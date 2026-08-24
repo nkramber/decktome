@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package mtg.v1;
+
+option go_package = "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1";
+
+// Format names the rule set a deck is built for.
+message Format {
+  FormatId id = 1;
+  // house_rules records what the user means when the format is HOUSE
+  // (D-3: "anything goes" is not a fixed thing). Empty otherwise.
+  string house_rules = 2;
+}
+
+// FormatId lists the formats the app builds for.
+// The Scryfall legality key for each id lives in the rules engine (PR-5).
+enum FormatId {
+  FORMAT_ID_UNSPECIFIED = 0;
+  FORMAT_ID_COMMANDER = 1;
+  FORMAT_ID_STANDARD = 2;
+  FORMAT_ID_PIONEER = 3;
+  FORMAT_ID_MODERN = 4;
+  FORMAT_ID_LEGACY = 5;
+  FORMAT_ID_VINTAGE = 6;
+  FORMAT_ID_PAUPER = 7;
+  // FORMAT_ID_HOUSE is a user-defined rule set. See Format.house_rules.
+  FORMAT_ID_HOUSE = 8;
+}
+
+// PowerLevel is the target strength (D-8).
+message PowerLevel {
+  oneof level {
+    // bracket is the official Commander bracket, 1 to 5.
+    int32 bracket = 1;
+    // sixty_step applies to 60-card formats.
+    SixtyStep sixty_step = 2;
+  }
+}
+
+// SixtyStep is the 3-step scale for 60-card formats (D-8).
+enum SixtyStep {
+  SIXTY_STEP_UNSPECIFIED = 0;
+  SIXTY_STEP_CASUAL = 1;
+  SIXTY_STEP_FNM = 2;
+  SIXTY_STEP_TOURNAMENT = 3;
+}

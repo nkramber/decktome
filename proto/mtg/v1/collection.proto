@@ -1,0 +1,86 @@
+syntax = "proto3";
+
+package mtg.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1";
+
+// Collection is one imported card list. The full collection is stored (D-16).
+message Collection {
+  string id = 1;
+  string name = 2;
+  ImportSource source = 3;
+  google.protobuf.Timestamp imported_at = 4;
+  // content_hash detects an identical re-upload (D-16).
+  string content_hash = 5;
+  repeated CollectionEntry entries = 6;
+  // card_count is the total number of cards, copies included.
+  int32 card_count = 7;
+}
+
+// CollectionEntry is one row: one printing with a quantity.
+message CollectionEntry {
+  // scryfall_id is the printing id, the ManaBox join key.
+  string scryfall_id = 1;
+  // oracle_id joins printings of one card for ownership counts.
+  string oracle_id = 2;
+  string name = 3;
+  string set_code = 4;
+  string collector_number = 5;
+  int32 quantity = 6;
+  Finish finish = 7;
+  Condition condition = 8;
+  // rarity of this printing (D-16).
+  string rarity = 9;
+}
+
+// ImportSource names the file format of an import.
+enum ImportSource {
+  IMPORT_SOURCE_UNSPECIFIED = 0;
+  IMPORT_SOURCE_MANABOX_CSV = 1;
+  IMPORT_SOURCE_ARENA_TEXT = 2;
+}
+
+// Finish mirrors the ManaBox Foil column values.
+enum Finish {
+  FINISH_UNSPECIFIED = 0;
+  FINISH_NORMAL = 1;
+  FINISH_FOIL = 2;
+  FINISH_ETCHED = 3;
+}
+
+// Condition mirrors the ManaBox Condition column values.
+enum Condition {
+  CONDITION_UNSPECIFIED = 0;
+  CONDITION_MINT = 1;
+  CONDITION_NEAR_MINT = 2;
+  CONDITION_EXCELLENT = 3;
+  CONDITION_GOOD = 4;
+  CONDITION_LIGHT_PLAYED = 5;
+  CONDITION_PLAYED = 6;
+  CONDITION_POOR = 7;
+}
+
+// ImportReport lists what an import could not use. Nothing is dropped
+// in silence (D-23, roadmap PR-4 gate).
+message ImportReport {
+  repeated UnresolvedRow unresolved = 1;
+  int32 resolved_count = 2;
+}
+
+// UnresolvedRow is one input row the importer rejected, with the reason.
+message UnresolvedRow {
+  int32 line = 1;
+  string raw = 2;
+  UnresolvedReason reason = 3;
+}
+
+// UnresolvedReason says why a row did not resolve.
+enum UnresolvedReason {
+  UNRESOLVED_REASON_UNSPECIFIED = 0;
+  UNRESOLVED_REASON_UNKNOWN_CARD = 1;
+  // UNRESOLVED_REASON_NON_ENGLISH: the app supports English only (D-23).
+  UNRESOLVED_REASON_NON_ENGLISH = 2;
+  UNRESOLVED_REASON_BAD_ROW = 3;
+}

@@ -1,0 +1,93 @@
+syntax = "proto3";
+
+package mtg.v1;
+
+import "mtg/v1/format.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1";
+
+// Deck is one generated deck.
+message Deck {
+  string id = 1;
+  string name = 2;
+  Format format = 3;
+  PowerLevel power = 4;
+  // summary is one paragraph on the deck's style and purpose (D-19).
+  string summary = 5;
+  // commander_oracle_ids holds one commander, or two for partners.
+  repeated string commander_oracle_ids = 6;
+  repeated DeckCard cards = 7;
+  ValidationResult validation = 8;
+  // legality_as_of is the card-snapshot date the deck was checked against,
+  // ISO 8601. The UI shows it (roadmap PR-3).
+  string legality_as_of = 9;
+  // seed reproduces this build on request (D-18).
+  int64 seed = 10;
+  string session_id = 11;
+  google.protobuf.Timestamp created_at = 12;
+  // stale marks a deck that a rule change made illegal (D-29, I-1).
+  bool stale = 13;
+  // stale_oracle_ids lists the now-illegal cards.
+  repeated string stale_oracle_ids = 14;
+  // sideboard holds up to 15 cards in 60-card formats. Empty in Commander.
+  repeated DeckCard sideboard = 15;
+  // companion_oracle_id names the companion, when the deck has one.
+  // The companion sits in the sideboard and must pass its own check (F-18).
+  string companion_oracle_id = 16;
+}
+
+// DeckCard is one card choice with its reason.
+message DeckCard {
+  string oracle_id = 1;
+  string name = 2;
+  int32 count = 3;
+  CardRole role = 4;
+  // reason is one line on why this card is in the deck (D-19).
+  string reason = 5;
+  // owned says the collection covers the count (D-2).
+  bool owned = 6;
+  // owned_count is how many copies the collection has.
+  int32 owned_count = 7;
+}
+
+// CardRole is the job a card does in the deck (corpus section 6).
+enum CardRole {
+  CARD_ROLE_UNSPECIFIED = 0;
+  CARD_ROLE_LAND = 1;
+  CARD_ROLE_RAMP = 2;
+  CARD_ROLE_DRAW = 3;
+  CARD_ROLE_REMOVAL = 4;
+  CARD_ROLE_WIPE = 5;
+  CARD_ROLE_THREAT = 6;
+  CARD_ROLE_INTERACTION = 7;
+  CARD_ROLE_SYNERGY = 8;
+  CARD_ROLE_WINCON = 9;
+  CARD_ROLE_OTHER = 10;
+}
+
+// ValidationResult is the rules-engine verdict (guardrail 1, PR-5).
+message ValidationResult {
+  repeated Finding findings = 1;
+  // passed means no finding has severity BLOCK.
+  bool passed = 2;
+}
+
+// Finding is one problem the rules engine found.
+message Finding {
+  // code names the check, for example "banned_card" or "off_color".
+  string code = 1;
+  Severity severity = 2;
+  string message = 3;
+  // oracle_id points at the card, when the finding is about one card.
+  string oracle_id = 4;
+}
+
+// Severity says what a finding blocks.
+enum Severity {
+  SEVERITY_UNSPECIFIED = 0;
+  // SEVERITY_BLOCK: the deck must not reach the user in this state.
+  SEVERITY_BLOCK = 1;
+  SEVERITY_WARN = 2;
+  SEVERITY_INFO = 3;
+}
