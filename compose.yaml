@@ -31,5 +31,6 @@ services:
       FIRESTORE_EMULATOR_HOST: "emulators:8281"
       FIREBASE_AUTH_EMULATOR_HOST: "emulators:9199"
       STORAGE_EMULATOR_HOST: "http://gcs:4443"
+      CARDS_BUCKET: "mtg-local-cards"
     depends_on: [emulators, gcs]
     ports: ["8090:8080"]

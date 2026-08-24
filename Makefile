@@ -68,8 +68,11 @@ run-web: ## Run the Vite dev server on :5180
 dev: ## Start the local stack: emulators, fake GCS, API, worker, web. No cloud credentials.
 	@./scripts/dev.sh
 
-dev-seed: ## Load local fixtures (PR-2 and PR-4 fill this in)
-	@echo "dev-seed: nothing to seed yet (arrives with PR-2 and PR-4)"
+dev-seed: ## Download the Scryfall snapshot into the local stack (network, ~110 MB)
+	@echo "==> one-shot card snapshot refresh (needs make dev running for fake GCS)"
+	@PROJECT_ID=mtg-local CARDS_BUCKET=mtg-local-cards \
+		STORAGE_EMULATOR_HOST=http://127.0.0.1:4443 \
+		go -C go run ./cmd/worker -once
 
 dev-docker: ## Start the emulators, fake GCS, and API in containers (Compose)
 	@docker compose up --build

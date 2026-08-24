@@ -1,0 +1,946 @@
+{"id":"0070651d-79aa-4ea6-b703-6ecd3528b548","name":"Warrant // Warden","oracle_id":"19053c47-97ce-4a25-a92c-1f4061e85bf3"}
+{"id":"008e066b-ca19-4c86-9865-d0d2662c0e50","name":"Slivdrazi Monstrosity","oracle_id":"59ed4021-bc4b-42ba-944d-78fb7bd94fa1"}
+{"id":"00d39d68-f4d8-46ee-ad52-1b7a57bc6321","name":"Elvish Skysweeper","oracle_id":"f557697a-4c1b-44f6-a989-4879bbe26eb5"}
+{"id":"01048220-cef3-47ee-8d68-d01d324ad8af","name":"Sword of the Animist","oracle_id":"d79cbc61-6c15-48ea-bbba-3cffb819ccba"}
+{"id":"01b28cef-7a94-4f55-a309-f131d44f9561","name":"Currency Converter","oracle_id":"981298e6-ddee-49c0-9377-f47f019b4138"}
+{"id":"01bbdbd8-1517-4bfd-926b-465a32724082","name":"Timid Drake","oracle_id":"aa8c5467-190a-4c6a-872c-56b8f8d01a2b"}
+{"id":"01c18d57-16a7-4cc0-b086-81c4b9a166c7","name":"Everflowing Chalice","oracle_id":"0a79237e-0811-4a8a-bd4d-db3ca91bff22"}
+{"id":"024c82c5-611e-48bd-ad56-9d31e4adda0e","name":"A-Blessed Hippogriff // A-Tyr's Blessing","oracle_id":"4264cf22-8823-4bb9-b414-15e8e10c011b"}
+{"id":"02729948-9b74-453f-a268-2f29b48a29ee","name":"Wastes","oracle_id":"05d24b0c-904a-46b6-b42a-96a4d91a0dd4"}
+{"id":"0383401f-d453-4e8f-82d2-5c016acc2591","name":"Grind // Dust","oracle_id":"ab5b697b-ab62-4ee7-a10e-cc937fef3095"}
+{"id":"04002706-2236-4b79-bdea-4f263e43cb9c","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"0441cd2c-3646-4c69-ae97-ad3bcea7466f","name":"Mirrorpool","oracle_id":"57b86d5c-3269-44bc-a838-3c5439d820d9"}
+{"id":"04cb4e4e-8275-4132-8f1a-84b486725400","name":"Fire // Ice","oracle_id":"ae92942b-919c-4ea9-b693-85fcef765d5a"}
+{"id":"052ab231-6575-4682-9208-13ac6b9d7910","name":"Linden, the Steadfast Queen","oracle_id":"dbc56f3b-83b3-41c8-a8ae-d3774fe6ee01"}
+{"id":"0548fb60-c843-4f8f-a029-6f10efc63a41","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"05e9d580-5da2-4559-b611-870726c53791","name":"Rograkh, Son of Rohgahh","oracle_id":"584cee10-f18c-4633-95cc-f2e7a11841ac"}
+{"id":"05edd9e7-1ff9-452a-b8d6-e96ab077188c","name":"Tovolar, Dire Overlord // Tovolar, the Midnight Scourge","oracle_id":"45d49831-548a-4a0e-9a18-9f7397913895"}
+{"id":"06a644b4-a2f7-4219-935b-237936b07948","name":"Oketra's Avenger","oracle_id":"8f064160-3afe-408a-85b4-b335eae8571c"}
+{"id":"06ab6802-da97-4ad8-95ee-2362b2c03975","name":"Currency Converter","oracle_id":"981298e6-ddee-49c0-9377-f47f019b4138"}
+{"id":"06be8262-4636-4a2c-a0c8-de741cf45aed","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"073bfdca-d7b8-4f4b-93f3-6e7c44bc0b0a","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"080ef367-7904-4e5c-a8b4-1fb62f951f3e","name":"Gruul Ragebeast","oracle_id":"e5fa93a3-0b2b-4477-ad3f-4fc1b325ca19"}
+{"id":"08d22402-c41d-43d7-be1f-42be1e300726","name":"Tolsimir, Midnight's Light","oracle_id":"0e9c7380-7584-43e6-8c31-5d1bb1685fe0"}
+{"id":"08d24f3f-bff1-4424-a029-3221c4e395b3","name":"Lutri, the Spellchaser","oracle_id":"158a6225-a246-4fd6-aa57-0df8067b4383"}
+{"id":"09951b0c-85a9-421e-9e44-f75712c228c3","name":"Jegantha, the Wellspring","oracle_id":"f0587c55-06c1-4930-a62e-668f37464ce9"}
+{"id":"09e008b9-c27c-40ad-9242-d7da52a2a0a8","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"09fd2d9c-1793-4beb-a3fb-7a869f660cd4","name":"Bonecrusher Giant // Stomp","oracle_id":"d6d72f5f-8f5d-4180-b514-f22ff5482902"}
+{"id":"0a08e0d2-1e60-47f5-9228-4c11a127089d","name":"Bloodsoaked Insight // Sanguine Morass","oracle_id":"c52fc8a1-43c6-41f8-b010-03be7c89ef1d"}
+{"id":"0a76d227-c899-409f-a01b-d3ca16b56ddc","name":"Fire // Ice","oracle_id":"ae92942b-919c-4ea9-b693-85fcef765d5a"}
+{"id":"0afa0e33-4804-4b00-b625-c2d6b61090fc","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"0b24f280-af07-4931-b607-480e35d16e1a","name":"Elvish Skysweeper","oracle_id":"f557697a-4c1b-44f6-a989-4879bbe26eb5"}
+{"id":"0b9ef17a-02a4-44c6-b0b3-9eccf7f324fd","name":"Azog, Moria's Ruin","oracle_id":"a8b018a7-0350-4ee0-9582-8d391018bdee"}
+{"id":"0bf28443-7124-44e1-b387-95c3bd1a9da2","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"0ca8f8c2-9ee3-43ab-bc1f-220adc1b5472","name":"Kaya, Ghost Haunter","oracle_id":"a51c0803-cef7-4b8b-aaed-38ded8fae3bd"}
+{"id":"0caa7e29-b8c5-41d3-bc0f-7f1ad1d6e674","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"0ce562a9-ca35-4f31-8618-bc26d3d40169","name":"Aethersnatch","oracle_id":"45892ec2-8996-444f-a61c-5151926baa0b"}
+{"id":"0d38ff41-a60c-4d70-92e4-4d3d3ab073a3","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"0dbac7ce-a6fa-466e-b6ba-173cf2dec98e","name":"Brutal Cathar // Moonrage Brute","oracle_id":"1ed2d8e0-462b-468e-8fd3-1f3c6d99fb8a"}
+{"id":"0dcd0898-db3d-44ec-9d56-a1b558da90f4","name":"Linden, the Steadfast Queen","oracle_id":"dbc56f3b-83b3-41c8-a8ae-d3774fe6ee01"}
+{"id":"0ddf922b-2005-411c-9537-ab2884b54507","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"0e09b054-4d33-4a12-bf2a-9b0009f33044","name":"Fire // Ice","oracle_id":"ae92942b-919c-4ea9-b693-85fcef765d5a"}
+{"id":"0e2de47c-828e-4e09-996d-b4c360af2d2f","name":"Vraska, Golgari Queen","oracle_id":"131096a3-2d53-4ec2-96d3-fcb58e698a13"}
+{"id":"0e402b49-2937-4b98-ab31-304454bb7f9f","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"0e863861-eb0d-4f86-9770-bd32b8227d07","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"0f003fde-be17-4159-a361-711ed0bee911","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"0f1f4f24-f62b-4f52-8168-62b5b9971162","name":"Aether Vial","oracle_id":"fc148e1e-dff0-448e-9f16-625341754356"}
+{"id":"0f279560-7e9f-4a6d-9fd6-6c8c6bd94a1b","name":"Wear // Tear","oracle_id":"9842734c-1eac-4509-a731-4c22017ae586"}
+{"id":"0f44a54b-512e-45ef-80ee-7982d2eaf762","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"0f93e8ad-8ef6-4cf1-a664-d1477f1ebae4","name":"Wastes","oracle_id":"05d24b0c-904a-46b6-b42a-96a4d91a0dd4"}
+{"id":"0fd33b41-e8f4-46e2-9a44-9cba5758a6fb","name":"Aethershield Artificer","oracle_id":"d2575513-72fa-49c7-be6b-9f6f85950f88"}
+{"id":"0ff8e7a9-2ce2-44a1-9671-70dbd46228b3","name":"Yorion, Sky Nomad","oracle_id":"e15504a7-2b67-4185-b916-172145f10b19"}
+{"id":"10576f29-1ab8-4157-b5a0-8ad94a1ff634","name":"Umori, the Collector","oracle_id":"913383a1-9c0d-40a1-8c5a-b0a8a95c09a6"}
+{"id":"10ea9e80-0d3a-4b75-8f29-56e88d6fe66a","name":"The Tenth Doctor","oracle_id":"23af0a0a-1d12-47c7-b191-2bd3f84eea93"}
+{"id":"112476e7-72ab-4ebc-9e6e-e96fbf5109c0","name":"Emrakul's Influence","oracle_id":"92eb07ca-ec57-48c3-98ce-9e878bd968c1"}
+{"id":"115e864c-a47f-48f6-a0e1-739e1427cb37","name":"Persistent Petitioners","oracle_id":"0e488c6c-aae2-450f-b969-7bb5a1b37a66"}
+{"id":"11bb73ca-0e3c-4fb6-becc-98c9924531b8","name":"Aether Vial","oracle_id":"fc148e1e-dff0-448e-9f16-625341754356"}
+{"id":"11bf83bb-c95b-4b4f-9a56-ce7a1816307a","name":"Delver of Secrets // Insectile Aberration","oracle_id":"edd531b9-f615-4399-8c8c-1c5e18c4acbf"}
+{"id":"11c93414-935e-462b-ad89-27ca21d01bf9","name":"Raised by Giants","oracle_id":"1682cf24-17a3-49ad-8b6f-9b7f13ebf53c"}
+{"id":"11e8d2fd-b132-4807-9410-8edeffa519ed","name":"Aether Vial","oracle_id":"fc148e1e-dff0-448e-9f16-625341754356"}
+{"id":"120e2b4b-afc7-4bf0-a09f-568e08f6bd8f","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"12279d5e-eff2-45bd-bb56-a953b56ff76a","name":"Fire // Ice","oracle_id":"ae92942b-919c-4ea9-b693-85fcef765d5a"}
+{"id":"12650e40-e62a-4777-b97c-2b5600208188","name":"Vraska, Golgari Queen","oracle_id":"131096a3-2d53-4ec2-96d3-fcb58e698a13"}
+{"id":"129d1bbd-83ad-4953-bf6d-b55989b2529c","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"12c01a00-2128-4b6c-874f-a206eca3a756","name":"Lutri, the Spellchaser","oracle_id":"158a6225-a246-4fd6-aa57-0df8067b4383"}
+{"id":"131a124f-f11e-4ea1-a7b2-b94eea988d4e","name":"Dawn's Reflection","oracle_id":"362b7838-3b70-4a00-8c26-1c8b8a3b6acf"}
+{"id":"135da718-affc-46ba-be57-c12c23b54dad","name":"Azog, Moria's Ruin","oracle_id":"a8b018a7-0350-4ee0-9582-8d391018bdee"}
+{"id":"1366d406-4539-408f-93c1-f940327c1ba2","name":"Dawn's Reflection","oracle_id":"362b7838-3b70-4a00-8c26-1c8b8a3b6acf"}
+{"id":"13788423-db82-4e76-83ad-3f812a4d547a","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"14019383-0327-404b-ab4d-c65c3fa8c50d","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"146019b7-d7c2-444c-8931-8a870c7a0b35","name":"Xathrid Necromancer","oracle_id":"a6b38874-c8be-47f7-a656-ba49ec9e967f"}
+{"id":"148abd94-e752-4394-abce-21d594318b41","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"14dbce79-1fcc-4cc9-bf38-7729e44a411e","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"14dc88ee-bba9-4625-af0d-89f3762a0ead","name":"Tergrid, God of Fright // Tergrid's Lantern","oracle_id":"8485cfaa-1dbf-432b-b5d0-92a6aa6a329b"}
+{"id":"150d8da9-3dd5-475b-a2a0-f93f9cee7256","name":"Scarlet Spider, Ben Reilly","oracle_id":"13ab2f3f-f65e-42b5-b743-39b30a4c4751"}
+{"id":"156464e7-3bb1-465f-939c-a9d290dc3ebc","name":"Everflowing Chalice","oracle_id":"0a79237e-0811-4a8a-bd4d-db3ca91bff22"}
+{"id":"16089845-be81-4fc2-82a8-8a28ec7e20d4","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"162dd988-0beb-48e4-9eaa-a08ddb835648","name":"Mtenda Griffin","oracle_id":"273f0353-4936-491b-82da-6d4d7f3259a6"}
+{"id":"16a2c470-b2b8-4633-89b1-7b936bcaff8d","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"16c19ce8-b295-4043-863b-f781147f9e32","name":"Everflowing Chalice","oracle_id":"0a79237e-0811-4a8a-bd4d-db3ca91bff22"}
+{"id":"16fbbd8d-bb18-4a8b-95a4-30ad6d548f72","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"170a06cd-501e-43c8-98e0-63ebd61cc0aa","name":"Skullcrack","oracle_id":"a6fc0b0c-9ba2-47f2-ab92-26fd20d0f86d"}
+{"id":"174eafc5-1489-45dd-9555-123647f2268f","name":"Persistent Petitioners","oracle_id":"0e488c6c-aae2-450f-b969-7bb5a1b37a66"}
+{"id":"1796b260-7053-4d68-9918-c7392e312d10","name":"Ajani's Pridemate","oracle_id":"95e94dea-5ac0-4d6f-adec-ca147aee861f"}
+{"id":"17c2f5f0-1f37-4f51-9c10-c02e2ef7d4ee","name":"Enslave","oracle_id":"879ba7c4-4557-4166-adb0-b52454816e5a"}
+{"id":"17fca517-aafa-49d2-98a4-fa7dea14d116","name":"Aether Vial","oracle_id":"fc148e1e-dff0-448e-9f16-625341754356"}
+{"id":"180000d4-6844-4292-b768-b1f74a3b8b2d","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"18303862-4726-4136-814f-157aa7006579","name":"Fire // Ice","oracle_id":"ae92942b-919c-4ea9-b693-85fcef765d5a"}
+{"id":"186ca552-40bd-4ca0-9c2a-e899c443643b","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"1879b406-c382-47e6-af33-439a164438ae","name":"Goblin Psychopath","oracle_id":"9369f131-3356-4926-9a9f-88a636305bd0"}
+{"id":"187b6719-e5ed-4615-a00b-3313ceca055b","name":"Currency Converter","oracle_id":"981298e6-ddee-49c0-9377-f47f019b4138"}
+{"id":"18a2bdc8-b705-4eb5-b3a5-ff2e2ab8f312","name":"Wandering Archaic // Explore the Vastlands","oracle_id":"6556c4c0-b10d-4208-821b-0c0a49abd188"}
+{"id":"18d51c53-d45f-4df4-abf5-dfa3ba07c68c","name":"Thrasios, Triton Hero","oracle_id":"3d867016-2601-4a37-a73d-308898d3bd37"}
+{"id":"18dff95a-9c76-4ca2-8de6-91e34538f5da","name":"Aetherflux Reservoir","oracle_id":"5f15125e-ae89-471e-b055-226a783bc7c1"}
+{"id":"1925dc45-4dee-4772-aa16-3b4ca54be6c7","name":"Grist, the Hunger Tide","oracle_id":"0efb0d7e-dea0-4817-a243-15066e9ef333"}
+{"id":"193a5688-9e9b-48f4-9904-53134ec73c97","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"19911e6e-7c35-4281-b31c-266382f052cc","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"199cde21-5bc3-49cd-acd4-bae3af6e5881","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"19f81099-f657-4f7d-84ad-f472ae87d9c5","name":"Bane's Contingency","oracle_id":"8089c3eb-99a8-40ca-882a-c1d4e30075ee"}
+{"id":"1a1b2bd0-e17d-4b34-a8ee-7c913a6bc945","name":"Moonstone, Harsh Mistress","oracle_id":"aeeb50f2-8e02-4d40-a1dd-28b1c5c85c7e"}
+{"id":"1a213fc0-99f0-438c-a526-cac8be222179","name":"Aether Vial","oracle_id":"fc148e1e-dff0-448e-9f16-625341754356"}
+{"id":"1a576d17-693d-4cc1-bb5b-bf81c74de03b","name":"Bane, Lord of Darkness","oracle_id":"ca507eea-1b04-4488-813e-ca970640e227"}
+{"id":"1a5b855b-f391-4963-a3d9-47880e084a7f","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"1abcafa9-0f27-482f-95a9-24520f0106b8","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"1b023575-4cb5-434f-92ef-d3b81aaa3c3e","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"1b28eccd-65a7-48c9-8dea-257c8efd78eb","name":"Axgard Cavalry","oracle_id":"6a92b011-fd01-4b6a-a17c-73ac1967ff98"}
+{"id":"1b3a4537-1d51-47ac-a12e-6b8d68f530e6","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"1b59533a-3e38-495d-873e-2f89fbd08494","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"1c9caf97-75c6-4e12-8724-1abe32212bef","name":"Relentless Rats","oracle_id":"104ea189-14cd-420f-afdc-57b0f827ab8e"}
+{"id":"1cc70d4e-662e-42c7-8a21-f3a002198fea","name":"Relentless Rats","oracle_id":"104ea189-14cd-420f-afdc-57b0f827ab8e"}
+{"id":"1cf96437-0943-40f9-b175-31a1504028ba","name":"Urza's Saga","oracle_id":"4c6a0c30-b547-4eff-8ff4-0ca25803c076"}
+{"id":"1d25ec34-b9c7-44ee-90f8-359c7ac6f835","name":"Wear // Tear","oracle_id":"9842734c-1eac-4509-a731-4c22017ae586"}
+{"id":"1d52e527-3835-4350-8c01-0f2d5d623b9c","name":"Jegantha, the Wellspring","oracle_id":"f0587c55-06c1-4930-a62e-668f37464ce9"}
+{"id":"1d958ec3-1ddc-4622-9089-cbe5b3b47c90","name":"Pegasus Guardian // Rescue the Foal","oracle_id":"e71863a7-0de1-4ab5-95e8-c39e6810d899"}
+{"id":"1da0b6bc-db7f-42e9-b37d-fa33030cde13","name":"Relentless Rats","oracle_id":"104ea189-14cd-420f-afdc-57b0f827ab8e"}
+{"id":"1dadea9c-1f50-4e5e-9fb0-ab20c707150f","name":"Nissa, Who Shakes the World","oracle_id":"5aa3abf1-d56b-4f42-8c84-7e5a2c15ee0f"}
+{"id":"1dd52f2e-5d07-4a10-8d1b-a456eaca977c","name":"Relentless Rats","oracle_id":"104ea189-14cd-420f-afdc-57b0f827ab8e"}
+{"id":"1e947092-c153-410c-bd81-30142c662459","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"1ee2e3a2-3d8d-458d-960b-ded60d2ad4a1","name":"Trelasarra, Moon Dancer","oracle_id":"cd10ebc9-9f6c-4da2-9a86-263902002ebc"}
+{"id":"1f013b42-05d5-43f5-b20b-177ca52c0587","name":"Gwenom, Remorseless","oracle_id":"c48cf135-b280-4e9f-a9d9-225104870741"}
+{"id":"1fdcc0c3-4029-4fc3-a486-5d7f45c910bd","name":"Everflowing Chalice","oracle_id":"0a79237e-0811-4a8a-bd4d-db3ca91bff22"}
+{"id":"2003c7f1-c9dc-4d0a-ba4b-6a4ca705164a","name":"The Ring Goes South","oracle_id":"3d36f0ab-d333-4a08-ad1b-5b7e1ddb647c"}
+{"id":"202c2323-6589-457a-af51-5528a98e7b30","name":"Shadowborn Apostle","oracle_id":"595a15f0-77f3-4544-8acc-10630e12cc14"}
+{"id":"203f04a1-9adc-42eb-95ee-0f4f394f91cf","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"21365def-bec7-4ec0-a1e9-34c85bf6c274","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"2138dfbb-a4e3-49db-b908-95d0b2b7e82f","name":"Urza's Saga","oracle_id":"4c6a0c30-b547-4eff-8ff4-0ca25803c076"}
+{"id":"219210d3-263c-41c4-9211-0e59b2d4ccf3","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"21e27b91-c7f1-4709-aa0d-8b5d81b22a0a","name":"Thrasios, Triton Hero","oracle_id":"3d867016-2601-4a37-a73d-308898d3bd37"}
+{"id":"222c1a68-e34c-4103-b1be-17d4ceaef6ce","name":"Ajani's Pridemate","oracle_id":"95e94dea-5ac0-4d6f-adec-ca147aee861f"}
+{"id":"226f7c45-db9f-4d48-b575-4d2f1904c963","name":"Aethershield Artificer","oracle_id":"d2575513-72fa-49c7-be6b-9f6f85950f88"}
+{"id":"2294d37e-8b34-4d8d-bc43-f961c96a760f","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"22cd0c26-13fd-46d7-bcb2-6d39d5628657","name":"Grind // Dust","oracle_id":"ab5b697b-ab62-4ee7-a10e-cc937fef3095"}
+{"id":"230e65b2-a908-4418-8ef9-ecc475ff0b27","name":"Fire // Ice","oracle_id":"ae92942b-919c-4ea9-b693-85fcef765d5a"}
+{"id":"2313d399-bbb8-4938-995c-489cd6fdd165","name":"Jegantha, the Wellspring","oracle_id":"f0587c55-06c1-4930-a62e-668f37464ce9"}
+{"id":"236c437f-ee9d-4145-a4db-b665908089cf","name":"Loki, God of Mischief","oracle_id":"c112852f-61d5-4b94-b864-c7d0b5333b29"}
+{"id":"23f4b149-fad5-4ba2-a484-dd29d97d120d","name":"Indomitable Archangel","oracle_id":"0f9269eb-6a6c-4b32-8b3d-73724c12ca6b"}
+{"id":"2411c341-a470-4484-9248-7c1d3ca12978","name":"Axgard Cavalry","oracle_id":"6a92b011-fd01-4b6a-a17c-73ac1967ff98"}
+{"id":"2413e7e1-f9a5-4657-9375-2c30d32d7853","name":"Currency Converter","oracle_id":"981298e6-ddee-49c0-9377-f47f019b4138"}
+{"id":"24179418-d92c-43eb-a8f6-b8ea83f8c80f","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"2418af21-7be9-4dec-8be6-4d0bcf84a7ca","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"2429510d-ce59-472d-b0df-5e6b7cdf63af","name":"Dragon's Rage Channeler","oracle_id":"0c016ccc-a341-4b76-87ba-69c639d2746d"}
+{"id":"244477e3-7371-4cbb-a5d8-dec71fac4c8f","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"24afe08b-6b88-42b3-a996-33f138431a87","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"24d4dbde-ff1f-4ffd-9fea-639b7a5bb50b","name":"Ajani's Pridemate","oracle_id":"95e94dea-5ac0-4d6f-adec-ca147aee861f"}
+{"id":"251d8c4a-a40c-4f89-9738-4928a7d4a97c","name":"Persistent Petitioners","oracle_id":"0e488c6c-aae2-450f-b969-7bb5a1b37a66"}
+{"id":"2534caaa-a793-415f-977f-1d0fac3642ab","name":"The Dragon-Kami Reborn // Dragon-Kami's Egg","oracle_id":"c3a46eb3-38d9-4f47-9b71-26c9ea7ef1ce"}
+{"id":"2585d250-1cce-431c-a9d1-a3adce9d70cd","name":"Wastes","oracle_id":"05d24b0c-904a-46b6-b42a-96a4d91a0dd4"}
+{"id":"25d63632-c019-4f34-926a-42f829a4665c","name":"Nissa, Who Shakes the World","oracle_id":"5aa3abf1-d56b-4f42-8c84-7e5a2c15ee0f"}
+{"id":"26494f96-1d97-4435-a116-3ade1becaab4","name":"Xathrid Necromancer","oracle_id":"a6b38874-c8be-47f7-a656-ba49ec9e967f"}
+{"id":"26dbf574-3193-413e-a982-4b9d27dafaf5","name":"Excalibur, Sword of Eden","oracle_id":"9fb6bd72-031b-40a1-83c5-8a1c82f84e12"}
+{"id":"26ece013-f3ef-4c12-9dea-b2789f61f8a0","name":"Bellowing Bruiser // Beat a Path","oracle_id":"cdb84830-faf2-4beb-8d57-ad696d75876b"}
+{"id":"271ef715-861c-4dad-93b2-160e29131c49","name":"Aether Revolt","oracle_id":"b73661a6-d136-4c65-804c-461e83484f4b"}
+{"id":"275426c4-c14e-47d0-a9d4-24da7f6f6911","name":"Yorion, Sky Nomad","oracle_id":"e15504a7-2b67-4185-b916-172145f10b19"}
+{"id":"27875258-47af-4105-9ded-56e03dcbd9e7","name":"Everflowing Chalice","oracle_id":"0a79237e-0811-4a8a-bd4d-db3ca91bff22"}
+{"id":"27be522d-bdef-4a95-a405-98247c58b71a","name":"Persistent Petitioners","oracle_id":"0e488c6c-aae2-450f-b969-7bb5a1b37a66"}
+{"id":"27e36832-09ca-4070-8511-94580014c3ed","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"27ea0aa3-30c0-4eb4-b262-ce70781277ce","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"28059d09-2c7d-4c61-af55-8942107a7c1f","name":"Delver of Secrets // Insectile Aberration","oracle_id":"edd531b9-f615-4399-8c8c-1c5e18c4acbf"}
+{"id":"2824f3fb-82e6-43bd-babf-da6777a5b075","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"28283a24-e3dd-4263-a006-c088dac582e3","name":"Yorion, Sky Nomad","oracle_id":"e15504a7-2b67-4185-b916-172145f10b19"}
+{"id":"285e4f85-c54b-4dda-9b59-fca7a2626671","name":"Sword of the Animist","oracle_id":"d79cbc61-6c15-48ea-bbba-3cffb819ccba"}
+{"id":"286bea73-8ad8-4423-8a7c-8497420fdb54","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"288135e8-2081-4c69-8e27-5c7e2a6dfbfa","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"28dae6b1-0407-4ac0-94fe-9711e978258a","name":"Persistent Petitioners","oracle_id":"0e488c6c-aae2-450f-b969-7bb5a1b37a66"}
+{"id":"28de0281-0370-44df-9ee0-6e1bb9925a92","name":"Relentless Rats","oracle_id":"104ea189-14cd-420f-afdc-57b0f827ab8e"}
+{"id":"28ee11c9-fa23-4863-8a18-25a008f18da5","name":"Yennett, Cryptic Sovereign","oracle_id":"4eec6838-3565-407f-8941-ce9421402f0b"}
+{"id":"296d0c32-1b7d-4c91-8675-2543c97a3753","name":"Ajani's Pridemate","oracle_id":"95e94dea-5ac0-4d6f-adec-ca147aee861f"}
+{"id":"297bfdee-54b3-4102-bb2b-e1088cb5d70e","name":"Shanna, Sisay's Legacy","oracle_id":"546201d0-3fa5-44e4-a526-ab0945711e49"}
+{"id":"298a4109-4f8d-449c-b13d-e678c1113b90","name":"Uvilda, Dean of Perfection // Nassari, Dean of Expression","oracle_id":"63c4915f-5ad9-468f-95c5-d44f1b71631e"}
+{"id":"2b7eed1e-7b28-4900-a6ac-67f167476c11","name":"Daghatar the Adamant","oracle_id":"7b303881-ac8d-4459-b04e-768a6804763c"}
+{"id":"2bdd502a-2c3e-4f4f-a206-4bccf175ca11","name":"Persistent Petitioners","oracle_id":"0e488c6c-aae2-450f-b969-7bb5a1b37a66"}
+{"id":"2be041f3-482d-40f3-a525-39e3d6890c56","name":"Haunting Hymn","oracle_id":"b9a0977a-6364-4358-bab1-112898a1b942"}
+{"id":"2c52c96d-e20f-4025-b759-674b36cf0db3","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"2c86aae8-08bb-4acc-b39b-10e5b2ac40d9","name":"Shanna, Sisay's Legacy","oracle_id":"546201d0-3fa5-44e4-a526-ab0945711e49"}
+{"id":"2cb62846-c5da-4c7c-b0d7-9b677dce68d1","name":"Sorin's Vengeance","oracle_id":"75d9c036-4f0d-4b55-b0a4-096ca84748ca"}
+{"id":"2d47121d-8b90-4d28-9ffa-0a640b9dd611","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"2d70ea49-8911-4361-8515-a78f34f6e721","name":"Vraska, Golgari Queen","oracle_id":"131096a3-2d53-4ec2-96d3-fcb58e698a13"}
+{"id":"2d77f095-c04e-4b7f-b1b1-2991a06134e8","name":"The Dragon-Kami Reborn // Dragon-Kami's Egg","oracle_id":"c3a46eb3-38d9-4f47-9b71-26c9ea7ef1ce"}
+{"id":"2dca37fb-e794-4027-bc4d-11677e67dfa7","name":"Reidane, God of the Worthy // Valkmira, Protector's Shield","oracle_id":"35ae7b25-6d0f-49f8-a40d-dd2cf88e6f44"}
+{"id":"2dd9f287-fc13-4bb1-851f-8d76c5cc12d8","name":"Everflowing Chalice","oracle_id":"0a79237e-0811-4a8a-bd4d-db3ca91bff22"}
+{"id":"2e0eb80a-f8c9-4cdf-9e35-b81e533a36a0","name":"Ondu Inversion // Ondu Skyruins","oracle_id":"15fc4e74-300e-4c2d-8ed7-004553b2f7c2"}
+{"id":"2e359014-f003-4dd6-bc97-ef2a5c515a23","name":"Azog, Moria's Ruin","oracle_id":"a8b018a7-0350-4ee0-9582-8d391018bdee"}
+{"id":"2e9034db-d167-4a5b-884c-df4ad661dc99","name":"Sune's Intervention","oracle_id":"2728b2d4-a207-4a2a-aa66-4d9c8865b26d"}
+{"id":"2e92d596-679f-4340-990d-29ae7900b5c8","name":"Shadowborn Apostle","oracle_id":"595a15f0-77f3-4544-8acc-10630e12cc14"}
+{"id":"2ef33ca3-9f5d-4e4a-a416-1dd3d1272e35","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"2f146425-749c-47f1-ae79-1c6cb113f425","name":"Kangee, Sky Warden","oracle_id":"6a344d2e-fbd7-4ff9-9e2a-97ae69d60c66"}
+{"id":"2f18e125-ac4a-45d0-8055-98f59c77324e","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"2f4e1e26-95cc-45bd-90e9-3ae00f1708cf","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"2f717e04-c078-4696-9ed6-e973033d7be0","name":"Ajani's Pridemate","oracle_id":"95e94dea-5ac0-4d6f-adec-ca147aee861f"}
+{"id":"2f7fc988-273a-45f4-85b6-597d1827504f","name":"Everflowing Chalice","oracle_id":"0a79237e-0811-4a8a-bd4d-db3ca91bff22"}
+{"id":"302d6e52-e6ba-4268-99ad-e22345866a51","name":"The Tenth Doctor","oracle_id":"23af0a0a-1d12-47c7-b191-2bd3f84eea93"}
+{"id":"3035cead-a501-4204-9154-5fd648577d32","name":"Tawnos's Weaponry","oracle_id":"f07f98bb-4190-4643-aeb9-c5eaf358c97c"}
+{"id":"303a7b3d-b359-42d8-826f-5b65c3210b24","name":"Currency Converter","oracle_id":"981298e6-ddee-49c0-9377-f47f019b4138"}
+{"id":"30442b97-a382-496d-b93c-8547557aff12","name":"The Dragon-Kami Reborn // Dragon-Kami's Egg","oracle_id":"c3a46eb3-38d9-4f47-9b71-26c9ea7ef1ce"}
+{"id":"308e9006-d072-46f4-befd-6a8d37f48582","name":"Dragon's Rage Channeler","oracle_id":"0c016ccc-a341-4b76-87ba-69c639d2746d"}
+{"id":"31ec8f91-4af6-448f-b672-210f9a898841","name":"Nissa, Who Shakes the World","oracle_id":"5aa3abf1-d56b-4f42-8c84-7e5a2c15ee0f"}
+{"id":"32158458-42eb-41bc-a15a-11af28463eb0","name":"Animating Faerie // Bring to Life","oracle_id":"db6fbdc9-1c45-416f-a08e-2082f65adb65"}
+{"id":"321bbf60-14a3-49b7-9401-0f2bb0660908","name":"Ulrich of the Krallenhorde // Ulrich, Uncontested Alpha","oracle_id":"0d397c05-a680-4274-972f-6a5f778b5133"}
+{"id":"33773feb-5b49-4d44-adca-93b99009acc0","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"33926454-5629-4035-b025-55fde396f732","name":"Haliya, Guided by Light","oracle_id":"9b0af3ad-1b4d-4480-af91-fe9baee5d1c5"}
+{"id":"33e1e8fc-77b4-409d-9fc4-7bc6f6ae3e26","name":"Cecily, Haunted Mage","oracle_id":"a726c27d-2955-4d41-b8a6-fca654c020a2"}
+{"id":"33e542ce-1106-489d-9563-bd62886b8ed3","name":"Kessig Forgemaster // Flameheart Werewolf","oracle_id":"b0d66546-c6a3-4052-b86e-98c3c2ab44b3"}
+{"id":"3402d3c7-125a-4ca7-8bf7-865cbed43692","name":"Fae of Wishes // Granted","oracle_id":"c0abbed2-d213-47ef-8d6c-4a21efb9a55f"}
+{"id":"3422f2e5-1cee-44bf-bcca-cce7c847a39c","name":"Everflowing Chalice","oracle_id":"0a79237e-0811-4a8a-bd4d-db3ca91bff22"}
+{"id":"3459b229-7c46-4f70-87d4-bb31c2c17dd9","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"347a7b0f-1239-4113-827c-aa67a6e0552e","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"349e598a-aa12-44b7-b9de-067c9b85fcec","name":"Crosis, the Purger","oracle_id":"f1ae1dcd-76cd-4714-9df2-1ab0ebd2ca41"}
+{"id":"351a6e6a-758d-417d-82c9-2c78db37d91e","name":"Elminster's Simulacrum","oracle_id":"3bb32408-81d3-4d0c-8674-1a1c5e3feb3b"}
+{"id":"3606519e-5677-4c21-a34e-be195b6669fa","name":"Reidane, God of the Worthy // Valkmira, Protector's Shield","oracle_id":"35ae7b25-6d0f-49f8-a40d-dd2cf88e6f44"}
+{"id":"37691c08-7763-42bd-b882-3cb0624a2098","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"38d347b7-dc17-417a-ab07-29fe99b9a101","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"3917f744-b876-47ae-94ad-f72b215ff1e7","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"397ffd01-c090-4233-9f5a-5f765886d498","name":"Alluring Suitor // Deadly Dancer","oracle_id":"e98e8129-3e0e-45cc-b00c-1387cc592023"}
+{"id":"3a38d40a-e745-4fee-b179-f8c27e9b2fbd","name":"Benalish Lancer","oracle_id":"b5adbd37-8d98-4c65-b42d-cd9db94e7222"}
+{"id":"3a4ab793-0dac-4b38-ae43-2e3fe454a6b2","name":"Bane, Lord of Darkness","oracle_id":"ca507eea-1b04-4488-813e-ca970640e227"}
+{"id":"3a558693-629f-4921-ae82-396c133f9117","name":"Ajani's Pridemate","oracle_id":"95e94dea-5ac0-4d6f-adec-ca147aee861f"}
+{"id":"3a6431fd-4b79-488e-a0c0-57731616bd08","name":"Bonecrusher Giant // Stomp","oracle_id":"d6d72f5f-8f5d-4180-b514-f22ff5482902"}
+{"id":"3ab5e71e-dc8d-4ed8-bcef-6497177c4a9d","name":"Unburied Earthcarver","oracle_id":"75da657e-0e36-4f2a-9b81-b7eba7d8e050"}
+{"id":"3beb6fa5-44db-4056-b8ec-42547aa5581f","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"3bfa6b8c-6e4b-42fa-9f6c-40c95e162b9a","name":"Sword of the Animist","oracle_id":"d79cbc61-6c15-48ea-bbba-3cffb819ccba"}
+{"id":"3c8a4c7d-527c-49ea-a115-a9e747c0fd03","name":"The Ring Goes South","oracle_id":"3d36f0ab-d333-4a08-ad1b-5b7e1ddb647c"}
+{"id":"3ce6d329-9c3a-4fb0-bf1e-9b72346ca3ad","name":"Ace, Fearless Rebel","oracle_id":"50d0d870-fe3d-44a2-ad6e-93307a1fb468"}
+{"id":"3d5c99e9-7c3e-4149-82a6-3c7d5d302488","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"3d7b401f-79aa-4584-b42b-e81e15c7065b","name":"Tovolar, Dire Overlord // Tovolar, the Midnight Scourge","oracle_id":"45d49831-548a-4a0e-9a18-9f7397913895"}
+{"id":"3dc08461-bec6-4a18-b782-da4c92abb789","name":"Scarecrow Guide","oracle_id":"cf7bb5d4-c33f-4879-a793-6d6f2a4d94be"}
+{"id":"3dd5ea51-68f7-4c12-a96b-8caca0d54640","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"3e10052f-b3e5-4a2c-b268-9a12ce354eb9","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"3e1f1ca9-453c-49b6-a913-20e461b9ea1b","name":"Everflowing Chalice","oracle_id":"0a79237e-0811-4a8a-bd4d-db3ca91bff22"}
+{"id":"3e2011f0-a640-4579-bd67-1dfbc09b8c09","name":"Ulrich of the Krallenhorde // Ulrich, Uncontested Alpha","oracle_id":"0d397c05-a680-4274-972f-6a5f778b5133"}
+{"id":"3ebc3424-456c-4b84-8e14-60c20828db0d","name":"Shadowborn Apostle","oracle_id":"595a15f0-77f3-4544-8acc-10630e12cc14"}
+{"id":"3ec5d76d-58c0-4525-be90-b37f4a97e14c","name":"Urza's Saga","oracle_id":"4c6a0c30-b547-4eff-8ff4-0ca25803c076"}
+{"id":"3edb78c2-0a3c-46e1-a7ff-97dbd8402495","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"3f822331-315e-4297-bb69-f1069032c6c5","name":"Fire // Ice","oracle_id":"ae92942b-919c-4ea9-b693-85fcef765d5a"}
+{"id":"3fd699b8-0207-413c-aac5-5cb527bc8c7e","name":"Bonecrusher Giant // Stomp","oracle_id":"d6d72f5f-8f5d-4180-b514-f22ff5482902"}
+{"id":"40c00370-0160-48a9-87ac-07a3b2bbd459","name":"Shanna, Sisay's Legacy","oracle_id":"546201d0-3fa5-44e4-a526-ab0945711e49"}
+{"id":"40c825d3-004f-4dea-9d82-815617fb0a41","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"41e108a5-4e2f-42cf-9ea1-87bf3c0a2b7f","name":"Nissa, Who Shakes the World","oracle_id":"5aa3abf1-d56b-4f42-8c84-7e5a2c15ee0f"}
+{"id":"427d7eab-24e3-41de-8444-d9a2c96f526f","name":"Wear // Tear","oracle_id":"9842734c-1eac-4509-a731-4c22017ae586"}
+{"id":"431f3f3b-42a7-4161-946b-c9bbf7bd5535","name":"Gwenom, Remorseless","oracle_id":"c48cf135-b280-4e9f-a9d9-225104870741"}
+{"id":"43a32bdf-c430-46a0-9d23-8b8e8468391b","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"43ab3ed2-2b50-4488-a21f-60965222970a","name":"Said // Done","oracle_id":"5d1d76e0-049c-4a33-96ec-8e60deed16d5"}
+{"id":"443be8f1-60d6-4ab3-8d0f-0aa0631f5690","name":"Umori, the Collector","oracle_id":"913383a1-9c0d-40a1-8c5a-b0a8a95c09a6"}
+{"id":"4477e730-6dff-44f1-97a5-8176be1b7f67","name":"Everflowing Chalice","oracle_id":"0a79237e-0811-4a8a-bd4d-db3ca91bff22"}
+{"id":"449d53ab-5e75-4370-a16a-5b03b0c16cc7","name":"Brutal Cathar // Moonrage Brute","oracle_id":"1ed2d8e0-462b-468e-8fd3-1f3c6d99fb8a"}
+{"id":"450697f9-4584-4a4b-b52c-1766b2af7048","name":"Sword of the Animist","oracle_id":"d79cbc61-6c15-48ea-bbba-3cffb819ccba"}
+{"id":"453a7e8d-5336-4b9c-9ba5-5b3c08c46fcc","name":"Shanna, Sisay's Legacy","oracle_id":"546201d0-3fa5-44e4-a526-ab0945711e49"}
+{"id":"4543516e-890f-44e8-acaa-da4e941e31dd","name":"Relentless Rats","oracle_id":"104ea189-14cd-420f-afdc-57b0f827ab8e"}
+{"id":"45fdf560-a106-4991-bb0b-2811db33ee1e","name":"Monoxa, Midway Manager","oracle_id":"d8e6cdab-234a-46b9-8b6c-164034cf2bc7"}
+{"id":"462b2d33-8158-4499-affe-1633779ce696","name":"Lutri, the Spellchaser","oracle_id":"158a6225-a246-4fd6-aa57-0df8067b4383"}
+{"id":"4676c019-886c-4b0d-9849-c044c0e03da3","name":"Foulmire Knight // Profane Insight","oracle_id":"10c0f814-e302-49ff-aded-1b8d8424fd60"}
+{"id":"46982091-cc78-4171-8b3d-d07592684728","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"46b6cc5d-7a37-4e8b-a1a5-9a573056610c","name":"Gwenom, Remorseless","oracle_id":"c48cf135-b280-4e9f-a9d9-225104870741"}
+{"id":"46ca0b66-a000-4483-b916-f5b89e710244","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"46d43696-3c63-4c55-bc61-e1560c8b8201","name":"Esika, God of the Tree // The Prismatic Bridge","oracle_id":"92023a5d-a143-4950-a71b-d736e6b8e959"}
+{"id":"4750787e-9fef-4bdf-b2e3-e410c84999f2","name":"Tawnos's Weaponry","oracle_id":"f07f98bb-4190-4643-aeb9-c5eaf358c97c"}
+{"id":"475be6db-6541-412b-a07e-5357b25a499f","name":"Wastes","oracle_id":"05d24b0c-904a-46b6-b42a-96a4d91a0dd4"}
+{"id":"485dc8d8-9e44-4a0f-9ff6-fa448e232290","name":"Bandit's Talent","oracle_id":"bcbe879a-4609-4493-bd7d-47c26d27e83c"}
+{"id":"48b2e344-3068-49c9-871d-4e66a64d8e9e","name":"Lutri, the Spellchaser","oracle_id":"158a6225-a246-4fd6-aa57-0df8067b4383"}
+{"id":"48e98c57-c42f-4a3b-b07c-bc7d4882d719","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"490b5da5-99c3-4e16-85b8-49c52ff947d7","name":"Mirrorpool","oracle_id":"57b86d5c-3269-44bc-a838-3c5439d820d9"}
+{"id":"490fa81f-3557-4f01-ba2d-0da10fb68a20","name":"Trapeze Artist","oracle_id":"e5d4eea2-f188-4c53-a878-0f7167206408"}
+{"id":"494a9b67-cfd8-44cd-adbb-8e8a9eeca0d4","name":"Terisiare's Devastation","oracle_id":"03c1e376-1410-4321-90fe-a6997e8db85a"}
+{"id":"4a2d381e-4082-4e7d-a109-a7c700ceddfd","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"4a2dfd72-a8f4-4e43-b5de-caf6a129a51a","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"4af29607-8907-4dda-9575-b6ae6ceaf027","name":"Umori, the Collector","oracle_id":"913383a1-9c0d-40a1-8c5a-b0a8a95c09a6"}
+{"id":"4bdfdb25-cfde-404f-b2f6-74283c8daa03","name":"Persistent Petitioners","oracle_id":"0e488c6c-aae2-450f-b969-7bb5a1b37a66"}
+{"id":"4cbc6901-6a4a-4d0a-83ea-7eefa3b35021","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"4ced112a-e775-4f97-97b3-74877e9dce12","name":"Dragon's Rage Channeler","oracle_id":"0c016ccc-a341-4b76-87ba-69c639d2746d"}
+{"id":"4d306864-1eeb-422a-a014-cb683faba096","name":"Relentless Rats","oracle_id":"104ea189-14cd-420f-afdc-57b0f827ab8e"}
+{"id":"4d51a621-be31-4b74-8e0b-3958180a8bc5","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"4d76d52c-7dd0-4d00-af84-fedae29590db","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"4e23958a-191a-4108-a3c9-2ec6cadc241d","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"4e357b2d-a3c1-490e-a37c-cdf42abcfa60","name":"Excalibur, Sword of Eden","oracle_id":"9fb6bd72-031b-40a1-83c5-8a1c82f84e12"}
+{"id":"4eab054c-93f8-4da4-afb9-8f4c73c19213","name":"Currency Converter","oracle_id":"981298e6-ddee-49c0-9377-f47f019b4138"}
+{"id":"4ed51dbc-bbec-4c78-a71e-26322a8d2439","name":"Necropouncer","oracle_id":"9e33b295-fab8-42c7-be43-baf9c17d063f"}
+{"id":"4f3acd04-a59c-4975-92ba-5314dd845fd9","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"4f943781-ce41-40e2-9c45-25dcd24f0090","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"4fe7b570-7893-407b-87aa-1c30c319c0de","name":"Yorion, Sky Nomad","oracle_id":"e15504a7-2b67-4185-b916-172145f10b19"}
+{"id":"503b89a5-d8cc-47c7-87f7-0c4a72508447","name":"The Tenth Doctor","oracle_id":"23af0a0a-1d12-47c7-b191-2bd3f84eea93"}
+{"id":"50752ca9-ea85-4c4b-9bf5-4f8759a7dcec","name":"Faithful Mending","oracle_id":"b997a982-09e1-4ae1-a972-3c2e5f101e8c"}
+{"id":"508b2c62-a344-4897-a3a4-4f0555627fc1","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"50976f27-1878-46b0-a3c9-ac53616905ac","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"50c0b868-a688-4ccb-97b7-58fd424a7864","name":"Clara Oswald","oracle_id":"542eae01-058d-4959-92a8-49d6b1e33ecd"}
+{"id":"50e56f12-2097-413d-9a79-8476067900b7","name":"Monoxa, Midway Manager","oracle_id":"d8e6cdab-234a-46b9-8b6c-164034cf2bc7"}
+{"id":"50ee8c1c-5293-41ce-9ede-c14af00e5ce7","name":"Mirrorpool","oracle_id":"57b86d5c-3269-44bc-a838-3c5439d820d9"}
+{"id":"5176ed32-2548-41cb-8128-28a9a73acdf9","name":"Bane, Lord of Darkness","oracle_id":"ca507eea-1b04-4488-813e-ca970640e227"}
+{"id":"51b8d3a9-2b2b-4b14-8886-459cd83ae4e6","name":"Jegantha, the Wellspring","oracle_id":"f0587c55-06c1-4930-a62e-668f37464ce9"}
+{"id":"520b89b6-53f5-4cad-b842-9dcc0a46224e","name":"The Tenth Doctor","oracle_id":"23af0a0a-1d12-47c7-b191-2bd3f84eea93"}
+{"id":"52287036-00f1-4b6d-8cd8-b8cbc70c5135","name":"Goblin Psychopath","oracle_id":"9369f131-3356-4926-9a9f-88a636305bd0"}
+{"id":"5261ff88-270b-4ab4-b5c0-e028f2a55ece","name":"Everflowing Chalice","oracle_id":"0a79237e-0811-4a8a-bd4d-db3ca91bff22"}
+{"id":"529451ef-2c7e-4566-8627-a1f25e010829","name":"Tergrid, God of Fright // Tergrid's Lantern","oracle_id":"8485cfaa-1dbf-432b-b5d0-92a6aa6a329b"}
+{"id":"52e1cbf7-da84-4f63-99b6-25e75e2625af","name":"Esika, God of the Tree // The Prismatic Bridge","oracle_id":"92023a5d-a143-4950-a71b-d736e6b8e959"}
+{"id":"5306a95e-fb18-463d-81a9-3c3b8121fc94","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"53778669-2259-4233-9b95-e3e01ff4634c","name":"Thrasios, Triton Hero","oracle_id":"3d867016-2601-4a37-a73d-308898d3bd37"}
+{"id":"54103be4-eb5a-40b7-be22-ae0a15bc71cf","name":"Grind // Dust","oracle_id":"ab5b697b-ab62-4ee7-a10e-cc937fef3095"}
+{"id":"544caea6-4ec6-4f59-9406-a4706d2dfe2a","name":"Nissa, Who Shakes the World","oracle_id":"5aa3abf1-d56b-4f42-8c84-7e5a2c15ee0f"}
+{"id":"546cce9d-4e2a-4a7f-85e4-908f0ee164d3","name":"Elminster's Simulacrum","oracle_id":"3bb32408-81d3-4d0c-8674-1a1c5e3feb3b"}
+{"id":"546f4ad6-fece-4c99-b859-d0378c86ca8f","name":"Everflowing Chalice","oracle_id":"0a79237e-0811-4a8a-bd4d-db3ca91bff22"}
+{"id":"54c388de-c2c9-4975-9eac-86a8030a9884","name":"Dirgur Nemesis","oracle_id":"c08b444b-6617-4199-b9da-5d4e81cd7597"}
+{"id":"54c92a0d-ab6e-45b2-b7a8-e13a5dd4e74e","name":"Tovolar, Dire Overlord // Tovolar, the Midnight Scourge","oracle_id":"45d49831-548a-4a0e-9a18-9f7397913895"}
+{"id":"5546390b-3957-4e3b-aa64-85692381f53f","name":"Gl\u00f3in the Mighty // Easy Pickings","oracle_id":"6505a53b-00db-44c4-8eaa-09a1a01451a4"}
+{"id":"55c9f778-6c0b-4cbe-a4c8-d7943aaa2895","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"56b4708a-9795-4799-82b5-13c69a2611f8","name":"Ulrich of the Krallenhorde // Ulrich, Uncontested Alpha","oracle_id":"0d397c05-a680-4274-972f-6a5f778b5133"}
+{"id":"56d03b15-86a4-48e7-887b-f67cc2f0a634","name":"Lutri, the Spellchaser","oracle_id":"158a6225-a246-4fd6-aa57-0df8067b4383"}
+{"id":"56ef693d-7c48-46cb-8f52-abc660a2736e","name":"Wastes","oracle_id":"05d24b0c-904a-46b6-b42a-96a4d91a0dd4"}
+{"id":"57139cca-2606-4493-8a12-416ae51e1752","name":"Relentless Rats","oracle_id":"104ea189-14cd-420f-afdc-57b0f827ab8e"}
+{"id":"572f03c2-cd20-4e09-90a4-13bd291c5478","name":"Yorion, Sky Nomad","oracle_id":"e15504a7-2b67-4185-b916-172145f10b19"}
+{"id":"5793b8eb-2fc5-454d-8fa2-20346fef167a","name":"Gl\u00f3in the Mighty // Easy Pickings","oracle_id":"6505a53b-00db-44c4-8eaa-09a1a01451a4"}
+{"id":"57ae67fd-065d-41d1-bd36-966b0070f026","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"5805f64c-dd88-4e94-8f0a-a01dae67e3ba","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"58109bb0-c8cc-4043-993e-d166581fb316","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"58b26011-e103-45c4-a253-900f4e6b2eeb","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"5912fcf3-844c-4fbe-94ff-2f04f60ed1bf","name":"Restricted Office // Lecture Hall","oracle_id":"b36286fa-4007-4276-af9c-d8f0da9e94d1"}
+{"id":"591b9ef3-de42-47cd-ae6d-7b4af8704f47","name":"Terisiare's Devastation","oracle_id":"03c1e376-1410-4321-90fe-a6997e8db85a"}
+{"id":"5970985d-670b-44f0-9f68-1cb013eea14a","name":"Grist, the Hunger Tide","oracle_id":"0efb0d7e-dea0-4817-a243-15066e9ef333"}
+{"id":"5978405f-43eb-4dff-94f8-b928b926d4fd","name":"Grist, the Hunger Tide","oracle_id":"0efb0d7e-dea0-4817-a243-15066e9ef333"}
+{"id":"597e70d7-843c-4588-9b51-f2b9b5f5a1e6","name":"Halana and Alena, Partners","oracle_id":"b347be2d-9aa1-42a9-b652-8fb032832f09"}
+{"id":"59e70558-6698-436f-a203-c5ef9f799104","name":"Currency Converter","oracle_id":"981298e6-ddee-49c0-9377-f47f019b4138"}
+{"id":"59f6f6ce-410d-4c84-8a57-cf9f41016441","name":"The Tenth Doctor","oracle_id":"23af0a0a-1d12-47c7-b191-2bd3f84eea93"}
+{"id":"5a7e61a6-c602-4089-ae45-828d8e516a63","name":"Quarrel's End","oracle_id":"fc46649d-9d84-4082-9d2d-fbb7ce91c6a4"}
+{"id":"5b82ac1b-c2d8-45f0-851a-97b0cdcff0ee","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"5b8a677c-fa8a-4fbc-b957-7e6915169734","name":"Crude Abattoir // Unsavory Kitchen","oracle_id":"52963d93-a90c-41a6-984d-fbc49ebfb20a"}
+{"id":"5b9fe249-9bda-462b-922c-f01c904c233a","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"5bef0790-aa1b-4144-8391-338e59e86115","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"5d09a20e-ee6e-44f3-9e86-d35c10e00844","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"5d419927-f5c0-42fd-a780-b91911909f2e","name":"Persistent Petitioners","oracle_id":"0e488c6c-aae2-450f-b969-7bb5a1b37a66"}
+{"id":"5d6178ed-6353-4733-81e1-7b3dc592c3bd","name":"Aether Tunnel","oracle_id":"0a90d1fb-7a76-4b62-b001-4a539a8e5df1"}
+{"id":"5d659b0c-dc93-464f-847f-2af075caf145","name":"Everflowing Chalice","oracle_id":"0a79237e-0811-4a8a-bd4d-db3ca91bff22"}
+{"id":"5dd7dd1a-6dd1-43c3-8298-7db703d384a1","name":"Gyome, Master Chef","oracle_id":"0f1b5cea-2035-444c-9f63-87dcb9782c74"}
+{"id":"5de35ba3-4f34-429b-bf40-b8cf2f34c662","name":"Egon, God of Death // Throne of Death","oracle_id":"8fa7bd8f-f712-4dd1-9ffb-e30dfe744389"}
+{"id":"5e12270f-34ce-4852-b8a8-9eeab78442d7","name":"Grist, the Hunger Tide","oracle_id":"0efb0d7e-dea0-4817-a243-15066e9ef333"}
+{"id":"5e16bc35-5237-4a13-9179-aaa0347ceffe","name":"Axgard Cavalry","oracle_id":"6a92b011-fd01-4b6a-a17c-73ac1967ff98"}
+{"id":"5e97d936-c3dc-42ae-a028-4a183d13ccc8","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"5eeb883d-b1d1-43ea-b1a4-028d53b7095f","name":"Shanna, Sisay's Legacy","oracle_id":"546201d0-3fa5-44e4-a526-ab0945711e49"}
+{"id":"5f13417d-3fe1-4357-b826-cb48dd111247","name":"Thrasios, Triton Hero","oracle_id":"3d867016-2601-4a37-a73d-308898d3bd37"}
+{"id":"5f66d99c-7c2d-40b9-ae07-c3a84f018a0d","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"5f876f3d-ee80-4465-8091-10e73942252a","name":"Break Expectations","oracle_id":"4d778e20-2c68-4bdf-8a87-d210c66716d2"}
+{"id":"5fb22ac0-3863-4165-8c93-f2ec1775474f","name":"Frenzied Raptor","oracle_id":"655c59d5-8666-476c-b494-411fa2e243a7"}
+{"id":"5fc770b6-03ac-45c3-a2ca-bd508096384e","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"600e3bc1-9777-4057-a11e-4f61582636c6","name":"Dream Beavers","oracle_id":"a1cec8e8-cf3c-42a4-b625-ca0cd148664e"}
+{"id":"605b2218-0eab-4c9d-a5d8-7fab342137a0","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"60682c00-c661-4a9d-8326-f3f014a04e3e","name":"Wastes","oracle_id":"05d24b0c-904a-46b6-b42a-96a4d91a0dd4"}
+{"id":"608fa232-f5fe-4c58-9efe-fb780f454b19","name":"Halana and Alena, Partners","oracle_id":"b347be2d-9aa1-42a9-b652-8fb032832f09"}
+{"id":"609d3ecf-f88d-4268-a8d3-4bf2bcf5df60","name":"Malakir Rebirth // Malakir Mire","oracle_id":"a731e87b-8d99-4b64-8ee3-8e540d652366"}
+{"id":"60bc8cfc-8f68-4ec7-92a7-98380d92f69e","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"610135d6-d32f-4ee9-b053-dc32da14c333","name":"Fire // Ice","oracle_id":"ae92942b-919c-4ea9-b693-85fcef765d5a"}
+{"id":"6159d568-7366-47c4-a789-28dc128a2ba5","name":"Necromancer's Familiar","oracle_id":"ce8833ea-5f58-4ab9-b33d-8972f2215574"}
+{"id":"615ddc94-3c2f-443f-9aae-61f11469fdf9","name":"Linden, the Steadfast Queen","oracle_id":"dbc56f3b-83b3-41c8-a8ae-d3774fe6ee01"}
+{"id":"6172808a-b5b7-4738-9583-79d6996c8114","name":"Kaya, Ghost Haunter","oracle_id":"a51c0803-cef7-4b8b-aaed-38ded8fae3bd"}
+{"id":"624b8dd3-41b5-4211-b644-b03f47c5d87f","name":"Xathrid Necromancer","oracle_id":"a6b38874-c8be-47f7-a656-ba49ec9e967f"}
+{"id":"62a31fb1-a323-47e1-b455-489623889794","name":"Nissa, Who Shakes the World","oracle_id":"5aa3abf1-d56b-4f42-8c84-7e5a2c15ee0f"}
+{"id":"62b5ab41-7a85-49aa-8669-8a09a09d02fa","name":"Sygg, Wanderwine Wisdom // Sygg, Wanderbrine Shield","oracle_id":"9cc91ac5-6f2b-4fc0-b810-cdc92eebe6de"}
+{"id":"630aa833-d4a2-4912-aee6-f28c9c486d77","name":"Trelasarra, Moon Dancer","oracle_id":"cd10ebc9-9f6c-4da2-9a86-263902002ebc"}
+{"id":"63a39996-48b7-42bb-9759-a42382ee0468","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"63ac6703-85f0-48df-bcca-983f49df63fa","name":"Wear // Tear","oracle_id":"9842734c-1eac-4509-a731-4c22017ae586"}
+{"id":"63bd0484-4089-4d33-aa8b-3730791061c3","name":"Wandering Archaic // Explore the Vastlands","oracle_id":"6556c4c0-b10d-4208-821b-0c0a49abd188"}
+{"id":"63e806ee-3c32-48bf-97a1-160a74765e76","name":"Pol Jamaar, Illusionist","oracle_id":"2f200a14-7e5b-4b7c-a283-5cf9abb1f95d"}
+{"id":"63ee2346-e151-45a4-90c1-cf1d63ec35f0","name":"Everflowing Chalice","oracle_id":"0a79237e-0811-4a8a-bd4d-db3ca91bff22"}
+{"id":"641c238d-e14a-41cc-bb5c-ad3993406d4b","name":"Aether Vial","oracle_id":"fc148e1e-dff0-448e-9f16-625341754356"}
+{"id":"643d0ee1-016c-4ea8-b469-3599ae7532e6","name":"Wastes","oracle_id":"05d24b0c-904a-46b6-b42a-96a4d91a0dd4"}
+{"id":"64401acc-d080-4763-b67a-95164c11c69e","name":"Sword of the Animist","oracle_id":"d79cbc61-6c15-48ea-bbba-3cffb819ccba"}
+{"id":"64e72ac3-2b4f-43d8-9708-afe1b67c5d00","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"651a1a4f-bdaa-44d6-ac45-050894788063","name":"Soaring Seacliff","oracle_id":"a37544b6-0048-4213-8e40-76ba8a0b6d1b"}
+{"id":"651f1740-1a79-42c5-bc0b-33a79a00621e","name":"Shadowborn Apostle","oracle_id":"595a15f0-77f3-4544-8acc-10630e12cc14"}
+{"id":"65412ea8-d9c4-481f-ad9e-5fd589bdb2f7","name":"Everflowing Chalice","oracle_id":"0a79237e-0811-4a8a-bd4d-db3ca91bff22"}
+{"id":"6576ee65-45e4-4291-a10a-8631366f0e8f","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"65a87d70-f6f1-41ea-a406-65c2c42b8a1c","name":"Tawnos's Weaponry","oracle_id":"f07f98bb-4190-4643-aeb9-c5eaf358c97c"}
+{"id":"65b145dd-8529-4bff-b381-b4be53f24b54","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"667b6c3b-75cc-4adf-b205-80925ca76d2a","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"66904768-09d0-4836-a6a0-c474678f19c1","name":"Tergrid, God of Fright // Tergrid's Lantern","oracle_id":"8485cfaa-1dbf-432b-b5d0-92a6aa6a329b"}
+{"id":"6714ffab-5950-4cb7-9b25-d7423dda9ccc","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"6774c646-76d4-4991-a7f3-b753ef200ce5","name":"Aether Vial","oracle_id":"fc148e1e-dff0-448e-9f16-625341754356"}
+{"id":"67a29ad8-2cca-4dab-ac71-d3b0b2489d79","name":"Goldbug, Humanity's Ally // Goldbug, Scrappy Scout","oracle_id":"d1960749-c11e-4ac4-97cb-f37d7875d479"}
+{"id":"685bdd92-984c-4870-b5de-3e2d1fcec05d","name":"Umori, the Collector","oracle_id":"913383a1-9c0d-40a1-8c5a-b0a8a95c09a6"}
+{"id":"6904ea20-e504-47da-95a0-08739fdde260","name":"Delver of Secrets // Insectile Aberration","oracle_id":"edd531b9-f615-4399-8c8c-1c5e18c4acbf"}
+{"id":"692c186a-997c-4f7e-a339-bf84884e1019","name":"Aether Rift","oracle_id":"2577ef8e-d85e-47af-ac34-629f31992751"}
+{"id":"69af2825-18c2-4463-b6ba-42eaa070ccc1","name":"Grist, the Hunger Tide","oracle_id":"0efb0d7e-dea0-4817-a243-15066e9ef333"}
+{"id":"69b215fe-0d97-4ca1-9490-174220fd454b","name":"Wastes","oracle_id":"05d24b0c-904a-46b6-b42a-96a4d91a0dd4"}
+{"id":"69c43267-e862-4c08-ae7b-0d400d31f297","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"6a109007-afa2-4e06-83bc-9a18c255e001","name":"Shadowborn Apostle","oracle_id":"595a15f0-77f3-4544-8acc-10630e12cc14"}
+{"id":"6a16f907-93df-419e-8a65-ee96938e4143","name":"Foulmire Knight // Profane Insight","oracle_id":"10c0f814-e302-49ff-aded-1b8d8424fd60"}
+{"id":"6a759aca-50a4-44ba-8a9d-a764da55bfb7","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"6ac9b263-71f2-49f9-a18d-e60aa5864344","name":"Fae of Wishes // Granted","oracle_id":"c0abbed2-d213-47ef-8d6c-4a21efb9a55f"}
+{"id":"6adf21b9-b6d5-4c27-b3f2-60ec0ff17416","name":"Alluring Suitor // Deadly Dancer","oracle_id":"e98e8129-3e0e-45cc-b00c-1387cc592023"}
+{"id":"6aedac12-3714-4a81-bd4d-1d2555c66f78","name":"Relm's Sketching","oracle_id":"dd6601c6-810d-4883-89d2-5d31419fb1cc"}
+{"id":"6b3a3944-c3e6-4710-a509-7f970cd692a2","name":"Sword of the Animist","oracle_id":"d79cbc61-6c15-48ea-bbba-3cffb819ccba"}
+{"id":"6bc35481-1f63-4c04-aee9-b3fe8eb89916","name":"Ajani's Pridemate","oracle_id":"95e94dea-5ac0-4d6f-adec-ca147aee861f"}
+{"id":"6bf0de91-765a-49e3-bd8a-94f266b3bdd8","name":"Soaring Seacliff","oracle_id":"a37544b6-0048-4213-8e40-76ba8a0b6d1b"}
+{"id":"6c5c9437-3d99-4a7c-8255-9acdcb1acc40","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"6c627c68-c4a9-4579-85f1-6a1a5e6f6fce","name":"Grist, the Hunger Tide","oracle_id":"0efb0d7e-dea0-4817-a243-15066e9ef333"}
+{"id":"6c6283e1-e4f1-4ff6-be01-b66ab623e0ac","name":"Enslave","oracle_id":"879ba7c4-4557-4166-adb0-b52454816e5a"}
+{"id":"6c801346-0052-4f4b-a497-1567a34679fb","name":"Nebelgast Intruder","oracle_id":"4c591977-f2af-4a6e-a0be-3dfb45a3598b"}
+{"id":"6c9c00a1-8c24-4f35-aac9-00304687ee2b","name":"Stand // Deliver","oracle_id":"6343aa78-2df6-41f3-9366-4933f9e6a93e"}
+{"id":"6d28946e-a478-4e0b-b39b-ec0236ddc9a5","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"6d32723c-f62e-4dfe-9d7c-7a5276ed6151","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"6d477a72-d4ad-4230-aee8-2bd78e448bb5","name":"Scarlet Spider, Ben Reilly","oracle_id":"13ab2f3f-f65e-42b5-b743-39b30a4c4751"}
+{"id":"6d5b06e4-bbc8-405b-bc53-1380dba3696e","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"6df25d01-5d82-453a-b50f-337c38d8806d","name":"Trapeze Artist","oracle_id":"e5d4eea2-f188-4c53-a878-0f7167206408"}
+{"id":"6e452e7a-7c35-4b47-8218-8c3b23c84651","name":"Slivdrazi Monstrosity","oracle_id":"59ed4021-bc4b-42ba-944d-78fb7bd94fa1"}
+{"id":"6eb0d9a2-f9bb-4d8e-a1ca-896c42f8ad56","name":"Raking Claws","oracle_id":"c2248d3d-3157-4610-868d-2b3fae2b1ec8"}
+{"id":"6ef39d0e-4caa-4808-949f-1d75e160dbc3","name":"Grand Entryway // Elegant Rotunda","oracle_id":"f7574379-d10e-4bbf-b0b1-13feee753d8b"}
+{"id":"6f2f7432-9216-4ef7-ab7b-c5d8e1cae395","name":"Aether Revolt","oracle_id":"b73661a6-d136-4c65-804c-461e83484f4b"}
+{"id":"6f7c63ae-5df3-410f-8643-b8c69133ca9d","name":"Haliya, Guided by Light","oracle_id":"9b0af3ad-1b4d-4480-af91-fe9baee5d1c5"}
+{"id":"6faa876b-d6d4-4108-83e5-c06e9a786bcd","name":"Relentless Rats","oracle_id":"104ea189-14cd-420f-afdc-57b0f827ab8e"}
+{"id":"700dfa3a-299d-4d4e-bb32-d29a1f6aa670","name":"Relentless Rats","oracle_id":"104ea189-14cd-420f-afdc-57b0f827ab8e"}
+{"id":"7019912c-bd9b-4b96-9388-400794909aa1","name":"Wastes","oracle_id":"05d24b0c-904a-46b6-b42a-96a4d91a0dd4"}
+{"id":"7030ea9e-b439-4273-a04c-aa9d4437ef7f","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"70adc870-f0db-4d4b-863b-673c2c258751","name":"Sygg, Wanderwine Wisdom // Sygg, Wanderbrine Shield","oracle_id":"9cc91ac5-6f2b-4fc0-b810-cdc92eebe6de"}
+{"id":"70dc51de-8a4a-4f41-8677-0d1dfcf1c1c4","name":"Tawnos's Weaponry","oracle_id":"f07f98bb-4190-4643-aeb9-c5eaf358c97c"}
+{"id":"71357a3d-9a9f-4ec6-8e01-1966b220206c","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"71773286-3f1b-4f81-ad72-adb126368b98","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"72df9225-eb06-4f3a-94a5-844c9f6869c7","name":"Brutal Cathar // Moonrage Brute","oracle_id":"1ed2d8e0-462b-468e-8fd3-1f3c6d99fb8a"}
+{"id":"74109c41-d1e7-4108-bed1-3d9110d5e7d2","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"741c479b-5e92-4837-9673-9bc72aa11d26","name":"Aether Vial","oracle_id":"fc148e1e-dff0-448e-9f16-625341754356"}
+{"id":"7454e0cc-98c2-48a1-b2c9-49908d2aedcc","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"74c5bc49-318c-44fc-b276-f6d036fdf054","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"751d3ba4-7f6c-4532-8db0-2a799d46ab8a","name":"Haliya, Guided by Light","oracle_id":"9b0af3ad-1b4d-4480-af91-fe9baee5d1c5"}
+{"id":"758a8ca6-1fc1-454a-a2be-9745ac964eb7","name":"Inkfathom Divers","oracle_id":"dbdf3c82-b0fc-479c-acce-f7e60be3a2b1"}
+{"id":"75ac31e0-ac70-4ee6-b2b1-cc445ffa1da9","name":"Umori, the Collector","oracle_id":"913383a1-9c0d-40a1-8c5a-b0a8a95c09a6"}
+{"id":"75f001a0-8393-4977-84bb-cde39740606c","name":"Ace, Fearless Rebel","oracle_id":"50d0d870-fe3d-44a2-ad6e-93307a1fb468"}
+{"id":"75f47b6e-9557-4853-b8d6-7602a91c59a7","name":"Relentless Rats","oracle_id":"104ea189-14cd-420f-afdc-57b0f827ab8e"}
+{"id":"76cd916c-7464-4391-814b-09eac0d8d204","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"772edef7-2f17-4244-b1bb-4e7a53c253e1","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"77540466-169b-48a5-b586-a9a34477a31d","name":"Fire // Ice","oracle_id":"ae92942b-919c-4ea9-b693-85fcef765d5a"}
+{"id":"77a679dd-220c-4fbe-a158-a8db57f55b86","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"77b05368-1661-42de-9319-bbe987d27327","name":"Yorion, Sky Nomad","oracle_id":"e15504a7-2b67-4185-b916-172145f10b19"}
+{"id":"77e8f8ec-6625-4615-aa5e-f324642b45b0","name":"Wastes","oracle_id":"05d24b0c-904a-46b6-b42a-96a4d91a0dd4"}
+{"id":"783adffd-449f-44a6-8faf-3e38a201b05b","name":"Topaz Dragon // Entropic Cloud","oracle_id":"ca8535f2-1f96-4836-bd32-5e952f9bee72"}
+{"id":"78b14ae1-fc8b-43df-b6a2-e9f8edc0b8dd","name":"Thrasios, Triton Hero","oracle_id":"3d867016-2601-4a37-a73d-308898d3bd37"}
+{"id":"792e4119-0518-4c97-822d-d146a5368a15","name":"Moonstone, Harsh Mistress","oracle_id":"aeeb50f2-8e02-4d40-a1dd-28b1c5c85c7e"}
+{"id":"79631e0a-b962-48f1-98fa-d871b2862866","name":"Barkchannel Pathway // Tidechannel Pathway","oracle_id":"59d22de5-e310-44d7-89cf-ef3529e40cef"}
+{"id":"79b12c44-9537-4863-a678-c982e8714a5a","name":"A-Ardent Dustspeaker","oracle_id":"dc22be73-1d72-4455-9a7a-871b75ecc4c7"}
+{"id":"79ec30d9-daf7-4f1d-ac16-4d11e8160d97","name":"Jegantha, the Wellspring","oracle_id":"f0587c55-06c1-4930-a62e-668f37464ce9"}
+{"id":"7a1c11ca-c81b-451e-a767-68865827e06d","name":"Fireforger's Puzzleknot","oracle_id":"0de18ba2-84a7-4e07-84b2-771761d77aaf"}
+{"id":"7a380bca-e64d-4582-9f55-02f91a1f3c2f","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"7a3d472f-6454-427e-8434-ae70af43dcaf","name":"Relentless Rats","oracle_id":"104ea189-14cd-420f-afdc-57b0f827ab8e"}
+{"id":"7a8db21f-722b-4a07-985b-8d25a0b0006a","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"7ac2a5aa-71c3-482b-9431-5f0b228cf64d","name":"Pious Evangel // Wayward Disciple","oracle_id":"e2fc5069-374b-4feb-acd9-976ddf90e504"}
+{"id":"7aebd8b6-7d4c-422f-ad57-fc07699c88ae","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"7b0ccfd4-f118-4497-9c5a-54cf12000e16","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"7b2de1d7-0b13-423b-b0ca-31eb38b5b81f","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"7b300a1d-22a6-410c-9fe4-293fefe49969","name":"Ondu Inversion // Ondu Skyruins","oracle_id":"15fc4e74-300e-4c2d-8ed7-004553b2f7c2"}
+{"id":"7b76e49c-1b02-4ef0-a707-9d85099435bf","name":"Xathrid Necromancer","oracle_id":"a6b38874-c8be-47f7-a656-ba49ec9e967f"}
+{"id":"7bf22be9-bf1a-48ec-a825-d19504f9dfcc","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"7bf864db-4754-433d-9d77-6695f78f6c09","name":"Civilized Scholar // Homicidal Brute","oracle_id":"8662c9be-2244-4ea3-bf80-31a117f40a59"}
+{"id":"7c36efb0-1a5b-4576-b5d9-c9b966716f65","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"7c4d35fe-1ec9-4691-b5cb-cc82998ee457","name":"Everflowing Chalice","oracle_id":"0a79237e-0811-4a8a-bd4d-db3ca91bff22"}
+{"id":"7c51c6bd-2ecc-4d92-a406-fcb31e889b45","name":"Vivien's Crocodile","oracle_id":"b49791f9-525c-4b04-954d-d7678c5565e3"}
+{"id":"7c9bfc6e-648a-482b-9483-9e8538726f53","name":"Gl\u00f3in the Mighty // Easy Pickings","oracle_id":"6505a53b-00db-44c4-8eaa-09a1a01451a4"}
+{"id":"7cf39d35-1426-4edb-98ae-d1f1a470629f","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"7d1f5c0a-3590-4da2-81a2-107f2a0f5b5f","name":"Egon, God of Death // Throne of Death","oracle_id":"8fa7bd8f-f712-4dd1-9ffb-e30dfe744389"}
+{"id":"7d698bdd-b485-409d-b03e-c7c7d3fe9a92","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"7e565adc-32ec-4ba8-9220-1239c373f84f","name":"Warrant // Warden","oracle_id":"19053c47-97ce-4a25-a92c-1f4061e85bf3"}
+{"id":"7eafe88e-ab38-442c-b147-bb01cc81178d","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"7eca11b2-6749-4ca2-9841-f3e3a25d031b","name":"Mirrorpool","oracle_id":"57b86d5c-3269-44bc-a838-3c5439d820d9"}
+{"id":"7ed5261d-4bf1-4cb4-8ffe-a51439eb40c9","name":"Naughty // Nice","oracle_id":"e51d8b31-17f6-417b-a9f5-f5da5ec534dd"}
+{"id":"7ee0bfdb-1b81-4ce2-a63e-69b75eba6c57","name":"Sword of the Animist","oracle_id":"d79cbc61-6c15-48ea-bbba-3cffb819ccba"}
+{"id":"7f399983-d70a-4cf3-b76e-bb0c472e7c69","name":"Skullcrack","oracle_id":"a6fc0b0c-9ba2-47f2-ab92-26fd20d0f86d"}
+{"id":"7f5342d5-b8a6-46ee-afd7-b333bb836a7c","name":"Aetherflux Reservoir","oracle_id":"5f15125e-ae89-471e-b055-226a783bc7c1"}
+{"id":"7f98e703-a0d3-497f-840a-aa026b02d47f","name":"Illuminated Wings","oracle_id":"7a22389a-34e7-4726-a551-f6fbc225cefe"}
+{"id":"7fccf54e-c257-4be6-af85-4e0a0fb42f36","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"7fe98f7c-e6c0-4632-96da-a4c2e1a1c094","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"803e2ce4-331b-4be6-97f4-d07b2527397c","name":"Shanna, Sisay's Legacy","oracle_id":"546201d0-3fa5-44e4-a526-ab0945711e49"}
+{"id":"803fd65f-4ca6-4fe4-abc2-72aa32ebb3a5","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"8068a146-f6fe-46f3-a42e-822fbc3502e6","name":"Skullcrack","oracle_id":"a6fc0b0c-9ba2-47f2-ab92-26fd20d0f86d"}
+{"id":"8075878b-b673-4d0c-b335-8a37295cd8d8","name":"Alluring Suitor // Deadly Dancer","oracle_id":"e98e8129-3e0e-45cc-b00c-1387cc592023"}
+{"id":"808a3770-057a-4985-ba5c-870d7b1cd527","name":"Grist, the Hunger Tide","oracle_id":"0efb0d7e-dea0-4817-a243-15066e9ef333"}
+{"id":"811d6e5d-c8a3-41ae-910e-e0f194f42292","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"81610aa1-d877-4ae0-ae38-cdf8971b7fc0","name":"Persistent Petitioners","oracle_id":"0e488c6c-aae2-450f-b969-7bb5a1b37a66"}
+{"id":"81826ef6-02ea-411b-ac08-8ac5e459daa1","name":"Umori, the Collector","oracle_id":"913383a1-9c0d-40a1-8c5a-b0a8a95c09a6"}
+{"id":"8182c9e0-861e-4736-997b-e79e62a2fec5","name":"Merfolk Secretkeeper // Venture Deeper","oracle_id":"4f5096d4-bbb5-4a48-9dd0-9dabdd2ac125"}
+{"id":"81ce7e1e-ffe5-4ced-8967-9a6917245240","name":"Advance Scout","oracle_id":"831e2185-0bb2-45bb-99cd-d2091bad86f0"}
+{"id":"8229264e-af6c-4f1f-b86a-257889ace9ce","name":"Galadriel, Gift-Giver","oracle_id":"d0c0a2ef-27b4-4186-8538-6ba5d35d85bb"}
+{"id":"822ec13d-031f-4ec7-806d-27271618153f","name":"Fae of Wishes // Granted","oracle_id":"c0abbed2-d213-47ef-8d6c-4a21efb9a55f"}
+{"id":"82518d3f-9557-416b-9b4d-dfe3ffa57f88","name":"Aerith, Last Ancient","oracle_id":"d6cba688-faff-4d9f-8148-37d389fa5fb3"}
+{"id":"825615d2-2bb9-486e-8a05-4244b7ba66c3","name":"Tax Collector","oracle_id":"66837faa-fbde-456d-b00f-eb17fbdd04aa"}
+{"id":"8279d421-dd86-49d1-93f7-65f6046c542d","name":"Gyome, Master Chef","oracle_id":"0f1b5cea-2035-444c-9f63-87dcb9782c74"}
+{"id":"827e7870-59d6-4de8-9382-c46fe656f0cf","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"82f1a8a3-7fdb-49a3-9649-b5c0b4755cd5","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"835df088-5860-46b1-9c4d-3607d0293963","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"837edd3f-5380-4c1c-8323-0e61dac385e5","name":"Wastes","oracle_id":"05d24b0c-904a-46b6-b42a-96a4d91a0dd4"}
+{"id":"83a0f2eb-2f6d-4aaa-b7a9-ea06d5de7eca","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"83b22428-6ea9-4416-a589-c46aa626a2fb","name":"Nissa, Who Shakes the World","oracle_id":"5aa3abf1-d56b-4f42-8c84-7e5a2c15ee0f"}
+{"id":"841b28eb-e16b-434e-aaaa-6a5ae8bccc19","name":"Fire // Ice","oracle_id":"ae92942b-919c-4ea9-b693-85fcef765d5a"}
+{"id":"8427e319-1aae-4788-86c3-46c7b1e7ba7c","name":"Bane, Lord of Darkness","oracle_id":"ca507eea-1b04-4488-813e-ca970640e227"}
+{"id":"842c3df8-43c9-4555-901c-67cdbfd26348","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"8453b08f-34cb-491d-be7d-dc4022f7c131","name":"Benalish Lancer","oracle_id":"b5adbd37-8d98-4c65-b42d-cd9db94e7222"}
+{"id":"845bf543-0367-4d2c-81ba-e424bfbfb7de","name":"Thrasios, Triton Hero","oracle_id":"3d867016-2601-4a37-a73d-308898d3bd37"}
+{"id":"84b79453-bb88-4c23-8cdb-82ba57ea3bc5","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"8542d37d-99cd-4b64-a524-94d2b2a4d9c3","name":"Aetherflux Reservoir","oracle_id":"5f15125e-ae89-471e-b055-226a783bc7c1"}
+{"id":"85536624-f44a-4b0f-bcc2-cf64957a81b6","name":"Quarrel's End","oracle_id":"fc46649d-9d84-4082-9d2d-fbb7ce91c6a4"}
+{"id":"858e0b83-7927-4e34-ae25-6ad7a787ad97","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"85d15f2d-f62a-4cd8-8aa8-dfed0516f354","name":"Linden, the Steadfast Queen","oracle_id":"dbc56f3b-83b3-41c8-a8ae-d3774fe6ee01"}
+{"id":"85eb4b03-305b-45a4-82e5-5fcd586cc744","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"85ff8012-5d11-43bf-9f77-5d0179dc775e","name":"Sword of the Animist","oracle_id":"d79cbc61-6c15-48ea-bbba-3cffb819ccba"}
+{"id":"86424491-a372-40c4-bfb5-faa2b2d41d4c","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"86f54b82-0168-421e-bcde-d13d48b7d9ff","name":"Esika, God of the Tree // The Prismatic Bridge","oracle_id":"92023a5d-a143-4950-a71b-d736e6b8e959"}
+{"id":"870ec754-a76c-40ea-9b81-81b3dca1f62c","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"870fc68d-f61b-4c05-8ddb-077415c7dda7","name":"Yennett, Cryptic Sovereign","oracle_id":"4eec6838-3565-407f-8941-ce9421402f0b"}
+{"id":"871c4ccc-5a14-4583-b4c7-6f2d2aeb8253","name":"Delver of Secrets // Insectile Aberration","oracle_id":"edd531b9-f615-4399-8c8c-1c5e18c4acbf"}
+{"id":"87684bef-8ef9-4709-a50e-fa5ff2f67acc","name":"Halana and Alena, Partners","oracle_id":"b347be2d-9aa1-42a9-b652-8fb032832f09"}
+{"id":"87c33c94-4b56-4a96-9c4c-a376f8d54943","name":"Barkchannel Pathway // Tidechannel Pathway","oracle_id":"59d22de5-e310-44d7-89cf-ef3529e40cef"}
+{"id":"87df5566-84e6-4517-9448-96f22525bcea","name":"Bonecrusher Giant // Stomp","oracle_id":"d6d72f5f-8f5d-4180-b514-f22ff5482902"}
+{"id":"880711b0-da06-4c4f-aa4e-1be58fc0bc67","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"880bb12d-48ce-4b27-ae0a-2a5192d66d01","name":"Wear // Tear","oracle_id":"9842734c-1eac-4509-a731-4c22017ae586"}
+{"id":"881af8c7-2d4d-4b68-b999-20e56a973311","name":"Loki, God of Mischief","oracle_id":"c112852f-61d5-4b94-b864-c7d0b5333b29"}
+{"id":"882b5580-ee23-4d65-a2b3-82475d6faf8e","name":"Aether Theorist","oracle_id":"b07ef53e-46db-457e-a5a2-846bb9805b70"}
+{"id":"882e5ac6-d892-497a-a71e-3ff2cb9de6ee","name":"Veteran of the Depths","oracle_id":"70bcec56-1485-4e4e-8fff-940d7b133c5d"}
+{"id":"887002ae-794b-427c-9f98-e909b22313d9","name":"Brigid, Clachan's Heart // Brigid, Doun's Mind","oracle_id":"60fc89a1-cc6f-4a32-84c3-09abf7a4a1df"}
+{"id":"888fbfaf-dbf9-4045-a79e-d436ef75b3cf","name":"Delver of Secrets // Insectile Aberration","oracle_id":"edd531b9-f615-4399-8c8c-1c5e18c4acbf"}
+{"id":"88a28a48-d4a1-47ce-9aa0-ee65325029c4","name":"Heirloom Mirror // Inherited Fiend","oracle_id":"b33390dd-f2f8-4059-83a9-45c0edccd5e4"}
+{"id":"88bf82e8-704c-40b9-a01b-aba565cb436f","name":"Fireforger's Puzzleknot","oracle_id":"0de18ba2-84a7-4e07-84b2-771761d77aaf"}
+{"id":"890eee8d-a339-4143-adfa-1b17ec10c099","name":"Umara Wizard // Umara Skyfalls","oracle_id":"6bc668f4-8fc7-4aaf-891b-277d8328b376"}
+{"id":"8927bd79-94e9-43e5-96bf-64c3f8debe30","name":"Shanna, Sisay's Legacy","oracle_id":"546201d0-3fa5-44e4-a526-ab0945711e49"}
+{"id":"8943691b-aaf1-4c7c-873e-93cd920c1fd0","name":"Aether Theorist","oracle_id":"b07ef53e-46db-457e-a5a2-846bb9805b70"}
+{"id":"8a50d35d-9e2a-458b-9bc0-320e98a832e5","name":"Terisiare's Devastation","oracle_id":"03c1e376-1410-4321-90fe-a6997e8db85a"}
+{"id":"8a5edac3-855a-4820-b913-44de5b29b7d0","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"8acaae58-93b5-4544-84cc-98e134edb738","name":"Tolsimir, Midnight's Light","oracle_id":"0e9c7380-7584-43e6-8c31-5d1bb1685fe0"}
+{"id":"8ae6d023-2945-47f1-bc9f-f9c5ff9f5282","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"8afabd77-d7b3-4544-b3ea-4423a6706b2e","name":"Dragon's Rage Channeler","oracle_id":"0c016ccc-a341-4b76-87ba-69c639d2746d"}
+{"id":"8b796a56-1611-4835-ac5b-48b4e9263685","name":"Anikthea, Hand of Erebos","oracle_id":"991fd651-0cba-41ee-855a-d01a1a7c8f60"}
+{"id":"8cfd0887-0c83-4b33-a85e-8b8ec5bf758d","name":"Uvilda, Dean of Perfection // Nassari, Dean of Expression","oracle_id":"63c4915f-5ad9-468f-95c5-d44f1b71631e"}
+{"id":"8d479a83-16f7-425c-9873-b900f39ed620","name":"Wastes","oracle_id":"05d24b0c-904a-46b6-b42a-96a4d91a0dd4"}
+{"id":"8d6e1d38-a756-4d81-8d86-06dcec75dfe5","name":"Skullcrack","oracle_id":"a6fc0b0c-9ba2-47f2-ab92-26fd20d0f86d"}
+{"id":"8e0d4b0c-75c9-432f-8bb0-18950ee1947b","name":"Aetherflux Reservoir","oracle_id":"5f15125e-ae89-471e-b055-226a783bc7c1"}
+{"id":"8e4a8db9-ef57-4ea0-952c-1e5d343fb5d9","name":"Goldbug, Humanity's Ally // Goldbug, Scrappy Scout","oracle_id":"d1960749-c11e-4ac4-97cb-f37d7875d479"}
+{"id":"8e8ca24a-9635-45c6-8923-86a96101f961","name":"Rograkh, Son of Rohgahh","oracle_id":"584cee10-f18c-4633-95cc-f2e7a11841ac"}
+{"id":"8eadbeaf-f01c-4c85-8eaf-6a569a1bdf64","name":"Grist, the Hunger Tide","oracle_id":"0efb0d7e-dea0-4817-a243-15066e9ef333"}
+{"id":"8f69a74a-778c-4a1d-99ad-6ca04771fb23","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"8fb860f9-3729-436e-adfb-c98c2a389d5d","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"8ff1a13c-e338-42e9-8eb3-b303fabd67de","name":"Barbed Bloodletter","oracle_id":"15febce7-8320-4591-9535-ef11c8adecc2"}
+{"id":"90630b20-fc83-475f-bcd5-8bcfee0cf241","name":"Glasswing Grace // Age-Graced Chapel","oracle_id":"3a3e8c9b-e458-4661-980d-0a84a4c2452b"}
+{"id":"90b43168-44fb-439f-80e7-cb2539ca511f","name":"Monoxa, Midway Manager","oracle_id":"d8e6cdab-234a-46b9-8b6c-164034cf2bc7"}
+{"id":"90f2398b-d41e-4e4b-bc93-5a1f34b52345","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"9138ce93-8fba-4ce5-8892-0a263e614ead","name":"Oketra's Avenger","oracle_id":"8f064160-3afe-408a-85b4-b335eae8571c"}
+{"id":"9138d11a-d55f-4c46-bb27-7e8e15a44e8c","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"91422b68-b4a8-4138-8aee-bc98d33d6a6c","name":"Wilson, Refined Grizzly","oracle_id":"d2766fd7-5cf9-4037-9f34-9ae3982c613a"}
+{"id":"91b23fea-9347-4bd2-a073-f48f46e32869","name":"Esika, God of the Tree // The Prismatic Bridge","oracle_id":"92023a5d-a143-4950-a71b-d736e6b8e959"}
+{"id":"91b73884-6850-479d-8531-e17c8531a245","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"91fdb56b-54d5-4272-8319-505ff987fe9b","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"9212f685-d7af-4279-b17e-7201d8f63813","name":"Timid Drake","oracle_id":"aa8c5467-190a-4c6a-872c-56b8f8d01a2b"}
+{"id":"925dee92-9c8d-4eef-a326-2fdae72b4328","name":"Tovolar, Dire Overlord // Tovolar, the Midnight Scourge","oracle_id":"45d49831-548a-4a0e-9a18-9f7397913895"}
+{"id":"93e26409-430b-419b-8cd2-1bce007f12d6","name":"Aether Vial","oracle_id":"fc148e1e-dff0-448e-9f16-625341754356"}
+{"id":"93f623da-616e-4067-9ea8-5dfbeef8ce0b","name":"Invasion of Lorwyn // Winnowing Forces","oracle_id":"c877a430-75bc-45ac-b11d-2365d11ed341"}
+{"id":"94553de8-52e8-4209-919a-cdf9289af116","name":"Aether Refinery","oracle_id":"9e9cde32-0568-44bc-a00a-9709f15c1350"}
+{"id":"946d0f6d-9ecd-4b26-88c7-12528021d20f","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"94810748-7c70-4491-a355-c7c56cc03df0","name":"Indomitable Archangel","oracle_id":"0f9269eb-6a6c-4b32-8b3d-73724c12ca6b"}
+{"id":"948f595c-4e7a-4109-8e8d-a3a92d125744","name":"Daghatar the Adamant","oracle_id":"7b303881-ac8d-4459-b04e-768a6804763c"}
+{"id":"94dcff94-9f25-4ca9-a1f1-5d97de4ab9df","name":"Aether Searcher","oracle_id":"80ea63fd-691a-45ba-a4bf-862e5ec2922d"}
+{"id":"94e2aa9e-af6a-41c6-99a8-ca9335730ddb","name":"Quagmire","oracle_id":"0fb54ed7-4c64-4029-b52d-2bf5343e7426"}
+{"id":"952cb8cb-633c-468f-8ef5-54ff91ddfb22","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"954a88f7-9d8f-4794-ac2a-b9e87c8e3b62","name":"Swindler's Scheme","oracle_id":"e3ff6134-10dd-4565-afcb-0f41a2933d19"}
+{"id":"954adeb7-84f1-44f6-a801-9fdef7b54fae","name":"Barkchannel Pathway // Tidechannel Pathway","oracle_id":"59d22de5-e310-44d7-89cf-ef3529e40cef"}
+{"id":"9569e624-fec3-41af-a54b-50869730673a","name":"Grist, the Hunger Tide","oracle_id":"0efb0d7e-dea0-4817-a243-15066e9ef333"}
+{"id":"9595a1af-0eae-4beb-bdde-d09706209aa8","name":"Ondu Inversion // Ondu Skyruins","oracle_id":"15fc4e74-300e-4c2d-8ed7-004553b2f7c2"}
+{"id":"95e4e445-8333-4cb4-b4fb-80957fae0b97","name":"Hovermyr","oracle_id":"b58722c5-84f2-43c2-be7e-3577c2f2a60a"}
+{"id":"963f641d-aabe-4432-87c5-d8cddf95d8d5","name":"Vraska, Golgari Queen","oracle_id":"131096a3-2d53-4ec2-96d3-fcb58e698a13"}
+{"id":"96b6b2e1-c3e6-464c-8a13-b15deb34e862","name":"Aetherflux Reservoir","oracle_id":"5f15125e-ae89-471e-b055-226a783bc7c1"}
+{"id":"96b9b04d-a486-40e6-8d2c-eaaa74668b8c","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"96c3244e-930f-498c-959e-0f000151597d","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"96d9532f-fe2c-4465-83f7-e186388656f8","name":"Reidane, God of the Worthy // Valkmira, Protector's Shield","oracle_id":"35ae7b25-6d0f-49f8-a40d-dd2cf88e6f44"}
+{"id":"978ca725-a3e1-4f2e-ab25-2d0d09a87f53","name":"Lutri, the Spellchaser","oracle_id":"158a6225-a246-4fd6-aa57-0df8067b4383"}
+{"id":"97eb6f47-4d64-486c-9597-a7d954dfb2ac","name":"Kangee, Sky Warden","oracle_id":"6a344d2e-fbd7-4ff9-9e2a-97ae69d60c66"}
+{"id":"9809d7f7-c91c-4883-872a-0c8581eb71e5","name":"Yorion, Sky Nomad","oracle_id":"e15504a7-2b67-4185-b916-172145f10b19"}
+{"id":"98c9cf61-9f32-402b-9db5-f5c11a8a60e6","name":"Umori, the Collector","oracle_id":"913383a1-9c0d-40a1-8c5a-b0a8a95c09a6"}
+{"id":"98e819e5-573c-49d3-87d7-9abd60532e71","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"99988f41-99b4-4423-be5f-9dc4ec7d813b","name":"Kangee, Sky Warden","oracle_id":"6a344d2e-fbd7-4ff9-9e2a-97ae69d60c66"}
+{"id":"99eed556-06b8-4063-8d72-24f010dd372e","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"9a1ee042-6713-4e9e-9901-9b94d99d33f1","name":"Clara Oswald","oracle_id":"542eae01-058d-4959-92a8-49d6b1e33ecd"}
+{"id":"9a34ac23-e318-4c0b-ab4c-e1eaa0e2547e","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"9a352374-ce80-4617-b77b-3c7011915b49","name":"Sword of the Animist","oracle_id":"d79cbc61-6c15-48ea-bbba-3cffb819ccba"}
+{"id":"9a810932-7f59-461e-8cc4-6d7168c1f838","name":"Foulmire Knight // Profane Insight","oracle_id":"10c0f814-e302-49ff-aded-1b8d8424fd60"}
+{"id":"9ac9c12b-5135-4124-b01b-336560907940","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"9ad231e2-f401-4670-b9ec-0d0aa7ea9bae","name":"Urza's Saga","oracle_id":"4c6a0c30-b547-4eff-8ff4-0ca25803c076"}
+{"id":"9aee8dd9-fccf-44e5-9e3c-31291300d4ad","name":"Soulcatchers' Aerie","oracle_id":"69565f6e-2e23-4cd8-bd21-1283e06729a3"}
+{"id":"9bbc8de9-6f74-468f-834c-46d10864e36b","name":"Galadriel, Gift-Giver","oracle_id":"d0c0a2ef-27b4-4186-8538-6ba5d35d85bb"}
+{"id":"9c609eef-7ccc-4687-bd06-9b206d9d5b11","name":"Shadowborn Apostle","oracle_id":"595a15f0-77f3-4544-8acc-10630e12cc14"}
+{"id":"9cc070d3-4b83-4684-9caf-063e5c473a77","name":"Wastes","oracle_id":"05d24b0c-904a-46b6-b42a-96a4d91a0dd4"}
+{"id":"9cd3e902-2e18-4025-92a4-afadded1b5cd","name":"Tawnos's Weaponry","oracle_id":"f07f98bb-4190-4643-aeb9-c5eaf358c97c"}
+{"id":"9cd8112f-21e0-4272-9f0d-14d1ef989779","name":"Everflowing Chalice","oracle_id":"0a79237e-0811-4a8a-bd4d-db3ca91bff22"}
+{"id":"9d9c1c46-7aa7-464c-87b0-b29b9663daef","name":"Chalice of Life // Chalice of Death","oracle_id":"28df85d6-e13a-4178-a361-7015afd316ca"}
+{"id":"9df37469-6e2d-4783-aad3-c897ecbc967d","name":"Urza's Saga","oracle_id":"4c6a0c30-b547-4eff-8ff4-0ca25803c076"}
+{"id":"9dfdb73d-b001-4a59-b79e-8c8c1baea116","name":"Egon, God of Death // Throne of Death","oracle_id":"8fa7bd8f-f712-4dd1-9ffb-e30dfe744389"}
+{"id":"9eadf356-105e-4a17-ab06-075ca662e963","name":"Storm, Shaker of Skies","oracle_id":"5d936655-8e46-4e30-8f9c-4fa1a4d34a17"}
+{"id":"9ef06694-e05d-4e96-a588-bd276447dcf8","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"9f1cdf84-c034-4435-8ce7-50f6b777fb57","name":"Iron Fist, Hero for Hire","oracle_id":"58c8bf6a-1b13-4c90-9e0b-24fb687f1e13"}
+{"id":"9f25ba4c-42f2-4d23-9299-b5343a7bad2e","name":"Shadowborn Apostle","oracle_id":"595a15f0-77f3-4544-8acc-10630e12cc14"}
+{"id":"9f4d9a0c-5a9a-4486-b8a0-942e73688fb4","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"9fac535f-46a3-440b-bb93-6fe4b2dba600","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"9ff4efdf-c0bb-443a-a100-2f3850571e91","name":"Tergrid, God of Fright // Tergrid's Lantern","oracle_id":"8485cfaa-1dbf-432b-b5d0-92a6aa6a329b"}
+{"id":"9ffc356f-9053-435c-ac1c-e36c2806b6fa","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"a00440fc-e3e1-4a1c-b32b-f7946a76cd62","name":"Enslave","oracle_id":"879ba7c4-4557-4166-adb0-b52454816e5a"}
+{"id":"a09ffd51-8ea4-40a6-b64e-58f3acfee533","name":"Cecily, Haunted Mage","oracle_id":"a726c27d-2955-4d41-b8a6-fca654c020a2"}
+{"id":"a0dd17da-9773-4a17-9aa7-4cd8958e1ef8","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"a10140e7-90a2-49fa-b47e-61214e35f9b8","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"a10b0238-fe30-4543-ae8a-ed834a0930b1","name":"Grist, the Hunger Tide","oracle_id":"0efb0d7e-dea0-4817-a243-15066e9ef333"}
+{"id":"a16e23bf-cff8-4a88-b27e-9de3d5b8703d","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"a19099ae-23f4-4167-abc6-edea9afc032c","name":"Aetherflux Reservoir","oracle_id":"5f15125e-ae89-471e-b055-226a783bc7c1"}
+{"id":"a1939e67-17f0-4cd0-9ad1-be3dcb9fb299","name":"Relentless Rats","oracle_id":"104ea189-14cd-420f-afdc-57b0f827ab8e"}
+{"id":"a1f7d709-74bb-4085-bf69-bdab4c1ae26d","name":"Clara Oswald","oracle_id":"542eae01-058d-4959-92a8-49d6b1e33ecd"}
+{"id":"a245bb3b-9126-4361-824b-2b27fbba9696","name":"Yorion, Sky Nomad","oracle_id":"e15504a7-2b67-4185-b916-172145f10b19"}
+{"id":"a26c340e-ccfb-4e91-ab10-a8b7714a9089","name":"Elvish Skysweeper","oracle_id":"f557697a-4c1b-44f6-a989-4879bbe26eb5"}
+{"id":"a300b5af-9223-4e97-9d33-a9226bd900f3","name":"Tax Collector","oracle_id":"66837faa-fbde-456d-b00f-eb17fbdd04aa"}
+{"id":"a3184cbb-71d4-4b33-ae5d-f8d18b36ba22","name":"Elminster's Simulacrum","oracle_id":"3bb32408-81d3-4d0c-8674-1a1c5e3feb3b"}
+{"id":"a328fd58-82bc-455b-9f14-c896b91c3a62","name":"Aether Vial","oracle_id":"fc148e1e-dff0-448e-9f16-625341754356"}
+{"id":"a356afb6-19d7-459a-84ca-090924d45387","name":"Dromoka's Gift","oracle_id":"1264da2f-4767-4bec-b4ed-1c625ac3cf95"}
+{"id":"a36d3ea7-0f18-4865-b47b-755673db065e","name":"Vraska, Golgari Queen","oracle_id":"131096a3-2d53-4ec2-96d3-fcb58e698a13"}
+{"id":"a376835d-ac7a-40c8-89c4-a65bac9e2399","name":"Merfolk Secretkeeper // Venture Deeper","oracle_id":"4f5096d4-bbb5-4a48-9dd0-9dabdd2ac125"}
+{"id":"a459833f-8cf4-43c0-9523-eb37de450bc1","name":"Brutal Cathar // Moonrage Brute","oracle_id":"1ed2d8e0-462b-468e-8fd3-1f3c6d99fb8a"}
+{"id":"a4efefd8-6623-4ae1-af91-dc43f658583e","name":"Umori, the Collector","oracle_id":"913383a1-9c0d-40a1-8c5a-b0a8a95c09a6"}
+{"id":"a4fab67f-00c2-4125-9262-d21a29411797","name":"Rograkh, Son of Rohgahh","oracle_id":"584cee10-f18c-4633-95cc-f2e7a11841ac"}
+{"id":"a4fe4275-30a9-479c-b44b-87598d7dac14","name":"Grind // Dust","oracle_id":"ab5b697b-ab62-4ee7-a10e-cc937fef3095"}
+{"id":"a508330c-f223-4ee3-8610-e2c394519ae6","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"a50e72a2-1e94-43cf-a605-bf3bb456d12f","name":"Indomitable Archangel","oracle_id":"0f9269eb-6a6c-4b32-8b3d-73724c12ca6b"}
+{"id":"a58cc78a-7bb0-4fa2-a63a-f8526ec5472b","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"a5b191f5-f01b-4d6c-8363-19591c61e6cc","name":"Gwenom, Remorseless","oracle_id":"c48cf135-b280-4e9f-a9d9-225104870741"}
+{"id":"a5efe226-a6fc-4fdb-a3d4-2b1ae0d667a8","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"a5f0af51-a054-4e04-aa6e-3972bd336a40","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"a5f9a7bb-4ace-4720-8651-08428494223f","name":"Dropkick Bomber","oracle_id":"c394d4b6-cfb8-4639-90cb-a322a25c0a2f"}
+{"id":"a662a862-c592-4c5b-9728-279d04be22bf","name":"Wandering Archaic // Explore the Vastlands","oracle_id":"6556c4c0-b10d-4208-821b-0c0a49abd188"}
+{"id":"a6be1542-70b8-4e97-a951-100966dc46ce","name":"Aura Flux","oracle_id":"128304af-4555-4276-bf26-638017beb3ff"}
+{"id":"a6d9b8d6-1e97-4e9c-b0c4-3b71734134a4","name":"Scarlet Spider, Ben Reilly","oracle_id":"13ab2f3f-f65e-42b5-b743-39b30a4c4751"}
+{"id":"a7033edf-f152-4c89-9ad2-a431579bb88c","name":"Bonecrusher Giant // Stomp","oracle_id":"d6d72f5f-8f5d-4180-b514-f22ff5482902"}
+{"id":"a71221a0-c474-4da1-9970-bb5adaad4f4d","name":"Anikthea, Hand of Erebos","oracle_id":"991fd651-0cba-41ee-855a-d01a1a7c8f60"}
+{"id":"a730b254-ff7c-4f89-a559-b44ad7fd6c6c","name":"Morcant's Eyes","oracle_id":"c55a27cc-8e25-4714-b1da-86e5c1c6661a"}
+{"id":"a739dd30-1fce-49db-99fb-15e346f4f2db","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"a78bc53e-7106-489f-8818-adef7200e2f8","name":"Shadowborn Apostle","oracle_id":"595a15f0-77f3-4544-8acc-10630e12cc14"}
+{"id":"a7c3a1c9-ffa2-4990-aa4b-db9d688f1ed4","name":"Frenzied Raptor","oracle_id":"655c59d5-8666-476c-b494-411fa2e243a7"}
+{"id":"a7fc546e-7e3c-436d-a0b9-9ac3548ec344","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"a808459c-f086-4cb6-a53e-4b9e196c1000","name":"Delver of Secrets // Insectile Aberration","oracle_id":"edd531b9-f615-4399-8c8c-1c5e18c4acbf"}
+{"id":"a822129c-0699-40e2-8639-c1a609a5ba3b","name":"Sword of the Animist","oracle_id":"d79cbc61-6c15-48ea-bbba-3cffb819ccba"}
+{"id":"a8260eef-5ff2-4058-8aa5-469b402eaf65","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"a8924faa-d5f5-4119-9fa1-be0789a5655d","name":"Animating Faerie // Bring to Life","oracle_id":"db6fbdc9-1c45-416f-a08e-2082f65adb65"}
+{"id":"a8bfc03f-227c-4a5d-b172-067ea5860bf9","name":"Fang, Fearless l'Cie","oracle_id":"04ac8b2c-95e9-40e9-8cc0-af9b075a94c0"}
+{"id":"a8c304dc-818b-4767-a8b9-8b1c8c8fca13","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"a8e9ea5a-5e10-4b77-baef-0352ff035483","name":"Disciple of Freyalise // Garden of Freyalise","oracle_id":"2699005b-a471-429f-a9d8-fbf2077ee2fd"}
+{"id":"a990260b-39b7-4799-930a-bf9ac208d9ed","name":"Frozen in Ice","oracle_id":"82fa14d8-5019-4e1b-a86c-923d9292b87a"}
+{"id":"a992bbe3-c389-4a4a-927b-dfc01a4cd9be","name":"Delver of Secrets // Insectile Aberration","oracle_id":"edd531b9-f615-4399-8c8c-1c5e18c4acbf"}
+{"id":"a99e2ed7-8a6c-49cf-81ae-690a8636d5f6","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"a9bbf20d-52eb-4a5b-8f86-ba80caf23e1f","name":"Faithful Mending","oracle_id":"b997a982-09e1-4ae1-a972-3c2e5f101e8c"}
+{"id":"a9e8b27b-3ed2-4a0b-a821-68658e8fdd7e","name":"Jegantha, the Wellspring","oracle_id":"f0587c55-06c1-4930-a62e-668f37464ce9"}
+{"id":"a9f63d3b-bee5-48bc-8b04-d8b24b0bda6e","name":"Jeong Jeong, the Deserter","oracle_id":"2158c73d-421b-4c94-af06-dd89cb8d3126"}
+{"id":"aa1bd238-a9f5-4145-9668-eb49a3b4c2bf","name":"Aerith, Last Ancient","oracle_id":"d6cba688-faff-4d9f-8148-37d389fa5fb3"}
+{"id":"aa21fc27-42d0-456a-9882-34d7f404270b","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"aa729c01-bb58-491e-8c68-a7eb6ba883ee","name":"Aether Refinery","oracle_id":"9e9cde32-0568-44bc-a00a-9709f15c1350"}
+{"id":"aab0badb-2879-406a-afee-425f42d2490f","name":"Lutri, the Spellchaser","oracle_id":"158a6225-a246-4fd6-aa57-0df8067b4383"}
+{"id":"aab2765d-cfc4-4381-8cce-adce5aaf05ad","name":"Tilonalli's Skinshifter","oracle_id":"23df9146-9fce-4769-b017-87aa36c79300"}
+{"id":"aab58d83-5930-4d28-a26c-225c7a872216","name":"Ajani's Pridemate","oracle_id":"95e94dea-5ac0-4d6f-adec-ca147aee861f"}
+{"id":"aae0b3ae-ed57-4d17-8876-736aa22186cf","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"ab696cab-2d83-444f-8068-dbf071c75de9","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"ab8292ae-9a52-43e7-92f7-0f45f4bb71ec","name":"Fire // Ice","oracle_id":"ae92942b-919c-4ea9-b693-85fcef765d5a"}
+{"id":"abff6c81-65a4-48fa-ba8f-580f87b0344a","name":"Delver of Secrets // Insectile Aberration","oracle_id":"edd531b9-f615-4399-8c8c-1c5e18c4acbf"}
+{"id":"ac794b2f-b5ea-449d-bb0b-4f0e6cc145ef","name":"Restricted Office // Lecture Hall","oracle_id":"b36286fa-4007-4276-af9c-d8f0da9e94d1"}
+{"id":"aca733e9-c252-4eab-8392-843e9c0bbae1","name":"Sword of the Animist","oracle_id":"d79cbc61-6c15-48ea-bbba-3cffb819ccba"}
+{"id":"acce65cc-9093-45a6-8c86-97edce545050","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"adfa16dc-03b3-4533-884c-a23b992b8d86","name":"Ral's Staticaster","oracle_id":"eae7dd41-3d5f-49a7-baaa-2c03bb341c3a"}
+{"id":"adff49ac-cb3c-4888-85b9-7eb07553e716","name":"Currency Converter","oracle_id":"981298e6-ddee-49c0-9377-f47f019b4138"}
+{"id":"ae7ba1de-48f9-423b-867a-22bd3f6c06c2","name":"Shadowborn Apostle","oracle_id":"595a15f0-77f3-4544-8acc-10630e12cc14"}
+{"id":"ae9f36b1-9f73-490e-87df-c17434113dfd","name":"Excalibur, Sword of Eden","oracle_id":"9fb6bd72-031b-40a1-83c5-8a1c82f84e12"}
+{"id":"aed61bbb-83fd-452b-b940-c8eb1e1ebdac","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"aef59ead-4854-47ee-b31a-74acccb59728","name":"The Tenth Doctor","oracle_id":"23af0a0a-1d12-47c7-b191-2bd3f84eea93"}
+{"id":"af443b8c-203f-46f0-9233-60f962e5baa6","name":"Pygmy Giant","oracle_id":"e00ef3d4-bee7-4bdb-9e25-f0068bbe142d"}
+{"id":"af646ff7-b3ee-4e95-9fce-7d48d4987e4e","name":"Ace, Fearless Rebel","oracle_id":"50d0d870-fe3d-44a2-ad6e-93307a1fb468"}
+{"id":"af7a15fc-429d-4289-8f4e-da74eb71609f","name":"Halana and Alena, Partners","oracle_id":"b347be2d-9aa1-42a9-b652-8fb032832f09"}
+{"id":"af88e4e8-b694-4ec0-8885-701ea30bf84c","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"afa464fe-978f-43de-ac35-79be4b12f0d9","name":"Tendril of the Mycotyrant","oracle_id":"d2824464-963b-48db-a482-cc08a0a97332"}
+{"id":"b162b131-5612-4605-9de8-a5731eeac37e","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"b1f00799-80ce-431e-97bb-8bb4e0e8ba49","name":"Ascended Lawmage","oracle_id":"4317f4f1-d339-4940-b46e-659641035595"}
+{"id":"b25ab334-1060-457e-b212-3d7a697c545e","name":"Joint Exploration","oracle_id":"9eba1789-6e58-4d78-8a0d-b54a8be76ec5"}
+{"id":"b2dadc79-855c-447e-a421-a9e16e81d47a","name":"Everflowing Chalice","oracle_id":"0a79237e-0811-4a8a-bd4d-db3ca91bff22"}
+{"id":"b2edaa87-8f82-4891-9543-8d6a53dd0313","name":"The Ring Goes South","oracle_id":"3d36f0ab-d333-4a08-ad1b-5b7e1ddb647c"}
+{"id":"b30df994-bb09-4d16-8443-223c6ce342dc","name":"Soulcatchers' Aerie","oracle_id":"69565f6e-2e23-4cd8-bd21-1283e06729a3"}
+{"id":"b3205343-03f8-4ffd-8bbc-6df1ae5621b4","name":"Aether Vial","oracle_id":"fc148e1e-dff0-448e-9f16-625341754356"}
+{"id":"b3656310-093d-4724-a399-7f7010843b1f","name":"Ajani's Pridemate","oracle_id":"95e94dea-5ac0-4d6f-adec-ca147aee861f"}
+{"id":"b37309cf-8b80-402b-9d29-fe5de56ced38","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"b44f758e-716a-408e-96d4-b58403591c2a","name":"Dropkick Bomber","oracle_id":"c394d4b6-cfb8-4639-90cb-a322a25c0a2f"}
+{"id":"b46dd373-748e-4834-9a1d-6ef514adac4c","name":"The Dragon-Kami Reborn // Dragon-Kami's Egg","oracle_id":"c3a46eb3-38d9-4f47-9b71-26c9ea7ef1ce"}
+{"id":"b47beeb9-0ce1-49cf-bf6f-3673c489af62","name":"Enslave","oracle_id":"879ba7c4-4557-4166-adb0-b52454816e5a"}
+{"id":"b53a112c-671c-4312-af56-53fdb735829b","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"b5b71cd2-de35-451f-b16e-2e3936169407","name":"Bonecrusher Giant // Stomp","oracle_id":"d6d72f5f-8f5d-4180-b514-f22ff5482902"}
+{"id":"b649f459-c9dc-495d-8703-b685996bb80c","name":"Halana and Alena, Partners","oracle_id":"b347be2d-9aa1-42a9-b652-8fb032832f09"}
+{"id":"b68a8c69-0e59-4491-9e4d-4c50600a035e","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"b6cb3d78-1a60-4e9b-b387-afeb58677536","name":"Noxious Groodion","oracle_id":"aed587bf-c6e5-4850-baeb-2715cb27bf4c"}
+{"id":"b6de14ae-0132-4261-af00-630bf15918cd","name":"Barkchannel Pathway // Tidechannel Pathway","oracle_id":"59d22de5-e310-44d7-89cf-ef3529e40cef"}
+{"id":"b6e6be8c-41c3-4348-a8dd-b40ceb24e9b4","name":"Ondu Inversion // Ondu Skyruins","oracle_id":"15fc4e74-300e-4c2d-8ed7-004553b2f7c2"}
+{"id":"b6e91ba0-b229-4ab1-84f3-2a490dfa5051","name":"Kjeldoran Phalanx","oracle_id":"a8563a4f-a23b-4cb5-b6e5-795bf8d74ee6"}
+{"id":"b72ee8f9-5e79-4f77-ae7e-e4c274f78187","name":"Sagu Wildling // Roost Seek","oracle_id":"7cee6d43-5dec-4989-85ec-c635ec783ec7"}
+{"id":"b73fe4b5-142f-4b1f-b48d-7aa65782bdb5","name":"Tawnos's Weaponry","oracle_id":"f07f98bb-4190-4643-aeb9-c5eaf358c97c"}
+{"id":"b79cb394-eb91-4b3b-91d4-c6a0f723feb1","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"b82f08c2-3944-437d-9af6-f1e9088e02bb","name":"Fang, Fearless l'Cie","oracle_id":"04ac8b2c-95e9-40e9-8cc0-af9b075a94c0"}
+{"id":"b8732e62-cdee-4d32-82a8-8a71a04be7a1","name":"Aether Revolt","oracle_id":"b73661a6-d136-4c65-804c-461e83484f4b"}
+{"id":"b8e73c11-0fb0-4cce-982d-bf3558fb26f3","name":"Dragon's Rage Channeler","oracle_id":"0c016ccc-a341-4b76-87ba-69c639d2746d"}
+{"id":"b90df81c-d738-46b3-8e96-9db0b3507ee0","name":"Shanna, Sisay's Legacy","oracle_id":"546201d0-3fa5-44e4-a526-ab0945711e49"}
+{"id":"ba721716-e19a-4ac5-9b44-1a18ad51554b","name":"Everflowing Chalice","oracle_id":"0a79237e-0811-4a8a-bd4d-db3ca91bff22"}
+{"id":"ba75dc52-7ab2-43ec-afac-0a9bcf24cde9","name":"Tapping at the Window","oracle_id":"d5b80d04-1650-4b5d-9f9b-091ecd17b6e8"}
+{"id":"baf8f4f2-9f25-4cd2-8d78-1041e134aeac","name":"Wastes","oracle_id":"05d24b0c-904a-46b6-b42a-96a4d91a0dd4"}
+{"id":"bb16341a-f793-4b0e-b4ef-3fc56aae3807","name":"Rograkh, Son of Rohgahh","oracle_id":"584cee10-f18c-4633-95cc-f2e7a11841ac"}
+{"id":"bb8f0fa6-243e-4994-a88b-4a9199efa166","name":"Terisiare's Devastation","oracle_id":"03c1e376-1410-4321-90fe-a6997e8db85a"}
+{"id":"bbad95fc-7f3e-49f9-82e2-3d3673ec27a3","name":"Monoxa, Midway Manager","oracle_id":"d8e6cdab-234a-46b9-8b6c-164034cf2bc7"}
+{"id":"bc26795f-645f-4cb3-a49c-65c8d12460be","name":"Jegantha, the Wellspring","oracle_id":"f0587c55-06c1-4930-a62e-668f37464ce9"}
+{"id":"bd6be33e-1a5b-482c-a444-3e8ab98d591d","name":"Everflowing Chalice","oracle_id":"0a79237e-0811-4a8a-bd4d-db3ca91bff22"}
+{"id":"bd8b17df-615c-4cc1-af1a-2fc35a985af9","name":"Ascending Aven","oracle_id":"67b4a4bc-0b02-4cef-b5c8-41c839eaf0cd"}
+{"id":"bd8cc91a-dedf-4a35-b0e7-31a3fedbe2d3","name":"Ace, Fearless Rebel","oracle_id":"50d0d870-fe3d-44a2-ad6e-93307a1fb468"}
+{"id":"bdbf73e9-91ff-4c25-b618-62d652e75587","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"bde73c08-40f6-42bd-9c38-348fcef97aa5","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"be667162-cd28-403c-b65f-dadc5459e757","name":"Crosis, the Purger","oracle_id":"f1ae1dcd-76cd-4714-9df2-1ab0ebd2ca41"}
+{"id":"be8b338f-6f05-43c6-beeb-c5052cc0d6a9","name":"Stand // Deliver","oracle_id":"6343aa78-2df6-41f3-9366-4933f9e6a93e"}
+{"id":"beebe533-29b9-4041-ab66-0a8233c50d56","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"bf10c264-c7f6-4ae3-b3ef-ff12bd7b64c0","name":"Wastes","oracle_id":"05d24b0c-904a-46b6-b42a-96a4d91a0dd4"}
+{"id":"bf5dafb0-4fb1-470d-85ce-88f3ae32340b","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"bfee769b-4684-480a-9104-8706c4f19b15","name":"Dirgur Nemesis","oracle_id":"c08b444b-6617-4199-b9da-5d4e81cd7597"}
+{"id":"bffbe9ec-edbc-43ed-a3bf-60635e7e625c","name":"Command Tower // Command Tower","card_faces":[{"oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}]}
+{"id":"c0040569-c4b1-46ad-8115-1fdb82ba3710","name":"Wastes","oracle_id":"05d24b0c-904a-46b6-b42a-96a4d91a0dd4"}
+{"id":"c018be5c-0357-47cc-ac8c-2929f90c4097","name":"Raking Claws","oracle_id":"c2248d3d-3157-4610-868d-2b3fae2b1ec8"}
+{"id":"c05eb30c-84f3-4b3b-ac05-097a72ddb1aa","name":"Aven Reedstalker","oracle_id":"d9f43942-4296-417d-a180-5b4f64e4b12d"}
+{"id":"c0fb91ec-20a8-4c13-9469-18885b1ecca3","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"c14cdc38-dd46-495e-93bd-d2694b64d5ad","name":"Aether Vial","oracle_id":"fc148e1e-dff0-448e-9f16-625341754356"}
+{"id":"c1bda37b-7702-462e-8851-af6917b78ee1","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"c1e0f201-42cb-46a1-901a-65bb4fc18f6c","name":"Urza's Saga","oracle_id":"4c6a0c30-b547-4eff-8ff4-0ca25803c076"}
+{"id":"c1f93f78-645b-4f21-a80b-5542f3328111","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"c29c6d37-785b-4d3a-9e7d-7963710538b1","name":"Shadowborn Apostle","oracle_id":"595a15f0-77f3-4544-8acc-10630e12cc14"}
+{"id":"c2b8706a-184f-4be4-b2d5-809e740ede89","name":"Ajani's Pridemate","oracle_id":"95e94dea-5ac0-4d6f-adec-ca147aee861f"}
+{"id":"c328d8ac-97df-4240-ac38-7cab363c5da1","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"c3544806-daf9-438f-aec5-087abb40d2e6","name":"Shadowborn Apostle","oracle_id":"595a15f0-77f3-4544-8acc-10630e12cc14"}
+{"id":"c36fe821-e9b1-453d-8e44-f8dce111a6de","name":"Veteran of the Depths","oracle_id":"70bcec56-1485-4e4e-8fff-940d7b133c5d"}
+{"id":"c402a722-d412-4598-8a1e-edb889b957e8","name":"Bonecrusher Giant // Stomp","oracle_id":"d6d72f5f-8f5d-4180-b514-f22ff5482902"}
+{"id":"c4300d24-1cae-4dd5-be7e-38cc677cf5bd","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"c46138f0-224a-4ca9-bf03-badb2ae5ee21","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"c46a217c-0ed2-4b3c-9a01-ee38d12d76f3","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"c4703ce4-5c40-4436-bff2-8e3458f55b47","name":"Xathrid Necromancer","oracle_id":"a6b38874-c8be-47f7-a656-ba49ec9e967f"}
+{"id":"c48d1586-23e9-4b0e-91ff-01bd6f32427c","name":"Gyome, Master Chef","oracle_id":"0f1b5cea-2035-444c-9f63-87dcb9782c74"}
+{"id":"c5318275-48bb-4fa8-b751-916836970dc4","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"c5430a1d-a575-4853-93f2-635c327eea15","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"c55b348b-c147-4d02-b26c-d610f515bce0","name":"Disciplined Duelist","oracle_id":"c650f497-92d6-48cf-8b59-5d61eb184dc0"}
+{"id":"c5727af5-a487-4b16-8278-81c3c928c417","name":"Ori, Keeper of Songs","oracle_id":"69cc089a-abd3-4edb-bc79-f02daac70837"}
+{"id":"c5952b88-3e67-4e8e-97cc-dc14317d8e92","name":"Frenzied Raptor","oracle_id":"655c59d5-8666-476c-b494-411fa2e243a7"}
+{"id":"c5da34ab-305b-4bce-8ba7-0301329a5bee","name":"Nebelgast Intruder","oracle_id":"4c591977-f2af-4a6e-a0be-3dfb45a3598b"}
+{"id":"c5f1c77c-07e6-4886-9b71-b556642f31cf","name":"Anikthea, Hand of Erebos","oracle_id":"991fd651-0cba-41ee-855a-d01a1a7c8f60"}
+{"id":"c5f6c745-e46a-42eb-8eca-b7b74ab1245e","name":"Foulmire Knight // Profane Insight","oracle_id":"10c0f814-e302-49ff-aded-1b8d8424fd60"}
+{"id":"c614a61d-b988-40fb-9172-0f86a0e41997","name":"Kangee, Sky Warden","oracle_id":"6a344d2e-fbd7-4ff9-9e2a-97ae69d60c66"}
+{"id":"c61feafd-ef09-437c-a12c-fd7d6cb8c15a","name":"Wastes","oracle_id":"05d24b0c-904a-46b6-b42a-96a4d91a0dd4"}
+{"id":"c6399a22-cebf-4c1d-a23e-4c68f784ac1b","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"c6721419-70aa-4137-98d5-98ef17720c8e","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"c717b484-4b88-4073-a185-71b6085e7324","name":"Reidane, God of the Worthy // Valkmira, Protector's Shield","oracle_id":"35ae7b25-6d0f-49f8-a40d-dd2cf88e6f44"}
+{"id":"c75cc38d-aee6-44ab-be69-26491fb9b808","name":"Dragon's Rage Channeler","oracle_id":"0c016ccc-a341-4b76-87ba-69c639d2746d"}
+{"id":"c7658ec0-3207-4c7e-b31a-30a2a9249595","name":"Urza's Saga","oracle_id":"4c6a0c30-b547-4eff-8ff4-0ca25803c076"}
+{"id":"c7e7c27a-47e4-47d1-90b3-88a936839cbc","name":"Rograkh, Son of Rohgahh","oracle_id":"584cee10-f18c-4633-95cc-f2e7a11841ac"}
+{"id":"c7efd07d-98d5-4e92-86dd-1eb4e60183d6","name":"The Ring Goes South","oracle_id":"3d36f0ab-d333-4a08-ad1b-5b7e1ddb647c"}
+{"id":"c946b161-0e4f-4c0a-a075-cdcf05504d0b","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"c96ece8e-b1fa-4cec-9f2c-c6c1f21ceb63","name":"Jegantha, the Wellspring","oracle_id":"f0587c55-06c1-4930-a62e-668f37464ce9"}
+{"id":"c9c4334a-5c53-4bce-ae39-bc5d30ef6b42","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"ca15027f-0f32-4018-9da8-50e4002fa6f8","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"ca57eebe-5bc9-4cff-ae91-ccd509aa36ce","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"cadcddad-2f37-4a5c-81e4-242a20573952","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"cae0c9e0-3be9-4151-9d59-658a032c30e9","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"cb44df5b-6c89-46ae-b068-5056b8c4c189","name":"Brighthearth Banneret","oracle_id":"04120095-74a5-4284-bfba-aeb0b509dc84"}
+{"id":"cb7d5bbb-4f68-4e38-8bb0-a95af21b24c8","name":"Brigid, Clachan's Heart // Brigid, Doun's Mind","oracle_id":"60fc89a1-cc6f-4a32-84c3-09abf7a4a1df"}
+{"id":"cb966bb2-1634-400e-9dd0-b8befda81f6a","name":"Nissa, Who Shakes the World","oracle_id":"5aa3abf1-d56b-4f42-8c84-7e5a2c15ee0f"}
+{"id":"cbaa647f-5799-4255-82c2-06ac4c159a21","name":"Enslave","oracle_id":"879ba7c4-4557-4166-adb0-b52454816e5a"}
+{"id":"cca371f0-e7c9-4154-8e1d-47576c0202bc","name":"Tawnos's Weaponry","oracle_id":"f07f98bb-4190-4643-aeb9-c5eaf358c97c"}
+{"id":"cca7e41a-0e61-4bc2-bfa5-8420e6a402f5","name":"Gyome, Master Chef","oracle_id":"0f1b5cea-2035-444c-9f63-87dcb9782c74"}
+{"id":"ccd9eec2-87d1-4372-a308-8dcb17cdafc9","name":"Loki, God of Mischief","oracle_id":"c112852f-61d5-4b94-b864-c7d0b5333b29"}
+{"id":"cce7ce6e-0d84-4d66-a1dd-26ddac73d47b","name":"Inkfathom Divers","oracle_id":"dbdf3c82-b0fc-479c-acce-f7e60be3a2b1"}
+{"id":"cd52d335-337c-4ac8-8854-15850e2da093","name":"Relentless Rats","oracle_id":"104ea189-14cd-420f-afdc-57b0f827ab8e"}
+{"id":"cd9eee5f-29c0-4f2f-996c-1ba23a55ec81","name":"Clara Oswald","oracle_id":"542eae01-058d-4959-92a8-49d6b1e33ecd"}
+{"id":"cea9aa06-d0ad-4dae-a36f-f84278a45c3a","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"ceb7308d-608c-4ede-9496-d795fc5bb271","name":"Merfolk Secretkeeper // Venture Deeper","oracle_id":"4f5096d4-bbb5-4a48-9dd0-9dabdd2ac125"}
+{"id":"ced8571a-24e1-45be-8698-3314b663940a","name":"Esika, God of the Tree // The Prismatic Bridge","oracle_id":"92023a5d-a143-4950-a71b-d736e6b8e959"}
+{"id":"cf9c2560-ace5-43e0-b54c-8426ae338d7f","name":"Foulmire Knight // Profane Insight","oracle_id":"10c0f814-e302-49ff-aded-1b8d8424fd60"}
+{"id":"d004e922-1f2b-4325-93f1-04a336192c06","name":"Vraska, Golgari Queen","oracle_id":"131096a3-2d53-4ec2-96d3-fcb58e698a13"}
+{"id":"d041a51c-9a28-4b32-9da3-0f06807959f1","name":"Aerith, Last Ancient","oracle_id":"d6cba688-faff-4d9f-8148-37d389fa5fb3"}
+{"id":"d05fbd5a-1114-4887-9dad-5ba398c59f13","name":"Persistent Petitioners","oracle_id":"0e488c6c-aae2-450f-b969-7bb5a1b37a66"}
+{"id":"d071fec0-850d-4b6c-83b8-68d2922943fc","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"d0994be7-fc69-426f-b01b-cff05b5e2fa7","name":"Dawn's Reflection","oracle_id":"362b7838-3b70-4a00-8c26-1c8b8a3b6acf"}
+{"id":"d105068a-d4f1-4971-b5a0-72806a798497","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"d169a3b2-18ae-4414-98ef-d879676fdcc0","name":"Wear // Tear","oracle_id":"9842734c-1eac-4509-a731-4c22017ae586"}
+{"id":"d1d019fb-0498-454b-a03b-4f396def718b","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"d1d8d32d-ebb2-46c2-b909-b7f71d33159e","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"d1ef9e19-a948-4d34-99df-623ac03d339b","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"d2119f3f-27d2-4d43-a5ef-35c1b73d182a","name":"The Reaper, King No More","oracle_id":"39b67a4d-6a87-41f0-a86f-b66671ccc20d"}
+{"id":"d24f611b-87b1-4406-9829-1b663f52fcb6","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"d296b765-c650-44d5-a4b6-1b58074c0007","name":"Relentless Rats","oracle_id":"104ea189-14cd-420f-afdc-57b0f827ab8e"}
+{"id":"d2acf06d-3388-4777-a5a3-7864ec235606","name":"Chalice of Life // Chalice of Death","oracle_id":"28df85d6-e13a-4178-a361-7015afd316ca"}
+{"id":"d2b1183f-bfc6-425f-9089-8657f7c8822b","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"d32dcd09-8542-4135-8955-e29ee63e3589","name":"Pegasus Guardian // Rescue the Foal","oracle_id":"e71863a7-0de1-4ab5-95e8-c39e6810d899"}
+{"id":"d34e7982-f4f2-444d-8039-538b2ed4dc6e","name":"Ajani's Pridemate","oracle_id":"95e94dea-5ac0-4d6f-adec-ca147aee861f"}
+{"id":"d3871fe6-e26e-4ab4-bd81-7e3c7b8135c1","name":"Alania's Pathmaker","oracle_id":"ce36a450-68a6-4519-a9f0-0e3b772054eb"}
+{"id":"d477d733-2360-4f1d-9ecd-cdedc2e8a7ae","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"d4cfb9bc-4273-4e5f-a7ac-2006a8345a4e","name":"Ajani's Pridemate","oracle_id":"95e94dea-5ac0-4d6f-adec-ca147aee861f"}
+{"id":"d4ee6b2e-7e6d-4f8d-a75e-ff30722e08d3","name":"The Ring Goes South","oracle_id":"3d36f0ab-d333-4a08-ad1b-5b7e1ddb647c"}
+{"id":"d5592378-f9e7-4c50-8425-2105744aa85c","name":"Jegantha, the Wellspring","oracle_id":"f0587c55-06c1-4930-a62e-668f37464ce9"}
+{"id":"d582b3c3-996e-4f4b-9efd-134e127d563c","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"d586407a-d260-48c6-8c05-50612d109221","name":"Advance Scout","oracle_id":"831e2185-0bb2-45bb-99cd-d2091bad86f0"}
+{"id":"d5bd4f68-f006-4ad5-9bf8-8757e498736a","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"d74a72a2-d46a-41c2-a400-70571197b020","name":"Sol Ring // Sol Ring","card_faces":[{"oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}]}
+{"id":"d754022f-9921-4701-9b41-d40f265cb311","name":"Yorion, Sky Nomad","oracle_id":"e15504a7-2b67-4185-b916-172145f10b19"}
+{"id":"d75bfbe3-41a0-44e1-86ce-f56c9bcf57d7","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"d79a7e3b-2b7f-4577-8895-6f20a41214b1","name":"Inkfathom Divers","oracle_id":"dbdf3c82-b0fc-479c-acce-f7e60be3a2b1"}
+{"id":"d7a87d6d-597d-4798-a4b0-f8bf5a006866","name":"Dragon's Rage Channeler","oracle_id":"0c016ccc-a341-4b76-87ba-69c639d2746d"}
+{"id":"d7c6614c-cc2b-4e5b-9c0d-ce8e4b2d8ea7","name":"Tezzeret, Master of Metal","oracle_id":"3fba19a9-44c6-4771-9587-9d2c4009e996"}
+{"id":"d8b43b00-f4d1-436c-bf3f-6d414cd4ce38","name":"Sagu Wildling // Roost Seek","oracle_id":"7cee6d43-5dec-4989-85ec-c635ec783ec7"}
+{"id":"d8bb1943-c9e4-4473-8ffe-17f53f463be4","name":"Tolsimir, Midnight's Light","oracle_id":"0e9c7380-7584-43e6-8c31-5d1bb1685fe0"}
+{"id":"d93510d4-7772-4260-b862-6dc096496404","name":"Aether Vial","oracle_id":"fc148e1e-dff0-448e-9f16-625341754356"}
+{"id":"d94fb4da-0d3f-4d84-966b-914b84b23289","name":"Defiled Crypt // Cadaver Lab","oracle_id":"f97de425-c7ab-4688-8606-159370d179ee"}
+{"id":"d9b38015-985f-4718-a6f8-fe19de225801","name":"Wastes","oracle_id":"05d24b0c-904a-46b6-b42a-96a4d91a0dd4"}
+{"id":"d9e098aa-a886-430e-8f11-78fb6f2d8ada","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"da4d9f44-9079-4144-8dd9-076be04032d4","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"da57f710-7af0-44f0-9070-47e1b7c3560e","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"da89596c-6348-4afa-880d-7540b8214ddd","name":"Restricted Office // Lecture Hall","oracle_id":"b36286fa-4007-4276-af9c-d8f0da9e94d1"}
+{"id":"db0dfaa7-40b2-4065-9cef-22e6af8ad53c","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"db948368-d072-4ea5-83c5-b46235a20a99","name":"Tolsimir, Midnight's Light","oracle_id":"0e9c7380-7584-43e6-8c31-5d1bb1685fe0"}
+{"id":"dc7436c6-cd33-4324-bd1b-026a5d5c0007","name":"Swindler's Scheme","oracle_id":"e3ff6134-10dd-4565-afcb-0f41a2933d19"}
+{"id":"dc9caae7-fb67-42bf-bee0-b935a1b88d79","name":"Raised by Giants","oracle_id":"1682cf24-17a3-49ad-8b6f-9b7f13ebf53c"}
+{"id":"dca1a706-9eee-4d75-80ee-fa12257908e3","name":"Fang, Fearless l'Cie","oracle_id":"04ac8b2c-95e9-40e9-8cc0-af9b075a94c0"}
+{"id":"dd775231-e1e0-41e2-ad9a-0726624f57f9","name":"Hussar Patrol","oracle_id":"bd73581c-c4bd-46cb-8004-75aeafa24288"}
+{"id":"ddfef9b6-4c78-49ac-b97c-5ddbbd8be7ef","name":"Egon, God of Death // Throne of Death","oracle_id":"8fa7bd8f-f712-4dd1-9ffb-e30dfe744389"}
+{"id":"de77ba1d-9e88-49db-b4e4-63824a0fe490","name":"Disciplined Duelist","oracle_id":"c650f497-92d6-48cf-8b59-5d61eb184dc0"}
+{"id":"df2988cd-ba09-4838-933c-aafce1bd51f0","name":"Nissa, Who Shakes the World","oracle_id":"5aa3abf1-d56b-4f42-8c84-7e5a2c15ee0f"}
+{"id":"df45943d-0a8b-4a0d-be46-271c54306116","name":"Sorin's Vengeance","oracle_id":"75d9c036-4f0d-4b55-b0a4-096ca84748ca"}
+{"id":"df5ed779-b400-489f-a419-4208de15efad","name":"Shadowborn Apostle","oracle_id":"595a15f0-77f3-4544-8acc-10630e12cc14"}
+{"id":"dfae7531-693e-4325-8207-3ea4368e6c2c","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"dfcb8e59-54e9-4e4d-8b21-e4371cbe3e77","name":"Linden, the Steadfast Queen","oracle_id":"dbc56f3b-83b3-41c8-a8ae-d3774fe6ee01"}
+{"id":"dfe0daf8-43da-484b-baa1-76f8313c5a0c","name":"Wilson, Refined Grizzly","oracle_id":"d2766fd7-5cf9-4037-9f34-9ae3982c613a"}
+{"id":"e01cc65a-0e38-4f41-b9ed-796ef0355d0b","name":"Wear // Tear","oracle_id":"9842734c-1eac-4509-a731-4c22017ae586"}
+{"id":"e0355992-8c21-4646-9fbb-f13a1be6153e","name":"Animating Faerie // Bring to Life","oracle_id":"db6fbdc9-1c45-416f-a08e-2082f65adb65"}
+{"id":"e07f656c-97b5-4147-821a-edbb49f34e19","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"e0bb07cd-9b74-4ba7-8089-27a565d74197","name":"Linden, the Steadfast Queen","oracle_id":"dbc56f3b-83b3-41c8-a8ae-d3774fe6ee01"}
+{"id":"e1187999-521d-4ed0-8673-6eb8f3c58bb8","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"e162de32-d326-4576-9081-a7b2efd51d46","name":"Dragon's Rage Channeler","oracle_id":"0c016ccc-a341-4b76-87ba-69c639d2746d"}
+{"id":"e1fee302-b37b-4057-934f-cf212e6ecc17","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"e23cdb0a-e114-47f8-aceb-c54c4683bbc5","name":"Disciplined Duelist","oracle_id":"c650f497-92d6-48cf-8b59-5d61eb184dc0"}
+{"id":"e2d7a901-238c-4ea3-a6cb-6c9b4cea2ad6","name":"Indomitable Archangel","oracle_id":"0f9269eb-6a6c-4b32-8b3d-73724c12ca6b"}
+{"id":"e3435fd6-8f51-4d99-a278-4ddb088acfe1","name":"Fae of Wishes // Granted","oracle_id":"c0abbed2-d213-47ef-8d6c-4a21efb9a55f"}
+{"id":"e3450882-d791-4172-b02a-ee7fdb36acfc","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"e35b3ab8-9230-469e-8c01-5f735fea5c9e","name":"Restricted Office // Lecture Hall","oracle_id":"b36286fa-4007-4276-af9c-d8f0da9e94d1"}
+{"id":"e35d8d96-5d5c-4549-87df-458fc43e4444","name":"Vraska, Golgari Queen","oracle_id":"131096a3-2d53-4ec2-96d3-fcb58e698a13"}
+{"id":"e3b2235b-6c18-436e-9d80-4a82ce0cac14","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"e40512d7-e083-4dd0-9dd2-5b81f557c87f","name":"Yorion, Sky Nomad","oracle_id":"e15504a7-2b67-4185-b916-172145f10b19"}
+{"id":"e411cacd-910b-4eda-8f67-03b426c94ebe","name":"Ajani's Pridemate","oracle_id":"95e94dea-5ac0-4d6f-adec-ca147aee861f"}
+{"id":"e432b156-baf0-48a1-b8fb-1aa18bfbf7de","name":"Chalice of Life // Chalice of Death","oracle_id":"28df85d6-e13a-4178-a361-7015afd316ca"}
+{"id":"e4484804-a98d-440c-bb67-07714de2bef3","name":"Yennett, Cryptic Sovereign","oracle_id":"4eec6838-3565-407f-8941-ce9421402f0b"}
+{"id":"e4665319-bb92-4e09-8d15-9047a5f826c1","name":"Mirrorpool","oracle_id":"57b86d5c-3269-44bc-a838-3c5439d820d9"}
+{"id":"e4ded4c1-0e3e-47c5-8fdc-e7c187f68b12","name":"Thranduil's Decree","oracle_id":"d7cba934-02ad-4677-bb4d-50808b01b4f9"}
+{"id":"e4dfb84f-582a-4fe2-9710-8b480a268571","name":"Necromancer's Familiar","oracle_id":"ce8833ea-5f58-4ab9-b33d-8972f2215574"}
+{"id":"e4ed0052-d6dd-4f69-8313-10863baefac9","name":"Everflowing Chalice","oracle_id":"0a79237e-0811-4a8a-bd4d-db3ca91bff22"}
+{"id":"e5ba8c01-b6f5-486d-b300-cbae2c2b5edf","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"e5f336d8-12a4-482d-8ffd-c205858c72ba","name":"Crosis, the Purger","oracle_id":"f1ae1dcd-76cd-4714-9df2-1ab0ebd2ca41"}
+{"id":"e672d408-997c-4a19-810a-3da8411eecf2","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"e675f7e2-5c9f-4912-8fdd-daaeda284a3d","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"e6ad5feb-a0b2-44e1-a7a3-ae5f1bf95b58","name":"Raised by Giants","oracle_id":"1682cf24-17a3-49ad-8b6f-9b7f13ebf53c"}
+{"id":"e6b81040-cbce-4833-bc13-89aa707dcda7","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"e6dd05f0-a3c0-4bd6-a1d1-a74540623093","name":"Heirloom Mirror // Inherited Fiend","oracle_id":"b33390dd-f2f8-4059-83a9-45c0edccd5e4"}
+{"id":"e80b91e8-c498-4178-8310-3cd3b039a3dc","name":"Elvish Skysweeper","oracle_id":"f557697a-4c1b-44f6-a989-4879bbe26eb5"}
+{"id":"e8163a9d-5a1b-4d36-b20a-b220207a3b94","name":"Haunting Hymn","oracle_id":"b9a0977a-6364-4358-bab1-112898a1b942"}
+{"id":"e89eca1c-19f5-4db0-9330-cecb87be8b55","name":"Everflowing Chalice","oracle_id":"0a79237e-0811-4a8a-bd4d-db3ca91bff22"}
+{"id":"e8fef858-8398-46a8-86a5-7a9b1c3e7336","name":"Fae of Wishes // Granted","oracle_id":"c0abbed2-d213-47ef-8d6c-4a21efb9a55f"}
+{"id":"e90d9cc4-9444-4610-ace5-c2981809b331","name":"Ascended Lawmage","oracle_id":"4317f4f1-d339-4940-b46e-659641035595"}
+{"id":"e93f0c57-eb80-4dde-bdb0-326970491621","name":"Persistent Petitioners","oracle_id":"0e488c6c-aae2-450f-b969-7bb5a1b37a66"}
+{"id":"e96901eb-5b57-43f4-a7b1-ae3b809bc36e","name":"Painter's Studio // Defaced Gallery","oracle_id":"2af01e09-f233-4675-89cd-470816471c62"}
+{"id":"e97f7f80-51f0-4366-a094-ee75ce03adb4","name":"Haliya, Guided by Light","oracle_id":"9b0af3ad-1b4d-4480-af91-fe9baee5d1c5"}
+{"id":"e996afbc-e6cd-473a-a194-a345512e6963","name":"Umori, the Collector","oracle_id":"913383a1-9c0d-40a1-8c5a-b0a8a95c09a6"}
+{"id":"e9a213c8-f9b5-4fcb-969c-b6c574810f21","name":"Urza's Saga","oracle_id":"4c6a0c30-b547-4eff-8ff4-0ca25803c076"}
+{"id":"e9da18b4-1efc-44b7-8001-a2cfd44c69bf","name":"Baron Bertram Graywater","oracle_id":"e25b516c-bf95-42bc-8b1e-04617a3d28df"}
+{"id":"ea20bca1-1f4b-47d6-8e37-b71c98d3e539","name":"Sword of the Animist","oracle_id":"d79cbc61-6c15-48ea-bbba-3cffb819ccba"}
+{"id":"ead69420-a4c8-47f5-8d2d-f433e919dfa6","name":"Mirrorpool","oracle_id":"57b86d5c-3269-44bc-a838-3c5439d820d9"}
+{"id":"ebfcda26-1f28-4d60-bc7b-8c0bafc6b132","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"ec1f1041-f667-4b73-b1f2-e5bcae84095e","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"ec39abba-f3d9-4ab4-96e7-dd1c65cc3d26","name":"Everflowing Chalice","oracle_id":"0a79237e-0811-4a8a-bd4d-db3ca91bff22"}
+{"id":"ec750874-33fb-44d6-915e-ba0ece9bef74","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"eca652b8-44f1-4bd9-b4bf-036eeead13aa","name":"Dai Li Indoctrination","oracle_id":"5591efbc-1b2c-489a-b4f3-935c9b6bd71a"}
+{"id":"eca9ae7b-a6d9-43ea-92d4-0110fd6643a7","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"ecd7267a-d6bd-4d9d-8e30-6068b5a0a12b","name":"Aethersnatch","oracle_id":"45892ec2-8996-444f-a61c-5151926baa0b"}
+{"id":"edbea2b5-eed3-464b-9d5c-9591f309f298","name":"Mirrorpool","oracle_id":"57b86d5c-3269-44bc-a838-3c5439d820d9"}
+{"id":"ee6178b8-6f42-43e7-af24-4982af5f2983","name":"Nissa, Who Shakes the World","oracle_id":"5aa3abf1-d56b-4f42-8c84-7e5a2c15ee0f"}
+{"id":"ee6e5a35-fe21-4dee-b0ef-a8f2841511ad","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"ee771581-f867-48d7-9ddb-897a1ffcdf0a","name":"Scarlet Spider, Ben Reilly","oracle_id":"13ab2f3f-f65e-42b5-b743-39b30a4c4751"}
+{"id":"eebffbb3-5421-40e4-af92-999d8eb504f4","name":"Mirrorpool","oracle_id":"57b86d5c-3269-44bc-a838-3c5439d820d9"}
+{"id":"eefe0113-8ac4-4d89-8ed3-010ccb57f3f0","name":"Tawnos's Weaponry","oracle_id":"f07f98bb-4190-4643-aeb9-c5eaf358c97c"}
+{"id":"ef55cb9e-27ab-4a85-9246-873f699be0f3","name":"Crosis, the Purger","oracle_id":"f1ae1dcd-76cd-4714-9df2-1ab0ebd2ca41"}
+{"id":"ef5df76e-1482-4677-a932-54b92384c3c3","name":"Fire // Ice","oracle_id":"ae92942b-919c-4ea9-b693-85fcef765d5a"}
+{"id":"ef8a8ba7-f955-425d-9a16-816fc48a2a83","name":"Grand Entryway // Elegant Rotunda","oracle_id":"f7574379-d10e-4bbf-b0b1-13feee753d8b"}
+{"id":"ef8ac50e-251b-411b-aee9-e5102843d1ed","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"f096ff4a-85f4-46f1-9478-e8921f21309d","name":"Offender at Large","oracle_id":"c8c42851-1b1b-49dd-a97c-7eda57dadb13"}
+{"id":"f0c2d70a-d646-44eb-9f65-ddf6e329ab43","name":"Aven Reedstalker","oracle_id":"d9f43942-4296-417d-a180-5b4f64e4b12d"}
+{"id":"f0e6ca8a-4e8a-4be4-bcc7-0a4cb1196aac","name":"Tilonalli's Skinshifter","oracle_id":"23df9146-9fce-4769-b017-87aa36c79300"}
+{"id":"f0e7d3ae-e15a-4e5c-8c9e-f90aa334b0cd","name":"The Tenth Doctor","oracle_id":"23af0a0a-1d12-47c7-b191-2bd3f84eea93"}
+{"id":"f1150ea9-02b5-4767-a529-6149d758830e","name":"Blightreaper Thallid // Blightsower Thallid","oracle_id":"ea405cb4-a21b-4a26-98f3-251e65ea2aef"}
+{"id":"f1499f49-793b-4265-9ad0-883a431941ab","name":"The Tenth Doctor","oracle_id":"23af0a0a-1d12-47c7-b191-2bd3f84eea93"}
+{"id":"f15d0534-6536-4ead-8e33-ba3de60c8b66","name":"Uvilda, Dean of Perfection // Nassari, Dean of Expression","oracle_id":"63c4915f-5ad9-468f-95c5-d44f1b71631e"}
+{"id":"f19a0013-ebf9-4472-a2ed-462c59d212a5","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"f1bb7b31-9da7-4146-be80-0d5d1245ca48","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"f2301532-a61f-4038-b771-6c34b6505b09","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"f241e5f7-3168-4bd2-b586-185aad3ae9d9","name":"Glimpse the Sun God","oracle_id":"87cc3a67-b4f0-41f0-9e34-745ef23aa479"}
+{"id":"f2a86d63-3342-4412-9ddc-4d2b02432a9d","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"f3600e4c-fd03-496f-84cf-a9417147a787","name":"Barkchannel Pathway // Tidechannel Pathway","oracle_id":"59d22de5-e310-44d7-89cf-ef3529e40cef"}
+{"id":"f3687c36-c0ae-4dba-9379-b420236bf529","name":"Sword of the Animist","oracle_id":"d79cbc61-6c15-48ea-bbba-3cffb819ccba"}
+{"id":"f39e0a2d-2f96-45c5-9c3c-508ed3dfe9af","name":"Sword of the Animist","oracle_id":"d79cbc61-6c15-48ea-bbba-3cffb819ccba"}
+{"id":"f3a60c53-4ba2-48cf-8b5f-08b80dbb960c","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"f3a98e14-1a13-4d0a-b227-9ba830ce3344","name":"Wandering Archaic // Explore the Vastlands","oracle_id":"6556c4c0-b10d-4208-821b-0c0a49abd188"}
+{"id":"f43f5f02-1b29-4e75-a6af-378dcc88c3df","name":"Convicted Killer // Branded Howler","oracle_id":"c1801b5c-1a87-46d0-83d3-e8dfd94211f4"}
+{"id":"f460bca4-dfe0-4645-8feb-0b715ed3bd0e","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"f48608ef-8526-49cc-94a9-c1efc6580a9b","name":"Soaring Seacliff","oracle_id":"a37544b6-0048-4213-8e40-76ba8a0b6d1b"}
+{"id":"f48f7190-9ee3-477f-8b25-91e8c2916624","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"f4b86816-8f45-4c4c-b6fb-6936c7d9dd68","name":"Jegantha, the Wellspring","oracle_id":"f0587c55-06c1-4930-a62e-668f37464ce9"}
+{"id":"f4cb8ada-49b6-4cc1-ba46-4b90896f7a8b","name":"Everflowing Chalice","oracle_id":"0a79237e-0811-4a8a-bd4d-db3ca91bff22"}
+{"id":"f57cb819-1d76-4cbc-bbcd-45e52bd89e04","name":"The Dragon-Kami Reborn // Dragon-Kami's Egg","oracle_id":"c3a46eb3-38d9-4f47-9b71-26c9ea7ef1ce"}
+{"id":"f588cc2c-f7aa-41ba-a9ed-3d2b0e845ba6","name":"Barkchannel Pathway // Tidechannel Pathway","oracle_id":"59d22de5-e310-44d7-89cf-ef3529e40cef"}
+{"id":"f6151f39-966e-4af6-a20a-d761781abed9","name":"Aether Vial","oracle_id":"fc148e1e-dff0-448e-9f16-625341754356"}
+{"id":"f6a4b54c-a8fa-464e-a3dd-f3f3a08606f5","name":"Trelasarra, Moon Dancer","oracle_id":"cd10ebc9-9f6c-4da2-9a86-263902002ebc"}
+{"id":"f6cd7465-9dd0-473c-ac5e-dd9e2f22f5f6","name":"Esika, God of the Tree // The Prismatic Bridge","oracle_id":"92023a5d-a143-4950-a71b-d736e6b8e959"}
+{"id":"f6e4a170-1075-47e4-abe6-996b161573c1","name":"Araba Mothrider","oracle_id":"d6b54f58-7775-4180-b2e5-1b57da65a409"}
+{"id":"f70d1452-6b61-4c63-841f-4256ac498e9f","name":"Ajani's Pridemate","oracle_id":"95e94dea-5ac0-4d6f-adec-ca147aee861f"}
+{"id":"f73a5cbb-905f-4b99-8d23-9d1b6bd47ee8","name":"Fang, Fearless l'Cie","oracle_id":"04ac8b2c-95e9-40e9-8cc0-af9b075a94c0"}
+{"id":"f78d2de4-517d-46f4-adda-a85140341361","name":"Lutri, the Spellchaser","oracle_id":"158a6225-a246-4fd6-aa57-0df8067b4383"}
+{"id":"f857bbe4-5619-4733-a0c7-69700f2ef4f3","name":"Nissa, Who Shakes the World","oracle_id":"5aa3abf1-d56b-4f42-8c84-7e5a2c15ee0f"}
+{"id":"f873c62a-7efc-40d8-8c0a-55e9a94847b8","name":"Relentless Rats","oracle_id":"104ea189-14cd-420f-afdc-57b0f827ab8e"}
+{"id":"f8e1bd2d-ff66-4e68-9ad0-0be9c134e6f5","name":"Wear // Tear","oracle_id":"9842734c-1eac-4509-a731-4c22017ae586"}
+{"id":"f916e752-af10-4073-af6a-b137c0b4139a","name":"Nissa, Who Shakes the World","oracle_id":"5aa3abf1-d56b-4f42-8c84-7e5a2c15ee0f"}
+{"id":"f953fad3-0cd1-48aa-8ed9-d7d2e293e6e2","name":"Tovolar, Dire Overlord // Tovolar, the Midnight Scourge","oracle_id":"45d49831-548a-4a0e-9a18-9f7397913895"}
+{"id":"f98f4538-5b5b-475d-b98f-49d01dae6f04","name":"Fire // Ice","oracle_id":"ae92942b-919c-4ea9-b693-85fcef765d5a"}
+{"id":"f9a32f17-49c4-4654-a087-1ba474f37377","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"f9c515bb-3d45-4c24-92bb-69c5c6520959","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"f9f102e4-0196-49ab-923e-579a1595b160","name":"Ondu Inversion // Ondu Skyruins","oracle_id":"15fc4e74-300e-4c2d-8ed7-004553b2f7c2"}
+{"id":"fa1ada9a-eacd-42e9-9f6b-fb8b968af859","name":"Sword of the Animist","oracle_id":"d79cbc61-6c15-48ea-bbba-3cffb819ccba"}
+{"id":"fa3ab467-be97-4b84-a73d-b03484d06b97","name":"Linden, the Steadfast Queen","oracle_id":"dbc56f3b-83b3-41c8-a8ae-d3774fe6ee01"}
+{"id":"fa428edc-4d7d-455a-9c9d-9dc71b502e64","name":"Tapping at the Window","oracle_id":"d5b80d04-1650-4b5d-9f9b-091ecd17b6e8"}
+{"id":"fa953715-a6ac-47e7-86d6-8f8f342aa289","name":"Uvilda, Dean of Perfection // Nassari, Dean of Expression","oracle_id":"63c4915f-5ad9-468f-95c5-d44f1b71631e"}
+{"id":"faaf07b2-57b0-4437-a8d7-51ff8894a7db","name":"Hussar Patrol","oracle_id":"bd73581c-c4bd-46cb-8004-75aeafa24288"}
+{"id":"fb1189c9-7842-466e-8238-1e02677d8494","name":"Lutri, the Spellchaser","oracle_id":"158a6225-a246-4fd6-aa57-0df8067b4383"}
+{"id":"fb35c235-7749-4016-917c-dd8b586ac819","name":"Everflowing Chalice","oracle_id":"0a79237e-0811-4a8a-bd4d-db3ca91bff22"}
+{"id":"fb3ebc0c-ae58-46c9-addc-a91d32201a95","name":"Wilson, Refined Grizzly","oracle_id":"d2766fd7-5cf9-4037-9f34-9ae3982c613a"}
+{"id":"fb51b2a8-035c-44e6-92db-2e2385066470","name":"Yennett, Cryptic Sovereign","oracle_id":"4eec6838-3565-407f-8941-ce9421402f0b"}
+{"id":"fbe0da77-7b53-41cc-b6e6-eed5092d38c5","name":"Fae of Wishes // Granted","oracle_id":"c0abbed2-d213-47ef-8d6c-4a21efb9a55f"}
+{"id":"fc234414-78fe-490b-92d5-25feb0507a43","name":"Pegasus Guardian // Rescue the Foal","oracle_id":"e71863a7-0de1-4ab5-95e8-c39e6810d899"}
+{"id":"fcd9da8a-e36f-4ae1-9a5d-b72ad9c27397","name":"Gwenom, Remorseless","oracle_id":"c48cf135-b280-4e9f-a9d9-225104870741"}
+{"id":"fd34a6d0-9368-4cc0-86c1-683354aad7b9","name":"Sword of the Animist","oracle_id":"d79cbc61-6c15-48ea-bbba-3cffb819ccba"}
+{"id":"fe0c708d-771f-4356-8525-932d2690989b","name":"Aetherflux Reservoir","oracle_id":"5f15125e-ae89-471e-b055-226a783bc7c1"}
+{"id":"fe202721-c5be-46de-9fb3-ac18c699e10d","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
+{"id":"fe264b37-ff86-4f53-b8f7-37ebc2ce86de","name":"Foulmire Knight // Profane Insight","oracle_id":"10c0f814-e302-49ff-aded-1b8d8424fd60"}
+{"id":"fe3cc41a-adae-4c9b-b4d3-03f3ca862fed","name":"Axgard Cavalry","oracle_id":"6a92b011-fd01-4b6a-a17c-73ac1967ff98"}
+{"id":"ff0b2ddc-eb21-4518-973c-4841b1f2ef52","name":"Shadowborn Apostle","oracle_id":"595a15f0-77f3-4544-8acc-10630e12cc14"}
+{"id":"ff4b950c-bd01-45e0-bd60-5b55640a50a8","name":"Elvish Skysweeper","oracle_id":"f557697a-4c1b-44f6-a989-4879bbe26eb5"}
+{"id":"ff890d40-710d-4b28-b303-37f4b7adcf42","name":"Sword of the Animist","oracle_id":"d79cbc61-6c15-48ea-bbba-3cffb819ccba"}
+{"id":"ff937493-c13c-48c3-a42f-7b15ee033759","name":"Aether Vial","oracle_id":"fc148e1e-dff0-448e-9f16-625341754356"}
+{"id":"ff984a4c-1818-4f8f-a9d7-fce57e77937d","name":"Bonecrusher Giant // Stomp","oracle_id":"d6d72f5f-8f5d-4180-b514-f22ff5482902"}
+{"id":"ffcf7acb-23e4-4658-a5fd-0ae585602dca","name":"Command Tower","oracle_id":"0895c9b7-ae7d-4bb3-af17-3b75deb50a25"}
+{"id":"fff440c0-7e6a-46c2-9989-f1b5af20fd44","name":"Sol Ring","oracle_id":"6ad8011d-3471-4369-9d68-b264cc027487"}
