@@ -11,6 +11,9 @@ export FIREBASE_AUTH_EMULATOR_HOST="127.0.0.1:9199"
 export STORAGE_EMULATOR_HOST="http://127.0.0.1:4443"
 export CARDS_BUCKET="mtg-local-cards"
 export CARDS_RELOAD_SECONDS="15"
+# Provider keys and LLM overrides live in .env (gitignored). Without
+# keys the API uses the fixture fake for every LLM role.
+if [ -f .env ]; then set -a; . ./.env; set +a; fi
 
 mkdir -p .local/firestore .local/gcs
 # Ports deliberately avoid the Wallabee dev stack on this machine:
