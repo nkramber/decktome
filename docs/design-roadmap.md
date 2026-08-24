@@ -127,8 +127,8 @@ Ids: PR-# code, M-# measurement, I-# integration, D-# decisions (in `decisions.m
 Layout: `proto/` (buf module), `go/` (Go workspace with `cmd/api`, `cmd/worker`, `internal/cards`, `internal/collections`, `internal/rules`, `internal/agent`, `internal/meta`, `internal/llm`), `web/` (pnpm workspace: `apps/web`, `packages/api-client` for generated TypeScript), `docs/`, `.claude/`. Makefile as the single entry point: `proto`, `lint`, `test`, `test-repeat`, `cover`, `dev`, `dev-seed`. Pinned versions: Go, buf, protoc-gen-go, protoc-gen-connect-go, protoc-gen-es, pnpm, Node, golangci-lint. CI: `verify:*` matrix with a fan-in job, path filters, and a proto-diff gate. AGENTS.md with the commands and never-edit rules. Gate: `make dev` starts an empty API and an empty UI.
 > *In plain English:* the empty house with plumbing. One folder for the shared contract, one for Go, one for the web app. One command to start everything. The checks that stop bad changes are wired before there is anything to check.
 
-**PR-0b: Developer machine setup, including Docker (D-10).**
-A `docs/setup.md` procedure: install Docker Desktop, Go, buf, pnpm via corepack, the firebase CLI, Java 17, and gcloud. A `make doctor` target checks each tool and its version.
+**PR-0b: Developer machine setup, including Docker (D-10).** ✅ gate held 2026-08-24: the owner installed Docker 29.7.2, and `make doctor` reports all ok (12 checks). Merge pending.
+A `docs/setup.md` procedure: install Homebrew, Git, Go, Node and pnpm via corepack, the firebase CLI, Java 17, Docker Desktop, and gcloud. A `make doctor` target checks each tool against the pinned version and prints the fix command. buf comes from `go/go.mod`, not from a separate install.
 Docker is used for the Compose file (PR-0c) and for local Cloud Run parity. Gate: `make doctor` passes on the owner's machine.
 > *In plain English:* a checklist to set up a laptop, and a command that tells you which tools are absent. The owner asked for the Docker install to be a tracked step, so it is one.
 
