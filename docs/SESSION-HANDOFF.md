@@ -4,7 +4,7 @@ Read this file first in a fresh session. Then read `CLAUDE.md`, `docs/decisions.
 
 ## Last updated
 
-2026-08-24. Merged: PR-0a (#1), PR-0b (#2), PR-0c (#3), PR-1 (#4). PR-2 built on branch `pr-2`, gate held, commit and merge pending.
+2026-08-24. Merged: PR-0a to PR-2 (#1 to #5). PR-3 built on branch `nate/pr-3`, merge pending.
 
 ## State of the work
 
@@ -23,14 +23,20 @@ Done in session 1:
 
 ## Where we stopped
 
-PR-2 is done on branch `pr-2`. Packages: `internal/scryfall` (bulk client, real User-Agent, F-3), `internal/cards` (parse, derive, index, tags, snapshot store with completion marker), `internal/cardsvc` (CardService handler). The worker downloads the three bulk files on start and every six hours (`-once` mode serves `make dev-seed`). The API loads the newest complete snapshot at start and reloads on a timer (`CARDS_RELOAD_SECONDS`, 15 in dev). `/healthz` reports the snapshot date and age (M-2 seed).
+PR-3 is done on branch `nate/pr-3`. `internal/cards/announcements.go` reads the embedded `announcement_dates.json` (next: 2026-10-12). The worker cadence: hourly, or every 15 minutes while an announcement is not covered by the snapshot. The first covering snapshot logs `legality_lag` hours (M-2). The UI front page shows "Card data as of" from `/healthz`.
 
-The gate held: 200/200 tricky names resolve, and the full local stack serves real lookups and a lifegain search. Two findings were fixed on the way: F-19 (fake-gcs needs `storage.WithJSONReads()`) and F-20 (snapshot completion marker). Test fixtures live in `go/internal/cards/testdata/` (200 cards, 946 printings, 124 tags, built from the 2026-08-24 bulk).
+Maintenance duty: add each newly announced B&R date to `announcement_dates.json`. The 2026-08-10 announcement names 2026-10-12. I-1 automates the watch later.
+
+Known debt: the web app has no component-test setup yet (no jsdom, no Testing Library). The freshness line ships untested beyond typecheck and build. PR-11 brings the real UI test stack.
+
+## Owner directive 2026-08-24 (D-37)
+
+The collection is optional. A user with zero library gets a fully optimized deck from the whole legal pool. A user with a library can turn the library off. The proto needed no change. The roadmap, guardrail 5, the corpus question catalog, and the PR-6/7/8/11/12 entries were updated. PR-3 content is unchanged and still awaits merge.
 
 ## Next steps, in order
 
-1. The owner reviews and merges `pr-2`.
-2. PR-3 (legality freshness fast path) or PR-4 (ManaBox import) is next. PR-4 needs the owner's sample exports (OQ-17, D-30). PR-3 needs nothing.
+1. The owner reviews and merges `nate/pr-3`.
+2. PR-4 (ManaBox import) is next. It needs the owner's sample exports (OQ-17, D-30). Ask for the files at the start.
 3. Collect corrections as dated register entries.
 
 ## Facts that expire
