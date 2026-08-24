@@ -235,7 +235,7 @@ Deciduous mechanics: Scry, Surveil, Mill, Fight, Food, Treasure, Clue, Blood, Ma
 
 ## 9. ManaBox export format
 
-ManaBox exports a CSV. Columns (from the MtgCsvHelper mapping, verified 2026-08-23): `Name, Set code, Set name, Collector number, Foil, Rarity, Quantity, ManaBox ID, Scryfall ID, Purchase price, Misprint, Altered, Condition, Language, Purchase price currency`. A whole-collection export adds the binder or list name. Values: `Foil` is `normal`, `foil`, or `etched`. `Condition` is `mint`, `near_mint`, `excellent`, `good`, `light_played`, `played`, `poor`. `Language` is a code such as `en`, `ja`, `zh_CN`.
+ManaBox exports a CSV. A real whole-collection export (verified 2026-08-24 against the owner's file) has 18 columns: `Binder Name, Binder Type, Name, Set code, Set name, Collector number, Foil, Rarity, Quantity, ManaBox ID, Scryfall ID, Purchase price, Misprint, Altered, Condition, Language, Purchase price currency, Added`. A single-list export can drop the binder columns. Parse by header name, never by position. Values: `Foil` is `normal`, `foil`, or `etched`. `Condition` is `mint`, `near_mint`, `excellent`, `good`, `light_played`, `played`, `poor`. `Language` is a code such as `en`, `ja`, `zh_CN`.
 
 Language: the app supports English only (D-23). Rows with another language code are reported to the user and skipped.
 
