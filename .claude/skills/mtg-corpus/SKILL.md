@@ -29,7 +29,7 @@ Reference files in `references/`:
 | Instant speed | Can be cast at any time you have priority. Instants, and cards with flash. |
 | Sorcery speed | Only on your main phase with an empty stack. |
 | Library | Your deck during the game. Graveyard: discard pile. Exile: removed from the game. |
-| Life total | 20 in most formats. 40 in Commander. 30 in Brawl multiplayer. |
+| Life total | 20 in most formats. 40 in Commander. 30 in paper Brawl multiplayer, 25 in 1v1 and on Arena. |
 | Mulligan | Redraw your opening hand. The London mulligan: draw seven, then put N cards on the bottom. |
 | Turn structure | Untap, upkeep, draw, main 1, combat, main 2, end step. |
 | Stack | Spells and abilities resolve last-in first-out. |
@@ -47,9 +47,9 @@ The app must know the format before it builds. A "60-card" request has many poss
 
 ### 2.1 Constructed formats (60-card style)
 
-| Format | Deck size | Copies | Card pool (2026-08-23) | Sideboard |
+| Format | Deck size | Copies | Card pool (2026-08-24) | Sideboard |
 |---|---|---|---|---|
-| Standard | min 60 | max 4 per name (basic lands unlimited) | Sets from Foundations (FDN, 2024-11-15) to The Hobbit (2026-08-14). 12 sets. No rotation in 2026. Next rotation: first set of 2027 (Bloomburrow and Duskmourn leave). | 15 |
+| Standard | min 60 | max 4 per name (basic lands unlimited) | Sets from Wilds of Eldraine (WOE, 2023-09-08) to The Hobbit (HOB, 2026-08-14). 18 sets. No rotation in 2026. Next rotation: first set of 2027. Six sets leave then: WOE, LCI, MKM, OTJ, BLB, DSK. Verified 2026-08-24 on Scryfall (`set:woe legal:standard`). | 15 |
 | Pioneer | min 60 | max 4 | Return to Ravnica (2012-10) forward. | 15 |
 | Modern | min 60 | max 4 | Eighth Edition (2003-07) and Mirrodin forward. Modern Horizons sets included. | 15 |
 | Legacy | min 60 | max 4 | All sets. Banned list. | 15 |
@@ -65,42 +65,47 @@ Legal Oracle-card counts on 2026-08-23: commander 31,830 · vintage 31,690 · le
 
 - Exactly 100 cards, the commander included.
 - Singleton: no two cards with the same English name, except basic lands and cards that say otherwise (for example Relentless Rats).
-- The commander is a legendary creature, or a card that says it can be your commander. Partner, Partner with, Friends forever, Background, and Doctor's companion allow two commanders.
+- The commander is a legendary creature card, a legendary Vehicle card, or a legendary Spacecraft card with a power box (CR 903.3, 2026-08-07). A card that says it can be your commander also qualifies. Only the front face of a double-faced card counts.
+- Two commanders: Partner, Partner with, Partner—[text] (Friends forever, Father & son, Survivors, Character select: equal text only), Choose a Background plus a Background, and Doctor's companion with a Time Lord Doctor. A Background alone can not be a commander.
 - Every card must fit the commander's color identity.
 - 40 life. Four players is the normal table. 21 combat damage from one commander kills a player.
 - The commander goes to the command zone when it would leave. It costs 2 more each time you cast it from there (the "commander tax").
 - Rules and ban list: the Commander Format Panel (from 2024-09, owned by Wizards of the Coast with a community panel). Site: mtgcommander.net.
 - Commander is a social format. Power level matters more than in any other format. Always ask about the bracket.
 
-### 2.3 Commander brackets (official, beta from 2025-02, updated 2026-02-09)
+### 2.3 Commander brackets (official, beta from 2025-02-11, revised 2025-10-21, list update 2026-02-09)
+
+Source: the Wizards article of 2025-10-21 and its infographic. The 2025-10-21 revision removed every tutor limit and the tie between Bracket 2 and precons.
 
 | Bracket | Name | Expected game | Game Changers | Other limits |
 |---|---|---|---|---|
-| 1 | Exhibition | 9+ turns | none | No infinite combos, no mass land denial, no extra-turn chains. |
-| 2 | Core | 8+ turns | none | No infinite combos, no efficient tutors. Precon level. |
-| 3 | Upgraded | 6+ turns | max 3 | No mass land denial. Late-game combos only. |
-| 4 | Optimized | 4+ turns | unlimited | Mass land denial, stax, two-card combos allowed. |
+| 1 | Exhibition | 9+ turns | none (thematic exceptions) | No mass land denial. No extra turns. No two-card infinite combos. |
+| 2 | Core | 8+ turns | none | No mass land denial. No chained extra turns. No two-card infinite combos. |
+| 3 | Upgraded | 6+ turns | max 3 | No mass land denial. No chained extra turns before turn 6. No early two-card combos. |
+| 4 | Optimized | 4+ turns | unlimited | Only the ban list applies. |
 | 5 | cEDH | any | unlimited | Only the ban list applies. Plays the best strategy, not a theme. |
 
-Game Changers: 53 cards on 2026-08-23. Scryfall flags them with `game_changer: true`. Examples: Rhystic Study, Cyclonic Rift, Smothering Tithe, Thassa's Oracle, Demonic Tutor, Vampiric Tutor, Ancient Tomb, The One Ring, Gaea's Cradle, Force of Will. Note: Mana Crypt is banned, so it is not a Game Changer.
+Whether the commanders count toward the Game Changer limit is not in the Wizards text. The engine counts them (unverified, 2026-08-24).
+
+Game Changers: 53 cards on 2026-08-24 (Scryfall `is:gamechanger`). The list changed on 2025-04-22, 2025-10-21, and 2026-02-09. Scryfall flags them with `game_changer: true`. Examples: Rhystic Study, Cyclonic Rift, Smothering Tithe, Thassa's Oracle, Demonic Tutor, Vampiric Tutor, Ancient Tomb, The One Ring, Gaea's Cradle, Force of Will. Note: Mana Crypt is banned, so it is not a Game Changer.
 
 ### 2.4 Other multiplayer or digital formats
 
-Brawl (Arena, 100-card singleton with a commander, Historic pool), Standard Brawl (60-card), Oathbreaker (planeswalker commander, 60 cards), Pauper Commander (common creature commander), Duel Commander (1v1, 20 life). Support these later.
+Brawl (Arena, 100-card singleton with a commander, the whole Arena pool with its own ban list), Standard Brawl (60-card), Oathbreaker (planeswalker commander, 60 cards), Pauper Commander (common creature commander), Duel Commander (1v1, 20 life). Support these later.
 
 ### 2.5 "Anything goes"
 
 Not a defined format. The owner's own meaning: any card, no ban list. Other users mean Vintage, or "Modern but with proxies", or "kitchen table". **Always ask what the user means.** Then record the answer as the session's house rules.
 
-## 3. Ban list snapshot (2026-08-23)
+## 3. Ban list snapshot (2026-08-24)
 
 Source of truth at run time: Scryfall `legalities` (updated within a day of each announcement). Never store a ban list in a prompt. Look it up. The facts below are for orientation only.
 
 - 2026-08-10 announcement: Standard banned Badgermole Cub, Stormchaser's Talent, Gran-Gran. Legacy banned The Fantasticar. Vintage restricted The Fantasticar. Next announcement: **2026-10-12**.
-- 2026-06-29: Legacy banned Candelabra of Tawnos.
-- 2026-05-18: Pioneer banned Cori-Steel Cutter. Alchemy banned Sewer-veillance Cam.
+- 2026-06-29: Legacy banned Candelabra of Tawnos. Pauper banned Seeker of Skybreak. Brawl banned Force of Will, Subtlety, Wash Away, Ugin's Labyrinth, Time Warp, Temporal Manipulation.
+- 2026-05-18: Pioneer banned Cori-Steel Cutter. Modern banned Phlage, Titan of Fire's Fury and Lotus Field, and unbanned Violent Outburst and Umezawa's Jitte. Legacy banned Undercity Informer. Pauper unbanned Bonder's Ornament. Alchemy banned Sewer-veillance Cam.
 - 2026-03-23: Historic banned Food Chain.
-- Commander 2026-02-09: Biorhythm unbanned (added to Game Changers). Lutri, the Spellchaser unbanned but "banned as a companion" (a new category). Still banned: Sundering Titan, Iona, Griselbrand, Mana Crypt, Jeweled Lotus, Dockside Extortionist, Nadu, and about 35 more.
+- Commander 2026-02-09: Biorhythm unbanned (added to Game Changers). Lutri, the Spellchaser unbanned but "banned as a companion" (a new category). Still banned: Sundering Titan, Iona, Griselbrand, Mana Crypt, Jeweled Lotus, Dockside Extortionist, Nadu, and 38 more named cards plus three categories (ante, Conspiracy, offensive cards).
 - Announcement cadence: Wizards posts on a published schedule, about every 6 to 8 weeks. Commander updates come 1 to 3 times per year.
 
 ## 4. Color names
@@ -154,7 +159,7 @@ Mono-colored: mono-white, mono-blue, and so on. Colorless: no colored mana symbo
 | Burn | Direct damage to the face. | Red. |
 | Hatebears | Small creatures with taxing effects. | |
 
-The Scryfall Oracle tags file maps most themes to real card lists. Example: tag `lifegain` has 881 direct cards and 3,374 with children (2026-08-23). Use the tag hierarchy to expand a theme word into candidate cards.
+The Scryfall Oracle tags file maps most themes to real card lists. Example: tag `lifegain` has 881 direct cards and 3,374 with children (bulk file of 2026-08-23, method not recorded, unverified). A live `otag:lifegain` search returns 2,596 cards (2026-08-24). Use the tag hierarchy to expand a theme word into candidate cards.
 
 ## 6. Card roles in a deck
 
@@ -173,7 +178,7 @@ Every deck needs cards in these roles. The ratios differ by format and archetype
 
 Mana curve: most decks want the most cards at MV 2 and 3, fewer at 1 and 4, few at 5+. Commander decks average MV 2.8 to 3.5. Aggro 60-card decks average under 2.5.
 
-Color sources: for a two-color 60-card deck, aim for at least 12 sources of each main color. Use the Frank Karsten tables for exact counts. Commander with three or more colors needs many dual lands and fixing.
+Color sources: for a two-color 60-card deck, aim for 12 to 14 sources of each main color. Use the Frank Karsten tables for exact counts. Commander with three or more colors needs many dual lands and fixing.
 
 Sideboard (60-card formats): 15 cards. Answer the expected metagame. Not used in Commander.
 
@@ -200,7 +205,7 @@ Sideboard (60-card formats): 15 cards. Answer the expected metagame. Not used in
 | Value | Card advantage from one card over time. |
 | Tempo | Time advantage. |
 | Wincon | The card or combination that wins. |
-| Precon | A preconstructed deck sold by Wizards. Bracket 2 by design. |
+| Precon | A preconstructed deck sold by Wizards. Most fit Bracket 2, but the bracket is no longer tied to precons (2025-10-21). |
 | Pod | A Commander table of players. |
 | Rule 0 | The pre-game talk about power and house rules in Commander. |
 | Pubstomp | Bring a strong deck to a weak table. Avoid it. |
@@ -235,7 +240,9 @@ Deciduous mechanics: Scry, Surveil, Mill, Fight, Food, Treasure, Clue, Blood, Ma
 
 ## 9. ManaBox export format
 
-ManaBox exports a CSV. A real whole-collection export (verified 2026-08-24 against the owner's file) has 18 columns: `Binder Name, Binder Type, Name, Set code, Set name, Collector number, Foil, Rarity, Quantity, ManaBox ID, Scryfall ID, Purchase price, Misprint, Altered, Condition, Language, Purchase price currency, Added`. A single-list export can drop the binder columns. Parse by header name, never by position. Values: `Foil` is `normal`, `foil`, or `etched`. `Condition` is `mint`, `near_mint`, `excellent`, `good`, `light_played`, `played`, `poor`. `Language` is a code such as `en`, `ja`, `zh_CN`.
+ManaBox exports a CSV. A real whole-collection export (verified 2026-08-24 against the owner's file) has 18 columns: `Binder Name, Binder Type, Name, Set code, Set name, Collector number, Foil, Rarity, Quantity, ManaBox ID, Scryfall ID, Purchase price, Misprint, Altered, Condition, Language, Purchase price currency, Added`. A single-list export can drop the binder columns. Parse by header name, never by position.
+
+Values: `Foil` is `normal`, `foil`, or `etched`. `Condition` is `mint`, `near_mint`, `excellent`, `good`, `light_played`, `played`, `poor`. `Language` is a code such as `en`, `ja`, `zh_CN`.
 
 Language: the app supports English only (D-23). Rows with another language code are reported to the user and skipped.
 
@@ -246,9 +253,9 @@ ManaBox also exports decks as text in the MTG Arena format: `4 Lightning Bolt (S
 ## 10. Scryfall facts for the app
 
 - API base: `https://api.scryfall.com`. Requests need a real `User-Agent` and an `Accept` header.
-- Rate limits: `/cards/search`, `/cards/named`, `/cards/collection`: 2 per second. Other endpoints: 10 per second. HTTP 429 blocks you for 30 seconds. Repeated overload gets a ban.
-- Bulk data (daily, no rate limit on `*.scryfall.io`): `oracle_cards` (24.5 MB gz, one card per Oracle ID, 38,626 rows), `default_cards` (77.5 MB gz, every printing in English), `all_cards` (392 MB gz), `rulings` (5.4 MB gz), `oracle_tags` (5.9 MB gz, 4,522 tags), `art_tags`, `unique_artwork`.
-- Update cadence: prices once per day. Gameplay data less often. Download bulk once per day.
+- Rate limits (2026-08-24): `/cards/search`, `/cards/named`, `/cards/random`, `/cards/collection`: 2 per second. `/cards/manifest`: 10 per minute. Other endpoints: 10 per second. HTTP 429 blocks you for 30 seconds. Repeated overload gets a ban.
+- Bulk data (collected every 12 to 24 hours, no rate limit on `*.scryfall.io`): `oracle_cards` (24.5 MB gz, one card per Oracle ID, 38,626 rows), `default_cards` (77.5 MB gz, every printing in English), `all_cards` (392 MB gz), `rulings` (5.4 MB gz), `oracle_tags` (5.9 MB gz, 4,522 tags), `art_tags`, `unique_artwork`.
+- Update cadence: prices once per day. Gameplay data less often. Download bulk once per day. Bulk prices are stale after 24 hours.
 - Images: `image_uris` keys `small, normal, large, png, art_crop, border_crop`. Double-faced cards have `card_faces[].image_uris`. Show the artist and copyright. Do not crop, skew, or watermark.
 - Data license: Wizards Fan Content Policy through Scryfall. No paywall on card data. No repackaging without added value. Do not imply Scryfall endorsement.
 - Prices: `prices.usd`, `usd_foil`, `usd_etched` are TCGplayer near-mint market estimates, once per day. No condition tiers. The app shows a 7-day rolling average with outliers removed, labeled "NM market estimate" (D-17).
@@ -261,15 +268,15 @@ The agent asks only what the prompt did not answer. Never ask more than three qu
 | Slot | Ask when the slot is empty | Example question |
 |---|---|---|
 | Format | Always, unless stated. | "Which format: Commander, Standard, Modern, or something else?" |
-| Commander | Format is Commander and no commander given. | "Do you have a commander in mind, or should I suggest three from your collection?" |
+| Commander | Format is Commander and no commander given. | "Do you have a commander in mind, or should I suggest three from your collection (or from the whole pool)?" |
 | Power level | Always for Commander (bracket). For 60-card, unless "casual" or "FNM" is clear. | "Which bracket does your table play? 2 is precon level, 3 is upgraded, 4 is high power." |
-| Colors | Theme does not imply colors. | "Any color preference? Lifegain is strongest in white and black." |
+| Colors | The user gave no preference and the theme spans many colors. The app can infer candidates from tags and the collection. | "Any color preference? Lifegain is strongest in white and black." |
 | Theme or plan | Prompt gives only a format. | "What should the deck do: a creature type, a mechanic, or a play style?" |
 | Card pool | A collection is attached (D-37). | "Build from your library first, only your library, or ignore it for a fully optimized deck?" Also ask when the collection is too thin for the plan. |
 | Budget | User mentions cost, or a buy list is needed. | "Is there a budget for cards to buy?" |
 | House rules | "Anything goes", "casual", "kitchen table". | "What does anything-goes mean at your table: any card with no ban list, or Vintage rules?" |
 | Meta | Power is competitive. | "Is this for a specific event or local meta? I can tune the sideboard to it." |
-| Variance | User asks for "another version". | "Same plan with different cards, or a different plan in the same colors?" |
+| Variance | User asks for "another version", or the theme has two common plans on the first build. | "Same plan with different cards, or a different plan in the same colors?" |
 | Locked cards | User names cards. | "Should I keep all of those, or can I cut some if they do not fit?" |
 
 Question source rule (D-25): use a catalog question when one fits the empty slot. Compute a gap score: how well the best catalog question matches the slot and the user's words. When the score is below the threshold, invent a question and log it with the score. Invented questions that repeat become catalog candidates.
@@ -279,16 +286,21 @@ Default answers when the user says "you decide": format Commander (the most play
 ## 12. Validation checklist (deterministic, run after every build)
 
 1. Deck size matches the format.
-2. Copy limits respected (4, singleton, restricted 1).
+2. Copy limits respected (4, singleton by name, restricted 1, per-card overrides such as Seven Dwarves).
 3. Every card legal in the format on the query date, per Scryfall legalities.
-4. Commander: every card inside the color identity. Commander eligible.
+4. Commander: every card inside the color identity. Commander eligible. A two-commander pair is a valid pairing.
 5. Commander: Game Changer count within the bracket. Bracket 1-2: zero.
 6. Every card name exists in the card database. No invented names.
-7. Ownership (owned modes only, D-37): every card in the collection with enough copies, or listed as an acquisition. In any-card mode this check is off, and ownership marks are information.
-8. Land count and color sources within the guide range for the archetype.
-9. Mana curve within the guide range.
-10. Each role (ramp, draw, removal, wincon) has at least the minimum count.
-11. The deck has a stated plan, and every card serves it or a role.
+7. Ownership (owned modes only, D-37): every card in the collection with enough copies, or listed as an acquisition. Basic lands are exempt. Owned-first gives a warning, owned-only a block. In any-card mode this check is off, and ownership marks are information.
+8. Sideboard size (15 max in 60-card formats, none in Commander). House format (D-3) skips legality.
+9. Companion: the card has the companion keyword and is not banned as a companion. In 60-card formats it sits in the sideboard. In Commander it counts as a 101st card.
+10. Land count within the guide range for the archetype (engine advisory).
+
+Model-side checks (PR-8, not the engine):
+- Color sources within the guide range.
+- Mana curve within the guide range.
+- Each role at its minimum count.
+- A stated plan that every card serves.
 
 ## 13. Sources
 
@@ -297,6 +309,9 @@ Default answers when the user says "you decide": format Commander (the most play
 - Commander B&R 2026-02-09: https://magic.wizards.com/en/news/announcements/commander-banned-and-restricted-february-9-2026
 - Commander rules: https://mtgcommander.net/index.php/rules/
 - Game Changers list: https://playgroup.gg/commander/game-changers (2026-08-24 update)
+- Commander brackets revision: https://magic.wizards.com/en/news/announcements/commander-brackets-beta-update-october-21-2025
+- Banned and Restricted 2026-05-18 and 2026-06-29: https://magic.wizards.com/en/news/announcements/banned-and-restricted-may-18-2026 and .../banned-and-restricted-june-29-2026
+- Comprehensive Rules 2026-08-07: https://media.wizards.com/2026/downloads/MagicCompRules%2020260819.txt
 - Standard sets: https://draftsim.com/mtg-standard-rotation/ (2026-08)
 - ManaBox import/export: https://www.manabox.app/guides/collection/import-export/
 - ManaBox CSV columns: https://github.com/StepKie/MtgCsvHelper (appsettings.json)

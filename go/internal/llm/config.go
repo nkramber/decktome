@@ -30,13 +30,30 @@ type Config struct {
 	VerifiedAt string            `json:"verified_at"`
 	Note       string            `json:"note"`
 	Roles      map[Role]RoleSpec `json:"roles"`
+	// RequireKeys is true when every role must run on a real provider.
+	// Validate then refuses the fake provider. NewFromEnv sets it from
+	// LLM_REQUIRE_KEYS (D-3).
+	RequireKeys bool `json:"-"`
+}
+
+// Clone returns a deep copy. Changes to the copy do not reach c.
+func (c *Config) Clone() *Config {
+	cp := *c
+	cp.Roles = make(map[Role]RoleSpec, len(c.Roles))
+	for r, s := range c.Roles {
+		cp.Roles[r] = s
+	}
+	return &cp
 }
 
 // Price is USD per one million tokens for one model.
 type Price struct {
 	Input       float64 `json:"input"`
 	CachedInput float64 `json:"cached_input"`
-	Output      float64 `json:"output"`
+	// CacheWrite is the price of one cache-write token. Anthropic charges
+	// 1.25 x input. OpenAI charges nothing extra, so its rows hold 0.
+	CacheWrite float64 `json:"cache_write"`
+	Output     float64 `json:"output"`
 }
 
 // PriceTable is the dated price list (M-1).
@@ -71,7 +88,8 @@ func LoadPrices() (*PriceTable, error) {
 }
 
 // Validate checks that every role is set and that the judge does not share
-// the generator's provider (D-22).
+// the generator's provider (D-22). With RequireKeys, no role may use the
+// fake provider (D-3).
 func (c *Config) Validate() error {
 	if c.VerifiedAt == "" {
 		return fmt.Errorf("llm: config has no verified_at")
@@ -87,6 +105,9 @@ func (c *Config) Validate() error {
 		if spec.MaxOutputTokens <= 0 {
 			return fmt.Errorf("llm: role %q needs max_output_tokens > 0", r)
 		}
+		if c.RequireKeys && spec.Provider == FakeName {
+			return fmt.Errorf("llm: role %q uses provider %q but %s is not 0", r, FakeName, EnvRequireKeys)
+		}
 	}
 	for r := range c.Roles {
 		if !knownRole(r) {
@@ -94,7 +115,8 @@ func (c *Config) Validate() error {
 		}
 	}
 	gen, judge := c.Roles[RoleGenerate], c.Roles[RoleJudge]
-	if gen.Provider == judge.Provider && gen.Provider != "fake" {
+	// The fake exemption only holds when keys are not required.
+	if gen.Provider == judge.Provider && (gen.Provider != FakeName || c.RequireKeys) {
 		return fmt.Errorf("llm: judge provider %q equals generate provider (D-22)", judge.Provider)
 	}
 	return nil
@@ -106,19 +128,23 @@ func (c *Config) Validate() error {
 func (c *Config) ApplyEnv(getenv func(string) string) error {
 	for _, r := range Roles {
 		spec := c.Roles[r]
-		key := "LLM_" + strings.ToUpper(string(r)) + "_"
-		if v := getenv(key + "PROVIDER"); v != "" {
+		if v := getenv(envKey(r, "PROVIDER")); v != "" {
 			spec.Provider = v
 		}
-		if v := getenv(key + "MODEL"); v != "" {
+		if v := getenv(envKey(r, "MODEL")); v != "" {
 			spec.Model = v
 		}
-		if v := getenv(key + "EFFORT"); v != "" {
+		if v := getenv(envKey(r, "EFFORT")); v != "" {
 			spec.Effort = v
 		}
 		c.Roles[r] = spec
 	}
 	return c.Validate()
+}
+
+// envKey builds the override variable name for one role field.
+func envKey(r Role, field string) string {
+	return "LLM_" + strings.ToUpper(string(r)) + "_" + field
 }
 
 // Providers lists the distinct provider names the config needs.
@@ -145,16 +171,20 @@ func knownRole(r Role) bool {
 }
 
 // Cost prices one usage report in USD. ok is false when the model has no
-// price row: the caller reports null, not zero (M-1).
+// price row: the caller reports null, not zero (M-1). Fresh input is the
+// input total minus cache reads and cache writes.
 func (t *PriceTable) Cost(model string, u Usage) (usd float64, ok bool) {
 	p, ok := t.Models[model]
 	if !ok {
 		return 0, false
 	}
-	fresh := u.InputTokens - u.CachedInputTokens
+	fresh := u.InputTokens - u.CachedInputTokens - u.CacheWriteTokens
 	if fresh < 0 {
 		fresh = 0
 	}
-	usd = (float64(fresh)*p.Input + float64(u.CachedInputTokens)*p.CachedInput + float64(u.OutputTokens)*p.Output) / 1e6
+	usd = (float64(fresh)*p.Input +
+		float64(u.CachedInputTokens)*p.CachedInput +
+		float64(u.CacheWriteTokens)*p.CacheWrite +
+		float64(u.OutputTokens)*p.Output) / 1e6
 	return usd, true
 }

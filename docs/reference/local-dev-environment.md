@@ -1,6 +1,6 @@
 # Reference: local test environment, including a local Firestore
 
-Status: research note. Verified 2026-08-23. Answers the owner's question: "Investigate how we can handle a local Firestore database. Is that possible?"
+Status: research note, frozen as history (D-42). Verified 2026-08-23. The port numbers in the recipe below are superseded by D-36 (Firestore 8281, UI 4100, API 8090). Answers the owner's question: "Investigate how we can handle a local Firestore database. Is that possible?"
 
 ## Short answer
 

@@ -179,8 +179,15 @@ type Deck struct {
 	// companion_oracle_id names the companion, when the deck has one.
 	// The companion sits in the sideboard and must pass its own check (F-18).
 	CompanionOracleId string `protobuf:"bytes,16,opt,name=companion_oracle_id,json=companionOracleId,proto3" json:"companion_oracle_id,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// upgrades lists unowned cards that improve the deck, with prices (D-2,
+	// roadmap PR-6). Empty in owned-only mode. In any-card mode the buy list
+	// is the unowned part of cards instead (D-37).
+	Upgrades []*DeckCard `protobuf:"bytes,17,rep,name=upgrades,proto3" json:"upgrades,omitempty"`
+	// buy_cost_usd sums price_usd over the cards the user does not own.
+	// Zero when every card is owned or no price is known.
+	BuyCostUsd    float64 `protobuf:"fixed64,18,opt,name=buy_cost_usd,json=buyCostUsd,proto3" json:"buy_cost_usd,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Deck) Reset() {
@@ -325,6 +332,20 @@ func (x *Deck) GetCompanionOracleId() string {
 	return ""
 }
 
+func (x *Deck) GetUpgrades() []*DeckCard {
+	if x != nil {
+		return x.Upgrades
+	}
+	return nil
+}
+
+func (x *Deck) GetBuyCostUsd() float64 {
+	if x != nil {
+		return x.BuyCostUsd
+	}
+	return 0
+}
+
 // DeckCard is one card choice with its reason.
 type DeckCard struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
@@ -337,7 +358,10 @@ type DeckCard struct {
 	// owned says the collection covers the count (D-2).
 	Owned bool `protobuf:"varint,6,opt,name=owned,proto3" json:"owned,omitempty"`
 	// owned_count is how many copies the collection has.
-	OwnedCount    int32 `protobuf:"varint,7,opt,name=owned_count,json=ownedCount,proto3" json:"owned_count,omitempty"`
+	OwnedCount int32 `protobuf:"varint,7,opt,name=owned_count,json=ownedCount,proto3" json:"owned_count,omitempty"`
+	// price_usd is the card's display price at build time (D-17). Zero means
+	// no price.
+	PriceUsd      float64 `protobuf:"fixed64,8,opt,name=price_usd,json=priceUsd,proto3" json:"price_usd,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -421,12 +445,26 @@ func (x *DeckCard) GetOwnedCount() int32 {
 	return 0
 }
 
+func (x *DeckCard) GetPriceUsd() float64 {
+	if x != nil {
+		return x.PriceUsd
+	}
+	return 0
+}
+
 // ValidationResult is the rules-engine verdict (guardrail 1, PR-5).
 type ValidationResult struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
 	Findings []*Finding             `protobuf:"bytes,1,rep,name=findings,proto3" json:"findings,omitempty"`
 	// passed means no finding has severity BLOCK.
-	Passed        bool `protobuf:"varint,2,opt,name=passed,proto3" json:"passed,omitempty"`
+	Passed bool `protobuf:"varint,2,opt,name=passed,proto3" json:"passed,omitempty"`
+	// legality_as_of is the card-snapshot date the engine checked against,
+	// ISO 8601. Empty when the engine ran without a snapshot.
+	LegalityAsOf string `protobuf:"bytes,3,opt,name=legality_as_of,json=legalityAsOf,proto3" json:"legality_as_of,omitempty"`
+	// pool_rule is the ownership mode the engine applied (D-37).
+	PoolRule PoolRule `protobuf:"varint,4,opt,name=pool_rule,json=poolRule,proto3,enum=mtg.v1.PoolRule" json:"pool_rule,omitempty"`
+	// format is the format the engine applied.
+	Format        FormatId `protobuf:"varint,5,opt,name=format,proto3,enum=mtg.v1.FormatId" json:"format,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -473,6 +511,27 @@ func (x *ValidationResult) GetPassed() bool {
 		return x.Passed
 	}
 	return false
+}
+
+func (x *ValidationResult) GetLegalityAsOf() string {
+	if x != nil {
+		return x.LegalityAsOf
+	}
+	return ""
+}
+
+func (x *ValidationResult) GetPoolRule() PoolRule {
+	if x != nil {
+		return x.PoolRule
+	}
+	return PoolRule_POOL_RULE_UNSPECIFIED
+}
+
+func (x *ValidationResult) GetFormat() FormatId {
+	if x != nil {
+		return x.Format
+	}
+	return FormatId_FORMAT_ID_UNSPECIFIED
 }
 
 // Finding is one problem the rules engine found.
@@ -550,7 +609,7 @@ var File_mtg_v1_deck_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\n" +
-	"\x11mtg/v1/deck.proto\x12\x06mtg.v1\x1a\x13mtg/v1/format.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xde\x04\n" +
+	"\x11mtg/v1/deck.proto\x12\x06mtg.v1\x1a\x13mtg/v1/format.proto\x1a\x14mtg/v1/session.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xae\x05\n" +
 	"\x04Deck\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12&\n" +
@@ -572,7 +631,10 @@ const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\x05stale\x18\r \x01(\bR\x05stale\x12(\n" +
 	"\x10stale_oracle_ids\x18\x0e \x03(\tR\x0estaleOracleIds\x12.\n" +
 	"\tsideboard\x18\x0f \x03(\v2\x10.mtg.v1.DeckCardR\tsideboard\x12.\n" +
-	"\x13companion_oracle_id\x18\x10 \x01(\tR\x11companionOracleId\"\xc6\x01\n" +
+	"\x13companion_oracle_id\x18\x10 \x01(\tR\x11companionOracleId\x12,\n" +
+	"\bupgrades\x18\x11 \x03(\v2\x10.mtg.v1.DeckCardR\bupgrades\x12 \n" +
+	"\fbuy_cost_usd\x18\x12 \x01(\x01R\n" +
+	"buyCostUsd\"\xe3\x01\n" +
 	"\bDeckCard\x12\x1b\n" +
 	"\toracle_id\x18\x01 \x01(\tR\boracleId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
@@ -581,10 +643,14 @@ const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\x06reason\x18\x05 \x01(\tR\x06reason\x12\x14\n" +
 	"\x05owned\x18\x06 \x01(\bR\x05owned\x12\x1f\n" +
 	"\vowned_count\x18\a \x01(\x05R\n" +
-	"ownedCount\"W\n" +
+	"ownedCount\x12\x1b\n" +
+	"\tprice_usd\x18\b \x01(\x01R\bpriceUsd\"\xd6\x01\n" +
 	"\x10ValidationResult\x12+\n" +
 	"\bfindings\x18\x01 \x03(\v2\x0f.mtg.v1.FindingR\bfindings\x12\x16\n" +
-	"\x06passed\x18\x02 \x01(\bR\x06passed\"\x82\x01\n" +
+	"\x06passed\x18\x02 \x01(\bR\x06passed\x12$\n" +
+	"\x0elegality_as_of\x18\x03 \x01(\tR\flegalityAsOf\x12-\n" +
+	"\tpool_rule\x18\x04 \x01(\x0e2\x10.mtg.v1.PoolRuleR\bpoolRule\x12(\n" +
+	"\x06format\x18\x05 \x01(\x0e2\x10.mtg.v1.FormatIdR\x06format\"\x82\x01\n" +
 	"\aFinding\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12,\n" +
 	"\bseverity\x18\x02 \x01(\x0e2\x10.mtg.v1.SeverityR\bseverity\x12\x18\n" +
@@ -633,22 +699,27 @@ var file_mtg_v1_deck_proto_goTypes = []any{
 	(*Format)(nil),                // 6: mtg.v1.Format
 	(*PowerLevel)(nil),            // 7: mtg.v1.PowerLevel
 	(*timestamppb.Timestamp)(nil), // 8: google.protobuf.Timestamp
+	(PoolRule)(0),                 // 9: mtg.v1.PoolRule
+	(FormatId)(0),                 // 10: mtg.v1.FormatId
 }
 var file_mtg_v1_deck_proto_depIdxs = []int32{
-	6, // 0: mtg.v1.Deck.format:type_name -> mtg.v1.Format
-	7, // 1: mtg.v1.Deck.power:type_name -> mtg.v1.PowerLevel
-	3, // 2: mtg.v1.Deck.cards:type_name -> mtg.v1.DeckCard
-	4, // 3: mtg.v1.Deck.validation:type_name -> mtg.v1.ValidationResult
-	8, // 4: mtg.v1.Deck.created_at:type_name -> google.protobuf.Timestamp
-	3, // 5: mtg.v1.Deck.sideboard:type_name -> mtg.v1.DeckCard
-	0, // 6: mtg.v1.DeckCard.role:type_name -> mtg.v1.CardRole
-	5, // 7: mtg.v1.ValidationResult.findings:type_name -> mtg.v1.Finding
-	1, // 8: mtg.v1.Finding.severity:type_name -> mtg.v1.Severity
-	9, // [9:9] is the sub-list for method output_type
-	9, // [9:9] is the sub-list for method input_type
-	9, // [9:9] is the sub-list for extension type_name
-	9, // [9:9] is the sub-list for extension extendee
-	0, // [0:9] is the sub-list for field type_name
+	6,  // 0: mtg.v1.Deck.format:type_name -> mtg.v1.Format
+	7,  // 1: mtg.v1.Deck.power:type_name -> mtg.v1.PowerLevel
+	3,  // 2: mtg.v1.Deck.cards:type_name -> mtg.v1.DeckCard
+	4,  // 3: mtg.v1.Deck.validation:type_name -> mtg.v1.ValidationResult
+	8,  // 4: mtg.v1.Deck.created_at:type_name -> google.protobuf.Timestamp
+	3,  // 5: mtg.v1.Deck.sideboard:type_name -> mtg.v1.DeckCard
+	3,  // 6: mtg.v1.Deck.upgrades:type_name -> mtg.v1.DeckCard
+	0,  // 7: mtg.v1.DeckCard.role:type_name -> mtg.v1.CardRole
+	5,  // 8: mtg.v1.ValidationResult.findings:type_name -> mtg.v1.Finding
+	9,  // 9: mtg.v1.ValidationResult.pool_rule:type_name -> mtg.v1.PoolRule
+	10, // 10: mtg.v1.ValidationResult.format:type_name -> mtg.v1.FormatId
+	1,  // 11: mtg.v1.Finding.severity:type_name -> mtg.v1.Severity
+	12, // [12:12] is the sub-list for method output_type
+	12, // [12:12] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_mtg_v1_deck_proto_init() }
@@ -657,6 +728,7 @@ func file_mtg_v1_deck_proto_init() {
 		return
 	}
 	file_mtg_v1_format_proto_init()
+	file_mtg_v1_session_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

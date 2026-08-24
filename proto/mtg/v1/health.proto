@@ -4,7 +4,7 @@ package mtg.v1;
 
 option go_package = "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1";
 
-// HealthService proves the proto pipeline end to end. PR-1 adds the real contract.
+// HealthService reports service health and the card-snapshot age.
 service HealthService {
   rpc Check(CheckRequest) returns (CheckResponse) {}
 }
@@ -16,4 +16,8 @@ message CheckResponse {
   string status = 1;
   // version is the build version, or "dev" for a local build.
   string version = 2;
+  // card_snapshot is the loaded snapshot date, RFC 3339, or "none".
+  string card_snapshot = 3;
+  // card_snapshot_age_hours is -1 when no snapshot is loaded.
+  double card_snapshot_age_hours = 4;
 }

@@ -5,11 +5,13 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"time"
 
 	"cloud.google.com/go/firestore"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 )
@@ -17,10 +19,23 @@ import (
 // Repo stores collections in Firestore under
 // users/{uid}/collections/{id}. One document per collection (D-16,
 // OQ-2): metadata, a gzip JSON entry array, and a gzip count map.
-// A 5,000-card binder stays far under the 1 MiB document limit.
+// A 5,000-card binder stays far under the 1 MiB document limit. Put
+// refuses a payload near that limit (ErrTooLarge). Sharding across
+// documents is a later step.
 type Repo struct {
 	client *firestore.Client
 }
+
+// maxStoredBytes bounds the gzip entry payload. Firestore caps a
+// document at 1 MiB. The other fields and the encoding overhead use the
+// rest.
+const maxStoredBytes = 900 << 10
+
+// maxInflatedBytes bounds the inflated read of a stored payload.
+const maxInflatedBytes = 16 << 20
+
+// ErrTooLarge reports a collection that does not fit one document.
+var ErrTooLarge = errors.New("collection too large for one document (max 900 KiB gzip): sharding is a later step")
 
 // NewRepo wraps a Firestore client. The caller owns the client.
 func NewRepo(client *firestore.Client) *Repo { return &Repo{client: client} }
@@ -53,6 +68,9 @@ func (r *Repo) Put(ctx context.Context, uid string, col *mtgv1.Collection) (stri
 	countsGz, err := gzJSON(OracleCounts(col.Entries))
 	if err != nil {
 		return "", err
+	}
+	if len(entriesGz)+len(countsGz) > maxStoredBytes {
+		return "", fmt.Errorf("%w: %d bytes", ErrTooLarge, len(entriesGz)+len(countsGz))
 	}
 	stored := storedCollection{
 		Name:          col.Name,
@@ -94,6 +112,25 @@ func (r *Repo) Get(ctx context.Context, uid, id string) (*mtgv1.Collection, erro
 	return col, nil
 }
 
+// OracleCounts reads the stored per-Oracle-id count map of one collection.
+// It inflates only the count payload, not the entries (D-37 ownership
+// check in DeckService.Validate).
+func (r *Repo) OracleCounts(ctx context.Context, uid, id string) (map[string]int32, error) {
+	snap, err := r.doc(uid, id).Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var stored storedCollection
+	if err := snap.DataTo(&stored); err != nil {
+		return nil, fmt.Errorf("collection %s: %w", id, err)
+	}
+	var counts map[string]int32
+	if err := ungzJSON(stored.OracleCntGz, &counts); err != nil {
+		return nil, fmt.Errorf("collection %s counts: %w", id, err)
+	}
+	return counts, nil
+}
+
 // List returns every collection of a user, without entries.
 func (r *Repo) List(ctx context.Context, uid string) ([]*mtgv1.Collection, error) {
 	snaps, err := r.client.Collection("users").Doc(uid).Collection("collections").Documents(ctx).GetAll()
@@ -131,7 +168,8 @@ func storedToProto(id string, s storedCollection) *mtgv1.Collection {
 		Name:        s.Name,
 		Source:      mtgv1.ImportSource(mtgv1.ImportSource_value[s.Source]),
 		ContentHash: s.ContentHash,
-		CardCount:   int32(s.CardCount),
+		CardCount:   int32(s.CardCount), //nolint:gosec // CardCount was an int32 at Put
+		ImportedAt:  timestamppb.New(s.ImportedAt),
 	}
 }
 
@@ -153,7 +191,7 @@ func ungzJSON(data []byte, v any) error {
 		return err
 	}
 	defer func() { _ = gz.Close() }()
-	raw, err := io.ReadAll(gz)
+	raw, err := io.ReadAll(io.LimitReader(gz, maxInflatedBytes))
 	if err != nil {
 		return err
 	}

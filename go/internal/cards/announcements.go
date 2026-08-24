@@ -8,8 +8,10 @@ import (
 )
 
 // F-1: ban lists drift fast, and decks must be legal on the query date.
-// The refresh loop checks the bulk catalog on a normal cadence, and a
-// tight cadence around an announcement until the new data lands.
+// The calendar sets the check cadence: normal on a normal day, fast from
+// an announcement date until a legality diff lands (C-2). Coverage is a
+// fact about the data, not the clock: a snapshot covers an announcement
+// only when its legalities differ from the previous snapshot.
 
 //go:embed announcement_dates.json
 var announcementJSON []byte
@@ -46,21 +48,28 @@ const (
 	// NormalCheckInterval is the refresh cadence on a normal day.
 	// One catalog call per hour is far inside the Scryfall limits (F-3).
 	NormalCheckInterval = 1 * time.Hour
-	// FastCheckInterval applies while an announcement is not yet in the
-	// stored snapshot.
+	// FastCheckInterval applies from an announcement date until a
+	// legality diff lands, for at most FastWindow.
 	FastCheckInterval = 15 * time.Minute
+	// FastWindow caps the fast path. Scryfall has never lagged an
+	// announcement by three days. After that the normal cadence resumes.
+	FastWindow = 3 * 24 * time.Hour
 )
 
-// pendingAnnouncement returns the newest announcement date that is in the
-// past but not yet covered by the snapshot, and true when one exists.
-func (c AnnouncementCalendar) pendingAnnouncement(now, snapshotAsOf time.Time) (time.Time, bool) {
+// Pending returns the announcement that waits for a legality diff, and
+// true when one exists. lastDiff is the AsOf of the last snapshot whose
+// legalities changed. The date is UTC midnight, and Wizards posts in the
+// US afternoon, so a diff on the date itself still counts as coverage.
+func (c AnnouncementCalendar) Pending(now, lastDiff time.Time) (time.Time, bool) {
 	for i := len(c.dates) - 1; i >= 0; i-- {
 		d := c.dates[i]
 		if d.After(now) {
 			continue
 		}
-		// Covered when the snapshot was published on or after the date.
-		if snapshotAsOf.Before(d) {
+		if now.Sub(d) > FastWindow {
+			return time.Time{}, false
+		}
+		if lastDiff.Before(d) {
 			return d, true
 		}
 		return time.Time{}, false
@@ -68,19 +77,19 @@ func (c AnnouncementCalendar) pendingAnnouncement(now, snapshotAsOf time.Time) (
 	return time.Time{}, false
 }
 
-// CheckInterval picks the refresh cadence. Fast while an announcement has
-// happened and the snapshot does not yet reflect a same-day-or-later
-// publish. Normal otherwise.
-func (c AnnouncementCalendar) CheckInterval(now, snapshotAsOf time.Time) time.Duration {
-	if _, pending := c.pendingAnnouncement(now, snapshotAsOf); pending {
+// CheckInterval picks the refresh cadence for the loop mode (make dev).
+// Production cadence is Cloud Scheduler, see cmd/worker.
+func (c AnnouncementCalendar) CheckInterval(now, lastDiff time.Time) time.Duration {
+	if _, pending := c.Pending(now, lastDiff); pending {
 		return FastCheckInterval
 	}
 	return NormalCheckInterval
 }
 
 // LagHours measures M-2: the hours between an announcement and the
-// snapshot that covers it. It returns false when the snapshot is not the
-// first one after an announcement within the last 7 days.
+// snapshot whose legality diff covers it. The caller calls it only when
+// a diff landed. It returns false when no announcement precedes the
+// snapshot within the last 7 days.
 func (c AnnouncementCalendar) LagHours(snapshotAsOf time.Time) (announcement time.Time, hours float64, ok bool) {
 	for i := len(c.dates) - 1; i >= 0; i-- {
 		d := c.dates[i]

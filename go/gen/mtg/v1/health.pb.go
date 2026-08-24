@@ -62,9 +62,13 @@ type CheckResponse struct {
 	// status is "ok" when the service can serve requests.
 	Status string `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
 	// version is the build version, or "dev" for a local build.
-	Version       string `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Version string `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
+	// card_snapshot is the loaded snapshot date, RFC 3339, or "none".
+	CardSnapshot string `protobuf:"bytes,3,opt,name=card_snapshot,json=cardSnapshot,proto3" json:"card_snapshot,omitempty"`
+	// card_snapshot_age_hours is -1 when no snapshot is loaded.
+	CardSnapshotAgeHours float64 `protobuf:"fixed64,4,opt,name=card_snapshot_age_hours,json=cardSnapshotAgeHours,proto3" json:"card_snapshot_age_hours,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *CheckResponse) Reset() {
@@ -111,15 +115,31 @@ func (x *CheckResponse) GetVersion() string {
 	return ""
 }
 
+func (x *CheckResponse) GetCardSnapshot() string {
+	if x != nil {
+		return x.CardSnapshot
+	}
+	return ""
+}
+
+func (x *CheckResponse) GetCardSnapshotAgeHours() float64 {
+	if x != nil {
+		return x.CardSnapshotAgeHours
+	}
+	return 0
+}
+
 var File_mtg_v1_health_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_health_proto_rawDesc = "" +
 	"\n" +
 	"\x13mtg/v1/health.proto\x12\x06mtg.v1\"\x0e\n" +
-	"\fCheckRequest\"A\n" +
+	"\fCheckRequest\"\x9d\x01\n" +
 	"\rCheckResponse\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\tR\x06status\x12\x18\n" +
-	"\aversion\x18\x02 \x01(\tR\aversion2G\n" +
+	"\aversion\x18\x02 \x01(\tR\aversion\x12#\n" +
+	"\rcard_snapshot\x18\x03 \x01(\tR\fcardSnapshot\x125\n" +
+	"\x17card_snapshot_age_hours\x18\x04 \x01(\x01R\x14cardSnapshotAgeHours2G\n" +
 	"\rHealthService\x126\n" +
 	"\x05Check\x12\x14.mtg.v1.CheckRequest\x1a\x15.mtg.v1.CheckResponse\"\x00B:Z8github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1b\x06proto3"
 

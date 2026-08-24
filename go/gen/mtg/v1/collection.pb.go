@@ -199,6 +199,12 @@ const (
 	// UNRESOLVED_REASON_NON_ENGLISH: the app supports English only (D-23).
 	UnresolvedReason_UNRESOLVED_REASON_NON_ENGLISH UnresolvedReason = 2
 	UnresolvedReason_UNRESOLVED_REASON_BAD_ROW     UnresolvedReason = 3
+	// UNRESOLVED_REASON_NOT_PLAYABLE: the printing is a token, emblem, art
+	// card, or other object that can not go in a deck.
+	UnresolvedReason_UNRESOLVED_REASON_NOT_PLAYABLE UnresolvedReason = 4
+	// UNRESOLVED_REASON_UNKNOWN_VALUE: a finish or condition value the
+	// parser does not know.
+	UnresolvedReason_UNRESOLVED_REASON_UNKNOWN_VALUE UnresolvedReason = 5
 )
 
 // Enum value maps for UnresolvedReason.
@@ -208,12 +214,16 @@ var (
 		1: "UNRESOLVED_REASON_UNKNOWN_CARD",
 		2: "UNRESOLVED_REASON_NON_ENGLISH",
 		3: "UNRESOLVED_REASON_BAD_ROW",
+		4: "UNRESOLVED_REASON_NOT_PLAYABLE",
+		5: "UNRESOLVED_REASON_UNKNOWN_VALUE",
 	}
 	UnresolvedReason_value = map[string]int32{
-		"UNRESOLVED_REASON_UNSPECIFIED":  0,
-		"UNRESOLVED_REASON_UNKNOWN_CARD": 1,
-		"UNRESOLVED_REASON_NON_ENGLISH":  2,
-		"UNRESOLVED_REASON_BAD_ROW":      3,
+		"UNRESOLVED_REASON_UNSPECIFIED":   0,
+		"UNRESOLVED_REASON_UNKNOWN_CARD":  1,
+		"UNRESOLVED_REASON_NON_ENGLISH":   2,
+		"UNRESOLVED_REASON_BAD_ROW":       3,
+		"UNRESOLVED_REASON_NOT_PLAYABLE":  4,
+		"UNRESOLVED_REASON_UNKNOWN_VALUE": 5,
 	}
 )
 
@@ -353,7 +363,10 @@ type CollectionEntry struct {
 	Finish          Finish    `protobuf:"varint,7,opt,name=finish,proto3,enum=mtg.v1.Finish" json:"finish,omitempty"`
 	Condition       Condition `protobuf:"varint,8,opt,name=condition,proto3,enum=mtg.v1.Condition" json:"condition,omitempty"`
 	// rarity of this printing (D-16).
-	Rarity        string `protobuf:"bytes,9,opt,name=rarity,proto3" json:"rarity,omitempty"`
+	Rarity string `protobuf:"bytes,9,opt,name=rarity,proto3" json:"rarity,omitempty"`
+	// language is the ManaBox language code, "en" today (D-23).
+	Language      string `protobuf:"bytes,10,opt,name=language,proto3" json:"language,omitempty"`
+	SetName       string `protobuf:"bytes,11,opt,name=set_name,json=setName,proto3" json:"set_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -451,14 +464,30 @@ func (x *CollectionEntry) GetRarity() string {
 	return ""
 }
 
+func (x *CollectionEntry) GetLanguage() string {
+	if x != nil {
+		return x.Language
+	}
+	return ""
+}
+
+func (x *CollectionEntry) GetSetName() string {
+	if x != nil {
+		return x.SetName
+	}
+	return ""
+}
+
 // ImportReport lists what an import could not use. Nothing is dropped
 // in silence (D-23, roadmap PR-4 gate).
 type ImportReport struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Unresolved    []*UnresolvedRow       `protobuf:"bytes,1,rep,name=unresolved,proto3" json:"unresolved,omitempty"`
 	ResolvedCount int32                  `protobuf:"varint,2,opt,name=resolved_count,json=resolvedCount,proto3" json:"resolved_count,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	// unresolved_by_reason counts rows per UnresolvedReason name (M-3).
+	UnresolvedByReason map[string]int32 `protobuf:"bytes,3,rep,name=unresolved_by_reason,json=unresolvedByReason,proto3" json:"unresolved_by_reason,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *ImportReport) Reset() {
@@ -503,6 +532,13 @@ func (x *ImportReport) GetResolvedCount() int32 {
 		return x.ResolvedCount
 	}
 	return 0
+}
+
+func (x *ImportReport) GetUnresolvedByReason() map[string]int32 {
+	if x != nil {
+		return x.UnresolvedByReason
+	}
+	return nil
 }
 
 // UnresolvedRow is one input row the importer rejected, with the reason.
@@ -581,7 +617,7 @@ const file_mtg_v1_collection_proto_rawDesc = "" +
 	"\fcontent_hash\x18\x05 \x01(\tR\vcontentHash\x121\n" +
 	"\aentries\x18\x06 \x03(\v2\x17.mtg.v1.CollectionEntryR\aentries\x12\x1d\n" +
 	"\n" +
-	"card_count\x18\a \x01(\x05R\tcardCount\"\xb6\x02\n" +
+	"card_count\x18\a \x01(\x05R\tcardCount\"\xed\x02\n" +
 	"\x0fCollectionEntry\x12\x1f\n" +
 	"\vscryfall_id\x18\x01 \x01(\tR\n" +
 	"scryfallId\x12\x1b\n" +
@@ -592,12 +628,19 @@ const file_mtg_v1_collection_proto_rawDesc = "" +
 	"\bquantity\x18\x06 \x01(\x05R\bquantity\x12&\n" +
 	"\x06finish\x18\a \x01(\x0e2\x0e.mtg.v1.FinishR\x06finish\x12/\n" +
 	"\tcondition\x18\b \x01(\x0e2\x11.mtg.v1.ConditionR\tcondition\x12\x16\n" +
-	"\x06rarity\x18\t \x01(\tR\x06rarity\"l\n" +
+	"\x06rarity\x18\t \x01(\tR\x06rarity\x12\x1a\n" +
+	"\blanguage\x18\n" +
+	" \x01(\tR\blanguage\x12\x19\n" +
+	"\bset_name\x18\v \x01(\tR\asetName\"\x93\x02\n" +
 	"\fImportReport\x125\n" +
 	"\n" +
 	"unresolved\x18\x01 \x03(\v2\x15.mtg.v1.UnresolvedRowR\n" +
 	"unresolved\x12%\n" +
-	"\x0eresolved_count\x18\x02 \x01(\x05R\rresolvedCount\"g\n" +
+	"\x0eresolved_count\x18\x02 \x01(\x05R\rresolvedCount\x12^\n" +
+	"\x14unresolved_by_reason\x18\x03 \x03(\v2,.mtg.v1.ImportReport.UnresolvedByReasonEntryR\x12unresolvedByReason\x1aE\n" +
+	"\x17UnresolvedByReasonEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01\"g\n" +
 	"\rUnresolvedRow\x12\x12\n" +
 	"\x04line\x18\x01 \x01(\x05R\x04line\x12\x10\n" +
 	"\x03raw\x18\x02 \x01(\tR\x03raw\x120\n" +
@@ -619,12 +662,14 @@ const file_mtg_v1_collection_proto_rawDesc = "" +
 	"\x0eCONDITION_GOOD\x10\x04\x12\x1a\n" +
 	"\x16CONDITION_LIGHT_PLAYED\x10\x05\x12\x14\n" +
 	"\x10CONDITION_PLAYED\x10\x06\x12\x12\n" +
-	"\x0eCONDITION_POOR\x10\a*\x9b\x01\n" +
+	"\x0eCONDITION_POOR\x10\a*\xe4\x01\n" +
 	"\x10UnresolvedReason\x12!\n" +
 	"\x1dUNRESOLVED_REASON_UNSPECIFIED\x10\x00\x12\"\n" +
 	"\x1eUNRESOLVED_REASON_UNKNOWN_CARD\x10\x01\x12!\n" +
 	"\x1dUNRESOLVED_REASON_NON_ENGLISH\x10\x02\x12\x1d\n" +
-	"\x19UNRESOLVED_REASON_BAD_ROW\x10\x03B:Z8github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1b\x06proto3"
+	"\x19UNRESOLVED_REASON_BAD_ROW\x10\x03\x12\"\n" +
+	"\x1eUNRESOLVED_REASON_NOT_PLAYABLE\x10\x04\x12#\n" +
+	"\x1fUNRESOLVED_REASON_UNKNOWN_VALUE\x10\x05B:Z8github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1b\x06proto3"
 
 var (
 	file_mtg_v1_collection_proto_rawDescOnce sync.Once
@@ -639,7 +684,7 @@ func file_mtg_v1_collection_proto_rawDescGZIP() []byte {
 }
 
 var file_mtg_v1_collection_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_mtg_v1_collection_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_mtg_v1_collection_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_mtg_v1_collection_proto_goTypes = []any{
 	(ImportSource)(0),             // 0: mtg.v1.ImportSource
 	(Finish)(0),                   // 1: mtg.v1.Finish
@@ -649,21 +694,23 @@ var file_mtg_v1_collection_proto_goTypes = []any{
 	(*CollectionEntry)(nil),       // 5: mtg.v1.CollectionEntry
 	(*ImportReport)(nil),          // 6: mtg.v1.ImportReport
 	(*UnresolvedRow)(nil),         // 7: mtg.v1.UnresolvedRow
-	(*timestamppb.Timestamp)(nil), // 8: google.protobuf.Timestamp
+	nil,                           // 8: mtg.v1.ImportReport.UnresolvedByReasonEntry
+	(*timestamppb.Timestamp)(nil), // 9: google.protobuf.Timestamp
 }
 var file_mtg_v1_collection_proto_depIdxs = []int32{
 	0, // 0: mtg.v1.Collection.source:type_name -> mtg.v1.ImportSource
-	8, // 1: mtg.v1.Collection.imported_at:type_name -> google.protobuf.Timestamp
+	9, // 1: mtg.v1.Collection.imported_at:type_name -> google.protobuf.Timestamp
 	5, // 2: mtg.v1.Collection.entries:type_name -> mtg.v1.CollectionEntry
 	1, // 3: mtg.v1.CollectionEntry.finish:type_name -> mtg.v1.Finish
 	2, // 4: mtg.v1.CollectionEntry.condition:type_name -> mtg.v1.Condition
 	7, // 5: mtg.v1.ImportReport.unresolved:type_name -> mtg.v1.UnresolvedRow
-	3, // 6: mtg.v1.UnresolvedRow.reason:type_name -> mtg.v1.UnresolvedReason
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	8, // 6: mtg.v1.ImportReport.unresolved_by_reason:type_name -> mtg.v1.ImportReport.UnresolvedByReasonEntry
+	3, // 7: mtg.v1.UnresolvedRow.reason:type_name -> mtg.v1.UnresolvedReason
+	8, // [8:8] is the sub-list for method output_type
+	8, // [8:8] is the sub-list for method input_type
+	8, // [8:8] is the sub-list for extension type_name
+	8, // [8:8] is the sub-list for extension extendee
+	0, // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_mtg_v1_collection_proto_init() }
@@ -677,7 +724,7 @@ func file_mtg_v1_collection_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_mtg_v1_collection_proto_rawDesc), len(file_mtg_v1_collection_proto_rawDesc)),
 			NumEnums:      4,
-			NumMessages:   4,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

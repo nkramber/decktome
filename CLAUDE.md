@@ -6,7 +6,9 @@ Read this file first. Then read `docs/SESSION-HANDOFF.md`. It tells you where th
 
 This repo is a Go + Protobuf + TypeScript monorepo for an agentic MtG deck builder. The app reads a user's ManaBox collection export. The user gives a prompt. The agent asks questions, then builds a legal, useful deck.
 
-Stage (2026-08-23): the roadmap is approved (D-31). PR-0a (scaffold) is in progress. See `docs/SESSION-HANDOFF.md`. The owner commits and pushes. Do not commit unless the owner asks.
+Stage (2026-08-24): PR-0a to PR-5 and PR-10 are merged (#1 to #9). Phase 1 is complete.
+
+The audit fixes (PR-1b, PR-4b, PR-5b, PR-10b) are on branch `audit-fixes`. Next: PR-6. See `docs/SESSION-HANDOFF.md`. The owner commits and pushes. Do not commit unless the owner asks.
 
 ## Hard rules from the owner
 

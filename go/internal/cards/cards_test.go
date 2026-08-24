@@ -203,7 +203,10 @@ func TestDerivations(t *testing.T) {
 
 func TestPrintingLookup(t *testing.T) {
 	idx := loadFixtureIndex(t)
-	f, _ := os.Open("testdata/printings_fixture.jsonl")
+	f, err := os.Open("testdata/printings_fixture.jsonl")
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer func() { _ = f.Close() }()
 	printings, err := LoadPrintings(f, "printings_fixture.jsonl")
 	if err != nil {

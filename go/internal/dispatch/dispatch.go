@@ -31,6 +31,11 @@ type Dispatcher interface {
 	Dispatch(ctx context.Context, task Task) error
 }
 
+// maxSeen caps the dedup set. Local mode runs for one dev session, so a
+// cap that resets the set is enough. Cloud Tasks keeps names for an
+// hour after the task completes, and this set is the local stand-in.
+const maxSeen = 10000
+
 // Local runs each task in a goroutine, at most once per task name.
 // It is the local-mode replacement for Cloud Tasks.
 type Local struct {
@@ -56,6 +61,10 @@ func (l *Local) Dispatch(ctx context.Context, task Task) error {
 			l.mu.Unlock()
 			l.logger.Info("dispatch: duplicate task dropped", "queue", task.Queue, "name", task.Name)
 			return nil
+		}
+		if len(l.seen) >= maxSeen {
+			l.logger.Warn("dispatch: dedup set full, reset", "size", len(l.seen))
+			clear(l.seen)
 		}
 		l.seen[task.Name] = struct{}{}
 		l.mu.Unlock()

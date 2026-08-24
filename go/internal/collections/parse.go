@@ -12,6 +12,7 @@ import (
 	"io"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 )
@@ -32,15 +33,32 @@ type Row struct {
 	ScryfallID string
 }
 
+// maxQuantity caps one row. ManaBox has no documented cap. A row above
+// this is a typo or an attack, and int32 stays safe (C-9).
+const maxQuantity = 10_000
+
+// maxRawBytes bounds the echoed row text in a report.
+const maxRawBytes = 200
+
+// Known ManaBox value vocabularies (C-15). Sources, 2026-08-24:
+//   - The owner's export of 2026-08-24 uses Foil = normal|foil|etched
+//     and Condition = near_mint only.
+//   - The ManaBox guide (https://www.manabox.app/guides/collection/import-export/)
+//     lists the required columns (Name plus Set code or Set name). It
+//     gives no value vocabulary for Foil or Condition.
+//
+// The condition names below beyond near_mint follow the ManaBox app's
+// condition picker (mint, near_mint, excellent, good, light_played,
+// played, poor). They are unverified against an export. An unknown
+// value is reported as UNKNOWN_VALUE, never defaulted in silence.
+// An empty cell keeps the default: normal, near_mint.
 var finishByValue = map[string]mtgv1.Finish{
-	"":       mtgv1.Finish_FINISH_NORMAL,
 	"normal": mtgv1.Finish_FINISH_NORMAL,
 	"foil":   mtgv1.Finish_FINISH_FOIL,
 	"etched": mtgv1.Finish_FINISH_ETCHED,
 }
 
 var conditionByValue = map[string]mtgv1.Condition{
-	"":             mtgv1.Condition_CONDITION_NEAR_MINT,
 	"mint":         mtgv1.Condition_CONDITION_MINT,
 	"near_mint":    mtgv1.Condition_CONDITION_NEAR_MINT,
 	"excellent":    mtgv1.Condition_CONDITION_EXCELLENT,
@@ -67,6 +85,11 @@ func ParseManaBoxCSV(r io.Reader) ([]Row, []*mtgv1.UnresolvedRow, error) {
 	header, err := cr.Read()
 	if err != nil {
 		return nil, nil, fmt.Errorf("manabox csv: no header: %w", err)
+	}
+	// A UTF-8 BOM before the first header cell is part of the cell
+	// for encoding/csv. Strip it (C-15).
+	if len(header) > 0 {
+		header[0] = strings.TrimPrefix(header[0], "\uFEFF")
 	}
 	col := map[string]int{}
 	for i, h := range header {
@@ -98,48 +121,78 @@ func ParseManaBoxCSV(r io.Reader) ([]Row, []*mtgv1.UnresolvedRow, error) {
 	}
 	var rows []Row
 	var bad []*mtgv1.UnresolvedRow
-	line := 1
 	for {
 		rec, err := cr.Read()
 		if errors.Is(err, io.EOF) {
 			break
 		}
-		line++
 		if err != nil {
+			// A broken record has no field positions. ParseError
+			// carries the line instead.
+			line := 0
+			var pe *csv.ParseError
+			if errors.As(err, &pe) {
+				line = pe.Line
+			}
 			bad = append(bad, unresolved(line, strings.Join(rec, ","), mtgv1.UnresolvedReason_UNRESOLVED_REASON_BAD_ROW))
 			continue
 		}
+		// FieldPos gives the physical line of the record. A quoted
+		// field can span lines, so a record counter is not enough.
+		line, _ := cr.FieldPos(0)
+		raw := strings.Join(rec, ",")
 		qty := 1
 		if q := get(rec, "Quantity"); q != "" {
 			qty, err = strconv.Atoi(q)
-			if err != nil || qty <= 0 {
-				bad = append(bad, unresolved(line, strings.Join(rec, ","), mtgv1.UnresolvedReason_UNRESOLVED_REASON_BAD_ROW))
+			if err != nil || qty < 1 || qty > maxQuantity {
+				bad = append(bad, unresolved(line, raw, mtgv1.UnresolvedReason_UNRESOLVED_REASON_BAD_ROW))
 				continue
 			}
 		}
-		row := Row{
+		finish, ok := parseFinish(get(rec, "Foil"))
+		if !ok {
+			bad = append(bad, unresolved(line, raw, mtgv1.UnresolvedReason_UNRESOLVED_REASON_UNKNOWN_VALUE))
+			continue
+		}
+		condition, ok := parseCondition(get(rec, "Condition"))
+		if !ok {
+			bad = append(bad, unresolved(line, raw, mtgv1.UnresolvedReason_UNRESOLVED_REASON_UNKNOWN_VALUE))
+			continue
+		}
+		rows = append(rows, Row{
 			Line:       line,
-			Raw:        strings.Join(rec, ","),
+			Raw:        raw,
 			Name:       get(rec, "Name"),
 			SetCode:    get(rec, "Set code"),
 			SetName:    get(rec, "Set name"),
 			Collector:  get(rec, "Collector number"),
 			Quantity:   qty,
-			Finish:     finishByValue[strings.ToLower(get(rec, "Foil"))],
-			Condition:  conditionByValue[strings.ToLower(get(rec, "Condition"))],
+			Finish:     finish,
+			Condition:  condition,
 			Language:   get(rec, "Language"),
 			Rarity:     strings.ToLower(get(rec, "Rarity")),
 			ScryfallID: strings.ToLower(get(rec, "Scryfall ID")),
-		}
-		if row.Finish == mtgv1.Finish_FINISH_UNSPECIFIED {
-			row.Finish = mtgv1.Finish_FINISH_NORMAL
-		}
-		if row.Condition == mtgv1.Condition_CONDITION_UNSPECIFIED {
-			row.Condition = mtgv1.Condition_CONDITION_NEAR_MINT
-		}
-		rows = append(rows, row)
+		})
 	}
 	return rows, bad, nil
+}
+
+// parseFinish maps a Foil cell. An empty cell means normal.
+func parseFinish(v string) (mtgv1.Finish, bool) {
+	if v == "" {
+		return mtgv1.Finish_FINISH_NORMAL, true
+	}
+	f, ok := finishByValue[strings.ToLower(v)]
+	return f, ok
+}
+
+// parseCondition maps a Condition cell. An empty cell means near mint.
+func parseCondition(v string) (mtgv1.Condition, bool) {
+	if v == "" {
+		return mtgv1.Condition_CONDITION_NEAR_MINT, true
+	}
+	c, ok := conditionByValue[strings.ToLower(v)]
+	return c, ok
 }
 
 // ParseArenaText reads the Arena deck/list format: "4 Lightning Bolt (STA) 42".
@@ -177,7 +230,7 @@ func parseArenaLine(text string) (Row, bool) {
 		return Row{}, false
 	}
 	qty, err := strconv.Atoi(fields[0])
-	if err != nil || qty <= 0 {
+	if err != nil || qty < 1 || qty > maxQuantity {
 		return Row{}, false
 	}
 	rest := fields[1:]
@@ -196,8 +249,19 @@ func parseArenaLine(text string) (Row, bool) {
 }
 
 func unresolved(line int, raw string, reason mtgv1.UnresolvedReason) *mtgv1.UnresolvedRow {
-	if len(raw) > 200 {
-		raw = raw[:200]
+	return &mtgv1.UnresolvedRow{Line: int32(line), Raw: truncateRaw(raw), Reason: reason}
+}
+
+// truncateRaw cuts raw to maxRawBytes on a rune boundary, so the
+// protobuf string stays valid UTF-8 (C-7). Invalid input bytes are
+// replaced too.
+func truncateRaw(raw string) string {
+	if len(raw) > maxRawBytes {
+		cut := maxRawBytes
+		for cut > 0 && !utf8.RuneStart(raw[cut]) {
+			cut--
+		}
+		raw = raw[:cut]
 	}
-	return &mtgv1.UnresolvedRow{Line: int32(line), Raw: raw, Reason: reason}
+	return strings.ToValidUTF8(raw, "\uFFFD")
 }

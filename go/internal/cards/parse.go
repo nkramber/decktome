@@ -44,7 +44,9 @@ type rawCard struct {
 }
 
 type rawFace struct {
+	OracleID   string     `json:"oracle_id"`
 	Name       string     `json:"name"`
+	Artist     string     `json:"artist"`
 	ManaCost   string     `json:"mana_cost"`
 	TypeLine   string     `json:"type_line"`
 	OracleText string     `json:"oracle_text"`
@@ -98,6 +100,10 @@ func parseCard(line []byte) (*mtgv1.Card, error) {
 	if err := json.Unmarshal(line, &r); err != nil {
 		return nil, err
 	}
+	// Reversible cards carry oracle_id on the faces, not the top level (C-8).
+	if r.OracleID == "" && len(r.CardFaces) > 0 {
+		r.OracleID = r.CardFaces[0].OracleID
+	}
 	c := &mtgv1.Card{
 		OracleId:      r.OracleID,
 		Name:          r.Name,
@@ -132,11 +138,16 @@ func parseCard(line []byte) (*mtgv1.Card, error) {
 			face := &mtgv1.CardFace{
 				Name: f.Name, ManaCost: f.ManaCost, TypeLine: f.TypeLine,
 				OracleText: f.OracleText, Power: f.Power, Toughness: f.Toughness,
-				Loyalty: f.Loyalty, ImageUris: f.ImageUris.proto(),
+				Loyalty: f.Loyalty, ImageUris: f.ImageUris.proto(), Artist: f.Artist,
 			}
 			// Split and adventure faces share one printed image at card level.
 			if face.ImageUris == nil {
 				face.ImageUris = r.ImageUris.proto()
+			}
+			// Faces of one card can have different artists (D-6). A face
+			// with no artist of its own takes the card-level one.
+			if face.Artist == "" {
+				face.Artist = r.Artist
 			}
 			c.Faces = append(c.Faces, face)
 		}
@@ -152,7 +163,7 @@ func parseCard(line []byte) (*mtgv1.Card, error) {
 		c.Faces = []*mtgv1.CardFace{{
 			Name: r.Name, ManaCost: r.ManaCost, TypeLine: r.TypeLine,
 			OracleText: r.OracleText, Power: r.Power, Toughness: r.Toughness,
-			Loyalty: r.Loyalty, ImageUris: r.ImageUris.proto(),
+			Loyalty: r.Loyalty, ImageUris: r.ImageUris.proto(), Artist: r.Artist,
 		}}
 	}
 	if usd := r.Prices["usd"]; usd != "" {
@@ -179,6 +190,10 @@ type Printing struct {
 	Name            string
 	SetCode         string
 	CollectorNumber string
+	// Layout is the Scryfall layout. Non-playable layouts (tokens, emblems,
+	// art cards) stay out of the index but are remembered by id, so an
+	// import can report them instead of a silent name fallback.
+	Layout string
 }
 
 // parsePrinting reads the minimal printing row for collection resolution.
@@ -189,6 +204,7 @@ func parsePrinting(line []byte) (Printing, error) {
 		Name            string `json:"name"`
 		Set             string `json:"set"`
 		CollectorNumber string `json:"collector_number"`
+		Layout          string `json:"layout"`
 		CardFaces       []struct {
 			OracleID string `json:"oracle_id"`
 		} `json:"card_faces"`
@@ -201,5 +217,5 @@ func parsePrinting(line []byte) (Printing, error) {
 		r.OracleID = r.CardFaces[0].OracleID
 	}
 	return Printing{ScryfallID: r.ID, OracleID: r.OracleID, Name: r.Name,
-		SetCode: r.Set, CollectorNumber: r.CollectorNumber}, nil
+		SetCode: r.Set, CollectorNumber: r.CollectorNumber, Layout: r.Layout}, nil
 }

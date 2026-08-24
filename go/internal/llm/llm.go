@@ -63,16 +63,24 @@ type Call struct {
 // it. A nil *Usage means the provider reported nothing. Zero means measured
 // zero. These are different facts (M-1).
 type Usage struct {
-	InputTokens       int64 `json:"input_tokens"`
+	// InputTokens is the full input count: fresh, cache read, and cache
+	// write tokens together.
+	InputTokens int64 `json:"input_tokens"`
+	// CachedInputTokens is the part of InputTokens read from a cache.
 	CachedInputTokens int64 `json:"cached_input_tokens"`
-	OutputTokens      int64 `json:"output_tokens"`
-	ReasoningTokens   int64 `json:"reasoning_tokens"`
+	// CacheWriteTokens is the part of InputTokens written to a cache.
+	// Anthropic bills it at 1.25 x input. OpenAI reports none.
+	CacheWriteTokens int64 `json:"cache_write_tokens"`
+	OutputTokens     int64 `json:"output_tokens"`
+	// ReasoningTokens is the part of OutputTokens spent on reasoning.
+	ReasoningTokens int64 `json:"reasoning_tokens"`
 }
 
 // Add sums o into u.
 func (u *Usage) Add(o Usage) {
 	u.InputTokens += o.InputTokens
 	u.CachedInputTokens += o.CachedInputTokens
+	u.CacheWriteTokens += o.CacheWriteTokens
 	u.OutputTokens += o.OutputTokens
 	u.ReasoningTokens += o.ReasoningTokens
 }

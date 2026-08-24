@@ -22,6 +22,122 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// SessionStatus says where the conversation stands.
+type SessionStatus int32
+
+const (
+	SessionStatus_SESSION_STATUS_UNSPECIFIED SessionStatus = 0
+	// SESSION_STATUS_ASKING: at least one slot is still empty.
+	SessionStatus_SESSION_STATUS_ASKING SessionStatus = 1
+	// SESSION_STATUS_READY: every slot is filled or skipped. A build can run.
+	SessionStatus_SESSION_STATUS_READY SessionStatus = 2
+	// SESSION_STATUS_BUILT: the latest deck is in deck_ids.
+	SessionStatus_SESSION_STATUS_BUILT SessionStatus = 3
+)
+
+// Enum value maps for SessionStatus.
+var (
+	SessionStatus_name = map[int32]string{
+		0: "SESSION_STATUS_UNSPECIFIED",
+		1: "SESSION_STATUS_ASKING",
+		2: "SESSION_STATUS_READY",
+		3: "SESSION_STATUS_BUILT",
+	}
+	SessionStatus_value = map[string]int32{
+		"SESSION_STATUS_UNSPECIFIED": 0,
+		"SESSION_STATUS_ASKING":      1,
+		"SESSION_STATUS_READY":       2,
+		"SESSION_STATUS_BUILT":       3,
+	}
+)
+
+func (x SessionStatus) Enum() *SessionStatus {
+	p := new(SessionStatus)
+	*p = x
+	return p
+}
+
+func (x SessionStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (SessionStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_mtg_v1_session_proto_enumTypes[0].Descriptor()
+}
+
+func (SessionStatus) Type() protoreflect.EnumType {
+	return &file_mtg_v1_session_proto_enumTypes[0]
+}
+
+func (x SessionStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use SessionStatus.Descriptor instead.
+func (SessionStatus) EnumDescriptor() ([]byte, []int) {
+	return file_mtg_v1_session_proto_rawDescGZIP(), []int{0}
+}
+
+// SlotState is the fill state of one slot (roadmap PR-7 gate: no repeated
+// question).
+type SlotState int32
+
+const (
+	SlotState_SLOT_STATE_UNSPECIFIED SlotState = 0
+	// SLOT_STATE_EMPTY: not filled and not yet asked.
+	SlotState_SLOT_STATE_EMPTY SlotState = 1
+	// SLOT_STATE_ASKED: a question is out, no answer mapped yet.
+	SlotState_SLOT_STATE_ASKED  SlotState = 2
+	SlotState_SLOT_STATE_FILLED SlotState = 3
+	// SLOT_STATE_SKIPPED: the user declined. The agent uses a default.
+	SlotState_SLOT_STATE_SKIPPED SlotState = 4
+)
+
+// Enum value maps for SlotState.
+var (
+	SlotState_name = map[int32]string{
+		0: "SLOT_STATE_UNSPECIFIED",
+		1: "SLOT_STATE_EMPTY",
+		2: "SLOT_STATE_ASKED",
+		3: "SLOT_STATE_FILLED",
+		4: "SLOT_STATE_SKIPPED",
+	}
+	SlotState_value = map[string]int32{
+		"SLOT_STATE_UNSPECIFIED": 0,
+		"SLOT_STATE_EMPTY":       1,
+		"SLOT_STATE_ASKED":       2,
+		"SLOT_STATE_FILLED":      3,
+		"SLOT_STATE_SKIPPED":     4,
+	}
+)
+
+func (x SlotState) Enum() *SlotState {
+	p := new(SlotState)
+	*p = x
+	return p
+}
+
+func (x SlotState) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (SlotState) Descriptor() protoreflect.EnumDescriptor {
+	return file_mtg_v1_session_proto_enumTypes[1].Descriptor()
+}
+
+func (SlotState) Type() protoreflect.EnumType {
+	return &file_mtg_v1_session_proto_enumTypes[1]
+}
+
+func (x SlotState) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use SlotState.Descriptor instead.
+func (SlotState) EnumDescriptor() ([]byte, []int) {
+	return file_mtg_v1_session_proto_rawDescGZIP(), []int{1}
+}
+
 // PoolRule says how the collection constrains the deck (D-2).
 type PoolRule int32
 
@@ -60,11 +176,11 @@ func (x PoolRule) String() string {
 }
 
 func (PoolRule) Descriptor() protoreflect.EnumDescriptor {
-	return file_mtg_v1_session_proto_enumTypes[0].Descriptor()
+	return file_mtg_v1_session_proto_enumTypes[2].Descriptor()
 }
 
 func (PoolRule) Type() protoreflect.EnumType {
-	return &file_mtg_v1_session_proto_enumTypes[0]
+	return &file_mtg_v1_session_proto_enumTypes[2]
 }
 
 func (x PoolRule) Number() protoreflect.EnumNumber {
@@ -73,19 +189,22 @@ func (x PoolRule) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PoolRule.Descriptor instead.
 func (PoolRule) EnumDescriptor() ([]byte, []int) {
-	return file_mtg_v1_session_proto_rawDescGZIP(), []int{0}
+	return file_mtg_v1_session_proto_rawDescGZIP(), []int{2}
 }
 
 // Session is one deck-building conversation.
 type Session struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	CollectionId  string                 `protobuf:"bytes,2,opt,name=collection_id,json=collectionId,proto3" json:"collection_id,omitempty"`
-	Slots         *Slots                 `protobuf:"bytes,3,opt,name=slots,proto3" json:"slots,omitempty"`
-	Turns         []*Turn                `protobuf:"bytes,4,rep,name=turns,proto3" json:"turns,omitempty"`
-	DeckIds       []string               `protobuf:"bytes,5,rep,name=deck_ids,json=deckIds,proto3" json:"deck_ids,omitempty"`
-	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	Id           string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	CollectionId string                 `protobuf:"bytes,2,opt,name=collection_id,json=collectionId,proto3" json:"collection_id,omitempty"`
+	Slots        *Slots                 `protobuf:"bytes,3,opt,name=slots,proto3" json:"slots,omitempty"`
+	Turns        []*Turn                `protobuf:"bytes,4,rep,name=turns,proto3" json:"turns,omitempty"`
+	DeckIds      []string               `protobuf:"bytes,5,rep,name=deck_ids,json=deckIds,proto3" json:"deck_ids,omitempty"`
+	CreatedAt    *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt    *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	Status       SessionStatus          `protobuf:"varint,8,opt,name=status,proto3,enum=mtg.v1.SessionStatus" json:"status,omitempty"`
+	// usage is the session's LLM token and cost total (M-1).
+	Usage         *Usage `protobuf:"bytes,9,opt,name=usage,proto3" json:"usage,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -169,8 +288,117 @@ func (x *Session) GetUpdatedAt() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *Session) GetStatus() SessionStatus {
+	if x != nil {
+		return x.Status
+	}
+	return SessionStatus_SESSION_STATUS_UNSPECIFIED
+}
+
+func (x *Session) GetUsage() *Usage {
+	if x != nil {
+		return x.Usage
+	}
+	return nil
+}
+
+// Usage is the LLM spend of one session (M-1). A false priced means the
+// cost is unknown, not zero. Zero calls means nothing was instrumented.
+type Usage struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	Calls             int32                  `protobuf:"varint,1,opt,name=calls,proto3" json:"calls,omitempty"`
+	InputTokens       int64                  `protobuf:"varint,2,opt,name=input_tokens,json=inputTokens,proto3" json:"input_tokens,omitempty"`
+	CachedInputTokens int64                  `protobuf:"varint,3,opt,name=cached_input_tokens,json=cachedInputTokens,proto3" json:"cached_input_tokens,omitempty"`
+	OutputTokens      int64                  `protobuf:"varint,4,opt,name=output_tokens,json=outputTokens,proto3" json:"output_tokens,omitempty"`
+	ReasoningTokens   int64                  `protobuf:"varint,5,opt,name=reasoning_tokens,json=reasoningTokens,proto3" json:"reasoning_tokens,omitempty"`
+	CostUsd           float64                `protobuf:"fixed64,6,opt,name=cost_usd,json=costUsd,proto3" json:"cost_usd,omitempty"`
+	Priced            bool                   `protobuf:"varint,7,opt,name=priced,proto3" json:"priced,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *Usage) Reset() {
+	*x = Usage{}
+	mi := &file_mtg_v1_session_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Usage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Usage) ProtoMessage() {}
+
+func (x *Usage) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_session_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Usage.ProtoReflect.Descriptor instead.
+func (*Usage) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_session_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *Usage) GetCalls() int32 {
+	if x != nil {
+		return x.Calls
+	}
+	return 0
+}
+
+func (x *Usage) GetInputTokens() int64 {
+	if x != nil {
+		return x.InputTokens
+	}
+	return 0
+}
+
+func (x *Usage) GetCachedInputTokens() int64 {
+	if x != nil {
+		return x.CachedInputTokens
+	}
+	return 0
+}
+
+func (x *Usage) GetOutputTokens() int64 {
+	if x != nil {
+		return x.OutputTokens
+	}
+	return 0
+}
+
+func (x *Usage) GetReasoningTokens() int64 {
+	if x != nil {
+		return x.ReasoningTokens
+	}
+	return 0
+}
+
+func (x *Usage) GetCostUsd() float64 {
+	if x != nil {
+		return x.CostUsd
+	}
+	return 0
+}
+
+func (x *Usage) GetPriced() bool {
+	if x != nil {
+		return x.Priced
+	}
+	return false
+}
+
 // Slots hold what the agent knows so far (roadmap PR-7).
-// An unset field is a slot the agent may ask about.
+// slot_states says for each slot whether it is empty, filled, or skipped
+// by the user. A zero value alone can not tell "not asked" from "declined".
 type Slots struct {
 	state  protoimpl.MessageState `protogen:"open.v1"`
 	Format *Format                `protobuf:"bytes,1,opt,name=format,proto3" json:"format,omitempty"`
@@ -186,14 +414,17 @@ type Slots struct {
 	// locked_oracle_ids are cards the user wants in the deck.
 	LockedOracleIds []string `protobuf:"bytes,8,rep,name=locked_oracle_ids,json=lockedOracleIds,proto3" json:"locked_oracle_ids,omitempty"`
 	// plan_variant separates two builds of one theme (roadmap PR-9).
-	PlanVariant   string `protobuf:"bytes,9,opt,name=plan_variant,json=planVariant,proto3" json:"plan_variant,omitempty"`
+	PlanVariant string `protobuf:"bytes,9,opt,name=plan_variant,json=planVariant,proto3" json:"plan_variant,omitempty"`
+	// slot_states is keyed by slot name: format, power, colors, theme,
+	// commander, pool_rule, budget, locked, plan_variant, house_rules, meta.
+	SlotStates    map[string]SlotState `protobuf:"bytes,10,rep,name=slot_states,json=slotStates,proto3" json:"slot_states,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value,enum=mtg.v1.SlotState"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Slots) Reset() {
 	*x = Slots{}
-	mi := &file_mtg_v1_session_proto_msgTypes[1]
+	mi := &file_mtg_v1_session_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -205,7 +436,7 @@ func (x *Slots) String() string {
 func (*Slots) ProtoMessage() {}
 
 func (x *Slots) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_session_proto_msgTypes[1]
+	mi := &file_mtg_v1_session_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -218,7 +449,7 @@ func (x *Slots) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Slots.ProtoReflect.Descriptor instead.
 func (*Slots) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_session_proto_rawDescGZIP(), []int{1}
+	return file_mtg_v1_session_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Slots) GetFormat() *Format {
@@ -284,6 +515,13 @@ func (x *Slots) GetPlanVariant() string {
 	return ""
 }
 
+func (x *Slots) GetSlotStates() map[string]SlotState {
+	if x != nil {
+		return x.SlotStates
+	}
+	return nil
+}
+
 // Turn is one exchange in the conversation.
 type Turn struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -292,15 +530,18 @@ type Turn struct {
 	// agent_message is what the agent answered.
 	AgentMessage string `protobuf:"bytes,2,opt,name=agent_message,json=agentMessage,proto3" json:"agent_message,omitempty"`
 	// questions the agent asked in this turn, when it asked.
-	Questions     []*Question            `protobuf:"bytes,3,rep,name=questions,proto3" json:"questions,omitempty"`
-	At            *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=at,proto3" json:"at,omitempty"`
+	Questions []*Question            `protobuf:"bytes,3,rep,name=questions,proto3" json:"questions,omitempty"`
+	At        *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=at,proto3" json:"at,omitempty"`
+	// answers maps the user's replies to questions, when the client sent
+	// structured answers.
+	Answers       []*Answer `protobuf:"bytes,5,rep,name=answers,proto3" json:"answers,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Turn) Reset() {
 	*x = Turn{}
-	mi := &file_mtg_v1_session_proto_msgTypes[2]
+	mi := &file_mtg_v1_session_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -312,7 +553,7 @@ func (x *Turn) String() string {
 func (*Turn) ProtoMessage() {}
 
 func (x *Turn) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_session_proto_msgTypes[2]
+	mi := &file_mtg_v1_session_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -325,7 +566,7 @@ func (x *Turn) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Turn.ProtoReflect.Descriptor instead.
 func (*Turn) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_session_proto_rawDescGZIP(), []int{2}
+	return file_mtg_v1_session_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Turn) GetUserMessage() string {
@@ -356,9 +597,81 @@ func (x *Turn) GetAt() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *Turn) GetAnswers() []*Answer {
+	if x != nil {
+		return x.Answers
+	}
+	return nil
+}
+
+// Answer is one reply to a Question.
+type Answer struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// question_id matches Question.id.
+	QuestionId string `protobuf:"bytes,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
+	// option_index is the chosen option, or -1 for free text.
+	OptionIndex   int32  `protobuf:"varint,2,opt,name=option_index,json=optionIndex,proto3" json:"option_index,omitempty"`
+	Text          string `protobuf:"bytes,3,opt,name=text,proto3" json:"text,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Answer) Reset() {
+	*x = Answer{}
+	mi := &file_mtg_v1_session_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Answer) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Answer) ProtoMessage() {}
+
+func (x *Answer) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_session_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Answer.ProtoReflect.Descriptor instead.
+func (*Answer) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_session_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *Answer) GetQuestionId() string {
+	if x != nil {
+		return x.QuestionId
+	}
+	return ""
+}
+
+func (x *Answer) GetOptionIndex() int32 {
+	if x != nil {
+		return x.OptionIndex
+	}
+	return 0
+}
+
+func (x *Answer) GetText() string {
+	if x != nil {
+		return x.Text
+	}
+	return ""
+}
+
 // Question is one clarifying question (roadmap PR-7, D-25).
 type Question struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
+	// id is unique in the session. Answers refer to it.
+	Id string `protobuf:"bytes,6,opt,name=id,proto3" json:"id,omitempty"`
 	// slot names the empty slot this question fills.
 	Slot string `protobuf:"bytes,1,opt,name=slot,proto3" json:"slot,omitempty"`
 	Text string `protobuf:"bytes,2,opt,name=text,proto3" json:"text,omitempty"`
@@ -374,7 +687,7 @@ type Question struct {
 
 func (x *Question) Reset() {
 	*x = Question{}
-	mi := &file_mtg_v1_session_proto_msgTypes[3]
+	mi := &file_mtg_v1_session_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -386,7 +699,7 @@ func (x *Question) String() string {
 func (*Question) ProtoMessage() {}
 
 func (x *Question) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_session_proto_msgTypes[3]
+	mi := &file_mtg_v1_session_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -399,7 +712,14 @@ func (x *Question) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Question.ProtoReflect.Descriptor instead.
 func (*Question) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_session_proto_rawDescGZIP(), []int{3}
+	return file_mtg_v1_session_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *Question) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
 }
 
 func (x *Question) GetSlot() string {
@@ -441,7 +761,7 @@ var File_mtg_v1_session_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_session_proto_rawDesc = "" +
 	"\n" +
-	"\x14mtg/v1/session.proto\x12\x06mtg.v1\x1a\x13mtg/v1/format.proto\x1a\x11mtg/v1/card.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x98\x02\n" +
+	"\x14mtg/v1/session.proto\x12\x06mtg.v1\x1a\x13mtg/v1/format.proto\x1a\x11mtg/v1/card.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xec\x02\n" +
 	"\aSession\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12#\n" +
 	"\rcollection_id\x18\x02 \x01(\tR\fcollectionId\x12#\n" +
@@ -451,7 +771,17 @@ const file_mtg_v1_session_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\xe5\x02\n" +
+	"updated_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12-\n" +
+	"\x06status\x18\b \x01(\x0e2\x15.mtg.v1.SessionStatusR\x06status\x12#\n" +
+	"\x05usage\x18\t \x01(\v2\r.mtg.v1.UsageR\x05usage\"\xf3\x01\n" +
+	"\x05Usage\x12\x14\n" +
+	"\x05calls\x18\x01 \x01(\x05R\x05calls\x12!\n" +
+	"\finput_tokens\x18\x02 \x01(\x03R\vinputTokens\x12.\n" +
+	"\x13cached_input_tokens\x18\x03 \x01(\x03R\x11cachedInputTokens\x12#\n" +
+	"\routput_tokens\x18\x04 \x01(\x03R\foutputTokens\x12)\n" +
+	"\x10reasoning_tokens\x18\x05 \x01(\x03R\x0freasoningTokens\x12\x19\n" +
+	"\bcost_usd\x18\x06 \x01(\x01R\acostUsd\x12\x16\n" +
+	"\x06priced\x18\a \x01(\bR\x06priced\"\xf7\x03\n" +
 	"\x05Slots\x12&\n" +
 	"\x06format\x18\x01 \x01(\v2\x0e.mtg.v1.FormatR\x06format\x12(\n" +
 	"\x05power\x18\x02 \x01(\v2\x12.mtg.v1.PowerLevelR\x05power\x12%\n" +
@@ -462,18 +792,42 @@ const file_mtg_v1_session_proto_rawDesc = "" +
 	"\n" +
 	"budget_usd\x18\a \x01(\x01R\tbudgetUsd\x12*\n" +
 	"\x11locked_oracle_ids\x18\b \x03(\tR\x0flockedOracleIds\x12!\n" +
-	"\fplan_variant\x18\t \x01(\tR\vplanVariant\"\xaa\x01\n" +
+	"\fplan_variant\x18\t \x01(\tR\vplanVariant\x12>\n" +
+	"\vslot_states\x18\n" +
+	" \x03(\v2\x1d.mtg.v1.Slots.SlotStatesEntryR\n" +
+	"slotStates\x1aP\n" +
+	"\x0fSlotStatesEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12'\n" +
+	"\x05value\x18\x02 \x01(\x0e2\x11.mtg.v1.SlotStateR\x05value:\x028\x01\"\xd4\x01\n" +
 	"\x04Turn\x12!\n" +
 	"\fuser_message\x18\x01 \x01(\tR\vuserMessage\x12#\n" +
 	"\ragent_message\x18\x02 \x01(\tR\fagentMessage\x12.\n" +
 	"\tquestions\x18\x03 \x03(\v2\x10.mtg.v1.QuestionR\tquestions\x12*\n" +
-	"\x02at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x02at\"\x85\x01\n" +
-	"\bQuestion\x12\x12\n" +
+	"\x02at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x02at\x12(\n" +
+	"\aanswers\x18\x05 \x03(\v2\x0e.mtg.v1.AnswerR\aanswers\"`\n" +
+	"\x06Answer\x12\x1f\n" +
+	"\vquestion_id\x18\x01 \x01(\tR\n" +
+	"questionId\x12!\n" +
+	"\foption_index\x18\x02 \x01(\x05R\voptionIndex\x12\x12\n" +
+	"\x04text\x18\x03 \x01(\tR\x04text\"\x95\x01\n" +
+	"\bQuestion\x12\x0e\n" +
+	"\x02id\x18\x06 \x01(\tR\x02id\x12\x12\n" +
 	"\x04slot\x18\x01 \x01(\tR\x04slot\x12\x12\n" +
 	"\x04text\x18\x02 \x01(\tR\x04text\x12\x18\n" +
 	"\aoptions\x18\x03 \x03(\tR\aoptions\x12\x1a\n" +
 	"\binvented\x18\x04 \x01(\bR\binvented\x12\x1b\n" +
-	"\tgap_score\x18\x05 \x01(\x01R\bgapScore*r\n" +
+	"\tgap_score\x18\x05 \x01(\x01R\bgapScore*~\n" +
+	"\rSessionStatus\x12\x1e\n" +
+	"\x1aSESSION_STATUS_UNSPECIFIED\x10\x00\x12\x19\n" +
+	"\x15SESSION_STATUS_ASKING\x10\x01\x12\x18\n" +
+	"\x14SESSION_STATUS_READY\x10\x02\x12\x18\n" +
+	"\x14SESSION_STATUS_BUILT\x10\x03*\x82\x01\n" +
+	"\tSlotState\x12\x1a\n" +
+	"\x16SLOT_STATE_UNSPECIFIED\x10\x00\x12\x14\n" +
+	"\x10SLOT_STATE_EMPTY\x10\x01\x12\x14\n" +
+	"\x10SLOT_STATE_ASKED\x10\x02\x12\x15\n" +
+	"\x11SLOT_STATE_FILLED\x10\x03\x12\x16\n" +
+	"\x12SLOT_STATE_SKIPPED\x10\x04*r\n" +
 	"\bPoolRule\x12\x19\n" +
 	"\x15POOL_RULE_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15POOL_RULE_OWNED_FIRST\x10\x01\x12\x18\n" +
@@ -492,35 +846,45 @@ func file_mtg_v1_session_proto_rawDescGZIP() []byte {
 	return file_mtg_v1_session_proto_rawDescData
 }
 
-var file_mtg_v1_session_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_mtg_v1_session_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_mtg_v1_session_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_mtg_v1_session_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_mtg_v1_session_proto_goTypes = []any{
-	(PoolRule)(0),                 // 0: mtg.v1.PoolRule
-	(*Session)(nil),               // 1: mtg.v1.Session
-	(*Slots)(nil),                 // 2: mtg.v1.Slots
-	(*Turn)(nil),                  // 3: mtg.v1.Turn
-	(*Question)(nil),              // 4: mtg.v1.Question
-	(*timestamppb.Timestamp)(nil), // 5: google.protobuf.Timestamp
-	(*Format)(nil),                // 6: mtg.v1.Format
-	(*PowerLevel)(nil),            // 7: mtg.v1.PowerLevel
-	(Color)(0),                    // 8: mtg.v1.Color
+	(SessionStatus)(0),            // 0: mtg.v1.SessionStatus
+	(SlotState)(0),                // 1: mtg.v1.SlotState
+	(PoolRule)(0),                 // 2: mtg.v1.PoolRule
+	(*Session)(nil),               // 3: mtg.v1.Session
+	(*Usage)(nil),                 // 4: mtg.v1.Usage
+	(*Slots)(nil),                 // 5: mtg.v1.Slots
+	(*Turn)(nil),                  // 6: mtg.v1.Turn
+	(*Answer)(nil),                // 7: mtg.v1.Answer
+	(*Question)(nil),              // 8: mtg.v1.Question
+	nil,                           // 9: mtg.v1.Slots.SlotStatesEntry
+	(*timestamppb.Timestamp)(nil), // 10: google.protobuf.Timestamp
+	(*Format)(nil),                // 11: mtg.v1.Format
+	(*PowerLevel)(nil),            // 12: mtg.v1.PowerLevel
+	(Color)(0),                    // 13: mtg.v1.Color
 }
 var file_mtg_v1_session_proto_depIdxs = []int32{
-	2,  // 0: mtg.v1.Session.slots:type_name -> mtg.v1.Slots
-	3,  // 1: mtg.v1.Session.turns:type_name -> mtg.v1.Turn
-	5,  // 2: mtg.v1.Session.created_at:type_name -> google.protobuf.Timestamp
-	5,  // 3: mtg.v1.Session.updated_at:type_name -> google.protobuf.Timestamp
-	6,  // 4: mtg.v1.Slots.format:type_name -> mtg.v1.Format
-	7,  // 5: mtg.v1.Slots.power:type_name -> mtg.v1.PowerLevel
-	8,  // 6: mtg.v1.Slots.colors:type_name -> mtg.v1.Color
-	0,  // 7: mtg.v1.Slots.pool_rule:type_name -> mtg.v1.PoolRule
-	4,  // 8: mtg.v1.Turn.questions:type_name -> mtg.v1.Question
-	5,  // 9: mtg.v1.Turn.at:type_name -> google.protobuf.Timestamp
-	10, // [10:10] is the sub-list for method output_type
-	10, // [10:10] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	5,  // 0: mtg.v1.Session.slots:type_name -> mtg.v1.Slots
+	6,  // 1: mtg.v1.Session.turns:type_name -> mtg.v1.Turn
+	10, // 2: mtg.v1.Session.created_at:type_name -> google.protobuf.Timestamp
+	10, // 3: mtg.v1.Session.updated_at:type_name -> google.protobuf.Timestamp
+	0,  // 4: mtg.v1.Session.status:type_name -> mtg.v1.SessionStatus
+	4,  // 5: mtg.v1.Session.usage:type_name -> mtg.v1.Usage
+	11, // 6: mtg.v1.Slots.format:type_name -> mtg.v1.Format
+	12, // 7: mtg.v1.Slots.power:type_name -> mtg.v1.PowerLevel
+	13, // 8: mtg.v1.Slots.colors:type_name -> mtg.v1.Color
+	2,  // 9: mtg.v1.Slots.pool_rule:type_name -> mtg.v1.PoolRule
+	9,  // 10: mtg.v1.Slots.slot_states:type_name -> mtg.v1.Slots.SlotStatesEntry
+	8,  // 11: mtg.v1.Turn.questions:type_name -> mtg.v1.Question
+	10, // 12: mtg.v1.Turn.at:type_name -> google.protobuf.Timestamp
+	7,  // 13: mtg.v1.Turn.answers:type_name -> mtg.v1.Answer
+	1,  // 14: mtg.v1.Slots.SlotStatesEntry.value:type_name -> mtg.v1.SlotState
+	15, // [15:15] is the sub-list for method output_type
+	15, // [15:15] is the sub-list for method input_type
+	15, // [15:15] is the sub-list for extension type_name
+	15, // [15:15] is the sub-list for extension extendee
+	0,  // [0:15] is the sub-list for field type_name
 }
 
 func init() { file_mtg_v1_session_proto_init() }
@@ -535,8 +899,8 @@ func file_mtg_v1_session_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_mtg_v1_session_proto_rawDesc), len(file_mtg_v1_session_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   4,
+			NumEnums:      3,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

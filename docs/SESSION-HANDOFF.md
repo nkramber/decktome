@@ -1,10 +1,10 @@
 # Session hand-off
 
-Read this file first in a fresh session. Then read `CLAUDE.md`, `docs/decisions.md`, and `docs/open-questions.md`.
+`CLAUDE.md` is the entry point. It sends you here. Then read `docs/decisions.md` and `docs/open-questions.md`.
 
 ## Last updated
 
-2026-08-24. Merged: PR-0a to PR-5 (#1 to #8). Phase 1 is complete. PR-10 built on branch `pr-10`, gate held (unit tests and live smoke), merge pending.
+2026-08-24. Merged: PR-0a to PR-5 and PR-10 (#1 to #9). Phase 1 is complete. The full audit ran and every finding is fixed on branch `audit-fixes`, merge pending.
 
 ## State of the work
 
@@ -31,9 +31,21 @@ Done in the PR-10 session (2026-08-24):
 
 ## Where we stopped
 
-PR-10 is complete. Lint is clean, 15 unit tests pass over the fakes, and the live smoke passed against both vendors (2026-08-24, $0.0013). The owner's keys live in `.env`.
+Done in the audit session (2026-08-24), branch `audit-fixes`:
+- `docs/audit-2026-08-24.md` records every finding and its resolution. Six review passes, then five fix streams.
+- PR-1b: the proto contract gained every field PR-6 to PR-9 need (F-25). `buf breaking` runs in CI. The string `ChatResponse.error` is deprecated in favor of `failure`.
+- PR-4b: token rows report `NOT_PLAYABLE` (F-21). BOM, rune-safe truncation, quantity cap, unknown finish and condition values, duplicate merge, per-reason counts, `language` and `set_name`, physical line numbers. `collectionsvc` has tests.
+- PR-5b: five eligibility gaps fixed (F-22). Companion fully checked. Ownership per Oracle id. Golden gate 41 good and 53 bad. `DeckService.Validate` does the ownership check from the stored collection.
+- Cards and ops: legality-diff coverage (F-23) with a marker object per version. The worker is a Cloud Run job (D-61). The API listens first and refuses to start on Cloud Run without `ALLOW_DEBUG_USER=1`. Also: body limits, snapshot pruning, 429 handling, collision counts, per-face artist, `price_as_of`.
+- PR-10b: thinking tokens counted, cache writes priced, keys required by default (`LLM_REQUIRE_KEYS=0` opts out), adapter tests with `httptest` (F-24).
+- Scaffold: Node 22.23.2, `.dockerignore`, CI with SHA-pinned actions, `go build`, `buf breaking`, buf cache. `dev.sh` hardened. Compose stack verified end to end with a worker seed service. Web tests render `App` under jsdom with an axe check.
+- Docs and corpus: every status current, D-42 to D-61 recorded, OQ-17 closed, OQ-20 opened, Standard set list and bracket table corrected, ban bullets refreshed.
 
-Known limits, recorded in the roadmap entry: Anthropic reports no reasoning-token count. No call site uses the layer yet. PR-7 and PR-8 add the first ones, with real role fixtures under `internal/llm/fixtures/`.
+Owner actions before merge:
+1. `nvm install && nvm use` (Node 22.23.2), then `cd web && pnpm install`. Then `make test`.
+2. Review branch `audit-fixes` and merge it as one PR.
+
+Known limits: Grist, the Hunger Tide can not be a commander in the engine (no Scryfall signal). GCS `ListVersions` and `DeleteVersion` have no unit test. The ManaBox condition vocabulary beyond `near_mint` is unverified.
 
 ## Owner directive 2026-08-24 (D-37)
 
@@ -41,7 +53,7 @@ The collection is optional. A user with zero library gets a fully optimized deck
 
 ## Next steps, in order
 
-1. The owner reviews and merges `pr-10`.
+1. The owner runs the two actions above and merges `audit-fixes`.
 2. PR-6 (candidates), PR-7 (questions), PR-8 (generator), PR-9 (variance). PR-7 is the first call site of `internal/llm`.
 
 ## Facts that expire
@@ -50,7 +62,8 @@ The collection is optional. A user with zero library gets a fully optimized deck
 - Scryfall bulk sizes and counts: 2026-08-23.
 - Game Changers: 53 cards, list of 2026-02-09.
 - Standard: 12 legal sets, no rotation in 2026.
-- LLM model ids and prices: 2026-08-24 (`roles.json`, `prices.json`). Sonnet 5 intro price ends 2026-08-31.
+- LLM model ids and prices: 2026-08-24 (`roles.json`, `prices.json`). The Sonnet 5 intro price claim is unverified.
+- Comprehensive Rules: 2026-08-07 text. Commander brackets: 2025-10-21 revision. Standard: 18 sets, six leave in 2027.
 
 ## How to resume
 

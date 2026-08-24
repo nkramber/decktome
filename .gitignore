@@ -17,3 +17,5 @@ web/apps/web/dist/
 *.tsbuildinfo
 *-debug.log
 firebase-export-*/
+coverage/
+.firebase/
