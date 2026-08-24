@@ -4,7 +4,7 @@ Read this file first in a fresh session. Then read `CLAUDE.md`, `docs/decisions.
 
 ## Last updated
 
-2026-08-23, session 1, pass 2 (exploratory design). The owner committed and pushed pass 1.
+2026-08-23, session 1, pass 4. The roadmap is approved (D-31). PR-0a is built on branch `pr-0a-scaffold` and staged, not committed.
 
 ## State of the work
 
@@ -23,11 +23,14 @@ Done in session 1:
 
 ## Where we stopped
 
-The design doc is draft 1 with correction pass 2. The owner opened it in the IDE but has not sent review comments. No code exists.
+PR-0a (scaffold) is built and its gate holds: `make dev` starts the API (:8080), the worker, and the web app (:5180). The Connect-RPC health check works directly and through the Vite proxy. `make lint`, `make test`, and `make proto-check` pass locally. The files are staged on branch `pr-0a-scaffold`. The owner commits, opens the PR, and merges (D-34: squash). CI (`.github/workflows/verify.yml`) has not run on GitHub yet, so the first PR may need a CI fix.
 
 ## Next steps, in order
 
-1. Ask the owner to review `docs/design-roadmap.md`. Collect corrections as dated entries in the register and the decisions file.
+1. The owner commits and pushes `pr-0a-scaffold`, opens the PR, and watches CI. Fix CI if needed. Merge.
+2. PR-0b: `docs/setup.md` and the Docker install (D-10). `make doctor` already exists in `scripts/doctor.sh`.
+3. PR-0c: local stack (Firestore and Auth emulators, fake-gcs-server, Dispatcher interface, fake LLM provider) per `docs/reference/local-dev-environment.md`.
+4. Ask the owner to review the roadmap again when Phase 1 starts. Collect corrections as dated entries.
 2. Ask OQ-18 (rerun depth rule) and OQ-19 (scoring rubric) when the design reaches I-1 and M-5. OQ-17 files come from the owner later.
 3. Run the STE checker (`docs/tools/ste-check.py`) on every changed `.md` file and fix findings.
 4. Expand the `mtg-corpus` skill: archetype-to-card examples per format, the Karsten color-source table, and a sample ManaBox export fixture (owner-provided).

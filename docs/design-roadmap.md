@@ -74,7 +74,7 @@ Three structural facts drive the plan:
 
 ## 5. Defect and finding register
 
-Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⚠ constraint on other work · ❓ needs owner input.
+Status: ✅ resolved · 🔧 planned or in progress (item listed) · 🅿 parked · ⚠ constraint on other work · ❓ needs owner input.
 
 | # | Finding | Status |
 |---|---|---|
@@ -123,7 +123,7 @@ Ids: PR-# code, M-# measurement, I-# integration, D-# decisions (in `decisions.m
 
 ### Phase 0 - Foundations (no product code)
 
-**PR-0a: Monorepo scaffold.**
+**PR-0a: Monorepo scaffold.** 🔧 built 2026-08-23 on branch `pr-0a-scaffold`, gate verified locally, PR not yet opened. Deviations from the plan, recorded in D-35: Vite 7 instead of 8, dev port 5180, buf built into `.bin/` from a `go tool` directive. The `verify:*` workflow exists but has not run on GitHub yet.
 Layout: `proto/` (buf module), `go/` (Go workspace with `cmd/api`, `cmd/worker`, `internal/cards`, `internal/collections`, `internal/rules`, `internal/agent`, `internal/meta`, `internal/llm`), `web/` (pnpm workspace: `apps/web`, `packages/api-client` for generated TypeScript), `docs/`, `.claude/`. Makefile as the single entry point: `proto`, `lint`, `test`, `test-repeat`, `cover`, `dev`, `dev-seed`. Pinned versions: Go, buf, protoc-gen-go, protoc-gen-connect-go, protoc-gen-es, pnpm, Node, golangci-lint. CI: `verify:*` matrix with a fan-in job, path filters, and a proto-diff gate. AGENTS.md with the commands and never-edit rules. Gate: `make dev` starts an empty API and an empty UI.
 > *In plain English:* the empty house with plumbing. One folder for the shared contract, one for Go, one for the web app. One command to start everything. The checks that stop bad changes are wired before there is anything to check.
 

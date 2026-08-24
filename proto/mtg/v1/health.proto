@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package mtg.v1;
+
+option go_package = "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1";
+
+// HealthService proves the proto pipeline end to end. PR-1 adds the real contract.
+service HealthService {
+  rpc Check(CheckRequest) returns (CheckResponse) {}
+}
+
+message CheckRequest {}
+
+message CheckResponse {
+  // status is "ok" when the service can serve requests.
+  string status = 1;
+  // version is the build version, or "dev" for a local build.
+  string version = 2;
+}
