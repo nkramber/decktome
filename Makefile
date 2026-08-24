@@ -6,7 +6,7 @@ GO := go -C go
 BUF := .bin/buf
 PNPM := pnpm --dir web
 
-.PHONY: help doctor buf proto proto-check lint test test-repeat cover build dev dev-seed run-api run-worker run-web clean
+.PHONY: help doctor buf proto proto-check lint test test-repeat cover build dev dev-docker dev-seed run-api run-worker run-web clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-14s %s\n", $$1, $$2}'
@@ -56,7 +56,7 @@ build: ## Build the Go binaries and the web app
 	@$(GO) build -o bin/worker ./cmd/worker
 	@$(PNPM) build
 
-run-api: ## Run the API on :8080
+run-api: ## Run the API on :8080 (make dev uses :8090)
 	@$(GO) run ./cmd/api
 
 run-worker: ## Run the worker
@@ -65,11 +65,14 @@ run-worker: ## Run the worker
 run-web: ## Run the Vite dev server on :5180
 	@$(PNPM) dev
 
-dev: ## Start the local stack: API, worker, and web (PR-0c adds the emulators)
+dev: ## Start the local stack: emulators, fake GCS, API, worker, web. No cloud credentials.
 	@./scripts/dev.sh
 
 dev-seed: ## Load local fixtures (PR-2 and PR-4 fill this in)
 	@echo "dev-seed: nothing to seed yet (arrives with PR-2 and PR-4)"
+
+dev-docker: ## Start the emulators, fake GCS, and API in containers (Compose)
+	@docker compose up --build
 
 clean: ## Remove build outputs
 	@rm -rf go/bin go/coverage.out web/apps/web/dist
