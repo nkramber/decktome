@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package mtg.v1;
+
+import "mtg/v1/collection.proto";
+
+option go_package = "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1";
+
+// CollectionService imports and reads the user's collections (roadmap PR-4).
+service CollectionService {
+  // Import parses an uploaded ManaBox CSV or Arena text list.
+  // Rows that do not resolve come back in the report, never dropped.
+  rpc ImportCollection(ImportCollectionRequest) returns (ImportCollectionResponse) {}
+  rpc GetCollection(GetCollectionRequest) returns (GetCollectionResponse) {}
+  rpc ListCollections(ListCollectionsRequest) returns (ListCollectionsResponse) {}
+}
+
+message ImportCollectionRequest {
+  string name = 1;
+  ImportSource source = 2;
+  // content is the raw uploaded file.
+  bytes content = 3;
+}
+
+message ImportCollectionResponse {
+  Collection collection = 1;
+  ImportReport report = 2;
+}
+
+message GetCollectionRequest {
+  string collection_id = 1;
+}
+
+message GetCollectionResponse {
+  Collection collection = 1;
+}
+
+message ListCollectionsRequest {}
+
+message ListCollectionsResponse {
+  // collections come back without entries. Get returns the entries.
+  repeated Collection collections = 1;
+}

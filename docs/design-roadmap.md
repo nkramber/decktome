@@ -94,6 +94,7 @@ Status: ✅ resolved · 🔧 planned or in progress (item listed) · 🅿 parked
 | F-14 | **Variance versus determinism.** The owner wants variance between decks. A first answer to OQ-4 asked for identical output on identical input. A second answer the same day withdrew that: random variance stays (D-18). Note for the record: an LLM is not deterministic even at temperature 0, so identical output was never a guarantee. | ✅ resolved by D-18. PR-9 keeps a stored seed per deck for reproduction on request, and adds plan variants. |
 | F-15 | **Standard has no rotation in 2026.** Rotation moves to the first set of 2027. Any hardcoded "September rotation" logic is wrong. | ✅ no rotation logic in code. Scryfall legalities carry it. |
 | F-16 | **Scryfall prices have no condition tiers.** `prices.usd`, `usd_foil`, `usd_etched` are TCGplayer near-mint market estimates, updated once per day. The owner asked for lightly-played prices (OQ-3). No free source gives them. | ✅ D-17: show the NM estimate with a 7-day rolling average and outlier rejection, labeled as such. A condition-tiered source is a later option. |
+| F-18 | **Scryfall legalities can not say "banned as a companion".** The 2026-02-09 Commander update unbanned Lutri, the Spellchaser but banned it as a companion. The Scryfall commander legality reads "legal". The open legalities map (guardrail 2) inherits this blind spot. | ⚠ binds PR-5: the rules engine owns the companion check. `Deck.companion_oracle_id` exists so the check has a target. Found in the 2026-08-24 proto re-pass. |
 | F-17 | **A fixed question catalog can not cover every prompt.** The owner wants catalog questions first, model-invented questions when needed, and a metric that says which case applies (D-25). Without the metric, the agent either asks nothing new or bypasses the catalog. | 🔧 PR-7 (gap score) + M-4 (catalog coverage metric) + PR-15 (catalog-change proposals from evals). |
 
 > *In plain English:* these are the traps we found before writing code. The biggest ones: ban lists change every few weeks. The collection file format is not documented. The AI can name a card that sounds right but is not. Each one has a planned fix or a rule that prevents it.
@@ -144,7 +145,11 @@ Container note: the firebase emulator binds 127.0.0.1 from `firebase.json`. The 
 
 ### Phase 1 - Data and rules (deterministic, fully testable)
 
-**PR-1: Proto contract, v1.**
+**PR-1: Proto contract, v1.** ✅ gate held 2026-08-24 on branch `pr-1`, merge pending. Nine files under `proto/mtg/v1/`. Generated Go and TypeScript compile, and the CI diff gate passes. Contract notes: `legalities` is an open map keyed by Scryfall format keys (guardrail 2). RPC names are service-scoped (`GetDeck`, `GetCollection`) because message names share one proto package. The stream message is `ChatResponse` with a oneof event. `Question` carries `invented` and `gap_score` (D-25). `Deck` carries `seed` (D-18), `stale` (D-29), and `legality_as_of`.
+
+Re-pass 2026-08-24 (owner-requested, against the MtG corpus) added: `COLOR_C` for produced mana, parsed `supertypes`/`card_types`/`subtypes`, `any_count_in_deck` (Relentless Rats class), commander eligibility (`can_be_commander`, `PartnerKind`, `partner_with_name`, `is_background`, `is_companion`), `Deck.sideboard` and `companion_oracle_id`, `CollectionEntry.rarity` (D-16), and `Printing.image_uris` plus `digital` (F-12, D-17).
+
+The re-pass also produced F-18.
 Messages: `Card`, `CardFace`, `Legality`, `Collection`, `CollectionEntry`, `Deck`, `DeckCard` (with `owned`, `owned_count`, `role`, `reason`), `Format`, `PowerLevel` (bracket or 60-card step, D-8), `Session`, `Turn`, `Question`, `Answer`, `ValidationResult`. Services: `CardService`, `CollectionService`, `DeckService`, `AgentService` (with a server-streaming `Chat` RPC). Connect-RPC with buf (D-7). Gate: generated Go and TypeScript compile. CI diff gate is green.
 > *In plain English:* one document says what a card, a deck, and a chat message look like. Both the Go code and the web app read it. Change it in one place, and both sides update.
 
