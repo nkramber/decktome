@@ -14,6 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-go@v5
         with:
           go-version-file: go/go.mod
@@ -25,6 +27,9 @@ jobs:
         run: make lint-go
       - name: test
         run: go -C go test -race ./...
+      # Guardrail 3: a model or price default change is a warning, never a failure.
+      - name: llm defaults
+        run: make llm-defaults-check
 
   web:
     name: "verify:web"

@@ -1,61 +1,115 @@
-// Package llm is the seam for language-model calls.
+// Package llm is the one door for language-model calls (D-1, guardrail 3).
 //
-// PR-0c ships the interface and the Fake provider so local mode never needs
-// an API key. PR-10 adds the role-to-model layer and the real providers.
-// Guardrail 3: no model id at a call site.
+// A call site names a Role. The Client resolves the role to a provider and a
+// model from the frozen config (roles.json), owns the request budget and the
+// retry classes, validates the structured output against the caller's JSON
+// Schema, and records usage. No call site ever names a model.
+//
+// PR-0c shipped the seam and the fixture Fake. PR-10 adds the role layer,
+// the OpenAI and Anthropic adapters (D-21, D-22), and usage accounting (M-1).
 package llm
 
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"io/fs"
+	"time"
 )
 
-// Request is one structured-output call.
+// Role names a call site's job. The config maps each role to a provider,
+// a model, a reasoning effort, and an output cap.
+type Role string
+
+// The five roles of the agent (roadmap PR-10).
+const (
+	RoleClassify Role = "classify"
+	RoleAsk      Role = "ask"
+	RoleGenerate Role = "generate"
+	RoleRepair   Role = "repair"
+	RoleJudge    Role = "judge"
+)
+
+// Roles lists every role in config order. Config validation requires all.
+var Roles = []Role{RoleClassify, RoleAsk, RoleGenerate, RoleRepair, RoleJudge}
+
+// Request is one structured-output call as the call site writes it.
 type Request struct {
-	// Role names the call site's job (for example "classify", "generate").
-	// PR-10 maps roles to providers and models.
-	Role string
-	// Input is the prompt input, serialized by the caller.
+	// Instructions is the system prompt. Keep it stable across calls of the
+	// same role: both providers cache a stable prefix.
+	Instructions string
+	// Input is the user-turn content, serialized by the caller.
 	Input string
+	// SchemaName labels the output schema for the provider (a-z, 0-9, _ , -).
+	SchemaName string
+	// Schema is the JSON Schema the output must satisfy. Strict rules apply:
+	// every object needs "additionalProperties": false and a full "required"
+	// list. The Client validates the output against it before it returns.
+	Schema json.RawMessage
+	// CacheKey is an optional routing hint for provider-side prompt caching.
+	// Use one key per session so a session's turns land on the same cache.
+	CacheKey string
 }
 
-// Response carries the raw structured output. The caller validates it
-// against its schema. A provider never returns unvalidated prose.
+// Call is what a provider adapter receives: the request plus the resolved
+// model settings. Only the Client builds a Call.
+type Call struct {
+	Request
+	Role            Role
+	Model           string
+	Effort          string
+	MaxOutputTokens int
+}
+
+// Usage is the token count of one provider call, as the provider reported
+// it. A nil *Usage means the provider reported nothing. Zero means measured
+// zero. These are different facts (M-1).
+type Usage struct {
+	InputTokens       int64 `json:"input_tokens"`
+	CachedInputTokens int64 `json:"cached_input_tokens"`
+	OutputTokens      int64 `json:"output_tokens"`
+	ReasoningTokens   int64 `json:"reasoning_tokens"`
+}
+
+// Add sums o into u.
+func (u *Usage) Add(o Usage) {
+	u.InputTokens += o.InputTokens
+	u.CachedInputTokens += o.CachedInputTokens
+	u.OutputTokens += o.OutputTokens
+	u.ReasoningTokens += o.ReasoningTokens
+}
+
+// Response carries the validated structured output.
 type Response struct {
-	// Output is a JSON document.
+	// Output is a JSON document that satisfies the request's Schema.
 	Output json.RawMessage
-	// Model is the resolved model id, or "fake" for the Fake provider.
-	Model string
+	// Provider and Model are the resolved names, for eval rows and logs.
+	Provider string
+	Model    string
+	// Usage is the provider's token report for the final attempt, or nil.
+	Usage *Usage
+	// Attempts counts provider calls made for this response, retries included.
+	Attempts int
+	// Latency is the wall-clock time of all attempts.
+	Latency time.Duration
 }
 
-// Provider executes LLM requests.
+// Provider executes one Call against one vendor. Adapters return a *Error
+// with a retry Class for every failure they can classify.
 type Provider interface {
-	Complete(ctx context.Context, req Request) (Response, error)
+	// Name is the provider key used in roles.json ("openai", "anthropic", "fake").
+	Name() string
+	Complete(ctx context.Context, call Call) (Response, error)
 }
 
-// Fake replies from fixture files instead of a network call.
-// Local mode and tests use it. The fixture for role R is R.json.
-type Fake struct {
-	fsys fs.FS
-}
+// Sleeper waits, or returns early when ctx ends. Tests replace it.
+type Sleeper func(ctx context.Context, d time.Duration) error
 
-// NewFake reads fixtures from fsys, normally an embed.FS or os.DirFS.
-func NewFake(fsys fs.FS) *Fake {
-	return &Fake{fsys: fsys}
-}
-
-// Complete returns the fixture for the request's role.
-// An absent fixture is an error, not an empty response: a silent default
-// would hide a missing test case.
-func (f *Fake) Complete(_ context.Context, req Request) (Response, error) {
-	data, err := fs.ReadFile(f.fsys, req.Role+".json")
-	if err != nil {
-		return Response{}, fmt.Errorf("llm fake: no fixture for role %q: %w", req.Role, err)
+func realSleep(ctx context.Context, d time.Duration) error {
+	t := time.NewTimer(d)
+	defer t.Stop()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-t.C:
+		return nil
 	}
-	if !json.Valid(data) {
-		return Response{}, fmt.Errorf("llm fake: fixture for role %q is not valid JSON", req.Role)
-	}
-	return Response{Output: data, Model: "fake"}, nil
 }

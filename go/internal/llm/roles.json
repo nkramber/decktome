@@ -1,0 +1,36 @@
+{
+  "verified_at": "2026-08-24",
+  "note": "Owner decisions D-38 and D-39 (2026-08-24). Baseline: OpenAI serves classify and ask on gpt-5.6-luna (cost tier) and generate and repair on gpt-5.6-terra (middle tier). Anthropic serves judge on claude-sonnet-5 so the judge never shares the generator's provider (D-22). Model ids verified against developers.openai.com/api/docs/models and the claude-api skill on 2026-08-24. No bake-off has run yet: PR-15 measures these defaults. Override one field with LLM_<ROLE>_<PROVIDER|MODEL|EFFORT>.",
+  "roles": {
+    "classify": {
+      "provider": "openai",
+      "model": "gpt-5.6-luna",
+      "effort": "none",
+      "max_output_tokens": 1024
+    },
+    "ask": {
+      "provider": "openai",
+      "model": "gpt-5.6-luna",
+      "effort": "low",
+      "max_output_tokens": 2048
+    },
+    "generate": {
+      "provider": "openai",
+      "model": "gpt-5.6-terra",
+      "effort": "medium",
+      "max_output_tokens": 16384
+    },
+    "repair": {
+      "provider": "openai",
+      "model": "gpt-5.6-terra",
+      "effort": "medium",
+      "max_output_tokens": 16384
+    },
+    "judge": {
+      "provider": "anthropic",
+      "model": "claude-sonnet-5",
+      "effort": "high",
+      "max_output_tokens": 8192
+    }
+  }
+}
