@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+package mtg.v1;
+
+import "mtg/v1/format.proto";
+import "mtg/v1/card.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1";
+
+// Session is one deck-building conversation.
+message Session {
+  string id = 1;
+  string collection_id = 2;
+  Slots slots = 3;
+  repeated Turn turns = 4;
+  repeated string deck_ids = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+}
+
+// Slots hold what the agent knows so far (roadmap PR-7).
+// An unset field is a slot the agent may ask about.
+message Slots {
+  Format format = 1;
+  PowerLevel power = 2;
+  repeated Color colors = 3;
+  // theme is the plan in the user's words, for example "lifegain".
+  string theme = 4;
+  // commander_oracle_ids is filled when the user names a commander.
+  repeated string commander_oracle_ids = 5;
+  PoolRule pool_rule = 6;
+  // budget_usd is the cap for cards to buy. Zero means no cap given.
+  double budget_usd = 7;
+  // locked_oracle_ids are cards the user wants in the deck.
+  repeated string locked_oracle_ids = 8;
+  // plan_variant separates two builds of one theme (roadmap PR-9).
+  string plan_variant = 9;
+}
+
+// PoolRule says how the collection constrains the deck (D-2).
+enum PoolRule {
+  POOL_RULE_UNSPECIFIED = 0;
+  // POOL_RULE_OWNED_FIRST builds from owned cards and lists upgrades.
+  POOL_RULE_OWNED_FIRST = 1;
+  POOL_RULE_OWNED_ONLY = 2;
+  POOL_RULE_ANY_CARD = 3;
+}
+
+// Turn is one exchange in the conversation.
+message Turn {
+  // user_message is what the user wrote.
+  string user_message = 1;
+  // agent_message is what the agent answered.
+  string agent_message = 2;
+  // questions the agent asked in this turn, when it asked.
+  repeated Question questions = 3;
+  google.protobuf.Timestamp at = 4;
+}
+
+// Question is one clarifying question (roadmap PR-7, D-25).
+message Question {
+  // slot names the empty slot this question fills.
+  string slot = 1;
+  string text = 2;
+  // options are suggested answers. The user can answer in free text.
+  repeated string options = 3;
+  // invented marks a model-invented question (D-25). Catalog otherwise.
+  bool invented = 4;
+  // gap_score is the catalog-fit score that allowed an invented question.
+  double gap_score = 5;
+}
