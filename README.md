@@ -2,7 +2,7 @@
 
 An agentic Magic: The Gathering deck builder. You upload a ManaBox collection export (optional), describe the deck you want, answer a few questions, and get a legal, validated deck with card art. Go + Protobuf (Connect-RPC) + TypeScript (React). Design: `docs/design-roadmap.md`.
 
-Status (2026-08-24): Phase 1 in progress. The local stack serves the card database and collection import. The deck-building agent is not built yet.
+Status (2026-08-24): Phase 1 complete. Phase 2 (agent) in progress: PR-10 merged. The local stack serves the card database, the collection import, and the LLM role layer. The deck-building agent is not built yet.
 
 ## Run it locally
 
@@ -14,13 +14,15 @@ Everything runs on your machine with no cloud account and no credentials.
 make doctor
 ```
 
-Each `MISSING` line shows the fix command. Full install steps: `docs/setup.md`. You need: Go, Node + pnpm, the firebase CLI, Java 17, and Docker (only for `make dev-docker`).
+Each `MISSING` line shows the fix command. Full install steps: `docs/setup.md`. You need: Go, Node 22 LTS (22.23.2) + pnpm, the firebase CLI, Java 17, and Docker (only for `make dev-docker`). A stopped Docker daemon is a `warn` line, not a failure.
 
 ### 2. Install the web dependencies
 
 ```bash
 cd web && pnpm install && cd ..
 ```
+
+Optional: copy `.env.example` to `.env` and add the LLM provider keys. Without keys, `make dev` uses the fixture fake for every LLM role.
 
 ### 3. Start the stack
 
@@ -96,7 +98,7 @@ Open http://localhost:5180 for the web page (a health view for now).
 make dev-docker
 ```
 
-Compose runs the emulators, fake GCS, and the API in containers. The native `make dev` is the normal path.
+Compose runs the emulators, fake GCS, and the API in containers. The native `make dev` is the normal path. To load the card database in the container stack, run `docker compose --profile seed run --rm worker`. The API loads the snapshot within 15 seconds. Verified end to end on 2026-08-24.
 
 ## Development commands
 
@@ -106,7 +108,15 @@ make proto         # regenerate Go + TS from proto/ (commit the output)
 make lint          # go vet, golangci-lint, eslint, tsc
 make test          # go test -race, vitest
 make test-repeat TEST=TestName RUNS=25   # flake hunt
+make test-smoke    # live LLM smoke test, reads the keys from .env
+make llm-defaults-check   # warn when roles.json or prices.json changed
+make proto-breaking       # buf breaking against main
+make cover         # Go coverage summary
+make build         # Go binaries + web bundle
+make dev-seed      # one-shot card snapshot refresh into the local stack
 ```
+
+CI runs every job on every push and pull request. There are no path filters.
 
 Rules for contributors and agents: `AGENTS.md`. Machine setup: `docs/setup.md`. Design and roadmap: `docs/design-roadmap.md`. Decisions: `docs/decisions.md`.
 

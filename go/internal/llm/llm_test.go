@@ -1,9 +1,12 @@
 package llm
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
+	"log/slog"
+	"strings"
 	"testing"
 	"testing/fstest"
 	"time"
@@ -29,6 +32,7 @@ func newTestClient(t *testing.T, p Provider, opts ...Option) *Client {
 	opts = append([]Option{
 		WithSleeper(func(_ context.Context, d time.Duration) error { slept = append(slept, d); return nil }),
 		WithBudget(Budget{MaxAttempts: 4, Deadline: time.Minute, BaseDelay: time.Second}),
+		WithoutJitter(),
 	}, opts...)
 	c, err := New(testConfig(), []Provider{p}, opts...)
 	if err != nil {
@@ -170,6 +174,9 @@ func TestCompleteHappyPath(t *testing.T) {
 	if rep.Calls != 1 || rep.Tokens == nil || rep.Tokens.InputTokens != 10 || rep.CostUSD != nil {
 		t.Errorf("report = %+v", rep)
 	}
+	if res.Latency <= 0 {
+		t.Errorf("latency = %v, want > 0", res.Latency)
+	}
 }
 
 func TestCompleteSchemaMismatch(t *testing.T) {
@@ -304,8 +311,21 @@ func TestAccumulatorNullSemantics(t *testing.T) {
 	if rep.ByRole[RoleClassify].Calls != 2 || rep.ByRole[RoleClassify].Tokens.OutputTokens != 1_000_000 {
 		t.Errorf("by role = %+v", rep.ByRole[RoleClassify])
 	}
+	// Anthropic cache writes cost 1.25 x input: 1M in = 0.2M fresh at $3
+	// + 0.5M read at $0.30 + 0.3M write at $3.75, plus 1M out at $15.
+	acc.Record(RoleJudge, "claude-sonnet-5", &Usage{InputTokens: 1_000_000, CachedInputTokens: 500_000, CacheWriteTokens: 300_000, OutputTokens: 1_000_000}, 2*time.Millisecond)
+	rep = acc.Report()
+	if rep.CostUSD == nil {
+		t.Fatalf("report = %+v", rep)
+	}
+	if want := 1.31 + 0.60 + 0.15 + 1.125 + 15.0; *rep.CostUSD < want-1e-9 || *rep.CostUSD > want+1e-9 {
+		t.Errorf("cost = %v, want %v", *rep.CostUSD, want)
+	}
+	if rep.Tokens.CacheWriteTokens != 300_000 || rep.LatencyMS != 4 {
+		t.Errorf("report = %+v", rep)
+	}
 	acc.Record(RoleJudge, "unknown-model", &Usage{InputTokens: 1}, time.Millisecond)
-	if rep := acc.Report(); rep.CostUSD != nil || rep.Tokens.InputTokens != 1_000_001 {
+	if rep := acc.Report(); rep.CostUSD != nil || rep.Tokens.InputTokens != 2_000_001 {
 		t.Errorf("unpriced report = %+v", rep)
 	}
 	var nilAcc *Accumulator
@@ -316,7 +336,8 @@ func TestAccumulatorNullSemantics(t *testing.T) {
 }
 
 func TestNewFromEnvFallsBackToFake(t *testing.T) {
-	c, err := NewFromEnv(func(string) string { return "" }, discardLogger())
+	env := map[string]string{EnvRequireKeys: "0"}
+	c, err := NewFromEnv(func(k string) string { return env[k] }, discardLogger())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -325,14 +346,64 @@ func TestNewFromEnvFallsBackToFake(t *testing.T) {
 			t.Errorf("provider %q not wired", name)
 		}
 	}
-	_, err = NewFromEnv(func(k string) string {
-		if k == EnvRequireKeys {
-			return "1"
-		}
-		return ""
-	}, discardLogger())
+	env["LLM_JUDGE_PROVIDER"] = FakeName
+	if _, err := NewFromEnv(func(k string) string { return env[k] }, discardLogger()); err != nil {
+		t.Errorf("LLM_REQUIRE_KEYS=0 must allow the fake judge: %v", err)
+	}
+}
+
+func TestNewFromEnvRequiresKeysByDefault(t *testing.T) {
+	// Unset means required (D-3): a missing key is fatal.
+	_, err := NewFromEnv(func(string) string { return "" }, discardLogger())
 	if err == nil {
-		t.Error("LLM_REQUIRE_KEYS=1 with no keys must fail")
+		t.Error("no keys and LLM_REQUIRE_KEYS unset must fail")
+	}
+	// A fake role is refused even when every key is present.
+	env := map[string]string{
+		EnvOpenAIKey:         "sk-test",
+		EnvAnthropicKey:      "sk-ant-test",
+		"LLM_JUDGE_PROVIDER": FakeName,
+	}
+	_, err = NewFromEnv(func(k string) string { return env[k] }, discardLogger())
+	if err == nil {
+		t.Error("LLM_JUDGE_PROVIDER=fake with keys required must fail")
+	}
+	// LLM_REQUIRE_KEYS=1 is the same as unset.
+	env[EnvRequireKeys] = "1"
+	if _, err := NewFromEnv(func(k string) string { return env[k] }, discardLogger()); err == nil {
+		t.Error("LLM_REQUIRE_KEYS=1 with a fake role must fail")
+	}
+	// With both keys and no fake role, the real adapters are wired.
+	delete(env, "LLM_JUDGE_PROVIDER")
+	c, err := NewFromEnv(func(k string) string { return env[k] }, discardLogger())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := c.providers[OpenAIName].(*OpenAI); !ok {
+		t.Errorf("openai provider = %T", c.providers[OpenAIName])
+	}
+	if _, ok := c.providers[AnthropicName].(*Anthropic); !ok {
+		t.Errorf("anthropic provider = %T", c.providers[AnthropicName])
+	}
+}
+
+func TestNewFromEnvWarnsOnUnpricedOverride(t *testing.T) {
+	var buf bytes.Buffer
+	log := slog.New(slog.NewTextHandler(&buf, nil))
+	env := map[string]string{
+		EnvRequireKeys:       "0",
+		"LLM_CLASSIFY_MODEL": "gpt-99-unknown",
+		"LLM_GENERATE_MODEL": "gpt-5.6-sol",
+	}
+	if _, err := NewFromEnv(func(k string) string { return env[k] }, log); err != nil {
+		t.Fatal(err)
+	}
+	out := buf.String()
+	if !strings.Contains(out, "no price row") || !strings.Contains(out, "gpt-99-unknown") {
+		t.Errorf("want a price-row warning for gpt-99-unknown, got:\n%s", out)
+	}
+	if strings.Contains(out, "model=gpt-5.6-sol level=WARN") || strings.Count(out, "no price row") != 1 {
+		t.Errorf("a priced override must not warn, got:\n%s", out)
 	}
 }
 

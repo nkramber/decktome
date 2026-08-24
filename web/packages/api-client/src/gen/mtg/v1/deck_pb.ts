@@ -4,8 +4,10 @@
 
 import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
-import type { Format, PowerLevel } from "./format_pb";
+import type { Format, FormatId, PowerLevel } from "./format_pb";
 import { file_mtg_v1_format } from "./format_pb";
+import type { PoolRule } from "./session_pb";
+import { file_mtg_v1_session } from "./session_pb";
 import type { Timestamp } from "@bufbuild/protobuf/wkt";
 import { file_google_protobuf_timestamp } from "@bufbuild/protobuf/wkt";
 import type { Message } from "@bufbuild/protobuf";
@@ -14,7 +16,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file mtg/v1/deck.proto.
  */
 export const file_mtg_v1_deck: GenFile = /*@__PURE__*/
-  fileDesc("ChFtdGcvdjEvZGVjay5wcm90bxIGbXRnLnYxIrYDCgREZWNrEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSHgoGZm9ybWF0GAMgASgLMg4ubXRnLnYxLkZvcm1hdBIhCgVwb3dlchgEIAEoCzISLm10Zy52MS5Qb3dlckxldmVsEg8KB3N1bW1hcnkYBSABKAkSHAoUY29tbWFuZGVyX29yYWNsZV9pZHMYBiADKAkSHwoFY2FyZHMYByADKAsyEC5tdGcudjEuRGVja0NhcmQSLAoKdmFsaWRhdGlvbhgIIAEoCzIYLm10Zy52MS5WYWxpZGF0aW9uUmVzdWx0EhYKDmxlZ2FsaXR5X2FzX29mGAkgASgJEgwKBHNlZWQYCiABKAMSEgoKc2Vzc2lvbl9pZBgLIAEoCRIuCgpjcmVhdGVkX2F0GAwgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBINCgVzdGFsZRgNIAEoCBIYChBzdGFsZV9vcmFjbGVfaWRzGA4gAygJEiMKCXNpZGVib2FyZBgPIAMoCzIQLm10Zy52MS5EZWNrQ2FyZBIbChNjb21wYW5pb25fb3JhY2xlX2lkGBAgASgJIo4BCghEZWNrQ2FyZBIRCglvcmFjbGVfaWQYASABKAkSDAoEbmFtZRgCIAEoCRINCgVjb3VudBgDIAEoBRIeCgRyb2xlGAQgASgOMhAubXRnLnYxLkNhcmRSb2xlEg4KBnJlYXNvbhgFIAEoCRINCgVvd25lZBgGIAEoCBITCgtvd25lZF9jb3VudBgHIAEoBSJFChBWYWxpZGF0aW9uUmVzdWx0EiEKCGZpbmRpbmdzGAEgAygLMg8ubXRnLnYxLkZpbmRpbmcSDgoGcGFzc2VkGAIgASgIIl8KB0ZpbmRpbmcSDAoEY29kZRgBIAEoCRIiCghzZXZlcml0eRgCIAEoDjIQLm10Zy52MS5TZXZlcml0eRIPCgdtZXNzYWdlGAMgASgJEhEKCW9yYWNsZV9pZBgEIAEoCSr/AQoIQ2FyZFJvbGUSGQoVQ0FSRF9ST0xFX1VOU1BFQ0lGSUVEEAASEgoOQ0FSRF9ST0xFX0xBTkQQARISCg5DQVJEX1JPTEVfUkFNUBACEhIKDkNBUkRfUk9MRV9EUkFXEAMSFQoRQ0FSRF9ST0xFX1JFTU9WQUwQBBISCg5DQVJEX1JPTEVfV0lQRRAFEhQKEENBUkRfUk9MRV9USFJFQVQQBhIZChVDQVJEX1JPTEVfSU5URVJBQ1RJT04QBxIVChFDQVJEX1JPTEVfU1lORVJHWRAIEhQKEENBUkRfUk9MRV9XSU5DT04QCRITCg9DQVJEX1JPTEVfT1RIRVIQCipeCghTZXZlcml0eRIYChRTRVZFUklUWV9VTlNQRUNJRklFRBAAEhIKDlNFVkVSSVRZX0JMT0NLEAESEQoNU0VWRVJJVFlfV0FSThACEhEKDVNFVkVSSVRZX0lORk8QA0I6WjhnaXRodWIuY29tL25rcmFtYmVyL210Zy1kZWNrLWJ1aWxkZXIvZ28vZ2VuL210Zy92MTttdGd2MWIGcHJvdG8z", [file_mtg_v1_format, file_google_protobuf_timestamp]);
+  fileDesc("ChFtdGcvdjEvZGVjay5wcm90bxIGbXRnLnYxIvADCgREZWNrEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSHgoGZm9ybWF0GAMgASgLMg4ubXRnLnYxLkZvcm1hdBIhCgVwb3dlchgEIAEoCzISLm10Zy52MS5Qb3dlckxldmVsEg8KB3N1bW1hcnkYBSABKAkSHAoUY29tbWFuZGVyX29yYWNsZV9pZHMYBiADKAkSHwoFY2FyZHMYByADKAsyEC5tdGcudjEuRGVja0NhcmQSLAoKdmFsaWRhdGlvbhgIIAEoCzIYLm10Zy52MS5WYWxpZGF0aW9uUmVzdWx0EhYKDmxlZ2FsaXR5X2FzX29mGAkgASgJEgwKBHNlZWQYCiABKAMSEgoKc2Vzc2lvbl9pZBgLIAEoCRIuCgpjcmVhdGVkX2F0GAwgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBINCgVzdGFsZRgNIAEoCBIYChBzdGFsZV9vcmFjbGVfaWRzGA4gAygJEiMKCXNpZGVib2FyZBgPIAMoCzIQLm10Zy52MS5EZWNrQ2FyZBIbChNjb21wYW5pb25fb3JhY2xlX2lkGBAgASgJEiIKCHVwZ3JhZGVzGBEgAygLMhAubXRnLnYxLkRlY2tDYXJkEhQKDGJ1eV9jb3N0X3VzZBgSIAEoASKhAQoIRGVja0NhcmQSEQoJb3JhY2xlX2lkGAEgASgJEgwKBG5hbWUYAiABKAkSDQoFY291bnQYAyABKAUSHgoEcm9sZRgEIAEoDjIQLm10Zy52MS5DYXJkUm9sZRIOCgZyZWFzb24YBSABKAkSDQoFb3duZWQYBiABKAgSEwoLb3duZWRfY291bnQYByABKAUSEQoJcHJpY2VfdXNkGAggASgBIqQBChBWYWxpZGF0aW9uUmVzdWx0EiEKCGZpbmRpbmdzGAEgAygLMg8ubXRnLnYxLkZpbmRpbmcSDgoGcGFzc2VkGAIgASgIEhYKDmxlZ2FsaXR5X2FzX29mGAMgASgJEiMKCXBvb2xfcnVsZRgEIAEoDjIQLm10Zy52MS5Qb29sUnVsZRIgCgZmb3JtYXQYBSABKA4yEC5tdGcudjEuRm9ybWF0SWQiXwoHRmluZGluZxIMCgRjb2RlGAEgASgJEiIKCHNldmVyaXR5GAIgASgOMhAubXRnLnYxLlNldmVyaXR5Eg8KB21lc3NhZ2UYAyABKAkSEQoJb3JhY2xlX2lkGAQgASgJKv8BCghDYXJkUm9sZRIZChVDQVJEX1JPTEVfVU5TUEVDSUZJRUQQABISCg5DQVJEX1JPTEVfTEFORBABEhIKDkNBUkRfUk9MRV9SQU1QEAISEgoOQ0FSRF9ST0xFX0RSQVcQAxIVChFDQVJEX1JPTEVfUkVNT1ZBTBAEEhIKDkNBUkRfUk9MRV9XSVBFEAUSFAoQQ0FSRF9ST0xFX1RIUkVBVBAGEhkKFUNBUkRfUk9MRV9JTlRFUkFDVElPThAHEhUKEUNBUkRfUk9MRV9TWU5FUkdZEAgSFAoQQ0FSRF9ST0xFX1dJTkNPThAJEhMKD0NBUkRfUk9MRV9PVEhFUhAKKl4KCFNldmVyaXR5EhgKFFNFVkVSSVRZX1VOU1BFQ0lGSUVEEAASEgoOU0VWRVJJVFlfQkxPQ0sQARIRCg1TRVZFUklUWV9XQVJOEAISEQoNU0VWRVJJVFlfSU5GTxADQjpaOGdpdGh1Yi5jb20vbmtyYW1iZXIvbXRnLWRlY2stYnVpbGRlci9nby9nZW4vbXRnL3YxO210Z3YxYgZwcm90bzM", [file_mtg_v1_format, file_mtg_v1_session, file_google_protobuf_timestamp]);
 
 /**
  * Deck is one generated deck.
@@ -119,6 +121,23 @@ export type Deck = Message<"mtg.v1.Deck"> & {
    * @generated from field: string companion_oracle_id = 16;
    */
   companionOracleId: string;
+
+  /**
+   * upgrades lists unowned cards that improve the deck, with prices (D-2,
+   * roadmap PR-6). Empty in owned-only mode. In any-card mode the buy list
+   * is the unowned part of cards instead (D-37).
+   *
+   * @generated from field: repeated mtg.v1.DeckCard upgrades = 17;
+   */
+  upgrades: DeckCard[];
+
+  /**
+   * buy_cost_usd sums price_usd over the cards the user does not own.
+   * Zero when every card is owned or no price is known.
+   *
+   * @generated from field: double buy_cost_usd = 18;
+   */
+  buyCostUsd: number;
 };
 
 /**
@@ -174,6 +193,14 @@ export type DeckCard = Message<"mtg.v1.DeckCard"> & {
    * @generated from field: int32 owned_count = 7;
    */
   ownedCount: number;
+
+  /**
+   * price_usd is the card's display price at build time (D-17). Zero means
+   * no price.
+   *
+   * @generated from field: double price_usd = 8;
+   */
+  priceUsd: number;
 };
 
 /**
@@ -200,6 +227,28 @@ export type ValidationResult = Message<"mtg.v1.ValidationResult"> & {
    * @generated from field: bool passed = 2;
    */
   passed: boolean;
+
+  /**
+   * legality_as_of is the card-snapshot date the engine checked against,
+   * ISO 8601. Empty when the engine ran without a snapshot.
+   *
+   * @generated from field: string legality_as_of = 3;
+   */
+  legalityAsOf: string;
+
+  /**
+   * pool_rule is the ownership mode the engine applied (D-37).
+   *
+   * @generated from field: mtg.v1.PoolRule pool_rule = 4;
+   */
+  poolRule: PoolRule;
+
+  /**
+   * format is the format the engine applied.
+   *
+   * @generated from field: mtg.v1.FormatId format = 5;
+   */
+  format: FormatId;
 };
 
 /**

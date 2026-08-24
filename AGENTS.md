@@ -8,7 +8,7 @@ Go + Protobuf + TypeScript monorepo. Read `CLAUDE.md` for the owner's rules and 
 - `go/` - one Go module `github.com/nkramber/mtg-deck-builder/go`. `cmd/api` (Connect-RPC API, :8080 default, :8090 under `make dev`), `cmd/worker` (jobs), `internal/*` (packages), `gen/` (generated, committed).
 - `web/` - pnpm workspace. `apps/web` (React 19 + Vite 7, dev port 5180), `packages/api-client` (generated TypeScript, committed).
 - `docs/` - design roadmap, decisions, open questions, reference notes.
-- `scripts/` - `doctor.sh`, `dev.sh`. One-off tools only. Not a source of design patterns.
+- `scripts/` - `doctor.sh`, `dev.sh`, `check-llm-defaults.sh`. One-off tools only. Not a source of design patterns.
 
 ## Commands
 
@@ -19,8 +19,16 @@ make doctor        # check tools
 make proto         # regenerate Go + TS from proto/ (commit the output)
 make lint          # go vet, golangci-lint, eslint, tsc
 make test          # go test -race, vitest
+make test-smoke    # live LLM smoke test, reads .env (fails when .env is absent)
+make llm-defaults-check   # warn on a roles.json or prices.json change
+make proto-breaking       # buf breaking against main
+make cover         # Go coverage summary
+make build         # Go binaries + web bundle
 make dev           # emulators (:8281, :9199) + fake GCS (:4443) + api (:8090) + worker + web (:5180)
+make dev-seed      # one-shot card snapshot refresh (needs make dev)
 ```
+
+CI runs every job on each push and pull request. There are no path filters.
 
 ## Rules
 

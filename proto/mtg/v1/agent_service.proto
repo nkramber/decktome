@@ -19,6 +19,22 @@ message ChatRequest {
   string session_id = 1;
   string collection_id = 2;
   string message = 3;
+  // answers carries structured replies to the last turn's questions.
+  repeated Answer answers = 4;
+  // seed reproduces an earlier build (D-18). Zero means a new seed.
+  int64 seed = 5;
+  // keep_oracle_ids asks for a re-roll that keeps these cards (roadmap
+  // PR-9, lever 3).
+  repeated string keep_oracle_ids = 6;
+}
+
+// AgentError is a failure the UI can act on.
+message AgentError {
+  // code is stable, for example "llm_unavailable" or "no_legal_deck".
+  string code = 1;
+  string message = 2;
+  // retryable says a new attempt can succeed.
+  bool retryable = 3;
 }
 
 // ChatResponse is one streamed step of the agent's turn.
@@ -36,8 +52,12 @@ message ChatResponse {
     string status = 5;
     // deck is the finished, validated deck.
     Deck deck = 6;
-    // error is a user-facing failure message. It ends the turn.
-    string error = 7;
+    // error is the old string failure. Deprecated: read failure.
+    string error = 7 [deprecated = true];
+    // failure is a user-facing failure. It ends the turn.
+    AgentError failure = 8;
+    // usage is the session total after this turn (M-1).
+    Usage usage = 9;
   }
 }
 

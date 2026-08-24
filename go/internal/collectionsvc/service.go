@@ -27,16 +27,24 @@ type IndexSource interface {
 // implementation with Firebase Auth.
 type UserResolver func(ctx context.Context) string
 
+// Repo is the storage the service needs. *collections.Repo satisfies it.
+type Repo interface {
+	Put(ctx context.Context, uid string, col *mtgv1.Collection) (string, error)
+	Get(ctx context.Context, uid, id string) (*mtgv1.Collection, error)
+	List(ctx context.Context, uid string) ([]*mtgv1.Collection, error)
+	FindByHash(ctx context.Context, uid, hash string) (string, error)
+}
+
 // Server answers CollectionService requests.
 type Server struct {
 	mtgv1connect.UnimplementedCollectionServiceHandler
-	repo  *collections.Repo
+	repo  Repo
 	index IndexSource
 	user  UserResolver
 }
 
 // New wires the service.
-func New(repo *collections.Repo, index IndexSource, user UserResolver) *Server {
+func New(repo Repo, index IndexSource, user UserResolver) *Server {
 	return &Server{repo: repo, index: index, user: user}
 }
 
@@ -79,9 +87,11 @@ func (s *Server) ImportCollection(ctx context.Context, req *connect.Request[mtgv
 	}
 
 	entries, badResolve := collections.Resolve(rows, idx)
+	unresolved := append(append([]*mtgv1.UnresolvedRow{}, badParse...), badResolve...)
 	report := &mtgv1.ImportReport{
-		Unresolved:    append(badParse, badResolve...),
-		ResolvedCount: int32(len(entries)),
+		Unresolved:         unresolved,
+		ResolvedCount:      int32(len(entries)), //nolint:gosec // bounded by maxUpload
+		UnresolvedByReason: collections.ReasonCounts(unresolved),
 	}
 	if len(entries) == 0 {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNoResolved)
@@ -96,12 +106,19 @@ func (s *Server) ImportCollection(ctx context.Context, req *connect.Request[mtgv
 		CardCount:   collections.CardCount(entries),
 	}
 	uid := s.user(ctx)
-	// An identical re-upload updates the existing document (D-16).
-	if existing, err := s.repo.FindByHash(ctx, uid, col.ContentHash); err == nil && existing != "" {
-		col.Id = existing
+	// An identical re-upload updates the existing document (D-16). The
+	// new request name wins: the user chose it. A lookup failure is an
+	// error, not a new document (C-6).
+	existing, err := s.repo.FindByHash(ctx, uid, col.ContentHash)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
 	}
+	col.Id = existing
 	id, err := s.repo.Put(ctx, uid, col)
 	if err != nil {
+		if errors.Is(err, collections.ErrTooLarge) {
+			return nil, connect.NewError(connect.CodeResourceExhausted, err)
+		}
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	col.Id = id

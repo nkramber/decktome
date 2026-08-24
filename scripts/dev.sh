@@ -2,7 +2,7 @@
 # Start the local stack with no cloud credentials (PR-0c, D-9).
 # One Ctrl-C stops every process. State persists in .local/.
 set -u
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/.." || exit 1
 
 FAKE_GCS_VERSION="v1.56.1"
 export PROJECT_ID="mtg-local"
@@ -11,8 +11,9 @@ export FIREBASE_AUTH_EMULATOR_HOST="127.0.0.1:9199"
 export STORAGE_EMULATOR_HOST="http://127.0.0.1:4443"
 export CARDS_BUCKET="mtg-local-cards"
 export CARDS_RELOAD_SECONDS="15"
-# Provider keys and LLM overrides live in .env (gitignored). Without
-# keys the API uses the fixture fake for every LLM role.
+# Local dev opts out of the key requirement. Without keys the API uses the
+# fixture fake for every LLM role. .env (gitignored) can still set keys.
+export LLM_REQUIRE_KEYS="0"
 if [ -f .env ]; then set -a; . ./.env; set +a; fi
 
 mkdir -p .local/firestore .local/gcs
@@ -36,17 +37,31 @@ cleanup() {
   done
   for p in "${pids[@]}"; do pkill -KILL -P "$p" 2>/dev/null; kill -KILL "$p" 2>/dev/null; done
   # go run leaves grandchildren behind. Sweep OUR ports only (Wallabee owns 8080, 8181, 4000, 5173).
-  lsof -ti :8281 -ti :9199 -ti :4443 -ti :8090 -ti :5180 -ti :4100 2>/dev/null | xargs kill -KILL 2>/dev/null
+  # 4490 is the emulator hub and 4590 is the emulator logging port (firebase.json).
+  lsof -ti :8281 -ti :9199 -ti :4443 -ti :8090 -ti :5180 -ti :4100 -ti :4490 -ti :4590 2>/dev/null | xargs kill -KILL 2>/dev/null
   # An abandoned export staging dir is always empty. Remove it.
   rmdir firebase-export-* 2>/dev/null
   wait 2>/dev/null
   return 0
 }
-trap cleanup EXIT INT TERM
+# INT/TERM: run cleanup once, drop the EXIT trap so it does not run twice,
+# then exit with the conventional 128+SIGINT code.
+trap cleanup EXIT
+trap 'cleanup; trap - EXIT; exit 130' INT TERM
 
 echo "==> firestore + auth emulators (:8281, :9199, ui :4100)"
 firebase emulators:start --only firestore,auth --project "$PROJECT_ID" \
   --import .local/firestore --export-on-exit .local/firestore & pids+=($!)
+
+# Wait for the Firestore port. The API and worker need it at start.
+for i in $(seq 1 30); do
+  if nc -z 127.0.0.1 8281 2>/dev/null; then break; fi
+  if [ "$i" -eq 30 ]; then
+    echo "!! firestore emulator did not open :8281 within 30 s. Check java and firebase-tools (make doctor)." >&2
+    exit 1
+  fi
+  sleep 1
+done
 
 echo "==> fake-gcs-server (:4443)"
 go run github.com/fsouza/fake-gcs-server@"$FAKE_GCS_VERSION" \

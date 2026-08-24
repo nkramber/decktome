@@ -6,13 +6,15 @@ import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobu
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Deck, ValidationResult } from "./deck_pb";
 import { file_mtg_v1_deck } from "./deck_pb";
+import type { PoolRule } from "./session_pb";
+import { file_mtg_v1_session } from "./session_pb";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file mtg/v1/deck_service.proto.
  */
 export const file_mtg_v1_deck_service: GenFile = /*@__PURE__*/
-  fileDesc("ChltdGcvdjEvZGVja19zZXJ2aWNlLnByb3RvEgZtdGcudjEiIQoOR2V0RGVja1JlcXVlc3QSDwoHZGVja19pZBgBIAEoCSItCg9HZXREZWNrUmVzcG9uc2USGgoEZGVjaxgBIAEoCzIMLm10Zy52MS5EZWNrIhIKEExpc3REZWNrc1JlcXVlc3QiMAoRTGlzdERlY2tzUmVzcG9uc2USGwoFZGVja3MYASADKAsyDC5tdGcudjEuRGVjayItCg9WYWxpZGF0ZVJlcXVlc3QSGgoEZGVjaxgBIAEoCzIMLm10Zy52MS5EZWNrIjwKEFZhbGlkYXRlUmVzcG9uc2USKAoGcmVzdWx0GAEgASgLMhgubXRnLnYxLlZhbGlkYXRpb25SZXN1bHQiRgoNRXhwb3J0UmVxdWVzdBIPCgdkZWNrX2lkGAEgASgJEiQKBmZvcm1hdBgCIAEoDjIULm10Zy52MS5FeHBvcnRGb3JtYXQiHgoORXhwb3J0UmVzcG9uc2USDAoEdGV4dBgBIAEoCSpNCgxFeHBvcnRGb3JtYXQSHQoZRVhQT1JUX0ZPUk1BVF9VTlNQRUNJRklFRBAAEh4KGkVYUE9SVF9GT1JNQVRfTUFOQUJPWF9URVhUEAEyiwIKC0RlY2tTZXJ2aWNlEjwKB0dldERlY2sSFi5tdGcudjEuR2V0RGVja1JlcXVlc3QaFy5tdGcudjEuR2V0RGVja1Jlc3BvbnNlIgASQgoJTGlzdERlY2tzEhgubXRnLnYxLkxpc3REZWNrc1JlcXVlc3QaGS5tdGcudjEuTGlzdERlY2tzUmVzcG9uc2UiABI/CghWYWxpZGF0ZRIXLm10Zy52MS5WYWxpZGF0ZVJlcXVlc3QaGC5tdGcudjEuVmFsaWRhdGVSZXNwb25zZSIAEjkKBkV4cG9ydBIVLm10Zy52MS5FeHBvcnRSZXF1ZXN0GhYubXRnLnYxLkV4cG9ydFJlc3BvbnNlIgBCOlo4Z2l0aHViLmNvbS9ua3JhbWJlci9tdGctZGVjay1idWlsZGVyL2dvL2dlbi9tdGcvdjE7bXRndjFiBnByb3RvMw", [file_mtg_v1_deck]);
+  fileDesc("ChltdGcvdjEvZGVja19zZXJ2aWNlLnByb3RvEgZtdGcudjEiIQoOR2V0RGVja1JlcXVlc3QSDwoHZGVja19pZBgBIAEoCSItCg9HZXREZWNrUmVzcG9uc2USGgoEZGVjaxgBIAEoCzIMLm10Zy52MS5EZWNrIhIKEExpc3REZWNrc1JlcXVlc3QiMAoRTGlzdERlY2tzUmVzcG9uc2USGwoFZGVja3MYASADKAsyDC5tdGcudjEuRGVjayJpCg9WYWxpZGF0ZVJlcXVlc3QSGgoEZGVjaxgBIAEoCzIMLm10Zy52MS5EZWNrEiMKCXBvb2xfcnVsZRgCIAEoDjIQLm10Zy52MS5Qb29sUnVsZRIVCg1jb2xsZWN0aW9uX2lkGAMgASgJIjwKEFZhbGlkYXRlUmVzcG9uc2USKAoGcmVzdWx0GAEgASgLMhgubXRnLnYxLlZhbGlkYXRpb25SZXN1bHQiRgoNRXhwb3J0UmVxdWVzdBIPCgdkZWNrX2lkGAEgASgJEiQKBmZvcm1hdBgCIAEoDjIULm10Zy52MS5FeHBvcnRGb3JtYXQiHgoORXhwb3J0UmVzcG9uc2USDAoEdGV4dBgBIAEoCSpNCgxFeHBvcnRGb3JtYXQSHQoZRVhQT1JUX0ZPUk1BVF9VTlNQRUNJRklFRBAAEh4KGkVYUE9SVF9GT1JNQVRfTUFOQUJPWF9URVhUEAEyiwIKC0RlY2tTZXJ2aWNlEjwKB0dldERlY2sSFi5tdGcudjEuR2V0RGVja1JlcXVlc3QaFy5tdGcudjEuR2V0RGVja1Jlc3BvbnNlIgASQgoJTGlzdERlY2tzEhgubXRnLnYxLkxpc3REZWNrc1JlcXVlc3QaGS5tdGcudjEuTGlzdERlY2tzUmVzcG9uc2UiABI/CghWYWxpZGF0ZRIXLm10Zy52MS5WYWxpZGF0ZVJlcXVlc3QaGC5tdGcudjEuVmFsaWRhdGVSZXNwb25zZSIAEjkKBkV4cG9ydBIVLm10Zy52MS5FeHBvcnRSZXF1ZXN0GhYubXRnLnYxLkV4cG9ydFJlc3BvbnNlIgBCOlo4Z2l0aHViLmNvbS9ua3JhbWJlci9tdGctZGVjay1idWlsZGVyL2dvL2dlbi9tdGcvdjE7bXRndjFiBnByb3RvMw", [file_mtg_v1_deck, file_mtg_v1_session]);
 
 /**
  * @generated from message mtg.v1.GetDeckRequest
@@ -86,6 +88,21 @@ export type ValidateRequest = Message<"mtg.v1.ValidateRequest"> & {
    * @generated from field: mtg.v1.Deck deck = 1;
    */
   deck?: Deck | undefined;
+
+  /**
+   * pool_rule selects the ownership check (D-37). UNSPECIFIED means
+   * ANY_CARD when collection_id is empty, else OWNED_FIRST.
+   *
+   * @generated from field: mtg.v1.PoolRule pool_rule = 2;
+   */
+  poolRule: PoolRule;
+
+  /**
+   * collection_id names the user's collection for the ownership check.
+   *
+   * @generated from field: string collection_id = 3;
+   */
+  collectionId: string;
 };
 
 /**

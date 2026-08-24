@@ -24,9 +24,16 @@ const (
 type ChatRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// session_id is empty on the first message. The first event returns it.
-	SessionId     string `protobuf:"bytes,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
-	CollectionId  string `protobuf:"bytes,2,opt,name=collection_id,json=collectionId,proto3" json:"collection_id,omitempty"`
-	Message       string `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
+	SessionId    string `protobuf:"bytes,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	CollectionId string `protobuf:"bytes,2,opt,name=collection_id,json=collectionId,proto3" json:"collection_id,omitempty"`
+	Message      string `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
+	// answers carries structured replies to the last turn's questions.
+	Answers []*Answer `protobuf:"bytes,4,rep,name=answers,proto3" json:"answers,omitempty"`
+	// seed reproduces an earlier build (D-18). Zero means a new seed.
+	Seed int64 `protobuf:"varint,5,opt,name=seed,proto3" json:"seed,omitempty"`
+	// keep_oracle_ids asks for a re-roll that keeps these cards (roadmap
+	// PR-9, lever 3).
+	KeepOracleIds []string `protobuf:"bytes,6,rep,name=keep_oracle_ids,json=keepOracleIds,proto3" json:"keep_oracle_ids,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -82,6 +89,90 @@ func (x *ChatRequest) GetMessage() string {
 	return ""
 }
 
+func (x *ChatRequest) GetAnswers() []*Answer {
+	if x != nil {
+		return x.Answers
+	}
+	return nil
+}
+
+func (x *ChatRequest) GetSeed() int64 {
+	if x != nil {
+		return x.Seed
+	}
+	return 0
+}
+
+func (x *ChatRequest) GetKeepOracleIds() []string {
+	if x != nil {
+		return x.KeepOracleIds
+	}
+	return nil
+}
+
+// AgentError is a failure the UI can act on.
+type AgentError struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// code is stable, for example "llm_unavailable" or "no_legal_deck".
+	Code    string `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
+	Message string `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	// retryable says a new attempt can succeed.
+	Retryable     bool `protobuf:"varint,3,opt,name=retryable,proto3" json:"retryable,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AgentError) Reset() {
+	*x = AgentError{}
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AgentError) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AgentError) ProtoMessage() {}
+
+func (x *AgentError) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AgentError.ProtoReflect.Descriptor instead.
+func (*AgentError) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_agent_service_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *AgentError) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+func (x *AgentError) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *AgentError) GetRetryable() bool {
+	if x != nil {
+		return x.Retryable
+	}
+	return false
+}
+
 // ChatResponse is one streamed step of the agent's turn.
 type ChatResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -94,6 +185,8 @@ type ChatResponse struct {
 	//	*ChatResponse_Status
 	//	*ChatResponse_Deck
 	//	*ChatResponse_Error
+	//	*ChatResponse_Failure
+	//	*ChatResponse_Usage
 	Event         isChatResponse_Event `protobuf_oneof:"event"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -101,7 +194,7 @@ type ChatResponse struct {
 
 func (x *ChatResponse) Reset() {
 	*x = ChatResponse{}
-	mi := &file_mtg_v1_agent_service_proto_msgTypes[1]
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -113,7 +206,7 @@ func (x *ChatResponse) String() string {
 func (*ChatResponse) ProtoMessage() {}
 
 func (x *ChatResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_agent_service_proto_msgTypes[1]
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -126,7 +219,7 @@ func (x *ChatResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChatResponse.ProtoReflect.Descriptor instead.
 func (*ChatResponse) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_agent_service_proto_rawDescGZIP(), []int{1}
+	return file_mtg_v1_agent_service_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ChatResponse) GetEvent() isChatResponse_Event {
@@ -190,6 +283,7 @@ func (x *ChatResponse) GetDeck() *Deck {
 	return nil
 }
 
+// Deprecated: Marked as deprecated in mtg/v1/agent_service.proto.
 func (x *ChatResponse) GetError() string {
 	if x != nil {
 		if x, ok := x.Event.(*ChatResponse_Error); ok {
@@ -197,6 +291,24 @@ func (x *ChatResponse) GetError() string {
 		}
 	}
 	return ""
+}
+
+func (x *ChatResponse) GetFailure() *AgentError {
+	if x != nil {
+		if x, ok := x.Event.(*ChatResponse_Failure); ok {
+			return x.Failure
+		}
+	}
+	return nil
+}
+
+func (x *ChatResponse) GetUsage() *Usage {
+	if x != nil {
+		if x, ok := x.Event.(*ChatResponse_Usage); ok {
+			return x.Usage
+		}
+	}
+	return nil
 }
 
 type isChatResponse_Event interface {
@@ -234,8 +346,20 @@ type ChatResponse_Deck struct {
 }
 
 type ChatResponse_Error struct {
-	// error is a user-facing failure message. It ends the turn.
+	// error is the old string failure. Deprecated: read failure.
+	//
+	// Deprecated: Marked as deprecated in mtg/v1/agent_service.proto.
 	Error string `protobuf:"bytes,7,opt,name=error,proto3,oneof"`
+}
+
+type ChatResponse_Failure struct {
+	// failure is a user-facing failure. It ends the turn.
+	Failure *AgentError `protobuf:"bytes,8,opt,name=failure,proto3,oneof"`
+}
+
+type ChatResponse_Usage struct {
+	// usage is the session total after this turn (M-1).
+	Usage *Usage `protobuf:"bytes,9,opt,name=usage,proto3,oneof"`
 }
 
 func (*ChatResponse_SessionStarted) isChatResponse_Event() {}
@@ -252,6 +376,10 @@ func (*ChatResponse_Deck) isChatResponse_Event() {}
 
 func (*ChatResponse_Error) isChatResponse_Event() {}
 
+func (*ChatResponse_Failure) isChatResponse_Event() {}
+
+func (*ChatResponse_Usage) isChatResponse_Event() {}
+
 type GetSessionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	SessionId     string                 `protobuf:"bytes,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
@@ -261,7 +389,7 @@ type GetSessionRequest struct {
 
 func (x *GetSessionRequest) Reset() {
 	*x = GetSessionRequest{}
-	mi := &file_mtg_v1_agent_service_proto_msgTypes[2]
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -273,7 +401,7 @@ func (x *GetSessionRequest) String() string {
 func (*GetSessionRequest) ProtoMessage() {}
 
 func (x *GetSessionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_agent_service_proto_msgTypes[2]
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -286,7 +414,7 @@ func (x *GetSessionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSessionRequest.ProtoReflect.Descriptor instead.
 func (*GetSessionRequest) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_agent_service_proto_rawDescGZIP(), []int{2}
+	return file_mtg_v1_agent_service_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *GetSessionRequest) GetSessionId() string {
@@ -305,7 +433,7 @@ type GetSessionResponse struct {
 
 func (x *GetSessionResponse) Reset() {
 	*x = GetSessionResponse{}
-	mi := &file_mtg_v1_agent_service_proto_msgTypes[3]
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -317,7 +445,7 @@ func (x *GetSessionResponse) String() string {
 func (*GetSessionResponse) ProtoMessage() {}
 
 func (x *GetSessionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_agent_service_proto_msgTypes[3]
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -330,7 +458,7 @@ func (x *GetSessionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSessionResponse.ProtoReflect.Descriptor instead.
 func (*GetSessionResponse) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_agent_service_proto_rawDescGZIP(), []int{3}
+	return file_mtg_v1_agent_service_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *GetSessionResponse) GetSession() *Session {
@@ -344,12 +472,20 @@ var File_mtg_v1_agent_service_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_agent_service_proto_rawDesc = "" +
 	"\n" +
-	"\x1amtg/v1/agent_service.proto\x12\x06mtg.v1\x1a\x11mtg/v1/deck.proto\x1a\x14mtg/v1/session.proto\"k\n" +
+	"\x1amtg/v1/agent_service.proto\x12\x06mtg.v1\x1a\x11mtg/v1/deck.proto\x1a\x14mtg/v1/session.proto\"\xd1\x01\n" +
 	"\vChatRequest\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\tR\tsessionId\x12#\n" +
 	"\rcollection_id\x18\x02 \x01(\tR\fcollectionId\x12\x18\n" +
-	"\amessage\x18\x03 \x01(\tR\amessage\"\x90\x02\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage\x12(\n" +
+	"\aanswers\x18\x04 \x03(\v2\x0e.mtg.v1.AnswerR\aanswers\x12\x12\n" +
+	"\x04seed\x18\x05 \x01(\x03R\x04seed\x12&\n" +
+	"\x0fkeep_oracle_ids\x18\x06 \x03(\tR\rkeepOracleIds\"X\n" +
+	"\n" +
+	"AgentError\x12\x12\n" +
+	"\x04code\x18\x01 \x01(\tR\x04code\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x12\x1c\n" +
+	"\tretryable\x18\x03 \x01(\bR\tretryable\"\xeb\x02\n" +
 	"\fChatResponse\x12)\n" +
 	"\x0fsession_started\x18\x01 \x01(\tH\x00R\x0esessionStarted\x12\x1f\n" +
 	"\n" +
@@ -357,8 +493,10 @@ const file_mtg_v1_agent_service_proto_rawDesc = "" +
 	"\bquestion\x18\x03 \x01(\v2\x10.mtg.v1.QuestionH\x00R\bquestion\x12%\n" +
 	"\x05slots\x18\x04 \x01(\v2\r.mtg.v1.SlotsH\x00R\x05slots\x12\x18\n" +
 	"\x06status\x18\x05 \x01(\tH\x00R\x06status\x12\"\n" +
-	"\x04deck\x18\x06 \x01(\v2\f.mtg.v1.DeckH\x00R\x04deck\x12\x16\n" +
-	"\x05error\x18\a \x01(\tH\x00R\x05errorB\a\n" +
+	"\x04deck\x18\x06 \x01(\v2\f.mtg.v1.DeckH\x00R\x04deck\x12\x1a\n" +
+	"\x05error\x18\a \x01(\tB\x02\x18\x01H\x00R\x05error\x12.\n" +
+	"\afailure\x18\b \x01(\v2\x12.mtg.v1.AgentErrorH\x00R\afailure\x12%\n" +
+	"\x05usage\x18\t \x01(\v2\r.mtg.v1.UsageH\x00R\x05usageB\a\n" +
 	"\x05event\"2\n" +
 	"\x11GetSessionRequest\x12\x1d\n" +
 	"\n" +
@@ -382,31 +520,37 @@ func file_mtg_v1_agent_service_proto_rawDescGZIP() []byte {
 	return file_mtg_v1_agent_service_proto_rawDescData
 }
 
-var file_mtg_v1_agent_service_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_mtg_v1_agent_service_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_mtg_v1_agent_service_proto_goTypes = []any{
 	(*ChatRequest)(nil),        // 0: mtg.v1.ChatRequest
-	(*ChatResponse)(nil),       // 1: mtg.v1.ChatResponse
-	(*GetSessionRequest)(nil),  // 2: mtg.v1.GetSessionRequest
-	(*GetSessionResponse)(nil), // 3: mtg.v1.GetSessionResponse
-	(*Question)(nil),           // 4: mtg.v1.Question
-	(*Slots)(nil),              // 5: mtg.v1.Slots
-	(*Deck)(nil),               // 6: mtg.v1.Deck
-	(*Session)(nil),            // 7: mtg.v1.Session
+	(*AgentError)(nil),         // 1: mtg.v1.AgentError
+	(*ChatResponse)(nil),       // 2: mtg.v1.ChatResponse
+	(*GetSessionRequest)(nil),  // 3: mtg.v1.GetSessionRequest
+	(*GetSessionResponse)(nil), // 4: mtg.v1.GetSessionResponse
+	(*Answer)(nil),             // 5: mtg.v1.Answer
+	(*Question)(nil),           // 6: mtg.v1.Question
+	(*Slots)(nil),              // 7: mtg.v1.Slots
+	(*Deck)(nil),               // 8: mtg.v1.Deck
+	(*Usage)(nil),              // 9: mtg.v1.Usage
+	(*Session)(nil),            // 10: mtg.v1.Session
 }
 var file_mtg_v1_agent_service_proto_depIdxs = []int32{
-	4, // 0: mtg.v1.ChatResponse.question:type_name -> mtg.v1.Question
-	5, // 1: mtg.v1.ChatResponse.slots:type_name -> mtg.v1.Slots
-	6, // 2: mtg.v1.ChatResponse.deck:type_name -> mtg.v1.Deck
-	7, // 3: mtg.v1.GetSessionResponse.session:type_name -> mtg.v1.Session
-	0, // 4: mtg.v1.AgentService.Chat:input_type -> mtg.v1.ChatRequest
-	2, // 5: mtg.v1.AgentService.GetSession:input_type -> mtg.v1.GetSessionRequest
-	1, // 6: mtg.v1.AgentService.Chat:output_type -> mtg.v1.ChatResponse
-	3, // 7: mtg.v1.AgentService.GetSession:output_type -> mtg.v1.GetSessionResponse
-	6, // [6:8] is the sub-list for method output_type
-	4, // [4:6] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	5,  // 0: mtg.v1.ChatRequest.answers:type_name -> mtg.v1.Answer
+	6,  // 1: mtg.v1.ChatResponse.question:type_name -> mtg.v1.Question
+	7,  // 2: mtg.v1.ChatResponse.slots:type_name -> mtg.v1.Slots
+	8,  // 3: mtg.v1.ChatResponse.deck:type_name -> mtg.v1.Deck
+	1,  // 4: mtg.v1.ChatResponse.failure:type_name -> mtg.v1.AgentError
+	9,  // 5: mtg.v1.ChatResponse.usage:type_name -> mtg.v1.Usage
+	10, // 6: mtg.v1.GetSessionResponse.session:type_name -> mtg.v1.Session
+	0,  // 7: mtg.v1.AgentService.Chat:input_type -> mtg.v1.ChatRequest
+	3,  // 8: mtg.v1.AgentService.GetSession:input_type -> mtg.v1.GetSessionRequest
+	2,  // 9: mtg.v1.AgentService.Chat:output_type -> mtg.v1.ChatResponse
+	4,  // 10: mtg.v1.AgentService.GetSession:output_type -> mtg.v1.GetSessionResponse
+	9,  // [9:11] is the sub-list for method output_type
+	7,  // [7:9] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_mtg_v1_agent_service_proto_init() }
@@ -416,7 +560,7 @@ func file_mtg_v1_agent_service_proto_init() {
 	}
 	file_mtg_v1_deck_proto_init()
 	file_mtg_v1_session_proto_init()
-	file_mtg_v1_agent_service_proto_msgTypes[1].OneofWrappers = []any{
+	file_mtg_v1_agent_service_proto_msgTypes[2].OneofWrappers = []any{
 		(*ChatResponse_SessionStarted)(nil),
 		(*ChatResponse_TextDelta)(nil),
 		(*ChatResponse_Question)(nil),
@@ -424,6 +568,8 @@ func file_mtg_v1_agent_service_proto_init() {
 		(*ChatResponse_Status)(nil),
 		(*ChatResponse_Deck)(nil),
 		(*ChatResponse_Error)(nil),
+		(*ChatResponse_Failure)(nil),
+		(*ChatResponse_Usage)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -431,7 +577,7 @@ func file_mtg_v1_agent_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_mtg_v1_agent_service_proto_rawDesc), len(file_mtg_v1_agent_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -16,7 +16,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file mtg/v1/session.proto.
  */
 export const file_mtg_v1_session: GenFile = /*@__PURE__*/
-  fileDesc("ChRtdGcvdjEvc2Vzc2lvbi5wcm90bxIGbXRnLnYxItkBCgdTZXNzaW9uEgoKAmlkGAEgASgJEhUKDWNvbGxlY3Rpb25faWQYAiABKAkSHAoFc2xvdHMYAyABKAsyDS5tdGcudjEuU2xvdHMSGwoFdHVybnMYBCADKAsyDC5tdGcudjEuVHVybhIQCghkZWNrX2lkcxgFIAMoCRIuCgpjcmVhdGVkX2F0GAYgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIuCgp1cGRhdGVkX2F0GAcgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCKAAgoFU2xvdHMSHgoGZm9ybWF0GAEgASgLMg4ubXRnLnYxLkZvcm1hdBIhCgVwb3dlchgCIAEoCzISLm10Zy52MS5Qb3dlckxldmVsEh0KBmNvbG9ycxgDIAMoDjINLm10Zy52MS5Db2xvchINCgV0aGVtZRgEIAEoCRIcChRjb21tYW5kZXJfb3JhY2xlX2lkcxgFIAMoCRIjCglwb29sX3J1bGUYBiABKA4yEC5tdGcudjEuUG9vbFJ1bGUSEgoKYnVkZ2V0X3VzZBgHIAEoARIZChFsb2NrZWRfb3JhY2xlX2lkcxgIIAMoCRIUCgxwbGFuX3ZhcmlhbnQYCSABKAkigAEKBFR1cm4SFAoMdXNlcl9tZXNzYWdlGAEgASgJEhUKDWFnZW50X21lc3NhZ2UYAiABKAkSIwoJcXVlc3Rpb25zGAMgAygLMhAubXRnLnYxLlF1ZXN0aW9uEiYKAmF0GAQgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCJcCghRdWVzdGlvbhIMCgRzbG90GAEgASgJEgwKBHRleHQYAiABKAkSDwoHb3B0aW9ucxgDIAMoCRIQCghpbnZlbnRlZBgEIAEoCBIRCglnYXBfc2NvcmUYBSABKAEqcgoIUG9vbFJ1bGUSGQoVUE9PTF9SVUxFX1VOU1BFQ0lGSUVEEAASGQoVUE9PTF9SVUxFX09XTkVEX0ZJUlNUEAESGAoUUE9PTF9SVUxFX09XTkVEX09OTFkQAhIWChJQT09MX1JVTEVfQU5ZX0NBUkQQA0I6WjhnaXRodWIuY29tL25rcmFtYmVyL210Zy1kZWNrLWJ1aWxkZXIvZ28vZ2VuL210Zy92MTttdGd2MWIGcHJvdG8z", [file_mtg_v1_format, file_mtg_v1_card, file_google_protobuf_timestamp]);
+  fileDesc("ChRtdGcvdjEvc2Vzc2lvbi5wcm90bxIGbXRnLnYxIp4CCgdTZXNzaW9uEgoKAmlkGAEgASgJEhUKDWNvbGxlY3Rpb25faWQYAiABKAkSHAoFc2xvdHMYAyABKAsyDS5tdGcudjEuU2xvdHMSGwoFdHVybnMYBCADKAsyDC5tdGcudjEuVHVybhIQCghkZWNrX2lkcxgFIAMoCRIuCgpjcmVhdGVkX2F0GAYgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIuCgp1cGRhdGVkX2F0GAcgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIlCgZzdGF0dXMYCCABKA4yFS5tdGcudjEuU2Vzc2lvblN0YXR1cxIcCgV1c2FnZRgJIAEoCzINLm10Zy52MS5Vc2FnZSKcAQoFVXNhZ2USDQoFY2FsbHMYASABKAUSFAoMaW5wdXRfdG9rZW5zGAIgASgDEhsKE2NhY2hlZF9pbnB1dF90b2tlbnMYAyABKAMSFQoNb3V0cHV0X3Rva2VucxgEIAEoAxIYChByZWFzb25pbmdfdG9rZW5zGAUgASgDEhAKCGNvc3RfdXNkGAYgASgBEg4KBnByaWNlZBgHIAEoCCL6AgoFU2xvdHMSHgoGZm9ybWF0GAEgASgLMg4ubXRnLnYxLkZvcm1hdBIhCgVwb3dlchgCIAEoCzISLm10Zy52MS5Qb3dlckxldmVsEh0KBmNvbG9ycxgDIAMoDjINLm10Zy52MS5Db2xvchINCgV0aGVtZRgEIAEoCRIcChRjb21tYW5kZXJfb3JhY2xlX2lkcxgFIAMoCRIjCglwb29sX3J1bGUYBiABKA4yEC5tdGcudjEuUG9vbFJ1bGUSEgoKYnVkZ2V0X3VzZBgHIAEoARIZChFsb2NrZWRfb3JhY2xlX2lkcxgIIAMoCRIUCgxwbGFuX3ZhcmlhbnQYCSABKAkSMgoLc2xvdF9zdGF0ZXMYCiADKAsyHS5tdGcudjEuU2xvdHMuU2xvdFN0YXRlc0VudHJ5GkQKD1Nsb3RTdGF0ZXNFbnRyeRILCgNrZXkYASABKAkSIAoFdmFsdWUYAiABKA4yES5tdGcudjEuU2xvdFN0YXRlOgI4ASKhAQoEVHVybhIUCgx1c2VyX21lc3NhZ2UYASABKAkSFQoNYWdlbnRfbWVzc2FnZRgCIAEoCRIjCglxdWVzdGlvbnMYAyADKAsyEC5tdGcudjEuUXVlc3Rpb24SJgoCYXQYBCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEh8KB2Fuc3dlcnMYBSADKAsyDi5tdGcudjEuQW5zd2VyIkEKBkFuc3dlchITCgtxdWVzdGlvbl9pZBgBIAEoCRIUCgxvcHRpb25faW5kZXgYAiABKAUSDAoEdGV4dBgDIAEoCSJoCghRdWVzdGlvbhIKCgJpZBgGIAEoCRIMCgRzbG90GAEgASgJEgwKBHRleHQYAiABKAkSDwoHb3B0aW9ucxgDIAMoCRIQCghpbnZlbnRlZBgEIAEoCBIRCglnYXBfc2NvcmUYBSABKAEqfgoNU2Vzc2lvblN0YXR1cxIeChpTRVNTSU9OX1NUQVRVU19VTlNQRUNJRklFRBAAEhkKFVNFU1NJT05fU1RBVFVTX0FTS0lORxABEhgKFFNFU1NJT05fU1RBVFVTX1JFQURZEAISGAoUU0VTU0lPTl9TVEFUVVNfQlVJTFQQAyqCAQoJU2xvdFN0YXRlEhoKFlNMT1RfU1RBVEVfVU5TUEVDSUZJRUQQABIUChBTTE9UX1NUQVRFX0VNUFRZEAESFAoQU0xPVF9TVEFURV9BU0tFRBACEhUKEVNMT1RfU1RBVEVfRklMTEVEEAMSFgoSU0xPVF9TVEFURV9TS0lQUEVEEAQqcgoIUG9vbFJ1bGUSGQoVUE9PTF9SVUxFX1VOU1BFQ0lGSUVEEAASGQoVUE9PTF9SVUxFX09XTkVEX0ZJUlNUEAESGAoUUE9PTF9SVUxFX09XTkVEX09OTFkQAhIWChJQT09MX1JVTEVfQU5ZX0NBUkQQA0I6WjhnaXRodWIuY29tL25rcmFtYmVyL210Zy1kZWNrLWJ1aWxkZXIvZ28vZ2VuL210Zy92MTttdGd2MWIGcHJvdG8z", [file_mtg_v1_format, file_mtg_v1_card, file_google_protobuf_timestamp]);
 
 /**
  * Session is one deck-building conversation.
@@ -58,6 +58,18 @@ export type Session = Message<"mtg.v1.Session"> & {
    * @generated from field: google.protobuf.Timestamp updated_at = 7;
    */
   updatedAt?: Timestamp | undefined;
+
+  /**
+   * @generated from field: mtg.v1.SessionStatus status = 8;
+   */
+  status: SessionStatus;
+
+  /**
+   * usage is the session's LLM token and cost total (M-1).
+   *
+   * @generated from field: mtg.v1.Usage usage = 9;
+   */
+  usage?: Usage | undefined;
 };
 
 /**
@@ -68,8 +80,59 @@ export const SessionSchema: GenMessage<Session> = /*@__PURE__*/
   messageDesc(file_mtg_v1_session, 0);
 
 /**
+ * Usage is the LLM spend of one session (M-1). A false priced means the
+ * cost is unknown, not zero. Zero calls means nothing was instrumented.
+ *
+ * @generated from message mtg.v1.Usage
+ */
+export type Usage = Message<"mtg.v1.Usage"> & {
+  /**
+   * @generated from field: int32 calls = 1;
+   */
+  calls: number;
+
+  /**
+   * @generated from field: int64 input_tokens = 2;
+   */
+  inputTokens: bigint;
+
+  /**
+   * @generated from field: int64 cached_input_tokens = 3;
+   */
+  cachedInputTokens: bigint;
+
+  /**
+   * @generated from field: int64 output_tokens = 4;
+   */
+  outputTokens: bigint;
+
+  /**
+   * @generated from field: int64 reasoning_tokens = 5;
+   */
+  reasoningTokens: bigint;
+
+  /**
+   * @generated from field: double cost_usd = 6;
+   */
+  costUsd: number;
+
+  /**
+   * @generated from field: bool priced = 7;
+   */
+  priced: boolean;
+};
+
+/**
+ * Describes the message mtg.v1.Usage.
+ * Use `create(UsageSchema)` to create a new message.
+ */
+export const UsageSchema: GenMessage<Usage> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_session, 1);
+
+/**
  * Slots hold what the agent knows so far (roadmap PR-7).
- * An unset field is a slot the agent may ask about.
+ * slot_states says for each slot whether it is empty, filled, or skipped
+ * by the user. A zero value alone can not tell "not asked" from "declined".
  *
  * @generated from message mtg.v1.Slots
  */
@@ -128,6 +191,14 @@ export type Slots = Message<"mtg.v1.Slots"> & {
    * @generated from field: string plan_variant = 9;
    */
   planVariant: string;
+
+  /**
+   * slot_states is keyed by slot name: format, power, colors, theme,
+   * commander, pool_rule, budget, locked, plan_variant, house_rules, meta.
+   *
+   * @generated from field: map<string, mtg.v1.SlotState> slot_states = 10;
+   */
+  slotStates: { [key: string]: SlotState };
 };
 
 /**
@@ -135,7 +206,7 @@ export type Slots = Message<"mtg.v1.Slots"> & {
  * Use `create(SlotsSchema)` to create a new message.
  */
 export const SlotsSchema: GenMessage<Slots> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_session, 1);
+  messageDesc(file_mtg_v1_session, 2);
 
 /**
  * Turn is one exchange in the conversation.
@@ -168,6 +239,14 @@ export type Turn = Message<"mtg.v1.Turn"> & {
    * @generated from field: google.protobuf.Timestamp at = 4;
    */
   at?: Timestamp | undefined;
+
+  /**
+   * answers maps the user's replies to questions, when the client sent
+   * structured answers.
+   *
+   * @generated from field: repeated mtg.v1.Answer answers = 5;
+   */
+  answers: Answer[];
 };
 
 /**
@@ -175,7 +254,40 @@ export type Turn = Message<"mtg.v1.Turn"> & {
  * Use `create(TurnSchema)` to create a new message.
  */
 export const TurnSchema: GenMessage<Turn> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_session, 2);
+  messageDesc(file_mtg_v1_session, 3);
+
+/**
+ * Answer is one reply to a Question.
+ *
+ * @generated from message mtg.v1.Answer
+ */
+export type Answer = Message<"mtg.v1.Answer"> & {
+  /**
+   * question_id matches Question.id.
+   *
+   * @generated from field: string question_id = 1;
+   */
+  questionId: string;
+
+  /**
+   * option_index is the chosen option, or -1 for free text.
+   *
+   * @generated from field: int32 option_index = 2;
+   */
+  optionIndex: number;
+
+  /**
+   * @generated from field: string text = 3;
+   */
+  text: string;
+};
+
+/**
+ * Describes the message mtg.v1.Answer.
+ * Use `create(AnswerSchema)` to create a new message.
+ */
+export const AnswerSchema: GenMessage<Answer> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_session, 4);
 
 /**
  * Question is one clarifying question (roadmap PR-7, D-25).
@@ -183,6 +295,13 @@ export const TurnSchema: GenMessage<Turn> = /*@__PURE__*/
  * @generated from message mtg.v1.Question
  */
 export type Question = Message<"mtg.v1.Question"> & {
+  /**
+   * id is unique in the session. Answers refer to it.
+   *
+   * @generated from field: string id = 6;
+   */
+  id: string;
+
   /**
    * slot names the empty slot this question fills.
    *
@@ -222,7 +341,91 @@ export type Question = Message<"mtg.v1.Question"> & {
  * Use `create(QuestionSchema)` to create a new message.
  */
 export const QuestionSchema: GenMessage<Question> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_session, 3);
+  messageDesc(file_mtg_v1_session, 5);
+
+/**
+ * SessionStatus says where the conversation stands.
+ *
+ * @generated from enum mtg.v1.SessionStatus
+ */
+export enum SessionStatus {
+  /**
+   * @generated from enum value: SESSION_STATUS_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * SESSION_STATUS_ASKING: at least one slot is still empty.
+   *
+   * @generated from enum value: SESSION_STATUS_ASKING = 1;
+   */
+  ASKING = 1,
+
+  /**
+   * SESSION_STATUS_READY: every slot is filled or skipped. A build can run.
+   *
+   * @generated from enum value: SESSION_STATUS_READY = 2;
+   */
+  READY = 2,
+
+  /**
+   * SESSION_STATUS_BUILT: the latest deck is in deck_ids.
+   *
+   * @generated from enum value: SESSION_STATUS_BUILT = 3;
+   */
+  BUILT = 3,
+}
+
+/**
+ * Describes the enum mtg.v1.SessionStatus.
+ */
+export const SessionStatusSchema: GenEnum<SessionStatus> = /*@__PURE__*/
+  enumDesc(file_mtg_v1_session, 0);
+
+/**
+ * SlotState is the fill state of one slot (roadmap PR-7 gate: no repeated
+ * question).
+ *
+ * @generated from enum mtg.v1.SlotState
+ */
+export enum SlotState {
+  /**
+   * @generated from enum value: SLOT_STATE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * SLOT_STATE_EMPTY: not filled and not yet asked.
+   *
+   * @generated from enum value: SLOT_STATE_EMPTY = 1;
+   */
+  EMPTY = 1,
+
+  /**
+   * SLOT_STATE_ASKED: a question is out, no answer mapped yet.
+   *
+   * @generated from enum value: SLOT_STATE_ASKED = 2;
+   */
+  ASKED = 2,
+
+  /**
+   * @generated from enum value: SLOT_STATE_FILLED = 3;
+   */
+  FILLED = 3,
+
+  /**
+   * SLOT_STATE_SKIPPED: the user declined. The agent uses a default.
+   *
+   * @generated from enum value: SLOT_STATE_SKIPPED = 4;
+   */
+  SKIPPED = 4,
+}
+
+/**
+ * Describes the enum mtg.v1.SlotState.
+ */
+export const SlotStateSchema: GenEnum<SlotState> = /*@__PURE__*/
+  enumDesc(file_mtg_v1_session, 1);
 
 /**
  * PoolRule says how the collection constrains the deck (D-2).
@@ -257,5 +460,5 @@ export enum PoolRule {
  * Describes the enum mtg.v1.PoolRule.
  */
 export const PoolRuleSchema: GenEnum<PoolRule> = /*@__PURE__*/
-  enumDesc(file_mtg_v1_session, 0);
+  enumDesc(file_mtg_v1_session, 2);
 

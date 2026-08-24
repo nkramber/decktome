@@ -13,6 +13,14 @@ func date(s string) time.Time {
 	return t.UTC()
 }
 
+func stamp(s string) time.Time {
+	t, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		panic(err)
+	}
+	return t.UTC()
+}
+
 func calFor(dates ...string) AnnouncementCalendar {
 	c := AnnouncementCalendar{}
 	for _, d := range dates {
@@ -31,23 +39,28 @@ func TestEmbeddedCalendarLoads(t *testing.T) {
 	}
 }
 
+// TestCheckInterval covers C-2: the 09:00Z snapshot on announcement day
+// does not count as coverage. Only a legality diff does.
 func TestCheckInterval(t *testing.T) {
 	cal := calFor("2026-10-12")
 	tests := []struct {
 		name     string
 		now      string
-		snapshot string
+		lastDiff string
 		want     time.Duration
 	}{
-		{"before announcement day", "2026-10-11", "2026-10-10", NormalCheckInterval},
-		{"announcement day, stale snapshot", "2026-10-12", "2026-10-11", FastCheckInterval},
-		{"day after, still stale", "2026-10-13", "2026-10-11", FastCheckInterval},
-		{"announcement covered", "2026-10-13", "2026-10-12", NormalCheckInterval},
-		{"long after, covered", "2026-11-01", "2026-10-31", NormalCheckInterval},
+		{"before announcement day", "2026-10-11T12:00:00Z", "2026-10-01T09:00:00Z", NormalCheckInterval},
+		{"announcement day, no diff yet", "2026-10-12T20:00:00Z", "2026-10-01T09:00:00Z", FastCheckInterval},
+		{"announcement day, same-day snapshot with no diff", "2026-10-12T20:00:00Z", "2026-10-01T09:00:00Z", FastCheckInterval},
+		{"day after, still no diff", "2026-10-13T12:00:00Z", "2026-10-01T09:00:00Z", FastCheckInterval},
+		{"diff landed the day after", "2026-10-13T12:00:00Z", "2026-10-13T09:01:00Z", NormalCheckInterval},
+		{"diff landed on the date itself", "2026-10-12T20:00:00Z", "2026-10-12T09:01:00Z", NormalCheckInterval},
+		{"window over, no diff", "2026-10-16T12:00:00Z", "2026-10-01T09:00:00Z", NormalCheckInterval},
+		{"no diff ever, before any date", "2026-10-11T12:00:00Z", "0001-01-01T00:00:00Z", NormalCheckInterval},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := cal.CheckInterval(date(tt.now), date(tt.snapshot))
+			got := cal.CheckInterval(stamp(tt.now), stamp(tt.lastDiff))
 			if got != tt.want {
 				t.Errorf("CheckInterval = %v, want %v", got, tt.want)
 			}
@@ -61,6 +74,12 @@ func TestLagHours(t *testing.T) {
 		ann, hours, ok := cal.LagHours(date("2026-10-14"))
 		if !ok || !ann.Equal(date("2026-10-12")) || hours != 48 {
 			t.Errorf("got ann=%v hours=%v ok=%v", ann, hours, ok)
+		}
+	})
+	t.Run("snapshot on announcement day at 09:01Z", func(t *testing.T) {
+		_, hours, ok := cal.LagHours(stamp("2026-10-12T09:01:00Z"))
+		if !ok || hours < 9 || hours > 9.1 {
+			t.Errorf("got hours=%v ok=%v", hours, ok)
 		}
 	})
 	t.Run("snapshot far from any announcement", func(t *testing.T) {

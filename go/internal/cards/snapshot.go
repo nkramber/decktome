@@ -39,28 +39,49 @@ func readLines(r io.Reader, name string, fn func(line []byte) error) error {
 	return sc.Err()
 }
 
-// skipLayouts are non-playable layouts, dropped at load time.
-var skipLayouts = map[string]bool{
+// SkipLayouts are non-playable layouts, dropped at load time.
+var SkipLayouts = map[string]bool{
 	"token": true, "double_faced_token": true, "emblem": true,
 	"art_series": true, "vanguard": true, "scheme": true, "planar": true,
+}
+
+// LoadStats counts what LoadCardsStats dropped.
+type LoadStats struct {
+	// NoOracleID counts playable cards with no Oracle id on the card or
+	// its faces (C-8). They can not enter the index.
+	NoOracleID int
+	// Skipped counts non-playable layouts.
+	Skipped int
 }
 
 // LoadCards parses an oracle-cards JSONL stream.
 // Non-playable layouts (tokens, art series) are dropped here, once.
 func LoadCards(r io.Reader, name string) ([]*mtgv1.Card, error) {
+	out, _, err := LoadCardsStats(r, name)
+	return out, err
+}
+
+// LoadCardsStats is LoadCards with drop counts for the caller's log.
+func LoadCardsStats(r io.Reader, name string) ([]*mtgv1.Card, LoadStats, error) {
 	var out []*mtgv1.Card
+	var stats LoadStats
 	err := readLines(r, name, func(line []byte) error {
 		c, err := parseCard(line)
 		if err != nil {
 			return err
 		}
-		if skipLayouts[c.Layout] {
+		if SkipLayouts[c.Layout] {
+			stats.Skipped++
+			return nil
+		}
+		if c.OracleId == "" {
+			stats.NoOracleID++
 			return nil
 		}
 		out = append(out, c)
 		return nil
 	})
-	return out, err
+	return out, stats, err
 }
 
 // LoadPrintings parses a default-cards JSONL stream into printing rows.

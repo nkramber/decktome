@@ -3,13 +3,15 @@
 # Prints one line per tool: ok, WRONG VERSION, or MISSING with a fix command.
 # Exit 1 when any line is not ok. See docs/setup.md.
 set -u
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/.." || exit 1
 
 status=0
 want_go=$(awk '/^go /{print $2}' go/go.mod)
 want_node=$(tr -d '[:space:]' < .nvmrc)
 want_pnpm=$(sed -n 's/.*"packageManager": *"pnpm@\([^"]*\)".*/\1/p' web/package.json)
 want_buf=$(awk '/github.com\/bufbuild\/buf /{print $2}' go/go.mod | sed 's/^v//')
+# Same pin as docker/emulators.Dockerfile and docs/setup.md step 6.
+want_firebase="14.14.0"
 
 row() { printf '  %-14s %-14s %s\n' "$1" "$2" "$3"; }
 
@@ -36,7 +38,7 @@ check "git"      git      "git --version | awk '{print \$3}'"           ""      
 check "go"       go       "go version | awk '{print \$3}' | sed 's/^go//'" "$want_go" "https://go.dev/dl/ version $want_go"
 check "node"     node     "node --version | sed 's/^v//'"               "$want_node" "nvm install (reads .nvmrc)"
 check "pnpm"     pnpm     "pnpm --version"                              "$want_pnpm" "corepack enable && corepack prepare pnpm@$want_pnpm --activate"
-check "firebase" firebase "firebase --version"                          ""           "npm install -g firebase-tools"
+check "firebase" firebase "firebase --version"                          "$want_firebase" "npm install -g firebase-tools@$want_firebase"
 check "java"     java     "java -version 2>&1 | head -1 | sed 's/.*\"\\(.*\\)\".*/\\1/'" "17." "brew install openjdk@17 (docs/setup.md step 6)"
 check "docker"   docker   "docker --version | awk '{print \$3}' | tr -d ," ""         "brew install --cask docker (docs/setup.md step 7, D-10)"
 check "gcloud"   gcloud   "gcloud --version | head -1 | awk '{print \$4}'" ""         "brew install --cask google-cloud-sdk"
@@ -55,12 +57,12 @@ else
   status=1
 fi
 
+# The daemon is only needed for make dev-docker. A stopped daemon is a warning.
 if command -v docker >/dev/null 2>&1; then
   if docker info >/dev/null 2>&1; then
     row "ok" "docker daemon" "running"
   else
-    row "MISSING" "docker daemon" "fix: open Docker Desktop and wait for it to start"
-    status=1
+    row "warn" "docker daemon" "stopped. Only make dev-docker needs it. Open Docker Desktop to start it."
   fi
 fi
 

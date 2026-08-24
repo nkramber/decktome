@@ -3,6 +3,7 @@ syntax = "proto3";
 package mtg.v1;
 
 import "mtg/v1/format.proto";
+import "mtg/v1/session.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1";
@@ -35,6 +36,13 @@ message Deck {
   // companion_oracle_id names the companion, when the deck has one.
   // The companion sits in the sideboard and must pass its own check (F-18).
   string companion_oracle_id = 16;
+  // upgrades lists unowned cards that improve the deck, with prices (D-2,
+  // roadmap PR-6). Empty in owned-only mode. In any-card mode the buy list
+  // is the unowned part of cards instead (D-37).
+  repeated DeckCard upgrades = 17;
+  // buy_cost_usd sums price_usd over the cards the user does not own.
+  // Zero when every card is owned or no price is known.
+  double buy_cost_usd = 18;
 }
 
 // DeckCard is one card choice with its reason.
@@ -49,6 +57,9 @@ message DeckCard {
   bool owned = 6;
   // owned_count is how many copies the collection has.
   int32 owned_count = 7;
+  // price_usd is the card's display price at build time (D-17). Zero means
+  // no price.
+  double price_usd = 8;
 }
 
 // CardRole is the job a card does in the deck (corpus section 6).
@@ -71,6 +82,13 @@ message ValidationResult {
   repeated Finding findings = 1;
   // passed means no finding has severity BLOCK.
   bool passed = 2;
+  // legality_as_of is the card-snapshot date the engine checked against,
+  // ISO 8601. Empty when the engine ran without a snapshot.
+  string legality_as_of = 3;
+  // pool_rule is the ownership mode the engine applied (D-37).
+  PoolRule pool_rule = 4;
+  // format is the format the engine applied.
+  FormatId format = 5;
 }
 
 // Finding is one problem the rules engine found.

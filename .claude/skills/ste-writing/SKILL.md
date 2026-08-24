@@ -7,7 +7,7 @@ description: Write and review text in ASD-STE100 Simplified Technical English (I
 
 Use this skill before you write text in this repo. The owner requires ASD-STE100 for all output.
 
-Source: ASD-STE100 Issue 8 (2021-04-30), Part 1, Writing rules. The full standard is free at https://www.asd-ste100.org/. This skill gives the 53 rules in short form. It does not copy the dictionary.
+Source: ASD-STE100 Issue 8 (2021-04-30), Part 1, Writing rules. Issue 9 (2025-01) supersedes it with the same 53 rules. The full standard is free at https://www.asd-ste100.org/. This skill gives the 53 rules in short form. It does not copy the dictionary.
 
 ## Procedure
 
@@ -36,7 +36,7 @@ Source: ASD-STE100 Issue 8 (2021-04-30), Part 1, Writing rules. The full standar
 - Notes give information, not instructions (5.5).
 - American English spelling (1.14).
 - No phrasal verbs: "remove" not "take out" (9.3).
-- Do not use a technical name as a verb: "make a backup" not "back up" is not the rule. The rule is: do not turn a noun-name into a verb (1.7).
+- Do not use a technical name as a verb (1.7). Write "make a backup", not "backup the data".
 
 ## The 53 rules in short form
 
@@ -54,7 +54,7 @@ Source: ASD-STE100 Issue 8 (2021-04-30), Part 1, Writing rules. The full standar
 - 1.11 Do not use different technical names for the same item.
 - 1.12 You can use verbs that fit a technical verb category.
 - 1.13 Do not use technical verbs as nouns.
-- 1.14 Use American English spelling.
+- 1.14 Use American English spelling, unless an official directive says otherwise.
 
 ### Section 2 - Noun clusters
 - 2.1 Write noun clusters of max three words.

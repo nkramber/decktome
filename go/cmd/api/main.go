@@ -15,6 +15,8 @@ import (
 
 	"cloud.google.com/go/firestore"
 	"cloud.google.com/go/storage"
+	"connectrpc.com/connect"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1/mtgv1connect"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
@@ -34,105 +36,157 @@ var version = "dev"
 // CARDS_RELOAD_SECONDS overrides it (make dev sets 15 for fast seeding).
 const defaultReloadSeconds = 600
 
+// maxRequestBytes bounds one request body before it enters memory
+// (C-10). The largest expected body is a ManaBox export, under 5 MiB.
+const maxRequestBytes = 8 << 20
+
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	addr := ":" + envOr("PORT", "8080")
-
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-
-	cardServer := cardsvc.New()
-	store, err := snapshotStore(ctx)
+	err := run(ctx, logger)
+	stop()
 	if err != nil {
-		logger.Error("snapshot store init failed", "err", err)
-		stop()
-		os.Exit(1) //nolint:gocritic // deliberate: stop() already ran
-	}
-	// Load whatever snapshot exists. An empty store is not fatal: the
-	// worker fills it and the reload loop picks it up.
-	loadedVersion := loadSnapshot(ctx, store, cardServer, "", logger)
-	go reloadLoop(ctx, store, cardServer, loadedVersion, logger)
-
-	// Firestore for user data. FIRESTORE_EMULATOR_HOST routes it to the
-	// emulator in local mode.
-	fs, err := firestore.NewClient(ctx, envOr("PROJECT_ID", "mtg-local"))
-	if err != nil {
-		logger.Error("firestore init failed", "err", err)
-		stop()
-		os.Exit(1) //nolint:gocritic // deliberate: stop() already ran
-	}
-	// Debug user until Firebase Auth lands (PR-11): every request acts as
-	// one local user. Never ship this beyond local mode.
-	debugUser := func(context.Context) string { return envOr("DEBUG_USER_ID", "local-dev") }
-	collectionServer := collectionsvc.New(collections.NewRepo(fs), cardServer, debugUser)
-	rulesCfg, err := rules.Load()
-	if err != nil {
-		logger.Error("rules data broken", "err", err)
-		stop()
-		os.Exit(1) //nolint:gocritic // deliberate: stop() already ran
-	}
-	deckServer := decksvc.New(rulesCfg, cardServer)
-	// The LLM role layer (PR-10). No call site exists until PR-7 and PR-8.
-	// Building it here proves the config and the keys at startup, not on
-	// the first user turn. Without keys the fixture fake stands in.
-	if _, err := llm.NewFromEnv(os.Getenv, logger); err != nil {
-		logger.Error("llm config broken", "err", err)
-		stop()
-		os.Exit(1) //nolint:gocritic // deliberate: stop() already ran
-	}
-
-	mux := http.NewServeMux()
-	mux.Handle(mtgv1connect.NewHealthServiceHandler(health.New(version)))
-	mux.Handle(mtgv1connect.NewCardServiceHandler(cardServer))
-	mux.Handle(mtgv1connect.NewCollectionServiceHandler(collectionServer))
-	mux.Handle(mtgv1connect.NewDeckServiceHandler(deckServer))
-	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		snapshot, age := "none", -1.0
-		if idx := cardServer.Current(); idx != nil {
-			snapshot = idx.AsOf.UTC().Format(time.RFC3339)
-			age = time.Since(idx.AsOf).Hours()
-		}
-		_, _ = fmt.Fprintf(w, `{"status":"ok","version":%q,"card_snapshot":%q,"card_snapshot_age_hours":%.1f}`,
-			version, snapshot, age)
-	})
-
-	srv := &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second}
-	go func() {
-		logger.Info("api listening", "addr", addr, "version", version)
-		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			logger.Error("api server failed", "err", err)
-			os.Exit(1)
-		}
-	}()
-
-	<-ctx.Done()
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	if err := srv.Shutdown(shutdownCtx); err != nil {
-		logger.Error("api shutdown failed", "err", err)
+		logger.Error("api failed", "err", err)
+		os.Exit(1)
 	}
 	logger.Info("api stopped")
 }
 
+// run starts the server and blocks until ctx ends or the server fails.
+// Every fatal path returns here, so main has one exit.
+func run(ctx context.Context, logger *slog.Logger) error {
+	addr := ":" + envOr("PORT", "8080")
+	project, err := projectID()
+	if err != nil {
+		return err
+	}
+	// C-3: the debug user must never reach Cloud Run by accident.
+	// Firebase Auth lands in PR-11 and replaces the debug user.
+	if os.Getenv("K_SERVICE") != "" && os.Getenv("ALLOW_DEBUG_USER") != "1" {
+		return errors.New("refuse to start on Cloud Run with the debug user: " +
+			"Firebase Auth lands in PR-11, set ALLOW_DEBUG_USER=1 to override")
+	}
+	if os.Getenv("K_SERVICE") != "" {
+		logger.Warn("debug user enabled on Cloud Run by ALLOW_DEBUG_USER=1, Firebase Auth lands in PR-11")
+	}
+
+	cardServer := cardsvc.New()
+	store, storageClient, err := snapshotStore(ctx, project)
+	if err != nil {
+		return fmt.Errorf("snapshot store init: %w", err)
+	}
+	if storageClient != nil {
+		defer func() { _ = storageClient.Close() }()
+	}
+	// Firestore for user data. FIRESTORE_EMULATOR_HOST routes it to the
+	// emulator in local mode.
+	fs, err := firestore.NewClient(ctx, project)
+	if err != nil {
+		return fmt.Errorf("firestore init: %w", err)
+	}
+	defer func() { _ = fs.Close() }()
+	// Debug user until Firebase Auth lands (PR-11): every request acts as
+	// one local user.
+	debugUser := func(context.Context) string { return envOr("DEBUG_USER_ID", "local-dev") }
+	collectionRepo := collections.NewRepo(fs)
+	collectionServer := collectionsvc.New(collectionRepo, cardServer, debugUser)
+	rulesCfg, err := rules.Load()
+	if err != nil {
+		return fmt.Errorf("rules data: %w", err)
+	}
+	deckServer := decksvc.New(rulesCfg, cardServer, decksvc.WithCollections(collectionRepo, debugUser))
+	// The LLM role layer (PR-10). No call site exists until PR-7 and PR-8.
+	// Building it here proves the config and the keys at startup, not on
+	// the first user turn. Without keys the fixture fake stands in.
+	if _, err := llm.NewFromEnv(os.Getenv, logger); err != nil {
+		return fmt.Errorf("llm config: %w", err)
+	}
+	healthServer := health.New(version, cardServer)
+
+	opts := []connect.HandlerOption{connect.WithReadMaxBytes(maxRequestBytes)}
+	mux := http.NewServeMux()
+	mux.Handle(mtgv1connect.NewHealthServiceHandler(healthServer, opts...))
+	mux.Handle(mtgv1connect.NewCardServiceHandler(cardServer, opts...))
+	mux.Handle(mtgv1connect.NewCollectionServiceHandler(collectionServer, opts...))
+	mux.Handle(mtgv1connect.NewDeckServiceHandler(deckServer, opts...))
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		body, err := protojson.Marshal(healthServer.Status())
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		_, _ = w.Write(body)
+	})
+
+	// Listen first (C-17). The snapshot loads in the background, so the
+	// Cloud Run startup probe sees a port inside its window. The card
+	// handlers answer Unavailable until the first index lands.
+	srv := &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second}
+	serveErr := make(chan error, 1)
+	go func() {
+		logger.Info("api listening", "addr", addr, "version", version)
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			serveErr <- err
+		}
+		close(serveErr)
+	}()
+	go func() {
+		loaded := loadSnapshot(ctx, store, cardServer, "", logger)
+		reloadLoop(ctx, store, cardServer, loaded, logger)
+	}()
+
+	select {
+	case err := <-serveErr:
+		if err != nil {
+			return fmt.Errorf("api server: %w", err)
+		}
+		return nil
+	case <-ctx.Done():
+	}
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		return fmt.Errorf("api shutdown: %w", err)
+	}
+	return nil
+}
+
+// projectID resolves the GCP project. Cloud Run sets neither PROJECT_ID
+// nor GOOGLE_CLOUD_PROJECT by default, so a missing value is fatal
+// unless an emulator host marks local mode (C-17).
+func projectID() (string, error) {
+	if p := envOr("PROJECT_ID", os.Getenv("GOOGLE_CLOUD_PROJECT")); p != "" {
+		return p, nil
+	}
+	if os.Getenv("FIRESTORE_EMULATOR_HOST") != "" || os.Getenv("STORAGE_EMULATOR_HOST") != "" {
+		return "mtg-local", nil
+	}
+	return "", errors.New("PROJECT_ID or GOOGLE_CLOUD_PROJECT must be set outside emulator mode")
+}
+
 // snapshotStore picks the snapshot backend. CARDS_SNAPSHOT_DIR selects a
 // local directory (offline mode, tests). Default: the GCS bucket, which
-// STORAGE_EMULATOR_HOST routes to fake-gcs-server in local mode.
-func snapshotStore(ctx context.Context) (cards.Store, error) {
+// STORAGE_EMULATOR_HOST routes to fake-gcs-server in local mode. The
+// returned client is nil for the directory backend.
+func snapshotStore(ctx context.Context, project string) (cards.Store, *storage.Client, error) {
 	if dir := os.Getenv("CARDS_SNAPSHOT_DIR"); dir != "" {
-		return cards.DirStore{Root: dir}, nil
+		return cards.DirStore{Root: dir}, nil, nil
 	}
 	// WithJSONReads: the SDK's default XML download path 404s on
 	// fake-gcs-server's filesystem backend (encoded-slash object names).
 	// JSON reads work on fake-gcs and on real GCS.
 	client, err := storage.NewClient(ctx, storage.WithJSONReads())
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	bucket := envOr("CARDS_BUCKET", envOr("PROJECT_ID", "mtg-local")+"-cards")
-	return cards.NewGCSStore(client, bucket), nil
+	bucket := envOr("CARDS_BUCKET", project+"-cards")
+	return cards.NewGCSStore(client, bucket), client, nil
 }
 
+// loadSnapshot installs the newest stored snapshot when its version
+// differs from lastVersion. A load error keeps the old index and the
+// old version, so the next tick tries again.
 func loadSnapshot(ctx context.Context, store cards.Store, server *cardsvc.Server, lastVersion string, logger *slog.Logger) string {
 	current, err := store.LatestVersion(ctx)
 	if err != nil {

@@ -237,8 +237,13 @@ func (x *ListDecksResponse) GetDecks() []*Deck {
 }
 
 type ValidateRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Deck          *Deck                  `protobuf:"bytes,1,opt,name=deck,proto3" json:"deck,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Deck  *Deck                  `protobuf:"bytes,1,opt,name=deck,proto3" json:"deck,omitempty"`
+	// pool_rule selects the ownership check (D-37). UNSPECIFIED means
+	// ANY_CARD when collection_id is empty, else OWNED_FIRST.
+	PoolRule PoolRule `protobuf:"varint,2,opt,name=pool_rule,json=poolRule,proto3,enum=mtg.v1.PoolRule" json:"pool_rule,omitempty"`
+	// collection_id names the user's collection for the ownership check.
+	CollectionId  string `protobuf:"bytes,3,opt,name=collection_id,json=collectionId,proto3" json:"collection_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -278,6 +283,20 @@ func (x *ValidateRequest) GetDeck() *Deck {
 		return x.Deck
 	}
 	return nil
+}
+
+func (x *ValidateRequest) GetPoolRule() PoolRule {
+	if x != nil {
+		return x.PoolRule
+	}
+	return PoolRule_POOL_RULE_UNSPECIFIED
+}
+
+func (x *ValidateRequest) GetCollectionId() string {
+	if x != nil {
+		return x.CollectionId
+	}
+	return ""
 }
 
 type ValidateResponse struct {
@@ -424,16 +443,18 @@ var File_mtg_v1_deck_service_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_deck_service_proto_rawDesc = "" +
 	"\n" +
-	"\x19mtg/v1/deck_service.proto\x12\x06mtg.v1\x1a\x11mtg/v1/deck.proto\")\n" +
+	"\x19mtg/v1/deck_service.proto\x12\x06mtg.v1\x1a\x11mtg/v1/deck.proto\x1a\x14mtg/v1/session.proto\")\n" +
 	"\x0eGetDeckRequest\x12\x17\n" +
 	"\adeck_id\x18\x01 \x01(\tR\x06deckId\"3\n" +
 	"\x0fGetDeckResponse\x12 \n" +
 	"\x04deck\x18\x01 \x01(\v2\f.mtg.v1.DeckR\x04deck\"\x12\n" +
 	"\x10ListDecksRequest\"7\n" +
 	"\x11ListDecksResponse\x12\"\n" +
-	"\x05decks\x18\x01 \x03(\v2\f.mtg.v1.DeckR\x05decks\"3\n" +
+	"\x05decks\x18\x01 \x03(\v2\f.mtg.v1.DeckR\x05decks\"\x87\x01\n" +
 	"\x0fValidateRequest\x12 \n" +
-	"\x04deck\x18\x01 \x01(\v2\f.mtg.v1.DeckR\x04deck\"D\n" +
+	"\x04deck\x18\x01 \x01(\v2\f.mtg.v1.DeckR\x04deck\x12-\n" +
+	"\tpool_rule\x18\x02 \x01(\x0e2\x10.mtg.v1.PoolRuleR\bpoolRule\x12#\n" +
+	"\rcollection_id\x18\x03 \x01(\tR\fcollectionId\"D\n" +
 	"\x10ValidateResponse\x120\n" +
 	"\x06result\x18\x01 \x01(\v2\x18.mtg.v1.ValidationResultR\x06result\"V\n" +
 	"\rExportRequest\x12\x17\n" +
@@ -475,27 +496,29 @@ var file_mtg_v1_deck_service_proto_goTypes = []any{
 	(*ExportRequest)(nil),     // 7: mtg.v1.ExportRequest
 	(*ExportResponse)(nil),    // 8: mtg.v1.ExportResponse
 	(*Deck)(nil),              // 9: mtg.v1.Deck
-	(*ValidationResult)(nil),  // 10: mtg.v1.ValidationResult
+	(PoolRule)(0),             // 10: mtg.v1.PoolRule
+	(*ValidationResult)(nil),  // 11: mtg.v1.ValidationResult
 }
 var file_mtg_v1_deck_service_proto_depIdxs = []int32{
 	9,  // 0: mtg.v1.GetDeckResponse.deck:type_name -> mtg.v1.Deck
 	9,  // 1: mtg.v1.ListDecksResponse.decks:type_name -> mtg.v1.Deck
 	9,  // 2: mtg.v1.ValidateRequest.deck:type_name -> mtg.v1.Deck
-	10, // 3: mtg.v1.ValidateResponse.result:type_name -> mtg.v1.ValidationResult
-	0,  // 4: mtg.v1.ExportRequest.format:type_name -> mtg.v1.ExportFormat
-	1,  // 5: mtg.v1.DeckService.GetDeck:input_type -> mtg.v1.GetDeckRequest
-	3,  // 6: mtg.v1.DeckService.ListDecks:input_type -> mtg.v1.ListDecksRequest
-	5,  // 7: mtg.v1.DeckService.Validate:input_type -> mtg.v1.ValidateRequest
-	7,  // 8: mtg.v1.DeckService.Export:input_type -> mtg.v1.ExportRequest
-	2,  // 9: mtg.v1.DeckService.GetDeck:output_type -> mtg.v1.GetDeckResponse
-	4,  // 10: mtg.v1.DeckService.ListDecks:output_type -> mtg.v1.ListDecksResponse
-	6,  // 11: mtg.v1.DeckService.Validate:output_type -> mtg.v1.ValidateResponse
-	8,  // 12: mtg.v1.DeckService.Export:output_type -> mtg.v1.ExportResponse
-	9,  // [9:13] is the sub-list for method output_type
-	5,  // [5:9] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	10, // 3: mtg.v1.ValidateRequest.pool_rule:type_name -> mtg.v1.PoolRule
+	11, // 4: mtg.v1.ValidateResponse.result:type_name -> mtg.v1.ValidationResult
+	0,  // 5: mtg.v1.ExportRequest.format:type_name -> mtg.v1.ExportFormat
+	1,  // 6: mtg.v1.DeckService.GetDeck:input_type -> mtg.v1.GetDeckRequest
+	3,  // 7: mtg.v1.DeckService.ListDecks:input_type -> mtg.v1.ListDecksRequest
+	5,  // 8: mtg.v1.DeckService.Validate:input_type -> mtg.v1.ValidateRequest
+	7,  // 9: mtg.v1.DeckService.Export:input_type -> mtg.v1.ExportRequest
+	2,  // 10: mtg.v1.DeckService.GetDeck:output_type -> mtg.v1.GetDeckResponse
+	4,  // 11: mtg.v1.DeckService.ListDecks:output_type -> mtg.v1.ListDecksResponse
+	6,  // 12: mtg.v1.DeckService.Validate:output_type -> mtg.v1.ValidateResponse
+	8,  // 13: mtg.v1.DeckService.Export:output_type -> mtg.v1.ExportResponse
+	10, // [10:14] is the sub-list for method output_type
+	6,  // [6:10] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_mtg_v1_deck_service_proto_init() }
@@ -504,6 +527,7 @@ func file_mtg_v1_deck_service_proto_init() {
 		return
 	}
 	file_mtg_v1_deck_proto_init()
+	file_mtg_v1_session_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

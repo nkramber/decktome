@@ -6,7 +6,7 @@ import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegen
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Deck } from "./deck_pb";
 import { file_mtg_v1_deck } from "./deck_pb";
-import type { Question, Session, Slots } from "./session_pb";
+import type { Answer, Question, Session, Slots, Usage } from "./session_pb";
 import { file_mtg_v1_session } from "./session_pb";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file mtg/v1/agent_service.proto.
  */
 export const file_mtg_v1_agent_service: GenFile = /*@__PURE__*/
-  fileDesc("ChptdGcvdjEvYWdlbnRfc2VydmljZS5wcm90bxIGbXRnLnYxIkkKC0NoYXRSZXF1ZXN0EhIKCnNlc3Npb25faWQYASABKAkSFQoNY29sbGVjdGlvbl9pZBgCIAEoCRIPCgdtZXNzYWdlGAMgASgJIs8BCgxDaGF0UmVzcG9uc2USGQoPc2Vzc2lvbl9zdGFydGVkGAEgASgJSAASFAoKdGV4dF9kZWx0YRgCIAEoCUgAEiQKCHF1ZXN0aW9uGAMgASgLMhAubXRnLnYxLlF1ZXN0aW9uSAASHgoFc2xvdHMYBCABKAsyDS5tdGcudjEuU2xvdHNIABIQCgZzdGF0dXMYBSABKAlIABIcCgRkZWNrGAYgASgLMgwubXRnLnYxLkRlY2tIABIPCgVlcnJvchgHIAEoCUgAQgcKBWV2ZW50IicKEUdldFNlc3Npb25SZXF1ZXN0EhIKCnNlc3Npb25faWQYASABKAkiNgoSR2V0U2Vzc2lvblJlc3BvbnNlEiAKB3Nlc3Npb24YASABKAsyDy5tdGcudjEuU2Vzc2lvbjKMAQoMQWdlbnRTZXJ2aWNlEjUKBENoYXQSEy5tdGcudjEuQ2hhdFJlcXVlc3QaFC5tdGcudjEuQ2hhdFJlc3BvbnNlIgAwARJFCgpHZXRTZXNzaW9uEhkubXRnLnYxLkdldFNlc3Npb25SZXF1ZXN0GhoubXRnLnYxLkdldFNlc3Npb25SZXNwb25zZSIAQjpaOGdpdGh1Yi5jb20vbmtyYW1iZXIvbXRnLWRlY2stYnVpbGRlci9nby9nZW4vbXRnL3YxO210Z3YxYgZwcm90bzM", [file_mtg_v1_deck, file_mtg_v1_session]);
+  fileDesc("ChptdGcvdjEvYWdlbnRfc2VydmljZS5wcm90bxIGbXRnLnYxIpEBCgtDaGF0UmVxdWVzdBISCgpzZXNzaW9uX2lkGAEgASgJEhUKDWNvbGxlY3Rpb25faWQYAiABKAkSDwoHbWVzc2FnZRgDIAEoCRIfCgdhbnN3ZXJzGAQgAygLMg4ubXRnLnYxLkFuc3dlchIMCgRzZWVkGAUgASgDEhcKD2tlZXBfb3JhY2xlX2lkcxgGIAMoCSI+CgpBZ2VudEVycm9yEgwKBGNvZGUYASABKAkSDwoHbWVzc2FnZRgCIAEoCRIRCglyZXRyeWFibGUYAyABKAgimgIKDENoYXRSZXNwb25zZRIZCg9zZXNzaW9uX3N0YXJ0ZWQYASABKAlIABIUCgp0ZXh0X2RlbHRhGAIgASgJSAASJAoIcXVlc3Rpb24YAyABKAsyEC5tdGcudjEuUXVlc3Rpb25IABIeCgVzbG90cxgEIAEoCzINLm10Zy52MS5TbG90c0gAEhAKBnN0YXR1cxgFIAEoCUgAEhwKBGRlY2sYBiABKAsyDC5tdGcudjEuRGVja0gAEhMKBWVycm9yGAcgASgJQgIYAUgAEiUKB2ZhaWx1cmUYCCABKAsyEi5tdGcudjEuQWdlbnRFcnJvckgAEh4KBXVzYWdlGAkgASgLMg0ubXRnLnYxLlVzYWdlSABCBwoFZXZlbnQiJwoRR2V0U2Vzc2lvblJlcXVlc3QSEgoKc2Vzc2lvbl9pZBgBIAEoCSI2ChJHZXRTZXNzaW9uUmVzcG9uc2USIAoHc2Vzc2lvbhgBIAEoCzIPLm10Zy52MS5TZXNzaW9uMowBCgxBZ2VudFNlcnZpY2USNQoEQ2hhdBITLm10Zy52MS5DaGF0UmVxdWVzdBoULm10Zy52MS5DaGF0UmVzcG9uc2UiADABEkUKCkdldFNlc3Npb24SGS5tdGcudjEuR2V0U2Vzc2lvblJlcXVlc3QaGi5tdGcudjEuR2V0U2Vzc2lvblJlc3BvbnNlIgBCOlo4Z2l0aHViLmNvbS9ua3JhbWJlci9tdGctZGVjay1idWlsZGVyL2dvL2dlbi9tdGcvdjE7bXRndjFiBnByb3RvMw", [file_mtg_v1_deck, file_mtg_v1_session]);
 
 /**
  * @generated from message mtg.v1.ChatRequest
@@ -36,6 +36,28 @@ export type ChatRequest = Message<"mtg.v1.ChatRequest"> & {
    * @generated from field: string message = 3;
    */
   message: string;
+
+  /**
+   * answers carries structured replies to the last turn's questions.
+   *
+   * @generated from field: repeated mtg.v1.Answer answers = 4;
+   */
+  answers: Answer[];
+
+  /**
+   * seed reproduces an earlier build (D-18). Zero means a new seed.
+   *
+   * @generated from field: int64 seed = 5;
+   */
+  seed: bigint;
+
+  /**
+   * keep_oracle_ids asks for a re-roll that keeps these cards (roadmap
+   * PR-9, lever 3).
+   *
+   * @generated from field: repeated string keep_oracle_ids = 6;
+   */
+  keepOracleIds: string[];
 };
 
 /**
@@ -44,6 +66,39 @@ export type ChatRequest = Message<"mtg.v1.ChatRequest"> & {
  */
 export const ChatRequestSchema: GenMessage<ChatRequest> = /*@__PURE__*/
   messageDesc(file_mtg_v1_agent_service, 0);
+
+/**
+ * AgentError is a failure the UI can act on.
+ *
+ * @generated from message mtg.v1.AgentError
+ */
+export type AgentError = Message<"mtg.v1.AgentError"> & {
+  /**
+   * code is stable, for example "llm_unavailable" or "no_legal_deck".
+   *
+   * @generated from field: string code = 1;
+   */
+  code: string;
+
+  /**
+   * @generated from field: string message = 2;
+   */
+  message: string;
+
+  /**
+   * retryable says a new attempt can succeed.
+   *
+   * @generated from field: bool retryable = 3;
+   */
+  retryable: boolean;
+};
+
+/**
+ * Describes the message mtg.v1.AgentError.
+ * Use `create(AgentErrorSchema)` to create a new message.
+ */
+export const AgentErrorSchema: GenMessage<AgentError> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_agent_service, 1);
 
 /**
  * ChatResponse is one streamed step of the agent's turn.
@@ -104,12 +159,29 @@ export type ChatResponse = Message<"mtg.v1.ChatResponse"> & {
     case: "deck";
   } | {
     /**
-     * error is a user-facing failure message. It ends the turn.
+     * error is the old string failure. Deprecated: read failure.
      *
-     * @generated from field: string error = 7;
+     * @generated from field: string error = 7 [deprecated = true];
+     * @deprecated
      */
     value: string;
     case: "error";
+  } | {
+    /**
+     * failure is a user-facing failure. It ends the turn.
+     *
+     * @generated from field: mtg.v1.AgentError failure = 8;
+     */
+    value: AgentError;
+    case: "failure";
+  } | {
+    /**
+     * usage is the session total after this turn (M-1).
+     *
+     * @generated from field: mtg.v1.Usage usage = 9;
+     */
+    value: Usage;
+    case: "usage";
   } | { case: undefined; value?: undefined };
 };
 
@@ -118,7 +190,7 @@ export type ChatResponse = Message<"mtg.v1.ChatResponse"> & {
  * Use `create(ChatResponseSchema)` to create a new message.
  */
 export const ChatResponseSchema: GenMessage<ChatResponse> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_agent_service, 1);
+  messageDesc(file_mtg_v1_agent_service, 2);
 
 /**
  * @generated from message mtg.v1.GetSessionRequest
@@ -135,7 +207,7 @@ export type GetSessionRequest = Message<"mtg.v1.GetSessionRequest"> & {
  * Use `create(GetSessionRequestSchema)` to create a new message.
  */
 export const GetSessionRequestSchema: GenMessage<GetSessionRequest> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_agent_service, 2);
+  messageDesc(file_mtg_v1_agent_service, 3);
 
 /**
  * @generated from message mtg.v1.GetSessionResponse
@@ -152,7 +224,7 @@ export type GetSessionResponse = Message<"mtg.v1.GetSessionResponse"> & {
  * Use `create(GetSessionResponseSchema)` to create a new message.
  */
 export const GetSessionResponseSchema: GenMessage<GetSessionResponse> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_agent_service, 3);
+  messageDesc(file_mtg_v1_agent_service, 4);
 
 /**
  * AgentService is the deck-building conversation (roadmap PR-7, PR-8).

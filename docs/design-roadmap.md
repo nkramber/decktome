@@ -1,8 +1,8 @@
 # MtG Deck Builder - Design Roadmap
 
-Status: **exploratory design doc, draft 1.** Nothing in this file is committed policy until the owner approves it and the item ships as a PR. The doc follows the structure of `connector-syncer-docs/docs/document-summary-roadmap.md`. It is written in ASD-STE100.
+Status: **approved (D-31), living document.** The owner approved draft 1 on 2026-08-23. Each PR entry carries its merge status. A ✅ means the code is merged on `main` (D-42). The doc follows the structure of `connector-syncer-docs/docs/document-summary-roadmap.md`. It is written in ASD-STE100.
 
-External facts were verified 2026-08-23. Sources: Scryfall (API and bulk data), the Wizards of the Coast announcements of 2026-08-10 and 2026-02-09, mtgcommander.net, and the local checkouts of connector-syncer and wallabee-ui. MtG rules and ban lists change. Re-verify every dated fact before you cite it in a PR.
+External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline. Sources: Scryfall (API and bulk data), the Wizards of the Coast announcements of 2026-08-10 and 2026-02-09, mtgcommander.net, and the local checkouts of connector-syncer and wallabee-ui. MtG rules and ban lists change. Re-verify every dated fact before you cite it in a PR.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
@@ -11,6 +11,8 @@ Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/
 2026-08-23 correction pass 3: OQ-13 to OQ-17 answered (D-26 to D-30). Changes: M-5 added (manual scoring lane for invented questions), I-1 rewritten as the stale-deck banner and rerun, I-2 threshold fixed, section 9 updated.
 
 2026-08-24 correction pass 4 (owner directive): the collection is optional (D-37, amends D-2). Changes: thesis fact 3, guardrail 5, PR-6, PR-7, PR-8, PR-11, PR-12. No proto change: `PoolRule` and an optional `collection_id` existed since PR-1.
+
+2026-08-24 correction pass 5 (full audit, `docs/audit-2026-08-24.md`): every PR status set to its merge state (#1 to #9). Register rows F-21 to F-25 added. PR-1b (contract amendment) added before PR-6. PR-3 added to section 8. Decisions D-42 to D-60 recorded. The fixes ship on branch `audit-fixes`.
 
 House rule (from connector-syncer): no PR, branch name, commit message, comment, or other artifact may contain AI-attribution text.
 
@@ -22,7 +24,7 @@ A deck builder is useful only when three things are true at the same time. The d
 
 The system is therefore built as a **thin agent over a strict engine**. The engine owns card data, legality, ownership, and validation. The agent owns the conversation, the plan, and the card choices inside the engine's limits. Every card the model names passes through the engine before the user sees it. This is the same shape connector-syncer uses for citations: the model proposes, the code verifies, and hallucinations die at the boundary.
 
-The program is sequenced so that each layer is testable before the next one exists. **Data and legality** come first (deterministic, cheap to test). Then the **agent loop** (measurable against the engine). Then the **UI** (thin over a streaming API). Then **meta and quality** (the expensive, judgment-heavy part). Each phase is gated on the one before it.
+We sequence the program so that each layer is testable before the next one exists. **Data and legality** come first (deterministic, cheap to test). Then the **agent loop** (measurable against the engine). Then the **UI** (thin over a streaming API). Then **meta and quality** (the expensive, judgment-heavy part). Each phase waits for the one before it.
 
 > *In plain English:* the AI is good at the creative question, such as a fun lifegain deck. It is bad at the exact question, such as a ban check. So the code answers the boring exact questions. The AI answers the creative ones. The AI never gets the last word on a card. The code checks every card before the user sees it.
 
@@ -64,10 +66,10 @@ Three structural facts drive the plan:
 
 ## 4. Cost model (what we expect, what we do not know)
 
-- **LLM.** One deck-build session: 2 to 4 question turns (small model, about 2k tokens each) plus 1 to 3 generation turns (strong model, about 15k input with the candidate card list, 3k output). Estimate: under $0.10 per session on 2026 list prices. Unknown until M-1 measures it. Prompt caching of the format rules and the candidate list cuts the input cost. The role layer must expose the provider's caching knob (D-1, OQ-7).
+- **LLM.** One deck-build session: 2 to 4 question turns (small model, about 2k tokens each) plus 1 to 3 generation turns (strong model, about 15k input with the candidate card list, 3k output). Estimate: under $0.10 per session on 2026 list prices. Unknown until M-1 measures it. Prompt caching of the format rules and the candidate list cuts the input cost. The role layer must expose the provider's caching knob (D-1, D-21).
 - **Card data.** Scryfall bulk: 24.5 MB compressed per day for Oracle cards, 77.5 MB for all English printings. Free. Images hotlinked (D-6), zero storage. GCS: one snapshot per day, about 100 MB, cheap lifecycle to 30 days.
-- **Meta data.** Unknown. Depends on source terms (OQ-10). MTGO decklists are official and free. Aggregator scraping may be zero or may be forbidden.
-- **Firestore.** Per user: one collection doc set (a 5,000-card binder is about 5,000 small docs or one 500 KB doc, decision in PR-4), sessions, decks. Low.
+- **Meta data.** Unknown. The source terms passed the legal check (D-5). MTGO decklists are official and free. Aggregator use is allowed.
+- **Firestore.** Per user: one collection doc set (PR-4 decided one gzip document per collection, about 500 KB for a 5,000-card binder, D-16), sessions, decks. Low.
 - **Cloud Run.** Two services plus a worker, scale to zero. Low until users exist.
 - **Eval.** Deterministic checks are free. Judge runs cost per deck. Cap per run as connector-syncer does ($5 cap in its bake-off).
 - **Unknowns to measure first:** tokens per session (M-1), Scryfall refresh lag after an announcement (M-2), ManaBox import failure rate on real files (M-3).
@@ -80,32 +82,37 @@ Status: ✅ resolved · 🔧 planned or in progress (item listed) · 🅿 parked
 
 | # | Finding | Status |
 |---|---|---|
-| F-1 | **Ban lists drift fast.** Four B&R announcements in 2026 so far (03-23, 05-18, 06-29, 08-10). Next 2026-10-12. Commander changed 2026-02-09 with a new category, "banned as a companion". Any cached legality older than one day can be wrong on announcement day. | 🔧 M-2 (freshness metric) + PR-3 (daily refresh with announcement-day fast path) |
-| F-2 | **ManaBox CSV columns vary.** The official guide does not list the columns. The verified column set (15 columns) comes from a third-party mapping. A whole-collection export adds a binder name column. Column order and presence can change with app versions. | 🔧 PR-4 (header-driven import, Scryfall ID first, tolerant of unknown columns) |
-| F-3 | **Scryfall API rate limits are hard.** 2 requests per second on `/cards/named`, `/cards/search`, `/cards/collection`. 10 per second elsewhere. A 429 blocks for 30 seconds. Repeated overload gets a ban. Bulk files have no limit. | ⚠ binds PR-2: all card lookups go to the local snapshot. The live API is for single-card fallback only, behind a client-side limiter. |
+| F-1 | **Ban lists drift fast.** Four B&R announcements in 2026 so far (03-23, 05-18, 06-29, 08-10). Next 2026-10-12. Commander changed 2026-02-09 with a new category, "banned as a companion". Any cached legality older than one day can be wrong on announcement day. | ✅ PR-3 (#6). M-2 logs the lag. The audit replaced the calendar test with a legality diff (F-23, D-47). |
+| F-2 | **ManaBox CSV columns vary.** The official guide does not list the columns. The verified set is 18 columns, from the owner's real export of 2026-08-24. A single-list export can drop the binder columns. Column order and presence can change with app versions. | ✅ PR-4 (#7): header-driven import, Scryfall ID first, unknown columns logged once. |
+| F-3 | **Scryfall API rate limits are hard.** 2 requests per second on `/cards/named`, `/cards/search`, `/cards/random`, `/cards/collection`. 10 per minute on `/cards/manifest`. 10 per second elsewhere (verified 2026-08-24). A 429 blocks for 30 seconds. Repeated overload gets a ban. Bulk files have no limit. | ⚠ binds PR-2: all card lookups go to the local snapshot. The live API is for single-card fallback only, behind a client-side limiter. |
 | F-4 | **Aggregator terms of use unknown.** MTGGoldfish, MTGTop8, Aetherhub, and EDHREC have no public API and their terms were unchecked. | ✅ 2026-08-23: the owner confirmed the legal check passed (D-5). All five sources may be used. PR-14 still starts with MTGO because it is the only structured source. |
 | F-5 | **Oracle tags are community data.** Scryfall Tagger tags are volunteer-made. Coverage is uneven. `lifegain` is rich (3,374 cards). Niche themes may have few tags. Weights are `median` style, not scores. | ⚠ binds PR-6: tags seed the candidate list. They never gate a card. Keywords and type lines are the second signal. The model is the third. |
-| F-6 | **No Cloud Tasks emulator.** Local mode can not run real Cloud Tasks. | 🔧 PR-1: a `Dispatcher` interface with a local in-process implementation. |
-| F-7 | **Docker absent on the dev machine.** | 🔧 PR-0b (owner installs Docker, D-10). Native `make dev` does not need it. |
+| F-6 | **No Cloud Tasks emulator.** Local mode can not run real Cloud Tasks. | ✅ PR-0c (#3): a `Dispatcher` interface with a local in-process implementation. |
+| F-7 | **Docker absent on the dev machine.** | ✅ PR-0b (#2): Docker 29.7.2 installed. Native `make dev` does not need it. |
 | F-8 | **The mtgcommander.net banned-list page reads "last updated September 2024."** It does not show the 2026-02-09 changes. It is not a reliable source for the current list. | ✅ Scryfall `legalities.commander` is the source of truth. The page is for philosophy text only. |
-| F-9 | **Double-faced and split cards have no top-level `image_uris`.** Images live in `card_faces[]`. Layouts `transform`, `modal_dfc`, `split`, `adventure` (about 800 Oracle cards). | 🔧 PR-2: the card model normalizes faces. The UI shows both faces. |
+| F-9 | **Double-faced and split cards have no top-level `image_uris`.** Images live in `card_faces[]`. Layouts `transform`, `modal_dfc`, `split`, `adventure` (about 800 Oracle cards). | ✅ PR-2 (#5): the card model normalizes faces. The UI shows both faces (PR-12). |
 | F-10 | **"Anything goes" and other user phrases are ambiguous.** The owner confirmed this is by design (D-3). | ✅ product principle. PR-7's question catalog handles it. |
-| F-11 | **Commander brackets are "beta" and change.** The 2026-02-09 update changed the Game Changers list. The bracket rules are prose, not data. | 🔧 PR-5 encodes brackets as data with a version date. The `game_changer` flag comes from Scryfall. |
-| F-12 | **Legality is per Oracle card, but ownership is per printing.** A user may own a printing that is not legal in a format where the card is legal (for example a gold-bordered or Alchemy-rebalanced version). Scryfall marks these on the printing. | 🔧 PR-4 keeps the printing id. PR-5 checks legality on the Oracle card and flags the printing exception. |
+| F-11 | **Commander brackets are "beta" and change.** The 2026-02-09 update changed the Game Changers list. The bracket rules are prose, not data. | ✅ PR-5 (#8) encodes brackets as data with a version date. The `game_changer` flag comes from Scryfall. Open: the prose rules (mass land denial, extra turns, combos) are an info finding, not a check. |
+| F-12 | **Legality is per Oracle card, but ownership is per printing.** A user may own a printing that is not legal in a format where the card is legal (for example a gold-bordered or Alchemy-rebalanced version). Scryfall marks these on the printing. | ✅ PR-4 (#7) keeps the printing id. PR-5 checks legality on the Oracle card. The printing exception is an info finding when the printing data carries it (audit fix, 2026-08-24). |
 | F-13 | **Model output can name a card that exists but is not the card meant.** Example: "Ajani's Pridemate" versus "Ajani's Welcome". Fuzzy matching hides this. | ⚠ binds PR-8: exact name match only, with the model asked for exact names. Fuzzy match is a suggestion to the user, never a silent substitution. |
 | F-14 | **Variance versus determinism.** The owner wants variance between decks. A first answer to OQ-4 asked for identical output on identical input. A second answer the same day withdrew that: random variance stays (D-18). Note for the record: an LLM is not deterministic even at temperature 0, so identical output was never a guarantee. | ✅ resolved by D-18. PR-9 keeps a stored seed per deck for reproduction on request, and adds plan variants. |
 | F-15 | **Standard has no rotation in 2026.** Rotation moves to the first set of 2027. Any hardcoded "September rotation" logic is wrong. | ✅ no rotation logic in code. Scryfall legalities carry it. |
 | F-16 | **Scryfall prices have no condition tiers.** `prices.usd`, `usd_foil`, `usd_etched` are TCGplayer near-mint market estimates, updated once per day. The owner asked for lightly-played prices (OQ-3). No free source gives them. | ✅ D-17: show the NM estimate with a 7-day rolling average and outlier rejection, labeled as such. A condition-tiered source is a later option. |
-| F-19 | **The Go storage SDK's default download path 404s on fake-gcs-server.** The SDK reads objects through the XML API with percent-encoded names. The fake-gcs filesystem backend serves only the JSON paths for names with slashes. Listing works, reads fail. Found 2026-08-24 in the PR-2 smoke test. | ✅ fixed: every storage client passes `storage.WithJSONReads()`. JSON reads work on fake-gcs and on real GCS. |
-| F-20 | **A snapshot version was listable before its files finished uploading.** The API loaded a mid-download snapshot and failed with "object doesn't exist". This is the reference project's F15 lesson: completion must imply artifacts. | ✅ fixed: the store writes a `complete` marker last. `LatestVersion` returns only marked versions. A test pins it. |
-| F-18 | **Scryfall legalities can not say "banned as a companion".** The 2026-02-09 Commander update unbanned Lutri, the Spellchaser but banned it as a companion. The Scryfall commander legality reads "legal". The open legalities map (guardrail 2) inherits this blind spot. | ⚠ binds PR-5: the rules engine owns the companion check. `Deck.companion_oracle_id` exists so the check has a target. Found in the 2026-08-24 proto re-pass. |
-| F-17 | **A fixed question catalog can not cover every prompt.** The owner wants catalog questions first, model-invented questions when needed, and a metric that says which case applies (D-25). Without the metric, the agent either asks nothing new or bypasses the catalog. | 🔧 PR-7 (gap score) + M-4 (catalog coverage metric) + PR-15 (catalog-change proposals from evals). |
 
 > *In plain English:* these are the traps we found before writing code. The biggest ones: ban lists change every few weeks. The collection file format is not documented. The AI can name a card that sounds right but is not. Each one has a planned fix or a rule that prevents it.
 
+| F-17 | **A fixed question catalog can not cover every prompt.** The owner wants catalog questions first, model-invented questions when needed, and a metric that says which case applies (D-25). Without the metric, the agent either asks nothing new or bypasses the catalog. | 🔧 PR-7 (gap score) + M-4 (catalog coverage metric) + PR-15 (catalog-change proposals from evals). |
+| F-18 | **Scryfall legalities can not say "banned as a companion".** The 2026-02-09 Commander update unbanned Lutri, the Spellchaser but banned it as a companion. The Scryfall commander legality reads "legal". The open legalities map (guardrail 2) inherits this blind spot. | ⚠ binds PR-5: the rules engine owns the companion check. `Deck.companion_oracle_id` exists so the check has a target. Found in the 2026-08-24 proto re-pass. |
+| F-19 | **The Go storage SDK's default download path 404s on fake-gcs-server.** The SDK reads objects through the XML API with percent-encoded names. The fake-gcs filesystem backend serves only the JSON paths for names with slashes. Listing works, reads fail. Found 2026-08-24 in the PR-2 smoke test. | ✅ fixed: every storage client passes `storage.WithJSONReads()`. JSON reads work on fake-gcs and on real GCS. |
+| F-20 | **A snapshot version was listable before its files finished uploading.** The API loaded a mid-download snapshot and failed with "object doesn't exist". This is the reference project's F15 lesson: completion must imply artifacts. | ✅ fixed: the store writes a `complete` marker last. `LatestVersion` returns only marked versions. A test pins it. |
+| F-21 | **A ManaBox token row resolved to the real card.** Row 186 of the owner's export is the Bloomburrow token `Pawpatch Recruit`. The resolver dropped tokens from the index, then fell through to the name lookup, which found the real creature. The PR-4 "2,548 of 2,548" gate counted it as resolved. Found in the 2026-08-24 audit. | ✅ audit fix: the index remembers dropped printings. A token, emblem, or art-card row reports `NOT_PLAYABLE` (D-44). |
+| F-22 | **Five commander-eligibility gaps.** `Partner—[text]` variants collapsed into plain Partner. A lone Background passed. "Up to seven" and "up to nine" cards were blocked. A double-faced card qualified on its back face. Vehicles and Spacecraft (CR 903.3, 2026-08-07) were refused. Found in the 2026-08-24 audit against the Comprehensive Rules. | ✅ audit fix: `partner_text` and `max_copies_override` on the card, front-face rule, Vehicle and Spacecraft support (D-49, D-50). The golden gate grew to 41 good and 53 bad. |
+| F-23 | **The announcement-day model used the calendar, not the data.** A snapshot from 09:00 UTC on announcement day counted as covered, hours before Wizards posted. The fast path never ran. | ✅ audit fix: coverage is a legality diff between snapshots (D-47). The calendar only sets the poll cadence. |
+| F-24 | **The LLM layer under-counted the judge.** Anthropic thinking tokens were dropped, cache writes were priced at 1x instead of 1.25x, and `LLM_JUDGE_PROVIDER=fake` passed under `LLM_REQUIRE_KEYS=1`. Found in the 2026-08-24 audit of PR-10. | ✅ audit fix: thinking tokens counted, `cache_write` price column, keys required by default (D-51). |
+| F-25 | **The proto lacked fields PR-6 to PR-9 need.** No upgrade list, no slot state, no question id, no structured answer, no seed override, no `Usage`, no per-face artist. | ✅ PR-1b (audit branch): all fields added in one contract amendment (D-46). `buf breaking` guards it from now on. |
 ## 6. Guardrails (the safety contract for every PR)
 
-1. **No card reaches the user before the rules engine has checked it.** Every generated list is validated for size, copies, legality on the query date, color identity, bracket, and ownership. A failed check blocks the response or marks the card, never silently drops it.
+1. **No card reaches the user before the rules engine has checked it.** The engine validates every generated list for size, copies, legality on the query date, color identity, bracket, and ownership. A failed check blocks the response or marks the card, never silently drops it.
 2. **No ban list, rotation date, or Game Changers list in any prompt or code constant.** Legality comes from the card database, which comes from Scryfall daily. Prompts may say "the engine will check legality".
 3. **No model id at a call site.** All models come from the role layer (D-1). CI warns on a default change, as in connector-syncer.
 4. **Exact card names only.** The model returns exact Oracle names. The normalizer does an exact match. Anything else becomes a user-visible suggestion, never a substitution (F-13).
@@ -128,16 +135,20 @@ Ids: PR-# code, M-# measurement, I-# integration, D-# decisions (in `decisions.m
 
 ### Phase 0 - Foundations (no product code)
 
-**PR-0a: Monorepo scaffold.** 🔧 built 2026-08-23 on branch `pr-0a-scaffold`, gate verified locally, PR not yet opened. Deviations from the plan, recorded in D-35: Vite 7 instead of 8, dev port 5180, buf built into `.bin/` from a `go tool` directive. The `verify:*` workflow exists but has not run on GitHub yet.
-Layout: `proto/` (buf module), `go/` (Go workspace with `cmd/api`, `cmd/worker`, `internal/cards`, `internal/collections`, `internal/rules`, `internal/agent`, `internal/meta`, `internal/llm`), `web/` (pnpm workspace: `apps/web`, `packages/api-client` for generated TypeScript), `docs/`, `.claude/`. Makefile as the single entry point: `proto`, `lint`, `test`, `test-repeat`, `cover`, `dev`, `dev-seed`. Pinned versions: Go, buf, protoc-gen-go, protoc-gen-connect-go, protoc-gen-es, pnpm, Node, golangci-lint. CI: `verify:*` matrix with a fan-in job, path filters, and a proto-diff gate. AGENTS.md with the commands and never-edit rules. Gate: `make dev` starts an empty API and an empty UI.
-> *In plain English:* the empty house with plumbing. One folder for the shared contract, one for Go, one for the web app. One command to start everything. The checks that stop bad changes are wired before there is anything to check.
+**PR-0a: Monorepo scaffold.** ✅ merged 2026-08-24 (#1, branch `pr-0a`). Deviations from the plan, recorded in D-35: Vite 7 instead of 8, dev port 5180, buf built into `.bin/` from a `go tool` directive. Node moved to 22.12 LTS in the audit (D-52).
 
-**PR-0b: Developer machine setup, including Docker (D-10).** ✅ gate held 2026-08-24: the owner installed Docker 29.7.2, and `make doctor` reports all ok (12 checks). Merge pending.
+Layout: `proto/` (buf module), `go/` (Go workspace with `cmd/api`, `cmd/worker`, `internal/cards`, `internal/collections`, `internal/rules`, `internal/agent`, `internal/meta`), `web/` (pnpm workspace: `apps/web`, `packages/api-client` for generated TypeScript), `docs/`, `.claude/`. Makefile as the single entry point: `proto`, `lint`, `test`, `test-repeat`, `cover`, `dev`, `dev-seed`. Pinned versions: Go, buf, protoc-gen-go, protoc-gen-connect-go, protoc-gen-es, pnpm, Node, golangci-lint. CI: `verify:*` matrix with a fan-in job, a proto-diff gate, and a `buf breaking` gate (audit). Path filters were planned and struck (D-56): a skipped required check blocks a merge. AGENTS.md with the commands and never-edit rules.
+
+Gate: `make dev` starts an empty API and an empty UI.
+
+> *In plain English:* the empty house with plumbing. One folder for the shared contract, one for Go, one for the web app. One command starts everything, and the checks that stop bad changes are wired before there is anything to check.
+
+**PR-0b: Developer machine setup, including Docker (D-10).** ✅ merged 2026-08-24 (#2). The owner installed Docker 29.7.2, and `make doctor` reports all ok (12 checks).
 A `docs/setup.md` procedure: install Homebrew, Git, Go, Node and pnpm via corepack, the firebase CLI, Java 17, Docker Desktop, and gcloud. A `make doctor` target checks each tool against the pinned version and prints the fix command. buf comes from `go/go.mod`, not from a separate install.
 Docker is used for the Compose file (PR-0c) and for local Cloud Run parity. Gate: `make doctor` passes on the owner's machine.
 > *In plain English:* a checklist to set up a laptop, and a command that tells you which tools are absent. The owner asked for the Docker install to be a tracked step, so it is one.
 
-**PR-0c: Local stack (D-9).** ✅ gate held 2026-08-24 on branch `pr-0c`, merge pending. Both variants verified: native (`make dev`, all services up in 8 seconds, clean teardown) and containers (`make dev-docker`, Compose).
+**PR-0c: Local stack (D-9).** ✅ merged 2026-08-24 (#3). Both variants verified: native (`make dev`, all services up in 8 seconds, clean teardown) and containers (`make dev-docker`, Compose).
 
 New in this PR: the port map D-36 (the Wallabee stack owns 8080, 8181, 4000, and 5173 on this machine), `internal/dispatch` (the Cloud Tasks stand-in, F-6), and `internal/llm` with the `Fake` provider.
 `firebase.json` with Firestore and Auth emulators. `fake-gcs-server` for storage. A `Dispatcher` interface with a local in-process implementation (F-6). A `fake` LLM provider with fixture responses.
@@ -149,7 +160,7 @@ Container note: the firebase emulator binds 127.0.0.1 from `firebase.json`. The 
 
 ### Phase 1 - Data and rules (deterministic, fully testable)
 
-**PR-1: Proto contract, v1.** ✅ gate held 2026-08-24 on branch `pr-1`, merge pending. Nine files under `proto/mtg/v1/`. Generated Go and TypeScript compile, and the CI diff gate passes. Contract notes: `legalities` is an open map keyed by Scryfall format keys (guardrail 2). RPC names are service-scoped (`GetDeck`, `GetCollection`) because message names share one proto package. The stream message is `ChatResponse` with a oneof event. `Question` carries `invented` and `gap_score` (D-25). `Deck` carries `seed` (D-18), `stale` (D-29), and `legality_as_of`.
+**PR-1: Proto contract, v1.** ✅ merged 2026-08-24 (#4). Nine files under `proto/mtg/v1/`. Generated Go and TypeScript compile, and the CI diff gate passes. Contract notes: `legalities` is an open map keyed by Scryfall format keys (guardrail 2). RPC names are service-scoped (`GetDeck`, `GetCollection`) because message names share one proto package. The stream message is `ChatResponse` with a oneof event. `Question` carries `invented` and `gap_score` (D-25). `Deck` carries `seed` (D-18), `stale` (D-29), and `legality_as_of`.
 
 Re-pass 2026-08-24 (owner-requested, against the MtG corpus) added: `COLOR_C` for produced mana, parsed `supertypes`/`card_types`/`subtypes`, `any_count_in_deck` (Relentless Rats class), commander eligibility (`can_be_commander`, `PartnerKind`, `partner_with_name`, `is_background`, `is_companion`), `Deck.sideboard` and `companion_oracle_id`, `CollectionEntry.rarity` (D-16), and `Printing.image_uris` plus `digital` (F-12, D-17).
 
@@ -157,17 +168,29 @@ The re-pass also produced F-18.
 Messages: `Card`, `CardFace`, `Legality`, `Collection`, `CollectionEntry`, `Deck`, `DeckCard` (with `owned`, `owned_count`, `role`, `reason`), `Format`, `PowerLevel` (bracket or 60-card step, D-8), `Session`, `Turn`, `Question`, `Answer`, `ValidationResult`. Services: `CardService`, `CollectionService`, `DeckService`, `AgentService` (with a server-streaming `Chat` RPC). Connect-RPC with buf (D-7). Gate: generated Go and TypeScript compile. CI diff gate is green.
 > *In plain English:* one document says what a card, a deck, and a chat message look like. Both the Go code and the web app read it. Change it in one place, and both sides update.
 
-**PR-2: Card database from Scryfall bulk.** ✅ gate held 2026-08-24 on branch `pr-2`, merge pending. The 200 tricky names resolve 200/200 (committed fixture, split cards, DFCs, face names, apostrophes, Aether spellings). End-to-end verified on the local stack. The worker downloads the three bulk files through fake-gcs and writes the completion marker (F-20). The API loads the index (about 34,000 cards) and answers Lookup and Search. Derivation facts learned from the data: the "Choose a Background" keyword has a lowercase b, and "Doctor's companion" sits on the companion card, not on the Doctor. Both are pinned by tests. F-19 and F-20 were found and fixed in this PR.
-A worker job downloads `oracle_cards` and `default_cards` daily (F-3: bulk only). It writes a versioned snapshot to GCS and an in-memory index in the `cards` service (name, Oracle ID, printing ID, legalities, color identity, keywords, type line, MV, produced mana, Oracle tags, `game_changer`, `edhrec_rank`, image URIs per face). Faces are normalized (F-9). The `oracle_tags` file loads into a tag tree. Rulings load on demand.
+**PR-1b: Contract amendment (audit, D-46).** ✅ built 2026-08-24 on branch `audit-fixes`, merge pending. One proto change carries every field PR-6 to PR-9 need (F-25). The fields:
+- Deck: `upgrades`, `buy_cost_usd`, and `DeckCard.price_usd`.
+- Validation: `legality_as_of`, `pool_rule`, and `format` on the result. `pool_rule` and `collection_id` on the request.
+- Session: `slot_states` with a `SlotState` enum, `Question.id`, `Answer`, `Turn.answers`, `status`, and `usage` with a `Usage` message (M-1).
+- Chat: `answers`, `seed`, `keep_oracle_ids`, and an `AgentError` `failure` event. The string `error` event stays, deprecated, so `buf breaking` holds.
+- Card: `CardFace.artist` (D-6), `partner_text`, and `max_copies_override` (F-22).
+- Collection: `language`, `set_name`, `unresolved_by_reason` (M-3), and two new `UnresolvedReason` values.
+- Health: `card_snapshot` and its age.
+
+`buf breaking` now runs in CI against `main`. Gate: `buf lint`, generated code committed, every service builds.
+> *In plain English:* the shared contract gains every field the next four steps need. One change now, so each later step touches only code.
+
+**PR-2: Card database from Scryfall bulk.** ✅ merged 2026-08-24 (#5). The 200 tricky names resolve 200/200 (committed fixture, split cards, DFCs, face names, apostrophes, Aether spellings). End-to-end verified on the local stack. The worker downloads the three bulk files through fake-gcs and writes the completion marker (F-20). The API loads the index (about 34,000 cards) and answers Lookup and Search. Derivation facts learned from the data: the "Choose a Background" keyword has a lowercase b, and "Doctor's companion" sits on the companion card, not on the Doctor. Both are pinned by tests. This PR found and fixed F-19 and F-20.
+A worker job downloads `oracle_cards`, `default_cards`, and `oracle_tags` daily (F-3: bulk only). It writes a versioned snapshot to GCS and an in-memory index in the `cards` service (name, Oracle ID, printing ID, legalities, color identity, keywords, type line, MV, produced mana, Oracle tags, `game_changer`, `edhrec_rank`, image URIs per face). Faces are normalized (F-9). The `oracle_tags` file loads into a tag tree. Rulings load on demand.
 
 A `CardService.Lookup` by exact name, by Scryfall ID, and by Oracle ID. A `CardService.Search` with structured filters (colors, types, keywords, tags, format-legal). Gate: 100% of a fixed list of 200 tricky names resolve (split, DFC, "Aether" spelling, commas, apostrophes). Snapshot age is exposed as a metric.
 > *In plain English:* every night we download the whole card list, keep a copy, and load it into memory. Anyone can ask "which green cards with lifelink are legal in Pioneer?" and get a fast exact answer with no AI involved.
 
-**PR-3: Legality freshness and announcement-day fast path (F-1).** ✅ gate mechanism in place 2026-08-24 on branch `nate/pr-3`, merge pending. The calendar is `announcement_dates.json`, embedded, with a verification date (next date: 2026-10-12). The worker checks hourly, and every 15 minutes while a past announcement is not yet covered by the snapshot. On the first snapshot after an announcement, the worker logs `legality_lag` with the hours (M-2). The UI shows "Card data as of" from `/healthz`. The real M-2 number arrives with the 2026-10-12 announcement.
+**PR-3: Legality freshness and announcement-day fast path (F-1).** ✅ merged 2026-08-24 (#6). The calendar is `announcement_dates.json`, embedded, with a verification date (next date: 2026-10-12). The worker checks hourly, and every 15 minutes from an announcement date until a snapshot with a legality change lands (F-23, D-47). On that snapshot, the worker logs `legality_lag` with the hours (M-2). The previous version comes from the store, not from process memory, so a restart keeps the metric. In production the worker is a Cloud Run job under Cloud Scheduler (D-48). The UI shows "Card data as of" from `/healthz`. The real M-2 number arrives with the 2026-10-12 announcement.
 The worker checks the Scryfall bulk `updated_at` every hour. On and after a B&R announcement day (a committed calendar, next 2026-10-12), it checks every 15 minutes until a snapshot from that day or later lands. Every deck response carries `legality_as_of` (the snapshot date). The UI shows it. Gate: M-2 shows the lag between an announcement and the snapshot that reflects it.
 > *In plain English:* ban announcements come on known dates. On those days we check more often. Every deck says which day's rules it was checked against, so the user knows.
 
-**PR-4: ManaBox import (F-2, F-12).** ✅ gate held 2026-08-24 on branch `pr-4`, merge pending. The owner's real export (2,548 rows, 4,317 cards, 18 columns) is the committed gate fixture at `go/internal/collections/testdata/`. End-to-end through the API against the full snapshot: 2,548 of 2,548 rows resolve, with zero unresolved. An identical re-upload updates the same document. Get and List work. Storage per D-16: one Firestore document with gzip entry and count payloads. Auth debt: a debug user id stands in until PR-11. M-3 rides the `ImportReport` counts until the analytics phase adds events.
+**PR-4: ManaBox import (F-2, F-12).** ✅ merged 2026-08-24 (#7). Audit note: the gate count included one token row (F-21). The fix reports such rows as `NOT_PLAYABLE`. The owner's real export (2,548 rows, 4,317 cards, 18 columns) is the committed gate fixture at `go/internal/collections/testdata/`. End-to-end through the API against the full snapshot: 2,548 of 2,548 rows resolve, with zero unresolved. An identical re-upload updates the same document. Get and List work. Storage per D-16: one Firestore document with gzip entry and count payloads. Auth debt: a debug user id stands in until PR-11. M-3 rides the `ImportReport` counts until the analytics phase adds events.
 CSV parser driven by the header row, not by column position. Required: `Scryfall ID`, or `Set code` plus `Collector number`, or `Name` plus `Set name`. Optional: `Quantity`, `Foil`, `Condition`, `Language`, binder name. Unknown columns are ignored and logged once. Rows that do not resolve are returned to the user as a list, not dropped silently.
 
 The result is a `Collection` with counts per Oracle ID and per printing. Also accepts the Arena text format (`4 Lightning Bolt (STA) 42`). Storage: the full collection is stored (D-16). One document per collection holds a compressed entry array (printing id, quantity, finish, condition, language). 
@@ -175,7 +198,7 @@ The result is a `Collection` with counts per Oracle ID and per printing. Also ac
 A per-Oracle-ID count map sits beside it for fast ownership checks. A content hash of the upload detects an identical re-upload. Non-English rows are reported to the user and skipped (D-23). Gate: a fixture set of real exports (owner-provided, anonymized) imports with zero silent drops. M-3 counts unresolved rows.
 > *In plain English:* upload the file ManaBox gives you. We match every line to a real card and count how many you own. We show you the lines we could not match. We do not hide them.
 
-**PR-5: Rules engine.** ✅ gate held 2026-08-24 on branch `pr-5`, merge pending. A pure library in `internal/rules` with embedded, dated data files: `formats.json`, `brackets.json`, and `companion_bans.json` (the F-18 list Scryfall can not express). Checks: size, copies (basics and any-count exempt, restricted capped at 1), legality, commander eligibility, and all five partner mechanics. Also: color identity, Game Changers per bracket, companion (Lutri blocked as companion, legal in the 99), ownership per pool mode (D-37), and land-count and curve advisories. The golden gate runs 30 good and 30 bad decks in CI. `DeckService.Validate` is wired and smoke-tested end to end. Still open from F-11: the bracket prose rules (mass land denial, extra turns, combos) emit an info finding, not a check. Fixture lesson: Scryfall Oracle data contains token objects that share a real card's name, and the fixture builder now prefers real layouts.
+**PR-5: Rules engine.** ✅ merged 2026-08-24 (#8). Audit 2026-08-24: five eligibility gaps fixed (F-22). The companion is now checked for legality, color identity, and singleton. `banned_as_companion` is Commander-only. Ownership aggregates per Oracle id. The golden gate is 41 good and 53 bad decks, with a test that enforces at least 30 of each. `DeckService.Validate` accepts `pool_rule` and `collection_id`, reads the owned counts from the stored collection, and returns `legality_as_of`. A pure library in `internal/rules` with embedded, dated data files: `formats.json`, `brackets.json`, and `companion_bans.json` (the F-18 list Scryfall can not express). Checks: size, copies (basics and any-count exempt, restricted capped at 1), legality, commander eligibility, and all five partner mechanics. Also: color identity, Game Changers per bracket, companion (Lutri blocked as companion, legal in the 99), ownership per pool mode (D-37), and land-count and curve advisories. The golden gate ran 27 good and 31 bad decks at merge. The audit padded it to 41 and 53. `DeckService.Validate` is wired and smoke-tested end to end. Still open from F-11: the bracket prose rules (mass land denial, extra turns, combos) emit an info finding, not a check. Fixture lesson: Scryfall Oracle data contains token objects that share a real card's name, and the fixture builder now prefers real layouts.
 A pure Go library. Inputs: a deck, a format, a power level, a collection, a card snapshot. Checks:
 - deck size and copy limits (4, singleton, restricted),
 - legality per card on the snapshot date,
@@ -202,7 +225,7 @@ The turn-based core. A `Session` holds filled slots (format, commander, power, c
 
 The user answers in free text. The small model maps answers to slots.
 
-Slots are stored, summarized, and carried to the next turn, as connector-syncer's schema agent does. The catalog is the first source of questions (D-25). A **gap score** decides when the catalog is not enough. It is the best catalog match between the empty slot and the user's words, from a small classifier. Below a threshold (OQ-14), the model may propose a question through a `custom_question` tool with a reason and the gap score. 
+Slots are stored, summarized, and carried to the next turn, as connector-syncer's schema agent does. The catalog is the first source of questions (D-25). A **gap score** decides when the catalog is not enough. It is the best catalog match between the empty slot and the user's words, from a small classifier. Below a threshold (D-27, set by M-5 with the OQ-19 rubric), the model may propose a question through a `custom_question` tool with a reason and the gap score. 
 
 Every invented question is logged with its slot and outcome. M-4 reports how often this happens. Repeated invented questions become catalog candidates (PR-15). "Anything goes" and similar phrases route to the house-rules question (D-3). The pool-mode slot: with a library, the agent asks or defaults to owned-first. Without one, it defaults to any-card and does not ask (D-37).
 
@@ -225,10 +248,20 @@ Random variance is a feature (D-18). Variance comes from three levers, not from 
 Lever 2: a "plan variant" slot (for example "lifegain aristocrats" versus "lifegain go-wide"). Lever 3: a "keep these, change the rest" re-roll. The seed is stored with the deck so a build can be reproduced on request. Identical output on identical input is not a requirement (D-18). Gate: two builds of the same prompt differ in at least 30% of nonland cards and both pass validation.
 > *In plain English:* ask twice, get two different but sensible decks. Each deck remembers the dice roll that made it, so you can get the same deck back.
 
-**PR-10: LLM role layer (D-1).** ✅ gate held 2026-08-24 on branch `pr-10`, merge pending. The live smoke passed on both adapters: classify on `gpt-5.6-luna` (69 in, 21 out, 2.7 s) and judge on `claude-sonnet-5` (316 in, 20 out, 3.0 s), $0.0013 for the session. `internal/llm` is the one door. `roles.json` is the frozen map, dated, with an owner note per default (D-38, D-39). The baseline: `classify` and `ask` on `gpt-5.6-luna`, `generate` and `repair` on `gpt-5.6-terra`, `judge` on `claude-sonnet-5` through Anthropic (D-22 holds, and config validation refuses a judge on the generator's provider). Adapters: OpenAI Responses API and Anthropic Messages API through the official Go SDKs (D-40), plus the fixture `Fake` and a scripted fake for tests. Both adapters send a strict JSON Schema and the client validates the output again locally. One `Budget` per logical call: four attempts, three minutes. Truncation retries once at a higher cap, bounded to min(65,536, max(8 x cap, 8,192)). Transient errors back off. Refusal, schema, and terminal errors return at once. `Accumulator` reports tokens and USD per session from a dated `prices.json`, and reports null when a call gave no usage or an unpriced model. `make llm-defaults-check` warns in CI when `roles.json` or `prices.json` changes. Keys live in `.env` (D-41). Without keys the fixture fake stands in, unless `LLM_REQUIRE_KEYS=1`. Gate: 15 unit tests over the fakes pass in CI. The live smoke (`make test-smoke`) proves both adapters against the real APIs. Known limit: the reasoning-token count is OpenAI-only. Anthropic reports none.
-`internal/llm` with roles: `classify`, `ask`, `generate`, `repair`, `judge`. A frozen config maps each role to a provider and model. Adapters: OpenAI on day one (D-21) and the `fake` provider. The `judge` role uses a different provider from `generate` (D-22), chosen at implementation time. Structured output through JSON Schema with strict validation.
+**PR-10: LLM role layer (D-1).** ✅ merged 2026-08-24 (#9). The live smoke passed on both adapters: classify on `gpt-5.6-luna` (69 in, 21 out, 2.7 s) and judge on `claude-sonnet-5` (316 in, 20 out, 3.0 s), $0.0013 at list price.
 
-One request budget per logical call with three retry classes (truncation, transient, terminal). Usage accounting per session that reports null when not instrumented. Prompt caching where the provider supports it. CI warns on default changes. Gate: unit tests with the fake provider. One real-provider smoke test behind an env flag.
+`internal/llm` is the one door. `roles.json` is the frozen map, dated, with an owner note per default (D-38, D-39). The baseline: `classify` and `ask` on `gpt-5.6-luna`, `generate` and `repair` on `gpt-5.6-terra`, `judge` on `claude-sonnet-5` at effort medium with thinking on (D-45). Config validation refuses a judge on the generator's provider (D-22).
+
+Adapters: OpenAI Responses API and Anthropic Messages API through the official Go SDKs (D-40), plus the fixture `Fake` and a scripted fake for tests. Both adapters send a strict JSON Schema. The client validates the output again locally. One `Budget` per logical call: four attempts, three minutes. Truncation retries once at a higher cap, bounded to min(65,536, max(8 x cap, 8,192)). Transient errors back off with a 30-second cap and jitter.
+
+Refusal, schema, and terminal errors return at once.
+
+`Accumulator` reports tokens and USD per session from a dated `prices.json`. It reports null when a call gave no usage or an unpriced model.
+
+Thinking tokens count on both providers, and Anthropic cache writes are priced at 1.25x (F-24). `make llm-defaults-check` warns in CI when `roles.json` or `prices.json` changes. Keys live in `.env` (D-41). Keys are required by default. `LLM_REQUIRE_KEYS=0` (set by `make dev`) lets the fixture fake stand in (D-51).
+
+Gate: unit tests over the fakes and `httptest` adapters pass in CI. The live smoke (`make test-smoke`) proves both adapters against the real APIs.
+
 > *In plain English:* the AI plug. Every place that calls an AI calls it through one door with a named job. Swap the vendor in one file. Count every token.
 
 **M-1: Token and cost accounting per session.** Lands with PR-10. Every cost claim in this doc is an estimate until then.
@@ -260,7 +293,7 @@ It shows the mana curve, the color sources, the `ValidationResult` findings, and
 Export as ManaBox text first (D-15). Other formats later. A buy list with Scryfall purchase links. Gate: a round trip ManaBox export to import loses nothing.
 > *In plain English:* get the deck out of the app and into ManaBox or Arena with one click, plus a shopping list.
 
-### Phase 4 - Meta and quality (gated on Phase 3 and on OQ-10)
+### Phase 4 - Meta and quality (gated on Phase 3)
 
 **PR-14: Meta ingest, MTGO first.**
 A worker job pulls published MTGO decklists per format (official source, D-5). It computes archetype shares and the most-played cards per archetype for the last 30 days. Aggregator and EDHREC ingesters follow, in order of structure: MTGTop8, MTGGoldfish, Aetherhub, EDHREC (D-5, legal check passed). The meta snapshot is advisory input to PR-6 and PR-8 for competitive power levels only. Gate: the snapshot for Modern lists at least 10 archetypes with card lists.
@@ -304,26 +337,28 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 2. PR-0b machine setup, Docker install (owner executes).
 3. PR-0c local stack.
 4. PR-1 proto v1.
-5. PR-2 card database. Then M-2.
-6. PR-4 ManaBox import. Then M-3.
-7. PR-5 rules engine.
-8. **GATE.** Phase 2 starts only when the golden decks pass PR-5.
-9. PR-10 LLM role layer, with M-1.
-10. PR-6 candidates.
-11. PR-7 questions.
-12. PR-8 generator.
-13. PR-9 variance.
-14. **GATE.** Phase 3 starts only when PR-8's gate holds on the golden prompts.
-15. PR-11, PR-12, PR-13.
-16. PR-15 eval harness (can start after step 12, in parallel with the UI, if a second owner exists). M-5 manual scoring runs on the first UI build (after PR-12).
-17. PR-14 meta, then I-1, I-2, I-3 on evidence.
-18. Phase 5 stays parked.
+5. PR-2 card database.
+6. PR-3 legality freshness, with M-2.
+7. PR-4 ManaBox import. Then M-3.
+8. PR-5 rules engine.
+9. **GATE.** Phase 2 starts only when the golden decks pass PR-5. Held 2026-08-24.
+10. PR-10 LLM role layer, with M-1.
+11. PR-1b contract amendment (audit branch, D-46).
+12. PR-6 candidates.
+13. PR-7 questions.
+14. PR-8 generator.
+15. PR-9 variance.
+16. **GATE.** Phase 3 starts only when PR-8's gate holds on the golden prompts.
+17. PR-11, PR-12, PR-13.
+18. PR-15 eval harness (can start after step 14, in parallel with the UI, if a second owner exists). M-5 manual scoring runs on the first UI build (after PR-12).
+19. PR-14 meta, then I-1, I-2, I-3 on evidence.
+20. Phase 5 stays parked.
 
 ## 9. Open questions
 
 See `docs/open-questions.md` for the full list with "ask when" dates. The ones that gate a phase:
 
 1. **OQ-19 scoring rubric** gates M-5.
-2. **OQ-17 sample ManaBox exports** (owner will provide, D-30) gate PR-4's fixture set.
-3. **OQ-18 rerun depth rule** gates I-1.
+2. **OQ-18 rerun depth rule** gates I-1.
+3. **OQ-20 public anonymized ManaBox exports** widen the PR-4 fixture set when found (D-43).
 4. PR-9's 30% variance number is a placeholder until PR-15 measures it.

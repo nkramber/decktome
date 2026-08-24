@@ -243,9 +243,10 @@ type Card struct {
 	ProducedMana []Color `protobuf:"varint,18,rep,packed,name=produced_mana,json=producedMana,proto3,enum=mtg.v1.Color" json:"produced_mana,omitempty"`
 	// default_printing shows one representative printing for display.
 	DefaultPrinting *Printing `protobuf:"bytes,19,opt,name=default_printing,json=defaultPrinting,proto3" json:"default_printing,omitempty"`
-	// price_usd is the display price per D-17: the lowest NM market estimate
-	// across legal printings and finishes, as a 7-day rolling average.
-	// Zero means no price. Advisory only (I-2).
+	// price_usd is the display price. Today: the Scryfall usd price of the
+	// default printing on the snapshot day. Target (D-17, D-26, I-2): the
+	// lowest NM market estimate across legal printings and finishes, as a
+	// 7-day median with outliers dropped. Zero means no price. Advisory only.
 	PriceUsd float64 `protobuf:"fixed64,20,opt,name=price_usd,json=priceUsd,proto3" json:"price_usd,omitempty"`
 	// price_as_of is the date of the price data, ISO 8601 (YYYY-MM-DD).
 	PriceAsOf string `protobuf:"bytes,21,opt,name=price_as_of,json=priceAsOf,proto3" json:"price_as_of,omitempty"`
@@ -270,9 +271,17 @@ type Card struct {
 	// is_companion marks a card with a companion condition.
 	// CAUTION: the legalities map can not say "banned as a companion"
 	// (Lutri, 2026-02-09). The rules engine owns that check (F-18).
-	IsCompanion   bool `protobuf:"varint,30,opt,name=is_companion,json=isCompanion,proto3" json:"is_companion,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	IsCompanion bool `protobuf:"varint,30,opt,name=is_companion,json=isCompanion,proto3" json:"is_companion,omitempty"`
+	// partner_text is the text after "Partner—" (for example "Survivors").
+	// Empty for plain Partner. Two Partner commanders need equal text
+	// (CR 702.124f, 2026-08-07).
+	PartnerText string `protobuf:"bytes,31,opt,name=partner_text,json=partnerText,proto3" json:"partner_text,omitempty"`
+	// max_copies_override is a per-card copy limit from the card text, for
+	// example 7 for Seven Dwarves or 9 for Nazgûl (CR 113.6n). Zero means
+	// the format limit applies. any_count_in_deck covers the unlimited case.
+	MaxCopiesOverride int32 `protobuf:"varint,32,opt,name=max_copies_override,json=maxCopiesOverride,proto3" json:"max_copies_override,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *Card) Reset() {
@@ -515,17 +524,34 @@ func (x *Card) GetIsCompanion() bool {
 	return false
 }
 
+func (x *Card) GetPartnerText() string {
+	if x != nil {
+		return x.PartnerText
+	}
+	return ""
+}
+
+func (x *Card) GetMaxCopiesOverride() int32 {
+	if x != nil {
+		return x.MaxCopiesOverride
+	}
+	return 0
+}
+
 // CardFace is one face of a card. Images live per face (F-9).
 type CardFace struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	ManaCost      string                 `protobuf:"bytes,2,opt,name=mana_cost,json=manaCost,proto3" json:"mana_cost,omitempty"`
-	TypeLine      string                 `protobuf:"bytes,3,opt,name=type_line,json=typeLine,proto3" json:"type_line,omitempty"`
-	OracleText    string                 `protobuf:"bytes,4,opt,name=oracle_text,json=oracleText,proto3" json:"oracle_text,omitempty"`
-	Power         string                 `protobuf:"bytes,5,opt,name=power,proto3" json:"power,omitempty"`
-	Toughness     string                 `protobuf:"bytes,6,opt,name=toughness,proto3" json:"toughness,omitempty"`
-	Loyalty       string                 `protobuf:"bytes,7,opt,name=loyalty,proto3" json:"loyalty,omitempty"`
-	ImageUris     *ImageUris             `protobuf:"bytes,8,opt,name=image_uris,json=imageUris,proto3" json:"image_uris,omitempty"`
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	Name       string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	ManaCost   string                 `protobuf:"bytes,2,opt,name=mana_cost,json=manaCost,proto3" json:"mana_cost,omitempty"`
+	TypeLine   string                 `protobuf:"bytes,3,opt,name=type_line,json=typeLine,proto3" json:"type_line,omitempty"`
+	OracleText string                 `protobuf:"bytes,4,opt,name=oracle_text,json=oracleText,proto3" json:"oracle_text,omitempty"`
+	Power      string                 `protobuf:"bytes,5,opt,name=power,proto3" json:"power,omitempty"`
+	Toughness  string                 `protobuf:"bytes,6,opt,name=toughness,proto3" json:"toughness,omitempty"`
+	Loyalty    string                 `protobuf:"bytes,7,opt,name=loyalty,proto3" json:"loyalty,omitempty"`
+	ImageUris  *ImageUris             `protobuf:"bytes,8,opt,name=image_uris,json=imageUris,proto3" json:"image_uris,omitempty"`
+	// artist is the face's artist, for attribution (D-6). Faces of one card
+	// can have different artists.
+	Artist        string `protobuf:"bytes,9,opt,name=artist,proto3" json:"artist,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -614,6 +640,13 @@ func (x *CardFace) GetImageUris() *ImageUris {
 		return x.ImageUris
 	}
 	return nil
+}
+
+func (x *CardFace) GetArtist() string {
+	if x != nil {
+		return x.Artist
+	}
+	return ""
 }
 
 // Printing is one physical version of a card.
@@ -795,7 +828,7 @@ var File_mtg_v1_card_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_card_proto_rawDesc = "" +
 	"\n" +
-	"\x11mtg/v1/card.proto\x12\x06mtg.v1\"\x92\t\n" +
+	"\x11mtg/v1/card.proto\x12\x06mtg.v1\"\xe5\t\n" +
 	"\x04Card\x12\x1b\n" +
 	"\toracle_id\x18\x01 \x01(\tR\boracleId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1b\n" +
@@ -835,10 +868,12 @@ const file_mtg_v1_card_proto_rawDesc = "" +
 	"\apartner\x18\x1b \x01(\x0e2\x13.mtg.v1.PartnerKindR\apartner\x12*\n" +
 	"\x11partner_with_name\x18\x1c \x01(\tR\x0fpartnerWithName\x12#\n" +
 	"\ris_background\x18\x1d \x01(\bR\fisBackground\x12!\n" +
-	"\fis_companion\x18\x1e \x01(\bR\visCompanion\x1aU\n" +
+	"\fis_companion\x18\x1e \x01(\bR\visCompanion\x12!\n" +
+	"\fpartner_text\x18\x1f \x01(\tR\vpartnerText\x12.\n" +
+	"\x13max_copies_override\x18  \x01(\x05R\x11maxCopiesOverride\x1aU\n" +
 	"\x0fLegalitiesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12,\n" +
-	"\x05value\x18\x02 \x01(\x0e2\x16.mtg.v1.LegalityStatusR\x05value:\x028\x01\"\xf9\x01\n" +
+	"\x05value\x18\x02 \x01(\x0e2\x16.mtg.v1.LegalityStatusR\x05value:\x028\x01\"\x91\x02\n" +
 	"\bCardFace\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1b\n" +
 	"\tmana_cost\x18\x02 \x01(\tR\bmanaCost\x12\x1b\n" +
@@ -849,7 +884,8 @@ const file_mtg_v1_card_proto_rawDesc = "" +
 	"\ttoughness\x18\x06 \x01(\tR\ttoughness\x12\x18\n" +
 	"\aloyalty\x18\a \x01(\tR\aloyalty\x120\n" +
 	"\n" +
-	"image_uris\x18\b \x01(\v2\x11.mtg.v1.ImageUrisR\timageUris\"\x88\x02\n" +
+	"image_uris\x18\b \x01(\v2\x11.mtg.v1.ImageUrisR\timageUris\x12\x16\n" +
+	"\x06artist\x18\t \x01(\tR\x06artist\"\x88\x02\n" +
 	"\bPrinting\x12\x1f\n" +
 	"\vscryfall_id\x18\x01 \x01(\tR\n" +
 	"scryfallId\x12\x19\n" +

@@ -16,10 +16,28 @@ type Index struct {
 	byName     map[string]*mtgv1.Card // key: normalized full or face name
 	byPrinting map[string]*mtgv1.Card // key: scryfall printing id
 	bySetNo    map[string]*mtgv1.Card // key: "setcode/collectornumber", lowercase
-	tags       *TagIndex
+	// nonPlayable maps a dropped printing (Scryfall id and set/collector
+	// key) to its layout, so an import can name the reason.
+	nonPlayable map[string]string
+	tags        *TagIndex
+	collisions  Collisions
 	// AsOf is the Scryfall updated_at of the snapshot (roadmap PR-3).
 	AsOf time.Time
 }
+
+// Collisions counts name keys that more than one card claimed at build
+// time (C-16). The first card keeps a full name. A face name never
+// overrides a full name. The log line shows the counts.
+type Collisions struct {
+	// FullNames counts a full name that a later card also carried.
+	FullNames int
+	// FaceNames counts a face name that another card's full or face
+	// name already held.
+	FaceNames int
+}
+
+// Collisions returns the name collision counts of the build.
+func (x *Index) Collisions() Collisions { return x.collisions }
 
 // normName is the lookup key: lowercase, trimmed. Exact otherwise
 // (guardrail 4: no fuzzy match).
@@ -27,20 +45,36 @@ func normName(name string) string {
 	return strings.ToLower(strings.TrimSpace(name))
 }
 
-// NewIndex builds the index. printings and tags are optional.
+// NewIndex builds the index. printings and tags are optional. The card
+// list is copied and sorted by EDHREC rank once, so Search never sorts.
+// A card with a price gets price_as_of set to the snapshot date.
 func NewIndex(cardList []*mtgv1.Card, printings []Printing, tags *TagIndex, asOf time.Time) *Index {
+	sorted := slices.Clone(cardList)
+	slices.SortStableFunc(sorted, func(a, b *mtgv1.Card) int {
+		return rankOf(a) - rankOf(b)
+	})
+	priceDate := asOf.UTC().Format("2006-01-02")
 	idx := &Index{
-		cards:      cardList,
-		byOracleID: make(map[string]*mtgv1.Card, len(cardList)),
-		byName:     make(map[string]*mtgv1.Card, len(cardList)*2),
-		byPrinting: make(map[string]*mtgv1.Card, len(printings)),
-		bySetNo:    make(map[string]*mtgv1.Card, len(printings)),
-		tags:       tags,
-		AsOf:       asOf,
+		cards:       sorted,
+		byOracleID:  make(map[string]*mtgv1.Card, len(cardList)),
+		byName:      make(map[string]*mtgv1.Card, len(cardList)*2),
+		byPrinting:  make(map[string]*mtgv1.Card, len(printings)),
+		bySetNo:     make(map[string]*mtgv1.Card, len(printings)),
+		nonPlayable: make(map[string]string),
+		tags:        tags,
+		AsOf:        asOf,
 	}
 	for _, c := range cardList {
+		if c.PriceUsd > 0 && c.PriceAsOf == "" {
+			c.PriceAsOf = priceDate
+		}
 		idx.byOracleID[c.OracleId] = c
-		idx.byName[normName(c.Name)] = c
+		k := normName(c.Name)
+		if _, taken := idx.byName[k]; taken {
+			idx.collisions.FullNames++
+		} else {
+			idx.byName[k] = c
+		}
 		if c.DefaultPrinting != nil {
 			idx.byPrinting[c.DefaultPrinting.ScryfallId] = c
 		}
@@ -50,14 +84,24 @@ func NewIndex(cardList []*mtgv1.Card, printings []Printing, tags *TagIndex, asOf
 	for _, c := range cardList {
 		for _, f := range c.Faces {
 			k := normName(f.Name)
-			if _, taken := idx.byName[k]; !taken {
-				idx.byName[k] = c
+			if taken, ok := idx.byName[k]; ok {
+				if taken != c {
+					idx.collisions.FaceNames++
+				}
+				continue
 			}
+			idx.byName[k] = c
 		}
 	}
 	for _, p := range printings {
 		c, ok := idx.byOracleID[p.OracleID]
 		if !ok {
+			if SkipLayouts[p.Layout] {
+				idx.nonPlayable[p.ScryfallID] = p.Layout
+				if p.SetCode != "" && p.CollectorNumber != "" {
+					idx.nonPlayable[setNoKey(p.SetCode, p.CollectorNumber)] = p.Layout
+				}
+			}
 			continue
 		}
 		idx.byPrinting[p.ScryfallID] = c
@@ -66,6 +110,22 @@ func NewIndex(cardList []*mtgv1.Card, printings []Printing, tags *TagIndex, asOf
 		}
 	}
 	return idx
+}
+
+// NonPlayablePrinting reports a printing the index dropped on purpose
+// (token, emblem, art card). key is a Scryfall id or a set/collector key.
+func (x *Index) NonPlayablePrinting(scryfallID, setCode, collector string) (layout string, ok bool) {
+	if scryfallID != "" {
+		if l, ok := x.nonPlayable[scryfallID]; ok {
+			return l, true
+		}
+	}
+	if setCode != "" && collector != "" {
+		if l, ok := x.nonPlayable[setNoKey(setCode, collector)]; ok {
+			return l, true
+		}
+	}
+	return "", false
 }
 
 // ByName finds a card by exact full name or exact face name.
@@ -116,6 +176,7 @@ type SearchQuery struct {
 }
 
 // Search filters the database. Order: by EDHREC rank, unranked last.
+// The order comes from the build-time sort, so a search never sorts.
 func (x *Index) Search(q SearchQuery) (result []*mtgv1.Card, total int) {
 	var tagSet map[string]bool
 	if len(q.OracleTags) > 0 {
@@ -157,9 +218,7 @@ func (x *Index) Search(q SearchQuery) (result []*mtgv1.Card, total int) {
 		}
 		matched = append(matched, c)
 	}
-	slices.SortStableFunc(matched, func(a, b *mtgv1.Card) int {
-		return rankOf(a) - rankOf(b)
-	})
+	// x.cards is rank-sorted at build time, so matched is too.
 	total = len(matched)
 	if q.Offset >= len(matched) {
 		return nil, total

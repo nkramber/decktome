@@ -2,6 +2,8 @@ package rules
 
 import (
 	"os"
+	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -14,17 +16,27 @@ var (
 	testCfg   *Config
 )
 
-func TestMain(m *testing.M) {
-	f, err := os.Open("../cards/testdata/cards_fixture.jsonl")
+// loadFixture reads one Scryfall JSONL fixture file.
+func loadFixture(path string) []*mtgv1.Card {
+	f, err := os.Open(path)
 	if err != nil {
 		panic(err)
 	}
-	cardList, err := cards.LoadCards(f, "cards_fixture.jsonl")
+	cardList, err := cards.LoadCards(f, path)
 	_ = f.Close()
 	if err != nil {
 		panic(err)
 	}
+	return cardList
+}
+
+// TestMain loads the shared cards fixture plus the rules-only rows in
+// testdata/cards_extra.jsonl (Scryfall API rows, fetched 2026-08-24).
+func TestMain(m *testing.M) {
+	cardList := loadFixture("../cards/testdata/cards_fixture.jsonl")
+	cardList = append(cardList, loadFixture("testdata/cards_extra.jsonl")...)
 	testIndex = cards.NewIndex(cardList, nil, nil, time.Now())
+	var err error
 	testCfg, err = Load()
 	if err != nil {
 		panic(err)
@@ -99,9 +111,24 @@ func codes(res *mtgv1.ValidationResult, sev mtgv1.Severity) map[string]int {
 	return out
 }
 
+// goldenGood and goldenBad count the golden subtests that ran.
+var goldenGood, goldenBad int
+
+// goldenRun runs one golden subtest and counts it by its prefix.
+func goldenRun(t *testing.T, name string, fn func(t *testing.T)) {
+	t.Helper()
+	switch {
+	case strings.HasPrefix(name, "good/"):
+		goldenGood++
+	case strings.HasPrefix(name, "bad/"):
+		goldenBad++
+	}
+	t.Run(name, fn)
+}
+
 func wantPass(t *testing.T, name string, ds deckSpec) {
 	t.Helper()
-	t.Run("good/"+name, func(t *testing.T) {
+	goldenRun(t, "good/"+name, func(t *testing.T) {
 		res := validate(t, ds)
 		if !res.Passed {
 			t.Errorf("deck must pass, blocks: %v", codes(res, mtgv1.Severity_SEVERITY_BLOCK))
@@ -111,7 +138,7 @@ func wantPass(t *testing.T, name string, ds deckSpec) {
 
 func wantBlock(t *testing.T, name string, ds deckSpec, wantCode string) {
 	t.Helper()
-	t.Run("bad/"+name, func(t *testing.T) {
+	goldenRun(t, "bad/"+name, func(t *testing.T) {
 		res := validate(t, ds)
 		if res.Passed {
 			t.Fatalf("deck must fail with %s, but passed", wantCode)
@@ -156,7 +183,11 @@ func TestGoldenDecks(t *testing.T) {
 		commanders: []string{"The Tenth Doctor", "Clara Oswald"},
 		cards:      map[string]int32{"Counterspell": 1, "Negate": 1, "Divination": 1},
 		fill:       "Island", fillTo: 100})
-	wantPass(t, "lutri in the 99 is legal", monoW([]string{"Heliod, Sun-Crowned"}, nil, 2)) // Lutri ban is companion-only
+	// The Lutri ban is companion-only: in the 99 under a UR commander it is legal.
+	wantPass(t, "lutri in the 99 is legal", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2,
+		commanders: []string{"Niv-Mizzet, Parun"},
+		cards:      map[string]int32{"Lutri, the Spellchaser": 1, "Counterspell": 1, "Negate": 1},
+		fill:       "Island", fillTo: 100})
 	wantPass(t, "relentless rats many copies", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2,
 		commanders: []string{"Felothar the Steadfast"},
 		cards:      map[string]int32{"Relentless Rats": 30, "Murder": 1, "Doom Blade": 1},
@@ -189,7 +220,7 @@ func TestGoldenDecks(t *testing.T) {
 	wantPass(t, "standard basics only", deckSpec{format: mtgv1.FormatId_FORMAT_ID_STANDARD,
 		cards: map[string]int32{}, fill: "Plains", fillTo: 60})
 	// owned modes
-	t.Run("good/owned-first warns but passes", func(t *testing.T) {
+	goldenRun(t, "good/owned-first warns but passes", func(t *testing.T) {
 		ds := monoW([]string{"Heliod, Sun-Crowned"}, nil, 2)
 		res := testCfg.Validate(Input{Deck: ds.build(t), Cards: testIndex,
 			PoolRule: mtgv1.PoolRule_POOL_RULE_OWNED_FIRST, OracleCounts: map[string]int32{}})
@@ -200,7 +231,7 @@ func TestGoldenDecks(t *testing.T) {
 			t.Error("want not_owned warns")
 		}
 	})
-	t.Run("good/any-card ignores ownership", func(t *testing.T) {
+	goldenRun(t, "good/any-card ignores ownership", func(t *testing.T) {
 		ds := monoW([]string{"Heliod, Sun-Crowned"}, nil, 2)
 		res := testCfg.Validate(Input{Deck: ds.build(t), Cards: testIndex,
 			PoolRule: mtgv1.PoolRule_POOL_RULE_ANY_CARD, OracleCounts: map[string]int32{}})
@@ -208,7 +239,7 @@ func TestGoldenDecks(t *testing.T) {
 			t.Errorf("any-card must ignore ownership: %v", res.Findings)
 		}
 	})
-	t.Run("good/owned-only with full collection", func(t *testing.T) {
+	goldenRun(t, "good/owned-only with full collection", func(t *testing.T) {
 		ds := deckSpec{format: mtgv1.FormatId_FORMAT_ID_MODERN,
 			cards: map[string]int32{"Soul Warden": 4}, fill: "Plains", fillTo: 60}
 		res := testCfg.Validate(Input{Deck: ds.build(t), Cards: testIndex,
@@ -219,7 +250,7 @@ func TestGoldenDecks(t *testing.T) {
 		}
 	})
 	// land-count warn is not a failure
-	t.Run("good/low lands warns only", func(t *testing.T) {
+	goldenRun(t, "good/low lands warns only", func(t *testing.T) {
 		ds := deckSpec{format: mtgv1.FormatId_FORMAT_ID_MODERN,
 			cards: map[string]int32{"Soul Warden": 4, "Counterspell": 4, "Ajani's Pridemate": 4, "Path to Exile": 4,
 				"Negate": 4, "Divination": 4, "Murder": 4, "Doom Blade": 4, "Serra Angel": 4, "Shivan Dragon": 4,
@@ -243,6 +274,84 @@ func TestGoldenDecks(t *testing.T) {
 		commanders: []string{"Tovolar, Dire Overlord // Tovolar, the Midnight Scourge"},
 		cards:      map[string]int32{"Rampant Growth": 1, "Shivan Dragon": 1},
 		fill:       "Forest", fillTo: 100})
+	wantPass(t, "partner with pair pir and toothy", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2,
+		commanders: []string{"Pir, Imaginative Rascal", "Toothy, Imaginary Friend"},
+		cards:      map[string]int32{"Counterspell": 1, "Cultivate": 1},
+		fill:       "Forest", fillTo: 100})
+	wantPass(t, "friends forever pair", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2,
+		commanders: []string{"Cecily, Haunted Mage", "Bjorna, Nightfall Alchemist"},
+		cards:      map[string]int32{"Counterspell": 1, "Murder": 1},
+		fill:       "Island", fillTo: 100})
+	wantPass(t, "partner pair thrasios and tymna", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 3,
+		commanders: []string{"Thrasios, Triton Hero", "Tymna the Weaver"},
+		cards:      map[string]int32{"Counterspell": 1, "Swords to Plowshares": 1, "Murder": 1},
+		fill:       "Island", fillTo: 100})
+	wantPass(t, "partner survivors pair", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2,
+		commanders: []string{"Abby, Merciless Soldier", "Ellie, Brick Master"},
+		cards:      map[string]int32{"Cultivate": 1, "Shivan Dragon": 1},
+		fill:       "Mountain", fillTo: 100})
+	wantPass(t, "doctor pair reversed", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2,
+		commanders: []string{"Clara Oswald", "The Tenth Doctor"},
+		cards:      map[string]int32{"Counterspell": 1, "Negate": 1, "Divination": 1},
+		fill:       "Island", fillTo: 100})
+	wantPass(t, "vehicle commander weatherlight", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2,
+		commanders: []string{"Weatherlight"},
+		cards:      map[string]int32{"Sol Ring": 1, "Mind Stone": 1},
+		fill:       "Wastes", fillTo: 100})
+	wantPass(t, "spacecraft commander dawnsire", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2,
+		commanders: []string{"Dawnsire, Sunstar Dreadnought"},
+		cards:      map[string]int32{"Sol Ring": 1, "Everflowing Chalice": 1},
+		fill:       "Wastes", fillTo: 100})
+	wantPass(t, "nazgul nine copies", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2,
+		commanders: []string{"Felothar the Steadfast"},
+		cards:      map[string]int32{"Nazgûl": 9, "Murder": 1},
+		fill:       "Swamp", fillTo: 100})
+	wantPass(t, "seven dwarves seven copies", deckSpec{format: mtgv1.FormatId_FORMAT_ID_MODERN,
+		cards: map[string]int32{"Seven Dwarves": 7, "Skullcrack": 4},
+		fill:  "Mountain", fillTo: 60})
+	wantPass(t, "game changer commander in bracket 4", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 4,
+		commanders: []string{"Tergrid, God of Fright // Tergrid's Lantern"},
+		cards:      map[string]int32{"Murder": 1, "Doom Blade": 1},
+		fill:       "Swamp", fillTo: 100})
+	wantPass(t, "wastes fill colorless commander", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2,
+		commanders: []string{"The Reaper, King No More"},
+		cards:      map[string]int32{"Sol Ring": 1},
+		fill:       "Wastes", fillTo: 100})
+	goldenRun(t, "good/house format reports info only", func(t *testing.T) {
+		ds := deckSpec{format: mtgv1.FormatId_FORMAT_ID_HOUSE,
+			cards: map[string]int32{"Dockside Extortionist": 4}, fill: "Mountain", fillTo: 60}
+		res := validate(t, ds)
+		if !res.Passed || codes(res, mtgv1.Severity_SEVERITY_INFO)[CodeHouseRules] == 0 {
+			t.Errorf("want pass with house_rules_limited info, got %v", res.Findings)
+		}
+		if res.Format != mtgv1.FormatId_FORMAT_ID_HOUSE {
+			t.Errorf("format = %v", res.Format)
+		}
+	})
+	goldenRun(t, "good/owned-only aggregates per oracle id", func(t *testing.T) {
+		ds := deckSpec{format: mtgv1.FormatId_FORMAT_ID_MODERN,
+			cards: map[string]int32{"Soul Warden": 3}, sideboard: map[string]int32{"Soul Warden": 1},
+			fill: "Plains", fillTo: 60}
+		res := testCfg.Validate(Input{Deck: ds.build(t), Cards: testIndex,
+			PoolRule:     mtgv1.PoolRule_POOL_RULE_OWNED_ONLY,
+			OracleCounts: map[string]int32{oid(t, "Soul Warden"): 4}})
+		if !res.Passed {
+			t.Errorf("blocks: %v", codes(res, mtgv1.Severity_SEVERITY_BLOCK))
+		}
+	})
+	goldenRun(t, "good/bracket info names the verified date", func(t *testing.T) {
+		res := validate(t, monoW([]string{"Heliod, Sun-Crowned"}, nil, 2))
+		var found bool
+		for _, f := range res.Findings {
+			if f.Code == CodeBracketProse && strings.Contains(f.Message, testCfg.VerifiedAt["brackets.json"]) &&
+				strings.Contains(f.Message, "8+") {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("want bracket info with the verified date and expected turns, got %v", res.Findings)
+		}
+	})
 
 	// ---- 30 bad decks ----
 	bad99 := monoW([]string{"Heliod, Sun-Crowned"}, nil, 2)
@@ -319,7 +428,7 @@ func TestGoldenDecks(t *testing.T) {
 		cards:     map[string]int32{"Soul Warden": 4},
 		sideboard: map[string]int32{"The One Ring": 1},
 		fill:      "Plains", fillTo: 60}, CodeBannedCard)
-	t.Run("bad/unknown card id", func(t *testing.T) {
+	goldenRun(t, "bad/unknown card id", func(t *testing.T) {
 		deck := monoW([]string{"Heliod, Sun-Crowned"}, nil, 2).build(t)
 		deck.Cards = append(deck.Cards, &mtgv1.DeckCard{OracleId: "not-a-real-id", Name: "Ghost", Count: 1})
 		deck.Cards[len(deck.Cards)-2].Count-- // keep 100
@@ -328,7 +437,88 @@ func TestGoldenDecks(t *testing.T) {
 			t.Errorf("want unknown_card block, got %v", codes(res, mtgv1.Severity_SEVERITY_BLOCK))
 		}
 	})
-	t.Run("bad/owned-only without cards", func(t *testing.T) {
+	wantBlock(t, "partner with alone with plain partner", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2,
+		commanders: []string{"Pir, Imaginative Rascal", "Thrasios, Triton Hero"},
+		fill:       "Forest", fillTo: 100}, CodeBadPartner)
+	wantBlock(t, "survivors with plain partner", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2,
+		commanders: []string{"Abby, Merciless Soldier", "Thrasios, Triton Hero"},
+		fill:       "Forest", fillTo: 100}, CodeBadPartner)
+	wantBlock(t, "survivors with father and son", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2,
+		commanders: []string{"Abby, Merciless Soldier", "Kratos, Stoic Father"},
+		fill:       "Mountain", fillTo: 100}, CodeBadPartner)
+	wantBlock(t, "friends forever with plain partner", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2,
+		commanders: []string{"Cecily, Haunted Mage", "Thrasios, Triton Hero"},
+		fill:       "Island", fillTo: 100}, CodeBadPartner)
+	wantBlock(t, "lone background", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2,
+		commanders: []string{"Raised by Giants"},
+		fill:       "Forest", fillTo: 100}, CodeBadCommander)
+	wantBlock(t, "background with plain partner", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2,
+		commanders: []string{"Thrasios, Triton Hero", "Raised by Giants"},
+		fill:       "Forest", fillTo: 100}, CodeBadCommander)
+	wantBlock(t, "doctor companion with human doctor", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2,
+		commanders: []string{"Clara Oswald", "Moonstone, Harsh Mistress"},
+		fill:       "Island", fillTo: 100}, CodeBadPartner)
+	wantBlock(t, "doctor companion with time lord rogue", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2,
+		commanders: []string{"Clara Oswald", "The Master, Formed Anew"},
+		fill:       "Island", fillTo: 100}, CodeBadPartner)
+	wantBlock(t, "back face legendary bloodline keeper", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2,
+		commanders: []string{"Bloodline Keeper // Lord of Lineage"},
+		fill:       "Swamp", fillTo: 100}, CodeBadCommander)
+	wantBlock(t, "nazgul ten copies", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2,
+		commanders: []string{"Felothar the Steadfast"},
+		cards:      map[string]int32{"Nazgûl": 10},
+		fill:       "Swamp", fillTo: 100}, CodeCopyLimit)
+	wantBlock(t, "seven dwarves eight copies", deckSpec{format: mtgv1.FormatId_FORMAT_ID_MODERN,
+		cards: map[string]int32{"Seven Dwarves": 8},
+		fill:  "Mountain", fillTo: 60}, CodeCopyLimit)
+	wantBlock(t, "game changer commander in bracket 2", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2,
+		commanders: []string{"Tergrid, God of Fright // Tergrid's Lantern"},
+		fill:       "Swamp", fillTo: 100}, CodeGameChangers)
+	wantBlock(t, "bracket 6 unknown", monoW([]string{"Heliod, Sun-Crowned"}, nil, 6), CodeGameChangers)
+	wantBlock(t, "restricted card split main and side", deckSpec{format: mtgv1.FormatId_FORMAT_ID_VINTAGE,
+		cards: map[string]int32{"Black Lotus": 1}, sideboard: map[string]int32{"Black Lotus": 1},
+		fill: "Island", fillTo: 60}, CodeRestrictedCard)
+	wantBlock(t, "unknown format", deckSpec{format: mtgv1.FormatId_FORMAT_ID_UNSPECIFIED,
+		fill: "Plains", fillTo: 60}, CodeUnknownFormat)
+	wantBlock(t, "companion off color in commander", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2,
+		commanders: []string{"Heliod, Sun-Crowned"}, companion: "Yorion, Sky Nomad",
+		fill: "Plains", fillTo: 100}, CodeOffColor)
+	wantBlock(t, "lurrus companion banned in modern", deckSpec{format: mtgv1.FormatId_FORMAT_ID_MODERN,
+		companion: "Lurrus of the Dream-Den",
+		cards:     map[string]int32{"Soul Warden": 4}, fill: "Plains", fillTo: 60}, CodeBannedCard)
+	wantBlock(t, "companion not in sideboard", deckSpec{format: mtgv1.FormatId_FORMAT_ID_LEGACY,
+		companion: "Yorion, Sky Nomad",
+		cards:     map[string]int32{"Soul Warden": 4}, fill: "Plains", fillTo: 80}, CodeCompanionNotSide)
+	wantBlock(t, "companion breaks singleton in commander", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2,
+		commanders: []string{"Niv-Mizzet, Parun"}, companion: "Jegantha, the Wellspring",
+		cards: map[string]int32{"Jegantha, the Wellspring": 1},
+		fill:  "Island", fillTo: 100}, CodeCopyLimit)
+	wantBlock(t, "grist known gap", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2,
+		commanders: []string{"Grist, the Hunger Tide"},
+		fill:       "Swamp", fillTo: 100}, CodeBadCommander)
+	goldenRun(t, "bad/nil cards gives a block finding", func(t *testing.T) {
+		deck := monoW([]string{"Heliod, Sun-Crowned"}, nil, 2).build(t)
+		res := testCfg.Validate(Input{Deck: deck})
+		if res.Passed || codes(res, mtgv1.Severity_SEVERITY_BLOCK)[CodeNoCardData] == 0 {
+			t.Errorf("want no_card_data block, got %v", res.Findings)
+		}
+		res = testCfg.Validate(Input{Cards: testIndex})
+		if res.Passed {
+			t.Error("nil deck must not pass")
+		}
+	})
+	goldenRun(t, "bad/owned-only split across main and side", func(t *testing.T) {
+		ds := deckSpec{format: mtgv1.FormatId_FORMAT_ID_MODERN,
+			cards: map[string]int32{"Soul Warden": 3}, sideboard: map[string]int32{"Soul Warden": 1},
+			fill: "Plains", fillTo: 60}
+		res := testCfg.Validate(Input{Deck: ds.build(t), Cards: testIndex,
+			PoolRule:     mtgv1.PoolRule_POOL_RULE_OWNED_ONLY,
+			OracleCounts: map[string]int32{oid(t, "Soul Warden"): 3}})
+		if res.Passed || codes(res, mtgv1.Severity_SEVERITY_BLOCK)[CodeNotOwned] != 1 {
+			t.Errorf("want one not_owned block, got %v", codes(res, mtgv1.Severity_SEVERITY_BLOCK))
+		}
+	})
+	goldenRun(t, "bad/owned-only without cards", func(t *testing.T) {
 		ds := deckSpec{format: mtgv1.FormatId_FORMAT_ID_MODERN,
 			cards: map[string]int32{"Soul Warden": 4}, fill: "Plains", fillTo: 60}
 		res := testCfg.Validate(Input{Deck: ds.build(t), Cards: testIndex,
@@ -350,7 +540,30 @@ func TestLoadData(t *testing.T) {
 	if cfg.MaxGameChangers[3] != 3 || cfg.MaxGameChangers[4] != -1 {
 		t.Errorf("brackets = %v", cfg.MaxGameChangers)
 	}
-	if !cfg.BannedAsCompanion["Lutri, the Spellchaser"] {
-		t.Error("Lutri missing from companion bans")
+	if !slices.Contains(cfg.BannedAsCompanion["Lutri, the Spellchaser"], "commander") {
+		t.Error("Lutri missing from companion bans for commander")
 	}
+	if len(cfg.BannedAsCompanion["Lutri, the Spellchaser"]) != 1 {
+		t.Errorf("Lutri ban formats = %v, want commander only", cfg.BannedAsCompanion["Lutri, the Spellchaser"])
+	}
+	for _, name := range []string{"formats.json", "brackets.json", "companion_bans.json"} {
+		if _, err := time.Parse("2006-01-02", cfg.VerifiedAt[name]); err != nil {
+			t.Errorf("%s verified_at = %q: %v", name, cfg.VerifiedAt[name], err)
+		}
+	}
+	if cfg.Brackets[1].ExpectedTurns != "9+" || cfg.Brackets[5].ExpectedTurns != "any" {
+		t.Errorf("brackets = %v", cfg.Brackets)
+	}
+}
+
+// TestGoldenCounts is the PR-5 gate size: at least 30 good and 30 bad
+// decks. It reads the counters that TestGoldenDecks filled.
+func TestGoldenCounts(t *testing.T) {
+	if goldenGood == 0 && goldenBad == 0 {
+		t.Skip("TestGoldenDecks did not run")
+	}
+	if goldenGood < 30 || goldenBad < 30 {
+		t.Errorf("golden gate: %d good, %d bad, want at least 30 each", goldenGood, goldenBad)
+	}
+	t.Logf("golden gate: %d good, %d bad", goldenGood, goldenBad)
 }
