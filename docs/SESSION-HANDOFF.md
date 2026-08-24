@@ -4,7 +4,7 @@ Read this file first in a fresh session. Then read `CLAUDE.md`, `docs/decisions.
 
 ## Last updated
 
-2026-08-24. PR-0a merged (#1), PR-0b merged (#2). PR-0c built on branch `pr-0c`, gate held, commit and merge pending.
+2026-08-24. Merged: PR-0a (#1), PR-0b (#2), PR-0c (#3). PR-1 built on branch `pr-1`, gate held, commit and merge pending.
 
 ## State of the work
 
@@ -23,17 +23,17 @@ Done in session 1:
 
 ## Where we stopped
 
-PR-0b is done: `docs/setup.md` (ten-step procedure) and the version-aware `scripts/doctor.sh`. The gate held 2026-08-24 with Docker 29.7.2 installed and the daemon running. The owner commits and merges `pr-0b`. Next: PR-0c.
+PR-1 is done on branch `pr-1`. The contract lives in nine files under `proto/mtg/v1/`: `card`, `format`, `collection`, `deck`, `session`, and four service files (`CardService`, `CollectionService`, `DeckService`, `AgentService` with the streaming `Chat`). Generated code is committed for both stacks. The gate held: both compile, `make proto-check` passes, lint and tests are green.
+
+Design notes for the reviewer: legalities are an open map with Scryfall keys. `PowerLevel` is a oneof (bracket, or the 60-card step, D-8). `Format` has `FORMAT_ID_HOUSE` plus `house_rules` text (D-3). `Slots` mirrors the PR-7 question catalog. `ImportReport` returns unresolved rows so nothing is dropped in silence (D-23). `Question` carries `invented` and `gap_score` (D-25).
+
+A domain re-pass on 2026-08-24 (owner-requested) added colorless produced mana, parsed types, commander eligibility fields, the sideboard, the companion, entry rarity, and printing images. It also found F-18: Scryfall can not express "banned as a companion", so the rules engine owns that check. Reviewed and deliberately skipped: a `target_meta` slot (the free-text `theme` holds it for now) and name-search on `CardService.Search` (additive later).
 
 ## Next steps, in order
 
-1. The owner commits `pr-0c` and merges.
-2. Phase 1 starts with PR-1 (proto contract v1). Ask the owner to review the roadmap Phase 1 entries before you write the proto.
-3. Collect roadmap corrections as dated entries.
-2. Ask OQ-18 (rerun depth rule) and OQ-19 (scoring rubric) when the design reaches I-1 and M-5. OQ-17 files come from the owner later.
-3. Run the STE checker (`docs/tools/ste-check.py`) on every changed `.md` file and fix findings.
-4. Expand the `mtg-corpus` skill: archetype-to-card examples per format, the Karsten color-source table, and a sample ManaBox export fixture (owner-provided).
-5. When the owner approves the plan, PR-0a starts. Until then, no application code.
+1. The owner reviews the `.proto` files, commits `pr-1`, and merges. A field rename after merge is a breaking change, so review now.
+2. PR-2: the card database from Scryfall bulk. It needs no owner input to start.
+3. Collect contract corrections as dated register entries.
 
 ## Facts that expire
 

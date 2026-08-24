@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package mtg.v1;
+
+import "mtg/v1/card.proto";
+
+option go_package = "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1";
+
+// CardService reads the card database (roadmap PR-2).
+service CardService {
+  // Lookup finds one card by exact name, Scryfall id, or Oracle id.
+  rpc Lookup(LookupRequest) returns (LookupResponse) {}
+  // Search filters the card database. No free-text ranking in v1.
+  rpc Search(SearchRequest) returns (SearchResponse) {}
+}
+
+message LookupRequest {
+  oneof key {
+    // name must match the exact English card name (guardrail 4).
+    string name = 1;
+    string scryfall_id = 2;
+    string oracle_id = 3;
+  }
+}
+
+message LookupResponse {
+  Card card = 1;
+}
+
+message SearchRequest {
+  // colors_within keeps cards whose color identity fits these colors.
+  repeated Color colors_within = 1;
+  // type_contains matches a word in the type line, for example "Creature".
+  string type_contains = 2;
+  repeated string keywords = 3;
+  // oracle_tags are Scryfall Tagger slugs, for example "lifegain".
+  repeated string oracle_tags = 4;
+  // legal_in keeps cards legal in this Scryfall format key.
+  string legal_in = 5;
+  int32 page_size = 6;
+  string page_token = 7;
+}
+
+message SearchResponse {
+  repeated Card cards = 1;
+  string next_page_token = 2;
+}

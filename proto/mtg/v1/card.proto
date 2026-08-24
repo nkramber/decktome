@@ -1,0 +1,144 @@
+syntax = "proto3";
+
+package mtg.v1;
+
+option go_package = "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1";
+
+// Card is one Oracle card: the rules identity, not one printing.
+// The data comes from the daily Scryfall snapshot (roadmap PR-2).
+message Card {
+  // oracle_id is the stable Scryfall Oracle identifier.
+  string oracle_id = 1;
+  // name is the exact English card name. Guardrail 4: exact names only.
+  string name = 2;
+  string mana_cost = 3;
+  // mana_value is the converted cost. Scryfall calls it cmc.
+  double mana_value = 4;
+  repeated Color colors = 5;
+  // color_identity adds every mana symbol in the rules text. Commander uses it.
+  repeated Color color_identity = 6;
+  string type_line = 7;
+  string oracle_text = 8;
+  repeated string keywords = 9;
+  // legalities maps a Scryfall format key (for example "modern") to a status.
+  // Guardrail 2: this map is the only legality source.
+  map<string, LegalityStatus> legalities = 10;
+  // game_changer marks the card on the Commander Game Changers list.
+  bool game_changer = 11;
+  // edhrec_rank is the popularity rank. Zero means unranked.
+  int32 edhrec_rank = 12;
+  // layout is the Scryfall layout (for example "normal", "transform").
+  string layout = 13;
+  // faces holds one entry for a normal card and two for a double-faced card.
+  repeated CardFace faces = 14;
+  // Power and toughness are strings: "*" and "1+*" exist.
+  string power = 15;
+  string toughness = 16;
+  string loyalty = 17;
+  // produced_mana lists the colors this card can produce.
+  repeated Color produced_mana = 18;
+  // default_printing shows one representative printing for display.
+  Printing default_printing = 19;
+  // price_usd is the display price per D-17: the lowest NM market estimate
+  // across legal printings and finishes, as a 7-day rolling average.
+  // Zero means no price. Advisory only (I-2).
+  double price_usd = 20;
+  // price_as_of is the date of the price data, ISO 8601 (YYYY-MM-DD).
+  string price_as_of = 21;
+  // supertypes, card_types, and subtypes are the parsed type_line.
+  // Example: "Legendary Snow Creature - Elk" gives ["Legendary", "Snow"],
+  // ["Creature"], ["Elk"]. The rules engine reads these, not the string.
+  repeated string supertypes = 22;
+  repeated string card_types = 23;
+  repeated string subtypes = 24;
+  // any_count_in_deck marks cards whose text lifts the copy limit
+  // (example: Relentless Rats). Computed from the Oracle text.
+  bool any_count_in_deck = 25;
+  // can_be_commander: a legendary creature, or a card whose text says
+  // it can be your commander.
+  bool can_be_commander = 26;
+  // partner says which two-commander rule the card uses, when any.
+  PartnerKind partner = 27;
+  // partner_with_name names the required partner for PARTNER_KIND_WITH.
+  string partner_with_name = 28;
+  // is_background marks a Background enchantment.
+  bool is_background = 29;
+  // is_companion marks a card with a companion condition.
+  // CAUTION: the legalities map can not say "banned as a companion"
+  // (Lutri, 2026-02-09). The rules engine owns that check (F-18).
+  bool is_companion = 30;
+}
+
+// CardFace is one face of a card. Images live per face (F-9).
+message CardFace {
+  string name = 1;
+  string mana_cost = 2;
+  string type_line = 3;
+  string oracle_text = 4;
+  string power = 5;
+  string toughness = 6;
+  string loyalty = 7;
+  ImageUris image_uris = 8;
+}
+
+// Printing is one physical version of a card.
+message Printing {
+  // scryfall_id identifies the printing. ManaBox exports it.
+  string scryfall_id = 1;
+  string set_code = 2;
+  string set_name = 3;
+  string collector_number = 4;
+  string rarity = 5;
+  // artist is shown next to the image. Scryfall terms require it (D-6).
+  string artist = 6;
+  ImageUris image_uris = 7;
+  // digital marks an online-only printing. Digital printings are out of
+  // the price search (D-17) and can differ in legality (F-12).
+  bool digital = 8;
+}
+
+// PartnerKind lists the two-commander mechanics.
+enum PartnerKind {
+  PARTNER_KIND_UNSPECIFIED = 0;
+  PARTNER_KIND_NONE = 1;
+  // PARTNER_KIND_PARTNER pairs with any other Partner commander.
+  PARTNER_KIND_PARTNER = 2;
+  // PARTNER_KIND_WITH pairs only with the named card.
+  PARTNER_KIND_WITH = 3;
+  PARTNER_KIND_FRIENDS_FOREVER = 4;
+  // PARTNER_KIND_CHOOSE_BACKGROUND pairs with a Background enchantment.
+  PARTNER_KIND_CHOOSE_BACKGROUND = 5;
+  PARTNER_KIND_DOCTORS_COMPANION = 6;
+}
+
+// ImageUris are Scryfall image links. The UI hotlinks them (D-6).
+// It must show the artist and must not crop or change the image.
+message ImageUris {
+  string small = 1;
+  string normal = 2;
+  string large = 3;
+  string art_crop = 4;
+}
+
+// LegalityStatus mirrors the Scryfall legality values.
+enum LegalityStatus {
+  LEGALITY_STATUS_UNSPECIFIED = 0;
+  LEGALITY_STATUS_LEGAL = 1;
+  LEGALITY_STATUS_NOT_LEGAL = 2;
+  LEGALITY_STATUS_BANNED = 3;
+  // LEGALITY_STATUS_RESTRICTED means max one copy (Vintage).
+  LEGALITY_STATUS_RESTRICTED = 4;
+}
+
+// Color is one of the five colors. Colorless is the absence of colors.
+enum Color {
+  COLOR_UNSPECIFIED = 0;
+  COLOR_W = 1;
+  COLOR_U = 2;
+  COLOR_B = 3;
+  COLOR_R = 4;
+  COLOR_G = 5;
+  // COLOR_C is colorless. It appears in produced_mana only.
+  // A color identity never contains it.
+  COLOR_C = 6;
+}
