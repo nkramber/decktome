@@ -175,7 +175,7 @@ The result is a `Collection` with counts per Oracle ID and per printing. Also ac
 A per-Oracle-ID count map sits beside it for fast ownership checks. A content hash of the upload detects an identical re-upload. Non-English rows are reported to the user and skipped (D-23). Gate: a fixture set of real exports (owner-provided, anonymized) imports with zero silent drops. M-3 counts unresolved rows.
 > *In plain English:* upload the file ManaBox gives you. We match every line to a real card and count how many you own. We show you the lines we could not match. We do not hide them.
 
-**PR-5: Rules engine.**
+**PR-5: Rules engine.** ✅ gate held 2026-08-24 on branch `pr-5`, merge pending. A pure library in `internal/rules` with embedded, dated data files: `formats.json`, `brackets.json`, and `companion_bans.json` (the F-18 list Scryfall can not express). Checks: size, copies (basics and any-count exempt, restricted capped at 1), legality, commander eligibility, and all five partner mechanics. Also: color identity, Game Changers per bracket, companion (Lutri blocked as companion, legal in the 99), ownership per pool mode (D-37), and land-count and curve advisories. The golden gate runs 30 good and 30 bad decks in CI. `DeckService.Validate` is wired and smoke-tested end to end. Still open from F-11: the bracket prose rules (mass land denial, extra turns, combos) emit an info finding, not a check. Fixture lesson: Scryfall Oracle data contains token objects that share a real card's name, and the fixture builder now prefers real layouts.
 A pure Go library. Inputs: a deck, a format, a power level, a collection, a card snapshot. Checks:
 - deck size and copy limits (4, singleton, restricted),
 - legality per card on the snapshot date,

@@ -1,0 +1,10 @@
+{
+  "_comment": "Commander bracket rules. Source: the Commander Format Panel bracket system, update of 2026-02-09. Verified 2026-08-24. Only the machine-checkable parts live here (F-11). The prose parts (mass land denial, extra-turn chains, combo timing) are not encoded yet: the engine emits an info finding that names them.",
+  "brackets": {
+    "1": {"max_game_changers": 0},
+    "2": {"max_game_changers": 0},
+    "3": {"max_game_changers": 3},
+    "4": {"max_game_changers": -1},
+    "5": {"max_game_changers": -1}
+  }
+}
