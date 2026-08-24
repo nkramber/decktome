@@ -1,19 +1,11 @@
 # Container variant of the local stack (PR-0c). Native path: make dev.
-# The emulators bind to 0.0.0.0 inside containers via the host override.
+# The emulator image binds 0.0.0.0 (see docker/emulators.Dockerfile) so the
+# other services can reach the ports. The image CMD starts the emulators.
 services:
   emulators:
     build:
       context: .
       dockerfile: docker/emulators.Dockerfile
-    command:
-      [
-        "firebase", "emulators:start",
-        "--only", "firestore,auth",
-        "--project", "mtg-local",
-      ]
-    environment:
-      # Bind inside the container so other services can reach the ports.
-      FIRESTORE_EMULATOR_HOST: "0.0.0.0:8281"
     ports: ["8281:8281", "9199:9199", "4100:4100"]
 
   gcs:
@@ -26,11 +18,26 @@ services:
     build:
       context: .
       dockerfile: docker/api.Dockerfile
-    environment:
+    environment: &gcp-env
       PROJECT_ID: "mtg-local"
       FIRESTORE_EMULATOR_HOST: "emulators:8281"
       FIREBASE_AUTH_EMULATOR_HOST: "emulators:9199"
       STORAGE_EMULATOR_HOST: "http://gcs:4443"
       CARDS_BUCKET: "mtg-local-cards"
+      # Same fast reload as scripts/dev.sh, so a seed shows up within 15 s.
+      CARDS_RELOAD_SECONDS: "15"
+      # Local stack: no provider keys, the fixture fake serves every LLM role.
+      LLM_REQUIRE_KEYS: "0"
     depends_on: [emulators, gcs]
     ports: ["8090:8080"]
+
+  # One-shot card snapshot refresh, the Cloud Run job shape.
+  # Run it on demand: docker compose --profile seed run --rm worker
+  worker:
+    build:
+      context: .
+      dockerfile: docker/worker.Dockerfile
+    command: ["-once"]
+    environment: *gcp-env
+    depends_on: [gcs]
+    profiles: [seed]

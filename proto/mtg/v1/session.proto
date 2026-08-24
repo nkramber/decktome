@@ -17,10 +17,37 @@ message Session {
   repeated string deck_ids = 5;
   google.protobuf.Timestamp created_at = 6;
   google.protobuf.Timestamp updated_at = 7;
+  SessionStatus status = 8;
+  // usage is the session's LLM token and cost total (M-1).
+  Usage usage = 9;
+}
+
+// SessionStatus says where the conversation stands.
+enum SessionStatus {
+  SESSION_STATUS_UNSPECIFIED = 0;
+  // SESSION_STATUS_ASKING: at least one slot is still empty.
+  SESSION_STATUS_ASKING = 1;
+  // SESSION_STATUS_READY: every slot is filled or skipped. A build can run.
+  SESSION_STATUS_READY = 2;
+  // SESSION_STATUS_BUILT: the latest deck is in deck_ids.
+  SESSION_STATUS_BUILT = 3;
+}
+
+// Usage is the LLM spend of one session (M-1). A false priced means the
+// cost is unknown, not zero. Zero calls means nothing was instrumented.
+message Usage {
+  int32 calls = 1;
+  int64 input_tokens = 2;
+  int64 cached_input_tokens = 3;
+  int64 output_tokens = 4;
+  int64 reasoning_tokens = 5;
+  double cost_usd = 6;
+  bool priced = 7;
 }
 
 // Slots hold what the agent knows so far (roadmap PR-7).
-// An unset field is a slot the agent may ask about.
+// slot_states says for each slot whether it is empty, filled, or skipped
+// by the user. A zero value alone can not tell "not asked" from "declined".
 message Slots {
   Format format = 1;
   PowerLevel power = 2;
@@ -36,6 +63,22 @@ message Slots {
   repeated string locked_oracle_ids = 8;
   // plan_variant separates two builds of one theme (roadmap PR-9).
   string plan_variant = 9;
+  // slot_states is keyed by slot name: format, power, colors, theme,
+  // commander, pool_rule, budget, locked, plan_variant, house_rules, meta.
+  map<string, SlotState> slot_states = 10;
+}
+
+// SlotState is the fill state of one slot (roadmap PR-7 gate: no repeated
+// question).
+enum SlotState {
+  SLOT_STATE_UNSPECIFIED = 0;
+  // SLOT_STATE_EMPTY: not filled and not yet asked.
+  SLOT_STATE_EMPTY = 1;
+  // SLOT_STATE_ASKED: a question is out, no answer mapped yet.
+  SLOT_STATE_ASKED = 2;
+  SLOT_STATE_FILLED = 3;
+  // SLOT_STATE_SKIPPED: the user declined. The agent uses a default.
+  SLOT_STATE_SKIPPED = 4;
 }
 
 // PoolRule says how the collection constrains the deck (D-2).
@@ -56,10 +99,24 @@ message Turn {
   // questions the agent asked in this turn, when it asked.
   repeated Question questions = 3;
   google.protobuf.Timestamp at = 4;
+  // answers maps the user's replies to questions, when the client sent
+  // structured answers.
+  repeated Answer answers = 5;
+}
+
+// Answer is one reply to a Question.
+message Answer {
+  // question_id matches Question.id.
+  string question_id = 1;
+  // option_index is the chosen option, or -1 for free text.
+  int32 option_index = 2;
+  string text = 3;
 }
 
 // Question is one clarifying question (roadmap PR-7, D-25).
 message Question {
+  // id is unique in the session. Answers refer to it.
+  string id = 6;
   // slot names the empty slot this question fills.
   string slot = 1;
   string text = 2;

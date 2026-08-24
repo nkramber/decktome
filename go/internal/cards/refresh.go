@@ -2,9 +2,11 @@ package cards
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
+	"sort"
 	"time"
 
 	"github.com/nkramber/mtg-deck-builder/go/internal/scryfall"
@@ -17,34 +19,51 @@ var bulkTypeByFile = map[string]string{
 	"oracle_tags.jsonl.gz":   "oracle_tags",
 }
 
+// KeepVersions is how many complete snapshots stay in the store after a
+// refresh (C-12). Three keeps one for the api, one for a legality diff,
+// and one spare for a rollback.
+const KeepVersions = 3
+
+// DownloadTimeout bounds one bulk-file transfer. The largest file is
+// about 80 MB, so 25 minutes covers a slow link (C-14).
+const DownloadTimeout = 25 * time.Minute
+
 // Refresh downloads the bulk files into the store when Scryfall has a
-// newer oracle_cards file than the newest stored version.
+// newer oracle_cards file than the newest stored version. The three bulk
+// files must share one UTC date, or the cycle skips and tries later.
+// After a successful download it prunes to KeepVersions.
 // It returns the current version either way.
 func Refresh(ctx context.Context, client *scryfall.Client, store Store, logger *slog.Logger) (string, error) {
 	files, err := client.BulkFiles(ctx)
 	if err != nil {
 		return "", err
 	}
-	oracle, ok := files["oracle_cards"]
-	if !ok {
-		return "", fmt.Errorf("scryfall bulk catalog has no oracle_cards")
-	}
-	remote := VersionFor(oracle.UpdatedAt)
 	current, err := store.LatestVersion(ctx)
 	if err != nil {
 		return "", err
 	}
-	if current >= remote {
-		logger.Info("cards refresh: snapshot current", "version", current)
-		return current, nil
-	}
-	logger.Info("cards refresh: downloading", "from", current, "to", remote)
+	var bulk []scryfall.BulkFile
 	for _, name := range SnapshotFiles {
-		bulk, ok := files[bulkTypeByFile[name]]
+		f, ok := files[bulkTypeByFile[name]]
 		if !ok {
 			return "", fmt.Errorf("scryfall bulk catalog has no %s", bulkTypeByFile[name])
 		}
-		if err := copyBulk(ctx, client, store, remote, name, bulk.DownloadURI); err != nil {
+		bulk = append(bulk, f)
+	}
+	oracle := bulk[0]
+	remote := VersionFor(oracle.UpdatedAt)
+	if !newerVersion(remote, current) {
+		logger.Info("cards refresh: snapshot current", "version", current)
+		return current, nil
+	}
+	if !sameUTCDate(bulk) {
+		logger.Warn("cards refresh: bulk files span two dates, wait for the next cycle",
+			"oracle_cards", bulk[0].UpdatedAt, "default_cards", bulk[1].UpdatedAt, "oracle_tags", bulk[2].UpdatedAt)
+		return current, nil
+	}
+	logger.Info("cards refresh: downloading", "from", current, "to", remote)
+	for i, name := range SnapshotFiles {
+		if err := copyBulk(ctx, client, store, remote, name, bulk[i].DownloadURI); err != nil {
 			return "", err
 		}
 	}
@@ -52,10 +71,51 @@ func Refresh(ctx context.Context, client *scryfall.Client, store Store, logger *
 		return "", fmt.Errorf("finalize %s: %w", remote, err)
 	}
 	logger.Info("cards refresh: done", "version", remote)
+	if err := Prune(ctx, store, KeepVersions, logger); err != nil {
+		// The new snapshot is complete. A failed prune costs storage, not
+		// correctness, so it logs and does not fail the refresh.
+		logger.Error("cards refresh: prune failed", "err", err)
+	}
 	return remote, nil
 }
 
+// newerVersion reports whether remote is strictly newer than current.
+// It compares parsed times, not strings. An unparsable current version
+// counts as older, so a bad store entry never blocks a refresh.
+func newerVersion(remote, current string) bool {
+	if current == "" {
+		return true
+	}
+	remoteT, err := VersionTime(remote)
+	if err != nil {
+		return false
+	}
+	currentT, err := VersionTime(current)
+	if err != nil {
+		return true
+	}
+	return remoteT.After(currentT)
+}
+
+// sameUTCDate reports whether every bulk file was updated on one UTC day.
+// Scryfall regenerates the files at close but not equal times. A mixed
+// set could pair new Oracle text with old printings.
+func sameUTCDate(files []scryfall.BulkFile) bool {
+	if len(files) == 0 {
+		return true
+	}
+	day := files[0].UpdatedAt.UTC().Format("2006-01-02")
+	for _, f := range files[1:] {
+		if f.UpdatedAt.UTC().Format("2006-01-02") != day {
+			return false
+		}
+	}
+	return true
+}
+
 func copyBulk(ctx context.Context, client *scryfall.Client, store Store, version, name, uri string) error {
+	ctx, cancel := context.WithTimeout(ctx, DownloadTimeout)
+	defer cancel()
 	body, err := client.Download(ctx, uri)
 	if err != nil {
 		return err
@@ -70,6 +130,102 @@ func copyBulk(ctx context.Context, client *scryfall.Client, store Store, version
 		return fmt.Errorf("store %s/%s: %w", version, name, err)
 	}
 	return w.Close()
+}
+
+// Prune deletes every complete version except the newest keep.
+func Prune(ctx context.Context, store Store, keep int, logger *slog.Logger) error {
+	versions, err := store.ListVersions(ctx)
+	if err != nil {
+		return err
+	}
+	sort.Slice(versions, func(i, j int) bool {
+		ti, _ := VersionTime(versions[i])
+		tj, _ := VersionTime(versions[j])
+		return ti.Before(tj)
+	})
+	if keep < 1 {
+		keep = 1
+	}
+	for len(versions) > keep {
+		old := versions[0]
+		versions = versions[1:]
+		if err := store.DeleteVersion(ctx, old); err != nil {
+			return fmt.Errorf("prune %s: %w", old, err)
+		}
+		logger.Info("cards refresh: pruned old snapshot", "version", old)
+	}
+	return nil
+}
+
+// LegalityDiff counts the cards whose legalities changed between two
+// stored versions (C-2). It reads only oracle_id and legalities, so it
+// costs a fraction of a full index load. A card that is present in one
+// version only counts as changed.
+func LegalityDiff(ctx context.Context, store Store, oldVersion, newVersion string) (changed int, err error) {
+	before, err := loadLegalities(ctx, store, oldVersion)
+	if err != nil {
+		return 0, err
+	}
+	after, err := loadLegalities(ctx, store, newVersion)
+	if err != nil {
+		return 0, err
+	}
+	for id, a := range after {
+		b, ok := before[id]
+		if !ok || !sameLegalities(a, b) {
+			changed++
+		}
+	}
+	for id := range before {
+		if _, ok := after[id]; !ok {
+			changed++
+		}
+	}
+	return changed, nil
+}
+
+func sameLegalities(a, b map[string]string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for k, v := range a {
+		if b[k] != v {
+			return false
+		}
+	}
+	return true
+}
+
+func loadLegalities(ctx context.Context, store Store, version string) (map[string]map[string]string, error) {
+	r, err := store.Open(ctx, version, "oracle_cards.jsonl.gz")
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = r.Close() }()
+	out := map[string]map[string]string{}
+	err = readLines(r, "oracle_cards.jsonl.gz", func(line []byte) error {
+		var raw struct {
+			OracleID   string            `json:"oracle_id"`
+			Legalities map[string]string `json:"legalities"`
+			CardFaces  []struct {
+				OracleID string `json:"oracle_id"`
+			} `json:"card_faces"`
+		}
+		if err := json.Unmarshal(line, &raw); err != nil {
+			return err
+		}
+		if raw.OracleID == "" && len(raw.CardFaces) > 0 {
+			raw.OracleID = raw.CardFaces[0].OracleID
+		}
+		if raw.OracleID != "" {
+			out[raw.OracleID] = raw.Legalities
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("%s/%s: %w", version, "oracle_cards.jsonl.gz", err)
+	}
+	return out, nil
 }
 
 // LoadIndex builds an Index from the newest stored snapshot.
@@ -92,9 +248,12 @@ func LoadIndex(ctx context.Context, store Store, logger *slog.Logger) (*Index, e
 		return nil, err
 	}
 	defer func() { _ = oc.Close() }()
-	parsed, err := LoadCards(oc, "oracle_cards.jsonl.gz")
+	parsed, stats, err := LoadCardsStats(oc, "oracle_cards.jsonl.gz")
 	if err != nil {
 		return nil, err
+	}
+	if stats.NoOracleID > 0 {
+		logger.Warn("cards index: cards with no oracle_id skipped", "count", stats.NoOracleID)
 	}
 	dc, err := store.Open(ctx, version, "default_cards.jsonl.gz")
 	if err != nil {
@@ -115,7 +274,10 @@ func LoadIndex(ctx context.Context, store Store, logger *slog.Logger) (*Index, e
 		return nil, err
 	}
 	idx := NewIndex(parsed, printings, tags, asOf)
+	col := idx.Collisions()
 	logger.Info("cards index loaded", "version", version, "cards", idx.Len(),
-		"printings", len(printings), "tags", tags.Len(), "took", time.Since(start).String())
+		"printings", len(printings), "tags", tags.Len(),
+		"name_collisions", col.FullNames, "face_name_collisions", col.FaceNames,
+		"took", time.Since(start).String())
 	return idx, nil
 }

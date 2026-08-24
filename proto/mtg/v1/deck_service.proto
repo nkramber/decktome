@@ -3,6 +3,7 @@ syntax = "proto3";
 package mtg.v1;
 
 import "mtg/v1/deck.proto";
+import "mtg/v1/session.proto";
 
 option go_package = "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1";
 
@@ -32,6 +33,11 @@ message ListDecksResponse {
 
 message ValidateRequest {
   Deck deck = 1;
+  // pool_rule selects the ownership check (D-37). UNSPECIFIED means
+  // ANY_CARD when collection_id is empty, else OWNED_FIRST.
+  PoolRule pool_rule = 2;
+  // collection_id names the user's collection for the ownership check.
+  string collection_id = 3;
 }
 
 message ValidateResponse {

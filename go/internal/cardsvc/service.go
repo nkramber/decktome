@@ -78,7 +78,10 @@ type keyError struct{ msg string }
 
 func (e *keyError) Error() string { return e.msg }
 
-const defaultPageSize = 50
+const (
+	defaultPageSize = 50
+	maxPageSize     = 200
+)
 
 // Search filters the card database with structured filters.
 func (s *Server) Search(_ context.Context, req *connect.Request[mtgv1.SearchRequest]) (*connect.Response[mtgv1.SearchResponse], error) {
@@ -87,8 +90,11 @@ func (s *Server) Search(_ context.Context, req *connect.Request[mtgv1.SearchRequ
 		return nil, err
 	}
 	size := int(req.Msg.PageSize)
-	if size <= 0 || size > 200 {
+	if size <= 0 {
 		size = defaultPageSize
+	}
+	if size > maxPageSize {
+		size = maxPageSize
 	}
 	offset := 0
 	if req.Msg.PageToken != "" {

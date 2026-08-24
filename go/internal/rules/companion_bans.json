@@ -1,4 +1,7 @@
 {
-  "_comment": "Cards banned AS A COMPANION in Commander. Scryfall legalities can not express this state (F-18): Lutri reads legal because it may sit in the 99 or command the deck. Source: Commander B&R announcement 2026-02-09. Verified 2026-08-24.",
-  "banned_as_companion": ["Lutri, the Spellchaser"]
+  "_comment": "Cards banned AS A COMPANION in one format. Scryfall legalities can not express this state (F-18): Lutri reads legal because it may sit in the 99 or command the deck. The format is the Scryfall legality key. Source: Commander B&R announcement 2026-02-09.",
+  "verified_at": "2026-08-24",
+  "banned_as_companion": [
+    {"name": "Lutri, the Spellchaser", "format": "commander"}
+  ]
 }

@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file mtg/v1/health.proto.
  */
 export const file_mtg_v1_health: GenFile = /*@__PURE__*/
-  fileDesc("ChNtdGcvdjEvaGVhbHRoLnByb3RvEgZtdGcudjEiDgoMQ2hlY2tSZXF1ZXN0IjAKDUNoZWNrUmVzcG9uc2USDgoGc3RhdHVzGAEgASgJEg8KB3ZlcnNpb24YAiABKAkyRwoNSGVhbHRoU2VydmljZRI2CgVDaGVjaxIULm10Zy52MS5DaGVja1JlcXVlc3QaFS5tdGcudjEuQ2hlY2tSZXNwb25zZSIAQjpaOGdpdGh1Yi5jb20vbmtyYW1iZXIvbXRnLWRlY2stYnVpbGRlci9nby9nZW4vbXRnL3YxO210Z3YxYgZwcm90bzM");
+  fileDesc("ChNtdGcvdjEvaGVhbHRoLnByb3RvEgZtdGcudjEiDgoMQ2hlY2tSZXF1ZXN0ImgKDUNoZWNrUmVzcG9uc2USDgoGc3RhdHVzGAEgASgJEg8KB3ZlcnNpb24YAiABKAkSFQoNY2FyZF9zbmFwc2hvdBgDIAEoCRIfChdjYXJkX3NuYXBzaG90X2FnZV9ob3VycxgEIAEoATJHCg1IZWFsdGhTZXJ2aWNlEjYKBUNoZWNrEhQubXRnLnYxLkNoZWNrUmVxdWVzdBoVLm10Zy52MS5DaGVja1Jlc3BvbnNlIgBCOlo4Z2l0aHViLmNvbS9ua3JhbWJlci9tdGctZGVjay1idWlsZGVyL2dvL2dlbi9tdGcvdjE7bXRndjFiBnByb3RvMw");
 
 /**
  * @generated from message mtg.v1.CheckRequest
@@ -42,6 +42,20 @@ export type CheckResponse = Message<"mtg.v1.CheckResponse"> & {
    * @generated from field: string version = 2;
    */
   version: string;
+
+  /**
+   * card_snapshot is the loaded snapshot date, RFC 3339, or "none".
+   *
+   * @generated from field: string card_snapshot = 3;
+   */
+  cardSnapshot: string;
+
+  /**
+   * card_snapshot_age_hours is -1 when no snapshot is loaded.
+   *
+   * @generated from field: double card_snapshot_age_hours = 4;
+   */
+  cardSnapshotAgeHours: number;
 };
 
 /**
@@ -52,7 +66,7 @@ export const CheckResponseSchema: GenMessage<CheckResponse> = /*@__PURE__*/
   messageDesc(file_mtg_v1_health, 1);
 
 /**
- * HealthService proves the proto pipeline end to end. PR-1 adds the real contract.
+ * HealthService reports service health and the card-snapshot age.
  *
  * @generated from service mtg.v1.HealthService
  */

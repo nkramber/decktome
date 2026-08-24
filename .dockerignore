@@ -1,0 +1,15 @@
+# Never send secrets, local state, or dependencies to the Docker daemon.
+.env
+.env.*
+!.env.example
+.local/
+.bin/
+.git/
+node_modules/
+web/**/node_modules/
+web/apps/web/dist/
+go/bin/
+go/coverage.out
+*.log
+firebase-export-*/
+docs/

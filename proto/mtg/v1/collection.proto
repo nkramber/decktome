@@ -33,6 +33,9 @@ message CollectionEntry {
   Condition condition = 8;
   // rarity of this printing (D-16).
   string rarity = 9;
+  // language is the ManaBox language code, "en" today (D-23).
+  string language = 10;
+  string set_name = 11;
 }
 
 // ImportSource names the file format of an import.
@@ -67,6 +70,8 @@ enum Condition {
 message ImportReport {
   repeated UnresolvedRow unresolved = 1;
   int32 resolved_count = 2;
+  // unresolved_by_reason counts rows per UnresolvedReason name (M-3).
+  map<string, int32> unresolved_by_reason = 3;
 }
 
 // UnresolvedRow is one input row the importer rejected, with the reason.
@@ -83,4 +88,10 @@ enum UnresolvedReason {
   // UNRESOLVED_REASON_NON_ENGLISH: the app supports English only (D-23).
   UNRESOLVED_REASON_NON_ENGLISH = 2;
   UNRESOLVED_REASON_BAD_ROW = 3;
+  // UNRESOLVED_REASON_NOT_PLAYABLE: the printing is a token, emblem, art
+  // card, or other object that can not go in a deck.
+  UNRESOLVED_REASON_NOT_PLAYABLE = 4;
+  // UNRESOLVED_REASON_UNKNOWN_VALUE: a finish or condition value the
+  // parser does not know.
+  UNRESOLVED_REASON_UNKNOWN_VALUE = 5;
 }

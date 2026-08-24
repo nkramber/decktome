@@ -1,6 +1,7 @@
 # Firestore + Auth emulators for the Compose stack.
 # Node runs the firebase CLI. Java runs the Firestore emulator.
-FROM node:20-slim
+# Node matches .nvmrc. firebase-tools matches scripts/doctor.sh and docs/setup.md.
+FROM node:22.23.2-slim
 RUN apt-get update \
     && apt-get install -y --no-install-recommends default-jre-headless \
     && rm -rf /var/lib/apt/lists/* \

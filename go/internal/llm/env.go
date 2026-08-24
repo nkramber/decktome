@@ -24,8 +24,9 @@ func Fixtures() fs.FS {
 const (
 	EnvOpenAIKey    = "OPENAI_API_KEY"
 	EnvAnthropicKey = "ANTHROPIC_API_KEY"
-	// EnvRequireKeys, when "1", makes a missing key fatal. Production sets
-	// it. Local mode leaves it unset and gets the fixture Fake instead.
+	// EnvRequireKeys makes a missing key fatal and refuses the fake
+	// provider. That is the default (D-3). Only the value "0" opts out:
+	// local dev and tests set it and get the fixture Fake instead.
 	EnvRequireKeys = "LLM_REQUIRE_KEYS"
 )
 
@@ -35,17 +36,18 @@ const attemptTimeout = 120 * time.Second
 
 // NewFromEnv builds the production Client. It loads roles.json, applies
 // LLM_<ROLE>_* overrides, and wires one adapter per provider the config
-// names. A provider whose key is absent falls back to the fixture Fake with
-// a warning, unless LLM_REQUIRE_KEYS=1.
+// names. A provider whose key is absent is fatal, unless LLM_REQUIRE_KEYS=0.
+// Then the fixture Fake stands in with a warning.
 func NewFromEnv(getenv func(string) string, log *slog.Logger) (*Client, error) {
 	cfg, err := LoadConfig()
 	if err != nil {
 		return nil, err
 	}
+	cfg.RequireKeys = getenv(EnvRequireKeys) != "0"
 	if err := cfg.ApplyEnv(getenv); err != nil {
 		return nil, err
 	}
-	require := getenv(EnvRequireKeys) == "1"
+	warnUnpricedOverrides(cfg, getenv, log)
 	fake := NewFake(Fixtures())
 	var providers []Provider
 	for _, name := range cfg.Providers() {
@@ -65,8 +67,8 @@ func NewFromEnv(getenv func(string) string, log *slog.Logger) (*Client, error) {
 			return nil, fmt.Errorf("llm: config names unknown provider %q", name)
 		}
 		if p == nil {
-			if require {
-				return nil, fmt.Errorf("llm: provider %q has no API key and %s=1", name, EnvRequireKeys)
+			if cfg.RequireKeys {
+				return nil, fmt.Errorf("llm: provider %q has no API key and %s is not 0", name, EnvRequireKeys)
 			}
 			log.Warn("llm provider has no API key, fixture fake stands in", "provider", name)
 			p = &renamed{Provider: fake, name: name}
@@ -82,6 +84,25 @@ func NewFromEnv(getenv func(string) string, log *slog.Logger) (*Client, error) {
 		log.Info("llm role", "role", r, "provider", s.Provider, "model", s.Model, "effort", s.Effort, "verified_at", cfg.VerifiedAt)
 	}
 	return c, nil
+}
+
+// warnUnpricedOverrides logs one warning per LLM_<ROLE>_MODEL override
+// whose model has no price row. The session cost then reports null (M-1).
+func warnUnpricedOverrides(cfg *Config, getenv func(string) string, log *slog.Logger) {
+	prices, err := LoadPrices()
+	if err != nil {
+		log.Warn("llm price table failed to load, cost reports null", "err", err)
+		return
+	}
+	for _, r := range Roles {
+		if getenv(envKey(r, "MODEL")) == "" {
+			continue
+		}
+		model := cfg.Roles[r].Model
+		if _, ok := prices.Models[model]; !ok {
+			log.Warn("llm model override has no price row, cost reports null", "role", r, "model", model)
+		}
+	}
 }
 
 // renamed lets the fixture Fake stand in under another provider's name.

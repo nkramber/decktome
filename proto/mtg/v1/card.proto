@@ -39,9 +39,10 @@ message Card {
   repeated Color produced_mana = 18;
   // default_printing shows one representative printing for display.
   Printing default_printing = 19;
-  // price_usd is the display price per D-17: the lowest NM market estimate
-  // across legal printings and finishes, as a 7-day rolling average.
-  // Zero means no price. Advisory only (I-2).
+  // price_usd is the display price. Today: the Scryfall usd price of the
+  // default printing on the snapshot day. Target (D-17, D-26, I-2): the
+  // lowest NM market estimate across legal printings and finishes, as a
+  // 7-day median with outliers dropped. Zero means no price. Advisory only.
   double price_usd = 20;
   // price_as_of is the date of the price data, ISO 8601 (YYYY-MM-DD).
   string price_as_of = 21;
@@ -67,6 +68,14 @@ message Card {
   // CAUTION: the legalities map can not say "banned as a companion"
   // (Lutri, 2026-02-09). The rules engine owns that check (F-18).
   bool is_companion = 30;
+  // partner_text is the text after "Partner—" (for example "Survivors").
+  // Empty for plain Partner. Two Partner commanders need equal text
+  // (CR 702.124f, 2026-08-07).
+  string partner_text = 31;
+  // max_copies_override is a per-card copy limit from the card text, for
+  // example 7 for Seven Dwarves or 9 for Nazgûl (CR 113.6n). Zero means
+  // the format limit applies. any_count_in_deck covers the unlimited case.
+  int32 max_copies_override = 32;
 }
 
 // CardFace is one face of a card. Images live per face (F-9).
@@ -79,6 +88,9 @@ message CardFace {
   string toughness = 6;
   string loyalty = 7;
   ImageUris image_uris = 8;
+  // artist is the face's artist, for attribution (D-6). Faces of one card
+  // can have different artists.
+  string artist = 9;
 }
 
 // Printing is one physical version of a card.

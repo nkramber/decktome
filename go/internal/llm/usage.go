@@ -36,9 +36,10 @@ type Report struct {
 	// CostUSD is nil when no attempt reported usage, or when any reported
 	// attempt used a model with no price row.
 	CostUSD *float64 `json:"cost_usd"`
-	// Latency is the summed wall-clock time of all attempts.
-	Latency time.Duration       `json:"latency"`
-	ByRole  map[Role]*RoleUsage `json:"by_role"`
+	// LatencyMS is the summed wall-clock time of all attempts, in
+	// milliseconds.
+	LatencyMS int64               `json:"latency_ms"`
+	ByRole    map[Role]*RoleUsage `json:"by_role"`
 }
 
 // NewAccumulator makes an empty accumulator. prices may be nil: then the
@@ -83,14 +84,15 @@ func (a *Accumulator) Record(role Role, model string, u *Usage, latency time.Dur
 	a.cost += usd
 }
 
-// Report snapshots the totals.
+// Report snapshots the totals. The result is a copy: a later Record does
+// not change it.
 func (a *Accumulator) Report() Report {
 	if a == nil {
 		return Report{}
 	}
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	r := Report{Calls: a.calls, Latency: a.latency, ByRole: map[Role]*RoleUsage{}}
+	r := Report{Calls: a.calls, LatencyMS: a.latency.Milliseconds(), ByRole: map[Role]*RoleUsage{}}
 	for role, ru := range a.byRole {
 		cp := &RoleUsage{Calls: ru.Calls}
 		if ru.Tokens != nil {

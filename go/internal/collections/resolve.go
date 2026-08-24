@@ -13,51 +13,108 @@ import (
 // Resolve joins parsed rows against the card index.
 // Join order (F-2): Scryfall ID, then set code plus collector number,
 // then exact name. Non-English rows are reported, never imported (D-23).
+// A token, emblem, or art card row is reported as NOT_PLAYABLE before
+// the name fallback, so it never counts as the real card (C-1).
+//
+// Rows with the same printing, finish, and condition merge into one
+// entry. Quantities add up, so ownership counts do not change.
 func Resolve(rows []Row, idx *cards.Index) ([]*mtgv1.CollectionEntry, []*mtgv1.UnresolvedRow) {
 	var entries []*mtgv1.CollectionEntry
 	var bad []*mtgv1.UnresolvedRow
+	merged := map[string]*mtgv1.CollectionEntry{}
 	for _, row := range rows {
 		if row.Language != "" && !strings.EqualFold(row.Language, "en") {
 			bad = append(bad, unresolved(row.Line, row.Raw, mtgv1.UnresolvedReason_UNRESOLVED_REASON_NON_ENGLISH))
 			continue
 		}
-		card, ok := resolveOne(row, idx)
+		card, byName, ok := resolveOne(row, idx)
 		if !ok {
-			bad = append(bad, unresolved(row.Line, row.Raw, mtgv1.UnresolvedReason_UNRESOLVED_REASON_UNKNOWN_CARD))
+			reason := mtgv1.UnresolvedReason_UNRESOLVED_REASON_UNKNOWN_CARD
+			if _, np := idx.NonPlayablePrinting(row.ScryfallID, row.SetCode, row.Collector); np {
+				reason = mtgv1.UnresolvedReason_UNRESOLVED_REASON_NOT_PLAYABLE
+			}
+			bad = append(bad, unresolved(row.Line, row.Raw, reason))
 			continue
 		}
-		entries = append(entries, &mtgv1.CollectionEntry{
-			ScryfallId:      row.ScryfallID,
-			OracleId:        card.OracleId,
-			Name:            card.Name,
-			SetCode:         row.SetCode,
-			CollectorNumber: row.Collector,
-			Quantity:        int32(row.Quantity),
-			Finish:          row.Finish,
-			Condition:       row.Condition,
-			Rarity:          row.Rarity,
-		})
+		e := buildEntry(row, card, byName)
+		key := strings.Join([]string{e.ScryfallId, e.SetCode, e.CollectorNumber, e.Finish.String(), e.Condition.String()}, "|")
+		if prev, dup := merged[key]; dup {
+			prev.Quantity += e.Quantity
+			continue
+		}
+		merged[key] = e
+		entries = append(entries, e)
 	}
 	return entries, bad
 }
 
-func resolveOne(row Row, idx *cards.Index) (*mtgv1.Card, bool) {
+// buildEntry fills an entry from a row and its card. When the match
+// came from the name alone, the input id and number point at a printing
+// the index does not know (C-5). The entry then takes the card's
+// default printing id, and keeps the input set code and number only when
+// they match that printing. The proto has no field for this fact. A
+// caller can detect it: the entry's scryfall_id differs from the input
+// row's Scryfall ID.
+func buildEntry(row Row, card *mtgv1.Card, byName bool) *mtgv1.CollectionEntry {
+	e := &mtgv1.CollectionEntry{
+		ScryfallId:      row.ScryfallID,
+		OracleId:        card.OracleId,
+		Name:            card.Name,
+		SetCode:         row.SetCode,
+		SetName:         row.SetName,
+		CollectorNumber: row.Collector,
+		Quantity:        int32(row.Quantity), //nolint:gosec // parser caps at maxQuantity
+		Finish:          row.Finish,
+		Condition:       row.Condition,
+		Rarity:          row.Rarity,
+		Language:        row.Language,
+	}
+	if byName {
+		dp := card.GetDefaultPrinting()
+		e.ScryfallId = dp.GetScryfallId()
+		if !strings.EqualFold(row.SetCode, dp.GetSetCode()) || !strings.EqualFold(row.Collector, dp.GetCollectorNumber()) {
+			e.SetCode = dp.GetSetCode()
+			e.SetName = dp.GetSetName()
+			e.CollectorNumber = dp.GetCollectorNumber()
+		}
+	}
+	return e
+}
+
+// resolveOne returns the card and whether only the name matched.
+func resolveOne(row Row, idx *cards.Index) (card *mtgv1.Card, byName, ok bool) {
 	if row.ScryfallID != "" {
 		if c, ok := idx.ByPrintingID(row.ScryfallID); ok {
-			return c, true
+			return c, false, true
 		}
 	}
 	if row.SetCode != "" && row.Collector != "" {
 		if c, ok := idx.BySetCollector(row.SetCode, row.Collector); ok {
-			return c, true
+			return c, false, true
 		}
+	}
+	// A known non-playable printing must not fall through to the name.
+	if _, np := idx.NonPlayablePrinting(row.ScryfallID, row.SetCode, row.Collector); np {
+		return nil, false, false
 	}
 	if row.Name != "" {
 		if c, ok := idx.ByName(row.Name); ok {
-			return c, true
+			return c, true, true
 		}
 	}
-	return nil, false
+	return nil, false, false
+}
+
+// ReasonCounts counts unresolved rows per reason name (M-3).
+func ReasonCounts(bad []*mtgv1.UnresolvedRow) map[string]int32 {
+	if len(bad) == 0 {
+		return nil
+	}
+	out := map[string]int32{}
+	for _, b := range bad {
+		out[b.Reason.String()]++
+	}
+	return out
 }
 
 // ContentHash detects an identical re-upload (D-16).

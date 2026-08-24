@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file mtg/v1/card.proto.
  */
 export const file_mtg_v1_card: GenFile = /*@__PURE__*/
-  fileDesc("ChFtdGcvdjEvY2FyZC5wcm90bxIGbXRnLnYxIrEGCgRDYXJkEhEKCW9yYWNsZV9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEhEKCW1hbmFfY29zdBgDIAEoCRISCgptYW5hX3ZhbHVlGAQgASgBEh0KBmNvbG9ycxgFIAMoDjINLm10Zy52MS5Db2xvchIlCg5jb2xvcl9pZGVudGl0eRgGIAMoDjINLm10Zy52MS5Db2xvchIRCgl0eXBlX2xpbmUYByABKAkSEwoLb3JhY2xlX3RleHQYCCABKAkSEAoIa2V5d29yZHMYCSADKAkSMAoKbGVnYWxpdGllcxgKIAMoCzIcLm10Zy52MS5DYXJkLkxlZ2FsaXRpZXNFbnRyeRIUCgxnYW1lX2NoYW5nZXIYCyABKAgSEwoLZWRocmVjX3JhbmsYDCABKAUSDgoGbGF5b3V0GA0gASgJEh8KBWZhY2VzGA4gAygLMhAubXRnLnYxLkNhcmRGYWNlEg0KBXBvd2VyGA8gASgJEhEKCXRvdWdobmVzcxgQIAEoCRIPCgdsb3lhbHR5GBEgASgJEiQKDXByb2R1Y2VkX21hbmEYEiADKA4yDS5tdGcudjEuQ29sb3ISKgoQZGVmYXVsdF9wcmludGluZxgTIAEoCzIQLm10Zy52MS5QcmludGluZxIRCglwcmljZV91c2QYFCABKAESEwoLcHJpY2VfYXNfb2YYFSABKAkSEgoKc3VwZXJ0eXBlcxgWIAMoCRISCgpjYXJkX3R5cGVzGBcgAygJEhAKCHN1YnR5cGVzGBggAygJEhkKEWFueV9jb3VudF9pbl9kZWNrGBkgASgIEhgKEGNhbl9iZV9jb21tYW5kZXIYGiABKAgSJAoHcGFydG5lchgbIAEoDjITLm10Zy52MS5QYXJ0bmVyS2luZBIZChFwYXJ0bmVyX3dpdGhfbmFtZRgcIAEoCRIVCg1pc19iYWNrZ3JvdW5kGB0gASgIEhQKDGlzX2NvbXBhbmlvbhgeIAEoCBpJCg9MZWdhbGl0aWVzRW50cnkSCwoDa2V5GAEgASgJEiUKBXZhbHVlGAIgASgOMhYubXRnLnYxLkxlZ2FsaXR5U3RhdHVzOgI4ASKtAQoIQ2FyZEZhY2USDAoEbmFtZRgBIAEoCRIRCgltYW5hX2Nvc3QYAiABKAkSEQoJdHlwZV9saW5lGAMgASgJEhMKC29yYWNsZV90ZXh0GAQgASgJEg0KBXBvd2VyGAUgASgJEhEKCXRvdWdobmVzcxgGIAEoCRIPCgdsb3lhbHR5GAcgASgJEiUKCmltYWdlX3VyaXMYCCABKAsyES5tdGcudjEuSW1hZ2VVcmlzIrUBCghQcmludGluZxITCgtzY3J5ZmFsbF9pZBgBIAEoCRIQCghzZXRfY29kZRgCIAEoCRIQCghzZXRfbmFtZRgDIAEoCRIYChBjb2xsZWN0b3JfbnVtYmVyGAQgASgJEg4KBnJhcml0eRgFIAEoCRIOCgZhcnRpc3QYBiABKAkSJQoKaW1hZ2VfdXJpcxgHIAEoCzIRLm10Zy52MS5JbWFnZVVyaXMSDwoHZGlnaXRhbBgIIAEoCCJLCglJbWFnZVVyaXMSDQoFc21hbGwYASABKAkSDgoGbm9ybWFsGAIgASgJEg0KBWxhcmdlGAMgASgJEhAKCGFydF9jcm9wGAQgASgJKt0BCgtQYXJ0bmVyS2luZBIcChhQQVJUTkVSX0tJTkRfVU5TUEVDSUZJRUQQABIVChFQQVJUTkVSX0tJTkRfTk9ORRABEhgKFFBBUlRORVJfS0lORF9QQVJUTkVSEAISFQoRUEFSVE5FUl9LSU5EX1dJVEgQAxIgChxQQVJUTkVSX0tJTkRfRlJJRU5EU19GT1JFVkVSEAQSIgoeUEFSVE5FUl9LSU5EX0NIT09TRV9CQUNLR1JPVU5EEAUSIgoeUEFSVE5FUl9LSU5EX0RPQ1RPUlNfQ09NUEFOSU9OEAYqpwEKDkxlZ2FsaXR5U3RhdHVzEh8KG0xFR0FMSVRZX1NUQVRVU19VTlNQRUNJRklFRBAAEhkKFUxFR0FMSVRZX1NUQVRVU19MRUdBTBABEh0KGUxFR0FMSVRZX1NUQVRVU19OT1RfTEVHQUwQAhIaChZMRUdBTElUWV9TVEFUVVNfQkFOTkVEEAMSHgoaTEVHQUxJVFlfU1RBVFVTX1JFU1RSSUNURUQQBCpsCgVDb2xvchIVChFDT0xPUl9VTlNQRUNJRklFRBAAEgsKB0NPTE9SX1cQARILCgdDT0xPUl9VEAISCwoHQ09MT1JfQhADEgsKB0NPTE9SX1IQBBILCgdDT0xPUl9HEAUSCwoHQ09MT1JfQxAGQjpaOGdpdGh1Yi5jb20vbmtyYW1iZXIvbXRnLWRlY2stYnVpbGRlci9nby9nZW4vbXRnL3YxO210Z3YxYgZwcm90bzM");
+  fileDesc("ChFtdGcvdjEvY2FyZC5wcm90bxIGbXRnLnYxIuQGCgRDYXJkEhEKCW9yYWNsZV9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEhEKCW1hbmFfY29zdBgDIAEoCRISCgptYW5hX3ZhbHVlGAQgASgBEh0KBmNvbG9ycxgFIAMoDjINLm10Zy52MS5Db2xvchIlCg5jb2xvcl9pZGVudGl0eRgGIAMoDjINLm10Zy52MS5Db2xvchIRCgl0eXBlX2xpbmUYByABKAkSEwoLb3JhY2xlX3RleHQYCCABKAkSEAoIa2V5d29yZHMYCSADKAkSMAoKbGVnYWxpdGllcxgKIAMoCzIcLm10Zy52MS5DYXJkLkxlZ2FsaXRpZXNFbnRyeRIUCgxnYW1lX2NoYW5nZXIYCyABKAgSEwoLZWRocmVjX3JhbmsYDCABKAUSDgoGbGF5b3V0GA0gASgJEh8KBWZhY2VzGA4gAygLMhAubXRnLnYxLkNhcmRGYWNlEg0KBXBvd2VyGA8gASgJEhEKCXRvdWdobmVzcxgQIAEoCRIPCgdsb3lhbHR5GBEgASgJEiQKDXByb2R1Y2VkX21hbmEYEiADKA4yDS5tdGcudjEuQ29sb3ISKgoQZGVmYXVsdF9wcmludGluZxgTIAEoCzIQLm10Zy52MS5QcmludGluZxIRCglwcmljZV91c2QYFCABKAESEwoLcHJpY2VfYXNfb2YYFSABKAkSEgoKc3VwZXJ0eXBlcxgWIAMoCRISCgpjYXJkX3R5cGVzGBcgAygJEhAKCHN1YnR5cGVzGBggAygJEhkKEWFueV9jb3VudF9pbl9kZWNrGBkgASgIEhgKEGNhbl9iZV9jb21tYW5kZXIYGiABKAgSJAoHcGFydG5lchgbIAEoDjITLm10Zy52MS5QYXJ0bmVyS2luZBIZChFwYXJ0bmVyX3dpdGhfbmFtZRgcIAEoCRIVCg1pc19iYWNrZ3JvdW5kGB0gASgIEhQKDGlzX2NvbXBhbmlvbhgeIAEoCBIUCgxwYXJ0bmVyX3RleHQYHyABKAkSGwoTbWF4X2NvcGllc19vdmVycmlkZRggIAEoBRpJCg9MZWdhbGl0aWVzRW50cnkSCwoDa2V5GAEgASgJEiUKBXZhbHVlGAIgASgOMhYubXRnLnYxLkxlZ2FsaXR5U3RhdHVzOgI4ASK9AQoIQ2FyZEZhY2USDAoEbmFtZRgBIAEoCRIRCgltYW5hX2Nvc3QYAiABKAkSEQoJdHlwZV9saW5lGAMgASgJEhMKC29yYWNsZV90ZXh0GAQgASgJEg0KBXBvd2VyGAUgASgJEhEKCXRvdWdobmVzcxgGIAEoCRIPCgdsb3lhbHR5GAcgASgJEiUKCmltYWdlX3VyaXMYCCABKAsyES5tdGcudjEuSW1hZ2VVcmlzEg4KBmFydGlzdBgJIAEoCSK1AQoIUHJpbnRpbmcSEwoLc2NyeWZhbGxfaWQYASABKAkSEAoIc2V0X2NvZGUYAiABKAkSEAoIc2V0X25hbWUYAyABKAkSGAoQY29sbGVjdG9yX251bWJlchgEIAEoCRIOCgZyYXJpdHkYBSABKAkSDgoGYXJ0aXN0GAYgASgJEiUKCmltYWdlX3VyaXMYByABKAsyES5tdGcudjEuSW1hZ2VVcmlzEg8KB2RpZ2l0YWwYCCABKAgiSwoJSW1hZ2VVcmlzEg0KBXNtYWxsGAEgASgJEg4KBm5vcm1hbBgCIAEoCRINCgVsYXJnZRgDIAEoCRIQCghhcnRfY3JvcBgEIAEoCSrdAQoLUGFydG5lcktpbmQSHAoYUEFSVE5FUl9LSU5EX1VOU1BFQ0lGSUVEEAASFQoRUEFSVE5FUl9LSU5EX05PTkUQARIYChRQQVJUTkVSX0tJTkRfUEFSVE5FUhACEhUKEVBBUlRORVJfS0lORF9XSVRIEAMSIAocUEFSVE5FUl9LSU5EX0ZSSUVORFNfRk9SRVZFUhAEEiIKHlBBUlRORVJfS0lORF9DSE9PU0VfQkFDS0dST1VORBAFEiIKHlBBUlRORVJfS0lORF9ET0NUT1JTX0NPTVBBTklPThAGKqcBCg5MZWdhbGl0eVN0YXR1cxIfChtMRUdBTElUWV9TVEFUVVNfVU5TUEVDSUZJRUQQABIZChVMRUdBTElUWV9TVEFUVVNfTEVHQUwQARIdChlMRUdBTElUWV9TVEFUVVNfTk9UX0xFR0FMEAISGgoWTEVHQUxJVFlfU1RBVFVTX0JBTk5FRBADEh4KGkxFR0FMSVRZX1NUQVRVU19SRVNUUklDVEVEEAQqbAoFQ29sb3ISFQoRQ09MT1JfVU5TUEVDSUZJRUQQABILCgdDT0xPUl9XEAESCwoHQ09MT1JfVRACEgsKB0NPTE9SX0IQAxILCgdDT0xPUl9SEAQSCwoHQ09MT1JfRxAFEgsKB0NPTE9SX0MQBkI6WjhnaXRodWIuY29tL25rcmFtYmVyL210Zy1kZWNrLWJ1aWxkZXIvZ28vZ2VuL210Zy92MTttdGd2MWIGcHJvdG8z");
 
 /**
  * Card is one Oracle card: the rules identity, not one printing.
@@ -140,9 +140,10 @@ export type Card = Message<"mtg.v1.Card"> & {
   defaultPrinting?: Printing | undefined;
 
   /**
-   * price_usd is the display price per D-17: the lowest NM market estimate
-   * across legal printings and finishes, as a 7-day rolling average.
-   * Zero means no price. Advisory only (I-2).
+   * price_usd is the display price. Today: the Scryfall usd price of the
+   * default printing on the snapshot day. Target (D-17, D-26, I-2): the
+   * lowest NM market estimate across legal printings and finishes, as a
+   * 7-day median with outliers dropped. Zero means no price. Advisory only.
    *
    * @generated from field: double price_usd = 20;
    */
@@ -219,6 +220,24 @@ export type Card = Message<"mtg.v1.Card"> & {
    * @generated from field: bool is_companion = 30;
    */
   isCompanion: boolean;
+
+  /**
+   * partner_text is the text after "Partner—" (for example "Survivors").
+   * Empty for plain Partner. Two Partner commanders need equal text
+   * (CR 702.124f, 2026-08-07).
+   *
+   * @generated from field: string partner_text = 31;
+   */
+  partnerText: string;
+
+  /**
+   * max_copies_override is a per-card copy limit from the card text, for
+   * example 7 for Seven Dwarves or 9 for Nazgûl (CR 113.6n). Zero means
+   * the format limit applies. any_count_in_deck covers the unlimited case.
+   *
+   * @generated from field: int32 max_copies_override = 32;
+   */
+  maxCopiesOverride: number;
 };
 
 /**
@@ -273,6 +292,14 @@ export type CardFace = Message<"mtg.v1.CardFace"> & {
    * @generated from field: mtg.v1.ImageUris image_uris = 8;
    */
   imageUris?: ImageUris | undefined;
+
+  /**
+   * artist is the face's artist, for attribution (D-6). Faces of one card
+   * can have different artists.
+   *
+   * @generated from field: string artist = 9;
+   */
+  artist: string;
 };
 
 /**
