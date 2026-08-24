@@ -34,3 +34,8 @@ Every owner decision, with date. This file is the source of truth. The design do
 | D-28 | 2026-08-23 | Catalog change approval (OQ-15) | The owner approves catalog changes to start. |
 | D-29 | 2026-08-23 | Stale decks on a rule change (OQ-16) | Show a banner on a stored deck that now contains a card illegal in its format. Give a "rerun" button. The rerun rebuilds according to the nature of the change: which cards were banned and how deeply they affect the deck. |
 | D-30 | 2026-08-23 | Sample ManaBox exports (OQ-17) | The owner will provide them later. |
+| D-31 | 2026-08-23 | Roadmap approval | The owner approved `docs/design-roadmap.md` draft 1 (passes 1-3). PR-0a may start. |
+| D-32 | 2026-08-23 | Write scope (supersedes D-13) | Writes are allowed across this repo. Other repos stay read-only. |
+| D-33 | 2026-08-23 | Go module and layout | Module `github.com/nkramber/mtg-deck-builder`. One Go module at `go/` with `cmd/` and `internal/`. |
+| D-34 | 2026-08-23 | CI and PR flow | GitHub Actions. PRs into `main`, squash merge, branch protection. `verify:*` matrix with a fan-in job. |
+| D-35 | 2026-08-23 | Scaffold toolchain pins (PR-0a) | Go 1.26.4. buf 1.72.0, protoc-gen-go 1.36.12, protoc-gen-connect-go 1.20.0 as `go tool` directives, with buf built into `.bin/`. Node 20.17.0 (installed version), pnpm 9.2.0. Vite 7.3.6 (Vite 8 needs rolldown native bindings that pnpm 9.2 did not install). React 19.2.8. Vite dev port 5180 (5173 is used by wallabee-ui). golangci-lint v2.6.2. |

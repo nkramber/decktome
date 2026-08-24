@@ -1,0 +1,17 @@
+# Go
+.bin/
+go/bin/
+go/coverage.out
+# Node
+node_modules/
+web/apps/web/dist/
+# Local stack state
+.local/
+# OS / editor
+.DS_Store
+.vscode/
+# Secrets
+.env
+.env.*
+!.env.example
+*.tsbuildinfo
