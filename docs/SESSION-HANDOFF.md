@@ -4,7 +4,7 @@ Read this file first in a fresh session. Then read `CLAUDE.md`, `docs/decisions.
 
 ## Last updated
 
-2026-08-24. PR-0a merged (#1). PR-0b gate held (Docker installed, `make doctor` all ok). PR-0b commit and merge pending.
+2026-08-24. PR-0a merged (#1), PR-0b merged (#2). PR-0c built on branch `pr-0c`, gate held, commit and merge pending.
 
 ## State of the work
 
@@ -27,9 +27,9 @@ PR-0b is done: `docs/setup.md` (ten-step procedure) and the version-aware `scrip
 
 ## Next steps, in order
 
-1. The owner commits `pr-0b` and merges.
-2. PR-0c: local stack (Firestore and Auth emulators, fake-gcs-server, Dispatcher interface, fake LLM provider) per `docs/reference/local-dev-environment.md`.
-3. Ask the owner to review the roadmap again when Phase 1 starts. Collect corrections as dated entries.
+1. The owner commits `pr-0c` and merges.
+2. Phase 1 starts with PR-1 (proto contract v1). Ask the owner to review the roadmap Phase 1 entries before you write the proto.
+3. Collect roadmap corrections as dated entries.
 2. Ask OQ-18 (rerun depth rule) and OQ-19 (scoring rubric) when the design reaches I-1 and M-5. OQ-17 files come from the owner later.
 3. Run the STE checker (`docs/tools/ste-check.py`) on every changed `.md` file and fix findings.
 4. Expand the `mtg-corpus` skill: archetype-to-card examples per format, the Karsten color-source table, and a sample ManaBox export fixture (owner-provided).
