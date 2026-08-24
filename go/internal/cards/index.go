@@ -15,6 +15,7 @@ type Index struct {
 	byOracleID map[string]*mtgv1.Card
 	byName     map[string]*mtgv1.Card // key: normalized full or face name
 	byPrinting map[string]*mtgv1.Card // key: scryfall printing id
+	bySetNo    map[string]*mtgv1.Card // key: "setcode/collectornumber", lowercase
 	tags       *TagIndex
 	// AsOf is the Scryfall updated_at of the snapshot (roadmap PR-3).
 	AsOf time.Time
@@ -33,6 +34,7 @@ func NewIndex(cardList []*mtgv1.Card, printings []Printing, tags *TagIndex, asOf
 		byOracleID: make(map[string]*mtgv1.Card, len(cardList)),
 		byName:     make(map[string]*mtgv1.Card, len(cardList)*2),
 		byPrinting: make(map[string]*mtgv1.Card, len(printings)),
+		bySetNo:    make(map[string]*mtgv1.Card, len(printings)),
 		tags:       tags,
 		AsOf:       asOf,
 	}
@@ -54,8 +56,13 @@ func NewIndex(cardList []*mtgv1.Card, printings []Printing, tags *TagIndex, asOf
 		}
 	}
 	for _, p := range printings {
-		if c, ok := idx.byOracleID[p.OracleID]; ok {
-			idx.byPrinting[p.ScryfallID] = c
+		c, ok := idx.byOracleID[p.OracleID]
+		if !ok {
+			continue
+		}
+		idx.byPrinting[p.ScryfallID] = c
+		if p.SetCode != "" && p.CollectorNumber != "" {
+			idx.bySetNo[setNoKey(p.SetCode, p.CollectorNumber)] = c
 		}
 	}
 	return idx
@@ -76,6 +83,17 @@ func (x *Index) ByOracleID(id string) (*mtgv1.Card, bool) {
 // ByPrintingID finds a card by a Scryfall printing id (ManaBox join key).
 func (x *Index) ByPrintingID(id string) (*mtgv1.Card, bool) {
 	c, ok := x.byPrinting[id]
+	return c, ok
+}
+
+func setNoKey(set, num string) string {
+	return strings.ToLower(strings.TrimSpace(set)) + "/" + strings.ToLower(strings.TrimSpace(num))
+}
+
+// BySetCollector finds a card by set code and collector number, the
+// ManaBox fallback join when the Scryfall id column is absent (PR-4).
+func (x *Index) BySetCollector(set, num string) (*mtgv1.Card, bool) {
+	c, ok := x.bySetNo[setNoKey(set, num)]
 	return c, ok
 }
 

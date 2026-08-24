@@ -4,7 +4,7 @@ Read this file first in a fresh session. Then read `CLAUDE.md`, `docs/decisions.
 
 ## Last updated
 
-2026-08-24. Merged: PR-0a to PR-2 (#1 to #5). PR-3 built on branch `nate/pr-3`, merge pending.
+2026-08-24. Merged: PR-0a to PR-3 (#1 to #6). PR-4 built on branch `pr-4`, gate held, merge pending.
 
 ## State of the work
 
@@ -23,11 +23,11 @@ Done in session 1:
 
 ## Where we stopped
 
-PR-3 is done on branch `nate/pr-3`. `internal/cards/announcements.go` reads the embedded `announcement_dates.json` (next: 2026-10-12). The worker cadence: hourly, or every 15 minutes while an announcement is not covered by the snapshot. The first covering snapshot logs `legality_lag` hours (M-2). The UI front page shows "Card data as of" from `/healthz`.
+PR-4 is done on branch `pr-4`. Packages: `internal/collections` (header-driven ManaBox CSV parser, Arena text parser, resolver with the join order Scryfall ID then set+collector then exact name, Firestore repo with gzip payloads) and `internal/collectionsvc` (the Connect handler). The cards index gained `BySetCollector`. The owner's real export is the committed gate fixture.
 
-Maintenance duty: add each newly announced B&R date to `announcement_dates.json`. The 2026-08-10 announcement names 2026-10-12. I-1 automates the watch later.
+Gate held end to end: 2,548/2,548 rows resolved against the full snapshot through the running API, with zero silent drops. Re-upload dedup by content hash, Get, and List are green. The corpus records the verified 18-column header.
 
-Known debt: the web app has no component-test setup yet (no jsdom, no Testing Library). The freshness line ships untested beyond typecheck and build. PR-11 brings the real UI test stack.
+Auth debt: requests act as one debug user (`DEBUG_USER_ID`, default `local-dev`) until Firebase Auth lands in PR-11. The UI upload screen also waits for PR-11.
 
 ## Owner directive 2026-08-24 (D-37)
 
@@ -35,8 +35,8 @@ The collection is optional. A user with zero library gets a fully optimized deck
 
 ## Next steps, in order
 
-1. The owner reviews and merges `nate/pr-3`.
-2. PR-4 (ManaBox import) is next. It needs the owner's sample exports (OQ-17, D-30). Ask for the files at the start.
+1. The owner reviews and merges `pr-4`.
+2. Phase 1 ends with PR-5 (the rules engine). It needs no owner input. Its golden decks (30 good, 30 bad) are the main work.
 3. Collect corrections as dated register entries.
 
 ## Facts that expire

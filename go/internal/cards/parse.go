@@ -174,18 +174,22 @@ func buildLegalities(in map[string]string) map[string]mtgv1.LegalityStatus {
 
 // Printing is one physical printing row from default_cards.
 type Printing struct {
-	ScryfallID string
-	OracleID   string
-	Name       string
+	ScryfallID      string
+	OracleID        string
+	Name            string
+	SetCode         string
+	CollectorNumber string
 }
 
 // parsePrinting reads the minimal printing row for collection resolution.
 func parsePrinting(line []byte) (Printing, error) {
 	var r struct {
-		ID        string `json:"id"`
-		OracleID  string `json:"oracle_id"`
-		Name      string `json:"name"`
-		CardFaces []struct {
+		ID              string `json:"id"`
+		OracleID        string `json:"oracle_id"`
+		Name            string `json:"name"`
+		Set             string `json:"set"`
+		CollectorNumber string `json:"collector_number"`
+		CardFaces       []struct {
 			OracleID string `json:"oracle_id"`
 		} `json:"card_faces"`
 	}
@@ -196,5 +200,6 @@ func parsePrinting(line []byte) (Printing, error) {
 	if r.OracleID == "" && len(r.CardFaces) > 0 {
 		r.OracleID = r.CardFaces[0].OracleID
 	}
-	return Printing{ScryfallID: r.ID, OracleID: r.OracleID, Name: r.Name}, nil
+	return Printing{ScryfallID: r.ID, OracleID: r.OracleID, Name: r.Name,
+		SetCode: r.Set, CollectorNumber: r.CollectorNumber}, nil
 }
