@@ -9,18 +9,33 @@ export PROJECT_ID="mtg-local"
 export FIRESTORE_EMULATOR_HOST="127.0.0.1:8281"
 export FIREBASE_AUTH_EMULATOR_HOST="127.0.0.1:9199"
 export STORAGE_EMULATOR_HOST="http://127.0.0.1:4443"
+export CARDS_BUCKET="mtg-local-cards"
+export CARDS_RELOAD_SECONDS="15"
 
 mkdir -p .local/firestore .local/gcs
 # Ports deliberately avoid the Wallabee dev stack on this machine:
 # its Firestore emulator holds 8181 and 4000, its flash API holds 8080.
 pids=()
-kill_tree() { pkill -TERM -P "$1" 2>/dev/null; kill -TERM "$1" 2>/dev/null; }
 cleanup() {
-  for p in "${pids[@]}"; do kill_tree "$p"; done
-  sleep 1
+  # Phase 1: TERM the top-level processes only. The firebase CLI must keep
+  # its java emulator alive to serve the --export-on-exit request; a TERM
+  # to the whole tree kills the emulator first and the export fails.
+  for p in "${pids[@]}"; do kill -TERM "$p" 2>/dev/null; done
+  # The firestore emulator writes its --export-on-exit data during shutdown.
+  # It stages into firebase-export-* in the cwd, then moves to .local/firestore.
+  # A kill during that window leaves empty firebase-export-* litter. Wait up
+  # to 30 seconds for clean exits before the hard sweep.
+  for _ in $(seq 1 30); do
+    alive=0
+    for p in "${pids[@]}"; do kill -0 "$p" 2>/dev/null && alive=1; done
+    [ "$alive" -eq 0 ] && break
+    sleep 1
+  done
   for p in "${pids[@]}"; do pkill -KILL -P "$p" 2>/dev/null; kill -KILL "$p" 2>/dev/null; done
   # go run leaves grandchildren behind. Sweep OUR ports only (Wallabee owns 8080, 8181, 4000, 5173).
   lsof -ti :8281 -ti :9199 -ti :4443 -ti :8090 -ti :5180 -ti :4100 2>/dev/null | xargs kill -KILL 2>/dev/null
+  # An abandoned export staging dir is always empty. Remove it.
+  rmdir firebase-export-* 2>/dev/null
   wait 2>/dev/null
   return 0
 }

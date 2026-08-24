@@ -4,7 +4,7 @@ Read this file first in a fresh session. Then read `CLAUDE.md`, `docs/decisions.
 
 ## Last updated
 
-2026-08-24. Merged: PR-0a (#1), PR-0b (#2), PR-0c (#3). PR-1 built on branch `pr-1`, gate held, commit and merge pending.
+2026-08-24. Merged: PR-0a (#1), PR-0b (#2), PR-0c (#3), PR-1 (#4). PR-2 built on branch `pr-2`, gate held, commit and merge pending.
 
 ## State of the work
 
@@ -23,17 +23,15 @@ Done in session 1:
 
 ## Where we stopped
 
-PR-1 is done on branch `pr-1`. The contract lives in nine files under `proto/mtg/v1/`: `card`, `format`, `collection`, `deck`, `session`, and four service files (`CardService`, `CollectionService`, `DeckService`, `AgentService` with the streaming `Chat`). Generated code is committed for both stacks. The gate held: both compile, `make proto-check` passes, lint and tests are green.
+PR-2 is done on branch `pr-2`. Packages: `internal/scryfall` (bulk client, real User-Agent, F-3), `internal/cards` (parse, derive, index, tags, snapshot store with completion marker), `internal/cardsvc` (CardService handler). The worker downloads the three bulk files on start and every six hours (`-once` mode serves `make dev-seed`). The API loads the newest complete snapshot at start and reloads on a timer (`CARDS_RELOAD_SECONDS`, 15 in dev). `/healthz` reports the snapshot date and age (M-2 seed).
 
-Design notes for the reviewer: legalities are an open map with Scryfall keys. `PowerLevel` is a oneof (bracket, or the 60-card step, D-8). `Format` has `FORMAT_ID_HOUSE` plus `house_rules` text (D-3). `Slots` mirrors the PR-7 question catalog. `ImportReport` returns unresolved rows so nothing is dropped in silence (D-23). `Question` carries `invented` and `gap_score` (D-25).
-
-A domain re-pass on 2026-08-24 (owner-requested) added colorless produced mana, parsed types, commander eligibility fields, the sideboard, the companion, entry rarity, and printing images. It also found F-18: Scryfall can not express "banned as a companion", so the rules engine owns that check. Reviewed and deliberately skipped: a `target_meta` slot (the free-text `theme` holds it for now) and name-search on `CardService.Search` (additive later).
+The gate held: 200/200 tricky names resolve, and the full local stack serves real lookups and a lifegain search. Two findings were fixed on the way: F-19 (fake-gcs needs `storage.WithJSONReads()`) and F-20 (snapshot completion marker). Test fixtures live in `go/internal/cards/testdata/` (200 cards, 946 printings, 124 tags, built from the 2026-08-24 bulk).
 
 ## Next steps, in order
 
-1. The owner reviews the `.proto` files, commits `pr-1`, and merges. A field rename after merge is a breaking change, so review now.
-2. PR-2: the card database from Scryfall bulk. It needs no owner input to start.
-3. Collect contract corrections as dated register entries.
+1. The owner reviews and merges `pr-2`.
+2. PR-3 (legality freshness fast path) or PR-4 (ManaBox import) is next. PR-4 needs the owner's sample exports (OQ-17, D-30). PR-3 needs nothing.
+3. Collect corrections as dated register entries.
 
 ## Facts that expire
 
