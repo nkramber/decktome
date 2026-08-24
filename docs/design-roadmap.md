@@ -6,6 +6,10 @@ External facts were verified 2026-08-23. Sources: Scryfall (API and bulk data), 
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-08-23 correction pass 2: the owner answered OQ-1 to OQ-12 (D-15 to D-25). Changes in this pass: F-4 resolved, F-14 rewritten, F-16 and F-17 added, PR-4 storage decided. Also: PR-7 gains the gap score and M-4, PR-8 gains the deck summary, I-2 has a price spec, and the GCP project ids are set.
+
+2026-08-23 correction pass 3: OQ-13 to OQ-17 answered (D-26 to D-30). Changes: M-5 added (manual scoring lane for invented questions), I-1 rewritten as the stale-deck banner and rerun, I-2 threshold fixed, section 9 updated.
+
 House rule (from connector-syncer): no PR, branch name, commit message, comment, or other artifact may contain AI-attribution text.
 
 ---
@@ -77,7 +81,7 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⚠ constra
 | F-1 | **Ban lists drift fast.** Four B&R announcements in 2026 so far (03-23, 05-18, 06-29, 08-10). Next 2026-10-12. Commander changed 2026-02-09 with a new category, "banned as a companion". Any cached legality older than one day can be wrong on announcement day. | 🔧 M-2 (freshness metric) + PR-3 (daily refresh with announcement-day fast path) |
 | F-2 | **ManaBox CSV columns vary.** The official guide does not list the columns. The verified column set (15 columns) comes from a third-party mapping. A whole-collection export adds a binder name column. Column order and presence can change with app versions. | 🔧 PR-4 (header-driven import, Scryfall ID first, tolerant of unknown columns) |
 | F-3 | **Scryfall API rate limits are hard.** 2 requests per second on `/cards/named`, `/cards/search`, `/cards/collection`. 10 per second elsewhere. A 429 blocks for 30 seconds. Repeated overload gets a ban. Bulk files have no limit. | ⚠ binds PR-2: all card lookups go to the local snapshot. The live API is for single-card fallback only, behind a client-side limiter. |
-| F-4 | **Aggregator terms of use unknown.** MTGGoldfish, MTGTop8, Aetherhub, and EDHREC have no public API and their terms are unchecked. D-5 allows them with a legal check. | ❓ OQ-10. Until checked, the meta service ships with MTGO decklists only. |
+| F-4 | **Aggregator terms of use unknown.** MTGGoldfish, MTGTop8, Aetherhub, and EDHREC have no public API and their terms were unchecked. | ✅ 2026-08-23: the owner confirmed the legal check passed (D-5). All five sources may be used. PR-14 still starts with MTGO because it is the only structured source. |
 | F-5 | **Oracle tags are community data.** Scryfall Tagger tags are volunteer-made. Coverage is uneven. `lifegain` is rich (3,374 cards). Niche themes may have few tags. Weights are `median` style, not scores. | ⚠ binds PR-6: tags seed the candidate list. They never gate a card. Keywords and type lines are the second signal. The model is the third. |
 | F-6 | **No Cloud Tasks emulator.** Local mode can not run real Cloud Tasks. | 🔧 PR-1: a `Dispatcher` interface with a local in-process implementation. |
 | F-7 | **Docker absent on the dev machine.** | 🔧 PR-0b (owner installs Docker, D-10). Native `make dev` does not need it. |
@@ -87,8 +91,10 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⚠ constra
 | F-11 | **Commander brackets are "beta" and change.** The 2026-02-09 update changed the Game Changers list. The bracket rules are prose, not data. | 🔧 PR-5 encodes brackets as data with a version date. The `game_changer` flag comes from Scryfall. |
 | F-12 | **Legality is per Oracle card, but ownership is per printing.** A user may own a printing that is not legal in a format where the card is legal (for example a gold-bordered or Alchemy-rebalanced version). Scryfall marks these on the printing. | 🔧 PR-4 keeps the printing id. PR-5 checks legality on the Oracle card and flags the printing exception. |
 | F-13 | **Model output can name a card that exists but is not the card meant.** Example: "Ajani's Pridemate" versus "Ajani's Welcome". Fuzzy matching hides this. | ⚠ binds PR-8: exact name match only, with the model asked for exact names. Fuzzy match is a suggestion to the user, never a silent substitution. |
-| F-14 | **Two decks from the same prompt should differ.** The owner wants variance. Temperature alone gives random, not designed, variance. | 🔧 PR-9: variance through candidate-list sampling with a seed, plus explicit "plan variants" (OQ-4). |
+| F-14 | **Variance versus determinism.** The owner wants variance between decks. A first answer to OQ-4 asked for identical output on identical input. A second answer the same day withdrew that: random variance stays (D-18). Note for the record: an LLM is not deterministic even at temperature 0, so identical output was never a guarantee. | ✅ resolved by D-18. PR-9 keeps a stored seed per deck for reproduction on request, and adds plan variants. |
 | F-15 | **Standard has no rotation in 2026.** Rotation moves to the first set of 2027. Any hardcoded "September rotation" logic is wrong. | ✅ no rotation logic in code. Scryfall legalities carry it. |
+| F-16 | **Scryfall prices have no condition tiers.** `prices.usd`, `usd_foil`, `usd_etched` are TCGplayer near-mint market estimates, updated once per day. The owner asked for lightly-played prices (OQ-3). No free source gives them. | ✅ D-17: show the NM estimate with a 7-day rolling average and outlier rejection, labeled as such. A condition-tiered source is a later option. |
+| F-17 | **A fixed question catalog can not cover every prompt.** The owner wants catalog questions first, model-invented questions when needed, and a metric that says which case applies (D-25). Without the metric, the agent either asks nothing new or bypasses the catalog. | 🔧 PR-7 (gap score) + M-4 (catalog coverage metric) + PR-15 (catalog-change proposals from evals). |
 
 > *In plain English:* these are the traps we found before writing code. The biggest ones: ban lists change every few weeks. The collection file format is not documented. The AI can name a card that sounds right but is not. Each one has a planned fix or a rule that prevents it.
 
@@ -129,7 +135,7 @@ Docker is used for the Compose file (PR-0c) and for local Cloud Run parity. Gate
 **PR-0c: Local stack (D-9).**
 `firebase.json` with Firestore and Auth emulators. `fake-gcs-server` for storage. A `Dispatcher` interface with a local in-process implementation (F-6). A `fake` LLM provider with fixture responses.
 
-`make dev` runs all of it under one process supervisor. A Compose file gives the same stack in containers once Docker exists. Gate: a developer with no GCP credentials runs the full stack and the UI loads.
+`make dev` runs all of it under one process supervisor. A Compose file gives the same stack in containers once Docker exists. GCP projects are `mtg-dev` and `mtg-prod` (D-24). No domain and no hosting yet. Local testing has priority. Gate: a developer with no GCP credentials runs the full stack and the UI loads.
 > *In plain English:* everything runs on the laptop with no cloud account: a fake database, fake file storage, a fake AI that returns canned answers. One command starts it all. The details are in `docs/reference/local-dev-environment.md`.
 
 ### Phase 1 - Data and rules (deterministic, fully testable)
@@ -151,7 +157,9 @@ The worker checks the Scryfall bulk `updated_at` every hour. On a B&R announceme
 **PR-4: ManaBox import (F-2, F-12).**
 CSV parser driven by the header row, not by column position. Required: `Scryfall ID`, or `Set code` plus `Collector number`, or `Name` plus `Set name`. Optional: `Quantity`, `Foil`, `Condition`, `Language`, binder name. Unknown columns are ignored and logged once. Rows that do not resolve are returned to the user as a list, not dropped silently.
 
-The result is a `Collection` with counts per Oracle ID and per printing. Also accepts the Arena text format (`4 Lightning Bolt (STA) 42`). Storage shape decided here: one document per collection with a compressed entry array, plus a per-Oracle-ID count map (OQ-2). Gate: a fixture set of real exports (owner-provided, anonymized) imports with zero silent drops. M-3 counts unresolved rows.
+The result is a `Collection` with counts per Oracle ID and per printing. Also accepts the Arena text format (`4 Lightning Bolt (STA) 42`). Storage: the full collection is stored (D-16). One document per collection holds a compressed entry array (printing id, quantity, finish, condition, language). 
+
+A per-Oracle-ID count map sits beside it for fast ownership checks. A content hash of the upload detects an identical re-upload. Non-English rows are reported to the user and skipped (D-23). Gate: a fixture set of real exports (owner-provided, anonymized) imports with zero silent drops. M-3 counts unresolved rows.
 > *In plain English:* upload the file ManaBox gives you. We match every line to a real card and count how many you own. We show you the lines we could not match. We do not hide them.
 
 **PR-5: Rules engine.**
@@ -175,28 +183,45 @@ Given a format, colors, a theme, a power level, and the collection, build a rank
 **PR-7: Question workflow.**
 The turn-based core. A `Session` holds filled slots (format, commander, power, colors, theme, pool rule, budget, house rules, locked cards). Each turn: a small model classifies the prompt and fills slots it can. The code decides which slots are still empty and picks up to three questions from the catalog (`mtg-corpus` skill, section 11). The model phrases them.
 
-The user answers in free text. The small model maps answers to slots. Slots are stored, summarized, and carried to the next turn, as connector-syncer's schema agent does. The model may propose a question outside the catalog only through a `custom_question` tool with a reason (OQ-12). "Anything goes" and similar phrases route to the house-rules question (D-3).
+The user answers in free text. The small model maps answers to slots.
 
-Gate: 30 scripted conversations reach a complete slot set in at most four turns, with no repeated question.
+Slots are stored, summarized, and carried to the next turn, as connector-syncer's schema agent does. The catalog is the first source of questions (D-25). A **gap score** decides when the catalog is not enough. It is the best catalog match between the empty slot and the user's words, from a small classifier. Below a threshold (OQ-14), the model may propose a question through a `custom_question` tool with a reason and the gap score. 
+
+Every invented question is logged with its slot and outcome. M-4 reports how often this happens. Repeated invented questions become catalog candidates (PR-15). "Anything goes" and similar phrases route to the house-rules question (D-3).
+
+Gate: 30 scripted conversations reach a complete slot set in at most four turns, with no repeated question. At least 25 of the 30 use catalog questions only. The gap-score threshold is set by M-5, not by this PR.
 > *In plain English:* the chat. "Build me a lifegain deck" fills in "theme: lifegain" and leaves format, power, and colors empty. The app asks those three, remembers the answers, and never asks twice. If the user says something vague, the app asks what they mean. It does not guess.
 
 **PR-8: Deck generator and normalizer (F-13).**
-With all slots filled, the strong model gets four inputs. They are the rules summary for the format, the candidate list with roles, the role targets, and the plan request. It returns a structured deck: a plan statement, then cards with exact names, counts, roles, and one-line reasons. The normalizer exact-matches every name to the candidate list. A miss is returned to the model once as a tool error. A second miss becomes a user-visible note.
+With all slots filled, the strong model gets four inputs. They are the rules summary for the format, the candidate list with roles, the role targets, and the plan request. It returns a structured deck (D-19). First, one summary paragraph on the deck's style and purpose. Then cards with exact names, counts, roles, and one line each. 
+
+The normalizer exact-matches every name to the candidate list. A miss is returned to the model once as a tool error. A second miss becomes a user-visible note.
 
 The engine validates (PR-5). A `block` finding triggers one repair turn with the findings as input. Then the deck goes to the user with the `ValidationResult` attached. Gate: on the golden prompts, 100% of returned decks pass `block` checks. Zero invented names reach the user.
 > *In plain English:* the AI writes the deck from the shortlist, with a plan and a reason for each card. The code checks every name and every rule. If something is wrong, the AI gets one chance to fix it. What the user sees has already passed the referee.
 
-**PR-9: Designed variance (F-14, OQ-4).**
-Variance comes from three levers, not from temperature alone. Lever 1: a seeded shuffle within each role tier of the candidate list. Lever 2: a "plan variant" slot (for example "lifegain aristocrats" versus "lifegain go-wide"). Lever 3: a "keep these, change the rest" re-roll. The seed is stored with the deck so a build is reproducible. Gate: two builds of the same prompt differ in at least 30% of nonland cards and both pass validation.
+**PR-9: Designed variance (F-14, D-18).**
+Random variance is a feature (D-18). Variance comes from three levers, not from temperature alone. Lever 1: a seeded shuffle within each role tier of the candidate list. 
+
+Lever 2: a "plan variant" slot (for example "lifegain aristocrats" versus "lifegain go-wide"). Lever 3: a "keep these, change the rest" re-roll. The seed is stored with the deck so a build can be reproduced on request. Identical output on identical input is not a requirement (D-18). Gate: two builds of the same prompt differ in at least 30% of nonland cards and both pass validation.
 > *In plain English:* ask twice, get two different but sensible decks. Each deck remembers the dice roll that made it, so you can get the same deck back.
 
 **PR-10: LLM role layer (D-1).**
-`internal/llm` with roles: `classify`, `ask`, `generate`, `repair`, `judge`. A frozen config maps each role to a provider and model. Adapters: at least one real provider and the `fake` provider. Structured output through JSON Schema with strict validation.
+`internal/llm` with roles: `classify`, `ask`, `generate`, `repair`, `judge`. A frozen config maps each role to a provider and model. Adapters: OpenAI on day one (D-21) and the `fake` provider. The `judge` role uses a different provider from `generate` (D-22), chosen at implementation time. Structured output through JSON Schema with strict validation.
 
 One request budget per logical call with three retry classes (truncation, transient, terminal). Usage accounting per session that reports null when not instrumented. Prompt caching where the provider supports it. CI warns on default changes. Gate: unit tests with the fake provider. One real-provider smoke test behind an env flag.
 > *In plain English:* the AI plug. Every place that calls an AI calls it through one door with a named job. Swap the vendor in one file. Count every token.
 
 **M-1: Token and cost accounting per session.** Lands with PR-10. Every cost claim in this doc is an estimate until then.
+
+**M-5: Manual scoring lane for invented questions (D-27, F-17).**
+The owner uses the product on a fixed set of prompts. For each model-invented question, a review page shows four things. The question, the gap score, the slot, and the top three catalog questions that were possible instead. The owner scores it on a fixed rubric (OQ-19): was a catalog question good enough, was the invented question better, did it fill the slot. 
+
+Scores go to the eval store with the prompt version and model. The gap-score threshold is chosen from these scores, and re-checked after each catalog change (D-28: the owner approves changes). Gate: at least 50 scored invented questions before the threshold is set.
+> *In plain English:* the app sometimes has to make up a question. The owner will use the app, see each made-up question next to the fixed questions it could have used, and grade it. Those grades decide how eager the app is to make up questions.
+
+**M-4: Catalog coverage metric (F-17).** Per session: catalog questions asked, invented questions asked, gap scores, and whether the invented question filled its slot. A weekly report lists invented questions by frequency. This is the input for catalog changes (D-25).
+> *In plain English:* we count how often the app had to invent a question. If the same invented question appears again and again, it belongs in the fixed list.
 
 ### Phase 3 - UI (gated on PR-8)
 
@@ -211,13 +236,13 @@ It shows the mana curve, the color sources, the `ValidationResult` findings, and
 > *In plain English:* the main screen. The conversation on one side, the deck on the other with real card pictures, grouped by what each card does, with your own cards marked.
 
 **PR-13: Export and share.**
-Export as ManaBox text, Arena text, and plain text (OQ-1 decides more). A buy list with Scryfall purchase links. Gate: a round trip ManaBox export to import loses nothing.
+Export as ManaBox text first (D-15). Other formats later. A buy list with Scryfall purchase links. Gate: a round trip ManaBox export to import loses nothing.
 > *In plain English:* get the deck out of the app and into ManaBox or Arena with one click, plus a shopping list.
 
 ### Phase 4 - Meta and quality (gated on Phase 3 and on OQ-10)
 
 **PR-14: Meta ingest, MTGO first.**
-A worker job pulls published MTGO decklists per format (official source, D-5). It computes archetype shares and the most-played cards per archetype for the last 30 days. Aggregator and EDHREC ingesters wait for the terms check (F-4, OQ-10). The meta snapshot is advisory input to PR-6 and PR-8 for competitive power levels only. Gate: the snapshot for Modern lists at least 10 archetypes with card lists.
+A worker job pulls published MTGO decklists per format (official source, D-5). It computes archetype shares and the most-played cards per archetype for the last 30 days. Aggregator and EDHREC ingesters follow, in order of structure: MTGTop8, MTGGoldfish, Aetherhub, EDHREC (D-5, legal check passed). The meta snapshot is advisory input to PR-6 and PR-8 for competitive power levels only. Gate: the snapshot for Modern lists at least 10 archetypes with card lists.
 > *In plain English:* what wins right now. We start with the official tournament lists. Other sites are added only after someone checks their rules.
 
 **PR-15: Eval harness.**
@@ -226,13 +251,27 @@ Golden prompts with expected slot sets and expected validation outcomes. Determi
 Tier 1 nightly. Label-gated full sweep on PRs. Cost cap per run. Gate: the harness runs on PR-8's output and reports named regressions.
 > *In plain English:* the test bench. Fixed questions, expected answers, a score every night. Any change that makes decks worse is named, not averaged away.
 
-**I-1: Ban-list watch.** A job reads the Wizards announcement feed and posts a notice with the diff when Scryfall reflects it. **I-2: Price-aware buy list** (OQ-3). **I-3: Semantic card search** over Oracle text as a fourth candidate signal, only if PR-6's gate shows tags are not enough.
+**I-1: Ban-list watch, stale-deck banner, and scoped rerun (D-29).**
+A job reads the Wizards announcement feed and detects the Scryfall snapshot that reflects it. It then re-validates every stored deck in the affected formats. 
+
+A deck with a now-illegal card gets a `stale` flag with the list of affected cards. The UI shows a banner on that deck with a "rerun" button.
+
+An impact classifier scopes the rerun. Its inputs: how many cards are affected, which roles they filled, and whether the commander or a win condition is among them. 
+
+Low impact: a patch turn that replaces only the affected cards from the same candidate list. 
+
+High impact (threshold OQ-18): a full rebuild with the original slots and a new seed. The banner states which case applies and why. Gate: on the golden decks, every synthetic ban produces the correct case and a legal deck.
+> *In plain English:* when Wizards bans a card, every deck we built that uses it gets a warning and a rerun button. If the ban only touches one filler card, we swap that card. If it guts the deck, we rebuild it from your answers.
+
+**I-2: Price-aware buy list** (D-17, F-16). USD. For each card: the lowest Scryfall NM market price across legal printings and finishes, as a 7-day rolling average, with outlier days rejected (a day more than 2x the 7-day median, D-26). Digital-only and gold-bordered printings excluded. The UI labels it "NM market estimate" with the price date.
+
+**I-3: Semantic card search** over Oracle text as a fourth candidate signal, only if PR-6's gate shows tags are not enough.
 
 ### Phase 5 - Parked (product decisions required)
 
-- Sample-hand and goldfish simulator (OQ-6).
-- Per-card explanations in the deck view beyond one line (OQ-5).
-- Non-English collections (OQ-9).
+- Sample-hand and goldfish simulator (D-20: later, not at launch).
+- Per-card explanations longer than one line (D-19 gives one line per card).
+- Non-English collections (D-23: English only for now).
 - Brawl, Oathbreaker, Pauper Commander, Duel Commander.
 - Sideboard builder for 60-card competitive play against a named meta.
 - Collection sync from ManaBox without a file (no API exists on 2026-08-23).
@@ -255,7 +294,7 @@ Tier 1 nightly. Label-gated full sweep on PRs. Cost cap per run. Gate: the harne
 13. PR-9 variance.
 14. **GATE.** Phase 3 starts only when PR-8's gate holds on the golden prompts.
 15. PR-11, PR-12, PR-13.
-16. PR-15 eval harness (can start after step 12, in parallel with the UI, if a second owner exists).
+16. PR-15 eval harness (can start after step 12, in parallel with the UI, if a second owner exists). M-5 manual scoring runs on the first UI build (after PR-12).
 17. PR-14 meta, then I-1, I-2, I-3 on evidence.
 18. Phase 5 stays parked.
 
@@ -263,8 +302,7 @@ Tier 1 nightly. Label-gated full sweep on PRs. Cost cap per run. Gate: the harne
 
 See `docs/open-questions.md` for the full list with "ask when" dates. The ones that gate a phase:
 
-1. **OQ-2 collection storage shape** gates PR-4.
-2. **OQ-7 day-one providers** gates PR-10.
-3. **OQ-10 terms check** gates the second half of PR-14.
-4. **OQ-4 variance target** gates PR-9's gate number (30% is a placeholder).
-5. **OQ-12 catalog-only questions** gates PR-7's `custom_question` tool.
+1. **OQ-19 scoring rubric** gates M-5.
+2. **OQ-17 sample ManaBox exports** (owner will provide, D-30) gate PR-4's fixture set.
+3. **OQ-18 rerun depth rule** gates I-1.
+4. PR-9's 30% variance number is a placeholder until PR-15 measures it.

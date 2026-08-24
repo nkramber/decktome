@@ -237,6 +237,8 @@ Deciduous mechanics: Scry, Surveil, Mill, Fight, Food, Treasure, Clue, Blood, Ma
 
 ManaBox exports a CSV. Columns (from the MtgCsvHelper mapping, verified 2026-08-23): `Name, Set code, Set name, Collector number, Foil, Rarity, Quantity, ManaBox ID, Scryfall ID, Purchase price, Misprint, Altered, Condition, Language, Purchase price currency`. A whole-collection export adds the binder or list name. Values: `Foil` is `normal`, `foil`, or `etched`. `Condition` is `mint`, `near_mint`, `excellent`, `good`, `light_played`, `played`, `poor`. `Language` is a code such as `en`, `ja`, `zh_CN`.
 
+Language: the app supports English only (D-23). Rows with another language code are reported to the user and skipped.
+
 The `Scryfall ID` column is the join key. It identifies one printing. Map it to `oracle_id` to count copies of one card across printings. Fallback when the ID is missing: `Set code` plus `Collector number`, then `Name` plus `Set name`.
 
 ManaBox also exports decks as text in the MTG Arena format: `4 Lightning Bolt (STA) 42`. The app should import both.
@@ -249,6 +251,7 @@ ManaBox also exports decks as text in the MTG Arena format: `4 Lightning Bolt (S
 - Update cadence: prices once per day. Gameplay data less often. Download bulk once per day.
 - Images: `image_uris` keys `small, normal, large, png, art_crop, border_crop`. Double-faced cards have `card_faces[].image_uris`. Show the artist and copyright. Do not crop, skew, or watermark.
 - Data license: Wizards Fan Content Policy through Scryfall. No paywall on card data. No repackaging without added value. Do not imply Scryfall endorsement.
+- Prices: `prices.usd`, `usd_foil`, `usd_etched` are TCGplayer near-mint market estimates, once per day. No condition tiers. The app shows a 7-day rolling average with outliers removed, labeled "NM market estimate" (D-17).
 - Card fields the builder needs: `name, oracle_id, id, mana_cost, cmc, colors, color_identity, type_line, oracle_text, keywords, legalities, game_changer, edhrec_rank, penny_rank, rarity, set, collector_number, prices, card_faces, layout, produced_mana, power, toughness, loyalty`.
 
 ## 11. Clarifying-question catalog
@@ -268,6 +271,8 @@ The agent asks only what the prompt did not answer. Never ask more than three qu
 | Meta | Power is competitive. | "Is this for a specific event or local meta? I can tune the sideboard to it." |
 | Variance | User asks for "another version". | "Same plan with different cards, or a different plan in the same colors?" |
 | Locked cards | User names cards. | "Should I keep all of those, or can I cut some if they do not fit?" |
+
+Question source rule (D-25): use a catalog question when one fits the empty slot. Compute a gap score: how well the best catalog question matches the slot and the user's words. When the score is below the threshold, invent a question and log it with the score. Invented questions that repeat become catalog candidates.
 
 Default answers when the user says "you decide": format Commander (the most played format in 2026), bracket 2 to 3, colors from the collection's strongest overlap with the theme.
 

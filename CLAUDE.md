@@ -6,7 +6,7 @@ Read this file first. Then read `docs/SESSION-HANDOFF.md`. It tells you where th
 
 This repo is a Go + Protobuf + TypeScript monorepo for an agentic MtG deck builder. The app reads a user's ManaBox collection export. The user gives a prompt. The agent asks questions, then builds a legal, useful deck.
 
-Stage (2026-08-23): **exploratory design only**. No application code exists yet. The deliverable is `docs/design-roadmap.md`.
+Stage (2026-08-23): **exploratory design only**. No application code exists yet. The deliverable is `docs/design-roadmap.md`. The owner commits and pushes. Do not commit unless the owner asks.
 
 ## Hard rules from the owner
 
@@ -17,6 +17,7 @@ Stage (2026-08-23): **exploratory design only**. No application code exists yet.
 5. **Make hand-off simple.** Before you end a session, update `docs/SESSION-HANDOFF.md`: what is done, what is open, and the next step.
 6. **No AI-attribution text** in any PR, branch name, commit message, or comment. This house rule comes from connector-syncer.
 7. **No mistakes.** Check card names, rules, and dates before you write them. When you are not sure, say so and mark the item as unverified.
+8. **Never hesitate to ask or to push back.** Ask a question the moment you have one. When the owner's two statements conflict, say so and quote both. When a request rests on a wrong premise, say so with the evidence. The owner sees this as the key to good LLM-user interaction. Silence is the mistake, not the question.
 
 ## Reference material
 
