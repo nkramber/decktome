@@ -10,6 +10,8 @@ Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/
 
 2026-08-23 correction pass 3: OQ-13 to OQ-17 answered (D-26 to D-30). Changes: M-5 added (manual scoring lane for invented questions), I-1 rewritten as the stale-deck banner and rerun, I-2 threshold fixed, section 9 updated.
 
+2026-08-24 correction pass 4 (owner directive): the collection is optional (D-37, amends D-2). Changes: thesis fact 3, guardrail 5, PR-6, PR-7, PR-8, PR-11, PR-12. No proto change: `PoolRule` and an optional `collection_id` existed since PR-1.
+
 House rule (from connector-syncer): no PR, branch name, commit message, comment, or other artifact may contain AI-attribution text.
 
 ---
@@ -56,7 +58,7 @@ Three structural facts drive the plan:
 
 - **The card database is small.** About 38,600 Oracle cards and 34,500 playable ones. It fits in memory in Go. We do not need a vector store to find cards. Scryfall Oracle tags (4,522 community tags, for example `lifegain` with 3,374 cards) plus keywords and type lines give a structured theme index. A vector index is a later option (I-3), not a foundation.
 - **Legality is a lookup, not a judgment.** Scryfall updates `legalities` within a day of each announcement. The engine reads them. No prompt carries a ban list. This makes "legal as of the query date" a data-freshness problem, which is measurable (M-2).
-- **Ownership is the constraint that makes the product.** Without the collection, the app is a worse EDHREC. With it, every suggestion is one the user can play tonight (D-2). The import must be robust to ManaBox column variance (F-2).
+- **Ownership is a differentiator, not a requirement (D-37, 2026-08-24).** With a collection, every suggestion is one the user can play tonight. Without one, or with the library toggle off, the app builds a truly optimized deck from the whole legal pool. The pool mode is a first-class slot (`PoolRule`): owned-first, owned-only, any-card. The import must be robust to ManaBox column variance (F-2).
 
 > *In plain English:* the whole card list of Magic fits in memory. The rules for "is this legal?" are a table lookup. The one thing no other tool has is the user's actual binder. So we build around the binder.
 
@@ -107,7 +109,7 @@ Status: ✅ resolved · 🔧 planned or in progress (item listed) · 🅿 parked
 2. **No ban list, rotation date, or Game Changers list in any prompt or code constant.** Legality comes from the card database, which comes from Scryfall daily. Prompts may say "the engine will check legality".
 3. **No model id at a call site.** All models come from the role layer (D-1). CI warns on a default change, as in connector-syncer.
 4. **Exact card names only.** The model returns exact Oracle names. The normalizer does an exact match. Anything else becomes a user-visible suggestion, never a substitution (F-13).
-5. **Owned cards first, always visible.** Every card in a deck carries an `owned` flag with the count. Acquisitions live in a separate list (D-2).
+5. **The pool mode is explicit, and ownership is always visible (D-2, D-37).** Every deck records its pool mode. When a collection is attached, every card carries an `owned` flag with the count, in every mode. Owned-first is the default with a library, any-card without one. The engine never silently narrows or widens the pool.
 6. **The agent asks before it assumes** on format, power level, and house rules. Max three questions per turn. Defaults are allowed only when the user says "you decide" (D-3).
 7. **Attribution on every image.** Artist and copyright are shown, images are not cropped or altered, and no paywall sits in front of card data (Scryfall terms, D-6).
 8. **Generated proto code is committed and CI diffs it.** No hand edits. Pinned buf and plugin versions.
@@ -161,8 +163,8 @@ A worker job downloads `oracle_cards` and `default_cards` daily (F-3: bulk only)
 A `CardService.Lookup` by exact name, by Scryfall ID, and by Oracle ID. A `CardService.Search` with structured filters (colors, types, keywords, tags, format-legal). Gate: 100% of a fixed list of 200 tricky names resolve (split, DFC, "Aether" spelling, commas, apostrophes). Snapshot age is exposed as a metric.
 > *In plain English:* every night we download the whole card list, keep a copy, and load it into memory. Anyone can ask "which green cards with lifelink are legal in Pioneer?" and get a fast exact answer with no AI involved.
 
-**PR-3: Legality freshness and announcement-day fast path (F-1).**
-The worker checks the Scryfall bulk `updated_at` every hour. On a B&R announcement day (a calendar the worker reads from a config, next 2026-10-12), it refreshes every hour until the legalities change. Every deck response carries `legality_as_of` (the snapshot date). The UI shows it. Gate: M-2 shows the lag between an announcement and the snapshot that reflects it.
+**PR-3: Legality freshness and announcement-day fast path (F-1).** ✅ gate mechanism in place 2026-08-24 on branch `nate/pr-3`, merge pending. The calendar is `announcement_dates.json`, embedded, with a verification date (next date: 2026-10-12). The worker checks hourly, and every 15 minutes while a past announcement is not yet covered by the snapshot. On the first snapshot after an announcement, the worker logs `legality_lag` with the hours (M-2). The UI shows "Card data as of" from `/healthz`. The real M-2 number arrives with the 2026-10-12 announcement.
+The worker checks the Scryfall bulk `updated_at` every hour. On and after a B&R announcement day (a committed calendar, next 2026-10-12), it checks every 15 minutes until a snapshot from that day or later lands. Every deck response carries `legality_as_of` (the snapshot date). The UI shows it. Gate: M-2 shows the lag between an announcement and the snapshot that reflects it.
 > *In plain English:* ban announcements come on known dates. On those days we check more often. Every deck says which day's rules it was checked against, so the user knows.
 
 **PR-4: ManaBox import (F-2, F-12).**
@@ -188,7 +190,11 @@ A pure Go library. Inputs: a deck, a format, a power level, a collection, a card
 ### Phase 2 - The agent (gated on Phase 1)
 
 **PR-6: Candidate-list builder.**
-Given a format, colors, a theme, a power level, and the collection, build a ranked candidate list from the engine. Signals: Oracle tags (theme), keywords and type lines, `edhrec_rank` (popularity), legality, ownership. Output: about 150 to 300 owned candidates by role, plus about 50 unowned upgrade candidates (D-2). This list, not the whole database, is what the model sees. Gate: for 20 theme prompts, a human confirms the top 40 candidates are on-theme in at least 18.
+Given a format, colors, a theme, a power level, the pool mode, and the collection (optional, D-37), build a ranked candidate list from the engine. 
+
+Owned-first: owned candidates plus a bounded unowned-upgrade list. Owned-only: owned candidates alone. Any-card: the whole legal pool, ranked by theme fit and `edhrec_rank`, with meta input at competitive power (PR-14). Signals: Oracle tags (theme), keywords and type lines, `edhrec_rank` (popularity), legality, ownership. Output in owned-first mode: about 150 to 300 owned candidates by role, plus about 50 unowned upgrade candidates. Output in any-card mode: about 300 candidates by role from the full pool. 
+
+This list, not the whole database, is what the model sees. Gate: for 20 theme prompts, a human confirms the top 40 candidates are on-theme in at least 18. Ten of the 20 run with no collection.
 > *In plain English:* before we ask the AI to build, the code shortlists the cards that fit: your cards, the right colors, on theme, legal. The AI picks from that list. It can not pick a card that is not there.
 
 **PR-7: Question workflow.**
@@ -198,7 +204,7 @@ The user answers in free text. The small model maps answers to slots.
 
 Slots are stored, summarized, and carried to the next turn, as connector-syncer's schema agent does. The catalog is the first source of questions (D-25). A **gap score** decides when the catalog is not enough. It is the best catalog match between the empty slot and the user's words, from a small classifier. Below a threshold (OQ-14), the model may propose a question through a `custom_question` tool with a reason and the gap score. 
 
-Every invented question is logged with its slot and outcome. M-4 reports how often this happens. Repeated invented questions become catalog candidates (PR-15). "Anything goes" and similar phrases route to the house-rules question (D-3).
+Every invented question is logged with its slot and outcome. M-4 reports how often this happens. Repeated invented questions become catalog candidates (PR-15). "Anything goes" and similar phrases route to the house-rules question (D-3). The pool-mode slot: with a library, the agent asks or defaults to owned-first. Without one, it defaults to any-card and does not ask (D-37).
 
 Gate: 30 scripted conversations reach a complete slot set in at most four turns, with no repeated question. At least 25 of the 30 use catalog questions only. The gap-score threshold is set by M-5, not by this PR.
 > *In plain English:* the chat. "Build me a lifegain deck" fills in "theme: lifegain" and leaves format, power, and colors empty. The app asks those three, remembers the answers, and never asks twice. If the user says something vague, the app asks what they mean. It does not guess.
@@ -208,7 +214,9 @@ With all slots filled, the strong model gets four inputs. They are the rules sum
 
 The normalizer exact-matches every name to the candidate list. A miss is returned to the model once as a tool error. A second miss becomes a user-visible note.
 
-The engine validates (PR-5). A `block` finding triggers one repair turn with the findings as input. Then the deck goes to the user with the `ValidationResult` attached. Gate: on the golden prompts, 100% of returned decks pass `block` checks. Zero invented names reach the user.
+The engine validates (PR-5). 
+
+The ownership check runs only in the owned modes. In any-card mode, ownership marks are information, never findings (D-37). A `block` finding triggers one repair turn with the findings as input. Then the deck goes to the user with the `ValidationResult` attached. Gate: on the golden prompts, 100% of returned decks pass `block` checks. Zero invented names reach the user.
 > *In plain English:* the AI writes the deck from the shortlist, with a plan and a reason for each card. The code checks every name and every rule. If something is wrong, the AI gets one chance to fix it. What the user sees has already passed the referee.
 
 **PR-9: Designed variance (F-14, D-18).**
@@ -237,11 +245,13 @@ Scores go to the eval store with the prompt version and model. The gap-score thr
 ### Phase 3 - UI (gated on PR-8)
 
 **PR-11: Web app shell.**
-React 19, Vite, TypeScript, Tailwind, the wallabee-ui patterns (TanStack Query, Zustand, lint-enforced import boundaries). Firebase Auth (D-11) with the emulator in local mode. Generated Connect client in `packages/api-client`. Gate: sign-in, upload a collection, see the count.
+React 19, Vite, TypeScript, Tailwind, the wallabee-ui patterns (TanStack Query, Zustand, lint-enforced import boundaries). Firebase Auth (D-11) with the emulator in local mode. Generated Connect client in `packages/api-client`. Gate: sign-in, then either upload a collection and see the count, or skip the upload and still reach the chat (D-37).
 > *In plain English:* the website skeleton: log in, upload your binder, see how many cards we recognized.
 
 **PR-12: Chat and deck view.**
-A streaming chat thread over the `Chat` RPC. The deck view groups cards by role. It shows card art from Scryfall image URIs with artist and copyright (D-6, guardrail 7). It shows both faces for DFCs (F-9). It marks owned versus to-buy.
+A streaming chat thread over the `Chat` RPC. The deck view groups cards by role. It shows card art from Scryfall image URIs with artist and copyright (D-6, guardrail 7). It shows both faces for DFCs (F-9). 
+
+It marks owned versus to-buy when a collection is attached. It shows the pool-mode toggle ("use only cards in my library") with the session's mode (D-37). In any-card mode, the buy list can be the whole deck.
 
 It shows the mana curve, the color sources, the `ValidationResult` findings, and `legality_as_of`. Hover or tap shows Oracle text. Gate: a11y checks pass. Every image has attribution in the DOM.
 > *In plain English:* the main screen. The conversation on one side, the deck on the other with real card pictures, grouped by what each card does, with your own cards marked.

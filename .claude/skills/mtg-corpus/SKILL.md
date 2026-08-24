@@ -265,7 +265,7 @@ The agent asks only what the prompt did not answer. Never ask more than three qu
 | Power level | Always for Commander (bracket). For 60-card, unless "casual" or "FNM" is clear. | "Which bracket does your table play? 2 is precon level, 3 is upgraded, 4 is high power." |
 | Colors | Theme does not imply colors. | "Any color preference? Lifegain is strongest in white and black." |
 | Theme or plan | Prompt gives only a format. | "What should the deck do: a creature type, a mechanic, or a play style?" |
-| Card pool | Collection has too few cards for the plan. | "Your collection has 14 lifegain cards in these colors. Build with only what you own, or add a buy list?" |
+| Card pool | A collection is attached (D-37). | "Build from your library first, only your library, or ignore it for a fully optimized deck?" Also ask when the collection is too thin for the plan. |
 | Budget | User mentions cost, or a buy list is needed. | "Is there a budget for cards to buy?" |
 | House rules | "Anything goes", "casual", "kitchen table". | "What does anything-goes mean at your table: any card with no ban list, or Vintage rules?" |
 | Meta | Power is competitive. | "Is this for a specific event or local meta? I can tune the sideboard to it." |
@@ -274,7 +274,7 @@ The agent asks only what the prompt did not answer. Never ask more than three qu
 
 Question source rule (D-25): use a catalog question when one fits the empty slot. Compute a gap score: how well the best catalog question matches the slot and the user's words. When the score is below the threshold, invent a question and log it with the score. Invented questions that repeat become catalog candidates.
 
-Default answers when the user says "you decide": format Commander (the most played format in 2026), bracket 2 to 3, colors from the collection's strongest overlap with the theme.
+Default answers when the user says "you decide": format Commander (the most played format in 2026), bracket 2 to 3, colors from the collection's strongest overlap with the theme. Pool mode: owned-first when a collection is attached, any-card when none is (D-37). A user without a collection never gets the card-pool question.
 
 ## 12. Validation checklist (deterministic, run after every build)
 
@@ -284,7 +284,7 @@ Default answers when the user says "you decide": format Commander (the most play
 4. Commander: every card inside the color identity. Commander eligible.
 5. Commander: Game Changer count within the bracket. Bracket 1-2: zero.
 6. Every card name exists in the card database. No invented names.
-7. Ownership: every card in the collection with enough copies, or listed as an acquisition.
+7. Ownership (owned modes only, D-37): every card in the collection with enough copies, or listed as an acquisition. In any-card mode this check is off, and ownership marks are information.
 8. Land count and color sources within the guide range for the archetype.
 9. Mana curve within the guide range.
 10. Each role (ramp, draw, removal, wincon) has at least the minimum count.
