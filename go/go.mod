@@ -3,6 +3,7 @@ module github.com/nkramber/mtg-deck-builder/go
 go 1.26.4
 
 require (
+	cloud.google.com/go/firestore v1.25.0
 	cloud.google.com/go/storage v1.65.0
 	connectrpc.com/connect v1.20.0
 	google.golang.org/api v0.287.1
@@ -30,6 +31,7 @@ require (
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
 	cloud.google.com/go/compute/metadata v0.9.0 // indirect
 	cloud.google.com/go/iam v1.11.0 // indirect
+	cloud.google.com/go/longrunning v1.2.0 // indirect
 	cloud.google.com/go/monitoring v1.29.0 // indirect
 	connectrpc.com/otelconnect v0.9.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.32.0 // indirect
