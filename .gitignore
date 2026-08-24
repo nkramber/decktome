@@ -16,3 +16,4 @@ web/apps/web/dist/
 !.env.example
 *.tsbuildinfo
 *-debug.log
+firebase-export-*/
