@@ -1,0 +1,13 @@
+{
+  "_comment": "Format construction rules. Source: Magic Comprehensive Rules section 100 and mtgcommander.net. Verified 2026-08-24. The scryfall_key selects the legality column (guardrail 2). HOUSE has no legality key: the owner defined anything-goes as any card, no ban list (D-3), and recorded house rules ride the session.",
+  "formats": {
+    "FORMAT_ID_COMMANDER": {"scryfall_key": "commander", "min_size": 100, "exact_size": 100, "max_copies": 1, "sideboard_max": 0, "commander": true},
+    "FORMAT_ID_STANDARD":  {"scryfall_key": "standard",  "min_size": 60, "max_copies": 4, "sideboard_max": 15},
+    "FORMAT_ID_PIONEER":   {"scryfall_key": "pioneer",   "min_size": 60, "max_copies": 4, "sideboard_max": 15},
+    "FORMAT_ID_MODERN":    {"scryfall_key": "modern",    "min_size": 60, "max_copies": 4, "sideboard_max": 15},
+    "FORMAT_ID_LEGACY":    {"scryfall_key": "legacy",    "min_size": 60, "max_copies": 4, "sideboard_max": 15},
+    "FORMAT_ID_VINTAGE":   {"scryfall_key": "vintage",   "min_size": 60, "max_copies": 4, "sideboard_max": 15},
+    "FORMAT_ID_PAUPER":    {"scryfall_key": "pauper",    "min_size": 60, "max_copies": 4, "sideboard_max": 15},
+    "FORMAT_ID_HOUSE":     {"scryfall_key": "",          "min_size": 60, "max_copies": 4, "sideboard_max": 15}
+  }
+}

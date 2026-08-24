@@ -18,13 +18,11 @@ jobs:
         with:
           go-version-file: go/go.mod
           cache-dependency-path: go/go.sum
-      - name: vet
-        run: go -C go vet ./...
+      # golangci-lint runs through the Makefile, built from source with
+      # the repo's Go toolchain. The prebuilt action binary is compiled
+      # with an older Go and refuses a newer go.mod target.
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v8
-        with:
-          version: v2.6.2
-          working-directory: go
+        run: make lint-go
       - name: test
         run: go -C go test -race ./...
 
