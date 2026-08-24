@@ -19,9 +19,9 @@ import (
 
 var version = "dev"
 
-// refreshInterval is the periodic check. Scryfall updates bulk data about
-// once per day. PR-3 adds the announcement-day fast path.
-const refreshInterval = 6 * time.Hour
+// The check cadence comes from the announcement calendar (PR-3, F-1):
+// hourly on a normal day, every 15 minutes while an announcement is not
+// yet covered by the stored snapshot.
 
 func main() {
 	once := flag.Bool("once", false, "run one refresh and exit (make dev-seed)")
@@ -39,11 +39,33 @@ func main() {
 	}
 	client := scryfall.New(nil, os.Getenv("SCRYFALL_BASE_URL"))
 
+	calendar, err := cards.Announcements()
+	if err != nil {
+		logger.Error("announcement calendar broken", "err", err)
+		stop()
+		os.Exit(1) //nolint:gocritic // deliberate: stop() already ran
+	}
+
+	var snapshotAsOf time.Time
 	refresh := func() error {
 		refreshCtx, cancel := context.WithTimeout(ctx, 30*time.Minute)
 		defer cancel()
-		_, err := cards.Refresh(refreshCtx, client, store, logger)
-		return err
+		version, err := cards.Refresh(refreshCtx, client, store, logger)
+		if err != nil {
+			return err
+		}
+		asOf, err := cards.VersionTime(version)
+		if err != nil {
+			return err
+		}
+		if asOf.After(snapshotAsOf) && !snapshotAsOf.IsZero() {
+			// M-2: report the announcement lag when a new snapshot lands.
+			if ann, hours, ok := calendar.LagHours(asOf); ok {
+				logger.Info("legality_lag", "announcement", ann.Format("2006-01-02"), "lag_hours", hours, "snapshot", version)
+			}
+		}
+		snapshotAsOf = asOf
+		return nil
 	}
 
 	if *once {
@@ -58,14 +80,14 @@ func main() {
 	if err := refresh(); err != nil {
 		logger.Error("refresh failed", "err", err)
 	}
-	ticker := time.NewTicker(refreshInterval)
-	defer ticker.Stop()
 	for {
+		interval := calendar.CheckInterval(time.Now().UTC(), snapshotAsOf)
+		logger.Debug("next refresh check", "in", interval.String())
 		select {
 		case <-ctx.Done():
 			logger.Info("worker stopped")
 			return
-		case <-ticker.C:
+		case <-time.After(interval):
 			if err := refresh(); err != nil {
 				logger.Error("refresh failed", "err", err)
 			}
