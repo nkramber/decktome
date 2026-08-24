@@ -13,11 +13,14 @@ import (
 	"syscall"
 	"time"
 
+	"cloud.google.com/go/firestore"
 	"cloud.google.com/go/storage"
 
 	"github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1/mtgv1connect"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cardsvc"
+	"github.com/nkramber/mtg-deck-builder/go/internal/collections"
+	"github.com/nkramber/mtg-deck-builder/go/internal/collectionsvc"
 	"github.com/nkramber/mtg-deck-builder/go/internal/health"
 )
 
@@ -47,9 +50,23 @@ func main() {
 	loadedVersion := loadSnapshot(ctx, store, cardServer, "", logger)
 	go reloadLoop(ctx, store, cardServer, loadedVersion, logger)
 
+	// Firestore for user data. FIRESTORE_EMULATOR_HOST routes it to the
+	// emulator in local mode.
+	fs, err := firestore.NewClient(ctx, envOr("PROJECT_ID", "mtg-local"))
+	if err != nil {
+		logger.Error("firestore init failed", "err", err)
+		stop()
+		os.Exit(1) //nolint:gocritic // deliberate: stop() already ran
+	}
+	// Debug user until Firebase Auth lands (PR-11): every request acts as
+	// one local user. Never ship this beyond local mode.
+	debugUser := func(context.Context) string { return envOr("DEBUG_USER_ID", "local-dev") }
+	collectionServer := collectionsvc.New(collections.NewRepo(fs), cardServer, debugUser)
+
 	mux := http.NewServeMux()
 	mux.Handle(mtgv1connect.NewHealthServiceHandler(health.New(version)))
 	mux.Handle(mtgv1connect.NewCardServiceHandler(cardServer))
+	mux.Handle(mtgv1connect.NewCollectionServiceHandler(collectionServer))
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		snapshot, age := "none", -1.0
