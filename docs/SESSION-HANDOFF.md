@@ -4,7 +4,7 @@ Read this file first in a fresh session. Then read `CLAUDE.md`, `docs/decisions.
 
 ## Last updated
 
-2026-08-24. Merged: PR-0a to PR-4 (#1 to #7). PR-5 built on branch `pr-5`, gate held, merge pending. Phase 1 is complete when it merges.
+2026-08-24. Merged: PR-0a to PR-5 (#1 to #8). Phase 1 is complete. PR-10 built on branch `pr-10`, gate held (unit tests and live smoke), merge pending.
 
 ## State of the work
 
@@ -21,21 +21,28 @@ Done in session 1:
 - Pass 2: the owner answered OQ-1 to OQ-12. Recorded D-15 to D-25. Updated the roadmap (correction pass 2), the corpus skill, and CLAUDE.md (rule 8: never hesitate to ask or push back). New open questions OQ-13 to OQ-17.
 - Pass 3: OQ-13 to OQ-17 answered (D-26 to D-30). Added M-5 (manual scoring lane) and rewrote I-1 (stale-deck banner and scoped rerun). New OQ-18, OQ-19. OQ-17 waits on the owner's files.
 
+Done in the PR-10 session (2026-08-24):
+- `internal/llm` is the role layer (D-1, guardrail 3). See the roadmap PR-10 entry for the full shape.
+- Decisions D-38 to D-41: Anthropic judge, baseline models (luna, terra, sonnet-5), official Go SDKs, keys in `.env`.
+- New files: `roles.json`, `prices.json`, `client.go`, `openai.go`, `anthropic.go`, `fake.go`, `usage.go`, `env.go`, `errors.go`, `config.go`, tests, and `smoke_test.go`.
+- `cmd/api` builds the client at startup and logs each role's provider and model.
+- `make test-smoke` runs the live smoke. `make llm-defaults-check` runs in CI and warns on a default change.
+- `.env.example` documents the keys. `scripts/dev.sh` sources `.env`.
+
 ## Where we stopped
 
-PR-5 is done on branch `pr-5`. `internal/rules` is the referee (guardrail 1): a pure library with embedded dated data (`formats.json`, `brackets.json`, `companion_bans.json` for F-18). Thirty good and thirty bad golden decks run in CI over the extended card fixture (243 cards). `DeckService.Validate` answers over Connect, currently in any-card mode until the agent passes the session collection. The e2e smoke validated a good Heliod deck (pass, with advisory findings) and a bad one (banned_card plus off_color blocks).
+PR-10 is complete. Lint is clean, 15 unit tests pass over the fakes, and the live smoke passed against both vendors (2026-08-24, $0.0013). The owner's keys live in `.env`.
 
-Known limits, recorded in the roadmap entry: bracket prose rules are an info finding (F-11). Companion deck conditions are not machine-checked yet. The Seven Dwarves copy rule is unhandled. The CI lint fix (make lint-go) rides this branch too.
+Known limits, recorded in the roadmap entry: Anthropic reports no reasoning-token count. No call site uses the layer yet. PR-7 and PR-8 add the first ones, with real role fixtures under `internal/llm/fixtures/`.
 
 ## Owner directive 2026-08-24 (D-37)
 
-The collection is optional. A user with zero library gets a fully optimized deck from the whole legal pool. A user with a library can turn the library off. The proto needed no change. The roadmap, guardrail 5, the corpus question catalog, and the PR-6/7/8/11/12 entries were updated. PR-3 content is unchanged and still awaits merge.
+The collection is optional. A user with zero library gets a fully optimized deck from the whole legal pool. A user with a library can turn the library off. The proto needed no change. The roadmap, guardrail 5, the corpus question catalog, and the PR-6/7/8/11/12 entries were updated.
 
 ## Next steps, in order
 
-1. The owner reviews and merges `pr-5`. Phase 1 is then complete.
-2. **GATE (roadmap section 8, step 8) is passed once the goldens run in CI.** Phase 2 starts: PR-10 (LLM role layer) first, with M-1. It needs the owner's OpenAI API key for the live smoke (D-21) - ask for it as an env var, never commit it.
-3. Then PR-6 (candidates), PR-7 (questions), PR-8 (generator), PR-9 (variance).
+1. The owner reviews and merges `pr-10`.
+2. PR-6 (candidates), PR-7 (questions), PR-8 (generator), PR-9 (variance). PR-7 is the first call site of `internal/llm`.
 
 ## Facts that expire
 
@@ -43,6 +50,7 @@ The collection is optional. A user with zero library gets a fully optimized deck
 - Scryfall bulk sizes and counts: 2026-08-23.
 - Game Changers: 53 cards, list of 2026-02-09.
 - Standard: 12 legal sets, no rotation in 2026.
+- LLM model ids and prices: 2026-08-24 (`roles.json`, `prices.json`). Sonnet 5 intro price ends 2026-08-31.
 
 ## How to resume
 
