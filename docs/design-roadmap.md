@@ -132,10 +132,14 @@ A `docs/setup.md` procedure: install Homebrew, Git, Go, Node and pnpm via corepa
 Docker is used for the Compose file (PR-0c) and for local Cloud Run parity. Gate: `make doctor` passes on the owner's machine.
 > *In plain English:* a checklist to set up a laptop, and a command that tells you which tools are absent. The owner asked for the Docker install to be a tracked step, so it is one.
 
-**PR-0c: Local stack (D-9).**
+**PR-0c: Local stack (D-9).** ✅ gate held 2026-08-24 on branch `pr-0c`, merge pending. Both variants verified: native (`make dev`, all services up in 8 seconds, clean teardown) and containers (`make dev-docker`, Compose).
+
+New in this PR: the port map D-36 (the Wallabee stack owns 8080, 8181, 4000, and 5173 on this machine), `internal/dispatch` (the Cloud Tasks stand-in, F-6), and `internal/llm` with the `Fake` provider.
 `firebase.json` with Firestore and Auth emulators. `fake-gcs-server` for storage. A `Dispatcher` interface with a local in-process implementation (F-6). A `fake` LLM provider with fixture responses.
 
 `make dev` runs all of it under one process supervisor. A Compose file gives the same stack in containers once Docker exists. GCP projects are `mtg-dev` and `mtg-prod` (D-24). No domain and no hosting yet. Local testing has priority. Gate: a developer with no GCP credentials runs the full stack and the UI loads.
+
+Container note: the firebase emulator binds 127.0.0.1 from `firebase.json`. The emulator image rewrites the host to 0.0.0.0, or the published ports stay dead.
 > *In plain English:* everything runs on the laptop with no cloud account: a fake database, fake file storage, a fake AI that returns canned answers. One command starts it all. The details are in `docs/reference/local-dev-environment.md`.
 
 ### Phase 1 - Data and rules (deterministic, fully testable)

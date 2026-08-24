@@ -1,0 +1,35 @@
+# Container variant of the local stack (PR-0c). Native path: make dev.
+# The emulators bind to 0.0.0.0 inside containers via the host override.
+services:
+  emulators:
+    build:
+      context: .
+      dockerfile: docker/emulators.Dockerfile
+    command:
+      [
+        "firebase", "emulators:start",
+        "--only", "firestore,auth",
+        "--project", "mtg-local",
+      ]
+    environment:
+      # Bind inside the container so other services can reach the ports.
+      FIRESTORE_EMULATOR_HOST: "0.0.0.0:8281"
+    ports: ["8281:8281", "9199:9199", "4100:4100"]
+
+  gcs:
+    image: fsouza/fake-gcs-server:1.56.1
+    command: ["-scheme", "http", "-port", "4443", "-filesystem-root", "/data"]
+    volumes: [".local/gcs-docker:/data"]
+    ports: ["4443:4443"]
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+    environment:
+      PROJECT_ID: "mtg-local"
+      FIRESTORE_EMULATOR_HOST: "emulators:8281"
+      FIREBASE_AUTH_EMULATOR_HOST: "emulators:9199"
+      STORAGE_EMULATOR_HOST: "http://gcs:4443"
+    depends_on: [emulators, gcs]
+    ports: ["8090:8080"]

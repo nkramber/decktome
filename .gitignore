@@ -15,3 +15,4 @@ web/apps/web/dist/
 .env.*
 !.env.example
 *.tsbuildinfo
+*-debug.log

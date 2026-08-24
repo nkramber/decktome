@@ -5,7 +5,7 @@ Go + Protobuf + TypeScript monorepo. Read `CLAUDE.md` for the owner's rules and 
 ## Layout
 
 - `proto/` - the one contract (buf module `mtg.v1`). Change it here only.
-- `go/` - one Go module `github.com/nkramber/mtg-deck-builder/go`. `cmd/api` (Connect-RPC API, :8080), `cmd/worker` (jobs), `internal/*` (packages), `gen/` (generated, committed).
+- `go/` - one Go module `github.com/nkramber/mtg-deck-builder/go`. `cmd/api` (Connect-RPC API, :8080 default, :8090 under `make dev`), `cmd/worker` (jobs), `internal/*` (packages), `gen/` (generated, committed).
 - `web/` - pnpm workspace. `apps/web` (React 19 + Vite 7, dev port 5180), `packages/api-client` (generated TypeScript, committed).
 - `docs/` - design roadmap, decisions, open questions, reference notes.
 - `scripts/` - `doctor.sh`, `dev.sh`. One-off tools only. Not a source of design patterns.
@@ -19,7 +19,7 @@ make doctor        # check tools
 make proto         # regenerate Go + TS from proto/ (commit the output)
 make lint          # go vet, golangci-lint, eslint, tsc
 make test          # go test -race, vitest
-make dev           # api (:8080) + worker + web (:5180)
+make dev           # emulators (:8281, :9199) + fake GCS (:4443) + api (:8090) + worker + web (:5180)
 ```
 
 ## Rules
