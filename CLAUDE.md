@@ -6,11 +6,11 @@ Read this file first. Then read `docs/SESSION-HANDOFF.md`. It tells you where th
 
 This repo is a Go + Protobuf + TypeScript monorepo for an agentic MtG deck builder. The app reads a user's ManaBox collection export. The user gives a prompt. The agent asks questions, then builds a legal, useful deck.
 
-Stage (2026-08-23): **exploratory design only**. No application code exists yet. The deliverable is `docs/design-roadmap.md`. The owner commits and pushes. Do not commit unless the owner asks.
+Stage (2026-08-23): the roadmap is approved (D-31). PR-0a (scaffold) is in progress. See `docs/SESSION-HANDOFF.md`. The owner commits and pushes. Do not commit unless the owner asks.
 
 ## Hard rules from the owner
 
-1. **Read-only outside two paths.** You may write only in `docs/` and in `.claude/` (skills, agent files) of this repo. Do not write to any other repo. Do not write application code until the owner says so.
+1. **Write scope.** Writes are allowed in this repo (D-32, 2026-08-23). All other repos are read-only. Application code follows the roadmap order. Do not start a roadmap item before its predecessor's gate holds.
 2. **Write in ASD-STE100.** Every doc, skill, and agent file must follow Simplified Technical English. Load the `ste-writing` skill before you write. Rules that apply most: max 20 words per procedural sentence, max 25 per descriptive sentence, active voice, one instruction per sentence. Also: no semicolons, no "-ing" verb forms, one term per concept, paragraphs of max six sentences.
 3. **Ask questions when you think of them.** Do not save questions for the end. Use `AskUserQuestion` in small batches. Record each answer in `docs/decisions.md`.
 4. **Do the research.** Verify facts against sources (Scryfall API, Wizards announcements, the Comprehensive Rules). Record the date of each fact. MtG rules and ban lists change often.

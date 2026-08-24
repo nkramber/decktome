@@ -1,0 +1,13 @@
+# Pinned generators. Go plugins come from go/go.mod tool directives.
+# The TypeScript plugin comes from web/node_modules (pinned in web/package.json).
+version: v2
+plugins:
+  - local: [go, -C, go, tool, protoc-gen-go]
+    out: go/gen
+    opt: paths=source_relative
+  - local: [go, -C, go, tool, protoc-gen-connect-go]
+    out: go/gen
+    opt: paths=source_relative
+  - local: web/node_modules/.bin/protoc-gen-es
+    out: web/packages/api-client/src/gen
+    opt: target=ts
