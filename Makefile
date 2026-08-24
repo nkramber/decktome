@@ -6,7 +6,7 @@ GO := go -C go
 BUF := .bin/buf
 PNPM := pnpm --dir web
 
-.PHONY: help doctor buf proto proto-check lint lint-go lint-web test test-repeat cover build dev dev-docker dev-seed run-api run-worker run-web clean
+.PHONY: help doctor buf proto proto-check lint lint-go lint-web test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-14s %s\n", $$1, $$2}'
@@ -51,6 +51,13 @@ test: ## Run Go and web unit tests
 
 test-repeat: ## Run one Go test N times to catch flakes. Usage: make test-repeat TEST=TestCheck RUNS=25
 	@$(GO) test -race -run '$(TEST)' -count=$(or $(RUNS),25) ./...
+
+test-smoke: ## Run the live LLM smoke test (needs OPENAI_API_KEY and ANTHROPIC_API_KEY, read from .env)
+	@set -a && [ -f .env ] && . ./.env; set +a; \
+		LLM_SMOKE=1 $(GO) test -race -run TestSmokeLiveProviders -v -count=1 ./internal/llm/
+
+llm-defaults-check: ## Warn when roles.json or prices.json differ from the merge base (never fails)
+	@./scripts/check-llm-defaults.sh
 
 cover: ## Go coverage report
 	@$(GO) test -coverprofile=coverage.out ./... && $(GO) tool cover -func=coverage.out | tail -1

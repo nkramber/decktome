@@ -23,6 +23,7 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/collectionsvc"
 	"github.com/nkramber/mtg-deck-builder/go/internal/decksvc"
 	"github.com/nkramber/mtg-deck-builder/go/internal/health"
+	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
 )
 
@@ -71,6 +72,14 @@ func main() {
 		os.Exit(1) //nolint:gocritic // deliberate: stop() already ran
 	}
 	deckServer := decksvc.New(rulesCfg, cardServer)
+	// The LLM role layer (PR-10). No call site exists until PR-7 and PR-8.
+	// Building it here proves the config and the keys at startup, not on
+	// the first user turn. Without keys the fixture fake stands in.
+	if _, err := llm.NewFromEnv(os.Getenv, logger); err != nil {
+		logger.Error("llm config broken", "err", err)
+		stop()
+		os.Exit(1) //nolint:gocritic // deliberate: stop() already ran
+	}
 
 	mux := http.NewServeMux()
 	mux.Handle(mtgv1connect.NewHealthServiceHandler(health.New(version)))
