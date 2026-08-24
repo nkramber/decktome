@@ -4,7 +4,7 @@ Read this file first in a fresh session. Then read `CLAUDE.md`, `docs/decisions.
 
 ## Last updated
 
-2026-08-24. Merged: PR-0a to PR-3 (#1 to #6). PR-4 built on branch `pr-4`, gate held, merge pending.
+2026-08-24. Merged: PR-0a to PR-4 (#1 to #7). PR-5 built on branch `pr-5`, gate held, merge pending. Phase 1 is complete when it merges.
 
 ## State of the work
 
@@ -23,11 +23,9 @@ Done in session 1:
 
 ## Where we stopped
 
-PR-4 is done on branch `pr-4`. Packages: `internal/collections` (header-driven ManaBox CSV parser, Arena text parser, resolver with the join order Scryfall ID then set+collector then exact name, Firestore repo with gzip payloads) and `internal/collectionsvc` (the Connect handler). The cards index gained `BySetCollector`. The owner's real export is the committed gate fixture.
+PR-5 is done on branch `pr-5`. `internal/rules` is the referee (guardrail 1): a pure library with embedded dated data (`formats.json`, `brackets.json`, `companion_bans.json` for F-18). Thirty good and thirty bad golden decks run in CI over the extended card fixture (243 cards). `DeckService.Validate` answers over Connect, currently in any-card mode until the agent passes the session collection. The e2e smoke validated a good Heliod deck (pass, with advisory findings) and a bad one (banned_card plus off_color blocks).
 
-Gate held end to end: 2,548/2,548 rows resolved against the full snapshot through the running API, with zero silent drops. Re-upload dedup by content hash, Get, and List are green. The corpus records the verified 18-column header.
-
-Auth debt: requests act as one debug user (`DEBUG_USER_ID`, default `local-dev`) until Firebase Auth lands in PR-11. The UI upload screen also waits for PR-11.
+Known limits, recorded in the roadmap entry: bracket prose rules are an info finding (F-11). Companion deck conditions are not machine-checked yet. The Seven Dwarves copy rule is unhandled. The CI lint fix (make lint-go) rides this branch too.
 
 ## Owner directive 2026-08-24 (D-37)
 
@@ -35,9 +33,9 @@ The collection is optional. A user with zero library gets a fully optimized deck
 
 ## Next steps, in order
 
-1. The owner reviews and merges `pr-4`.
-2. Phase 1 ends with PR-5 (the rules engine). It needs no owner input. Its golden decks (30 good, 30 bad) are the main work.
-3. Collect corrections as dated register entries.
+1. The owner reviews and merges `pr-5`. Phase 1 is then complete.
+2. **GATE (roadmap section 8, step 8) is passed once the goldens run in CI.** Phase 2 starts: PR-10 (LLM role layer) first, with M-1. It needs the owner's OpenAI API key for the live smoke (D-21) - ask for it as an env var, never commit it.
+3. Then PR-6 (candidates), PR-7 (questions), PR-8 (generator), PR-9 (variance).
 
 ## Facts that expire
 

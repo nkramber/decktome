@@ -6,7 +6,7 @@ GO := go -C go
 BUF := .bin/buf
 PNPM := pnpm --dir web
 
-.PHONY: help doctor buf proto proto-check lint test test-repeat cover build dev dev-docker dev-seed run-api run-worker run-web clean
+.PHONY: help doctor buf proto proto-check lint lint-go lint-web test test-repeat cover build dev dev-docker dev-seed run-api run-worker run-web clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-14s %s\n", $$1, $$2}'
@@ -32,11 +32,15 @@ proto-check: proto ## Fail if generated code differs from the committed code
 		&& test -z "$$(git ls-files --others --exclude-standard -- go/gen web/packages/api-client/src/gen)" \
 		|| (echo "Generated code is stale. Run: make proto && git add -A" && exit 1)
 
-lint: ## Lint Go and TypeScript
+lint: lint-go lint-web ## Lint Go and TypeScript
+
+lint-go: ## Lint Go (vet + golangci-lint, built from source with the local toolchain)
 	@echo "==> go vet"
 	@$(GO) vet ./...
 	@echo "==> golangci-lint"
 	@$(GO) run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION) run ./... -c .golangci.yml
+
+lint-web: ## Lint and typecheck TypeScript
 	@echo "==> web lint + typecheck"
 	@$(PNPM) lint
 	@$(PNPM) typecheck

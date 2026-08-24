@@ -21,7 +21,9 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/cardsvc"
 	"github.com/nkramber/mtg-deck-builder/go/internal/collections"
 	"github.com/nkramber/mtg-deck-builder/go/internal/collectionsvc"
+	"github.com/nkramber/mtg-deck-builder/go/internal/decksvc"
 	"github.com/nkramber/mtg-deck-builder/go/internal/health"
+	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
 )
 
 // version is set at build time with -ldflags "-X main.version=...".
@@ -62,11 +64,19 @@ func main() {
 	// one local user. Never ship this beyond local mode.
 	debugUser := func(context.Context) string { return envOr("DEBUG_USER_ID", "local-dev") }
 	collectionServer := collectionsvc.New(collections.NewRepo(fs), cardServer, debugUser)
+	rulesCfg, err := rules.Load()
+	if err != nil {
+		logger.Error("rules data broken", "err", err)
+		stop()
+		os.Exit(1) //nolint:gocritic // deliberate: stop() already ran
+	}
+	deckServer := decksvc.New(rulesCfg, cardServer)
 
 	mux := http.NewServeMux()
 	mux.Handle(mtgv1connect.NewHealthServiceHandler(health.New(version)))
 	mux.Handle(mtgv1connect.NewCardServiceHandler(cardServer))
 	mux.Handle(mtgv1connect.NewCollectionServiceHandler(collectionServer))
+	mux.Handle(mtgv1connect.NewDeckServiceHandler(deckServer))
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		snapshot, age := "none", -1.0
