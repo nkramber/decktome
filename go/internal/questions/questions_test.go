@@ -51,14 +51,15 @@ func TestLoadValidates(t *testing.T) {
 // The JSON is the file the code reads. They must hold the same rows.
 func TestCatalogMatchesCorpus(t *testing.T) {
 	byName := map[string]string{
-		"Format": "format", "Format (store event)": "format_store",
+		"Out of scope": "out_of_scope",
+		"Format":       "format", "Format (store event)": "format_store",
 		"Theme or plan": "theme", "Theme (competitive)": "theme_competitive",
 		"Theme (card named)": "theme_card_named", "Named card role": "named_card_role",
 		"Commander": "commander", "Commander (pick)": "commander_pick",
 		"Commander not owned": "commander_not_owned", "Weak commander pool": "commander_weak_pool",
 		"Power (Commander)": "power_commander", "Power (60-card)": "power_sixty",
 		"Colors": "colors", "Card pool": "pool", "Card pool (thin theme)": "pool_thin",
-		"Budget": "budget", "Budget scope": "budget_scope", "Acquisition": "acquisition",
+		"Budget": "budget", "Budget scope": "budget_scope",
 		"House rules": "house_rules", "House format limits": "house_format_limits",
 		"Jank or fun": "jank", "Table tolerance": "table_tolerance", "Meta": "meta",
 		"Plan choice": "plan_choice", "Variance": "variance", "Locked cards": "locked",

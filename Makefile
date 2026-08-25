@@ -6,7 +6,7 @@ GO := go -C go
 BUF := .bin/buf
 PNPM := pnpm --dir web
 
-.PHONY: candidates-review themes-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
+.PHONY: candidates-review questions-gate m5-sheet m5-report store-check themes-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-14s %s\n", $$1, $$2}'
@@ -78,8 +78,49 @@ candidates-review: ## Write the PR-6 gate document from the local snapshot and t
 		-collection internal/collections/testdata/manabox_collection.csv > $(REVIEW_OUT)
 	@echo "wrote $(REVIEW_OUT)"
 
-themes-check: ## Check every themes.json slug against the local snapshot (defect A guard)
-	@CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall $(GO) test ./internal/candidates -run TestThemeSlugsExist -count=1
+# GATE_OUT names the PR-7 gate document. A rerun must never overwrite a
+# scored document (D-65).
+GATE_OUT ?= docs/reference/pr7-question-gate.md
+
+questions-gate: ## Write the PR-7 gate document. CAUTION: this calls the real providers and costs money
+	@test ! -f $(GATE_OUT) || ! grep -q '^Verdict:' $(GATE_OUT) || \
+		{ echo "$(GATE_OUT) holds a verdict. Set GATE_OUT to a new file."; exit 1; }
+	@set -a && . ./.env && set +a && \
+		QUESTIONS_GATE=1 CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall \
+		$(GO) run ./cmd/questions-gate -collection internal/collections/testdata/manabox_collection.csv > $(GATE_OUT)
+	@echo "wrote $(GATE_OUT)"
+
+# M5_OUT names the scoring sheet. A rerun must never overwrite a sheet
+# the owner has scored.
+M5_OUT ?= docs/reference/pr7-m5-scoring.md
+
+# M5_RUNS names the gate documents the sheet may read. Only a run whose
+# engine matches the current code belongs here (D-96). A run made before
+# a defect was fixed measures the defect, not the catalog. Runs 1 to 9
+# are held back: see the table in docs/SESSION-HANDOFF.md.
+M5_RUNS ?= ../docs/reference/pr7-question-gate-run10.md ../docs/reference/pr7-question-gate-run11.md \
+           ../docs/reference/pr7-question-gate-run12.md ../docs/reference/pr7-question-gate-run13.md
+
+# The guard reads every field the owner fills, in any case, and free text
+# counts. filled_slot is left out because the generator pre-fills it.
+M5_SCORED := \| (catalog_enough|invented_better|right_slot|faults|catalog_action) \|[[:space:]]*[^[:space:]|]
+
+m5-sheet: ## Build the M-5 scoring sheet from the gate documents (no model calls, no cost)
+	@test ! -f $(M5_OUT) || ! grep -qEi '$(M5_SCORED)' $(M5_OUT) || \
+		{ echo "$(M5_OUT) holds scores. Set M5_OUT to a new file."; exit 1; }
+	@$(GO) run ./cmd/m5-sheet $(M5_RUNS) > $(M5_OUT)
+	@echo "wrote $(M5_OUT)"
+
+m5-report: ## Read the scored M-5 sheet and compute the thresholds (no model calls, no cost)
+	@$(GO) run ./cmd/m5-report ../$(M5_OUT)
+
+store-check: ## Run the session store against the local Firestore emulator (needs `firebase emulators:start --only firestore`)
+	@nc -z 127.0.0.1 8281 2>/dev/null || \
+		{ echo "no Firestore emulator on :8281. Start one: firebase emulators:start --only firestore --project mtg-local"; exit 1; }
+	@FIRESTORE_EMULATOR_HOST=127.0.0.1:8281 $(GO) test ./internal/sessions -count=1
+
+themes-check: ## Check the theme slugs and the commander ranking against the local snapshot
+	@CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall $(GO) test ./internal/candidates -run 'TestThemeSlugsExist|TestCommanderQualitySnapshot' -count=1
 
 cover: ## Go coverage report
 	@$(GO) test -coverprofile=coverage.out ./... && $(GO) tool cover -func=coverage.out | tail -1

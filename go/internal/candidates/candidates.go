@@ -457,20 +457,81 @@ func (b *Builder) Commanders(idx *cards.Index, req Request, n int) ([]Candidate,
 	if n <= 0 {
 		n = 3
 	}
-	req.Format = mtgv1.FormatId_FORMAT_ID_COMMANDER
-	list, err := b.Build(idx, req)
+	pool, err := b.CommanderPool(idx, req)
 	if err != nil {
 		return nil, err
 	}
+	if len(pool) > n {
+		pool = pool[:n]
+	}
+	return pool, nil
+}
+
+// CommanderPool ranks every commander that fits the request, best first.
+//
+// It walks the card index itself rather than the 99-card shortlist. The
+// shortlist ends in capByRole, which emits one role bucket after another
+// with lands first, so it is not ordered by score at all. Reading the
+// first legends out of it returned whichever ones landed in the land
+// bucket: a blink request was answered with three Ojer modal double-faced
+// cards, scoring 0.16 on the theme, while 85 on-theme blink commanders
+// existed and Emiel the Blessed scored 0.56 (measured 2026-08-25, D-94).
+//
+// Two rules differ from the 99. A commander must carry a theme signal,
+// because the staple-role fallback that keeps a useful land in the deck
+// says nothing about leading it. Role caps do not apply, because one card
+// fills no role quota.
+//
+// The length of the result is the weak-pool signal PR-7 needs (D-63):
+// an owned mode with no on-theme commander leaves it empty.
+func (b *Builder) CommanderPool(idx *cards.Index, req Request) ([]Candidate, error) {
+	if idx == nil {
+		return nil, fmt.Errorf("candidates: no card index")
+	}
+	mode := req.PoolRule
+	if mode == mtgv1.PoolRule_POOL_RULE_UNSPECIFIED {
+		mode = mtgv1.PoolRule_POOL_RULE_ANY_CARD
+		if req.Owned != nil {
+			mode = mtgv1.PoolRule_POOL_RULE_OWNED_FIRST
+		}
+	}
+	if mode != mtgv1.PoolRule_POOL_RULE_ANY_CARD && req.Owned == nil {
+		return nil, fmt.Errorf("candidates: pool rule %s needs a collection", mode)
+	}
+	theme := b.themes.match(req.Theme, idx.Tags())
+	colorSet := colorSetOf(req.Colors)
+	maxRank := maxRankOf(idx)
+
 	var out []Candidate
-	for _, c := range append(append([]Candidate(nil), list.Candidates...), list.Upgrades...) {
-		if !c.Card.CanBeCommander {
+	for _, c := range idx.All() {
+		if !c.GetCanBeCommander() || !legalIn(c, legalKeys[mtgv1.FormatId_FORMAT_ID_COMMANDER]) {
 			continue
 		}
-		out = append(out, c)
-		if len(out) >= n {
-			break
+		if colorSet != nil && !identityFits(c.ColorIdentity, colorSet) {
+			continue
 		}
+		if c.GameChanger && req.Bracket > 0 && req.Bracket <= 2 {
+			continue
+		}
+		themeScore, signals := theme.score(c)
+		if themeScore <= 0 {
+			continue
+		}
+		owned := req.Owned[c.OracleId]
+		if mode == mtgv1.PoolRule_POOL_RULE_OWNED_ONLY && owned == 0 {
+			continue
+		}
+		out = append(out, Candidate{
+			Card: c, Role: mtgv1.CardRole_CARD_ROLE_THREAT,
+			Score: themeScore*0.7 + popularity(c, maxRank)*0.3,
+			Owned: owned, Signals: signals,
+		})
+	}
+	sortCandidates(out)
+	// Owned-first offers what the user already has, before a card they
+	// would need to buy.
+	if mode == mtgv1.PoolRule_POOL_RULE_OWNED_FIRST {
+		out = append(filterOwned(out, true), filterOwned(out, false)...)
 	}
 	return out, nil
 }

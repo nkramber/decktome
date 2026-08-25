@@ -15,8 +15,23 @@ type stubHints struct {
 	owned      int
 }
 
-func (s stubHints) ThemeColors(string) string  { return s.colors }
-func (s stubHints) Commanders(string) []string { return s.commanders }
+func (s stubHints) ThemeColors(string) string { return s.colors }
+
+// Commanders answers the names the agent has not offered yet, which is
+// what the real hint source does (D-73).
+func (s stubHints) Commanders(_ string, skip []string) []string {
+	var out []string
+	for _, name := range s.commanders {
+		if hasName(skip, name) {
+			continue
+		}
+		out = append(out, name)
+		if len(out) == 3 {
+			break
+		}
+	}
+	return out
+}
 func (s stubHints) OwnedThemeCount(string) int { return s.owned }
 
 func themedState(theme string) *State {
@@ -32,7 +47,7 @@ func TestNoPlaceholderReachesTheModel(t *testing.T) {
 	c := load(t)
 	for _, r := range c.Rows {
 		for _, h := range []Hints{nil, stubHints{}} {
-			text, _ := resolve(r, themedState("lifegain"), h)
+			text, _, _ := resolve(r, themedState("lifegain"), h)
 			if strings.ContainsAny(text, "{}") {
 				t.Errorf("row %q resolved to %q, which still holds a placeholder", r.ID, text)
 			}
@@ -49,10 +64,41 @@ func TestResolveUsesHints(t *testing.T) {
 	if !ok {
 		t.Fatal("no colors row")
 	}
-	got, _ := resolve(row, themedState("lifegain"), stubHints{colors: "white and black"})
-	want := "Any color preference? lifegain is strongest in white and black."
+	got, _, _ := resolve(row, themedState("lifegain"), stubHints{colors: "white and black"})
+	want := "Any color preference? A lifegain deck is strongest in white and black."
 	if got != want {
 		t.Errorf("resolve = %q, want %q", got, want)
+	}
+}
+
+// TestVagueThemeDropsTheColorClause is the D-79 side effect that gate
+// run 3 of 2026-08-25 found. "The best deck under budget" is a theme
+// value, and it reads as nonsense inside a statement about colors. The
+// model replaced three color questions for that reason.
+func TestVagueThemeDropsTheColorClause(t *testing.T) {
+	c := load(t)
+	row, _ := c.Row("colors")
+	for _, theme := range []string{"the best deck under budget", "the strongest Modern deck", "a named tier-one deck"} {
+		got, _, _ := resolve(row, themedState(theme), stubHints{colors: "white and black"})
+		if got != "Any color preference?" {
+			t.Errorf("theme %q gave %q, want the short question", theme, got)
+		}
+	}
+	// A real archetype keeps the clause.
+	got, _, _ := resolve(row, themedState("lifegain"), stubHints{colors: "white and black"})
+	if !strings.Contains(got, "strongest in white and black") {
+		t.Errorf("a real theme lost its color clause: %q", got)
+	}
+}
+
+// TestTooManyColorsDropsTheClause keeps a useless statement out. Four
+// colors name no preference at all.
+func TestTooManyColorsDropsTheClause(t *testing.T) {
+	c := load(t)
+	row, _ := c.Row("colors")
+	got, _, _ := resolve(row, themedState("lifegain"), stubHints{colors: "white, blue, black, and green"})
+	if got != "Any color preference?" {
+		t.Errorf("four colors gave %q, want the short question", got)
 	}
 }
 
@@ -60,7 +106,7 @@ func TestResolveUsesHints(t *testing.T) {
 func TestResolveDropsTheClauseWithNoValue(t *testing.T) {
 	c := load(t)
 	row, _ := c.Row("colors")
-	got, _ := resolve(row, themedState("lifegain"), nil)
+	got, _, _ := resolve(row, themedState("lifegain"), nil)
 	if got != "Any color preference?" {
 		t.Errorf("resolve = %q, want the first sentence alone", got)
 	}
@@ -71,7 +117,7 @@ func TestResolveDropsTheClauseWithNoValue(t *testing.T) {
 func TestResolveFallsBackWhenNothingSurvives(t *testing.T) {
 	c := load(t)
 	row, _ := c.Row("theme_card_named")
-	got, _ := resolve(row, themedState(""), nil)
+	got, _, _ := resolve(row, themedState(""), nil)
 	if got != row.Fallback {
 		t.Errorf("resolve = %q, want the fallback %q", got, row.Fallback)
 	}
@@ -82,7 +128,7 @@ func TestResolveNamedCard(t *testing.T) {
 	row, _ := c.Row("named_card_role")
 	st := themedState("sacrifice")
 	st.NamedCards = []string{"Grist, the Hunger Tide"}
-	got, _ := resolve(row, st, nil)
+	got, _, _ := resolve(row, st, nil)
 	if !strings.Contains(got, "Grist, the Hunger Tide") {
 		t.Errorf("resolve = %q, want the card name", got)
 	}
@@ -162,7 +208,7 @@ func TestPhrasedBraceNeverReachesTheUser(t *testing.T) {
 // TestHintsNilSafety keeps a missing index from breaking a turn.
 func TestHintsNilSafety(t *testing.T) {
 	var h *CandidateHints
-	if h.ThemeColors("lifegain") != "" || h.Commanders("lifegain") != nil || h.OwnedThemeCount("lifegain") != 0 {
+	if h.ThemeColors("lifegain") != "" || h.Commanders("lifegain", nil) != nil || h.OwnedThemeCount("lifegain") != 0 {
 		t.Error("a nil hint source answered something")
 	}
 	empty := &CandidateHints{}

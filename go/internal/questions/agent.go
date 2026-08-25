@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -69,6 +70,8 @@ type Result struct {
 	Ready bool
 	// Invented counts the model-invented questions of this turn (M-4).
 	Invented int
+	// Coverage is the session's M-4 report after this turn.
+	Coverage Coverage
 }
 
 // Turn maps one user message onto the slots and returns the next
@@ -79,22 +82,26 @@ func (a *Agent) Turn(ctx context.Context, st *State, message string, acc *llm.Ac
 	}
 	st.AddWords(message)
 	if st.Ctx.Frozen {
-		return Result{Slots: st.Slots, Ready: true}, nil
+		return Result{Slots: st.Slots, Ready: true, Coverage: st.Metrics()}, nil
 	}
+	st.Turn++
 	if err := a.classify(ctx, st, message, acc); err != nil {
 		return Result{}, err
 	}
 	rows := a.cat.Plan(st.Ctx)
 	if len(rows) == 0 {
-		return Result{Slots: st.Slots, Ready: st.Ready(a.cat)}, nil
+		// The classify call may have closed a key, so the M-4 report
+		// changes even on a turn that asks nothing.
+		return Result{Slots: st.Slots, Ready: st.Ready(a.cat), Coverage: st.Metrics()}, nil
 	}
 	// Resolve every placeholder before a model sees the row. A brace that
 	// reaches the model comes back as a question aimed at the user.
 	resolved := make(map[string]string, len(rows))
 	options := make(map[string][]string, len(rows))
+	offered := make(map[string][]string, len(rows))
 	for _, r := range rows {
-		text, opts := resolve(r, st, a.hints)
-		resolved[r.ID], options[r.ID] = text, opts
+		text, opts, names := resolve(r, st, a.hints)
+		resolved[r.ID], options[r.ID], offered[r.ID] = text, opts, names
 	}
 	scores, err := a.score(ctx, st, message, rows, resolved, acc)
 	if err != nil {
@@ -106,7 +113,23 @@ func (a *Agent) Turn(ctx context.Context, st *State, message string, acc *llm.Ac
 	for _, row := range rows {
 		c := choice{Row: row, Text: resolved[row.ID], Options: options[row.ID], Fit: scores[row.ID].Fit, Reason: scores[row.ID].Reason}
 		if custom := strings.TrimSpace(scores[row.ID].CustomText); custom != "" && c.Fit < a.threshold {
-			c.Text, c.Options, c.Invented = custom, nil, true
+			switch {
+			case nearCopy(custom, c.Text):
+				// A reword is not an invention. It costs the user nothing
+				// and it counts against the catalog (D-88).
+				c.NearCopy, c.Refused = true, custom
+				a.log.Info("replacement refused as a reword",
+					"row", row.ID, "fit", c.Fit, "overlap", overlap(custom, c.Text),
+					"replacement", custom, "row_text", c.Text)
+			default:
+				// The options stay. A row's option set is its decision
+				// space, and a replacement must keep it (the score prompt
+				// says so). Gate run 4 of 2026-08-25 replaced the
+				// card-pool question twice, and each replacement offered
+				// two of the three pool modes, so the user lost
+				// owned-only or owned-first (D-37).
+				c.Text, c.Invented = custom, true
+			}
 		}
 		chosen = append(chosen, c)
 	}
@@ -115,9 +138,10 @@ func (a *Agent) Turn(ctx context.Context, st *State, message string, acc *llm.Ac
 		return Result{}, err
 	}
 	res := Result{Slots: st.Slots}
-	for i, c := range chosen {
+	for _, c := range chosen {
+		st.AskCount++
 		q := &mtgv1.Question{
-			Id:       fmt.Sprintf("q%d-%s", len(st.Ctx.Asked)+i+1, c.Row.ID),
+			Id:       fmt.Sprintf("q%d-%s", st.AskCount, c.Row.ID),
 			Slot:     c.Row.Slot,
 			Text:     c.Text,
 			Options:  c.Options,
@@ -135,12 +159,34 @@ func (a *Agent) Turn(ctx context.Context, st *State, message string, acc *llm.Ac
 			}
 		}
 		if c.Invented {
+			// The UI shows both texts, so M-5 can score whether the
+			// catalog was enough and whether the invention is better (D-66).
+			q.CatalogText = resolved[c.Row.ID]
 			res.Invented++
+		} else {
+			// The catalog text went out, so those names are on the table.
+			// An invented question named none of them.
+			st.SetOffer(offered[c.Row.ID])
 		}
 		st.MarkAsked(c.Row.ID, c.Row.StateKey())
+		rec := Ask{
+			QuestionID: q.Id, RowID: c.Row.ID, Slot: c.Row.Slot, Key: c.Row.StateKey(),
+			Invented: c.Invented, Fit: c.Fit, Threshold: a.threshold, Turn: st.Turn,
+		}
+		if c.Invented {
+			rec.CatalogText = resolved[c.Row.ID]
+		}
+		rec.NearCopy, rec.RefusedText = c.NearCopy, c.Refused
+		st.Asks = append(st.Asks, rec)
 		a.record(st, c.Row, q, c.Reason)
 		res.Questions = append(res.Questions, q)
 	}
+	res.Coverage = st.Metrics()
+	a.log.Info("turn coverage",
+		"session", st.SessionID, "turn", st.Turn,
+		"asked", res.Coverage.Asked, "catalog", res.Coverage.Catalog,
+		"invented", res.Coverage.Invented, "invented_filled", res.Coverage.InventedFilled,
+		"median_fit", res.Coverage.MedianFit())
 	return res, nil
 }
 
@@ -152,6 +198,7 @@ func (a *Agent) record(st *State, row Row, q *mtgv1.Question, reason string) {
 		source = "invented"
 	}
 	a.log.Info("question asked",
+		"session", st.SessionID, "turn", st.Turn, "question", q.Id,
 		"slot", row.Slot, "key", row.StateKey(), "row", row.ID,
 		"source", source, "fit", q.GapScore, "threshold", a.threshold,
 		"reason", reason, "asked_so_far", len(st.Ctx.Asked))
@@ -168,19 +215,28 @@ type classifyOut struct {
 	PoolRule       string   `json:"pool_rule"`
 	BudgetUSD      float64  `json:"budget_usd"`
 	ClosedKeys     []string `json:"closed_keys"`
-	Facts          struct {
+	// DeclinedKeys are the keys the user handed back to the agent. A
+	// decline is not an answer: it holds no value, and a default applies
+	// (D-93).
+	DeclinedKeys []string `json:"declined_keys"`
+	Facts        struct {
 		NamedCard        bool `json:"named_card"`
 		BuyList          bool `json:"buy_list"`
-		Deadline         bool `json:"deadline"`
 		HouseFormat      bool `json:"house_format"`
 		TwoPlans         bool `json:"two_plans"`
 		BudgetAmbiguous  bool `json:"budget_ambiguous"`
 		PowerCompetitive bool `json:"power_competitive"`
+		// WantsSuggestion says the user asked the agent to name a
+		// commander. It is what fires the commander_pick row (D-71).
+		WantsSuggestion bool `json:"wants_suggestion"`
+		// OutOfScope says the user asked for something other than a
+		// Magic: The Gathering deck (D-99).
+		OutOfScope bool `json:"out_of_scope"`
 	} `json:"facts"`
 }
 
 func (a *Agent) classify(ctx context.Context, st *State, message string, acc *llm.Accumulator) error {
-	open := openKeys(a.cat, st)
+	open := openKeys(st)
 	input, err := json.Marshal(map[string]any{
 		"message":     message,
 		"slots_known": st.Slots.SlotStates,
@@ -195,6 +251,7 @@ func (a *Agent) classify(ctx context.Context, st *State, message string, acc *ll
 		Input:        string(input),
 		SchemaName:   "slot_fill",
 		Schema:       json.RawMessage(classifySchema),
+		CacheKey:     st.SessionID,
 	}, acc)
 	if err != nil {
 		return fmt.Errorf("questions: classify: %w", err)
@@ -210,7 +267,7 @@ func (a *Agent) classify(ctx context.Context, st *State, message string, acc *ll
 // apply writes one classify result onto the state. It never clears a slot
 // the session already filled: a value stays until the user replaces it.
 func (a *Agent) apply(st *State, out classifyOut, open []string) {
-	if id, ok := formatIDs[out.Format]; ok && id != mtgv1.FormatId_FORMAT_ID_UNSPECIFIED {
+	if id, ok := formatIDs[slotWord(out.Format)]; ok && id != mtgv1.FormatId_FORMAT_ID_UNSPECIFIED {
 		st.Slots.Format = &mtgv1.Format{Id: id}
 		st.Ctx.Format = id
 		st.Close("format")
@@ -230,13 +287,22 @@ func (a *Agent) apply(st *State, out classifyOut, open []string) {
 			st.Close("colors")
 		}
 	}
+	// The two name lists are kept apart. Merged, one name that becomes the
+	// commander also reads as a card to keep, which is the defect the live
+	// run of 2026-08-24 found (D-70).
 	for _, name := range append(append([]string(nil), out.CommanderNames...), out.LockedNames...) {
 		if name = strings.TrimSpace(name); name != "" {
 			st.NamedCards = append([]string{name}, st.NamedCards...)
 			st.Ctx.NamedCard = true
 		}
 	}
-	if rule, ok := poolRules[out.PoolRule]; ok {
+	for _, name := range out.LockedNames {
+		st.AddLocked(name)
+	}
+	for _, name := range out.CommanderNames {
+		st.SetCommander(name)
+	}
+	if rule, ok := poolRules[slotWord(out.PoolRule)]; ok {
 		st.Slots.PoolRule = rule
 		st.Ctx.OwnedMode = rule != mtgv1.PoolRule_POOL_RULE_ANY_CARD
 		st.Close("pool_rule")
@@ -249,32 +315,86 @@ func (a *Agent) apply(st *State, out classifyOut, open []string) {
 		st.Slots.BudgetUsd = out.BudgetUSD
 		st.Close("budget")
 	}
-	// A key closes only when the agent offered it this turn. The live run
-	// of 2026-08-24 showed the classifier naming keys it was never asked
-	// about, which ended a session with three slots still empty.
-	offered := make(map[string]bool, len(open))
-	for _, k := range open {
-		offered[k] = true
-	}
+	// A key closes by name only when two things hold: its question is
+	// out, and it carries no typed value. Three gate runs paid for that
+	// pair of conditions.
+	//
+	// The question must be out, because on 2026-08-25 the classifier
+	// retired power and the pool rule from "Brago blink deck from my
+	// library". The session then called itself complete after one
+	// question, and neither key had ever been asked.
+	//
+	// A typed slot must close on its value, because a name says only
+	// "answered" and never says what the answer was. Run 6 of 2026-08-25
+	// closed the format by name, so the format value stayed empty. Every
+	// row that triggers on the format then stopped firing, five sessions
+	// ended with no power level, and PR-8 would have had no format to
+	// build from. Asking the format twice is the safe failure. Building
+	// a deck with no format is not (D-83).
 	for _, k := range out.ClosedKeys {
 		k = strings.TrimSpace(k)
 		if k == "" {
 			continue
 		}
-		if !offered[k] {
-			a.log.Warn("classifier named a key it was not offered", "key", k, "offered", open)
+		if typedSlots[k] {
+			a.log.Warn("classifier closed a typed slot by name and gave no value", "key", k)
+			continue
+		}
+		if st.Slots.GetSlotStates()[k] != mtgv1.SlotState_SLOT_STATE_ASKED {
+			a.log.Warn("classifier closed a key whose question is not out", "key", k, "offered", open)
 			continue
 		}
 		st.Close(k)
 	}
+	// A decline closes any key, typed or not. It carries no value on
+	// purpose: the user handed the choice back, and the generator applies
+	// the default the corpus names. The question must still be out,
+	// because nobody can decline a question they never saw (D-93).
+	for _, k := range out.DeclinedKeys {
+		k = strings.TrimSpace(k)
+		if k == "" {
+			continue
+		}
+		if st.Slots.GetSlotStates()[k] != mtgv1.SlotState_SLOT_STATE_ASKED {
+			a.log.Warn("classifier declined a key whose question is not out", "key", k, "offered", open)
+			continue
+		}
+		a.log.Info("the user declined a slot", "key", k)
+		st.Skip(k)
+		// The format is the one slot the planner routes on. Every power
+		// row, and every Commander row, triggers on it. A declined format
+		// left it empty, so no power row could ever fire and the session
+		// finished with no power level (probe 35 of gate run 11).
+		//
+		// The corpus names the default under "default answers", so
+		// nothing is invented here. The slot keeps the SKIPPED state,
+		// which records that the user did not choose it. PR-8 reads the
+		// other declined slots the same way (D-98).
+		if k == "format" && st.Ctx.Format == mtgv1.FormatId_FORMAT_ID_UNSPECIFIED {
+			st.Slots.Format = &mtgv1.Format{Id: DefaultFormat}
+			st.Ctx.Format = DefaultFormat
+			a.log.Info("a declined format took the corpus default", "format", DefaultFormat.String())
+		}
+	}
 	f := out.Facts
 	st.Ctx.NamedCard = st.Ctx.NamedCard || f.NamedCard
 	st.Ctx.BuyList = st.Ctx.BuyList || f.BuyList
-	st.Ctx.Deadline = st.Ctx.Deadline || f.Deadline
 	st.Ctx.HouseFormat = st.Ctx.HouseFormat || f.HouseFormat
 	st.Ctx.TwoPlans = st.Ctx.TwoPlans || f.TwoPlans
 	st.Ctx.BudgetAmbiguous = st.Ctx.BudgetAmbiguous || f.BudgetAmbiguous
 	st.Ctx.PowerCompetitive = st.Ctx.PowerCompetitive || f.PowerCompetitive
+	// The fact is not sticky. A user who asks for a Magic deck after the
+	// agent declines is back in scope.
+	st.Ctx.OutOfScope = f.OutOfScope
+	// A user who asks for a suggestion gets the pick row next turn. A user
+	// who then names one closes every commander row, so the fact does not
+	// need to be cleared.
+	if f.WantsSuggestion {
+		// A second request retires the names on the table, so the next
+		// round names three others (D-73).
+		st.RetireOffer()
+	}
+	st.Ctx.Suggested = st.Ctx.Suggested || f.WantsSuggestion
 	// A word rule can fire when the classifier misses one (corpus 11).
 	if slot := Route(st.Ctx.Words); slot == "house_rules" {
 		st.Ctx.HouseFormat = st.Ctx.HouseFormat || strings.Contains(st.Ctx.Words, "no ban list")
@@ -296,13 +416,31 @@ func power(s string) *mtgv1.PowerLevel {
 	return nil
 }
 
-// openKeys lists the keys the planner would ask about next. The classifier
-// reads them so it can close one from free text before a question goes out.
-func openKeys(c *Catalog, st *State) []string {
+// typedSlots are the slots that carry a value the deck generator reads.
+// The classifier fills each one through its own field, so a name in the
+// closed_keys list can never close one: the name says "answered" and
+// leaves the value empty (D-83).
+var typedSlots = map[string]bool{
+	"format": true, "theme": true, "colors": true,
+	"power": true, "pool_rule": true, "budget": true,
+	// The commander closes on a name, and that name closes the color
+	// slot and the two other commander rows with it.
+	"commander": true,
+}
+
+// openKeys lists every key whose question is out. The classifier reads
+// them for two lists. It may close an advisory key by name (D-83), and it
+// may decline any of them, typed or not (D-93).
+func openKeys(st *State) []string {
 	var out []string
-	for _, r := range c.Plan(st.Ctx) {
-		out = append(out, r.StateKey())
+	for key, state := range st.Slots.GetSlotStates() {
+		if state == mtgv1.SlotState_SLOT_STATE_ASKED {
+			out = append(out, key)
+		}
 	}
+	// Sorted, because a map gives a new order on every turn, and the
+	// input of a model call must not change without a reason.
+	sort.Strings(out)
 	return out
 }
 
@@ -314,6 +452,10 @@ type choice struct {
 	Fit      float64
 	Reason   string
 	Invented bool
+	// NearCopy marks a replacement the agent refused as a reword (D-88).
+	NearCopy bool
+	// Refused is the text of that replacement.
+	Refused string
 }
 
 // scored is one row as the scoring classifier returned it.
@@ -353,6 +495,7 @@ func (a *Agent) score(ctx context.Context, st *State, message string, rows []Row
 		Input:        string(input),
 		SchemaName:   "score_questions",
 		Schema:       json.RawMessage(scoreSchema),
+		CacheKey:     st.SessionID,
 	}, acc)
 	if err != nil {
 		return nil, fmt.Errorf("questions: score: %w", err)
@@ -403,6 +546,7 @@ func (a *Agent) ask(ctx context.Context, st *State, message string, chosen []cho
 		Input:        string(input),
 		SchemaName:   "phrase_questions",
 		Schema:       json.RawMessage(askSchema),
+		CacheKey:     st.SessionID,
 	}, acc)
 	if err != nil {
 		return nil, fmt.Errorf("questions: ask: %w", err)

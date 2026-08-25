@@ -1,0 +1,561 @@
+{
+  "verified_at": "2026-08-24",
+  "note": "The PR-7 gate conversations as user messages. Conversations 1 to 30 are the gate: TestConversations proves the deterministic half offline, and the catalog-only bar counts these alone. Conversations marked \"probe\" do not count toward the verdict. They exist to find catalog gaps, so they hold the shapes the gate set never takes: a user who changes their mind, contradicts themselves, asks a question back, or wants something the app can not serve. Their questions still reach the M-5 sheet (D-96).",
+  "conversations": [
+    {
+      "id": 1,
+      "name": "lifegain with a collection",
+      "collection": true,
+      "messages": [
+        "Build me a lifegain deck. I have a collection.",
+        "Commander, and white and black is right.",
+        "Bracket 3. Suggest a commander from my library, and build from my library first.",
+        "Karlov of the Ghost Council. Keep the buy list under 50 dollars."
+      ]
+    },
+    {
+      "id": 2,
+      "name": "blink with a thin library",
+      "collection": true,
+      "messages": [
+        "I want a blink deck from my library.",
+        "Commander. White and blue.",
+        "Bracket 3, and Brago, King Eternal is my commander. Build owned-first with a buy list.",
+        "No more than 40 dollars."
+      ]
+    },
+    {
+      "id": 3,
+      "name": "a named card, role unknown",
+      "collection": true,
+      "messages": [
+        "Build around Grist, the Hunger Tide.",
+        "Commander. Black and green is fine.",
+        "Grist is my commander. Bracket 3, and use my library first."
+      ]
+    },
+    {
+      "id": 4,
+      "name": "fun and janky",
+      "collection": true,
+      "messages": [
+        "Make me something fun and janky.",
+        "Commander. Janky means an odd card nobody expects.",
+        "A sacrifice deck. Bracket 2, and any colors are fine.",
+        "You pick the commander, and build from my library first."
+      ]
+    },
+    {
+      "id": 5,
+      "name": "60-card anything goes",
+      "collection": false,
+      "messages": [
+        "I want a 60-card deck, and anything goes at our table.",
+        "Any card, no ban list. Call it Modern. A dragon deck.",
+        "The normal limits hold. Casual power, red and green."
+      ]
+    },
+    {
+      "id": 6,
+      "name": "the strongest deck, no collection",
+      "collection": false,
+      "messages": [
+        "Build the strongest deck possible. I own nothing.",
+        "Modern. The best deck under budget.",
+        "300 dollars, tournament level. People at my shop play aggro and control."
+      ]
+    },
+    {
+      "id": 7,
+      "name": "FNM on Friday",
+      "collection": false,
+      "messages": [
+        "I need a deck for FNM on Friday, something competitive.",
+        "Pioneer. The best deck under budget.",
+        "200 dollars, tournament level. My shop is mostly aggro decks."
+      ]
+    },
+    {
+      "id": 8,
+      "name": "mill for a playgroup",
+      "collection": true,
+      "messages": [
+        "Make a mill deck for my playgroup, budget 100.",
+        "Commander. Blue and black.",
+        "Bracket 3. Bruvac the Grandiloquent is the commander, and build from my library first.",
+        "My table accepts mill. The 100 caps the cards I buy. Mill as the win condition."
+      ]
+    },
+    {
+      "id": 9,
+      "name": "a commander the library does not hold",
+      "collection": true,
+      "messages": [
+        "Brago blink deck from my library.",
+        "Commander, and Brago, King Eternal is the commander.",
+        "Add him to the buy list. Bracket 3, white and blue.",
+        "Under 30 dollars, and build from my library first."
+      ]
+    },
+    {
+      "id": 10,
+      "name": "no strong commander in the library",
+      "collection": true,
+      "messages": [
+        "Lifegain from my collection.",
+        "Commander. White and black.",
+        "Buy the best lifegain commander. Bracket 3, owned-first, and 60 dollars is the cap."
+      ]
+    },
+    {
+      "id": 11,
+      "name": "another version after a build",
+      "collection": true,
+      "messages": [
+        "Give me another version of that deck.",
+        "A different plan in the same colors."
+      ]
+    },
+    {
+      "id": 12,
+      "name": "a frozen run asks nothing",
+      "collection": true,
+      "messages": [
+        "Switch to owned-only."
+      ]
+    },
+    {
+      "id": 13,
+      "name": "a card to keep that is not the commander",
+      "collection": true,
+      "messages": [
+        "Karlov of the Ghost Council lifegain deck, and keep Sanguine Bond in it.",
+        "Commander, white and black, bracket 3.",
+        "Build from my library first, and lock Sanguine Bond in."
+      ]
+    },
+    {
+      "id": 14,
+      "name": "the user says none, then picks",
+      "collection": false,
+      "messages": [
+        "A lifegain commander deck.",
+        "Bracket 3. I have no commander in mind, so suggest one.",
+        "None of those.",
+        "The first of the new three is good."
+      ]
+    },
+    {
+      "id": 15,
+      "name": "standard at the store, no library",
+      "collection": false,
+      "messages": [
+        "I need a Standard deck for my local store.",
+        "Standard. An aggro deck, red and white.",
+        "FNM level."
+      ]
+    },
+    {
+      "id": 16,
+      "name": "the strongest modern deck",
+      "collection": false,
+      "messages": [
+        "I want the strongest Modern deck, money is no object.",
+        "The best deck under budget. Any colors.",
+        "Tournament level, 800 dollars. My shop plays aggro and combo decks."
+      ]
+    },
+    {
+      "id": 17,
+      "name": "precon upgrade at bracket 2",
+      "collection": true,
+      "messages": [
+        "Upgrade my Atraxa, Praetors' Voice precon. We play bracket 2.",
+        "A superfriends deck. Build from my library first."
+      ]
+    },
+    {
+      "id": 18,
+      "name": "pauper burn on a budget",
+      "collection": false,
+      "messages": [
+        "A Pauper burn deck, as cheap as possible.",
+        "Pauper. Burn, mono red.",
+        "Casual power, and 25 dollars is the cap."
+      ]
+    },
+    {
+      "id": 19,
+      "name": "a big library, no theme",
+      "collection": true,
+      "messages": [
+        "I have a big collection. Build me something good.",
+        "Commander. A token deck, green and white.",
+        "You pick the commander. Bracket 3, and build from my library first."
+      ]
+    },
+    {
+      "id": 20,
+      "name": "dinosaur tribal for a child",
+      "collection": true,
+      "messages": [
+        "A dinosaur deck for my kid. Keep it casual.",
+        "Commander. Dinosaurs. Casual means low power, not a house format.",
+        "Gishath, Sun's Avatar is the commander. Bracket 2, red green and white.",
+        "Build from my library first."
+      ]
+    },
+    {
+      "id": 21,
+      "name": "vintage with proxies",
+      "collection": false,
+      "messages": [
+        "We proxy everything at our table.",
+        "Any card, no ban list. Call it Vintage. An artifact prison deck.",
+        "The normal limits hold. Casual power, mono brown."
+      ]
+    },
+    {
+      "id": 22,
+      "name": "extra turns commander",
+      "collection": true,
+      "messages": [
+        "I want an extra turns deck.",
+        "Commander. Blue and red.",
+        "You pick the commander. Bracket 3, and build from my library first.",
+        "My table is fine with extra turns."
+      ]
+    },
+    {
+      "id": 23,
+      "name": "land destruction",
+      "collection": true,
+      "messages": [
+        "A land destruction Commander deck.",
+        "Commander. Red and green.",
+        "You pick the commander. Bracket 3, and build from my library first.",
+        "My table does not mind."
+      ]
+    },
+    {
+      "id": 24,
+      "name": "stax, owned only",
+      "collection": true,
+      "messages": [
+        "A stax deck from only the cards I own.",
+        "Commander. White and blue.",
+        "You pick the commander. Bracket 4, owned-only.",
+        "My table accepts stax."
+      ]
+    },
+    {
+      "id": 25,
+      "name": "poison in a tournament",
+      "collection": false,
+      "messages": [
+        "An infect deck for a Modern tournament.",
+        "Modern. The best deck under budget.",
+        "Tournament level, 400 dollars. My shop plays aggro and control decks."
+      ]
+    },
+    {
+      "id": 26,
+      "name": "legacy for an event",
+      "collection": false,
+      "messages": [
+        "A Legacy deck for an event.",
+        "Legacy. A Delver of Secrets tempo deck, blue and red.",
+        "FNM level, 600 dollars."
+      ]
+    },
+    {
+      "id": 27,
+      "name": "a card for the 99",
+      "collection": true,
+      "messages": [
+        "Build around Grist, the Hunger Tide, but not as my commander.",
+        "Commander. A sacrifice deck, black and green.",
+        "Grist goes in the 99. Bracket 3, and build from my library first.",
+        "You pick the commander, and keep Grist in the deck."
+      ]
+    },
+    {
+      "id": 28,
+      "name": "reanimator with two plans",
+      "collection": true,
+      "messages": [
+        "A reanimator Commander deck.",
+        "Commander. Black and green.",
+        "Meren of Clan Nel Toth is the commander. Bracket 3, and build from my library first.",
+        "Reanimate one big creature, not a value loop."
+      ]
+    },
+    {
+      "id": 29,
+      "name": "two hundred dollars",
+      "collection": true,
+      "messages": [
+        "A Commander deck. I can spend 200 dollars, and I have a library.",
+        "Commander. An artifact deck, blue and red.",
+        "You pick the commander. Bracket 3, and build from my library first.",
+        "The 200 caps the cards I buy."
+      ]
+    },
+    {
+      "id": 30,
+      "name": "another version, same plan",
+      "collection": true,
+      "messages": [
+        "Give me the same deck with other cards.",
+        "The same plan with different cards."
+      ]
+    },
+    {
+      "id": 31,
+      "name": "the user changes the format",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "Build me a lifegain deck.",
+        "Commander, white and black.",
+        "Actually, make it Modern instead. Sixty cards.",
+        "FNM level, and 100 dollars."
+      ]
+    },
+    {
+      "id": 32,
+      "name": "the user changes the theme late",
+      "collection": true,
+      "probe": true,
+      "messages": [
+        "A sacrifice deck from my collection.",
+        "Commander, black and green. Meren of Clan Nel Toth is the commander.",
+        "I changed my mind, I want a token deck instead.",
+        "Bracket 3, and build from my library first."
+      ]
+    },
+    {
+      "id": 33,
+      "name": "the user contradicts the budget",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "A competitive Modern deck, my budget is 50 dollars.",
+        "Modern. Actually money is no object, spend what you need.",
+        "Tournament level. My shop plays aggro."
+      ]
+    },
+    {
+      "id": 34,
+      "name": "everything in one message",
+      "collection": true,
+      "probe": true,
+      "messages": [
+        "Commander, bracket 3, Karlov of the Ghost Council, white and black lifegain, build from my library first, 50 dollar buy list."
+      ]
+    },
+    {
+      "id": 35,
+      "name": "the user stays vague",
+      "collection": true,
+      "probe": true,
+      "messages": [
+        "Make me a good deck.",
+        "I dunno, you pick.",
+        "Whatever you think is best.",
+        "Sure, that works."
+      ]
+    },
+    {
+      "id": 36,
+      "name": "the user asks a question back",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "I want a Commander deck.",
+        "What is a bracket? I have never heard of that.",
+        "Alright, bracket 2 then. A dragon deck, red and green."
+      ]
+    },
+    {
+      "id": 37,
+      "name": "a request we can not serve",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "Can you build me a Yu-Gi-Oh deck?",
+        "Fine, Magic then. Commander, a dragon deck.",
+        "Bracket 3, red and green."
+      ]
+    },
+    {
+      "id": 38,
+      "name": "shorthand and slang",
+      "collection": true,
+      "probe": true,
+      "messages": [
+        "edh gruul dino stompy pls, no proxies",
+        "bracket 3, from my binder",
+        "yeah 50 bucks max"
+      ]
+    },
+    {
+      "id": 39,
+      "name": "a card name with a typo",
+      "collection": true,
+      "probe": true,
+      "messages": [
+        "Build around Karlov of the Ghost Counsel.",
+        "Commander, white and black lifegain.",
+        "Yes that is the card I meant. Bracket 3, from my library."
+      ]
+    },
+    {
+      "id": 40,
+      "name": "a card that is not legal",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "I want a Modern deck built around Black Lotus.",
+        "Then pick something else. A burn deck, mono red.",
+        "FNM level, 200 dollars."
+      ]
+    },
+    {
+      "id": 41,
+      "name": "a commander that can not lead",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "Commander deck with Lightning Bolt as my commander.",
+        "Alright, suggest a red commander for a burn deck.",
+        "The first one. Bracket 3."
+      ]
+    },
+    {
+      "id": 42,
+      "name": "two partner commanders",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "A Commander deck with Thrasios, Triton Hero and Tymna the Weaver.",
+        "Yes, both as partners. A value deck.",
+        "Bracket 5, cEDH. Money is no object."
+      ]
+    },
+    {
+      "id": 43,
+      "name": "a deck as a gift",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "I want to build a deck as a gift for my brother. He likes zombies.",
+        "Commander, black. He is new to the game.",
+        "Bracket 2, and under 80 dollars."
+      ]
+    },
+    {
+      "id": 44,
+      "name": "sideboard help only",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "I already have a Modern burn deck. I only need sideboard help.",
+        "Modern, burn, mono red. Tournament level.",
+        "My shop plays a lot of control."
+      ]
+    },
+    {
+      "id": 45,
+      "name": "copy a known deck",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "Build me the current best Standard deck, whatever is winning.",
+        "Standard. Tournament level.",
+        "300 dollars, and my shop plays aggro."
+      ]
+    },
+    {
+      "id": 46,
+      "name": "a format we do not support",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "I want a Brawl deck for Arena.",
+        "It is like Commander but 60 cards on Arena.",
+        "Fine, treat it as Commander. A dragon deck, red.",
+        "Bracket 2."
+      ]
+    },
+    {
+      "id": 47,
+      "name": "the user declines everything",
+      "collection": true,
+      "probe": true,
+      "messages": [
+        "Build me a Commander deck.",
+        "You decide.",
+        "You decide.",
+        "You decide."
+      ]
+    },
+    {
+      "id": 48,
+      "name": "a price cap per card",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "A Modern deck where nothing costs more than 5 dollars a card.",
+        "Modern, a burn deck, mono red.",
+        "Casual power, and 100 dollars total."
+      ]
+    },
+    {
+      "id": 49,
+      "name": "the user swaps the commander",
+      "collection": true,
+      "probe": true,
+      "messages": [
+        "A lifegain Commander deck from my library.",
+        "White and black. Karlov of the Ghost Council is the commander.",
+        "Actually use a different commander, suggest one.",
+        "The second one. Bracket 3, library first."
+      ]
+    },
+    {
+      "id": 50,
+      "name": "two decks at once",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "I want two decks, one Commander and one Modern.",
+        "Start with the Commander one. A dragon deck, red and green.",
+        "Bracket 3, and 150 dollars."
+      ]
+    },
+    {
+      "id": 51,
+      "name": "a returning player",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "I have not played since 2015 and I want to get back in.",
+        "Commander, I think. I like big green creatures.",
+        "Green. Bracket 2, and about 100 dollars."
+      ]
+    },
+    {
+      "id": 52,
+      "name": "the user answers a different question",
+      "collection": true,
+      "probe": true,
+      "messages": [
+        "A mill deck from my collection.",
+        "My friends hate mill.",
+        "Commander, blue and black. Bracket 3.",
+        "Build from my library first."
+      ]
+    }
+  ]
+}

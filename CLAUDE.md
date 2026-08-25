@@ -6,9 +6,13 @@ Read this file first. Then read `docs/SESSION-HANDOFF.md`. It tells you where th
 
 This repo is a Go + Protobuf + TypeScript monorepo for an agentic MtG deck builder. The app reads a user's ManaBox collection export. The user gives a prompt. The agent asks questions, then builds a legal, useful deck.
 
-Stage (2026-08-24): PR-0a to PR-5 and PR-10 are merged (#1 to #9). Phase 1 is complete.
+Stage (2026-08-25): PR-0a to PR-6 and PR-10 are merged (#1 to #11), the audit fixes included.
 
-The audit fixes (PR-1b, PR-4b, PR-5b, PR-10b) are on branch `audit-fixes`. Next: PR-6. See `docs/SESSION-HANDOFF.md`. The owner commits and pushes. Do not commit unless the owner asks.
+PR-7 (the question workflow) is code-complete on branch `pr-7`. Both gate bars pass after 13 live runs and 20 fixed defects. The one open item is the owner's M-5 scoring of `docs/reference/pr7-m5-scoring.md`, which sets two thresholds. Then PR-8.
+
+**Nothing after commit 69fe1c2 is committed.** About 50 files sit in the working tree. Run `git status` before you change anything. The owner commits and pushes. Do not commit unless the owner asks.
+
+Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
 
 ## Hard rules from the owner
 
@@ -42,4 +46,10 @@ The audit fixes (PR-1b, PR-4b, PR-5b, PR-10b) are on branch `audit-fixes`. Next:
 - `docs/decisions.md` - every owner decision, with date.
 - `docs/SESSION-HANDOFF.md` - resume point for a fresh session.
 - `docs/open-questions.md` - questions not yet asked or not yet answered.
-- `docs/reference/` - research notes with sources and dates.
+- `docs/reference/` - research notes with sources and dates, and every dated gate document.
+
+## Commands that cost money
+
+`make questions-gate` calls the real providers. One run of the 52 conversations costs about $0.09 and takes 11 minutes. Ask the owner before every run, and write to a new `GATE_OUT` file: a rerun must never overwrite a scored document (D-65).
+
+Everything else is free. `make m5-sheet` builds the scoring sheet, `make m5-report` reads it, `make themes-check` checks the theme slugs and the commander ranking, and `make store-check` runs the session store against the local Firestore emulator.

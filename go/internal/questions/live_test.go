@@ -9,6 +9,9 @@ import (
 	"os"
 	"testing"
 
+	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	"github.com/nkramber/mtg-deck-builder/go/internal/candidates"
+	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 )
 
@@ -37,7 +40,27 @@ func TestLiveConversation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("prices: %v", err)
 	}
-	agent, err := NewAgent(load(t), client, WithLogger(slog.New(slog.NewTextHandler(io.Discard, nil))))
+	opts := []AgentOption{WithLogger(slog.New(slog.NewTextHandler(io.Discard, nil)))}
+	// With a local snapshot the hints are real: PR-6 names the theme's
+	// colors and its commanders, so the placeholder clauses resolve
+	// instead of being dropped.
+	if dir := os.Getenv("CARDS_SNAPSHOT_DIR"); dir != "" {
+		idx, err := cards.LoadIndex(context.Background(), cards.DirStore{Root: dir}, slog.New(slog.NewTextHandler(io.Discard, nil)))
+		if err != nil {
+			t.Fatalf("index: %v", err)
+		}
+		builder, err := candidates.New()
+		if err != nil {
+			t.Fatalf("candidates: %v", err)
+		}
+		opts = append(opts, WithHints(&CandidateHints{
+			Index: idx, Builder: builder,
+			Format: mtgv1.FormatId_FORMAT_ID_COMMANDER,
+			Log:    slog.New(slog.NewTextHandler(io.Discard, nil)),
+		}))
+		t.Log("hints: PR-6 index loaded")
+	}
+	agent, err := NewAgent(load(t), client, opts...)
 	if err != nil {
 		t.Fatalf("agent: %v", err)
 	}
@@ -70,6 +93,7 @@ func TestLiveConversation(t *testing.T) {
 			break
 		}
 	}
+	t.Logf("ready=%v outstanding=%v slot_states=%v", st.Ready(load(t)), st.Outstanding(), st.Slots.GetSlotStates())
 	rep := acc.Report()
 	raw, _ := json.MarshalIndent(rep, "", "  ")
 	t.Logf("usage report:\n%s", raw)

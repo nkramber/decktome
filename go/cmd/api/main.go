@@ -19,6 +19,8 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1/mtgv1connect"
+	"github.com/nkramber/mtg-deck-builder/go/internal/agentsvc"
+	"github.com/nkramber/mtg-deck-builder/go/internal/candidates"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cardsvc"
 	"github.com/nkramber/mtg-deck-builder/go/internal/collections"
@@ -26,7 +28,9 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/decksvc"
 	"github.com/nkramber/mtg-deck-builder/go/internal/health"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
+	"github.com/nkramber/mtg-deck-builder/go/internal/questions"
 	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
+	"github.com/nkramber/mtg-deck-builder/go/internal/sessions"
 )
 
 // version is set at build time with -ldflags "-X main.version=...".
@@ -95,11 +99,16 @@ func run(ctx context.Context, logger *slog.Logger) error {
 		return fmt.Errorf("rules data: %w", err)
 	}
 	deckServer := decksvc.New(rulesCfg, cardServer, decksvc.WithCollections(collectionRepo, debugUser))
-	// The LLM role layer (PR-10). No call site exists until PR-7 and PR-8.
-	// Building it here proves the config and the keys at startup, not on
-	// the first user turn. Without keys the fixture fake stands in.
-	if _, err := llm.NewFromEnv(os.Getenv, logger); err != nil {
+	// The LLM role layer (PR-10). Building it here proves the config and
+	// the keys at startup, not on the first user turn. Without keys the
+	// fixture fake stands in.
+	llmClient, err := llm.NewFromEnv(os.Getenv, logger)
+	if err != nil {
 		return fmt.Errorf("llm config: %w", err)
+	}
+	agentServer, err := agentService(llmClient, fs, cardServer, collectionRepo, debugUser, logger)
+	if err != nil {
+		return fmt.Errorf("agent service: %w", err)
 	}
 	healthServer := health.New(version, cardServer)
 
@@ -109,6 +118,7 @@ func run(ctx context.Context, logger *slog.Logger) error {
 	mux.Handle(mtgv1connect.NewCardServiceHandler(cardServer, opts...))
 	mux.Handle(mtgv1connect.NewCollectionServiceHandler(collectionServer, opts...))
 	mux.Handle(mtgv1connect.NewDeckServiceHandler(deckServer, opts...))
+	mux.Handle(mtgv1connect.NewAgentServiceHandler(agentServer, opts...))
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		body, err := protojson.Marshal(healthServer.Status())
@@ -150,6 +160,34 @@ func run(ctx context.Context, logger *slog.Logger) error {
 		return fmt.Errorf("api shutdown: %w", err)
 	}
 	return nil
+}
+
+// agentService wires the question workflow (PR-7). The card index and
+// the candidate builder feed the PR-6 hints, so a question that names a
+// value names a real card. A missing price table only costs the cost
+// field of the usage event.
+func agentService(client *llm.Client, fs *firestore.Client, index *cardsvc.Server,
+	cols *collections.Repo, userFn agentsvc.UserFunc, logger *slog.Logger) (*agentsvc.Server, error) {
+	cat, err := questions.Load()
+	if err != nil {
+		return nil, err
+	}
+	builder, err := candidates.New()
+	if err != nil {
+		return nil, err
+	}
+	opts := []agentsvc.Option{
+		agentsvc.WithLogger(logger),
+		agentsvc.WithCandidates(index, builder),
+		agentsvc.WithCollections(cols),
+	}
+	prices, err := llm.LoadPrices()
+	if err != nil {
+		logger.Warn("llm prices unavailable, the usage event carries no cost", "err", err)
+	} else {
+		opts = append(opts, agentsvc.WithPrices(prices))
+	}
+	return agentsvc.New(cat, client, sessions.NewRepo(fs), userFn, opts...)
 }
 
 // projectID resolves the GCP project. Cloud Run sets neither PROJECT_ID

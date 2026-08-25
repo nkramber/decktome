@@ -23,12 +23,23 @@ func fakeConfig() *llm.Config {
 
 func testAgent(t *testing.T, steps ...llm.Step) (*Agent, *llm.Script) {
 	t.Helper()
+	return testAgentHints(t, nil, steps...)
+}
+
+// testAgentHints builds the agent with a hint source, so a row that names
+// commanders resolves to real names.
+func testAgentHints(t *testing.T, h Hints, steps ...llm.Step) (*Agent, *llm.Script) {
+	t.Helper()
 	sc := llm.NewScript(steps...)
 	c, err := llm.New(fakeConfig(), []llm.Provider{sc}, llm.WithoutJitter())
 	if err != nil {
 		t.Fatalf("client: %v", err)
 	}
-	a, err := NewAgent(load(t), c, WithLogger(slog.New(slog.NewTextHandler(io.Discard, nil))))
+	opts := []AgentOption{WithLogger(slog.New(slog.NewTextHandler(io.Discard, nil)))}
+	if h != nil {
+		opts = append(opts, WithHints(h))
+	}
+	a, err := NewAgent(load(t), c, opts...)
 	if err != nil {
 		t.Fatalf("agent: %v", err)
 	}
@@ -51,6 +62,9 @@ func classifyStep(t *testing.T, out classifyOut) llm.Step {
 	if out.ClosedKeys == nil {
 		out.ClosedKeys = []string{}
 	}
+	if out.DeclinedKeys == nil {
+		out.DeclinedKeys = []string{}
+	}
 	raw, err := json.Marshal(out)
 	if err != nil {
 		t.Fatal(err)
@@ -58,8 +72,13 @@ func classifyStep(t *testing.T, out classifyOut) llm.Step {
 	return llm.Step{Output: raw}
 }
 
+// askStep is the ask call. With no phrasing the agent keeps its own
+// resolved catalog text, which is how a test asserts that text.
 func askStep(t *testing.T, ps ...phrasing) llm.Step {
 	t.Helper()
+	if ps == nil {
+		ps = []phrasing{}
+	}
 	for i := range ps {
 		if ps[i].Options == nil {
 			ps[i].Options = []string{}

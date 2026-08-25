@@ -1,7 +1,20 @@
 {
   "verified_at": "2026-08-24",
-  "note": "The question catalog of the mtg-corpus skill, section 11, as data. `slot` is the proto slot the answer informs. `key` is the question's own state key, and it defaults to the slot. A refinement question (jank, table tolerance, budget scope, acquisition, house format limits, named card role) carries its own key, so a filled proto slot does not cancel it. Keep the rows in step with the skill file. TestCatalogMatchesCorpus checks it.",
+  "note": "The question catalog of the mtg-corpus skill, section 11, as data. `slot` is the proto slot the answer informs. `key` is the question's own state key, and it defaults to the slot. A refinement question (jank, table tolerance, budget scope, house format limits, named card role) carries its own key, so a filled proto slot does not cancel it. Keep the rows in step with the skill file. TestCatalogMatchesCorpus checks it.",
   "rows": [
+    {
+      "id": "out_of_scope",
+      "slot": "scope",
+      "order": 1,
+      "text": "I build Magic: The Gathering decks only. Would you like one instead?",
+      "options": [
+        "Yes, a Magic deck",
+        "No thanks"
+      ],
+      "when": {
+        "out_of_scope": true
+      }
+    },
     {
       "id": "format_store",
       "slot": "format",
@@ -78,7 +91,6 @@
       "when": {
         "words": [
           "anything goes",
-          "casual",
           "kitchen table",
           "proxy",
           "proxies",
@@ -97,7 +109,10 @@
         "No, I will say the limits"
       ],
       "when": {
-        "house_format": true
+        "house_format": true,
+        "requires": [
+          "house_rules"
+        ]
       },
       "key": "house_format_limits"
     },
@@ -149,14 +164,17 @@
       "id": "commander",
       "slot": "commander",
       "order": 31,
-      "text": "Do you have a commander in mind? If not, take one of these three: {a}, {b}, {c}.",
+      "text": "Do you have a commander in mind, or should I suggest one?",
+      "options": [
+        "I have one in mind",
+        "Suggest one"
+      ],
       "when": {
         "format": "commander",
         "requires": [
           "theme"
         ]
-      },
-      "fallback": "Do you have a commander in mind, or should I suggest one?"
+      }
     },
     {
       "id": "commander_pick",
@@ -167,6 +185,8 @@
         "format": "commander",
         "suggested": true
       },
+      "key": "commander_pick",
+      "repeat": true,
       "fallback": "Which commander do you want, or should I suggest three more?"
     },
     {
@@ -241,7 +261,7 @@
       "id": "colors",
       "slot": "colors",
       "order": 50,
-      "text": "Any color preference? {theme} is strongest in {colors}.",
+      "text": "Any color preference? A {theme} deck is strongest in {colors}.",
       "when": {
         "commander_set": false
       },
@@ -312,17 +332,6 @@
       "key": "budget_scope"
     },
     {
-      "id": "acquisition",
-      "slot": "budget",
-      "order": 72,
-      "text": "Do you buy in person or online, and by what date do you need the cards?",
-      "when": {
-        "buy_list": true,
-        "deadline": true
-      },
-      "key": "acquisition"
-    },
-    {
       "id": "meta",
       "slot": "meta",
       "order": 90,
@@ -359,14 +368,19 @@
       "id": "locked",
       "slot": "locked",
       "order": 110,
-      "text": "Should I keep all of those, or can I cut some if they do not fit?",
+      "text": "Must the deck keep {locked}, or may I cut a card that does not fit the plan?",
       "options": [
-        "Keep all of them",
-        "Cut the ones that do not fit"
+        "Keep every card I named",
+        "Cut what does not fit"
       ],
       "when": {
-        "named_card": true
-      }
+        "locked_card": true,
+        "requires": [
+          "format",
+          "theme"
+        ]
+      },
+      "fallback": "Is there a card the deck must keep, whatever else changes?"
     }
   ]
 }

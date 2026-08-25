@@ -41,7 +41,11 @@ type Row struct {
 	// Fallback is the wording used when a placeholder has no value. It
 	// holds no placeholder itself. Load enforces that.
 	Fallback string `json:"fallback"`
-	When     When   `json:"when"`
+	// Repeat exempts a row from the no-repeat rule. Only the commander
+	// pick row uses it: a user who answers "none" gets three new names
+	// until one fits (D-73). The row still closes when its key closes.
+	Repeat bool `json:"repeat"`
+	When   When `json:"when"`
 }
 
 // When holds the triggers of one row. A nil pointer means the row does
@@ -52,7 +56,9 @@ type When struct {
 	Requires          []string `json:"requires"`
 	Format            string   `json:"format"`
 	PowerCompetitive  *bool    `json:"power_competitive"`
+	OutOfScope        *bool    `json:"out_of_scope"`
 	NamedCard         *bool    `json:"named_card"`
+	LockedCard        *bool    `json:"locked_card"`
 	Suggested         *bool    `json:"suggested"`
 	OwnedMode         *bool    `json:"owned_mode"`
 	CommanderNotOwned *bool    `json:"commander_not_owned"`
@@ -63,7 +69,6 @@ type When struct {
 	ThinTheme         *bool    `json:"thin_theme"`
 	BuyList           *bool    `json:"buy_list"`
 	BudgetAmbiguous   *bool    `json:"budget_ambiguous"`
-	Deadline          *bool    `json:"deadline"`
 	HouseFormat       *bool    `json:"house_format"`
 	TwoPlans          *bool    `json:"two_plans"`
 	AfterBuild        *bool    `json:"after_build"`
@@ -78,6 +83,9 @@ type Catalog struct {
 // slots are the slot names the proto documents on Slots.slot_states.
 // A row must fill one of them. A question with no slot can not close.
 var slots = map[string]bool{
+	// scope is not a deck value. It records that the agent said it builds
+	// Magic decks only, after the user asked for something else (D-99).
+	"scope":  true,
 	"format": true, "power": true, "colors": true, "theme": true,
 	"commander": true, "pool_rule": true, "budget": true, "locked": true,
 	"plan_variant": true, "house_rules": true, "meta": true,

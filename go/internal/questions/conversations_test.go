@@ -32,7 +32,8 @@ func commander(c *Context) { c.Format = mtgv1.FormatId_FORMAT_ID_COMMANDER }
 
 // conversations are the PR-7 gate cases. Each one must reach a complete
 // slot set in at most four turns, with no repeated question. Eight of the
-// twelve come from the dogfood runs of 2026-08-24.
+// first fourteen come from the dogfood runs of 2026-08-24. Every catalog
+// row fires in at least one of the thirty.
 func conversations() []conversation {
 	var cs []conversation
 
@@ -43,7 +44,7 @@ func conversations() []conversation {
 		{want: []string{"format", "theme", "colors"}, fill: []string{"format", "theme", "colors"}, set: commander},
 		{want: []string{"commander", "power_commander", "pool"}, fill: []string{"power", "pool_rule"},
 			set: func(c *Context) { c.OwnedMode, c.BuyList, c.Suggested = true, true, true }},
-		{want: []string{"commander_pick", "budget"}, fill: []string{"commander", "budget"},
+		{want: []string{"commander_pick", "budget"}, fill: []string{"commander", "commander_pick", "budget"},
 			set: func(c *Context) { c.CommanderSet = true }},
 	}
 	cs = append(cs, c1)
@@ -59,6 +60,9 @@ func conversations() []conversation {
 	}
 	cs = append(cs, c2)
 
+	// The named card becomes the commander, so no card is locked. The
+	// locked row must stay silent here: the live run of 2026-08-24 asked
+	// the user to keep or cut a list that held only their commander (D-70).
 	c3 := conversation{name: "a named card, role unknown"}
 	c3.ctx = newCtx("build around grist, the hunger tide")
 	c3.ctx.HasCollection, c3.ctx.NamedCard = true, true
@@ -67,7 +71,6 @@ func conversations() []conversation {
 		{want: []string{"named_card_role", "power_commander", "pool"},
 			fill: []string{"named_card_role", "commander", "power", "pool_rule"},
 			set:  func(c *Context) { c.CommanderSet = true }},
-		{want: []string{"locked"}, fill: []string{"locked"}},
 	}
 	cs = append(cs, c3)
 
@@ -79,7 +82,7 @@ func conversations() []conversation {
 			set: func(c *Context) { commander(c); c.Theme = "sacrifice" }},
 		{want: []string{"commander", "power_commander", "colors"}, fill: []string{"power", "colors"},
 			set: func(c *Context) { c.Suggested = true }},
-		{want: []string{"commander_pick", "pool"}, fill: []string{"commander", "pool_rule"},
+		{want: []string{"commander_pick", "pool"}, fill: []string{"commander", "commander_pick", "pool_rule"},
 			set: func(c *Context) { c.CommanderSet = true }},
 	}
 	cs = append(cs, c4)
@@ -110,14 +113,13 @@ func conversations() []conversation {
 
 	c7 := conversation{name: "FNM on Friday"}
 	c7.ctx = newCtx("i need a deck for fnm on friday, something competitive")
-	c7.ctx.BuyList, c7.ctx.Deadline = true, true
+	c7.ctx.BuyList = true
 	c7.steps = []step{
 		{want: []string{"format_store", "theme", "colors"}, fill: []string{"format", "theme", "colors"},
 			set: func(c *Context) {
 				c.Format, c.PowerCompetitive, c.Theme = mtgv1.FormatId_FORMAT_ID_PIONEER, true, "best deck"
 			}},
 		{want: []string{"power_sixty", "budget", "meta"}, fill: []string{"power", "budget", "meta"}},
-		{want: []string{"acquisition"}, fill: []string{"acquisition"}},
 	}
 	cs = append(cs, c7)
 
@@ -170,11 +172,256 @@ func conversations() []conversation {
 	}
 	cs = append(cs, c11)
 
+	// The other half of D-70: a named card that is not the commander is a
+	// locked card, and the locked row fires for it.
+	c13 := conversation{name: "a card to keep that is not the commander"}
+	c13.ctx = newCtx("karlov lifegain deck, and keep sanguine bond")
+	c13.ctx.HasCollection, c13.ctx.NamedCard, c13.ctx.LockedCard = true, true, true
+	c13.ctx.CommanderSet, c13.ctx.Theme = true, "lifegain"
+	c13.ctx.Format = mtgv1.FormatId_FORMAT_ID_COMMANDER
+	for _, k := range []string{"format", "theme", "colors", "commander", "commander_pick", "named_card_role"} {
+		c13.ctx.Filled[k] = true
+	}
+	c13.steps = []step{
+		{want: []string{"power_commander", "pool", "locked"},
+			fill: []string{"power", "pool_rule", "locked"}},
+	}
+	cs = append(cs, c13)
+
+	// D-73: the pick row repeats until the user takes a commander. Every
+	// round must name three others, which the hint source enforces.
+	c14 := conversation{name: "the user says none, then picks"}
+	c14.ctx = newCtx("lifegain commander deck")
+	c14.ctx.Theme, c14.ctx.Format = "lifegain", mtgv1.FormatId_FORMAT_ID_COMMANDER
+	for _, k := range []string{"format", "theme", "colors"} {
+		c14.ctx.Filled[k] = true
+	}
+	c14.steps = []step{
+		{want: []string{"commander", "power_commander"}, fill: []string{"power"},
+			set: func(c *Context) { c.Suggested = true }},
+		{want: []string{"commander_pick"}},
+		{want: []string{"commander_pick"}, fill: []string{"commander", "commander_pick"},
+			set: func(c *Context) { c.CommanderSet = true }},
+	}
+	cs = append(cs, c14)
+
 	c12 := conversation{name: "a frozen run asks nothing"}
 	c12.ctx = newCtx("switch to owned-only")
 	c12.ctx.Frozen, c12.ctx.HasCollection = true, true
 	c12.steps = []step{{want: nil}}
 	cs = append(cs, c12)
+
+	// Conversations 15 to 30 widen the gate to the 30 the roadmap asks
+	// for. Each one exercises a trigger the first fourteen do not reach.
+
+	c15 := conversation{name: "standard at the store, no library"}
+	c15.ctx = newCtx("i need a standard deck for my local store")
+	c15.steps = []step{
+		{want: []string{"format_store", "theme", "colors"}, fill: []string{"format", "theme", "colors"},
+			set: func(c *Context) { c.Format, c.Theme = mtgv1.FormatId_FORMAT_ID_STANDARD, "aggro" }},
+		{want: []string{"power_sixty"}, fill: []string{"power"}},
+	}
+	cs = append(cs, c15)
+
+	// The competitive theme row fires only when the user asks for power in
+	// the first message. Conversations 6 and 7 learn it one turn later.
+	c16 := conversation{name: "the strongest modern deck"}
+	c16.ctx = newCtx("i want the strongest modern deck, money is no object")
+	c16.ctx.PowerCompetitive, c16.ctx.BuyList = true, true
+	c16.steps = []step{
+		{want: []string{"format", "theme_competitive", "colors"}, fill: []string{"format", "theme", "colors"},
+			set: func(c *Context) { c.Format, c.Theme = mtgv1.FormatId_FORMAT_ID_MODERN, "best deck" }},
+		{want: []string{"power_sixty", "budget", "meta"}, fill: []string{"power", "budget", "meta"}},
+	}
+	cs = append(cs, c16)
+
+	// A set commander fills the color slot, so the card-pool question can
+	// still fire. Without that rule the pool row waits forever (D-67).
+	c17 := conversation{name: "precon upgrade at bracket 2"}
+	c17.ctx = newCtx("upgrade my atraxa precon, we play bracket 2")
+	c17.ctx.HasCollection, c17.ctx.CommanderSet = true, true
+	c17.ctx.Format, c17.ctx.Theme = mtgv1.FormatId_FORMAT_ID_COMMANDER, "superfriends"
+	for _, k := range []string{"format", "theme", "commander", "commander_pick", "named_card_role", "colors"} {
+		c17.ctx.Filled[k] = true
+	}
+	c17.steps = []step{
+		{want: []string{"power_commander", "pool"}, fill: []string{"power", "pool_rule"}},
+	}
+	cs = append(cs, c17)
+
+	c18 := conversation{name: "pauper burn on a budget"}
+	c18.ctx = newCtx("pauper burn deck, as cheap as possible")
+	c18.ctx.BuyList = true
+	c18.steps = []step{
+		{want: []string{"format", "theme", "colors"}, fill: []string{"format", "theme", "colors"},
+			set: func(c *Context) { c.Format, c.Theme = mtgv1.FormatId_FORMAT_ID_PAUPER, "burn" }},
+		{want: []string{"power_sixty", "budget"}, fill: []string{"power", "budget"}},
+	}
+	cs = append(cs, c18)
+
+	c19 := conversation{name: "a big library, no theme"}
+	c19.ctx = newCtx("i have a big collection, build me something good")
+	c19.ctx.HasCollection = true
+	c19.steps = []step{
+		{want: []string{"format", "theme", "colors"}, fill: []string{"format", "theme", "colors"},
+			set: func(c *Context) { commander(c); c.Theme = "tokens" }},
+		{want: []string{"commander", "power_commander", "pool"},
+			fill: []string{"commander", "commander_pick", "power", "pool_rule"},
+			set:  func(c *Context) { c.CommanderSet = true }},
+	}
+	cs = append(cs, c19)
+
+	// "Casual" alone no longer routes to house rules (D-78). The gate run
+	// of 2026-08-25 asked this user about house rules, and they answered
+	// "casual means low power, not a house format".
+	c20 := conversation{name: "dinosaur tribal for a child"}
+	c20.ctx = newCtx("dinosaur deck for my kid, keep it casual")
+	c20.ctx.HasCollection = true
+	c20.steps = []step{
+		{want: []string{"format", "theme", "colors"}, fill: []string{"format", "theme", "colors"},
+			set: func(c *Context) { commander(c); c.Theme = "dinosaurs" }},
+		{want: []string{"commander", "power_commander", "pool"},
+			fill: []string{"commander", "commander_pick", "power", "pool_rule"},
+			set:  func(c *Context) { c.CommanderSet = true }},
+	}
+	cs = append(cs, c20)
+
+	c21 := conversation{name: "vintage with proxies"}
+	c21.ctx = newCtx("we proxy everything at our table")
+	c21.steps = []step{
+		{want: []string{"format", "theme", "house_rules"}, fill: []string{"format", "theme", "house_rules"},
+			set: func(c *Context) {
+				c.Format, c.Theme, c.HouseFormat = mtgv1.FormatId_FORMAT_ID_VINTAGE, "shops", true
+			}},
+		{want: []string{"house_format_limits", "power_sixty", "colors"},
+			fill: []string{"house_format_limits", "power", "colors"}},
+	}
+	cs = append(cs, c21)
+
+	c22 := conversation{name: "extra turns commander"}
+	c22.ctx = newCtx("i want an extra turns deck")
+	c22.ctx.HasCollection = true
+	c22.steps = []step{
+		{want: []string{"format", "theme", "colors"}, fill: []string{"format", "theme", "colors"},
+			set: func(c *Context) { commander(c); c.Theme = "extra turns" }},
+		{want: []string{"commander", "power_commander", "pool"},
+			fill: []string{"commander", "commander_pick", "power", "pool_rule"},
+			set:  func(c *Context) { c.CommanderSet = true }},
+		{want: []string{"table_tolerance"}, fill: []string{"table_tolerance"}},
+	}
+	cs = append(cs, c22)
+
+	c23 := conversation{name: "land destruction"}
+	c23.ctx = newCtx("land destruction commander deck")
+	c23.ctx.HasCollection, c23.ctx.Theme = true, "land destruction"
+	c23.steps = []step{
+		{want: []string{"format", "theme", "colors"}, fill: []string{"format", "theme", "colors"}, set: commander},
+		{want: []string{"commander", "power_commander", "pool"},
+			fill: []string{"commander", "commander_pick", "power", "pool_rule"},
+			set:  func(c *Context) { c.CommanderSet = true }},
+		{want: []string{"table_tolerance"}, fill: []string{"table_tolerance"}},
+	}
+	cs = append(cs, c23)
+
+	c24 := conversation{name: "stax, owned only"}
+	c24.ctx = newCtx("stax deck from only the cards i own")
+	c24.ctx.HasCollection, c24.ctx.OwnedMode, c24.ctx.Theme = true, true, "stax"
+	c24.steps = []step{
+		{want: []string{"format", "theme", "colors"}, fill: []string{"format", "theme", "colors"}, set: commander},
+		{want: []string{"commander", "power_commander", "pool"},
+			fill: []string{"commander", "commander_pick", "power", "pool_rule"},
+			set:  func(c *Context) { c.CommanderSet = true }},
+		{want: []string{"table_tolerance"}, fill: []string{"table_tolerance"}},
+	}
+	cs = append(cs, c24)
+
+	c25 := conversation{name: "poison in a tournament"}
+	c25.ctx = newCtx("infect deck for a modern tournament")
+	c25.ctx.PowerCompetitive, c25.ctx.BuyList = true, true
+	c25.steps = []step{
+		{want: []string{"format_store", "theme_competitive", "colors"}, fill: []string{"format", "theme", "colors"},
+			set: func(c *Context) { c.Format, c.Theme = mtgv1.FormatId_FORMAT_ID_MODERN, "poison" }},
+		{want: []string{"power_sixty", "budget", "meta"}, fill: []string{"power", "budget", "meta"}},
+	}
+	cs = append(cs, c25)
+
+	c26 := conversation{name: "legacy for an event"}
+	c26.ctx = newCtx("legacy deck for an event")
+	c26.ctx.BuyList = true
+	c26.steps = []step{
+		{want: []string{"format_store", "theme", "colors"}, fill: []string{"format", "theme", "colors"},
+			set: func(c *Context) { c.Format, c.Theme = mtgv1.FormatId_FORMAT_ID_LEGACY, "delver" }},
+		{want: []string{"power_sixty", "budget"}, fill: []string{"power", "budget"}},
+	}
+	cs = append(cs, c26)
+
+	// The named card goes into the 99, so it stays a locked card (D-70),
+	// and the commander row still has work to do.
+	c27 := conversation{name: "a card for the 99"}
+	c27.ctx = newCtx("build around grist but not as my commander")
+	c27.ctx.HasCollection, c27.ctx.NamedCard, c27.ctx.LockedCard = true, true, true
+	c27.steps = []step{
+		{want: []string{"format", "theme_card_named", "colors"}, fill: []string{"format", "theme", "colors"},
+			set: func(c *Context) { commander(c); c.Theme = "sacrifice" }},
+		{want: []string{"named_card_role", "power_commander", "pool"},
+			fill: []string{"named_card_role", "power", "pool_rule"}},
+		{want: []string{"commander", "locked"}, fill: []string{"commander", "commander_pick", "locked"},
+			set: func(c *Context) { c.CommanderSet = true }},
+	}
+	cs = append(cs, c27)
+
+	c28 := conversation{name: "reanimator with two plans"}
+	c28.ctx = newCtx("reanimator commander deck")
+	c28.ctx.HasCollection, c28.ctx.TwoPlans, c28.ctx.Theme = true, true, "reanimator"
+	c28.steps = []step{
+		{want: []string{"format", "theme", "colors"}, fill: []string{"format", "theme", "colors"}, set: commander},
+		{want: []string{"commander", "power_commander", "pool"},
+			fill: []string{"commander", "commander_pick", "power", "pool_rule"},
+			set:  func(c *Context) { c.CommanderSet = true }},
+		{want: []string{"plan_choice"}, fill: []string{"plan_variant"}},
+	}
+	cs = append(cs, c28)
+
+	c29 := conversation{name: "two hundred dollars"}
+	c29.ctx = newCtx("commander deck, i can spend 200 dollars, i have a library")
+	c29.ctx.HasCollection, c29.ctx.BudgetAmbiguous, c29.ctx.BuyList = true, true, true
+	c29.ctx.Theme = "artifacts"
+	c29.steps = []step{
+		{want: []string{"format", "theme", "colors"}, fill: []string{"format", "theme", "colors"}, set: commander},
+		{want: []string{"commander", "power_commander", "pool"},
+			fill: []string{"commander", "commander_pick", "power", "pool_rule"},
+			set:  func(c *Context) { c.CommanderSet = true }},
+		{want: []string{"budget"}, fill: []string{"budget"}},
+		{want: []string{"budget_scope"}, fill: []string{"budget_scope"}},
+	}
+	cs = append(cs, c29)
+
+	c30 := conversation{name: "another version, same plan"}
+	c30.ctx = newCtx("give me the same deck with other cards")
+	c30.ctx.AfterBuild, c30.ctx.HasCollection, c30.ctx.CommanderSet = true, true, true
+	c30.ctx.Format = mtgv1.FormatId_FORMAT_ID_COMMANDER
+	for _, k := range []string{"format", "theme", "colors", "commander", "power", "pool_rule", "budget"} {
+		c30.ctx.Filled[k] = true
+	}
+	c30.steps = []step{
+		{want: []string{"variance"}, fill: []string{"plan_variant"}},
+	}
+	cs = append(cs, c30)
+
+	// D-99: a request for another game gets one question and no others.
+	c31 := conversation{name: "a request we can not serve"}
+	c31.ctx = newCtx("can you build me a yu-gi-oh deck")
+	c31.ctx.OutOfScope = true
+	c31.steps = []step{
+		{want: []string{"out_of_scope"}, fill: []string{"scope"},
+			set: func(c *Context) { c.OutOfScope = false }},
+		{want: []string{"format", "theme", "colors"}, fill: []string{"format", "theme", "colors"},
+			set: func(c *Context) { commander(c); c.Theme = "dragons" }},
+		{want: []string{"commander", "power_commander"},
+			fill: []string{"commander", "commander_pick", "power"},
+			set:  func(c *Context) { c.CommanderSet = true }},
+	}
+	cs = append(cs, c31)
 
 	return cs
 }
@@ -184,6 +431,42 @@ func conversations() []conversation {
 // half of the gate (at least 25 of 30 conversations use catalog questions
 // only) needs the model in the loop, because only the model invents a
 // question. Every question below comes from the catalog.
+// TestGateSize holds the count. The other half of the gate (at least 25
+// of the 30 use catalog questions only) needs the model in the loop, and
+// `cmd/questions-gate` runs it.
+func TestGateSize(t *testing.T) {
+	if n := len(conversations()); n < MinGateSize {
+		t.Errorf("%d scripted conversations, the gate needs %d", n, MinGateSize)
+	}
+}
+
+// TestEveryRowFires proves the gate reaches every catalog row. A row no
+// conversation reaches is a row no test covers.
+func TestEveryRowFires(t *testing.T) {
+	c := load(t)
+	fired := map[string]bool{}
+	for _, conv := range conversations() {
+		ctx := conv.ctx
+		for _, st := range conv.steps {
+			for _, r := range c.Plan(ctx) {
+				fired[r.ID] = true
+				ctx.Asked[r.ID] = true
+			}
+			for _, k := range st.fill {
+				ctx.Filled[k] = true
+			}
+			if st.set != nil {
+				st.set(&ctx)
+			}
+		}
+	}
+	for _, r := range c.Rows {
+		if !fired[r.ID] {
+			t.Errorf("no gate conversation reaches row %q", r.ID)
+		}
+	}
+}
+
 func TestConversations(t *testing.T) {
 	c := load(t)
 	for _, conv := range conversations() {
@@ -202,7 +485,8 @@ func TestConversations(t *testing.T) {
 					t.Fatalf("turn %d asked %d questions, max is %d", i+1, len(got), MaxPerTurn)
 				}
 				for _, id := range got {
-					if everAsked[id] {
+					row, _ := c.Row(id)
+					if everAsked[id] && !row.Repeat {
 						t.Fatalf("turn %d repeated question %q", i+1, id)
 					}
 					everAsked[id] = true

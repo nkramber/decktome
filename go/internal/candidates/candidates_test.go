@@ -1,8 +1,12 @@
 package candidates
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"log/slog"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -53,12 +57,23 @@ func fixture(t *testing.T, list []tc) *cards.Index {
 		if c.commanderBanned {
 			st = banned
 		}
+		// The loader derives this from the type line for real cards. The
+		// fixture derives it the same way, so a commander test sees what
+		// production sees.
+		legendary, creature := false, false
+		for _, ty := range super {
+			legendary = legendary || ty == "Legendary"
+		}
+		for _, ty := range card {
+			creature = creature || ty == "Creature"
+		}
 		protoCards = append(protoCards, &mtgv1.Card{
 			OracleId: c.id, Name: c.name, TypeLine: c.typeLine, OracleText: c.text,
 			ColorIdentity: c.identity, Keywords: c.keywords, Subtypes: c.subtypes,
 			Supertypes: super, CardTypes: card, ManaValue: c.mv, EdhrecRank: c.rank,
-			Legalities:  map[string]mtgv1.LegalityStatus{"commander": st, "standard": legal},
-			GameChanger: c.gameChanger,
+			Legalities:     map[string]mtgv1.LegalityStatus{"commander": st, "standard": legal},
+			GameChanger:    c.gameChanger,
+			CanBeCommander: legendary && creature,
 		})
 		for _, tg := range c.tags {
 			tagCards[tg] = append(tagCards[tg], c.id)
@@ -404,5 +419,190 @@ func TestExileIsRemoval(t *testing.T) {
 		if got := exileIsRemoval(c.text); got != c.want {
 			t.Errorf("%s: exileIsRemoval = %v, want %v", c.name, got, c.want)
 		}
+	}
+}
+
+// commanderCards holds four legends and one non-legend. Only two of the
+// legends carry a lifegain signal.
+func commanderCards() []tc {
+	return []tc{
+		{id: "heliod", name: "Heliod, Sun-Crowned", typeLine: "Legendary Enchantment Creature — God",
+			text:     "Whenever you gain life, put a +1/+1 counter on target creature you control.",
+			identity: []mtgv1.Color{W}, mv: 3, rank: 120, tags: []string{"lifegain"}},
+		{id: "vito", name: "Vito, Thorn of the Dusk Rose", typeLine: "Legendary Creature — Vampire Cleric",
+			text:     "Whenever you gain life, each opponent loses that much life.",
+			identity: []mtgv1.Color{B}, mv: 3, rank: 200, tags: []string{"lifegain"}},
+		// A legend with no theme signal, but a staple role and a famous
+		// rank. The 99-card list keeps it. A commander list must not.
+		{id: "landlegend", name: "Ojer Stand-In", typeLine: "Legendary Creature — God",
+			text: "{T}: Add {W}.", identity: []mtgv1.Color{W}, mv: 2, rank: 1, tags: []string{"ramp"}},
+		{id: "offcolorlegend", name: "Green Legend", typeLine: "Legendary Creature — Elf",
+			text: "Whenever you gain life, draw a card.", identity: []mtgv1.Color{G}, mv: 2, rank: 500, tags: []string{"lifegain"}},
+		{id: "notlegend", name: "Soul Warden", typeLine: "Creature — Human Cleric",
+			text:     "Whenever another creature enters, you gain 1 life.",
+			identity: []mtgv1.Color{W}, mv: 1, rank: 5, tags: []string{"lifegain"}},
+	}
+}
+
+// TestCommandersRankByTheme is D-94. The helper read the 99-card
+// shortlist, which capByRole emits one role bucket at a time with lands
+// first. It was never ordered by score, so the first legends it met won.
+func TestCommandersRankByTheme(t *testing.T) {
+	idx := fixture(t, commanderCards())
+	b, err := New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := b.Commanders(idx, Request{Format: cmdr, Theme: "lifegain"}, 3)
+	if err != nil {
+		t.Fatalf("commanders: %v", err)
+	}
+	list := names(got)
+	for _, unwanted := range []string{"Ojer Stand-In", "Soul Warden"} {
+		if contains(list, unwanted) {
+			t.Errorf("%q reached the commander list: %v", unwanted, list)
+		}
+	}
+	if len(list) == 0 || list[0] != "Heliod, Sun-Crowned" {
+		t.Errorf("commanders = %v, want the best lifegain legend first", list)
+	}
+}
+
+// TestCommandersRespectColorIdentity keeps an illegal suggestion out. Run
+// 1 of the gate offered a white-black deck three commanders outside its
+// identity.
+func TestCommandersRespectColorIdentity(t *testing.T) {
+	idx := fixture(t, commanderCards())
+	b, _ := New()
+	got, err := b.Commanders(idx, Request{Format: cmdr, Theme: "lifegain", Colors: []mtgv1.Color{W, B}}, 5)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if contains(names(got), "Green Legend") {
+		t.Errorf("a green commander reached a white-black deck: %v", names(got))
+	}
+	if len(got) != 2 {
+		t.Errorf("commanders = %v, want the two white-black lifegain legends", names(got))
+	}
+}
+
+// TestCommanderPoolIsTheWeakPoolSignal is D-63. An owned mode with no
+// on-theme commander is exactly what the weak-pool row asks about, and
+// the count answers it with no threshold to invent.
+func TestCommanderPoolIsTheWeakPoolSignal(t *testing.T) {
+	idx := fixture(t, commanderCards())
+	b, _ := New()
+	// The collection holds one lifegain legend.
+	rich, err := b.CommanderPool(idx, Request{
+		Format: cmdr, Theme: "lifegain",
+		PoolRule: mtgv1.PoolRule_POOL_RULE_OWNED_ONLY,
+		Owned:    map[string]int32{"vito": 1},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rich) != 1 || rich[0].Card.Name != "Vito, Thorn of the Dusk Rose" {
+		t.Errorf("owned-only pool = %v, want Vito alone", names(rich))
+	}
+	// The collection holds none.
+	weak, err := b.CommanderPool(idx, Request{
+		Format: cmdr, Theme: "lifegain",
+		PoolRule: mtgv1.PoolRule_POOL_RULE_OWNED_ONLY,
+		Owned:    map[string]int32{"notlegend": 1},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(weak) != 0 {
+		t.Errorf("owned-only pool = %v, want none: that is the weak-pool signal", names(weak))
+	}
+}
+
+// TestCommanderPoolOwnedFirst offers what the user already has first.
+func TestCommanderPoolOwnedFirst(t *testing.T) {
+	idx := fixture(t, commanderCards())
+	b, _ := New()
+	got, err := b.CommanderPool(idx, Request{
+		Format: cmdr, Theme: "lifegain",
+		PoolRule: mtgv1.PoolRule_POOL_RULE_OWNED_FIRST,
+		// Vito is owned, Heliod ranks higher but is not.
+		Owned: map[string]int32{"vito": 1},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) < 2 || got[0].Card.Name != "Vito, Thorn of the Dusk Rose" {
+		t.Errorf("owned-first pool = %v, want the owned commander first", names(got))
+	}
+	if got[0].Owned == 0 {
+		t.Error("the first commander is not marked owned")
+	}
+}
+
+// TestCommanderQualitySnapshot is the D-94 regression gate. It needs the
+// local snapshot, like TestThemeSlugsExist, so CI skips it.
+//
+// The old helper read the 99-card shortlist, which capByRole emits one
+// role bucket at a time with lands first. A blink request came back with
+// three Ojer modal double-faced cards at 0.16 on the theme, while 85
+// on-theme blink commanders existed. The bar below is what that bug
+// could not clear.
+//
+//	CARDS_SNAPSHOT_DIR=.local/gcs/mtg-local-cards/scryfall \
+//	  go test ./internal/candidates -run TestCommanderQualitySnapshot -v
+func TestCommanderQualitySnapshot(t *testing.T) {
+	dir := os.Getenv("CARDS_SNAPSHOT_DIR")
+	if dir == "" {
+		t.Skip("set CARDS_SNAPSHOT_DIR to a snapshot store root")
+	}
+	idx, err := cards.LoadIndex(context.Background(), cards.DirStore{Root: dir}, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	if err != nil {
+		t.Fatalf("index: %v", err)
+	}
+	if idx == nil {
+		t.Skipf("no complete snapshot under %s", dir)
+	}
+	b, err := New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Themes the tag data covers well. A narrow theme such as extra turns
+	// holds few legendary creatures that say the words, and a short list
+	// is the honest answer there.
+	cases := []struct {
+		theme  string
+		colors []mtgv1.Color
+	}{
+		{"sacrifice", nil},
+		{"lifegain", []mtgv1.Color{W, B}},
+		{"blink", []mtgv1.Color{W, mtgv1.Color_COLOR_U}},
+		{"mill", []mtgv1.Color{mtgv1.Color_COLOR_U, B}},
+		{"tokens", []mtgv1.Color{W, B}},
+	}
+	for _, tcse := range cases {
+		t.Run(tcse.theme, func(t *testing.T) {
+			req := Request{Format: cmdr, Theme: tcse.theme, Colors: tcse.colors}
+			got, err := b.Commanders(idx, req, 3)
+			if err != nil {
+				t.Fatalf("commanders: %v", err)
+			}
+			if len(got) != 3 {
+				t.Fatalf("%d commanders for a well covered theme: %v", len(got), names(got))
+			}
+			match := b.themes.match(tcse.theme, idx.Tags())
+			for i, c := range got {
+				score, _ := match.score(c.Card)
+				if score <= 0 {
+					t.Errorf("%s carries no theme signal", c.Card.GetName())
+				}
+				// The lead suggestion must be a real payoff.
+				if i == 0 && score < 0.5 {
+					t.Errorf("the first commander %s scores %.2f, want 0.50 or more", c.Card.GetName(), score)
+				}
+				if len(tcse.colors) > 0 && !identityFits(c.Card.ColorIdentity, colorSetOf(tcse.colors)) {
+					t.Errorf("%s sits outside the requested color identity", c.Card.GetName())
+				}
+			}
+		})
 	}
 }
