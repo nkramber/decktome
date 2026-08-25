@@ -245,12 +245,12 @@ The agent refused this one as a reword and sent the catalog question (D-88). Sco
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | no |
+| invented_better | both | same |
+| right_slot | the replacement | yes |
 | filled_slot | the run | yes |
 | faults | the replacement | |
-| catalog_action | our catalog | |
+| catalog_action | our catalog | reword - the user clearly specified that they do NOT want Grist as their commander |
 
 ## Item 10
 
