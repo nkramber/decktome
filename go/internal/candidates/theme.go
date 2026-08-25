@@ -1,0 +1,315 @@
+package candidates
+
+import (
+	_ "embed"
+	"encoding/json"
+	"fmt"
+	"slices"
+	"sort"
+	"strings"
+
+	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
+)
+
+//go:embed themes.json
+var themesJSON []byte
+
+// themeRow splits signals into payoffs (cards that reward the theme) and
+// enablers (cards that merely do the thing). Payoffs weigh more (D-62).
+type themeRow struct {
+	PayoffSlugs []string `json:"payoff_slugs"`
+	PayoffText  []string `json:"payoff_text"`
+	Slugs       []string `json:"slugs"`
+	Keywords    []string `json:"keywords"`
+	Text        []string `json:"text"`
+	Subtype     string   `json:"subtype"`
+}
+
+type themeTable struct {
+	VerifiedAt string              `json:"verified_at"`
+	Themes     map[string]themeRow `json:"themes"`
+	Roles      map[string][]string `json:"roles"`
+}
+
+func loadThemes() (*themeTable, error) {
+	var t themeTable
+	if err := json.Unmarshal(themesJSON, &t); err != nil {
+		return nil, fmt.Errorf("candidates: themes.json: %w", err)
+	}
+	if t.VerifiedAt == "" {
+		return nil, fmt.Errorf("candidates: themes.json has no verified_at")
+	}
+	return &t, nil
+}
+
+// Signal weights (D-62). A payoff tag is the strongest signal. An enabler
+// keyword is weak: hundreds of cards have lifelink, few reward lifegain.
+// Text is weaker than a tag of the same kind: a needle can match by
+// accident. The cap is scoreCap, so payoff plus enabler is a full score.
+const (
+	weightPayoffTag  = 1.5
+	weightPayoffText = 1.2
+	weightTag        = 1.0
+	weightSubtype    = 0.8
+	weightKeyword    = 0.5
+	weightText       = 0.4
+	scoreCap         = 2.5
+)
+
+// ThemeMatch is the resolved theme, for logs and the gate doc.
+type ThemeMatch struct {
+	// Words are the normalized theme words in input order.
+	Words []string
+	// PayoffSlugs and Slugs are the Tagger slugs that exist for the words.
+	PayoffSlugs []string
+	Slugs       []string
+	// PayoffText lists the payoff needles.
+	PayoffText []string
+	// Keywords, Subtypes, and Text are the other signals in use.
+	Keywords []string
+	Subtypes []string
+	Text     []string
+	// Unmatched lists words with no signal at all.
+	Unmatched []string
+
+	tagged map[string]map[string]bool // slug -> oracle ids
+}
+
+// match turns the user's words into signals. Each word maps through the
+// table, or through the generic rule when the table has no row.
+func (t *themeTable) match(theme string, tags *cards.TagIndex) ThemeMatch {
+	var m ThemeMatch
+	m.tagged = map[string]map[string]bool{}
+	seenSlug := map[string]bool{}
+	addSlug := func(slug string, payoff bool) bool {
+		if seenSlug[slug] || !tags.Has(slug) {
+			return false
+		}
+		seenSlug[slug] = true
+		set := map[string]bool{}
+		for _, id := range tags.Resolve(slug) {
+			set[id] = true
+		}
+		m.tagged[slug] = set
+		if payoff {
+			m.PayoffSlugs = append(m.PayoffSlugs, slug)
+		} else {
+			m.Slugs = append(m.Slugs, slug)
+		}
+		return true
+	}
+	for _, w := range words(theme) {
+		m.Words = append(m.Words, w)
+		hit := false
+		if row, ok := t.Themes[w]; ok {
+			for _, s := range row.PayoffSlugs {
+				hit = addSlug(s, true) || hit
+			}
+			for _, n := range row.PayoffText {
+				m.PayoffText = appendUnique(m.PayoffText, strings.ToLower(n))
+				hit = true
+			}
+			for _, s := range row.Slugs {
+				hit = addSlug(s, false) || hit
+			}
+			for _, k := range row.Keywords {
+				m.Keywords = appendUnique(m.Keywords, k)
+				hit = true
+			}
+			if row.Subtype != "" {
+				m.Subtypes = appendUnique(m.Subtypes, row.Subtype)
+				hit = true
+			}
+			for _, n := range row.Text {
+				m.Text = appendUnique(m.Text, strings.ToLower(n))
+				hit = true
+			}
+		} else {
+			// Generic rule: payoff slugs w-matters and synergy-w, enabler
+			// slugs w and typal-w, then keyword, subtype, and text.
+			for _, s := range []string{w + "-matters", "synergy-" + w, "typal-" + w, "typal-" + singular(w)} {
+				addSlug(s, true)
+			}
+			addSlug(w, false)
+			m.Keywords = appendUnique(m.Keywords, title(w))
+			m.Subtypes = appendUnique(m.Subtypes, title(singular(w)))
+			m.Text = appendUnique(m.Text, w)
+			hit = true
+		}
+		if !hit {
+			m.Unmatched = append(m.Unmatched, w)
+		}
+	}
+	return m
+}
+
+// score returns the theme fit of a card and the signals that fired.
+func (m ThemeMatch) score(c *mtgv1.Card) (float64, []string) {
+	var score float64
+	var signals []string
+	text := strings.ToLower(c.OracleText)
+	// Tags in one hierarchy overlap (lifegain, repeatable-lifegain,
+	// drain-life), so a kind counts once no matter how many slugs fire.
+	hit := false
+	for _, slug := range m.PayoffSlugs {
+		if m.tagged[slug][c.OracleId] {
+			hit = true
+			signals = append(signals, "payoff:"+slug)
+		}
+	}
+	if hit {
+		score += weightPayoffTag
+	}
+	hit = false
+	for _, n := range m.PayoffText {
+		if n != "" && strings.Contains(text, n) {
+			hit = true
+			signals = append(signals, "payoff-text:"+n)
+		}
+	}
+	if hit {
+		score += weightPayoffText
+	}
+	hit = false
+	for _, slug := range m.Slugs {
+		if m.tagged[slug][c.OracleId] {
+			hit = true
+			signals = append(signals, "tag:"+slug)
+		}
+	}
+	if hit {
+		score += weightTag
+	}
+	// A keyword that fired also covers its own name as a text needle:
+	// "lifelink" the keyword and "lifelink" the word are one fact.
+	covered := map[string]bool{}
+	for _, k := range m.Keywords {
+		if hasKeywordFold(c.Keywords, k) {
+			score += weightKeyword
+			signals = append(signals, "keyword:"+k)
+			covered[strings.ToLower(k)] = true
+		}
+	}
+	for _, st := range m.Subtypes {
+		if slices.Contains(c.Subtypes, st) {
+			score += weightSubtype
+			signals = append(signals, "subtype:"+st)
+		}
+	}
+	for _, n := range m.Text {
+		if n == "" || covered[n] || !strings.Contains(text, n) {
+			continue
+		}
+		score += weightText
+		signals = append(signals, "text:"+n)
+	}
+	if score > scoreCap {
+		score = scoreCap
+	}
+	return score / scoreCap, signals
+}
+
+// roleSets resolves the role slugs to Oracle-id sets.
+func (t *themeTable) roleSets(tags *cards.TagIndex) map[string]map[string]bool {
+	out := map[string]map[string]bool{}
+	for role, slugs := range t.Roles {
+		set := map[string]bool{}
+		for _, s := range slugs {
+			for _, id := range tags.Resolve(s) {
+				set[id] = true
+			}
+		}
+		out[role] = set
+	}
+	return out
+}
+
+// words normalizes the theme: lowercase, split on space and punctuation,
+// stop words dropped, order kept, duplicates dropped.
+func words(theme string) []string {
+	f := func(r rune) bool {
+		return (r < 'a' || r > 'z') && (r < '0' || r > '9') && r != '-'
+	}
+	var out []string
+	seen := map[string]bool{}
+	for _, w := range strings.FieldsFunc(strings.ToLower(theme), f) {
+		w = strings.Trim(w, "-")
+		if w == "" || stopWords[w] || seen[w] {
+			continue
+		}
+		seen[w] = true
+		out = append(out, w)
+	}
+	return out
+}
+
+var stopWords = map[string]bool{
+	"a": true, "an": true, "the": true, "and": true, "or": true, "of": true, "with": true, "deck": true,
+	"build": true, "me": true, "my": true, "for": true, "in": true, "on": true, "to": true, "some": true,
+	"commander": true, "edh": true, "please": true, "want": true, "i": true, "that": true, "this": true,
+	"cards": true, "card": true, "fun": true, "good": true, "strong": true, "casual": true,
+}
+
+func singular(w string) string {
+	switch {
+	case strings.HasSuffix(w, "ies"):
+		return strings.TrimSuffix(w, "ies") + "y"
+	case strings.HasSuffix(w, "ves"):
+		return strings.TrimSuffix(w, "ves") + "f"
+	case strings.HasSuffix(w, "s") && !strings.HasSuffix(w, "ss"):
+		return strings.TrimSuffix(w, "s")
+	}
+	return w
+}
+
+func title(w string) string {
+	if w == "" {
+		return w
+	}
+	return strings.ToUpper(w[:1]) + w[1:]
+}
+
+func appendUnique(list []string, v string) []string {
+	if v == "" || slices.Contains(list, v) {
+		return list
+	}
+	return append(list, v)
+}
+
+func hasKeywordFold(have []string, want string) bool {
+	for _, k := range have {
+		if strings.EqualFold(k, want) {
+			return true
+		}
+	}
+	return false
+}
+
+// Describe renders the match for the gate doc.
+func (m ThemeMatch) Describe() string {
+	var parts []string
+	if len(m.PayoffSlugs) > 0 {
+		s := append([]string(nil), m.PayoffSlugs...)
+		sort.Strings(s)
+		parts = append(parts, "payoff tags "+strings.Join(s, ", "))
+	}
+	if len(m.Slugs) > 0 {
+		s := append([]string(nil), m.Slugs...)
+		sort.Strings(s)
+		parts = append(parts, "tags "+strings.Join(s, ", "))
+	}
+	if len(m.Keywords) > 0 {
+		parts = append(parts, "keywords "+strings.Join(m.Keywords, ", "))
+	}
+	if len(m.Subtypes) > 0 {
+		parts = append(parts, "subtypes "+strings.Join(m.Subtypes, ", "))
+	}
+	if len(m.Unmatched) > 0 {
+		parts = append(parts, "unmatched "+strings.Join(m.Unmatched, ", "))
+	}
+	if len(parts) == 0 {
+		return "no theme signal"
+	}
+	return strings.Join(parts, ". ")
+}

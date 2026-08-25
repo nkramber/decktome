@@ -160,6 +160,13 @@ func (x *Index) BySetCollector(set, num string) (*mtgv1.Card, bool) {
 // Len returns the card count.
 func (x *Index) Len() int { return len(x.cards) }
 
+// All returns every card in rank order. The slice is shared: do not
+// modify it.
+func (x *Index) All() []*mtgv1.Card { return x.cards }
+
+// Tags returns the tag index, or nil when the snapshot had no tags file.
+func (x *Index) Tags() *TagIndex { return x.tags }
+
 // SearchQuery is the structured filter set for Search.
 type SearchQuery struct {
 	// ColorsWithin keeps cards whose color identity fits these colors.

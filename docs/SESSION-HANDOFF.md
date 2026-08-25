@@ -4,7 +4,7 @@
 
 ## Last updated
 
-2026-08-24. Merged: PR-0a to PR-5 and PR-10 (#1 to #9). Phase 1 is complete. The full audit ran and every finding is fixed on branch `audit-fixes`, merge pending.
+2026-08-24. Merged: PR-0a to PR-5, PR-10, and the audit fixes (#1 to #10). Phase 1 is complete. PR-6 is built on branch `pr-6`. Run 1 scored 12 of 20. Run 2 scores 20 of 20, so the PR-6 gate holds.
 
 ## State of the work
 
@@ -51,19 +51,36 @@ Known limits: Grist, the Hunger Tide can not be a commander in the engine (no Sc
 
 The collection is optional. A user with zero library gets a fully optimized deck from the whole legal pool. A user with a library can turn the library off. The proto needed no change. The roadmap, guardrail 5, the corpus question catalog, and the PR-6/7/8/11/12 entries were updated.
 
+## PR-6 state (2026-08-24)
+
+`internal/candidates` is built and tested. `cmd/candidates-review` writes the gate document. Scoring follows D-62 (payoffs over enablers) and D-64 (a theme line behind a condition counts). D-63 gives PR-7 the thin-theme question.
+
+Run 1 (`docs/reference/pr6-candidate-review.md`): 12 of 20 on theme. The bar is 18, so run 1 fails. Eight prompts failed: 2, 3, 5, 6, 14, 16, 18, and 19. The document keeps every score and Review block.
+
+Run 2 (`docs/reference/pr6-candidate-review-run2.md`): 20 of 20 on theme, so the gate holds. Ten lists are identical to run 1. Ten changed, and each one has a new Review block. The weakest pass is prompt 19 (control) at exactly 36 of 40, with six borderline cards. A rerun writes a new file, because `REVIEW_OUT` refuses a document that already holds a verdict (D-65).
+
+Fixes between the two runs:
+- Defect A: `themes.json` named 16 tag slugs that Scryfall Tagger does not have, over 11 theme rows. The matcher dropped each one without a message. Every slug is now real. `make themes-check` runs `TestThemeSlugsExist` against the local snapshot and fails on an unknown slug.
+- Defect B: two payoff needles missed the common card wording. "deals damage to each opponent" matched 11 red cards, and the real wording with a number matches 176. Needles are now short and wording-safe.
+- Defect C: the role fallback in `roles.go` called every "exile target" clause removal, so blink spells got role removal. `exileIsRemoval` now skips a clause that returns the permanent. `TestExileIsRemoval` guards it.
+- Theme rows: a parent tag carries its children, which was the root cause in four prompts. `death-trigger` (aristocrats), `anthem` (tokens), `flicker` (blink), and `counters-matter` (counters) are gone. Payoffs are now narrow: `blood-artist-ability`, `synergy-token`, `reanimate-creature`, `storm-like`, `pp-counters-matter`, `burn-player`, `synergy-mill`, `synergy-poison`.
+
+Known limits: popularity is EDHREC rank for every format, so a 60-card prompt collects Commander staples. Prompt 18 measures the cost: every Modern Burn staple except Lightning Bolt ranks below the cut. PR-14 (`MetaBoost`) is the fix. Prompt 16 shows the second limit: the word "proliferate" scores under the word "counters", so no proliferate card reaches the top 40.
+
 ## Next steps, in order
 
-1. The owner runs the two actions above and merges `audit-fixes`.
-2. PR-6 (candidates), PR-7 (questions), PR-8 (generator), PR-9 (variance). PR-7 is the first call site of `internal/llm`.
+1. The owner reads `docs/reference/pr6-candidate-review-run2.md` and confirms the 20 verdicts. Prompt 19 needs the closest look.
+2. The owner merges `pr-6`.
+3. PR-7 (questions), PR-8 (generator), PR-9 (variance). PR-7 is the first call site of `internal/llm`.
 
 ## Facts that expire
 
 - Ban-list snapshot: 2026-08-23. Next announcement 2026-10-12.
 - Scryfall bulk sizes and counts: 2026-08-23.
 - Game Changers: 53 cards, list of 2026-02-09.
-- Standard: 12 legal sets, no rotation in 2026.
+- Standard: 18 sets, Wilds of Eldraine (2023-09-08) to The Hobbit (2026-08-14). No rotation in 2026. Six sets leave at the first 2027 set: WOE, LCI, MKM, OTJ, BLB, DSK. Verified 2026-08-24 on the Scryfall sets API.
 - LLM model ids and prices: 2026-08-24 (`roles.json`, `prices.json`). The Sonnet 5 intro price claim is unverified.
-- Comprehensive Rules: 2026-08-07 text. Commander brackets: 2025-10-21 revision. Standard: 18 sets, six leave in 2027.
+- Comprehensive Rules: 2026-08-07 text. Commander brackets: 2025-10-21 revision.
 
 ## How to resume
 
