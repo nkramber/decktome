@@ -8,7 +8,7 @@
 
 PR-7 is code-complete and both gate bars pass. The live gate ran 13 times. Twenty defects were found, and all twenty are fixed. The M-5 sheet holds 60 items, and the owner is scoring them now. That scoring is the only open item in PR-7.
 
-**Nothing is committed.** Branch `pr-7` holds the first half in commit 69fe1c2. Every change after that commit is in the working tree, across about 50 files. Run `git status` first. The owner commits and pushes (D-24 style, see the hard rules in `CLAUDE.md`).
+All of it is committed and pushed. Branch `pr-7` is level with `origin/pr-7` at commit 53ddbf4, and the working tree is clean. Run `git pull` before you read anything: the owner scores the M-5 sheet on a phone, so the remote can hold newer scores than the local file. The owner commits and pushes.
 
 ## State of the work
 
@@ -83,7 +83,7 @@ New decisions: D-66 gives the rubric. D-67 holds the card-pool question until fo
 
 ## PR-7 state (2026-08-24)
 
-PR-7 is the question workflow and the first call site of `internal/llm`. Every item is built except the live gate run, which costs money and needs the owner. `go build`, `go vet`, `go test`, and `golangci-lint` are all green on the Go tree. Branch `pr-7` holds commit 69fe1c2. This session's work is not committed.
+PR-7 is the question workflow and the first call site of `internal/llm`. Every item is built, and both gate bars pass. `go build`, `go vet`, `go test`, and `golangci-lint` are all green on the Go tree. The work is committed and pushed at 53ddbf4.
 
 ### What exists
 
@@ -278,7 +278,7 @@ The scoring earns its keep before it ends. Item 8 named a fault the six of D-66 
 
 ## How to resume
 
-1. Run `git status`. About 50 files sit in the working tree, and nothing after commit 69fe1c2 is committed.
+1. Run `git pull`, then `git status`. The owner scores the M-5 sheet on a phone, so the remote can be ahead. The tree was clean at commit 53ddbf4.
 2. Load the skills: `ste-writing` before you write any `.md`, `design-doc-style` before you edit the roadmap, and `mtg-corpus` before you reason about a format, a legality, or a card term.
 3. Read `docs/decisions.md` (D-1 to D-103) and `docs/open-questions.md`. The decision log is the source of truth, and this file is the summary.
 4. Check the Go tree is green: `cd go && go build ./... && go vet ./... && go test ./...`, then `make lint-go`.

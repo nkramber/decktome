@@ -10,7 +10,7 @@ Stage (2026-08-25): PR-0a to PR-6 and PR-10 are merged (#1 to #11), the audit fi
 
 PR-7 (the question workflow) is code-complete on branch `pr-7`. Both gate bars pass after 13 live runs and 20 fixed defects. The one open item is the owner's M-5 scoring of `docs/reference/pr7-m5-scoring.md`, which sets two thresholds. Then PR-8.
 
-**Nothing after commit 69fe1c2 is committed.** About 50 files sit in the working tree. Run `git status` before you change anything. The owner commits and pushes. Do not commit unless the owner asks.
+All of PR-7 is committed and pushed. Branch `pr-7` is level with `origin/pr-7` at commit 53ddbf4, and the working tree is clean. Run `git pull` first: the owner reads and scores the M-5 sheet on a phone, so the remote can be ahead. The owner commits and pushes. Do not commit unless the owner asks.
 
 Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
 
