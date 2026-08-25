@@ -38,7 +38,10 @@ type Row struct {
 	Text string `json:"text"`
 	// Options are suggested answers. The user may answer in free text.
 	Options []string `json:"options"`
-	When    When     `json:"when"`
+	// Fallback is the wording used when a placeholder has no value. It
+	// holds no placeholder itself. Load enforces that.
+	Fallback string `json:"fallback"`
+	When     When   `json:"when"`
 }
 
 // When holds the triggers of one row. A nil pointer means the row does
@@ -109,6 +112,14 @@ func Load() (*Catalog, error) {
 		}
 		seen[r.ID] = true
 		order[r.Order] = r.ID
+		if placeholder.MatchString(r.Text) {
+			if strings.TrimSpace(r.Fallback) == "" {
+				return nil, fmt.Errorf("questions: row %q holds a placeholder and has no fallback", r.ID)
+			}
+			if placeholder.MatchString(r.Fallback) {
+				return nil, fmt.Errorf("questions: the fallback of row %q holds a placeholder", r.ID)
+			}
+		}
 		for _, need := range r.When.Requires {
 			if !slots[need] {
 				return nil, fmt.Errorf("questions: row %q requires slot %q, which the proto does not have", r.ID, need)

@@ -4,7 +4,7 @@
 
 ## Last updated
 
-2026-08-24. Merged: PR-0a to PR-5, PR-10, the audit fixes, and PR-6 (#1 to #11). Phase 1 and PR-6 are complete. PR-7 is next.
+2026-08-24. Merged: PR-0a to PR-5, PR-10, the audit fixes, and PR-6 (#1 to #11). PR-7 is in progress, and its work is not committed.
 
 ## State of the work
 
@@ -69,34 +69,73 @@ Known limits: popularity is EDHREC rank for every format, so a 60-card prompt co
 
 ## PR-7 preparation (2026-08-24)
 
-OQ-19 is answered (D-66). M-5 now holds the six-field rubric, the warranted-invention rule, and the 80% precision floor.
+OQ-19 is answered (D-66): six fields per invented question, three-point scales, and an 80% precision floor on the threshold M-5 sets.
 
-Eight dogfood conversations ran through the `deck-builder-dogfood` agent, before any PR-7 code. Result: none of the eight was catalog-only, and only 5 of 26 catalog questions survived without a rewrite. The catalog held the right slots and the wrong wording. One cause produced three of the invented questions: the Commander row offered suggestions and held no question to close the slot.
+Eight dogfood conversations ran through the `deck-builder-dogfood` agent before any code. None was catalog-only, and only 5 of 26 catalog questions survived without a rewrite. The catalog held the right slots and the wrong wording. One cause produced three of the invented questions: the Commander row offered suggestions and held no question to close the slot.
 
-Corpus section 11 was rewritten the same day. It holds 24 rows, against 11 before: 11 new rows (commander pick, commander not owned, weak commander pool, named card role, theme with a card named, budget scope, acquisition, house format limits, jank or fun, table tolerance, plan choice), and two rows split in two (power, card pool). It also gained an ask order and a word-routing rule. Section 2.2 gained the Grist class of commander, which a type-line test reads wrong. Scryfall ruling of 2021-06-18.
+Corpus section 11 was rewritten from those runs. It holds 26 rows, against 11 before: 11 new rows, two rows split in two, an ask order, and a word-routing rule. Section 2.2 gained the Grist class of commander, which a type-line test reads wrong (Scryfall ruling, 2021-06-18).
 
-New decisions: D-66 (rubric), D-67 (the card-pool question waits for format, colors, and theme), D-68 (slots freeze when a run starts).
+New decisions: D-66 (rubric), D-67 (the card-pool question waits for format, colors, and theme), D-68 (slots freeze when a run starts), D-69 (the gap score is its own call, first threshold 0.35).
 
 ## PR-7 state (2026-08-24)
 
-`internal/questions` holds the deterministic half of the question workflow. 1,166 lines with tests. `go test ./...` is green.
+PR-7 is the question workflow and the first call site of `internal/llm`. It is **in progress**. `internal/questions` holds the whole turn loop, 2,648 lines with tests. `go test ./...` is green and `go vet ./...` is clean. Nothing is committed by this session.
 
-- `catalog.json` holds the 26 rows of corpus section 11 as data, with the ask order, the triggers, and the option lists.
-- `catalog.go` loads and checks the rows: unique ids, a real proto slot, a unique order, and a text.
-- `plan.go` picks the questions for one turn: ask order, at most three, one question per proto slot per turn, no repeat, and nothing at all when the run is frozen (D-68).
-- A row carries a `slot` (the proto slot the answer informs) and a `key` (its own state key). A refinement question such as table tolerance informs power, and the bracket answer must not cancel it.
-- `TestCatalogMatchesCorpus` fails when the skill file and the data drift apart.
-- `TestConversations` runs 12 scripted conversations. Each one completes in at most four turns with no repeated question.
+### What exists
 
-Three ordering defects came out of the tests, all one class: a general row hid its special row, because both share a key and the first match wins. Fixed for the theme rows, the commander rows, and the two pool rows.
+| File | What it holds |
+|---|---|
+| `catalog.json` | The 26 rows of corpus section 11 as data: ask order, triggers, options, and a placeholder-free fallback for each of the 9 rows that use braces. |
+| `catalog.go` | Load and validate. A row needs a unique id, a real proto slot, a unique order, a text, and a fallback when it holds a placeholder. |
+| `plan.go` | The turn planner and the word-routing rules. |
+| `state.go` | Session state, the slot map, the freeze, and `Ready`. |
+| `agent.go` | The turn loop: classify, score, ask. The agent decides the source of every question. |
+| `prompts.go` | The three prompts and their strict schemas. Keep them stable: a changed prompt invalidates the M-5 scores (D-66). |
+| `resolve.go` | The placeholder resolver, the clause dropper, and the phrasing guard. |
+| `hints_candidates.go` | PR-6 as the value source: theme colors, commander names, owned on-theme count. |
 
-Still open in PR-7: the model half. The `classify` role fills slots from free text, the `ask` role phrases a question, the `custom_question` tool covers a gap, the gap score decides between the two, and M-4 logs every invented question. The service (`AgentService.Chat`) and the session store follow. The gate needs 30 conversations, and 12 exist. The catalog-only count needs the model in the loop, because only the model invents a question.
+Rules the code holds:
 
-Known rough edge: the locked-cards row fires whenever the user names a card, including a card that became the commander.
+- At most three questions in one turn, and one question per proto slot.
+- Never a repeat.
+- Nothing at all when the run is frozen (D-68).
+- The card-pool question waits for format, colors, and theme (D-67).
+
+A row carries two names. `slot` is the proto field the answer informs. `key` is the row's own state. A refinement question such as table tolerance therefore survives a filled power slot.
+
+A turn costs three model calls (D-69): `classify` fills slots, a second `classify` call scores the catalog fit and may offer a replacement, and `ask` phrases the result. The provisional fit threshold is 0.35. A replacement counts only under it.
+
+### The live run (2026-08-24)
+
+The owner approved one live conversation. Four calls, 1,875 input tokens, 350 output tokens, **$0.000795**, 9.7 seconds, both roles on `gpt-5.6-luna`, zero cached input tokens. A second run went out by mistake in the same session, at about the same size, so the true spend was near $0.0016.
+
+It found four defects that 33 offline tests had missed:
+
+1. The agent trusted the classifier's list of closed slots. One over-eager list ended a session with commander, power, and card pool still empty. Fixed: a key closes only when the agent offered it that turn, and a refused key is logged.
+2. The agent sent raw placeholders to the model. The model answered by turning "{theme} is strongest in {colors}" into a second question aimed at the user. Fixed: resolve first, drop a clause with no value, fall back when the first sentence does not survive, and guard the phrasing that comes back.
+3. A surviving trailing clause read as a dangling question. Fixed by the first-sentence rule.
+4. `Ready` called a session complete while its questions were still unanswered, because the no-repeat rule empties the plan as soon as a question goes out. Fixed: ready needs an empty plan and no outstanding ask.
+
+Defects 3 and 4 came out of the fixes for 1 and 2, so the live call paid for itself four times.
+
+### How to run it
+
+- `go test ./internal/questions` runs everything offline against the fake provider.
+- `make themes-check` checks the PR-6 theme slugs against the local snapshot.
+- The live conversation needs approval before every run. It costs money:
+  `set -a && . ./.env && set +a && QUESTIONS_LIVE=1 go test ./internal/questions -run TestLiveConversation -v -count=1`
+
+### Open in PR-7
+
+- `AgentService.Chat` and `GetSession`, plus the session store. The proto is ready (PR-1b).
+- The M-4 report. Every question already logs its slot, source, fit, and threshold.
+- 18 more gate conversations. Twelve exist. The catalog-only half of the gate needs the model in the loop, because only the model invents a question.
+- Prompt caching is off: the live run read zero cached input tokens, although both prompts hold a stable prefix.
+- Known rough edge: the locked-cards row fires whenever the user names a card, including a card that became the commander.
 
 ## Next steps, in order
 
-1. Build PR-7 (question workflow). It is the first call site of `internal/llm`. The gate: 30 scripted conversations, complete slots in at most four turns, no repeat, at least 25 catalog-only.
+1. Finish PR-7: `AgentService.Chat`, the session store, the M-4 report, and 18 more gate conversations.
 2. PR-8 (generator), then PR-9 (variance).
 3. M-5 runs on the first UI build (after PR-12) and sets the D-27 threshold from the D-66 rubric.
 

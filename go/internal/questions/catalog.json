@@ -44,7 +44,8 @@
       "text": "{card} supports two plans: {plan_a} and {plan_b}. Which one do you want?",
       "when": {
         "named_card": true
-      }
+      },
+      "fallback": "What should the deck do: a creature type, a mechanic, or a play style?"
     },
     {
       "id": "theme_competitive",
@@ -113,7 +114,8 @@
         "format": "commander",
         "owned_mode": true,
         "commander_not_owned": true
-      }
+      },
+      "fallback": "You do not own that commander. Add it to the buy list, or pick one from your library?"
     },
     {
       "id": "commander_weak_pool",
@@ -124,7 +126,8 @@
         "format": "commander",
         "owned_mode": true,
         "weak_commander_pool": true
-      }
+      },
+      "fallback": "Your library holds no strong commander for this theme. Buy one, change the theme, or use the best you own?"
     },
     {
       "id": "named_card_role",
@@ -139,7 +142,8 @@
         "named_card": true,
         "format": "commander"
       },
-      "key": "named_card_role"
+      "key": "named_card_role",
+      "fallback": "Do you want that card as your commander, or as one card in the 99?"
     },
     {
       "id": "commander",
@@ -151,7 +155,8 @@
         "requires": [
           "theme"
         ]
-      }
+      },
+      "fallback": "Do you have a commander in mind, or should I suggest one?"
     },
     {
       "id": "commander_pick",
@@ -161,7 +166,8 @@
       "when": {
         "format": "commander",
         "suggested": true
-      }
+      },
+      "fallback": "Which commander do you want, or should I suggest three more?"
     },
     {
       "id": "power_commander",
@@ -238,7 +244,8 @@
       "text": "Any color preference? {theme} is strongest in {colors}.",
       "when": {
         "commander_set": false
-      }
+      },
+      "fallback": "Any color preference?"
     },
     {
       "id": "pool",
@@ -277,7 +284,8 @@
           "colors",
           "theme"
         ]
-      }
+      },
+      "fallback": "Your library is thin for this theme. Build owned-first with a buy list, or use the whole pool?"
     },
     {
       "id": "budget",
@@ -331,7 +339,8 @@
       "text": "{theme} has two plans: {plan_a}, or {plan_b}. Which one?",
       "when": {
         "two_plans": true
-      }
+      },
+      "fallback": "This theme has two common plans. Which one do you want?"
     },
     {
       "id": "variance",

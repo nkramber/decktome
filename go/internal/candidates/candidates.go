@@ -407,3 +407,70 @@ func stapleRole(r mtgv1.CardRole) bool {
 func RoleName(r mtgv1.CardRole) string {
 	return strings.ToLower(strings.TrimPrefix(r.String(), "CARD_ROLE_"))
 }
+
+// ThemeColors returns the colors a theme is strongest in, in WUBRG order.
+// It tallies the color identity of the theme's best cards and keeps a
+// color that carries at least share of them. PR-7 uses it to fill the
+// {colors} clause of the color question, so the agent states a fact
+// instead of asking the user for it.
+func (b *Builder) ThemeColors(idx *cards.Index, format mtgv1.FormatId, theme string, top int, share float64) ([]mtgv1.Color, error) {
+	if top <= 0 {
+		top = 100
+	}
+	if share <= 0 {
+		share = 0.25
+	}
+	list, err := b.Build(idx, Request{Format: format, Theme: theme})
+	if err != nil {
+		return nil, err
+	}
+	count := map[mtgv1.Color]int{}
+	seen := 0
+	for _, c := range list.Candidates {
+		if seen >= top {
+			break
+		}
+		if len(c.Card.ColorIdentity) == 0 {
+			continue // colorless cards say nothing about a theme's colors
+		}
+		seen++
+		for _, col := range c.Card.ColorIdentity {
+			count[col]++
+		}
+	}
+	if seen == 0 {
+		return nil, nil
+	}
+	var out []mtgv1.Color
+	for _, col := range []mtgv1.Color{mtgv1.Color_COLOR_W, mtgv1.Color_COLOR_U, mtgv1.Color_COLOR_B, mtgv1.Color_COLOR_R, mtgv1.Color_COLOR_G} {
+		if float64(count[col])/float64(seen) >= share {
+			out = append(out, col)
+		}
+	}
+	return out, nil
+}
+
+// Commanders returns up to n commander-eligible candidates for a request,
+// best first. PR-7 uses it to name real commanders in the commander
+// question instead of a placeholder.
+func (b *Builder) Commanders(idx *cards.Index, req Request, n int) ([]Candidate, error) {
+	if n <= 0 {
+		n = 3
+	}
+	req.Format = mtgv1.FormatId_FORMAT_ID_COMMANDER
+	list, err := b.Build(idx, req)
+	if err != nil {
+		return nil, err
+	}
+	var out []Candidate
+	for _, c := range append(append([]Candidate(nil), list.Candidates...), list.Upgrades...) {
+		if !c.Card.CanBeCommander {
+			continue
+		}
+		out = append(out, c)
+		if len(out) >= n {
+			break
+		}
+	}
+	return out, nil
+}
