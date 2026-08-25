@@ -1,0 +1,875 @@
+{
+  "verified_at": "2026-08-24",
+  "note": "Theme words to signals. Two kinds (D-62): payoffs reward the theme (payoff_slugs, payoff_text) and enablers merely do the thing (slugs, keywords, subtype, text). Payoffs weigh more, so Archangel of Thune outranks a bare lifelinker. Slugs verified against the oracle_tags bulk file of 2026-08-24 (4,521 tags). Scryfall splits the two in its hierarchy: lifegain versus lifegain-matters, sacrifice-outlet versus sacrifice-matters. A word with no row falls back to the generic rule: payoff slug w-matters and synergy-w, enabler slugs w and typal-w, keyword w, subtype w, text w.",
+  "themes": {
+    "lifegain": {
+      "payoff_slugs": [
+        "lifegain-matters",
+        "life-total-matters-self"
+      ],
+      "payoff_text": [
+        "whenever you gain life",
+        "if you gained life this turn",
+        "if you've gained life",
+        "for each 1 life",
+        "life you gained"
+      ],
+      "slugs": [
+        "lifegain",
+        "repeatable-lifegain",
+        "drain-life"
+      ],
+      "keywords": [
+        "Lifelink"
+      ],
+      "text": [
+        "you gain"
+      ]
+    },
+    "lifelink": {
+      "payoff_slugs": [
+        "lifegain-matters"
+      ],
+      "payoff_text": [
+        "whenever you gain life"
+      ],
+      "slugs": [
+        "lifegain",
+        "gives-lifelink"
+      ],
+      "keywords": [
+        "Lifelink"
+      ]
+    },
+    "tokens": {
+      "payoff_slugs": [
+        "synergy-token",
+        "synergy-token-creature",
+        "tokenfall",
+        "token-doubler",
+        "token-increaser"
+      ],
+      "payoff_text": [
+        "whenever a token",
+        "creature tokens you control",
+        "for each creature you control"
+      ],
+      "slugs": [
+        "repeatable-token-generator",
+        "repeatable-creature-tokens"
+      ],
+      "text": [
+        "create a",
+        "creature token"
+      ]
+    },
+    "go-wide": {
+      "payoff_slugs": [
+        "synergy-token",
+        "synergy-token-creature",
+        "token-doubler"
+      ],
+      "payoff_text": [
+        "creature tokens you control",
+        "for each creature you control"
+      ],
+      "slugs": [
+        "repeatable-token-generator",
+        "repeatable-creature-tokens"
+      ],
+      "text": [
+        "create a"
+      ]
+    },
+    "aristocrats": {
+      "payoff_slugs": [
+        "blood-artist-ability"
+      ],
+      "payoff_text": [
+        "creature you control dies",
+        "another creature dies",
+        "sacrifice another creature",
+        "whenever you sacrifice a creature"
+      ],
+      "slugs": [
+        "sacrifice-outlet-creature",
+        "free-sacrifice-outlet",
+        "repeatable-sacrifice-outlet"
+      ],
+      "text": [
+        "sacrifice a creature"
+      ]
+    },
+    "sacrifice": {
+      "payoff_slugs": [],
+      "payoff_text": [
+        "whenever you sacrifice a creature",
+        "sacrifice another creature",
+        "creature you control dies"
+      ],
+      "slugs": [
+        "sacrifice-outlet-creature",
+        "free-sacrifice-outlet",
+        "repeatable-sacrifice-outlet"
+      ],
+      "text": [
+        "sacrifice a creature"
+      ]
+    },
+    "voltron": {
+      "payoff_slugs": [
+        "synergy-equipment",
+        "synergy-aura",
+        "synergy-modified"
+      ],
+      "payoff_text": [
+        "equipped creature",
+        "enchanted creature",
+        "commander damage"
+      ],
+      "slugs": [
+        "evasion",
+        "protection"
+      ],
+      "keywords": [
+        "Equip",
+        "Double strike",
+        "Hexproof"
+      ]
+    },
+    "equipment": {
+      "payoff_slugs": [
+        "synergy-equipment",
+        "synergy-modified"
+      ],
+      "payoff_text": [
+        "equipped creature",
+        "whenever an equipment"
+      ],
+      "keywords": [
+        "Equip"
+      ],
+      "text": [
+        "equipment"
+      ]
+    },
+    "auras": {
+      "payoff_slugs": [
+        "synergy-aura"
+      ],
+      "payoff_text": [
+        "enchanted creature",
+        "whenever an aura"
+      ],
+      "keywords": [
+        "Enchant creature"
+      ],
+      "text": [
+        "aura"
+      ]
+    },
+    "blink": {
+      "payoff_slugs": [],
+      "slugs": [
+        "flicker-creature",
+        "flicker-nonland",
+        "flicker-permanent"
+      ],
+      "text": [
+        "exile target creature you control, then return",
+        "return it to the battlefield"
+      ],
+      "payoff_text": [
+        "entering causes a triggered ability"
+      ]
+    },
+    "flicker": {
+      "payoff_slugs": [],
+      "slugs": [
+        "flicker-creature",
+        "flicker-nonland",
+        "flicker-permanent"
+      ],
+      "text": [
+        "exile target creature you control, then return",
+        "return it to the battlefield"
+      ],
+      "payoff_text": [
+        "entering causes a triggered ability"
+      ]
+    },
+    "reanimator": {
+      "payoff_slugs": [
+        "reanimate-matters",
+        "reanimate-creature"
+      ],
+      "payoff_text": [
+        "whenever a creature enters from your graveyard",
+        "creature card from your graveyard to the battlefield"
+      ],
+      "slugs": [
+        "reanimate",
+        "reanimate-from-any",
+        "tutor-to-graveyard",
+        "mill-self",
+        "discard"
+      ],
+      "text": [
+        "from your graveyard to the battlefield"
+      ]
+    },
+    "graveyard": {
+      "payoff_slugs": [
+        "leaving-graveyard-matters",
+        "graveyard-order-matters"
+      ],
+      "slugs": [
+        "reanimate",
+        "recursion",
+        "mill-self"
+      ],
+      "text": [
+        "graveyard"
+      ]
+    },
+    "storm": {
+      "payoff_slugs": [
+        "storm-like",
+        "third-spell-matters",
+        "fourth-spell-matters"
+      ],
+      "payoff_text": [
+        "copy it for each spell cast before it this turn",
+        "instant and sorcery spells you cast cost"
+      ],
+      "slugs": [
+        "storm-count-matters",
+        "cantrip",
+        "ritual"
+      ],
+      "keywords": [
+        "Storm"
+      ]
+    },
+    "spellslinger": {
+      "payoff_slugs": [
+        "second-spell-matters",
+        "storm-count-matters"
+      ],
+      "payoff_text": [
+        "whenever you cast an instant or sorcery",
+        "whenever you cast a noncreature spell"
+      ],
+      "slugs": [
+        "cantrip",
+        "copy"
+      ],
+      "keywords": [
+        "Prowess",
+        "Magecraft"
+      ],
+      "text": [
+        "instant or sorcery"
+      ]
+    },
+    "spells": {
+      "payoff_slugs": [
+        "second-spell-matters"
+      ],
+      "payoff_text": [
+        "whenever you cast an instant or sorcery"
+      ],
+      "slugs": [
+        "cantrip",
+        "copy"
+      ],
+      "keywords": [
+        "Prowess",
+        "Magecraft"
+      ],
+      "text": [
+        "instant or sorcery"
+      ]
+    },
+    "landfall": {
+      "payoff_slugs": [
+        "landfall",
+        "landfall-other",
+        "lands-matter",
+        "land-count-matters"
+      ],
+      "payoff_text": [
+        "whenever a land you control enters",
+        "land enters"
+      ],
+      "slugs": [
+        "land-ramp"
+      ],
+      "keywords": [
+        "Landfall"
+      ]
+    },
+    "lands": {
+      "payoff_slugs": [
+        "lands-matter",
+        "land-count-matters",
+        "landfall"
+      ],
+      "payoff_text": [
+        "for each land you control"
+      ],
+      "slugs": [
+        "land-ramp",
+        "utility-land"
+      ],
+      "keywords": [
+        "Landfall"
+      ],
+      "text": [
+        "land"
+      ]
+    },
+    "mill": {
+      "payoff_slugs": [
+        "synergy-mill"
+      ],
+      "payoff_text": [
+        "whenever a card is put into an opponent's graveyard",
+        "cards in their graveyard",
+        "cards in each opponent's graveyard"
+      ],
+      "slugs": [
+        "mill-opponent",
+        "mill-any",
+        "mill"
+      ],
+      "keywords": [
+        "Mill"
+      ],
+      "text": [
+        "mills"
+      ]
+    },
+    "burn": {
+      "payoff_slugs": [
+        "burn-player"
+      ],
+      "payoff_text": [
+        "damage to each opponent",
+        "deals that much damage plus"
+      ],
+      "slugs": [
+        "single-target-instant-sorcery"
+      ],
+      "text": []
+    },
+    "kindred": {
+      "payoff_slugs": [
+        "typal"
+      ],
+      "payoff_text": [
+        "creatures you control get",
+        "lord"
+      ],
+      "text": [
+        "creatures you control"
+      ]
+    },
+    "tribal": {
+      "payoff_slugs": [
+        "typal"
+      ],
+      "payoff_text": [
+        "creatures you control get"
+      ],
+      "text": [
+        "creatures you control"
+      ]
+    },
+    "stax": {
+      "payoff_slugs": [
+        "tax",
+        "hatebear"
+      ],
+      "text": [
+        "can't",
+        "unless",
+        "costs",
+        "more to cast"
+      ]
+    },
+    "control": {
+      "slugs": [
+        "counterspell",
+        "sweeper",
+        "removal",
+        "draw-engine",
+        "pure-draw"
+      ],
+      "text": [
+        "counter target spell",
+        "destroy target",
+        "exile target"
+      ],
+      "payoff_slugs": [
+        "counterspell",
+        "sweeper",
+        "single-target-instant-sorcery"
+      ]
+    },
+    "ramp": {
+      "payoff_slugs": [
+        "land-count-matters",
+        "lands-matter"
+      ],
+      "slugs": [
+        "ramp",
+        "mana-rock",
+        "mana-dork",
+        "land-ramp"
+      ],
+      "text": [
+        "add {",
+        "search your library for a basic land"
+      ]
+    },
+    "combo": {
+      "payoff_slugs": [
+        "alternate-win-condition"
+      ],
+      "payoff_text": [
+        "you win the game",
+        "infinite"
+      ],
+      "slugs": [
+        "tutor",
+        "untapper",
+        "copy"
+      ],
+      "text": [
+        "untap"
+      ]
+    },
+    "discard": {
+      "payoff_slugs": [
+        "discard-matters"
+      ],
+      "payoff_text": [
+        "whenever an opponent discards",
+        "whenever you discard"
+      ],
+      "slugs": [
+        "discard"
+      ],
+      "text": [
+        "discards"
+      ]
+    },
+    "wheel": {
+      "payoff_slugs": [
+        "draw-matters"
+      ],
+      "payoff_text": [
+        "whenever you draw",
+        "whenever an opponent draws"
+      ],
+      "slugs": [
+        "wheel"
+      ],
+      "text": [
+        "discards their hand",
+        "draws seven cards"
+      ]
+    },
+    "group-hug": {
+      "slugs": [
+        "group-hug"
+      ],
+      "text": [
+        "each player"
+      ]
+    },
+    "extra-turns": {
+      "slugs": [
+        "extra-turn"
+      ],
+      "text": [
+        "extra turn"
+      ]
+    },
+    "counters": {
+      "payoff_slugs": [
+        "pp-counters-matter",
+        "synergy-modified"
+      ],
+      "payoff_text": [
+        "with a +1/+1 counter on it",
+        "for each +1/+1 counter",
+        "whenever one or more +1/+1 counters"
+      ],
+      "slugs": [
+        "repeatable-proliferate",
+        "pseudo-proliferate",
+        "repeatable-pp-counters"
+      ],
+      "keywords": [
+        "Proliferate"
+      ],
+      "text": [
+        "+1/+1 counter"
+      ]
+    },
+    "proliferate": {
+      "payoff_slugs": [
+        "pp-counters-matter"
+      ],
+      "slugs": [
+        "repeatable-proliferate",
+        "pseudo-proliferate"
+      ],
+      "keywords": [
+        "Proliferate"
+      ],
+      "text": [
+        "proliferate"
+      ]
+    },
+    "artifacts": {
+      "payoff_slugs": [
+        "artifact-matters",
+        "synergy-artifact"
+      ],
+      "payoff_text": [
+        "for each artifact you control",
+        "whenever an artifact enters",
+        "artifacts you control"
+      ],
+      "slugs": [
+        "mana-rock"
+      ],
+      "keywords": [
+        "Affinity",
+        "Improvise",
+        "Metalcraft"
+      ],
+      "text": [
+        "artifact"
+      ]
+    },
+    "enchantress": {
+      "payoff_slugs": [
+        "synergy-enchantment"
+      ],
+      "payoff_text": [
+        "whenever you cast an enchantment",
+        "whenever an enchantment enters",
+        "enchantments you control",
+        "for each enchantment"
+      ],
+      "keywords": [
+        "Constellation"
+      ],
+      "text": [
+        "enchantment"
+      ]
+    },
+    "enchantments": {
+      "payoff_slugs": [
+        "synergy-enchantment"
+      ],
+      "payoff_text": [
+        "whenever you cast an enchantment",
+        "enchantments you control"
+      ],
+      "keywords": [
+        "Constellation"
+      ],
+      "text": [
+        "enchantment"
+      ]
+    },
+    "theft": {
+      "slugs": [
+        "theft"
+      ],
+      "text": [
+        "gain control of"
+      ]
+    },
+    "copy": {
+      "slugs": [
+        "copy",
+        "clone"
+      ],
+      "text": [
+        "copy of",
+        "copy target"
+      ]
+    },
+    "flying": {
+      "payoff_slugs": [
+        "synergy-flying"
+      ],
+      "payoff_text": [
+        "creatures with flying you control",
+        "for each creature with flying"
+      ],
+      "slugs": [
+        "evasion"
+      ],
+      "keywords": [
+        "Flying"
+      ]
+    },
+    "infect": {
+      "payoff_slugs": [
+        "synergy-poison"
+      ],
+      "payoff_text": [
+        "poison counter",
+        "corrupted"
+      ],
+      "slugs": [
+        "poisonous"
+      ],
+      "keywords": [
+        "Infect",
+        "Toxic",
+        "Proliferate"
+      ]
+    },
+    "poison": {
+      "payoff_slugs": [
+        "synergy-poison"
+      ],
+      "payoff_text": [
+        "poison counter",
+        "corrupted"
+      ],
+      "slugs": [
+        "poisonous"
+      ],
+      "keywords": [
+        "Infect",
+        "Toxic",
+        "Proliferate"
+      ]
+    },
+    "aggro": {
+      "slugs": [
+        "evasion",
+        "anthem"
+      ],
+      "keywords": [
+        "Haste",
+        "Menace",
+        "Trample"
+      ]
+    },
+    "treasure": {
+      "payoff_slugs": [
+        "synergy-treasure"
+      ],
+      "payoff_text": [
+        "whenever you create a treasure",
+        "sacrifice a treasure"
+      ],
+      "slugs": [
+        "repeatable-treasures"
+      ],
+      "text": [
+        "treasure token"
+      ]
+    },
+    "energy": {
+      "slugs": [
+        "energy-generator",
+        "counter-fuel-energy"
+      ],
+      "text": [
+        "{e}"
+      ]
+    },
+    "dragons": {
+      "payoff_slugs": [
+        "typal-dragon"
+      ],
+      "payoff_text": [
+        "dragon you control",
+        "dragons you control",
+        "dragon spell"
+      ],
+      "subtype": "Dragon"
+    },
+    "elves": {
+      "payoff_slugs": [
+        "typal-elf"
+      ],
+      "payoff_text": [
+        "elves you control",
+        "elf you control",
+        "for each elf"
+      ],
+      "subtype": "Elf"
+    },
+    "goblins": {
+      "payoff_slugs": [
+        "typal-goblin"
+      ],
+      "payoff_text": [
+        "goblins you control",
+        "goblin you control"
+      ],
+      "subtype": "Goblin"
+    },
+    "zombies": {
+      "payoff_slugs": [
+        "typal-zombie"
+      ],
+      "payoff_text": [
+        "zombies you control",
+        "zombie you control",
+        "for each zombie"
+      ],
+      "subtype": "Zombie"
+    },
+    "vampires": {
+      "payoff_slugs": [
+        "typal-vampire"
+      ],
+      "payoff_text": [
+        "vampires you control",
+        "vampire you control"
+      ],
+      "subtype": "Vampire"
+    },
+    "angels": {
+      "payoff_slugs": [
+        "typal-angel"
+      ],
+      "payoff_text": [
+        "angels you control",
+        "angel you control"
+      ],
+      "subtype": "Angel"
+    },
+    "humans": {
+      "payoff_slugs": [
+        "typal-human"
+      ],
+      "payoff_text": [
+        "humans you control",
+        "human you control"
+      ],
+      "subtype": "Human"
+    },
+    "merfolk": {
+      "payoff_slugs": [
+        "typal-merfolk"
+      ],
+      "payoff_text": [
+        "merfolk you control"
+      ],
+      "subtype": "Merfolk"
+    },
+    "slivers": {
+      "payoff_slugs": [
+        "typal-sliver"
+      ],
+      "payoff_text": [
+        "sliver creatures",
+        "slivers you control"
+      ],
+      "subtype": "Sliver"
+    },
+    "cats": {
+      "payoff_slugs": [
+        "typal-cat"
+      ],
+      "payoff_text": [
+        "cats you control",
+        "cat you control"
+      ],
+      "subtype": "Cat"
+    },
+    "dinosaurs": {
+      "payoff_slugs": [
+        "typal-dinosaur"
+      ],
+      "payoff_text": [
+        "dinosaurs you control",
+        "dinosaur you control"
+      ],
+      "subtype": "Dinosaur"
+    },
+    "wizards": {
+      "payoff_slugs": [
+        "typal-wizard"
+      ],
+      "payoff_text": [
+        "wizards you control",
+        "wizard you control"
+      ],
+      "subtype": "Wizard"
+    },
+    "knights": {
+      "payoff_slugs": [
+        "typal-knight"
+      ],
+      "payoff_text": [
+        "knights you control",
+        "knight you control"
+      ],
+      "subtype": "Knight"
+    },
+    "rabbits": {
+      "payoff_slugs": [
+        "typal-rabbit"
+      ],
+      "payoff_text": [
+        "rabbits you control",
+        "rabbit you control"
+      ],
+      "subtype": "Rabbit"
+    },
+    "spirits": {
+      "payoff_slugs": [
+        "typal-spirit"
+      ],
+      "payoff_text": [
+        "spirits you control",
+        "spirit you control"
+      ],
+      "subtype": "Spirit"
+    }
+  },
+  "roles": {
+    "ramp": [
+      "ramp",
+      "mana-rock",
+      "mana-dork",
+      "land-ramp"
+    ],
+    "draw": [
+      "draw",
+      "draw-engine",
+      "cantrip"
+    ],
+    "removal": [
+      "removal"
+    ],
+    "wipe": [
+      "sweeper"
+    ],
+    "interaction": [
+      "counterspell",
+      "protection"
+    ],
+    "wincon": [
+      "alternate-win-condition"
+    ],
+    "utility_land": [
+      "utility-land"
+    ]
+  }
+}

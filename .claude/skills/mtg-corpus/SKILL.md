@@ -49,7 +49,7 @@ The app must know the format before it builds. A "60-card" request has many poss
 
 | Format | Deck size | Copies | Card pool (2026-08-24) | Sideboard |
 |---|---|---|---|---|
-| Standard | min 60 | max 4 per name (basic lands unlimited) | Sets from Wilds of Eldraine (WOE, 2023-09-08) to The Hobbit (HOB, 2026-08-14). 18 sets. No rotation in 2026. Next rotation: first set of 2027. Six sets leave then: WOE, LCI, MKM, OTJ, BLB, DSK. Verified 2026-08-24 on Scryfall (`set:woe legal:standard`). | 15 |
+| Standard | min 60 | max 4 per name (basic lands unlimited) | Sets from Wilds of Eldraine (WOE, 2023-09-08) to The Hobbit (HOB, 2026-08-14). 18 sets. The Big Score (BIG) is legal with Outlaws of Thunder Junction and is not counted as a separate set. No rotation in 2026. Next rotation: first set of 2027. Six sets leave then: WOE, LCI, MKM, OTJ, BLB, DSK. Verified 2026-08-24 on the Scryfall sets API: 19 paper core or expansion sets have a full Standard-legal card list, and BIG is one of them. | 15 |
 | Pioneer | min 60 | max 4 | Return to Ravnica (2012-10) forward. | 15 |
 | Modern | min 60 | max 4 | Eighth Edition (2003-07) and Mirrodin forward. Modern Horizons sets included. | 15 |
 | Legacy | min 60 | max 4 | All sets. Banned list. | 15 |
@@ -272,7 +272,7 @@ The agent asks only what the prompt did not answer. Never ask more than three qu
 | Power level | Always for Commander (bracket). For 60-card, unless "casual" or "FNM" is clear. | "Which bracket does your table play? 2 is precon level, 3 is upgraded, 4 is high power." |
 | Colors | The user gave no preference and the theme spans many colors. The app can infer candidates from tags and the collection. | "Any color preference? Lifegain is strongest in white and black." |
 | Theme or plan | Prompt gives only a format. | "What should the deck do: a creature type, a mechanic, or a play style?" |
-| Card pool | A collection is attached (D-37). | "Build from your library first, only your library, or ignore it for a fully optimized deck?" Also ask when the collection is too thin for the plan. |
+| Card pool | A collection is attached (D-37). Ask again when the collection is thin for the theme (D-63): "You own six dragons. Build from your library with a buy list, or use the whole pool?" | "Build from your library first, only your library, or ignore it for a fully optimized deck?" Also ask when the collection is too thin for the plan. |
 | Budget | User mentions cost, or a buy list is needed. | "Is there a budget for cards to buy?" |
 | House rules | "Anything goes", "casual", "kitchen table". | "What does anything-goes mean at your table: any card with no ban list, or Vintage rules?" |
 | Meta | Power is competitive. | "Is this for a specific event or local meta? I can tune the sideboard to it." |

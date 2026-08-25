@@ -6,7 +6,7 @@ GO := go -C go
 BUF := .bin/buf
 PNPM := pnpm --dir web
 
-.PHONY: help doctor buf proto proto-check proto-breaking lint lint-go lint-web test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
+.PHONY: candidates-review themes-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-14s %s\n", $$1, $$2}'
@@ -66,6 +66,20 @@ test-smoke: ## Run the live LLM smoke test (needs OPENAI_API_KEY and ANTHROPIC_A
 
 llm-defaults-check: ## Warn when roles.json or prices.json differ from the merge base (never fails)
 	@./scripts/check-llm-defaults.sh
+
+# REVIEW_OUT names the gate document. A rerun must never overwrite a
+# document that already holds scores (D-65). Raise the run number instead.
+REVIEW_OUT ?= docs/reference/pr6-candidate-review-run2.md
+
+candidates-review: ## Write the PR-6 gate document from the local snapshot and the owner's export
+	@test ! -f $(REVIEW_OUT) || ! grep -q '^Verdict:' $(REVIEW_OUT) || \
+		{ echo "$(REVIEW_OUT) holds scores. Set REVIEW_OUT to a new file."; exit 1; }
+	@CARDS_SNAPSHOT_DIR=../.local/gcs/mtg-local-cards/scryfall $(GO) run ./cmd/candidates-review \
+		-collection internal/collections/testdata/manabox_collection.csv > $(REVIEW_OUT)
+	@echo "wrote $(REVIEW_OUT)"
+
+themes-check: ## Check every themes.json slug against the local snapshot (defect A guard)
+	@CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall $(GO) test ./internal/candidates -run TestThemeSlugsExist -count=1
 
 cover: ## Go coverage report
 	@$(GO) test -coverprofile=coverage.out ./... && $(GO) tool cover -func=coverage.out | tail -1

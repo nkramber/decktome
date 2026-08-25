@@ -83,3 +83,12 @@ func (x *TagIndex) Resolve(slug string) []string {
 
 // Len returns the tag count.
 func (x *TagIndex) Len() int { return len(x.bySlug) }
+
+// Has reports whether a slug exists.
+func (x *TagIndex) Has(slug string) bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.bySlug[slug]
+	return ok
+}
