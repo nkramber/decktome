@@ -14,6 +14,8 @@ Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/
 
 2026-08-24 correction pass 5 (full audit, `docs/audit-2026-08-24.md`): every PR status set to its merge state (#1 to #9). Register rows F-21 to F-25 added. PR-1b (contract amendment) added before PR-6. PR-3 added to section 8. Decisions D-42 to D-60 recorded. The fixes ship on branch `audit-fixes`.
 
+2026-08-24 correction pass 6: PR-6 merged (#11) after a second gate run. Changes: PR-6 status and text, M-5 gains the OQ-19 rubric (D-66), section 9 open questions, and three engine defects recorded in the PR-6 entry. PR-7 gains the pool-question timing (D-67) and the slot freeze (D-68), both from eight dogfood conversations. The corpus question catalog was revised the same day.
+
 House rule (from connector-syncer): no PR, branch name, commit message, comment, or other artifact may contain AI-attribution text.
 
 ---
@@ -212,7 +214,7 @@ A pure Go library. Inputs: a deck, a format, a power level, a collection, a card
 
 ### Phase 2 - The agent (gated on Phase 1)
 
-**PR-6: Candidate-list builder.** 🔧 built 2026-08-24 on branch `pr-6`, code gate held, human gate open. `internal/candidates` filters the index by legality, color identity, and the commander, then scores each card. Signals come in two kinds (D-62). Payoffs reward the theme: a payoff tag such as `lifegain-matters` (1.5) or a payoff needle such as "whenever you gain life" (1.2). Enablers do the thing: a tag such as `lifegain` (1.0), a subtype (0.8), a keyword such as Lifelink (0.5), a text needle (0.4). A kind counts once, so overlapping tags do not stack. EDHREC rank adds 0.3. A staple with no theme signal keeps half its score, so theme leads. `themes.json` maps 55 theme words to verified Tagger slugs, payoff and enabler apart. An unknown word falls back to a generic rule. Roles come from the tags first (`ramp`, `draw`, `removal`, `sweeper`, `counterspell`, `protection`, `alternate-win-condition`), then from the type line and text. Brackets 1 and 2 drop Game Changers from the list. Pool modes per D-37: any-card returns about 300 by role. Owned-first returns the owned cards plus up to 50 upgrades. An upgrade must beat the weakest owned card of the same role. Owned-only returns the owned cards. Basic lands are not candidates: the generator adds them. `cmd/candidates-review` writes the gate document from a local snapshot and a ManaBox export. The owner scores `docs/reference/pr6-candidate-review.md` (20 prompts, 10 with the owner's collection). Meta input (PR-14) has a hook and no data. `Stats.ThinTheme` marks an owned mode with under 30 on-theme owned cards. PR-7 asks the pool-mode question again on that flag (D-63).
+**PR-6: Candidate-list builder.** ✅ merged 2026-08-24 (#11). The human gate failed on run 1 (12 of 20) and held on run 2 (20 of 20, bar 18). Both documents stay: `docs/reference/pr6-candidate-review.md` is run 1, and `pr6-candidate-review-run2.md` is run 2 (D-65). `internal/candidates` filters the index by legality, color identity, and the commander, then scores each card. Signals come in two kinds (D-62). Payoffs reward the theme: a payoff tag such as `lifegain-matters` (1.5) or a payoff needle such as "whenever you gain life" (1.2). Enablers do the thing: a tag such as `lifegain` (1.0), a subtype (0.8), a keyword such as Lifelink (0.5), a text needle (0.4). A kind counts once, so overlapping tags do not stack. EDHREC rank adds 0.3. A staple with no theme signal keeps half its score, so theme leads. `themes.json` maps 55 theme words to Tagger slugs, payoff and enabler apart. Run 1 exposed 16 slugs that Tagger does not have, over 11 rows, which the matcher dropped without a message. `make themes-check` now fails on an unknown slug. Run 1 also showed that a parent tag carries its children, so `death-trigger`, `anthem`, `flicker`, and `counters-matter` each pulled in the wrong half of a theme. Payoffs are narrow from run 2 on. An unknown word falls back to a generic rule. Roles come from the tags first (`ramp`, `draw`, `removal`, `sweeper`, `counterspell`, `protection`, `alternate-win-condition`), then from the type line and text. Brackets 1 and 2 drop Game Changers from the list. Pool modes per D-37: any-card returns about 300 by role. Owned-first returns the owned cards plus up to 50 upgrades. An upgrade must beat the weakest owned card of the same role. Owned-only returns the owned cards. Basic lands are not candidates: the generator adds them. `cmd/candidates-review` writes the gate document from a local snapshot and a ManaBox export. The owner scores `docs/reference/pr6-candidate-review.md` (20 prompts, 10 with the owner's collection). Meta input (PR-14) has a hook and no data. `Stats.ThinTheme` marks an owned mode with under 30 on-theme owned cards. PR-7 asks the pool-mode question again on that flag (D-63).
 
 Given a format, colors, a theme, a power level, the pool mode, and the collection (optional, D-37), build a ranked candidate list from the engine. 
 
@@ -226,11 +228,11 @@ The turn-based core. A `Session` holds filled slots (format, commander, power, c
 
 The user answers in free text. The small model maps answers to slots.
 
-Slots are stored, summarized, and carried to the next turn, as connector-syncer's schema agent does. The catalog is the first source of questions (D-25). A **gap score** decides when the catalog is not enough. It is the best catalog match between the empty slot and the user's words, from a small classifier. Below a threshold (D-27, set by M-5 with the OQ-19 rubric), the model may propose a question through a `custom_question` tool with a reason and the gap score. 
+Slots are stored, summarized, and carried to the next turn, as connector-syncer's schema agent does. A slot stays open through the question phase, and a later answer replaces an earlier one. Every slot freezes when a build run starts (D-68). The card-pool question waits for the format, the colors, and the theme, because PR-6 needs those three before it can count on-theme owned cards (D-67). The catalog is the first source of questions (D-25). A **gap score** decides when the catalog is not enough. It is the best catalog match between the empty slot and the user's words, from a small classifier. Below a threshold (D-27, set by M-5 with the OQ-19 rubric), the model may propose a question through a `custom_question` tool with a reason and the gap score. 
 
 Every invented question is logged with its slot and outcome. M-4 reports how often this happens. Repeated invented questions become catalog candidates (PR-15). "Anything goes" and similar phrases route to the house-rules question (D-3). The pool-mode slot: with a library, the agent asks or defaults to owned-first. Without one, it defaults to any-card and does not ask (D-37).
 
-Gate: 30 scripted conversations reach a complete slot set in at most four turns, with no repeated question. At least 25 of the 30 use catalog questions only. The gap-score threshold is set by M-5, not by this PR.
+Gate: 30 scripted conversations reach a complete slot set in at most four turns, with no repeated question. At least 25 of the 30 use catalog questions only. The gap-score threshold is set by M-5, not by this PR. Eight dogfood conversations ran on 2026-08-24, before any code. None of the eight was catalog-only, and only 5 of 26 catalog questions survived without a rewrite. One cause gave three of the invented questions: the catalog offered commander suggestions and held no question to close the slot. Section 11 of the corpus went from 11 rows to 24 from those runs: 11 new rows, two rows split in two, an ask order, and a word-routing rule.
 > *In plain English:* the chat. "Build me a lifegain deck" fills in "theme: lifegain" and leaves format, power, and colors empty. The app asks those three, remembers the answers, and never asks twice. If the user says something vague, the app asks what they mean. It does not guess.
 
 **PR-8: Deck generator and normalizer (F-13).**
@@ -268,10 +270,19 @@ Gate: unit tests over the fakes and `httptest` adapters pass in CI. The live smo
 **M-1: Token and cost accounting per session.** Lands with PR-10. Every cost claim in this doc is an estimate until then.
 
 **M-5: Manual scoring lane for invented questions (D-27, F-17).**
-The owner uses the product on a fixed set of prompts. For each model-invented question, a review page shows four things. The question, the gap score, the slot, and the top three catalog questions that were possible instead. The owner scores it on a fixed rubric (OQ-19): was a catalog question good enough, was the invented question better, did it fill the slot. 
+The owner uses the product on a fixed set of prompts. For each model-invented question, a review page shows four things. The question, the gap score, the slot, and the top three catalog questions that were possible instead. The owner then scores six fields (D-66, closes OQ-19):
 
-Scores go to the eval store with the prompt version and model. The gap-score threshold is chosen from these scores, and re-checked after each catalog change (D-28: the owner approves changes). Gate: at least 50 scored invented questions before the threshold is set.
-> *In plain English:* the app sometimes has to make up a question. The owner will use the app, see each made-up question next to the fixed questions it could have used, and grade it. Those grades decide how eager the app is to make up questions.
+- `catalog_enough`: yes, no, or unsure. Was one of the three catalog questions good enough?
+- `invented_better`: worse, same, or better than the best catalog question.
+- `right_slot`: yes or no. Did the question target the correct empty slot?
+- `filled_slot`: yes, partly, or no. The session fills this field. The owner only corrects it.
+- `faults`: mandatory on every row that is not clean. One or more of duplicate, two questions in one, jargon, assumes an answer, unanswerable, out of scope.
+- `catalog_action`: none, add, or reword an existing entry. This feeds D-25 and PR-15.
+
+Scales hold three points, because a five-point scale drifts between sessions and makes the rows hard to compare. An invention is warranted when `catalog_enough` is no and `invented_better` is not worse. An `unsure` row is reported and left out of the fit. 
+
+Scores go to the eval store with the prompt version, the model id, and the rubric version. The threshold is the gap score that best separates a warranted invention from an unwarranted one. A precision floor binds the choice: of the inventions the threshold allows, at least 80% must be warranted (D-66). Every tenth item repeats an earlier one, which measures self-consistency across sessions. A change to the rubric invalidates the fit. The threshold is re-checked after each catalog change (D-28: the owner approves changes). Gate: at least 50 scored invented questions before the threshold is set.
+> *In plain English:* the app sometimes has to make up a question. The owner will use the app, see each made-up question next to the fixed questions it could have used, and grade it on six fixed fields. Those grades decide how eager the app is to make up questions. The rule is strict: at least four of every five made-up questions must be ones the fixed list could not cover.
 
 **M-4: Catalog coverage metric (F-17).** Per session: catalog questions asked, invented questions asked, gap scores, and whether the invented question filled its slot. A weekly report lists invented questions by frequency. This is the input for catalog changes (D-25).
 > *In plain English:* we count how often the app had to invent a question. If the same invented question appears again and again, it belongs in the fixed list.
@@ -359,7 +370,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 
 See `docs/open-questions.md` for the full list with "ask when" dates. The ones that gate a phase:
 
-1. **OQ-19 scoring rubric** gates M-5.
+1. **OQ-19 scoring rubric** answered 2026-08-24 (D-66). M-5 is no longer gated on it.
 2. **OQ-18 rerun depth rule** gates I-1.
 3. **OQ-20 public anonymized ManaBox exports** widen the PR-4 fixture set when found (D-43).
 4. PR-9's 30% variance number is a placeholder until PR-15 measures it.

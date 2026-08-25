@@ -4,7 +4,7 @@
 
 ## Last updated
 
-2026-08-24. Merged: PR-0a to PR-5, PR-10, and the audit fixes (#1 to #10). Phase 1 is complete. PR-6 is built on branch `pr-6`. Run 1 scored 12 of 20. Run 2 scores 20 of 20, so the PR-6 gate holds.
+2026-08-24. Merged: PR-0a to PR-5, PR-10, the audit fixes, and PR-6 (#1 to #11). Phase 1 and PR-6 are complete. PR-7 is next.
 
 ## State of the work
 
@@ -67,11 +67,38 @@ Fixes between the two runs:
 
 Known limits: popularity is EDHREC rank for every format, so a 60-card prompt collects Commander staples. Prompt 18 measures the cost: every Modern Burn staple except Lightning Bolt ranks below the cut. PR-14 (`MetaBoost`) is the fix. Prompt 16 shows the second limit: the word "proliferate" scores under the word "counters", so no proliferate card reaches the top 40.
 
+## PR-7 preparation (2026-08-24)
+
+OQ-19 is answered (D-66). M-5 now holds the six-field rubric, the warranted-invention rule, and the 80% precision floor.
+
+Eight dogfood conversations ran through the `deck-builder-dogfood` agent, before any PR-7 code. Result: none of the eight was catalog-only, and only 5 of 26 catalog questions survived without a rewrite. The catalog held the right slots and the wrong wording. One cause produced three of the invented questions: the Commander row offered suggestions and held no question to close the slot.
+
+Corpus section 11 was rewritten the same day. It holds 24 rows, against 11 before: 11 new rows (commander pick, commander not owned, weak commander pool, named card role, theme with a card named, budget scope, acquisition, house format limits, jank or fun, table tolerance, plan choice), and two rows split in two (power, card pool). It also gained an ask order and a word-routing rule. Section 2.2 gained the Grist class of commander, which a type-line test reads wrong. Scryfall ruling of 2021-06-18.
+
+New decisions: D-66 (rubric), D-67 (the card-pool question waits for format, colors, and theme), D-68 (slots freeze when a run starts).
+
+## PR-7 state (2026-08-24)
+
+`internal/questions` holds the deterministic half of the question workflow. 1,166 lines with tests. `go test ./...` is green.
+
+- `catalog.json` holds the 26 rows of corpus section 11 as data, with the ask order, the triggers, and the option lists.
+- `catalog.go` loads and checks the rows: unique ids, a real proto slot, a unique order, and a text.
+- `plan.go` picks the questions for one turn: ask order, at most three, one question per proto slot per turn, no repeat, and nothing at all when the run is frozen (D-68).
+- A row carries a `slot` (the proto slot the answer informs) and a `key` (its own state key). A refinement question such as table tolerance informs power, and the bracket answer must not cancel it.
+- `TestCatalogMatchesCorpus` fails when the skill file and the data drift apart.
+- `TestConversations` runs 12 scripted conversations. Each one completes in at most four turns with no repeated question.
+
+Three ordering defects came out of the tests, all one class: a general row hid its special row, because both share a key and the first match wins. Fixed for the theme rows, the commander rows, and the two pool rows.
+
+Still open in PR-7: the model half. The `classify` role fills slots from free text, the `ask` role phrases a question, the `custom_question` tool covers a gap, the gap score decides between the two, and M-4 logs every invented question. The service (`AgentService.Chat`) and the session store follow. The gate needs 30 conversations, and 12 exist. The catalog-only count needs the model in the loop, because only the model invents a question.
+
+Known rough edge: the locked-cards row fires whenever the user names a card, including a card that became the commander.
+
 ## Next steps, in order
 
-1. The owner reads `docs/reference/pr6-candidate-review-run2.md` and confirms the 20 verdicts. Prompt 19 needs the closest look.
-2. The owner merges `pr-6`.
-3. PR-7 (questions), PR-8 (generator), PR-9 (variance). PR-7 is the first call site of `internal/llm`.
+1. Build PR-7 (question workflow). It is the first call site of `internal/llm`. The gate: 30 scripted conversations, complete slots in at most four turns, no repeat, at least 25 catalog-only.
+2. PR-8 (generator), then PR-9 (variance).
+3. M-5 runs on the first UI build (after PR-12) and sets the D-27 threshold from the D-66 rubric.
 
 ## Facts that expire
 
