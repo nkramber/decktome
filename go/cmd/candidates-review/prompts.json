@@ -1,0 +1,26 @@
+{
+  "verified_at": "2026-08-24",
+  "note": "The PR-6 gate prompts. Twenty themes. Ten run against the owner's ManaBox export (owned-first), ten against the whole legal pool (any-card, D-37). Colors are the commander's identity or the user's choice. The owner scores each list: are the top 40 on theme?",
+  "prompts": [
+    {"id": 1,  "theme": "lifegain",                 "format": "commander", "colors": ["W", "B"], "collection": true},
+    {"id": 2,  "theme": "aristocrats sacrifice",    "format": "commander", "colors": ["W", "B"], "collection": true},
+    {"id": 3,  "theme": "tokens go-wide",           "format": "commander", "colors": ["G", "W"], "collection": true},
+    {"id": 4,  "theme": "voltron equipment",        "format": "commander", "colors": ["R", "W"], "collection": true},
+    {"id": 5,  "theme": "blink",                    "format": "commander", "colors": ["W", "U"], "collection": true},
+    {"id": 6,  "theme": "reanimator",               "format": "commander", "colors": ["B"],      "collection": true},
+    {"id": 7,  "theme": "landfall",                 "format": "commander", "colors": ["G", "U"], "collection": true},
+    {"id": 8,  "theme": "spellslinger",             "format": "commander", "colors": ["U", "R"], "collection": true},
+    {"id": 9,  "theme": "dragons",                  "format": "commander", "colors": ["R", "G", "B"], "collection": true},
+    {"id": 10, "theme": "artifacts",                "format": "commander", "colors": ["U", "R"], "collection": true},
+    {"id": 11, "theme": "lifegain",                 "format": "commander", "colors": ["W", "B"], "collection": false},
+    {"id": 12, "theme": "mill",                     "format": "commander", "colors": ["U", "B"], "collection": false},
+    {"id": 13, "theme": "elves",                    "format": "commander", "colors": ["G", "B"], "collection": false},
+    {"id": 14, "theme": "storm",                    "format": "commander", "colors": ["U", "R"], "collection": false},
+    {"id": 15, "theme": "enchantress",              "format": "commander", "colors": ["G", "W"], "collection": false},
+    {"id": 16, "theme": "counters proliferate",     "format": "commander", "colors": ["G", "U", "B"], "collection": false},
+    {"id": 17, "theme": "zombies",                  "format": "commander", "colors": ["B", "U"], "collection": false},
+    {"id": 18, "theme": "burn",                     "format": "modern",    "colors": ["R"],      "collection": false},
+    {"id": 19, "theme": "control",                  "format": "standard",  "colors": ["W", "U"], "collection": false},
+    {"id": 20, "theme": "infect poison",            "format": "commander", "colors": ["G", "B"], "collection": false}
+  ]
+}
