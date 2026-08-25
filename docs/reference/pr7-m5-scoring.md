@@ -264,12 +264,12 @@ The agent refused this one as a reword and sent the catalog question (D-88). Sco
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | yes |
+| invented_better | both | same |
+| right_slot | the replacement | yes |
 | filled_slot | the run | no |
 | faults | the replacement | |
-| catalog_action | our catalog | |
+| catalog_action | our catalog | none |
 
 ## Item 11
 
@@ -283,12 +283,12 @@ The agent refused this one as a reword and sent the catalog question (D-88). Sco
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | yes |
+| invented_better | both | better |
+| right_slot | the replacement | yes |
 | filled_slot | the run | yes |
 | faults | the replacement | |
-| catalog_action | our catalog | |
+| catalog_action | our catalog | reword - the LLM answer is less verbose and of higher quality |
 
 ## Item 12
 
@@ -302,12 +302,12 @@ The agent refused this one as a reword and sent the catalog question (D-88). Sco
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | yes |
+| invented_better | both | same |
+| right_slot | the replacement | yes |
 | filled_slot | the run | yes |
 | faults | the replacement | |
-| catalog_action | our catalog | |
+| catalog_action | our catalog | none |
 
 ## Item 13
 
@@ -321,12 +321,12 @@ The agent refused this one as a reword and sent the catalog question (D-88). Sco
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | yes |
+| invented_better | both | better |
+| right_slot | the replacement | yes |
 | filled_slot | the run | yes |
 | faults | the replacement | |
-| catalog_action | our catalog | |
+| catalog_action | our catalog | none |
 
 ## Item 14
 
@@ -340,12 +340,12 @@ The agent sent this one in place of the catalog question.
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | no |
+| invented_better | both | better |
+| right_slot | the replacement | yes |
 | filled_slot | the run | no |
 | faults | the replacement | |
-| catalog_action | our catalog | |
+| catalog_action | our catalog | reword - current catalog option is off-topic |
 
 ## Item 15
 
