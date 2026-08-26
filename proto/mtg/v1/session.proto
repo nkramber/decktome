@@ -63,8 +63,10 @@ message Slots {
   repeated string locked_oracle_ids = 8;
   // plan_variant separates two builds of one theme (roadmap PR-9).
   string plan_variant = 9;
-  // slot_states is keyed by slot name: format, power, colors, theme,
-  // commander, pool_rule, budget, locked, plan_variant, house_rules, meta.
+  // slot_states is keyed by slot name: scope, format, power, colors,
+  // theme, commander, pool_rule, budget, locked, plan_variant,
+  // house_rules, meta. "scope" records that the agent said it builds
+  // Magic decks only, after the user asked for something else.
   map<string, SlotState> slot_states = 10;
 }
 
@@ -126,4 +128,8 @@ message Question {
   bool invented = 4;
   // gap_score is the catalog-fit score that allowed an invented question.
   double gap_score = 5;
+  // catalog_text is the catalog question an invented question replaced.
+  // Empty when invented is false. M-5 scores catalog_enough and
+  // invented_better, and neither can be judged without both texts (D-66).
+  string catalog_text = 7;
 }

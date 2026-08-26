@@ -6,9 +6,13 @@ Read this file first. Then read `docs/SESSION-HANDOFF.md`. It tells you where th
 
 This repo is a Go + Protobuf + TypeScript monorepo for an agentic MtG deck builder. The app reads a user's ManaBox collection export. The user gives a prompt. The agent asks questions, then builds a legal, useful deck.
 
-Stage (2026-08-24): PR-0a to PR-5 and PR-10 are merged (#1 to #9). Phase 1 is complete.
+Stage (2026-08-25): PR-0a to PR-6 and PR-10 are merged (#1 to #11), the audit fixes included.
 
-The audit fixes (PR-1b, PR-4b, PR-5b, PR-10b) are on branch `audit-fixes`. Next: PR-6. See `docs/SESSION-HANDOFF.md`. The owner commits and pushes. Do not commit unless the owner asks.
+PR-7 (the question workflow) is on branch `pr-7`. The owner scored items 1 to 32 of `docs/reference/pr7-m5-scoring.md`. Those scores asked for 16 rewords and one deletion, and they exposed a class of defect the sheet could not hold. A correction session of 2026-08-25 fixed it, and a batch sweep of all 66 conversations followed. Together they record D-104 to D-132. Gate run 14 is the next step, and it costs money.
+
+The correction is not committed. Run `git pull`, then `git status`, before you change anything: the owner reads and scores the M-5 sheet on a phone, so the remote can be ahead. The owner commits and pushes. Do not commit unless the owner asks.
+
+Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
 
 ## Hard rules from the owner
 
@@ -42,4 +46,15 @@ The audit fixes (PR-1b, PR-4b, PR-5b, PR-10b) are on branch `audit-fixes`. Next:
 - `docs/decisions.md` - every owner decision, with date.
 - `docs/SESSION-HANDOFF.md` - resume point for a fresh session.
 - `docs/open-questions.md` - questions not yet asked or not yet answered.
-- `docs/reference/` - research notes with sources and dates.
+- `docs/owner-questions.md` - the decision queue. Every question here waits for the owner, and the tuning loop refuses to decide one.
+- `docs/reference/` - research notes with sources and dates, and every dated gate document.
+
+## Commands that cost money
+
+`make questions-gate` calls the real providers. One run of the 66 conversations costs about $0.12 and takes about 14 minutes. The 52-conversation run cost $0.09 and took 11 minutes, and D-105 added 14. Ask the owner before every run, and write to a new `GATE_OUT` file: a rerun must never overwrite a scored document (D-65).
+
+`make questions-eval` scores a gate run with the eval role. One 66-conversation run costs about eleven cents. `make eval-calibrate` measures the eval model against a stronger one for about thirty cents. `scripts/autotune.sh` is the overnight tuning loop, and it refuses to start without `AUTOTUNE_ALLOW_UNATTENDED=1`. Read `docs/reference/autotune-design.md` first.
+
+Everything else is free. `make m5-sheet` builds the scoring sheet, `make m5-report` reads it, `make themes-check` checks the theme slugs and the commander ranking, and `make store-check` runs the session store against the local Firestore emulator.
+
+`docs/reference/pr7-m5-scoring.md` is the owner's working copy. No target writes to it. The version-2 sheet needs a new name: `M5_OUT=docs/reference/pr7-m5-scoring-run14.md make m5-sheet`.

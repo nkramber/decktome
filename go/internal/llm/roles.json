@@ -1,6 +1,6 @@
 {
   "verified_at": "2026-08-24",
-  "note": "Owner decisions D-38 and D-39 (2026-08-24). Baseline: OpenAI serves classify and ask on gpt-5.6-luna (cost tier) and generate and repair on gpt-5.6-terra (middle tier). Anthropic serves judge on claude-sonnet-5 so the judge never shares the generator's provider (D-22). Model ids verified against developers.openai.com/api/docs/models and the claude-api skill on 2026-08-24. No bake-off has run yet: PR-15 measures these defaults. Override one field with LLM_<ROLE>_<PROVIDER|MODEL|EFFORT>. Judge (D-4, 2026-08-24): thinking stays on (Sonnet 5 runs adaptive thinking when the request omits the thinking field). Effort is medium, not high, so a judge answer fits the 8192-token cap and the 120-second attempt timeout. A truncation retry escalates the cap to 65536, and high effort at that cap can outrun the timeout.",
+  "note": "Owner decisions D-38 and D-39 (2026-08-24). Baseline: OpenAI serves classify and ask on gpt-5.6-luna (cost tier) and generate and repair on gpt-5.6-terra (middle tier). Anthropic serves judge on claude-sonnet-5 so the judge never shares the generator's provider (D-22). Model ids verified against developers.openai.com/api/docs/models and the claude-api skill on 2026-08-24. No bake-off has run yet: PR-15 measures these defaults. Override one field with LLM_<ROLE>_<PROVIDER|MODEL|EFFORT>. Judge (D-4, 2026-08-24): thinking stays on (Sonnet 5 runs adaptive thinking when the request omits the thinking field). Effort is medium, not high, so a judge answer fits the 8192-token cap and the 120-second attempt timeout. A truncation retry escalates the cap to 65536, and high effort at that cap can outrun the timeout. Eval (D-133, 2026-08-26): the owner set the automated question scorer on gpt-5.6-luna, the cost tier, so a whole 66-conversation run costs about eleven cents. That model also serves classify and ask, so the eval role rates work its own model produced. `make eval-calibrate` measures that bias against claude-sonnet-5 on a sample. Override with LLM_EVAL_MODEL.",
   "roles": {
     "classify": {
       "provider": "openai",
@@ -31,6 +31,12 @@
       "model": "claude-sonnet-5",
       "effort": "medium",
       "max_output_tokens": 8192
+    },
+    "eval": {
+      "provider": "openai",
+      "model": "gpt-5.6-luna",
+      "effort": "low",
+      "max_output_tokens": 4096
     }
   }
 }

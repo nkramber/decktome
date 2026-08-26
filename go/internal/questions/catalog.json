@@ -1,0 +1,452 @@
+{
+  "verified_at": "2026-08-25",
+  "note": "The question catalog of the mtg-corpus skill, section 11, as data. `slot` is the proto slot the answer informs. `key` is the question's own state key, and it defaults to the slot. A refinement question (jank, budget scope, house format limits, named card role, power confirm) carries its own key, so a filled proto slot does not cancel it. Keep the rows in step with the skill file. TestCatalogMatchesCorpus checks it.",
+  "rows": [
+    {
+      "id": "out_of_scope",
+      "slot": "scope",
+      "order": 1,
+      "fixed": true,
+      "text": "I build Magic: The Gathering decks only. Would you like one instead?",
+      "options": [
+        "Yes, a Magic deck",
+        "No thanks"
+      ],
+      "when": {
+        "out_of_scope": true
+      }
+    },
+    {
+      "id": "one_deck",
+      "slot": "deck_count",
+      "order": 2,
+      "fixed": true,
+      "text": "I build one deck at a time. Which deck do you want first?",
+      "when": {
+        "two_decks": true
+      }
+    },
+    {
+      "id": "format_unsupported",
+      "slot": "format",
+      "order": 8,
+      "fixed": true,
+      "text": "I do not build {bad_format}. The nearest format I build is {near_format}. Shall I use that?",
+      "options": [
+        "Yes, use the nearest format",
+        "No, I will name another format"
+      ],
+      "when": {
+        "unsupported_format": true
+      },
+      "fallback": "I do not build that format. Would you like the nearest format I do build?"
+    },
+    {
+      "id": "format_store",
+      "slot": "format",
+      "order": 9,
+      "text": "Which format does your event run: Standard, Pioneer, Modern, or Pauper?",
+      "options": [
+        "Standard",
+        "Pioneer",
+        "Modern",
+        "Pauper"
+      ],
+      "when": {
+        "words": [
+          "fnm",
+          "lgs",
+          "store",
+          "rcq",
+          "tournament",
+          "event"
+        ]
+      }
+    },
+    {
+      "id": "format",
+      "slot": "format",
+      "order": 10,
+      "text": "Which format: Commander, Standard, Modern, or something else?",
+      "options": [
+        "Commander",
+        "Standard",
+        "Modern",
+        "Pioneer",
+        "Pauper"
+      ]
+    },
+    {
+      "id": "theme_card_named",
+      "slot": "theme",
+      "order": 18,
+      "text": "{card} supports two plans: {plan_a} and {plan_b}. Which one do you want?",
+      "when": {
+        "named_card": true
+      },
+      "fallback": "What should the deck do: a creature type, a mechanic, or a play style?"
+    },
+    {
+      "id": "theme_competitive",
+      "slot": "theme",
+      "order": 19,
+      "text": "Do you want a named tier-one deck, or the best deck under your budget?",
+      "options": [
+        "A named deck",
+        "The best deck under budget"
+      ],
+      "when": {
+        "power_competitive": true
+      }
+    },
+    {
+      "id": "theme",
+      "slot": "theme",
+      "order": 20,
+      "text": "What should the deck do: a creature type, a mechanic, or a play style?"
+    },
+    {
+      "id": "house_rules",
+      "slot": "house_rules",
+      "order": 25,
+      "text": "When you say anything goes, do you mean any card with no ban list, or Vintage rules?",
+      "options": [
+        "Any card, no ban list",
+        "Vintage rules"
+      ],
+      "when": {
+        "words": [
+          "anything goes",
+          "kitchen table",
+          "no ban list"
+        ]
+      }
+    },
+    {
+      "id": "house_format_limits",
+      "slot": "house_rules",
+      "order": 26,
+      "text": "Inside your house format, do the normal limits hold: 60-card minimum, four copies per name, and a 15-card sideboard?",
+      "options": [
+        "Yes, the normal limits",
+        "No, I will say the limits"
+      ],
+      "when": {
+        "house_format": true,
+        "requires": [
+          "house_rules"
+        ]
+      },
+      "key": "house_format_limits"
+    },
+    {
+      "id": "commander_illegal",
+      "slot": "commander",
+      "order": 27,
+      "fixed": true,
+      "text": "{bad_commander} can not lead a deck. Shall I suggest a commander instead?",
+      "options": [
+        "Yes, suggest one",
+        "No, I will name another"
+      ],
+      "when": {
+        "format": "commander",
+        "commander_illegal": true
+      },
+      "key": "commander_illegal",
+      "fallback": "That card can not lead a deck. Shall I suggest a commander instead?"
+    },
+    {
+      "id": "commander_not_owned",
+      "slot": "commander",
+      "order": 28,
+      "text": "You do not own {card}. Add it to the buy list, or pick from your library? Owned options: {a}, {b}.",
+      "options": [
+        "Add it to the buy list",
+        "Pick from my library"
+      ],
+      "when": {
+        "format": "commander",
+        "owned_mode": true,
+        "commander_not_owned": true
+      },
+      "fallback": "You do not own that commander. Add it to the buy list, or pick one from your library?"
+    },
+    {
+      "id": "commander_weak_pool",
+      "slot": "commander",
+      "order": 29,
+      "text": "Your library holds no strong {theme} commander. Buy {c} for {price}, change the theme, or use {a}?",
+      "when": {
+        "format": "commander",
+        "owned_mode": true,
+        "weak_commander_pool": true
+      },
+      "fallback": "Your library holds no strong commander for this theme. Buy one, change the theme, or use the best you own?"
+    },
+    {
+      "id": "named_card_role",
+      "slot": "commander",
+      "order": 30,
+      "text": "Do you want {card} as your commander, or as one card in the 99?",
+      "options": [
+        "As my commander",
+        "In the 99"
+      ],
+      "when": {
+        "named_card": true,
+        "format": "commander"
+      },
+      "key": "named_card_role",
+      "fallback": "Do you want that card as your commander, or as one card in the 99?"
+    },
+    {
+      "id": "commander",
+      "slot": "commander",
+      "order": 31,
+      "text": "Do you have a commander in mind, or should I suggest one?",
+      "options": [
+        "I have one in mind",
+        "Suggest one"
+      ],
+      "when": {
+        "format": "commander",
+        "requires": [
+          "theme"
+        ],
+        "not_outstanding": [
+          "named_card_role"
+        ],
+        "suggested": false
+      }
+    },
+    {
+      "id": "commander_pick",
+      "slot": "commander",
+      "order": 32,
+      "fixed": true,
+      "text": "Which one do you want: {a}, {b}, or {c}? Say \"none\" and I name three more.",
+      "when": {
+        "format": "commander",
+        "suggested": true
+      },
+      "key": "commander_pick",
+      "repeat": true,
+      "fallback": "Which commander do you want, or should I suggest three more?"
+    },
+    {
+      "id": "power_sixty_confirm",
+      "slot": "power",
+      "order": 39,
+      "text": "You asked for a competitive deck, so I will build to tournament level. Is that right?",
+      "options": [
+        "Yes, tournament level",
+        "No, FNM level",
+        "No, casual"
+      ],
+      "when": {
+        "format": "sixty",
+        "power_competitive": true
+      },
+      "key": "power_confirm"
+    },
+    {
+      "id": "power_commander",
+      "slot": "power",
+      "order": 40,
+      "text": "Which power bracket should the deck target? 2 is precon level, 3 is upgraded, 4 is high power.",
+      "options": [
+        "1 exhibition",
+        "2 core",
+        "3 upgraded",
+        "4 optimized",
+        "5 cEDH"
+      ],
+      "when": {
+        "format": "commander"
+      }
+    },
+    {
+      "id": "power_sixty",
+      "slot": "power",
+      "order": 41,
+      "text": "How strong should this be: casual, FNM level, or tournament-meta?",
+      "options": [
+        "Casual",
+        "FNM",
+        "Tournament-meta"
+      ],
+      "when": {
+        "format": "sixty",
+        "power_competitive": false
+      }
+    },
+    {
+      "id": "jank",
+      "slot": "power",
+      "order": 42,
+      "text": "What does janky mean to you: a low-power deck, an odd card nobody expects, or a plan that almost never works?",
+      "options": [
+        "A low-power deck",
+        "An odd card nobody expects",
+        "A plan that almost never works"
+      ],
+      "when": {
+        "words": [
+          "janky",
+          "jank",
+          "fun",
+          "silly",
+          "meme",
+          "laughs"
+        ]
+      },
+      "key": "jank"
+    },
+    {
+      "id": "colors",
+      "slot": "colors",
+      "order": 50,
+      "text": "Any color preference?",
+      "when": {
+        "commander_set": false
+      }
+    },
+    {
+      "id": "pool_precon",
+      "slot": "pool_rule",
+      "order": 59,
+      "text": "Should I build from your {precon} precon first, use only cards from it, or ignore it for a fully optimized deck?",
+      "options": [
+        "The precon first",
+        "Only the precon",
+        "Ignore the precon"
+      ],
+      "when": {
+        "has_collection": true,
+        "precon": true,
+        "requires": [
+          "format",
+          "colors",
+          "theme"
+        ]
+      },
+      "fallback": "Should I build from your precon first, use only cards from it, or ignore it for a fully optimized deck?"
+    },
+    {
+      "id": "pool",
+      "slot": "pool_rule",
+      "order": 60,
+      "text": "Build from your library first, only your library, or ignore it for a fully optimized deck?",
+      "options": [
+        "Library first",
+        "Only my library",
+        "Ignore my library"
+      ],
+      "when": {
+        "has_collection": true,
+        "requires": [
+          "format",
+          "colors",
+          "theme"
+        ],
+        "thin_theme": false
+      }
+    },
+    {
+      "id": "pool_thin",
+      "slot": "pool_rule",
+      "order": 61,
+      "text": "Your library holds {n} {theme} cards. I want 30 or more. Build owned-first with a buy list, or use the whole pool?",
+      "options": [
+        "Owned-first with a buy list",
+        "Use the whole pool"
+      ],
+      "when": {
+        "has_collection": true,
+        "thin_theme": true,
+        "requires": [
+          "format",
+          "colors",
+          "theme"
+        ]
+      },
+      "fallback": "Your library is thin for this theme. Build owned-first with a buy list, or use the whole pool?"
+    },
+    {
+      "id": "budget",
+      "slot": "budget",
+      "order": 70,
+      "text": "Is there a budget for cards to buy?",
+      "when": {
+        "buy_list": true
+      }
+    },
+    {
+      "id": "budget_scope",
+      "slot": "budget",
+      "order": 71,
+      "text": "Is that a cap on the cards you buy, or on the whole deck value?",
+      "options": [
+        "The cards I buy",
+        "The whole deck"
+      ],
+      "when": {
+        "has_collection": true,
+        "budget_ambiguous": true
+      },
+      "key": "budget_scope"
+    },
+    {
+      "id": "meta",
+      "slot": "meta",
+      "order": 90,
+      "text": "What decks do you expect to play against? I tune the 15 sideboard cards to that.",
+      "when": {
+        "power_competitive": true,
+        "format": "sixty"
+      }
+    },
+    {
+      "id": "plan_choice",
+      "slot": "plan_variant",
+      "order": 100,
+      "text": "{theme} has two plans: {plan_a}, or {plan_b}. Which one?",
+      "when": {
+        "two_plans": true
+      },
+      "fallback": "This theme has two common plans. Which one do you want?"
+    },
+    {
+      "id": "variance",
+      "slot": "plan_variant",
+      "order": 101,
+      "text": "Same plan with different cards, or a different plan in the same colors?",
+      "options": [
+        "Same plan, different cards",
+        "A different plan"
+      ],
+      "when": {
+        "after_build": true
+      }
+    },
+    {
+      "id": "locked",
+      "slot": "locked",
+      "order": 110,
+      "text": "Must the deck keep {locked}, or may I cut a card that does not fit the plan?",
+      "options": [
+        "Keep every card I named",
+        "Cut what does not fit"
+      ],
+      "when": {
+        "locked_card": true,
+        "requires": [
+          "format",
+          "theme"
+        ]
+      },
+      "fallback": "Is there a card the deck must keep, whatever else changes?"
+    }
+  ]
+}
