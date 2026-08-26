@@ -16,17 +16,31 @@ package questions
 // Version 3 added the named_cards list. "Build around X" names a card
 // and no role, and the classifier reported X as the commander. The role
 // question then never fired, in every run from 11 to 13 (D-118).
-const PromptVersion = 4
+//
+// Version 6 followed gate run 15. The ask role fitted a question to the
+// format the agent had just declined: "What should the Oathbreaker deck
+// focus on?" went out one line under "I do not build Oathbreaker". The
+// linter refused both, and the run failed on them (D-150).
+//
+// Version 8 followed D-155, which narrowed the app to Commander,
+// Standard, and Modern. The classify role must not resolve a format the
+// app no longer builds, because the unsupported-format row declines it
+// by name instead.
+//
+// Version 7 followed gate run 16. The ask role named one card's color
+// identity in runs 14, 15, and 16, and it changed the preposition each
+// time D-144 caught the old one. The rule now reads the shape (D-151).
+const PromptVersion = 8
 
 const classifyInstructions = `You map one message from a Magic: The Gathering deck-building conversation onto slots.
 
 Rules:
 - Fill a slot only from what the user wrote or clearly implied. Never guess.
 - When the message answers a question about the format, the theme, the colors, the power, the pool rule, the budget, or the commander, put the answer in that field. A field is the only place an answer counts. Naming the slot in closed_keys does not record the answer, and the agent asks again.
-- Repeat a value the user gave in an earlier message when the field is still empty. "Pioneer" said two messages ago is still the format.
+- Repeat a value the user gave in an earlier message when the field is still empty. "Modern" said two messages ago is still the format.
 - Leave a field empty, zero, or "unknown" when the message does not answer it.
-- format: the format the user named, even as one word on its own. "Commander" means commander, "Modern" means modern, "Standard" means standard. Copy it into the format field every time the user names one. Use "unknown" only when the message names no format at all. "anything goes" is not a format.
-- format from an adjective: "a Commander deck", "a Modern burn deck", and "a Pauper burn deck" all name the format. Read it. "EDH" means commander.
+- format: the format the user named, even as one word on its own. This app builds three: "Commander", "Standard", and "Modern". Copy one of those three into the format field every time the user names one. Use "unknown" for every other format, including Pioneer, Legacy, Vintage, Pauper, Brawl, and Historic: another step declines those by name, and naming one here would build the wrong deck. Use "unknown" also when the message names no format at all. "anything goes" is not a format.
+- format from an adjective: "a Commander deck", "a Modern burn deck", and "a Standard burn deck" all name the format. Read it. "EDH" means commander.
 - format from a commander phrase: a message that says "my commander", "not as my commander", "in the 99", "bracket 3", or "my precon" means the commander format, even when the word Commander is absent. Fill the format field from it.
 - theme: the plan in the user's own words, for example "lifegain" or "mill". An answer such as "the best deck under budget" or "a named tier-one deck" is also a theme.
 - power: a Commander bracket as "bracket 3", or a 60-card step as "casual", "fnm", or "tournament". Vague words such as "strongest", "competitive", or "best" are not a step. Leave power empty for those and set facts.power_competitive.
@@ -96,7 +110,13 @@ Keep a clause that narrows the question. "Do you have a red-green commander in m
 
 State no fact about the game. Do not say which colors, cards, or archetypes are strongest. Another step owns that, and a wrong claim costs the user's trust.
 
+In Commander, the color identity of the commander is the color identity of the deck. Never offer to go beyond it, outside it, or to add a color to it. Gate run 14 asked "Do you want to use any colors beyond Grist's color identity?", and the rules do not allow that answer.
+
 Presume nothing the user did not write. Do not say "your table", "your playgroup", or "your event" unless the user named one. A deck can be a gift.
+
+Never name one card's color identity. Do not write "within Grist's color identity", "beyond Grist's color identity", or any clause of that shape. You are asked about the colors only when no commander is settled, so naming a card presumes that the card leads the deck, and the user may not have said so. Ask "Do you have a color preference?" instead.
+
+Never name a format this app does not build: Brawl, Oathbreaker, Duel Commander, Canadian Highlander, Alchemy, Historic, or Timeless. The agent declines such a format in its own row, and every other question must leave it out. Gate run 15 asked "What should the Oathbreaker deck focus on?" one line under "I do not build Oathbreaker", so the agent contradicted itself in one message. Write "the deck", and never the declined format.
 
 Never change what a question asks. Never merge two questions. Never add a question. Answer with the schema only.`
 

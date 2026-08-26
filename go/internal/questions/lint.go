@@ -2,6 +2,7 @@ package questions
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"unicode"
 )
@@ -48,6 +49,34 @@ var tableEvidence = []string{
 	"table", "playgroup", "group", "pod", "event", "shop", "store",
 	"fnm", "lgs", "rcq", "tournament", "friends", "we play", "our",
 }
+
+// illegalOffers are questions that offer an answer the rules forbid. The
+// color identity of a commander is the color identity of the deck, and
+// nothing may offer to leave it. Gate run 14 asked "Do you want to use
+// any colors beyond Grist's color identity?" (D-144).
+var illegalOffers = []string{
+	"beyond the color identity", "beyond its color identity",
+	"colors beyond", "colors outside", "outside the color identity",
+	"outside its color identity", "additional colors beyond",
+}
+
+// possessiveIdentity finds a clause that names one card's color identity,
+// such as "within Grist's color identity".
+//
+// D-144 refused this shape as a list of prepositions: "colors beyond",
+// "outside the color identity". Gate run 14 said "beyond Grist's color
+// identity", and the rule caught it. Runs 15 and 16 then said "within
+// Grist's color identity", and the rule did not. The model kept the
+// shape and changed the preposition, so the rule now reads the shape.
+//
+// No legitimate case exists. Every row that asks about the colors
+// carries `commander_set: false`, so it fires only when no commander is
+// settled. A card's color identity therefore settles nothing, and the
+// question presumes that the card leads the deck. Conversation 3 is the
+// case: the user wrote "Build around Grist, the Hunger Tide", which
+// names a card and no role at all (D-118). The format was still open in
+// the same turn, and color identity is a Commander term (D-151).
+var possessiveIdentity = regexp.MustCompile(`(?i)['\x{2019}]s\s+color\s+identity`)
 
 // factClaims are the shapes of a claim about the game. A question states
 // no fact: another step owns that, and a wrong claim costs trust (D-108).
@@ -110,7 +139,7 @@ func LintConversation(messages []string, qs []LintQuestion) []Finding {
 		lower := strings.ToLower(q.Text)
 
 		// The user named the format and the agent asked for it anyway.
-		if q.Slot == "format" && q.RowID != "format_unsupported" {
+		if q.Slot == "format" && !declinesFormat(q.RowID) {
 			if id, ok := FormatFromWords(prior); ok {
 				add(q, "format_already_named", fmt.Sprintf("the user named %s before this question", id.String()))
 			}
@@ -126,7 +155,7 @@ func LintConversation(messages []string, qs []LintQuestion) []Finding {
 		// declines such a format is exempt: naming it is the whole job of
 		// that row (D-112).
 		for _, u := range unsupported {
-			if q.RowID == "format_unsupported" {
+			if declinesFormat(q.RowID) {
 				break
 			}
 			if strings.Contains(lower, u.phrase) {
@@ -140,6 +169,19 @@ func LintConversation(messages []string, qs []LintQuestion) []Finding {
 				add(q, "states_a_fact", fmt.Sprintf("the question claims %q", c))
 				break
 			}
+		}
+		// The question offers an answer the rules forbid.
+		for _, o := range illegalOffers {
+			if strings.Contains(lower, o) {
+				add(q, "offers_an_illegal_answer",
+					fmt.Sprintf("the question says %q, and a commander's color identity is the deck's", o))
+				break
+			}
+		}
+		// The question names one card's color identity.
+		if m := possessiveIdentity.FindString(q.Text); m != "" {
+			add(q, "names_a_card_color_identity",
+				fmt.Sprintf("the question says %q, and no commander is settled when it goes out", strings.TrimSpace(m)))
 		}
 		if name, ok := stutteredName(q.Text); ok {
 			add(q, "stuttered_card_name", fmt.Sprintf("the question repeats %q", name))
@@ -227,4 +269,12 @@ func anyPlain(text string, words []string) bool {
 		}
 	}
 	return false
+}
+
+// declinesFormat reports whether a row exists to decline an unsupported
+// format. Such a row must name that format, so both linter rules exempt
+// it (D-112). format_unsupported_open is the variant that offers no
+// substitute, which Historic and Timeless use (D-146).
+func declinesFormat(rowID string) bool {
+	return rowID == "format_unsupported" || rowID == "format_unsupported_open"
 }

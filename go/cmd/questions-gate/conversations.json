@@ -1,6 +1,6 @@
 {
-  "verified_at": "2026-08-25",
-  "note": "The PR-7 gate conversations as user messages. Conversations 1 to 30 are the gate: TestConversations proves the deterministic half offline, and the catalog-only bar counts these alone. Conversations marked \"probe\" do not count toward the verdict. They exist to find catalog gaps, so they hold the shapes the gate set never takes: a user who changes their mind, contradicts themselves, asks a question back, or wants something the app can not serve. Their questions still reach the M-5 sheet (D-96). Conversations 53 to 66 are the terse set (D-105). Their users never repeat a value they already gave, so a redundant question strands the conversation instead of getting an answer. Every gate conversation before them restates the format at turn 2, which hid that defect and let both bars reward it. The terse set counts as probes, so the catalog-only bar stays comparable to runs 1 to 13.",
+  "verified_at": "2026-08-26",
+  "note": "The PR-7 gate conversations as user messages. Conversations 1 to 30 are the gate: TestConversations proves the deterministic half offline, and the catalog-only bar counts these alone. Conversations marked \"probe\" do not count toward the verdict. They exist to find catalog gaps, so they hold the shapes the gate set never takes: a user who changes their mind, contradicts themselves, asks a question back, or wants something the app can not serve. Their questions still reach the M-5 sheet (D-96). Conversations 53 to 66 are the terse set (D-105). Their users never repeat a value they already gave, so a redundant question strands the conversation instead of getting an answer. Every gate conversation before them restates the format at turn 2, which hid that defect and let both bars reward it. The terse set counts as probes, so the catalog-only bar stays comparable to runs 1 to 13. Conversations 67 to 100 joined on 2026-08-26 (D-145). They are terse like 53 to 66, and they take the shapes the first 66 never took: bracket 1 and bracket 5, five colors and no colors, a companion, a Background pair, a corrected card name, a corrected color, a zero budget, a partial proxy, a per-card cap beside a total cap, a collection of lands alone, a library that does not exist, Pauper Commander, Oathbreaker, Historic, and a user who answers with a bare digit. They count as probes, so the catalog-only bar still reads the first 30.",
   "conversations": [
     {
       "id": 1,
@@ -73,7 +73,8 @@
         "I need a deck for FNM on Friday, something competitive.",
         "Pioneer. The best deck under budget.",
         "200 dollars, tournament level. My shop is mostly aggro decks."
-      ]
+      ],
+      "probe": true
     },
     {
       "id": 8,
@@ -182,7 +183,8 @@
         "A Pauper burn deck, as cheap as possible.",
         "Pauper. Burn, mono red.",
         "Casual power, and 25 dollars is the cap."
-      ]
+      ],
+      "probe": true
     },
     {
       "id": 19,
@@ -213,7 +215,8 @@
         "We proxy everything at our table.",
         "Any card, no ban list. Call it Vintage. An artifact prison deck.",
         "The normal limits hold. Casual power, mono brown."
-      ]
+      ],
+      "probe": true
     },
     {
       "id": 22,
@@ -266,7 +269,8 @@
         "A Legacy deck for an event.",
         "Legacy. A Delver of Secrets tempo deck, blue and red.",
         "FNM level, 600 dollars."
-      ]
+      ],
+      "probe": true
     },
     {
       "id": 27,
@@ -312,6 +316,42 @@
     },
     {
       "id": 31,
+      "name": "FNM on Friday, Modern",
+      "messages": [
+        "I need a deck for FNM on Friday, something competitive.",
+        "Modern. The best deck under budget.",
+        "200 dollars, tournament level. My shop is mostly aggro decks."
+      ]
+    },
+    {
+      "id": 32,
+      "name": "burn on a budget",
+      "messages": [
+        "A Standard burn deck, as cheap as possible.",
+        "Standard. Burn, mono red.",
+        "Casual power, and 25 dollars is the cap."
+      ]
+    },
+    {
+      "id": 33,
+      "name": "a tempo deck for an event",
+      "messages": [
+        "A Modern deck for an event.",
+        "Modern. A Delver of Secrets tempo deck, blue and red.",
+        "FNM level, 600 dollars."
+      ]
+    },
+    {
+      "id": 34,
+      "name": "no ban list at our table",
+      "messages": [
+        "We proxy everything at our table.",
+        "Any card, no ban list. Call it Modern. An artifact prison deck.",
+        "The normal limits hold. Casual power, mono brown."
+      ]
+    },
+    {
+      "id": 35,
       "name": "the user changes the format",
       "collection": false,
       "probe": true,
@@ -323,7 +363,7 @@
       ]
     },
     {
-      "id": 32,
+      "id": 36,
       "name": "the user changes the theme late",
       "collection": true,
       "probe": true,
@@ -335,7 +375,7 @@
       ]
     },
     {
-      "id": 33,
+      "id": 37,
       "name": "the user contradicts the budget",
       "collection": false,
       "probe": true,
@@ -346,7 +386,7 @@
       ]
     },
     {
-      "id": 34,
+      "id": 38,
       "name": "everything in one message",
       "collection": true,
       "probe": true,
@@ -355,7 +395,7 @@
       ]
     },
     {
-      "id": 35,
+      "id": 39,
       "name": "the user stays vague",
       "collection": true,
       "probe": true,
@@ -367,7 +407,7 @@
       ]
     },
     {
-      "id": 36,
+      "id": 40,
       "name": "the user asks a question back",
       "collection": false,
       "probe": true,
@@ -378,7 +418,7 @@
       ]
     },
     {
-      "id": 37,
+      "id": 41,
       "name": "a request we can not serve",
       "collection": false,
       "probe": true,
@@ -389,7 +429,7 @@
       ]
     },
     {
-      "id": 38,
+      "id": 42,
       "name": "shorthand and slang",
       "collection": true,
       "probe": true,
@@ -400,7 +440,7 @@
       ]
     },
     {
-      "id": 39,
+      "id": 43,
       "name": "a card name with a typo",
       "collection": true,
       "probe": true,
@@ -411,7 +451,7 @@
       ]
     },
     {
-      "id": 40,
+      "id": 44,
       "name": "a card that is not legal",
       "collection": false,
       "probe": true,
@@ -422,7 +462,7 @@
       ]
     },
     {
-      "id": 41,
+      "id": 45,
       "name": "a commander that can not lead",
       "collection": false,
       "probe": true,
@@ -433,7 +473,7 @@
       ]
     },
     {
-      "id": 42,
+      "id": 46,
       "name": "two partner commanders",
       "collection": false,
       "probe": true,
@@ -444,7 +484,7 @@
       ]
     },
     {
-      "id": 43,
+      "id": 47,
       "name": "a deck as a gift",
       "collection": false,
       "probe": true,
@@ -455,7 +495,7 @@
       ]
     },
     {
-      "id": 44,
+      "id": 48,
       "name": "sideboard help only",
       "collection": false,
       "probe": true,
@@ -466,7 +506,7 @@
       ]
     },
     {
-      "id": 45,
+      "id": 49,
       "name": "copy a known deck",
       "collection": false,
       "probe": true,
@@ -477,7 +517,7 @@
       ]
     },
     {
-      "id": 46,
+      "id": 50,
       "name": "a format we do not support",
       "collection": false,
       "probe": true,
@@ -489,7 +529,7 @@
       ]
     },
     {
-      "id": 47,
+      "id": 51,
       "name": "the user declines everything",
       "collection": true,
       "probe": true,
@@ -501,7 +541,7 @@
       ]
     },
     {
-      "id": 48,
+      "id": 52,
       "name": "a price cap per card",
       "collection": false,
       "probe": true,
@@ -512,7 +552,7 @@
       ]
     },
     {
-      "id": 49,
+      "id": 53,
       "name": "the user swaps the commander",
       "collection": true,
       "probe": true,
@@ -524,7 +564,7 @@
       ]
     },
     {
-      "id": 50,
+      "id": 54,
       "name": "two decks at once",
       "collection": false,
       "probe": true,
@@ -535,7 +575,7 @@
       ]
     },
     {
-      "id": 51,
+      "id": 55,
       "name": "a returning player",
       "collection": false,
       "probe": true,
@@ -546,7 +586,7 @@
       ]
     },
     {
-      "id": 52,
+      "id": 56,
       "name": "the user answers a different question",
       "collection": true,
       "probe": true,
@@ -558,7 +598,7 @@
       ]
     },
     {
-      "id": 53,
+      "id": 57,
       "name": "terse: the format is named once",
       "collection": true,
       "probe": true,
@@ -569,7 +609,7 @@
       ]
     },
     {
-      "id": 54,
+      "id": 58,
       "name": "terse: a card for the 99",
       "collection": true,
       "probe": true,
@@ -581,7 +621,7 @@
       ]
     },
     {
-      "id": 55,
+      "id": 59,
       "name": "terse: two decks at once",
       "collection": false,
       "probe": true,
@@ -592,7 +632,7 @@
       ]
     },
     {
-      "id": 56,
+      "id": 60,
       "name": "terse: a format we do not build",
       "collection": false,
       "probe": true,
@@ -603,7 +643,7 @@
       ]
     },
     {
-      "id": 57,
+      "id": 61,
       "name": "terse: a proxy table",
       "collection": false,
       "probe": true,
@@ -614,7 +654,7 @@
       ]
     },
     {
-      "id": 58,
+      "id": 62,
       "name": "terse: a precon upgrade",
       "collection": true,
       "probe": true,
@@ -625,7 +665,7 @@
       ]
     },
     {
-      "id": 59,
+      "id": 63,
       "name": "terse: a competitive request",
       "collection": false,
       "probe": true,
@@ -636,7 +676,7 @@
       ]
     },
     {
-      "id": 60,
+      "id": 64,
       "name": "terse: a deck as a gift",
       "collection": false,
       "probe": true,
@@ -647,7 +687,7 @@
       ]
     },
     {
-      "id": 61,
+      "id": 65,
       "name": "terse: a named commander and a locked card",
       "collection": true,
       "probe": true,
@@ -658,7 +698,7 @@
       ]
     },
     {
-      "id": 62,
+      "id": 66,
       "name": "terse: sideboard help only",
       "collection": false,
       "probe": true,
@@ -669,7 +709,7 @@
       ]
     },
     {
-      "id": 63,
+      "id": 67,
       "name": "terse: everything in one message",
       "collection": true,
       "probe": true,
@@ -678,7 +718,7 @@
       ]
     },
     {
-      "id": 64,
+      "id": 68,
       "name": "terse: the strongest deck, no collection",
       "collection": false,
       "probe": true,
@@ -689,7 +729,7 @@
       ]
     },
     {
-      "id": 65,
+      "id": 69,
       "name": "terse: a Pauper deck named once",
       "collection": false,
       "probe": true,
@@ -699,7 +739,7 @@
       ]
     },
     {
-      "id": 66,
+      "id": 70,
       "name": "terse: a mill deck for a playgroup",
       "collection": true,
       "probe": true,
@@ -707,6 +747,381 @@
         "A Commander mill deck for my playgroup, budget 100.",
         "Blue and black. Bruvac the Grandiloquent is the commander.",
         "Bracket 3, build from my library first. The 100 caps the cards I buy."
+      ]
+    },
+    {
+      "id": 71,
+      "name": "terse: one-word answers",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "Mono-white weenie deck.",
+        "Modern.",
+        "FNM.",
+        "Control."
+      ]
+    },
+    {
+      "id": 72,
+      "name": "terse: a five-color deck",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "A five-color Commander deck. Kenrith, the Returned King is the commander.",
+        "Good stuff, whatever is strongest.",
+        "Bracket 4, and 400 dollars."
+      ]
+    },
+    {
+      "id": 73,
+      "name": "terse: a colorless deck",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "A colorless Commander deck built around big artifacts.",
+        "Kozilek, Butcher of Truth is the commander.",
+        "Bracket 3, and 250 dollars."
+      ]
+    },
+    {
+      "id": 74,
+      "name": "terse: a card the user does not own",
+      "collection": true,
+      "probe": true,
+      "messages": [
+        "A Commander deck from only the cards I own. Sol Ring goes in it.",
+        "An artifact deck, colorless.",
+        "Bracket 3.",
+        "Buy it then."
+      ]
+    },
+    {
+      "id": 75,
+      "name": "terse: cEDH at bracket 5",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "A cEDH deck. Najeela, the Blade-Blossom.",
+        "Money is no object.",
+        "Yes, bracket 5."
+      ]
+    },
+    {
+      "id": 76,
+      "name": "terse: a companion",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "A Modern deck with Lurrus of the Dream-Den as my companion.",
+        "Mono black, aggro.",
+        "Tournament level, 300 dollars."
+      ]
+    },
+    {
+      "id": 77,
+      "name": "terse: a Background pair",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "A Commander deck with a Background commander pair.",
+        "Red and white, aggressive.",
+        "Bracket 3, and 150 dollars."
+      ]
+    },
+    {
+      "id": 78,
+      "name": "terse: partners named once",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "Krark, the Thumbless and Sakashima of a Thousand Faces as partners.",
+        "A spellslinger deck, blue and red.",
+        "Bracket 4, and 500 dollars."
+      ]
+    },
+    {
+      "id": 79,
+      "name": "terse: everything buried in one long message",
+      "collection": true,
+      "probe": true,
+      "messages": [
+        "So I have been playing with my friends on Thursdays for about a year and we mostly play Commander, and I picked up a lot of black and green cards over that time, and what I really want is something that sacrifices creatures for value, nothing too strong because we are all pretty casual, maybe bracket 2 or 3, and I would rather use what I already have than buy much."
+      ]
+    },
+    {
+      "id": 80,
+      "name": "terse: all caps, no punctuation",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "BUILD ME A MODERN BURN DECK MONO RED",
+        "TOURNAMENT",
+        "MY SHOP PLAYS CONTROL"
+      ]
+    },
+    {
+      "id": 81,
+      "name": "terse: the user corrects the colors",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "A Commander lifegain deck, white and black.",
+        "Actually make it white and green instead.",
+        "You pick the commander. Bracket 3."
+      ]
+    },
+    {
+      "id": 82,
+      "name": "terse: the user corrects a card name",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "Build around Atraxa, Praetor's Voice.",
+        "I meant Atraxa, Praetors' Voice. Commander, superfriends.",
+        "Bracket 3, and 300 dollars."
+      ]
+    },
+    {
+      "id": 83,
+      "name": "terse: group hug",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "A group hug Commander deck. Phelddagrif is the commander.",
+        "Bracket 2, and 100 dollars."
+      ]
+    },
+    {
+      "id": 84,
+      "name": "terse: voltron",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "A voltron Commander deck.",
+        "White and green. You pick the commander.",
+        "The first one. Bracket 3, and 200 dollars."
+      ]
+    },
+    {
+      "id": 85,
+      "name": "terse: chaos",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "A chaos Commander deck, as random as possible.",
+        "Yidris, Maelstrom Wielder. Bracket 3.",
+        "150 dollars."
+      ]
+    },
+    {
+      "id": 86,
+      "name": "terse: enchantress",
+      "collection": true,
+      "probe": true,
+      "messages": [
+        "An enchantress deck from my collection.",
+        "Commander, white and green. Sythis, Harvest's Hand.",
+        "Bracket 3, library first."
+      ]
+    },
+    {
+      "id": 87,
+      "name": "terse: landfall",
+      "collection": true,
+      "probe": true,
+      "messages": [
+        "A landfall Commander deck from my binder.",
+        "Green, mono.",
+        "You pick the commander. Bracket 3, library first."
+      ]
+    },
+    {
+      "id": 88,
+      "name": "terse: no theme at all",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "A Commander deck. Surprise me.",
+        "You decide.",
+        "You decide."
+      ]
+    },
+    {
+      "id": 89,
+      "name": "terse: teaching a new player",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "A Commander deck for someone who has never played before.",
+        "Green, big creatures.",
+        "Bracket 1, and under 50 dollars."
+      ]
+    },
+    {
+      "id": 90,
+      "name": "terse: a deck for a spouse",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "My wife likes cats. Build her a Commander deck.",
+        "White and green. Bracket 2.",
+        "Under 60 dollars."
+      ]
+    },
+    {
+      "id": 91,
+      "name": "terse: a budget of zero",
+      "collection": true,
+      "probe": true,
+      "messages": [
+        "A Commander deck and I can not spend anything.",
+        "Black and green, a sacrifice deck.",
+        "Bracket 2."
+      ]
+    },
+    {
+      "id": 92,
+      "name": "terse: proxy the expensive cards only",
+      "collection": true,
+      "probe": true,
+      "messages": [
+        "A Commander deck. I proxy anything over 20 dollars.",
+        "Blue and black, a mill deck. Bruvac the Grandiloquent.",
+        "Bracket 3, library first."
+      ]
+    },
+    {
+      "id": 93,
+      "name": "terse: two budget shapes at once",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "A Modern deck. Nothing over 5 dollars a card, and 120 dollars in total.",
+        "A burn deck, mono red.",
+        "FNM level."
+      ]
+    },
+    {
+      "id": 94,
+      "name": "terse: a collection of lands only",
+      "collection": true,
+      "probe": true,
+      "messages": [
+        "I only own lands. Build me a Commander deck anyway.",
+        "Red and green, a dinosaur deck.",
+        "Bracket 3, and 200 dollars."
+      ]
+    },
+    {
+      "id": 95,
+      "name": "terse: a library that does not exist",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "Build a Commander deck from my library.",
+        "White and blue, a blink deck.",
+        "Bracket 3."
+      ]
+    },
+    {
+      "id": 96,
+      "name": "terse: the user asks about a card",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "Is Sol Ring legal in Modern?",
+        "Alright, a Modern artifact deck then, blue.",
+        "FNM level, and 150 dollars."
+      ]
+    },
+    {
+      "id": 97,
+      "name": "terse: Pauper Commander",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "A Pauper Commander deck.",
+        "Black, a sacrifice deck.",
+        "Casual power, and 40 dollars."
+      ]
+    },
+    {
+      "id": 98,
+      "name": "terse: Oathbreaker",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "An Oathbreaker deck.",
+        "Commander is fine. Blue and red, a spellslinger deck.",
+        "Bracket 3, and 150 dollars."
+      ]
+    },
+    {
+      "id": 99,
+      "name": "terse: Historic on Arena",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "A Historic deck for Arena.",
+        "Modern works. A mono-black aggro deck.",
+        "Tournament level, and 200 dollars."
+      ]
+    },
+    {
+      "id": 100,
+      "name": "terse: a deck for a team event",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "I need a Modern deck for a team event on Saturday.",
+        "My teammates play aggro and combo, so I take control.",
+        "Tournament level, 600 dollars, blue and white."
+      ]
+    },
+    {
+      "id": 101,
+      "name": "terse: mill with no table named",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "A Commander mill deck.",
+        "Blue and black. You pick the commander.",
+        "The second one. Bracket 3, and 100 dollars."
+      ]
+    },
+    {
+      "id": 102,
+      "name": "terse: stax with no table named",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "A stax Commander deck.",
+        "White and blue. You pick the commander.",
+        "None of those.",
+        "The first one. Bracket 4."
+      ]
+    },
+    {
+      "id": 103,
+      "name": "terse: two themes at once",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "A Commander deck that does artifacts and lifegain.",
+        "White and blue. You pick the commander.",
+        "The first one. Bracket 3, and 200 dollars."
+      ]
+    },
+    {
+      "id": 104,
+      "name": "terse: the user answers with a number",
+      "collection": true,
+      "probe": true,
+      "messages": [
+        "A Commander deck from my collection.",
+        "3",
+        "Black and green, a sacrifice deck.",
+        "2"
       ]
     }
   ]

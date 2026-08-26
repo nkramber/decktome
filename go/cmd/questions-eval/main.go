@@ -69,6 +69,10 @@ func run(in, out, jsonOut string, budget float64, limit, holdout int) error {
 	}
 	acc := llm.NewAccumulator(prices)
 	started := time.Now()
+	// The eval invents card facts, and a false one changes a verdict. The
+	// snapshot refutes the claim for nothing (D-149).
+	checker, checkNote := newCardChecker()
+	corrected := map[string]string{}
 
 	convs := gate.Conversations
 	if limit > 0 && limit < len(convs) {
@@ -91,12 +95,18 @@ func run(in, out, jsonOut string, budget float64, limit, holdout int) error {
 			stopped = fmt.Sprintf("the budget of $%.2f stopped the run after %d conversations", budget, len(missed))
 			break
 		}
-		vs, miss, err := score(client, acc, gate.Name, conv)
+		vs, miss, err := score(client, acc, gate.Name, conv, checker.facts(conv))
 		if err != nil {
 			return fmt.Errorf("%s: %w", conv.Name, err)
 		}
 		for j := range vs {
 			vs[j].Holdout = held
+			// A refusal that rests on a card the eval calls unreal is
+			// dropped when the snapshot holds that card (D-149).
+			if fixed, name, ok := checker.correct(vs[j]); ok {
+				vs[j] = fixed
+				corrected[conv.Name+": "+name] = vs[j].Row
+			}
 		}
 		verdicts = append(verdicts, vs...)
 		if len(miss) > 0 {
@@ -121,6 +131,7 @@ func run(in, out, jsonOut string, budget float64, limit, holdout int) error {
 		w = f
 	}
 	write(w, gate, sum, missed, stopped, acc.Report(), time.Since(started))
+	writeCardCheck(w, checkNote, corrected)
 	if jsonOut != "" {
 		if err := os.MkdirAll(filepath.Dir(jsonOut), 0o750); err != nil {
 			return err
@@ -155,7 +166,8 @@ type evalOut struct {
 // score judges one conversation in one call. A call per conversation, and
 // not a call per question, is what keeps a whole run inside a few cents:
 // the instructions cache, and the conversation is read once.
-func score(client *llm.Client, acc *llm.Accumulator, run string, conv tune.Conversation) ([]tune.Verdict, []string, error) {
+func score(client *llm.Client, acc *llm.Accumulator, run string, conv tune.Conversation,
+	facts []cardFact) ([]tune.Verdict, []string, error) {
 	type qIn struct {
 		Turn    int      `json:"turn"`
 		Row     string   `json:"row"`
@@ -163,14 +175,38 @@ func score(client *llm.Client, acc *llm.Accumulator, run string, conv tune.Conve
 		Text    string   `json:"text"`
 		Options []string `json:"options,omitempty"`
 	}
-	qs := make([]qIn, 0, len(conv.Questions))
+	// The transcript is interleaved, turn by turn. A flat list of messages
+	// beside a flat list of questions makes the reader hold the order in
+	// its head, and the cost tier did not. The calibration of 2026-08-26
+	// found seven questions marked as duplicates of an answer the user
+	// gave one or two turns later (D-141).
+	type turnIn struct {
+		Turn int `json:"turn"`
+		// User is the message that arrived on this turn.
+		User string `json:"user"`
+		// Asked are the questions the agent sent in reply to it. Nothing
+		// below this point in the transcript was known when they went out.
+		Asked []qIn `json:"agent_asked_in_reply"`
+	}
+	byTurn := map[int][]qIn{}
 	for _, q := range conv.Questions {
-		qs = append(qs, qIn{Turn: q.Turn, Row: q.Row, Slot: q.Slot, Text: q.Text, Options: q.Options})
+		byTurn[q.Turn] = append(byTurn[q.Turn],
+			qIn{Turn: q.Turn, Row: q.Row, Slot: q.Slot, Text: q.Text, Options: q.Options})
+	}
+	turns := make([]turnIn, 0, len(conv.Messages))
+	for i, msg := range conv.Messages {
+		turns = append(turns, turnIn{Turn: i + 1, User: msg, Asked: byTurn[i+1]})
 	}
 	input, err := json.Marshal(map[string]any{
 		"conversation": conv.Name,
-		"messages":     conv.Messages,
-		"questions":    qs,
+		// The session facts the transcript does not show. Without this
+		// one, the card-pool question reads as a presumption (D-143).
+		"user_has_a_card_collection": conv.Collection,
+		// Every card the questions name, as the snapshot holds it. The
+		// eval invented facts about four cards of crossover sets, and it
+		// called each one unreal or inapplicable (D-152).
+		"cards_named_in_questions": facts,
+		"transcript":               turns,
 	})
 	if err != nil {
 		return nil, nil, err

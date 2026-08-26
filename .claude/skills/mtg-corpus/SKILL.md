@@ -43,23 +43,20 @@ Reference files in `references/`:
 
 ## 2. Formats
 
+The app builds three formats: Commander, Standard, and Modern (D-155). It declines every other format by name and asks which of the three to build instead. It names no substitute, because no measurement supports one.
+
 The app must know the format before it builds. A "60-card" request has many possible formats. Ask.
 
-### 2.1 Constructed formats (60-card style)
+### 2.1 Constructed formats the app builds (60-card style)
 
 | Format | Deck size | Copies | Card pool (2026-08-24) | Sideboard |
 |---|---|---|---|---|
 | Standard | min 60 | max 4 per name (basic lands unlimited) | Sets from Wilds of Eldraine (WOE, 2023-09-08) to The Hobbit (HOB, 2026-08-14). 18 sets. The Big Score (BIG) is legal with Outlaws of Thunder Junction and is not counted as a separate set. No rotation in 2026. Next rotation: first set of 2027. Six sets leave then: WOE, LCI, MKM, OTJ, BLB, DSK. Verified 2026-08-24 on the Scryfall sets API: 19 paper core or expansion sets have a full Standard-legal card list, and BIG is one of them. | 15 |
-| Pioneer | min 60 | max 4 | Return to Ravnica (2012-10) forward. | 15 |
 | Modern | min 60 | max 4 | Eighth Edition (2003-07) and Mirrodin forward. Modern Horizons sets included. | 15 |
-| Legacy | min 60 | max 4 | All sets. Banned list. | 15 |
-| Vintage | min 60 | max 4 | All sets. Banned list plus a restricted list (max 1 copy). | 15 |
-| Pauper | min 60 | max 4 | Only cards printed at common (in a paper or MTGO set). | 15 |
-| Historic, Timeless, Alchemy | min 60 | max 4 | MTG Arena only. Digital-only cards exist. | 15 |
 
 Scryfall `legalities` keys: `standard, future, historic, timeless, gladiator, pioneer, modern, legacy, pauper, vintage, penny, commander, oathbreaker, standardbrawl, brawl, competitivebrawl, alchemy, paupercommander, duel, oldschool, premodern, predh, tlr`. Values: `legal, not_legal, banned, restricted`.
 
-Legal Oracle-card counts on 2026-08-23: commander 31,830 · vintage 31,690 · legacy 31,672 · modern 22,450 · pioneer 14,817 · pauper 10,793 · standard 4,887.
+Legal Oracle-card counts on 2026-08-23, for the three formats the app builds: commander 31,830 · modern 22,450 · standard 4,887.
 
 ### 2.2 Commander (EDH)
 
@@ -90,13 +87,21 @@ Whether the commanders count toward the Game Changer limit is not in the Wizards
 
 Game Changers: 53 cards on 2026-08-24 (Scryfall `is:gamechanger`). The list changed on 2025-04-22, 2025-10-21, and 2026-02-09. Scryfall flags them with `game_changer: true`. Examples: Rhystic Study, Cyclonic Rift, Smothering Tithe, Thassa's Oracle, Demonic Tutor, Vampiric Tutor, Ancient Tomb, The One Ring, Gaea's Cradle, Force of Will. Note: Mana Crypt is banned, so it is not a Game Changer.
 
-### 2.4 Other multiplayer or digital formats
+### 2.4 Formats the app does not build
 
-Brawl (Arena, 100-card singleton with a commander, the whole Arena pool with its own ban list), Standard Brawl (60-card), Oathbreaker (planeswalker commander, 60 cards), Pauper Commander (common creature commander), Duel Commander (1v1, 20 life). Support these later.
+The app declines each of these by name (D-112, D-155). It offers no substitute for any of them, and it asks which of Commander, Standard, or Modern to build instead.
+
+- **Pioneer** (Return to Ravnica forward), **Legacy** (all sets, ban list), **Vintage** (all sets, ban list plus a restricted list), **Pauper** (commons only). Removed 2026-08-26.
+- **Historic**, **Timeless**, **Alchemy**: MTG Arena only, with digital-only cards.
+- **Brawl** (Arena, 100-card singleton with a commander), **Standard Brawl** (60-card), **Oathbreaker** (planeswalker commander, 60 cards), **Pauper Commander** (common creature commander), **Duel Commander** (1v1, 20 life), **Canadian Highlander**.
+
+Brawl, Oathbreaker, Duel Commander, and Canadian Highlander still name Commander as the nearest format, and Alchemy names Standard. Those four are singleton formats of the same shape, and Alchemy is Standard with the Arena-only rebalanced cards.
 
 ### 2.5 "Anything goes"
 
-Not a defined format. The owner's own meaning: any card, no ban list. Other users mean Vintage, or "Modern but with proxies", or "kitchen table". **Always ask what the user means.** Then record the answer as the session's house rules.
+Not a format the app offers, and not a format the user can select (D-155). The owner's own meaning: any card, no ban list. Other users mean "Modern but with proxies", or "kitchen table". **Always ask what the user means.** Then record the answer as the session's house rules, which ride on top of Commander, Standard, or Modern.
+
+A user who names no format at all and asks for no ban list gets `FORMAT_ID_HOUSE`, which builds 60 cards with 4 copies and a 15-card sideboard until the user says otherwise.
 
 ## 3. Ban list snapshot (2026-08-24)
 
@@ -271,8 +276,9 @@ The agent asks only what the prompt did not answer. Never ask more than three qu
 | Out of scope | The user asked for something this app does not build, such as a deck for another card game (D-99). Ask this alone, before every other row. | "I build Magic: The Gathering decks only. Would you like one instead?" |
 | One deck at a time | The user asked for more than one deck (D-112). Ask this alone. Read one message for it, and never the whole conversation. | "I build one deck at a time. Which deck do you want first?" |
 | Format (not supported) | The user named a format this app does not build, such as Brawl (D-112). | "I do not build {bad_format}. The nearest format I build is {near_format}. Shall I use that?" |
-| Format | Always, unless stated. Ask this first. Every other slot depends on it. | "Which format: Commander, Standard, Modern, or something else?" |
-| Format (store event) | The user names FNM, an LGS, a store, or an event. | "Which format does your event run: Standard, Pioneer, Modern, or Pauper?" |
+| Format (no substitute) | The user named an unsupported format with no nearest format to offer (D-146, D-155). Historic, Timeless, Pioneer, Legacy, Vintage, Pauper, and Pauper Commander are the seven. | "I do not build {bad_format}. Which format should I build instead: Commander, Standard, or Modern?" |
+| Format | Always, unless stated. Ask this first. Every other slot depends on it. The app builds three (D-155). | "Which format: Commander, Standard, or Modern?" |
+| Format (store event) | The user names FNM, an LGS, a store, or an event. | "Which format does your event run: Standard, Modern, or Commander?" |
 | Theme or plan | The prompt gives only a format. | "What should the deck do: a creature type, a mechanic, or a play style?" |
 | Theme (competitive) | Power is FNM or tournament-meta. | "Do you want a named tier-one deck, or the best deck under your budget?" |
 | Theme (card named) | The user named a card and the theme is empty. | "{card} supports two plans: {plan A} and {plan B}. Which one do you want?" |
@@ -291,7 +297,7 @@ The agent asks only what the prompt did not answer. Never ask more than three qu
 | Card pool (thin theme) | `ThinTheme` is set (D-63). This row replaces the row above. | "Your library holds {n} {theme} cards. I want 30 or more. Build owned-first with a buy list, or use the whole pool?" |
 | Budget | The user mentions cost, a buy list is needed, or the pool mode is any-card. | "Is there a budget for cards to buy?" |
 | Budget scope | A collection is attached and the user named one number. | "Is that a cap on the cards you buy, or on the whole deck value?" |
-| House rules | "Anything goes", "kitchen table", or "no ban list". "Casual" alone does not fire this row (D-78). "Proxy" and "whatever" do not fire it either (D-111). A negation stops every trigger word. | "What does anything-goes mean at your table: any card with no ban list, or Vintage rules?" |
+| House rules | "Anything goes", "kitchen table", or "no ban list". "Casual" alone does not fire this row (D-78). "Proxy" and "whatever" do not fire it either (D-111). A negation stops every trigger word. The row names no format, because Vintage is not one the app builds (D-155). | "When you say anything goes, do you mean any card with no ban list?" |
 | House format limits | House rules set a house format, and the user answered the house-rules question (D-81). | "Inside your house format, do the normal limits hold: 60-card minimum, four copies per name, and a 15-card sideboard?" |
 | Jank or fun | The prompt says janky, jank, fun, silly, meme, or for laughs. | "What does janky mean to you: a low-power deck, an odd card nobody expects, or a plan that almost never works?" |
 | Meta | Power is FNM or tournament-meta. Name no event: the user may name none (D-109). | "What decks do you expect to play against? I tune the 15 sideboard cards to that." |

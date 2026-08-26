@@ -21,6 +21,11 @@ type CandidateHints struct {
 	Colors  []mtgv1.Color
 	Owned   map[string]int32
 	Pool    mtgv1.PoolRule
+	// WantPair asks the candidate builder for two-commander pairs. The
+	// user asked for partners or a Background (D-154).
+	WantPair bool
+	// WantBackground narrows that to pairs that hold a Background.
+	WantBackground bool
 	// OnThemeOwned is PR-6's count for the {n} clause of the thin-theme
 	// question. The caller reads it from candidates.Stats.
 	OnThemeOwned int
@@ -38,6 +43,18 @@ type CandidateHints struct {
 // CanLead reports whether a named card can lead a deck. Probe 41 asks
 // for "Commander deck with Lightning Bolt as my commander", and every run
 // before 2026-08-26 accepted it in silence (D-129).
+//
+// It answers "not known" for any legendary card it can not confirm. The
+// engine reads a type line, and a type line is wrong about a whole class
+// of commander. Grist, the Hunger Tide is "Legendary Planeswalker" and it
+// is a legal commander, because a characteristic-defining ability makes
+// it a creature card everywhere except the battlefield (Scryfall ruling,
+// 2021-06-18). Gate run 14 told a user that Grist can not lead a deck.
+// The gate passed and the linter found nothing, and the claim was false.
+//
+// A confident "no" therefore needs a card that is not legendary at all.
+// Lightning Bolt is an instant and Sol Ring is not legendary, so both
+// still answer (D-140).
 func (h *CandidateHints) CanLead(name string) (canLead, known bool) {
 	if h == nil || h.Index == nil {
 		return false, false
@@ -46,7 +63,34 @@ func (h *CandidateHints) CanLead(name string) (canLead, known bool) {
 	if !ok {
 		return false, false
 	}
-	return card.GetCanBeCommander() || card.GetIsBackground(), true
+	if card.GetCanBeCommander() || card.GetIsBackground() {
+		return true, true
+	}
+	if strings.Contains(strings.ToLower(card.GetTypeLine()), "legendary") {
+		// A legendary card the engine can not confirm. Say nothing.
+		return false, false
+	}
+	return false, true
+}
+
+// FitsColors reports whether the named card holds every color named and
+// no other. It is the same test CommanderPool applies when it builds the
+// pool (D-148), so a name that survives here would be offered again.
+//
+// An empty color list fits everything: the user has named no colors, so
+// nothing is out of them (D-153).
+func (h *CandidateHints) FitsColors(name string, colors []mtgv1.Color) (fits, known bool) {
+	if h == nil || h.Index == nil {
+		return false, false
+	}
+	card, ok := h.Index.ByName(strings.TrimSpace(name))
+	if !ok {
+		return false, false
+	}
+	if len(colors) == 0 {
+		return true, true
+	}
+	return candidates.IdentityMatches(card.GetColorIdentity(), colors), true
 }
 
 // UseSlots takes the slot values as they stand inside the turn. The cache
@@ -64,6 +108,19 @@ func (h *CandidateHints) UseSlots(format mtgv1.FormatId, colors []mtgv1.Color, p
 	}
 	if pool != mtgv1.PoolRule_POOL_RULE_UNSPECIFIED {
 		h.Pool = pool
+	}
+}
+
+// UseWantPair records that the user asked for a two-commander pair. The
+// pool offers pairs on its own when too few singles fit the colors, so
+// this only adds the case the words ask for (D-154).
+func (h *CandidateHints) UseWantPair(want, background bool) {
+	if h == nil || !want {
+		return
+	}
+	h.WantPair = true
+	if background {
+		h.WantBackground = true
 	}
 }
 
@@ -101,15 +158,23 @@ func (h *CandidateHints) Commanders(theme string, skip []string) []string {
 		return nil
 	}
 	cacheKey := h.key(theme) + "\x00" + strings.Join(skip, "\x00")
+	if h.WantPair {
+		cacheKey += "\x00pair"
+	}
+	if h.WantBackground {
+		cacheKey += "\x00background"
+	}
 	if v, ok := h.commanders[cacheKey]; ok {
 		return v
 	}
 	req := candidates.Request{
-		Format:   mtgv1.FormatId_FORMAT_ID_COMMANDER,
-		Theme:    theme,
-		Colors:   h.Colors,
-		PoolRule: h.Pool,
-		Owned:    h.Owned,
+		Format:         mtgv1.FormatId_FORMAT_ID_COMMANDER,
+		Theme:          theme,
+		Colors:         h.Colors,
+		PoolRule:       h.Pool,
+		Owned:          h.Owned,
+		WantPair:       h.WantPair,
+		WantBackground: h.WantBackground,
 	}
 	list, err := h.Builder.Commanders(h.Index, req, 3+len(skip))
 	if err != nil {
@@ -122,7 +187,9 @@ func (h *CandidateHints) Commanders(theme string, skip []string) []string {
 	}
 	var names []string
 	for _, c := range list {
-		name := c.Card.GetName()
+		// A pair reads "A + B". The pick row offers it as one choice,
+		// because the user chooses a pair and not half of one (D-154).
+		name := c.DisplayName()
 		if seen[strings.ToLower(strings.TrimSpace(name))] {
 			continue
 		}

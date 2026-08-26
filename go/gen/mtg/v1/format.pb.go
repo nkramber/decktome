@@ -23,18 +23,22 @@ const (
 
 // FormatId lists the formats the app builds for.
 // The Scryfall legality key for each id lives in the rules engine (PR-5).
+//
+// The app builds three formats: Commander, Standard, and Modern (D-155).
+// Pioneer, Legacy, Vintage, and Pauper were removed rather than left
+// unreachable. Every defect class this repository has found in the
+// question layer was a path that could never fire, so an id no product
+// surface can reach is the same trap. The numbers and the names are
+// reserved, so neither can come back with a different meaning.
 type FormatId int32
 
 const (
 	FormatId_FORMAT_ID_UNSPECIFIED FormatId = 0
 	FormatId_FORMAT_ID_COMMANDER   FormatId = 1
 	FormatId_FORMAT_ID_STANDARD    FormatId = 2
-	FormatId_FORMAT_ID_PIONEER     FormatId = 3
 	FormatId_FORMAT_ID_MODERN      FormatId = 4
-	FormatId_FORMAT_ID_LEGACY      FormatId = 5
-	FormatId_FORMAT_ID_VINTAGE     FormatId = 6
-	FormatId_FORMAT_ID_PAUPER      FormatId = 7
 	// FORMAT_ID_HOUSE is a user-defined rule set. See Format.house_rules.
+	// It is the format of a user who names none and asks for no ban list.
 	FormatId_FORMAT_ID_HOUSE FormatId = 8
 )
 
@@ -44,22 +48,14 @@ var (
 		0: "FORMAT_ID_UNSPECIFIED",
 		1: "FORMAT_ID_COMMANDER",
 		2: "FORMAT_ID_STANDARD",
-		3: "FORMAT_ID_PIONEER",
 		4: "FORMAT_ID_MODERN",
-		5: "FORMAT_ID_LEGACY",
-		6: "FORMAT_ID_VINTAGE",
-		7: "FORMAT_ID_PAUPER",
 		8: "FORMAT_ID_HOUSE",
 	}
 	FormatId_value = map[string]int32{
 		"FORMAT_ID_UNSPECIFIED": 0,
 		"FORMAT_ID_COMMANDER":   1,
 		"FORMAT_ID_STANDARD":    2,
-		"FORMAT_ID_PIONEER":     3,
 		"FORMAT_ID_MODERN":      4,
-		"FORMAT_ID_LEGACY":      5,
-		"FORMAT_ID_VINTAGE":     6,
-		"FORMAT_ID_PAUPER":      7,
 		"FORMAT_ID_HOUSE":       8,
 	}
 )
@@ -298,17 +294,13 @@ const file_mtg_v1_format_proto_rawDesc = "" +
 	"\abracket\x18\x01 \x01(\x05H\x00R\abracket\x122\n" +
 	"\n" +
 	"sixty_step\x18\x02 \x01(\x0e2\x11.mtg.v1.SixtyStepH\x00R\tsixtyStepB\a\n" +
-	"\x05level*\xdb\x01\n" +
+	"\x05level*\xe3\x01\n" +
 	"\bFormatId\x12\x19\n" +
 	"\x15FORMAT_ID_UNSPECIFIED\x10\x00\x12\x17\n" +
 	"\x13FORMAT_ID_COMMANDER\x10\x01\x12\x16\n" +
-	"\x12FORMAT_ID_STANDARD\x10\x02\x12\x15\n" +
-	"\x11FORMAT_ID_PIONEER\x10\x03\x12\x14\n" +
-	"\x10FORMAT_ID_MODERN\x10\x04\x12\x14\n" +
-	"\x10FORMAT_ID_LEGACY\x10\x05\x12\x15\n" +
-	"\x11FORMAT_ID_VINTAGE\x10\x06\x12\x14\n" +
-	"\x10FORMAT_ID_PAUPER\x10\a\x12\x13\n" +
-	"\x0fFORMAT_ID_HOUSE\x10\b*m\n" +
+	"\x12FORMAT_ID_STANDARD\x10\x02\x12\x14\n" +
+	"\x10FORMAT_ID_MODERN\x10\x04\x12\x13\n" +
+	"\x0fFORMAT_ID_HOUSE\x10\b\"\x04\b\x03\x10\x03\"\x04\b\x05\x10\x05\"\x04\b\x06\x10\x06\"\x04\b\a\x10\a*\x11FORMAT_ID_PIONEER*\x10FORMAT_ID_LEGACY*\x11FORMAT_ID_VINTAGE*\x10FORMAT_ID_PAUPER*m\n" +
 	"\tSixtyStep\x12\x1a\n" +
 	"\x16SIXTY_STEP_UNSPECIFIED\x10\x00\x12\x15\n" +
 	"\x11SIXTY_STEP_CASUAL\x10\x01\x12\x12\n" +

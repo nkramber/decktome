@@ -88,6 +88,8 @@ type When struct {
 	TwoDecks *bool `json:"two_decks"`
 	// UnsupportedFormat marks a format this app does not build (D-112).
 	UnsupportedFormat *bool `json:"unsupported_format"`
+	// NoNearFormat marks an unsupported format with no substitute (D-146).
+	NoNearFormat *bool `json:"no_near_format"`
 	// Precon marks a request to upgrade a preconstructed deck (D-113).
 	Precon *bool `json:"precon"`
 	// CommanderIllegal marks a named commander that can not lead (D-129).

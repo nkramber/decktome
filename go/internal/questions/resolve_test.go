@@ -171,13 +171,36 @@ func TestGuard(t *testing.T) {
 		{"empty falls back", "   ", resolved},
 		{"no question mark falls back", "Tell me your colors.", resolved},
 		{"a long ramble falls back", strings.Repeat("word ", 200) + "?", resolved},
+		// D-150. Gate run 15 asked "What should the Oathbreaker deck
+		// focus on?" one line under "I do not build Oathbreaker".
+		{"an unsupported format falls back",
+			"What should the Oathbreaker deck focus on: a creature type, a mechanic, or a play style?", resolved},
+		{"Historic falls back too",
+			"What should the Historic deck focus on: a creature type or a play style?", resolved},
+		{"a supported format passes",
+			"What should the Modern deck focus on: a creature type or a play style?",
+			"What should the Modern deck focus on: a creature type or a play style?"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			if got := guard(tc.phrased, resolved); got != tc.want {
+			if got := guard("theme", tc.phrased, resolved); got != tc.want {
 				t.Errorf("guard = %q, want %q", got, tc.want)
 			}
 		})
+	}
+}
+
+// TestGuardLetsTheDecliningRowNameTheFormat is D-150. The row that
+// declines an unsupported format must name it, which is the whole job of
+// that row. Those rows carry `fixed` and never reach the ask role today,
+// so this is a guard against a later change (D-112, D-117).
+func TestGuardLetsTheDecliningRowNameTheFormat(t *testing.T) {
+	phrased := "I do not build Oathbreaker. Shall I use Commander instead?"
+	resolved := "I do not build Oathbreaker. The nearest format I build is Commander. Shall I use that?"
+	for _, row := range []string{"format_unsupported", "format_unsupported_open"} {
+		if got := guard(row, phrased, resolved); got != phrased {
+			t.Errorf("%s: guard refused the row that must name the format: %q", row, got)
+		}
 	}
 }
 

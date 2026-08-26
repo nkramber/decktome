@@ -117,7 +117,7 @@ func conversations() []conversation {
 	c7.steps = []step{
 		{want: []string{"format_store", "theme", "colors"}, fill: []string{"format", "theme", "colors"},
 			set: func(c *Context) {
-				c.Format, c.PowerCompetitive, c.Theme = mtgv1.FormatId_FORMAT_ID_PIONEER, true, "best deck"
+				c.Format, c.PowerCompetitive, c.Theme = mtgv1.FormatId_FORMAT_ID_MODERN, true, "best deck"
 			}},
 		{want: []string{"power_sixty_confirm", "budget", "meta"}, fill: []string{"power", "power_confirm", "budget", "meta"}},
 	}
@@ -249,12 +249,12 @@ func conversations() []conversation {
 	}
 	cs = append(cs, c17)
 
-	c18 := conversation{name: "pauper burn on a budget"}
-	c18.ctx = newCtx("pauper burn deck, as cheap as possible")
+	c18 := conversation{name: "burn on a budget"}
+	c18.ctx = newCtx("standard burn deck, as cheap as possible")
 	c18.ctx.BuyList = true
 	c18.steps = []step{
 		{want: []string{"format", "theme", "colors"}, fill: []string{"format", "theme", "colors"},
-			set: func(c *Context) { c.Format, c.Theme = mtgv1.FormatId_FORMAT_ID_PAUPER, "burn" }},
+			set: func(c *Context) { c.Format, c.Theme = mtgv1.FormatId_FORMAT_ID_STANDARD, "burn" }},
 		{want: []string{"power_sixty", "budget"}, fill: []string{"power", "budget"}},
 	}
 	cs = append(cs, c18)
@@ -286,12 +286,12 @@ func conversations() []conversation {
 	}
 	cs = append(cs, c20)
 
-	c21 := conversation{name: "vintage with proxies"}
+	c21 := conversation{name: "modern with proxies"}
 	c21.ctx = newCtx("we proxy everything at our table")
 	c21.steps = []step{
 		{want: []string{"format", "theme", "colors"}, fill: []string{"format", "theme", "colors"},
 			set: func(c *Context) {
-				c.Format, c.Theme, c.HouseFormat = mtgv1.FormatId_FORMAT_ID_VINTAGE, "shops", true
+				c.Format, c.Theme, c.HouseFormat = mtgv1.FormatId_FORMAT_ID_MODERN, "shops", true
 				// The second message is what raises the house rules. The
 				// word "proxy" no longer does, because a proxy user has no
 				// budget and names no legality (D-111).
@@ -346,12 +346,12 @@ func conversations() []conversation {
 	}
 	cs = append(cs, c25)
 
-	c26 := conversation{name: "legacy for an event"}
-	c26.ctx = newCtx("legacy deck for an event")
+	c26 := conversation{name: "modern for an event"}
+	c26.ctx = newCtx("modern deck for an event")
 	c26.ctx.BuyList = true
 	c26.steps = []step{
 		{want: []string{"format_store", "theme", "colors"}, fill: []string{"format", "theme", "colors"},
-			set: func(c *Context) { c.Format, c.Theme = mtgv1.FormatId_FORMAT_ID_LEGACY, "delver" }},
+			set: func(c *Context) { c.Format, c.Theme = mtgv1.FormatId_FORMAT_ID_MODERN, "delver" }},
 		{want: []string{"power_sixty", "budget"}, fill: []string{"power", "budget"}},
 	}
 	cs = append(cs, c26)
@@ -455,6 +455,27 @@ func conversations() []conversation {
 			set:  func(c *Context) { c.CommanderSet = true }},
 	}
 	cs = append(cs, c33)
+
+	// D-146: Historic and Timeless name no nearest format. The pool
+	// measurement of 2026-08-26 put Pioneer nearest for both, and not
+	// Modern and Legacy, so the owner chose to offer no substitute.
+	c33b := conversation{name: "an unsupported format with no substitute"}
+	c33b.ctx = newCtx("i want a historic deck")
+	c33b.ctx.UnsupportedFormat = true
+	c33b.ctx.NoNearFormat = true
+	c33b.steps = []step{
+		{want: []string{"format_unsupported_open", "theme", "colors"},
+			fill: []string{"format", "theme", "colors"},
+			set: func(c *Context) {
+				commander(c)
+				c.Theme = "dragons"
+				c.UnsupportedFormat, c.NoNearFormat = false, false
+			}},
+		{want: []string{"commander", "power_commander"},
+			fill: []string{"commander", "commander_pick", "power"},
+			set:  func(c *Context) { c.CommanderSet = true }},
+	}
+	cs = append(cs, c33b)
 
 	// D-129: a card that can not lead a deck is not a commander. Probe 41
 	// named Lightning Bolt, and every run accepted it in silence.

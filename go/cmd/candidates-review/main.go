@@ -38,11 +38,13 @@ type prompt struct {
 	Collection bool     `json:"collection"`
 }
 
+// formats maps a prompt's format word onto the enum. The 20 review
+// prompts use commander, modern, and standard only, so the PR-6 gate is
+// unaffected by D-155.
 var formats = map[string]mtgv1.FormatId{
-	"commander": mtgv1.FormatId_FORMAT_ID_COMMANDER, "standard": mtgv1.FormatId_FORMAT_ID_STANDARD,
-	"pioneer": mtgv1.FormatId_FORMAT_ID_PIONEER, "modern": mtgv1.FormatId_FORMAT_ID_MODERN,
-	"legacy": mtgv1.FormatId_FORMAT_ID_LEGACY, "vintage": mtgv1.FormatId_FORMAT_ID_VINTAGE,
-	"pauper": mtgv1.FormatId_FORMAT_ID_PAUPER,
+	"commander": mtgv1.FormatId_FORMAT_ID_COMMANDER,
+	"standard":  mtgv1.FormatId_FORMAT_ID_STANDARD,
+	"modern":    mtgv1.FormatId_FORMAT_ID_MODERN,
 }
 
 var colors = map[string]mtgv1.Color{

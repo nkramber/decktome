@@ -66,14 +66,6 @@ func checkCopies(res *mtgv1.ValidationResult, in Input, fr FormatRules) {
 		if card.MaxCopiesOverride > 0 {
 			limit = card.MaxCopiesOverride
 		}
-		if fr.ScryfallKey != "" && card.Legalities[fr.ScryfallKey] == mtgv1.LegalityStatus_LEGALITY_STATUS_RESTRICTED {
-			limit = 1
-			if n > limit {
-				add(res, CodeRestrictedCard, mtgv1.Severity_SEVERITY_BLOCK,
-					fmt.Sprintf("%s is restricted: max 1 copy, the deck has %d", names[oid], n), oid)
-				continue
-			}
-		}
 		if n > limit {
 			add(res, CodeCopyLimit, mtgv1.Severity_SEVERITY_BLOCK,
 				fmt.Sprintf("%s: %d copies, the limit is %d", names[oid], n, limit), oid)
@@ -123,6 +115,9 @@ func checkLegality(res *mtgv1.ValidationResult, in Input, fr FormatRules) {
 			continue
 		}
 		switch card.Legalities[fr.ScryfallKey] {
+		// RESTRICTED still reads as legal. No format the app builds has a
+		// restricted list since D-155, so this arm is about the card data
+		// and not about a deck the app can produce.
 		case mtgv1.LegalityStatus_LEGALITY_STATUS_LEGAL, mtgv1.LegalityStatus_LEGALITY_STATUS_RESTRICTED:
 		case mtgv1.LegalityStatus_LEGALITY_STATUS_BANNED:
 			add(res, CodeBannedCard, mtgv1.Severity_SEVERITY_BLOCK,
@@ -169,18 +164,23 @@ func checkCommander(res *mtgv1.ValidationResult, in Input) {
 		}
 	}
 	if len(cmdrs) == 2 {
-		if !validPair(cmdrs[0], cmdrs[1]) {
+		if !ValidPair(cmdrs[0], cmdrs[1]) {
 			add(res, CodeBadPartner, mtgv1.Severity_SEVERITY_BLOCK,
 				fmt.Sprintf("%s and %s are not a legal commander pair", cmdrs[0].Name, cmdrs[1].Name), "")
 		}
 	}
 }
 
-// validPair checks the two-commander mechanics (corpus section 2.2).
+// ValidPair checks the two-commander mechanics (corpus section 2.2).
 // Two Partner cards pair only when their variant text is equal
 // (CR 702.124f): plain Partner with plain Partner, Survivors with
 // Survivors, and so on.
-func validPair(a, b *mtgv1.Card) bool {
+//
+// It is exported so the candidate builder can offer a pair as one choice.
+// A pair carries the union of two color identities, which is the only way
+// to reach four colors: WUBR, WBRG, and UBRG hold one legal single
+// commander each (D-154).
+func ValidPair(a, b *mtgv1.Card) bool {
 	pk := func(c *mtgv1.Card) mtgv1.PartnerKind { return c.Partner }
 	switch {
 	case pk(a) == mtgv1.PartnerKind_PARTNER_KIND_PARTNER && pk(b) == mtgv1.PartnerKind_PARTNER_KIND_PARTNER:

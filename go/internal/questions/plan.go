@@ -65,8 +65,15 @@ type Context struct {
 	// UnsupportedFormat marks a format this app does not build, such as
 	// Brawl. State holds the name and the nearest format (D-112).
 	UnsupportedFormat bool `json:"unsupported_format"`
+	// NoNearFormat marks an unsupported format with no nearest format to
+	// offer. Historic and Timeless are the two (D-146).
+	NoNearFormat bool `json:"no_near_format"`
 	// Precon marks a request to upgrade a preconstructed deck (D-113).
 	Precon bool `json:"precon"`
+	// WantPair marks a request for a two-commander pair (D-154).
+	WantPair bool `json:"want_pair"`
+	// WantBackground narrows that to a pair that holds a Background.
+	WantBackground bool `json:"want_background"`
 	// CommanderIllegal marks a named commander that can not lead a deck,
 	// such as Lightning Bolt (D-129).
 	CommanderIllegal bool `json:"commander_illegal"`
@@ -180,6 +187,7 @@ func (w When) matches(ctx Context) bool {
 		{w.AfterBuild, ctx.AfterBuild},
 		{w.TwoDecks, ctx.TwoDecks},
 		{w.UnsupportedFormat, ctx.UnsupportedFormat},
+		{w.NoNearFormat, ctx.NoNearFormat},
 		{w.Precon, ctx.Precon},
 		{w.CommanderIllegal, ctx.CommanderIllegal},
 	}
@@ -193,11 +201,17 @@ func (w When) matches(ctx Context) bool {
 
 // sixtyCard reports whether a format builds a 60-card deck. Commander and
 // an empty format do not.
+//
+// HOUSE joined the list with D-155. It builds 60 cards by default
+// (formats.json), and it was absent here, so no power row could fire for
+// it at all: the 60-card rows need this test and the Commander rows need
+// format "commander". A user who named no format and asked for no ban
+// list would have finished with no power level.
 func sixtyCard(f mtgv1.FormatId) bool {
 	switch f {
-	case mtgv1.FormatId_FORMAT_ID_STANDARD, mtgv1.FormatId_FORMAT_ID_PIONEER,
-		mtgv1.FormatId_FORMAT_ID_MODERN, mtgv1.FormatId_FORMAT_ID_LEGACY,
-		mtgv1.FormatId_FORMAT_ID_VINTAGE, mtgv1.FormatId_FORMAT_ID_PAUPER:
+	case mtgv1.FormatId_FORMAT_ID_STANDARD,
+		mtgv1.FormatId_FORMAT_ID_MODERN,
+		mtgv1.FormatId_FORMAT_ID_HOUSE:
 		return true
 	}
 	return false
