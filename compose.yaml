@@ -1,18 +1,42 @@
 # Container variant of the local stack (PR-0c). Native path: make dev.
 # The emulator image binds 0.0.0.0 (see docker/emulators.Dockerfile) so the
 # other services can reach the ports. The image CMD starts the emulators.
+# Published ports bind 127.0.0.1 only. The emulators and the fake GCS
+# accept every request without credentials, so the LAN must not see them.
 services:
   emulators:
     build:
       context: .
       dockerfile: docker/emulators.Dockerfile
-    ports: ["8281:8281", "9199:9199", "4100:4100"]
+    ports:
+      - "127.0.0.1:8281:8281"
+      - "127.0.0.1:9199:9199"
+      - "127.0.0.1:4100:4100"
+    # Firestore export. Data survives a restart, as .local/firestore does for make dev.
+    volumes:
+      - ./.local/firestore-docker:/data/firestore
+    # The Firestore emulator answers GET / with "Ok". The image has node and no curl.
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:8281/', r => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 24
+      start_period: 20s
 
   gcs:
-    image: fsouza/fake-gcs-server:1.56.1
+    # Digest resolved from the registry manifest on 2026-08-26.
+    image: fsouza/fake-gcs-server:1.56.1@sha256:797ce226d62f947c009dc40246b30cfb456b8473d8241407f9d6f2c04e4d69ef
     command: ["-scheme", "http", "-port", "4443", "-filesystem-root", "/data"]
     volumes: [".local/gcs-docker:/data"]
-    ports: ["4443:4443"]
+    ports:
+      - "127.0.0.1:4443:4443"
+    # The image is alpine, so busybox wget is present.
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:4443/"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
 
   api:
     build:
@@ -28,8 +52,20 @@ services:
       CARDS_RELOAD_SECONDS: "15"
       # Local stack: no provider keys, the fixture fake serves every LLM role.
       LLM_REQUIRE_KEYS: "0"
-    depends_on: [emulators, gcs]
-    ports: ["8090:8080"]
+    depends_on:
+      emulators:
+        condition: service_healthy
+      gcs:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8090:8080"
+    # /healthcheck is a static probe built in docker/api.Dockerfile. It calls GET /healthz.
+    healthcheck:
+      test: ["CMD", "/healthcheck"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
 
   # One-shot card snapshot refresh, the Cloud Run job shape.
   # Run it on demand: docker compose --profile seed run --rm worker
@@ -39,5 +75,7 @@ services:
       dockerfile: docker/worker.Dockerfile
     command: ["-once"]
     environment: *gcp-env
-    depends_on: [gcs]
+    depends_on:
+      gcs:
+        condition: service_healthy
     profiles: [seed]

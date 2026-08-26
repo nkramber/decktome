@@ -30,12 +30,15 @@ import (
 type Store interface {
 	// NewID reserves a session id without a write.
 	NewID(uid string) string
-	// Put writes the public session and the private state together.
-	Put(ctx context.Context, uid string, s *mtgv1.Session, snap questions.Snapshot) error
+	// Put writes the public session and the private state together. It
+	// returns sessions.ErrConflict when the stored version is not the
+	// expected one, and then writes nothing (H-7).
+	Put(ctx context.Context, uid string, s *mtgv1.Session, snap questions.Snapshot, expected int64) error
 	// Get reads the public session alone.
 	Get(ctx context.Context, uid, id string) (*mtgv1.Session, error)
-	// GetState reads the session and its private state.
-	GetState(ctx context.Context, uid, id string) (*mtgv1.Session, questions.Snapshot, error)
+	// GetState reads the session, its private state, and the version
+	// that the next Put must expect.
+	GetState(ctx context.Context, uid, id string) (*mtgv1.Session, questions.Snapshot, int64, error)
 }
 
 // UserFunc reads the caller's user id from the request context.
@@ -132,6 +135,10 @@ func (s *Server) GetSession(ctx context.Context, req *connect.Request[mtgv1.GetS
 // event for each question, then the slots, then the usage. A model
 // failure ends the turn with a failure event, and the session keeps every
 // slot the turn already filled.
+//
+// Two overlapping calls on one session both run the turn, and only the
+// first Put lands. The second one gets CodeAborted and stored nothing, so
+// the asked rows of the first turn survive (H-7).
 func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatRequest], stream *connect.ServerStream[mtgv1.ChatResponse]) error {
 	uid := s.userFn(ctx)
 	if uid == "" {
@@ -141,7 +148,7 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 		return connect.NewError(connect.CodeInvalidArgument, errNoMessage)
 	}
 
-	session, snap, err := s.load(ctx, uid, req.Msg)
+	session, snap, version, err := s.load(ctx, uid, req.Msg)
 	if err != nil {
 		return err
 	}
@@ -183,7 +190,7 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 		}
 	}
 	session.Turns = append(session.Turns, turn)
-	if err := s.store.Put(ctx, uid, session, st.Snapshot()); err != nil {
+	if err := s.store.Put(ctx, uid, session, st.Snapshot(), version); err != nil {
 		return storeError(err)
 	}
 
@@ -212,14 +219,15 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 	return stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Usage{Usage: session.GetUsage()}})
 }
 
-// load reads the named session, or makes a new one.
-func (s *Server) load(ctx context.Context, uid string, msg *mtgv1.ChatRequest) (*mtgv1.Session, questions.Snapshot, error) {
+// load reads the named session, or makes a new one. The version is the
+// one Put must expect, and a new session expects 0.
+func (s *Server) load(ctx context.Context, uid string, msg *mtgv1.ChatRequest) (*mtgv1.Session, questions.Snapshot, int64, error) {
 	if id := msg.GetSessionId(); id != "" {
-		session, snap, err := s.store.GetState(ctx, uid, id)
+		session, snap, version, err := s.store.GetState(ctx, uid, id)
 		if err != nil {
-			return nil, questions.Snapshot{}, storeError(err)
+			return nil, questions.Snapshot{}, 0, storeError(err)
 		}
-		return session, snap, nil
+		return session, snap, version, nil
 	}
 	id := s.store.NewID(uid)
 	session := &mtgv1.Session{
@@ -230,7 +238,7 @@ func (s *Server) load(ctx context.Context, uid string, msg *mtgv1.ChatRequest) (
 	// A user with no collection never gets the card-pool question (D-37).
 	snap := questions.Snapshot{Version: questions.SnapshotVersion}
 	snap.Ctx.HasCollection = msg.GetCollectionId() != ""
-	return session, snap, nil
+	return session, snap, 0, nil
 }
 
 // agent builds the turn's agent.
@@ -251,29 +259,17 @@ func (s *Server) agent(hints *questions.CandidateHints) (*questions.Agent, error
 //
 // Each one gates a catalog row. Without them the row is dead code, which
 // is the defect the live run of 2026-08-24 found on Context.Suggested.
+//
+// The PR-6 facts read the slots, and the agent reads them again after
+// the classify call fills the slots of this turn (M-6). This call covers
+// the turn's first plan with the stored slots.
 func (s *Server) facts(session *mtgv1.Session, st *questions.State, hints *questions.CandidateHints) {
 	// A deck exists, so the user may ask for another version (PR-9).
 	st.Ctx.AfterBuild = len(session.GetDeckIds()) > 0
-	if hints == nil || !st.Ctx.HasCollection {
+	if hints == nil {
 		return
 	}
-	// The named commander is not in the collection (corpus section 11).
-	st.Ctx.CommanderNotOwned = hints.MissingCommander(st.CommanderNames)
-	// No owned commander fits the theme (D-63, D-94). The count answers
-	// it, so no threshold is invented.
-	if !st.Ctx.CommanderSet {
-		st.Ctx.WeakCommanderPool = hints.WeakCommanderPool(st.Slots.GetTheme())
-	}
-	// PR-6 counts the on-theme owned cards (D-63). The count needs the
-	// format and the theme, and it only matters while the pool key is
-	// open.
-	if st.Ctx.Filled["pool_rule"] || st.Slots.GetTheme() == "" ||
-		st.Slots.GetFormat().GetId() == mtgv1.FormatId_FORMAT_ID_UNSPECIFIED {
-		return
-	}
-	thin, count := hints.ThinTheme(st.Slots.GetTheme())
-	st.Ctx.ThinTheme = thin
-	hints.OnThemeOwned = count
+	questions.RefreshFacts(st, hints)
 }
 
 // hints answers the placeholder values from the card index. It returns
@@ -311,6 +307,13 @@ func (s *Server) hints(ctx context.Context, uid string, session *mtgv1.Session, 
 // withAnswers folds the structured replies into the message the
 // classifier reads. Each line names the question and the answer, so the
 // classifier maps the answer to the right slot.
+//
+// The Answer contract follows the proto: text wins when it is not empty,
+// and option_index names an option only when text is empty. The proto
+// says -1 means free text. A client that omits option_index sends 0,
+// which is a valid option. So a client must send -1, or text, for a
+// free-text reply. A free-text reply with option_index 0 and text set
+// uses the text.
 func withAnswers(message string, answers []*mtgv1.Answer, session *mtgv1.Session) string {
 	if len(answers) == 0 {
 		return message
@@ -347,7 +350,9 @@ func withAnswers(message string, answers []*mtgv1.Answer, session *mtgv1.Session
 
 // addUsage sums one turn's report into the session total (M-1). A turn
 // whose provider reported nothing leaves priced false, which is not the
-// same fact as a zero cost.
+// same fact as a zero cost. A turn with no calls at all, such as a
+// frozen session, reports no cost either, and it must not flip the
+// flag (M-8).
 func addUsage(total *mtgv1.Usage, r llm.Report) *mtgv1.Usage {
 	if total == nil {
 		total = &mtgv1.Usage{Priced: true}
@@ -359,10 +364,11 @@ func addUsage(total *mtgv1.Usage, r llm.Report) *mtgv1.Usage {
 		total.OutputTokens += r.Tokens.OutputTokens
 		total.ReasoningTokens += r.Tokens.ReasoningTokens
 	}
-	if r.CostUSD == nil {
-		total.Priced = false
-	} else {
+	switch {
+	case r.CostUSD != nil:
 		total.CostUsd += *r.CostUSD
+	case r.Calls > 0:
+		total.Priced = false
 	}
 	return total
 }
@@ -392,6 +398,10 @@ func storeError(err error) error {
 	}
 	if errors.Is(err, sessions.ErrNotFound) {
 		return connect.NewError(connect.CodeNotFound, err)
+	}
+	if errors.Is(err, sessions.ErrConflict) {
+		return connect.NewError(connect.CodeAborted,
+			fmt.Errorf("the session is busy with another turn, send the message again: %w", err))
 	}
 	return connect.NewError(connect.CodeInternal, err)
 }

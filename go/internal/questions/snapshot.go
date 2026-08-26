@@ -22,8 +22,13 @@ type Snapshot struct {
 	LockedNames       []string `json:"locked_names"`
 	OfferedCommanders []string `json:"offered_commanders"`
 	CurrentOffer      []string `json:"current_offer"`
-	AskCount          int      `json:"ask_count"`
-	Turn              int      `json:"turn"`
+	// OfferAsked are the names the pick row sent last. A snapshot written
+	// before D-163 holds none, and the row then asks once more with the
+	// names on the table. That is the safe failure: the alternative is a
+	// resumed session that never asks again.
+	OfferAsked []string `json:"offer_asked"`
+	AskCount   int      `json:"ask_count"`
+	Turn       int      `json:"turn"`
 	// Asks are the M-4 records of every question the session sent.
 	Asks []Ask `json:"asks"`
 }
@@ -38,6 +43,7 @@ func (s *State) Snapshot() Snapshot {
 		LockedNames:       s.LockedNames,
 		OfferedCommanders: s.OfferedCommanders,
 		CurrentOffer:      s.CurrentOffer,
+		OfferAsked:        s.OfferAsked,
 		AskCount:          s.AskCount,
 		Turn:              s.Turn,
 		Asks:              s.Asks,
@@ -71,6 +77,7 @@ func Restore(id string, slots *mtgv1.Slots, snap Snapshot) *State {
 	st.LockedNames = snap.LockedNames
 	st.OfferedCommanders = snap.OfferedCommanders
 	st.CurrentOffer = snap.CurrentOffer
+	st.OfferAsked = snap.OfferAsked
 	st.AskCount = snap.AskCount
 	st.Turn = snap.Turn
 	st.Asks = snap.Asks

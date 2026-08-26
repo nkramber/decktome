@@ -113,6 +113,9 @@ var commanderSigns = []string{
 	"my commander", "as my commander", "the commander", "in the 99",
 	"one of the 99", "for the 99", "bracket 1", "bracket 2", "bracket 3",
 	"bracket 4", "bracket 5", "precon", "preconstructed",
+	// cEDH is competitive Commander, so it names the format as well as
+	// the power level (corpus section 15, D-164).
+	"cedh",
 }
 
 // FormatFromWords reads a format the user named or clearly implied. It is
@@ -145,7 +148,15 @@ func FormatFromWords(text string) (mtgv1.FormatId, bool) {
 // namesFormat reports whether one message names one format. It reads the
 // message alone, and never the conversation: a value the user replaced
 // stays in the conversation forever (D-125).
+//
+// A message that names a sub-format this app does not build names no
+// format here. "I play Duel Commander" holds the word "commander", and
+// the classifier may report Commander for it. The unsupported-format
+// row must decline it instead (M-9, D-112).
 func namesFormat(message string, id mtgv1.FormatId) bool {
+	if _, _, ok := UnsupportedFormat(message); ok {
+		return false
+	}
 	for word, want := range formatNames {
 		if want == id && hasPhrase(message, word) {
 			return true
@@ -158,9 +169,10 @@ func namesFormat(message string, id mtgv1.FormatId) bool {
 // unsupported is a format this app does not build, and the nearest one it
 // does. Verified 2026-08-25 against the format definitions.
 //
-// Brawl is 60-card singleton with a commander, so Commander is nearest.
-// The owner confirmed that reading: probe 46 answers "treat it as
-// Commander". Oathbreaker, Duel Commander, and Canadian Highlander are
+// Brawl is 100-card singleton with a commander on Arena, and Standard
+// Brawl is the 60-card version (owner ruling, 2026-08-26). Commander is
+// nearest to both. The owner confirmed that reading: probe 46 answers
+// "treat it as Commander". Oathbreaker, Duel Commander, and Canadian Highlander are
 // singleton formats with the same shape. Alchemy is Standard with the
 // Arena-only rebalanced cards.
 //
@@ -470,3 +482,139 @@ var competitiveSigns = []string{
 // The agent infers the tournament step from it in a 60-card format, and
 // asks the user to confirm (D-107).
 func CompetitiveRequest(text string) bool { return anyPhrase(text, competitiveSigns) }
+
+// cedhSigns name competitive Commander. cEDH is bracket 5 by definition,
+// and it is a Commander deck (corpus sections 2.3 and 15).
+//
+// "Competitive Commander" is not on the list. It says the deck is strong
+// and it does not name bracket 5, and the two are three brackets apart.
+var cedhSigns = []string{"cedh", "competitive edh"}
+
+// CEDHRequest reports whether the user asked for a cEDH deck. Probe 75
+// of gate run 18 opens with "A cEDH deck", and the agent asked which
+// power bracket to target. The user had named it (D-164).
+func CEDHRequest(text string) bool { return anyPhrase(text, cedhSigns) }
+
+// colorlessSigns name a deck with no colors.
+//
+// No model call can report this answer. The classify schema offers the
+// five colors alone, so an empty list means "the user said nothing" and
+// "the user said colorless" at the same time. Probe 73 of gate run 18
+// opens with "A colorless Commander deck", and the color question went
+// out (D-165).
+var colorlessSigns = []string{"colorless", "no colors", "no color"}
+
+// ColorlessRequest reports whether the user asked for a colorless deck.
+// The negation guard applies, so "not colorless" is not such a request.
+func ColorlessRequest(text string) bool { return anyPhrase(text, colorlessSigns) }
+
+// lockVerbs put a named card into the deck outright. The user has
+// answered the locked row before it went out.
+var lockVerbs = map[string]bool{
+	"keep": true, "keeps": true, "kept": true,
+	"lock": true, "locks": true, "locked": true,
+	"include": true, "includes": true, "must": true,
+}
+
+// lockWindow is how many words may stand between a lock verb and the
+// card name. "Keep Sanguine Bond in it" is one word, and "and please
+// keep the card Sanguine Bond" is three.
+const lockWindow = 3
+
+// LocksCard reports whether one message locks a named card into the
+// deck. Conversation 13 of gate run 18 opens with "keep Sanguine Bond in
+// it", and the agent asked "Should Sanguine Bond stay in the deck, or
+// may I cut cards that do not fit the plan?" (D-166).
+//
+// The card name comes from the classifier, so it is the user's own card
+// and not a guess. The short form is read as well as the full one, which
+// is the sameCard rule of D-70.
+func LocksCard(message, name string) bool {
+	toks := tokens(message)
+	for _, form := range []string{name, baseName(name)} {
+		want := tokens(form)
+		if len(want) == 0 {
+			continue
+		}
+		for i := range toks {
+			if !matchAt(toks, want, i) {
+				continue
+			}
+			for j := i - 1; j >= 0 && j >= i-lockWindow; j-- {
+				if negators[toks[j]] {
+					break
+				}
+				// "Do not keep Sanguine Bond" holds the verb and denies
+				// it, so the negator before the verb counts as well.
+				if lockVerbs[toks[j]] && !negatedAt(toks, j) {
+					return true
+				}
+			}
+			// "Sol Ring goes in it" puts the verb after the name.
+			// Conversation 74 of run 20260826-191225-000 wrote that, and
+			// the locked row asked whether Sol Ring may be cut.
+			if after := i + len(want); after < len(toks) && lockAfter[toks[after]] && !negatedAt(toks, i) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// lockAfter are the verbs that lock a card in when they follow its name:
+// "Sol Ring goes in it", "Sanguine Bond stays".
+var lockAfter = map[string]bool{"goes": true, "stays": true}
+
+// bestSigns hand a choice to the agent with a superlative. They name no
+// card, and they tell the agent to select one.
+var bestSigns = []string{"the best", "the strongest", "the top"}
+
+// DelegatesCommander reports whether the message asks the agent to pick
+// the commander. Conversation 10 of gate run 18 writes "Buy the best
+// lifegain commander", and the agent answered with three names to choose
+// from. The user had asked the agent to choose (D-167).
+//
+// The message must name a commander. Without that guard "the best" would
+// hand over the commander choice whenever any commander question is out,
+// and "buy the best lands" is not that message.
+func DelegatesCommander(message string) bool {
+	return NamesCommander(message) && anyPhrase(message, bestSigns)
+}
+
+// noBudgetSigns say the user set no spending limit. The negation guard
+// is off here, as it is for refusalSigns: every phrase carries its own
+// sense, and a general rule would read each one as negated.
+var noBudgetSigns = []string{
+	"money is no object", "price is no object", "cost is no object",
+	"no budget", "no spending limit", "no price limit",
+	"spend what you need", "spend whatever", "budget is no issue",
+}
+
+// NoSpendingLimit reports whether the user refused a budget cap. The
+// budget row must not ask a user who has answered it.
+//
+// It reads one message and never the whole conversation, which is the
+// D-125 rule. A cap the user names later still closes the slot on its
+// value.
+func NoSpendingLimit(message string) bool {
+	toks := tokens(message)
+	for _, p := range noBudgetSigns {
+		want := tokens(p)
+		for i := range toks {
+			if matchAt(toks, want, i) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// buysCards reports whether a pool rule lets the deck hold a card the
+// user does not own. Only owned-only builds with no purchase.
+func buysCards(r mtgv1.PoolRule) bool {
+	switch r {
+	case mtgv1.PoolRule_POOL_RULE_OWNED_FIRST, mtgv1.PoolRule_POOL_RULE_ANY_CARD:
+		return true
+	}
+	return false
+}

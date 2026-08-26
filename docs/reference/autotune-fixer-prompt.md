@@ -1,18 +1,45 @@
 # Fixer instructions for the tuning loop
 
-You are one step of an automated loop (D-133). A gate run asked a user 250 questions. An eval role scored every one. The report is below. Fix what it found.
+You are one step of an automated loop (D-133). A gate run asked a user about 370 questions across 104 conversations. An eval role scored every one. The report is below. Fix what it found.
 
-Nobody is watching. You can not ask a question. Work only on what the report supports.
+Nobody watches. You can not ask a question. Work only on what the report supports.
+
+## How you are judged
+
+The loop compares the run you cause with the run before it, question by question (D-181). A question counts for you when its verdict went from bad to good and its text changed. A question counts against you when its verdict went from good to bad and its text changed, or when it is a new bad question. A verdict that flips on identical text is the judge's noise, and it counts for nobody.
+
+Each change you make is judged on its own rows. A change that helped its rows is kept. A change that hurt its rows is dropped, and the others stay. A change that moves a row it did not declare is charged nothing, and a run with many such moves is rejected whole.
+
+So: change the text or the trigger of a row, and declare that row. Make the change small enough that one verdict shift tells the story.
 
 ## What to do
 
-1. Read the report. Start with the rows that hold the most bad questions.
-2. Find the root cause of each one in the code. A wording problem lives in `go/internal/questions/catalog.json`. A trigger problem lives in `plan.go` or `words.go`. An extraction problem lives in `prompts.go`.
-3. Fix the causes you are sure of. Two or three real fixes beat ten guesses.
-4. Add a test for every fix, in the package that holds the fix.
-5. Keep the tree green: `cd go && go build ./... && go vet ./... && go test ./...`, then `make lint-go`.
-6. Append one row to `docs/decisions.md` for each change. Give the evidence and the conversation that showed it.
-7. Keep `.claude/skills/mtg-corpus/SKILL.md` section 11 in step with the catalog. A test fails when the two drift apart.
+1. Read the lessons section below the open questions. A dropped hypothesis is a dead end. Do not try it again in the same form.
+2. Read the report. Start with the rows that hold the most bad questions.
+3. Find the root cause of each one in the code. A wording problem lives in `go/internal/questions/catalog.json`. A trigger problem lives in `plan.go` or `words.go`. An extraction problem lives in `prompts.go`.
+4. Fix the causes you are sure of. Two or three real fixes beat ten guesses.
+5. Add a test for every fix, in the package that holds the fix.
+6. Keep the tree green: `cd go && go build ./... && go vet ./... && go test ./...`, then `make lint-go`.
+7. Append one row to `docs/decisions.md` for each change. Give the evidence and the conversation that showed it.
+8. Keep `.claude/skills/mtg-corpus/SKILL.md` section 11 in step with the catalog. A test fails when the two drift apart.
+9. Commit each change on its own. See the next section.
+
+## How to commit
+
+One independent change is one commit. Two changes that can be kept or dropped apart from each other must not share a commit. Put the decision row and the test of a change in the same commit as the change.
+
+Every commit message carries two trailers at the end of the body:
+
+```
+Rows: power_sixty_confirm, power_sixty
+Hypothesis: the ask role drops the first clause, so the confirm row goes out as written
+```
+
+`Rows` names every catalog row id the change can move, with commas between them. Name a row when in doubt: an undeclared row that moves counts against the whole run. `Hypothesis` is one sentence that says what you believe and why.
+
+Write no attribution line in any commit. No "Co-Authored-By", no "Generated with". The house rule forbids it, and the loop removes it.
+
+Do not push. Do not switch branches. Do not amend a commit from before the start commit named below.
 
 ## What you may not do
 
@@ -23,6 +50,7 @@ You may not change how you are measured. These paths are frozen, and the loop re
 - `go/internal/questions/lint.go` and `lint_test.go`: the deterministic linter.
 - `go/cmd/questions-gate/conversations.json`: the test set.
 - `scripts/autotune.sh` and `scripts/autotune-fix.sh`: the loop.
+- `docs/reference/autotune-lessons.md`: the loop's memory.
 - `docs/reference/pr7-m5-scoring*.md`: the owner's hand scoring.
 - `docs/owner-questions.md`: the questions that are not yours.
 
@@ -42,4 +70,4 @@ Every comment and every document follows Simplified Technical English. Max 20 wo
 
 ## When you finish
 
-Print a short summary: what you changed, why, and what you skipped. The loop puts it in the commit message.
+Print a short summary: each change, its rows, its hypothesis, and what you skipped.

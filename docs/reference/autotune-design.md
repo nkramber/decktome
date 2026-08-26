@@ -7,7 +7,7 @@ Written 2026-08-26. Updated the same day, after the owner answered every blockin
 
 `docs/design-roadmap.md` holds PR-7B, which is the authority on what this lane is for, which evals run, and what its gate is. This file is the authority on how the loop runs: the guards, the accept rules, the cost, and what the owner does run by run. Read the roadmap entry first.
 
-The three evals of the PR-7B gate started on 2026-08-26. The loop itself has not run.
+The three evals of the PR-7B gate started on 2026-08-26. The loop ran the same day: four starts, two of them aborted. One iteration was accepted and then judged wrong (D-171), and one was rejected (run 20260826-191225). `autotune-readme.md` holds the commands.
 
 ## The problem
 
@@ -15,14 +15,16 @@ The owner scored 32 questions by hand and it took hours. A gate run asks about 2
 
 ## The shape
 
-Six steps, in a loop.
+Eight steps, in a loop.
 
-1. Run the question gate. It asks 104 conversations on `gpt-5.6-luna`, and it writes a document.
-2. Score every question with the eval role, also on `gpt-5.6-luna` (D-133).
-3. Compare the run with the one before it.
-4. Hand the report to a fixer agent, which changes the product.
-5. Keep the change when the run got better. Revert it when it did not.
-6. Stop at the budget, at the target ratio, or after three iterations that changed nothing.
+1. Hand the last report and the lessons file to a fixer agent. It commits each change on its own, with the rows it means to move (D-181, D-182).
+2. Run the question gate. It asks 104 conversations on `gpt-5.6-luna`, and it writes a document.
+3. Score every question with the eval role, also on `gpt-5.6-luna` (D-133).
+4. Compare the run with the one before it, question by question. Charge every moved question to the change that declared its row.
+5. Keep the changes that helped. Drop the ones that hurt. Keep the evidence of a dropped change under `.local/tune/rejected/` (D-180).
+6. When some changes are kept and some dropped, run the gate again on the conversations the kept rows touch, and fold that into the baseline.
+7. Write what the decision taught to the lessons file, and commit it, whatever the outcome.
+8. Stop at the budget, at the target ratio, or after three iterations that changed nothing.
 
 `scripts/autotune.sh` is the loop. It calls `cmd/questions-gate`, `cmd/questions-eval`, `scripts/autotune-fix.sh`, and `cmd/tune-check`.
 
@@ -44,7 +46,7 @@ Wall clock now binds before the budget does. Twelve iterations take about six ho
 
 ## What the $3 does not cover
 
-The fixer agent is not in that table. It reads a report and edits Go, and its own tokens are billed to the owner somewhere else. A frontier model doing real work over fourteen iterations plausibly costs **ten to forty dollars**, which is more than the loop budget by a wide margin.
+The fixer agent is not in that table. It reads a report and edits Go, and its own tokens are billed to the owner somewhere else. A frontier model at real work over fourteen iterations plausibly costs **ten to forty dollars**. That is more than the loop budget by a wide margin.
 
 The owner runs Claude Code on a monthly plan, so the fixer needs no dollar cap and none is set (D-159). What binds it is the plan's usage limit and the wall clock, not money. A fixer that stops part way through a night is safe: the loop reverts that iteration and goes on to the next.
 
@@ -75,6 +77,12 @@ Each one exists because something in this repository's history needed it.
 | The premature check | A session that calls itself complete with a slot open (D-91) | `internal/tune` |
 | The linter | A redundant or presumptuous question (D-115) | `internal/questions/lint.go` |
 | The holdout split | The fixer learning the test set (D-134) | `internal/tune` |
+| The noise margin | The judge's own noise read as a gain or a loss (D-183) | `internal/tune` |
+| The paired comparison | A verdict that flipped on identical text charged to the fixer (D-181) | `internal/tune` |
+| Per-change attribution | One bad change throwing away two good ones (D-181) | `internal/tune`, `autotune.sh` |
+| The lessons file | The same dead end tried twice (D-182) | `autotune-lessons.md` |
+| Rejected evidence | A paid measurement thrown away (D-180) | `.local/tune/rejected/` |
+| The untracked check | An owner file swept into a loop commit (D-184) | `autotune.sh` |
 | The owner questions | The fixer deciding what is not its to decide | `docs/owner-questions.md` |
 
 ## The holdout split
@@ -95,23 +103,46 @@ Three layers, and the middle one is the part that is easy to miss (D-142).
 
 `--base pr-7c` names the container. The run switches to it, cuts the night's branch off it, and pushes nothing.
 
-Without a container, every night starts from the same commit. The second night never sees the first night's accepted work, so both nights rewrite the same catalog rows from the same base, and the owner is left merging two branches that disagree about the same file. The loop warns when the base is `main` for that reason.
+Without a container, every night starts from the same commit. The second night never sees the first night's accepted work. Both nights then rewrite the same catalog rows from the same base, and the owner must merge two branches that disagree about one file. The loop warns when the base is `main` for that reason.
 
 The container also gives the work one shape. Ten accepted iterations over three nights become one pull request from `pr-7c`, not ten branches.
 
 A night that goes wrong costs nothing. Delete `auto-tune/<stamp>` and the container is untouched.
 
+## The noise floor
+
+Two measurements set it (D-183). Run 18 and run 20260826-191225-000 ran identical agent code on the same 104 conversations. The holdout moved by three bad questions, the whole set by three, and only 16 of the 32 bad questions were the same in both. The same gate document scored twice by the same judge differs on 25 of 365 verdicts, and the holdout moves by two.
+
+So a ratio that moves by three or fewer bad questions says nothing about the change. The old checker rejected identical code as a regression, and it accepted noise as progress (D-171). The checker now allows a rise of three bad questions, and it decides each change on paired evidence instead.
+
 ## Accept and reject
 
-An iteration is kept only when every one of these holds.
+The whole run must pass four hard rules first.
 
 1. The linter finds nothing.
 2. No session calls itself complete with a needed slot unanswered.
 3. The agent asks at least 90 percent of the questions it asked before.
 4. At least 90 percent as many questions close a slot.
-5. The holdout ratio did not rise.
 
-Anything else reverts the whole iteration with `git reset --hard`.
+A hard failure reverts the whole iteration. Then each change is judged on its own (D-181).
+
+The checker pairs every question of the new run with the same question of the old run: same conversation, same turn, same row. A verdict that flipped on identical text is the judge, and it counts for nobody. A verdict that flipped on changed text is charged to the change that declared the row. A new bad question is charged the same way.
+
+A change with more questions better than worse is kept. A change with more worse than better is dropped. A change with no moved question is kept, because nothing spoke against it.
+
+Two whole-run guards sit over that. The holdout may not rise by more than the noise margin, and neither may the whole set. A third guard reads the rows no change declared. When those get worse by more than the margin, a change touched what it did not name, and nobody can be charged.
+
+When every change is kept, the iteration commits as one version. When every change is dropped, the tree reverts. When some are kept, the loop resets to the last good commit and cherry-picks the kept commits. It builds, and it runs the gate again on the conversations the kept rows touch, and nothing else.
+
+The eval of that partial run is folded into the baseline with `tune-check -merge`. The merged summary must pass the whole-run guards before it becomes the baseline. The owner chose this over a full re-measure, because it costs a fraction of one.
+
+## What the loop remembers
+
+`docs/reference/autotune-lessons.md` is the loop's memory (D-182). After every decision, `tune-check` appends a block with the ratio and the paired counts. For every change it adds the hypothesis, the rows, the verdict, and the questions it made worse. The loop commits that block whatever the outcome, so a rejected night still leaves its lessons on the branch.
+
+The fixer prompt carries the whole file. It says a dropped hypothesis is not tried again in the same form, and a kept one is a base to build on. The file is frozen, so the fixer can not edit its own memory. Before this file existed, two fixers on two days tried the same confirm-row idea, and both were rejected.
+
+The evidence behind each lesson stays under `.local/tune/rejected/<label>/`: the diff, the commits, the gate and eval documents, and the verdict (D-180). Nothing under `docs/reference/` is written for a rejected iteration, so the M-5 sheet and the overwrite guards see nothing new.
 
 ## Stop conditions
 
@@ -129,8 +160,8 @@ The setup happens once.
 
 Each run then costs the owner two things.
 
-- **Before.** One command, and a look at the budget. The loop refuses to start on a dirty tree, on `main`, or without `AUTOTUNE_ALLOW_UNATTENDED=1`.
-- **After.** Read `.local/tune/autotune.log`, read the branch, and merge it or delete it. Every accepted iteration is one commit with the ratio and the counts in its message.
+- **Before.** One command, and a look at the budget. The loop refuses to start on a dirty tree, with an untracked file, or without `AUTOTUNE_ALLOW_UNATTENDED=1`. It warns on `main` and cuts a branch anyway.
+- **After.** Read `.local/tune/autotune.log`, read `docs/reference/autotune-lessons.md`, read the branch, and merge it or delete it. Every accepted iteration is one commit with the ratio and the counts in its message, and every lesson is one commit of its own.
 
 Nothing is needed while it runs. That is the point of it.
 
@@ -159,7 +190,7 @@ The eval role runs on the model that also writes the questions. A model marks it
 - How many questions each one refused.
 - A warning when the cost tier refused fewer.
 
-The last line is the one that matters. A cost-tier eval that refuses four questions where the stronger model refuses twelve is not measuring the agent. It is reporting a floor, and the real number is somewhere above it.
+The last line is the one that matters. A cost-tier eval that refuses four questions where the stronger model refuses twelve is not measuring the agent. It reports a floor, and the real number is somewhere above it.
 
 The pass costs about 25 cents, and the stronger model is nearly all of it. Run it once against the first gate document, and again after any change to the eval prompt.
 
@@ -173,12 +204,6 @@ OQ-39 is open, and the first calibration measures it.
 
 ## The recommendation
 
-Run the report alone first.
+The report alone was run first, as this section once asked, and it found what the batch sweep had found by hand. Then the loop ran four times on 2026-08-26 and taught three things. The checker judged below the noise floor. A rejected iteration left nothing behind. Two fixers tried one dead end twice. D-180 to D-184 are the answer to each.
 
-```
-GATE_OUT=docs/reference/pr7-question-gate-run14.md make questions-gate
-EVAL_RUN=docs/reference/pr7-question-gate-run14.md make questions-eval
-make eval-calibrate
-```
-
-That costs about fifty cents in total, it needs no new permission, and it answers OQ-26 and OQ-27 with data. Read the report. If it finds what the batch sweep found by hand, the loop is worth turning on. If it does not, the loop would only automate a scorer that can not see.
+Run one iteration with `--max 1` against `pr-7c` before a full night, and read the lessons file after it. The first night is worth its budget only if the second fixer reads what the first one learned.

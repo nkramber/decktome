@@ -3,6 +3,7 @@ package collections
 import (
 	"context"
 	"errors"
+	"math"
 	"os"
 	"strings"
 	"testing"
@@ -313,6 +314,56 @@ func TestDuplicateRowsMerge(t *testing.T) {
 	}
 	if entries[0].Quantity != 5 || entries[1].Quantity != 1 || CardCount(entries) != 6 {
 		t.Errorf("merged quantities: %v", entries)
+	}
+}
+
+// TestMergedQuantityStopsAtCap is M-3 of the 2026-08-26 review. Each row
+// stays under maxQuantity, so the parser accepts it, and the merge sum
+// wrapped int32 negative on a long enough file. The row that would push
+// the entry over the cap is a BAD_ROW, so the row arithmetic holds.
+func TestMergedQuantityStopsAtCap(t *testing.T) {
+	idx := smallIndex()
+	id := "aaaaaaaa-0000-0000-0000-000000000001"
+	var sb strings.Builder
+	sb.WriteString(manaboxHeader + "\n")
+	const n = 5
+	for i := 0; i < n; i++ {
+		sb.WriteString(manaboxLine("Pawpatch Recruit", "BLB", "187", "normal", "9000", id, "near_mint", "en") + "\n")
+	}
+	rows, badParse, err := ParseManaBoxCSV(strings.NewReader(sb.String()))
+	if err != nil || len(badParse) != 0 || len(rows) != n {
+		t.Fatalf("parse: rows %d bad %v err %v", len(rows), badParse, err)
+	}
+	entries, bad := Resolve(rows, idx)
+	if len(entries) != 1 || entries[0].Quantity != 9000 {
+		t.Fatalf("entries = %v, want one entry at 9000", entries)
+	}
+	if len(bad) != n-1 {
+		t.Fatalf("bad = %d rows, want %d", len(bad), n-1)
+	}
+	for _, b := range bad {
+		if b.Reason != mtgv1.UnresolvedReason_UNRESOLVED_REASON_BAD_ROW {
+			t.Errorf("reason = %v, want BAD_ROW", b.Reason)
+		}
+	}
+	if got := len(rows) - len(bad); got != len(rows)-n+1 {
+		t.Errorf("resolved rows = %d", got)
+	}
+}
+
+// TestCountsSaturate covers the sums over stored entries, which the
+// merge cap does not bound.
+func TestCountsSaturate(t *testing.T) {
+	entries := []*mtgv1.CollectionEntry{
+		{OracleId: "a", Quantity: math.MaxInt32},
+		{OracleId: "a", Quantity: 5},
+		{OracleId: "b", Quantity: 1},
+	}
+	if got := CardCount(entries); got != math.MaxInt32 {
+		t.Errorf("CardCount = %d, want the int32 maximum", got)
+	}
+	if got := OracleCounts(entries)["a"]; got != math.MaxInt32 {
+		t.Errorf("OracleCounts[a] = %d, want the int32 maximum", got)
 	}
 }
 

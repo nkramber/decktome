@@ -38,6 +38,10 @@ type Context struct {
 	// Frozen marks a session whose build run has started (D-68). A frozen
 	// session asks nothing.
 	Frozen bool `json:"frozen"`
+	// OfferChanged says the commanders on the table differ from the ones
+	// the pick row named last. Only a row with RepeatOnChange reads it
+	// (D-163).
+	OfferChanged bool `json:"offer_changed"`
 
 	// OutOfScope marks a request for something other than a Magic deck.
 	// Nothing else is worth asking until it is settled (D-99).
@@ -114,7 +118,7 @@ func (c *Catalog) Plan(ctx Context) []Row {
 		key := r.StateKey()
 		// One question per proto slot per turn. Two rows that inform one
 		// slot read as a contradiction in the same message.
-		if ctx.Filled[key] || (ctx.Asked[r.ID] && !r.Repeat) || usedKey[key] || usedSlot[r.Slot] {
+		if ctx.Filled[key] || (ctx.Asked[r.ID] && !r.asksAgain(ctx)) || usedKey[key] || usedSlot[r.Slot] {
 			continue
 		}
 		// Another row already asked this key, and no answer came back.
@@ -128,6 +132,29 @@ func (c *Catalog) Plan(ctx Context) []Row {
 		usedKey[key], usedSlot[r.Slot] = true, true
 	}
 	return out
+}
+
+// asksAgain reports whether a row the session already asked may ask a
+// second time.
+//
+// A plain repeat row always may. A row that narrows the repeat asks again
+// only when its content changed. The pick row names three commanders, so
+// a repeat with the same three names is the same question in the same
+// words. Conversations 1, 77, and 90 of gate run 18 each got one, and the
+// eval refused every one of them as a duplicate. The user answered some
+// other slot, and the agent read that as a reason to ask again.
+//
+// This is the D-158 rule for another row: the question is out, it is
+// recorded as asked with no answer, and the gate reports it. Silence
+// beats the same sentence twice (D-163).
+func (r Row) asksAgain(ctx Context) bool {
+	switch {
+	case !r.Repeat:
+		return false
+	case r.RepeatOnChange:
+		return ctx.OfferChanged
+	}
+	return true
 }
 
 // matches reports whether every trigger of a row holds.

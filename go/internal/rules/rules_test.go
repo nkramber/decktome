@@ -521,6 +521,48 @@ func TestGoldenDecks(t *testing.T) {
 	})
 }
 
+// TestNegativeCountBlocks is M-4 of the 2026-08-26 review. A 101-card
+// list plus one entry with count -1 summed to 100 and passed deck_size.
+func TestNegativeCountBlocks(t *testing.T) {
+	deck := monoW([]string{"Heliod, Sun-Crowned"}, nil, 0).build(t)
+	deck.Cards = append(deck.Cards,
+		&mtgv1.DeckCard{OracleId: oid(t, "Plains"), Name: "Plains", Count: 1},
+		&mtgv1.DeckCard{OracleId: oid(t, "Serra Angel"), Name: "Serra Angel", Count: -1},
+	)
+	res := testCfg.Validate(Input{Deck: deck, Cards: testIndex})
+	if res.Passed {
+		t.Fatal("a negative count must block")
+	}
+	blocks := codes(res, mtgv1.Severity_SEVERITY_BLOCK)
+	if blocks[CodeBadCount] != 1 || blocks[CodeDeckSize] != 1 {
+		t.Errorf("blocks = %v, want one bad_count and one deck_size", blocks)
+	}
+	if n := mainDeckCount(deck); n != 101 {
+		t.Errorf("mainDeckCount = %d, want 101: the negative entry must not count", n)
+	}
+	// A zero count in the sideboard is a bad_count too.
+	deck = deckSpec{format: mtgv1.FormatId_FORMAT_ID_STANDARD, fill: "Plains", fillTo: 60}.build(t)
+	deck.Sideboard = append(deck.Sideboard, &mtgv1.DeckCard{OracleId: oid(t, "Plains"), Name: "Plains", Count: 0})
+	res = testCfg.Validate(Input{Deck: deck, Cards: testIndex})
+	if codes(res, mtgv1.Severity_SEVERITY_BLOCK)[CodeBadCount] != 1 {
+		t.Errorf("sideboard zero count: %v", codes(res, mtgv1.Severity_SEVERITY_BLOCK))
+	}
+}
+
+// TestIsDoctorIsExported keeps the helper the candidate builder relies on.
+func TestIsDoctorIsExported(t *testing.T) {
+	c, ok := testIndex.ByName("The Tenth Doctor")
+	if !ok {
+		t.Fatal("fixture card missing: The Tenth Doctor")
+	}
+	if !IsDoctor(c) {
+		t.Errorf("The Tenth Doctor must be a Doctor: %v", c.Subtypes)
+	}
+	if m, ok := testIndex.ByName("Moonstone, Harsh Mistress"); ok && IsDoctor(m) {
+		t.Error("a Human Doctor Villain is not a Time Lord Doctor")
+	}
+}
+
 func TestLoadData(t *testing.T) {
 	cfg, err := Load()
 	if err != nil {

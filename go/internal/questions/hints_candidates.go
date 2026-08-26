@@ -331,5 +331,8 @@ func (h *CandidateHints) ThinTheme(theme string) (bool, int) {
 	}
 	h.thinDone[theme] = true
 	h.thin[theme], h.thinCount[theme] = list.Stats.ThinTheme, list.Stats.OnThemeOwned
+	// The {n} clause of the thin-theme question reads this count, so the
+	// source keeps it with the answer (M-6).
+	h.OnThemeOwned = h.thinCount[theme]
 	return h.thin[theme], h.thinCount[theme]
 }

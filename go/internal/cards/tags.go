@@ -58,6 +58,9 @@ func (t *Tag) ID() string { return t.id }
 // An unknown slug returns nil: the caller treats it as an empty theme,
 // not an error (F-5).
 func (x *TagIndex) Resolve(slug string) []string {
+	if x == nil {
+		return nil
+	}
 	root, ok := x.bySlug[slug]
 	if !ok {
 		return nil
@@ -82,7 +85,12 @@ func (x *TagIndex) Resolve(slug string) []string {
 }
 
 // Len returns the tag count.
-func (x *TagIndex) Len() int { return len(x.bySlug) }
+func (x *TagIndex) Len() int {
+	if x == nil {
+		return 0
+	}
+	return len(x.bySlug)
+}
 
 // Has reports whether a slug exists.
 func (x *TagIndex) Has(slug string) bool {

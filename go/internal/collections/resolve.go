@@ -3,6 +3,7 @@ package collections
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"math"
 	"sort"
 	"strings"
 
@@ -17,7 +18,11 @@ import (
 // the name fallback, so it never counts as the real card (C-1).
 //
 // Rows with the same printing, finish, and condition merge into one
-// entry. Quantities add up, so ownership counts do not change.
+// entry. Quantities add up, so ownership counts do not change. A merged
+// entry stops at maxQuantity: the row that would push it over is
+// reported as BAD_ROW, the same reason the parser gives one row over the
+// cap. The row then counts in the report and not in the collection, so
+// resolved plus unresolved rows still equals the input rows.
 func Resolve(rows []Row, idx *cards.Index) ([]*mtgv1.CollectionEntry, []*mtgv1.UnresolvedRow) {
 	var entries []*mtgv1.CollectionEntry
 	var bad []*mtgv1.UnresolvedRow
@@ -39,6 +44,10 @@ func Resolve(rows []Row, idx *cards.Index) ([]*mtgv1.CollectionEntry, []*mtgv1.U
 		e := buildEntry(row, card, byName)
 		key := strings.Join([]string{e.ScryfallId, e.SetCode, e.CollectorNumber, e.Finish.String(), e.Condition.String()}, "|")
 		if prev, dup := merged[key]; dup {
+			if int(prev.Quantity)+int(e.Quantity) > maxQuantity {
+				bad = append(bad, unresolved(row.Line, row.Raw, mtgv1.UnresolvedReason_UNRESOLVED_REASON_BAD_ROW))
+				continue
+			}
 			prev.Quantity += e.Quantity
 			continue
 		}
@@ -123,22 +132,33 @@ func ContentHash(content []byte) string {
 	return hex.EncodeToString(sum[:])
 }
 
-// OracleCounts sums owned copies per Oracle id across printings.
+// OracleCounts sums owned copies per Oracle id across printings. The
+// sum saturates at the int32 maximum, it never wraps.
 func OracleCounts(entries []*mtgv1.CollectionEntry) map[string]int32 {
 	out := map[string]int32{}
 	for _, e := range entries {
-		out[e.OracleId] += e.Quantity
+		out[e.OracleId] = addSaturate(out[e.OracleId], e.Quantity)
 	}
 	return out
 }
 
-// CardCount sums every copy.
+// CardCount sums every copy. The sum saturates at the int32 maximum.
 func CardCount(entries []*mtgv1.CollectionEntry) int32 {
 	var n int32
 	for _, e := range entries {
-		n += e.Quantity
+		n = addSaturate(n, e.Quantity)
 	}
 	return n
+}
+
+// addSaturate adds two counts and stops at the int32 maximum. A stored
+// collection can hold entries the current cap did not bound.
+func addSaturate(a, b int32) int32 {
+	sum := int64(a) + int64(b)
+	if sum > math.MaxInt32 {
+		return math.MaxInt32
+	}
+	return int32(sum)
 }
 
 // SortEntries orders entries by name, then set, then number. Stable

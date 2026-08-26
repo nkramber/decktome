@@ -173,8 +173,12 @@ func ReadRun(path string) (*Run, error) {
 	return run, nil
 }
 
+// flush keeps a conversation that carried a message. The document has
+// other "###" headings, such as the table of invented questions by row,
+// and each one read as a 105th conversation with no questions. That
+// phantom counted as catalog-only, so every recount was one high (D-181).
 func (r *Run) flush(c *Conversation) {
-	if c != nil {
+	if c != nil && len(c.Messages) > 0 {
 		r.Conversations = append(r.Conversations, *c)
 	}
 }

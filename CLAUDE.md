@@ -6,11 +6,9 @@ Read this file first. Then read `docs/SESSION-HANDOFF.md`. It tells you where th
 
 This repo is a Go + Protobuf + TypeScript monorepo for an agentic MtG deck builder. The app reads a user's ManaBox collection export. The user gives a prompt. The agent asks questions, then builds a legal, useful deck.
 
-Stage (2026-08-25): PR-0a to PR-6 and PR-10 are merged (#1 to #11), the audit fixes included.
+Stage (2026-08-26): PR-0a to PR-7, PR-7B, and PR-10 are merged (#1 to #13), the audit fixes included. Branch `pr-7c` is the container for the tuning loop (D-142). The loop exists in `scripts/autotune.sh`, and it ran four times on 2026-08-26: two aborted starts, one accepted iteration that D-171 later judged wrong, and one rejected iteration. The checker gets a noise margin before the next run, because two runs on identical code differed by three holdout questions. `docs/SESSION-HANDOFF.md` is the resume point, and `docs/reference/autotune-readme.md` holds the loop commands.
 
-PR-7 (the question workflow) is on branch `pr-7`. The owner scored items 1 to 32 of `docs/reference/pr7-m5-scoring.md`. Those scores asked for 16 rewords and one deletion, and they exposed a class of defect the sheet could not hold. A correction session of 2026-08-25 fixed it, and a batch sweep of all 66 conversations followed. Together they record D-104 to D-132. Gate run 14 is the next step, and it costs money.
-
-The correction is not committed. Run `git pull`, then `git status`, before you change anything: the owner reads and scores the M-5 sheet on a phone, so the remote can be ahead. The owner commits and pushes. Do not commit unless the owner asks.
+Run `git pull`, then `git status`, before you change anything. The owner commits and pushes. Do not commit unless the owner asks.
 
 Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
 
@@ -51,10 +49,10 @@ Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
 
 ## Commands that cost money
 
-`make questions-gate` calls the real providers. One run of the 100 conversations costs about $0.14 and takes about 18 minutes. Measured: 66 conversations cost $0.0964 over 737 seconds on 2026-08-26, and D-145 added 34. Ask the owner before every run, and write to a new `GATE_OUT` file: a rerun must never overwrite a scored document (D-65).
+`make questions-gate` calls the real providers. One run of the 104 conversations (30 gate and 74 probe) costs $0.152 to $0.165 and takes about 20 minutes, measured on 2026-08-26. Ask the owner before every run, and write to a new `GATE_OUT` file: a rerun must never overwrite a scored document (D-65).
 
-`make questions-eval` scores a gate run with the eval role. One 100-conversation run costs about ten cents and takes about 13 minutes. Measured: 66 conversations cost $0.0645 over 494 seconds. `make eval-calibrate` measures the eval model against a stronger one for about thirty cents. `scripts/autotune.sh` is the overnight tuning loop, and it refuses to start without `AUTOTUNE_ALLOW_UNATTENDED=1`. Read `docs/reference/autotune-design.md` first.
+`make questions-eval` scores a gate run with the eval role. One 104-conversation run costs $0.092 to $0.099 and takes about 13 minutes, measured on 2026-08-26. `make eval-calibrate` measures the eval model against `claude-sonnet-5` for $0.25 to $0.30. `make autotune` prints the loop instructions and starts nothing. `scripts/autotune.sh` is the loop, and it refuses to start without `AUTOTUNE_ALLOW_UNATTENDED=1`. One iteration costs about $0.25 and takes 33 to 35 minutes, so a $3 budget buys about 12 iterations. Read `docs/reference/autotune-readme.md` and `docs/reference/autotune-design.md` first.
 
-Everything else is free. `make m5-sheet` builds the scoring sheet, `make m5-report` reads it, `make themes-check` checks the theme slugs and the commander ranking, and `make store-check` runs the session store against the local Firestore emulator.
+Everything else is free. `make m5-sheet` builds the scoring sheet, `make m5-report` reads it, `make themes-check` checks the theme slugs and the commander ranking, and `make store-check` runs the session store against the local Firestore emulator. `make candidates-review` writes the PR-6 gate document from a local snapshot, and `cd go && go run ./cmd/tune-check` compares an eval summary with its baseline.
 
-`docs/reference/pr7-m5-scoring.md` is the owner's working copy. No target writes to it. The version-2 sheet needs a new name: `M5_OUT=docs/reference/pr7-m5-scoring-run14.md make m5-sheet`.
+`docs/reference/pr7-m5-scoring.md` is the owner's working copy. No target writes to it. A new sheet needs a new name and points at the latest gate document, for example `M5_OUT=docs/reference/pr7-m5-scoring-run18.md M5_RUNS=../docs/reference/pr7-question-gate-run18.md make m5-sheet`.

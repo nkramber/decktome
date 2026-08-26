@@ -142,8 +142,10 @@ func conversations() []conversation {
 	c9.ctx.Theme, c9.ctx.Filled["format"], c9.ctx.Filled["theme"] = "blink", true, true
 	c9.ctx.Format = mtgv1.FormatId_FORMAT_ID_COMMANDER
 	c9.steps = []step{
+		// The not-owned row carries its own key, so the named commander
+		// does not cancel it (M-5).
 		{want: []string{"commander_not_owned", "power_commander", "colors"},
-			fill: []string{"commander", "power", "colors"}, set: func(c *Context) { c.CommanderSet, c.BuyList = true, true }},
+			fill: []string{"commander_owned", "commander", "power", "colors"}, set: func(c *Context) { c.CommanderSet, c.BuyList = true, true }},
 		{want: []string{"pool", "budget"}, fill: []string{"pool_rule", "budget"}},
 	}
 	cs = append(cs, c9)
@@ -199,7 +201,10 @@ func conversations() []conversation {
 	c14.steps = []step{
 		{want: []string{"commander", "power_commander"}, fill: []string{"power"},
 			set: func(c *Context) { c.Suggested = true }},
-		{want: []string{"commander_pick"}},
+		// The user answers "none of those", which retires the names. The
+		// row asks again only for that reason now: three names the user
+		// has not seen (D-163).
+		{want: []string{"commander_pick"}, set: func(c *Context) { c.OfferChanged = true }},
 		{want: []string{"commander_pick"}, fill: []string{"commander", "commander_pick"},
 			set: func(c *Context) { c.CommanderSet = true }},
 	}

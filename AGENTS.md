@@ -5,10 +5,10 @@ Go + Protobuf + TypeScript monorepo. Read `CLAUDE.md` for the owner's rules and 
 ## Layout
 
 - `proto/` - the one contract (buf module `mtg.v1`). Change it here only.
-- `go/` - one Go module `github.com/nkramber/mtg-deck-builder/go`. `cmd/api` (Connect-RPC API, :8080 default, :8090 under `make dev`), `cmd/worker` (jobs), `internal/*` (packages), `gen/` (generated, committed).
+- `go/` - one Go module `github.com/nkramber/mtg-deck-builder/go`. `cmd/api` (Connect-RPC API, :8080 default, :8090 under `make dev`), `cmd/worker` (jobs), `internal/*` (packages), `gen/` (generated, committed). Tools: `cmd/candidates-review` (PR-6 gate document), `cmd/questions-gate` (PR-7 gate run, costs money), `cmd/questions-eval` (scores a gate run, costs money), `cmd/m5-sheet` and `cmd/m5-report` (the hand-scoring sheet), `cmd/tune-check` (accept rules for one loop iteration, free).
 - `web/` - pnpm workspace. `apps/web` (React 19 + Vite 7, dev port 5180), `packages/api-client` (generated TypeScript, committed).
 - `docs/` - design roadmap, decisions, open questions, reference notes.
-- `scripts/` - `doctor.sh`, `dev.sh`, `check-llm-defaults.sh`. One-off tools only. Not a source of design patterns.
+- `scripts/` - `doctor.sh`, `dev.sh`, `check-llm-defaults.sh`, `autotune.sh` (the tuning loop, needs `AUTOTUNE_ALLOW_UNATTENDED=1`), `autotune-fix.sh` (the fixer step the loop calls). One-off tools only. Not a source of design patterns.
 
 ## Commands
 

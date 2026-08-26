@@ -592,13 +592,14 @@ func TestSuggestionDoesNotSwapTheNames(t *testing.T) {
 	if err != nil {
 		t.Fatalf("turn 2: %v", err)
 	}
-	q := question(res.Questions, "commander")
-	if q == nil {
-		t.Fatal("the pick row did not ask again")
+	// The names stay on the table. D-163 stops the second copy of the
+	// same question, so the test reads the table and not a new question.
+	if q := question(res.Questions, "commander"); q != nil {
+		t.Errorf("the pick row asked again on a message that refused nothing: %q", q.GetText())
 	}
 	for _, want := range h.first {
-		if !strings.Contains(q.GetText(), want) {
-			t.Errorf("the agent dropped %q although the user refused nothing: %q", want, q.GetText())
+		if !hasName(st.CurrentOffer, want) {
+			t.Errorf("the agent dropped %q although the user refused nothing: %v", want, st.CurrentOffer)
 		}
 	}
 }
@@ -1000,5 +1001,621 @@ func TestCanLeadStaysSilentOnALegendaryCard(t *testing.T) {
 	h := &CandidateHints{Index: cards.NewIndex(nil, nil, nil, time.Time{})}
 	if _, known := h.CanLead("Nonesuch"); known {
 		t.Error("an unknown card name produced a claim")
+	}
+}
+
+// TestHouseLimitsRowGoesOutAsWritten is the half of D-162 the evidence
+// supports. The row bundles three limits into one yes-or-no question:
+// "do the normal limits hold: ...". The ask role rewrote it as "should
+// the deck use a 60-card minimum, four copies per name, and a 15-card
+// sideboard?", and the eval read three questions in one (conversations
+// 21 and 34 of run 20260826-191225-000). A fixed row never reaches the
+// ask role.
+//
+// The confirm row is not fixed. Its own words assert a premise the user
+// may not have given, and the eval refused the fixed text in
+// conversations 33, 49, and 68 of run 20260826-191225-001.
+func TestHouseLimitsRowGoesOutAsWritten(t *testing.T) {
+	c := load(t)
+	row, ok := c.Row("house_format_limits")
+	if !ok {
+		t.Fatal("the house-limits row is gone")
+	}
+	if !row.Fixed {
+		t.Error("the house-limits row is not fixed, so the ask role may split it into three questions")
+	}
+	if confirm, ok := c.Row("power_sixty_confirm"); !ok || confirm.Fixed {
+		t.Error("the confirm row is fixed, and its fixed text was refused three times in run 20260826-191225-001")
+	}
+	out := classifyOut{Format: "modern", Theme: "dragons", PoolRule: "any_card", BudgetUSD: 100}
+	out.Colors = []string{"R"}
+	out.Power = "casual"
+	out.Facts.HouseFormat = true
+	a, _ := testAgent(t,
+		classifyStep(t, out), fits(t, "house_rules"), askStep(t),
+		classifyStep(t, classifyOut{Format: "unknown", PoolRule: "unknown", ClosedKeys: []string{"house_rules"}}),
+		fits(t, "house_format_limits"),
+		askStep(t, phrasing{RowID: "house_format_limits", Text: "Should the deck use a 60-card minimum, four copies per name, and a 15-card sideboard?"}))
+	st := NewState(false)
+	if _, err := a.Turn(context.Background(), st, "a 60-card dragons deck, anything goes at our table", nil); err != nil {
+		t.Fatalf("turn 1: %v", err)
+	}
+	res, err := a.Turn(context.Background(), st, "any card, no ban list", nil)
+	if err != nil {
+		t.Fatalf("turn 2: %v", err)
+	}
+	q := question(res.Questions, "house_rules")
+	if q == nil {
+		t.Fatalf("the house-limits row did not fire: %v", ids2(res.Questions))
+	}
+	if !strings.Contains(q.GetText(), "do the normal limits hold") {
+		t.Errorf("the house-limits question lost the clause that bundles the limits: %q", q.GetText())
+	}
+}
+
+// TestPickRowNeedsNewNames is D-163. Conversations 1, 77, and 90 of gate
+// run 18 each got the same three commanders twice, because the user
+// answered some other slot and the row repeats every turn.
+func TestPickRowNeedsNewNames(t *testing.T) {
+	c := load(t)
+	row, ok := c.Row("commander_pick")
+	if !ok {
+		t.Fatal("the pick row is gone")
+	}
+	if !row.Repeat || !row.RepeatOnChange {
+		t.Fatalf("the pick row repeats %v and narrows it %v", row.Repeat, row.RepeatOnChange)
+	}
+	base := Context{
+		Format:      mtgv1.FormatId_FORMAT_ID_COMMANDER,
+		Suggested:   true,
+		Filled:      map[string]bool{"format": true, "theme": true, "colors": true, "power": true},
+		Asked:       map[string]bool{"commander_pick": true},
+		Outstanding: map[string]string{},
+	}
+	if got := ids(c.Plan(base)); len(got) != 0 {
+		t.Errorf("the pick row asked again with the same names: %v", got)
+	}
+	base.OfferChanged = true
+	if got := ids(c.Plan(base)); len(got) != 1 || got[0] != "commander_pick" {
+		t.Errorf("the pick row did not ask again with new names: %v", got)
+	}
+}
+
+// TestOfferChangedReadsTheTable proves what the planner reads: the names
+// on the table against the names the row sent last.
+func TestOfferChangedReadsTheTable(t *testing.T) {
+	st := NewState(false)
+	names := []string{"Karlov of the Ghost Council", "Oloro, Ageless Ascetic", "Ayli, Eternal Pilgrim"}
+	st.SetOffer(names)
+	st.RecordAskedOffer(names)
+	if st.OfferChanged() {
+		t.Error("an unchanged table reads as changed")
+	}
+	st.RetireOffer()
+	if !st.OfferChanged() {
+		t.Error("a refusal left the table unchanged")
+	}
+	// A dropped name is the D-153 case: the colors arrived and one name
+	// no longer fits.
+	st.SetOffer(names)
+	st.RecordAskedOffer(names)
+	st.CurrentOffer = names[:2]
+	if !st.OfferChanged() {
+		t.Error("a dropped name left the table unchanged")
+	}
+}
+
+// TestLocksCard is D-166. Conversation 13 of gate run 18 opened with
+// "keep Sanguine Bond in it", and the agent asked whether the deck must
+// keep Sanguine Bond.
+func TestLocksCard(t *testing.T) {
+	cases := []struct {
+		message, name string
+		want          bool
+	}{
+		{"Karlov of the Ghost Council lifegain deck, and keep Sanguine Bond in it", "Sanguine Bond", true},
+		{"lock Sanguine Bond in", "Sanguine Bond", true},
+		{"it must include Sanguine Bond", "Sanguine Bond", true},
+		{"build around Grist, the Hunger Tide", "Grist, the Hunger Tide", false},
+		{"and Sanguine Bond as well", "Sanguine Bond", false},
+		{"do not keep Sanguine Bond", "Sanguine Bond", false},
+		{"Karlov of the Ghost Council. Keep the buy list under 50 dollars.", "Karlov of the Ghost Council", false},
+		// The short form is the one the user writes on the second turn.
+		{"keep Grist in", "Grist, the Hunger Tide", true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.message, func(t *testing.T) {
+			if got := LocksCard(tc.message, tc.name); got != tc.want {
+				t.Errorf("LocksCard(%q, %q) = %v, want %v", tc.message, tc.name, got, tc.want)
+			}
+		})
+	}
+}
+
+// TestLockedCardClosesOnAKeepInstruction is the turn D-166 fixes.
+func TestLockedCardClosesOnAKeepInstruction(t *testing.T) {
+	out := commanderClassify()
+	out.BudgetUSD = 60
+	out.LockedNames = []string{"Sanguine Bond"}
+	out.Facts.NamedCard = true
+	a, _ := testAgent(t, classifyStep(t, out), fits(t, "commander", "power_commander"), askStep(t))
+	st := NewState(true)
+	res, err := a.Turn(context.Background(), st,
+		"Karlov of the Ghost Council lifegain deck, and keep Sanguine Bond in it", nil)
+	if err != nil {
+		t.Fatalf("turn: %v", err)
+	}
+	if q := question(res.Questions, "locked"); q != nil {
+		t.Errorf("the locked row asked what the user had just said: %q", q.GetText())
+	}
+	if !st.Ctx.Filled["locked"] {
+		t.Error("the locked slot is still open although the user locked a card in")
+	}
+	// The card stays in the deck. The slot closed on a value, not on a
+	// decline.
+	if !hasName(st.LockedCards(), "Sanguine Bond") {
+		t.Errorf("locked cards = %v, want Sanguine Bond", st.LockedCards())
+	}
+}
+
+// TestColorlessClosesTheColorSlot is D-165. The classify schema holds the
+// five colors alone, so no model call can report a colorless deck. Probe
+// 73 of gate run 18 answered "A colorless Commander deck" and got the
+// color question.
+func TestColorlessClosesTheColorSlot(t *testing.T) {
+	if !ColorlessRequest("a colorless Commander deck built around big artifacts") {
+		t.Error("a colorless request was not read")
+	}
+	if ColorlessRequest("not colorless, I want green") {
+		t.Error("a negated colorless request fired")
+	}
+	out := classifyOut{Format: "commander", Theme: "big artifacts", PoolRule: "any_card", BudgetUSD: 250}
+	a, _ := testAgent(t, classifyStep(t, out), fits(t, "commander", "power_commander"), askStep(t))
+	st := NewState(false)
+	res, err := a.Turn(context.Background(), st, "A colorless Commander deck built around big artifacts.", nil)
+	if err != nil {
+		t.Fatalf("turn: %v", err)
+	}
+	if q := question(res.Questions, "colors"); q != nil {
+		t.Errorf("the color row asked a user who said colorless: %q", q.GetText())
+	}
+	if !st.Ctx.Filled["colors"] {
+		t.Error("the color slot is still open")
+	}
+}
+
+// TestCEDHNamesBracketFive is D-164. Probe 75 opens with "A cEDH deck",
+// and gate run 18 asked which power bracket to target.
+func TestCEDHNamesBracketFive(t *testing.T) {
+	if !CEDHRequest("a cEDH deck") {
+		t.Error("cEDH was not read as a power level")
+	}
+	if CEDHRequest("a competitive Commander deck") {
+		t.Error("competitive Commander names no bracket, and it fired")
+	}
+	if id, ok := FormatFromWords("a cEDH deck"); !ok || id != mtgv1.FormatId_FORMAT_ID_COMMANDER {
+		t.Errorf("cEDH names format %v/%v, want Commander", id, ok)
+	}
+	out := classifyOut{Format: "commander", Theme: "combo", PoolRule: "any_card", BudgetUSD: 500}
+	a, _ := testAgent(t, classifyStep(t, out), fits(t, "commander", "colors"), askStep(t))
+	st := NewState(false)
+	res, err := a.Turn(context.Background(), st, "A cEDH deck.", nil)
+	if err != nil {
+		t.Fatalf("turn: %v", err)
+	}
+	if q := question(res.Questions, "power"); q != nil {
+		t.Errorf("the bracket row asked a cEDH user: %q", q.GetText())
+	}
+	if got := st.Slots.GetPower().GetBracket(); got != cedhBracket {
+		t.Errorf("power bracket = %d, want %d", got, cedhBracket)
+	}
+}
+
+// TestNoCollectionAsksTheBudget is D-168. 61 of the 63 sessions of gate
+// run 18 that held no collection were never asked about the budget, and
+// the eval named the budget in 20 of its unasked slots. A user with no
+// library buys every card.
+func TestNoCollectionAsksTheBudget(t *testing.T) {
+	out := classifyOut{Format: "modern", Theme: "burn", PoolRule: "unknown"}
+	out.Colors = []string{"R"}
+	out.Power = "fnm"
+	a, _ := testAgent(t, classifyStep(t, out), fits(t, "budget", "meta"), askStep(t))
+	st := NewState(false)
+	res, err := a.Turn(context.Background(), st, "A Modern burn deck, mono red, FNM level.", nil)
+	if err != nil {
+		t.Fatalf("turn: %v", err)
+	}
+	if !st.Ctx.BuyList {
+		t.Fatal("a session with no collection carries no buy list")
+	}
+	if q := question(res.Questions, "budget"); q == nil {
+		t.Errorf("the budget row did not fire: %v", ids2(res.Questions))
+	}
+}
+
+// TestNoSpendingLimitClosesTheBudget keeps the budget row off a user who
+// has answered it (D-168).
+func TestNoSpendingLimitClosesTheBudget(t *testing.T) {
+	if !NoSpendingLimit("money is no object") {
+		t.Error("money is no object was not read")
+	}
+	if NoSpendingLimit("the best deck under budget") {
+		t.Error("a budget request read as a refusal of the cap")
+	}
+	out := classifyOut{Format: "modern", Theme: "burn", PoolRule: "unknown"}
+	out.Colors = []string{"R"}
+	out.Power = "tournament"
+	a, _ := testAgent(t, classifyStep(t, out), fits(t, "meta"), askStep(t))
+	st := NewState(false)
+	res, err := a.Turn(context.Background(), st,
+		"The strongest Modern burn deck, mono red, tournament level, money is no object.", nil)
+	if err != nil {
+		t.Fatalf("turn: %v", err)
+	}
+	if q := question(res.Questions, "budget"); q != nil {
+		t.Errorf("the budget row asked a user who named no cap: %q", q.GetText())
+	}
+	if !st.Ctx.Filled["budget"] {
+		t.Error("the budget slot is still open")
+	}
+}
+
+// TestSuperlativeDelegatesTheCommander is D-167. Conversation 10 of gate
+// run 18 wrote "Buy the best lifegain commander" and got three names to
+// choose from.
+func TestSuperlativeDelegatesTheCommander(t *testing.T) {
+	if !DelegatesCommander("Buy the best lifegain commander") {
+		t.Error("a superlative commander instruction was not read as a delegation")
+	}
+	if DelegatesCommander("buy the best lands you can find") {
+		t.Error("a message that names no commander handed the commander choice over")
+	}
+	first := classifyOut{Format: "commander", Theme: "lifegain", PoolRule: "unknown", BudgetUSD: 60}
+	first.Colors = []string{"W", "B"}
+	second := classifyOut{Format: "unknown", PoolRule: "owned_first"}
+	second.Power = "bracket 3"
+	a, _ := testAgentHints(t, stubHints{commanders: []string{"Karlov of the Ghost Council"}},
+		classifyStep(t, first), fits(t, "commander", "power_commander"), askStep(t),
+		classifyStep(t, second), fits(t))
+	st := NewState(true)
+	if _, err := a.Turn(context.Background(), st, "Lifegain from my collection. Commander, white and black.", nil); err != nil {
+		t.Fatalf("turn 1: %v", err)
+	}
+	res, err := a.Turn(context.Background(), st,
+		"Buy the best lifegain commander. Bracket 3, owned-first, and 60 dollars is the cap.", nil)
+	if err != nil {
+		t.Fatalf("turn 2: %v", err)
+	}
+	if q := question(res.Questions, "commander"); q != nil {
+		t.Errorf("the agent asked the user to choose after they handed the choice over: %q", q.GetText())
+	}
+	for _, key := range []string{"commander", "commander_pick"} {
+		if !st.Ctx.Filled[key] {
+			t.Errorf("key %q is still open although the user asked the agent to choose", key)
+		}
+	}
+}
+
+// ids2 names the slots of the questions one turn sent.
+func ids2(qs []*mtgv1.Question) []string {
+	var out []string
+	for _, q := range qs {
+		out = append(out, q.GetSlot())
+	}
+	return out
+}
+
+// TestRetiredQuestionLeavesTheAskedState is H-5. A changed format retires
+// the questions that are out, and the retired key stayed in the asked
+// state forever: the only ways out of it were an answer and a decline.
+// The session never reported ready, and the classifier was offered the
+// dead key every turn.
+func TestRetiredQuestionLeavesTheAskedState(t *testing.T) {
+	first := commanderClassify()
+	first.Facts.WantsSuggestion = true
+	change := classifyOut{Format: "modern", Theme: "lifegain", PoolRule: "unknown"}
+	last := classifyOut{Format: "unknown", PoolRule: "unknown", BudgetUSD: 100}
+	last.Power = "casual"
+	a, _ := testAgentHints(t, stubHints{commanders: []string{"Karlov of the Ghost Council", "Oloro, Ageless Ascetic", "Ayli, Eternal Pilgrim"}},
+		classifyStep(t, first), fits(t, "commander_pick", "power_commander"), askStep(t),
+		classifyStep(t, change), fits(t, "power_sixty", "budget"), askStep(t),
+		classifyStep(t, last), fits(t))
+	st := NewState(false)
+	if _, err := a.Turn(context.Background(), st, "Commander lifegain, white and black, suggest a commander", nil); err != nil {
+		t.Fatalf("turn 1: %v", err)
+	}
+	if !st.Ctx.Asked["commander_pick"] {
+		t.Fatal("the pick row did not fire on turn 1")
+	}
+	if _, err := a.Turn(context.Background(), st, "Actually make it Modern", nil); err != nil {
+		t.Fatalf("turn 2: %v", err)
+	}
+	for _, key := range openKeys(st) {
+		if key == "commander_pick" {
+			t.Error("the retired pick key is still offered to the classifier")
+		}
+	}
+	res, err := a.Turn(context.Background(), st, "Casual, and 100 dollars", nil)
+	if err != nil {
+		t.Fatalf("turn 3: %v", err)
+	}
+	if len(res.Questions) != 0 {
+		t.Errorf("turn 3 asked %v, want nothing", ids2(res.Questions))
+	}
+	if !res.Ready {
+		t.Errorf("the session is not ready after every slot filled: states %v", st.Slots.GetSlotStates())
+	}
+	// The retired row does not ask again: Ctx.Asked keeps its id.
+	if !st.Ctx.Asked["commander_pick"] {
+		t.Error("the retired row lost its asked mark, so it could ask twice")
+	}
+}
+
+// TestNamedCommanderClosesTheIllegalRow is one third of H-6. The illegal
+// row asks for a replacement, and the replacement arrived through
+// SetCommander, which closed every commander key except this one.
+func TestNamedCommanderClosesTheIllegalRow(t *testing.T) {
+	st := NewState(false)
+	st.Ctx.Format = mtgv1.FormatId_FORMAT_ID_COMMANDER
+	st.Ctx.CommanderIllegal, st.IllegalCommander = true, "Lightning Bolt"
+	st.MarkAsked("commander_illegal", "commander_illegal", "commander")
+	if !st.Outstanding() {
+		t.Fatal("the illegal question is not out")
+	}
+	st.SetCommander("Karlov of the Ghost Council")
+	if st.Outstanding() {
+		t.Errorf("a question is still out after the user named a commander: %v", st.Slots.GetSlotStates())
+	}
+	if !st.Ctx.Filled["commander_illegal"] {
+		t.Error("the illegal key is still open")
+	}
+	if st.Ctx.CommanderIllegal {
+		t.Error("the illegal fact survived a legal commander")
+	}
+}
+
+// TestOneDeckClosesOnASingleDeckAnswer is one third of H-6. The one-deck
+// row closed only through the classifier's closed_keys, and a user who
+// answered by naming one deck left the key open forever.
+func TestOneDeckClosesOnASingleDeckAnswer(t *testing.T) {
+	first := classifyOut{Format: "unknown", PoolRule: "unknown"}
+	second := classifyOut{Format: "commander", Theme: "lifegain", PoolRule: "unknown"}
+	a, _ := testAgent(t,
+		classifyStep(t, first), fits(t, "one_deck"),
+		classifyStep(t, second), fits(t, "colors", "commander", "power_commander"), askStep(t))
+	st := NewState(false)
+	if _, err := a.Turn(context.Background(), st, "I want two decks, one Commander and one Modern.", nil); err != nil {
+		t.Fatalf("turn 1: %v", err)
+	}
+	if got := st.Slots.GetSlotStates()["deck_count"]; got != mtgv1.SlotState_SLOT_STATE_ASKED {
+		t.Fatalf("deck_count state = %v, want ASKED", got)
+	}
+	if _, err := a.Turn(context.Background(), st, "The Commander one first, lifegain.", nil); err != nil {
+		t.Fatalf("turn 2: %v", err)
+	}
+	if got := st.Slots.GetSlotStates()["deck_count"]; got != mtgv1.SlotState_SLOT_STATE_SKIPPED {
+		t.Errorf("deck_count state = %v, want SKIPPED: the user chose one deck", got)
+	}
+	if !st.Ctx.Filled["deck_count"] {
+		t.Error("the one-deck key is still open")
+	}
+}
+
+// TestOutOfScopeClosesOnADeckRequest is one third of H-6. The scope row
+// offers "Yes, a Magic deck", and a user who answers "a Modern burn deck"
+// has said the same thing. Nothing closed the key.
+func TestOutOfScopeClosesOnADeckRequest(t *testing.T) {
+	first := classifyOut{Format: "unknown", PoolRule: "unknown"}
+	first.Facts.OutOfScope = true
+	second := classifyOut{Format: "modern", Theme: "burn", PoolRule: "unknown"}
+	second.Colors = []string{"R"}
+	a, _ := testAgent(t,
+		classifyStep(t, first), fits(t, "out_of_scope"),
+		classifyStep(t, second), fits(t, "power_sixty", "budget"), askStep(t))
+	st := NewState(false)
+	if _, err := a.Turn(context.Background(), st, "build me a yu-gi-oh deck", nil); err != nil {
+		t.Fatalf("turn 1: %v", err)
+	}
+	if got := st.Slots.GetSlotStates()["scope"]; got != mtgv1.SlotState_SLOT_STATE_ASKED {
+		t.Fatalf("scope state = %v, want ASKED", got)
+	}
+	if _, err := a.Turn(context.Background(), st, "a Modern red burn deck then", nil); err != nil {
+		t.Fatalf("turn 2: %v", err)
+	}
+	if got := st.Slots.GetSlotStates()["scope"]; got != mtgv1.SlotState_SLOT_STATE_SKIPPED {
+		t.Errorf("scope state = %v, want SKIPPED: the user asked for a Magic deck", got)
+	}
+	if !st.Ctx.Filled["scope"] {
+		t.Error("the scope key is still open")
+	}
+}
+
+// factHints answers the PR-6 facts with fixed values, so a test can prove
+// what the agent reads and when.
+type factHints struct {
+	stubHints
+	missing bool
+	weak    bool
+	thin    bool
+	count   int
+}
+
+func (f factHints) MissingCommander([]string) bool                { return f.missing }
+func (f factHints) WeakCommanderPool(string) bool                 { return f.weak }
+func (f factHints) ThinTheme(string) (bool, int)                  { return f.thin, f.count }
+func (f factHints) OwnedThemeCount(string) int                    { return f.count }
+func (f factHints) FitsColors(string, []mtgv1.Color) (bool, bool) { return true, true }
+
+// TestNotOwnedRowFiresForANamedCommander is M-5. The row carried the
+// commander key, and any named commander filled that key, so the row
+// could never fire. It now carries its own key, and a skip on that key
+// leaves the named commander alone.
+func TestNotOwnedRowFiresForANamedCommander(t *testing.T) {
+	out := commanderClassify()
+	out.PoolRule = "owned_first"
+	out.CommanderNames = []string{"Karlov of the Ghost Council"}
+	h := factHints{missing: true, stubHints: stubHints{commanders: []string{"Oloro, Ageless Ascetic", "Ayli, Eternal Pilgrim"}}}
+	a, _ := testAgentHints(t, h, classifyStep(t, out), fits(t, "commander_not_owned", "power_commander"), askStep(t))
+	st := NewState(true)
+	res, err := a.Turn(context.Background(), st, "Karlov lifegain from my library first, white and black", nil)
+	if err != nil {
+		t.Fatalf("turn: %v", err)
+	}
+	q := question(res.Questions, "commander")
+	if q == nil {
+		t.Fatalf("the not-owned row did not fire: %v", ids2(res.Questions))
+	}
+	if !strings.Contains(q.GetText(), "You do not own") {
+		t.Errorf("the commander question is not the not-owned row: %q", q.GetText())
+	}
+	if got := st.Slots.GetSlotStates()["commander"]; got != mtgv1.SlotState_SLOT_STATE_FILLED {
+		t.Errorf("commander state = %v, want FILLED: the user named one", got)
+	}
+	if got := st.Slots.GetSlotStates()["commander_owned"]; got != mtgv1.SlotState_SLOT_STATE_ASKED {
+		t.Errorf("commander_owned state = %v, want ASKED", got)
+	}
+}
+
+// TestNotOwnedSkipLeavesTheCommanderFilled is the other half of M-5. When
+// the library offers no alternative, D-127 skips the row, and that skip
+// used to overwrite the commander the user named.
+func TestNotOwnedSkipLeavesTheCommanderFilled(t *testing.T) {
+	out := commanderClassify()
+	out.PoolRule = "owned_first"
+	out.CommanderNames = []string{"Karlov of the Ghost Council"}
+	h := factHints{missing: true}
+	a, _ := testAgentHints(t, h, classifyStep(t, out), fits(t, "power_commander"), askStep(t))
+	st := NewState(true)
+	res, err := a.Turn(context.Background(), st, "Karlov lifegain from my library first, white and black", nil)
+	if err != nil {
+		t.Fatalf("turn: %v", err)
+	}
+	if q := question(res.Questions, "commander"); q != nil {
+		t.Errorf("the not-owned row fired with no owned option to offer: %q", q.GetText())
+	}
+	if got := st.Slots.GetSlotStates()["commander"]; got != mtgv1.SlotState_SLOT_STATE_FILLED {
+		t.Errorf("commander state = %v, want FILLED: the skip must not touch the named commander", got)
+	}
+	if got := st.Slots.GetSlotStates()["commander_owned"]; got != mtgv1.SlotState_SLOT_STATE_SKIPPED {
+		t.Errorf("commander_owned state = %v, want SKIPPED", got)
+	}
+}
+
+// TestFactsReadTheSlotsOfThisTurn is M-6. agentsvc read the PR-6 facts
+// before the turn, so a one-message answer filled the format and the
+// theme after the count was skipped. The user got the plain pool question
+// and the {n} count of D-67 never showed.
+func TestFactsReadTheSlotsOfThisTurn(t *testing.T) {
+	out := classifyOut{Format: "modern", Theme: "burn", PoolRule: "unknown"}
+	out.Colors = []string{"R"}
+	out.Power = "casual"
+	h := factHints{thin: true, count: 12}
+	a, _ := testAgentHints(t, h, classifyStep(t, out), fits(t, "pool_thin"), askStep(t))
+	st := NewState(true)
+	res, err := a.Turn(context.Background(), st, "Modern red burn deck from my library, casual", nil)
+	if err != nil {
+		t.Fatalf("turn: %v", err)
+	}
+	if !st.Ctx.ThinTheme {
+		t.Fatal("the thin-theme fact was not read after the slots filled")
+	}
+	q := question(res.Questions, "pool_rule")
+	if q == nil {
+		t.Fatalf("no pool question went out: %v", ids2(res.Questions))
+	}
+	if !strings.Contains(q.GetText(), "12") {
+		t.Errorf("the pool question does not carry the count: %q", q.GetText())
+	}
+}
+
+// TestUnsupportedSubFormatNamesNoFormat is M-9. "Duel Commander" holds
+// the word "commander", and the classifier reported Commander for it.
+// The format then filled, and the unsupported-format row never fired.
+func TestUnsupportedSubFormatNamesNoFormat(t *testing.T) {
+	if namesFormat("I play Duel Commander", mtgv1.FormatId_FORMAT_ID_COMMANDER) {
+		t.Error("Duel Commander read as the Commander format")
+	}
+	if namesFormat("Pauper Commander please", mtgv1.FormatId_FORMAT_ID_COMMANDER) {
+		t.Error("Pauper Commander read as the Commander format")
+	}
+	if !namesFormat("a Commander deck", mtgv1.FormatId_FORMAT_ID_COMMANDER) {
+		t.Error("a plain Commander request was not read")
+	}
+	out := classifyOut{Format: "commander", Theme: "lifegain", PoolRule: "unknown"}
+	a, _ := testAgent(t, classifyStep(t, out), fits(t, "format_unsupported", "colors", "budget"), askStep(t))
+	st := NewState(false)
+	res, err := a.Turn(context.Background(), st, "I play Duel Commander. A lifegain deck.", nil)
+	if err != nil {
+		t.Fatalf("turn: %v", err)
+	}
+	if st.Ctx.Format != mtgv1.FormatId_FORMAT_ID_UNSPECIFIED {
+		t.Errorf("format = %v, want none: the message names a format this app does not build", st.Ctx.Format)
+	}
+	if st.UnsupportedFormatName != "Duel Commander" {
+		t.Errorf("unsupported format = %q, want Duel Commander", st.UnsupportedFormatName)
+	}
+	if !st.Ctx.Asked["format_unsupported"] {
+		t.Errorf("the unsupported-format row did not fire: %v", ids2(res.Questions))
+	}
+}
+
+// TestMissingScoreKeepsTheCatalogRow covers the score call that omits a
+// row. The zero value gave a fit of 0, which entered the M-4 record as
+// the worst fit ever measured. A fit outside 0 to 1 is clamped.
+func TestMissingScoreKeepsTheCatalogRow(t *testing.T) {
+	out := classifyOut{Format: "unknown", PoolRule: "unknown"}
+	a, _ := testAgent(t, classifyStep(t, out),
+		scoreStep(t, scored{RowID: "theme", Fit: 1.7, Reason: "over the top"}),
+		askStep(t))
+	st := NewState(false)
+	res, err := a.Turn(context.Background(), st, "build me a deck", nil)
+	if err != nil {
+		t.Fatalf("turn: %v", err)
+	}
+	format := question(res.Questions, "format")
+	if format == nil {
+		t.Fatalf("the format row did not fire: %v", ids2(res.Questions))
+	}
+	if format.GetInvented() || format.GetGapScore() != DefaultFitThreshold {
+		t.Errorf("an unscored row went out with fit %v invented %v, want the threshold and the catalog text", format.GetGapScore(), format.GetInvented())
+	}
+	theme := question(res.Questions, "theme")
+	if theme == nil {
+		t.Fatalf("the theme row did not fire: %v", ids2(res.Questions))
+	}
+	if theme.GetGapScore() != 1 {
+		t.Errorf("fit = %v, want 1: the score is clamped", theme.GetGapScore())
+	}
+}
+
+// TestColorsSurviveAnUnknownColorWord covers a classify answer with a
+// word the color map does not hold. The schema refuses such a word
+// today, so the test reaches apply directly. The old code wiped the
+// colors before it validated the new ones, and a provider that skips the
+// schema would have emptied the slot.
+func TestColorsSurviveAnUnknownColorWord(t *testing.T) {
+	a, _ := testAgent(t)
+	st := NewState(false)
+	first := commanderClassify()
+	a.apply(st, first, nil, "white-black lifegain commander deck")
+	second := classifyOut{Format: "unknown", PoolRule: "unknown"}
+	second.Colors = []string{"purple"}
+	a.apply(st, second, nil, "purple is my favourite colour")
+	if got := len(st.Slots.GetColors()); got != 2 {
+		t.Errorf("colors = %v, want the two the user gave", st.Slots.GetColors())
+	}
+	if got := st.Slots.GetSlotStates()["colors"]; got != mtgv1.SlotState_SLOT_STATE_FILLED {
+		t.Errorf("colors state = %v, want FILLED", got)
+	}
+}
+
+// TestLocksCardAfterTheName extends D-166 to the verb after the name.
+// Conversation 74 of run 20260826-191225-000 wrote "Sol Ring goes in it".
+func TestLocksCardAfterTheName(t *testing.T) {
+	if !LocksCard("A Modern burn deck. Sol Ring goes in it.", "Sol Ring") {
+		t.Error("a verb after the name did not lock the card")
+	}
+	if LocksCard("Sol Ring, if it goes in", "Sol Ring") {
+		t.Error("a verb two words after the name locked the card")
 	}
 }

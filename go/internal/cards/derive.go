@@ -59,7 +59,7 @@ func maxCopiesOverride(text string) int32 {
 	return int32(n)
 }
 
-// partnerText reads the variant name after "Partner—" (CR 702.124f).
+// partnerText reads the variant name after "Partner—" (CR 702.124i).
 // Example: "Partner—Survivors (You can have...)" gives "Survivors".
 // Plain "Partner" gives "".
 func partnerText(text string) string {

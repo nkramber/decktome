@@ -22,7 +22,7 @@ Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/
 
 2026-08-24 correction pass 6: PR-6 merged (#11) after a second gate run. Changes: PR-6 status and text, M-5 gains the OQ-19 rubric (D-66), section 9 open questions, and three engine defects recorded in the PR-6 entry. PR-7 gains the pool-question timing (D-67) and the slot freeze (D-68), both from eight dogfood conversations. The corpus question catalog was revised the same day.
 
-2026-08-25 correction pass 19: the owner's scoring found a seventh fault and a hole in the reword guard (D-103). A truncation is now refused.
+2026-08-25 correction pass 22: the owner's scoring found a seventh fault and a hole in the reword guard (D-103). A truncation is now refused.
 
 2026-08-25 correction pass 18: two gaps closed before PR-7 is committed. The session store now runs against the Firestore emulator (D-101), and `cmd/m5-report` reads the scored sheet and computes the thresholds (D-102).
 
@@ -135,7 +135,7 @@ Status: ✅ resolved · 🔧 planned or in progress (item listed) · 🅿 parked
 
 > *In plain English:* these are the traps we found before writing code. The biggest ones: ban lists change every few weeks. The collection file format is not documented. The AI can name a card that sounds right but is not. Each one has a planned fix or a rule that prevents it.
 
-| F-17 | **A fixed question catalog can not cover every prompt.** The owner wants catalog questions first, model-invented questions when needed, and a metric that says which case applies (D-25). Without the metric, the agent either asks nothing new or bypasses the catalog. | 🔧 PR-7 (gap score) + M-4 (catalog coverage metric) + PR-15 (catalog-change proposals from evals). |
+| F-17 | **A fixed question catalog can not cover every prompt.** The owner wants catalog questions first, model-invented questions when needed, and a metric that says which case applies (D-25). Without the metric, the agent either asks nothing new or bypasses the catalog. | 🔧 PR-7 (gap score) ✅ merged 2026-08-26. M-4 (catalog coverage metric) and PR-15 (catalog-change proposals from evals) stay open. |
 | F-18 | **Scryfall legalities can not say "banned as a companion".** The 2026-02-09 Commander update unbanned Lutri, the Spellchaser but banned it as a companion. The Scryfall commander legality reads "legal". The open legalities map (guardrail 2) inherits this blind spot. | ⚠ binds PR-5: the rules engine owns the companion check. `Deck.companion_oracle_id` exists so the check has a target. Found in the 2026-08-24 proto re-pass. |
 | F-19 | **The Go storage SDK's default download path 404s on fake-gcs-server.** The SDK reads objects through the XML API with percent-encoded names. The fake-gcs filesystem backend serves only the JSON paths for names with slashes. Listing works, reads fail. Found 2026-08-24 in the PR-2 smoke test. | ✅ fixed: every storage client passes `storage.WithJSONReads()`. JSON reads work on fake-gcs and on real GCS. |
 | F-20 | **A snapshot version was listable before its files finished uploading.** The API loaded a mid-download snapshot and failed with "object doesn't exist". This is the reference project's F15 lesson: completion must imply artifacts. | ✅ fixed: the store writes a `complete` marker last. `LatestVersion` returns only marked versions. A test pins it. |
@@ -203,7 +203,7 @@ The re-pass also produced F-18.
 Messages: `Card`, `CardFace`, `Legality`, `Collection`, `CollectionEntry`, `Deck`, `DeckCard` (with `owned`, `owned_count`, `role`, `reason`), `Format`, `PowerLevel` (bracket or 60-card step, D-8), `Session`, `Turn`, `Question`, `Answer`, `ValidationResult`. Services: `CardService`, `CollectionService`, `DeckService`, `AgentService` (with a server-streaming `Chat` RPC). Connect-RPC with buf (D-7). Gate: generated Go and TypeScript compile. CI diff gate is green.
 > *In plain English:* one document says what a card, a deck, and a chat message look like. Both the Go code and the web app read it. Change it in one place, and both sides update.
 
-**PR-1b: Contract amendment (audit, D-46).** ✅ built 2026-08-24 on branch `audit-fixes`, merge pending. One proto change carries every field PR-6 to PR-9 need (F-25). The fields:
+**PR-1b: Contract amendment (audit, D-46).** ✅ merged 2026-08-24 (#10). One proto change carries every field PR-6 to PR-9 need (F-25). The fields:
 - Deck: `upgrades`, `buy_cost_usd`, and `DeckCard.price_usd`.
 - Validation: `legality_as_of`, `pool_rule`, and `format` on the result. `pool_rule` and `collection_id` on the request.
 - Session: `slot_states` with a `SlotState` enum, `Question.id`, `Answer`, `Turn.answers`, `status`, and `usage` with a `Usage` message (M-1).
@@ -256,7 +256,7 @@ Owned-first: owned candidates plus a bounded unowned-upgrade list. Owned-only: o
 This list, not the whole database, is what the model sees. Gate: for 20 theme prompts, a human confirms the top 40 candidates are on-theme in at least 18. Ten of the 20 run with no collection.
 > *In plain English:* before we ask the AI to build, the code shortlists the cards that fit: your cards, the right colors, on theme, legal. The AI picks from that list. It can not pick a card that is not there.
 
-**PR-7: Question workflow.** 🔧 in progress 2026-08-24. `internal/questions` holds the whole turn loop. The service and the session store are not built yet.
+**PR-7: Question workflow.** ✅ merged 2026-08-26 (#12). `internal/questions` holds the whole turn loop, `AgentService.Chat` serves it, and the session store runs against Firestore.
 The turn-based core. A `Session` holds filled slots (format, commander, power, colors, theme, pool rule, budget, house rules, locked cards). Each turn: a small model classifies the prompt and fills slots it can. The code decides which slots are still empty and picks up to three questions from the catalog (`mtg-corpus` skill, section 11). The model phrases them.
 
 The user answers in free text. The small model maps answers to slots.
@@ -353,9 +353,9 @@ Open in PR-7: the M-5 scoring, then the threshold and one confirming run.
 
 > *In plain English:* the chat. "Build me a lifegain deck" fills in "theme: lifegain" and leaves format, power, and colors empty. The app asks those three, remembers the answers, and never asks twice. If the user says something vague, the app asks what they mean. It does not guess.
 
-**PR-7B: Automated eval lane.** 🔧 in progress 2026-08-26, branch `pr-7b`. The first three evals ran on 2026-08-26 and the lane earned its place at once: it found two false rules claims that gate run 14 passed with zero linter findings (F-26, D-140, D-144). It also exposed two defects of its own. The eval judged a question against answers the user gave later, which read the ratio as 39.5 percent instead of 17.4 (D-141), and it could not see that a collection was attached (D-143). The calibration agreed 80 percent, and the ten disagreements are where the value sat: two real defects, and two card facts `claude-sonnet-5` invented. Gate run 15 is the next measurement, on the 100-conversation set of D-145. PR-7 proved that reading transcripts finds defects and that scoring replacements does not. The version-1 M-5 sheet could hold 60 of 793 questions, because it held only a question the model offered to replace (D-104). The batch sweep of 2026-08-26 read all 66 conversations by hand and found sixteen more defects, none of which could have reached that sheet. PR-7B makes that reading automatic.
+**PR-7B: Automated eval lane.** ✅ merged 2026-08-26 (#13). Branch `pr-7c` holds what the loop writes (D-142). The first three evals ran on 2026-08-26 and the lane earned its place at once: it found two false rules claims that gate run 14 passed with zero linter findings (F-26, D-140, D-144). It also exposed two defects of its own. The eval judged a question against answers the user gave later, which read the ratio as 39.5 percent instead of 17.4 (D-141), and it could not see that a collection was attached (D-143). The calibration agreed 80 percent, and the ten disagreements are where the value sat: two real defects, and two card facts `claude-sonnet-5` invented. Gate run 18 is the baseline for the loop, on the 104-conversation set of D-145 and D-155. PR-7 proved that reading transcripts finds defects and that scoring replacements does not. The version-1 M-5 sheet could hold 60 of 793 questions, because it held only a question the model offered to replace (D-104). The batch sweep of 2026-08-26 read all 66 conversations by hand and found sixteen more defects, none of which could have reached that sheet. PR-7B makes that reading automatic.
 
-A sixth role, `eval`, scores every question of a gate run against the rubric the owner applied by hand (D-133). It runs on `gpt-5.6-luna`, the cost tier, so a 66-conversation run costs about eleven cents. It is not the judge role: D-4 gives the judge a deck, and D-22 keeps the judge off the generator's provider. The eval role shares a model with the classify and ask roles, which the owner accepted with the risk named (D-136). Every ratio it reports is a floor.
+A sixth role, `eval`, scores every question of a gate run against the rubric the owner applied by hand (D-133). It runs on `gpt-5.6-luna`, the cost tier, so a 104-conversation run costs $0.092 to $0.099 (measured 2026-08-26). It is not the judge role: D-4 gives the judge a deck, and D-22 keeps the judge off the generator's provider. The eval role shares a model with the classify and ask roles, which the owner accepted with the risk named (D-136). Every ratio it reports is a floor.
 
 `internal/tune` reads a gate document back and holds the accept rules. `cmd/questions-eval` writes a report a person reads and a summary a script reads. `cmd/tune-check` decides whether one iteration may be kept, and it costs nothing. `scripts/autotune.sh` is the loop, and it refuses to start without `AUTOTUNE_ALLOW_UNATTENDED=1`.
 
@@ -363,9 +363,9 @@ Three evals run first, in this order.
 
 | Eval | What it measures | Cost |
 |---|---|---|
-| Gate run | The transcript. 100 conversations, 30 gate and 70 probe (D-145). | about $0.14 |
-| Question eval | Every question, scored for whether it deserved to be asked. | about $0.10 |
-| Eval calibration | The cost-tier eval against `claude-sonnet-5` on 12 conversations. | about $0.25 |
+| Gate run | The transcript. 104 conversations, 30 gate and 74 probe (D-145, D-155). | $0.152 to $0.165, measured 2026-08-26 |
+| Question eval | Every question, scored for whether it deserved to be asked. | $0.092 to $0.099, measured 2026-08-26 |
+| Eval calibration | The cost-tier eval against `claude-sonnet-5` on 12 conversations. | $0.25 to $0.30 |
 
 The calibration answers the one question the cost tier raises: how gently does a model score work its own model produced? It scores the same 12 conversations twice, once on the cost tier and once on `claude-sonnet-5`, and `cmd/tune-check -agree` compares the two question by question. It reports how often they agree, and how many questions each one refused. A cost-tier eval that refuses four where the stronger model refuses twelve is not measuring the agent. It reports a floor, and the real number sits above it. OQ-39 holds what the owner does with that gap.
 

@@ -50,7 +50,7 @@ func TestExitCodes(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			path := write(t, dir, "next.json", tc.next)
-			code, err := run(path, tc.prev, 0.05, os.Stdout)
+			code, err := run(path, tc.prev, "", 0.05, tune.DefaultNoise, "", "", os.Stdout)
 			if err != nil {
 				t.Fatalf("run: %v", err)
 			}
@@ -67,7 +67,7 @@ func TestOmittedPreviousIsAFirstRun(t *testing.T) {
 	dir := t.TempDir()
 	path := write(t, dir, "next.json", tune.Summary{Judged: 10, Bad: 5, Ratio: 0.50,
 		Metrics: tune.Metrics{Questions: 20, CatalogFilled: 15}})
-	code, err := run(path, "", 0.05, os.Stdout)
+	code, err := run(path, "", "", 0.05, tune.DefaultNoise, "", "", os.Stdout)
 	if err != nil {
 		t.Fatalf("run: %v", err)
 	}
@@ -89,7 +89,7 @@ func TestNamedPreviousMustExist(t *testing.T) {
 	dir := t.TempDir()
 	path := write(t, dir, "next.json", tune.Summary{Judged: 10, Bad: 5, Ratio: 0.50,
 		Metrics: tune.Metrics{Questions: 20, CatalogFilled: 15}})
-	if _, err := run(path, filepath.Join(dir, "nope.json"), 0.05, os.Stdout); err == nil {
+	if _, err := run(path, filepath.Join(dir, "nope.json"), "", 0.05, tune.DefaultNoise, "", "", os.Stdout); err == nil {
 		t.Error("a named baseline that is missing was read as a first run")
 	}
 }

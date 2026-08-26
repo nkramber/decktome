@@ -36,6 +36,7 @@ type tc struct {
 	tags                     []string
 	commanderBanned          bool
 	gameChanger              bool
+	partner                  mtgv1.PartnerKind
 }
 
 // fixture builds an index with a tag file from the test cards.
@@ -74,6 +75,7 @@ func fixture(t *testing.T, list []tc) *cards.Index {
 			Legalities:     map[string]mtgv1.LegalityStatus{"commander": st, "standard": legal},
 			GameChanger:    c.gameChanger,
 			CanBeCommander: legendary && creature,
+			Partner:        c.partner,
 		})
 		for _, tg := range c.tags {
 			tagCards[tg] = append(tagCards[tg], c.id)
@@ -333,13 +335,139 @@ func TestThemeWords(t *testing.T) {
 	if !contains(m.Subtypes, "Cat") {
 		t.Errorf("cats should map to subtype Cat: %+v", m)
 	}
-	if !contains(m.Unmatched, "zzzz") && !contains(m.Text, "zzzz") {
+	if !contains(m.Text, "zzzz") {
 		t.Errorf("unknown word handling: %+v", m)
 	}
 	list, _ := b.Build(idx, Request{Format: cmdr, Colors: []mtgv1.Color{W}, Theme: "cats"})
 	if _, ok := find(list.Candidates, "Ajani's Pridemate"); !ok {
 		t.Errorf("subtype signal should list the Cat: %v", names(list.Candidates))
 	}
+}
+
+// TestThemeUnmatchedReportsDeadWords covers the Unmatched field. The
+// generic branch set hit unconditionally, so the field stayed empty even
+// for a word that no card carried.
+func TestThemeUnmatchedReportsDeadWords(t *testing.T) {
+	b, _ := New()
+	idx := fixture(t, testCards())
+	list, err := b.Build(idx, Request{Format: cmdr, Theme: "cats zzzz lifegain"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !contains(list.Theme.Unmatched, "zzzz") {
+		t.Errorf("zzzz fired on no card, want it unmatched: %+v", list.Theme.Unmatched)
+	}
+	for _, w := range []string{"cats", "lifegain"} {
+		if contains(list.Theme.Unmatched, w) {
+			t.Errorf("%s fired on a card, must not be unmatched: %+v", w, list.Theme.Unmatched)
+		}
+	}
+}
+
+// TestThemeColorsIgnoreStaples is M-1 of the 2026-08-26 review. Build
+// emits the staple roles first, so the first 100 cards of a list were
+// lands, ramp, draw, and removal. The colors of the staples are not the
+// colors of the theme. Here every staple is white and every theme card
+// is black, and the old tally reported white.
+func TestThemeColorsIgnoreStaples(t *testing.T) {
+	b, _ := New()
+	var list []tc
+	for i := 0; i < 12; i++ {
+		list = append(list,
+			tc{id: fmt.Sprintf("ramp%d", i), name: fmt.Sprintf("White Rock %d", i), typeLine: "Artifact",
+				text: "{T}: Add {W}.", identity: []mtgv1.Color{W}, mv: 2, rank: int32(10 + i), tags: []string{"ramp"}},
+			tc{id: fmt.Sprintf("draw%d", i), name: fmt.Sprintf("White Draw %d", i), typeLine: "Sorcery",
+				text: "Draw two cards.", identity: []mtgv1.Color{W}, mv: 2, rank: int32(100 + i), tags: []string{"draw"}},
+			tc{id: fmt.Sprintf("kill%d", i), name: fmt.Sprintf("White Kill %d", i), typeLine: "Instant",
+				text: "Destroy target creature.", identity: []mtgv1.Color{W}, mv: 2, rank: int32(200 + i), tags: []string{"removal"}},
+		)
+	}
+	for i := 0; i < 4; i++ {
+		list = append(list, tc{id: fmt.Sprintf("syn%d", i), name: fmt.Sprintf("Black Artist %d", i), typeLine: "Creature — Vampire",
+			text: "Whenever another creature dies, you gain 1 life.", identity: []mtgv1.Color{B}, mv: 2, rank: int32(1000 + i), tags: []string{"lifegain"}})
+	}
+	idx := fixture(t, list)
+	got, err := b.ThemeColors(idx, cmdr, "lifegain", 100, 0.25)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 || got[0] != B {
+		t.Errorf("ThemeColors = %v, want [B]: the white staples must not count", got)
+	}
+}
+
+// TestThemeColorsSnapshot measures the fix on the local snapshot. It
+// skips without one. Measured 2026-08-26 over the 100 best theme-role
+// cards: aristocrats B 88, R 18, G 16, W 15, U 4. Dragons R 54, G 22,
+// B 21. The second color of aristocrats sits under the 25 percent
+// share, so the test asserts only the lead color of each theme.
+func TestThemeColorsSnapshot(t *testing.T) {
+	idx := snapshotIndex(t)
+	b, _ := New()
+	cases := []struct {
+		theme string
+		need  []mtgv1.Color
+	}{
+		{"aristocrats", []mtgv1.Color{B}},
+		{"dragons", []mtgv1.Color{mtgv1.Color_COLOR_R}},
+		{"lifegain", []mtgv1.Color{W}},
+		{"blink", []mtgv1.Color{W}},
+	}
+	for _, c := range cases {
+		got, err := b.ThemeColors(idx, cmdr, c.theme, 100, 0.25)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Logf("%s: %v", c.theme, got)
+		for _, col := range c.need {
+			if !contains(colorNames(got), col.String()) {
+				t.Errorf("%s: %v lacks %s", c.theme, got, col)
+			}
+		}
+	}
+}
+
+func colorNames(cs []mtgv1.Color) []string {
+	var out []string
+	for _, c := range cs {
+		out = append(out, c.String())
+	}
+	return out
+}
+
+// TestDoctorPairIsOffered is M-2 of the 2026-08-26 review. The Doctor
+// carries no partner kind, so canPair dropped every Doctor and the
+// Doctor's companion arms of rules.ValidPair were unreachable. The fixture
+// types follow the snapshot: The Tenth Doctor is "Time Lord Doctor".
+func TestDoctorPairIsOffered(t *testing.T) {
+	b, _ := New()
+	R, U := mtgv1.Color_COLOR_R, mtgv1.Color_COLOR_U
+	list := append(testCards(),
+		tc{id: "tenth", name: "The Tenth Doctor", typeLine: "Legendary Creature — Time Lord Doctor",
+			text: "Whenever you gain life, draw a card.", identity: []mtgv1.Color{U, R}, mv: 5, rank: 800,
+			subtypes: []string{"Time", "Lord", "Doctor"}, tags: []string{"lifegain"}},
+		tc{id: "clara", name: "Clara Oswald", typeLine: "Legendary Creature — Human Advisor",
+			text: "Doctor's companion", identity: nil, mv: 2, rank: 900,
+			subtypes: []string{"Human", "Advisor"}, partner: mtgv1.PartnerKind_PARTNER_KIND_DOCTORS_COMPANION},
+	)
+	idx := fixture(t, list)
+	if doctor, ok := idx.ByName("The Tenth Doctor"); !ok || !canPair(doctor) {
+		t.Fatal("a Doctor must pass canPair")
+	}
+	pool, err := b.CommanderPool(idx, Request{Format: cmdr, Theme: "lifegain", Colors: []mtgv1.Color{U, R}, WantPair: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range pool {
+		if c.Partner != nil && c.DisplayName() == "The Tenth Doctor + Clara Oswald" {
+			return
+		}
+	}
+	var got []string
+	for _, c := range pool {
+		got = append(got, c.DisplayName())
+	}
+	t.Errorf("no Doctor pair offered: %v", got)
 }
 
 func TestBuildNilIndex(t *testing.T) {

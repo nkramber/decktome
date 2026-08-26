@@ -41,9 +41,17 @@ type Row struct {
 	// Fallback is the wording used when a placeholder has no value. It
 	// holds no placeholder itself. Load enforces that.
 	Fallback string `json:"fallback"`
-	// Fixed marks a row that states what this app does or does not do.
-	// The model may not replace such a row: the sentence that names the
-	// limit is the point of it, and a replacement drops that sentence.
+	// Fixed marks a row whose exact words carry the meaning. The model
+	// may neither replace it nor phrase it again.
+	//
+	// Two kinds of row need it. The first states what this app does or
+	// does not do: the sentence that names the limit is the point of it,
+	// and a replacement drops that sentence. The second bundles several
+	// values into one yes-or-no question. The house-limits row asks "do
+	// the normal limits hold", and the ask role rewrote it as "should the
+	// deck use a 60-card minimum, four copies per name, and a 15-card
+	// sideboard?" The eval then read three questions in one, twice in run
+	// 20260826-191225-000 (D-162).
 	//
 	// The smoke run before gate 14 (2026-08-26 UTC) is the evidence. The model replaced "I
 	// build one deck at a time. Which deck do you want first?" with
@@ -55,7 +63,12 @@ type Row struct {
 	// pick row uses it: a user who answers "none" gets three new names
 	// until one fits (D-73). The row still closes when its key closes.
 	Repeat bool `json:"repeat"`
-	When   When `json:"when"`
+	// RepeatOnChange narrows Repeat. Such a row asks again only when its
+	// content changed, which for the pick row means three other names.
+	// A repeat with the same three names is the same question in the same
+	// words, and the eval of gate run 18 refused four of them (D-163).
+	RepeatOnChange bool `json:"repeat_on_change"`
+	When           When `json:"when"`
 }
 
 // When holds the triggers of one row. A nil pointer means the row does
@@ -140,6 +153,9 @@ func Load() (*Catalog, error) {
 			return nil, fmt.Errorf("questions: row %q has no text", r.ID)
 		case r.Order <= 0:
 			return nil, fmt.Errorf("questions: row %q has no order", r.ID)
+		}
+		if r.RepeatOnChange && !r.Repeat {
+			return nil, fmt.Errorf("questions: row %q narrows a repeat it does not have", r.ID)
 		}
 		if other, ok := order[r.Order]; ok {
 			return nil, fmt.Errorf("questions: rows %q and %q share order %d", other, r.ID, r.Order)

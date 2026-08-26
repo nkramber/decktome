@@ -1,5 +1,5 @@
 {
-  "verified_at": "2026-08-25",
+  "verified_at": "2026-08-26",
   "note": "The question catalog of the mtg-corpus skill, section 11, as data. `slot` is the proto slot the answer informs. `key` is the question's own state key, and it defaults to the slot. A refinement question (jank, budget scope, house format limits, named card role, power confirm) carries its own key, so a filled proto slot does not cancel it. Keep the rows in step with the skill file. TestCatalogMatchesCorpus checks it.",
   "rows": [
     {
@@ -143,7 +143,8 @@
       "id": "house_format_limits",
       "slot": "house_rules",
       "order": 26,
-      "text": "Inside your house format, do the normal limits hold: 60-card minimum, four copies per name, and a 15-card sideboard?",
+      "fixed": true,
+      "text": "Inside your house format, do the normal limits hold: 60 cards, four copies per name, and a 15-card sideboard?",
       "options": [
         "Yes, the normal limits",
         "No, I will say the limits"
@@ -187,6 +188,7 @@
         "owned_mode": true,
         "commander_not_owned": true
       },
+      "key": "commander_owned",
       "fallback": "You do not own that commander. Add it to the buy list, or pick one from your library?"
     },
     {
@@ -249,6 +251,7 @@
       },
       "key": "commander_pick",
       "repeat": true,
+      "repeat_on_change": true,
       "fallback": "Which commander do you want, or should I suggest three more?"
     },
     {
@@ -418,7 +421,11 @@
       "id": "meta",
       "slot": "meta",
       "order": 90,
-      "text": "What decks do you expect to play against? I tune the 15 sideboard cards to that.",
+      "text": "Which decks do you expect to face, or should I keep the sideboard general?",
+      "options": [
+        "I will name the decks",
+        "Keep the sideboard general"
+      ],
       "when": {
         "power_competitive": true,
         "format": "sixty"
