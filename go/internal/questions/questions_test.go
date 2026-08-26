@@ -317,3 +317,24 @@ func TestMetaRowAsksOneThing(t *testing.T) {
 		t.Errorf("options = %v, want the general sideboard first", r.Options)
 	}
 }
+
+// TestHouseLimitsRowNamesNoList holds D-212. The row asks one yes-or-no
+// question. A list of limits inside it reads as one question for each
+// item, which the eval refused in conversation 61 of gate run
+// 20260826-220840-000 even though the row went out word for word.
+func TestHouseLimitsRowNamesNoList(t *testing.T) {
+	c := load(t)
+	r, ok := c.Row("house_format_limits")
+	if !ok {
+		t.Fatal("no house_format_limits row")
+	}
+	if !r.Fixed {
+		t.Error("the house-limits row lost its fixed flag (D-162)")
+	}
+	if strings.Contains(r.Text, ":") {
+		t.Errorf("the house-limits row names a list of limits: %q", r.Text)
+	}
+	if strings.Count(r.Text, "?") != 1 {
+		t.Errorf("the house-limits row holds more than one question: %q", r.Text)
+	}
+}

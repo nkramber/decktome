@@ -1048,8 +1048,8 @@ func TestHouseLimitsRowGoesOutAsWritten(t *testing.T) {
 	if q == nil {
 		t.Fatalf("the house-limits row did not fire: %v", ids2(res.Questions))
 	}
-	if !strings.Contains(q.GetText(), "do the normal limits hold") {
-		t.Errorf("the house-limits question lost the clause that bundles the limits: %q", q.GetText())
+	if !strings.Contains(q.GetText(), "do the normal 60-card deck limits hold") {
+		t.Errorf("the house-limits question did not go out as written: %q", q.GetText())
 	}
 }
 
