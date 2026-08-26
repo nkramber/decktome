@@ -61,17 +61,35 @@ func TestExitCodes(t *testing.T) {
 	}
 }
 
-// TestMissingPreviousIsNotAnError covers the first iteration, where the
-// driver names a file that does not exist yet.
-func TestMissingPreviousIsNotAnError(t *testing.T) {
+// TestOmittedPreviousIsAFirstRun covers the real first iteration. The
+// driver names no previous run, so there is nothing to compare.
+func TestOmittedPreviousIsAFirstRun(t *testing.T) {
 	dir := t.TempDir()
 	path := write(t, dir, "next.json", tune.Summary{Judged: 10, Bad: 5, Ratio: 0.50,
 		Metrics: tune.Metrics{Questions: 20, CatalogFilled: 15}})
-	code, err := run(path, filepath.Join(dir, "nope.json"), 0.05, os.Stdout)
+	code, err := run(path, "", 0.05, os.Stdout)
 	if err != nil {
 		t.Fatalf("run: %v", err)
 	}
 	if code != exitAccept {
 		t.Errorf("exit = %d, want accept", code)
+	}
+}
+
+// TestNamedPreviousMustExist replaces a test that read a named and
+// missing file as a first run. That reading hid a real defect: the loop
+// passed a relative path into a subshell that had changed directory, the
+// file was not there, and the comparison was skipped in silence. An
+// iteration that raised the holdout ratio was accepted and committed
+// (D-171).
+//
+// A path the owner gave and a path the owner omitted mean different
+// things. Only the second is a first run.
+func TestNamedPreviousMustExist(t *testing.T) {
+	dir := t.TempDir()
+	path := write(t, dir, "next.json", tune.Summary{Judged: 10, Bad: 5, Ratio: 0.50,
+		Metrics: tune.Metrics{Questions: 20, CatalogFilled: 15}})
+	if _, err := run(path, filepath.Join(dir, "nope.json"), 0.05, os.Stdout); err == nil {
+		t.Error("a named baseline that is missing was read as a first run")
 	}
 }

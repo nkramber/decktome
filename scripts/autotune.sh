@@ -220,6 +220,11 @@ metric_of() { python3 -c "import json,sys;print(json.load(open(sys.argv[1]))['me
 say "budget \$$BUDGET, target ratio $TARGET_RATIO, at most $MAX_ITERATIONS iterations"
 # A scored run already on disk is the baseline. The loop pays for its own
 # only when the owner gives it none.
+# tune-check runs from go/, so a relative baseline path resolves against
+# the wrong directory. Make both absolute before anything reads them.
+case "$BASELINE_JSON" in ""|/*) ;; *) BASELINE_JSON="$ROOT/$BASELINE_JSON" ;; esac
+case "$BASELINE_DOC" in ""|/*) ;; *) BASELINE_DOC="$ROOT/$BASELINE_DOC" ;; esac
+
 if [ -n "$BASELINE_JSON" ] && [ -s "$BASELINE_JSON" ]; then
   PREV="$BASELINE_JSON"
   # The fixer needs the report, not the summary. Take the name the owner

@@ -60,13 +60,18 @@ func run(nextPath, prevPath string, target float64, w *os.File) (int, error) {
 	if err != nil {
 		return 0, err
 	}
+	// A -prev that was named and can not be read is an error, and never a
+	// first run. The loop passed a relative path into a subshell that had
+	// changed directory, so the file was missing, the comparison was
+	// skipped in silence, and an iteration that raised the holdout ratio
+	// was accepted and committed (D-171).
 	var prev *tune.Summary
 	if prevPath != "" {
-		if p, err := read(prevPath); err == nil {
-			prev = p
-		} else if !os.IsNotExist(err) {
-			return 0, err
+		p, err := read(prevPath)
+		if err != nil {
+			return 0, fmt.Errorf("-prev %s: %w", prevPath, err)
 		}
+		prev = p
 	}
 	d := tune.Compare(prev, next)
 	for _, r := range d.Reasons {
