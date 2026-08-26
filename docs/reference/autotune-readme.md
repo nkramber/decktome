@@ -95,6 +95,15 @@ AUTOTUNE_ALLOW_UNATTENDED=1 scripts/autotune.sh \
   --base pr-7c --budget 3.00 --max 1
 ```
 
+The owner keeps a shell function named `autotune` in `.zshrc`. It takes
+the branch, the budget, and the iteration count, and it passes every
+other flag through to the script:
+
+```
+autotune --branch pr-7c --budget 3.00 --max 1
+autotune --branch pr-7c --budget 3.00 --max 20 --baseline .local/tune/BASELINE.json
+```
+
 `--max` counts tuning iterations only. The baseline is not one of them, so
 this command runs two gate and eval pairs: the baseline, then iteration 1.
 It costs about $0.50 and takes about an hour.
