@@ -137,7 +137,7 @@ func (h *CandidateHints) ThemeColors(theme string) string {
 	if format == mtgv1.FormatId_FORMAT_ID_UNSPECIFIED {
 		format = mtgv1.FormatId_FORMAT_ID_COMMANDER
 	}
-	cols, err := h.Builder.ThemeColors(h.Index, format, theme, 100, 0.25)
+	cols, err := h.Builder.ThemeColors(h.Index, format, theme, 100, 0.15)
 	if err != nil {
 		h.warn("theme colors", err)
 		return ""

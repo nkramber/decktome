@@ -480,7 +480,7 @@ func (b *Builder) ThemeColors(idx *cards.Index, format mtgv1.FormatId, theme str
 		top = 100
 	}
 	if share <= 0 {
-		share = 0.25
+		share = 0.15
 	}
 	list, err := b.Build(idx, Request{Format: format, Theme: theme})
 	if err != nil {
@@ -506,9 +506,29 @@ func (b *Builder) ThemeColors(idx *cards.Index, format mtgv1.FormatId, theme str
 	if seen == 0 {
 		return nil, nil
 	}
+	// The lead color always goes out, and at most one second color joins
+	// it when its share reaches the bar. Players name an archetype by its
+	// lead and one partner: aristocrats is black and red, dragons is red
+	// and green. A flat share reported black alone for aristocrats at 25
+	// percent, and five colors for dragons at 15 percent (D-205).
+	wubrg := []mtgv1.Color{mtgv1.Color_COLOR_W, mtgv1.Color_COLOR_U, mtgv1.Color_COLOR_B, mtgv1.Color_COLOR_R, mtgv1.Color_COLOR_G}
+	lead, second := mtgv1.Color_COLOR_UNSPECIFIED, mtgv1.Color_COLOR_UNSPECIFIED
+	for _, col := range wubrg {
+		if lead == mtgv1.Color_COLOR_UNSPECIFIED || count[col] > count[lead] {
+			lead = col
+		}
+	}
+	for _, col := range wubrg {
+		if col == lead || float64(count[col])/float64(seen) < share {
+			continue
+		}
+		if second == mtgv1.Color_COLOR_UNSPECIFIED || count[col] > count[second] {
+			second = col
+		}
+	}
 	var out []mtgv1.Color
-	for _, col := range []mtgv1.Color{mtgv1.Color_COLOR_W, mtgv1.Color_COLOR_U, mtgv1.Color_COLOR_B, mtgv1.Color_COLOR_R, mtgv1.Color_COLOR_G} {
-		if float64(count[col])/float64(seen) >= share {
+	for _, col := range wubrg {
+		if col == lead || col == second {
 			out = append(out, col)
 		}
 	}

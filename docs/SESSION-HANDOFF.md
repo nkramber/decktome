@@ -22,7 +22,7 @@ CAUTION: every baseline on disk is stale. D-163 to D-169, D-195 to D-202, and th
 - `main` is at fdfe15c, "Pr 7b (#13)". Merged: PR-0a to PR-7, PR-7B, and PR-10 (#1 to #13), the audit fixes included.
 - Branch `pr-7c` is the container for everything the loop writes (D-142). HEAD is 3391748, "v0.0: baseline run for the tuning loop". The tree is green and committed.
 - Branch `auto-tune/20260826-164931` was dropped (D-204). D-172 to D-176 are retired numbers.
-- `docs/decisions.md` reaches D-204 on `pr-7c`. D-179 to D-184 are the loop rebuild, D-185 to D-194 the audit fixes, D-195 to D-203 the question-workflow fixes and the D-162 to D-170 verdicts.
+- `docs/decisions.md` reaches D-206 on `pr-7c`. D-179 to D-184 are the loop rebuild, D-185 to D-194 the audit fixes, D-195 to D-203 the question-workflow fixes and the D-162 to D-170 verdicts.
 - The work of 2026-08-26 after the loop run is uncommitted: about 70 files. The owner commits. `git status` lists them, and every one is on `pr-7c`.
 - Gate documents run 2 to run 18 and `20260826-191225-000` sit under `docs/reference/`. Eval documents exist for run 14, 14b, 16, 17, 18, `20260826-191225-000`, and `-000b`. The `-000b` report is the same gate document scored a second time, and it measures the judge alone (D-183).
 - `.local/tune/` holds the JSON for run14, run14b, run16, run17, run18, and `20260826-191225-000` and `-001`. No JSON for run 15 exists.
@@ -33,8 +33,8 @@ CAUTION: every baseline on disk is stale. D-163 to D-169, D-195 to D-202, and th
 ## Next steps, in order
 
 1. Commit the tree on `pr-7c`. Read `git status` first: it holds the loop rebuild, the audit fixes, and the rebuilt D-163 to D-169.
-2. Run `make store-check` with the emulator up. The session version test (D-185) only runs there. Run `make dev-docker` once: the nonroot images and the health checks (D-193) were written and not run.
-3. Answer two questions the work raised. Is the 25 percent color share of D-186 right, when aristocrats reads black alone and red sits at 18 percent? Does D-168 hold, when it raised the budget row from 8 to 86 conversations and its effect on the ratio was never measured?
+2. `make store-check` passed under the emulator, and the Compose stack came up healthy with the API as nonroot, both on 2026-08-26. Nothing is left to verify there.
+3. Both questions the work raised are answered: D-205 sets the color rule, and D-206 keeps D-168 for the next run to measure.
 4. Start the loop with `--max 1` and no `--baseline`, so it measures the changed code first. Read the lessons file after it.
 5. PR-8 (generator), then PR-9 (variance). PR-8 owns the prompt-cache lever, the weak-commander-pool bar, and OQ-21.
 

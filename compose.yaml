@@ -30,9 +30,10 @@ services:
     volumes: [".local/gcs-docker:/data"]
     ports:
       - "127.0.0.1:4443:4443"
-    # The image is alpine, so busybox wget is present.
+    # The image is alpine, so busybox wget is present. GET / answers 404, and
+    # the bucket list answers 200, so the probe reads the bucket list.
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:4443/"]
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:4443/storage/v1/b"]
       interval: 5s
       timeout: 3s
       retries: 12

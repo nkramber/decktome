@@ -404,25 +404,28 @@ func TestThemeColorsIgnoreStaples(t *testing.T) {
 func TestThemeColorsSnapshot(t *testing.T) {
 	idx := snapshotIndex(t)
 	b, _ := New()
+	// The lead color and at most one second color, the way players name
+	// an archetype (D-205). Measured on the snapshot of 2026-08-24.
 	cases := []struct {
 		theme string
-		need  []mtgv1.Color
+		want  []mtgv1.Color
 	}{
-		{"aristocrats", []mtgv1.Color{B}},
-		{"dragons", []mtgv1.Color{mtgv1.Color_COLOR_R}},
-		{"lifegain", []mtgv1.Color{W}},
-		{"blink", []mtgv1.Color{W}},
+		{"aristocrats", []mtgv1.Color{B, mtgv1.Color_COLOR_R}},
+		{"dragons", []mtgv1.Color{mtgv1.Color_COLOR_R, mtgv1.Color_COLOR_G}},
+		{"lifegain", []mtgv1.Color{W, B}},
+		{"blink", []mtgv1.Color{W, mtgv1.Color_COLOR_U}},
 	}
 	for _, c := range cases {
-		got, err := b.ThemeColors(idx, cmdr, c.theme, 100, 0.25)
+		got, err := b.ThemeColors(idx, cmdr, c.theme, 100, 0.15)
 		if err != nil {
 			t.Fatal(err)
 		}
 		t.Logf("%s: %v", c.theme, got)
-		for _, col := range c.need {
-			if !contains(colorNames(got), col.String()) {
-				t.Errorf("%s: %v lacks %s", c.theme, got, col)
-			}
+		if len(got) > 2 {
+			t.Errorf("%s: %v names more than two colors", c.theme, got)
+		}
+		if strings.Join(colorNames(got), " ") != strings.Join(colorNames(c.want), " ") {
+			t.Errorf("%s: %v, want %v", c.theme, got, c.want)
 		}
 	}
 }
