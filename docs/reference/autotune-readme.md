@@ -15,6 +15,21 @@ holds the commands.
    AUTOTUNE_FIXER_CMD="claude -p --permission-mode bypassPermissions"
    ```
 
+   Keep the quotation marks. Bash reads `NAME=value more words` as a
+   command to run with NAME set, so an unquoted value that holds a space
+   breaks every target that reads `.env`. The marks do not reach the
+   fixer: `autotune-fix.sh` splits the value into words when it runs it.
+
+   No dollar cap goes here. The fixer bills against the monthly plan
+   (D-159). The `--budget` flag is a separate thing, and it pays for the
+   gate and the eval.
+
+   The loop withholds `ANTHROPIC_API_KEY` and `OPENAI_API_KEY` from the
+   fixer (D-161). Claude Code reads the first in preference to a
+   claude.ai login, so without this the fixer bills per token to the key
+   and not to the plan. Withholding the second stops the fixer from
+   paying for a gate run the loop does not count.
+
 2. Keep a container branch, and name it with `--base`. `pr-7c` is the one
    today. Every night cuts a working branch off it, and you fast-forward
    it after a review. Without a container each night starts from the same

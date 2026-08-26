@@ -45,5 +45,17 @@ trap 'rm -f "$PROMPT"' EXIT
   cat "$DOC"
 } > "$PROMPT"
 
+# The provider keys do not reach the fixer, for two reasons.
+#
+# The loop exports every name in .env, and Claude Code reads
+# ANTHROPIC_API_KEY in preference to a claude.ai login. The fixer would
+# then bill per token to that key instead of the owner's monthly plan,
+# with no cap, unattended, all night (D-161).
+#
+# OPENAI_API_KEY goes for a second reason. The loop owns every paid
+# measurement and counts it against --budget. A fixer that ran its own
+# gate to check its work would spend outside that accounting.
+#
+# The offline tests need neither key. They run against the fake provider.
 # shellcheck disable=SC2086
-exec $AUTOTUNE_FIXER_CMD < "$PROMPT"
+exec env -u ANTHROPIC_API_KEY -u OPENAI_API_KEY $AUTOTUNE_FIXER_CMD < "$PROMPT"
