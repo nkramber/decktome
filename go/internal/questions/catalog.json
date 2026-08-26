@@ -423,10 +423,10 @@
       "id": "meta",
       "slot": "meta",
       "order": 90,
-      "text": "Which decks do you expect to face, or should I keep the sideboard general?",
+      "text": "Should I keep the sideboard general, or will you name the decks you expect to face?",
       "options": [
-        "I will name the decks",
-        "Keep the sideboard general"
+        "Keep the sideboard general",
+        "I will name the decks"
       ],
       "when": {
         "power_competitive": true,

@@ -295,3 +295,25 @@ func has(list []string, want string) bool {
 	}
 	return false
 }
+
+// TestMetaRowAsksOneThing holds D-211. The row offers the general
+// sideboard first, so one choice goes out. The old wording asked for a
+// list of decks and for a yes-or-no answer in the same sentence, and the
+// eval refused it in conversations 44 and 76 of gate run
+// 20260826-220840-000.
+func TestMetaRowAsksOneThing(t *testing.T) {
+	c := load(t)
+	r, ok := c.Row("meta")
+	if !ok {
+		t.Fatal("no meta row")
+	}
+	if !strings.HasPrefix(r.Text, "Should I keep the sideboard general") {
+		t.Errorf("the meta row does not offer the general sideboard first: %q", r.Text)
+	}
+	if strings.Count(r.Text, "?") != 1 {
+		t.Errorf("the meta row holds more than one question: %q", r.Text)
+	}
+	if len(r.Options) == 0 || r.Options[0] != "Keep the sideboard general" {
+		t.Errorf("options = %v, want the general sideboard first", r.Options)
+	}
+}
