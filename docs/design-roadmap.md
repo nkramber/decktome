@@ -4,7 +4,11 @@ Status: **approved (D-31), living document.** The owner approved draft 1 on 2026
 
 External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline. Sources: Scryfall (API and bulk data), the Wizards of the Coast announcements of 2026-08-10 and 2026-02-09, mtgcommander.net, and the local checkouts of connector-syncer and wallabee-ui. MtG rules and ban lists change. Re-verify every dated fact before you cite it in a PR.
 
-Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
+Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
+
+2026-08-26 correction pass 20: PR-7B added, the automated eval lane. The owner's hand scoring does not scale past 32 items, and a run asks about 250 questions. A new `eval` role scores every one for about eleven cents (D-133). Every third conversation is a holdout (D-134). The owner answered OQ-24, OQ-26, and OQ-27 the same day (D-135 to D-137). PR-7 gained sixteen fixes from the batch sweep of all 66 conversations (D-117 to D-132).
+
+2026-08-25 correction pass 19: the owner scored items 1 to 32 of the M-5 sheet, and the scores asked for 16 rewords and one deletion. The correction session that followed recorded D-104 to D-116. The sheet could hold only 60 of 793 questions, which is where most defects hid (D-104).
 
 2026-08-23 correction pass 2: the owner answered OQ-1 to OQ-12 (D-15 to D-25). Changes in this pass: F-4 resolved, F-14 rewritten, F-16 and F-17 added, PR-4 storage decided. Also: PR-7 gains the gap score and M-4, PR-8 gains the deck summary, I-2 has a price spec, and the GCP project ids are set.
 
@@ -346,6 +350,40 @@ Open in PR-7: the M-5 scoring, then the threshold and one confirming run.
 
 > *In plain English:* the chat. "Build me a lifegain deck" fills in "theme: lifegain" and leaves format, power, and colors empty. The app asks those three, remembers the answers, and never asks twice. If the user says something vague, the app asks what they mean. It does not guess.
 
+**PR-7B: Automated eval lane.** 🔧 in progress 2026-08-26, branch `pr-7b`. PR-7 proved that reading transcripts finds defects and that scoring replacements does not. The version-1 M-5 sheet could hold 60 of 793 questions, because it held only a question the model offered to replace (D-104). The batch sweep of 2026-08-26 read all 66 conversations by hand and found sixteen more defects, none of which could have reached that sheet. PR-7B makes that reading automatic.
+
+A sixth role, `eval`, scores every question of a gate run against the rubric the owner applied by hand (D-133). It runs on `gpt-5.6-luna`, the cost tier, so a 66-conversation run costs about eleven cents. It is not the judge role: D-4 gives the judge a deck, and D-22 keeps the judge off the generator's provider. The eval role shares a model with the classify and ask roles, which the owner accepted with the risk named (D-136). Every ratio it reports is a floor.
+
+`internal/tune` reads a gate document back and holds the accept rules. `cmd/questions-eval` writes a report a person reads and a summary a script reads. `cmd/tune-check` decides whether one iteration may be kept, and it costs nothing. `scripts/autotune.sh` is the loop, and it refuses to start without `AUTOTUNE_ALLOW_UNATTENDED=1`.
+
+Three evals run first, in this order.
+
+| Eval | What it measures | Cost |
+|---|---|---|
+| Gate run 14 | The transcript. 66 conversations, 30 gate and 36 probe and terse. | about $0.12 |
+| Question eval | Every question, scored for whether it deserved to be asked. | about $0.09 |
+| Eval calibration | The cost-tier eval against `claude-sonnet-5` on 12 conversations. | about $0.30 |
+
+The calibration answers the one question the cost tier raises: how gently does a model score work its own model produced? It scores the same 12 conversations twice, once on the cost tier and once on `claude-sonnet-5`, and `cmd/tune-check -agree` compares the two question by question. It reports how often they agree, and how many questions each one refused. A cost-tier eval that refuses four where the stronger model refuses twelve is not measuring the agent. It reports a floor, and the real number sits above it. OQ-39 holds what the owner does with that gap.
+
+Four counters guard the ratio, because a run that asks less scores better and serves the user worse. Gate run 7 of 2026-08-25 passed both bars with 26 of 30 conversations unanswered. The counters are the questions asked, the questions that closed a slot, the premature sessions, and the linter findings. They come from the transcript and not from the M-4 table, because the table counts the 30 gate conversations alone and the terse set of D-105 is where the hard cases live.
+
+Every third conversation is a holdout (D-134). The eval scores it, the report never names its failures, and the loop reads its ratio. A ratio that falls on the two thirds the fixer saw, and stands still on the holdout, is a reworded test set.
+
+The loop that consumes these evals comes second, and it starts only when the gate below holds. The owner settled its four terms on 2026-08-26: it may change the catalog inside an approved run (D-135), it may share a model with the agent it scores (D-136), it stops at a 5 percent holdout ratio (D-137), and it works on a branch of its own and pushes nothing (D-138). `docs/reference/autotune-design.md` is the authority on how it runs: the guards, the accept rules, the owner's duties run by run, and the one cost the loop can not see, which is the fixer agent's own tokens.
+
+PR-7B is the instrument and not the repair. Its scope is the eval role, `internal/tune`, the three commands, the loop, and the guards. A change the loop makes is a change to PR-7: the catalog rows, the planner, the word rules, and the prompts all belong to the question workflow. The loop writes PR-7 corrections, and the PR-7 entry records them. This keeps one concern per PR, and it keeps the measuring device apart from the thing it measures.
+
+Each accepted iteration is one commit on a branch of its own, with the ratio and the counters in its message, and one appended row in `docs/decisions.md`. A rejected iteration leaves nothing, so every commit on that branch passed the accept rules.
+
+The branches work in three layers (D-142). `main` holds the merged work. A branch the owner keeps, `pr-7c`, is the container for everything the loop writes. Each night cuts `auto-tune/<stamp>` off that container, and it pushes nothing. The owner reads the night in the morning and fast-forwards the container, or deletes the night.
+
+The container matters more than it looks. A loop that always starts from `main` gives the second night none of the first night's accepted work. Two nights then change the same catalog rows from the same starting point, and the owner merges two branches that disagree. A container makes the nights add up, and it makes one reviewable pull request out of many nights.
+
+Gate: the three evals run. The report names every defect class the batch sweep of 2026-08-26 found by hand. The calibration reports the agreement between the two eval models, and the owner accepts that number or names a stronger model (OQ-39).
+
+> *In plain English:* the owner spent hours scoring 32 questions by hand, and one test run asks 250. This adds a second model that reads every question and says whether it deserved to be asked. It writes a short report instead of a spreadsheet. A third of the conversations are hidden from anything that tries to fix the code, so we can tell a real gain from a reworded test. The scorer is cheap, and cheap scorers are kind. We measure how kind before we trust the number.
+
 **PR-8: Deck generator and normalizer (F-13).**
 Prompt caching pays here, not in PR-7. The generate role runs on the middle model, and its prompt carries a candidate list of about 300 cards. That list is the same across a repair retry and across PR-9's re-rolls, and a cache read costs a tenth of a fresh read. Two rules protect the lever: keep the stable text first and the session text last, and hold one cache key per session. The PR-7 measurements of 2026-08-24 read zero cached tokens, because each call sat near 470 tokens and the OpenAI cache starts above 1,024. Anthropic caching is opt-in, and it charges 1.25 times input to write. The judge role therefore pays for a cache only when it reads the same prefix more than twice. The adapter has no `cache_control` wiring today.
 With all slots filled, the strong model gets four inputs. They are the rules summary for the format, the candidate list with roles, the role targets, and the plan request. It returns a structured deck (D-19). First, one summary paragraph on the deck's style and purpose. Then cards with exact names, counts, roles, and one line each. 
@@ -470,13 +508,14 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 11. PR-1b contract amendment (audit branch, D-46).
 12. PR-6 candidates.
 13. PR-7 questions.
-14. PR-8 generator.
-15. PR-9 variance.
-16. **GATE.** Phase 3 starts only when PR-8's gate holds on the golden prompts.
-17. PR-11, PR-12, PR-13.
-18. PR-15 eval harness (can start after step 14, in parallel with the UI, if a second owner exists). M-5 manual scoring runs on the first UI build (after PR-12).
-19. PR-14 meta, then I-1, I-2, I-3 on evidence.
-20. Phase 5 stays parked.
+14. PR-7B automated eval lane. It runs beside PR-8 once its three evals hold.
+15. PR-8 generator.
+16. PR-9 variance.
+17. **GATE.** Phase 3 starts only when PR-8's gate holds on the golden prompts.
+18. PR-11, PR-12, PR-13.
+19. PR-15 eval harness (can start after step 15, in parallel with the UI, if a second owner exists). M-5 manual scoring runs on the first UI build (after PR-12).
+20. PR-14 meta, then I-1, I-2, I-3 on evidence.
+21. Phase 5 stays parked.
 
 ## 9. Open questions
 

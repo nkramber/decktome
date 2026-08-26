@@ -341,9 +341,9 @@ The linter ran over all 793 questions of runs 10 to 13. It found 6 redundant for
 3. OQ-21: how much of a precon must survive a build. PR-8 owns it.
 4. OQ-22: the nearest supported format for Historic and for Timeless. Both are unverified in `words.go`.
 
-## The automated eval lane (2026-08-26)
+## PR-7B, the automated eval lane (2026-08-26)
 
-The owner asked for a lane that needs no hand scoring, and for a loop that can run overnight. The parts exist and nothing has run. `docs/reference/autotune-design.md` holds the design, the cost, and the honest limits.
+The owner asked for a lane that needs no hand scoring, and for a loop that can run overnight. The roadmap holds it as PR-7B, on branch `pr-7b`. `docs/reference/autotune-design.md` holds the design, the cost, and the honest limits.
 
 - A new `eval` role scores every question of a gate run. The owner set it on `gpt-5.6-luna`, so a 66-conversation run costs about eleven cents (D-133).
 - `cmd/questions-eval` writes a report a person reads and a summary a script reads. `make questions-eval` runs it.
@@ -353,9 +353,23 @@ The owner asked for a lane that needs no hand scoring, and for a loop that can r
 
 A budget of $3.00 buys about 14 iterations of gate and eval. The fixer agent's own tokens are not in that number, and they are the larger cost.
 
-`docs/owner-questions.md` is new. It holds every question that waits for a person, and the loop refuses to decide any of them. Four of them block the first unattended run: OQ-24 to OQ-27.
+`docs/owner-questions.md` is new. It holds every question that waits for a person, and the loop refuses to decide any of them. The owner answered all four blocking questions on 2026-08-26: D-135 to D-138. One step is left before an unattended run, and the owner owns it: name the fixer in `AUTOTUNE_FIXER_CMD`, and cap its tokens.
 
-The recommendation is to run the report alone first, for about fifty cents, and read what it finds. The loop is worth turning on only if the report finds what the batch sweep found by hand.
+### The three evals of PR-7B
+
+The owner started these on 2026-08-26. They cost about fifty cents in total.
+
+1. `GATE_OUT=docs/reference/pr7-question-gate-run14.md make questions-gate`
+2. `EVAL_RUN=docs/reference/pr7-question-gate-run14.md make questions-eval`
+3. `make eval-calibrate`
+
+The first writes the transcript of all 66 conversations. The second scores every question and writes the report. The third scores 12 conversations twice, once on the cost tier and once on `claude-sonnet-5`, and reports how far the two agree. OQ-39 holds the floor the owner sets from that number.
+
+The PR-7B gate: the report must name every defect class the batch sweep found by hand, and the owner must accept the calibration number.
+
+### Waiting on those three
+
+The conversation set grows from 66 to 100. The 34 new conversations are drafted and they are **not** in `go/cmd/questions-gate/conversations.json` yet, because the three commands read that file. They wait in the scratchpad until the owner says the commands finished.
 
 ## Next steps, in order
 

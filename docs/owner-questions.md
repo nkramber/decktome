@@ -8,13 +8,15 @@ Every row came out of the session of 2026-08-25 and 2026-08-26: the owner's scor
 
 ## Blocks the automation
 
-One question is left. The owner answered the other three on 2026-08-26.
+Nothing blocks it now. The owner answered all four on 2026-08-26: OQ-24 (D-135, the loop may change the catalog inside an approved run), OQ-25 (D-138, a branch of its own and no push), OQ-26 (D-136, the eval may share a model with the agent), and OQ-27 (D-137, the target is 5 percent).
+
+One step is left before the first unattended run. The owner names the fixer in `AUTOTUNE_FIXER_CMD`, and sets a token budget for it. That agent is billed apart from the loop budget, and nothing here can measure it.
+
+## Waits on the first eval run
 
 | # | Question | Why only you | What it blocks |
 |---|---|---|---|
-| OQ-25 | May an agent edit this repository unattended, and what does that need from you? | The guards bound what a bad night can do inside the repository. They do not bound what a headless agent can run. | `AUTOTUNE_FIXER_CMD`, and every unattended run. |
-
-Answered: OQ-24 (D-135, the loop may change the catalog inside an approved run), OQ-26 (D-136, the eval may share a model with the agent), OQ-27 (D-137, the target is 5 percent).
+| OQ-39 | How far may the cost-tier eval fall behind a stronger judge? `make eval-calibrate` reports the agreement, and no number sets the floor. | It is a tolerance, and tolerances are yours. A cheap judge that refuses half as many questions still reports a real floor, and it hides the other half. | The PR-7B gate, and how much weight the loop's ratio carries. |
 
 ## The two numbers M-5 exists to set
 

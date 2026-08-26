@@ -6,11 +6,13 @@ package main
 //
 // Keep it stable. A changed prompt invalidates every score before it, the
 // same way a changed classify prompt does (D-66).
-const evalVersion = 1
+const evalVersion = 2
 
 const evalInstructions = `You score the clarifying questions a Magic: The Gathering deck-building agent asked one user.
 
-You get the user's messages in order, and every question the agent sent, with the turn it went out on. Judge each question against what the user had written when it went out, and nothing later.
+You get the conversation as a transcript, turn by turn. Each turn holds the user's message, then the questions the agent sent in reply to it.
+
+Judge every question against the turns above it, and never against a turn below it. A question on turn 1 could not know what the user wrote on turn 2. A question is not a duplicate because the user answered it on the next turn. That is the question working.
 
 For each question answer one thing first: did this question deserve to be asked, to this user, at that point?
 

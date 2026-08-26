@@ -163,14 +163,31 @@ func score(client *llm.Client, acc *llm.Accumulator, run string, conv tune.Conve
 		Text    string   `json:"text"`
 		Options []string `json:"options,omitempty"`
 	}
-	qs := make([]qIn, 0, len(conv.Questions))
+	// The transcript is interleaved, turn by turn. A flat list of messages
+	// beside a flat list of questions makes the reader hold the order in
+	// its head, and the cost tier did not. The calibration of 2026-08-26
+	// found seven questions marked as duplicates of an answer the user
+	// gave one or two turns later (D-141).
+	type turnIn struct {
+		Turn int `json:"turn"`
+		// User is the message that arrived on this turn.
+		User string `json:"user"`
+		// Asked are the questions the agent sent in reply to it. Nothing
+		// below this point in the transcript was known when they went out.
+		Asked []qIn `json:"agent_asked_in_reply"`
+	}
+	byTurn := map[int][]qIn{}
 	for _, q := range conv.Questions {
-		qs = append(qs, qIn{Turn: q.Turn, Row: q.Row, Slot: q.Slot, Text: q.Text, Options: q.Options})
+		byTurn[q.Turn] = append(byTurn[q.Turn],
+			qIn{Turn: q.Turn, Row: q.Row, Slot: q.Slot, Text: q.Text, Options: q.Options})
+	}
+	turns := make([]turnIn, 0, len(conv.Messages))
+	for i, msg := range conv.Messages {
+		turns = append(turns, turnIn{Turn: i + 1, User: msg, Asked: byTurn[i+1]})
 	}
 	input, err := json.Marshal(map[string]any{
 		"conversation": conv.Name,
-		"messages":     conv.Messages,
-		"questions":    qs,
+		"transcript":   turns,
 	})
 	if err != nil {
 		return nil, nil, err

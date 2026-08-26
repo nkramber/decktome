@@ -4,8 +4,10 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
 )
 
 // TestNegationStopsATriggerWord is D-111. Probe 38 of gate run 11 wrote
@@ -748,5 +750,44 @@ func TestCommanderSwapReopensTheChoice(t *testing.T) {
 	}
 	if strings.Contains(q.GetText(), "Karlov") {
 		t.Errorf("the agent offered the commander the user replaced: %q", q.GetText())
+	}
+}
+
+// TestCanLeadStaysSilentOnALegendaryCard is D-140. Gate run 14 told a
+// user "Grist, the Hunger Tide can not lead a deck". Grist is a legendary
+// planeswalker, and it is a legal commander: a characteristic-defining
+// ability makes it a creature card everywhere except the battlefield
+// (Scryfall ruling, 2021-06-18). The gate passed and the linter found
+// nothing, and the claim was false.
+func TestCanLeadStaysSilentOnALegendaryCard(t *testing.T) {
+	cases := []struct {
+		name             string
+		typeLine         string
+		commander, back  bool
+		wantLead, wantOK bool
+	}{
+		{"Grist, the Hunger Tide", "Legendary Planeswalker — Grist", false, false, false, false},
+		{"Jace, the Mind Sculptor", "Legendary Planeswalker — Jace", false, false, false, false},
+		{"Lightning Bolt", "Instant", false, false, false, true},
+		{"Sol Ring", "Artifact", false, false, false, true},
+		{"Karlov of the Ghost Council", "Legendary Creature — Spirit Advisor", true, false, true, true},
+		{"a background", "Legendary Enchantment — Background", false, true, true, true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			h := &CandidateHints{Index: cards.NewIndex([]*mtgv1.Card{{
+				Name: tc.name, TypeLine: tc.typeLine,
+				CanBeCommander: tc.commander, IsBackground: tc.back,
+			}}, nil, nil, time.Time{})}
+			lead, known := h.CanLead(tc.name)
+			if lead != tc.wantLead || known != tc.wantOK {
+				t.Errorf("CanLead = %v/%v, want %v/%v", lead, known, tc.wantLead, tc.wantOK)
+			}
+		})
+	}
+	// An unknown name claims nothing.
+	h := &CandidateHints{Index: cards.NewIndex(nil, nil, nil, time.Time{})}
+	if _, known := h.CanLead("Nonesuch"); known {
+		t.Error("an unknown card name produced a claim")
 	}
 }

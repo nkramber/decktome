@@ -38,6 +38,18 @@ type CandidateHints struct {
 // CanLead reports whether a named card can lead a deck. Probe 41 asks
 // for "Commander deck with Lightning Bolt as my commander", and every run
 // before 2026-08-26 accepted it in silence (D-129).
+//
+// It answers "not known" for any legendary card it can not confirm. The
+// engine reads a type line, and a type line is wrong about a whole class
+// of commander. Grist, the Hunger Tide is "Legendary Planeswalker" and it
+// is a legal commander, because a characteristic-defining ability makes
+// it a creature card everywhere except the battlefield (Scryfall ruling,
+// 2021-06-18). Gate run 14 told a user that Grist can not lead a deck.
+// The gate passed and the linter found nothing, and the claim was false.
+//
+// A confident "no" therefore needs a card that is not legendary at all.
+// Lightning Bolt is an instant and Sol Ring is not legendary, so both
+// still answer (D-140).
 func (h *CandidateHints) CanLead(name string) (canLead, known bool) {
 	if h == nil || h.Index == nil {
 		return false, false
@@ -46,7 +58,14 @@ func (h *CandidateHints) CanLead(name string) (canLead, known bool) {
 	if !ok {
 		return false, false
 	}
-	return card.GetCanBeCommander() || card.GetIsBackground(), true
+	if card.GetCanBeCommander() || card.GetIsBackground() {
+		return true, true
+	}
+	if strings.Contains(strings.ToLower(card.GetTypeLine()), "legendary") {
+		// A legendary card the engine can not confirm. Say nothing.
+		return false, false
+	}
+	return false, true
 }
 
 // UseSlots takes the slot values as they stand inside the turn. The cache
