@@ -82,9 +82,13 @@ func TestCollectPairsBothTexts(t *testing.T) {
 	}
 }
 
-// TestScorableDropsWhatTheOwnerCanNotJudge is the D-66 rule: the rubric
-// compares two questions, so an item with one text is not scorable. A row
-// the catalog no longer holds is not worth the owner's time either.
+// TestScorableDropsWhatTheOwnerCanNotJudge is the D-66 rule for a
+// replacement: the rubric compares two questions, so a replacement with
+// one text is not scorable. A row the catalog no longer holds is not
+// worth the owner's time either.
+//
+// A question the model left alone is now kept. It becomes a plain item,
+// and version 1 of the sheet could not hold one (D-104).
 func TestScorableDropsWhatTheOwnerCanNotJudge(t *testing.T) {
 	items, err := collect([]string{writeFixture(t)})
 	if err != nil {
@@ -94,12 +98,21 @@ func TestScorableDropsWhatTheOwnerCanNotJudge(t *testing.T) {
 	if err != nil {
 		t.Fatalf("scorable: %v", err)
 	}
-	if len(kept) != 2 {
-		t.Fatalf("kept %d items, want the colors invention and the refused reword: %+v", len(kept), kept)
-	}
+	reps, plain := 0, 0
 	rows := map[string]bool{}
 	for _, it := range kept {
 		rows[it.Row] = true
+		if it.replacement() {
+			reps++
+		} else {
+			plain++
+		}
+	}
+	if reps != 2 {
+		t.Errorf("kept %d replacements, want the colors invention and the refused reword: %+v", reps, kept)
+	}
+	if plain == 0 {
+		t.Error("no plain item survived, and D-104 makes every question scorable")
 	}
 	if !rows["colors"] || !rows["power_commander"] {
 		t.Errorf("kept rows = %v, want colors and power_commander", rows)
@@ -110,8 +123,7 @@ func TestScorableDropsWhatTheOwnerCanNotJudge(t *testing.T) {
 	if dropped["the catalog no longer holds the row"] != 1 {
 		t.Errorf("dropped map = %v, want one deleted row (acquisition, D-87)", dropped)
 	}
-	// A catalog question the model left alone is the normal case, and it
-	// is not reported as a drop.
+	// A catalog question the model left alone is kept, not dropped.
 	if _, ok := dropped["the model offered no replacement"]; ok {
 		t.Errorf("dropped map = %v, want no entry for an untouched catalog question", dropped)
 	}
@@ -155,6 +167,7 @@ func TestWriteHoldsEveryField(t *testing.T) {
 	out := buf.String()
 	for _, want := range []string{
 		"catalog_enough", "invented_better", "right_slot", "filled_slot", "faults", "catalog_action",
+		"warranted", "inaccurate", "omits information", "n/a",
 		"Any color preference?", "Which colors?", "| filled_slot | the run | yes |",
 		"| catalog_enough | the catalog question | |",
 		"| right_slot | the replacement | |",
@@ -164,6 +177,71 @@ func TestWriteHoldsEveryField(t *testing.T) {
 	} {
 		if !strings.Contains(out, want) {
 			t.Errorf("the sheet does not hold %q", want)
+		}
+	}
+}
+
+// TestPlainItemAsksWhetherItWasWarranted covers the item kind D-104 adds.
+// Version 1 could hold only a question the model offered to replace, and
+// that is where most defects hid.
+func TestPlainItemAsksWhetherItWasWarranted(t *testing.T) {
+	var buf bytes.Buffer
+	write(&buf, []item{{
+		Run: "runX", Conv: "23. land destruction", Turn: 1, Row: "format", Slot: "format",
+		Fit: 0.9, Filled: true,
+		Asked:   "What format would you like: Commander, Standard, Modern, Pioneer, or Pauper?",
+		Catalog: "What format would you like: Commander, Standard, Modern, Pioneer, or Pauper?",
+	}}, 1, nil)
+	out := buf.String()
+	for _, want := range []string{
+		"**The question that went out:**",
+		"The model offered no replacement here.",
+		"| warranted | the question | |",
+		"| filled_slot | the run | yes |",
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("the sheet does not hold %q", want)
+		}
+	}
+	// A plain item must not carry the fields that compare two questions.
+	if strings.Contains(out, "| catalog_enough | the catalog question | |") {
+		t.Error("a plain item carries catalog_enough, which reads a question that does not exist")
+	}
+}
+
+// TestPickKeepsEveryReplacementAndReachesEveryRow is the sampling rule of
+// D-104. A replacement decides the D-27 threshold, so none may be lost. A
+// rare row must still reach the sheet.
+func TestPickKeepsEveryReplacementAndReachesEveryRow(t *testing.T) {
+	var items []item
+	for i := 0; i < 3; i++ {
+		items = append(items, item{Row: "colors", Slot: "colors", Asked: "q", Catalog: "c", Invented: "r"})
+	}
+	// One noisy row, and two rows with a single question each.
+	for i := 0; i < 200; i++ {
+		items = append(items, item{Row: "format", Slot: "format", Asked: "q", Catalog: "q"})
+	}
+	items = append(items,
+		item{Row: "locked", Slot: "locked", Asked: "q", Catalog: "q"},
+		item{Row: "meta", Slot: "meta", Asked: "q", Catalog: "q"})
+
+	got := pick(items, 20)
+	if len(got) != 20 {
+		t.Fatalf("picked %d items, want 20", len(got))
+	}
+	reps, rows := 0, map[string]bool{}
+	for _, it := range got {
+		rows[it.Row] = true
+		if it.replacement() {
+			reps++
+		}
+	}
+	if reps < 3 {
+		t.Errorf("%d replacements reached the sheet, want all 3", reps)
+	}
+	for _, row := range []string{"colors", "format", "locked", "meta"} {
+		if !rows[row] {
+			t.Errorf("row %q never reached the sheet", row)
 		}
 	}
 }

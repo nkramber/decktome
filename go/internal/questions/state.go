@@ -11,8 +11,8 @@ import (
 // closed, which rows were asked, and the facts the rows trigger on.
 //
 // slot_states carries both proto slot names and the advisory keys of the
-// refinement rows (jank, table_tolerance, budget_scope,
-// house_format_limits, named_card_role). The map is free-form by design.
+// refinement rows (jank, budget_scope, house_format_limits,
+// named_card_role, power_confirm). The map is free-form by design.
 type State struct {
 	Slots *mtgv1.Slots
 	Ctx   Context
@@ -30,6 +30,17 @@ type State struct {
 	// OfferedCommanders are the names the agent has retired. A retired
 	// name never comes back (D-73).
 	OfferedCommanders []string
+	// UnsupportedFormatName is the format the user asked for that this app
+	// does not build, such as "Brawl". NearestFormat is the format the app
+	// builds that is closest to it (D-112).
+	UnsupportedFormatName string
+	NearestFormat         string
+	// PreconName is the precon the user wants to upgrade, named by its
+	// commander (D-113).
+	PreconName string
+	// IllegalCommander is a card the user named as the commander that can
+	// not lead a deck (D-129).
+	IllegalCommander string
 	// CurrentOffer are the names on the table now. The pick row repeats
 	// with these same names until the user asks for others. The gate run
 	// of 2026-08-25 named three others every turn, which read as if the
@@ -75,10 +86,10 @@ func (s *State) SetCommander(name string) {
 	if name == "" {
 		return
 	}
-	if !hasName(s.CommanderNames, name) {
-		s.CommanderNames = append(s.CommanderNames, name)
-	}
+	s.CommanderNames = mergeName(s.CommanderNames, name)
 	s.Ctx.CommanderSet = true
+	// A legal commander settles the question the illegal one raised.
+	s.Ctx.CommanderIllegal, s.IllegalCommander = false, ""
 	for _, key := range commanderKeys {
 		s.Close(key)
 	}
@@ -90,13 +101,49 @@ func (s *State) SetCommander(name string) {
 	s.Refresh()
 }
 
-// AddLocked records a card the user wants in the deck.
+// Reopen undoes a closed key, so its row may ask again. The slot state
+// goes back to unspecified, which is what the planner reads.
+func (s *State) Reopen(key string) {
+	delete(s.Ctx.Filled, key)
+	delete(s.Ctx.Outstanding, key)
+	delete(s.Slots.SlotStates, key)
+}
+
+// ClearCommander drops the commander the user chose and reopens every
+// commander row. The user asked for another one, and a closed key would
+// otherwise leave the agent with nothing to ask (D-130).
+//
+// The color slot stays closed. The user gave the colors, or the old
+// commander did, and a new commander comes from inside them.
+func (s *State) ClearCommander() {
+	s.CommanderNames = nil
+	s.Ctx.CommanderSet = false
+	s.Slots.CommanderOracleIds = nil
+	// The role row stays closed. The user has just said that this card
+	// does not lead the deck, and reopening the row would ask about the
+	// card they replaced.
+	for _, key := range []string{"commander", "commander_pick"} {
+		s.Reopen(key)
+	}
+	s.RetireOffer()
+	s.Ctx.Suggested = true
+	s.Refresh()
+}
+
+// AddLocked records a card the user wants in the deck, and not as the
+// commander. The role of that card is then settled, so the role question
+// closes with it.
+//
+// Gate runs 10 to 13 of 2026-08-25 asked conversation 27 "Do you want
+// Grist, the Hunger Tide as your commander, or as one card in the 99?"
+// The first message of that conversation reads "but not as my commander".
+// The row fired in all four runs (D-70).
 func (s *State) AddLocked(name string) {
-	name = strings.TrimSpace(name)
-	if name == "" || hasName(s.LockedNames, name) {
+	if name = strings.TrimSpace(name); name == "" {
 		return
 	}
-	s.LockedNames = append(s.LockedNames, name)
+	s.LockedNames = mergeName(s.LockedNames, name)
+	s.Close("named_card_role")
 	s.Refresh()
 }
 
@@ -119,15 +166,92 @@ func (s *State) Refresh() {
 	s.Ctx.LockedCard = len(s.LockedCards()) > 0
 }
 
-// hasName reports whether list holds name, ignoring case and space.
+// hasName reports whether list holds the same card as name.
 func hasName(list []string, name string) bool {
-	name = strings.ToLower(strings.TrimSpace(name))
 	for _, n := range list {
-		if strings.ToLower(strings.TrimSpace(n)) == name {
+		if sameCard(n, name) {
 			return true
 		}
 	}
 	return false
+}
+
+// normName reads a card name for comparison, without case or edge space.
+func normName(s string) string { return strings.ToLower(strings.TrimSpace(s)) }
+
+// baseName is the part of a card name before the first comma. For
+// "Grist, the Hunger Tide" it is "grist".
+func baseName(s string) string {
+	if i := strings.Index(s, ","); i >= 0 {
+		return strings.TrimSpace(s[:i])
+	}
+	return s
+}
+
+// sameCard reports whether two strings name one card. A user writes the
+// full name once and the short name afterwards, and the classifier
+// reports both.
+//
+// Only a bare first name merges with a full name. Two names that both
+// hold a comma stay apart, because "Toph, Hardheaded Teacher" and "Toph,
+// the Blind Bandit" are two different cards.
+//
+// Gate runs 10 to 12 of 2026-08-25 asked "Must the deck keep Grist, the
+// Hunger Tide and Grist ...", because the two forms both reached the
+// locked list.
+func sameCard(a, b string) bool {
+	x, y := normName(a), normName(b)
+	switch {
+	case x == "" || y == "":
+		return false
+	case x == y:
+		return true
+	case !strings.Contains(x, ",") && baseName(y) == x:
+		return true
+	case !strings.Contains(y, ",") && baseName(x) == y:
+		return true
+	}
+	return false
+}
+
+// mergeName adds a card name to a list. It keeps the longer form when the
+// list already holds the same card, because the full name is the one the
+// user can act on.
+func mergeName(list []string, name string) []string {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return list
+	}
+	for i, n := range list {
+		if sameCard(n, name) {
+			if len(name) > len(n) {
+				list[i] = name
+			}
+			return list
+		}
+	}
+	return append(list, name)
+}
+
+// mergeFront adds a card name to a newest-first list. The {card}
+// placeholder reads the first entry, so a repeated name moves to the
+// front instead of growing the list.
+func mergeFront(list []string, name string) []string {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return list
+	}
+	var out []string
+	for _, n := range list {
+		if sameCard(n, name) {
+			if len(n) > len(name) {
+				name = n
+			}
+			continue
+		}
+		out = append(out, n)
+	}
+	return append([]string{name}, out...)
 }
 
 // NewState makes an empty state for a new session.
@@ -135,8 +259,9 @@ func NewState(hasCollection bool) *State {
 	return &State{
 		Slots: &mtgv1.Slots{SlotStates: map[string]mtgv1.SlotState{}},
 		Ctx: Context{
-			Filled: map[string]bool{},
-			Asked:  map[string]bool{},
+			Filled:      map[string]bool{},
+			Asked:       map[string]bool{},
+			Outstanding: map[string]string{},
 			// A user with no collection never gets the pool question. The
 			// default is any-card (D-37).
 			HasCollection: hasCollection,
@@ -149,6 +274,7 @@ func NewState(hasCollection bool) *State {
 // whether an invented question filled its slot.
 func (s *State) Close(key string) {
 	s.Ctx.Filled[key] = true
+	delete(s.Ctx.Outstanding, key)
 	s.Slots.SlotStates[key] = mtgv1.SlotState_SLOT_STATE_FILLED
 	s.fillAsk(key)
 }
@@ -158,6 +284,7 @@ func (s *State) Close(key string) {
 // question did its work, and the slot is closed.
 func (s *State) Skip(key string) {
 	s.Ctx.Filled[key] = true
+	delete(s.Ctx.Outstanding, key)
 	s.Slots.SlotStates[key] = mtgv1.SlotState_SLOT_STATE_SKIPPED
 	s.fillAsk(key)
 }
@@ -173,11 +300,25 @@ func (s *State) fillAsk(key string) {
 }
 
 // MarkAsked records a question the agent sent. The gate forbids a repeat.
-func (s *State) MarkAsked(rowID, key string) {
+func (s *State) MarkAsked(rowID, key, slot string) {
 	s.Ctx.Asked[rowID] = true
 	if s.Slots.SlotStates[key] == mtgv1.SlotState_SLOT_STATE_UNSPECIFIED {
 		s.Slots.SlotStates[key] = mtgv1.SlotState_SLOT_STATE_ASKED
 	}
+	if !s.Ctx.Filled[key] {
+		if s.Ctx.Outstanding == nil {
+			s.Ctx.Outstanding = map[string]string{}
+		}
+		s.Ctx.Outstanding[key] = slot
+	}
+}
+
+// RetireOutstanding drops every key whose question is out with no
+// answer. A changed format makes those questions meaningless, and the
+// one-row-per-key rule must not block the questions that replace them
+// (D-125, D-126).
+func (s *State) RetireOutstanding() {
+	s.Ctx.Outstanding = map[string]string{}
 }
 
 // Freeze stops every question. A build run has started, so the slot set is

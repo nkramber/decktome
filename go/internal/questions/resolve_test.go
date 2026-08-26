@@ -58,12 +58,40 @@ func TestNoPlaceholderReachesTheModel(t *testing.T) {
 	}
 }
 
-func TestResolveUsesHints(t *testing.T) {
+// colorsStubRow is the row the catalog held before D-108. No catalog row
+// names {colors} now, and the placeholder path still runs for PR-8.
+func colorsStubRow() Row {
+	return Row{ID: "colors_stub", Slot: "colors",
+		Text:     "Any color preference? A {theme} deck is strongest in {colors}.",
+		Fallback: "Any color preference?"}
+}
+
+// TestColorsRowStatesNoFact is D-108. The row asserted which colors a
+// theme is strongest in. Gate run 13 of 2026-08-25 read "Extra-turns
+// decks are strongest in blue and green", and "Black Lotus decks are
+// strongest in black". Black Lotus is a colorless card.
+func TestColorsRowStatesNoFact(t *testing.T) {
 	c := load(t)
 	row, ok := c.Row("colors")
 	if !ok {
 		t.Fatal("no colors row")
 	}
+	if placeholder.MatchString(row.Text) {
+		t.Errorf("the colors row holds a placeholder again: %q", row.Text)
+	}
+	for _, word := range []string{"strongest", "best in", "strong in"} {
+		if strings.Contains(strings.ToLower(row.Text), word) {
+			t.Errorf("the colors row states a fact again: %q", row.Text)
+		}
+	}
+	got, _, _ := resolve(row, themedState("lifegain"), stubHints{colors: "white and black"})
+	if got != "Any color preference?" {
+		t.Errorf("resolve = %q, want the question alone", got)
+	}
+}
+
+func TestResolveUsesHints(t *testing.T) {
+	row := colorsStubRow()
 	got, _, _ := resolve(row, themedState("lifegain"), stubHints{colors: "white and black"})
 	want := "Any color preference? A lifegain deck is strongest in white and black."
 	if got != want {
@@ -76,8 +104,7 @@ func TestResolveUsesHints(t *testing.T) {
 // value, and it reads as nonsense inside a statement about colors. The
 // model replaced three color questions for that reason.
 func TestVagueThemeDropsTheColorClause(t *testing.T) {
-	c := load(t)
-	row, _ := c.Row("colors")
+	row := colorsStubRow()
 	for _, theme := range []string{"the best deck under budget", "the strongest Modern deck", "a named tier-one deck"} {
 		got, _, _ := resolve(row, themedState(theme), stubHints{colors: "white and black"})
 		if got != "Any color preference?" {
@@ -94,8 +121,7 @@ func TestVagueThemeDropsTheColorClause(t *testing.T) {
 // TestTooManyColorsDropsTheClause keeps a useless statement out. Four
 // colors name no preference at all.
 func TestTooManyColorsDropsTheClause(t *testing.T) {
-	c := load(t)
-	row, _ := c.Row("colors")
+	row := colorsStubRow()
 	got, _, _ := resolve(row, themedState("lifegain"), stubHints{colors: "white, blue, black, and green"})
 	if got != "Any color preference?" {
 		t.Errorf("four colors gave %q, want the short question", got)
@@ -104,8 +130,7 @@ func TestTooManyColorsDropsTheClause(t *testing.T) {
 
 // TestResolveDropsTheClauseWithNoValue keeps the short, correct question.
 func TestResolveDropsTheClauseWithNoValue(t *testing.T) {
-	c := load(t)
-	row, _ := c.Row("colors")
+	row := colorsStubRow()
 	got, _, _ := resolve(row, themedState("lifegain"), nil)
 	if got != "Any color preference?" {
 		t.Errorf("resolve = %q, want the first sentence alone", got)

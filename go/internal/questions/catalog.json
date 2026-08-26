@@ -1,11 +1,12 @@
 {
-  "verified_at": "2026-08-24",
-  "note": "The question catalog of the mtg-corpus skill, section 11, as data. `slot` is the proto slot the answer informs. `key` is the question's own state key, and it defaults to the slot. A refinement question (jank, table tolerance, budget scope, house format limits, named card role) carries its own key, so a filled proto slot does not cancel it. Keep the rows in step with the skill file. TestCatalogMatchesCorpus checks it.",
+  "verified_at": "2026-08-25",
+  "note": "The question catalog of the mtg-corpus skill, section 11, as data. `slot` is the proto slot the answer informs. `key` is the question's own state key, and it defaults to the slot. A refinement question (jank, budget scope, house format limits, named card role, power confirm) carries its own key, so a filled proto slot does not cancel it. Keep the rows in step with the skill file. TestCatalogMatchesCorpus checks it.",
   "rows": [
     {
       "id": "out_of_scope",
       "slot": "scope",
       "order": 1,
+      "fixed": true,
       "text": "I build Magic: The Gathering decks only. Would you like one instead?",
       "options": [
         "Yes, a Magic deck",
@@ -14,6 +15,31 @@
       "when": {
         "out_of_scope": true
       }
+    },
+    {
+      "id": "one_deck",
+      "slot": "deck_count",
+      "order": 2,
+      "fixed": true,
+      "text": "I build one deck at a time. Which deck do you want first?",
+      "when": {
+        "two_decks": true
+      }
+    },
+    {
+      "id": "format_unsupported",
+      "slot": "format",
+      "order": 8,
+      "fixed": true,
+      "text": "I do not build {bad_format}. The nearest format I build is {near_format}. Shall I use that?",
+      "options": [
+        "Yes, use the nearest format",
+        "No, I will name another format"
+      ],
+      "when": {
+        "unsupported_format": true
+      },
+      "fallback": "I do not build that format. Would you like the nearest format I do build?"
     },
     {
       "id": "format_store",
@@ -83,7 +109,7 @@
       "id": "house_rules",
       "slot": "house_rules",
       "order": 25,
-      "text": "What does anything-goes mean at your table: any card with no ban list, or Vintage rules?",
+      "text": "When you say anything goes, do you mean any card with no ban list, or Vintage rules?",
       "options": [
         "Any card, no ban list",
         "Vintage rules"
@@ -92,10 +118,7 @@
         "words": [
           "anything goes",
           "kitchen table",
-          "proxy",
-          "proxies",
-          "no ban list",
-          "whatever"
+          "no ban list"
         ]
       }
     },
@@ -115,6 +138,23 @@
         ]
       },
       "key": "house_format_limits"
+    },
+    {
+      "id": "commander_illegal",
+      "slot": "commander",
+      "order": 27,
+      "fixed": true,
+      "text": "{bad_commander} can not lead a deck. Shall I suggest a commander instead?",
+      "options": [
+        "Yes, suggest one",
+        "No, I will name another"
+      ],
+      "when": {
+        "format": "commander",
+        "commander_illegal": true
+      },
+      "key": "commander_illegal",
+      "fallback": "That card can not lead a deck. Shall I suggest a commander instead?"
     },
     {
       "id": "commander_not_owned",
@@ -173,13 +213,18 @@
         "format": "commander",
         "requires": [
           "theme"
-        ]
+        ],
+        "not_outstanding": [
+          "named_card_role"
+        ],
+        "suggested": false
       }
     },
     {
       "id": "commander_pick",
       "slot": "commander",
       "order": 32,
+      "fixed": true,
       "text": "Which one do you want: {a}, {b}, or {c}? Say \"none\" and I name three more.",
       "when": {
         "format": "commander",
@@ -190,10 +235,26 @@
       "fallback": "Which commander do you want, or should I suggest three more?"
     },
     {
+      "id": "power_sixty_confirm",
+      "slot": "power",
+      "order": 39,
+      "text": "You asked for a competitive deck, so I will build to tournament level. Is that right?",
+      "options": [
+        "Yes, tournament level",
+        "No, FNM level",
+        "No, casual"
+      ],
+      "when": {
+        "format": "sixty",
+        "power_competitive": true
+      },
+      "key": "power_confirm"
+    },
+    {
       "id": "power_commander",
       "slot": "power",
       "order": 40,
-      "text": "Which bracket does your table play? 2 is precon level, 3 is upgraded, 4 is high power.",
+      "text": "Which power bracket should the deck target? 2 is precon level, 3 is upgraded, 4 is high power.",
       "options": [
         "1 exhibition",
         "2 core",
@@ -216,7 +277,8 @@
         "Tournament-meta"
       ],
       "when": {
-        "format": "sixty"
+        "format": "sixty",
+        "power_competitive": false
       }
     },
     {
@@ -242,30 +304,34 @@
       "key": "jank"
     },
     {
-      "id": "table_tolerance",
-      "slot": "power",
-      "order": 43,
-      "text": "Does your table accept mill, land destruction, extra turns, or stax?",
-      "options": [
-        "Yes",
-        "No",
-        "Mill only"
-      ],
-      "when": {
-        "salty_theme": true,
-        "format": "commander"
-      },
-      "key": "table_tolerance"
-    },
-    {
       "id": "colors",
       "slot": "colors",
       "order": 50,
-      "text": "Any color preference? A {theme} deck is strongest in {colors}.",
+      "text": "Any color preference?",
       "when": {
         "commander_set": false
+      }
+    },
+    {
+      "id": "pool_precon",
+      "slot": "pool_rule",
+      "order": 59,
+      "text": "Should I build from your {precon} precon first, use only cards from it, or ignore it for a fully optimized deck?",
+      "options": [
+        "The precon first",
+        "Only the precon",
+        "Ignore the precon"
+      ],
+      "when": {
+        "has_collection": true,
+        "precon": true,
+        "requires": [
+          "format",
+          "colors",
+          "theme"
+        ]
       },
-      "fallback": "Any color preference?"
+      "fallback": "Should I build from your precon first, use only cards from it, or ignore it for a fully optimized deck?"
     },
     {
       "id": "pool",
@@ -335,7 +401,7 @@
       "id": "meta",
       "slot": "meta",
       "order": 90,
-      "text": "What do people play at your event? I tune the 15 sideboard cards to it.",
+      "text": "What decks do you expect to play against? I tune the 15 sideboard cards to that.",
       "when": {
         "power_competitive": true,
         "format": "sixty"

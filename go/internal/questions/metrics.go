@@ -35,6 +35,12 @@ type Ask struct {
 	// it to judge whether the refusal was right, which is what decides
 	// the reword threshold.
 	RefusedText string `json:"refused_text,omitempty"`
+	// ResolvedText is the catalog row after the placeholders are filled,
+	// and before the ask role phrases it. The reword guard compares a
+	// replacement against this text, and never against the phrasing that
+	// went out. The M-5 sheet showed only the phrasing, so an owner could
+	// not tell an exact copy of the row from a new question (D-116).
+	ResolvedText string `json:"resolved_text,omitempty"`
 	// Turn is the turn number, counted from 1.
 	Turn int `json:"turn"`
 }

@@ -22,6 +22,16 @@ type Context struct {
 	// Asked marks a row id the agent already used. The gate forbids a
 	// repeat.
 	Asked map[string]bool `json:"asked"`
+	// Outstanding maps a state key whose question is out with no answer
+	// onto the slot that key informs.
+	// No other row may ask that key while it is out. Probe 33 asked the
+	// theme through the competitive row, got no answer, and asked it
+	// again through the general row one turn later. To the user that
+	// reads as the same question in other words (D-126).
+	//
+	// The commander rows are unaffected. Each one carries its own key, so
+	// the pick row still follows the base row (D-71).
+	Outstanding map[string]string `json:"outstanding"`
 	// Words is every word the user has written so far, lowercased. The
 	// word-routing rules read it.
 	Words string `json:"words"`
@@ -49,13 +59,20 @@ type Context struct {
 	HouseFormat       bool `json:"house_format"`
 	TwoPlans          bool `json:"two_plans"`
 	AfterBuild        bool `json:"after_build"`
-	// Theme is the theme slot in the user's words. The salt list reads it.
+	// TwoDecks marks a request for more than one deck. The app builds one
+	// at a time, and it says so before it asks anything else (D-112).
+	TwoDecks bool `json:"two_decks"`
+	// UnsupportedFormat marks a format this app does not build, such as
+	// Brawl. State holds the name and the nearest format (D-112).
+	UnsupportedFormat bool `json:"unsupported_format"`
+	// Precon marks a request to upgrade a preconstructed deck (D-113).
+	Precon bool `json:"precon"`
+	// CommanderIllegal marks a named commander that can not lead a deck,
+	// such as Lightning Bolt (D-129).
+	CommanderIllegal bool `json:"commander_illegal"`
+	// Theme is the theme slot in the user's words.
 	Theme string `json:"theme"`
 }
-
-// saltyThemes are the archetypes the corpus marks as salt (section 7).
-// A Commander table may refuse them, so the agent asks first.
-var saltyThemes = []string{"mill", "land destruction", "stax", "extra turn", "prison"}
 
 // Plan returns the questions to ask this turn, in ask order, at most
 // MaxPerTurn. It never returns two rows that inform one proto slot, and
@@ -74,6 +91,15 @@ func (c *Catalog) Plan(ctx Context) []Row {
 			return []Row{row}
 		}
 	}
+	// A two-deck request also gets one question and no others. Every other
+	// row belongs to one deck, so the agent settles which deck first.
+	// Probe 50 of gate runs 11 to 13 chose a deck silently, and it never
+	// said that the app builds one at a time (D-112).
+	if ctx.TwoDecks && !ctx.Filled["deck_count"] && !ctx.Asked["one_deck"] {
+		if row, ok := c.Row("one_deck"); ok {
+			return []Row{row}
+		}
+	}
 	for _, r := range c.Rows {
 		if len(out) >= MaxPerTurn {
 			break
@@ -82,6 +108,10 @@ func (c *Catalog) Plan(ctx Context) []Row {
 		// One question per proto slot per turn. Two rows that inform one
 		// slot read as a contradiction in the same message.
 		if ctx.Filled[key] || (ctx.Asked[r.ID] && !r.Repeat) || usedKey[key] || usedSlot[r.Slot] {
+			continue
+		}
+		// Another row already asked this key, and no answer came back.
+		if _, out := ctx.Outstanding[key]; out && !ctx.Asked[r.ID] {
 			continue
 		}
 		if !r.When.matches(ctx) {
@@ -113,11 +143,20 @@ func (w When) matches(ctx Context) bool {
 	default:
 		return false
 	}
-	if len(w.Words) > 0 && !anyWord(ctx.Words, w.Words) {
+	// A trigger word reads through anyPhrase, which refuses a negated
+	// match. Probe 38 of gate run 11 wrote "no proxies", and the plain
+	// substring test fired the house-rules row on it (D-111).
+	if len(w.Words) > 0 && !anyPhrase(ctx.Words, w.Words) {
 		return false
 	}
-	if w.SaltyTheme != nil && *w.SaltyTheme != anyWord(strings.ToLower(ctx.Theme), saltyThemes) {
-		return false
+	// A row may wait for the answer to another row. The commander row
+	// waits for the role question: whether the named card leads the deck
+	// decides whether a commander question is needed at all. Probe 39
+	// asked both, one turn apart (D-128).
+	for _, k := range w.NotOutstanding {
+		if _, out := ctx.Outstanding[k]; out {
+			return false
+		}
 	}
 	facts := []struct {
 		want *bool
@@ -139,6 +178,10 @@ func (w When) matches(ctx Context) bool {
 		{w.HouseFormat, ctx.HouseFormat},
 		{w.TwoPlans, ctx.TwoPlans},
 		{w.AfterBuild, ctx.AfterBuild},
+		{w.TwoDecks, ctx.TwoDecks},
+		{w.UnsupportedFormat, ctx.UnsupportedFormat},
+		{w.Precon, ctx.Precon},
+		{w.CommanderIllegal, ctx.CommanderIllegal},
 	}
 	for _, f := range facts {
 		if f.want != nil && *f.want != f.have {
@@ -176,11 +219,15 @@ func anyWord(text string, words []string) bool {
 func Route(text string) string {
 	t := strings.ToLower(text)
 	switch {
-	case anyWord(t, []string{"anything goes", "kitchen table", "proxy", "proxies", "no ban list", "whatever"}):
+	// "Proxy" left this list. A user who proxies has no budget, and the
+	// word says nothing about which cards are legal (D-111). "Whatever"
+	// left it too. "Whatever is winning" and "whatever you think is best"
+	// are not house rules, and they fired the row in three runs.
+	case anyPhrase(t, []string{"anything goes", "kitchen table", "no ban list"}):
 		return "house_rules"
-	case anyWord(t, []string{"janky", "jank", "silly", "meme", "for laughs"}):
+	case anyPhrase(t, []string{"janky", "jank", "silly", "meme", "for laughs"}):
 		return "power"
-	case anyWord(t, []string{"strongest", "competitive", "serious", "best deck", "win the event"}):
+	case anyPhrase(t, competitiveSigns):
 		return "power"
 	}
 	return ""

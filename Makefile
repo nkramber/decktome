@@ -6,7 +6,7 @@ GO := go -C go
 BUF := .bin/buf
 PNPM := pnpm --dir web
 
-.PHONY: candidates-review questions-gate m5-sheet m5-report store-check themes-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
+.PHONY: candidates-review questions-gate questions-eval eval-calibrate autotune m5-sheet m5-report store-check themes-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-14s %s\n", $$1, $$2}'
@@ -92,14 +92,22 @@ questions-gate: ## Write the PR-7 gate document. CAUTION: this calls the real pr
 
 # M5_OUT names the scoring sheet. A rerun must never overwrite a sheet
 # the owner has scored.
+# M5_OUT stays the version-1 sheet, because `make m5-report` reads it and
+# the owner is still scoring it. The scored-sheet guard below refuses to
+# write over it, so building the version-2 sheet needs a new name:
+#
+#   M5_OUT=docs/reference/pr7-m5-scoring-run14.md make m5-sheet
 M5_OUT ?= docs/reference/pr7-m5-scoring.md
 
 # M5_RUNS names the gate documents the sheet may read. Only a run whose
 # engine matches the current code belongs here (D-96). A run made before
-# a defect was fixed measures the defect, not the catalog. Runs 1 to 9
-# are held back: see the table in docs/SESSION-HANDOFF.md.
-M5_RUNS ?= ../docs/reference/pr7-question-gate-run10.md ../docs/reference/pr7-question-gate-run11.md \
-           ../docs/reference/pr7-question-gate-run12.md ../docs/reference/pr7-question-gate-run13.md
+# a defect was fixed measures the defect, not the catalog.
+#
+# Runs 1 to 13 are all held back now. The fixes of 2026-08-25 changed the
+# catalog rows, the classify and ask prompts, and the conversation set
+# (D-104 to D-116). A sheet built from them would measure the old engine.
+# The next sheet reads run 14 alone.
+M5_RUNS ?= ../docs/reference/pr7-question-gate-run14.md
 
 # The guard reads every field the owner fills, in any case, and free text
 # counts. filled_slot is left out because the generator pre-fills it.
@@ -113,6 +121,48 @@ m5-sheet: ## Build the M-5 scoring sheet from the gate documents (no model calls
 
 m5-report: ## Read the scored M-5 sheet and compute the thresholds (no model calls, no cost)
 	@$(GO) run ./cmd/m5-report ../$(M5_OUT)
+
+# EVAL_RUN names the gate document the eval scores, and EVAL_OUT the
+# document it writes. The eval calls a real provider, so it costs money.
+# A 66-conversation run on the cost tier is about eleven cents (D-133).
+EVAL_RUN ?= docs/reference/pr7-question-gate-run14.md
+EVAL_OUT ?= docs/reference/pr7-question-eval-run14.md
+EVAL_JSON ?= .local/tune/run14.json
+EVAL_BUDGET ?= 0.50
+
+questions-eval: ## Score every question of a gate run. CAUTION: calls a real provider and costs money
+	@test -f $(EVAL_RUN) || { echo "no gate document at $(EVAL_RUN). Set EVAL_RUN."; exit 1; }
+	@test ! -f $(EVAL_OUT) || { echo "$(EVAL_OUT) exists. Set EVAL_OUT to a new file."; exit 1; }
+	@set -a && . ./.env && set +a && QUESTIONS_EVAL=1 \
+		$(GO) run ./cmd/questions-eval -in ../$(EVAL_RUN) -out ../$(EVAL_OUT) \
+		-json ../$(EVAL_JSON) -budget $(EVAL_BUDGET)
+	@echo "wrote $(EVAL_OUT)"
+
+# The eval role runs on the model that also writes the questions, which
+# the owner chose for cost (D-133). This target measures what that costs
+# in judgment: it scores a sample twice and compares the two verdicts.
+CALIBRATE_N ?= 12
+CALIBRATE_MODEL ?= claude-sonnet-5
+CALIBRATE_PROVIDER ?= anthropic
+
+eval-calibrate: ## Measure the eval model against a stronger one on a sample. CAUTION: costs money
+	@test -f $(EVAL_RUN) || { echo "no gate document at $(EVAL_RUN). Set EVAL_RUN."; exit 1; }
+	@mkdir -p .local/tune
+	@set -a && . ./.env && set +a && QUESTIONS_EVAL=1 \
+		$(GO) run ./cmd/questions-eval -in ../$(EVAL_RUN) -n $(CALIBRATE_N) -holdout 0 \
+		-json ../.local/tune/calibrate-base.json -out /dev/null -budget $(EVAL_BUDGET)
+	@set -a && . ./.env && set +a && QUESTIONS_EVAL=1 \
+		LLM_EVAL_PROVIDER=$(CALIBRATE_PROVIDER) LLM_EVAL_MODEL=$(CALIBRATE_MODEL) \
+		$(GO) run ./cmd/questions-eval -in ../$(EVAL_RUN) -n $(CALIBRATE_N) -holdout 0 \
+		-json ../.local/tune/calibrate-strong.json -out /dev/null -budget $(EVAL_BUDGET)
+	@$(GO) run ./cmd/tune-check -agree \
+		-next ../.local/tune/calibrate-base.json -prev ../.local/tune/calibrate-strong.json
+
+autotune: ## Print how to start the overnight tuning loop. It never starts one
+	@echo "The loop edits code and pushes with nobody watching."
+	@echo "Read docs/reference/autotune-design.md, then answer OQ-24 to OQ-27."
+	@echo
+	@echo "  AUTOTUNE_ALLOW_UNATTENDED=1 AUTOTUNE_FIXER_CMD=... scripts/autotune.sh --budget 3.00"
 
 store-check: ## Run the session store against the local Firestore emulator (needs `firebase emulators:start --only firestore`)
 	@nc -z 127.0.0.1 8281 2>/dev/null || \

@@ -55,7 +55,7 @@ func TestConversationsFile(t *testing.T) {
 // TestRunNeedsApproval keeps the command from spending money by accident.
 func TestRunNeedsApproval(t *testing.T) {
 	t.Setenv("QUESTIONS_GATE", "")
-	err := run("", 0, io.Discard)
+	err := run("", 0, "", io.Discard)
 	if err == nil || !strings.Contains(err.Error(), "QUESTIONS_GATE=1") {
 		t.Errorf("err = %v, want a refusal without QUESTIONS_GATE=1", err)
 	}

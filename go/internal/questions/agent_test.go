@@ -59,6 +59,9 @@ func classifyStep(t *testing.T, out classifyOut) llm.Step {
 	if out.LockedNames == nil {
 		out.LockedNames = []string{}
 	}
+	if out.NamedCards == nil {
+		out.NamedCards = []string{}
+	}
 	if out.ClosedKeys == nil {
 		out.ClosedKeys = []string{}
 	}

@@ -37,6 +37,7 @@ import (
 	"log/slog"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -94,6 +95,9 @@ type asked struct {
 	NearCopy bool
 	// Refused is the text of that replacement, for the owner to judge.
 	Refused string
+	// Resolved is the catalog row before the ask role phrased it. The
+	// reword guard compared the replacement against this text (D-116).
+	Resolved string
 }
 
 type result struct {
@@ -115,20 +119,26 @@ type result struct {
 	// still unanswered. That is a gate failure: the deck would carry a
 	// value nobody chose.
 	Premature bool
-	Err       error
+	// Findings are the deterministic defects the linter found in the
+	// questions this conversation sent (D-115).
+	Findings []questions.Finding
+	Err      error
 }
 
 func main() {
 	collectionPath := flag.String("collection", "", "ManaBox CSV for the owned-mode conversations")
 	limit := flag.Int("n", 0, "run only the first n conversations (0 runs all)")
+	// only names the conversation ids to run, for a cheap check of one
+	// row. A full run costs money, and a wasted one costs it twice.
+	only := flag.String("only", "", "run only these conversation ids, comma separated")
 	flag.Parse()
-	if err := run(*collectionPath, *limit, os.Stdout); err != nil {
+	if err := run(*collectionPath, *limit, *only, os.Stdout); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
 
-func run(collectionPath string, limit int, w io.Writer) error {
+func run(collectionPath string, limit int, only string, w io.Writer) error {
 	if os.Getenv("QUESTIONS_GATE") != "1" {
 		return fmt.Errorf("this run calls the real providers and costs money: set QUESTIONS_GATE=1 to allow it")
 	}
@@ -174,6 +184,26 @@ func run(collectionPath string, limit int, w io.Writer) error {
 	}
 
 	list := file.Conversations
+	if only != "" {
+		want := map[int]bool{}
+		for _, s := range strings.Split(only, ",") {
+			id, err := strconv.Atoi(strings.TrimSpace(s))
+			if err != nil {
+				return fmt.Errorf("-only takes conversation ids: %w", err)
+			}
+			want[id] = true
+		}
+		var kept []conversation
+		for _, c := range list {
+			if want[c.ID] {
+				kept = append(kept, c)
+			}
+		}
+		if len(kept) == 0 {
+			return fmt.Errorf("-only %q matches no conversation", only)
+		}
+		list = kept
+	}
 	if limit > 0 && limit < len(list) {
 		list = list[:limit]
 	}
@@ -255,8 +285,16 @@ func runOne(cat *questions.Catalog, client *llm.Client, idx *cards.Index, builde
 			res.Questions[i].Catalog = rec.CatalogText
 			res.Questions[i].NearCopy = rec.NearCopy
 			res.Questions[i].Refused = rec.RefusedText
+			res.Questions[i].Resolved = rec.ResolvedText
 		}
 	}
+	// The linter reads the questions that went out against the messages
+	// that came before them. It costs no model call (D-115).
+	lint := make([]questions.LintQuestion, 0, len(res.Questions))
+	for _, q := range res.Questions {
+		lint = append(lint, questions.LintQuestion{Turn: q.Turn, RowID: q.Row, Slot: q.Slot, Text: q.Text})
+	}
+	res.Findings = questions.LintConversation(conv.Messages[:res.Turns], lint)
 	res.Coverage = st.Metrics()
 	res.Ready = st.Ready(cat)
 	res.Slots = map[string]string{}
@@ -363,7 +401,19 @@ func write(w io.Writer, file gateFile, results []result, total, probes questions
 			gate++
 		}
 	}
-	pass := total.CatalogOnly >= CatalogOnlyBar && gate >= questions.MinGateSize && len(premature) == 0
+	// The linter is the third bar. A question that names a format the user
+	// gave, presumes a table, or states a fact about the game fails the
+	// gate, whatever the catalog-only count says (D-115).
+	findings := 0
+	byRule := map[string]int{}
+	for _, r := range results {
+		findings += len(r.Findings)
+		for _, f := range r.Findings {
+			byRule[f.Rule]++
+		}
+	}
+	pass := total.CatalogOnly >= CatalogOnlyBar && gate >= questions.MinGateSize &&
+		len(premature) == 0 && findings == 0
 	verdict := "FAIL"
 	if pass {
 		verdict = "PASS"
@@ -387,6 +437,27 @@ func write(w io.Writer, file gateFile, results []result, total, probes questions
 			len(premature), strings.Join(premature, "; "))
 	} else {
 		_, _ = fmt.Fprintf(w, "No conversation called itself complete with a slot unanswered.\n\n")
+	}
+	if findings > 0 {
+		_, _ = fmt.Fprintf(w, "The linter found %d defective questions, which fails the gate (D-115).\n\n", findings)
+		_, _ = fmt.Fprintf(w, "| Rule | Count |\n|---|---|\n")
+		rules := make([]string, 0, len(byRule))
+		for rule := range byRule {
+			rules = append(rules, rule)
+		}
+		sort.Strings(rules)
+		for _, rule := range rules {
+			_, _ = fmt.Fprintf(w, "| `%s` | %d |\n", rule, byRule[rule])
+		}
+		_, _ = fmt.Fprintf(w, "\n")
+		for _, r := range results {
+			for _, f := range r.Findings {
+				_, _ = fmt.Fprintf(w, "- %s: %s\n", r.Name, f)
+			}
+		}
+		_, _ = fmt.Fprintf(w, "\n")
+	} else {
+		_, _ = fmt.Fprintf(w, "The linter found no defective question (D-115).\n\n")
 	}
 
 	_, _ = fmt.Fprintf(w, "## M-4 report\n\n")
@@ -481,14 +552,17 @@ func write(w io.Writer, file gateFile, results []result, total, probes questions
 				}
 				if q.NearCopy {
 					_, _ = fmt.Fprintf(w, "  - Refused as a reword (D-88): %s\n", q.Refused)
+					if q.Resolved != "" {
+						_, _ = fmt.Fprintf(w, "  - The guard compared against: %s\n", q.Resolved)
+					}
 				}
 			}
 			_, _ = fmt.Fprintln(w)
 		}
 	}
 	if !pass {
-		return fmt.Errorf("gate failed: %d of %d catalog-only (bar %d), %d premature",
-			total.CatalogOnly, len(results), CatalogOnlyBar, len(premature))
+		return fmt.Errorf("gate failed: %d of %d catalog-only (bar %d), %d premature, %d lint findings",
+			total.CatalogOnly, len(results), CatalogOnlyBar, len(premature), findings)
 	}
 	return nil
 }

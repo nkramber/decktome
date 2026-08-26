@@ -120,10 +120,8 @@ func TestSuggestionFiresThePickRow(t *testing.T) {
 		askStep(t),
 		classifyStep(t, wants),
 		fits(t, "commander_pick"),
-		askStep(t),
 		classifyStep(t, none),
 		fits(t, "commander_pick"),
-		askStep(t),
 		classifyStep(t, other),
 		fits(t, "commander_pick"),
 		askStep(t))
@@ -313,21 +311,26 @@ func TestTypedSlotNeverClosesWithoutAValue(t *testing.T) {
 	// Turn 3 gives the value.
 	byValue := classifyOut{Format: "commander", PoolRule: "unknown"}
 
+	// Turn 2 asks nothing. The format question is out with no answer, so
+	// no other row may ask the format in other words (D-126).
 	a, _ := testAgent(t,
 		classifyStep(t, first), fits(t, "format", "theme"), askStep(t),
-		classifyStep(t, byName), fits(t, "theme"), askStep(t),
-		classifyStep(t, byValue), fits(t), askStep(t))
+		classifyStep(t, byName),
+		classifyStep(t, byValue), fits(t, "power_commander"), askStep(t))
 	st := NewState(false)
+	// No message below names a format. The word rules read a format the
+	// classifier missed (D-116), and this test must isolate the classify
+	// path that D-83 is about.
 	if _, err := a.Turn(context.Background(), st, "i need a deck for fnm on friday", nil); err != nil {
 		t.Fatalf("turn 1: %v", err)
 	}
-	if _, err := a.Turn(context.Background(), st, "Commander", nil); err != nil {
+	if _, err := a.Turn(context.Background(), st, "yes, that one", nil); err != nil {
 		t.Fatalf("turn 2: %v", err)
 	}
 	if st.Ctx.Filled["format"] {
 		t.Error("the format closed on a name alone, so no value reached the deck generator")
 	}
-	if _, err := a.Turn(context.Background(), st, "Commander", nil); err != nil {
+	if _, err := a.Turn(context.Background(), st, "the first option", nil); err != nil {
 		t.Fatalf("turn 3: %v", err)
 	}
 	if !st.Ctx.Filled["format"] {
@@ -452,12 +455,12 @@ func TestRewordIsRefused(t *testing.T) {
 // TestRewordKeepsTheCatalogQuestion runs the refusal through a turn.
 func TestRewordKeepsTheCatalogQuestion(t *testing.T) {
 	out := commanderClassify()
-	catalog := "Which bracket does your table play? 2 is precon level, 3 is upgraded, 4 is high power."
+	catalog := "Which power bracket should the deck target? 2 is precon level, 3 is upgraded, 4 is high power."
 	a, _ := testAgent(t,
 		classifyStep(t, out),
 		scoreStep(t,
 			scored{RowID: "power_commander", Fit: 0.20, Reason: "test",
-				CustomText: "Which bracket does your white-black table play? 2 is precon level, 3 is upgraded, 4 is high power."},
+				CustomText: "Which power bracket should the white-black deck target? 2 is precon level, 3 is upgraded, 4 is high power."},
 			scored{RowID: "commander", Fit: 0.9, Reason: "fits"}),
 		askStep(t))
 	st := NewState(false)
@@ -708,8 +711,10 @@ func TestBackInScopeAsksNormally(t *testing.T) {
 	first := classifyOut{Format: "unknown", PoolRule: "unknown"}
 	first.Facts.OutOfScope = true
 	second := classifyOut{Format: "commander", Theme: "dragons", PoolRule: "unknown"}
+	// Turn 1 needs no ask step. The out-of-scope row states what this app
+	// builds, so it goes out as written and never reaches the ask role.
 	a, _ := testAgent(t,
-		classifyStep(t, first), fits(t, "out_of_scope"), askStep(t),
+		classifyStep(t, first), fits(t, "out_of_scope"),
 		classifyStep(t, second), fits(t, "colors", "commander", "power_commander"), askStep(t))
 	st := NewState(false)
 	if _, err := a.Turn(context.Background(), st, "build me a yu-gi-oh deck", nil); err != nil {

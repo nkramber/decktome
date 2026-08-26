@@ -178,7 +178,7 @@ func TestHintsAreAskedOnlyForWhatARowNames(t *testing.T) {
 		{"format", 0, 0},
 		{"power_commander", 0, 0},
 		{"commander", 0, 0},
-		{"colors", 0, 1},
+		{"colors", 0, 0},
 		{"commander_pick", 1, 0},
 	}
 	for _, tc := range cases {

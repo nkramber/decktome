@@ -107,7 +107,7 @@ func conversations() []conversation {
 			set: func(c *Context) {
 				c.Format, c.PowerCompetitive, c.Theme = mtgv1.FormatId_FORMAT_ID_MODERN, true, "best deck"
 			}},
-		{want: []string{"power_sixty", "budget", "meta"}, fill: []string{"power", "budget", "meta"}},
+		{want: []string{"power_sixty_confirm", "budget", "meta"}, fill: []string{"power", "power_confirm", "budget", "meta"}},
 	}
 	cs = append(cs, c6)
 
@@ -119,7 +119,7 @@ func conversations() []conversation {
 			set: func(c *Context) {
 				c.Format, c.PowerCompetitive, c.Theme = mtgv1.FormatId_FORMAT_ID_PIONEER, true, "best deck"
 			}},
-		{want: []string{"power_sixty", "budget", "meta"}, fill: []string{"power", "budget", "meta"}},
+		{want: []string{"power_sixty_confirm", "budget", "meta"}, fill: []string{"power", "power_confirm", "budget", "meta"}},
 	}
 	cs = append(cs, c7)
 
@@ -131,8 +131,8 @@ func conversations() []conversation {
 			set: func(c *Context) { commander(c); c.TwoPlans = true }},
 		{want: []string{"commander", "power_commander", "pool"}, fill: []string{"power", "pool_rule", "commander"},
 			set: func(c *Context) { c.OwnedMode, c.CommanderSet = true, true }},
-		{want: []string{"table_tolerance", "budget_scope", "plan_choice"},
-			fill: []string{"table_tolerance", "budget_scope", "budget", "plan_variant"}},
+		{want: []string{"budget_scope", "plan_choice"},
+			fill: []string{"budget_scope", "budget", "plan_variant"}},
 	}
 	cs = append(cs, c8)
 
@@ -231,7 +231,7 @@ func conversations() []conversation {
 	c16.steps = []step{
 		{want: []string{"format", "theme_competitive", "colors"}, fill: []string{"format", "theme", "colors"},
 			set: func(c *Context) { c.Format, c.Theme = mtgv1.FormatId_FORMAT_ID_MODERN, "best deck" }},
-		{want: []string{"power_sixty", "budget", "meta"}, fill: []string{"power", "budget", "meta"}},
+		{want: []string{"power_sixty_confirm", "budget", "meta"}, fill: []string{"power", "power_confirm", "budget", "meta"}},
 	}
 	cs = append(cs, c16)
 
@@ -239,13 +239,13 @@ func conversations() []conversation {
 	// still fire. Without that rule the pool row waits forever (D-67).
 	c17 := conversation{name: "precon upgrade at bracket 2"}
 	c17.ctx = newCtx("upgrade my atraxa precon, we play bracket 2")
-	c17.ctx.HasCollection, c17.ctx.CommanderSet = true, true
+	c17.ctx.HasCollection, c17.ctx.CommanderSet, c17.ctx.Precon = true, true, true
 	c17.ctx.Format, c17.ctx.Theme = mtgv1.FormatId_FORMAT_ID_COMMANDER, "superfriends"
 	for _, k := range []string{"format", "theme", "commander", "commander_pick", "named_card_role", "colors"} {
 		c17.ctx.Filled[k] = true
 	}
 	c17.steps = []step{
-		{want: []string{"power_commander", "pool"}, fill: []string{"power", "pool_rule"}},
+		{want: []string{"power_commander", "pool_precon"}, fill: []string{"power", "pool_rule"}},
 	}
 	cs = append(cs, c17)
 
@@ -289,12 +289,16 @@ func conversations() []conversation {
 	c21 := conversation{name: "vintage with proxies"}
 	c21.ctx = newCtx("we proxy everything at our table")
 	c21.steps = []step{
-		{want: []string{"format", "theme", "house_rules"}, fill: []string{"format", "theme", "house_rules"},
+		{want: []string{"format", "theme", "colors"}, fill: []string{"format", "theme", "colors"},
 			set: func(c *Context) {
 				c.Format, c.Theme, c.HouseFormat = mtgv1.FormatId_FORMAT_ID_VINTAGE, "shops", true
+				// The second message is what raises the house rules. The
+				// word "proxy" no longer does, because a proxy user has no
+				// budget and names no legality (D-111).
+				c.Words += " any card, no ban list. call it vintage"
 			}},
-		{want: []string{"house_format_limits", "power_sixty", "colors"},
-			fill: []string{"house_format_limits", "power", "colors"}},
+		{want: []string{"house_rules", "power_sixty"}, fill: []string{"house_rules", "power"}},
+		{want: []string{"house_format_limits"}, fill: []string{"house_format_limits"}},
 	}
 	cs = append(cs, c21)
 
@@ -307,7 +311,6 @@ func conversations() []conversation {
 		{want: []string{"commander", "power_commander", "pool"},
 			fill: []string{"commander", "commander_pick", "power", "pool_rule"},
 			set:  func(c *Context) { c.CommanderSet = true }},
-		{want: []string{"table_tolerance"}, fill: []string{"table_tolerance"}},
 	}
 	cs = append(cs, c22)
 
@@ -319,7 +322,6 @@ func conversations() []conversation {
 		{want: []string{"commander", "power_commander", "pool"},
 			fill: []string{"commander", "commander_pick", "power", "pool_rule"},
 			set:  func(c *Context) { c.CommanderSet = true }},
-		{want: []string{"table_tolerance"}, fill: []string{"table_tolerance"}},
 	}
 	cs = append(cs, c23)
 
@@ -331,7 +333,6 @@ func conversations() []conversation {
 		{want: []string{"commander", "power_commander", "pool"},
 			fill: []string{"commander", "commander_pick", "power", "pool_rule"},
 			set:  func(c *Context) { c.CommanderSet = true }},
-		{want: []string{"table_tolerance"}, fill: []string{"table_tolerance"}},
 	}
 	cs = append(cs, c24)
 
@@ -341,7 +342,7 @@ func conversations() []conversation {
 	c25.steps = []step{
 		{want: []string{"format_store", "theme_competitive", "colors"}, fill: []string{"format", "theme", "colors"},
 			set: func(c *Context) { c.Format, c.Theme = mtgv1.FormatId_FORMAT_ID_MODERN, "poison" }},
-		{want: []string{"power_sixty", "budget", "meta"}, fill: []string{"power", "budget", "meta"}},
+		{want: []string{"power_sixty_confirm", "budget", "meta"}, fill: []string{"power", "power_confirm", "budget", "meta"}},
 	}
 	cs = append(cs, c25)
 
@@ -422,6 +423,59 @@ func conversations() []conversation {
 			set:  func(c *Context) { c.CommanderSet = true }},
 	}
 	cs = append(cs, c31)
+
+	// D-112: a request for two decks gets one question and no others. The
+	// app builds one deck at a time, and it says so.
+	c32 := conversation{name: "two decks at once"}
+	c32.ctx = newCtx("i want two decks, one commander and one modern")
+	c32.ctx.TwoDecks = true
+	c32.steps = []step{
+		{want: []string{"one_deck"}, fill: []string{"deck_count", "format", "theme"},
+			set: func(c *Context) { commander(c); c.Theme = "dragons" }},
+		{want: []string{"commander", "power_commander", "colors"},
+			fill: []string{"commander", "commander_pick", "power", "colors"},
+			set:  func(c *Context) { c.CommanderSet = true }},
+	}
+	cs = append(cs, c32)
+
+	// D-112: a format this app does not build gets named, with the
+	// nearest format it does build. Gate run 13 offered Brawl instead.
+	c33 := conversation{name: "a format we do not build"}
+	c33.ctx = newCtx("i want a brawl deck for arena")
+	c33.ctx.UnsupportedFormat = true
+	c33.steps = []step{
+		{want: []string{"format_unsupported", "theme", "colors"},
+			fill: []string{"format", "theme", "colors"},
+			set: func(c *Context) {
+				commander(c)
+				c.Theme, c.UnsupportedFormat = "dragons", false
+			}},
+		{want: []string{"commander", "power_commander"},
+			fill: []string{"commander", "commander_pick", "power"},
+			set:  func(c *Context) { c.CommanderSet = true }},
+	}
+	cs = append(cs, c33)
+
+	// D-129: a card that can not lead a deck is not a commander. Probe 41
+	// named Lightning Bolt, and every run accepted it in silence.
+	c34 := conversation{name: "a commander that can not lead"}
+	c34.ctx = newCtx("commander deck with lightning bolt as my commander")
+	c34.ctx.Format, c34.ctx.Theme = mtgv1.FormatId_FORMAT_ID_COMMANDER, "burn"
+	c34.ctx.CommanderIllegal = true
+	// The card can only sit in the 99, so the role question is settled.
+	for _, k := range []string{"format", "theme", "named_card_role"} {
+		c34.ctx.Filled[k] = true
+	}
+	c34.steps = []step{
+		{want: []string{"commander_illegal", "power_commander", "colors"},
+			fill: []string{"commander_illegal", "power", "colors"},
+			set: func(c *Context) {
+				c.CommanderIllegal, c.Suggested = false, true
+			}},
+		{want: []string{"commander_pick"}, fill: []string{"commander", "commander_pick", "named_card_role"},
+			set: func(c *Context) { c.CommanderSet = true }},
+	}
+	cs = append(cs, c34)
 
 	return cs
 }

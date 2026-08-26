@@ -35,27 +35,50 @@ const PrecisionFloor = 0.80
 
 // scored is one item after the owner filled it in.
 type scored struct {
-	Item     int
-	Row      string
-	Fit      float64
-	Refused  bool
-	Enough   string
-	Better   string
-	Slot     string
-	Faults   string
-	Action   string
-	Complete bool
+	Item    int
+	Row     string
+	Fit     float64
+	Refused bool
+	Enough  string
+	Better  string
+	Slot    string
+	Faults  string
+	Action  string
+	// Warranted is the field a plain item carries. A plain item holds one
+	// question the model left alone, and version 1 of the sheet could not
+	// hold one (D-104).
+	Warranted string
+	// Plain marks such an item. A replacement item carries catalog_enough
+	// and invented_better instead.
+	Plain bool
+	// Identical marks a replacement that copies the catalog row word for
+	// word. It says nothing about the reword guard (D-116).
+	Identical bool
+	Complete  bool
 }
 
 // warranted is the D-66 rule. An unsure item is neither warranted nor
 // unwarranted, and the caller leaves it out.
 func (s scored) warranted() bool { return s.Enough == "no" && s.Better != "worse" }
-func (s scored) unsure() bool    { return s.Enough == "unsure" || s.Enough == "" }
+
+// unsure reports whether an item stays out of the fit calculation. An
+// `n/a` item says the row must not exist, which is a catalog change and
+// not a scoring signal (D-114).
+func (s scored) unsure() bool {
+	switch s.Enough {
+	case "unsure", "", "n/a", "n\\a", "na":
+		return true
+	}
+	return s.Better == "n/a"
+}
 
 var (
 	itemRe   = regexp.MustCompile(`(?m)^## Item (\d+)$`)
 	sourceRe = regexp.MustCompile(`Row ` + "`" + `(\w+)` + "`" + `.*gap score ([0-9.]+)`)
 	fieldRe  = regexp.MustCompile(`(?m)^\| (\w+) \| [^|]* \| ([^|]*)\|`)
+	catRe    = regexp.MustCompile(`(?m)^\*\*The catalog question:\*\* (.+)$`)
+	repRe    = regexp.MustCompile(`(?m)^\*\*What the model (?:asked|offered) instead:\*\* (.+)$`)
+	resRe    = regexp.MustCompile(`(?m)^\*\*The guard compared against:\*\* (.+)$`)
 )
 
 func main() {
@@ -109,9 +132,31 @@ func parse(doc string) []scored {
 				it.Faults = strings.TrimSpace(f[2])
 			case "catalog_action":
 				it.Action = value
+			case "warranted":
+				it.Warranted, it.Plain = value, true
 			}
 		}
-		it.Complete = it.Enough != "" && it.Better != ""
+		if it.Plain {
+			// A plain item is scored when the owner answered `warranted`.
+			it.Complete = it.Warranted != ""
+		} else {
+			it.Complete = it.Enough != "" && it.Better != ""
+		}
+		// A replacement that copies the row word for word tells us nothing
+		// about the reword guard: the guard refused an exact copy, which is
+		// what it exists to do. The owner's verdict there is about the
+		// clause the ask role added (D-116).
+		if rm := repRe.FindStringSubmatch(block); rm != nil {
+			// Prefer the resolved row. The guard read that text, and the
+			// sheet shows the phrasing that went out beside it (D-116).
+			row := ""
+			if sm := resRe.FindStringSubmatch(block); sm != nil {
+				row = sm[1]
+			} else if cm := catRe.FindStringSubmatch(block); cm != nil {
+				row = cm[1]
+			}
+			it.Identical = row != "" && questions.Overlap(rm[1], row) >= 0.99
+		}
 		out = append(out, it)
 	}
 	return out
@@ -131,11 +176,14 @@ func firstWord(s string) string {
 
 func report(w io.Writer, items []scored, floor float64) {
 	p := func(format string, a ...any) { _, _ = fmt.Fprintf(w, format, a...) }
-	var sent, refused, done, unsure int
+	var sent, refused, plain, done, unsure int
 	for _, it := range items {
-		if it.Refused {
+		switch {
+		case it.Plain:
+			plain++
+		case it.Refused:
 			refused++
-		} else {
+		default:
 			sent++
 		}
 		switch {
@@ -149,7 +197,8 @@ func report(w io.Writer, items []scored, floor float64) {
 	}
 	p("# M-5 report\n\n")
 	p("Items: %d. Scored: %d. Not scored yet: %d.\n\n", len(items), done, len(items)-done)
-	p("Sent to a user: %d. Refused as rewords: %d (D-88).\n\n", sent, refused)
+	p("Replacement items: %d sent to a user, %d refused as rewords (D-88). Plain items: %d (D-104).\n\n",
+		sent, refused, plain)
 	if done < len(items) {
 		p("**The sheet is not finished. Every number below reads the scored items only.**\n\n")
 	}
@@ -220,11 +269,62 @@ func report(w io.Writer, items []scored, floor float64) {
 		p("The catalog rows the model replaced need work before a threshold is worth setting.\n\n")
 	}
 
+	// Was the question warranted at all? This lane reads the plain items,
+	// which version 1 of the sheet could not hold (D-104).
+	p("## Were the questions warranted (D-104)\n\n")
+	warranted, unwarranted, plainDone := 0, 0, 0
+	byRowBad := map[string]int{}
+	for _, it := range items {
+		if !it.Plain || !it.Complete {
+			continue
+		}
+		switch it.Warranted {
+		case "yes":
+			warranted++
+			plainDone++
+		case "no":
+			unwarranted++
+			plainDone++
+			byRowBad[it.Row]++
+		}
+	}
+	switch {
+	case plainDone == 0:
+		p("No plain item is scored yet. A plain item asks whether a question deserved to be asked at all.\n\n")
+	case unwarranted == 0:
+		p("Every one of the %s warranted.\n\n", plural(plainDone, "scored question was", "scored questions were"))
+	default:
+		p("**%d of %d scored questions should not have been asked.** That is a trigger or catalog defect, not a threshold question.\n\n",
+			unwarranted, plainDone)
+		rows := make([]string, 0, len(byRowBad))
+		for row := range byRowBad {
+			rows = append(rows, row)
+		}
+		sort.Slice(rows, func(i, j int) bool {
+			if byRowBad[rows[i]] != byRowBad[rows[j]] {
+				return byRowBad[rows[i]] > byRowBad[rows[j]]
+			}
+			return rows[i] < rows[j]
+		})
+		p("Unwarranted by row:")
+		for _, row := range rows {
+			p(" `%s` x%d", row, byRowBad[row])
+		}
+		p("\n\n")
+	}
+
 	// The reword guard reads the refused items alone.
 	p("## The reword guard (D-88)\n\n")
-	better, total := 0, 0
+	better, total, identical := 0, 0, 0
 	for _, it := range items {
 		if !it.Refused || !it.Complete || it.unsure() {
+			continue
+		}
+		// A replacement that copies the row word for word says nothing
+		// about the guard. The guard refused an exact copy, which is what
+		// it exists to do (D-116).
+		if it.Identical {
+			identical++
 			continue
 		}
 		total++
@@ -232,9 +332,14 @@ func report(w io.Writer, items []scored, floor float64) {
 			better++
 		}
 	}
+	if identical > 0 {
+		p("%s the catalog row word for word, and %s left out here. ",
+			plural(identical, "scored refusal copied", "scored refusals copied"), them(identical))
+		p("The guard refused an exact copy, which is what it exists to do. A `better` on such an item judges the clause the ask role added, not the guard (D-116).\n\n")
+	}
 	switch {
 	case total == 0:
-		p("No refused reword is scored yet.\n\n")
+		p("No refused reword that says something new is scored yet.\n\n")
 	case better == 0:
 		p("None of the %s better than the row it replaced. The guard at %.2f overlap is not too tight.\n\n",
 			plural(total, "scored refusal is", "scored refusals are"), questions.MaxRewordOverlap)

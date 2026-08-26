@@ -61,7 +61,9 @@ func TestCatalogMatchesCorpus(t *testing.T) {
 		"Colors": "colors", "Card pool": "pool", "Card pool (thin theme)": "pool_thin",
 		"Budget": "budget", "Budget scope": "budget_scope",
 		"House rules": "house_rules", "House format limits": "house_format_limits",
-		"Jank or fun": "jank", "Table tolerance": "table_tolerance", "Meta": "meta",
+		"Jank or fun": "jank", "Meta": "meta",
+		"One deck at a time": "one_deck", "Format (not supported)": "format_unsupported",
+		"Power (60-card, competitive)": "power_sixty_confirm", "Card pool (precon)": "pool_precon", "Commander (can not lead)": "commander_illegal",
 		"Plan choice": "plan_choice", "Variance": "variance", "Locked cards": "locked",
 	}
 	raw, err := os.ReadFile("../../../.claude/skills/mtg-corpus/SKILL.md")
@@ -234,12 +236,17 @@ func TestFrozenSessionAsksNothing(t *testing.T) {
 
 func TestRoute(t *testing.T) {
 	cases := map[string]string{
-		"60-card anything goes":             "house_rules",
-		"I will proxy the expensive cards":  "house_rules",
-		"make me something fun and janky":   "power",
-		"build the strongest deck possible": "power",
-		"I want to win the event":           "power",
-		"build me a lifegain deck":          "",
+		"60-card anything goes":    "house_rules",
+		"we play with no ban list": "house_rules",
+		// D-111. A proxy user has no budget, and the word says nothing
+		// about which cards are legal.
+		"I will proxy the expensive cards": "",
+		// D-111. A negation stops a trigger word.
+		"edh gruul dino stompy pls, no proxies": "",
+		"make me something fun and janky":       "power",
+		"build the strongest deck possible":     "power",
+		"I want to win the event":               "power",
+		"build me a lifegain deck":              "",
 	}
 	for in, want := range cases {
 		if got := Route(in); got != want {

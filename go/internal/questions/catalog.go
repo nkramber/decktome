@@ -27,8 +27,8 @@ type Row struct {
 	Slot string `json:"slot"`
 	// Key is the question's own state key. It defaults to Slot. A
 	// refinement question carries its own key, so a filled proto slot does
-	// not cancel it. Table tolerance informs power, but the bracket answer
-	// must not cancel the question.
+	// not cancel it. The power confirm row informs power, but the inferred
+	// step must not cancel the question.
 	Key string `json:"key"`
 	// Order is the ask order. Format first, then theme, then commander
 	// (corpus section 11, from the dogfood runs of 2026-08-24).
@@ -41,6 +41,16 @@ type Row struct {
 	// Fallback is the wording used when a placeholder has no value. It
 	// holds no placeholder itself. Load enforces that.
 	Fallback string `json:"fallback"`
+	// Fixed marks a row that states what this app does or does not do.
+	// The model may not replace such a row: the sentence that names the
+	// limit is the point of it, and a replacement drops that sentence.
+	//
+	// The smoke run before gate 14 (2026-08-26 UTC) is the evidence. The model replaced "I
+	// build one deck at a time. Which deck do you want first?" with
+	// "Which deck would you like to work on first: Commander or Modern?"
+	// The user was never told that the app builds one deck at a time,
+	// which is exactly what D-112 asks the row to say.
+	Fixed bool `json:"fixed"`
 	// Repeat exempts a row from the no-repeat rule. Only the commander
 	// pick row uses it: a user who answers "none" gets three new names
 	// until one fits (D-73). The row still closes when its key closes.
@@ -52,8 +62,11 @@ type Row struct {
 // not care about that fact. Requires names slots that must be filled
 // first, which is how D-67 holds the card-pool question back.
 type When struct {
-	Words             []string `json:"words"`
-	Requires          []string `json:"requires"`
+	Words    []string `json:"words"`
+	Requires []string `json:"requires"`
+	// NotOutstanding names the state keys this row waits for. The row
+	// does not fire while one of them holds an unanswered question.
+	NotOutstanding    []string `json:"not_outstanding"`
 	Format            string   `json:"format"`
 	PowerCompetitive  *bool    `json:"power_competitive"`
 	OutOfScope        *bool    `json:"out_of_scope"`
@@ -63,7 +76,6 @@ type When struct {
 	OwnedMode         *bool    `json:"owned_mode"`
 	CommanderNotOwned *bool    `json:"commander_not_owned"`
 	WeakCommanderPool *bool    `json:"weak_commander_pool"`
-	SaltyTheme        *bool    `json:"salty_theme"`
 	CommanderSet      *bool    `json:"commander_set"`
 	HasCollection     *bool    `json:"has_collection"`
 	ThinTheme         *bool    `json:"thin_theme"`
@@ -72,6 +84,14 @@ type When struct {
 	HouseFormat       *bool    `json:"house_format"`
 	TwoPlans          *bool    `json:"two_plans"`
 	AfterBuild        *bool    `json:"after_build"`
+	// TwoDecks marks a request for more than one deck (D-112).
+	TwoDecks *bool `json:"two_decks"`
+	// UnsupportedFormat marks a format this app does not build (D-112).
+	UnsupportedFormat *bool `json:"unsupported_format"`
+	// Precon marks a request to upgrade a preconstructed deck (D-113).
+	Precon *bool `json:"precon"`
+	// CommanderIllegal marks a named commander that can not lead (D-129).
+	CommanderIllegal *bool `json:"commander_illegal"`
 }
 
 // Catalog is the loaded table.
@@ -85,8 +105,12 @@ type Catalog struct {
 var slots = map[string]bool{
 	// scope is not a deck value. It records that the agent said it builds
 	// Magic decks only, after the user asked for something else (D-99).
-	"scope":  true,
-	"format": true, "power": true, "colors": true, "theme": true,
+	"scope": true,
+	// deck_count is not a deck value either. It records that the agent
+	// said it builds one deck at a time, after the user asked for two
+	// (D-112).
+	"deck_count": true,
+	"format":     true, "power": true, "colors": true, "theme": true,
 	"commander": true, "pool_rule": true, "budget": true, "locked": true,
 	"plan_variant": true, "house_rules": true, "meta": true,
 }

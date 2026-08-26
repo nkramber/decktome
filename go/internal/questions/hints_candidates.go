@@ -35,6 +35,38 @@ type CandidateHints struct {
 	thinCount map[string]int
 }
 
+// CanLead reports whether a named card can lead a deck. Probe 41 asks
+// for "Commander deck with Lightning Bolt as my commander", and every run
+// before 2026-08-26 accepted it in silence (D-129).
+func (h *CandidateHints) CanLead(name string) (canLead, known bool) {
+	if h == nil || h.Index == nil {
+		return false, false
+	}
+	card, ok := h.Index.ByName(strings.TrimSpace(name))
+	if !ok {
+		return false, false
+	}
+	return card.GetCanBeCommander() || card.GetIsBackground(), true
+}
+
+// UseSlots takes the slot values as they stand inside the turn. The cache
+// key carries the format, the colors, and the pool rule, so an answer
+// computed under other values stays keyed to those values (D-82).
+func (h *CandidateHints) UseSlots(format mtgv1.FormatId, colors []mtgv1.Color, pool mtgv1.PoolRule) {
+	if h == nil {
+		return
+	}
+	if format != mtgv1.FormatId_FORMAT_ID_UNSPECIFIED {
+		h.Format = format
+	}
+	if len(colors) > 0 {
+		h.Colors = colors
+	}
+	if pool != mtgv1.PoolRule_POOL_RULE_UNSPECIFIED {
+		h.Pool = pool
+	}
+}
+
 // ThemeColors names the colors a theme is strongest in, for example
 // "white and black".
 func (h *CandidateHints) ThemeColors(theme string) string {

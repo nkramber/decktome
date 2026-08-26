@@ -1,6 +1,6 @@
 {
-  "verified_at": "2026-08-24",
-  "note": "The PR-7 gate conversations as user messages. Conversations 1 to 30 are the gate: TestConversations proves the deterministic half offline, and the catalog-only bar counts these alone. Conversations marked \"probe\" do not count toward the verdict. They exist to find catalog gaps, so they hold the shapes the gate set never takes: a user who changes their mind, contradicts themselves, asks a question back, or wants something the app can not serve. Their questions still reach the M-5 sheet (D-96).",
+  "verified_at": "2026-08-25",
+  "note": "The PR-7 gate conversations as user messages. Conversations 1 to 30 are the gate: TestConversations proves the deterministic half offline, and the catalog-only bar counts these alone. Conversations marked \"probe\" do not count toward the verdict. They exist to find catalog gaps, so they hold the shapes the gate set never takes: a user who changes their mind, contradicts themselves, asks a question back, or wants something the app can not serve. Their questions still reach the M-5 sheet (D-96). Conversations 53 to 66 are the terse set (D-105). Their users never repeat a value they already gave, so a redundant question strands the conversation instead of getting an answer. Every gate conversation before them restates the format at turn 2, which hid that defect and let both bars reward it. The terse set counts as probes, so the catalog-only bar stays comparable to runs 1 to 13.",
   "conversations": [
     {
       "id": 1,
@@ -555,6 +555,158 @@
         "My friends hate mill.",
         "Commander, blue and black. Bracket 3.",
         "Build from my library first."
+      ]
+    },
+    {
+      "id": 53,
+      "name": "terse: the format is named once",
+      "collection": true,
+      "probe": true,
+      "messages": [
+        "A land destruction Commander deck.",
+        "Red and green.",
+        "You pick the commander. Bracket 3, and build from my library first."
+      ]
+    },
+    {
+      "id": 54,
+      "name": "terse: a card for the 99",
+      "collection": true,
+      "probe": true,
+      "messages": [
+        "Build around Grist, the Hunger Tide, but not as my commander.",
+        "A sacrifice deck, black and green.",
+        "Bracket 3, and build from my library first.",
+        "You pick the commander."
+      ]
+    },
+    {
+      "id": 55,
+      "name": "terse: two decks at once",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "I want two decks, one Commander and one Modern.",
+        "The Commander one. A dragon deck, red and green.",
+        "Bracket 3, and 150 dollars."
+      ]
+    },
+    {
+      "id": 56,
+      "name": "terse: a format we do not build",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "I want a Brawl deck for Arena.",
+        "Commander is fine. A dragon deck, red.",
+        "Bracket 2."
+      ]
+    },
+    {
+      "id": 57,
+      "name": "terse: a proxy table",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "We proxy everything at our table. A Vintage artifact prison deck.",
+        "Any card, no ban list.",
+        "The normal limits hold. Casual power, mono brown."
+      ]
+    },
+    {
+      "id": 58,
+      "name": "terse: a precon upgrade",
+      "collection": true,
+      "probe": true,
+      "messages": [
+        "Upgrade my Atraxa, Praetors' Voice precon. We play bracket 2.",
+        "A superfriends deck.",
+        "Build from the precon first."
+      ]
+    },
+    {
+      "id": 59,
+      "name": "terse: a competitive request",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "I want the strongest Modern deck, money is no object.",
+        "The best deck under budget. Any colors.",
+        "Yes, tournament level. My shop plays aggro and combo."
+      ]
+    },
+    {
+      "id": 60,
+      "name": "terse: a deck as a gift",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "I want to build a Commander deck as a gift for my brother. He likes zombies.",
+        "Black. He is new to the game.",
+        "Bracket 2, and under 80 dollars."
+      ]
+    },
+    {
+      "id": 61,
+      "name": "terse: a named commander and a locked card",
+      "collection": true,
+      "probe": true,
+      "messages": [
+        "Karlov of the Ghost Council lifegain deck, and keep Sanguine Bond in it.",
+        "Bracket 3.",
+        "Build from my library first."
+      ]
+    },
+    {
+      "id": 62,
+      "name": "terse: sideboard help only",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "I already have a Modern burn deck, mono red. I only need sideboard help.",
+        "Tournament level.",
+        "My shop plays a lot of control."
+      ]
+    },
+    {
+      "id": 63,
+      "name": "terse: everything in one message",
+      "collection": true,
+      "probe": true,
+      "messages": [
+        "Commander, bracket 3, Karlov of the Ghost Council, white and black lifegain, build from my library first, 50 dollar buy list."
+      ]
+    },
+    {
+      "id": 64,
+      "name": "terse: the strongest deck, no collection",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "Build the strongest Modern deck possible. I own nothing.",
+        "A burn deck, mono red.",
+        "Yes, tournament level. 300 dollars."
+      ]
+    },
+    {
+      "id": 65,
+      "name": "terse: a Pauper deck named once",
+      "collection": false,
+      "probe": true,
+      "messages": [
+        "A Pauper burn deck, as cheap as possible. Mono red.",
+        "Casual power, and 25 dollars is the cap."
+      ]
+    },
+    {
+      "id": 66,
+      "name": "terse: a mill deck for a playgroup",
+      "collection": true,
+      "probe": true,
+      "messages": [
+        "A Commander mill deck for my playgroup, budget 100.",
+        "Blue and black. Bruvac the Grandiloquent is the commander.",
+        "Bracket 3, build from my library first. The 100 caps the cards I buy."
       ]
     }
   ]

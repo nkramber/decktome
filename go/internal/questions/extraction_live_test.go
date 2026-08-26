@@ -48,8 +48,8 @@ func TestLiveDecline(t *testing.T) {
 	st.Slots.Theme = "sacrifice"
 	st.Close("theme")
 	st.Close("format")
-	st.MarkAsked("colors", "colors")
-	st.MarkAsked("power_commander", "power")
+	st.MarkAsked("colors", "colors", "colors")
+	st.MarkAsked("power_commander", "power", "power")
 
 	cases := []struct {
 		message  string
@@ -189,7 +189,7 @@ func TestLiveFormatExtraction(t *testing.T) {
 	st.Slots.Theme = "lifegain"
 	st.Close("theme")
 	st.Close("colors")
-	st.MarkAsked("format", "format")
+	st.MarkAsked("format", "format", "format")
 
 	cases := []struct{ message, want string }{
 		{"Commander, and white and black is right.", "commander"},

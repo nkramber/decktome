@@ -44,7 +44,7 @@ func sampleState() questions.Snapshot {
 	st := questions.NewState(true)
 	st.Slots.Theme = "lifegain"
 	st.Close("theme")
-	st.MarkAsked("commander", "commander")
+	st.MarkAsked("commander", "commander", "commander")
 	st.AddLocked("Sanguine Bond")
 	st.SetCommander("Karlov of the Ghost Council")
 	st.Ctx.Words = "build me a lifegain deck"

@@ -6,9 +6,11 @@
 
 2026-08-25. Merged: PR-0a to PR-5, PR-10, the audit fixes, and PR-6 (#1 to #11).
 
-PR-7 is code-complete and both gate bars pass. The live gate ran 13 times. Twenty defects were found, and all twenty are fixed. The M-5 sheet holds 60 items, and the owner is scoring them now. That scoring is the only open item in PR-7.
+PR-7 was code-complete, and then the owner scored items 1 to 32 of the M-5 sheet. Those scores asked for 16 rewords and one deletion. They also exposed a class of defect the sheet could not hold. A correction session followed on the same day. Read "The correction session" below before anything else.
 
-All of it is committed and pushed. Branch `pr-7` is level with `origin/pr-7` at commit 53ddbf4, and the working tree is clean. Run `git pull` before you read anything: the owner scores the M-5 sheet on a phone, so the remote can hold newer scores than the local file. The owner commits and pushes.
+The Go tree is green after the correction: `go build`, `go vet`, `go test`, and `golangci-lint` all pass. Gate run 14 has not run yet, and it is the next step. It costs money and needs the owner's approval.
+
+The correction is **not committed**. Branch `pr-7` sits at commit b349bb6 with the owner's scores. Run `git status` before you change anything, and run `git pull` first: the owner scores the M-5 sheet on a phone, so the remote can hold newer scores. The owner commits and pushes.
 
 ## State of the work
 
@@ -215,9 +217,9 @@ Probe conversations found both, on the first run they existed (D-97). Every one 
 
 20. **A truncation slipped past the reword guard (D-103).** Word overlap is symmetric, so a replacement that deleted half a row scored low and passed, although it said strictly less. The owner found it while scoring item 8 of the M-5 sheet. The guard now refuses a truncation as well, and the rule refuses item 8 and nothing else across all 60 items.
 
-### What the owner does next
+### What M-5 was for
 
-M-5 sets two numbers: the fit threshold (D-27) and the reword overlap bar (D-88). This session chose both from its own data, which is exactly what M-5 exists to replace. The sheet is ready, and the owner has begun.
+M-5 sets two numbers: the fit threshold (D-27) and the reword overlap bar (D-88). The session of 2026-08-25 chose both from its own data, which is exactly what M-5 exists to replace. The paragraphs below describe the version-1 sheet, which the owner scored to item 32. The correction session replaced that sheet with version 2. Read "The correction session" for what changed.
 
 `docs/reference/pr7-m5-scoring.md` holds 60 items from runs 10 to 13, which passes the 50 the D-66 rubric asks for. Runs 1 to 9 are held back (D-96). Each ran with a defect that produced or distorted the replacements it recorded. Run 3 is the clearest case. The format enum threw the user's answer away, the format row fired again, and the model invented a repair question. Scoring that item reads as "the catalog was not enough and the invention was better". It would push the D-27 threshold up on evidence about a bug that no longer exists.
 
@@ -242,12 +244,13 @@ The threshold follows from the scores. The scale is discrete now: 0.90 means no 
   `set -a && . ./.env && set +a && QUESTIONS_LIVE=1 go test ./internal/questions -run TestLiveConversation -v -count=1`
 - The live gate needs approval and writes the gate document. A rerun needs a new file (D-65):
   `GATE_OUT=docs/reference/pr7-question-gate-run5.md make questions-gate`. A cheap check first: `QUESTIONS_GATE=1 go run ./cmd/questions-gate -n 2 > /tmp/gate.md`.
-- `make m5-sheet` rebuilds the scoring sheet from the runs `M5_RUNS` names. It costs nothing.
-- `make m5-report` reads the scored sheet and computes the thresholds. It costs nothing, and it works on a half-scored sheet.
+- `make m5-sheet` builds the scoring sheet from the runs `M5_RUNS` names, which is run 14 alone. It costs nothing, and it needs a new `M5_OUT` name.
+- `make m5-report` reads the scored sheet and computes the thresholds. It costs nothing, and it works on a half-scored sheet. It reads `M5_OUT`, which still points at the version-1 sheet.
+- `go test ./internal/questions -run TestCatalogIsClean` runs the question linter over the catalog rows. It costs nothing, and CI runs it.
 - `make store-check` runs the session store against the local Firestore emulator. Start one first:
   `firebase emulators:start --only firestore --project mtg-local`
 
-A full gate run costs about $0.044 and takes about six minutes. Four runs are measured, not estimated.
+A full gate run of the 52 conversations cost about $0.09 and took 11 minutes, measured over four runs. D-105 added 14 conversations, so run 14 should cost about $0.12 and take about 14 minutes. That is an estimate.
 
 ### Known limits
 
@@ -256,16 +259,116 @@ A full gate run costs about $0.044 and takes about six minutes. Four runs are me
 - Grist, the Hunger Tide can not be a commander in the engine (no Scryfall signal).
 - The ManaBox condition vocabulary beyond `near_mint` is unverified.
 
+## The correction session (2026-08-25)
+
+The owner scored items 1 to 32 of `docs/reference/pr7-m5-scoring.md` and reported that many questions were simply wrong, apart from anything M-5 measures. This session read every score, verified each claim against the four gate documents, and fixed what the evidence supported. Decisions D-104 to D-116 record every owner answer.
+
+### What the 32 scores said
+
+| Field | Values |
+|---|---|
+| `catalog_enough` | yes 17, no 13, n/a 6 |
+| `invented_better` | better 13, same 12, worse 5, n/a 6 |
+| `right_slot` | yes 27, no 3, n/a 6 |
+| `catalog_action` | **reword 16**, none 14, delete the row 6 |
+
+Half the rows the model touched needed wording work, and one row needed deletion. That is a catalog verdict, and not a threshold verdict. It is why `make m5-report` still finds no threshold that meets the 80 percent floor.
+
+### Why the owner kept finding wrong questions
+
+The version-1 sheet held only a question the model offered to replace. That is 60 of the 793 questions of runs 10 to 13, or 7.6 percent. A question that was wrong, and that the model never challenged, could not become an item. Deterministic rules find a defect in 61 of the 793 questions, and in 159 when the presumed-table wording counts. D-104 makes every question scorable.
+
+### The five root causes
+
+1. **The question contradicted what the user said.** Three mechanisms. The classifier missed a stated format (2 of 79 chances). The classifier could not infer a format from "not as my commander", and conversation 27 then asked the role question in all four runs. Word triggers fired on a negation, so "no proxies" and "whatever is winning" raised house rules nine times.
+2. **The row presumed a fact.** 90 of 793 questions said "your table" to a user who named none. The colors row asserted which colors a theme is strongest in, and run 13 wrote "Black Lotus decks are strongest in black". Black Lotus is a colorless card.
+3. **Template defects.** `{locked}` rendered "Grist, the Hunger Tide and Grist" in three runs. The colors row rendered "A a dragon deck deck".
+4. **Rows that must not exist, and rows that were missing.** `table_tolerance` fired 20 times and the owner deleted it. No row said the app builds one deck at a time. No row named an unsupported format, and run 13 offered Brawl.
+5. **Verbosity, with a rule under it.** The owner marked a shorter replacement better when it dropped a fitted clause, and worse when it dropped a constraint. D-116 puts that rule in the ask prompt.
+
+### What changed in the code
+
+- **Catalog**: 26 rows became 29. `table_tolerance` is gone (D-110). Four rows are new: `one_deck`, `format_unsupported`, `power_sixty_confirm`, and `pool_precon` (D-107, D-112, D-113). The colors row asserts nothing (D-108). The power and meta rows presume no table (D-109). The house-rules row lost its proxy and "whatever" triggers (D-111).
+- **`internal/questions/words.go`** is new. It holds the deterministic word rules: negation, format inference, unsupported formats, a two-deck request, a precon, a proxy user, a card placed in the 99, and a competitive request. Every rule costs no model call.
+- **`internal/questions/lint.go`** is new. It is the question linter of D-115. It reads text alone, it runs in CI over the catalog, and `cmd/questions-gate` runs it over every conversation. A finding fails the gate.
+- **State**: `sameCard` merges a short card name into the full one, so the locked row no longer stutters. `AddLocked` closes the role question, because a card placed in the 99 has a settled role.
+- **Prompts**: version 2. The classify role reads a format from an adjective and from a commander phrase. The ask role adds no clause that repeats a known value, states no fact, and presumes no table.
+- **`cmd/m5-sheet`**: rubric version 2. The sheet holds plain items beside replacement items, and it carries `warranted`, three more faults, and a legal `n/a`.
+- **`cmd/m5-report`**: an `n/a` item leaves the fit calculation. A refusal that copies the row word for word is counted apart, because the guard refused an exact copy and that says nothing about the guard.
+- **Conversations**: 52 became 66. Conversations 1 to 30 are byte-identical (D-105). Conversations 53 to 66 are the terse set, and their users never repeat a value they already gave.
+
+### What four smoke runs found
+
+Four cheap runs went out before gate 14, at a total of about 1.3 cents. `cmd/questions-gate` gained an `-only` flag, so one conversation can be checked without a full run.
+
+They proved the main fixes live. Conversation 53 asks no format question after "A land destruction Commander deck." Conversation 54 asks no role question after "not as my commander", and the locked row no longer stutters. The power row names no table, and the colors row states no fact.
+
+They also found two defects, and both are fixed. The model replaced the one-deck row and dropped the sentence that names the limit, so D-117 makes such a row fixed. The linter then fired on the row that declines an unsupported format, which is the one row that must name it. A loose test had let that through, and the test is tighter now.
+
+### The batch sweep (2026-08-26)
+
+The owner asked for the gate to run three conversations at a time, from 1 to 66, with every defect fixed as it appeared. Twenty-two batches ran, plus re-runs, for about $0.17. The linter found no defective question in any batch after the first fix.
+
+The sweep found sixteen more defects. Decisions D-117 to D-132 record them. None of them could reach the version-1 M-5 sheet, because the model offered a replacement for none of them.
+
+| Defect | Where it showed | Decision |
+|---|---|---|
+| A limit row was paraphrased away | one deck at a time, Brawl | D-117, D-131 |
+| "Build around X" read as "X is my commander" | conversation 3 | D-118 |
+| An answer that repeats an option left the key open | conversation 5 | D-119 |
+| "None of those" closed the commander pick | conversation 14 | D-120 |
+| "The first of the new three" named no commander | conversation 14 | D-121 |
+| A message answered the question it raised | conversation 21 | D-122 |
+| The offered commanders were swapped unasked | conversation 23 | D-123 |
+| The hint source could not see this turn's colors | conversation 23 | D-124 |
+| A replaced format came back | probe 31 | D-125 |
+| One slot asked twice in other words | probe 33, probe 39 | D-126, D-128 |
+| A commander row with nothing to offer | probe 35, probe 47 | D-127 |
+| Lightning Bolt accepted as a commander | probe 41 | D-129 |
+| "Use a different commander" got silence | probe 49 | D-130 |
+| The meta row never fired on a named step | conversation 62 | D-132 |
+
+Two shapes run through most of them. A word the user wrote was read as an answer to a question the agent had not asked, or an answer the user gave never reached the key that needed it. Both are invisible to a sheet that only holds replaced questions.
+
+### How the linter was checked
+
+The linter ran over all 793 questions of runs 10 to 13. It found 6 redundant format questions, 90 presumed tables, 24 stated facts, 2 stuttered names, and 1 unsupported format. Every one of the 6, the 2, and the 1 matches a case found by hand. The historical documents are untouched.
+
+### What is still open
+
+1. The owner scored items 33 to 60 of the version-1 sheet, or stopped at 32. That sheet keeps its scores as a dated record. It measures the old engine, so its threshold no longer applies (D-96).
+2. Two duplicate pairs disagree. Items 2 and 20 are the same item, and D-106 settles that item 20 stands. Items 3 and 30 differ on `invented_better` alone. Items 40, 50, and 60 repeat items 4, 5, and 6.
+3. OQ-21: how much of a precon must survive a build. PR-8 owns it.
+4. OQ-22: the nearest supported format for Historic and for Timeless. Both are unverified in `words.go`.
+
+## The automated eval lane (2026-08-26)
+
+The owner asked for a lane that needs no hand scoring, and for a loop that can run overnight. The parts exist and nothing has run. `docs/reference/autotune-design.md` holds the design, the cost, and the honest limits.
+
+- A new `eval` role scores every question of a gate run. The owner set it on `gpt-5.6-luna`, so a 66-conversation run costs about eleven cents (D-133).
+- `cmd/questions-eval` writes a report a person reads and a summary a script reads. `make questions-eval` runs it.
+- `cmd/tune-check` decides whether one iteration may be kept. It costs nothing.
+- `scripts/autotune.sh` is the loop. `make autotune` prints how to start it and starts nothing.
+- Every third conversation is a holdout. The fixer never reads its failures, and the loop reads its ratio (D-134).
+
+A budget of $3.00 buys about 14 iterations of gate and eval. The fixer agent's own tokens are not in that number, and they are the larger cost.
+
+`docs/owner-questions.md` is new. It holds every question that waits for a person, and the loop refuses to decide any of them. Four of them block the first unattended run: OQ-24 to OQ-27.
+
+The recommendation is to run the report alone first, for about fifty cents, and read what it finds. The loop is worth turning on only if the report finds what the batch sweep found by hand.
+
 ## Next steps, in order
 
-1. Score `docs/reference/pr7-m5-scoring.md`, 60 items on the six fields of D-66. The sheet explains every field, so it needs no other document (D-100).
-2. Run `make m5-report`. It sets the D-27 threshold and says whether the reword guard at 0.6 is too tight. It reads a half-scored sheet, so it can be run at any point.
-3. Set `DefaultFitThreshold` and, if the report says so, `MaxRewordOverlap`. Then rerun the gate once: a new threshold changes when the model may invent, so the current pass does not carry over.
-4. Review and commit PR-7. The owner commits and pushes.
-5. PR-8 (generator), then PR-9 (variance). PR-8 owns the prompt-cache lever and the weak-commander-pool bar.
-6. M-5 continues on the first UI build (after PR-12), where the UI shows both texts through `Question.catalog_text`.
-
-The scoring earns its keep before it ends. Item 8 named a fault the six of D-66 did not hold, and it exposed the reword guard at the same time (D-103). The guard measured word overlap, which is symmetric, so a replacement that deleted half a row scored low and passed. It now refuses a truncation as well. Measured against all 60 items, the new rule refuses item 8 and nothing else.
+1. Run gate run 14 as one document. The batch sweep proved the conversations one by one, and it wrote no single gate document, so M-5 still needs one. It costs about $0.12 and takes about 14 minutes, and it needs the owner's approval:
+   `GATE_OUT=docs/reference/pr7-question-gate-run14.md make questions-gate`
+   The linter is a bar now, so a redundant or presumptuous question fails the run.
+2. Build the version-2 sheet from run 14 alone:
+   `M5_OUT=docs/reference/pr7-m5-scoring-run14.md make m5-sheet`
+3. Score that sheet. It holds 60 items: every replacement, and a sample of the plain questions spread over the rows.
+4. Run `make m5-report` against the new sheet. It sets the D-27 threshold, it says whether the reword guard at 0.6 is too tight, and it says which questions should never have been asked.
+5. Set `DefaultFitThreshold` and, if the report says so, `MaxRewordOverlap`. Then run the gate once more: a new threshold changes when the model may invent.
+6. Review and commit PR-7. The owner commits and pushes.
+7. PR-8 (generator), then PR-9 (variance). PR-8 owns the prompt-cache lever, the weak-commander-pool bar, and OQ-21.
 
 ## Facts that expire
 
@@ -278,11 +381,11 @@ The scoring earns its keep before it ends. Item 8 named a fault the six of D-66 
 
 ## How to resume
 
-1. Run `git pull`, then `git status`. The owner scores the M-5 sheet on a phone, so the remote can be ahead. The tree was clean at commit 53ddbf4.
+1. Run `git pull`, then `git status`. The owner scores the M-5 sheet on a phone, so the remote can be ahead. The correction session of 2026-08-25 is not committed, so the tree is not clean.
 2. Load the skills: `ste-writing` before you write any `.md`, `design-doc-style` before you edit the roadmap, and `mtg-corpus` before you reason about a format, a legality, or a card term.
-3. Read `docs/decisions.md` (D-1 to D-103) and `docs/open-questions.md`. The decision log is the source of truth, and this file is the summary.
+3. Read `docs/decisions.md` (D-1 to D-134), `docs/owner-questions.md`, and `docs/open-questions.md`. The decision log is the source of truth, and this file is the summary.
 4. Check the Go tree is green: `cd go && go build ./... && go vet ./... && go test ./...`, then `make lint-go`.
 5. Continue from "Next steps, in order". Ask questions as they come up, and record each answer in `docs/decisions.md`.
 6. Before you end, update this file.
 
-Three things a fresh session gets wrong without reading further. `make questions-gate` spends money and needs approval each time. A rerun must write to a new `GATE_OUT` file, because a scored document is never overwritten (D-65). The M-5 sheet is the owner's working file, so do not regenerate it while they are scoring.
+Four things a fresh session gets wrong without reading further. `make questions-gate` spends money and needs approval each time. A rerun must write to a new `GATE_OUT` file, because a scored document is never overwritten (D-65). `docs/reference/pr7-m5-scoring.md` is the owner's working file, and no target writes to it. The version-2 sheet needs a new `M5_OUT` name.

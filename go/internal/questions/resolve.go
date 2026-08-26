@@ -4,6 +4,8 @@ import (
 	"regexp"
 	"strings"
 	"unicode"
+
+	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 )
 
 // Hints supply the values the catalog rows name in {braces}. PR-6 answers
@@ -27,6 +29,25 @@ type Hints interface {
 	OwnedThemeCount(theme string) int
 }
 
+// SlotAware lets a hint source read the slots as they stand inside the
+// turn. The gate runner and agentsvc build the hint source before the
+// turn runs, so a value the classifier has just filled is invisible to
+// it. Conversation 23 of the batch run offered Jodah, the Unifier, a
+// five-color commander, for a red-green deck, because the color slot
+// filled in the same turn (D-124, the same class as D-82).
+type SlotAware interface {
+	UseSlots(format mtgv1.FormatId, colors []mtgv1.Color, pool mtgv1.PoolRule)
+}
+
+// CommanderChecker reports whether a named card can lead a deck. A hint
+// source that holds the card index implements it.
+//
+// known is false when the index does not hold the name. An unknown name
+// is not proof of anything, and the agent claims nothing about it.
+type CommanderChecker interface {
+	CanLead(name string) (canLead, known bool)
+}
+
 var placeholder = regexp.MustCompile(`\{[a-z_]+\}`)
 
 // resolve fills a row's placeholders, drops every sentence that still
@@ -45,7 +66,25 @@ func resolve(row Row, st *State, h Hints) (text string, opts []string, offered [
 	if !usable(text) || !keptFirst {
 		return strings.TrimSpace(row.Fallback), row.Options, nil
 	}
-	return text, row.Options, offered
+	return text, pickOptions(row, offered), offered
+}
+
+// noneOption is the answer that asks for three other commanders (D-73).
+const noneOption = "None, name three more"
+
+// pickOptions builds the option list of a row that names commanders. The
+// row carries no options of its own, because the names change every time.
+//
+// The pick row goes out as written (D-131), so the ask role no longer
+// supplies its options. The names are the question, and the owner scored
+// a replacement that dropped them as worse than the row (M-5 item 31).
+func pickOptions(row Row, offered []string) []string {
+	if len(offered) == 0 || len(row.Options) > 0 || len(commanderKeysIn(row.Text)) == 0 {
+		return row.Options
+	}
+	out := make([]string, 0, len(offered)+1)
+	out = append(out, offered...)
+	return append(out, noneOption)
 }
 
 // vagueThemes are the theme values that name no archetype. They come
@@ -78,12 +117,32 @@ func substitute(text string, st *State, h Hints) (string, []string) {
 	if s := englishList(st.LockedCards()); s != "" {
 		rep["{locked}"] = s
 	}
+	// The illegal-commander row names the card the user asked for (D-129).
+	if s := strings.TrimSpace(st.IllegalCommander); s != "" {
+		rep["{bad_commander}"] = s
+	}
+	// The precon row names the deck the user wants to upgrade (D-113).
+	if s := strings.TrimSpace(st.PreconName); s != "" {
+		rep["{precon}"] = s
+	}
+	// The unsupported-format row names what the user asked for, and the
+	// nearest format this app builds (D-112).
+	if s := strings.TrimSpace(st.UnsupportedFormatName); s != "" {
+		rep["{bad_format}"] = s
+	}
+	if s := strings.TrimSpace(st.NearestFormat); s != "" {
+		rep["{near_format}"] = s
+	}
 	// Ask the hint source only for a value the row names. An eager call
 	// runs a whole PR-6 build for a row that holds no placeholder, and it
 	// fills the hint cache before the colors are known. The gate run of
 	// 2026-08-25 offered three commanders outside the deck's colors for
 	// exactly that reason.
 	if h != nil {
+		// No catalog row names {colors} since D-108: the colors row stated
+		// which colors a theme is strongest in, and the claim was wrong in
+		// gate run 13. The path stays live because PR-8 reads the same
+		// source for the default color answer the corpus names.
 		if strings.Contains(text, "{colors}") && usefulTheme(theme) {
 			if c := strings.TrimSpace(h.ThemeColors(theme)); c != "" && strings.Count(c, ",") < 2 {
 				rep["{colors}"] = c
@@ -215,6 +274,11 @@ func share(replacement, row string) (borrowed, covered float64) {
 	}
 	return float64(both) / float64(len(wa)), float64(both) / float64(len(wb))
 }
+
+// Overlap is the share of words two texts have in common, from 0 to 1.
+// cmd/m5-report reads it to tell a replacement that copies the row word
+// for word from one that says something else (D-116).
+func Overlap(a, b string) float64 { return overlap(a, b) }
 
 // overlap is the share of words the two texts have in common, from 0 to 1.
 func overlap(a, b string) float64 {

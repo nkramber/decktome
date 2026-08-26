@@ -61,7 +61,7 @@ func TestStateRoundTrip(t *testing.T) {
 	st.SetCommander("Karlov of the Ghost Council")
 	st.SetOffer([]string{"Oloro, Ageless Ascetic"})
 	st.RetireOffer()
-	st.MarkAsked("commander", "commander")
+	st.MarkAsked("commander", "commander", "commander")
 	st.Ctx.Words = "build me a lifegain deck"
 
 	payload, err := gzJSON(st.Snapshot())
