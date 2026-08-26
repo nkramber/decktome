@@ -26,8 +26,14 @@ holds the commands.
    `scripts/autotune.sh` before a run, because that path is frozen.
 
 4. Make a baseline. Run one gate and one eval on the code you are about to
-   tune, keep the JSON summary, and pass it with `--baseline`. Without one
-   the loop pays for its own first run.
+   tune, keep both outputs, and pass the JSON with `--baseline`. Without
+   one the loop pays for its own first run.
+
+   The loop needs the eval report as well as the JSON summary. The checker
+   reads the summary and the fixer reads the report. The loop finds the
+   report by the name of the summary, so `.local/tune/run18.json` pairs
+   with `docs/reference/pr7-question-eval-run18.md`. Keep that pairing, or
+   name the report with `--baseline-doc`.
 
    A baseline holds only while the code it measured holds. A later change
    to Go, to the proto, or to a JSON file the app reads makes it stale,
@@ -139,6 +145,7 @@ The fixer is not in that number. It bills against the monthly plan.
 |---|---|---|
 | `--base` | current branch | The container branch the night starts from. |
 | `--baseline` | none | A scored JSON to compare against. |
+| `--baseline-doc` | beside the JSON | The eval report the fixer reads. |
 | `--budget` | 3.00 | Dollars for the gate and the eval. |
 | `--max` | 20 | Most iterations to run. |
 | `--target` | 0.05 | Stop when the holdout ratio reaches this. |

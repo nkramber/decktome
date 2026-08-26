@@ -34,6 +34,11 @@ ROOT="$(pwd)"
 
 BUDGET="3.00"
 BASELINE_JSON=""
+# BASELINE_DOC is the eval report that goes with BASELINE_JSON. The fixer
+# reads the report, and the checker reads the JSON. Supplying a baseline
+# skips the auto-000 run, so without this the first iteration had no
+# report to act on and the fixer failed at once.
+BASELINE_DOC=""
 # BASE_REF is the branch the run starts from. Empty means the current
 # branch. A named long-lived branch is what makes two nights add up
 # instead of diverging from one fixed point (D-142).
@@ -58,6 +63,7 @@ while [ $# -gt 0 ]; do
     --no-push) PUSH="0"; shift ;;
     --base) BASE_REF="$2"; shift 2 ;;
     --baseline) BASELINE_JSON="$2"; shift 2 ;;
+    --baseline-doc) BASELINE_DOC="$2"; shift 2 ;;
     --dry-run) DRY_RUN="1"; shift ;;
     *) echo "unknown flag: $1" >&2; exit 2 ;;
   esac
@@ -216,10 +222,20 @@ say "budget \$$BUDGET, target ratio $TARGET_RATIO, at most $MAX_ITERATIONS itera
 # only when the owner gives it none.
 if [ -n "$BASELINE_JSON" ] && [ -s "$BASELINE_JSON" ]; then
   PREV="$BASELINE_JSON"
+  # The fixer needs the report, not the summary. Take the name the owner
+  # gave, or the one that matches the summary: .local/tune/run18.json goes
+  # with docs/reference/pr7-question-eval-run18.md.
+  if [ -z "$BASELINE_DOC" ]; then
+    BASELINE_DOC="$ROOT/docs/reference/pr7-question-eval-$(basename "$BASELINE_JSON" .json).md"
+  fi
+  [ -f "$BASELINE_DOC" ] || die "no eval report at $BASELINE_DOC. Name it with --baseline-doc."
+  PREV_DOC="$BASELINE_DOC"
   say "baseline read from $BASELINE_JSON, ratio $(ratio_of "$PREV")%"
+  say "baseline report $PREV_DOC"
 else
   GATE="$(run_gate "auto-000")" || die "the baseline gate produced nothing"
   PREV="$(run_eval "auto-000" "$GATE")" || die "the baseline eval produced nothing"
+  PREV_DOC="$ROOT/docs/reference/pr7-question-eval-auto-000.md"
   say "baseline ratio $(ratio_of "$PREV")%, spent \$$(spent)"
   commit_push "v0.0" "baseline run for the tuning loop" "$PREV"
 fi
@@ -240,8 +256,7 @@ while [ "$i" -lt "$MAX_ITERATIONS" ]; do
   if [ "$rejects" -ge 3 ]; then say "three iterations in a row changed nothing that held"; break; fi
 
   say "--- iteration $i, spent \$$(spent) of \$$BUDGET"
-  EVAL_DOC="$ROOT/docs/reference/pr7-question-eval-$(printf 'auto-%03d' $((i-1))).md"
-  [ -f "$EVAL_DOC" ] || EVAL_DOC="$ROOT/docs/reference/pr7-question-eval-auto-000.md"
+  EVAL_DOC="$PREV_DOC"
 
   if ! AUTOTUNE_EVAL_DOC="$EVAL_DOC" AUTOTUNE_LABEL="$LABEL" "$ROOT/scripts/autotune-fix.sh"; then
     say "the fixer failed"; git checkout -- . ; rejects=$((rejects+1)); continue
@@ -264,7 +279,8 @@ while [ "$i" -lt "$MAX_ITERATIONS" ]; do
   ( cd "$ROOT/go" && go run ./cmd/tune-check -next "$NEXT" -prev "$PREV" -target "$TARGET_RATIO" ) | tee -a "$LOG"
   code="${PIPESTATUS[0]}"
   case "$code" in
-    0) commit_push "v0.$i" "tuning iteration $i" "$NEXT"; LAST_GOOD="$(git rev-parse HEAD)"; PREV="$NEXT"; rejects=0 ;;
+    0) commit_push "v0.$i" "tuning iteration $i" "$NEXT"; LAST_GOOD="$(git rev-parse HEAD)"
+       PREV="$NEXT"; PREV_DOC="$ROOT/docs/reference/pr7-question-eval-$LABEL.md"; rejects=0 ;;
     3) commit_push "v0.$i" "tuning iteration $i, target reached" "$NEXT"; say "target reached"; break ;;
     *) say "REVERT: the checker rejected iteration $i"
        git reset -q --hard "$LAST_GOOD"; git clean -qfd; rejects=$((rejects+1)) ;;
