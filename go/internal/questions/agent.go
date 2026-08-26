@@ -120,6 +120,11 @@ func (a *Agent) Turn(ctx context.Context, st *State, message string, acc *llm.Ac
 	// The classify call is what changes them: a refusal empties the
 	// table, and the color check drops a name the colors exclude (D-163).
 	st.Ctx.OfferChanged = st.OfferChanged()
+	// The decline rows ask again only when the user names another format
+	// this app does not build. Probes 18 and 26 of gate run
+	// 20260826-220840-000 named the same one twice, and got the same
+	// sentence twice (D-210).
+	st.Ctx.BadFormatChanged = st.BadFormatChanged()
 	rows := a.cat.Plan(st.Ctx)
 	// A user can answer a question in the same message that raises it.
 	// Conversation 21 writes "Any card, no ban list. Call it Vintage",
@@ -278,6 +283,9 @@ func (a *Agent) Turn(ctx context.Context, st *State, message string, acc *llm.Ac
 		// so the next turn can tell a new list from the same list.
 		if c.Row.RepeatOnChange {
 			st.RecordAskedOffer(offered[c.Row.ID])
+			if declinesFormat(c.Row.ID) {
+				st.RecordAskedBadFormat()
+			}
 		}
 		st.MarkAsked(c.Row.ID, c.Row.StateKey(), c.Row.Slot)
 		rec := Ask{

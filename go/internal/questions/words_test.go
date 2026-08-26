@@ -1677,3 +1677,48 @@ func TestDeclinedPickClosesTheCommanderSlot(t *testing.T) {
 		t.Errorf("the session reported ready with the commander never asked and never chosen")
 	}
 }
+
+// TestDeclineRowWaitsForAnotherFormat holds the D-210 rule. The user
+// names Legacy, hears that this app does not build it, and names Legacy
+// again. The row said its sentence, so it stays silent.
+//
+// Conversations 18 and 26 of gate run 20260826-220840-000 are the
+// evidence. Both got the same sentence on two turns, and the eval refused
+// the second one as a duplicate.
+func TestDeclineRowWaitsForAnotherFormat(t *testing.T) {
+	out := classifyOut{Format: "unknown", PoolRule: "unknown"}
+	a, _ := testAgent(t,
+		classifyStep(t, out), fits(t, "format_unsupported_open", "colors", "budget"), askStep(t),
+		classifyStep(t, out), fits(t, "theme"), askStep(t))
+	st := NewState(false)
+	if _, err := a.Turn(context.Background(), st, "A Legacy deck for an event.", nil); err != nil {
+		t.Fatalf("turn 1: %v", err)
+	}
+	if !st.Ctx.Asked["format_unsupported_open"] {
+		t.Fatal("the decline row did not fire on turn 1")
+	}
+	res, err := a.Turn(context.Background(), st, "Legacy. A Delver of Secrets tempo deck.", nil)
+	if err != nil {
+		t.Fatalf("turn 2: %v", err)
+	}
+	for _, q := range res.Questions {
+		if q.GetSlot() == "format" {
+			t.Errorf("the decline row asked again on the same format: %q", q.GetText())
+		}
+	}
+}
+
+// TestDeclineRowAsksAgainForAnotherFormat is the other half. A second
+// unsupported format is a new sentence, so the row asks again.
+func TestDeclineRowAsksAgainForAnotherFormat(t *testing.T) {
+	st := NewState(false)
+	st.UnsupportedFormatName = "Legacy"
+	st.RecordAskedBadFormat()
+	if st.BadFormatChanged() {
+		t.Fatal("the same format read as a change")
+	}
+	st.UnsupportedFormatName = "Vintage"
+	if !st.BadFormatChanged() {
+		t.Fatal("another format did not read as a change")
+	}
+}

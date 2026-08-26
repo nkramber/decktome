@@ -42,6 +42,10 @@ type Context struct {
 	// the pick row named last. Only a row with RepeatOnChange reads it
 	// (D-163).
 	OfferChanged bool `json:"offer_changed"`
+	// BadFormatChanged says the unsupported format the user named differs
+	// from the one the decline row named last. It is the same rule for
+	// the format rows that OfferChanged is for the pick row (D-210).
+	BadFormatChanged bool `json:"bad_format_changed"`
 
 	// OutOfScope marks a request for something other than a Magic deck.
 	// Nothing else is worth asking until it is settled (D-99).
@@ -157,9 +161,24 @@ func (r Row) asksAgain(ctx Context) bool {
 	case !r.Repeat:
 		return false
 	case r.RepeatOnChange:
-		return ctx.OfferChanged
+		return ctx.contentChanged(r.Slot)
 	}
 	return true
+}
+
+// contentChanged reports whether the content of a repeat-on-change row
+// differs from the content that row sent last. The pick row names three
+// commanders, and the two decline rows name one format. A slot with no
+// signal never repeats, which is the safe answer: silence beats the same
+// sentence twice (D-163, D-210).
+func (c Context) contentChanged(slot string) bool {
+	switch slot {
+	case "commander":
+		return c.OfferChanged
+	case "format":
+		return c.BadFormatChanged
+	}
+	return false
 }
 
 // matches reports whether every trigger of a row holds.

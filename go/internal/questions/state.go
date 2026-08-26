@@ -35,6 +35,10 @@ type State struct {
 	// builds that is closest to it (D-112).
 	UnsupportedFormatName string
 	NearestFormat         string
+	// UnsupportedFormatAsked is the format the decline row named last. The
+	// row asks again only when UnsupportedFormatName differs from it
+	// (D-210).
+	UnsupportedFormatAsked string
 	// PreconName is the precon the user wants to upgrade, named by its
 	// commander (D-113).
 	PreconName string
@@ -90,6 +94,22 @@ func (s *State) OfferChanged() bool {
 		}
 	}
 	return false
+}
+
+// RecordAskedBadFormat keeps the format the decline row just named, so
+// the next turn can tell a new format from the same one.
+func (s *State) RecordAskedBadFormat() {
+	s.UnsupportedFormatAsked = s.UnsupportedFormatName
+}
+
+// BadFormatChanged reports whether the format the decline row would name
+// differs from the one it named last. A user who repeats the same
+// unsupported format hears the same sentence, so the row stays silent
+// (D-163, D-210).
+func (s *State) BadFormatChanged() bool {
+	now := strings.TrimSpace(s.UnsupportedFormatName)
+	last := strings.TrimSpace(s.UnsupportedFormatAsked)
+	return !strings.EqualFold(now, last)
 }
 
 // RetireOffer drops the names on the table and never offers them again.
