@@ -49,6 +49,16 @@ var tableEvidence = []string{
 	"fnm", "lgs", "rcq", "tournament", "friends", "we play", "our",
 }
 
+// illegalOffers are questions that offer an answer the rules forbid. The
+// color identity of a commander is the color identity of the deck, and
+// nothing may offer to leave it. Gate run 14 asked "Do you want to use
+// any colors beyond Grist's color identity?" (D-144).
+var illegalOffers = []string{
+	"beyond the color identity", "beyond its color identity",
+	"colors beyond", "colors outside", "outside the color identity",
+	"outside its color identity", "additional colors beyond",
+}
+
 // factClaims are the shapes of a claim about the game. A question states
 // no fact: another step owns that, and a wrong claim costs trust (D-108).
 var factClaims = []string{"strongest in", "is strongest", "are strongest", "strongest for", "best in"}
@@ -138,6 +148,14 @@ func LintConversation(messages []string, qs []LintQuestion) []Finding {
 		for _, c := range factClaims {
 			if strings.Contains(lower, c) {
 				add(q, "states_a_fact", fmt.Sprintf("the question claims %q", c))
+				break
+			}
+		}
+		// The question offers an answer the rules forbid.
+		for _, o := range illegalOffers {
+			if strings.Contains(lower, o) {
+				add(q, "offers_an_illegal_answer",
+					fmt.Sprintf("the question says %q, and a commander's color identity is the deck's", o))
 				break
 			}
 		}

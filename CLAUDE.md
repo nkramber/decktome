@@ -51,9 +51,9 @@ Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
 
 ## Commands that cost money
 
-`make questions-gate` calls the real providers. One run of the 66 conversations costs about $0.12 and takes about 14 minutes. The 52-conversation run cost $0.09 and took 11 minutes, and D-105 added 14. Ask the owner before every run, and write to a new `GATE_OUT` file: a rerun must never overwrite a scored document (D-65).
+`make questions-gate` calls the real providers. One run of the 100 conversations costs about $0.14 and takes about 18 minutes. Measured: 66 conversations cost $0.0964 over 737 seconds on 2026-08-26, and D-145 added 34. Ask the owner before every run, and write to a new `GATE_OUT` file: a rerun must never overwrite a scored document (D-65).
 
-`make questions-eval` scores a gate run with the eval role. One 66-conversation run costs about eleven cents. `make eval-calibrate` measures the eval model against a stronger one for about thirty cents. `scripts/autotune.sh` is the overnight tuning loop, and it refuses to start without `AUTOTUNE_ALLOW_UNATTENDED=1`. Read `docs/reference/autotune-design.md` first.
+`make questions-eval` scores a gate run with the eval role. One 100-conversation run costs about ten cents and takes about 13 minutes. Measured: 66 conversations cost $0.0645 over 494 seconds. `make eval-calibrate` measures the eval model against a stronger one for about thirty cents. `scripts/autotune.sh` is the overnight tuning loop, and it refuses to start without `AUTOTUNE_ALLOW_UNATTENDED=1`. Read `docs/reference/autotune-design.md` first.
 
 Everything else is free. `make m5-sheet` builds the scoring sheet, `make m5-report` reads it, `make themes-check` checks the theme slugs and the commander ranking, and `make store-check` runs the session store against the local Firestore emulator.
 

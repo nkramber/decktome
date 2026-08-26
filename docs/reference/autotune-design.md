@@ -27,13 +27,17 @@ Six steps, in a loop.
 
 Yes, and the cost is the easy part.
 
-| Item | Per iteration |
-|---|---|
-| Gate run, 66 conversations | about $0.12 |
-| Eval, 66 calls on the cost tier | about $0.09 |
-| Total inside the budget | about $0.21 |
+| Item | Per iteration | Wall clock |
+|---|---|---|
+| Gate run, 100 conversations | about $0.14 | about 18 minutes |
+| Eval, about 98 calls on the cost tier | about $0.10 | about 13 minutes |
+| Total inside the budget | about $0.24 | about 31 minutes |
 
-A budget of $3.00 buys about **14 iterations**. On `claude-sonnet-5` the same eval costs about $1.19 a run, and $3.00 buys two. The owner's choice of the cost tier is what makes the loop possible.
+Measured on 2026-08-26 at 66 conversations: the gate cost $0.0964 over 737 seconds, and the eval cost $0.0645 over 494 seconds. D-145 raised the set to 100, and the figures above scale by the message count.
+
+A budget of $3.00 buys about **12 iterations**. On `claude-sonnet-5` the same eval costs about $1.80 a run, and $3.00 buys one. The owner's choice of the cost tier is what makes the loop possible.
+
+Wall clock now binds before the budget does. Twelve iterations take about six hours of provider time, and the fixer agent adds its own on top. One night fits eight to ten iterations, not twelve.
 
 ## What the $3 does not cover
 

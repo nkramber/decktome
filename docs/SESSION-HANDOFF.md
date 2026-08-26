@@ -367,9 +367,20 @@ The first writes the transcript of all 66 conversations. The second scores every
 
 The PR-7B gate: the report must name every defect class the batch sweep found by hand, and the owner must accept the calibration number.
 
-### Waiting on those three
+### What the first three evals found
 
-The conversation set grows from 66 to 100. The 34 new conversations are drafted and they are **not** in `go/cmd/questions-gate/conversations.json` yet, because the three commands read that file. They wait in the scratchpad until the owner says the commands finished.
+Gate run 14 passed: 27 of 30 catalog-only, and the linter found no defective question. The eval then found two false rules claims that the gate and the linter both missed.
+
+1. "Grist, the Hunger Tide can not lead a deck." Grist is a Legendary Planeswalker by type line, and it is a legal commander (Scryfall ruling, 2021-06-18). D-129 turned a documented engine limit into a false statement, and D-140 silences the row for any legendary card it can not confirm.
+2. "Do you want to use any colors beyond Grist's color identity?" The rules allow no answer. The ask role added the clause, and D-144 puts the rule in the ask prompt and the shape in the linter.
+
+The eval instrument had two defects of its own. It read a question against answers the user gave later (D-141), which is what drove the first ratio to 39.5 percent. It also could not see that a collection was attached (D-143). The ratio after the first fix is 17.4 percent.
+
+The calibration is the lane that pays. The agreement number is 80 percent and it is not the useful output. Reading the ten disagreements is: it found both rules claims, and it showed that `claude-sonnet-5` invents card facts of its own. Neither model is reliable alone, and OQ-39 holds what the owner does about that.
+
+### The conversation set is 100
+
+D-145 added conversations 67 to 100. The set is 30 gate and 70 probe, 312 messages, and every conversation stays inside four turns.
 
 ## Next steps, in order
 

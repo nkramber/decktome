@@ -187,7 +187,10 @@ func score(client *llm.Client, acc *llm.Accumulator, run string, conv tune.Conve
 	}
 	input, err := json.Marshal(map[string]any{
 		"conversation": conv.Name,
-		"transcript":   turns,
+		// The session facts the transcript does not show. Without this
+		// one, the card-pool question reads as a presumption (D-143).
+		"user_has_a_card_collection": conv.Collection,
+		"transcript":                 turns,
 	})
 	if err != nil {
 		return nil, nil, err

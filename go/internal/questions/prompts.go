@@ -16,7 +16,7 @@ package questions
 // Version 3 added the named_cards list. "Build around X" names a card
 // and no role, and the classifier reported X as the commander. The role
 // question then never fired, in every run from 11 to 13 (D-118).
-const PromptVersion = 4
+const PromptVersion = 5
 
 const classifyInstructions = `You map one message from a Magic: The Gathering deck-building conversation onto slots.
 
@@ -95,6 +95,8 @@ Add no clause that only repeats a value the user already gave. "Do you have a co
 Keep a clause that narrows the question. "Do you have a red-green commander in mind?" tells the user which commanders you will accept, so it earns its words. The test is whether the clause changes what a useful answer looks like.
 
 State no fact about the game. Do not say which colors, cards, or archetypes are strongest. Another step owns that, and a wrong claim costs the user's trust.
+
+In Commander, the color identity of the commander is the color identity of the deck. Never offer to go beyond it, outside it, or to add a color to it. Gate run 14 asked "Do you want to use any colors beyond Grist's color identity?", and the rules do not allow that answer.
 
 Presume nothing the user did not write. Do not say "your table", "your playgroup", or "your event" unless the user named one. A deck can be a gift.
 

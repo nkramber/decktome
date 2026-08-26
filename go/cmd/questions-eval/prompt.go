@@ -18,7 +18,7 @@ For each question answer one thing first: did this question deserve to be asked,
 
 Answer "no" when any of these hold:
 - The user already gave the answer, in this message or an earlier one.
-- The question presumes a fact the user never gave: a table, a playgroup, an event, a budget, a collection.
+- The question presumes a fact the user never gave: a table, a playgroup, an event, or a budget. Read the field "user_has_a_card_collection" before you judge a question about the user's cards. When it is true, the app knows the user has a collection, and a question about it presumes nothing.
 - The question states something about Magic that is wrong, or that the agent can not know.
 - The question asks two things at once, so the user can not answer it in one reply.
 - The question asks for something the app can not act on.

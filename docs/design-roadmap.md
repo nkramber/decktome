@@ -360,9 +360,9 @@ Three evals run first, in this order.
 
 | Eval | What it measures | Cost |
 |---|---|---|
-| Gate run 14 | The transcript. 66 conversations, 30 gate and 36 probe and terse. | about $0.12 |
-| Question eval | Every question, scored for whether it deserved to be asked. | about $0.09 |
-| Eval calibration | The cost-tier eval against `claude-sonnet-5` on 12 conversations. | about $0.30 |
+| Gate run | The transcript. 100 conversations, 30 gate and 70 probe (D-145). | about $0.14 |
+| Question eval | Every question, scored for whether it deserved to be asked. | about $0.10 |
+| Eval calibration | The cost-tier eval against `claude-sonnet-5` on 12 conversations. | about $0.25 |
 
 The calibration answers the one question the cost tier raises: how gently does a model score work its own model produced? It scores the same 12 conversations twice, once on the cost tier and once on `claude-sonnet-5`, and `cmd/tune-check -agree` compares the two question by question. It reports how often they agree, and how many questions each one refused. A cost-tier eval that refuses four where the stronger model refuses twelve is not measuring the agent. It reports a floor, and the real number sits above it. OQ-39 holds what the owner does with that gap.
 
