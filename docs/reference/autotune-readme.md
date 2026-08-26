@@ -12,11 +12,8 @@ holds the commands.
 1. Add one line to `.env`:
 
    ```
-   AUTOTUNE_FIXER_CMD=claude -p --permission-mode bypassPermissions
+   AUTOTUNE_FIXER_CMD="claude -p --permission-mode bypassPermissions"
    ```
-
-   No dollar cap goes here. The fixer bills against the monthly plan
-   (D-159). The `--budget` flag below is a separate thing.
 
 2. Keep a container branch, and name it with `--base`. `pr-7c` is the one
    today. Every night cuts a working branch off it, and you fast-forward
@@ -90,7 +87,41 @@ Every finished iteration is already committed on the `auto-tune` branch.
 A rejected iteration leaves no document. The loop cleans the tree, so read
 the log for what it tried.
 
-Keep a night by a fast-forward of `pr-7c`. Delete the branch to drop it.
+## Keep or drop a night
+
+Find the branch the night wrote:
+
+```
+git branch --list 'auto-tune/*'
+```
+
+Read what it did before you decide:
+
+```
+git log --oneline pr-7c..auto-tune/<stamp>
+git diff pr-7c..auto-tune/<stamp>
+```
+
+Keep it. The night was cut from `pr-7c`, so the merge is a fast-forward:
+
+```
+git switch pr-7c
+git merge --ff-only auto-tune/<stamp>
+git branch -d auto-tune/<stamp>
+```
+
+`--ff-only` fails when `pr-7c` moved after the night started. That failure
+is a warning and not a fault. Read both branches before you merge them
+any other way.
+
+Drop it:
+
+```
+git branch -D auto-tune/<stamp>
+```
+
+Keep one commit of a night, and drop the rest, with `git cherry-pick`.
+Each iteration is one commit, named `v0.1`, `v0.2`, and so on.
 
 ## What it costs
 

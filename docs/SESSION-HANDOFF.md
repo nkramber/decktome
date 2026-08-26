@@ -4,17 +4,30 @@
 
 ## Do this first
 
-Gate run 16 and its eval are done, and they are the current state. Read
-`docs/reference/pr7-question-gate-run16.md` and
-`docs/reference/pr7-question-eval-run16.md` before anything else. The
-section "Gate run 16 and its eval" below holds the numbers.
+The baseline for the tuning loop is ready: `.local/tune/run18.json`.
+`docs/reference/autotune-readme.md` holds every command for the loop.
 
-Run 17 and its eval are the next step, and they need the owner's word.
-They measure D-151 to D-153, which no run has seen. One question waits in
-`docs/owner-questions.md`: the rest of OQ-39.
+Gate run 18 and its eval measure the tree as it stands, with D-155 to
+D-159 in it. Nothing costs money until the owner approves the next run.
 
-The tree carries the uncommitted fixes for D-146 to D-158. The owner
-commits and pushes.
+| Measure | Run 16 | Run 17 | Run 18 |
+|---|---|---|---|
+| Catalog-only, bar 25 | 29 | 27 | **28** |
+| Linter findings | 0 | 0 | **0** |
+| Premature sessions | 0 | 0 | **0** |
+| Questions asked | 124 | 125 | **124** |
+| Catalog questions that closed a slot | 98 | 97 | **97** |
+| Bad-question ratio, holdout | 11.3% | 13.3% | **10.4%** |
+
+Run 17 rose because of D-157, which this session wrote and then corrected
+with D-158. The row that D-157 made repeat, `format_unsupported_open`,
+fell from 14 bad questions to 4. The ratio is now under the level that
+came before the format change.
+
+Two notes on the eval-18 numbers. The tune split reads 7.8 percent and
+the holdout 10.4 percent. No fixer has run, so that gap is sampling and
+not the overfit D-134 warns about. The target of D-137 is 5 percent on
+the holdout, so the loop has room.
 
 ## Last updated
 
