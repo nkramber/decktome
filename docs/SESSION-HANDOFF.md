@@ -1,16 +1,36 @@
 # Session hand-off
 
-`CLAUDE.md` is the entry point. It sends you here. Then read `docs/decisions.md` and `docs/open-questions.md`.
+`CLAUDE.md` is the entry point. It sends you here. Then read `docs/decisions.md`, `docs/owner-questions.md`, and `docs/open-questions.md`.
+
+## Do this first
+
+The owner already approved these two runs. Run them, both in the background, and report what they say.
+
+```
+GATE_OUT=docs/reference/pr7-question-gate-run15.md make questions-gate
+
+EVAL_RUN=docs/reference/pr7-question-gate-run15.md \
+EVAL_OUT=docs/reference/pr7-question-eval-run15.md \
+EVAL_JSON=.local/tune/run15.json make questions-eval
+```
+
+The gate takes about 18 minutes and the eval about 13. A foreground command stops at 10 minutes, so run each one in the background and wait for it to finish. The eval needs the gate document, so the two are in order and not in parallel.
+
+Read three things in the result, in this order.
+
+1. **The linter verdict.** Gate run 14 passed the gate and told a user two false rules claims. D-140 and D-144 fixed both, and D-144 put the second shape into the linter as a gate bar. A finding here is a regression.
+2. **Any claim about the rules.** Search the transcript for a sentence that states a fact about Magic. The ask role invented one in each of the last two runs, and neither the gate nor the linter caught it. Check every card name and every rule against the local snapshot in `.local/gcs/mtg-local-cards/scryfall/`, and never against memory.
+3. **The bad-question ratio.** Run 14 read 39.5 percent, and 17.4 percent after D-141 fixed the eval. Run 15 is not comparable to either: 34 harder conversations joined (D-145), and the classify and ask prompts are at version 5. A higher number is not a regression by itself.
+
+`.local/tune/run15.json` then becomes the tuning loop's baseline.
 
 ## Last updated
 
-2026-08-25. Merged: PR-0a to PR-5, PR-10, the audit fixes, and PR-6 (#1 to #11).
+2026-08-26. Merged: PR-0a to PR-7 and PR-10 (#1 to #12), the audit fixes included. PR-7 merged as #12.
 
-PR-7 was code-complete, and then the owner scored items 1 to 32 of the M-5 sheet. Those scores asked for 16 rewords and one deletion. They also exposed a class of defect the sheet could not hold. A correction session followed on the same day. Read "The correction session" below before anything else.
+Branch `pr-7b` holds PR-7B, the automated eval lane. The tree is clean at commit 84a3be7, and `go build`, `go vet`, `go test`, and `golangci-lint` all pass. The owner commits and pushes. Do not commit unless the owner asks.
 
-The Go tree is green after the correction: `go build`, `go vet`, `go test`, and `golangci-lint` all pass. Gate run 14 has not run yet, and it is the next step. It costs money and needs the owner's approval.
-
-The correction is **not committed**. Branch `pr-7` sits at commit b349bb6 with the owner's scores. Run `git status` before you change anything, and run `git pull` first: the owner scores the M-5 sheet on a phone, so the remote can hold newer scores. The owner commits and pushes.
+Versions that invalidate earlier scores: the classify and ask prompts are at 5, the eval prompt is at 2, and the M-5 rubric is at 2. A score taken under an earlier version does not carry over (D-66).
 
 ## State of the work
 
@@ -384,16 +404,18 @@ D-145 added conversations 67 to 100. The set is 30 gate and 70 probe, 312 messag
 
 ## Next steps, in order
 
-1. Run gate run 14 as one document. The batch sweep proved the conversations one by one, and it wrote no single gate document, so M-5 still needs one. It costs about $0.12 and takes about 14 minutes, and it needs the owner's approval:
-   `GATE_OUT=docs/reference/pr7-question-gate-run14.md make questions-gate`
-   The linter is a bar now, so a redundant or presumptuous question fails the run.
-2. Build the version-2 sheet from run 14 alone:
-   `M5_OUT=docs/reference/pr7-m5-scoring-run14.md make m5-sheet`
-3. Score that sheet. It holds 60 items: every replacement, and a sample of the plain questions spread over the rows.
-4. Run `make m5-report` against the new sheet. It sets the D-27 threshold, it says whether the reword guard at 0.6 is too tight, and it says which questions should never have been asked.
-5. Set `DefaultFitThreshold` and, if the report says so, `MaxRewordOverlap`. Then run the gate once more: a new threshold changes when the model may invent.
-6. Review and commit PR-7. The owner commits and pushes.
-7. PR-8 (generator), then PR-9 (variance). PR-8 owns the prompt-cache lever, the weak-commander-pool bar, and OQ-21.
+1. Run gate run 15 and its eval. "Do this first" at the top of this file holds both commands and what to read in the answer. The owner approved both runs.
+2. Fix whatever the eval finds, with a test for each fix and a decision row. The last two runs each hid one false rules claim behind a passing gate.
+3. Answer OQ-39. The calibration of 2026-08-26 agreed 80 percent, and the ten disagreements held two real defects and two card facts `claude-sonnet-5` invented. Neither model is reliable alone. The open proposal is to score with both and let a fixer act only on a refusal they agree on, which costs about ten cents more per run.
+4. Merge `pr-7b`. Then open `pr-7c` from `main` as the container for everything the loop writes (D-142).
+5. Name the fixer in `AUTOTUNE_FIXER_CMD` and cap its tokens. That agent bills apart from the loop budget, and nothing here can measure it.
+6. Start the loop against `pr-7c`, with `run15.json` as the baseline. One iteration takes about 31 minutes, so a night fits eight to ten:
+   `AUTOTUNE_ALLOW_UNATTENDED=1 scripts/autotune.sh --base pr-7c --baseline .local/tune/run15.json --budget 3.00`
+   Run it once with `--max 1` before a full night.
+7. Build the version-2 M-5 sheet when the owner wants a hand-scored sample beside the automated one:
+   `M5_OUT=docs/reference/pr7-m5-scoring-run15.md M5_RUNS=../docs/reference/pr7-question-gate-run15.md make m5-sheet`
+8. Set `DefaultFitThreshold` (OQ-28) and, if the report says so, `MaxRewordOverlap` (OQ-29).
+9. PR-8 (generator), then PR-9 (variance). PR-8 owns the prompt-cache lever, the weak-commander-pool bar, and OQ-21.
 
 ## Facts that expire
 
@@ -403,14 +425,25 @@ D-145 added conversations 67 to 100. The set is 30 gate and 70 probe, 312 messag
 - Standard: 18 sets, Wilds of Eldraine (2023-09-08) to The Hobbit (2026-08-14). No rotation in 2026. Six sets leave at the first 2027 set: WOE, LCI, MKM, OTJ, BLB, DSK. Verified 2026-08-24 on the Scryfall sets API.
 - LLM model ids and prices: 2026-08-24 (`roles.json`, `prices.json`). The Sonnet 5 intro price claim is unverified.
 - Comprehensive Rules: 2026-08-07 text. Commander brackets: 2025-10-21 revision.
+- Card snapshot on disk: `.local/gcs/mtg-local-cards/scryfall/20260824T090152`. Check every card fact against it, and never against memory. It holds art-series objects that share a real card's name, so read the `layout` field.
+- Run cost, measured 2026-08-26 at 66 conversations: the gate cost $0.0964 over 737 seconds, and the eval cost $0.0645 over 494 seconds. At 100 conversations that scales to about $0.14 and 18 minutes, and about $0.10 and 13 minutes.
+- Prompt versions: classify and ask 5, eval 2, M-5 rubric 2.
 
 ## How to resume
 
-1. Run `git pull`, then `git status`. The owner scores the M-5 sheet on a phone, so the remote can be ahead. The correction session of 2026-08-25 is not committed, so the tree is not clean.
+1. Run `git pull`, then `git status`. The tree was clean at commit 84a3be7 on branch `pr-7b`.
 2. Load the skills: `ste-writing` before you write any `.md`, `design-doc-style` before you edit the roadmap, and `mtg-corpus` before you reason about a format, a legality, or a card term.
-3. Read `docs/decisions.md` (D-1 to D-134), `docs/owner-questions.md`, and `docs/open-questions.md`. The decision log is the source of truth, and this file is the summary.
-4. Check the Go tree is green: `cd go && go build ./... && go vet ./... && go test ./...`, then `make lint-go`.
-5. Continue from "Next steps, in order". Ask questions as they come up, and record each answer in `docs/decisions.md`.
-6. Before you end, update this file.
+3. Read `docs/decisions.md` (D-1 to D-145), `docs/owner-questions.md`, and `docs/open-questions.md`. The decision log is the source of truth, and this file is the summary.
+4. Check the Go tree is green: `cd go && go build ./... && go vet ./... && go test ./...`, then `make lint-go`. The module sits in `go/`, so `./...` from the repository root finds nothing.
+5. Do "Do this first" at the top of this file. Then continue from "Next steps, in order".
+6. Ask questions as they come up. Record each owner answer in `docs/decisions.md`, and delete the row from `docs/owner-questions.md`.
+7. Before you end, update this file.
 
-Four things a fresh session gets wrong without reading further. `make questions-gate` spends money and needs approval each time. A rerun must write to a new `GATE_OUT` file, because a scored document is never overwritten (D-65). `docs/reference/pr7-m5-scoring.md` is the owner's working file, and no target writes to it. The version-2 sheet needs a new `M5_OUT` name.
+Six things a fresh session gets wrong without reading further.
+
+- `make questions-gate` and `make questions-eval` spend money. The owner approved gate run 15 and its eval, and nothing after that.
+- A rerun writes to a new file. `GATE_OUT`, `EVAL_OUT`, `EVAL_JSON`, and `M5_OUT` all refuse to overwrite a document that holds a result (D-65).
+- A gate run takes about 18 minutes and an eval about 13. A foreground command stops at 10 minutes, so run both in the background.
+- `docs/reference/pr7-m5-scoring.md` is the owner's hand scoring. No target writes to it, and the version-2 sheet needs a new `M5_OUT` name.
+- Check every card fact against the local snapshot. Two false rules claims reached a user in one run, and both passed the gate and the linter.
+- The eval and the agent share a model, `gpt-5.6-luna`. Every ratio it reports is a floor, not a measurement (D-136).
