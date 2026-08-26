@@ -266,7 +266,7 @@
       ],
       "when": {
         "format": "sixty",
-        "power_competitive": true
+        "power_inferred": true
       },
       "key": "power_confirm"
     },

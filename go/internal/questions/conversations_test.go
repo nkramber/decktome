@@ -106,6 +106,9 @@ func conversations() []conversation {
 		{want: []string{"format", "theme", "colors"}, fill: []string{"format", "theme", "colors"},
 			set: func(c *Context) {
 				c.Format, c.PowerCompetitive, c.Theme = mtgv1.FormatId_FORMAT_ID_MODERN, true, "best deck"
+				// The agent fills the tournament step here, because the
+				// user named none, and the confirm row asks about it.
+				c.PowerInferred = true
 			}},
 		{want: []string{"power_sixty_confirm", "budget", "meta"}, fill: []string{"power", "power_confirm", "budget", "meta"}},
 	}
@@ -118,6 +121,9 @@ func conversations() []conversation {
 		{want: []string{"format_store", "theme", "colors"}, fill: []string{"format", "theme", "colors"},
 			set: func(c *Context) {
 				c.Format, c.PowerCompetitive, c.Theme = mtgv1.FormatId_FORMAT_ID_MODERN, true, "best deck"
+				// The agent fills the tournament step here, because the
+				// user named none, and the confirm row asks about it.
+				c.PowerInferred = true
 			}},
 		{want: []string{"power_sixty_confirm", "budget", "meta"}, fill: []string{"power", "power_confirm", "budget", "meta"}},
 	}
@@ -235,7 +241,10 @@ func conversations() []conversation {
 	c16.ctx.PowerCompetitive, c16.ctx.BuyList = true, true
 	c16.steps = []step{
 		{want: []string{"format", "theme_competitive", "colors"}, fill: []string{"format", "theme", "colors"},
-			set: func(c *Context) { c.Format, c.Theme = mtgv1.FormatId_FORMAT_ID_MODERN, "best deck" }},
+			set: func(c *Context) {
+				c.Format, c.Theme = mtgv1.FormatId_FORMAT_ID_MODERN, "best deck"
+				c.PowerInferred = true
+			}},
 		{want: []string{"power_sixty_confirm", "budget", "meta"}, fill: []string{"power", "power_confirm", "budget", "meta"}},
 	}
 	cs = append(cs, c16)
@@ -346,7 +355,10 @@ func conversations() []conversation {
 	c25.ctx.PowerCompetitive, c25.ctx.BuyList = true, true
 	c25.steps = []step{
 		{want: []string{"format_store", "theme_competitive", "colors"}, fill: []string{"format", "theme", "colors"},
-			set: func(c *Context) { c.Format, c.Theme = mtgv1.FormatId_FORMAT_ID_MODERN, "poison" }},
+			set: func(c *Context) {
+				c.Format, c.Theme = mtgv1.FormatId_FORMAT_ID_MODERN, "poison"
+				c.PowerInferred = true
+			}},
 		{want: []string{"power_sixty_confirm", "budget", "meta"}, fill: []string{"power", "power_confirm", "budget", "meta"}},
 	}
 	cs = append(cs, c25)

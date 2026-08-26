@@ -264,3 +264,34 @@ func contains(list []string, want string) bool {
 	}
 	return false
 }
+
+// TestPowerConfirmNeedsAnInferredStep holds the D-209 rule. The confirm
+// row asks about a step the agent filled in. A step the user named needs
+// no confirmation, and a question about it repeats the answer.
+//
+// Conversation 80 of gate run 20260826-220840-000 is the evidence. The
+// user answered "TOURNAMENT", and the next turn asked "Should I build the
+// deck for tournament-level competition?" Conversation 71 answered
+// "FNM." and got the same row one turn later.
+func TestPowerConfirmNeedsAnInferredStep(t *testing.T) {
+	c := load(t)
+	named := ctx(mtgv1.FormatId_FORMAT_ID_MODERN, "power")
+	named.PowerCompetitive = true
+	if got := ids(c.Plan(named)); has(got, "power_sixty_confirm") {
+		t.Fatalf("the confirm row fired on a step the user named: %v", got)
+	}
+	inferred := ctx(mtgv1.FormatId_FORMAT_ID_MODERN, "power")
+	inferred.PowerCompetitive, inferred.PowerInferred = true, true
+	if got := ids(c.Plan(inferred)); !has(got, "power_sixty_confirm") {
+		t.Fatalf("the confirm row stayed silent on an inferred step: %v", got)
+	}
+}
+
+func has(list []string, want string) bool {
+	for _, s := range list {
+		if s == want {
+			return true
+		}
+	}
+	return false
+}

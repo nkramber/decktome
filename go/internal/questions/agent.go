@@ -694,10 +694,15 @@ func (a *Agent) applyWords(st *State, message string) {
 	// it. The slot ends with a value whatever the user answers, which
 	// D-90 requires. Commander keeps its bracket question, because
 	// bracket 4 and bracket 5 are too far apart to infer (D-107).
+	//
+	// The mark is what the confirm row fires on. A step the user named
+	// reaches the slot through the classify call, one step above this
+	// one, so no inference runs and the row stays silent (D-209).
 	if st.Ctx.PowerCompetitive && sixtyCard(st.Ctx.Format) && st.Slots.GetPower() == nil {
 		st.Slots.Power = &mtgv1.PowerLevel{
 			Level: &mtgv1.PowerLevel_SixtyStep{SixtyStep: mtgv1.SixtyStep_SIXTY_STEP_TOURNAMENT},
 		}
+		st.Ctx.PowerInferred = true
 		st.Close("power")
 		a.log.Info("the agent inferred the tournament step from a competitive request",
 			"session", st.SessionID)

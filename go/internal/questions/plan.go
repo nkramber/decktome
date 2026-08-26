@@ -58,11 +58,16 @@ type Context struct {
 	CommanderNotOwned bool `json:"commander_not_owned"`
 	WeakCommanderPool bool `json:"weak_commander_pool"`
 	PowerCompetitive  bool `json:"power_competitive"`
-	BuyList           bool `json:"buy_list"`
-	BudgetAmbiguous   bool `json:"budget_ambiguous"`
-	HouseFormat       bool `json:"house_format"`
-	TwoPlans          bool `json:"two_plans"`
-	AfterBuild        bool `json:"after_build"`
+	// PowerInferred says the agent filled the power step itself, because
+	// the user asked for a strong deck and named no step. A step the user
+	// named is not inferred, and a question about it repeats the answer
+	// the user already gave (D-209).
+	PowerInferred   bool `json:"power_inferred"`
+	BuyList         bool `json:"buy_list"`
+	BudgetAmbiguous bool `json:"budget_ambiguous"`
+	HouseFormat     bool `json:"house_format"`
+	TwoPlans        bool `json:"two_plans"`
+	AfterBuild      bool `json:"after_build"`
 	// TwoDecks marks a request for more than one deck. The app builds one
 	// at a time, and it says so before it asks anything else (D-112).
 	TwoDecks bool `json:"two_decks"`
@@ -198,6 +203,7 @@ func (w When) matches(ctx Context) bool {
 	}{
 		{w.OutOfScope, ctx.OutOfScope},
 		{w.PowerCompetitive, ctx.PowerCompetitive},
+		{w.PowerInferred, ctx.PowerInferred},
 		{w.NamedCard, ctx.NamedCard},
 		{w.LockedCard, ctx.LockedCard},
 		{w.Suggested, ctx.Suggested},
