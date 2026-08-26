@@ -415,8 +415,10 @@ type Slots struct {
 	LockedOracleIds []string `protobuf:"bytes,8,rep,name=locked_oracle_ids,json=lockedOracleIds,proto3" json:"locked_oracle_ids,omitempty"`
 	// plan_variant separates two builds of one theme (roadmap PR-9).
 	PlanVariant string `protobuf:"bytes,9,opt,name=plan_variant,json=planVariant,proto3" json:"plan_variant,omitempty"`
-	// slot_states is keyed by slot name: format, power, colors, theme,
-	// commander, pool_rule, budget, locked, plan_variant, house_rules, meta.
+	// slot_states is keyed by slot name: scope, format, power, colors,
+	// theme, commander, pool_rule, budget, locked, plan_variant,
+	// house_rules, meta. "scope" records that the agent said it builds
+	// Magic decks only, after the user asked for something else.
 	SlotStates    map[string]SlotState `protobuf:"bytes,10,rep,name=slot_states,json=slotStates,proto3" json:"slot_states,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value,enum=mtg.v1.SlotState"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -680,7 +682,11 @@ type Question struct {
 	// invented marks a model-invented question (D-25). Catalog otherwise.
 	Invented bool `protobuf:"varint,4,opt,name=invented,proto3" json:"invented,omitempty"`
 	// gap_score is the catalog-fit score that allowed an invented question.
-	GapScore      float64 `protobuf:"fixed64,5,opt,name=gap_score,json=gapScore,proto3" json:"gap_score,omitempty"`
+	GapScore float64 `protobuf:"fixed64,5,opt,name=gap_score,json=gapScore,proto3" json:"gap_score,omitempty"`
+	// catalog_text is the catalog question an invented question replaced.
+	// Empty when invented is false. M-5 scores catalog_enough and
+	// invented_better, and neither can be judged without both texts (D-66).
+	CatalogText   string `protobuf:"bytes,7,opt,name=catalog_text,json=catalogText,proto3" json:"catalog_text,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -757,6 +763,13 @@ func (x *Question) GetGapScore() float64 {
 	return 0
 }
 
+func (x *Question) GetCatalogText() string {
+	if x != nil {
+		return x.CatalogText
+	}
+	return ""
+}
+
 var File_mtg_v1_session_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_session_proto_rawDesc = "" +
@@ -809,14 +822,15 @@ const file_mtg_v1_session_proto_rawDesc = "" +
 	"\vquestion_id\x18\x01 \x01(\tR\n" +
 	"questionId\x12!\n" +
 	"\foption_index\x18\x02 \x01(\x05R\voptionIndex\x12\x12\n" +
-	"\x04text\x18\x03 \x01(\tR\x04text\"\x95\x01\n" +
+	"\x04text\x18\x03 \x01(\tR\x04text\"\xb8\x01\n" +
 	"\bQuestion\x12\x0e\n" +
 	"\x02id\x18\x06 \x01(\tR\x02id\x12\x12\n" +
 	"\x04slot\x18\x01 \x01(\tR\x04slot\x12\x12\n" +
 	"\x04text\x18\x02 \x01(\tR\x04text\x12\x18\n" +
 	"\aoptions\x18\x03 \x03(\tR\aoptions\x12\x1a\n" +
 	"\binvented\x18\x04 \x01(\bR\binvented\x12\x1b\n" +
-	"\tgap_score\x18\x05 \x01(\x01R\bgapScore*~\n" +
+	"\tgap_score\x18\x05 \x01(\x01R\bgapScore\x12!\n" +
+	"\fcatalog_text\x18\a \x01(\tR\vcatalogText*~\n" +
 	"\rSessionStatus\x12\x1e\n" +
 	"\x1aSESSION_STATUS_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15SESSION_STATUS_ASKING\x10\x01\x12\x18\n" +

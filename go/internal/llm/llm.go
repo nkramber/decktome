@@ -19,17 +19,23 @@ import (
 // a model, a reasoning effort, and an output cap.
 type Role string
 
-// The five roles of the agent (roadmap PR-10).
+// The six roles of the agent (roadmap PR-10, D-133).
 const (
 	RoleClassify Role = "classify"
 	RoleAsk      Role = "ask"
 	RoleGenerate Role = "generate"
 	RoleRepair   Role = "repair"
 	RoleJudge    Role = "judge"
+	// RoleEval scores the questions the agent asked, for the automated
+	// M-5 lane. It is not RoleJudge: the judge rates a deck (D-4), and
+	// D-22 keeps it off the generator's provider. The eval role rates a
+	// question, and the owner set it on the cost tier so a whole run
+	// costs cents (D-133).
+	RoleEval Role = "eval"
 )
 
 // Roles lists every role in config order. Config validation requires all.
-var Roles = []Role{RoleClassify, RoleAsk, RoleGenerate, RoleRepair, RoleJudge}
+var Roles = []Role{RoleClassify, RoleAsk, RoleGenerate, RoleRepair, RoleJudge, RoleEval}
 
 // Request is one structured-output call as the call site writes it.
 type Request struct {
