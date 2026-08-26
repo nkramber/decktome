@@ -191,6 +191,16 @@ func Compare(prev, next *Summary) Decision {
 		fail("the bad-question ratio on the %s rose from %.1f%% to %.1f%%",
 			split, prevRatio*100, nextRatio*100)
 	}
+	// The holdout decides, and the whole set is the sanity check under it.
+	// The holdout holds about 120 questions, so two of them move it by
+	// more than a point. Iteration 1 of 2026-08-26 improved the holdout by
+	// two bad questions while every judged question got worse by three,
+	// and the loop called that progress. A ratio that falls on the holdout
+	// while it rises over the whole set is noise, and not a gain (D-178).
+	if next.HoldoutJudged > 0 && next.Ratio > prev.Ratio {
+		fail("the bad-question ratio over every judged question rose from %.1f%% to %.1f%%, although the holdout fell",
+			prev.Ratio*100, next.Ratio*100)
+	}
 	// A fall on the tune split alone is the shape of an overfit. It does
 	// not reject the iteration, and the loop says so out loud.
 	if next.HoldoutJudged > 0 && next.TuneRatio < prev.TuneRatio && nextRatio >= prevRatio {

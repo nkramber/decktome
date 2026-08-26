@@ -72,6 +72,34 @@ AUTOTUNE_ALLOW_UNATTENDED=1 scripts/autotune.sh \
   --base pr-7c --baseline .local/tune/BASELINE.json --budget 3.00
 ```
 
+## Run it without a baseline
+
+Drop `--baseline` and the loop measures its own. It runs one gate and one
+eval first, calls that the baseline, commits it as `v0.0`, and then starts
+the iterations.
+
+```
+AUTOTUNE_ALLOW_UNATTENDED=1 scripts/autotune.sh \
+  --base pr-7c --budget 3.00 --max 1
+```
+
+`--max` counts tuning iterations only. The baseline is not one of them, so
+this command runs two gate and eval pairs: the baseline, then iteration 1.
+It costs about $0.49 and takes about an hour.
+
+Use it when the code has changed since the last scored run. A baseline
+that measured other code makes the loop credit the fixer with work it did
+not do.
+
+## Nothing is ever overwritten
+
+Every document carries the run stamp, so two runs never collide. A
+document reads `pr7-question-gate-20260826-164931-001.md`, where the first
+part is the run and the last is the iteration (D-177).
+
+The loop also refuses to write over a file that exists. It stops before it
+calls a provider, and it names the file.
+
 ## Stop it
 
 ```
@@ -172,6 +200,7 @@ The fixer is not in that number. It bills against the monthly plan.
 - The budget is spent.
 - The iteration count reaches `--max`.
 - Three iterations in a row change nothing that holds.
+- The whole judged set gets worse, even when the holdout improves (D-178).
 - The holdout ratio reaches the target.
 
 ## What it can not do

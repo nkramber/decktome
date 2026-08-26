@@ -176,6 +176,8 @@ conv_count() {
 
 run_gate() {   # $1 = iteration label
   local out="$ROOT/docs/reference/pr7-question-gate-$1.md"
+  # A scored document is never overwritten (D-65, D-177).
+  [ -e "$out" ] && die "a gate document already exists at $out"
   say "gate $1: $(conv_count) conversations, about 20 minutes"
   [ "$DRY_RUN" = "1" ] && { say "dry run: no gate"; return 1; }
   ( cd "$ROOT/go" && QUESTIONS_GATE=1 go run ./cmd/questions-gate \
@@ -188,6 +190,8 @@ run_gate() {   # $1 = iteration label
 run_eval() {   # $1 = iteration label, $2 = gate document
   local doc="$ROOT/docs/reference/pr7-question-eval-$1.md"
   local sum="$STATE_DIR/$1.json"
+  [ -e "$doc" ] && die "an eval report already exists at $doc"
+  [ -e "$sum" ] && die "an eval summary already exists at $sum"
   say "eval $1: scoring every question"
   ( cd "$ROOT/go" && QUESTIONS_EVAL=1 go run ./cmd/questions-eval \
       -in "$2" -out "$doc" -json "$sum" -budget "$EVAL_BUDGET" ) || true
@@ -238,9 +242,9 @@ if [ -n "$BASELINE_JSON" ] && [ -s "$BASELINE_JSON" ]; then
   say "baseline read from $BASELINE_JSON, ratio $(ratio_of "$PREV")%"
   say "baseline report $PREV_DOC"
 else
-  GATE="$(run_gate "auto-000")" || die "the baseline gate produced nothing"
-  PREV="$(run_eval "auto-000" "$GATE")" || die "the baseline eval produced nothing"
-  PREV_DOC="$ROOT/docs/reference/pr7-question-eval-auto-000.md"
+  GATE="$(run_gate "$STAMP-000")" || die "the baseline gate produced nothing"
+  PREV="$(run_eval "$STAMP-000" "$GATE")" || die "the baseline eval produced nothing"
+  PREV_DOC="$ROOT/docs/reference/pr7-question-eval-$STAMP-000.md"
   say "baseline ratio $(ratio_of "$PREV")%, spent \$$(spent)"
   commit_push "v0.0" "baseline run for the tuning loop" "$PREV"
 fi
@@ -251,7 +255,12 @@ i=0
 rejects=0
 while [ "$i" -lt "$MAX_ITERATIONS" ]; do
   i=$((i+1))
-  LABEL="$(printf 'auto-%03d' "$i")"
+  # The label carries the run stamp. It used to be the iteration number
+  # alone, so every --max 1 run wrote auto-001 and overwrote the gate
+  # document, the eval report, and the summary of the run before it. One
+  # iteration's measurements were lost that way, which D-65 forbids
+  # (D-177).
+  LABEL="$(printf '%s-%03d' "$STAMP" "$i")"
   if [ -f "$STOP_FILE" ]; then
     say "stop file found, so the loop ends after $((i-1)) iterations"
     rm -f "$STOP_FILE"
