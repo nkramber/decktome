@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file mtg/v1/format.proto.
  */
 export const file_mtg_v1_format: GenFile = /*@__PURE__*/
-  fileDesc("ChNtdGcvdjEvZm9ybWF0LnByb3RvEgZtdGcudjEiOwoGRm9ybWF0EhwKAmlkGAEgASgOMhAubXRnLnYxLkZvcm1hdElkEhMKC2hvdXNlX3J1bGVzGAIgASgJIlEKClBvd2VyTGV2ZWwSEQoHYnJhY2tldBgBIAEoBUgAEicKCnNpeHR5X3N0ZXAYAiABKA4yES5tdGcudjEuU2l4dHlTdGVwSABCBwoFbGV2ZWwq2wEKCEZvcm1hdElkEhkKFUZPUk1BVF9JRF9VTlNQRUNJRklFRBAAEhcKE0ZPUk1BVF9JRF9DT01NQU5ERVIQARIWChJGT1JNQVRfSURfU1RBTkRBUkQQAhIVChFGT1JNQVRfSURfUElPTkVFUhADEhQKEEZPUk1BVF9JRF9NT0RFUk4QBBIUChBGT1JNQVRfSURfTEVHQUNZEAUSFQoRRk9STUFUX0lEX1ZJTlRBR0UQBhIUChBGT1JNQVRfSURfUEFVUEVSEAcSEwoPRk9STUFUX0lEX0hPVVNFEAgqbQoJU2l4dHlTdGVwEhoKFlNJWFRZX1NURVBfVU5TUEVDSUZJRUQQABIVChFTSVhUWV9TVEVQX0NBU1VBTBABEhIKDlNJWFRZX1NURVBfRk5NEAISGQoVU0lYVFlfU1RFUF9UT1VSTkFNRU5UEANCOlo4Z2l0aHViLmNvbS9ua3JhbWJlci9tdGctZGVjay1idWlsZGVyL2dvL2dlbi9tdGcvdjE7bXRndjFiBnByb3RvMw");
+  fileDesc("ChNtdGcvdjEvZm9ybWF0LnByb3RvEgZtdGcudjEiOwoGRm9ybWF0EhwKAmlkGAEgASgOMhAubXRnLnYxLkZvcm1hdElkEhMKC2hvdXNlX3J1bGVzGAIgASgJIlEKClBvd2VyTGV2ZWwSEQoHYnJhY2tldBgBIAEoBUgAEicKCnNpeHR5X3N0ZXAYAiABKA4yES5tdGcudjEuU2l4dHlTdGVwSABCBwoFbGV2ZWwq4wEKCEZvcm1hdElkEhkKFUZPUk1BVF9JRF9VTlNQRUNJRklFRBAAEhcKE0ZPUk1BVF9JRF9DT01NQU5ERVIQARIWChJGT1JNQVRfSURfU1RBTkRBUkQQAhIUChBGT1JNQVRfSURfTU9ERVJOEAQSEwoPRk9STUFUX0lEX0hPVVNFEAgiBAgDEAMiBAgFEAUiBAgGEAYiBAgHEAcqEUZPUk1BVF9JRF9QSU9ORUVSKhBGT1JNQVRfSURfTEVHQUNZKhFGT1JNQVRfSURfVklOVEFHRSoQRk9STUFUX0lEX1BBVVBFUiptCglTaXh0eVN0ZXASGgoWU0lYVFlfU1RFUF9VTlNQRUNJRklFRBAAEhUKEVNJWFRZX1NURVBfQ0FTVUFMEAESEgoOU0lYVFlfU1RFUF9GTk0QAhIZChVTSVhUWV9TVEVQX1RPVVJOQU1FTlQQA0I6WjhnaXRodWIuY29tL25rcmFtYmVyL210Zy1kZWNrLWJ1aWxkZXIvZ28vZ2VuL210Zy92MTttdGd2MWIGcHJvdG8z");
 
 /**
  * Format names the rule set a deck is built for.
@@ -78,6 +78,13 @@ export const PowerLevelSchema: GenMessage<PowerLevel> = /*@__PURE__*/
  * FormatId lists the formats the app builds for.
  * The Scryfall legality key for each id lives in the rules engine (PR-5).
  *
+ * The app builds three formats: Commander, Standard, and Modern (D-155).
+ * Pioneer, Legacy, Vintage, and Pauper were removed rather than left
+ * unreachable. Every defect class this repository has found in the
+ * question layer was a path that could never fire, so an id no product
+ * surface can reach is the same trap. The numbers and the names are
+ * reserved, so neither can come back with a different meaning.
+ *
  * @generated from enum mtg.v1.FormatId
  */
 export enum FormatId {
@@ -97,32 +104,13 @@ export enum FormatId {
   STANDARD = 2,
 
   /**
-   * @generated from enum value: FORMAT_ID_PIONEER = 3;
-   */
-  PIONEER = 3,
-
-  /**
    * @generated from enum value: FORMAT_ID_MODERN = 4;
    */
   MODERN = 4,
 
   /**
-   * @generated from enum value: FORMAT_ID_LEGACY = 5;
-   */
-  LEGACY = 5,
-
-  /**
-   * @generated from enum value: FORMAT_ID_VINTAGE = 6;
-   */
-  VINTAGE = 6,
-
-  /**
-   * @generated from enum value: FORMAT_ID_PAUPER = 7;
-   */
-  PAUPER = 7,
-
-  /**
    * FORMAT_ID_HOUSE is a user-defined rule set. See Format.house_rules.
+   * It is the format of a user who names none and asks for no ban list.
    *
    * @generated from enum value: FORMAT_ID_HOUSE = 8;
    */

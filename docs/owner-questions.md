@@ -16,7 +16,16 @@ One step is left before the first unattended run. The owner names the fixer in `
 
 | # | Question | Why only you | What it blocks |
 |---|---|---|---|
-| OQ-39 | How far may the cost-tier eval fall behind a stronger judge? `make eval-calibrate` reports the agreement, and no number sets the floor. | It is a tolerance, and tolerances are yours. A cheap judge that refuses half as many questions still reports a real floor, and it hides the other half. | The PR-7B gate, and how much weight the loop's ratio carries. |
+| OQ-39 | How far may the cost-tier eval fall behind a stronger judge? `make eval-calibrate` reports the agreement, and no number sets the floor. D-149 answers the card-fact half of this for nothing, and it caught one false claim on its first run. The dual-judge proposal stays open for the rest. | It is a tolerance, and tolerances are yours. A cheap judge that refuses half as many questions still reports a real floor, and it hides the other half. | The PR-7B gate, and how much weight the loop's ratio carries. |
+
+## Raised by gate run 16 and its eval (2026-08-26)
+
+OQ-41, OQ-42, and OQ-43 are answered: D-151, D-152, and D-154. D-153
+answers the third defect of that session. Nothing from that work waits on
+the owner now.
+
+| # | Question | Why only you | What it blocks |
+|---|---|---|---|
 
 ## The two numbers M-5 exists to set
 
@@ -44,7 +53,6 @@ The batch sweep needed an answer to keep moving. Each one is recorded and each o
 |---|---|---|---|
 | OQ-23 | What does the agent do when the user asks a question back, such as "What is a bracket?" | The catalog holds questions and no answers. An answer path is a product decision. | Probe 36, and the first chat UI. |
 | OQ-21 | How much of a named precon must the built deck keep? | "Upgrade my precon" has no number behind it. | PR-8. |
-| OQ-22 | Which supported format is nearest to Historic, and which to Timeless? | Both are Arena formats with no exact paper equal. My mapping is unverified. | The unsupported-format row, for those two words alone. |
 | OQ-36 | The not-owned row and the weak-pool row never fire in a live run. The pool mode arrives after the commander is settled. Do we reorder, or let PR-8 handle both? | It is an ask-order change, and the order is yours (corpus section 11). | Two catalog rows that are dead in practice. |
 | OQ-37 | Do the 14 terse conversations join the catalog-only bar, or stay probes? | D-105 froze the first 30 so the bar stays comparable. At some point the bar should measure the harder set. | The meaning of the gate verdict. |
 | OQ-38 | Conversations 11 and 12 need a stored deck, so the variance row and the freeze can not work before PR-8. Do they stay in the gate? | They cost money every run and prove nothing yet. | Two of the 30 gate conversations. |

@@ -73,7 +73,8 @@
         "I need a deck for FNM on Friday, something competitive.",
         "Pioneer. The best deck under budget.",
         "200 dollars, tournament level. My shop is mostly aggro decks."
-      ]
+      ],
+      "probe": true
     },
     {
       "id": 8,
@@ -182,7 +183,8 @@
         "A Pauper burn deck, as cheap as possible.",
         "Pauper. Burn, mono red.",
         "Casual power, and 25 dollars is the cap."
-      ]
+      ],
+      "probe": true
     },
     {
       "id": 19,
@@ -213,7 +215,8 @@
         "We proxy everything at our table.",
         "Any card, no ban list. Call it Vintage. An artifact prison deck.",
         "The normal limits hold. Casual power, mono brown."
-      ]
+      ],
+      "probe": true
     },
     {
       "id": 22,
@@ -266,7 +269,8 @@
         "A Legacy deck for an event.",
         "Legacy. A Delver of Secrets tempo deck, blue and red.",
         "FNM level, 600 dollars."
-      ]
+      ],
+      "probe": true
     },
     {
       "id": 27,
@@ -312,6 +316,42 @@
     },
     {
       "id": 31,
+      "name": "FNM on Friday, Modern",
+      "messages": [
+        "I need a deck for FNM on Friday, something competitive.",
+        "Modern. The best deck under budget.",
+        "200 dollars, tournament level. My shop is mostly aggro decks."
+      ]
+    },
+    {
+      "id": 32,
+      "name": "burn on a budget",
+      "messages": [
+        "A Standard burn deck, as cheap as possible.",
+        "Standard. Burn, mono red.",
+        "Casual power, and 25 dollars is the cap."
+      ]
+    },
+    {
+      "id": 33,
+      "name": "a tempo deck for an event",
+      "messages": [
+        "A Modern deck for an event.",
+        "Modern. A Delver of Secrets tempo deck, blue and red.",
+        "FNM level, 600 dollars."
+      ]
+    },
+    {
+      "id": 34,
+      "name": "no ban list at our table",
+      "messages": [
+        "We proxy everything at our table.",
+        "Any card, no ban list. Call it Modern. An artifact prison deck.",
+        "The normal limits hold. Casual power, mono brown."
+      ]
+    },
+    {
+      "id": 35,
       "name": "the user changes the format",
       "collection": false,
       "probe": true,
@@ -323,7 +363,7 @@
       ]
     },
     {
-      "id": 32,
+      "id": 36,
       "name": "the user changes the theme late",
       "collection": true,
       "probe": true,
@@ -335,7 +375,7 @@
       ]
     },
     {
-      "id": 33,
+      "id": 37,
       "name": "the user contradicts the budget",
       "collection": false,
       "probe": true,
@@ -346,7 +386,7 @@
       ]
     },
     {
-      "id": 34,
+      "id": 38,
       "name": "everything in one message",
       "collection": true,
       "probe": true,
@@ -355,7 +395,7 @@
       ]
     },
     {
-      "id": 35,
+      "id": 39,
       "name": "the user stays vague",
       "collection": true,
       "probe": true,
@@ -367,7 +407,7 @@
       ]
     },
     {
-      "id": 36,
+      "id": 40,
       "name": "the user asks a question back",
       "collection": false,
       "probe": true,
@@ -378,7 +418,7 @@
       ]
     },
     {
-      "id": 37,
+      "id": 41,
       "name": "a request we can not serve",
       "collection": false,
       "probe": true,
@@ -389,7 +429,7 @@
       ]
     },
     {
-      "id": 38,
+      "id": 42,
       "name": "shorthand and slang",
       "collection": true,
       "probe": true,
@@ -400,7 +440,7 @@
       ]
     },
     {
-      "id": 39,
+      "id": 43,
       "name": "a card name with a typo",
       "collection": true,
       "probe": true,
@@ -411,7 +451,7 @@
       ]
     },
     {
-      "id": 40,
+      "id": 44,
       "name": "a card that is not legal",
       "collection": false,
       "probe": true,
@@ -422,7 +462,7 @@
       ]
     },
     {
-      "id": 41,
+      "id": 45,
       "name": "a commander that can not lead",
       "collection": false,
       "probe": true,
@@ -433,7 +473,7 @@
       ]
     },
     {
-      "id": 42,
+      "id": 46,
       "name": "two partner commanders",
       "collection": false,
       "probe": true,
@@ -444,7 +484,7 @@
       ]
     },
     {
-      "id": 43,
+      "id": 47,
       "name": "a deck as a gift",
       "collection": false,
       "probe": true,
@@ -455,7 +495,7 @@
       ]
     },
     {
-      "id": 44,
+      "id": 48,
       "name": "sideboard help only",
       "collection": false,
       "probe": true,
@@ -466,7 +506,7 @@
       ]
     },
     {
-      "id": 45,
+      "id": 49,
       "name": "copy a known deck",
       "collection": false,
       "probe": true,
@@ -477,7 +517,7 @@
       ]
     },
     {
-      "id": 46,
+      "id": 50,
       "name": "a format we do not support",
       "collection": false,
       "probe": true,
@@ -489,7 +529,7 @@
       ]
     },
     {
-      "id": 47,
+      "id": 51,
       "name": "the user declines everything",
       "collection": true,
       "probe": true,
@@ -501,7 +541,7 @@
       ]
     },
     {
-      "id": 48,
+      "id": 52,
       "name": "a price cap per card",
       "collection": false,
       "probe": true,
@@ -512,7 +552,7 @@
       ]
     },
     {
-      "id": 49,
+      "id": 53,
       "name": "the user swaps the commander",
       "collection": true,
       "probe": true,
@@ -524,7 +564,7 @@
       ]
     },
     {
-      "id": 50,
+      "id": 54,
       "name": "two decks at once",
       "collection": false,
       "probe": true,
@@ -535,7 +575,7 @@
       ]
     },
     {
-      "id": 51,
+      "id": 55,
       "name": "a returning player",
       "collection": false,
       "probe": true,
@@ -546,7 +586,7 @@
       ]
     },
     {
-      "id": 52,
+      "id": 56,
       "name": "the user answers a different question",
       "collection": true,
       "probe": true,
@@ -558,7 +598,7 @@
       ]
     },
     {
-      "id": 53,
+      "id": 57,
       "name": "terse: the format is named once",
       "collection": true,
       "probe": true,
@@ -569,7 +609,7 @@
       ]
     },
     {
-      "id": 54,
+      "id": 58,
       "name": "terse: a card for the 99",
       "collection": true,
       "probe": true,
@@ -581,7 +621,7 @@
       ]
     },
     {
-      "id": 55,
+      "id": 59,
       "name": "terse: two decks at once",
       "collection": false,
       "probe": true,
@@ -592,7 +632,7 @@
       ]
     },
     {
-      "id": 56,
+      "id": 60,
       "name": "terse: a format we do not build",
       "collection": false,
       "probe": true,
@@ -603,7 +643,7 @@
       ]
     },
     {
-      "id": 57,
+      "id": 61,
       "name": "terse: a proxy table",
       "collection": false,
       "probe": true,
@@ -614,7 +654,7 @@
       ]
     },
     {
-      "id": 58,
+      "id": 62,
       "name": "terse: a precon upgrade",
       "collection": true,
       "probe": true,
@@ -625,7 +665,7 @@
       ]
     },
     {
-      "id": 59,
+      "id": 63,
       "name": "terse: a competitive request",
       "collection": false,
       "probe": true,
@@ -636,7 +676,7 @@
       ]
     },
     {
-      "id": 60,
+      "id": 64,
       "name": "terse: a deck as a gift",
       "collection": false,
       "probe": true,
@@ -647,7 +687,7 @@
       ]
     },
     {
-      "id": 61,
+      "id": 65,
       "name": "terse: a named commander and a locked card",
       "collection": true,
       "probe": true,
@@ -658,7 +698,7 @@
       ]
     },
     {
-      "id": 62,
+      "id": 66,
       "name": "terse: sideboard help only",
       "collection": false,
       "probe": true,
@@ -669,7 +709,7 @@
       ]
     },
     {
-      "id": 63,
+      "id": 67,
       "name": "terse: everything in one message",
       "collection": true,
       "probe": true,
@@ -678,7 +718,7 @@
       ]
     },
     {
-      "id": 64,
+      "id": 68,
       "name": "terse: the strongest deck, no collection",
       "collection": false,
       "probe": true,
@@ -689,7 +729,7 @@
       ]
     },
     {
-      "id": 65,
+      "id": 69,
       "name": "terse: a Pauper deck named once",
       "collection": false,
       "probe": true,
@@ -699,7 +739,7 @@
       ]
     },
     {
-      "id": 66,
+      "id": 70,
       "name": "terse: a mill deck for a playgroup",
       "collection": true,
       "probe": true,
@@ -710,7 +750,7 @@
       ]
     },
     {
-      "id": 67,
+      "id": 71,
       "name": "terse: one-word answers",
       "collection": false,
       "probe": true,
@@ -722,7 +762,7 @@
       ]
     },
     {
-      "id": 68,
+      "id": 72,
       "name": "terse: a five-color deck",
       "collection": false,
       "probe": true,
@@ -733,7 +773,7 @@
       ]
     },
     {
-      "id": 69,
+      "id": 73,
       "name": "terse: a colorless deck",
       "collection": false,
       "probe": true,
@@ -744,7 +784,7 @@
       ]
     },
     {
-      "id": 70,
+      "id": 74,
       "name": "terse: a card the user does not own",
       "collection": true,
       "probe": true,
@@ -756,7 +796,7 @@
       ]
     },
     {
-      "id": 71,
+      "id": 75,
       "name": "terse: cEDH at bracket 5",
       "collection": false,
       "probe": true,
@@ -767,7 +807,7 @@
       ]
     },
     {
-      "id": 72,
+      "id": 76,
       "name": "terse: a companion",
       "collection": false,
       "probe": true,
@@ -778,7 +818,7 @@
       ]
     },
     {
-      "id": 73,
+      "id": 77,
       "name": "terse: a Background pair",
       "collection": false,
       "probe": true,
@@ -789,7 +829,7 @@
       ]
     },
     {
-      "id": 74,
+      "id": 78,
       "name": "terse: partners named once",
       "collection": false,
       "probe": true,
@@ -800,7 +840,7 @@
       ]
     },
     {
-      "id": 75,
+      "id": 79,
       "name": "terse: everything buried in one long message",
       "collection": true,
       "probe": true,
@@ -809,7 +849,7 @@
       ]
     },
     {
-      "id": 76,
+      "id": 80,
       "name": "terse: all caps, no punctuation",
       "collection": false,
       "probe": true,
@@ -820,7 +860,7 @@
       ]
     },
     {
-      "id": 77,
+      "id": 81,
       "name": "terse: the user corrects the colors",
       "collection": false,
       "probe": true,
@@ -831,7 +871,7 @@
       ]
     },
     {
-      "id": 78,
+      "id": 82,
       "name": "terse: the user corrects a card name",
       "collection": false,
       "probe": true,
@@ -842,7 +882,7 @@
       ]
     },
     {
-      "id": 79,
+      "id": 83,
       "name": "terse: group hug",
       "collection": false,
       "probe": true,
@@ -852,7 +892,7 @@
       ]
     },
     {
-      "id": 80,
+      "id": 84,
       "name": "terse: voltron",
       "collection": false,
       "probe": true,
@@ -863,7 +903,7 @@
       ]
     },
     {
-      "id": 81,
+      "id": 85,
       "name": "terse: chaos",
       "collection": false,
       "probe": true,
@@ -874,7 +914,7 @@
       ]
     },
     {
-      "id": 82,
+      "id": 86,
       "name": "terse: enchantress",
       "collection": true,
       "probe": true,
@@ -885,7 +925,7 @@
       ]
     },
     {
-      "id": 83,
+      "id": 87,
       "name": "terse: landfall",
       "collection": true,
       "probe": true,
@@ -896,7 +936,7 @@
       ]
     },
     {
-      "id": 84,
+      "id": 88,
       "name": "terse: no theme at all",
       "collection": false,
       "probe": true,
@@ -907,7 +947,7 @@
       ]
     },
     {
-      "id": 85,
+      "id": 89,
       "name": "terse: teaching a new player",
       "collection": false,
       "probe": true,
@@ -918,7 +958,7 @@
       ]
     },
     {
-      "id": 86,
+      "id": 90,
       "name": "terse: a deck for a spouse",
       "collection": false,
       "probe": true,
@@ -929,7 +969,7 @@
       ]
     },
     {
-      "id": 87,
+      "id": 91,
       "name": "terse: a budget of zero",
       "collection": true,
       "probe": true,
@@ -940,7 +980,7 @@
       ]
     },
     {
-      "id": 88,
+      "id": 92,
       "name": "terse: proxy the expensive cards only",
       "collection": true,
       "probe": true,
@@ -951,7 +991,7 @@
       ]
     },
     {
-      "id": 89,
+      "id": 93,
       "name": "terse: two budget shapes at once",
       "collection": false,
       "probe": true,
@@ -962,7 +1002,7 @@
       ]
     },
     {
-      "id": 90,
+      "id": 94,
       "name": "terse: a collection of lands only",
       "collection": true,
       "probe": true,
@@ -973,7 +1013,7 @@
       ]
     },
     {
-      "id": 91,
+      "id": 95,
       "name": "terse: a library that does not exist",
       "collection": false,
       "probe": true,
@@ -984,7 +1024,7 @@
       ]
     },
     {
-      "id": 92,
+      "id": 96,
       "name": "terse: the user asks about a card",
       "collection": false,
       "probe": true,
@@ -995,7 +1035,7 @@
       ]
     },
     {
-      "id": 93,
+      "id": 97,
       "name": "terse: Pauper Commander",
       "collection": false,
       "probe": true,
@@ -1006,7 +1046,7 @@
       ]
     },
     {
-      "id": 94,
+      "id": 98,
       "name": "terse: Oathbreaker",
       "collection": false,
       "probe": true,
@@ -1017,7 +1057,7 @@
       ]
     },
     {
-      "id": 95,
+      "id": 99,
       "name": "terse: Historic on Arena",
       "collection": false,
       "probe": true,
@@ -1028,7 +1068,7 @@
       ]
     },
     {
-      "id": 96,
+      "id": 100,
       "name": "terse: a deck for a team event",
       "collection": false,
       "probe": true,
@@ -1039,7 +1079,7 @@
       ]
     },
     {
-      "id": 97,
+      "id": 101,
       "name": "terse: mill with no table named",
       "collection": false,
       "probe": true,
@@ -1050,7 +1090,7 @@
       ]
     },
     {
-      "id": 98,
+      "id": 102,
       "name": "terse: stax with no table named",
       "collection": false,
       "probe": true,
@@ -1062,7 +1102,7 @@
       ]
     },
     {
-      "id": 99,
+      "id": 103,
       "name": "terse: two themes at once",
       "collection": false,
       "probe": true,
@@ -1073,7 +1113,7 @@
       ]
     },
     {
-      "id": 100,
+      "id": 104,
       "name": "terse: the user answers with a number",
       "collection": true,
       "probe": true,

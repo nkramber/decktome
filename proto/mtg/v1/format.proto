@@ -14,17 +14,24 @@ message Format {
 
 // FormatId lists the formats the app builds for.
 // The Scryfall legality key for each id lives in the rules engine (PR-5).
+//
+// The app builds three formats: Commander, Standard, and Modern (D-155).
+// Pioneer, Legacy, Vintage, and Pauper were removed rather than left
+// unreachable. Every defect class this repository has found in the
+// question layer was a path that could never fire, so an id no product
+// surface can reach is the same trap. The numbers and the names are
+// reserved, so neither can come back with a different meaning.
 enum FormatId {
   FORMAT_ID_UNSPECIFIED = 0;
   FORMAT_ID_COMMANDER = 1;
   FORMAT_ID_STANDARD = 2;
-  FORMAT_ID_PIONEER = 3;
   FORMAT_ID_MODERN = 4;
-  FORMAT_ID_LEGACY = 5;
-  FORMAT_ID_VINTAGE = 6;
-  FORMAT_ID_PAUPER = 7;
   // FORMAT_ID_HOUSE is a user-defined rule set. See Format.house_rules.
+  // It is the format of a user who names none and asks for no ban list.
   FORMAT_ID_HOUSE = 8;
+
+  reserved 3, 5, 6, 7;
+  reserved "FORMAT_ID_PIONEER", "FORMAT_ID_LEGACY", "FORMAT_ID_VINTAGE", "FORMAT_ID_PAUPER";
 }
 
 // PowerLevel is the target strength (D-8).

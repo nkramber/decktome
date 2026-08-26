@@ -422,8 +422,11 @@ func TestExileIsRemoval(t *testing.T) {
 	}
 }
 
-// commanderCards holds four legends and one non-legend. Only two of the
-// legends carry a lifegain signal.
+// commanderCards holds five legends and one non-legend. Three of the
+// legends carry a lifegain signal, and one of those three is white-black.
+// D-148 needs that one: a commander must hold every color the user named,
+// so a white-black request may not take the mono-white or mono-black
+// legend beside it.
 func commanderCards() []tc {
 	return []tc{
 		{id: "heliod", name: "Heliod, Sun-Crowned", typeLine: "Legendary Enchantment Creature — God",
@@ -436,6 +439,12 @@ func commanderCards() []tc {
 		// rank. The 99-card list keeps it. A commander list must not.
 		{id: "landlegend", name: "Ojer Stand-In", typeLine: "Legendary Creature — God",
 			text: "{T}: Add {W}.", identity: []mtgv1.Color{W}, mv: 2, rank: 1, tags: []string{"ramp"}},
+		// The one white-black lifegain legend. Verified against the card
+		// snapshot of 2026-08-24: Legendary Creature - Spirit Advisor,
+		// color identity white and black, legal in Commander.
+		{id: "karlov", name: "Karlov of the Ghost Council", typeLine: "Legendary Creature — Spirit Advisor",
+			text:     "Whenever you gain life, put two +1/+1 counters on Karlov of the Ghost Council.",
+			identity: []mtgv1.Color{W, B}, mv: 2, rank: 300, tags: []string{"lifegain"}},
 		{id: "offcolorlegend", name: "Green Legend", typeLine: "Legendary Creature — Elf",
 			text: "Whenever you gain life, draw a card.", identity: []mtgv1.Color{G}, mv: 2, rank: 500, tags: []string{"lifegain"}},
 		{id: "notlegend", name: "Soul Warden", typeLine: "Creature — Human Cleric",
@@ -471,6 +480,10 @@ func TestCommandersRankByTheme(t *testing.T) {
 // TestCommandersRespectColorIdentity keeps an illegal suggestion out. Run
 // 1 of the gate offered a white-black deck three commanders outside its
 // identity.
+//
+// D-148 tightened the test in the other direction as well. A commander
+// must hold every color the user named, so the mono-white and mono-black
+// legends leave a white-black list. Only Karlov is both.
 func TestCommandersRespectColorIdentity(t *testing.T) {
 	idx := fixture(t, commanderCards())
 	b, _ := New()
@@ -481,8 +494,41 @@ func TestCommandersRespectColorIdentity(t *testing.T) {
 	if contains(names(got), "Green Legend") {
 		t.Errorf("a green commander reached a white-black deck: %v", names(got))
 	}
-	if len(got) != 2 {
-		t.Errorf("commanders = %v, want the two white-black lifegain legends", names(got))
+	for _, partial := range []string{"Heliod, Sun-Crowned", "Vito, Thorn of the Dusk Rose"} {
+		if contains(names(got), partial) {
+			t.Errorf("%q holds one of the two colors, and it reached a white-black list: %v",
+				partial, names(got))
+		}
+	}
+	if len(got) != 1 || names(got)[0] != "Karlov of the Ghost Council" {
+		t.Errorf("commanders = %v, want the one white-black lifegain legend", names(got))
+	}
+}
+
+// TestCommanderPoolTakesEveryNamedColor is D-148. Conversation 22 of gate
+// run 14 asked for a blue-red deck and was offered Birgi, God of
+// Storytelling (mono-red) and Emrakul, the Promised End (colorless). A
+// colorless commander makes a deck that can play no colored card.
+func TestCommanderPoolTakesEveryNamedColor(t *testing.T) {
+	allowed := map[mtgv1.Color]bool{W: true, B: true}
+	cases := []struct {
+		name     string
+		identity []mtgv1.Color
+		want     bool
+	}{
+		{"both colors", []mtgv1.Color{W, B}, true},
+		{"one of the two", []mtgv1.Color{W}, false},
+		{"colorless", nil, false},
+		{"both colors and colorless", []mtgv1.Color{W, B, mtgv1.Color_COLOR_C}, true},
+	}
+	for _, c := range cases {
+		if got := identityCovers(c.identity, allowed); got != c.want {
+			t.Errorf("%s: identityCovers = %v, want %v", c.name, got, c.want)
+		}
+	}
+	// A single named color still admits the mono-colored commander.
+	if !identityCovers([]mtgv1.Color{W}, map[mtgv1.Color]bool{W: true}) {
+		t.Error("a mono-white request lost its mono-white commander")
 	}
 }
 

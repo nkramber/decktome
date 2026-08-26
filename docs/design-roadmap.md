@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-08-26 correction pass 21 (owner directive): the app builds three formats, Commander, Standard, and Modern (D-155). Pioneer, Legacy, Vintage, and Pauper are removed. The proto keeps no dead ids: the four enum values are deleted and reserved, and `buf.yaml` moved from FILE to WIRE_JSON, which still refuses every wire-breaking and JSON-breaking change. Nothing is deployed, so no session needed migration. Two rules died with Vintage and were removed: the restricted-card check had no format left that carries a restricted list. "Anything goes" is not a format the user may select. It stays a house-rules layer on one of the three (D-3).
+
 2026-08-26 correction pass 20: PR-7B added, the automated eval lane. The owner's hand scoring does not scale past 32 items, and a run asks about 250 questions. A new `eval` role scores every one for about eleven cents (D-133). Every third conversation is a holdout (D-134). The owner answered OQ-24, OQ-26, and OQ-27 the same day (D-135 to D-137). PR-7 gained sixteen fixes from the batch sweep of all 66 conversations (D-117 to D-132).
 
 2026-08-25 correction pass 19: the owner scored items 1 to 32 of the M-5 sheet, and the scores asked for 16 rewords and one deletion. The correction session that followed recorded D-104 to D-116. The sheet could hold only 60 of 793 questions, which is where most defects hid (D-104).
@@ -217,7 +219,7 @@ Messages: `Card`, `CardFace`, `Legality`, `Collection`, `CollectionEntry`, `Deck
 A worker job downloads `oracle_cards`, `default_cards`, and `oracle_tags` daily (F-3: bulk only). It writes a versioned snapshot to GCS and an in-memory index in the `cards` service. The index holds the name, Oracle ID, printing ID, legalities, color identity, keywords, type line, MV, produced mana, Oracle tags, `game_changer`, `edhrec_rank`, and the image URIs per face. Faces are normalized (F-9). The `oracle_tags` file loads into a tag tree. Rulings load on demand.
 
 A `CardService.Lookup` by exact name, by Scryfall ID, and by Oracle ID. A `CardService.Search` with structured filters (colors, types, keywords, tags, format-legal). Gate: 100% of a fixed list of 200 tricky names resolve (split, DFC, "Aether" spelling, commas, apostrophes). Snapshot age is exposed as a metric.
-> *In plain English:* every night we download the whole card list, keep a copy, and load it into memory. Anyone can ask "which green cards with lifelink are legal in Pioneer?" and get a fast exact answer with no AI involved.
+> *In plain English:* every night we download the whole card list, keep a copy, and load it into memory. Anyone can ask "which green cards with lifelink are legal in Modern?" and get a fast exact answer with no AI involved.
 
 **PR-3: Legality freshness and announcement-day fast path (F-1).** ✅ merged 2026-08-24 (#6). The calendar is `announcement_dates.json`, embedded, with a verification date (next date: 2026-10-12). The worker checks hourly, and every 15 minutes from an announcement date until a snapshot with a legality change lands (F-23, D-47). On that snapshot, the worker logs `legality_lag` with the hours (M-2). The previous version comes from the store, not from process memory, so a restart keeps the metric. In production the worker is a Cloud Run job under Cloud Scheduler (D-48). The UI shows "Card data as of" from `/healthz`. The real M-2 number arrives with the 2026-10-12 announcement.
 The worker checks the Scryfall bulk `updated_at` every hour. On and after a B&R announcement day (a committed calendar, next 2026-10-12), it checks every 15 minutes until a snapshot from that day or later lands. Every deck response carries `legality_as_of` (the snapshot date). The UI shows it. Gate: M-2 shows the lag between an announcement and the snapshot that reflects it.
@@ -489,7 +491,8 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 - Sample-hand and goldfish simulator (D-20: later, not at launch).
 - Per-card explanations longer than one line (D-19 gives one line per card).
 - Non-English collections (D-23: English only for now).
-- Brawl, Oathbreaker, Pauper Commander, Duel Commander.
+- Brawl, Oathbreaker, Pauper Commander, Duel Commander, Canadian Highlander.
+- Pioneer, Legacy, Vintage, and Pauper. The app built these until 2026-08-26, and D-155 removed them. The agent declines each one by name and offers no substitute.
 - Sideboard builder for 60-card competitive play against a named meta.
 - Collection sync from ManaBox without a file (no API exists on 2026-08-23).
 - A public corpus API that serves the `mtg-corpus` content to the app's own prompts.

@@ -29,6 +29,7 @@
     {
       "id": "format_unsupported",
       "slot": "format",
+      "repeat": true,
       "order": 8,
       "fixed": true,
       "text": "I do not build {bad_format}. The nearest format I build is {near_format}. Shall I use that?",
@@ -37,20 +38,38 @@
         "No, I will name another format"
       ],
       "when": {
-        "unsupported_format": true
+        "unsupported_format": true,
+        "no_near_format": false
       },
       "fallback": "I do not build that format. Would you like the nearest format I do build?"
+    },
+    {
+      "id": "format_unsupported_open",
+      "slot": "format",
+      "repeat": true,
+      "order": 7,
+      "fixed": true,
+      "text": "I do not build {bad_format}. Which format should I build instead: Commander, Standard, or Modern?",
+      "options": [
+        "Commander",
+        "Standard",
+        "Modern"
+      ],
+      "when": {
+        "unsupported_format": true,
+        "no_near_format": true
+      },
+      "fallback": "I do not build that format. Which format should I build instead?"
     },
     {
       "id": "format_store",
       "slot": "format",
       "order": 9,
-      "text": "Which format does your event run: Standard, Pioneer, Modern, or Pauper?",
+      "text": "Which format does your event run: Standard, Modern, or Commander?",
       "options": [
         "Standard",
-        "Pioneer",
         "Modern",
-        "Pauper"
+        "Commander"
       ],
       "when": {
         "words": [
@@ -67,13 +86,11 @@
       "id": "format",
       "slot": "format",
       "order": 10,
-      "text": "Which format: Commander, Standard, Modern, or something else?",
+      "text": "Which format: Commander, Standard, or Modern?",
       "options": [
         "Commander",
         "Standard",
-        "Modern",
-        "Pioneer",
-        "Pauper"
+        "Modern"
       ]
     },
     {
@@ -109,10 +126,10 @@
       "id": "house_rules",
       "slot": "house_rules",
       "order": 25,
-      "text": "When you say anything goes, do you mean any card with no ban list, or Vintage rules?",
+      "text": "When you say anything goes, do you mean any card with no ban list?",
       "options": [
         "Any card, no ban list",
-        "Vintage rules"
+        "No, I meant something else"
       ],
       "when": {
         "words": [

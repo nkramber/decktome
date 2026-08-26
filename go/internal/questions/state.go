@@ -371,11 +371,7 @@ const DefaultFormat = mtgv1.FormatId_FORMAT_ID_COMMANDER
 var formatIDs = map[string]mtgv1.FormatId{
 	"commander": mtgv1.FormatId_FORMAT_ID_COMMANDER,
 	"standard":  mtgv1.FormatId_FORMAT_ID_STANDARD,
-	"pioneer":   mtgv1.FormatId_FORMAT_ID_PIONEER,
 	"modern":    mtgv1.FormatId_FORMAT_ID_MODERN,
-	"legacy":    mtgv1.FormatId_FORMAT_ID_LEGACY,
-	"vintage":   mtgv1.FormatId_FORMAT_ID_VINTAGE,
-	"pauper":    mtgv1.FormatId_FORMAT_ID_PAUPER,
 	"house":     mtgv1.FormatId_FORMAT_ID_HOUSE,
 }
 

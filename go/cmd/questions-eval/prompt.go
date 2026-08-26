@@ -6,13 +6,21 @@ package main
 //
 // Keep it stable. A changed prompt invalidates every score before it, the
 // same way a changed classify prompt does (D-66).
-const evalVersion = 2
+// Version 3 gives the reader the cards the questions name, as the local
+// snapshot holds them. Eval run 14 called Ran and Shaw and Quina, Qu
+// Gourmet unreal, and eval run 16 called Cloak and Dagger, Entwined
+// inapplicable and Vincent, Vengeful Atoner and Shadow the Hedgehog
+// invalid. All five are real and legal in Commander, and every one comes
+// from a crossover set (D-152).
+const evalVersion = 3
 
 const evalInstructions = `You score the clarifying questions a Magic: The Gathering deck-building agent asked one user.
 
 You get the conversation as a transcript, turn by turn. Each turn holds the user's message, then the questions the agent sent in reply to it.
 
 Judge every question against the turns above it, and never against a turn below it. A question on turn 1 could not know what the user wrote on turn 2. A question is not a duplicate because the user answered it on the next turn. That is the question working.
+
+The input holds a list named cards_named_in_questions. Every card there is real, and the type line, the color identity, and the commander legality come from the official card data. Never say that one of those cards does not exist, is not a real card, or is not a valid option. When you judge whether a commander fits the deck, read its color identity from that list and never from memory. A card you do not recognize is still real when it is in that list.
 
 For each question answer one thing first: did this question deserve to be asked, to this user, at that point?
 

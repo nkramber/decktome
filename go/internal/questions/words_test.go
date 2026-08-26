@@ -7,6 +7,7 @@ import (
 	"time"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	"github.com/nkramber/mtg-deck-builder/go/internal/candidates"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
 )
 
@@ -47,7 +48,12 @@ func TestFormatFromWords(t *testing.T) {
 		"upgrade my atraxa, praetors' voice precon. we play bracket 2":  mtgv1.FormatId_FORMAT_ID_COMMANDER,
 		"edh gruul dino stompy pls, no proxies":                         mtgv1.FormatId_FORMAT_ID_COMMANDER,
 		"i already have a modern burn deck. i only need sideboard help": mtgv1.FormatId_FORMAT_ID_MODERN,
-		"a pauper burn deck, as cheap as possible":                      mtgv1.FormatId_FORMAT_ID_PAUPER,
+		// D-155: Pauper is not a format this app builds, so the word rule
+		// answers nothing and the unsupported row declines it.
+		"a pauper burn deck, as cheap as possible": none,
+		"a pioneer aggro deck":                     none,
+		"a legacy delver deck":                     none,
+		"a vintage shops deck":                     none,
 		// Two formats is a two-deck request, and the one-deck row reads it.
 		"i want two decks, one commander and one modern": none,
 		// A format this app does not build answers nothing here.
@@ -561,6 +567,11 @@ func TestAMessageThatAnswersItsOwnTriggerAsksNothing(t *testing.T) {
 // classifier set wants_suggestion again in conversation 23 of the batch
 // run, on a message that refused nothing. The agent swapped all three
 // commanders under the user.
+//
+// The message asked for a suggestion before D-147. It now asks without
+// the words that hand the choice over, because a delegation closes the
+// pick row instead of repeating it. D-123 is about the names on the
+// table, and this test still measures only that.
 func TestSuggestionDoesNotSwapTheNames(t *testing.T) {
 	wants := commanderClassify()
 	wants.Facts.WantsSuggestion = true
@@ -574,7 +585,7 @@ func TestSuggestionDoesNotSwapTheNames(t *testing.T) {
 		classifyStep(t, wants), fits(t, "commander_pick", "power_commander"), askStep(t),
 		classifyStep(t, again), fits(t, "commander_pick"))
 	st := NewState(false)
-	if _, err := a.Turn(context.Background(), st, "a lifegain commander deck, you pick the commander", nil); err != nil {
+	if _, err := a.Turn(context.Background(), st, "a lifegain commander deck, please suggest a commander", nil); err != nil {
 		t.Fatalf("turn 1: %v", err)
 	}
 	res, err := a.Turn(context.Background(), st, "Bracket 3, and build from my library first.", nil)
@@ -589,6 +600,206 @@ func TestSuggestionDoesNotSwapTheNames(t *testing.T) {
 		if !strings.Contains(q.GetText(), want) {
 			t.Errorf("the agent dropped %q although the user refused nothing: %q", want, q.GetText())
 		}
+	}
+}
+
+// TestDelegationClosesTheCommanderPick is D-147. "You pick the commander"
+// appears in 18 of the 100 gate conversations, and no rule read it. The
+// pick row carries "repeat": true, so it asked again every turn until the
+// messages ran out. Eval run 14 refused 18 of its 43 bad questions on
+// that row, more than the next four rows together.
+//
+// A delegation is a decline (D-93): the key closes, it takes no value,
+// and the generator picks the best commander of the pool.
+func TestDelegationClosesTheCommanderPick(t *testing.T) {
+	wants := commanderClassify()
+	wants.Facts.WantsSuggestion = true
+	again := commanderClassify()
+	again.Facts.WantsSuggestion = true
+	h := &offerHints{
+		first:  []string{"Vito, Thorn of the Dusk Rose", "Heliod, Sun-Crowned", "Haliya, Guided by Light"},
+		second: []string{"Karlov of the Ghost Council", "Oloro, Ageless Ascetic", "Ayli, Eternal Pilgrim"},
+	}
+	a, _ := testAgentHints(t, h,
+		classifyStep(t, wants), fits(t, "power_commander"), askStep(t),
+		classifyStep(t, again))
+	st := NewState(false)
+	if _, err := a.Turn(context.Background(), st, "a lifegain commander deck, you pick the commander", nil); err != nil {
+		t.Fatalf("turn 1: %v", err)
+	}
+	if st.Slots.GetSlotStates()["commander_pick"] != mtgv1.SlotState_SLOT_STATE_SKIPPED {
+		t.Errorf("the delegation left commander_pick in state %v, want SKIPPED",
+			st.Slots.GetSlotStates()["commander_pick"])
+	}
+	res, err := a.Turn(context.Background(), st, "Bracket 3, and build from my library first.", nil)
+	if err != nil {
+		t.Fatalf("turn 2: %v", err)
+	}
+	if q := question(res.Questions, "commander"); q != nil {
+		t.Errorf("the pick row asked again after the user handed over the choice: %q", q.GetText())
+	}
+}
+
+// TestDelegationNeedsTheCommanderInScope guards D-147 against a general
+// "up to you". The phrase closes the commander choice only while a
+// commander question is out, or while the message names one.
+func TestDelegationNeedsTheCommanderInScope(t *testing.T) {
+	if !DelegatesChoice("You pick the commander.") {
+		t.Error("a plain delegation was not read")
+	}
+	if !DelegatesChoice("I dunno, you pick.") {
+		t.Error("conversation 35 answers this, and it was not read")
+	}
+	if !DelegatesChoice("You decide.") {
+		t.Error("probe 47 answers this, and it was not read")
+	}
+	if DelegatesChoice("I will pick the commander myself.") {
+		t.Error("the user kept the choice, and the rule took it")
+	}
+	if !NamesCommander("You pick the commander.") {
+		t.Error("the scope guard missed the word")
+	}
+	if NamesCommander("Up to you.") {
+		t.Error("the scope guard read a word that is not there")
+	}
+}
+
+// colorOfferHints names commanders and knows each one's color identity.
+// It is the offerHints of D-123 with an IdentityChecker on top.
+type colorOfferHints struct {
+	first, second []string
+	identity      map[string][]mtgv1.Color
+}
+
+func (o *colorOfferHints) ThemeColors(string) string  { return "" }
+func (o *colorOfferHints) OwnedThemeCount(string) int { return 0 }
+func (o *colorOfferHints) Commanders(_ string, skip []string) []string {
+	if len(skip) > 0 {
+		return o.second
+	}
+	return o.first
+}
+func (o *colorOfferHints) FitsColors(name string, colors []mtgv1.Color) (bool, bool) {
+	id, ok := o.identity[name]
+	if !ok {
+		return false, false
+	}
+	return candidates.IdentityMatches(id, colors), true
+}
+
+// TestOffColorOfferLeavesTheTable is D-153. The pick row keeps the names
+// on the table until the user refuses them (D-80, D-123). Nothing checked
+// them again when the colors arrived later.
+//
+// Probe 73 of gate run 16 is the case. Turn 1 named no colors, and the
+// row offered Jaheira, Friend of the Forest, which is mono-green. The
+// user answered "Red and white" on turn 2, and the same three names went
+// out on turns 2 and 3. The eval caught it, and D-148 could not: it
+// filters the pool, and these names were already on the table.
+func TestOffColorOfferLeavesTheTable(t *testing.T) {
+	first := commanderClassify()
+	first.Facts.WantsSuggestion = true
+	first.Colors = nil
+	second := commanderClassify()
+	second.Facts.WantsSuggestion = true
+	second.Colors = []string{"R", "W"}
+	// Two of the three offered names are red-white, so they survive the
+	// colors. Jaheira is mono-green and must leave. A mono-red name would
+	// leave as well, because D-148 asks a commander to hold every color
+	// the user named, so the test uses names that isolate D-153.
+	h := &colorOfferHints{
+		first:  []string{"Jaheira, Friend of the Forest", "Winota, Joiner of Forces", "Feather, the Redeemed"},
+		second: []string{"Aurelia, the Warleader", "Anax and Cymede", "Tajic, Blade of the Legion"},
+		identity: map[string][]mtgv1.Color{
+			"Jaheira, Friend of the Forest": {mtgv1.Color_COLOR_G},
+			"Winota, Joiner of Forces":      {mtgv1.Color_COLOR_R, mtgv1.Color_COLOR_W},
+			"Feather, the Redeemed":         {mtgv1.Color_COLOR_R, mtgv1.Color_COLOR_W},
+			"Aurelia, the Warleader":        {mtgv1.Color_COLOR_R, mtgv1.Color_COLOR_W},
+			"Anax and Cymede":               {mtgv1.Color_COLOR_R, mtgv1.Color_COLOR_W},
+			"Tajic, Blade of the Legion":    {mtgv1.Color_COLOR_R, mtgv1.Color_COLOR_W},
+		},
+	}
+	a, _ := testAgentHints(t, h,
+		classifyStep(t, first), fits(t, "commander_pick", "power_commander"), askStep(t),
+		classifyStep(t, second), fits(t, "commander_pick"), askStep(t))
+	st := NewState(false)
+	if _, err := a.Turn(context.Background(), st, "A Commander deck with a Background commander pair.", nil); err != nil {
+		t.Fatalf("turn 1: %v", err)
+	}
+	if !contains(st.CurrentOffer, "Jaheira, Friend of the Forest") {
+		t.Fatalf("turn 1 did not offer the green commander: %v", st.CurrentOffer)
+	}
+	if len(st.CurrentOffer) != 3 {
+		t.Fatalf("turn 1 offered %d names, want 3: %v", len(st.CurrentOffer), st.CurrentOffer)
+	}
+	res, err := a.Turn(context.Background(), st, "Red and white, aggressive.", nil)
+	if err != nil {
+		t.Fatalf("turn 2: %v", err)
+	}
+	if contains(st.CurrentOffer, "Jaheira, Friend of the Forest") {
+		t.Errorf("the mono-green commander stayed on the table after the user named red and white: %v",
+			st.CurrentOffer)
+	}
+	for _, keep := range []string{"Winota, Joiner of Forces", "Feather, the Redeemed"} {
+		if !contains(st.CurrentOffer, keep) {
+			t.Errorf("%q fits red-white and it left the table: %v", keep, st.CurrentOffer)
+		}
+	}
+	if q := question(res.Questions, "commander"); q != nil {
+		if strings.Contains(q.GetText(), "Jaheira") {
+			t.Errorf("the question still names the green commander: %q", q.GetText())
+		}
+	}
+}
+
+// TestOffColorDropKeepsAnUnknownName guards D-153. An unknown name proves
+// nothing, so the agent drops nothing on it. This is the D-140 rule for a
+// card the index can not confirm.
+func TestOffColorDropKeepsAnUnknownName(t *testing.T) {
+	h := &colorOfferHints{identity: map[string][]mtgv1.Color{"Known Legend": {mtgv1.Color_COLOR_G}}}
+	if fits, known := h.FitsColors("A Card Nobody Holds", []mtgv1.Color{mtgv1.Color_COLOR_R}); known || fits {
+		t.Errorf("an unknown name answered fits=%v known=%v, want both false", fits, known)
+	}
+	// An empty color list fits everything: nothing is out of no colors.
+	if fits, known := h.FitsColors("Known Legend", nil); !fits || !known {
+		t.Errorf("no colors named answered fits=%v known=%v, want both true", fits, known)
+	}
+}
+
+// TestWantsCommanderPair is D-154. Probe 73 writes "A Commander deck
+// with a Background commander pair", and every run before this read it as
+// a request for one commander.
+func TestWantsCommanderPair(t *testing.T) {
+	want := []string{
+		"A Commander deck with a Background commander pair.",
+		"A Commander deck with Thrasios, Triton Hero and Tymna the Weaver as partners.",
+		"I want two commanders.",
+		"Build a four-color deck with partners.",
+		"Give me a Doctor's companion deck.",
+	}
+	for _, m := range want {
+		if !WantsCommanderPair(m) {
+			t.Errorf("a pair request was not read: %q", m)
+		}
+	}
+	// The negation guard applies, and an unrelated message names none.
+	notWant := []string{
+		"No partners, just one commander.",
+		"A lifegain Commander deck from my library.",
+		"Bracket 3, and 150 dollars.",
+	}
+	for _, m := range notWant {
+		if WantsCommanderPair(m) {
+			t.Errorf("a message that asks for no pair was read as one: %q", m)
+		}
+	}
+	// A Background request narrows the pair, because a Background carries
+	// no theme signal and loses on score without this.
+	if !WantsBackgroundPair("A Commander deck with a Background commander pair.") {
+		t.Error("a Background request was not read")
+	}
+	if WantsBackgroundPair("A Commander deck with partners.") {
+		t.Error("a plain partner request was read as a Background request")
 	}
 }
 

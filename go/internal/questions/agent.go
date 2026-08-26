@@ -107,6 +107,9 @@ func (a *Agent) Turn(ctx context.Context, st *State, message string, acc *llm.Ac
 	// The hint source reads the slots as they stand now. The caller built
 	// it before the turn, so the colors the classifier just filled would
 	// otherwise be invisible to it (D-124).
+	if pa, ok := a.hints.(PairAware); ok && st.Ctx.WantPair {
+		pa.UseWantPair(true, st.Ctx.WantBackground)
+	}
 	if sa, ok := a.hints.(SlotAware); ok {
 		sa.UseSlots(st.Slots.GetFormat().GetId(), st.Slots.GetColors(), st.Slots.GetPoolRule())
 	}
@@ -216,7 +219,7 @@ func (a *Agent) Turn(ctx context.Context, st *State, message string, acc *llm.Ac
 		if p, ok := phrased[c.Row.ID]; ok && !c.Row.Fixed {
 			// The guard keeps a bad phrasing off the wire. It falls back
 			// to the resolved catalog text.
-			if kept := guard(p.Text, c.Text); kept != c.Text {
+			if kept := guard(c.Row.ID, p.Text, c.Text); kept != c.Text {
 				q.Text = kept
 			}
 			if len(p.Options) > 0 {
@@ -465,8 +468,33 @@ func (a *Agent) applyWords(st *State, message string) {
 	// A format this app does not build. Run 13 offered Brawl to probe 46.
 	if st.Ctx.Format == mtgv1.FormatId_FORMAT_ID_UNSPECIFIED && !st.Ctx.Filled["format"] {
 		if name, near, ok := UnsupportedFormat(words); ok {
+			// A newly named unsupported format retires the questions that
+			// are out. The plain format row is one of them, and D-126
+			// blocks every other row on that key while it waits. Probe 21
+			// asked the format on turn 1, the user answered "Call it
+			// Vintage" on turn 2, and the agent could never say that it
+			// does not build Vintage (D-157).
+			first := !st.Ctx.UnsupportedFormat
+			if first {
+				a.log.Info("the user named a format this app does not build",
+					"session", st.SessionID, "format", name)
+				st.RetireOutstanding()
+			}
 			st.UnsupportedFormatName, st.NearestFormat = name, near
-			st.Ctx.UnsupportedFormat = true
+			// The row states the limit once, and it asks again only while
+			// the user keeps naming the format. D-157 made it repeat every
+			// turn, and eval run 17 refused 14 questions on this one row.
+			// Probe 18 answered "Casual power, and 25 dollars is the cap"
+			// on turn 3 and got the same format question a third time.
+			// The trigger reads the whole conversation, so the fact stayed
+			// true forever. The repeat now reads the message alone, which
+			// is the D-125 rule (D-158).
+			_, _, namedNow := UnsupportedFormat(message)
+			asked := st.Ctx.Asked["format_unsupported"] || st.Ctx.Asked["format_unsupported_open"]
+			st.Ctx.UnsupportedFormat = first || !asked || namedNow
+			// Historic and Timeless name no substitute, so a second row
+			// asks which format to build instead (D-146).
+			st.Ctx.NoNearFormat = near == ""
 		}
 	}
 	// A request for two decks reads one message, and never the whole
@@ -501,6 +529,38 @@ func (a *Agent) applyWords(st *State, message string) {
 		a.log.Info("the user asked for another commander, so the choice reopens",
 			"session", st.SessionID)
 		st.ClearCommander()
+	}
+	// The user asked for two commanders. A pair carries the union of two
+	// color identities, and it is the only practical way to reach four
+	// colors (D-154).
+	if !st.Ctx.WantPair && WantsCommanderPair(message) {
+		a.log.Info("the user asked for a two-commander pair", "session", st.SessionID)
+		st.Ctx.WantPair = true
+		st.Ctx.WantBackground = WantsBackgroundPair(message)
+		// The names on the table were single commanders, so they answer a
+		// different question now.
+		st.RetireOffer()
+		st.Ctx.Suggested = true
+	}
+	// The user handed the commander choice to the agent. "You pick the
+	// commander" reads as neither a refusal nor a pick, so every rule
+	// before D-147 ignored it. The pick row carries "repeat": true, so it
+	// asked again every turn until the messages ran out. Eval run 14
+	// refused 18 of its 43 bad questions on that row alone.
+	//
+	// A delegation is a decline (D-93). It closes the key, it names no
+	// value, and the generator takes the best commander of the pool. The
+	// scope guard keeps "up to you" from closing the commander choice
+	// when the user answered some other question with it.
+	if !st.Ctx.CommanderSet && DelegatesChoice(message) {
+		_, pickOut := st.Ctx.Outstanding["commander_pick"]
+		_, baseOut := st.Ctx.Outstanding["commander"]
+		if pickOut || baseOut || NamesCommander(message) {
+			a.log.Info("the user handed the commander choice to the agent",
+				"session", st.SessionID)
+			st.Skip("commander_pick")
+			st.Skip("commander")
+		}
 	}
 	// A commander chosen by its place. Conversation 14 answers "The first
 	// of the new three is good", and the classifier can not map that onto
@@ -599,6 +659,12 @@ func (a *Agent) apply(st *State, out classifyOut, open []string, message string)
 		}
 		if len(st.Slots.Colors) > 0 {
 			st.Close("colors")
+			// The names on the table were chosen before these colors
+			// arrived, and nothing checked them again. Probe 73 offered
+			// mono-green Jaheira on turn 1 with no colors named, and the
+			// same three names went out on turns 2 and 3 after the user
+			// answered "Red and white" (D-153).
+			a.dropOffColorOffers(st)
 		}
 	}
 	// The two name lists are kept apart. Merged, one name that becomes the
@@ -925,4 +991,43 @@ func (a *Agent) ask(ctx context.Context, st *State, message string, chosen []cho
 		byRow[p.RowID] = p
 	}
 	return byRow, nil
+}
+
+// dropOffColorOffers removes an offered commander that the colors just
+// named exclude. It keeps every name that still fits, so D-80 and D-123
+// still hold: the agent swaps no name the user could still choose.
+//
+// A dropped name is retired, so the pool never offers it again. When
+// nothing is left, the pick row asks with three new names, and D-127
+// settles the case where the pool has none.
+func (a *Agent) dropOffColorOffers(st *State) {
+	checker, ok := a.hints.(IdentityChecker)
+	if !ok || len(st.CurrentOffer) == 0 {
+		return
+	}
+	kept := make([]string, 0, len(st.CurrentOffer))
+	var dropped []string
+	for _, name := range st.CurrentOffer {
+		fits, known := checker.FitsColors(name, st.Slots.Colors)
+		// An unknown name proves nothing, so it stays on the table.
+		if !known || fits {
+			kept = append(kept, name)
+			continue
+		}
+		dropped = append(dropped, name)
+	}
+	if len(dropped) == 0 {
+		return
+	}
+	a.log.Info("an offered commander no longer fits the colors, so it leaves the table",
+		"session", st.SessionID, "dropped", dropped, "kept", kept)
+	for _, name := range dropped {
+		if name = strings.TrimSpace(name); name != "" && !hasName(st.OfferedCommanders, name) {
+			st.OfferedCommanders = append(st.OfferedCommanders, name)
+		}
+	}
+	st.CurrentOffer = kept
+	// The pick row must ask again with a full set of names.
+	st.Reopen("commander_pick")
+	st.Ctx.Suggested = true
 }
