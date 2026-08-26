@@ -4,7 +4,11 @@
 
 ## Do this first
 
-The tuning loop ran on 2026-08-26, and the same day rebuilt it (D-179 to D-184). `docs/reference/autotune-readme.md` holds every command, and `docs/reference/autotune-lessons.md` holds what the loop learned. The table below holds the three measurements that matter. Run 18 and run -000 measured identical agent code, and they differ by three holdout questions. The same document scored twice differs on 25 of 365 verdicts. The checker now carries that margin (D-183), and it judges each change on paired evidence (D-181).
+The tuning loop ran on 2026-08-26, and the same day rebuilt it (D-179 to D-184). `docs/reference/autotune-readme.md` holds every command, and `docs/reference/autotune-lessons.md` holds what the loop learned.
+
+The first baseline on the rebuilt code, run 20260826-212512-000, failed its own gate: the not-owned row woke up and one session was premature. D-207 and D-208 fix both, and the tree is green. The next run must measure a new baseline, because the code changed again.
+
+The table below holds the three measurements that matter. Run 18 and run -000 measured identical agent code, and they differ by three holdout questions. The same document scored twice differs on 25 of 365 verdicts. The checker now carries that margin (D-183), and it judges each change on paired evidence (D-181).
 
 | Measure | Run 18 | Run 20260826-191225-000 | Run 20260826-191225-001 |
 |---|---|---|---|
@@ -22,8 +26,8 @@ CAUTION: every baseline on disk is stale. D-163 to D-169, D-195 to D-202, and th
 - `main` is at fdfe15c, "Pr 7b (#13)". Merged: PR-0a to PR-7, PR-7B, and PR-10 (#1 to #13), the audit fixes included.
 - Branch `pr-7c` is the container for everything the loop writes (D-142). HEAD is 3391748, "v0.0: baseline run for the tuning loop". The tree is green and committed.
 - Branch `auto-tune/20260826-164931` was dropped (D-204). D-172 to D-176 are retired numbers.
-- `docs/decisions.md` reaches D-206 on `pr-7c`. D-179 to D-184 are the loop rebuild, D-185 to D-194 the audit fixes, D-195 to D-203 the question-workflow fixes and the D-162 to D-170 verdicts.
-- The work of 2026-08-26 after the loop run is uncommitted: about 70 files. The owner commits. `git status` lists them, and every one is on `pr-7c`.
+- `docs/decisions.md` reaches D-208 on `pr-7c`. D-179 to D-184 are the loop rebuild, D-185 to D-194 the audit fixes, D-195 to D-203 the question-workflow fixes and the D-162 to D-170 verdicts.
+- The checkout may sit on `auto-tune/20260826-212512`, which holds the failed baseline as `v0.0`. Keep that commit: it is evidence. Commit the D-205 to D-208 fixes there, fast-forward `pr-7c` onto it, and delete the branch, as the readme describes under "Keep or drop a night".
 - Gate documents run 2 to run 18 and `20260826-191225-000` sit under `docs/reference/`. Eval documents exist for run 14, 14b, 16, 17, 18, `20260826-191225-000`, and `-000b`. The `-000b` report is the same gate document scored a second time, and it measures the judge alone (D-183).
 - `.local/tune/` holds the JSON for run14, run14b, run16, run17, run18, and `20260826-191225-000` and `-001`. No JSON for run 15 exists.
 - The conversation set holds 104 conversations, 30 gate and 74 probe (D-145, D-155).
@@ -47,7 +51,7 @@ CAUTION: every baseline on disk is stale. D-163 to D-169, D-195 to D-202, and th
 - LLM model ids and prices: 2026-08-24 (`roles.json`, `prices.json`). The Sonnet 5 intro price claim is unverified.
 - Comprehensive Rules: 2026-08-07 text. Commander brackets: 2025-10-21 revision.
 - Card snapshot on disk: `.local/gcs/mtg-local-cards/scryfall/20260824T090152`. Check every card fact against it, and never against memory. It holds art-series objects that share a real card's name, so read the `layout` field.
-- Run cost, measured 2026-08-26 at 104 conversations: the gate costs $0.152 to $0.165 over about 20 minutes, and the eval costs $0.092 to $0.099 over about 13 minutes. One loop iteration costs about $0.25 and takes 33 to 35 minutes, so a $3 budget buys about 12 iterations. A Sonnet 5 calibration costs $0.25 to $0.30.
+- Run cost, measured 2026-08-26 at 104 conversations. The gate costs $0.152 to $0.165 over about 20 minutes. The eval costs $0.092 to $0.099 over about 13 minutes. One loop iteration costs about $0.25 and takes 33 to 35 minutes, so a $3 budget buys about 12 iterations. A Sonnet 5 calibration costs $0.25 to $0.30.
 - Card-pool measurement of 2026-08-26, against the snapshot of 2026-08-24 (D-146). Historic holds 15,680 legal cards and Timeless 15,753. Jaccard against Pioneer: 0.680 and 0.694. Against Modern: 0.568 and 0.581. Historic against Timeless: 0.968. Historic bans 77 cards. Timeless restricts 4 and bans none.
 - Prompt versions: classify and ask 8, eval 3, M-5 rubric 2. A score taken at an earlier version does not carry over (D-66).
 - Formats the app builds, from 2026-08-26: Commander, Standard, Modern (D-155). Everything else is declined by name with no substitute (D-156).
@@ -56,7 +60,7 @@ CAUTION: every baseline on disk is stale. D-163 to D-169, D-195 to D-202, and th
 
 1. Run `git pull`, then `git status`. Work on branch `pr-7c`. The tree is green. The owner commits and pushes.
 2. Run `ps aux | grep autotune` before any write. The loop reverts the tree when it rejects an iteration, so a write during a run is lost.
-3. Load the skills: `ste-writing` before you write any `.md`, `design-doc-style` before you edit the roadmap, and `mtg-corpus` before you reason about a format, a legality, or a card term.
+3. Load the skills. Load `ste-writing` before you write any `.md`, and `design-doc-style` before you edit the roadmap. Load `mtg-corpus` before you reason about a format, a legality, or a card term.
 4. Read `docs/decisions.md` from D-179 to the end, `docs/owner-questions.md`, and `docs/open-questions.md`. The decision log is the source of truth, and this file is the summary.
 5. Check the Go tree is green: `cd go && go build ./... && go vet ./... && go test ./...`, then `make lint-go`. The module sits in `go/`, so `./...` from the repository root finds nothing.
 6. Do "Do this first" at the top of this file. Then continue from "Next steps, in order".

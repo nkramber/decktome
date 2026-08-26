@@ -1457,6 +1457,8 @@ func TestNotOwnedRowFiresForANamedCommander(t *testing.T) {
 	h := factHints{missing: true, stubHints: stubHints{commanders: []string{"Oloro, Ageless Ascetic", "Ayli, Eternal Pilgrim"}}}
 	a, _ := testAgentHints(t, h, classifyStep(t, out), fits(t, "commander_not_owned", "power_commander"), askStep(t))
 	st := NewState(true)
+	// The row is dormant (D-207), so the test sets the fact by hand.
+	st.Ctx.CommanderNotOwned = true
 	res, err := a.Turn(context.Background(), st, "Karlov lifegain from my library first, white and black", nil)
 	if err != nil {
 		t.Fatalf("turn: %v", err)
@@ -1486,6 +1488,8 @@ func TestNotOwnedSkipLeavesTheCommanderFilled(t *testing.T) {
 	h := factHints{missing: true}
 	a, _ := testAgentHints(t, h, classifyStep(t, out), fits(t, "power_commander"), askStep(t))
 	st := NewState(true)
+	// The row is dormant (D-207), so the test sets the fact by hand.
+	st.Ctx.CommanderNotOwned = true
 	res, err := a.Turn(context.Background(), st, "Karlov lifegain from my library first, white and black", nil)
 	if err != nil {
 		t.Fatalf("turn: %v", err)
@@ -1617,5 +1621,59 @@ func TestLocksCardAfterTheName(t *testing.T) {
 	}
 	if LocksCard("Sol Ring, if it goes in", "Sol Ring") {
 		t.Error("a verb two words after the name locked the card")
+	}
+}
+
+// TestDeclinedPickClosesTheCommanderSlot replays conversation 39 of gate
+// run 20260826-212512-000, "the user stays vague". Turn 2 answers "I
+// dunno, you pick", the classifier sets wants_suggestion, and the pick
+// row asks. Turn 3 answers "Whatever you think is best", and the
+// classifier declines the pick key. The decline closes commander_pick
+// alone. The D-147 rule runs after the decline, its guard reads an
+// outstanding pick question that the decline already removed, and the
+// commander slot stays UNSPECIFIED. The session then reports ready, and
+// the gate calls it premature: "commander (never asked)".
+//
+// A delegation is a decline (D-93, D-147): it closes commander_pick and
+// commander, and the generator picks. The gate's required() accepts a
+// SKIPPED commander for that reason.
+func TestDeclinedPickClosesTheCommanderSlot(t *testing.T) {
+	var vague classifyOut
+	var delegate classifyOut
+	delegate.DeclinedKeys = []string{"format", "colors"}
+	delegate.Facts.WantsSuggestion = true
+	var decline classifyOut
+	decline.DeclinedKeys = []string{"commander_pick", "power", "pool_rule"}
+	h := &offerHints{
+		first:  []string{"Peregrin Took", "Joshua, Phoenix's Dominant // Phoenix, Warden of Fire", "Éowyn, Shieldmaiden"},
+		second: []string{"Karlov of the Ghost Council", "Oloro, Ageless Ascetic", "Ayli, Eternal Pilgrim"},
+	}
+	a, _ := testAgentHints(t, h,
+		classifyStep(t, vague), fits(t), askStep(t),
+		classifyStep(t, delegate), fits(t), askStep(t),
+		classifyStep(t, decline), fits(t), askStep(t))
+	st := NewState(true)
+	if _, err := a.Turn(context.Background(), st, "Make me a good deck.", nil); err != nil {
+		t.Fatalf("turn 1: %v", err)
+	}
+	if _, err := a.Turn(context.Background(), st, "I dunno, you pick.", nil); err != nil {
+		t.Fatalf("turn 2: %v", err)
+	}
+	if st.Slots.GetSlotStates()["commander_pick"] != mtgv1.SlotState_SLOT_STATE_ASKED {
+		t.Fatalf("the pick row did not ask on turn 2: %v", st.Slots.GetSlotStates())
+	}
+	res, err := a.Turn(context.Background(), st, "Whatever you think is best.", nil)
+	if err != nil {
+		t.Fatalf("turn 3: %v", err)
+	}
+	states := st.Slots.GetSlotStates()
+	if states["commander_pick"] != mtgv1.SlotState_SLOT_STATE_SKIPPED {
+		t.Errorf("the decline left commander_pick in state %v, want SKIPPED", states["commander_pick"])
+	}
+	if states["commander"] != mtgv1.SlotState_SLOT_STATE_SKIPPED {
+		t.Errorf("the declined pick left the commander slot in state %v, want SKIPPED (D-147)", states["commander"])
+	}
+	if res.Ready && states["commander"] == mtgv1.SlotState_SLOT_STATE_UNSPECIFIED {
+		t.Errorf("the session reported ready with the commander never asked and never chosen")
 	}
 }

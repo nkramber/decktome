@@ -109,6 +109,9 @@ func (s *State) RetireOffer() {
 // replacement that has now arrived (H-6).
 var commanderKeys = []string{"commander", "commander_pick", "named_card_role", "commander_illegal"}
 
+// notOwnedRowLive gates the fact behind the not-owned row (OQ-36, D-207).
+const notOwnedRowLive = false
+
 // RefreshFacts reads the planner facts a FactSource answers, from the
 // slots as they stand now. agentsvc calls it before the turn, and the
 // agent calls it again after the classify call (M-6).
@@ -117,7 +120,14 @@ func RefreshFacts(s *State, src FactSource) {
 		return
 	}
 	// The named commander is not in the collection (corpus section 11).
-	s.Ctx.CommanderNotOwned = src.MissingCommander(s.CommanderNames)
+	// The not-owned row stays dormant until the owner answers OQ-36
+	// (D-207). It fired 14 times in gate run 20260826-212512-000 at fit
+	// 0.05, and the agent replaced 13 of them with an invented question.
+	// The key fix of D-197 stays, so the row is live the day the owner
+	// flips this constant.
+	if notOwnedRowLive {
+		s.Ctx.CommanderNotOwned = src.MissingCommander(s.CommanderNames)
+	}
 	// No owned commander fits the theme (D-63, D-94). The count answers
 	// it, so no threshold is invented.
 	if !s.Ctx.CommanderSet {

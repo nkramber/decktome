@@ -900,6 +900,17 @@ func (a *Agent) apply(st *State, out classifyOut, open []string, message string)
 		}
 		a.log.Info("the user declined a slot", "key", k)
 		st.Skip(k)
+		// A declined pick is a delegation (D-147): the user handed the
+		// commander choice to the agent, and the generator picks. The
+		// pick row carries its own key, so the skip above leaves the
+		// commander slot unspecified, and the D-147 rule can not close it
+		// either: its guard reads the outstanding pick question that this
+		// skip just removed. Conversation 39 of gate run
+		// 20260826-212512-000 then reported ready with the commander
+		// never asked (D-208).
+		if k == "commander_pick" && !st.Ctx.Filled["commander"] {
+			st.Skip("commander")
+		}
 		// The format is the one slot the planner routes on. Every power
 		// row, and every Commander row, triggers on it. A declined format
 		// left it empty, so no power row could ever fire and the session

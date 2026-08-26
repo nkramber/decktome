@@ -386,13 +386,16 @@ while [ "$i" -lt "$MAX_ITERATIONS" ]; do
   # The label carries the run stamp, so no two runs ever write the same
   # document (D-177).
   LABEL="$(printf '%s-%03d' "$STAMP" "$i")"
+  # An exit here happens before the iteration ran, so the count steps
+  # back and the closing line reports the iterations that did run.
   if [ -f "$STOP_FILE" ]; then
-    say "stop file found, so the loop ends after $((i-1)) iterations"
+    i=$((i-1))
+    say "stop file found, so the loop ends after $i iterations"
     rm -f "$STOP_FILE"
     break
   fi
-  if over_budget; then say "the budget of \$$BUDGET is spent"; break; fi
-  if [ "$rejects" -ge 3 ]; then say "three iterations in a row changed nothing that held"; break; fi
+  if over_budget; then i=$((i-1)); say "the budget of \$$BUDGET is spent"; break; fi
+  if [ "$rejects" -ge 3 ]; then i=$((i-1)); say "three iterations in a row changed nothing that held"; break; fi
 
   say "--- iteration $i, spent \$$(spent) of \$$BUDGET"
 
