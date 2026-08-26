@@ -721,8 +721,35 @@ the limit once, and asks again only while the user names the format
 again.
 
 **Read eval run 17 as a measurement of the tree before D-158.** The 13.3
-percent number does not describe the tree as it stands. A rerun would
-measure the fix, and the owner has approved no run past 17.
+percent holdout number does not describe the tree as it stands.
+
+### The pre-flight check, and what it costs
+
+A full gate and eval costs about $0.24 and 31 minutes. A targeted run of
+the conversations one change touches costs cents, and it answered this
+question twice.
+
+`cmd/questions-gate -only` takes conversation ids. The eleven that fire a
+decline row are 7, 18, 21, 26, 50, 60, 61, 69, 97, 98, and 99. Two runs
+of those eleven cost $0.0287 in total.
+
+| Measure | Run 17 | First fix | Second fix |
+|---|---|---|---|
+| Decline questions asked | 23 | 15 | **13** |
+
+The first fix left probes 61 and 97 asking a third time, and the check
+found it. The second fix leaves two conversations doubled, and both are
+the ones where the user writes "Pauper." or "Legacy." again on turn 2.
+
+Holding every other verdict fixed, the overall ratio projects from
+49 of 378 (13.0 percent) to 39 of 368 (**10.6 percent**), against eval
+16's 11.3 percent. That is a projection and not a measurement: it assumes
+the ten questions that no longer go out are among the fifteen the eval
+refused, and it re-judges nothing. A full run would measure it.
+
+Run this check before every full gate. Three defects of this session
+survived a green test suite and reached a live run, and two of them cost
+under two cents to find.
 
 ### State of the tree
 

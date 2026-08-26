@@ -474,8 +474,12 @@ func (a *Agent) applyWords(st *State, message string) {
 			// asked the format on turn 1, the user answered "Call it
 			// Vintage" on turn 2, and the agent could never say that it
 			// does not build Vintage (D-157).
-			first := !st.Ctx.UnsupportedFormat
-			if first {
+			// "Declared" is sticky, and the firing fact is not. Reading
+			// the fact to decide the first time made it oscillate: true on
+			// turn 1, false on turn 2, and true again on turn 3, so the
+			// row asked a third time in probes 61 and 97 (D-158).
+			declared := st.Ctx.Asked["format_unsupported"] || st.Ctx.Asked["format_unsupported_open"]
+			if !declared && !st.Ctx.UnsupportedFormat {
 				a.log.Info("the user named a format this app does not build",
 					"session", st.SessionID, "format", name)
 				st.RetireOutstanding()
@@ -490,8 +494,7 @@ func (a *Agent) applyWords(st *State, message string) {
 			// true forever. The repeat now reads the message alone, which
 			// is the D-125 rule (D-158).
 			_, _, namedNow := UnsupportedFormat(message)
-			asked := st.Ctx.Asked["format_unsupported"] || st.Ctx.Asked["format_unsupported_open"]
-			st.Ctx.UnsupportedFormat = first || !asked || namedNow
+			st.Ctx.UnsupportedFormat = !declared || namedNow
 			// Historic and Timeless name no substitute, so a second row
 			// asks which format to build instead (D-146).
 			st.Ctx.NoNearFormat = near == ""
