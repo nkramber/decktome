@@ -278,7 +278,7 @@ The agent asks only what the prompt did not answer. Never ask more than three qu
 | Format (not supported) | The user named a format this app does not build, such as Brawl (D-112). The row asks again only for another unsupported format. The same format twice gets one sentence (D-210). | "I do not build {bad_format}. The nearest format I build is {near_format}. Shall I use that?" |
 | Format (no substitute) | The user named an unsupported format with no nearest format to offer (D-146, D-155). Historic, Timeless, Pioneer, Legacy, Vintage, Pauper, and Pauper Commander are the seven. The row asks again only for another unsupported format (D-210). | "I do not build {bad_format}. Which format should I build instead: Commander, Standard, or Modern?" |
 | Format | Always, unless stated. Ask this first. Every other slot depends on it. The app builds three (D-155). | "Which format: Commander, Standard, or Modern?" |
-| Format (store event) | The user names FNM, an LGS, a store, or an event. | "Which format does your event run: Standard, Modern, or Commander?" |
+| Format (store event) | The user names FNM, an LGS, a store, or an event. The row names the three formats as the ones it builds, and never as the ones the event runs (D-213). | "I build Standard, Modern, and Commander. Which one does your event run?" |
 | Theme or plan | The prompt gives only a format. | "What should the deck do: a creature type, a mechanic, or a play style?" |
 | Theme (competitive) | Power is FNM or tournament-meta. | "Do you want a named tier-one deck, or the best deck under your budget?" |
 | Theme (card named) | The user named a card and the theme is empty. | "{card} supports two plans: {plan A} and {plan B}. Which one do you want?" |

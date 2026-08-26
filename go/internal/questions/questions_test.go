@@ -338,3 +338,24 @@ func TestHouseLimitsRowNamesNoList(t *testing.T) {
 		t.Errorf("the house-limits row holds more than one question: %q", r.Text)
 	}
 }
+
+// TestStoreFormatRowNamesItsOwnLimit holds D-213. The three formats are
+// the ones this app builds. An FNM can run Pioneer, so a question that
+// offers the list as the event's own formats omits information. The eval
+// refused it in conversation 7 of gate run 20260826-220840-000.
+func TestStoreFormatRowNamesItsOwnLimit(t *testing.T) {
+	c := load(t)
+	r, ok := c.Row("format_store")
+	if !ok {
+		t.Fatal("no format_store row")
+	}
+	if !strings.HasPrefix(r.Text, "I build Standard, Modern, and Commander.") {
+		t.Errorf("the store row does not name the formats it builds: %q", r.Text)
+	}
+	if strings.Contains(r.Text, "run:") {
+		t.Errorf("the store row offers the list as the event's formats: %q", r.Text)
+	}
+	if f := LintCatalog(c); len(f) > 0 {
+		t.Errorf("the linter refused the catalog: %v", f)
+	}
+}

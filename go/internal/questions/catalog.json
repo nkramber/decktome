@@ -67,7 +67,7 @@
       "id": "format_store",
       "slot": "format",
       "order": 9,
-      "text": "Which format does your event run: Standard, Modern, or Commander?",
+      "text": "I build Standard, Modern, and Commander. Which one does your event run?",
       "options": [
         "Standard",
         "Modern",
