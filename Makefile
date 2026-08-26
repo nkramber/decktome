@@ -161,7 +161,8 @@ eval-calibrate: ## Measure the eval model against a stronger one on a sample. CA
 
 autotune: ## Print how to start the overnight tuning loop. It never starts one
 	@echo "The loop edits code and pushes with nobody watching."
-	@echo "Read docs/reference/autotune-design.md, then answer OQ-24 to OQ-27."
+	@echo "docs/reference/autotune-readme.md holds every command."
+	@echo "docs/reference/autotune-design.md holds the reasons and the limits."
 	@echo
 	@echo "  AUTOTUNE_ALLOW_UNATTENDED=1 AUTOTUNE_FIXER_CMD=... scripts/autotune.sh --budget 3.00"
 

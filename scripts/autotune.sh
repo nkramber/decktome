@@ -17,6 +17,14 @@
 #   AUTOTUNE_ALLOW_UNATTENDED=1 scripts/autotune.sh --budget 3.00 --max 20 \
 #     --base pr-7c --baseline .local/tune/run14b.json
 #
+# To stop the loop without losing work, run:
+#
+#   touch .local/tune/STOP
+#
+# The iteration that is running finishes and commits, and the loop ends
+# before the next one starts. Ctrl-C also works and it abandons the
+# iteration in flight.
+#
 # --base names the branch the owner keeps for loop output. The run cuts a
 # working branch off it and pushes nothing. After the review, the owner
 # fast-forwards the base, and the next night continues from there.
@@ -56,6 +64,13 @@ while [ $# -gt 0 ]; do
 done
 
 STATE_DIR="$ROOT/.local/tune"
+# STOP_FILE lets a person end the loop without losing an iteration.
+# Ctrl-C kills the gate or the eval part way, and that iteration is
+# abandoned with its spend wasted. Touch this file instead: the iteration
+# that is running finishes and commits, and the loop stops before the
+# next one. The loop removes the file, so a stale one never blocks a
+# later run.
+STOP_FILE="$ROOT/.local/tune/STOP"
 LEDGER="$STATE_DIR/ledger.txt"
 LOG="$STATE_DIR/autotune.log"
 mkdir -p "$STATE_DIR"
@@ -145,9 +160,17 @@ say "base branch $BASE_BRANCH, working branch $BRANCH"
 set -a; . "$ROOT/.env"; set +a
 export CARDS_SNAPSHOT_DIR="${CARDS_SNAPSHOT_DIR:-$ROOT/.local/gcs/mtg-local-cards/scryfall}"
 
+# conv_count reads the size of the conversation set. A hardcoded number
+# goes stale: the set grew from 52 to 66 to 100 to 104, and the log still
+# said 66 (D-145, D-155).
+conv_count() {
+  python3 -c "import json,sys;d=json.load(open(sys.argv[1]));print(len(d if isinstance(d,list) else d['conversations']))" \
+    "$ROOT/go/cmd/questions-gate/conversations.json" 2>/dev/null || echo "?"
+}
+
 run_gate() {   # $1 = iteration label
   local out="$ROOT/docs/reference/pr7-question-gate-$1.md"
-  say "gate $1: 66 conversations, about 14 minutes"
+  say "gate $1: $(conv_count) conversations, about 20 minutes"
   [ "$DRY_RUN" = "1" ] && { say "dry run: no gate"; return 1; }
   ( cd "$ROOT/go" && QUESTIONS_GATE=1 go run ./cmd/questions-gate \
       -collection internal/collections/testdata/manabox_collection.csv > "$out" ) || true
@@ -208,6 +231,11 @@ rejects=0
 while [ "$i" -lt "$MAX_ITERATIONS" ]; do
   i=$((i+1))
   LABEL="$(printf 'auto-%03d' "$i")"
+  if [ -f "$STOP_FILE" ]; then
+    say "stop file found, so the loop ends after $((i-1)) iterations"
+    rm -f "$STOP_FILE"
+    break
+  fi
   if over_budget; then say "the budget of \$$BUDGET is spent"; break; fi
   if [ "$rejects" -ge 3 ]; then say "three iterations in a row changed nothing that held"; break; fi
 

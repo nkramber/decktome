@@ -10,7 +10,7 @@ Every row came out of the session of 2026-08-25 and 2026-08-26: the owner's scor
 
 Nothing blocks it now. The owner answered all four on 2026-08-26: OQ-24 (D-135, the loop may change the catalog inside an approved run), OQ-25 (D-138, a branch of its own and no push), OQ-26 (D-136, the eval may share a model with the agent), and OQ-27 (D-137, the target is 5 percent).
 
-One step is left before the first unattended run. The owner names the fixer in `AUTOTUNE_FIXER_CMD`, and sets a token budget for it. That agent is billed apart from the loop budget, and nothing here can measure it.
+One step is left before the first unattended run. The owner names the fixer in `AUTOTUNE_FIXER_CMD`. That agent is billed apart from the loop budget. The owner runs Claude Code on a monthly plan, so no dollar cap applies to it and none is set (D-159).
 
 ## Waits on the first eval run
 

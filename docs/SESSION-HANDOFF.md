@@ -365,7 +365,7 @@ The owner asked for a lane that needs no hand scoring, and for a loop that can r
 
 A budget of $3.00 buys about 14 iterations of gate and eval. The fixer agent's own tokens are not in that number, and they are the larger cost.
 
-`docs/owner-questions.md` is new. It holds every question that waits for a person, and the loop refuses to decide any of them. The owner answered all four blocking questions on 2026-08-26: D-135 to D-138. One step is left before an unattended run, and the owner owns it: name the fixer in `AUTOTUNE_FIXER_CMD`, and cap its tokens.
+`docs/owner-questions.md` is new. It holds every question that waits for a person, and the loop refuses to decide any of them. The owner answered all four blocking questions on 2026-08-26: D-135 to D-138. One step is left before an unattended run, and the owner owns it: name the fixer in `AUTOTUNE_FIXER_CMD`. No dollar cap applies, because the owner runs Claude Code on a monthly plan (D-159).
 
 ### The three evals of PR-7B
 
@@ -762,7 +762,7 @@ The work is not committed. The owner commits and pushes.
 2. Fix whatever the eval finds, with a test for each fix and a decision row. The last two runs each hid one false rules claim behind a passing gate.
 3. Answer the rest of OQ-39. D-149 answers the card-fact half of it with a deterministic snapshot check that costs nothing. The calibration of 2026-08-26 agreed 80 percent, and the ten disagreements held two real defects and two card facts `claude-sonnet-5` invented. The dual-judge proposal stays open for the faults the snapshot can not reach, at about ten cents more per run.
 4. Merge `pr-7b`. Then open `pr-7c` from `main` as the container for everything the loop writes (D-142).
-5. Name the fixer in `AUTOTUNE_FIXER_CMD` and cap its tokens. That agent bills apart from the loop budget, and nothing here can measure it.
+5. Name the fixer in `AUTOTUNE_FIXER_CMD`. That agent bills apart from the loop budget, against the owner's monthly plan, so it needs no dollar cap (D-159).
 6. Start the loop against `pr-7c`, with `run15.json` as the baseline. One iteration takes about 31 minutes, so a night fits eight to ten:
    `AUTOTUNE_ALLOW_UNATTENDED=1 scripts/autotune.sh --base pr-7c --baseline .local/tune/run15.json --budget 3.00`
    Run it once with `--max 1` before a full night.
