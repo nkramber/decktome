@@ -115,3 +115,33 @@ func TestLintAllowsWhatTheUserRaised(t *testing.T) {
 		})
 	}
 }
+
+// TestLintCatchesAnIllegalOffer is D-144. Gate run 14 asked "Do you want
+// to use any colors beyond Grist's color identity?" In Commander the
+// color identity of the commander is the color identity of the deck, so
+// the rules allow no answer to that question. The gate passed, the linter
+// found nothing, and both eval models caught it.
+func TestLintCatchesAnIllegalOffer(t *testing.T) {
+	bad := []string{
+		"Do you want to use any colors beyond Grist's color identity?",
+		"Should the deck use colors outside its color identity?",
+		"Would you like additional colors beyond the commander's identity?",
+	}
+	for _, text := range bad {
+		q := LintQuestion{Turn: 1, RowID: "colors", Slot: "colors", Text: text}
+		var found bool
+		for _, f := range LintConversation([]string{"Build around Grist, the Hunger Tide."}, []LintQuestion{q}) {
+			if f.Rule == "offers_an_illegal_answer" {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("the linter missed an illegal offer: %q", text)
+		}
+	}
+	// A normal color question is untouched.
+	ok := LintQuestion{Turn: 1, RowID: "colors", Slot: "colors", Text: "Any color preference?"}
+	for _, f := range LintConversation([]string{"Build me a deck."}, []LintQuestion{ok}) {
+		t.Errorf("the linter fired on a clean question: %s", f.Detail)
+	}
+}

@@ -202,17 +202,16 @@ func TestGoldenDecks(t *testing.T) {
 		cards:     map[string]int32{"Soul Warden": 4, "Path to Exile": 4},
 		sideboard: map[string]int32{"Negate": 4, "Counterspell": 4, "Wrath of God": 4, "Day of Judgment": 3},
 		fill:      "Plains", fillTo: 60})
-	// Yorion is banned in Modern, so the companion case runs in Legacy.
-	wantPass(t, "legacy yorion companion", deckSpec{format: mtgv1.FormatId_FORMAT_ID_LEGACY,
-		companion: "Yorion, Sky Nomad",
-		cards:     map[string]int32{"Soul Warden": 4, "Counterspell": 4},
-		sideboard: map[string]int32{"Yorion, Sky Nomad": 1},
-		fill:      "Plains", fillTo: 80})
-	wantPass(t, "vintage one lotus", deckSpec{format: mtgv1.FormatId_FORMAT_ID_VINTAGE,
-		cards: map[string]int32{"Black Lotus": 1, "Brainstorm": 1, "Counterspell": 4},
-		fill:  "Island", fillTo: 60})
-	wantPass(t, "legacy fair deck", deckSpec{format: mtgv1.FormatId_FORMAT_ID_LEGACY,
-		cards: map[string]int32{"Brainstorm": 4, "Counterspell": 4, "Delver of Secrets // Insectile Aberration": 4},
+	// Yorion is banned in Modern, so the companion case uses Kaheera. It
+	// is legal in Modern, checked against the card snapshot (D-155 dropped
+	// Legacy, which used to host this case).
+	wantPass(t, "modern kaheera companion", deckSpec{format: mtgv1.FormatId_FORMAT_ID_MODERN,
+		companion: "Kaheera, the Orphanguard",
+		cards:     map[string]int32{"Soul Warden": 4},
+		sideboard: map[string]int32{"Kaheera, the Orphanguard": 1},
+		fill:      "Plains", fillTo: 60})
+	wantPass(t, "modern fair deck", deckSpec{format: mtgv1.FormatId_FORMAT_ID_MODERN,
+		cards: map[string]int32{"Counterspell": 4, "Delver of Secrets // Insectile Aberration": 4},
 		fill:  "Island", fillTo: 60})
 	wantPass(t, "house anything", deckSpec{format: mtgv1.FormatId_FORMAT_ID_HOUSE,
 		cards: map[string]int32{"Black Lotus": 4, "The One Ring": 4},
@@ -264,7 +263,7 @@ func TestGoldenDecks(t *testing.T) {
 			t.Error("want land_count warn")
 		}
 	})
-	wantPass(t, "pauper commons", deckSpec{format: mtgv1.FormatId_FORMAT_ID_PAUPER,
+	wantPass(t, "modern commons", deckSpec{format: mtgv1.FormatId_FORMAT_ID_MODERN,
 		cards: map[string]int32{"Counterspell": 4}, fill: "Island", fillTo: 60})
 	wantPass(t, "esika front face commander", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 4,
 		commanders: []string{"Esika, God of the Tree // The Prismatic Bridge"},
@@ -376,10 +375,6 @@ func TestGoldenDecks(t *testing.T) {
 		map[string]int32{"Black Lotus": 1}, 2), CodeBannedCard)
 	wantBlock(t, "brainstorm not legal in modern", deckSpec{format: mtgv1.FormatId_FORMAT_ID_MODERN,
 		cards: map[string]int32{"Brainstorm": 4}, fill: "Island", fillTo: 60}, CodeNotLegal)
-	wantBlock(t, "two lotus in vintage", deckSpec{format: mtgv1.FormatId_FORMAT_ID_VINTAGE,
-		cards: map[string]int32{"Black Lotus": 2}, fill: "Island", fillTo: 60}, CodeRestrictedCard)
-	wantBlock(t, "two brainstorm restricted", deckSpec{format: mtgv1.FormatId_FORMAT_ID_VINTAGE,
-		cards: map[string]int32{"Brainstorm": 2}, fill: "Island", fillTo: 60}, CodeRestrictedCard)
 	wantBlock(t, "no commander", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2,
 		fill: "Plains", fillTo: 100}, CodeNoCommander)
 	wantBlock(t, "serra angel not legendary", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2,
@@ -475,9 +470,6 @@ func TestGoldenDecks(t *testing.T) {
 		commanders: []string{"Tergrid, God of Fright // Tergrid's Lantern"},
 		fill:       "Swamp", fillTo: 100}, CodeGameChangers)
 	wantBlock(t, "bracket 6 unknown", monoW([]string{"Heliod, Sun-Crowned"}, nil, 6), CodeGameChangers)
-	wantBlock(t, "restricted card split main and side", deckSpec{format: mtgv1.FormatId_FORMAT_ID_VINTAGE,
-		cards: map[string]int32{"Black Lotus": 1}, sideboard: map[string]int32{"Black Lotus": 1},
-		fill: "Island", fillTo: 60}, CodeRestrictedCard)
 	wantBlock(t, "unknown format", deckSpec{format: mtgv1.FormatId_FORMAT_ID_UNSPECIFIED,
 		fill: "Plains", fillTo: 60}, CodeUnknownFormat)
 	wantBlock(t, "companion off color in commander", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2,
@@ -486,9 +478,9 @@ func TestGoldenDecks(t *testing.T) {
 	wantBlock(t, "lurrus companion banned in modern", deckSpec{format: mtgv1.FormatId_FORMAT_ID_MODERN,
 		companion: "Lurrus of the Dream-Den",
 		cards:     map[string]int32{"Soul Warden": 4}, fill: "Plains", fillTo: 60}, CodeBannedCard)
-	wantBlock(t, "companion not in sideboard", deckSpec{format: mtgv1.FormatId_FORMAT_ID_LEGACY,
-		companion: "Yorion, Sky Nomad",
-		cards:     map[string]int32{"Soul Warden": 4}, fill: "Plains", fillTo: 80}, CodeCompanionNotSide)
+	wantBlock(t, "companion not in sideboard", deckSpec{format: mtgv1.FormatId_FORMAT_ID_MODERN,
+		companion: "Kaheera, the Orphanguard",
+		cards:     map[string]int32{"Soul Warden": 4}, fill: "Plains", fillTo: 60}, CodeCompanionNotSide)
 	wantBlock(t, "companion breaks singleton in commander", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2,
 		commanders: []string{"Niv-Mizzet, Parun"}, companion: "Jegantha, the Wellspring",
 		cards: map[string]int32{"Jegantha, the Wellspring": 1},
@@ -534,7 +526,8 @@ func TestLoadData(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(cfg.Formats) < 8 {
+	// Four formats since D-155: Commander, Standard, Modern, and HOUSE.
+	if len(cfg.Formats) < 4 {
 		t.Errorf("formats = %d", len(cfg.Formats))
 	}
 	if cfg.MaxGameChangers[3] != 3 || cfg.MaxGameChangers[4] != -1 {

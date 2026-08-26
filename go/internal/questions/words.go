@@ -103,11 +103,7 @@ var formatNames = map[string]mtgv1.FormatId{
 	"commander": mtgv1.FormatId_FORMAT_ID_COMMANDER,
 	"edh":       mtgv1.FormatId_FORMAT_ID_COMMANDER,
 	"standard":  mtgv1.FormatId_FORMAT_ID_STANDARD,
-	"pioneer":   mtgv1.FormatId_FORMAT_ID_PIONEER,
 	"modern":    mtgv1.FormatId_FORMAT_ID_MODERN,
-	"legacy":    mtgv1.FormatId_FORMAT_ID_LEGACY,
-	"vintage":   mtgv1.FormatId_FORMAT_ID_VINTAGE,
-	"pauper":    mtgv1.FormatId_FORMAT_ID_PAUPER,
 }
 
 // commanderSigns are phrases that name no format and mean Commander. A
@@ -168,17 +164,44 @@ func namesFormat(message string, id mtgv1.FormatId) bool {
 // singleton formats with the same shape. Alchemy is Standard with the
 // Arena-only rebalanced cards.
 //
-// The Historic and Timeless rows are marked unverified. Both are Arena
-// formats with no exact paper equivalent, and the owner has not confirmed
-// the nearest format for either (OQ-22).
+// Historic and Timeless name no nearest format, which closes OQ-22
+// (D-146). Both are Arena formats, and the card pools were measured
+// against the snapshot of 2026-08-24 rather than argued from memory.
+// Pioneer is the nearest of the seven by Jaccard similarity, at 0.680 for
+// Historic and 0.694 for Timeless, against 0.568 and 0.581 for Modern.
+// The earlier mapping to Modern and to Legacy matched neither. Historic
+// and Timeless are also 0.968 similar to each other, so no measurement
+// separates them. The owner chose to name no substitute over naming one
+// the data does not support. An empty near sets Context.NoNearFormat, and
+// a second row then asks which format to build.
+// D-155 narrowed the app to Commander, Standard, and Modern. Pioneer,
+// Legacy, Vintage, and Pauper joined this list and name no substitute.
+//
+// Pool similarity was measured for each one and it was not used. Legacy
+// and Vintage read nearest to Commander at 0.994 Jaccard, because
+// Commander is also an all-sets format of the same size. That number
+// compares two different games: a Legacy player does not want a 100-card
+// singleton multiplayer deck. Restricted to the 60-card formats the app
+// keeps, all four read Modern, but only Pioneer carries its whole card
+// pool (100 percent). Legacy and Vintage carry 71 percent, and Pauper
+// loses the commons-only rule that defines it. The owner chose to name no
+// substitute for any of the four over a claim the data does not support.
+//
+// "duel commander" must stay before "commander", because the list is read
+// in order and the longer phrase wins.
 var unsupported = []struct{ phrase, display, near string }{
 	{"canadian highlander", "Canadian Highlander", "Commander"},
 	{"duel commander", "Duel Commander", "Commander"},
+	{"pauper commander", "Pauper Commander", ""},
 	{"oathbreaker", "Oathbreaker", "Commander"},
 	{"brawl", "Brawl", "Commander"},
 	{"alchemy", "Alchemy", "Standard"},
-	{"historic", "Historic", "Modern"},
-	{"timeless", "Timeless", "Legacy"},
+	{"historic", "Historic", ""},
+	{"timeless", "Timeless", ""},
+	{"pioneer", "Pioneer", ""},
+	{"legacy", "Legacy", ""},
+	{"vintage", "Vintage", ""},
+	{"pauper", "Pauper", ""},
 }
 
 // UnsupportedFormat reads a format this app does not build. It returns
@@ -305,6 +328,99 @@ func RefusedOffer(message string) bool {
 		}
 	}
 	return false
+}
+
+// pairSigns name a request for two commanders. The Commander rules allow
+// a pair through Partner, Partner with, Friends forever, "choose a
+// Background", and Doctor's companion (corpus section 2.2).
+//
+// A pair is also the only practical way to reach four colors. WUBR, WBRG,
+// and UBRG hold exactly one legal single commander each: Breya, Etherium
+// Shaper, Saskia the Unyielding, and Yidris, Maelstrom Wielder (measured
+// 2026-08-26 against the snapshot of 2026-08-24).
+var pairSigns = []string{
+	"partner", "partners", "background", "backgrounds",
+	"two commanders", "2 commanders", "commander pair", "pair of commanders",
+	"doctor's companion", "doctors companion", "friends forever",
+	"both as commanders", "two legends",
+}
+
+// WantsCommanderPair reports whether the user asked for two commanders.
+// Probe 73 writes "A Commander deck with a Background commander pair",
+// and every run before D-154 answered it with three single legends.
+//
+// The negation guard applies: "no partners" asks for one commander.
+func WantsCommanderPair(message string) bool {
+	toks := tokens(message)
+	for _, p := range pairSigns {
+		want := tokens(p)
+		for i := range toks {
+			if matchAt(toks, want, i) && !negatedAt(toks, i) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// WantsBackgroundPair reports whether the user named a Background. It
+// narrows a pair request: probe 73 asked for a "Background commander
+// pair", and no Background ranked among the best pairs for its theme,
+// because a Background carries no theme signal of its own (D-154).
+func WantsBackgroundPair(message string) bool {
+	toks := tokens(message)
+	for _, p := range []string{"background", "backgrounds"} {
+		want := tokens(p)
+		for i := range toks {
+			if matchAt(toks, want, i) && !negatedAt(toks, i) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// delegateSigns hand a choice to the agent outright. The user does not
+// refuse the names on the table, and does not pick one: they ask the
+// agent to decide.
+//
+// The negation guard is off here, as it is for refusalSigns. Every phrase
+// carries its own sense, and a general rule would read each one as
+// negated.
+var delegateSigns = []string{
+	"you pick", "you choose", "you decide", "you select",
+	"pick for me", "choose for me", "decide for me", "select for me",
+	"up to you", "your call", "your choice", "surprise me",
+	"whatever you think", "whichever you think", "you know best",
+	"i dunno, you pick", "dealer's choice",
+}
+
+// DelegatesChoice reports whether the message hands the choice to the
+// agent. The caller decides which key the answer closes.
+//
+// Eighteen of the 100 gate conversations hold such a phrase, and no rule
+// read one before D-147. The commander pick carries "repeat": true, so
+// the row asked again every turn until the messages ran out. Eval run 14
+// refused 18 of its 43 bad questions on that row alone, which is more
+// than the next four rows together.
+func DelegatesChoice(message string) bool {
+	toks := tokens(message)
+	for _, p := range delegateSigns {
+		want := tokens(p)
+		for i := range toks {
+			if matchAt(toks, want, i) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// NamesCommander reports whether the message uses the word at all. It
+// scopes a delegation that would otherwise read as an answer to any open
+// question (D-147).
+func NamesCommander(message string) bool {
+	return hasPhrase(message, "commander")
 }
 
 // ordinals name a commander by its place in the offered list.

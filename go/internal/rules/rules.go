@@ -137,7 +137,6 @@ const (
 	CodeUnknownCard      = "unknown_card"
 	CodeNotLegal         = "not_legal"
 	CodeBannedCard       = "banned_card"
-	CodeRestrictedCard   = "restricted_card"
 	CodeNoCommander      = "no_commander"
 	CodeBadCommander     = "bad_commander"
 	CodeBadPartner       = "bad_partner"

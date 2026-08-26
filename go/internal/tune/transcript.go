@@ -41,6 +41,10 @@ type Conversation struct {
 	Messages  []string   `json:"messages"`
 	Questions []Question `json:"questions"`
 	Premature bool       `json:"premature"`
+	// Collection says a card collection was attached to the session. The
+	// eval needs it: without it, the card-pool question reads as a
+	// presumption that the user owns cards (D-143).
+	Collection bool `json:"collection"`
 	// Unanswered names the slots the deck needs that no answer filled.
 	Unanswered string `json:"unanswered,omitempty"`
 }
@@ -88,6 +92,7 @@ var (
 	lintRe    = regexp.MustCompile(`^The linter found (\d+) defective`)
 	prematRe  = regexp.MustCompile(`^(\d+) conversations called themselves complete`)
 	unansRe   = regexp.MustCompile(`^Slots the deck needs and nobody answered: (.+)$`)
+	collectRe = regexp.MustCompile(`^Collection: (true|false)\.`)
 )
 
 // ReadRun parses one gate document.
@@ -120,6 +125,8 @@ func ReadRun(path string) (*Run, error) {
 		case conv == nil && metricRe.MatchString(line):
 			m := metricRe.FindStringSubmatch(line)
 			run.Metrics.set(strings.TrimSpace(m[1]), atoi(m[2]))
+		case conv != nil && collectRe.MatchString(line):
+			conv.Collection = collectRe.FindStringSubmatch(line)[1] == "true"
 		case conv != nil && unansRe.MatchString(line):
 			conv.Unanswered = unansRe.FindStringSubmatch(line)[1]
 		case conv != nil && strings.HasPrefix(line, "**PREMATURE.**"):

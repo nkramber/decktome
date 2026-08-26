@@ -1,16 +1,28 @@
 # Session hand-off
 
-`CLAUDE.md` is the entry point. It sends you here. Then read `docs/decisions.md` and `docs/open-questions.md`.
+`CLAUDE.md` is the entry point. It sends you here. Then read `docs/decisions.md`, `docs/owner-questions.md`, and `docs/open-questions.md`.
+
+## Do this first
+
+Gate run 16 and its eval are done, and they are the current state. Read
+`docs/reference/pr7-question-gate-run16.md` and
+`docs/reference/pr7-question-eval-run16.md` before anything else. The
+section "Gate run 16 and its eval" below holds the numbers.
+
+Run 17 and its eval are the next step, and they need the owner's word.
+They measure D-151 to D-153, which no run has seen. One question waits in
+`docs/owner-questions.md`: the rest of OQ-39.
+
+The tree carries the uncommitted fixes for D-146 to D-158. The owner
+commits and pushes.
 
 ## Last updated
 
-2026-08-25. Merged: PR-0a to PR-5, PR-10, the audit fixes, and PR-6 (#1 to #11).
+2026-08-26. Merged: PR-0a to PR-7 and PR-10 (#1 to #12), the audit fixes included. PR-7 merged as #12.
 
-PR-7 was code-complete, and then the owner scored items 1 to 32 of the M-5 sheet. Those scores asked for 16 rewords and one deletion. They also exposed a class of defect the sheet could not hold. A correction session followed on the same day. Read "The correction session" below before anything else.
+Branch `pr-7b` holds PR-7B, the automated eval lane. The last commit is 0771756. `go build`, `go vet`, `go test`, and `golangci-lint` all pass. The tree carries the uncommitted fixes for D-146 to D-158. The owner commits and pushes. Do not commit unless the owner asks.
 
-The Go tree is green after the correction: `go build`, `go vet`, `go test`, and `golangci-lint` all pass. Gate run 14 has not run yet, and it is the next step. It costs money and needs the owner's approval.
-
-The correction is **not committed**. Branch `pr-7` sits at commit b349bb6 with the owner's scores. Run `git status` before you change anything, and run `git pull` first: the owner scores the M-5 sheet on a phone, so the remote can hold newer scores. The owner commits and pushes.
+Versions that invalidate earlier scores: the classify and ask prompts are at 5, the eval prompt is at 2, and the M-5 rubric is at 2. A score taken under an earlier version does not carry over (D-66).
 
 ## State of the work
 
@@ -341,9 +353,9 @@ The linter ran over all 793 questions of runs 10 to 13. It found 6 redundant for
 3. OQ-21: how much of a precon must survive a build. PR-8 owns it.
 4. OQ-22: the nearest supported format for Historic and for Timeless. Both are unverified in `words.go`.
 
-## The automated eval lane (2026-08-26)
+## PR-7B, the automated eval lane (2026-08-26)
 
-The owner asked for a lane that needs no hand scoring, and for a loop that can run overnight. The parts exist and nothing has run. `docs/reference/autotune-design.md` holds the design, the cost, and the honest limits.
+The owner asked for a lane that needs no hand scoring, and for a loop that can run overnight. The roadmap holds it as PR-7B, on branch `pr-7b`. `docs/reference/autotune-design.md` holds the design, the cost, and the honest limits.
 
 - A new `eval` role scores every question of a gate run. The owner set it on `gpt-5.6-luna`, so a 66-conversation run costs about eleven cents (D-133).
 - `cmd/questions-eval` writes a report a person reads and a summary a script reads. `make questions-eval` runs it.
@@ -353,22 +365,411 @@ The owner asked for a lane that needs no hand scoring, and for a loop that can r
 
 A budget of $3.00 buys about 14 iterations of gate and eval. The fixer agent's own tokens are not in that number, and they are the larger cost.
 
-`docs/owner-questions.md` is new. It holds every question that waits for a person, and the loop refuses to decide any of them. Four of them block the first unattended run: OQ-24 to OQ-27.
+`docs/owner-questions.md` is new. It holds every question that waits for a person, and the loop refuses to decide any of them. The owner answered all four blocking questions on 2026-08-26: D-135 to D-138. One step is left before an unattended run, and the owner owns it: name the fixer in `AUTOTUNE_FIXER_CMD`, and cap its tokens.
 
-The recommendation is to run the report alone first, for about fifty cents, and read what it finds. The loop is worth turning on only if the report finds what the batch sweep found by hand.
+### The three evals of PR-7B
+
+The owner started these on 2026-08-26. They cost about fifty cents in total.
+
+1. `GATE_OUT=docs/reference/pr7-question-gate-run14.md make questions-gate`
+2. `EVAL_RUN=docs/reference/pr7-question-gate-run14.md make questions-eval`
+3. `make eval-calibrate`
+
+The first writes the transcript of all 66 conversations. The second scores every question and writes the report. The third scores 12 conversations twice, once on the cost tier and once on `claude-sonnet-5`, and reports how far the two agree. OQ-39 holds the floor the owner sets from that number.
+
+The PR-7B gate: the report must name every defect class the batch sweep found by hand, and the owner must accept the calibration number.
+
+### What the first three evals found
+
+Gate run 14 passed: 27 of 30 catalog-only, and the linter found no defective question. The eval then found two false rules claims that the gate and the linter both missed.
+
+1. "Grist, the Hunger Tide can not lead a deck." Grist is a Legendary Planeswalker by type line, and it is a legal commander (Scryfall ruling, 2021-06-18). D-129 turned a documented engine limit into a false statement, and D-140 silences the row for any legendary card it can not confirm.
+2. "Do you want to use any colors beyond Grist's color identity?" The rules allow no answer. The ask role added the clause, and D-144 puts the rule in the ask prompt and the shape in the linter.
+
+The eval instrument had two defects of its own. It read a question against answers the user gave later (D-141), which is what drove the first ratio to 39.5 percent. It also could not see that a collection was attached (D-143). The ratio after the first fix is 17.4 percent.
+
+The calibration is the lane that pays. The agreement number is 80 percent and it is not the useful output. Reading the ten disagreements is: it found both rules claims, and it showed that `claude-sonnet-5` invents card facts of its own. Neither model is reliable alone, and OQ-39 holds what the owner does about that.
+
+### The conversation set is 100
+
+D-145 added conversations 67 to 100. The set is 30 gate and 70 probe, 312 messages, and every conversation stays inside four turns.
+
+## The session of 2026-08-26, part two
+
+Gate run 15 started at 00:23. `go run` compiles before it runs, so run 15
+measures the tree at commit 0771756. Every fix below landed after that
+compile, and run 15 therefore does not hold any of them. Read run 15 as
+the last measurement of the old code, and as the tuning baseline the
+owner asked for.
+
+The owner answered four questions this session. D-146 to D-149 record
+them, and every fix carries a test. Gate run 15 then found a fifth
+defect, which D-150 records.
+
+### OQ-22 is closed (D-146)
+
+`words.go` mapped Historic to Modern and Timeless to Legacy. Both rows
+were marked unverified since 2026-08-25. This session measured the card
+pools against the snapshot instead of an argument from memory.
+
+| Format | Pioneer | Modern | Legacy | Standard |
+|---|---|---|---|---|
+| Historic (15,680 legal) | **0.680** | 0.568 | 0.454 | 0.311 |
+| Timeless (15,753 legal) | **0.694** | 0.581 | 0.465 | 0.310 |
+
+The numbers are Jaccard similarity of the legal-card sets. Pioneer is
+nearest to both, and the old mapping matched neither. Historic and
+Timeless are 0.968 similar to each other, so no measurement separates
+them. The owner chose to name no substitute at all. A new row,
+`format_unsupported_open`, names the format and asks which format to
+build. The catalog holds 31 rows.
+
+### The eval invents card facts (D-149)
+
+Eval run 14 refused three questions on two false claims. It called Ran
+and Shaw "not a real Magic card", and Quina, Qu Gourmet "not a valid
+Magic card option". The snapshot holds both. Ran and Shaw is a mono-red
+Legendary Creature - Dragon, and the user had asked for a red dragon
+deck. Quina, Qu Gourmet is a mono-green Legendary Creature - Qu.
+
+Three of the ten `inaccurate` faults of that run were therefore the
+eval's own inventions. `cmd/questions-eval` now reads the snapshot and
+drops such a refusal. The check costs nothing. The dual-judge proposal
+stays open under OQ-39 for the faults this check can not reach.
+
+### A delegation never closed the commander pick (D-147)
+
+`commander_pick` was the worst row of eval run 14, at 18 of 43 bad
+questions. That is more than the next four rows together. The cause is
+one gap: no rule read "You pick the commander". Eighteen of the 100
+conversations hold such a phrase, the row carries `"repeat": true`, and
+nothing closed the key. The row therefore asked again every turn until
+the messages ran out.
+
+A delegation is now a decline (D-93). D-123 is amended: its test asserted
+that the pick row asks again after that exact message, which is the
+behavior this decision removes.
+
+### A commander did not hold the colors (D-148)
+
+`CommanderPool` used a subset test, so a blue-red request accepted a
+mono-red commander and a colorless one. Conversation 22 was offered
+Birgi (mono-red), Emrakul, the Promised End (colorless), and Vnwxt
+(mono-blue). Not one is blue-red. The commander's identity is the deck's
+identity, so a colorless commander gives a deck that can play no colored
+card. `identityCovers` now runs in `CommanderPool` alone, and the 99
+keeps the subset test.
+
+### Gate run 15 failed, and it found one more defect (D-150)
+
+Run 15 cost $0.1445 over 1181 seconds, and it asked 135 questions across
+the 30 gate conversations. It passed the catalog bar at 26 of 30, against
+a bar of 25, and no session called itself complete with a slot
+unanswered. It failed on the linter, which is the bar D-144 added.
+
+Two questions named a format the app had just declined.
+
+- Conversation 94: "I do not build Oathbreaker. The nearest format I
+  build is Commander." Then, in the same turn: "What should the
+  Oathbreaker deck focus on: a creature type, a mechanic, or a play
+  style?"
+- Conversation 95 did the same with Historic.
+
+The catalog row is innocent. The `theme` row reads "What should the deck
+do", and the ask role fitted it to the user's words. D-150 puts the rule
+in the ask prompt at version 6, adds it to the phrasing guard, and keeps
+the linter rule that caught it. A row that declines a format stays exempt.
+
+The other run-15 counters, for comparison with run 16: 4 invented
+questions, 4 refused as rewords, 90 catalog questions that closed a slot,
+and a median gap score of 0.90. The 70 probes asked 242 questions and
+drew 16 replacements.
+
+### Gate run 16 and its eval (the fixed tree)
+
+Run 16 holds D-146 to D-150. It passes.
+
+| Measure | Run 15 | Run 16 |
+|---|---|---|
+| Verdict | FAIL | **PASS** |
+| Catalog-only, bar 25 | 26 | 29 |
+| Linter findings | 2 | 0 |
+| Premature sessions | 0 | 0 |
+| Questions asked | 135 | 124 |
+| Catalog questions that closed a slot | 90 | **98** |
+| `commander_pick` questions | 42 | 24 |
+| Invented | 4 | 1 |
+| Cost | $0.1445 | $0.1192 |
+
+Read the last four rows and not the first. Run 16 asked 11 fewer
+questions and closed 8 more slots. Run 7 of 2026-08-25 passed both bars
+by the opposite route: it asked less and closed less. A drop in the
+question count is only good news beside a rise in the slots closed.
+
+The eval scored 356 questions and refused 40.
+
+| Measure | Eval 14 | Eval 16 |
+|---|---|---|
+| Bad-question ratio, holdout | 17.4% | **11.3%** |
+| `commander_pick` bad questions | 18 | 10 |
+| `inaccurate` faults | 10 | 8 |
+| Cost | - | $0.0889 |
+
+The eval cost $0.0889 over 698 seconds. `.local/tune/run16.json` is the
+tuning loop's baseline.
+
+### The card check found one on its first run (D-149)
+
+The eval called Cloak and Dagger, Entwined "not a real card". The
+snapshot holds it: a Legendary Creature - Human Hero with deathtouch and
+lifelink, white and black, legal in Commander. The check dropped the
+`inaccurate` fault, and the question left the refusal list.
+
+The same card exposed the limit of the check. In conversation 1 the eval
+wrote that the card "is not an applicable commander option". That is not
+a claim about existence, so the check did not fire, and the fault stands
+in the report. The card is white and black with lifelink, and the user
+asked for a white-black lifegain deck, so the claim is wrong. Existence
+is the wrong refutation for an applicability claim. The right one reads
+the color identity against the colors the user named, which is what
+D-148 now enforces on the side that writes the question. OQ-39 holds
+whether the eval gets that check as well.
+
+### One defect run 16 did not fix
+
+Conversation 3 turn 1 reads "Build around Grist, the Hunger Tide". The
+agent asks the format in that turn, and it asks "What color preferences
+do you have within Grist's color identity?" beside it.
+
+The clause presumes two facts the agent does not hold. The format is not
+known, and color identity is a Commander term. The role of the named card
+is not known either, which is the whole subject of conversation 3
+(D-118). The catalog row asserts nothing (D-108), so the ask role added
+the clause. It is the D-144 class, and it appears once in about 65 color
+questions.
+
+### The three fixes after eval run 16 (D-151 to D-153)
+
+The owner answered OQ-41 and OQ-42, and the work found a third defect.
+
+**D-151, the color-identity clause.** It is not the one-off the first
+read called it. The same conversation produced one in three runs, and the
+model changed one word each time D-144 caught the old one.
+
+| Run | Text |
+|---|---|
+| 14 | "any colors **beyond** Grist's color identity?" |
+| 15 | "should I use **within** Grist's color identity?" |
+| 16 | "do you have **within** Grist's color identity?" |
+
+D-144 listed prepositions. The rule now reads the shape. No exception is
+needed: every row that asks about the colors carries
+`commander_set: false`, so a card's color identity settles nothing there.
+Ask prompt version 7, the phrasing guard, and the linter all refuse it.
+
+**D-152, the eval's card facts.** Three of the four card claims of eval
+run 16 were false, and every miss came from a crossover set.
+
+| Eval claim | The snapshot |
+|---|---|
+| Cloak and Dagger, Entwined "not applicable" | White-black, deathtouch and lifelink, legal. The user asked for white-black lifegain. |
+| Vincent, Vengeful Atoner "not valid" | Legendary Creature - Assassin, mono-red, legal. |
+| Shadow the Hedgehog "not valid" | Legendary Creature - Hedgehog Mercenary, black-red, legal. |
+| Jaheira "not a legal red-white commander" | Correct. Every Jaheira holds green. |
+
+The model reasons well from facts it holds and invents the facts it
+lacks. The eval input now carries `cards_named_in_questions` for every
+card a question offers, with the type line, the color identity, and the
+commander legality. Eval prompt version 3.
+
+**D-153, the stale offer.** The one true claim above is a defect in this
+code, not in the eval. Probe 73 offered mono-green Jaheira on turn 1 with
+no colors named. The user answered "Red and white" on turn 2, and the
+same three names went out on turns 2 and 3. D-148 filters the pool, and
+these names were already on the table. The agent now drops an offered
+name the colors exclude, keeps every name that still fits, and tops the
+list up. D-80 and D-123 still hold.
+
+### Pairs: OQ-43 answered (D-154)
+
+OQ-43 held two defects under one label. The color arithmetic was wrong,
+and the pick row was single-commander shaped.
+
+The measurement sets the scope. Of 3,384 commander-legal leaders, 177 can
+pair, and 31 Backgrounds exist. The exact-match pool by colors named:
+
+| Colors | min | median | max |
+|---|---|---|---|
+| 1 | 280 | 322 | 351 |
+| 2 | 108 | 124 | 145 |
+| 3 | 24 | 47 | 58 |
+| **4** | **1** | **1** | 11 |
+| 5 | 59 | 59 | 59 |
+
+D-148 costs almost nothing at one, two, or three colors. At four it
+leaves one commander: WUBR is Breya, WBRG is Saskia, and UBRG is Yidris.
+A pair is how those decks are built.
+
+`CommanderPool` now scores a pair as one candidate when the union of the
+two identities matches. It offers pairs when the user asks, and when too
+few singles fit to fill the three names of the pick row. The pairing
+rules come from `rules.ValidPair`, which the deck validator already uses,
+so a pair the agent offers is a pair that passes validation. A pair reads
+"A + B" in the question.
+
+Two findings from the work. A Background carries no theme signal, so a
+pair holding one loses on score to two themed legends, and probe 73's
+user got no Background at all. `WantsBackgroundPair` narrows the request
+when the user names one. The pair walk also read the wrong enum constant
+at first, `PARTNER_KIND_UNSPECIFIED` where the index holds
+`PARTNER_KIND_NONE`, which let all 3,384 leaders into a loop meant for
+208 cards. `canPair` holds that cut now.
+
+Three snapshot-backed tests cover it: four colors find pairs, a
+Background request returns Backgrounds, and a deep two-color pool still
+offers singles alone.
+
+## Three formats (D-155 to D-157, 2026-08-26)
+
+The owner narrowed the app to **Commander, Standard, and Modern**. Read
+D-155 and not the earlier drafts: the scope changed twice inside the
+session. Pioneer, Legacy, Vintage, and Pauper are gone. "Anything goes"
+is not a format a user may select, and it stays what D-3 made it, a
+house-rules layer on one of the three.
+
+### What changed
+
+| Layer | Change |
+|---|---|
+| Proto | Four ids deleted and reserved. HOUSE kept for a user who names no format. `buf.yaml` FILE to WIRE_JSON. |
+| Engine | `formats.json` holds four entries. `legalKeys` holds three. The restricted-card check is gone. |
+| Questions | `formatNames`, `formatIDs`, four catalog rows, the `unsupported` list, classify prompt version 8. |
+| Corpus | Sections 2.1, 2.4, 2.5, and the section-11 catalog. |
+| Roadmap | Correction pass 21. |
+| Conversations | 7, 18, 21, and 26 are probes now. Four replacements joined the gate 30. The set is 104. |
+
+### The proto cost, measured and not assumed
+
+`buf breaking` under FILE refused all four deletions, and it refused them
+**although the numbers and the names are reserved**. FILE holds
+`ENUM_VALUE_NO_DELETE`, which accepts no reservation. Under WIRE_JSON both
+`buf lint` and `buf breaking --against main` pass. WIRE_JSON still refuses
+every change that breaks the wire format or the JSON encoding, and this
+app has no external consumer that FILE protects.
+
+`make proto-check` fails while the work is uncommitted. It compares the
+generated code against the committed tree, so it passes after a commit.
+
+### Three defects the work found
+
+1. **`sixtyCard` never held HOUSE.** No power row could fire for a house
+   format: the 60-card rows need that test, and the Commander rows need
+   the Commander format. Such a session would have ended with no power
+   level. Same class as D-77.
+2. **The restricted-card check died with Vintage.** Only Vintage carries
+   a restricted list among the formats the app builds, so the branch was
+   unreachable. It is removed with its four tests.
+3. **Two dead ends the tests could not see (D-157).** A one-cent live
+   check on three conversations found both. Probe 18 said "I do not build
+   Pauper", the user answered "Pauper." again, and the agent sent nothing
+   for two turns. Probe 21 asked the format on turn 1, the user wrote
+   "Call it Vintage" on turn 2, and D-126 blocks every row on a key whose
+   question is out, so the agent could never decline Vintage. Both are
+   the D-130 shape, where a reasonable message gets silence.
+
+### Gate run 17
+
+| Measure | Run 16 | Run 17 |
+|---|---|---|
+| Verdict | PASS | **PASS** |
+| Catalog-only, bar 25 | 29 | 27 |
+| Linter findings | 0 | 0 |
+| Premature sessions | 0 | 0 |
+| Questions asked | 124 | 125 |
+| Catalog questions that closed a slot | 98 | 97 |
+| Cost | $0.1192 | $0.1540 |
+
+The two-conversation fall is not a regression signal on its own. The gate
+set changed, four conversations of it are new, and the classify and ask
+prompts are at version 8. The honest counters stand still: the agent asks
+the same number of questions and closes the same number of slots, and no
+session finished early.
+
+Two invariants held live. Every mention of a removed format in the whole
+run is the row that declines it, and no other question names one. The
+possessive color-identity clause of D-151 is gone: run 16 held one and
+run 17 holds none.
+
+### Eval run 17, and the fix it forced (D-158)
+
+| Measure | Eval 16 | Eval 17 |
+|---|---|---|
+| Bad-question ratio, holdout | 11.3% | 13.3% |
+| Worst row | `commander_pick` 10 | `format_unsupported_open` 14 |
+| `duplicate` faults | 22 | 31 |
+| Cost | $0.0889 | about $0.09 |
+
+The rise is one row, and that row is D-157 from the same session. Making
+the decline repeat every turn fixed real silence and went too far. Probe
+18 said "Casual power, and 25 dollars is the cap" on turn 3 and got the
+same format question a third time.
+
+The cause is the one D-125 found. The trigger reads `Ctx.Words`, which is
+the whole conversation, so a format named once keeps the fact true
+forever. D-158 makes the repeat read the current message. The row states
+the limit once, and asks again only while the user names the format
+again.
+
+**Read eval run 17 as a measurement of the tree before D-158.** The 13.3
+percent holdout number does not describe the tree as it stands.
+
+### The pre-flight check, and what it costs
+
+A full gate and eval costs about $0.24 and 31 minutes. A targeted run of
+the conversations one change touches costs cents, and it answered this
+question twice.
+
+`cmd/questions-gate -only` takes conversation ids. The eleven that fire a
+decline row are 7, 18, 21, 26, 50, 60, 61, 69, 97, 98, and 99. Two runs
+of those eleven cost $0.0287 in total.
+
+| Measure | Run 17 | First fix | Second fix |
+|---|---|---|---|
+| Decline questions asked | 23 | 15 | **13** |
+
+The first fix left probes 61 and 97 asking a third time, and the check
+found it. The second fix leaves two conversations doubled, and both are
+the ones where the user writes "Pauper." or "Legacy." again on turn 2.
+
+Holding every other verdict fixed, the overall ratio projects from
+49 of 378 (13.0 percent) to 39 of 368 (**10.6 percent**), against eval
+16's 11.3 percent. That is a projection and not a measurement: it assumes
+the ten questions that no longer go out are among the fifteen the eval
+refused, and it re-judges nothing. A full run would measure it.
+
+Run this check before every full gate. Three defects of this session
+survived a green test suite and reached a live run, and two of them cost
+under two cents to find.
+
+### State of the tree
+
+`go build`, `go vet`, `go test ./...`, and `make lint-go` are all green.
+The work is not committed. The owner commits and pushes.
 
 ## Next steps, in order
 
-1. Run gate run 14 as one document. The batch sweep proved the conversations one by one, and it wrote no single gate document, so M-5 still needs one. It costs about $0.12 and takes about 14 minutes, and it needs the owner's approval:
-   `GATE_OUT=docs/reference/pr7-question-gate-run14.md make questions-gate`
-   The linter is a bar now, so a redundant or presumptuous question fails the run.
-2. Build the version-2 sheet from run 14 alone:
-   `M5_OUT=docs/reference/pr7-m5-scoring-run14.md make m5-sheet`
-3. Score that sheet. It holds 60 items: every replacement, and a sample of the plain questions spread over the rows.
-4. Run `make m5-report` against the new sheet. It sets the D-27 threshold, it says whether the reword guard at 0.6 is too tight, and it says which questions should never have been asked.
-5. Set `DefaultFitThreshold` and, if the report says so, `MaxRewordOverlap`. Then run the gate once more: a new threshold changes when the model may invent.
-6. Review and commit PR-7. The owner commits and pushes.
-7. PR-8 (generator), then PR-9 (variance). PR-8 owns the prompt-cache lever, the weak-commander-pool bar, and OQ-21.
+1. Run gate run 16 and its eval. "Do this first" at the top of this file holds both commands and what to read in the answer. The owner approved both runs.
+2. Fix whatever the eval finds, with a test for each fix and a decision row. The last two runs each hid one false rules claim behind a passing gate.
+3. Answer the rest of OQ-39. D-149 answers the card-fact half of it with a deterministic snapshot check that costs nothing. The calibration of 2026-08-26 agreed 80 percent, and the ten disagreements held two real defects and two card facts `claude-sonnet-5` invented. The dual-judge proposal stays open for the faults the snapshot can not reach, at about ten cents more per run.
+4. Merge `pr-7b`. Then open `pr-7c` from `main` as the container for everything the loop writes (D-142).
+5. Name the fixer in `AUTOTUNE_FIXER_CMD` and cap its tokens. That agent bills apart from the loop budget, and nothing here can measure it.
+6. Start the loop against `pr-7c`, with `run15.json` as the baseline. One iteration takes about 31 minutes, so a night fits eight to ten:
+   `AUTOTUNE_ALLOW_UNATTENDED=1 scripts/autotune.sh --base pr-7c --baseline .local/tune/run15.json --budget 3.00`
+   Run it once with `--max 1` before a full night.
+7. Build the version-2 M-5 sheet when the owner wants a hand-scored sample beside the automated one:
+   `M5_OUT=docs/reference/pr7-m5-scoring-run15.md M5_RUNS=../docs/reference/pr7-question-gate-run15.md make m5-sheet`
+8. Set `DefaultFitThreshold` (OQ-28) and, if the report says so, `MaxRewordOverlap` (OQ-29).
+9. PR-8 (generator), then PR-9 (variance). PR-8 owns the prompt-cache lever, the weak-commander-pool bar, and OQ-21.
 
 ## Facts that expire
 
@@ -378,14 +779,27 @@ The recommendation is to run the report alone first, for about fifty cents, and 
 - Standard: 18 sets, Wilds of Eldraine (2023-09-08) to The Hobbit (2026-08-14). No rotation in 2026. Six sets leave at the first 2027 set: WOE, LCI, MKM, OTJ, BLB, DSK. Verified 2026-08-24 on the Scryfall sets API.
 - LLM model ids and prices: 2026-08-24 (`roles.json`, `prices.json`). The Sonnet 5 intro price claim is unverified.
 - Comprehensive Rules: 2026-08-07 text. Commander brackets: 2025-10-21 revision.
+- Card snapshot on disk: `.local/gcs/mtg-local-cards/scryfall/20260824T090152`. Check every card fact against it, and never against memory. It holds art-series objects that share a real card's name, so read the `layout` field.
+- Run cost, measured 2026-08-26 at 66 conversations: the gate cost $0.0964 over 737 seconds, and the eval cost $0.0645 over 494 seconds. At 100 conversations that scales to about $0.14 and 18 minutes, and about $0.10 and 13 minutes.
+- Card-pool measurement of 2026-08-26, against the snapshot of 2026-08-24 (D-146). Historic holds 15,680 legal cards and Timeless 15,753. Jaccard against Pioneer: 0.680 and 0.694. Against Modern: 0.568 and 0.581. Historic against Timeless: 0.968. Historic bans 77 cards. Timeless restricts 4 and bans none.
+- Prompt versions: classify and ask 8, eval 3, M-5 rubric 2. A score taken at an earlier version does not carry over (D-66).
+- Formats the app builds, from 2026-08-26: Commander, Standard, Modern (D-155). Everything else is declined by name with no substitute (D-156).
 
 ## How to resume
 
-1. Run `git pull`, then `git status`. The owner scores the M-5 sheet on a phone, so the remote can be ahead. The correction session of 2026-08-25 is not committed, so the tree is not clean.
+1. Run `git pull`, then `git status`. The last commit is 0771756 on branch `pr-7b`. The tree is not clean: this session's fixes for D-146 to D-158 are uncommitted. The owner commits and pushes.
 2. Load the skills: `ste-writing` before you write any `.md`, `design-doc-style` before you edit the roadmap, and `mtg-corpus` before you reason about a format, a legality, or a card term.
-3. Read `docs/decisions.md` (D-1 to D-134), `docs/owner-questions.md`, and `docs/open-questions.md`. The decision log is the source of truth, and this file is the summary.
-4. Check the Go tree is green: `cd go && go build ./... && go vet ./... && go test ./...`, then `make lint-go`.
-5. Continue from "Next steps, in order". Ask questions as they come up, and record each answer in `docs/decisions.md`.
-6. Before you end, update this file.
+3. Read `docs/decisions.md` (D-1 to D-145), `docs/owner-questions.md`, and `docs/open-questions.md`. The decision log is the source of truth, and this file is the summary.
+4. Check the Go tree is green: `cd go && go build ./... && go vet ./... && go test ./...`, then `make lint-go`. The module sits in `go/`, so `./...` from the repository root finds nothing.
+5. Do "Do this first" at the top of this file. Then continue from "Next steps, in order".
+6. Ask questions as they come up. Record each owner answer in `docs/decisions.md`, and delete the row from `docs/owner-questions.md`.
+7. Before you end, update this file.
 
-Four things a fresh session gets wrong without reading further. `make questions-gate` spends money and needs approval each time. A rerun must write to a new `GATE_OUT` file, because a scored document is never overwritten (D-65). `docs/reference/pr7-m5-scoring.md` is the owner's working file, and no target writes to it. The version-2 sheet needs a new `M5_OUT` name.
+Six things a fresh session gets wrong without reading further.
+
+- `make questions-gate` and `make questions-eval` spend money. The owner approved gate run 15 and its eval, and nothing after that.
+- A rerun writes to a new file. `GATE_OUT`, `EVAL_OUT`, `EVAL_JSON`, and `M5_OUT` all refuse to overwrite a document that holds a result (D-65).
+- A gate run takes about 18 minutes and an eval about 13. A foreground command stops at 10 minutes, so run both in the background.
+- `docs/reference/pr7-m5-scoring.md` is the owner's hand scoring. No target writes to it, and the version-2 sheet needs a new `M5_OUT` name.
+- Check every card fact against the local snapshot. Two false rules claims reached a user in one run, and both passed the gate and the linter.
+- The eval and the agent share a model, `gpt-5.6-luna`. Every ratio it reports is a floor, not a measurement (D-136).

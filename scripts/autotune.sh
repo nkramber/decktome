@@ -14,12 +14,22 @@
 # The loop commits to its own branch and does not push. Add --push when
 # the owner wants the branch on the remote as it goes.
 #
-#   AUTOTUNE_ALLOW_UNATTENDED=1 scripts/autotune.sh --budget 3.00 --max 20
+#   AUTOTUNE_ALLOW_UNATTENDED=1 scripts/autotune.sh --budget 3.00 --max 20 \
+#     --base pr-7c --baseline .local/tune/run14b.json
+#
+# --base names the branch the owner keeps for loop output. The run cuts a
+# working branch off it and pushes nothing. After the review, the owner
+# fast-forwards the base, and the next night continues from there.
 set -u
 cd "$(dirname "$0")/.." || exit 1
 ROOT="$(pwd)"
 
 BUDGET="3.00"
+BASELINE_JSON=""
+# BASE_REF is the branch the run starts from. Empty means the current
+# branch. A named long-lived branch is what makes two nights add up
+# instead of diverging from one fixed point (D-142).
+BASE_REF=""
 MAX_ITERATIONS="20"
 TARGET_RATIO="0.05"
 EVAL_BUDGET="0.50"
@@ -38,6 +48,8 @@ while [ $# -gt 0 ]; do
     --branch) BRANCH_PREFIX="$2"; shift 2 ;;
     --push) PUSH="1"; shift ;;
     --no-push) PUSH="0"; shift ;;
+    --base) BASE_REF="$2"; shift 2 ;;
+    --baseline) BASELINE_JSON="$2"; shift 2 ;;
     --dry-run) DRY_RUN="1"; shift ;;
     *) echo "unknown flag: $1" >&2; exit 2 ;;
   esac
@@ -48,7 +60,10 @@ LEDGER="$STATE_DIR/ledger.txt"
 LOG="$STATE_DIR/autotune.log"
 mkdir -p "$STATE_DIR"
 
-say() { printf '%s  %s\n' "$(date -u +%H:%M:%S)" "$*" | tee -a "$LOG"; }
+# say writes to the log and to stderr, never to stdout. run_gate and
+# run_eval hand their path back through stdout, and a log line on the same
+# stream would ride along with it.
+say() { printf '%s  %s\n' "$(date -u +%H:%M:%S)" "$*" | tee -a "$LOG" >&2; }
 die() { say "STOP: $*"; exit 1; }
 
 # --- Frozen files. The fixer may not change how it is measured. --------
@@ -108,9 +123,18 @@ green() {
 [ -f "$ROOT/.env" ] || die "no .env, so no API keys"
 git diff --quiet && git diff --cached --quiet || die "the working tree is dirty. Commit or stash first."
 
+# The base is a branch the owner keeps. Every night cuts a working branch
+# off it, and the owner fast-forwards the base after the review. Two
+# nights therefore add up. A loop that always starts from main would give
+# the second night none of the first night's accepted work, and the owner
+# would merge two branches that changed the same rows (D-142).
+if [ -n "$BASE_REF" ]; then
+  git rev-parse --verify --quiet "$BASE_REF" >/dev/null || die "no branch $BASE_REF"
+  git switch "$BASE_REF" >/dev/null 2>&1 || die "could not switch to $BASE_REF"
+fi
 BASE_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 case "$BASE_BRANCH" in
-  main|master) die "refusing to run from $BASE_BRANCH" ;;
+  main|master) say "WARNING: the base is $BASE_BRANCH. Two nights from here will diverge, not add up." ;;
 esac
 STAMP="$(date -u +%Y%m%d-%H%M%S)"
 BRANCH="$BRANCH_PREFIX/$STAMP"
@@ -143,7 +167,11 @@ run_eval() {   # $1 = iteration label, $2 = gate document
   echo "$sum"
 }
 
-commit_push() {  # $1 = version, $2 = subject
+commit_push() {  # $1 = version, $2 = subject, $3 = eval summary
+  if [ "$DRY_RUN" = "1" ]; then say "dry run: no commit"; return 0; fi
+  case "$(git rev-parse --abbrev-ref HEAD)" in
+    main|master) die "refusing to commit to $(git rev-parse --abbrev-ref HEAD)" ;;
+  esac
   git add -A
   git diff --cached --quiet && { say "nothing to commit"; return 0; }
   git commit -q -F - <<EOF
@@ -161,10 +189,17 @@ metric_of() { python3 -c "import json,sys;print(json.load(open(sys.argv[1]))['me
 
 # --- Baseline ----------------------------------------------------------
 say "budget \$$BUDGET, target ratio $TARGET_RATIO, at most $MAX_ITERATIONS iterations"
-GATE="$(run_gate "auto-000")" || die "the baseline gate produced nothing"
-PREV="$(run_eval "auto-000" "$GATE")" || die "the baseline eval produced nothing"
-say "baseline ratio $(ratio_of "$PREV")%, spent \$$(spent)"
-commit_push "v0.0" "baseline run for the tuning loop" "$PREV"
+# A scored run already on disk is the baseline. The loop pays for its own
+# only when the owner gives it none.
+if [ -n "$BASELINE_JSON" ] && [ -s "$BASELINE_JSON" ]; then
+  PREV="$BASELINE_JSON"
+  say "baseline read from $BASELINE_JSON, ratio $(ratio_of "$PREV")%"
+else
+  GATE="$(run_gate "auto-000")" || die "the baseline gate produced nothing"
+  PREV="$(run_eval "auto-000" "$GATE")" || die "the baseline eval produced nothing"
+  say "baseline ratio $(ratio_of "$PREV")%, spent \$$(spent)"
+  commit_push "v0.0" "baseline run for the tuning loop" "$PREV"
+fi
 LAST_GOOD="$(git rev-parse HEAD)"
 
 # --- Loop --------------------------------------------------------------

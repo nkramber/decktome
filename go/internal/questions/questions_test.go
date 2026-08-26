@@ -63,6 +63,7 @@ func TestCatalogMatchesCorpus(t *testing.T) {
 		"House rules": "house_rules", "House format limits": "house_format_limits",
 		"Jank or fun": "jank", "Meta": "meta",
 		"One deck at a time": "one_deck", "Format (not supported)": "format_unsupported",
+		"Format (no substitute)":       "format_unsupported_open",
 		"Power (60-card, competitive)": "power_sixty_confirm", "Card pool (precon)": "pool_precon", "Commander (can not lead)": "commander_illegal",
 		"Plan choice": "plan_choice", "Variance": "variance", "Locked cards": "locked",
 	}

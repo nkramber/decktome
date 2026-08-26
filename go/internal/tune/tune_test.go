@@ -55,6 +55,10 @@ func TestReadRun(t *testing.T) {
 	}
 	want := Metrics{Questions: 136, Catalog: 133, Invented: 3, CatalogFilled: 89,
 		CatalogOnly: 27, Premature: 2, LintFindings: 3, QuestionsSeen: 3, FilledSeen: 2}
+	if !run.Conversations[0].Collection || run.Conversations[1].Collection {
+		t.Errorf("the collection flag was not read: %v, %v",
+			run.Conversations[0].Collection, run.Conversations[1].Collection)
+	}
 	if run.Metrics != want {
 		t.Errorf("metrics = %+v, want %+v", run.Metrics, want)
 	}

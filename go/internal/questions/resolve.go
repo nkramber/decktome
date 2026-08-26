@@ -39,6 +39,14 @@ type SlotAware interface {
 	UseSlots(format mtgv1.FormatId, colors []mtgv1.Color, pool mtgv1.PoolRule)
 }
 
+// PairAware lets a hint source know the user asked for a two-commander
+// pair. Probe 73 writes "A Commander deck with a Background commander
+// pair", and every run before D-154 answered it with three single
+// legends, one of them off color.
+type PairAware interface {
+	UseWantPair(want, background bool)
+}
+
 // CommanderChecker reports whether a named card can lead a deck. A hint
 // source that holds the card index implements it.
 //
@@ -46,6 +54,22 @@ type SlotAware interface {
 // is not proof of anything, and the agent claims nothing about it.
 type CommanderChecker interface {
 	CanLead(name string) (canLead, known bool)
+}
+
+// IdentityChecker reports whether a named card fits a set of colors. A
+// hint source that holds the card index implements it.
+//
+// The pick row keeps the names on the table until the user refuses them
+// (D-80, D-123). When the colors arrive after the offer, those names were
+// never checked again. Probe 73 offered Jaheira, Friend of the Forest,
+// which is mono-green, on turn 1 with no colors named. The user answered
+// "Red and white" on turn 2, and the same three names went out on turns 2
+// and 3 (D-153).
+//
+// known is false when the index does not hold the name. An unknown name
+// is not proof of anything, and the agent drops nothing on it.
+type IdentityChecker interface {
+	FitsColors(name string, colors []mtgv1.Color) (fits, known bool)
 }
 
 var placeholder = regexp.MustCompile(`\{[a-z_]+\}`)
@@ -153,7 +177,20 @@ func substitute(text string, st *State, h Hints) (string, []string) {
 			// only after the user asks for one (D-73).
 			list := st.CurrentOffer
 			if len(list) < len(names) {
-				list = h.Commanders(theme, st.OfferedCommanders)
+				// Keep every name that still stands, and top the list up.
+				// A full replacement would swap names the user could still
+				// choose, which D-80 and D-123 forbid. The list is short of
+				// names either because the user refused them all, which
+				// empties it, or because D-153 dropped the ones the colors
+				// exclude.
+				for _, fresh := range h.Commanders(theme, st.OfferedCommanders) {
+					if len(list) >= len(names) {
+						break
+					}
+					if strings.TrimSpace(fresh) != "" && !hasName(list, fresh) {
+						list = append(list, fresh)
+					}
+				}
 			}
 			for _, key := range names {
 				if keys < len(list) && strings.TrimSpace(list[keys]) != "" {
@@ -314,7 +351,7 @@ func words(text string) map[string]bool {
 // guard checks the model's phrasing before it reaches the user. A phrasing
 // that fails goes back to the resolved catalog text (the live run of
 // 2026-08-24 sent out a compound question the ask role invented).
-func guard(phrased, resolved string) string {
+func guard(rowID, phrased, resolved string) string {
 	p := strings.TrimSpace(phrased)
 	switch {
 	case p == "":
@@ -322,10 +359,43 @@ func guard(phrased, resolved string) string {
 	case strings.Count(p, "?") != 1:
 	case !strings.Contains(p, "?"):
 	case len(p) > 4*len(resolved)+120:
+	case namesUnsupportedFormat(rowID, p):
+	case possessiveIdentity.MatchString(p):
 	default:
 		return p
 	}
 	return resolved
+}
+
+// The guard also refuses a phrasing that names one card's color identity,
+// which possessiveIdentity reads. Gate runs 14, 15, and 16 each sent one,
+// and the model changed the preposition every time D-144 caught it
+// (D-151).
+
+// namesUnsupportedFormat reports whether a phrasing names a format this
+// app does not build. The ask role fits a question to the user's words,
+// and it fitted the format the agent had just declined.
+//
+// Gate run 15 asked "What should the Oathbreaker deck focus on?" one line
+// under "I do not build Oathbreaker", and it did the same for Historic.
+// Both went out in the same turn, so the agent contradicted itself inside
+// one message. The linter refuses the shape, and it failed run 15 (D-150).
+//
+// A row that exists to decline such a format is exempt, because naming it
+// is the whole job of that row. Those rows carry `fixed` and never reach
+// the ask role today, so the exemption is a guard against a later change
+// (D-112, D-117).
+func namesUnsupportedFormat(rowID, phrased string) bool {
+	if declinesFormat(rowID) {
+		return false
+	}
+	low := strings.ToLower(phrased)
+	for _, u := range unsupported {
+		if strings.Contains(low, u.phrase) {
+			return true
+		}
+	}
+	return false
 }
 
 // commanderKeysIn lists the commander placeholders a row holds, in the

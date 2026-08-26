@@ -134,6 +134,7 @@ questions-eval: ## Score every question of a gate run. CAUTION: calls a real pro
 	@test -f $(EVAL_RUN) || { echo "no gate document at $(EVAL_RUN). Set EVAL_RUN."; exit 1; }
 	@test ! -f $(EVAL_OUT) || { echo "$(EVAL_OUT) exists. Set EVAL_OUT to a new file."; exit 1; }
 	@set -a && . ./.env && set +a && QUESTIONS_EVAL=1 \
+		CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall \
 		$(GO) run ./cmd/questions-eval -in ../$(EVAL_RUN) -out ../$(EVAL_OUT) \
 		-json ../$(EVAL_JSON) -budget $(EVAL_BUDGET)
 	@echo "wrote $(EVAL_OUT)"

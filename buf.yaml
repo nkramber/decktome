@@ -5,5 +5,11 @@ lint:
   use:
     - STANDARD
 breaking:
+  # WIRE_JSON, not FILE. FILE forbids deleting an enum value even when the
+  # number and the name are reserved, so it refuses a deliberate narrowing
+  # of the product surface. D-155 removed four FormatId values, and this
+  # app has no external consumer that FILE would protect. WIRE_JSON still
+  # refuses every change that would break the wire format or the JSON
+  # encoding, which is what a stored session and a running client need.
   use:
-    - FILE
+    - WIRE_JSON
