@@ -49,3 +49,35 @@ D-168 raised the budget row from 6 to 83 conversations, and the eval refused 0 o
 ### Fixed by hand: conversation 39 was premature
 
 "Make me a good deck", then "you pick", then "Whatever you think is best" ended the session with no commander. Run 18 did not do this on the same messages. The cause was a hole in the decline path and not a catalog row. A declined pick row closed its own key and not the commander slot (D-208). It is fixed in code. No catalog change can touch it.
+
+## 20260826-220840-001, rejected (2026-08-26)
+
+The holdout ratio moved from 7.3% to 8.8%. Paired: 10 questions got better, 6 got worse, and 6 verdicts flipped on identical text.
+
+- WARNING: the tune split improved and the holdout did not (7.3% to 8.8%)
+- the holdout ratio moved from 7.3% to 8.8%, inside the margin of 3, and no counter fell
+- 5 questions got worse on rows no change declared, past the margin of 3
+
+| Change | Rows | Verdict | Why |
+|---|---|---|---|
+| 127f2b4 the power confirm row asks about an inferred step alone | power_sixty_confirm | kept | 3 questions got better and 1 got worse on its rows |
+| 68b4709 the format decline rows repeat only on another format | format_unsupported_open, format_unsupported | kept | 2 questions got better and 0 got worse on its rows |
+| 6e304b8 the meta row offers the general sideboard first | meta | kept | 2 questions got better and 0 got worse on its rows |
+| 84938b5 the house-limits row names no list of limits | house_format_limits | kept | no judged question moved on its rows |
+| dc01820 the store row names the formats it builds | format_store | kept | 1 questions got better and 0 got worse on its rows |
+
+### 127f2b4: the power confirm row asks about an inferred step alone
+
+Hypothesis: the confirm row repeats a power step the user named, because its own key survives the filled slot
+
+Kept, and these questions still got worse on its rows:
+
+- 6. the strongest deck, no collection, turn 2, row `power_sixty_confirm`: "Should I build the deck at tournament level, or are you looking for FNM-level or casual power instead?". The user had already asked for “the strongest deck possible,” which supplies the relevant power-level preference; asking them to choose tournament, FNM, or casual power was unnecessary at this point.
+
+7 questions moved on rows no change declared. Declare every row a change can touch.
+- `budget`: 1
+- `locked`: 1
+- `pool`: 1
+- `pool_precon`: 2
+- `pool_thin`: 1
+- `theme_card_named`: 1
