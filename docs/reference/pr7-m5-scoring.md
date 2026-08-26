@@ -340,12 +340,12 @@ The agent sent this one in place of the catalog question.
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | no |
-| invented_better | both | better |
-| right_slot | the replacement | yes |
+| catalog_enough | the catalog question | n/a |
+| invented_better | both | n/a |
+| right_slot | the replacement | n/a |
 | filled_slot | the run | no |
 | faults | the replacement | |
-| catalog_action | our catalog | reword - current catalog option is off-topic |
+| catalog_action | our catalog | 'table_tolerance' needs to be removed entirely. we should not ask the user if their table is okay with things like mill, land destruction, etc. 'power_level' is enough. |
 
 ## Item 15
 
@@ -359,12 +359,12 @@ The agent sent this one in place of the catalog question.
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | yes |
+| invented_better | both | better |
+| right_slot | the replacement | yes |
 | filled_slot | the run | no |
 | faults | the replacement | |
-| catalog_action | our catalog | |
+| catalog_action | our catalog | reword |
 
 ## Item 16
 
@@ -378,12 +378,12 @@ The agent sent this one in place of the catalog question.
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | no |
+| invented_better | both | better |
+| right_slot | the replacement | yes |
 | filled_slot | the run | yes |
 | faults | the replacement | |
-| catalog_action | our catalog | |
+| catalog_action | our catalog | reword |
 
 ## Item 17
 
@@ -397,12 +397,12 @@ The agent refused this one as a reword and sent the catalog question (D-88). Sco
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | yes |
+| invented_better | both | better |
+| right_slot | the replacement | yes |
 | filled_slot | the run | yes |
 | faults | the replacement | |
-| catalog_action | our catalog | |
+| catalog_action | our catalog | reword |
 
 ## Item 18
 
@@ -416,12 +416,12 @@ The agent refused this one as a reword and sent the catalog question (D-88). Sco
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | yes |
+| invented_better | both | same |
+| right_slot | the replacement | yes |
 | filled_slot | the run | no |
 | faults | the replacement | |
-| catalog_action | our catalog | |
+| catalog_action | our catalog | none |
 
 ## Item 19
 
@@ -435,12 +435,12 @@ The agent refused this one as a reword and sent the catalog question (D-88). Sco
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | no |
+| invented_better | both | better |
+| right_slot | the replacement | yes |
 | filled_slot | the run | yes |
 | faults | the replacement | |
-| catalog_action | our catalog | |
+| catalog_action | our catalog | reword - the catalog question is just wrong. the replacement is better, but still not perfect. we need to specify that the tool is for ONE deck at a time. |
 
 ## Item 20
 
@@ -454,12 +454,12 @@ The agent sent this one in place of the catalog question.
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | no |
+| invented_better | both | better |
+| right_slot | the replacement | yes |
 | filled_slot | the run | yes |
 | faults | the replacement | |
-| catalog_action | our catalog | |
+| catalog_action | our catalog | reword |
 
 ## Item 21
 
@@ -473,12 +473,12 @@ The agent sent this one in place of the catalog question.
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | no |
+| invented_better | both | better |
+| right_slot | the replacement | yes |
 | filled_slot | the run | no |
 | faults | the replacement | |
-| catalog_action | our catalog | |
+| catalog_action | our catalog | reword - the catalog question is irrelevant here. the invented question is relevant. |
 
 ## Item 22
 
@@ -492,12 +492,12 @@ The agent refused this one as a reword and sent the catalog question (D-88). Sco
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | no |
+| invented_better | both | better |
+| right_slot | the replacement | yes |
 | filled_slot | the run | no |
 | faults | the replacement | |
-| catalog_action | our catalog | |
+| catalog_action | our catalog | reword - the catalog question has a misplaced work - 'Grist' appears twice. the invented question fixed this. |
 
 ## Item 23
 
@@ -511,12 +511,12 @@ The agent sent this one in place of the catalog question.
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | no |
+| invented_better | both | same |
+| right_slot | the replacement | yes |
 | filled_slot | the run | no |
-| faults | the replacement | |
-| catalog_action | our catalog | |
+| faults | the replacement | duplicate |
+| catalog_action | our catalog | reword - both the catalog and invented questions are wrong. the user's initial prompt is "Build around Grist, the Hunger Tide, but not as my commander" - this implies two things: we are building a commander deck, Grist, the Hunger Tide MUST be included, and CANNOT be the commander. our first follow up is "Which format would you like: Commander, Standard, Modern, Pioneer, or something else?" - this is a redundant question as we already know that we are building a commander deck. the user then says "Commander. A sacrifice deck, black and green." - at this point the user must be slightly frustrated, since 'commander' was already obvious. our next question is "Do you want Grist, the Hunger Tide as your commander, or in the 99 with a different commander?" which is also redundant - the user already said they do NOT want Grist, the Hunger Tide as their commander, and it is evident and obvious that they want this card in their deck. this needs a significant fix. |
 
 ## Item 24
 
@@ -530,12 +530,12 @@ The agent refused this one as a reword and sent the catalog question (D-88). Sco
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | no |
+| invented_better | both | better |
+| right_slot | the replacement | yes |
 | filled_slot | the run | yes |
 | faults | the replacement | |
-| catalog_action | our catalog | |
+| catalog_action | our catalog | reword - it needs to be obvious that the user wants most of their precon cards to remain the same. "Upgrade my precon" means utilize most of the existing cards. the invented question is more on-track, asking if they should utilize just the user's library or not. either way, we need to ensure that "upgrade my precon" leads to reusing the same theme, colors, etc as the precon. |
 
 ## Item 25
 
@@ -549,12 +549,12 @@ The agent sent this one in place of the catalog question.
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | no |
+| invented_better | both | better |
+| right_slot | the replacement | yes |
 | filled_slot | the run | yes |
 | faults | the replacement | |
-| catalog_action | our catalog | |
+| catalog_action | our catalog | reword - the catalog question is incorrect as the user never mentioned a 'table' at all. |
 
 ## Item 26
 
@@ -568,12 +568,12 @@ The agent refused this one as a reword and sent the catalog question (D-88). Sco
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | no |
+| invented_better | both | same |
+| right_slot | the replacement | no |
 | filled_slot | the run | yes |
-| faults | the replacement | |
-| catalog_action | our catalog | |
+| faults | the replacement | duplicate |
+| catalog_action | our catalog | reword - the user says in their initial prompt "I want the strongest Modern deck, money is no object" - it is redundant and not useful for us to ask them any variation of 'how strong should this be' as we already know that information. |
 
 ## Item 27
 
@@ -587,12 +587,12 @@ The agent refused this one as a reword and sent the catalog question (D-88). Sco
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | n/a |
+| invented_better | both | n/a |
+| right_slot | the replacement | n/a |
 | filled_slot | the run | no |
 | faults | the replacement | |
-| catalog_action | our catalog | |
+| catalog_action | our catalog | 'table_tolerance' needs to be removed entirely. we should not ask the user if their table is okay with things like mill, land destruction, etc. 'power_level' is enough. |
 
 ## Item 28
 
@@ -606,12 +606,12 @@ The agent sent this one in place of the catalog question.
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | yes |
+| invented_better | both | better |
+| right_slot | the replacement | yes |
 | filled_slot | the run | yes |
 | faults | the replacement | |
-| catalog_action | our catalog | |
+| catalog_action | our catalog | reword - there is a type in the original question (duplicated 'deck' word), and presuming which colors are strongest is a slipperly slope. getting that wrong loses user trust. |
 
 ## Item 29
 
@@ -625,12 +625,12 @@ The agent refused this one as a reword and sent the catalog question (D-88). Sco
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | yes |
+| invented_better | both | worse |
+| right_slot | the replacement | yes |
 | filled_slot | the run | yes |
-| faults | the replacement | |
-| catalog_action | our catalog | |
+| faults | the replacement | inaccurate - 'different commander' assumes they suggested ANY commander, which they did not. |
+| catalog_action | our catalog | none - while this question was fine, turns 1 and 2 of this conversation were a disaster - see 'Item 23' above. |
 
 ## Item 30
 
@@ -644,12 +644,12 @@ The agent refused this one as a reword and sent the catalog question (D-88). Sco
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | yes |
+| invented_better | both | worse |
+| right_slot | the replacement | yes |
 | filled_slot | the run | no |
-| faults | the replacement | |
-| catalog_action | our catalog | |
+| faults | the replacement | omits information from catalog question |
+| catalog_action | our catalog | none - however, in turn 1 we ask what format when the user CLEARLY stated 'Commander' in their initial prompt. |
 
 ## Item 31
 
@@ -663,12 +663,12 @@ The agent refused this one as a reword and sent the catalog question (D-88). Sco
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | yes |
+| invented_better | both | worse |
+| right_slot | the replacement | yes |
 | filled_slot | the run | no |
-| faults | the replacement | |
-| catalog_action | our catalog | |
+| faults | the replacement | omits information from catalog question |
+| catalog_action | our catalog | none |
 
 ## Item 32
 
@@ -682,12 +682,12 @@ The agent sent this one in place of the catalog question.
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | yes |
+| invented_better | both | same |
+| right_slot | the replacement | yes |
 | filled_slot | the run | yes |
 | faults | the replacement | |
-| catalog_action | our catalog | |
+| catalog_action | our catalog | none - however, in turn 1 we ask "When you say anything goes, do you mean any card with no ban list or Vintage rules?" which is a good question, and turn away the invented question "What house rules should apply at your table: any card with no ban list, or Vintage rules?" as a reword. we should turn this away for a different reason - it's just an inaccurate question. they said "anything goes", so there is no reason to ask "What house rules should apply" - that verbage is wrong. |
 
 ## Item 33
 
@@ -796,12 +796,12 @@ The agent refused this one as a reword and sent the catalog question (D-88). Sco
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | n/a |
+| invented_better | both | n/a |
+| right_slot | the replacement | n/a |
 | filled_slot | the run | yes |
 | faults | the replacement | |
-| catalog_action | our catalog | |
+| catalog_action | our catalog | 'table_tolerance' needs to be removed entirely. we should not ask the user if their table is okay with things like mill, land destruction, etc. 'power_level' is enough. |
 
 ## Item 39
 
@@ -948,12 +948,12 @@ The agent refused this one as a reword and sent the catalog question (D-88). Sco
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | n/a |
+| invented_better | both | n/a |
+| right_slot | the replacement | n/a |
 | filled_slot | the run | no |
 | faults | the replacement | |
-| catalog_action | our catalog | |
+| catalog_action | our catalog | 'table_tolerance' needs to be removed entirely. we should not ask the user if their table is okay with things like mill, land destruction, etc. 'power_level' is enough. |
 
 ## Item 47
 
@@ -1081,12 +1081,12 @@ The agent refused this one as a reword and sent the catalog question (D-88). Sco
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | n/a |
+| invented_better | both | n/a |
+| right_slot | the replacement | n/a |
 | filled_slot | the run | no |
 | faults | the replacement | |
-| catalog_action | our catalog | |
+| catalog_action | our catalog | 'table_tolerance' needs to be removed entirely. we should not ask the user if their table is okay with things like mill, land destruction, etc. 'power_level' is enough. |
 
 ## Item 54
 
@@ -1157,12 +1157,12 @@ The agent refused this one as a reword and sent the catalog question (D-88). Sco
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | n/a |
+| invented_better | both | n/a |
+| right_slot | the replacement | n/a |
 | filled_slot | the run | no |
 | faults | the replacement | |
-| catalog_action | our catalog | |
+| catalog_action | our catalog | 'table_tolerance' needs to be removed entirely. we should not ask the user if their table is okay with things like mill, land destruction, etc. 'power_level' is enough. |
 
 ## Item 58
 
