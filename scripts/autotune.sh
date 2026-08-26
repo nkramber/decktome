@@ -158,6 +158,11 @@ case "$BASE_BRANCH" in
   main|master) say "WARNING: the base is $BASE_BRANCH. Two nights from here will diverge, not add up." ;;
 esac
 STAMP="$(date -u +%Y%m%d-%H%M%S)"
+# The ledger is per run. It used to be one file for every run ever, so
+# --budget counted spend from earlier nights and each run had less to
+# spend than the one before it. The whole record is the set of these
+# files (D-179).
+LEDGER="$STATE_DIR/ledger-$STAMP.txt"
 BRANCH="$BRANCH_PREFIX/$STAMP"
 say "base branch $BASE_BRANCH, working branch $BRANCH"
 [ "$DRY_RUN" = "1" ] || git switch -c "$BRANCH" >/dev/null 2>&1 || die "could not make branch $BRANCH"
@@ -176,8 +181,10 @@ conv_count() {
 
 run_gate() {   # $1 = iteration label
   local out="$ROOT/docs/reference/pr7-question-gate-$1.md"
-  # A scored document is never overwritten (D-65, D-177).
-  [ -e "$out" ] && die "a gate document already exists at $out"
+  # A scored document is never overwritten (D-65, D-177). This runs
+  # inside a command substitution, so it returns and never exits: die
+  # would kill the subshell alone and hide the reason.
+  if [ -e "$out" ]; then say "STOP: a gate document already exists at $out"; return 1; fi
   say "gate $1: $(conv_count) conversations, about 20 minutes"
   [ "$DRY_RUN" = "1" ] && { say "dry run: no gate"; return 1; }
   ( cd "$ROOT/go" && QUESTIONS_GATE=1 go run ./cmd/questions-gate \
@@ -190,8 +197,8 @@ run_gate() {   # $1 = iteration label
 run_eval() {   # $1 = iteration label, $2 = gate document
   local doc="$ROOT/docs/reference/pr7-question-eval-$1.md"
   local sum="$STATE_DIR/$1.json"
-  [ -e "$doc" ] && die "an eval report already exists at $doc"
-  [ -e "$sum" ] && die "an eval summary already exists at $sum"
+  if [ -e "$doc" ]; then say "STOP: an eval report already exists at $doc"; return 1; fi
+  if [ -e "$sum" ]; then say "STOP: an eval summary already exists at $sum"; return 1; fi
   say "eval $1: scoring every question"
   ( cd "$ROOT/go" && QUESTIONS_EVAL=1 go run ./cmd/questions-eval \
       -in "$2" -out "$doc" -json "$sum" -budget "$EVAL_BUDGET" ) || true
