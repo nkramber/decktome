@@ -84,7 +84,13 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("candidates: %w", err)
 	}
-	always := append([]*mtgv1.Card{cmdr}, generate.BasicLands(idx.ByName, cmdr.GetColorIdentity())...)
+	// Only Commander has a command zone (D-233).
+	var cmdrIDs []string
+	always := generate.BasicLands(idx.ByName, cmdr.GetColorIdentity())
+	if fid == mtgv1.FormatId_FORMAT_ID_COMMANDER {
+		cmdrIDs = []string{cmdr.GetOracleId()}
+		always = append([]*mtgv1.Card{cmdr}, always...)
+	}
 	pool := generate.FromList(list, always, false)
 	fmt.Printf("snapshot: %d cards, %d paper-printing swaps (D-221)\n", idx.Len(), idx.PaperSwaps())
 	if *dry {
@@ -117,7 +123,7 @@ func run() error {
 		Format:       fid,
 		Plan:         fmt.Sprintf("a %s deck led by %s, at bracket 3", *theme, cmdr.GetName()),
 		Pool:         pool,
-		Commanders:   []string{cmdr.GetOracleId()},
+		Commanders:   cmdrIDs,
 		PoolRule:     mtgv1.PoolRule_POOL_RULE_ANY_CARD,
 		Roles:        generate.Roles(list),
 		Limits:       generate.LimitsFor(fid),
@@ -199,7 +205,11 @@ func report(pool *generate.Pool, res *generate.Result, acc *llm.Accumulator) {
 	}
 	fmt.Printf("shortlist: %d names\n", pool.Size())
 	fmt.Printf("repair turn ran: %v\n", res.Repaired)
-	fmt.Printf("cards listed: %d entries, %d with counts\n", len(d.GetCards()), total)
+	side := 0
+	for _, c := range d.GetSideboard() {
+		side += int(c.GetCount())
+	}
+	fmt.Printf("cards listed: %d entries, %d with counts. Sideboard: %d cards.\n", len(d.GetCards()), total, side)
 	fmt.Printf("notes (names that missed twice): %d\n", len(res.Notes))
 	for _, n := range res.Notes {
 		fmt.Printf("  - %s\n", n)

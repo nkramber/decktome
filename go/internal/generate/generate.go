@@ -126,11 +126,19 @@ type pass struct {
 func (b *Builder) assemble(req Request, out *deckOut) pass {
 	main := Normalize(req.Pool, out.Cards)
 	side := Normalize(req.Pool, out.Sideboard)
+	// Only Commander has a command zone. A 60-card session whose
+	// classifier reported a commander name would otherwise build a deck
+	// with one, and the engine refuses it as not legal in the format
+	// (D-233).
+	commanders := req.Commanders
+	if req.Format != mtgv1.FormatId_FORMAT_ID_COMMANDER {
+		commanders = nil
+	}
 	deck := &mtgv1.Deck{
 		Format:             &mtgv1.Format{Id: req.Format},
 		Power:              req.Power,
 		Summary:            strings.TrimSpace(out.Summary),
-		CommanderOracleIds: req.Commanders,
+		CommanderOracleIds: commanders,
 		Cards:              main.Cards,
 		Sideboard:          side.Cards,
 		SessionId:          req.SessionID,

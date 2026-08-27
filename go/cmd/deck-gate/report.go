@@ -77,6 +77,17 @@ func blocks(d *mtgv1.Deck) []*mtgv1.Finding {
 	return out
 }
 
+// countSide counts the sideboard. A 60-card format wants 15, and the
+// engine only refuses a sideboard that is too big, so a deck with none
+// passes every check (D-233).
+func countSide(d *mtgv1.Deck) int {
+	n := 0
+	for _, c := range d.GetSideboard() {
+		n += int(c.GetCount())
+	}
+	return n
+}
+
 func countCards(d *mtgv1.Deck) int {
 	n := 0
 	for _, c := range d.GetCards() {
@@ -188,8 +199,8 @@ func writeDeck(w io.Writer, r result) {
 		return
 	}
 	d := r.deck
-	_, _ = fmt.Fprintf(w, "Cards: %d. Repair turn: %v. Block findings: %d.\n\n",
-		countCards(d), r.repaired, len(blocks(d)))
+	_, _ = fmt.Fprintf(w, "Cards: %d main, %d sideboard. Repair turn: %v. Block findings: %d.\n\n",
+		countCards(d), countSide(d), r.repaired, len(blocks(d)))
 	_, _ = fmt.Fprintf(w, "**Summary:** %s\n\n", d.GetSummary())
 	if claims := generate.LintSummary(d.GetSummary()); len(claims) > 0 {
 		_, _ = fmt.Fprintf(w, "Summary rules claims (F-26): %s\n\n", strings.Join(claims, ", "))

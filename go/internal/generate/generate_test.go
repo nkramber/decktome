@@ -173,3 +173,33 @@ func TestBuildAttachesTheValidationResult(t *testing.T) {
 		}
 	}
 }
+
+// TestSixtyCardDeckCarriesNoCommander is D-233. Only Commander has a
+// command zone. A probe of 2026-08-27 built a Modern deck with Karlov in
+// the command zone, and the engine refused it as not legal in the format.
+func TestSixtyCardDeckCarriesNoCommander(t *testing.T) {
+	one := step(t, deckOut{Summary: "burn", Cards: []Entry{
+		{Name: "Ajani's Welcome", Count: 4, Role: "synergy", Reason: "gains life"},
+	}})
+	b, _, _ := testBuilder(t, one, one)
+	req := testRequest()
+	req.Format = mtgv1.FormatId_FORMAT_ID_MODERN
+	req.Commanders = []string{"o-karlov"}
+	got, err := b.Build(context.Background(), req, nil)
+	if err != nil {
+		t.Fatalf("build: %v", err)
+	}
+	if ids := got.Deck.GetCommanderOracleIds(); len(ids) != 0 {
+		t.Errorf("a Modern deck carries commanders %v", ids)
+	}
+	// Commander keeps its command zone.
+	req.Format = mtgv1.FormatId_FORMAT_ID_COMMANDER
+	b2, _, _ := testBuilder(t, one, one)
+	got2, err := b2.Build(context.Background(), req, nil)
+	if err != nil {
+		t.Fatalf("build: %v", err)
+	}
+	if len(got2.Deck.GetCommanderOracleIds()) != 1 {
+		t.Error("a Commander deck lost its commander")
+	}
+}
