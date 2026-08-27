@@ -110,6 +110,8 @@
     },
     {
       "id": 11,
+      "has_deck": true,
+      "note": "The variance row needs a deck to vary (D-68, D-239).",
       "name": "another version after a build",
       "collection": true,
       "messages": [
@@ -119,6 +121,8 @@
     },
     {
       "id": 12,
+      "frozen": true,
+      "note": "A frozen run is inside a build, and it asks nothing until a change starts a new run (D-68, D-239).",
       "name": "a frozen run asks nothing",
       "collection": true,
       "messages": [
