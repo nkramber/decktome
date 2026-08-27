@@ -140,6 +140,12 @@ func NewIndex(cardList []*mtgv1.Card, printings []Printing, tags *TagIndex, asOf
 			Artist:          p.Artist,
 			ImageUris:       p.ImageUris,
 		}
+		// The price follows the printing. A digital printing carries no
+		// USD price, so the card read as free before this (D-231).
+		if p.PriceUSD > 0 {
+			c.PriceUsd = p.PriceUSD
+			c.PriceAsOf = priceDate
+		}
 		idx.paperSwaps++
 	}
 	return idx

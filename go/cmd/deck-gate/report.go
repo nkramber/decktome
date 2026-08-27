@@ -90,6 +90,7 @@ func countCards(d *mtgv1.Deck) int {
 // reaches the user.
 func report(w io.Writer, rs []result, acc *llm.Accumulator, idx *cards.Index, took time.Duration) {
 	built, clean, notes, repaired, errs := 0, 0, 0, 0, 0
+	judged, falseRules, statesRule := 0, 0, 0
 	for _, r := range rs {
 		switch {
 		case r.err != nil:
@@ -104,16 +105,27 @@ func report(w io.Writer, rs []result, acc *llm.Accumulator, idx *cards.Index, to
 				repaired++
 			}
 		}
+		if r.judged != nil {
+			judged++
+			if r.judged.StatesAFalseRule() {
+				falseRules++
+			} else if len(r.judged.Claims) > 0 {
+				statesRule++
+			}
+		}
 	}
-	pass := errs == 0 && built == len(rs) && clean == built && notes == 0
+	// F-26 is a bar and not a footnote. A summary that states a false rule
+	// of the game reached a user twice before, and both passed the gate
+	// and the deterministic linter (D-229).
+	pass := errs == 0 && built == len(rs) && clean == built && notes == 0 && falseRules == 0
 	verdict := "FAIL"
 	if pass {
 		verdict = "PASS"
 	}
 	_, _ = fmt.Fprintf(w, "# PR-8 deck gate\n\n")
 	_, _ = fmt.Fprintf(w, "Run date: %s. Card snapshot: %s.\n\n", time.Now().UTC().Format("2006-01-02"), idx.AsOf.Format("2006-01-02"))
-	_, _ = fmt.Fprintf(w, "Verdict: %s. %d of %d decks passed every block check, and %d invented names reached the user. Both bars are zero tolerance.\n\n",
-		verdict, clean, len(rs), notes)
+	_, _ = fmt.Fprintf(w, "Verdict: %s. %d of %d decks passed every block check, %d invented names reached the user, and %d summaries stated a false rule of the game. All three bars are zero tolerance.\n\n",
+		verdict, clean, len(rs), notes, falseRules)
 	if errs > 0 {
 		_, _ = fmt.Fprintf(w, "%d prompts failed before a deck existed. A gate can not pass with an error.\n\n", errs)
 	}
@@ -124,6 +136,9 @@ func report(w io.Writer, rs []result, acc *llm.Accumulator, idx *cards.Index, to
 	_, _ = fmt.Fprintf(w, "| Decks with no block finding | %d |\n", clean)
 	_, _ = fmt.Fprintf(w, "| Invented names that reached the user | %d |\n", notes)
 	_, _ = fmt.Fprintf(w, "| Decks that needed the repair turn | %d |\n", repaired)
+	_, _ = fmt.Fprintf(w, "| Summaries judged (F-26) | %d |\n", judged)
+	_, _ = fmt.Fprintf(w, "| Summaries that state a rule of the game | %d |\n", statesRule)
+	_, _ = fmt.Fprintf(w, "| Summaries that state a FALSE rule | %d |\n", falseRules)
 	_, _ = fmt.Fprintf(w, "| Errors | %d |\n", errs)
 	_, _ = fmt.Fprintf(w, "| Prompt version | %d |\n", generate.PromptVersion)
 	rep := acc.Report()
@@ -181,6 +196,11 @@ func writeDeck(w io.Writer, r result) {
 	}
 	for _, n := range r.notes {
 		_, _ = fmt.Fprintf(w, "- NOTE: %s\n", n)
+	}
+	if r.judged != nil {
+		for _, c := range r.judged.Claims {
+			_, _ = fmt.Fprintf(w, "- JUDGE [%s]: %q. %s\n", c.Truth, c.Text, c.Why)
+		}
 	}
 	for _, f := range d.GetValidation().GetFindings() {
 		_, _ = fmt.Fprintf(w, "- [%s] `%s`: %s\n", strings.TrimPrefix(f.GetSeverity().String(), "SEVERITY_"), f.GetCode(), f.GetMessage())

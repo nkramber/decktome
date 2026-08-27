@@ -53,3 +53,30 @@ func TestPluralReadsCorrectly(t *testing.T) {
 		}
 	}
 }
+
+// TestStatesAFalseRuleReadsBothSignals is the F-26 bar. The judge may
+// answer with the verdict, or with a claim it rated false, and either one
+// fails the gate.
+func TestStatesAFalseRuleReadsBothSignals(t *testing.T) {
+	cases := []struct {
+		name string
+		j    Judgement
+		want bool
+	}{
+		{"clean", Judgement{Verdict: "clean"}, false},
+		{"a true rule", Judgement{Verdict: "states_a_rule",
+			Claims: []Claim{{Text: "Karlov leads the deck", Truth: "true"}}}, false},
+		{"the verdict names a false rule", Judgement{Verdict: "states_a_false_rule"}, true},
+		// The verdict and the claims must not disagree in the gate's
+		// favour. A claim rated false fails whatever the verdict says.
+		{"a claim rated false under a soft verdict", Judgement{Verdict: "states_a_rule",
+			Claims: []Claim{{Text: "Grist can not lead a deck", Truth: "false"}}}, true},
+		{"an unknown claim is not a failure", Judgement{Verdict: "states_a_rule",
+			Claims: []Claim{{Text: "something", Truth: "unknown"}}}, false},
+	}
+	for _, tc := range cases {
+		if got := tc.j.StatesAFalseRule(); got != tc.want {
+			t.Errorf("%s: StatesAFalseRule = %v, want %v", tc.name, got, tc.want)
+		}
+	}
+}

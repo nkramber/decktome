@@ -206,23 +206,29 @@ type Printing struct {
 	Rarity     string
 	Artist     string
 	ImageUris  *mtgv1.ImageUris
+	// PriceUSD is the printing's USD price, 0 when it has none. A digital
+	// printing carries no USD price at all, only MTGO tickets, so a card
+	// whose default printing is digital reads as free. The price must
+	// follow the printing the index shows (D-231, extends D-221 and D-17).
+	PriceUSD float64
 }
 
 // parsePrinting reads the minimal printing row for collection resolution.
 func parsePrinting(line []byte) (Printing, error) {
 	var r struct {
-		ID              string     `json:"id"`
-		OracleID        string     `json:"oracle_id"`
-		Name            string     `json:"name"`
-		Set             string     `json:"set"`
-		SetName         string     `json:"set_name"`
-		CollectorNumber string     `json:"collector_number"`
-		Layout          string     `json:"layout"`
-		Rarity          string     `json:"rarity"`
-		Artist          string     `json:"artist"`
-		Digital         bool       `json:"digital"`
-		ReleasedAt      string     `json:"released_at"`
-		ImageUris       *rawImages `json:"image_uris"`
+		ID              string            `json:"id"`
+		OracleID        string            `json:"oracle_id"`
+		Name            string            `json:"name"`
+		Set             string            `json:"set"`
+		SetName         string            `json:"set_name"`
+		CollectorNumber string            `json:"collector_number"`
+		Layout          string            `json:"layout"`
+		Rarity          string            `json:"rarity"`
+		Artist          string            `json:"artist"`
+		Digital         bool              `json:"digital"`
+		ReleasedAt      string            `json:"released_at"`
+		Prices          map[string]string `json:"prices"`
+		ImageUris       *rawImages        `json:"image_uris"`
 		CardFaces       []struct {
 			OracleID string `json:"oracle_id"`
 		} `json:"card_faces"`
@@ -237,5 +243,16 @@ func parsePrinting(line []byte) (Printing, error) {
 	return Printing{ScryfallID: r.ID, OracleID: r.OracleID, Name: r.Name,
 		SetCode: r.Set, CollectorNumber: r.CollectorNumber, Layout: r.Layout,
 		Digital: r.Digital, ReleasedAt: r.ReleasedAt, SetName: r.SetName,
-		Rarity: r.Rarity, Artist: r.Artist, ImageUris: r.ImageUris.proto()}, nil
+		Rarity: r.Rarity, Artist: r.Artist, ImageUris: r.ImageUris.proto(),
+		PriceUSD: usdPrice(r.Prices)}, nil
+}
+
+// usdPrice reads the USD price of a printing. A digital printing has
+// none, and the field may be absent or null (D-231).
+func usdPrice(prices map[string]string) float64 {
+	v, err := strconv.ParseFloat(prices["usd"], 64)
+	if err != nil {
+		return 0
+	}
+	return v
 }

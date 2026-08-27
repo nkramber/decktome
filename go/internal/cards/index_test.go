@@ -30,7 +30,7 @@ func TestDigitalDefaultPrintingIsSwappedForPaper(t *testing.T) {
 		{ScryfallID: "p-arn", OracleID: "o-dv", SetCode: "arn", SetName: "Arabian Nights",
 			Artist: "Jesper Myrfors", Digital: false, ReleasedAt: "1993-12-17"},
 		{ScryfallID: "p-plst", OracleID: "o-dv", SetCode: "plst", SetName: "The List",
-			Artist: "Newer Artist", Digital: false, ReleasedAt: "2024-08-02"},
+			Artist: "Newer Artist", Digital: false, ReleasedAt: "2024-08-02", PriceUSD: 12.34},
 		{ScryfallID: "p-lea", OracleID: "o-bolt", SetCode: "lea", Digital: false, ReleasedAt: "1993-08-05"},
 	}, nil, time.Time{})
 
@@ -54,5 +54,13 @@ func TestDigitalDefaultPrintingIsSwappedForPaper(t *testing.T) {
 	}
 	if idx.PaperSwaps() != 1 {
 		t.Errorf("swaps = %d, want 1", idx.PaperSwaps())
+	}
+	// The price follows the printing. A digital printing carries no USD
+	// price, so the card read as free before D-231.
+	if got.GetPriceUsd() != 12.34 {
+		t.Errorf("price = %v, want the paper printing's price", got.GetPriceUsd())
+	}
+	if got.GetPriceAsOf() == "" {
+		t.Error("the swapped price carries no date")
 	}
 }

@@ -17,7 +17,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -29,49 +28,6 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 )
-
-const judgeInstructions = `You check one paragraph from a Magic: The Gathering deck builder.
-
-The paragraph is a deck summary written for the person who will play the deck. It must describe the deck and state no rule of the game. The rules engine reports the rules, and the summary must not.
-
-Report two things.
-
-First, every statement in the paragraph that asserts a rule of the game. A rule of the game is anything about what a card may do, what a format allows, what is banned or legal, what counts toward a limit, how many copies a deck may hold, or whether a card can lead a deck. A description of what the deck does on the table is not a rule.
-
-Second, for each such statement, whether it is true. Judge it against the real rules of Magic: The Gathering. Say "unknown" when you can not tell.
-
-Be strict about what counts as a rules claim and honest about truth. A summary with no rules claim is the expected result.`
-
-const judgeSchema = `{
-  "type": "object",
-  "additionalProperties": false,
-  "required": ["claims", "verdict"],
-  "properties": {
-    "claims": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["text", "truth", "why"],
-        "properties": {
-          "text": {"type": "string"},
-          "truth": {"type": "string", "enum": ["true", "false", "unknown"]},
-          "why": {"type": "string"}
-        }
-      }
-    },
-    "verdict": {"type": "string", "enum": ["clean", "states_a_rule", "states_a_falseRulerule"]}
-  }
-}`
-
-type judgeOut struct {
-	Claims []struct {
-		Text  string `json:"text"`
-		Truth string `json:"truth"`
-		Why   string `json:"why"`
-	} `json:"claims"`
-	Verdict string `json:"verdict"`
-}
 
 var (
 	deckRe    = regexp.MustCompile(`(?m)^### (\d+)\. (.+)$`)
@@ -122,18 +78,9 @@ func run() error {
 	clean, rules, falseRule := 0, 0, 0
 	for i, m := range names {
 		summary := strings.TrimSpace(sums[i][1])
-		res, err := client.Complete(context.Background(), llm.RoleJudge, llm.Request{
-			Instructions: judgeInstructions,
-			Input:        fmt.Sprintf("Deck: %s\n\nSummary:\n%s", m[2], summary),
-			SchemaName:   "summary_check",
-			Schema:       json.RawMessage(judgeSchema),
-		}, acc)
+		out, err := generate.JudgeSummary(context.Background(), client, m[2], summary, acc)
 		if err != nil {
 			return fmt.Errorf("judge deck %s: %w", m[1], err)
-		}
-		var out judgeOut
-		if err := json.Unmarshal(res.Output, &out); err != nil {
-			return err
 		}
 		switch out.Verdict {
 		case "clean":

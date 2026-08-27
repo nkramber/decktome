@@ -60,6 +60,7 @@ type result struct {
 	notes    []string
 	repaired bool
 	poolSize int
+	judged   *generate.Judgement
 	err      error
 }
 
@@ -74,6 +75,7 @@ func run() error {
 	collPath := flag.String("collection", "", "a ManaBox CSV for the owned modes")
 	only := flag.String("only", "", "run these prompt ids only, comma separated")
 	dry := flag.Bool("dry", false, "build every shortlist and stop before the provider calls")
+	noJudge := flag.Bool("no-judge", false, "skip the F-26 judge lane, which costs about $0.0034 a deck")
 	flag.Parse()
 
 	var file struct {
@@ -128,6 +130,7 @@ func run() error {
 	// no API key. It is the free check before a paid run.
 	var b *generate.Builder
 	var acc *llm.Accumulator
+	var client *llm.Client
 	if !*dry {
 		env := func(k string) string {
 			if k == llm.EnvRequireKeys {
@@ -135,7 +138,7 @@ func run() error {
 			}
 			return os.Getenv(k)
 		}
-		client, err := llm.NewFromEnv(env, quiet)
+		client, err = llm.NewFromEnv(env, quiet)
 		if err != nil {
 			return err
 		}
@@ -151,6 +154,16 @@ func run() error {
 	var results []result
 	for _, p := range file.Prompts {
 		r := build(context.Background(), b, cb, idx, owned, p, acc, *dry)
+		// The judge lane is the real check for F-26, and the deterministic
+		// net can not read the truth of a rules claim (D-229).
+		if !*dry && !*noJudge && r.deck != nil && r.deck.GetSummary() != "" {
+			j, err := generate.JudgeSummary(context.Background(), client, p.Name, r.deck.GetSummary(), acc)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "  judge %d failed: %v\n", p.ID, err)
+			} else {
+				r.judged = j
+			}
+		}
 		results = append(results, r)
 		fmt.Fprintf(os.Stderr, "  %2d. %-38s pool %3d  %s\n", p.ID, p.Name, r.poolSize, status(r))
 	}
