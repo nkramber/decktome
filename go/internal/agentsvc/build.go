@@ -2,6 +2,7 @@ package agentsvc
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -120,6 +121,7 @@ func (s *Server) buildDeck(ctx context.Context, uid string, session *mtgv1.Sessi
 
 	res, err := s.decks.Build(ctx, generate.Request{
 		ThinCommanderPool: thinPool,
+		BudgetUSD:         slots.GetBudgetUsd(),
 		SessionID:         session.GetId(),
 		Format:            format,
 		Power:             slots.GetPower(),
@@ -178,11 +180,23 @@ func (s *Server) sendDeck(ctx context.Context, uid string, session *mtgv1.Sessio
 	}); err != nil {
 		return err
 	}
-	res, err := s.buildDeck(ctx, uid, session, st, acc)
+	// The build is bounded, so a slow provider ends the turn with an
+	// error instead of holding the stream open (D-235).
+	limit := s.buildLimit
+	if limit <= 0 {
+		limit = DefaultBuildLimit
+	}
+	bctx, cancel := context.WithTimeout(ctx, limit)
+	defer cancel()
+	res, err := s.buildDeck(bctx, uid, session, st, acc)
 	if err != nil {
 		s.log.ErrorContext(ctx, "the build failed", "session", session.GetId(), "err", err)
+		msg := "the deck build failed, please ask again"
+		if errors.Is(bctx.Err(), context.DeadlineExceeded) {
+			msg = "the deck build ran past its time limit, please ask again"
+		}
 		return stream.Send(&mtgv1.ChatResponse{
-			Event: &mtgv1.ChatResponse_Status{Status: "the deck build failed, please ask again"},
+			Event: &mtgv1.ChatResponse_Status{Status: msg},
 		})
 	}
 	if res == nil {

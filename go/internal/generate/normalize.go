@@ -120,6 +120,10 @@ func Normalize(p *Pool, entries []Entry) Normalized {
 			Reason:     strings.TrimSpace(e.Reason),
 			Owned:      owned >= e.Count,
 			OwnedCount: owned,
+			// The display price of the card, per copy (D-17, D-236). It
+			// follows the printing the index shows, which D-231 made the
+			// paper one.
+			PriceUsd: c.GetPriceUsd(),
 		})
 	}
 	return out

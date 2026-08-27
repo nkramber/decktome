@@ -201,6 +201,8 @@ func writeDeck(w io.Writer, r result) {
 	d := r.deck
 	_, _ = fmt.Fprintf(w, "Cards: %d main, %d sideboard. Repair turn: %v. Block findings: %d.\n\n",
 		countCards(d), countSide(d), r.repaired, len(blocks(d)))
+	_, _ = fmt.Fprintf(w, "Cost: $%.2f to buy, $%.2f the whole deck.\n\n",
+		generate.BuyCost(d), generate.DeckCost(d))
 	_, _ = fmt.Fprintf(w, "**Summary:** %s\n\n", d.GetSummary())
 	if claims := generate.LintSummary(d.GetSummary()); len(claims) > 0 {
 		_, _ = fmt.Fprintf(w, "Summary rules claims (F-26): %s\n\n", strings.Join(claims, ", "))

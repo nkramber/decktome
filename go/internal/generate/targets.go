@@ -104,3 +104,37 @@ func plural(n int, noun string) string {
 // theme, in an owned mode. The retired weak-pool row asked about this
 // before the build, and a delegated commander silenced it (D-232).
 const CodeThinCommanderPool = "thin_commander_pool"
+
+// CodeOverBudget reports a deck that costs more than the user allowed.
+// It is a warning and never a block: the price is a daily estimate and
+// not a rule of the game, and a deck the user can trim is more use than
+// no deck (D-17, D-236).
+const CodeOverBudget = "over_budget"
+
+// BuyCost is what the user must buy: every copy the collection does not
+// cover, at the card's display price. A deck built from an owned pool
+// costs nothing to buy.
+func BuyCost(deck *mtgv1.Deck) float64 {
+	total := 0.0
+	for _, c := range allCards(deck) {
+		short := c.GetCount() - c.GetOwnedCount()
+		if short > 0 && c.GetPriceUsd() > 0 {
+			total += float64(short) * c.GetPriceUsd()
+		}
+	}
+	return total
+}
+
+// DeckCost is what the whole deck is worth, owned copies included. The
+// budget-scope question of D-77 asks the user which of the two they mean.
+func DeckCost(deck *mtgv1.Deck) float64 {
+	total := 0.0
+	for _, c := range allCards(deck) {
+		total += float64(c.GetCount()) * c.GetPriceUsd()
+	}
+	return total
+}
+
+func allCards(deck *mtgv1.Deck) []*mtgv1.DeckCard {
+	return append(append([]*mtgv1.DeckCard(nil), deck.GetCards()...), deck.GetSideboard()...)
+}

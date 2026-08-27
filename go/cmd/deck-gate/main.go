@@ -275,6 +275,7 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 		Targets:      generate.TargetsFor(format, power(p)),
 		Limits:       generate.LimitsFor(format),
 		LegalityAsOf: idx.AsOf.Format("2006-01-02"),
+		BudgetUSD:    p.Budget,
 	}, acc)
 	if err != nil {
 		out.err = err

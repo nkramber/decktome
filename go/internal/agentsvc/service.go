@@ -65,6 +65,7 @@ type Server struct {
 	index       IndexSource
 	builder     *candidates.Builder
 	decks       DeckBuilder
+	buildLimit  time.Duration
 	collections CollectionSource
 	prices      *llm.PriceTable
 	now         func() time.Time
@@ -91,6 +92,18 @@ type DeckBuilder interface {
 // every slot is filled and builds nothing, which is the PR-7 behavior.
 func WithDecks(b DeckBuilder) Option {
 	return func(s *Server) { s.decks = b }
+}
+
+// DefaultBuildLimit caps one build. The llm client already caps each call
+// at three minutes, so a generate and a repair together can hold the
+// stream for six. A build is about two minutes when it goes well, and a
+// user waiting longer than this is better served by an error than by a
+// stream that does not end (D-235).
+const DefaultBuildLimit = 4 * time.Minute
+
+// WithBuildTimeout caps one build. Zero keeps DefaultBuildLimit.
+func WithBuildTimeout(d time.Duration) Option {
+	return func(s *Server) { s.buildLimit = d }
 }
 
 // WithCollections wires the owned counts, which the hints read.

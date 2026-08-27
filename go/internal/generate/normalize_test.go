@@ -1,6 +1,7 @@
 package generate
 
 import (
+	"context"
 	"strings"
 	"testing"
 
@@ -148,5 +149,60 @@ func TestBasicLandsFollowTheColorIdentity(t *testing.T) {
 	}
 	if len(BasicLands(find, nil)) != 0 {
 		t.Error("a colorless deck got a basic land")
+	}
+}
+
+// TestDeckCardsCarryTheirPrice is D-236. The deck showed no price at all,
+// so a budget deck could not be checked or reported.
+func TestDeckCardsCarryTheirPrice(t *testing.T) {
+	pricey := &mtgv1.Card{OracleId: "o-dv", Name: "Diamond Valley", PriceUsd: 693.33}
+	cheap := &mtgv1.Card{OracleId: "o-sr", Name: "Sol Ring", PriceUsd: 1.50}
+	pool := NewPool([]*mtgv1.Card{pricey, cheap}, map[string]int32{"o-sr": 1})
+	got := Normalize(pool, []Entry{
+		{Name: "Diamond Valley", Count: 1, Role: "land"},
+		{Name: "Sol Ring", Count: 2, Role: "ramp"},
+	})
+	if got.Cards[0].GetPriceUsd() != 693.33 {
+		t.Errorf("price = %v, want the card's price", got.Cards[0].GetPriceUsd())
+	}
+	deck := &mtgv1.Deck{Cards: got.Cards}
+	// The buy cost counts only what the collection does not cover: one
+	// Diamond Valley, and one of the two Sol Rings.
+	if want := 693.33 + 1.50; BuyCost(deck) != want {
+		t.Errorf("buy cost = %v, want %v", BuyCost(deck), want)
+	}
+	// The whole deck counts every copy.
+	if want := 693.33 + 3.00; DeckCost(deck) != want {
+		t.Errorf("deck cost = %v, want %v", DeckCost(deck), want)
+	}
+}
+
+// TestOverBudgetWarnsAndNeverBlocks is D-236. The price is a daily
+// estimate and not a rule of the game, and a deck the user can trim is
+// more use than no deck.
+func TestOverBudgetWarnsAndNeverBlocks(t *testing.T) {
+	b, _, _ := testBuilder(t, step(t, deckOut{Summary: "s", Cards: []Entry{
+		{Name: "Ajani's Welcome", Count: 1, Role: "synergy"},
+	}}), step(t, deckOut{Summary: "s", Cards: []Entry{
+		{Name: "Ajani's Welcome", Count: 1, Role: "synergy"},
+	}}))
+	req := testRequest()
+	req.BudgetUSD = 10
+	req.Pool = NewPool([]*mtgv1.Card{{OracleId: "o-w", Name: "Ajani's Welcome", PriceUsd: 50}}, nil)
+	got, err := b.Build(context.Background(), req, nil)
+	if err != nil {
+		t.Fatalf("build: %v", err)
+	}
+	var found *mtgv1.Finding
+	for _, f := range got.Deck.GetValidation().GetFindings() {
+		if f.GetCode() == CodeOverBudget {
+			found = f
+		}
+	}
+	if found == nil {
+		t.Fatal("a deck over budget carried no finding")
+	}
+	if found.GetSeverity() != mtgv1.Severity_SEVERITY_WARN {
+		t.Errorf("severity = %v, want WARN: a price estimate must not block a deck", found.GetSeverity())
 	}
 }

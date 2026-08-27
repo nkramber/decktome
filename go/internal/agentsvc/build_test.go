@@ -2,6 +2,7 @@ package agentsvc
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -43,15 +44,22 @@ func buildOpts(t *testing.T, fd *fakeDecks) []Option {
 // fakeDecks stands in for the generator. It records the request, so the
 // test can read what the session handed over.
 type fakeDecks struct {
-	got  generate.Request
-	res  *generate.Result
-	err  error
-	runs int
+	got   generate.Request
+	res   *generate.Result
+	err   error
+	runs  int
+	block bool
 }
 
-func (f *fakeDecks) Build(_ context.Context, req generate.Request, _ *llm.Accumulator) (*generate.Result, error) {
+func (f *fakeDecks) Build(ctx context.Context, req generate.Request, _ *llm.Accumulator) (*generate.Result, error) {
 	f.runs++
 	f.got = req
+	// block waits for the caller's deadline, which is how a slow provider
+	// looks from here.
+	if f.block {
+		<-ctx.Done()
+		return nil, ctx.Err()
+	}
 	return f.res, f.err
 }
 
@@ -154,5 +162,42 @@ func TestReadyWithoutAGeneratorSaysSo(t *testing.T) {
 	}
 	if !said {
 		t.Errorf("the turn said nothing about the missing generator: %v", second.statuses)
+	}
+}
+
+// TestBuildTimeoutEndsTheTurnCleanly is D-235. The llm client caps each
+// call at three minutes, so a generate and a repair together can hold the
+// stream for six. A build past its limit must end the turn with a status
+// line, and never lose the turn or hang the stream.
+func TestBuildTimeoutEndsTheTurnCleanly(t *testing.T) {
+	store := newFakeStore()
+	fd := &fakeDecks{block: true}
+	opts := append(buildOpts(t, fd), WithBuildTimeout(50*time.Millisecond))
+	client, _ := testServerOpts(t, store, opts, readySteps(t)...)
+
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	second := chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
+
+	if fd.runs != 1 {
+		t.Fatalf("build runs = %d, want 1", fd.runs)
+	}
+	if second.deck != nil {
+		t.Error("a timed-out build sent a deck")
+	}
+	if second.failure != nil {
+		t.Errorf("a timed-out build ended the turn: %v", second.failure)
+	}
+	var said bool
+	for _, s := range second.statuses {
+		if strings.Contains(s, "time limit") {
+			said = true
+		}
+	}
+	if !said {
+		t.Errorf("the turn did not say the build ran past its limit: %v", second.statuses)
+	}
+	// The turn is still stored, so the questions are not lost.
+	if len(store.sessions[first.started].GetTurns()) != 2 {
+		t.Error("the turn was lost")
 	}
 }
