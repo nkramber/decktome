@@ -21,6 +21,7 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1/mtgv1connect"
 	"github.com/nkramber/mtg-deck-builder/go/internal/candidates"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
+	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 	"github.com/nkramber/mtg-deck-builder/go/internal/questions"
 	"github.com/nkramber/mtg-deck-builder/go/internal/sessions"
@@ -63,6 +64,7 @@ type Server struct {
 	userFn      UserFunc
 	index       IndexSource
 	builder     *candidates.Builder
+	decks       DeckBuilder
 	collections CollectionSource
 	prices      *llm.PriceTable
 	now         func() time.Time
@@ -76,6 +78,19 @@ type Option func(*Server)
 // names a value drops that clause and falls back.
 func WithCandidates(index IndexSource, b *candidates.Builder) Option {
 	return func(s *Server) { s.index, s.builder = index, b }
+}
+
+// DeckBuilder writes the deck for a ready session (roadmap PR-8).
+// internal/generate holds the one implementation, and the interface keeps
+// agentsvc testable without a provider.
+type DeckBuilder interface {
+	Build(ctx context.Context, req generate.Request, acc *llm.Accumulator) (*generate.Result, error)
+}
+
+// WithDecks wires the generator. Without it, a ready session reports that
+// every slot is filled and builds nothing, which is the PR-7 behavior.
+func WithDecks(b DeckBuilder) Option {
+	return func(s *Server) { s.decks = b }
 }
 
 // WithCollections wires the owned counts, which the hints read.
@@ -209,10 +224,7 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 		return err
 	}
 	if res.Ready {
-		// PR-8 builds the deck here. Until then the turn says so.
-		if err := stream.Send(&mtgv1.ChatResponse{
-			Event: &mtgv1.ChatResponse_Status{Status: "every slot is filled, the build lands with PR-8"},
-		}); err != nil {
+		if err := s.sendDeck(ctx, uid, session, st, acc, stream); err != nil {
 			return err
 		}
 	}
