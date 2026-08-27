@@ -16,9 +16,15 @@ PR-8 is under way on branch `pr-8`, cut from `main` at 98eac91. The generator wr
 
 Run 1 found one defect and D-225 fixed it. The shortlist leaves basic lands out on purpose, and the generator may name nothing else, so no deck held a basic land. Read `docs/reference/pr8-deck-gate-run2.md`.
 
+Deck gate run 4 passed on 15 prompts, on all three bars: every deck passed the block checks, no invented name reached the user, and no summary stated a false rule. F-26 is a bar of the gate now and not a footnote (D-229). Cost $0.9002.
+
+Two faults that run 4 covers and earlier runs could not. No golden prompt named no commander, so the generator had never run the path D-147 and D-208 create, and a delegated session would have failed the engine on `no_commander` (D-232). The repair turn wrote a changelog into the summary, and prompt version 3 fixed it, which prompt 13 of run 4 exercised.
+
 Deck gate run 3 passed on 13 prompts, with the golden set corrected. The prompt cache is measured (D-227), the cost model is verified (D-228), and the judge lane answers F-26 (D-229). OQ-36 is closed by D-226.
 
-What PR-8 still needs: fold the judge lane into the deck gate as a standing check, and run the weak-pool probe. Conversation 105 was too short in run 21, and it now holds four messages.
+What PR-8 still needs: nothing the roadmap names. The generator, the normalizer, the repair turn, the ownership rule, the precon share, the prompt cache, and F-26 are all done and measured. PR-9 is next.
+
+CAUTION: the catalog-only count of the question gate carries about two conversations of variance. Runs 19 to 22 read 29, 29, 29, and 27 on question code that did not change. The bar is 25, so the gate absorbs it, and one run proves nothing on its own (D-230).
 
 | Measure | Run 20 | Run 21 |
 |---|---|---|
