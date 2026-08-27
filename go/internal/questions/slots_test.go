@@ -63,7 +63,11 @@ func TestLockedRowNeedsANonCommanderCard(t *testing.T) {
 		}
 	}
 
-	res, err = a.Turn(context.Background(), st, "and keep sanguine bond", nil)
+	// The message names the card and locks nothing in. "Keep Sanguine
+	// Bond in it" answers the locked row before it goes out, and D-166
+	// closes the key on it. D-70 is about which card the row names, so
+	// this message leaves the lock question open.
+	res, err = a.Turn(context.Background(), st, "and sanguine bond as well", nil)
 	if err != nil {
 		t.Fatalf("turn 2: %v", err)
 	}
@@ -184,21 +188,26 @@ func TestSuggestionFiresThePickRow(t *testing.T) {
 		t.Errorf("two questions share the id %q", pick.Id)
 	}
 
-	// A message that does not ask for other names keeps the same three.
-	// The gate run of 2026-08-25 named three others on every turn, which
-	// read as if the agent had ignored the answer (D-73).
+	// A message that does not ask for other names keeps the same three,
+	// and it gets no second copy of the same question. The gate run of
+	// 2026-08-25 named three others on every turn, which read as if the
+	// agent had ignored the answer (D-73). Gate run 18 then named the
+	// same three twice, which the eval refused as a duplicate (D-163).
 	res, err = a.Turn(context.Background(), st, "my table accepts stax", nil)
 	if err != nil {
 		t.Fatalf("turn 4: %v", err)
 	}
-	third := question(res.Questions, "commander")
-	if third == nil {
-		t.Fatal("the pick row did not fire while the commander is unset")
+	if third := question(res.Questions, "commander"); third != nil {
+		t.Errorf("the pick row asked again with the same names: %q", third.Text)
 	}
 	for _, name := range hints.commanders[3:] {
-		if !strings.Contains(third.Text, name) {
-			t.Errorf("an unrelated answer changed the names, %q is gone: %q", name, third.Text)
+		if !hasName(st.CurrentOffer, name) {
+			t.Errorf("an unrelated answer changed the names, %q is gone: %v", name, st.CurrentOffer)
 		}
+	}
+	// The question is out with no answer, so the session is not ready.
+	if st.Ready(load(t)) {
+		t.Error("the session calls itself complete with the commander unanswered")
 	}
 }
 
@@ -304,7 +313,10 @@ func TestOnlyAnOpenQuestionCloses(t *testing.T) {
 // level. A deck can not be built from a slot that says "answered" and
 // holds nothing.
 func TestTypedSlotNeverClosesWithoutAValue(t *testing.T) {
-	first := classifyOut{Format: "unknown", PoolRule: "unknown"}
+	// The budget carries a value from the first message. Without one the
+	// budget row fires, because a session with no collection buys every
+	// card, and this test is about the format alone (D-168).
+	first := classifyOut{Format: "unknown", PoolRule: "unknown", BudgetUSD: 40}
 	// Turn 2 answers the format question by name alone, with no value.
 	byName := classifyOut{Format: "unknown", PoolRule: "unknown"}
 	byName.ClosedKeys = []string{"format"}

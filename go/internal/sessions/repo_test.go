@@ -98,7 +98,7 @@ func TestEmptyPayloadOpens(t *testing.T) {
 
 func TestPutRefusesASessionWithNoID(t *testing.T) {
 	r := NewRepo(nil)
-	err := r.Put(t.Context(), "u1", &mtgv1.Session{}, questions.Snapshot{})
+	err := r.Put(t.Context(), "u1", &mtgv1.Session{}, questions.Snapshot{}, 0)
 	if err == nil || !strings.Contains(err.Error(), "needs an id") {
 		t.Errorf("err = %v, want a missing id", err)
 	}

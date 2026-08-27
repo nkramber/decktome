@@ -38,6 +38,14 @@ type Context struct {
 	// Frozen marks a session whose build run has started (D-68). A frozen
 	// session asks nothing.
 	Frozen bool `json:"frozen"`
+	// OfferChanged says the commanders on the table differ from the ones
+	// the pick row named last. Only a row with RepeatOnChange reads it
+	// (D-163).
+	OfferChanged bool `json:"offer_changed"`
+	// BadFormatChanged says the unsupported format the user named differs
+	// from the one the decline row named last. It is the same rule for
+	// the format rows that OfferChanged is for the pick row (D-210).
+	BadFormatChanged bool `json:"bad_format_changed"`
 
 	// OutOfScope marks a request for something other than a Magic deck.
 	// Nothing else is worth asking until it is settled (D-99).
@@ -54,11 +62,16 @@ type Context struct {
 	CommanderNotOwned bool `json:"commander_not_owned"`
 	WeakCommanderPool bool `json:"weak_commander_pool"`
 	PowerCompetitive  bool `json:"power_competitive"`
-	BuyList           bool `json:"buy_list"`
-	BudgetAmbiguous   bool `json:"budget_ambiguous"`
-	HouseFormat       bool `json:"house_format"`
-	TwoPlans          bool `json:"two_plans"`
-	AfterBuild        bool `json:"after_build"`
+	// PowerInferred says the agent filled the power step itself, because
+	// the user asked for a strong deck and named no step. A step the user
+	// named is not inferred, and a question about it repeats the answer
+	// the user already gave (D-209).
+	PowerInferred   bool `json:"power_inferred"`
+	BuyList         bool `json:"buy_list"`
+	BudgetAmbiguous bool `json:"budget_ambiguous"`
+	HouseFormat     bool `json:"house_format"`
+	TwoPlans        bool `json:"two_plans"`
+	AfterBuild      bool `json:"after_build"`
 	// TwoDecks marks a request for more than one deck. The app builds one
 	// at a time, and it says so before it asks anything else (D-112).
 	TwoDecks bool `json:"two_decks"`
@@ -114,7 +127,7 @@ func (c *Catalog) Plan(ctx Context) []Row {
 		key := r.StateKey()
 		// One question per proto slot per turn. Two rows that inform one
 		// slot read as a contradiction in the same message.
-		if ctx.Filled[key] || (ctx.Asked[r.ID] && !r.Repeat) || usedKey[key] || usedSlot[r.Slot] {
+		if ctx.Filled[key] || (ctx.Asked[r.ID] && !r.asksAgain(ctx)) || usedKey[key] || usedSlot[r.Slot] {
 			continue
 		}
 		// Another row already asked this key, and no answer came back.
@@ -128,6 +141,44 @@ func (c *Catalog) Plan(ctx Context) []Row {
 		usedKey[key], usedSlot[r.Slot] = true, true
 	}
 	return out
+}
+
+// asksAgain reports whether a row the session already asked may ask a
+// second time.
+//
+// A plain repeat row always may. A row that narrows the repeat asks again
+// only when its content changed. The pick row names three commanders, so
+// a repeat with the same three names is the same question in the same
+// words. Conversations 1, 77, and 90 of gate run 18 each got one, and the
+// eval refused every one of them as a duplicate. The user answered some
+// other slot, and the agent read that as a reason to ask again.
+//
+// This is the D-158 rule for another row: the question is out, it is
+// recorded as asked with no answer, and the gate reports it. Silence
+// beats the same sentence twice (D-163).
+func (r Row) asksAgain(ctx Context) bool {
+	switch {
+	case !r.Repeat:
+		return false
+	case r.RepeatOnChange:
+		return ctx.contentChanged(r.Slot)
+	}
+	return true
+}
+
+// contentChanged reports whether the content of a repeat-on-change row
+// differs from the content that row sent last. The pick row names three
+// commanders, and the two decline rows name one format. A slot with no
+// signal never repeats, which is the safe answer: silence beats the same
+// sentence twice (D-163, D-210).
+func (c Context) contentChanged(slot string) bool {
+	switch slot {
+	case "commander":
+		return c.OfferChanged
+	case "format":
+		return c.BadFormatChanged
+	}
+	return false
 }
 
 // matches reports whether every trigger of a row holds.
@@ -171,6 +222,7 @@ func (w When) matches(ctx Context) bool {
 	}{
 		{w.OutOfScope, ctx.OutOfScope},
 		{w.PowerCompetitive, ctx.PowerCompetitive},
+		{w.PowerInferred, ctx.PowerInferred},
 		{w.NamedCard, ctx.NamedCard},
 		{w.LockedCard, ctx.LockedCard},
 		{w.Suggested, ctx.Suggested},

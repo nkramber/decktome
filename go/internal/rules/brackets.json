@@ -1,5 +1,5 @@
 {
-  "_comment": "Commander bracket rules. Source: the Commander Format Panel bracket system, Wizards revision of 2025-10-21, checked again against the update of 2026-02-09. Only the machine-checkable parts live here (F-11). The prose parts (mass land denial, extra-turn chains, combo timing) are not encoded yet: the engine emits an info finding that names them. Commanders count toward the Game Changer limit: unverified against Wizards text (2026-08-24). expected_turns is the Wizards guide for the game length. -1 means no limit.",
+  "_comment": "Commander bracket rules. Source: the Commander Format Panel bracket system, Wizards revision of 2025-10-21, checked again against the update of 2026-02-09. Only the machine-checkable parts live here (F-11). The prose parts (mass land denial, extra-turn chains, combo timing) are not encoded yet: the engine emits an info finding that names them. A Game Changer commander counts as one of the three at Bracket 3, and can not play in Brackets 1 and 2. Verified 2026-08-26 against https://magic.wizards.com/en/news/announcements/introducing-commander-brackets-beta (the engine counts the command zone). expected_turns is the Wizards guide for the game length. -1 means no limit.",
   "verified_at": "2026-08-24",
   "brackets": {
     "1": {"name": "Exhibition", "expected_turns": "9+", "max_game_changers": 0},

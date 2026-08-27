@@ -137,7 +137,7 @@ func (h *CandidateHints) ThemeColors(theme string) string {
 	if format == mtgv1.FormatId_FORMAT_ID_UNSPECIFIED {
 		format = mtgv1.FormatId_FORMAT_ID_COMMANDER
 	}
-	cols, err := h.Builder.ThemeColors(h.Index, format, theme, 100, 0.25)
+	cols, err := h.Builder.ThemeColors(h.Index, format, theme, 100, 0.15)
 	if err != nil {
 		h.warn("theme colors", err)
 		return ""
@@ -331,5 +331,8 @@ func (h *CandidateHints) ThinTheme(theme string) (bool, int) {
 	}
 	h.thinDone[theme] = true
 	h.thin[theme], h.thinCount[theme] = list.Stats.ThinTheme, list.Stats.OnThemeOwned
+	// The {n} clause of the thin-theme question reads this count, so the
+	// source keeps it with the answer (M-6).
+	h.OnThemeOwned = h.thinCount[theme]
 	return h.thin[theme], h.thinCount[theme]
 }

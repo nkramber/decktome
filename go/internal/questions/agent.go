@@ -85,9 +85,46 @@ func (a *Agent) Turn(ctx context.Context, st *State, message string, acc *llm.Ac
 		return Result{Slots: st.Slots, Ready: true, Coverage: st.Metrics()}, nil
 	}
 	st.Turn++
+	// The keys a deck slot fills before this turn. An out-of-scope
+	// question closes when the user fills one afterwards (H-6).
+	deckKeysBefore := deckKeysFilled(st)
 	if err := a.classify(ctx, st, message, acc); err != nil {
 		return Result{}, err
 	}
+	// The scope question closes when the user answers it with a deck.
+	// The row offers "Yes, a Magic deck", and a user who writes "a Modern
+	// burn deck" instead has said the same thing. Nothing else closed
+	// that key, so the session never reported ready (H-6).
+	if st.Slots.GetSlotStates()["scope"] == mtgv1.SlotState_SLOT_STATE_ASKED &&
+		!st.Ctx.OutOfScope && deckKeysFilled(st) > deckKeysBefore {
+		a.log.Info("the user asked for a Magic deck, so the scope question closed",
+			"session", st.SessionID)
+		st.Skip("scope")
+	}
+	// The hint source reads the slots as they stand now. The caller built
+	// it before the turn, so the colors the classifier just filled would
+	// otherwise be invisible to it (D-124). The facts it answers move with
+	// the slots, so they are read again here and not only before the turn:
+	// a one-message answer filled the format and the theme, and the
+	// thin-theme count was never taken (M-6).
+	if pa, ok := a.hints.(PairAware); ok && st.Ctx.WantPair {
+		pa.UseWantPair(true, st.Ctx.WantBackground)
+	}
+	if sa, ok := a.hints.(SlotAware); ok {
+		sa.UseSlots(st.Slots.GetFormat().GetId(), st.Slots.GetColors(), st.Slots.GetPoolRule())
+	}
+	if fs, ok := a.hints.(FactSource); ok {
+		RefreshFacts(st, fs)
+	}
+	// The pick row asks again only when the names on the table changed.
+	// The classify call is what changes them: a refusal empties the
+	// table, and the color check drops a name the colors exclude (D-163).
+	st.Ctx.OfferChanged = st.OfferChanged()
+	// The decline rows ask again only when the user names another format
+	// this app does not build. Probes 18 and 26 of gate run
+	// 20260826-220840-000 named the same one twice, and got the same
+	// sentence twice (D-210).
+	st.Ctx.BadFormatChanged = st.BadFormatChanged()
 	rows := a.cat.Plan(st.Ctx)
 	// A user can answer a question in the same message that raises it.
 	// Conversation 21 writes "Any card, no ban list. Call it Vintage",
@@ -103,15 +140,6 @@ func (a *Agent) Turn(ctx context.Context, st *State, message string, acc *llm.Ac
 		// The classify call may have closed a key, so the M-4 report
 		// changes even on a turn that asks nothing.
 		return Result{Slots: st.Slots, Ready: st.Ready(a.cat), Coverage: st.Metrics()}, nil
-	}
-	// The hint source reads the slots as they stand now. The caller built
-	// it before the turn, so the colors the classifier just filled would
-	// otherwise be invisible to it (D-124).
-	if pa, ok := a.hints.(PairAware); ok && st.Ctx.WantPair {
-		pa.UseWantPair(true, st.Ctx.WantBackground)
-	}
-	if sa, ok := a.hints.(SlotAware); ok {
-		sa.UseSlots(st.Slots.GetFormat().GetId(), st.Slots.GetColors(), st.Slots.GetPoolRule())
 	}
 	// Resolve every placeholder before a model sees the row. A brace that
 	// reaches the model comes back as a question aimed at the user.
@@ -134,8 +162,10 @@ func (a *Agent) Turn(ctx context.Context, st *State, message string, acc *llm.Ac
 			// The agent has taken the choice, so the slot is settled too.
 			// Probe 47 declines every question, and the session then
 			// called itself complete with the commander never asked
-			// (D-127).
-			if r.Slot != r.StateKey() {
+			// (D-127). A slot the user filled stays filled: the not-owned
+			// row carries its own key, and a skip on that key must not
+			// overwrite the commander the user named (M-5).
+			if r.Slot != r.StateKey() && !st.Ctx.Filled[r.Slot] {
 				st.Skip(r.Slot)
 			}
 			continue
@@ -155,8 +185,19 @@ func (a *Agent) Turn(ctx context.Context, st *State, message string, acc *llm.Ac
 	// catalog fit is under the threshold and the model wrote one.
 	chosen := make([]choice, 0, len(rows))
 	for _, row := range rows {
-		c := choice{Row: row, Text: resolved[row.ID], Options: options[row.ID], Fit: scores[row.ID].Fit, Reason: scores[row.ID].Reason}
-		if custom := strings.TrimSpace(scores[row.ID].CustomText); custom != "" && c.Fit < a.threshold {
+		sc, ok := scores[row.ID]
+		if !ok {
+			// The model omitted the row. Its zero value would enter the
+			// M-4 record as a fit of 0, which reads as the worst catalog
+			// fit ever measured. The catalog is the default source (D-25),
+			// so the row goes out as written with the threshold as its fit.
+			a.log.Warn("the score call omitted a row, so the catalog row goes out as written",
+				"session", st.SessionID, "row", row.ID)
+			sc = scored{RowID: row.ID, Fit: a.threshold, Reason: "no score returned"}
+		}
+		sc.Fit = clampFit(sc.Fit)
+		c := choice{Row: row, Text: resolved[row.ID], Options: options[row.ID], Fit: sc.Fit, Reason: sc.Reason}
+		if custom := strings.TrimSpace(sc.CustomText); custom != "" && c.Fit < a.threshold {
 			switch {
 			case row.Fixed:
 				// A row that states what the app does or does not do goes
@@ -238,6 +279,14 @@ func (a *Agent) Turn(ctx context.Context, st *State, message string, acc *llm.Ac
 		// Before D-121 an invented question recorded no offer, so the
 		// next turn could not read an ordinal answer.
 		st.SetOffer(offered[c.Row.ID])
+		// A row that repeats only on a change records what it just sent,
+		// so the next turn can tell a new list from the same list.
+		if c.Row.RepeatOnChange {
+			st.RecordAskedOffer(offered[c.Row.ID])
+			if declinesFormat(c.Row.ID) {
+				st.RecordAskedBadFormat()
+			}
+		}
 		st.MarkAsked(c.Row.ID, c.Row.StateKey(), c.Row.Slot)
 		rec := Ask{
 			QuestionID: q.Id, RowID: c.Row.ID, Slot: c.Row.Slot, Key: c.Row.StateKey(),
@@ -505,6 +554,13 @@ func (a *Agent) applyWords(st *State, message string) {
 	// not asked for two decks, and probe 31 does exactly that (D-112).
 	if OneDeckRequest(message) {
 		st.Ctx.TwoDecks = true
+	} else if st.Slots.GetSlotStates()["deck_count"] == mtgv1.SlotState_SLOT_STATE_ASKED {
+		// The one-deck question is out, and the user wrote about one
+		// deck. That is the answer. Nothing else closed the key, so the
+		// session never reported ready (H-6).
+		a.log.Info("the user named one deck, so the one-deck question closed",
+			"session", st.SessionID)
+		st.Skip("deck_count")
 	}
 	// A precon names the card pool (D-113).
 	if PreconRequest(words) {
@@ -520,6 +576,57 @@ func (a *Agent) applyWords(st *State, message string) {
 		st.Skip("budget")
 		a.log.Info("the user proxies their cards, so the budget slot is closed",
 			"session", st.SessionID)
+	}
+	// A user who named no cap has answered the budget row. It reads the
+	// message alone, so a cap the user names later still closes the slot
+	// on its value (D-168).
+	if NoSpendingLimit(message) && !st.Ctx.Filled["budget"] {
+		st.Skip("budget")
+		a.log.Info("the user set no spending limit, so the budget slot is closed",
+			"session", st.SessionID)
+	}
+	// A buy list exists when the user owns nothing to build from, or when
+	// the pool rule lets the deck hold a card they do not own. The corpus
+	// fires the budget row on a buy list or an any-card pool, and only a
+	// model fact carried that. 61 of the 63 sessions of gate run 18 that
+	// had no collection were never asked about the budget, and the eval
+	// named the budget in 20 of its unasked slots (D-168).
+	if !st.Ctx.HasCollection || buysCards(st.Slots.GetPoolRule()) {
+		st.Ctx.BuyList = true
+	}
+	// "Colorless" is an answer to the color question, and no model call
+	// can report it: the classify schema holds the five colors alone
+	// (D-165).
+	if ColorlessRequest(message) && !st.Ctx.Filled["colors"] {
+		st.Skip("colors")
+		a.log.Info("the user asked for a colorless deck, so the color slot is closed",
+			"session", st.SessionID)
+	}
+	// cEDH names the power level. It is bracket 5 by definition, and the
+	// bracket question asked probe 75 for a value its first message gave
+	// (D-164).
+	if CEDHRequest(words) && st.Slots.GetPower() == nil {
+		st.Slots.Power = &mtgv1.PowerLevel{Level: &mtgv1.PowerLevel_Bracket{Bracket: cedhBracket}}
+		st.Close("power")
+		a.log.Info("cEDH names bracket 5, so the power slot is closed",
+			"session", st.SessionID)
+	}
+	// A card the user locked in outright answers the locked row before it
+	// goes out. Conversation 13 wrote "keep Sanguine Bond in it" and got
+	// the question anyway (D-166).
+	if !st.Ctx.Filled["locked"] {
+		for _, name := range st.LockedCards() {
+			// LockedCards holds the cards that sit in the 99, so a card
+			// named as the deck's plan here is not the commander and it
+			// stays (D-214).
+			if !LocksCard(message, name) && !BuildsAround(message, name) {
+				continue
+			}
+			a.log.Info("the user locked a card in, so the locked slot is closed",
+				"session", st.SessionID, "card", name)
+			st.Close("locked")
+			break
+		}
 	}
 	// A named card the user put in the 99 is not a commander, so the role
 	// question is already answered (D-70).
@@ -555,7 +662,12 @@ func (a *Agent) applyWords(st *State, message string) {
 	// value, and the generator takes the best commander of the pool. The
 	// scope guard keeps "up to you" from closing the commander choice
 	// when the user answered some other question with it.
-	if !st.Ctx.CommanderSet && DelegatesChoice(message) {
+	//
+	// A superlative delegates too. "Buy the best lifegain commander"
+	// names no card and asks the agent to select one, and conversation 10
+	// answered it with three names to choose from. That form carries its
+	// own guard: the message must name a commander (D-167).
+	if !st.Ctx.CommanderSet && (DelegatesChoice(message) || DelegatesCommander(message)) {
 		_, pickOut := st.Ctx.Outstanding["commander_pick"]
 		_, baseOut := st.Ctx.Outstanding["commander"]
 		if pickOut || baseOut || NamesCommander(message) {
@@ -593,10 +705,15 @@ func (a *Agent) applyWords(st *State, message string) {
 	// it. The slot ends with a value whatever the user answers, which
 	// D-90 requires. Commander keeps its bracket question, because
 	// bracket 4 and bracket 5 are too far apart to infer (D-107).
+	//
+	// The mark is what the confirm row fires on. A step the user named
+	// reaches the slot through the classify call, one step above this
+	// one, so no inference runs and the row stays silent (D-209).
 	if st.Ctx.PowerCompetitive && sixtyCard(st.Ctx.Format) && st.Slots.GetPower() == nil {
 		st.Slots.Power = &mtgv1.PowerLevel{
 			Level: &mtgv1.PowerLevel_SixtyStep{SixtyStep: mtgv1.SixtyStep_SIXTY_STEP_TOURNAMENT},
 		}
+		st.Ctx.PowerInferred = true
 		st.Close("power")
 		a.log.Info("the agent inferred the tournament step from a competitive request",
 			"session", st.SessionID)
@@ -630,7 +747,17 @@ func (a *Agent) apply(st *State, out classifyOut, open []string, message string)
 		// just replaced. The format went back to Commander two turns after
 		// the user asked for Modern, and the agent then asked for a
 		// commander (D-125).
+		//
+		// A message that names a format this app does not build gives no
+		// format at all. "I play Duel Commander" holds the word
+		// "commander", and the classifier reported Commander for it. The
+		// unsupported-format row then never fired, and the app built the
+		// wrong deck in silence (M-9, D-112).
+		_, _, unsupportedNow := UnsupportedFormat(message)
 		switch {
+		case unsupportedNow:
+			a.log.Warn("the classifier reported a format on a message that names one this app does not build",
+				"session", st.SessionID, "reported", id.String())
 		case st.Ctx.Format == mtgv1.FormatId_FORMAT_ID_UNSPECIFIED, namesFormat(message, id):
 			// A changed format retires every question that is still out.
 			// The bracket question means nothing in Modern, and D-126
@@ -654,13 +781,16 @@ func (a *Agent) apply(st *State, out classifyOut, open []string, message string)
 		st.Close("theme")
 	}
 	if len(out.Colors) > 0 {
-		st.Slots.Colors = nil
+		// The old value stays until at least one new color is valid. A list
+		// of unknown words wiped the colors the user gave before.
+		var colors []mtgv1.Color
 		for _, c := range out.Colors {
 			if id, ok := colorIDs[strings.ToUpper(c)]; ok {
-				st.Slots.Colors = append(st.Slots.Colors, id)
+				colors = append(colors, id)
 			}
 		}
-		if len(st.Slots.Colors) > 0 {
+		if len(colors) > 0 {
+			st.Slots.Colors = colors
 			st.Close("colors")
 			// The names on the table were chosen before these colors
 			// arrived, and nothing checked them again. Probe 73 offered
@@ -688,6 +818,24 @@ func (a *Agent) apply(st *State, out classifyOut, open []string, message string)
 	for _, name := range out.LockedNames {
 		st.AddLocked(name)
 	}
+	// A named card that can not lead a deck has a settled role: it can
+	// only sit in the 99. The role question then asks what the card
+	// itself answers. Conversation 74 of gate run 19 named Sol Ring and
+	// got "Should Sol Ring be your commander or one of the 99 cards?".
+	// D-129 read the commander list alone, and this card was never on it
+	// (D-220, extends D-129 and D-70).
+	if ck, ok := a.hints.(CommanderChecker); ok {
+		for _, name := range out.NamedCards {
+			if name = strings.TrimSpace(name); name == "" {
+				continue
+			}
+			if canLead, known := ck.CanLead(name); known && !canLead {
+				st.AddLocked(name)
+				a.log.Info("a named card can not lead a deck, so its role is settled",
+					"session", st.SessionID, "card", name)
+			}
+		}
+	}
 	for _, name := range out.CommanderNames {
 		// A card that can not lead a deck is not a commander. Probe 41
 		// named Lightning Bolt, and every run accepted it in silence
@@ -696,6 +844,9 @@ func (a *Agent) apply(st *State, out classifyOut, open []string, message string)
 			if canLead, known := ck.CanLead(name); known && !canLead {
 				st.IllegalCommander = strings.TrimSpace(name)
 				st.Ctx.CommanderIllegal = true
+				// A legal commander closed the illegal row (H-6). A new
+				// illegal name raises it again.
+				st.Reopen("commander_illegal")
 				// The user still wants the card in the deck, and its role
 				// is settled: it can only sit in the 99. AddLocked closes
 				// the role question with it (D-70).
@@ -712,7 +863,18 @@ func (a *Agent) apply(st *State, out classifyOut, open []string, message string)
 		st.Ctx.OwnedMode = rule != mtgv1.PoolRule_POOL_RULE_ANY_CARD
 		st.Close("pool_rule")
 	}
-	if p := power(out.Power); p != nil {
+	p := power(out.Power)
+	// An occasion is not a power level. Conversation 33 of gate run 19
+	// opened with "A Modern deck for an event", and the classifier
+	// answered the tournament step. The step filled the slot, so no power
+	// question went out, and the user said "FNM level" two turns later.
+	// The open power row asks instead (D-219, extends D-215).
+	if p != nil && p.GetSixtyStep() != mtgv1.SixtyStep_SIXTY_STEP_UNSPECIFIED && OccasionOnly(message) {
+		a.log.Info("an occasion names no power step, so the classifier step is dropped",
+			"session", st.SessionID)
+		p = nil
+	}
+	if p != nil {
 		st.Slots.Power = p
 		st.Close("power")
 		// The corpus triggers the meta row and the competitive theme row
@@ -783,6 +945,17 @@ func (a *Agent) apply(st *State, out classifyOut, open []string, message string)
 		}
 		a.log.Info("the user declined a slot", "key", k)
 		st.Skip(k)
+		// A declined pick is a delegation (D-147): the user handed the
+		// commander choice to the agent, and the generator picks. The
+		// pick row carries its own key, so the skip above leaves the
+		// commander slot unspecified, and the D-147 rule can not close it
+		// either: its guard reads the outstanding pick question that this
+		// skip just removed. Conversation 39 of gate run
+		// 20260826-212512-000 then reported ready with the commander
+		// never asked (D-208).
+		if k == "commander_pick" && !st.Ctx.Filled["commander"] {
+			st.Skip("commander")
+		}
 		// The format is the one slot the planner routes on. Every power
 		// row, and every Commander row, triggers on it. A declined format
 		// left it empty, so no power row could ever fire and the session
@@ -804,7 +977,13 @@ func (a *Agent) apply(st *State, out classifyOut, open []string, message string)
 	st.Ctx.HouseFormat = st.Ctx.HouseFormat || f.HouseFormat
 	st.Ctx.TwoPlans = st.Ctx.TwoPlans || f.TwoPlans
 	st.Ctx.BudgetAmbiguous = st.Ctx.BudgetAmbiguous || f.BudgetAmbiguous
-	st.Ctx.PowerCompetitive = st.Ctx.PowerCompetitive || f.PowerCompetitive
+	// The classifier reads an occasion as a power level. Conversation 33
+	// of gate run 20260826-220840-000 opened with "A Modern deck for an
+	// event", the model set power_competitive, and the agent filled the
+	// tournament step from it. The user answered "FNM level" two turns
+	// later. The user's own words now carry the fact, as they carry the
+	// format (D-215, extends D-199).
+	st.Ctx.PowerCompetitive = st.Ctx.PowerCompetitive || CompetitiveRequest(message)
 	// The fact is not sticky. A user who asks for a Magic deck after the
 	// agent declines is back in scope.
 	st.Ctx.OutOfScope = f.OutOfScope
@@ -833,6 +1012,10 @@ func power(s string) *mtgv1.PowerLevel {
 	if step, ok := sixtySteps[s]; ok {
 		return &mtgv1.PowerLevel{Level: &mtgv1.PowerLevel_SixtyStep{SixtyStep: step}}
 	}
+	// The classifier may answer with the word instead of the number.
+	if s == "cedh" {
+		return &mtgv1.PowerLevel{Level: &mtgv1.PowerLevel_Bracket{Bracket: cedhBracket}}
+	}
 	if n, err := strconv.Atoi(strings.TrimPrefix(s, "bracket ")); err == nil && n >= 1 && n <= 5 {
 		return &mtgv1.PowerLevel{Level: &mtgv1.PowerLevel_Bracket{Bracket: int32(n)}}
 	}
@@ -858,6 +1041,33 @@ var typedSlots = map[string]bool{
 	// then called itself complete, and the fourth message never went out.
 	// A deck would have carried a commander nobody chose (D-120).
 	"commander_pick": true,
+}
+
+// deckKeys are the slots a deck request fills. A user who fills one has
+// asked for a Magic deck, whatever else they asked for before (H-6).
+var deckKeys = []string{"format", "theme", "colors", "commander"}
+
+// deckKeysFilled counts the deck keys the session holds.
+func deckKeysFilled(st *State) int {
+	n := 0
+	for _, k := range deckKeys {
+		if st.Ctx.Filled[k] {
+			n++
+		}
+	}
+	return n
+}
+
+// clampFit keeps a fit score inside 0 to 1. The schema asks for that
+// range, and the M-4 record must not carry a value outside it.
+func clampFit(f float64) float64 {
+	switch {
+	case f < 0:
+		return 0
+	case f > 1:
+		return 1
+	}
+	return f
 }
 
 // openKeys lists every key whose question is out. The classifier reads

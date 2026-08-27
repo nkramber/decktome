@@ -70,10 +70,41 @@ type ThemeMatch struct {
 	Keywords []string
 	Subtypes []string
 	Text     []string
-	// Unmatched lists words with no signal at all.
+	// Unmatched lists words that fired on no card of the pool. Build
+	// fills it after the scan: a needle is a guess until a card holds it.
 	Unmatched []string
 
 	tagged map[string]map[string]bool // slug -> oracle ids
+	// wordOf maps a signal, as score emits it, to the theme word that
+	// produced it. Build reads it to fill Unmatched.
+	wordOf map[string]string
+}
+
+// firedSignals is the set of signals that fired on at least one card.
+type firedSignals map[string]bool
+
+func (f firedSignals) mark(signals []string) {
+	for _, s := range signals {
+		f[s] = true
+	}
+}
+
+// unmatchedWords returns the theme words, in input order, that no fired
+// signal traces back to. A word with no needle at all is unmatched too.
+func (m ThemeMatch) unmatchedWords(fired firedSignals) []string {
+	hit := map[string]bool{}
+	for s := range fired {
+		if w, ok := m.wordOf[s]; ok {
+			hit[w] = true
+		}
+	}
+	var out []string
+	for _, w := range m.Words {
+		if !hit[w] {
+			out = append(out, w)
+		}
+	}
+	return out
 }
 
 // match turns the user's words into signals. Each word maps through the
@@ -81,7 +112,16 @@ type ThemeMatch struct {
 func (t *themeTable) match(theme string, tags *cards.TagIndex) ThemeMatch {
 	var m ThemeMatch
 	m.tagged = map[string]map[string]bool{}
+	m.wordOf = map[string]string{}
 	seenSlug := map[string]bool{}
+	// The current word, so each signal remembers where it came from. The
+	// first word that produced a signal keeps it.
+	word := ""
+	trace := func(signal string) {
+		if _, ok := m.wordOf[signal]; !ok {
+			m.wordOf[signal] = word
+		}
+	}
 	addSlug := func(slug string, payoff bool) bool {
 		if seenSlug[slug] || !tags.Has(slug) {
 			return false
@@ -94,36 +134,38 @@ func (t *themeTable) match(theme string, tags *cards.TagIndex) ThemeMatch {
 		m.tagged[slug] = set
 		if payoff {
 			m.PayoffSlugs = append(m.PayoffSlugs, slug)
+			trace("payoff:" + slug)
 		} else {
 			m.Slugs = append(m.Slugs, slug)
+			trace("tag:" + slug)
 		}
 		return true
 	}
+	addNeedle := func(list *[]string, kind, n string) {
+		*list = appendUnique(*list, n)
+		trace(kind + ":" + n)
+	}
 	for _, w := range words(theme) {
 		m.Words = append(m.Words, w)
-		hit := false
+		word = w
 		if row, ok := t.Themes[w]; ok {
 			for _, s := range row.PayoffSlugs {
-				hit = addSlug(s, true) || hit
+				addSlug(s, true)
 			}
 			for _, n := range row.PayoffText {
-				m.PayoffText = appendUnique(m.PayoffText, strings.ToLower(n))
-				hit = true
+				addNeedle(&m.PayoffText, "payoff-text", strings.ToLower(n))
 			}
 			for _, s := range row.Slugs {
-				hit = addSlug(s, false) || hit
+				addSlug(s, false)
 			}
 			for _, k := range row.Keywords {
-				m.Keywords = appendUnique(m.Keywords, k)
-				hit = true
+				addNeedle(&m.Keywords, "keyword", k)
 			}
 			if row.Subtype != "" {
-				m.Subtypes = appendUnique(m.Subtypes, row.Subtype)
-				hit = true
+				addNeedle(&m.Subtypes, "subtype", row.Subtype)
 			}
 			for _, n := range row.Text {
-				m.Text = appendUnique(m.Text, strings.ToLower(n))
-				hit = true
+				addNeedle(&m.Text, "text", strings.ToLower(n))
 			}
 		} else {
 			// Generic rule: payoff slugs w-matters and synergy-w, enabler
@@ -132,15 +174,12 @@ func (t *themeTable) match(theme string, tags *cards.TagIndex) ThemeMatch {
 				addSlug(s, true)
 			}
 			addSlug(w, false)
-			m.Keywords = appendUnique(m.Keywords, title(w))
-			m.Subtypes = appendUnique(m.Subtypes, title(singular(w)))
-			m.Text = appendUnique(m.Text, w)
-			hit = true
-		}
-		if !hit {
-			m.Unmatched = append(m.Unmatched, w)
+			addNeedle(&m.Keywords, "keyword", title(w))
+			addNeedle(&m.Subtypes, "subtype", title(singular(w)))
+			addNeedle(&m.Text, "text", w)
 		}
 	}
+	// Build fills Unmatched after it scans the pool.
 	return m
 }
 

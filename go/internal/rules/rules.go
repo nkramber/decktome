@@ -132,6 +132,7 @@ const (
 	CodeUnknownFormat    = "unknown_format"
 	CodeNoCardData       = "no_card_data"
 	CodeDeckSize         = "deck_size"
+	CodeBadCount         = "bad_count"
 	CodeSideboardSize    = "sideboard_size"
 	CodeCopyLimit        = "copy_limit"
 	CodeUnknownCard      = "unknown_card"
@@ -179,6 +180,7 @@ func (cfg *Config) Validate(in Input) *mtgv1.ValidationResult {
 		add(res, CodeHouseRules, mtgv1.Severity_SEVERITY_INFO,
 			"house format: size and copy checks apply, legality checks are off (D-3)", "")
 	}
+	checkCounts(res, deck)
 	checkSize(res, deck, fr)
 	checkCopies(res, in, fr)
 	checkLegality(res, in, fr)

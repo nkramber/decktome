@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
+	"google.golang.org/protobuf/proto"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1/mtgv1connect"
@@ -26,12 +27,20 @@ import (
 type fakeStore struct {
 	sessions map[string]*mtgv1.Session
 	states   map[string]questions.Snapshot
+	versions map[string]int64
 	ids      int
 	putErr   error
+	// onGetState runs after each GetState, so a test can slip a write in
+	// between the read and the Put, the way an overlapping turn does.
+	onGetState func()
 }
 
 func newFakeStore() *fakeStore {
-	return &fakeStore{sessions: map[string]*mtgv1.Session{}, states: map[string]questions.Snapshot{}}
+	return &fakeStore{
+		sessions: map[string]*mtgv1.Session{},
+		states:   map[string]questions.Snapshot{},
+		versions: map[string]int64{},
+	}
 }
 
 func (f *fakeStore) NewID(string) string {
@@ -39,12 +48,16 @@ func (f *fakeStore) NewID(string) string {
 	return "sess-" + string(rune('0'+f.ids))
 }
 
-func (f *fakeStore) Put(_ context.Context, _ string, s *mtgv1.Session, snap questions.Snapshot) error {
+func (f *fakeStore) Put(_ context.Context, _ string, s *mtgv1.Session, snap questions.Snapshot, expected int64) error {
 	if f.putErr != nil {
 		return f.putErr
 	}
+	if f.versions[s.GetId()] != expected {
+		return sessions.ErrConflict
+	}
 	f.sessions[s.GetId()] = s
 	f.states[s.GetId()] = snap
+	f.versions[s.GetId()] = expected + 1
 	return nil
 }
 
@@ -53,15 +66,21 @@ func (f *fakeStore) Get(_ context.Context, _, id string) (*mtgv1.Session, error)
 	if !ok {
 		return nil, sessions.ErrNotFound
 	}
-	return s, nil
+	// A copy, as Firestore decodes one. A turn that edits the session
+	// in place must not reach the store without a Put.
+	return proto.Clone(s).(*mtgv1.Session), nil
 }
 
-func (f *fakeStore) GetState(ctx context.Context, uid, id string) (*mtgv1.Session, questions.Snapshot, error) {
+func (f *fakeStore) GetState(ctx context.Context, uid, id string) (*mtgv1.Session, questions.Snapshot, int64, error) {
 	s, err := f.Get(ctx, uid, id)
 	if err != nil {
-		return nil, questions.Snapshot{}, err
+		return nil, questions.Snapshot{}, 0, err
 	}
-	return s, f.states[id], nil
+	snap, version := f.states[id], f.versions[id]
+	if f.onGetState != nil {
+		f.onGetState()
+	}
+	return s, snap, version, nil
 }
 
 // classifyJSON writes one classify answer that satisfies the schema.
@@ -119,6 +138,10 @@ func firstTurn(t *testing.T) []llm.Step {
 		classifyJSON(t, map[string]any{
 			"format": "commander", "theme": "lifegain",
 			"colors": []string{"W", "B"}, "pool_rule": "any_card",
+			// The session holds no collection, so every card must be
+			// bought and the budget row fires. A named cap closes it, and
+			// this test measures the commander rows (D-168).
+			"budget_usd": 50,
 		}),
 		scoreJSON(t, "commander", "power_commander"),
 		askJSON(t),
@@ -406,5 +429,106 @@ func TestVarianceNeedsABuild(t *testing.T) {
 	}
 	if !found {
 		t.Errorf("the variance row did not fire although the session holds a deck: %+v", second.questions)
+	}
+}
+
+// TestChatStaleVersionIsAborted is the H-7 guard at the service. A turn
+// reads the session, another write lands, and the turn's Put must fail
+// with CodeAborted and store nothing.
+func TestChatStaleVersionIsAborted(t *testing.T) {
+	store := newFakeStore()
+	steps := append(firstTurn(t),
+		classifyJSON(t, map[string]any{"power": "bracket 3"}),
+		scoreJSON(t),
+		askJSON(t))
+	client, _ := testServer(t, store, steps...)
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	before := len(store.sessions[first.started].GetTurns())
+
+	// The overlapping turn wins the write between this turn's read and
+	// its Put.
+	store.onGetState = func() {
+		store.onGetState = nil
+		store.versions[first.started]++
+	}
+	stream, err := client.Chat(context.Background(), connect.NewRequest(&mtgv1.ChatRequest{
+		SessionId: first.started, Message: "bracket 3",
+	}))
+	if err == nil {
+		for stream.Receive() {
+		}
+		err = stream.Err()
+		_ = stream.Close()
+	}
+	if connect.CodeOf(err) != connect.CodeAborted {
+		t.Fatalf("a stale put gave %v, want Aborted: %v", connect.CodeOf(err), err)
+	}
+	if !strings.Contains(err.Error(), "busy") {
+		t.Errorf("the message does not tell the client to retry: %v", err)
+	}
+	if got := len(store.sessions[first.started].GetTurns()); got != before {
+		t.Errorf("the loser's turn was stored: %d turns, want %d", got, before)
+	}
+}
+
+// TestChatSecondTurnAdvancesTheVersion proves a normal resume passes the
+// version it read, so the store accepts it.
+func TestChatSecondTurnAdvancesTheVersion(t *testing.T) {
+	store := newFakeStore()
+	steps := append(firstTurn(t),
+		classifyJSON(t, map[string]any{"power": "bracket 3"}),
+		scoreJSON(t),
+		askJSON(t))
+	client, _ := testServer(t, store, steps...)
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	if store.versions[first.started] != 1 {
+		t.Fatalf("version after turn 1 = %d, want 1", store.versions[first.started])
+	}
+	chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "bracket 3"})
+	if store.versions[first.started] != 2 {
+		t.Errorf("version after turn 2 = %d, want 2", store.versions[first.started])
+	}
+}
+
+// TestAddUsageKeepsPricedOnAnEmptyTurn is M-8. A frozen turn makes no
+// call and reports no cost. That is not an unpriced call.
+func TestAddUsageKeepsPricedOnAnEmptyTurn(t *testing.T) {
+	cost := 0.01
+	total := addUsage(nil, llm.Report{Calls: 3, CostUSD: &cost})
+	if !total.GetPriced() || total.GetCostUsd() != cost {
+		t.Fatalf("a priced turn gave %+v", total)
+	}
+	total = addUsage(total, llm.Report{})
+	if !total.GetPriced() {
+		t.Error("a turn with no calls flipped priced to false")
+	}
+	if total.GetCalls() != 3 {
+		t.Errorf("calls = %d, want 3", total.GetCalls())
+	}
+	// A turn with calls and no cost is unpriced, as before.
+	total = addUsage(total, llm.Report{Calls: 1})
+	if total.GetPriced() {
+		t.Error("a turn with calls and no cost left priced true")
+	}
+}
+
+// TestAnswerTextWinsOverOptionZero pins the Answer contract. The proto
+// says -1 means free text, so 0 is option 0. A client that sends text and
+// leaves option_index at 0 gets its text, not the first option.
+func TestAnswerTextWinsOverOptionZero(t *testing.T) {
+	session := &mtgv1.Session{Turns: []*mtgv1.Turn{{Questions: []*mtgv1.Question{{
+		Id: "q-power", Text: "Which bracket?", Options: []string{"Bracket 1", "Bracket 2"},
+	}}}}}
+	got := withAnswers("", []*mtgv1.Answer{{QuestionId: "q-power", OptionIndex: 0, Text: "somewhere near 3"}}, session)
+	if got != "Which bracket? somewhere near 3" {
+		t.Errorf("text with option 0 gave %q", got)
+	}
+	got = withAnswers("", []*mtgv1.Answer{{QuestionId: "q-power", OptionIndex: 0}}, session)
+	if got != "Which bracket? Bracket 1" {
+		t.Errorf("option 0 with no text gave %q", got)
+	}
+	got = withAnswers("", []*mtgv1.Answer{{QuestionId: "q-power", OptionIndex: -1}}, session)
+	if got != "" {
+		t.Errorf("free text with no text gave %q, want nothing", got)
 	}
 }

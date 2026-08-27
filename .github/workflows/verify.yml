@@ -86,13 +86,25 @@ jobs:
       - name: no breaking proto change against main
         run: make proto-breaking
 
+  shell:
+    name: "verify:shell"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      # The ubuntu-latest image ships shellcheck. The apt step covers an image that does not.
+      - name: shellcheck
+        run: |
+          command -v shellcheck >/dev/null || { sudo apt-get update && sudo apt-get install -y shellcheck; }
+          shellcheck --version
+          shellcheck scripts/*.sh
+
   verify:
     name: verify
-    needs: [go, web, proto]
+    needs: [go, web, proto, shell]
     if: always()
     runs-on: ubuntu-latest
     steps:
       - name: fan-in
         run: |
-          echo "go=${{ needs.go.result }} web=${{ needs.web.result }} proto=${{ needs.proto.result }}"
-          [ "${{ needs.go.result }}" = success ] && [ "${{ needs.web.result }}" = success ] && [ "${{ needs.proto.result }}" = success ]
+          echo "go=${{ needs.go.result }} web=${{ needs.web.result }} proto=${{ needs.proto.result }} shell=${{ needs.shell.result }}"
+          [ "${{ needs.go.result }}" = success ] && [ "${{ needs.web.result }}" = success ] && [ "${{ needs.proto.result }}" = success ] && [ "${{ needs.shell.result }}" = success ]

@@ -35,6 +35,10 @@ type State struct {
 	// builds that is closest to it (D-112).
 	UnsupportedFormatName string
 	NearestFormat         string
+	// UnsupportedFormatAsked is the format the decline row named last. The
+	// row asks again only when UnsupportedFormatName differs from it
+	// (D-210).
+	UnsupportedFormatAsked string
 	// PreconName is the precon the user wants to upgrade, named by its
 	// commander (D-113).
 	PreconName string
@@ -46,6 +50,10 @@ type State struct {
 	// of 2026-08-25 named three others every turn, which read as if the
 	// agent had ignored the answer.
 	CurrentOffer []string
+	// OfferAsked are the names the pick row sent last. The row asks again
+	// only when CurrentOffer differs from these, so a turn that changes
+	// nothing gets no second copy of the same question (D-163).
+	OfferAsked []string
 	// AskCount counts the questions the session has sent. It makes the
 	// question id unique, which a repeated row would otherwise break.
 	AskCount int
@@ -63,6 +71,47 @@ func (s *State) SetOffer(names []string) {
 	s.CurrentOffer = append([]string(nil), names...)
 }
 
+// RecordAskedOffer keeps the names a repeat-on-change row just sent. An
+// empty list changes nothing, which is the rule SetOffer follows.
+func (s *State) RecordAskedOffer(names []string) {
+	if len(names) == 0 {
+		return
+	}
+	s.OfferAsked = append([]string(nil), names...)
+}
+
+// OfferChanged reports whether the names on the table differ from the
+// ones the pick row sent last. A refusal empties the table, and the
+// color check of D-153 drops the names the colors exclude. Both cases
+// give the user three names they have not seen.
+func (s *State) OfferChanged() bool {
+	if len(s.CurrentOffer) != len(s.OfferAsked) {
+		return true
+	}
+	for i, name := range s.CurrentOffer {
+		if !sameCard(name, s.OfferAsked[i]) {
+			return true
+		}
+	}
+	return false
+}
+
+// RecordAskedBadFormat keeps the format the decline row just named, so
+// the next turn can tell a new format from the same one.
+func (s *State) RecordAskedBadFormat() {
+	s.UnsupportedFormatAsked = s.UnsupportedFormatName
+}
+
+// BadFormatChanged reports whether the format the decline row would name
+// differs from the one it named last. A user who repeats the same
+// unsupported format hears the same sentence, so the row stays silent
+// (D-163, D-210).
+func (s *State) BadFormatChanged() bool {
+	now := strings.TrimSpace(s.UnsupportedFormatName)
+	last := strings.TrimSpace(s.UnsupportedFormatAsked)
+	return !strings.EqualFold(now, last)
+}
+
 // RetireOffer drops the names on the table and never offers them again.
 // The agent calls it when the user asks for other names (D-73).
 func (s *State) RetireOffer() {
@@ -75,9 +124,45 @@ func (s *State) RetireOffer() {
 }
 
 // commanderKeys are the state keys of the rows that ask for the commander.
-// A named commander closes all three: the pick row and the role row ask
-// the same thing in other words.
-var commanderKeys = []string{"commander", "commander_pick", "named_card_role"}
+// A named commander closes all of them: the pick row and the role row ask
+// the same thing in other words, and the illegal row asked for a
+// replacement that has now arrived (H-6).
+var commanderKeys = []string{"commander", "commander_pick", "named_card_role", "commander_illegal"}
+
+// notOwnedRowLive gates the fact behind the not-owned row (OQ-36, D-207).
+const notOwnedRowLive = false
+
+// RefreshFacts reads the planner facts a FactSource answers, from the
+// slots as they stand now. agentsvc calls it before the turn, and the
+// agent calls it again after the classify call (M-6).
+func RefreshFacts(s *State, src FactSource) {
+	if src == nil || !s.Ctx.HasCollection {
+		return
+	}
+	// The named commander is not in the collection (corpus section 11).
+	// The not-owned row stays dormant until the owner answers OQ-36
+	// (D-207). It fired 14 times in gate run 20260826-212512-000 at fit
+	// 0.05, and the agent replaced 13 of them with an invented question.
+	// The key fix of D-197 stays, so the row is live the day the owner
+	// flips this constant.
+	if notOwnedRowLive {
+		s.Ctx.CommanderNotOwned = src.MissingCommander(s.CommanderNames)
+	}
+	// No owned commander fits the theme (D-63, D-94). The count answers
+	// it, so no threshold is invented.
+	if !s.Ctx.CommanderSet {
+		s.Ctx.WeakCommanderPool = src.WeakCommanderPool(s.Slots.GetTheme())
+	}
+	// PR-6 counts the on-theme owned cards (D-63). The count needs the
+	// format and the theme, and it only matters while the pool key is
+	// open.
+	if s.Ctx.Filled["pool_rule"] || s.Slots.GetTheme() == "" ||
+		s.Slots.GetFormat().GetId() == mtgv1.FormatId_FORMAT_ID_UNSPECIFIED {
+		return
+	}
+	thin, _ := src.ThinTheme(s.Slots.GetTheme())
+	s.Ctx.ThinTheme = thin
+}
 
 // SetCommander records a commander the user named. It closes every
 // commander row, and it drops the name from the locked list.
@@ -317,7 +402,18 @@ func (s *State) MarkAsked(rowID, key, slot string) {
 // answer. A changed format makes those questions meaningless, and the
 // one-row-per-key rule must not block the questions that replace them
 // (D-125, D-126).
+//
+// A retired key leaves the asked state. Ready reads that state, and the
+// only other ways out of it are an answer and a decline, so a retired
+// question kept the session from ever reporting ready, and it offered
+// the dead key to the classifier every turn (H-5). Ctx.Asked keeps the
+// row id, so the same row does not ask again. A replacing row may.
 func (s *State) RetireOutstanding() {
+	for key := range s.Ctx.Outstanding {
+		if s.Slots.GetSlotStates()[key] == mtgv1.SlotState_SLOT_STATE_ASKED {
+			delete(s.Slots.SlotStates, key)
+		}
+	}
 	s.Ctx.Outstanding = map[string]string{}
 }
 
@@ -385,6 +481,10 @@ var colorIDs = map[string]mtgv1.Color{
 	"W": mtgv1.Color_COLOR_W, "U": mtgv1.Color_COLOR_U, "B": mtgv1.Color_COLOR_B,
 	"R": mtgv1.Color_COLOR_R, "G": mtgv1.Color_COLOR_G,
 }
+
+// cedhBracket is the bracket cEDH names. Bracket 5 is competitive
+// Commander, and only the ban list limits it (corpus section 2.3).
+const cedhBracket = 5
 
 var sixtySteps = map[string]mtgv1.SixtyStep{
 	"casual":     mtgv1.SixtyStep_SIXTY_STEP_CASUAL,

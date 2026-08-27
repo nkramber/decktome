@@ -63,8 +63,8 @@ func TestCatalogMatchesCorpus(t *testing.T) {
 		"House rules": "house_rules", "House format limits": "house_format_limits",
 		"Jank or fun": "jank", "Meta": "meta",
 		"One deck at a time": "one_deck", "Format (not supported)": "format_unsupported",
-		"Format (no substitute)":       "format_unsupported_open",
-		"Power (60-card, competitive)": "power_sixty_confirm", "Card pool (precon)": "pool_precon", "Commander (can not lead)": "commander_illegal",
+		"Format (no substitute)": "format_unsupported_open",
+		"Card pool (precon)":     "pool_precon", "Commander (can not lead)": "commander_illegal",
 		"Plan choice": "plan_choice", "Variance": "variance", "Locked cards": "locked",
 	}
 	raw, err := os.ReadFile("../../../.claude/skills/mtg-corpus/SKILL.md")
@@ -263,4 +263,104 @@ func contains(list []string, want string) bool {
 		}
 	}
 	return false
+}
+
+// TestPowerConfirmNeedsAnInferredStep holds the D-209 rule. The confirm
+// row asks about a step the agent filled in. A step the user named needs
+// no confirmation, and a question about it repeats the answer.
+//
+// Conversation 80 of gate run 20260826-220840-000 is the evidence. The
+// user answered "TOURNAMENT", and the next turn asked "Should I build the
+// deck for tournament-level competition?" Conversation 71 answered
+// "FNM." and got the same row one turn later. D-216 then removed the row:
+// the eval refused it on every well-founded inference too, because a user
+// who asks for the strongest deck has already given the answer.
+func TestNoRowConfirmsAnInferredStep(t *testing.T) {
+	c := load(t)
+	for _, tc := range []struct {
+		name     string
+		inferred bool
+	}{{"a step the user named", false}, {"a step the agent inferred", true}} {
+		got := ctx(mtgv1.FormatId_FORMAT_ID_MODERN, "power")
+		got.PowerCompetitive, got.PowerInferred = true, tc.inferred
+		if rows := ids(c.Plan(got)); has(rows, "power_sixty_confirm") {
+			t.Fatalf("%s: a confirm row went out: %v", tc.name, rows)
+		}
+	}
+	if _, ok := c.Row("power_sixty_confirm"); ok {
+		t.Fatal("the confirm row is still in the catalog (D-216)")
+	}
+}
+
+func has(list []string, want string) bool {
+	for _, s := range list {
+		if s == want {
+			return true
+		}
+	}
+	return false
+}
+
+// TestMetaRowAsksOneThing holds D-211. The row offers the general
+// sideboard first, so one choice goes out. The old wording asked for a
+// list of decks and for a yes-or-no answer in the same sentence, and the
+// eval refused it in conversations 44 and 76 of gate run
+// 20260826-220840-000.
+func TestMetaRowAsksOneThing(t *testing.T) {
+	c := load(t)
+	r, ok := c.Row("meta")
+	if !ok {
+		t.Fatal("no meta row")
+	}
+	if !strings.HasPrefix(r.Text, "Should I keep the sideboard general") {
+		t.Errorf("the meta row does not offer the general sideboard first: %q", r.Text)
+	}
+	if strings.Count(r.Text, "?") != 1 {
+		t.Errorf("the meta row holds more than one question: %q", r.Text)
+	}
+	if len(r.Options) == 0 || r.Options[0] != "Keep the sideboard general" {
+		t.Errorf("options = %v, want the general sideboard first", r.Options)
+	}
+}
+
+// TestHouseLimitsRowNamesNoList holds D-212. The row asks one yes-or-no
+// question. A list of limits inside it reads as one question for each
+// item, which the eval refused in conversation 61 of gate run
+// 20260826-220840-000 even though the row went out word for word.
+func TestHouseLimitsRowNamesNoList(t *testing.T) {
+	c := load(t)
+	r, ok := c.Row("house_format_limits")
+	if !ok {
+		t.Fatal("no house_format_limits row")
+	}
+	if !r.Fixed {
+		t.Error("the house-limits row lost its fixed flag (D-162)")
+	}
+	if strings.Contains(r.Text, ":") {
+		t.Errorf("the house-limits row names a list of limits: %q", r.Text)
+	}
+	if strings.Count(r.Text, "?") != 1 {
+		t.Errorf("the house-limits row holds more than one question: %q", r.Text)
+	}
+}
+
+// TestStoreFormatRowNamesItsOwnLimit holds D-213. The three formats are
+// the ones this app builds. An FNM can run Pioneer, so a question that
+// offers the list as the event's own formats omits information. The eval
+// refused it in conversation 7 of gate run 20260826-220840-000.
+func TestStoreFormatRowNamesItsOwnLimit(t *testing.T) {
+	c := load(t)
+	r, ok := c.Row("format_store")
+	if !ok {
+		t.Fatal("no format_store row")
+	}
+	if !strings.HasPrefix(r.Text, "I build Standard, Modern, and Commander.") {
+		t.Errorf("the store row does not name the formats it builds: %q", r.Text)
+	}
+	if strings.Contains(r.Text, "run:") {
+		t.Errorf("the store row offers the list as the event's formats: %q", r.Text)
+	}
+	if f := LintCatalog(c); len(f) > 0 {
+		t.Errorf("the linter refused the catalog: %v", f)
+	}
 }

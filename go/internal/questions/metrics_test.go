@@ -14,6 +14,10 @@ import (
 // whether an invented question filled its slot.
 func TestCoverageCountsTheSources(t *testing.T) {
 	first := commanderClassify()
+	// The session holds no collection, so a buy list exists and the
+	// budget row fires. A named cap closes it, and this test counts the
+	// commander rows alone (D-168).
+	first.BudgetUSD = 50
 	// The commander row fits poorly, so the model replaces it. The bracket
 	// row fits, so the catalog wins.
 	score := scoreStep(t,

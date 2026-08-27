@@ -319,3 +319,12 @@ func TestDirStoreRoundTrip(t *testing.T) {
 	}
 	_ = filepath.Join
 }
+
+// TestTagIndexNilSafe: roleSets in candidates calls Resolve on the tag
+// index of an index that has none. Has was nil-safe, Resolve panicked.
+func TestTagIndexNilSafe(t *testing.T) {
+	var x *TagIndex
+	if x.Has("lifegain") || x.Resolve("lifegain") != nil || x.Len() != 0 {
+		t.Error("a nil TagIndex must answer empty")
+	}
+}

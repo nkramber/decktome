@@ -88,9 +88,11 @@ func (s *Server) ImportCollection(ctx context.Context, req *connect.Request[mtgv
 
 	entries, badResolve := collections.Resolve(rows, idx)
 	unresolved := append(append([]*mtgv1.UnresolvedRow{}, badParse...), badResolve...)
+	// ResolvedCount counts rows, not merged entries, so resolved plus
+	// unresolved equals the input row count.
 	report := &mtgv1.ImportReport{
 		Unresolved:         unresolved,
-		ResolvedCount:      int32(len(entries)), //nolint:gosec // bounded by maxUpload
+		ResolvedCount:      int32(len(rows) - len(badResolve)), //nolint:gosec // bounded by maxUpload
 		UnresolvedByReason: collections.ReasonCounts(unresolved),
 	}
 	if len(entries) == 0 {

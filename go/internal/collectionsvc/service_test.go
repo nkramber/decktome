@@ -87,8 +87,10 @@ func newServer(repo Repo, idx *cards.Index) *Server {
 	return New(repo, staticIndex{idx}, func(context.Context) string { return "user1" })
 }
 
+// goodCSV holds five rows: two resolve to one merged entry, three fail.
 const goodCSV = "Name,Set code,Collector number,Quantity,Scryfall ID,Foil,Condition,Language\n" +
 	"Pawpatch Recruit,BLB,187,3," + scryfallID + ",foil,near_mint,en\n" +
+	"Pawpatch Recruit,BLB,187,2," + scryfallID + ",foil,near_mint,en\n" +
 	"Pawpatch Recruit,TBLB,21,1,7cdd8679-93a7-4e58-a6f3-b48897697e89,normal,near_mint,en\n" +
 	"Nope,ZZZ,1,1,,normal,near_mint,en\n" +
 	"Pawpatch Recruit,BLB,187,1," + scryfallID + ",shiny,near_mint,en\n"
@@ -105,10 +107,12 @@ func TestImportCollectionReport(t *testing.T) {
 		t.Fatal(err)
 	}
 	col, rep := resp.Msg.Collection, resp.Msg.Report
-	if col.Id == "" || col.CardCount != 3 || len(col.Entries) != 1 {
+	if col.Id == "" || col.CardCount != 5 || len(col.Entries) != 1 {
 		t.Errorf("collection = %v", col)
 	}
-	if rep.ResolvedCount != 1 || len(rep.Unresolved) != 3 {
+	// ResolvedCount counts rows, so resolved plus unresolved is the
+	// input row count of five.
+	if rep.ResolvedCount != 2 || len(rep.Unresolved) != 3 {
 		t.Errorf("report = %v", rep)
 	}
 	want := map[string]int32{
