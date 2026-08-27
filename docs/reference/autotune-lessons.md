@@ -75,6 +75,8 @@ Kept, and these questions still got worse on its rows:
 - 6. the strongest deck, no collection, turn 2, row `power_sixty_confirm`: "Should I build the deck at tournament level, or are you looking for FNM-level or casual power instead?". The user had already asked for “the strongest deck possible,” which supplies the relevant power-level preference; asking them to choose tournament, FNM, or casual power was unnecessary at this point.
 
 7 questions moved on rows no change declared. Declare every row a change can touch.
+
+CORRECTION, written by hand on 2026-08-26 (D-217). The line above is wrong, and no fixer is to act on it. The patch of this iteration touched two catalog texts, `format_store` and `meta`, and the `when` clauses of the declared rows. It touched none of the rows named below. The ask role rewrites its wording every run, so those rows moved with no edit behind them. The checker read a changed text as proof of an edit, and it charged the fixer for the judge and the ask role. Two runs of identical agent code move 15 such questions. The guard fired at 3. Every one of the five changes was kept on its own rows, and the whole run was rejected on this false signal.
 - `budget`: 1
 - `locked`: 1
 - `pool`: 1

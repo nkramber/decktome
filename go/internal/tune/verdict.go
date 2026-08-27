@@ -154,6 +154,24 @@ const Tolerance = 0.90
 // not the fixer (D-183).
 const DefaultNoise = 3
 
+// DefaultDriftNoise is how many questions may get worse on rows no change
+// declared before the loop calls it damage. It is a different quantity
+// from DefaultNoise, and it has a far larger floor.
+//
+// Measured on 2026-08-26. Run 18 and run 20260826-191225-000 ran the same
+// agent code on the same 104 conversations. On rows no change declared,
+// 15 questions got worse and 8 got better, so the harm minus the help was
+// 7. The ask role rewrites its wording every run, so a question moves
+// with no edit behind it, and 12 of those 15 moved on changed text alone.
+//
+// The old guard compared the raw harm against DefaultNoise, which is 3.
+// It therefore rejected identical code, and it rejected every iteration
+// the loop ever ran (D-217).
+//
+// CAUTION: one same-code pair sets this number. Measure a second pair
+// before you lower it, and keep TestIdenticalCodeIsAccepted green.
+const DefaultDriftNoise = 8
+
 // Decision is the accept or reject of one iteration.
 type Decision struct {
 	Accept  bool     `json:"accept"`
@@ -267,17 +285,24 @@ func Decide(prev, next *Summary, changes []Change, noise int) (Decision, Paired,
 	}
 	p := Pair(prev, next)
 	a := Attribute(p, changes)
-	// Unattributed harm past the margin means a change moved rows it did
-	// not declare. Nobody can be charged, so nobody is kept.
-	unBad := 0
+	// Unattributed movement means a question moved on a row no change
+	// declared. Most of it is the ask role, which rewrites its wording
+	// every run, so the raw harm is not damage on its own (D-217). The
+	// guard reads the harm against the help, because pure churn moves
+	// both and real damage moves one.
+	unBad, unGood := 0, 0
 	for _, u := range a.Unattributed {
-		if u.Kind == "worse" || u.Kind == "new_bad" {
+		switch u.Kind {
+		case "worse", "new_bad":
 			unBad++
+		case "better", "gone_bad":
+			unGood++
 		}
 	}
-	if unBad > noise {
+	if drift := unBad - unGood; drift > DefaultDriftNoise {
 		d.Accept = false
-		d.Reasons = append(d.Reasons, fmt.Sprintf("%d questions got worse on rows no change declared, past the margin of %d", unBad, noise))
+		d.Reasons = append(d.Reasons, fmt.Sprintf("on rows no change declared, %d questions got worse and %d got better, so the drift of %d passed the margin of %d",
+			unBad, unGood, drift, DefaultDriftNoise))
 		return d, p, a
 	}
 	var keepRows []string

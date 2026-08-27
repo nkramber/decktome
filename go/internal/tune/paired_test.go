@@ -1,6 +1,7 @@
 package tune
 
 import (
+	"fmt"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -226,5 +227,62 @@ func TestMergeReplacesTheMeasuredConversations(t *testing.T) {
 	old := sum(v("1. a", 1, "meta", "x", "no"))
 	if _, err := Merge(old, part); err == nil {
 		t.Error("a base with no per-conversation counts was merged")
+	}
+}
+
+// TestIdenticalCodeIsAccepted pins DefaultDriftNoise to the measurement
+// of D-217. Run 18 and run 20260826-191225-000 ran the same agent code on
+// the same 104 conversations. On rows no change declared, 15 questions
+// got worse and 8 got better, because the ask role rewrites its wording
+// every run.
+//
+// The old guard compared the raw 15 against DefaultNoise, which is 3, so
+// it rejected identical code. This test fails if that comes back.
+func TestIdenticalCodeIsAccepted(t *testing.T) {
+	// One change declares the meta row, so every other row is undeclared
+	// and its movement is drift.
+	var prevV, nextV []Verdict
+	prevV = append(prevV, v("1. a", 1, "meta", "old meta", "no"))
+	nextV = append(nextV, v("1. a", 1, "meta", "new meta", "yes"))
+	// Three verdicts flip on identical text. They are the judge alone, and
+	// they hold the whole-set count at the +3 the two runs really moved.
+	for i := 0; i < 3; i++ {
+		name := fmt.Sprintf("%d. flip", i+70)
+		prevV = append(prevV, v(name, 1, "budget", "same budget", "no"))
+		nextV = append(nextV, v(name, 1, "budget", "same budget", "yes"))
+	}
+	// 15 undeclared questions get worse, and 8 get better. The ask role
+	// rewrote each one, so every text differs.
+	for i := 0; i < 15; i++ {
+		name := fmt.Sprintf("%d. worse", i+10)
+		prevV = append(prevV, v(name, 1, "colors", "old colors", "yes"))
+		nextV = append(nextV, v(name, 1, "colors", "new colors", "no"))
+	}
+	for i := 0; i < 8; i++ {
+		name := fmt.Sprintf("%d. better", i+40)
+		prevV = append(prevV, v(name, 1, "pool", "old pool", "no"))
+		nextV = append(nextV, v(name, 1, "pool", "new pool", "yes"))
+	}
+	changes := []Change{{Commit: "aaa", Subject: "meta offers general", Rows: []string{"meta"}}}
+	d, _, a := Decide(sum(prevV...), sum(nextV...), changes, DefaultNoise)
+	unBad, unGood := 0, 0
+	for _, u := range a.Unattributed {
+		switch u.Kind {
+		case "worse", "new_bad":
+			unBad++
+		case "better", "gone_bad":
+			unGood++
+		}
+	}
+	if unBad != 15 || unGood != 8 {
+		t.Fatalf("drift = %d worse and %d better, want 15 and 8", unBad, unGood)
+	}
+	for _, r := range d.Reasons {
+		if strings.Contains(r, "no change declared") {
+			t.Errorf("the drift guard rejected identical code: %s", r)
+		}
+	}
+	if !d.Accept {
+		t.Errorf("decision = %+v, want an accept: the only declared row got better", d)
 	}
 }
