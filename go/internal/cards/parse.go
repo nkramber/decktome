@@ -194,17 +194,35 @@ type Printing struct {
 	// art cards) stay out of the index but are remembered by id, so an
 	// import can report them instead of a silent name fallback.
 	Layout string
+	// Digital marks an online-only printing. The oracle_cards file names
+	// one printing per card, and for some cards that printing is digital.
+	// Diamond Valley reads as Masters Edition, and its paper printing is
+	// Arabian Nights (D-221).
+	Digital bool
+	// ReleasedAt is the printing date, ISO 8601. The index prefers the
+	// newest paper printing, because that is the one a player can buy.
+	ReleasedAt string
+	SetName    string
+	Rarity     string
+	Artist     string
+	ImageUris  *mtgv1.ImageUris
 }
 
 // parsePrinting reads the minimal printing row for collection resolution.
 func parsePrinting(line []byte) (Printing, error) {
 	var r struct {
-		ID              string `json:"id"`
-		OracleID        string `json:"oracle_id"`
-		Name            string `json:"name"`
-		Set             string `json:"set"`
-		CollectorNumber string `json:"collector_number"`
-		Layout          string `json:"layout"`
+		ID              string     `json:"id"`
+		OracleID        string     `json:"oracle_id"`
+		Name            string     `json:"name"`
+		Set             string     `json:"set"`
+		SetName         string     `json:"set_name"`
+		CollectorNumber string     `json:"collector_number"`
+		Layout          string     `json:"layout"`
+		Rarity          string     `json:"rarity"`
+		Artist          string     `json:"artist"`
+		Digital         bool       `json:"digital"`
+		ReleasedAt      string     `json:"released_at"`
+		ImageUris       *rawImages `json:"image_uris"`
 		CardFaces       []struct {
 			OracleID string `json:"oracle_id"`
 		} `json:"card_faces"`
@@ -217,5 +235,7 @@ func parsePrinting(line []byte) (Printing, error) {
 		r.OracleID = r.CardFaces[0].OracleID
 	}
 	return Printing{ScryfallID: r.ID, OracleID: r.OracleID, Name: r.Name,
-		SetCode: r.Set, CollectorNumber: r.CollectorNumber, Layout: r.Layout}, nil
+		SetCode: r.Set, CollectorNumber: r.CollectorNumber, Layout: r.Layout,
+		Digital: r.Digital, ReleasedAt: r.ReleasedAt, SetName: r.SetName,
+		Rarity: r.Rarity, Artist: r.Artist, ImageUris: r.ImageUris.proto()}, nil
 }

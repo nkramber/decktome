@@ -19,8 +19,11 @@ type Index struct {
 	// nonPlayable maps a dropped printing (Scryfall id and set/collector
 	// key) to its layout, so an import can name the reason.
 	nonPlayable map[string]string
-	tags        *TagIndex
-	collisions  Collisions
+	// paperSwaps counts the cards whose digital default printing was
+	// replaced by a paper one (D-221).
+	paperSwaps int
+	tags       *TagIndex
+	collisions Collisions
 	// AsOf is the Scryfall updated_at of the snapshot (roadmap PR-3).
 	AsOf time.Time
 }
@@ -93,6 +96,9 @@ func NewIndex(cardList []*mtgv1.Card, printings []Printing, tags *TagIndex, asOf
 			idx.byName[k] = c
 		}
 	}
+	// paper collects a replacement for every card whose default printing
+	// is digital and whose paper printing the file also holds (D-221).
+	paper := map[string]Printing{}
 	for _, p := range printings {
 		c, ok := idx.byOracleID[p.OracleID]
 		if !ok {
@@ -108,8 +114,44 @@ func NewIndex(cardList []*mtgv1.Card, printings []Printing, tags *TagIndex, asOf
 		if p.SetCode != "" && p.CollectorNumber != "" {
 			idx.bySetNo[setNoKey(p.SetCode, p.CollectorNumber)] = c
 		}
+		// The oracle_cards file names one printing per card, and for some
+		// cards that printing is digital. Diamond Valley read as Masters
+		// Edition, an online set, while its paper printing is Arabian
+		// Nights. A digital default costs the price search (D-17), the
+		// image, and the artist credit (D-6), and the rules engine reports
+		// a paper problem the card does not have (D-221).
+		if !p.Digital && c.DefaultPrinting.GetDigital() {
+			paper[c.OracleId] = newerPaper(paper[c.OracleId], p)
+		}
+	}
+	// The swap runs after the walk, so the newest paper printing wins
+	// whatever order the file holds.
+	for oid, p := range paper {
+		c, ok := idx.byOracleID[oid]
+		if !ok {
+			continue
+		}
+		c.DefaultPrinting = &mtgv1.Printing{
+			ScryfallId:      p.ScryfallID,
+			SetCode:         p.SetCode,
+			SetName:         p.SetName,
+			CollectorNumber: p.CollectorNumber,
+			Rarity:          p.Rarity,
+			Artist:          p.Artist,
+			ImageUris:       p.ImageUris,
+		}
+		idx.paperSwaps++
 	}
 	return idx
+}
+
+// newerPaper keeps the later of two paper printings. A player buys the
+// newest one, so it is the one to show and to price.
+func newerPaper(have, next Printing) Printing {
+	if have.ScryfallID == "" || next.ReleasedAt > have.ReleasedAt {
+		return next
+	}
+	return have
 }
 
 // NonPlayablePrinting reports a printing the index dropped on purpose
@@ -261,3 +303,8 @@ func hasAllKeywords(have, want []string) bool {
 	}
 	return true
 }
+
+// PaperSwaps counts the cards whose default printing was digital and
+// whose paper printing the snapshot also held. The loader logs it, so a
+// snapshot that suddenly swaps thousands of cards is visible (D-221).
+func (x *Index) PaperSwaps() int { return x.paperSwaps }
