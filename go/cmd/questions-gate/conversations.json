@@ -1129,11 +1129,12 @@
       "name": "probe: a theme the library can not lead",
       "collection": true,
       "probe": true,
-      "note": "The weak-pool row has never fired in any gate run. It needs an owned mode and a theme the collection holds no commander for. It is a probe, so the frozen bar of the first 30 stays comparable (D-105, D-226).",
+      "note": "The weak-pool row has never fired in any gate run. It needs an owned mode, a theme the collection holds no commander for, and enough turns to reach the commander stage. Run 21 of 2026-08-27 ended at turn 3 with the power question outstanding, so the row at order 29 never got its turn. The messages now settle format, theme, pool, colors, and power first (D-226).",
       "messages": [
-        "Build me an Eldrazi deck using only the cards in my library.",
-        "Commander.",
-        "Colorless."
+        "Build me an Eldrazi Commander deck using only the cards in my library.",
+        "Colorless.",
+        "Bracket 3.",
+        "You pick the commander."
       ]
     }
   ]

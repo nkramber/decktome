@@ -16,7 +16,17 @@ PR-8 is under way on branch `pr-8`, cut from `main` at 98eac91. The generator wr
 
 Run 1 found one defect and D-225 fixed it. The shortlist leaves basic lands out on purpose, and the generator may name nothing else, so no deck held a basic land. Read `docs/reference/pr8-deck-gate-run2.md`.
 
-What PR-8 still needs: the prompt-cache measurement of the roadmap, the judge lane for F-26, and a decision on OQ-36. D-207 parked the not-owned row until PR-8, and PR-8 now exists.
+Deck gate run 3 passed on 13 prompts, with the golden set corrected. The prompt cache is measured (D-227), the cost model is verified (D-228), and the judge lane answers F-26 (D-229). OQ-36 is closed by D-226.
+
+What PR-8 still needs: fold the judge lane into the deck gate as a standing check, and run the weak-pool probe. Conversation 105 was too short in run 21, and it now holds four messages.
+
+| Measure | Run 20 | Run 21 |
+|---|---|---|
+| Gate verdict | PASS 29 of 30 | PASS 29 of 30 |
+| Bad questions, whole set | 18 of 430 | 27 of 429 |
+| Bad-question ratio, holdout | 9.3% | 10.8% |
+
+CAUTION: run 21 is not a regression. Nothing in the agent changed between the two runs, so the pair is a same-code measurement, and D-230 reads it as one.
 
 ## The question workflow
 

@@ -11,13 +11,19 @@ package generate
 //
 // Version 1 is the first generator.
 //
+// Version 3 followed deck gate run 3. The repair turn wrote a changelog
+// into the summary: "Sol Ring remains included. Skullport Merchant now
+// appears once; Warren Soultrader fills the replaced ramp slot." The
+// reader of a summary does not know a repair happened, so the repair
+// prompt now asks for the summary again from nothing.
+//
 // Version 2 followed the first real call, on 2026-08-27. The summary read
 // "uses its 20 synergy cards ... while maintaining 10 draw cards, 10 ramp
 // cards, eight removal cards, and three wipes. There are no target
 // shortfalls." The model recited the job targets back, because version 1
 // asked it to state a shortfall there. The summary is for the user, and
 // the counts are in the card list.
-const PromptVersion = 2
+const PromptVersion = 3
 
 // generateInstructions is the stable prefix. It names no card, no format,
 // and no session value, so every call of a session shares it.
@@ -59,6 +65,7 @@ Rules:
 - Use only cards from the shortlist, and copy each name exactly as the shortlist writes it.
 - A finding that names a card you invented means the card is not on the shortlist. Replace it with a shortlist card that does the same job. Never write the name again.
 - Return the whole deck, and not the change alone.
+- Write the summary again from nothing. It describes the deck, and never the repair. Name no card you changed, no count, and no slot you filled. A reader of the summary does not know a first turn happened.
 - The summary rules of the first turn still hold. State no rule of the game.`
 
 // deckSchema is the output contract. Strict mode applies, so every object

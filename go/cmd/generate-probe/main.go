@@ -44,6 +44,8 @@ func run() error {
 	cmdrName := flag.String("commander", "Karlov of the Ghost Council", "the commander")
 	limit := flag.Int("limit", 300, "how many shortlist cards the model may name")
 	dry := flag.Bool("dry", false, "build the shortlist and stop before the provider call")
+	repeat := flag.Int("repeat", 1, "how many times to build, on one session id, to measure the prompt cache")
+	format := flag.String("format", "commander", "commander, standard, or modern")
 	flag.Parse()
 
 	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
@@ -63,8 +65,15 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	fid := mtgv1.FormatId_FORMAT_ID_COMMANDER
+	switch *format {
+	case "standard":
+		fid = mtgv1.FormatId_FORMAT_ID_STANDARD
+	case "modern":
+		fid = mtgv1.FormatId_FORMAT_ID_MODERN
+	}
 	list, err := cb.Build(idx, candidates.Request{
-		Format:             mtgv1.FormatId_FORMAT_ID_COMMANDER,
+		Format:             fid,
 		Colors:             cmdr.GetColorIdentity(),
 		Theme:              *theme,
 		CommanderOracleIDs: []string{cmdr.GetOracleId()},
@@ -105,22 +114,81 @@ func run() error {
 	acc := llm.NewAccumulator(prices)
 	req := generate.Request{
 		SessionID:    "probe-1",
-		Format:       mtgv1.FormatId_FORMAT_ID_COMMANDER,
+		Format:       fid,
 		Plan:         fmt.Sprintf("a %s deck led by %s, at bracket 3", *theme, cmdr.GetName()),
 		Pool:         pool,
 		Commanders:   []string{cmdr.GetOracleId()},
 		PoolRule:     mtgv1.PoolRule_POOL_RULE_ANY_CARD,
 		Roles:        generate.Roles(list),
-		Limits:       "Exactly 100 cards, the commander included. So list exactly 99 cards. One copy of each name, basic lands excepted. Every card must fit the commander's color identity.",
-		Targets:      map[string]int{"land": 36, "ramp": 10, "draw": 10, "removal": 8, "wipe": 3, "threat": 12, "synergy": 20},
+		Limits:       generate.LimitsFor(fid),
+		Targets:      generate.TargetsFor(fid, nil),
 		LegalityAsOf: idx.AsOf.Format("2006-01-02"),
 	}
-	res, err := b.Build(context.Background(), req, acc)
-	if err != nil {
-		return err
+	// The cache lever of the roadmap: one key per session, the stable text
+	// first and the session text last. A repeat run reads the same prefix,
+	// so call 1 writes the cache and the rest read it.
+	for i := 1; i <= *repeat; i++ {
+		before := acc.Report()
+		res, err := b.Build(context.Background(), req, acc)
+		if err != nil {
+			return err
+		}
+		after := acc.Report()
+		if *repeat > 1 {
+			reportCall(i, before, after)
+			continue
+		}
+		report(pool, res, acc)
 	}
-	report(pool, res, acc)
+	if *repeat > 1 {
+		reportCache(acc, *repeat)
+	}
 	return nil
+}
+
+// reportCall prints what one call of a repeat run cost, and how much of
+// its input the provider served from the cache.
+func reportCall(n int, before, after llm.Report) {
+	// Tokens is nil until an attempt reports usage, so the first call
+	// compares against an empty report and not a nil pointer.
+	var b, a llm.Usage
+	if before.Tokens != nil {
+		b = *before.Tokens
+	}
+	if after.Tokens != nil {
+		a = *after.Tokens
+	}
+	in := a.InputTokens - b.InputTokens
+	cached := a.CachedInputTokens - b.CachedInputTokens
+	out := a.OutputTokens - b.OutputTokens
+	cost := 0.0
+	if after.CostUSD != nil {
+		cost = *after.CostUSD
+		if before.CostUSD != nil {
+			cost -= *before.CostUSD
+		}
+	}
+	share := 0.0
+	if in > 0 {
+		share = 100 * float64(cached) / float64(in)
+	}
+	fmt.Printf("call %d: input %6d (cached %6d, %5.1f%%)  output %6d  cost $%.5f\n",
+		n, in, cached, share, out, cost)
+}
+
+// reportCache states what the cache saved over the run, against the price
+// table. The roadmap says a cache read costs a tenth of a fresh read, and
+// that is true of the input alone.
+func reportCache(acc *llm.Accumulator, calls int) {
+	rep := acc.Report()
+	t := rep.Tokens
+	cost := 0.0
+	if rep.CostUSD != nil {
+		cost = *rep.CostUSD
+	}
+	fmt.Printf("\ntotals over %d calls: input %d, cached %d, output %d, reasoning %d\n",
+		calls, t.InputTokens, t.CachedInputTokens, t.OutputTokens, t.ReasoningTokens)
+	fmt.Printf("reported cost: $%.5f\n", cost)
 }
 
 func report(pool *generate.Pool, res *generate.Result, acc *llm.Accumulator) {
