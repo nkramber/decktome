@@ -1773,3 +1773,52 @@ func TestAnEventIsNotACompetitiveRequest(t *testing.T) {
 		}
 	}
 }
+
+// TestOccasionIsNotAPowerStep is D-219. Conversation 33 of gate run 19
+// opened with "A Modern deck for an event". The classifier answered the
+// tournament step, the slot filled, and the user said "FNM level" two
+// turns later.
+func TestOccasionIsNotAPowerStep(t *testing.T) {
+	for _, s := range []string{
+		"a modern deck for an event", "a deck for a team event",
+		"something for my local game store",
+	} {
+		if !OccasionOnly(s) {
+			t.Errorf("%q: an occasion was read as a power step", s)
+		}
+	}
+	// A message that names a step, or asks for a strong deck, keeps it.
+	for _, s := range []string{
+		"a modern deck for an fnm event", "poison in a tournament",
+		"the strongest deck for an event", "a casual deck for game night",
+	} {
+		if OccasionOnly(s) {
+			t.Errorf("%q: a named step was dropped with the occasion", s)
+		}
+	}
+}
+
+// TestNamedCardThatCanNotLeadSettlesItsRole is D-220. Conversation 74 of
+// gate run 19 named Sol Ring, and the agent asked "Should Sol Ring be
+// your commander or one of the 99 cards?". D-129 read the commander list
+// alone, and Sol Ring was never on it.
+func TestNamedCardThatCanNotLeadSettlesItsRole(t *testing.T) {
+	h := &CandidateHints{Index: cards.NewIndex([]*mtgv1.Card{
+		{Name: "Sol Ring", TypeLine: "Artifact"},
+		{Name: "Karlov of the Ghost Council", TypeLine: "Legendary Creature — Spirit Advisor", CanBeCommander: true},
+	}, nil, nil, time.Time{})}
+	out := commanderClassify()
+	out.NamedCards = []string{"Sol Ring"}
+	a, _ := testAgentHints(t, h, classifyStep(t, out),
+		fits(t, "commander", "power_commander", "locked"), askStep(t))
+	st := NewState(false)
+	if _, err := a.Turn(context.Background(), st, "A Commander deck with Sol Ring in it.", nil); err != nil {
+		t.Fatalf("turn: %v", err)
+	}
+	if st.Ctx.Asked["named_card_role"] {
+		t.Error("the agent asked whether Sol Ring should be the commander")
+	}
+	if len(st.LockedCards()) == 0 {
+		t.Error("Sol Ring did not reach the 99")
+	}
+}

@@ -486,6 +486,23 @@ var competitiveSigns = []string{
 // asks the user to confirm (D-107).
 func CompetitiveRequest(text string) bool { return anyPhrase(text, competitiveSigns) }
 
+// occasionSigns name a place or a happening, and not a power level. A
+// user who builds "for an event" has said nothing about how strong the
+// deck must be.
+var occasionSigns = []string{"event", "store", "lgs", "game night"}
+
+// stepSigns name a 60-card power step outright.
+var stepSigns = []string{"casual", "fnm", "friday night", "tournament", "kitchen table"}
+
+// OccasionOnly reports whether a message names an occasion and no power
+// step. The classifier reads such a message as the tournament step.
+// Conversation 33 of gate run 19 opened with "A Modern deck for an
+// event", and the user answered "FNM level" two turns later (D-219).
+func OccasionOnly(message string) bool {
+	return anyPhrase(message, occasionSigns) &&
+		!anyPhrase(message, stepSigns) && !CompetitiveRequest(message)
+}
+
 // cedhSigns name competitive Commander. cEDH is bracket 5 by definition,
 // and it is a Commander deck (corpus sections 2.3 and 15).
 //

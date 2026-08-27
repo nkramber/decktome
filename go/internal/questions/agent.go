@@ -818,6 +818,24 @@ func (a *Agent) apply(st *State, out classifyOut, open []string, message string)
 	for _, name := range out.LockedNames {
 		st.AddLocked(name)
 	}
+	// A named card that can not lead a deck has a settled role: it can
+	// only sit in the 99. The role question then asks what the card
+	// itself answers. Conversation 74 of gate run 19 named Sol Ring and
+	// got "Should Sol Ring be your commander or one of the 99 cards?".
+	// D-129 read the commander list alone, and this card was never on it
+	// (D-220, extends D-129 and D-70).
+	if ck, ok := a.hints.(CommanderChecker); ok {
+		for _, name := range out.NamedCards {
+			if name = strings.TrimSpace(name); name == "" {
+				continue
+			}
+			if canLead, known := ck.CanLead(name); known && !canLead {
+				st.AddLocked(name)
+				a.log.Info("a named card can not lead a deck, so its role is settled",
+					"session", st.SessionID, "card", name)
+			}
+		}
+	}
 	for _, name := range out.CommanderNames {
 		// A card that can not lead a deck is not a commander. Probe 41
 		// named Lightning Bolt, and every run accepted it in silence
@@ -845,7 +863,18 @@ func (a *Agent) apply(st *State, out classifyOut, open []string, message string)
 		st.Ctx.OwnedMode = rule != mtgv1.PoolRule_POOL_RULE_ANY_CARD
 		st.Close("pool_rule")
 	}
-	if p := power(out.Power); p != nil {
+	p := power(out.Power)
+	// An occasion is not a power level. Conversation 33 of gate run 19
+	// opened with "A Modern deck for an event", and the classifier
+	// answered the tournament step. The step filled the slot, so no power
+	// question went out, and the user said "FNM level" two turns later.
+	// The open power row asks instead (D-219, extends D-215).
+	if p != nil && p.GetSixtyStep() != mtgv1.SixtyStep_SIXTY_STEP_UNSPECIFIED && OccasionOnly(message) {
+		a.log.Info("an occasion names no power step, so the classifier step is dropped",
+			"session", st.SessionID)
+		p = nil
+	}
+	if p != nil {
 		st.Slots.Power = p
 		st.Close("power")
 		// The corpus triggers the meta row and the competitive theme row
