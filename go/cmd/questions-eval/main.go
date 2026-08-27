@@ -81,14 +81,16 @@ func run(in, out, jsonOut string, budget float64, limit, holdout int) error {
 	var verdicts []tune.Verdict
 	missed := map[string][]string{}
 	stopped := ""
-	for i, conv := range convs {
+	for _, conv := range convs {
 		if len(conv.Questions) == 0 {
 			continue
 		}
 		// Every nth conversation is held back. The fixer never reads its
 		// failures, so a ratio that falls here is a real gain and not a
-		// reworded test set (D-134).
-		held := holdout > 0 && (i+1)%holdout == 0
+		// reworded test set (D-134). The split keys on the conversation
+		// number and not on the position, so a partial run holds out the
+		// same conversations as a full one (D-181).
+		held := tune.HeldOut(conv.Name, holdout)
 		// The budget is a hard stop, checked before every call. A run that
 		// costs more than the owner allowed is worse than a short run.
 		if spent := costOf(acc); spent >= budget {
@@ -120,6 +122,9 @@ func run(in, out, jsonOut string, budget float64, limit, holdout int) error {
 		model = spec.Model
 	}
 	sum := tune.Summarize(gate.Name, model, costOf(acc), gate.Metrics, verdicts)
+	// The per-conversation counts let a partial run be folded into this
+	// one later (D-181).
+	sum.Conversations = tune.CountConversations(gate)
 
 	w := os.Stdout
 	if out != "" {

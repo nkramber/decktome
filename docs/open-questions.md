@@ -8,14 +8,12 @@ Questions not yet asked, or asked and not yet answered. Move each answered quest
 |---|---|---|---|
 | OQ-18 | Rerun depth rule: when does a ban trigger a full rebuild instead of a patch? | D-29 asks for a rerun scoped to the nature of the change. A threshold is needed (for example: commander or win condition banned means full rebuild). | Before I-1 ships. |
 | OQ-20 | Where can we find public anonymized ManaBox exports for the import fixture set? | D-43. One real export is the gate today. More files widen column and value coverage. | Before PR-11, when time allows. |
-| OQ-21 | How much of a named precon must the built deck keep? | D-113 names the precon in the card-pool question. It does not say what "upgrade my precon" means to the generator. A share of the precon cards must survive the build, and no number exists. | Before PR-8 builds a deck. |
-| OQ-23 | What should the agent do when the user asks a question back, such as "What is a bracket?" | Probe 36 asks it. The agent answered with silence in every run, because the catalog holds questions and no answers. A row that explains a term, or a separate answer path, is a design decision. | Before PR-12 builds the chat UI. |
 
 ## Asked, waiting
 
-None.
+OQ-21 and OQ-23 sit in `docs/owner-questions.md`, the decision queue. This file does not repeat them.
 
 
 ## Answered (moved to decisions.md)
 
-OQ-1 to OQ-12 were answered 2026-08-23. See D-15 to D-25. OQ-13 to OQ-17 were answered 2026-08-23. See D-26 to D-30. OQ-17 closed 2026-08-24 (D-43). OQ-19 answered 2026-08-24 (D-66). OQ-22 answered 2026-08-26 (D-146): Historic and Timeless name no nearest format.
+OQ-1 to OQ-12 were answered 2026-08-23. See D-15 to D-25. OQ-13 to OQ-17 were answered 2026-08-23. See D-26 to D-30. OQ-17 closed 2026-08-24 (D-43). OQ-19 answered 2026-08-24 (D-66). OQ-22 answered 2026-08-26 (D-146): Historic and Timeless name no nearest format. OQ-24 to OQ-27 answered 2026-08-26 (D-135 to D-138). OQ-32 to OQ-35 answered 2026-08-26 (D-131, D-129, D-130, D-132). OQ-40 answered 2026-08-26 (D-139). OQ-41 to OQ-43 answered 2026-08-26 (D-151, D-152, D-154).

@@ -2,6 +2,11 @@
 # Start the local stack with no cloud credentials (PR-0c, D-9).
 # One Ctrl-C stops every process. State persists in .local/.
 set -u
+# Job control puts each background job in its own process group. The
+# cleanup then kills a whole group, so the binary that `go run` starts
+# dies with `go run`. Each job reads stdin from /dev/null on purpose:
+# with job control a background read from the terminal stops the job.
+set -m
 cd "$(dirname "$0")/.." || exit 1
 
 FAKE_GCS_VERSION="v1.56.1"
@@ -35,8 +40,10 @@ cleanup() {
     [ "$alive" -eq 0 ] && break
     sleep 1
   done
-  for p in "${pids[@]}"; do pkill -KILL -P "$p" 2>/dev/null; kill -KILL "$p" 2>/dev/null; done
-  # go run leaves grandchildren behind. Sweep OUR ports only (Wallabee owns 8080, 8181, 4000, 5173).
+  # Hard sweep. Each pid leads its own process group (set -m), so a kill
+  # of the group also reaches the compiled binary under `go run`.
+  for p in "${pids[@]}"; do kill -KILL -- "-$p" 2>/dev/null; kill -KILL "$p" 2>/dev/null; done
+  # A process that left its group survives the sweep. Sweep OUR ports only (Wallabee owns 8080, 8181, 4000, 5173).
   # 4490 is the emulator hub and 4590 is the emulator logging port (firebase.json).
   lsof -ti :8281 -ti :9199 -ti :4443 -ti :8090 -ti :5180 -ti :4100 -ti :4490 -ti :4590 2>/dev/null | xargs kill -KILL 2>/dev/null
   # An abandoned export staging dir is always empty. Remove it.
@@ -51,7 +58,7 @@ trap 'cleanup; trap - EXIT; exit 130' INT TERM
 
 echo "==> firestore + auth emulators (:8281, :9199, ui :4100)"
 firebase emulators:start --only firestore,auth --project "$PROJECT_ID" \
-  --import .local/firestore --export-on-exit .local/firestore & pids+=($!)
+  --import .local/firestore --export-on-exit .local/firestore </dev/null & pids+=($!)
 
 # Wait for the Firestore port. The API and worker need it at start.
 for i in $(seq 1 30); do
@@ -65,13 +72,13 @@ done
 
 echo "==> fake-gcs-server (:4443)"
 go run github.com/fsouza/fake-gcs-server@"$FAKE_GCS_VERSION" \
-  -scheme http -host 127.0.0.1 -port 4443 -filesystem-root .local/gcs & pids+=($!)
+  -scheme http -host 127.0.0.1 -port 4443 -filesystem-root .local/gcs </dev/null & pids+=($!)
 
 export PORT="8090"
 echo "==> api on :8090"
-(cd go && go run ./cmd/api) & pids+=($!)
+(cd go && go run ./cmd/api) </dev/null & pids+=($!)
 echo "==> worker"
-(cd go && go run ./cmd/worker) & pids+=($!)
+(cd go && go run ./cmd/worker) </dev/null & pids+=($!)
 echo "==> web on :5180"
-(cd web && pnpm --filter @mtg/web dev) & pids+=($!)
+(cd web && pnpm --filter @mtg/web dev) </dev/null & pids+=($!)
 wait

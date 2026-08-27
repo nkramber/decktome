@@ -46,6 +46,10 @@ var ErrNotFound = errors.New("session not found")
 // ErrTooLarge reports a conversation that does not fit one document.
 var ErrTooLarge = errors.New("session too large for one document (max 900 KiB gzip)")
 
+// ErrConflict reports a Put whose expected version is stale. Another turn
+// stored the session first, and this turn must not overwrite it.
+var ErrConflict = errors.New("session changed since it was read")
+
 // Repo stores sessions in Firestore. The caller owns the client.
 type Repo struct {
 	client *firestore.Client
@@ -64,6 +68,10 @@ type storedSession struct {
 	UpdatedAt     time.Time `firestore:"updated_at"`
 	SessionGz     []byte    `firestore:"session_gz"`
 	SchemaVersion int64     `firestore:"schema_version"`
+	// Version counts the writes. Put compares it before it writes, so two
+	// overlapping turns can not both land. A document from before this
+	// field reads as version 0.
+	Version int64 `firestore:"version"`
 }
 
 // storedState is the private document shape.
@@ -85,9 +93,14 @@ func (r *Repo) NewID(uid string) string {
 	return r.client.Collection("users").Doc(uid).Collection("sessions").NewDoc().ID
 }
 
-// Put writes both documents in one batch, so the public session and the
-// private state never disagree.
-func (r *Repo) Put(ctx context.Context, uid string, s *mtgv1.Session, snap questions.Snapshot) error {
+// Put writes both documents in one transaction, so the public session
+// and the private state never disagree.
+//
+// expected is the version GetState returned, or 0 for a new session. The
+// transaction reads the stored version first. When it differs, Put
+// returns ErrConflict and writes nothing. On success the stored version
+// becomes expected+1.
+func (r *Repo) Put(ctx context.Context, uid string, s *mtgv1.Session, snap questions.Snapshot, expected int64) error {
 	if s.GetId() == "" {
 		return errors.New("sessions: a session needs an id")
 	}
@@ -114,11 +127,22 @@ func (r *Repo) Put(ctx context.Context, uid string, s *mtgv1.Session, snap quest
 		UpdatedAt:     now,
 		SessionGz:     sessionGz,
 		SchemaVersion: schemaVersion,
+		Version:       expected + 1,
 	}
 	private := storedState{StateGz: stateGz, SchemaVersion: schemaVersion}
 	// One transaction, because a session and its state must never
 	// disagree. A half write would repeat a question the user answered.
+	// The read inside it is the version check (H-7): Firestore retries
+	// the transaction when the document changes under it, so the check
+	// and the write are one step.
 	err = r.client.RunTransaction(ctx, func(_ context.Context, tx *firestore.Transaction) error {
+		current, err := storedVersion(tx, r.doc(uid, s.GetId()))
+		if err != nil {
+			return err
+		}
+		if current != expected {
+			return fmt.Errorf("%w: stored version %d, expected %d", ErrConflict, current, expected)
+		}
 		if err := tx.Set(r.doc(uid, s.GetId()), public); err != nil {
 			return err
 		}
@@ -130,32 +154,56 @@ func (r *Repo) Put(ctx context.Context, uid string, s *mtgv1.Session, snap quest
 	return nil
 }
 
-// Get reads the public session alone. GetSession answers from it.
-func (r *Repo) Get(ctx context.Context, uid, id string) (*mtgv1.Session, error) {
-	snap, err := r.doc(uid, id).Get(ctx)
+// storedVersion reads the version inside a transaction. A missing
+// document is version 0, which is what a new session expects.
+func storedVersion(tx *firestore.Transaction, ref *firestore.DocumentRef) (int64, error) {
+	snap, err := tx.Get(ref)
 	if err != nil {
 		if status.Code(err) == codes.NotFound {
-			return nil, fmt.Errorf("%w: %s", ErrNotFound, id)
+			return 0, nil
 		}
-		return nil, err
+		return 0, err
 	}
 	var stored storedSession
 	if err := snap.DataTo(&stored); err != nil {
-		return nil, fmt.Errorf("session %s: %w", id, err)
+		return 0, err
+	}
+	return stored.Version, nil
+}
+
+// Get reads the public session alone. GetSession answers from it.
+func (r *Repo) Get(ctx context.Context, uid, id string) (*mtgv1.Session, error) {
+	s, _, err := r.get(ctx, uid, id)
+	return s, err
+}
+
+// get reads the public session and its stored version.
+func (r *Repo) get(ctx context.Context, uid, id string) (*mtgv1.Session, int64, error) {
+	snap, err := r.doc(uid, id).Get(ctx)
+	if err != nil {
+		if status.Code(err) == codes.NotFound {
+			return nil, 0, fmt.Errorf("%w: %s", ErrNotFound, id)
+		}
+		return nil, 0, err
+	}
+	var stored storedSession
+	if err := snap.DataTo(&stored); err != nil {
+		return nil, 0, fmt.Errorf("session %s: %w", id, err)
 	}
 	var out mtgv1.Session
 	if err := ungzProto(stored.SessionGz, &out); err != nil {
-		return nil, fmt.Errorf("session %s: %w", id, err)
+		return nil, 0, fmt.Errorf("session %s: %w", id, err)
 	}
 	out.Id = id
-	return &out, nil
+	return &out, stored.Version, nil
 }
 
 // GetState reads the session and its private state, for the next turn.
-func (r *Repo) GetState(ctx context.Context, uid, id string) (*mtgv1.Session, questions.Snapshot, error) {
-	s, err := r.Get(ctx, uid, id)
+// The version it returns is the one Put must expect.
+func (r *Repo) GetState(ctx context.Context, uid, id string) (*mtgv1.Session, questions.Snapshot, int64, error) {
+	s, version, err := r.get(ctx, uid, id)
 	if err != nil {
-		return nil, questions.Snapshot{}, err
+		return nil, questions.Snapshot{}, 0, err
 	}
 	snap, err := r.stateDoc(uid, id).Get(ctx)
 	if err != nil {
@@ -163,22 +211,22 @@ func (r *Repo) GetState(ctx context.Context, uid, id string) (*mtgv1.Session, qu
 			// The public session exists and the private state does not.
 			// A zero snapshot opens a new state, which asks again rather
 			// than answer from nothing.
-			return s, questions.Snapshot{}, nil
+			return s, questions.Snapshot{}, version, nil
 		}
-		return nil, questions.Snapshot{}, err
+		return nil, questions.Snapshot{}, 0, err
 	}
 	var stored storedState
 	if err := snap.DataTo(&stored); err != nil {
-		return nil, questions.Snapshot{}, fmt.Errorf("session %s state: %w", id, err)
+		return nil, questions.Snapshot{}, 0, fmt.Errorf("session %s state: %w", id, err)
 	}
 	var out questions.Snapshot
 	if err := ungzJSON(stored.StateGz, &out); err != nil {
-		return nil, questions.Snapshot{}, fmt.Errorf("session %s state: %w", id, err)
+		return nil, questions.Snapshot{}, 0, fmt.Errorf("session %s state: %w", id, err)
 	}
 	if out.Version > questions.SnapshotVersion {
-		return nil, questions.Snapshot{}, fmt.Errorf("session %s state: version %d is newer than %d", id, out.Version, questions.SnapshotVersion)
+		return nil, questions.Snapshot{}, 0, fmt.Errorf("session %s state: version %d is newer than %d", id, out.Version, questions.SnapshotVersion)
 	}
-	return s, out, nil
+	return s, out, version, nil
 }
 
 func gzProto(m *mtgv1.Session) ([]byte, error) {

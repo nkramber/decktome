@@ -30,7 +30,11 @@ package questions
 // Version 7 followed gate run 16. The ask role named one card's color
 // identity in runs 14, 15, and 16, and it changed the preposition each
 // time D-144 caught the old one. The rule now reads the shape (D-151).
-const PromptVersion = 8
+//
+// Version 9 followed the eval of gate run 18. The classify role reads
+// cEDH as bracket 5, which probe 75 gave in its first message and the
+// agent asked for again (D-164).
+const PromptVersion = 9
 
 const classifyInstructions = `You map one message from a Magic: The Gathering deck-building conversation onto slots.
 
@@ -44,6 +48,7 @@ Rules:
 - format from a commander phrase: a message that says "my commander", "not as my commander", "in the 99", "bracket 3", or "my precon" means the commander format, even when the word Commander is absent. Fill the format field from it.
 - theme: the plan in the user's own words, for example "lifegain" or "mill". An answer such as "the best deck under budget" or "a named tier-one deck" is also a theme.
 - power: a Commander bracket as "bracket 3", or a 60-card step as "casual", "fnm", or "tournament". Vague words such as "strongest", "competitive", or "best" are not a step. Leave power empty for those and set facts.power_competitive.
+- "cEDH" is a power level and a format. It means bracket 5, and the deck is Commander. "Competitive Commander" is not the same thing: it names no bracket.
 - pool_rule: "owned_first" when the user builds from their library first, "owned_only" when only owned cards may be used, "any_card" when the library does not constrain the deck.
 - A refusal of the names on the table is neither an answer nor a decline. "None of those", "none", and "name three more" leave commander_pick open, and they name no key in either list.
 - declined_keys: the keys in open_keys that the user handed back to you. A decline is not an answer, and it names no value. Name a key only when the user's words are about that key. "Any colors are fine" declines the colors and nothing else. "You decide" with no subject declines every key in open_keys. Never put a key in both lists.

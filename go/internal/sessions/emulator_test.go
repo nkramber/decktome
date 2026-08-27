@@ -64,7 +64,7 @@ func TestEmulatorPutGetRoundTrip(t *testing.T) {
 	want.Id = id
 	snap := sampleState()
 
-	if err := repo.Put(ctx, "u1", want, snap); err != nil {
+	if err := repo.Put(ctx, "u1", want, snap, 0); err != nil {
 		t.Fatalf("put: %v", err)
 	}
 
@@ -78,12 +78,15 @@ func TestEmulatorPutGetRoundTrip(t *testing.T) {
 	}
 
 	// The private half, and the public half together.
-	gotSession, gotSnap, err := repo.GetState(ctx, "u1", id)
+	gotSession, gotSnap, version, err := repo.GetState(ctx, "u1", id)
 	if err != nil {
 		t.Fatalf("get state: %v", err)
 	}
 	if !proto.Equal(want, gotSession) {
 		t.Error("GetState returned a different session from Get")
+	}
+	if version != 1 {
+		t.Errorf("version after one Put = %d, want 1", version)
 	}
 	if gotSnap.Version != questions.SnapshotVersion {
 		t.Errorf("snapshot version = %d, want %d", gotSnap.Version, questions.SnapshotVersion)
@@ -110,7 +113,7 @@ func TestEmulatorNotFound(t *testing.T) {
 	} else if !isNotFound(err) {
 		t.Errorf("err = %v, want ErrNotFound", err)
 	}
-	if _, _, err := repo.GetState(t.Context(), "u1", "no-such-session"); !isNotFound(err) {
+	if _, _, _, err := repo.GetState(t.Context(), "u1", "no-such-session"); !isNotFound(err) {
 		t.Errorf("GetState err = %v, want ErrNotFound", err)
 	}
 }
@@ -125,7 +128,7 @@ func TestEmulatorUpdateKeepsOneDocument(t *testing.T) {
 
 	first := sampleSession()
 	first.Id = id
-	if err := repo.Put(ctx, "u2", first, sampleState()); err != nil {
+	if err := repo.Put(ctx, "u2", first, sampleState(), 0); err != nil {
 		t.Fatalf("put 1: %v", err)
 	}
 	second := sampleSession()
@@ -133,7 +136,7 @@ func TestEmulatorUpdateKeepsOneDocument(t *testing.T) {
 	second.Status = mtgv1.SessionStatus_SESSION_STATUS_READY
 	second.Turns = append(second.Turns, &mtgv1.Turn{UserMessage: "bracket 3"})
 	second.UpdatedAt = timestamppb.Now()
-	if err := repo.Put(ctx, "u2", second, sampleState()); err != nil {
+	if err := repo.Put(ctx, "u2", second, sampleState(), 1); err != nil {
 		t.Fatalf("put 2: %v", err)
 	}
 	got, err := repo.Get(ctx, "u2", id)
@@ -153,7 +156,7 @@ func TestEmulatorUsersAreSeparate(t *testing.T) {
 	id := repo.NewID("owner")
 	s := sampleSession()
 	s.Id = id
-	if err := repo.Put(ctx, "owner", s, sampleState()); err != nil {
+	if err := repo.Put(ctx, "owner", s, sampleState(), 0); err != nil {
 		t.Fatalf("put: %v", err)
 	}
 	if _, err := repo.Get(ctx, "someone-else", id); !isNotFound(err) {
@@ -170,16 +173,19 @@ func TestEmulatorStatePartlyMissing(t *testing.T) {
 	id := repo.NewID("u3")
 	s := sampleSession()
 	s.Id = id
-	if err := repo.Put(ctx, "u3", s, sampleState()); err != nil {
+	if err := repo.Put(ctx, "u3", s, sampleState(), 0); err != nil {
 		t.Fatalf("put: %v", err)
 	}
 	// Remove the private half, as an old session would have it.
 	if _, err := repo.stateDoc("u3", id).Delete(ctx); err != nil {
 		t.Fatalf("delete state: %v", err)
 	}
-	got, snap, err := repo.GetState(ctx, "u3", id)
+	got, snap, version, err := repo.GetState(ctx, "u3", id)
 	if err != nil {
 		t.Fatalf("a session with no private state failed to open: %v", err)
+	}
+	if version != 1 {
+		t.Errorf("version = %d, want 1 from the public document", version)
 	}
 	if got.GetId() != id {
 		t.Errorf("session id = %q", got.GetId())
@@ -201,7 +207,7 @@ func TestEmulatorPrivateStateIsNotPublic(t *testing.T) {
 	id := repo.NewID("u4")
 	s := sampleSession()
 	s.Id = id
-	if err := repo.Put(ctx, "u4", s, sampleState()); err != nil {
+	if err := repo.Put(ctx, "u4", s, sampleState(), 0); err != nil {
 		t.Fatalf("put: %v", err)
 	}
 	snap, err := repo.doc("u4", id).Get(ctx)
@@ -233,7 +239,7 @@ func TestEmulatorStateSurvivesAPathChange(t *testing.T) {
 	id := repo.NewID("u5")
 	s := sampleSession()
 	s.Id = id
-	if err := repo.Put(ctx, "u5", s, sampleState()); err != nil {
+	if err := repo.Put(ctx, "u5", s, sampleState(), 0); err != nil {
 		t.Fatalf("put: %v", err)
 	}
 	literal := repo.client.Collection("users").Doc("u5").
@@ -253,5 +259,62 @@ func TestEmulatorStateSurvivesAPathChange(t *testing.T) {
 	}
 	if out.Version != questions.SnapshotVersion {
 		t.Errorf("snapshot version = %d", out.Version)
+	}
+}
+
+// TestEmulatorPutConflict is the H-7 guard. Two turns read version 1 and
+// both try to write. The second write must fail with ErrConflict and
+// leave the first one in place. Without this check the second Put erased
+// the first turn's asked rows, and the no-repeat rule then repeated a
+// question.
+func TestEmulatorPutConflict(t *testing.T) {
+	repo, done := emulatorRepo(t)
+	defer done()
+	ctx := t.Context()
+	id := repo.NewID("u6")
+
+	base := sampleSession()
+	base.Id = id
+	if err := repo.Put(ctx, "u6", base, sampleState(), 0); err != nil {
+		t.Fatalf("put 0: %v", err)
+	}
+	_, _, version, err := repo.GetState(ctx, "u6", id)
+	if err != nil {
+		t.Fatalf("get state: %v", err)
+	}
+
+	winner := sampleSession()
+	winner.Id = id
+	winner.Turns = append(winner.Turns, &mtgv1.Turn{UserMessage: "winner"})
+	if err := repo.Put(ctx, "u6", winner, sampleState(), version); err != nil {
+		t.Fatalf("put winner: %v", err)
+	}
+
+	loser := sampleSession()
+	loser.Id = id
+	loser.Turns = append(loser.Turns, &mtgv1.Turn{UserMessage: "loser"})
+	err = repo.Put(ctx, "u6", loser, sampleState(), version)
+	if !errors.Is(err, ErrConflict) {
+		t.Fatalf("stale put err = %v, want ErrConflict", err)
+	}
+
+	got, _, after, err := repo.GetState(ctx, "u6", id)
+	if err != nil {
+		t.Fatalf("get after: %v", err)
+	}
+	if after != version+1 {
+		t.Errorf("version = %d, want %d", after, version+1)
+	}
+	turns := got.GetTurns()
+	if len(turns) != 2 || turns[1].GetUserMessage() != "winner" {
+		t.Errorf("the stale put overwrote the first turn: %+v", turns)
+	}
+
+	// A stale expected version also refuses a write over a missing
+	// document, so a lost create can not be replayed as an update.
+	fresh := sampleSession()
+	fresh.Id = repo.NewID("u6")
+	if err := repo.Put(ctx, "u6", fresh, sampleState(), 3); !errors.Is(err, ErrConflict) {
+		t.Errorf("put over a missing document with expected 3 gave %v, want ErrConflict", err)
 	}
 }

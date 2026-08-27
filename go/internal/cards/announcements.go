@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"time"
 )
 
@@ -38,7 +39,15 @@ func loadAnnouncements() (AnnouncementCalendar, error) {
 		}
 		cal.dates = append(cal.dates, t.UTC())
 	}
+	cal.sortDates()
 	return cal, nil
+}
+
+// sortDates puts the dates in ascending order. Pending and LagHours walk
+// the list from the end and stop at the first date that decides, so an
+// unsorted file would make them skip a newer announcement.
+func (c *AnnouncementCalendar) sortDates() {
+	sort.Slice(c.dates, func(i, j int) bool { return c.dates[i].Before(c.dates[j]) })
 }
 
 // Announcements is the package calendar. The error surfaces on first use.

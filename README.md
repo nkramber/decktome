@@ -2,7 +2,7 @@
 
 An agentic Magic: The Gathering deck builder. You upload a ManaBox collection export (optional), describe the deck you want, answer a few questions, and get a legal, validated deck with card art. Go + Protobuf (Connect-RPC) + TypeScript (React). Design: `docs/design-roadmap.md`.
 
-Status (2026-08-24): Phase 1 complete. Phase 2 (agent) in progress: PR-10 merged. The local stack serves the card database, the collection import, and the LLM role layer. The deck-building agent is not built yet.
+Status (2026-08-26): Phase 1 complete. Phase 2 (agent) in progress: PR-7, PR-7B, and PR-10 merged (#1 to #13). The local stack serves the card database, the collection import, the LLM role layer, and the question workflow (`AgentService.Chat`). The tuning loop for the questions exists and ran once. The deck generator (PR-8) is not built yet.
 
 ## Run it locally
 
@@ -114,6 +114,22 @@ make proto-breaking       # buf breaking against main
 make cover         # Go coverage summary
 make build         # Go binaries + web bundle
 make dev-seed      # one-shot card snapshot refresh into the local stack
+make m5-sheet      # build the M-5 scoring sheet from a gate document
+make m5-report     # read the scored sheet and compute the thresholds
+make themes-check  # check the theme slugs and the commander ranking
+make store-check   # session store against the local Firestore emulator
+make candidates-review   # write the PR-6 gate document from the local snapshot
+```
+
+`cd go && go run ./cmd/tune-check` compares an eval summary with its baseline, and it costs nothing.
+
+CAUTION: the four targets below call the real LLM providers and spend money. Ask the owner before each run, and write to a new output file (D-65).
+
+```bash
+make questions-gate    # 104 conversations, $0.15 to $0.17, about 20 minutes
+make questions-eval    # score a gate run, $0.09 to $0.10, about 13 minutes
+make eval-calibrate    # eval model against claude-sonnet-5, $0.25 to $0.30
+make autotune          # print how to start the tuning loop (scripts/autotune.sh)
 ```
 
 CI runs every job on every push and pull request. There are no path filters.

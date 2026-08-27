@@ -106,8 +106,11 @@ func conversations() []conversation {
 		{want: []string{"format", "theme", "colors"}, fill: []string{"format", "theme", "colors"},
 			set: func(c *Context) {
 				c.Format, c.PowerCompetitive, c.Theme = mtgv1.FormatId_FORMAT_ID_MODERN, true, "best deck"
+				// The agent fills the tournament step here, because the
+				// user named none, and the confirm row asks about it.
+				c.PowerInferred = true
 			}},
-		{want: []string{"power_sixty_confirm", "budget", "meta"}, fill: []string{"power", "power_confirm", "budget", "meta"}},
+		{want: []string{"budget", "meta"}, fill: []string{"budget", "meta"}},
 	}
 	cs = append(cs, c6)
 
@@ -118,8 +121,11 @@ func conversations() []conversation {
 		{want: []string{"format_store", "theme", "colors"}, fill: []string{"format", "theme", "colors"},
 			set: func(c *Context) {
 				c.Format, c.PowerCompetitive, c.Theme = mtgv1.FormatId_FORMAT_ID_MODERN, true, "best deck"
+				// The agent fills the tournament step here, because the
+				// user named none, and the confirm row asks about it.
+				c.PowerInferred = true
 			}},
-		{want: []string{"power_sixty_confirm", "budget", "meta"}, fill: []string{"power", "power_confirm", "budget", "meta"}},
+		{want: []string{"budget", "meta"}, fill: []string{"budget", "meta"}},
 	}
 	cs = append(cs, c7)
 
@@ -142,8 +148,10 @@ func conversations() []conversation {
 	c9.ctx.Theme, c9.ctx.Filled["format"], c9.ctx.Filled["theme"] = "blink", true, true
 	c9.ctx.Format = mtgv1.FormatId_FORMAT_ID_COMMANDER
 	c9.steps = []step{
+		// The not-owned row carries its own key, so the named commander
+		// does not cancel it (M-5).
 		{want: []string{"commander_not_owned", "power_commander", "colors"},
-			fill: []string{"commander", "power", "colors"}, set: func(c *Context) { c.CommanderSet, c.BuyList = true, true }},
+			fill: []string{"commander_owned", "commander", "power", "colors"}, set: func(c *Context) { c.CommanderSet, c.BuyList = true, true }},
 		{want: []string{"pool", "budget"}, fill: []string{"pool_rule", "budget"}},
 	}
 	cs = append(cs, c9)
@@ -199,7 +207,10 @@ func conversations() []conversation {
 	c14.steps = []step{
 		{want: []string{"commander", "power_commander"}, fill: []string{"power"},
 			set: func(c *Context) { c.Suggested = true }},
-		{want: []string{"commander_pick"}},
+		// The user answers "none of those", which retires the names. The
+		// row asks again only for that reason now: three names the user
+		// has not seen (D-163).
+		{want: []string{"commander_pick"}, set: func(c *Context) { c.OfferChanged = true }},
 		{want: []string{"commander_pick"}, fill: []string{"commander", "commander_pick"},
 			set: func(c *Context) { c.CommanderSet = true }},
 	}
@@ -230,8 +241,11 @@ func conversations() []conversation {
 	c16.ctx.PowerCompetitive, c16.ctx.BuyList = true, true
 	c16.steps = []step{
 		{want: []string{"format", "theme_competitive", "colors"}, fill: []string{"format", "theme", "colors"},
-			set: func(c *Context) { c.Format, c.Theme = mtgv1.FormatId_FORMAT_ID_MODERN, "best deck" }},
-		{want: []string{"power_sixty_confirm", "budget", "meta"}, fill: []string{"power", "power_confirm", "budget", "meta"}},
+			set: func(c *Context) {
+				c.Format, c.Theme = mtgv1.FormatId_FORMAT_ID_MODERN, "best deck"
+				c.PowerInferred = true
+			}},
+		{want: []string{"budget", "meta"}, fill: []string{"budget", "meta"}},
 	}
 	cs = append(cs, c16)
 
@@ -341,8 +355,11 @@ func conversations() []conversation {
 	c25.ctx.PowerCompetitive, c25.ctx.BuyList = true, true
 	c25.steps = []step{
 		{want: []string{"format_store", "theme_competitive", "colors"}, fill: []string{"format", "theme", "colors"},
-			set: func(c *Context) { c.Format, c.Theme = mtgv1.FormatId_FORMAT_ID_MODERN, "poison" }},
-		{want: []string{"power_sixty_confirm", "budget", "meta"}, fill: []string{"power", "power_confirm", "budget", "meta"}},
+			set: func(c *Context) {
+				c.Format, c.Theme = mtgv1.FormatId_FORMAT_ID_MODERN, "poison"
+				c.PowerInferred = true
+			}},
+		{want: []string{"budget", "meta"}, fill: []string{"budget", "meta"}},
 	}
 	cs = append(cs, c25)
 

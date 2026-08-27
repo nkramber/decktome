@@ -89,9 +89,17 @@ func (c *Client) do(ctx context.Context, req *http.Request, what string) (*http.
 	}
 }
 
+// retryWait reads a Retry-After header. RFC 9110 allows two forms: a
+// delay in seconds, or an HTTP-date. A date in the past, or a header
+// neither form fits, gives the default wait.
 func (c *Client) retryWait(header string) time.Duration {
 	if secs, err := strconv.Atoi(header); err == nil && secs > 0 {
 		return time.Duration(secs) * time.Second
+	}
+	if at, err := http.ParseTime(header); err == nil {
+		if wait := time.Until(at); wait > 0 {
+			return wait
+		}
 	}
 	return c.retryAfter
 }

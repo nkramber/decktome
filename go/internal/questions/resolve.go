@@ -47,6 +47,27 @@ type PairAware interface {
 	UseWantPair(want, background bool)
 }
 
+// FactSource answers the planner facts that come from the card index and
+// the collection. The classifier can not answer them, and each one gates
+// a catalog row.
+//
+// agentsvc read them once before the turn, so a one-message answer such
+// as "Modern red burn deck from my library" filled the format and the
+// theme inside the turn, and the thin-theme count was never taken. The
+// user got the plain pool question, and the {n} count of D-67 never
+// showed. The agent reads them again after the classify call (M-6).
+type FactSource interface {
+	// MissingCommander reports whether the collection holds none of the
+	// named commanders.
+	MissingCommander(names []string) bool
+	// WeakCommanderPool reports whether an owned mode holds no on-theme
+	// commander (D-63).
+	WeakCommanderPool(theme string) bool
+	// ThinTheme reports whether the collection holds fewer than 30
+	// on-theme cards, and the count (D-63).
+	ThinTheme(theme string) (thin bool, count int)
+}
+
 // CommanderChecker reports whether a named card can lead a deck. A hint
 // source that holds the card index implements it.
 //

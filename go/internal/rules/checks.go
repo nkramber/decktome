@@ -14,10 +14,39 @@ import (
 // (60-card formats) or outside the 100 (Commander).
 func mainDeckCount(deck *mtgv1.Deck) int {
 	n := len(deck.CommanderOracleIds)
-	for _, c := range deck.Cards {
+	for _, c := range counted(deck.Cards) {
 		n += int(c.Count)
 	}
 	return n
+}
+
+// counted drops every entry with a count under one. Such an entry is a
+// bad_count finding, and no sum may read it: a count of -1 beside a
+// 101-card list passed the size check before this filter existed.
+func counted(list []*mtgv1.DeckCard) []*mtgv1.DeckCard {
+	out := make([]*mtgv1.DeckCard, 0, len(list))
+	for _, c := range list {
+		if c.Count >= 1 {
+			out = append(out, c)
+		}
+	}
+	return out
+}
+
+// checkCounts blocks every main-deck or sideboard entry whose count is
+// under one. A zero says nothing, and a negative count would shrink
+// every sum the other checks make.
+func checkCounts(res *mtgv1.ValidationResult, deck *mtgv1.Deck) {
+	report := func(zone string, list []*mtgv1.DeckCard) {
+		for _, c := range list {
+			if c.Count < 1 {
+				add(res, CodeBadCount, mtgv1.Severity_SEVERITY_BLOCK,
+					fmt.Sprintf("%s entry %s has count %d, the count must be 1 or more", zone, c.Name, c.Count), c.OracleId)
+			}
+		}
+	}
+	report("main deck", deck.Cards)
+	report("sideboard", deck.Sideboard)
 }
 
 func checkSize(res *mtgv1.ValidationResult, deck *mtgv1.Deck, fr FormatRules) {
@@ -31,7 +60,7 @@ func checkSize(res *mtgv1.ValidationResult, deck *mtgv1.Deck, fr FormatRules) {
 			fmt.Sprintf("deck has %d cards, the format needs at least %d", n, fr.MinSize), "")
 	}
 	var sb int
-	for _, c := range deck.Sideboard {
+	for _, c := range counted(deck.Sideboard) {
 		sb += int(c.Count)
 	}
 	if sb > fr.SideboardMax {
@@ -78,8 +107,8 @@ func checkCopies(res *mtgv1.ValidationResult, in Input, fr FormatRules) {
 // counted twice.
 func allCards(deck *mtgv1.Deck) []*mtgv1.DeckCard {
 	out := make([]*mtgv1.DeckCard, 0, len(deck.Cards)+len(deck.Sideboard)+len(deck.CommanderOracleIds)+1)
-	out = append(out, deck.Cards...)
-	out = append(out, deck.Sideboard...)
+	out = append(out, counted(deck.Cards)...)
+	out = append(out, counted(deck.Sideboard)...)
 	for _, oid := range deck.CommanderOracleIds {
 		out = append(out, &mtgv1.DeckCard{OracleId: oid, Count: 1})
 	}
@@ -173,8 +202,9 @@ func checkCommander(res *mtgv1.ValidationResult, in Input) {
 
 // ValidPair checks the two-commander mechanics (corpus section 2.2).
 // Two Partner cards pair only when their variant text is equal
-// (CR 702.124f): plain Partner with plain Partner, Survivors with
-// Survivors, and so on.
+// (CR 702.124i, effective 2026-08-07): plain Partner with plain Partner,
+// Survivors with Survivors, and so on. CR 702.124f is the rule that
+// forbids a cross of two different partner abilities.
 //
 // It is exported so the candidate builder can offer a pair as one choice.
 // A pair carries the union of two color identities, which is the only way
@@ -193,18 +223,20 @@ func ValidPair(a, b *mtgv1.Card) bool {
 		return true
 	case pk(b) == mtgv1.PartnerKind_PARTNER_KIND_CHOOSE_BACKGROUND && a.IsBackground:
 		return true
-	case pk(a) == mtgv1.PartnerKind_PARTNER_KIND_DOCTORS_COMPANION && isDoctor(b):
+	case pk(a) == mtgv1.PartnerKind_PARTNER_KIND_DOCTORS_COMPANION && IsDoctor(b):
 		return true
-	case pk(b) == mtgv1.PartnerKind_PARTNER_KIND_DOCTORS_COMPANION && isDoctor(a):
+	case pk(b) == mtgv1.PartnerKind_PARTNER_KIND_DOCTORS_COMPANION && IsDoctor(a):
 		return true
 	default:
 		return false
 	}
 }
 
-// isDoctor applies CR 702.124m: the creature types are exactly Time Lord
-// Doctor, with no other creature type.
-func isDoctor(c *mtgv1.Card) bool {
+// IsDoctor applies CR 702.124m: the creature types are exactly Time Lord
+// Doctor, with no other creature type. It is exported because a Doctor
+// carries no partner kind of its own, so the candidate builder needs
+// this test to let a Doctor into a pair.
+func IsDoctor(c *mtgv1.Card) bool {
 	if len(c.Subtypes) != 3 || !slices.Contains(c.CardTypes, "Creature") {
 		return false
 	}
@@ -244,8 +276,9 @@ func checkColorIdentity(res *mtgv1.ValidationResult, in Input) {
 }
 
 // checkBracket counts Game Changers in the 99, the command zone, and the
-// companion. Whether commanders count is unverified against Wizards text
-// (see brackets.json).
+// companion. A Game Changer commander counts as one of the three at
+// Bracket 3, and can not play in Brackets 1 and 2. Verified 2026-08-26
+// against the Wizards announcement (see brackets.json).
 func checkBracket(cfg *Config, res *mtgv1.ValidationResult, in Input) {
 	bracket := in.Deck.GetPower().GetBracket()
 	if bracket == 0 {
@@ -354,7 +387,7 @@ func checkOwnership(res *mtgv1.ValidationResult, in Input) {
 func checkManaBase(res *mtgv1.ValidationResult, in Input, fr FormatRules) {
 	var lands, nonlands int32
 	var mvSum float64
-	for _, dc := range in.Deck.Cards {
+	for _, dc := range counted(in.Deck.Cards) {
 		card, ok := in.Cards.ByOracleID(dc.OracleId)
 		if !ok {
 			continue

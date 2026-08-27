@@ -98,6 +98,27 @@ func TestRateLimit(t *testing.T) {
 	}
 }
 
+// TestRetryWaitForms covers both Retry-After forms of RFC 9110: a delay
+// in seconds and an HTTP-date. The date form was ignored before.
+func TestRetryWaitForms(t *testing.T) {
+	c := New(nil, "", nil)
+	c.retryAfter = 50 * time.Millisecond
+	if got := c.retryWait("3"); got != 3*time.Second {
+		t.Errorf("seconds form = %v, want 3s", got)
+	}
+	future := time.Now().Add(5 * time.Second).UTC().Format(http.TimeFormat)
+	if got := c.retryWait(future); got < 3*time.Second || got > 5*time.Second {
+		t.Errorf("date form = %v, want about 4s", got)
+	}
+	past := time.Now().Add(-5 * time.Second).UTC().Format(http.TimeFormat)
+	if got := c.retryWait(past); got != c.retryAfter {
+		t.Errorf("past date = %v, want the default %v", got, c.retryAfter)
+	}
+	if got := c.retryWait("soon"); got != c.retryAfter {
+		t.Errorf("garbage = %v, want the default", got)
+	}
+}
+
 func TestRateLimitContextCancel(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Retry-After", "30")

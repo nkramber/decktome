@@ -29,6 +29,32 @@ func calFor(dates ...string) AnnouncementCalendar {
 	return c
 }
 
+// TestCalendarSortsOnLoad covers the sort the doc promised. Pending
+// walks from the end and stops at the first date that decides, so an
+// unsorted list hid a newer announcement behind an older one.
+func TestCalendarSortsOnLoad(t *testing.T) {
+	cal := calFor("2026-08-20", "2026-06-01", "2026-07-15")
+	cal.sortDates()
+	for i := 1; i < len(cal.dates); i++ {
+		if cal.dates[i].Before(cal.dates[i-1]) {
+			t.Fatalf("dates not ascending: %v", cal.dates)
+		}
+	}
+	got, ok := cal.Pending(date("2026-08-21"), date("2026-08-01"))
+	if !ok || !got.Equal(date("2026-08-20")) {
+		t.Errorf("Pending = %v, %v, want 2026-08-20", got, ok)
+	}
+	loaded, err := loadAnnouncements()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := 1; i < len(loaded.dates); i++ {
+		if loaded.dates[i].Before(loaded.dates[i-1]) {
+			t.Fatalf("embedded calendar not ascending after load: %v", loaded.dates)
+		}
+	}
+}
+
 func TestEmbeddedCalendarLoads(t *testing.T) {
 	cal, err := loadAnnouncements()
 	if err != nil {

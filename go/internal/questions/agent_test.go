@@ -279,3 +279,28 @@ func TestUsageAccumulates(t *testing.T) {
 		t.Errorf("tokens = %+v", rep.Tokens)
 	}
 }
+
+// TestInferredPowerIsMarked holds the other half of D-209. The mark goes
+// on the step the agent fills in, and never on the step the user named.
+func TestInferredPowerIsMarked(t *testing.T) {
+	a, _ := testAgent(t)
+	empty := NewState(false)
+	empty.Ctx.Format = mtgv1.FormatId_FORMAT_ID_MODERN
+	empty.Slots.Format = &mtgv1.Format{Id: mtgv1.FormatId_FORMAT_ID_MODERN}
+	empty.Ctx.PowerCompetitive = true
+	a.applyWords(empty, "build the strongest modern deck")
+	if !empty.Ctx.PowerInferred {
+		t.Fatal("the agent filled the tournament step and did not mark it")
+	}
+	named := NewState(false)
+	named.Ctx.Format = mtgv1.FormatId_FORMAT_ID_MODERN
+	named.Slots.Format = &mtgv1.Format{Id: mtgv1.FormatId_FORMAT_ID_MODERN}
+	named.Ctx.PowerCompetitive = true
+	named.Slots.Power = &mtgv1.PowerLevel{
+		Level: &mtgv1.PowerLevel_SixtyStep{SixtyStep: mtgv1.SixtyStep_SIXTY_STEP_FNM},
+	}
+	a.applyWords(named, "fnm")
+	if named.Ctx.PowerInferred {
+		t.Fatal("a step the user named was marked as inferred")
+	}
+}

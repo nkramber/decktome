@@ -186,6 +186,7 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 
 	var stats Stats
 	var scored []Candidate
+	fired := firedSignals{}
 	for _, c := range idx.All() {
 		if excluded[c.OracleId] || isBasicLand(c) {
 			continue
@@ -201,6 +202,7 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 		}
 		stats.Pool++
 		themeScore, signals := theme.score(c)
+		fired.mark(signals)
 		role, roleSignal := assignRole(c, roleTags, themeScore > 0)
 		if roleSignal != "" {
 			signals = append(signals, roleSignal)
@@ -234,6 +236,7 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 		scored = append(scored, Candidate{Card: c, Role: role, Score: score, Owned: owned, Signals: signals})
 	}
 	sortCandidates(scored)
+	theme.Unmatched = theme.unmatchedWords(fired)
 
 	var main, upgrades []Candidate
 	switch mode {
@@ -465,12 +468,19 @@ func RoleName(r mtgv1.CardRole) string {
 // color that carries at least share of them. PR-7 uses it to fill the
 // {colors} clause of the color question, so the agent states a fact
 // instead of asking the user for it.
+//
+// Only the theme-bearing roles count: synergy, threat, wincon, and
+// other. Build emits one role bucket after another with the staples
+// first, so the first 100 cards of the list were lands, ramp, draw, and
+// removal, and not one synergy piece. Measured 2026-08-26 on the local
+// snapshot: "aristocrats" reported black only, "dragons" blue and red,
+// and "blink" four colors. A staple says nothing about a theme's colors.
 func (b *Builder) ThemeColors(idx *cards.Index, format mtgv1.FormatId, theme string, top int, share float64) ([]mtgv1.Color, error) {
 	if top <= 0 {
 		top = 100
 	}
 	if share <= 0 {
-		share = 0.25
+		share = 0.15
 	}
 	list, err := b.Build(idx, Request{Format: format, Theme: theme})
 	if err != nil {
@@ -481,6 +491,9 @@ func (b *Builder) ThemeColors(idx *cards.Index, format mtgv1.FormatId, theme str
 	for _, c := range list.Candidates {
 		if seen >= top {
 			break
+		}
+		if stapleRole(c.Role) {
+			continue // a staple role carries no theme signal of its own
 		}
 		if len(c.Card.ColorIdentity) == 0 {
 			continue // colorless cards say nothing about a theme's colors
@@ -493,9 +506,29 @@ func (b *Builder) ThemeColors(idx *cards.Index, format mtgv1.FormatId, theme str
 	if seen == 0 {
 		return nil, nil
 	}
+	// The lead color always goes out, and at most one second color joins
+	// it when its share reaches the bar. Players name an archetype by its
+	// lead and one partner: aristocrats is black and red, dragons is red
+	// and green. A flat share reported black alone for aristocrats at 25
+	// percent, and five colors for dragons at 15 percent (D-205).
+	wubrg := []mtgv1.Color{mtgv1.Color_COLOR_W, mtgv1.Color_COLOR_U, mtgv1.Color_COLOR_B, mtgv1.Color_COLOR_R, mtgv1.Color_COLOR_G}
+	lead, second := mtgv1.Color_COLOR_UNSPECIFIED, mtgv1.Color_COLOR_UNSPECIFIED
+	for _, col := range wubrg {
+		if lead == mtgv1.Color_COLOR_UNSPECIFIED || count[col] > count[lead] {
+			lead = col
+		}
+	}
+	for _, col := range wubrg {
+		if col == lead || float64(count[col])/float64(seen) < share {
+			continue
+		}
+		if second == mtgv1.Color_COLOR_UNSPECIFIED || count[col] > count[second] {
+			second = col
+		}
+	}
 	var out []mtgv1.Color
-	for _, col := range []mtgv1.Color{mtgv1.Color_COLOR_W, mtgv1.Color_COLOR_U, mtgv1.Color_COLOR_B, mtgv1.Color_COLOR_R, mtgv1.Color_COLOR_G} {
-		if float64(count[col])/float64(seen) >= share {
+	for _, col := range wubrg {
+		if col == lead || col == second {
 			out = append(out, col)
 		}
 	}
@@ -699,8 +732,14 @@ func (b *Builder) commanderPairs(idx *cards.Index, req Request, theme ThemeMatch
 // canPair reports whether a card can be half of a two-commander pair.
 // Only 177 of the 3,384 commander-legal leaders can, plus 31 Backgrounds,
 // so this cut is what keeps the pair walk small (D-154).
+//
+// A Doctor carries no partner kind: the Doctor's companion card carries
+// it (derive.go). The Doctor passes on its creature types instead, which
+// is the test rules.ValidPair applies (CR 702.124m). Without it the
+// snapshot offered 0 pairs from 17 Doctors and 26 companions (measured
+// 2026-08-26).
 func canPair(c *mtgv1.Card) bool {
-	if c.GetIsBackground() {
+	if c.GetIsBackground() || rules.IsDoctor(c) {
 		return true
 	}
 	switch c.Partner {
