@@ -144,14 +144,14 @@ func conversations() []conversation {
 
 	c9 := conversation{name: "a commander the library does not hold"}
 	c9.ctx = newCtx("brago blink deck from my library")
-	c9.ctx.HasCollection, c9.ctx.OwnedMode, c9.ctx.CommanderNotOwned = true, true, true
+	c9.ctx.HasCollection, c9.ctx.OwnedMode = true, true
 	c9.ctx.Theme, c9.ctx.Filled["format"], c9.ctx.Filled["theme"] = "blink", true, true
 	c9.ctx.Format = mtgv1.FormatId_FORMAT_ID_COMMANDER
 	c9.steps = []step{
-		// The not-owned row carries its own key, so the named commander
-		// does not cancel it (M-5).
-		{want: []string{"commander_not_owned", "power_commander", "colors"},
-			fill: []string{"commander_owned", "commander", "power", "colors"}, set: func(c *Context) { c.CommanderSet, c.BuyList = true, true }},
+		// The not-owned row is retired (D-226), so the base commander row
+		// asks and the rules engine reports ownership after the build.
+		{want: []string{"commander", "power_commander", "colors"},
+			fill: []string{"commander", "power", "colors"}, set: func(c *Context) { c.CommanderSet, c.BuyList = true, true }},
 		{want: []string{"pool", "budget"}, fill: []string{"pool_rule", "budget"}},
 	}
 	cs = append(cs, c9)

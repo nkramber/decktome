@@ -1123,6 +1123,18 @@
         "Black and green, a sacrifice deck.",
         "2"
       ]
+    },
+    {
+      "id": 105,
+      "name": "probe: a theme the library can not lead",
+      "collection": true,
+      "probe": true,
+      "note": "The weak-pool row has never fired in any gate run. It needs an owned mode and a theme the collection holds no commander for. It is a probe, so the frozen bar of the first 30 stays comparable (D-105, D-226).",
+      "messages": [
+        "Build me an Eldrazi deck using only the cards in my library.",
+        "Commander.",
+        "Colorless."
+      ]
     }
   ]
 }

@@ -59,7 +59,6 @@ type Context struct {
 	// row asks about these, and only these (D-70).
 	LockedCard        bool `json:"locked_card"`
 	Suggested         bool `json:"suggested"`
-	CommanderNotOwned bool `json:"commander_not_owned"`
 	WeakCommanderPool bool `json:"weak_commander_pool"`
 	PowerCompetitive  bool `json:"power_competitive"`
 	// PowerInferred says the agent filled the power step itself, because
@@ -227,7 +226,6 @@ func (w When) matches(ctx Context) bool {
 		{w.LockedCard, ctx.LockedCard},
 		{w.Suggested, ctx.Suggested},
 		{w.OwnedMode, ctx.OwnedMode},
-		{w.CommanderNotOwned, ctx.CommanderNotOwned},
 		{w.WeakCommanderPool, ctx.WeakCommanderPool},
 		{w.CommanderSet, ctx.CommanderSet},
 		{w.HasCollection, ctx.HasCollection},

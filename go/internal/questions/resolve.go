@@ -57,9 +57,6 @@ type PairAware interface {
 // user got the plain pool question, and the {n} count of D-67 never
 // showed. The agent reads them again after the classify call (M-6).
 type FactSource interface {
-	// MissingCommander reports whether the collection holds none of the
-	// named commanders.
-	MissingCommander(names []string) bool
 	// WeakCommanderPool reports whether an owned mode holds no on-theme
 	// commander (D-63).
 	WeakCommanderPool(theme string) bool

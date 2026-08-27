@@ -32,7 +32,6 @@ What blocks the next run is the checker's noise margin. Run 18 and run 20260826-
 | # | Question | Why only you | What it blocks |
 |---|---|---|---|
 | OQ-23 | What does the agent do when the user asks a question back, such as "What is a bracket?" | Probe 36 asks it. The catalog holds questions and no answers, so an answer path is a product decision. | Probe 36, and the PR-12 chat UI. |
-| OQ-36 | The not-owned row and the weak-pool row never fire in a live run. The pool mode arrives after the commander is settled. Do we reorder, or let PR-8 handle both? | It is an ask-order change, and the order is yours (corpus section 11). | Two catalog rows that are dead in practice. |
 | OQ-37 | Do the 14 terse conversations join the catalog-only bar, or stay probes? | D-105 froze the first 30 so the bar stays comparable. At some point the bar should measure the harder set. | The meaning of the gate verdict. |
 | OQ-38 | Conversations 11 and 12 need a stored deck, so the variance row and the freeze can not work before PR-8. Do they stay in the gate? | They cost money every run and prove nothing yet. | Two of the 30 gate conversations. |
 

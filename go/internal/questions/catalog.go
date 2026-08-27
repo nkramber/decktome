@@ -90,7 +90,6 @@ type When struct {
 	LockedCard        *bool `json:"locked_card"`
 	Suggested         *bool `json:"suggested"`
 	OwnedMode         *bool `json:"owned_mode"`
-	CommanderNotOwned *bool `json:"commander_not_owned"`
 	WeakCommanderPool *bool `json:"weak_commander_pool"`
 	CommanderSet      *bool `json:"commander_set"`
 	HasCollection     *bool `json:"has_collection"`

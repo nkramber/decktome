@@ -254,26 +254,6 @@ func colorWords(cols []mtgv1.Color) string {
 	return englishList(words)
 }
 
-// MissingCommander reports whether the collection holds none of the named
-// commanders. It answers false when no name is given, when no collection
-// is loaded, or when the index does not know the name. A card the index
-// can not resolve is not proof that the user does not own it.
-func (h *CandidateHints) MissingCommander(names []string) bool {
-	if h == nil || h.Index == nil || len(h.Owned) == 0 || len(names) == 0 {
-		return false
-	}
-	for _, name := range names {
-		card, ok := h.Index.ByName(strings.TrimSpace(name))
-		if !ok {
-			return false
-		}
-		if h.Owned[card.GetOracleId()] > 0 {
-			return false
-		}
-	}
-	return true
-}
-
 // WeakCommanderPool reports whether an owned mode holds no on-theme
 // commander (D-63). PR-6 answers it with a count, so there is no
 // threshold to invent: an empty pool is a weak pool.
