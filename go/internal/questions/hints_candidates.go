@@ -257,6 +257,10 @@ func colorWords(cols []mtgv1.Color) string {
 // WeakCommanderPool reports whether an owned mode holds no on-theme
 // commander (D-63). PR-6 answers it with a count, so there is no
 // threshold to invent: an empty pool is a weak pool.
+//
+// No catalog row reads it since D-232 retired the weak-pool row. PR-8
+// reads the same pool when it picks a commander the session delegated,
+// and it reports the shortfall with the deck.
 func (h *CandidateHints) WeakCommanderPool(theme string) bool {
 	if h == nil || h.Index == nil || h.Builder == nil || len(h.Owned) == 0 || strings.TrimSpace(theme) == "" {
 		return false

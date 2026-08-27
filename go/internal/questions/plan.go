@@ -57,10 +57,9 @@ type Context struct {
 	NamedCard     bool `json:"named_card"`
 	// LockedCard marks a named card that is not the commander. The locked
 	// row asks about these, and only these (D-70).
-	LockedCard        bool `json:"locked_card"`
-	Suggested         bool `json:"suggested"`
-	WeakCommanderPool bool `json:"weak_commander_pool"`
-	PowerCompetitive  bool `json:"power_competitive"`
+	LockedCard       bool `json:"locked_card"`
+	Suggested        bool `json:"suggested"`
+	PowerCompetitive bool `json:"power_competitive"`
 	// PowerInferred says the agent filled the power step itself, because
 	// the user asked for a strong deck and named no step. A step the user
 	// named is not inferred, and a question about it repeats the answer
@@ -226,7 +225,6 @@ func (w When) matches(ctx Context) bool {
 		{w.LockedCard, ctx.LockedCard},
 		{w.Suggested, ctx.Suggested},
 		{w.OwnedMode, ctx.OwnedMode},
-		{w.WeakCommanderPool, ctx.WeakCommanderPool},
 		{w.CommanderSet, ctx.CommanderSet},
 		{w.HasCollection, ctx.HasCollection},
 		{w.ThinTheme, ctx.ThinTheme},

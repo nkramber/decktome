@@ -1,5 +1,5 @@
 {
-  "note": "The PR-8 golden prompts. Prompt 13 names a commander the collection does not hold, on purpose: owned-first must warn and still build (D-37). Prompts 2 and 5 name owned commanders, so an accidental warning never hides a real one. Each one is a session whose slots are all answered, which is where the generator takes over. The set covers the three formats the app builds (D-155), both pool modes (D-37), every power shape, and the two build rules that are not rules of the game: the precon share (D-218) and a locked card (D-70).",
+  "note": "The PR-8 golden prompts. Prompts 14 and 15 name no commander, so the generator must pick one. A user who delegates the pick makes D-147 and D-208 skip the slot (D-232). Prompt 13 names a commander the collection does not hold, on purpose: owned-first must warn and still build (D-37). Prompts 2 and 5 name owned commanders, so an accidental warning never hides a real one. Each one is a session whose slots are all answered, which is where the generator takes over. The set covers the three formats the app builds (D-155), both pool modes (D-37), every power shape, and the two build rules that are not rules of the game: the precon share (D-218) and a locked card (D-70).",
   "prompts": [
     {"id": 1, "name": "lifegain Commander, any card", "format": "commander", "theme": "lifegain",
      "commander": "Karlov of the Ghost Council", "bracket": 3, "pool": "any_card",
@@ -40,6 +40,12 @@
      "plan": "A token Commander deck led by Adeline, Resplendent Cathar, under 100 dollars, at bracket 2."},
     {"id": 13, "name": "owned first, and the commander is not owned", "format": "commander", "theme": "lifegain",
      "commander": "Karlov of the Ghost Council", "bracket": 3, "pool": "owned_first", "collection": true,
-     "plan": "A lifegain Commander deck led by Karlov of the Ghost Council, from my library first, at bracket 3."}
+     "plan": "A lifegain Commander deck led by Karlov of the Ghost Council, from my library first, at bracket 3."},
+    {"id": 14, "name": "the user delegates the commander", "format": "commander", "theme": "dragons",
+     "bracket": 3, "pool": "any_card", "colors": ["R", "G"],
+     "plan": "A dragons Commander deck at bracket 3. You pick the commander."},
+    {"id": 15, "name": "delegated commander, owned first", "format": "commander", "theme": "lifegain",
+     "bracket": 2, "pool": "owned_first", "collection": true, "colors": ["W", "B"],
+     "plan": "A lifegain Commander deck from my library first, at bracket 2. You pick the commander."}
   ]
 }

@@ -1443,12 +1443,10 @@ func TestOutOfScopeClosesOnADeckRequest(t *testing.T) {
 type factHints struct {
 	stubHints
 	missing bool
-	weak    bool
 	thin    bool
 	count   int
 }
 
-func (f factHints) WeakCommanderPool(string) bool                 { return f.weak }
 func (f factHints) ThinTheme(string) (bool, int)                  { return f.thin, f.count }
 func (f factHints) OwnedThemeCount(string) int                    { return f.count }
 func (f factHints) FitsColors(string, []mtgv1.Color) (bool, bool) { return true, true }

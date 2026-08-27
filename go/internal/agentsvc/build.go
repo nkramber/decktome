@@ -57,6 +57,41 @@ func (s *Server) buildDeck(ctx context.Context, uid string, session *mtgv1.Sessi
 		}
 	}
 
+	// A user who says "you pick" delegates the commander, and D-147 and
+	// D-208 skip the slot for the generator. The generator must then pick
+	// one, or the engine refuses the deck for no commander. No golden
+	// prompt covered this path until D-232.
+	var thinPool bool
+	if format == mtgv1.FormatId_FORMAT_ID_COMMANDER && len(commanderIDs) == 0 {
+		pool, err := s.builder.CommanderPool(idx, candidates.Request{
+			Format:   format,
+			Theme:    slots.GetTheme(),
+			Colors:   slots.GetColors(),
+			PoolRule: slots.GetPoolRule(),
+			Owned:    owned,
+			Bracket:  slots.GetPower().GetBracket(),
+		})
+		switch {
+		case err != nil:
+			s.log.WarnContext(ctx, "the commander pool failed", "err", err)
+		case len(pool) == 0:
+			// The library holds no commander for this theme. The weak-pool
+			// row used to ask about this and could never reach the user
+			// who needed it (D-232). The deck reports it instead.
+			thinPool = true
+		default:
+			c := pool[0]
+			commanders = append(commanders, c.Card)
+			commanderIDs = append(commanderIDs, c.Card.GetOracleId())
+			if c.Partner != nil {
+				commanders = append(commanders, c.Partner)
+				commanderIDs = append(commanderIDs, c.Partner.GetOracleId())
+			}
+			s.log.InfoContext(ctx, "the generator picked the commander the user delegated",
+				"session", session.GetId(), "card", c.Card.GetName())
+		}
+	}
+
 	list, err := s.builder.Build(idx, candidates.Request{
 		Format:             format,
 		Colors:             slots.GetColors(),
@@ -84,18 +119,19 @@ func (s *Server) buildDeck(ctx context.Context, uid string, session *mtgv1.Sessi
 	pool := generate.FromList(list, always, buyList)
 
 	res, err := s.decks.Build(ctx, generate.Request{
-		SessionID:    session.GetId(),
-		Format:       format,
-		Power:        slots.GetPower(),
-		Plan:         plan(session, slots),
-		Pool:         pool,
-		Commanders:   commanderIDs,
-		PoolRule:     slots.GetPoolRule(),
-		OracleCounts: owned,
-		Roles:        generate.Roles(list),
-		Targets:      generate.TargetsFor(format, slots.GetPower()),
-		Limits:       generate.LimitsFor(format),
-		LegalityAsOf: idx.AsOf.Format("2006-01-02"),
+		ThinCommanderPool: thinPool,
+		SessionID:         session.GetId(),
+		Format:            format,
+		Power:             slots.GetPower(),
+		Plan:              plan(session, slots),
+		Pool:              pool,
+		Commanders:        commanderIDs,
+		PoolRule:          slots.GetPoolRule(),
+		OracleCounts:      owned,
+		Roles:             generate.Roles(list),
+		Targets:           generate.TargetsFor(format, slots.GetPower()),
+		Limits:            generate.LimitsFor(format),
+		LegalityAsOf:      idx.AsOf.Format("2006-01-02"),
 	}, acc)
 	if err != nil {
 		return nil, err

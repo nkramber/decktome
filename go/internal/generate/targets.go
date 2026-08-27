@@ -99,3 +99,8 @@ func plural(n int, noun string) string {
 	}
 	return fmt.Sprintf("%d %ss", n, noun)
 }
+
+// CodeThinCommanderPool reports a library with no commander for the
+// theme, in an owned mode. The retired weak-pool row asked about this
+// before the build, and a delegated commander silenced it (D-232).
+const CodeThinCommanderPool = "thin_commander_pool"

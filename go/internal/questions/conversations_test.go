@@ -156,13 +156,16 @@ func conversations() []conversation {
 	}
 	cs = append(cs, c9)
 
+	// The weak-pool row is retired (D-232), so a thin library asks the
+	// plain commander question and PR-8 reports the shortfall with the
+	// deck.
 	c10 := conversation{name: "no strong commander in the library"}
 	c10.ctx = newCtx("lifegain from my collection")
-	c10.ctx.HasCollection, c10.ctx.OwnedMode, c10.ctx.WeakCommanderPool = true, true, true
+	c10.ctx.HasCollection, c10.ctx.OwnedMode = true, true
 	c10.ctx.Theme, c10.ctx.Format = "lifegain", mtgv1.FormatId_FORMAT_ID_COMMANDER
 	c10.ctx.Filled["format"], c10.ctx.Filled["theme"], c10.ctx.Filled["colors"] = true, true, true
 	c10.steps = []step{
-		{want: []string{"commander_weak_pool", "power_commander", "pool"},
+		{want: []string{"commander", "power_commander", "pool"},
 			fill: []string{"commander", "power", "pool_rule", "budget"}, set: func(c *Context) { c.CommanderSet = true }},
 	}
 	cs = append(cs, c10)

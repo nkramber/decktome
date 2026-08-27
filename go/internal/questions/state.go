@@ -139,11 +139,9 @@ func RefreshFacts(s *State, src FactSource) {
 	// The not-owned row is retired (D-226, closes OQ-36). The rules engine
 	// reports ownership per card after the build, which names the exact
 	// card and count and costs no turn.
-	// No owned commander fits the theme (D-63, D-94). The count answers
-	// it, so no threshold is invented.
-	if !s.Ctx.CommanderSet {
-		s.Ctx.WeakCommanderPool = src.WeakCommanderPool(s.Slots.GetTheme())
-	}
+	// The weak-pool row is retired (D-232). It sat on the commander key,
+	// and a delegated commander fills that key, so the row could not
+	// reach the user who needed it. PR-8 reports the thin pool instead.
 	// PR-6 counts the on-theme owned cards (D-63). The count needs the
 	// format and the theme, and it only matters while the pool key is
 	// open.

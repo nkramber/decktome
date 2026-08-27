@@ -197,6 +197,24 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 	}
 	var commanders []*mtgv1.Card
 	var commanderIDs []string
+	// A prompt with no commander delegates the pick, as a user who says
+	// "you pick" does. The generator must choose one (D-232).
+	if p.Commander == "" && format == mtgv1.FormatId_FORMAT_ID_COMMANDER {
+		pool, err := cb.CommanderPool(idx, candidates.Request{
+			Format: format, Theme: p.Theme, Colors: colorList(p.Colors),
+			PoolRule: poolRuleID(p.Pool), Owned: ownedFor(p, owned), Bracket: p.Bracket,
+		})
+		if err != nil {
+			out.err = fmt.Errorf("commander pool: %w", err)
+			return out
+		}
+		if len(pool) == 0 {
+			out.err = fmt.Errorf("the library holds no commander for %q", p.Theme)
+			return out
+		}
+		commanders = append(commanders, pool[0].Card)
+		commanderIDs = append(commanderIDs, pool[0].Card.GetOracleId())
+	}
 	if p.Commander != "" {
 		c, ok := idx.ByName(p.Commander)
 		if !ok {
@@ -211,10 +229,7 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 		colors = commanders[0].GetColorIdentity()
 	}
 	poolRule := poolRuleID(p.Pool)
-	own := map[string]int32{}
-	if p.Collection {
-		own = owned
-	}
+	own := ownedFor(p, owned)
 	list, err := cb.Build(idx, candidates.Request{
 		Format:             format,
 		Colors:             colors,
@@ -281,4 +296,12 @@ func loadOwned(path string, idx *cards.Index) (map[string]int32, error) {
 	}
 	entries, _ := collections.Resolve(rows, idx)
 	return collections.OracleCounts(entries), nil
+}
+
+// ownedFor is the collection a prompt reads, empty when it wants none.
+func ownedFor(p prompt, owned map[string]int32) map[string]int32 {
+	if p.Collection {
+		return owned
+	}
+	return map[string]int32{}
 }

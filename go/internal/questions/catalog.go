@@ -84,21 +84,20 @@ type When struct {
 	PowerCompetitive *bool    `json:"power_competitive"`
 	// PowerInferred marks a power step the agent filled in for the user.
 	// The confirm row exists for that step alone (D-209).
-	PowerInferred     *bool `json:"power_inferred"`
-	OutOfScope        *bool `json:"out_of_scope"`
-	NamedCard         *bool `json:"named_card"`
-	LockedCard        *bool `json:"locked_card"`
-	Suggested         *bool `json:"suggested"`
-	OwnedMode         *bool `json:"owned_mode"`
-	WeakCommanderPool *bool `json:"weak_commander_pool"`
-	CommanderSet      *bool `json:"commander_set"`
-	HasCollection     *bool `json:"has_collection"`
-	ThinTheme         *bool `json:"thin_theme"`
-	BuyList           *bool `json:"buy_list"`
-	BudgetAmbiguous   *bool `json:"budget_ambiguous"`
-	HouseFormat       *bool `json:"house_format"`
-	TwoPlans          *bool `json:"two_plans"`
-	AfterBuild        *bool `json:"after_build"`
+	PowerInferred   *bool `json:"power_inferred"`
+	OutOfScope      *bool `json:"out_of_scope"`
+	NamedCard       *bool `json:"named_card"`
+	LockedCard      *bool `json:"locked_card"`
+	Suggested       *bool `json:"suggested"`
+	OwnedMode       *bool `json:"owned_mode"`
+	CommanderSet    *bool `json:"commander_set"`
+	HasCollection   *bool `json:"has_collection"`
+	ThinTheme       *bool `json:"thin_theme"`
+	BuyList         *bool `json:"buy_list"`
+	BudgetAmbiguous *bool `json:"budget_ambiguous"`
+	HouseFormat     *bool `json:"house_format"`
+	TwoPlans        *bool `json:"two_plans"`
+	AfterBuild      *bool `json:"after_build"`
 	// TwoDecks marks a request for more than one deck (D-112).
 	TwoDecks *bool `json:"two_decks"`
 	// UnsupportedFormat marks a format this app does not build (D-112).

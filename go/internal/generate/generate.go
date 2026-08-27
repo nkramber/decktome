@@ -45,6 +45,11 @@ type Request struct {
 	PreconOracleIDs []string
 	// LegalityAsOf is the card-snapshot date the deck is checked against.
 	LegalityAsOf string
+	// ThinCommanderPool says the library holds no commander for the theme
+	// in an owned mode. The retired weak-pool row asked about this and
+	// could never reach the user who needed it, so the deck reports it
+	// (D-232).
+	ThinCommanderPool bool
 }
 
 // Result is one finished build.
@@ -152,6 +157,13 @@ func (b *Builder) assemble(req Request, out *deckOut) pass {
 			Code:     CodeBasicsAdded,
 			Severity: mtgv1.Severity_SEVERITY_INFO,
 			Message:  fmt.Sprintf("the list was %s short, so the builder added %s", plural(padded, "card"), plural(padded, "basic land")),
+		})
+	}
+	if req.ThinCommanderPool {
+		deck.Validation.Findings = append(deck.GetValidation().GetFindings(), &mtgv1.Finding{
+			Code:     CodeThinCommanderPool,
+			Severity: mtgv1.Severity_SEVERITY_WARN,
+			Message:  "your library holds no commander for this theme, so the deck was built without one from it",
 		})
 	}
 	// The summary is prose, and F-26 lives there. The net reads the shape
