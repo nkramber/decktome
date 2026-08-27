@@ -20,9 +20,22 @@ The numbers below are the four runs that matter. Run 18 and `191225-000` measure
 | Bad questions, whole set | 32 of 369 | 42 of 453 | 24 of 434 | 24 of 430 | 26 of 423 |
 | Bad-question ratio, holdout | 10.4% | 8.5% | 7.3% | 8.8% | 8.9% |
 | `duplicate` faults | 16 | 15 | 10 | 3 | 1 |
-| Verdict | baseline | failed | baseline | rejected | current |
+| Verdict | baseline | failed | baseline | rejected | superseded |
+
+| Measure | Run 19 | Run 20 |
+|---|---|---|
+| Agent code | D-209 to D-216 | D-219 and D-220 |
+| Gate verdict | PASS 29/30 | PASS 29/30 |
+| Bad questions, whole set | 26 of 423 | 18 of 430 |
+| Bad-question ratio, whole set | 6.1% | 4.2% |
+| Bad-question ratio, holdout | 8.9% | 9.3% |
+| Verdict | superseded | current |
 
 Run 19 measures D-214 to D-216 against baseline `220840-000`. The three targets landed. The `power_sixty_confirm` row went from 6 bad questions to 0, `duplicate` faults fell from 10 to 1, and conversations 27 and 33 need no invented question. The whole set rose by 2 and the holdout by 2. Both sit inside the margin of 3, and both sit on rows the change never touched (D-217).
+
+Run 20 measures D-219 and D-220. Conversation 33 now gets the open power question, and the competitive theme row is gone. Conversation 74 no longer asks whether Sol Ring can lead a deck, and the commander row asks instead. The whole set fell by 8 bad questions, from 6.1 percent to 4.2 percent.
+
+CAUTION: the holdout did not move. It went from 12 bad questions to 13, which is inside the margin of 3. The whole set and the holdout disagree, and the holdout is the conservative measure. Do not report 4.2 percent as the product ratio. The next run must show the holdout move before that number holds.
 
 Every gain above came from hand analysis, and none came from the loop. D-195 to D-208 removed 18 bad questions in one session. The loop started seven times and kept nothing.
 
@@ -42,7 +55,7 @@ The owner chose PR-8 next. The loop stays off until a run proves the checker hol
 
 - `main` is at fdfe15c, "Pr 7b (#13)". Merged: PR-0a to PR-7, PR-7B, and PR-10 (#1 to #13).
 - Branch `pr-7c` holds the loop work. HEAD is 351250d. It carries the `v0.0` baseline as evidence, the lesson of the rejected iteration, and the five recovered commits (D-209 to D-213).
-- `docs/decisions.md` reaches D-217. D-214 to D-216 fix the two named defects of gate run `20260826-220840-000`.
+- `docs/decisions.md` reaches D-220. OQ-21 is answered, so no owner question blocks PR-8. D-214 to D-216 fix the two named defects of gate run `20260826-220840-000`.
 - Branches `auto-tune/20260826-191225` and `auto-tune/20260826-220840` can be deleted. `pr-7c` holds everything they carry.
 - The conversation set holds 104 conversations, 30 gate and 74 probe (D-145, D-155).
 - Prompt versions: classify and ask 8, eval 3, M-5 rubric 2. A score taken at an earlier version does not carry over (D-66).
@@ -54,10 +67,9 @@ The owner chose PR-8 next. The loop stays off until a run proves the checker hol
 2. Answer OQ-21, the precon share. It is the only owner question that blocks PR-8.
 3. PR-8 (generator), then PR-9 (variance). PR-8 owns the prompt-cache lever, the weak-commander-pool bar, and OQ-21.
 
-Two defects that run 19 found, and that nobody fixed:
+One defect that run 20 found, and that nobody fixed:
 
-- Conversation 74 asks "Should Sol Ring be your commander or one of the 99 cards?". Sol Ring can not lead a deck, and D-129 must catch it. The `named_card_role` row does not read the card index.
-- Conversation 33 still gets the `theme_competitive` row for "A Modern deck for an event". D-215 closed the `facts.power_competitive` path. The classifier can still fill the power step itself, and `agent.go` reads a filled step of FNM or tournament as a competitive request. Read that path before you trust D-215 as complete.
+- Conversation 33 spends its one invented question on the `locked` row. The ask role rewrote "Must the deck keep {locked}, or may I cut a card that does not fit the plan?" and the guard refused the rewrite. The row is a reword candidate, and no rule is wrong.
 
 ## Facts that expire
 
