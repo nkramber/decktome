@@ -59,6 +59,11 @@ func classifyStep(t *testing.T, out classifyOut) llm.Step {
 	if out.LockedNames == nil {
 		out.LockedNames = []string{}
 	}
+	// The scope is an enum, and the empty string is not one of its values
+	// (D-238).
+	if out.BudgetScope == "" {
+		out.BudgetScope = "unknown"
+	}
 	if out.NamedCards == nil {
 		out.NamedCards = []string{}
 	}

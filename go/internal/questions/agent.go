@@ -343,7 +343,10 @@ type classifyOut struct {
 	Power      string   `json:"power"`
 	PoolRule   string   `json:"pool_rule"`
 	BudgetUSD  float64  `json:"budget_usd"`
-	ClosedKeys []string `json:"closed_keys"`
+	// BudgetScope is "buy", "deck", or "unknown". The budget-scope row
+	// asks it, and nothing stored the answer before D-238.
+	BudgetScope string   `json:"budget_scope"`
+	ClosedKeys  []string `json:"closed_keys"`
 	// DeclinedKeys are the keys the user handed back to the agent. A
 	// decline is not an answer: it holds no value, and a default applies
 	// (D-93).
@@ -891,6 +894,12 @@ func (a *Agent) apply(st *State, out classifyOut, open []string, message string)
 		st.Slots.BudgetUsd = out.BudgetUSD
 		st.Close("budget")
 	}
+	// The scope answers its own row, so a user who says "on the whole
+	// deck" closes it without naming a number again (D-238).
+	if sc := budgetScope(out.BudgetScope); sc != mtgv1.BudgetScope_BUDGET_SCOPE_UNSPECIFIED {
+		st.Slots.BudgetScope = sc
+		st.Close("budget_scope")
+	}
 	// A key closes by name only when two things hold: its question is
 	// out, and it carries no typed value. Three gate runs paid for that
 	// pair of conditions.
@@ -1243,4 +1252,15 @@ func (a *Agent) dropOffColorOffers(st *State) {
 	// The pick row must ask again with a full set of names.
 	st.Reopen("commander_pick")
 	st.Ctx.Suggested = true
+}
+
+// budgetScope reads the scope word the classifier reported (D-238).
+func budgetScope(s string) mtgv1.BudgetScope {
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "buy", "cards", "purchases":
+		return mtgv1.BudgetScope_BUDGET_SCOPE_CARDS_TO_BUY
+	case "deck", "whole", "whole_deck", "whole deck":
+		return mtgv1.BudgetScope_BUDGET_SCOPE_WHOLE_DECK
+	}
+	return mtgv1.BudgetScope_BUDGET_SCOPE_UNSPECIFIED
 }

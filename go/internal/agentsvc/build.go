@@ -122,6 +122,7 @@ func (s *Server) buildDeck(ctx context.Context, uid string, session *mtgv1.Sessi
 	res, err := s.decks.Build(ctx, generate.Request{
 		ThinCommanderPool: thinPool,
 		BudgetUSD:         slots.GetBudgetUsd(),
+		BudgetWholeDeck:   slots.GetBudgetScope() == mtgv1.BudgetScope_BUDGET_SCOPE_WHOLE_DECK,
 		SessionID:         session.GetId(),
 		Format:            format,
 		Power:             slots.GetPower(),

@@ -16,7 +16,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file mtg/v1/session.proto.
  */
 export const file_mtg_v1_session: GenFile = /*@__PURE__*/
-  fileDesc("ChRtdGcvdjEvc2Vzc2lvbi5wcm90bxIGbXRnLnYxIp4CCgdTZXNzaW9uEgoKAmlkGAEgASgJEhUKDWNvbGxlY3Rpb25faWQYAiABKAkSHAoFc2xvdHMYAyABKAsyDS5tdGcudjEuU2xvdHMSGwoFdHVybnMYBCADKAsyDC5tdGcudjEuVHVybhIQCghkZWNrX2lkcxgFIAMoCRIuCgpjcmVhdGVkX2F0GAYgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIuCgp1cGRhdGVkX2F0GAcgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIlCgZzdGF0dXMYCCABKA4yFS5tdGcudjEuU2Vzc2lvblN0YXR1cxIcCgV1c2FnZRgJIAEoCzINLm10Zy52MS5Vc2FnZSKcAQoFVXNhZ2USDQoFY2FsbHMYASABKAUSFAoMaW5wdXRfdG9rZW5zGAIgASgDEhsKE2NhY2hlZF9pbnB1dF90b2tlbnMYAyABKAMSFQoNb3V0cHV0X3Rva2VucxgEIAEoAxIYChByZWFzb25pbmdfdG9rZW5zGAUgASgDEhAKCGNvc3RfdXNkGAYgASgBEg4KBnByaWNlZBgHIAEoCCL6AgoFU2xvdHMSHgoGZm9ybWF0GAEgASgLMg4ubXRnLnYxLkZvcm1hdBIhCgVwb3dlchgCIAEoCzISLm10Zy52MS5Qb3dlckxldmVsEh0KBmNvbG9ycxgDIAMoDjINLm10Zy52MS5Db2xvchINCgV0aGVtZRgEIAEoCRIcChRjb21tYW5kZXJfb3JhY2xlX2lkcxgFIAMoCRIjCglwb29sX3J1bGUYBiABKA4yEC5tdGcudjEuUG9vbFJ1bGUSEgoKYnVkZ2V0X3VzZBgHIAEoARIZChFsb2NrZWRfb3JhY2xlX2lkcxgIIAMoCRIUCgxwbGFuX3ZhcmlhbnQYCSABKAkSMgoLc2xvdF9zdGF0ZXMYCiADKAsyHS5tdGcudjEuU2xvdHMuU2xvdFN0YXRlc0VudHJ5GkQKD1Nsb3RTdGF0ZXNFbnRyeRILCgNrZXkYASABKAkSIAoFdmFsdWUYAiABKA4yES5tdGcudjEuU2xvdFN0YXRlOgI4ASKhAQoEVHVybhIUCgx1c2VyX21lc3NhZ2UYASABKAkSFQoNYWdlbnRfbWVzc2FnZRgCIAEoCRIjCglxdWVzdGlvbnMYAyADKAsyEC5tdGcudjEuUXVlc3Rpb24SJgoCYXQYBCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEh8KB2Fuc3dlcnMYBSADKAsyDi5tdGcudjEuQW5zd2VyIkEKBkFuc3dlchITCgtxdWVzdGlvbl9pZBgBIAEoCRIUCgxvcHRpb25faW5kZXgYAiABKAUSDAoEdGV4dBgDIAEoCSJ+CghRdWVzdGlvbhIKCgJpZBgGIAEoCRIMCgRzbG90GAEgASgJEgwKBHRleHQYAiABKAkSDwoHb3B0aW9ucxgDIAMoCRIQCghpbnZlbnRlZBgEIAEoCBIRCglnYXBfc2NvcmUYBSABKAESFAoMY2F0YWxvZ190ZXh0GAcgASgJKn4KDVNlc3Npb25TdGF0dXMSHgoaU0VTU0lPTl9TVEFUVVNfVU5TUEVDSUZJRUQQABIZChVTRVNTSU9OX1NUQVRVU19BU0tJTkcQARIYChRTRVNTSU9OX1NUQVRVU19SRUFEWRACEhgKFFNFU1NJT05fU1RBVFVTX0JVSUxUEAMqggEKCVNsb3RTdGF0ZRIaChZTTE9UX1NUQVRFX1VOU1BFQ0lGSUVEEAASFAoQU0xPVF9TVEFURV9FTVBUWRABEhQKEFNMT1RfU1RBVEVfQVNLRUQQAhIVChFTTE9UX1NUQVRFX0ZJTExFRBADEhYKElNMT1RfU1RBVEVfU0tJUFBFRBAEKnIKCFBvb2xSdWxlEhkKFVBPT0xfUlVMRV9VTlNQRUNJRklFRBAAEhkKFVBPT0xfUlVMRV9PV05FRF9GSVJTVBABEhgKFFBPT0xfUlVMRV9PV05FRF9PTkxZEAISFgoSUE9PTF9SVUxFX0FOWV9DQVJEEANCOlo4Z2l0aHViLmNvbS9ua3JhbWJlci9tdGctZGVjay1idWlsZGVyL2dvL2dlbi9tdGcvdjE7bXRndjFiBnByb3RvMw", [file_mtg_v1_format, file_mtg_v1_card, file_google_protobuf_timestamp]);
+  fileDesc("ChRtdGcvdjEvc2Vzc2lvbi5wcm90bxIGbXRnLnYxIp4CCgdTZXNzaW9uEgoKAmlkGAEgASgJEhUKDWNvbGxlY3Rpb25faWQYAiABKAkSHAoFc2xvdHMYAyABKAsyDS5tdGcudjEuU2xvdHMSGwoFdHVybnMYBCADKAsyDC5tdGcudjEuVHVybhIQCghkZWNrX2lkcxgFIAMoCRIuCgpjcmVhdGVkX2F0GAYgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIuCgp1cGRhdGVkX2F0GAcgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIlCgZzdGF0dXMYCCABKA4yFS5tdGcudjEuU2Vzc2lvblN0YXR1cxIcCgV1c2FnZRgJIAEoCzINLm10Zy52MS5Vc2FnZSKcAQoFVXNhZ2USDQoFY2FsbHMYASABKAUSFAoMaW5wdXRfdG9rZW5zGAIgASgDEhsKE2NhY2hlZF9pbnB1dF90b2tlbnMYAyABKAMSFQoNb3V0cHV0X3Rva2VucxgEIAEoAxIYChByZWFzb25pbmdfdG9rZW5zGAUgASgDEhAKCGNvc3RfdXNkGAYgASgBEg4KBnByaWNlZBgHIAEoCCKlAwoFU2xvdHMSHgoGZm9ybWF0GAEgASgLMg4ubXRnLnYxLkZvcm1hdBIhCgVwb3dlchgCIAEoCzISLm10Zy52MS5Qb3dlckxldmVsEh0KBmNvbG9ycxgDIAMoDjINLm10Zy52MS5Db2xvchINCgV0aGVtZRgEIAEoCRIcChRjb21tYW5kZXJfb3JhY2xlX2lkcxgFIAMoCRIjCglwb29sX3J1bGUYBiABKA4yEC5tdGcudjEuUG9vbFJ1bGUSEgoKYnVkZ2V0X3VzZBgHIAEoARIpCgxidWRnZXRfc2NvcGUYCyABKA4yEy5tdGcudjEuQnVkZ2V0U2NvcGUSGQoRbG9ja2VkX29yYWNsZV9pZHMYCCADKAkSFAoMcGxhbl92YXJpYW50GAkgASgJEjIKC3Nsb3Rfc3RhdGVzGAogAygLMh0ubXRnLnYxLlNsb3RzLlNsb3RTdGF0ZXNFbnRyeRpECg9TbG90U3RhdGVzRW50cnkSCwoDa2V5GAEgASgJEiAKBXZhbHVlGAIgASgOMhEubXRnLnYxLlNsb3RTdGF0ZToCOAEioQEKBFR1cm4SFAoMdXNlcl9tZXNzYWdlGAEgASgJEhUKDWFnZW50X21lc3NhZ2UYAiABKAkSIwoJcXVlc3Rpb25zGAMgAygLMhAubXRnLnYxLlF1ZXN0aW9uEiYKAmF0GAQgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIfCgdhbnN3ZXJzGAUgAygLMg4ubXRnLnYxLkFuc3dlciJBCgZBbnN3ZXISEwoLcXVlc3Rpb25faWQYASABKAkSFAoMb3B0aW9uX2luZGV4GAIgASgFEgwKBHRleHQYAyABKAkifgoIUXVlc3Rpb24SCgoCaWQYBiABKAkSDAoEc2xvdBgBIAEoCRIMCgR0ZXh0GAIgASgJEg8KB29wdGlvbnMYAyADKAkSEAoIaW52ZW50ZWQYBCABKAgSEQoJZ2FwX3Njb3JlGAUgASgBEhQKDGNhdGFsb2dfdGV4dBgHIAEoCSp+Cg1TZXNzaW9uU3RhdHVzEh4KGlNFU1NJT05fU1RBVFVTX1VOU1BFQ0lGSUVEEAASGQoVU0VTU0lPTl9TVEFUVVNfQVNLSU5HEAESGAoUU0VTU0lPTl9TVEFUVVNfUkVBRFkQAhIYChRTRVNTSU9OX1NUQVRVU19CVUlMVBADKmcKC0J1ZGdldFNjb3BlEhwKGEJVREdFVF9TQ09QRV9VTlNQRUNJRklFRBAAEh0KGUJVREdFVF9TQ09QRV9DQVJEU19UT19CVVkQARIbChdCVURHRVRfU0NPUEVfV0hPTEVfREVDSxACKoIBCglTbG90U3RhdGUSGgoWU0xPVF9TVEFURV9VTlNQRUNJRklFRBAAEhQKEFNMT1RfU1RBVEVfRU1QVFkQARIUChBTTE9UX1NUQVRFX0FTS0VEEAISFQoRU0xPVF9TVEFURV9GSUxMRUQQAxIWChJTTE9UX1NUQVRFX1NLSVBQRUQQBCpyCghQb29sUnVsZRIZChVQT09MX1JVTEVfVU5TUEVDSUZJRUQQABIZChVQT09MX1JVTEVfT1dORURfRklSU1QQARIYChRQT09MX1JVTEVfT1dORURfT05MWRACEhYKElBPT0xfUlVMRV9BTllfQ0FSRBADQjpaOGdpdGh1Yi5jb20vbmtyYW1iZXIvbXRnLWRlY2stYnVpbGRlci9nby9nZW4vbXRnL3YxO210Z3YxYgZwcm90bzM", [file_mtg_v1_format, file_mtg_v1_card, file_google_protobuf_timestamp]);
 
 /**
  * Session is one deck-building conversation.
@@ -172,11 +172,18 @@ export type Slots = Message<"mtg.v1.Slots"> & {
   poolRule: PoolRule;
 
   /**
-   * budget_usd is the cap for cards to buy. Zero means no cap given.
+   * budget_usd is the cap the user named. Zero means no cap given.
+   * budget_scope says what the cap covers, which the budget-scope
+   * question asks (D-77, D-238).
    *
    * @generated from field: double budget_usd = 7;
    */
   budgetUsd: number;
+
+  /**
+   * @generated from field: mtg.v1.BudgetScope budget_scope = 11;
+   */
+  budgetScope: BudgetScope;
 
   /**
    * locked_oracle_ids are cards the user wants in the deck.
@@ -394,6 +401,45 @@ export const SessionStatusSchema: GenEnum<SessionStatus> = /*@__PURE__*/
   enumDesc(file_mtg_v1_session, 0);
 
 /**
+ * BudgetScope says what a budget covers. The user names one number, and
+ * the budget-scope question asks which of the two they mean (D-77). The
+ * answer had nowhere to go until D-238, so the agent asked it and
+ * discarded it.
+ *
+ * @generated from enum mtg.v1.BudgetScope
+ */
+export enum BudgetScope {
+  /**
+   * BUDGET_SCOPE_UNSPECIFIED: the user gave a number and no scope. The
+   * cap reads as the cards to buy, which is the common meaning.
+   *
+   * @generated from enum value: BUDGET_SCOPE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * BUDGET_SCOPE_CARDS_TO_BUY caps what the user must acquire.
+   *
+   * @generated from enum value: BUDGET_SCOPE_CARDS_TO_BUY = 1;
+   */
+  CARDS_TO_BUY = 1,
+
+  /**
+   * BUDGET_SCOPE_WHOLE_DECK caps the value of every card, owned copies
+   * included.
+   *
+   * @generated from enum value: BUDGET_SCOPE_WHOLE_DECK = 2;
+   */
+  WHOLE_DECK = 2,
+}
+
+/**
+ * Describes the enum mtg.v1.BudgetScope.
+ */
+export const BudgetScopeSchema: GenEnum<BudgetScope> = /*@__PURE__*/
+  enumDesc(file_mtg_v1_session, 1);
+
+/**
  * SlotState is the fill state of one slot (roadmap PR-7 gate: no repeated
  * question).
  *
@@ -436,7 +482,7 @@ export enum SlotState {
  * Describes the enum mtg.v1.SlotState.
  */
 export const SlotStateSchema: GenEnum<SlotState> = /*@__PURE__*/
-  enumDesc(file_mtg_v1_session, 1);
+  enumDesc(file_mtg_v1_session, 2);
 
 /**
  * PoolRule says how the collection constrains the deck (D-2).
@@ -471,5 +517,5 @@ export enum PoolRule {
  * Describes the enum mtg.v1.PoolRule.
  */
 export const PoolRuleSchema: GenEnum<PoolRule> = /*@__PURE__*/
-  enumDesc(file_mtg_v1_session, 2);
+  enumDesc(file_mtg_v1_session, 3);
 

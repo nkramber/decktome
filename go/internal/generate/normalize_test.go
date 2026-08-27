@@ -206,3 +206,42 @@ func TestOverBudgetWarnsAndNeverBlocks(t *testing.T) {
 		t.Errorf("severity = %v, want WARN: a price estimate must not block a deck", found.GetSeverity())
 	}
 }
+
+// TestBudgetScopeChoosesTheCost is D-238. The budget-scope row asks
+// whether a cap covers the cards to buy or the whole deck, and nothing
+// stored the answer, so the agent asked and discarded it.
+func TestBudgetScopeChoosesTheCost(t *testing.T) {
+	// One owned copy and one to buy, each $50. Buying costs $50, and the
+	// whole deck is worth $100.
+	pool := NewPool([]*mtgv1.Card{{OracleId: "o-w", Name: "Ajani's Welcome", PriceUsd: 50}},
+		map[string]int32{"o-w": 1})
+	entry := []Entry{{Name: "Ajani's Welcome", Count: 2, Role: "synergy"}}
+	for _, tc := range []struct {
+		name  string
+		whole bool
+		cap   float64
+		want  bool
+	}{
+		{"buy scope, under the cap", false, 75, false},
+		{"whole-deck scope, over the cap", true, 75, true},
+		{"whole-deck scope, under the cap", true, 150, false},
+	} {
+		one := step(t, deckOut{Summary: "s", Cards: entry})
+		b, _, _ := testBuilder(t, one, one)
+		req := testRequest()
+		req.Pool, req.BudgetUSD, req.BudgetWholeDeck = pool, tc.cap, tc.whole
+		got, err := b.Build(context.Background(), req, nil)
+		if err != nil {
+			t.Fatalf("%s: build: %v", tc.name, err)
+		}
+		var over bool
+		for _, f := range got.Deck.GetValidation().GetFindings() {
+			if f.GetCode() == CodeOverBudget {
+				over = true
+			}
+		}
+		if over != tc.want {
+			t.Errorf("%s: over budget = %v, want %v", tc.name, over, tc.want)
+		}
+	}
+}

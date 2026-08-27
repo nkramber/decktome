@@ -46,11 +46,10 @@ type Request struct {
 	// LegalityAsOf is the card-snapshot date the deck is checked against.
 	LegalityAsOf string
 	// BudgetUSD is what the user allowed, 0 when they named no number.
-	// The proto documents budget_usd as the cap on the cards the user must
-	// buy, so that is what it checks. The budget-scope row asks whether
-	// the cap covers the whole deck instead, and nothing stores that
-	// answer (D-236).
-	BudgetUSD float64
+	// BudgetWholeDeck says the cap covers every card and not the cards the
+	// user must buy, which the budget-scope row asks (D-77, D-238).
+	BudgetUSD       float64
+	BudgetWholeDeck bool
 	// ThinCommanderPool says the library holds no commander for the theme
 	// in an owned mode. The retired weak-pool row asked about this and
 	// could never reach the user who needed it, so the deck reports it
@@ -176,13 +175,16 @@ func (b *Builder) assemble(req Request, out *deckOut) pass {
 	// The price is a daily estimate and not a rule, so going over budget
 	// warns and never blocks (D-236).
 	if req.BudgetUSD > 0 {
-		cost := BuyCost(deck)
+		cost, what := BuyCost(deck), "the cards you must buy"
+		if req.BudgetWholeDeck {
+			cost, what = DeckCost(deck), "the whole deck"
+		}
 		if cost > req.BudgetUSD {
 			deck.Validation.Findings = append(deck.GetValidation().GetFindings(), &mtgv1.Finding{
 				Code:     CodeOverBudget,
 				Severity: mtgv1.Severity_SEVERITY_WARN,
-				Message: fmt.Sprintf("the cards you must buy cost about $%.2f, and the budget is $%.2f",
-					cost, req.BudgetUSD),
+				Message: fmt.Sprintf("%s cost about $%.2f, and the budget is $%.2f",
+					what, cost, req.BudgetUSD),
 			})
 		}
 	}

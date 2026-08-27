@@ -31,10 +31,15 @@ package questions
 // identity in runs 14, 15, and 16, and it changed the preposition each
 // time D-144 caught the old one. The rule now reads the shape (D-151).
 //
+// Version 10 followed D-238. The budget-scope row asked whether a cap
+// covers the cards to buy or the whole deck, and nothing stored the
+// answer, so the agent asked and discarded it. The classify role now
+// reports the scope.
+//
 // Version 9 followed the eval of gate run 18. The classify role reads
 // cEDH as bracket 5, which probe 75 gave in its first message and the
 // agent asked for again (D-164).
-const PromptVersion = 9
+const PromptVersion = 10
 
 const classifyInstructions = `You map one message from a Magic: The Gathering deck-building conversation onto slots.
 
@@ -59,6 +64,7 @@ Rules:
 - facts.house_format: the user described their own rule set instead of a real format.
 - facts.two_plans: the theme has two common plans and the user has not chosen one.
 - facts.budget_ambiguous: the user named one money number without saying whether it caps purchases or the whole deck.
+- budget_scope: what the cap covers, when the user says. "buy" means the cards they must acquire, and "deck" means the whole deck value, owned copies included. Leave it "unknown" when the user did not say.
 - facts.power_competitive: the user asked for a strong, competitive, or winning deck.
 - facts.wants_suggestion: the user asked you to name a commander, or said they have none in mind.
 - offered_commanders in the input are the commanders the agent just named. When the user picks one of them, by name or by place ("the first", "the second one"), put that commander in commander_names.
@@ -72,7 +78,7 @@ Answer with the schema only.`
 const classifySchema = `{
   "type": "object",
   "additionalProperties": false,
-  "required": ["format","theme","colors","commander_names","locked_names","named_cards","power","pool_rule","budget_usd","closed_keys","declined_keys","facts"],
+  "required": ["format","theme","colors","commander_names","locked_names","named_cards","power","pool_rule","budget_usd","budget_scope","closed_keys","declined_keys","facts"],
   "properties": {
     "format": {"type": "string"},
     "theme": {"type": "string"},
@@ -83,6 +89,7 @@ const classifySchema = `{
     "power": {"type": "string"},
     "pool_rule": {"type": "string"},
     "budget_usd": {"type": "number"},
+    "budget_scope": {"type": "string", "enum": ["buy", "deck", "unknown"]},
     "closed_keys": {"type": "array", "items": {"type": "string"}},
     "declined_keys": {"type": "array", "items": {"type": "string"}},
     "facts": {

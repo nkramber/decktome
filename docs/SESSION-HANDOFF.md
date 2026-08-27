@@ -90,7 +90,7 @@ The owner chose PR-8 next. The loop stays off until a run proves the checker hol
 - `docs/decisions.md` reaches D-225. D-221 to D-225 are the PR-8 work. OQ-21 is answered, so no owner question blocks PR-8. D-214 to D-216 fix the two named defects of gate run `20260826-220840-000`.
 - Branches `auto-tune/20260826-191225` and `auto-tune/20260826-220840` can be deleted. `pr-7c` holds everything they carry.
 - The conversation set holds 104 conversations, 30 gate and 74 probe (D-145, D-155).
-- Prompt versions: classify and ask 8, eval 3, M-5 rubric 2. A score taken at an earlier version does not carry over (D-66).
+- Prompt versions: classify and ask 10, eval 3, M-5 rubric 2, generate 3. A score taken at an earlier version does not carry over (D-66). CAUTION: the classify prompt moved to 10 on 2026-08-27 for D-238, so question-gate runs 19 to 22 do not compare with the next run.
 - `.local/tune/` holds the JSON of run14, run14b, run16, run17, run18, and every stamped loop run.
 
 ## Next steps, in order

@@ -89,7 +89,7 @@ func classifyJSON(t *testing.T, fields map[string]any) llm.Step {
 	out := map[string]any{
 		"format": "unknown", "theme": "", "colors": []string{},
 		"commander_names": []string{}, "locked_names": []string{}, "named_cards": []string{},
-		"power": "", "pool_rule": "unknown", "budget_usd": 0.0,
+		"power": "", "pool_rule": "unknown", "budget_usd": 0.0, "budget_scope": "unknown",
 		"closed_keys": []string{}, "declined_keys": []string{},
 		"facts": map[string]bool{
 			"named_card": false, "buy_list": false,

@@ -1795,3 +1795,35 @@ func TestNamedCardThatCanNotLeadSettlesItsRole(t *testing.T) {
 		t.Error("Sol Ring did not reach the 99")
 	}
 }
+
+// TestBudgetScopeIsStored is D-238. The row asked which the cap covers,
+// and the answer reached no slot, so the agent asked and discarded it.
+func TestBudgetScopeIsStored(t *testing.T) {
+	for _, tc := range []struct {
+		word string
+		want mtgv1.BudgetScope
+	}{
+		{"buy", mtgv1.BudgetScope_BUDGET_SCOPE_CARDS_TO_BUY},
+		{"deck", mtgv1.BudgetScope_BUDGET_SCOPE_WHOLE_DECK},
+		{"unknown", mtgv1.BudgetScope_BUDGET_SCOPE_UNSPECIFIED},
+		{"", mtgv1.BudgetScope_BUDGET_SCOPE_UNSPECIFIED},
+	} {
+		if got := budgetScope(tc.word); got != tc.want {
+			t.Errorf("budgetScope(%q) = %v, want %v", tc.word, got, tc.want)
+		}
+	}
+	out := commanderClassify()
+	out.BudgetUSD, out.BudgetScope = 100, "deck"
+	a, _ := testAgentHints(t, nil, classifyStep(t, out), fits(t, "power_commander"), askStep(t))
+	st := NewState(true)
+	if _, err := a.Turn(context.Background(), st, "A lifegain deck, 100 dollars for the whole deck.", nil); err != nil {
+		t.Fatalf("turn: %v", err)
+	}
+	if got := st.Slots.GetBudgetScope(); got != mtgv1.BudgetScope_BUDGET_SCOPE_WHOLE_DECK {
+		t.Errorf("scope = %v, want the whole deck", got)
+	}
+	// The answer closes its own row, so the agent does not ask again.
+	if st.Slots.GetSlotStates()["budget_scope"] == mtgv1.SlotState_SLOT_STATE_ASKED {
+		t.Error("the scope row is still outstanding after the user answered it")
+	}
+}
