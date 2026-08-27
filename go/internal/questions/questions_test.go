@@ -63,8 +63,8 @@ func TestCatalogMatchesCorpus(t *testing.T) {
 		"House rules": "house_rules", "House format limits": "house_format_limits",
 		"Jank or fun": "jank", "Meta": "meta",
 		"One deck at a time": "one_deck", "Format (not supported)": "format_unsupported",
-		"Format (no substitute)":       "format_unsupported_open",
-		"Power (60-card, competitive)": "power_sixty_confirm", "Card pool (precon)": "pool_precon", "Commander (can not lead)": "commander_illegal",
+		"Format (no substitute)": "format_unsupported_open",
+		"Card pool (precon)":     "pool_precon", "Commander (can not lead)": "commander_illegal",
 		"Plan choice": "plan_choice", "Variance": "variance", "Locked cards": "locked",
 	}
 	raw, err := os.ReadFile("../../../.claude/skills/mtg-corpus/SKILL.md")
@@ -272,18 +272,23 @@ func contains(list []string, want string) bool {
 // Conversation 80 of gate run 20260826-220840-000 is the evidence. The
 // user answered "TOURNAMENT", and the next turn asked "Should I build the
 // deck for tournament-level competition?" Conversation 71 answered
-// "FNM." and got the same row one turn later.
-func TestPowerConfirmNeedsAnInferredStep(t *testing.T) {
+// "FNM." and got the same row one turn later. D-216 then removed the row:
+// the eval refused it on every well-founded inference too, because a user
+// who asks for the strongest deck has already given the answer.
+func TestNoRowConfirmsAnInferredStep(t *testing.T) {
 	c := load(t)
-	named := ctx(mtgv1.FormatId_FORMAT_ID_MODERN, "power")
-	named.PowerCompetitive = true
-	if got := ids(c.Plan(named)); has(got, "power_sixty_confirm") {
-		t.Fatalf("the confirm row fired on a step the user named: %v", got)
+	for _, tc := range []struct {
+		name     string
+		inferred bool
+	}{{"a step the user named", false}, {"a step the agent inferred", true}} {
+		got := ctx(mtgv1.FormatId_FORMAT_ID_MODERN, "power")
+		got.PowerCompetitive, got.PowerInferred = true, tc.inferred
+		if rows := ids(c.Plan(got)); has(rows, "power_sixty_confirm") {
+			t.Fatalf("%s: a confirm row went out: %v", tc.name, rows)
+		}
 	}
-	inferred := ctx(mtgv1.FormatId_FORMAT_ID_MODERN, "power")
-	inferred.PowerCompetitive, inferred.PowerInferred = true, true
-	if got := ids(c.Plan(inferred)); !has(got, "power_sixty_confirm") {
-		t.Fatalf("the confirm row stayed silent on an inferred step: %v", got)
+	if _, ok := c.Row("power_sixty_confirm"); ok {
+		t.Fatal("the confirm row is still in the catalog (D-216)")
 	}
 }
 

@@ -473,9 +473,12 @@ func OfferedPick(message string) (int, bool) {
 }
 
 // competitiveSigns ask for a strong deck without naming a power step.
+// The list carries the paraphrases the classifier used to catch, because
+// the fact now needs the user's own words behind it (D-215).
 var competitiveSigns = []string{
 	"strongest", "competitive", "serious", "best deck", "win the event",
 	"money is no object", "whatever is winning", "most powerful",
+	"as strong as possible", "tier one", "top tier", "tournament",
 }
 
 // CompetitiveRequest reports whether the user asked for a strong deck.
@@ -514,6 +517,44 @@ var lockVerbs = map[string]bool{
 	"keep": true, "keeps": true, "kept": true,
 	"lock": true, "locks": true, "locked": true,
 	"include": true, "includes": true, "must": true,
+}
+
+// aroundVerbs name a card as the deck's plan. They do not lock it on
+// their own: "build around Grist" leaves open whether Grist leads the
+// deck, and a card that becomes the commander is not a locked card
+// (D-70). BuildsAround is therefore read only for a card already known
+// to sit in the 99.
+var aroundVerbs = map[string]bool{"around": true}
+
+// BuildsAround reports whether one message names a card as the deck's
+// plan. A card the deck is built around stays in it, so the message
+// answers the locked row before it goes out.
+//
+// Conversation 27 of gate run 20260826-220840-000 opened with "Build
+// around Grist, the Hunger Tide, but not as my commander". The locked
+// row then asked on turn 2 whether Grist may be cut (D-214).
+func BuildsAround(message, name string) bool {
+	toks := tokens(message)
+	for _, form := range []string{name, baseName(name)} {
+		want := tokens(form)
+		if len(want) == 0 {
+			continue
+		}
+		for i := range toks {
+			if !matchAt(toks, want, i) {
+				continue
+			}
+			for j := i - 1; j >= 0 && j >= i-lockWindow; j-- {
+				if negators[toks[j]] {
+					break
+				}
+				if aroundVerbs[toks[j]] && !negatedAt(toks, j) {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
 
 // lockWindow is how many words may stand between a lock verb and the

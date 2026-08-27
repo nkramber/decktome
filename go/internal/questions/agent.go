@@ -616,7 +616,10 @@ func (a *Agent) applyWords(st *State, message string) {
 	// the question anyway (D-166).
 	if !st.Ctx.Filled["locked"] {
 		for _, name := range st.LockedCards() {
-			if !LocksCard(message, name) {
+			// LockedCards holds the cards that sit in the 99, so a card
+			// named as the deck's plan here is not the commander and it
+			// stays (D-214).
+			if !LocksCard(message, name) && !BuildsAround(message, name) {
 				continue
 			}
 			a.log.Info("the user locked a card in, so the locked slot is closed",
@@ -945,7 +948,13 @@ func (a *Agent) apply(st *State, out classifyOut, open []string, message string)
 	st.Ctx.HouseFormat = st.Ctx.HouseFormat || f.HouseFormat
 	st.Ctx.TwoPlans = st.Ctx.TwoPlans || f.TwoPlans
 	st.Ctx.BudgetAmbiguous = st.Ctx.BudgetAmbiguous || f.BudgetAmbiguous
-	st.Ctx.PowerCompetitive = st.Ctx.PowerCompetitive || f.PowerCompetitive
+	// The classifier reads an occasion as a power level. Conversation 33
+	// of gate run 20260826-220840-000 opened with "A Modern deck for an
+	// event", the model set power_competitive, and the agent filled the
+	// tournament step from it. The user answered "FNM level" two turns
+	// later. The user's own words now carry the fact, as they carry the
+	// format (D-215, extends D-199).
+	st.Ctx.PowerCompetitive = st.Ctx.PowerCompetitive || CompetitiveRequest(message)
 	// The fact is not sticky. A user who asks for a Magic deck after the
 	// agent declines is back in scope.
 	st.Ctx.OutOfScope = f.OutOfScope

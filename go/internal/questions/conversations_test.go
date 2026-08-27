@@ -110,7 +110,7 @@ func conversations() []conversation {
 				// user named none, and the confirm row asks about it.
 				c.PowerInferred = true
 			}},
-		{want: []string{"power_sixty_confirm", "budget", "meta"}, fill: []string{"power", "power_confirm", "budget", "meta"}},
+		{want: []string{"budget", "meta"}, fill: []string{"budget", "meta"}},
 	}
 	cs = append(cs, c6)
 
@@ -125,7 +125,7 @@ func conversations() []conversation {
 				// user named none, and the confirm row asks about it.
 				c.PowerInferred = true
 			}},
-		{want: []string{"power_sixty_confirm", "budget", "meta"}, fill: []string{"power", "power_confirm", "budget", "meta"}},
+		{want: []string{"budget", "meta"}, fill: []string{"budget", "meta"}},
 	}
 	cs = append(cs, c7)
 
@@ -245,7 +245,7 @@ func conversations() []conversation {
 				c.Format, c.Theme = mtgv1.FormatId_FORMAT_ID_MODERN, "best deck"
 				c.PowerInferred = true
 			}},
-		{want: []string{"power_sixty_confirm", "budget", "meta"}, fill: []string{"power", "power_confirm", "budget", "meta"}},
+		{want: []string{"budget", "meta"}, fill: []string{"budget", "meta"}},
 	}
 	cs = append(cs, c16)
 
@@ -359,7 +359,7 @@ func conversations() []conversation {
 				c.Format, c.Theme = mtgv1.FormatId_FORMAT_ID_MODERN, "poison"
 				c.PowerInferred = true
 			}},
-		{want: []string{"power_sixty_confirm", "budget", "meta"}, fill: []string{"power", "power_confirm", "budget", "meta"}},
+		{want: []string{"budget", "meta"}, fill: []string{"budget", "meta"}},
 	}
 	cs = append(cs, c25)
 

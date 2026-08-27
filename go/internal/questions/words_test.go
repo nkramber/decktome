@@ -208,7 +208,7 @@ func TestCompetitiveRequestInfersTheTournamentStep(t *testing.T) {
 	out := classifyOut{Format: "modern", Theme: "best deck", PoolRule: "unknown"}
 	out.Colors = []string{"R"}
 	out.Facts.PowerCompetitive = true
-	a, _ := testAgent(t, classifyStep(t, out), fits(t, "power_sixty_confirm", "meta"), askStep(t))
+	a, _ := testAgent(t, classifyStep(t, out), fits(t, "meta"), askStep(t))
 	st := NewState(false)
 	res, err := a.Turn(context.Background(), st, "I want the strongest Modern deck, money is no object.", nil)
 	if err != nil {
@@ -221,14 +221,22 @@ func TestCompetitiveRequestInfersTheTournamentStep(t *testing.T) {
 	if !st.Ctx.Filled["power"] {
 		t.Error("the power slot did not close")
 	}
-	if !st.Ctx.Asked["power_sixty_confirm"] {
-		t.Error("the agent did not ask the user to confirm the inferred step")
+	// The agent states the step and asks nothing. A user who asked for the
+	// strongest deck has given the answer, and the eval refused the
+	// confirm row on every such conversation (D-216).
+	if st.Ctx.Asked["power_sixty_confirm"] {
+		t.Error("the agent asked the user to confirm a step they had given")
+	}
+	if !st.Ctx.PowerInferred {
+		t.Error("the agent filled the step and left no mark for the plan to state")
 	}
 	if st.Ctx.Asked["power_sixty"] {
-		t.Error("the open power question went out beside the confirm question")
+		t.Error("the open power question went out on an answered slot")
 	}
-	if q := question(res.Questions, "power"); q == nil {
-		t.Fatal("no power question went out")
+	// The slot is filled and closed, so no power question goes out at
+	// all. The plan states the step instead (D-216).
+	if q := question(res.Questions, "power"); q != nil {
+		t.Fatalf("a power question went out: %q", q.GetText())
 	}
 }
 
@@ -1024,8 +1032,8 @@ func TestHouseLimitsRowGoesOutAsWritten(t *testing.T) {
 	if !row.Fixed {
 		t.Error("the house-limits row is not fixed, so the ask role may split it into three questions")
 	}
-	if confirm, ok := c.Row("power_sixty_confirm"); !ok || confirm.Fixed {
-		t.Error("the confirm row is fixed, and its fixed text was refused three times in run 20260826-191225-001")
+	if _, ok := c.Row("power_sixty_confirm"); ok {
+		t.Error("the confirm row is back, and the eval refused it on every inference (D-216)")
 	}
 	out := classifyOut{Format: "modern", Theme: "dragons", PoolRule: "any_card", BudgetUSD: 100}
 	out.Colors = []string{"R"}
@@ -1720,5 +1728,48 @@ func TestDeclineRowAsksAgainForAnotherFormat(t *testing.T) {
 	st.UnsupportedFormatName = "Vintage"
 	if !st.BadFormatChanged() {
 		t.Fatal("another format did not read as a change")
+	}
+}
+
+// TestBuildAroundLocksTheCard replays conversation 27 of gate run
+// 20260826-220840-000. "Build around Grist, the Hunger Tide, but not as
+// my commander" names the card as the deck's plan, so the card stays and
+// the locked row has its answer (D-214).
+func TestBuildAroundLocksTheCard(t *testing.T) {
+	const card = "Grist, the Hunger Tide"
+	if !BuildsAround("Build around Grist, the Hunger Tide, but not as my commander", card) {
+		t.Error("a build-around card was not read as the deck's plan")
+	}
+	if !BuildsAround("build around Grist", card) {
+		t.Error("the short form of the name was not read")
+	}
+	// The negation guard holds, as it does for a lock verb (D-166).
+	if BuildsAround("do not build around Grist", card) {
+		t.Error("a negated build-around named the deck's plan")
+	}
+	// LocksCard keeps its own contract. The bare phrase leaves open
+	// whether the card leads the deck, and a commander is never a locked
+	// card (D-70).
+	if LocksCard("build around Grist, the Hunger Tide", card) {
+		t.Error("the bare build-around phrase locked the card")
+	}
+}
+
+// TestAnEventIsNotACompetitiveRequest replays conversation 33 of gate run
+// 20260826-220840-000. "A Modern deck for an event" carries no power
+// level, and the user answered "FNM level" two turns later (D-215).
+func TestAnEventIsNotACompetitiveRequest(t *testing.T) {
+	for _, s := range []string{"a modern deck for an event", "a tempo deck for friday"} {
+		if CompetitiveRequest(s) {
+			t.Errorf("%q: an occasion was read as a power level", s)
+		}
+	}
+	for _, s := range []string{
+		"the strongest modern deck", "money is no object",
+		"as strong as possible", "a competitive modern deck",
+	} {
+		if !CompetitiveRequest(s) {
+			t.Errorf("%q: a competitive request was missed", s)
+		}
 	}
 }

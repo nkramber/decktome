@@ -289,7 +289,6 @@ The agent asks only what the prompt did not answer. Never ask more than three qu
 | Commander not owned | An owned mode, and the collection does not hold the named commander. The row carries its own key, so the named commander does not cancel it, and its answer never replaces that commander. | "You do not own {card}. Add it to the buy list, or pick from your library? Owned options: {A}, {B}." |
 | Weak commander pool | An owned mode, and no owned commander fits the theme. | "Your library holds no strong {theme} commander. Buy {C} for {price}, change the theme, or use {A}?" |
 | Power (Commander) | Always for Commander, unless the user names a bracket. "cEDH" names bracket 5 (D-164). Name no table: the user may build a deck as a gift (D-109). | "Which power bracket should the deck target? 2 is precon level, 3 is upgraded, 4 is high power." |
-| Power (60-card, competitive) | The user asked for a strong deck and named no step, for example "strongest" or "money is no object" (D-107). The agent fills the tournament step and asks the user to confirm it. The row fires on that filled step alone. A step the user named needs no confirmation, and a question about it repeats the answer (D-209). | "You asked for a competitive deck, so I will build to tournament level. Is that right?" |
 | Power (60-card) | The user asked for no strong deck. Ask again when the user names a step and also says competitive, strong, best, or serious. Those words conflict with the named step. | "How strong should this be: casual, FNM level, or tournament-meta?" |
 | Colors | The user gave no preference. Never ask when a commander is set. The color identity fills this slot. "Colorless" is an answer, and it closes the slot (D-165). State no fact about which colors are strongest (D-108). | "Any color preference?" |
 | Card pool (precon) | The user asked to upgrade a precon (D-113). This row replaces the row below, and it names the precon. | "Should I build from your {precon} precon first, use only cards from it, or ignore it for a fully optimized deck?" |
@@ -304,6 +303,8 @@ The agent asks only what the prompt did not answer. Never ask more than three qu
 | Plan choice | The theme has two common plans, before the first build. | "Mill has two plans: mill as the win condition, or mill for value with a creature win. Which one?" |
 | Variance | The user asks for another version after a build. | "Same plan with different cards, or a different plan in the same colors?" |
 | Locked cards | The user names a card to keep that is not the commander (D-70), and the format and the theme are filled (D-81). A message that locks the card in outright, such as "keep Sanguine Bond in it" or "Sol Ring goes in it", answers the row (D-166). | "Must the deck keep {locked}, or may I cut a card that does not fit the plan?" |
+
+The agent does not ask the user to confirm a power step it inferred. A user who asks for the strongest deck gives the answer, and a question about it repeats the answer (D-216). The agent fills the tournament step, closes the slot, and marks the step as inferred. The plan states the step, and the user can change it.
 
 Do not ask where the user buys, or by what date they need the cards. The app can not act on either answer. It holds no store stock and no delivery times, and Scryfall gives a price estimate, not availability (D-87).
 

@@ -257,22 +257,6 @@
       "fallback": "Which commander do you want, or should I suggest three more?"
     },
     {
-      "id": "power_sixty_confirm",
-      "slot": "power",
-      "order": 39,
-      "text": "You asked for a competitive deck, so I will build to tournament level. Is that right?",
-      "options": [
-        "Yes, tournament level",
-        "No, FNM level",
-        "No, casual"
-      ],
-      "when": {
-        "format": "sixty",
-        "power_inferred": true
-      },
-      "key": "power_confirm"
-    },
-    {
       "id": "power_commander",
       "slot": "power",
       "order": 40,
