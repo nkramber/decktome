@@ -19,3 +19,7 @@ web/apps/web/dist/
 firebase-export-*/
 coverage/
 .firebase/
+
+# Binaries that `go build ./cmd/...` drops in the module root.
+/go/deck-gate
+/go/generate-probe

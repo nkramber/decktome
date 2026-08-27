@@ -4,6 +4,22 @@
 
 ## Do this first
 
+PR-8 is under way on branch `pr-8`, cut from `main` at 98eac91. The generator writes a deck, the code checks every name and every rule, and the deck gate holds.
+
+| Measure | Deck gate run 1 | Deck gate run 2 |
+|---|---|---|
+| Verdict | FAIL | PASS |
+| Decks with no block finding | 10 of 12 | 12 of 12 |
+| Invented names that reached the user | 1 | 0 |
+| Decks that needed the repair turn | 3 | 0 |
+| Cost | $0.9117 | $0.6166 |
+
+Run 1 found one defect and D-225 fixed it. The shortlist leaves basic lands out on purpose, and the generator may name nothing else, so no deck held a basic land. Read `docs/reference/pr8-deck-gate-run2.md`.
+
+What PR-8 still needs: the prompt-cache measurement of the roadmap, the judge lane for F-26, and a decision on OQ-36. D-207 parked the not-owned row until PR-8, and PR-8 now exists.
+
+## The question workflow
+
 The tuning loop ran a fifth time on 2026-08-26, as run `20260826-220840`. Read the result before you trust the loop again.
 
 - The baseline passed the gate. It measured the best numbers so far.
@@ -55,7 +71,7 @@ The owner chose PR-8 next. The loop stays off until a run proves the checker hol
 
 - `main` is at fdfe15c, "Pr 7b (#13)". Merged: PR-0a to PR-7, PR-7B, and PR-10 (#1 to #13).
 - Branch `pr-7c` holds the loop work. HEAD is 351250d. It carries the `v0.0` baseline as evidence, the lesson of the rejected iteration, and the five recovered commits (D-209 to D-213).
-- `docs/decisions.md` reaches D-220. OQ-21 is answered, so no owner question blocks PR-8. D-214 to D-216 fix the two named defects of gate run `20260826-220840-000`.
+- `docs/decisions.md` reaches D-225. D-221 to D-225 are the PR-8 work. OQ-21 is answered, so no owner question blocks PR-8. D-214 to D-216 fix the two named defects of gate run `20260826-220840-000`.
 - Branches `auto-tune/20260826-191225` and `auto-tune/20260826-220840` can be deleted. `pr-7c` holds everything they carry.
 - The conversation set holds 104 conversations, 30 gate and 74 probe (D-145, D-155).
 - Prompt versions: classify and ask 8, eval 3, M-5 rubric 2. A score taken at an earlier version does not carry over (D-66).
