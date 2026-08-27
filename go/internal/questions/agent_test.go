@@ -207,25 +207,6 @@ func TestInventedNeedsLowFit(t *testing.T) {
 	}
 }
 
-// TestFrozenTurnMakesNoCall is D-68: a run has started, so the agent asks
-// nothing and spends nothing.
-func TestFrozenTurnMakesNoCall(t *testing.T) {
-	a, sc := testAgent(t)
-	st := NewState(true)
-	st.Freeze()
-	res, err := a.Turn(context.Background(), st, "switch to owned-only", nil)
-	if err != nil {
-		t.Fatalf("turn: %v", err)
-	}
-	if len(sc.Calls) != 0 {
-		t.Errorf("a frozen turn made %d model calls", len(sc.Calls))
-	}
-	if len(res.Questions) != 0 || !res.Ready {
-		t.Errorf("a frozen turn asked %d questions", len(res.Questions))
-	}
-}
-
-// TestNoRepeatAcrossTurns is the gate rule, with the model in the loop.
 func TestNoRepeatAcrossTurns(t *testing.T) {
 	var first classifyOut
 	first.Format, first.Theme, first.PoolRule = "commander", "lifegain", "unknown"

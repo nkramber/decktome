@@ -121,9 +121,9 @@
     },
     {
       "id": 12,
-      "frozen": true,
-      "note": "A frozen run is inside a build, and it asks nothing until a change starts a new run (D-68, D-239).",
-      "name": "a frozen run asks nothing",
+      "has_deck": true,
+      "note": "The freeze is retired (D-241). A slot change after a build is an ordinary turn, and the variance row is what a user who wants another version reaches (D-239).",
+      "name": "a slot change after a build",
       "collection": true,
       "messages": [
         "Switch to owned-only."

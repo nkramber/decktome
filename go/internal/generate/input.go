@@ -108,6 +108,15 @@ const PreconSharePercent = 85
 // of the precon it was asked to upgrade.
 const CodePreconShare = "precon_share"
 
+// CAUTION: nothing reaches this function today, and nothing can. The
+// share needs the precon's card list, and no precon decklist source
+// exists in this repo. The question workflow holds only PreconName, which
+// is the first card the user named and not a list. The Scryfall snapshot
+// carries set codes and no per-product decklist.
+//
+// D-218 stands as the owner's answer. It waits on a precon ingester,
+// which OQ-40 asks for (D-240).
+//
 // checkPreconShare adds a finding when the deck keeps less of the precon
 // than D-218 requires. It is a build rule and not a rule of the game, so
 // it is a warning and never a block: the user asked for an upgrade, and a

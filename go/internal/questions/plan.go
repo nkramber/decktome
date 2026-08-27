@@ -35,9 +35,6 @@ type Context struct {
 	// Words is every word the user has written so far, lowercased. The
 	// word-routing rules read it.
 	Words string `json:"words"`
-	// Frozen marks a session whose build run has started (D-68). A frozen
-	// session asks nothing.
-	Frozen bool `json:"frozen"`
 	// OfferChanged says the commanders on the table differ from the ones
 	// the pick row named last. Only a row with RepeatOnChange reads it
 	// (D-163).
@@ -96,9 +93,6 @@ type Context struct {
 // MaxPerTurn. It never returns two rows that inform one proto slot, and
 // never a row the session already asked.
 func (c *Catalog) Plan(ctx Context) []Row {
-	if ctx.Frozen {
-		return nil
-	}
 	var out []Row
 	usedKey, usedSlot := map[string]bool{}, map[string]bool{}
 	// An out-of-scope request gets one question and no others. Asking the

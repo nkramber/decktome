@@ -79,9 +79,6 @@ type conversation struct {
 	// be true. A deck exists only when the build slots were filled, so the
 	// flag fills them too (D-239, OQ-38).
 	HasDeck bool `json:"has_deck"`
-	// Frozen starts the conversation inside a build run. A frozen session
-	// asks nothing until a change starts a new run (D-68).
-	Frozen bool `json:"frozen"`
 }
 
 // builtSlots are the slots a finished build must have settled. A stored
@@ -257,7 +254,6 @@ func runOne(cat *questions.Catalog, client *llm.Client, idx *cards.Index, builde
 		}
 		st.Ctx.CommanderSet = true
 	}
-	st.Ctx.Frozen = conv.Frozen
 	for i, msg := range conv.Messages {
 		// One agent per turn, with hints built from the slots as they
 		// stand. agentsvc does the same, and a hint source that outlives

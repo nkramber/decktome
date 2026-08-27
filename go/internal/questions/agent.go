@@ -75,15 +75,12 @@ type Result struct {
 }
 
 // Turn maps one user message onto the slots and returns the next
-// questions. A frozen session asks nothing (D-68).
+// questions.
 func (a *Agent) Turn(ctx context.Context, st *State, message string, acc *llm.Accumulator) (Result, error) {
 	if st == nil {
 		return Result{}, fmt.Errorf("questions: Turn needs a state")
 	}
 	st.AddWords(message)
-	if st.Ctx.Frozen {
-		return Result{Slots: st.Slots, Ready: true, Coverage: st.Metrics()}, nil
-	}
 	st.Turn++
 	// The keys a deck slot fills before this turn. An out-of-scope
 	// question closes when the user fills one afterwards (H-6).

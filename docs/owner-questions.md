@@ -31,6 +31,7 @@ What blocks the next run is the checker's noise margin. Run 18 and run 20260826-
 
 | # | Question | Why only you | What it blocks |
 |---|---|---|---|
+| OQ-40 | Where do precon decklists come from? D-218 sets the share at 85 percent, and no source in this repo lists the cards of a precon. Scryfall carries set codes and no per-product list. | It is a data source, and D-5 covers meta sources and not product lists. Licensing and freshness are yours. | D-218, the `pool_precon` row, and any upgrade request. |
 | OQ-23 | What does the agent do when the user asks a question back, such as "What is a bracket?" | Probe 36 asks it. The catalog holds questions and no answers, so an answer path is a product decision. | Probe 36, and the PR-12 chat UI. |
 | OQ-37 | Do the 14 terse conversations join the catalog-only bar, or stay probes? | D-105 froze the first 30 so the bar stays comparable. At some point the bar should measure the harder set. | The meaning of the gate verdict. |
 

@@ -219,10 +219,18 @@ func conversations() []conversation {
 	}
 	cs = append(cs, c14)
 
-	c12 := conversation{name: "a frozen run asks nothing"}
+	// The freeze is retired (D-241). A slot change after a build is an
+	// ordinary turn: it updates the slot and asks nothing new, because
+	// every other slot is already settled.
+	c12 := conversation{name: "a slot change after a build"}
 	c12.ctx = newCtx("switch to owned-only")
-	c12.ctx.Frozen, c12.ctx.HasCollection = true, true
-	c12.steps = []step{{want: nil}}
+	c12.ctx.HasCollection, c12.ctx.AfterBuild = true, true
+	c12.ctx.Format = mtgv1.FormatId_FORMAT_ID_COMMANDER
+	for _, k := range []string{"format", "theme", "colors", "commander", "power", "pool_rule", "budget"} {
+		c12.ctx.Filled[k] = true
+	}
+	c12.ctx.CommanderSet = true
+	c12.steps = []step{{want: []string{"variance"}, fill: []string{"plan_variant"}}}
 	cs = append(cs, c12)
 
 	// Conversations 15 to 30 widen the gate to the 30 the roadmap asks

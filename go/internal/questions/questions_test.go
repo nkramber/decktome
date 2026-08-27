@@ -224,16 +224,6 @@ func TestOneRowPerSlotPerTurn(t *testing.T) {
 	}
 }
 
-// TestFrozenSessionAsksNothing is D-68.
-func TestFrozenSessionAsksNothing(t *testing.T) {
-	c := load(t)
-	frozen := ctx(mtgv1.FormatId_FORMAT_ID_UNSPECIFIED)
-	frozen.Frozen = true
-	if got := c.Plan(frozen); len(got) != 0 {
-		t.Fatalf("a frozen session planned %v", ids(got))
-	}
-}
-
 func TestRoute(t *testing.T) {
 	cases := map[string]string{
 		"60-card anything goes":    "house_rules",

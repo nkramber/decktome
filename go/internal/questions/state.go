@@ -406,10 +406,6 @@ func (s *State) RetireOutstanding() {
 	s.Ctx.Outstanding = map[string]string{}
 }
 
-// Freeze stops every question. A build run has started, so the slot set is
-// the deck's record (D-68). A later change starts a new run.
-func (s *State) Freeze() { s.Ctx.Frozen = true }
-
 // AddWords keeps every word the user has written. The routing rules and
 // the word triggers read it.
 func (s *State) AddWords(text string) {
