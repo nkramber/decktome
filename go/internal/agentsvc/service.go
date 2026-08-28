@@ -320,6 +320,11 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 		At:          timestamppb.New(s.now()),
 	}
 	if turnErr == nil {
+		// An option that names a card carries its Oracle id, so the UI
+		// can show the art and the rules text of a commander offer (D-287).
+		if s.index != nil {
+			cardOptions(res.Questions, s.index.Current())
+		}
 		turn.Questions = res.Questions
 		session.Status = mtgv1.SessionStatus_SESSION_STATUS_ASKING
 		if res.Ready {
@@ -606,4 +611,26 @@ func slotsChanged(before, after *mtgv1.Slots) bool {
 	b := proto.Clone(after).(*mtgv1.Slots)
 	a.SlotStates, b.SlotStates = nil, nil
 	return !proto.Equal(a, b)
+}
+
+// cardOptions fills Question.option_oracle_ids for every option that is
+// an exact card name. A question with no card option keeps the field
+// empty, so a client can tell the two apart.
+func cardOptions(qs []*mtgv1.Question, idx *cards.Index) {
+	if idx == nil {
+		return
+	}
+	for _, q := range qs {
+		ids := make([]string, len(q.GetOptions()))
+		found := false
+		for i, opt := range q.GetOptions() {
+			if c, ok := idx.ByName(opt); ok {
+				ids[i] = c.GetOracleId()
+				found = true
+			}
+		}
+		if found {
+			q.OptionOracleIds = ids
+		}
+	}
 }

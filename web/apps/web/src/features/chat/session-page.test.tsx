@@ -121,10 +121,10 @@ describe("SessionPage", () => {
     await user.click(screen.getByRole("button", { name: "Send" }));
     const first = await screen.findByRole("group", { name: "Question: Which format?" });
     const second = screen.getByRole("group", { name: "Question: How strong?" });
-    await user.type(within(first).getByLabelText("Or answer in your own words"), "Pauper");
+    await user.type(within(first).getByRole("textbox"), "Pauper");
     // One answer of two: the submit waits.
     expect(screen.getByRole("button", { name: "Submit answers" })).toBeDisabled();
-    await user.type(within(second).getByLabelText("Or answer in your own words"), "bracket 2");
+    await user.type(within(second).getByRole("textbox"), "bracket 2");
     await user.click(screen.getByRole("button", { name: "Submit answers" }));
 
     const req = chat.mock.calls[1][0] as { answers: { questionId: string; text: string }[] };
@@ -165,7 +165,7 @@ describe("SessionPage", () => {
     await user.click(screen.getByRole("button", { name: "Send" }));
     await user.click(await screen.findByRole("button", { name: "Modern" }));
     const colorsCard = screen.getByRole("group", { name: "Question: Any color preference?" });
-    await user.type(within(colorsCard).getByLabelText("Or answer in your own words"), "green");
+    await user.type(within(colorsCard).getByRole("textbox"), "green");
     await user.click(screen.getByRole("button", { name: "Submit answers" }));
     await screen.findByRole("group", { name: "Question: How strong?" });
     // A later turn that leaves a question open keeps it, and drops the answered ones.
@@ -293,6 +293,41 @@ describe("SessionPage", () => {
     expect((chat.mock.calls[1][0] as { sessionId: string; message: string }).message).toBe("fewer elves");
   });
 
+  it("shows a commander offer as cards with art, attribution, and rules text (D-287)", async () => {
+    getCards.mockResolvedValue({
+      cards: [
+        { oracleId: "o-ghalta", name: "Ghalta, Primal Hunger", typeLine: "Legendary Creature — Elder Dinosaur", manaCost: "{10}{G}{G}", oracleText: "Ghalta costs {X} less to cast.\nTrample", cardTypes: ["Creature"], faces: [], defaultPrinting: { artist: "Chase Stone", imageUris: { normal: "https://x/ghalta.jpg", small: "https://x/ghalta-s.jpg" } } },
+        { oracleId: "o-reptil", name: "Reptil, Dinomorpher", typeLine: "Legendary Creature — Human Druid", manaCost: "{1}{G}", oracleText: "Whenever a Dinosaur enters, draw a card.", cardTypes: ["Creature"], faces: [], defaultPrinting: { artist: "Someone", imageUris: { normal: "https://x/reptil.jpg", small: "https://x/reptil-s.jpg" } } },
+      ],
+      missingOracleIds: [],
+    });
+    const offer = {
+      id: "q5",
+      slot: "commander",
+      text: "Which one do you want: Ghalta, Primal Hunger, or Reptil, Dinomorpher?",
+      options: ["Ghalta, Primal Hunger", "Reptil, Dinomorpher", "None, name three more"],
+      optionOracleIds: ["o-ghalta", "o-reptil", ""],
+    };
+    chat.mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("question", offer)]));
+    renderAt("/session/new");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "dinosaurs");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    const card = await screen.findByRole("group", { name: /Question: Which one/ });
+    expect(await within(card).findByAltText("Ghalta, Primal Hunger")).toHaveAttribute("src", "https://x/ghalta.jpg");
+    expect(within(card).getByText("Ghalta, Primal Hunger. Illustrated by Chase Stone. © Wizards of the Coast, LLC")).toBeInTheDocument();
+    expect(within(card).getByText("Legendary Creature — Elder Dinosaur")).toBeInTheDocument();
+    expect(within(card).getByText(/Ghalta costs \{X\} less to cast/)).toBeInTheDocument();
+    expect(within(card).getAllByTestId("card-option")).toHaveLength(2);
+    expect((getCards.mock.calls[0][0] as { oracleIds: string[] }).oracleIds).toEqual(["o-ghalta", "o-reptil"]);
+    // The non-card option keeps a plain button, and every option still picks.
+    await user.click(within(card).getByRole("button", { name: "None, name three more" }));
+    expect(within(card).getByRole("button", { name: "None, name three more" })).toHaveAttribute("aria-pressed", "true");
+    await user.click(within(card).getByRole("button", { name: "Reptil, Dinomorpher" }));
+    expect(within(card).getByRole("button", { name: "Reptil, Dinomorpher" })).toHaveAttribute("aria-pressed", "true");
+    expect(await axe(card)).toHaveNoViolations();
+  });
+
   it("refuses a message over the 8 KiB cap", async () => {
     renderAt("/session/new");
     const user = userEvent.setup();
@@ -333,7 +368,7 @@ describe("SessionPage", () => {
     chat.mockReturnValue(events([ev("slots", {})]));
     const user = userEvent.setup();
     const card = screen.getByRole("group", { name: "Question: How strong?" });
-    await user.type(within(card).getByLabelText("Or answer in your own words"), "bracket 2");
+    await user.type(within(card).getByRole("textbox"), "bracket 2");
     await user.click(screen.getByRole("button", { name: "Submit answers" }));
     expect((chat.mock.calls[0][0] as { sessionId: string }).sessionId).toBe("s1");
     // A stored session carries its own collection, so the request sends none.

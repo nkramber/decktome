@@ -160,4 +160,9 @@ message Question {
   // Empty when invented is false. M-5 scores catalog_enough and
   // invented_better, and neither can be judged without both texts (D-66).
   string catalog_text = 7;
+  // option_oracle_ids is parallel to options. An option that is an exact
+  // card name carries the card's Oracle id, so the UI can show the art
+  // and the rules text of a commander offer (D-287). An option that is
+  // not a card carries an empty string. Empty when no option is a card.
+  repeated string option_oracle_ids = 8;
 }

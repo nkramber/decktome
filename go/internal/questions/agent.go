@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -116,7 +117,7 @@ func (a *Agent) classify(ctx context.Context, st *State, message string, acc *ll
 	// agent's text, and its format list is not a two-deck request.
 	words := UserWords(message)
 	a.apply(st, out, open, words)
-	a.applyWords(st, turnWords{Message: words, Declined: out.DeclinedKeys, Closed: out.ClosedKeys})
+	a.applyWords(st, turnWords{Message: words, Declined: out.DeclinedKeys, Closed: out.ClosedKeys, Open: open})
 	a.closeByOption(st, words)
 	// The scope question closes when the user answers it with a deck.
 	// The row offers "Yes, a Magic deck", and a user who writes "a Modern
@@ -605,6 +606,9 @@ type turnWords struct {
 	// under. A delegation reads them to learn which question the user
 	// answered (audit Q-11).
 	Declined, Closed []string
+	// Open are the keys that were out when the turn began. A rule reads
+	// them to learn which question a value answers (D-288).
+	Open []string
 }
 
 // hasKey reports whether the classifier assigned the message to a key.
@@ -841,6 +845,13 @@ func ruleBudgetScope(a *Agent, st *State, in turnWords) {
 	case namesTheWholeDeck(in.Message) && st.Slots.GetSlotStates()["budget_scope"] == mtgv1.SlotState_SLOT_STATE_ASKED:
 		st.Slots.BudgetScope = mtgv1.BudgetScope_BUDGET_SCOPE_WHOLE_DECK
 		a.log.Info("the user named the whole deck, so the budget scope is the deck value",
+			"session", st.SessionID)
+	case slices.Contains(in.Open, "budget") && st.Slots.GetBudgetUsd() > 0:
+		// The budget row asks "Is there a budget for cards to buy?", so a
+		// number that answers it is a cap on the cards to buy. The scope
+		// row asked the user to say it again (owner, 2026-08-28, D-288).
+		st.Slots.BudgetScope = mtgv1.BudgetScope_BUDGET_SCOPE_CARDS_TO_BUY
+		a.log.Info("the number answers the cards-to-buy question, so the budget scope is the cards to buy",
 			"session", st.SessionID)
 	default:
 		return
