@@ -23,8 +23,12 @@ message Deck {
   // legality_as_of is the card-snapshot date the deck was checked against,
   // ISO 8601. The UI shows it (roadmap PR-3).
   string legality_as_of = 9;
-  // seed reproduces this build on request (D-18).
-  int64 seed = 10;
+  // 10 held seed, which reproduced a build on request (D-18). PR-9 left
+  // the MVP, and nothing ever set it. The number and the name are
+  // reserved, so a later PR-9 must choose a new one and no stored deck
+  // can be misread (D-256).
+  reserved 10;
+  reserved "seed";
   string session_id = 11;
   google.protobuf.Timestamp created_at = 12;
   // stale marks a deck that a rule change made illegal (D-29, I-1).

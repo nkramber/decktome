@@ -178,9 +178,10 @@ func conversations() []conversation {
 		c11.ctx.Filled[k] = true
 	}
 	c11.ctx.CommanderSet = true
-	c11.steps = []step{
-		{want: []string{"variance"}, fill: []string{"plan_variant"}},
-	}
+	// The variance row is retired with PR-9 (D-256). A message after a
+	// build asks nothing: every slot is settled, so the session is ready
+	// and the build runs again.
+	c11.steps = []step{{want: nil}}
 	cs = append(cs, c11)
 
 	// The other half of D-70: a named card that is not the commander is a
@@ -230,7 +231,7 @@ func conversations() []conversation {
 		c12.ctx.Filled[k] = true
 	}
 	c12.ctx.CommanderSet = true
-	c12.steps = []step{{want: []string{"variance"}, fill: []string{"plan_variant"}}}
+	c12.steps = []step{{want: nil}}
 	cs = append(cs, c12)
 
 	// Conversations 15 to 30 widen the gate to the 30 the roadmap asks
@@ -433,7 +434,7 @@ func conversations() []conversation {
 		c30.ctx.Filled[k] = true
 	}
 	c30.steps = []step{
-		{want: []string{"variance"}, fill: []string{"plan_variant"}},
+		{want: nil},
 	}
 	cs = append(cs, c30)
 

@@ -399,19 +399,6 @@
       "fallback": "This theme has two common plans. Which one do you want?"
     },
     {
-      "id": "variance",
-      "slot": "plan_variant",
-      "order": 101,
-      "text": "Same plan with different cards, or a different plan in the same colors?",
-      "options": [
-        "Same plan, different cards",
-        "A different plan"
-      ],
-      "when": {
-        "after_build": true
-      }
-    },
-    {
       "id": "locked",
       "slot": "locked",
       "order": 110,

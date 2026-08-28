@@ -64,7 +64,7 @@ func TestCatalogMatchesCorpus(t *testing.T) {
 		"One deck at a time": "one_deck", "Format (not supported)": "format_unsupported",
 		"Format (no substitute)": "format_unsupported_open",
 		"Card pool (precon)":     "pool_precon", "Commander (can not lead)": "commander_illegal",
-		"Plan choice": "plan_choice", "Variance": "variance", "Locked cards": "locked",
+		"Plan choice": "plan_choice", "Locked cards": "locked",
 	}
 	raw, err := os.ReadFile("../../../.claude/skills/mtg-corpus/SKILL.md")
 	if err != nil {

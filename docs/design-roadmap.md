@@ -405,7 +405,12 @@ The engine validates (PR-5).
 The ownership check runs only in the owned modes. In any-card mode, ownership marks are information, never findings (D-37). A `block` finding triggers one repair turn with the findings as input. Then the deck goes to the user with the `ValidationResult` attached. Gate: on the golden prompts, 100% of returned decks pass `block` checks. Zero invented names reach the user.
 > *In plain English:* the AI writes the deck from the shortlist, with a plan and a reason for each card. The code checks every name and every rule. If something is wrong, the AI gets one chance to fix it. What the user sees has already passed the referee.
 
-**PR-9: Designed variance (F-14, D-18).**
+**PR-9: Designed variance (F-14, D-18).** ⏸ out of MVP scope, 2026-08-28 (D-256, amends D-18). Three reasons. Phase 3 waits on PR-8's gate and not on this one, and that gate held on 2026-08-28. The gate below asks for 30 percent, which this document already calls a placeholder until PR-15 measures it, so the bar is not one anyone can hold the work to. No user has asked for it: D-18 is a preference recorded before a user existed.
+
+The variance row is retired with the item, because it asked which kind of variance the user wanted and nothing read the answer. `Deck.seed` and `Slots.plan_variant` are removed from the contract, with the field numbers and the names reserved, so a later PR-9 must choose new numbers and no stored message can be misread.
+
+What a user has instead: the deck store keeps every build (D-245), and the generate role is not deterministic, so a second ask gives a different deck. That is not designed variance, and it is not nothing.
+
 Random variance is a feature (D-18). Variance comes from three levers, not from temperature alone. Lever 1: a seeded shuffle within each role tier of the candidate list. 
 
 Lever 2: a "plan variant" slot (for example "lifegain aristocrats" versus "lifegain go-wide"). Lever 3: a "keep these, change the rest" re-roll. The seed is stored with the deck so a build can be reproduced on request. Identical output on identical input is not a requirement (D-18). Gate: two builds of the same prompt differ in at least 30% of nonland cards and both pass validation.
@@ -521,7 +526,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 13. PR-7 questions.
 14. PR-7B automated eval lane. It runs beside PR-8 once its three evals hold.
 15. PR-8 generator.
-16. PR-9 variance.
+16. PR-9 variance. ⏸ out of MVP scope (D-256). It blocks nothing: the Phase 3 gate below reads PR-8's gate.
 17. **GATE.** Phase 3 starts only when PR-8's gate holds on the golden prompts. ✅ held on 2026-08-28, deck gate run 6.
 18. PR-11, PR-12, PR-13.
 19. PR-15 eval harness (can start after step 15, in parallel with the UI, if a second owner exists). M-5 manual scoring runs on the first UI build (after PR-12).

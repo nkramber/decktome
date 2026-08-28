@@ -24,8 +24,7 @@ var unreadSlots = map[string]string{
 	// slot_states is the question layer's own bookkeeping. The build reads
 	// the values, not whether they were asked.
 	"slot_states": "the question layer's bookkeeping, not a build input",
-	// plan_variant is PR-9's lever, and PR-9 is not written.
-	"plan_variant": "PR-9 designed variance, not yet built",
+
 	// locked_oracle_ids is the proto's copy. The build reads the same
 	// cards from the private state, which holds the names the user wrote
 	// (D-242).
