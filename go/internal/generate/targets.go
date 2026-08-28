@@ -164,3 +164,8 @@ func PreconKeepCount(total int) int {
 	// Round up, so the share is met and not approached.
 	return (total*PreconSharePercent + 99) / 100
 }
+
+// CodePreconSwapped reports the precon cards the builder put back to meet
+// the share. It is an INFO: the deck is what the user asked for, and they
+// should know the builder finished the job (D-250).
+const CodePreconSwapped = "precon_cards_restored"

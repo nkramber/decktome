@@ -211,3 +211,77 @@ func missingLocked(deck *mtgv1.Deck, req Request) []string {
 	}
 	return out
 }
+
+// MaxPreconSwap is the largest precon shortfall the builder closes
+// itself. The model chose which cards to drop, and putting one back is
+// what the user asked for. A larger gap means the model built a different
+// deck, and that stays a finding for the user to see (D-250).
+const MaxPreconSwap = 3
+
+// swapBackPrecon puts precon cards back until the share is met, and
+// returns how many it moved. It trades a card the precon does not hold
+// for one it does, so the deck size does not change.
+//
+// The model repaired prompt 17 of 2026-08-28 to 67 of the 68 it needed,
+// read the finding that said so, and returned 67 again. It can not count
+// its own list reliably, so the builder finishes the job.
+func swapBackPrecon(deck *mtgv1.Deck, req Request) int {
+	want := len(req.PreconOracleIDs)
+	if want == 0 {
+		return 0
+	}
+	in := make(map[string]bool, want)
+	for _, id := range req.PreconOracleIDs {
+		in[id] = true
+	}
+	held := map[string]bool{}
+	for _, c := range deck.GetCards() {
+		if in[c.GetOracleId()] {
+			held[c.GetOracleId()] = true
+		}
+	}
+	for _, id := range deck.GetCommanderOracleIds() {
+		if in[id] {
+			held[id] = true
+		}
+	}
+	short := PreconKeepCount(want) - len(held)
+	if short <= 0 || short > MaxPreconSwap {
+		return 0
+	}
+	// The cards to put back, in the pool's order so the choice is stable.
+	var missing []*mtgv1.Card
+	for _, name := range req.Pool.Names() {
+		c, ok := req.Pool.Card(name)
+		if !ok || !in[c.GetOracleId()] || held[c.GetOracleId()] {
+			continue
+		}
+		missing = append(missing, c)
+	}
+	locked := map[string]bool{}
+	for _, id := range req.Locked {
+		locked[id] = true
+	}
+	moved := 0
+	for i := len(deck.Cards) - 1; i >= 0 && moved < short && moved < len(missing); i-- {
+		c := deck.Cards[i]
+		// A card the precon holds stays. So does a locked card, a basic
+		// land, and any entry of more than one copy: those are the mana
+		// base, and swapping one would break the deck size.
+		if in[c.GetOracleId()] || locked[c.GetOracleId()] || c.GetCount() != 1 {
+			continue
+		}
+		if pc, ok := req.Pool.Card(c.GetName()); ok && IsBasic(pc) {
+			continue
+		}
+		put := missing[moved]
+		deck.Cards[i] = &mtgv1.DeckCard{
+			OracleId: put.GetOracleId(), Name: put.GetName(), Count: 1,
+			Role:     c.GetRole(),
+			Reason:   "the deck upgrades a precon, and this card is one the precon holds",
+			PriceUsd: put.GetPriceUsd(),
+		}
+		moved++
+	}
+	return moved
+}

@@ -17,6 +17,11 @@ package generate
 // The lines carry prices now, the budget is a limit rather than a line of
 // the plan prose, and going over it buys the repair turn (D-244).
 //
+// Version 6 followed prompt 17 again. The job targets prescribe the whole
+// deck and sum to 99, and the precon share demands most of those slots,
+// so the two instructions fought and the model split the difference. An
+// upgrade now gets no job targets: a precon is a working deck (D-249).
+//
 // Version 5 followed deck gate prompts 17 and 18. The precon share was
 // stated as a percentage, and the decks kept 68 and 29 percent of theirs.
 // The prompt states a card count now, and what the model may drop, and a
@@ -34,7 +39,7 @@ package generate
 // shortfalls." The model recited the job targets back, because version 1
 // asked it to state a shortfall there. The summary is for the user, and
 // the counts are in the card list.
-const PromptVersion = 5
+const PromptVersion = 6
 
 // generateInstructions is the stable prefix. It names no card, no format,
 // and no session value, so every call of a session shares it.

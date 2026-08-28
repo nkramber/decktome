@@ -2,6 +2,7 @@ package generate
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -355,5 +356,87 @@ func TestShortPreconBuysTheRepairTurn(t *testing.T) {
 	// The prompt must state the count, or the model is guessing.
 	if !strings.Contains(sc.Calls[0].Input, "Keep at least 4 of them") {
 		t.Error("the prompt did not state how many precon cards to keep")
+	}
+}
+
+// TestAnUpgradeGetsNoJobTargets is D-249. The targets prescribe the whole
+// deck and the share demands most of its slots, so the two fought.
+func TestAnUpgradeGetsNoJobTargets(t *testing.T) {
+	b := &Builder{}
+	req := testRequest()
+	req.Targets = map[string]int{"land": 36, "ramp": 10}
+	if got := b.input(req, nil, nil); !strings.Contains(got, "Job targets") {
+		t.Error("an ordinary build lost its job targets")
+	}
+	req.Precon = "Goblin Storm"
+	req.PreconOracleIDs = []string{"o-a", "o-b"}
+	got := b.input(req, nil, nil)
+	if strings.Contains(got, "Job targets") {
+		t.Error("an upgrade was given job targets, which fight the share")
+	}
+	if !strings.Contains(got, "Keep at least 2 of them") {
+		t.Error("the upgrade prompt does not state the keep count")
+	}
+}
+
+// TestSwapBackPreconClosesASmallShortfall is D-250. The model repaired a
+// deck to 67 of the 68 precon cards it needed, read the finding that said
+// so, and returned 67 again. It can not count its own list reliably.
+func TestSwapBackPreconClosesASmallShortfall(t *testing.T) {
+	pool := NewPool([]*mtgv1.Card{
+		{OracleId: "o-p1", Name: "Precon One"}, {OracleId: "o-p2", Name: "Precon Two"},
+		{OracleId: "o-p3", Name: "Precon Three"}, {OracleId: "o-p4", Name: "Precon Four"},
+		{OracleId: "o-x", Name: "Outsider"},
+		{OracleId: "o-plains", Name: "Plains", Supertypes: []string{"Basic"}},
+	}, nil)
+	req := Request{
+		Format: mtgv1.FormatId_FORMAT_ID_COMMANDER, Pool: pool,
+		Precon:          "Test Precon",
+		PreconOracleIDs: []string{"o-p1", "o-p2", "o-p3", "o-p4"},
+	}
+	// Three of four precon cards, one outsider, and a basic. The keep
+	// count is four, so one card is missing.
+	deck := &mtgv1.Deck{Cards: []*mtgv1.DeckCard{
+		{OracleId: "o-p1", Name: "Precon One", Count: 1},
+		{OracleId: "o-p2", Name: "Precon Two", Count: 1},
+		{OracleId: "o-p3", Name: "Precon Three", Count: 1},
+		{OracleId: "o-x", Name: "Outsider", Count: 1},
+		{OracleId: "o-plains", Name: "Plains", Count: 30},
+	}}
+	if got := swapBackPrecon(deck, req); got != 1 {
+		t.Fatalf("swapped = %d, want 1", got)
+	}
+	names := map[string]bool{}
+	size := 0
+	for _, c := range deck.GetCards() {
+		names[c.GetName()] = true
+		size += int(c.GetCount())
+	}
+	if !names["Precon Four"] {
+		t.Error("the missing precon card was not put back")
+	}
+	if names["Outsider"] {
+		t.Error("the outsider was not the card traded out")
+	}
+	// The basic land and the deck size must not move.
+	if !names["Plains"] || size != 34 {
+		t.Errorf("the mana base moved: names %v size %d", names, size)
+	}
+}
+
+// TestSwapBackRefusesALargeShortfall keeps a real failure visible. A deck
+// far from the share is a different deck, not a counting slip.
+func TestSwapBackRefusesALargeShortfall(t *testing.T) {
+	var ids []string
+	var cards []*mtgv1.Card
+	for i := 0; i < 20; i++ {
+		id := fmt.Sprintf("o-p%d", i)
+		ids = append(ids, id)
+		cards = append(cards, &mtgv1.Card{OracleId: id, Name: fmt.Sprintf("Precon %d", i)})
+	}
+	req := Request{Pool: NewPool(cards, nil), Precon: "Big", PreconOracleIDs: ids}
+	deck := &mtgv1.Deck{Cards: []*mtgv1.DeckCard{{OracleId: "o-p0", Name: "Precon 0", Count: 1}}}
+	if got := swapBackPrecon(deck, req); got != 0 {
+		t.Errorf("swapped = %d, want 0: a 16-card gap is a different deck", got)
 	}
 }

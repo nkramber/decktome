@@ -73,8 +73,15 @@ func (b *Builder) input(req Request, misses []Miss, blocks []*mtgv1.Finding) str
 		fmt.Fprintf(&s, "Keep at least %d of them. You may drop at most %d, and replace those with anything else on the shortlist.\n",
 			keep, change)
 		s.WriteString("An upgrade is a small number of better cards, and not a new deck.\n")
+		s.WriteString("Keep the precon's own shape. It is a working deck, so do not rebuild it to a role template: no job target is given for this build.\n")
+		s.WriteString("Count the cards you keep before you answer. The count above is a limit and not a goal.\n")
 	}
-	if len(req.Targets) > 0 {
+	// An upgrade keeps the precon's own composition. The generic job
+	// targets prescribe the whole deck, and the share demands most of
+	// those slots come from the precon, so the two instructions fight and
+	// the model splits the difference: prompt 17 kept 54 of the 68 it
+	// needed. A precon is a working deck already (D-249).
+	if len(req.Targets) > 0 && req.Precon == "" {
 		s.WriteString("\n## Job targets\n\n")
 		keys := make([]string, 0, len(req.Targets))
 		for k := range req.Targets {

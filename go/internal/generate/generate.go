@@ -192,6 +192,16 @@ func (b *Builder) assemble(req Request, out *deckOut) pass {
 	// is added here (D-218).
 	shortPrecon := false
 	if req.Precon != "" {
+		// The model can not count its own list reliably, so a small
+		// shortfall is closed here before the check reads it (D-250).
+		if swapped := swapBackPrecon(deck, req); swapped > 0 {
+			deck.Validation.Findings = append(deck.GetValidation().GetFindings(), &mtgv1.Finding{
+				Code:     CodePreconSwapped,
+				Severity: mtgv1.Severity_SEVERITY_INFO,
+				Message: fmt.Sprintf("the deck was %s short of the %s precon share, so the builder put %s back",
+					plural(swapped, "card"), req.Precon, plural(swapped, "card")),
+			})
+		}
 		shortPrecon = checkPreconShare(deck, req)
 	}
 	if padded > 0 {
