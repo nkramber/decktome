@@ -5,8 +5,12 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 
 	"connectrpc.com/connect"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1/mtgv1connect"
@@ -54,6 +58,7 @@ var (
 	errBadSource  = errors.New("source must be MANABOX_CSV or ARENA_TEXT")
 	errEmptyBody  = errors.New("content is empty")
 	errNoResolved = errors.New("no row resolved to a card: the report lists every row")
+	errNoID       = errors.New("collection_id is required")
 )
 
 // ImportCollection parses, resolves, and stores an upload.
@@ -127,11 +132,19 @@ func (s *Server) ImportCollection(ctx context.Context, req *connect.Request[mtgv
 	return connect.NewResponse(&mtgv1.ImportCollectionResponse{Collection: col, Report: report}), nil
 }
 
-// GetCollection returns one collection with entries.
+// GetCollection returns one collection with entries. A missing document
+// is NotFound, and every other store failure is Internal (L-13).
 func (s *Server) GetCollection(ctx context.Context, req *connect.Request[mtgv1.GetCollectionRequest]) (*connect.Response[mtgv1.GetCollectionResponse], error) {
-	col, err := s.repo.Get(ctx, s.user(ctx), req.Msg.CollectionId)
+	id := strings.TrimSpace(req.Msg.GetCollectionId())
+	if id == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errNoID)
+	}
+	col, err := s.repo.Get(ctx, s.user(ctx), id)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, err)
+		if status.Code(err) == codes.NotFound {
+			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("collection %q: %w", id, err))
+		}
+		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	return connect.NewResponse(&mtgv1.GetCollectionResponse{Collection: col}), nil
 }

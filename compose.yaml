@@ -51,8 +51,12 @@ services:
       CARDS_BUCKET: "mtg-local-cards"
       # Same fast reload as scripts/dev.sh, so a seed shows up within 15 s.
       CARDS_RELOAD_SECONDS: "15"
-      # Local stack: no provider keys, the fixture fake serves every LLM role.
-      LLM_REQUIRE_KEYS: "0"
+    # The provider keys come from .env (A-11). The file may be absent, and
+    # the api then refuses to start until it is written: the fixture fake
+    # serves the health role only.
+    env_file:
+      - path: .env
+        required: false
     depends_on:
       emulators:
         condition: service_healthy
@@ -76,6 +80,9 @@ services:
       dockerfile: docker/worker.Dockerfile
     command: ["-once"]
     environment: *gcp-env
+    env_file:
+      - path: .env
+        required: false
     depends_on:
       gcs:
         condition: service_healthy

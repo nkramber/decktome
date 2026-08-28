@@ -24,11 +24,13 @@ func TestCheck(t *testing.T) {
 		source   IndexSource
 		wantSnap string
 		wantAge  float64
+		wantStat string
+		ready    bool
 	}{
-		{name: "dev build, nil source", version: "dev", wantSnap: "none", wantAge: -1},
-		{name: "tagged build, no index yet", version: "v0.1.0", source: fakeSource{}, wantSnap: "none", wantAge: -1},
+		{name: "dev build, nil source", version: "dev", wantSnap: "none", wantAge: -1, wantStat: "starting"},
+		{name: "tagged build, no index yet", version: "v0.1.0", source: fakeSource{}, wantSnap: "none", wantAge: -1, wantStat: "starting"},
 		{name: "index loaded", version: "v0.1.0", source: fakeSource{idx: cards.NewIndex(nil, nil, nil, asOf)},
-			wantSnap: "2026-08-24T09:00:00Z", wantAge: 1.5},
+			wantSnap: "2026-08-24T09:00:00Z", wantAge: 1.5, wantStat: "ok", ready: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -38,8 +40,11 @@ func TestCheck(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Check returned error: %v", err)
 			}
-			if got := res.Msg.GetStatus(); got != "ok" {
-				t.Errorf("status = %q, want %q", got, "ok")
+			if got := res.Msg.GetStatus(); got != tt.wantStat {
+				t.Errorf("status = %q, want %q", got, tt.wantStat)
+			}
+			if got := s.Ready(); got != tt.ready {
+				t.Errorf("ready = %v, want %v", got, tt.ready)
 			}
 			if got := res.Msg.GetVersion(); got != tt.version {
 				t.Errorf("version = %q, want %q", got, tt.version)

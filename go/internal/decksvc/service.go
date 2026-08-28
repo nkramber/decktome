@@ -43,8 +43,15 @@ type DeckSource interface {
 
 // WithDecks wires the deck store. Without it GetDeck and ListDecks
 // answer Unimplemented, which is what they did before PR-8.
-func WithDecks(src DeckSource, userFn UserFunc) Option {
-	return func(s *Server) { s.decks, s.userFn = src, userFn }
+func WithDecks(src DeckSource) Option {
+	return func(s *Server) { s.decks = src }
+}
+
+// WithUser wires the caller's identity. Without it every read that needs
+// a user answers Unauthenticated, and Validate passes an empty user to
+// the collection source.
+func WithUser(userFn UserFunc) Option {
+	return func(s *Server) { s.userFn = userFn }
 }
 
 // listLimit caps one ListDecks answer. The request carries no paging
@@ -53,11 +60,8 @@ const listLimit = 100
 
 // WithCollections wires the ownership check. Without it, Validate refuses
 // a request that names a collection.
-func WithCollections(src CollectionSource, userFn UserFunc) Option {
-	return func(s *Server) {
-		s.collections = src
-		s.userFn = userFn
-	}
+func WithCollections(src CollectionSource) Option {
+	return func(s *Server) { s.collections = src }
 }
 
 // Server answers DeckService requests.
@@ -105,12 +109,8 @@ func (s *Server) Validate(ctx context.Context, req *connect.Request[mtgv1.Valida
 		if s.collections == nil {
 			return nil, connect.NewError(connect.CodeUnavailable, errNoCollections)
 		}
-		var userID string
-		if s.userFn != nil {
-			userID = s.userFn(ctx)
-		}
 		var err error
-		counts, err = s.collections.OracleCounts(ctx, userID, req.Msg.CollectionId)
+		counts, err = s.collections.OracleCounts(ctx, s.user(ctx), req.Msg.CollectionId)
 		if err != nil {
 			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("collection %q: %w", req.Msg.CollectionId, err))
 		}

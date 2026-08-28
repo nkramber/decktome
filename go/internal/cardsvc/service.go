@@ -3,6 +3,7 @@ package cardsvc
 
 import (
 	"context"
+	"errors"
 	"strconv"
 	"sync/atomic"
 
@@ -37,13 +38,7 @@ func (s *Server) ready() (*cards.Index, error) {
 	return idx, nil
 }
 
-var errNoSnapshot = &snapshotError{}
-
-type snapshotError struct{}
-
-func (*snapshotError) Error() string {
-	return "card database not loaded yet: no snapshot available"
-}
+var errNoSnapshot = errors.New("card database not loaded yet: no snapshot available")
 
 // Lookup finds one card by exact name, printing id, or Oracle id.
 func (s *Server) Lookup(_ context.Context, req *connect.Request[mtgv1.LookupRequest]) (*connect.Response[mtgv1.LookupResponse], error) {
@@ -70,13 +65,9 @@ func (s *Server) Lookup(_ context.Context, req *connect.Request[mtgv1.LookupRequ
 }
 
 var (
-	errNoKey    = &keyError{"lookup needs a name, scryfall_id, or oracle_id"}
-	errNotFound = &keyError{"card not found"}
+	errNoKey    = errors.New("lookup needs a name, scryfall_id, or oracle_id")
+	errNotFound = errors.New("card not found")
 )
-
-type keyError struct{ msg string }
-
-func (e *keyError) Error() string { return e.msg }
 
 const (
 	defaultPageSize = 50
@@ -119,4 +110,4 @@ func (s *Server) Search(_ context.Context, req *connect.Request[mtgv1.SearchRequ
 	return connect.NewResponse(&mtgv1.SearchResponse{Cards: res, NextPageToken: next}), nil
 }
 
-var errBadToken = &keyError{"page_token must be a non-negative integer"}
+var errBadToken = errors.New("page_token must be a non-negative integer")
