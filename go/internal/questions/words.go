@@ -122,15 +122,19 @@ var commanderSigns = []string{
 // a safety net under the classifier, not a replacement for it: the agent
 // calls it only when the classify role left the format empty.
 //
+// It reads one message. The whole conversation held every format the
+// user ever named, so one "pauper" on turn 1 turned the net off for the
+// rest of the session (audit Q-7). The linter reads it per message too.
+//
 // It answers nothing when the user named more than one format. Two named
-// formats is a two-deck request, and OneDeckRequest reads that.
+// formats is a two-deck request, and oneDeckRequest reads that.
 func FormatFromWords(text string) (mtgv1.FormatId, bool) {
-	if _, _, ok := UnsupportedFormat(text); ok {
+	if _, _, ok := unsupportedFormat(text); ok {
 		return mtgv1.FormatId_FORMAT_ID_UNSPECIFIED, false
 	}
 	found := map[mtgv1.FormatId]bool{}
 	for word, id := range formatNames {
-		if hasPhrase(text, word) {
+		if namesFormatWord(text, word) {
 			found[id] = true
 		}
 	}
@@ -145,6 +149,53 @@ func FormatFromWords(text string) (mtgv1.FormatId, bool) {
 	return mtgv1.FormatId_FORMAT_ID_UNSPECIFIED, false
 }
 
+// namesFormatWord reports whether the text names a format word outright.
+// A word inside a comparison names no format: "It is like Commander but
+// 60 cards on Arena" describes Brawl, and gate conversation 50 wrote
+// exactly that while the decline row was out. The word rule must leave
+// that turn to the decline flow (audit follow-up, 2026-08-28).
+func namesFormatWord(text, word string) bool {
+	toks, want := tokens(text), tokens(word)
+	if len(want) == 0 {
+		return false
+	}
+	for i := range toks {
+		if matchAt(toks, want, i) && !negatedAt(toks, i) && !comparedAt(toks, i, len(want)) {
+			return true
+		}
+	}
+	return false
+}
+
+// comparedAt reports whether the format word at index i sits inside a
+// comparison: "like X", "similar to X", "the same as X", "based on X",
+// "X but ...", "X style".
+func comparedAt(toks []string, i, n int) bool {
+	before := func(k int) string {
+		if i-k < 0 {
+			return ""
+		}
+		return toks[i-k]
+	}
+	switch {
+	case before(1) == "like":
+		return true
+	case before(1) == "to" && before(2) == "similar":
+		return true
+	case before(1) == "as" && before(2) == "same":
+		return true
+	case before(1) == "on" && before(2) == "based":
+		return true
+	}
+	if after := i + n; after < len(toks) {
+		switch toks[after] {
+		case "but", "style":
+			return true
+		}
+	}
+	return false
+}
+
 // namesFormat reports whether one message names one format. It reads the
 // message alone, and never the conversation: a value the user replaced
 // stays in the conversation forever (D-125).
@@ -154,7 +205,7 @@ func FormatFromWords(text string) (mtgv1.FormatId, bool) {
 // the classifier may report Commander for it. The unsupported-format
 // row must decline it instead (M-9, D-112).
 func namesFormat(message string, id mtgv1.FormatId) bool {
-	if _, _, ok := UnsupportedFormat(message); ok {
+	if _, _, ok := unsupportedFormat(message); ok {
 		return false
 	}
 	for word, want := range formatNames {
@@ -199,8 +250,8 @@ func namesFormat(message string, id mtgv1.FormatId) bool {
 // loses the commons-only rule that defines it. The owner chose to name no
 // substitute for any of the four over a claim the data does not support.
 //
-// "duel commander" must stay before "commander", because the list is read
-// in order and the longer phrase wins.
+// The list is read in order and the first match wins, so a longer phrase
+// stands before the word it holds: "pauper commander" before "pauper".
 var unsupported = []struct{ phrase, display, near string }{
 	{"canadian highlander", "Canadian Highlander", "Commander"},
 	{"duel commander", "Duel Commander", "Commander"},
@@ -216,13 +267,13 @@ var unsupported = []struct{ phrase, display, near string }{
 	{"pauper", "Pauper", ""},
 }
 
-// UnsupportedFormat reads a format this app does not build. It returns
+// unsupportedFormat reads a format this app does not build. It returns
 // the name the user wrote and the nearest format the app does build.
 //
-// The list is in longest-phrase order, so "duel commander" wins over
-// "commander". Gate run 13 of 2026-08-25 offered Brawl to a user, which
+// The list is in longest-phrase order, so "pauper commander" wins over
+// "pauper". Gate run 13 of 2026-08-25 offered Brawl to a user, which
 // the app can not build (probe 46).
-func UnsupportedFormat(text string) (name, near string, ok bool) {
+func unsupportedFormat(text string) (name, near string, ok bool) {
 	for _, u := range unsupported {
 		if hasPhrase(text, u.phrase) {
 			return u.display, u.near, true
@@ -234,12 +285,12 @@ func UnsupportedFormat(text string) (name, near string, ok bool) {
 // twoDeckSigns name a request for more than one deck outright.
 var twoDeckSigns = []string{"two decks", "2 decks", "both decks", "second deck"}
 
-// OneDeckRequest reports whether one message asks for more than one deck.
+// oneDeckRequest reports whether one message asks for more than one deck.
 //
 // It reads one message and never the whole conversation. A user who
 // changes the format across two turns has not asked for two decks, and
 // probe 31 does exactly that.
-func OneDeckRequest(message string) bool {
+func oneDeckRequest(message string) bool {
 	if anyPhrase(message, twoDeckSigns) {
 		return true
 	}
@@ -255,15 +306,15 @@ func OneDeckRequest(message string) bool {
 // preconSigns name a preconstructed deck.
 var preconSigns = []string{"precon", "preconstructed"}
 
-// PreconRequest reports whether the user asked to upgrade a precon.
-func PreconRequest(text string) bool { return anyPhrase(text, preconSigns) }
+// preconRequest reports whether the user asked to upgrade a precon.
+func preconRequest(text string) bool { return anyPhrase(text, preconSigns) }
 
 // proxySigns name a table that plays with proxies.
 var proxySigns = []string{"proxy", "proxies", "proxied"}
 
-// ProxyUser reports whether the user proxies their cards. Such a user has
+// proxyUser reports whether the user proxies their cards. Such a user has
 // no budget, so the agent asks no budget question (D-111).
-func ProxyUser(text string) bool { return anyPhrase(text, proxySigns) }
+func proxyUser(text string) bool { return anyPhrase(text, proxySigns) }
 
 // notCommanderSigns say a named card belongs in the 99 and not in the
 // command zone.
@@ -272,13 +323,13 @@ var notCommanderSigns = []string{
 	"in the 99", "one of the 99", "for the 99", "goes in the 99",
 }
 
-// NamedCardNotCommander reports whether the user placed a named card in
+// namedCardNotCommander reports whether the user placed a named card in
 // the 99. The role question must not fire after that (D-70).
 //
 // The negation guard is off here on purpose. Every phrase in the list
 // carries its own negative sense, and "not as my commander" would read as
 // negated by any general rule.
-func NamedCardNotCommander(text string) bool {
+func namedCardNotCommander(text string) bool {
 	toks := tokens(text)
 	for _, p := range notCommanderSigns {
 		want := tokens(p)
@@ -298,11 +349,11 @@ var swapSigns = []string{
 	"someone else as my commander", "a different one",
 }
 
-// SwapsCommander reports whether the user wants to replace a commander
+// swapsCommander reports whether the user wants to replace a commander
 // they already chose. Probe 49 writes "Actually use a different
 // commander, suggest one", and every run before 2026-08-26 asked nothing
 // after it (D-130).
-func SwapsCommander(message string) bool {
+func swapsCommander(message string) bool {
 	toks := tokens(message)
 	for _, p := range swapSigns {
 		want := tokens(p)
@@ -323,13 +374,13 @@ var refusalSigns = []string{
 	"none", "neither", "no thanks",
 }
 
-// RefusedOffer reports whether the message rejects the commanders on the
+// refusedOffer reports whether the message rejects the commanders on the
 // table. The caller checks that the pick row is out first, so a "none"
 // about anything else reaches nothing.
 //
 // The negation guard is off here. Every phrase carries its own negative
 // sense, and a general rule would read each one as negated.
-func RefusedOffer(message string) bool {
+func refusedOffer(message string) bool {
 	toks := tokens(message)
 	for _, p := range refusalSigns {
 		want := tokens(p)
@@ -357,12 +408,12 @@ var pairSigns = []string{
 	"both as commanders", "two legends",
 }
 
-// WantsCommanderPair reports whether the user asked for two commanders.
+// wantsCommanderPair reports whether the user asked for two commanders.
 // Probe 73 writes "A Commander deck with a Background commander pair",
 // and every run before D-154 answered it with three single legends.
 //
 // The negation guard applies: "no partners" asks for one commander.
-func WantsCommanderPair(message string) bool {
+func wantsCommanderPair(message string) bool {
 	toks := tokens(message)
 	for _, p := range pairSigns {
 		want := tokens(p)
@@ -375,11 +426,11 @@ func WantsCommanderPair(message string) bool {
 	return false
 }
 
-// WantsBackgroundPair reports whether the user named a Background. It
+// wantsBackgroundPair reports whether the user named a Background. It
 // narrows a pair request: probe 73 asked for a "Background commander
 // pair", and no Background ranked among the best pairs for its theme,
 // because a Background carries no theme signal of its own (D-154).
-func WantsBackgroundPair(message string) bool {
+func wantsBackgroundPair(message string) bool {
 	toks := tokens(message)
 	for _, p := range []string{"background", "backgrounds"} {
 		want := tokens(p)
@@ -407,7 +458,7 @@ var delegateSigns = []string{
 	"i dunno, you pick", "dealer's choice",
 }
 
-// DelegatesChoice reports whether the message hands the choice to the
+// delegatesChoice reports whether the message hands the choice to the
 // agent. The caller decides which key the answer closes.
 //
 // Eighteen of the 100 gate conversations hold such a phrase, and no rule
@@ -415,7 +466,7 @@ var delegateSigns = []string{
 // the row asked again every turn until the messages ran out. Eval run 14
 // refused 18 of its 43 bad questions on that row alone, which is more
 // than the next four rows together.
-func DelegatesChoice(message string) bool {
+func delegatesChoice(message string) bool {
 	toks := tokens(message)
 	for _, p := range delegateSigns {
 		want := tokens(p)
@@ -428,10 +479,10 @@ func DelegatesChoice(message string) bool {
 	return false
 }
 
-// NamesCommander reports whether the message uses the word at all. It
+// namesCommander reports whether the message uses the word at all. It
 // scopes a delegation that would otherwise read as an answer to any open
 // question (D-147).
-func NamesCommander(message string) bool {
+func namesCommander(message string) bool {
 	return hasPhrase(message, "commander")
 }
 
@@ -454,10 +505,10 @@ var notAPick = map[string]bool{
 	"precon": true, "deck": true, "cards": true, "pool": true,
 }
 
-// OfferedPick reads a commander chosen by its place, such as "the first
+// offeredPick reads a commander chosen by its place, such as "the first
 // of the new three". The caller checks that the pick row is out, so an
 // ordinal about anything else reaches nothing.
-func OfferedPick(message string) (int, bool) {
+func offeredPick(message string) (int, bool) {
 	toks := tokens(message)
 	for j, t := range toks {
 		i, ok := ordinals[t]
@@ -481,10 +532,10 @@ var competitiveSigns = []string{
 	"as strong as possible", "tier one", "top tier", "tournament",
 }
 
-// CompetitiveRequest reports whether the user asked for a strong deck.
+// competitiveRequest reports whether the user asked for a strong deck.
 // The agent infers the tournament step from it in a 60-card format, and
 // asks the user to confirm (D-107).
-func CompetitiveRequest(text string) bool { return anyPhrase(text, competitiveSigns) }
+func competitiveRequest(text string) bool { return anyPhrase(text, competitiveSigns) }
 
 // occasionSigns name a place or a happening, and not a power level. A
 // user who builds "for an event" has said nothing about how strong the
@@ -494,13 +545,13 @@ var occasionSigns = []string{"event", "store", "lgs", "game night"}
 // stepSigns name a 60-card power step outright.
 var stepSigns = []string{"casual", "fnm", "friday night", "tournament", "kitchen table"}
 
-// OccasionOnly reports whether a message names an occasion and no power
+// occasionOnly reports whether a message names an occasion and no power
 // step. The classifier reads such a message as the tournament step.
 // Conversation 33 of gate run 19 opened with "A Modern deck for an
 // event", and the user answered "FNM level" two turns later (D-219).
-func OccasionOnly(message string) bool {
+func occasionOnly(message string) bool {
 	return anyPhrase(message, occasionSigns) &&
-		!anyPhrase(message, stepSigns) && !CompetitiveRequest(message)
+		!anyPhrase(message, stepSigns) && !competitiveRequest(message)
 }
 
 // cedhSigns name competitive Commander. cEDH is bracket 5 by definition,
@@ -510,10 +561,10 @@ func OccasionOnly(message string) bool {
 // and it does not name bracket 5, and the two are three brackets apart.
 var cedhSigns = []string{"cedh", "competitive edh"}
 
-// CEDHRequest reports whether the user asked for a cEDH deck. Probe 75
+// cedhRequest reports whether the user asked for a cEDH deck. Probe 75
 // of gate run 18 opens with "A cEDH deck", and the agent asked which
 // power bracket to target. The user had named it (D-164).
-func CEDHRequest(text string) bool { return anyPhrase(text, cedhSigns) }
+func cedhRequest(text string) bool { return anyPhrase(text, cedhSigns) }
 
 // buyListSigns name the cards the user must acquire. A budget beside one
 // of these caps the buy list, so the scope question has its answer
@@ -521,8 +572,8 @@ func CEDHRequest(text string) bool { return anyPhrase(text, cedhSigns) }
 // cap covers (D-253).
 var buyListSigns = []string{"buy list", "buylist", "to buy", "cards i buy", "cards to acquire"}
 
-// NamesTheBuyList reports whether a message names the cards to buy.
-func NamesTheBuyList(text string) bool { return anyPhrase(text, buyListSigns) }
+// namesTheBuyList reports whether a message names the cards to buy.
+func namesTheBuyList(text string) bool { return anyPhrase(text, buyListSigns) }
 
 // colorlessSigns name a deck with no colors.
 //
@@ -533,110 +584,15 @@ func NamesTheBuyList(text string) bool { return anyPhrase(text, buyListSigns) }
 // out (D-165).
 var colorlessSigns = []string{"colorless", "no colors", "no color"}
 
-// ColorlessRequest reports whether the user asked for a colorless deck.
+// colorlessRequest reports whether the user asked for a colorless deck.
 // The negation guard applies, so "not colorless" is not such a request.
-func ColorlessRequest(text string) bool { return anyPhrase(text, colorlessSigns) }
-
-// lockVerbs put a named card into the deck outright. The user has
-// answered the locked row before it went out.
-var lockVerbs = map[string]bool{
-	"keep": true, "keeps": true, "kept": true,
-	"lock": true, "locks": true, "locked": true,
-	"include": true, "includes": true, "must": true,
-}
-
-// aroundVerbs name a card as the deck's plan. They do not lock it on
-// their own: "build around Grist" leaves open whether Grist leads the
-// deck, and a card that becomes the commander is not a locked card
-// (D-70). BuildsAround is therefore read only for a card already known
-// to sit in the 99.
-var aroundVerbs = map[string]bool{"around": true}
-
-// BuildsAround reports whether one message names a card as the deck's
-// plan. A card the deck is built around stays in it, so the message
-// answers the locked row before it goes out.
-//
-// Conversation 27 of gate run 20260826-220840-000 opened with "Build
-// around Grist, the Hunger Tide, but not as my commander". The locked
-// row then asked on turn 2 whether Grist may be cut (D-214).
-func BuildsAround(message, name string) bool {
-	toks := tokens(message)
-	for _, form := range []string{name, baseName(name)} {
-		want := tokens(form)
-		if len(want) == 0 {
-			continue
-		}
-		for i := range toks {
-			if !matchAt(toks, want, i) {
-				continue
-			}
-			for j := i - 1; j >= 0 && j >= i-lockWindow; j-- {
-				if negators[toks[j]] {
-					break
-				}
-				if aroundVerbs[toks[j]] && !negatedAt(toks, j) {
-					return true
-				}
-			}
-		}
-	}
-	return false
-}
-
-// lockWindow is how many words may stand between a lock verb and the
-// card name. "Keep Sanguine Bond in it" is one word, and "and please
-// keep the card Sanguine Bond" is three.
-const lockWindow = 3
-
-// LocksCard reports whether one message locks a named card into the
-// deck. Conversation 13 of gate run 18 opens with "keep Sanguine Bond in
-// it", and the agent asked "Should Sanguine Bond stay in the deck, or
-// may I cut cards that do not fit the plan?" (D-166).
-//
-// The card name comes from the classifier, so it is the user's own card
-// and not a guess. The short form is read as well as the full one, which
-// is the sameCard rule of D-70.
-func LocksCard(message, name string) bool {
-	toks := tokens(message)
-	for _, form := range []string{name, baseName(name)} {
-		want := tokens(form)
-		if len(want) == 0 {
-			continue
-		}
-		for i := range toks {
-			if !matchAt(toks, want, i) {
-				continue
-			}
-			for j := i - 1; j >= 0 && j >= i-lockWindow; j-- {
-				if negators[toks[j]] {
-					break
-				}
-				// "Do not keep Sanguine Bond" holds the verb and denies
-				// it, so the negator before the verb counts as well.
-				if lockVerbs[toks[j]] && !negatedAt(toks, j) {
-					return true
-				}
-			}
-			// "Sol Ring goes in it" puts the verb after the name.
-			// Conversation 74 of run 20260826-191225-000 wrote that, and
-			// the locked row asked whether Sol Ring may be cut.
-			if after := i + len(want); after < len(toks) && lockAfter[toks[after]] && !negatedAt(toks, i) {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-// lockAfter are the verbs that lock a card in when they follow its name:
-// "Sol Ring goes in it", "Sanguine Bond stays".
-var lockAfter = map[string]bool{"goes": true, "stays": true}
+func colorlessRequest(text string) bool { return anyPhrase(text, colorlessSigns) }
 
 // bestSigns hand a choice to the agent with a superlative. They name no
 // card, and they tell the agent to select one.
 var bestSigns = []string{"the best", "the strongest", "the top"}
 
-// DelegatesCommander reports whether the message asks the agent to pick
+// delegatesCommander reports whether the message asks the agent to pick
 // the commander. Conversation 10 of gate run 18 writes "Buy the best
 // lifegain commander", and the agent answered with three names to choose
 // from. The user had asked the agent to choose (D-167).
@@ -644,8 +600,8 @@ var bestSigns = []string{"the best", "the strongest", "the top"}
 // The message must name a commander. Without that guard "the best" would
 // hand over the commander choice whenever any commander question is out,
 // and "buy the best lands" is not that message.
-func DelegatesCommander(message string) bool {
-	return NamesCommander(message) && anyPhrase(message, bestSigns)
+func delegatesCommander(message string) bool {
+	return namesCommander(message) && anyPhrase(message, bestSigns)
 }
 
 // noBudgetSigns say the user set no spending limit. The negation guard
@@ -657,13 +613,13 @@ var noBudgetSigns = []string{
 	"spend what you need", "spend whatever", "budget is no issue",
 }
 
-// NoSpendingLimit reports whether the user refused a budget cap. The
+// noSpendingLimit reports whether the user refused a budget cap. The
 // budget row must not ask a user who has answered it.
 //
 // It reads one message and never the whole conversation, which is the
 // D-125 rule. A cap the user names later still closes the slot on its
 // value.
-func NoSpendingLimit(message string) bool {
+func noSpendingLimit(message string) bool {
 	toks := tokens(message)
 	for _, p := range noBudgetSigns {
 		want := tokens(p)
@@ -675,6 +631,45 @@ func NoSpendingLimit(message string) bool {
 	}
 	return false
 }
+
+// yesWords open an answer that accepts what the agent offered.
+var yesWords = map[string]bool{
+	"yes": true, "yeah": true, "yep": true, "sure": true, "ok": true,
+	"okay": true, "fine": true, "please": true,
+}
+
+// acceptSigns accept the offer inside a longer sentence. "Fine, treat it
+// as Commander" and "use that" both take the nearest format.
+var acceptSigns = []string{"use that", "that works", "treat it as", "go with that", "the nearest"}
+
+// acceptsOffer reports whether a message says yes to the question that
+// is out. It reads a leading yes-word or an acceptance phrase. The caller
+// checks which question is out, so a bare "yes" reaches only the row
+// that offered something (audit Q-4).
+func acceptsOffer(message string) bool {
+	toks := tokens(message)
+	if len(toks) > 0 && yesWords[toks[0]] {
+		return true
+	}
+	return anyPhrase(message, acceptSigns)
+}
+
+// wholeDeckSigns say a budget caps the whole deck value. The scope row
+// offers "The whole deck", and the user repeats it (D-238).
+var wholeDeckSigns = []string{"whole deck", "entire deck", "total deck", "deck value"}
+
+// namesTheWholeDeck reports whether a message puts the cap on the whole
+// deck.
+func namesTheWholeDeck(text string) bool { return anyPhrase(text, wholeDeckSigns) }
+
+// commanderRoleSigns give a named card the command zone. "Not as my
+// commander" is negated, so it never matches here.
+var commanderRoleSigns = []string{"as my commander", "as the commander", "as commander", "is my commander", "leads the deck"}
+
+// namedCardAsCommander reports whether the user gave a named card the
+// commander role. The role row offers "As my commander", and closing it
+// must set the commander from the card (audit Q-14).
+func namedCardAsCommander(message string) bool { return anyPhrase(message, commanderRoleSigns) }
 
 // buysCards reports whether a pool rule lets the deck hold a card the
 // user does not own. Only owned-only builds with no purchase.

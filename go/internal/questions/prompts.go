@@ -22,31 +22,45 @@ package questions
 // focus on?" went out one line under "I do not build Oathbreaker". The
 // linter refused both, and the run failed on them (D-150).
 //
+// Version 7 followed gate run 16. The ask role named one card's color
+// identity in runs 14, 15, and 16, and it changed the preposition each
+// time D-144 caught the old one. The rule now reads the shape (D-151).
+//
 // Version 8 followed D-155, which narrowed the app to Commander,
 // Standard, and Modern. The classify role must not resolve a format the
 // app no longer builds, because the unsupported-format row declines it
 // by name instead.
 //
-// Version 7 followed gate run 16. The ask role named one card's color
-// identity in runs 14, 15, and 16, and it changed the preposition each
-// time D-144 caught the old one. The rule now reads the shape (D-151).
+// Version 9 followed the eval of gate run 18. The classify role reads
+// cEDH as bracket 5, which probe 75 gave in its first message and the
+// agent asked for again (D-164).
 //
 // Version 10 followed D-238. The budget-scope row asked whether a cap
 // covers the cards to buy or the whole deck, and nothing stored the
 // answer, so the agent asked and discarded it. The classify role now
 // reports the scope.
 //
-// Version 9 followed the eval of gate run 18. The classify role reads
-// cEDH as bracket 5, which probe 75 gave in its first message and the
-// agent asked for again (D-164).
-const PromptVersion = 10
+// Version 11 followed the audit of 2026-08-28. The classify role asked
+// the model to repeat a value from an earlier message it never saw
+// (audit Q-13). The input now carries prior_messages, the user's last
+// five earlier messages, and the rule is gone. The input also carries
+// nearest_format, so a "yes" to the decline row fills the format (audit
+// Q-4). The instruction prefix is unchanged in shape, so the provider
+// cache still serves it, and the input differs on every turn in any
+// case.
+//
+// Version 12 stores the house-rules answer (D-265). The schema gains a
+// house_rules string, and five rows left the catalog (D-260), so the
+// instruction text names fewer rows.
+const PromptVersion = 12
 
 const classifyInstructions = `You map one message from a Magic: The Gathering deck-building conversation onto slots.
 
 Rules:
 - Fill a slot only from what the user wrote or clearly implied. Never guess.
 - When the message answers a question about the format, the theme, the colors, the power, the pool rule, the budget, or the commander, put the answer in that field. A field is the only place an answer counts. Naming the slot in closed_keys does not record the answer, and the agent asks again.
-- Repeat a value the user gave in an earlier message when the field is still empty. "Modern" said two messages ago is still the format.
+- prior_messages in the input are the user's earlier messages, oldest first. Read them for a value the user gave before and has not replaced. "Modern" in an earlier message is still the format when no later message names another.
+- nearest_format in the input is the format the agent offered in place of one it does not build. When the message accepts it ("yes", "use that", "fine, treat it as Commander"), copy nearest_format into the format field.
 - Leave a field empty, zero, or "unknown" when the message does not answer it.
 - format: the format the user named, even as one word on its own. This app builds three: "Commander", "Standard", and "Modern". Copy one of those three into the format field every time the user names one. Use "unknown" for every other format, including Pioneer, Legacy, Vintage, Pauper, Brawl, and Historic: another step declines those by name, and naming one here would build the wrong deck. Use "unknown" also when the message names no format at all. "anything goes" is not a format.
 - format from an adjective: "a Commander deck", "a Modern burn deck", and "a Standard burn deck" all name the format. Read it. "EDH" means commander.
@@ -64,6 +78,7 @@ Rules:
 - facts.house_format: the user described their own rule set instead of a real format.
 - facts.two_plans: the theme has two common plans and the user has not chosen one.
 - facts.budget_ambiguous: the user named one money number without saying whether it caps purchases or the whole deck.
+- house_rules: what the user means by "anything goes", "kitchen table", or "no ban list", in the user's own words, for example "any card, no ban list" or "Modern with proxies". Fill it when the user answers the house-rules question, or states the rules unprompted. Leave it empty otherwise.
 - budget_scope: what the cap covers, when the user says. "buy" means the cards they must acquire, and "deck" means the whole deck value, owned copies included. Leave it "unknown" when the user did not say.
 - facts.power_competitive: the user asked for a strong, competitive, or winning deck.
 - facts.wants_suggestion: the user asked you to name a commander, or said they have none in mind.
@@ -78,7 +93,7 @@ Answer with the schema only.`
 const classifySchema = `{
   "type": "object",
   "additionalProperties": false,
-  "required": ["format","theme","colors","commander_names","locked_names","named_cards","power","pool_rule","budget_usd","budget_scope","closed_keys","declined_keys","facts"],
+  "required": ["format","theme","colors","commander_names","locked_names","named_cards","power","pool_rule","budget_usd","budget_scope","house_rules","closed_keys","declined_keys","facts"],
   "properties": {
     "format": {"type": "string"},
     "theme": {"type": "string"},
@@ -90,6 +105,7 @@ const classifySchema = `{
     "pool_rule": {"type": "string"},
     "budget_usd": {"type": "number"},
     "budget_scope": {"type": "string", "enum": ["buy", "deck", "unknown"]},
+    "house_rules": {"type": "string"},
     "closed_keys": {"type": "array", "items": {"type": "string"}},
     "declined_keys": {"type": "array", "items": {"type": "string"}},
     "facts": {

@@ -121,29 +121,9 @@ func TestNilHintsAreSafe(t *testing.T) {
 	if thin, n := nilHints.ThinTheme("lifegain"); thin || n != 0 {
 		t.Errorf("a nil hint source reported a thin theme: %v %d", thin, n)
 	}
-	if nilHints.WeakCommanderPool("lifegain") {
-		t.Error("a nil hint source claimed a weak commander pool")
-	}
 	if nilHints.OwnedThemeCount("lifegain") != 0 {
 		t.Error("a nil hint source counted owned theme cards")
 	}
-}
-
-// countingHints records what the resolver asked for.
-type countingHints struct {
-	stubHints
-	commanderCalls int
-	colorCalls     int
-}
-
-func (c *countingHints) ThemeColors(theme string) string {
-	c.colorCalls++
-	return c.stubHints.ThemeColors(theme)
-}
-
-func (c *countingHints) Commanders(theme string, skip []string) []string {
-	c.commanderCalls++
-	return c.stubHints.Commanders(theme, skip)
 }
 
 // TestHintsAreAskedOnlyForWhatARowNames is the first half of the
@@ -152,14 +132,14 @@ func (c *countingHints) Commanders(theme string, skip []string) []string {
 func TestHintsAreAskedOnlyForWhatARowNames(t *testing.T) {
 	c := load(t)
 	cases := []struct {
-		row                        string
-		wantCommanders, wantColors int
+		row            string
+		wantCommanders int
 	}{
-		{"format", 0, 0},
-		{"power_commander", 0, 0},
-		{"commander", 0, 0},
-		{"colors", 0, 0},
-		{"commander_pick", 1, 0},
+		{"format", 0},
+		{"power_commander", 0},
+		{"commander", 0},
+		{"colors", 0},
+		{"commander_pick", 1},
 	}
 	for _, tc := range cases {
 		t.Run(tc.row, func(t *testing.T) {
@@ -167,14 +147,10 @@ func TestHintsAreAskedOnlyForWhatARowNames(t *testing.T) {
 			if !ok {
 				t.Fatalf("no row %q", tc.row)
 			}
-			h := &countingHints{stubHints: stubHints{colors: "white and black",
-				commanders: []string{"Karlov of the Ghost Council", "Oloro, Ageless Ascetic", "Ayli, Eternal Pilgrim"}}}
+			h := &fakeHints{commanders: []string{"Karlov of the Ghost Council", "Oloro, Ageless Ascetic", "Ayli, Eternal Pilgrim"}}
 			resolve(row, themedState("lifegain"), h)
 			if h.commanderCalls != tc.wantCommanders {
 				t.Errorf("row %q asked for commanders %d times, want %d", tc.row, h.commanderCalls, tc.wantCommanders)
-			}
-			if h.colorCalls != tc.wantColors {
-				t.Errorf("row %q asked for theme colors %d times, want %d", tc.row, h.colorCalls, tc.wantColors)
 			}
 		})
 	}
@@ -198,5 +174,34 @@ func TestHintCacheKeyCarriesTheColors(t *testing.T) {
 		Pool:   mtgv1.PoolRule_POOL_RULE_OWNED_ONLY}
 	if owned.key("stax") == white.key("stax") {
 		t.Errorf("one cache key serves two pool rules: %q", owned.key("stax"))
+	}
+}
+
+// TestThinThemeCacheCarriesTheColors is audit Q-12. ThinTheme cached by
+// the theme alone, which the D-82 comment names as the defect, and it
+// overwrote OnThemeOwned as a side effect. The cache now keys on the
+// same key as every other hint, and the count reaches the {n} clause
+// through the cache.
+func TestThinThemeCacheCarriesTheColors(t *testing.T) {
+	h := &CandidateHints{Format: mtgv1.FormatId_FORMAT_ID_COMMANDER,
+		Colors: []mtgv1.Color{mtgv1.Color_COLOR_W}, OnThemeOwned: 40}
+	h.cacheThin(h.key("lifegain"), true, 12)
+	if thin, n := h.ThinTheme("lifegain"); !thin || n != 12 {
+		t.Errorf("a cached answer was not served: %v %d", thin, n)
+	}
+	if n := h.OwnedThemeCount("lifegain"); n != 12 {
+		t.Errorf("owned count = %d, want the 12 the count measured", n)
+	}
+	if h.OnThemeOwned != 40 {
+		t.Errorf("OnThemeOwned = %d, the cache overwrote the caller's value", h.OnThemeOwned)
+	}
+	// Another color set is another key. With no builder the miss answers
+	// nothing, which proves the white answer was not served for green.
+	h.Colors = []mtgv1.Color{mtgv1.Color_COLOR_G}
+	if thin, n := h.ThinTheme("lifegain"); thin || n != 0 {
+		t.Errorf("the white answer was served for green: %v %d", thin, n)
+	}
+	if n := h.OwnedThemeCount("lifegain"); n != 40 {
+		t.Errorf("owned count under green = %d, want the caller's 40", n)
 	}
 }

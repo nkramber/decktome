@@ -31,10 +31,11 @@ type CandidateHints struct {
 	OnThemeOwned int
 	Log          *slog.Logger
 
-	colors     map[string]string
 	commanders map[string][]string
 	// The thin-theme count runs the whole PR-6 build, so it runs once per
-	// theme and the answer is kept.
+	// key and the answer is kept. The key carries the format, the
+	// colors, and the pool rule, as every other hint's does (D-82,
+	// audit Q-12).
 	thinDone  map[string]bool
 	thin      map[string]bool
 	thinCount map[string]int
@@ -124,32 +125,6 @@ func (h *CandidateHints) UseWantPair(want, background bool) {
 	}
 }
 
-// ThemeColors names the colors a theme is strongest in, for example
-// "white and black".
-func (h *CandidateHints) ThemeColors(theme string) string {
-	if h == nil || h.Index == nil || h.Builder == nil || strings.TrimSpace(theme) == "" {
-		return ""
-	}
-	if v, ok := h.colors[h.key(theme)]; ok {
-		return v
-	}
-	format := h.Format
-	if format == mtgv1.FormatId_FORMAT_ID_UNSPECIFIED {
-		format = mtgv1.FormatId_FORMAT_ID_COMMANDER
-	}
-	cols, err := h.Builder.ThemeColors(h.Index, format, theme, 100, 0.15)
-	if err != nil {
-		h.warn("theme colors", err)
-		return ""
-	}
-	out := colorWords(cols)
-	if h.colors == nil {
-		h.colors = map[string]string{}
-	}
-	h.colors[h.key(theme)] = out
-	return out
-}
-
 // Commanders names up to three commanders for the theme. It never names
 // one the agent already offered, so a user who answers "none" sees three
 // others (D-73).
@@ -181,16 +156,14 @@ func (h *CandidateHints) Commanders(theme string, skip []string) []string {
 		h.warn("commanders", err)
 		return nil
 	}
-	seen := map[string]bool{}
-	for _, s := range skip {
-		seen[strings.ToLower(strings.TrimSpace(s))] = true
-	}
 	var names []string
 	for _, c := range list {
 		// A pair reads "A + B". The pick row offers it as one choice,
 		// because the user chooses a pair and not half of one (D-154).
+		// hasName reads a short name and a full name as one card, which
+		// is the sameCard rule of D-70.
 		name := c.DisplayName()
-		if seen[strings.ToLower(strings.TrimSpace(name))] {
+		if hasName(skip, name) {
 			continue
 		}
 		names = append(names, name)
@@ -205,10 +178,16 @@ func (h *CandidateHints) Commanders(theme string, skip []string) []string {
 	return names
 }
 
-// OwnedThemeCount is the on-theme owned count PR-6 reported.
-func (h *CandidateHints) OwnedThemeCount(string) int {
+// OwnedThemeCount is the on-theme owned count PR-6 reported. A count
+// ThinTheme measured under the same key wins over the one the caller
+// set, so the {n} clause of the thin-theme question reads the count that
+// belongs to these colors (M-6, audit Q-12).
+func (h *CandidateHints) OwnedThemeCount(theme string) int {
 	if h == nil {
 		return 0
+	}
+	if n, ok := h.thinCount[h.key(theme)]; ok {
+		return n
 	}
 	return h.OnThemeOwned
 }
@@ -219,11 +198,6 @@ func (h *CandidateHints) warn(what string, err error) {
 		log = slog.Default()
 	}
 	log.WarnContext(context.Background(), "questions: hint failed", "hint", what, "error", err)
-}
-
-var colorNames = map[mtgv1.Color]string{
-	mtgv1.Color_COLOR_W: "white", mtgv1.Color_COLOR_U: "blue", mtgv1.Color_COLOR_B: "black",
-	mtgv1.Color_COLOR_R: "red", mtgv1.Color_COLOR_G: "green",
 }
 
 // key is the cache key of one hint. It carries every value the answer
@@ -243,57 +217,26 @@ func (h *CandidateHints) key(theme string) string {
 	return b.String()
 }
 
-// colorWords reads a color list as English: "white and black".
-func colorWords(cols []mtgv1.Color) string {
-	var words []string
-	for _, c := range cols {
-		if n, ok := colorNames[c]; ok {
-			words = append(words, n)
-		}
-	}
-	return englishList(words)
-}
-
-// WeakCommanderPool reports whether an owned mode holds no on-theme
-// commander (D-63). PR-6 answers it with a count, so there is no
-// threshold to invent: an empty pool is a weak pool.
-//
-// No catalog row reads it since D-232 retired the weak-pool row. PR-8
-// reads the same pool when it picks a commander the session delegated,
-// and it reports the shortfall with the deck.
-func (h *CandidateHints) WeakCommanderPool(theme string) bool {
-	if h == nil || h.Index == nil || h.Builder == nil || len(h.Owned) == 0 || strings.TrimSpace(theme) == "" {
-		return false
-	}
-	if h.Pool == mtgv1.PoolRule_POOL_RULE_ANY_CARD {
-		return false
-	}
-	pool, err := h.Builder.CommanderPool(h.Index, candidates.Request{
-		Format:   mtgv1.FormatId_FORMAT_ID_COMMANDER,
-		Theme:    theme,
-		Colors:   h.Colors,
-		PoolRule: mtgv1.PoolRule_POOL_RULE_OWNED_ONLY,
-		Owned:    h.Owned,
-	})
-	if err != nil {
-		h.warn("weak commander pool", err)
-		return false
-	}
-	return len(pool) == 0
-}
-
 // ThinTheme runs the PR-6 count and reports whether the collection holds
 // fewer than 30 on-theme cards (D-63). The second value is the count, for
 // the {n} clause of the thin-theme question.
 //
 // The mode is owned-first when the user has not answered the pool
 // question, because that is the default with a collection (D-37).
+//
+// The answer is cached by key, so a count taken before the user named
+// the colors is not served after. It leaves OnThemeOwned alone: the
+// count reaches OwnedThemeCount through the same cache (audit Q-12).
 func (h *CandidateHints) ThinTheme(theme string) (bool, int) {
-	if h == nil || h.Index == nil || h.Builder == nil || len(h.Owned) == 0 || strings.TrimSpace(theme) == "" {
+	if h == nil || strings.TrimSpace(theme) == "" {
 		return false, 0
 	}
-	if h.thinDone[theme] {
-		return h.thin[theme], h.thinCount[theme]
+	key := h.key(theme)
+	if h.thinDone[key] {
+		return h.thin[key], h.thinCount[key]
+	}
+	if h.Index == nil || h.Builder == nil || len(h.Owned) == 0 {
+		return false, 0
 	}
 	pool := h.Pool
 	if pool == mtgv1.PoolRule_POOL_RULE_UNSPECIFIED {
@@ -310,13 +253,14 @@ func (h *CandidateHints) ThinTheme(theme string) (bool, int) {
 		h.warn("thin theme", err)
 		return false, 0
 	}
+	h.cacheThin(key, list.Stats.ThinTheme, list.Stats.OnThemeOwned)
+	return h.thin[key], h.thinCount[key]
+}
+
+// cacheThin keeps one thin-theme answer under its key.
+func (h *CandidateHints) cacheThin(key string, thin bool, count int) {
 	if h.thinDone == nil {
 		h.thinDone, h.thin, h.thinCount = map[string]bool{}, map[string]bool{}, map[string]int{}
 	}
-	h.thinDone[theme] = true
-	h.thin[theme], h.thinCount[theme] = list.Stats.ThinTheme, list.Stats.OnThemeOwned
-	// The {n} clause of the thin-theme question reads this count, so the
-	// source keeps it with the answer (M-6).
-	h.OnThemeOwned = h.thinCount[theme]
-	return h.thin[theme], h.thinCount[theme]
+	h.thinDone[key], h.thin[key], h.thinCount[key] = true, thin, count
 }

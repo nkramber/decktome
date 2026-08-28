@@ -35,10 +35,10 @@ func TestLintFindsTheKnownDefects(t *testing.T) {
 			want: "presumes_a_table",
 		},
 		{
-			name:     "the locked row repeated the card name",
-			messages: []string{"Build around Grist, the Hunger Tide, but not as my commander."},
-			q: LintQuestion{Turn: 1, RowID: "locked", Slot: "locked",
-				Text: "Must the deck keep Grist, the Hunger Tide and Grist, or may I cut a card that does not fit the plan?"},
+			name:     "the role row repeated the card name",
+			messages: []string{"Build around Grist, the Hunger Tide."},
+			q: LintQuestion{Turn: 1, RowID: "named_card_role", Slot: "commander",
+				Text: "Do you want Grist, the Hunger Tide and Grist as your commander, or as one card in the 99?"},
 			want: "stuttered_card_name",
 		},
 		{

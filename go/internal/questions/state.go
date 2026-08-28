@@ -10,9 +10,9 @@ import (
 // generator reads. Ctx holds what the planner needs: which keys are
 // closed, which rows were asked, and the facts the rows trigger on.
 //
-// slot_states carries both proto slot names and the advisory keys of the
-// refinement rows (jank, budget_scope, house_format_limits,
-// named_card_role, power_confirm). The map is free-form by design.
+// slot_states carries both proto slot names and the keys of the
+// refinement rows (budget_scope, house_format_limits, named_card_role,
+// commander_pick, commander_illegal). The map is free-form by design.
 type State struct {
 	Slots *mtgv1.Slots
 	Ctx   Context
@@ -59,8 +59,30 @@ type State struct {
 	AskCount int
 	// Turn counts the turns the session has run, from 1.
 	Turn int
+	// Messages are the user's messages, oldest first. The classify call
+	// reads the last few of them, so the model sees what the user wrote
+	// before and never has to guess at it (audit Q-13).
+	Messages []string
 	// Asks are the M-4 records, oldest first.
 	Asks []Ask
+}
+
+// PriorMessages is how many earlier messages the classify call sees.
+const PriorMessages = 5
+
+// Prior returns the last PriorMessages user messages, oldest first.
+func (s *State) Prior() []string {
+	if len(s.Messages) <= PriorMessages {
+		return s.Messages
+	}
+	return s.Messages[len(s.Messages)-PriorMessages:]
+}
+
+// AddMessage keeps one user message and its words. The agent calls it
+// after the classify call succeeds, so a failed turn leaves no trace.
+func (s *State) AddMessage(text string) {
+	s.Messages = append(s.Messages, text)
+	s.AddWords(text)
 }
 
 // SetOffer records the commander names now on the table.
@@ -172,7 +194,6 @@ func (s *State) SetCommander(name string) {
 	// for colors, and the card-pool question must not wait for an answer
 	// that never comes (D-67). PR-8 reads the identity from the card.
 	s.Close("colors")
-	s.Refresh()
 }
 
 // Reopen undoes a closed key, so its row may ask again. The slot state
@@ -201,7 +222,6 @@ func (s *State) ClearCommander() {
 	}
 	s.RetireOffer()
 	s.Ctx.Suggested = true
-	s.Refresh()
 }
 
 // AddLocked records a card the user wants in the deck, and not as the
@@ -218,12 +238,13 @@ func (s *State) AddLocked(name string) {
 	}
 	s.LockedNames = mergeName(s.LockedNames, name)
 	s.Close("named_card_role")
-	s.Refresh()
 }
 
-// LockedCards are the named cards that are not the commander. The locked
-// row asks about these, and only these. The live run of 2026-08-24 asked
-// the user to keep or cut a list that held only their commander (D-70).
+// LockedCards are the named cards that are not the commander. The build
+// keeps every one of them (D-242). The locked row that once asked to
+// keep or cut them is retired: the live run of 2026-08-24 asked the user
+// to keep or cut a list that held only their commander (D-70), and no
+// function ever read the answer (A-6 of the 2026-08-28 audit).
 func (s *State) LockedCards() []string {
 	var out []string
 	for _, name := range s.LockedNames {
@@ -232,12 +253,6 @@ func (s *State) LockedCards() []string {
 		}
 	}
 	return out
-}
-
-// Refresh recomputes the facts that come from the card lists. A name that
-// becomes the commander must stop the locked question in the same turn.
-func (s *State) Refresh() {
-	s.Ctx.LockedCard = len(s.LockedCards()) > 0
 }
 
 // hasName reports whether list holds the same card as name.
@@ -395,12 +410,26 @@ func (s *State) MarkAsked(rowID, key, slot string) {
 // A retired key leaves the asked state. Ready reads that state, and the
 // only other ways out of it are an answer and a decline, so a retired
 // question kept the session from ever reporting ready, and it offered
-// the dead key to the classifier every turn (H-5). Ctx.Asked keeps the
-// row id, so the same row does not ask again. A replacing row may.
-func (s *State) RetireOutstanding() {
+// the dead key to the classifier every turn (H-5).
+//
+// The rows of a retired key lose their asked mark too. The theme and the
+// colors have one row each, so a retired theme question could never be
+// asked again, and the build ran with the slot empty. A row may ask a
+// retired question once more, because the user never answered it (audit
+// Q-8, owner decision of 2026-08-28). The catalog maps the keys onto the
+// rows, and a nil catalog keeps the marks.
+func (s *State) RetireOutstanding(c *Catalog) {
 	for key := range s.Ctx.Outstanding {
 		if s.Slots.GetSlotStates()[key] == mtgv1.SlotState_SLOT_STATE_ASKED {
 			delete(s.Slots.SlotStates, key)
+		}
+		if c == nil {
+			continue
+		}
+		for _, r := range c.Rows {
+			if r.StateKey() == key {
+				delete(s.Ctx.Asked, r.ID)
+			}
 		}
 	}
 	s.Ctx.Outstanding = map[string]string{}

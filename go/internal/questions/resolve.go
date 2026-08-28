@@ -2,6 +2,7 @@ package questions
 
 import (
 	"regexp"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -9,7 +10,7 @@ import (
 )
 
 // Hints supply the values the catalog rows name in {braces}. PR-6 answers
-// the first two from the card index. A nil Hints means no value, and the
+// the commander names from the card index. A nil Hints means no value, and the
 // clause that needs one is dropped.
 //
 // The live run of 2026-08-24 showed why this exists: the agent sent
@@ -17,9 +18,6 @@ import (
 // and the model turned the agent's own statement into a second question
 // aimed back at the user.
 type Hints interface {
-	// ThemeColors reads like "white and black". An empty string drops the
-	// clause.
-	ThemeColors(theme string) string
 	// Commanders names up to three commanders for the theme and colors.
 	// skip holds the names the agent already offered, so a user who
 	// answers "none" gets three new names (D-73).
@@ -126,20 +124,6 @@ func pickOptions(row Row, offered []string) []string {
 	return append(out, noneOption)
 }
 
-// vagueThemes are the theme values that name no archetype. They come
-// from the competitive row (D-79), and they read as nonsense inside a
-// statement: "the best deck under budget is strongest in white and
-// blue". Gate run 3 of 2026-08-25 replaced three color questions for
-// this reason.
-var vagueThemes = []string{"best deck", "tier-one", "tier one", "strongest", "competitive", "under budget"}
-
-// usefulTheme reports whether a theme can stand as the subject of a
-// statement about colors.
-func usefulTheme(theme string) bool {
-	theme = strings.ToLower(strings.TrimSpace(theme))
-	return theme != "" && !anyWord(theme, vagueThemes)
-}
-
 // substitute replaces the placeholders whose values exist. It returns the
 // commander names it placed in the text.
 func substitute(text string, st *State, h Hints) (string, []string) {
@@ -180,13 +164,8 @@ func substitute(text string, st *State, h Hints) (string, []string) {
 	if h != nil {
 		// No catalog row names {colors} since D-108: the colors row stated
 		// which colors a theme is strongest in, and the claim was wrong in
-		// gate run 13. The path stays live because PR-8 reads the same
-		// source for the default color answer the corpus names.
-		if strings.Contains(text, "{colors}") && usefulTheme(theme) {
-			if c := strings.TrimSpace(h.ThemeColors(theme)); c != "" && strings.Count(c, ",") < 2 {
-				rep["{colors}"] = c
-			}
-		}
+		// gate run 13. The hint that answered it left with the audit of
+		// 2026-08-28 (Q-17), so a {colors} clause drops.
 		if names, keys := commanderKeysIn(text), 0; len(names) > 0 {
 			// The names on the table stay on the table. A new set comes
 			// only after the user asks for one (D-73).
@@ -217,7 +196,7 @@ func substitute(text string, st *State, h Hints) (string, []string) {
 		}
 		if strings.Contains(text, "{n}") {
 			if n := h.OwnedThemeCount(theme); n > 0 {
-				rep["{n}"] = itoa(n)
+				rep["{n}"] = strconv.Itoa(n)
 			}
 		}
 	}
@@ -372,7 +351,6 @@ func guard(rowID, phrased, resolved string) string {
 	case p == "":
 	case strings.ContainsAny(p, "{}"):
 	case strings.Count(p, "?") != 1:
-	case !strings.Contains(p, "?"):
 	case len(p) > 4*len(resolved)+120:
 	case namesUnsupportedFormat(rowID, p):
 	case possessiveIdentity.MatchString(p):
@@ -443,18 +421,4 @@ func englishList(items []string) string {
 	default:
 		return strings.Join(kept[:len(kept)-1], ", ") + ", and " + kept[len(kept)-1]
 	}
-}
-
-func itoa(n int) string {
-	if n == 0 {
-		return "0"
-	}
-	var b [20]byte
-	i := len(b)
-	for n > 0 {
-		i--
-		b[i] = byte('0' + n%10)
-		n /= 10
-	}
-	return string(b[i:])
 }

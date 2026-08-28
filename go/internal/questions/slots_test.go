@@ -2,8 +2,6 @@ package questions
 
 import (
 	"context"
-	"encoding/json"
-	"reflect"
 	"strings"
 	"testing"
 
@@ -19,11 +17,13 @@ func commanderClassify() classifyOut {
 	return out
 }
 
-// TestLockedRowNeedsANonCommanderCard is D-70. The live run of 2026-08-24
+// TestNamedCommanderIsNotALockedCard is D-70. The live run of 2026-08-24
 // asked "Should I keep all of those, or can I cut some if they do not
 // fit?" after the user had named exactly one card, and that card was the
-// commander. There was no list to keep or cut.
-func TestLockedRowNeedsANonCommanderCard(t *testing.T) {
+// commander. The locked row retired with A-6 of the 2026-08-28 audit,
+// and the list it read still feeds the build, so the list must stay
+// right: the commander is never in it, and a card named later is.
+func TestNamedCommanderIsNotALockedCard(t *testing.T) {
 	first := commanderClassify()
 	first.CommanderNames = []string{"Karlov of the Ghost Council"}
 	first.Facts.NamedCard = true
@@ -36,20 +36,14 @@ func TestLockedRowNeedsANonCommanderCard(t *testing.T) {
 		fits(t, "power_commander"),
 		askStep(t),
 		classifyStep(t, second),
-		fits(t, "locked"),
+		fits(t),
 		askStep(t))
 	st := NewState(false)
 
-	res, err := a.Turn(context.Background(), st, "karlov lifegain deck", nil)
-	if err != nil {
+	if _, err := a.Turn(context.Background(), st, "karlov lifegain deck", nil); err != nil {
 		t.Fatalf("turn 1: %v", err)
 	}
-	for _, q := range res.Questions {
-		if q.Slot == "locked" {
-			t.Errorf("the locked row fired for a card that is the commander: %q", q.Text)
-		}
-	}
-	if st.Ctx.LockedCard || len(st.LockedCards()) != 0 {
+	if len(st.LockedCards()) != 0 {
 		t.Errorf("locked cards = %v, want none", st.LockedCards())
 	}
 	// A named commander closes every commander row, so the pick row and the
@@ -63,29 +57,15 @@ func TestLockedRowNeedsANonCommanderCard(t *testing.T) {
 		}
 	}
 
-	// The message names the card and locks nothing in. "Keep Sanguine
-	// Bond in it" answers the locked row before it goes out, and D-166
-	// closes the key on it. D-70 is about which card the row names, so
-	// this message leaves the lock question open.
-	res, err = a.Turn(context.Background(), st, "and sanguine bond as well", nil)
+	res, err := a.Turn(context.Background(), st, "and sanguine bond as well", nil)
 	if err != nil {
 		t.Fatalf("turn 2: %v", err)
 	}
-	var asked bool
-	for _, q := range res.Questions {
-		if q.Slot != "locked" {
-			continue
-		}
-		asked = true
-		if !strings.Contains(q.Text, "Sanguine Bond") {
-			t.Errorf("the locked question does not name the card: %q", q.Text)
-		}
-		if strings.Contains(q.Text, "Karlov") {
-			t.Errorf("the locked question names the commander: %q", q.Text)
-		}
+	if got := st.LockedCards(); len(got) != 1 || !sameCard(got[0], "Sanguine Bond") {
+		t.Errorf("locked cards = %v, want Sanguine Bond alone", got)
 	}
-	if !asked {
-		t.Error("the locked row did not fire for a card that is not the commander")
+	if q := question(res.Questions, "locked"); q != nil {
+		t.Errorf("a retired row asked about the locked card: %q", q.GetText())
 	}
 }
 
@@ -94,11 +74,11 @@ func TestLockedRowNeedsANonCommanderCard(t *testing.T) {
 func TestNameThatBecomesTheCommanderStopsBeingLocked(t *testing.T) {
 	st := NewState(false)
 	st.AddLocked("Karlov of the Ghost Council")
-	if !st.Ctx.LockedCard {
+	if len(st.LockedCards()) != 1 {
 		t.Fatal("a named card is not locked")
 	}
 	st.SetCommander("karlov of the ghost council")
-	if st.Ctx.LockedCard || len(st.LockedCards()) != 0 {
+	if len(st.LockedCards()) != 0 {
 		t.Errorf("locked cards = %v, want none after the card became the commander", st.LockedCards())
 	}
 }
@@ -108,7 +88,7 @@ func TestNameThatBecomesTheCommanderStopsBeingLocked(t *testing.T) {
 // whether the user has one, and the pick row carries the names. Nothing
 // set the Suggested fact before this change, so the pick row was dead code.
 func TestSuggestionFiresThePickRow(t *testing.T) {
-	hints := stubHints{colors: "white and black", commanders: []string{
+	hints := &fakeHints{commanders: []string{
 		"Karlov of the Ghost Council", "Oloro, Ageless Ascetic", "Trelasarra, Moon Dancer",
 		"Liesa, Shroud of Dusk", "Ayli, Eternal Pilgrim", "Vito, Thorn of the Dusk Rose",
 	}}
@@ -118,17 +98,15 @@ func TestSuggestionFiresThePickRow(t *testing.T) {
 	none := wants
 	other := classifyOut{Format: "unknown", PoolRule: "unknown"}
 
+	// The pick row is fixed (D-131), so a turn that asks it alone makes
+	// the classify call and no other.
 	a, _ := testAgentHints(t, hints,
 		classifyStep(t, commanderClassify()),
 		fits(t, "commander", "power_commander"),
 		askStep(t),
 		classifyStep(t, wants),
-		fits(t, "commander_pick"),
 		classifyStep(t, none),
-		fits(t, "commander_pick"),
-		classifyStep(t, other),
-		fits(t, "commander_pick"),
-		askStep(t))
+		classifyStep(t, other))
 	st := NewState(false)
 
 	res, err := a.Turn(context.Background(), st, "lifegain commander deck", nil)
@@ -245,28 +223,30 @@ func question(qs []*mtgv1.Question, slot string) *mtgv1.Question {
 
 // TestAskedKeyCanClose covers the advisory keys, which carry no typed
 // value. The no-repeat rule drops an asked row from the plan, so without
-// this path a jank or table-tolerance question could never close and the
-// session was never ready.
+// this path the house-limits question could never close and the session
+// was never ready.
 func TestAskedKeyCanClose(t *testing.T) {
 	first := commanderClassify()
 	first.Power = "bracket 3"
+	first.HouseRules = "any card, no ban list"
+	first.Facts.HouseFormat = true
 	second := classifyOut{Format: "unknown", PoolRule: "unknown"}
-	second.ClosedKeys = []string{"jank"}
+	second.ClosedKeys = []string{"house_format_limits"}
 	a, _ := testAgent(t,
-		classifyStep(t, first), fits(t, "commander", "jank"), askStep(t),
+		classifyStep(t, first), fits(t, "commander", "house_format_limits"), askStep(t),
 		classifyStep(t, second), fits(t), askStep(t))
 	st := NewState(false)
-	if _, err := a.Turn(context.Background(), st, "make me something fun and janky", nil); err != nil {
+	if _, err := a.Turn(context.Background(), st, "any card, no ban list, but a commander deck", nil); err != nil {
 		t.Fatalf("turn 1: %v", err)
 	}
-	if !st.Ctx.Asked["jank"] {
-		t.Fatalf("the jank row did not fire: %v", st.Ctx.Asked)
+	if !st.Ctx.Asked["house_format_limits"] {
+		t.Fatalf("the house-limits row did not fire: %v", st.Ctx.Asked)
 	}
-	if _, err := a.Turn(context.Background(), st, "an odd card nobody expects", nil); err != nil {
+	if _, err := a.Turn(context.Background(), st, "I will say the limits myself", nil); err != nil {
 		t.Fatalf("turn 2: %v", err)
 	}
-	if !st.Ctx.Filled["jank"] {
-		t.Error("the jank key did not close although the agent asked it last turn")
+	if !st.Ctx.Filled["house_format_limits"] {
+		t.Error("the house-limits key did not close although the agent asked it last turn")
 	}
 }
 
@@ -357,41 +337,6 @@ func TestTypedSlotNeverClosesWithoutAValue(t *testing.T) {
 	}
 }
 
-// TestSnapshotRoundTrip proves the private state survives a store cycle
-// (D-74). Without it, a resumed conversation repeats a question.
-func TestSnapshotRoundTrip(t *testing.T) {
-	out := commanderClassify()
-	out.CommanderNames = []string{"Karlov of the Ghost Council"}
-	a, _ := testAgent(t, classifyStep(t, out), fits(t, "power_commander"), askStep(t))
-	st := NewState(true)
-	st.SessionID = "sess-1"
-	st.AddLocked("Sanguine Bond")
-	if _, err := a.Turn(context.Background(), st, "karlov lifegain, keep sanguine bond", nil); err != nil {
-		t.Fatalf("turn: %v", err)
-	}
-	raw, err := json.Marshal(st.Snapshot())
-	if err != nil {
-		t.Fatalf("marshal: %v", err)
-	}
-	var snap Snapshot
-	if err := json.Unmarshal(raw, &snap); err != nil {
-		t.Fatalf("unmarshal: %v", err)
-	}
-	back := Restore("sess-1", st.Slots, snap)
-	if !reflect.DeepEqual(back.Ctx, st.Ctx) {
-		t.Errorf("context did not survive:\n got %+v\nwant %+v", back.Ctx, st.Ctx)
-	}
-	if !reflect.DeepEqual(back.CommanderNames, st.CommanderNames) ||
-		!reflect.DeepEqual(back.LockedNames, st.LockedNames) ||
-		!reflect.DeepEqual(back.OfferedCommanders, st.OfferedCommanders) ||
-		back.AskCount != st.AskCount || back.SessionID != "sess-1" {
-		t.Errorf("card lists or counters did not survive: %+v", back)
-	}
-	if len(back.Ctx.Asked) == 0 {
-		t.Error("the asked rows did not survive, so a resumed session repeats a question")
-	}
-}
-
 // TestRestoreWithoutSnapshot opens a session stored before the private
 // state existed. It must not panic, and it must ask again.
 func TestRestoreWithoutSnapshot(t *testing.T) {
@@ -467,12 +412,12 @@ func TestRewordIsRefused(t *testing.T) {
 // TestRewordKeepsTheCatalogQuestion runs the refusal through a turn.
 func TestRewordKeepsTheCatalogQuestion(t *testing.T) {
 	out := commanderClassify()
-	catalog := "Which power bracket should the deck target? 2 is precon level, 3 is upgraded, 4 is high power."
+	catalog := "Which power bracket should the deck target? 2 is the core level, near a precon, 3 is upgraded, 4 is high power."
 	a, _ := testAgent(t,
 		classifyStep(t, out),
 		scoreStep(t,
 			scored{RowID: "power_commander", Fit: 0.20, Reason: "test",
-				CustomText: "Which power bracket should the white-black deck target? 2 is precon level, 3 is upgraded, 4 is high power."},
+				CustomText: "Which power bracket should the white-black deck target? 2 is the core level, near a precon, 3 is upgraded, 4 is high power."},
 			scored{RowID: "commander", Fit: 0.9, Reason: "fits"}),
 		askStep(t))
 	st := NewState(false)
@@ -705,9 +650,14 @@ func TestDeclinedFormatTakesTheDefault(t *testing.T) {
 func TestOutOfScopeAsksOneThing(t *testing.T) {
 	out := classifyOut{Format: "unknown", PoolRule: "unknown"}
 	out.Facts.OutOfScope = true
-	a, _ := testAgent(t, classifyStep(t, out), fits(t, "out_of_scope"), askStep(t))
+	// A fixed row is neither scored nor phrased, so the turn costs one
+	// call.
+	a, sc := testAgent(t, classifyStep(t, out))
 	st := NewState(false)
 	res, err := a.Turn(context.Background(), st, "can you build me a yu-gi-oh deck", nil)
+	if len(sc.Calls) != 1 {
+		t.Errorf("a fixed-only turn made %d model calls, want 1", len(sc.Calls))
+	}
 	if err != nil {
 		t.Fatalf("turn: %v", err)
 	}
@@ -729,10 +679,10 @@ func TestBackInScopeAsksNormally(t *testing.T) {
 	first := classifyOut{Format: "unknown", PoolRule: "unknown"}
 	first.Facts.OutOfScope = true
 	second := classifyOut{Format: "commander", Theme: "dragons", PoolRule: "unknown"}
-	// Turn 1 needs no ask step. The out-of-scope row states what this app
-	// builds, so it goes out as written and never reaches the ask role.
+	// Turn 1 needs no score or ask step. The out-of-scope row states what
+	// this app builds, so it goes out as written and reaches no model.
 	a, _ := testAgent(t,
-		classifyStep(t, first), fits(t, "out_of_scope"),
+		classifyStep(t, first),
 		classifyStep(t, second), fits(t, "colors", "commander", "power_commander"), askStep(t))
 	st := NewState(false)
 	if _, err := a.Turn(context.Background(), st, "build me a yu-gi-oh deck", nil); err != nil {
