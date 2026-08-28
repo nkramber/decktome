@@ -4,7 +4,7 @@
 
 ## Where things stand (2026-08-28)
 
-- `main` is at `5a1fcfe` (#16). The working tree holds the audit of 2026-08-28 and every fix it named, uncommitted. The owner commits.
+- `main` is at `4aeb02b`, the rewritten #16. Branch `audit-2026-08-28` holds the audit of 2026-08-28 and every fix it named, in eight commits, pushed and open for a pull request.
 - `docs/audit-2026-08-28.md` is the change report. Section 8 is the plan, and every step of it is in the tree. Section 10 is the history-purge procedure, which the owner runs.
 - The tree is green: build, vet, `-race` tests, golangci-lint, staticcheck, `buf lint`, `buf breaking`, govulncheck (zero reachable), web lint, typecheck, tests, and build. `make ste-check` is part of `make lint` now.
 - `make test` takes seconds again. The four snapshot tests of `candidates` gate on `CARDS_SNAPSHOT_DIR` and run under `make themes-check`.
@@ -30,12 +30,12 @@ Every measured number below moved on 2026-08-28, and no gate has run since. Run 
 
 ## Next steps, in order
 
-1. Read `git status`. Commit the tree. Section 8 of the audit gives one commit per step, and the owner chooses the grain.
-2. Delete the merged branches: `pr-0a` to `pr-8`, `nate/pr-3`, `audit-fixes`, both `auto-tune/*`, and `chore/scope-and-cleanup`. Every one is in `main` by squash.
-3. Run the history purge of audit section 10. It needs the force-push rule lifted for one push.
-4. Ask the owner, then run `make questions-gate` with a new `GATE_OUT`. That run is the new baseline. Then `make questions-eval` on it.
-5. Ask the owner, then run `make deck-gate` with a new `DECK_GATE_OUT`. The share rule now counts nonbasic names, and no run has measured it.
-6. Start Phase 3 with PR-11.
+1. Merge the pull request for `audit-2026-08-28`. Then restore the rule that forbids a force push to `main`, which was lifted for the purge on 2026-08-28.
+2. Ask the owner, then run `make questions-gate` with a new `GATE_OUT`. That run is the new baseline. Then `make questions-eval` on it.
+3. Ask the owner, then run `make deck-gate` with a new `DECK_GATE_OUT`. The share rule now counts nonbasic names, and no run has measured it.
+4. Start Phase 3 with PR-11.
+
+Done on 2026-08-28, after the audit: the merged branches are deleted on the clone and on origin, and the history purge ran. Every hash after PR-6 changed, the repo went from 101 MB to 2 MB, and the tree at each tip is byte for byte the same. CAUTION: a clone made before 2026-08-28 holds the old history. Re-clone it, and do not merge from it.
 
 Two owner questions stay open in `docs/owner-questions.md`: OQ-23 (a user who asks a question back) and OQ-39 (the eval tolerance). OQ-44 (the ManaBox condition vocabulary) waits in `docs/open-questions.md`.
 
