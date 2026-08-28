@@ -78,6 +78,64 @@ func (SessionStatus) EnumDescriptor() ([]byte, []int) {
 	return file_mtg_v1_session_proto_rawDescGZIP(), []int{0}
 }
 
+// BudgetScope says what a budget covers. The user names one number, and
+// the budget-scope question asks which of the two they mean (D-77). The
+// answer had nowhere to go until D-238, so the agent asked it and
+// discarded it.
+type BudgetScope int32
+
+const (
+	// BUDGET_SCOPE_UNSPECIFIED: the user gave a number and no scope. The
+	// cap reads as the cards to buy, which is the common meaning.
+	BudgetScope_BUDGET_SCOPE_UNSPECIFIED BudgetScope = 0
+	// BUDGET_SCOPE_CARDS_TO_BUY caps what the user must acquire.
+	BudgetScope_BUDGET_SCOPE_CARDS_TO_BUY BudgetScope = 1
+	// BUDGET_SCOPE_WHOLE_DECK caps the value of every card, owned copies
+	// included.
+	BudgetScope_BUDGET_SCOPE_WHOLE_DECK BudgetScope = 2
+)
+
+// Enum value maps for BudgetScope.
+var (
+	BudgetScope_name = map[int32]string{
+		0: "BUDGET_SCOPE_UNSPECIFIED",
+		1: "BUDGET_SCOPE_CARDS_TO_BUY",
+		2: "BUDGET_SCOPE_WHOLE_DECK",
+	}
+	BudgetScope_value = map[string]int32{
+		"BUDGET_SCOPE_UNSPECIFIED":  0,
+		"BUDGET_SCOPE_CARDS_TO_BUY": 1,
+		"BUDGET_SCOPE_WHOLE_DECK":   2,
+	}
+)
+
+func (x BudgetScope) Enum() *BudgetScope {
+	p := new(BudgetScope)
+	*p = x
+	return p
+}
+
+func (x BudgetScope) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (BudgetScope) Descriptor() protoreflect.EnumDescriptor {
+	return file_mtg_v1_session_proto_enumTypes[1].Descriptor()
+}
+
+func (BudgetScope) Type() protoreflect.EnumType {
+	return &file_mtg_v1_session_proto_enumTypes[1]
+}
+
+func (x BudgetScope) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use BudgetScope.Descriptor instead.
+func (BudgetScope) EnumDescriptor() ([]byte, []int) {
+	return file_mtg_v1_session_proto_rawDescGZIP(), []int{1}
+}
+
 // SlotState is the fill state of one slot (roadmap PR-7 gate: no repeated
 // question).
 type SlotState int32
@@ -122,11 +180,11 @@ func (x SlotState) String() string {
 }
 
 func (SlotState) Descriptor() protoreflect.EnumDescriptor {
-	return file_mtg_v1_session_proto_enumTypes[1].Descriptor()
+	return file_mtg_v1_session_proto_enumTypes[2].Descriptor()
 }
 
 func (SlotState) Type() protoreflect.EnumType {
-	return &file_mtg_v1_session_proto_enumTypes[1]
+	return &file_mtg_v1_session_proto_enumTypes[2]
 }
 
 func (x SlotState) Number() protoreflect.EnumNumber {
@@ -135,7 +193,7 @@ func (x SlotState) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SlotState.Descriptor instead.
 func (SlotState) EnumDescriptor() ([]byte, []int) {
-	return file_mtg_v1_session_proto_rawDescGZIP(), []int{1}
+	return file_mtg_v1_session_proto_rawDescGZIP(), []int{2}
 }
 
 // PoolRule says how the collection constrains the deck (D-2).
@@ -176,11 +234,11 @@ func (x PoolRule) String() string {
 }
 
 func (PoolRule) Descriptor() protoreflect.EnumDescriptor {
-	return file_mtg_v1_session_proto_enumTypes[2].Descriptor()
+	return file_mtg_v1_session_proto_enumTypes[3].Descriptor()
 }
 
 func (PoolRule) Type() protoreflect.EnumType {
-	return &file_mtg_v1_session_proto_enumTypes[2]
+	return &file_mtg_v1_session_proto_enumTypes[3]
 }
 
 func (x PoolRule) Number() protoreflect.EnumNumber {
@@ -189,7 +247,7 @@ func (x PoolRule) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PoolRule.Descriptor instead.
 func (PoolRule) EnumDescriptor() ([]byte, []int) {
-	return file_mtg_v1_session_proto_rawDescGZIP(), []int{2}
+	return file_mtg_v1_session_proto_rawDescGZIP(), []int{3}
 }
 
 // Session is one deck-building conversation.
@@ -409,8 +467,11 @@ type Slots struct {
 	// commander_oracle_ids is filled when the user names a commander.
 	CommanderOracleIds []string `protobuf:"bytes,5,rep,name=commander_oracle_ids,json=commanderOracleIds,proto3" json:"commander_oracle_ids,omitempty"`
 	PoolRule           PoolRule `protobuf:"varint,6,opt,name=pool_rule,json=poolRule,proto3,enum=mtg.v1.PoolRule" json:"pool_rule,omitempty"`
-	// budget_usd is the cap for cards to buy. Zero means no cap given.
-	BudgetUsd float64 `protobuf:"fixed64,7,opt,name=budget_usd,json=budgetUsd,proto3" json:"budget_usd,omitempty"`
+	// budget_usd is the cap the user named. Zero means no cap given.
+	// budget_scope says what the cap covers, which the budget-scope
+	// question asks (D-77, D-238).
+	BudgetUsd   float64     `protobuf:"fixed64,7,opt,name=budget_usd,json=budgetUsd,proto3" json:"budget_usd,omitempty"`
+	BudgetScope BudgetScope `protobuf:"varint,11,opt,name=budget_scope,json=budgetScope,proto3,enum=mtg.v1.BudgetScope" json:"budget_scope,omitempty"`
 	// locked_oracle_ids are cards the user wants in the deck.
 	LockedOracleIds []string `protobuf:"bytes,8,rep,name=locked_oracle_ids,json=lockedOracleIds,proto3" json:"locked_oracle_ids,omitempty"`
 	// plan_variant separates two builds of one theme (roadmap PR-9).
@@ -501,6 +562,13 @@ func (x *Slots) GetBudgetUsd() float64 {
 		return x.BudgetUsd
 	}
 	return 0
+}
+
+func (x *Slots) GetBudgetScope() BudgetScope {
+	if x != nil {
+		return x.BudgetScope
+	}
+	return BudgetScope_BUDGET_SCOPE_UNSPECIFIED
 }
 
 func (x *Slots) GetLockedOracleIds() []string {
@@ -794,7 +862,7 @@ const file_mtg_v1_session_proto_rawDesc = "" +
 	"\routput_tokens\x18\x04 \x01(\x03R\foutputTokens\x12)\n" +
 	"\x10reasoning_tokens\x18\x05 \x01(\x03R\x0freasoningTokens\x12\x19\n" +
 	"\bcost_usd\x18\x06 \x01(\x01R\acostUsd\x12\x16\n" +
-	"\x06priced\x18\a \x01(\bR\x06priced\"\xf7\x03\n" +
+	"\x06priced\x18\a \x01(\bR\x06priced\"\xaf\x04\n" +
 	"\x05Slots\x12&\n" +
 	"\x06format\x18\x01 \x01(\v2\x0e.mtg.v1.FormatR\x06format\x12(\n" +
 	"\x05power\x18\x02 \x01(\v2\x12.mtg.v1.PowerLevelR\x05power\x12%\n" +
@@ -803,7 +871,8 @@ const file_mtg_v1_session_proto_rawDesc = "" +
 	"\x14commander_oracle_ids\x18\x05 \x03(\tR\x12commanderOracleIds\x12-\n" +
 	"\tpool_rule\x18\x06 \x01(\x0e2\x10.mtg.v1.PoolRuleR\bpoolRule\x12\x1d\n" +
 	"\n" +
-	"budget_usd\x18\a \x01(\x01R\tbudgetUsd\x12*\n" +
+	"budget_usd\x18\a \x01(\x01R\tbudgetUsd\x126\n" +
+	"\fbudget_scope\x18\v \x01(\x0e2\x13.mtg.v1.BudgetScopeR\vbudgetScope\x12*\n" +
 	"\x11locked_oracle_ids\x18\b \x03(\tR\x0flockedOracleIds\x12!\n" +
 	"\fplan_variant\x18\t \x01(\tR\vplanVariant\x12>\n" +
 	"\vslot_states\x18\n" +
@@ -835,7 +904,11 @@ const file_mtg_v1_session_proto_rawDesc = "" +
 	"\x1aSESSION_STATUS_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15SESSION_STATUS_ASKING\x10\x01\x12\x18\n" +
 	"\x14SESSION_STATUS_READY\x10\x02\x12\x18\n" +
-	"\x14SESSION_STATUS_BUILT\x10\x03*\x82\x01\n" +
+	"\x14SESSION_STATUS_BUILT\x10\x03*g\n" +
+	"\vBudgetScope\x12\x1c\n" +
+	"\x18BUDGET_SCOPE_UNSPECIFIED\x10\x00\x12\x1d\n" +
+	"\x19BUDGET_SCOPE_CARDS_TO_BUY\x10\x01\x12\x1b\n" +
+	"\x17BUDGET_SCOPE_WHOLE_DECK\x10\x02*\x82\x01\n" +
 	"\tSlotState\x12\x1a\n" +
 	"\x16SLOT_STATE_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10SLOT_STATE_EMPTY\x10\x01\x12\x14\n" +
@@ -860,45 +933,47 @@ func file_mtg_v1_session_proto_rawDescGZIP() []byte {
 	return file_mtg_v1_session_proto_rawDescData
 }
 
-var file_mtg_v1_session_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_mtg_v1_session_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
 var file_mtg_v1_session_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_mtg_v1_session_proto_goTypes = []any{
 	(SessionStatus)(0),            // 0: mtg.v1.SessionStatus
-	(SlotState)(0),                // 1: mtg.v1.SlotState
-	(PoolRule)(0),                 // 2: mtg.v1.PoolRule
-	(*Session)(nil),               // 3: mtg.v1.Session
-	(*Usage)(nil),                 // 4: mtg.v1.Usage
-	(*Slots)(nil),                 // 5: mtg.v1.Slots
-	(*Turn)(nil),                  // 6: mtg.v1.Turn
-	(*Answer)(nil),                // 7: mtg.v1.Answer
-	(*Question)(nil),              // 8: mtg.v1.Question
-	nil,                           // 9: mtg.v1.Slots.SlotStatesEntry
-	(*timestamppb.Timestamp)(nil), // 10: google.protobuf.Timestamp
-	(*Format)(nil),                // 11: mtg.v1.Format
-	(*PowerLevel)(nil),            // 12: mtg.v1.PowerLevel
-	(Color)(0),                    // 13: mtg.v1.Color
+	(BudgetScope)(0),              // 1: mtg.v1.BudgetScope
+	(SlotState)(0),                // 2: mtg.v1.SlotState
+	(PoolRule)(0),                 // 3: mtg.v1.PoolRule
+	(*Session)(nil),               // 4: mtg.v1.Session
+	(*Usage)(nil),                 // 5: mtg.v1.Usage
+	(*Slots)(nil),                 // 6: mtg.v1.Slots
+	(*Turn)(nil),                  // 7: mtg.v1.Turn
+	(*Answer)(nil),                // 8: mtg.v1.Answer
+	(*Question)(nil),              // 9: mtg.v1.Question
+	nil,                           // 10: mtg.v1.Slots.SlotStatesEntry
+	(*timestamppb.Timestamp)(nil), // 11: google.protobuf.Timestamp
+	(*Format)(nil),                // 12: mtg.v1.Format
+	(*PowerLevel)(nil),            // 13: mtg.v1.PowerLevel
+	(Color)(0),                    // 14: mtg.v1.Color
 }
 var file_mtg_v1_session_proto_depIdxs = []int32{
-	5,  // 0: mtg.v1.Session.slots:type_name -> mtg.v1.Slots
-	6,  // 1: mtg.v1.Session.turns:type_name -> mtg.v1.Turn
-	10, // 2: mtg.v1.Session.created_at:type_name -> google.protobuf.Timestamp
-	10, // 3: mtg.v1.Session.updated_at:type_name -> google.protobuf.Timestamp
+	6,  // 0: mtg.v1.Session.slots:type_name -> mtg.v1.Slots
+	7,  // 1: mtg.v1.Session.turns:type_name -> mtg.v1.Turn
+	11, // 2: mtg.v1.Session.created_at:type_name -> google.protobuf.Timestamp
+	11, // 3: mtg.v1.Session.updated_at:type_name -> google.protobuf.Timestamp
 	0,  // 4: mtg.v1.Session.status:type_name -> mtg.v1.SessionStatus
-	4,  // 5: mtg.v1.Session.usage:type_name -> mtg.v1.Usage
-	11, // 6: mtg.v1.Slots.format:type_name -> mtg.v1.Format
-	12, // 7: mtg.v1.Slots.power:type_name -> mtg.v1.PowerLevel
-	13, // 8: mtg.v1.Slots.colors:type_name -> mtg.v1.Color
-	2,  // 9: mtg.v1.Slots.pool_rule:type_name -> mtg.v1.PoolRule
-	9,  // 10: mtg.v1.Slots.slot_states:type_name -> mtg.v1.Slots.SlotStatesEntry
-	8,  // 11: mtg.v1.Turn.questions:type_name -> mtg.v1.Question
-	10, // 12: mtg.v1.Turn.at:type_name -> google.protobuf.Timestamp
-	7,  // 13: mtg.v1.Turn.answers:type_name -> mtg.v1.Answer
-	1,  // 14: mtg.v1.Slots.SlotStatesEntry.value:type_name -> mtg.v1.SlotState
-	15, // [15:15] is the sub-list for method output_type
-	15, // [15:15] is the sub-list for method input_type
-	15, // [15:15] is the sub-list for extension type_name
-	15, // [15:15] is the sub-list for extension extendee
-	0,  // [0:15] is the sub-list for field type_name
+	5,  // 5: mtg.v1.Session.usage:type_name -> mtg.v1.Usage
+	12, // 6: mtg.v1.Slots.format:type_name -> mtg.v1.Format
+	13, // 7: mtg.v1.Slots.power:type_name -> mtg.v1.PowerLevel
+	14, // 8: mtg.v1.Slots.colors:type_name -> mtg.v1.Color
+	3,  // 9: mtg.v1.Slots.pool_rule:type_name -> mtg.v1.PoolRule
+	1,  // 10: mtg.v1.Slots.budget_scope:type_name -> mtg.v1.BudgetScope
+	10, // 11: mtg.v1.Slots.slot_states:type_name -> mtg.v1.Slots.SlotStatesEntry
+	9,  // 12: mtg.v1.Turn.questions:type_name -> mtg.v1.Question
+	11, // 13: mtg.v1.Turn.at:type_name -> google.protobuf.Timestamp
+	8,  // 14: mtg.v1.Turn.answers:type_name -> mtg.v1.Answer
+	2,  // 15: mtg.v1.Slots.SlotStatesEntry.value:type_name -> mtg.v1.SlotState
+	16, // [16:16] is the sub-list for method output_type
+	16, // [16:16] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_mtg_v1_session_proto_init() }
@@ -913,7 +988,7 @@ func file_mtg_v1_session_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_mtg_v1_session_proto_rawDesc), len(file_mtg_v1_session_proto_rawDesc)),
-			NumEnums:      3,
+			NumEnums:      4,
 			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   0,

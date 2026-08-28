@@ -147,12 +147,18 @@ func (m Metrics) filled() int {
 const Tolerance = 0.90
 
 // DefaultNoise is how many bad questions two runs of identical code may
-// differ by. Run 18 and run 20260826-191225-000 ran the same agent code
-// on the same 104 conversations: the holdout moved by three bad
-// questions and the whole set by three, and half of the bad set was a
-// different half. A ratio guard below that level judges the judge, and
-// not the fixer (D-183).
-const DefaultNoise = 3
+// differ by.
+//
+// D-183 measured three, on run 18 against run 20260826-191225-000. A
+// second same-code pair on 2026-08-27, run 20 against run 21, moved nine:
+// the only change between them retired a row that could never fire, and
+// the new conversation contributed no bad question. The whole set went
+// from 18 to 27 with no behavior change at all (D-230).
+//
+// CAUTION: this guard can no longer tell a nine-question regression from
+// the judge. It is a coarse backstop, and the paired comparison on the
+// declared rows is what decides a change (D-181).
+const DefaultNoise = 9
 
 // DefaultDriftNoise is how many questions may get worse on rows no change
 // declared before the loop calls it damage. It is a different quantity
@@ -168,8 +174,12 @@ const DefaultNoise = 3
 // It therefore rejected identical code, and it rejected every iteration
 // the loop ever ran (D-217).
 //
-// CAUTION: one same-code pair sets this number. Measure a second pair
-// before you lower it, and keep TestIdenticalCodeIsAccepted green.
+// A second same-code pair, run 20 against run 21 of 2026-08-27, gave the
+// same drift of 7: harm 13 and help 6. Two independent pairs agree, so
+// the margin of 8 holds (D-230).
+//
+// CAUTION: two same-code pairs set this number. Keep
+// TestIdenticalCodeIsAccepted green.
 const DefaultDriftNoise = 8
 
 // Decision is the accept or reject of one iteration.

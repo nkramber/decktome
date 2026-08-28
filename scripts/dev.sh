@@ -19,6 +19,8 @@ export CARDS_RELOAD_SECONDS="15"
 # Local dev opts out of the key requirement. Without keys the API uses the
 # fixture fake for every LLM role. .env (gitignored) can still set keys.
 export LLM_REQUIRE_KEYS="0"
+# The file holds secrets and is gitignored, so shellcheck can not read it.
+# shellcheck source=/dev/null
 if [ -f .env ]; then set -a; . ./.env; set +a; fi
 
 mkdir -p .local/firestore .local/gcs

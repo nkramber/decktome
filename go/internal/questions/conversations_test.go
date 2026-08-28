@@ -144,25 +144,28 @@ func conversations() []conversation {
 
 	c9 := conversation{name: "a commander the library does not hold"}
 	c9.ctx = newCtx("brago blink deck from my library")
-	c9.ctx.HasCollection, c9.ctx.OwnedMode, c9.ctx.CommanderNotOwned = true, true, true
+	c9.ctx.HasCollection, c9.ctx.OwnedMode = true, true
 	c9.ctx.Theme, c9.ctx.Filled["format"], c9.ctx.Filled["theme"] = "blink", true, true
 	c9.ctx.Format = mtgv1.FormatId_FORMAT_ID_COMMANDER
 	c9.steps = []step{
-		// The not-owned row carries its own key, so the named commander
-		// does not cancel it (M-5).
-		{want: []string{"commander_not_owned", "power_commander", "colors"},
-			fill: []string{"commander_owned", "commander", "power", "colors"}, set: func(c *Context) { c.CommanderSet, c.BuyList = true, true }},
+		// The not-owned row is retired (D-226), so the base commander row
+		// asks and the rules engine reports ownership after the build.
+		{want: []string{"commander", "power_commander", "colors"},
+			fill: []string{"commander", "power", "colors"}, set: func(c *Context) { c.CommanderSet, c.BuyList = true, true }},
 		{want: []string{"pool", "budget"}, fill: []string{"pool_rule", "budget"}},
 	}
 	cs = append(cs, c9)
 
+	// The weak-pool row is retired (D-232), so a thin library asks the
+	// plain commander question and PR-8 reports the shortfall with the
+	// deck.
 	c10 := conversation{name: "no strong commander in the library"}
 	c10.ctx = newCtx("lifegain from my collection")
-	c10.ctx.HasCollection, c10.ctx.OwnedMode, c10.ctx.WeakCommanderPool = true, true, true
+	c10.ctx.HasCollection, c10.ctx.OwnedMode = true, true
 	c10.ctx.Theme, c10.ctx.Format = "lifegain", mtgv1.FormatId_FORMAT_ID_COMMANDER
 	c10.ctx.Filled["format"], c10.ctx.Filled["theme"], c10.ctx.Filled["colors"] = true, true, true
 	c10.steps = []step{
-		{want: []string{"commander_weak_pool", "power_commander", "pool"},
+		{want: []string{"commander", "power_commander", "pool"},
 			fill: []string{"commander", "power", "pool_rule", "budget"}, set: func(c *Context) { c.CommanderSet = true }},
 	}
 	cs = append(cs, c10)
@@ -216,10 +219,18 @@ func conversations() []conversation {
 	}
 	cs = append(cs, c14)
 
-	c12 := conversation{name: "a frozen run asks nothing"}
+	// The freeze is retired (D-241). A slot change after a build is an
+	// ordinary turn: it updates the slot and asks nothing new, because
+	// every other slot is already settled.
+	c12 := conversation{name: "a slot change after a build"}
 	c12.ctx = newCtx("switch to owned-only")
-	c12.ctx.Frozen, c12.ctx.HasCollection = true, true
-	c12.steps = []step{{want: nil}}
+	c12.ctx.HasCollection, c12.ctx.AfterBuild = true, true
+	c12.ctx.Format = mtgv1.FormatId_FORMAT_ID_COMMANDER
+	for _, k := range []string{"format", "theme", "colors", "commander", "power", "pool_rule", "budget"} {
+		c12.ctx.Filled[k] = true
+	}
+	c12.ctx.CommanderSet = true
+	c12.steps = []step{{want: []string{"variance"}, fill: []string{"plan_variant"}}}
 	cs = append(cs, c12)
 
 	// Conversations 15 to 30 widen the gate to the 30 the roadmap asks

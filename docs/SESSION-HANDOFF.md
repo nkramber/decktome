@@ -4,6 +4,62 @@
 
 ## Do this first
 
+PR-8 is done and marked in the roadmap. Deck gate run 6 passed all three bars on 16 golden prompts, at prompt version 4, for $0.8776. The Phase 3 gate of the sequencing list holds.
+
+The branch `pr-8` is open as a pull request. `main` is at 98eac91 with PR-7c merged.
+
+The precon work of 2026-08-28 closed OQ-40 and finished D-218. `internal/precons` embeds nine decklists the owner supplied, one file per product, and adding a precon is adding a file. Six of the nine are wholly in the owner's collection.
+
+The 85 percent share now holds on both gate prompts, with no repair turn. Three causes had to be fixed, and only one was the model's: the precon reached the pool after the pool was built, the job targets fought the share, and the model could not count its own list (D-247 to D-250).
+
+Next: PR-9 variance. `Deck.seed` is in the proto and nothing sets it, which is PR-9's first step and a prerequisite for its other two levers.
+
+The question workflow has a valid baseline again: run 24 of 2026-08-28, at classify prompt version 10. It passes at 28 of 30 catalog-only, with no premature session, 20 bad questions of 435 on the whole set, and 12 of 140 on the holdout. No row holds more than two bad questions. Runs 19 to 22 do not compare with it (D-66).
+
+The re-baseline earned its cost twice. Run 23 failed on a regression D-239 had introduced, and D-252 fixed it. The variance row then fired for the first time in any gate run.
+
+NOTE: the `budget_scope` row holds two of the twenty bad questions, and both are trigger faults and not storage faults. It fires when the context already answers it: "build owned-first with a buy list" names the scope, and "I proxy anything over 20 dollars" is a proxy rule and not a budget.
+
+
+
+PR-8 is under way on branch `pr-8`, cut from `main` at 98eac91. The generator writes a deck, the code checks every name and every rule, and the deck gate holds.
+
+| Measure | Deck gate run 1 | Deck gate run 2 |
+|---|---|---|
+| Verdict | FAIL | PASS |
+| Decks with no block finding | 10 of 12 | 12 of 12 |
+| Invented names that reached the user | 1 | 0 |
+| Decks that needed the repair turn | 3 | 0 |
+| Cost | $0.9117 | $0.6166 |
+
+Run 1 found one defect and D-225 fixed it. The shortlist leaves basic lands out on purpose, and the generator may name nothing else, so no deck held a basic land. Read `docs/reference/pr8-deck-gate-run2.md`.
+
+Deck gate run 4 passed on 15 prompts, on all three bars: every deck passed the block checks, no invented name reached the user, and no summary stated a false rule. F-26 is a bar of the gate now and not a footnote (D-229). Cost $0.9002.
+
+Two faults that run 4 covers and earlier runs could not. No golden prompt named no commander, so the generator had never run the path D-147 and D-208 create, and a delegated session would have failed the engine on `no_commander` (D-232). The repair turn wrote a changelog into the summary, and prompt version 3 fixed it, which prompt 13 of run 4 exercised.
+
+Deck gate run 3 passed on 13 prompts, with the golden set corrected. The prompt cache is measured (D-227), the cost model is verified (D-228), and the judge lane answers F-26 (D-229). OQ-36 is closed by D-226.
+
+What PR-8 still needs: the precon share waits on a data source (D-240, OQ-40). Everything else the roadmap names is done and measured.
+
+The question layer collected more than the build consumed, six times over: D-226, D-232, D-238, D-240, D-241, and D-242. Each was found by accident. `TestEverySlotIsReadOrNamed` now checks every slot against the build, so the seventh is caught in the test and not in a gate run (D-243).
+
+CAUTION: the deck gate has not run since D-233. The locked-card check of D-242 is a new BLOCK finding, and no gate run has exercised it. Run the deck gate before you trust the bars.
+
+Superseded: The generator, the normalizer, the repair turn, the ownership rule, the precon share, the prompt cache, and F-26 are all done and measured. PR-9 is next.
+
+CAUTION: the catalog-only count of the question gate carries about two conversations of variance. Runs 19 to 22 read 29, 29, 29, and 27 on question code that did not change. The bar is 25, so the gate absorbs it, and one run proves nothing on its own (D-230).
+
+| Measure | Run 20 | Run 21 |
+|---|---|---|
+| Gate verdict | PASS 29 of 30 | PASS 29 of 30 |
+| Bad questions, whole set | 18 of 430 | 27 of 429 |
+| Bad-question ratio, holdout | 9.3% | 10.8% |
+
+CAUTION: run 21 is not a regression. Nothing in the agent changed between the two runs, so the pair is a same-code measurement, and D-230 reads it as one.
+
+## The question workflow
+
 The tuning loop ran a fifth time on 2026-08-26, as run `20260826-220840`. Read the result before you trust the loop again.
 
 - The baseline passed the gate. It measured the best numbers so far.
@@ -55,10 +111,10 @@ The owner chose PR-8 next. The loop stays off until a run proves the checker hol
 
 - `main` is at fdfe15c, "Pr 7b (#13)". Merged: PR-0a to PR-7, PR-7B, and PR-10 (#1 to #13).
 - Branch `pr-7c` holds the loop work. HEAD is 351250d. It carries the `v0.0` baseline as evidence, the lesson of the rejected iteration, and the five recovered commits (D-209 to D-213).
-- `docs/decisions.md` reaches D-220. OQ-21 is answered, so no owner question blocks PR-8. D-214 to D-216 fix the two named defects of gate run `20260826-220840-000`.
+- `docs/decisions.md` reaches D-225. D-221 to D-225 are the PR-8 work. OQ-21 is answered, so no owner question blocks PR-8. D-214 to D-216 fix the two named defects of gate run `20260826-220840-000`.
 - Branches `auto-tune/20260826-191225` and `auto-tune/20260826-220840` can be deleted. `pr-7c` holds everything they carry.
 - The conversation set holds 104 conversations, 30 gate and 74 probe (D-145, D-155).
-- Prompt versions: classify and ask 8, eval 3, M-5 rubric 2. A score taken at an earlier version does not carry over (D-66).
+- Prompt versions: classify and ask 10, eval 3, M-5 rubric 2, generate 3. A score taken at an earlier version does not carry over (D-66). CAUTION: the classify prompt moved to 10 on 2026-08-27 for D-238, so question-gate runs 19 to 22 do not compare with the next run.
 - `.local/tune/` holds the JSON of run14, run14b, run16, run17, run18, and every stamped loop run.
 
 ## Next steps, in order

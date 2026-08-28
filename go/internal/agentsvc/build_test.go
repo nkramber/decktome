@@ -1,0 +1,301 @@
+package agentsvc
+
+import (
+	"context"
+	"fmt"
+	"strings"
+	"testing"
+	"time"
+
+	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	"github.com/nkramber/mtg-deck-builder/go/internal/candidates"
+	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
+	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
+	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
+)
+
+// fixedIndex is an IndexSource over a hand-built snapshot.
+type fixedIndex struct{ idx *cards.Index }
+
+func (f fixedIndex) Current() *cards.Index { return f.idx }
+
+// buildOpts wires the generator, a card index, and a candidates builder.
+// Without all three the build returns early and the test proves nothing.
+func buildOpts(t *testing.T, fd *fakeDecks) []Option {
+	t.Helper()
+	karlov := &mtgv1.Card{
+		OracleId: "o-karlov", Name: "Karlov of the Ghost Council",
+		TypeLine: "Legendary Creature — Spirit Advisor", CanBeCommander: true,
+		ColorIdentity: []mtgv1.Color{mtgv1.Color_COLOR_W, mtgv1.Color_COLOR_B},
+		Legalities:    map[string]mtgv1.LegalityStatus{"commander": mtgv1.LegalityStatus_LEGALITY_STATUS_LEGAL},
+	}
+	welcome := &mtgv1.Card{
+		OracleId: "o-welcome", Name: "Ajani's Welcome", TypeLine: "Enchantment",
+		ColorIdentity: []mtgv1.Color{mtgv1.Color_COLOR_W},
+		Legalities:    map[string]mtgv1.LegalityStatus{"commander": mtgv1.LegalityStatus_LEGALITY_STATUS_LEGAL},
+	}
+	idx := cards.NewIndex([]*mtgv1.Card{karlov, welcome}, nil, nil, time.Unix(1000, 0).UTC())
+	cb, err := candidates.New()
+	if err != nil {
+		t.Fatalf("candidates: %v", err)
+	}
+	return []Option{WithDecks(fd), WithCandidates(fixedIndex{idx}, cb)}
+}
+
+// fakeDecks stands in for the generator. It records the request, so the
+// test can read what the session handed over.
+type fakeDecks struct {
+	got   generate.Request
+	res   *generate.Result
+	err   error
+	runs  int
+	block bool
+}
+
+func (f *fakeDecks) Build(ctx context.Context, req generate.Request, _ *llm.Accumulator) (*generate.Result, error) {
+	f.runs++
+	f.got = req
+	// block waits for the caller's deadline, which is how a slow provider
+	// looks from here.
+	if f.block {
+		<-ctx.Done()
+		return nil, ctx.Err()
+	}
+	// The real builder stamps the deck with the id the caller reserved.
+	// A fake that skips it hides the store, and storeDeck's own guard
+	// then makes a failing test look green (D-245).
+	if f.res != nil && f.res.Deck != nil {
+		f.res.Deck.Id = req.DeckID
+	}
+	return f.res, f.err
+}
+
+// readySteps drives a session to READY. It is the recipe of
+// TestChatResumesWithoutRepeating: the second turn closes the last slots.
+func readySteps(t *testing.T) []llm.Step {
+	t.Helper()
+	return append(firstTurn(t),
+		classifyJSON(t, map[string]any{
+			"power":           "bracket 3",
+			"commander_names": []string{"Karlov of the Ghost Council"},
+		}),
+		scoreJSON(t),
+		askJSON(t))
+}
+
+// TestReadySessionStreamsTheDeck is the PR-8 hand-over. The question
+// workflow reports READY, and the deck reaches the user on the same turn.
+func TestReadySessionStreamsTheDeck(t *testing.T) {
+	store := newFakeStore()
+	deck := &mtgv1.Deck{
+		Summary:    "a lifegain deck",
+		Validation: &mtgv1.ValidationResult{},
+		Cards:      []*mtgv1.DeckCard{{Name: "Ajani's Welcome", Count: 1}},
+	}
+	fd := &fakeDecks{res: &generate.Result{Deck: deck, Notes: []string{"I could not place \"Nonesuch\"."}}}
+	client, _ := testServerOpts(t, store, buildOpts(t, fd), readySteps(t)...)
+
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	if fd.runs != 0 {
+		t.Fatal("the build ran before the session was ready")
+	}
+	second := chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
+
+	if fd.runs != 1 {
+		t.Fatalf("build runs = %d, want 1", fd.runs)
+	}
+	if second.deck == nil {
+		t.Fatalf("no deck reached the user: %v", second.order)
+	}
+	if second.deck.GetSummary() != "a lifegain deck" {
+		t.Errorf("summary = %q", second.deck.GetSummary())
+	}
+	// A name that missed twice reaches the user as prose.
+	if len(second.texts) != 1 {
+		t.Errorf("texts = %v, want the one note", second.texts)
+	}
+	// The session, not the model, decides the session id and the format.
+	if fd.got.SessionID != first.started {
+		t.Errorf("session id = %q, want %q", fd.got.SessionID, first.started)
+	}
+	if fd.got.Pool == nil {
+		t.Error("the build got no shortlist")
+	}
+}
+
+// TestBuildFailureKeepsTheTurn covers the failure path. The questions are
+// already stored and already sent, so a build error must not lose them.
+func TestBuildFailureKeepsTheTurn(t *testing.T) {
+	store := newFakeStore()
+	fd := &fakeDecks{err: context.DeadlineExceeded}
+	client, _ := testServerOpts(t, store, buildOpts(t, fd), readySteps(t)...)
+
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	second := chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
+
+	if fd.runs != 1 {
+		t.Fatalf("build runs = %d, want 1: the failure path was never reached", fd.runs)
+	}
+	if second.deck != nil {
+		t.Error("a failed build sent a deck")
+	}
+	if second.failure != nil {
+		t.Errorf("a failed build ended the turn: %v", second.failure)
+	}
+	// The session still reached READY and the turn is stored.
+	if got := store.sessions[first.started].GetStatus(); got != mtgv1.SessionStatus_SESSION_STATUS_READY {
+		t.Errorf("status = %v, want READY", got)
+	}
+	if len(store.sessions[first.started].GetTurns()) != 2 {
+		t.Error("the turn was lost")
+	}
+}
+
+// TestReadyWithoutAGeneratorSaysSo keeps the PR-7 behavior for a
+// deployment that wires no generator.
+func TestReadyWithoutAGeneratorSaysSo(t *testing.T) {
+	store := newFakeStore()
+	client, _ := testServer(t, store, readySteps(t)...)
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	second := chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
+	if second.deck != nil {
+		t.Error("a server with no generator sent a deck")
+	}
+	var said bool
+	for _, s := range second.statuses {
+		if s != "" {
+			said = true
+		}
+	}
+	if !said {
+		t.Errorf("the turn said nothing about the missing generator: %v", second.statuses)
+	}
+}
+
+// TestBuildTimeoutEndsTheTurnCleanly is D-235. The llm client caps each
+// call at three minutes, so a generate and a repair together can hold the
+// stream for six. A build past its limit must end the turn with a status
+// line, and never lose the turn or hang the stream.
+func TestBuildTimeoutEndsTheTurnCleanly(t *testing.T) {
+	store := newFakeStore()
+	fd := &fakeDecks{block: true}
+	opts := append(buildOpts(t, fd), WithBuildTimeout(50*time.Millisecond))
+	client, _ := testServerOpts(t, store, opts, readySteps(t)...)
+
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	second := chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
+
+	if fd.runs != 1 {
+		t.Fatalf("build runs = %d, want 1", fd.runs)
+	}
+	if second.deck != nil {
+		t.Error("a timed-out build sent a deck")
+	}
+	if second.failure != nil {
+		t.Errorf("a timed-out build ended the turn: %v", second.failure)
+	}
+	var said bool
+	for _, s := range second.statuses {
+		if strings.Contains(s, "time limit") {
+			said = true
+		}
+	}
+	if !said {
+		t.Errorf("the turn did not say the build ran past its limit: %v", second.statuses)
+	}
+	// The turn is still stored, so the questions are not lost.
+	if len(store.sessions[first.started].GetTurns()) != 2 {
+		t.Error("the turn was lost")
+	}
+}
+
+// fakeDeckStore records what the build kept.
+type fakeDeckStore struct {
+	n    int
+	put  []*mtgv1.Deck
+	fail error
+}
+
+func (f *fakeDeckStore) NewID(string) string {
+	f.n++
+	return fmt.Sprintf("deck-%d", f.n)
+}
+
+func (f *fakeDeckStore) Put(_ context.Context, _ string, d *mtgv1.Deck) error {
+	if f.fail != nil {
+		return f.fail
+	}
+	f.put = append(f.put, d)
+	return nil
+}
+
+// TestTheDeckIsKeptAndRecorded is D-245. The build streamed a deck and
+// let it go, so session.deck_ids stayed empty, AfterBuild was never true,
+// and the variance row was dead for every real user.
+func TestTheDeckIsKeptAndRecorded(t *testing.T) {
+	store := newFakeStore()
+	ds := &fakeDeckStore{}
+	deck := &mtgv1.Deck{Summary: "a deck", Validation: &mtgv1.ValidationResult{}}
+	fd := &fakeDecks{res: &generate.Result{Deck: deck}}
+	opts := append(buildOpts(t, fd), WithDeckStore(ds))
+	client, _ := testServerOpts(t, store, opts, readySteps(t)...)
+
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
+
+	if len(ds.put) != 1 {
+		t.Fatalf("decks kept = %d, want 1", len(ds.put))
+	}
+	// The build reserves the id before it runs, because a deck carries
+	// its own id.
+	if fd.got.DeckID == "" {
+		t.Error("the build was given no deck id")
+	}
+	// The id must reach the stored session, or the next turn cannot know
+	// a deck exists.
+	got := store.sessions[first.started].GetDeckIds()
+	if len(got) != 1 || got[0] != fd.got.DeckID {
+		t.Errorf("session deck ids = %v, want the built deck's id %q", got, fd.got.DeckID)
+	}
+}
+
+// TestAStoreFailureKeepsTheDeck covers the failure path. The user is
+// already reading the deck, so a store that refuses it must not take it
+// away.
+func TestAStoreFailureKeepsTheDeck(t *testing.T) {
+	store := newFakeStore()
+	ds := &fakeDeckStore{fail: context.DeadlineExceeded}
+	deck := &mtgv1.Deck{Summary: "a deck", Validation: &mtgv1.ValidationResult{}}
+	fd := &fakeDecks{res: &generate.Result{Deck: deck}}
+	opts := append(buildOpts(t, fd), WithDeckStore(ds))
+	client, _ := testServerOpts(t, store, opts, readySteps(t)...)
+
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	second := chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
+
+	if ds.n != 1 {
+		t.Fatalf("the store reserved %d ids, want 1: the failure path was never reached", ds.n)
+	}
+	if second.deck == nil {
+		t.Error("a store failure took the deck away from the user")
+	}
+	if second.failure != nil {
+		t.Errorf("a store failure ended the turn: %v", second.failure)
+	}
+	if ids := store.sessions[first.started].GetDeckIds(); len(ids) != 0 {
+		t.Errorf("a deck that was not stored was recorded on the session: %v", ids)
+	}
+}
+
+// TestNoDeckStoreStillBuilds keeps a deployment without a store working.
+func TestNoDeckStoreStillBuilds(t *testing.T) {
+	store := newFakeStore()
+	deck := &mtgv1.Deck{Summary: "a deck", Validation: &mtgv1.ValidationResult{}}
+	fd := &fakeDecks{res: &generate.Result{Deck: deck}}
+	client, _ := testServerOpts(t, store, buildOpts(t, fd), readySteps(t)...)
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	second := chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
+	if second.deck == nil {
+		t.Error("a server with no deck store sent no deck")
+	}
+}

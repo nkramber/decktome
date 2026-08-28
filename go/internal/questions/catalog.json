@@ -177,35 +177,6 @@
       "fallback": "That card can not lead a deck. Shall I suggest a commander instead?"
     },
     {
-      "id": "commander_not_owned",
-      "slot": "commander",
-      "order": 28,
-      "text": "You do not own {card}. Add it to the buy list, or pick from your library? Owned options: {a}, {b}.",
-      "options": [
-        "Add it to the buy list",
-        "Pick from my library"
-      ],
-      "when": {
-        "format": "commander",
-        "owned_mode": true,
-        "commander_not_owned": true
-      },
-      "key": "commander_owned",
-      "fallback": "You do not own that commander. Add it to the buy list, or pick one from your library?"
-    },
-    {
-      "id": "commander_weak_pool",
-      "slot": "commander",
-      "order": 29,
-      "text": "Your library holds no strong {theme} commander. Buy {c} for {price}, change the theme, or use {a}?",
-      "when": {
-        "format": "commander",
-        "owned_mode": true,
-        "weak_commander_pool": true
-      },
-      "fallback": "Your library holds no strong commander for this theme. Buy one, change the theme, or use the best you own?"
-    },
-    {
       "id": "named_card_role",
       "slot": "commander",
       "order": 30,

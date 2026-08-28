@@ -75,15 +75,12 @@ type Result struct {
 }
 
 // Turn maps one user message onto the slots and returns the next
-// questions. A frozen session asks nothing (D-68).
+// questions.
 func (a *Agent) Turn(ctx context.Context, st *State, message string, acc *llm.Accumulator) (Result, error) {
 	if st == nil {
 		return Result{}, fmt.Errorf("questions: Turn needs a state")
 	}
 	st.AddWords(message)
-	if st.Ctx.Frozen {
-		return Result{Slots: st.Slots, Ready: true, Coverage: st.Metrics()}, nil
-	}
 	st.Turn++
 	// The keys a deck slot fills before this turn. An out-of-scope
 	// question closes when the user fills one afterwards (H-6).
@@ -343,7 +340,10 @@ type classifyOut struct {
 	Power      string   `json:"power"`
 	PoolRule   string   `json:"pool_rule"`
 	BudgetUSD  float64  `json:"budget_usd"`
-	ClosedKeys []string `json:"closed_keys"`
+	// BudgetScope is "buy", "deck", or "unknown". The budget-scope row
+	// asks it, and nothing stored the answer before D-238.
+	BudgetScope string   `json:"budget_scope"`
+	ClosedKeys  []string `json:"closed_keys"`
 	// DeclinedKeys are the keys the user handed back to the agent. A
 	// decline is not an answer: it holds no value, and a default applies
 	// (D-93).
@@ -574,7 +574,20 @@ func (a *Agent) applyWords(st *State, message string) {
 	// negation (D-111).
 	if ProxyUser(words) && !st.Ctx.Filled["budget"] {
 		st.Skip("budget")
+		// No budget means no scope to ask about. Probe 92 of gate run 24
+		// said "I proxy anything over 20 dollars", and the scope row
+		// still asked which of the two the cap covers (D-253).
+		st.Skip("budget_scope")
 		a.log.Info("the user proxies their cards, so the budget slot is closed",
+			"session", st.SessionID)
+	}
+	// A message that names the buy list names the scope with it, so the
+	// scope row has its answer. Conversation 2 of gate run 24 said "Build
+	// owned-first with a buy list" and was asked anyway (D-253).
+	if NamesTheBuyList(message) && st.Slots.GetBudgetScope() == mtgv1.BudgetScope_BUDGET_SCOPE_UNSPECIFIED {
+		st.Slots.BudgetScope = mtgv1.BudgetScope_BUDGET_SCOPE_CARDS_TO_BUY
+		st.Close("budget_scope")
+		a.log.Info("the user named the buy list, so the budget scope is the cards to buy",
 			"session", st.SessionID)
 	}
 	// A user who named no cap has answered the budget row. It reads the
@@ -890,6 +903,12 @@ func (a *Agent) apply(st *State, out classifyOut, open []string, message string)
 	if out.BudgetUSD > 0 {
 		st.Slots.BudgetUsd = out.BudgetUSD
 		st.Close("budget")
+	}
+	// The scope answers its own row, so a user who says "on the whole
+	// deck" closes it without naming a number again (D-238).
+	if sc := budgetScope(out.BudgetScope); sc != mtgv1.BudgetScope_BUDGET_SCOPE_UNSPECIFIED {
+		st.Slots.BudgetScope = sc
+		st.Close("budget_scope")
 	}
 	// A key closes by name only when two things hold: its question is
 	// out, and it carries no typed value. Three gate runs paid for that
@@ -1243,4 +1262,15 @@ func (a *Agent) dropOffColorOffers(st *State) {
 	// The pick row must ask again with a full set of names.
 	st.Reopen("commander_pick")
 	st.Ctx.Suggested = true
+}
+
+// budgetScope reads the scope word the classifier reported (D-238).
+func budgetScope(s string) mtgv1.BudgetScope {
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "buy", "cards", "purchases":
+		return mtgv1.BudgetScope_BUDGET_SCOPE_CARDS_TO_BUY
+	case "deck", "whole", "whole_deck", "whole deck":
+		return mtgv1.BudgetScope_BUDGET_SCOPE_WHOLE_DECK
+	}
+	return mtgv1.BudgetScope_BUDGET_SCOPE_UNSPECIFIED
 }

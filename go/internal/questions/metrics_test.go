@@ -3,10 +3,8 @@ package questions
 import (
 	"context"
 	"testing"
-	"time"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
-	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
 )
 
 // TestCoverageCountsTheSources is the M-4 report (F-17): how many
@@ -112,44 +110,22 @@ func TestCommanderFillsTheColorSlot(t *testing.T) {
 	}
 }
 
-// TestMissingCommander is the trigger of the "Commander not owned" row.
-// It must stay quiet on every uncertain case: no collection, no name, or
-// a name the card database does not know.
-func TestMissingCommander(t *testing.T) {
-	karlov := &mtgv1.Card{OracleId: "oracle-karlov", Name: "Karlov of the Ghost Council"}
-	oloro := &mtgv1.Card{OracleId: "oracle-oloro", Name: "Oloro, Ageless Ascetic"}
-	idx := cards.NewIndex([]*mtgv1.Card{karlov, oloro}, nil, nil, time.Now())
-
-	cases := []struct {
-		name  string
-		hints *CandidateHints
-		names []string
-		want  bool
-	}{
-		{"not in the collection", &CandidateHints{Index: idx, Owned: map[string]int32{"oracle-oloro": 1}},
-			[]string{"Karlov of the Ghost Council"}, true},
-		{"in the collection", &CandidateHints{Index: idx, Owned: map[string]int32{"oracle-karlov": 1}},
-			[]string{"Karlov of the Ghost Council"}, false},
-		{"no collection", &CandidateHints{Index: idx}, []string{"Karlov of the Ghost Council"}, false},
-		{"no name", &CandidateHints{Index: idx, Owned: map[string]int32{"oracle-oloro": 1}}, nil, false},
-		{"unknown name", &CandidateHints{Index: idx, Owned: map[string]int32{"oracle-oloro": 1}},
-			[]string{"Not A Real Card"}, false},
-		{"no index", &CandidateHints{Owned: map[string]int32{"oracle-oloro": 1}},
-			[]string{"Karlov of the Ghost Council"}, false},
-	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			if got := tc.hints.MissingCommander(tc.names); got != tc.want {
-				t.Errorf("MissingCommander = %v, want %v", got, tc.want)
-			}
-		})
-	}
+// TestNilHintsAreSafe keeps the nil-source guard. A deployment with no
+// card index answers every fact source call with nil, and no fact may
+// claim anything from it.
+//
+// The MissingCommander case left with D-226, which retired the not-owned
+// row and its fact.
+func TestNilHintsAreSafe(t *testing.T) {
 	var nilHints *CandidateHints
-	if nilHints.MissingCommander([]string{"Karlov of the Ghost Council"}) {
-		t.Error("a nil hint source claimed a missing commander")
-	}
 	if thin, n := nilHints.ThinTheme("lifegain"); thin || n != 0 {
 		t.Errorf("a nil hint source reported a thin theme: %v %d", thin, n)
+	}
+	if nilHints.WeakCommanderPool("lifegain") {
+		t.Error("a nil hint source claimed a weak commander pool")
+	}
+	if nilHints.OwnedThemeCount("lifegain") != 0 {
+		t.Error("a nil hint source counted owned theme cards")
 	}
 }
 

@@ -168,11 +168,15 @@ green() {
 [ "${AUTOTUNE_ALLOW_UNATTENDED:-0}" = "1" ] || \
   die "this loop edits code and pushes with no person watching. Set AUTOTUNE_ALLOW_UNATTENDED=1 to allow it."
 [ -f "$ROOT/.env" ] || die "no .env, so no API keys"
-git diff --quiet && git diff --cached --quiet || die "the working tree is dirty. Commit or stash first."
+# Not "A && B || C": that runs C when A succeeds and B fails, which is
+# the same answer here, but shellcheck can not know it (SC2015).
+if ! git diff --quiet || ! git diff --cached --quiet; then
+  die "the working tree is dirty. Commit or stash first."
+fi
 # An untracked file would ride into a loop commit under the owner's name,
 # because the loop commits with git add -A (audit H-1).
 untracked="$(git ls-files --others --exclude-standard)"
-[ -z "$untracked" ] || die "untracked files would ride into a loop commit. Commit, stash, or remove: $(printf '%s ' $untracked)"
+[ -z "$untracked" ] || die "untracked files would ride into a loop commit. Commit, stash, or remove: $(tr '\n' ' ' <<<"$untracked")"
 
 # The base is a branch the owner keeps. Every night cuts a working branch
 # off it, and the owner fast-forwards the base after the review. Two
@@ -197,8 +201,14 @@ BRANCH="$BRANCH_PREFIX/$STAMP"
 say "base branch $BASE_BRANCH, working branch $BRANCH"
 [ "$DRY_RUN" = "1" ] || git switch -c "$BRANCH" >/dev/null 2>&1 || die "could not make branch $BRANCH"
 
-# shellcheck disable=SC1091
-set -a; . "$ROOT/.env"; set +a
+# The directive must sit on the line above the dot, so the three commands
+# are split: on one line it attaches to "set -a" and the dot stays
+# flagged.
+set -a
+# The file holds secrets and is gitignored, so shellcheck can not read it.
+# shellcheck source=/dev/null
+. "$ROOT/.env"
+set +a
 export CARDS_SNAPSHOT_DIR="${CARDS_SNAPSHOT_DIR:-$ROOT/.local/gcs/mtg-local-cards/scryfall}"
 
 # conv_count reads the size of the conversation set. A hardcoded number
@@ -252,7 +262,10 @@ commit_all() {  # $1 = version, $2 = subject, $3 = eval summary (optional)
   esac
   git add -A
   git diff --cached --quiet && { say "nothing to commit"; return 0; }
-  local body="Automated tuning loop, budget spent \$$(spent) of \$$BUDGET."
+  # Declared apart from the assignment, so a failure inside the command
+  # substitution is not masked by local's own exit status (SC2155).
+  local body
+  body="Automated tuning loop, budget spent \$$(spent) of \$$BUDGET."
   if [ -n "${3:-}" ]; then
     body="Bad-question ratio $(ratio_of "$3")%. Questions asked $(metric_of "$3" questions).
 $body"
