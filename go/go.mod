@@ -10,7 +10,7 @@ require (
 	github.com/anthropics/anthropic-sdk-go v1.66.0
 	github.com/openai/openai-go/v3 v3.52.0
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.3
-	google.golang.org/api v0.287.1
+	google.golang.org/api v0.293.0
 	google.golang.org/grpc v1.83.2
 	google.golang.org/protobuf v1.36.12
 )
@@ -32,7 +32,7 @@ require (
 	buf.build/go/standard v0.1.1-0.20260325175353-2b287e071df5 // indirect
 	cel.dev/expr v0.25.2 // indirect
 	cloud.google.com/go v0.123.0 // indirect
-	cloud.google.com/go/auth v0.20.0 // indirect
+	cloud.google.com/go/auth v0.23.0 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
 	cloud.google.com/go/compute/metadata v0.9.0 // indirect
 	cloud.google.com/go/iam v1.11.0 // indirect
@@ -74,7 +74,7 @@ require (
 	github.com/google/go-containerregistry v0.21.7 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/googleapis/enterprise-certificate-proxy v0.3.17 // indirect
+	github.com/googleapis/enterprise-certificate-proxy v0.3.20 // indirect
 	github.com/googleapis/gax-go/v2 v2.23.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/invopop/jsonschema v0.14.0 // indirect
@@ -139,7 +139,7 @@ require (
 	google.golang.org/appengine/v2 v2.0.6 // indirect
 	google.golang.org/genproto v0.0.0-20260519071638-aa98bba5eb94 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260715232425-e75dac1f907d // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260715232425-e75dac1f907d // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260807164820-c8921c73eeea // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	mvdan.cc/xurls/v2 v2.6.0 // indirect
 	pluginrpc.com/pluginrpc v0.5.0 // indirect
