@@ -80,6 +80,7 @@ describe("SessionPage", () => {
     // The conversation shows the user line and the asked line.
     const thread = screen.getByRole("list", { name: "Conversation" });
     expect(within(thread).getAllByRole("listitem")[0]).toHaveTextContent("Build me an elf deck");
+    expect(screen.queryByLabelText("Your message")).not.toBeInTheDocument();
   });
 
   it("an option click sends option_index, and the deck event opens the deck view", async () => {
@@ -99,6 +100,8 @@ describe("SessionPage", () => {
 
     expect(await screen.findByRole("heading", { name: "Elves" })).toBeInTheDocument();
     expect(screen.queryByRole("group", { name: /Question:/ })).not.toBeInTheDocument();
+    // The option the user clicked shows as their line.
+    expect(within(screen.getByRole("list", { name: "Conversation" })).getAllByRole("listitem")[2]).toHaveTextContent("Modern");
     expect(screen.getByText("building the deck")).toBeInTheDocument();
     expect(screen.getByText("Here is your deck.")).toBeInTheDocument();
     expect(await screen.findByAltText("Llanowar Elves")).toBeInTheDocument();
@@ -174,6 +177,44 @@ describe("SessionPage", () => {
     expect(screen.queryByLabelText("Use only cards in my collection")).not.toBeInTheDocument();
   });
 
+  it("Enter sends, and a failed send gives the draft back", async () => {
+    chat.mockImplementationOnce(() => {
+      throw new Error("[unavailable] down");
+    });
+    renderAt("/session/new");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "elves{enter}");
+    expect(await screen.findByRole("alert")).toHaveTextContent("[unavailable] down (stream)");
+    expect(screen.getByLabelText("Your message")).toHaveValue("elves");
+    expect((chat.mock.calls[0][0] as { message: string }).message).toBe("elves");
+  });
+
+  it("offers to resume the stored session on /session/new", async () => {
+    useAppStore.setState({ sessionId: "s9" });
+    renderAt("/session/new");
+    expect(await screen.findByTestId("resume-link")).toHaveAttribute("href", "/session/s9");
+  });
+
+  it("keeps a stored session's open question when a later turn asked another (reload merge)", async () => {
+    getSession.mockResolvedValue({
+      session: {
+        id: "s1",
+        collectionId: "",
+        deckIds: [],
+        turns: [
+          { userMessage: "elves", agentMessage: "", questions: [formatQuestion, { id: "q2", slot: "colors", text: "Any color preference?", options: [] }], answers: [] },
+          { userMessage: "", agentMessage: "", questions: [{ id: "q3", slot: "power", text: "How strong?", options: [] }], answers: [{ questionId: "q1", optionIndex: 2, text: "" }] },
+        ],
+      },
+    });
+    renderAt("/session/s1");
+    await screen.findByRole("group", { name: "Question: How strong?" });
+    expect(screen.getByRole("group", { name: "Question: Any color preference?" })).toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: "Question: Which format?" })).not.toBeInTheDocument();
+    // The clicked option shows as the user's line.
+    expect(within(screen.getByRole("list", { name: "Conversation" })).getAllByRole("listitem")[3]).toHaveTextContent("Modern");
+  });
+
   it("refuses a message over the 8 KiB cap", async () => {
     renderAt("/session/new");
     const user = userEvent.setup();
@@ -209,11 +250,18 @@ describe("SessionPage", () => {
     expect(screen.queryByRole("group", { name: "Question: Which format?" })).not.toBeInTheDocument();
     expect(screen.getByRole("group", { name: "Question: How strong?" })).toBeInTheDocument();
 
+    // The message box hides while a question waits (owner, 2026-08-28).
+    expect(screen.queryByLabelText("Your message")).not.toBeInTheDocument();
     chat.mockReturnValue(events([ev("slots", {})]));
-    await userEvent.setup().type(screen.getByLabelText("Your message"), "bracket 2{enter}");
-    await userEvent.setup().click(screen.getByRole("button", { name: "Send" }));
-    expect((chat.mock.calls[0][0] as { sessionId: string; collectionId: string }).sessionId).toBe("s1");
-    expect((chat.mock.calls[0][0] as { collectionId: string }).collectionId).toBe("c1");
+    const user = userEvent.setup();
+    const card = screen.getByRole("group", { name: "Question: How strong?" });
+    await user.type(within(card).getByLabelText("Or answer in your own words"), "bracket 2");
+    await user.click(within(card).getByRole("button", { name: "Answer" }));
+    expect((chat.mock.calls[0][0] as { sessionId: string }).sessionId).toBe("s1");
+    // A stored session carries its own collection, so the request sends none.
+    expect((chat.mock.calls[0][0] as { collectionId: string }).collectionId).toBe("");
+    // The box returns when no question is open, and the answer shows in the thread.
+    expect(await screen.findByLabelText("Your message")).toBeInTheDocument();
   });
 
   it("reports a session that does not load", async () => {

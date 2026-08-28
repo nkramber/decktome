@@ -24,7 +24,7 @@ Every measured number below moved on 2026-08-28. Question gate run 25 and deck g
 
 | Measure | Baseline | Where measured |
 |---|---|---|
-| Question gate | PASS 26 of 27 counted, 1 invented, 0 premature, 0 lint | run 25, 2026-08-28, prompt 12 |
+| Question gate | PASS 25 of 27 counted, 2 invented, 0 premature, 0 lint | run 26, 2026-08-28, prompt 12, after D-280 |
 | Question eval | 19 bad of 382, holdout 8 of 111 (7.2 percent) | eval of run 25, 5 conversations unjudged |
 | Deck gate | PASS 18 of 18, 2 repairs, $1.09 | run 8, 2026-08-28, generate prompt 9 |
 | Loop | off since 2026-08-26 | seven starts, nothing kept |
@@ -38,6 +38,8 @@ Branch `pr-12` holds the slice of the ui plan, section 6. The tree is green on t
 - `CardService.GetCards` returns up to 120 cards by Oracle id, in request order, with a `missing_oracle_ids` list (D-277). `go/internal/cardsvc` holds it and its tests.
 - `web/apps/web/src/features/chat`: `use-chat.ts` reads the `Chat` stream and holds the open questions (D-278). `session-page.tsx` is the chat beside the deck. `question-card.tsx` shows the options as buttons and a free-text field. A reload rebuilds the thread from `GetSession` and the latest deck from `GetDeck`.
 - `web/apps/web/src/features/deck`: `deck-view.tsx` groups the cards by role and shows the findings, the legality date, the curve, and the color sources. `card-tile.tsx` shows every face with "Illustrated by <artist>. © Wizards of the Coast, LLC" (D-279). `deck-stats.ts` holds the pure helpers. The decks page opens a deck in place.
+- Gate run 26 ran after D-280: PASS, 25 of 27 on a bar of 25, against 26 of 27 in run 25. The two invented gate questions are `pool` in conversation 4 and `colors` in one other, and run 25 invented `budget` once. The gate sends plain messages, and `UserWords` returns a plain message unchanged. So the gate ran the code of run 25, and the drop is model noise (D-230). The `Q:`/`A:` shape is still unmeasured, because only the browser sends it.
+- The UI audit of 2026-08-28 (D-281) fixed 41 defects across the chat, the deck view, the collection screen, the layout, and the styles. 50 web tests pass. The owner has not seen the audited build in the browser yet.
 - The owner ran the first browser turns on 2026-08-28 and found two faults, both fixed (D-280). A structured answer echoed the question text into the word rules, and the chat dropped an open question when a new turn asked another. The classify input for a structured answer is `Q: <question>` and `A: <answer>` on two lines now, so the next question gate run measures that shape.
 - The pool toggle "Use only cards in my collection" shows before the first message when a collection is active. It decides whether `collection_id` goes with the first message. The agent asks how strict the pool is, and the session's `pool_rule` shows after that.
 
@@ -45,7 +47,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## Next steps, in order
 
-1. The owner runs the PR-12 browser gate: `make dev` with provider keys, then README section 6 steps 1 to 6. Ask the owner before the run, because every chat turn spends money. Then the owner merges `pr-12`.
+1. The owner runs the PR-12 browser gate on the audited build: `make dev` with provider keys, then README section 6 steps 1 to 6. Ask the owner before the run, because every chat turn spends money. Then the owner merges `pr-12`.
 2. PR-13: `DeckService.ExportDeck`, the export button, and the buy list with Scryfall links. Ui plan section 4 gives the text shape, and the gate is the round trip through `ParseArenaText`.
 3. Add a ruleset that requires the `verify` check on `main`, if it is not there yet. Four Dependabot majors merged without it on 2026-08-28 and broke `main` twice.
 4. After PR-12 merges, run the M-5 manual scoring on the first UI build (sequencing step 19), and ask the owner before any paid run.

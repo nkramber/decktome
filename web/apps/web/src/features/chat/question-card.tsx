@@ -15,7 +15,7 @@ export function QuestionCard({ question, disabled, onAnswer }: { question: Quest
   }
 
   return (
-    <div className="flex flex-col gap-2 rounded border border-blue-200 bg-blue-50 p-3" role="group" aria-label={`Question: ${question.text}`}>
+    <div className="flex flex-col gap-2 rounded border border-blue-400 bg-blue-50 p-3" role="group" aria-label={`Question: ${question.text}`}>
       <p className="font-medium">{question.text}</p>
       {question.options.length > 0 && (
         <div className="flex flex-wrap gap-2">
@@ -25,7 +25,7 @@ export function QuestionCard({ question, disabled, onAnswer }: { question: Quest
               type="button"
               disabled={disabled}
               onClick={() => onAnswer({ questionId: question.id, optionIndex: i, text: "" } as Answer)}
-              className="rounded border border-neutral-400 bg-white px-2 py-1 text-sm disabled:opacity-50"
+              className="rounded border border-neutral-400 bg-white px-2 py-1 text-sm disabled:bg-neutral-200 disabled:text-neutral-500"
             >
               {opt}
             </button>
@@ -40,10 +40,14 @@ export function QuestionCard({ question, disabled, onAnswer }: { question: Quest
             value={text}
             disabled={disabled}
             onChange={(e) => setText(e.target.value)}
-            className="rounded border border-neutral-400 px-2 py-1"
+            className="rounded border border-neutral-400 bg-white px-2 py-1 text-neutral-900"
           />
         </label>
-        <button type="submit" disabled={disabled || !text.trim()} className="self-end rounded border border-neutral-400 bg-white px-2 py-1 text-sm disabled:opacity-50">
+        <button
+          type="submit"
+          disabled={disabled || !text.trim()}
+          className="self-end rounded border border-neutral-400 bg-white px-2 py-1 text-sm disabled:bg-neutral-200 disabled:text-neutral-500"
+        >
           Answer
         </button>
       </form>

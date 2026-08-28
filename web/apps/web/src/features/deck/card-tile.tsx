@@ -44,6 +44,10 @@ function FaceImage({ face }: { face: Face }) {
   // and the aspect ratio stays, so nothing is cropped or skewed (D-6).
   const [src, setSrc] = useState(face.imageUris?.normal || face.imageUris?.small || "");
   const small = face.imageUris?.small ?? "";
+  // A second load error leaves the text tile, not a broken image.
+  function onError() {
+    setSrc(small && src !== small ? small : "");
+  }
   if (!src) {
     return (
       <div className="flex aspect-[488/680] w-full items-center justify-center rounded border border-neutral-300 bg-neutral-100 p-2 text-center text-sm">
@@ -55,14 +59,11 @@ function FaceImage({ face }: { face: Face }) {
     <img
       src={src}
       alt={face.name}
-      title={face.oracleText || face.name}
       width={488}
       height={680}
       loading="lazy"
       className="h-auto w-full rounded"
-      onError={() => {
-        if (small && src !== small) setSrc(small);
-      }}
+      onError={onError}
     />
   );
 }
@@ -75,15 +76,19 @@ export function CardTile({ entry, card, isCommander }: { entry: DeckCard; card: 
   return (
     <li className="flex flex-col gap-1 rounded border border-neutral-200 p-2" data-testid="card-tile">
       <div className="flex items-baseline justify-between gap-2">
-        <span className="font-medium">
+        <span className="min-w-0 wrap-anywhere font-medium">
           {entry.count > 1 && <span className="mr-1 text-neutral-600">{entry.count}×</span>}
           {name}
         </span>
-        {isCommander && <span className="rounded bg-amber-100 px-1 text-xs" data-testid="commander-mark">Commander</span>}
+        {isCommander && (
+          <span className="rounded border border-amber-300 bg-amber-100 px-1 text-xs" data-testid="commander-mark">
+            Commander
+          </span>
+        )}
       </div>
       {faces.length === 0 && <p className="text-sm text-neutral-600">No card data for this entry.</p>}
       {faces.map((face, i) => (
-        <figure key={i} className="flex flex-col gap-1">
+        <figure key={face.imageUris?.normal || face.name || i} className="flex flex-col gap-1">
           <FaceImage face={face} />
           <figcaption className="text-xs text-neutral-700">
             {face.name}
@@ -95,18 +100,18 @@ export function CardTile({ entry, card, isCommander }: { entry: DeckCard; card: 
       ))}
       <p className="text-xs">
         {entry.owned ? (
-          <span className="rounded bg-green-100 px-1" data-testid="owned-mark">
+          <span className="rounded border border-green-300 bg-green-100 px-1" data-testid="owned-mark">
             Owned{entry.ownedCount > 0 ? ` (${entry.ownedCount})` : ""}
           </span>
         ) : (
-          <span className="rounded bg-red-100 px-1" data-testid="buy-mark">
+          <span className="rounded border border-red-300 bg-red-100 px-1" data-testid="buy-mark">
             To buy: {priceText(entry.priceUsd)}
           </span>
         )}
       </p>
       {entry.reason && <p className="text-xs text-neutral-700">{entry.reason}</p>}
       {card && (
-        <details className="text-xs">
+        <details className="text-sm">
           <summary className="cursor-pointer">Oracle text</summary>
           {faces.map((face, i) => (
             <div key={i} className="mt-1">

@@ -18,8 +18,8 @@ export function DecksPage() {
   return (
     <div className="mx-auto max-w-7xl p-6">
       <h1 className="text-2xl font-semibold">Your decks</h1>
-      <div aria-live="polite" className="mt-2">
-        {decks.isPending && <p>Loading decks...</p>}
+      <div className="mt-2">
+        {decks.isPending && <p role="status">Loading decks...</p>}
         {decks.isError && (
           <p role="alert" className="text-red-700">
             Could not list decks: {errorMessage(decks.error)}
@@ -28,7 +28,7 @@ export function DecksPage() {
       </div>
       {decks.isSuccess && decks.data.decks.length === 0 && <p className="mt-2">No decks yet.</p>}
       {decks.isSuccess && decks.data.decks.length > 0 && (
-        <ul className="mt-2 flex flex-col gap-1">
+        <ul className="mt-2 flex flex-col gap-1" role="list">
           {decks.data.decks.map((d) => (
             <li key={d.id}>
               <span className="font-medium">{d.name || d.id}</span>
@@ -43,11 +43,17 @@ export function DecksPage() {
                 </>
               )}
               {" · "}
-              <button type="button" aria-expanded={openId === d.id} onClick={() => setOpenId(openId === d.id ? "" : d.id)} className="underline">
+              <button
+                type="button"
+                aria-expanded={openId === d.id}
+                aria-controls={`deck-panel-${d.id}`}
+                onClick={() => setOpenId(openId === d.id ? "" : d.id)}
+                className="rounded border border-neutral-400 px-2 py-0.5 text-sm"
+              >
                 {openId === d.id ? "Hide" : "View"}
               </button>
               {openId === d.id && (
-                <div className="mt-2 rounded border border-neutral-200 p-4">
+                <div id={`deck-panel-${d.id}`} className="mt-2 rounded border border-neutral-200 p-4">
                   <DeckView deck={d} />
                 </div>
               )}

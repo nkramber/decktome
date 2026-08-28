@@ -147,16 +147,17 @@ describe("DeckView", () => {
     renderDeck();
     await screen.findByAltText("Forest");
     expect(screen.getByTestId("legality-line")).toHaveTextContent("Not legal, checked against the card data of 2026-08-24.");
+    expect(screen.getByTestId("buy-cost")).toHaveTextContent("To buy: $0.50");
     const findings = screen.getByRole("region", { name: "Findings" });
     expect(within(findings).getAllByRole("listitem")).toHaveLength(2);
     expect(findings).toHaveTextContent("Block (deck_size): 27 cards, the format needs 60");
     expect(findings).toHaveTextContent("Warning (off_color): a blue card in a green deck — Delver of Secrets // Insectile Aberration");
     expect(screen.getByText("Modern · Casual · 27 cards")).toBeInTheDocument();
 
-    const curve = screen.getByRole("table", { name: /Mana curve/ });
+    const curve = screen.getByRole("table", { name: /Mana curve, lands excluded/ });
     const one = within(curve).getByRole("row", { name: /^1 / });
     expect(one).toHaveTextContent("6");
-    const sources = screen.getByRole("table", { name: /Color sources/ });
+    const sources = screen.getByRole("table", { name: /Color sources, copies/ });
     expect(within(sources).getByRole("row", { name: /Green/ })).toHaveTextContent("24");
     expect(within(sources).getByRole("row", { name: /Blue/ })).toHaveTextContent("0");
   });
@@ -167,7 +168,6 @@ describe("DeckView", () => {
     const ramp = screen.getByRole("region", { name: "Ramp (4)" });
     await userEvent.setup().click(within(ramp).getByText("Oracle text"));
     expect(within(ramp).getByText("{T}: Add {G}.")).toBeVisible();
-    expect(screen.getByAltText("Llanowar Elves")).toHaveAttribute("title", "{T}: Add {G}.");
   });
 
   it("falls back to the small image when the normal one fails", async () => {

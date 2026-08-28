@@ -40,5 +40,8 @@ export function useDeckCards(deck: Deck) {
     queryKey: ["cards", deck.id, ids],
     queryFn: () => fetchCards(ids),
     staleTime: Infinity,
+    // A rebuilt deck keeps the last card data on screen while the new
+    // ids load, so the tables and the images do not blank out.
+    placeholderData: (prev) => prev,
   });
 }

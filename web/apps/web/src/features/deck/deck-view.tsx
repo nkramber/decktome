@@ -26,6 +26,8 @@ export function DeckView({ deck }: { deck: Deck }) {
   const cards = useDeckCards(deck);
   const byId = cards.data?.byId ?? new Map<string, Card>();
   const missing = cards.data?.missing ?? [];
+  const allEntries = [...deck.cards, ...deck.sideboard, ...deck.upgrades];
+  const nameOf = (id: string) => allEntries.find((c) => c.oracleId === id)?.name ?? byId.get(id)?.name ?? id;
   const commanders = new Set(deck.commanderOracleIds);
   const main = deck.cards.filter((c) => !commanders.has(c.oracleId));
   const commanderEntries = deck.cards.filter((c) => commanders.has(c.oracleId));
@@ -35,12 +37,13 @@ export function DeckView({ deck }: { deck: Deck }) {
   const total = deck.cards.reduce((n, c) => n + c.count, 0);
   const validation = deck.validation;
   const findings = validation?.findings ?? [];
-  const legalityAsOf = deck.legalityAsOf || validation?.legalityAsOf || "unknown";
+  const legalityAsOf = deck.legalityAsOf || validation?.legalityAsOf || "an unknown date";
+  const curveMax = Math.max(1, ...curve);
 
   return (
-    <article aria-labelledby="deck-title" className="flex flex-col gap-4">
+    <article aria-labelledby={`deck-title-${deck.id}`} className="flex flex-col gap-4">
       <header className="flex flex-col gap-1">
-        <h2 id="deck-title" className="text-xl font-semibold">
+        <h2 id={`deck-title-${deck.id}`} className="wrap-anywhere text-xl font-semibold">
           {deck.name || "Untitled deck"}
         </h2>
         <p className="text-sm text-neutral-700">
@@ -50,36 +53,36 @@ export function DeckView({ deck }: { deck: Deck }) {
           {deck.sideboard.length > 0 && ` · ${deck.sideboard.reduce((n, c) => n + c.count, 0)} sideboard`}
         </p>
         <p className="text-sm" data-testid="legality-line">
-          {validation ? (validation.passed ? "Legal" : "Not legal") : "Not checked"}, checked against the card data of{" "}
-          {legalityAsOf}.
+          {validation
+            ? `${validation.passed ? "Legal" : "Not legal"}, checked against the card data of ${legalityAsOf}.`
+            : "Legality not checked yet."}
           {deck.stale && " CAUTION: a rule change made this deck illegal since."}
         </p>
         <p className="text-sm" data-testid="buy-cost">
-          To buy: {priceText(deck.buyCostUsd)}
-          {deck.buyCostUsd === 0 && " (every card is owned, or no price is known)"}
+          To buy: {deck.buyCostUsd > 0 ? priceText(deck.buyCostUsd) : "nothing. Every card is owned, or no price is known."}
         </p>
         {deck.summary && <p className="mt-1">{deck.summary}</p>}
       </header>
 
       {findings.length > 0 && (
-        <section aria-labelledby="findings-title">
-          <h3 id="findings-title" className="font-medium">
+        <section aria-labelledby={`findings-title-${deck.id}`}>
+          <h3 id={`findings-title-${deck.id}`} className="font-medium">
             Findings
           </h3>
-          <ul className="list-disc pl-5 text-sm">
+          <ul className="list-disc pl-5 text-sm" role="list">
             {findings.map((f, i) => (
               <li key={i} className={f.severity === Severity.BLOCK ? "text-red-700" : ""}>
                 <span className="font-medium">{severityLabel(f.severity)}</span>
                 {f.code && <span className="text-neutral-600"> ({f.code})</span>}: {f.message}
-                {f.oracleId && byId.get(f.oracleId) && ` — ${byId.get(f.oracleId)?.name}`}
+                {f.oracleId && ` — ${nameOf(f.oracleId)}`}
               </li>
             ))}
           </ul>
         </section>
       )}
 
-      <div aria-live="polite" className="text-sm">
-        {cards.isPending && <p>Loading card data...</p>}
+      <div className="text-sm">
+        {cards.isPending && <p role="status">Loading card data...</p>}
         {cards.isError && (
           <p role="alert" className="text-red-700">
             Could not load the card data: {errorMessage(cards.error)}
@@ -88,15 +91,15 @@ export function DeckView({ deck }: { deck: Deck }) {
         {missing.length > 0 && (
           <p role="alert" className="text-red-700">
             {missing.length} card{missing.length === 1 ? "" : "s"} of this deck are not in the card database:{" "}
-            {missing.map((id) => deck.cards.find((c) => c.oracleId === id)?.name ?? id).join(", ")}.
+            {missing.map(nameOf).join(", ")}.
           </p>
         )}
       </div>
 
-      {cards.isSuccess && (
-        <div className="grid gap-4 sm:grid-cols-2">
-          <table className="text-sm" aria-label="Mana curve, lands excluded">
-            <caption className="text-left font-medium">Mana curve</caption>
+      {cards.data && (
+        <div className="@container grid gap-4 @md:grid-cols-2">
+          <table className="text-sm">
+            <caption className="text-left font-medium">Mana curve, lands excluded</caption>
             <thead>
               <tr>
                 <th scope="col" className="pr-2 text-left">
@@ -114,15 +117,19 @@ export function DeckView({ deck }: { deck: Deck }) {
                     {step}
                   </th>
                   <td>
-                    <span className="inline-block h-3 bg-neutral-700 align-middle" style={{ width: `${curve[i] * 8}px` }} aria-hidden="true" />{" "}
-                    {curve[i]}
+                    <span className="flex items-center gap-2">
+                      <span className="block h-3 w-24 max-w-full bg-neutral-200" aria-hidden="true">
+                        <span className="block h-3 bg-neutral-700" style={{ width: `${(curve[i] / curveMax) * 100}%` }} />
+                      </span>
+                      {curve[i]}
+                    </span>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <table className="text-sm" aria-label="Color sources: copies of cards that produce each color">
-            <caption className="text-left font-medium">Color sources</caption>
+          <table className="text-sm">
+            <caption className="text-left font-medium">Color sources, copies of cards that make each color</caption>
             <thead>
               <tr>
                 <th scope="col" className="pr-2 text-left">
@@ -182,11 +189,11 @@ function CardGroup({
   commanders: Set<string>;
 }) {
   return (
-    <section aria-label={`${title} (${count})`}>
+    <section aria-label={`${title} (${count})`} className="@container">
       <h3 className="font-medium">
         {title} <span className="text-neutral-600">({count})</span>
       </h3>
-      <ul className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-4">
+      <ul className="mt-2 grid grid-cols-1 items-start gap-2 @sm:grid-cols-2 @2xl:grid-cols-3 @4xl:grid-cols-4" role="list">
         {entries.map((e, i) => (
           <CardTile key={`${e.oracleId}-${i}`} entry={e} card={byId.get(e.oracleId)} isCommander={commanders.has(e.oracleId)} />
         ))}
