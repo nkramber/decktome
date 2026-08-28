@@ -6,12 +6,33 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: weekly }
+    groups:
+      actions: { update-types: [minor, patch] }
   - package-ecosystem: gomod
     directory: /go
     schedule: { interval: weekly }
+    groups:
+      go-minor: { update-types: [minor, patch] }
   - package-ecosystem: npm
     directory: /web
     schedule: { interval: weekly }
+    groups:
+      web-minor: { update-types: [minor, patch] }
+    ignore:
+      # typescript-eslint 8 does not support TypeScript 7. Both move
+      # together in PR-11, by hand.
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
+      - dependency-name: vite
+        update-types: [version-update:semver-major]
+      # plugin-react 6 needs Vite 8. It moves with vite.
+      - dependency-name: "@vitejs/plugin-react"
+        update-types: [version-update:semver-major]
   - package-ecosystem: docker
     directory: /docker
     schedule: { interval: weekly }
+    ignore:
+      # The golang tag follows go/go.mod and the node tag follows .nvmrc.
+      # Bump those pins first, then the image, by hand.
+      - dependency-name: golang
+      - dependency-name: node
