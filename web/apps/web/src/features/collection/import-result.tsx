@@ -24,9 +24,6 @@ export function ImportResult({ result }: { result: ImportCollectionResponse }) {
   const report = result.report;
   const unresolved = report?.unresolved ?? [];
   const byReason = Object.entries(report?.unresolvedByReason ?? {});
-  // ManaBox exports tokens as collection rows. The importer refuses them
-  // on purpose (F-21), so the note says why before the user asks.
-  const hasTokens = byReason.some(([reason, count]) => reason.endsWith("NOT_PLAYABLE") && count > 0);
 
   return (
     <section aria-live="polite" className="flex flex-col gap-3 rounded border border-neutral-200 p-4">
@@ -44,12 +41,6 @@ export function ImportResult({ result }: { result: ImportCollectionResponse }) {
             </li>
           ))}
         </ul>
-      )}
-      {hasTokens && (
-        <p className="text-sm text-neutral-600" data-testid="token-note">
-          ManaBox lists tokens in a collection. A token is not a card a deck can use, so the importer
-          leaves it out of the count and shows the row here.
-        </p>
       )}
       {unresolved.length > 0 && (
         <div className="overflow-x-auto">

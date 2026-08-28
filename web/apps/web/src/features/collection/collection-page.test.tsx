@@ -83,9 +83,9 @@ describe("CollectionPage", () => {
     expect(row).toHaveTextContent("Unknown card");
     expect(row).not.toHaveTextContent("UNRESOLVED_REASON");
     expect(screen.getByText(/^Unknown card: .*: 1$/)).toBeInTheDocument();
-    // A token row gets its own words and the note that says why it is out.
+    // A token row gets its own words, and no extra note.
     expect(within(table).getAllByRole("row")[2]).toHaveTextContent("Not a playable card: a token, emblem, or art card");
-    expect(screen.getByTestId("token-note")).toHaveTextContent("A token is not a card a deck can use");
+    expect(screen.queryByTestId("token-note")).not.toBeInTheDocument();
     expect(useAppStore.getState().collectionId).toBe("c-new");
   });
 
