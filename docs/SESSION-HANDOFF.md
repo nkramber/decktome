@@ -4,6 +4,16 @@
 
 ## Do this first
 
+PR-8 is done and marked in the roadmap. Deck gate run 6 passed all three bars on 16 golden prompts, at prompt version 4, for $0.8776. The Phase 3 gate of the sequencing list holds.
+
+The branch `pr-8` is open as a pull request. `main` is at 98eac91 with PR-7c merged.
+
+Next: PR-9 variance. `Deck.seed` is in the proto and nothing sets it, which is PR-9's first step and a prerequisite for its other two levers.
+
+CAUTION: the classify prompt moved to version 10, so question-gate runs 19 to 22 compare with nothing. The question workflow has no valid baseline. Take one before PR-9 changes the variance row.
+
+
+
 PR-8 is under way on branch `pr-8`, cut from `main` at 98eac91. The generator writes a deck, the code checks every name and every rule, and the deck gate holds.
 
 | Measure | Deck gate run 1 | Deck gate run 2 |
