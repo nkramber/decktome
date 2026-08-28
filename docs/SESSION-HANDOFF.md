@@ -27,6 +27,7 @@ Every measured number below moved on 2026-08-28. Question gate run 25 and deck g
 | Question gate | PASS 25 of 27 counted, 2 invented, 0 premature, 0 lint, $0.16 | run 27, 2026-08-28, ask prompt 13, catalog of D-290 and D-294 |
 | Question eval | 19 bad of 382, holdout 8 of 111 (7.2 percent) | eval of run 25, 5 conversations unjudged |
 | Deck gate | PASS 18 of 18, 2 repairs, $1.09 | run 8, 2026-08-28, generate prompt 9 |
+| Revise gate | 5 of 6, the sixth by the gate's own bar, $0.33 | run 1, 2026-08-28 (D-296) |
 | Loop | off since 2026-08-26 | seven starts, nothing kept |
 
 CAUTION: `tune-check` paired zero questions between run 24 and run 25, because the catalog and the prompt changed. The paired guard says nothing across that line, and the whole-run margins carry the verdict. The eval leaves a conversation unjudged when the judge returns fewer verdicts than questions. So 382 is the honest count, not a drop from 435.
@@ -48,7 +49,7 @@ Branch `pr-12b` holds the revision turn (F-27, D-283 to D-285). The tree is gree
 - A commander offer shows each card with its art and its rules text, through the new `Question.option_oracle_ids` (D-287). The branch holds it too.
 - `cmd/revise-gate` and `make revise-gate` are the paid gate: two bases, six revisions, a verdict per revision. Ask the owner before the run, then record the numbers here and in the roadmap.
 
-CAUTION: the revise prompt has never met a real model. The first gate run is the first evidence, and the prompt may need a version bump after it.
+Revise gate run 1 (D-296): 5 of 6, $0.33. The model held every bar, and the one failure was the gate's bar on a mixed message, which is fixed. The next run should read 6 of 6.
 
 ## PR-12, what it holds (2026-08-28)
 
@@ -69,7 +70,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## Next steps, in order
 
-1. Run `make revise-gate` with the owner's go-ahead (about $0.60, unmeasured), read every brief and every reply, and fix the revise prompt where it misread. Then the owner tests a revision in the browser and merges `pr-12b`.
+1. The owner tests a revision in the browser, then merges `pr-12b`. A second `make revise-gate` run ($0.33 measured) confirms the fixed bar when the owner wants it.
 2. Watch the first pull request under the new `verify` workflow (D-286). The `changes` job prints the diff and its answers, so a job that skipped when it should have run is visible in that log. The workflow file is one of the inputs of every job, so this pull request runs them all.
 3. PR-13: `DeckService.ExportDeck`, the export button, and the buy list with Scryfall links. Ui plan section 4 gives the text shape, and the gate is the round trip through `ParseArenaText`.
 4. A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The fan-in job left the workflow for that reason (D-286). The owner reads the checks before a merge.

@@ -528,7 +528,7 @@ It shows the mana curve, the color sources, the `ValidationResult` findings, and
 Contract addition of 2026-08-28: `CardService.GetCards` returns up to 120 cards by Oracle id in one call. `DeckCard` carries only the id and the name, and one `Lookup` per card is 100 calls per deck (ui plan, section 4). Landed 2026-08-28 (D-277). The chat holds an open question across a turn that asks nothing (D-278). The attribution line is the one the Scryfall docs ask for (D-279).
 > *In plain English:* the main screen. The conversation on one side, the deck on the other with real card pictures, grouped by what each card does, with your own cards marked.
 
-**PR-12B: Deck revision turns.** 🔧 built 2026-08-28 on branch `pr-12b` (F-27, D-283 to D-285), gate not yet run. The unit tests hold the three outcomes and the slot-change rebuild. `make revise-gate` is the paid gate, and the owner says when.
+**PR-12B: Deck revision turns.** 🔧 built 2026-08-28 on branch `pr-12b` (F-27, D-283 to D-285). Gate run 1 on 2026-08-28: 5 of 6 revisions met their bar. The sixth failed the gate's own bar on a mixed message, and not the model (D-296). The bar is fixed, and the next run measures it.
 After a build, every message is a request to change the latest deck. The turn has three parts. First, the classify call runs as today for a slot change. A changed slot means a full rebuild with a note that says so (D-241). Second, with no slot change, a new revise call reads the message and the current deck list. It returns a revision brief with four parts:
 
 - the cards to remove,

@@ -59,8 +59,12 @@ type revision struct {
 	// RemoveHighest fills {{HIGHEST}} with the base deck's dearest
 	// nonland card, and the check wants it gone.
 	RemoveHighest bool `json:"remove_highest"`
-	// Unclear says the right outcome is a question, not a build.
+	// Unclear says the right outcome is a question, not a build. A cap
+	// on an unclear prompt is the clear part of a mixed message, and the
+	// brief must still hold it (D-284).
 	Unclear bool `json:"unclear"`
+	// Note is for the reader of the prompt file.
+	Note string `json:"note"`
 }
 
 // keepBar is the share of untouched base names a revised deck must keep.
@@ -297,6 +301,11 @@ func runRevision(ctx context.Context, client *llm.Client, b *generate.Builder, i
 		o.note = revise.DeclineNote(brief)
 		if brief.Question != "" {
 			o.note = "Question: " + brief.Question
+		}
+		// The clear part of a mixed message must be in the brief even
+		// when the unclear part earns a question.
+		if r.Cap > 0 && brief.MaxManaValue != r.Cap {
+			o.failures = append(o.failures, fmt.Sprintf("the brief read the cap as %g, and the message says %g", brief.MaxManaValue, r.Cap))
 		}
 		return o
 	}
