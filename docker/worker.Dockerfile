@@ -1,7 +1,7 @@
 # Pinned to the go/go.mod toolchain. Bump both together.
 # Digests resolved from the registry manifests on 2026-08-28. Bump the
 # tag and the digest together.
-FROM golang:1.27.0@sha256:0ecdc2a9f6156af6451080bfe3d8382a662fcc4e209608c6f919e643453514c1 AS build
+FROM golang:1.26.6@sha256:0d1d3a794be25f809dd2cb3160d8c73276c4056a9f8242a138e908ddeee7b6b6 AS build
 WORKDIR /src
 # See docker/api.Dockerfile for why there is no separate `go mod download`.
 COPY go/ go/
