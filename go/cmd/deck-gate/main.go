@@ -275,13 +275,14 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 	// impossible instruction (D-248).
 	var preconName string
 	var preconIDs []string
+	var preconLands int
 	if p.Precon != "" {
 		pc, ok := preconSet.Get(p.Precon)
 		if !ok {
 			out.err = fmt.Errorf("no precon named %q", p.Precon)
 			return out
 		}
-		preconName, preconIDs = pc.Name, pc.OracleIDs
+		preconName, preconIDs, preconLands = pc.Name, pc.OracleIDs, pc.Lands
 		for _, id := range preconIDs {
 			if c, ok := idx.ByOracleID(id); ok {
 				always = append(always, c)
@@ -304,6 +305,7 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 		Locked:          lockedIDs,
 		Precon:          preconName,
 		PreconOracleIDs: preconIDs,
+		PreconLands:     preconLands,
 		PoolRule:        poolRule,
 		OracleCounts:    own,
 		Roles:           generate.Roles(list),

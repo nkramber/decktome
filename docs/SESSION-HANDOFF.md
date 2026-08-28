@@ -8,6 +8,10 @@ PR-8 is done and marked in the roadmap. Deck gate run 6 passed all three bars on
 
 The branch `pr-8` is open as a pull request. `main` is at 98eac91 with PR-7c merged.
 
+The precon work of 2026-08-28 closed OQ-40 and finished D-218. `internal/precons` embeds nine decklists the owner supplied, one file per product, and adding a precon is adding a file. Six of the nine are wholly in the owner's collection.
+
+The 85 percent share now holds on both gate prompts, with no repair turn. Three causes had to be fixed, and only one was the model's: the precon reached the pool after the pool was built, the job targets fought the share, and the model could not count its own list (D-247 to D-250).
+
 Next: PR-9 variance. `Deck.seed` is in the proto and nothing sets it, which is PR-9's first step and a prerequisite for its other two levers.
 
 CAUTION: the classify prompt moved to version 10, so question-gate runs 19 to 22 compare with nothing. The question workflow has no valid baseline. Take one before PR-9 changes the variance row.

@@ -44,6 +44,11 @@ type Precon struct {
 	Cards int
 	// Sideboard counts the bonus cards the file lists after the deck.
 	Sideboard int
+	// Lands counts the land cards the deck holds, copies included. The
+	// upgrade prompt names it so the mana base survives, and a guess at
+	// how many basics a precon runs is not good enough: the list says
+	// (D-251).
+	Lands int
 }
 
 // Set is every precon the build can read.
@@ -90,6 +95,12 @@ func Load(idx *cards.Index) (*Set, error) {
 		}
 		resolved, unresolved := collections.Resolve(rows, idx)
 		p.Unresolved += len(unresolved)
+		for _, entry := range resolved {
+			c, ok := idx.ByOracleID(entry.GetOracleId())
+			if ok && strings.Contains(strings.ToLower(c.GetTypeLine()), "land") {
+				p.Lands += int(entry.GetQuantity())
+			}
+		}
 		seen := map[string]bool{}
 		for _, entry := range resolved {
 			id := entry.GetOracleId()

@@ -73,7 +73,14 @@ func (b *Builder) input(req Request, misses []Miss, blocks []*mtgv1.Finding) str
 		fmt.Fprintf(&s, "Keep at least %d of them. You may drop at most %d, and replace those with anything else on the shortlist.\n",
 			keep, change)
 		s.WriteString("An upgrade is a small number of better cards, and not a new deck.\n")
-		s.WriteString("Keep the precon's own shape. It is a working deck, so do not rebuild it to a role template: no job target is given for this build.\n")
+		s.WriteString("Keep the precon's own shape. It is a working deck, so do not rebuild it to a role template, and no job target is given.\n")
+		// The mana base is the one thing a role template got right, and
+		// the precon already holds it. Naming its own count keeps it
+		// without setting a second quota against the share (D-251).
+		if lands := req.PreconLands; lands > 0 {
+			fmt.Fprintf(&s, "The precon holds %s. Keep about that many, and count the precon's own lands toward it.\n",
+				plural(lands, "land"))
+		}
 		s.WriteString("Count the cards you keep before you answer. The count above is a limit and not a goal.\n")
 	}
 	// An upgrade keeps the precon's own composition. The generic job
@@ -81,15 +88,28 @@ func (b *Builder) input(req Request, misses []Miss, blocks []*mtgv1.Finding) str
 	// those slots come from the precon, so the two instructions fight and
 	// the model splits the difference: prompt 17 kept 54 of the 68 it
 	// needed. A precon is a working deck already (D-249).
-	if len(req.Targets) > 0 && req.Precon == "" {
+	//
+	// The land count is not one of those jobs. It is the mana base, and
+	// dropping it with the rest gave both precon decks 25 lands against a
+	// guide of 34 to 38, which the land-count advisory caught (D-251).
+	// A generic land target is a second quota. With "keep 68 precon
+	// cards" it reads as 36 plus 68 of 99 slots, which cannot be met, and
+	// the share fell to 61. The precon's own lands are precon cards, so
+	// the upgrade prompt names the precon's land count in its own block
+	// and sends no target here (D-251).
+	targets := req.Targets
+	if req.Precon != "" {
+		targets = nil
+	}
+	if len(targets) > 0 {
 		s.WriteString("\n## Job targets\n\n")
-		keys := make([]string, 0, len(req.Targets))
-		for k := range req.Targets {
+		keys := make([]string, 0, len(targets))
+		for k := range targets {
 			keys = append(keys, k)
 		}
 		sort.Strings(keys)
 		for _, k := range keys {
-			fmt.Fprintf(&s, "- %s: %d\n", k, req.Targets[k])
+			fmt.Fprintf(&s, "- %s: %d\n", k, targets[k])
 		}
 	}
 	if len(misses) > 0 {

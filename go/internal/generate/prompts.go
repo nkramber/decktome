@@ -17,6 +17,16 @@ package generate
 // The lines carry prices now, the budget is a limit rather than a line of
 // the plan prose, and going over it buys the repair turn (D-244).
 //
+// Version 8 followed the version 7 test. A generic land target is a
+// second quota: with "keep 68 precon cards" it reads as 36 plus 68 of 99
+// slots, and the share fell to 61. The upgrade prompt names the precon's
+// own land count instead, and sends no job target (D-251).
+//
+// Version 7 followed deck gate run 7. Version 6 dropped every job target
+// for an upgrade, and the land count went with them: both precon decks
+// came back with 25 lands against a guide of 34 to 38. The land count is
+// the mana base and not a job, so an upgrade keeps it (D-251).
+//
 // Version 6 followed prompt 17 again. The job targets prescribe the whole
 // deck and sum to 99, and the precon share demands most of those slots,
 // so the two instructions fought and the model split the difference. An
@@ -39,7 +49,7 @@ package generate
 // shortfalls." The model recited the job targets back, because version 1
 // asked it to state a shortfall there. The summary is for the user, and
 // the counts are in the card list.
-const PromptVersion = 6
+const PromptVersion = 8
 
 // generateInstructions is the stable prefix. It names no card, no format,
 // and no session value, so every call of a session shares it.

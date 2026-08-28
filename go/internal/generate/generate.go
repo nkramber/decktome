@@ -50,6 +50,10 @@ type Request struct {
 	// otherwise. PreconOracleIDs holds its cards (D-218).
 	Precon          string
 	PreconOracleIDs []string
+	// PreconLands is how many lands the precon runs, copies included. The
+	// upgrade prompt names it so the mana base survives the rebuild
+	// (D-251).
+	PreconLands int
 	// LegalityAsOf is the card-snapshot date the deck is checked against.
 	LegalityAsOf string
 	// DeckID is the id the store reserved. A deck carries its own id, so

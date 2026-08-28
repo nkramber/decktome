@@ -370,9 +370,17 @@ func TestAnUpgradeGetsNoJobTargets(t *testing.T) {
 	}
 	req.Precon = "Goblin Storm"
 	req.PreconOracleIDs = []string{"o-a", "o-b"}
+	// The list states the land count, so nothing guesses at it (D-251).
+	req.PreconLands = 34
 	got := b.input(req, nil, nil)
+	// No job target reaches an upgrade: each one is a quota against the
+	// share. The mana base comes from the precon's own count instead, so
+	// the two do not fight (D-251).
 	if strings.Contains(got, "Job targets") {
 		t.Error("an upgrade was given job targets, which fight the share")
+	}
+	if !strings.Contains(got, "The precon holds 34 lands") {
+		t.Error("the upgrade prompt does not name the precon's land count")
 	}
 	if !strings.Contains(got, "Keep at least 2 of them") {
 		t.Error("the upgrade prompt does not state the keep count")

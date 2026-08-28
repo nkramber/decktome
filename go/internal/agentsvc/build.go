@@ -135,9 +135,10 @@ func (s *Server) buildDeck(ctx context.Context, uid string, session *mtgv1.Sessi
 	// 27 of 93 cards and an instruction it could not meet (D-248).
 	var preconName string
 	var preconIDs []string
+	var preconLands int
 	if s.precons != nil && st.Ctx.Precon {
 		if p, ok := s.precons.Find(st.Ctx.Words); ok {
-			preconName, preconIDs = p.Name, p.OracleIDs
+			preconName, preconIDs, preconLands = p.Name, p.OracleIDs, p.Lands
 			// The deck must keep a share of these, so the model must be
 			// able to name them (D-247).
 			for _, id := range preconIDs {
@@ -164,6 +165,7 @@ func (s *Server) buildDeck(ctx context.Context, uid string, session *mtgv1.Sessi
 	res, err := s.decks.Build(ctx, generate.Request{
 		Precon:            preconName,
 		PreconOracleIDs:   preconIDs,
+		PreconLands:       preconLands,
 		DeckID:            deckID,
 		Name:              deckName(slots),
 		Now:               s.now,
