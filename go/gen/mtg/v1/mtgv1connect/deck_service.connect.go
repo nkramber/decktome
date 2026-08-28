@@ -39,8 +39,6 @@ const (
 	DeckServiceListDecksProcedure = "/mtg.v1.DeckService/ListDecks"
 	// DeckServiceValidateProcedure is the fully-qualified name of the DeckService's Validate RPC.
 	DeckServiceValidateProcedure = "/mtg.v1.DeckService/Validate"
-	// DeckServiceExportProcedure is the fully-qualified name of the DeckService's Export RPC.
-	DeckServiceExportProcedure = "/mtg.v1.DeckService/Export"
 )
 
 // DeckServiceClient is a client for the mtg.v1.DeckService service.
@@ -49,8 +47,6 @@ type DeckServiceClient interface {
 	ListDecks(context.Context, *connect.Request[v1.ListDecksRequest]) (*connect.Response[v1.ListDecksResponse], error)
 	// Validate runs the rules engine on a deck (roadmap PR-5).
 	Validate(context.Context, *connect.Request[v1.ValidateRequest]) (*connect.Response[v1.ValidateResponse], error)
-	// Export renders a deck as text. ManaBox first (D-15).
-	Export(context.Context, *connect.Request[v1.ExportRequest]) (*connect.Response[v1.ExportResponse], error)
 }
 
 // NewDeckServiceClient constructs a client for the mtg.v1.DeckService service. By default, it uses
@@ -82,12 +78,6 @@ func NewDeckServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(deckServiceMethods.ByName("Validate")),
 			connect.WithClientOptions(opts...),
 		),
-		export: connect.NewClient[v1.ExportRequest, v1.ExportResponse](
-			httpClient,
-			baseURL+DeckServiceExportProcedure,
-			connect.WithSchema(deckServiceMethods.ByName("Export")),
-			connect.WithClientOptions(opts...),
-		),
 	}
 }
 
@@ -96,7 +86,6 @@ type deckServiceClient struct {
 	getDeck   *connect.Client[v1.GetDeckRequest, v1.GetDeckResponse]
 	listDecks *connect.Client[v1.ListDecksRequest, v1.ListDecksResponse]
 	validate  *connect.Client[v1.ValidateRequest, v1.ValidateResponse]
-	export    *connect.Client[v1.ExportRequest, v1.ExportResponse]
 }
 
 // GetDeck calls mtg.v1.DeckService.GetDeck.
@@ -114,19 +103,12 @@ func (c *deckServiceClient) Validate(ctx context.Context, req *connect.Request[v
 	return c.validate.CallUnary(ctx, req)
 }
 
-// Export calls mtg.v1.DeckService.Export.
-func (c *deckServiceClient) Export(ctx context.Context, req *connect.Request[v1.ExportRequest]) (*connect.Response[v1.ExportResponse], error) {
-	return c.export.CallUnary(ctx, req)
-}
-
 // DeckServiceHandler is an implementation of the mtg.v1.DeckService service.
 type DeckServiceHandler interface {
 	GetDeck(context.Context, *connect.Request[v1.GetDeckRequest]) (*connect.Response[v1.GetDeckResponse], error)
 	ListDecks(context.Context, *connect.Request[v1.ListDecksRequest]) (*connect.Response[v1.ListDecksResponse], error)
 	// Validate runs the rules engine on a deck (roadmap PR-5).
 	Validate(context.Context, *connect.Request[v1.ValidateRequest]) (*connect.Response[v1.ValidateResponse], error)
-	// Export renders a deck as text. ManaBox first (D-15).
-	Export(context.Context, *connect.Request[v1.ExportRequest]) (*connect.Response[v1.ExportResponse], error)
 }
 
 // NewDeckServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -154,12 +136,6 @@ func NewDeckServiceHandler(svc DeckServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(deckServiceMethods.ByName("Validate")),
 		connect.WithHandlerOptions(opts...),
 	)
-	deckServiceExportHandler := connect.NewUnaryHandler(
-		DeckServiceExportProcedure,
-		svc.Export,
-		connect.WithSchema(deckServiceMethods.ByName("Export")),
-		connect.WithHandlerOptions(opts...),
-	)
 	return "/mtg.v1.DeckService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case DeckServiceGetDeckProcedure:
@@ -168,8 +144,6 @@ func NewDeckServiceHandler(svc DeckServiceHandler, opts ...connect.HandlerOption
 			deckServiceListDecksHandler.ServeHTTP(w, r)
 		case DeckServiceValidateProcedure:
 			deckServiceValidateHandler.ServeHTTP(w, r)
-		case DeckServiceExportProcedure:
-			deckServiceExportHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -189,8 +163,4 @@ func (UnimplementedDeckServiceHandler) ListDecks(context.Context, *connect.Reque
 
 func (UnimplementedDeckServiceHandler) Validate(context.Context, *connect.Request[v1.ValidateRequest]) (*connect.Response[v1.ValidateResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("mtg.v1.DeckService.Validate is not implemented"))
-}
-
-func (UnimplementedDeckServiceHandler) Export(context.Context, *connect.Request[v1.ExportRequest]) (*connect.Response[v1.ExportResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("mtg.v1.DeckService.Export is not implemented"))
 }

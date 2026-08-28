@@ -62,17 +62,22 @@ message Slots {
   // question asks (D-77, D-238).
   double budget_usd = 7;
   BudgetScope budget_scope = 11;
+  // house_rules is what the user means when the format is HOUSE, in the
+  // user's own words (D-3). The build copies it to Format.house_rules.
+  // Empty for every other format (D-265).
+  string house_rules = 12;
   // locked_oracle_ids are cards the user wants in the deck.
   repeated string locked_oracle_ids = 8;
   // 9 held plan_variant, which separated two builds of one theme. PR-9
-  // left the MVP, and nothing ever set it. The slot name still keys
-  // slot_states, because the plan-choice row closes on it (D-256).
+  // left the MVP, and nothing ever set it (D-256). The plan-choice row
+  // that closed on it retired with A-6 of the 2026-08-28 audit.
   reserved 9;
   reserved "plan_variant";
-  // slot_states is keyed by slot name: scope, format, power, colors,
-  // theme, commander, pool_rule, budget, locked, plan_variant,
-  // house_rules, meta. "scope" records that the agent said it builds
-  // Magic decks only, after the user asked for something else.
+  // slot_states is keyed by slot name: scope, deck_count, format,
+  // power, colors, theme, commander, pool_rule, budget, house_rules.
+  // A refinement row keys its own name beside them, for example
+  // budget_scope or commander_pick. "scope" records that the agent said
+  // it builds Magic decks only, after the user asked for something else.
   map<string, SlotState> slot_states = 10;
 }
 
@@ -131,8 +136,10 @@ message Turn {
 message Answer {
   // question_id matches Question.id.
   string question_id = 1;
-  // option_index is the chosen option, or -1 for free text.
-  int32 option_index = 2;
+  // option_index is the chosen option. Unset means free text in
+  // `text`. Explicit presence separates "option 0" from "no option",
+  // which the proto3 default of 0 could not (D-266).
+  optional int32 option_index = 2;
   string text = 3;
 }
 
