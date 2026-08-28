@@ -29,7 +29,7 @@ Every measured number below moved on 2026-08-28. Question gate run 25 and deck g
 | Deck gate | PASS 18 of 18, 2 repairs, $1.09 | run 8, 2026-08-28, generate prompt 9 |
 | Loop | off since 2026-08-26 | seven starts, nothing kept |
 
-CAUTION: `tune-check` paired zero questions between run 24 and run 25, because the catalog and the prompt changed. The paired guard says nothing across that line, and the whole-run margins carry the verdict. The eval leaves a conversation unjudged when the judge returns fewer verdicts than questions, so 382 is the honest count and not a drop from 435.
+CAUTION: `tune-check` paired zero questions between run 24 and run 25, because the catalog and the prompt changed. The paired guard says nothing across that line, and the whole-run margins carry the verdict. The eval leaves a conversation unjudged when the judge returns fewer verdicts than questions. So 382 is the honest count, not a drop from 435.
 
 ## Next steps, in order
 
