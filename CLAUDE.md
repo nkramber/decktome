@@ -6,7 +6,7 @@ Read this file first. Then read `docs/SESSION-HANDOFF.md`. It tells you where th
 
 This repo is a Go + Protobuf + TypeScript monorepo for an agentic MtG deck builder. The app reads a user's ManaBox collection export. The user gives a prompt. The agent asks questions, then builds a legal, useful deck.
 
-Stage (2026-08-26): PR-0a to PR-7, PR-7B, and PR-10 are merged (#1 to #13), the audit fixes included. Branch `pr-7c` is the container for the tuning loop (D-142). The loop exists in `scripts/autotune.sh`, and it ran four times on 2026-08-26: two aborted starts, one accepted iteration that D-171 later judged wrong, and one rejected iteration. The checker gets a noise margin before the next run, because two runs on identical code differed by three holdout questions. `docs/SESSION-HANDOFF.md` is the resume point, and `docs/reference/autotune-readme.md` holds the loop commands.
+Stage (2026-08-28): PR-0a to PR-8, PR-7B, and PR-10 are merged (#1 to #16). `main` is at `5a1fcfe` plus the audit work of 2026-08-28 (`docs/audit-2026-08-28.md`). PR-9 is out of the MVP (D-256). The next item is Phase 3, the UI. The tuning loop exists in `scripts/autotune.sh`, and it started seven times and kept nothing. `docs/SESSION-HANDOFF.md` is the resume point, and `docs/reference/autotune-readme.md` holds the loop commands.
 
 Run `git pull`, then `git status`, before you change anything. The owner commits and pushes. Do not commit unless the owner asks.
 
@@ -46,13 +46,22 @@ Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
 - `docs/open-questions.md` - questions not yet asked or not yet answered.
 - `docs/owner-questions.md` - the decision queue. Every question here waits for the owner, and the tuning loop refuses to decide one.
 - `docs/reference/` - research notes with sources and dates, and every dated gate document.
+- `docs/audit-2026-08-28.md` - the full audit of 2026-08-28, its owner answers, and the change plan.
 
 ## Commands that cost money
 
 `make questions-gate` calls the real providers. One run of the 104 conversations (30 gate and 74 probe) costs $0.152 to $0.165 and takes about 20 minutes, measured on 2026-08-26. Ask the owner before every run, and write to a new `GATE_OUT` file: a rerun must never overwrite a scored document (D-65).
 
-`make questions-eval` scores a gate run with the eval role. One 104-conversation run costs $0.092 to $0.099 and takes about 13 minutes, measured on 2026-08-26. `make eval-calibrate` measures the eval model against `claude-sonnet-5` for $0.25 to $0.30. `make autotune` prints the loop instructions and starts nothing. `scripts/autotune.sh` is the loop, and it refuses to start without `AUTOTUNE_ALLOW_UNATTENDED=1`. One iteration costs about $0.25 and takes 33 to 35 minutes, so a $3 budget buys about 12 iterations. Read `docs/reference/autotune-readme.md` and `docs/reference/autotune-design.md` first.
+`make questions-eval` scores a gate run with the eval role. One 104-conversation run costs $0.092 to $0.099 and takes about 13 minutes, measured on 2026-08-26. `make eval-calibrate` measures the eval model against `claude-sonnet-5` for $0.25 to $0.30.
 
-Everything else is free. `make m5-sheet` builds the scoring sheet, `make m5-report` reads it, `make themes-check` checks the theme slugs and the commander ranking, and `make store-check` runs the session store against the local Firestore emulator. `make candidates-review` writes the PR-6 gate document from a local snapshot, and `cd go && go run ./cmd/tune-check` compares an eval summary with its baseline.
+`make autotune` prints the loop instructions and starts nothing. `scripts/autotune.sh` is the loop, and it refuses to start without `AUTOTUNE_ALLOW_UNATTENDED=1`. One iteration costs about $0.25 and takes 33 to 35 minutes, so a $3 budget buys about 12 iterations. Read `docs/reference/autotune-readme.md` and `docs/reference/autotune-design.md` first.
+
+Four more targets spend money, and each has an overwrite guard and an env guard. `make deck-gate` builds the PR-8 gate document, at about $0.90 for a run of 16 to 18 prompts, measured on 2026-08-28. `make chat-probe` drives the real `Chat` RPC to a deck. `make generate-probe` builds one deck with the real generate role.
+
+`make summary-judge` judges every deck summary of a gate document (F-26). Each probe costs a few cents. Ask the owner before every run.
+
+Everything else is free. `make ste-check` checks every hand-written `.md` file against the STE rules, and `make lint` runs it. `make m5-sheet` builds the scoring sheet, and `make m5-report` reads it. `make themes-check` checks the theme slugs and the commander ranking.
+
+`make store-check` runs the session store against the local Firestore emulator. `make candidates-review` writes the PR-6 gate document from a local snapshot. `cd go && go run ./cmd/tune-check` compares an eval summary with its baseline.
 
 `docs/reference/pr7-m5-scoring.md` is the owner's working copy. No target writes to it. A new sheet needs a new name and points at the latest gate document, for example `M5_OUT=docs/reference/pr7-m5-scoring-run18.md M5_RUNS=../docs/reference/pr7-question-gate-run18.md make m5-sheet`.

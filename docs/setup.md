@@ -83,7 +83,7 @@ Other targets: `make test-smoke` (live LLM test, needs `.env`), `make llm-defaul
 ## 10. Final check
 
 1. Run `make doctor`.
-2. Every line must read `ok`. This is the PR-0b gate.
+2. Every line must read `ok` or `warn`. This is the PR-0b gate. A `warn` line names an optional tool: `brew`, the `docker` CLI, `gcloud`, `python3`, or `shellcheck`. `make dev` needs none of them.
 
 ## Known problems
 
