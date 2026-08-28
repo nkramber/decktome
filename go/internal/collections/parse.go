@@ -219,6 +219,10 @@ func ParseArenaText(r io.Reader) ([]Row, []*mtgv1.UnresolvedRow, error) {
 			continue
 		}
 		row.Line = line
+		// The raw line names the row a later step could not resolve. It
+		// was empty before, so an unresolved deck row said nothing about
+		// which line failed (D-246).
+		row.Raw = text
 		rows = append(rows, row)
 	}
 	return rows, bad, sc.Err()
@@ -235,6 +239,20 @@ func parseArenaLine(text string) (Row, bool) {
 	}
 	rest := fields[1:]
 	row := Row{Quantity: qty, Finish: mtgv1.Finish_FINISH_NORMAL, Condition: mtgv1.Condition_CONDITION_NEAR_MINT, Language: "en"}
+	// A finish marker trails the line: "*F*" is foil and "*E*" is etched.
+	// It sits after the collector number, so the set and number pair below
+	// can not be found while it is there. The Avengers Assemble precon of
+	// 2026-08-28 marked its commander foil, and the whole line became the
+	// card name: the deck lost the one card it is built around (D-246).
+	if len(rest) > 0 {
+		if f, ok := arenaFinish(rest[len(rest)-1]); ok {
+			row.Finish = f
+			rest = rest[:len(rest)-1]
+		}
+	}
+	if len(rest) == 0 {
+		return Row{}, false
+	}
 	// Trailing "(SET) 123" pair, when present.
 	if len(rest) >= 2 {
 		maybeSet := rest[len(rest)-2]
@@ -264,4 +282,16 @@ func truncateRaw(raw string) string {
 		raw = raw[:cut]
 	}
 	return strings.ToValidUTF8(raw, "\uFFFD")
+}
+
+// arenaFinish reads a trailing finish marker of a deck export. Anything
+// else is part of the card name.
+func arenaFinish(field string) (mtgv1.Finish, bool) {
+	switch strings.ToUpper(field) {
+	case "*F*":
+		return mtgv1.Finish_FINISH_FOIL, true
+	case "*E*":
+		return mtgv1.Finish_FINISH_ETCHED, true
+	}
+	return mtgv1.Finish_FINISH_UNSPECIFIED, false
 }
