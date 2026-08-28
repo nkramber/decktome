@@ -32,9 +32,17 @@ proto-check: proto ## Fail if generated code differs from the committed code
 		&& test -z "$$(git ls-files --others --exclude-standard -- go/gen web/packages/api-client/src/gen)" \
 		|| (echo "Generated code is stale. Run: make proto && git add -A" && exit 1)
 
-proto-breaking: $(BUF) ## Fail on a breaking proto change against the main branch (needs the main ref, fetch-depth 0 in CI)
-	@echo "==> buf breaking against main"
-	@$(BUF) breaking --against '.git#branch=main'
+# The ref to compare against. A CI checkout of a pull request has no local
+# main branch, only refs/remotes/origin/main, so "branch=main" fails there
+# with "couldn't find remote ref main". A push to main does create the
+# local branch, which is why this passed on main and failed on every pull
+# request (D-254). origin/main exists in both, and the fallback covers a
+# clone with no remote.
+PROTO_BASE = $(shell git rev-parse --verify --quiet origin/main >/dev/null && echo origin/main || echo main)
+
+proto-breaking: $(BUF) ## Fail on a breaking proto change against the main branch (needs fetch-depth 0 in CI)
+	@echo "==> buf breaking against $(PROTO_BASE)"
+	@$(BUF) breaking --against '.git#branch=$(PROTO_BASE)'
 
 lint: lint-go lint-web ## Lint Go and TypeScript
 
@@ -184,10 +192,10 @@ autotune: ## Print how to start the overnight tuning loop. It never starts one
 	@echo
 	@echo "  AUTOTUNE_ALLOW_UNATTENDED=1 AUTOTUNE_FIXER_CMD=... scripts/autotune.sh --budget 3.00"
 
-store-check: ## Run the session store against the local Firestore emulator (needs `firebase emulators:start --only firestore`)
+store-check: ## Run the session and deck stores against the local Firestore emulator (needs `firebase emulators:start --only firestore`)
 	@nc -z 127.0.0.1 8281 2>/dev/null || \
 		{ echo "no Firestore emulator on :8281. Start one: firebase emulators:start --only firestore --project mtg-local"; exit 1; }
-	@FIRESTORE_EMULATOR_HOST=127.0.0.1:8281 $(GO) test ./internal/sessions -count=1
+	@FIRESTORE_EMULATOR_HOST=127.0.0.1:8281 $(GO) test ./internal/sessions ./internal/decks -count=1
 
 themes-check: ## Check the theme slugs and the commander ranking against the local snapshot
 	@CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall $(GO) test ./internal/candidates -run 'TestThemeSlugsExist|TestCommanderQualitySnapshot' -count=1

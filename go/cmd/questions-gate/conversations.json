@@ -110,6 +110,8 @@
     },
     {
       "id": 11,
+      "has_deck": true,
+      "note": "The variance row needs a deck to vary (D-68, D-239).",
       "name": "another version after a build",
       "collection": true,
       "messages": [
@@ -119,7 +121,9 @@
     },
     {
       "id": 12,
-      "name": "a frozen run asks nothing",
+      "has_deck": true,
+      "note": "The freeze is retired (D-241). A slot change after a build is an ordinary turn, and the variance row is what a user who wants another version reaches (D-239).",
+      "name": "a slot change after a build",
       "collection": true,
       "messages": [
         "Switch to owned-only."
@@ -1122,6 +1126,19 @@
         "3",
         "Black and green, a sacrifice deck.",
         "2"
+      ]
+    },
+    {
+      "id": 105,
+      "name": "probe: a theme the library can not lead",
+      "collection": true,
+      "probe": true,
+      "note": "This probe was written to force the weak-pool row, and D-232 retired that row: the build reports a thin library after it reads one. The probe stays for what it still covers, an owned-only request for a theme the collection can not lead (D-252).",
+      "messages": [
+        "Build me an Eldrazi Commander deck using only the cards in my library.",
+        "Colorless.",
+        "Bracket 3.",
+        "You pick the commander."
       ]
     }
   ]

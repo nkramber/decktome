@@ -21,7 +21,9 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1/mtgv1connect"
 	"github.com/nkramber/mtg-deck-builder/go/internal/candidates"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
+	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
+	"github.com/nkramber/mtg-deck-builder/go/internal/precons"
 	"github.com/nkramber/mtg-deck-builder/go/internal/questions"
 	"github.com/nkramber/mtg-deck-builder/go/internal/sessions"
 )
@@ -63,6 +65,10 @@ type Server struct {
 	userFn      UserFunc
 	index       IndexSource
 	builder     *candidates.Builder
+	decks       DeckBuilder
+	deckStore   DeckStore
+	precons     *precons.Set
+	buildLimit  time.Duration
 	collections CollectionSource
 	prices      *llm.PriceTable
 	now         func() time.Time
@@ -76,6 +82,54 @@ type Option func(*Server)
 // names a value drops that clause and falls back.
 func WithCandidates(index IndexSource, b *candidates.Builder) Option {
 	return func(s *Server) { s.index, s.builder = index, b }
+}
+
+// DeckBuilder writes the deck for a ready session (roadmap PR-8).
+// internal/generate holds the one implementation, and the interface keeps
+// agentsvc testable without a provider.
+type DeckBuilder interface {
+	Build(ctx context.Context, req generate.Request, acc *llm.Accumulator) (*generate.Result, error)
+}
+
+// WithDecks wires the generator. Without it, a ready session reports that
+// every slot is filled and builds nothing, which is the PR-7 behavior.
+func WithDecks(b DeckBuilder) Option {
+	return func(s *Server) { s.decks = b }
+}
+
+// DeckStore holds the decks a build produced. Without it a deck streams
+// to the user and is gone: session.deck_ids stays empty, AfterBuild is
+// never true, and the variance row is dead (D-245).
+type DeckStore interface {
+	// NewID reserves a deck id without a write. The deck carries its own
+	// id, so the build needs one before it runs.
+	NewID(uid string) string
+	Put(ctx context.Context, uid string, d *mtgv1.Deck) error
+}
+
+// WithPrecons wires the preconstructed decks a user can ask to upgrade.
+// Without it the precon share of D-218 does not run, and an upgrade
+// request is served as an ordinary owned-first build (D-247).
+func WithPrecons(set *precons.Set) Option {
+	return func(s *Server) { s.precons = set }
+}
+
+// WithDeckStore wires the deck store. Without it the build still returns
+// a deck, and nothing keeps it.
+func WithDeckStore(s DeckStore) Option {
+	return func(srv *Server) { srv.deckStore = s }
+}
+
+// DefaultBuildLimit caps one build. The llm client already caps each call
+// at three minutes, so a generate and a repair together can hold the
+// stream for six. A build is about two minutes when it goes well, and a
+// user waiting longer than this is better served by an error than by a
+// stream that does not end (D-235).
+const DefaultBuildLimit = 4 * time.Minute
+
+// WithBuildTimeout caps one build. Zero keeps DefaultBuildLimit.
+func WithBuildTimeout(d time.Duration) Option {
+	return func(s *Server) { s.buildLimit = d }
 }
 
 // WithCollections wires the owned counts, which the hints read.
@@ -209,10 +263,9 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 		return err
 	}
 	if res.Ready {
-		// PR-8 builds the deck here. Until then the turn says so.
-		if err := stream.Send(&mtgv1.ChatResponse{
-			Event: &mtgv1.ChatResponse_Status{Status: "every slot is filled, the build lands with PR-8"},
-		}); err != nil {
+		// The session was stored before the build, so the deck id needs a
+		// second write. version+1 is what that Put stored (D-245).
+		if err := s.sendDeck(ctx, uid, session, st, snap, version+1, acc, stream); err != nil {
 			return err
 		}
 	}

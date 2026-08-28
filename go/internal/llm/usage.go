@@ -55,6 +55,11 @@ func (a *Accumulator) Record(role Role, model string, u *Usage, latency time.Dur
 	}
 	a.mu.Lock()
 	defer a.mu.Unlock()
+	// The zero value must work. NewAccumulator makes the map, and a
+	// caller that writes &Accumulator{} panicked here on the first call.
+	if a.byRole == nil {
+		a.byRole = map[Role]*RoleUsage{}
+	}
 	a.calls++
 	a.latency += latency
 	ru := a.byRole[role]

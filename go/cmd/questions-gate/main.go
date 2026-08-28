@@ -73,7 +73,17 @@ type conversation struct {
 	// the bar, so the verdict reads the gate set alone. Their questions
 	// still reach the M-5 sheet (D-96).
 	Probe bool `json:"probe"`
+	// HasDeck starts the conversation after a finished build. agentsvc
+	// sets the fact from the session's stored decks, and this harness runs
+	// the questions agent directly, so without the flag the fact can never
+	// be true. A deck exists only when the build slots were filled, so the
+	// flag fills them too (D-239, OQ-38).
+	HasDeck bool `json:"has_deck"`
 }
+
+// builtSlots are the slots a finished build must have settled. A stored
+// deck is proof that each one was answered (D-239).
+var builtSlots = []string{"format", "theme", "colors", "commander", "power", "pool_rule", "budget"}
 
 // asked is one question as the run produced it.
 type asked struct {
@@ -235,6 +245,18 @@ func runOne(cat *questions.Catalog, client *llm.Client, idx *cards.Index, builde
 	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
 	st := questions.NewState(conv.Collection)
 	st.SessionID = fmt.Sprintf("gate-%02d", conv.ID)
+	// agentsvc reads these from the session (D-239). A stored deck means a
+	// build finished, so the slots it needed are settled.
+	st.Ctx.AfterBuild = conv.HasDeck
+	if conv.HasDeck {
+		for _, k := range builtSlots {
+			// Close, not Ctx.Filled: a slot the planner calls filled and
+			// the record calls never asked reads as a premature session,
+			// and run 23 failed the gate on it (D-252).
+			st.Close(k)
+		}
+		st.Ctx.CommanderSet = true
+	}
 	for i, msg := range conv.Messages {
 		// One agent per turn, with hints built from the slots as they
 		// stand. agentsvc does the same, and a hint source that outlives

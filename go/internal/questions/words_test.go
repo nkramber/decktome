@@ -1443,73 +1443,46 @@ func TestOutOfScopeClosesOnADeckRequest(t *testing.T) {
 type factHints struct {
 	stubHints
 	missing bool
-	weak    bool
 	thin    bool
 	count   int
 }
 
-func (f factHints) MissingCommander([]string) bool                { return f.missing }
-func (f factHints) WeakCommanderPool(string) bool                 { return f.weak }
 func (f factHints) ThinTheme(string) (bool, int)                  { return f.thin, f.count }
 func (f factHints) OwnedThemeCount(string) int                    { return f.count }
 func (f factHints) FitsColors(string, []mtgv1.Color) (bool, bool) { return true, true }
 
-// TestNotOwnedRowFiresForANamedCommander is M-5. The row carried the
-// commander key, and any named commander filled that key, so the row
-// could never fire. It now carries its own key, and a skip on that key
-// leaves the named commander alone.
-func TestNotOwnedRowFiresForANamedCommander(t *testing.T) {
-	out := commanderClassify()
-	out.PoolRule = "owned_first"
-	out.CommanderNames = []string{"Karlov of the Ghost Council"}
-	h := factHints{missing: true, stubHints: stubHints{commanders: []string{"Oloro, Ageless Ascetic", "Ayli, Eternal Pilgrim"}}}
-	a, _ := testAgentHints(t, h, classifyStep(t, out), fits(t, "commander_not_owned", "power_commander"), askStep(t))
-	st := NewState(true)
-	// The row is dormant (D-207), so the test sets the fact by hand.
-	st.Ctx.CommanderNotOwned = true
-	res, err := a.Turn(context.Background(), st, "Karlov lifegain from my library first, white and black", nil)
-	if err != nil {
-		t.Fatalf("turn: %v", err)
+// TestNotOwnedRowIsRetired is D-226, which closes OQ-36. The row asked
+// "You do not own {card}. Add it to the buy list, or pick from your
+// library?" It scored 0.05 on all 14 firings of gate run
+// 20260826-212512-000, and the agent replaced 13 of them.
+//
+// The rules engine answers the same question after the build, per card
+// and with the exact count: a warning in owned-first and a block in
+// owned-only (D-37). That costs no turn and names the card.
+func TestNotOwnedRowIsRetired(t *testing.T) {
+	c := load(t)
+	if _, ok := c.Row("commander_not_owned"); ok {
+		t.Fatal("the not-owned row is back in the catalog (D-226)")
 	}
-	q := question(res.Questions, "commander")
-	if q == nil {
-		t.Fatalf("the not-owned row did not fire: %v", ids2(res.Questions))
-	}
-	if !strings.Contains(q.GetText(), "You do not own") {
-		t.Errorf("the commander question is not the not-owned row: %q", q.GetText())
-	}
-	if got := st.Slots.GetSlotStates()["commander"]; got != mtgv1.SlotState_SLOT_STATE_FILLED {
-		t.Errorf("commander state = %v, want FILLED: the user named one", got)
-	}
-	if got := st.Slots.GetSlotStates()["commander_owned"]; got != mtgv1.SlotState_SLOT_STATE_ASKED {
-		t.Errorf("commander_owned state = %v, want ASKED", got)
-	}
-}
-
-// TestNotOwnedSkipLeavesTheCommanderFilled is the other half of M-5. When
-// the library offers no alternative, D-127 skips the row, and that skip
-// used to overwrite the commander the user named.
-func TestNotOwnedSkipLeavesTheCommanderFilled(t *testing.T) {
+	// A named commander the collection does not hold still reaches the
+	// build, and the commander slot stays filled.
 	out := commanderClassify()
 	out.PoolRule = "owned_first"
 	out.CommanderNames = []string{"Karlov of the Ghost Council"}
 	h := factHints{missing: true}
 	a, _ := testAgentHints(t, h, classifyStep(t, out), fits(t, "power_commander"), askStep(t))
 	st := NewState(true)
-	// The row is dormant (D-207), so the test sets the fact by hand.
-	st.Ctx.CommanderNotOwned = true
 	res, err := a.Turn(context.Background(), st, "Karlov lifegain from my library first, white and black", nil)
 	if err != nil {
 		t.Fatalf("turn: %v", err)
 	}
-	if q := question(res.Questions, "commander"); q != nil {
-		t.Errorf("the not-owned row fired with no owned option to offer: %q", q.GetText())
+	for _, q := range res.Questions {
+		if strings.Contains(q.GetText(), "You do not own") {
+			t.Errorf("a not-owned question went out: %q", q.GetText())
+		}
 	}
 	if got := st.Slots.GetSlotStates()["commander"]; got != mtgv1.SlotState_SLOT_STATE_FILLED {
-		t.Errorf("commander state = %v, want FILLED: the skip must not touch the named commander", got)
-	}
-	if got := st.Slots.GetSlotStates()["commander_owned"]; got != mtgv1.SlotState_SLOT_STATE_SKIPPED {
-		t.Errorf("commander_owned state = %v, want SKIPPED", got)
+		t.Errorf("commander state = %v, want FILLED: the user named one", got)
 	}
 }
 
@@ -1820,5 +1793,81 @@ func TestNamedCardThatCanNotLeadSettlesItsRole(t *testing.T) {
 	}
 	if len(st.LockedCards()) == 0 {
 		t.Error("Sol Ring did not reach the 99")
+	}
+}
+
+// TestBudgetScopeIsStored is D-238. The row asked which the cap covers,
+// and the answer reached no slot, so the agent asked and discarded it.
+func TestBudgetScopeIsStored(t *testing.T) {
+	for _, tc := range []struct {
+		word string
+		want mtgv1.BudgetScope
+	}{
+		{"buy", mtgv1.BudgetScope_BUDGET_SCOPE_CARDS_TO_BUY},
+		{"deck", mtgv1.BudgetScope_BUDGET_SCOPE_WHOLE_DECK},
+		{"unknown", mtgv1.BudgetScope_BUDGET_SCOPE_UNSPECIFIED},
+		{"", mtgv1.BudgetScope_BUDGET_SCOPE_UNSPECIFIED},
+	} {
+		if got := budgetScope(tc.word); got != tc.want {
+			t.Errorf("budgetScope(%q) = %v, want %v", tc.word, got, tc.want)
+		}
+	}
+	out := commanderClassify()
+	out.BudgetUSD, out.BudgetScope = 100, "deck"
+	a, _ := testAgentHints(t, nil, classifyStep(t, out), fits(t, "power_commander"), askStep(t))
+	st := NewState(true)
+	if _, err := a.Turn(context.Background(), st, "A lifegain deck, 100 dollars for the whole deck.", nil); err != nil {
+		t.Fatalf("turn: %v", err)
+	}
+	if got := st.Slots.GetBudgetScope(); got != mtgv1.BudgetScope_BUDGET_SCOPE_WHOLE_DECK {
+		t.Errorf("scope = %v, want the whole deck", got)
+	}
+	// The answer closes its own row, so the agent does not ask again.
+	if st.Slots.GetSlotStates()["budget_scope"] == mtgv1.SlotState_SLOT_STATE_ASKED {
+		t.Error("the scope row is still outstanding after the user answered it")
+	}
+}
+
+// TestBudgetScopeIsNotAskedWhenTheWordsAnswerIt is D-253. The row held
+// two of the twenty bad questions of gate run 24, and both were trigger
+// faults: it asked what the message had already said.
+func TestBudgetScopeIsNotAskedWhenTheWordsAnswerIt(t *testing.T) {
+	for _, s := range []string{
+		"build owned-first with a buy list", "40 dollars for the cards to buy",
+	} {
+		if !NamesTheBuyList(s) {
+			t.Errorf("%q: the buy list was not read", s)
+		}
+	}
+	for _, s := range []string{"a lifegain deck for 40 dollars", "no more than 40 dollars"} {
+		if NamesTheBuyList(s) {
+			t.Errorf("%q: a plain budget was read as a buy list", s)
+		}
+	}
+
+	// A message that names the buy list answers the scope row.
+	out := commanderClassify()
+	out.BudgetUSD = 40
+	a, _ := testAgentHints(t, nil, classifyStep(t, out), fits(t, "power_commander"), askStep(t))
+	st := NewState(true)
+	if _, err := a.Turn(context.Background(), st, "Build owned-first with a buy list, no more than 40 dollars.", nil); err != nil {
+		t.Fatalf("turn: %v", err)
+	}
+	if got := st.Slots.GetBudgetScope(); got != mtgv1.BudgetScope_BUDGET_SCOPE_CARDS_TO_BUY {
+		t.Errorf("scope = %v, want the cards to buy", got)
+	}
+	if st.Slots.GetSlotStates()["budget_scope"] == mtgv1.SlotState_SLOT_STATE_ASKED {
+		t.Error("the scope row asked what the message had already said")
+	}
+
+	// A proxy user has no budget, so there is no scope to ask about.
+	out2 := commanderClassify()
+	a2, _ := testAgentHints(t, nil, classifyStep(t, out2), fits(t, "power_commander"), askStep(t))
+	st2 := NewState(true)
+	if _, err := a2.Turn(context.Background(), st2, "I proxy anything over 20 dollars.", nil); err != nil {
+		t.Fatalf("turn: %v", err)
+	}
+	if got := st2.Slots.GetSlotStates()["budget_scope"]; got == mtgv1.SlotState_SLOT_STATE_ASKED {
+		t.Error("a proxy user was asked what their budget covers")
 	}
 }

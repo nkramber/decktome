@@ -57,8 +57,11 @@ message Slots {
   // commander_oracle_ids is filled when the user names a commander.
   repeated string commander_oracle_ids = 5;
   PoolRule pool_rule = 6;
-  // budget_usd is the cap for cards to buy. Zero means no cap given.
+  // budget_usd is the cap the user named. Zero means no cap given.
+  // budget_scope says what the cap covers, which the budget-scope
+  // question asks (D-77, D-238).
   double budget_usd = 7;
+  BudgetScope budget_scope = 11;
   // locked_oracle_ids are cards the user wants in the deck.
   repeated string locked_oracle_ids = 8;
   // plan_variant separates two builds of one theme (roadmap PR-9).
@@ -68,6 +71,21 @@ message Slots {
   // house_rules, meta. "scope" records that the agent said it builds
   // Magic decks only, after the user asked for something else.
   map<string, SlotState> slot_states = 10;
+}
+
+// BudgetScope says what a budget covers. The user names one number, and
+// the budget-scope question asks which of the two they mean (D-77). The
+// answer had nowhere to go until D-238, so the agent asked it and
+// discarded it.
+enum BudgetScope {
+  // BUDGET_SCOPE_UNSPECIFIED: the user gave a number and no scope. The
+  // cap reads as the cards to buy, which is the common meaning.
+  BUDGET_SCOPE_UNSPECIFIED = 0;
+  // BUDGET_SCOPE_CARDS_TO_BUY caps what the user must acquire.
+  BUDGET_SCOPE_CARDS_TO_BUY = 1;
+  // BUDGET_SCOPE_WHOLE_DECK caps the value of every card, owned copies
+  // included.
+  BUDGET_SCOPE_WHOLE_DECK = 2;
 }
 
 // SlotState is the fill state of one slot (roadmap PR-7 gate: no repeated

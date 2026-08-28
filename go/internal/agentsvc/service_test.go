@@ -89,7 +89,7 @@ func classifyJSON(t *testing.T, fields map[string]any) llm.Step {
 	out := map[string]any{
 		"format": "unknown", "theme": "", "colors": []string{},
 		"commander_names": []string{}, "locked_names": []string{}, "named_cards": []string{},
-		"power": "", "pool_rule": "unknown", "budget_usd": 0.0,
+		"power": "", "pool_rule": "unknown", "budget_usd": 0.0, "budget_scope": "unknown",
 		"closed_keys": []string{}, "declined_keys": []string{},
 		"facts": map[string]bool{
 			"named_card": false, "buy_list": false,
@@ -166,14 +166,23 @@ func fakeClient(t *testing.T, steps ...llm.Step) (*llm.Client, *llm.Script) {
 // direct call can not make a ServerStream.
 func testServer(t *testing.T, store Store, steps ...llm.Step) (mtgv1connect.AgentServiceClient, *llm.Script) {
 	t.Helper()
+	return testServerOpts(t, store, nil, steps...)
+}
+
+// testServerOpts builds the server with extra options, for the wiring
+// that PR-8 adds.
+func testServerOpts(t *testing.T, store Store, extra []Option, steps ...llm.Step) (mtgv1connect.AgentServiceClient, *llm.Script) {
+	t.Helper()
 	cat, err := questions.Load()
 	if err != nil {
 		t.Fatalf("catalog: %v", err)
 	}
 	client, sc := fakeClient(t, steps...)
 	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
-	srv, err := New(cat, client, store, func(context.Context) string { return "u1" },
-		WithLogger(quiet), WithClock(func() time.Time { return time.Unix(1000, 0).UTC() }))
+	opts := append([]Option{
+		WithLogger(quiet), WithClock(func() time.Time { return time.Unix(1000, 0).UTC() }),
+	}, extra...)
+	srv, err := New(cat, client, store, func(context.Context) string { return "u1" }, opts...)
 	if err != nil {
 		t.Fatalf("server: %v", err)
 	}
@@ -192,6 +201,8 @@ type events struct {
 	statuses  []string
 	usage     *mtgv1.Usage
 	failure   *mtgv1.AgentError
+	deck      *mtgv1.Deck
+	texts     []string
 	order     []string
 }
 
@@ -217,6 +228,10 @@ func chat(t *testing.T, c mtgv1connect.AgentServiceClient, req *mtgv1.ChatReques
 			got.usage, got.order = e.Usage, append(got.order, "usage")
 		case *mtgv1.ChatResponse_Failure:
 			got.failure, got.order = e.Failure, append(got.order, "failure")
+		case *mtgv1.ChatResponse_Deck:
+			got.deck, got.order = e.Deck, append(got.order, "deck")
+		case *mtgv1.ChatResponse_TextDelta:
+			got.texts, got.order = append(got.texts, e.TextDelta), append(got.order, "text")
 		}
 	}
 	if err := stream.Err(); err != nil {

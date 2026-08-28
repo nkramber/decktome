@@ -56,7 +56,6 @@ func TestCatalogMatchesCorpus(t *testing.T) {
 		"Theme or plan": "theme", "Theme (competitive)": "theme_competitive",
 		"Theme (card named)": "theme_card_named", "Named card role": "named_card_role",
 		"Commander": "commander", "Commander (pick)": "commander_pick",
-		"Commander not owned": "commander_not_owned", "Weak commander pool": "commander_weak_pool",
 		"Power (Commander)": "power_commander", "Power (60-card)": "power_sixty",
 		"Colors": "colors", "Card pool": "pool", "Card pool (thin theme)": "pool_thin",
 		"Budget": "budget", "Budget scope": "budget_scope",
@@ -222,16 +221,6 @@ func TestOneRowPerSlotPerTurn(t *testing.T) {
 			t.Fatalf("two rows for slot %q in one turn", r.Slot)
 		}
 		seen[r.Slot] = true
-	}
-}
-
-// TestFrozenSessionAsksNothing is D-68.
-func TestFrozenSessionAsksNothing(t *testing.T) {
-	c := load(t)
-	frozen := ctx(mtgv1.FormatId_FORMAT_ID_UNSPECIFIED)
-	frozen.Frozen = true
-	if got := c.Plan(frozen); len(got) != 0 {
-		t.Fatalf("a frozen session planned %v", ids(got))
 	}
 }
 

@@ -129,9 +129,6 @@ func (s *State) RetireOffer() {
 // replacement that has now arrived (H-6).
 var commanderKeys = []string{"commander", "commander_pick", "named_card_role", "commander_illegal"}
 
-// notOwnedRowLive gates the fact behind the not-owned row (OQ-36, D-207).
-const notOwnedRowLive = false
-
 // RefreshFacts reads the planner facts a FactSource answers, from the
 // slots as they stand now. agentsvc calls it before the turn, and the
 // agent calls it again after the classify call (M-6).
@@ -139,20 +136,12 @@ func RefreshFacts(s *State, src FactSource) {
 	if src == nil || !s.Ctx.HasCollection {
 		return
 	}
-	// The named commander is not in the collection (corpus section 11).
-	// The not-owned row stays dormant until the owner answers OQ-36
-	// (D-207). It fired 14 times in gate run 20260826-212512-000 at fit
-	// 0.05, and the agent replaced 13 of them with an invented question.
-	// The key fix of D-197 stays, so the row is live the day the owner
-	// flips this constant.
-	if notOwnedRowLive {
-		s.Ctx.CommanderNotOwned = src.MissingCommander(s.CommanderNames)
-	}
-	// No owned commander fits the theme (D-63, D-94). The count answers
-	// it, so no threshold is invented.
-	if !s.Ctx.CommanderSet {
-		s.Ctx.WeakCommanderPool = src.WeakCommanderPool(s.Slots.GetTheme())
-	}
+	// The not-owned row is retired (D-226, closes OQ-36). The rules engine
+	// reports ownership per card after the build, which names the exact
+	// card and count and costs no turn.
+	// The weak-pool row is retired (D-232). It sat on the commander key,
+	// and a delegated commander fills that key, so the row could not
+	// reach the user who needed it. PR-8 reports the thin pool instead.
 	// PR-6 counts the on-theme owned cards (D-63). The count needs the
 	// format and the theme, and it only matters while the pool key is
 	// open.
@@ -416,10 +405,6 @@ func (s *State) RetireOutstanding() {
 	}
 	s.Ctx.Outstanding = map[string]string{}
 }
-
-// Freeze stops every question. A build run has started, so the slot set is
-// the deck's record (D-68). A later change starts a new run.
-func (s *State) Freeze() { s.Ctx.Frozen = true }
 
 // AddWords keeps every word the user has written. The routing rules and
 // the word triggers read it.
