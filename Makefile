@@ -32,9 +32,17 @@ proto-check: proto ## Fail if generated code differs from the committed code
 		&& test -z "$$(git ls-files --others --exclude-standard -- go/gen web/packages/api-client/src/gen)" \
 		|| (echo "Generated code is stale. Run: make proto && git add -A" && exit 1)
 
-proto-breaking: $(BUF) ## Fail on a breaking proto change against the main branch (needs the main ref, fetch-depth 0 in CI)
-	@echo "==> buf breaking against main"
-	@$(BUF) breaking --against '.git#branch=main'
+# The ref to compare against. A CI checkout of a pull request has no local
+# main branch, only refs/remotes/origin/main, so "branch=main" fails there
+# with "couldn't find remote ref main". A push to main does create the
+# local branch, which is why this passed on main and failed on every pull
+# request (D-254). origin/main exists in both, and the fallback covers a
+# clone with no remote.
+PROTO_BASE = $(shell git rev-parse --verify --quiet origin/main >/dev/null && echo origin/main || echo main)
+
+proto-breaking: $(BUF) ## Fail on a breaking proto change against the main branch (needs fetch-depth 0 in CI)
+	@echo "==> buf breaking against $(PROTO_BASE)"
+	@$(BUF) breaking --against '.git#branch=$(PROTO_BASE)'
 
 lint: lint-go lint-web ## Lint Go and TypeScript
 
