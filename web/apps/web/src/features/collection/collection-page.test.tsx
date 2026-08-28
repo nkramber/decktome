@@ -75,10 +75,11 @@ describe("CollectionPage", () => {
     expect(req.source).toBe(ImportSource.MANABOX_CSV);
     expect(new TextDecoder().decode(req.content)).toContain("Lightning Bolt");
 
-    const table = screen.getByRole("table", { name: "Unresolved rows" });
+    const table = screen.getByRole("table", { name: /Unresolved rows/ });
     const row = within(table).getAllByRole("row")[1];
     expect(row).toHaveTextContent("4");
-    expect(row).toHaveTextContent("Not A Card,XYZ,1");
+    // The raw row stays out of the table. A user reads the line in their own file.
+    expect(row).not.toHaveTextContent("Not A Card,XYZ,1");
     expect(row).toHaveTextContent("Unknown card");
     expect(row).not.toHaveTextContent("UNRESOLVED_REASON");
     expect(screen.getByText(/^Unknown card: .*: 1$/)).toBeInTheDocument();

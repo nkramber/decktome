@@ -54,14 +54,13 @@ export function ImportResult({ result }: { result: ImportCollectionResponse }) {
       {unresolved.length > 0 && (
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <caption className="text-left font-medium">Unresolved rows</caption>
+            <caption className="text-left font-medium">
+              Unresolved rows. The line number points at the row in your export.
+            </caption>
             <thead>
               <tr>
                 <th scope="col" className="pr-3">
                   Line
-                </th>
-                <th scope="col" className="pr-3">
-                  Row
                 </th>
                 <th scope="col">Reason</th>
               </tr>
@@ -70,7 +69,6 @@ export function ImportResult({ result }: { result: ImportCollectionResponse }) {
               {unresolved.map((row) => (
                 <tr key={row.line}>
                   <td className="pr-3">{row.line}</td>
-                  <td className="pr-3 font-mono">{row.raw}</td>
                   <td>{reasonLabel(row.reason)}</td>
                 </tr>
               ))}
