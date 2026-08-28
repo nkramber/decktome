@@ -85,7 +85,7 @@ func (a *Agent) Turn(ctx context.Context, st *State, message string, acc *llm.Ac
 		return Result{}, err
 	}
 	a.readFacts(st)
-	rows, resolved := a.plan(st, message)
+	rows, resolved := a.plan(st, UserWords(message))
 	if len(rows) == 0 {
 		// The classify call may have closed a key, so the M-4 report
 		// changes even on a turn that asks nothing.
@@ -112,9 +112,12 @@ func (a *Agent) classify(ctx context.Context, st *State, message string, acc *ll
 	// The keys a deck slot fills before this turn. An out-of-scope
 	// question closes when the user fills one afterwards (H-6).
 	deckKeysBefore := deckKeysFilled(st)
-	a.apply(st, out, open, message)
-	a.applyWords(st, turnWords{Message: message, Declined: out.DeclinedKeys, Closed: out.ClosedKeys})
-	a.closeByOption(st, message)
+	// The word rules read the user's own words. A quoted question is the
+	// agent's text, and its format list is not a two-deck request.
+	words := UserWords(message)
+	a.apply(st, out, open, words)
+	a.applyWords(st, turnWords{Message: words, Declined: out.DeclinedKeys, Closed: out.ClosedKeys})
+	a.closeByOption(st, words)
 	// The scope question closes when the user answers it with a deck.
 	// The row offers "Yes, a Magic deck", and a user who writes "a Modern
 	// burn deck" instead has said the same thing. Nothing else closed

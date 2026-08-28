@@ -12,7 +12,50 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file mtg/v1/card_service.proto.
  */
 export const file_mtg_v1_card_service: GenFile = /*@__PURE__*/
-  fileDesc("ChltdGcvdjEvY2FyZF9zZXJ2aWNlLnByb3RvEgZtdGcudjEiUgoNTG9va3VwUmVxdWVzdBIOCgRuYW1lGAEgASgJSAASFQoLc2NyeWZhbGxfaWQYAiABKAlIABITCglvcmFjbGVfaWQYAyABKAlIAEIFCgNrZXkiLAoOTG9va3VwUmVzcG9uc2USGgoEY2FyZBgBIAEoCzIMLm10Zy52MS5DYXJkIqwBCg1TZWFyY2hSZXF1ZXN0EiQKDWNvbG9yc193aXRoaW4YASADKA4yDS5tdGcudjEuQ29sb3ISFQoNdHlwZV9jb250YWlucxgCIAEoCRIQCghrZXl3b3JkcxgDIAMoCRITCgtvcmFjbGVfdGFncxgEIAMoCRIQCghsZWdhbF9pbhgFIAEoCRIRCglwYWdlX3NpemUYBiABKAUSEgoKcGFnZV90b2tlbhgHIAEoCSJGCg5TZWFyY2hSZXNwb25zZRIbCgVjYXJkcxgBIAMoCzIMLm10Zy52MS5DYXJkEhcKD25leHRfcGFnZV90b2tlbhgCIAEoCTKDAQoLQ2FyZFNlcnZpY2USOQoGTG9va3VwEhUubXRnLnYxLkxvb2t1cFJlcXVlc3QaFi5tdGcudjEuTG9va3VwUmVzcG9uc2UiABI5CgZTZWFyY2gSFS5tdGcudjEuU2VhcmNoUmVxdWVzdBoWLm10Zy52MS5TZWFyY2hSZXNwb25zZSIAQjpaOGdpdGh1Yi5jb20vbmtyYW1iZXIvbXRnLWRlY2stYnVpbGRlci9nby9nZW4vbXRnL3YxO210Z3YxYgZwcm90bzM", [file_mtg_v1_card]);
+  fileDesc("ChltdGcvdjEvY2FyZF9zZXJ2aWNlLnByb3RvEgZtdGcudjEiJQoPR2V0Q2FyZHNSZXF1ZXN0EhIKCm9yYWNsZV9pZHMYASADKAkiSwoQR2V0Q2FyZHNSZXNwb25zZRIbCgVjYXJkcxgBIAMoCzIMLm10Zy52MS5DYXJkEhoKEm1pc3Npbmdfb3JhY2xlX2lkcxgCIAMoCSJSCg1Mb29rdXBSZXF1ZXN0Eg4KBG5hbWUYASABKAlIABIVCgtzY3J5ZmFsbF9pZBgCIAEoCUgAEhMKCW9yYWNsZV9pZBgDIAEoCUgAQgUKA2tleSIsCg5Mb29rdXBSZXNwb25zZRIaCgRjYXJkGAEgASgLMgwubXRnLnYxLkNhcmQirAEKDVNlYXJjaFJlcXVlc3QSJAoNY29sb3JzX3dpdGhpbhgBIAMoDjINLm10Zy52MS5Db2xvchIVCg10eXBlX2NvbnRhaW5zGAIgASgJEhAKCGtleXdvcmRzGAMgAygJEhMKC29yYWNsZV90YWdzGAQgAygJEhAKCGxlZ2FsX2luGAUgASgJEhEKCXBhZ2Vfc2l6ZRgGIAEoBRISCgpwYWdlX3Rva2VuGAcgASgJIkYKDlNlYXJjaFJlc3BvbnNlEhsKBWNhcmRzGAEgAygLMgwubXRnLnYxLkNhcmQSFwoPbmV4dF9wYWdlX3Rva2VuGAIgASgJMsQBCgtDYXJkU2VydmljZRI5CgZMb29rdXASFS5tdGcudjEuTG9va3VwUmVxdWVzdBoWLm10Zy52MS5Mb29rdXBSZXNwb25zZSIAEjkKBlNlYXJjaBIVLm10Zy52MS5TZWFyY2hSZXF1ZXN0GhYubXRnLnYxLlNlYXJjaFJlc3BvbnNlIgASPwoIR2V0Q2FyZHMSFy5tdGcudjEuR2V0Q2FyZHNSZXF1ZXN0GhgubXRnLnYxLkdldENhcmRzUmVzcG9uc2UiAEI6WjhnaXRodWIuY29tL25rcmFtYmVyL210Zy1kZWNrLWJ1aWxkZXIvZ28vZ2VuL210Zy92MTttdGd2MWIGcHJvdG8z", [file_mtg_v1_card]);
+
+/**
+ * @generated from message mtg.v1.GetCardsRequest
+ */
+export type GetCardsRequest = Message<"mtg.v1.GetCardsRequest"> & {
+  /**
+   * oracle_ids holds at most 120 ids. A repeated id counts once.
+   *
+   * @generated from field: repeated string oracle_ids = 1;
+   */
+  oracleIds: string[];
+};
+
+/**
+ * Describes the message mtg.v1.GetCardsRequest.
+ * Use `create(GetCardsRequestSchema)` to create a new message.
+ */
+export const GetCardsRequestSchema: GenMessage<GetCardsRequest> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_card_service, 0);
+
+/**
+ * @generated from message mtg.v1.GetCardsResponse
+ */
+export type GetCardsResponse = Message<"mtg.v1.GetCardsResponse"> & {
+  /**
+   * cards come back in request order, without the missing ones.
+   *
+   * @generated from field: repeated mtg.v1.Card cards = 1;
+   */
+  cards: Card[];
+
+  /**
+   * @generated from field: repeated string missing_oracle_ids = 2;
+   */
+  missingOracleIds: string[];
+};
+
+/**
+ * Describes the message mtg.v1.GetCardsResponse.
+ * Use `create(GetCardsResponseSchema)` to create a new message.
+ */
+export const GetCardsResponseSchema: GenMessage<GetCardsResponse> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_card_service, 1);
 
 /**
  * @generated from message mtg.v1.LookupRequest
@@ -49,7 +92,7 @@ export type LookupRequest = Message<"mtg.v1.LookupRequest"> & {
  * Use `create(LookupRequestSchema)` to create a new message.
  */
 export const LookupRequestSchema: GenMessage<LookupRequest> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_card_service, 0);
+  messageDesc(file_mtg_v1_card_service, 2);
 
 /**
  * @generated from message mtg.v1.LookupResponse
@@ -66,7 +109,7 @@ export type LookupResponse = Message<"mtg.v1.LookupResponse"> & {
  * Use `create(LookupResponseSchema)` to create a new message.
  */
 export const LookupResponseSchema: GenMessage<LookupResponse> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_card_service, 1);
+  messageDesc(file_mtg_v1_card_service, 3);
 
 /**
  * @generated from message mtg.v1.SearchRequest
@@ -121,7 +164,7 @@ export type SearchRequest = Message<"mtg.v1.SearchRequest"> & {
  * Use `create(SearchRequestSchema)` to create a new message.
  */
 export const SearchRequestSchema: GenMessage<SearchRequest> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_card_service, 2);
+  messageDesc(file_mtg_v1_card_service, 4);
 
 /**
  * @generated from message mtg.v1.SearchResponse
@@ -143,7 +186,7 @@ export type SearchResponse = Message<"mtg.v1.SearchResponse"> & {
  * Use `create(SearchResponseSchema)` to create a new message.
  */
 export const SearchResponseSchema: GenMessage<SearchResponse> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_card_service, 3);
+  messageDesc(file_mtg_v1_card_service, 5);
 
 /**
  * CardService reads the card database (roadmap PR-2).
@@ -170,6 +213,20 @@ export const CardService: GenService<{
     methodKind: "unary";
     input: typeof SearchRequestSchema;
     output: typeof SearchResponseSchema;
+  },
+  /**
+   * GetCards returns up to 120 cards by Oracle id in one call. The deck
+   * view needs the art, the type line, the mana cost, and the faces of
+   * every card, and DeckCard carries only the id and the name (ui plan
+   * of 2026-08-28, section 4). An id the index does not know goes in
+   * missing_oracle_ids, never dropped in silence.
+   *
+   * @generated from rpc mtg.v1.CardService.GetCards
+   */
+  getCards: {
+    methodKind: "unary";
+    input: typeof GetCardsRequestSchema;
+    output: typeof GetCardsResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_mtg_v1_card_service, 0);

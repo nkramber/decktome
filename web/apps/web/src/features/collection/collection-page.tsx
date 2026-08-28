@@ -38,6 +38,9 @@ export function CollectionPage() {
     },
     onSuccess: (res) => {
       setResult(res);
+      // The form empties, so a second click can not import the file again.
+      setFile(null);
+      setName("");
       if (res.collection) {
         setCollection(res.collection.id);
       }
@@ -68,10 +71,12 @@ export function CollectionPage() {
         <label className="flex flex-col gap-1">
           <span>ManaBox CSV file</span>
           <input
+            key={result?.collection?.id ?? "new"}
             type="file"
             name="file"
             accept=".csv,text/csv"
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            className="file:mr-3 file:rounded file:border file:border-neutral-400 file:bg-neutral-100 file:px-3 file:py-1"
           />
         </label>
         <label className="flex flex-col gap-1">
@@ -81,14 +86,14 @@ export function CollectionPage() {
             name="name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="rounded border border-neutral-400 px-2 py-1"
+            className="rounded border border-neutral-400 bg-white px-2 py-1 text-neutral-900"
           />
         </label>
         <div className="flex gap-3">
           <button
             type="submit"
             disabled={!file || upload.isPending}
-            className="rounded bg-neutral-900 px-3 py-2 text-white disabled:opacity-50"
+            className="rounded bg-neutral-900 px-3 py-2 text-white disabled:bg-neutral-300 disabled:text-neutral-600"
           >
             Upload
           </button>
@@ -96,8 +101,8 @@ export function CollectionPage() {
             Skip, build from any card
           </button>
         </div>
-        <div aria-live="polite" className="min-h-6">
-          {upload.isPending && <p>Uploading and resolving cards...</p>}
+        <div className="min-h-6">
+          {upload.isPending && <p role="status">Uploading and resolving cards...</p>}
           {upload.isError && (
             <p role="alert" className="text-red-700">
               Upload failed: {errorMessage(upload.error)}
@@ -110,8 +115,8 @@ export function CollectionPage() {
 
       <section className="flex flex-col gap-2">
         <h2 className="text-lg font-medium">Earlier uploads</h2>
-        <div aria-live="polite">
-          {list.isPending && <p>Loading collections...</p>}
+        <div>
+          {list.isPending && <p role="status">Loading collections...</p>}
           {list.isError && (
             <p role="alert" className="text-red-700">
               Could not list collections: {errorMessage(list.error)}
@@ -128,14 +133,20 @@ export function CollectionPage() {
                   <button
                     type="button"
                     aria-pressed={isActive}
-                    onClick={() => setCollection(c.id)}
-                    className={`rounded border px-2 py-1 ${isActive ? "border-neutral-900 bg-neutral-100" : "border-neutral-400"}`}
+                    onClick={() => {
+                      // A second click on the active one clears it (D-37).
+                      setResult(null);
+                      if (isActive) clearCollection();
+                      else setCollection(c.id);
+                    }}
+                    className={`rounded border px-2 py-1 ${isActive ? "border-neutral-900 bg-neutral-100 font-semibold ring-2 ring-neutral-900" : "border-neutral-400"}`}
                   >
+                    {isActive && <span aria-hidden="true">✓ </span>}
                     {c.name}
                   </button>
                   <span className="text-sm text-neutral-600">
                     {c.cardCount} cards
-                    {c.importedAt && `, imported ${new Date(Number(c.importedAt.seconds) * 1000).toLocaleDateString()}`}
+                    {c.importedAt?.seconds ? `, imported ${new Date(Number(c.importedAt.seconds) * 1000).toLocaleDateString()}` : null}
                   </span>
                 </li>
               );

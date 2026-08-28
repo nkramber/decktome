@@ -1,0 +1,138 @@
+import { type Card, Color } from "@mtg/api-client/mtg/v1/card_pb";
+import { CardRole, type DeckCard, Severity } from "@mtg/api-client/mtg/v1/deck_pb";
+import { FormatId, type PowerLevel, SixtyStep } from "@mtg/api-client/mtg/v1/format_pb";
+
+// Pure helpers for the deck view. The mana curve and the color sources
+// come from the card data on the client (ui plan, section 4).
+
+export const roleOrder: CardRole[] = [
+  CardRole.LAND,
+  CardRole.RAMP,
+  CardRole.DRAW,
+  CardRole.REMOVAL,
+  CardRole.WIPE,
+  CardRole.THREAT,
+  CardRole.INTERACTION,
+  CardRole.SYNERGY,
+  CardRole.WINCON,
+  CardRole.OTHER,
+  CardRole.UNSPECIFIED,
+];
+
+const roleLabels: Record<CardRole, string> = {
+  [CardRole.LAND]: "Lands",
+  [CardRole.RAMP]: "Ramp",
+  [CardRole.DRAW]: "Card draw",
+  [CardRole.REMOVAL]: "Removal",
+  [CardRole.WIPE]: "Board wipes",
+  [CardRole.THREAT]: "Threats",
+  [CardRole.INTERACTION]: "Interaction",
+  [CardRole.SYNERGY]: "Synergy",
+  [CardRole.WINCON]: "Win conditions",
+  [CardRole.OTHER]: "Other",
+  [CardRole.UNSPECIFIED]: "Unsorted",
+};
+
+export function roleLabel(role: CardRole): string {
+  return roleLabels[role] ?? "Unsorted";
+}
+
+export type RoleGroup = { role: CardRole; cards: DeckCard[]; count: number };
+
+// groupByRole keeps the roleOrder and drops empty roles.
+export function groupByRole(cards: DeckCard[]): RoleGroup[] {
+  return roleOrder
+    .map((role) => {
+      const inRole = cards.filter((c) => c.role === role);
+      return { role, cards: inRole, count: inRole.reduce((n, c) => n + c.count, 0) };
+    })
+    .filter((g) => g.cards.length > 0);
+}
+
+export function isLand(card: Card | undefined): boolean {
+  return card?.cardTypes.includes("Land") ?? false;
+}
+
+// The curve has eight steps: mana value 0 to 6, then "7+". Lands stay out.
+export const curveSteps = ["0", "1", "2", "3", "4", "5", "6", "7+"];
+
+export function manaCurve(cards: DeckCard[], byId: Map<string, Card>): number[] {
+  const curve = new Array<number>(curveSteps.length).fill(0);
+  for (const dc of cards) {
+    const card = byId.get(dc.oracleId);
+    if (!card || isLand(card)) continue;
+    const step = Math.min(Math.floor(card.manaValue), curveSteps.length - 1);
+    curve[step] += dc.count;
+  }
+  return curve;
+}
+
+export const colorLetters: { color: Color; letter: string; name: string }[] = [
+  { color: Color.W, letter: "W", name: "White" },
+  { color: Color.U, letter: "U", name: "Blue" },
+  { color: Color.B, letter: "B", name: "Black" },
+  { color: Color.R, letter: "R", name: "Red" },
+  { color: Color.G, letter: "G", name: "Green" },
+  { color: Color.C, letter: "C", name: "Colorless" },
+];
+
+// colorSources counts the copies of every card that can produce each color.
+// A dual land counts once for each of its colors.
+export function colorSources(cards: DeckCard[], byId: Map<string, Card>): Map<Color, number> {
+  const sources = new Map<Color, number>(colorLetters.map((c) => [c.color, 0]));
+  for (const dc of cards) {
+    const card = byId.get(dc.oracleId);
+    if (!card) continue;
+    for (const color of new Set(card.producedMana)) {
+      if (sources.has(color)) sources.set(color, (sources.get(color) ?? 0) + dc.count);
+    }
+  }
+  return sources;
+}
+
+export function formatLabel(id: FormatId | undefined, houseRules: string): string {
+  switch (id) {
+    case FormatId.COMMANDER:
+      return "Commander";
+    case FormatId.STANDARD:
+      return "Standard";
+    case FormatId.MODERN:
+      return "Modern";
+    case FormatId.HOUSE:
+      return houseRules ? `House rules: ${houseRules}` : "House rules";
+    default:
+      return "Unknown format";
+  }
+}
+
+export function powerLabel(power: PowerLevel | undefined): string {
+  if (!power) return "";
+  if (power.level.case === "bracket") return `Bracket ${power.level.value}`;
+  if (power.level.case === "sixtyStep") {
+    const labels: Record<SixtyStep, string> = {
+      [SixtyStep.CASUAL]: "Casual",
+      [SixtyStep.FNM]: "FNM",
+      [SixtyStep.TOURNAMENT]: "Tournament",
+      [SixtyStep.UNSPECIFIED]: "",
+    };
+    return labels[power.level.value] ?? "";
+  }
+  return "";
+}
+
+export function severityLabel(s: Severity): string {
+  switch (s) {
+    case Severity.BLOCK:
+      return "Block";
+    case Severity.WARN:
+      return "Warning";
+    case Severity.INFO:
+      return "Info";
+    default:
+      return "";
+  }
+}
+
+export function priceText(usd: number): string {
+  return usd > 0 ? `$${usd.toFixed(2)}` : "no price";
+}

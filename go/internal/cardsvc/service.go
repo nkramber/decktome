@@ -111,3 +111,41 @@ func (s *Server) Search(_ context.Context, req *connect.Request[mtgv1.SearchRequ
 }
 
 var errBadToken = errors.New("page_token must be a non-negative integer")
+
+// MaxGetCards caps one GetCards call. A Commander deck holds 100 cards,
+// and 120 leaves room for a sideboard and two commanders.
+const MaxGetCards = 120
+
+// GetCards returns the cards of up to MaxGetCards Oracle ids, in request
+// order. A repeated id counts once and comes back once. An unknown id
+// lands in missing_oracle_ids, so a client never reads a short list as
+// a full one.
+func (s *Server) GetCards(_ context.Context, req *connect.Request[mtgv1.GetCardsRequest]) (*connect.Response[mtgv1.GetCardsResponse], error) {
+	idx, err := s.ready()
+	if err != nil {
+		return nil, err
+	}
+	seen := make(map[string]struct{}, len(req.Msg.GetOracleIds()))
+	ids := make([]string, 0, len(req.Msg.GetOracleIds()))
+	for _, id := range req.Msg.GetOracleIds() {
+		if _, dup := seen[id]; dup || id == "" {
+			continue
+		}
+		seen[id] = struct{}{}
+		ids = append(ids, id)
+	}
+	if len(ids) > MaxGetCards {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errTooManyIDs)
+	}
+	res := &mtgv1.GetCardsResponse{}
+	for _, id := range ids {
+		if c, ok := idx.ByOracleID(id); ok {
+			res.Cards = append(res.Cards, c)
+		} else {
+			res.MissingOracleIds = append(res.MissingOracleIds, id)
+		}
+	}
+	return connect.NewResponse(res), nil
+}
+
+var errTooManyIDs = errors.New("oracle_ids holds more than 120 distinct ids")

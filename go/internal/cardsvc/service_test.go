@@ -139,3 +139,48 @@ func TestSearchPaging(t *testing.T) {
 		}
 	})
 }
+
+func TestGetCards(t *testing.T) {
+	s := New()
+	ctx := context.Background()
+	if _, err := s.GetCards(ctx, connect.NewRequest(&mtgv1.GetCardsRequest{OracleIds: []string{"o0"}})); code(err) != connect.CodeUnavailable {
+		t.Errorf("GetCards before swap: %v", err)
+	}
+	s.Swap(testIndex(130))
+	t.Run("request order, dedup, and the missing list", func(t *testing.T) {
+		res, err := s.GetCards(ctx, connect.NewRequest(&mtgv1.GetCardsRequest{OracleIds: []string{"o2", "nope", "o0", "o2", ""}}))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(res.Msg.Cards) != 2 || res.Msg.Cards[0].Name != "Card 2" || res.Msg.Cards[1].Name != "Card 0" {
+			t.Errorf("cards = %v", res.Msg.Cards)
+		}
+		if len(res.Msg.MissingOracleIds) != 1 || res.Msg.MissingOracleIds[0] != "nope" {
+			t.Errorf("missing = %v", res.Msg.MissingOracleIds)
+		}
+	})
+	t.Run("empty request", func(t *testing.T) {
+		res, err := s.GetCards(ctx, connect.NewRequest(&mtgv1.GetCardsRequest{}))
+		if err != nil || len(res.Msg.Cards) != 0 {
+			t.Errorf("res=%v err=%v", res, err)
+		}
+	})
+	t.Run("120 distinct ids pass, 121 refuse", func(t *testing.T) {
+		ids := make([]string, 0, 121)
+		for i := 0; i < 121; i++ {
+			ids = append(ids, fmt.Sprintf("o%d", i))
+		}
+		res, err := s.GetCards(ctx, connect.NewRequest(&mtgv1.GetCardsRequest{OracleIds: ids[:120]}))
+		if err != nil || len(res.Msg.Cards) != 120 {
+			t.Errorf("120: len=%d err=%v", len(res.Msg.GetCards()), err)
+		}
+		if _, err := s.GetCards(ctx, connect.NewRequest(&mtgv1.GetCardsRequest{OracleIds: ids})); code(err) != connect.CodeInvalidArgument {
+			t.Errorf("121: err=%v", err)
+		}
+		// Duplicates do not count against the cap.
+		dup := append(append([]string{}, ids[:120]...), "o0", "o1")
+		if _, err := s.GetCards(ctx, connect.NewRequest(&mtgv1.GetCardsRequest{OracleIds: dup})); err != nil {
+			t.Errorf("120 plus repeats: %v", err)
+		}
+	})
+}

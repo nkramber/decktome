@@ -3,7 +3,7 @@
 // more than the message, so the code wins when it is present.
 export function errorMessage(err: unknown): string {
   if (typeof err === "object" && err !== null && "code" in err && typeof err.code === "string") {
-    return authErrorText(err.code) ?? err.code;
+    return authErrorText(err.code) ?? `Sign-in failed (${err.code}).`;
   }
   return err instanceof Error ? err.message : String(err);
 }

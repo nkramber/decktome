@@ -285,6 +285,31 @@ func unsupportedFormat(text string) (name, near string, ok bool) {
 // twoDeckSigns name a request for more than one deck outright.
 var twoDeckSigns = []string{"two decks", "2 decks", "both decks", "second deck"}
 
+// QuotedQuestionPrefix starts a line that echoes an agent question back
+// with a structured answer. A client that sends Answer messages gets the
+// question text joined in front of the answer, so the classifier can map
+// the answer to its slot. The word rules must not read that echo: the
+// format question names three formats, and oneDeckRequest read the echo
+// as a request for three decks in the browser gate of 2026-08-28.
+const QuotedQuestionPrefix = "Q: "
+
+// AnswerPrefix starts the answer line under a quoted question.
+const AnswerPrefix = "A: "
+
+// UserWords returns the user's own words of a message: every line that is
+// not a quoted question, with the answer prefix removed.
+func UserWords(message string) string {
+	lines := strings.Split(message, "\n")
+	out := lines[:0]
+	for _, line := range lines {
+		if strings.HasPrefix(line, QuotedQuestionPrefix) {
+			continue
+		}
+		out = append(out, strings.TrimPrefix(line, AnswerPrefix))
+	}
+	return strings.Join(out, "\n")
+}
+
 // oneDeckRequest reports whether one message asks for more than one deck.
 //
 // It reads one message and never the whole conversation. A user who
