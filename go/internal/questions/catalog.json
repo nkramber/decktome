@@ -1,6 +1,6 @@
 {
-  "verified_at": "2026-08-26",
-  "note": "The question catalog of the mtg-corpus skill, section 11, as data. `slot` is the proto slot the answer informs. `key` is the question's own state key, and it defaults to the slot. A refinement question (jank, budget scope, house format limits, named card role, power confirm) carries its own key, so a filled proto slot does not cancel it. Keep the rows in step with the skill file. TestCatalogMatchesCorpus checks it.",
+  "verified_at": "2026-08-28",
+  "note": "The question catalog of the mtg-corpus skill, section 11, as data. `slot` is the proto slot the answer informs. `key` is the question's own state key, and it defaults to the slot. A refinement question (budget scope, house format limits, named card role, commander pick) carries its own key, so a filled proto slot does not cancel it. Keep the rows in step with the skill file. TestCatalogMatchesCorpus checks it.",
   "rows": [
     {
       "id": "out_of_scope",
@@ -94,16 +94,6 @@
         "Standard",
         "Modern"
       ]
-    },
-    {
-      "id": "theme_card_named",
-      "slot": "theme",
-      "order": 18,
-      "text": "{card} supports two plans: {plan_a} and {plan_b}. Which one do you want?",
-      "when": {
-        "named_card": true
-      },
-      "fallback": "What should the deck do: a creature type, a mechanic, or a play style?"
     },
     {
       "id": "theme_competitive",
@@ -231,7 +221,7 @@
       "id": "power_commander",
       "slot": "power",
       "order": 40,
-      "text": "Which power bracket should the deck target? 2 is precon level, 3 is upgraded, 4 is high power.",
+      "text": "Which power bracket should the deck target? 2 is the core level, near a precon, 3 is upgraded, 4 is high power.",
       "options": [
         "1 exhibition",
         "2 core",
@@ -257,28 +247,6 @@
         "format": "sixty",
         "power_competitive": false
       }
-    },
-    {
-      "id": "jank",
-      "slot": "power",
-      "order": 42,
-      "text": "What does janky mean to you: a low-power deck, an odd card nobody expects, or a plan that almost never works?",
-      "options": [
-        "A low-power deck",
-        "An odd card nobody expects",
-        "A plan that almost never works"
-      ],
-      "when": {
-        "words": [
-          "janky",
-          "jank",
-          "fun",
-          "silly",
-          "meme",
-          "laughs"
-        ]
-      },
-      "key": "jank"
     },
     {
       "id": "colors",
@@ -373,48 +341,6 @@
         "budget_ambiguous": true
       },
       "key": "budget_scope"
-    },
-    {
-      "id": "meta",
-      "slot": "meta",
-      "order": 90,
-      "text": "Should I keep the sideboard general, or will you name the decks you expect to face?",
-      "options": [
-        "Keep the sideboard general",
-        "I will name the decks"
-      ],
-      "when": {
-        "power_competitive": true,
-        "format": "sixty"
-      }
-    },
-    {
-      "id": "plan_choice",
-      "slot": "plan_variant",
-      "order": 100,
-      "text": "{theme} has two plans: {plan_a}, or {plan_b}. Which one?",
-      "when": {
-        "two_plans": true
-      },
-      "fallback": "This theme has two common plans. Which one do you want?"
-    },
-    {
-      "id": "locked",
-      "slot": "locked",
-      "order": 110,
-      "text": "Must the deck keep {locked}, or may I cut a card that does not fit the plan?",
-      "options": [
-        "Keep every card I named",
-        "Cut what does not fit"
-      ],
-      "when": {
-        "locked_card": true,
-        "requires": [
-          "format",
-          "theme"
-        ]
-      },
-      "fallback": "Is there a card the deck must keep, whatever else changes?"
     }
   ]
 }

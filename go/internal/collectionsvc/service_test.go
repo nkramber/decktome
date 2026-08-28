@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
@@ -20,6 +22,7 @@ type fakeRepo struct {
 	stored  map[string]*mtgv1.Collection
 	findErr error
 	putErr  error
+	getErr  error
 	puts    int
 }
 
@@ -42,9 +45,13 @@ func (f *fakeRepo) Put(_ context.Context, _ string, col *mtgv1.Collection) (stri
 }
 
 func (f *fakeRepo) Get(_ context.Context, _, id string) (*mtgv1.Collection, error) {
+	if f.getErr != nil {
+		return nil, f.getErr
+	}
 	c, ok := f.stored[id]
 	if !ok {
-		return nil, errors.New("not found")
+		// The real repo passes the Firestore status through.
+		return nil, status.Error(codes.NotFound, "not found")
 	}
 	return c, nil
 }
@@ -205,10 +212,29 @@ func TestImportCollectionErrorMapping(t *testing.T) {
 	}
 }
 
-func TestGetCollectionNotFound(t *testing.T) {
-	s := newServer(newFakeRepo(), testIndex())
-	_, err := s.GetCollection(context.Background(), connect.NewRequest(&mtgv1.GetCollectionRequest{CollectionId: "missing"}))
-	if connect.CodeOf(err) != connect.CodeNotFound {
-		t.Errorf("err = %v", err)
+// TestGetCollectionCodes is L-13: only a Firestore NotFound is NotFound.
+func TestGetCollectionCodes(t *testing.T) {
+	tests := []struct {
+		name   string
+		id     string
+		getErr error
+		want   connect.Code
+	}{
+		{name: "empty id", id: "", want: connect.CodeInvalidArgument},
+		{name: "blank id", id: "  ", want: connect.CodeInvalidArgument},
+		{name: "missing document", id: "missing", want: connect.CodeNotFound},
+		{name: "store failure", id: "col-1", getErr: errors.New("firestore down"), want: connect.CodeInternal},
+		{name: "permission denied is not not-found", id: "col-1", getErr: status.Error(codes.PermissionDenied, "no"), want: connect.CodeInternal},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo := newFakeRepo()
+			repo.getErr = tt.getErr
+			s := newServer(repo, testIndex())
+			_, err := s.GetCollection(context.Background(), connect.NewRequest(&mtgv1.GetCollectionRequest{CollectionId: tt.id}))
+			if connect.CodeOf(err) != tt.want {
+				t.Errorf("code = %v, want %v: %v", connect.CodeOf(err), tt.want, err)
+			}
+		})
 	}
 }

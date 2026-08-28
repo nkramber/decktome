@@ -34,19 +34,27 @@ func New(version string, source IndexSource) *Server {
 	return &Server{version: version, source: source, now: time.Now}
 }
 
-// Check reports that the service is up, with the snapshot state.
+// Check reports the service state with the snapshot state. The status
+// is "starting" until the first snapshot loads and "ok" after (L-14).
 func (s *Server) Check(_ context.Context, _ *connect.Request[mtgv1.CheckRequest]) (*connect.Response[mtgv1.CheckResponse], error) {
 	return connect.NewResponse(s.Status()), nil
 }
 
-// Status builds the CheckResponse. The plain /healthz route uses the
-// same values, so both probes agree.
+// Ready reports whether a card index is loaded. The RPCs that need one
+// refuse until then, so a router must not send traffic before it.
+func (s *Server) Ready() bool {
+	return s.source != nil && s.source.Current() != nil
+}
+
+// Status builds the CheckResponse. The plain /healthz and /readyz routes
+// use the same values, so every probe agrees.
 func (s *Server) Status() *mtgv1.CheckResponse {
-	res := &mtgv1.CheckResponse{Status: "ok", Version: s.version, CardSnapshot: "none", CardSnapshotAgeHours: -1}
+	res := &mtgv1.CheckResponse{Status: "starting", Version: s.version, CardSnapshot: "none", CardSnapshotAgeHours: -1}
 	if s.source == nil {
 		return res
 	}
 	if idx := s.source.Current(); idx != nil {
+		res.Status = "ok"
 		res.CardSnapshot = idx.AsOf.UTC().Format(time.RFC3339)
 		res.CardSnapshotAgeHours = s.now().Sub(idx.AsOf).Hours()
 	}

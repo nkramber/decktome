@@ -19,12 +19,12 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"sort"
 	"strings"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/candidates"
-	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
-	"github.com/nkramber/mtg-deck-builder/go/internal/collections"
+	"github.com/nkramber/mtg-deck-builder/go/internal/gatekit"
 )
 
 //go:embed prompts.json
@@ -38,20 +38,6 @@ type prompt struct {
 	Collection bool     `json:"collection"`
 }
 
-// formats maps a prompt's format word onto the enum. The 20 review
-// prompts use commander, modern, and standard only, so the PR-6 gate is
-// unaffected by D-155.
-var formats = map[string]mtgv1.FormatId{
-	"commander": mtgv1.FormatId_FORMAT_ID_COMMANDER,
-	"standard":  mtgv1.FormatId_FORMAT_ID_STANDARD,
-	"modern":    mtgv1.FormatId_FORMAT_ID_MODERN,
-}
-
-var colors = map[string]mtgv1.Color{
-	"W": mtgv1.Color_COLOR_W, "U": mtgv1.Color_COLOR_U, "B": mtgv1.Color_COLOR_B,
-	"R": mtgv1.Color_COLOR_R, "G": mtgv1.Color_COLOR_G,
-}
-
 func main() {
 	collectionPath := flag.String("collection", "", "ManaBox CSV for the owned-first prompts")
 	top := flag.Int("top", 40, "candidates to print per prompt")
@@ -63,33 +49,18 @@ func main() {
 }
 
 func run(collectionPath string, top int, w io.Writer) error {
-	dir := os.Getenv("CARDS_SNAPSHOT_DIR")
-	if dir == "" {
-		return fmt.Errorf("set CARDS_SNAPSHOT_DIR to a snapshot store root (for example .local/gcs/mtg-local-cards/scryfall)")
-	}
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
-	idx, err := cards.LoadIndex(context.Background(), cards.DirStore{Root: dir}, logger)
+	idx, err := gatekit.LoadSnapshot(context.Background(), logger)
 	if err != nil {
 		return err
-	}
-	if idx == nil {
-		return fmt.Errorf("no complete snapshot under %s", dir)
 	}
 	var owned map[string]int32
 	var ownedNote string
 	if collectionPath != "" {
-		f, err := os.Open(collectionPath)
+		owned, ownedNote, err = gatekit.LoadOwned(collectionPath, idx)
 		if err != nil {
 			return err
 		}
-		defer func() { _ = f.Close() }()
-		rows, bad, err := collections.ParseManaBoxCSV(f)
-		if err != nil {
-			return err
-		}
-		entries, unresolved := collections.Resolve(rows, idx)
-		owned = collections.OracleCounts(entries)
-		ownedNote = fmt.Sprintf("%d entries, %d cards, %d rows unresolved", len(entries), collections.CardCount(entries), len(bad)+len(unresolved))
 	}
 	var file struct {
 		VerifiedAt string   `json:"verified_at"`
@@ -104,7 +75,7 @@ func run(collectionPath string, top int, w io.Writer) error {
 	}
 
 	_, _ = fmt.Fprintf(w, "# PR-6 candidate review\n\n")
-	_, _ = fmt.Fprintf(w, "Snapshot: %s. Prompts: %s. Collection: %s.\n\n", idx.AsOf.Format("2006-01-02"), file.VerifiedAt, orNone(ownedNote))
+	_, _ = fmt.Fprintf(w, "Snapshot: %s. Prompts: %s. Collection: %s.\n\n", idx.AsOf.Format("2006-01-02"), file.VerifiedAt, gatekit.OrNone(ownedNote))
 	_, _ = fmt.Fprintf(w, "Gate: for 20 theme prompts, a human confirms the top %d candidates are on theme in at least 18. Ten run with no collection.\n\n", top)
 	_, _ = fmt.Fprintf(w, "Score each prompt in the table, then fill the total.\n\n")
 	_, _ = fmt.Fprintf(w, "| # | Theme | Mode | On theme (yes/no) | Notes |\n|---|---|---|---|---|\n")
@@ -118,10 +89,9 @@ func run(collectionPath string, top int, w io.Writer) error {
 	_, _ = fmt.Fprintf(w, "\nTotal on theme: __ of 20.\n\n")
 
 	for _, p := range file.Prompts {
-		req := candidates.Request{Format: formats[p.Format], Theme: p.Theme}
-		for _, c := range p.Colors {
-			req.Colors = append(req.Colors, colors[c])
-		}
+		// The 20 review prompts use commander, modern, and standard only,
+		// so the PR-6 gate is unaffected by D-155.
+		req := candidates.Request{Format: gatekit.FormatID(p.Format), Theme: p.Theme, Colors: gatekit.Colors(p.Colors)}
 		mode := "any-card"
 		if p.Collection {
 			if owned == nil {
@@ -169,20 +139,9 @@ func run(collectionPath string, top int, w io.Writer) error {
 // the strongest theme matches first, not the land group.
 func byScore(cs []candidates.Candidate, n int) []candidates.Candidate {
 	out := append([]candidates.Candidate(nil), cs...)
-	for i := 1; i < len(out); i++ {
-		for j := i; j > 0 && out[j].Score > out[j-1].Score; j-- {
-			out[j], out[j-1] = out[j-1], out[j]
-		}
-	}
+	sort.SliceStable(out, func(i, j int) bool { return out[i].Score > out[j].Score })
 	if len(out) > n {
 		out = out[:n]
 	}
 	return out
-}
-
-func orNone(s string) string {
-	if s == "" {
-		return "none"
-	}
-	return s
 }

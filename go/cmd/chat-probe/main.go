@@ -7,11 +7,12 @@
 // gate prompt reached agentsvc at all.
 //
 // CAUTION: this calls the real providers and it costs money. One session
-// is a few classify and ask calls plus one generate call.
+// is a few classify and ask calls plus one generate call. CHAT_PROBE=1 is
+// required, so it can not run by accident.
 //
 // Usage:
 //
-//	CARDS_SNAPSHOT_DIR=.local/gcs/mtg-local-cards/scryfall \
+//	CHAT_PROBE=1 CARDS_SNAPSHOT_DIR=.local/gcs/mtg-local-cards/scryfall \
 //	  go run ./cmd/chat-probe -messages "Build me a lifegain Commander deck.|Karlov of the Ghost Council, bracket 3."
 package main
 
@@ -19,8 +20,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io"
-	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -36,7 +35,7 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/agentsvc"
 	"github.com/nkramber/mtg-deck-builder/go/internal/candidates"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
-	"github.com/nkramber/mtg-deck-builder/go/internal/collections"
+	"github.com/nkramber/mtg-deck-builder/go/internal/gatekit"
 	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 	"github.com/nkramber/mtg-deck-builder/go/internal/questions"
@@ -110,12 +109,11 @@ func run() error {
 	msgs := flag.String("messages", "Build me a lifegain Commander deck from any cards.|Karlov of the Ghost Council. Bracket 3, white and black, and no budget.", "the user's turns, separated by |")
 	flag.Parse()
 
-	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
-	dir := os.Getenv("CARDS_SNAPSHOT_DIR")
-	if dir == "" {
-		return fmt.Errorf("set CARDS_SNAPSHOT_DIR")
+	if err := gatekit.SpendGuard("CHAT_PROBE"); err != nil {
+		return err
 	}
-	idx, err := cards.LoadIndex(context.Background(), cards.DirStore{Root: dir}, quiet)
+	quiet := gatekit.Quiet()
+	idx, err := gatekit.LoadSnapshot(context.Background(), quiet)
 	if err != nil {
 		return err
 	}
@@ -131,13 +129,7 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	env := func(k string) string {
-		if k == llm.EnvRequireKeys {
-			return "1"
-		}
-		return os.Getenv(k)
-	}
-	client, err := llm.NewFromEnv(env, quiet)
+	client, err := llm.NewFromEnv(gatekit.Env, quiet)
 	if err != nil {
 		return err
 	}
@@ -147,7 +139,7 @@ func run() error {
 		agentsvc.WithDecks(generate.NewBuilder(client, rcfg, idx, quiet)),
 	}
 	if *collPath != "" {
-		owned, err := loadOwned(*collPath, idx)
+		owned, _, err := gatekit.LoadOwned(*collPath, idx)
 		if err != nil {
 			return err
 		}
@@ -244,19 +236,4 @@ func report(d *mtgv1.Deck, took time.Duration) {
 	if claims := generate.LintSummary(d.GetSummary()); len(claims) > 0 {
 		fmt.Printf("summary rules claims (F-26): %v\n", claims)
 	}
-}
-
-// loadOwned reads a ManaBox export into owned counts per oracle id.
-func loadOwned(path string, idx *cards.Index) (map[string]int32, error) {
-	f, err := os.Open(path) // #nosec G304 -- the operator names the file.
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = f.Close() }()
-	rows, _, err := collections.ParseManaBoxCSV(f)
-	if err != nil {
-		return nil, err
-	}
-	entries, _ := collections.Resolve(rows, idx)
-	return collections.OracleCounts(entries), nil
 }

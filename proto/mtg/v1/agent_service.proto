@@ -21,11 +21,12 @@ message ChatRequest {
   string message = 3;
   // answers carries structured replies to the last turn's questions.
   repeated Answer answers = 4;
-  // seed reproduces an earlier build (D-18). Zero means a new seed.
-  int64 seed = 5;
-  // keep_oracle_ids asks for a re-roll that keeps these cards (roadmap
-  // PR-9, lever 3).
-  repeated string keep_oracle_ids = 6;
+  // 5 held seed and 6 held keep_oracle_ids, the two request levers of
+  // PR-9. PR-9 left the MVP (D-256), and nothing ever read them. The
+  // numbers and the names are reserved, so a later PR-9 must choose new
+  // ones and no stored request can be misread (D-266).
+  reserved 5, 6;
+  reserved "seed", "keep_oracle_ids";
 }
 
 // AgentError is a failure the UI can act on.

@@ -16,7 +16,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file mtg/v1/session.proto.
  */
 export const file_mtg_v1_session: GenFile = /*@__PURE__*/
-  fileDesc("ChRtdGcvdjEvc2Vzc2lvbi5wcm90bxIGbXRnLnYxIp4CCgdTZXNzaW9uEgoKAmlkGAEgASgJEhUKDWNvbGxlY3Rpb25faWQYAiABKAkSHAoFc2xvdHMYAyABKAsyDS5tdGcudjEuU2xvdHMSGwoFdHVybnMYBCADKAsyDC5tdGcudjEuVHVybhIQCghkZWNrX2lkcxgFIAMoCRIuCgpjcmVhdGVkX2F0GAYgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIuCgp1cGRhdGVkX2F0GAcgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIlCgZzdGF0dXMYCCABKA4yFS5tdGcudjEuU2Vzc2lvblN0YXR1cxIcCgV1c2FnZRgJIAEoCzINLm10Zy52MS5Vc2FnZSKcAQoFVXNhZ2USDQoFY2FsbHMYASABKAUSFAoMaW5wdXRfdG9rZW5zGAIgASgDEhsKE2NhY2hlZF9pbnB1dF90b2tlbnMYAyABKAMSFQoNb3V0cHV0X3Rva2VucxgEIAEoAxIYChByZWFzb25pbmdfdG9rZW5zGAUgASgDEhAKCGNvc3RfdXNkGAYgASgBEg4KBnByaWNlZBgHIAEoCCKjAwoFU2xvdHMSHgoGZm9ybWF0GAEgASgLMg4ubXRnLnYxLkZvcm1hdBIhCgVwb3dlchgCIAEoCzISLm10Zy52MS5Qb3dlckxldmVsEh0KBmNvbG9ycxgDIAMoDjINLm10Zy52MS5Db2xvchINCgV0aGVtZRgEIAEoCRIcChRjb21tYW5kZXJfb3JhY2xlX2lkcxgFIAMoCRIjCglwb29sX3J1bGUYBiABKA4yEC5tdGcudjEuUG9vbFJ1bGUSEgoKYnVkZ2V0X3VzZBgHIAEoARIpCgxidWRnZXRfc2NvcGUYCyABKA4yEy5tdGcudjEuQnVkZ2V0U2NvcGUSGQoRbG9ja2VkX29yYWNsZV9pZHMYCCADKAkSMgoLc2xvdF9zdGF0ZXMYCiADKAsyHS5tdGcudjEuU2xvdHMuU2xvdFN0YXRlc0VudHJ5GkQKD1Nsb3RTdGF0ZXNFbnRyeRILCgNrZXkYASABKAkSIAoFdmFsdWUYAiABKA4yES5tdGcudjEuU2xvdFN0YXRlOgI4AUoECAkQClIMcGxhbl92YXJpYW50IqEBCgRUdXJuEhQKDHVzZXJfbWVzc2FnZRgBIAEoCRIVCg1hZ2VudF9tZXNzYWdlGAIgASgJEiMKCXF1ZXN0aW9ucxgDIAMoCzIQLm10Zy52MS5RdWVzdGlvbhImCgJhdBgEIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASHwoHYW5zd2VycxgFIAMoCzIOLm10Zy52MS5BbnN3ZXIiQQoGQW5zd2VyEhMKC3F1ZXN0aW9uX2lkGAEgASgJEhQKDG9wdGlvbl9pbmRleBgCIAEoBRIMCgR0ZXh0GAMgASgJIn4KCFF1ZXN0aW9uEgoKAmlkGAYgASgJEgwKBHNsb3QYASABKAkSDAoEdGV4dBgCIAEoCRIPCgdvcHRpb25zGAMgAygJEhAKCGludmVudGVkGAQgASgIEhEKCWdhcF9zY29yZRgFIAEoARIUCgxjYXRhbG9nX3RleHQYByABKAkqfgoNU2Vzc2lvblN0YXR1cxIeChpTRVNTSU9OX1NUQVRVU19VTlNQRUNJRklFRBAAEhkKFVNFU1NJT05fU1RBVFVTX0FTS0lORxABEhgKFFNFU1NJT05fU1RBVFVTX1JFQURZEAISGAoUU0VTU0lPTl9TVEFUVVNfQlVJTFQQAypnCgtCdWRnZXRTY29wZRIcChhCVURHRVRfU0NPUEVfVU5TUEVDSUZJRUQQABIdChlCVURHRVRfU0NPUEVfQ0FSRFNfVE9fQlVZEAESGwoXQlVER0VUX1NDT1BFX1dIT0xFX0RFQ0sQAiqCAQoJU2xvdFN0YXRlEhoKFlNMT1RfU1RBVEVfVU5TUEVDSUZJRUQQABIUChBTTE9UX1NUQVRFX0VNUFRZEAESFAoQU0xPVF9TVEFURV9BU0tFRBACEhUKEVNMT1RfU1RBVEVfRklMTEVEEAMSFgoSU0xPVF9TVEFURV9TS0lQUEVEEAQqcgoIUG9vbFJ1bGUSGQoVUE9PTF9SVUxFX1VOU1BFQ0lGSUVEEAASGQoVUE9PTF9SVUxFX09XTkVEX0ZJUlNUEAESGAoUUE9PTF9SVUxFX09XTkVEX09OTFkQAhIWChJQT09MX1JVTEVfQU5ZX0NBUkQQA0I6WjhnaXRodWIuY29tL25rcmFtYmVyL210Zy1kZWNrLWJ1aWxkZXIvZ28vZ2VuL210Zy92MTttdGd2MWIGcHJvdG8z", [file_mtg_v1_format, file_mtg_v1_card, file_google_protobuf_timestamp]);
+  fileDesc("ChRtdGcvdjEvc2Vzc2lvbi5wcm90bxIGbXRnLnYxIp4CCgdTZXNzaW9uEgoKAmlkGAEgASgJEhUKDWNvbGxlY3Rpb25faWQYAiABKAkSHAoFc2xvdHMYAyABKAsyDS5tdGcudjEuU2xvdHMSGwoFdHVybnMYBCADKAsyDC5tdGcudjEuVHVybhIQCghkZWNrX2lkcxgFIAMoCRIuCgpjcmVhdGVkX2F0GAYgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIuCgp1cGRhdGVkX2F0GAcgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIlCgZzdGF0dXMYCCABKA4yFS5tdGcudjEuU2Vzc2lvblN0YXR1cxIcCgV1c2FnZRgJIAEoCzINLm10Zy52MS5Vc2FnZSKcAQoFVXNhZ2USDQoFY2FsbHMYASABKAUSFAoMaW5wdXRfdG9rZW5zGAIgASgDEhsKE2NhY2hlZF9pbnB1dF90b2tlbnMYAyABKAMSFQoNb3V0cHV0X3Rva2VucxgEIAEoAxIYChByZWFzb25pbmdfdG9rZW5zGAUgASgDEhAKCGNvc3RfdXNkGAYgASgBEg4KBnByaWNlZBgHIAEoCCK4AwoFU2xvdHMSHgoGZm9ybWF0GAEgASgLMg4ubXRnLnYxLkZvcm1hdBIhCgVwb3dlchgCIAEoCzISLm10Zy52MS5Qb3dlckxldmVsEh0KBmNvbG9ycxgDIAMoDjINLm10Zy52MS5Db2xvchINCgV0aGVtZRgEIAEoCRIcChRjb21tYW5kZXJfb3JhY2xlX2lkcxgFIAMoCRIjCglwb29sX3J1bGUYBiABKA4yEC5tdGcudjEuUG9vbFJ1bGUSEgoKYnVkZ2V0X3VzZBgHIAEoARIpCgxidWRnZXRfc2NvcGUYCyABKA4yEy5tdGcudjEuQnVkZ2V0U2NvcGUSEwoLaG91c2VfcnVsZXMYDCABKAkSGQoRbG9ja2VkX29yYWNsZV9pZHMYCCADKAkSMgoLc2xvdF9zdGF0ZXMYCiADKAsyHS5tdGcudjEuU2xvdHMuU2xvdFN0YXRlc0VudHJ5GkQKD1Nsb3RTdGF0ZXNFbnRyeRILCgNrZXkYASABKAkSIAoFdmFsdWUYAiABKA4yES5tdGcudjEuU2xvdFN0YXRlOgI4AUoECAkQClIMcGxhbl92YXJpYW50IqEBCgRUdXJuEhQKDHVzZXJfbWVzc2FnZRgBIAEoCRIVCg1hZ2VudF9tZXNzYWdlGAIgASgJEiMKCXF1ZXN0aW9ucxgDIAMoCzIQLm10Zy52MS5RdWVzdGlvbhImCgJhdBgEIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASHwoHYW5zd2VycxgFIAMoCzIOLm10Zy52MS5BbnN3ZXIiVwoGQW5zd2VyEhMKC3F1ZXN0aW9uX2lkGAEgASgJEhkKDG9wdGlvbl9pbmRleBgCIAEoBUgAiAEBEgwKBHRleHQYAyABKAlCDwoNX29wdGlvbl9pbmRleCJ+CghRdWVzdGlvbhIKCgJpZBgGIAEoCRIMCgRzbG90GAEgASgJEgwKBHRleHQYAiABKAkSDwoHb3B0aW9ucxgDIAMoCRIQCghpbnZlbnRlZBgEIAEoCBIRCglnYXBfc2NvcmUYBSABKAESFAoMY2F0YWxvZ190ZXh0GAcgASgJKn4KDVNlc3Npb25TdGF0dXMSHgoaU0VTU0lPTl9TVEFUVVNfVU5TUEVDSUZJRUQQABIZChVTRVNTSU9OX1NUQVRVU19BU0tJTkcQARIYChRTRVNTSU9OX1NUQVRVU19SRUFEWRACEhgKFFNFU1NJT05fU1RBVFVTX0JVSUxUEAMqZwoLQnVkZ2V0U2NvcGUSHAoYQlVER0VUX1NDT1BFX1VOU1BFQ0lGSUVEEAASHQoZQlVER0VUX1NDT1BFX0NBUkRTX1RPX0JVWRABEhsKF0JVREdFVF9TQ09QRV9XSE9MRV9ERUNLEAIqggEKCVNsb3RTdGF0ZRIaChZTTE9UX1NUQVRFX1VOU1BFQ0lGSUVEEAASFAoQU0xPVF9TVEFURV9FTVBUWRABEhQKEFNMT1RfU1RBVEVfQVNLRUQQAhIVChFTTE9UX1NUQVRFX0ZJTExFRBADEhYKElNMT1RfU1RBVEVfU0tJUFBFRBAEKnIKCFBvb2xSdWxlEhkKFVBPT0xfUlVMRV9VTlNQRUNJRklFRBAAEhkKFVBPT0xfUlVMRV9PV05FRF9GSVJTVBABEhgKFFBPT0xfUlVMRV9PV05FRF9PTkxZEAISFgoSUE9PTF9SVUxFX0FOWV9DQVJEEANCOlo4Z2l0aHViLmNvbS9ua3JhbWJlci9tdGctZGVjay1idWlsZGVyL2dvL2dlbi9tdGcvdjE7bXRndjFiBnByb3RvMw", [file_mtg_v1_format, file_mtg_v1_card, file_google_protobuf_timestamp]);
 
 /**
  * Session is one deck-building conversation.
@@ -186,6 +186,15 @@ export type Slots = Message<"mtg.v1.Slots"> & {
   budgetScope: BudgetScope;
 
   /**
+   * house_rules is what the user means when the format is HOUSE, in the
+   * user's own words (D-3). The build copies it to Format.house_rules.
+   * Empty for every other format (D-265).
+   *
+   * @generated from field: string house_rules = 12;
+   */
+  houseRules: string;
+
+  /**
    * locked_oracle_ids are cards the user wants in the deck.
    *
    * @generated from field: repeated string locked_oracle_ids = 8;
@@ -193,10 +202,11 @@ export type Slots = Message<"mtg.v1.Slots"> & {
   lockedOracleIds: string[];
 
   /**
-   * slot_states is keyed by slot name: scope, format, power, colors,
-   * theme, commander, pool_rule, budget, locked, plan_variant,
-   * house_rules, meta. "scope" records that the agent said it builds
-   * Magic decks only, after the user asked for something else.
+   * slot_states is keyed by slot name: scope, deck_count, format,
+   * power, colors, theme, commander, pool_rule, budget, house_rules.
+   * A refinement row keys its own name beside them, for example
+   * budget_scope or commander_pick. "scope" records that the agent said
+   * it builds Magic decks only, after the user asked for something else.
    *
    * @generated from field: map<string, mtg.v1.SlotState> slot_states = 10;
    */
@@ -272,11 +282,13 @@ export type Answer = Message<"mtg.v1.Answer"> & {
   questionId: string;
 
   /**
-   * option_index is the chosen option, or -1 for free text.
+   * option_index is the chosen option. Unset means free text in
+   * `text`. Explicit presence separates "option 0" from "no option",
+   * which the proto3 default of 0 could not (D-266).
    *
-   * @generated from field: int32 option_index = 2;
+   * @generated from field: optional int32 option_index = 2;
    */
-  optionIndex: number;
+  optionIndex?: number | undefined;
 
   /**
    * @generated from field: string text = 3;

@@ -47,7 +47,7 @@ func LimitsFor(format mtgv1.FormatId) string {
 			"No sideboard."
 	case mtgv1.FormatId_FORMAT_ID_STANDARD, mtgv1.FormatId_FORMAT_ID_MODERN:
 		return "At least 60 cards in the main deck. At most four copies of each name, basic lands excepted. " +
-			"A sideboard of exactly 15 cards, under the same copy limit across both."
+			"A sideboard of up to 15 cards, under the same copy limit across both."
 	default:
 		return "At least 60 cards in the main deck. At most four copies of each name, basic lands excepted."
 	}
@@ -152,11 +152,22 @@ func allCards(deck *mtgv1.Deck) []*mtgv1.DeckCard {
 // put the card back (D-70, D-242).
 const CodeLockedCardMissing = "locked_card_missing"
 
-// PreconKeepCount is how many of a precon's cards a built deck must keep
-// (D-218). The share is a percentage, and the prompt states a count: a
-// model asked for a percentage must do arithmetic against a list it is
-// still writing, and deck gate prompts 17 and 18 kept 68 and 29 percent
-// of theirs (D-248).
+// PreconSharePercent is how much of a named precon a built deck keeps.
+// The owner set it on 2026-08-26, and called it a start and not a settled
+// figure (D-218, answers OQ-21). On 2026-08-28 the owner set the base:
+// the nonbasic names of the precon, with basic lands free to swap. The
+// rest is a ceiling and not a target (A-5 of the 2026-08-28 audit).
+const PreconSharePercent = 85
+
+// CodePreconShare is the finding an upgrade gets when it drops too much
+// of the precon it was asked to upgrade.
+const CodePreconShare = "precon_share"
+
+// PreconKeepCount is how many of a precon's nonbasic names a built deck
+// must keep (D-218, A-5). The share is a percentage, and the prompt
+// states a count: a model asked for a percentage must do arithmetic
+// against a list it is still writing, and deck gate prompts 17 and 18
+// kept 68 and 29 percent of theirs (D-248).
 func PreconKeepCount(total int) int {
 	if total <= 0 {
 		return 0
@@ -165,7 +176,7 @@ func PreconKeepCount(total int) int {
 	return (total*PreconSharePercent + 99) / 100
 }
 
-// CodePreconSwapped reports the precon cards the builder put back to meet
-// the share. It is an INFO: the deck is what the user asked for, and they
-// should know the builder finished the job (D-250).
-const CodePreconSwapped = "precon_cards_restored"
+// CodePreconCardsRestored reports the precon cards the builder put back
+// to meet the share. It is an INFO: the deck is what the user asked for,
+// and they should know the builder finished the job (D-250).
+const CodePreconCardsRestored = "precon_cards_restored"

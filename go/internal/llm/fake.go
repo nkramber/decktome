@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/fs"
+	"sort"
+	"strings"
 	"sync"
 )
 
@@ -25,14 +27,33 @@ func NewFake(fsys fs.FS) *Fake {
 // Name implements Provider.
 func (f *Fake) Name() string { return FakeName }
 
+// Roles lists the roles a fixture file exists for, in name order.
+func (f *Fake) Roles() []string {
+	entries, err := fs.ReadDir(f.fsys, ".")
+	if err != nil {
+		return nil
+	}
+	var out []string
+	for _, e := range entries {
+		if name, ok := strings.CutSuffix(e.Name(), ".json"); ok && !e.IsDir() {
+			out = append(out, name)
+		}
+	}
+	sort.Strings(out)
+	return out
+}
+
 // Complete returns the fixture for the call's role.
 // An absent fixture is an error, not an empty response: a silent default
-// would hide a missing test case.
+// would hide a missing test case. The error names the role and lists the
+// fixtures present, so a no-key local run says which roles it can serve
+// (A-11).
 func (f *Fake) Complete(_ context.Context, call Call) (Response, error) {
 	data, err := fs.ReadFile(f.fsys, string(call.Role)+".json")
 	if err != nil {
 		return Response{}, newErr(ClassTerminal, FakeName, call.Model, 0,
-			fmt.Errorf("no fixture for role %q: %w", call.Role, err))
+			fmt.Errorf("the fixture fake cannot serve role %q, it has fixtures for %s only: %w",
+				call.Role, strings.Join(f.Roles(), ", "), err))
 	}
 	if !json.Valid(data) {
 		return Response{}, newErr(ClassTerminal, FakeName, call.Model, 0,

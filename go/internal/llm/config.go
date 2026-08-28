@@ -105,6 +105,9 @@ func (c *Config) Validate() error {
 		if spec.MaxOutputTokens <= 0 {
 			return fmt.Errorf("llm: role %q needs max_output_tokens > 0", r)
 		}
+		if err := validEffort(spec.Provider, spec.Effort); err != nil {
+			return fmt.Errorf("llm: role %q: %w", r, err)
+		}
 		if c.RequireKeys && spec.Provider == FakeName {
 			return fmt.Errorf("llm: role %q uses provider %q but %s is not 0", r, FakeName, EnvRequireKeys)
 		}
@@ -187,4 +190,30 @@ func (t *PriceTable) Cost(model string, u Usage) (usd float64, ok bool) {
 		float64(u.CacheWriteTokens)*p.CacheWrite +
 		float64(u.OutputTokens)*p.Output) / 1e6
 	return usd, true
+}
+
+// efforts lists the reasoning-effort values each provider accepts, as
+// its SDK names them (anthropic-sdk-go v1.66.0, openai-go v3.52.0).
+var efforts = map[string][]string{
+	AnthropicName: {"low", "medium", "high", "xhigh", "max"},
+	OpenAIName:    {"none", "minimal", "low", "medium", "high", "xhigh", "max"},
+}
+
+// validEffort checks an LLM_<ROLE>_EFFORT value against the provider's
+// list at load time, so a typo fails at startup and not on the first
+// user turn. The fake accepts every value, and "" is the default.
+func validEffort(provider, effort string) error {
+	if effort == "" {
+		return nil
+	}
+	allowed, ok := efforts[provider]
+	if !ok {
+		return nil
+	}
+	for _, v := range allowed {
+		if v == effort {
+			return nil
+		}
+	}
+	return fmt.Errorf("effort %q is not one of %s for provider %q", effort, strings.Join(allowed, ", "), provider)
 }

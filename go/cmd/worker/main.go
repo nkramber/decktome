@@ -17,7 +17,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -26,9 +25,8 @@ import (
 	"syscall"
 	"time"
 
-	"cloud.google.com/go/storage"
-
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
+	"github.com/nkramber/mtg-deck-builder/go/internal/gcpenv"
 	"github.com/nkramber/mtg-deck-builder/go/internal/scryfall"
 )
 
@@ -42,7 +40,7 @@ func main() {
 	once := flag.Bool("once", false, "run one refresh and exit (Cloud Run job, make dev-seed)")
 	flag.Parse()
 
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	logger := gcpenv.NewLogger(os.Stdout)
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	err := run(ctx, *once, logger)
 	stop()
@@ -53,11 +51,13 @@ func main() {
 }
 
 func run(ctx context.Context, once bool, logger *slog.Logger) error {
-	project, err := projectID()
+	project, err := gcpenv.ProjectID()
 	if err != nil {
 		return err
 	}
-	store, storageClient, err := snapshotStore(ctx, project, logger)
+	// The worker creates the bucket in emulator mode, because
+	// fake-gcs-server starts empty.
+	store, storageClient, err := gcpenv.SnapshotStore(ctx, project, true, logger)
 	if err != nil {
 		return fmt.Errorf("snapshot store init: %w", err)
 	}
@@ -145,14 +145,17 @@ func run(ctx context.Context, once bool, logger *slog.Logger) error {
 	if err := refresh(); err != nil {
 		logger.Error("refresh failed", "err", err)
 	}
+	timer := time.NewTimer(0)
+	defer timer.Stop()
 	for {
 		interval := calendar.CheckInterval(time.Now().UTC(), lastDiff)
 		logger.Debug("next refresh check", "in", interval.String())
+		timer.Reset(interval)
 		select {
 		case <-ctx.Done():
 			logger.Info("worker stopped")
 			return nil
-		case <-time.After(interval):
+		case <-timer.C:
 			if err := refresh(); err != nil {
 				logger.Error("refresh failed", "err", err)
 			}
@@ -172,46 +175,4 @@ func skipRefresh(now, latestAt time.Time, pending bool) bool {
 		return false
 	}
 	return now.Sub(latestAt) < freshWindow
-}
-
-// projectID mirrors cmd/api: fatal without a project outside local mode.
-func projectID() (string, error) {
-	if p := envOr("PROJECT_ID", os.Getenv("GOOGLE_CLOUD_PROJECT")); p != "" {
-		return p, nil
-	}
-	if os.Getenv("STORAGE_EMULATOR_HOST") != "" || os.Getenv("CARDS_SNAPSHOT_DIR") != "" {
-		return "mtg-local", nil
-	}
-	return "", errors.New("PROJECT_ID or GOOGLE_CLOUD_PROJECT must be set outside emulator mode")
-}
-
-// snapshotStore mirrors the api's backend choice. In emulator mode it
-// also creates the bucket, because fake-gcs-server starts empty. In
-// production the bucket is infrastructure, not the worker's job.
-func snapshotStore(ctx context.Context, project string, logger *slog.Logger) (cards.Store, *storage.Client, error) {
-	if dir := os.Getenv("CARDS_SNAPSHOT_DIR"); dir != "" {
-		return cards.DirStore{Root: dir}, nil, nil
-	}
-	// WithJSONReads: the SDK's default XML download path 404s on
-	// fake-gcs-server's filesystem backend (encoded-slash object names).
-	// JSON reads work on fake-gcs and on real GCS.
-	client, err := storage.NewClient(ctx, storage.WithJSONReads())
-	if err != nil {
-		return nil, nil, err
-	}
-	bucket := envOr("CARDS_BUCKET", project+"-cards")
-	if os.Getenv("STORAGE_EMULATOR_HOST") != "" {
-		if err := client.Bucket(bucket).Create(ctx, project, nil); err != nil {
-			// An existing bucket lands here.
-			logger.Info("bucket create skipped", "bucket", bucket, "note", err.Error())
-		}
-	}
-	return cards.NewGCSStore(client, bucket), client, nil
-}
-
-func envOr(key, fallback string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
-	}
-	return fallback
 }

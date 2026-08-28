@@ -16,7 +16,13 @@
 //
 // With -lessons, the command appends what it learned to a file the next
 // fixer reads (D-182). With -merge, it folds a partial run into a full
-// one.
+// one. With -fixer, it writes the summary the fixer's checkout may hold:
+// the same file with every holdout verdict removed (T-8). With
+// -print-noise, it prints the noise margin the loop reads (T-7).
+//
+// Exit 2 is a tool fault: an unreadable file, a partial summary, or two
+// commits that own one row. The loop stops on it and rejects nothing
+// (T-12).
 //
 // Usage:
 //
@@ -58,25 +64,36 @@ func main() {
 	nextDoc := flag.String("next-doc", "", "the gate document of -next, for -merge of a summary from before D-181")
 	out := flag.String("out", "", "where -merge writes the merged summary")
 	outDoc := flag.String("out-doc", "", "where -merge writes the merged report the fixer reads (optional)")
+	fixer := flag.Bool("fixer", false, "write -next to -out with every holdout verdict removed")
+	printNoise := flag.Bool("print-noise", false, "print the default noise margin and exit")
 	flag.Parse()
 	switch {
+	case *printNoise:
+		fmt.Println(tune.DefaultNoise)
+		return
+	case *fixer:
+		if err := fixerCopy(*next, *out); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(exitFault)
+		}
+		return
 	case *agree:
 		if err := agreement(*next, *prev, os.Stdout); err != nil {
 			fmt.Fprintln(os.Stderr, err)
-			os.Exit(2)
+			os.Exit(exitFault)
 		}
 		return
 	case *merge:
 		if err := mergeRuns(*prev, *prevDoc, *next, *nextDoc, *out, *outDoc, os.Stdout); err != nil {
 			fmt.Fprintln(os.Stderr, err)
-			os.Exit(2)
+			os.Exit(exitFault)
 		}
 		return
 	}
 	code, err := run(*next, *prev, *changes, *target, *noise, *lessons, *label, os.Stdout)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		os.Exit(2)
+		os.Exit(exitFault)
 	}
 	os.Exit(code)
 }
@@ -86,6 +103,8 @@ const (
 	exitAccept = 0
 	// exitReject says the iteration made things worse. The driver reverts.
 	exitReject = 1
+	// exitFault says the tool could not decide. The driver stops.
+	exitFault = 2
 	// exitDone says the run is good enough and the loop may stop.
 	exitDone = 3
 	// exitPartial says some changes are kept and some are dropped. The
@@ -98,7 +117,7 @@ func run(nextPath, prevPath, changesPath string, target float64, noise int, less
 	if nextPath == "" {
 		return 0, fmt.Errorf("give -next, an eval summary")
 	}
-	next, err := read(nextPath)
+	next, err := readWhole(nextPath)
 	if err != nil {
 		return 0, err
 	}
@@ -109,7 +128,7 @@ func run(nextPath, prevPath, changesPath string, target float64, noise int, less
 	// was accepted and committed (D-171).
 	var prev *tune.Summary
 	if prevPath != "" {
-		p, err := read(prevPath)
+		p, err := readWhole(prevPath)
 		if err != nil {
 			return 0, fmt.Errorf("-prev %s: %w", prevPath, err)
 		}
@@ -125,7 +144,10 @@ func run(nextPath, prevPath, changesPath string, target float64, noise int, less
 			return 0, fmt.Errorf("-changes %s: %w", changesPath, err)
 		}
 	}
-	d, paired, attr := tune.Decide(prev, next, changes, noise)
+	d, paired, attr, err := tune.Decide(prev, next, changes, noise)
+	if err != nil {
+		return 0, err
+	}
 	for _, r := range d.Reasons {
 		switch {
 		case d.Accept:
@@ -137,8 +159,8 @@ func run(nextPath, prevPath, changesPath string, target float64, noise int, less
 		}
 	}
 	if prev != nil {
-		_, _ = fmt.Fprintf(w, "paired: %d shared, %d for, %d against, %d judge flips\n",
-			paired.Shared, paired.For(), paired.Against(), len(paired.JudgeFlips))
+		_, _ = fmt.Fprintf(w, "paired: %d shared, %d for, %d against, %d judge flips, %d churn, %d errored conversations\n",
+			paired.Shared, paired.For(), paired.Against(), len(paired.JudgeFlips), len(attr.Churn), paired.Errored)
 	}
 	for _, cv := range attr.Changes {
 		verb := "drop"
@@ -161,9 +183,11 @@ func run(nextPath, prevPath, changesPath string, target float64, noise int, less
 	case !d.Accept:
 		return exitReject, nil
 	}
-	if next.Judged > 0 && next.Ratio <= target {
-		_, _ = fmt.Fprintf(w, "done: the ratio is %.1f%%, at or under the target of %.1f%%\n",
-			next.Ratio*100, target*100)
+	// The target reads the holdout ratio when there is one, as the docs
+	// say (T-14).
+	if scored, split := next.Scored(); next.Judged > 0 && scored <= target {
+		_, _ = fmt.Fprintf(w, "done: the %s ratio is %.1f%%, at or under the target of %.1f%%\n",
+			split, scored*100, target*100)
 		return exitDone, nil
 	}
 	return exitAccept, nil
@@ -281,11 +305,11 @@ func mergeRuns(basePath, baseDoc, partPath, partDoc, outPath, outDoc string, w i
 			return fmt.Errorf("%s exists, and a result is never overwritten (D-65)", p)
 		}
 	}
-	base, err := read(basePath)
+	base, err := readWhole(basePath)
 	if err != nil {
 		return err
 	}
-	part, err := read(partPath)
+	part, err := readWhole(partPath)
 	if err != nil {
 		return err
 	}
@@ -456,4 +480,43 @@ func read(path string) (*tune.Summary, error) {
 		return nil, fmt.Errorf("%s: %w", path, err)
 	}
 	return &s, nil
+}
+
+// readWhole reads a summary and refuses a partial one. A budget-cut eval
+// scores fewer questions, and a smaller count read as an improvement
+// once (T-2).
+func readWhole(path string) (*tune.Summary, error) {
+	s, err := read(path)
+	if err != nil {
+		return nil, err
+	}
+	if why, skipped := s.Skipped(); skipped {
+		return nil, fmt.Errorf("%s is a partial summary (%s), and a partial run is no baseline and no candidate", path, why)
+	}
+	return s, nil
+}
+
+// fixerCopy writes the summary with every holdout verdict removed. The
+// counts stay, so the fixer reads the holdout ratio and never which
+// questions made it (T-8, D-134).
+func fixerCopy(in, out string) error {
+	if in == "" || out == "" {
+		return fmt.Errorf("-fixer needs -next and -out")
+	}
+	s, err := read(in)
+	if err != nil {
+		return err
+	}
+	kept := make([]tune.Verdict, 0, len(s.Verdicts))
+	for _, v := range s.Verdicts {
+		if !v.Holdout {
+			kept = append(kept, v)
+		}
+	}
+	s.Verdicts = kept
+	raw, err := json.MarshalIndent(s, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(out, append(raw, '\n'), 0o600)
 }

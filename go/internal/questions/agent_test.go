@@ -3,6 +3,7 @@ package questions
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"log/slog"
 	"testing"
@@ -266,27 +267,60 @@ func TestUsageAccumulates(t *testing.T) {
 	}
 }
 
-// TestInferredPowerIsMarked holds the other half of D-209. The mark goes
-// on the step the agent fills in, and never on the step the user named.
-func TestInferredPowerIsMarked(t *testing.T) {
-	a, _ := testAgent(t)
-	empty := NewState(false)
-	empty.Ctx.Format = mtgv1.FormatId_FORMAT_ID_MODERN
-	empty.Slots.Format = &mtgv1.Format{Id: mtgv1.FormatId_FORMAT_ID_MODERN}
-	empty.Ctx.PowerCompetitive = true
-	a.applyWords(empty, "build the strongest modern deck")
-	if !empty.Ctx.PowerInferred {
-		t.Fatal("the agent filled the tournament step and did not mark it")
+// TestClassifySeesThePriorMessages is audit Q-13. The classify prompt
+// told the model to repeat a value from an earlier message, and the
+// model never saw one. The input now carries the last five earlier
+// messages, and the current message is not among them.
+func TestClassifySeesThePriorMessages(t *testing.T) {
+	out := classifyOut{Format: "unknown", PoolRule: "unknown"}
+	a, sc := testAgent(t, classifyStep(t, out), fits(t, "format", "theme", "colors"), askStep(t))
+	st := NewState(false)
+	for _, m := range []string{"one", "two", "three", "four", "five", "six"} {
+		st.AddMessage(m)
 	}
-	named := NewState(false)
-	named.Ctx.Format = mtgv1.FormatId_FORMAT_ID_MODERN
-	named.Slots.Format = &mtgv1.Format{Id: mtgv1.FormatId_FORMAT_ID_MODERN}
-	named.Ctx.PowerCompetitive = true
-	named.Slots.Power = &mtgv1.PowerLevel{
-		Level: &mtgv1.PowerLevel_SixtyStep{SixtyStep: mtgv1.SixtyStep_SIXTY_STEP_FNM},
+	if _, err := a.Turn(context.Background(), st, "seven", nil); err != nil {
+		t.Fatalf("turn: %v", err)
 	}
-	a.applyWords(named, "fnm")
-	if named.Ctx.PowerInferred {
-		t.Fatal("a step the user named was marked as inferred")
+	var in struct {
+		Message string   `json:"message"`
+		Prior   []string `json:"prior_messages"`
 	}
+	if err := json.Unmarshal([]byte(sc.Calls[0].Input), &in); err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"two", "three", "four", "five", "six"}
+	if in.Message != "seven" || len(in.Prior) != len(want) {
+		t.Fatalf("classify input = %+v, want the last %d earlier messages", in, PriorMessages)
+	}
+	for i := range want {
+		if in.Prior[i] != want[i] {
+			t.Errorf("prior_messages[%d] = %q, want %q", i, in.Prior[i], want[i])
+		}
+	}
+	if got := st.Messages[len(st.Messages)-1]; got != "seven" {
+		t.Errorf("the message did not join the state after the call: %v", st.Messages)
+	}
+}
+
+// TestFailedClassifyLeavesNoTrace is the low finding beside Q-13. The
+// message and the turn count joined the state before the classify call,
+// so a failed call left a half turn behind.
+func TestFailedClassifyLeavesNoTrace(t *testing.T) {
+	a, _ := testAgent(t, llm.Step{Err: errors.New("provider down")})
+	st := NewState(false)
+	if _, err := a.Turn(context.Background(), st, "a lifegain deck", nil); err == nil {
+		t.Fatal("a failed classify call returned no error")
+	}
+	if st.Turn != 0 || st.Ctx.Words != "" || len(st.Messages) != 0 {
+		t.Errorf("a failed turn left a trace: turn %d, words %q, messages %v", st.Turn, st.Ctx.Words, st.Messages)
+	}
+}
+
+// ids2 names the slots of the questions one turn sent.
+func ids2(qs []*mtgv1.Question) []string {
+	var out []string
+	for _, q := range qs {
+		out = append(out, q.GetSlot())
+	}
+	return out
 }

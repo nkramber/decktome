@@ -252,7 +252,9 @@ func TestCompileSchemaRules(t *testing.T) {
 	}
 	// format keywords are asserted.
 	schema := `{"type":"object","properties":{"when":{"type":"string","format":"date"}},"required":["when"],"additionalProperties":false}`
-	c := newTestClient(t, NewScript(Step{Output: json.RawMessage(`{"when":"not a date"}`)}))
+	// Two misses, because a schema miss retries once (L-7).
+	notDate := Step{Output: json.RawMessage(`{"when":"not a date"}`)}
+	c := newTestClient(t, NewScript(notDate, notDate))
 	_, err := c.Complete(context.Background(), RoleClassify, Request{Schema: json.RawMessage(schema)}, nil)
 	if ClassOf(err) != ClassSchema {
 		t.Errorf("format: class = %v, err = %v", ClassOf(err), err)

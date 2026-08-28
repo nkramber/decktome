@@ -132,17 +132,16 @@ func copyBulk(ctx context.Context, client *scryfall.Client, store Store, version
 	return w.Close()
 }
 
-// Prune deletes every complete version except the newest keep.
+// Prune deletes every complete version except the newest keep. It also
+// deletes an incomplete version that is older than the newest complete
+// one, because a download that old is a failed one. The newest
+// incomplete version always stays: it can be a download in progress.
 func Prune(ctx context.Context, store Store, keep int, logger *slog.Logger) error {
 	versions, err := store.ListVersions(ctx)
 	if err != nil {
 		return err
 	}
-	sort.Slice(versions, func(i, j int) bool {
-		ti, _ := VersionTime(versions[i])
-		tj, _ := VersionTime(versions[j])
-		return ti.Before(tj)
-	})
+	sortByVersionTime(versions)
 	if keep < 1 {
 		keep = 1
 	}
@@ -154,7 +153,41 @@ func Prune(ctx context.Context, store Store, keep int, logger *slog.Logger) erro
 		}
 		logger.Info("cards refresh: pruned old snapshot", "version", old)
 	}
+	if len(versions) == 0 {
+		return nil
+	}
+	newest, err := VersionTime(versions[len(versions)-1])
+	if err != nil {
+		return nil
+	}
+	incomplete, err := store.ListIncompleteVersions(ctx)
+	if err != nil {
+		return err
+	}
+	sortByVersionTime(incomplete)
+	if len(incomplete) > 0 {
+		incomplete = incomplete[:len(incomplete)-1]
+	}
+	for _, v := range incomplete {
+		t, err := VersionTime(v)
+		if err != nil || !t.Before(newest) {
+			continue
+		}
+		if err := store.DeleteVersion(ctx, v); err != nil {
+			return fmt.Errorf("prune incomplete %s: %w", v, err)
+		}
+		logger.Info("cards refresh: pruned incomplete snapshot", "version", v)
+	}
 	return nil
+}
+
+// sortByVersionTime orders versions oldest first by their parsed time.
+func sortByVersionTime(versions []string) {
+	sort.SliceStable(versions, func(i, j int) bool {
+		ti, _ := VersionTime(versions[i])
+		tj, _ := VersionTime(versions[j])
+		return ti.Before(tj)
+	})
 }
 
 // LegalityDiff counts the cards whose legalities changed between two
@@ -278,6 +311,7 @@ func LoadIndex(ctx context.Context, store Store, logger *slog.Logger) (*Index, e
 	logger.Info("cards index loaded", "version", version, "cards", idx.Len(),
 		"printings", len(printings), "tags", tags.Len(),
 		"name_collisions", col.FullNames, "face_name_collisions", col.FaceNames,
+		"paper_swaps", idx.PaperSwaps(),
 		"took", time.Since(start).String())
 	return idx, nil
 }

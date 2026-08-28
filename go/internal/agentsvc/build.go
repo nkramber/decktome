@@ -19,6 +19,12 @@ import (
 // question workflow decided what to build, and nothing here asks the
 // user anything: a slot that is still open never reaches this file.
 
+// ErrThinCommanderPool says a Commander session delegated the commander
+// and the library holds none for the theme. A build without a commander
+// must fail the engine, so none runs, and the user reads why (D-232,
+// G-11 of the 2026-08-28 audit).
+var ErrThinCommanderPool = errors.New("your library holds no commander for this theme, so no deck was built: name a commander, or allow cards you do not own")
+
 // buildDeck writes the deck for a ready session. It returns nil when the
 // server has no generator wired, so a deployment without one keeps the
 // PR-7 behavior and says so.
@@ -62,7 +68,6 @@ func (s *Server) buildDeck(ctx context.Context, uid string, session *mtgv1.Sessi
 	// D-208 skip the slot for the generator. The generator must then pick
 	// one, or the engine refuses the deck for no commander. No golden
 	// prompt covered this path until D-232.
-	var thinPool bool
 	if format == mtgv1.FormatId_FORMAT_ID_COMMANDER && len(commanderIDs) == 0 {
 		pool, err := s.builder.CommanderPool(idx, candidates.Request{
 			Format:   format,
@@ -78,8 +83,12 @@ func (s *Server) buildDeck(ctx context.Context, uid string, session *mtgv1.Sessi
 		case len(pool) == 0:
 			// The library holds no commander for this theme. The weak-pool
 			// row used to ask about this and could never reach the user
-			// who needed it (D-232). The deck reports it instead.
-			thinPool = true
+			// who needed it (D-232). A Commander deck with no commander
+			// fails the engine, so no model call is spent on one, and the
+			// turn says why (G-11).
+			s.log.WarnContext(ctx, "the library holds no commander for the theme, so no deck is built",
+				"session", session.GetId(), "theme", slots.GetTheme())
+			return nil, ErrThinCommanderPool
 		default:
 			c := pool[0]
 			commanders = append(commanders, c.Card)
@@ -109,16 +118,12 @@ func (s *Server) buildDeck(ctx context.Context, uid string, session *mtgv1.Sessi
 	// deck must not name a card the user can neither own nor buy (D-37).
 	buyList := st.Ctx.BuyList || slots.GetPoolRule() == mtgv1.PoolRule_POOL_RULE_ANY_CARD
 	// The shortlist leaves basic lands out on purpose, and every deck
-	// needs them (D-225). The deck colors are the commander's identity in
-	// Commander, and the chosen colors otherwise.
-	colors := slots.GetColors()
-	if len(commanders) > 0 {
-		colors = commanders[0].GetColorIdentity()
-	}
+	// needs them (D-225).
+	colors := deckColors(format, slots.GetColors(), commanders)
 	always := append([]*mtgv1.Card(nil), commanders...)
 	always = append(always, generate.BasicLands(idx.ByName, colors)...)
 	// A card the user said to keep must be nameable, or the deck can not
-	// hold it. The locked row asks for these (D-70, D-242).
+	// hold it. The classifier names these (D-70, D-242).
 	var lockedIDs []string
 	for _, name := range st.LockedCards() {
 		c, ok := idx.ByName(name)
@@ -136,8 +141,13 @@ func (s *Server) buildDeck(ctx context.Context, uid string, session *mtgv1.Sessi
 	var preconName string
 	var preconIDs []string
 	var preconLands int
-	if s.precons != nil && st.Ctx.Precon {
-		if p, ok := s.precons.Find(st.Ctx.Words); ok {
+	if set := s.preconSet(); set != nil && st.Ctx.Precon {
+		if p, ok := set.Find(st.Ctx.Words); ok && p.Unresolved > 0 {
+			// A list the card index could not fully answer gives a wrong
+			// share, so the rule does not run on it.
+			s.log.WarnContext(ctx, "the precon has unresolved rows, so the share rule is off",
+				"session", session.GetId(), "precon", p.Slug, "unresolved", p.Unresolved)
+		} else if ok {
 			preconName, preconIDs, preconLands = p.Name, p.OracleIDs, p.Lands
 			// The deck must keep a share of these, so the model must be
 			// able to name them (D-247).
@@ -153,7 +163,9 @@ func (s *Server) buildDeck(ctx context.Context, uid string, session *mtgv1.Sessi
 				"session", session.GetId())
 		}
 	}
-	pool := generate.FromList(list, always, buyList)
+	// The always cards read their owned count from the collection, so a
+	// precon card the user holds is never charged as a purchase (G-3).
+	pool := generate.FromListOwned(list, always, owned, buyList)
 
 	// The deck carries its own id, so the store reserves one first
 	// (D-245).
@@ -163,33 +175,59 @@ func (s *Server) buildDeck(ctx context.Context, uid string, session *mtgv1.Sessi
 	}
 
 	res, err := s.decks.Build(ctx, generate.Request{
-		Precon:            preconName,
-		PreconOracleIDs:   preconIDs,
-		PreconLands:       preconLands,
-		DeckID:            deckID,
-		Name:              deckName(slots),
-		Now:               s.now,
-		ThinCommanderPool: thinPool,
-		BudgetUSD:         slots.GetBudgetUsd(),
-		BudgetWholeDeck:   slots.GetBudgetScope() == mtgv1.BudgetScope_BUDGET_SCOPE_WHOLE_DECK,
-		SessionID:         session.GetId(),
-		Format:            format,
-		Power:             slots.GetPower(),
-		Plan:              plan(session, slots),
-		Pool:              pool,
-		Commanders:        commanderIDs,
-		Locked:            lockedIDs,
-		PoolRule:          slots.GetPoolRule(),
-		OracleCounts:      owned,
-		Roles:             generate.Roles(list),
-		Targets:           generate.TargetsFor(format, slots.GetPower()),
-		Limits:            generate.LimitsFor(format),
-		LegalityAsOf:      idx.AsOf.Format("2006-01-02"),
+		Precon:          preconName,
+		PreconOracleIDs: preconIDs,
+		PreconLands:     preconLands,
+		DeckID:          deckID,
+		Name:            deckName(slots),
+		Now:             s.now,
+		BudgetUSD:       slots.GetBudgetUsd(),
+		BudgetWholeDeck: slots.GetBudgetScope() == mtgv1.BudgetScope_BUDGET_SCOPE_WHOLE_DECK,
+		SessionID:       session.GetId(),
+		Format:          format,
+		HouseRules:      slots.GetHouseRules(),
+		Power:           slots.GetPower(),
+		Plan:            plan(session, slots),
+		Pool:            pool,
+		Commanders:      commanderIDs,
+		Locked:          lockedIDs,
+		PoolRule:        slots.GetPoolRule(),
+		OracleCounts:    owned,
+		Roles:           generate.Roles(list),
+		Targets:         generate.TargetsFor(format, slots.GetPower()),
+		Limits:          generate.LimitsFor(format),
+		LegalityAsOf:    idx.AsOf.Format("2006-01-02"),
 	}, acc)
 	if err != nil {
 		return nil, err
 	}
 	return res, nil
+}
+
+// deckColors is the color set the basic lands follow. In Commander it is
+// the union of every commander's color identity, so a partner pair gets
+// both halves (G-7 of the 2026-08-28 audit). Otherwise it is the chosen
+// colors, and a 60-card session that chose none gets every basic.
+func deckColors(format mtgv1.FormatId, chosen []mtgv1.Color, commanders []*mtgv1.Card) []mtgv1.Color {
+	if len(commanders) > 0 {
+		seen := map[mtgv1.Color]bool{}
+		for _, c := range commanders {
+			for _, col := range c.GetColorIdentity() {
+				seen[col] = true
+			}
+		}
+		var out []mtgv1.Color
+		for _, col := range generate.AllColors {
+			if seen[col] {
+				out = append(out, col)
+			}
+		}
+		return out
+	}
+	if len(chosen) == 0 && format != mtgv1.FormatId_FORMAT_ID_COMMANDER {
+		return generate.AllColors
+	}
+	return chosen
 }
 
 // plan is the deck the user asked for, in the user's own words. The
@@ -244,7 +282,10 @@ func (s *Server) sendDeck(ctx context.Context, uid string, session *mtgv1.Sessio
 	if err != nil {
 		s.log.ErrorContext(ctx, "the build failed", "session", session.GetId(), "err", err)
 		msg := "the deck build failed, please ask again"
-		if errors.Is(bctx.Err(), context.DeadlineExceeded) {
+		switch {
+		case errors.Is(err, ErrThinCommanderPool):
+			msg = err.Error()
+		case errors.Is(bctx.Err(), context.DeadlineExceeded):
 			msg = "the deck build ran past its time limit, please ask again"
 		}
 		return stream.Send(&mtgv1.ChatResponse{

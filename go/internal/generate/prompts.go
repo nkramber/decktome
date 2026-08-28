@@ -11,6 +11,13 @@ package generate
 //
 // Version 1 is the first generator.
 //
+// Version 9 followed the audit of 2026-08-28 (A-5). The share of a precon
+// an upgrade keeps is 85 percent of its nonbasic names, basic lands swap
+// free, and the 15 percent is a ceiling and not a target. The prompts say
+// so: change as few cards as the upgrade needs, keep the theme, and
+// never aim to replace the full number. The 60-card sideboard is "up to
+// 15 cards" and not "exactly 15" (G-10).
+//
 // Version 4 followed deck gate run 5. The deck cost $268.37 against a
 // $100.00 cap, on a shortlist whose cheapest 99 cards cost $25.66. No
 // shortlist line carried a price, so the model could not budget at all.
@@ -49,7 +56,7 @@ package generate
 // shortfalls." The model recited the job targets back, because version 1
 // asked it to state a shortfall there. The summary is for the user, and
 // the counts are in the card list.
-const PromptVersion = 8
+const PromptVersion = 9
 
 // generateInstructions is the stable prefix. It names no card, no format,
 // and no session value, so every call of a session shares it.
@@ -69,6 +76,11 @@ Rules for the card list:
 - Give every card one job from the job list, and one line that says why the card is in the deck.
 - Meet the deck size in the limits block. Count the commander when the limits block says to.
 - Come as close to each job target as the shortlist allows.
+
+Rules for an upgrade, when the input names a precon:
+- The precon is a working deck. Change as few cards as the upgrade needs, and keep its theme intact.
+- The input states how many precon names you may change at most. That number is a ceiling and not a target. Never aim to replace that many.
+- Basic lands are free to swap and are not counted.
 
 Rules for the summary:
 - Write one paragraph for the person who will play the deck. Say what the deck does on the table, how it wins, and what it gives up.
@@ -91,7 +103,7 @@ Rules:
 - Use only cards from the shortlist, and copy each name exactly as the shortlist writes it.
 - A finding that names a card you invented means the card is not on the shortlist. Replace it with a shortlist card that does the same job. Never write the name again.
 - A finding that the deck costs too much means you must swap dear cards for cheaper ones that do the same job. Each shortlist line ends with the price of one copy. Come under the cap.
-- A finding that the deck keeps too few precon cards means you dropped too many. Put back the ones marked "precon" until the count is met, and drop cards that are not marked instead.
+- A finding that the deck keeps too few precon names means you dropped too many. Put back the ones marked "precon" until the count is met, and drop cards that are not marked instead. Keep the theme of the precon, and change no more than the fix needs.
 - Return the whole deck, and not the change alone.
 - Write the summary again from nothing. It describes the deck, and never the repair. Name no card you changed, no count, and no slot you filled. A reader of the summary does not know a first turn happened.
 - The summary rules of the first turn still hold. State no rule of the game.`

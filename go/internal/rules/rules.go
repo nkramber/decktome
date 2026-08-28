@@ -9,6 +9,8 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"maps"
+	"slices"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 )
@@ -80,8 +82,11 @@ func Load() (*Config, error) {
 	if err := json.Unmarshal(companionJSON, &c); err != nil {
 		return nil, fmt.Errorf("companion_bans.json: %w", err)
 	}
-	for name, v := range map[string]string{"formats.json": f.VerifiedAt, "brackets.json": b.VerifiedAt, "companion_bans.json": c.VerifiedAt} {
-		if v == "" {
+	dates := map[string]string{"formats.json": f.VerifiedAt, "brackets.json": b.VerifiedAt, "companion_bans.json": c.VerifiedAt}
+	// The names are sorted, so the error reads the same on every run
+	// (G-13 of the 2026-08-28 audit).
+	for _, name := range slices.Sorted(maps.Keys(dates)) {
+		if dates[name] == "" {
 			return nil, fmt.Errorf("%s: verified_at is missing", name)
 		}
 	}
@@ -143,6 +148,7 @@ const (
 	CodeBadPartner       = "bad_partner"
 	CodeOffColor         = "off_color"
 	CodeGameChangers     = "game_changer_limit"
+	CodeUnknownBracket   = "unknown_bracket"
 	CodeBracketProse     = "bracket_prose_rules"
 	CodeBadCompanion     = "bad_companion"
 	CodeCompanionBanned  = "companion_banned"

@@ -1,14 +1,8 @@
 package candidates
 
 import (
-	"context"
-	"io"
-	"log/slog"
-	"os"
 	"sort"
 	"testing"
-
-	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
 )
 
 // TestThemeSlugsExist guards defect A of the PR-6 gate (2026-08-24).
@@ -17,17 +11,7 @@ import (
 // loses its payoff half. The test needs a local snapshot. It skips
 // without one, and `make themes-check` runs it with the snapshot.
 func TestThemeSlugsExist(t *testing.T) {
-	dir := os.Getenv("CARDS_SNAPSHOT_DIR")
-	if dir == "" {
-		t.Skip("set CARDS_SNAPSHOT_DIR to check the theme slugs against a snapshot")
-	}
-	idx, err := cards.LoadIndex(context.Background(), cards.DirStore{Root: dir}, slog.New(slog.NewTextHandler(io.Discard, nil)))
-	if err != nil {
-		t.Fatalf("load index: %v", err)
-	}
-	if idx == nil {
-		t.Fatalf("no complete snapshot under %s", dir)
-	}
+	idx := snapshotIndex(t)
 	tbl, err := loadThemes()
 	if err != nil {
 		t.Fatalf("load themes: %v", err)

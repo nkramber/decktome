@@ -46,29 +46,26 @@ type Context struct {
 
 	// OutOfScope marks a request for something other than a Magic deck.
 	// Nothing else is worth asking until it is settled (D-99).
-	OutOfScope    bool `json:"out_of_scope"`
-	HasCollection bool `json:"has_collection"`
-	OwnedMode     bool `json:"owned_mode"`
-	ThinTheme     bool `json:"thin_theme"`
-	CommanderSet  bool `json:"commander_set"`
-	NamedCard     bool `json:"named_card"`
-	// LockedCard marks a named card that is not the commander. The locked
-	// row asks about these, and only these (D-70).
-	LockedCard       bool `json:"locked_card"`
+	OutOfScope       bool `json:"out_of_scope"`
+	HasCollection    bool `json:"has_collection"`
+	OwnedMode        bool `json:"owned_mode"`
+	ThinTheme        bool `json:"thin_theme"`
+	CommanderSet     bool `json:"commander_set"`
+	NamedCard        bool `json:"named_card"`
 	Suggested        bool `json:"suggested"`
 	PowerCompetitive bool `json:"power_competitive"`
-	// PowerInferred says the agent filled the power step itself, because
-	// the user asked for a strong deck and named no step. A step the user
-	// named is not inferred, and a question about it repeats the answer
-	// the user already gave (D-209).
-	PowerInferred   bool `json:"power_inferred"`
-	BuyList         bool `json:"buy_list"`
-	BudgetAmbiguous bool `json:"budget_ambiguous"`
-	HouseFormat     bool `json:"house_format"`
-	TwoPlans        bool `json:"two_plans"`
-	AfterBuild      bool `json:"after_build"`
-	// TwoDecks marks a request for more than one deck. The app builds one
-	// at a time, and it says so before it asks anything else (D-112).
+	BuyList          bool `json:"buy_list"`
+	BudgetAmbiguous  bool `json:"budget_ambiguous"`
+	HouseFormat      bool `json:"house_format"`
+	TwoPlans         bool `json:"two_plans"`
+	// AfterBuild says the session holds a built deck. agentsvc and
+	// cmd/questions-gate set it. No row reads it since PR-9 left the MVP
+	// (D-256), and it stays for the callers that set it.
+	AfterBuild bool `json:"after_build"`
+	// TwoDecks marks a request for more than one deck in this message.
+	// The app builds one at a time, and it says so before it asks
+	// anything else (D-112). The fact is read each turn, so a user who
+	// asks for a second deck again hears the sentence again (audit Q-10).
 	TwoDecks bool `json:"two_decks"`
 	// UnsupportedFormat marks a format this app does not build, such as
 	// Brawl. State holds the name and the nearest format (D-112).
@@ -98,7 +95,13 @@ func (c *Catalog) Plan(ctx Context) []Row {
 	// An out-of-scope request gets one question and no others. Asking the
 	// format beside it reads as if the agent had not heard the request.
 	// Gate run 11 asked "Which Yu-Gi-Oh format would you like?" (D-99).
-	if ctx.OutOfScope && !ctx.Filled["scope"] && !ctx.Asked["out_of_scope"] {
+	//
+	// Both facts below are read on this message alone, and the row fires
+	// whenever the fact holds. The asked mark does not stop it: a user
+	// who asks for another game a second time hears the sentence a second
+	// time, and the agent reopens the key before the plan runs (audit
+	// Q-10).
+	if ctx.OutOfScope && !ctx.Filled["scope"] {
 		if row, ok := c.Row("out_of_scope"); ok {
 			return []Row{row}
 		}
@@ -107,7 +110,7 @@ func (c *Catalog) Plan(ctx Context) []Row {
 	// row belongs to one deck, so the agent settles which deck first.
 	// Probe 50 of gate runs 11 to 13 chose a deck silently, and it never
 	// said that the app builds one at a time (D-112).
-	if ctx.TwoDecks && !ctx.Filled["deck_count"] && !ctx.Asked["one_deck"] {
+	if ctx.TwoDecks && !ctx.Filled["deck_count"] {
 		if row, ok := c.Row("one_deck"); ok {
 			return []Row{row}
 		}
@@ -214,9 +217,7 @@ func (w When) matches(ctx Context) bool {
 	}{
 		{w.OutOfScope, ctx.OutOfScope},
 		{w.PowerCompetitive, ctx.PowerCompetitive},
-		{w.PowerInferred, ctx.PowerInferred},
 		{w.NamedCard, ctx.NamedCard},
-		{w.LockedCard, ctx.LockedCard},
 		{w.Suggested, ctx.Suggested},
 		{w.OwnedMode, ctx.OwnedMode},
 		{w.CommanderSet, ctx.CommanderSet},
@@ -226,7 +227,6 @@ func (w When) matches(ctx Context) bool {
 		{w.BudgetAmbiguous, ctx.BudgetAmbiguous},
 		{w.HouseFormat, ctx.HouseFormat},
 		{w.TwoPlans, ctx.TwoPlans},
-		{w.AfterBuild, ctx.AfterBuild},
 		{w.TwoDecks, ctx.TwoDecks},
 		{w.UnsupportedFormat, ctx.UnsupportedFormat},
 		{w.NoNearFormat, ctx.NoNearFormat},
@@ -259,19 +259,11 @@ func sixtyCard(f mtgv1.FormatId) bool {
 	return false
 }
 
-func anyWord(text string, words []string) bool {
-	for _, w := range words {
-		if strings.Contains(text, w) {
-			return true
-		}
-	}
-	return false
-}
-
 // Route maps a user phrase to the slot it belongs to (corpus section 11).
 // It returns an empty string when no rule fires. The rules exist because
 // the dogfood runs of 2026-08-24 showed three phrase families with no
-// home: house rules, power, and jank.
+// home: house rules, power, and jank. A jank word routes to power: the
+// jank row retired with A-6 of the 2026-08-28 audit.
 func Route(text string) string {
 	t := strings.ToLower(text)
 	switch {

@@ -60,29 +60,31 @@ func conversations() []conversation {
 	}
 	cs = append(cs, c2)
 
-	// The named card becomes the commander, so no card is locked. The
-	// locked row must stay silent here: the live run of 2026-08-24 asked
-	// the user to keep or cut a list that held only their commander (D-70).
+	// The named card becomes the commander, so no card is locked (D-70).
+	// The plain theme row asks: the card-named theme row retired with
+	// A-6 of the 2026-08-28 audit.
 	c3 := conversation{name: "a named card, role unknown"}
 	c3.ctx = newCtx("build around grist, the hunger tide")
 	c3.ctx.HasCollection, c3.ctx.NamedCard = true, true
 	c3.steps = []step{
-		{want: []string{"format", "theme_card_named", "colors"}, fill: []string{"format", "theme", "colors"}, set: commander},
+		{want: []string{"format", "theme", "colors"}, fill: []string{"format", "theme", "colors"}, set: commander},
 		{want: []string{"named_card_role", "power_commander", "pool"},
 			fill: []string{"named_card_role", "commander", "power", "pool_rule"},
 			set:  func(c *Context) { c.CommanderSet = true }},
 	}
 	cs = append(cs, c3)
 
+	// The jank row retired (A-6 of the 2026-08-28 audit). A jank word
+	// routes to power, and the power row asks.
 	c4 := conversation{name: "fun and janky"}
 	c4.ctx = newCtx("make me something fun and janky")
 	c4.ctx.HasCollection = true
 	c4.steps = []step{
-		{want: []string{"format", "theme", "jank"}, fill: []string{"format", "theme", "jank"},
+		{want: []string{"format", "theme", "colors"}, fill: []string{"format", "theme", "colors"},
 			set: func(c *Context) { commander(c); c.Theme = "sacrifice" }},
-		{want: []string{"commander", "power_commander", "colors"}, fill: []string{"power", "colors"},
+		{want: []string{"commander", "power_commander", "pool"}, fill: []string{"power", "pool_rule"},
 			set: func(c *Context) { c.Suggested = true }},
-		{want: []string{"commander_pick", "pool"}, fill: []string{"commander", "commander_pick", "pool_rule"},
+		{want: []string{"commander_pick"}, fill: []string{"commander", "commander_pick"},
 			set: func(c *Context) { c.CommanderSet = true }},
 	}
 	cs = append(cs, c4)
@@ -99,6 +101,8 @@ func conversations() []conversation {
 	}
 	cs = append(cs, c5)
 
+	// The meta row retired (A-6 of the 2026-08-28 audit). A competitive
+	// 60-card session asks the budget and nothing about the sideboard.
 	c6 := conversation{name: "the strongest deck, no collection"}
 	c6.ctx = newCtx("build the strongest deck possible i own nothing")
 	c6.ctx.BuyList = true
@@ -106,11 +110,8 @@ func conversations() []conversation {
 		{want: []string{"format", "theme", "colors"}, fill: []string{"format", "theme", "colors"},
 			set: func(c *Context) {
 				c.Format, c.PowerCompetitive, c.Theme = mtgv1.FormatId_FORMAT_ID_MODERN, true, "best deck"
-				// The agent fills the tournament step here, because the
-				// user named none, and the confirm row asks about it.
-				c.PowerInferred = true
 			}},
-		{want: []string{"budget", "meta"}, fill: []string{"budget", "meta"}},
+		{want: []string{"budget"}, fill: []string{"budget"}},
 	}
 	cs = append(cs, c6)
 
@@ -121,11 +122,8 @@ func conversations() []conversation {
 		{want: []string{"format_store", "theme", "colors"}, fill: []string{"format", "theme", "colors"},
 			set: func(c *Context) {
 				c.Format, c.PowerCompetitive, c.Theme = mtgv1.FormatId_FORMAT_ID_MODERN, true, "best deck"
-				// The agent fills the tournament step here, because the
-				// user named none, and the confirm row asks about it.
-				c.PowerInferred = true
 			}},
-		{want: []string{"budget", "meta"}, fill: []string{"budget", "meta"}},
+		{want: []string{"budget"}, fill: []string{"budget"}},
 	}
 	cs = append(cs, c7)
 
@@ -137,8 +135,9 @@ func conversations() []conversation {
 			set: func(c *Context) { commander(c); c.TwoPlans = true }},
 		{want: []string{"commander", "power_commander", "pool"}, fill: []string{"power", "pool_rule", "commander"},
 			set: func(c *Context) { c.OwnedMode, c.CommanderSet = true, true }},
-		{want: []string{"budget_scope", "plan_choice"},
-			fill: []string{"budget_scope", "budget", "plan_variant"}},
+		// The plan-choice row retired with PR-9 (D-256, A-6 of the
+		// 2026-08-28 audit), so two plans raise no question.
+		{want: []string{"budget_scope"}, fill: []string{"budget_scope", "budget"}},
 	}
 	cs = append(cs, c8)
 
@@ -185,18 +184,19 @@ func conversations() []conversation {
 	cs = append(cs, c11)
 
 	// The other half of D-70: a named card that is not the commander is a
-	// locked card, and the locked row fires for it.
+	// locked card. The build keeps it, and no row asks about it since the
+	// locked row retired (A-6 of the 2026-08-28 audit).
 	c13 := conversation{name: "a card to keep that is not the commander"}
 	c13.ctx = newCtx("karlov lifegain deck, and keep sanguine bond")
-	c13.ctx.HasCollection, c13.ctx.NamedCard, c13.ctx.LockedCard = true, true, true
+	c13.ctx.HasCollection, c13.ctx.NamedCard = true, true
 	c13.ctx.CommanderSet, c13.ctx.Theme = true, "lifegain"
 	c13.ctx.Format = mtgv1.FormatId_FORMAT_ID_COMMANDER
 	for _, k := range []string{"format", "theme", "colors", "commander", "commander_pick", "named_card_role"} {
 		c13.ctx.Filled[k] = true
 	}
 	c13.steps = []step{
-		{want: []string{"power_commander", "pool", "locked"},
-			fill: []string{"power", "pool_rule", "locked"}},
+		{want: []string{"power_commander", "pool"},
+			fill: []string{"power", "pool_rule"}},
 	}
 	cs = append(cs, c13)
 
@@ -255,9 +255,8 @@ func conversations() []conversation {
 		{want: []string{"format", "theme_competitive", "colors"}, fill: []string{"format", "theme", "colors"},
 			set: func(c *Context) {
 				c.Format, c.Theme = mtgv1.FormatId_FORMAT_ID_MODERN, "best deck"
-				c.PowerInferred = true
 			}},
-		{want: []string{"budget", "meta"}, fill: []string{"budget", "meta"}},
+		{want: []string{"budget"}, fill: []string{"budget"}},
 	}
 	cs = append(cs, c16)
 
@@ -369,9 +368,8 @@ func conversations() []conversation {
 		{want: []string{"format_store", "theme_competitive", "colors"}, fill: []string{"format", "theme", "colors"},
 			set: func(c *Context) {
 				c.Format, c.Theme = mtgv1.FormatId_FORMAT_ID_MODERN, "poison"
-				c.PowerInferred = true
 			}},
-		{want: []string{"budget", "meta"}, fill: []string{"budget", "meta"}},
+		{want: []string{"budget"}, fill: []string{"budget"}},
 	}
 	cs = append(cs, c25)
 
@@ -389,13 +387,13 @@ func conversations() []conversation {
 	// and the commander row still has work to do.
 	c27 := conversation{name: "a card for the 99"}
 	c27.ctx = newCtx("build around grist but not as my commander")
-	c27.ctx.HasCollection, c27.ctx.NamedCard, c27.ctx.LockedCard = true, true, true
+	c27.ctx.HasCollection, c27.ctx.NamedCard = true, true
 	c27.steps = []step{
-		{want: []string{"format", "theme_card_named", "colors"}, fill: []string{"format", "theme", "colors"},
+		{want: []string{"format", "theme", "colors"}, fill: []string{"format", "theme", "colors"},
 			set: func(c *Context) { commander(c); c.Theme = "sacrifice" }},
 		{want: []string{"named_card_role", "power_commander", "pool"},
 			fill: []string{"named_card_role", "power", "pool_rule"}},
-		{want: []string{"commander", "locked"}, fill: []string{"commander", "commander_pick", "locked"},
+		{want: []string{"commander"}, fill: []string{"commander", "commander_pick"},
 			set: func(c *Context) { c.CommanderSet = true }},
 	}
 	cs = append(cs, c27)
@@ -408,7 +406,6 @@ func conversations() []conversation {
 		{want: []string{"commander", "power_commander", "pool"},
 			fill: []string{"commander", "commander_pick", "power", "pool_rule"},
 			set:  func(c *Context) { c.CommanderSet = true }},
-		{want: []string{"plan_choice"}, fill: []string{"plan_variant"}},
 	}
 	cs = append(cs, c28)
 

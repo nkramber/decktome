@@ -14,7 +14,7 @@ The owner wants the design doc in the style of `/Users/nate/Repos/connector-sync
 3. **Lessons learned.** Numbered. Each lesson names the event that taught it. Carry lessons from connector-syncer when they apply.
 4. **System map.** A table of components, what each reads, and its sensitivity.
 5. **Cost model.** What we pay, what we do not know, and which measurement will answer it.
-6. **Defect and finding register.** A numbered table. Status legend: ✅ done (code merged), 🔧 planned (item listed), ⚠ constraint (binds a PR), ❓ needs owner input, parked. Findings carry evidence and dates. Findings bind to plan items ("binds PR-3").
+6. **Defect and finding register.** A numbered table. Status legend: ✅ done (code merged), 🔧 planned (item listed), ⚠ constraint (binds a PR), ❓ needs owner input, ⏸ out of scope (a decision parked it), 🅿 parked. Findings carry evidence and dates. Findings bind to plan items ("binds PR-3").
 7. **Guardrails.** Numbered invariants that every PR must keep.
 8. **Roadmap.** Phases. Each entry has: an id (PR-#, M-#, I-#), a technical paragraph, a gate, and a plain-English paragraph in a block quote that starts with "*In plain English:*".
 9. **Sequencing.** A strict ordered list with a single owner. Mark the gate.
@@ -27,7 +27,7 @@ The owner wants the design doc in the style of `/Users/nate/Repos/connector-sync
 - Numbering continues across revisions. Never renumber.
 - "One concern per PR" applies to the plan items.
 - A refuted premise stays in the doc with a dated correction (lesson 7 in the model doc).
-- Ids: F-# findings, Q-# quality findings, E-# constraints, PR-# code changes, M-# measurement, I-# integration, D-# owner decisions.
+- Ids in the roadmap: F-# findings, PR-# code changes, M-# measurement, I-# integration, D-# owner decisions (in `decisions.md`), OQ-# open questions. An audit file uses its own local ids (C-, B-, E-, Q-, G-, L-, T-, P-, W-), and they never enter the roadmap register.
 
 ## Plain-English paragraph rules
 

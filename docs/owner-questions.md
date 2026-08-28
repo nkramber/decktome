@@ -4,19 +4,17 @@ This file is the decision queue. `docs/open-questions.md` is the roadmap log, an
 
 The tuning loop reads this file (D-133). A fixer agent may not decide anything listed here. When a fix needs one of these answers, the agent skips that fix and says so.
 
-Every row came out of the session of 2026-08-25 and 2026-08-26: the owner's scoring of items 1 to 32, the correction session, and the batch sweep of all 66 conversations.
+Every row came out of the sessions of 2026-08-25 and 2026-08-26. Their sources are the owner's scoring of items 1 to 32, the correction session, and the batch sweep of all 66 conversations.
 
 ## Blocks the automation
 
-No owner question blocks it. The owner answered OQ-24 to OQ-27 on 2026-08-26 (D-135 to D-138), and the fixer is named in `AUTOTUNE_FIXER_CMD` (D-159). The loop ran four times on 2026-08-26, and D-171 to D-178 record what it got wrong.
+No owner question blocks it. The owner answered OQ-24 to OQ-27 on 2026-08-26 (D-135 to D-138), and the fixer is named in `AUTOTUNE_FIXER_CMD` (D-159). The loop started seven times and kept nothing, and D-171 to D-178 record what it got wrong. The noise margin is set (D-230, D-258).
 
-What blocks the next run is the checker's noise margin. Run 18 and run 20260826-191225-000 measured identical agent code, and their holdout ratios differed by three questions. The lead builds a margin from two same-code runs, and the loop waits for it.
-
-## Waits on the first eval run
+## Waits on a decision
 
 | # | Question | Why only you | What it blocks |
 |---|---|---|---|
-| OQ-39 | How far may the cost-tier eval fall behind a stronger judge? `make eval-calibrate` reports the agreement, and no number sets the floor. D-149 answers the card-fact half of this for nothing, and it caught one false claim on its first run. The dual-judge proposal stays open for the rest. | It is a tolerance, and tolerances are yours. A cheap judge that refuses half as many questions still reports a real floor, and it hides the other half. | The PR-7B gate, and how much weight the loop's ratio carries. |
+| OQ-39 | How far may the cost-tier eval fall behind a stronger judge? `make eval-calibrate` reports the agreement, and no number sets the floor. D-149 answers the card-fact half of this for nothing, and it caught one false claim on its first run. The dual-judge proposal stays open for the rest. | It is a tolerance, and tolerances are yours. A cheap judge that refuses half as many questions still reports a real floor, and it hides the other half. | How much weight the loop's ratio carries. |
 
 ## The two numbers M-5 exists to set
 

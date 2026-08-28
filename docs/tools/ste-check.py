@@ -3,7 +3,9 @@
 
 Checks: sentence length (25 words, rule 6.3), semicolons (8.1), contractions (4.2),
 "-ing" verb forms after helper words (3.5), and paragraphs over six sentences (6.6).
-Tables, code blocks, headings, front matter, and URLs are skipped.
+Tables, code blocks, headings, front matter, and URLs are skipped. A
+comma list of technical names (rule 4.3, 8.6) is not held to the length
+rule.
 Usage: python3 docs/tools/ste-check.py FILE [FILE ...]
 """
 import re
@@ -16,6 +18,9 @@ MAX_WORDS = 25
 
 
 def strip_md(line: str) -> str:
+    # Curly quotes count like straight ones (rule 8.6), and a curly
+    # apostrophe hides a contraction from the check.
+    line = line.replace("\u2019", "'").replace("\u2018", "'").replace("\u201c", '"').replace("\u201d", '"')
     line = re.sub(r"`[^`]*`", "X", line)
     line = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", line)
     line = re.sub(r"https?://\S+", "URL", line)
@@ -23,6 +28,12 @@ def strip_md(line: str) -> str:
     line = re.sub(r"\([^)]*\)", "(X)", line)  # rule 8.5: parentheses count as one word
     line = re.sub(r"[*_>#]+", "", line)
     return line
+
+
+def is_name_list(s: str) -> bool:
+    """A run of short comma-separated items is a list of names, not a sentence."""
+    items = [i.strip() for i in s.split(",")]
+    return len(items) >= 6 and sum(len(i.split()) for i in items) / len(items) <= 3
 
 
 def sentences(text: str):
@@ -34,7 +45,22 @@ def check(path: str):
     findings = []
     in_code = in_front = False
     para = []
+    held = []  # (line number, text) of the paragraph so far, for wrapped sentences
     n = 0
+
+    def flush_held():
+        # A sentence may span hard-wrapped lines. Join the held lines and
+        # split into sentences once, so a wrap is not a sentence end.
+        if not held:
+            return
+        first = held[0][0]
+        joined = " ".join(t for _, t in held)
+        for s in sentences(joined):
+            words = len(s.split())
+            if words > MAX_WORDS and not is_name_list(s):
+                findings.append((first, "6.3", f"{words} words: {s[:70]}..."))
+            para.append(s)
+        held.clear()
     with open(path, encoding="utf-8") as fh:
         for n, raw in enumerate(fh, 1):
             line = raw.rstrip("\n")
@@ -51,12 +77,14 @@ def check(path: str):
             if in_code or line.strip().startswith("|") or line.strip().startswith("#"):
                 continue
             if not line.strip() or line.strip() == ">":
+                flush_held()
                 if len(para) > 6:
                     findings.append((n, "6.6", f"paragraph has {len(para)} sentences"))
                 para = []
                 continue
             if line.startswith(">") or line.startswith("**"):
                 # a block quote or a bold entry title starts a new paragraph
+                flush_held()
                 if len(para) > 6:
                     findings.append((n, "6.6", f"paragraph has {len(para)} sentences"))
                 para = []
@@ -69,12 +97,19 @@ def check(path: str):
                 w = m.group(2).lower()
                 if w not in ING_ALLOW:
                     findings.append((n, "3.5", f"-ing form '{m.group(0)}'"))
-            for s in sentences(txt):
-                words = len(s.split())
-                if words > MAX_WORDS:
-                    findings.append((n, "6.3", f"{words} words: {s[:70]}..."))
-                if not re.match(r"^\s*[-*\d]", line):
-                    para.append(s)
+            if re.match(r"^\s*[-*\d]", line):
+                # A list item is one unit. It is not part of the paragraph count.
+                flush_held()
+                for s in sentences(txt):
+                    words = len(s.split())
+                    if words > MAX_WORDS and not is_name_list(s):
+                        findings.append((n, "6.3", f"{words} words: {s[:70]}..."))
+                continue
+            held.append((n, txt))
+    # The last paragraph of a file ends with no blank line after it.
+    flush_held()
+    if len(para) > 6:
+        findings.append((n, "6.6", f"paragraph has {len(para)} sentences"))
     return findings
 
 

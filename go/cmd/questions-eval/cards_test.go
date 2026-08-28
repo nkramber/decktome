@@ -1,11 +1,34 @@
 package main
 
 import (
+	"os"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/nkramber/mtg-deck-builder/go/internal/tune"
 )
+
+// The snapshot loads once per package. Every snapshot test shares it.
+var (
+	checkerOnce sync.Once
+	checkerIdx  cardChecker
+	checkerNote string
+)
+
+// snapshotChecker returns the card checker over CARDS_SNAPSHOT_DIR. The
+// tests skip without the variable, the way the candidates tests do.
+func snapshotChecker(t *testing.T) cardChecker {
+	t.Helper()
+	if os.Getenv("CARDS_SNAPSHOT_DIR") == "" {
+		t.Skip("set CARDS_SNAPSHOT_DIR to run the snapshot tests")
+	}
+	checkerOnce.Do(func() { checkerIdx, checkerNote = newCardChecker() })
+	if checkerNote != "" {
+		t.Fatalf("snapshot: %s", checkerNote)
+	}
+	return checkerIdx
+}
 
 // TestDeniesExistence is D-149. The two false claims of eval run 14 are
 // the first two cases. The rest are reasons that name a card and claim
@@ -94,11 +117,7 @@ func TestCardCheckReportsWhenItDidNotRun(t *testing.T) {
 // where the card snapshot is present, and it proves the two claims of
 // eval run 14 against it rather than against memory.
 func TestSnapshotRefutesRunFourteen(t *testing.T) {
-	t.Setenv("CARDS_SNAPSHOT_DIR", "../../../.local/gcs/mtg-local-cards/scryfall")
-	c, note := newCardChecker()
-	if note != "" {
-		t.Skipf("no snapshot: %s", note)
-	}
+	c := snapshotChecker(t)
 	cases := []struct{ reason, card string }{
 		{`Commander selection is needed because the user said only "A dragon deck, red", but "Ran and Shaw" is not a real Magic card or commander option.`, "Ran and Shaw"},
 		{`The user had not chosen a commander, but "Quina, Qu Gourmet" is not a valid Magic card option.`, "Quina, Qu Gourmet"},
@@ -131,11 +150,7 @@ func TestSnapshotRefutesRunFourteen(t *testing.T) {
 // wrong came from a crossover set and reached the user through the pick
 // row's options. The facts block answers all four from the snapshot.
 func TestFactsNameTheCardsAQuestionOffers(t *testing.T) {
-	t.Setenv("CARDS_SNAPSHOT_DIR", "../../../.local/gcs/mtg-local-cards/scryfall")
-	c, note := newCardChecker()
-	if note != "" {
-		t.Skipf("no snapshot: %s", note)
-	}
+	c := snapshotChecker(t)
 	conv := tune.Conversation{
 		Name: "the four cards the eval got wrong",
 		Questions: []tune.Question{{

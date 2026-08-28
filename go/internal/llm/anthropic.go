@@ -119,7 +119,11 @@ func classifyAnthropic(ctx context.Context, err error, model string) error {
 			apierr.StatusCode >= 500:
 			class = ClassTransient
 		}
-		return newErr(class, AnthropicName, model, apierr.StatusCode, err)
+		e := newErr(class, AnthropicName, model, apierr.StatusCode, err)
+		if class == ClassTransient {
+			e = e.withRetryAfter(apierr.Response)
+		}
+		return e
 	}
 	return classifyTransport(ctx, err, AnthropicName, model)
 }

@@ -11,6 +11,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 )
@@ -79,25 +80,21 @@ type When struct {
 	Requires []string `json:"requires"`
 	// NotOutstanding names the state keys this row waits for. The row
 	// does not fire while one of them holds an unanswered question.
-	NotOutstanding   []string `json:"not_outstanding"`
-	Format           string   `json:"format"`
-	PowerCompetitive *bool    `json:"power_competitive"`
-	// PowerInferred marks a power step the agent filled in for the user.
-	// The confirm row exists for that step alone (D-209).
-	PowerInferred   *bool `json:"power_inferred"`
-	OutOfScope      *bool `json:"out_of_scope"`
-	NamedCard       *bool `json:"named_card"`
-	LockedCard      *bool `json:"locked_card"`
-	Suggested       *bool `json:"suggested"`
-	OwnedMode       *bool `json:"owned_mode"`
-	CommanderSet    *bool `json:"commander_set"`
-	HasCollection   *bool `json:"has_collection"`
-	ThinTheme       *bool `json:"thin_theme"`
-	BuyList         *bool `json:"buy_list"`
-	BudgetAmbiguous *bool `json:"budget_ambiguous"`
-	HouseFormat     *bool `json:"house_format"`
-	TwoPlans        *bool `json:"two_plans"`
-	AfterBuild      *bool `json:"after_build"`
+	NotOutstanding []string `json:"not_outstanding"`
+	// Format is "commander", "sixty", or empty. Load refuses another word.
+	Format           string `json:"format"`
+	PowerCompetitive *bool  `json:"power_competitive"`
+	OutOfScope       *bool  `json:"out_of_scope"`
+	NamedCard        *bool  `json:"named_card"`
+	Suggested        *bool  `json:"suggested"`
+	OwnedMode        *bool  `json:"owned_mode"`
+	CommanderSet     *bool  `json:"commander_set"`
+	HasCollection    *bool  `json:"has_collection"`
+	ThinTheme        *bool  `json:"thin_theme"`
+	BuyList          *bool  `json:"buy_list"`
+	BudgetAmbiguous  *bool  `json:"budget_ambiguous"`
+	HouseFormat      *bool  `json:"house_format"`
+	TwoPlans         *bool  `json:"two_plans"`
 	// TwoDecks marks a request for more than one deck (D-112).
 	TwoDecks *bool `json:"two_decks"`
 	// UnsupportedFormat marks a format this app does not build (D-112).
@@ -127,14 +124,20 @@ var slots = map[string]bool{
 	// (D-112).
 	"deck_count": true,
 	"format":     true, "power": true, "colors": true, "theme": true,
-	"commander": true, "pool_rule": true, "budget": true, "locked": true,
-	"plan_variant": true, "house_rules": true, "meta": true,
+	"commander": true, "pool_rule": true, "budget": true,
+	// house_rules holds the user's own words for "anything goes". The
+	// build copies it to Format.house_rules (D-3, A-6 of the 2026-08-28
+	// audit). locked, plan_variant, and meta left with their rows.
+	"house_rules": true,
 }
 
 // Load reads the embedded catalog and checks it.
-func Load() (*Catalog, error) {
+func Load() (*Catalog, error) { return parse(catalogJSON) }
+
+// parse reads one catalog document and checks it.
+func parse(data []byte) (*Catalog, error) {
 	var c Catalog
-	if err := json.Unmarshal(catalogJSON, &c); err != nil {
+	if err := json.Unmarshal(data, &c); err != nil {
 		return nil, fmt.Errorf("questions: catalog.json: %w", err)
 	}
 	if c.VerifiedAt == "" {
@@ -158,6 +161,14 @@ func Load() (*Catalog, error) {
 		if r.RepeatOnChange && !r.Repeat {
 			return nil, fmt.Errorf("questions: row %q narrows a repeat it does not have", r.ID)
 		}
+		switch r.When.Format {
+		case "", "commander", "sixty":
+		default:
+			return nil, fmt.Errorf("questions: row %q names format trigger %q, want commander, sixty, or none", r.ID, r.When.Format)
+		}
+		if r.Key != "" && !keyWord.MatchString(r.Key) {
+			return nil, fmt.Errorf("questions: row %q has key %q, want lowercase words and underscores", r.ID, r.Key)
+		}
 		if other, ok := order[r.Order]; ok {
 			return nil, fmt.Errorf("questions: rows %q and %q share order %d", other, r.ID, r.Order)
 		}
@@ -177,9 +188,24 @@ func Load() (*Catalog, error) {
 			}
 		}
 	}
+	// A row may wait on a key only when some row owns that key.
+	keys := map[string]bool{}
+	for _, r := range c.Rows {
+		keys[r.StateKey()] = true
+	}
+	for _, r := range c.Rows {
+		for _, k := range r.When.NotOutstanding {
+			if !keys[k] {
+				return nil, fmt.Errorf("questions: row %q waits on key %q, which no row owns", r.ID, k)
+			}
+		}
+	}
 	sort.SliceStable(c.Rows, func(i, j int) bool { return c.Rows[i].Order < c.Rows[j].Order })
 	return &c, nil
 }
+
+// keyWord is the shape of a state key.
+var keyWord = regexp.MustCompile(`^[a-z][a-z0-9_]*$`)
 
 // StateKey is the key the planner tracks for this row.
 func (r Row) StateKey() string {

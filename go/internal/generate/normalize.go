@@ -44,16 +44,21 @@ type Normalized struct {
 // candidates.List, and the normalizer reads nothing else: a card outside
 // the pool is a miss even when the card index knows it.
 type Pool struct {
-	byName map[string]*mtgv1.Card
-	owned  map[string]int32
-	names  []string
+	byName   map[string]*mtgv1.Card
+	byOracle map[string]*mtgv1.Card
+	owned    map[string]int32
+	names    []string
 }
 
 // NewPool indexes the cards the model may name. A later card with the
 // same name replaces an earlier one, so the caller passes the commander
 // list first and the shortlist after it.
 func NewPool(cards []*mtgv1.Card, owned map[string]int32) *Pool {
-	p := &Pool{byName: make(map[string]*mtgv1.Card, len(cards)), owned: owned}
+	p := &Pool{
+		byName:   make(map[string]*mtgv1.Card, len(cards)),
+		byOracle: make(map[string]*mtgv1.Card, len(cards)),
+		owned:    owned,
+	}
 	for _, c := range cards {
 		if c.GetName() == "" {
 			continue
@@ -63,6 +68,9 @@ func NewPool(cards []*mtgv1.Card, owned map[string]int32) *Pool {
 			p.names = append(p.names, c.GetName())
 		}
 		p.byName[key] = c
+		if id := c.GetOracleId(); id != "" {
+			p.byOracle[id] = c
+		}
 	}
 	sort.Strings(p.names)
 	return p
@@ -80,6 +88,19 @@ func (p *Pool) Card(name string) (*mtgv1.Card, bool) {
 	c, ok := p.byName[foldName(name)]
 	return c, ok
 }
+
+// ByOracleID returns the pool card of an oracle id. The builder reads
+// the pool by id when it puts a card back or names a locked card, and a
+// scan of every name for each id was the slow way to do that.
+func (p *Pool) ByOracleID(id string) (*mtgv1.Card, bool) {
+	c, ok := p.byOracle[id]
+	return c, ok
+}
+
+// OwnedCount is how many copies of a card the collection holds, zero
+// with no collection. Every card the builder inserts reads it, so a
+// card the user owns is never charged as a purchase.
+func (p *Pool) OwnedCount(id string) int32 { return p.owned[id] }
 
 // foldName is the match key: lower case, with the outer spaces removed.
 // Nothing else is folded. A punctuation change makes a different card

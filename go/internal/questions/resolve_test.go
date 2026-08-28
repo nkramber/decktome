@@ -9,31 +9,6 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 )
 
-type stubHints struct {
-	colors     string
-	commanders []string
-	owned      int
-}
-
-func (s stubHints) ThemeColors(string) string { return s.colors }
-
-// Commanders answers the names the agent has not offered yet, which is
-// what the real hint source does (D-73).
-func (s stubHints) Commanders(_ string, skip []string) []string {
-	var out []string
-	for _, name := range s.commanders {
-		if hasName(skip, name) {
-			continue
-		}
-		out = append(out, name)
-		if len(out) == 3 {
-			break
-		}
-	}
-	return out
-}
-func (s stubHints) OwnedThemeCount(string) int { return s.owned }
-
 func themedState(theme string) *State {
 	st := NewState(true)
 	st.Slots.Theme = theme
@@ -46,7 +21,7 @@ func themedState(theme string) *State {
 func TestNoPlaceholderReachesTheModel(t *testing.T) {
 	c := load(t)
 	for _, r := range c.Rows {
-		for _, h := range []Hints{nil, stubHints{}} {
+		for _, h := range []Hints{nil, &fakeHints{}} {
 			text, _, _ := resolve(r, themedState("lifegain"), h)
 			if strings.ContainsAny(text, "{}") {
 				t.Errorf("row %q resolved to %q, which still holds a placeholder", r.ID, text)
@@ -59,7 +34,7 @@ func TestNoPlaceholderReachesTheModel(t *testing.T) {
 }
 
 // colorsStubRow is the row the catalog held before D-108. No catalog row
-// names {colors} now, and the placeholder path still runs for PR-8.
+// names {colors} now, and no hint answers it, so the clause drops.
 func colorsStubRow() Row {
 	return Row{ID: "colors_stub", Slot: "colors",
 		Text:     "Any color preference? A {theme} deck is strongest in {colors}.",
@@ -84,47 +59,9 @@ func TestColorsRowStatesNoFact(t *testing.T) {
 			t.Errorf("the colors row states a fact again: %q", row.Text)
 		}
 	}
-	got, _, _ := resolve(row, themedState("lifegain"), stubHints{colors: "white and black"})
+	got, _, _ := resolve(row, themedState("lifegain"), &fakeHints{})
 	if got != "Any color preference?" {
 		t.Errorf("resolve = %q, want the question alone", got)
-	}
-}
-
-func TestResolveUsesHints(t *testing.T) {
-	row := colorsStubRow()
-	got, _, _ := resolve(row, themedState("lifegain"), stubHints{colors: "white and black"})
-	want := "Any color preference? A lifegain deck is strongest in white and black."
-	if got != want {
-		t.Errorf("resolve = %q, want %q", got, want)
-	}
-}
-
-// TestVagueThemeDropsTheColorClause is the D-79 side effect that gate
-// run 3 of 2026-08-25 found. "The best deck under budget" is a theme
-// value, and it reads as nonsense inside a statement about colors. The
-// model replaced three color questions for that reason.
-func TestVagueThemeDropsTheColorClause(t *testing.T) {
-	row := colorsStubRow()
-	for _, theme := range []string{"the best deck under budget", "the strongest Modern deck", "a named tier-one deck"} {
-		got, _, _ := resolve(row, themedState(theme), stubHints{colors: "white and black"})
-		if got != "Any color preference?" {
-			t.Errorf("theme %q gave %q, want the short question", theme, got)
-		}
-	}
-	// A real archetype keeps the clause.
-	got, _, _ := resolve(row, themedState("lifegain"), stubHints{colors: "white and black"})
-	if !strings.Contains(got, "strongest in white and black") {
-		t.Errorf("a real theme lost its color clause: %q", got)
-	}
-}
-
-// TestTooManyColorsDropsTheClause keeps a useless statement out. Four
-// colors name no preference at all.
-func TestTooManyColorsDropsTheClause(t *testing.T) {
-	row := colorsStubRow()
-	got, _, _ := resolve(row, themedState("lifegain"), stubHints{colors: "white, blue, black, and green"})
-	if got != "Any color preference?" {
-		t.Errorf("four colors gave %q, want the short question", got)
 	}
 }
 
@@ -138,10 +75,11 @@ func TestResolveDropsTheClauseWithNoValue(t *testing.T) {
 }
 
 // TestResolveFallsBackWhenNothingSurvives covers a row whose first clause
-// carries the meaning.
+// carries the meaning. The illegal-commander row opens with the card
+// name, and a state with no such card leaves nothing to fill.
 func TestResolveFallsBackWhenNothingSurvives(t *testing.T) {
 	c := load(t)
-	row, _ := c.Row("theme_card_named")
+	row, _ := c.Row("commander_illegal")
 	got, _, _ := resolve(row, themedState(""), nil)
 	if got != row.Fallback {
 		t.Errorf("resolve = %q, want the fallback %q", got, row.Fallback)
@@ -256,29 +194,12 @@ func TestPhrasedBraceNeverReachesTheUser(t *testing.T) {
 // TestHintsNilSafety keeps a missing index from breaking a turn.
 func TestHintsNilSafety(t *testing.T) {
 	var h *CandidateHints
-	if h.ThemeColors("lifegain") != "" || h.Commanders("lifegain", nil) != nil || h.OwnedThemeCount("lifegain") != 0 {
+	if h.Commanders("lifegain", nil) != nil || h.OwnedThemeCount("lifegain") != 0 {
 		t.Error("a nil hint source answered something")
 	}
 	empty := &CandidateHints{}
-	if empty.ThemeColors("lifegain") != "" {
+	if empty.Commanders("lifegain", nil) != nil {
 		t.Error("an empty hint source answered something")
-	}
-}
-
-func TestColorWords(t *testing.T) {
-	cases := []struct {
-		in   []mtgv1.Color
-		want string
-	}{
-		{nil, ""},
-		{[]mtgv1.Color{mtgv1.Color_COLOR_W}, "white"},
-		{[]mtgv1.Color{mtgv1.Color_COLOR_W, mtgv1.Color_COLOR_B}, "white and black"},
-		{[]mtgv1.Color{mtgv1.Color_COLOR_U, mtgv1.Color_COLOR_B, mtgv1.Color_COLOR_R}, "blue, black, and red"},
-	}
-	for _, tc := range cases {
-		if got := colorWords(tc.in); got != tc.want {
-			t.Errorf("colorWords(%v) = %q, want %q", tc.in, got, tc.want)
-		}
 	}
 }
 

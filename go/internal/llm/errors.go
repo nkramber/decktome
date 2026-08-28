@@ -3,6 +3,9 @@ package llm
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"strconv"
+	"time"
 )
 
 // Class answers one question about a failure: can a retry help, and how?
@@ -19,8 +22,8 @@ const (
 	ClassTruncation
 	// ClassRefusal means the model declined. A retry gives the same answer.
 	ClassRefusal
-	// ClassSchema means the output did not satisfy the schema. Not retried here:
-	// the caller decides (PR-8 feeds it back to the model once as a tool error).
+	// ClassSchema means the output did not satisfy the schema. The output
+	// is sampled, so the Client retries once. A second miss is terminal.
 	ClassSchema
 	// ClassBudget means the attempt or time budget ran out.
 	ClassBudget
@@ -51,7 +54,10 @@ type Error struct {
 	Model    string
 	// Status is the HTTP status when a provider answered, else 0.
 	Status int
-	Err    error
+	// RetryAfter is the provider's Retry-After hint, or 0. The Client
+	// waits at least this long before a transient retry (L-6).
+	RetryAfter time.Duration
+	Err        error
 }
 
 func (e *Error) Error() string {
@@ -75,4 +81,34 @@ func ClassOf(err error) Class {
 
 func newErr(class Class, provider, model string, status int, err error) *Error {
 	return &Error{Class: class, Provider: provider, Model: model, Status: status, Err: err}
+}
+
+// retryAfter reads the Retry-After header of resp as a delay. The header
+// is seconds or an HTTP-date. A missing or unreadable header is 0.
+func retryAfter(resp *http.Response, now time.Time) time.Duration {
+	if resp == nil {
+		return 0
+	}
+	v := resp.Header.Get("Retry-After")
+	if v == "" {
+		return 0
+	}
+	if secs, err := strconv.ParseFloat(v, 64); err == nil {
+		if secs <= 0 {
+			return 0
+		}
+		return time.Duration(secs * float64(time.Second))
+	}
+	if t, err := http.ParseTime(v); err == nil {
+		if d := t.Sub(now); d > 0 {
+			return d
+		}
+	}
+	return 0
+}
+
+// withRetryAfter returns e with the Retry-After hint of resp set.
+func (e *Error) withRetryAfter(resp *http.Response) *Error {
+	e.RetryAfter = retryAfter(resp, time.Now())
+	return e
 }

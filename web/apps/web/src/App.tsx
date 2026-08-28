@@ -35,13 +35,18 @@ export function App() {
   return (
     <main style={{ fontFamily: "system-ui, sans-serif", padding: "2rem" }}>
       <h1>MtG Deck Builder</h1>
-      <p>PR-0a scaffold. The API health check below proves the proto pipeline.</p>
-      <pre data-testid="health">{health ? JSON.stringify(health, null, 2) : "checking API..."}</pre>
-      <p data-testid="freshness">
-        {freshness
-          ? `Card data as of ${freshness.cardSnapshot} (${freshness.ageHours.toFixed(1)} h old). Legality checks use this snapshot.`
-          : "Card data: not loaded yet."}
-      </p>
+      <p>Health view. The chat and the deck views land with PR-11 and PR-12.</p>
+      {/* aria-live tells a screen reader when the async status changes. */}
+      <div aria-live="polite">
+        <pre data-testid="health">{health ? JSON.stringify(health, null, 2) : "checking API..."}</pre>
+        <p data-testid="freshness">
+          {freshness
+            ? `Card data as of ${freshness.cardSnapshot} (${freshness.ageHours.toFixed(1)} h old). Legality checks use this snapshot.`
+            : health && "error" in health
+              ? "Card data: unknown. The API did not answer."
+              : "Card data: not loaded yet."}
+        </p>
+      </div>
     </main>
   );
 }

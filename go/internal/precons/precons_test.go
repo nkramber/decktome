@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
@@ -63,6 +64,12 @@ func TestFindReadsTheUsersWords(t *testing.T) {
 		{"upgrade my avengers assemble precon", "avengers-assemble"},
 		{"I want to improve my Goblin Storm deck", "goblin-storm"},
 		{"AVENGERS ASSEMBLE, but better", "avengers-assemble"},
+		// The product names, not the file slugs (G-12).
+		{"upgrade my riders of rohan precon", "lotr-riders-of-rohan"},
+		{"make my Tricky Terrain deck better", "tricky-terrain-collectors-edition"},
+		// A short phrase whose every word is in the name.
+		{"riders of rohan", "lotr-riders-of-rohan"},
+		{"Rohan", "lotr-riders-of-rohan"},
 	} {
 		got, ok := s.Find(tc.words)
 		if !ok || got.Slug != tc.want {
@@ -143,5 +150,77 @@ func TestSplitSideboardReadsTheHeader(t *testing.T) {
 	whole, none := splitSideboard("1 Sol Ring (SLD) 2417\n")
 	if none != 0 || !strings.Contains(whole, "Sol Ring") {
 		t.Errorf("a file with no sideboard split wrong: %q %d", whole, none)
+	}
+	// The bare header the shared parser reads is a header here too.
+	bare, n := splitSideboard("1 Sol Ring (SLD) 2417\n\nSideboard\n3 Omo, Queen of Vesuva (M3C) 149\n")
+	if n != 3 || strings.Contains(bare, "Omo") {
+		t.Errorf("the bare Sideboard header was not read: %q %d", bare, n)
+	}
+}
+
+// TestTitlesAreProductNames is G-12 of the 2026-08-28 audit. A slug is a
+// file name, and the user reads the product name.
+func TestTitlesAreProductNames(t *testing.T) {
+	for _, tc := range []struct{ slug, want string }{
+		{"lotr-riders-of-rohan", "Riders of Rohan"},
+		{"tricky-terrain-collectors-edition", "Tricky Terrain"},
+		{"from-cute-to-brute", "From Cute to Brute"},
+		// Unverified product names keep the slug in Title Case.
+		{"ff-cloud", "Ff Cloud"},
+		{"lorwyn-blight-curse", "Lorwyn Blight Curse"},
+	} {
+		if got := titleOf(tc.slug); got != tc.want {
+			t.Errorf("titleOf(%q) = %q, want %q", tc.slug, got, tc.want)
+		}
+	}
+}
+
+// TestWordsOfMatchesAShortForm covers the phrase rule without the
+// snapshot.
+func TestWordsOfMatchesAShortForm(t *testing.T) {
+	title := strings.Fields("riders of rohan")
+	for _, tc := range []struct {
+		phrase string
+		want   bool
+	}{
+		{"riders of rohan", true},
+		{"rohan", true},
+		{"rohan, riders", true},
+		{"upgrade my riders of rohan precon", false},
+		{"", false},
+	} {
+		if got := wordsOf(strings.Fields(tc.phrase), title); got != tc.want {
+			t.Errorf("wordsOf(%q) = %v, want %v", tc.phrase, got, tc.want)
+		}
+	}
+}
+
+// TestUnresolvedListsTheLostLists is G-8 of the 2026-08-28 audit. A
+// precon the index can not answer must not feed the share rule, and the
+// loader now says which ones those are. A two-card index answers no
+// precon, so every one is listed.
+func TestUnresolvedListsTheLostLists(t *testing.T) {
+	idx := cards.NewIndex([]*mtgv1.Card{
+		{OracleId: "o-solring", Name: "Sol Ring", TypeLine: "Artifact"},
+	}, nil, nil, time.Unix(0, 0).UTC())
+	s, err := Load(idx)
+	if err != nil {
+		t.Fatalf("precons: %v", err)
+	}
+	if got, all := len(s.Unresolved()), len(s.All()); got != all || all == 0 {
+		t.Errorf("unresolved = %d of %d, want every one", got, all)
+	}
+	for _, p := range s.Unresolved() {
+		if p.Unresolved == 0 {
+			t.Errorf("%s is listed with no unresolved row", p.Slug)
+		}
+	}
+}
+
+// TestNothingIsUnresolvedAgainstTheSnapshot is the other half of G-8.
+func TestNothingIsUnresolvedAgainstTheSnapshot(t *testing.T) {
+	s := loadSet(t)
+	if got := s.Unresolved(); len(got) != 0 {
+		t.Errorf("unresolved precons = %v, want none", got)
 	}
 }

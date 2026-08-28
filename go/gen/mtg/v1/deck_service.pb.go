@@ -21,53 +21,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// ExportFormat lists the supported export targets (D-15).
-type ExportFormat int32
-
-const (
-	ExportFormat_EXPORT_FORMAT_UNSPECIFIED  ExportFormat = 0
-	ExportFormat_EXPORT_FORMAT_MANABOX_TEXT ExportFormat = 1
-)
-
-// Enum value maps for ExportFormat.
-var (
-	ExportFormat_name = map[int32]string{
-		0: "EXPORT_FORMAT_UNSPECIFIED",
-		1: "EXPORT_FORMAT_MANABOX_TEXT",
-	}
-	ExportFormat_value = map[string]int32{
-		"EXPORT_FORMAT_UNSPECIFIED":  0,
-		"EXPORT_FORMAT_MANABOX_TEXT": 1,
-	}
-)
-
-func (x ExportFormat) Enum() *ExportFormat {
-	p := new(ExportFormat)
-	*p = x
-	return p
-}
-
-func (x ExportFormat) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (ExportFormat) Descriptor() protoreflect.EnumDescriptor {
-	return file_mtg_v1_deck_service_proto_enumTypes[0].Descriptor()
-}
-
-func (ExportFormat) Type() protoreflect.EnumType {
-	return &file_mtg_v1_deck_service_proto_enumTypes[0]
-}
-
-func (x ExportFormat) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use ExportFormat.Descriptor instead.
-func (ExportFormat) EnumDescriptor() ([]byte, []int) {
-	return file_mtg_v1_deck_service_proto_rawDescGZIP(), []int{0}
-}
-
 type GetDeckRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	DeckId        string                 `protobuf:"bytes,1,opt,name=deck_id,json=deckId,proto3" json:"deck_id,omitempty"`
@@ -343,102 +296,6 @@ func (x *ValidateResponse) GetResult() *ValidationResult {
 	return nil
 }
 
-type ExportRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	DeckId        string                 `protobuf:"bytes,1,opt,name=deck_id,json=deckId,proto3" json:"deck_id,omitempty"`
-	Format        ExportFormat           `protobuf:"varint,2,opt,name=format,proto3,enum=mtg.v1.ExportFormat" json:"format,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ExportRequest) Reset() {
-	*x = ExportRequest{}
-	mi := &file_mtg_v1_deck_service_proto_msgTypes[6]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ExportRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ExportRequest) ProtoMessage() {}
-
-func (x *ExportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_deck_service_proto_msgTypes[6]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ExportRequest.ProtoReflect.Descriptor instead.
-func (*ExportRequest) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_deck_service_proto_rawDescGZIP(), []int{6}
-}
-
-func (x *ExportRequest) GetDeckId() string {
-	if x != nil {
-		return x.DeckId
-	}
-	return ""
-}
-
-func (x *ExportRequest) GetFormat() ExportFormat {
-	if x != nil {
-		return x.Format
-	}
-	return ExportFormat_EXPORT_FORMAT_UNSPECIFIED
-}
-
-type ExportResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Text          string                 `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ExportResponse) Reset() {
-	*x = ExportResponse{}
-	mi := &file_mtg_v1_deck_service_proto_msgTypes[7]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ExportResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ExportResponse) ProtoMessage() {}
-
-func (x *ExportResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_deck_service_proto_msgTypes[7]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ExportResponse.ProtoReflect.Descriptor instead.
-func (*ExportResponse) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_deck_service_proto_rawDescGZIP(), []int{7}
-}
-
-func (x *ExportResponse) GetText() string {
-	if x != nil {
-		return x.Text
-	}
-	return ""
-}
-
 var File_mtg_v1_deck_service_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_deck_service_proto_rawDesc = "" +
@@ -456,20 +313,11 @@ const file_mtg_v1_deck_service_proto_rawDesc = "" +
 	"\tpool_rule\x18\x02 \x01(\x0e2\x10.mtg.v1.PoolRuleR\bpoolRule\x12#\n" +
 	"\rcollection_id\x18\x03 \x01(\tR\fcollectionId\"D\n" +
 	"\x10ValidateResponse\x120\n" +
-	"\x06result\x18\x01 \x01(\v2\x18.mtg.v1.ValidationResultR\x06result\"V\n" +
-	"\rExportRequest\x12\x17\n" +
-	"\adeck_id\x18\x01 \x01(\tR\x06deckId\x12,\n" +
-	"\x06format\x18\x02 \x01(\x0e2\x14.mtg.v1.ExportFormatR\x06format\"$\n" +
-	"\x0eExportResponse\x12\x12\n" +
-	"\x04text\x18\x01 \x01(\tR\x04text*M\n" +
-	"\fExportFormat\x12\x1d\n" +
-	"\x19EXPORT_FORMAT_UNSPECIFIED\x10\x00\x12\x1e\n" +
-	"\x1aEXPORT_FORMAT_MANABOX_TEXT\x10\x012\x8b\x02\n" +
+	"\x06result\x18\x01 \x01(\v2\x18.mtg.v1.ValidationResultR\x06result2\xd0\x01\n" +
 	"\vDeckService\x12<\n" +
 	"\aGetDeck\x12\x16.mtg.v1.GetDeckRequest\x1a\x17.mtg.v1.GetDeckResponse\"\x00\x12B\n" +
 	"\tListDecks\x12\x18.mtg.v1.ListDecksRequest\x1a\x19.mtg.v1.ListDecksResponse\"\x00\x12?\n" +
-	"\bValidate\x12\x17.mtg.v1.ValidateRequest\x1a\x18.mtg.v1.ValidateResponse\"\x00\x129\n" +
-	"\x06Export\x12\x15.mtg.v1.ExportRequest\x1a\x16.mtg.v1.ExportResponse\"\x00B:Z8github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1b\x06proto3"
+	"\bValidate\x12\x17.mtg.v1.ValidateRequest\x1a\x18.mtg.v1.ValidateResponse\"\x00B:Z8github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1b\x06proto3"
 
 var (
 	file_mtg_v1_deck_service_proto_rawDescOnce sync.Once
@@ -483,42 +331,35 @@ func file_mtg_v1_deck_service_proto_rawDescGZIP() []byte {
 	return file_mtg_v1_deck_service_proto_rawDescData
 }
 
-var file_mtg_v1_deck_service_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_mtg_v1_deck_service_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_mtg_v1_deck_service_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_mtg_v1_deck_service_proto_goTypes = []any{
-	(ExportFormat)(0),         // 0: mtg.v1.ExportFormat
-	(*GetDeckRequest)(nil),    // 1: mtg.v1.GetDeckRequest
-	(*GetDeckResponse)(nil),   // 2: mtg.v1.GetDeckResponse
-	(*ListDecksRequest)(nil),  // 3: mtg.v1.ListDecksRequest
-	(*ListDecksResponse)(nil), // 4: mtg.v1.ListDecksResponse
-	(*ValidateRequest)(nil),   // 5: mtg.v1.ValidateRequest
-	(*ValidateResponse)(nil),  // 6: mtg.v1.ValidateResponse
-	(*ExportRequest)(nil),     // 7: mtg.v1.ExportRequest
-	(*ExportResponse)(nil),    // 8: mtg.v1.ExportResponse
-	(*Deck)(nil),              // 9: mtg.v1.Deck
-	(PoolRule)(0),             // 10: mtg.v1.PoolRule
-	(*ValidationResult)(nil),  // 11: mtg.v1.ValidationResult
+	(*GetDeckRequest)(nil),    // 0: mtg.v1.GetDeckRequest
+	(*GetDeckResponse)(nil),   // 1: mtg.v1.GetDeckResponse
+	(*ListDecksRequest)(nil),  // 2: mtg.v1.ListDecksRequest
+	(*ListDecksResponse)(nil), // 3: mtg.v1.ListDecksResponse
+	(*ValidateRequest)(nil),   // 4: mtg.v1.ValidateRequest
+	(*ValidateResponse)(nil),  // 5: mtg.v1.ValidateResponse
+	(*Deck)(nil),              // 6: mtg.v1.Deck
+	(PoolRule)(0),             // 7: mtg.v1.PoolRule
+	(*ValidationResult)(nil),  // 8: mtg.v1.ValidationResult
 }
 var file_mtg_v1_deck_service_proto_depIdxs = []int32{
-	9,  // 0: mtg.v1.GetDeckResponse.deck:type_name -> mtg.v1.Deck
-	9,  // 1: mtg.v1.ListDecksResponse.decks:type_name -> mtg.v1.Deck
-	9,  // 2: mtg.v1.ValidateRequest.deck:type_name -> mtg.v1.Deck
-	10, // 3: mtg.v1.ValidateRequest.pool_rule:type_name -> mtg.v1.PoolRule
-	11, // 4: mtg.v1.ValidateResponse.result:type_name -> mtg.v1.ValidationResult
-	0,  // 5: mtg.v1.ExportRequest.format:type_name -> mtg.v1.ExportFormat
-	1,  // 6: mtg.v1.DeckService.GetDeck:input_type -> mtg.v1.GetDeckRequest
-	3,  // 7: mtg.v1.DeckService.ListDecks:input_type -> mtg.v1.ListDecksRequest
-	5,  // 8: mtg.v1.DeckService.Validate:input_type -> mtg.v1.ValidateRequest
-	7,  // 9: mtg.v1.DeckService.Export:input_type -> mtg.v1.ExportRequest
-	2,  // 10: mtg.v1.DeckService.GetDeck:output_type -> mtg.v1.GetDeckResponse
-	4,  // 11: mtg.v1.DeckService.ListDecks:output_type -> mtg.v1.ListDecksResponse
-	6,  // 12: mtg.v1.DeckService.Validate:output_type -> mtg.v1.ValidateResponse
-	8,  // 13: mtg.v1.DeckService.Export:output_type -> mtg.v1.ExportResponse
-	10, // [10:14] is the sub-list for method output_type
-	6,  // [6:10] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	6, // 0: mtg.v1.GetDeckResponse.deck:type_name -> mtg.v1.Deck
+	6, // 1: mtg.v1.ListDecksResponse.decks:type_name -> mtg.v1.Deck
+	6, // 2: mtg.v1.ValidateRequest.deck:type_name -> mtg.v1.Deck
+	7, // 3: mtg.v1.ValidateRequest.pool_rule:type_name -> mtg.v1.PoolRule
+	8, // 4: mtg.v1.ValidateResponse.result:type_name -> mtg.v1.ValidationResult
+	0, // 5: mtg.v1.DeckService.GetDeck:input_type -> mtg.v1.GetDeckRequest
+	2, // 6: mtg.v1.DeckService.ListDecks:input_type -> mtg.v1.ListDecksRequest
+	4, // 7: mtg.v1.DeckService.Validate:input_type -> mtg.v1.ValidateRequest
+	1, // 8: mtg.v1.DeckService.GetDeck:output_type -> mtg.v1.GetDeckResponse
+	3, // 9: mtg.v1.DeckService.ListDecks:output_type -> mtg.v1.ListDecksResponse
+	5, // 10: mtg.v1.DeckService.Validate:output_type -> mtg.v1.ValidateResponse
+	8, // [8:11] is the sub-list for method output_type
+	5, // [5:8] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_mtg_v1_deck_service_proto_init() }
@@ -533,14 +374,13 @@ func file_mtg_v1_deck_service_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_mtg_v1_deck_service_proto_rawDesc), len(file_mtg_v1_deck_service_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   8,
+			NumEnums:      0,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_mtg_v1_deck_service_proto_goTypes,
 		DependencyIndexes: file_mtg_v1_deck_service_proto_depIdxs,
-		EnumInfos:         file_mtg_v1_deck_service_proto_enumTypes,
 		MessageInfos:      file_mtg_v1_deck_service_proto_msgTypes,
 	}.Build()
 	File_mtg_v1_deck_service_proto = out.File

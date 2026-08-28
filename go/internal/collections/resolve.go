@@ -161,10 +161,13 @@ func addSaturate(a, b int32) int32 {
 	return int32(sum)
 }
 
-// SortEntries orders entries by name, then set, then number. Stable
-// storage order keeps the content hash meaningful across imports.
+// SortEntries orders entries by name, set, number, finish, and
+// condition. Two rows of one printing differ by finish or condition, so
+// both join the key, and the sort is stable for the rest. One upload
+// then stores one order every time. ContentHash hashes the upload
+// bytes, not this order.
 func SortEntries(entries []*mtgv1.CollectionEntry) {
-	sort.Slice(entries, func(i, j int) bool {
+	sort.SliceStable(entries, func(i, j int) bool {
 		a, b := entries[i], entries[j]
 		if a.Name != b.Name {
 			return a.Name < b.Name
@@ -172,6 +175,12 @@ func SortEntries(entries []*mtgv1.CollectionEntry) {
 		if a.SetCode != b.SetCode {
 			return a.SetCode < b.SetCode
 		}
-		return a.CollectorNumber < b.CollectorNumber
+		if a.CollectorNumber != b.CollectorNumber {
+			return a.CollectorNumber < b.CollectorNumber
+		}
+		if a.Finish != b.Finish {
+			return a.Finish < b.Finish
+		}
+		return a.Condition < b.Condition
 	})
 }

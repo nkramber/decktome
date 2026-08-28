@@ -179,15 +179,37 @@ func TestCompleteHappyPath(t *testing.T) {
 	}
 }
 
+// TestCompleteSchemaMismatch is L-7. A schema miss is sampled, so one
+// retry runs. A second miss is terminal.
 func TestCompleteSchemaMismatch(t *testing.T) {
-	sc := NewScript(Step{Output: json.RawMessage(`{"format":7}`)})
-	c := newTestClient(t, sc)
-	_, err := c.Complete(context.Background(), RoleClassify, Request{Schema: json.RawMessage(testSchema)}, nil)
-	if ClassOf(err) != ClassSchema {
-		t.Fatalf("class = %v, err = %v", ClassOf(err), err)
+	bad := json.RawMessage(`{"format":7}`)
+	good := json.RawMessage(`{"format":"x"}`)
+	tests := []struct {
+		name      string
+		steps     []Step
+		wantClass Class
+		wantCalls int
+		wantOK    bool
+	}{
+		{name: "one miss then a fit", steps: []Step{{Output: bad}, {Output: good}}, wantCalls: 2, wantOK: true},
+		{name: "two misses are terminal", steps: []Step{{Output: bad}, {Output: bad}, {Output: good}}, wantClass: ClassSchema, wantCalls: 2},
 	}
-	if len(sc.Calls) != 1 {
-		t.Errorf("schema errors must not retry, got %d calls", len(sc.Calls))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sc := NewScript(tt.steps...)
+			c := newTestClient(t, sc)
+			res, err := c.Complete(context.Background(), RoleClassify, Request{Schema: json.RawMessage(testSchema)}, nil)
+			if tt.wantOK {
+				if err != nil || res.Attempts != 2 {
+					t.Fatalf("err = %v, attempts = %d", err, res.Attempts)
+				}
+			} else if ClassOf(err) != tt.wantClass {
+				t.Fatalf("class = %v, err = %v", ClassOf(err), err)
+			}
+			if len(sc.Calls) != tt.wantCalls {
+				t.Errorf("calls = %d, want %d", len(sc.Calls), tt.wantCalls)
+			}
+		})
 	}
 }
 

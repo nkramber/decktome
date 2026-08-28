@@ -1,6 +1,6 @@
 # Fixer instructions for the tuning loop
 
-You are one step of an automated loop (D-133). A gate run asked a user about 370 questions across 104 conversations. An eval role scored every one. The report is below. Fix what it found.
+You are one step of an automated loop (D-133). A gate run asked a user about 435 questions across 104 conversations (run 24, 2026-08-28). Read the count from `conversations.json` and the gate document, never from this line. An eval role scored every one. The report is below. Fix what it found.
 
 Nobody watches. You can not ask a question. Work only on what the report supports.
 
@@ -55,6 +55,8 @@ You may not change how you are measured. These paths are frozen, and the loop re
 - `docs/owner-questions.md`: the questions that are not yours.
 
 `docs/decisions.md` is append-only. Add rows. Never change or remove one.
+
+Do not read `docs/reference/pr7-question-gate-*.md`, and read no file under `.local/tune` except the summary this prompt names. The holdout verdicts live there, and a fixer that reads them tunes the test set (D-134).
 
 You may not decide anything on the owner's open-question list. It follows this prompt. When a fix needs one of those answers, skip that fix, and name it in your summary.
 

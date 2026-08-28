@@ -4,12 +4,17 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"errors"
+	"io"
 	"log/slog"
 	"testing"
 	"time"
 
+	"github.com/nkramber/mtg-deck-builder/go/internal/auth"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cardsvc"
+	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
+	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
 )
 
 func gz(t *testing.T, s string) []byte {
@@ -98,7 +103,7 @@ func TestReloadLoop(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
 	go func() {
-		reloadLoop(ctx, store, server, "", slog.Default())
+		reloadLoop(ctx, store, server, "", slog.Default(), nil)
 		close(done)
 	}()
 	writeVersion(t, store, "20260824T090000", false)
@@ -115,23 +120,124 @@ func TestReloadLoop(t *testing.T) {
 	<-done
 }
 
-func TestProjectID(t *testing.T) {
-	for _, k := range []string{"PROJECT_ID", "GOOGLE_CLOUD_PROJECT", "FIRESTORE_EMULATOR_HOST", "STORAGE_EMULATOR_HOST"} {
-		t.Setenv(k, "")
+// TestPreconSourceFollowsTheIndex is L-2. The agent service is built
+// before the first snapshot lands, so the precon set must resolve late
+// and again on every snapshot change.
+func TestPreconSourceFollowsTheIndex(t *testing.T) {
+	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
+	server := cardsvc.New()
+	src := newPreconSource(server, quiet)
+	if src.Current() != nil {
+		t.Fatal("a nil index gave a precon set")
 	}
-	if _, err := projectID(); err == nil {
-		t.Error("want error with no project and no emulator")
+
+	store := cards.DirStore{Root: t.TempDir()}
+	writeVersion(t, store, "20260824T090000", false)
+	loadSnapshot(context.Background(), store, server, "", quiet)
+	if server.Current() == nil {
+		t.Fatal("the snapshot did not load")
 	}
-	t.Setenv("FIRESTORE_EMULATOR_HOST", "localhost:8081")
-	if p, err := projectID(); err != nil || p != "mtg-local" {
-		t.Errorf("emulator mode: %q %v", p, err)
+	first := src.Current()
+	if first == nil {
+		t.Fatal("the swapped index gave no precon set")
 	}
-	t.Setenv("GOOGLE_CLOUD_PROJECT", "real-proj")
-	if p, _ := projectID(); p != "real-proj" {
-		t.Errorf("GOOGLE_CLOUD_PROJECT: %q", p)
+	if src.Current() != first {
+		t.Error("the same index resolved the set twice")
 	}
-	t.Setenv("PROJECT_ID", "explicit")
-	if p, _ := projectID(); p != "explicit" {
-		t.Errorf("PROJECT_ID wins: %q", p)
+
+	// The reload loop re-resolves on a version change.
+	t.Setenv("CARDS_RELOAD_SECONDS", "1")
+	writeVersion(t, store, "20260825T090000", false)
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() {
+		reloadLoop(ctx, store, server, "20260824T090000", quiet, src.refresh)
+		close(done)
+	}()
+	deadline := time.After(5 * time.Second)
+	for src.Current() == first {
+		select {
+		case <-deadline:
+			cancel()
+			<-done
+			t.Fatal("the reload loop did not re-resolve the precons")
+		case <-time.After(50 * time.Millisecond):
+		}
+	}
+	cancel()
+	<-done
+}
+
+// TestAgentServiceBuildsWithoutAnIndex proves the wiring of L-1 and L-2
+// needs no snapshot at startup: the generator and the precons bind late.
+func TestAgentServiceBuildsWithoutAnIndex(t *testing.T) {
+	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
+	rulesCfg, err := rules.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	client, err := llm.NewFromEnv(func(k string) string {
+		if k == llm.EnvRequireKeys {
+			return "0"
+		}
+		return ""
+	}, quiet)
+	if err != nil {
+		t.Fatal(err)
+	}
+	server := cardsvc.New()
+	src := newPreconSource(server, quiet)
+	srv, err := agentService(client, nil, server, nil, nil, rulesCfg, src, func(context.Context) string { return "u" }, quiet)
+	if err != nil {
+		t.Fatalf("agent service with a nil index: %v", err)
+	}
+	if srv == nil {
+		t.Fatal("no server")
+	}
+	if lc := (liveCards{server}); func() bool { _, ok := lc.ByOracleID("x"); return ok }() {
+		t.Error("a nil index answered a card")
+	}
+}
+
+func TestAuthOptions(t *testing.T) {
+	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
+	tests := []struct {
+		name         string
+		env          map[string]string
+		wantFallback bool
+		wantReject   bool
+	}{
+		{name: "local, no firebase", wantFallback: true, wantReject: true},
+		{name: "local with a debug id", env: map[string]string{"DEBUG_USER_ID": "nate"}, wantFallback: true, wantReject: true},
+		{name: "cloud run refuses the fallback", env: map[string]string{"K_SERVICE": "api"}, wantFallback: false},
+		{name: "cloud run with the override", env: map[string]string{"K_SERVICE": "api", "ALLOW_DEBUG_USER": "1"}, wantFallback: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			for _, k := range []string{"K_SERVICE", "ALLOW_DEBUG_USER", "DEBUG_USER_ID", "FIREBASE_AUTH_EMULATOR_HOST", "GOOGLE_APPLICATION_CREDENTIALS"} {
+				t.Setenv(k, "")
+			}
+			for k, v := range tt.env {
+				t.Setenv(k, v)
+			}
+			if tt.env["K_SERVICE"] != "" {
+				// The Firebase client needs credentials on Cloud Run, which
+				// the test host has not. The fallback decision is what the
+				// test reads, so it stops before the verifier.
+				t.Setenv("FIREBASE_AUTH_EMULATOR_HOST", "127.0.0.1:1")
+			}
+			got, err := authOptions(context.Background(), "p", quiet)
+			if err != nil {
+				t.Fatalf("authOptions: %v", err)
+			}
+			if (len(got.opts) > 0) != tt.wantFallback {
+				t.Errorf("fallback set = %v, want %v", len(got.opts) > 0, tt.wantFallback)
+			}
+			if tt.wantReject {
+				if _, err := got.verifier.Verify(context.Background(), "tok"); !errors.Is(err, auth.ErrNotConfigured) {
+					t.Errorf("local verifier accepted a token: %v", err)
+				}
+			}
+		})
 	}
 }

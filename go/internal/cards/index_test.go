@@ -64,3 +64,41 @@ func TestDigitalDefaultPrintingIsSwappedForPaper(t *testing.T) {
 		t.Error("the swapped price carries no date")
 	}
 }
+
+// TestFullNameTiePrefersPlayableCard covers a full name two cards share.
+// A playtest card from set cmb2 is legal nowhere and carries the name of
+// a playable card. The playable card wins the name whatever the file order.
+// Two cards legal somewhere keep the first-wins rule.
+func TestFullNameTiePrefersPlayableCard(t *testing.T) {
+	legal := map[string]mtgv1.LegalityStatus{"commander": mtgv1.LegalityStatus_LEGALITY_STATUS_LEGAL}
+	nowhere := map[string]mtgv1.LegalityStatus{"commander": mtgv1.LegalityStatus_LEGALITY_STATUS_NOT_LEGAL}
+	playtest := &mtgv1.Card{OracleId: "o-playtest", Name: "Patient Turtle", Legalities: nowhere}
+	playable := &mtgv1.Card{OracleId: "o-playable", Name: "Patient Turtle", Legalities: legal}
+	first := &mtgv1.Card{OracleId: "o-first", Name: "Twin Name", Legalities: legal}
+	second := &mtgv1.Card{OracleId: "o-second", Name: "Twin Name", Legalities: legal}
+	tests := []struct {
+		name  string
+		cards []*mtgv1.Card
+		look  string
+		want  string
+	}{
+		{"unplayable first", []*mtgv1.Card{playtest, playable}, "Patient Turtle", "o-playable"},
+		{"playable first", []*mtgv1.Card{playable, playtest}, "Patient Turtle", "o-playable"},
+		{"two playable cards keep the first", []*mtgv1.Card{first, second}, "Twin Name", "o-first"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			idx := NewIndex(tt.cards, nil, nil, time.Time{})
+			got, ok := idx.ByName(tt.look)
+			if !ok {
+				t.Fatalf("%q does not resolve", tt.look)
+			}
+			if got.OracleId != tt.want {
+				t.Errorf("%q resolved to %s, want %s", tt.look, got.OracleId, tt.want)
+			}
+			if idx.Collisions().FullNames != 1 {
+				t.Errorf("full name collisions = %d, want 1", idx.Collisions().FullNames)
+			}
+		})
+	}
+}

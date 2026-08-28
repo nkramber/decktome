@@ -1,7 +1,7 @@
 # Pinned to the go/go.mod toolchain. Bump both together.
-# Digests resolved from the registry manifests on 2026-08-26. Bump the
+# Digests resolved from the registry manifests on 2026-08-28. Bump the
 # tag and the digest together.
-FROM golang:1.26.4@sha256:f96cc555eb8db430159a3aa6797cd5bae561945b7b0fe7d0e284c63a3b291609 AS build
+FROM golang:1.26.6@sha256:0d1d3a794be25f809dd2cb3160d8c73276c4056a9f8242a138e908ddeee7b6b6 AS build
 WORKDIR /src
 # Copy the whole module before the build. `go build` fetches only the
 # modules the api binary imports. A separate `go mod download` would also

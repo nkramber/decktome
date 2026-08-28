@@ -352,6 +352,13 @@ func TestGoldenDecks(t *testing.T) {
 		}
 	})
 
+	// Grist, the Hunger Tide is a creature outside the battlefield by a
+	// characteristic-defining ability, so it leads a deck (D-140, G-4 of
+	// the 2026-08-28 audit).
+	wantPass(t, "grist leads by its creature CDA", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2,
+		commanders: []string{"Grist, the Hunger Tide"},
+		fill:       "Swamp", fillTo: 100})
+
 	// ---- 30 bad decks ----
 	bad99 := monoW([]string{"Heliod, Sun-Crowned"}, nil, 2)
 	bad99.fillTo = 99
@@ -469,7 +476,7 @@ func TestGoldenDecks(t *testing.T) {
 	wantBlock(t, "game changer commander in bracket 2", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2,
 		commanders: []string{"Tergrid, God of Fright // Tergrid's Lantern"},
 		fill:       "Swamp", fillTo: 100}, CodeGameChangers)
-	wantBlock(t, "bracket 6 unknown", monoW([]string{"Heliod, Sun-Crowned"}, nil, 6), CodeGameChangers)
+	wantBlock(t, "bracket 6 unknown", monoW([]string{"Heliod, Sun-Crowned"}, nil, 6), CodeUnknownBracket)
 	wantBlock(t, "unknown format", deckSpec{format: mtgv1.FormatId_FORMAT_ID_UNSPECIFIED,
 		fill: "Plains", fillTo: 60}, CodeUnknownFormat)
 	wantBlock(t, "companion off color in commander", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2,
@@ -485,8 +492,11 @@ func TestGoldenDecks(t *testing.T) {
 		commanders: []string{"Niv-Mizzet, Parun"}, companion: "Jegantha, the Wellspring",
 		cards: map[string]int32{"Jegantha, the Wellspring": 1},
 		fill:  "Island", fillTo: 100}, CodeCopyLimit)
-	wantBlock(t, "grist known gap", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2,
-		commanders: []string{"Grist, the Hunger Tide"},
+	// A legendary planeswalker with no creature CDA is not a commander.
+	// Grist is, and it sits with the good decks (G-4 of the 2026-08-28
+	// audit).
+	wantBlock(t, "planeswalker without the creature CDA", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2,
+		commanders: []string{"Kaya, Ghost Haunter"},
 		fill:       "Swamp", fillTo: 100}, CodeBadCommander)
 	goldenRun(t, "bad/nil cards gives a block finding", func(t *testing.T) {
 		deck := monoW([]string{"Heliod, Sun-Crowned"}, nil, 2).build(t)
@@ -592,13 +602,15 @@ func TestLoadData(t *testing.T) {
 }
 
 // TestGoldenCounts is the PR-5 gate size: at least 30 good and 30 bad
-// decks. It reads the counters that TestGoldenDecks filled.
+// decks. It reads the counters that TestGoldenDecks filled. The set holds
+// 31 good and 30 bad since 2026-08-28: Grist moved to the good decks, and
+// a planeswalker without the creature CDA took its place (G-4).
 func TestGoldenCounts(t *testing.T) {
 	if goldenGood == 0 && goldenBad == 0 {
 		t.Skip("TestGoldenDecks did not run")
 	}
-	if goldenGood < 30 || goldenBad < 30 {
-		t.Errorf("golden gate: %d good, %d bad, want at least 30 each", goldenGood, goldenBad)
+	if goldenGood < 31 || goldenBad < 30 {
+		t.Errorf("golden gate: %d good, %d bad, want at least 31 and 30", goldenGood, goldenBad)
 	}
 	t.Logf("golden gate: %d good, %d bad", goldenGood, goldenBad)
 }
