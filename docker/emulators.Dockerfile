@@ -4,9 +4,11 @@
 # Digest resolved from the registry manifest on 2026-08-28. Bump the tag
 # and the digest together.
 FROM node:22.23.2-slim@sha256:83f487e0a63425e5b4d146fb5e5be574bcbe1b7b843d3ebafdd95eaf7767a7e5
-# Java 17 is the major that scripts/doctor.sh and docs/setup.md require.
+# default-jre-headless is the Debian release's own Java (21 on trixie).
+# The Firestore emulator needs Java 11 or newer, so the major is free to
+# move with the image. Java 17 in scripts/doctor.sh is the laptop pin.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends openjdk-17-jre-headless \
+    && apt-get install -y --no-install-recommends default-jre-headless \
     && rm -rf /var/lib/apt/lists/* \
     && npm install -g firebase-tools@14.14.0
 WORKDIR /app
