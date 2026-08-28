@@ -39,6 +39,7 @@ Branch `pr-12` holds the slice of the ui plan, section 6. The tree is green on t
 - `web/apps/web/src/features/chat`: `use-chat.ts` reads the `Chat` stream and holds the open questions (D-278). `session-page.tsx` is the chat beside the deck. `question-card.tsx` shows the options as buttons and a free-text field. A reload rebuilds the thread from `GetSession` and the latest deck from `GetDeck`.
 - `web/apps/web/src/features/deck`: `deck-view.tsx` groups the cards by role and shows the findings, the legality date, the curve, and the color sources. `card-tile.tsx` shows every face with "Illustrated by <artist>. © Wizards of the Coast, LLC" (D-279). `deck-stats.ts` holds the pure helpers. The decks page opens a deck in place.
 - Gate run 26 ran after D-280: PASS, 25 of 27 on a bar of 25, against 26 of 27 in run 25. The two invented gate questions are `pool` in conversation 4 and `colors` in one other, and run 25 invented `budget` once. The gate sends plain messages, and `UserWords` returns a plain message unchanged. So the gate ran the code of run 25, and the drop is model noise (D-230). The `Q:`/`A:` shape is still unmeasured, because only the browser sends it.
+- The owner's first live session (`eIrL12hRY2YNTTCo3iS4`) showed that a message after a build is dropped and the deck is rebuilt from turn 1 (F-27). PR-12B is the fix, and it is planned and not started (D-283, D-284). Collection delete is not on the roadmap (owner, 2026-08-28).
 - The answers go out in one request through "Submit answers", and the message box hides on Send (D-282).
 - The UI audit of 2026-08-28 (D-281) fixed 41 defects across the chat, the deck view, the collection screen, the layout, and the styles. 50 web tests pass. The owner has not seen the audited build in the browser yet.
 - The owner ran the first browser turns on 2026-08-28 and found two faults, both fixed (D-280). A structured answer echoed the question text into the word rules, and the chat dropped an open question when a new turn asked another. The classify input for a structured answer is `Q: <question>` and `A: <answer>` on two lines now, so the next question gate run measures that shape.
@@ -49,9 +50,10 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 ## Next steps, in order
 
 1. The owner runs the PR-12 browser gate on the audited build: `make dev` with provider keys, then README section 6 steps 1 to 6. Ask the owner before the run, because every chat turn spends money. Then the owner merges `pr-12`.
-2. PR-13: `DeckService.ExportDeck`, the export button, and the buy list with Scryfall links. Ui plan section 4 gives the text shape, and the gate is the round trip through `ParseArenaText`.
-3. Add a ruleset that requires the `verify` check on `main`, if it is not there yet. Four Dependabot majors merged without it on 2026-08-28 and broke `main` twice.
-4. After PR-12 merges, run the M-5 manual scoring on the first UI build (sequencing step 19), and ask the owner before any paid run.
+2. PR-12B, the revision turn (F-27, D-283). A message after a build is dropped today, and the deck is rebuilt from the first message. The roadmap entry holds the design, and `.local/session-eIrL12hRY2YNTTCo3iS4.txt` holds the session that showed it. Cut the branch from `main` after `pr-12` merges.
+3. PR-13: `DeckService.ExportDeck`, the export button, and the buy list with Scryfall links. Ui plan section 4 gives the text shape, and the gate is the round trip through `ParseArenaText`.
+4. Add a ruleset that requires the `verify` check on `main`, if it is not there yet. Four Dependabot majors merged without it on 2026-08-28 and broke `main` twice.
+5. After PR-12 merges, run the M-5 manual scoring on the first UI build (sequencing step 19), and ask the owner before any paid run.
 
 Done on 2026-08-28: the audit merged (#17), the baselines merged (#34), Go moved to 1.27.0 (#37), and PR-11 merged (#38). Every Dependabot pull request of the day is merged or closed. PR-11 holds the stack, the router, the boundary lint, sign-in and sign-up over the Auth emulator, the token interceptor, and the collection screen. The owner ran the gate in the browser on the real export: 4,952 cards, 2,657 rows, one token row reported as not playable. README section 6 is the browser procedure.
 
