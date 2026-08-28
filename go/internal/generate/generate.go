@@ -87,8 +87,11 @@ type Result struct {
 	// model gets one repair turn, and a second miss becomes a note
 	// (roadmap PR-8).
 	Notes []string
-	// Repaired says the repair turn ran.
-	Repaired bool
+	// Repaired says the repair turn ran. RepairReason says why, as a short
+	// line the gate document prints: the miss count and the finding codes.
+	// A reader of deck gate run 8 could not tell a miss from a budget.
+	Repaired     bool
+	RepairReason string
 }
 
 // Builder runs the generate and repair calls.
@@ -133,10 +136,12 @@ func (b *Builder) Build(ctx context.Context, req Request, acc *llm.Accumulator) 
 		if err != nil {
 			return nil, err
 		}
+		reason := repairReason(res.misses, findings)
 		res = b.assemble(req, out2)
 		res.repaired = true
+		res.repairReason = reason
 	}
-	final := &Result{Deck: res.deck, Repaired: res.repaired}
+	final := &Result{Deck: res.deck, Repaired: res.repaired, RepairReason: res.repairReason}
 	// A name that missed twice never reaches the deck, and the user reads
 	// why it is absent.
 	for _, m := range res.misses {
@@ -147,9 +152,10 @@ func (b *Builder) Build(ctx context.Context, req Request, acc *llm.Accumulator) 
 
 // pass is one generate or repair turn, assembled and checked.
 type pass struct {
-	deck     *mtgv1.Deck
-	misses   []Miss
-	repaired bool
+	deck         *mtgv1.Deck
+	misses       []Miss
+	repaired     bool
+	repairReason string
 }
 
 // assemble normalizes the model's list, builds the deck, and validates it.
@@ -307,4 +313,17 @@ func repairable(v *mtgv1.ValidationResult) []*mtgv1.Finding {
 		}
 	}
 	return out
+}
+
+// repairReason names what bought the repair turn: the miss count and
+// the codes of the findings the model was shown.
+func repairReason(misses []Miss, findings []*mtgv1.Finding) string {
+	var parts []string
+	if len(misses) > 0 {
+		parts = append(parts, fmt.Sprintf("%d missed names", len(misses)))
+	}
+	for _, f := range findings {
+		parts = append(parts, f.GetCode())
+	}
+	return strings.Join(parts, ", ")
 }
