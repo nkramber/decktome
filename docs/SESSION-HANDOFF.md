@@ -52,7 +52,7 @@ Two owner questions stay open in `docs/owner-questions.md`: OQ-23 (a user who as
 - Card snapshot on disk: `.local/gcs/mtg-local-cards/scryfall/20260824T090152`. Check every card fact against it.
 - LLM model ids and prices: `roles.json` and `prices.json`, verified 2026-08-24. The OpenAI rows are unverified by anyone but the owner.
 - Run cost, measured before today's changes. The question gate costs $0.152 to $0.165 over about 20 minutes. The eval costs $0.092 to $0.104 over about 13 minutes. The deck gate costs about $0.90. The next runs re-measure all three.
-- Toolchain: Go 1.26.6, Node 22.23.2, pnpm 9.2.0, firebase-tools 14.14.0, Java 17.
+- Toolchain: Go 1.27.0, Node 22.23.2, pnpm 9.2.0, firebase-tools 14.14.0, Java 17.
 
 ## How to resume
 
