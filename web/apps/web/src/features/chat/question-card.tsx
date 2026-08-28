@@ -14,7 +14,7 @@ export function draftAnswered(d: Draft | undefined): boolean {
 
 // One open question: the options as toggle buttons and a free-text field
 // (ui plan, step 3). Nothing sends here. The page sends every answer at
-// once through its "Submit answers" button (owner, 2026-08-28).
+// once through its "Submit answers" button (D-282).
 export function QuestionCard({
   question,
   draft,

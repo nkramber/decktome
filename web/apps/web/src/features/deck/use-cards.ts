@@ -10,6 +10,9 @@ export const getCardsMax = 120;
 
 export function deckOracleIds(deck: Deck): string[] {
   const ids = new Set<string>();
+  // The commander sits in commander_oracle_ids and not in cards: the
+  // generator lists the 99 and the command zone is chosen (D-289).
+  for (const id of deck.commanderOracleIds) ids.add(id);
   for (const dc of [...deck.cards, ...deck.sideboard, ...deck.upgrades]) {
     if (dc.oracleId) ids.add(dc.oracleId);
   }

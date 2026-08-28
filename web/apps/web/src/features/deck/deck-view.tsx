@@ -1,6 +1,6 @@
 import type { Card } from "@mtg/api-client/mtg/v1/card_pb";
 import type { Deck, DeckCard } from "@mtg/api-client/mtg/v1/deck_pb";
-import { Severity } from "@mtg/api-client/mtg/v1/deck_pb";
+import { CardRole, Severity } from "@mtg/api-client/mtg/v1/deck_pb";
 
 import { errorMessage } from "../../lib/errors";
 import { CardTile } from "./card-tile";
@@ -33,7 +33,14 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
   const nameOf = (id: string) => allEntries.find((c) => c.oracleId === id)?.name ?? byId.get(id)?.name ?? id;
   const commanders = new Set(deck.commanderOracleIds);
   const main = deck.cards.filter((c) => !commanders.has(c.oracleId));
-  const commanderEntries = deck.cards.filter((c) => commanders.has(c.oracleId));
+  // The command zone: one entry per commander id, from cards when the
+  // list holds it and from the card data otherwise (D-289).
+  const commanderEntries: DeckCard[] = deck.commanderOracleIds.map(
+    (id) =>
+      deck.cards.find((c) => c.oracleId === id) ??
+      ({ oracleId: id, name: byId.get(id)?.name ?? "Commander", count: 1, role: CardRole.UNSPECIFIED, owned: false, ownedCount: 0, priceUsd: 0, reason: "" } as DeckCard),
+  );
+  const commanderCount = deck.commanderOracleIds.length;
   const groups = groupByRole(main);
   const curve = manaCurve(deck.cards, byId);
   const sources = colorSources(deck.cards, byId);
@@ -53,6 +60,7 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
           {formatLabel(deck.format?.id, deck.format?.houseRules ?? "")}
           {powerLabel(deck.power) && ` · ${powerLabel(deck.power)}`}
           {` · ${total} cards`}
+          {commanderCount > 0 && ` + ${commanderCount} commander${commanderCount > 1 ? "s" : ""}`}
           {deck.sideboard.length > 0 && ` · ${deck.sideboard.reduce((n, c) => n + c.count, 0)} sideboard`}
         </p>
         <p className="text-sm" data-testid="legality-line">
@@ -185,7 +193,7 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
       </p>
 
       {commanderEntries.length > 0 && (
-        <CardGroup title="Commander" count={commanderEntries.reduce((n, c) => n + c.count, 0)} entries={commanderEntries} byId={byId} commanders={commanders} />
+        <CardGroup title="Commander" count={commanderEntries.length} entries={commanderEntries} byId={byId} commanders={commanders} hideOwnership />
       )}
       {groups.map((g) => (
         <CardGroup key={g.role} title={roleLabel(g.role)} count={g.count} entries={g.cards} byId={byId} commanders={commanders} />
@@ -206,12 +214,14 @@ function CardGroup({
   entries,
   byId,
   commanders,
+  hideOwnership = false,
 }: {
   title: string;
   count: number;
   entries: DeckCard[];
   byId: Map<string, Card>;
   commanders: Set<string>;
+  hideOwnership?: boolean;
 }) {
   return (
     <section aria-label={`${title} (${count})`} className="@container">
@@ -220,7 +230,7 @@ function CardGroup({
       </h3>
       <ul className="mt-2 grid grid-cols-1 items-start gap-2 @sm:grid-cols-2 @2xl:grid-cols-3 @4xl:grid-cols-4">
         {entries.map((e, i) => (
-          <CardTile key={`${e.oracleId}-${i}`} entry={e} card={byId.get(e.oracleId)} isCommander={commanders.has(e.oracleId)} />
+          <CardTile key={`${e.oracleId}-${i}`} entry={e} card={byId.get(e.oracleId)} isCommander={commanders.has(e.oracleId)} hideOwnership={hideOwnership} />
         ))}
       </ul>
     </section>

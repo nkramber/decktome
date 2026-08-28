@@ -70,7 +70,19 @@ function FaceImage({ face }: { face: Face }) {
 
 // CardTile shows one deck entry: every face with its art and attribution,
 // the count, the owned mark or the price, and the Oracle text on demand.
-export function CardTile({ entry, card, isCommander }: { entry: DeckCard; card: Card | undefined; isCommander?: boolean }) {
+// hideOwnership is for a commander entry built from the card data: the
+// deck carries no owned mark for it, so the tile shows none.
+export function CardTile({
+  entry,
+  card,
+  isCommander,
+  hideOwnership = false,
+}: {
+  entry: DeckCard;
+  card: Card | undefined;
+  isCommander?: boolean;
+  hideOwnership?: boolean;
+}) {
   const faces = facesOf(card);
   const name = card?.name || entry.name;
   return (
@@ -98,6 +110,7 @@ export function CardTile({ entry, card, isCommander }: { entry: DeckCard; card: 
           </figcaption>
         </figure>
       ))}
+      {!hideOwnership && (
       <p className="text-xs">
         {entry.owned ? (
           <span className="rounded border border-green-300 bg-green-100 px-1" data-testid="owned-mark">
@@ -109,6 +122,7 @@ export function CardTile({ entry, card, isCommander }: { entry: DeckCard; card: 
           </span>
         )}
       </p>
+      )}
       {entry.reason && <p className="text-xs text-neutral-700">{entry.reason}</p>}
       {card && (
         <details className="text-sm">

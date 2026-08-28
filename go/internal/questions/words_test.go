@@ -355,9 +355,9 @@ func TestOccasionIsNotAPowerStep(t *testing.T) {
 	}
 }
 
-// TestUserWordsDropsTheQuotedQuestion is the browser gate fault of
-// 2026-08-28. The format question names three formats, and the word
-// rules read the echo as a request for three decks.
+// TestUserWordsDropsTheQuotedQuestion is D-280. The format question
+// names three formats, and the word rules must not read the echo as a
+// request for three decks.
 func TestUserWordsDropsTheQuotedQuestion(t *testing.T) {
 	msg := QuotedQuestionPrefix + "Which format would you like: Commander, Standard, or Modern?\n" + AnswerPrefix + "Modern"
 	if got := UserWords(msg); got != "Modern" {

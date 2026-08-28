@@ -848,8 +848,8 @@ func ruleBudgetScope(a *Agent, st *State, in turnWords) {
 			"session", st.SessionID)
 	case slices.Contains(in.Open, "budget") && st.Slots.GetBudgetUsd() > 0:
 		// The budget row asks "Is there a budget for cards to buy?", so a
-		// number that answers it is a cap on the cards to buy. The scope
-		// row asked the user to say it again (owner, 2026-08-28, D-288).
+		// number that answers it is a cap on the cards to buy, and the
+		// scope row has its answer (D-288).
 		st.Slots.BudgetScope = mtgv1.BudgetScope_BUDGET_SCOPE_CARDS_TO_BUY
 		a.log.Info("the number answers the cards-to-buy question, so the budget scope is the cards to buy",
 			"session", st.SessionID)

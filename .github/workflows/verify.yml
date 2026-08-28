@@ -1,9 +1,8 @@
 name: verify
 
 # The workflow runs on pull requests only. A merge to main is the tree
-# the pull request already verified, so a second run on push bought
-# nothing (owner, 2026-08-28: 90 percent of the monthly minutes gone in
-# six days). A new push to a branch cancels the run in progress.
+# the pull request already verified, so a second run on push buys
+# nothing. A new push to a branch cancels the run in progress (D-286).
 on:
   pull_request:
 

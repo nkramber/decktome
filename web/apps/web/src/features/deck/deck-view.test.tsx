@@ -177,19 +177,23 @@ describe("DeckView", () => {
     expect(await screen.findByAltText("Forest")).toHaveAttribute("src", "https://cards.scryfall.io/small/forest.jpg");
   });
 
-  it("shows the commander first", async () => {
+  it("shows the commander from commander_oracle_ids, which the card list does not hold (D-289)", async () => {
     getCards.mockResolvedValue({ cards, missingOracleIds: [] });
     renderDeck({
       ...deck,
       format: { id: FormatId.COMMANDER, houseRules: "" },
       power: { level: { case: "bracket", value: 2 } },
       commanderOracleIds: ["o-elf"],
-      cards: deck.cards.slice(0, 2),
+      cards: deck.cards.slice(0, 1),
     } as unknown as Deck);
-    const commander = await screen.findByRole("region", { name: "Commander (4)" });
+    const commander = await screen.findByRole("region", { name: "Commander (1)" });
     expect(within(commander).getByTestId("commander-mark")).toBeInTheDocument();
+    expect(await within(commander).findByAltText("Llanowar Elves")).toBeInTheDocument();
+    expect(within(commander).queryByTestId("owned-mark")).not.toBeInTheDocument();
+    expect(within(commander).queryByTestId("buy-mark")).not.toBeInTheDocument();
+    expect((getCards.mock.calls[0][0] as { oracleIds: string[] }).oracleIds).toContain("o-elf");
     expect(screen.queryByRole("region", { name: /^Ramp/ })).not.toBeInTheDocument();
-    expect(screen.getByText("Commander · Bracket 2 · 24 cards")).toBeInTheDocument();
+    expect(screen.getByText("Commander · Bracket 2 · 20 cards + 1 commander")).toBeInTheDocument();
   });
 
   it("shows the revision note and the diff against the base deck (PR-12B)", async () => {

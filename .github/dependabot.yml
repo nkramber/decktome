@@ -3,9 +3,9 @@
 # nothing tells the owner when a pin is old (audit 2026-08-28, P-11).
 #
 # Every update of one ecosystem lands in one monthly pull request, and
-# Dependabot never rebases it on its own. On 2026-08-28 twelve separate
-# pull requests each ran the verify workflow, and every merge rebased the
-# rest and ran it again, which spent most of a month's minutes in one day.
+# Dependabot never rebases it on its own. Separate pull requests each run
+# the verify workflow, and every merge rebases the rest and runs it again
+# (D-286).
 version: 2
 updates:
   - package-ecosystem: github-actions

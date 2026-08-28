@@ -363,7 +363,7 @@ describe("SessionPage", () => {
     expect(screen.queryByRole("group", { name: "Question: Which format?" })).not.toBeInTheDocument();
     expect(screen.getByRole("group", { name: "Question: How strong?" })).toBeInTheDocument();
 
-    // The message box hides while a question waits (owner, 2026-08-28).
+    // The message box hides while a question waits (D-282).
     expect(screen.queryByLabelText("Your message")).not.toBeInTheDocument();
     chat.mockReturnValue(events([ev("slots", {})]));
     const user = userEvent.setup();

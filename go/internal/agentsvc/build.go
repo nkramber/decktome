@@ -112,9 +112,12 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 		}
 	}
 
+	// The shortlist follows the commander's color identity, and the slot
+	// colors only when no commander is chosen. The slot can hold every
+	// color, and the engine refuses each card outside the identity (D-289).
 	list, err := s.builder.Build(idx, candidates.Request{
 		Format:             format,
-		Colors:             slots.GetColors(),
+		Colors:             deckColors(format, slots.GetColors(), commanders),
 		Theme:              slots.GetTheme(),
 		CommanderOracleIDs: commanderIDs,
 		PoolRule:           slots.GetPoolRule(),

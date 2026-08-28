@@ -469,3 +469,55 @@ func TestBuildCopiesTheHouseRules(t *testing.T) {
 		t.Errorf("the build request carries house rules %q, want the slot value", fd.got.HouseRules)
 	}
 }
+
+// TestShortlistFollowsTheCommanderIdentity is D-289. A user who says "any
+// colors are fine" leaves the color slot empty, and the shortlist must
+// still hold the commander's identity and nothing outside it.
+func TestShortlistFollowsTheCommanderIdentity(t *testing.T) {
+	store := newFakeStore()
+	fd := &fakeDecks{res: &generate.Result{Deck: &mtgv1.Deck{Validation: &mtgv1.ValidationResult{}}}}
+	// A green lifegain card, so the theme ranks it and only the color
+	// identity can keep it out.
+	elves := &mtgv1.Card{
+		OracleId: "o-elves", Name: "Llanowar Elves", TypeLine: "Creature — Elf Druid",
+		OracleText: "Lifelink. Whenever you gain life, put a +1/+1 counter on Llanowar Elves.", Keywords: []string{"Lifelink"},
+		ColorIdentity: []mtgv1.Color{mtgv1.Color_COLOR_G}, CardTypes: []string{"Creature"}, EdhrecRank: 10,
+		Legalities: map[string]mtgv1.LegalityStatus{"commander": mtgv1.LegalityStatus_LEGALITY_STATUS_LEGAL},
+	}
+	karlov := &mtgv1.Card{
+		OracleId: "o-karlov", Name: "Karlov of the Ghost Council",
+		TypeLine: "Legendary Creature — Spirit Advisor", CanBeCommander: true,
+		ColorIdentity: []mtgv1.Color{mtgv1.Color_COLOR_W, mtgv1.Color_COLOR_B}, CardTypes: []string{"Creature"},
+		Legalities: map[string]mtgv1.LegalityStatus{"commander": mtgv1.LegalityStatus_LEGALITY_STATUS_LEGAL},
+	}
+	welcome := &mtgv1.Card{
+		OracleId: "o-welcome", Name: "Ajani's Welcome", TypeLine: "Enchantment",
+		ColorIdentity: []mtgv1.Color{mtgv1.Color_COLOR_W}, CardTypes: []string{"Enchantment"},
+		Legalities: map[string]mtgv1.LegalityStatus{"commander": mtgv1.LegalityStatus_LEGALITY_STATUS_LEGAL},
+	}
+	idx := cards.NewIndex([]*mtgv1.Card{karlov, welcome, elves}, nil, nil, time.Unix(1000, 0).UTC())
+	cb, err := candidates.New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	steps := []llm.Step{
+		classifyJSON(t, map[string]any{
+			"format": "commander", "theme": "lifegain", "colors": []string{}, "pool_rule": "any_card", "budget_usd": 50,
+		}),
+		scoreJSON(t, "commander", "power_commander"),
+		askJSON(t),
+		classifyJSON(t, map[string]any{"power": "bracket 3", "commander_names": []string{"Karlov of the Ghost Council"}}),
+	}
+	client, _ := testServerOpts(t, store, []Option{WithDecks(fd), WithCandidates(fixedIndex{idx}, cb)}, steps...)
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck, any colors are fine"})
+	second := chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
+	if second.deck == nil || fd.got.Pool == nil {
+		t.Fatalf("no build: %v", second.order)
+	}
+	if _, ok := fd.got.Pool.ByOracleID("o-elves"); ok {
+		t.Error("a green card reached the pool of a W/B commander")
+	}
+	if _, ok := fd.got.Pool.ByOracleID("o-karlov"); !ok {
+		t.Error("the commander left the pool")
+	}
+}

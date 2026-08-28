@@ -289,8 +289,8 @@ var twoDeckSigns = []string{"two decks", "2 decks", "both decks", "second deck"}
 // with a structured answer. A client that sends Answer messages gets the
 // question text joined in front of the answer, so the classifier can map
 // the answer to its slot. The word rules must not read that echo: the
-// format question names three formats, and oneDeckRequest read the echo
-// as a request for three decks in the browser gate of 2026-08-28.
+// format question names three formats, and oneDeckRequest would read
+// the echo as a request for three decks (D-280).
 const QuotedQuestionPrefix = "Q: "
 
 // AnswerPrefix starts the answer line under a quoted question.
