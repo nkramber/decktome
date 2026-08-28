@@ -31,7 +31,7 @@ const fixture = `# PR-7 question gate
 
 **Turn 1, the user:** blink deck
 
-- [INVENTED slot=locked row=locked fit=0.05 filled=false] Keep every card?
+- [INVENTED slot=budget row=budget_scope fit=0.05 filled=false] Is that a cap on the cards you buy?
 `
 
 func writeFixture(t *testing.T) string {

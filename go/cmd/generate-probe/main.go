@@ -6,11 +6,12 @@
 // it changes no state.
 //
 // CAUTION: this calls a real provider and it costs money. One Commander
-// deck is a few cents.
+// deck is a few cents. GENERATE_PROBE=1 is required, so it can not run
+// by accident. A -dry run calls no provider and needs no guard.
 //
 // Usage:
 //
-//	CARDS_SNAPSHOT_DIR=.local/gcs/mtg-local-cards/scryfall \
+//	GENERATE_PROBE=1 CARDS_SNAPSHOT_DIR=.local/gcs/mtg-local-cards/scryfall \
 //	  go run ./cmd/generate-probe -theme lifegain -commander "Karlov of the Ghost Council"
 package main
 
@@ -19,14 +20,12 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
-	"log/slog"
 	"os"
 	"strings"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/candidates"
-	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
+	"github.com/nkramber/mtg-deck-builder/go/internal/gatekit"
 	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
@@ -48,14 +47,15 @@ func run() error {
 	format := flag.String("format", "commander", "commander, standard, or modern")
 	flag.Parse()
 
-	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
-	dir := os.Getenv("CARDS_SNAPSHOT_DIR")
-	if dir == "" {
-		return fmt.Errorf("set CARDS_SNAPSHOT_DIR")
+	if !*dry {
+		if err := gatekit.SpendGuard("GENERATE_PROBE"); err != nil {
+			return err
+		}
 	}
-	idx, err := cards.LoadIndex(context.Background(), cards.DirStore{Root: dir}, quiet)
+	quiet := gatekit.Quiet()
+	idx, err := gatekit.LoadSnapshot(context.Background(), quiet)
 	if err != nil {
-		return fmt.Errorf("cards: %w", err)
+		return err
 	}
 	cmdr, ok := idx.ByName(*cmdrName)
 	if !ok {
@@ -65,12 +65,9 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	fid := mtgv1.FormatId_FORMAT_ID_COMMANDER
-	switch *format {
-	case "standard":
-		fid = mtgv1.FormatId_FORMAT_ID_STANDARD
-	case "modern":
-		fid = mtgv1.FormatId_FORMAT_ID_MODERN
+	fid := gatekit.FormatID(*format)
+	if fid == mtgv1.FormatId_FORMAT_ID_UNSPECIFIED {
+		return fmt.Errorf("unknown format %q: give commander, standard, or modern", *format)
 	}
 	list, err := cb.Build(idx, candidates.Request{
 		Format:             fid,
@@ -98,13 +95,7 @@ func run() error {
 		return nil
 	}
 
-	env := func(k string) string {
-		if k == llm.EnvRequireKeys {
-			return "1"
-		}
-		return os.Getenv(k)
-	}
-	client, err := llm.NewFromEnv(env, quiet)
+	client, err := llm.NewFromEnv(gatekit.Env, quiet)
 	if err != nil {
 		return fmt.Errorf("llm client: %w", err)
 	}

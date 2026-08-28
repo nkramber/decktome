@@ -34,7 +34,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"log/slog"
 	"os"
 	"sort"
 	"strconv"
@@ -44,7 +43,7 @@ import (
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/candidates"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
-	"github.com/nkramber/mtg-deck-builder/go/internal/collections"
+	"github.com/nkramber/mtg-deck-builder/go/internal/gatekit"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 	"github.com/nkramber/mtg-deck-builder/go/internal/questions"
 )
@@ -52,12 +51,15 @@ import (
 //go:embed conversations.json
 var conversationsJSON []byte
 
-// CatalogOnlyBar is the roadmap gate: at least 25 of the 30 conversations
-// use catalog questions only.
+// CatalogOnlyBar is the roadmap gate: at least 25 of the counted gate
+// conversations use catalog questions only. A gate conversation that
+// starts after a build is not counted: its build slots are closed before
+// the first message, so it can not invent one (A-9).
 const CatalogOnlyBar = 25
 
 type gateFile struct {
 	VerifiedAt    string         `json:"verified_at"`
+	Note          string         `json:"note"`
 	Conversations []conversation `json:"conversations"`
 }
 
@@ -66,6 +68,9 @@ type conversation struct {
 	Name       string   `json:"name"`
 	Collection bool     `json:"collection"`
 	Messages   []string `json:"messages"`
+	// Note says why the conversation exists. The struct names it so the
+	// file can not carry a field nothing reads (T-19).
+	Note string `json:"note,omitempty"`
 	// Probe marks a conversation that explores catalog coverage rather
 	// than one the gate scores. A probe holds a shape the gate set never
 	// takes: a user who changes their mind, contradicts themselves, or
@@ -82,8 +87,21 @@ type conversation struct {
 }
 
 // builtSlots are the slots a finished build must have settled. A stored
-// deck is proof that each one was answered (D-239).
+// deck is proof that each one was answered (D-239). The document reports
+// the same slots for every conversation.
 var builtSlots = []string{"format", "theme", "colors", "commander", "power", "pool_rule", "budget"}
+
+// gateCount counts the conversations the verdict reads: every one that
+// is not a probe. The size test counts the same way (T-20).
+func gateCount(convs []conversation) int {
+	n := 0
+	for _, c := range convs {
+		if !c.Probe {
+			n++
+		}
+	}
+	return n
+}
 
 // asked is one question as the run produced it.
 type asked struct {
@@ -149,34 +167,22 @@ func main() {
 }
 
 func run(collectionPath string, limit int, only string, w io.Writer) error {
-	if os.Getenv("QUESTIONS_GATE") != "1" {
-		return fmt.Errorf("this run calls the real providers and costs money: set QUESTIONS_GATE=1 to allow it")
+	if err := gatekit.SpendGuard("QUESTIONS_GATE"); err != nil {
+		return err
 	}
 	var file gateFile
 	if err := json.Unmarshal(conversationsJSON, &file); err != nil {
 		return fmt.Errorf("conversations.json: %w", err)
 	}
-	gateCount := 0
-	for _, c := range file.Conversations {
-		if !c.Probe {
-			gateCount++
-		}
-	}
-	if n := gateCount; n < questions.MinGateSize {
-		return fmt.Errorf("conversations.json holds %d conversations, the gate needs %d", n, questions.MinGateSize)
+	if n := gateCount(file.Conversations); n < questions.MinGateSize {
+		return fmt.Errorf("conversations.json holds %d gate conversations, the gate needs %d", n, questions.MinGateSize)
 	}
 	cat, err := questions.Load()
 	if err != nil {
 		return err
 	}
-	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
-	env := func(k string) string {
-		if k == llm.EnvRequireKeys {
-			return "1"
-		}
-		return os.Getenv(k)
-	}
-	client, err := llm.NewFromEnv(env, quiet)
+	quiet := gatekit.Quiet()
+	client, err := llm.NewFromEnv(gatekit.Env, quiet)
 	if err != nil {
 		return err
 	}
@@ -220,21 +226,44 @@ func run(collectionPath string, limit int, only string, w io.Writer) error {
 	acc := llm.NewAccumulator(prices)
 	started := time.Now()
 	results := make([]result, 0, len(list))
-	var total, probes questions.Coverage
+	var cov coverages
 	for _, conv := range list {
 		res := runOne(cat, client, idx, builder, owned, conv, acc)
 		results = append(results, res)
-		kind := ""
-		if conv.Probe {
-			probes.Add(asksOf(res))
-			kind = " (probe)"
-		} else {
-			total.Add(asksOf(res))
-		}
+		cov.add(res)
 		fmt.Fprintf(os.Stderr, "%2d/%d %-40s catalog=%d invented=%d%s\n",
-			conv.ID, len(list), conv.Name, res.Coverage.Catalog, res.Coverage.Invented, kind)
+			conv.ID, len(list), conv.Name, res.Coverage.Catalog, res.Coverage.Invented, res.kind())
 	}
-	return write(w, file, results, total, probes, acc.Report(), client, ownedNote, time.Since(started))
+	return write(w, file, results, cov, acc.Report(), client.Config(), ownedNote, time.Since(started))
+}
+
+// coverages splits the M-4 counts three ways: the counted gate
+// conversations, the ones that start after a build, and the probes.
+type coverages struct {
+	total, afterBuild, probes questions.Coverage
+}
+
+func (c *coverages) add(res result) {
+	switch {
+	case res.Probe:
+		c.probes.Add(asksOf(res))
+	case res.HasDeck:
+		c.afterBuild.Add(asksOf(res))
+	default:
+		c.total.Add(asksOf(res))
+	}
+}
+
+// kind is the heading suffix that tells the reader, and tune.ReadRun,
+// which set a conversation belongs to.
+func (r result) kind() string {
+	switch {
+	case r.Probe:
+		return " (probe)"
+	case r.HasDeck:
+		return " (after a build)"
+	}
+	return ""
 }
 
 // runOne plays one conversation. A failed turn ends that conversation and
@@ -242,7 +271,7 @@ func run(collectionPath string, limit int, only string, w io.Writer) error {
 func runOne(cat *questions.Catalog, client *llm.Client, idx *cards.Index, builder *candidates.Builder,
 	owned map[string]int32, conv conversation, acc *llm.Accumulator) result {
 	res := result{conversation: conv}
-	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
+	quiet := gatekit.Quiet()
 	st := questions.NewState(conv.Collection)
 	st.SessionID = fmt.Sprintf("gate-%02d", conv.ID)
 	// agentsvc reads these from the session (D-239). A stored deck means a
@@ -299,7 +328,12 @@ func runOne(cat *questions.Catalog, client *llm.Client, idx *cards.Index, builde
 			break
 		}
 	}
-	// The row id and the filled flag come from the M-4 records.
+	// The row id and the filled flag come from the M-4 records. The two
+	// lists are written in step, one record per question sent, and a
+	// length that differs would map a row onto the wrong question.
+	if res.Err == nil && len(st.Asks) != len(res.Questions) {
+		res.Err = fmt.Errorf("%d M-4 records for %d questions sent", len(st.Asks), len(res.Questions))
+	}
 	for i, rec := range st.Asks {
 		if i < len(res.Questions) {
 			res.Questions[i].Row = rec.RowID
@@ -320,7 +354,7 @@ func runOne(cat *questions.Catalog, client *llm.Client, idx *cards.Index, builde
 	res.Coverage = st.Metrics()
 	res.Ready = st.Ready(cat)
 	res.Slots = map[string]string{}
-	for _, key := range []string{"format", "theme", "colors", "commander", "power", "pool_rule", "budget"} {
+	for _, key := range builtSlots {
 		res.Slots[key] = slotState(st, key)
 	}
 	for _, key := range required(st, conv.Collection) {
@@ -385,42 +419,37 @@ func loadIndex(collectionPath string) (*cards.Index, map[string]int32, string, e
 	if dir == "" {
 		return nil, nil, "no snapshot: the hint clauses were dropped", nil
 	}
-	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
-	idx, err := cards.LoadIndex(context.Background(), cards.DirStore{Root: dir}, quiet)
+	idx, err := gatekit.LoadSnapshot(context.Background(), gatekit.Quiet())
 	if err != nil {
 		return nil, nil, "", err
-	}
-	if idx == nil {
-		return nil, nil, "", fmt.Errorf("no complete snapshot under %s", dir)
 	}
 	if collectionPath == "" {
 		return idx, nil, "snapshot loaded, no collection", nil
 	}
-	f, err := os.Open(collectionPath)
+	owned, note, err := gatekit.LoadOwned(collectionPath, idx)
 	if err != nil {
 		return nil, nil, "", err
 	}
-	defer func() { _ = f.Close() }()
-	rows, bad, err := collections.ParseManaBoxCSV(f)
-	if err != nil {
-		return nil, nil, "", err
-	}
-	entries, unresolved := collections.Resolve(rows, idx)
-	note := fmt.Sprintf("snapshot loaded, %d entries, %d cards, %d rows unresolved",
-		len(entries), collections.CardCount(entries), len(bad)+len(unresolved))
-	return idx, collections.OracleCounts(entries), note, nil
+	return idx, owned, "snapshot loaded, " + note, nil
 }
 
-func write(w io.Writer, file gateFile, results []result, total, probes questions.Coverage,
-	report llm.Report, client *llm.Client, ownedNote string, elapsed time.Duration) error {
+func write(w io.Writer, file gateFile, results []result, cov coverages,
+	report llm.Report, cfg *llm.Config, ownedNote string, elapsed time.Duration) error {
+	total, probes := cov.total, cov.probes
 	var premature []string
-	gate := 0
+	gate, counted, afterBuild := 0, 0, 0
 	for _, r := range results {
 		if r.Premature {
 			premature = append(premature, r.Name)
 		}
-		if !r.Probe {
+		switch {
+		case r.Probe:
+		case r.HasDeck:
 			gate++
+			afterBuild++
+		default:
+			gate++
+			counted++
 		}
 	}
 	// The linter is the third bar. A question that names a format the user
@@ -448,8 +477,12 @@ func write(w io.Writer, file gateFile, results []result, total, probes questions
 
 	_, _ = fmt.Fprintf(w, "# PR-7 question gate\n\n")
 	_, _ = fmt.Fprintf(w, "Run date: %s. Conversations: %s.\n\n", time.Now().UTC().Format("2006-01-02"), file.VerifiedAt)
-	_, _ = fmt.Fprintf(w, "Verdict: %s. %d of %d gate conversations used catalog questions only. The bar is %d.\n\n",
-		verdict, total.CatalogOnly, gate, CatalogOnlyBar)
+	_, _ = fmt.Fprintf(w, "Verdict: %s. %d of %d counted gate conversations used catalog questions only. The bar is %d. The set holds %d gate conversations, and %d of them start after a build and are not counted (A-9).\n\n",
+		verdict, total.CatalogOnly, counted, CatalogOnlyBar, gate, afterBuild)
+	if cov.afterBuild.Sessions > 0 {
+		_, _ = fmt.Fprintf(w, "%d conversations after a build ran beside the count. They asked %d questions, and the model offered %d replacements.\n\n",
+			cov.afterBuild.Sessions, cov.afterBuild.Asked, cov.afterBuild.Invented+cov.afterBuild.NearCopies)
+	}
 	if probes.Sessions > 0 {
 		_, _ = fmt.Fprintf(w, "%d probe conversations ran beside the gate. They asked %d questions, and the model offered %d replacements. A probe explores catalog coverage and does not move the verdict (D-96).\n\n",
 			probes.Sessions, probes.Asked, probes.Invented+probes.NearCopies)
@@ -516,7 +549,6 @@ func write(w io.Writer, file gateFile, results []result, total, probes questions
 	}
 
 	_, _ = fmt.Fprintf(w, "## Run\n\n")
-	cfg := client.Config()
 	_, _ = fmt.Fprintf(w, "- Roles: classify on `%s`, ask on `%s`.\n",
 		cfg.Roles[llm.RoleClassify].Model, cfg.Roles[llm.RoleAsk].Model)
 	_, _ = fmt.Fprintf(w, "- Cards: %s.\n", ownedNote)
@@ -534,11 +566,7 @@ func write(w io.Writer, file gateFile, results []result, total, probes questions
 
 	_, _ = fmt.Fprintf(w, "## Conversations\n\n")
 	for _, r := range results {
-		kind := ""
-		if r.Probe {
-			kind = " (probe)"
-		}
-		_, _ = fmt.Fprintf(w, "### %d. %s%s\n\n", r.ID, r.Name, kind)
+		_, _ = fmt.Fprintf(w, "### %d. %s%s\n\n", r.ID, r.Name, r.kind())
 		if r.Err != nil {
 			_, _ = fmt.Fprintf(w, "**Failed: %v**\n\n", r.Err)
 		}
@@ -583,8 +611,8 @@ func write(w io.Writer, file gateFile, results []result, total, probes questions
 		}
 	}
 	if !pass {
-		return fmt.Errorf("gate failed: %d of %d catalog-only (bar %d), %d premature, %d lint findings",
-			total.CatalogOnly, len(results), CatalogOnlyBar, len(premature), findings)
+		return fmt.Errorf("gate failed: %d of %d counted catalog-only (bar %d), %d premature, %d lint findings",
+			total.CatalogOnly, counted, CatalogOnlyBar, len(premature), findings)
 	}
 	return nil
 }
