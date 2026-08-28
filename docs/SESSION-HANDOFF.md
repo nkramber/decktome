@@ -34,9 +34,9 @@ CAUTION: `tune-check` paired zero questions between run 24 and run 25, because t
 ## Next steps, in order
 
 1. Merge the pull request for `audit-2026-08-28`. Then restore the rule that forbids a force push to `main`, which was lifted for the purge on 2026-08-28.
-2. Merge the three open pull requests in this order: the pin fixes, the baselines, then the UI plan if it is still open. Then ask Dependabot to rebase #23.
+2. Ask Dependabot to rebase #23, then merge it. Every other Dependabot pull request of 2026-08-28 is merged or closed.
 3. Add a ruleset that requires the `verify` check on `main`. Four Dependabot majors merged without it on 2026-08-28 and broke `main` twice.
-4. Start Phase 3 with PR-11.
+4. Start Phase 3 with PR-11. `docs/reference/ui-plan-2026-08-28.md` is the plan (D-273 to D-276): the whole user path, the roadmap stack, real sign-in over the Auth emulator, local under `make dev`.
 
 Done on 2026-08-28, after the audit: the merged branches are deleted on the clone and on origin, and the history purge ran. Every hash after PR-6 changed. The repo went from 101 MB to 2 MB, and the tree at each tip is byte for byte the same. CAUTION: a clone made before 2026-08-28 holds the old history. Re-clone it, and do not merge from it.
 

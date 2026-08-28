@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-08-28 correction pass 25 (UI plan, `docs/reference/ui-plan-2026-08-28.md`): the owner scoped the live test (D-273 to D-276). It covers the whole user path, on the roadmap stack, with real sign-in over the Auth emulator, locally. PR-12 gains `CardService.GetCards`, and PR-13 gains `DeckService.ExportDeck`.
+
 2026-08-28 correction pass 24 (full audit, `docs/audit-2026-08-28.md`): PR-8 merged (#15), and #16 ignores every command binary (D-255). PR-9 leaves the MVP (D-256). The audit found the deployable API could not build a deck, and the owner ruled it a defect (D-257). Decisions D-247 to D-272 recorded, five catalog rows retired (D-260), and the gate set changed with no run (D-263). The Comprehensive Rules file is 2026-08-19 (D-272). The register table is one table again, the freeze and the restricted check are marked retired, and the STE check runs in `make lint` (D-264).
 
 2026-08-27 correction pass 23: PR-8 built, and its gate runs began. The build-run freeze is retired (D-241). The gate harness can start a conversation after a build (D-239). The judge lane answers F-26 (D-229), and the cache saving is measured (D-227). Decisions D-226 to D-243 recorded.
@@ -508,6 +510,8 @@ Every tenth item repeats an earlier one, which measures self-consistency across 
 
 **PR-11: Web app shell.**
 React 19, Vite, TypeScript, Tailwind, the wallabee-ui patterns (TanStack Query, Zustand, lint-enforced import boundaries). Firebase Auth (D-11) with the emulator in local mode. Generated Connect client in `packages/api-client`. Gate: sign-in, then either upload a collection and see the count, or skip the upload and still reach the chat (D-37).
+
+Detail of 2026-08-28: `docs/reference/ui-plan-2026-08-28.md` holds the user path, the architecture, and the live-test procedure (D-273 to D-276). The sign-in is real, over the Auth emulator, and the token reaches the API through the interceptor of D-268.
 > *In plain English:* the website skeleton: log in, upload your binder, see how many cards we recognized.
 
 **PR-12: Chat and deck view.**
@@ -516,10 +520,14 @@ A streaming chat thread over the `Chat` RPC. The deck view groups cards by role.
 It marks owned versus to-buy when a collection is attached. It shows the pool-mode toggle ("use only cards in my library") with the session's mode (D-37). In any-card mode, the buy list can be the whole deck.
 
 It shows the mana curve, the color sources, the `ValidationResult` findings, and `legality_as_of`. Hover or tap shows Oracle text. Gate: a11y checks pass. Every image has attribution in the DOM.
+
+Contract addition of 2026-08-28: `CardService.GetCards` returns up to 120 cards by Oracle id in one call. `DeckCard` carries only the id and the name, and one `Lookup` per card is 100 calls per deck (ui plan, section 4).
 > *In plain English:* the main screen. The conversation on one side, the deck on the other with real card pictures, grouped by what each card does, with your own cards marked.
 
 **PR-13: Export and share.**
 Export as ManaBox text first (D-15). Other formats later. A buy list with Scryfall purchase links. Gate: a round trip ManaBox export to import loses nothing.
+
+Contract addition of 2026-08-28: `DeckService.ExportDeck` lands with this PR, with `EXPORT_FORMAT_ARENA_TEXT` first. ManaBox imports the Arena text shape, and `collections.ParseArenaText` reads it, so the gate runs against our own parser (ui plan, section 4). The Export RPC of PR-0a left the contract on 2026-08-28 because nothing implemented it (D-266).
 > *In plain English:* get the deck out of the app and into ManaBox or Arena with one click, plus a shopping list.
 
 ### Phase 4 - Meta and quality (gated on Phase 3)
