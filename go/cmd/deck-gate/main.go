@@ -32,6 +32,7 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/collections"
 	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
+	"github.com/nkramber/mtg-deck-builder/go/internal/precons"
 	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
 )
 
@@ -50,8 +51,11 @@ type prompt struct {
 	Pool       string   `json:"pool"`
 	Collection bool     `json:"collection"`
 	Locked     []string `json:"locked"`
-	Budget     float64  `json:"budget"`
-	Plan       string   `json:"plan"`
+	// Precon names a preconstructed deck the build must keep a share of
+	// (D-218, D-247).
+	Precon string  `json:"precon"`
+	Budget float64 `json:"budget"`
+	Plan   string  `json:"plan"`
 }
 
 type result struct {
@@ -122,6 +126,10 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	preconSet, err := precons.Load(idx)
+	if err != nil {
+		return fmt.Errorf("precons: %w", err)
+	}
 	rcfg, err := rules.Load()
 	if err != nil {
 		return err
@@ -153,7 +161,7 @@ func run() error {
 	start := time.Now()
 	var results []result
 	for _, p := range file.Prompts {
-		r := build(context.Background(), b, cb, idx, owned, p, acc, *dry)
+		r := build(context.Background(), b, cb, idx, owned, p, acc, *dry, preconSet)
 		// The judge lane is the real check for F-26, and the deterministic
 		// net can not read the truth of a rules claim (D-229).
 		if !*dry && !*noJudge && r.deck != nil && r.deck.GetSummary() != "" {
@@ -188,7 +196,7 @@ func status(r result) string {
 }
 
 func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx *cards.Index,
-	owned map[string]int32, p prompt, acc *llm.Accumulator, dry bool) result {
+	owned map[string]int32, p prompt, acc *llm.Accumulator, dry bool, preconSet *precons.Set) result {
 	out := result{prompt: p}
 	format := formatID(p.Format)
 	if format == mtgv1.FormatId_FORMAT_ID_UNSPECIFIED {
@@ -260,6 +268,26 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 	// The shortlist leaves basic lands out on purpose (D-225).
 	always := append([]*mtgv1.Card(nil), commanders...)
 	always = append(always, generate.BasicLands(idx.ByName, colors)...)
+	// The share rule of D-218 measures the precon's own cards, so every
+	// one must be nameable. The shortlist ranks by theme and holds only
+	// some of them. This must run before the pool is built: it did not,
+	// and 27 of 93 cards reached the model, which then refused an
+	// impossible instruction (D-248).
+	var preconName string
+	var preconIDs []string
+	if p.Precon != "" {
+		pc, ok := preconSet.Get(p.Precon)
+		if !ok {
+			out.err = fmt.Errorf("no precon named %q", p.Precon)
+			return out
+		}
+		preconName, preconIDs = pc.Name, pc.OracleIDs
+		for _, id := range preconIDs {
+			if c, ok := idx.ByOracleID(id); ok {
+				always = append(always, c)
+			}
+		}
+	}
 	pool := generate.FromList(list, always, buyList)
 	out.poolSize = pool.Size()
 	if dry {
@@ -267,20 +295,22 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 	}
 	plan := p.Plan
 	res, err := b.Build(ctx, generate.Request{
-		SessionID:    fmt.Sprintf("gate-%d", p.ID),
-		Format:       format,
-		Power:        power(p),
-		Plan:         plan,
-		Pool:         pool,
-		Commanders:   commanderIDs,
-		Locked:       lockedIDs,
-		PoolRule:     poolRule,
-		OracleCounts: own,
-		Roles:        generate.Roles(list),
-		Targets:      generate.TargetsFor(format, power(p)),
-		Limits:       generate.LimitsFor(format),
-		LegalityAsOf: idx.AsOf.Format("2006-01-02"),
-		BudgetUSD:    p.Budget,
+		SessionID:       fmt.Sprintf("gate-%d", p.ID),
+		Format:          format,
+		Power:           power(p),
+		Plan:            plan,
+		Pool:            pool,
+		Commanders:      commanderIDs,
+		Locked:          lockedIDs,
+		Precon:          preconName,
+		PreconOracleIDs: preconIDs,
+		PoolRule:        poolRule,
+		OracleCounts:    own,
+		Roles:           generate.Roles(list),
+		Targets:         generate.TargetsFor(format, power(p)),
+		Limits:          generate.LimitsFor(format),
+		LegalityAsOf:    idx.AsOf.Format("2006-01-02"),
+		BudgetUSD:       p.Budget,
 	}, acc)
 	if err != nil {
 		out.err = err

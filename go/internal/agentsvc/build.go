@@ -129,6 +129,29 @@ func (s *Server) buildDeck(ctx context.Context, uid string, session *mtgv1.Sessi
 		always = append(always, c)
 		lockedIDs = append(lockedIDs, c.GetOracleId())
 	}
+	// The precon the user asked to upgrade. Its cards are what the share
+	// rule of D-218 measures, and every one must be nameable. This must
+	// run before the pool is built: it did not, and the model was given
+	// 27 of 93 cards and an instruction it could not meet (D-248).
+	var preconName string
+	var preconIDs []string
+	if s.precons != nil && st.Ctx.Precon {
+		if p, ok := s.precons.Find(st.Ctx.Words); ok {
+			preconName, preconIDs = p.Name, p.OracleIDs
+			// The deck must keep a share of these, so the model must be
+			// able to name them (D-247).
+			for _, id := range preconIDs {
+				if c, ok := idx.ByOracleID(id); ok {
+					always = append(always, c)
+				}
+			}
+			s.log.InfoContext(ctx, "the user asked to upgrade a precon",
+				"session", session.GetId(), "precon", p.Name, "cards", len(p.OracleIDs))
+		} else {
+			s.log.InfoContext(ctx, "the user named a precon the app does not hold",
+				"session", session.GetId())
+		}
+	}
 	pool := generate.FromList(list, always, buyList)
 
 	// The deck carries its own id, so the store reserves one first
@@ -137,7 +160,10 @@ func (s *Server) buildDeck(ctx context.Context, uid string, session *mtgv1.Sessi
 	if s.deckStore != nil {
 		deckID = s.deckStore.NewID(uid)
 	}
+
 	res, err := s.decks.Build(ctx, generate.Request{
+		Precon:            preconName,
+		PreconOracleIDs:   preconIDs,
 		DeckID:            deckID,
 		Name:              deckName(slots),
 		Now:               s.now,

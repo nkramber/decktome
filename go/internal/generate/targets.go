@@ -151,3 +151,16 @@ func allCards(deck *mtgv1.Deck) []*mtgv1.DeckCard {
 // deck does not hold. It blocks, so the repair turn gets one chance to
 // put the card back (D-70, D-242).
 const CodeLockedCardMissing = "locked_card_missing"
+
+// PreconKeepCount is how many of a precon's cards a built deck must keep
+// (D-218). The share is a percentage, and the prompt states a count: a
+// model asked for a percentage must do arithmetic against a list it is
+// still writing, and deck gate prompts 17 and 18 kept 68 and 29 percent
+// of theirs (D-248).
+func PreconKeepCount(total int) int {
+	if total <= 0 {
+		return 0
+	}
+	// Round up, so the share is met and not approached.
+	return (total*PreconSharePercent + 99) / 100
+}

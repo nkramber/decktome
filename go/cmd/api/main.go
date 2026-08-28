@@ -29,6 +29,7 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/decksvc"
 	"github.com/nkramber/mtg-deck-builder/go/internal/health"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
+	"github.com/nkramber/mtg-deck-builder/go/internal/precons"
 	"github.com/nkramber/mtg-deck-builder/go/internal/questions"
 	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
 	"github.com/nkramber/mtg-deck-builder/go/internal/sessions"
@@ -188,6 +189,17 @@ func agentService(client *llm.Client, fs *firestore.Client, index *cardsvc.Serve
 		agentsvc.WithCandidates(index, builder),
 		agentsvc.WithCollections(cols),
 		agentsvc.WithDeckStore(decks.NewRepo(fs)),
+	}
+	// The precon lists a user can ask to upgrade (D-247). Without them the
+	// share rule of D-218 does not run, and an upgrade is an ordinary
+	// owned-first build.
+	if idx := index.Current(); idx != nil {
+		set, err := precons.Load(idx)
+		if err != nil {
+			logger.Warn("precon decklists unavailable, an upgrade keeps no share", "err", err)
+		} else {
+			opts = append(opts, agentsvc.WithPrecons(set))
+		}
 	}
 	prices, err := llm.LoadPrices()
 	if err != nil {

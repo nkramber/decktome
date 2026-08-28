@@ -114,9 +114,9 @@ func (b *Builder) Build(ctx context.Context, req Request, acc *llm.Accumulator) 
 	res := b.assemble(req, out)
 	// One repair turn covers both refusals: a name the shortlist does not
 	// hold, and a block finding from the engine.
-	if misses, blocks := res.misses, blocking(res.deck.GetValidation()); len(misses) > 0 || len(blocks) > 0 || res.overBudget {
+	if misses, blocks := res.misses, blocking(res.deck.GetValidation()); len(misses) > 0 || len(blocks) > 0 || res.overBudget || res.shortPrecon {
 		b.log.Info("the deck was refused, so one repair turn runs",
-			"session", req.SessionID, "misses", len(misses), "blocks", len(blocks), "over_budget", res.overBudget)
+			"session", req.SessionID, "misses", len(misses), "blocks", len(blocks), "over_budget", res.overBudget, "short_precon", res.shortPrecon)
 		out2, err := b.call(ctx, llm.RoleRepair, repairInstructions,
 			b.input(req, misses, blocks), req.SessionID, acc)
 		if err != nil {
@@ -142,7 +142,10 @@ type pass struct {
 	// warning, because a price is an estimate and not a rule, but the
 	// model gets one chance to come under the cap (D-244).
 	overBudget bool
-	repaired   bool
+	// shortPrecon buys the repair turn as well. An upgrade that keeps too
+	// little of the precon is not the deck the user asked for (D-248).
+	shortPrecon bool
+	repaired    bool
 }
 
 // assemble normalizes the model's list, builds the deck, and validates it.
@@ -187,8 +190,9 @@ func (b *Builder) assemble(req Request, out *deckOut) pass {
 	})
 	// The precon share is a build rule and not a rules-engine rule, so it
 	// is added here (D-218).
+	shortPrecon := false
 	if req.Precon != "" {
-		checkPreconShare(deck, req)
+		shortPrecon = checkPreconShare(deck, req)
 	}
 	if padded > 0 {
 		deck.Validation.Findings = append(deck.GetValidation().GetFindings(), &mtgv1.Finding{
@@ -239,7 +243,7 @@ func (b *Builder) assemble(req Request, out *deckOut) pass {
 	// The summary is prose, and F-26 lives there. The net reads the shape
 	// of a rules claim and never its truth.
 	lintSummaryInto(deck)
-	return pass{deck: deck, misses: append(main.Misses, side.Misses...), overBudget: over}
+	return pass{deck: deck, misses: append(main.Misses, side.Misses...), overBudget: over, shortPrecon: shortPrecon}
 }
 
 // call runs one model turn and reads its answer.

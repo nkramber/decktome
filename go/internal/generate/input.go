@@ -62,10 +62,17 @@ func (b *Builder) input(req Request, misses []Miss, blocks []*mtgv1.Finding) str
 		}
 	}
 	if req.Precon != "" {
-		// D-218 sets the share, and the prompt states it as a limit the
-		// model must meet, not as a preference.
-		fmt.Fprintf(&s, "\nThis deck upgrades the %s precon. Keep at least %d percent of its cards. The shortlist marks them \"precon\".\n",
-			req.Precon, PreconSharePercent)
+		// D-218 sets the share. A percentage asks the model to do
+		// arithmetic against a list it is still writing, and deck gate
+		// prompts 17 and 18 of 2026-08-28 kept 68 and 29 percent. The
+		// prompt states the count instead, and what it may change (D-248).
+		keep := PreconKeepCount(len(req.PreconOracleIDs))
+		change := len(req.PreconOracleIDs) - keep
+		fmt.Fprintf(&s, "\n## The precon\n\nThis deck upgrades the %s precon, which holds %d cards. The shortlist marks each one \"precon\".\n",
+			req.Precon, len(req.PreconOracleIDs))
+		fmt.Fprintf(&s, "Keep at least %d of them. You may drop at most %d, and replace those with anything else on the shortlist.\n",
+			keep, change)
+		s.WriteString("An upgrade is a small number of better cards, and not a new deck.\n")
 	}
 	if len(req.Targets) > 0 {
 		s.WriteString("\n## Job targets\n\n")
@@ -146,23 +153,18 @@ const PreconSharePercent = 85
 // of the precon it was asked to upgrade.
 const CodePreconShare = "precon_share"
 
-// CAUTION: nothing reaches this function today, and nothing can. The
-// share needs the precon's card list, and no precon decklist source
-// exists in this repo. The question workflow holds only PreconName, which
-// is the first card the user named and not a list. The Scryfall snapshot
-// carries set codes and no per-product decklist.
-//
-// D-218 stands as the owner's answer. It waits on a precon ingester,
-// which OQ-40 asks for (D-240).
+// internal/precons holds the decklists, and agentsvc reads the product
+// name from the user's own words, because the classifier reports a card
+// name for an upgrade request and not a product (D-247).
 //
 // checkPreconShare adds a finding when the deck keeps less of the precon
 // than D-218 requires. It is a build rule and not a rule of the game, so
 // it is a warning and never a block: the user asked for an upgrade, and a
 // refusal to return a deck serves nobody.
-func checkPreconShare(deck *mtgv1.Deck, req Request) {
+func checkPreconShare(deck *mtgv1.Deck, req Request) bool {
 	want := len(req.PreconOracleIDs)
 	if want == 0 {
-		return
+		return false
 	}
 	in := make(map[string]bool, want)
 	for _, id := range req.PreconOracleIDs {
@@ -174,13 +176,20 @@ func checkPreconShare(deck *mtgv1.Deck, req Request) {
 			kept++
 		}
 	}
-	if kept*100 >= want*PreconSharePercent {
-		return
+	// The commander counts: it is in the deck, in the command zone.
+	for _, id := range deck.GetCommanderOracleIds() {
+		if in[id] {
+			kept++
+		}
+	}
+	if kept >= PreconKeepCount(want) {
+		return false
 	}
 	deck.Validation.Findings = append(deck.GetValidation().GetFindings(), &mtgv1.Finding{
 		Code:     CodePreconShare,
 		Severity: mtgv1.Severity_SEVERITY_WARN,
-		Message: fmt.Sprintf("the deck keeps %d of the %d %s precon cards, and the rule asks for %d percent",
-			kept, want, req.Precon, PreconSharePercent),
+		Message: fmt.Sprintf("the deck keeps %d of the %d %s precon cards, and the rule asks for %d",
+			kept, want, req.Precon, PreconKeepCount(want)),
 	})
+	return true
 }

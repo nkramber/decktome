@@ -23,6 +23,7 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
 	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
+	"github.com/nkramber/mtg-deck-builder/go/internal/precons"
 	"github.com/nkramber/mtg-deck-builder/go/internal/questions"
 	"github.com/nkramber/mtg-deck-builder/go/internal/sessions"
 )
@@ -66,6 +67,7 @@ type Server struct {
 	builder     *candidates.Builder
 	decks       DeckBuilder
 	deckStore   DeckStore
+	precons     *precons.Set
 	buildLimit  time.Duration
 	collections CollectionSource
 	prices      *llm.PriceTable
@@ -103,6 +105,13 @@ type DeckStore interface {
 	// id, so the build needs one before it runs.
 	NewID(uid string) string
 	Put(ctx context.Context, uid string, d *mtgv1.Deck) error
+}
+
+// WithPrecons wires the preconstructed decks a user can ask to upgrade.
+// Without it the precon share of D-218 does not run, and an upgrade
+// request is served as an ordinary owned-first build (D-247).
+func WithPrecons(set *precons.Set) Option {
+	return func(s *Server) { s.precons = set }
 }
 
 // WithDeckStore wires the deck store. Without it the build still returns

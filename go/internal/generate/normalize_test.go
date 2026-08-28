@@ -305,3 +305,55 @@ func TestOverBudgetBuysTheRepairTurn(t *testing.T) {
 		t.Error("the repair input did not name the cost")
 	}
 }
+
+// TestPreconKeepCountRoundsUp is D-248. The share is met and not
+// approached, so a fraction of a card rounds up.
+func TestPreconKeepCountRoundsUp(t *testing.T) {
+	for _, tc := range []struct{ total, want int }{
+		{0, 0}, {100, 85}, {79, 68}, {93, 80}, {87, 74}, {10, 9},
+	} {
+		if got := PreconKeepCount(tc.total); got != tc.want {
+			t.Errorf("PreconKeepCount(%d) = %d, want %d", tc.total, got, tc.want)
+		}
+	}
+}
+
+// TestShortPreconBuysTheRepairTurn is D-248. An upgrade that keeps too
+// little of the precon is not the deck the user asked for, and the model
+// gets one chance to put the cards back.
+func TestShortPreconBuysTheRepairTurn(t *testing.T) {
+	pool := NewPool([]*mtgv1.Card{
+		{OracleId: "o-a", Name: "Card A"}, {OracleId: "o-b", Name: "Card B"},
+		{OracleId: "o-c", Name: "Card C"}, {OracleId: "o-d", Name: "Card D"},
+	}, nil)
+	// Two of the four precon cards is under the keep count of four.
+	few := deckOut{Summary: "s", Cards: []Entry{
+		{Name: "Card A", Count: 1, Role: "synergy"}, {Name: "Card B", Count: 1, Role: "synergy"},
+	}}
+	all := deckOut{Summary: "s", Cards: []Entry{
+		{Name: "Card A", Count: 1, Role: "synergy"}, {Name: "Card B", Count: 1, Role: "synergy"},
+		{Name: "Card C", Count: 1, Role: "synergy"}, {Name: "Card D", Count: 1, Role: "synergy"},
+	}}
+	b, _, sc := testBuilder(t, step(t, few), step(t, all))
+	req := testRequest()
+	req.Pool = pool
+	req.Precon = "Test Precon"
+	req.PreconOracleIDs = []string{"o-a", "o-b", "o-c", "o-d"}
+	got, err := b.Build(context.Background(), req, nil)
+	if err != nil {
+		t.Fatalf("build: %v", err)
+	}
+	if len(sc.Calls) != 2 {
+		t.Fatalf("provider calls = %d, want 2: a short precon buys the repair turn", len(sc.Calls))
+	}
+	// The repair put the cards back, so no finding survives.
+	for _, f := range got.Deck.GetValidation().GetFindings() {
+		if f.GetCode() == CodePreconShare {
+			t.Errorf("the repaired deck is still short: %s", f.GetMessage())
+		}
+	}
+	// The prompt must state the count, or the model is guessing.
+	if !strings.Contains(sc.Calls[0].Input, "Keep at least 4 of them") {
+		t.Error("the prompt did not state how many precon cards to keep")
+	}
+}

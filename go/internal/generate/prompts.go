@@ -17,6 +17,11 @@ package generate
 // The lines carry prices now, the budget is a limit rather than a line of
 // the plan prose, and going over it buys the repair turn (D-244).
 //
+// Version 5 followed deck gate prompts 17 and 18. The precon share was
+// stated as a percentage, and the decks kept 68 and 29 percent of theirs.
+// The prompt states a card count now, and what the model may drop, and a
+// shortfall buys the repair turn (D-248).
+//
 // Version 3 followed deck gate run 3. The repair turn wrote a changelog
 // into the summary: "Sol Ring remains included. Skullport Merchant now
 // appears once; Warren Soultrader fills the replaced ramp slot." The
@@ -29,7 +34,7 @@ package generate
 // shortfalls." The model recited the job targets back, because version 1
 // asked it to state a shortfall there. The summary is for the user, and
 // the counts are in the card list.
-const PromptVersion = 4
+const PromptVersion = 5
 
 // generateInstructions is the stable prefix. It names no card, no format,
 // and no session value, so every call of a session shares it.
@@ -71,6 +76,7 @@ Rules:
 - Use only cards from the shortlist, and copy each name exactly as the shortlist writes it.
 - A finding that names a card you invented means the card is not on the shortlist. Replace it with a shortlist card that does the same job. Never write the name again.
 - A finding that the deck costs too much means you must swap dear cards for cheaper ones that do the same job. Each shortlist line ends with the price of one copy. Come under the cap.
+- A finding that the deck keeps too few precon cards means you dropped too many. Put back the ones marked "precon" until the count is met, and drop cards that are not marked instead.
 - Return the whole deck, and not the change alone.
 - Write the summary again from nothing. It describes the deck, and never the repair. Name no card you changed, no count, and no slot you filled. A reader of the summary does not know a first turn happened.
 - The summary rules of the first turn still hold. State no rule of the game.`
