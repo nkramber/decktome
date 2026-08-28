@@ -23,6 +23,23 @@ check() {
     status=1
     return
   fi
+  version_row "$name" "$vcmd" "$want" "$fix"
+}
+
+# optional NAME CMD VERSION_CMD WANT FIX
+# The same as check, but a missing tool is a warn line and not a failure.
+# make dev needs none of these. See docs/setup.md.
+optional() {
+  local name="$1" cmd="$2" vcmd="$3" want="$4" fix="$5"
+  if ! command -v "$cmd" >/dev/null 2>&1; then
+    row "warn" "$name" "absent. Not needed for make dev. fix: $fix"
+    return
+  fi
+  version_row "$name" "$vcmd" "$want" "$fix"
+}
+
+version_row() {
+  local name="$1" vcmd="$2" want="$3" fix="$4" have
   have=$(eval "$vcmd" 2>&1 | head -1)
   if [ -n "$want" ] && ! printf '%s' "$have" | grep -q "$want"; then
     row "WRONG VERSION" "$name" "have $have, want $want. fix: $fix"
@@ -33,15 +50,20 @@ check() {
 }
 
 echo "mtg-deck-builder doctor (macOS $(sw_vers -productVersion 2>/dev/null || echo ?), $(uname -m))"
-check "brew"     brew     "brew --version | awk '{print \$2}'"          ""           "https://brew.sh"
+optional "brew"  brew     "brew --version | awk '{print \$2}'"          ""           "https://brew.sh"
 check "git"      git      "git --version | awk '{print \$3}'"           ""           "xcode-select --install"
+# scripts/dev.sh waits on ports with nc and sweeps them with lsof.
+check "nc"       nc       "echo present"                                ""           "brew install netcat (macOS ships nc)"
+check "lsof"     lsof     "echo present"                                ""           "macOS ships lsof"
 check "go"       go       "go version | awk '{print \$3}' | sed 's/^go//'" "$want_go" "https://go.dev/dl/ version $want_go"
 check "node"     node     "node --version | sed 's/^v//'"               "$want_node" "nvm install (reads .nvmrc)"
 check "pnpm"     pnpm     "pnpm --version"                              "$want_pnpm" "corepack enable && corepack prepare pnpm@$want_pnpm --activate"
 check "firebase" firebase "firebase --version"                          "$want_firebase" "npm install -g firebase-tools@$want_firebase"
 check "java"     java     "java -version 2>&1 | head -1 | sed 's/.*\"\\(.*\\)\".*/\\1/'" "17." "brew install openjdk@17 (docs/setup.md step 6)"
-check "docker"   docker   "docker --version | awk '{print \$3}' | tr -d ," ""         "brew install --cask docker (docs/setup.md step 7, D-10)"
-check "gcloud"   gcloud   "gcloud --version | head -1 | awk '{print \$4}'" ""         "brew install --cask google-cloud-sdk"
+optional "docker" docker  "docker --version | awk '{print \$3}' | tr -d ," ""         "brew install --cask docker (docs/setup.md step 7, D-10). Only make dev-docker needs it."
+optional "gcloud" gcloud  "gcloud --version | head -1 | awk '{print \$4}'" ""         "brew install --cask google-cloud-sdk. Only a cloud deploy needs it."
+optional "python3" python3 "python3 --version | awk '{print \$2}'"      ""           "brew install python. docs/tools/ste-check.py and the README import example use it."
+optional "shellcheck" shellcheck "shellcheck --version | sed -n 's/^version: //p'" "" "brew install shellcheck. CI lints scripts/*.sh with it."
 
 if [ -x .bin/buf ]; then
   check "buf" .bin/buf ".bin/buf --version" "$want_buf" "make buf"

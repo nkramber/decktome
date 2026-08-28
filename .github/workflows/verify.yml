@@ -10,10 +10,13 @@ permissions:
 
 # Every action is pinned to a commit SHA. The comment gives the tag the SHA
 # resolved to on 2026-08-24. Bump the SHA and the comment together.
+# Every job has a timeout. A hung test or install runs to the 6-hour
+# default otherwise.
 jobs:
   go:
     name: "verify:go"
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -31,13 +34,49 @@ jobs:
         run: make lint-go
       - name: test
         run: go -C go test -race ./...
+      # The known-vulnerability scan. It fails only on a vulnerability
+      # that this code reaches (govulncheck reads the call graph).
+      - name: govulncheck
+        run: go -C go run golang.org/x/vuln/cmd/govulncheck@v1.7.0 ./...
       # Guardrail 3: a model or price default change is a warning, never a failure.
       - name: llm defaults
         run: make llm-defaults-check
 
+  # The Firestore repos (sessions, decks) and the fake-GCS store skip
+  # their tests without an emulator. This job gives them one.
+  emulator:
+    name: "verify:emulator"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version-file: go/go.mod
+          cache-dependency-path: go/go.sum
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .nvmrc
+      - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: "17"
+      # Same pin as docker/emulators.Dockerfile, scripts/doctor.sh, docs/setup.md.
+      - run: npm install -g firebase-tools@14.14.0
+      - name: firestore tests
+        run: |
+          firebase emulators:exec --only firestore --project mtg-local \
+            "FIRESTORE_EMULATOR_HOST=127.0.0.1:8281 go -C go test -race -count=1 ./internal/sessions/ ./internal/decks/"
+      - name: fake gcs tests
+        run: |
+          go -C go run github.com/fsouza/fake-gcs-server@v1.56.1 -scheme http -host 127.0.0.1 -port 4443 -filesystem-root /tmp/gcs &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:4443/storage/v1/b >/dev/null && break; sleep 1; done
+          STORAGE_EMULATOR_HOST=http://127.0.0.1:4443 FAKE_GCS_LIVE=1 go -C go test -race -count=1 ./internal/cards/ -run LiveStore
+
   web:
     name: "verify:web"
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
@@ -49,6 +88,8 @@ jobs:
           cache: pnpm
           cache-dependency-path: web/pnpm-lock.yaml
       - run: pnpm --dir web install --frozen-lockfile
+      # A known vulnerability of high severity or worse fails the job.
+      - run: pnpm --dir web audit --audit-level high
       - run: pnpm --dir web lint
       - run: pnpm --dir web typecheck
       - run: pnpm --dir web test
@@ -57,6 +98,7 @@ jobs:
   proto:
     name: "verify:proto"
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -89,6 +131,7 @@ jobs:
   shell:
     name: "verify:shell"
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       # The ubuntu-latest image ships shellcheck. The apt step covers an image that does not.
@@ -97,14 +140,30 @@ jobs:
           command -v shellcheck >/dev/null || { sudo apt-get update && sudo apt-get install -y shellcheck; }
           shellcheck --version
           shellcheck scripts/*.sh
+      # Every .md file is written in ASD-STE100 (CLAUDE.md rule 2). The
+      # script checks the prose. Tables and code blocks are exempt.
+      - name: ste check
+        run: make ste-check
+
+  # The three images build on every run, with no push. The README claim
+  # "verified end to end" then stays true (audit 2026-08-28, P-11).
+  docker:
+    name: "verify:docker"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - run: docker build -f docker/api.Dockerfile .
+      - run: docker build -f docker/worker.Dockerfile .
+      - run: docker build -f docker/emulators.Dockerfile .
 
   verify:
     name: verify
-    needs: [go, web, proto, shell]
+    needs: [go, emulator, web, proto, shell, docker]
     if: always()
     runs-on: ubuntu-latest
     steps:
       - name: fan-in
         run: |
-          echo "go=${{ needs.go.result }} web=${{ needs.web.result }} proto=${{ needs.proto.result }} shell=${{ needs.shell.result }}"
-          [ "${{ needs.go.result }}" = success ] && [ "${{ needs.web.result }}" = success ] && [ "${{ needs.proto.result }}" = success ] && [ "${{ needs.shell.result }}" = success ]
+          echo "go=${{ needs.go.result }} emulator=${{ needs.emulator.result }} web=${{ needs.web.result }} proto=${{ needs.proto.result }} shell=${{ needs.shell.result }} docker=${{ needs.docker.result }}"
+          [ "${{ needs.go.result }}" = success ] && [ "${{ needs.emulator.result }}" = success ] && [ "${{ needs.web.result }}" = success ] && [ "${{ needs.proto.result }}" = success ] && [ "${{ needs.shell.result }}" = success ] && [ "${{ needs.docker.result }}" = success ]

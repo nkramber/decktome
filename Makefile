@@ -6,10 +6,10 @@ GO := go -C go
 BUF := .bin/buf
 PNPM := pnpm --dir web
 
-.PHONY: candidates-review questions-gate questions-eval eval-calibrate autotune m5-sheet m5-report store-check themes-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
+.PHONY: candidates-review questions-gate deck-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check themes-check ste-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
 
 help: ## Show this help
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-14s %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-14s %s\n", $$1, $$2}'
 
 doctor: ## Check that every required tool is installed
 	@./scripts/doctor.sh
@@ -44,7 +44,7 @@ proto-breaking: $(BUF) ## Fail on a breaking proto change against the main branc
 	@echo "==> buf breaking against $(PROTO_BASE)"
 	@$(BUF) breaking --against '.git#branch=$(PROTO_BASE)'
 
-lint: lint-go lint-web ## Lint Go and TypeScript
+lint: lint-go lint-web ste-check ## Lint Go, TypeScript, and the docs
 
 lint-go: ## Lint Go (vet + golangci-lint, built from source with the local toolchain)
 	@echo "==> go vet"
@@ -57,6 +57,16 @@ lint-web: ## Lint and typecheck TypeScript
 	@$(PNPM) lint
 	@$(PNPM) typecheck
 
+# Every .md file follows ASD-STE100 (CLAUDE.md rule 2). The script reads
+# the prose and skips tables and code blocks. The gate and eval documents
+# under docs/reference/ are machine output, and the frozen research notes
+# keep their date, so both stay out of the list.
+STE_FILES := $(shell git ls-files '*.md' | grep -vE '^docs/reference/(pr[0-9]|session-log|connector-syncer|wallabee)')
+
+ste-check: ## Check every hand-written .md file against the STE rules (no cost)
+	@echo "==> ste-check"
+	@python3 docs/tools/ste-check.py $(STE_FILES)
+
 # LLM_REQUIRE_KEYS is not set here. The unit tests must pass with the
 # package default. Set it in a test with t.Setenv when a case needs it.
 test: ## Run Go and web unit tests
@@ -64,6 +74,7 @@ test: ## Run Go and web unit tests
 	@$(PNPM) test
 
 test-repeat: ## Run one Go test N times to catch flakes. Usage: make test-repeat TEST=TestCheck RUNS=25
+	@[ -n "$(TEST)" ] || { echo "test-repeat: set TEST=TestName, or every test runs $(or $(RUNS),25) times."; exit 1; }
 	@$(GO) test -race -run '$(TEST)' -count=$(or $(RUNS),25) ./...
 
 # Keys are required here on purpose (LLM_REQUIRE_KEYS keeps its default).
@@ -82,7 +93,7 @@ REVIEW_OUT ?= docs/reference/pr6-candidate-review-run2.md
 candidates-review: ## Write the PR-6 gate document from the local snapshot and the owner's export
 	@test ! -f $(REVIEW_OUT) || ! grep -q '^Verdict:' $(REVIEW_OUT) || \
 		{ echo "$(REVIEW_OUT) holds scores. Set REVIEW_OUT to a new file."; exit 1; }
-	@CARDS_SNAPSHOT_DIR=../.local/gcs/mtg-local-cards/scryfall $(GO) run ./cmd/candidates-review \
+	@CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall $(GO) run ./cmd/candidates-review \
 		-collection internal/collections/testdata/manabox_collection.csv > $(REVIEW_OUT)
 	@echo "wrote $(REVIEW_OUT)"
 
@@ -91,12 +102,65 @@ candidates-review: ## Write the PR-6 gate document from the local snapshot and t
 GATE_OUT ?= docs/reference/pr7-question-gate.md
 
 questions-gate: ## Write the PR-7 gate document. CAUTION: this calls the real providers and costs money
+	@[ -f .env ] || { echo "questions-gate: .env is absent. Run: cp .env.example .env, then add the provider keys."; exit 1; }
 	@test ! -f $(GATE_OUT) || ! grep -q '^Verdict:' $(GATE_OUT) || \
 		{ echo "$(GATE_OUT) holds a verdict. Set GATE_OUT to a new file."; exit 1; }
 	@set -a && . ./.env && set +a && \
 		QUESTIONS_GATE=1 CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall \
 		$(GO) run ./cmd/questions-gate -collection internal/collections/testdata/manabox_collection.csv > $(GATE_OUT)
 	@echo "wrote $(GATE_OUT)"
+
+# --- The PR-8 gate and the three probes (audit 2026-08-28, T-18) -------
+# Each target calls a real provider and costs money. Each one has the
+# same two guards as questions-gate: an env variable the command checks,
+# and an output file a rerun must never overwrite (D-65).
+DECK_GATE_OUT ?= docs/reference/pr8-deck-gate.md
+CHAT_PROBE_OUT ?= .local/probes/chat-probe.txt
+GENERATE_PROBE_OUT ?= .local/probes/generate-probe.txt
+# SUMMARY_JUDGE_IN is the deck gate document the judge reads.
+SUMMARY_JUDGE_IN ?= $(DECK_GATE_OUT)
+SUMMARY_JUDGE_OUT ?= .local/probes/summary-judge.txt
+# CHAT_PROBE_MESSAGES are the user's turns, separated by |.
+CHAT_PROBE_MESSAGES ?= Build me a lifegain Commander deck from any cards.|Karlov of the Ghost Council. Bracket 3, white and black, and no budget.
+GENERATE_PROBE_THEME ?= lifegain
+GENERATE_PROBE_COMMANDER ?= Karlov of the Ghost Council
+
+deck-gate: ## Write the PR-8 deck gate document. CAUTION: calls a real provider and costs money
+	@[ -f .env ] || { echo "deck-gate: .env is absent."; exit 1; }
+	@test ! -f $(DECK_GATE_OUT) || ! grep -q '^Verdict:' $(DECK_GATE_OUT) || \
+		{ echo "$(DECK_GATE_OUT) holds a verdict. Set DECK_GATE_OUT to a new file."; exit 1; }
+	@set -a && . ./.env && set +a && \
+		DECK_GATE=1 CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall \
+		$(GO) run ./cmd/deck-gate -collection internal/collections/testdata/manabox_collection.csv > $(DECK_GATE_OUT)
+	@echo "wrote $(DECK_GATE_OUT)"
+
+chat-probe: ## Drive the real Chat RPC to a deck. CAUTION: calls the real providers and costs money
+	@[ -f .env ] || { echo "chat-probe: .env is absent."; exit 1; }
+	@test ! -f $(CHAT_PROBE_OUT) || { echo "$(CHAT_PROBE_OUT) exists. Set CHAT_PROBE_OUT to a new file."; exit 1; }
+	@mkdir -p $(dir $(CHAT_PROBE_OUT))
+	@set -a && . ./.env && set +a && \
+		CHAT_PROBE=1 CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall \
+		$(GO) run ./cmd/chat-probe -messages "$(CHAT_PROBE_MESSAGES)" | tee $(CHAT_PROBE_OUT)
+	@echo "wrote $(CHAT_PROBE_OUT)"
+
+generate-probe: ## Build one deck with the real generate role. CAUTION: calls a real provider and costs money
+	@[ -f .env ] || { echo "generate-probe: .env is absent."; exit 1; }
+	@test ! -f $(GENERATE_PROBE_OUT) || { echo "$(GENERATE_PROBE_OUT) exists. Set GENERATE_PROBE_OUT to a new file."; exit 1; }
+	@mkdir -p $(dir $(GENERATE_PROBE_OUT))
+	@set -a && . ./.env && set +a && \
+		GENERATE_PROBE=1 CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall \
+		$(GO) run ./cmd/generate-probe -theme "$(GENERATE_PROBE_THEME)" -commander "$(GENERATE_PROBE_COMMANDER)" | tee $(GENERATE_PROBE_OUT)
+	@echo "wrote $(GENERATE_PROBE_OUT)"
+
+summary-judge: ## Judge every deck summary of a deck gate document (F-26). CAUTION: calls a real provider and costs money
+	@[ -f .env ] || { echo "summary-judge: .env is absent."; exit 1; }
+	@test -f $(SUMMARY_JUDGE_IN) || { echo "no deck gate document at $(SUMMARY_JUDGE_IN). Set SUMMARY_JUDGE_IN."; exit 1; }
+	@test ! -f $(SUMMARY_JUDGE_OUT) || { echo "$(SUMMARY_JUDGE_OUT) exists. Set SUMMARY_JUDGE_OUT to a new file."; exit 1; }
+	@mkdir -p $(dir $(SUMMARY_JUDGE_OUT))
+	@set -a && . ./.env && set +a && \
+		SUMMARY_JUDGE=1 $(GO) run ./cmd/summary-judge -in $(abspath $(SUMMARY_JUDGE_IN)) | tee $(SUMMARY_JUDGE_OUT)
+	@echo "wrote $(SUMMARY_JUDGE_OUT)"
+# --- end of the PR-8 gate and probe targets ------------------------------
 
 # M5_OUT names the scoring sheet. A rerun must never overwrite a sheet
 # the owner has scored.
@@ -117,7 +181,7 @@ M5_OUT ?= docs/reference/pr7-m5-scoring.md
 # The next sheet reads the latest gate document alone.
 # Paths are repo-relative. The recipe makes them absolute for the Go
 # tool, which runs from go/. An absolute path also works.
-M5_RUNS ?= docs/reference/pr7-question-gate-run18.md
+M5_RUNS ?= docs/reference/pr7-question-gate-run24.md
 
 # The guard reads every field the owner fills, in any case, and free text
 # counts. filled_slot is left out because the generator pre-fills it.
@@ -141,12 +205,13 @@ m5-report: ## Read the scored M-5 sheet and compute the thresholds (no model cal
 # defaults. That is correct: set EVAL_OUT and EVAL_JSON to new names for
 # a rerun. EVAL_JSON is the baseline that tune-check compares against, so
 # a rerun must never overwrite it (D-65).
-EVAL_RUN ?= docs/reference/pr7-question-gate-run18.md
-EVAL_OUT ?= docs/reference/pr7-question-eval-run18.md
-EVAL_JSON ?= .local/tune/run18.json
+EVAL_RUN ?= docs/reference/pr7-question-gate-run24.md
+EVAL_OUT ?= docs/reference/pr7-question-eval-run24.md
+EVAL_JSON ?= .local/tune/run24.json
 EVAL_BUDGET ?= 0.50
 
 questions-eval: ## Score every question of a gate run. CAUTION: calls a real provider and costs money
+	@[ -f .env ] || { echo "questions-eval: .env is absent. Run: cp .env.example .env, then add the provider keys."; exit 1; }
 	@test -f $(EVAL_RUN) || { echo "no gate document at $(EVAL_RUN). Set EVAL_RUN."; exit 1; }
 	@test ! -f $(EVAL_OUT) || { echo "$(EVAL_OUT) exists. Set EVAL_OUT to a new file."; exit 1; }
 	@test ! -f $(EVAL_JSON) || { echo "$(EVAL_JSON) exists. Set EVAL_JSON to a new file."; exit 1; }
@@ -166,11 +231,12 @@ CALIBRATE_PROVIDER ?= anthropic
 # CALIBRATE_OUT is the stem of the two summaries this target writes:
 # <stem>-base.json and <stem>-strong.json. A paid result is never
 # overwritten (D-65). Set CALIBRATE_OUT to a new stem for a rerun.
-CALIBRATE_OUT ?= .local/tune/calibrate-run18
+CALIBRATE_OUT ?= .local/tune/calibrate-run24
 CALIBRATE_BASE := $(CALIBRATE_OUT)-base.json
 CALIBRATE_STRONG := $(CALIBRATE_OUT)-strong.json
 
 eval-calibrate: ## Measure the eval model against a stronger one on a sample. CAUTION: costs money
+	@[ -f .env ] || { echo "eval-calibrate: .env is absent. Run: cp .env.example .env, then add the provider keys."; exit 1; }
 	@test -f $(EVAL_RUN) || { echo "no gate document at $(EVAL_RUN). Set EVAL_RUN."; exit 1; }
 	@test ! -f $(CALIBRATE_BASE) || { echo "$(CALIBRATE_BASE) exists. Set CALIBRATE_OUT to a new stem."; exit 1; }
 	@test ! -f $(CALIBRATE_STRONG) || { echo "$(CALIBRATE_STRONG) exists. Set CALIBRATE_OUT to a new stem."; exit 1; }
@@ -224,7 +290,7 @@ dev-seed: ## Download the Scryfall snapshot into the local stack (network, ~110 
 	@echo "==> one-shot card snapshot refresh (needs make dev running for fake GCS)"
 	@PROJECT_ID=mtg-local CARDS_BUCKET=mtg-local-cards \
 		STORAGE_EMULATOR_HOST=http://127.0.0.1:4443 \
-		go -C go run ./cmd/worker -once
+		$(GO) run ./cmd/worker -once
 
 dev-docker: ## Start the emulators, fake GCS, and API in containers (Compose). Seed: docker compose --profile seed run --rm worker
 	@docker compose up --build
