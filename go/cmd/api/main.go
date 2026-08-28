@@ -25,6 +25,7 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/cardsvc"
 	"github.com/nkramber/mtg-deck-builder/go/internal/collections"
 	"github.com/nkramber/mtg-deck-builder/go/internal/collectionsvc"
+	"github.com/nkramber/mtg-deck-builder/go/internal/decks"
 	"github.com/nkramber/mtg-deck-builder/go/internal/decksvc"
 	"github.com/nkramber/mtg-deck-builder/go/internal/health"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
@@ -98,7 +99,13 @@ func run(ctx context.Context, logger *slog.Logger) error {
 	if err != nil {
 		return fmt.Errorf("rules data: %w", err)
 	}
-	deckServer := decksvc.New(rulesCfg, cardServer, decksvc.WithCollections(collectionRepo, debugUser))
+	// The deck store holds what a build produced (D-245). Without it a
+	// deck streams to the user and is gone, GetDeck and ListDecks have
+	// nothing to read, and the variance row is dead.
+	deckRepo := decks.NewRepo(fs)
+	deckServer := decksvc.New(rulesCfg, cardServer,
+		decksvc.WithCollections(collectionRepo, debugUser),
+		decksvc.WithDecks(deckRepo, debugUser))
 	// The LLM role layer (PR-10). Building it here proves the config and
 	// the keys at startup, not on the first user turn. Without keys the
 	// fixture fake stands in.
@@ -180,6 +187,7 @@ func agentService(client *llm.Client, fs *firestore.Client, index *cardsvc.Serve
 		agentsvc.WithLogger(logger),
 		agentsvc.WithCandidates(index, builder),
 		agentsvc.WithCollections(cols),
+		agentsvc.WithDeckStore(decks.NewRepo(fs)),
 	}
 	prices, err := llm.LoadPrices()
 	if err != nil {

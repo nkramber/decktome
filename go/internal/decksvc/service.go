@@ -1,17 +1,20 @@
 // Package decksvc serves DeckService. PR-5 wires Validate. Get, List,
-// and Export arrive with PR-8 and PR-13.
+// GetDeck and ListDecks read the decks a build kept (D-245). Export
+// arrives with PR-13.
 package decksvc
 
 import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"connectrpc.com/connect"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1/mtgv1connect"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
+	"github.com/nkramber/mtg-deck-builder/go/internal/decks"
 	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
 )
 
@@ -32,6 +35,22 @@ type UserFunc func(ctx context.Context) string
 // Option configures the server.
 type Option func(*Server)
 
+// DeckSource reads the decks a build kept (D-245).
+type DeckSource interface {
+	Get(ctx context.Context, uid, id string) (*mtgv1.Deck, error)
+	List(ctx context.Context, uid string, limit int) ([]*mtgv1.Deck, error)
+}
+
+// WithDecks wires the deck store. Without it GetDeck and ListDecks
+// answer Unimplemented, which is what they did before PR-8.
+func WithDecks(src DeckSource, userFn UserFunc) Option {
+	return func(s *Server) { s.decks, s.userFn = src, userFn }
+}
+
+// listLimit caps one ListDecks answer. The request carries no paging
+// field, so the cap keeps one response inside a sane size.
+const listLimit = 100
+
 // WithCollections wires the ownership check. Without it, Validate refuses
 // a request that names a collection.
 func WithCollections(src CollectionSource, userFn UserFunc) Option {
@@ -43,6 +62,7 @@ func WithCollections(src CollectionSource, userFn UserFunc) Option {
 
 // Server answers DeckService requests.
 type Server struct {
+	decks DeckSource
 	mtgv1connect.UnimplementedDeckServiceHandler
 	cfg         *rules.Config
 	index       IndexSource
@@ -118,4 +138,51 @@ func resolvePoolRule(pr mtgv1.PoolRule, collectionID string) mtgv1.PoolRule {
 		return mtgv1.PoolRule_POOL_RULE_ANY_CARD
 	}
 	return mtgv1.PoolRule_POOL_RULE_OWNED_FIRST
+}
+
+// GetDeck reads one of the caller's decks (D-245).
+func (s *Server) GetDeck(ctx context.Context, req *connect.Request[mtgv1.GetDeckRequest]) (*connect.Response[mtgv1.GetDeckResponse], error) {
+	if s.decks == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("no deck store is wired"))
+	}
+	id := strings.TrimSpace(req.Msg.GetDeckId())
+	if id == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("give a deck id"))
+	}
+	uid := s.user(ctx)
+	if uid == "" {
+		return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("no user"))
+	}
+	d, err := s.decks.Get(ctx, uid, id)
+	if errors.Is(err, decks.ErrNotFound) {
+		return nil, connect.NewError(connect.CodeNotFound, err)
+	}
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	return connect.NewResponse(&mtgv1.GetDeckResponse{Deck: d}), nil
+}
+
+// ListDecks reads the caller's decks, newest first (D-245).
+func (s *Server) ListDecks(ctx context.Context, _ *connect.Request[mtgv1.ListDecksRequest]) (*connect.Response[mtgv1.ListDecksResponse], error) {
+	if s.decks == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("no deck store is wired"))
+	}
+	uid := s.user(ctx)
+	if uid == "" {
+		return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("no user"))
+	}
+	list, err := s.decks.List(ctx, uid, listLimit)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	return connect.NewResponse(&mtgv1.ListDecksResponse{Decks: list}), nil
+}
+
+// user reads the caller's id, or empty when no source is wired.
+func (s *Server) user(ctx context.Context) string {
+	if s.userFn == nil {
+		return ""
+	}
+	return s.userFn(ctx)
 }

@@ -2,6 +2,7 @@ package agentsvc
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -59,6 +60,12 @@ func (f *fakeDecks) Build(ctx context.Context, req generate.Request, _ *llm.Accu
 	if f.block {
 		<-ctx.Done()
 		return nil, ctx.Err()
+	}
+	// The real builder stamps the deck with the id the caller reserved.
+	// A fake that skips it hides the store, and storeDeck's own guard
+	// then makes a failing test look green (D-245).
+	if f.res != nil && f.res.Deck != nil {
+		f.res.Deck.Id = req.DeckID
 	}
 	return f.res, f.err
 }
@@ -199,5 +206,96 @@ func TestBuildTimeoutEndsTheTurnCleanly(t *testing.T) {
 	// The turn is still stored, so the questions are not lost.
 	if len(store.sessions[first.started].GetTurns()) != 2 {
 		t.Error("the turn was lost")
+	}
+}
+
+// fakeDeckStore records what the build kept.
+type fakeDeckStore struct {
+	n    int
+	put  []*mtgv1.Deck
+	fail error
+}
+
+func (f *fakeDeckStore) NewID(string) string {
+	f.n++
+	return fmt.Sprintf("deck-%d", f.n)
+}
+
+func (f *fakeDeckStore) Put(_ context.Context, _ string, d *mtgv1.Deck) error {
+	if f.fail != nil {
+		return f.fail
+	}
+	f.put = append(f.put, d)
+	return nil
+}
+
+// TestTheDeckIsKeptAndRecorded is D-245. The build streamed a deck and
+// let it go, so session.deck_ids stayed empty, AfterBuild was never true,
+// and the variance row was dead for every real user.
+func TestTheDeckIsKeptAndRecorded(t *testing.T) {
+	store := newFakeStore()
+	ds := &fakeDeckStore{}
+	deck := &mtgv1.Deck{Summary: "a deck", Validation: &mtgv1.ValidationResult{}}
+	fd := &fakeDecks{res: &generate.Result{Deck: deck}}
+	opts := append(buildOpts(t, fd), WithDeckStore(ds))
+	client, _ := testServerOpts(t, store, opts, readySteps(t)...)
+
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
+
+	if len(ds.put) != 1 {
+		t.Fatalf("decks kept = %d, want 1", len(ds.put))
+	}
+	// The build reserves the id before it runs, because a deck carries
+	// its own id.
+	if fd.got.DeckID == "" {
+		t.Error("the build was given no deck id")
+	}
+	// The id must reach the stored session, or the next turn cannot know
+	// a deck exists.
+	got := store.sessions[first.started].GetDeckIds()
+	if len(got) != 1 || got[0] != fd.got.DeckID {
+		t.Errorf("session deck ids = %v, want the built deck's id %q", got, fd.got.DeckID)
+	}
+}
+
+// TestAStoreFailureKeepsTheDeck covers the failure path. The user is
+// already reading the deck, so a store that refuses it must not take it
+// away.
+func TestAStoreFailureKeepsTheDeck(t *testing.T) {
+	store := newFakeStore()
+	ds := &fakeDeckStore{fail: context.DeadlineExceeded}
+	deck := &mtgv1.Deck{Summary: "a deck", Validation: &mtgv1.ValidationResult{}}
+	fd := &fakeDecks{res: &generate.Result{Deck: deck}}
+	opts := append(buildOpts(t, fd), WithDeckStore(ds))
+	client, _ := testServerOpts(t, store, opts, readySteps(t)...)
+
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	second := chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
+
+	if ds.n != 1 {
+		t.Fatalf("the store reserved %d ids, want 1: the failure path was never reached", ds.n)
+	}
+	if second.deck == nil {
+		t.Error("a store failure took the deck away from the user")
+	}
+	if second.failure != nil {
+		t.Errorf("a store failure ended the turn: %v", second.failure)
+	}
+	if ids := store.sessions[first.started].GetDeckIds(); len(ids) != 0 {
+		t.Errorf("a deck that was not stored was recorded on the session: %v", ids)
+	}
+}
+
+// TestNoDeckStoreStillBuilds keeps a deployment without a store working.
+func TestNoDeckStoreStillBuilds(t *testing.T) {
+	store := newFakeStore()
+	deck := &mtgv1.Deck{Summary: "a deck", Validation: &mtgv1.ValidationResult{}}
+	fd := &fakeDecks{res: &generate.Result{Deck: deck}}
+	client, _ := testServerOpts(t, store, buildOpts(t, fd), readySteps(t)...)
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	second := chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
+	if second.deck == nil {
+		t.Error("a server with no deck store sent no deck")
 	}
 }

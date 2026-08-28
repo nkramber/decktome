@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
+	"time"
+
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
@@ -49,6 +52,13 @@ type Request struct {
 	PreconOracleIDs []string
 	// LegalityAsOf is the card-snapshot date the deck is checked against.
 	LegalityAsOf string
+	// DeckID is the id the store reserved. A deck carries its own id, so
+	// the caller reserves one before the build (D-245).
+	DeckID string
+	// Name is what the user sees the deck called.
+	Name string
+	// Now stamps the deck. Tests give a fixed clock.
+	Now func() time.Time
 	// BudgetUSD is what the user allowed, 0 when they named no number.
 	// BudgetWholeDeck says the cap covers every card and not the cards the
 	// user must buy, which the budget-scope row asks (D-77, D-238).
@@ -147,7 +157,14 @@ func (b *Builder) assemble(req Request, out *deckOut) pass {
 	if req.Format != mtgv1.FormatId_FORMAT_ID_COMMANDER {
 		commanders = nil
 	}
+	now := req.Now
+	if now == nil {
+		now = time.Now
+	}
 	deck := &mtgv1.Deck{
+		Id:                 req.DeckID,
+		Name:               req.Name,
+		CreatedAt:          timestamppb.New(now().UTC()),
 		Format:             &mtgv1.Format{Id: req.Format},
 		Power:              req.Power,
 		Summary:            strings.TrimSpace(out.Summary),
@@ -216,6 +233,9 @@ func (b *Builder) assemble(req Request, out *deckOut) pass {
 			Message:  "your library holds no commander for this theme, so the deck was built without one from it",
 		})
 	}
+	// The deck carries what it costs, so a reader needs no card index to
+	// see it (D-245).
+	deck.BuyCostUsd = BuyCost(deck)
 	// The summary is prose, and F-26 lives there. The net reads the shape
 	// of a rules claim and never its truth.
 	lintSummaryInto(deck)

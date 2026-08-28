@@ -65,6 +65,7 @@ type Server struct {
 	index       IndexSource
 	builder     *candidates.Builder
 	decks       DeckBuilder
+	deckStore   DeckStore
 	buildLimit  time.Duration
 	collections CollectionSource
 	prices      *llm.PriceTable
@@ -92,6 +93,22 @@ type DeckBuilder interface {
 // every slot is filled and builds nothing, which is the PR-7 behavior.
 func WithDecks(b DeckBuilder) Option {
 	return func(s *Server) { s.decks = b }
+}
+
+// DeckStore holds the decks a build produced. Without it a deck streams
+// to the user and is gone: session.deck_ids stays empty, AfterBuild is
+// never true, and the variance row is dead (D-245).
+type DeckStore interface {
+	// NewID reserves a deck id without a write. The deck carries its own
+	// id, so the build needs one before it runs.
+	NewID(uid string) string
+	Put(ctx context.Context, uid string, d *mtgv1.Deck) error
+}
+
+// WithDeckStore wires the deck store. Without it the build still returns
+// a deck, and nothing keeps it.
+func WithDeckStore(s DeckStore) Option {
+	return func(srv *Server) { srv.deckStore = s }
 }
 
 // DefaultBuildLimit caps one build. The llm client already caps each call
@@ -237,7 +254,9 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 		return err
 	}
 	if res.Ready {
-		if err := s.sendDeck(ctx, uid, session, st, acc, stream); err != nil {
+		// The session was stored before the build, so the deck id needs a
+		// second write. version+1 is what that Put stored (D-245).
+		if err := s.sendDeck(ctx, uid, session, st, snap, version+1, acc, stream); err != nil {
 			return err
 		}
 	}

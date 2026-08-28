@@ -131,7 +131,16 @@ func (s *Server) buildDeck(ctx context.Context, uid string, session *mtgv1.Sessi
 	}
 	pool := generate.FromList(list, always, buyList)
 
+	// The deck carries its own id, so the store reserves one first
+	// (D-245).
+	var deckID string
+	if s.deckStore != nil {
+		deckID = s.deckStore.NewID(uid)
+	}
 	res, err := s.decks.Build(ctx, generate.Request{
+		DeckID:            deckID,
+		Name:              deckName(slots),
+		Now:               s.now,
 		ThinCommanderPool: thinPool,
 		BudgetUSD:         slots.GetBudgetUsd(),
 		BudgetWholeDeck:   slots.GetBudgetScope() == mtgv1.BudgetScope_BUDGET_SCOPE_WHOLE_DECK,
@@ -183,7 +192,8 @@ func plan(session *mtgv1.Session, slots *mtgv1.Slots) string {
 // the turn: the questions are already stored and already sent, so the
 // user reads a status line and can ask again.
 func (s *Server) sendDeck(ctx context.Context, uid string, session *mtgv1.Session, st *questions.State,
-	acc *llm.Accumulator, stream *connect.ServerStream[mtgv1.ChatResponse]) error {
+	snap questions.Snapshot, version int64, acc *llm.Accumulator,
+	stream *connect.ServerStream[mtgv1.ChatResponse]) error {
 	if s.decks == nil {
 		return stream.Send(&mtgv1.ChatResponse{
 			Event: &mtgv1.ChatResponse_Status{Status: "every slot is filled, and no generator is wired"},
@@ -218,6 +228,9 @@ func (s *Server) sendDeck(ctx context.Context, uid string, session *mtgv1.Sessio
 			Event: &mtgv1.ChatResponse_Status{Status: "every slot is filled, and no generator is wired"},
 		})
 	}
+	// The deck is kept before it is sent, so a user who reads it can ask
+	// for it again (D-245).
+	s.storeDeck(ctx, uid, session, snap, version, res.Deck)
 	// A name the model wrote twice and the shortlist never held reaches
 	// the user as prose, because the card is absent from the deck.
 	for _, n := range res.Notes {
@@ -226,4 +239,37 @@ func (s *Server) sendDeck(ctx context.Context, uid string, session *mtgv1.Sessio
 		}
 	}
 	return stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Deck{Deck: res.Deck}})
+}
+
+// deckName is what the user sees the deck called. The theme and the
+// format are what a person would name it by.
+func deckName(slots *mtgv1.Slots) string {
+	theme := strings.TrimSpace(slots.GetTheme())
+	format := generate.FormatWord(slots.GetFormat().GetId())
+	if theme == "" {
+		return format + " deck"
+	}
+	return theme + " " + format
+}
+
+// storeDeck keeps the deck and records its id on the session. A store
+// failure must not lose the deck the user is already reading, so it warns
+// and the turn goes on (D-245).
+func (s *Server) storeDeck(ctx context.Context, uid string, session *mtgv1.Session,
+	snap questions.Snapshot, version int64, d *mtgv1.Deck) {
+	if s.deckStore == nil || d.GetId() == "" {
+		return
+	}
+	if err := s.deckStore.Put(ctx, uid, d); err != nil {
+		s.log.ErrorContext(ctx, "the deck was not stored", "session", session.GetId(), "deck", d.GetId(), "err", err)
+		return
+	}
+	// The session was written before the build, so the deck id needs its
+	// own write. Without it AfterBuild stays false and the variance row
+	// is dead for the next turn (D-245).
+	session.DeckIds = append(session.GetDeckIds(), d.GetId())
+	if err := s.store.Put(ctx, uid, session, snap, version); err != nil {
+		s.log.ErrorContext(ctx, "the deck id was not recorded on the session",
+			"session", session.GetId(), "deck", d.GetId(), "err", err)
+	}
 }
