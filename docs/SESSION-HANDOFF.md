@@ -39,6 +39,7 @@ Branch `pr-12b` holds the revision turn (F-27, D-283 to D-285). The tree is gree
 - `internal/generate`: `Request.Revision`, the revision block of the generate prompt, `CheckRevision`, `AllowedByRevision`, and `Pool.Filter`. The pool drops the removed cards and the cards over the cap.
 - `internal/agentsvc`: `sendRevision` runs after a build when no slot changed, and `slotsChanged` decides. A slot change rebuilds from the start with a status line. `DeckStore` gained `Get`. `Turn.agent_message` is written now.
 - `Deck.revised_from_deck_id` and `Deck.revision_note` are additive proto fields. The deck view shows the note and the diff against the deck before it.
+- The commander rows come last in the catalog order, after the power, the colors, the pool, and the budget (D-294).
 - A commander offer before the pool question ranks on quality alone (D-293). The conversation words hold the user words only (D-292). Both came from the browser sessions of the evening.
 - A card tile shows the full image and no caption (D-291). The commander offer tile shows the image and the pick button only.
 - The commander row asks for a name or a suggestion in one step (D-290). The catalog text changed, so the next question gate run re-baselines (D-66).

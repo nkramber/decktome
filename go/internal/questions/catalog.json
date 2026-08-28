@@ -185,7 +185,7 @@
     {
       "id": "commander",
       "slot": "commander",
-      "order": 31,
+      "order": 80,
       "text": "Which commander do you want? Name one, or I suggest three.",
       "options": [
         "Suggest one"
@@ -204,7 +204,7 @@
     {
       "id": "commander_pick",
       "slot": "commander",
-      "order": 32,
+      "order": 81,
       "fixed": true,
       "text": "Which one do you want: {a}, {b}, or {c}? Say \"none\" and I name three more.",
       "when": {
