@@ -26,15 +26,15 @@ export function ImportResult({ result }: { result: ImportCollectionResponse }) {
   const byReason = Object.entries(report?.unresolvedByReason ?? {});
 
   return (
-    <section aria-live="polite" className="flex flex-col gap-3 rounded border border-neutral-200 p-4">
+    <section className="flex flex-col gap-3 rounded border border-neutral-200 p-4">
       <h2 className="text-lg font-medium">Import result</h2>
-      <p data-testid="card-count">
+      <p data-testid="card-count" role="status">
         {collection
           ? `${collection.name}: ${collection.cardCount} cards, ${report?.resolvedCount ?? 0} rows resolved, ${unresolved.length} unresolved.`
           : "The import returned no collection."}
       </p>
       {byReason.length > 0 && (
-        <ul className="text-sm">
+        <ul className="text-sm" role="list">
           {byReason.map(([reason, count]) => (
             <li key={reason}>
               {reasonLabel(reason)}: {count}

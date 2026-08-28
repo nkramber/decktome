@@ -17,6 +17,8 @@ export type AppState = {
   clearCollection: () => void;
   setSessionId: (sessionId: string) => void;
   setPoolMode: (poolMode: PoolMode) => void;
+  // reset forgets every id. Sign-out calls it.
+  reset: () => void;
 };
 
 export const useAppStore = create<AppState>()(
@@ -29,6 +31,7 @@ export const useAppStore = create<AppState>()(
       clearCollection: () => set({ collectionId: "", poolMode: "any" }),
       setSessionId: (sessionId) => set({ sessionId }),
       setPoolMode: (poolMode) => set({ poolMode }),
+      reset: () => set({ collectionId: "", sessionId: "", poolMode: "any" }),
     }),
     {
       name: "mtg-deck-builder",
