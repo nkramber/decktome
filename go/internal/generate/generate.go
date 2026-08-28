@@ -104,9 +104,9 @@ func (b *Builder) Build(ctx context.Context, req Request, acc *llm.Accumulator) 
 	res := b.assemble(req, out)
 	// One repair turn covers both refusals: a name the shortlist does not
 	// hold, and a block finding from the engine.
-	if misses, blocks := res.misses, blocking(res.deck.GetValidation()); len(misses) > 0 || len(blocks) > 0 {
+	if misses, blocks := res.misses, blocking(res.deck.GetValidation()); len(misses) > 0 || len(blocks) > 0 || res.overBudget {
 		b.log.Info("the deck was refused, so one repair turn runs",
-			"session", req.SessionID, "misses", len(misses), "blocks", len(blocks))
+			"session", req.SessionID, "misses", len(misses), "blocks", len(blocks), "over_budget", res.overBudget)
 		out2, err := b.call(ctx, llm.RoleRepair, repairInstructions,
 			b.input(req, misses, blocks), req.SessionID, acc)
 		if err != nil {
@@ -126,9 +126,13 @@ func (b *Builder) Build(ctx context.Context, req Request, acc *llm.Accumulator) 
 
 // pass is one generate or repair turn, assembled and checked.
 type pass struct {
-	deck     *mtgv1.Deck
-	misses   []Miss
-	repaired bool
+	deck   *mtgv1.Deck
+	misses []Miss
+	// overBudget buys the repair turn. The deck still ships with a
+	// warning, because a price is an estimate and not a rule, but the
+	// model gets one chance to come under the cap (D-244).
+	overBudget bool
+	repaired   bool
 }
 
 // assemble normalizes the model's list, builds the deck, and validates it.
@@ -177,13 +181,15 @@ func (b *Builder) assemble(req Request, out *deckOut) pass {
 		})
 	}
 	// The price is a daily estimate and not a rule, so going over budget
-	// warns and never blocks (D-236).
+	// warns and never blocks (D-236). It does buy the repair turn (D-244).
+	over := false
 	if req.BudgetUSD > 0 {
 		cost, what := BuyCost(deck), "the cards you must buy"
 		if req.BudgetWholeDeck {
 			cost, what = DeckCost(deck), "the whole deck"
 		}
 		if cost > req.BudgetUSD {
+			over = true
 			deck.Validation.Findings = append(deck.GetValidation().GetFindings(), &mtgv1.Finding{
 				Code:     CodeOverBudget,
 				Severity: mtgv1.Severity_SEVERITY_WARN,
@@ -213,7 +219,7 @@ func (b *Builder) assemble(req Request, out *deckOut) pass {
 	// The summary is prose, and F-26 lives there. The net reads the shape
 	// of a rules claim and never its truth.
 	lintSummaryInto(deck)
-	return pass{deck: deck, misses: append(main.Misses, side.Misses...)}
+	return pass{deck: deck, misses: append(main.Misses, side.Misses...), overBudget: over}
 }
 
 // call runs one model turn and reads its answer.

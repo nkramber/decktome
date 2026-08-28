@@ -245,3 +245,63 @@ func TestBudgetScopeChoosesTheCost(t *testing.T) {
 		}
 	}
 }
+
+// TestBudgetReachesThePrompt is D-244. Deck gate run 5 spent $268.37
+// against a $100.00 cap, on a shortlist whose cheapest 99 cards cost
+// $25.66. No shortlist line carried a price, so the model was guessing.
+func TestBudgetReachesThePrompt(t *testing.T) {
+	pool := NewPool([]*mtgv1.Card{
+		{OracleId: "o-cheap", Name: "Cheap Card", PriceUsd: 0.25},
+		{OracleId: "o-dear", Name: "Dear Card", PriceUsd: 53.68},
+	}, map[string]int32{"o-cheap": 1})
+	b := &Builder{}
+	req := testRequest()
+	req.Pool, req.BudgetUSD, req.OracleCounts = pool, 100, map[string]int32{"o-cheap": 1}
+	in := b.input(req, nil, nil)
+	for _, want := range []string{"$0.25", "$53.68", "## Budget", "$100.00", "owned"} {
+		if !strings.Contains(in, want) {
+			t.Errorf("the prompt does not carry %q", want)
+		}
+	}
+	// With no budget the prices stay out, so an ordinary build pays no
+	// tokens for them.
+	req.BudgetUSD = 0
+	if got := b.input(req, nil, nil); strings.Contains(got, "$53.68") {
+		t.Error("a build with no budget still carried prices")
+	}
+}
+
+// TestOverBudgetBuysTheRepairTurn is D-244. The finding stays a warning,
+// because a price is an estimate and not a rule, and the model still gets
+// one chance to come under the cap.
+func TestOverBudgetBuysTheRepairTurn(t *testing.T) {
+	dear := deckOut{Summary: "s", Cards: []Entry{{Name: "Dear Card", Count: 1, Role: "synergy"}}}
+	cheap := deckOut{Summary: "s", Cards: []Entry{{Name: "Cheap Card", Count: 1, Role: "synergy"}}}
+	b, _, sc := testBuilder(t, step(t, dear), step(t, cheap))
+	req := testRequest()
+	req.Pool = NewPool([]*mtgv1.Card{
+		{OracleId: "o-cheap", Name: "Cheap Card", PriceUsd: 0.25},
+		{OracleId: "o-dear", Name: "Dear Card", PriceUsd: 53.68},
+	}, nil)
+	req.BudgetUSD = 10
+	got, err := b.Build(context.Background(), req, nil)
+	if err != nil {
+		t.Fatalf("build: %v", err)
+	}
+	if len(sc.Calls) != 2 {
+		t.Fatalf("provider calls = %d, want 2: over budget buys the repair turn", len(sc.Calls))
+	}
+	if !got.Repaired {
+		t.Error("the repair turn did not run on an over-budget deck")
+	}
+	// The repair came under the cap, so no warning survives.
+	for _, f := range got.Deck.GetValidation().GetFindings() {
+		if f.GetCode() == CodeOverBudget {
+			t.Errorf("the repaired deck is still over budget: %s", f.GetMessage())
+		}
+	}
+	// The repair input must name the cost, or the model cannot fix it.
+	if !strings.Contains(sc.Calls[1].Input, "cost") {
+		t.Error("the repair input did not name the cost")
+	}
+}

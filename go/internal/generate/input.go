@@ -30,6 +30,18 @@ func (b *Builder) input(req Request, misses []Miss, blocks []*mtgv1.Finding) str
 				strings.Join(names, " and "))
 		}
 	}
+	if req.BudgetUSD > 0 {
+		what := "the cards you must buy"
+		if req.BudgetWholeDeck {
+			what = "every card in the deck, the copies the user owns included"
+		}
+		fmt.Fprintf(&s, "\n## Budget\n\nThe deck must cost $%.2f or less, counting %s. Each shortlist line ends with the price of one copy.\n",
+			req.BudgetUSD, what)
+		if req.OracleCounts != nil && !req.BudgetWholeDeck {
+			s.WriteString("A copy the user already owns costs nothing, so prefer the cards marked owned.\n")
+		}
+		s.WriteString("Stay under the cap. Choose a cheaper card that does the same job when one is on the list.\n")
+	}
 	if len(req.Locked) > 0 {
 		var names []string
 		for _, n := range req.Pool.Names() {
@@ -109,6 +121,13 @@ func (b *Builder) shortlist(req Request) string {
 		}
 		if req.OracleCounts != nil {
 			fmt.Fprintf(&s, " | owned %d", req.OracleCounts[c.GetOracleId()])
+		}
+		// The model cannot budget what it cannot see. Deck gate run 5
+		// spent $268.37 against a $100.00 cap on a shortlist whose
+		// cheapest 99 cards cost $25.66, because no line carried a price
+		// (D-244).
+		if req.BudgetUSD > 0 {
+			fmt.Fprintf(&s, " | $%.2f", c.GetPriceUsd())
 		}
 		if precon[c.GetOracleId()] {
 			s.WriteString(" | precon")

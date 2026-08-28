@@ -46,6 +46,10 @@
      "plan": "A dragons Commander deck at bracket 3. You pick the commander."},
     {"id": 15, "name": "delegated commander, owned first", "format": "commander", "theme": "lifegain",
      "bracket": 2, "pool": "owned_first", "collection": true, "colors": ["W", "B"],
-     "plan": "A lifegain Commander deck from my library first, at bracket 2. You pick the commander."}
+     "plan": "A lifegain Commander deck from my library first, at bracket 2. You pick the commander."},
+    {"id": 16, "name": "a tight budget, owned first", "format": "commander", "theme": "aristocrats sacrifice",
+     "commander": "Denethor, Ruling Steward", "bracket": 2, "pool": "owned_first", "collection": true,
+     "budget": 25,
+     "plan": "An aristocrats Commander deck from my library first, at bracket 2, and I can spend 25 dollars."}
   ]
 }
