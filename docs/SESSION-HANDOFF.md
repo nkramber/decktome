@@ -9,7 +9,7 @@
 - The tree is green: build, vet, `-race` tests, golangci-lint, staticcheck, `buf lint`, `buf breaking`, govulncheck (zero reachable), web lint, typecheck, tests, and build. `make ste-check` is part of `make lint` now.
 - `make test` takes seconds again. The four snapshot tests of `candidates` gate on `CARDS_SNAPSHOT_DIR` and run under `make themes-check`.
 - The deployable API builds decks now (D-257). Before today only `chat-probe` could.
-- PR-8 is done and merged (#15). PR-9 is out of the MVP (D-256). Next is Phase 3: PR-11, PR-12, PR-13, and PR-15.
+- PR-8 is done and merged (#15). PR-9 is out of the MVP (D-256). Phase 3 started on 2026-08-28: PR-11 is built and waits on its browser gate. PR-12, PR-13, and PR-15 follow.
 
 ## The numbers, and why none of them compare with the last run
 
@@ -33,10 +33,11 @@ CAUTION: `tune-check` paired zero questions between run 24 and run 25, because t
 
 ## Next steps, in order
 
-1. Merge the pull request for `audit-2026-08-28`. Then restore the rule that forbids a force push to `main`, which was lifted for the purge on 2026-08-28.
-2. Ask Dependabot to rebase #23, then merge it. Every other Dependabot pull request of 2026-08-28 is merged or closed.
-3. Add a ruleset that requires the `verify` check on `main`. Four Dependabot majors merged without it on 2026-08-28 and broke `main` twice.
-4. Start Phase 3 with PR-11. `docs/reference/ui-plan-2026-08-28.md` is the plan (D-273 to D-276): the whole user path, the roadmap stack, real sign-in over the Auth emulator, local under `make dev`.
+1. Run the PR-11 gate in the browser. Sign in over the emulator, then upload a collection and see the count, or skip and reach the chat placeholder. README section 6 is the procedure. The token path is proved with curl, and the browser path is not.
+2. Merge PR-11 when the gate holds. Then PR-12: `CardService.GetCards`, the chat thread, the deck view (`docs/reference/ui-plan-2026-08-28.md`, section 6).
+3. Add a ruleset that requires the `verify` check on `main`, if it is not there yet. Four Dependabot majors merged without it on 2026-08-28 and broke `main` twice.
+
+Done on 2026-08-28: the audit merged (#17), every Dependabot pull request of the day is merged or closed, and the baselines merged (#34). PR-11 is built on branch `pr-11`. It holds the stack, the router, the boundary lint, sign-in and sign-up over the Auth emulator, the token interceptor, and the collection screen. 23 web tests pass.
 
 Done on 2026-08-28, after the audit: the merged branches are deleted on the clone and on origin, and the history purge ran. Every hash after PR-6 changed. The repo went from 101 MB to 2 MB, and the tree at each tip is byte for byte the same. CAUTION: a clone made before 2026-08-28 holds the old history. Re-clone it, and do not merge from it.
 

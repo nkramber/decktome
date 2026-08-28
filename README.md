@@ -90,7 +90,31 @@ print(json.load(urllib.request.urlopen(req))["collection"]["cardCount"], "cards 
 PY
 ```
 
-Open http://localhost:5180 for the web page (a health view for now).
+### 6. Test it in the browser
+
+The web app is the product's front door. Open http://localhost:5180 while `make dev` runs. This is what works today, and what does not. The roadmap slice is PR-11 (`docs/reference/ui-plan-2026-08-28.md`).
+
+1. Sign in. The form runs over the Firebase Auth emulator, so any email and password work. Click "Create account" the first time. The account survives a restart of `make dev`, because the emulator exports its users to `.local/firestore` at exit.
+2. Upload a collection, or skip. Choose a ManaBox CSV export. `go/internal/collections/testdata/manabox_collection.csv` is a real one with 2,548 rows. The screen shows the card count, the rows that did not resolve, and the reason for each. Earlier uploads appear as a list, and one of them is the active collection. "Skip, build from any card" clears the active collection (D-37).
+3. Continue to chat. The chat page is a placeholder in PR-11. It shows the session id and says the chat lands with PR-12.
+4. Open "Decks". The list reads `DeckService.ListDecks`. It is empty until a deck exists.
+5. Read the footer. It shows the API status and the date of the card snapshot. "Card data: not loaded yet" means step 4 above has not run.
+
+What the browser cannot do yet: ask for a deck (PR-12), see a deck with card art (PR-12), and export it (PR-13). Until PR-12 lands, the chat runs from a terminal with `make chat-probe`, which spends money.
+
+Every request from the browser carries the Firebase ID token in the `Authorization` header (D-268, D-275). A request with no token falls back to the debug user `local-dev` under `make dev` only. The emulator forgets nothing while `.local/` stays, and `rm -rf .local` starts clean.
+
+To test the sign-in path without the browser, create a user on the emulator and call the API with its token:
+
+```bash
+TOKEN=$(curl -s -X POST 'http://127.0.0.1:9199/identitytoolkit.googleapis.com/v1/accounts:signUp?key=demo-key' \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"me@example.com","password":"password123","returnSecureToken":true}' | python3 -c 'import sys,json;print(json.load(sys.stdin)["idToken"])')
+curl -s -X POST -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{}' localhost:8090/mtg.v1.CollectionService/ListCollections
+```
+
+The web checks run with `pnpm --dir web lint`, `typecheck`, `test`, and `build`. `make lint` and `make test` run them too.
 
 ### Container variant
 
