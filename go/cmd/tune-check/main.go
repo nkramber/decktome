@@ -211,7 +211,7 @@ func appendLessons(path, label string, prev, next *tune.Summary, d tune.Decision
 	}
 	defer func() { _ = f.Close() }()
 	var b strings.Builder
-	w := func(format string, args ...any) { b.WriteString(fmt.Sprintf(format, args...)) }
+	w := func(format string, args ...any) { fmt.Fprintf(&b, format, args...) }
 	outcome := "rejected"
 	switch {
 	case d.Accept:
@@ -360,7 +360,7 @@ func fillCounts(s *tune.Summary, doc string) error {
 // counters, the rows, and every refused question outside the holdout.
 func mergedReport(base, part *tune.Summary, s tune.Summary) string {
 	var b strings.Builder
-	p := func(format string, a ...any) { b.WriteString(fmt.Sprintf(format, a...)) }
+	p := func(format string, a ...any) { fmt.Fprintf(&b, format, a...) }
 	p("# PR-7 question eval, merged\n\n")
 	p("Run: `%s`. It folds %d conversations of `%s` into `%s` (D-181). Eval model: `%s`.\n\n",
 		s.Run, len(part.Conversations), part.Run, base.Run, s.Model)
