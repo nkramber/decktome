@@ -35,7 +35,7 @@ Every measured number below moved on 2026-08-28, and no gate has run since. Run 
 3. Ask the owner, then run `make deck-gate` with a new `DECK_GATE_OUT`. The share rule now counts nonbasic names, and no run has measured it.
 4. Start Phase 3 with PR-11.
 
-Done on 2026-08-28, after the audit: the merged branches are deleted on the clone and on origin, and the history purge ran. Every hash after PR-6 changed, the repo went from 101 MB to 2 MB, and the tree at each tip is byte for byte the same. CAUTION: a clone made before 2026-08-28 holds the old history. Re-clone it, and do not merge from it.
+Done on 2026-08-28, after the audit: the merged branches are deleted on the clone and on origin, and the history purge ran. Every hash after PR-6 changed. The repo went from 101 MB to 2 MB, and the tree at each tip is byte for byte the same. CAUTION: a clone made before 2026-08-28 holds the old history. Re-clone it, and do not merge from it.
 
 Two owner questions stay open in `docs/owner-questions.md`: OQ-23 (a user who asks a question back) and OQ-39 (the eval tolerance). OQ-44 (the ManaBox condition vocabulary) waits in `docs/open-questions.md`.
 
