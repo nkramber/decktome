@@ -171,8 +171,12 @@ func writeDeck(w io.Writer, r result) {
 		return
 	}
 	d := r.deck
-	_, _ = fmt.Fprintf(w, "Cards: %d main, %d sideboard. Repair turn: %v. Block findings: %d.\n\n",
-		countCards(d), countSide(d), r.repaired, len(blocks(d)))
+	repair := "no"
+	if r.repaired {
+		repair = "yes, for " + r.repairReason
+	}
+	_, _ = fmt.Fprintf(w, "Cards: %d main, %d sideboard. Repair turn: %s. Block findings: %d.\n\n",
+		countCards(d), countSide(d), repair, len(blocks(d)))
 	_, _ = fmt.Fprintf(w, "Cost: $%.2f to buy, $%.2f the whole deck.\n\n",
 		generate.BuyCost(d), generate.DeckCost(d))
 	_, _ = fmt.Fprintf(w, "**Summary:** %s\n\n", d.GetSummary())

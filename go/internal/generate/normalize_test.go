@@ -296,6 +296,9 @@ func TestOverBudgetBuysTheRepairTurn(t *testing.T) {
 	if !got.Repaired {
 		t.Error("the repair turn did not run on an over-budget deck")
 	}
+	if !strings.Contains(got.RepairReason, CodeOverBudget) {
+		t.Errorf("repair reason = %q, want it to name %s", got.RepairReason, CodeOverBudget)
+	}
 	// The repair came under the cap, so no warning survives.
 	for _, f := range got.Deck.GetValidation().GetFindings() {
 		if f.GetCode() == CodeOverBudget {
