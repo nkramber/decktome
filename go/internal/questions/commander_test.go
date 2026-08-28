@@ -1,0 +1,796 @@
+package questions
+
+import (
+	"context"
+	"strings"
+	"testing"
+	"time"
+
+	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
+)
+
+// The commander tests: the pick row, the delegation, the offer, and the
+// named-card role. The pure commander rules are in words_test.go.
+
+// TestColorChangeKeepsTheDelegation is audit Q-5. dropOffColorOffers
+// reopened the pick row after the user had delegated the commander
+// choice, so a color change asked the user to pick after all. D-153 says
+// the offer leaves, and the delegation stands.
+func TestColorChangeKeepsTheDelegation(t *testing.T) {
+	first := commanderClassify()
+	change := classifyOut{Format: "unknown", PoolRule: "unknown", Colors: []string{"W", "G"}}
+	h := &fakeHints{
+		commanders: []string{"Karlov of the Ghost Council", "Oloro, Ageless Ascetic", "Ayli, Eternal Pilgrim"},
+		identity:   map[string][]mtgv1.Color{"Karlov of the Ghost Council": {mtgv1.Color_COLOR_W, mtgv1.Color_COLOR_B}},
+	}
+	a, _ := testAgentHints(t, h,
+		classifyStep(t, first), fits(t, "power_commander", "budget"), askStep(t),
+		classifyStep(t, change))
+	st := NewState(false)
+	if _, err := a.Turn(context.Background(), st, "A lifegain Commander deck, white and black, you pick the commander.", nil); err != nil {
+		t.Fatalf("turn 1: %v", err)
+	}
+	if st.Slots.GetSlotStates()["commander_pick"] != mtgv1.SlotState_SLOT_STATE_SKIPPED {
+		t.Fatalf("the delegation did not close the pick row: %v", st.Slots.GetSlotStates())
+	}
+	if len(st.CurrentOffer) != 0 {
+		t.Errorf("names stayed on the table after the delegation: %v", st.CurrentOffer)
+	}
+	res, err := a.Turn(context.Background(), st, "White and green instead.", nil)
+	if err != nil {
+		t.Fatalf("turn 2: %v", err)
+	}
+	if q := question(res.Questions, "commander"); q != nil {
+		t.Errorf("a color change reopened the commander choice: %q", q.GetText())
+	}
+	if st.Slots.GetSlotStates()["commander_pick"] != mtgv1.SlotState_SLOT_STATE_SKIPPED {
+		t.Errorf("commander_pick = %v after the color change, want SKIPPED", st.Slots.GetSlotStates()["commander_pick"])
+	}
+}
+
+// TestColorChangeDropsTheOfferOfASetCommander is the other half of Q-5.
+// A named commander settles the choice, and a color change leaves the
+// old offer alone.
+func TestColorChangeDropsTheOfferOfASetCommander(t *testing.T) {
+	a, _ := testAgentHints(t, &fakeHints{identity: map[string][]mtgv1.Color{}})
+	st := NewState(false)
+	st.SetOffer([]string{"Oloro, Ageless Ascetic"})
+	st.SetCommander("Karlov of the Ghost Council")
+	st.Slots.Colors = []mtgv1.Color{mtgv1.Color_COLOR_G}
+	a.dropOffColorOffers(st)
+	if len(st.CurrentOffer) != 0 {
+		t.Errorf("the offer stayed after a commander was set: %v", st.CurrentOffer)
+	}
+	if !st.Ctx.Filled["commander_pick"] {
+		t.Error("the pick row reopened under a set commander")
+	}
+}
+
+// TestDelegationFollowsTheClassifier is audit Q-11. "Any colors, you
+// pick" delegates the colors, and the word rule handed the commander
+// choice over because a commander question was out. The classifier says
+// which question the message answered.
+func TestDelegationFollowsTheClassifier(t *testing.T) {
+	cases := []struct {
+		name     string
+		message  string
+		declined []string
+		wantSkip bool
+	}{
+		{"the classifier filed it under the colors", "Any colors, you pick.", []string{"colors"}, false},
+		{"the classifier filed it under the commander", "Whatever, you pick.", []string{"commander"}, true},
+		{"no verdict and other questions out", "Up to you.", nil, false},
+		{"the message names the commander", "You pick the commander, any colors.", []string{"colors"}, true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			first := classifyOut{Format: "commander", Theme: "lifegain", PoolRule: "unknown"}
+			second := classifyOut{Format: "unknown", PoolRule: "unknown", DeclinedKeys: tc.declined}
+			a, _ := testAgent(t,
+				classifyStep(t, first), fits(t, "commander", "power_commander", "colors"), askStep(t),
+				classifyStep(t, second), fits(t), askStep(t))
+			st := NewState(false)
+			if _, err := a.Turn(context.Background(), st, "A lifegain Commander deck.", nil); err != nil {
+				t.Fatalf("turn 1: %v", err)
+			}
+			for _, key := range []string{"commander", "power", "colors"} {
+				if st.Slots.GetSlotStates()[key] != mtgv1.SlotState_SLOT_STATE_ASKED {
+					t.Fatalf("turn 1 did not ask %s: %v", key, st.Slots.GetSlotStates())
+				}
+			}
+			if _, err := a.Turn(context.Background(), st, tc.message, nil); err != nil {
+				t.Fatalf("turn 2: %v", err)
+			}
+			got := st.Slots.GetSlotStates()["commander"] == mtgv1.SlotState_SLOT_STATE_SKIPPED
+			if got != tc.wantSkip {
+				t.Errorf("commander skipped = %v, want %v: states %v", got, tc.wantSkip, st.Slots.GetSlotStates())
+			}
+		})
+	}
+}
+
+// TestDelegationAloneClosesTheOnlyOpenQuestion keeps the D-147 case: a
+// bare "up to you" answers the commander when nothing else is out.
+func TestDelegationAloneClosesTheOnlyOpenQuestion(t *testing.T) {
+	st := NewState(false)
+	st.MarkAsked("commander", "commander", "commander")
+	if !delegationIsAboutTheCommander(st, turnWords{Message: "Up to you."}) {
+		t.Error("a delegation with the commander as the only open question was not read")
+	}
+	st.MarkAsked("colors", "colors", "colors")
+	if delegationIsAboutTheCommander(st, turnWords{Message: "Up to you."}) {
+		t.Error("a delegation with two questions out took the commander")
+	}
+	if !delegationIsAboutTheCommander(st, turnWords{Message: "Up to you.", Declined: []string{"commander_pick"}}) {
+		t.Error("the classifier filed it under the pick and the rule did not read that")
+	}
+}
+
+// TestNamedCardRoleSetsTheCommander is audit Q-14. The role row offered
+// "As my commander", and the option closed the row with no commander
+// set. "In the 99" must lock the card, and a name alone closes nothing.
+func TestNamedCardRoleSetsTheCommander(t *testing.T) {
+	cases := []struct {
+		name, answer  string
+		closed        []string
+		wantCommander bool
+		wantLocked    bool
+		wantOpen      bool
+	}{
+		{"as my commander", "As my commander.", nil, true, false, false},
+		{"in the 99", "In the 99.", nil, false, true, false},
+		{"a name alone closes nothing", "sure, that one", []string{"named_card_role"}, false, false, true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			first := classifyOut{Format: "commander", Theme: "sacrifice", PoolRule: "unknown", NamedCards: []string{"Grist, the Hunger Tide"}}
+			first.Facts.NamedCard = true
+			second := classifyOut{Format: "unknown", PoolRule: "unknown", ClosedKeys: tc.closed}
+			a, _ := testAgent(t,
+				classifyStep(t, first), fits(t, "named_card_role", "power_commander", "colors"), askStep(t),
+				classifyStep(t, second), fits(t), askStep(t))
+			st := NewState(false)
+			if _, err := a.Turn(context.Background(), st, "Build around Grist, the Hunger Tide. A sacrifice deck.", nil); err != nil {
+				t.Fatalf("turn 1: %v", err)
+			}
+			if st.Slots.GetSlotStates()["named_card_role"] != mtgv1.SlotState_SLOT_STATE_ASKED {
+				t.Fatalf("the role row did not fire: %v", st.Slots.GetSlotStates())
+			}
+			if _, err := a.Turn(context.Background(), st, tc.answer, nil); err != nil {
+				t.Fatalf("turn 2: %v", err)
+			}
+			if got := hasName(st.CommanderNames, "Grist, the Hunger Tide"); got != tc.wantCommander {
+				t.Errorf("Grist is the commander = %v, want %v", got, tc.wantCommander)
+			}
+			if got := hasName(st.LockedCards(), "Grist, the Hunger Tide"); got != tc.wantLocked {
+				t.Errorf("Grist is locked = %v, want %v", got, tc.wantLocked)
+			}
+			open := st.Slots.GetSlotStates()["named_card_role"] == mtgv1.SlotState_SLOT_STATE_ASKED
+			if open != tc.wantOpen {
+				t.Errorf("role question open = %v, want %v", open, tc.wantOpen)
+			}
+		})
+	}
+}
+
+// TestCardInThe99ClosesTheRoleRow is D-70. Conversation 27 opens with
+// "Build around Grist, the Hunger Tide, but not as my commander", and all
+// four runs of 2026-08-25 then asked whether Grist should be the
+// commander.
+func TestCardInThe99ClosesTheRoleRow(t *testing.T) {
+	out := classifyOut{Format: "commander", PoolRule: "unknown"}
+	out.LockedNames = []string{"Grist, the Hunger Tide"}
+	out.Facts.NamedCard = true
+	a, _ := testAgent(t, classifyStep(t, out), fits(t, "theme", "colors"), askStep(t))
+	st := NewState(false)
+	res, err := a.Turn(context.Background(), st,
+		"Build around Grist, the Hunger Tide, but not as my commander.", nil)
+	if err != nil {
+		t.Fatalf("turn: %v", err)
+	}
+	if !st.Ctx.Filled["named_card_role"] {
+		t.Error("the role question is still open after the user answered it")
+	}
+	if st.Ctx.Asked["named_card_role"] {
+		t.Error("the agent asked the role question the user had answered")
+	}
+	if q := question(res.Questions, "commander"); q != nil {
+		t.Errorf("a commander question went out: %q", q.GetText())
+	}
+}
+
+// TestNoneRepeatsThePickRowWithNewNames is D-73 and D-120. Conversation
+// 14 is named "the user says none, then picks". The classifier closed the
+// pick row on "None of those." in gate runs 12 and 13, so the session
+// called itself complete with a commander nobody chose.
+func TestNoneRepeatsThePickRowWithNewNames(t *testing.T) {
+	base := commanderClassify()
+	wants := commanderClassify()
+	wants.Facts.WantsSuggestion = true
+	// Turn 3 refuses, and the classifier tries to close the row by name.
+	refuse := commanderClassify()
+	// The classifier reported the refusal through both channels in gate
+	// runs 12 and 13. Neither may close the row.
+	refuse.ClosedKeys = []string{"commander_pick"}
+	refuse.DeclinedKeys = []string{"commander_pick"}
+	h := &fakeHints{
+		commanders: []string{"Vito, Thorn of the Dusk Rose", "Heliod, Sun-Crowned", "Haliya, Guided by Light"},
+		second:     []string{"Karlov of the Ghost Council", "Oloro, Ageless Ascetic", "Ayli, Eternal Pilgrim"},
+	}
+	a, _ := testAgentHints(t, h,
+		classifyStep(t, base), fits(t, "commander", "power_commander"), askStep(t),
+		classifyStep(t, wants),
+		classifyStep(t, refuse))
+	st := NewState(false)
+	if _, err := a.Turn(context.Background(), st, "a lifegain commander deck", nil); err != nil {
+		t.Fatalf("turn 1: %v", err)
+	}
+	if _, err := a.Turn(context.Background(), st, "Bracket 3. I have no commander in mind, so suggest one.", nil); err != nil {
+		t.Fatalf("turn 2: %v", err)
+	}
+	if !st.Ctx.Asked["commander_pick"] {
+		t.Fatal("the pick row never went out")
+	}
+	res, err := a.Turn(context.Background(), st, "None of those.", nil)
+	if err != nil {
+		t.Fatalf("turn 3: %v", err)
+	}
+	if st.Ctx.Filled["commander_pick"] {
+		t.Fatal("a refusal closed the pick row, so the session ends with no commander")
+	}
+	q := question(res.Questions, "commander")
+	if q == nil {
+		t.Fatal("the pick row did not ask again after the refusal")
+	}
+	for _, old := range h.commanders {
+		if strings.Contains(q.GetText(), old) {
+			t.Errorf("the agent offered %q again after the user refused it", old)
+		}
+	}
+	if st.Ready(a.cat) {
+		t.Error("the session called itself complete with no commander chosen")
+	}
+}
+
+// TestCommanderChosenByPlace is D-121. Conversation 14 ends with "The
+// first of the new three is good", and the classifier can not map that
+// onto a name, because it never sees the names.
+func TestCommanderChosenByPlace(t *testing.T) {
+	base := commanderClassify()
+	wants := commanderClassify()
+	wants.Facts.WantsSuggestion = true
+	pick := commanderClassify()
+	h := &fakeHints{
+		commanders: []string{"Vito, Thorn of the Dusk Rose", "Heliod, Sun-Crowned", "Haliya, Guided by Light"},
+		second:     []string{"Karlov of the Ghost Council", "Oloro, Ageless Ascetic", "Ayli, Eternal Pilgrim"},
+	}
+	a, _ := testAgentHints(t, h,
+		classifyStep(t, base), fits(t, "commander", "power_commander"), askStep(t),
+		classifyStep(t, wants),
+		classifyStep(t, pick))
+	st := NewState(false)
+	for i, msg := range []string{
+		"a lifegain commander deck",
+		"Bracket 3. I have no commander in mind, so suggest one.",
+		"The second one is good.",
+	} {
+		if _, err := a.Turn(context.Background(), st, msg, nil); err != nil {
+			t.Fatalf("turn %d: %v", i+1, err)
+		}
+	}
+	if !st.Ctx.Filled["commander"] {
+		t.Fatal("the commander slot stayed open after the user chose one")
+	}
+	if len(st.CommanderNames) == 0 || st.CommanderNames[0] != h.commanders[1] {
+		t.Errorf("commander = %v, want %q", st.CommanderNames, h.commanders[1])
+	}
+}
+
+// TestSuggestionDoesNotSwapTheNames is D-123, which restores D-80. The
+// classifier set wants_suggestion again in conversation 23 of the batch
+// run, on a message that refused nothing. The agent swapped all three
+// commanders under the user.
+//
+// The message asked for a suggestion before D-147. It now asks without
+// the words that hand the choice over, because a delegation closes the
+// pick row instead of repeating it. D-123 is about the names on the
+// table, and this test still measures only that.
+func TestSuggestionDoesNotSwapTheNames(t *testing.T) {
+	wants := commanderClassify()
+	wants.Facts.WantsSuggestion = true
+	again := commanderClassify()
+	again.Facts.WantsSuggestion = true
+	h := &fakeHints{
+		commanders: []string{"Vito, Thorn of the Dusk Rose", "Heliod, Sun-Crowned", "Haliya, Guided by Light"},
+		second:     []string{"Karlov of the Ghost Council", "Oloro, Ageless Ascetic", "Ayli, Eternal Pilgrim"},
+	}
+	a, _ := testAgentHints(t, h,
+		classifyStep(t, wants), fits(t, "commander_pick", "power_commander"), askStep(t),
+		classifyStep(t, again))
+	st := NewState(false)
+	if _, err := a.Turn(context.Background(), st, "a lifegain commander deck, please suggest a commander", nil); err != nil {
+		t.Fatalf("turn 1: %v", err)
+	}
+	res, err := a.Turn(context.Background(), st, "Bracket 3, and build from my library first.", nil)
+	if err != nil {
+		t.Fatalf("turn 2: %v", err)
+	}
+	// The names stay on the table. D-163 stops the second copy of the
+	// same question, so the test reads the table and not a new question.
+	if q := question(res.Questions, "commander"); q != nil {
+		t.Errorf("the pick row asked again on a message that refused nothing: %q", q.GetText())
+	}
+	for _, want := range h.commanders {
+		if !hasName(st.CurrentOffer, want) {
+			t.Errorf("the agent dropped %q although the user refused nothing: %v", want, st.CurrentOffer)
+		}
+	}
+}
+
+// TestDelegationClosesTheCommanderPick is D-147. "You pick the commander"
+// appears in 18 of the 100 gate conversations, and no rule read it. The
+// pick row carries "repeat": true, so it asked again every turn until the
+// messages ran out. Eval run 14 refused 18 of its 43 bad questions on
+// that row, more than the next four rows together.
+//
+// A delegation is a decline (D-93): the key closes, it takes no value,
+// and the generator picks the best commander of the pool.
+func TestDelegationClosesTheCommanderPick(t *testing.T) {
+	wants := commanderClassify()
+	wants.Facts.WantsSuggestion = true
+	again := commanderClassify()
+	again.Facts.WantsSuggestion = true
+	h := &fakeHints{
+		commanders: []string{"Vito, Thorn of the Dusk Rose", "Heliod, Sun-Crowned", "Haliya, Guided by Light"},
+		second:     []string{"Karlov of the Ghost Council", "Oloro, Ageless Ascetic", "Ayli, Eternal Pilgrim"},
+	}
+	a, _ := testAgentHints(t, h,
+		classifyStep(t, wants), fits(t, "power_commander"), askStep(t),
+		classifyStep(t, again))
+	st := NewState(false)
+	if _, err := a.Turn(context.Background(), st, "a lifegain commander deck, you pick the commander", nil); err != nil {
+		t.Fatalf("turn 1: %v", err)
+	}
+	if st.Slots.GetSlotStates()["commander_pick"] != mtgv1.SlotState_SLOT_STATE_SKIPPED {
+		t.Errorf("the delegation left commander_pick in state %v, want SKIPPED",
+			st.Slots.GetSlotStates()["commander_pick"])
+	}
+	res, err := a.Turn(context.Background(), st, "Bracket 3, and build from my library first.", nil)
+	if err != nil {
+		t.Fatalf("turn 2: %v", err)
+	}
+	if q := question(res.Questions, "commander"); q != nil {
+		t.Errorf("the pick row asked again after the user handed over the choice: %q", q.GetText())
+	}
+}
+
+// TestOffColorOfferLeavesTheTable is D-153. The pick row keeps the names
+// on the table until the user refuses them (D-80, D-123). Nothing checked
+// them again when the colors arrived later.
+//
+// Probe 73 of gate run 16 is the case. Turn 1 named no colors, and the
+// row offered Jaheira, Friend of the Forest, which is mono-green. The
+// user answered "Red and white" on turn 2, and the same three names went
+// out on turns 2 and 3. The eval caught it, and D-148 could not: it
+// filters the pool, and these names were already on the table.
+func TestOffColorOfferLeavesTheTable(t *testing.T) {
+	first := commanderClassify()
+	first.Facts.WantsSuggestion = true
+	first.Colors = nil
+	second := commanderClassify()
+	second.Facts.WantsSuggestion = true
+	second.Colors = []string{"R", "W"}
+	// Two of the three offered names are red-white, so they survive the
+	// colors. Jaheira is mono-green and must leave. A mono-red name would
+	// leave as well, because D-148 asks a commander to hold every color
+	// the user named, so the test uses names that isolate D-153.
+	h := &fakeHints{
+		commanders: []string{"Jaheira, Friend of the Forest", "Winota, Joiner of Forces", "Feather, the Redeemed"},
+		second:     []string{"Aurelia, the Warleader", "Anax and Cymede", "Tajic, Blade of the Legion"},
+		identity: map[string][]mtgv1.Color{
+			"Jaheira, Friend of the Forest": {mtgv1.Color_COLOR_G},
+			"Winota, Joiner of Forces":      {mtgv1.Color_COLOR_R, mtgv1.Color_COLOR_W},
+			"Feather, the Redeemed":         {mtgv1.Color_COLOR_R, mtgv1.Color_COLOR_W},
+			"Aurelia, the Warleader":        {mtgv1.Color_COLOR_R, mtgv1.Color_COLOR_W},
+			"Anax and Cymede":               {mtgv1.Color_COLOR_R, mtgv1.Color_COLOR_W},
+			"Tajic, Blade of the Legion":    {mtgv1.Color_COLOR_R, mtgv1.Color_COLOR_W},
+		},
+	}
+	a, _ := testAgentHints(t, h,
+		classifyStep(t, first), fits(t, "commander_pick", "power_commander"), askStep(t),
+		classifyStep(t, second), fits(t, "commander_pick"), askStep(t))
+	st := NewState(false)
+	if _, err := a.Turn(context.Background(), st, "A Commander deck with a Background commander pair.", nil); err != nil {
+		t.Fatalf("turn 1: %v", err)
+	}
+	if !contains(st.CurrentOffer, "Jaheira, Friend of the Forest") {
+		t.Fatalf("turn 1 did not offer the green commander: %v", st.CurrentOffer)
+	}
+	if len(st.CurrentOffer) != 3 {
+		t.Fatalf("turn 1 offered %d names, want 3: %v", len(st.CurrentOffer), st.CurrentOffer)
+	}
+	res, err := a.Turn(context.Background(), st, "Red and white, aggressive.", nil)
+	if err != nil {
+		t.Fatalf("turn 2: %v", err)
+	}
+	if contains(st.CurrentOffer, "Jaheira, Friend of the Forest") {
+		t.Errorf("the mono-green commander stayed on the table after the user named red and white: %v",
+			st.CurrentOffer)
+	}
+	for _, keep := range []string{"Winota, Joiner of Forces", "Feather, the Redeemed"} {
+		if !contains(st.CurrentOffer, keep) {
+			t.Errorf("%q fits red-white and it left the table: %v", keep, st.CurrentOffer)
+		}
+	}
+	if q := question(res.Questions, "commander"); q != nil {
+		if strings.Contains(q.GetText(), "Jaheira") {
+			t.Errorf("the question still names the green commander: %q", q.GetText())
+		}
+	}
+}
+
+// TestOffColorDropKeepsAnUnknownName guards D-153. An unknown name proves
+// nothing, so the agent drops nothing on it. This is the D-140 rule for a
+// card the index can not confirm.
+func TestOffColorDropKeepsAnUnknownName(t *testing.T) {
+	h := &fakeHints{identity: map[string][]mtgv1.Color{"Known Legend": {mtgv1.Color_COLOR_G}}}
+	if fits, known := h.FitsColors("A Card Nobody Holds", []mtgv1.Color{mtgv1.Color_COLOR_R}); known || fits {
+		t.Errorf("an unknown name answered fits=%v known=%v, want both false", fits, known)
+	}
+	// An empty color list fits everything: nothing is out of no colors.
+	if fits, known := h.FitsColors("Known Legend", nil); !fits || !known {
+		t.Errorf("no colors named answered fits=%v known=%v, want both true", fits, known)
+	}
+}
+
+// TestHintsReadTheColorsOfThisTurn is D-124. The caller builds the hint
+// source before the turn, so a color the classifier fills inside the turn
+// was invisible. Conversation 23 offered a five-color commander for a
+// red-green deck.
+func TestHintsReadTheColorsOfThisTurn(t *testing.T) {
+	h := &fakeHints{commanders: []string{"Karlov of the Ghost Council", "Oloro, Ageless Ascetic", "Ayli, Eternal Pilgrim"}}
+	out := commanderClassify()
+	out.Facts.WantsSuggestion = true
+	a, _ := testAgentHints(t, h, classifyStep(t, out), fits(t, "commander_pick", "power_commander"), askStep(t))
+	st := NewState(false)
+	if _, err := a.Turn(context.Background(), st, "a white-black lifegain commander deck, you pick", nil); err != nil {
+		t.Fatalf("turn: %v", err)
+	}
+	if len(h.saw) != 2 {
+		t.Fatalf("the hint source saw %d colors, want the two the classifier filled", len(h.saw))
+	}
+}
+
+// TestPickRowWithNoNamesAsksNothing is D-127. Probe 35 answers every
+// question with "you pick", so the theme stays empty and PR-6 can name no
+// commander. The pick row then asked "Which commander would you like, or
+// should I suggest three more?" twice, with nothing to suggest.
+func TestPickRowWithNoNamesAsksNothing(t *testing.T) {
+	out := commanderClassify()
+	out.Theme = ""
+	out.Facts.WantsSuggestion = true
+	// The hint source names no commander, which is what an empty theme
+	// gives.
+	a, _ := testAgentHints(t, &fakeHints{}, classifyStep(t, out), fits(t, "power_commander"), askStep(t))
+	st := NewState(false)
+	res, err := a.Turn(context.Background(), st, "Make me a good deck. I dunno, you pick.", nil)
+	if err != nil {
+		t.Fatalf("turn: %v", err)
+	}
+	for _, q := range res.Questions {
+		if strings.Contains(strings.ToLower(q.GetText()), "commander") {
+			t.Errorf("a commander question went out with nothing to offer: %q", q.GetText())
+		}
+	}
+	for _, key := range []string{"commander_pick", "commander"} {
+		if st.Slots.GetSlotStates()[key] != mtgv1.SlotState_SLOT_STATE_SKIPPED {
+			t.Errorf("%s = %v, want skipped so the agent chooses",
+				key, st.Slots.GetSlotStates()[key])
+		}
+	}
+}
+
+// TestCommanderSwapReopensTheChoice is D-130. Probe 49 chooses Karlov of
+// the Ghost Council, then writes "Actually use a different commander,
+// suggest one". Every run before 2026-08-26 asked nothing after it,
+// because a chosen commander closes every commander row.
+func TestCommanderSwapReopensTheChoice(t *testing.T) {
+	named := commanderClassify()
+	named.CommanderNames = []string{"Karlov of the Ghost Council"}
+	swap := commanderClassify()
+	swap.Facts.WantsSuggestion = true
+	h := &fakeHints{
+		commanders: []string{"Vito, Thorn of the Dusk Rose", "Heliod, Sun-Crowned", "Haliya, Guided by Light"},
+		second:     []string{"Oloro, Ageless Ascetic", "Ayli, Eternal Pilgrim", "Liesa, Shroud of Dusk"},
+	}
+	a, _ := testAgentHints(t, h,
+		classifyStep(t, named), fits(t, "power_commander"), askStep(t),
+		classifyStep(t, swap))
+	st := NewState(false)
+	if _, err := a.Turn(context.Background(), st,
+		"A white-black lifegain Commander deck. Karlov of the Ghost Council is the commander.", nil); err != nil {
+		t.Fatalf("turn 1: %v", err)
+	}
+	if !st.Ctx.CommanderSet {
+		t.Fatal("the commander did not stick")
+	}
+	res, err := a.Turn(context.Background(), st, "Actually use a different commander, suggest one.", nil)
+	if err != nil {
+		t.Fatalf("turn 2: %v", err)
+	}
+	if st.Ctx.CommanderSet {
+		t.Error("the old commander survived the swap")
+	}
+	q := question(res.Questions, "commander")
+	if q == nil {
+		t.Fatal("the agent asked nothing after the user asked for another commander")
+	}
+	if strings.Contains(q.GetText(), "Karlov") {
+		t.Errorf("the agent offered the commander the user replaced: %q", q.GetText())
+	}
+}
+
+// TestCanLeadStaysSilentOnALegendaryCard is D-140. Gate run 14 told a
+// user "Grist, the Hunger Tide can not lead a deck". Grist is a legendary
+// planeswalker, and it is a legal commander: a characteristic-defining
+// ability makes it a creature card everywhere except the battlefield
+// (Scryfall ruling, 2021-06-18). The gate passed and the linter found
+// nothing, and the claim was false.
+func TestCanLeadStaysSilentOnALegendaryCard(t *testing.T) {
+	cases := []struct {
+		name             string
+		typeLine         string
+		commander, back  bool
+		wantLead, wantOK bool
+	}{
+		{"Grist, the Hunger Tide", "Legendary Planeswalker — Grist", false, false, false, false},
+		{"Jace, the Mind Sculptor", "Legendary Planeswalker — Jace", false, false, false, false},
+		{"Lightning Bolt", "Instant", false, false, false, true},
+		{"Sol Ring", "Artifact", false, false, false, true},
+		{"Karlov of the Ghost Council", "Legendary Creature — Spirit Advisor", true, false, true, true},
+		{"a background", "Legendary Enchantment — Background", false, true, true, true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			h := &CandidateHints{Index: cards.NewIndex([]*mtgv1.Card{{
+				Name: tc.name, TypeLine: tc.typeLine,
+				CanBeCommander: tc.commander, IsBackground: tc.back,
+			}}, nil, nil, time.Time{})}
+			lead, known := h.CanLead(tc.name)
+			if lead != tc.wantLead || known != tc.wantOK {
+				t.Errorf("CanLead = %v/%v, want %v/%v", lead, known, tc.wantLead, tc.wantOK)
+			}
+		})
+	}
+	// An unknown name claims nothing.
+	h := &CandidateHints{Index: cards.NewIndex(nil, nil, nil, time.Time{})}
+	if _, known := h.CanLead("Nonesuch"); known {
+		t.Error("an unknown card name produced a claim")
+	}
+}
+
+// TestPickRowNeedsNewNames is D-163. Conversations 1, 77, and 90 of gate
+// run 18 each got the same three commanders twice, because the user
+// answered some other slot and the row repeats every turn.
+func TestPickRowNeedsNewNames(t *testing.T) {
+	c := load(t)
+	row, ok := c.Row("commander_pick")
+	if !ok {
+		t.Fatal("the pick row is gone")
+	}
+	if !row.Repeat || !row.RepeatOnChange {
+		t.Fatalf("the pick row repeats %v and narrows it %v", row.Repeat, row.RepeatOnChange)
+	}
+	base := Context{
+		Format:      mtgv1.FormatId_FORMAT_ID_COMMANDER,
+		Suggested:   true,
+		Filled:      map[string]bool{"format": true, "theme": true, "colors": true, "power": true},
+		Asked:       map[string]bool{"commander_pick": true},
+		Outstanding: map[string]string{},
+	}
+	if got := ids(c.Plan(base)); len(got) != 0 {
+		t.Errorf("the pick row asked again with the same names: %v", got)
+	}
+	base.OfferChanged = true
+	if got := ids(c.Plan(base)); len(got) != 1 || got[0] != "commander_pick" {
+		t.Errorf("the pick row did not ask again with new names: %v", got)
+	}
+}
+
+// TestLockedCardStaysWithNoQuestion is the turn D-166 fixed. The locked
+// row retired with A-6 of the 2026-08-28 audit, so no row asks whether
+// the card may be cut, and the name still reaches the build.
+func TestLockedCardStaysWithNoQuestion(t *testing.T) {
+	out := commanderClassify()
+	out.BudgetUSD = 60
+	out.LockedNames = []string{"Sanguine Bond"}
+	out.Facts.NamedCard = true
+	a, _ := testAgent(t, classifyStep(t, out), fits(t, "commander", "power_commander"), askStep(t))
+	st := NewState(true)
+	res, err := a.Turn(context.Background(), st,
+		"Karlov of the Ghost Council lifegain deck, and keep Sanguine Bond in it", nil)
+	if err != nil {
+		t.Fatalf("turn: %v", err)
+	}
+	if q := question(res.Questions, "locked"); q != nil {
+		t.Errorf("a retired row asked about the locked card: %q", q.GetText())
+	}
+	// The card stays in the deck.
+	if !hasName(st.LockedCards(), "Sanguine Bond") {
+		t.Errorf("locked cards = %v, want Sanguine Bond", st.LockedCards())
+	}
+}
+
+// TestSuperlativeDelegatesTheCommander is D-167. Conversation 10 of gate
+// run 18 wrote "Buy the best lifegain commander" and got three names to
+// choose from.
+func TestSuperlativeDelegatesTheCommander(t *testing.T) {
+	if !delegatesCommander("Buy the best lifegain commander") {
+		t.Error("a superlative commander instruction was not read as a delegation")
+	}
+	if delegatesCommander("buy the best lands you can find") {
+		t.Error("a message that names no commander handed the commander choice over")
+	}
+	first := classifyOut{Format: "commander", Theme: "lifegain", PoolRule: "unknown", BudgetUSD: 60}
+	first.Colors = []string{"W", "B"}
+	second := classifyOut{Format: "unknown", PoolRule: "owned_first"}
+	second.Power = "bracket 3"
+	a, _ := testAgentHints(t, &fakeHints{commanders: []string{"Karlov of the Ghost Council"}},
+		classifyStep(t, first), fits(t, "commander", "power_commander"), askStep(t),
+		classifyStep(t, second), fits(t))
+	st := NewState(true)
+	if _, err := a.Turn(context.Background(), st, "Lifegain from my collection. Commander, white and black.", nil); err != nil {
+		t.Fatalf("turn 1: %v", err)
+	}
+	res, err := a.Turn(context.Background(), st,
+		"Buy the best lifegain commander. Bracket 3, owned-first, and 60 dollars is the cap.", nil)
+	if err != nil {
+		t.Fatalf("turn 2: %v", err)
+	}
+	if q := question(res.Questions, "commander"); q != nil {
+		t.Errorf("the agent asked the user to choose after they handed the choice over: %q", q.GetText())
+	}
+	for _, key := range []string{"commander", "commander_pick"} {
+		if !st.Ctx.Filled[key] {
+			t.Errorf("key %q is still open although the user asked the agent to choose", key)
+		}
+	}
+}
+
+// TestNamedCommanderClosesTheIllegalRow is one third of H-6. The illegal
+// row asks for a replacement, and the replacement arrived through
+// SetCommander, which closed every commander key except this one.
+func TestNamedCommanderClosesTheIllegalRow(t *testing.T) {
+	st := NewState(false)
+	st.Ctx.Format = mtgv1.FormatId_FORMAT_ID_COMMANDER
+	st.Ctx.CommanderIllegal, st.IllegalCommander = true, "Lightning Bolt"
+	st.MarkAsked("commander_illegal", "commander_illegal", "commander")
+	if !st.Outstanding() {
+		t.Fatal("the illegal question is not out")
+	}
+	st.SetCommander("Karlov of the Ghost Council")
+	if st.Outstanding() {
+		t.Errorf("a question is still out after the user named a commander: %v", st.Slots.GetSlotStates())
+	}
+	if !st.Ctx.Filled["commander_illegal"] {
+		t.Error("the illegal key is still open")
+	}
+	if st.Ctx.CommanderIllegal {
+		t.Error("the illegal fact survived a legal commander")
+	}
+}
+
+// TestNotOwnedRowIsRetired is D-226, which closes OQ-36. The row asked
+// "You do not own {card}. Add it to the buy list, or pick from your
+// library?" It scored 0.05 on all 14 firings of gate run
+// 20260826-212512-000, and the agent replaced 13 of them.
+//
+// The rules engine answers the same question after the build, per card
+// and with the exact count: a warning in owned-first and a block in
+// owned-only (D-37). That costs no turn and names the card.
+func TestNotOwnedRowIsRetired(t *testing.T) {
+	c := load(t)
+	if _, ok := c.Row("commander_not_owned"); ok {
+		t.Fatal("the not-owned row is back in the catalog (D-226)")
+	}
+	// A named commander the collection does not hold still reaches the
+	// build, and the commander slot stays filled.
+	out := commanderClassify()
+	out.PoolRule = "owned_first"
+	out.CommanderNames = []string{"Karlov of the Ghost Council"}
+	h := &fakeHints{}
+	a, _ := testAgentHints(t, h, classifyStep(t, out), fits(t, "power_commander"), askStep(t))
+	st := NewState(true)
+	res, err := a.Turn(context.Background(), st, "Karlov lifegain from my library first, white and black", nil)
+	if err != nil {
+		t.Fatalf("turn: %v", err)
+	}
+	for _, q := range res.Questions {
+		if strings.Contains(q.GetText(), "You do not own") {
+			t.Errorf("a not-owned question went out: %q", q.GetText())
+		}
+	}
+	if got := st.Slots.GetSlotStates()["commander"]; got != mtgv1.SlotState_SLOT_STATE_FILLED {
+		t.Errorf("commander state = %v, want FILLED: the user named one", got)
+	}
+}
+
+// TestDeclinedPickClosesTheCommanderSlot replays conversation 39 of gate
+// run 20260826-212512-000, "the user stays vague". Turn 2 answers "I
+// dunno, you pick", the classifier sets wants_suggestion, and the pick
+// row asks. Turn 3 answers "Whatever you think is best", and the
+// classifier declines the pick key. The decline closes commander_pick
+// alone. The D-147 rule runs after the decline, its guard reads an
+// outstanding pick question that the decline already removed, and the
+// commander slot stays UNSPECIFIED. The session then reports ready, and
+// the gate calls it premature: "commander (never asked)".
+//
+// A delegation is a decline (D-93, D-147): it closes commander_pick and
+// commander, and the generator picks. The gate's required() accepts a
+// SKIPPED commander for that reason.
+func TestDeclinedPickClosesTheCommanderSlot(t *testing.T) {
+	var vague classifyOut
+	var delegate classifyOut
+	delegate.DeclinedKeys = []string{"format", "colors"}
+	delegate.Facts.WantsSuggestion = true
+	var decline classifyOut
+	decline.DeclinedKeys = []string{"commander_pick", "power", "pool_rule"}
+	h := &fakeHints{
+		commanders: []string{"Peregrin Took", "Joshua, Phoenix's Dominant // Phoenix, Warden of Fire", "Éowyn, Shieldmaiden"},
+		second:     []string{"Karlov of the Ghost Council", "Oloro, Ageless Ascetic", "Ayli, Eternal Pilgrim"},
+	}
+	a, _ := testAgentHints(t, h,
+		classifyStep(t, vague), fits(t), askStep(t),
+		classifyStep(t, delegate), fits(t), askStep(t),
+		classifyStep(t, decline))
+	st := NewState(true)
+	if _, err := a.Turn(context.Background(), st, "Make me a good deck.", nil); err != nil {
+		t.Fatalf("turn 1: %v", err)
+	}
+	if _, err := a.Turn(context.Background(), st, "I dunno, you pick.", nil); err != nil {
+		t.Fatalf("turn 2: %v", err)
+	}
+	if st.Slots.GetSlotStates()["commander_pick"] != mtgv1.SlotState_SLOT_STATE_ASKED {
+		t.Fatalf("the pick row did not ask on turn 2: %v", st.Slots.GetSlotStates())
+	}
+	res, err := a.Turn(context.Background(), st, "Whatever you think is best.", nil)
+	if err != nil {
+		t.Fatalf("turn 3: %v", err)
+	}
+	states := st.Slots.GetSlotStates()
+	if states["commander_pick"] != mtgv1.SlotState_SLOT_STATE_SKIPPED {
+		t.Errorf("the decline left commander_pick in state %v, want SKIPPED", states["commander_pick"])
+	}
+	if states["commander"] != mtgv1.SlotState_SLOT_STATE_SKIPPED {
+		t.Errorf("the declined pick left the commander slot in state %v, want SKIPPED (D-147)", states["commander"])
+	}
+	if res.Ready && states["commander"] == mtgv1.SlotState_SLOT_STATE_UNSPECIFIED {
+		t.Errorf("the session reported ready with the commander never asked and never chosen")
+	}
+}
+
+// TestNamedCardThatCanNotLeadSettlesItsRole is D-220. Conversation 74 of
+// gate run 19 named Sol Ring, and the agent asked "Should Sol Ring be
+// your commander or one of the 99 cards?". D-129 read the commander list
+// alone, and Sol Ring was never on it.
+func TestNamedCardThatCanNotLeadSettlesItsRole(t *testing.T) {
+	h := &CandidateHints{Index: cards.NewIndex([]*mtgv1.Card{
+		{Name: "Sol Ring", TypeLine: "Artifact"},
+		{Name: "Karlov of the Ghost Council", TypeLine: "Legendary Creature — Spirit Advisor", CanBeCommander: true},
+	}, nil, nil, time.Time{})}
+	out := commanderClassify()
+	out.NamedCards = []string{"Sol Ring"}
+	a, _ := testAgentHints(t, h, classifyStep(t, out),
+		fits(t, "commander", "power_commander"), askStep(t))
+	st := NewState(false)
+	if _, err := a.Turn(context.Background(), st, "A Commander deck with Sol Ring in it.", nil); err != nil {
+		t.Fatalf("turn: %v", err)
+	}
+	if st.Ctx.Asked["named_card_role"] {
+		t.Error("the agent asked whether Sol Ring should be the commander")
+	}
+	if len(st.LockedCards()) == 0 {
+		t.Error("Sol Ring did not reach the 99")
+	}
+}

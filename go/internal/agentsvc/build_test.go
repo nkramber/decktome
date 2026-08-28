@@ -2,7 +2,10 @@ package agentsvc
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
+	"log/slog"
 	"strings"
 	"testing"
 	"time"
@@ -12,6 +15,8 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
 	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
+	"github.com/nkramber/mtg-deck-builder/go/internal/precons"
+	"github.com/nkramber/mtg-deck-builder/go/internal/questions"
 )
 
 // fixedIndex is an IndexSource over a hand-built snapshot.
@@ -297,5 +302,161 @@ func TestNoDeckStoreStillBuilds(t *testing.T) {
 	second := chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
 	if second.deck == nil {
 		t.Error("a server with no deck store sent no deck")
+	}
+}
+
+// TestDeckColorsFollowEveryCommander is G-7 of the 2026-08-28 audit. The
+// basics followed the first commander only, so a partner pair got half
+// its basics.
+func TestDeckColorsFollowEveryCommander(t *testing.T) {
+	w := &mtgv1.Card{ColorIdentity: []mtgv1.Color{mtgv1.Color_COLOR_W}}
+	ug := &mtgv1.Card{ColorIdentity: []mtgv1.Color{mtgv1.Color_COLOR_U, mtgv1.Color_COLOR_G}}
+	for _, tc := range []struct {
+		name       string
+		format     mtgv1.FormatId
+		chosen     []mtgv1.Color
+		commanders []*mtgv1.Card
+		want       []mtgv1.Color
+	}{
+		{"a partner pair is the union", mtgv1.FormatId_FORMAT_ID_COMMANDER, nil, []*mtgv1.Card{w, ug},
+			[]mtgv1.Color{mtgv1.Color_COLOR_W, mtgv1.Color_COLOR_U, mtgv1.Color_COLOR_G}},
+		{"one commander is its identity", mtgv1.FormatId_FORMAT_ID_COMMANDER,
+			[]mtgv1.Color{mtgv1.Color_COLOR_R}, []*mtgv1.Card{ug},
+			[]mtgv1.Color{mtgv1.Color_COLOR_U, mtgv1.Color_COLOR_G}},
+		{"a 60-card session keeps its colors", mtgv1.FormatId_FORMAT_ID_MODERN,
+			[]mtgv1.Color{mtgv1.Color_COLOR_R}, nil, []mtgv1.Color{mtgv1.Color_COLOR_R}},
+		{"a 60-card session with no colors gets every basic", mtgv1.FormatId_FORMAT_ID_MODERN,
+			nil, nil, generate.AllColors},
+		{"a Commander session with nothing gets none", mtgv1.FormatId_FORMAT_ID_COMMANDER, nil, nil, nil},
+	} {
+		got := deckColors(tc.format, tc.chosen, tc.commanders)
+		if fmt.Sprint(got) != fmt.Sprint(tc.want) {
+			t.Errorf("%s: colors = %v, want %v", tc.name, got, tc.want)
+		}
+	}
+}
+
+// buildServer makes a server with the build wired over the given index,
+// for tests that call buildDeck without a stream.
+func buildServer(t *testing.T, fd *fakeDecks, idx *cards.Index, extra ...Option) *Server {
+	t.Helper()
+	cat, err := questions.Load()
+	if err != nil {
+		t.Fatalf("catalog: %v", err)
+	}
+	client, _ := fakeClient(t)
+	cb, err := candidates.New()
+	if err != nil {
+		t.Fatalf("candidates: %v", err)
+	}
+	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
+	opts := append([]Option{WithLogger(quiet), WithDecks(fd), WithCandidates(fixedIndex{idx}, cb)}, extra...)
+	srv, err := New(cat, client, newFakeStore(), func(context.Context) string { return "u1" }, opts...)
+	if err != nil {
+		t.Fatalf("server: %v", err)
+	}
+	return srv
+}
+
+// TestThinCommanderPoolRunsNoBuild is G-11 of the 2026-08-28 audit. A
+// Commander session that delegated the commander, over a library with
+// none for the theme, ran a build the engine had to refuse. No model
+// call is spent on it, and the error names the reason for the user.
+func TestThinCommanderPoolRunsNoBuild(t *testing.T) {
+	// No legendary creature at all, so the commander pool is empty.
+	welcome := &mtgv1.Card{
+		OracleId: "o-welcome", Name: "Ajani's Welcome", TypeLine: "Enchantment",
+		ColorIdentity: []mtgv1.Color{mtgv1.Color_COLOR_W},
+		Legalities:    map[string]mtgv1.LegalityStatus{"commander": mtgv1.LegalityStatus_LEGALITY_STATUS_LEGAL},
+	}
+	idx := cards.NewIndex([]*mtgv1.Card{welcome}, nil, nil, time.Unix(1000, 0).UTC())
+	fd := &fakeDecks{res: &generate.Result{Deck: &mtgv1.Deck{Validation: &mtgv1.ValidationResult{}}}}
+	srv := buildServer(t, fd, idx)
+	session := &mtgv1.Session{Id: "s-1", Slots: &mtgv1.Slots{
+		Format:   &mtgv1.Format{Id: mtgv1.FormatId_FORMAT_ID_COMMANDER},
+		Theme:    "lifegain",
+		Colors:   []mtgv1.Color{mtgv1.Color_COLOR_W},
+		PoolRule: mtgv1.PoolRule_POOL_RULE_OWNED_ONLY,
+	}}
+	st := &questions.State{Slots: session.GetSlots()}
+	res, err := srv.buildDeck(context.Background(), "u1", session, st, nil)
+	if !errors.Is(err, ErrThinCommanderPool) {
+		t.Fatalf("err = %v, want ErrThinCommanderPool", err)
+	}
+	if res != nil || fd.runs != 0 {
+		t.Errorf("a build ran: res %v, runs %d", res, fd.runs)
+	}
+}
+
+// TestUnresolvedPreconKeepsNoShare pins the unresolved-precon rule. The
+// loader counted the rows the index could not answer, and nothing read
+// the count. A precon with any is not trustworthy for the share rule, so
+// the build runs without it. A two-card index resolves no precon, so
+// every one is such a list here.
+func TestUnresolvedPreconKeepsNoShare(t *testing.T) {
+	karlov := &mtgv1.Card{
+		OracleId: "o-karlov", Name: "Karlov of the Ghost Council",
+		TypeLine: "Legendary Creature — Spirit Advisor", CanBeCommander: true,
+		ColorIdentity: []mtgv1.Color{mtgv1.Color_COLOR_W, mtgv1.Color_COLOR_B},
+		Legalities:    map[string]mtgv1.LegalityStatus{"commander": mtgv1.LegalityStatus_LEGALITY_STATUS_LEGAL},
+	}
+	idx := cards.NewIndex([]*mtgv1.Card{karlov}, nil, nil, time.Unix(1000, 0).UTC())
+	set, err := precons.Load(idx)
+	if err != nil {
+		t.Fatalf("precons: %v", err)
+	}
+	if len(set.Unresolved()) == 0 {
+		t.Fatal("the one-card index resolved a precon, so the test proves nothing")
+	}
+	fd := &fakeDecks{res: &generate.Result{Deck: &mtgv1.Deck{Validation: &mtgv1.ValidationResult{}}}}
+	srv := buildServer(t, fd, idx, WithPrecons(set))
+	session := &mtgv1.Session{Id: "s-1", Slots: &mtgv1.Slots{
+		Format:   &mtgv1.Format{Id: mtgv1.FormatId_FORMAT_ID_COMMANDER},
+		Theme:    "lifegain",
+		PoolRule: mtgv1.PoolRule_POOL_RULE_ANY_CARD,
+	}}
+	st := &questions.State{Slots: session.GetSlots(), CommanderNames: []string{"Karlov of the Ghost Council"}}
+	st.Ctx.Precon = true
+	st.Ctx.Words = "upgrade my avengers assemble precon"
+	if _, err := srv.buildDeck(context.Background(), "u1", session, st, nil); err != nil {
+		t.Fatalf("build: %v", err)
+	}
+	if fd.runs != 1 {
+		t.Fatalf("build runs = %d, want 1", fd.runs)
+	}
+	if fd.got.Precon != "" || len(fd.got.PreconOracleIDs) != 0 {
+		t.Errorf("an unresolved precon reached the share rule: %q with %d cards", fd.got.Precon, len(fd.got.PreconOracleIDs))
+	}
+}
+
+// TestBuildCopiesTheHouseRules is A-6 of the 2026-08-28 audit. The
+// house-rules row asked its question for 24 gate runs, and the answer
+// never left the session. The slot now reaches the build request, and
+// the deck's Format carries it from there (D-3).
+func TestBuildCopiesTheHouseRules(t *testing.T) {
+	welcome := &mtgv1.Card{
+		OracleId: "o-welcome", Name: "Ajani's Welcome", TypeLine: "Enchantment",
+		ColorIdentity: []mtgv1.Color{mtgv1.Color_COLOR_W},
+		Legalities:    map[string]mtgv1.LegalityStatus{"modern": mtgv1.LegalityStatus_LEGALITY_STATUS_LEGAL},
+	}
+	idx := cards.NewIndex([]*mtgv1.Card{welcome}, nil, nil, time.Unix(1000, 0).UTC())
+	fd := &fakeDecks{res: &generate.Result{Deck: &mtgv1.Deck{Validation: &mtgv1.ValidationResult{}}}}
+	srv := buildServer(t, fd, idx)
+	session := &mtgv1.Session{Id: "s-1", Slots: &mtgv1.Slots{
+		Format:     &mtgv1.Format{Id: mtgv1.FormatId_FORMAT_ID_MODERN},
+		Theme:      "lifegain",
+		Colors:     []mtgv1.Color{mtgv1.Color_COLOR_W},
+		PoolRule:   mtgv1.PoolRule_POOL_RULE_ANY_CARD,
+		HouseRules: "any card, no ban list",
+	}}
+	st := &questions.State{Slots: session.GetSlots()}
+	if _, err := srv.buildDeck(context.Background(), "u1", session, st, nil); err != nil {
+		t.Fatalf("build: %v", err)
+	}
+	if fd.runs != 1 {
+		t.Fatalf("build runs = %d, want 1", fd.runs)
+	}
+	if fd.got.HouseRules != "any card, no ban list" {
+		t.Errorf("the build request carries house rules %q, want the slot value", fd.got.HouseRules)
 	}
 }

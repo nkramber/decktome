@@ -2,8 +2,8 @@
 // site of internal/questions: one user message in, the next questions
 // out, and the whole conversation stored.
 //
-// The build itself lands with PR-8. A session that reaches a full slot
-// set reports SESSION_STATUS_READY and stops there.
+// A session that reaches a full slot set reports SESSION_STATUS_READY,
+// builds (PR-8), and then reports SESSION_STATUS_BUILT.
 package agentsvc
 
 import (
@@ -51,6 +51,23 @@ type IndexSource interface {
 	Current() *cards.Index
 }
 
+// PreconSource hands out the precon set for the current card index, or
+// nil before the first snapshot loads. The api resolves it late, because
+// the precon lists need an index and the index lands after the server
+// starts (L-2).
+type PreconSource interface {
+	Current() *precons.Set
+}
+
+// MaxMessageBytes caps one message and one answer text (A-7). A deck
+// request is a few sentences, and a whole ManaBox export goes through
+// ImportCollection, not Chat.
+const MaxMessageBytes = 8 << 10
+
+// DefaultChatLimit caps the Chat turns one process runs at once (A-7).
+// A turn holds a model call open for minutes, and every turn is billed.
+const DefaultChatLimit = 8
+
 // CollectionSource gives the owned count per Oracle id (D-37).
 type CollectionSource interface {
 	OracleCounts(ctx context.Context, userID, collectionID string) (map[string]int32, error)
@@ -59,16 +76,19 @@ type CollectionSource interface {
 // Server answers AgentService requests.
 type Server struct {
 	mtgv1connect.UnimplementedAgentServiceHandler
-	cat         *questions.Catalog
-	client      *llm.Client
-	store       Store
-	userFn      UserFunc
-	index       IndexSource
-	builder     *candidates.Builder
-	decks       DeckBuilder
-	deckStore   DeckStore
-	precons     *precons.Set
-	buildLimit  time.Duration
+	cat        *questions.Catalog
+	client     *llm.Client
+	store      Store
+	userFn     UserFunc
+	index      IndexSource
+	builder    *candidates.Builder
+	decks      DeckBuilder
+	deckStore  DeckStore
+	precons    *precons.Set
+	preconSrc  PreconSource
+	buildLimit time.Duration
+	// turns is the concurrency gate: one token per running Chat turn.
+	turns       chan struct{}
 	collections CollectionSource
 	prices      *llm.PriceTable
 	now         func() time.Time
@@ -112,6 +132,22 @@ type DeckStore interface {
 // request is served as an ordinary owned-first build (D-247).
 func WithPrecons(set *precons.Set) Option {
 	return func(s *Server) { s.precons = set }
+}
+
+// WithPreconSource wires a late-bound precon set. It wins over
+// WithPrecons when both are set (L-2).
+func WithPreconSource(src PreconSource) Option {
+	return func(s *Server) { s.preconSrc = src }
+}
+
+// WithChatLimit caps the Chat turns that run at once. Zero keeps
+// DefaultChatLimit. A refused turn answers ResourceExhausted.
+func WithChatLimit(n int) Option {
+	return func(s *Server) {
+		if n > 0 {
+			s.turns = make(chan struct{}, n)
+		}
+	}
 }
 
 // WithDeckStore wires the deck store. Without it the build still returns
@@ -159,13 +195,41 @@ func New(cat *questions.Catalog, client *llm.Client, store Store, userFn UserFun
 	for _, o := range opts {
 		o(s)
 	}
+	if s.turns == nil {
+		s.turns = make(chan struct{}, DefaultChatLimit)
+	}
 	return s, nil
 }
 
+// preconSet returns the precon set for the current index. build.go
+// reads it before an upgrade request.
+func (s *Server) preconSet() *precons.Set {
+	if s.preconSrc != nil {
+		return s.preconSrc.Current()
+	}
+	return s.precons
+}
+
 var (
-	errNoUser    = errors.New("no user in the request context")
-	errNoMessage = errors.New("message or answers are required")
+	errNoUser     = errors.New("no user in the request context")
+	errNoMessage  = errors.New("message or answers are required")
+	errTooLong    = fmt.Errorf("a message or an answer is longer than %d bytes", MaxMessageBytes)
+	errBusy       = errors.New("the server runs its limit of turns at once, send the message again in a moment")
+	errSessionBig = errors.New("this conversation is too long to continue, start a new session")
 )
+
+// tooLong reports whether the message or any answer text passes the cap.
+func tooLong(req *mtgv1.ChatRequest) bool {
+	if len(req.GetMessage()) > MaxMessageBytes {
+		return true
+	}
+	for _, a := range req.GetAnswers() {
+		if len(a.GetText()) > MaxMessageBytes {
+			return true
+		}
+	}
+	return false
+}
 
 // GetSession returns one stored conversation.
 func (s *Server) GetSession(ctx context.Context, req *connect.Request[mtgv1.GetSessionRequest]) (*connect.Response[mtgv1.GetSessionResponse], error) {
@@ -200,6 +264,17 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 	}
 	if strings.TrimSpace(req.Msg.GetMessage()) == "" && len(req.Msg.GetAnswers()) == 0 {
 		return connect.NewError(connect.CodeInvalidArgument, errNoMessage)
+	}
+	if tooLong(req.Msg) {
+		return connect.NewError(connect.CodeInvalidArgument, errTooLong)
+	}
+	// The gate is non-blocking: a caller past the limit hears it at once
+	// instead of a queue that holds the connection open (A-7).
+	select {
+	case s.turns <- struct{}{}:
+		defer func() { <-s.turns }()
+	default:
+		return connect.NewError(connect.CodeResourceExhausted, errBusy)
 	}
 
 	session, snap, version, err := s.load(ctx, uid, req.Msg)
@@ -264,8 +339,18 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 	}
 	if res.Ready {
 		// The session was stored before the build, so the deck id needs a
-		// second write. version+1 is what that Put stored (D-245).
-		if err := s.sendDeck(ctx, uid, session, st, snap, version+1, acc, stream); err != nil {
+		// second write. version+1 is what that Put stored (D-245). That
+		// write carries the post-turn state, or the next turn would lose
+		// this turn's asked rows and repeat a question (L-3). It also
+		// carries the built status, and storeDeck writes it only when a
+		// deck was kept (L-11).
+		before := len(session.GetDeckIds())
+		session.Status = mtgv1.SessionStatus_SESSION_STATUS_BUILT
+		err := s.sendDeck(ctx, uid, session, st, st.Snapshot(), version+1, acc, stream)
+		if len(session.GetDeckIds()) == before {
+			session.Status = mtgv1.SessionStatus_SESSION_STATUS_READY
+		}
+		if err != nil {
 			return err
 		}
 	}
@@ -382,7 +467,9 @@ func withAnswers(message string, answers []*mtgv1.Answer, session *mtgv1.Session
 		text := strings.TrimSpace(a.GetText())
 		q := asked[a.GetQuestionId()]
 		if text == "" && q != nil {
-			if i := int(a.GetOptionIndex()); i >= 0 && i < len(q.GetOptions()) {
+			// An unset option_index is free text. The field has explicit
+			// presence, so option 0 and "no option" are distinct.
+			if i := int(a.GetOptionIndex()); a.OptionIndex != nil && i >= 0 && i < len(q.GetOptions()) {
 				text = q.GetOptions()[i]
 			}
 		}
@@ -426,21 +513,44 @@ func addUsage(total *mtgv1.Usage, r llm.Report) *mtgv1.Usage {
 	return total
 }
 
-// failure maps a model error onto the code the UI acts on.
+// failure maps a model error onto the code the UI acts on. A schema
+// miss is sampled, so a retry can succeed. A terminal fault is either
+// the operator's (auth, config) or the user's (L-12).
 func failure(err error) *mtgv1.AgentError {
 	class := llm.ClassOf(err)
 	out := &mtgv1.AgentError{
 		Code:      "llm_" + class.String(),
 		Message:   "The model call failed. This one does not succeed on a retry.",
-		Retryable: class == llm.ClassTransient || class == llm.ClassBudget,
+		Retryable: class == llm.ClassTransient || class == llm.ClassBudget || class == llm.ClassSchema,
 	}
 	switch class {
 	case llm.ClassTransient, llm.ClassBudget:
 		out.Message = "The model call failed. Send the message again."
 	case llm.ClassRefusal:
 		out.Message = "The model declined that request. Say it in other words."
+	case llm.ClassSchema:
+		out.Message = "The model answered in the wrong shape. Send the message again, a retry usually succeeds."
+	case llm.ClassTerminal:
+		if operatorFault(err) {
+			out.Message = "The model provider refused the setup. The operator must fix the provider setup."
+		}
 	}
 	return out
+}
+
+// operatorFault reports a terminal error the user cannot fix: a refused
+// key, a forbidden model, or a role with no provider wired.
+func operatorFault(err error) bool {
+	var e *llm.Error
+	if !errors.As(err, &e) {
+		return false
+	}
+	if e.Status == 401 || e.Status == 403 || e.Status == 404 {
+		return true
+	}
+	msg := e.Err.Error()
+	return strings.Contains(msg, "no provider") || strings.Contains(msg, "unknown role") ||
+		strings.Contains(msg, "fixture") || strings.Contains(msg, "no fixture")
 }
 
 // storeError maps a store failure onto a Connect code.
@@ -455,6 +565,11 @@ func storeError(err error) error {
 	if errors.Is(err, sessions.ErrConflict) {
 		return connect.NewError(connect.CodeAborted,
 			fmt.Errorf("the session is busy with another turn, send the message again: %w", err))
+	}
+	if errors.Is(err, sessions.ErrTooLarge) {
+		// The document limit is a hard stop. The user hears it as a clear
+		// message, not as a session that fails every later turn (L-8).
+		return connect.NewError(connect.CodeResourceExhausted, fmt.Errorf("%w: %w", errSessionBig, err))
 	}
 	return connect.NewError(connect.CodeInternal, err)
 }

@@ -29,14 +29,28 @@ type Index struct {
 }
 
 // Collisions counts name keys that more than one card claimed at build
-// time (C-16). The first card keeps a full name. A face name never
-// overrides a full name. The log line shows the counts.
+// time (C-16). On a full-name tie the card that is legal in at least one
+// format wins, and among equals the first card wins. A face name never
+// overrides a full name. A face name that two cards share resolves to
+// nothing: the lookup is exact, and a guess is a wrong card. The log
+// line shows the counts.
 type Collisions struct {
 	// FullNames counts a full name that a later card also carried.
 	FullNames int
 	// FaceNames counts a face name that another card's full or face
 	// name already held.
 	FaceNames int
+}
+
+// legalSomewhere reports whether a card is legal or restricted in at
+// least one format. A playtest card or a front card is legal nowhere.
+func legalSomewhere(c *mtgv1.Card) bool {
+	for _, s := range c.Legalities {
+		if s == mtgv1.LegalityStatus_LEGALITY_STATUS_LEGAL || s == mtgv1.LegalityStatus_LEGALITY_STATUS_RESTRICTED {
+			return true
+		}
+	}
+	return false
 }
 
 // Collisions returns the name collision counts of the build.
@@ -73,8 +87,13 @@ func NewIndex(cardList []*mtgv1.Card, printings []Printing, tags *TagIndex, asOf
 		}
 		idx.byOracleID[c.OracleId] = c
 		k := normName(c.Name)
-		if _, taken := idx.byName[k]; taken {
+		if taken, ok := idx.byName[k]; ok {
 			idx.collisions.FullNames++
+			// A playable card beats one that is legal nowhere. Otherwise
+			// the first card keeps the name.
+			if !legalSomewhere(taken) && legalSomewhere(c) {
+				idx.byName[k] = c
+			}
 		} else {
 			idx.byName[k] = c
 		}
@@ -82,8 +101,12 @@ func NewIndex(cardList []*mtgv1.Card, printings []Printing, tags *TagIndex, asOf
 			idx.byPrinting[c.DefaultPrinting.ScryfallId] = c
 		}
 	}
-	// Face names resolve to the whole card ("Fire" finds "Fire // Ice").
-	// A face name never overrides a real full name.
+	// Face names resolve to the whole card ("Stomp" finds "Bonecrusher
+	// Giant // Stomp"). A face name never overrides a real full name. A
+	// face name that two cards share is ambiguous: "Fire" is a face of
+	// both "Fire // Ice" and "Start // Fire", so it resolves to nothing.
+	faceOwner := map[string]*mtgv1.Card{}
+	ambiguous := map[string]bool{}
 	for _, c := range cardList {
 		for _, f := range c.Faces {
 			k := normName(f.Name)
@@ -93,6 +116,18 @@ func NewIndex(cardList []*mtgv1.Card, printings []Printing, tags *TagIndex, asOf
 				}
 				continue
 			}
+			if owner, ok := faceOwner[k]; ok {
+				if owner != c {
+					idx.collisions.FaceNames++
+					ambiguous[k] = true
+				}
+				continue
+			}
+			faceOwner[k] = c
+		}
+	}
+	for k, c := range faceOwner {
+		if !ambiguous[k] {
 			idx.byName[k] = c
 		}
 	}
@@ -176,7 +211,8 @@ func (x *Index) NonPlayablePrinting(scryfallID, setCode, collector string) (layo
 	return "", false
 }
 
-// ByName finds a card by exact full name or exact face name.
+// ByName finds a card by exact full name or exact face name. A face
+// name that two cards share finds nothing.
 func (x *Index) ByName(name string) (*mtgv1.Card, bool) {
 	c, ok := x.byName[normName(name)]
 	return c, ok
@@ -311,6 +347,6 @@ func hasAllKeywords(have, want []string) bool {
 }
 
 // PaperSwaps counts the cards whose default printing was digital and
-// whose paper printing the snapshot also held. The loader logs it, so a
+// whose paper printing the snapshot also held. LoadIndex logs it, so a
 // snapshot that suddenly swaps thousands of cards is visible (D-221).
 func (x *Index) PaperSwaps() int { return x.paperSwaps }

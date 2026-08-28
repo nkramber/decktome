@@ -50,9 +50,21 @@ const (
 	escalationMax    = 65536
 )
 
-// Backoff bounds. A transient delay never exceeds maxBackoff. Jitter moves
-// each delay by up to jitterFraction in either direction, so many callers
-// do not retry in step.
+// Attempt timeout rule (L-4). One attempt gets attemptBase plus
+// attemptPerKTokens for each 1,000 output tokens of its cap, and never
+// more than what is left of the Budget deadline. A 1,024-token classify
+// call gets about 121 s. An escalated 65,536-token generate call asks
+// for 185 s and gets the rest of the three minutes. The old fixed 120 s
+// could not finish an escalated retry, and every attempt was billed.
+const (
+	attemptBase       = 120 * time.Second
+	attemptPerKTokens = time.Second
+)
+
+// Backoff bounds. A transient delay never exceeds maxBackoff, unless the
+// provider's Retry-After hint asks for more. Jitter moves each delay by
+// up to jitterFraction in either direction, so many callers do not retry
+// in step.
 const (
 	maxBackoff     = 30 * time.Second
 	jitterFraction = 0.2
@@ -70,6 +82,13 @@ type Client struct {
 	// it: rand.Rand is not safe for concurrent use.
 	rngMu sync.Mutex
 	rng   *rand.Rand
+
+	// attemptBase is the per-attempt base timeout. Tests shorten it.
+	attemptBase time.Duration
+
+	// schemas caches compiled schemas by their bytes. A role's schema is
+	// one constant document, so the compile runs once per process.
+	schemas sync.Map
 }
 
 // Option tunes a Client.
@@ -98,12 +117,13 @@ func New(cfg *Config, providers []Provider, opts ...Option) (*Client, error) {
 		return nil, err
 	}
 	c := &Client{
-		cfg:       cfg,
-		providers: map[string]Provider{},
-		budget:    DefaultBudget,
-		sleep:     realSleep,
-		log:       slog.Default(),
-		rng:       rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64())),
+		cfg:         cfg,
+		providers:   map[string]Provider{},
+		budget:      DefaultBudget,
+		attemptBase: attemptBase,
+		sleep:       realSleep,
+		log:         slog.Default(),
+		rng:         rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64())),
 	}
 	for _, p := range providers {
 		if p == nil {
@@ -128,10 +148,16 @@ func (c *Client) Config() *Config { return c.cfg.Clone() }
 
 // Complete runs one logical call for role. acc may be nil.
 //
-// Retry classes: a truncation retries once at once with a higher cap. A
-// transient failure retries after an exponential backoff. Every other class
-// returns at once. All attempts share one Budget. When the caller's ctx
-// ends during an attempt, the result is ClassBudget.
+// Retry classes: a truncation retries once at once with a higher cap,
+// and the higher cap stays for the rest of the call: a transient failure
+// on the escalated attempt does not change what the output needs. A
+// transient failure retries after an exponential
+// backoff, or after the provider's Retry-After hint when that is
+// longer. A schema miss retries once, because the output is sampled and
+// a second sample usually fits. Every other class returns at once. All
+// attempts share one Budget, and each attempt gets its own timeout
+// (see attemptTimeout). When the caller's ctx ends during an attempt,
+// the result is ClassBudget.
 func (c *Client) Complete(ctx context.Context, role Role, req Request, acc *Accumulator) (Response, error) {
 	spec, ok := c.cfg.Roles[role]
 	if !ok {
@@ -144,7 +170,7 @@ func (c *Client) Complete(ctx context.Context, role Role, req Request, acc *Accu
 	if len(req.Schema) == 0 {
 		return Response{}, newErr(ClassTerminal, spec.Provider, spec.Model, 0, errors.New("request has no schema"))
 	}
-	schema, err := compileSchema(req.Schema)
+	schema, err := c.schema(req.Schema)
 	if err != nil {
 		return Response{}, newErr(ClassTerminal, spec.Provider, spec.Model, 0, err)
 	}
@@ -152,14 +178,15 @@ func (c *Client) Complete(ctx context.Context, role Role, req Request, acc *Accu
 		req.SchemaName = string(role) + "_output"
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, c.budget.Deadline)
+	start := time.Now()
+	ctx, cancel := context.WithDeadline(ctx, start.Add(c.budget.Deadline))
 	defer cancel()
 
 	call := Call{Request: req, Role: role, Model: spec.Model, Effort: spec.Effort, MaxOutputTokens: spec.MaxOutputTokens}
-	start := time.Now()
 	attempts := 0
 	escalated := false
 	transient := 0
+	schemaMisses := 0
 	for {
 		if attempts >= c.budget.MaxAttempts {
 			return Response{}, newErr(ClassBudget, spec.Provider, spec.Model, 0,
@@ -170,20 +197,29 @@ func (c *Client) Complete(ctx context.Context, role Role, req Request, acc *Accu
 		}
 		attempts++
 		t0 := time.Now()
-		res, err := prov.Complete(ctx, call)
+		actx, acancel := context.WithTimeout(ctx, attemptTimeout(c.attemptBase, call.MaxOutputTokens, c.budget.Deadline-time.Since(start)))
+		res, err := prov.Complete(actx, call)
+		attemptEnded := actx.Err() != nil
+		acancel()
 		acc.Record(role, spec.Model, res.Usage, time.Since(t0))
 		if err == nil {
-			if verr := schema.Validate(mustAny(res.Output)); verr != nil {
-				return Response{}, newErr(ClassSchema, spec.Provider, spec.Model, 0, verr)
+			verr := schema.Validate(mustAny(res.Output))
+			if verr == nil {
+				res.Provider, res.Model = spec.Provider, spec.Model
+				res.Attempts, res.Latency = attempts, time.Since(start)
+				return res, nil
 			}
-			res.Provider, res.Model = spec.Provider, spec.Model
-			res.Attempts, res.Latency = attempts, time.Since(start)
-			return res, nil
+			err = newErr(ClassSchema, spec.Provider, spec.Model, 0, verr)
 		}
 		// The caller's cancel or the deadline ended the attempt. The
 		// provider's own error class does not matter then.
 		if cerr := ctx.Err(); cerr != nil {
 			return Response{}, newErr(ClassBudget, spec.Provider, spec.Model, 0, fmt.Errorf("%w (attempt %d: %w)", cerr, attempts, err))
+		}
+		if attemptEnded {
+			// The attempt's own timeout ended it, and the budget still
+			// has time. That is a slow provider, so a retry can help.
+			err = newErr(ClassTransient, spec.Provider, spec.Model, 0, fmt.Errorf("attempt %d timed out: %w", attempts, err))
 		}
 		switch ClassOf(err) {
 		case ClassTruncation:
@@ -199,9 +235,22 @@ func (c *Client) Complete(ctx context.Context, role Role, req Request, acc *Accu
 			call.MaxOutputTokens = next
 			c.log.Warn("llm truncation, retry with higher cap", "role", role, "model", spec.Model, "cap", call.MaxOutputTokens)
 			continue
+		case ClassSchema:
+			if schemaMisses > 0 {
+				return Response{}, err
+			}
+			schemaMisses++
+			c.log.Warn("llm schema miss, one retry", "role", role, "model", spec.Model, "err", err)
+			continue
 		case ClassTransient:
 			transient++
 			delay := c.backoff(transient)
+			if hint := retryAfterOf(err); hint > delay {
+				delay = hint
+			}
+			if left := c.budget.Deadline - time.Since(start); delay > left {
+				delay = left
+			}
 			c.log.Warn("llm transient failure, backoff", "role", role, "model", spec.Model, "attempt", attempts, "delay", delay, "err", err)
 			if serr := c.sleep(ctx, delay); serr != nil {
 				return Response{}, newErr(ClassBudget, spec.Provider, spec.Model, 0, fmt.Errorf("deadline during backoff: %w", serr))
@@ -211,6 +260,19 @@ func (c *Client) Complete(ctx context.Context, role Role, req Request, acc *Accu
 			return Response{}, err
 		}
 	}
+}
+
+// attemptTimeout applies the L-4 rule: base plus attemptPerKTokens per
+// 1,000 tokens of cap, and never more than the budget that is left.
+func attemptTimeout(base time.Duration, maxOutputTokens int, left time.Duration) time.Duration {
+	d := base + time.Duration(maxOutputTokens/1000)*attemptPerKTokens
+	if d > left {
+		d = left
+	}
+	if d < 0 {
+		d = 0
+	}
+	return d
 }
 
 // backoff returns the delay before transient retry n (1-based): BaseDelay
@@ -233,6 +295,15 @@ func (c *Client) backoff(n int) time.Duration {
 	return delay + time.Duration(float64(delay)*f)
 }
 
+// retryAfterOf reads the provider's Retry-After hint from err, or 0.
+func retryAfterOf(err error) time.Duration {
+	var e *Error
+	if errors.As(err, &e) {
+		return e.RetryAfter
+	}
+	return 0
+}
+
 func escalate(limit int) int {
 	n := limit * escalationFactor
 	if n < escalationFloor {
@@ -245,6 +316,21 @@ func escalate(limit int) int {
 		return limit
 	}
 	return n
+}
+
+// schema returns the compiled form of raw, from the cache when the same
+// bytes were compiled before.
+func (c *Client) schema(raw json.RawMessage) (*jsonschema.Schema, error) {
+	key := string(raw)
+	if s, ok := c.schemas.Load(key); ok {
+		return s.(*jsonschema.Schema), nil
+	}
+	s, err := compileSchema(raw)
+	if err != nil {
+		return nil, err
+	}
+	got, _ := c.schemas.LoadOrStore(key, s)
+	return got.(*jsonschema.Schema), nil
 }
 
 // compileSchema parses a JSON Schema draft 2020-12 document. The root must

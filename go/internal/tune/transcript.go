@@ -47,7 +47,18 @@ type Conversation struct {
 	Collection bool `json:"collection"`
 	// Unanswered names the slots the deck needs that no answer filled.
 	Unanswered string `json:"unanswered,omitempty"`
+	// AfterBuild marks a conversation that starts after a finished build.
+	// The catalog-only bar leaves it out, the way it leaves a probe out,
+	// because its build slots were closed before the first message (A-9).
+	AfterBuild bool `json:"after_build,omitempty"`
+	// Failed holds the error a conversation ended on. The gate writes the
+	// marker, and a conversation that errored counts for nobody in a
+	// paired comparison (T-5).
+	Failed string `json:"failed,omitempty"`
 }
+
+// Errored reports whether the conversation ended on an error.
+func (c Conversation) Errored() bool { return c.Failed != "" }
 
 // Run is one gate document.
 type Run struct {
@@ -91,8 +102,13 @@ var (
 	verdictRe = regexp.MustCompile(`^Verdict: (\w+)\.`)
 	lintRe    = regexp.MustCompile(`^The linter found (\d+) defective`)
 	prematRe  = regexp.MustCompile(`^(\d+) conversations called themselves complete`)
-	unansRe   = regexp.MustCompile(`^Slots the deck needs and nobody answered: (.+)$`)
-	collectRe = regexp.MustCompile(`^Collection: (true|false)\.`)
+	unansRe   = regexp.MustCompile(`^Slots the deck needs and nobody answered: (.+)\.$`)
+	// prematureRe reads the same list off a premature session. The old
+	// reader matched the plain label alone, so a premature conversation
+	// carried no unanswered slots (audit 2026-08-28).
+	prematureRe = regexp.MustCompile(`^\*\*PREMATURE\.\*\* It called itself complete with these slots unanswered: (.+)\.$`)
+	failedRe    = regexp.MustCompile(`^\*\*Failed: (.+)\*\*$`)
+	collectRe   = regexp.MustCompile(`^Collection: (true|false)\.`)
 )
 
 // ReadRun parses one gate document.
@@ -114,7 +130,8 @@ func ReadRun(path string) (*Run, error) {
 		case convRe.MatchString(line):
 			run.flush(conv)
 			name := convRe.FindStringSubmatch(line)[1]
-			conv = &Conversation{Name: name, Probe: strings.Contains(name, "(probe)")}
+			conv = &Conversation{Name: name, Probe: strings.Contains(name, "(probe)"),
+				AfterBuild: strings.Contains(name, "(after a build)")}
 			turn = 0
 		case verdictRe.MatchString(line):
 			run.Verdict = verdictRe.FindStringSubmatch(line)[1]
@@ -129,8 +146,13 @@ func ReadRun(path string) (*Run, error) {
 			conv.Collection = collectRe.FindStringSubmatch(line)[1] == "true"
 		case conv != nil && unansRe.MatchString(line):
 			conv.Unanswered = unansRe.FindStringSubmatch(line)[1]
+		case conv != nil && prematureRe.MatchString(line):
+			conv.Premature = true
+			conv.Unanswered = prematureRe.FindStringSubmatch(line)[1]
 		case conv != nil && strings.HasPrefix(line, "**PREMATURE.**"):
 			conv.Premature = true
+		case conv != nil && failedRe.MatchString(line):
+			conv.Failed = failedRe.FindStringSubmatch(line)[1]
 		case conv != nil && turnRe.MatchString(line):
 			m := turnRe.FindStringSubmatch(line)
 			turn = atoi(m[1])

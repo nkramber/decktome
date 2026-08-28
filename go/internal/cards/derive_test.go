@@ -100,7 +100,7 @@ func TestCanBeCommanderFromFixture(t *testing.T) {
 		"Sol Ring":                                                false,
 		"Sword of the Animist":                                    false, // legendary Equipment, no P/T box
 		"Raised by Giants":                                        false, // a Background is not a commander by itself
-		"Grist, the Hunger Tide":                                  false, // known gap: no Scryfall signal for the CDA
+		"Grist, the Hunger Tide":                                  true,  // legendary planeswalker with a creature CDA (D-140)
 	}
 	for name, want := range cases {
 		card, ok := byName[name]

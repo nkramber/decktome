@@ -4,13 +4,15 @@
 // The bars come from the roadmap. Every returned deck passes the block
 // checks, and no invented name reaches the user.
 //
-// CAUTION: this calls a real provider and it costs money. Ask the owner
-// before every run, and write to a new DECK_GATE_OUT: a rerun must never
-// overwrite a scored document (D-65).
+// CAUTION: this calls a real provider and it costs money. DECK_GATE=1 is
+// required, so it can not run by accident. Ask the owner before every
+// run. `make deck-gate` writes to DECK_GATE_OUT and refuses a file that
+// already holds a verdict: a rerun must never overwrite a scored document
+// (D-65). A -dry run calls no provider and needs no guard.
 //
 // Usage:
 //
-//	CARDS_SNAPSHOT_DIR=.local/gcs/mtg-local-cards/scryfall \
+//	DECK_GATE=1 CARDS_SNAPSHOT_DIR=.local/gcs/mtg-local-cards/scryfall \
 //	  go run ./cmd/deck-gate -collection internal/collections/testdata/manabox_collection.csv
 package main
 
@@ -20,16 +22,15 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
-	"log/slog"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/candidates"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
-	"github.com/nkramber/mtg-deck-builder/go/internal/collections"
+	"github.com/nkramber/mtg-deck-builder/go/internal/gatekit"
 	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 	"github.com/nkramber/mtg-deck-builder/go/internal/precons"
@@ -65,6 +66,9 @@ type result struct {
 	repaired bool
 	poolSize int
 	judged   *generate.Judgement
+	// judgeErr is the judge lane's failure. A deck with one has no
+	// verdict on F-26, so it can not count as a pass on that bar (T-17).
+	judgeErr error
 	err      error
 }
 
@@ -91,8 +95,8 @@ func run() error {
 	if *only != "" {
 		want := map[int]bool{}
 		for _, s := range strings.Split(*only, ",") {
-			var id int
-			if _, err := fmt.Sscanf(strings.TrimSpace(s), "%d", &id); err != nil {
+			id, err := strconv.Atoi(strings.TrimSpace(s))
+			if err != nil {
 				return fmt.Errorf("-only takes prompt ids: %w", err)
 			}
 			want[id] = true
@@ -106,18 +110,20 @@ func run() error {
 		file.Prompts = kept
 	}
 
-	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
-	dir := os.Getenv("CARDS_SNAPSHOT_DIR")
-	if dir == "" {
-		return fmt.Errorf("set CARDS_SNAPSHOT_DIR")
+	// A dry run calls no provider, so it needs no guard.
+	if !*dry {
+		if err := gatekit.SpendGuard("DECK_GATE"); err != nil {
+			return err
+		}
 	}
-	idx, err := cards.LoadIndex(context.Background(), cards.DirStore{Root: dir}, quiet)
+	quiet := gatekit.Quiet()
+	idx, err := gatekit.LoadSnapshot(context.Background(), quiet)
 	if err != nil {
-		return fmt.Errorf("cards: %w", err)
+		return err
 	}
 	owned := map[string]int32{}
 	if *collPath != "" {
-		owned, err = loadOwned(*collPath, idx)
+		owned, _, err = gatekit.LoadOwned(*collPath, idx)
 		if err != nil {
 			return err
 		}
@@ -140,13 +146,7 @@ func run() error {
 	var acc *llm.Accumulator
 	var client *llm.Client
 	if !*dry {
-		env := func(k string) string {
-			if k == llm.EnvRequireKeys {
-				return "1"
-			}
-			return os.Getenv(k)
-		}
-		client, err = llm.NewFromEnv(env, quiet)
+		client, err = llm.NewFromEnv(gatekit.Env, quiet)
 		if err != nil {
 			return err
 		}
@@ -167,6 +167,7 @@ func run() error {
 		if !*dry && !*noJudge && r.deck != nil && r.deck.GetSummary() != "" {
 			j, err := generate.JudgeSummary(context.Background(), client, p.Name, r.deck.GetSummary(), acc)
 			if err != nil {
+				r.judgeErr = err
 				fmt.Fprintf(os.Stderr, "  judge %d failed: %v\n", p.ID, err)
 			} else {
 				r.judged = j
@@ -198,7 +199,7 @@ func status(r result) string {
 func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx *cards.Index,
 	owned map[string]int32, p prompt, acc *llm.Accumulator, dry bool, preconSet *precons.Set) result {
 	out := result{prompt: p}
-	format := formatID(p.Format)
+	format := gatekit.FormatID(p.Format)
 	if format == mtgv1.FormatId_FORMAT_ID_UNSPECIFIED {
 		out.err = fmt.Errorf("unknown format %q", p.Format)
 		return out
@@ -209,8 +210,8 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 	// "you pick" does. The generator must choose one (D-232).
 	if p.Commander == "" && format == mtgv1.FormatId_FORMAT_ID_COMMANDER {
 		pool, err := cb.CommanderPool(idx, candidates.Request{
-			Format: format, Theme: p.Theme, Colors: colorList(p.Colors),
-			PoolRule: poolRuleID(p.Pool), Owned: ownedFor(p, owned), Bracket: p.Bracket,
+			Format: format, Theme: p.Theme, Colors: gatekit.Colors(p.Colors),
+			PoolRule: gatekit.PoolRuleID(p.Pool), Owned: ownedFor(p, owned), Bracket: p.Bracket,
 		})
 		if err != nil {
 			out.err = fmt.Errorf("commander pool: %w", err)
@@ -232,11 +233,11 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 		commanders = append(commanders, c)
 		commanderIDs = append(commanderIDs, c.GetOracleId())
 	}
-	colors := colorList(p.Colors)
+	colors := gatekit.Colors(p.Colors)
 	if len(commanders) > 0 {
 		colors = commanders[0].GetColorIdentity()
 	}
-	poolRule := poolRuleID(p.Pool)
+	poolRule := gatekit.PoolRuleID(p.Pool)
 	own := ownedFor(p, owned)
 	list, err := cb.Build(idx, candidates.Request{
 		Format:             format,
@@ -320,20 +321,6 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 	}
 	out.deck, out.notes, out.repaired = res.Deck, res.Notes, res.Repaired
 	return out
-}
-
-func loadOwned(path string, idx *cards.Index) (map[string]int32, error) {
-	f, err := os.Open(path) // #nosec G304 -- the operator names the file.
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = f.Close() }()
-	rows, _, err := collections.ParseManaBoxCSV(f)
-	if err != nil {
-		return nil, fmt.Errorf("collection: %w", err)
-	}
-	entries, _ := collections.Resolve(rows, idx)
-	return collections.OracleCounts(entries), nil
 }
 
 // ownedFor is the collection a prompt reads, empty when it wants none.

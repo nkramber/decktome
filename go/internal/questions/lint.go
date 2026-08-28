@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"strings"
 	"unicode"
+
+	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 )
 
 // The question linter (D-115). Every rule here reads text alone, so it
@@ -140,7 +142,7 @@ func LintConversation(messages []string, qs []LintQuestion) []Finding {
 
 		// The user named the format and the agent asked for it anyway.
 		if q.Slot == "format" && !declinesFormat(q.RowID) {
-			if id, ok := FormatFromWords(prior); ok {
+			if id, ok := lastNamedFormat(messages, q.Turn); ok {
 				add(q, "format_already_named", fmt.Sprintf("the user named %s before this question", id.String()))
 			}
 		}
@@ -245,6 +247,29 @@ func triggersProveATable(r Row) bool {
 		}
 	}
 	return true
+}
+
+// lastNamedFormat reads the format the user named last, up to and
+// including the turn that carried the question. It reads one message at
+// a time, so one unsupported word on turn 1 does not blind the rule for
+// the rest of the conversation (audit Q-7). A later unsupported format
+// clears an earlier supported one: the decline row owns the format from
+// then on, and the plain row may ask.
+func lastNamedFormat(messages []string, turn int) (mtgv1.FormatId, bool) {
+	if turn > len(messages) {
+		turn = len(messages)
+	}
+	last, ok := mtgv1.FormatId_FORMAT_ID_UNSPECIFIED, false
+	for _, m := range messages[:max(turn, 0)] {
+		if id, named := FormatFromWords(m); named {
+			last, ok = id, true
+			continue
+		}
+		if _, _, unsupported := unsupportedFormat(m); unsupported {
+			last, ok = mtgv1.FormatId_FORMAT_ID_UNSPECIFIED, false
+		}
+	}
+	return last, ok
 }
 
 // priorWords joins every message the user sent up to and including the

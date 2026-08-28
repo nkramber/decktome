@@ -156,7 +156,7 @@ func TestValidateOwnedFlow(t *testing.T) {
 	})
 	t.Run("collection default is owned-first and warns", func(t *testing.T) {
 		src := &fakeCollections{counts: map[string]int32{}}
-		s := newServer(t, idx, WithCollections(src, func(context.Context) string { return "u-1" }))
+		s := newServer(t, idx, WithCollections(src), WithUser(func(context.Context) string { return "u-1" }))
 		resp, err := s.Validate(context.Background(), connect.NewRequest(&mtgv1.ValidateRequest{
 			Deck: deck, CollectionId: "col-1"}))
 		if err != nil {
@@ -181,7 +181,7 @@ func TestValidateOwnedFlow(t *testing.T) {
 	})
 	t.Run("owned-only blocks", func(t *testing.T) {
 		src := &fakeCollections{counts: map[string]int32{}}
-		s := newServer(t, idx, WithCollections(src, nil))
+		s := newServer(t, idx, WithCollections(src))
 		resp, err := s.Validate(context.Background(), connect.NewRequest(&mtgv1.ValidateRequest{
 			Deck: deck, CollectionId: "col-1", PoolRule: mtgv1.PoolRule_POOL_RULE_OWNED_ONLY}))
 		if err != nil {
@@ -193,7 +193,7 @@ func TestValidateOwnedFlow(t *testing.T) {
 	})
 	t.Run("missing collection is not found", func(t *testing.T) {
 		src := &fakeCollections{err: errors.New("no such collection")}
-		s := newServer(t, idx, WithCollections(src, nil))
+		s := newServer(t, idx, WithCollections(src))
 		_, err := s.Validate(context.Background(), connect.NewRequest(&mtgv1.ValidateRequest{
 			Deck: deck, CollectionId: "missing"}))
 		if codeOf(t, err) != connect.CodeNotFound {

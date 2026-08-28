@@ -7,7 +7,7 @@ description: Magic: The Gathering terminology, formats, deck-construction rules,
 
 This skill is the knowledge base for the deck-builder agent. It is also the seed of the app's own corpus. Facts carry a date. Rules and ban lists change. Check the date before you trust a fact.
 
-Snapshot date: **2026-08-23**. Section 11 revised 2026-08-24 from the PR-7 dogfood runs (D-66, D-67, D-68). Sources: Scryfall API and bulk data, Wizards of the Coast announcements, mtgcommander.net, and the Commander Format Panel.
+Snapshot date: **2026-08-23**. Section 11 revised 2026-08-28: five rows retired (A-6 of the 2026-08-28 audit), after the PR-7 dogfood runs of 2026-08-24 (D-66, D-67, D-68). Sources: Scryfall API and bulk data, Wizards of the Coast announcements, mtgcommander.net, and the Commander Format Panel.
 
 Reference files in `references/`:
 - `scryfall-catalogs.md` - all keyword abilities, keyword actions, ability words, and type lists.
@@ -83,25 +83,25 @@ Source: the Wizards article of 2025-10-21 and its infographic. The 2025-10-21 re
 | 4 | Optimized | 4+ turns | unlimited | Only the ban list applies. |
 | 5 | cEDH | any | unlimited | Only the ban list applies. Plays the best strategy, not a theme. |
 
-The commander counts toward the Game Changer limit. The Wizards bracket article of 2025-02-11 says a Game Changer commander counts as one of the three at Bracket 3, and it can not play in Brackets 1 and 2. The engine counts the command zone (verified 2026-08-26, source in section 13).
+The commander counts toward the Game Changer limit. The Wizards bracket article of 2025-02-11 says a Game Changer commander counts as one of the three at Bracket 3. Such a commander can not play in Brackets 1 and 2. The engine counts the command zone (verified 2026-08-26, source in section 13).
 
 Game Changers: 53 cards on 2026-08-24 (Scryfall `is:gamechanger`). The list changed on 2025-04-22, 2025-10-21, and 2026-02-09. Scryfall flags them with `game_changer: true`. Examples: Rhystic Study, Cyclonic Rift, Smothering Tithe, Thassa's Oracle, Demonic Tutor, Vampiric Tutor, Ancient Tomb, The One Ring, Gaea's Cradle, Force of Will. Note: Mana Crypt is banned, so it is not a Game Changer.
 
 ### 2.4 Formats the app does not build
 
-The app declines each of these by name (D-112, D-155). Seven of them have no substitute, and five have a nearest format (see the last paragraph). In every case it asks which of Commander, Standard, or Modern to build instead.
+The app declines each of these by name (D-112, D-155). Seven of them have no substitute, and six have a nearest format (see the last paragraph). In every case it asks which of Commander, Standard, or Modern to build instead.
 
 - **Pioneer** (Return to Ravnica forward), **Legacy** (all sets, ban list), **Vintage** (all sets, ban list plus a restricted list), **Pauper** (commons only). Removed 2026-08-26.
 - **Historic**, **Timeless**, **Alchemy**: MTG Arena only, with digital-only cards.
 - **Brawl** (Arena, 100-card singleton with a commander), **Standard Brawl** (60-card), **Oathbreaker** (planeswalker commander, 60 cards), **Pauper Commander** (an uncommon creature, Vehicle, or Spacecraft as commander, 99 commons, 30 life), **Duel Commander** (1v1, 20 life), **Canadian Highlander**.
 
-Brawl, Oathbreaker, Duel Commander, and Canadian Highlander still name Commander as the nearest format, and Alchemy names Standard. Those four are singleton formats of the same shape, and Alchemy is Standard with the Arena-only rebalanced cards.
+Brawl, Standard Brawl, Oathbreaker, Duel Commander, and Canadian Highlander name Commander as the nearest format (D-192), and Alchemy names Standard. Those five are singleton formats of the same shape, and Alchemy is Standard with the Arena-only rebalanced cards.
 
 ### 2.5 "Anything goes"
 
 Not a format the app offers, and not a format the user can select (D-155). The owner's own meaning: any card, no ban list. Other users mean "Modern but with proxies", or "kitchen table". **Always ask what the user means.** Then record the answer as the session's house rules, which ride on top of Commander, Standard, or Modern.
 
-A user who names no format at all and asks for no ban list gets `FORMAT_ID_HOUSE`, which builds 60 cards with 4 copies and a 15-card sideboard until the user says otherwise.
+A user who names no format at all and asks for no ban list gets `FORMAT_ID_HOUSE`. It builds 60 cards with 4 copies and a 15-card sideboard until the user says otherwise.
 
 ## 3. Ban list snapshot (2026-08-24)
 
@@ -271,6 +271,10 @@ ManaBox also exports decks as text in the MTG Arena format: `4 Lightning Bolt (S
 
 The agent asks only what the prompt did not answer. Never ask more than three questions in one turn. Order by impact.
 
+Neither owned-commander row survives. The not-owned row and the weak-pool row both sat on the commander key. A delegated commander fills that key, so a user who says "you pick" silences them. That user is the one who needs them. PR-8 reports both after the build, from the library it actually read (D-226, D-232).
+
+Five more rows retired on 2026-08-28 (A-6 of the audit): theme (card named), jank, meta, plan choice, and locked cards. No function and no planned PR read their answers. The card names for locked cards survive: the classifier names them, and the build keeps every one (D-242). A jank word routes to Power, and the meta row returns if the sideboard builder opens.
+
 | Slot | Ask when the slot is empty | Example question |
 |---|---|---|
 | Out of scope | The user asked for something this app does not build, such as a deck for another card game (D-99). Ask this alone, before every other row. The row closes when the user then asks for a Magic deck: a filled format, theme, color, or commander slot is the answer. | "I build Magic: The Gathering decks only. Would you like one instead?" |
@@ -281,14 +285,11 @@ The agent asks only what the prompt did not answer. Never ask more than three qu
 | Format (store event) | The user names FNM, an LGS, a store, or an event. The row names the three formats as the ones it builds, and never as the ones the event runs (D-213). | "I build Standard, Modern, and Commander. Which one does your event run?" |
 | Theme or plan | The prompt gives only a format. | "What should the deck do: a creature type, a mechanic, or a play style?" |
 | Theme (competitive) | Power is FNM or tournament-meta. | "Do you want a named tier-one deck, or the best deck under your budget?" |
-| Theme (card named) | The user named a card and the theme is empty. | "{card} supports two plans: {plan A} and {plan B}. Which one do you want?" |
 | Named card role | The user named one card, and the format is Commander or empty. The row closes when the user says the card is not the commander, for example "build around X, but not as my commander" (D-70). A card the index says can not lead a deck has a settled role, so the row does not fire (D-220). | "Do you want {card} as your commander, or as one card in the 99?" |
 | Commander | The format is Commander and no commander is given. | "Do you have a commander in mind, or should I suggest one?" |
-Neither owned-commander row survives. The not-owned row and the weak-pool row both sat on the commander key, and a delegated commander fills that key, so a user who says "you pick" silences them. That user is the one who needs them. PR-8 reports both after the build, from the library it actually read (D-226, D-232).
-
 | Commander (pick) | The user asked the agent to name a commander (D-71). The row asks again only with names the user has not seen: a refusal retires the old ones (D-73, D-80), and the color check drops the names the colors exclude (D-153). The same three names never go out twice (D-163). | "Which one do you want: {A}, {B}, or {C}? Say 'none' and I name three more." |
 | Commander (can not lead) | The user named a commander that can not lead a deck, such as Lightning Bolt (D-129). The card index answers it. A legal commander named later closes the row. | "{bad_commander} can not lead a deck. Shall I suggest a commander instead?" |
-| Power (Commander) | Always for Commander, unless the user names a bracket. "cEDH" names bracket 5 (D-164). Name no table: the user may build a deck as a gift (D-109). | "Which power bracket should the deck target? 2 is precon level, 3 is upgraded, 4 is high power." |
+| Power (Commander) | Always for Commander, unless the user names a bracket. "cEDH" names bracket 5 (D-164). Name no table: the user may build a deck as a gift (D-109). | "Which power bracket should the deck target? 2 is the core level, near a precon, 3 is upgraded, 4 is high power." |
 | Power (60-card) | The user asked for no strong deck. Ask again when the user names a step and also says competitive, strong, best, or serious. Those words conflict with the named step. | "How strong should this be: casual, FNM level, or tournament-meta?" |
 | Colors | The user gave no preference. Never ask when a commander is set. The color identity fills this slot. "Colorless" is an answer, and it closes the slot (D-165). State no fact about which colors are strongest (D-108). | "Any color preference?" |
 | Card pool (precon) | The user asked to upgrade a precon (D-113). This row replaces the row below, and it names the precon. The build keeps 85 percent of the precon's cards, and it reads the product name from the user's own words (D-218, D-247). | "Should I build from your {precon} precon first, use only cards from it, or ignore it for a fully optimized deck?" |
@@ -296,12 +297,8 @@ Neither owned-commander row survives. The not-owned row and the weak-pool row bo
 | Card pool (thin theme) | `ThinTheme` is set (D-63). This row replaces the row above. | "Your library holds {n} {theme} cards. I want 30 or more. Build owned-first with a buy list, or use the whole pool?" |
 | Budget | The user mentions cost, a buy list is needed, or the pool mode is any-card. A session with no collection always needs a buy list, because the user owns nothing to build from (D-168). "Money is no object" answers the row (D-168). | "Is there a budget for cards to buy?" |
 | Budget scope | A collection is attached and the user named one number, and the message did not say which the cap covers. A phrase that names the buy list answers it, and a proxy rule is not a budget at all (D-253). The answer is stored, and the build reads it: a cap on the cards to buy checks what the user must acquire, and a cap on the whole deck checks every copy (D-238). | "Is that a cap on the cards you buy, or on the whole deck value?" |
-| House rules | "Anything goes", "kitchen table", or "no ban list". "Casual" alone does not fire this row (D-78). "Proxy" and "whatever" do not fire it either (D-111). A negation stops every trigger word. The row names no format, because Vintage is not one the app builds (D-155). | "When you say anything goes, do you mean any card with no ban list?" |
+| House rules | "Anything goes", "kitchen table", or "no ban list". "Casual" alone does not fire this row (D-78). "Proxy" and "whatever" do not fire it either (D-111). A negation stops every trigger word. The row names no format, because Vintage is not one the app builds (D-155). The answer is stored in the user's own words, and the build copies it to the deck's format (A-6). | "When you say anything goes, do you mean any card with no ban list?" |
 | House format limits | House rules set a house format, and the user answered the house-rules question (D-81). The row goes out word for word: a rewrite reads as three questions (D-162). The row names no list of limits, because a list reads as one question for each item (D-212). | "Inside your house format, do the normal 60-card deck limits hold?" |
-| Jank or fun | The prompt says janky, jank, fun, silly, meme, or for laughs. | "What does janky mean to you: a low-power deck, an odd card nobody expects, or a plan that almost never works?" |
-| Meta | Power is FNM or tournament-meta. Name no event, and presume no metagame: the user may know neither (D-109, D-169). Offer the general sideboard first, and ask for a list second (D-211). | "Should I keep the sideboard general, or will you name the decks you expect to face?" |
-| Plan choice | The theme has two common plans, before the first build. | "Mill has two plans: mill as the win condition, or mill for value with a creature win. Which one?" |
-| Locked cards | The user names a card to keep that is not the commander (D-70), and the format and the theme are filled (D-81). A message that locks the card in outright, such as "keep Sanguine Bond in it" or "Sol Ring goes in it", answers the row (D-166). | "Must the deck keep {locked}, or may I cut a card that does not fit the plan?" |
 
 The agent does not ask the user to confirm a power step it inferred. A user who asks for the strongest deck gives the answer, and a question about it repeats the answer (D-216). The agent fills the tournament step, closes the slot, and marks the step as inferred. The plan states the step, and the user can change it.
 
@@ -311,23 +308,29 @@ Do not ask whether the table accepts mill, land destruction, extra turns, or sta
 
 An out-of-scope request gets one question and no others. Gate run 11 of 2026-08-25 asked "Which Yu-Gi-Oh format would you like?", because the catalog held no way to decline (D-99).
 
-Ask order (from the PR-7 dogfood runs, 2026-08-24): format, theme, house rules, commander, power, colors, card pool, budget, meta, plan, locked cards. Ask the card pool after the format, the colors, and the theme (D-67). A special row beats its general row: ask "Commander not owned" before "Commander", and "Theme (card named)" before "Theme or plan". Never ask a slot that another slot already fills. `internal/questions` holds this order as data.
+Ask order (from the PR-7 dogfood runs, 2026-08-24): format, theme, house rules, commander, power, colors, card pool, budget. Ask the card pool after the format, the colors, and the theme (D-67). A special row beats its general row: ask "Format (store event)" before "Format", and "Card pool (precon)" before "Card pool". Never ask a slot that another slot already fills. `internal/questions` holds this order as data.
 
-Word routing: "anything goes", "kitchen table", and "no ban list" route to House rules (D-3). "Casual" alone routes to Power, not to House rules. The gate run of 2026-08-25 asked a parent about house rules for a child's deck, and the parent answered "casual means low power, not a house format" (D-78). "Strongest", "competitive", "best", and "serious" route to Power. An occasion routes nowhere. "For an event" and "at my store" name a place or a happening, and they name no power step (D-219). "Janky", "fun", "silly", and "meme" route to Jank or fun. Do not route a jank word to House rules. House rules cover legality. Jank covers card choice.
+Word routing: "anything goes", "kitchen table", and "no ban list" route to House rules (D-3). "Casual" alone routes to Power, not to House rules. The gate run of 2026-08-25 asked a parent about house rules for a child's deck, and the parent answered "casual means low power, not a house format" (D-78). "Strongest", "competitive", "best", and "serious" route to Power.
+
+An occasion routes nowhere. "For an event" and "at my store" name a place or a happening, and they name no power step (D-219). "Janky", "fun", "silly", and "meme" route to Power, because the jank row retired (A-6). Do not route a jank word to House rules. House rules cover legality.
 
 "Proxy" routes to Budget, and not to House rules (D-111). A user who proxies every card has no budget, so the agent asks no budget question. The word says nothing about which cards are legal. "Whatever" routes nowhere. Gate runs 11 to 13 read "whatever is winning" and "whatever you think is best" as house rules, six times.
 
 Negation rule (D-111): a negator before a trigger word stops that trigger. "No proxies" is not a proxy user. The negators are "no", "not", "never", "without", and the short negative verb forms. One shape is exempt: "not as my commander" denies the role of a card, and it names the Commander format.
 
-Format inference (D-116): read the format from an adjective, such as "a Commander deck" or "a Modern burn deck". "EDH" means Commander. A message with "my commander", "in the 99", "bracket 3", or "my precon" means Commander, even with no format word. Gate run 11 asked conversation 23 for the format after the user wrote "A land destruction Commander deck." A message that names a format this app does not build names no format, even when it holds a format word. "Duel Commander" and "Pauper Commander" are not Commander. The unsupported-format row declines them (D-112).
+Format inference (D-116): read the format from an adjective, such as "a Commander deck" or "a Modern burn deck". "EDH" means Commander. A message with "my commander", "in the 99", "bracket 3", or "my precon" means Commander, even with no format word. Gate run 11 asked conversation 23 for the format. The user had written "A land destruction Commander deck."
+
+A message that names a format this app does not build names no format. That holds even when the message holds a format word. "Duel Commander" and "Pauper Commander" are not Commander. The unsupported-format row declines them (D-112).
 
 Question wording rules (D-109, D-116): add no clause that only repeats a value the user gave. Keep a clause that narrows the question. State no fact about the game inside a question. Presume no table, no playgroup, and no event that the user did not name.
 
-Slot rules: a slot stays open through the question phase. A later answer replaces an earlier one, and the agent states the change. Every slot freezes when a build run starts (D-68). A change after that point starts a new run. A changed format retires every question that is out (D-125, D-126). A retired question leaves the asked state, so the session can report ready, and the row that asked it does not ask again.
+Slot rules: a slot stays open through the question phase. A later answer replaces an earlier one, and the agent states the change. A slot change after a build is an ordinary turn, and the next build reads the new value (D-241). A changed format retires every question that is out (D-125, D-126). A retired question leaves the asked state, so the session can report ready, and the row that asked it does not ask again.
 
-Commander rules: a name the user gives as the commander closes every commander row (D-71), the "can not lead" row included. The three rows ask one thing in different words. The pick row is the one exception to the no-repeat rule. It asks again only when the names on the table change. The same three names stay on the table until the user asks for others, and a retired name never comes back (D-73, D-80). The row never sends one list twice (D-163). A superlative such as "buy the best lifegain commander" hands the choice to the agent, as "you pick" does (D-147, D-167).
+Commander rules: a name the user gives as the commander closes every commander row (D-71), the "can not lead" row included. The three rows ask one thing in different words. The pick row is the one exception to the no-repeat rule. It asks again only when the names on the table change. The same three names stay on the table until the user asks for others, and a retired name never comes back (D-73, D-80). The row never sends one list twice (D-163).
 
-Locked-card rule: a card that becomes the commander is not a locked card (D-70). The agent asks the locked row only for a card that stays in the 99. A lock verb before the card name closes the row, and so does "goes in" or "stays" after it. A negator before the verb stops it (D-166).
+A superlative such as "buy the best lifegain commander" hands the choice to the agent, as "you pick" does (D-147, D-167).
+
+Locked-card rule: a card that becomes the commander is not a locked card (D-70). The locked row retired on 2026-08-28 (A-6). The classifier names the locked cards, the session state holds them, and the build keeps every one (D-242). No question asks whether the deck may cut one.
 
 Question source rule (D-25): use a catalog question when one fits the empty slot. Compute a gap score: how well the best catalog question matches the slot and the user's words. When the score is below the threshold, invent a question and log it with the score. The owner scores each invented question on the six-field rubric (D-66). Invented questions that repeat become catalog candidates.
 
@@ -338,7 +341,7 @@ Default answers when the user says "you decide": format Commander (the most play
 ## 12. Validation checklist (deterministic, run after every build)
 
 1. Deck size matches the format.
-2. Copy limits respected (4, singleton by name, restricted 1, per-card overrides such as Seven Dwarves).
+2. Copy limits respected (4, singleton by name, per-card overrides such as Seven Dwarves). No restricted list applies, because Vintage left the app (D-155).
 3. Every card legal in the format on the query date, per Scryfall legalities.
 4. Commander: every card inside the color identity. Commander eligible. A two-commander pair is a valid pairing.
 5. Commander: Game Changer count within the bracket. Bracket 1-2: zero.

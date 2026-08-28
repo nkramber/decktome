@@ -74,15 +74,8 @@ func lintSummaryInto(deck *mtgv1.Deck) {
 	if len(claims) == 0 {
 		return
 	}
-	v := deck.GetValidation()
-	if v == nil {
-		return
-	}
 	for _, c := range claims {
-		v.Findings = append(v.Findings, &mtgv1.Finding{
-			Code:     CodeSummaryRulesClaim,
-			Severity: mtgv1.Severity_SEVERITY_WARN,
-			Message:  fmt.Sprintf("the summary states a rule of the game, %q. The engine reports the rules, and the summary must not.", c),
-		})
+		addFinding(deck, CodeSummaryRulesClaim, mtgv1.Severity_SEVERITY_WARN,
+			fmt.Sprintf("the summary states a rule of the game, %q. The engine reports the rules, and the summary must not.", c))
 	}
 }

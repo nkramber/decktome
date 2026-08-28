@@ -232,10 +232,13 @@ func pick(items []item, n int) []item {
 			break
 		}
 	}
-	out := withRepeats(base)
-	if n > 0 && len(out) > n {
-		out = out[:n]
+	// The repeats sit inside the count. The sheet used to be cut after
+	// the repeats went in, which dropped real items off the end while
+	// every repeat stayed (audit 2026-08-28).
+	for n > 0 && len(withRepeats(base)) > n {
+		base = base[:len(base)-1]
 	}
+	out := withRepeats(base)
 	return out
 }
 

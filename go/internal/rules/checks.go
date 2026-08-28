@@ -75,7 +75,7 @@ func isBasic(c *mtgv1.Card) bool {
 
 // checkCopies enforces the per-name limit. Basic lands and any-number
 // cards are exempt. A card-text limit (Seven Dwarves: 7, Nazgûl: 9)
-// replaces the format limit. Vintage-restricted cards cap at one copy.
+// replaces the format limit.
 func checkCopies(res *mtgv1.ValidationResult, in Input, fr FormatRules) {
 	counts := map[string]int32{}
 	names := map[string]string{}
@@ -286,7 +286,9 @@ func checkBracket(cfg *Config, res *mtgv1.ValidationResult, in Input) {
 	}
 	br, ok := cfg.Brackets[bracket]
 	if !ok {
-		add(res, CodeGameChangers, mtgv1.Severity_SEVERITY_BLOCK,
+		// A bracket the data does not know is its own finding, and not a
+		// Game Changer count.
+		add(res, CodeUnknownBracket, mtgv1.Severity_SEVERITY_BLOCK,
 			fmt.Sprintf("unknown bracket %d", bracket), "")
 		return
 	}

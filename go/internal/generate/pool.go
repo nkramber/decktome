@@ -14,9 +14,26 @@ import (
 // miss, whatever the card index knows (F-13). Upgrades join it only when
 // the session may buy cards, because a deck must not name a card the
 // user can neither own nor buy.
+//
+// The always cards carry no owned count here. A caller with a collection
+// uses FromListOwned, or the user's own precon cards count as purchases
+// (G-3 of the 2026-08-28 audit).
 func FromList(l *candidates.List, always []*mtgv1.Card, buyList bool) *Pool {
+	return FromListOwned(l, always, nil, buyList)
+}
+
+// FromListOwned is FromList with the collection's owned count per oracle
+// id. The shortlist rows carry their own counts, and the always cards
+// read theirs from owned, so every card in the pool knows whether the
+// user holds it.
+func FromListOwned(l *candidates.List, always []*mtgv1.Card, ownedCounts map[string]int32, buyList bool) *Pool {
 	cards := append([]*mtgv1.Card(nil), always...)
 	owned := map[string]int32{}
+	for _, c := range always {
+		if n := ownedCounts[c.GetOracleId()]; n > 0 {
+			owned[c.GetOracleId()] = n
+		}
+	}
 	add := func(cs []candidates.Candidate) {
 		for _, c := range cs {
 			if c.Card == nil {
@@ -30,6 +47,9 @@ func FromList(l *candidates.List, always []*mtgv1.Card, buyList bool) *Pool {
 			// nameable or the pair can not be built (D-154).
 			if c.Partner != nil {
 				cards = append(cards, c.Partner)
+				if n := ownedCounts[c.Partner.GetOracleId()]; n > 0 {
+					owned[c.Partner.GetOracleId()] = n
+				}
 			}
 		}
 	}
@@ -85,6 +105,13 @@ var basicNames = map[mtgv1.Color]string{
 	mtgv1.Color_COLOR_G: "Forest",
 }
 
+// AllColors is the five colors in color order. A 60-card session with no
+// color choice gets every basic (G-7 of the 2026-08-28 audit).
+var AllColors = []mtgv1.Color{
+	mtgv1.Color_COLOR_W, mtgv1.Color_COLOR_U, mtgv1.Color_COLOR_B,
+	mtgv1.Color_COLOR_R, mtgv1.Color_COLOR_G,
+}
+
 // BasicLands returns the basic lands of a color identity, in color order.
 // find is the card lookup, so this package needs no card index.
 //
@@ -92,10 +119,7 @@ var basicNames = map[mtgv1.Color]string{
 // app builds no deck that needs it today.
 func BasicLands(find func(string) (*mtgv1.Card, bool), colors []mtgv1.Color) []*mtgv1.Card {
 	var out []*mtgv1.Card
-	for _, col := range []mtgv1.Color{
-		mtgv1.Color_COLOR_W, mtgv1.Color_COLOR_U, mtgv1.Color_COLOR_B,
-		mtgv1.Color_COLOR_R, mtgv1.Color_COLOR_G,
-	} {
+	for _, col := range AllColors {
 		if !hasColor(colors, col) {
 			continue
 		}
@@ -123,6 +147,23 @@ func IsBasic(c *mtgv1.Card) bool {
 		}
 	}
 	return false
+}
+
+// deckCard makes the entry for a card the builder inserts itself. The
+// owned count and the price come from the pool, so a card the user owns
+// is never charged as a purchase (G-3 of the 2026-08-28 audit).
+func deckCard(pool *Pool, c *mtgv1.Card, count int32, role mtgv1.CardRole, reason string) *mtgv1.DeckCard {
+	owned := pool.OwnedCount(c.GetOracleId())
+	return &mtgv1.DeckCard{
+		OracleId:   c.GetOracleId(),
+		Name:       c.GetName(),
+		Count:      count,
+		Role:       role,
+		Reason:     reason,
+		Owned:      owned >= count,
+		OwnedCount: owned,
+		PriceUsd:   c.GetPriceUsd(),
+	}
 }
 
 // padWithBasics fills a small shortfall with basic lands and returns how
@@ -164,13 +205,11 @@ func padWithBasics(deck *mtgv1.Deck, req Request) int {
 		b := basics[i%len(basics)]
 		if dc, ok := byOracle[b.GetOracleId()]; ok {
 			dc.Count++
+			dc.Owned = dc.OwnedCount >= dc.Count
 			continue
 		}
-		dc := &mtgv1.DeckCard{
-			OracleId: b.GetOracleId(), Name: b.GetName(), Count: 1,
-			Role:   mtgv1.CardRole_CARD_ROLE_LAND,
-			Reason: "the builder added this basic land to reach the deck size",
-		}
+		dc := deckCard(req.Pool, b, 1, mtgv1.CardRole_CARD_ROLE_LAND,
+			"the builder added this basic land to reach the deck size")
 		deck.Cards = append(deck.Cards, dc)
 		byOracle[b.GetOracleId()] = dc
 	}
@@ -201,13 +240,27 @@ func missingLocked(deck *mtgv1.Deck, req Request) []string {
 			continue
 		}
 		name := id
-		for _, n := range req.Pool.Names() {
-			if c, ok := req.Pool.Card(n); ok && c.GetOracleId() == id {
-				name = c.GetName()
-				break
-			}
+		if c, ok := req.Pool.ByOracleID(id); ok {
+			name = c.GetName()
 		}
 		out = append(out, name)
+	}
+	return out
+}
+
+// preconNonbasics is the set of the precon's nonbasic oracle ids. The
+// share rule of D-218 measures these: basic lands swap free, so a deck
+// that trades a Swamp for a Forest has kept the precon (A-5 of the
+// 2026-08-28 audit). A precon card the pool does not hold still counts,
+// because the deck can not keep what the model can not name, and the
+// share must say so.
+func preconNonbasics(req Request) map[string]bool {
+	out := make(map[string]bool, len(req.PreconOracleIDs))
+	for _, id := range req.PreconOracleIDs {
+		if c, ok := req.Pool.ByOracleID(id); ok && IsBasic(c) {
+			continue
+		}
+		out[id] = true
 	}
 	return out
 }
@@ -226,13 +279,10 @@ const MaxPreconSwap = 3
 // read the finding that said so, and returned 67 again. It can not count
 // its own list reliably, so the builder finishes the job.
 func swapBackPrecon(deck *mtgv1.Deck, req Request) int {
-	want := len(req.PreconOracleIDs)
+	in := preconNonbasics(req)
+	want := len(in)
 	if want == 0 {
 		return 0
-	}
-	in := make(map[string]bool, want)
-	for _, id := range req.PreconOracleIDs {
-		in[id] = true
 	}
 	held := map[string]bool{}
 	for _, c := range deck.GetCards() {
@@ -249,14 +299,16 @@ func swapBackPrecon(deck *mtgv1.Deck, req Request) int {
 	if short <= 0 || short > MaxPreconSwap {
 		return 0
 	}
-	// The cards to put back, in the pool's order so the choice is stable.
+	// The cards to put back, in the precon's own order so the choice is
+	// stable. A card the pool does not hold can not go back.
 	var missing []*mtgv1.Card
-	for _, name := range req.Pool.Names() {
-		c, ok := req.Pool.Card(name)
-		if !ok || !in[c.GetOracleId()] || held[c.GetOracleId()] {
+	for _, id := range req.PreconOracleIDs {
+		if !in[id] || held[id] {
 			continue
 		}
-		missing = append(missing, c)
+		if c, ok := req.Pool.ByOracleID(id); ok {
+			missing = append(missing, c)
+		}
 	}
 	locked := map[string]bool{}
 	for _, id := range req.Locked {
@@ -271,16 +323,11 @@ func swapBackPrecon(deck *mtgv1.Deck, req Request) int {
 		if in[c.GetOracleId()] || locked[c.GetOracleId()] || c.GetCount() != 1 {
 			continue
 		}
-		if pc, ok := req.Pool.Card(c.GetName()); ok && IsBasic(pc) {
+		if pc, ok := req.Pool.ByOracleID(c.GetOracleId()); ok && IsBasic(pc) {
 			continue
 		}
-		put := missing[moved]
-		deck.Cards[i] = &mtgv1.DeckCard{
-			OracleId: put.GetOracleId(), Name: put.GetName(), Count: 1,
-			Role:     c.GetRole(),
-			Reason:   "the deck upgrades a precon, and this card is one the precon holds",
-			PriceUsd: put.GetPriceUsd(),
-		}
+		deck.Cards[i] = deckCard(req.Pool, missing[moved], 1, c.GetRole(),
+			"the deck upgrades a precon, and this card is one the precon holds")
 		moved++
 	}
 	return moved

@@ -78,7 +78,10 @@ func TestAttributeKeepsTheHelpfulChange(t *testing.T) {
 		{Commit: "aaa", Subject: "meta offers general", Rows: []string{"meta"}},
 		{Commit: "bbb", Subject: "confirm as written", Rows: []string{"power_sixty_confirm"}},
 	}
-	d, p, a := Decide(prev, next, changes, DefaultNoise)
+	d, p, a, err := Decide(prev, next, changes, DefaultNoise)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(p.JudgeFlips) != 1 {
 		t.Errorf("judge flips = %d, want 1: the colors row kept its text", len(p.JudgeFlips))
 	}
@@ -100,9 +103,134 @@ func TestAttributeKeepsTheHelpfulChange(t *testing.T) {
 func TestDecideWithNoDeclaredRowsFallsBackToTheWholeRun(t *testing.T) {
 	prev := sum(v("1. a", 1, "meta", "old", "no"))
 	next := sum(v("1. a", 1, "meta", "new", "yes"))
-	d, _, _ := Decide(prev, next, nil, DefaultNoise)
+	d, _, _, err := Decide(prev, next, nil, DefaultNoise)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if !d.Accept || d.Partial {
 		t.Errorf("decision = %+v, want a plain accept", d)
+	}
+}
+
+// TestAttributeRules is the charge table of T-4 and T-21. A commit with
+// no rows is dropped, one row has one owner, a flip on a declared row is
+// the change's whatever the text did, and a reworded flip on an
+// undeclared row is churn.
+func TestAttributeRules(t *testing.T) {
+	prev := sum(
+		v("1. a", 1, "meta", "old meta", "no"),
+		v("2. b", 1, "meta", "same meta", "no"),
+		v("3. c", 1, "colors", "old colors", "yes"),
+		v("4. d", 1, "colors", "same colors", "yes"),
+		v("5. e", 1, "power", "gone", "no"),
+	)
+	next := sum(
+		v("1. a", 1, "meta", "new meta", "yes"),
+		v("2. b", 1, "meta", "same meta", "yes"),
+		v("3. c", 1, "colors", "new colors", "no"),
+		v("4. d", 1, "colors", "same colors", "no"),
+		v("6. f", 1, "budget", "new question", "no"),
+	)
+	cases := []struct {
+		name    string
+		changes []Change
+		wantErr bool
+		keep    []bool
+		reasons []string
+		churn   int
+		unattr  int
+	}{
+		{
+			name:    "a declared row takes both its flips",
+			changes: []Change{{Commit: "aaa", Rows: []string{"meta"}}},
+			keep:    []bool{true},
+			reasons: []string{"2 questions got better and 0 got worse on its rows"},
+			churn:   1, // the reworded colors flip
+			unattr:  3, // the identical colors flip, the gone power, the new budget
+		},
+		{
+			name:    "no rows declared is dropped",
+			changes: []Change{{Commit: "bbb"}},
+			keep:    []bool{false},
+			reasons: []string{"no rows declared"},
+			churn:   2,
+			unattr:  4, // both identical flips, the gone power, the new budget
+		},
+		{
+			name:    "one row has one owner",
+			changes: []Change{{Commit: "aaa", Rows: []string{"meta"}}, {Commit: "bbb", Rows: []string{"meta"}}},
+			wantErr: true,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			a, err := Attribute(Pair(prev, next), tc.changes)
+			if (err != nil) != tc.wantErr {
+				t.Fatalf("err = %v, want error %v", err, tc.wantErr)
+			}
+			if err != nil {
+				return
+			}
+			for i, cv := range a.Changes {
+				if cv.Keep != tc.keep[i] || cv.Reason != tc.reasons[i] {
+					t.Errorf("change %d: keep %v (%s), want %v (%s)", i, cv.Keep, cv.Reason, tc.keep[i], tc.reasons[i])
+				}
+			}
+			if len(a.Churn) != tc.churn || len(a.Unattributed) != tc.unattr {
+				t.Errorf("churn %d unattributed %d, want %d and %d", len(a.Churn), len(a.Unattributed), tc.churn, tc.unattr)
+			}
+		})
+	}
+}
+
+// TestDecideStopsOnADoubleOwner is the tool fault the loop stops on.
+func TestDecideStopsOnADoubleOwner(t *testing.T) {
+	prev := sum(v("1. a", 1, "meta", "old", "no"))
+	next := sum(v("1. a", 1, "meta", "new", "yes"))
+	changes := []Change{{Commit: "aaa", Rows: []string{"meta"}}, {Commit: "bbb", Rows: []string{"meta"}}}
+	if _, _, _, err := Decide(prev, next, changes, DefaultNoise); err == nil {
+		t.Error("two owners of one row were accepted")
+	}
+}
+
+// TestHardFailureDropsEveryChange covers T-15 and T-16. A hard failure
+// keeps nothing, and the drop list holds every commit, the ones that
+// helped included.
+func TestHardFailureDropsEveryChange(t *testing.T) {
+	prev := sum(v("1. a", 1, "meta", "old", "no"), v("2. b", 1, "power", "old", "yes"))
+	next := sum(v("1. a", 1, "meta", "new", "yes"), v("2. b", 1, "power", "new", "no"))
+	next.Metrics.LintFindings = 1
+	changes := []Change{{Commit: "aaa", Rows: []string{"meta"}}, {Commit: "bbb", Rows: []string{"power"}}}
+	d, _, _, err := Decide(prev, next, changes, DefaultNoise)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !d.Hard || d.Accept || len(d.Keep) != 0 {
+		t.Errorf("decision = %+v, want a hard reject with nothing kept", d)
+	}
+	if len(d.Drop) != 2 {
+		t.Errorf("drop = %v, want both commits", d.Drop)
+	}
+}
+
+// TestErroredConversationCountsForNobody is T-5. A conversation that
+// ended on an error asked nothing after it, and its missing questions are
+// neither gone nor new.
+func TestErroredConversationCountsForNobody(t *testing.T) {
+	prev := sum(v("1. a", 1, "meta", "old", "no"), v("2. b", 1, "meta", "old", "no"))
+	next := sum(v("1. a", 1, "meta", "new", "yes"))
+	next.Errored = []string{"2. b"}
+	p := Pair(prev, next)
+	if p.Errored != 1 || len(p.GoneBad) != 0 || p.For() != 1 {
+		t.Errorf("paired = %+v, want one errored conversation and one better question", p)
+	}
+	// The other direction skips too.
+	prev.Errored = []string{"1. a"}
+	next.Errored = nil
+	next.Verdicts = append(next.Verdicts, v("2. b", 1, "meta", "new", "no"))
+	p = Pair(prev, next)
+	if p.Errored != 1 || p.For() != 0 || p.Against() != 0 {
+		t.Errorf("paired = %+v, want nothing charged", p)
 	}
 }
 
@@ -264,18 +392,17 @@ func TestIdenticalCodeIsAccepted(t *testing.T) {
 		nextV = append(nextV, v(name, 1, "pool", "new pool", "yes"))
 	}
 	changes := []Change{{Commit: "aaa", Subject: "meta offers general", Rows: []string{"meta"}}}
-	d, _, a := Decide(sum(prevV...), sum(nextV...), changes, DefaultNoise)
-	unBad, unGood := 0, 0
-	for _, u := range a.Unattributed {
-		switch u.Kind {
-		case "worse", "new_bad":
-			unBad++
-		case "better", "gone_bad":
-			unGood++
-		}
+	d, _, a, err := Decide(sum(prevV...), sum(nextV...), changes, DefaultNoise)
+	if err != nil {
+		t.Fatal(err)
 	}
-	if unBad != 15 || unGood != 8 {
-		t.Fatalf("drift = %d worse and %d better, want 15 and 8", unBad, unGood)
+	// The 23 reworded flips are churn, charged to nobody (T-21). The three
+	// identical-text flips went from bad to good, so they are help.
+	if len(a.Churn) != 23 {
+		t.Fatalf("churn = %d, want 23", len(a.Churn))
+	}
+	if unBad, unGood := a.Drift(); unBad != 0 || unGood != 3 {
+		t.Fatalf("drift = %d worse and %d better, want 0 and 3", unBad, unGood)
 	}
 	for _, r := range d.Reasons {
 		if strings.Contains(r, "no change declared") {

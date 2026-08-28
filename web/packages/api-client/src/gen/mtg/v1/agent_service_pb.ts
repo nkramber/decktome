@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file mtg/v1/agent_service.proto.
  */
 export const file_mtg_v1_agent_service: GenFile = /*@__PURE__*/
-  fileDesc("ChptdGcvdjEvYWdlbnRfc2VydmljZS5wcm90bxIGbXRnLnYxIpEBCgtDaGF0UmVxdWVzdBISCgpzZXNzaW9uX2lkGAEgASgJEhUKDWNvbGxlY3Rpb25faWQYAiABKAkSDwoHbWVzc2FnZRgDIAEoCRIfCgdhbnN3ZXJzGAQgAygLMg4ubXRnLnYxLkFuc3dlchIMCgRzZWVkGAUgASgDEhcKD2tlZXBfb3JhY2xlX2lkcxgGIAMoCSI+CgpBZ2VudEVycm9yEgwKBGNvZGUYASABKAkSDwoHbWVzc2FnZRgCIAEoCRIRCglyZXRyeWFibGUYAyABKAgimgIKDENoYXRSZXNwb25zZRIZCg9zZXNzaW9uX3N0YXJ0ZWQYASABKAlIABIUCgp0ZXh0X2RlbHRhGAIgASgJSAASJAoIcXVlc3Rpb24YAyABKAsyEC5tdGcudjEuUXVlc3Rpb25IABIeCgVzbG90cxgEIAEoCzINLm10Zy52MS5TbG90c0gAEhAKBnN0YXR1cxgFIAEoCUgAEhwKBGRlY2sYBiABKAsyDC5tdGcudjEuRGVja0gAEhMKBWVycm9yGAcgASgJQgIYAUgAEiUKB2ZhaWx1cmUYCCABKAsyEi5tdGcudjEuQWdlbnRFcnJvckgAEh4KBXVzYWdlGAkgASgLMg0ubXRnLnYxLlVzYWdlSABCBwoFZXZlbnQiJwoRR2V0U2Vzc2lvblJlcXVlc3QSEgoKc2Vzc2lvbl9pZBgBIAEoCSI2ChJHZXRTZXNzaW9uUmVzcG9uc2USIAoHc2Vzc2lvbhgBIAEoCzIPLm10Zy52MS5TZXNzaW9uMowBCgxBZ2VudFNlcnZpY2USNQoEQ2hhdBITLm10Zy52MS5DaGF0UmVxdWVzdBoULm10Zy52MS5DaGF0UmVzcG9uc2UiADABEkUKCkdldFNlc3Npb24SGS5tdGcudjEuR2V0U2Vzc2lvblJlcXVlc3QaGi5tdGcudjEuR2V0U2Vzc2lvblJlc3BvbnNlIgBCOlo4Z2l0aHViLmNvbS9ua3JhbWJlci9tdGctZGVjay1idWlsZGVyL2dvL2dlbi9tdGcvdjE7bXRndjFiBnByb3RvMw", [file_mtg_v1_deck, file_mtg_v1_session]);
+  fileDesc("ChptdGcvdjEvYWdlbnRfc2VydmljZS5wcm90bxIGbXRnLnYxIo0BCgtDaGF0UmVxdWVzdBISCgpzZXNzaW9uX2lkGAEgASgJEhUKDWNvbGxlY3Rpb25faWQYAiABKAkSDwoHbWVzc2FnZRgDIAEoCRIfCgdhbnN3ZXJzGAQgAygLMg4ubXRnLnYxLkFuc3dlckoECAUQBkoECAYQB1IEc2VlZFIPa2VlcF9vcmFjbGVfaWRzIj4KCkFnZW50RXJyb3ISDAoEY29kZRgBIAEoCRIPCgdtZXNzYWdlGAIgASgJEhEKCXJldHJ5YWJsZRgDIAEoCCKaAgoMQ2hhdFJlc3BvbnNlEhkKD3Nlc3Npb25fc3RhcnRlZBgBIAEoCUgAEhQKCnRleHRfZGVsdGEYAiABKAlIABIkCghxdWVzdGlvbhgDIAEoCzIQLm10Zy52MS5RdWVzdGlvbkgAEh4KBXNsb3RzGAQgASgLMg0ubXRnLnYxLlNsb3RzSAASEAoGc3RhdHVzGAUgASgJSAASHAoEZGVjaxgGIAEoCzIMLm10Zy52MS5EZWNrSAASEwoFZXJyb3IYByABKAlCAhgBSAASJQoHZmFpbHVyZRgIIAEoCzISLm10Zy52MS5BZ2VudEVycm9ySAASHgoFdXNhZ2UYCSABKAsyDS5tdGcudjEuVXNhZ2VIAEIHCgVldmVudCInChFHZXRTZXNzaW9uUmVxdWVzdBISCgpzZXNzaW9uX2lkGAEgASgJIjYKEkdldFNlc3Npb25SZXNwb25zZRIgCgdzZXNzaW9uGAEgASgLMg8ubXRnLnYxLlNlc3Npb24yjAEKDEFnZW50U2VydmljZRI1CgRDaGF0EhMubXRnLnYxLkNoYXRSZXF1ZXN0GhQubXRnLnYxLkNoYXRSZXNwb25zZSIAMAESRQoKR2V0U2Vzc2lvbhIZLm10Zy52MS5HZXRTZXNzaW9uUmVxdWVzdBoaLm10Zy52MS5HZXRTZXNzaW9uUmVzcG9uc2UiAEI6WjhnaXRodWIuY29tL25rcmFtYmVyL210Zy1kZWNrLWJ1aWxkZXIvZ28vZ2VuL210Zy92MTttdGd2MWIGcHJvdG8z", [file_mtg_v1_deck, file_mtg_v1_session]);
 
 /**
  * @generated from message mtg.v1.ChatRequest
@@ -43,21 +43,6 @@ export type ChatRequest = Message<"mtg.v1.ChatRequest"> & {
    * @generated from field: repeated mtg.v1.Answer answers = 4;
    */
   answers: Answer[];
-
-  /**
-   * seed reproduces an earlier build (D-18). Zero means a new seed.
-   *
-   * @generated from field: int64 seed = 5;
-   */
-  seed: bigint;
-
-  /**
-   * keep_oracle_ids asks for a re-roll that keeps these cards (roadmap
-   * PR-9, lever 3).
-   *
-   * @generated from field: repeated string keep_oracle_ids = 6;
-   */
-  keepOracleIds: string[];
 };
 
 /**

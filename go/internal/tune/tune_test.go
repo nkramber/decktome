@@ -34,7 +34,11 @@ const fixture = "# PR-7 question gate\n\n" +
 	"**PREMATURE.** It called itself complete with these slots unanswered: colors (never asked).\n\n" +
 	"**Turn 1, the user:** I already have a Modern burn deck.\n\n" +
 	"- [catalog slot=power row=power_sixty fit=0.90 filled=false] How strong?\n" +
-	"  - Refused as a reword (D-88): How strong should it be?\n"
+	"  - Refused as a reword (D-88): How strong should it be?\n\n" +
+	"### 11. another version after a build (after a build)\n\n" +
+	"**Failed: turn 2: the provider timed out**\n\n" +
+	"Collection: true. Catalog: 0. Invented: 0.\n\n" +
+	"**Turn 1, the user:** Give me another version of that deck.\n\n"
 
 func writeFixture(t *testing.T) string {
 	t.Helper()
@@ -62,8 +66,21 @@ func TestReadRun(t *testing.T) {
 	if run.Metrics != want {
 		t.Errorf("metrics = %+v, want %+v", run.Metrics, want)
 	}
-	if len(run.Conversations) != 2 {
-		t.Fatalf("%d conversations, want 2", len(run.Conversations))
+	if len(run.Conversations) != 3 {
+		t.Fatalf("%d conversations, want 3", len(run.Conversations))
+	}
+	if after := run.Conversations[2]; !after.AfterBuild || !after.Errored() ||
+		after.Failed != "turn 2: the provider timed out" {
+		t.Errorf("the after-build conversation = %+v", after)
+	}
+	// The after-build conversation leaves the M-4 table (A-9), and an
+	// errored one is marked in its count.
+	counts := CountConversations(run)
+	if !counts[2].AfterBuild || !counts[2].Errored {
+		t.Errorf("counts[2] = %+v", counts[2])
+	}
+	if m := MetricsFromCounts(counts); m.Questions != 2 || m.CatalogOnly != 0 {
+		t.Errorf("metrics from counts = %+v, want the gate conversation alone", m)
 	}
 	c := run.Conversations[0]
 	if c.Name != "23. land destruction" || c.Probe {
@@ -87,6 +104,9 @@ func TestReadRun(t *testing.T) {
 	probe := run.Conversations[1]
 	if !probe.Probe || !probe.Premature {
 		t.Errorf("probe = %v, premature = %v", probe.Probe, probe.Premature)
+	}
+	if probe.Unanswered != "colors (never asked)" {
+		t.Errorf("the premature conversation's unanswered slots = %q", probe.Unanswered)
 	}
 	if probe.Questions[0].Refused == "" {
 		t.Error("the refused reword was not read")
@@ -219,6 +239,53 @@ func TestHoldoutSplitDrivesTheDecision(t *testing.T) {
 	worse := mk(0, 40, 20, 20)
 	if d := Compare(prev, worse); d.Accept {
 		t.Error("a worse holdout was accepted")
+	}
+}
+
+// TestSkippedReadsThePartialFlag is T-2. A budget-cut eval is no
+// baseline and no candidate.
+func TestSkippedReadsThePartialFlag(t *testing.T) {
+	cases := []struct {
+		name string
+		s    Summary
+		want string
+		skip bool
+	}{
+		{"a full run", Summary{}, "", false},
+		{"a cut run with a reason", Summary{Partial: true, StoppedReason: "the budget stopped it"}, "the budget stopped it", true},
+		{"a cut run with no reason", Summary{Partial: true}, "the run was cut short", true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			why, skip := tc.s.Skipped()
+			if why != tc.want || skip != tc.skip {
+				t.Errorf("Skipped() = %q, %v, want %q, %v", why, skip, tc.want, tc.skip)
+			}
+		})
+	}
+}
+
+// TestCompareMarksHardFailures is T-16. The loop reads a flag and not
+// the wording of a reason.
+func TestCompareMarksHardFailures(t *testing.T) {
+	prev := &Summary{Judged: 100, Bad: 20, Ratio: 0.20, Metrics: Metrics{Questions: 200, CatalogFilled: 150}}
+	cases := []struct {
+		name string
+		next *Summary
+		hard bool
+	}{
+		{"lint", &Summary{Judged: 100, Bad: 5, Metrics: Metrics{Questions: 200, CatalogFilled: 150, LintFindings: 1}}, true},
+		{"premature", &Summary{Judged: 100, Bad: 5, Metrics: Metrics{Questions: 200, CatalogFilled: 150, Premature: 1}}, true},
+		{"quiet", &Summary{Judged: 40, Bad: 2, Metrics: Metrics{Questions: 90, CatalogFilled: 60}}, true},
+		{"a worse ratio", &Summary{Judged: 100, Bad: 40, Metrics: Metrics{Questions: 200, CatalogFilled: 150}}, false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			d := Compare(prev, tc.next)
+			if d.Accept || d.Hard != tc.hard {
+				t.Errorf("accept %v hard %v, want a reject with hard %v: %v", d.Accept, d.Hard, tc.hard, d.Reasons)
+			}
+		})
 	}
 }
 

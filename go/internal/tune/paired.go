@@ -8,14 +8,6 @@ import (
 	"strings"
 )
 
-// A run and the run before it share their conversations, so the loop can
-// compare them question by question instead of ratio by ratio. Two runs
-// of the same code differ by three holdout questions, and half of the
-// bad set is swapped for another half (run 18 against 20260826-191225-000).
-// A ratio can not see that. A paired comparison can: it counts only the
-// questions whose verdict changed AND whose text changed, because a
-// verdict that flips on identical text is the judge and not the fixer.
-
 // numberRe reads the number a conversation name starts with.
 var numberRe = regexp.MustCompile(`^\s*(\d+)\.`)
 
@@ -49,6 +41,15 @@ func PairKey(v Verdict) string {
 	return fmt.Sprintf("%d|%d|%s", ConversationNumber(v.Conversation), v.Turn, v.Row)
 }
 
+// The kinds of a Delta.
+const (
+	KindWorse     = "worse"
+	KindBetter    = "better"
+	KindNewBad    = "new_bad"
+	KindGoneBad   = "gone_bad"
+	KindJudgeFlip = "judge_flip"
+)
+
 // Delta is one question that changed between two runs.
 type Delta struct {
 	Row          string  `json:"row"`
@@ -57,7 +58,7 @@ type Delta struct {
 	Holdout      bool    `json:"holdout"`
 	Before       Verdict `json:"before"`
 	After        Verdict `json:"after"`
-	// Kind is worse, better, new_bad, gone_bad, or judge_flip.
+	// Kind is one of the Kind constants.
 	Kind string `json:"kind"`
 }
 
@@ -75,14 +76,39 @@ type Paired struct {
 	// the new run does not. Both count for the change.
 	Better  []Delta `json:"better"`
 	GoneBad []Delta `json:"gone_bad"`
-	// JudgeFlips are verdicts that changed on identical text. They are
-	// the judge's own noise, and no change is charged for them.
+	// JudgeFlips are verdicts that changed on identical text. On a row
+	// no change declared they are the judge's own noise.
 	JudgeFlips []Delta `json:"judge_flips"`
+	// Errored counts the conversations left out because they ended on an
+	// error in either run (T-5).
+	Errored int `json:"errored"`
 }
 
-// Pair compares two runs question by question.
+// Pair compares two runs question by question. A run and the run before
+// it share their conversations, so the loop can compare them question by
+// question instead of ratio by ratio. Two runs of the same code differ by
+// three holdout questions, and half of the bad set is swapped for another
+// half (run 18 against 20260826-191225-000). A ratio can not see that.
+//
+// A verdict that flips on identical text is a judge flip. A verdict that
+// flips on changed text is a better or worse delta. Which of them a
+// change is charged for is Attribute's rule (T-21).
+//
+// A conversation that errored in either run is skipped on both sides. It
+// asked nothing after the error, and its missing questions would read as
+// gone or new bad questions (T-5).
 func Pair(prev, next *Summary) Paired {
 	var p Paired
+	skip := map[int]bool{}
+	for _, s := range []*Summary{prev, next} {
+		for _, name := range s.Errored {
+			if n := ConversationNumber(name); n > 0 {
+				skip[n] = true
+			}
+		}
+	}
+	p.Errored = len(skip)
+	skipped := func(v Verdict) bool { return skip[ConversationNumber(v.Conversation)] }
 	before := map[string]Verdict{}
 	for _, v := range prev.Verdicts {
 		before[PairKey(v)] = v
@@ -92,11 +118,14 @@ func Pair(prev, next *Summary) Paired {
 		after[PairKey(v)] = v
 	}
 	for _, v := range next.Verdicts {
+		if skipped(v) {
+			continue
+		}
 		k := PairKey(v)
 		old, ok := before[k]
 		if !ok {
 			if v.Bad() {
-				p.NewBad = append(p.NewBad, delta(old, v, "new_bad"))
+				p.NewBad = append(p.NewBad, delta(old, v, KindNewBad))
 			}
 			continue
 		}
@@ -105,18 +134,21 @@ func Pair(prev, next *Summary) Paired {
 			continue
 		}
 		if sameText(old.Text, v.Text) {
-			p.JudgeFlips = append(p.JudgeFlips, delta(old, v, "judge_flip"))
+			p.JudgeFlips = append(p.JudgeFlips, delta(old, v, KindJudgeFlip))
 			continue
 		}
 		if v.Bad() {
-			p.Worse = append(p.Worse, delta(old, v, "worse"))
+			p.Worse = append(p.Worse, delta(old, v, KindWorse))
 		} else {
-			p.Better = append(p.Better, delta(old, v, "better"))
+			p.Better = append(p.Better, delta(old, v, KindBetter))
 		}
 	}
 	for _, v := range prev.Verdicts {
+		if skipped(v) {
+			continue
+		}
 		if _, ok := after[PairKey(v)]; !ok && v.Bad() {
-			p.GoneBad = append(p.GoneBad, delta(v, Verdict{}, "gone_bad"))
+			p.GoneBad = append(p.GoneBad, delta(v, Verdict{}, KindGoneBad))
 		}
 	}
 	for _, list := range []*[]Delta{&p.Worse, &p.NewBad, &p.Better, &p.GoneBad, &p.JudgeFlips} {
@@ -128,7 +160,7 @@ func Pair(prev, next *Summary) Paired {
 func delta(before, after Verdict, kind string) Delta {
 	d := Delta{Before: before, After: after, Kind: kind}
 	src := after
-	if kind == "gone_bad" {
+	if kind == KindGoneBad {
 		src = before
 	}
 	d.Row, d.Conversation, d.Turn, d.Holdout = src.Row, src.Conversation, src.Turn, src.Holdout
@@ -179,11 +211,35 @@ type ChangeVerdict struct {
 // declared the rows.
 type Attribution struct {
 	Changes []ChangeVerdict `json:"changes"`
-	// Unattributed are deltas on rows no change declared. A change that
-	// moved a row it did not name is charged nothing, so a large count
-	// here says the declarations were wrong, and the loop falls back to
-	// the whole-run rules.
+	// Unattributed are deltas on rows no change declared that are not the
+	// ask role's rewording: a question that appeared, one that went away,
+	// and a verdict that flipped on identical text. A large count says the
+	// declarations were wrong, and the loop falls back to the whole-run
+	// rules.
 	Unattributed []Delta `json:"unattributed"`
+	// Churn are verdicts that flipped on changed text on rows no change
+	// declared. The ask role rewrites its wording every run, so these are
+	// charged to nobody and counted as no drift (T-21).
+	Churn []Delta `json:"churn"`
+}
+
+// Drift counts the unattributed deltas that hurt and the ones that helped.
+func (a Attribution) Drift() (bad, good int) {
+	for _, u := range a.Unattributed {
+		switch u.Kind {
+		case KindWorse, KindNewBad:
+			bad++
+		case KindBetter, KindGoneBad:
+			good++
+		case KindJudgeFlip:
+			if u.After.Bad() {
+				bad++
+			} else {
+				good++
+			}
+		}
+	}
+	return bad, good
 }
 
 // Attribute charges each delta to the change that declared its row. A
@@ -191,39 +247,60 @@ type Attribution struct {
 // A change with no delta on its rows is kept: nothing spoke against it.
 // A tie with activity is dropped: the change moved questions and did not
 // improve them.
-func Attribute(p Paired, changes []Change) Attribution {
+//
+// A flip on a declared row is the change's, whether the text changed or
+// not: a text change is the catalog edit, and an identical text is a
+// trigger edit. A flip on an undeclared row with changed text is the ask
+// role's churn, and it is charged to nobody (T-21).
+//
+// A commit that declares no row is dropped: nothing can be charged to it,
+// so nothing can speak for it (T-4). Two commits that declare one row are
+// an error, because a delta on that row has two owners.
+func Attribute(p Paired, changes []Change) (Attribution, error) {
 	owner := map[string]int{}
 	for i, c := range changes {
 		for _, r := range c.Rows {
-			owner[strings.TrimSpace(r)] = i
+			r = strings.TrimSpace(r)
+			if j, dup := owner[r]; dup && j != i {
+				return Attribution{}, fmt.Errorf("tune: row %q is declared by %s and %s, and a row has one owner",
+					r, short(changes[j].Commit), short(c.Commit))
+			}
+			owner[r] = i
 		}
 	}
 	out := Attribution{Changes: make([]ChangeVerdict, len(changes))}
 	for i, c := range changes {
 		out.Changes[i].Change = c
 	}
-	charge := func(ds []Delta, against bool) {
+	charge := func(ds []Delta, against bool, reworded bool) {
 		for _, d := range ds {
 			i, ok := owner[d.Row]
-			if !ok {
-				out.Unattributed = append(out.Unattributed, d)
-				continue
-			}
-			if against {
+			switch {
+			case ok && against:
 				out.Changes[i].Against = append(out.Changes[i].Against, d)
-			} else {
+			case ok:
 				out.Changes[i].For = append(out.Changes[i].For, d)
+			case reworded:
+				out.Churn = append(out.Churn, d)
+			default:
+				out.Unattributed = append(out.Unattributed, d)
 			}
 		}
 	}
-	charge(p.Worse, true)
-	charge(p.NewBad, true)
-	charge(p.Better, false)
-	charge(p.GoneBad, false)
+	charge(p.Worse, true, true)
+	charge(p.Better, false, true)
+	charge(p.NewBad, true, false)
+	charge(p.GoneBad, false, false)
+	for _, d := range p.JudgeFlips {
+		charge([]Delta{d}, d.After.Bad(), false)
+	}
 	for i := range out.Changes {
 		cv := &out.Changes[i]
 		f, a := len(cv.For), len(cv.Against)
 		switch {
+		case len(cv.Change.Rows) == 0:
+			cv.Keep = false
+			cv.Reason = "no rows declared"
 		case f == 0 && a == 0:
 			cv.Keep = true
 			cv.Reason = "no judged question moved on its rows"
@@ -236,7 +313,15 @@ func Attribute(p Paired, changes []Change) Attribution {
 		}
 	}
 	sortDeltas(out.Unattributed)
-	return out
+	sortDeltas(out.Churn)
+	return out, nil
+}
+
+func short(sha string) string {
+	if len(sha) > 7 {
+		return sha[:7]
+	}
+	return sha
 }
 
 // Conversations lists the conversation numbers a set of rows touched in
@@ -272,20 +357,24 @@ func Conversations(rows []string, runs ...*Summary) []int {
 // per conversation, so a partial run can be folded into it without the
 // gate document (D-181).
 type ConvCount struct {
-	Name          string `json:"name"`
-	Probe         bool   `json:"probe,omitempty"`
-	Questions     int    `json:"questions"`
-	Invented      int    `json:"invented,omitempty"`
-	CatalogFilled int    `json:"catalog_filled"`
-	Filled        int    `json:"filled"`
-	Premature     bool   `json:"premature,omitempty"`
+	Name  string `json:"name"`
+	Probe bool   `json:"probe,omitempty"`
+	// AfterBuild leaves the M-4 table the way Probe does (A-9).
+	AfterBuild    bool `json:"after_build,omitempty"`
+	Errored       bool `json:"errored,omitempty"`
+	Questions     int  `json:"questions"`
+	Invented      int  `json:"invented,omitempty"`
+	CatalogFilled int  `json:"catalog_filled"`
+	Filled        int  `json:"filled"`
+	Premature     bool `json:"premature,omitempty"`
 }
 
 // CountConversations reads the per-conversation counts of a gate document.
 func CountConversations(run *Run) []ConvCount {
 	out := make([]ConvCount, 0, len(run.Conversations))
 	for _, c := range run.Conversations {
-		cc := ConvCount{Name: c.Name, Probe: c.Probe, Premature: c.Premature}
+		cc := ConvCount{Name: c.Name, Probe: c.Probe, AfterBuild: c.AfterBuild,
+			Errored: c.Errored(), Premature: c.Premature}
 		for _, q := range c.Questions {
 			cc.Questions++
 			if q.Filled {
@@ -305,8 +394,9 @@ func CountConversations(run *Run) []ConvCount {
 }
 
 // MetricsFromCounts recomputes the M-4 counters. The table in the
-// document counts the gate conversations alone, and the two Seen counters
-// read every conversation, probes included.
+// document counts the gate conversations alone, without the ones that
+// start after a build (A-9), and the two Seen counters read every
+// conversation, probes included.
 // TestMetricsOfMatchesTheDocument proves both readings agree with what
 // the gate wrote.
 func MetricsFromCounts(counts []ConvCount) Metrics {
@@ -319,7 +409,7 @@ func MetricsFromCounts(counts []ConvCount) Metrics {
 		if c.Premature {
 			m.Premature++
 		}
-		if c.Probe {
+		if c.Probe || c.AfterBuild {
 			continue
 		}
 		m.Questions += c.Questions

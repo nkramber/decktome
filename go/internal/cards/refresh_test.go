@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -23,7 +24,9 @@ type fakeScryfall struct {
 	srv       *httptest.Server
 	updatedAt map[string]time.Time
 	bodies    map[string]string
-	downloads int
+	// downloads is written from the handler goroutine and read by the
+	// test, so it is atomic.
+	downloads atomic.Int64
 }
 
 func newFakeScryfall(t *testing.T, at time.Time) *fakeScryfall {
@@ -48,7 +51,7 @@ func newFakeScryfall(t *testing.T, at time.Time) *fakeScryfall {
 			w.WriteHeader(404)
 			return
 		}
-		f.downloads++
+		f.downloads.Add(1)
 		_, _ = w.Write(gzipBytes(t, body))
 	}))
 	t.Cleanup(f.srv.Close)
@@ -93,8 +96,8 @@ func TestRefresh(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if v != VersionFor(day1) || f.downloads != 3 {
-			t.Fatalf("version %q downloads %d", v, f.downloads)
+		if v != VersionFor(day1) || f.downloads.Load() != 3 {
+			t.Fatalf("version %q downloads %d", v, f.downloads.Load())
 		}
 		latest, _ := store.LatestVersion(ctx)
 		if latest != v {
@@ -107,17 +110,17 @@ func TestRefresh(t *testing.T) {
 		if _, err := Refresh(ctx, f.client(), store, slog.Default()); err != nil {
 			t.Fatal(err)
 		}
-		f.downloads = 0
+		f.downloads.Store(0)
 		v, err := Refresh(ctx, f.client(), store, slog.Default())
-		if err != nil || f.downloads != 0 || v != VersionFor(day1) {
-			t.Fatalf("second run: v=%q downloads=%d err=%v", v, f.downloads, err)
+		if err != nil || f.downloads.Load() != 0 || v != VersionFor(day1) {
+			t.Fatalf("second run: v=%q downloads=%d err=%v", v, f.downloads.Load(), err)
 		}
 		for typ := range f.updatedAt {
 			f.updatedAt[typ] = day1.Add(-time.Hour)
 		}
 		v, err = Refresh(ctx, f.client(), store, slog.Default())
-		if err != nil || f.downloads != 0 || v != VersionFor(day1) {
-			t.Fatalf("older remote: v=%q downloads=%d err=%v", v, f.downloads, err)
+		if err != nil || f.downloads.Load() != 0 || v != VersionFor(day1) {
+			t.Fatalf("older remote: v=%q downloads=%d err=%v", v, f.downloads.Load(), err)
 		}
 	})
 	t.Run("newer remote by one second downloads", func(t *testing.T) {
@@ -129,10 +132,10 @@ func TestRefresh(t *testing.T) {
 		for typ := range f.updatedAt {
 			f.updatedAt[typ] = day1.Add(time.Second)
 		}
-		f.downloads = 0
+		f.downloads.Store(0)
 		v, err := Refresh(ctx, f.client(), store, slog.Default())
-		if err != nil || f.downloads != 3 || v != VersionFor(day1.Add(time.Second)) {
-			t.Fatalf("v=%q downloads=%d err=%v", v, f.downloads, err)
+		if err != nil || f.downloads.Load() != 3 || v != VersionFor(day1.Add(time.Second)) {
+			t.Fatalf("v=%q downloads=%d err=%v", v, f.downloads.Load(), err)
 		}
 	})
 	t.Run("bulk files on two dates skip the cycle", func(t *testing.T) {
@@ -140,8 +143,8 @@ func TestRefresh(t *testing.T) {
 		f.updatedAt["oracle_tags"] = day1
 		store := DirStore{Root: t.TempDir()}
 		v, err := Refresh(ctx, f.client(), store, slog.Default())
-		if err != nil || v != "" || f.downloads != 0 {
-			t.Fatalf("v=%q downloads=%d err=%v", v, f.downloads, err)
+		if err != nil || v != "" || f.downloads.Load() != 0 {
+			t.Fatalf("v=%q downloads=%d err=%v", v, f.downloads.Load(), err)
 		}
 	})
 	t.Run("download failure leaves no complete version", func(t *testing.T) {
@@ -205,28 +208,74 @@ func TestRefreshPrunes(t *testing.T) {
 	}
 }
 
+// TestPruneKeepsIncompleteAndNewest covers the incomplete versions. A
+// failed download older than the newest complete version goes. The
+// newest incomplete version stays, because it can be a download in
+// progress.
 func TestPruneKeepsIncompleteAndNewest(t *testing.T) {
 	ctx := context.Background()
-	store := DirStore{Root: t.TempDir()}
-	for _, v := range []string{"20260820T090000", "20260821T090000", "20260822T090000"} {
-		w, _ := store.Create(ctx, v, "oracle_cards.jsonl.gz")
-		_ = w.Close()
-		if err := store.Finalize(ctx, v); err != nil {
-			t.Fatal(err)
-		}
+	tests := []struct {
+		name           string
+		complete       []string
+		incomplete     []string
+		keep           int
+		wantComplete   []string
+		wantIncomplete []string
+	}{
+		{
+			name:           "stale incomplete versions go, the newest stays",
+			complete:       []string{"20260820T090000", "20260821T090000", "20260822T090000"},
+			incomplete:     []string{"20260818T090000", "20260819T090000", "20260823T090000"},
+			keep:           1,
+			wantComplete:   []string{"20260822T090000"},
+			wantIncomplete: []string{"20260823T090000"},
+		},
+		{
+			name:           "an incomplete version newer than every complete one stays",
+			complete:       []string{"20260820T090000"},
+			incomplete:     []string{"20260821T090000", "20260822T090000"},
+			keep:           3,
+			wantComplete:   []string{"20260820T090000"},
+			wantIncomplete: []string{"20260821T090000", "20260822T090000"},
+		},
+		{
+			name:           "no complete version leaves every incomplete one",
+			incomplete:     []string{"20260818T090000", "20260819T090000"},
+			keep:           1,
+			wantIncomplete: []string{"20260818T090000", "20260819T090000"},
+		},
 	}
-	// An incomplete version is invisible to ListVersions and untouched.
-	w, _ := store.Create(ctx, "20260823T090000", "oracle_cards.jsonl.gz")
-	_ = w.Close()
-	if err := Prune(ctx, store, 1, slog.Default()); err != nil {
-		t.Fatal(err)
-	}
-	versions, _ := store.ListVersions(ctx)
-	if len(versions) != 1 || versions[0] != "20260822T090000" {
-		t.Fatalf("versions = %v", versions)
-	}
-	if _, err := os.Stat(filepath.Join(store.Root, "20260823T090000")); err != nil {
-		t.Fatalf("incomplete version removed: %v", err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			store := DirStore{Root: t.TempDir()}
+			for _, v := range tt.complete {
+				w, _ := store.Create(ctx, v, "oracle_cards.jsonl.gz")
+				_ = w.Close()
+				if err := store.Finalize(ctx, v); err != nil {
+					t.Fatal(err)
+				}
+			}
+			for _, v := range tt.incomplete {
+				w, _ := store.Create(ctx, v, "oracle_cards.jsonl.gz")
+				_ = w.Close()
+			}
+			if err := Prune(ctx, store, tt.keep, slog.Default()); err != nil {
+				t.Fatal(err)
+			}
+			complete, _ := store.ListVersions(ctx)
+			if strings.Join(complete, ",") != strings.Join(tt.wantComplete, ",") {
+				t.Errorf("complete = %v, want %v", complete, tt.wantComplete)
+			}
+			incomplete, _ := store.ListIncompleteVersions(ctx)
+			if strings.Join(incomplete, ",") != strings.Join(tt.wantIncomplete, ",") {
+				t.Errorf("incomplete = %v, want %v", incomplete, tt.wantIncomplete)
+			}
+			for _, v := range tt.wantIncomplete {
+				if _, err := os.Stat(filepath.Join(store.Root, v)); err != nil {
+					t.Errorf("incomplete version %s removed: %v", v, err)
+				}
+			}
+		})
 	}
 }
 

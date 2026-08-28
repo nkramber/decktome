@@ -115,7 +115,12 @@ func (r *Repo) Put(ctx context.Context, uid string, s *mtgv1.Session, snap quest
 	if len(sessionGz) > maxStoredBytes || len(stateGz) > maxStoredBytes {
 		return fmt.Errorf("%w: %d and %d bytes", ErrTooLarge, len(sessionGz), len(stateGz))
 	}
+	// The session carries its own clock: the service stamps updated_at,
+	// so the flat field agrees with the proto (L-9).
 	now := time.Now().UTC()
+	if t := s.GetUpdatedAt(); t != nil {
+		now = t.AsTime()
+	}
 	created := now
 	if t := s.GetCreatedAt(); t != nil {
 		created = t.AsTime()
@@ -285,6 +290,9 @@ func ungzBytes(payload []byte) ([]byte, error) {
 	raw, err := io.ReadAll(io.LimitReader(zr, maxInflatedBytes))
 	if err != nil {
 		return nil, fmt.Errorf("sessions: read: %w", err)
+	}
+	if len(raw) == maxInflatedBytes {
+		return nil, fmt.Errorf("sessions: stored payload is larger than %d bytes", maxInflatedBytes)
 	}
 	return raw, nil
 }

@@ -8,23 +8,23 @@
 // in gate run 14. The judge runs on another provider than the generator,
 // so it never rates its own work (D-22).
 //
-// CAUTION: this calls a real provider and it costs money.
+// CAUTION: this calls a real provider and it costs money. SUMMARY_JUDGE=1
+// is required, so it can not run by accident.
 //
 // Usage:
 //
-//	go run ./cmd/summary-judge -in ../docs/reference/pr8-deck-gate-run3.md
+//	SUMMARY_JUDGE=1 go run ./cmd/summary-judge -in ../docs/reference/pr8-deck-gate-run3.md
 package main
 
 import (
 	"context"
 	"flag"
 	"fmt"
-	"io"
-	"log/slog"
 	"os"
 	"regexp"
 	"strings"
 
+	"github.com/nkramber/mtg-deck-builder/go/internal/gatekit"
 	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 )
@@ -47,6 +47,9 @@ func run() error {
 	if *in == "" {
 		return fmt.Errorf("give -in, a deck gate document")
 	}
+	if err := gatekit.SpendGuard("SUMMARY_JUDGE"); err != nil {
+		return err
+	}
 	raw, err := os.ReadFile(*in) // #nosec G304 -- the operator names the file.
 	if err != nil {
 		return err
@@ -58,14 +61,7 @@ func run() error {
 		return fmt.Errorf("the document holds %d decks and %d summaries", len(names), len(sums))
 	}
 
-	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
-	env := func(k string) string {
-		if k == llm.EnvRequireKeys {
-			return "1"
-		}
-		return os.Getenv(k)
-	}
-	client, err := llm.NewFromEnv(env, quiet)
+	client, err := llm.NewFromEnv(gatekit.Env, gatekit.Quiet())
 	if err != nil {
 		return err
 	}
@@ -82,13 +78,16 @@ func run() error {
 		if err != nil {
 			return fmt.Errorf("judge deck %s: %w", m[1], err)
 		}
-		switch out.Verdict {
-		case "clean":
-			clean++
-		case "states_a_rule":
-			rules++
-		case "states_a_falseRulerule":
+		// The false-rule count reads the same helper the deck gate reads,
+		// so a claim marked false counts whatever the verdict word says.
+		// The old switch matched a misspelt enum and counted zero (T-3).
+		switch {
+		case out.StatesAFalseRule():
 			falseRule++
+		case out.Verdict == "states_a_rule":
+			rules++
+		case out.Verdict == "clean":
+			clean++
 		}
 		fmt.Printf("%-3s %-42s %s\n", m[1]+".", trunc(m[2], 42), out.Verdict)
 		for _, c := range out.Claims {

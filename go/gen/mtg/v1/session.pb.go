@@ -472,12 +472,17 @@ type Slots struct {
 	// question asks (D-77, D-238).
 	BudgetUsd   float64     `protobuf:"fixed64,7,opt,name=budget_usd,json=budgetUsd,proto3" json:"budget_usd,omitempty"`
 	BudgetScope BudgetScope `protobuf:"varint,11,opt,name=budget_scope,json=budgetScope,proto3,enum=mtg.v1.BudgetScope" json:"budget_scope,omitempty"`
+	// house_rules is what the user means when the format is HOUSE, in the
+	// user's own words (D-3). The build copies it to Format.house_rules.
+	// Empty for every other format (D-265).
+	HouseRules string `protobuf:"bytes,12,opt,name=house_rules,json=houseRules,proto3" json:"house_rules,omitempty"`
 	// locked_oracle_ids are cards the user wants in the deck.
 	LockedOracleIds []string `protobuf:"bytes,8,rep,name=locked_oracle_ids,json=lockedOracleIds,proto3" json:"locked_oracle_ids,omitempty"`
-	// slot_states is keyed by slot name: scope, format, power, colors,
-	// theme, commander, pool_rule, budget, locked, plan_variant,
-	// house_rules, meta. "scope" records that the agent said it builds
-	// Magic decks only, after the user asked for something else.
+	// slot_states is keyed by slot name: scope, deck_count, format,
+	// power, colors, theme, commander, pool_rule, budget, house_rules.
+	// A refinement row keys its own name beside them, for example
+	// budget_scope or commander_pick. "scope" records that the agent said
+	// it builds Magic decks only, after the user asked for something else.
 	SlotStates    map[string]SlotState `protobuf:"bytes,10,rep,name=slot_states,json=slotStates,proto3" json:"slot_states,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value,enum=mtg.v1.SlotState"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -567,6 +572,13 @@ func (x *Slots) GetBudgetScope() BudgetScope {
 		return x.BudgetScope
 	}
 	return BudgetScope_BUDGET_SCOPE_UNSPECIFIED
+}
+
+func (x *Slots) GetHouseRules() string {
+	if x != nil {
+		return x.HouseRules
+	}
+	return ""
 }
 
 func (x *Slots) GetLockedOracleIds() []string {
@@ -670,8 +682,10 @@ type Answer struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// question_id matches Question.id.
 	QuestionId string `protobuf:"bytes,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
-	// option_index is the chosen option, or -1 for free text.
-	OptionIndex   int32  `protobuf:"varint,2,opt,name=option_index,json=optionIndex,proto3" json:"option_index,omitempty"`
+	// option_index is the chosen option. Unset means free text in
+	// `text`. Explicit presence separates "option 0" from "no option",
+	// which the proto3 default of 0 could not (D-266).
+	OptionIndex   *int32 `protobuf:"varint,2,opt,name=option_index,json=optionIndex,proto3,oneof" json:"option_index,omitempty"`
 	Text          string `protobuf:"bytes,3,opt,name=text,proto3" json:"text,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -715,8 +729,8 @@ func (x *Answer) GetQuestionId() string {
 }
 
 func (x *Answer) GetOptionIndex() int32 {
-	if x != nil {
-		return x.OptionIndex
+	if x != nil && x.OptionIndex != nil {
+		return *x.OptionIndex
 	}
 	return 0
 }
@@ -853,7 +867,7 @@ const file_mtg_v1_session_proto_rawDesc = "" +
 	"\routput_tokens\x18\x04 \x01(\x03R\foutputTokens\x12)\n" +
 	"\x10reasoning_tokens\x18\x05 \x01(\x03R\x0freasoningTokens\x12\x19\n" +
 	"\bcost_usd\x18\x06 \x01(\x01R\acostUsd\x12\x16\n" +
-	"\x06priced\x18\a \x01(\bR\x06priced\"\xa0\x04\n" +
+	"\x06priced\x18\a \x01(\bR\x06priced\"\xc1\x04\n" +
 	"\x05Slots\x12&\n" +
 	"\x06format\x18\x01 \x01(\v2\x0e.mtg.v1.FormatR\x06format\x12(\n" +
 	"\x05power\x18\x02 \x01(\v2\x12.mtg.v1.PowerLevelR\x05power\x12%\n" +
@@ -863,7 +877,9 @@ const file_mtg_v1_session_proto_rawDesc = "" +
 	"\tpool_rule\x18\x06 \x01(\x0e2\x10.mtg.v1.PoolRuleR\bpoolRule\x12\x1d\n" +
 	"\n" +
 	"budget_usd\x18\a \x01(\x01R\tbudgetUsd\x126\n" +
-	"\fbudget_scope\x18\v \x01(\x0e2\x13.mtg.v1.BudgetScopeR\vbudgetScope\x12*\n" +
+	"\fbudget_scope\x18\v \x01(\x0e2\x13.mtg.v1.BudgetScopeR\vbudgetScope\x12\x1f\n" +
+	"\vhouse_rules\x18\f \x01(\tR\n" +
+	"houseRules\x12*\n" +
 	"\x11locked_oracle_ids\x18\b \x03(\tR\x0flockedOracleIds\x12>\n" +
 	"\vslot_states\x18\n" +
 	" \x03(\v2\x1d.mtg.v1.Slots.SlotStatesEntryR\n" +
@@ -877,12 +893,13 @@ const file_mtg_v1_session_proto_rawDesc = "" +
 	"\ragent_message\x18\x02 \x01(\tR\fagentMessage\x12.\n" +
 	"\tquestions\x18\x03 \x03(\v2\x10.mtg.v1.QuestionR\tquestions\x12*\n" +
 	"\x02at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x02at\x12(\n" +
-	"\aanswers\x18\x05 \x03(\v2\x0e.mtg.v1.AnswerR\aanswers\"`\n" +
+	"\aanswers\x18\x05 \x03(\v2\x0e.mtg.v1.AnswerR\aanswers\"v\n" +
 	"\x06Answer\x12\x1f\n" +
 	"\vquestion_id\x18\x01 \x01(\tR\n" +
-	"questionId\x12!\n" +
-	"\foption_index\x18\x02 \x01(\x05R\voptionIndex\x12\x12\n" +
-	"\x04text\x18\x03 \x01(\tR\x04text\"\xb8\x01\n" +
+	"questionId\x12&\n" +
+	"\foption_index\x18\x02 \x01(\x05H\x00R\voptionIndex\x88\x01\x01\x12\x12\n" +
+	"\x04text\x18\x03 \x01(\tR\x04textB\x0f\n" +
+	"\r_option_index\"\xb8\x01\n" +
 	"\bQuestion\x12\x0e\n" +
 	"\x02id\x18\x06 \x01(\tR\x02id\x12\x12\n" +
 	"\x04slot\x18\x01 \x01(\tR\x04slot\x12\x12\n" +
@@ -974,6 +991,7 @@ func file_mtg_v1_session_proto_init() {
 	}
 	file_mtg_v1_format_proto_init()
 	file_mtg_v1_card_proto_init()
+	file_mtg_v1_session_proto_msgTypes[4].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

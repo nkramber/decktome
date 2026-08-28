@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/fs"
 	"log/slog"
-	"time"
 )
 
 //go:embed fixtures/*.json
@@ -25,14 +24,17 @@ const (
 	EnvOpenAIKey    = "OPENAI_API_KEY"
 	EnvAnthropicKey = "ANTHROPIC_API_KEY"
 	// EnvRequireKeys makes a missing key fatal and refuses the fake
-	// provider. That is the default (D-3). Only the value "0" opts out:
-	// local dev and tests set it and get the fixture Fake instead.
+	// provider. That is the default (D-3). Only the value "0" opts out,
+	// and the fixture Fake then stands in. The Fake serves the health
+	// fixture only, and it names the roles it cannot serve (A-11). A
+	// local turn needs real keys, which compose reads from .env.
 	EnvRequireKeys = "LLM_REQUIRE_KEYS"
 )
 
-// attemptTimeout bounds one provider attempt. The Client's Budget bounds
-// the whole logical call.
-const attemptTimeout = 120 * time.Second
+// sdkTimeout is the request timeout each SDK gets. It is a backstop
+// only: the Client gives every attempt its own context with the L-4
+// rule, and that context ends the attempt first.
+var sdkTimeout = DefaultBudget.Deadline
 
 // NewFromEnv builds the production Client. It loads roles.json, applies
 // LLM_<ROLE>_* overrides, and wires one adapter per provider the config
@@ -55,11 +57,11 @@ func NewFromEnv(getenv func(string) string, log *slog.Logger) (*Client, error) {
 		switch name {
 		case OpenAIName:
 			if key := getenv(EnvOpenAIKey); key != "" {
-				p = NewOpenAI(key, attemptTimeout)
+				p = NewOpenAI(key, sdkTimeout)
 			}
 		case AnthropicName:
 			if key := getenv(EnvAnthropicKey); key != "" {
-				p = NewAnthropic(key, attemptTimeout)
+				p = NewAnthropic(key, sdkTimeout)
 			}
 		case FakeName:
 			p = fake

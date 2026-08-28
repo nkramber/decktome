@@ -4,11 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -17,7 +19,9 @@ import (
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1/mtgv1connect"
+	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
+	"github.com/nkramber/mtg-deck-builder/go/internal/precons"
 	"github.com/nkramber/mtg-deck-builder/go/internal/questions"
 	"github.com/nkramber/mtg-deck-builder/go/internal/sessions"
 )
@@ -90,7 +94,7 @@ func classifyJSON(t *testing.T, fields map[string]any) llm.Step {
 		"format": "unknown", "theme": "", "colors": []string{},
 		"commander_names": []string{}, "locked_names": []string{}, "named_cards": []string{},
 		"power": "", "pool_rule": "unknown", "budget_usd": 0.0, "budget_scope": "unknown",
-		"closed_keys": []string{}, "declined_keys": []string{},
+		"house_rules": "", "closed_keys": []string{}, "declined_keys": []string{},
 		"facts": map[string]bool{
 			"named_card": false, "buy_list": false,
 			"house_format": false, "two_plans": false, "budget_ambiguous": false,
@@ -344,7 +348,7 @@ func TestAnswersReachTheClassifier(t *testing.T) {
 	}
 	chat(t, client, &mtgv1.ChatRequest{
 		SessionId: first.started,
-		Answers:   []*mtgv1.Answer{{QuestionId: bracket.GetId(), OptionIndex: 2}},
+		Answers:   []*mtgv1.Answer{{QuestionId: bracket.GetId(), OptionIndex: proto.Int32(2)}},
 	})
 	last := sc.Calls[3].Input
 	if !strings.Contains(last, bracket.GetOptions()[2]) {
@@ -523,22 +527,312 @@ func TestAddUsageKeepsPricedOnAnEmptyTurn(t *testing.T) {
 }
 
 // TestAnswerTextWinsOverOptionZero pins the Answer contract. The proto
-// says -1 means free text, so 0 is option 0. A client that sends text and
-// leaves option_index at 0 gets its text, not the first option.
+// says an unset option_index means free text, so 0 is option 0. A client
+// that sends text and option 0 gets its text, not the first option.
 func TestAnswerTextWinsOverOptionZero(t *testing.T) {
 	session := &mtgv1.Session{Turns: []*mtgv1.Turn{{Questions: []*mtgv1.Question{{
 		Id: "q-power", Text: "Which bracket?", Options: []string{"Bracket 1", "Bracket 2"},
 	}}}}}
-	got := withAnswers("", []*mtgv1.Answer{{QuestionId: "q-power", OptionIndex: 0, Text: "somewhere near 3"}}, session)
+	got := withAnswers("", []*mtgv1.Answer{{QuestionId: "q-power", OptionIndex: proto.Int32(0), Text: "somewhere near 3"}}, session)
 	if got != "Which bracket? somewhere near 3" {
 		t.Errorf("text with option 0 gave %q", got)
 	}
-	got = withAnswers("", []*mtgv1.Answer{{QuestionId: "q-power", OptionIndex: 0}}, session)
+	got = withAnswers("", []*mtgv1.Answer{{QuestionId: "q-power", OptionIndex: proto.Int32(0)}}, session)
 	if got != "Which bracket? Bracket 1" {
 		t.Errorf("option 0 with no text gave %q", got)
 	}
-	got = withAnswers("", []*mtgv1.Answer{{QuestionId: "q-power", OptionIndex: -1}}, session)
+	got = withAnswers("", []*mtgv1.Answer{{QuestionId: "q-power"}}, session)
 	if got != "" {
 		t.Errorf("free text with no text gave %q, want nothing", got)
+	}
+}
+
+// TestBuildStoresThePostTurnState is L-3 and L-11. The second write of
+// a building turn must carry the turn's asked rows and the built status,
+// or the next turn repeats a question and the session never says BUILT.
+func TestBuildStoresThePostTurnState(t *testing.T) {
+	store := newFakeStore()
+	ds := &fakeDeckStore{}
+	deck := &mtgv1.Deck{Summary: "a deck", Validation: &mtgv1.ValidationResult{}}
+	fd := &fakeDecks{res: &generate.Result{Deck: deck}}
+	opts := append(buildOpts(t, fd), WithDeckStore(ds))
+	client, _ := testServerOpts(t, store, opts, readySteps(t)...)
+
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	askedBefore := len(store.states[first.started].Ctx.Asked)
+	if askedBefore == 0 {
+		t.Fatal("turn 1 asked nothing, the test proves nothing")
+	}
+	second := chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
+	if second.deck == nil {
+		t.Fatalf("no deck streamed: %v", second.order)
+	}
+	snap := store.states[first.started]
+	if len(snap.Ctx.Asked) < askedBefore {
+		t.Errorf("the stored state lost the asked rows: %d, had %d", len(snap.Ctx.Asked), askedBefore)
+	}
+	if len(snap.CommanderNames) == 0 {
+		t.Errorf("the stored state lost the commander: %+v", snap)
+	}
+	if got := store.sessions[first.started].GetStatus(); got != mtgv1.SessionStatus_SESSION_STATUS_BUILT {
+		t.Errorf("status = %v, want BUILT", got)
+	}
+	if store.versions[first.started] != 3 {
+		t.Errorf("version = %d, want 3: the turn and the deck id", store.versions[first.started])
+	}
+}
+
+// TestBuildFailureKeepsReady covers the other side of L-11: a build that
+// kept no deck leaves the session READY.
+func TestBuildFailureKeepsReady(t *testing.T) {
+	store := newFakeStore()
+	fd := &fakeDecks{err: errors.New("the model is down")}
+	client, _ := testServerOpts(t, store, buildOpts(t, fd), readySteps(t)...)
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
+	if got := store.sessions[first.started].GetStatus(); got != mtgv1.SessionStatus_SESSION_STATUS_READY {
+		t.Errorf("status = %v, want READY", got)
+	}
+}
+
+// TestMessageCap is A-7: a message or an answer past MaxMessageBytes is
+// refused before any model call.
+func TestMessageCap(t *testing.T) {
+	long := strings.Repeat("x", MaxMessageBytes+1)
+	tests := []struct {
+		name string
+		req  *mtgv1.ChatRequest
+		want connect.Code
+	}{
+		{name: "long message", req: &mtgv1.ChatRequest{Message: long}, want: connect.CodeInvalidArgument},
+		{name: "long answer", req: &mtgv1.ChatRequest{Answers: []*mtgv1.Answer{{QuestionId: "q", Text: long}}}, want: connect.CodeInvalidArgument},
+		{name: "at the cap", req: &mtgv1.ChatRequest{Message: strings.Repeat("x", MaxMessageBytes)}, want: 0},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client, sc := testServer(t, newFakeStore(), firstTurn(t)...)
+			stream, err := client.Chat(context.Background(), connect.NewRequest(tt.req))
+			if err == nil {
+				for stream.Receive() {
+				}
+				err = stream.Err()
+				_ = stream.Close()
+			}
+			var got connect.Code
+			if err != nil {
+				got = connect.CodeOf(err)
+			}
+			if got != tt.want {
+				t.Errorf("code = %v, want %v: %v", got, tt.want, err)
+			}
+			if tt.want != 0 && len(sc.Calls) != 0 {
+				t.Errorf("a refused turn made %d model calls", len(sc.Calls))
+			}
+		})
+	}
+}
+
+// gate is a provider that waits until the test releases it.
+type gate struct {
+	entered chan struct{}
+	release chan struct{}
+	steps   []llm.Step
+	mu      sync.Mutex
+}
+
+func (g *gate) Name() string { return llm.FakeName }
+
+func (g *gate) Complete(ctx context.Context, call llm.Call) (llm.Response, error) {
+	g.mu.Lock()
+	first := len(g.steps) > 0
+	var st llm.Step
+	if first {
+		st, g.steps = g.steps[0], g.steps[1:]
+	}
+	g.mu.Unlock()
+	select {
+	case g.entered <- struct{}{}:
+	default:
+	}
+	select {
+	case <-g.release:
+	case <-ctx.Done():
+		return llm.Response{}, ctx.Err()
+	}
+	if !first {
+		return llm.Response{}, errors.New("script exhausted")
+	}
+	return llm.Response{Output: st.Output, Model: call.Model, Usage: st.Usage}, nil
+}
+
+// TestConcurrencyCap is A-7: the turn past the limit answers
+// ResourceExhausted at once, and the running turn is not disturbed.
+func TestConcurrencyCap(t *testing.T) {
+	cat, err := questions.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	roles := map[llm.Role]llm.RoleSpec{}
+	for _, r := range llm.Roles {
+		roles[r] = llm.RoleSpec{Provider: llm.FakeName, Model: "fake-" + string(r), MaxOutputTokens: 1024}
+	}
+	g := &gate{entered: make(chan struct{}, 1), release: make(chan struct{}), steps: firstTurn(t)}
+	client, err := llm.New(&llm.Config{VerifiedAt: "2026-08-24", Roles: roles}, []llm.Provider{g}, llm.WithoutJitter())
+	if err != nil {
+		t.Fatal(err)
+	}
+	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
+	srv, err := New(cat, client, newFakeStore(), func(context.Context) string { return "u1" },
+		WithLogger(quiet), WithChatLimit(1))
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.Handle(mtgv1connect.NewAgentServiceHandler(srv))
+	httpSrv := httptest.NewServer(mux)
+	t.Cleanup(httpSrv.Close)
+	c := mtgv1connect.NewAgentServiceClient(httpSrv.Client(), httpSrv.URL)
+
+	firstDone := make(chan error, 1)
+	go func() {
+		stream, err := c.Chat(context.Background(), connect.NewRequest(&mtgv1.ChatRequest{Message: "build me a lifegain commander deck"}))
+		if err != nil {
+			firstDone <- err
+			return
+		}
+		for stream.Receive() {
+		}
+		firstDone <- stream.Err()
+		_ = stream.Close()
+	}()
+	select {
+	case <-g.entered:
+	case <-time.After(5 * time.Second):
+		t.Fatal("the first turn never reached the provider")
+	}
+
+	stream, err := c.Chat(context.Background(), connect.NewRequest(&mtgv1.ChatRequest{Message: "another"}))
+	if err == nil {
+		for stream.Receive() {
+		}
+		err = stream.Err()
+		_ = stream.Close()
+	}
+	if connect.CodeOf(err) != connect.CodeResourceExhausted {
+		t.Errorf("the second turn gave %v, want ResourceExhausted: %v", connect.CodeOf(err), err)
+	}
+	if err != nil && !strings.Contains(err.Error(), "again") {
+		t.Errorf("the message does not tell the user to retry: %v", err)
+	}
+	close(g.release)
+	if err := <-firstDone; err != nil {
+		t.Errorf("the first turn failed: %v", err)
+	}
+	// The token is back, so a third turn is admitted.
+	stream, err = c.Chat(context.Background(), connect.NewRequest(&mtgv1.ChatRequest{Message: "third"}))
+	if err == nil {
+		for stream.Receive() {
+		}
+		err = stream.Err()
+		_ = stream.Close()
+	}
+	if connect.CodeOf(err) == connect.CodeResourceExhausted {
+		t.Error("the gate did not release after the first turn")
+	}
+}
+
+// TestFailureMessages is L-12.
+func TestFailureMessages(t *testing.T) {
+	mk := func(class llm.Class, status int, msg string) error {
+		return &llm.Error{Class: class, Provider: "p", Model: "m", Status: status, Err: errors.New(msg)}
+	}
+	tests := []struct {
+		name      string
+		err       error
+		wantCode  string
+		wantRetry bool
+		wantText  string
+	}{
+		{name: "schema says retry", err: mk(llm.ClassSchema, 0, "bad shape"), wantCode: "llm_schema", wantRetry: true, wantText: "retry usually succeeds"},
+		{name: "auth is the operator's", err: mk(llm.ClassTerminal, 401, "bad key"), wantCode: "llm_terminal", wantText: "operator must fix"},
+		{name: "forbidden is the operator's", err: mk(llm.ClassTerminal, 403, "no"), wantCode: "llm_terminal", wantText: "operator must fix"},
+		{name: "no provider is the operator's", err: mk(llm.ClassTerminal, 0, `no provider "x" wired`), wantCode: "llm_terminal", wantText: "operator must fix"},
+		{name: "bad request is the user's", err: mk(llm.ClassTerminal, 400, "too long"), wantCode: "llm_terminal", wantText: "does not succeed on a retry"},
+		{name: "transient", err: mk(llm.ClassTransient, 503, "down"), wantCode: "llm_transient", wantRetry: true, wantText: "Send the message again"},
+		{name: "refusal", err: mk(llm.ClassRefusal, 0, "no"), wantCode: "llm_refusal", wantText: "other words"},
+		{name: "plain error is terminal", err: errors.New("x"), wantCode: "llm_terminal", wantText: "does not succeed on a retry"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := failure(tt.err)
+			if got.GetCode() != tt.wantCode || got.GetRetryable() != tt.wantRetry {
+				t.Errorf("code %q retryable %v, want %q %v", got.GetCode(), got.GetRetryable(), tt.wantCode, tt.wantRetry)
+			}
+			if !strings.Contains(got.GetMessage(), tt.wantText) {
+				t.Errorf("message %q does not say %q", got.GetMessage(), tt.wantText)
+			}
+		})
+	}
+}
+
+// TestStoreErrorCodes covers L-8: a session past the document limit is
+// refused with a message, not bricked as Internal.
+func TestStoreErrorCodes(t *testing.T) {
+	tests := []struct {
+		name string
+		err  error
+		want connect.Code
+		text string
+	}{
+		{name: "too large", err: fmt.Errorf("store: %w", sessions.ErrTooLarge), want: connect.CodeResourceExhausted, text: "start a new session"},
+		{name: "not found", err: sessions.ErrNotFound, want: connect.CodeNotFound},
+		{name: "conflict", err: sessions.ErrConflict, want: connect.CodeAborted, text: "busy"},
+		{name: "other", err: errors.New("x"), want: connect.CodeInternal},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := storeError(tt.err)
+			if connect.CodeOf(got) != tt.want {
+				t.Errorf("code = %v, want %v", connect.CodeOf(got), tt.want)
+			}
+			if !strings.Contains(got.Error(), tt.text) {
+				t.Errorf("message %q does not say %q", got.Error(), tt.text)
+			}
+		})
+	}
+}
+
+type fakePrecons struct{ set *precons.Set }
+
+func (f *fakePrecons) Current() *precons.Set { return f.set }
+
+// TestPreconSourceIsLateBound is L-2 at the service: the set the source
+// holds now is the set the build reads.
+func TestPreconSourceIsLateBound(t *testing.T) {
+	cat, err := questions.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	client, _ := fakeClient(t)
+	src := &fakePrecons{}
+	srv, err := New(cat, client, newFakeStore(), func(context.Context) string { return "u1" }, WithPreconSource(src))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if srv.preconSet() != nil {
+		t.Error("a source with no set gave a set")
+	}
+	src.set = &precons.Set{}
+	if srv.preconSet() != src.set {
+		t.Error("the late set did not reach the service")
+	}
+	// Without a source the static set stands.
+	static := &precons.Set{}
+	srv, err = New(cat, client, newFakeStore(), func(context.Context) string { return "u1" }, WithPrecons(static))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if srv.preconSet() != static {
+		t.Error("the static set was lost")
 	}
 }

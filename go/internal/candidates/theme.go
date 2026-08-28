@@ -145,7 +145,7 @@ func (t *themeTable) match(theme string, tags *cards.TagIndex) ThemeMatch {
 		*list = appendUnique(*list, n)
 		trace(kind + ":" + n)
 	}
-	for _, w := range words(theme) {
+	for _, w := range t.words(theme) {
 		m.Words = append(m.Words, w)
 		word = w
 		if row, ok := t.Themes[w]; ok {
@@ -264,23 +264,64 @@ func (t *themeTable) roleSets(tags *cards.TagIndex) map[string]map[string]bool {
 	return out
 }
 
+// minWordLen is the shortest token that can be a theme word. A shorter
+// token is a fragment: "+1/+1 counters" splits into "1", "1", and
+// "counters", and the needle "1" matches every card with a digit.
+const minWordLen = 3
+
 // words normalizes the theme: lowercase, split on space and punctuation,
-// stop words dropped, order kept, duplicates dropped.
-func words(theme string) []string {
+// stop words dropped, order kept, duplicates dropped. Two tokens that
+// name a hyphenated row join first, so "go wide" finds the go-wide row.
+// Then a token shorter than minWordLen or made of digits goes.
+func (t *themeTable) words(theme string) []string {
 	f := func(r rune) bool {
 		return (r < 'a' || r > 'z') && (r < '0' || r > '9') && r != '-'
 	}
+	var tokens []string
+	for _, w := range strings.FieldsFunc(strings.ToLower(theme), f) {
+		if w = strings.Trim(w, "-"); w != "" {
+			tokens = append(tokens, w)
+		}
+	}
+	tokens = t.joinRows(tokens)
 	var out []string
 	seen := map[string]bool{}
-	for _, w := range strings.FieldsFunc(strings.ToLower(theme), f) {
-		w = strings.Trim(w, "-")
-		if w == "" || stopWords[w] || seen[w] {
+	for _, w := range tokens {
+		if len(w) < minWordLen || allDigits(w) || stopWords[w] || seen[w] {
 			continue
 		}
 		seen[w] = true
 		out = append(out, w)
 	}
 	return out
+}
+
+// joinRows joins two neighbor tokens when the table has a row under
+// their hyphenated form. The joined word replaces both tokens.
+func (t *themeTable) joinRows(tokens []string) []string {
+	var out []string
+	for i := 0; i < len(tokens); i++ {
+		if i+1 < len(tokens) {
+			joined := tokens[i] + "-" + tokens[i+1]
+			if _, ok := t.Themes[joined]; ok {
+				out = append(out, joined)
+				i++
+				continue
+			}
+		}
+		out = append(out, tokens[i])
+	}
+	return out
+}
+
+// allDigits reports whether a token is a number.
+func allDigits(w string) bool {
+	for _, r := range w {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	return w != ""
 }
 
 var stopWords = map[string]bool{
@@ -290,8 +331,18 @@ var stopWords = map[string]bool{
 	"cards": true, "card": true, "fun": true, "good": true, "strong": true, "casual": true,
 }
 
+// singularIE lists plurals in -ies whose singular ends in -ie. The rule
+// below turns -ies into -y, which is right for armies and harpies and
+// wrong for these creature types.
+var singularIE = map[string]bool{
+	"zombies": true, "faeries": true, "pixies": true, "genies": true,
+}
+
+// singular gives the singular of a theme word, for a subtype or a slug.
 func singular(w string) string {
 	switch {
+	case singularIE[w]:
+		return strings.TrimSuffix(w, "s")
 	case strings.HasSuffix(w, "ies"):
 		return strings.TrimSuffix(w, "ies") + "y"
 	case strings.HasSuffix(w, "ves"):

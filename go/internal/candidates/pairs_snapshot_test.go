@@ -4,24 +4,44 @@ import (
 	"context"
 	"io"
 	"log/slog"
+	"os"
 	"strings"
+	"sync"
 	"testing"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
 )
 
-// snapshotIndex loads the local card snapshot. Every card fact in this
-// file is checked against it and never against memory.
+// The snapshot is 103 MB and loads in seconds. Every snapshot test in
+// the package shares one load.
+var (
+	snapshotOnce sync.Once
+	snapshotIdx  *cards.Index
+	snapshotErr  error
+)
+
+// snapshotIndex loads the card snapshot under CARDS_SNAPSHOT_DIR, once
+// per package. Every card fact in the snapshot tests is checked against
+// it and never against memory. The tests skip without the variable, and
+// `make themes-check` sets it.
 func snapshotIndex(t *testing.T) *cards.Index {
 	t.Helper()
-	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
-	idx, err := cards.LoadIndex(context.Background(),
-		cards.DirStore{Root: "../../../.local/gcs/mtg-local-cards/scryfall"}, quiet)
-	if err != nil || idx == nil {
-		t.Skipf("no card snapshot: %v", err)
+	dir := os.Getenv("CARDS_SNAPSHOT_DIR")
+	if dir == "" {
+		t.Skip("set CARDS_SNAPSHOT_DIR to run the snapshot tests")
 	}
-	return idx
+	snapshotOnce.Do(func() {
+		quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
+		snapshotIdx, snapshotErr = cards.LoadIndex(context.Background(), cards.DirStore{Root: dir}, quiet)
+	})
+	if snapshotErr != nil {
+		t.Fatalf("load index: %v", snapshotErr)
+	}
+	if snapshotIdx == nil {
+		t.Fatalf("no complete snapshot under %s", dir)
+	}
+	return snapshotIdx
 }
 
 // TestPairsReachFourColors is D-154. WUBR, WBRG, and UBRG hold exactly

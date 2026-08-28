@@ -79,9 +79,6 @@ func TestStateRoundTrip(t *testing.T) {
 	if len(back.CommanderNames) != 1 || len(back.LockedNames) != 1 || len(back.OfferedCommanders) != 1 {
 		t.Errorf("the card lists did not survive: %+v", back)
 	}
-	if back.Ctx.LockedCard != st.Ctx.LockedCard {
-		t.Errorf("locked_card = %v, want %v", back.Ctx.LockedCard, st.Ctx.LockedCard)
-	}
 }
 
 // TestEmptyPayloadOpens covers a session stored before the private state

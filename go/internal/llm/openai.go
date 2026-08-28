@@ -97,6 +97,12 @@ func (o *OpenAI) Complete(ctx context.Context, call Call) (Response, error) {
 	case responses.ResponseStatusFailed:
 		return out, newErr(ClassTerminal, OpenAIName, call.Model, 0,
 			fmt.Errorf("status failed: %s: %s", resp.Error.Code, resp.Error.Message))
+	case responses.ResponseStatusQueued, responses.ResponseStatusInProgress:
+		// A synchronous call answered before it finished. A new call can
+		// finish, so the class is transient.
+		return out, newErr(ClassTransient, OpenAIName, call.Model, 0, fmt.Errorf("status %q", resp.Status))
+	case responses.ResponseStatusCancelled:
+		return out, newErr(ClassTerminal, OpenAIName, call.Model, 0, errors.New("status cancelled"))
 	default:
 		return out, newErr(ClassTerminal, OpenAIName, call.Model, 0, fmt.Errorf("status %q", resp.Status))
 	}
@@ -126,7 +132,11 @@ func classifyOpenAI(ctx context.Context, err error, model string) error {
 			apierr.StatusCode >= 500:
 			class = ClassTransient
 		}
-		return newErr(class, OpenAIName, model, apierr.StatusCode, err)
+		e := newErr(class, OpenAIName, model, apierr.StatusCode, err)
+		if class == ClassTransient {
+			e = e.withRetryAfter(apierr.Response)
+		}
+		return e
 	}
 	return classifyTransport(ctx, err, OpenAIName, model)
 }

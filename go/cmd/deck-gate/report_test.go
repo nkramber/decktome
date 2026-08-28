@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -136,3 +137,36 @@ var errTest = &testError{}
 type testError struct{}
 
 func (*testError) Error() string { return "the prompt failed" }
+
+// TestJudgeErrorFailsTheRun is T-17. A deck the judge could not read has
+// no verdict on F-26, so it can not pass that bar, and the row says so.
+func TestJudgeErrorFailsTheRun(t *testing.T) {
+	cases := []struct {
+		name     string
+		judgeErr error
+		want     string
+		row      string
+	}{
+		{"no judge error", nil, "PASS", "| Judge errors | 0 |"},
+		{"a judge error", fmt.Errorf("the provider timed out"), "FAIL", "| Judge errors | 1 |"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			r := goodResult()
+			if tc.judgeErr != nil {
+				r.judged, r.judgeErr = nil, tc.judgeErr
+			}
+			var b bytes.Buffer
+			report(&b, []result{r}, llm.NewAccumulator(nil), cards.NewIndex(nil, nil, nil, time.Time{}), time.Second)
+			if got := verdictOf(t, []result{r}); got != tc.want {
+				t.Errorf("verdict = %s, want %s", got, tc.want)
+			}
+			if !strings.Contains(b.String(), tc.row) {
+				t.Errorf("the report lacks %q:\n%s", tc.row, b.String())
+			}
+			if tc.judgeErr != nil && !strings.Contains(b.String(), "JUDGE ERROR: the provider timed out") {
+				t.Errorf("the deck does not name its judge error:\n%s", b.String())
+			}
+		})
+	}
+}

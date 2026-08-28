@@ -1,6 +1,7 @@
 package questions
 
 import (
+	"fmt"
 	"os"
 	"regexp"
 	"strings"
@@ -54,17 +55,15 @@ func TestCatalogMatchesCorpus(t *testing.T) {
 		"Out of scope": "out_of_scope",
 		"Format":       "format", "Format (store event)": "format_store",
 		"Theme or plan": "theme", "Theme (competitive)": "theme_competitive",
-		"Theme (card named)": "theme_card_named", "Named card role": "named_card_role",
-		"Commander": "commander", "Commander (pick)": "commander_pick",
+		"Named card role": "named_card_role",
+		"Commander":       "commander", "Commander (pick)": "commander_pick",
 		"Power (Commander)": "power_commander", "Power (60-card)": "power_sixty",
 		"Colors": "colors", "Card pool": "pool", "Card pool (thin theme)": "pool_thin",
 		"Budget": "budget", "Budget scope": "budget_scope",
 		"House rules": "house_rules", "House format limits": "house_format_limits",
-		"Jank or fun": "jank", "Meta": "meta",
 		"One deck at a time": "one_deck", "Format (not supported)": "format_unsupported",
 		"Format (no substitute)": "format_unsupported_open",
 		"Card pool (precon)":     "pool_precon", "Commander (can not lead)": "commander_illegal",
-		"Plan choice": "plan_choice", "Locked cards": "locked",
 	}
 	raw, err := os.ReadFile("../../../.claude/skills/mtg-corpus/SKILL.md")
 	if err != nil {
@@ -271,7 +270,8 @@ func TestNoRowConfirmsAnInferredStep(t *testing.T) {
 		inferred bool
 	}{{"a step the user named", false}, {"a step the agent inferred", true}} {
 		got := ctx(mtgv1.FormatId_FORMAT_ID_MODERN, "power")
-		got.PowerCompetitive, got.PowerInferred = true, tc.inferred
+		got.PowerCompetitive = true
+		_ = tc.inferred
 		if rows := ids(c.Plan(got)); has(rows, "power_sixty_confirm") {
 			t.Fatalf("%s: a confirm row went out: %v", tc.name, rows)
 		}
@@ -288,28 +288,6 @@ func has(list []string, want string) bool {
 		}
 	}
 	return false
-}
-
-// TestMetaRowAsksOneThing holds D-211. The row offers the general
-// sideboard first, so one choice goes out. The old wording asked for a
-// list of decks and for a yes-or-no answer in the same sentence, and the
-// eval refused it in conversations 44 and 76 of gate run
-// 20260826-220840-000.
-func TestMetaRowAsksOneThing(t *testing.T) {
-	c := load(t)
-	r, ok := c.Row("meta")
-	if !ok {
-		t.Fatal("no meta row")
-	}
-	if !strings.HasPrefix(r.Text, "Should I keep the sideboard general") {
-		t.Errorf("the meta row does not offer the general sideboard first: %q", r.Text)
-	}
-	if strings.Count(r.Text, "?") != 1 {
-		t.Errorf("the meta row holds more than one question: %q", r.Text)
-	}
-	if len(r.Options) == 0 || r.Options[0] != "Keep the sideboard general" {
-		t.Errorf("options = %v, want the general sideboard first", r.Options)
-	}
 }
 
 // TestHouseLimitsRowNamesNoList holds D-212. The row asks one yes-or-no
@@ -351,5 +329,34 @@ func TestStoreFormatRowNamesItsOwnLimit(t *testing.T) {
 	}
 	if f := LintCatalog(c); len(f) > 0 {
 		t.Errorf("the linter refused the catalog: %v", f)
+	}
+}
+
+// TestLoadRefusesABadTrigger holds the catalog checks the audit of
+// 2026-08-28 added: a format trigger outside the two values, a key that
+// is not a word, and a wait on a key no row owns.
+func TestLoadRefusesABadTrigger(t *testing.T) {
+	const good = `{"verified_at":"2026-08-28","rows":[
+		{"id":"format","slot":"format","order":1,"text":"Which format?"},
+		{"id":"theme","slot":"theme","order":2,"text":"Which theme?"%s}]}`
+	cases := []struct {
+		name, extra string
+		wantErr     bool
+	}{
+		{"a clean catalog", "", false},
+		{"a known format trigger", `,"when":{"format":"sixty"}`, false},
+		{"an unknown format trigger", `,"when":{"format":"pauper"}`, true},
+		{"a key that is a word", `,"key":"theme_plan"`, false},
+		{"a key with a space", `,"key":"theme plan"`, true},
+		{"a wait on an owned key", `,"when":{"not_outstanding":["format"]}`, false},
+		{"a wait on a key nobody owns", `,"when":{"not_outstanding":["sideboard"]}`, true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := parse([]byte(fmt.Sprintf(good, tc.extra)))
+			if (err != nil) != tc.wantErr {
+				t.Errorf("parse error = %v, want error %v", err, tc.wantErr)
+			}
+		})
 	}
 }

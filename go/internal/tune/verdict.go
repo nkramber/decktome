@@ -65,6 +65,31 @@ type Summary struct {
 	// Conversations holds the M-4 count of every conversation, so a
 	// partial run can be folded into this one (D-181).
 	Conversations []ConvCount `json:"conversations,omitempty"`
+	// Partial says the budget or -n cut the eval short. StoppedReason says
+	// which. A partial summary is no baseline and no candidate, and
+	// tune-check refuses it (T-2).
+	Partial       bool   `json:"partial,omitempty"`
+	StoppedReason string `json:"stopped_reason,omitempty"`
+	// Unjudged names the conversations whose verdicts did not line up
+	// with the questions asked, one verdict per question. Their verdicts
+	// are dropped and the document says so (T-9).
+	Unjudged []string `json:"unjudged,omitempty"`
+	// Errored names the conversations that ended on an error in the gate.
+	// They hold no verdict, and a paired comparison skips them on both
+	// sides (T-5).
+	Errored []string `json:"errored,omitempty"`
+}
+
+// Skipped reports whether the run is unfit as a baseline or a candidate.
+func (s Summary) Skipped() (string, bool) {
+	if !s.Partial {
+		return "", false
+	}
+	why := s.StoppedReason
+	if why == "" {
+		why = "the run was cut short"
+	}
+	return why, true
 }
 
 // Summarize counts the verdicts of one run.
@@ -186,6 +211,9 @@ const DefaultDriftNoise = 8
 type Decision struct {
 	Accept  bool     `json:"accept"`
 	Reasons []string `json:"reasons"`
+	// Hard says a whole-run rule failed: the linter, a premature session,
+	// or a counter under the floor. No change is kept past it (T-16).
+	Hard bool `json:"hard,omitempty"`
 	// Partial says some changes are kept and some are dropped. Keep and
 	// Drop hold the commits, and Remeasure the conversations the kept
 	// rows touch, which the loop runs again before the merge (D-181).
@@ -214,14 +242,18 @@ func CompareWith(prev, next *Summary, noise int) Decision {
 		d.Accept = false
 		d.Reasons = append(d.Reasons, fmt.Sprintf(format, a...))
 	}
+	hard := func(format string, a ...any) {
+		d.Hard = true
+		fail(format, a...)
+	}
 	if next == nil {
-		return Decision{Accept: false, Reasons: []string{"no run to judge"}}
+		return Decision{Accept: false, Hard: true, Reasons: []string{"no run to judge"}}
 	}
 	if next.Metrics.LintFindings > 0 {
-		fail("the linter found %d defective questions", next.Metrics.LintFindings)
+		hard("the linter found %d defective questions", next.Metrics.LintFindings)
 	}
 	if next.Metrics.Premature > 0 {
-		fail("%d sessions called themselves complete with a slot unanswered", next.Metrics.Premature)
+		hard("%d sessions called themselves complete with a slot unanswered", next.Metrics.Premature)
 	}
 	if prev == nil {
 		if d.Accept {
@@ -230,11 +262,11 @@ func CompareWith(prev, next *Summary, noise int) Decision {
 		return d
 	}
 	if got, was := next.Metrics.asked(), prev.Metrics.asked(); got < int(float64(was)*Tolerance) {
-		fail("the agent asked %d questions, down from %d: below the %.0f%% floor",
+		hard("the agent asked %d questions, down from %d: below the %.0f%% floor",
 			got, was, Tolerance*100)
 	}
 	if got, was := next.Metrics.filled(), prev.Metrics.filled(); got < int(float64(was)*Tolerance) {
-		fail("%d questions closed a slot, down from %d: below the %.0f%% floor",
+		hard("%d questions closed a slot, down from %d: below the %.0f%% floor",
 			got, was, Tolerance*100)
 	}
 	nextRatio, split := next.Scored()
@@ -288,32 +320,33 @@ func CompareWith(prev, next *Summary, noise int) Decision {
 // the ones that hurt (D-181). The whole-run rules still stand over it:
 // a hard failure, a quiet agent, or a rise past the noise margin on rows
 // no change declared rejects everything.
-func Decide(prev, next *Summary, changes []Change, noise int) (Decision, Paired, Attribution) {
+//
+// prev is the best accepted run so far, not the run before. The loop
+// passes it, so a night of iterations each a margin worse than the last
+// can not drift down (T-6).
+//
+// An error says the changes themselves are malformed: two commits declare
+// one row. That is a tool fault, and the loop stops on it.
+func Decide(prev, next *Summary, changes []Change, noise int) (Decision, Paired, Attribution, error) {
 	d := CompareWith(prev, next, noise)
 	if prev == nil || len(changes) == 0 {
-		return d, Paired{}, Attribution{}
+		return d, Paired{}, Attribution{}, nil
 	}
 	p := Pair(prev, next)
-	a := Attribute(p, changes)
-	// Unattributed movement means a question moved on a row no change
-	// declared. Most of it is the ask role, which rewrites its wording
-	// every run, so the raw harm is not damage on its own (D-217). The
-	// guard reads the harm against the help, because pure churn moves
-	// both and real damage moves one.
-	unBad, unGood := 0, 0
-	for _, u := range a.Unattributed {
-		switch u.Kind {
-		case "worse", "new_bad":
-			unBad++
-		case "better", "gone_bad":
-			unGood++
-		}
+	a, err := Attribute(p, changes)
+	if err != nil {
+		return d, p, a, err
 	}
+	// Unattributed movement is a question that moved on a row no change
+	// declared, with the ask role's rewording set aside (T-21). The guard
+	// reads the harm against the help, because pure churn moves both and
+	// real damage moves one (D-217).
+	unBad, unGood := a.Drift()
 	if drift := unBad - unGood; drift > DefaultDriftNoise {
 		d.Accept = false
 		d.Reasons = append(d.Reasons, fmt.Sprintf("on rows no change declared, %d questions got worse and %d got better, so the drift of %d passed the margin of %d",
 			unBad, unGood, drift, DefaultDriftNoise))
-		return d, p, a
+		return d, p, a, nil
 	}
 	var keepRows []string
 	for _, cv := range a.Changes {
@@ -324,23 +357,17 @@ func Decide(prev, next *Summary, changes []Change, noise int) (Decision, Paired,
 			d.Drop = append(d.Drop, cv.Change.Commit)
 		}
 	}
-	hard := false
-	for _, r := range d.Reasons {
-		if strings.Contains(r, "linter") || strings.Contains(r, "complete with a slot") ||
-			strings.Contains(r, "floor") {
-			hard = true
-		}
-	}
 	switch {
-	case hard:
+	case d.Hard:
 		// A hard failure is the whole run's, and no change is kept.
-		d.Keep, d.Drop = nil, d.Keep
+		d.Drop = append(d.Drop, d.Keep...)
+		d.Keep = nil
 		d.Accept = false
 	case len(d.Drop) == 0:
 		// Every change helped or stood still: the whole-run decision holds.
 	case len(d.Keep) == 0:
 		d.Accept = false
-		d.Reasons = append(d.Reasons, "every change made its own rows worse")
+		d.Reasons = append(d.Reasons, "every change made its own rows worse or declared no row")
 	default:
 		d.Accept = false
 		d.Partial = true
@@ -348,7 +375,7 @@ func Decide(prev, next *Summary, changes []Change, noise int) (Decision, Paired,
 		d.Reasons = append(d.Reasons, fmt.Sprintf("%d changes are kept and %d are dropped, so the kept rows are measured again on %d conversations",
 			len(d.Keep), len(d.Drop), len(d.Remeasure)))
 	}
-	return d, p, a
+	return d, p, a, nil
 }
 
 // TopRows names the rows with the most bad questions, worst first.

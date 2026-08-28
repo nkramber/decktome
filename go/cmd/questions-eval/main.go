@@ -22,13 +22,13 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"log/slog"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 	"time"
 
+	"github.com/nkramber/mtg-deck-builder/go/internal/gatekit"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 	"github.com/nkramber/mtg-deck-builder/go/internal/tune"
 )
@@ -48,8 +48,8 @@ func main() {
 }
 
 func run(in, out, jsonOut string, budget float64, limit, holdout int) error {
-	if os.Getenv("QUESTIONS_EVAL") != "1" {
-		return fmt.Errorf("this run calls a real provider and costs money: set QUESTIONS_EVAL=1 to allow it")
+	if err := gatekit.SpendGuard("QUESTIONS_EVAL"); err != nil {
+		return err
 	}
 	if in == "" {
 		return fmt.Errorf("give -in, a gate document")
@@ -58,14 +58,18 @@ func run(in, out, jsonOut string, budget float64, limit, holdout int) error {
 	if err != nil {
 		return err
 	}
-	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
-	client, err := llm.NewFromEnv(os.Getenv, quiet)
+	quiet := gatekit.Quiet()
+	client, err := llm.NewFromEnv(gatekit.Env, quiet)
 	if err != nil {
 		return err
 	}
 	prices, err := llm.LoadPrices()
 	if err != nil {
 		return err
+	}
+	model := "unknown"
+	if spec, ok := client.Config().Roles[llm.RoleEval]; ok {
+		model = spec.Model
 	}
 	acc := llm.NewAccumulator(prices)
 	started := time.Now()
@@ -75,13 +79,24 @@ func run(in, out, jsonOut string, budget float64, limit, holdout int) error {
 	corrected := map[string]string{}
 
 	convs := gate.Conversations
+	// A cut run is marked as partial, so it can never stand as a baseline
+	// or a candidate (T-2).
+	stopped := ""
 	if limit > 0 && limit < len(convs) {
 		convs = convs[:limit]
+		stopped = fmt.Sprintf("-n %d cut the run to %d of %d conversations", limit, limit, len(gate.Conversations))
 	}
 	var verdicts []tune.Verdict
 	missed := map[string][]string{}
-	stopped := ""
+	unjudged := map[string]string{}
+	var errored []string
 	for _, conv := range convs {
+		// A conversation that errored in the gate asked nothing after the
+		// error. It is named, and it counts for nobody (T-5).
+		if conv.Errored() {
+			errored = append(errored, conv.Name)
+			continue
+		}
 		if len(conv.Questions) == 0 {
 			continue
 		}
@@ -93,13 +108,23 @@ func run(in, out, jsonOut string, budget float64, limit, holdout int) error {
 		held := tune.HeldOut(conv.Name, holdout)
 		// The budget is a hard stop, checked before every call. A run that
 		// costs more than the owner allowed is worse than a short run.
-		if spent := costOf(acc); spent >= budget {
+		spent, err := costOf(acc, model)
+		if err != nil {
+			return err
+		}
+		if spent >= budget {
 			stopped = fmt.Sprintf("the budget of $%.2f stopped the run after %d conversations", budget, len(missed))
 			break
 		}
 		vs, miss, err := score(client, acc, gate.Name, conv, checker.facts(conv))
 		if err != nil {
 			return fmt.Errorf("%s: %w", conv.Name, err)
+		}
+		// One verdict per question asked, or the conversation is unjudged
+		// and the document says so (T-9).
+		if why := mismatch(conv, vs); why != "" {
+			unjudged[conv.Name] = why
+			continue
 		}
 		for j := range vs {
 			vs[j].Holdout = held
@@ -117,14 +142,19 @@ func run(in, out, jsonOut string, budget float64, limit, holdout int) error {
 			missed[conv.Name] = nil
 		}
 	}
-	model := "unknown"
-	if spec, ok := client.Config().Roles[llm.RoleEval]; ok {
-		model = spec.Model
+	cost, err := costOf(acc, model)
+	if err != nil {
+		return err
 	}
-	sum := tune.Summarize(gate.Name, model, costOf(acc), gate.Metrics, verdicts)
+	sum := tune.Summarize(gate.Name, model, cost, gate.Metrics, verdicts)
 	// The per-conversation counts let a partial run be folded into this
 	// one later (D-181).
 	sum.Conversations = tune.CountConversations(gate)
+	sum.Unjudged = sortedKeys(counts(unjudged))
+	sum.Errored = errored
+	if stopped != "" {
+		sum.Partial, sum.StoppedReason = true, stopped
+	}
 
 	w := os.Stdout
 	if out != "" {
@@ -135,7 +165,7 @@ func run(in, out, jsonOut string, budget float64, limit, holdout int) error {
 		defer func() { _ = f.Close() }()
 		w = f
 	}
-	write(w, gate, sum, missed, stopped, acc.Report(), time.Since(started))
+	write(w, gate, sum, missed, unjudged, acc.Report(), time.Since(started))
 	writeCardCheck(w, checkNote, corrected)
 	if jsonOut != "" {
 		if err := os.MkdirAll(filepath.Dir(jsonOut), 0o750); err != nil {
@@ -250,6 +280,39 @@ func score(client *llm.Client, acc *llm.Accumulator, run string, conv tune.Conve
 
 func key(turn int, row string) string { return fmt.Sprintf("%d/%s", turn, row) }
 
+// mismatch says why the verdicts do not cover the questions asked, or
+// nothing when they do. The eval answers one verdict per question, keyed
+// by turn and row. A merged verdict covers two questions and leaves one
+// with none, and a verdict on a question never asked keys to nothing. A
+// run that counted such a conversation would score a question nobody
+// judged (T-9).
+func mismatch(conv tune.Conversation, vs []tune.Verdict) string {
+	if len(vs) != len(conv.Questions) {
+		return fmt.Sprintf("%d verdicts for %d questions", len(vs), len(conv.Questions))
+	}
+	want := map[string]int{}
+	for _, q := range conv.Questions {
+		want[key(q.Turn, q.Row)]++
+	}
+	for _, v := range vs {
+		k := key(v.Turn, v.Row)
+		if want[k] == 0 {
+			return fmt.Sprintf("a verdict on turn %d row %s, which asked no such question", v.Turn, v.Row)
+		}
+		want[k]--
+	}
+	return ""
+}
+
+// counts turns a set of names into the map sortedKeys reads.
+func counts(m map[string]string) map[string]int {
+	out := make(map[string]int, len(m))
+	for k := range m {
+		out[k] = 1
+	}
+	return out
+}
+
 // word normalizes a free-text answer. The schema leaves these fields free
 // on purpose: an enum suppressed a field once already (D-92).
 func word(s string) string {
@@ -262,14 +325,20 @@ func word(s string) string {
 	return s
 }
 
-func costOf(acc *llm.Accumulator) float64 {
-	if c := acc.Report().CostUSD; c != nil {
-		return *c
+// costOf reads the spend so far. A run with calls and no price is an
+// error, never $0: the loop's budget would count nothing (T-1).
+func costOf(acc *llm.Accumulator, model string) (float64, error) {
+	rep := acc.Report()
+	if rep.CostUSD != nil {
+		return *rep.CostUSD, nil
 	}
-	return 0
+	if rep.Calls == 0 {
+		return 0, nil
+	}
+	return 0, fmt.Errorf("no price for model %s in prices.json, so the run can not be charged", model)
 }
 
-func write(w io.Writer, _ *tune.Run, s tune.Summary, missed map[string][]string, stopped string, rep llm.Report, elapsed time.Duration) {
+func write(w io.Writer, _ *tune.Run, s tune.Summary, missed map[string][]string, unjudged map[string]string, rep llm.Report, elapsed time.Duration) {
 	p := func(format string, a ...any) { _, _ = fmt.Fprintf(w, format, a...) }
 	p("# PR-7 question eval\n\n")
 	p("Run: `%s`. Eval model: `%s`. Prompt version %d.\n\n", s.Run, s.Model, evalVersion)
@@ -281,8 +350,24 @@ func write(w io.Writer, _ *tune.Run, s tune.Summary, missed map[string][]string,
 			s.TuneJudged, s.TuneRatio*100, s.HoldoutJudged, s.HoldoutRatio*100)
 		p("A fixer reads the tune split alone. A gain that shows only there is a reworded test set (D-134).\n\n")
 	}
-	if stopped != "" {
-		p("**%s.** The ratio above reads the conversations that ran.\n\n", stopped)
+	if s.Partial {
+		p("**PARTIAL: %s.** The ratio above reads the conversations that ran, and this run is no baseline (T-2).\n\n", s.StoppedReason)
+	}
+	if len(s.Errored) > 0 {
+		p("## Conversations that errored in the gate\n\n")
+		p("These asked nothing after the error. They hold no verdict, and a paired comparison skips them (T-5).\n\n")
+		for _, name := range s.Errored {
+			p("- %s\n", name)
+		}
+		p("\n")
+	}
+	if len(s.Unjudged) > 0 {
+		p("## Conversations the eval left unjudged\n\n")
+		p("The verdicts did not line up with the questions asked, one per question. Their verdicts are dropped and not counted (T-9).\n\n")
+		for _, name := range s.Unjudged {
+			p("- %s: %s\n", name, unjudged[name])
+		}
+		p("\n")
 	}
 
 	p("## The counters the ratio can not see\n\n")
@@ -335,7 +420,7 @@ func write(w io.Writer, _ *tune.Run, s tune.Summary, missed map[string][]string,
 		if len(v.Faults) > 0 {
 			p("Faults: %s. ", strings.Join(v.Faults, ", "))
 		}
-		p("Catalog action: %s.\n\n", orNone(v.CatalogAction))
+		p("Catalog action: %s.\n\n", gatekit.OrNone(v.CatalogAction))
 		p("%s\n\n", v.Reason)
 	}
 	if bad == 0 {
@@ -378,11 +463,4 @@ func sortedKeys(m map[string]int) []string {
 		return out[i] < out[j]
 	})
 	return out
-}
-
-func orNone(s string) string {
-	if s == "" {
-		return "none"
-	}
-	return s
 }

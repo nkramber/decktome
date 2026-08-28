@@ -9,46 +9,10 @@ import (
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
+	"github.com/nkramber/mtg-deck-builder/go/internal/gatekit"
 	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 )
-
-func formatID(s string) mtgv1.FormatId {
-	switch strings.ToLower(strings.TrimSpace(s)) {
-	case "commander":
-		return mtgv1.FormatId_FORMAT_ID_COMMANDER
-	case "standard":
-		return mtgv1.FormatId_FORMAT_ID_STANDARD
-	case "modern":
-		return mtgv1.FormatId_FORMAT_ID_MODERN
-	}
-	return mtgv1.FormatId_FORMAT_ID_UNSPECIFIED
-}
-
-var colorNames = map[string]mtgv1.Color{
-	"W": mtgv1.Color_COLOR_W, "U": mtgv1.Color_COLOR_U, "B": mtgv1.Color_COLOR_B,
-	"R": mtgv1.Color_COLOR_R, "G": mtgv1.Color_COLOR_G,
-}
-
-func colorList(in []string) []mtgv1.Color {
-	var out []mtgv1.Color
-	for _, s := range in {
-		if c, ok := colorNames[strings.ToUpper(strings.TrimSpace(s))]; ok {
-			out = append(out, c)
-		}
-	}
-	return out
-}
-
-func poolRuleID(s string) mtgv1.PoolRule {
-	switch strings.ToLower(strings.TrimSpace(s)) {
-	case "owned_first":
-		return mtgv1.PoolRule_POOL_RULE_OWNED_FIRST
-	case "owned_only":
-		return mtgv1.PoolRule_POOL_RULE_OWNED_ONLY
-	}
-	return mtgv1.PoolRule_POOL_RULE_ANY_CARD
-}
 
 var sixtySteps = map[string]mtgv1.SixtyStep{
 	"casual": mtgv1.SixtyStep_SIXTY_STEP_CASUAL,
@@ -101,8 +65,11 @@ func countCards(d *mtgv1.Deck) int {
 // reaches the user.
 func report(w io.Writer, rs []result, acc *llm.Accumulator, idx *cards.Index, took time.Duration) {
 	built, clean, notes, repaired, errs := 0, 0, 0, 0, 0
-	judged, falseRules, statesRule := 0, 0, 0
+	judged, falseRules, statesRule, judgeErrs := 0, 0, 0, 0
 	for _, r := range rs {
+		if r.judgeErr != nil {
+			judgeErrs++
+		}
 		switch {
 		case r.err != nil:
 			errs++
@@ -127,8 +94,9 @@ func report(w io.Writer, rs []result, acc *llm.Accumulator, idx *cards.Index, to
 	}
 	// F-26 is a bar and not a footnote. A summary that states a false rule
 	// of the game reached a user twice before, and both passed the gate
-	// and the deterministic linter (D-229).
-	pass := errs == 0 && built == len(rs) && clean == built && notes == 0 && falseRules == 0
+	// and the deterministic linter (D-229). A deck the judge could not
+	// read has no verdict on that bar, so it can not pass it (T-17).
+	pass := errs == 0 && built == len(rs) && clean == built && notes == 0 && falseRules == 0 && judgeErrs == 0
 	verdict := "FAIL"
 	if pass {
 		verdict = "PASS"
@@ -140,6 +108,9 @@ func report(w io.Writer, rs []result, acc *llm.Accumulator, idx *cards.Index, to
 	if errs > 0 {
 		_, _ = fmt.Fprintf(w, "%d prompts failed before a deck existed. A gate can not pass with an error.\n\n", errs)
 	}
+	if judgeErrs > 0 {
+		_, _ = fmt.Fprintf(w, "%d decks got no judge verdict, because the judge call failed. The F-26 bar can not pass without one.\n\n", judgeErrs)
+	}
 
 	_, _ = fmt.Fprintf(w, "## Summary\n\n| Measure | Value |\n|---|---|\n")
 	_, _ = fmt.Fprintf(w, "| Prompts | %d |\n", len(rs))
@@ -150,6 +121,7 @@ func report(w io.Writer, rs []result, acc *llm.Accumulator, idx *cards.Index, to
 	_, _ = fmt.Fprintf(w, "| Summaries judged (F-26) | %d |\n", judged)
 	_, _ = fmt.Fprintf(w, "| Summaries that state a rule of the game | %d |\n", statesRule)
 	_, _ = fmt.Fprintf(w, "| Summaries that state a FALSE rule | %d |\n", falseRules)
+	_, _ = fmt.Fprintf(w, "| Judge errors | %d |\n", judgeErrs)
 	_, _ = fmt.Fprintf(w, "| Errors | %d |\n", errs)
 	_, _ = fmt.Fprintf(w, "| Prompt version | %d |\n", generate.PromptVersion)
 	rep := acc.Report()
@@ -193,7 +165,7 @@ func writeDeck(w io.Writer, r result) {
 	p := r.prompt
 	_, _ = fmt.Fprintf(w, "### %d. %s\n\n", p.ID, p.Name)
 	_, _ = fmt.Fprintf(w, "Format: %s. Theme: %s. Pool: %s. Shortlist: %d names.\n\n",
-		generate.FormatWord(formatID(p.Format)), p.Theme, p.Pool, r.poolSize)
+		generate.FormatWord(gatekit.FormatID(p.Format)), p.Theme, p.Pool, r.poolSize)
 	if r.err != nil {
 		_, _ = fmt.Fprintf(w, "ERROR: %v\n\n", r.err)
 		return
@@ -209,6 +181,9 @@ func writeDeck(w io.Writer, r result) {
 	}
 	for _, n := range r.notes {
 		_, _ = fmt.Fprintf(w, "- NOTE: %s\n", n)
+	}
+	if r.judgeErr != nil {
+		_, _ = fmt.Fprintf(w, "- JUDGE ERROR: %v\n", r.judgeErr)
 	}
 	if r.judged != nil {
 		for _, c := range r.judged.Claims {

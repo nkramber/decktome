@@ -28,12 +28,7 @@ type ChatRequest struct {
 	CollectionId string `protobuf:"bytes,2,opt,name=collection_id,json=collectionId,proto3" json:"collection_id,omitempty"`
 	Message      string `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
 	// answers carries structured replies to the last turn's questions.
-	Answers []*Answer `protobuf:"bytes,4,rep,name=answers,proto3" json:"answers,omitempty"`
-	// seed reproduces an earlier build (D-18). Zero means a new seed.
-	Seed int64 `protobuf:"varint,5,opt,name=seed,proto3" json:"seed,omitempty"`
-	// keep_oracle_ids asks for a re-roll that keeps these cards (roadmap
-	// PR-9, lever 3).
-	KeepOracleIds []string `protobuf:"bytes,6,rep,name=keep_oracle_ids,json=keepOracleIds,proto3" json:"keep_oracle_ids,omitempty"`
+	Answers       []*Answer `protobuf:"bytes,4,rep,name=answers,proto3" json:"answers,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -92,20 +87,6 @@ func (x *ChatRequest) GetMessage() string {
 func (x *ChatRequest) GetAnswers() []*Answer {
 	if x != nil {
 		return x.Answers
-	}
-	return nil
-}
-
-func (x *ChatRequest) GetSeed() int64 {
-	if x != nil {
-		return x.Seed
-	}
-	return 0
-}
-
-func (x *ChatRequest) GetKeepOracleIds() []string {
-	if x != nil {
-		return x.KeepOracleIds
 	}
 	return nil
 }
@@ -472,15 +453,13 @@ var File_mtg_v1_agent_service_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_agent_service_proto_rawDesc = "" +
 	"\n" +
-	"\x1amtg/v1/agent_service.proto\x12\x06mtg.v1\x1a\x11mtg/v1/deck.proto\x1a\x14mtg/v1/session.proto\"\xd1\x01\n" +
+	"\x1amtg/v1/agent_service.proto\x12\x06mtg.v1\x1a\x11mtg/v1/deck.proto\x1a\x14mtg/v1/session.proto\"\xb8\x01\n" +
 	"\vChatRequest\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\tR\tsessionId\x12#\n" +
 	"\rcollection_id\x18\x02 \x01(\tR\fcollectionId\x12\x18\n" +
 	"\amessage\x18\x03 \x01(\tR\amessage\x12(\n" +
-	"\aanswers\x18\x04 \x03(\v2\x0e.mtg.v1.AnswerR\aanswers\x12\x12\n" +
-	"\x04seed\x18\x05 \x01(\x03R\x04seed\x12&\n" +
-	"\x0fkeep_oracle_ids\x18\x06 \x03(\tR\rkeepOracleIds\"X\n" +
+	"\aanswers\x18\x04 \x03(\v2\x0e.mtg.v1.AnswerR\aanswersJ\x04\b\x05\x10\x06J\x04\b\x06\x10\aR\x04seedR\x0fkeep_oracle_ids\"X\n" +
 	"\n" +
 	"AgentError\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12\x18\n" +
