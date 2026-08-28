@@ -1827,3 +1827,47 @@ func TestBudgetScopeIsStored(t *testing.T) {
 		t.Error("the scope row is still outstanding after the user answered it")
 	}
 }
+
+// TestBudgetScopeIsNotAskedWhenTheWordsAnswerIt is D-253. The row held
+// two of the twenty bad questions of gate run 24, and both were trigger
+// faults: it asked what the message had already said.
+func TestBudgetScopeIsNotAskedWhenTheWordsAnswerIt(t *testing.T) {
+	for _, s := range []string{
+		"build owned-first with a buy list", "40 dollars for the cards to buy",
+	} {
+		if !NamesTheBuyList(s) {
+			t.Errorf("%q: the buy list was not read", s)
+		}
+	}
+	for _, s := range []string{"a lifegain deck for 40 dollars", "no more than 40 dollars"} {
+		if NamesTheBuyList(s) {
+			t.Errorf("%q: a plain budget was read as a buy list", s)
+		}
+	}
+
+	// A message that names the buy list answers the scope row.
+	out := commanderClassify()
+	out.BudgetUSD = 40
+	a, _ := testAgentHints(t, nil, classifyStep(t, out), fits(t, "power_commander"), askStep(t))
+	st := NewState(true)
+	if _, err := a.Turn(context.Background(), st, "Build owned-first with a buy list, no more than 40 dollars.", nil); err != nil {
+		t.Fatalf("turn: %v", err)
+	}
+	if got := st.Slots.GetBudgetScope(); got != mtgv1.BudgetScope_BUDGET_SCOPE_CARDS_TO_BUY {
+		t.Errorf("scope = %v, want the cards to buy", got)
+	}
+	if st.Slots.GetSlotStates()["budget_scope"] == mtgv1.SlotState_SLOT_STATE_ASKED {
+		t.Error("the scope row asked what the message had already said")
+	}
+
+	// A proxy user has no budget, so there is no scope to ask about.
+	out2 := commanderClassify()
+	a2, _ := testAgentHints(t, nil, classifyStep(t, out2), fits(t, "power_commander"), askStep(t))
+	st2 := NewState(true)
+	if _, err := a2.Turn(context.Background(), st2, "I proxy anything over 20 dollars.", nil); err != nil {
+		t.Fatalf("turn: %v", err)
+	}
+	if got := st2.Slots.GetSlotStates()["budget_scope"]; got == mtgv1.SlotState_SLOT_STATE_ASKED {
+		t.Error("a proxy user was asked what their budget covers")
+	}
+}

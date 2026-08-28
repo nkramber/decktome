@@ -515,6 +515,15 @@ var cedhSigns = []string{"cedh", "competitive edh"}
 // power bracket to target. The user had named it (D-164).
 func CEDHRequest(text string) bool { return anyPhrase(text, cedhSigns) }
 
+// buyListSigns name the cards the user must acquire. A budget beside one
+// of these caps the buy list, so the scope question has its answer
+// already: "Build owned-first with a buy list" says which of the two the
+// cap covers (D-253).
+var buyListSigns = []string{"buy list", "buylist", "to buy", "cards i buy", "cards to acquire"}
+
+// NamesTheBuyList reports whether a message names the cards to buy.
+func NamesTheBuyList(text string) bool { return anyPhrase(text, buyListSigns) }
+
 // colorlessSigns name a deck with no colors.
 //
 // No model call can report this answer. The classify schema offers the

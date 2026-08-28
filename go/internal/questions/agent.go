@@ -574,7 +574,20 @@ func (a *Agent) applyWords(st *State, message string) {
 	// negation (D-111).
 	if ProxyUser(words) && !st.Ctx.Filled["budget"] {
 		st.Skip("budget")
+		// No budget means no scope to ask about. Probe 92 of gate run 24
+		// said "I proxy anything over 20 dollars", and the scope row
+		// still asked which of the two the cap covers (D-253).
+		st.Skip("budget_scope")
 		a.log.Info("the user proxies their cards, so the budget slot is closed",
+			"session", st.SessionID)
+	}
+	// A message that names the buy list names the scope with it, so the
+	// scope row has its answer. Conversation 2 of gate run 24 said "Build
+	// owned-first with a buy list" and was asked anyway (D-253).
+	if NamesTheBuyList(message) && st.Slots.GetBudgetScope() == mtgv1.BudgetScope_BUDGET_SCOPE_UNSPECIFIED {
+		st.Slots.BudgetScope = mtgv1.BudgetScope_BUDGET_SCOPE_CARDS_TO_BUY
+		st.Close("budget_scope")
+		a.log.Info("the user named the buy list, so the budget scope is the cards to buy",
 			"session", st.SessionID)
 	}
 	// A user who named no cap has answered the budget row. It reads the
