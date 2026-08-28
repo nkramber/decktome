@@ -38,6 +38,10 @@ type Store interface {
 	LatestVersion(ctx context.Context) (string, error)
 	// ListVersions returns every complete version, oldest first.
 	ListVersions(ctx context.Context) ([]string, error)
+	// ListIncompleteVersions returns every version with files and no
+	// completion marker, oldest first. Prune reads it. A download in
+	// progress is one of them, so a caller never deletes the newest.
+	ListIncompleteVersions(ctx context.Context) ([]string, error)
 	// Open reads one file of one version. The caller closes it.
 	Open(ctx context.Context, version, file string) (io.ReadCloser, error)
 	// Create writes one file of one version. Closing commits it.
@@ -169,26 +173,52 @@ func (s *GCSStore) LatestVersion(ctx context.Context) (string, error) {
 
 // ListVersions returns every complete version, oldest first.
 func (s *GCSStore) ListVersions(ctx context.Context) ([]string, error) {
-	// Complete versions only: list the markers, not the directories.
+	complete, _, err := s.listVersions(ctx)
+	return complete, err
+}
+
+// ListIncompleteVersions returns every version with objects and no
+// completion marker, oldest first.
+func (s *GCSStore) ListIncompleteVersions(ctx context.Context) ([]string, error) {
+	_, incomplete, err := s.listVersions(ctx)
+	return incomplete, err
+}
+
+// listVersions walks the bucket once and splits the versions by marker.
+func (s *GCSStore) listVersions(ctx context.Context) (complete, incomplete []string, err error) {
 	it := s.client.Bucket(s.bucket).Objects(ctx, &storage.Query{Prefix: gcsPrefix})
-	var versions []string
+	marked := map[string]bool{}
+	seen := map[string]bool{}
 	for {
 		attrs, err := it.Next()
 		if errors.Is(err, iterator.Done) {
 			break
 		}
 		if err != nil {
-			return nil, fmt.Errorf("list snapshots: %w", err)
+			return nil, nil, fmt.Errorf("list snapshots: %w", err)
 		}
 		// Object names are slash paths on every platform, so path, not
 		// filepath, splits them.
 		dir, file := path.Split(attrs.Name)
+		version := path.Base(path.Clean(dir))
+		if version == "." || version == "/" {
+			continue
+		}
+		seen[version] = true
 		if file == completeMarker {
-			versions = append(versions, path.Base(path.Clean(dir)))
+			marked[version] = true
 		}
 	}
-	sort.Strings(versions)
-	return versions, nil
+	for version := range seen {
+		if marked[version] {
+			complete = append(complete, version)
+		} else {
+			incomplete = append(incomplete, version)
+		}
+	}
+	sort.Strings(complete)
+	sort.Strings(incomplete)
+	return complete, incomplete, nil
 }
 
 // Finalize marks a version complete.
@@ -285,6 +315,18 @@ func (s DirStore) LatestVersion(ctx context.Context) (string, error) {
 
 // ListVersions returns every complete version, oldest first.
 func (s DirStore) ListVersions(_ context.Context) ([]string, error) {
+	return s.listVersions(true)
+}
+
+// ListIncompleteVersions returns every version directory with no
+// completion marker, oldest first.
+func (s DirStore) ListIncompleteVersions(_ context.Context) ([]string, error) {
+	return s.listVersions(false)
+}
+
+// listVersions lists the version directories that hold a completion
+// marker, or the ones that do not.
+func (s DirStore) listVersions(complete bool) ([]string, error) {
 	entries, err := os.ReadDir(s.Root)
 	if os.IsNotExist(err) {
 		return nil, nil
@@ -297,7 +339,8 @@ func (s DirStore) ListVersions(_ context.Context) ([]string, error) {
 		if !e.IsDir() {
 			continue
 		}
-		if _, err := os.Stat(filepath.Join(s.Root, e.Name(), completeMarker)); err == nil {
+		_, err := os.Stat(filepath.Join(s.Root, e.Name(), completeMarker))
+		if (err == nil) == complete {
 			versions = append(versions, e.Name())
 		}
 	}

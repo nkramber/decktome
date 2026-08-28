@@ -1,12 +1,9 @@
 package candidates
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-	"log/slog"
-	"os"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -324,12 +321,30 @@ func TestBuildNoThemeKeepsStaples(t *testing.T) {
 }
 
 func TestThemeWords(t *testing.T) {
-	got := words("Build me a Lifegain / Aristocrats deck, with cats!")
-	want := []string{"lifegain", "aristocrats", "cats"}
-	if strings.Join(got, " ") != strings.Join(want, " ") {
-		t.Errorf("words = %v, want %v", got, want)
-	}
 	b, _ := New()
+	cases := []struct {
+		theme string
+		want  []string
+	}{
+		{"Build me a Lifegain / Aristocrats deck, with cats!", []string{"lifegain", "aristocrats", "cats"}},
+		// A fragment of "+1/+1" is not a word: the needle "1" matched
+		// every card with a digit.
+		{"+1/+1 counters", []string{"counters"}},
+		// Two tokens that name a hyphenated row join.
+		{"go wide", []string{"go-wide"}},
+		{"go wide tokens", []string{"go-wide", "tokens"}},
+		{"extra turns", []string{"extra-turns"}},
+		{"go-wide", []string{"go-wide"}},
+		// A short token that names no row goes.
+		{"ub mill", []string{"mill"}},
+		{"2024 zombies", []string{"zombies"}},
+	}
+	for _, c := range cases {
+		got := b.themes.words(c.theme)
+		if strings.Join(got, " ") != strings.Join(c.want, " ") {
+			t.Errorf("words(%q) = %v, want %v", c.theme, got, c.want)
+		}
+	}
 	idx := fixture(t, testCards())
 	m := b.themes.match("cats zzzz", idx.Tags())
 	if !contains(m.Subtypes, "Cat") {
@@ -728,17 +743,7 @@ func TestCommanderPoolOwnedFirst(t *testing.T) {
 //	CARDS_SNAPSHOT_DIR=.local/gcs/mtg-local-cards/scryfall \
 //	  go test ./internal/candidates -run TestCommanderQualitySnapshot -v
 func TestCommanderQualitySnapshot(t *testing.T) {
-	dir := os.Getenv("CARDS_SNAPSHOT_DIR")
-	if dir == "" {
-		t.Skip("set CARDS_SNAPSHOT_DIR to a snapshot store root")
-	}
-	idx, err := cards.LoadIndex(context.Background(), cards.DirStore{Root: dir}, slog.New(slog.NewTextHandler(io.Discard, nil)))
-	if err != nil {
-		t.Fatalf("index: %v", err)
-	}
-	if idx == nil {
-		t.Skipf("no complete snapshot under %s", dir)
-	}
+	idx := snapshotIndex(t)
 	b, err := New()
 	if err != nil {
 		t.Fatal(err)
@@ -781,5 +786,130 @@ func TestCommanderQualitySnapshot(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// TestSingular covers the plural rule the generic theme branch applies to
+// a subtype. Faeries and zombies end in -ie, not -y.
+func TestSingular(t *testing.T) {
+	cases := []struct{ in, want string }{
+		{"faeries", "faerie"},
+		{"zombies", "zombie"},
+		{"counters", "counter"},
+		{"armies", "army"},
+		{"harpies", "harpy"},
+		{"elves", "elf"},
+		{"cats", "cat"},
+		{"boss", "boss"},
+		{"elf", "elf"},
+	}
+	for _, c := range cases {
+		if got := singular(c.in); got != c.want {
+			t.Errorf("singular(%q) = %q, want %q", c.in, got, c.want)
+		}
+	}
+}
+
+// TestTotalCapDropsTheLowestScore covers the cut under Total. The role
+// caps sum to more than Total, and the old cut took the first Total cards
+// in role order, so the synergy tail went and a weak land stayed.
+func TestTotalCapDropsTheLowestScore(t *testing.T) {
+	b, _ := New()
+	idx := fixture(t, testCards())
+	req := Request{Format: cmdr, Colors: []mtgv1.Color{W, B}, Theme: "lifegain"}
+	full, err := b.Build(idx, req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(full.Candidates) < 4 {
+		t.Fatalf("too few candidates to cut: %v", names(full.Candidates))
+	}
+	total := len(full.Candidates) - 2
+	req.Limits = Limits{Total: total}
+	cut, err := b.Build(idx, req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(cut.Candidates) != total {
+		t.Fatalf("total cap: got %d, want %d", len(cut.Candidates), total)
+	}
+	kept := map[string]Candidate{}
+	for _, c := range cut.Candidates {
+		kept[c.Card.Name] = c
+	}
+	// Every dropped card scores at or under every kept card.
+	minKept := 1.0
+	for _, c := range cut.Candidates {
+		minKept = min(minKept, c.Score)
+	}
+	for _, c := range full.Candidates {
+		if _, ok := kept[c.Card.Name]; ok {
+			continue
+		}
+		if c.Score > minKept {
+			t.Errorf("%s (%.3f) was dropped and a card at %.3f was kept", c.Card.Name, c.Score, minKept)
+		}
+	}
+	// The role order survives the cut.
+	last := -1
+	for _, c := range cut.Candidates {
+		pos := slices.Index(roleOrder, c.Role)
+		if pos < last {
+			t.Errorf("role order broken at %s", c.Card.Name)
+		}
+		last = pos
+	}
+}
+
+// TestTextFallbacksOnlyWithoutTags covers the role fallbacks. With tags
+// loaded, an untagged card that says "draw a card" is not a draw staple.
+// Without tags, the text is all there is, and the fallbacks stand in.
+func TestTextFallbacksOnlyWithoutTags(t *testing.T) {
+	draw := &mtgv1.Card{OracleId: "d", Name: "Untagged Cantrip", OracleText: "Draw a card.", CardTypes: []string{"Instant"}}
+	tagged := map[string]map[string]bool{"draw": {"other": true}}
+	cases := []struct {
+		name     string
+		roleTags map[string]map[string]bool
+		useText  bool
+		want     mtgv1.CardRole
+	}{
+		{"tags loaded, fallbacks off", tagged, false, mtgv1.CardRole_CARD_ROLE_OTHER},
+		{"no tags, fallbacks on", map[string]map[string]bool{}, true, mtgv1.CardRole_CARD_ROLE_DRAW},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			got, _ := assignRole(draw, c.roleTags, false, c.useText)
+			if got != c.want {
+				t.Errorf("role = %s, want %s", got, c.want)
+			}
+		})
+	}
+	// Build reads the tag index: an index with no tags turns the
+	// fallbacks on, and the fixture with tags keeps them off.
+	b, _ := New()
+	noTags := cards.NewIndex([]*mtgv1.Card{{
+		OracleId: "d", Name: "Untagged Cantrip", OracleText: "Draw a card.", CardTypes: []string{"Instant"},
+		Legalities: map[string]mtgv1.LegalityStatus{"commander": legal},
+	}}, nil, nil, time.Time{})
+	list, err := b.Build(noTags, Request{Format: cmdr, Theme: "lifegain"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c, ok := find(list.Candidates, "Untagged Cantrip"); !ok || c.Role != mtgv1.CardRole_CARD_ROLE_DRAW {
+		t.Errorf("without tags the cantrip must be a draw staple: %v", names(list.Candidates))
+	}
+	withTags := fixture(t, []tc{
+		{id: "d", name: "Untagged Cantrip", typeLine: "Instant", text: "Draw a card.", rank: 10},
+		{id: "t", name: "Tagged Draw", typeLine: "Instant", text: "Draw two cards.", rank: 11, tags: []string{"draw"}},
+	})
+	list, err = b.Build(withTags, Request{Format: cmdr, Theme: "lifegain"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := find(list.Candidates, "Untagged Cantrip"); ok {
+		t.Error("with tags loaded an untagged cantrip is not a staple")
+	}
+	if c, ok := find(list.Candidates, "Tagged Draw"); !ok || c.Role != mtgv1.CardRole_CARD_ROLE_DRAW {
+		t.Error("the tagged draw card must keep its role")
 	}
 }

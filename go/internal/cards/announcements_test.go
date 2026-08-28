@@ -55,6 +55,9 @@ func TestCalendarSortsOnLoad(t *testing.T) {
 	}
 }
 
+// TestEmbeddedCalendarLoads also fails when every date is in the past.
+// The calendar then covers no announcement, and the refresh loop never
+// enters its fast interval. The fix is a new date in the file.
 func TestEmbeddedCalendarLoads(t *testing.T) {
 	cal, err := loadAnnouncements()
 	if err != nil {
@@ -62,6 +65,17 @@ func TestEmbeddedCalendarLoads(t *testing.T) {
 	}
 	if len(cal.dates) == 0 {
 		t.Fatal("embedded calendar is empty")
+	}
+	now := time.Now().UTC()
+	future := false
+	for _, d := range cal.dates {
+		if d.After(now) {
+			future = true
+		}
+	}
+	if !future {
+		t.Fatalf("internal/cards/announcement_dates.json holds no date after %s: add the next Wizards announcement date",
+			now.Format("2006-01-02"))
 	}
 }
 

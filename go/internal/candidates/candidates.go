@@ -67,7 +67,9 @@ type Limits struct {
 const staplePenalty = 0.5
 
 // DefaultLimits follows the roadmap numbers: about 300 candidates by role,
-// about 50 upgrades.
+// about 50 upgrades. The role caps sum to more than Total on purpose: a
+// role that comes up short leaves room for the others, and when every
+// role is full the lowest-scored cards go, whatever their role.
 var DefaultLimits = Limits{
 	Total:    300,
 	Upgrades: 50,
@@ -146,11 +148,10 @@ func New() (*Builder, error) {
 	return &Builder{themes: t}, nil
 }
 
-// legalKeys maps a format to its Scryfall legality key. House rules and
-// an unknown format skip the legality filter.
 // legalKeys maps a format to its Scryfall legality column. The app builds
 // three formats (D-155). HOUSE has no key on purpose: the user defined
-// the rules, so no ban list applies (D-3).
+// the rules, so no ban list applies (D-3). An unknown format skips the
+// legality filter as well.
 var legalKeys = map[mtgv1.FormatId]string{
 	mtgv1.FormatId_FORMAT_ID_COMMANDER: "commander",
 	mtgv1.FormatId_FORMAT_ID_STANDARD:  "standard",
@@ -176,6 +177,9 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 	}
 	theme := b.themes.match(req.Theme, idx.Tags())
 	roleTags := b.themes.roleSets(idx.Tags())
+	// Text fallbacks stand in for the tags only when the snapshot has
+	// none. With tags loaded, an untagged card is not a staple.
+	useText := idx.Tags().Len() == 0
 	legalKey := legalKeys[req.Format]
 	colorSet := colorSetOf(req.Colors)
 	excluded := map[string]bool{}
@@ -203,7 +207,7 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 		stats.Pool++
 		themeScore, signals := theme.score(c)
 		fired.mark(signals)
-		role, roleSignal := assignRole(c, roleTags, themeScore > 0)
+		role, roleSignal := assignRole(c, roleTags, themeScore > 0, useText)
 		if roleSignal != "" {
 			signals = append(signals, roleSignal)
 		}
@@ -283,6 +287,9 @@ var roleOrder = []mtgv1.CardRole{
 }
 
 // capByRole keeps the best cards per role, in role order, under the total.
+// When the role caps together exceed the total, the lowest-scored cards
+// go across every role. A plain cut at Total dropped the whole tail of
+// the last roles, which is where the synergy pieces sit.
 func capByRole(in []Candidate, lim Limits) []Candidate {
 	byRole := map[mtgv1.CardRole][]Candidate{}
 	for _, c := range in {
@@ -296,10 +303,22 @@ func capByRole(in []Candidate, lim Limits) []Candidate {
 		}
 		out = append(out, cs...)
 	}
-	if len(out) > lim.Total {
-		out = out[:lim.Total]
+	if len(out) <= lim.Total {
+		return out
 	}
-	return out
+	ranked := slices.Clone(out)
+	sortCandidates(ranked)
+	keep := make(map[*mtgv1.Card]bool, lim.Total)
+	for _, c := range ranked[:lim.Total] {
+		keep[c.Card] = true
+	}
+	kept := make([]Candidate, 0, lim.Total)
+	for _, c := range out {
+		if keep[c.Card] {
+			kept = append(kept, c)
+		}
+	}
+	return kept
 }
 
 // topUpgrades picks the best unowned cards that beat the weakest owned

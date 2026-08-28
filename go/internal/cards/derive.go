@@ -173,29 +173,38 @@ func partnerWithName(c *mtgv1.Card) string {
 	return strings.TrimSpace(rest)
 }
 
+// creatureOutsideBattlefieldRe matches the characteristic-defining
+// ability of Grist, the Hunger Tide: "As long as Grist isn't on the
+// battlefield, it's a 1/1 Insect creature in addition to its other
+// types." Such a card is a legendary creature in the command zone, so it
+// can be a commander (CR 903.3a, D-140). The pattern reads the shape of
+// the ability and never a card name. Text checked against the Scryfall
+// fixture on 2026-08-28.
+var creatureOutsideBattlefieldRe = regexp.MustCompile(`isn't on the battlefield, it's an? [^.]*\bcreature\b`)
+
 // canBeCommander applies CR 903.3 (text of 2026-08-07): a legendary
 // creature, a legendary Vehicle or Spacecraft with a power/toughness box,
-// or a card whose text allows it. Only the front face counts (CR 712.8a),
-// so a card such as Bloodline Keeper does not qualify.
-//
-// Known gap: Grist, the Hunger Tide is a creature outside the battlefield
-// by a characteristic-defining ability and is a legal commander. Scryfall
-// card JSON carries no "commander-eligible" signal, and a name match is
-// not acceptable, so Grist reads as not eligible here (2026-08-24).
+// a legendary card that a characteristic-defining ability makes a
+// creature outside the battlefield, or a card whose text allows it. Only
+// the front face counts (CR 712.8a), so a card such as Bloodline Keeper
+// does not qualify.
 func canBeCommander(c *mtgv1.Card) bool {
 	if strings.Contains(c.OracleText, "can be your commander") &&
 		!strings.Contains(c.OracleText, "can't be your commander") {
 		return true
 	}
-	line, power := c.TypeLine, c.Power
+	line, power, text := c.TypeLine, c.Power, c.OracleText
 	if len(c.Faces) > 0 {
-		line, power = c.Faces[0].TypeLine, c.Faces[0].Power
+		line, power, text = c.Faces[0].TypeLine, c.Faces[0].Power, c.Faces[0].OracleText
 	}
 	supers, types, subs := parseTypeLine(line)
 	if !slices.Contains(supers, "Legendary") {
 		return false
 	}
 	if slices.Contains(types, "Creature") {
+		return true
+	}
+	if creatureOutsideBattlefieldRe.MatchString(text) {
 		return true
 	}
 	if slices.Contains(subs, "Vehicle") || slices.Contains(subs, "Spacecraft") {
