@@ -60,12 +60,13 @@ type prompt struct {
 }
 
 type result struct {
-	prompt   prompt
-	deck     *mtgv1.Deck
-	notes    []string
-	repaired bool
-	poolSize int
-	judged   *generate.Judgement
+	prompt       prompt
+	deck         *mtgv1.Deck
+	notes        []string
+	repaired     bool
+	repairReason string
+	poolSize     int
+	judged       *generate.Judgement
 	// judgeErr is the judge lane's failure. A deck with one has no
 	// verdict on F-26, so it can not count as a pass on that bar (T-17).
 	judgeErr error
@@ -319,7 +320,7 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 		out.err = err
 		return out
 	}
-	out.deck, out.notes, out.repaired = res.Deck, res.Notes, res.Repaired
+	out.deck, out.notes, out.repaired, out.repairReason = res.Deck, res.Notes, res.Repaired, res.RepairReason
 	return out
 }
 

@@ -13,7 +13,7 @@
 
 ## The numbers, and why none of them compare with the last run
 
-Every measured number below moved on 2026-08-28, and no gate has run since. Run 24 was the question baseline and deck gate run 7 the deck baseline. Neither compares with the next run (D-66):
+Every measured number below moved on 2026-08-28. Question gate run 25 and deck gate run 8 ran on the new code the same day, and they are the baselines now. Runs 1 to 24 and deck gate runs 1 to 7 do not compare with them (D-66, D-263):
 
 - The classify and ask prompts are at version 12 (D-260, D-265). The generate prompt is at version 9 (D-259).
 - The catalog holds 22 rows. Five retired (D-260), and `house_rules` stores its answer (D-265).
@@ -22,17 +22,20 @@ Every measured number below moved on 2026-08-28, and no gate has run since. Run 
 - The generator shows the repair turn the `over_budget` and `precon_share` findings, recomputes `Passed`, and prices owned cards as owned (audit G-1 to G-3). The precon share reads the nonbasic names as a ceiling (D-259).
 - The card index drops 291 front cards and refuses an ambiguous face name (D-270).
 
-| Measure | Last value | Where measured |
+| Measure | Baseline | Where measured |
 |---|---|---|
-| Question gate | PASS 28 of 30, 20 bad of 435, holdout 12 of 140 | run 24, 2026-08-28, prompt 10 |
-| Deck gate | PASS 18 of 18 | run 7, 2026-08-28, generate prompt 6 |
+| Question gate | PASS 26 of 27 counted, 1 invented, 0 premature, 0 lint | run 25, 2026-08-28, prompt 12 |
+| Question eval | 19 bad of 382, holdout 8 of 111 (7.2 percent) | eval of run 25, 5 conversations unjudged |
+| Deck gate | PASS 18 of 18, 2 repairs, $1.09 | run 8, 2026-08-28, generate prompt 9 |
 | Loop | off since 2026-08-26 | seven starts, nothing kept |
+
+CAUTION: `tune-check` paired zero questions between run 24 and run 25, because the catalog and the prompt changed. The paired guard says nothing across that line, and the whole-run margins carry the verdict. The eval leaves a conversation unjudged when the judge returns fewer verdicts than questions. So 382 is the honest count, not a drop from 435.
 
 ## Next steps, in order
 
 1. Merge the pull request for `audit-2026-08-28`. Then restore the rule that forbids a force push to `main`, which was lifted for the purge on 2026-08-28.
-2. Ask the owner, then run `make questions-gate` with a new `GATE_OUT`. That run is the new baseline. Then `make questions-eval` on it.
-3. Ask the owner, then run `make deck-gate` with a new `DECK_GATE_OUT`. The share rule now counts nonbasic names, and no run has measured it.
+2. Ask Dependabot to rebase #23, then merge it. Every other Dependabot pull request of 2026-08-28 is merged or closed.
+3. Add a ruleset that requires the `verify` check on `main`. Four Dependabot majors merged without it on 2026-08-28 and broke `main` twice.
 4. Start Phase 3 with PR-11. `docs/reference/ui-plan-2026-08-28.md` is the plan (D-273 to D-276): the whole user path, the roadmap stack, real sign-in over the Auth emulator, local under `make dev`.
 
 Done on 2026-08-28, after the audit: the merged branches are deleted on the clone and on origin, and the history purge ran. Every hash after PR-6 changed. The repo went from 101 MB to 2 MB, and the tree at each tip is byte for byte the same. CAUTION: a clone made before 2026-08-28 holds the old history. Re-clone it, and do not merge from it.
