@@ -304,7 +304,7 @@ function ChatPanel({
           </p>
         )}
         {state.deck ? (
-          <DeckView deck={state.deck} />
+          <DeckView deck={state.deck} base={state.baseDeck} />
         ) : (
           !deckError && <p className="text-neutral-600">The deck shows here when the agent has built one.</p>
         )}

@@ -192,6 +192,44 @@ describe("DeckView", () => {
     expect(screen.getByText("Commander · Bracket 2 · 24 cards")).toBeInTheDocument();
   });
 
+  it("shows the revision note and the diff against the base deck (PR-12B)", async () => {
+    getCards.mockResolvedValue({ cards, missingOracleIds: [] });
+    const base = { ...deck, id: "d0", cards: deck.cards.slice(0, 2) } as unknown as Deck;
+    const revised = {
+      ...deck,
+      id: "d1",
+      revisedFromDeckId: "d0",
+      revisionNote: "I removed 4 Llanowar Elves. I changed the count of Forest: 20 to 22.",
+      cards: [{ ...deck.cards[0], count: 22 }, deck.cards[2]],
+    } as unknown as Deck;
+    render(
+      <QueryClientProvider client={makeQueryClient()}>
+        <DeckView deck={revised} base={base} />
+      </QueryClientProvider>,
+    );
+    await screen.findByAltText("Forest");
+    expect(screen.getByTestId("revision-note")).toHaveTextContent("I removed 4 Llanowar Elves.");
+    const diff = screen.getByTestId("revision-diff");
+    expect(within(diff).getAllByRole("listitem").map((li) => li.textContent)).toEqual([
+      "Removed 4 Llanowar Elves",
+      "Added 2 Delver of Secrets // Insectile Aberration",
+      "Count of Forest: 20 to 22",
+    ]);
+  });
+
+  it("shows no diff when the base is not the deck this one revised", async () => {
+    getCards.mockResolvedValue({ cards, missingOracleIds: [] });
+    const revised = { ...deck, id: "d1", revisedFromDeckId: "d0", revisionNote: "note" } as unknown as Deck;
+    render(
+      <QueryClientProvider client={makeQueryClient()}>
+        <DeckView deck={revised} base={{ ...deck, id: "d9" } as unknown as Deck} />
+      </QueryClientProvider>,
+    );
+    await screen.findByAltText("Forest");
+    expect(screen.getByTestId("revision-note")).toHaveTextContent("note");
+    expect(screen.queryByTestId("revision-diff")).not.toBeInTheDocument();
+  });
+
   it("reports a GetCards failure", async () => {
     getCards.mockRejectedValue(new Error("[unavailable] card database not loaded yet"));
     renderDeck();

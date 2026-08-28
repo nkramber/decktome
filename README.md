@@ -101,6 +101,8 @@ The web app is the product's front door. Open http://localhost:5180 while `make 
 5. Open "Decks". The list reads `DeckService.ListDecks`. "View" opens a deck in place. The session link returns to its chat, and a reload of the chat rebuilds the thread from the stored session.
 6. Read the footer. It shows the API status and the date of the card snapshot. "Card data: not loaded yet" means step 4 above has not run.
 
+After the deck, write what you want changed, for example "no 6 or 7 mana cards". The agent answers in words. Then it asks a question when the request is unclear, revises the deck when it is clear, or says why it made no change (D-283, D-284). The deck view shows what changed. A change to a setting, for example the format or the bracket, builds the deck again from the start.
+
 What the browser cannot do yet: export a deck (PR-13). A chat turn calls the real providers and spends money, at the rates of `docs/SESSION-HANDOFF.md`. The card images come from the Scryfall CDN, so the deck view needs the internet.
 
 Every request from the browser carries the Firebase ID token in the `Authorization` header (D-268, D-275). A request with no token falls back to the debug user `local-dev` under `make dev` only. The emulator forgets nothing while `.local/` stays, and `rm -rf .local` starts clean.
@@ -173,7 +175,7 @@ make summary-judge     # judge every deck summary of a gate document (F-26), a f
 
 The gate costs were measured on 2026-08-26, and the deck gate on 2026-08-28.
 
-CI runs every job on every push and pull request. There are no path filters.
+CI runs on pull requests only, and a new push to a branch cancels the run in progress. A first job reads the diff against the base branch. Each job runs only when its inputs changed, so a docs change runs the STE check and nothing else. A merge to `main` runs nothing, because the pull request verified the same tree. The owner hit 90 percent of the monthly minutes in six days on 2026-08-28, and each run cost 25 billed minutes before this rule (D-286).
 
 Rules for contributors and agents: `AGENTS.md`. Machine setup: `docs/setup.md`. Design and roadmap: `docs/design-roadmap.md`. Decisions: `docs/decisions.md`.
 

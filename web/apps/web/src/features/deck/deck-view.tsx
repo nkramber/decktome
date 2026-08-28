@@ -8,6 +8,7 @@ import {
   colorLetters,
   colorSources,
   curveSteps,
+  diffDecks,
   formatLabel,
   groupByRole,
   manaCurve,
@@ -22,7 +23,9 @@ import { useDeckCards } from "./use-cards";
 // and attribution (D-6), both faces for a DFC (F-9), the owned mark or
 // the price (D-2, D-37), the findings, legality_as_of, the curve, and
 // the color sources.
-export function DeckView({ deck }: { deck: Deck }) {
+// base is the deck this one revised, when the page holds it (PR-12B).
+export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
+  const diff = base && deck.revisedFromDeckId && base.id === deck.revisedFromDeckId ? diffDecks(base, deck) : undefined;
   const cards = useDeckCards(deck);
   const byId = cards.data?.byId ?? new Map<string, Card>();
   const missing = cards.data?.missing ?? [];
@@ -63,6 +66,28 @@ export function DeckView({ deck }: { deck: Deck }) {
         </p>
         {deck.summary && <p className="mt-1">{deck.summary}</p>}
       </header>
+
+      {deck.revisionNote && (
+        <section aria-labelledby={`revision-title-${deck.id}`} className="rounded border border-blue-400 bg-blue-50 p-3 text-sm">
+          <h3 id={`revision-title-${deck.id}`} className="font-medium">
+            What changed
+          </h3>
+          <p data-testid="revision-note">{deck.revisionNote}</p>
+          {diff && (
+            <ul className="mt-2 list-disc pl-5" data-testid="revision-diff">
+              {diff.removed.map((x) => (
+                <li key={`r-${x}`}>Removed {x}</li>
+              ))}
+              {diff.added.map((x) => (
+                <li key={`a-${x}`}>Added {x}</li>
+              ))}
+              {diff.changed.map((x) => (
+                <li key={`c-${x}`}>Count of {x}</li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
 
       {findings.length > 0 && (
         <section aria-labelledby={`findings-title-${deck.id}`}>

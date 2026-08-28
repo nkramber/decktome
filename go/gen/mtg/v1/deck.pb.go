@@ -183,7 +183,15 @@ type Deck struct {
 	Upgrades []*DeckCard `protobuf:"bytes,17,rep,name=upgrades,proto3" json:"upgrades,omitempty"`
 	// buy_cost_usd sums price_usd over the cards the user does not own.
 	// Zero when every card is owned or no price is known.
-	BuyCostUsd    float64 `protobuf:"fixed64,18,opt,name=buy_cost_usd,json=buyCostUsd,proto3" json:"buy_cost_usd,omitempty"`
+	BuyCostUsd float64 `protobuf:"fixed64,18,opt,name=buy_cost_usd,json=buyCostUsd,proto3" json:"buy_cost_usd,omitempty"`
+	// revised_from_deck_id names the deck this one revised, when the user
+	// asked for a change after a build (PR-12B, D-283). Empty for a first
+	// build and for a full rebuild after a slot change.
+	RevisedFromDeckId string `protobuf:"bytes,19,opt,name=revised_from_deck_id,json=revisedFromDeckId,proto3" json:"revised_from_deck_id,omitempty"`
+	// revision_note is the reply the user read with the revision: what
+	// changed, and what the agent declined and why (D-284). Built from the
+	// diff, not from the model.
+	RevisionNote  string `protobuf:"bytes,20,opt,name=revision_note,json=revisionNote,proto3" json:"revision_note,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -335,6 +343,20 @@ func (x *Deck) GetBuyCostUsd() float64 {
 		return x.BuyCostUsd
 	}
 	return 0
+}
+
+func (x *Deck) GetRevisedFromDeckId() string {
+	if x != nil {
+		return x.RevisedFromDeckId
+	}
+	return ""
+}
+
+func (x *Deck) GetRevisionNote() string {
+	if x != nil {
+		return x.RevisionNote
+	}
+	return ""
 }
 
 // DeckCard is one card choice with its reason.
@@ -600,7 +622,7 @@ var File_mtg_v1_deck_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\n" +
-	"\x11mtg/v1/deck.proto\x12\x06mtg.v1\x1a\x13mtg/v1/format.proto\x1a\x14mtg/v1/session.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xa6\x05\n" +
+	"\x11mtg/v1/deck.proto\x12\x06mtg.v1\x1a\x13mtg/v1/format.proto\x1a\x14mtg/v1/session.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xfc\x05\n" +
 	"\x04Deck\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12&\n" +
@@ -623,7 +645,9 @@ const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\x13companion_oracle_id\x18\x10 \x01(\tR\x11companionOracleId\x12,\n" +
 	"\bupgrades\x18\x11 \x03(\v2\x10.mtg.v1.DeckCardR\bupgrades\x12 \n" +
 	"\fbuy_cost_usd\x18\x12 \x01(\x01R\n" +
-	"buyCostUsdJ\x04\b\n" +
+	"buyCostUsd\x12/\n" +
+	"\x14revised_from_deck_id\x18\x13 \x01(\tR\x11revisedFromDeckId\x12#\n" +
+	"\rrevision_note\x18\x14 \x01(\tR\frevisionNoteJ\x04\b\n" +
 	"\x10\vR\x04seed\"\xe3\x01\n" +
 	"\bDeckCard\x12\x1b\n" +
 	"\toracle_id\x18\x01 \x01(\tR\boracleId\x12\x12\n" +

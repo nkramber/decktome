@@ -78,6 +78,29 @@ type Request struct {
 	// could never reach the user who needed it, so the deck reports it
 	// (D-232).
 	ThinCommanderPool bool
+	// Revision is set when the user asked for a change after a build
+	// (PR-12B, D-283). The model gets the base deck and the brief, and
+	// keeps every card the brief does not touch.
+	Revision *Revision
+}
+
+// Revision is the brief of one change request against a built deck.
+type Revision struct {
+	// BaseDeckID is the deck the user read. The new deck records it.
+	BaseDeckID string
+	// Base is the card list the user read, with counts and jobs.
+	Base []*mtgv1.DeckCard
+	// Instructions restate the request for the generator, in short lines.
+	Instructions []string
+	// Remove names the cards the user wants out. The pool never holds
+	// them, and a deck that keeps one is refused.
+	Remove []string
+	// Keep names the cards the user wants in. A deck without one is
+	// refused.
+	Keep []string
+	// MaxManaValue caps the mana value of every nonland card. Zero means
+	// no cap. The pool drops every card above it.
+	MaxManaValue float64
 }
 
 // Result is one finished build.
@@ -242,6 +265,16 @@ func (b *Builder) assemble(req Request, out *deckOut) pass {
 		addFinding(deck, CodeThinCommanderPool, mtgv1.Severity_SEVERITY_WARN,
 			"your library holds no commander for this theme, so the deck was built without one from it")
 	}
+	// A revision must do what the brief says. The pool already dropped
+	// the removed cards and the cards over the cap, so these fire only
+	// on a kept card the model left out, or a pool the brief could not
+	// filter (PR-12B).
+	if req.Revision != nil {
+		deck.RevisedFromDeckId = req.Revision.BaseDeckID
+		for _, f := range CheckRevision(deck, req.Revision, b.cards) {
+			addFinding(deck, f.GetCode(), f.GetSeverity(), f.GetMessage())
+		}
+	}
 	// The deck carries what it costs, so a reader needs no card index to
 	// see it (D-245).
 	deck.BuyCostUsd = BuyCost(deck)
@@ -308,7 +341,7 @@ func repairable(v *mtgv1.ValidationResult) []*mtgv1.Finding {
 		switch {
 		case f.GetSeverity() == mtgv1.Severity_SEVERITY_BLOCK:
 			out = append(out, f)
-		case f.GetCode() == CodeOverBudget, f.GetCode() == CodePreconShare:
+		case f.GetCode() == CodeOverBudget, f.GetCode() == CodePreconShare, f.GetCode() == CodeRevisionOverManaValue:
 			out = append(out, f)
 		}
 	}

@@ -77,6 +77,12 @@ Rules for the card list:
 - Meet the deck size in the limits block. Count the commander when the limits block says to.
 - Come as close to each job target as the shortlist allows.
 
+Rules for a revision, when the input holds the deck you are revising:
+- The user read that deck and asked for a change. The input lists the change in short lines.
+- Keep every card the change does not touch, at the same count and the same job. A revision is the smallest set of changes that does what the user asked, and not a new deck.
+- Do what every line of the change says. A card the user wants out is not on the shortlist. A card the user wants kept must stay.
+- Write the summary for the deck as it is now. Never describe the change.
+
 Rules for an upgrade, when the input names a precon:
 - The precon is a working deck. Change as few cards as the upgrade needs, and keep its theme intact.
 - The input states how many precon names you may change at most. That number is a ceiling and not a target. Never aim to replace that many.

@@ -9,7 +9,7 @@
 - The tree is green: build, vet, `-race` tests, golangci-lint, staticcheck, `buf lint`, `buf breaking`, govulncheck (zero reachable), web lint, typecheck, tests, and build. `make ste-check` is part of `make lint` now.
 - `make test` takes seconds again. The four snapshot tests of `candidates` gate on `CARDS_SNAPSHOT_DIR` and run under `make themes-check`.
 - The deployable API builds decks now (D-257). Before today only `chat-probe` could.
-- PR-8 is done and merged (#15). PR-9 is out of the MVP (D-256). Phase 3 started on 2026-08-28: PR-11 is merged (#38) and its browser gate held. PR-12 is code complete on branch `pr-12` and not merged (D-277 to D-279). Its browser gate is open. Then PR-13 and PR-15.
+- PR-8 is done and merged (#15). PR-9 is out of the MVP (D-256). Phase 3 started on 2026-08-28: PR-11 (#38) and PR-12 (#40) are merged. PR-12B is built on branch `pr-12b` and not merged (D-283 to D-285). Its paid gate has not run. Then PR-13 and PR-15.
 
 ## The numbers, and why none of them compare with the last run
 
@@ -31,6 +31,18 @@ Every measured number below moved on 2026-08-28. Question gate run 25 and deck g
 
 CAUTION: `tune-check` paired zero questions between run 24 and run 25, because the catalog and the prompt changed. The paired guard says nothing across that line, and the whole-run margins carry the verdict. The eval leaves a conversation unjudged when the judge returns fewer verdicts than questions. So 382 is the honest count, not a drop from 435.
 
+## PR-12B, what it holds (2026-08-28)
+
+Branch `pr-12b` holds the revision turn (F-27, D-283 to D-285). The tree is green on the branch: Go build, vet, `-race` tests, golangci-lint, `buf breaking`, web lint, typecheck, 55 web tests, and the web build. Nothing paid has run.
+
+- `internal/revise`: the `revise` role call, the brief, `DiffDecks`, `Note`, and `DeclineNote`. The reply comes from the diff and the declines, never from the model.
+- `internal/generate`: `Request.Revision`, the revision block of the generate prompt, `CheckRevision`, `AllowedByRevision`, and `Pool.Filter`. The pool drops the removed cards and the cards over the cap.
+- `internal/agentsvc`: `sendRevision` runs after a build when no slot changed, and `slotsChanged` decides. A slot change rebuilds from the start with a status line. `DeckStore` gained `Get`. `Turn.agent_message` is written now.
+- `Deck.revised_from_deck_id` and `Deck.revision_note` are additive proto fields. The deck view shows the note and the diff against the deck before it.
+- `cmd/revise-gate` and `make revise-gate` are the paid gate: two bases, six revisions, a verdict per revision. Ask the owner before the run, then record the numbers here and in the roadmap.
+
+CAUTION: the revise prompt has never met a real model. The first gate run is the first evidence, and the prompt may need a version bump after it.
+
 ## PR-12, what it holds (2026-08-28)
 
 Branch `pr-12` holds the slice of the ui plan, section 6. The tree is green on the branch: Go build, vet, `-race` tests, golangci-lint, `buf breaking`, web lint, typecheck, 46 web tests, and the web build. The owner has not run it in the browser yet.
@@ -49,10 +61,10 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## Next steps, in order
 
-1. The owner runs the PR-12 browser gate on the audited build: `make dev` with provider keys, then README section 6 steps 1 to 6. Ask the owner before the run, because every chat turn spends money. Then the owner merges `pr-12`.
-2. PR-12B, the revision turn (F-27, D-283). A message after a build is dropped today, and the deck is rebuilt from the first message. The roadmap entry holds the design, and `.local/session-eIrL12hRY2YNTTCo3iS4.txt` holds the session that showed it. Cut the branch from `main` after `pr-12` merges.
+1. Run `make revise-gate` with the owner's go-ahead (about $0.60, unmeasured), read every brief and every reply, and fix the revise prompt where it misread. Then the owner tests a revision in the browser and merges `pr-12b`.
+2. Watch the first pull request under the new `verify` workflow (D-286). The `changes` job prints the diff and its answers, so a job that skipped when it should have run is visible in that log. The workflow file is one of the inputs of every job, so this pull request runs them all.
 3. PR-13: `DeckService.ExportDeck`, the export button, and the buy list with Scryfall links. Ui plan section 4 gives the text shape, and the gate is the round trip through `ParseArenaText`.
-4. Add a ruleset that requires the `verify` check on `main`, if it is not there yet. Four Dependabot majors merged without it on 2026-08-28 and broke `main` twice.
+4. A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The fan-in job left the workflow for that reason (D-286). The owner reads the checks before a merge.
 5. After PR-12 merges, run the M-5 manual scoring on the first UI build (sequencing step 19), and ask the owner before any paid run.
 
 Done on 2026-08-28: the audit merged (#17), the baselines merged (#34), Go moved to 1.27.0 (#37), and PR-11 merged (#38). Every Dependabot pull request of the day is merged or closed. PR-11 holds the stack, the router, the boundary lint, sign-in and sign-up over the Auth emulator, the token interceptor, and the collection screen. The owner ran the gate in the browser on the real export: 4,952 cards, 2,657 rows, one token row reported as not playable. README section 6 is the browser procedure.

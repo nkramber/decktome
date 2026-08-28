@@ -1,0 +1,32 @@
+{
+  "bases": [
+    {
+      "id": 1,
+      "name": "Modern Angels, casual, mono-white, any card",
+      "format": "modern",
+      "power": "casual",
+      "colors": ["W"],
+      "theme": "Angels with lots of +1/+1 counters",
+      "plan": "Build an Angel deck that uses lots of +1/+1 counters.\nTheme: Angels with lots of +1/+1 counters\nPower: casual",
+      "revisions": [
+        {"id": 1, "message": "Replace some lands with better options if possible. Also tune the mana curve lower - no 6 or 7 mana cards needed", "cap": 5},
+        {"id": 2, "message": "Take out {{HIGHEST}}.", "remove_highest": true},
+        {"id": 3, "message": "Better lands please.", "unclear": true}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "lifegain Commander, Karlov, bracket 3, any card",
+      "format": "commander",
+      "commander": "Karlov of the Ghost Council",
+      "bracket": 3,
+      "theme": "lifegain",
+      "plan": "Build me a lifegain Commander deck.\nTheme: lifegain\nCommander bracket: 3",
+      "revisions": [
+        {"id": 4, "message": "No nonland cards over 4 mana.", "cap": 4},
+        {"id": 5, "message": "Swap {{HIGHEST}} for something cheaper that does the same job.", "remove_highest": true},
+        {"id": 6, "message": "Add two more cards that draw cards, and cut two of the weakest creatures."}
+      ]
+    }
+  ]
+}

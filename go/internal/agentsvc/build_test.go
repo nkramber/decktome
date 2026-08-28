@@ -226,6 +226,15 @@ func (f *fakeDeckStore) NewID(string) string {
 	return fmt.Sprintf("deck-%d", f.n)
 }
 
+func (f *fakeDeckStore) Get(_ context.Context, _ string, id string) (*mtgv1.Deck, error) {
+	for _, d := range f.put {
+		if d.GetId() == id {
+			return d, nil
+		}
+	}
+	return nil, fmt.Errorf("deck %s not found", id)
+}
+
 func (f *fakeDeckStore) Put(_ context.Context, _ string, d *mtgv1.Deck) error {
 	if f.fail != nil {
 		return f.fail

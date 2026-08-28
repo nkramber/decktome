@@ -151,7 +151,7 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-24 | **The LLM layer under-counted the judge.** Anthropic thinking tokens were dropped, cache writes were priced at 1x instead of 1.25x, and `LLM_JUDGE_PROVIDER=fake` passed under `LLM_REQUIRE_KEYS=1`. Found in the 2026-08-24 audit of PR-10. | ✅ audit fix: thinking tokens counted, `cache_write` price column, keys required by default (D-51). |
 | F-25 | **The proto lacked fields PR-6 to PR-9 need.** No upgrade list, no slot state, no question id, no structured answer, no seed override, no `Usage`, no per-face artist. | ✅ PR-1b (audit branch): all fields added in one contract amendment (D-46). `buf breaking` guards it from now on. |
 | F-26 | **The phrasing role invents claims about the game, and no gate catches them.** Gate run 14 of 2026-08-26 passed the gate with zero linter findings and told one user two false things. It said "Grist, the Hunger Tide can not lead a deck", which the rules contradict (Scryfall ruling, 2021-06-18). It asked "Do you want to use any colors beyond Grist's color identity?", which the rules allow no answer to. The catalog rows say neither. The ask role added both, and the ask prompt already said to state no fact about the game. | ✅ answered for PR-8 by the judge lane (D-229): the judge role reads every deck summary for a rule of the game and for the truth of it, on another provider than the generator, and a false rule fails the deck gate. Deck gate run 6 found none in 16 summaries, at $0.0034 a deck. The deterministic net reads the shape of a claim and never its truth, which is why the judge decides (D-224). Earlier: 🔧 partly fixed: D-140 silences the commander row for a legendary card the engine can not confirm, and D-144 puts the color-identity rule in the prompt and the shape in the linter. ⚠ binds PR-8: the generate role writes a deck summary in prose, and the same failure has more room there. The eval lane found both, and the deterministic linter found neither. |
-| F-27 | **A message after a build is dropped, and the deck is rebuilt from the first message.** Session `eIrL12hRY2YNTTCo3iS4`, 2026-08-28: the user wrote "Replace some lands with better options if possible. Also tune the mana curve lower - no 6 or 7 mana cards needed". The agent sent no reply, `plan()` read turn 1 and the slots only, and the generator built a second deck 2.5 minutes after the first with 24 Plains and the same four 6- and 7-mana cards. Three cards changed, all by variance (D-18). The turn cost a full build and answered nothing. | 🔧 PR-12B. |
+| F-27 | **A message after a build is dropped, and the deck is rebuilt from the first message.** Session `eIrL12hRY2YNTTCo3iS4`, 2026-08-28: the user wrote "Replace some lands with better options if possible. Also tune the mana curve lower - no 6 or 7 mana cards needed". The agent sent no reply, `plan()` read turn 1 and the slots only, and the generator built a second deck 2.5 minutes after the first with 24 Plains and the same four 6- and 7-mana cards. Three cards changed, all by variance (D-18). The turn cost a full build and answered nothing. | 🔧 PR-12B built 2026-08-28, gate not run. |
 
 > *In plain English:* these are the traps we found before writing code. The biggest ones: ban lists change every few weeks. The collection file format is not documented. The AI can name a card that sounds right but is not. Each one has a planned fix or a rule that prevents it.
 
@@ -518,7 +518,7 @@ React 19, Vite, TypeScript, Tailwind, the wallabee-ui patterns (TanStack Query, 
 Detail of 2026-08-28: `docs/reference/ui-plan-2026-08-28.md` holds the user path, the architecture, and the live-test procedure (D-273 to D-276). The sign-in is real, over the Auth emulator, and the token reaches the API through the interceptor of D-268.
 > *In plain English:* the website skeleton: log in, upload your binder, see how many cards we recognized.
 
-**PR-12: Chat and deck view.** 🔧 code complete 2026-08-28 on branch `pr-12`, not merged. The test gate held. Axe passes on the session page and the deck view, and a test asserts the artist and the copyright on every image. The browser gate waits for the owner (README section 6).
+**PR-12: Chat and deck view.** ✅ merged 2026-08-28 (#40). The test gate held. Axe passes on the session page and the deck view, and a test asserts the artist and the copyright on every image. The browser gate waits for the owner (README section 6).
 A streaming chat thread over the `Chat` RPC. The deck view groups cards by role. It shows card art from Scryfall image URIs with artist and copyright (D-6, guardrail 7). It shows both faces for DFCs (F-9). 
 
 It marks owned versus to-buy when a collection is attached. It shows the pool-mode toggle ("use only cards in my library") with the session's mode (D-37). In any-card mode, the buy list can be the whole deck.
@@ -528,7 +528,7 @@ It shows the mana curve, the color sources, the `ValidationResult` findings, and
 Contract addition of 2026-08-28: `CardService.GetCards` returns up to 120 cards by Oracle id in one call. `DeckCard` carries only the id and the name, and one `Lookup` per card is 100 calls per deck (ui plan, section 4). Landed 2026-08-28 (D-277). The chat holds an open question across a turn that asks nothing (D-278). The attribution line is the one the Scryfall docs ask for (D-279).
 > *In plain English:* the main screen. The conversation on one side, the deck on the other with real card pictures, grouped by what each card does, with your own cards marked.
 
-**PR-12B: Deck revision turns.** 🔧 planned 2026-08-28 (F-27, D-283).
+**PR-12B: Deck revision turns.** 🔧 built 2026-08-28 on branch `pr-12b` (F-27, D-283 to D-285), gate not yet run. The unit tests hold the three outcomes and the slot-change rebuild. `make revise-gate` is the paid gate, and the owner says when.
 After a build, every message is a request to change the latest deck. The turn has three parts. First, the classify call runs as today for a slot change. A changed slot means a full rebuild with a note that says so (D-241). Second, with no slot change, a new revise call reads the message and the current deck list. It returns a revision brief with four parts:
 
 - the cards to remove,
@@ -610,7 +610,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 15. PR-8 generator.
 16. PR-9 variance. ⏸ out of MVP scope (D-256). It blocks nothing: the Phase 3 gate below reads PR-8's gate.
 17. **GATE.** Phase 3 starts only when PR-8's gate holds on the golden prompts. ✅ held on 2026-08-28, deck gate run 6.
-18. PR-11 ✅ merged 2026-08-28 (#38). PR-12 🔧 code complete 2026-08-28 on branch `pr-12`, browser gate open. Then PR-12B (F-27), then PR-13.
+18. PR-11 ✅ merged 2026-08-28 (#38). PR-12 ✅ merged 2026-08-28 (#40). PR-12B 🔧 built 2026-08-28 on branch `pr-12b`, gate not run. Then PR-13.
 19. PR-15 eval harness (can start after step 15, in parallel with the UI, if a second owner exists). M-5 manual scoring runs on the first UI build (after PR-12).
 20. PR-14 meta, then I-1, I-2, I-3 on evidence.
 21. Phase 5 stays parked.

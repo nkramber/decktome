@@ -60,6 +60,8 @@ Four more targets spend money, and each has an overwrite guard and an env guard.
 
 `make summary-judge` judges every deck summary of a gate document (F-26). Each probe costs a few cents. Ask the owner before every run.
 
+`make revise-gate` builds two base decks and runs six revisions over them (PR-12B). It has the same two guards. The cost is unmeasured until the first run, and the estimate is two builds plus six revise calls plus six revised builds, about $0.60.
+
 Everything else is free. `make ste-check` checks every hand-written `.md` file against the STE rules, and `make lint` runs it. `make m5-sheet` builds the scoring sheet, and `make m5-report` reads it. `make themes-check` checks the theme slugs and the commander ranking.
 
 `make store-check` runs the session store against the local Firestore emulator. `make candidates-review` writes the PR-6 gate document from a local snapshot. `cd go && go run ./cmd/tune-check` compares an eval summary with its baseline.

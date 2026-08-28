@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
@@ -125,6 +126,9 @@ type DeckStore interface {
 	// id, so the build needs one before it runs.
 	NewID(uid string) string
 	Put(ctx context.Context, uid string, d *mtgv1.Deck) error
+	// Get reads one kept deck. A revision starts from the deck the user
+	// read (PR-12B).
+	Get(ctx context.Context, uid, id string) (*mtgv1.Deck, error)
 }
 
 // WithPrecons wires the preconstructed decks a user can ask to upgrade.
@@ -292,6 +296,10 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 
 	st := questions.Restore(session.GetId(), session.GetSlots(), snap)
 	message := withAnswers(req.Msg.GetMessage(), req.Msg.GetAnswers(), session)
+	// The slots before the turn. A turn after a build that changes none
+	// of them is a revision of the deck, and one that changes any is a
+	// full rebuild (PR-12B, D-241).
+	slotsBefore := proto.Clone(session.GetSlots()).(*mtgv1.Slots)
 
 	hints := s.hints(ctx, uid, session, st)
 	s.facts(session, st, hints)
@@ -346,7 +354,21 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 		// deck was kept (L-11).
 		before := len(session.GetDeckIds())
 		session.Status = mtgv1.SessionStatus_SESSION_STATUS_BUILT
-		err := s.sendDeck(ctx, uid, session, st, st.Snapshot(), version+1, acc, stream)
+		var err error
+		switch {
+		case before > 0 && !slotsChanged(slotsBefore, session.GetSlots()):
+			// A message after a build with no slot change asks for a
+			// change to the deck the user read (D-283).
+			err = s.sendRevision(ctx, uid, session, st, st.Snapshot(), version+1, acc, message, turn, stream)
+		case before > 0:
+			if err = stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Status{
+				Status: "a deck setting changed, so the deck is built again from the start"}}); err != nil {
+				return err
+			}
+			err = s.sendDeck(ctx, uid, session, st, st.Snapshot(), version+1, acc, stream)
+		default:
+			err = s.sendDeck(ctx, uid, session, st, st.Snapshot(), version+1, acc, stream)
+		}
 		if len(session.GetDeckIds()) == before {
 			session.Status = mtgv1.SessionStatus_SESSION_STATUS_READY
 		}
@@ -574,4 +596,14 @@ func storeError(err error) error {
 		return connect.NewError(connect.CodeResourceExhausted, fmt.Errorf("%w: %w", errSessionBig, err))
 	}
 	return connect.NewError(connect.CodeInternal, err)
+}
+
+// slotsChanged compares the deck settings of two slot sets. The fill
+// states are not settings: a turn that marks a question asked changes
+// no deck.
+func slotsChanged(before, after *mtgv1.Slots) bool {
+	a := proto.Clone(before).(*mtgv1.Slots)
+	b := proto.Clone(after).(*mtgv1.Slots)
+	a.SlotStates, b.SlotStates = nil, nil
+	return !proto.Equal(a, b)
 }

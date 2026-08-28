@@ -268,6 +268,31 @@ describe("SessionPage", () => {
     expect(within(screen.getByRole("list", { name: "Conversation" })).getAllByRole("listitem")[3]).toHaveTextContent("Modern");
   });
 
+  it("a message after the deck streams the reply and the revised deck with its diff (PR-12B)", async () => {
+    const revised = {
+      ...deck,
+      id: "d2",
+      revisedFromDeckId: "d1",
+      revisionNote: "I changed the count of Llanowar Elves: 4 to 2.",
+      cards: [{ ...deck.cards[0], count: 2 }],
+    };
+    chat
+      .mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("deck", deck), ev("usage", { calls: 2 })]))
+      .mockReturnValueOnce(
+        events([ev("status", "reading your request"), ev("status", "revising the deck"), ev("textDelta", "I changed the count of Llanowar Elves: 4 to 2."), ev("deck", revised), ev("usage", { calls: 4 })]),
+      );
+    renderAt("/session/new");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "elves");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    await screen.findByRole("heading", { name: "Elves" });
+    await user.type(await screen.findByLabelText("Your message"), "fewer elves{enter}");
+    expect(await screen.findByTestId("revision-note")).toHaveTextContent("I changed the count of Llanowar Elves: 4 to 2.");
+    expect(screen.getByTestId("revision-diff")).toHaveTextContent("Count of Llanowar Elves: 4 to 2");
+    expect(screen.getByText("I changed the count of Llanowar Elves: 4 to 2.", { selector: "p.whitespace-pre-line" })).toBeInTheDocument();
+    expect((chat.mock.calls[1][0] as { sessionId: string; message: string }).message).toBe("fewer elves");
+  });
+
   it("refuses a message over the 8 KiB cap", async () => {
     renderAt("/session/new");
     const user = userEvent.setup();
