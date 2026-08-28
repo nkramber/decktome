@@ -1,7 +1,7 @@
 # mtg-deck-builder - single human entry point.
 # Every target prints what it does. Versions are pinned in go/go.mod, web/package.json, and here.
 
-GOLANGCI_LINT_VERSION := v2.6.2
+GOLANGCI_LINT_VERSION := v2.13.2
 GO := go -C go
 BUF := .bin/buf
 PNPM := pnpm --dir web
