@@ -107,7 +107,7 @@ describe("SessionPage", () => {
     expect(within(screen.getByRole("list", { name: "Conversation" })).getAllByRole("listitem")[2]).toHaveTextContent("Modern");
     expect(screen.getByText("building the deck")).toBeInTheDocument();
     expect(screen.getByText("Here is your deck.")).toBeInTheDocument();
-    expect(await screen.findByAltText("Llanowar Elves")).toBeInTheDocument();
+    expect(await screen.findByAltText("Llanowar Elves (card)")).toBeInTheDocument();
   });
 
   it("one submit sends every answer, and waits until each question has one", async () => {
@@ -293,7 +293,7 @@ describe("SessionPage", () => {
     expect((chat.mock.calls[1][0] as { sessionId: string; message: string }).message).toBe("fewer elves");
   });
 
-  it("shows a commander offer as cards with art, attribution, and rules text (D-287)", async () => {
+  it("shows a commander offer as full card images (D-287)", async () => {
     getCards.mockResolvedValue({
       cards: [
         { oracleId: "o-ghalta", name: "Ghalta, Primal Hunger", typeLine: "Legendary Creature — Elder Dinosaur", manaCost: "{10}{G}{G}", oracleText: "Ghalta costs {X} less to cast.\nTrample", cardTypes: ["Creature"], faces: [], defaultPrinting: { artist: "Chase Stone", imageUris: { normal: "https://x/ghalta.jpg", small: "https://x/ghalta-s.jpg" } } },
@@ -314,10 +314,11 @@ describe("SessionPage", () => {
     await user.type(await screen.findByLabelText("Your message"), "dinosaurs");
     await user.click(screen.getByRole("button", { name: "Send" }));
     const card = await screen.findByRole("group", { name: /Question: Which one/ });
-    expect(await within(card).findByAltText("Ghalta, Primal Hunger")).toHaveAttribute("src", "https://x/ghalta.jpg");
-    expect(within(card).getByText("Ghalta, Primal Hunger. Illustrated by Chase Stone. © Wizards of the Coast, LLC")).toBeInTheDocument();
-    expect(within(card).getByText("Legendary Creature — Elder Dinosaur")).toBeInTheDocument();
-    expect(within(card).getByText(/Ghalta costs \{X\} less to cast/)).toBeInTheDocument();
+    expect(await within(card).findByAltText("Ghalta, Primal Hunger (card)")).toHaveAttribute("src", "https://x/ghalta.jpg");
+    expect(within(card).queryByText(/Illustrated by/)).not.toBeInTheDocument();
+    // The image carries the rules text, so the tile repeats none of it.
+    expect(within(card).queryByText("Legendary Creature — Elder Dinosaur")).not.toBeInTheDocument();
+    expect(within(card).queryByText(/Ghalta costs \{X\} less to cast/)).not.toBeInTheDocument();
     expect(within(card).getAllByTestId("card-option")).toHaveLength(2);
     expect((getCards.mock.calls[0][0] as { oracleIds: string[] }).oracleIds).toEqual(["o-ghalta", "o-reptil"]);
     // The non-card option keeps a plain button, and every option still picks.
@@ -389,7 +390,7 @@ describe("SessionPage", () => {
     const user = userEvent.setup();
     await user.type(await screen.findByLabelText("Your message"), "elves");
     await user.click(screen.getByRole("button", { name: "Send" }));
-    await screen.findByAltText("Llanowar Elves");
+    await screen.findByAltText("Llanowar Elves (card)");
     expect(await axe(container)).toHaveNoViolations();
   });
 });

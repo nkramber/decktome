@@ -4,10 +4,9 @@ import { useState } from "react";
 
 import { priceText } from "./deck-stats";
 
-// The copyright line every image carries (Scryfall API docs, read
-// 2026-08-28: "Do not cover, crop, or clip off the copyright or artist
-// name", and the footer wording "copyright Wizards of the Coast, LLC").
-export const copyrightLine = "© Wizards of the Coast, LLC";
+// The full card image carries the artist and the copyright line, and no
+// CSS crops it. The Scryfall guidelines ask for a separate line only
+// beside an art_crop, which the app never shows (D-6, D-291).
 
 type Face = { name: string; artist: string; imageUris?: ImageUris; typeLine: string; oracleText: string; manaCost: string };
 
@@ -58,7 +57,7 @@ function FaceImage({ face }: { face: Face }) {
   return (
     <img
       src={src}
-      alt={face.name}
+      alt={`${face.name} (card)`}
       width={488}
       height={680}
       loading="lazy"
@@ -102,12 +101,11 @@ export function CardTile({
       {faces.map((face, i) => (
         <figure key={face.imageUris?.normal || face.name || i} className="flex flex-col gap-1">
           <FaceImage face={face} />
-          <figcaption className="text-xs text-neutral-700">
-            {face.name}
-            {faces.length > 1 && ` (face ${i + 1} of ${faces.length})`}
-            {face.artist ? `. Illustrated by ${face.artist}. ` : ". "}
-            {copyrightLine}
-          </figcaption>
+          {faces.length > 1 && (
+            <figcaption className="text-xs text-neutral-700">
+              {face.name} (face {i + 1} of {faces.length})
+            </figcaption>
+          )}
         </figure>
       ))}
       {!hideOwnership && (

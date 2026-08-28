@@ -99,7 +99,7 @@ describe("DeckView", () => {
   it("loads the cards in one GetCards call and groups them by role", async () => {
     renderDeck();
     expect(await screen.findByRole("region", { name: "Lands (20)" })).toBeInTheDocument();
-    await screen.findByAltText("Forest");
+    await screen.findByAltText("Forest (card)");
     expect(getCards).toHaveBeenCalledTimes(1);
     expect((getCards.mock.calls[0][0] as { oracleIds: string[] }).oracleIds).toEqual(["o-forest", "o-elf", "o-dfc", "o-gone"]);
     expect(screen.getByRole("region", { name: "Ramp (4)" })).toBeInTheDocument();
@@ -108,33 +108,32 @@ describe("DeckView", () => {
     expect(screen.getByRole("alert", { name: "" })).toHaveTextContent("1 card of this deck are not in the card database: Missing Card.");
   });
 
-  it("gives every image its artist and the copyright in the DOM (D-6)", async () => {
+  it("shows every card as its full image, uncropped, with no caption to repeat what the card prints (D-6, D-291)", async () => {
     renderDeck();
-    await screen.findByAltText("Forest");
+    await screen.findByAltText("Forest (card)");
     const images = screen.getAllByRole("img");
     expect(images).toHaveLength(4);
     for (const image of images) {
-      const figure = image.closest("figure");
-      expect(figure).not.toBeNull();
-      const caption = within(figure as HTMLElement).getByText(/Illustrated by .+\. © Wizards of the Coast, LLC/);
-      expect(caption.tagName).toBe("FIGCAPTION");
+      expect(image).toHaveClass("h-auto", "w-full");
+      expect(image).toHaveAttribute("width", "488");
+      expect(image).toHaveAttribute("height", "680");
     }
-    expect(screen.getByAltText("Forest").closest("figure")).toHaveTextContent("Illustrated by John Avon");
-    // No CSS crop: the image keeps its own aspect ratio.
-    expect(screen.getByAltText("Forest")).toHaveClass("h-auto", "w-full");
+    expect(screen.queryByText(/Illustrated by/)).not.toBeInTheDocument();
+    // The one Fan Content notice of the view stays.
+    expect(screen.getByText(/unofficial Fan Content/)).toBeInTheDocument();
   });
 
   it("shows both faces of a double-faced card (F-9)", async () => {
     renderDeck();
-    await screen.findByAltText("Forest");
-    expect(screen.getByAltText("Delver of Secrets")).toHaveAttribute("src", "https://cards.scryfall.io/normal/delver-a.jpg");
-    expect(screen.getByAltText("Insectile Aberration")).toHaveAttribute("src", "https://cards.scryfall.io/normal/delver-b.jpg");
-    expect(screen.getByText("Delver of Secrets (face 1 of 2). Illustrated by Nils Hamm. © Wizards of the Coast, LLC")).toBeInTheDocument();
+    await screen.findByAltText("Forest (card)");
+    expect(screen.getByAltText("Delver of Secrets (card)")).toHaveAttribute("src", "https://cards.scryfall.io/normal/delver-a.jpg");
+    expect(screen.getByAltText("Insectile Aberration (card)")).toHaveAttribute("src", "https://cards.scryfall.io/normal/delver-b.jpg");
+    expect(screen.getByText("Delver of Secrets (face 1 of 2)")).toBeInTheDocument();
   });
 
   it("marks owned cards and prices the rest", async () => {
     renderDeck();
-    await screen.findByAltText("Forest");
+    await screen.findByAltText("Forest (card)");
     const lands = screen.getByRole("region", { name: "Lands (20)" });
     expect(within(lands).getByTestId("owned-mark")).toHaveTextContent("Owned (40)");
     const ramp = screen.getByRole("region", { name: "Ramp (4)" });
@@ -145,7 +144,7 @@ describe("DeckView", () => {
 
   it("shows the findings, the legality date, the curve, and the sources", async () => {
     renderDeck();
-    await screen.findByAltText("Forest");
+    await screen.findByAltText("Forest (card)");
     expect(screen.getByTestId("legality-line")).toHaveTextContent("Not legal, checked against the card data of 2026-08-24.");
     expect(screen.getByTestId("buy-cost")).toHaveTextContent("To buy: $0.50");
     const findings = screen.getByRole("region", { name: "Findings" });
@@ -164,7 +163,7 @@ describe("DeckView", () => {
 
   it("opens the Oracle text on demand", async () => {
     renderDeck();
-    await screen.findByAltText("Forest");
+    await screen.findByAltText("Forest (card)");
     const ramp = screen.getByRole("region", { name: "Ramp (4)" });
     await userEvent.setup().click(within(ramp).getByText("Oracle text"));
     expect(within(ramp).getByText("{T}: Add {G}.")).toBeVisible();
@@ -172,9 +171,9 @@ describe("DeckView", () => {
 
   it("falls back to the small image when the normal one fails", async () => {
     renderDeck();
-    const image = await screen.findByAltText("Forest");
+    const image = await screen.findByAltText("Forest (card)");
     image.dispatchEvent(new Event("error"));
-    expect(await screen.findByAltText("Forest")).toHaveAttribute("src", "https://cards.scryfall.io/small/forest.jpg");
+    expect(await screen.findByAltText("Forest (card)")).toHaveAttribute("src", "https://cards.scryfall.io/small/forest.jpg");
   });
 
   it("shows the commander from commander_oracle_ids, which the card list does not hold (D-289)", async () => {
@@ -188,7 +187,7 @@ describe("DeckView", () => {
     } as unknown as Deck);
     const commander = await screen.findByRole("region", { name: "Commander (1)" });
     expect(within(commander).getByTestId("commander-mark")).toBeInTheDocument();
-    expect(await within(commander).findByAltText("Llanowar Elves")).toBeInTheDocument();
+    expect(await within(commander).findByAltText("Llanowar Elves (card)")).toBeInTheDocument();
     expect(within(commander).queryByTestId("owned-mark")).not.toBeInTheDocument();
     expect(within(commander).queryByTestId("buy-mark")).not.toBeInTheDocument();
     expect((getCards.mock.calls[0][0] as { oracleIds: string[] }).oracleIds).toContain("o-elf");
@@ -211,7 +210,7 @@ describe("DeckView", () => {
         <DeckView deck={revised} base={base} />
       </QueryClientProvider>,
     );
-    await screen.findByAltText("Forest");
+    await screen.findByAltText("Forest (card)");
     expect(screen.getByTestId("revision-note")).toHaveTextContent("I removed 4 Llanowar Elves.");
     const diff = screen.getByTestId("revision-diff");
     expect(within(diff).getAllByRole("listitem").map((li) => li.textContent)).toEqual([
@@ -229,7 +228,7 @@ describe("DeckView", () => {
         <DeckView deck={revised} base={{ ...deck, id: "d9" } as unknown as Deck} />
       </QueryClientProvider>,
     );
-    await screen.findByAltText("Forest");
+    await screen.findByAltText("Forest (card)");
     expect(screen.getByTestId("revision-note")).toHaveTextContent("note");
     expect(screen.queryByTestId("revision-diff")).not.toBeInTheDocument();
   });
@@ -242,7 +241,7 @@ describe("DeckView", () => {
 
   it("has no axe violations", async () => {
     const { container } = renderDeck();
-    await screen.findByAltText("Forest");
+    await screen.findByAltText("Forest (card)");
     expect(await axe(container)).toHaveNoViolations();
   });
 });

@@ -4,11 +4,12 @@ import { useQuery } from "@tanstack/react-query";
 
 import { cardClient } from "../../lib/api";
 import { errorMessage } from "../../lib/errors";
-import { copyrightLine, facesOf } from "../deck/card-tile";
+import { facesOf } from "../deck/card-tile";
 
 // A question whose options are cards, for example a commander offer,
-// shows each card with its art, its attribution, its type line, and its
-// rules text above the pick button (D-287, D-6).
+// shows each full card image above the pick button. The image carries
+// the rules text, the artist, and the copyright line, so the tile
+// repeats none of them (D-287, D-291).
 export function optionIds(q: Question): string[] {
   return q.optionOracleIds ?? [];
 }
@@ -39,7 +40,7 @@ export function CardOption({ card, name }: { card: Card | undefined; name: strin
           {face.imageUris?.normal || face.imageUris?.small ? (
             <img
               src={face.imageUris.normal || face.imageUris.small}
-              alt={face.name}
+              alt={`${face.name} (card)`}
               width={488}
               height={680}
               loading="lazy"
@@ -48,17 +49,11 @@ export function CardOption({ card, name }: { card: Card | undefined; name: strin
           ) : (
             <div className="rounded border border-neutral-300 bg-neutral-100 p-2 text-center text-sm">{face.name} (no image)</div>
           )}
-          <figcaption className="text-xs text-neutral-700">
-            {face.name}
-            {faces.length > 1 && ` (face ${i + 1} of ${faces.length})`}
-            {face.artist ? `. Illustrated by ${face.artist}. ` : ". "}
-            {copyrightLine}
-          </figcaption>
-          <p className="text-sm">
-            <span className="font-medium">{face.typeLine}</span>
-            {face.manaCost && <span className="text-neutral-600"> {face.manaCost}</span>}
-          </p>
-          <p className="whitespace-pre-line text-sm">{face.oracleText || "No rules text."}</p>
+          {faces.length > 1 && (
+            <figcaption className="text-xs text-neutral-700">
+              {face.name} (face {i + 1} of {faces.length})
+            </figcaption>
+          )}
         </figure>
       ))}
     </div>

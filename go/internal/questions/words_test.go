@@ -1,6 +1,7 @@
 package questions
 
 import (
+	"strings"
 	"testing"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
@@ -373,5 +374,22 @@ func TestUserWordsDropsTheQuotedQuestion(t *testing.T) {
 	}
 	if got := UserWords("plain words\nmore words"); got != "plain words\nmore words" {
 		t.Errorf("plain message changed: %q", got)
+	}
+}
+
+// TestAddMessageKeepsOnlyTheUserWords is D-292. The power question echoes
+// "near a precon" in its options, and the precon rule must not fire on
+// the agent's own words.
+func TestAddMessageKeepsOnlyTheUserWords(t *testing.T) {
+	st := Restore("s", &mtgv1.Slots{}, Snapshot{Version: SnapshotVersion})
+	st.AddMessage(QuotedQuestionPrefix + "Which power bracket? 2 core, near a precon, 3 upgraded\n" + AnswerPrefix + "3 upgraded")
+	if preconRequest(st.Ctx.Words) {
+		t.Errorf("the quoted question reached the words: %q", st.Ctx.Words)
+	}
+	if !strings.Contains(st.Ctx.Words, "upgraded") {
+		t.Errorf("the user's answer left the words: %q", st.Ctx.Words)
+	}
+	if len(st.Prior()) != 1 || !strings.HasPrefix(st.Prior()[0], QuotedQuestionPrefix) {
+		t.Errorf("the classifier's prior messages lost the question: %v", st.Prior())
 	}
 }

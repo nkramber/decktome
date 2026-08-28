@@ -82,7 +82,10 @@ func (s *State) Prior() []string {
 // after the classify call succeeds, so a failed turn leaves no trace.
 func (s *State) AddMessage(text string) {
 	s.Messages = append(s.Messages, text)
-	s.AddWords(text)
+	// The words hold what the user wrote, and never a quoted question.
+	// A quoted option such as "near a precon" is the agent's text, and
+	// the word rules must not read it as the user's (D-280, D-292).
+	s.AddWords(UserWords(text))
 }
 
 // SetOffer records the commander names now on the table.

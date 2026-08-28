@@ -163,7 +163,7 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 4. **Exact card names only.** The model returns exact Oracle names. The normalizer does an exact match. Anything else becomes a user-visible suggestion, never a substitution (F-13).
 5. **The pool mode is explicit, and ownership is always visible (D-2, D-37).** Every deck records its pool mode. When a collection is attached, every card carries an `owned` flag with the count, in every mode. Owned-first is the default with a library, any-card without one. The engine never silently narrows or widens the pool.
 6. **The agent asks before it assumes** on format, power level, and house rules. Max three questions per turn. Defaults are allowed only when the user says "you decide" (D-3).
-7. **Attribution on every image.** Artist and copyright are shown, images are not cropped or altered, and no paywall sits in front of card data (Scryfall terms, D-6).
+7. **Attribution on every image.** The full card image shows its printed artist and copyright. Images are not cropped or altered, and no paywall sits in front of card data (Scryfall terms, D-6, D-291). A separate credit line is needed only beside an art crop, which the app never shows.
 8. **Generated proto code is committed and CI diffs it.** No hand edits. Pinned buf and plugin versions.
 9. **Local mode has no cloud dependency.** Every service starts with emulators or fakes (D-9). A new cloud dependency must ship with its local fake in the same PR.
 10. **One concern per PR. Evidence committed.** Golden decks and A/B outputs live in the repo.
@@ -518,7 +518,7 @@ React 19, Vite, TypeScript, Tailwind, the wallabee-ui patterns (TanStack Query, 
 Detail of 2026-08-28: `docs/reference/ui-plan-2026-08-28.md` holds the user path, the architecture, and the live-test procedure (D-273 to D-276). The sign-in is real, over the Auth emulator, and the token reaches the API through the interceptor of D-268.
 > *In plain English:* the website skeleton: log in, upload your binder, see how many cards we recognized.
 
-**PR-12: Chat and deck view.** ✅ merged 2026-08-28 (#40). The test gate held. Axe passes on the session page and the deck view, and a test asserts the artist and the copyright on every image. The browser gate waits for the owner (README section 6).
+**PR-12: Chat and deck view.** ✅ merged 2026-08-28 (#40). The test gate held. Axe passes on the session page and the deck view, and a test asserts the full card image, uncropped, on every card (D-291). The browser gate waits for the owner (README section 6).
 A streaming chat thread over the `Chat` RPC. The deck view groups cards by role. It shows card art from Scryfall image URIs with artist and copyright (D-6, guardrail 7). It shows both faces for DFCs (F-9). 
 
 It marks owned versus to-buy when a collection is attached. It shows the pool-mode toggle ("use only cards in my library") with the session's mode (D-37). In any-card mode, the buy list can be the whole deck.

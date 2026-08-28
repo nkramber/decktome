@@ -15,7 +15,7 @@
 
 Every measured number below moved on 2026-08-28. Question gate run 25 and deck gate run 8 ran on the new code the same day, and they are the baselines now. Runs 1 to 24 and deck gate runs 1 to 7 do not compare with them (D-66, D-263):
 
-- The classify and ask prompts are at version 12 (D-260, D-265). The generate prompt is at version 9 (D-259).
+- The classify prompt is at version 12 (D-260, D-265), and the ask prompt at version 13 (D-290). The generate prompt is at version 10 (D-285). Runs 25 and 26 do not compare with the next run.
 - The catalog holds 22 rows. Five retired (D-260), and `house_rules` stores its answer (D-265).
 - The conversation set holds 104 conversations, 30 gate and 74 probe, with ids 1 to 105 and no id 67 (D-263). A `has_deck` conversation leaves the catalog-only count.
 - The question agent changed in seven places a gate could not see before (audit Q-1 to Q-14). The snapshot carries every field. The nearest-format acceptance fills the slot. A retired row may ask again. The word rules read the current message.
@@ -39,6 +39,9 @@ Branch `pr-12b` holds the revision turn (F-27, D-283 to D-285). The tree is gree
 - `internal/generate`: `Request.Revision`, the revision block of the generate prompt, `CheckRevision`, `AllowedByRevision`, and `Pool.Filter`. The pool drops the removed cards and the cards over the cap.
 - `internal/agentsvc`: `sendRevision` runs after a build when no slot changed, and `slotsChanged` decides. A slot change rebuilds from the start with a status line. `DeckStore` gained `Get`. `Turn.agent_message` is written now.
 - `Deck.revised_from_deck_id` and `Deck.revision_note` are additive proto fields. The deck view shows the note and the diff against the deck before it.
+- A commander offer before the pool question ranks on quality alone (D-293). The conversation words hold the user words only (D-292). Both came from the browser sessions of the evening.
+- A card tile shows the full image and no caption (D-291). The commander offer tile shows the image and the pick button only.
+- The commander row asks for a name or a suggestion in one step (D-290). The catalog text changed, so the next question gate run re-baselines (D-66).
 - The shortlist follows the commander identity, and the deck view shows the commander from `commander_oracle_ids` (D-289). Before this, a mono-green commander got nine off-color Dinosaurs and no commander tile.
 - A commander offer shows each card with its art and its rules text, through the new `Question.option_oracle_ids` (D-287). The branch holds it too.
 - `cmd/revise-gate` and `make revise-gate` are the paid gate: two bases, six revisions, a verdict per revision. Ask the owner before the run, then record the numbers here and in the roadmap.
