@@ -480,7 +480,9 @@ func withAnswers(message string, answers []*mtgv1.Answer, session *mtgv1.Session
 			lines = append(lines, text)
 			continue
 		}
-		lines = append(lines, fmt.Sprintf("%s %s", q.GetText(), text))
+		// The question goes on its own quoted line, so the classifier
+		// sees it and the word rules skip it (questions.UserWords).
+		lines = append(lines, questions.QuotedQuestionPrefix+q.GetText(), questions.AnswerPrefix+text)
 	}
 	if message = strings.TrimSpace(message); message != "" {
 		lines = append(lines, message)

@@ -534,11 +534,11 @@ func TestAnswerTextWinsOverOptionZero(t *testing.T) {
 		Id: "q-power", Text: "Which bracket?", Options: []string{"Bracket 1", "Bracket 2"},
 	}}}}}
 	got := withAnswers("", []*mtgv1.Answer{{QuestionId: "q-power", OptionIndex: proto.Int32(0), Text: "somewhere near 3"}}, session)
-	if got != "Which bracket? somewhere near 3" {
+	if got != "Q: Which bracket?\nA: somewhere near 3" {
 		t.Errorf("text with option 0 gave %q", got)
 	}
 	got = withAnswers("", []*mtgv1.Answer{{QuestionId: "q-power", OptionIndex: proto.Int32(0)}}, session)
-	if got != "Which bracket? Bracket 1" {
+	if got != "Q: Which bracket?\nA: Bracket 1" {
 		t.Errorf("option 0 with no text gave %q", got)
 	}
 	got = withAnswers("", []*mtgv1.Answer{{QuestionId: "q-power"}}, session)

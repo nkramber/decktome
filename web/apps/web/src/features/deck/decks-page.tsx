@@ -1,18 +1,22 @@
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { Link } from "react-router";
 
 import { deckClient } from "../../lib/api";
 import { errorMessage } from "../../lib/errors";
+import { DeckView } from "./deck-view";
 
-// Placeholder listing. The deck view lands with PR-12.
+// The deck list. One deck opens in place with the full deck view, so the
+// M-5 scoring can read every deck without its session.
 export function DecksPage() {
+  const [openId, setOpenId] = useState("");
   const decks = useQuery({
     queryKey: ["decks"],
     queryFn: () => deckClient.listDecks({}),
   });
 
   return (
-    <div className="mx-auto max-w-3xl p-6">
+    <div className="mx-auto max-w-7xl p-6">
       <h1 className="text-2xl font-semibold">Your decks</h1>
       <div aria-live="polite" className="mt-2">
         {decks.isPending && <p>Loading decks...</p>}
@@ -37,6 +41,15 @@ export function DecksPage() {
                     session
                   </Link>
                 </>
+              )}
+              {" · "}
+              <button type="button" aria-expanded={openId === d.id} onClick={() => setOpenId(openId === d.id ? "" : d.id)} className="underline">
+                {openId === d.id ? "Hide" : "View"}
+              </button>
+              {openId === d.id && (
+                <div className="mt-2 rounded border border-neutral-200 p-4">
+                  <DeckView deck={d} />
+                </div>
               )}
             </li>
           ))}

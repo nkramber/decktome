@@ -16,6 +16,7 @@ vi.mock("../../lib/api", () => ({
   },
   collectionClient: { listCollections: () => Promise.resolve({ collections: [] }) },
   deckClient: { listDecks: () => Promise.resolve({ decks: [] }) },
+  agentClient: { getSession: () => Promise.resolve({ session: { id: "abc123", turns: [], deckIds: [] } }) },
 }));
 
 beforeEach(() => {
@@ -53,7 +54,6 @@ describe("route guard", () => {
     state.user = fakeUser;
     renderAt("/session/abc123");
     expect(await screen.findByTestId("session-id")).toHaveTextContent("Session id: abc123");
-    expect(screen.getByText(/The chat lands with PR-12/)).toBeInTheDocument();
     await userEvent.setup().click(screen.getByRole("button", { name: "Sign out" }));
     expect(vi.mocked(signOut)).toHaveBeenCalled();
   });

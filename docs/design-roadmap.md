@@ -516,14 +516,14 @@ React 19, Vite, TypeScript, Tailwind, the wallabee-ui patterns (TanStack Query, 
 Detail of 2026-08-28: `docs/reference/ui-plan-2026-08-28.md` holds the user path, the architecture, and the live-test procedure (D-273 to D-276). The sign-in is real, over the Auth emulator, and the token reaches the API through the interceptor of D-268.
 > *In plain English:* the website skeleton: log in, upload your binder, see how many cards we recognized.
 
-**PR-12: Chat and deck view.**
+**PR-12: Chat and deck view.** 🔧 code complete 2026-08-28 on branch `pr-12`, not merged. The test gate held. Axe passes on the session page and the deck view, and a test asserts the artist and the copyright on every image. The browser gate waits for the owner (README section 6).
 A streaming chat thread over the `Chat` RPC. The deck view groups cards by role. It shows card art from Scryfall image URIs with artist and copyright (D-6, guardrail 7). It shows both faces for DFCs (F-9). 
 
 It marks owned versus to-buy when a collection is attached. It shows the pool-mode toggle ("use only cards in my library") with the session's mode (D-37). In any-card mode, the buy list can be the whole deck.
 
 It shows the mana curve, the color sources, the `ValidationResult` findings, and `legality_as_of`. Hover or tap shows Oracle text. Gate: a11y checks pass. Every image has attribution in the DOM.
 
-Contract addition of 2026-08-28: `CardService.GetCards` returns up to 120 cards by Oracle id in one call. `DeckCard` carries only the id and the name, and one `Lookup` per card is 100 calls per deck (ui plan, section 4).
+Contract addition of 2026-08-28: `CardService.GetCards` returns up to 120 cards by Oracle id in one call. `DeckCard` carries only the id and the name, and one `Lookup` per card is 100 calls per deck (ui plan, section 4). Landed 2026-08-28 (D-277). The chat holds an open question across a turn that asks nothing (D-278). The attribution line is the one the Scryfall docs ask for (D-279).
 > *In plain English:* the main screen. The conversation on one side, the deck on the other with real card pictures, grouped by what each card does, with your own cards marked.
 
 **PR-13: Export and share.**
@@ -590,7 +590,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 15. PR-8 generator.
 16. PR-9 variance. ⏸ out of MVP scope (D-256). It blocks nothing: the Phase 3 gate below reads PR-8's gate.
 17. **GATE.** Phase 3 starts only when PR-8's gate holds on the golden prompts. ✅ held on 2026-08-28, deck gate run 6.
-18. PR-11 ✅ merged 2026-08-28 (#38), then PR-12, PR-13.
+18. PR-11 ✅ merged 2026-08-28 (#38). PR-12 🔧 code complete 2026-08-28 on branch `pr-12`, browser gate open. Then PR-13.
 19. PR-15 eval harness (can start after step 15, in parallel with the UI, if a second owner exists). M-5 manual scoring runs on the first UI build (after PR-12).
 20. PR-14 meta, then I-1, I-2, I-3 on evidence.
 21. Phase 5 stays parked.

@@ -4,12 +4,12 @@
 
 ## Where things stand (2026-08-28)
 
-- `main` is at `961d4b5`, PR-11 merged (#38). The audit of 2026-08-28 (#17), the baselines (#34), Go 1.27.0 (#37), and every Dependabot pull request of the day are in.
+- `main` is at `29dee3e`, PR-11 merged (#38). Branch `pr-12` sits on top of it with the PR-12 slice, uncommitted at the end of the session of 2026-08-28. The audit of 2026-08-28 (#17), the baselines (#34), Go 1.27.0 (#37), and every Dependabot pull request of the day are in.
 - `docs/audit-2026-08-28.md` is the audit report. Every step of its plan is merged, and the history purge ran (section 10).
 - The tree is green: build, vet, `-race` tests, golangci-lint, staticcheck, `buf lint`, `buf breaking`, govulncheck (zero reachable), web lint, typecheck, tests, and build. `make ste-check` is part of `make lint` now.
 - `make test` takes seconds again. The four snapshot tests of `candidates` gate on `CARDS_SNAPSHOT_DIR` and run under `make themes-check`.
 - The deployable API builds decks now (D-257). Before today only `chat-probe` could.
-- PR-8 is done and merged (#15). PR-9 is out of the MVP (D-256). Phase 3 started on 2026-08-28: PR-11 is merged (#38) and its browser gate held. PR-12 is next, then PR-13 and PR-15.
+- PR-8 is done and merged (#15). PR-9 is out of the MVP (D-256). Phase 3 started on 2026-08-28: PR-11 is merged (#38) and its browser gate held. PR-12 is code complete on branch `pr-12` and not merged (D-277 to D-279). Its browser gate is open. Then PR-13 and PR-15.
 
 ## The numbers, and why none of them compare with the last run
 
@@ -31,11 +31,24 @@ Every measured number below moved on 2026-08-28. Question gate run 25 and deck g
 
 CAUTION: `tune-check` paired zero questions between run 24 and run 25, because the catalog and the prompt changed. The paired guard says nothing across that line, and the whole-run margins carry the verdict. The eval leaves a conversation unjudged when the judge returns fewer verdicts than questions. So 382 is the honest count, not a drop from 435.
 
+## PR-12, what it holds (2026-08-28)
+
+Branch `pr-12` holds the slice of the ui plan, section 6. The tree is green on the branch: Go build, vet, `-race` tests, golangci-lint, `buf breaking`, web lint, typecheck, 46 web tests, and the web build. The owner has not run it in the browser yet.
+
+- `CardService.GetCards` returns up to 120 cards by Oracle id, in request order, with a `missing_oracle_ids` list (D-277). `go/internal/cardsvc` holds it and its tests.
+- `web/apps/web/src/features/chat`: `use-chat.ts` reads the `Chat` stream and holds the open questions (D-278). `session-page.tsx` is the chat beside the deck. `question-card.tsx` shows the options as buttons and a free-text field. A reload rebuilds the thread from `GetSession` and the latest deck from `GetDeck`.
+- `web/apps/web/src/features/deck`: `deck-view.tsx` groups the cards by role and shows the findings, the legality date, the curve, and the color sources. `card-tile.tsx` shows every face with "Illustrated by <artist>. © Wizards of the Coast, LLC" (D-279). `deck-stats.ts` holds the pure helpers. The decks page opens a deck in place.
+- The owner ran the first browser turns on 2026-08-28 and found two faults, both fixed (D-280). A structured answer echoed the question text into the word rules, and the chat dropped an open question when a new turn asked another. The classify input for a structured answer is `Q: <question>` and `A: <answer>` on two lines now, so the next question gate run measures that shape.
+- The pool toggle "Use only cards in my collection" shows before the first message when a collection is active. It decides whether `collection_id` goes with the first message. The agent asks how strict the pool is, and the session's `pool_rule` shows after that.
+
+CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. The shell of 2026-08-28 had Node 20 first on the PATH, and `~/.nvm/versions/node/v22.23.2/bin` fixed it.
+
 ## Next steps, in order
 
-1. PR-12: `CardService.GetCards`, the chat thread over the `Chat` stream, and the deck view with card art (D-6). `docs/reference/ui-plan-2026-08-28.md` section 6 is the slice, and section 7 the live-test procedure. Cut branch `pr-12` from `main`.
-2. Add a ruleset that requires the `verify` check on `main`, if it is not there yet. Four Dependabot majors merged without it on 2026-08-28 and broke `main` twice.
-3. After PR-12, run the M-5 manual scoring on the first UI build (sequencing step 19), and ask the owner before any paid run.
+1. The owner runs the PR-12 browser gate: `make dev` with provider keys, then README section 6 steps 1 to 6. Ask the owner before the run, because every chat turn spends money. Then the owner merges `pr-12`.
+2. PR-13: `DeckService.ExportDeck`, the export button, and the buy list with Scryfall links. Ui plan section 4 gives the text shape, and the gate is the round trip through `ParseArenaText`.
+3. Add a ruleset that requires the `verify` check on `main`, if it is not there yet. Four Dependabot majors merged without it on 2026-08-28 and broke `main` twice.
+4. After PR-12 merges, run the M-5 manual scoring on the first UI build (sequencing step 19), and ask the owner before any paid run.
 
 Done on 2026-08-28: the audit merged (#17), the baselines merged (#34), Go moved to 1.27.0 (#37), and PR-11 merged (#38). Every Dependabot pull request of the day is merged or closed. PR-11 holds the stack, the router, the boundary lint, sign-in and sign-up over the Auth emulator, the token interceptor, and the collection screen. The owner ran the gate in the browser on the real export: 4,952 cards, 2,657 rows, one token row reported as not playable. README section 6 is the browser procedure.
 

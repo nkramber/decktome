@@ -1,0 +1,206 @@
+import { Color } from "@mtg/api-client/mtg/v1/card_pb";
+import { CardRole, type Deck, Severity } from "@mtg/api-client/mtg/v1/deck_pb";
+import { FormatId } from "@mtg/api-client/mtg/v1/format_pb";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { axe } from "jest-axe";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { makeQueryClient } from "../../lib/query-client";
+import { DeckView } from "./deck-view";
+
+const getCards = vi.fn();
+vi.mock("../../lib/api", () => ({
+  cardClient: { getCards: (...args: unknown[]) => getCards(...args) },
+}));
+
+const img = (n: string) => ({ small: `https://cards.scryfall.io/small/${n}.jpg`, normal: `https://cards.scryfall.io/normal/${n}.jpg` });
+
+const cards = [
+  {
+    oracleId: "o-forest",
+    name: "Forest",
+    typeLine: "Basic Land — Forest",
+    cardTypes: ["Land"],
+    manaValue: 0,
+    producedMana: [Color.G],
+    oracleText: "({T}: Add {G}.)",
+    faces: [],
+    defaultPrinting: { artist: "John Avon", imageUris: img("forest") },
+  },
+  {
+    oracleId: "o-elf",
+    name: "Llanowar Elves",
+    typeLine: "Creature — Elf Druid",
+    cardTypes: ["Creature"],
+    manaValue: 1,
+    manaCost: "{G}",
+    producedMana: [Color.G],
+    oracleText: "{T}: Add {G}.",
+    faces: [],
+    defaultPrinting: { artist: "Anson Maddocks", imageUris: img("elf") },
+  },
+  {
+    oracleId: "o-dfc",
+    name: "Delver of Secrets // Insectile Aberration",
+    typeLine: "Creature — Human Wizard // Creature — Human Insect",
+    cardTypes: ["Creature"],
+    manaValue: 1,
+    producedMana: [],
+    faces: [
+      { name: "Delver of Secrets", artist: "Nils Hamm", imageUris: img("delver-a"), oracleText: "At the beginning of your upkeep, look at the top card of your library.", typeLine: "Creature — Human Wizard", manaCost: "{U}" },
+      { name: "Insectile Aberration", artist: "Nils Hamm", imageUris: img("delver-b"), oracleText: "Flying", typeLine: "Creature — Human Insect", manaCost: "" },
+    ],
+  },
+];
+
+const deck = {
+  id: "d1",
+  name: "Elf test",
+  format: { id: FormatId.MODERN, houseRules: "" },
+  power: { level: { case: "sixtyStep", value: 1 } },
+  summary: "A small test deck.",
+  legalityAsOf: "2026-08-24",
+  buyCostUsd: 0.5,
+  commanderOracleIds: [],
+  sideboard: [],
+  upgrades: [],
+  cards: [
+    { oracleId: "o-forest", name: "Forest", count: 20, role: CardRole.LAND, owned: true, ownedCount: 40, priceUsd: 0 },
+    { oracleId: "o-elf", name: "Llanowar Elves", count: 4, role: CardRole.RAMP, owned: false, ownedCount: 0, priceUsd: 0.5, reason: "Turn-one mana." },
+    { oracleId: "o-dfc", name: "Delver of Secrets // Insectile Aberration", count: 2, role: CardRole.THREAT, owned: true, ownedCount: 2, priceUsd: 0 },
+    { oracleId: "o-gone", name: "Missing Card", count: 1, role: CardRole.OTHER, owned: false, ownedCount: 0, priceUsd: 0 },
+  ],
+  validation: {
+    passed: false,
+    legalityAsOf: "2026-08-24",
+    findings: [
+      { code: "deck_size", severity: Severity.BLOCK, message: "27 cards, the format needs 60", oracleId: "" },
+      { code: "off_color", severity: Severity.WARN, message: "a blue card in a green deck", oracleId: "o-dfc" },
+    ],
+  },
+} as unknown as Deck;
+
+function renderDeck(d: Deck = deck) {
+  return render(
+    <QueryClientProvider client={makeQueryClient()}>
+      <DeckView deck={d} />
+    </QueryClientProvider>,
+  );
+}
+
+beforeEach(() => {
+  getCards.mockReset();
+  getCards.mockResolvedValue({ cards, missingOracleIds: ["o-gone"] });
+});
+
+describe("DeckView", () => {
+  it("loads the cards in one GetCards call and groups them by role", async () => {
+    renderDeck();
+    expect(await screen.findByRole("region", { name: "Lands (20)" })).toBeInTheDocument();
+    await screen.findByAltText("Forest");
+    expect(getCards).toHaveBeenCalledTimes(1);
+    expect((getCards.mock.calls[0][0] as { oracleIds: string[] }).oracleIds).toEqual(["o-forest", "o-elf", "o-dfc", "o-gone"]);
+    expect(screen.getByRole("region", { name: "Ramp (4)" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Threats (2)" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Other (1)" })).toHaveTextContent("No card data for this entry.");
+    expect(screen.getByRole("alert", { name: "" })).toHaveTextContent("1 card of this deck are not in the card database: Missing Card.");
+  });
+
+  it("gives every image its artist and the copyright in the DOM (D-6)", async () => {
+    renderDeck();
+    await screen.findByAltText("Forest");
+    const images = screen.getAllByRole("img");
+    expect(images).toHaveLength(4);
+    for (const image of images) {
+      const figure = image.closest("figure");
+      expect(figure).not.toBeNull();
+      const caption = within(figure as HTMLElement).getByText(/Illustrated by .+\. © Wizards of the Coast, LLC/);
+      expect(caption.tagName).toBe("FIGCAPTION");
+    }
+    expect(screen.getByAltText("Forest").closest("figure")).toHaveTextContent("Illustrated by John Avon");
+    // No CSS crop: the image keeps its own aspect ratio.
+    expect(screen.getByAltText("Forest")).toHaveClass("h-auto", "w-full");
+  });
+
+  it("shows both faces of a double-faced card (F-9)", async () => {
+    renderDeck();
+    await screen.findByAltText("Forest");
+    expect(screen.getByAltText("Delver of Secrets")).toHaveAttribute("src", "https://cards.scryfall.io/normal/delver-a.jpg");
+    expect(screen.getByAltText("Insectile Aberration")).toHaveAttribute("src", "https://cards.scryfall.io/normal/delver-b.jpg");
+    expect(screen.getByText("Delver of Secrets (face 1 of 2). Illustrated by Nils Hamm. © Wizards of the Coast, LLC")).toBeInTheDocument();
+  });
+
+  it("marks owned cards and prices the rest", async () => {
+    renderDeck();
+    await screen.findByAltText("Forest");
+    const lands = screen.getByRole("region", { name: "Lands (20)" });
+    expect(within(lands).getByTestId("owned-mark")).toHaveTextContent("Owned (40)");
+    const ramp = screen.getByRole("region", { name: "Ramp (4)" });
+    expect(within(ramp).getByTestId("buy-mark")).toHaveTextContent("To buy: $0.50");
+    expect(within(ramp).getByText("Turn-one mana.")).toBeInTheDocument();
+    expect(screen.getByTestId("buy-cost")).toHaveTextContent("To buy: $0.50");
+  });
+
+  it("shows the findings, the legality date, the curve, and the sources", async () => {
+    renderDeck();
+    await screen.findByAltText("Forest");
+    expect(screen.getByTestId("legality-line")).toHaveTextContent("Not legal, checked against the card data of 2026-08-24.");
+    const findings = screen.getByRole("region", { name: "Findings" });
+    expect(within(findings).getAllByRole("listitem")).toHaveLength(2);
+    expect(findings).toHaveTextContent("Block (deck_size): 27 cards, the format needs 60");
+    expect(findings).toHaveTextContent("Warning (off_color): a blue card in a green deck — Delver of Secrets // Insectile Aberration");
+    expect(screen.getByText("Modern · Casual · 27 cards")).toBeInTheDocument();
+
+    const curve = screen.getByRole("table", { name: /Mana curve/ });
+    const one = within(curve).getByRole("row", { name: /^1 / });
+    expect(one).toHaveTextContent("6");
+    const sources = screen.getByRole("table", { name: /Color sources/ });
+    expect(within(sources).getByRole("row", { name: /Green/ })).toHaveTextContent("24");
+    expect(within(sources).getByRole("row", { name: /Blue/ })).toHaveTextContent("0");
+  });
+
+  it("opens the Oracle text on demand", async () => {
+    renderDeck();
+    await screen.findByAltText("Forest");
+    const ramp = screen.getByRole("region", { name: "Ramp (4)" });
+    await userEvent.setup().click(within(ramp).getByText("Oracle text"));
+    expect(within(ramp).getByText("{T}: Add {G}.")).toBeVisible();
+    expect(screen.getByAltText("Llanowar Elves")).toHaveAttribute("title", "{T}: Add {G}.");
+  });
+
+  it("falls back to the small image when the normal one fails", async () => {
+    renderDeck();
+    const image = await screen.findByAltText("Forest");
+    image.dispatchEvent(new Event("error"));
+    expect(await screen.findByAltText("Forest")).toHaveAttribute("src", "https://cards.scryfall.io/small/forest.jpg");
+  });
+
+  it("shows the commander first", async () => {
+    getCards.mockResolvedValue({ cards, missingOracleIds: [] });
+    renderDeck({
+      ...deck,
+      format: { id: FormatId.COMMANDER, houseRules: "" },
+      power: { level: { case: "bracket", value: 2 } },
+      commanderOracleIds: ["o-elf"],
+      cards: deck.cards.slice(0, 2),
+    } as unknown as Deck);
+    const commander = await screen.findByRole("region", { name: "Commander (4)" });
+    expect(within(commander).getByTestId("commander-mark")).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /^Ramp/ })).not.toBeInTheDocument();
+    expect(screen.getByText("Commander · Bracket 2 · 24 cards")).toBeInTheDocument();
+  });
+
+  it("reports a GetCards failure", async () => {
+    getCards.mockRejectedValue(new Error("[unavailable] card database not loaded yet"));
+    renderDeck();
+    expect(await screen.findByRole("alert")).toHaveTextContent("Could not load the card data: [unavailable] card database not loaded yet");
+  });
+
+  it("has no axe violations", async () => {
+    const { container } = renderDeck();
+    await screen.findByAltText("Forest");
+    expect(await axe(container)).toHaveNoViolations();
+  });
+});
