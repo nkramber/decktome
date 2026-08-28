@@ -33,7 +33,7 @@ Every measured number below moved on 2026-08-28, and no gate has run since. Run 
 1. Merge the pull request for `audit-2026-08-28`. Then restore the rule that forbids a force push to `main`, which was lifted for the purge on 2026-08-28.
 2. Ask the owner, then run `make questions-gate` with a new `GATE_OUT`. That run is the new baseline. Then `make questions-eval` on it.
 3. Ask the owner, then run `make deck-gate` with a new `DECK_GATE_OUT`. The share rule now counts nonbasic names, and no run has measured it.
-4. Start Phase 3 with PR-11.
+4. Start Phase 3 with PR-11. `docs/reference/ui-plan-2026-08-28.md` is the plan (D-273 to D-276): the whole user path, the roadmap stack, real sign-in over the Auth emulator, local under `make dev`.
 
 Done on 2026-08-28, after the audit: the merged branches are deleted on the clone and on origin, and the history purge ran. Every hash after PR-6 changed. The repo went from 101 MB to 2 MB, and the tree at each tip is byte for byte the same. CAUTION: a clone made before 2026-08-28 holds the old history. Re-clone it, and do not merge from it.
 
