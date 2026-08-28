@@ -72,6 +72,7 @@ export function QuestionCard({
       ) : (
         question.options.length > 0 && <div className="flex flex-wrap gap-2">{question.options.map(button)}</div>
       )}
+      {!question.closed && (
       <label className="flex flex-col gap-1 text-sm">
         <span>{question.options.length > 0 ? "Or answer in your own words" : "Your answer"}</span>
         <input
@@ -82,6 +83,7 @@ export function QuestionCard({
           className="rounded border border-neutral-400 bg-white px-2 py-1 text-neutral-900"
         />
       </label>
+      )}
       {question.invented && <p className="text-xs text-neutral-600">This question is not in the catalog (D-25).</p>}
     </div>
   );

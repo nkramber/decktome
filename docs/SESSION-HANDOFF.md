@@ -24,7 +24,7 @@ Every measured number below moved on 2026-08-28. Question gate run 25 and deck g
 
 | Measure | Baseline | Where measured |
 |---|---|---|
-| Question gate | PASS 25 of 27 counted, 2 invented, 0 premature, 0 lint | run 26, 2026-08-28, prompt 12, after D-280 |
+| Question gate | PASS 25 of 27 counted, 2 invented, 0 premature, 0 lint, $0.16 | run 27, 2026-08-28, ask prompt 13, catalog of D-290 and D-294 |
 | Question eval | 19 bad of 382, holdout 8 of 111 (7.2 percent) | eval of run 25, 5 conversations unjudged |
 | Deck gate | PASS 18 of 18, 2 repairs, $1.09 | run 8, 2026-08-28, generate prompt 9 |
 | Loop | off since 2026-08-26 | seven starts, nothing kept |
@@ -39,6 +39,7 @@ Branch `pr-12b` holds the revision turn (F-27, D-283 to D-285). The tree is gree
 - `internal/generate`: `Request.Revision`, the revision block of the generate prompt, `CheckRevision`, `AllowedByRevision`, and `Pool.Filter`. The pool drops the removed cards and the cards over the cap.
 - `internal/agentsvc`: `sendRevision` runs after a build when no slot changed, and `slotsChanged` decides. A slot change rebuilds from the start with a status line. `DeckStore` gained `Get`. `Turn.agent_message` is written now.
 - `Deck.revised_from_deck_id` and `Deck.revision_note` are additive proto fields. The deck view shows the note and the diff against the deck before it.
+- A closed question offers no free-text field, through `Question.closed` and the catalog flag (D-295).
 - The commander rows come last in the catalog order, after the power, the colors, the pool, and the budget (D-294).
 - A commander offer before the pool question ranks on quality alone (D-293). The conversation words hold the user words only (D-292). Both came from the browser sessions of the evening.
 - A card tile shows the full image and no caption (D-291). The commander offer tile shows the image and the pick button only.
@@ -56,6 +57,7 @@ Branch `pr-12` holds the slice of the ui plan, section 6. The tree is green on t
 - `CardService.GetCards` returns up to 120 cards by Oracle id, in request order, with a `missing_oracle_ids` list (D-277). `go/internal/cardsvc` holds it and its tests.
 - `web/apps/web/src/features/chat`: `use-chat.ts` reads the `Chat` stream and holds the open questions (D-278). `session-page.tsx` is the chat beside the deck. `question-card.tsx` shows the options as buttons and a free-text field. A reload rebuilds the thread from `GetSession` and the latest deck from `GetDeck`.
 - `web/apps/web/src/features/deck`: `deck-view.tsx` groups the cards by role and shows the findings, the legality date, the curve, and the color sources. `card-tile.tsx` shows every face with "Illustrated by <artist>. © Wizards of the Coast, LLC" (D-279). `deck-stats.ts` holds the pure helpers. The decks page opens a deck in place.
+- Gate run 27 is the baseline after D-290 and D-294: PASS, 25 of 27 on a bar of 25, $0.16. The two gate inventions replaced `pool_thin` once and the new `commander` row once, both at fit 0.20. The ask role rewrote the commander row to name the colors ("Do you have a black-green commander in mind, or should I suggest three?"), which is a reword and not a gap. Runs 25 and 26 do not compare with it.
 - Gate run 26 ran after D-280: PASS, 25 of 27 on a bar of 25, against 26 of 27 in run 25. The two invented gate questions are `pool` in conversation 4 and `colors` in one other, and run 25 invented `budget` once. The gate sends plain messages, and `UserWords` returns a plain message unchanged. So the gate ran the code of run 25, and the drop is model noise (D-230). The `Q:`/`A:` shape is still unmeasured, because only the browser sends it.
 - The owner's first live session (`eIrL12hRY2YNTTCo3iS4`) showed that a message after a build is dropped and the deck is rebuilt from turn 1 (F-27). PR-12B is the fix, and it is planned and not started (D-283, D-284). Collection delete is not on the roadmap (owner, 2026-08-28).
 - The answers go out in one request through "Submit answers", and the message box hides on Send (D-282).

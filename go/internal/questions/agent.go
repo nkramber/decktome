@@ -329,6 +329,7 @@ func (a *Agent) send(ctx context.Context, st *State, message string, chosen []ch
 			Options:  resolved.options[c.Row.ID],
 			Invented: c.Invented,
 			GapScore: c.Fit,
+			Closed:   c.Row.Closed && !c.Invented,
 		}
 		if p, ok := phrased[c.Row.ID]; ok && !c.Row.Fixed {
 			// The guard keeps a bad phrasing off the wire. It falls back

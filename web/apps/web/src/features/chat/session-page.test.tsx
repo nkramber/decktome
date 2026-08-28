@@ -137,6 +137,18 @@ describe("SessionPage", () => {
     expect(await screen.findByLabelText("Your message")).toBeInTheDocument();
   });
 
+  it("a closed question offers no free-text field (D-295)", async () => {
+    chat.mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("question", { ...formatQuestion, closed: true })]));
+    renderAt("/session/new");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "elves");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    const card = await screen.findByRole("group", { name: "Question: Which format?" });
+    expect(within(card).queryByRole("textbox")).not.toBeInTheDocument();
+    await user.click(within(card).getByRole("button", { name: "Modern" }));
+    expect(screen.getByRole("button", { name: "Submit answers" })).toBeEnabled();
+  });
+
   it("an option pick toggles, and a second pick replaces it", async () => {
     chat.mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("question", formatQuestion)]));
     renderAt("/session/new");

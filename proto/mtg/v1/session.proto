@@ -165,4 +165,8 @@ message Question {
   // and the rules text of a commander offer (D-287). An option that is
   // not a card carries an empty string. Empty when no option is a card.
   repeated string option_oracle_ids = 8;
+  // closed says the options are the whole answer space, for example the
+  // three formats the app builds. The UI offers no free-text field for
+  // a closed question (D-295).
+  bool closed = 9;
 }

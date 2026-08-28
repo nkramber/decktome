@@ -61,7 +61,8 @@
         "unsupported_format": true,
         "no_near_format": true
       },
-      "fallback": "I do not build that format. Which format should I build instead?"
+      "fallback": "I do not build that format. Which format should I build instead?",
+      "closed": true
     },
     {
       "id": "format_store",
@@ -82,7 +83,8 @@
           "tournament",
           "event"
         ]
-      }
+      },
+      "closed": true
     },
     {
       "id": "format",
@@ -93,7 +95,8 @@
         "Commander",
         "Standard",
         "Modern"
-      ]
+      ],
+      "closed": true
     },
     {
       "id": "theme_competitive",
@@ -180,7 +183,8 @@
         "format": "commander"
       },
       "key": "named_card_role",
-      "fallback": "Do you want that card as your commander, or as one card in the 99?"
+      "fallback": "Do you want that card as your commander, or as one card in the 99?",
+      "closed": true
     },
     {
       "id": "commander",
@@ -230,7 +234,8 @@
       ],
       "when": {
         "format": "commander"
-      }
+      },
+      "closed": true
     },
     {
       "id": "power_sixty",
@@ -245,7 +250,8 @@
       "when": {
         "format": "sixty",
         "power_competitive": false
-      }
+      },
+      "closed": true
     },
     {
       "id": "colors",
@@ -275,7 +281,8 @@
           "theme"
         ]
       },
-      "fallback": "Should I build from your precon first, use only cards from it, or ignore it for a fully optimized deck?"
+      "fallback": "Should I build from your precon first, use only cards from it, or ignore it for a fully optimized deck?",
+      "closed": true
     },
     {
       "id": "pool",
@@ -295,7 +302,8 @@
           "theme"
         ],
         "thin_theme": false
-      }
+      },
+      "closed": true
     },
     {
       "id": "pool_thin",
@@ -315,7 +323,8 @@
           "theme"
         ]
       },
-      "fallback": "Your library is thin for this theme. Build owned-first with a buy list, or use the whole pool?"
+      "fallback": "Your library is thin for this theme. Build owned-first with a buy list, or use the whole pool?",
+      "closed": true
     },
     {
       "id": "budget",
@@ -339,7 +348,8 @@
         "has_collection": true,
         "budget_ambiguous": true
       },
-      "key": "budget_scope"
+      "key": "budget_scope",
+      "closed": true
     }
   ]
 }
