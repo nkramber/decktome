@@ -30,6 +30,25 @@ func (b *Builder) input(req Request, misses []Miss, blocks []*mtgv1.Finding) str
 				strings.Join(names, " and "))
 		}
 	}
+	if len(req.Locked) > 0 {
+		var names []string
+		for _, n := range req.Pool.Names() {
+			c, ok := req.Pool.Card(n)
+			if !ok {
+				continue
+			}
+			for _, id := range req.Locked {
+				if c.GetOracleId() == id {
+					names = append(names, c.GetName())
+				}
+			}
+		}
+		if len(names) > 0 {
+			// The user named these, so they are not a preference (D-242).
+			fmt.Fprintf(&s, "\nThe deck must hold %s. The user asked to keep %s.\n",
+				strings.Join(names, ", "), these(len(names)))
+		}
+	}
 	if req.Precon != "" {
 		// D-218 sets the share, and the prompt states it as a limit the
 		// model must meet, not as a preference.

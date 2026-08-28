@@ -27,6 +27,10 @@ type Request struct {
 	// Commanders are the commander oracle ids, one or two. Empty outside
 	// Commander. The session picks them, and the model does not.
 	Commanders []string
+	// Locked are the oracle ids of cards the user said the deck must
+	// keep. The locked row asks for them, and the deck must hold every
+	// one (D-70, D-242).
+	Locked []string
 	// PoolRule decides whether ownership is a finding or a mark (D-37).
 	PoolRule mtgv1.PoolRule
 	// OracleCounts is the owned count per oracle id, nil with no
@@ -187,6 +191,17 @@ func (b *Builder) assemble(req Request, out *deckOut) pass {
 					what, cost, req.BudgetUSD),
 			})
 		}
+	}
+	// A card the user said to keep must be in the deck. The locked row
+	// asks for it, and a deck without it answers the user's own
+	// instruction with silence (D-242).
+	if missing := missingLocked(deck, req); len(missing) > 0 {
+		deck.Validation.Findings = append(deck.GetValidation().GetFindings(), &mtgv1.Finding{
+			Code:     CodeLockedCardMissing,
+			Severity: mtgv1.Severity_SEVERITY_BLOCK,
+			Message: fmt.Sprintf("the deck does not hold %s, which you asked to keep",
+				strings.Join(missing, ", ")),
+		})
 	}
 	if req.ThinCommanderPool {
 		deck.Validation.Findings = append(deck.GetValidation().GetFindings(), &mtgv1.Finding{

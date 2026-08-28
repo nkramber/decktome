@@ -176,3 +176,38 @@ func padWithBasics(deck *mtgv1.Deck, req Request) int {
 	}
 	return short
 }
+
+// missingLocked names the cards the user said to keep that the deck does
+// not hold. A commander counts as held: it is in the deck, in the command
+// zone. The names come from the pool, so the message reads as the user
+// wrote them (D-242).
+func missingLocked(deck *mtgv1.Deck, req Request) []string {
+	if len(req.Locked) == 0 {
+		return nil
+	}
+	have := map[string]bool{}
+	for _, c := range deck.GetCards() {
+		have[c.GetOracleId()] = true
+	}
+	for _, c := range deck.GetSideboard() {
+		have[c.GetOracleId()] = true
+	}
+	for _, id := range deck.GetCommanderOracleIds() {
+		have[id] = true
+	}
+	var out []string
+	for _, id := range req.Locked {
+		if have[id] {
+			continue
+		}
+		name := id
+		for _, n := range req.Pool.Names() {
+			if c, ok := req.Pool.Card(n); ok && c.GetOracleId() == id {
+				name = c.GetName()
+				break
+			}
+		}
+		out = append(out, name)
+	}
+	return out
+}

@@ -100,6 +100,14 @@ func plural(n int, noun string) string {
 	return fmt.Sprintf("%d %ss", n, noun)
 }
 
+// these reads "this card" or "these cards", for a sentence about a list.
+func these(n int) string {
+	if n == 1 {
+		return "this card"
+	}
+	return "these cards"
+}
+
 // CodeThinCommanderPool reports a library with no commander for the
 // theme, in an owned mode. The retired weak-pool row asked about this
 // before the build, and a delegated commander silenced it (D-232).
@@ -138,3 +146,8 @@ func DeckCost(deck *mtgv1.Deck) float64 {
 func allCards(deck *mtgv1.Deck) []*mtgv1.DeckCard {
 	return append(append([]*mtgv1.DeckCard(nil), deck.GetCards()...), deck.GetSideboard()...)
 }
+
+// CodeLockedCardMissing reports a card the user said to keep that the
+// deck does not hold. It blocks, so the repair turn gets one chance to
+// put the card back (D-70, D-242).
+const CodeLockedCardMissing = "locked_card_missing"

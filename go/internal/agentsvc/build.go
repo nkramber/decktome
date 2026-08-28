@@ -117,6 +117,18 @@ func (s *Server) buildDeck(ctx context.Context, uid string, session *mtgv1.Sessi
 	}
 	always := append([]*mtgv1.Card(nil), commanders...)
 	always = append(always, generate.BasicLands(idx.ByName, colors)...)
+	// A card the user said to keep must be nameable, or the deck can not
+	// hold it. The locked row asks for these (D-70, D-242).
+	var lockedIDs []string
+	for _, name := range st.LockedCards() {
+		c, ok := idx.ByName(name)
+		if !ok {
+			s.log.WarnContext(ctx, "a locked card left the snapshot", "card", name)
+			continue
+		}
+		always = append(always, c)
+		lockedIDs = append(lockedIDs, c.GetOracleId())
+	}
 	pool := generate.FromList(list, always, buyList)
 
 	res, err := s.decks.Build(ctx, generate.Request{
@@ -129,6 +141,7 @@ func (s *Server) buildDeck(ctx context.Context, uid string, session *mtgv1.Sessi
 		Plan:              plan(session, slots),
 		Pool:              pool,
 		Commanders:        commanderIDs,
+		Locked:            lockedIDs,
 		PoolRule:          slots.GetPoolRule(),
 		OracleCounts:      owned,
 		Roles:             generate.Roles(list),

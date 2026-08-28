@@ -203,3 +203,65 @@ func TestSixtyCardDeckCarriesNoCommander(t *testing.T) {
 		t.Error("a Commander deck lost its commander")
 	}
 }
+
+// TestLockedCardMustReachTheDeck is D-242. The locked row asks which
+// cards the deck must keep, and agentsvc never passed the answer, so a
+// deck without the card answered the user's own instruction with silence.
+func TestLockedCardMustReachTheDeck(t *testing.T) {
+	// The model leaves Sol Ring out on both turns.
+	without := deckOut{Summary: "s", Cards: []Entry{
+		{Name: "Ajani's Welcome", Count: 1, Role: "synergy", Reason: "gains life"},
+	}}
+	b, _, sc := testBuilder(t, step(t, without), step(t, without))
+	req := testRequest()
+	req.Locked = []string{"o-solring"}
+	got, err := b.Build(context.Background(), req, nil)
+	if err != nil {
+		t.Fatalf("build: %v", err)
+	}
+	var found *mtgv1.Finding
+	for _, f := range got.Deck.GetValidation().GetFindings() {
+		if f.GetCode() == CodeLockedCardMissing {
+			found = f
+		}
+	}
+	if found == nil {
+		t.Fatal("a deck without the locked card carried no finding")
+	}
+	if found.GetSeverity() != mtgv1.Severity_SEVERITY_BLOCK {
+		t.Errorf("severity = %v, want BLOCK so the repair turn runs", found.GetSeverity())
+	}
+	if !strings.Contains(found.GetMessage(), "Sol Ring") {
+		t.Errorf("the finding does not name the card: %q", found.GetMessage())
+	}
+	// A block finding buys one repair turn (D-223).
+	if len(sc.Calls) != 2 {
+		t.Errorf("provider calls = %d, want 2: a block finding runs the repair turn", len(sc.Calls))
+	}
+	// The prompt must name the card, or the model can not keep it.
+	if !strings.Contains(sc.Calls[0].Input, "Sol Ring") {
+		t.Error("the first prompt did not name the locked card")
+	}
+}
+
+// TestLockedCommanderCounts covers the card that became the commander. It
+// is in the deck, in the command zone, so it is not missing (D-70).
+func TestLockedCommanderCounts(t *testing.T) {
+	one := step(t, deckOut{Summary: "s", Cards: []Entry{
+		{Name: "Ajani's Welcome", Count: 1, Role: "synergy"},
+	}})
+	b, _, _ := testBuilder(t, one, one)
+	req := testRequest()
+	req.Format = mtgv1.FormatId_FORMAT_ID_COMMANDER
+	req.Commanders = []string{"o-karlov"}
+	req.Locked = []string{"o-karlov"}
+	got, err := b.Build(context.Background(), req, nil)
+	if err != nil {
+		t.Fatalf("build: %v", err)
+	}
+	for _, f := range got.Deck.GetValidation().GetFindings() {
+		if f.GetCode() == CodeLockedCardMissing {
+			t.Errorf("the commander was reported missing: %s", f.GetMessage())
+		}
+	}
+}

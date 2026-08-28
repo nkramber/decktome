@@ -22,7 +22,13 @@ Two faults that run 4 covers and earlier runs could not. No golden prompt named 
 
 Deck gate run 3 passed on 13 prompts, with the golden set corrected. The prompt cache is measured (D-227), the cost model is verified (D-228), and the judge lane answers F-26 (D-229). OQ-36 is closed by D-226.
 
-What PR-8 still needs: nothing the roadmap names. The generator, the normalizer, the repair turn, the ownership rule, the precon share, the prompt cache, and F-26 are all done and measured. PR-9 is next.
+What PR-8 still needs: the precon share waits on a data source (D-240, OQ-40). Everything else the roadmap names is done and measured.
+
+The question layer collected more than the build consumed, six times over: D-226, D-232, D-238, D-240, D-241, and D-242. Each was found by accident. `TestEverySlotIsReadOrNamed` now checks every slot against the build, so the seventh is caught in the test and not in a gate run (D-243).
+
+CAUTION: the deck gate has not run since D-233. The locked-card check of D-242 is a new BLOCK finding, and no gate run has exercised it. Run the deck gate before you trust the bars.
+
+Superseded: The generator, the normalizer, the repair turn, the ownership rule, the precon share, the prompt cache, and F-26 are all done and measured. PR-9 is next.
 
 CAUTION: the catalog-only count of the question gate carries about two conversations of variance. Runs 19 to 22 read 29, 29, 29, and 27 on question code that did not change. The bar is 25, so the gate absorbs it, and one run proves nothing on its own (D-230).
 
