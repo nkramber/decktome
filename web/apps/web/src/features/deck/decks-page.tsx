@@ -28,7 +28,7 @@ export function DecksPage() {
       </div>
       {decks.isSuccess && decks.data.decks.length === 0 && <p className="mt-2">No decks yet.</p>}
       {decks.isSuccess && decks.data.decks.length > 0 && (
-        <ul className="mt-2 flex flex-col gap-1" role="list">
+        <ul className="mt-2 flex flex-col gap-1">
           {decks.data.decks.map((d) => (
             <li key={d.id}>
               <span className="font-medium">{d.name || d.id}</span>

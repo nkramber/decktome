@@ -92,6 +92,9 @@ describe("SessionPage", () => {
     await user.type(await screen.findByLabelText("Your message"), "elves");
     await user.click(screen.getByRole("button", { name: "Send" }));
     await user.click(await screen.findByRole("button", { name: "Modern" }));
+    // Nothing goes out until the submit.
+    expect(chat).toHaveBeenCalledTimes(1);
+    await user.click(screen.getByRole("button", { name: "Submit answers" }));
 
     const req = chat.mock.calls[1][0] as { sessionId: string; message: string; answers: { questionId: string; optionIndex?: number; text: string }[] };
     expect(req.sessionId).toBe("s1");
@@ -107,7 +110,7 @@ describe("SessionPage", () => {
     expect(await screen.findByAltText("Llanowar Elves")).toBeInTheDocument();
   });
 
-  it("free text sends text, and a turn with no question keeps the other questions open (D-237)", async () => {
+  it("one submit sends every answer, and waits until each question has one", async () => {
     const q2 = { id: "q2", slot: "power", text: "How strong?", options: [] };
     chat
       .mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("question", formatQuestion), ev("question", q2)]))
@@ -117,17 +120,40 @@ describe("SessionPage", () => {
     await user.type(await screen.findByLabelText("Your message"), "elves");
     await user.click(screen.getByRole("button", { name: "Send" }));
     const first = await screen.findByRole("group", { name: "Question: Which format?" });
+    const second = screen.getByRole("group", { name: "Question: How strong?" });
     await user.type(within(first).getByLabelText("Or answer in your own words"), "Pauper");
-    await user.click(within(first).getByRole("button", { name: "Answer" }));
+    // One answer of two: the submit waits.
+    expect(screen.getByRole("button", { name: "Submit answers" })).toBeDisabled();
+    await user.type(within(second).getByLabelText("Or answer in your own words"), "bracket 2");
+    await user.click(screen.getByRole("button", { name: "Submit answers" }));
 
     const req = chat.mock.calls[1][0] as { answers: { questionId: string; text: string }[] };
-    expect(req.answers).toEqual([{ questionId: "q1", text: "Pauper" }]);
+    expect(req.answers).toEqual([
+      { questionId: "q1", optionIndex: undefined, text: "Pauper" },
+      { questionId: "q2", optionIndex: undefined, text: "bracket 2" },
+    ]);
     await waitFor(() => expect(screen.queryByText("The agent is working...")).not.toBeInTheDocument());
-    expect(screen.queryByRole("group", { name: "Question: Which format?" })).not.toBeInTheDocument();
-    expect(screen.getByRole("group", { name: "Question: How strong?" })).toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: /Question:/ })).not.toBeInTheDocument();
+    expect(await screen.findByLabelText("Your message")).toBeInTheDocument();
   });
 
-  it("keeps an open question when the next turn asks a different one (the browser gate fault of 2026-08-28)", async () => {
+  it("an option pick toggles, and a second pick replaces it", async () => {
+    chat.mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("question", formatQuestion)]));
+    renderAt("/session/new");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "elves");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    const modern = await screen.findByRole("button", { name: "Modern" });
+    await user.click(modern);
+    expect(modern).toHaveAttribute("aria-pressed", "true");
+    await user.click(screen.getByRole("button", { name: "Standard" }));
+    expect(modern).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "Standard" })).toHaveAttribute("aria-pressed", "true");
+    await user.click(screen.getByRole("button", { name: "Standard" }));
+    expect(screen.getByRole("button", { name: "Submit answers" })).toBeDisabled();
+  });
+
+  it("sends every answer in one request when the next turn asks a different one", async () => {
     const colors = { id: "q2", slot: "colors", text: "Any color preference?", options: [] };
     const power = { id: "q3", slot: "power", text: "How strong?", options: ["Casual", "FNM"] };
     chat
@@ -138,9 +164,18 @@ describe("SessionPage", () => {
     await user.type(await screen.findByLabelText("Your message"), "angels");
     await user.click(screen.getByRole("button", { name: "Send" }));
     await user.click(await screen.findByRole("button", { name: "Modern" }));
+    const colorsCard = screen.getByRole("group", { name: "Question: Any color preference?" });
+    await user.type(within(colorsCard).getByLabelText("Or answer in your own words"), "green");
+    await user.click(screen.getByRole("button", { name: "Submit answers" }));
     await screen.findByRole("group", { name: "Question: How strong?" });
-    expect(screen.getByRole("group", { name: "Question: Any color preference?" })).toBeInTheDocument();
+    // A later turn that leaves a question open keeps it, and drops the answered ones.
     expect(screen.queryByRole("group", { name: "Question: Which format?" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: "Question: Any color preference?" })).not.toBeInTheDocument();
+    const req = chat.mock.calls[1][0] as { answers: { questionId: string; optionIndex?: number; text: string }[] };
+    expect(req.answers).toEqual([
+      { questionId: "q1", optionIndex: 2, text: "" },
+      { questionId: "q2", optionIndex: undefined, text: "green" },
+    ]);
   });
 
   it("shows a failure event and a stream error as alerts", async () => {
@@ -175,6 +210,24 @@ describe("SessionPage", () => {
     await screen.findByText("Session id: s1");
     expect((chat.mock.calls[0][0] as { collectionId: string }).collectionId).toBe("c1");
     expect(screen.queryByLabelText("Use only cards in my collection")).not.toBeInTheDocument();
+  });
+
+  it("hides the message box the moment a send starts", async () => {
+    let release = () => {};
+    const gate = new Promise<void>((r) => (release = r));
+    chat.mockImplementationOnce(async function* () {
+      await gate;
+      yield ev("sessionStarted", "s1");
+      yield ev("slots", {});
+    });
+    renderAt("/session/new");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "elves");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    expect(screen.queryByLabelText("Your message")).not.toBeInTheDocument();
+    expect(screen.getByText("The agent is working...")).toBeInTheDocument();
+    release();
+    expect(await screen.findByLabelText("Your message")).toBeInTheDocument();
   });
 
   it("Enter sends, and a failed send gives the draft back", async () => {
@@ -256,7 +309,7 @@ describe("SessionPage", () => {
     const user = userEvent.setup();
     const card = screen.getByRole("group", { name: "Question: How strong?" });
     await user.type(within(card).getByLabelText("Or answer in your own words"), "bracket 2");
-    await user.click(within(card).getByRole("button", { name: "Answer" }));
+    await user.click(screen.getByRole("button", { name: "Submit answers" }));
     expect((chat.mock.calls[0][0] as { sessionId: string }).sessionId).toBe("s1");
     // A stored session carries its own collection, so the request sends none.
     expect((chat.mock.calls[0][0] as { collectionId: string }).collectionId).toBe("");

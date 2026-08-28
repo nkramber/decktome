@@ -34,7 +34,7 @@ export function ImportResult({ result }: { result: ImportCollectionResponse }) {
           : "The import returned no collection."}
       </p>
       {byReason.length > 0 && (
-        <ul className="text-sm" role="list">
+        <ul className="text-sm">
           {byReason.map(([reason, count]) => (
             <li key={reason}>
               {reasonLabel(reason)}: {count}

@@ -69,7 +69,7 @@ export function DeckView({ deck }: { deck: Deck }) {
           <h3 id={`findings-title-${deck.id}`} className="font-medium">
             Findings
           </h3>
-          <ul className="list-disc pl-5 text-sm" role="list">
+          <ul className="list-disc pl-5 text-sm">
             {findings.map((f, i) => (
               <li key={i} className={f.severity === Severity.BLOCK ? "text-red-700" : ""}>
                 <span className="font-medium">{severityLabel(f.severity)}</span>
@@ -193,7 +193,7 @@ function CardGroup({
       <h3 className="font-medium">
         {title} <span className="text-neutral-600">({count})</span>
       </h3>
-      <ul className="mt-2 grid grid-cols-1 items-start gap-2 @sm:grid-cols-2 @2xl:grid-cols-3 @4xl:grid-cols-4" role="list">
+      <ul className="mt-2 grid grid-cols-1 items-start gap-2 @sm:grid-cols-2 @2xl:grid-cols-3 @4xl:grid-cols-4">
         {entries.map((e, i) => (
           <CardTile key={`${e.oracleId}-${i}`} entry={e} card={byId.get(e.oracleId)} isCommander={commanders.has(e.oracleId)} />
         ))}

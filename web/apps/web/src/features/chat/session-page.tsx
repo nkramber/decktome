@@ -1,4 +1,4 @@
-import { PoolRule, type Session } from "@mtg/api-client/mtg/v1/session_pb";
+import { type Answer, PoolRule, type Session } from "@mtg/api-client/mtg/v1/session_pb";
 import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, type KeyboardEvent, useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
@@ -7,7 +7,7 @@ import { agentClient, deckClient } from "../../lib/api";
 import { errorMessage } from "../../lib/errors";
 import { useAppStore } from "../../lib/store";
 import { DeckView } from "../deck/deck-view";
-import { QuestionCard } from "./question-card";
+import { type Draft, draftAnswered, emptyDraft, QuestionCard } from "./question-card";
 import { byteLength, type ChatState, emptyState, fromSession, maxMessageBytes, type ThreadItem, useChat } from "./use-chat";
 
 // The chat screen (ui plan, step 3). The id "new" means no session yet.
@@ -21,21 +21,23 @@ export function SessionPage() {
 
   // A session this page started stays mounted when the route moves from
   // /session/new to /session/<id>. Nothing reloads it, so the stream and
-  // the thread survive the navigate. The ref is written before the
-  // navigate, so no render sees the new id without it. A later visit to
-  // /session/new starts a fresh panel through the nonce.
-  const started = useRef("");
+  // the thread survive the navigate. setStarted runs before navigate, so
+  // no render sees the new id without it. A later visit to /session/new
+  // starts a fresh panel through the nonce.
+  const [started, setStarted] = useState("");
   const [nonce, setNonce] = useState(0);
+  // The reset fires on the move back to /session/new, and never on the
+  // render that records the started id while the route is still new.
+  const wasNew = useRef(isNew);
   useEffect(() => {
-    if (isNew && started.current) {
-      started.current = "";
+    if (isNew && !wasNew.current) {
+      setStarted("");
       setNonce((n) => n + 1);
     }
+    wasNew.current = isNew;
   }, [isNew]);
-  const live = isNew || id === started.current;
-  const onStarted = useCallback((sid: string) => {
-    started.current = sid;
-  }, []);
+  const live = isNew || id === started;
+  const onStarted = useCallback((sid: string) => setStarted(sid), []);
 
   const session = useQuery({
     queryKey: ["session", id],
@@ -132,12 +134,14 @@ function ChatPanel({
   );
   const { state, send, stop } = useChat(initial, sendCollection, onSessionStarted);
   const [message, setMessage] = useState("");
+  const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const bytes = byteLength(message);
   const tooLong = bytes > maxMessageBytes;
   const beforeFirstMessage = state.sessionId === "";
-  // The message box hides while a question waits. The user answers the
-  // question, and the box returns when none is open (owner, 2026-08-28).
-  const showComposer = state.openQuestions.length === 0;
+  // The message box hides the moment a send starts, and while a question
+  // waits. It returns when the turn ends with no question open (owner,
+  // 2026-08-28).
+  const showComposer = !state.busy && state.openQuestions.length === 0;
 
   // New output scrolls into view. The sentinel sits under the thread.
   const end = useRef<HTMLDivElement>(null);
@@ -146,6 +150,21 @@ function ChatPanel({
   useEffect(() => {
     end.current?.scrollIntoView?.({ block: "nearest" });
   }, [state.thread.length, lastLength, state.openQuestions.length]);
+
+  // Every open question needs an answer before the submit (owner,
+  // 2026-08-28). One send carries them all.
+  const allAnswered = state.openQuestions.length > 0 && state.openQuestions.every((q) => draftAnswered(drafts[q.id]));
+
+  function onSubmitAnswers(e: FormEvent) {
+    e.preventDefault();
+    if (!allAnswered || state.busy) return;
+    const answers = state.openQuestions.map((q) => {
+      const d = drafts[q.id];
+      return { questionId: q.id, optionIndex: d.text.trim() ? undefined : d.optionIndex, text: d.text.trim() } as Answer;
+    });
+    setDrafts({});
+    void send({ message: "", answers });
+  }
 
   async function submit() {
     const text = message.trim();
@@ -197,7 +216,7 @@ function ChatPanel({
           {poolText}
         </p>
 
-        <ol className="flex flex-col gap-2" aria-label="Conversation" role="list">
+        <ol className="flex flex-col gap-2" aria-label="Conversation">
           {state.thread.map((item, i) => (
             <li key={i}>
               <ThreadLine item={item} />
@@ -206,11 +225,25 @@ function ChatPanel({
         </ol>
 
         {state.openQuestions.length > 0 && (
-          <div className="flex flex-col gap-2" data-testid="open-questions">
+          <form onSubmit={onSubmitAnswers} className="flex flex-col gap-2" data-testid="open-questions">
             {state.openQuestions.map((q) => (
-              <QuestionCard key={q.id} question={q} disabled={state.busy} onAnswer={(a) => void send({ message: "", answers: [a] })} />
+              <QuestionCard
+                key={q.id}
+                question={q}
+                draft={drafts[q.id] ?? emptyDraft}
+                disabled={state.busy}
+                onChange={(d) => setDrafts((all) => ({ ...all, [q.id]: d }))}
+              />
             ))}
-          </div>
+            <button
+              type="submit"
+              disabled={!allAnswered || state.busy}
+              className="self-start rounded bg-neutral-900 px-3 py-2 text-white disabled:bg-neutral-300 disabled:text-neutral-600"
+            >
+              Submit answers
+            </button>
+            {!allAnswered && !state.busy && <p className="text-xs text-neutral-600">Answer every question, then submit.</p>}
+          </form>
         )}
 
         <div className="flex items-center gap-3 text-sm text-neutral-600" role="status">

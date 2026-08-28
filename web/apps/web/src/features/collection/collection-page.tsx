@@ -125,7 +125,7 @@ export function CollectionPage() {
         </div>
         {list.isSuccess && collections.length === 0 && <p>No uploads yet.</p>}
         {collections.length > 0 && (
-          <ul className="flex flex-col gap-1" role="list">
+          <ul className="flex flex-col gap-1">
             {collections.map((c) => {
               const isActive = c.id === collectionId;
               return (
