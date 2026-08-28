@@ -21,7 +21,10 @@ import (
 type Request struct {
 	SessionID string
 	Format    mtgv1.FormatId
-	Power     *mtgv1.PowerLevel
+	// HouseRules is what the user means by "anything goes", in the
+	// user's own words. The deck's Format carries it (D-3).
+	HouseRules string
+	Power      *mtgv1.PowerLevel
 	// Plan is the deck the user asked for, in the user's own terms.
 	Plan string
 	// Pool holds every card the model may name. A card outside it is a
@@ -31,8 +34,8 @@ type Request struct {
 	// Commander. The session picks them, and the model does not.
 	Commanders []string
 	// Locked are the oracle ids of cards the user said the deck must
-	// keep. The locked row asks for them, and the deck must hold every
-	// one (D-70, D-242).
+	// keep. The classifier names them, and the deck must hold every one
+	// (D-70, D-242).
 	Locked []string
 	// PoolRule decides whether ownership is a finding or a mark (D-37).
 	PoolRule mtgv1.PoolRule
@@ -47,7 +50,9 @@ type Request struct {
 	// Limits is the deck-building limits block the prompt reads.
 	Limits string
 	// Precon names the precon the user asked to upgrade, and it is empty
-	// otherwise. PreconOracleIDs holds its cards (D-218).
+	// otherwise. PreconOracleIDs holds its cards (D-218). The share rule
+	// reads the nonbasic ones, and basic lands swap free (A-5 of the
+	// 2026-08-28 audit).
 	Precon          string
 	PreconOracleIDs []string
 	// PreconLands is how many lands the precon runs, copies included. The
@@ -116,13 +121,15 @@ func (b *Builder) Build(ctx context.Context, req Request, acc *llm.Accumulator) 
 		return nil, err
 	}
 	res := b.assemble(req, out)
-	// One repair turn covers both refusals: a name the shortlist does not
-	// hold, and a block finding from the engine.
-	if misses, blocks := res.misses, blocking(res.deck.GetValidation()); len(misses) > 0 || len(blocks) > 0 || res.overBudget || res.shortPrecon {
+	// One repair turn covers every refusal: a name the shortlist does not
+	// hold, a block finding from the engine, and the two warnings that
+	// buy a repair on their own. The repair turn reads every one of them,
+	// or it cannot fix what it was not told (G-1 of the 2026-08-28 audit).
+	if findings := repairable(res.deck.GetValidation()); len(res.misses) > 0 || len(findings) > 0 {
 		b.log.Info("the deck was refused, so one repair turn runs",
-			"session", req.SessionID, "misses", len(misses), "blocks", len(blocks), "over_budget", res.overBudget, "short_precon", res.shortPrecon)
+			"session", req.SessionID, "misses", len(res.misses), "findings", len(findings))
 		out2, err := b.call(ctx, llm.RoleRepair, repairInstructions,
-			b.input(req, misses, blocks), req.SessionID, acc)
+			b.input(req, res.misses, findings), req.SessionID, acc)
 		if err != nil {
 			return nil, err
 		}
@@ -140,16 +147,9 @@ func (b *Builder) Build(ctx context.Context, req Request, acc *llm.Accumulator) 
 
 // pass is one generate or repair turn, assembled and checked.
 type pass struct {
-	deck   *mtgv1.Deck
-	misses []Miss
-	// overBudget buys the repair turn. The deck still ships with a
-	// warning, because a price is an estimate and not a rule, but the
-	// model gets one chance to come under the cap (D-244).
-	overBudget bool
-	// shortPrecon buys the repair turn as well. An upgrade that keeps too
-	// little of the precon is not the deck the user asked for (D-248).
-	shortPrecon bool
-	repaired    bool
+	deck     *mtgv1.Deck
+	misses   []Miss
+	repaired bool
 }
 
 // assemble normalizes the model's list, builds the deck, and validates it.
@@ -172,7 +172,7 @@ func (b *Builder) assemble(req Request, out *deckOut) pass {
 		Id:                 req.DeckID,
 		Name:               req.Name,
 		CreatedAt:          timestamppb.New(now().UTC()),
-		Format:             &mtgv1.Format{Id: req.Format},
+		Format:             &mtgv1.Format{Id: req.Format, HouseRules: req.HouseRules},
 		Power:              req.Power,
 		Summary:            strings.TrimSpace(out.Summary),
 		CommanderOracleIds: commanders,
@@ -186,70 +186,55 @@ func (b *Builder) assemble(req Request, out *deckOut) pass {
 	// engine reads it, rather than return a deck the engine must refuse
 	// (D-225).
 	padded := padWithBasics(deck, req)
+	// The model can not count its own list reliably, so a small precon
+	// shortfall is closed here (D-250). It runs before the engine, so
+	// every finding describes the deck the user gets (G-5 of the
+	// 2026-08-28 audit).
+	swapped := 0
+	if req.Precon != "" {
+		swapped = swapBackPrecon(deck, req)
+	}
 	deck.Validation = b.rules.Validate(rules.Input{
 		Deck:         deck,
 		PoolRule:     req.PoolRule,
 		OracleCounts: req.OracleCounts,
 		Cards:        b.cards,
 	})
-	// The precon share is a build rule and not a rules-engine rule, so it
-	// is added here (D-218).
-	shortPrecon := false
+	if swapped > 0 {
+		addFinding(deck, CodePreconCardsRestored, mtgv1.Severity_SEVERITY_INFO,
+			fmt.Sprintf("the deck was %s short of the %s precon share, so the builder put %s back",
+				plural(swapped, "card"), req.Precon, plural(swapped, "card")))
+	}
+	// The precon share is a build rule and not a rules-engine rule, so
+	// it is added here (D-218).
 	if req.Precon != "" {
-		// The model can not count its own list reliably, so a small
-		// shortfall is closed here before the check reads it (D-250).
-		if swapped := swapBackPrecon(deck, req); swapped > 0 {
-			deck.Validation.Findings = append(deck.GetValidation().GetFindings(), &mtgv1.Finding{
-				Code:     CodePreconSwapped,
-				Severity: mtgv1.Severity_SEVERITY_INFO,
-				Message: fmt.Sprintf("the deck was %s short of the %s precon share, so the builder put %s back",
-					plural(swapped, "card"), req.Precon, plural(swapped, "card")),
-			})
-		}
-		shortPrecon = checkPreconShare(deck, req)
+		checkPreconShare(deck, req)
 	}
 	if padded > 0 {
-		deck.Validation.Findings = append(deck.GetValidation().GetFindings(), &mtgv1.Finding{
-			Code:     CodeBasicsAdded,
-			Severity: mtgv1.Severity_SEVERITY_INFO,
-			Message:  fmt.Sprintf("the list was %s short, so the builder added %s", plural(padded, "card"), plural(padded, "basic land")),
-		})
+		addFinding(deck, CodeBasicsAdded, mtgv1.Severity_SEVERITY_INFO,
+			fmt.Sprintf("the list was %s short, so the builder added %s", plural(padded, "card"), plural(padded, "basic land")))
 	}
 	// The price is a daily estimate and not a rule, so going over budget
 	// warns and never blocks (D-236). It does buy the repair turn (D-244).
-	over := false
 	if req.BudgetUSD > 0 {
 		cost, what := BuyCost(deck), "the cards you must buy"
 		if req.BudgetWholeDeck {
 			cost, what = DeckCost(deck), "the whole deck"
 		}
 		if cost > req.BudgetUSD {
-			over = true
-			deck.Validation.Findings = append(deck.GetValidation().GetFindings(), &mtgv1.Finding{
-				Code:     CodeOverBudget,
-				Severity: mtgv1.Severity_SEVERITY_WARN,
-				Message: fmt.Sprintf("%s cost about $%.2f, and the budget is $%.2f",
-					what, cost, req.BudgetUSD),
-			})
+			addFinding(deck, CodeOverBudget, mtgv1.Severity_SEVERITY_WARN,
+				fmt.Sprintf("%s cost about $%.2f, and the budget is $%.2f", what, cost, req.BudgetUSD))
 		}
 	}
-	// A card the user said to keep must be in the deck. The locked row
-	// asks for it, and a deck without it answers the user's own
-	// instruction with silence (D-242).
+	// A card the user said to keep must be in the deck. A deck without
+	// it answers the user's own instruction with silence (D-242).
 	if missing := missingLocked(deck, req); len(missing) > 0 {
-		deck.Validation.Findings = append(deck.GetValidation().GetFindings(), &mtgv1.Finding{
-			Code:     CodeLockedCardMissing,
-			Severity: mtgv1.Severity_SEVERITY_BLOCK,
-			Message: fmt.Sprintf("the deck does not hold %s, which you asked to keep",
-				strings.Join(missing, ", ")),
-		})
+		addFinding(deck, CodeLockedCardMissing, mtgv1.Severity_SEVERITY_BLOCK,
+			fmt.Sprintf("the deck does not hold %s, which you asked to keep", strings.Join(missing, ", ")))
 	}
 	if req.ThinCommanderPool {
-		deck.Validation.Findings = append(deck.GetValidation().GetFindings(), &mtgv1.Finding{
-			Code:     CodeThinCommanderPool,
-			Severity: mtgv1.Severity_SEVERITY_WARN,
-			Message:  "your library holds no commander for this theme, so the deck was built without one from it",
-		})
+		addFinding(deck, CodeThinCommanderPool, mtgv1.Severity_SEVERITY_WARN,
+			"your library holds no commander for this theme, so the deck was built without one from it")
 	}
 	// The deck carries what it costs, so a reader needs no card index to
 	// see it (D-245).
@@ -257,7 +242,23 @@ func (b *Builder) assemble(req Request, out *deckOut) pass {
 	// The summary is prose, and F-26 lives there. The net reads the shape
 	// of a rules claim and never its truth.
 	lintSummaryInto(deck)
-	return pass{deck: deck, misses: append(main.Misses, side.Misses...), overBudget: over, shortPrecon: shortPrecon}
+	return pass{deck: deck, misses: append(main.Misses, side.Misses...)}
+}
+
+// addFinding appends one finding and keeps Passed true to its meaning.
+// The engine set Passed before the builder's own checks ran, and a BLOCK
+// added after that shipped under passed = true (G-2 of the 2026-08-28
+// audit).
+func addFinding(deck *mtgv1.Deck, code string, sev mtgv1.Severity, msg string) {
+	v := deck.GetValidation()
+	if v == nil {
+		v = &mtgv1.ValidationResult{Passed: true}
+		deck.Validation = v
+	}
+	v.Findings = append(v.Findings, &mtgv1.Finding{Code: code, Severity: sev, Message: msg})
+	if sev == mtgv1.Severity_SEVERITY_BLOCK {
+		v.Passed = false
+	}
 }
 
 // call runs one model turn and reads its answer.
@@ -286,6 +287,22 @@ func blocking(v *mtgv1.ValidationResult) []*mtgv1.Finding {
 	var out []*mtgv1.Finding
 	for _, f := range v.GetFindings() {
 		if f.GetSeverity() == mtgv1.Severity_SEVERITY_BLOCK {
+			out = append(out, f)
+		}
+	}
+	return out
+}
+
+// repairable lists the findings that buy the repair turn: every BLOCK,
+// and the two warnings that do so by decision. Over budget is D-244,
+// and a short precon share is D-248. The repair input carries each one.
+func repairable(v *mtgv1.ValidationResult) []*mtgv1.Finding {
+	var out []*mtgv1.Finding
+	for _, f := range v.GetFindings() {
+		switch {
+		case f.GetSeverity() == mtgv1.Severity_SEVERITY_BLOCK:
+			out = append(out, f)
+		case f.GetCode() == CodeOverBudget, f.GetCode() == CodePreconShare:
 			out = append(out, f)
 		}
 	}

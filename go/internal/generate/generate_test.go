@@ -265,3 +265,19 @@ func TestLockedCommanderCounts(t *testing.T) {
 		}
 	}
 }
+
+// TestAssembleCarriesTheHouseRules is A-6 of the 2026-08-28 audit. The
+// house-rules answer reaches the deck's Format, so a reader of the deck
+// sees what "anything goes" meant to this user (D-3).
+func TestAssembleCarriesTheHouseRules(t *testing.T) {
+	b, _, _ := testBuilder(t)
+	req := testRequest()
+	req.HouseRules = "any card, no ban list"
+	got := b.assemble(req, &deckOut{Summary: "a lifegain deck"})
+	if got.deck.GetFormat().GetHouseRules() != req.HouseRules {
+		t.Errorf("deck format house rules = %q, want %q", got.deck.GetFormat().GetHouseRules(), req.HouseRules)
+	}
+	if got.deck.GetFormat().GetId() != req.Format {
+		t.Errorf("deck format = %v, want %v", got.deck.GetFormat().GetId(), req.Format)
+	}
+}

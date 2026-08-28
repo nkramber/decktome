@@ -6,8 +6,9 @@
 // the question workflow held only the first card the user named (D-240).
 //
 // A decklist is one file in decks/, in the deck export format the corpus
-// names in section 9. The file name is the product name, in lower case
-// with hyphens. Adding a precon is adding a file (D-247).
+// names in section 9. The file name is a slug of the product name, in
+// lower case with hyphens, and displayNames maps a slug to the name a
+// person uses. Adding a precon is adding a file (D-247).
 package precons
 
 import (
@@ -15,6 +16,7 @@ import (
 	"fmt"
 	"io/fs"
 	"path"
+	"slices"
 	"sort"
 	"strings"
 
@@ -57,9 +59,10 @@ type Set struct {
 	list   []*Precon
 }
 
-// Load reads every decklist and resolves it against the card index. It
-// returns a Set and the precons that did not fully resolve, so a caller
-// can refuse to trust one (D-247).
+// Load reads every decklist and resolves it against the card index. A
+// precon that did not fully resolve stays in the Set with its Unresolved
+// count, and Set.Unresolved lists them, so a caller can refuse to trust
+// one (D-247, G-8 of the 2026-08-28 audit).
 func Load(idx *cards.Index) (*Set, error) {
 	if idx == nil {
 		return nil, fmt.Errorf("precons: no card index")
@@ -97,7 +100,7 @@ func Load(idx *cards.Index) (*Set, error) {
 		p.Unresolved += len(unresolved)
 		for _, entry := range resolved {
 			c, ok := idx.ByOracleID(entry.GetOracleId())
-			if ok && strings.Contains(strings.ToLower(c.GetTypeLine()), "land") {
+			if ok && slices.Contains(c.GetCardTypes(), "Land") {
 				p.Lands += int(entry.GetQuantity())
 			}
 		}
@@ -127,9 +130,25 @@ func (s *Set) All() []*Precon {
 	return append([]*Precon(nil), s.list...)
 }
 
-// Find reads the user's words and returns the precon they named. It
-// matches the whole product name inside the message, longest name first,
-// so "Avengers Assemble" wins over a precon called "Avengers".
+// Unresolved lists the precons with a row the card index could not
+// answer. The share rule of D-218 must not trust one: a list that lost
+// cards gives a wrong share (G-8 of the 2026-08-28 audit).
+func (s *Set) Unresolved() []*Precon {
+	var out []*Precon
+	for _, p := range s.All() {
+		if p.Unresolved > 0 {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
+// Find reads the user's words and returns the precon they named. A
+// precon matches when its name is inside the message, or when every
+// word of the message is a word of the name, which is how a short
+// phrase such as "riders of rohan" reaches a longer product name. The
+// longest name wins, so "Avengers Assemble" beats a precon called
+// "Avengers" (G-12 of the 2026-08-28 audit).
 //
 // A user says "upgrade my Avengers Assemble precon", and the classifier
 // reports a card name for that phrase, not a product (D-240). The words
@@ -139,10 +158,11 @@ func (s *Set) Find(words string) (*Precon, bool) {
 		return nil, false
 	}
 	low := strings.ToLower(words)
+	phrase := strings.Fields(low)
 	var best *Precon
 	for _, p := range s.list {
 		name := strings.ToLower(p.Name)
-		if !strings.Contains(low, name) {
+		if !strings.Contains(low, name) && !wordsOf(phrase, strings.Fields(name)) {
 			continue
 		}
 		if best == nil || len(name) > len(strings.ToLower(best.Name)) {
@@ -150,6 +170,20 @@ func (s *Set) Find(words string) (*Precon, bool) {
 		}
 	}
 	return best, best != nil
+}
+
+// wordsOf reports whether every word of phrase is one of the title
+// words. An empty phrase names nothing.
+func wordsOf(phrase, title []string) bool {
+	if len(phrase) == 0 {
+		return false
+	}
+	for _, w := range phrase {
+		if !slices.Contains(title, strings.Trim(w, ",.!?'\"")) {
+			return false
+		}
+	}
+	return true
 }
 
 // Get reads one precon by slug or by name.
@@ -162,12 +196,15 @@ func (s *Set) Get(key string) (*Precon, bool) {
 }
 
 // splitSideboard divides a deck export at its sideboard header and
-// returns the deck text and how many cards the sideboard holds.
+// returns the deck text and how many cards the sideboard holds. The
+// header is "// SIDEBOARD" in the ManaBox export, and the bare
+// "Sideboard" that collections.ParseArenaText also reads.
 func splitSideboard(text string) (deck string, sideboard int) {
 	lines := strings.Split(text, "\n")
 	cut := len(lines)
 	for i, l := range lines {
-		if strings.HasPrefix(strings.ToLower(strings.TrimSpace(l)), "// sideboard") {
+		header := strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(l), "//"))
+		if strings.EqualFold(header, "sideboard") {
 			cut = i
 			break
 		}
@@ -181,9 +218,27 @@ func splitSideboard(text string) (deck string, sideboard int) {
 	return strings.Join(lines[:cut], "\n"), sideboard
 }
 
-// titleOf turns a slug into a product name: "avengers-assemble" reads
-// "Avengers Assemble".
+// displayNames maps a file slug to the product name a person uses. A
+// slug that is not here reads in Title Case, so "ff-cloud" and
+// "lorwyn-blight-curse" show "Ff Cloud" and "Lorwyn Blight Curse": their
+// product names are unverified on 2026-08-28, and a guessed name would
+// be a mistake the user sees. Add the name here once it is verified.
+var displayNames = map[string]string{
+	"avengers-assemble":                 "Avengers Assemble",
+	"from-cute-to-brute":                "From Cute to Brute",
+	"goblin-storm":                      "Goblin Storm",
+	"living-energy":                     "Living Energy",
+	"lotr-riders-of-rohan":              "Riders of Rohan",
+	"tricky-terrain-collectors-edition": "Tricky Terrain",
+	"turtle-power":                      "Turtle Power",
+}
+
+// titleOf gives the display name of a slug. A slug displayNames does not
+// hold reads in Title Case: "ff-cloud" reads "Ff Cloud".
 func titleOf(slug string) string {
+	if name, ok := displayNames[slug]; ok {
+		return name
+	}
 	parts := strings.Split(slug, "-")
 	for i, p := range parts {
 		if p == "" {

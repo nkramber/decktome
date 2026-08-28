@@ -13,12 +13,17 @@ import (
 // prefix holds across a repair turn (roadmap PR-8).
 //
 // The shortlist goes last and it is the longest part. Findings and misses
-// are empty on the first turn.
-func (b *Builder) input(req Request, misses []Miss, blocks []*mtgv1.Finding) string {
+// are empty on the first turn. On the repair turn, findings holds every
+// finding that bought the turn, the two warnings included (G-1 of the
+// 2026-08-28 audit).
+func (b *Builder) input(req Request, misses []Miss, findings []*mtgv1.Finding) string {
 	var s strings.Builder
 	fmt.Fprintf(&s, "## Limits\n\n%s\n", strings.TrimSpace(req.Limits))
 	fmt.Fprintf(&s, "\n## The deck the user asked for\n\n%s\n", strings.TrimSpace(req.Plan))
-	if len(req.Commanders) > 0 {
+	// Only Commander has a command zone. A 60-card session whose
+	// classifier reported a commander name must not hear that the deck
+	// has one (D-233, G-6 of the 2026-08-28 audit).
+	if req.Format == mtgv1.FormatId_FORMAT_ID_COMMANDER && len(req.Commanders) > 0 {
 		var names []string
 		for _, id := range req.Commanders {
 			if c, ok := b.cards.ByOracleID(id); ok {
@@ -44,15 +49,9 @@ func (b *Builder) input(req Request, misses []Miss, blocks []*mtgv1.Finding) str
 	}
 	if len(req.Locked) > 0 {
 		var names []string
-		for _, n := range req.Pool.Names() {
-			c, ok := req.Pool.Card(n)
-			if !ok {
-				continue
-			}
-			for _, id := range req.Locked {
-				if c.GetOracleId() == id {
-					names = append(names, c.GetName())
-				}
+		for _, id := range req.Locked {
+			if c, ok := req.Pool.ByOracleID(id); ok {
+				names = append(names, c.GetName())
 			}
 		}
 		if len(names) > 0 {
@@ -66,12 +65,19 @@ func (b *Builder) input(req Request, misses []Miss, blocks []*mtgv1.Finding) str
 		// arithmetic against a list it is still writing, and deck gate
 		// prompts 17 and 18 of 2026-08-28 kept 68 and 29 percent. The
 		// prompt states the count instead, and what it may change (D-248).
-		keep := PreconKeepCount(len(req.PreconOracleIDs))
-		change := len(req.PreconOracleIDs) - keep
-		fmt.Fprintf(&s, "\n## The precon\n\nThis deck upgrades the %s precon, which holds %d cards. The shortlist marks each one \"precon\".\n",
-			req.Precon, len(req.PreconOracleIDs))
-		fmt.Fprintf(&s, "Keep at least %d of them. You may drop at most %d, and replace those with anything else on the shortlist.\n",
+		//
+		// The count is the precon's nonbasic names. Basic lands swap free,
+		// and the change count is a ceiling and not a target: an upgrade
+		// makes the smallest set of changes that keeps the theme (A-5 of
+		// the 2026-08-28 audit).
+		names := len(preconNonbasics(req))
+		keep := PreconKeepCount(names)
+		change := names - keep
+		fmt.Fprintf(&s, "\n## The precon\n\nThis deck upgrades the %s precon. Its nonbasic cards are %d names, and the shortlist marks each one \"precon\". Basic lands are not counted, and you may swap them freely.\n",
+			req.Precon, names)
+		fmt.Fprintf(&s, "Keep at least %d of those names. You may change at most %d, and that number is a ceiling and not a target.\n",
 			keep, change)
+		s.WriteString("Change as few cards as the upgrade needs, and keep the theme of the precon intact. Never aim to replace the full number you may change.\n")
 		s.WriteString("An upgrade is a small number of better cards, and not a new deck.\n")
 		s.WriteString("Keep the precon's own shape. It is a working deck, so do not rebuild it to a role template, and no job target is given.\n")
 		// The mana base is the one thing a role template got right, and
@@ -81,7 +87,7 @@ func (b *Builder) input(req Request, misses []Miss, blocks []*mtgv1.Finding) str
 			fmt.Fprintf(&s, "The precon holds %s. Keep about that many, and count the precon's own lands toward it.\n",
 				plural(lands, "land"))
 		}
-		s.WriteString("Count the cards you keep before you answer. The count above is a limit and not a goal.\n")
+		s.WriteString("Count the names you keep before you answer. The count above is a limit and not a goal.\n")
 	}
 	// An upgrade keeps the precon's own composition. The generic job
 	// targets prescribe the whole deck, and the share demands most of
@@ -122,9 +128,9 @@ func (b *Builder) input(req Request, misses []Miss, blocks []*mtgv1.Finding) str
 			fmt.Fprintf(&s, "- %q is not on the shortlist. The shortlist holds %s.\n", m.Name, strings.Join(m.Near, ", "))
 		}
 	}
-	if len(blocks) > 0 {
+	if len(findings) > 0 {
 		s.WriteString("\n## Findings against your deck\n\n")
-		for _, f := range blocks {
+		for _, f := range findings {
 			fmt.Fprintf(&s, "- %s: %s\n", f.GetCode(), f.GetMessage())
 		}
 	}
@@ -171,31 +177,20 @@ func (b *Builder) shortlist(req Request) string {
 	return s.String()
 }
 
-// PreconSharePercent is how much of a named precon a built deck keeps.
-// The owner set it on 2026-08-26, and called it a start and not a settled
-// figure (D-218, answers OQ-21).
-const PreconSharePercent = 85
-
-// CodePreconShare is the finding an upgrade gets when it drops too much
-// of the precon it was asked to upgrade.
-const CodePreconShare = "precon_share"
-
 // internal/precons holds the decklists, and agentsvc reads the product
 // name from the user's own words, because the classifier reports a card
 // name for an upgrade request and not a product (D-247).
 //
-// checkPreconShare adds a finding when the deck keeps less of the precon
-// than D-218 requires. It is a build rule and not a rule of the game, so
-// it is a warning and never a block: the user asked for an upgrade, and a
-// refusal to return a deck serves nobody.
+// checkPreconShare adds a finding when the deck keeps fewer of the
+// precon's nonbasic names than D-218 and A-5 require. It is a build rule
+// and not a rule of the game, so it is a warning and never a block: the
+// user asked for an upgrade, and a refusal to return a deck serves
+// nobody. It reports whether the finding was added.
 func checkPreconShare(deck *mtgv1.Deck, req Request) bool {
-	want := len(req.PreconOracleIDs)
+	in := preconNonbasics(req)
+	want := len(in)
 	if want == 0 {
 		return false
-	}
-	in := make(map[string]bool, want)
-	for _, id := range req.PreconOracleIDs {
-		in[id] = true
 	}
 	kept := 0
 	for _, c := range deck.GetCards() {
@@ -212,11 +207,8 @@ func checkPreconShare(deck *mtgv1.Deck, req Request) bool {
 	if kept >= PreconKeepCount(want) {
 		return false
 	}
-	deck.Validation.Findings = append(deck.GetValidation().GetFindings(), &mtgv1.Finding{
-		Code:     CodePreconShare,
-		Severity: mtgv1.Severity_SEVERITY_WARN,
-		Message: fmt.Sprintf("the deck keeps %d of the %d %s precon cards, and the rule asks for %d",
-			kept, want, req.Precon, PreconKeepCount(want)),
-	})
+	addFinding(deck, CodePreconShare, mtgv1.Severity_SEVERITY_WARN,
+		fmt.Sprintf("the deck keeps %d of the %d nonbasic %s precon names, and the rule asks for %d",
+			kept, want, req.Precon, PreconKeepCount(want)))
 	return true
 }
