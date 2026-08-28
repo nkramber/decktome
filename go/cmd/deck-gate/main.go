@@ -244,10 +244,17 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 		return out
 	}
 	// A locked card must be nameable, or the deck can not hold it (D-70).
+	// The build reads the ids and states the cards in its own prompt, so
+	// the gate adds nothing to the plan text by hand (D-242).
+	var lockedIDs []string
 	for _, name := range p.Locked {
-		if c, ok := idx.ByName(name); ok {
-			commanders = append(commanders, c)
+		c, ok := idx.ByName(name)
+		if !ok {
+			out.err = fmt.Errorf("no card named %q to lock", name)
+			return out
 		}
+		commanders = append(commanders, c)
+		lockedIDs = append(lockedIDs, c.GetOracleId())
 	}
 	buyList := poolRule == mtgv1.PoolRule_POOL_RULE_ANY_CARD || p.Budget > 0
 	// The shortlist leaves basic lands out on purpose (D-225).
@@ -259,9 +266,6 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 		return out
 	}
 	plan := p.Plan
-	for _, name := range p.Locked {
-		plan += fmt.Sprintf("\n%s must be in the deck.", name)
-	}
 	res, err := b.Build(ctx, generate.Request{
 		SessionID:    fmt.Sprintf("gate-%d", p.ID),
 		Format:       format,
@@ -269,6 +273,7 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 		Plan:         plan,
 		Pool:         pool,
 		Commanders:   commanderIDs,
+		Locked:       lockedIDs,
 		PoolRule:     poolRule,
 		OracleCounts: own,
 		Roles:        generate.Roles(list),

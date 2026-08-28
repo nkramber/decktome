@@ -34,7 +34,7 @@
     {"id": 11, "name": "Commander with a locked card", "format": "commander", "theme": "sacrifice",
      "commander": "Karlov of the Ghost Council", "bracket": 3, "pool": "any_card",
      "locked": ["Sol Ring"],
-     "plan": "A sacrifice Commander deck led by Karlov of the Ghost Council. Sol Ring must stay in the deck."},
+     "plan": "A sacrifice Commander deck led by Karlov of the Ghost Council."},
     {"id": 12, "name": "Commander on a budget", "format": "commander", "theme": "tokens",
      "commander": "Adeline, Resplendent Cathar", "bracket": 2, "pool": "any_card", "budget": 100,
      "plan": "A token Commander deck led by Adeline, Resplendent Cathar, under 100 dollars, at bracket 2."},
