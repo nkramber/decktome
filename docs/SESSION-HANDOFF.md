@@ -4,12 +4,12 @@
 
 ## Where things stand (2026-08-28)
 
-- `main` is at `4aeb02b`, the rewritten #16. Branch `audit-2026-08-28` holds the audit of 2026-08-28 and every fix it named, in eight commits, pushed and open for a pull request.
-- `docs/audit-2026-08-28.md` is the change report. Section 8 is the plan, and every step of it is in the tree. Section 10 is the history-purge procedure, which the owner runs.
+- `main` is at `961d4b5`, PR-11 merged (#38). The audit of 2026-08-28 (#17), the baselines (#34), Go 1.27.0 (#37), and every Dependabot pull request of the day are in.
+- `docs/audit-2026-08-28.md` is the audit report. Every step of its plan is merged, and the history purge ran (section 10).
 - The tree is green: build, vet, `-race` tests, golangci-lint, staticcheck, `buf lint`, `buf breaking`, govulncheck (zero reachable), web lint, typecheck, tests, and build. `make ste-check` is part of `make lint` now.
 - `make test` takes seconds again. The four snapshot tests of `candidates` gate on `CARDS_SNAPSHOT_DIR` and run under `make themes-check`.
 - The deployable API builds decks now (D-257). Before today only `chat-probe` could.
-- PR-8 is done and merged (#15). PR-9 is out of the MVP (D-256). Phase 3 started on 2026-08-28: PR-11 is built and waits on its browser gate. PR-12, PR-13, and PR-15 follow.
+- PR-8 is done and merged (#15). PR-9 is out of the MVP (D-256). Phase 3 started on 2026-08-28: PR-11 is merged (#38) and its browser gate held. PR-12 is next, then PR-13 and PR-15.
 
 ## The numbers, and why none of them compare with the last run
 
@@ -33,11 +33,11 @@ CAUTION: `tune-check` paired zero questions between run 24 and run 25, because t
 
 ## Next steps, in order
 
-1. Run the PR-11 gate in the browser. Sign in over the emulator, then upload a collection and see the count, or skip and reach the chat placeholder. README section 6 is the procedure. The token path is proved with curl, and the browser path is not.
-2. Merge PR-11 when the gate holds. Then PR-12: `CardService.GetCards`, the chat thread, the deck view (`docs/reference/ui-plan-2026-08-28.md`, section 6).
-3. Add a ruleset that requires the `verify` check on `main`, if it is not there yet. Four Dependabot majors merged without it on 2026-08-28 and broke `main` twice.
+1. PR-12: `CardService.GetCards`, the chat thread over the `Chat` stream, and the deck view with card art (D-6). `docs/reference/ui-plan-2026-08-28.md` section 6 is the slice, and section 7 the live-test procedure. Cut branch `pr-12` from `main`.
+2. Add a ruleset that requires the `verify` check on `main`, if it is not there yet. Four Dependabot majors merged without it on 2026-08-28 and broke `main` twice.
+3. After PR-12, run the M-5 manual scoring on the first UI build (sequencing step 19), and ask the owner before any paid run.
 
-Done on 2026-08-28: the audit merged (#17), every Dependabot pull request of the day is merged or closed, and the baselines merged (#34). PR-11 is built on branch `pr-11`. It holds the stack, the router, the boundary lint, sign-in and sign-up over the Auth emulator, the token interceptor, and the collection screen. 23 web tests pass.
+Done on 2026-08-28: the audit merged (#17), every Dependabot pull request of the day is merged or closed, the baselines merged (#34), Go moved to 1.27.0 (#37), and PR-11 merged (#38). PR-11 holds the stack, the router, the boundary lint, sign-in and sign-up over the Auth emulator, the token interceptor, and the collection screen. The owner ran the gate in the browser on the real export: 4,952 cards, 2,657 rows, one token row reported as not playable. README section 6 is the browser procedure.
 
 Done on 2026-08-28, after the audit: the merged branches are deleted on the clone and on origin, and the history purge ran. Every hash after PR-6 changed. The repo went from 101 MB to 2 MB, and the tree at each tip is byte for byte the same. CAUTION: a clone made before 2026-08-28 holds the old history. Re-clone it, and do not merge from it.
 

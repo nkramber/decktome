@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-08-28 correction pass 26 (PR-11 merged, #38): the web shell, sign-in over the Auth emulator, and the collection screen. The gate held in the browser the same day. Changes: PR-11, sequencing step 18.
+
 2026-08-28 correction pass 25 (UI plan, `docs/reference/ui-plan-2026-08-28.md`): the owner scoped the live test (D-273 to D-276). It covers the whole user path, on the roadmap stack, with real sign-in over the Auth emulator, locally. PR-12 gains `CardService.GetCards`, and PR-13 gains `DeckService.ExportDeck`.
 
 2026-08-28 correction pass 24 (full audit, `docs/audit-2026-08-28.md`): PR-8 merged (#15), and #16 ignores every command binary (D-255). PR-9 leaves the MVP (D-256). The audit found the deployable API could not build a deck, and the owner ruled it a defect (D-257). Decisions D-247 to D-272 recorded, five catalog rows retired (D-260), and the gate set changed with no run (D-263). The Comprehensive Rules file is 2026-08-19 (D-272). The register table is one table again, the freeze and the restricted check are marked retired, and the STE check runs in `make lint` (D-264).
@@ -508,7 +510,7 @@ Every tenth item repeats an earlier one, which measures self-consistency across 
 
 ### Phase 3 - UI (gated on PR-8)
 
-**PR-11: Web app shell.**
+**PR-11: Web app shell.** ✅ merged 2026-08-28 (#38). The gate held in the browser on 2026-08-28: sign-in over the Auth emulator, an upload of the owner's export with the count, and the skip path to the chat placeholder. The token path is proved with curl too. The unresolved rows show the line and a reason in plain words, and not the raw row. 23 web tests, axe on each page. The bundle is 546 kB, almost all `firebase/auth`, and a code split is later polish.
 React 19, Vite, TypeScript, Tailwind, the wallabee-ui patterns (TanStack Query, Zustand, lint-enforced import boundaries). Firebase Auth (D-11) with the emulator in local mode. Generated Connect client in `packages/api-client`. Gate: sign-in, then either upload a collection and see the count, or skip the upload and still reach the chat (D-37).
 
 Detail of 2026-08-28: `docs/reference/ui-plan-2026-08-28.md` holds the user path, the architecture, and the live-test procedure (D-273 to D-276). The sign-in is real, over the Auth emulator, and the token reaches the API through the interceptor of D-268.
@@ -588,7 +590,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 15. PR-8 generator.
 16. PR-9 variance. ⏸ out of MVP scope (D-256). It blocks nothing: the Phase 3 gate below reads PR-8's gate.
 17. **GATE.** Phase 3 starts only when PR-8's gate holds on the golden prompts. ✅ held on 2026-08-28, deck gate run 6.
-18. PR-11, PR-12, PR-13.
+18. PR-11 ✅ merged 2026-08-28 (#38), then PR-12, PR-13.
 19. PR-15 eval harness (can start after step 15, in parallel with the UI, if a second owner exists). M-5 manual scoring runs on the first UI build (after PR-12).
 20. PR-14 meta, then I-1, I-2, I-3 on evidence.
 21. Phase 5 stays parked.
