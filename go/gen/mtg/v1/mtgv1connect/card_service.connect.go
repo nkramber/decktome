@@ -37,6 +37,8 @@ const (
 	CardServiceLookupProcedure = "/mtg.v1.CardService/Lookup"
 	// CardServiceSearchProcedure is the fully-qualified name of the CardService's Search RPC.
 	CardServiceSearchProcedure = "/mtg.v1.CardService/Search"
+	// CardServiceGetCardsProcedure is the fully-qualified name of the CardService's GetCards RPC.
+	CardServiceGetCardsProcedure = "/mtg.v1.CardService/GetCards"
 )
 
 // CardServiceClient is a client for the mtg.v1.CardService service.
@@ -45,6 +47,12 @@ type CardServiceClient interface {
 	Lookup(context.Context, *connect.Request[v1.LookupRequest]) (*connect.Response[v1.LookupResponse], error)
 	// Search filters the card database. No free-text ranking in v1.
 	Search(context.Context, *connect.Request[v1.SearchRequest]) (*connect.Response[v1.SearchResponse], error)
+	// GetCards returns up to 120 cards by Oracle id in one call. The deck
+	// view needs the art, the type line, the mana cost, and the faces of
+	// every card, and DeckCard carries only the id and the name (ui plan
+	// of 2026-08-28, section 4). An id the index does not know goes in
+	// missing_oracle_ids, never dropped in silence.
+	GetCards(context.Context, *connect.Request[v1.GetCardsRequest]) (*connect.Response[v1.GetCardsResponse], error)
 }
 
 // NewCardServiceClient constructs a client for the mtg.v1.CardService service. By default, it uses
@@ -70,13 +78,20 @@ func NewCardServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(cardServiceMethods.ByName("Search")),
 			connect.WithClientOptions(opts...),
 		),
+		getCards: connect.NewClient[v1.GetCardsRequest, v1.GetCardsResponse](
+			httpClient,
+			baseURL+CardServiceGetCardsProcedure,
+			connect.WithSchema(cardServiceMethods.ByName("GetCards")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // cardServiceClient implements CardServiceClient.
 type cardServiceClient struct {
-	lookup *connect.Client[v1.LookupRequest, v1.LookupResponse]
-	search *connect.Client[v1.SearchRequest, v1.SearchResponse]
+	lookup   *connect.Client[v1.LookupRequest, v1.LookupResponse]
+	search   *connect.Client[v1.SearchRequest, v1.SearchResponse]
+	getCards *connect.Client[v1.GetCardsRequest, v1.GetCardsResponse]
 }
 
 // Lookup calls mtg.v1.CardService.Lookup.
@@ -89,12 +104,23 @@ func (c *cardServiceClient) Search(ctx context.Context, req *connect.Request[v1.
 	return c.search.CallUnary(ctx, req)
 }
 
+// GetCards calls mtg.v1.CardService.GetCards.
+func (c *cardServiceClient) GetCards(ctx context.Context, req *connect.Request[v1.GetCardsRequest]) (*connect.Response[v1.GetCardsResponse], error) {
+	return c.getCards.CallUnary(ctx, req)
+}
+
 // CardServiceHandler is an implementation of the mtg.v1.CardService service.
 type CardServiceHandler interface {
 	// Lookup finds one card by exact name, Scryfall id, or Oracle id.
 	Lookup(context.Context, *connect.Request[v1.LookupRequest]) (*connect.Response[v1.LookupResponse], error)
 	// Search filters the card database. No free-text ranking in v1.
 	Search(context.Context, *connect.Request[v1.SearchRequest]) (*connect.Response[v1.SearchResponse], error)
+	// GetCards returns up to 120 cards by Oracle id in one call. The deck
+	// view needs the art, the type line, the mana cost, and the faces of
+	// every card, and DeckCard carries only the id and the name (ui plan
+	// of 2026-08-28, section 4). An id the index does not know goes in
+	// missing_oracle_ids, never dropped in silence.
+	GetCards(context.Context, *connect.Request[v1.GetCardsRequest]) (*connect.Response[v1.GetCardsResponse], error)
 }
 
 // NewCardServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -116,12 +142,20 @@ func NewCardServiceHandler(svc CardServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(cardServiceMethods.ByName("Search")),
 		connect.WithHandlerOptions(opts...),
 	)
+	cardServiceGetCardsHandler := connect.NewUnaryHandler(
+		CardServiceGetCardsProcedure,
+		svc.GetCards,
+		connect.WithSchema(cardServiceMethods.ByName("GetCards")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/mtg.v1.CardService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case CardServiceLookupProcedure:
 			cardServiceLookupHandler.ServeHTTP(w, r)
 		case CardServiceSearchProcedure:
 			cardServiceSearchHandler.ServeHTTP(w, r)
+		case CardServiceGetCardsProcedure:
+			cardServiceGetCardsHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -137,4 +171,8 @@ func (UnimplementedCardServiceHandler) Lookup(context.Context, *connect.Request[
 
 func (UnimplementedCardServiceHandler) Search(context.Context, *connect.Request[v1.SearchRequest]) (*connect.Response[v1.SearchResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("mtg.v1.CardService.Search is not implemented"))
+}
+
+func (UnimplementedCardServiceHandler) GetCards(context.Context, *connect.Request[v1.GetCardsRequest]) (*connect.Response[v1.GetCardsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("mtg.v1.CardService.GetCards is not implemented"))
 }

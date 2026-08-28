@@ -12,6 +12,23 @@ service CardService {
   rpc Lookup(LookupRequest) returns (LookupResponse) {}
   // Search filters the card database. No free-text ranking in v1.
   rpc Search(SearchRequest) returns (SearchResponse) {}
+  // GetCards returns up to 120 cards by Oracle id in one call. The deck
+  // view needs the art, the type line, the mana cost, and the faces of
+  // every card, and DeckCard carries only the id and the name (ui plan
+  // of 2026-08-28, section 4). An id the index does not know goes in
+  // missing_oracle_ids, never dropped in silence.
+  rpc GetCards(GetCardsRequest) returns (GetCardsResponse) {}
+}
+
+message GetCardsRequest {
+  // oracle_ids holds at most 120 ids. A repeated id counts once.
+  repeated string oracle_ids = 1;
+}
+
+message GetCardsResponse {
+  // cards come back in request order, without the missing ones.
+  repeated Card cards = 1;
+  repeated string missing_oracle_ids = 2;
 }
 
 message LookupRequest {

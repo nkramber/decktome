@@ -9,13 +9,14 @@ import { useAuth } from "./auth-context";
 // One form for sign-in and sign-up (D-275). The emulator accepts any email
 // and any password of six or more characters.
 export function SignInPage() {
-  const { user } = useAuth();
+  const { user, ready } = useAuth();
   const [mode, setMode] = useState<"sign-in" | "sign-up">("sign-in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
+  if (!ready) return null;
   if (user) {
     return <Navigate to="/collection" replace />;
   }
@@ -52,7 +53,7 @@ export function SignInPage() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="rounded border border-neutral-400 px-2 py-1"
+            className="rounded border border-neutral-400 bg-white px-2 py-1 text-neutral-900"
           />
         </label>
         <label className="flex flex-col gap-1">
@@ -65,17 +66,17 @@ export function SignInPage() {
             minLength={6}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="rounded border border-neutral-400 px-2 py-1"
+            className="rounded border border-neutral-400 bg-white px-2 py-1 text-neutral-900"
           />
         </label>
         <button
           type="submit"
           disabled={busy}
-          className="rounded bg-neutral-900 px-3 py-2 text-white disabled:opacity-50"
+          className="rounded bg-neutral-900 px-3 py-2 text-white disabled:bg-neutral-300 disabled:text-neutral-600"
         >
           {creating ? "Create account" : "Sign in"}
         </button>
-        <div role="alert" aria-live="assertive" className="min-h-6 text-red-700">
+        <div role="alert" className="min-h-6 text-red-700">
           {error}
         </div>
       </form>

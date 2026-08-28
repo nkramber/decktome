@@ -354,3 +354,24 @@ func TestOccasionIsNotAPowerStep(t *testing.T) {
 		}
 	}
 }
+
+// TestUserWordsDropsTheQuotedQuestion is the browser gate fault of
+// 2026-08-28. The format question names three formats, and the word
+// rules read the echo as a request for three decks.
+func TestUserWordsDropsTheQuotedQuestion(t *testing.T) {
+	msg := QuotedQuestionPrefix + "Which format would you like: Commander, Standard, or Modern?\n" + AnswerPrefix + "Modern"
+	if got := UserWords(msg); got != "Modern" {
+		t.Errorf("UserWords = %q, want Modern", got)
+	}
+	// The raw echo still reads as three decks. That is why Turn hands the
+	// word rules UserWords and never the raw message.
+	if !oneDeckRequest(msg) {
+		t.Error("the raw echo no longer reads as two decks, so this guard is dead")
+	}
+	if oneDeckRequest(UserWords(msg)) {
+		t.Error("Modern alone read as two decks")
+	}
+	if got := UserWords("plain words\nmore words"); got != "plain words\nmore words" {
+		t.Errorf("plain message changed: %q", got)
+	}
+}

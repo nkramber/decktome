@@ -30,7 +30,7 @@ export function HealthFooter() {
   }
 
   return (
-    <footer className="border-t border-neutral-200 px-6 py-2 text-sm text-neutral-600" aria-live="polite">
+    <footer className="border-t border-neutral-200 px-6 py-2 text-sm text-neutral-600" >
       <span data-testid="health">{api}</span>
       {" · "}
       <span data-testid="freshness">{cards}</span>
