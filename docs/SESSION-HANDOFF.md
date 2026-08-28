@@ -37,7 +37,7 @@ CAUTION: `tune-check` paired zero questions between run 24 and run 25, because t
 2. Add a ruleset that requires the `verify` check on `main`, if it is not there yet. Four Dependabot majors merged without it on 2026-08-28 and broke `main` twice.
 3. After PR-12, run the M-5 manual scoring on the first UI build (sequencing step 19), and ask the owner before any paid run.
 
-Done on 2026-08-28: the audit merged (#17), every Dependabot pull request of the day is merged or closed, the baselines merged (#34), Go moved to 1.27.0 (#37), and PR-11 merged (#38). PR-11 holds the stack, the router, the boundary lint, sign-in and sign-up over the Auth emulator, the token interceptor, and the collection screen. The owner ran the gate in the browser on the real export: 4,952 cards, 2,657 rows, one token row reported as not playable. README section 6 is the browser procedure.
+Done on 2026-08-28: the audit merged (#17), the baselines merged (#34), Go moved to 1.27.0 (#37), and PR-11 merged (#38). Every Dependabot pull request of the day is merged or closed. PR-11 holds the stack, the router, the boundary lint, sign-in and sign-up over the Auth emulator, the token interceptor, and the collection screen. The owner ran the gate in the browser on the real export: 4,952 cards, 2,657 rows, one token row reported as not playable. README section 6 is the browser procedure.
 
 Done on 2026-08-28, after the audit: the merged branches are deleted on the clone and on origin, and the history purge ran. Every hash after PR-6 changed. The repo went from 101 MB to 2 MB, and the tree at each tip is byte for byte the same. CAUTION: a clone made before 2026-08-28 holds the old history. Re-clone it, and do not merge from it.
 

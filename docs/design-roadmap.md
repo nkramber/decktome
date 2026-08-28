@@ -510,7 +510,7 @@ Every tenth item repeats an earlier one, which measures self-consistency across 
 
 ### Phase 3 - UI (gated on PR-8)
 
-**PR-11: Web app shell.** ✅ merged 2026-08-28 (#38). The gate held in the browser on 2026-08-28: sign-in over the Auth emulator, an upload of the owner's export with the count, and the skip path to the chat placeholder. The token path is proved with curl too. The unresolved rows show the line and a reason in plain words, and not the raw row. 23 web tests, axe on each page. The bundle is 546 kB, almost all `firebase/auth`, and a code split is later polish.
+**PR-11: Web app shell.** ✅ merged 2026-08-28 (#38). The gate held in the browser on 2026-08-28. The owner signed in over the Auth emulator, uploaded the real export and saw the count, and took the skip path to the chat placeholder. The token path is proved with curl too. The unresolved rows show the line and a reason in plain words, and not the raw row. 23 web tests, axe on each page. The bundle is 546 kB, almost all `firebase/auth`, and a code split is later polish.
 React 19, Vite, TypeScript, Tailwind, the wallabee-ui patterns (TanStack Query, Zustand, lint-enforced import boundaries). Firebase Auth (D-11) with the emulator in local mode. Generated Connect client in `packages/api-client`. Gate: sign-in, then either upload a collection and see the count, or skip the upload and still reach the chat (D-37).
 
 Detail of 2026-08-28: `docs/reference/ui-plan-2026-08-28.md` holds the user path, the architecture, and the live-test procedure (D-273 to D-276). The sign-in is real, over the Auth emulator, and the token reaches the API through the interceptor of D-268.
