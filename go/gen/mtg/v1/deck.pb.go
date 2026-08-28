@@ -165,11 +165,9 @@ type Deck struct {
 	Validation         *ValidationResult `protobuf:"bytes,8,opt,name=validation,proto3" json:"validation,omitempty"`
 	// legality_as_of is the card-snapshot date the deck was checked against,
 	// ISO 8601. The UI shows it (roadmap PR-3).
-	LegalityAsOf string `protobuf:"bytes,9,opt,name=legality_as_of,json=legalityAsOf,proto3" json:"legality_as_of,omitempty"`
-	// seed reproduces this build on request (D-18).
-	Seed      int64                  `protobuf:"varint,10,opt,name=seed,proto3" json:"seed,omitempty"`
-	SessionId string                 `protobuf:"bytes,11,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
-	CreatedAt *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	LegalityAsOf string                 `protobuf:"bytes,9,opt,name=legality_as_of,json=legalityAsOf,proto3" json:"legality_as_of,omitempty"`
+	SessionId    string                 `protobuf:"bytes,11,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	CreatedAt    *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	// stale marks a deck that a rule change made illegal (D-29, I-1).
 	Stale bool `protobuf:"varint,13,opt,name=stale,proto3" json:"stale,omitempty"`
 	// stale_oracle_ids lists the now-illegal cards.
@@ -281,13 +279,6 @@ func (x *Deck) GetLegalityAsOf() string {
 		return x.LegalityAsOf
 	}
 	return ""
-}
-
-func (x *Deck) GetSeed() int64 {
-	if x != nil {
-		return x.Seed
-	}
-	return 0
 }
 
 func (x *Deck) GetSessionId() string {
@@ -609,7 +600,7 @@ var File_mtg_v1_deck_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\n" +
-	"\x11mtg/v1/deck.proto\x12\x06mtg.v1\x1a\x13mtg/v1/format.proto\x1a\x14mtg/v1/session.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xae\x05\n" +
+	"\x11mtg/v1/deck.proto\x12\x06mtg.v1\x1a\x13mtg/v1/format.proto\x1a\x14mtg/v1/session.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xa6\x05\n" +
 	"\x04Deck\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12&\n" +
@@ -621,9 +612,7 @@ const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\n" +
 	"validation\x18\b \x01(\v2\x18.mtg.v1.ValidationResultR\n" +
 	"validation\x12$\n" +
-	"\x0elegality_as_of\x18\t \x01(\tR\flegalityAsOf\x12\x12\n" +
-	"\x04seed\x18\n" +
-	" \x01(\x03R\x04seed\x12\x1d\n" +
+	"\x0elegality_as_of\x18\t \x01(\tR\flegalityAsOf\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\v \x01(\tR\tsessionId\x129\n" +
 	"\n" +
@@ -634,7 +623,8 @@ const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\x13companion_oracle_id\x18\x10 \x01(\tR\x11companionOracleId\x12,\n" +
 	"\bupgrades\x18\x11 \x03(\v2\x10.mtg.v1.DeckCardR\bupgrades\x12 \n" +
 	"\fbuy_cost_usd\x18\x12 \x01(\x01R\n" +
-	"buyCostUsd\"\xe3\x01\n" +
+	"buyCostUsdJ\x04\b\n" +
+	"\x10\vR\x04seed\"\xe3\x01\n" +
 	"\bDeckCard\x12\x1b\n" +
 	"\toracle_id\x18\x01 \x01(\tR\boracleId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +

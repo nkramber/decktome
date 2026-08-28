@@ -12,7 +12,11 @@ The precon work of 2026-08-28 closed OQ-40 and finished D-218. `internal/precons
 
 The 85 percent share now holds on both gate prompts, with no repair turn. Three causes had to be fixed, and only one was the model's: the precon reached the pool after the pool was built, the job targets fought the share, and the model could not count its own list (D-247 to D-250).
 
-Next: PR-9 variance. `Deck.seed` is in the proto and nothing sets it, which is PR-9's first step and a prerequisite for its other two levers.
+PR-9 is out of MVP scope (D-256). It blocks nothing: Phase 3 waits on PR-8's gate, which held. The variance row is retired with it, and `Deck.seed` and `Slots.plan_variant` are removed from the contract with their numbers reserved.
+
+Next: Phase 3. PR-11, PR-12, and PR-13 are the UI and the meta snapshot, and PR-15 is the eval harness.
+
+Old next: `Deck.seed` is in the proto and nothing sets it, which is PR-9's first step and a prerequisite for its other two levers.
 
 The question workflow has a valid baseline again: run 24 of 2026-08-28, at classify prompt version 10. It passes at 28 of 30 catalog-only, with no premature session, 20 bad questions of 435 on the whole set, and 12 of 140 on the holdout. No row holds more than two bad questions. Runs 19 to 22 do not compare with it (D-66).
 

@@ -301,7 +301,6 @@ Neither owned-commander row survives. The not-owned row and the weak-pool row bo
 | Jank or fun | The prompt says janky, jank, fun, silly, meme, or for laughs. | "What does janky mean to you: a low-power deck, an odd card nobody expects, or a plan that almost never works?" |
 | Meta | Power is FNM or tournament-meta. Name no event, and presume no metagame: the user may know neither (D-109, D-169). Offer the general sideboard first, and ask for a list second (D-211). | "Should I keep the sideboard general, or will you name the decks you expect to face?" |
 | Plan choice | The theme has two common plans, before the first build. | "Mill has two plans: mill as the win condition, or mill for value with a creature win. Which one?" |
-| Variance | The user asks for another version after a build. | "Same plan with different cards, or a different plan in the same colors?" |
 | Locked cards | The user names a card to keep that is not the commander (D-70), and the format and the theme are filled (D-81). A message that locks the card in outright, such as "keep Sanguine Bond in it" or "Sol Ring goes in it", answers the row (D-166). | "Must the deck keep {locked}, or may I cut a card that does not fit the plan?" |
 
 The agent does not ask the user to confirm a power step it inferred. A user who asks for the strongest deck gives the answer, and a question about it repeats the answer (D-216). The agent fills the tournament step, closes the slot, and marks the step as inferred. The plan states the step, and the user can change it.

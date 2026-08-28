@@ -474,8 +474,6 @@ type Slots struct {
 	BudgetScope BudgetScope `protobuf:"varint,11,opt,name=budget_scope,json=budgetScope,proto3,enum=mtg.v1.BudgetScope" json:"budget_scope,omitempty"`
 	// locked_oracle_ids are cards the user wants in the deck.
 	LockedOracleIds []string `protobuf:"bytes,8,rep,name=locked_oracle_ids,json=lockedOracleIds,proto3" json:"locked_oracle_ids,omitempty"`
-	// plan_variant separates two builds of one theme (roadmap PR-9).
-	PlanVariant string `protobuf:"bytes,9,opt,name=plan_variant,json=planVariant,proto3" json:"plan_variant,omitempty"`
 	// slot_states is keyed by slot name: scope, format, power, colors,
 	// theme, commander, pool_rule, budget, locked, plan_variant,
 	// house_rules, meta. "scope" records that the agent said it builds
@@ -576,13 +574,6 @@ func (x *Slots) GetLockedOracleIds() []string {
 		return x.LockedOracleIds
 	}
 	return nil
-}
-
-func (x *Slots) GetPlanVariant() string {
-	if x != nil {
-		return x.PlanVariant
-	}
-	return ""
 }
 
 func (x *Slots) GetSlotStates() map[string]SlotState {
@@ -862,7 +853,7 @@ const file_mtg_v1_session_proto_rawDesc = "" +
 	"\routput_tokens\x18\x04 \x01(\x03R\foutputTokens\x12)\n" +
 	"\x10reasoning_tokens\x18\x05 \x01(\x03R\x0freasoningTokens\x12\x19\n" +
 	"\bcost_usd\x18\x06 \x01(\x01R\acostUsd\x12\x16\n" +
-	"\x06priced\x18\a \x01(\bR\x06priced\"\xaf\x04\n" +
+	"\x06priced\x18\a \x01(\bR\x06priced\"\xa0\x04\n" +
 	"\x05Slots\x12&\n" +
 	"\x06format\x18\x01 \x01(\v2\x0e.mtg.v1.FormatR\x06format\x12(\n" +
 	"\x05power\x18\x02 \x01(\v2\x12.mtg.v1.PowerLevelR\x05power\x12%\n" +
@@ -873,14 +864,14 @@ const file_mtg_v1_session_proto_rawDesc = "" +
 	"\n" +
 	"budget_usd\x18\a \x01(\x01R\tbudgetUsd\x126\n" +
 	"\fbudget_scope\x18\v \x01(\x0e2\x13.mtg.v1.BudgetScopeR\vbudgetScope\x12*\n" +
-	"\x11locked_oracle_ids\x18\b \x03(\tR\x0flockedOracleIds\x12!\n" +
-	"\fplan_variant\x18\t \x01(\tR\vplanVariant\x12>\n" +
+	"\x11locked_oracle_ids\x18\b \x03(\tR\x0flockedOracleIds\x12>\n" +
 	"\vslot_states\x18\n" +
 	" \x03(\v2\x1d.mtg.v1.Slots.SlotStatesEntryR\n" +
 	"slotStates\x1aP\n" +
 	"\x0fSlotStatesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12'\n" +
-	"\x05value\x18\x02 \x01(\x0e2\x11.mtg.v1.SlotStateR\x05value:\x028\x01\"\xd4\x01\n" +
+	"\x05value\x18\x02 \x01(\x0e2\x11.mtg.v1.SlotStateR\x05value:\x028\x01J\x04\b\t\x10\n" +
+	"R\fplan_variant\"\xd4\x01\n" +
 	"\x04Turn\x12!\n" +
 	"\fuser_message\x18\x01 \x01(\tR\vuserMessage\x12#\n" +
 	"\ragent_message\x18\x02 \x01(\tR\fagentMessage\x12.\n" +

@@ -411,39 +411,34 @@ func TestEmptyRequestIsRefused(t *testing.T) {
 	}
 }
 
-// TestVarianceNeedsABuild is the other dead-row class. Nothing in the
-// classify schema can say "a deck exists", so the service reads it from
-// the stored session. Until PR-8 stores a deck, the row stays quiet.
-func TestVarianceNeedsABuild(t *testing.T) {
+// TestAfterBuildAsksNothingMore is what the variance row used to test.
+// The row is retired with PR-9 (D-256), so a session that holds a deck
+// and has every slot settled asks nothing at all: it builds again.
+func TestAfterBuildAsksNothingMore(t *testing.T) {
 	store := newFakeStore()
 	client, _ := testServer(t, store, firstTurn(t)...)
 	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
 	for _, q := range first.questions {
 		if q.GetSlot() == "plan_variant" {
-			t.Errorf("the variance row fired before any build: %q", q.GetText())
+			t.Errorf("the retired variance row fired: %q", q.GetText())
 		}
 	}
-
-	// A stored deck flips the fact on the next turn.
+	// A stored deck must not raise it either.
 	store.sessions[first.started].DeckIds = []string{"deck-1"}
 	steps := []llm.Step{
 		classifyJSON(t, map[string]any{
 			"power":           "bracket 3",
 			"commander_names": []string{"Karlov of the Ghost Council"},
 		}),
-		scoreJSON(t, "variance"),
+		scoreJSON(t),
 		askJSON(t),
 	}
 	client2, _ := testServer(t, store, steps...)
 	second := chat(t, client2, &mtgv1.ChatRequest{SessionId: first.started, Message: "give me another version"})
-	var found bool
 	for _, q := range second.questions {
 		if q.GetSlot() == "plan_variant" {
-			found = true
+			t.Errorf("the retired variance row fired on a stored deck: %q", q.GetText())
 		}
-	}
-	if !found {
-		t.Errorf("the variance row did not fire although the session holds a deck: %+v", second.questions)
 	}
 }
 

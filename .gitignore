@@ -20,6 +20,22 @@ firebase-export-*/
 coverage/
 .firebase/
 
-# Binaries that `go build ./cmd/...` drops in the module root.
+# Binaries that `go build ./cmd/X` drops in the module root, because it
+# writes to the working directory when no -o is given. Three reached the
+# repo before this list did: candidates-review in PR-6, and chat-probe and
+# summary-judge in PR-8, for 216 MB together (D-255).
+#
+# One line per command in go/cmd. A new command needs a new line, which
+# the test in go/cmd/cmdignore_test.go enforces.
+/go/api
+/go/candidates-review
+/go/chat-probe
 /go/deck-gate
 /go/generate-probe
+/go/m5-report
+/go/m5-sheet
+/go/questions-eval
+/go/questions-gate
+/go/summary-judge
+/go/tune-check
+/go/worker

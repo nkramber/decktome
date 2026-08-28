@@ -64,8 +64,11 @@ message Slots {
   BudgetScope budget_scope = 11;
   // locked_oracle_ids are cards the user wants in the deck.
   repeated string locked_oracle_ids = 8;
-  // plan_variant separates two builds of one theme (roadmap PR-9).
-  string plan_variant = 9;
+  // 9 held plan_variant, which separated two builds of one theme. PR-9
+  // left the MVP, and nothing ever set it. The slot name still keys
+  // slot_states, because the plan-choice row closes on it (D-256).
+  reserved 9;
+  reserved "plan_variant";
   // slot_states is keyed by slot name: scope, format, power, colors,
   // theme, commander, pool_rule, budget, locked, plan_variant,
   // house_rules, meta. "scope" records that the agent said it builds

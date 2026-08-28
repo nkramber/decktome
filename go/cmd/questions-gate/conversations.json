@@ -111,7 +111,7 @@
     {
       "id": 11,
       "has_deck": true,
-      "note": "The variance row needs a deck to vary (D-68, D-239).",
+      "note": "A message after a build must not re-ask a settled slot. The variance row that used to answer this is retired with PR-9 (D-256).",
       "name": "another version after a build",
       "collection": true,
       "messages": [
@@ -122,7 +122,7 @@
     {
       "id": 12,
       "has_deck": true,
-      "note": "The freeze is retired (D-241). A slot change after a build is an ordinary turn, and the variance row is what a user who wants another version reaches (D-239).",
+      "note": "A slot change after a build is an ordinary turn: the slot updates and nothing is re-asked (D-241, D-256).",
       "name": "a slot change after a build",
       "collection": true,
       "messages": [
