@@ -52,8 +52,12 @@ describe("CollectionPage", () => {
       collection: { id: "c-new", name: "export.csv", cardCount: 3 },
       report: {
         resolvedCount: 2,
-        unresolvedByReason: { UNKNOWN_CARD: 1 },
-        unresolved: [{ line: 4, raw: "Not A Card,XYZ,1", reason: UnresolvedReason.UNKNOWN_CARD }],
+        // The server keys the map by the full enum name.
+        unresolvedByReason: { UNRESOLVED_REASON_UNKNOWN_CARD: 1, UNRESOLVED_REASON_NOT_PLAYABLE: 1 },
+        unresolved: [
+          { line: 4, raw: "Not A Card,XYZ,1", reason: UnresolvedReason.UNKNOWN_CARD },
+          { line: 5, raw: "Pawpatch Recruit,TBLB,1", reason: UnresolvedReason.NOT_PLAYABLE },
+        ],
       },
     });
     renderAt("/collection");
@@ -64,7 +68,7 @@ describe("CollectionPage", () => {
     await user.click(screen.getByRole("button", { name: "Upload" }));
 
     expect(await screen.findByTestId("card-count")).toHaveTextContent(
-      "export.csv: 3 cards, 2 rows resolved, 1 unresolved.",
+      "export.csv: 3 cards, 2 rows resolved, 2 unresolved.",
     );
     const req = importCollection.mock.calls[0][0] as { name: string; source: ImportSource; content: Uint8Array };
     expect(req.name).toBe("export.csv");
@@ -75,8 +79,12 @@ describe("CollectionPage", () => {
     const row = within(table).getAllByRole("row")[1];
     expect(row).toHaveTextContent("4");
     expect(row).toHaveTextContent("Not A Card,XYZ,1");
-    expect(row).toHaveTextContent("UNKNOWN_CARD");
-    expect(screen.getByText("UNKNOWN_CARD: 1")).toBeInTheDocument();
+    expect(row).toHaveTextContent("Unknown card");
+    expect(row).not.toHaveTextContent("UNRESOLVED_REASON");
+    expect(screen.getByText(/^Unknown card: .*: 1$/)).toBeInTheDocument();
+    // A token row gets its own words and the note that says why it is out.
+    expect(within(table).getAllByRole("row")[2]).toHaveTextContent("Not a playable card: a token, emblem, or art card");
+    expect(screen.getByTestId("token-note")).toHaveTextContent("A token is not a card a deck can use");
     expect(useAppStore.getState().collectionId).toBe("c-new");
   });
 
