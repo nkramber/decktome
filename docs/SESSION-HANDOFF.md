@@ -14,7 +14,11 @@ The 85 percent share now holds on both gate prompts, with no repair turn. Three 
 
 Next: PR-9 variance. `Deck.seed` is in the proto and nothing sets it, which is PR-9's first step and a prerequisite for its other two levers.
 
-CAUTION: the classify prompt moved to version 10, so question-gate runs 19 to 22 compare with nothing. The question workflow has no valid baseline. Take one before PR-9 changes the variance row.
+The question workflow has a valid baseline again: run 24 of 2026-08-28, at classify prompt version 10. It passes at 28 of 30 catalog-only, with no premature session, 20 bad questions of 435 on the whole set, and 12 of 140 on the holdout. No row holds more than two bad questions. Runs 19 to 22 do not compare with it (D-66).
+
+The re-baseline earned its cost twice. Run 23 failed on a regression D-239 had introduced, and D-252 fixed it. The variance row then fired for the first time in any gate run.
+
+NOTE: the `budget_scope` row holds two of the twenty bad questions, and both are trigger faults and not storage faults. It fires when the context already answers it: "build owned-first with a buy list" names the scope, and "I proxy anything over 20 dollars" is a proxy rule and not a budget.
 
 
 

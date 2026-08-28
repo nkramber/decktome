@@ -250,7 +250,10 @@ func runOne(cat *questions.Catalog, client *llm.Client, idx *cards.Index, builde
 	st.Ctx.AfterBuild = conv.HasDeck
 	if conv.HasDeck {
 		for _, k := range builtSlots {
-			st.Ctx.Filled[k] = true
+			// Close, not Ctx.Filled: a slot the planner calls filled and
+			// the record calls never asked reads as a premature session,
+			// and run 23 failed the gate on it (D-252).
+			st.Close(k)
 		}
 		st.Ctx.CommanderSet = true
 	}
