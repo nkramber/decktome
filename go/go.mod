@@ -7,7 +7,7 @@ require (
 	cloud.google.com/go/storage v1.65.0
 	connectrpc.com/connect v1.20.0
 	firebase.google.com/go/v4 v4.21.0
-	github.com/anthropics/anthropic-sdk-go v1.66.0
+	github.com/anthropics/anthropic-sdk-go v1.67.0
 	github.com/openai/openai-go/v3 v3.52.0
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.3
 	google.golang.org/api v0.293.0
