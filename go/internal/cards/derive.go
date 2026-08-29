@@ -32,8 +32,8 @@ func derive(c *mtgv1.Card) {
 }
 
 // upToCopiesRe matches "A deck can have up to seven cards named ...".
-// Scryfall spells the number as a word (Seven Dwarves, Nazgûl, checked
-// 2026-08-24). Digits are accepted as well.
+// Scryfall spells the number as a word (Seven Dwarves, Nazgûl). Digits
+// are accepted as well.
 var upToCopiesRe = regexp.MustCompile(`A deck can have up to ([A-Za-z0-9]+) cards named`)
 
 var numberWords = map[string]int32{
@@ -178,8 +178,7 @@ func partnerWithName(c *mtgv1.Card) string {
 // battlefield, it's a 1/1 Insect creature in addition to its other
 // types." Such a card is a legendary creature in the command zone, so it
 // can be a commander (CR 903.3a, D-140). The pattern reads the shape of
-// the ability and never a card name. Text checked against the Scryfall
-// fixture on 2026-08-28.
+// the ability and never a card name.
 var creatureOutsideBattlefieldRe = regexp.MustCompile(`isn't on the battlefield, it's an? [^.]*\bcreature\b`)
 
 // canBeCommander applies CR 903.3 (text of 2026-08-07): a legendary
@@ -189,13 +188,13 @@ var creatureOutsideBattlefieldRe = regexp.MustCompile(`isn't on the battlefield,
 // the front face counts (CR 712.8a), so a card such as Bloodline Keeper
 // does not qualify.
 func canBeCommander(c *mtgv1.Card) bool {
-	if strings.Contains(c.OracleText, "can be your commander") &&
-		!strings.Contains(c.OracleText, "can't be your commander") {
-		return true
-	}
 	line, power, text := c.TypeLine, c.Power, c.OracleText
 	if len(c.Faces) > 0 {
 		line, power, text = c.Faces[0].TypeLine, c.Faces[0].Power, c.Faces[0].OracleText
+	}
+	if strings.Contains(text, "can be your commander") &&
+		!strings.Contains(text, "can't be your commander") {
+		return true
 	}
 	supers, types, subs := parseTypeLine(line)
 	if !slices.Contains(supers, "Legendary") {

@@ -1,10 +1,15 @@
 name: verify
 
-# The workflow runs on pull requests only. A merge to main is the tree
-# the pull request already verified, so a second run on push buys
-# nothing. A new push to a branch cancels the run in progress (D-286).
+# The workflow runs on pull requests, and on one weekly schedule whose
+# only job is the govulncheck scan. A merge to main is the tree the pull
+# request already verified, so a run on push buys nothing (D-286). A new
+# push to a branch cancels the run in progress (D-286).
 on:
   pull_request:
+  # Monday 06:00 UTC. The vuln job is the only job that runs on the
+  # schedule, at about 2 billed minutes a week (D-305).
+  schedule:
+    - cron: "0 6 * * 1"
 
 concurrency:
   group: verify-${{ github.head_ref || github.ref }}
@@ -13,17 +18,22 @@ concurrency:
 permissions:
   contents: read
 
-# Every action is pinned to a commit SHA. The comment gives the tag the SHA
-# resolved to on 2026-08-24. Bump the SHA and the comment together.
+# Every action is pinned to a commit SHA. The comment gives the tag the
+# SHA resolves to. Bump the SHA and the comment together. Each pin was
+# checked against its tag with `gh api repos/<owner>/<repo>/git/ref/tags/<tag>`.
+# verified_at: 2026-08-29, source: https://api.github.com/repos/actions/checkout/git/ref/tags/v7.0.1
+# and the same path for every other action below.
 # Every job has a timeout. A hung test or install runs to the 6-hour
 # default otherwise.
 #
 # Each job is billed by the minute, rounded up, so a job that need not
 # run is skipped. The changes job reads the diff against the base branch
-# and every other job waits on its answer.
+# and every other pull-request job waits on its answer (D-286). The
+# scheduled run starts the vuln job only (D-305).
 jobs:
   changes:
     name: "verify:changes"
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -40,9 +50,13 @@ jobs:
           fetch-depth: 0
       - id: diff
         shell: bash
+        # The base branch name enters through env, never through an
+        # expression inside the script, so its text cannot run as shell.
+        env:
+          BASE_REF: ${{ github.base_ref }}
         run: |
           set -euo pipefail
-          base="origin/${{ github.base_ref }}"
+          base="origin/${BASE_REF}"
           git diff --name-only "$base...HEAD" > changed.txt
           echo "changed files:"; cat changed.txt
           has() { grep -Eq "$1" changed.txt && echo true || echo false; }
@@ -51,19 +65,25 @@ jobs:
             echo "gosum=$(has '^go/go\.(mod|sum)$')"
             echo "web=$(has '^(web/|\.nvmrc$|\.github/workflows/)')"
             echo "proto=$(has '^(proto/|buf\.|go/gen/|go/go\.(mod|sum)$|web/packages/api-client/|\.github/workflows/)')"
-            echo "emulator=$(has '^(go/internal/(sessions|decks|cards)/|go/go\.(mod|sum)$|\.github/workflows/)')"
-            echo "docker=$(has '^(docker/|compose\.yaml$|go/go\.(mod|sum)$|\.nvmrc$|\.github/workflows/)')"
+            # The emulator tests round-trip questions.Snapshot and the generated messages.
+            echo "emulator=$(has '^(go/internal/(sessions|decks|cards|questions)/|go/gen/|proto/|go/go\.(mod|sum)$|\.github/workflows/)')"
+            # The emulators image copies firebase.json and the firestore files, and asserts on them.
+            echo "docker=$(has '^(docker/|compose\.yaml$|\.dockerignore$|firebase\.json$|firestore\.(rules|indexes\.json)$|go/go\.(mod|sum)$|\.nvmrc$|\.github/workflows/)')"
             echo "shell=$(has '^(scripts/|docs/|.*\.md$|Makefile$|\.github/workflows/)')"
           } | tee -a "$GITHUB_OUTPUT"
 
   go:
     name: "verify:go"
     needs: changes
-    if: needs.changes.outputs.go == 'true'
+    if: github.event_name == 'pull_request' && needs.changes.outputs.go == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The LLM-defaults check diffs against the merge base, which a
+          # shallow clone does not hold (D-305).
+          fetch-depth: 0
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go/go.mod
@@ -80,7 +100,8 @@ jobs:
       # The known-vulnerability scan. It fails only on a vulnerability
       # that this code reaches (govulncheck reads the call graph). It
       # runs when the module graph changed, which is when the answer
-      # can change. The weekly Dependabot pull request touches go.sum.
+      # can change. The weekly vuln job covers a new advisory against an
+      # unchanged graph (D-305).
       - name: govulncheck
         if: needs.changes.outputs.gosum == 'true'
         run: go -C go run golang.org/x/vuln/cmd/govulncheck@v1.7.0 ./...
@@ -88,12 +109,29 @@ jobs:
       - name: llm defaults
         run: make llm-defaults-check
 
+  # The weekly scan. A new advisory can hit a pinned module while go.sum
+  # stays the same, and no pull request would run the scan (D-305).
+  vuln:
+    name: "verify:vuln"
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go/go.mod
+          cache-dependency-path: go/go.sum
+      # Same pin as the go job above and scripts/dev.sh.
+      - name: govulncheck
+        run: go -C go run golang.org/x/vuln/cmd/govulncheck@v1.7.0 ./...
+
   # The Firestore repos (sessions, decks) and the fake-GCS store skip
   # their tests without an emulator. This job gives them one.
   emulator:
     name: "verify:emulator"
     needs: changes
-    if: needs.changes.outputs.emulator == 'true'
+    if: github.event_name == 'pull_request' && needs.changes.outputs.emulator == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -118,13 +156,13 @@ jobs:
       - name: fake gcs tests
         run: |
           go -C go run github.com/fsouza/fake-gcs-server@v1.56.1 -scheme http -host 127.0.0.1 -port 4443 -filesystem-root /tmp/gcs &
-          for i in $(seq 1 30); do curl -sf http://127.0.0.1:4443/storage/v1/b >/dev/null && break; sleep 1; done
+          for _ in $(seq 1 30); do curl -sf http://127.0.0.1:4443/storage/v1/b >/dev/null && break; sleep 1; done
           STORAGE_EMULATOR_HOST=http://127.0.0.1:4443 FAKE_GCS_LIVE=1 go -C go test -race -count=1 ./internal/cards/ -run LiveStore
 
   web:
     name: "verify:web"
     needs: changes
-    if: needs.changes.outputs.web == 'true'
+    if: github.event_name == 'pull_request' && needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -148,7 +186,7 @@ jobs:
   proto:
     name: "verify:proto"
     needs: changes
-    if: needs.changes.outputs.proto == 'true'
+    if: github.event_name == 'pull_request' && needs.changes.outputs.proto == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -171,10 +209,17 @@ jobs:
       - run: pnpm --dir web install --frozen-lockfile
       # The buf binary is built from go/go.mod. Cache it on the module graph
       # so the proto job does not compile buf on every run.
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      - id: buf
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .bin/buf
           key: buf-${{ runner.os }}-${{ hashFiles('go/go.sum') }}
+      # The Makefile rebuilds .bin/buf when go/go.sum is newer. The checkout
+      # writes go.sum at run time, and the cache restores buf with its saved
+      # mtime, so the restored binary would always look stale. The touch
+      # makes it newer than go.sum and keeps the cache useful.
+      - if: steps.buf.outputs.cache-hit == 'true'
+        run: touch .bin/buf
       - name: generated code is committed and current
         run: make proto-check
       - name: no breaking proto change against main
@@ -183,7 +228,7 @@ jobs:
   shell:
     name: "verify:shell"
     needs: changes
-    if: needs.changes.outputs.shell == 'true'
+    if: github.event_name == 'pull_request' && needs.changes.outputs.shell == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -205,7 +250,7 @@ jobs:
   docker:
     name: "verify:docker"
     needs: changes
-    if: needs.changes.outputs.docker == 'true'
+    if: github.event_name == 'pull_request' && needs.changes.outputs.docker == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:

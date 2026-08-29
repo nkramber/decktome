@@ -3,16 +3,15 @@ package questions
 import "testing"
 
 // TestCatalogIsClean runs the linter over the rows themselves. It needs no
-// gate run and no model call, so CI holds the line (D-115).
+// model call, so CI holds the line (D-115).
 func TestCatalogIsClean(t *testing.T) {
 	for _, f := range LintCatalog(load(t)) {
 		t.Errorf("catalog row %q: %s (%q)", f.RowID, f.Detail, f.Text)
 	}
 }
 
-// TestLintFindsTheKnownDefects replays the questions that the owner's
-// M-5 scoring of 2026-08-25 marked wrong. Each case is a real line from a
-// gate document.
+// TestLintFindsTheKnownDefects replays questions the M-5 scoring marked
+// wrong (D-66, D-115). Each case is a real line from a gate document.
 func TestLintFindsTheKnownDefects(t *testing.T) {
 	cases := []struct {
 		name     string
@@ -106,9 +105,8 @@ func TestLintAllowsWhatTheUserRaised(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			// A clean question produces no finding at all. An earlier
-			// version of this test allowed one through, and the live smoke
-			// before gate 14 caught what it missed.
+			// A clean question produces no finding at all. A test that
+			// allows one through misses a real defect.
 			for _, f := range LintConversation(tc.messages, []LintQuestion{tc.q}) {
 				t.Errorf("the linter fired %q on a clean question: %s", f.Rule, f.Detail)
 			}
@@ -116,11 +114,10 @@ func TestLintAllowsWhatTheUserRaised(t *testing.T) {
 	}
 }
 
-// TestLintCatchesAnIllegalOffer is D-144. Gate run 14 asked "Do you want
-// to use any colors beyond Grist's color identity?" In Commander the
-// color identity of the commander is the color identity of the deck, so
-// the rules allow no answer to that question. The gate passed, the linter
-// found nothing, and both eval models caught it.
+// TestLintCatchesAnIllegalOffer is D-144. "Do you want to use any colors
+// beyond Grist's color identity?" offers an answer the rules forbid: in
+// Commander the color identity of the commander is the color identity
+// of the deck.
 func TestLintCatchesAnIllegalOffer(t *testing.T) {
 	bad := []string{
 		"Do you want to use any colors beyond Grist's color identity?",

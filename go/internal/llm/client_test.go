@@ -55,6 +55,44 @@ func TestCompleteDeadlineDuringCall(t *testing.T) {
 	}
 }
 
+// schemaMissAtDeadline is a Provider that waits for the attempt to end,
+// then returns an output that misses the schema. It models a complete but
+// wrong answer that arrives as the attempt timer fires.
+type schemaMissAtDeadline struct {
+	mu    sync.Mutex
+	calls int
+}
+
+func (p *schemaMissAtDeadline) Name() string { return FakeName }
+
+func (p *schemaMissAtDeadline) Complete(ctx context.Context, _ Call) (Response, error) {
+	p.mu.Lock()
+	p.calls++
+	p.mu.Unlock()
+	<-ctx.Done()
+	return Response{Output: json.RawMessage(`{}`)}, nil
+}
+
+// TestSchemaMissAtAttemptTimeoutKeepsItsClass covers a schema miss that
+// lands as the per-attempt timer fires. It keeps ClassSchema and its one
+// retry, and it is not reclassified as transient.
+func TestSchemaMissAtAttemptTimeoutKeepsItsClass(t *testing.T) {
+	p := &schemaMissAtDeadline{}
+	var slept []time.Duration
+	c := newTestClient(t, p, WithSleeper(func(_ context.Context, d time.Duration) error { slept = append(slept, d); return nil }))
+	c.attemptBase = 10 * time.Millisecond
+	_, err := c.Complete(context.Background(), RoleClassify, Request{Schema: json.RawMessage(testSchema)}, nil)
+	if ClassOf(err) != ClassSchema {
+		t.Errorf("class = %v, err = %v", ClassOf(err), err)
+	}
+	if p.calls != 2 {
+		t.Errorf("calls = %d, want 2: one schema retry", p.calls)
+	}
+	if len(slept) != 0 {
+		t.Errorf("slept %v, want no backoff for a schema miss", slept)
+	}
+}
+
 func TestCompleteSleeperError(t *testing.T) {
 	tr := newErr(ClassTransient, FakeName, "m", 503, errors.New("down"))
 	sc := NewScript(Step{Err: tr}, Step{Output: json.RawMessage(`{"format":"x"}`)})
@@ -162,19 +200,26 @@ func TestBackoffCapAndJitter(t *testing.T) {
 		}
 	}
 	c = newTestClient(t, NewScript(), WithBudget(Budget{BaseDelay: 10 * time.Second}), WithJitterSeed(7))
-	same := 0
-	// From retry 3 on, the base is at the 30 s cap.
-	for i := 3; i <= 42; i++ {
-		got := c.backoff(i)
-		if got < 24*time.Second || got > 36*time.Second {
-			t.Errorf("backoff(%d) = %v, outside 30s +/- 20%%", i, got)
+	moved := 0
+	// Retry 2 has a 20 s base, and the jitter moves it inside +/- 20%.
+	for i := 0; i < 40; i++ {
+		got := c.backoff(2)
+		if got < 16*time.Second || got > 24*time.Second {
+			t.Errorf("backoff(2) = %v, outside 20s +/- 20%%", got)
 		}
-		if got == 30*time.Second {
-			same++
+		if got != 20*time.Second {
+			moved++
 		}
 	}
-	if same == 40 {
+	if moved == 0 {
 		t.Error("seeded jitter never moved the delay")
+	}
+	// From retry 3 on, the base is over the cap. The cap applies after
+	// the jitter, so no delay ever exceeds it.
+	for i := 3; i <= 42; i++ {
+		if got := c.backoff(i); got > maxBackoff {
+			t.Errorf("backoff(%d) = %v, over the %v cap", i, got, maxBackoff)
+		}
 	}
 	// A fixed seed gives a fixed sequence.
 	a := newTestClient(t, NewScript(), WithJitterSeed(3))

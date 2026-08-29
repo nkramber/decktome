@@ -47,6 +47,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nkramber/mtg-deck-builder/go/internal/gatekit"
 	"github.com/nkramber/mtg-deck-builder/go/internal/tune"
 )
 
@@ -122,10 +123,8 @@ func run(nextPath, prevPath, changesPath string, target float64, noise int, less
 		return 0, err
 	}
 	// A -prev that was named and can not be read is an error, and never a
-	// first run. The loop passed a relative path into a subshell that had
-	// changed directory, so the file was missing, the comparison was
-	// skipped in silence, and an iteration that raised the holdout ratio
-	// was accepted and committed (D-171).
+	// first run. A missing baseline must stop the loop and not skip the
+	// comparison in silence (D-171).
 	var prev *tune.Summary
 	if prevPath != "" {
 		p, err := readWhole(prevPath)
@@ -397,7 +396,7 @@ func mergedReport(base, part *tune.Summary, s tune.Summary) string {
 		if len(v.Faults) > 0 {
 			p("Faults: %s. ", strings.Join(v.Faults, ", "))
 		}
-		p("Catalog action: %s.\n\n%s\n\n", orNone(v.CatalogAction), v.Reason)
+		p("Catalog action: %s.\n\n%s\n\n", gatekit.OrNone(v.CatalogAction), v.Reason)
 	}
 	if n == 0 {
 		p("None.\n\n")
@@ -406,21 +405,13 @@ func mergedReport(base, part *tune.Summary, s tune.Summary) string {
 	return b.String()
 }
 
-func orNone(s string) string {
-	if s == "" {
-		return "none"
-	}
-	return s
-}
-
-// agreement measures one eval model against another on the same run. It
-// answers the question the owner must not guess at: how gently does a
-// model score work its own model produced (OQ-26)?
+// agreement measures one eval model against another on the same run: how
+// gently does a model score work its own model produced (OQ-26)?
 //
-// The eval role runs on the model that also writes the questions. That is
-// the owner's call for cost, and this is how the cost of that call gets
-// measured. It also measures one judge against itself: two scorings of
-// one document show the judge's own noise (D-183).
+// The eval role runs on the model that also writes the questions (D-133),
+// and this is how the cost of that choice gets measured. It also measures
+// one judge against itself: two scorings of one document show the judge's
+// own noise (D-183).
 func agreement(aPath, bPath string, w io.Writer) error {
 	a, err := read(aPath)
 	if err != nil {

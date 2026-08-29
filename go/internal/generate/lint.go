@@ -9,10 +9,8 @@ import (
 )
 
 // F-26 says the model invents claims about the game, and that no
-// deterministic check caught them. Gate run 14 of 2026-08-26 told one
-// user "Grist, the Hunger Tide can not lead a deck", which the rules
-// contradict, and it asked a question the rules allow no answer to. The
-// eval lane found both. The linter found neither.
+// deterministic check caught them: a summary told a user that a card can
+// not lead a deck, which the rules contradict.
 //
 // The deck summary is prose, so it has more room for this than a
 // question ever had. The rules below read the SHAPE of a rules claim,

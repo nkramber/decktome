@@ -8,12 +8,8 @@ import (
 )
 
 // TestArenaFinishMarker is D-246. A deck export marks a foil with "*F*"
-// after the collector number, and the set and number pair could not be
-// found while it was there. The whole line became the card name.
-//
-// The Avengers Assemble precon of 2026-08-28 marked its commander foil,
-// so the deck lost the one card it is built around, and the unresolved
-// row carried no raw text to say which line failed.
+// after the collector number. The marker comes off before the set and
+// number pair is read, and an unresolved row carries its raw text.
 func TestArenaFinishMarker(t *testing.T) {
 	const deck = `// COMMANDER
 1 Captain America, Team Leader (MSC) 5 *F*
@@ -72,5 +68,24 @@ func TestArenaLineOfOnlyAFinishMarker(t *testing.T) {
 	}
 	if len(rows) != 0 || len(bad) != 1 {
 		t.Errorf("rows = %d and bad = %d, want 0 and 1", len(rows), len(bad))
+	}
+}
+
+// TestBrokenCSVRecordNamesItsLine: a record encoding/csv can not parse
+// has no fields to echo, so the report names the line instead.
+func TestBrokenCSVRecordNamesItsLine(t *testing.T) {
+	const csvText = "Name,Set code\nGood Card,abc\n\"broken,abc\nAnother,abc\n"
+	_, bad, err := ParseManaBoxCSV(strings.NewReader(csvText))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(bad) != 1 {
+		t.Fatalf("bad rows = %v, want one", bad)
+	}
+	if bad[0].GetReason() != mtgv1.UnresolvedReason_UNRESOLVED_REASON_BAD_ROW {
+		t.Errorf("reason = %v", bad[0].GetReason())
+	}
+	if !strings.HasPrefix(bad[0].GetRaw(), "unparseable record at line ") || bad[0].GetLine() == 0 {
+		t.Errorf("raw = %q line %d, want the line named", bad[0].GetRaw(), bad[0].GetLine())
 	}
 }

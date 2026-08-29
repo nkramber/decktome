@@ -15,7 +15,7 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 )
 
-// The Turn harness (audit Q-16). The 34 conversations of
+// The Turn harness (D-74). The 34 conversations of
 // conversations_test.go drive Plan with a hand-edited context, so they
 // can not see a defect in Turn, in the word rules, or in the snapshot.
 // The conversations here run through Agent.Turn with a scripted
@@ -180,7 +180,7 @@ func roundTrip(t *testing.T, st *State) *State {
 
 // TestHarnessNearestFormat is gate conversation 50, "a format we do not
 // support". The user names Brawl, hears the decline, accepts the nearest
-// format, and the plan continues (Q-1, Q-4).
+// format, and the plan continues (D-74, D-112).
 func TestHarnessNearestFormat(t *testing.T) {
 	unknown := classifyOut{Format: "unknown", PoolRule: "unknown"}
 	dragons := classifyOut{Format: "unknown", Theme: "dragons", PoolRule: "unknown", Colors: []string{"R"}}
@@ -210,9 +210,8 @@ func TestHarnessNearestFormat(t *testing.T) {
 	}
 }
 
-// TestHarnessDelegationThenColorChange is the shape of probe 81. The
-// user hands the commander choice over, then changes the colors. The
-// delegation stands (Q-5, D-153).
+// TestHarnessDelegationThenColorChange: the user hands the commander
+// choice over, then changes the colors. The delegation stands (D-153).
 func TestHarnessDelegationThenColorChange(t *testing.T) {
 	first := commanderClassify()
 	change := classifyOut{Format: "unknown", PoolRule: "unknown", Colors: []string{"W", "G"}}
@@ -267,9 +266,9 @@ func TestHarnessKeepACard(t *testing.T) {
 	}
 }
 
-// TestHarnessFormatSwitch is probe 35, "the user changes the format".
-// The switch retires the Commander questions, the 60-card rows take
-// over, and the theme the user gave survives (D-125, Q-8).
+// TestHarnessFormatSwitch is "the user changes the format". The switch
+// retires the Commander questions, the 60-card rows take over, and the
+// theme the user gave survives (D-125, D-195).
 func TestHarnessFormatSwitch(t *testing.T) {
 	first := classifyOut{Format: "unknown", Theme: "lifegain", PoolRule: "unknown"}
 	second := classifyOut{Format: "commander", PoolRule: "unknown", Colors: []string{"W", "B"}}
@@ -302,9 +301,9 @@ func TestHarnessFormatSwitch(t *testing.T) {
 	}
 }
 
-// TestHarnessOutOfScopeRepeat is probe 41 with a second request for
-// another game. The decline goes out twice, and the third message gets
-// the normal questions (D-99, Q-10).
+// TestHarnessOutOfScopeRepeat sends a second request for another game.
+// The decline goes out twice, and the third message gets the normal
+// questions (D-99).
 func TestHarnessOutOfScopeRepeat(t *testing.T) {
 	other := classifyOut{Format: "unknown", PoolRule: "unknown"}
 	other.Facts.OutOfScope = true

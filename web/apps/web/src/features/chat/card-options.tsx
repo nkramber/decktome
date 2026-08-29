@@ -4,14 +4,14 @@ import { useQuery } from "@tanstack/react-query";
 
 import { cardClient } from "../../lib/api";
 import { errorMessage } from "../../lib/errors";
-import { facesOf } from "../deck/card-tile";
+import { FaceImage, facesOf } from "../deck/card-tile";
 
 // A question whose options are cards, for example a commander offer,
 // shows each full card image above the pick button. The image carries
 // the rules text, the artist, and the copyright line, so the tile
 // repeats none of them (D-287, D-291).
 export function optionIds(q: Question): string[] {
-  return q.optionOracleIds ?? [];
+  return q.optionOracleIds;
 }
 
 export function hasCardOptions(q: Question): boolean {
@@ -36,19 +36,8 @@ export function CardOption({ card, name }: { card: Card | undefined; name: strin
   return (
     <div className="flex flex-col gap-2" data-testid="card-option">
       {faces.map((face, i) => (
-        <figure key={face.imageUris?.normal || face.name || i} className="flex flex-col gap-1">
-          {face.imageUris?.normal || face.imageUris?.small ? (
-            <img
-              src={face.imageUris.normal || face.imageUris.small}
-              alt={`${face.name} (card)`}
-              width={488}
-              height={680}
-              loading="lazy"
-              className="h-auto w-full rounded"
-            />
-          ) : (
-            <div className="rounded border border-neutral-300 bg-neutral-100 p-2 text-center text-sm">{face.name} (no image)</div>
-          )}
+        <figure key={`${card.oracleId}-${i}`} className="flex flex-col gap-1">
+          <FaceImage face={face} />
           {faces.length > 1 && (
             <figcaption className="text-xs text-neutral-700">
               {face.name} (face {i + 1} of {faces.length})

@@ -71,8 +71,9 @@ export type Deck = Message<"mtg.v1.Deck"> & {
   validation?: ValidationResult | undefined;
 
   /**
-   * legality_as_of is the card-snapshot date the deck was checked against,
-   * ISO 8601. The UI shows it (roadmap PR-3).
+   * legality_as_of is the card-snapshot date of the build's validation,
+   * ISO 8601. It is a copy: validation.legality_as_of is authoritative,
+   * because the last validation writes it. The UI shows this copy.
    *
    * @generated from field: string legality_as_of = 9;
    */
@@ -89,14 +90,15 @@ export type Deck = Message<"mtg.v1.Deck"> & {
   createdAt?: Timestamp | undefined;
 
   /**
-   * stale marks a deck that a rule change made illegal (D-29, I-1).
+   * stale is reserved for the staleness pass (D-29, I-1), unset today.
    *
    * @generated from field: bool stale = 13;
    */
   stale: boolean;
 
   /**
-   * stale_oracle_ids lists the now-illegal cards.
+   * stale_oracle_ids is reserved for the staleness pass (D-29, I-1),
+   * unset today.
    *
    * @generated from field: repeated string stale_oracle_ids = 14;
    */
@@ -252,7 +254,9 @@ export type ValidationResult = Message<"mtg.v1.ValidationResult"> & {
 
   /**
    * legality_as_of is the card-snapshot date the engine checked against,
-   * ISO 8601. Empty when the engine ran without a snapshot.
+   * ISO 8601. Empty when the engine ran without a snapshot. This field is
+   * authoritative: the last validation writes it, and Deck.legality_as_of
+   * is the copy from the build.
    *
    * @generated from field: string legality_as_of = 3;
    */

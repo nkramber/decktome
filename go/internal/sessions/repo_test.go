@@ -8,12 +8,13 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	"github.com/nkramber/mtg-deck-builder/go/internal/gzstore"
 	"github.com/nkramber/mtg-deck-builder/go/internal/questions"
 )
 
-// The store itself needs the Firestore emulator, which no test in this
-// repo starts yet. These tests cover the encoding both halves go through,
-// which is where a silent data loss would happen.
+// The store paths run in emulator_test.go, which skips without the
+// Firestore emulator. These tests cover the encoding both halves go
+// through, which is where a silent data loss would happen.
 
 func sampleSession() *mtgv1.Session {
 	return &mtgv1.Session{
@@ -40,12 +41,12 @@ func sampleSession() *mtgv1.Session {
 
 func TestSessionRoundTrip(t *testing.T) {
 	want := sampleSession()
-	payload, err := gzProto(want)
+	payload, err := gzstore.MarshalProto(want)
 	if err != nil {
 		t.Fatalf("encode: %v", err)
 	}
 	var got mtgv1.Session
-	if err := ungzProto(payload, &got); err != nil {
+	if err := gzstore.UnmarshalProto(payload, &got); err != nil {
 		t.Fatalf("decode: %v", err)
 	}
 	if !proto.Equal(want, &got) {
@@ -64,12 +65,12 @@ func TestStateRoundTrip(t *testing.T) {
 	st.MarkAsked("commander", "commander", "commander")
 	st.Ctx.Words = "build me a lifegain deck"
 
-	payload, err := gzJSON(st.Snapshot())
+	payload, err := gzstore.MarshalJSON(st.Snapshot())
 	if err != nil {
 		t.Fatalf("encode: %v", err)
 	}
 	var got questions.Snapshot
-	if err := ungzJSON(payload, &got); err != nil {
+	if err := gzstore.UnmarshalJSON(payload, &got); err != nil {
 		t.Fatalf("decode: %v", err)
 	}
 	back := questions.Restore("sess-1", st.Slots, got)
@@ -85,7 +86,7 @@ func TestStateRoundTrip(t *testing.T) {
 // existed. It must read as an empty snapshot, not as an error.
 func TestEmptyPayloadOpens(t *testing.T) {
 	var snap questions.Snapshot
-	if err := ungzJSON(nil, &snap); err != nil {
+	if err := gzstore.UnmarshalJSON(nil, &snap); err != nil {
 		t.Fatalf("an empty payload failed: %v", err)
 	}
 	if snap.Version != 0 {

@@ -10,12 +10,11 @@ import (
 
 // The judge lane is the real check for F-26. The deterministic net of
 // LintSummary reads the shape of a rules claim and can not read its
-// truth, and it found neither of the two false claims that reached a
-// user in gate run 14 of 2026-08-26.
+// truth.
 //
 // The judge runs on another provider than the generator, so it never
-// rates its own work (D-22). It costs about $0.0034 a deck, which is
-// cheap enough to run beside every gate (D-229).
+// rates its own work (D-22). It is cheap enough to run beside every gate
+// (D-229).
 
 const judgeInstructions = `You check one paragraph from a Magic: The Gathering deck builder.
 

@@ -3,6 +3,7 @@ package generate
 import (
 	"context"
 	"fmt"
+	"math"
 	"strings"
 	"testing"
 
@@ -12,6 +13,10 @@ import (
 
 func card(oid, name string) *mtgv1.Card {
 	return &mtgv1.Card{OracleId: oid, Name: name}
+}
+
+func basic(oid, name string) *mtgv1.Card {
+	return &mtgv1.Card{OracleId: oid, Name: name, Supertypes: []string{"Basic"}, CardTypes: []string{"Land"}}
 }
 
 func testPool() *Pool {
@@ -95,12 +100,11 @@ func TestMissNoteNamesTheCard(t *testing.T) {
 	}
 }
 
-// TestPadWithBasicsFinishesAShortList is D-225. Gate run 1 of 2026-08-27
-// returned two Commander decks of 99 cards against a size of 100, and one
-// of them asked for a Plains the pool did not hold.
+// TestPadWithBasicsFinishesAShortList is D-225. A deck one or two cards
+// short is a counting slip, and a basic land is always a legal answer.
 func TestPadWithBasicsFinishesAShortList(t *testing.T) {
-	plains := &mtgv1.Card{OracleId: "o-plains", Name: "Plains", Supertypes: []string{"Basic"}}
-	swamp := &mtgv1.Card{OracleId: "o-swamp", Name: "Swamp", Supertypes: []string{"Basic"}}
+	plains := basic("o-plains", "Plains")
+	swamp := basic("o-swamp", "Swamp")
 	pool := NewPool([]*mtgv1.Card{card("o-karlov", "Karlov of the Ghost Council"), plains, swamp}, nil)
 	req := Request{Format: mtgv1.FormatId_FORMAT_ID_COMMANDER, Pool: pool}
 
@@ -248,9 +252,8 @@ func TestBudgetScopeChoosesTheCost(t *testing.T) {
 	}
 }
 
-// TestBudgetReachesThePrompt is D-244. Deck gate run 5 spent $268.37
-// against a $100.00 cap, on a shortlist whose cheapest 99 cards cost
-// $25.66. No shortlist line carried a price, so the model was guessing.
+// TestBudgetReachesThePrompt is D-244. Every shortlist line carries a
+// price when a budget applies, or the model is guessing.
 func TestBudgetReachesThePrompt(t *testing.T) {
 	pool := NewPool([]*mtgv1.Card{
 		{OracleId: "o-cheap", Name: "Cheap Card", PriceUsd: 0.25},
@@ -306,8 +309,7 @@ func TestOverBudgetBuysTheRepairTurn(t *testing.T) {
 		}
 	}
 	// The repair input must carry the finding, or the model cannot fix
-	// it. It is a warning, and the repair turn once saw blocks only (G-1
-	// of the 2026-08-28 audit).
+	// it. It is a warning, and it buys the repair turn (D-244).
 	for _, want := range []string{CodeOverBudget, "cost about $53.68, and the budget is $10.00"} {
 		if !strings.Contains(sc.Calls[1].Input, want) {
 			t.Errorf("the repair input does not carry %q", want)
@@ -366,7 +368,7 @@ func TestShortPreconBuysTheRepairTurn(t *testing.T) {
 		t.Error("the prompt did not state how many precon cards to keep")
 	}
 	// The repair input must carry the finding, or the model cannot fix
-	// it (G-1 of the 2026-08-28 audit).
+	// it (D-248).
 	for _, want := range []string{CodePreconShare, "keeps 2 of the 4 nonbasic Test Precon precon names"} {
 		if !strings.Contains(sc.Calls[1].Input, want) {
 			t.Errorf("the repair input does not carry %q", want)
@@ -430,7 +432,7 @@ func TestSwapBackPreconClosesASmallShortfall(t *testing.T) {
 		{OracleId: "o-x", Name: "Outsider", Count: 1},
 		{OracleId: "o-plains", Name: "Plains", Count: 30},
 	}}
-	if got := swapBackPrecon(deck, req); got != 1 {
+	if got := swapBackPrecon(deck, req, nil); got != 1 {
 		t.Fatalf("swapped = %d, want 1", got)
 	}
 	names := map[string]bool{}
@@ -463,20 +465,19 @@ func TestSwapBackRefusesALargeShortfall(t *testing.T) {
 	}
 	req := Request{Pool: NewPool(cards, nil), Precon: "Big", PreconOracleIDs: ids}
 	deck := &mtgv1.Deck{Cards: []*mtgv1.DeckCard{{OracleId: "o-p0", Name: "Precon 0", Count: 1}}}
-	if got := swapBackPrecon(deck, req); got != 0 {
+	if got := swapBackPrecon(deck, req, nil); got != 0 {
 		t.Errorf("swapped = %d, want 0: a 16-card gap is a different deck", got)
 	}
 }
 
-// TestPreconShareCountsNonbasicNames is A-5 of the 2026-08-28 audit. The
-// share is 85 percent of the precon's nonbasic names, and a basic land
-// swapped for another basic has not dropped the precon.
+// TestPreconShareCountsNonbasicNames is D-218. The share is 85 percent of
+// the precon's nonbasic names, and a basic land swapped for another
+// basic has not dropped the precon.
 func TestPreconShareCountsNonbasicNames(t *testing.T) {
 	pool := NewPool([]*mtgv1.Card{
 		{OracleId: "o-p1", Name: "Precon One"}, {OracleId: "o-p2", Name: "Precon Two"},
 		{OracleId: "o-p3", Name: "Precon Three"}, {OracleId: "o-p4", Name: "Precon Four"},
-		{OracleId: "o-swamp", Name: "Swamp", Supertypes: []string{"Basic"}},
-		{OracleId: "o-forest", Name: "Forest", Supertypes: []string{"Basic"}},
+		basic("o-swamp", "Swamp"), basic("o-forest", "Forest"),
 	}, nil)
 	req := Request{
 		Format: mtgv1.FormatId_FORMAT_ID_COMMANDER, Pool: pool, Precon: "Test Precon",
@@ -499,10 +500,10 @@ func TestPreconShareCountsNonbasicNames(t *testing.T) {
 	}
 	for _, tc := range cases {
 		deck := &mtgv1.Deck{Cards: tc.cards, Validation: &mtgv1.ValidationResult{Passed: true}}
-		if got := checkPreconShare(deck, req); got != tc.short {
+		if got := checkPreconShare(deck, req, nil); got != tc.short {
 			t.Errorf("%s: short = %v, want %v", tc.name, got, tc.short)
 		}
-		if got := len(preconNonbasics(req)); got != 4 {
+		if got := len(preconNonbasics(req, nil)); got != 4 {
 			t.Errorf("%s: nonbasic names = %d, want 4", tc.name, got)
 		}
 	}
@@ -516,9 +517,8 @@ func TestPreconShareCountsNonbasicNames(t *testing.T) {
 	}
 }
 
-// TestAddFindingKeepsPassedTrue is G-2 of the 2026-08-28 audit. The
-// engine set Passed before the builder's own checks ran, and a locked
-// card missing shipped as a BLOCK under passed = true.
+// TestAddFindingKeepsPassedTrue: a BLOCK the builder adds after the
+// engine ran clears Passed (D-242).
 func TestAddFindingKeepsPassedTrue(t *testing.T) {
 	without := deckOut{Summary: "s", Cards: []Entry{
 		{Name: "Ajani's Welcome", Count: 1, Role: "synergy", Reason: "gains life"},
@@ -551,13 +551,15 @@ func TestAddFindingKeepsPassedTrue(t *testing.T) {
 	}
 }
 
-// TestInsertedCardsReadTheOwnedCount is G-3 of the 2026-08-28 audit. A
-// card the builder inserts, and a card that joins the pool as an always
-// card, carried Owned = false, so the user's own precon cards counted as
-// purchases and over_budget fired wrongly.
+// TestInsertedCardsReadTheOwnedCount is D-37. A card the builder inserts
+// reads the owned count from the pool, so the user's own precon cards
+// never count as purchases. The commander is priced from the card index
+// and owned from the collection.
 func TestInsertedCardsReadTheOwnedCount(t *testing.T) {
-	plains := &mtgv1.Card{OracleId: "o-plains", Name: "Plains", Supertypes: []string{"Basic"}, PriceUsd: 0.10}
+	plains := basic("o-plains", "Plains")
+	plains.PriceUsd = 0.10
 	p4 := &mtgv1.Card{OracleId: "o-p4", Name: "Precon Four", PriceUsd: 12}
+	commander := &mtgv1.Card{OracleId: "o-c", Name: "The Commander", PriceUsd: 30}
 	pool := NewPool([]*mtgv1.Card{
 		{OracleId: "o-p1", Name: "Precon One"}, {OracleId: "o-p2", Name: "Precon Two"},
 		{OracleId: "o-p3", Name: "Precon Three"}, p4,
@@ -578,7 +580,7 @@ func TestInsertedCardsReadTheOwnedCount(t *testing.T) {
 	if got := padWithBasics(deck, req); got != 3 {
 		t.Fatalf("padded = %d, want 3", got)
 	}
-	if got := swapBackPrecon(deck, req); got != 1 {
+	if got := swapBackPrecon(deck, req, nil); got != 1 {
 		t.Fatalf("swapped = %d, want 1", got)
 	}
 	by := map[string]*mtgv1.DeckCard{}
@@ -604,9 +606,140 @@ func TestInsertedCardsReadTheOwnedCount(t *testing.T) {
 				tc.name, c.GetOwned(), c.GetOwnedCount(), c.GetPriceUsd(), tc.owned, tc.count, tc.price)
 		}
 	}
-	// The owned precon card costs nothing to buy. One Plains does.
+	// The owned precon card costs nothing to buy. One Plains does, and so
+	// does the commander until the collection holds it.
 	if got := BuyCost(deck); got != 0.10 {
-		t.Errorf("BuyCost = %.2f, want 0.10", got)
+		t.Errorf("BuyCost = %.2f, want 0.10 without a card index", got)
+	}
+	cards := cardMap{"o-c": commander}
+	if got := BuyCostWith(deck, cards, nil); math.Abs(got-30.10) > 1e-9 {
+		t.Errorf("BuyCostWith = %.2f, want 30.10 with the commander unowned", got)
+	}
+	if got := BuyCostWith(deck, cards, map[string]int32{"o-c": 1}); math.Abs(got-0.10) > 1e-9 {
+		t.Errorf("BuyCostWith = %.2f, want 0.10 with the commander owned", got)
+	}
+	// The whole deck counts the commander and the owned precon card.
+	if got := DeckCostWith(deck, cards); math.Abs(got-42.30) > 1e-9 {
+		t.Errorf("DeckCostWith = %.2f, want 42.30", got)
+	}
+}
+
+// TestBuyCostSumsCopiesPerOracleId: four main and two sideboard copies
+// of a card the user owns four of cost two copies, not none (D-37).
+func TestBuyCostSumsCopiesPerOracleId(t *testing.T) {
+	deck := &mtgv1.Deck{
+		Cards:     []*mtgv1.DeckCard{{OracleId: "o-w", Name: "Ajani's Welcome", Count: 4, OwnedCount: 4, PriceUsd: 0.50}},
+		Sideboard: []*mtgv1.DeckCard{{OracleId: "o-w", Name: "Ajani's Welcome", Count: 2, OwnedCount: 4, PriceUsd: 0.50}},
+	}
+	if got := BuyCost(deck); math.Abs(got-1.00) > 1e-9 {
+		t.Errorf("BuyCost = %.2f, want 1.00 for the two copies over the four owned", got)
+	}
+	if got := DeckCost(deck); math.Abs(got-3.00) > 1e-9 {
+		t.Errorf("DeckCost = %.2f, want 3.00", got)
+	}
+}
+
+// TestOwnedFlagReadsTheWholeList: the owned flag reads the copies of an
+// oracle id across every entry, so two entries of one card are owned
+// only when the collection covers both (D-37).
+func TestOwnedFlagReadsTheWholeList(t *testing.T) {
+	got := Normalize(testPool(), []Entry{
+		{Name: "Ajani's Welcome", Count: 3, Role: "synergy"},
+		{Name: "Ajani's Welcome", Count: 2, Role: "synergy"},
+		{Name: "Sol Ring", Count: 1, Role: "ramp"},
+	})
+	if len(got.Cards) != 3 {
+		t.Fatalf("cards = %d, want 3", len(got.Cards))
+	}
+	for _, c := range got.Cards[:2] {
+		if c.GetOwned() || c.GetOwnedCount() != 4 {
+			t.Errorf("%s x%d: owned %v/%d, want false/4: five copies against four owned", c.GetName(), c.GetCount(), c.GetOwned(), c.GetOwnedCount())
+		}
+	}
+	if !got.Cards[2].GetOwned() {
+		t.Error("one Sol Ring against one owned is not owned")
+	}
+	// Across the main deck and the sideboard, assemble applies the same
+	// rule.
+	b, _, _ := testBuilder(t)
+	req := testRequest()
+	req.OracleCounts = map[string]int32{"o-welcome": 4}
+	pass := b.assemble(req, &deckOut{Summary: "s",
+		Cards:     []Entry{{Name: "Ajani's Welcome", Count: 4, Role: "synergy"}},
+		Sideboard: []Entry{{Name: "Ajani's Welcome", Count: 2, Role: "synergy"}},
+	})
+	for _, c := range allCards(pass.deck) {
+		if c.GetOwned() {
+			t.Errorf("%s x%d in a deck of six copies against four owned is marked owned", c.GetName(), c.GetCount())
+		}
+	}
+}
+
+// TestPreconShareCountsDistinctIds: two entries of one precon card keep
+// one name, not two (D-218).
+func TestPreconShareCountsDistinctIds(t *testing.T) {
+	pool := NewPool([]*mtgv1.Card{
+		{OracleId: "o-p1", Name: "Precon One"}, {OracleId: "o-p2", Name: "Precon Two"},
+		{OracleId: "o-p3", Name: "Precon Three"}, {OracleId: "o-p4", Name: "Precon Four"},
+	}, nil)
+	req := Request{Format: mtgv1.FormatId_FORMAT_ID_COMMANDER, Pool: pool, Precon: "Test Precon",
+		PreconOracleIDs: []string{"o-p1", "o-p2", "o-p3", "o-p4"}}
+	// Four names need four kept. Three distinct names and a duplicate
+	// entry is three, so the share is short.
+	deck := &mtgv1.Deck{Cards: []*mtgv1.DeckCard{
+		{OracleId: "o-p1", Name: "Precon One", Count: 1}, {OracleId: "o-p1", Name: "Precon One", Count: 1},
+		{OracleId: "o-p2", Name: "Precon Two", Count: 1}, {OracleId: "o-p3", Name: "Precon Three", Count: 1},
+		{OracleId: "o-x", Name: "Outsider", Count: 1},
+	}}
+	if !checkPreconShare(deck, req, nil) {
+		t.Error("a duplicate entry counted as a second precon name")
+	}
+}
+
+// TestSwapBackKeepsTheCommanderColors: a precon card outside the chosen
+// commander's color identity never goes back (CR 903.5c).
+func TestSwapBackKeepsTheCommanderColors(t *testing.T) {
+	W, G := mtgv1.Color_COLOR_W, mtgv1.Color_COLOR_G
+	pool := NewPool([]*mtgv1.Card{
+		{OracleId: "o-c", Name: "White Commander", ColorIdentity: []mtgv1.Color{W}},
+		{OracleId: "o-p1", Name: "Precon One", ColorIdentity: []mtgv1.Color{W}},
+		{OracleId: "o-p2", Name: "Precon Two", ColorIdentity: []mtgv1.Color{W}},
+		{OracleId: "o-p3", Name: "Precon Three", ColorIdentity: []mtgv1.Color{W}},
+		{OracleId: "o-green", Name: "Green Precon Card", ColorIdentity: []mtgv1.Color{G}},
+		{OracleId: "o-p5", Name: "Precon Five", ColorIdentity: nil},
+		{OracleId: "o-x", Name: "Outsider"}, {OracleId: "o-y", Name: "Outsider Two"},
+	}, nil)
+	req := Request{Format: mtgv1.FormatId_FORMAT_ID_COMMANDER, Pool: pool, Precon: "Test Precon",
+		PreconOracleIDs: []string{"o-p1", "o-p2", "o-p3", "o-green", "o-p5"}}
+	// Five names need five kept. Three are held, and the green card is
+	// first in precon order, so a color-blind swap would put it back.
+	deck := &mtgv1.Deck{CommanderOracleIds: []string{"o-c"}, Cards: []*mtgv1.DeckCard{
+		{OracleId: "o-p1", Name: "Precon One", Count: 1}, {OracleId: "o-p2", Name: "Precon Two", Count: 1},
+		{OracleId: "o-p3", Name: "Precon Three", Count: 1},
+		{OracleId: "o-x", Name: "Outsider", Count: 1}, {OracleId: "o-y", Name: "Outsider Two", Count: 1},
+	}}
+	if got := swapBackPrecon(deck, req, nil); got != 1 {
+		t.Errorf("swapped = %d, want 1: the colorless card and not the green one", got)
+	}
+	for _, c := range deck.GetCards() {
+		if c.GetOracleId() == "o-green" {
+			t.Error("an off-color precon card went back into the deck")
+		}
+	}
+}
+
+// TestPreconNonbasicsReadsTheCardIndex: a precon basic the pool does not
+// hold, Wastes or a snow basic, is a basic and not a nonbasic (D-218).
+func TestPreconNonbasicsReadsTheCardIndex(t *testing.T) {
+	pool := NewPool([]*mtgv1.Card{{OracleId: "o-p1", Name: "Precon One"}}, nil)
+	req := Request{Pool: pool, PreconOracleIDs: []string{"o-p1", "o-wastes", "o-snow"}}
+	cards := cardMap{"o-wastes": basic("o-wastes", "Wastes"), "o-snow": basic("o-snow", "Snow-Covered Forest")}
+	cards["o-snow"].Supertypes = []string{"Basic", "Snow"}
+	if got := preconNonbasics(req, cards); len(got) != 1 || !got["o-p1"] {
+		t.Errorf("nonbasics = %v, want the one real card", got)
+	}
+	if got := preconNonbasics(req, nil); len(got) != 3 {
+		t.Errorf("nonbasics without a card index = %v, want every id the pool can not name", got)
 	}
 }
 
@@ -638,9 +771,9 @@ func TestFromListOwnedReadsTheAlwaysCards(t *testing.T) {
 	}
 }
 
-// TestFindingsDescribeTheFinalDeck is G-5 of the 2026-08-28 audit. The
-// engine ran before the builder put the precon cards back, so the
-// findings described a deck the user never got.
+// TestFindingsDescribeTheFinalDeck is D-250. The builder puts the precon
+// cards back before the engine runs, so every finding describes the deck
+// the user gets.
 func TestFindingsDescribeTheFinalDeck(t *testing.T) {
 	pool := NewPool([]*mtgv1.Card{
 		{OracleId: "o-p1", Name: "Precon One"}, {OracleId: "o-p2", Name: "Precon Two"},
@@ -679,9 +812,8 @@ func TestFindingsDescribeTheFinalDeck(t *testing.T) {
 	}
 }
 
-// TestCommanderSentenceIsCommanderOnly is G-6 of the 2026-08-28 audit. A
-// 60-card session whose classifier reported a commander name was told
-// "the commander is X".
+// TestCommanderSentenceIsCommanderOnly is D-233. Only a Commander session
+// hears "the commander is X".
 func TestCommanderSentenceIsCommanderOnly(t *testing.T) {
 	b, _, _ := testBuilder(t)
 	for _, tc := range []struct {

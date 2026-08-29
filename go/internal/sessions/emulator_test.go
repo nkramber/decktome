@@ -10,15 +10,14 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	"github.com/nkramber/mtg-deck-builder/go/internal/gzstore"
 	"github.com/nkramber/mtg-deck-builder/go/internal/questions"
 )
 
-// The store talks to Firestore, and no unit test can reach that. Before
-// 2026-08-25 every Firestore path here was at zero coverage: NewID, Get,
-// GetState, and the document paths never ran, and Put ran only far enough
-// to reject a session with no id. A wrong collection path, a bad
-// `firestore` struct tag, or a misused transaction would have passed
-// every green test in the repo.
+// The store talks to Firestore, and no unit test can reach that. A wrong
+// collection path, a bad `firestore` struct tag, or a misused transaction
+// passes every unit test, so these tests run the paths against the
+// emulator.
 //
 // These tests need the local emulator, so CI skips them:
 //
@@ -254,7 +253,7 @@ func TestEmulatorStateSurvivesAPathChange(t *testing.T) {
 		t.Fatalf("private document: %v", err)
 	}
 	var out questions.Snapshot
-	if err := ungzJSON(stored.StateGz, &out); err != nil {
+	if err := gzstore.UnmarshalJSON(stored.StateGz, &out); err != nil {
 		t.Fatalf("private payload: %v", err)
 	}
 	if out.Version != questions.SnapshotVersion {
@@ -262,7 +261,7 @@ func TestEmulatorStateSurvivesAPathChange(t *testing.T) {
 	}
 }
 
-// TestEmulatorPutConflict is the H-7 guard. Two turns read version 1 and
+// TestEmulatorPutConflict: two turns read version 1 and
 // both try to write. The second write must fail with ErrConflict and
 // leave the first one in place. Without this check the second Put erased
 // the first turn's asked rows, and the no-repeat rule then repeated a

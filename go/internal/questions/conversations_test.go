@@ -31,9 +31,8 @@ func newCtx(words string) Context {
 func commander(c *Context) { c.Format = mtgv1.FormatId_FORMAT_ID_COMMANDER }
 
 // conversations are the PR-7 gate cases. Each one must reach a complete
-// slot set in at most four turns, with no repeated question. Eight of the
-// first fourteen come from the dogfood runs of 2026-08-24. Every catalog
-// row fires in at least one of the thirty.
+// slot set in at most four turns, with no repeated question (D-53).
+// Every catalog row fires in at least one of the thirty.
 func conversations() []conversation {
 	var cs []conversation
 
@@ -43,7 +42,7 @@ func conversations() []conversation {
 	c1.steps = []step{
 		{want: []string{"format", "theme", "colors"}, fill: []string{"format", "theme", "colors"}, set: commander},
 		{want: []string{"power_commander", "pool", "commander"}, fill: []string{"power", "pool_rule"},
-			set: func(c *Context) { c.OwnedMode, c.BuyList, c.Suggested = true, true, true }},
+			set: func(c *Context) { c.BuyList, c.Suggested = true, true }},
 		{want: []string{"budget", "commander_pick"}, fill: []string{"commander", "commander_pick", "budget"},
 			set: func(c *Context) { c.CommanderSet = true }},
 	}
@@ -55,14 +54,14 @@ func conversations() []conversation {
 	c2.steps = []step{
 		{want: []string{"format", "theme", "colors"}, fill: []string{"format", "theme", "colors"}, set: commander},
 		{want: []string{"power_commander", "pool_thin", "commander"}, fill: []string{"power", "pool_rule", "commander"},
-			set: func(c *Context) { c.OwnedMode, c.BuyList, c.CommanderSet = true, true, true }},
+			set: func(c *Context) { c.BuyList, c.CommanderSet = true, true }},
 		{want: []string{"budget"}, fill: []string{"budget"}},
 	}
 	cs = append(cs, c2)
 
 	// The named card becomes the commander, so no card is locked (D-70).
-	// The plain theme row asks: the card-named theme row retired with
-	// A-6 of the 2026-08-28 audit.
+	// The plain theme row asks: the card-named theme row is retired
+	// (D-260).
 	c3 := conversation{name: "a named card, role unknown"}
 	c3.ctx = newCtx("build around grist, the hunger tide")
 	c3.ctx.HasCollection, c3.ctx.NamedCard = true, true
@@ -74,8 +73,8 @@ func conversations() []conversation {
 	}
 	cs = append(cs, c3)
 
-	// The jank row retired (A-6 of the 2026-08-28 audit). A jank word
-	// routes to power, and the power row asks.
+	// The jank row is retired (D-260). A jank word routes to power, and
+	// the power row asks.
 	c4 := conversation{name: "fun and janky"}
 	c4.ctx = newCtx("make me something fun and janky")
 	c4.ctx.HasCollection = true
@@ -101,8 +100,8 @@ func conversations() []conversation {
 	}
 	cs = append(cs, c5)
 
-	// The meta row retired (A-6 of the 2026-08-28 audit). A competitive
-	// 60-card session asks the budget and nothing about the sideboard.
+	// The meta row is retired (D-260). A competitive 60-card session
+	// asks the budget and nothing about the sideboard.
 	c6 := conversation{name: "the strongest deck, no collection"}
 	c6.ctx = newCtx("build the strongest deck possible i own nothing")
 	c6.ctx.BuyList = true
@@ -132,19 +131,17 @@ func conversations() []conversation {
 	c8.ctx.HasCollection, c8.ctx.Theme, c8.ctx.BudgetAmbiguous = true, "mill", true
 	c8.steps = []step{
 		{want: []string{"format", "theme", "colors"}, fill: []string{"format", "theme", "colors"},
-			set: func(c *Context) { commander(c); c.TwoPlans = true }},
-		{want: []string{"power_commander", "pool", "budget_scope"}, fill: []string{"power", "pool_rule", "budget_scope", "budget"},
-			set: func(c *Context) { c.OwnedMode = true }},
-		// The plan-choice row retired with PR-9 (D-256, A-6 of the
-		// 2026-08-28 audit), so two plans raise no question. The
-		// commander comes last (D-294).
+			set: commander},
+		{want: []string{"power_commander", "pool", "budget_scope"}, fill: []string{"power", "pool_rule", "budget_scope", "budget"}},
+		// The plan-choice row is retired (D-256, D-260), so two plans raise
+		// no question. The commander comes last (D-294).
 		{want: []string{"commander"}, fill: []string{"commander"}, set: func(c *Context) { c.CommanderSet = true }},
 	}
 	cs = append(cs, c8)
 
 	c9 := conversation{name: "a commander the library does not hold"}
 	c9.ctx = newCtx("brago blink deck from my library")
-	c9.ctx.HasCollection, c9.ctx.OwnedMode = true, true
+	c9.ctx.HasCollection = true
 	c9.ctx.Theme, c9.ctx.Filled["format"], c9.ctx.Filled["theme"] = "blink", true, true
 	c9.ctx.Format = mtgv1.FormatId_FORMAT_ID_COMMANDER
 	c9.steps = []step{
@@ -161,7 +158,7 @@ func conversations() []conversation {
 	// deck.
 	c10 := conversation{name: "no strong commander in the library"}
 	c10.ctx = newCtx("lifegain from my collection")
-	c10.ctx.HasCollection, c10.ctx.OwnedMode = true, true
+	c10.ctx.HasCollection = true
 	c10.ctx.Theme, c10.ctx.Format = "lifegain", mtgv1.FormatId_FORMAT_ID_COMMANDER
 	c10.ctx.Filled["format"], c10.ctx.Filled["theme"], c10.ctx.Filled["colors"] = true, true, true
 	c10.steps = []step{
@@ -186,7 +183,7 @@ func conversations() []conversation {
 
 	// The other half of D-70: a named card that is not the commander is a
 	// locked card. The build keeps it, and no row asks about it since the
-	// locked row retired (A-6 of the 2026-08-28 audit).
+	// locked row is retired (D-260).
 	c13 := conversation{name: "a card to keep that is not the commander"}
 	c13.ctx = newCtx("karlov lifegain deck, and keep sanguine bond")
 	c13.ctx.HasCollection, c13.ctx.NamedCard = true, true
@@ -297,9 +294,8 @@ func conversations() []conversation {
 	}
 	cs = append(cs, c19)
 
-	// "Casual" alone no longer routes to house rules (D-78). The gate run
-	// of 2026-08-25 asked this user about house rules, and they answered
-	// "casual means low power, not a house format".
+	// "Casual" alone does not route to house rules: it means low power,
+	// not a house format (D-78).
 	c20 := conversation{name: "dinosaur tribal for a child"}
 	c20.ctx = newCtx("dinosaur deck for my kid, keep it casual")
 	c20.ctx.HasCollection = true
@@ -353,7 +349,7 @@ func conversations() []conversation {
 
 	c24 := conversation{name: "stax, owned only"}
 	c24.ctx = newCtx("stax deck from only the cards i own")
-	c24.ctx.HasCollection, c24.ctx.OwnedMode, c24.ctx.Theme = true, true, "stax"
+	c24.ctx.HasCollection, c24.ctx.Theme = true, "stax"
 	c24.steps = []step{
 		{want: []string{"format", "theme", "colors"}, fill: []string{"format", "theme", "colors"}, set: commander},
 		{want: []string{"power_commander", "pool", "commander"},
@@ -401,7 +397,7 @@ func conversations() []conversation {
 
 	c28 := conversation{name: "reanimator with two plans"}
 	c28.ctx = newCtx("reanimator commander deck")
-	c28.ctx.HasCollection, c28.ctx.TwoPlans, c28.ctx.Theme = true, true, "reanimator"
+	c28.ctx.HasCollection, c28.ctx.Theme = true, "reanimator"
 	c28.steps = []step{
 		{want: []string{"format", "theme", "colors"}, fill: []string{"format", "theme", "colors"}, set: commander},
 		{want: []string{"power_commander", "pool", "commander"},
@@ -466,7 +462,7 @@ func conversations() []conversation {
 	cs = append(cs, c32)
 
 	// D-112: a format this app does not build gets named, with the
-	// nearest format it does build. Gate run 13 offered Brawl instead.
+	// nearest format it does build.
 	c33 := conversation{name: "a format we do not build"}
 	c33.ctx = newCtx("i want a brawl deck for arena")
 	c33.ctx.UnsupportedFormat = true
@@ -483,9 +479,8 @@ func conversations() []conversation {
 	}
 	cs = append(cs, c33)
 
-	// D-146: Historic and Timeless name no nearest format. The pool
-	// measurement of 2026-08-26 put Pioneer nearest for both, and not
-	// Modern and Legacy, so the owner chose to offer no substitute.
+	// D-146: Historic and Timeless name no nearest format, because no
+	// format the app builds is near enough to offer.
 	c33b := conversation{name: "an unsupported format with no substitute"}
 	c33b.ctx = newCtx("i want a historic deck")
 	c33b.ctx.UnsupportedFormat = true
@@ -504,8 +499,7 @@ func conversations() []conversation {
 	}
 	cs = append(cs, c33b)
 
-	// D-129: a card that can not lead a deck is not a commander. Probe 41
-	// named Lightning Bolt, and every run accepted it in silence.
+	// D-129: a card that can not lead a deck is not a commander.
 	c34 := conversation{name: "a commander that can not lead"}
 	c34.ctx = newCtx("commander deck with lightning bolt as my commander")
 	c34.ctx.Format, c34.ctx.Theme = mtgv1.FormatId_FORMAT_ID_COMMANDER, "burn"

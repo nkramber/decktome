@@ -1,6 +1,7 @@
+import { Code, ConnectError } from "@connectrpc/connect";
 import { CardRole } from "@mtg/api-client/mtg/v1/deck_pb";
 import { PoolRule } from "@mtg/api-client/mtg/v1/session_pb";
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { axe } from "jest-axe";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -8,6 +9,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useAppStore } from "../../lib/store";
 import { fakeUser, state } from "../../test-auth-state";
 import { renderAt } from "../../test-utils";
+import { poolLabel, pruneDrafts } from "./session-page";
 
 vi.mock("firebase/app");
 vi.mock("firebase/auth");
@@ -35,7 +37,7 @@ async function* events(list: Ev[]) {
 }
 const ev = (c: string, value: unknown): Ev => ({ event: { case: c, value } });
 
-const formatQuestion = { id: "q1", slot: "format", text: "Which format?", options: ["Commander", "Standard", "Modern"] };
+const formatQuestion = { id: "q1", slot: "format", text: "Which format?", options: ["Commander", "Standard", "Modern"], optionOracleIds: [] };
 const deck = {
   id: "d1",
   name: "Elves",
@@ -111,7 +113,7 @@ describe("SessionPage", () => {
   });
 
   it("one submit sends every answer, and waits until each question has one", async () => {
-    const q2 = { id: "q2", slot: "power", text: "How strong?", options: [] };
+    const q2 = { id: "q2", slot: "power", text: "How strong?", options: [], optionOracleIds: [] };
     chat
       .mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("question", formatQuestion), ev("question", q2)]))
       .mockReturnValueOnce(events([ev("slots", {})]));
@@ -166,8 +168,8 @@ describe("SessionPage", () => {
   });
 
   it("sends every answer in one request when the next turn asks a different one", async () => {
-    const colors = { id: "q2", slot: "colors", text: "Any color preference?", options: [] };
-    const power = { id: "q3", slot: "power", text: "How strong?", options: ["Casual", "FNM"] };
+    const colors = { id: "q2", slot: "colors", text: "Any color preference?", options: [], optionOracleIds: [] };
+    const power = { id: "q3", slot: "power", text: "How strong?", options: ["Casual", "FNM"], optionOracleIds: [] };
     chat
       .mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("question", formatQuestion), ev("question", colors)]))
       .mockReturnValueOnce(events([ev("question", power), ev("slots", {})]));
@@ -199,11 +201,11 @@ describe("SessionPage", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("The model did not answer. (llm_unavailable) You can try again.");
 
     chat.mockImplementationOnce(() => {
-      throw new Error("[resource_exhausted] busy");
+      throw new ConnectError("busy", Code.ResourceExhausted);
     });
     await user.type(screen.getByLabelText("Your message"), "again");
     await user.click(screen.getByRole("button", { name: "Send" }));
-    expect((await screen.findAllByRole("alert"))[1]).toHaveTextContent("[resource_exhausted] busy (stream)");
+    expect((await screen.findAllByRole("alert"))[1]).toHaveTextContent("busy (resource_exhausted) You can try again.");
   });
 
   it("sends the collection id in owned mode on the first message only", async () => {
@@ -222,9 +224,14 @@ describe("SessionPage", () => {
     await screen.findByText("Session id: s1");
     expect((chat.mock.calls[0][0] as { collectionId: string }).collectionId).toBe("c1");
     expect(screen.queryByLabelText("Use only cards in my collection")).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getByLabelText("Your message")).toBeEnabled());
+    await user.type(screen.getByLabelText("Your message"), "more{enter}");
+    await waitFor(() => expect(chat).toHaveBeenCalledTimes(2));
+    expect((chat.mock.calls[1][0] as { sessionId: string; collectionId: string }).collectionId).toBe("");
+    expect((chat.mock.calls[1][0] as { sessionId: string }).sessionId).toBe("s1");
   });
 
-  it("hides the message box the moment a send starts", async () => {
+  it("disables the message box the moment a send starts, and focuses it again at the end", async () => {
     let release = () => {};
     const gate = new Promise<void>((r) => (release = r));
     chat.mockImplementationOnce(async function* () {
@@ -236,20 +243,212 @@ describe("SessionPage", () => {
     const user = userEvent.setup();
     await user.type(await screen.findByLabelText("Your message"), "elves");
     await user.click(screen.getByRole("button", { name: "Send" }));
-    expect(screen.queryByLabelText("Your message")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Your message")).toBeDisabled();
     expect(screen.getByText("The agent is working...")).toBeInTheDocument();
     release();
-    expect(await screen.findByLabelText("Your message")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByLabelText("Your message")).toBeEnabled());
+    expect(screen.getByLabelText("Your message")).toHaveFocus();
   });
 
-  it("Enter sends, and a failed send gives the draft back", async () => {
+  it("Stop aborts the stream, clears busy, and gives the draft back", async () => {
+    chat.mockImplementationOnce(async function* (_req: unknown, opts: { signal: AbortSignal }) {
+      yield ev("sessionStarted", "s1");
+      await new Promise((_, reject) => opts.signal.addEventListener("abort", () => reject(new ConnectError("canceled", Code.Canceled))));
+    });
+    renderAt("/session/new");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "elves");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    await user.click(await screen.findByRole("button", { name: "Stop" }));
+    await waitFor(() => expect(screen.getByLabelText("Your message")).toBeEnabled());
+    expect(screen.queryByText("The agent is working...")).not.toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Your message")).toHaveValue("elves");
+  });
+
+  it("the unmount aborts the stream", async () => {
+    const abort = vi.fn();
+    chat.mockImplementationOnce(async function* (_req: unknown, opts: { signal: AbortSignal }) {
+      opts.signal.addEventListener("abort", abort);
+      yield ev("sessionStarted", "s1");
+      await new Promise(() => {});
+    });
+    const { unmount } = renderAt("/session/new");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "elves");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    await screen.findByText("Session id: s1");
+    unmount();
+    expect(abort).toHaveBeenCalled();
+  });
+
+  it("a thrown send gives the answered questions and their drafts back", async () => {
+    chat
+      .mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("question", formatQuestion)]))
+      .mockImplementationOnce(() => {
+        throw new ConnectError("down", Code.Unavailable);
+      });
+    renderAt("/session/new");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "elves");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    await user.click(await screen.findByRole("button", { name: "Modern" }));
+    await user.click(screen.getByRole("button", { name: "Submit answers" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("down (unavailable)");
+    const card = screen.getByRole("group", { name: "Question: Which format?" });
+    expect(within(card).getByRole("button", { name: "Modern" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Submit answers" })).toBeEnabled();
+  });
+
+  it("an Aborted stream names the build in progress and stays retryable (D-303)", async () => {
     chat.mockImplementationOnce(() => {
-      throw new Error("[unavailable] down");
+      throw new ConnectError("a build is in progress", Code.Aborted);
     });
     renderAt("/session/new");
     const user = userEvent.setup();
     await user.type(await screen.findByLabelText("Your message"), "elves{enter}");
-    expect(await screen.findByRole("alert")).toHaveTextContent("[unavailable] down (stream)");
+    expect(await screen.findByRole("alert")).toHaveTextContent("a build is in progress. The build continues on the server, and the deck shows on reload. (aborted) You can try again.");
+  });
+
+  it("a plain error is not retryable", async () => {
+    chat.mockImplementationOnce(() => {
+      throw new Error("boom");
+    });
+    renderAt("/session/new");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "elves{enter}");
+    expect(await screen.findByRole("alert")).toHaveTextContent("boom (stream)");
+    expect(screen.getByRole("alert")).not.toHaveTextContent("try again");
+  });
+
+  it("warns before a navigation or an unload while the agent works (D-303)", async () => {
+    let release = () => {};
+    const gate = new Promise<void>((r) => (release = r));
+    chat.mockImplementationOnce(async function* () {
+      yield ev("sessionStarted", "s1");
+      await gate;
+      yield ev("slots", {});
+    });
+    const { router } = renderAt("/session/new");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "elves");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    await screen.findByText("Session id: s1");
+    // The move from /session/new to the session's own route is not blocked.
+    expect(router.state.location.pathname).toBe("/session/s1");
+    const unload = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(unload);
+    expect(unload.defaultPrevented).toBe(true);
+
+    await user.click(screen.getByRole("link", { name: "Decks" }));
+    const dialog = await screen.findByRole("alertdialog");
+    expect(dialog).toHaveTextContent("The build continues on the server.");
+    expect(router.state.location.pathname).toBe("/session/s1");
+    await user.click(within(dialog).getByRole("button", { name: "Stay" }));
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("link", { name: "Decks" }));
+    await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Leave" }));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/decks"));
+    release();
+    const after = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(after);
+    expect(after.defaultPrevented).toBe(false);
+  });
+
+  it("Enter during an IME composition sends nothing", async () => {
+    renderAt("/session/new");
+    const user = userEvent.setup();
+    const box = await screen.findByLabelText("Your message");
+    await user.type(box, "elves");
+    fireEvent.keyDown(box, { key: "Enter", isComposing: true });
+    expect(chat).not.toHaveBeenCalled();
+    expect(box).toHaveValue("elves");
+  });
+
+  it("moves focus to a new question group", async () => {
+    chat.mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("question", formatQuestion)]));
+    renderAt("/session/new");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "elves{enter}");
+    await screen.findByRole("group", { name: "Question: Which format?" });
+    expect(screen.getByTestId("open-questions")).toHaveFocus();
+  });
+
+  it("refuses an answer over the 8 KiB cap", async () => {
+    chat.mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("question", { id: "q2", slot: "power", text: "How strong?", options: [], optionOracleIds: [] })]));
+    renderAt("/session/new");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "elves{enter}");
+    const card = await screen.findByRole("group", { name: "Question: How strong?" });
+    await user.click(within(card).getByRole("textbox"));
+    await user.paste("x".repeat(8193));
+    expect(screen.getByRole("alert")).toHaveTextContent("An answer is over the 8192 byte cap.");
+    expect(screen.getByRole("button", { name: "Submit answers" })).toBeDisabled();
+  });
+
+  it("a text delta after a stored agent line starts a new line", async () => {
+    getSession.mockResolvedValue({
+      session: { id: "s1", collectionId: "", deckIds: [], turns: [{ userMessage: "elves", agentMessage: "Here is a plan.", questions: [], answers: [] }] },
+    });
+    chat.mockReturnValueOnce(events([ev("textDelta", "And "), ev("textDelta", "more.")]));
+    renderAt("/session/s1");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "go on{enter}");
+    await screen.findByText("And more.", { selector: "p.whitespace-pre-line" });
+    expect(screen.getByText("Here is a plan.", { selector: "p.whitespace-pre-line" })).toBeInTheDocument();
+  });
+
+  it("scrolls the thread only while the reader is near the end", async () => {
+    const scroll = vi.fn();
+    Element.prototype.scrollIntoView = scroll;
+    const rect = vi.spyOn(Element.prototype, "getBoundingClientRect").mockReturnValue({ top: 5000 } as DOMRect);
+    chat.mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("textDelta", "hi")]));
+    renderAt("/session/new");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "elves{enter}");
+    await screen.findByText("hi", { selector: "p.whitespace-pre-line" });
+    expect(scroll).not.toHaveBeenCalled();
+    rect.mockReturnValue({ top: 0 } as DOMRect);
+    chat.mockReturnValueOnce(events([ev("textDelta", "again")]));
+    await waitFor(() => expect(screen.getByLabelText("Your message")).toBeEnabled());
+    await user.type(screen.getByLabelText("Your message"), "more{enter}");
+    await screen.findByText("again", { selector: "p.whitespace-pre-line" });
+    expect(scroll).toHaveBeenCalled();
+    rect.mockRestore();
+  });
+
+  it("forgets a stored session id the server does not know, and keeps it on another error", async () => {
+    useAppStore.setState({ sessionId: "s1" });
+    getSession.mockRejectedValueOnce(new ConnectError("down", Code.Unavailable));
+    const first = renderAt("/session/s1");
+    await screen.findByRole("alert");
+    expect(useAppStore.getState().sessionId).toBe("s1");
+    first.unmount();
+    getSession.mockRejectedValueOnce(new ConnectError("no session", Code.NotFound));
+    renderAt("/session/s1");
+    await screen.findByRole("alert");
+    await waitFor(() => expect(useAppStore.getState().sessionId).toBe(""));
+  });
+
+  it("a second visit to /session/new starts a fresh panel", async () => {
+    chat.mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("textDelta", "hello")]));
+    const { router } = renderAt("/session/new");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "elves{enter}");
+    await screen.findByText("hello", { selector: "p.whitespace-pre-line" });
+    await act(() => router.navigate("/session/new"));
+    expect(await screen.findByTestId("session-id")).toHaveTextContent("No session yet.");
+    expect(screen.queryByText("hello", { selector: "p.whitespace-pre-line" })).not.toBeInTheDocument();
+  });
+
+  it("Enter sends, and a failed send gives the draft back", async () => {
+    chat.mockImplementationOnce(() => {
+      throw new ConnectError("down", Code.Unavailable);
+    });
+    renderAt("/session/new");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "elves{enter}");
+    expect(await screen.findByRole("alert")).toHaveTextContent("down (unavailable) You can try again.");
     expect(screen.getByLabelText("Your message")).toHaveValue("elves");
     expect((chat.mock.calls[0][0] as { message: string }).message).toBe("elves");
   });
@@ -267,8 +466,8 @@ describe("SessionPage", () => {
         collectionId: "",
         deckIds: [],
         turns: [
-          { userMessage: "elves", agentMessage: "", questions: [formatQuestion, { id: "q2", slot: "colors", text: "Any color preference?", options: [] }], answers: [] },
-          { userMessage: "", agentMessage: "", questions: [{ id: "q3", slot: "power", text: "How strong?", options: [] }], answers: [{ questionId: "q1", optionIndex: 2, text: "" }] },
+          { userMessage: "elves", agentMessage: "", questions: [formatQuestion, { id: "q2", slot: "colors", text: "Any color preference?", options: [], optionOracleIds: [] }], answers: [] },
+          { userMessage: "", agentMessage: "", questions: [{ id: "q3", slot: "power", text: "How strong?", options: [], optionOracleIds: [] }], answers: [{ questionId: "q1", optionIndex: 2, text: "" }] },
         ],
       },
     });
@@ -333,6 +532,10 @@ describe("SessionPage", () => {
     expect(within(card).queryByText(/Ghalta costs \{X\} less to cast/)).not.toBeInTheDocument();
     expect(within(card).getAllByTestId("card-option")).toHaveLength(2);
     expect((getCards.mock.calls[0][0] as { oracleIds: string[] }).oracleIds).toEqual(["o-ghalta", "o-reptil"]);
+    expect(within(card).queryAllByRole("status")).toHaveLength(0);
+    // The card image falls back to the small one, as in the deck view.
+    fireEvent.error(within(card).getByAltText("Ghalta, Primal Hunger (card)"));
+    expect(within(card).getByAltText("Ghalta, Primal Hunger (card)")).toHaveAttribute("src", "https://x/ghalta-s.jpg");
     // The non-card option keeps a plain button, and every option still picks.
     await user.click(within(card).getByRole("button", { name: "None, name three more" }));
     expect(within(card).getByRole("button", { name: "None, name three more" })).toHaveAttribute("aria-pressed", "true");
@@ -361,7 +564,7 @@ describe("SessionPage", () => {
         slots: { poolRule: PoolRule.OWNED_ONLY },
         usage: { calls: 4, inputTokens: 10n, outputTokens: 5n, priced: false },
         turns: [
-          { userMessage: "elves", agentMessage: "", questions: [formatQuestion, { id: "q2", slot: "power", text: "How strong?", options: [] }], answers: [] },
+          { userMessage: "elves", agentMessage: "", questions: [formatQuestion, { id: "q2", slot: "power", text: "How strong?", options: [], optionOracleIds: [] }], answers: [] },
           { userMessage: "", agentMessage: "", questions: [], answers: [{ questionId: "q1", optionIndex: 2, text: "" }] },
         ],
       },
@@ -390,10 +593,51 @@ describe("SessionPage", () => {
     expect(await screen.findByLabelText("Your message")).toBeInTheDocument();
   });
 
+  it("loads the base deck of a revised deck on reload and places the deck line by time (PR-12B)", async () => {
+    const revised = { ...deck, id: "d1", revisedFromDeckId: "d0", revisionNote: "fewer elves", cards: [{ ...deck.cards[0], count: 2 }], createdAt: { seconds: 200n, nanos: 0 } };
+    getSession.mockResolvedValue({
+      session: {
+        id: "s1",
+        collectionId: "",
+        deckIds: ["d0", "d1"],
+        turns: [
+          { userMessage: "elves", agentMessage: "", questions: [], answers: [], at: { seconds: 100n, nanos: 0 } },
+          { userMessage: "fewer elves", agentMessage: "done", questions: [], answers: [], at: { seconds: 300n, nanos: 0 } },
+        ],
+      },
+    });
+    getDeck.mockImplementation(({ deckId }: { deckId: string }) => Promise.resolve({ deck: deckId === "d1" ? revised : { ...deck, id: "d0" } }));
+    renderAt("/session/s1");
+    expect(await screen.findByTestId("revision-diff")).toHaveTextContent("Count of Llanowar Elves: 4 to 2");
+    expect(getDeck).toHaveBeenCalledWith({ deckId: "d0" });
+    const items = within(screen.getByRole("list", { name: "Conversation" })).getAllByRole("listitem");
+    expect(items.map((li) => li.textContent)).toEqual(["You: elves", "Deck built: Elves.", "You: fewer elves", "Agent: done"]);
+  });
+
+  it("a closed question with no options shows the text field", async () => {
+    chat.mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("question", { id: "q2", slot: "power", text: "How strong?", options: [], optionOracleIds: [], closed: true })]));
+    renderAt("/session/new");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "elves{enter}");
+    const card = await screen.findByRole("group", { name: "Question: How strong?" });
+    expect(within(card).getByRole("textbox")).toBeInTheDocument();
+  });
+
   it("reports a session that does not load", async () => {
     getSession.mockRejectedValue(new Error("[not_found] no session"));
     renderAt("/session/nope");
     expect(await screen.findByRole("alert")).toHaveTextContent("Could not load the session: [not_found] no session");
+  });
+
+  it("shows one loading status per card question while the cards load", async () => {
+    getCards.mockReturnValue(new Promise(() => {}));
+    const offer = { id: "q5", slot: "commander", text: "Which one?", options: ["A", "B"], optionOracleIds: ["o-a", "o-b"] };
+    chat.mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("question", offer)]));
+    renderAt("/session/new");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "elves{enter}");
+    const card = await screen.findByRole("group", { name: "Question: Which one?" });
+    expect(within(card).getAllByRole("status")).toHaveLength(1);
   });
 
   it("has no axe violations with a question and a deck on screen", async () => {
@@ -404,5 +648,17 @@ describe("SessionPage", () => {
     await user.click(screen.getByRole("button", { name: "Send" }));
     await screen.findByAltText("Llanowar Elves (card)");
     expect(await axe(container)).toHaveNoViolations();
+  });
+
+  it("poolLabel names the pool rule, and the collection before the rule is set", () => {
+    expect(poolLabel(PoolRule.OWNED_ONLY, "c1")).toBe("Pool: only cards in your collection.");
+    expect(poolLabel(PoolRule.OWNED_FIRST, "")).toBe("Pool: your collection first, with upgrades to buy.");
+    expect(poolLabel(PoolRule.ANY_CARD, "c1")).toBe("Pool: any card (D-37).");
+    expect(poolLabel(undefined, "c1")).toBe("Pool: your collection (c1). The agent asks how strict.");
+    expect(poolLabel(undefined, "")).toBe("Pool: any card (D-37).");
+  });
+
+  it("pruneDrafts drops the drafts of questions no longer open", () => {
+    expect(pruneDrafts({ q1: { text: "a" }, q2: { optionIndex: 1, text: "" } }, [{ id: "q2" }])).toEqual({ q2: { optionIndex: 1, text: "" } });
   });
 });

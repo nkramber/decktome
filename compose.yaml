@@ -12,9 +12,13 @@ services:
       - "127.0.0.1:8281:8281"
       - "127.0.0.1:9199:9199"
       - "127.0.0.1:4100:4100"
-    # Firestore export. Data survives a restart, as .local/firestore does for make dev.
+    # Firestore export. Data survives a restart, as .local/firestore does
+    # for make dev. A named volume, not a bind mount: the emulator runs as
+    # the node user, and on Linux Docker creates a missing bind-mount
+    # directory as root, which the node user cannot write. A named volume
+    # takes the owner of /data/firestore from the image, which is node.
     volumes:
-      - ./.local/firestore-docker:/data/firestore
+      - firestore-data:/data/firestore
     # The Firestore emulator answers GET / with "Ok". The image has node and no curl.
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:8281/', r => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))"]
@@ -87,3 +91,6 @@ services:
       gcs:
         condition: service_healthy
     profiles: [seed]
+
+volumes:
+  firestore-data:

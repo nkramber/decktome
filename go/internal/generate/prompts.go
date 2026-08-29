@@ -11,52 +11,36 @@ package generate
 //
 // Version 1 is the first generator.
 //
-// Version 9 followed the audit of 2026-08-28 (A-5). The share of a precon
-// an upgrade keeps is 85 percent of its nonbasic names, basic lands swap
-// free, and the 15 percent is a ceiling and not a target. The prompts say
-// so: change as few cards as the upgrade needs, keep the theme, and
-// never aim to replace the full number. The 60-card sideboard is "up to
-// 15 cards" and not "exactly 15" (G-10).
+// Version 2: the summary names no job target and no job count, because
+// the summary is for the user and the counts are in the card list.
 //
-// Version 4 followed deck gate run 5. The deck cost $268.37 against a
-// $100.00 cap, on a shortlist whose cheapest 99 cards cost $25.66. No
-// shortlist line carried a price, so the model could not budget at all.
-// The lines carry prices now, the budget is a limit rather than a line of
-// the plan prose, and going over it buys the repair turn (D-244).
+// Version 3: the repair turn writes the summary again from nothing, so a
+// summary never describes the repair.
 //
-// Version 8 followed the version 7 test. A generic land target is a
-// second quota: with "keep 68 precon cards" it reads as 36 plus 68 of 99
-// slots, and the share fell to 61. The upgrade prompt names the precon's
-// own land count instead, and sends no job target (D-251).
+// Version 4: every shortlist line carries a price when a budget applies,
+// the budget is a limit and not plan prose, and going over it buys the
+// repair turn (D-244).
 //
-// Version 7 followed deck gate run 7. Version 6 dropped every job target
-// for an upgrade, and the land count went with them: both precon decks
-// came back with 25 lands against a guide of 34 to 38. The land count is
-// the mana base and not a job, so an upgrade keeps it (D-251).
+// Version 5: the precon share is a card count and not a percentage, and
+// a shortfall buys the repair turn (D-248).
 //
-// Version 6 followed prompt 17 again. The job targets prescribe the whole
-// deck and sum to 99, and the precon share demands most of those slots,
-// so the two instructions fought and the model split the difference. An
-// upgrade now gets no job targets: a precon is a working deck (D-249).
+// Version 6: an upgrade gets no job targets, because a precon is a
+// working deck (D-249).
 //
-// Version 5 followed deck gate prompts 17 and 18. The precon share was
-// stated as a percentage, and the decks kept 68 and 29 percent of theirs.
-// The prompt states a card count now, and what the model may drop, and a
-// shortfall buys the repair turn (D-248).
+// Version 7: an upgrade keeps the precon's land count, because the mana
+// base is not a job (D-251).
 //
-// Version 3 followed deck gate run 3. The repair turn wrote a changelog
-// into the summary: "Sol Ring remains included. Skullport Merchant now
-// appears once; Warren Soultrader fills the replaced ramp slot." The
-// reader of a summary does not know a repair happened, so the repair
-// prompt now asks for the summary again from nothing.
+// Version 8: the upgrade prompt names the precon's own land count and
+// sends no generic land target, which was a second quota (D-251).
 //
-// Version 2 followed the first real call, on 2026-08-27. The summary read
-// "uses its 20 synergy cards ... while maintaining 10 draw cards, 10 ramp
-// cards, eight removal cards, and three wipes. There are no target
-// shortfalls." The model recited the job targets back, because version 1
-// asked it to state a shortfall there. The summary is for the user, and
-// the counts are in the card list.
-const PromptVersion = 9
+// Version 9: the share is 85 percent of the precon's nonbasic names,
+// basic lands swap free, and the change count is a ceiling and not a
+// target. The 60-card sideboard is "up to 15 cards" (D-218).
+//
+// Version 10: the shortlist omits the commander, which the prompt says
+// is not one of the cards to list, and the house format gets the
+// sideboard sentence (D-302).
+const PromptVersion = 10
 
 // generateInstructions is the stable prefix. It names no card, no format,
 // and no session value, so every call of a session shares it.

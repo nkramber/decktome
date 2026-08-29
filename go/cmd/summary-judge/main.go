@@ -4,8 +4,7 @@
 //
 // This is the real check for F-26. The deterministic linter of
 // internal/generate reads the shape of a rules claim and can not read its
-// truth, and it found neither of the two false claims that reached a user
-// in gate run 14. The judge runs on another provider than the generator,
+// truth (D-229). The judge runs on another provider than the generator,
 // so it never rates its own work (D-22).
 //
 // CAUTION: this calls a real provider and it costs money. SUMMARY_JUDGE=1
@@ -34,6 +33,34 @@ var (
 	summaryRe = regexp.MustCompile(`(?m)^\*\*Summary:\*\* (.+)$`)
 )
 
+// deckBlock is one deck of the gate document: its heading and the
+// summary under it, or an empty summary when the block holds none.
+type deckBlock struct {
+	ID      string
+	Name    string
+	Summary string
+}
+
+// deckBlocks reads the document deck by deck. Each block runs from one
+// deck heading to the next, and the summary is read inside the block
+// alone, so a deck with no summary can not take the next deck's.
+func deckBlocks(text string) []deckBlock {
+	heads := deckRe.FindAllStringSubmatchIndex(text, -1)
+	out := make([]deckBlock, 0, len(heads))
+	for i, h := range heads {
+		end := len(text)
+		if i+1 < len(heads) {
+			end = heads[i+1][0]
+		}
+		block := deckBlock{ID: text[h[2]:h[3]], Name: text[h[4]:h[5]]}
+		if m := summaryRe.FindStringSubmatch(text[h[1]:end]); m != nil {
+			block.Summary = strings.TrimSpace(m[1])
+		}
+		out = append(out, block)
+	}
+	return out
+}
+
 func main() {
 	if err := run(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -54,11 +81,9 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	text := string(raw)
-	names := deckRe.FindAllStringSubmatch(text, -1)
-	sums := summaryRe.FindAllStringSubmatch(text, -1)
-	if len(names) != len(sums) {
-		return fmt.Errorf("the document holds %d decks and %d summaries", len(names), len(sums))
+	blocks := deckBlocks(string(raw))
+	if len(blocks) == 0 {
+		return fmt.Errorf("%s holds no deck heading", *in)
 	}
 
 	client, err := llm.NewFromEnv(gatekit.Env, gatekit.Quiet())
@@ -71,16 +96,20 @@ func run() error {
 	}
 	acc := llm.NewAccumulator(prices)
 
-	clean, rules, falseRule := 0, 0, 0
-	for i, m := range names {
-		summary := strings.TrimSpace(sums[i][1])
-		out, err := generate.JudgeSummary(context.Background(), client, m[2], summary, acc)
+	clean, rules, falseRule, skipped := 0, 0, 0, 0
+	for _, b := range blocks {
+		if b.Summary == "" {
+			skipped++
+			fmt.Printf("%-3s %-42s no summary, skipped\n", b.ID+".", trunc(b.Name, 42))
+			continue
+		}
+		out, err := generate.JudgeSummary(context.Background(), client, b.Name, b.Summary, acc)
 		if err != nil {
-			return fmt.Errorf("judge deck %s: %w", m[1], err)
+			return fmt.Errorf("judge deck %s: %w", b.ID, err)
 		}
 		// The false-rule count reads the same helper the deck gate reads,
-		// so a claim marked false counts whatever the verdict word says.
-		// The old switch matched a misspelt enum and counted zero (T-3).
+		// so a claim marked false counts whatever the verdict word says
+		// (T-3).
 		switch {
 		case out.StatesAFalseRule():
 			falseRule++
@@ -89,22 +118,19 @@ func run() error {
 		case out.Verdict == "clean":
 			clean++
 		}
-		fmt.Printf("%-3s %-42s %s\n", m[1]+".", trunc(m[2], 42), out.Verdict)
+		fmt.Printf("%-3s %-42s %s\n", b.ID+".", trunc(b.Name, 42), out.Verdict)
 		for _, c := range out.Claims {
 			fmt.Printf("      [%s] %q\n            %s\n", c.Truth, trunc(c.Text, 90), trunc(c.Why, 130))
 		}
 		// The deterministic net of D-224, for comparison.
-		if shapes := generate.LintSummary(summary); len(shapes) > 0 {
+		if shapes := generate.LintSummary(b.Summary); len(shapes) > 0 {
 			fmt.Printf("      linter also flagged: %s\n", strings.Join(shapes, ", "))
 		}
 	}
 	rep := acc.Report()
-	cost := 0.0
-	if rep.CostUSD != nil {
-		cost = *rep.CostUSD
-	}
-	fmt.Printf("\n%d summaries: %d clean, %d state a rule, %d state a FALSE rule\n", len(names), clean, rules, falseRule)
-	fmt.Printf("calls: %d. Cost: $%.4f\n", rep.Calls, cost)
+	fmt.Printf("\n%d decks: %d clean, %d state a rule, %d state a FALSE rule, %d with no summary\n",
+		len(blocks), clean, rules, falseRule, skipped)
+	fmt.Printf("calls: %d. Cost: %s\n", rep.Calls, gatekit.CostWord(rep))
 	if falseRule > 0 {
 		return fmt.Errorf("F-26: %d summaries state a false rule", falseRule)
 	}

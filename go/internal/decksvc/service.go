@@ -1,6 +1,5 @@
-// Package decksvc serves DeckService. PR-5 wires Validate. Get, List,
-// GetDeck and ListDecks read the decks a build kept (D-245). Export
-// arrives with PR-13.
+// Package decksvc serves DeckService: Validate, and the reads of the
+// decks a build kept (D-245). Export is a later step.
 package decksvc
 
 import (
@@ -10,39 +9,36 @@ import (
 	"strings"
 
 	"connectrpc.com/connect"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1/mtgv1connect"
-	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
+	"github.com/nkramber/mtg-deck-builder/go/internal/auth"
+	"github.com/nkramber/mtg-deck-builder/go/internal/cardsvc"
 	"github.com/nkramber/mtg-deck-builder/go/internal/decks"
+	"github.com/nkramber/mtg-deck-builder/go/internal/gzstore"
 	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
 )
 
-// IndexSource hands out the current card index.
-type IndexSource interface {
-	Current() *cards.Index
-}
-
 // CollectionSource gives the owned count per Oracle id for one collection
-// of one user (D-37). A missing collection returns an error.
+// of one user (D-37). A missing collection returns a NotFound status.
 type CollectionSource interface {
 	OracleCounts(ctx context.Context, userID, collectionID string) (map[string]int32, error)
 }
 
-// UserFunc reads the caller's user id from the request context.
-type UserFunc func(ctx context.Context) string
-
 // Option configures the server.
 type Option func(*Server)
 
-// DeckSource reads the decks a build kept (D-245).
+// DeckSource reads the decks a build kept (D-245). List answers from the
+// flat fields and carries no cards.
 type DeckSource interface {
 	Get(ctx context.Context, uid, id string) (*mtgv1.Deck, error)
 	List(ctx context.Context, uid string, limit int) ([]*mtgv1.Deck, error)
 }
 
 // WithDecks wires the deck store. Without it GetDeck and ListDecks
-// answer Unimplemented, which is what they did before PR-8.
+// answer Unimplemented.
 func WithDecks(src DeckSource) Option {
 	return func(s *Server) { s.decks = src }
 }
@@ -50,7 +46,7 @@ func WithDecks(src DeckSource) Option {
 // WithUser wires the caller's identity. Without it every read that needs
 // a user answers Unauthenticated, and Validate passes an empty user to
 // the collection source.
-func WithUser(userFn UserFunc) Option {
+func WithUser(userFn auth.UserFunc) Option {
 	return func(s *Server) { s.userFn = userFn }
 }
 
@@ -69,13 +65,13 @@ type Server struct {
 	decks DeckSource
 	mtgv1connect.UnimplementedDeckServiceHandler
 	cfg         *rules.Config
-	index       IndexSource
+	index       cardsvc.IndexSource
 	collections CollectionSource
-	userFn      UserFunc
+	userFn      auth.UserFunc
 }
 
 // New wires the service.
-func New(cfg *rules.Config, index IndexSource, opts ...Option) *Server {
+func New(cfg *rules.Config, index cardsvc.IndexSource, opts ...Option) *Server {
 	s := &Server{cfg: cfg, index: index}
 	for _, o := range opts {
 		o(s)
@@ -88,6 +84,11 @@ var (
 	errNoDeck         = errors.New("deck is required")
 	errNoCollectionID = errors.New("an owned pool rule needs collection_id")
 	errNoCollections  = errors.New("collections are not wired on this server")
+	errNoDeckStore    = errors.New("no deck store is wired")
+	errNoDeckID       = errors.New("give a deck id")
+	errNoUser         = errors.New("no user in the request context")
+	errBadDeckID      = fmt.Errorf("deck_id: %w", gzstore.ErrBadID)
+	errBadCollection  = fmt.Errorf("collection_id: %w", gzstore.ErrBadID)
 )
 
 // Validate runs the rules engine on a deck (guardrail 1).
@@ -106,13 +107,21 @@ func (s *Server) Validate(ctx context.Context, req *connect.Request[mtgv1.Valida
 	pool := resolvePoolRule(req.Msg.PoolRule, req.Msg.CollectionId)
 	var counts map[string]int32
 	if req.Msg.CollectionId != "" {
+		if !gzstore.ValidID(req.Msg.CollectionId) {
+			return nil, connect.NewError(connect.CodeInvalidArgument, errBadCollection)
+		}
 		if s.collections == nil {
 			return nil, connect.NewError(connect.CodeUnavailable, errNoCollections)
 		}
 		var err error
 		counts, err = s.collections.OracleCounts(ctx, s.user(ctx), req.Msg.CollectionId)
 		if err != nil {
-			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("collection %q: %w", req.Msg.CollectionId, err))
+			// Only a missing document is NotFound. A store failure is
+			// Internal, so a client does not read an outage as a bad id.
+			if status.Code(err) == codes.NotFound {
+				return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("collection %q: %w", req.Msg.CollectionId, err))
+			}
+			return nil, connect.NewError(connect.CodeInternal, err)
 		}
 	} else if pool != mtgv1.PoolRule_POOL_RULE_ANY_CARD {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNoCollectionID)
@@ -143,15 +152,18 @@ func resolvePoolRule(pr mtgv1.PoolRule, collectionID string) mtgv1.PoolRule {
 // GetDeck reads one of the caller's decks (D-245).
 func (s *Server) GetDeck(ctx context.Context, req *connect.Request[mtgv1.GetDeckRequest]) (*connect.Response[mtgv1.GetDeckResponse], error) {
 	if s.decks == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("no deck store is wired"))
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoDeckStore)
 	}
 	id := strings.TrimSpace(req.Msg.GetDeckId())
 	if id == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("give a deck id"))
+		return nil, connect.NewError(connect.CodeInvalidArgument, errNoDeckID)
+	}
+	if !gzstore.ValidID(id) {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errBadDeckID)
 	}
 	uid := s.user(ctx)
 	if uid == "" {
-		return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("no user"))
+		return nil, connect.NewError(connect.CodeUnauthenticated, errNoUser)
 	}
 	d, err := s.decks.Get(ctx, uid, id)
 	if errors.Is(err, decks.ErrNotFound) {
@@ -163,14 +175,16 @@ func (s *Server) GetDeck(ctx context.Context, req *connect.Request[mtgv1.GetDeck
 	return connect.NewResponse(&mtgv1.GetDeckResponse{Deck: d}), nil
 }
 
-// ListDecks reads the caller's decks, newest first (D-245).
+// ListDecks reads the caller's decks, newest first (D-245). The list
+// carries the flat fields of each deck and no cards: GetDeck reads one
+// deck whole.
 func (s *Server) ListDecks(ctx context.Context, _ *connect.Request[mtgv1.ListDecksRequest]) (*connect.Response[mtgv1.ListDecksResponse], error) {
 	if s.decks == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("no deck store is wired"))
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoDeckStore)
 	}
 	uid := s.user(ctx)
 	if uid == "" {
-		return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("no user"))
+		return nil, connect.NewError(connect.CodeUnauthenticated, errNoUser)
 	}
 	list, err := s.decks.List(ctx, uid, listLimit)
 	if err != nil {

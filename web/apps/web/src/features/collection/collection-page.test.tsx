@@ -75,7 +75,7 @@ describe("CollectionPage", () => {
     expect(req.source).toBe(ImportSource.MANABOX_CSV);
     expect(new TextDecoder().decode(req.content)).toContain("Lightning Bolt");
 
-    const table = screen.getByRole("table", { name: /Unresolved rows/ });
+    const table = screen.getByRole("table", { name: /open your file at this line/ });
     const row = within(table).getAllByRole("row")[1];
     expect(row).toHaveTextContent("4");
     // The raw row stays out of the table. A user reads the line in their own file.
@@ -107,6 +107,31 @@ describe("CollectionPage", () => {
     await user.upload(screen.getByLabelText("ManaBox CSV file"), new File(["x"], "export.csv"));
     await user.click(screen.getByRole("button", { name: "Upload" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Upload failed: [unauthenticated] no token");
+  });
+
+  it("refuses a file over the 5 MiB upload cap before the upload", async () => {
+    renderAt("/collection");
+    const user = userEvent.setup();
+    const big = new File([new Uint8Array((5 << 20) + 1)], "big.csv", { type: "text/csv" });
+    await user.upload(screen.getByLabelText("ManaBox CSV file"), big);
+    expect(await screen.findByRole("alert")).toHaveTextContent("The file is 5.0 MiB. The limit is 5 MiB.");
+    expect(screen.getByRole("button", { name: "Upload" })).toBeDisabled();
+    expect(importCollection).not.toHaveBeenCalled();
+  });
+
+  it("clears the picked file on Skip and on a click on an earlier upload", async () => {
+    const { router } = renderAt("/collection");
+    await screen.findByRole("button", { name: "binder-july.csv" });
+    const user = userEvent.setup();
+    await user.upload(screen.getByLabelText("ManaBox CSV file"), new File(["x"], "export.csv"));
+    expect(screen.getByRole("button", { name: "Upload" })).toBeEnabled();
+    await user.click(screen.getByRole("button", { name: "binder-july.csv" }));
+    expect(screen.getByRole("button", { name: "Upload" })).toBeDisabled();
+    expect((screen.getByLabelText("ManaBox CSV file") as HTMLInputElement).files).toHaveLength(0);
+    await user.upload(screen.getByLabelText("ManaBox CSV file"), new File(["x"], "export.csv"));
+    expect(screen.getByRole("button", { name: "Upload" })).toBeEnabled();
+    await user.click(screen.getByRole("button", { name: "Skip, build from any card" }));
+    expect(router.state.location.pathname).toBe("/session/new");
   });
 
   it("skip clears the active collection and goes to the chat (D-37)", async () => {

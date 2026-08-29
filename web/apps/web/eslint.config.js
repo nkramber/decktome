@@ -16,9 +16,10 @@ import tseslint from "typescript-eslint";
 const features = ["auth", "collection", "chat", "deck", "export"];
 const allow = { auth: [], collection: [], chat: ["deck"], deck: [], export: ["deck"] };
 
-// A feature reaches a sibling by a relative path: ../deck/x from features/chat,
-// or ../../deck/x from features/chat/components. The regex matches both.
-function featureBoundary(name) {
+// A feature reaches a sibling by a relative path: ../deck/x from
+// features/chat, ../../deck/x from features/chat/components, or
+// ../../features/deck/x. The regex matches every form.
+export function featureBoundary(name) {
   const blocked = features.filter((f) => f !== name && !allow[name].includes(f));
   return {
     files: [`src/features/${name}/**/*.{ts,tsx}`],
@@ -28,7 +29,7 @@ function featureBoundary(name) {
         {
           patterns: [
             {
-              regex: `^(\\.\\./)+(${blocked.join("|")})(/|$)`,
+              regex: `^(\\.\\./)+(features/)?(${blocked.join("|")})(/|$)`,
               message: `features/${name} may import only: lib, app/components, ${allow[name].join(", ") || "no sibling feature"}.`,
             },
             {
@@ -56,6 +57,8 @@ export default tseslint.config(
         {
           patterns: [
             { regex: "^(\\.\\./)+(features|app)(/|$)", message: "src/lib imports no feature and no app code." },
+            // zustand's create stays allowed: useAppStore is a plain store object
+            // with a hook signature, and no feature could import it from app/.
             { group: ["react", "react-dom", "react-router"], message: "src/lib holds no React code. The QueryClient and the zustand store are plain objects." },
           ],
         },

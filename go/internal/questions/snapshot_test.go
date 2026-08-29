@@ -3,6 +3,7 @@ package questions
 import (
 	"encoding/json"
 	"reflect"
+	"strings"
 	"testing"
 
 	"google.golang.org/protobuf/proto"
@@ -41,11 +42,10 @@ func fullState() *State {
 // TestSnapshotRoundTrip proves the private state survives a store cycle
 // (D-74). Without it, a resumed conversation repeats a question.
 //
-// It reflects over every exported State field. Five fields never reached
-// the snapshot before the audit of 2026-08-28, and production restores
-// from the snapshot on every turn, so the D-210 guard and the D-113
-// precon name only worked in the gate harness (Q-1). A field this test
-// does not fill fails it, and a field the snapshot drops fails it too.
+// It reflects over every exported State field. Production restores from
+// the snapshot on every turn, so a field that never reaches the snapshot
+// works in the gate harness alone (D-74). A field this test does not
+// fill fails it, and a field the snapshot drops fails it too.
 func TestSnapshotRoundTrip(t *testing.T) {
 	st := fullState()
 	v := reflect.ValueOf(*st)
@@ -104,5 +104,30 @@ func TestRestoreReadsAnOldSnapshot(t *testing.T) {
 	}
 	if st.Ctx.Outstanding == nil {
 		t.Error("restore left the outstanding map nil")
+	}
+}
+
+// TestRestoreIgnoresTheRetiredFacts is D-302. The two_plans and
+// owned_mode facts left the context, and a snapshot stored with them
+// must still load.
+func TestRestoreIgnoresTheRetiredFacts(t *testing.T) {
+	raw := `{"version":2,"ctx":{"format":1,"filled":{"format":true},"asked":{"format":true},
+	"outstanding":{},"words":"a commander deck","two_plans":true,"owned_mode":true,
+	"after_build":false,"has_collection":true},"named_cards":["Grist, the Hunger Tide"],"turn":1}`
+	var snap Snapshot
+	if err := json.Unmarshal([]byte(raw), &snap); err != nil {
+		t.Fatalf("an old snapshot no longer decodes: %v", err)
+	}
+	st := Restore("old", nil, snap)
+	if !st.Ctx.Filled["format"] || !st.Ctx.Asked["format"] || !st.Ctx.HasCollection {
+		t.Errorf("the old snapshot lost its facts: %+v", st.Ctx)
+	}
+	if len(st.NamedCards) != 1 {
+		t.Errorf("named cards = %v, want one", st.NamedCards)
+	}
+	for _, word := range []string{"two_plans", "owned_mode"} {
+		if strings.Contains(classifySchema, word) || strings.Contains(classifyInstructions, word) {
+			t.Errorf("the classify prompt still names %s", word)
+		}
 	}
 }

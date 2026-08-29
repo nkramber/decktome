@@ -31,15 +31,15 @@ type Ask struct {
 	// NearCopy marks a turn where the model offered a replacement and the
 	// agent refused it as a reword (D-88).
 	NearCopy bool `json:"near_copy,omitempty"`
-	// RefusedText is the replacement the agent refused. The owner reads
-	// it to judge whether the refusal was right, which is what decides
-	// the reword threshold.
+	// RefusedText is the replacement the agent refused. The M-5 sheet
+	// shows it, so the refusal can be judged, which is what decides the
+	// reword threshold (D-88).
 	RefusedText string `json:"refused_text,omitempty"`
 	// ResolvedText is the catalog row after the placeholders are filled,
 	// and before the ask role phrases it. The reword guard compares a
 	// replacement against this text, and never against the phrasing that
-	// went out. The M-5 sheet showed only the phrasing, so an owner could
-	// not tell an exact copy of the row from a new question (D-116).
+	// went out. The M-5 sheet shows it beside the phrasing, so an exact
+	// copy of the row can be told from a new question (D-116).
 	ResolvedText string `json:"resolved_text,omitempty"`
 	// Turn is the turn number, counted from 1.
 	Turn int `json:"turn"`

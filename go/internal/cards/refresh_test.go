@@ -209,9 +209,9 @@ func TestRefreshPrunes(t *testing.T) {
 }
 
 // TestPruneKeepsIncompleteAndNewest covers the incomplete versions. A
-// failed download older than the newest complete version goes. The
-// newest incomplete version stays, because it can be a download in
-// progress.
+// failed download older than the newest complete version goes, also
+// when it is the newest incomplete one. An incomplete version newer than
+// every complete one stays, because it can be a download in progress.
 func TestPruneKeepsIncompleteAndNewest(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
@@ -237,6 +237,13 @@ func TestPruneKeepsIncompleteAndNewest(t *testing.T) {
 			keep:           3,
 			wantComplete:   []string{"20260820T090000"},
 			wantIncomplete: []string{"20260821T090000", "20260822T090000"},
+		},
+		{
+			name:         "the newest incomplete version goes when a complete one is newer",
+			complete:     []string{"20260822T090000"},
+			incomplete:   []string{"20260820T090000", "20260821T090000"},
+			keep:         3,
+			wantComplete: []string{"20260822T090000"},
 		},
 		{
 			name:           "no complete version leaves every incomplete one",
@@ -511,5 +518,51 @@ func TestLegalityDiffMarker(t *testing.T) {
 	}
 	if err := store.WriteLegalityDiff(ctx, "../evil", rec); err == nil {
 		t.Error("marker write accepted a bad version")
+	}
+}
+
+// ctxWriter records the context its store got and fails a Close after a
+// cancel, the way a GCS writer does.
+type ctxWriter struct {
+	ctx   context.Context
+	buf   bytes.Buffer
+	saved *[]byte
+}
+
+func (w *ctxWriter) Write(p []byte) (int, error) { return w.buf.Write(p) }
+
+func (w *ctxWriter) Close() error {
+	if err := w.ctx.Err(); err != nil {
+		return err
+	}
+	*w.saved = w.buf.Bytes()
+	return nil
+}
+
+type ctxStore struct {
+	DirStore
+	saved []byte
+}
+
+func (s *ctxStore) Create(ctx context.Context, _, _ string) (io.WriteCloser, error) {
+	return &ctxWriter{ctx: ctx, saved: &s.saved}, nil
+}
+
+// TestCopyBulkCancelsTheWriterOnError: a copy that fails must not commit a
+// truncated object, so the writer's context is canceled before Close.
+func TestCopyBulkCancelsTheWriterOnError(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Length", "100")
+		_, _ = w.Write([]byte("abc"))
+	}))
+	t.Cleanup(srv.Close)
+	client := scryfall.New(srv.Client(), srv.URL, slog.Default())
+	store := &ctxStore{DirStore: DirStore{Root: t.TempDir()}}
+	err := copyBulk(context.Background(), client, store, "20260823T090000", "oracle_cards.jsonl.gz", srv.URL+"/file")
+	if err == nil {
+		t.Fatal("a truncated download must fail")
+	}
+	if store.saved != nil {
+		t.Errorf("the truncated object was committed: %q", store.saved)
 	}
 }

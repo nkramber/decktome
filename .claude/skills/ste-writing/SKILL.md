@@ -22,7 +22,7 @@ Source: ASD-STE100 Issue 8 (2021-04-30), Part 1, Writing rules. Issue 9 (2025-01
 - One instruction per sentence (5.2).
 - Instructions in the imperative: "Load the file." Not "The file should be loaded." (5.3).
 - Active voice in procedures. Active voice as much as possible in descriptions (3.6).
-- No "-ing" verb forms. "Sync the data" not "Syncing the data". An "-ing" word is allowed only in a technical name (3.5).
+- No "-ing" verb forms. "Sync the data" not "Syncing the data". The rules permit an "-ing" word only in a technical name (3.5).
 - No helping verbs for complex tenses: `we did`, not `we have been doing` (3.4).
 - Tenses allowed: infinitive, imperative, simple present, simple past, past participle as adjective, future (3.2).
 - No semicolons (8.1).
@@ -113,12 +113,16 @@ Source: ASD-STE100 Issue 8 (2021-04-30), Part 1, Writing rules. Issue 9 (2025-01
 
 ## Technical names in this project
 
-These are allowed as written. They are technical names (rule 1.5):
+The rules permit these as written. They are technical names (rule 1.5):
 - MtG card names, set names, and set codes.
 - Format names: Standard, Pioneer, Modern, Legacy, Vintage, Pauper, Commander, Brawl.
 - Keywords and ability words from the Scryfall catalogs (for example "lifelink", "landfall").
 - Software names: ManaBox, Scryfall, Cloud Run, Firestore, Go, Protobuf, TypeScript, React.
 - Code identifiers in backticks.
+
+## The checker
+
+`make ste-check` runs `docs/tools/ste-check.py` on every hand-written `.md` file. The checker flags passive voice (3.6) and modal and helper verbs (3.2, 3.4). It flags sentence-initial and preposition-led -ing forms (3.5), and the 20-word limit in a numbered step (5.1, D-304). It also flags semicolons, contractions, and the 25-word limit. Dated records are exempt: gate documents, audits, session logs, and eval documents.
 
 ## Markdown notes
 

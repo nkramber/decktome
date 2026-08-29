@@ -48,7 +48,7 @@ func TestLoadValidates(t *testing.T) {
 }
 
 // TestCatalogMatchesCorpus guards the drift between the data and the
-// mtg-corpus skill, section 11. The skill is the document the owner reads.
+// mtg-corpus skill, section 11. The skill is the document people read.
 // The JSON is the file the code reads. They must hold the same rows.
 func TestCatalogMatchesCorpus(t *testing.T) {
 	byName := map[string]string{
@@ -100,7 +100,7 @@ func TestCatalogMatchesCorpus(t *testing.T) {
 	}
 }
 
-// TestFormatFirst holds the ask order the dogfood runs asked for: nothing
+// TestFormatFirst holds the ask order of corpus section 11: nothing
 // before the format, because every other row depends on it.
 func TestFormatFirst(t *testing.T) {
 	c := load(t)
@@ -135,8 +135,7 @@ func TestPoolWaitsForFormatColorsTheme(t *testing.T) {
 }
 
 // TestThinThemeReplacesPool checks that the two pool rows never both fire.
-// One cell held both questions before 2026-08-24, which made the no-repeat
-// check unsafe.
+// One cell that holds both questions makes the no-repeat check unsafe.
 func TestThinThemeReplacesPool(t *testing.T) {
 	c := load(t)
 	thin := ctx(mtgv1.FormatId_FORMAT_ID_COMMANDER, "format", "colors", "theme")
@@ -257,12 +256,10 @@ func contains(list []string, want string) bool {
 // row asks about a step the agent filled in. A step the user named needs
 // no confirmation, and a question about it repeats the answer.
 //
-// Conversation 80 of gate run 20260826-220840-000 is the evidence. The
-// user answered "TOURNAMENT", and the next turn asked "Should I build the
-// deck for tournament-level competition?" Conversation 71 answered
-// "FNM." and got the same row one turn later. D-216 then removed the row:
-// the eval refused it on every well-founded inference too, because a user
-// who asks for the strongest deck has already given the answer.
+// A user who answers "TOURNAMENT" must not get "Should I build the deck
+// for tournament-level competition?" one turn later. D-216 then removed
+// the row: a user who asks for the strongest deck has already given the
+// answer.
 func TestNoRowConfirmsAnInferredStep(t *testing.T) {
 	c := load(t)
 	for _, tc := range []struct {
@@ -292,8 +289,7 @@ func has(list []string, want string) bool {
 
 // TestHouseLimitsRowNamesNoList holds D-212. The row asks one yes-or-no
 // question. A list of limits inside it reads as one question for each
-// item, which the eval refused in conversation 61 of gate run
-// 20260826-220840-000 even though the row went out word for word.
+// item, even when the row goes out word for word.
 func TestHouseLimitsRowNamesNoList(t *testing.T) {
 	c := load(t)
 	r, ok := c.Row("house_format_limits")
@@ -313,8 +309,7 @@ func TestHouseLimitsRowNamesNoList(t *testing.T) {
 
 // TestStoreFormatRowNamesItsOwnLimit holds D-213. The three formats are
 // the ones this app builds. An FNM can run Pioneer, so a question that
-// offers the list as the event's own formats omits information. The eval
-// refused it in conversation 7 of gate run 20260826-220840-000.
+// offers the list as the event's own formats omits information.
 func TestStoreFormatRowNamesItsOwnLimit(t *testing.T) {
 	c := load(t)
 	r, ok := c.Row("format_store")
@@ -332,9 +327,9 @@ func TestStoreFormatRowNamesItsOwnLimit(t *testing.T) {
 	}
 }
 
-// TestLoadRefusesABadTrigger holds the catalog checks the audit of
-// 2026-08-28 added: a format trigger outside the two values, a key that
-// is not a word, and a wait on a key no row owns.
+// TestLoadRefusesABadTrigger holds the catalog checks: a format trigger
+// outside the two values, a key that is not a word, and a wait on a key
+// no row owns.
 func TestLoadRefusesABadTrigger(t *testing.T) {
 	const good = `{"verified_at":"2026-08-28","rows":[
 		{"id":"format","slot":"format","order":1,"text":"Which format?"},

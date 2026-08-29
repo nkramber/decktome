@@ -13,10 +13,9 @@ import (
 // The commander tests: the pick row, the delegation, the offer, and the
 // named-card role. The pure commander rules are in words_test.go.
 
-// TestColorChangeKeepsTheDelegation is audit Q-5. dropOffColorOffers
-// reopened the pick row after the user had delegated the commander
-// choice, so a color change asked the user to pick after all. D-153 says
-// the offer leaves, and the delegation stands.
+// TestColorChangeKeepsTheDelegation is D-153. A color change after the
+// user delegated the commander choice must not reopen the pick row: the
+// offer leaves, and the delegation stands.
 func TestColorChangeKeepsTheDelegation(t *testing.T) {
 	first := commanderClassify()
 	change := classifyOut{Format: "unknown", PoolRule: "unknown", Colors: []string{"W", "G"}}
@@ -49,7 +48,7 @@ func TestColorChangeKeepsTheDelegation(t *testing.T) {
 	}
 }
 
-// TestColorChangeDropsTheOfferOfASetCommander is the other half of Q-5.
+// TestColorChangeDropsTheOfferOfASetCommander is the other half of D-153.
 // A named commander settles the choice, and a color change leaves the
 // old offer alone.
 func TestColorChangeDropsTheOfferOfASetCommander(t *testing.T) {
@@ -67,9 +66,9 @@ func TestColorChangeDropsTheOfferOfASetCommander(t *testing.T) {
 	}
 }
 
-// TestDelegationFollowsTheClassifier is audit Q-11. "Any colors, you
-// pick" delegates the colors, and the word rule handed the commander
-// choice over because a commander question was out. The classifier says
+// TestDelegationFollowsTheClassifier is D-147. "Any colors, you pick"
+// delegates the colors, and the word rule must not hand the commander
+// choice over because a commander question is out. The classifier says
 // which question the message answered.
 func TestDelegationFollowsTheClassifier(t *testing.T) {
 	cases := []struct {
@@ -129,9 +128,9 @@ func TestDelegationAloneClosesTheOnlyOpenQuestion(t *testing.T) {
 	}
 }
 
-// TestNamedCardRoleSetsTheCommander is audit Q-14. The role row offered
-// "As my commander", and the option closed the row with no commander
-// set. "In the 99" must lock the card, and a name alone closes nothing.
+// TestNamedCardRoleSetsTheCommander is D-118 and D-83. "As my commander"
+// must set the commander, "In the 99" must lock the card, and a name
+// alone closes nothing.
 func TestNamedCardRoleSetsTheCommander(t *testing.T) {
 	cases := []struct {
 		name, answer  string
@@ -176,10 +175,9 @@ func TestNamedCardRoleSetsTheCommander(t *testing.T) {
 	}
 }
 
-// TestCardInThe99ClosesTheRoleRow is D-70. Conversation 27 opens with
-// "Build around Grist, the Hunger Tide, but not as my commander", and all
-// four runs of 2026-08-25 then asked whether Grist should be the
-// commander.
+// TestCardInThe99ClosesTheRoleRow is D-70. "Build around Grist, the
+// Hunger Tide, but not as my commander" answers the role question, so
+// the row must not ask whether Grist should be the commander.
 func TestCardInThe99ClosesTheRoleRow(t *testing.T) {
 	out := classifyOut{Format: "commander", PoolRule: "unknown"}
 	out.LockedNames = []string{"Grist, the Hunger Tide"}
@@ -202,18 +200,17 @@ func TestCardInThe99ClosesTheRoleRow(t *testing.T) {
 	}
 }
 
-// TestNoneRepeatsThePickRowWithNewNames is D-73 and D-120. Conversation
-// 14 is named "the user says none, then picks". The classifier closed the
-// pick row on "None of those." in gate runs 12 and 13, so the session
-// called itself complete with a commander nobody chose.
+// TestNoneRepeatsThePickRowWithNewNames is D-73 and D-120. "None of
+// those" is a refusal, and a pick row closed on it leaves a commander
+// nobody chose.
 func TestNoneRepeatsThePickRowWithNewNames(t *testing.T) {
 	base := commanderClassify()
 	wants := commanderClassify()
 	wants.Facts.WantsSuggestion = true
 	// Turn 3 refuses, and the classifier tries to close the row by name.
 	refuse := commanderClassify()
-	// The classifier reported the refusal through both channels in gate
-	// runs 12 and 13. Neither may close the row.
+	// The classifier can report the refusal through both channels.
+	// Neither may close the row.
 	refuse.ClosedKeys = []string{"commander_pick"}
 	refuse.DeclinedKeys = []string{"commander_pick"}
 	h := &fakeHints{
@@ -255,9 +252,9 @@ func TestNoneRepeatsThePickRowWithNewNames(t *testing.T) {
 	}
 }
 
-// TestCommanderChosenByPlace is D-121. Conversation 14 ends with "The
-// first of the new three is good", and the classifier can not map that
-// onto a name, because it never sees the names.
+// TestCommanderChosenByPlace is D-121. "The first of the new three is
+// good" names a place, and the classifier can not map that onto a name,
+// because it never sees the names.
 func TestCommanderChosenByPlace(t *testing.T) {
 	base := commanderClassify()
 	wants := commanderClassify()
@@ -290,9 +287,8 @@ func TestCommanderChosenByPlace(t *testing.T) {
 }
 
 // TestSuggestionDoesNotSwapTheNames is D-123, which restores D-80. The
-// classifier set wants_suggestion again in conversation 23 of the batch
-// run, on a message that refused nothing. The agent swapped all three
-// commanders under the user.
+// classifier can set wants_suggestion again on a message that refused
+// nothing, and the agent must not swap the names under the user.
 //
 // The message asked for a suggestion before D-147. It now asks without
 // the words that hand the choice over, because a delegation closes the
@@ -331,10 +327,8 @@ func TestSuggestionDoesNotSwapTheNames(t *testing.T) {
 }
 
 // TestDelegationClosesTheCommanderPick is D-147. "You pick the commander"
-// appears in 18 of the 100 gate conversations, and no rule read it. The
-// pick row carries "repeat": true, so it asked again every turn until the
-// messages ran out. Eval run 14 refused 18 of its 43 bad questions on
-// that row, more than the next four rows together.
+// is a delegation. Unread, it leaves the pick row to ask again every
+// turn, because the row carries "repeat": true.
 //
 // A delegation is a decline (D-93): the key closes, it takes no value,
 // and the generator picks the best commander of the pool.
@@ -371,11 +365,10 @@ func TestDelegationClosesTheCommanderPick(t *testing.T) {
 // on the table until the user refuses them (D-80, D-123). Nothing checked
 // them again when the colors arrived later.
 //
-// Probe 73 of gate run 16 is the case. Turn 1 named no colors, and the
-// row offered Jaheira, Friend of the Forest, which is mono-green. The
-// user answered "Red and white" on turn 2, and the same three names went
-// out on turns 2 and 3. The eval caught it, and D-148 could not: it
-// filters the pool, and these names were already on the table.
+// Turn 1 names no colors, and the row offers a mono-green commander.
+// The user answers "Red and white" on turn 2, and the same three names
+// must not go out again. D-148 can not catch it: it filters the pool,
+// and these names are already on the table.
 func TestOffColorOfferLeavesTheTable(t *testing.T) {
 	first := commanderClassify()
 	first.Facts.WantsSuggestion = true
@@ -449,8 +442,8 @@ func TestOffColorDropKeepsAnUnknownName(t *testing.T) {
 
 // TestHintsReadTheColorsOfThisTurn is D-124. The caller builds the hint
 // source before the turn, so a color the classifier fills inside the turn
-// was invisible. Conversation 23 offered a five-color commander for a
-// red-green deck.
+// would be invisible, and the offer could name a five-color commander for
+// a red-green deck.
 func TestHintsReadTheColorsOfThisTurn(t *testing.T) {
 	h := &fakeHints{commanders: []string{"Karlov of the Ghost Council", "Oloro, Ageless Ascetic", "Ayli, Eternal Pilgrim"}}
 	out := commanderClassify()
@@ -465,10 +458,9 @@ func TestHintsReadTheColorsOfThisTurn(t *testing.T) {
 	}
 }
 
-// TestPickRowWithNoNamesAsksNothing is D-127. Probe 35 answers every
-// question with "you pick", so the theme stays empty and PR-6 can name no
-// commander. The pick row then asked "Which commander would you like, or
-// should I suggest three more?" twice, with nothing to suggest.
+// TestPickRowWithNoNamesAsksNothing is D-127. A user who answers every
+// question with "you pick" leaves the theme empty, so PR-6 can name no
+// commander, and the pick row must not ask with nothing to suggest.
 func TestPickRowWithNoNamesAsksNothing(t *testing.T) {
 	out := commanderClassify()
 	out.Theme = ""
@@ -495,10 +487,10 @@ func TestPickRowWithNoNamesAsksNothing(t *testing.T) {
 	}
 }
 
-// TestCommanderSwapReopensTheChoice is D-130. Probe 49 chooses Karlov of
+// TestCommanderSwapReopensTheChoice is D-130. The user chooses Karlov of
 // the Ghost Council, then writes "Actually use a different commander,
-// suggest one". Every run before 2026-08-26 asked nothing after it,
-// because a chosen commander closes every commander row.
+// suggest one". A chosen commander closes every commander row, so the
+// swap must reopen the choice.
 func TestCommanderSwapReopensTheChoice(t *testing.T) {
 	named := commanderClassify()
 	named.CommanderNames = []string{"Karlov of the Ghost Council"}
@@ -535,12 +527,11 @@ func TestCommanderSwapReopensTheChoice(t *testing.T) {
 	}
 }
 
-// TestCanLeadStaysSilentOnALegendaryCard is D-140. Gate run 14 told a
-// user "Grist, the Hunger Tide can not lead a deck". Grist is a legendary
-// planeswalker, and it is a legal commander: a characteristic-defining
-// ability makes it a creature card everywhere except the battlefield
-// (Scryfall ruling, 2021-06-18). The gate passed and the linter found
-// nothing, and the claim was false.
+// TestCanLeadStaysSilentOnALegendaryCard is D-140. Grist, the Hunger
+// Tide is a legendary planeswalker, and it is a legal commander: a
+// characteristic-defining ability makes it a creature card everywhere
+// except the battlefield (D-269). The engine must not claim that it can
+// not lead a deck.
 func TestCanLeadStaysSilentOnALegendaryCard(t *testing.T) {
 	cases := []struct {
 		name             string
@@ -553,7 +544,7 @@ func TestCanLeadStaysSilentOnALegendaryCard(t *testing.T) {
 		{"Lightning Bolt", "Instant", false, false, false, true},
 		{"Sol Ring", "Artifact", false, false, false, true},
 		{"Karlov of the Ghost Council", "Legendary Creature — Spirit Advisor", true, false, true, true},
-		{"a background", "Legendary Enchantment — Background", false, true, true, true},
+		{"a background", "Legendary Enchantment — Background", false, true, false, true},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -574,9 +565,8 @@ func TestCanLeadStaysSilentOnALegendaryCard(t *testing.T) {
 	}
 }
 
-// TestPickRowNeedsNewNames is D-163. Conversations 1, 77, and 90 of gate
-// run 18 each got the same three commanders twice, because the user
-// answered some other slot and the row repeats every turn.
+// TestPickRowNeedsNewNames is D-163. A user who answers some other slot
+// must not get the same three commanders twice.
 func TestPickRowNeedsNewNames(t *testing.T) {
 	c := load(t)
 	row, ok := c.Row("commander_pick")
@@ -602,9 +592,9 @@ func TestPickRowNeedsNewNames(t *testing.T) {
 	}
 }
 
-// TestLockedCardStaysWithNoQuestion is the turn D-166 fixed. The locked
-// row retired with A-6 of the 2026-08-28 audit, so no row asks whether
-// the card may be cut, and the name still reaches the build.
+// TestLockedCardStaysWithNoQuestion is D-166 and D-260. The locked row
+// is retired, so no row asks whether the card may be cut, and the name
+// still reaches the build.
 func TestLockedCardStaysWithNoQuestion(t *testing.T) {
 	out := commanderClassify()
 	out.BudgetUSD = 60
@@ -626,9 +616,9 @@ func TestLockedCardStaysWithNoQuestion(t *testing.T) {
 	}
 }
 
-// TestSuperlativeDelegatesTheCommander is D-167. Conversation 10 of gate
-// run 18 wrote "Buy the best lifegain commander" and got three names to
-// choose from.
+// TestSuperlativeDelegatesTheCommander is D-167. "Buy the best lifegain
+// commander" asks the agent to choose, and three names to choose from do
+// not answer it.
 func TestSuperlativeDelegatesTheCommander(t *testing.T) {
 	if !delegatesCommander("Buy the best lifegain commander") {
 		t.Error("a superlative commander instruction was not read as a delegation")
@@ -685,10 +675,9 @@ func TestNamedCommanderClosesTheIllegalRow(t *testing.T) {
 	}
 }
 
-// TestNotOwnedRowIsRetired is D-226, which closes OQ-36. The row asked
-// "You do not own {card}. Add it to the buy list, or pick from your
-// library?" It scored 0.05 on all 14 firings of gate run
-// 20260826-212512-000, and the agent replaced 13 of them.
+// TestNotOwnedRowIsRetired is D-226. The row asked "You do not own
+// {card}. Add it to the buy list, or pick from your library?", and it
+// scored badly on every firing.
 //
 // The rules engine answers the same question after the build, per card
 // and with the exact count: a warning in owned-first and a block in
@@ -720,8 +709,7 @@ func TestNotOwnedRowIsRetired(t *testing.T) {
 	}
 }
 
-// TestDeclinedPickClosesTheCommanderSlot replays conversation 39 of gate
-// run 20260826-212512-000, "the user stays vague". Turn 2 answers "I
+// TestDeclinedPickClosesTheCommanderSlot is D-208. Turn 2 answers "I
 // dunno, you pick", the classifier sets wants_suggestion, and the pick
 // row asks. Turn 3 answers "Whatever you think is best", and the
 // classifier declines the pick key. The decline closes commander_pick
@@ -774,10 +762,10 @@ func TestDeclinedPickClosesTheCommanderSlot(t *testing.T) {
 	}
 }
 
-// TestNamedCardThatCanNotLeadSettlesItsRole is D-220. Conversation 74 of
-// gate run 19 named Sol Ring, and the agent asked "Should Sol Ring be
-// your commander or one of the 99 cards?". D-129 read the commander list
-// alone, and Sol Ring was never on it.
+// TestNamedCardThatCanNotLeadSettlesItsRole is D-220. A named Sol Ring
+// must not get "Should Sol Ring be your commander or one of the 99
+// cards?". D-129 read the commander list alone, and Sol Ring is never on
+// it.
 func TestNamedCardThatCanNotLeadSettlesItsRole(t *testing.T) {
 	h := &CandidateHints{Index: cards.NewIndex([]*mtgv1.Card{
 		{Name: "Sol Ring", TypeLine: "Artifact"},
@@ -796,5 +784,101 @@ func TestNamedCardThatCanNotLeadSettlesItsRole(t *testing.T) {
 	}
 	if len(st.LockedCards()) == 0 {
 		t.Error("Sol Ring did not reach the 99")
+	}
+}
+
+// TestSecondIllegalCommanderGetsTheQuestion is D-129 across two turns.
+// The illegal row carries no repeat, so a second illegal name needs its
+// asked mark cleared, or the agent accepts it in silence (D-195).
+func TestSecondIllegalCommanderGetsTheQuestion(t *testing.T) {
+	h := &CandidateHints{Index: cards.NewIndex([]*mtgv1.Card{
+		{Name: "Lightning Bolt", TypeLine: "Instant"},
+		{Name: "Sol Ring", TypeLine: "Artifact"},
+	}, nil, nil, time.Time{})}
+	first := classifyOut{Format: "commander", Theme: "burn", PoolRule: "unknown", CommanderNames: []string{"Lightning Bolt"}}
+	second := classifyOut{Format: "unknown", PoolRule: "unknown", CommanderNames: []string{"Sol Ring"}}
+	p := play(t, false, h, []turnScript{
+		{"A Commander burn deck with Lightning Bolt as my commander.", first},
+		{"Sol Ring as my commander then.", second},
+	})
+	if !p.askedOn(1, "commander_illegal") {
+		t.Fatalf("turn 1 did not refuse Lightning Bolt: %v", p.rows)
+	}
+	if !p.askedOn(2, "commander_illegal") {
+		t.Errorf("turn 2 accepted Sol Ring in silence: %v", p.rows)
+	}
+	if p.st.IllegalCommander != "Sol Ring" {
+		t.Errorf("IllegalCommander = %q, want Sol Ring", p.st.IllegalCommander)
+	}
+	if p.st.Ctx.CommanderSet {
+		t.Error("an illegal card became the commander")
+	}
+}
+
+// TestABackgroundAloneCanNotLead is D-154 read the other way. A
+// Background joins a creature that chooses one, and it never leads a
+// deck on its own.
+func TestABackgroundAloneCanNotLead(t *testing.T) {
+	h := &CandidateHints{Index: cards.NewIndex([]*mtgv1.Card{
+		{Name: "Guild Artisan", TypeLine: "Legendary Enchantment — Background", IsBackground: true},
+	}, nil, nil, time.Time{})}
+	lead, known := h.CanLead("Guild Artisan")
+	if lead || !known {
+		t.Errorf("CanLead(Background) = %v/%v, want false/true", lead, known)
+	}
+	out := classifyOut{Format: "commander", Theme: "treasure", PoolRule: "unknown", CommanderNames: []string{"Guild Artisan"}}
+	p := play(t, false, h, []turnScript{
+		{"A Commander treasure deck with Guild Artisan as my commander.", out},
+	})
+	if !p.askedOn(1, "commander_illegal") {
+		t.Errorf("a sole Background was accepted as the commander: %v", p.rows)
+	}
+}
+
+// TestCardNamedAfterTheCommanderGetsTheRoleQuestion is D-118. The
+// commander closed the role key, and a card named later with no role
+// reopens it, so the user says where that card goes.
+func TestCardNamedAfterTheCommanderGetsTheRoleQuestion(t *testing.T) {
+	h := &CandidateHints{Index: cards.NewIndex([]*mtgv1.Card{
+		{Name: "Karlov of the Ghost Council", TypeLine: "Legendary Creature — Spirit Advisor", CanBeCommander: true},
+		{Name: "Grist, the Hunger Tide", TypeLine: "Legendary Planeswalker — Grist"},
+	}, nil, nil, time.Time{})}
+	first := classifyOut{Format: "commander", Theme: "lifegain", PoolRule: "unknown", CommanderNames: []string{"Karlov of the Ghost Council"}}
+	second := classifyOut{Format: "unknown", PoolRule: "unknown", NamedCards: []string{"Grist, the Hunger Tide"}}
+	second.Facts.NamedCard = true
+	p := play(t, false, h, []turnScript{
+		{"A Commander lifegain deck with Karlov of the Ghost Council as my commander.", first},
+		{"Also build around Grist, the Hunger Tide.", second},
+	})
+	if p.askedOn(1, "named_card_role") {
+		t.Errorf("turn 1 asked the role of the commander: %v", p.rows[0])
+	}
+	if !p.askedOn(2, "named_card_role") {
+		t.Errorf("turn 2 did not ask where Grist goes: %v", p.rows)
+	}
+	if !p.st.Ctx.CommanderSet || !hasName(p.st.CommanderNames, "Karlov of the Ghost Council") {
+		t.Error("the commander did not survive the second card")
+	}
+}
+
+// TestBareOrdinalPicksNoCommander is D-121 with the guard. "First, make
+// it budget" orders the sentence and chooses no commander.
+func TestBareOrdinalPicksNoCommander(t *testing.T) {
+	h := &fakeHints{commanders: []string{"Karlov of the Ghost Council", "Oloro, Ageless Ascetic", "Trelasarra, Moon Dancer"}}
+	first := commanderClassify()
+	first.Facts.WantsSuggestion = true
+	p := play(t, false, h, []turnScript{
+		{"A Commander lifegain deck, white and black. Suggest a commander.", first},
+		{"First, make it budget. 50 dollars.", classifyOut{Format: "unknown", PoolRule: "unknown", BudgetUSD: 50}},
+		{"The second one.", classifyOut{Format: "unknown", PoolRule: "unknown"}},
+	})
+	if !p.askedOn(1, "commander_pick") {
+		t.Fatalf("turn 1 offered no commanders: %v", p.rows)
+	}
+	if hasName(p.st.CommanderNames, "Karlov of the Ghost Council") {
+		t.Error(`"First, make it budget" picked the first commander`)
+	}
+	if !hasName(p.st.CommanderNames, "Oloro, Ageless Ascetic") {
+		t.Errorf(`"The second one" did not pick the second commander: %v`, p.st.CommanderNames)
 	}
 }

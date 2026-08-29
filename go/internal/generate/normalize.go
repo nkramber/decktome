@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	"github.com/nkramber/mtg-deck-builder/go/internal/candidates"
 )
 
 // A model names a card that exists and is not the card meant. "Ajani's
@@ -63,7 +64,7 @@ func NewPool(cards []*mtgv1.Card, owned map[string]int32) *Pool {
 		if c.GetName() == "" {
 			continue
 		}
-		key := foldName(c.GetName())
+		key := candidates.FoldName(c.GetName())
 		if _, seen := p.byName[key]; !seen {
 			p.names = append(p.names, c.GetName())
 		}
@@ -85,7 +86,7 @@ func (p *Pool) Size() int { return len(p.byName) }
 func (p *Pool) Filter(keep func(*mtgv1.Card) bool) *Pool {
 	var cards []*mtgv1.Card
 	for _, name := range p.names {
-		c := p.byName[foldName(name)]
+		c := p.byName[candidates.FoldName(name)]
 		if keep(c) {
 			cards = append(cards, c)
 		}
@@ -99,7 +100,7 @@ func (p *Pool) Names() []string { return append([]string(nil), p.names...) }
 
 // Card returns the pool card of an exact name.
 func (p *Pool) Card(name string) (*mtgv1.Card, bool) {
-	c, ok := p.byName[foldName(name)]
+	c, ok := p.byName[candidates.FoldName(name)]
 	return c, ok
 }
 
@@ -116,13 +117,6 @@ func (p *Pool) ByOracleID(id string) (*mtgv1.Card, bool) {
 // card the user owns is never charged as a purchase.
 func (p *Pool) OwnedCount(id string) int32 { return p.owned[id] }
 
-// foldName is the match key: lower case, with the outer spaces removed.
-// Nothing else is folded. A punctuation change makes a different card
-// name, and the model must write the name as the shortlist holds it.
-func foldName(s string) string {
-	return strings.ToLower(strings.TrimSpace(s))
-}
-
 // Entry is one line of the model's deck list.
 type Entry struct {
 	Name   string `json:"name"`
@@ -133,7 +127,8 @@ type Entry struct {
 
 // Normalize matches every entry against the pool. A matched entry
 // becomes a DeckCard with the oracle id and the owned counts filled in.
-// An unmatched entry becomes a Miss, and it reaches no deck.
+// An unmatched entry becomes a Miss, and it reaches no deck. The owned
+// flag reads the count of an oracle id across every entry of the list.
 func Normalize(p *Pool, entries []Entry) Normalized {
 	var out Normalized
 	for _, e := range entries {
@@ -153,15 +148,27 @@ func Normalize(p *Pool, entries []Entry) Normalized {
 			Count:      e.Count,
 			Role:       cardRole(e.Role),
 			Reason:     strings.TrimSpace(e.Reason),
-			Owned:      owned >= e.Count,
 			OwnedCount: owned,
-			// The display price of the card, per copy (D-17, D-236). It
-			// follows the printing the index shows, which D-231 made the
-			// paper one.
+			// The display price of the card, per copy. It follows the
+			// paper printing the index shows (D-231).
 			PriceUsd: c.GetPriceUsd(),
 		})
 	}
+	markOwned(out.Cards)
 	return out
+}
+
+// markOwned sets the owned flag of every entry from the count of its
+// oracle id across the whole list, so two entries of one card are owned
+// only when the collection covers both (D-37).
+func markOwned(cards []*mtgv1.DeckCard) {
+	need := map[string]int32{}
+	for _, c := range cards {
+		need[c.GetOracleId()] += c.GetCount()
+	}
+	for _, c := range cards {
+		c.Owned = c.GetOwnedCount() >= need[c.GetOracleId()]
+	}
 }
 
 // nearLimit is how many near names one miss reports. The repair turn
@@ -201,7 +208,7 @@ func (p *Pool) near(name string) []string {
 // everything else removed. The apostrophe of "Ajani's" must not hide the
 // match with "Ajani".
 func firstWord(s string) string {
-	s = foldName(s)
+	s = candidates.FoldName(s)
 	if i := strings.IndexAny(s, " ,"); i >= 0 {
 		s = s[:i]
 	}
@@ -226,7 +233,7 @@ var roleNames = map[string]mtgv1.CardRole{
 // other role, which is a report and never an error: the engine checks
 // the deck, and no rule turns on this field.
 func cardRole(s string) mtgv1.CardRole {
-	if r, ok := roleNames[foldName(s)]; ok {
+	if r, ok := roleNames[candidates.FoldName(s)]; ok {
 		return r
 	}
 	return mtgv1.CardRole_CARD_ROLE_OTHER

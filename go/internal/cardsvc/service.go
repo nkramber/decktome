@@ -14,8 +14,15 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
 )
 
+// IndexSource hands out the current card index, or nil before the first
+// snapshot loads. *Server is the one implementation, and every service
+// that reads cards takes this interface.
+type IndexSource interface {
+	Current() *cards.Index
+}
+
 // Server answers CardService requests from the current index.
-// The index pointer swaps atomically on refresh. Requests never block.
+// The index pointer swaps atomically on refresh. Requests do not block.
 type Server struct {
 	mtgv1connect.UnimplementedCardServiceHandler
 	index atomic.Pointer[cards.Index]

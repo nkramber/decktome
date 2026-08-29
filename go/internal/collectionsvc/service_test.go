@@ -145,7 +145,6 @@ func TestImportCollectionRejects(t *testing.T) {
 		{"too large", importReq("n", mtgv1.ImportSource_IMPORT_SOURCE_MANABOX_CSV, strings.Repeat("a", maxUpload+1)), connect.CodeInvalidArgument},
 		{"bad source", importReq("n", mtgv1.ImportSource_IMPORT_SOURCE_UNSPECIFIED, goodCSV), connect.CodeInvalidArgument},
 		{"bad header", importReq("n", mtgv1.ImportSource_IMPORT_SOURCE_MANABOX_CSV, "Foo,Bar\n1,2\n"), connect.CodeInvalidArgument},
-		{"nothing resolved", importReq("n", mtgv1.ImportSource_IMPORT_SOURCE_MANABOX_CSV, "Name,Set code\nNope,zzz\n"), connect.CodeInvalidArgument},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -165,7 +164,7 @@ func TestImportCollectionNoIndex(t *testing.T) {
 	}
 }
 
-// TestImportCollectionDedup covers D-16 and C-6: an identical
+// TestImportCollectionDedup covers D-16: an identical
 // re-upload reuses the document and takes the new name.
 func TestImportCollectionDedup(t *testing.T) {
 	repo := newFakeRepo()
@@ -212,7 +211,8 @@ func TestImportCollectionErrorMapping(t *testing.T) {
 	}
 }
 
-// TestGetCollectionCodes is L-13: only a Firestore NotFound is NotFound.
+// TestGetCollectionCodes: only a Firestore NotFound is NotFound, and an
+// id that names another path is refused.
 func TestGetCollectionCodes(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -222,6 +222,9 @@ func TestGetCollectionCodes(t *testing.T) {
 	}{
 		{name: "empty id", id: "", want: connect.CodeInvalidArgument},
 		{name: "blank id", id: "  ", want: connect.CodeInvalidArgument},
+		{name: "path id", id: "../other/doc", want: connect.CodeInvalidArgument},
+		{name: "dot id", id: ".", want: connect.CodeInvalidArgument},
+		{name: "long id", id: strings.Repeat("x", 1501), want: connect.CodeInvalidArgument},
 		{name: "missing document", id: "missing", want: connect.CodeNotFound},
 		{name: "store failure", id: "col-1", getErr: errors.New("firestore down"), want: connect.CodeInternal},
 		{name: "permission denied is not not-found", id: "col-1", getErr: status.Error(codes.PermissionDenied, "no"), want: connect.CodeInternal},
@@ -236,5 +239,58 @@ func TestGetCollectionCodes(t *testing.T) {
 				t.Errorf("code = %v, want %v: %v", connect.CodeOf(err), tt.want, err)
 			}
 		})
+	}
+}
+
+// TestImportNothingResolvedAnswersTheReport: an upload where no row
+// resolves stores nothing and returns the report, not an error.
+func TestImportNothingResolvedAnswersTheReport(t *testing.T) {
+	repo := newFakeRepo()
+	s := newServer(repo, testIndex())
+	resp, err := s.ImportCollection(context.Background(), importReq("n", mtgv1.ImportSource_IMPORT_SOURCE_MANABOX_CSV, "Name,Set code\nNope,zzz\n"))
+	if err != nil {
+		t.Fatalf("err = %v, want a response", err)
+	}
+	if repo.puts != 0 {
+		t.Error("an empty collection was stored")
+	}
+	col, rep := resp.Msg.GetCollection(), resp.Msg.GetReport()
+	if col.GetId() != "" || len(col.GetEntries()) != 0 || col.GetContentHash() == "" {
+		t.Errorf("collection = %v", col)
+	}
+	if rep.GetResolvedCount() != 0 || len(rep.GetUnresolved()) != 1 {
+		t.Errorf("report = %v", rep)
+	}
+}
+
+// TestImportName: the name is trimmed and capped.
+func TestImportName(t *testing.T) {
+	repo := newFakeRepo()
+	s := newServer(repo, testIndex())
+	resp, err := s.ImportCollection(context.Background(), importReq("  Binder  ", mtgv1.ImportSource_IMPORT_SOURCE_MANABOX_CSV, goodCSV))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.Msg.GetCollection().GetName() != "Binder" {
+		t.Errorf("name = %q", resp.Msg.GetCollection().GetName())
+	}
+	_, err = s.ImportCollection(context.Background(), importReq(strings.Repeat("n", MaxNameBytes+1), mtgv1.ImportSource_IMPORT_SOURCE_MANABOX_CSV, goodCSV))
+	if connect.CodeOf(err) != connect.CodeInvalidArgument {
+		t.Errorf("a long name gave %v", err)
+	}
+}
+
+// TestNoUserIsUnauthenticated covers every RPC.
+func TestNoUserIsUnauthenticated(t *testing.T) {
+	s := New(newFakeRepo(), staticIndex{testIndex()}, func(context.Context) string { return "" })
+	ctx := context.Background()
+	if _, err := s.ImportCollection(ctx, importReq("n", mtgv1.ImportSource_IMPORT_SOURCE_MANABOX_CSV, goodCSV)); connect.CodeOf(err) != connect.CodeUnauthenticated {
+		t.Errorf("import: %v", err)
+	}
+	if _, err := s.GetCollection(ctx, connect.NewRequest(&mtgv1.GetCollectionRequest{CollectionId: "c1"})); connect.CodeOf(err) != connect.CodeUnauthenticated {
+		t.Errorf("get: %v", err)
+	}
+	if _, err := s.ListCollections(ctx, connect.NewRequest(&mtgv1.ListCollectionsRequest{})); connect.CodeOf(err) != connect.CodeUnauthenticated {
+		t.Errorf("list: %v", err)
 	}
 }

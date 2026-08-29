@@ -13,9 +13,9 @@ import (
 // The format tests: the word rules, the decline rows, and the turn path
 // that fills the format. The pure format rules are in words_test.go.
 
-// TestAcceptedNearestFormatFillsTheSlot is audit Q-4. The decline row
-// offered "Yes, use the nearest format", and no path filled the format
-// on that answer. The turn returned no question and no status.
+// TestAcceptedNearestFormatFillsTheSlot is D-112. The decline row offers
+// "Yes, use the nearest format", and the format must fill on that
+// answer.
 func TestAcceptedNearestFormatFillsTheSlot(t *testing.T) {
 	cases := []struct {
 		name, answer string
@@ -68,16 +68,16 @@ func TestAcceptedNearestFormatFillsTheSlot(t *testing.T) {
 	}
 }
 
-// TestUnsupportedFormatAfterAFilledOne is audit Q-6. A user who names a
-// format this app does not build after a supported one was filled got
-// silence. The format reopens through the D-125 path and the decline row
-// fires.
+// TestUnsupportedFormatAfterAFilledOne is D-112 after D-125. A user who
+// names a format this app does not build after a supported one is filled
+// must hear the decline: the format reopens through the D-125 path and
+// the decline row fires.
 func TestUnsupportedFormatAfterAFilledOne(t *testing.T) {
 	first := commanderClassify()
 	change := classifyOut{Format: "unknown", PoolRule: "unknown"}
 	// Turn 2 asks the budget again beside the decline: the format change
 	// retired the open budget question, and a retired question may ask
-	// again (Q-8).
+	// again (D-195).
 	a, _ := testAgent(t,
 		classifyStep(t, first), fits(t, "commander", "power_commander", "budget"), askStep(t),
 		classifyStep(t, change), fits(t, "budget"), askStep(t))
@@ -104,8 +104,8 @@ func TestUnsupportedFormatAfterAFilledOne(t *testing.T) {
 	}
 }
 
-// TestWordRuleReadsTheMessageAlone is audit Q-7. FormatFromWords read
-// the whole conversation, so one "pauper" on turn 1 turned the safety
+// TestWordRuleReadsTheMessageAlone is D-125. A FormatFromWords that read
+// the whole conversation would let one "pauper" on turn 1 turn the safety
 // net off for the rest of the session.
 func TestWordRuleReadsTheMessageAlone(t *testing.T) {
 	unknown := classifyOut{Format: "unknown", PoolRule: "unknown"}
@@ -127,8 +127,8 @@ func TestWordRuleReadsTheMessageAlone(t *testing.T) {
 	}
 }
 
-// TestLintFormatRuleReadsEachMessage is the linter half of audit Q-7.
-// The format_already_named rule went blind after one unsupported word.
+// TestLintFormatRuleReadsEachMessage is the linter half of D-125. The
+// format_already_named rule must not go blind after one unsupported word.
 func TestLintFormatRuleReadsEachMessage(t *testing.T) {
 	cases := []struct {
 		name     string
@@ -156,10 +156,9 @@ func TestLintFormatRuleReadsEachMessage(t *testing.T) {
 	}
 }
 
-// TestRetiredThemeAsksAgain is audit Q-8. After a format change retired
-// the theme question, the theme row could never ask again, and the build
-// ran with the slot empty. The owner ruled on 2026-08-28 that a retired
-// question may be asked again.
+// TestRetiredThemeAsksAgain is D-195. After a format change retires the
+// theme question, the theme row must ask again, or the build runs with
+// the slot empty.
 func TestRetiredThemeAsksAgain(t *testing.T) {
 	first := classifyOut{Format: "commander", PoolRule: "unknown"}
 	change := classifyOut{Format: "modern", PoolRule: "unknown"}
@@ -188,7 +187,7 @@ func TestRetiredThemeAsksAgain(t *testing.T) {
 	}
 }
 
-// TestRetireOutstandingClearsTheAskedMark holds the state half of Q-8.
+// TestRetireOutstandingClearsTheAskedMark holds the state half of D-195.
 // The row ids of a retired key leave Ctx.Asked, and a nil catalog keeps
 // them.
 func TestRetireOutstandingClearsTheAskedMark(t *testing.T) {
@@ -213,8 +212,8 @@ func TestRetireOutstandingClearsTheAskedMark(t *testing.T) {
 }
 
 // TestWordRuleReadsTheFormatTheClassifierMissed is the safety net of
-// D-116. Conversation 23 of gate run 11 named Commander in the first
-// message and still got the format question.
+// D-116. "A land destruction Commander deck" names Commander, and the
+// format question must not go out.
 func TestWordRuleReadsTheFormatTheClassifierMissed(t *testing.T) {
 	out := classifyOut{Format: "unknown", Theme: "land destruction", PoolRule: "unknown"}
 	a, _ := testAgent(t, classifyStep(t, out),
@@ -252,10 +251,10 @@ func TestUnsupportedFormatRowNamesTheNearestFormat(t *testing.T) {
 	}
 }
 
-// TestFormatDoesNotRevertToAReplacedValue is D-125. Probe 31 asks for
+// TestFormatDoesNotRevertToAReplacedValue is D-125. The user asks for
 // Commander, changes to Modern two turns later, and the classifier
-// reported Commander again on a message that named no format. The agent
-// then asked for a commander in a 60-card format.
+// reports Commander again on a message that names no format. The agent
+// must not ask for a commander in a 60-card format.
 func TestFormatDoesNotRevertToAReplacedValue(t *testing.T) {
 	first := classifyOut{Format: "commander", Theme: "lifegain", PoolRule: "unknown"}
 	first.Colors = []string{"W", "B"}
@@ -284,8 +283,8 @@ func TestFormatDoesNotRevertToAReplacedValue(t *testing.T) {
 	}
 }
 
-// TestCEDHNamesBracketFive is D-164. Probe 75 opens with "A cEDH deck",
-// and gate run 18 asked which power bracket to target.
+// TestCEDHNamesBracketFive is D-164. "A cEDH deck" names bracket 5, so
+// the agent must not ask which power bracket to target.
 func TestCEDHNamesBracketFive(t *testing.T) {
 	if !cedhRequest("a cEDH deck") {
 		t.Error("cEDH was not read as a power level")
@@ -352,7 +351,7 @@ func TestRetiredQuestionLeavesTheAskedState(t *testing.T) {
 		t.Errorf("the session is not ready after every slot filled: states %v", st.Slots.GetSlotStates())
 	}
 	// The retired row may ask again: the user never answered it, so its
-	// asked mark leaves with the key (audit Q-8). It stays silent here
+	// asked mark leaves with the key (D-195). It stays silent here
 	// because Modern has no commander.
 	if st.Ctx.Asked["commander_pick"] {
 		t.Error("the retired row kept its asked mark, so a return to Commander could never ask it")
@@ -394,9 +393,7 @@ func TestUnsupportedSubFormatNamesNoFormat(t *testing.T) {
 // names Legacy, hears that this app does not build it, and names Legacy
 // again. The row said its sentence, so it stays silent.
 //
-// Conversations 18 and 26 of gate run 20260826-220840-000 are the
-// evidence. Both got the same sentence on two turns, and the eval refused
-// the second one as a duplicate.
+// The same sentence on two turns is a duplicate (D-210).
 func TestDeclineRowWaitsForAnotherFormat(t *testing.T) {
 	out := classifyOut{Format: "unknown", PoolRule: "unknown"}
 	a, _ := testAgent(t,
@@ -529,5 +526,41 @@ func TestSupportedFormatsAllBuild(t *testing.T) {
 	}
 	if sixtyCard(mtgv1.FormatId_FORMAT_ID_COMMANDER) {
 		t.Error("Commander is not a 60-card format")
+	}
+}
+
+// TestReopenedFormatClearsThePlainRowMark is D-195 for the format. A
+// format this app does not build, named after a format was filled,
+// reopens the key, and the plain row must be able to ask again.
+func TestReopenedFormatClearsThePlainRowMark(t *testing.T) {
+	unknown := classifyOut{Format: "unknown", PoolRule: "unknown"}
+	p := play(t, false, nil, []turnScript{
+		{"A burn deck.", unknown},
+		{"Modern.", classifyOut{Format: "modern", PoolRule: "unknown"}},
+		{"Actually, make it Brawl.", unknown},
+	})
+	if !p.askedOn(1, "format") {
+		t.Fatalf("turn 1 did not ask the format: %v", p.rows)
+	}
+	if !p.askedOn(3, "format_unsupported") {
+		t.Fatalf("turn 3 did not decline Brawl: %v", p.rows)
+	}
+	if p.st.Ctx.Asked["format"] {
+		t.Error("the plain format row kept its asked mark through the reopen")
+	}
+	if !p.st.Ctx.Asked["format_unsupported"] {
+		t.Error("the decline row lost its asked mark, so it would repeat on the same format")
+	}
+	// The decline question answered with no format leaves the key open,
+	// and the plain row is the one that asks next.
+	st := p.st
+	st.RetireOutstanding(load(t))
+	st.Ctx.UnsupportedFormat, st.Ctx.BadFormatChanged = false, false
+	var ids []string
+	for _, r := range load(t).Plan(st.Ctx) {
+		ids = append(ids, r.ID)
+	}
+	if len(ids) == 0 || ids[0] != "format" {
+		t.Errorf("plan after the reopen = %v, want the plain format row first", ids)
 	}
 }

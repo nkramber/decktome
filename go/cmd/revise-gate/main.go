@@ -7,15 +7,18 @@
 // engine. An unclear request gets a question and no build.
 //
 // CAUTION: this calls a real provider and it costs money. REVISE_GATE=1
-// is required, so it can not run by accident. Ask the owner before every
-// run. `make revise-gate` writes to REVISE_GATE_OUT and refuses a file
-// that already holds a verdict (D-65).
+// is required, so it can not run by accident. `make revise-gate` writes
+// to REVISE_GATE_OUT and refuses a file that already holds a verdict
+// (D-65). A -dry run loads the prompts and the snapshot, calls no
+// provider, and needs no guard. The exit code is 1 on a FAIL verdict,
+// and the document is written first.
 package main
 
 import (
 	"context"
 	_ "embed"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -94,9 +97,9 @@ func main() {
 }
 
 func run() error {
-	collPath := flag.String("collection", "", "a ManaBox CSV, unused today and kept for parity")
+	only := flag.String("only", "", "run these base ids only, comma separated")
+	dry := flag.Bool("dry", false, "load the prompts and the snapshot and stop before the provider calls")
 	flag.Parse()
-	_ = collPath
 
 	var file struct {
 		Bases []base `json:"bases"`
@@ -104,8 +107,16 @@ func run() error {
 	if err := json.Unmarshal(promptsJSON, &file); err != nil {
 		return fmt.Errorf("prompts: %w", err)
 	}
-	if err := gatekit.SpendGuard("REVISE_GATE"); err != nil {
+	bases, err := selectBases(file.Bases, *only)
+	if err != nil {
 		return err
+	}
+	file.Bases = bases
+	// A dry run calls no provider, so it needs no guard.
+	if !*dry {
+		if err := gatekit.SpendGuard("REVISE_GATE"); err != nil {
+			return err
+		}
 	}
 	quiet := gatekit.Quiet()
 	ctx := context.Background()
@@ -120,6 +131,19 @@ func run() error {
 	rcfg, err := rules.Load()
 	if err != nil {
 		return err
+	}
+	if *dry {
+		revisions := 0
+		for _, bs := range file.Bases {
+			if bs.Commander != "" {
+				if _, ok := idx.ByName(bs.Commander); !ok {
+					return fmt.Errorf("base %d: no card named %q", bs.ID, bs.Commander)
+				}
+			}
+			revisions += len(bs.Revisions)
+		}
+		fmt.Fprintf(os.Stderr, "dry run: %d bases and %d revisions read, no provider call ran\n", len(file.Bases), revisions)
+		return nil
 	}
 	client, err := llm.NewFromEnv(gatekit.Env, quiet)
 	if err != nil {
@@ -144,15 +168,48 @@ func run() error {
 			fmt.Fprintf(os.Stderr, "  base failed: %v\n", err)
 			continue
 		}
-		fmt.Fprintf(os.Stderr, "  %d cards, %d blocks\n", countCards(baseDeck), len(blocks(baseDeck)))
+		fmt.Fprintf(os.Stderr, "  %d cards, %d blocks\n", gatekit.CountCards(baseDeck), len(blocks(baseDeck)))
 		for _, r := range bs.Revisions {
 			o := runRevision(ctx, client, b, idx, bs, r, baseDeck, pool, list, commanderIDs, acc)
 			outcomes = append(outcomes, o)
 			fmt.Fprintf(os.Stderr, "  %d. %s\n", r.ID, status(o))
 		}
 	}
-	report(os.Stdout, outcomes, acc, idx, time.Since(start))
+	if !report(os.Stdout, outcomes, acc, idx, time.Since(start)) {
+		return errGateFailed
+	}
 	return nil
+}
+
+// errGateFailed is the exit reason after a FAIL verdict. The document is
+// written before it, so the record stays complete.
+var errGateFailed = errors.New("revise gate failed: read the verdict line of the document")
+
+// selectBases keeps the bases -only names, or all of them when -only is
+// empty. A list that names no base is an error: a run of zero revisions
+// can not pass a gate.
+func selectBases(all []base, only string) ([]base, error) {
+	ids, err := gatekit.ParseIDs(only)
+	if err != nil {
+		return nil, fmt.Errorf("revise-gate: %w", err)
+	}
+	if ids == nil {
+		return all, nil
+	}
+	want := map[int]bool{}
+	for _, id := range ids {
+		want[id] = true
+	}
+	var kept []base
+	for _, b := range all {
+		if want[b.ID] {
+			kept = append(kept, b)
+		}
+	}
+	if len(kept) == 0 {
+		return nil, fmt.Errorf("-only %q matches no base", only)
+	}
+	return kept, nil
 }
 
 func status(o outcome) string {
@@ -170,18 +227,7 @@ func status(o outcome) string {
 
 func formatOf(bs base) mtgv1.FormatId { return gatekit.FormatID(bs.Format) }
 
-func powerOf(bs base) *mtgv1.PowerLevel {
-	if bs.Bracket > 0 {
-		return &mtgv1.PowerLevel{Level: &mtgv1.PowerLevel_Bracket{Bracket: bs.Bracket}}
-	}
-	steps := map[string]mtgv1.SixtyStep{
-		"casual": mtgv1.SixtyStep_SIXTY_STEP_CASUAL, "fnm": mtgv1.SixtyStep_SIXTY_STEP_FNM, "tournament": mtgv1.SixtyStep_SIXTY_STEP_TOURNAMENT,
-	}
-	if s, ok := steps[strings.ToLower(bs.Power)]; ok {
-		return &mtgv1.PowerLevel{Level: &mtgv1.PowerLevel_SixtyStep{SixtyStep: s}}
-	}
-	return nil
-}
+func powerOf(bs base) *mtgv1.PowerLevel { return gatekit.PowerLevel(bs.Bracket, bs.Power) }
 
 func powerWord(bs base) string {
 	if bs.Bracket > 0 {
@@ -417,25 +463,18 @@ func contains(list []string, name string) bool {
 	return false
 }
 
-func countCards(d *mtgv1.Deck) int {
-	n := 0
-	for _, c := range d.GetCards() {
-		n += int(c.GetCount())
-	}
-	return n
-}
-
+// blocks names the codes of the findings that stop the deck.
 func blocks(d *mtgv1.Deck) []string {
 	var out []string
-	for _, f := range d.GetValidation().GetFindings() {
-		if f.GetSeverity() == mtgv1.Severity_SEVERITY_BLOCK {
-			out = append(out, f.GetCode())
-		}
+	for _, f := range gatekit.BlockFindings(d) {
+		out = append(out, f.GetCode())
 	}
 	return out
 }
 
-func report(w io.Writer, outcomes []outcome, acc *llm.Accumulator, idx *cards.Index, took time.Duration) {
+// report writes the gate document and returns the verdict. A run of zero
+// revisions fails: there is nothing to pass.
+func report(w io.Writer, outcomes []outcome, acc *llm.Accumulator, idx *cards.Index, took time.Duration) bool {
 	// The document is the record, and a write error on stdout ends the
 	// process in any case.
 	pf := func(format string, a ...any) { _, _ = fmt.Fprintf(w, format, a...) }
@@ -445,24 +484,21 @@ func report(w io.Writer, outcomes []outcome, acc *llm.Accumulator, idx *cards.In
 			passed++
 		}
 	}
-	verdict := "PASS"
-	if passed < len(outcomes) {
-		verdict = "FAIL"
+	pass := len(outcomes) > 0 && passed == len(outcomes)
+	verdict := "FAIL"
+	if pass {
+		verdict = "PASS"
 	}
 	pf("# PR-12B revise gate\n\nRun date: %s. Snapshot: %s.\n\n", time.Now().UTC().Format("2006-01-02"), idx.AsOf.Format("2006-01-02"))
 	pf("Verdict: %s. %d of %d revisions met their bar. The bars: an unclear request gets a question or a decline with a reason, a clear request gets a revised deck with no block finding, the deck holds every cap and every removal the message names, and it keeps at least %.0f percent of the untouched cards.\n\n",
 		verdict, passed, len(outcomes), keepBar*100)
 	r := acc.Report()
-	cost := "unpriced"
-	if r.CostUSD != nil {
-		cost = fmt.Sprintf("$%.4f", *r.CostUSD)
-	}
-	pf("Cost: %d calls, %s. Time: %s.\n\n", r.Calls, cost, took.Round(time.Second))
+	pf("Cost: %d calls, %s. Time: %s.\n\n", r.Calls, gatekit.CostWord(r), took.Round(time.Second))
 	pf("| Base | Revision | Message | Outcome | Kept | Result |\n|---|---|---|---|---|---|\n")
 	for _, o := range outcomes {
 		out := "no build"
 		if o.deck != nil {
-			out = fmt.Sprintf("%d cards", countCards(o.deck))
+			out = fmt.Sprintf("%d cards", gatekit.CountCards(o.deck))
 		}
 		if o.brief != nil && o.brief.Question != "" {
 			out = "question"
@@ -501,6 +537,7 @@ func report(w io.Writer, outcomes []outcome, acc *llm.Accumulator, idx *cards.In
 			pf("\nFailures: %s\n", strings.Join(o.failures, "; "))
 		}
 	}
+	return pass
 }
 
 func findings(d *mtgv1.Deck) string {

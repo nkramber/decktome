@@ -15,9 +15,9 @@ func themedState(theme string) *State {
 	return st
 }
 
-// TestNoPlaceholderReachesTheModel is the rule the live run of 2026-08-24
-// broke: the agent sent "{theme} is strongest in {colors}" to the ask role,
-// and the model turned the clause into a second question for the user.
+// TestNoPlaceholderReachesTheModel is D-82. A brace such as "{theme} is
+// strongest in {colors}" that reaches the ask role comes back as a
+// second question aimed at the user.
 func TestNoPlaceholderReachesTheModel(t *testing.T) {
 	c := load(t)
 	for _, r := range c.Rows {
@@ -41,10 +41,9 @@ func colorsStubRow() Row {
 		Fallback: "Any color preference?"}
 }
 
-// TestColorsRowStatesNoFact is D-108. The row asserted which colors a
-// theme is strongest in. Gate run 13 of 2026-08-25 read "Extra-turns
-// decks are strongest in blue and green", and "Black Lotus decks are
-// strongest in black". Black Lotus is a colorless card.
+// TestColorsRowStatesNoFact is D-108. A row that asserts which colors a
+// theme is strongest in can be wrong: "Black Lotus decks are strongest
+// in black", and Black Lotus is a colorless card.
 func TestColorsRowStatesNoFact(t *testing.T) {
 	c := load(t)
 	row, ok := c.Row("colors")
@@ -109,8 +108,8 @@ func TestGuard(t *testing.T) {
 		{"empty falls back", "   ", resolved},
 		{"no question mark falls back", "Tell me your colors.", resolved},
 		{"a long ramble falls back", strings.Repeat("word ", 200) + "?", resolved},
-		// D-150. Gate run 15 asked "What should the Oathbreaker deck
-		// focus on?" one line under "I do not build Oathbreaker".
+		// D-150. "What should the Oathbreaker deck focus on?" one line
+		// under "I do not build Oathbreaker" is a contradiction.
 		{"an unsupported format falls back",
 			"What should the Oathbreaker deck focus on: a creature type, a mechanic, or a play style?", resolved},
 		{"Historic falls back too",

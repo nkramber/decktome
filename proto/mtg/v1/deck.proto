@@ -21,8 +21,9 @@ message Deck {
   repeated string commander_oracle_ids = 6;
   repeated DeckCard cards = 7;
   ValidationResult validation = 8;
-  // legality_as_of is the card-snapshot date the deck was checked against,
-  // ISO 8601. The UI shows it (roadmap PR-3).
+  // legality_as_of is the card-snapshot date of the build's validation,
+  // ISO 8601. It is a copy: validation.legality_as_of is authoritative,
+  // because the last validation writes it. The UI shows this copy.
   string legality_as_of = 9;
   // 10 held seed, which reproduced a build on request (D-18). PR-9 left
   // the MVP, and nothing ever set it. The number and the name are
@@ -32,9 +33,10 @@ message Deck {
   reserved "seed";
   string session_id = 11;
   google.protobuf.Timestamp created_at = 12;
-  // stale marks a deck that a rule change made illegal (D-29, I-1).
+  // stale is reserved for the staleness pass (D-29, I-1), unset today.
   bool stale = 13;
-  // stale_oracle_ids lists the now-illegal cards.
+  // stale_oracle_ids is reserved for the staleness pass (D-29, I-1),
+  // unset today.
   repeated string stale_oracle_ids = 14;
   // sideboard holds up to 15 cards in 60-card formats. Empty in Commander.
   repeated DeckCard sideboard = 15;
@@ -100,7 +102,9 @@ message ValidationResult {
   // passed means no finding has severity BLOCK.
   bool passed = 2;
   // legality_as_of is the card-snapshot date the engine checked against,
-  // ISO 8601. Empty when the engine ran without a snapshot.
+  // ISO 8601. Empty when the engine ran without a snapshot. This field is
+  // authoritative: the last validation writes it, and Deck.legality_as_of
+  // is the copy from the build.
   string legality_as_of = 3;
   // pool_rule is the ownership mode the engine applied (D-37).
   PoolRule pool_rule = 4;

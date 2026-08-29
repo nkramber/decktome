@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
 )
 
 // input writes the session text the model reads. The stable instructions
@@ -14,15 +15,13 @@ import (
 //
 // The shortlist goes last and it is the longest part. Findings and misses
 // are empty on the first turn. On the repair turn, findings holds every
-// finding that bought the turn, the two warnings included (G-1 of the
-// 2026-08-28 audit).
+// finding that bought the turn, the two warnings included (D-244, D-248).
 func (b *Builder) input(req Request, misses []Miss, findings []*mtgv1.Finding) string {
 	var s strings.Builder
 	fmt.Fprintf(&s, "## Limits\n\n%s\n", strings.TrimSpace(req.Limits))
 	fmt.Fprintf(&s, "\n## The deck the user asked for\n\n%s\n", strings.TrimSpace(req.Plan))
-	// Only Commander has a command zone. A 60-card session whose
-	// classifier reported a commander name must not hear that the deck
-	// has one (D-233, G-6 of the 2026-08-28 audit).
+	// Only Commander has a command zone, so a 60-card session never hears
+	// that the deck has one (D-233).
 	if req.Format == mtgv1.FormatId_FORMAT_ID_COMMANDER && len(req.Commanders) > 0 {
 		var names []string
 		for _, id := range req.Commanders {
@@ -62,15 +61,13 @@ func (b *Builder) input(req Request, misses []Miss, findings []*mtgv1.Finding) s
 	}
 	if req.Precon != "" {
 		// D-218 sets the share. A percentage asks the model to do
-		// arithmetic against a list it is still writing, and deck gate
-		// prompts 17 and 18 of 2026-08-28 kept 68 and 29 percent. The
-		// prompt states the count instead, and what it may change (D-248).
+		// arithmetic against a list it is still writing, so the prompt
+		// states the count instead, and what it may change (D-248).
 		//
 		// The count is the precon's nonbasic names. Basic lands swap free,
 		// and the change count is a ceiling and not a target: an upgrade
-		// makes the smallest set of changes that keeps the theme (A-5 of
-		// the 2026-08-28 audit).
-		names := len(preconNonbasics(req))
+		// makes the smallest set of changes that keeps the theme (D-218).
+		names := len(preconNonbasics(req, b.cards))
 		keep := PreconKeepCount(names)
 		change := names - keep
 		fmt.Fprintf(&s, "\n## The precon\n\nThis deck upgrades the %s precon. Its nonbasic cards are %d names, and the shortlist marks each one \"precon\". Basic lands are not counted, and you may swap them freely.\n",
@@ -111,18 +108,13 @@ func (b *Builder) input(req Request, misses []Miss, findings []*mtgv1.Finding) s
 	}
 	// An upgrade keeps the precon's own composition. The generic job
 	// targets prescribe the whole deck, and the share demands most of
-	// those slots come from the precon, so the two instructions fight and
-	// the model splits the difference: prompt 17 kept 54 of the 68 it
-	// needed. A precon is a working deck already (D-249).
+	// those slots come from the precon, so the two instructions fight. A
+	// precon is a working deck already (D-249).
 	//
 	// The land count is not one of those jobs. It is the mana base, and
-	// dropping it with the rest gave both precon decks 25 lands against a
-	// guide of 34 to 38, which the land-count advisory caught (D-251).
-	// A generic land target is a second quota. With "keep 68 precon
-	// cards" it reads as 36 plus 68 of 99 slots, which cannot be met, and
-	// the share fell to 61. The precon's own lands are precon cards, so
-	// the upgrade prompt names the precon's land count in its own block
-	// and sends no target here (D-251).
+	// a generic land target is a second quota against the share. The
+	// upgrade prompt names the precon's land count in its own block and
+	// sends no target here (D-251).
 	targets := req.Targets
 	if req.Precon != "" || req.Revision != nil {
 		targets = nil
@@ -160,16 +152,24 @@ func (b *Builder) input(req Request, misses []Miss, findings []*mtgv1.Finding) s
 }
 
 // shortlist writes one line per card: the name as the model must copy it,
-// the job, and the owned count when a collection is attached.
+// the job, and the owned count when a collection is attached. The
+// commander is in the command zone, so the shortlist omits it and the
+// pool keeps it (D-302).
 func (b *Builder) shortlist(req Request) string {
 	precon := make(map[string]bool, len(req.PreconOracleIDs))
 	for _, id := range req.PreconOracleIDs {
 		precon[id] = true
 	}
+	omit := map[string]bool{}
+	if req.Format == mtgv1.FormatId_FORMAT_ID_COMMANDER {
+		for _, id := range req.Commanders {
+			omit[id] = true
+		}
+	}
 	var s strings.Builder
 	for _, name := range req.Pool.Names() {
 		c, ok := req.Pool.Card(name)
-		if !ok {
+		if !ok || omit[c.GetOracleId()] {
 			continue
 		}
 		fmt.Fprintf(&s, "- %s", c.GetName())
@@ -182,10 +182,8 @@ func (b *Builder) shortlist(req Request) string {
 		if req.OracleCounts != nil {
 			fmt.Fprintf(&s, " | owned %d", req.OracleCounts[c.GetOracleId()])
 		}
-		// The model cannot budget what it cannot see. Deck gate run 5
-		// spent $268.37 against a $100.00 cap on a shortlist whose
-		// cheapest 99 cards cost $25.66, because no line carried a price
-		// (D-244).
+		// The model cannot budget what it cannot see, so every line
+		// carries a price when a budget applies (D-244).
 		if req.BudgetUSD > 0 {
 			fmt.Fprintf(&s, " | $%.2f", c.GetPriceUsd())
 		}
@@ -197,33 +195,18 @@ func (b *Builder) shortlist(req Request) string {
 	return s.String()
 }
 
-// internal/precons holds the decklists, and agentsvc reads the product
-// name from the user's own words, because the classifier reports a card
-// name for an upgrade request and not a product (D-247).
-//
 // checkPreconShare adds a finding when the deck keeps fewer of the
-// precon's nonbasic names than D-218 and A-5 require. It is a build rule
-// and not a rule of the game, so it is a warning and never a block: the
-// user asked for an upgrade, and a refusal to return a deck serves
-// nobody. It reports whether the finding was added.
-func checkPreconShare(deck *mtgv1.Deck, req Request) bool {
-	in := preconNonbasics(req)
+// precon's nonbasic names than D-218 requires. It is a build rule and
+// not a rule of the game, so it is a warning and never a block: the user
+// asked for an upgrade, and a refusal to return a deck serves nobody. It
+// reports whether the finding was added.
+func checkPreconShare(deck *mtgv1.Deck, req Request, cards rules.CardSource) bool {
+	in := preconNonbasics(req, cards)
 	want := len(in)
 	if want == 0 {
 		return false
 	}
-	kept := 0
-	for _, c := range deck.GetCards() {
-		if in[c.GetOracleId()] {
-			kept++
-		}
-	}
-	// The commander counts: it is in the deck, in the command zone.
-	for _, id := range deck.GetCommanderOracleIds() {
-		if in[id] {
-			kept++
-		}
-	}
+	kept := len(heldPrecon(deck, in))
 	if kept >= PreconKeepCount(want) {
 		return false
 	}

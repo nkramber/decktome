@@ -41,8 +41,9 @@ func (b Budget) withDefaults() Budget {
 	return b
 }
 
-// Escalation bounds for a truncation retry, as in connector-syncer:
-// the new cap is min(escalationMax, max(escalationFactor x cap, escalationFloor)).
+// Escalation bounds for a truncation retry. The new cap is
+// min(escalationMax, max(escalationFactor x cap, escalationFloor)), and
+// never more than the provider's own output limit (providerMaxOutput).
 // A small call can not become a huge call.
 const (
 	escalationFactor = 8
@@ -50,21 +51,32 @@ const (
 	escalationMax    = 65536
 )
 
+// providerMaxOutput is the largest max_tokens value an escalation may
+// send to each provider. The values are the smallest "max output" of the
+// models roles.json names, read on 2026-08-29 from
+// https://platform.claude.com/docs/en/docs/about-claude/models/overview
+// (Claude Sonnet 5: 128K, Claude Haiku 4.5: 64K) and from
+// https://developers.openai.com/api/docs/models (gpt-5.6-luna, -terra,
+// and -sol: 128K). Haiku 4.5 sets the Anthropic floor, so an override to
+// it stays legal. A provider not listed here takes escalationMax.
+var providerMaxOutput = map[string]int{
+	AnthropicName: 65536,
+	OpenAIName:    131072,
+}
+
 // Attempt timeout rule (L-4). One attempt gets attemptBase plus
 // attemptPerKTokens for each 1,000 output tokens of its cap, and never
-// more than what is left of the Budget deadline. A 1,024-token classify
-// call gets about 121 s. An escalated 65,536-token generate call asks
-// for 185 s and gets the rest of the three minutes. The old fixed 120 s
-// could not finish an escalated retry, and every attempt was billed.
+// more than what is left of the Budget deadline. The cap-based part is
+// what lets an escalated retry finish inside its own attempt.
 const (
 	attemptBase       = 120 * time.Second
 	attemptPerKTokens = time.Second
 )
 
-// Backoff bounds. A transient delay never exceeds maxBackoff, unless the
-// provider's Retry-After hint asks for more. Jitter moves each delay by
-// up to jitterFraction in either direction, so many callers do not retry
-// in step.
+// Backoff bounds. A transient delay never exceeds maxBackoff, jitter
+// included, unless the provider's Retry-After hint asks for more. Jitter
+// moves each delay by up to jitterFraction in either direction, so many
+// callers do not retry in step.
 const (
 	maxBackoff     = 30 * time.Second
 	jitterFraction = 0.2
@@ -216,9 +228,11 @@ func (c *Client) Complete(ctx context.Context, role Role, req Request, acc *Accu
 		if cerr := ctx.Err(); cerr != nil {
 			return Response{}, newErr(ClassBudget, spec.Provider, spec.Model, 0, fmt.Errorf("%w (attempt %d: %w)", cerr, attempts, err))
 		}
-		if attemptEnded {
-			// The attempt's own timeout ended it, and the budget still
-			// has time. That is a slow provider, so a retry can help.
+		// The attempt's own timeout ended it, and the budget still has
+		// time. That is a slow provider, so a retry can help. A schema
+		// miss or a truncation is a complete answer that arrived as the
+		// timer fired, and each keeps its own class and its own retry.
+		if class := ClassOf(err); attemptEnded && class != ClassSchema && class != ClassTruncation {
 			err = newErr(ClassTransient, spec.Provider, spec.Model, 0, fmt.Errorf("attempt %d timed out: %w", attempts, err))
 		}
 		switch ClassOf(err) {
@@ -226,7 +240,7 @@ func (c *Client) Complete(ctx context.Context, role Role, req Request, acc *Accu
 			if escalated {
 				return Response{}, err
 			}
-			next := escalate(call.MaxOutputTokens)
+			next := escalate(call.MaxOutputTokens, spec.Provider)
 			if next == call.MaxOutputTokens {
 				// The cap is at the maximum. The same cap gives the same truncation.
 				return Response{}, err
@@ -243,12 +257,25 @@ func (c *Client) Complete(ctx context.Context, role Role, req Request, acc *Accu
 			c.log.Warn("llm schema miss, one retry", "role", role, "model", spec.Model, "err", err)
 			continue
 		case ClassTransient:
+			// No sleep before an attempt the budget forbids: the caller
+			// learns the outcome now instead of after a full backoff.
+			if attempts >= c.budget.MaxAttempts {
+				return Response{}, newErr(ClassBudget, spec.Provider, spec.Model, 0,
+					fmt.Errorf("attempt budget of %d used: %w", c.budget.MaxAttempts, err))
+			}
 			transient++
 			delay := c.backoff(transient)
+			left := c.budget.Deadline - time.Since(start)
+			// A hint longer than the budget can not be honored, and a sleep
+			// that ends at the deadline buys nothing.
 			if hint := retryAfterOf(err); hint > delay {
+				if hint > left {
+					return Response{}, newErr(ClassBudget, spec.Provider, spec.Model, 0,
+						fmt.Errorf("retry-after hint of %v exceeds the %v left of the deadline: %w", hint, left.Round(time.Millisecond), err))
+				}
 				delay = hint
 			}
-			if left := c.budget.Deadline - time.Since(start); delay > left {
+			if delay > left {
 				delay = left
 			}
 			c.log.Warn("llm transient failure, backoff", "role", role, "model", spec.Model, "attempt", attempts, "delay", delay, "err", err)
@@ -276,23 +303,23 @@ func attemptTimeout(base time.Duration, maxOutputTokens int, left time.Duration)
 }
 
 // backoff returns the delay before transient retry n (1-based): BaseDelay
-// doubled per retry, capped at maxBackoff, then moved by the jitter.
+// doubled per retry, moved by the jitter, then capped at maxBackoff.
 func (c *Client) backoff(n int) time.Duration {
 	delay := c.budget.BaseDelay
 	for i := 1; i < n && delay < maxBackoff; i++ {
 		delay *= 2
 	}
+	c.rngMu.Lock()
+	defer c.rngMu.Unlock()
+	if c.rng != nil {
+		// f is in [-jitterFraction, +jitterFraction).
+		f := (c.rng.Float64()*2 - 1) * jitterFraction
+		delay += time.Duration(float64(delay) * f)
+	}
 	if delay > maxBackoff {
 		delay = maxBackoff
 	}
-	c.rngMu.Lock()
-	defer c.rngMu.Unlock()
-	if c.rng == nil {
-		return delay
-	}
-	// f is in [-jitterFraction, +jitterFraction).
-	f := (c.rng.Float64()*2 - 1) * jitterFraction
-	return delay + time.Duration(float64(delay)*f)
+	return delay
 }
 
 // retryAfterOf reads the provider's Retry-After hint from err, or 0.
@@ -304,13 +331,19 @@ func retryAfterOf(err error) time.Duration {
 	return 0
 }
 
-func escalate(limit int) int {
+// escalate returns the next cap after a truncation, or limit when the
+// cap can not grow. The result never exceeds the provider's own limit.
+func escalate(limit int, provider string) int {
 	n := limit * escalationFactor
 	if n < escalationFloor {
 		n = escalationFloor
 	}
-	if n > escalationMax {
-		n = escalationMax
+	top := escalationMax
+	if m, ok := providerMaxOutput[provider]; ok && m < top {
+		top = m
+	}
+	if n > top {
+		n = top
 	}
 	if n <= limit {
 		return limit

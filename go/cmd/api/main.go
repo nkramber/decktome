@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -46,17 +47,18 @@ var version = "dev"
 // CARDS_RELOAD_SECONDS overrides it (make dev sets 15 for fast seeding).
 const defaultReloadSeconds = 600
 
-// maxRequestBytes bounds one request body before it enters memory
-// (C-10). The largest expected body is a ManaBox export, under 5 MiB.
+// maxRequestBytes bounds one request body before it enters memory. The
+// largest expected body is a ManaBox export, under 5 MiB.
 const maxRequestBytes = 8 << 20
 
-// Server timing (L-15). A Chat stream holds a connection for minutes, so
-// there is no ReadTimeout. IdleTimeout closes keep-alive connections that
+// Server timing. A Chat stream holds a connection for minutes, so there
+// is no ReadTimeout. IdleTimeout closes keep-alive connections that
 // carry nothing. shutdownTimeout gives a stream that is mid-build time
-// to end before the process exits.
+// to end before the process exits: the build limit plus a margin for
+// the store writes that follow it (D-303).
 const (
 	idleTimeout     = 120 * time.Second
-	shutdownTimeout = 30 * time.Second
+	shutdownTimeout = agentsvc.DefaultBuildLimit + time.Minute
 )
 
 // Environment the api reads: PORT, ALLOW_DEBUG_USER, DEBUG_USER_ID,
@@ -103,7 +105,7 @@ func run(ctx context.Context, logger *slog.Logger) error {
 		return fmt.Errorf("firestore init: %w", err)
 	}
 	defer func() { _ = fs.Close() }()
-	// The interceptor puts the user id in the context (A-12).
+	// The interceptor puts the user id in the context.
 	userFn := auth.UserID
 	collectionRepo := collections.NewRepo(fs)
 	collectionServer := collectionsvc.New(collectionRepo, cardServer, userFn)
@@ -112,14 +114,14 @@ func run(ctx context.Context, logger *slog.Logger) error {
 		return fmt.Errorf("rules data: %w", err)
 	}
 	// The deck store holds what a build produced (D-245). One repo serves
-	// the build and the reads (L-19).
+	// the build and the reads.
 	deckRepo := decks.NewRepo(fs)
 	deckServer := decksvc.New(rulesCfg, cardServer,
 		decksvc.WithCollections(collectionRepo),
 		decksvc.WithDecks(deckRepo),
 		decksvc.WithUser(userFn))
-	// The LLM role layer (PR-10). Building it here proves the config and
-	// the keys at startup, not on the first user turn.
+	// The LLM role layer. Building it here proves the config and the
+	// keys at startup, not on the first user turn.
 	llmClient, err := llm.NewFromEnv(os.Getenv, logger)
 	if err != nil {
 		return fmt.Errorf("llm config: %w", err)
@@ -141,7 +143,7 @@ func run(ctx context.Context, logger *slog.Logger) error {
 	mux.Handle(mtgv1connect.NewDeckServiceHandler(deckServer, opts...))
 	mux.Handle(mtgv1connect.NewAgentServiceHandler(agentServer, opts...))
 	// /healthz is liveness: the process answers. /readyz is readiness:
-	// a card index is loaded, so the RPCs can answer (L-14).
+	// a card index is loaded, so the RPCs can answer.
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
 		writeStatus(w, healthServer.Status(), http.StatusOK)
 	})
@@ -152,9 +154,10 @@ func run(ctx context.Context, logger *slog.Logger) error {
 		}
 		writeStatus(w, healthServer.Status(), code)
 	})
-	handler := auth.CORS(auth.ParseOrigins(os.Getenv("ALLOWED_ORIGINS")), mux)
+	inflight := &inflightCounter{}
+	handler := auth.CORS(auth.ParseOrigins(os.Getenv("ALLOWED_ORIGINS")), inflight.wrap(mux))
 
-	// Listen first (C-17). The snapshot loads in the background, so the
+	// Listen first. The snapshot loads in the background, so the
 	// Cloud Run startup probe sees a port inside its window. The card
 	// handlers answer Unavailable until the first index lands.
 	srv := &http.Server{
@@ -193,15 +196,32 @@ func run(ctx context.Context, logger *slog.Logger) error {
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
 	err = srv.Shutdown(shutdownCtx)
+	if n := inflight.n.Load(); n > 0 {
+		// The shutdown window ended with streams still open. Each one
+		// is a turn the client must send again.
+		logger.Warn("shutdown cut open requests", "count", n, "window", shutdownTimeout.String())
+	}
 	// A snapshot load mid-flight ends with the loop context, and the
-	// exit waits for it, so a half-swapped index never outlives the
-	// server (L-15).
+	// exit waits for it, so a half-swapped index does not outlive the
+	// server.
 	stopLoop()
 	<-loopDone
 	if err != nil {
 		return fmt.Errorf("api shutdown: %w", err)
 	}
 	return nil
+}
+
+// inflightCounter counts the requests a handler is serving, so the
+// shutdown log can say how many streams it cut.
+type inflightCounter struct{ n atomic.Int64 }
+
+func (c *inflightCounter) wrap(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		c.n.Add(1)
+		defer c.n.Add(-1)
+		next.ServeHTTP(w, r)
+	})
 }
 
 // writeStatus writes the health document with the given HTTP code.
@@ -222,7 +242,7 @@ type authSetup struct {
 	opts     []auth.Option
 }
 
-// authOptions applies A-12 and C-3. Local mode keeps the debug user as
+// authOptions picks the verifier and the fallback. Local mode keeps the debug user as
 // the fallback for a request with no token. On Cloud Run the fallback
 // exists only with ALLOW_DEBUG_USER=1, and a missing or refused token is
 // Unauthenticated otherwise.
@@ -257,8 +277,7 @@ func authOptions(ctx context.Context, project string, logger *slog.Logger) (auth
 }
 
 // liveCards answers the rules engine from the current index. The index
-// lands after the builder is made, so the builder must not hold one
-// (L-1).
+// lands after the builder is made, so the builder must not hold one.
 type liveCards struct{ src *cardsvc.Server }
 
 func (l liveCards) ByOracleID(id string) (*mtgv1.Card, bool) {
@@ -270,7 +289,7 @@ func (l liveCards) ByOracleID(id string) (*mtgv1.Card, bool) {
 }
 
 // preconSource resolves the precon lists against the current index, once
-// per snapshot (L-2). Before the first snapshot it answers nil, and the
+// per snapshot. Before the first snapshot it answers nil, and the
 // upgrade path then runs as an ordinary build.
 type preconSource struct {
 	src *cardsvc.Server
@@ -284,21 +303,30 @@ func newPreconSource(src *cardsvc.Server, log *slog.Logger) *preconSource {
 	return &preconSource{src: src, log: log}
 }
 
-// Current implements agentsvc.PreconSource.
+// Current implements agentsvc.PreconSource. The resolve runs outside
+// the lock, so a turn that arrives during it is not held. Two callers
+// that resolve the same index at once both install the same set, and
+// the first one wins.
 func (p *preconSource) Current() *precons.Set {
 	idx := p.src.Current()
 	if idx == nil {
 		return nil
 	}
 	p.mu.Lock()
-	defer p.mu.Unlock()
-	if idx == p.idx {
-		return p.set
+	cachedIdx, cachedSet := p.idx, p.set
+	p.mu.Unlock()
+	if idx == cachedIdx {
+		return cachedSet
 	}
 	set, err := precons.Load(idx)
 	if err != nil {
 		p.log.Warn("precon decklists unavailable, an upgrade keeps no share", "err", err)
 		set = nil
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.idx == idx {
+		return p.set
 	}
 	p.idx, p.set = idx, set
 	return p.set
@@ -308,14 +336,13 @@ func (p *preconSource) Current() *precons.Set {
 // that needs it.
 func (p *preconSource) refresh() { p.Current() }
 
-// agentService wires the question workflow (PR-7) and the build (PR-8).
-// The card index and the candidate builder feed the PR-6 hints, so a
-// question that names a value names a real card. The generator reads
-// the live index, so a deployment builds decks as chat-probe does (L-1).
+// agentService wires the question workflow and the build. The card
+// index and the candidate builder feed the hints, so a question that
+// names a value names a real card. The generator reads the live index.
 // A missing price table only costs the cost field of the usage event.
 func agentService(client *llm.Client, fs *firestore.Client, index *cardsvc.Server,
 	cols *collections.Repo, deckRepo *decks.Repo, rulesCfg *rules.Config, preconSrc agentsvc.PreconSource,
-	userFn agentsvc.UserFunc, logger *slog.Logger) (*agentsvc.Server, error) {
+	userFn auth.UserFunc, logger *slog.Logger) (*agentsvc.Server, error) {
 	cat, err := questions.Load()
 	if err != nil {
 		return nil, err
@@ -368,7 +395,7 @@ func loadSnapshot(ctx context.Context, store cards.Store, server *cardsvc.Server
 }
 
 // reloadLoop polls the store until ctx ends. onLoad runs after every
-// version change, so a dependent of the index re-resolves (L-2).
+// version change, so a dependent of the index re-resolves.
 func reloadLoop(ctx context.Context, store cards.Store, server *cardsvc.Server, lastVersion string, logger *slog.Logger, onLoad func()) {
 	seconds := defaultReloadSeconds
 	if v, err := strconv.Atoi(os.Getenv("CARDS_RELOAD_SECONDS")); err == nil && v > 0 {

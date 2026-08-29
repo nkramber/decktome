@@ -35,7 +35,7 @@ Note: `buf`, `protoc-gen-go`, and `protoc-gen-connect-go` are not separate insta
 
 1. Install nvm from https://github.com/nvm-sh/nvm.
 2. In the repo root, run `nvm install`. It reads `.nvmrc` (Node 22.23.2, the 22 LTS line).
-3. Run `nvm use`. Vite 7 needs Node 20.19 or 22.12 and newer. An older Node prints a warning on each build and fails the web tests.
+3. Run `nvm use`. The repo needs Node 22.12 or newer on the 22 line (`engines`). Node 20 fails the web tests with `ERR_REQUIRE_ESM`.
 4. Run `corepack enable`.
 5. Run `corepack prepare pnpm@9.2.0 --activate`. The version comes from `packageManager` in `web/package.json`.
 6. Run `pnpm --version` to confirm.
@@ -51,7 +51,7 @@ The Firestore and Auth emulators (PR-0c) need both.
 
 ## 7. Install Docker (D-10)
 
-Docker is not needed for `make dev`. It is needed for the Compose file (PR-0c) and for Cloud Run parity. When the daemon is stopped, `make doctor` prints a `warn` line and still passes.
+`make dev` does not need Docker. The Compose file (PR-0c) and Cloud Run parity need it. When the daemon does not run, `make doctor` prints a `warn` line and still passes.
 
 1. Run `brew install --cask docker`. Or download Docker Desktop from https://docs.docker.com/desktop/setup/install/mac-install/.
 2. Open Docker Desktop once. Accept the license. Wait for the whale icon to show "running".
@@ -62,7 +62,7 @@ CAUTION: Docker Desktop needs a paid subscription for large companies. Personal 
 
 ## 8. Install the Google Cloud CLI
 
-Needed for `mtg-dev` and `mtg-prod` (D-24). Not needed for local work.
+The `mtg-dev` and `mtg-prod` projects need it (D-24). Local work does not.
 
 1. Run `brew install --cask google-cloud-sdk`.
 2. Run `gcloud init`.
@@ -75,7 +75,7 @@ Needed for `mtg-dev` and `mtg-prod` (D-24). Not needed for local work.
 3. Run `make proto`. It builds buf and regenerates code. `git status` must stay clean.
 4. Run `make lint`.
 5. Run `make test`.
-6. Run `make dev`. Open http://localhost:5180. The page shows the API health check.
+6. Run `make dev`. Open http://localhost:5180. The page shows the sign-in form, and the API health line sits in the footer.
 7. Press Ctrl-C to stop the stack.
 
 Other targets: `make test-smoke` (live LLM test, needs `.env`), `make llm-defaults-check`, `make dev-seed`, `make cover`, `make build`, `make proto-breaking`. Run `make help` for the full list.

@@ -7,16 +7,9 @@ import (
 	"testing"
 )
 
-// The question layer collected more than the build consumed, six times
-// over. commander_not_owned, commander_weak_pool, budget_scope, the
-// precon share, the locked cards, and the build-run freeze were each
-// found by accident while chasing something else (D-226, D-232, D-238,
-// D-240, D-241, D-242).
-//
-// This test makes the hand-off explicit. Every field of the Slots message
-// is either read by the build or named below as deliberately unread. A
-// new field with neither fails the test, so the seventh instance is
-// caught here and not in a gate run months later (D-243).
+// Every field of the Slots message is either read by the build or named
+// below as deliberately unread. A new field with neither fails the test
+// (D-243).
 
 // unreadSlots names the Slots fields the build does not read, and why.
 // A field leaves this map when the build starts reading it.

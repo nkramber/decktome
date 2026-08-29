@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"slices"
 	"testing"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
@@ -241,7 +242,7 @@ func TestNoRepeatAcrossTurns(t *testing.T) {
 }
 
 // TestUsageAccumulates proves a turn reports its tokens, which is what M-1
-// and the owner's cost review read.
+// and the cost review read.
 func TestUsageAccumulates(t *testing.T) {
 	var out classifyOut
 	out.Format, out.Theme, out.PoolRule = "commander", "lifegain", "any_card"
@@ -267,10 +268,10 @@ func TestUsageAccumulates(t *testing.T) {
 	}
 }
 
-// TestClassifySeesThePriorMessages is audit Q-13. The classify prompt
-// told the model to repeat a value from an earlier message, and the
-// model never saw one. The input now carries the last five earlier
-// messages, and the current message is not among them.
+// TestClassifySeesThePriorMessages is D-90. The classify prompt must not
+// ask the model to repeat a value from a message it never saw. The input
+// carries the last five earlier messages, and the current message is not
+// among them.
 func TestClassifySeesThePriorMessages(t *testing.T) {
 	out := classifyOut{Format: "unknown", PoolRule: "unknown"}
 	a, sc := testAgent(t, classifyStep(t, out), fits(t, "format", "theme", "colors"), askStep(t))
@@ -302,7 +303,7 @@ func TestClassifySeesThePriorMessages(t *testing.T) {
 	}
 }
 
-// TestFailedClassifyLeavesNoTrace is the low finding beside Q-13. The
+// TestFailedClassifyLeavesNoTrace is the other half of D-90. The
 // message and the turn count joined the state before the classify call,
 // so a failed call left a half turn behind.
 func TestFailedClassifyLeavesNoTrace(t *testing.T) {
@@ -323,4 +324,82 @@ func ids2(qs []*mtgv1.Question) []string {
 		out = append(out, q.GetSlot())
 	}
 	return out
+}
+
+// TestClosedRowKeepsTheCatalogOptions is D-295. The options of a closed
+// row are the whole answer space, so the ask role's rewording must not
+// replace them. An open row still takes the reworded options.
+func TestClosedRowKeepsTheCatalogOptions(t *testing.T) {
+	a, _ := testAgent(t,
+		classifyStep(t, classifyOut{Format: "unknown", PoolRule: "unknown"}),
+		fits(t, "format", "theme", "house_rules"),
+		askStep(t,
+			phrasing{RowID: "format", Text: "Which format would you like?", Options: []string{"Cmdr", "Std", "Mdn"}},
+			phrasing{RowID: "house_rules", Text: "Is it any card with no ban list?", Options: []string{"Any card at all", "Something else"}},
+		))
+	st := NewState(false)
+	res, err := a.Turn(context.Background(), st, "A kitchen table deck.", nil)
+	if err != nil {
+		t.Fatalf("turn: %v", err)
+	}
+	cat := load(t)
+	closed, _ := cat.Row("format")
+	q := question(res.Questions, "format")
+	if q == nil {
+		t.Fatalf("no format question: %v", res.Questions)
+	}
+	if !q.GetClosed() {
+		t.Error("the format question is not closed")
+	}
+	if got := q.GetOptions(); !slices.Equal(got, closed.Options) {
+		t.Errorf("closed row options = %v, want the catalog options %v", got, closed.Options)
+	}
+	open := question(res.Questions, "house_rules")
+	if open == nil {
+		t.Fatalf("no house-rules question: %v", res.Questions)
+	}
+	if got := open.GetOptions(); !slices.Equal(got, []string{"Any card at all", "Something else"}) {
+		t.Errorf("open row options = %v, want the reworded options", got)
+	}
+}
+
+// TestScoreCallSkipsTheFixedRows is D-117 at the score call. A fixed
+// row goes out as written whatever its score, so the call names only
+// the rows a score can change.
+func TestScoreCallSkipsTheFixedRows(t *testing.T) {
+	out := commanderClassify()
+	p := play(t, false, nil, []turnScript{
+		{"A Commander lifegain deck, white and black.", out},
+	})
+	if !p.askedOn(1, "commander") || !p.askedOn(1, "power_commander") {
+		t.Fatalf("turn 1 asked %v, want the commander row and the power row", p.rows)
+	}
+	var scored [][]string
+	for _, call := range p.fake.calls {
+		if call.SchemaName != "score_questions" {
+			continue
+		}
+		var in struct {
+			Rows []struct {
+				ID string `json:"id"`
+			} `json:"rows"`
+		}
+		if err := json.Unmarshal([]byte(call.Input), &in); err != nil {
+			t.Fatal(err)
+		}
+		var ids []string
+		for _, r := range in.Rows {
+			ids = append(ids, r.ID)
+		}
+		scored = append(scored, ids)
+	}
+	if len(scored) != 1 {
+		t.Fatalf("score calls = %d, want 1", len(scored))
+	}
+	if slices.Contains(scored[0], "commander") {
+		t.Errorf("the score call named the fixed commander row: %v", scored[0])
+	}
+	if !slices.Contains(scored[0], "power_commander") {
+		t.Errorf("the score call left out the power row: %v", scored[0])
+	}
 }

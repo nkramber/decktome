@@ -18,8 +18,8 @@
 # The evidence of a dropped change is kept under .local/tune/rejected/
 # (D-180).
 #
-# The loop commits to its own branch and does not push. Add --push when
-# the owner wants the branch on the remote as it goes.
+# The loop commits to its own branch and does not push. Add --push to
+# push the branch to the remote as it goes (OQ-25).
 #
 #   AUTOTUNE_ALLOW_UNATTENDED=1 scripts/autotune.sh --budget 3.00 --max 20 \
 #     --base pr-7c --baseline .local/tune/run18.json
@@ -32,9 +32,9 @@
 # before the next one starts. Ctrl-C also works and it abandons the
 # iteration in flight.
 #
-# --base names the branch the owner keeps for loop output. The run cuts a
-# working branch off it and pushes nothing. After the review, the owner
-# fast-forwards the base, and the next night continues from there.
+# --base names the long-lived branch for loop output. The run cuts a
+# working branch off it and pushes nothing. After the review, the base is
+# fast-forwarded by hand, and the next night continues from there (D-142).
 #
 # The loop stops, and rejects nothing, on a tool fault: an unpriced run,
 # a partial eval, a checker that exits 2, or a checker that does not
@@ -50,9 +50,8 @@ ROOT="$(pwd)"
 BUDGET="3.00"
 BASELINE_JSON=""
 # BASELINE_DOC is the eval report that goes with BASELINE_JSON. The fixer
-# reads the report, and the checker reads the JSON. Supplying a baseline
-# skips the -000 run, so without this the first iteration had no report
-# to act on and the fixer failed at once (D-160).
+# reads the report, and the checker reads the JSON. A baseline skips the
+# -000 run, so the first iteration needs this report to act on (D-160).
 BASELINE_DOC=""
 # BASE_REF is the branch the run starts from. Empty means the current
 # branch. A named long-lived branch is what makes two nights add up
@@ -62,14 +61,14 @@ MAX_ITERATIONS="20"
 TARGET_RATIO="0.05"
 EVAL_BUDGET="0.50"
 # NOISE is how many bad questions two runs of identical code differ by.
-# Empty means the Go constant tune.DefaultNoise, which is 9 (D-230). The
-# script carried its own 3 from D-183 for two days after D-230 raised the
-# constant, so the two disagreed (T-7, A-3).
+# Empty means the Go constant tune.DefaultNoise, which the checker prints
+# with -print-noise. The script holds no copy of its own, so the two can
+# not disagree (D-230, T-7).
 NOISE=""
 BRANCH_PREFIX="auto-tune"
 DRY_RUN="0"
-# Nothing leaves the machine unless the owner asks. The loop commits to a
-# branch of its own, and the owner pushes after reading it (OQ-25).
+# Nothing leaves the machine without --push. The loop commits to a branch
+# of its own, and the branch is pushed after a review (OQ-25).
 PUSH="0"
 
 while [ $# -gt 0 ]; do
@@ -101,9 +100,9 @@ STOP_FILE="$STATE_DIR/STOP"
 LOG="$STATE_DIR/autotune.log"
 LESSONS="$ROOT/docs/reference/autotune-lessons.md"
 REJECTED_DIR="$STATE_DIR/rejected"
-# TUNE_CHECK is the checker, built once at the start. A go run each time
-# would read the exit code of the Go toolchain when the tree does not
-# build, and that code is the reject code (T-12).
+# TUNE_CHECK is the checker, built once from the base branch. A go run
+# each time would read the exit code of the Go toolchain when the tree
+# does not build, and that code is the reject code (T-12).
 TUNE_CHECK="$STATE_DIR/tune-check.bin"
 mkdir -p "$STATE_DIR"
 
@@ -119,7 +118,7 @@ die() { say "STOP: $*"; exit 1; }
 # prompt and the lessons file are the loop's memory, and a fixer that
 # edits its own memory forgets what it was told (D-182). The gate
 # command, its metrics, the role table, and the price table are the
-# scorecard, and they joined the list on 2026-08-28 (T-10).
+# scorecard (T-10).
 FROZEN="
 go/cmd/questions-eval
 go/cmd/questions-gate/main.go
@@ -150,7 +149,7 @@ frozen_touched() {
       return 0
     fi
   done
-  # The M-5 sheets are the owner's record. Nothing may rewrite one.
+  # The M-5 sheets are the hand-scored record. Nothing may rewrite one.
   if grep -q '^docs/reference/pr7-m5-scoring' <<<"$changed"; then
     echo "docs/reference/pr7-m5-scoring*"
     return 0
@@ -167,8 +166,8 @@ frozen_touched() {
 spent() { [ -f "$LEDGER" ] && awk '{s+=$1} END {printf "%.4f", s+0}' "$LEDGER" || echo "0.0000"; }
 # charge adds one priced run to the ledger. It runs at the top level and
 # never inside a command substitution, so a cost that is empty or not a
-# number stops the loop here. An unpriced run charged $0 before, because
-# the die inside $(...) killed a subshell alone (T-1).
+# number stops the loop here: a die inside $(...) kills the subshell
+# alone (T-1).
 charge() {  # $1 = cost in USD, $2 = what it paid for
   case "$1" in
     ''|*[!0-9.]*|.|*.*.*) die "$2 carries no priced cost (got '${1:-}'), so the budget can not count it. Add the model to prices.json." ;;
@@ -179,8 +178,9 @@ over_budget() { awk -v s="$(spent)" -v b="$BUDGET" 'BEGIN {exit !(s >= b)}'; }
 
 # cost_of reads the "- Cost: $0.1234." line a run document writes. It
 # prints nothing for a document with no priced line, and charge decides.
+# The value is printed in fixed notation: charge rejects an exponent.
 cost_of() {
-  grep -o -- '- Cost: \$[0-9.]*' "$1" 2>/dev/null | tail -1 | tr -d '$' | awk '{print $3+0}'
+  grep -o -- '- Cost: \$[0-9.]*' "$1" 2>/dev/null | tail -1 | tr -d '$' | awk '{printf "%.6f", $3+0}'
 }
 
 green() {
@@ -190,43 +190,55 @@ green() {
 
 # --- Preflight ---------------------------------------------------------
 [ "${AUTOTUNE_ALLOW_UNATTENDED:-0}" = "1" ] || \
-  die "this loop edits code and pushes with no person watching. Set AUTOTUNE_ALLOW_UNATTENDED=1 to allow it."
+  die "this loop edits code and commits with no person watching, and it pushes with --push. Set AUTOTUNE_ALLOW_UNATTENDED=1 to allow it."
 [ -f "$ROOT/.env" ] || die "no .env, so no API keys"
 # Not "A && B || C": that runs C when A succeeds and B fails, which is
 # the same answer here, but shellcheck can not know it (SC2015).
 if ! git diff --quiet || ! git diff --cached --quiet; then
   die "the working tree is dirty. Commit or stash first."
 fi
-# An untracked file would ride into a loop commit under the owner's name,
-# because the loop commits with git add -A (audit H-1).
+# An untracked file would ride into a loop commit, because the loop
+# commits with git add -A.
 untracked="$(git ls-files --others --exclude-standard)"
 [ -z "$untracked" ] || die "untracked files would ride into a loop commit. Commit, stash, or remove: $(tr '\n' ' ' <<<"$untracked")"
 
-# The checker is built once, from the frozen code, before anything else
-# runs. Its exit codes are then its own (T-12).
+# START_BRANCH is where the checkout stood before the loop. A dry run
+# never switches away from it, and a real run switches back on exit.
+START_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+restore_branch() {
+  [ "$(git rev-parse --abbrev-ref HEAD)" = "$START_BRANCH" ] && return 0
+  git switch "$START_BRANCH" >/dev/null 2>&1 || say "WARNING: could not switch back to $START_BRANCH"
+}
+trap restore_branch EXIT
+
+# The base is a long-lived branch. Every night cuts a working branch off
+# it, and the base is fast-forwarded after the review, so two nights add
+# up. A loop that always starts from main would give the second night
+# none of the first night's accepted work (D-142). A dry run reads the
+# base and stays on the current branch.
+if [ -n "$BASE_REF" ]; then
+  git rev-parse --verify --quiet "$BASE_REF" >/dev/null || die "no branch $BASE_REF"
+  if [ "$DRY_RUN" = "1" ]; then
+    say "dry run: the checkout stays on $START_BRANCH, and a real run would start from $BASE_REF"
+  else
+    git switch "$BASE_REF" >/dev/null 2>&1 || die "could not switch to $BASE_REF"
+  fi
+fi
+BASE_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+
+# The checker is built after the switch, from the frozen code of the base
+# branch, before anything else runs. Its exit codes are then its own
+# (T-12).
 ( cd "$ROOT/go" && go build -o "$TUNE_CHECK" ./cmd/tune-check ) || die "the checker does not build"
 if [ -z "$NOISE" ]; then
   NOISE="$("$TUNE_CHECK" -print-noise)" || die "the checker did not print its noise margin"
 fi
-
-# The base is a branch the owner keeps. Every night cuts a working branch
-# off it, and the owner fast-forwards the base after the review. Two
-# nights therefore add up. A loop that always starts from main would give
-# the second night none of the first night's accepted work, and the owner
-# would merge two branches that changed the same rows (D-142).
-if [ -n "$BASE_REF" ]; then
-  git rev-parse --verify --quiet "$BASE_REF" >/dev/null || die "no branch $BASE_REF"
-  git switch "$BASE_REF" >/dev/null 2>&1 || die "could not switch to $BASE_REF"
-fi
-BASE_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 case "$BASE_BRANCH" in
   main|master) say "WARNING: the base is $BASE_BRANCH. Two nights from here will diverge, not add up." ;;
 esac
 STAMP="$(date -u +%Y%m%d-%H%M%S)"
-# The ledger is per run. It used to be one file for every run ever, so
-# --budget counted spend from earlier nights and each run had less to
-# spend than the one before it. The whole record is the set of these
-# files (D-179).
+# The ledger is per run, so --budget counts this run alone. The whole
+# record is the set of these files (D-179).
 LEDGER="$STATE_DIR/ledger-$STAMP.txt"
 BRANCH="$BRANCH_PREFIX/$STAMP"
 say "base branch $BASE_BRANCH, working branch $BRANCH"
@@ -242,9 +254,8 @@ set -a
 set +a
 export CARDS_SNAPSHOT_DIR="${CARDS_SNAPSHOT_DIR:-$ROOT/.local/gcs/mtg-local-cards/scryfall}"
 
-# conv_count reads the size of the conversation set. A hardcoded number
-# goes stale: the set grew from 52 to 66 to 100 to 104, and the log still
-# said 66 (D-145, D-155).
+# conv_count reads the size of the conversation set from the file, so the
+# log can not go stale when the set grows (D-145, D-155).
 conv_count() {
   python3 -c "import json,sys;d=json.load(open(sys.argv[1]));print(len(d if isinstance(d,list) else d['conversations']))" \
     "$ROOT/go/cmd/questions-gate/conversations.json" 2>/dev/null || echo "?"
@@ -300,8 +311,8 @@ fixer_json_of() {  # $1 = eval summary
 }
 
 # commit_all commits everything in the tree. The result is checked: a
-# commit that failed left accepted work uncommitted, and the next revert
-# to LAST_GOOD destroyed it with no log line (audit M-11).
+# commit that fails must stop the loop, or the next revert to LAST_GOOD
+# destroys the uncommitted work.
 commit_all() {  # $1 = version, $2 = subject, $3 = eval summary (optional)
   if [ "$DRY_RUN" = "1" ]; then say "dry run: no commit"; return 0; fi
   case "$(git rev-parse --abbrev-ref HEAD)" in
@@ -401,8 +412,8 @@ preserve() {  # $1 = label, $2 = why
 }
 
 # revert_to_last_good resets the working branch. It never runs in a dry
-# run, where the branch is the owner's base and LAST_GOOD is its tip: a
-# reset there threw away the owner's uncommitted state once (T-13).
+# run, where the branch is the starting branch and LAST_GOOD is its tip:
+# a reset there would throw away uncommitted work (T-13).
 revert_to_last_good() {
   if [ "$DRY_RUN" = "1" ]; then say "dry run: no revert"; return 0; fi
   git reset -q --hard "$LAST_GOOD"
@@ -411,7 +422,7 @@ revert_to_last_good() {
 
 # reject preserves the evidence, reverts, records the lesson, and counts
 # the rejection. Every reject path runs through here, so none can skip
-# the preserve step (audit 2026-08-28).
+# the preserve step (D-180).
 reject() {  # $1 = label, $2 = why
   say "REVERT: $2"
   preserve "$1" "$2"
@@ -438,9 +449,8 @@ record_lesson() {  # $1 = label, $2 = outcome word
 # --- Baseline ----------------------------------------------------------
 say "budget \$$BUDGET, target ratio $TARGET_RATIO, noise margin $NOISE, at most $MAX_ITERATIONS iterations"
 # A scored run already on disk is the baseline. The loop pays for its own
-# only when the owner gives it none. A baseline the owner named and the
-# loop can not read stops the run: a typo must not buy a new baseline
-# (audit H-4).
+# only when none is given. A named baseline the loop can not read stops
+# the run: a typo must not buy a new baseline.
 # tune-check runs from go/, so a relative baseline path resolves against
 # the wrong directory. Make both absolute before anything reads them.
 case "$BASELINE_JSON" in ""|/*) ;; *) BASELINE_JSON="$ROOT/$BASELINE_JSON" ;; esac
@@ -456,9 +466,9 @@ if [ -n "$BASELINE_JSON" ]; then
   is_partial "$BASELINE_JSON" && die "the baseline $BASELINE_JSON is a partial eval: $(stopped_reason "$BASELINE_JSON")"
   BEST="$BASELINE_JSON"
   BEST_LABEL="$(basename "$BASELINE_JSON" .json)"
-  # The fixer needs the report, not the summary. Take the name the owner
-  # gave, or the one that matches the summary: .local/tune/run18.json goes
-  # with docs/reference/pr7-question-eval-run18.md.
+  # The fixer needs the report, not the summary. Take the name given, or
+  # the one that matches the summary: .local/tune/run18.json goes with
+  # docs/reference/pr7-question-eval-run18.md.
   if [ -z "$BASELINE_DOC" ]; then
     BASELINE_DOC="$(eval_doc_of "$BEST_LABEL")"
   fi
@@ -483,7 +493,13 @@ else
   commit_all "v0.0" "baseline run for the tuning loop" "$BEST"
 fi
 LAST_GOOD="$(git rev-parse HEAD)"
-[ -f "$LESSONS" ] || { printf '# What the tuning loop learned\n\nThe loop appends one block per iteration (D-182).\n' > "$LESSONS"; commit_all "lessons" "start the lessons file"; LAST_GOOD="$(git rev-parse HEAD)"; }
+# The lessons file is bootstrapped on the working branch alone. A dry run
+# commits nothing, so it creates nothing (T-13).
+if [ ! -f "$LESSONS" ] && [ "$DRY_RUN" != "1" ]; then
+  printf '# What the tuning loop learned\n\nThe loop appends one block per iteration (D-182).\n' > "$LESSONS"
+  commit_all "lessons" "start the lessons file"
+  LAST_GOOD="$(git rev-parse HEAD)"
+fi
 
 # accept_run commits an accepted iteration and moves the baseline. BEST
 # moves only when the new run scored at least as well (T-6).
@@ -527,6 +543,8 @@ while [ "$i" -lt "$MAX_ITERATIONS" ]; do
   if ! AUTOTUNE_EVAL_DOC="$PREV_DOC" AUTOTUNE_LABEL="$LABEL" AUTOTUNE_LESSONS="$LESSONS" \
        AUTOTUNE_LAST_GOOD="$LAST_GOOD" AUTOTUNE_FIXER_JSON="$FIXER_JSON" AUTOTUNE_DRY_RUN="$DRY_RUN" \
        "$ROOT/scripts/autotune-fix.sh"; then
+    # A failed fixer may have left edits, and those are evidence too.
+    preserve "$LABEL" "the fixer failed"
     say "the fixer failed"; revert_to_last_good; rejects=$((rejects+1)); continue
   fi
   # A dry run stops here. The fixer wrote its prompt and ran no agent, so

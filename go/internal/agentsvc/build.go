@@ -16,36 +16,59 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 	"github.com/nkramber/mtg-deck-builder/go/internal/questions"
 	"github.com/nkramber/mtg-deck-builder/go/internal/revise"
+	"github.com/nkramber/mtg-deck-builder/go/internal/sessions"
 )
 
-// The build runs when every slot is answered (roadmap PR-8). The
-// question workflow decided what to build, and nothing here asks the
-// user anything: a slot that is still open never reaches this file.
+// The build runs when every slot is answered. The question workflow
+// decided what to build, and nothing here asks the user anything: a slot
+// that is still open never reaches this file.
 
 // ErrThinCommanderPool says a Commander session delegated the commander
 // and the library holds none for the theme. A build without a commander
-// must fail the engine, so none runs, and the user reads why (D-232,
-// G-11 of the 2026-08-28 audit).
+// must fail the engine, so none runs, and the user reads why (D-232).
 var ErrThinCommanderPool = errors.New("your library holds no commander for this theme, so no deck was built: name a commander, or allow cards you do not own")
 
+// The wiring a build needs, each named so a log says which one is
+// missing.
+var (
+	errNoIndexSource      = errors.New("build: no card index source is wired")
+	errNoIndexLoaded      = errors.New("build: no card index is loaded")
+	errNoCandidateBuilder = errors.New("build: no candidate builder is wired")
+	errNoDeckStore        = errors.New("build: no deck store is wired")
+)
+
+// deckIDRetries bounds the retries of the deck id write after a version
+// conflict (D-303).
+const deckIDRetries = 3
+
 // buildDeck writes the deck for a ready session. It returns nil when the
-// server has no generator wired, so a deployment without one keeps the
-// PR-7 behavior and says so.
-func (s *Server) buildDeck(ctx context.Context, uid string, session *mtgv1.Session, st *questions.State, acc *llm.Accumulator) (*generate.Result, error) {
-	return s.buildDeckFrom(ctx, uid, session, st, acc, nil)
+// server has no generator wired, so a deployment without one reports
+// that every slot is filled and says so.
+func (s *Server) buildDeck(ctx context.Context, uid string, session *mtgv1.Session, st *questions.State, owned map[string]int32, acc *llm.Accumulator) (*generate.Result, error) {
+	return s.buildDeckFrom(ctx, uid, session, st, owned, acc, nil)
 }
 
 // buildDeckFrom is buildDeck with an optional revision brief. The base
 // deck's cards join the pool so the model can keep them, the brief's
 // removed cards and the cards over its cap leave the pool, and the
-// request carries the brief (PR-12B).
-func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.Session, st *questions.State, acc *llm.Accumulator, rev *generate.Revision) (*generate.Result, error) {
-	if s.decks == nil || s.index == nil || s.builder == nil {
+// request carries the brief (D-283). owned is the collection's count per
+// Oracle id, read once per turn.
+func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.Session, st *questions.State, owned map[string]int32, acc *llm.Accumulator, rev *generate.Revision) (*generate.Result, error) {
+	if s.decks == nil {
 		return nil, nil
+	}
+	if s.index == nil {
+		return nil, errNoIndexSource
+	}
+	if s.builder == nil {
+		return nil, errNoCandidateBuilder
 	}
 	idx := s.index.Current()
 	if idx == nil {
-		return nil, fmt.Errorf("build: no card index is loaded")
+		return nil, errNoIndexLoaded
+	}
+	if owned == nil {
+		owned = map[string]int32{}
 	}
 	slots := session.GetSlots()
 	format := slots.GetFormat().GetId()
@@ -65,20 +88,9 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 		commanderIDs = append(commanderIDs, c.GetOracleId())
 	}
 
-	owned := map[string]int32{}
-	if s.collections != nil && session.GetCollectionId() != "" {
-		if got, err := s.collections.OracleCounts(ctx, uid, session.GetCollectionId()); err == nil {
-			owned = got
-		} else {
-			s.log.WarnContext(ctx, "owned counts unavailable for the build",
-				"collection", session.GetCollectionId(), "err", err)
-		}
-	}
-
 	// A user who says "you pick" delegates the commander, and D-147 and
 	// D-208 skip the slot for the generator. The generator must then pick
-	// one, or the engine refuses the deck for no commander. No golden
-	// prompt covered this path until D-232.
+	// one, or the engine refuses the deck for no commander (D-232).
 	if format == mtgv1.FormatId_FORMAT_ID_COMMANDER && len(commanderIDs) == 0 {
 		pool, err := s.builder.CommanderPool(idx, candidates.Request{
 			Format:   format,
@@ -92,11 +104,9 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 		case err != nil:
 			s.log.WarnContext(ctx, "the commander pool failed", "err", err)
 		case len(pool) == 0:
-			// The library holds no commander for this theme. The weak-pool
-			// row used to ask about this and could never reach the user
-			// who needed it (D-232). A Commander deck with no commander
-			// fails the engine, so no model call is spent on one, and the
-			// turn says why (G-11).
+			// The library holds no commander for this theme. A Commander
+			// deck with no commander fails the engine, so no model call is
+			// spent on one, and the turn says why (D-232).
 			s.log.WarnContext(ctx, "the library holds no commander for the theme, so no deck is built",
 				"session", session.GetId(), "theme", slots.GetTheme())
 			return nil, ErrThinCommanderPool
@@ -113,12 +123,14 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 		}
 	}
 
-	// The shortlist follows the commander's color identity, and the slot
-	// colors only when no commander is chosen. The slot can hold every
-	// color, and the engine refuses each card outside the identity (D-289).
+	// The shortlist and the basic lands follow the commander's color
+	// identity, and the slot colors only when no commander is chosen. The
+	// slot can hold every color, and the engine refuses each card outside
+	// the identity (D-289).
+	colors := deckColors(format, slots.GetColors(), commanders)
 	list, err := s.builder.Build(idx, candidates.Request{
 		Format:             format,
-		Colors:             deckColors(format, slots.GetColors(), commanders),
+		Colors:             colors,
 		Theme:              slots.GetTheme(),
 		CommanderOracleIDs: commanderIDs,
 		PoolRule:           slots.GetPoolRule(),
@@ -133,7 +145,6 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 	buyList := st.Ctx.BuyList || slots.GetPoolRule() == mtgv1.PoolRule_POOL_RULE_ANY_CARD
 	// The shortlist leaves basic lands out on purpose, and every deck
 	// needs them (D-225).
-	colors := deckColors(format, slots.GetColors(), commanders)
 	always := append([]*mtgv1.Card(nil), commanders...)
 	always = append(always, generate.BasicLands(idx.ByName, colors)...)
 	// A card the user said to keep must be nameable, or the deck can not
@@ -149,9 +160,8 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 		lockedIDs = append(lockedIDs, c.GetOracleId())
 	}
 	// The precon the user asked to upgrade. Its cards are what the share
-	// rule of D-218 measures, and every one must be nameable. This must
-	// run before the pool is built: it did not, and the model was given
-	// 27 of 93 cards and an instruction it could not meet (D-248).
+	// rule of D-218 measures, and every one must be nameable, so they join
+	// the pool before it is built (D-248).
 	var preconName string
 	var preconIDs []string
 	var preconLands int
@@ -178,7 +188,7 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 		}
 	}
 	// A revision keeps every card the brief does not touch, so the base
-	// deck's cards must be nameable (PR-12B).
+	// deck's cards must be nameable (D-283).
 	if rev != nil {
 		for _, dc := range rev.Base {
 			if c, ok := idx.ByOracleID(dc.GetOracleId()); ok {
@@ -187,9 +197,13 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 		}
 	}
 	// The always cards read their owned count from the collection, so a
-	// precon card the user holds is never charged as a purchase (G-3).
+	// precon card the user holds is never charged as a purchase.
 	pool := generate.FromListOwned(list, always, owned, buyList)
 	if rev != nil {
+		// The mana value cap never drops a commander or a locked card:
+		// the engine blocks a deck without them, and the model can not
+		// put back what it can not name (D-242).
+		rev.Exempt = append(append([]string(nil), commanderIDs...), lockedIDs...)
 		pool = pool.Filter(func(c *mtgv1.Card) bool { return generate.AllowedByRevision(rev, c) })
 	}
 
@@ -266,8 +280,8 @@ func (s *Server) markOwnedPrintings(ctx context.Context, uid string, session *mt
 
 // deckColors is the color set the basic lands follow. In Commander it is
 // the union of every commander's color identity, so a partner pair gets
-// both halves (G-7 of the 2026-08-28 audit). Otherwise it is the chosen
-// colors, and a 60-card session that chose none gets every basic.
+// both halves. Otherwise it is the chosen colors, and a 60-card session
+// that chose none gets every basic.
 func deckColors(format mtgv1.FormatId, chosen []mtgv1.Color, commanders []*mtgv1.Card) []mtgv1.Color {
 	if len(commanders) > 0 {
 		seen := map[mtgv1.Color]bool{}
@@ -314,11 +328,20 @@ func plan(session *mtgv1.Session, slots *mtgv1.Slots) string {
 	return b.String()
 }
 
+// sendOrLog sends one event after a paid call. A client that left
+// mid-build can not receive it, and the build must still end and store
+// its deck, so a failed send is logged and the turn goes on (D-303).
+func (s *Server) sendOrLog(ctx context.Context, stream *connect.ServerStream[mtgv1.ChatResponse], session *mtgv1.Session, ev *mtgv1.ChatResponse) {
+	if err := stream.Send(ev); err != nil {
+		s.log.WarnContext(ctx, "the client left before the event was sent", "session", session.GetId(), "err", err)
+	}
+}
+
 // sendDeck builds the deck and streams it. A build failure must not lose
 // the turn: the questions are already stored and already sent, so the
 // user reads a status line and can ask again.
 func (s *Server) sendDeck(ctx context.Context, uid string, session *mtgv1.Session, st *questions.State,
-	snap questions.Snapshot, version int64, acc *llm.Accumulator,
+	snap questions.Snapshot, version int64, owned map[string]int32, acc *llm.Accumulator,
 	stream *connect.ServerStream[mtgv1.ChatResponse]) error {
 	if s.decks == nil {
 		return stream.Send(&mtgv1.ChatResponse{
@@ -331,26 +354,25 @@ func (s *Server) sendDeck(ctx context.Context, uid string, session *mtgv1.Sessio
 		return err
 	}
 	// The build is bounded, so a slow provider ends the turn with an
-	// error instead of holding the stream open (D-235).
-	limit := s.buildLimit
-	if limit <= 0 {
-		limit = DefaultBuildLimit
-	}
-	bctx, cancel := context.WithTimeout(ctx, limit)
+	// error instead of a stream that does not end (D-235). It runs
+	// detached from the client, so a disconnect after the paid call
+	// still stores the deck (D-303).
+	bctx, cancel := detached(ctx, s.buildDeadline())
 	defer cancel()
-	res, err := s.buildDeck(bctx, uid, session, st, acc)
+	res, err := s.buildDeck(bctx, uid, session, st, owned, acc)
 	if err != nil {
 		s.log.ErrorContext(ctx, "the build failed", "session", session.GetId(), "err", err)
 		msg := "the deck build failed, please ask again"
 		switch {
 		case errors.Is(err, ErrThinCommanderPool):
 			msg = err.Error()
+		case errors.Is(err, errNoIndexSource), errors.Is(err, errNoIndexLoaded), errors.Is(err, errNoCandidateBuilder):
+			msg = "the deck can not be built here: " + strings.TrimPrefix(err.Error(), "build: ")
 		case errors.Is(bctx.Err(), context.DeadlineExceeded):
 			msg = "the deck build ran past its time limit, please ask again"
 		}
-		return stream.Send(&mtgv1.ChatResponse{
-			Event: &mtgv1.ChatResponse_Status{Status: msg},
-		})
+		s.sendOrLog(ctx, stream, session, &mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Status{Status: msg}})
+		return nil
 	}
 	if res == nil {
 		return stream.Send(&mtgv1.ChatResponse{
@@ -360,14 +382,13 @@ func (s *Server) sendDeck(ctx context.Context, uid string, session *mtgv1.Sessio
 	// The deck is kept before it is sent, so a user who reads it can ask
 	// for it again (D-245).
 	s.storeDeck(ctx, uid, session, snap, version, res.Deck)
-	// A name the model wrote twice and the shortlist never held reaches
+	// A name the model wrote twice and the shortlist did not hold reaches
 	// the user as prose, because the card is absent from the deck.
 	for _, n := range res.Notes {
-		if err := stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_TextDelta{TextDelta: n}}); err != nil {
-			return err
-		}
+		s.sendOrLog(ctx, stream, session, &mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_TextDelta{TextDelta: n}})
 	}
-	return stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Deck{Deck: res.Deck}})
+	s.sendOrLog(ctx, stream, session, &mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Deck{Deck: res.Deck}})
+	return nil
 }
 
 // deckName is what the user sees the deck called. The theme and the
@@ -381,23 +402,47 @@ func deckName(slots *mtgv1.Slots) string {
 	return theme + " " + format
 }
 
-// storeDeck keeps the deck and records its id on the session. A store
-// failure must not lose the deck the user is already reading, so it warns
-// and the turn goes on (D-245).
+// storeDeck keeps the deck and records its id on the session. Both
+// writes run detached from the client (D-303). A store failure must not
+// lose the deck the user is already reading, so it warns and the turn
+// goes on (D-245).
 func (s *Server) storeDeck(ctx context.Context, uid string, session *mtgv1.Session,
 	snap questions.Snapshot, version int64, d *mtgv1.Deck) {
 	if s.deckStore == nil || d.GetId() == "" {
 		return
 	}
-	if err := s.deckStore.Put(ctx, uid, d); err != nil {
+	sctx, cancel := detached(ctx, storeLimit)
+	defer cancel()
+	if err := s.deckStore.Put(sctx, uid, d); err != nil {
 		s.log.ErrorContext(ctx, "the deck was not stored", "session", session.GetId(), "deck", d.GetId(), "err", err)
 		return
 	}
 	// The session was written before the build, so the deck id needs its
-	// own write. Without it AfterBuild stays false and the variance row
-	// is dead for the next turn (D-245).
+	// own write. Without it AfterBuild stays false for the next turn
+	// (D-245).
 	session.DeckIds = append(session.GetDeckIds(), d.GetId())
-	if err := s.store.Put(ctx, uid, session, snap, version); err != nil {
+	err := s.store.Put(sctx, uid, session, snap, version)
+	// A version conflict means another write landed since the turn was
+	// stored. The deck exists, so the id is appended to the current
+	// session instead of lost (D-303).
+	for try := 0; errors.Is(err, sessions.ErrConflict) && try < deckIDRetries; try++ {
+		var current *mtgv1.Session
+		current, _, version, err = s.store.GetState(sctx, uid, session.GetId())
+		if err != nil {
+			break
+		}
+		current.DeckIds = append(current.GetDeckIds(), d.GetId())
+		current.Status = mtgv1.SessionStatus_SESSION_STATUS_BUILT
+		current.UpdatedAt = session.GetUpdatedAt()
+		if n := len(current.GetTurns()); n > 0 && n == len(session.GetTurns()) {
+			current.Turns[n-1] = session.GetTurns()[n-1]
+		}
+		err = s.store.Put(sctx, uid, current, snap, version)
+		if err == nil {
+			session.DeckIds = current.GetDeckIds()
+		}
+	}
+	if err != nil {
 		s.log.ErrorContext(ctx, "the deck id was not recorded on the session",
 			"session", session.GetId(), "deck", d.GetId(), "err", err)
 	}
@@ -409,9 +454,15 @@ func (s *Server) storeDeck(ctx context.Context, uid string, session *mtgv1.Sessi
 // (D-283, D-284). The reply lands in Turn.agent_message and streams as
 // text_delta.
 func (s *Server) sendRevision(ctx context.Context, uid string, session *mtgv1.Session, st *questions.State,
-	snap questions.Snapshot, version int64, acc *llm.Accumulator, message string, turn *mtgv1.Turn,
+	snap questions.Snapshot, version int64, owned map[string]int32, acc *llm.Accumulator, message string, turn *mtgv1.Turn,
 	stream *connect.ServerStream[mtgv1.ChatResponse]) error {
-	if s.decks == nil || s.deckStore == nil {
+	if s.decks == nil {
+		return stream.Send(&mtgv1.ChatResponse{
+			Event: &mtgv1.ChatResponse_Status{Status: "every slot is filled, and no generator is wired"},
+		})
+	}
+	if s.deckStore == nil {
+		s.log.ErrorContext(ctx, "the deck can not be revised", "session", session.GetId(), "err", errNoDeckStore)
 		return stream.Send(&mtgv1.ChatResponse{
 			Event: &mtgv1.ChatResponse_Status{Status: "the deck can not be revised here, because no deck store is wired"},
 		})
@@ -449,10 +500,14 @@ func (s *Server) sendRevision(ctx context.Context, uid string, session *mtgv1.Se
 			Event: &mtgv1.ChatResponse_Status{Status: "your request could not be read, please ask again"},
 		})
 	}
+	// The revise call is paid, so the write that records its reply runs
+	// detached from the client (D-303).
 	record := func(text string) {
 		turn.AgentMessage = text
 		session.UpdatedAt = timestamppb.New(s.now())
-		if err := s.store.Put(ctx, uid, session, snap, version); err != nil {
+		sctx, cancel := detached(ctx, storeLimit)
+		defer cancel()
+		if err := s.store.Put(sctx, uid, session, snap, version); err != nil {
 			s.log.ErrorContext(ctx, "the reply was not recorded on the session", "session", session.GetId(), "err", err)
 		}
 	}
@@ -464,13 +519,17 @@ func (s *Server) sendRevision(ctx context.Context, uid string, session *mtgv1.Se
 			Invented: true,
 		}
 		turn.Questions = append(turn.Questions, q)
+		// A question was sent, so the session is asking again.
+		session.Status = mtgv1.SessionStatus_SESSION_STATUS_ASKING
 		record(q.GetText())
-		return stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Question{Question: q}})
+		s.sendOrLog(ctx, stream, session, &mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Question{Question: q}})
+		return nil
 	}
 	if !brief.Acts() {
 		note := revise.DeclineNote(brief)
 		record(note)
-		return stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_TextDelta{TextDelta: note}})
+		s.sendOrLog(ctx, stream, session, &mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_TextDelta{TextDelta: note}})
+		return nil
 	}
 	// A card the brief removes is not a card to keep, whatever the
 	// classify call read from the same message. The state drops the lock
@@ -479,14 +538,8 @@ func (s *Server) sendRevision(ctx context.Context, uid string, session *mtgv1.Se
 		st.Unlock(name)
 	}
 	snap = st.Snapshot()
-	if err := stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Status{Status: "revising the deck"}}); err != nil {
-		return err
-	}
-	limit := s.buildLimit
-	if limit <= 0 {
-		limit = DefaultBuildLimit
-	}
-	bctx, cancel := context.WithTimeout(ctx, limit)
+	s.sendOrLog(ctx, stream, session, &mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Status{Status: "revising the deck"}})
+	bctx, cancel := detached(ctx, s.buildDeadline())
 	defer cancel()
 	rev := &generate.Revision{
 		BaseDeckID:   base.GetId(),
@@ -496,14 +549,15 @@ func (s *Server) sendRevision(ctx context.Context, uid string, session *mtgv1.Se
 		Keep:         brief.Keep,
 		MaxManaValue: brief.MaxManaValue,
 	}
-	res, err := s.buildDeckFrom(bctx, uid, session, st, acc, rev)
+	res, err := s.buildDeckFrom(bctx, uid, session, st, owned, acc, rev)
 	if err != nil || res == nil {
 		s.log.ErrorContext(ctx, "the revision failed", "session", session.GetId(), "err", err)
 		msg := "the revision failed, please ask again"
 		if errors.Is(bctx.Err(), context.DeadlineExceeded) {
 			msg = "the revision ran past its time limit, please ask again"
 		}
-		return stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Status{Status: msg}})
+		s.sendOrLog(ctx, stream, session, &mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Status{Status: msg}})
+		return nil
 	}
 	if base.GetName() != "" {
 		res.Deck.Name = base.GetName()
@@ -515,15 +569,12 @@ func (s *Server) sendRevision(ctx context.Context, uid string, session *mtgv1.Se
 	// the reply, so one write records both.
 	turn.AgentMessage = note
 	s.storeDeck(ctx, uid, session, snap, version, res.Deck)
-	if err := stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_TextDelta{TextDelta: note}}); err != nil {
-		return err
-	}
+	s.sendOrLog(ctx, stream, session, &mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_TextDelta{TextDelta: note}})
 	for _, n := range res.Notes {
-		if err := stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_TextDelta{TextDelta: n}}); err != nil {
-			return err
-		}
+		s.sendOrLog(ctx, stream, session, &mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_TextDelta{TextDelta: n}})
 	}
-	return stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Deck{Deck: res.Deck}})
+	s.sendOrLog(ctx, stream, session, &mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Deck{Deck: res.Deck}})
+	return nil
 }
 
 // priorUserMessage is the user's message of the turn before this one,

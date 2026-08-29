@@ -46,7 +46,7 @@ export function ImportResult({ result }: { result: ImportCollectionResponse }) {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <caption className="text-left font-medium">
-              Unresolved rows. The line number points at the row in your export.
+              Unresolved rows. The line number points at the row in your export: open your file at this line.
             </caption>
             <thead>
               <tr>

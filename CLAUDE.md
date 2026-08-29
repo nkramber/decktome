@@ -6,7 +6,7 @@ Read this file first. Then read `docs/SESSION-HANDOFF.md`. It tells you where th
 
 This repo is a Go + Protobuf + TypeScript monorepo for an agentic MtG deck builder. The app reads a user's ManaBox collection export. The user gives a prompt. The agent asks questions, then builds a legal, useful deck.
 
-Stage (2026-08-28): PR-0a to PR-8, PR-7B, and PR-10 are merged (#1 to #16). `main` is at `5a1fcfe` plus the audit work of 2026-08-28 (`docs/audit-2026-08-28.md`). PR-9 is out of the MVP (D-256). The next item is Phase 3, the UI. The tuning loop exists in `scripts/autotune.sh`, and it started seven times and kept nothing. `docs/SESSION-HANDOFF.md` is the resume point, and `docs/reference/autotune-readme.md` holds the loop commands.
+Stage (2026-08-29): `main` is at `7924658`. Merged: PR-0a to PR-8, PR-7B, PR-10, PR-11 (#38), PR-12 (#40), and PR-12B (#41). PR-9 is out of the MVP (D-256), and the next roadmap item is PR-13 (`DeckService.ExportDeck`), then PR-15. The audit of 2026-08-29 (D-302) moved the generate prompt to version 10 and bumped the classify prompt version. The gate baselines (question gate run 27, deck gate run 8) do not compare with `main` until the owner reruns them. `docs/SESSION-HANDOFF.md` holds the moving parts, and `docs/reference/autotune-readme.md` holds the loop commands.
 
 Run `git pull`, then `git status`, before you change anything. The owner commits and pushes. Do not commit unless the owner asks.
 
@@ -14,11 +14,11 @@ Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
 
 ## Hard rules from the owner
 
-1. **Write scope.** Writes are allowed in this repo (D-32, 2026-08-23). All other repos are read-only. Application code follows the roadmap order. Do not start a roadmap item before its predecessor's gate holds.
-2. **Write in ASD-STE100.** Every doc, skill, and agent file must follow Simplified Technical English. Load the `ste-writing` skill before you write. Rules that apply most: max 20 words per procedural sentence, max 25 per descriptive sentence, active voice, one instruction per sentence. Also: no semicolons, no "-ing" verb forms, one term per concept, paragraphs of max six sentences.
+1. **Write scope.** This repo permits writes (D-32, 2026-08-23). All other repos are read-only. Application code follows the roadmap order. Do not start a roadmap item before the gate of the item before it holds.
+2. **Write in ASD-STE100.** Every doc, skill, and agent file must follow Simplified Technical English. Load the `ste-writing` skill before you write. Rules that apply most: max 20 words per procedural sentence, max 25 per descriptive sentence, and active voice. Also: one instruction per sentence, no semicolons, no "-ing" verb forms, one term per concept, paragraphs of max six sentences.
 3. **Ask questions when you think of them.** Do not save questions for the end. Use `AskUserQuestion` in small batches. Record each answer in `docs/decisions.md`.
 4. **Do the research.** Verify facts against sources (Scryfall API, Wizards announcements, the Comprehensive Rules). Record the date of each fact. MtG rules and ban lists change often.
-5. **Make hand-off simple.** Before you end a session, update `docs/SESSION-HANDOFF.md`: what is done, what is open, and the next step.
+5. **Make hand-off simple.** Before you end a session, update `docs/SESSION-HANDOFF.md`: the completed work, the open work, and the next step.
 6. **No AI-attribution text** in any PR, branch name, commit message, or comment. This house rule comes from connector-syncer.
 7. **No mistakes.** Check card names, rules, and dates before you write them. When you are not sure, say so and mark the item as unverified.
 8. **Never hesitate to ask or to push back.** Ask a question the moment you have one. When the owner's two statements conflict, say so and quote both. When a request rests on a wrong premise, say so with the evidence. The owner sees this as the key to good LLM-user interaction. Silence is the mistake, not the question.
@@ -47,22 +47,25 @@ Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
 - `docs/owner-questions.md` - the decision queue. Every question here waits for the owner, and the tuning loop refuses to decide one.
 - `docs/reference/` - research notes with sources and dates, and every dated gate document.
 - `docs/audit-2026-08-28.md` - the full audit of 2026-08-28, its owner answers, and the change plan.
+- `docs/audit-2026-08-29.md` - the quality audit of 2026-08-29 and its fixes (D-302 to D-306).
 
 ## Commands that cost money
 
 `make questions-gate` calls the real providers. One run of the 104 conversations (30 gate and 74 probe) costs $0.152 to $0.165 and takes about 20 minutes, measured on 2026-08-26. Ask the owner before every run, and write to a new `GATE_OUT` file: a rerun must never overwrite a scored document (D-65).
 
-`make questions-eval` scores a gate run with the eval role. One 104-conversation run costs $0.092 to $0.099 and takes about 13 minutes, measured on 2026-08-26. `make eval-calibrate` measures the eval model against `claude-sonnet-5` for $0.25 to $0.30.
+`make questions-eval` scores a gate run with the eval role. One 104-conversation run costs $0.092 to $0.104 (runs 14 to 25) and takes about 13 minutes. `make eval-calibrate` measures the eval model against `claude-sonnet-5` for $0.25 to $0.30.
 
-`make autotune` prints the loop instructions and starts nothing. `scripts/autotune.sh` is the loop, and it refuses to start without `AUTOTUNE_ALLOW_UNATTENDED=1`. One iteration costs about $0.25 and takes 33 to 35 minutes, so a $3 budget buys about 12 iterations. Read `docs/reference/autotune-readme.md` and `docs/reference/autotune-design.md` first.
+`make autotune` is free. It prints the loop instructions and starts nothing. `scripts/autotune.sh` is the paid loop, and it refuses to start without `AUTOTUNE_ALLOW_UNATTENDED=1`. One iteration costs about $0.25 and takes 33 to 35 minutes, so a $3 budget buys about 12 iterations. Read `docs/reference/autotune-readme.md` and `docs/reference/autotune-design.md` first.
 
-Four more targets spend money, and each has an overwrite guard and an env guard. `make deck-gate` builds the PR-8 gate document, at about $0.90 for a run of 16 to 18 prompts, measured on 2026-08-28. `make chat-probe` drives the real `Chat` RPC to a deck. `make generate-probe` builds one deck with the real generate role.
+Five more targets spend money, and each has an overwrite guard and an env guard. `make deck-gate` builds the PR-8 gate document. Run 8 cost $1.09 for 18 prompts. `make chat-probe` drives the real `Chat` RPC to a deck. `make generate-probe` builds one deck with the real generate role.
 
 `make summary-judge` judges every deck summary of a gate document (F-26). Each probe costs a few cents. Ask the owner before every run.
 
-`make revise-gate` builds two base decks and runs six revisions over them (PR-12B). It has the same two guards. The cost is unmeasured until the first run, and the estimate is two builds plus six revise calls plus six revised builds, about $0.60.
+`make revise-gate` builds two base decks and runs six revisions over them (PR-12B). It has the same two guards. One run costs about $0.30 (run 2, $0.29).
 
-Everything else is free. `make ste-check` checks every hand-written `.md` file against the STE rules, and `make lint` runs it. `make m5-sheet` builds the scoring sheet, and `make m5-report` reads it. `make themes-check` checks the theme slugs and the commander ranking.
+`make test-smoke` runs the live LLM smoke test and reads the keys from `.env`. It spends a few cents. The paid targets are these nine plus the script: questions-gate, questions-eval, eval-calibrate, deck-gate, revise-gate, chat-probe, generate-probe, summary-judge, and test-smoke.
+
+Each other target is free. `make ste-check` checks every hand-written `.md` file against the STE rules, and `make lint` runs it. `make m5-sheet` builds the scoring sheet, and `make m5-report` reads it. `make themes-check` checks the theme slugs and the commander ranking.
 
 `make store-check` runs the session store against the local Firestore emulator. `make candidates-review` writes the PR-6 gate document from a local snapshot. `cd go && go run ./cmd/tune-check` compares an eval summary with its baseline.
 

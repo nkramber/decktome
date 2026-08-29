@@ -48,6 +48,53 @@ func TestCheckRevision(t *testing.T) {
 	}
 }
 
+// TestCheckRevisionReadsTheSideboardAndTheCommander: a removed card in
+// the sideboard stayed, and a kept card that is the commander is held.
+func TestCheckRevisionReadsTheSideboardAndTheCommander(t *testing.T) {
+	cards := cardMap{
+		"o-karlov": {OracleId: "o-karlov", Name: "Karlov of the Ghost Council", ManaValue: 2, CardTypes: []string{"Creature"}},
+		"o-lyra":   {OracleId: "o-lyra", Name: "Lyra Dawnbringer", ManaValue: 5, CardTypes: []string{"Creature"}},
+	}
+	deck := &mtgv1.Deck{
+		CommanderOracleIds: []string{"o-karlov"},
+		Sideboard:          []*mtgv1.DeckCard{{OracleId: "o-lyra", Name: "Lyra Dawnbringer", Count: 1}},
+	}
+	rev := &Revision{Remove: []string{"Lyra Dawnbringer"}, Keep: []string{"Karlov of the Ghost Council"}}
+	codes := map[string]bool{}
+	for _, f := range CheckRevision(deck, rev, cards) {
+		codes[f.GetCode()] = true
+	}
+	if !codes[CodeRevisionRemovedPresent] {
+		t.Error("a removed card in the sideboard was not reported")
+	}
+	if codes[CodeRevisionKeptMissing] {
+		t.Error("the kept commander was reported missing")
+	}
+}
+
+// TestRevisionCapExemptsKeptLockedAndCommanderCards: a kept name, a
+// locked card, and a commander above the cap stay in the pool, or the
+// deck must hold a card the model can not name (D-242).
+func TestRevisionCapExemptsKeptLockedAndCommanderCards(t *testing.T) {
+	serenity := &mtgv1.Card{OracleId: "o-serenity", Name: "Angel of Serenity", ManaValue: 7, CardTypes: []string{"Creature"}}
+	titan := &mtgv1.Card{OracleId: "o-titan", Name: "Sun Titan", ManaValue: 6, CardTypes: []string{"Creature"}}
+	other := &mtgv1.Card{OracleId: "o-other", Name: "Other Seven", ManaValue: 7, CardTypes: []string{"Creature"}}
+	rev := &Revision{Keep: []string{"angel of serenity"}, MaxManaValue: 5, Exempt: []string{"o-titan"}}
+	if !AllowedByRevision(rev, serenity) {
+		t.Error("a kept 7-drop left the pool under a cap of 5")
+	}
+	if !AllowedByRevision(rev, titan) {
+		t.Error("an exempt 6-drop left the pool under a cap of 5")
+	}
+	if AllowedByRevision(rev, other) {
+		t.Error("a 7-drop that is neither kept nor exempt passed the cap")
+	}
+	pool := NewPool([]*mtgv1.Card{serenity, titan, other}, nil).Filter(func(c *mtgv1.Card) bool { return AllowedByRevision(rev, c) })
+	if pool.Size() != 2 {
+		t.Errorf("pool = %v, want the kept card and the exempt card", pool.Names())
+	}
+}
+
 func TestAllowedByRevisionAndPoolFilter(t *testing.T) {
 	serenity := &mtgv1.Card{OracleId: "o-serenity", Name: "Angel of Serenity", ManaValue: 7, CardTypes: []string{"Creature"}}
 	plains := &mtgv1.Card{OracleId: "o-plains", Name: "Plains", CardTypes: []string{"Land"}}

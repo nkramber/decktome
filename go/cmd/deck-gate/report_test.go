@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"strings"
 	"testing"
@@ -13,9 +14,8 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 )
 
-// A bar that has never failed may not be a bar at all. The block bar is
-// proved: deck gate run 1 of 2026-08-27 failed on it. The other two had
-// never fired once, so these cases fire them on purpose (D-234).
+// A bar that has never failed may not be a bar at all, so every bar is
+// fired here on purpose (D-234).
 
 func goodResult() result {
 	return result{
@@ -29,20 +29,27 @@ func goodResult() result {
 	}
 }
 
-func verdictOf(t *testing.T, rs []result) string {
+// render writes the document once and returns the verdict word with it.
+func render(t *testing.T, rs []result) (string, string) {
 	t.Helper()
 	var b bytes.Buffer
 	idx := cards.NewIndex(nil, nil, nil, time.Time{})
-	report(&b, rs, llm.NewAccumulator(nil), idx, time.Second)
-	line := b.String()
-	switch {
-	case strings.Contains(line, "Verdict: PASS"):
-		return "PASS"
-	case strings.Contains(line, "Verdict: FAIL"):
-		return "FAIL"
+	pass := report(&b, rs, llm.NewAccumulator(nil), idx, time.Second)
+	doc := b.String()
+	verdict := "FAIL"
+	if pass {
+		verdict = "PASS"
 	}
-	t.Fatalf("no verdict in the document: %s", line)
-	return ""
+	if !strings.Contains(doc, "Verdict: "+verdict) {
+		t.Fatalf("report returned %v and the document says otherwise: %s", pass, doc)
+	}
+	return verdict, doc
+}
+
+func verdictOf(t *testing.T, rs []result) string {
+	t.Helper()
+	v, _ := render(t, rs)
+	return v
 }
 
 // TestCleanRunPasses is the control. Without it a bar that always fails
@@ -53,7 +60,7 @@ func TestCleanRunPasses(t *testing.T) {
 	}
 }
 
-// TestBlockFindingFailsTheRun is the bar run 1 proved.
+// TestBlockFindingFailsTheRun fires the block bar.
 func TestBlockFindingFailsTheRun(t *testing.T) {
 	r := goodResult()
 	r.deck.Validation.Findings = []*mtgv1.Finding{{
@@ -65,8 +72,8 @@ func TestBlockFindingFailsTheRun(t *testing.T) {
 	}
 }
 
-// TestInventedNameFailsTheRun fires the bar that had never fired. A name
-// that misses twice reaches the user as a note, and no invented name may
+// TestInventedNameFailsTheRun fires the invented-name bar. A name that
+// misses twice reaches the user as a note, and no invented name may
 // reach the user.
 func TestInventedNameFailsTheRun(t *testing.T) {
 	r := goodResult()
@@ -76,9 +83,8 @@ func TestInventedNameFailsTheRun(t *testing.T) {
 	}
 }
 
-// TestFalseRuleFailsTheRun fires the F-26 bar, which had never fired.
-// This is the failure that reached a user twice and passed both the gate
-// and the deterministic linter.
+// TestFalseRuleFailsTheRun fires the F-26 bar: a summary that states a
+// false rule of the game fails the gate whatever the linter says (D-229).
 func TestFalseRuleFailsTheRun(t *testing.T) {
 	r := goodResult()
 	r.deck.Summary = "Grist, the Hunger Tide can not lead a deck, so it sits in the 99."
@@ -107,9 +113,8 @@ func TestFalseClaimUnderASoftVerdictFailsTheRun(t *testing.T) {
 	}
 }
 
-// TestATrueRuleDoesNotFailTheRun keeps the bar from being too strict. The
-// judge rated two summaries of run 4 as stating a rule, and both were
-// true. A true statement must not fail the gate.
+// TestATrueRuleDoesNotFailTheRun keeps the bar from being too strict. A
+// true statement of a rule must not fail the gate.
 func TestATrueRuleDoesNotFailTheRun(t *testing.T) {
 	r := goodResult()
 	r.judged = &generate.Judgement{
@@ -156,17 +161,74 @@ func TestJudgeErrorFailsTheRun(t *testing.T) {
 			if tc.judgeErr != nil {
 				r.judged, r.judgeErr = nil, tc.judgeErr
 			}
-			var b bytes.Buffer
-			report(&b, []result{r}, llm.NewAccumulator(nil), cards.NewIndex(nil, nil, nil, time.Time{}), time.Second)
-			if got := verdictOf(t, []result{r}); got != tc.want {
+			got, doc := render(t, []result{r})
+			if got != tc.want {
 				t.Errorf("verdict = %s, want %s", got, tc.want)
 			}
-			if !strings.Contains(b.String(), tc.row) {
-				t.Errorf("the report lacks %q:\n%s", tc.row, b.String())
+			if !strings.Contains(doc, tc.row) {
+				t.Errorf("the report lacks %q:\n%s", tc.row, doc)
 			}
-			if tc.judgeErr != nil && !strings.Contains(b.String(), "JUDGE ERROR: the provider timed out") {
-				t.Errorf("the deck does not name its judge error:\n%s", b.String())
+			if tc.judgeErr != nil && !strings.Contains(doc, "JUDGE ERROR: the provider timed out") {
+				t.Errorf("the deck does not name its judge error:\n%s", doc)
 			}
 		})
+	}
+}
+
+// TestEmptyRunFailsTheRun covers a -only list that names no prompt. Zero
+// of zero is not a pass.
+func TestEmptyRunFailsTheRun(t *testing.T) {
+	got, doc := render(t, nil)
+	if got != "FAIL" {
+		t.Errorf("verdict = %s, want FAIL on an empty run", got)
+	}
+	if !strings.Contains(doc, "no prompt") {
+		t.Errorf("the document does not say the run was empty:\n%s", doc)
+	}
+}
+
+// TestSelectPromptsRefusesAnEmptyMatch covers the -only flag.
+func TestSelectPromptsRefusesAnEmptyMatch(t *testing.T) {
+	all := []prompt{{ID: 1, Name: "a"}, {ID: 2, Name: "b"}, {ID: 3, Name: "c"}}
+	got, err := selectPrompts(all, "")
+	if err != nil || len(got) != 3 {
+		t.Errorf("empty -only = %d prompts, %v; want all", len(got), err)
+	}
+	got, err = selectPrompts(all, "3, 1")
+	if err != nil || len(got) != 2 || got[0].ID != 1 || got[1].ID != 3 {
+		t.Errorf("-only 3,1 = %v, %v", got, err)
+	}
+	if _, err := selectPrompts(all, "9"); err == nil {
+		t.Error("-only 9 matched nothing and was accepted")
+	}
+	if _, err := selectPrompts(all, "x"); err == nil {
+		t.Error("-only x was accepted")
+	}
+}
+
+// TestEmptySummaryIsAJudgeError covers F-26 on a deck with no summary.
+// The judge has nothing to read, so the deck has no verdict on that bar.
+func TestEmptySummaryIsAJudgeError(t *testing.T) {
+	j, err := judge(context.Background(), nil, "a deck", &mtgv1.Deck{}, nil)
+	if err == nil || j != nil {
+		t.Fatalf("judge = %v, %v; want the empty-summary error", j, err)
+	}
+	r := goodResult()
+	r.deck.Summary = ""
+	r.judged, r.judgeErr = nil, err
+	got, doc := render(t, []result{r})
+	if got != "FAIL" {
+		t.Errorf("verdict = %s, want FAIL on an empty summary", got)
+	}
+	if !strings.Contains(doc, "| Judge errors | 1 |") {
+		t.Errorf("the report does not count the empty summary as a judge error:\n%s", doc)
+	}
+}
+
+// TestCostRowSaysUnpriced covers M-1: a nil cost is not $0.
+func TestCostRowSaysUnpriced(t *testing.T) {
+	_, doc := render(t, []result{goodResult()})
+	if !strings.Contains(doc, "| Cost | unpriced |") {
+		t.Errorf("the report prints a nil cost as a number:\n%s", doc)
 	}
 }

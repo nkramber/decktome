@@ -32,7 +32,7 @@ type Row struct {
 	// step must not cancel the question.
 	Key string `json:"key"`
 	// Order is the ask order. Format first, then theme, then commander
-	// (corpus section 11, from the dogfood runs of 2026-08-24).
+	// (corpus section 11, D-294).
 	Order int `json:"order"`
 	// Text may hold {placeholders} that the caller fills before the model
 	// phrases the question.
@@ -47,18 +47,10 @@ type Row struct {
 	//
 	// Two kinds of row need it. The first states what this app does or
 	// does not do: the sentence that names the limit is the point of it,
-	// and a replacement drops that sentence. The second bundles several
-	// values into one yes-or-no question. The house-limits row asks "do
-	// the normal limits hold", and the ask role rewrote it as "should the
-	// deck use a 60-card minimum, four copies per name, and a 15-card
-	// sideboard?" The eval then read three questions in one, twice in run
-	// 20260826-191225-000 (D-162).
-	//
-	// The smoke run before gate 14 (2026-08-26 UTC) is the evidence. The model replaced "I
-	// build one deck at a time. Which deck do you want first?" with
-	// "Which deck would you like to work on first: Commander or Modern?"
-	// The user was never told that the app builds one deck at a time,
-	// which is exactly what D-112 asks the row to say.
+	// and a replacement drops that sentence (D-112, D-117). The second
+	// bundles several values into one yes-or-no question. The house-limits
+	// row asks "do the normal limits hold", and a rephrasing that lists
+	// the limits reads as three questions in one (D-162).
 	Fixed bool `json:"fixed"`
 	// Closed says the options are the whole answer space, so the UI
 	// offers no free-text field (D-295).
@@ -70,7 +62,7 @@ type Row struct {
 	// RepeatOnChange narrows Repeat. Such a row asks again only when its
 	// content changed, which for the pick row means three other names.
 	// A repeat with the same three names is the same question in the same
-	// words, and the eval of gate run 18 refused four of them (D-163).
+	// words (D-163).
 	RepeatOnChange bool `json:"repeat_on_change"`
 	When           When `json:"when"`
 }
@@ -90,14 +82,12 @@ type When struct {
 	OutOfScope       *bool  `json:"out_of_scope"`
 	NamedCard        *bool  `json:"named_card"`
 	Suggested        *bool  `json:"suggested"`
-	OwnedMode        *bool  `json:"owned_mode"`
 	CommanderSet     *bool  `json:"commander_set"`
 	HasCollection    *bool  `json:"has_collection"`
 	ThinTheme        *bool  `json:"thin_theme"`
 	BuyList          *bool  `json:"buy_list"`
 	BudgetAmbiguous  *bool  `json:"budget_ambiguous"`
 	HouseFormat      *bool  `json:"house_format"`
-	TwoPlans         *bool  `json:"two_plans"`
 	// TwoDecks marks a request for more than one deck (D-112).
 	TwoDecks *bool `json:"two_decks"`
 	// UnsupportedFormat marks a format this app does not build (D-112).
@@ -129,8 +119,8 @@ var slots = map[string]bool{
 	"format":     true, "power": true, "colors": true, "theme": true,
 	"commander": true, "pool_rule": true, "budget": true,
 	// house_rules holds the user's own words for "anything goes". The
-	// build copies it to Format.house_rules (D-3, A-6 of the 2026-08-28
-	// audit). locked, plan_variant, and meta left with their rows.
+	// build copies it to Format.house_rules (D-3, D-265). locked,
+	// plan_variant, and meta left with their rows (D-260).
 	"house_rules": true,
 }
 

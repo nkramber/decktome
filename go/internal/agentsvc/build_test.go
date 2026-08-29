@@ -7,8 +7,13 @@ import (
 	"io"
 	"log/slog"
 	"strings"
+	"sync"
 	"testing"
 	"time"
+
+	"connectrpc.com/connect"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/candidates"
@@ -55,11 +60,27 @@ type fakeDecks struct {
 	err   error
 	runs  int
 	block bool
+	// started and release gate one build, so a test can act while a
+	// build is in flight. started closes once.
+	started   chan struct{}
+	startOnce sync.Once
+	release   chan struct{}
 }
 
 func (f *fakeDecks) Build(ctx context.Context, req generate.Request, _ *llm.Accumulator) (*generate.Result, error) {
 	f.runs++
 	f.got = req
+	if f.started != nil {
+		f.startOnce.Do(func() { close(f.started) })
+	}
+	if f.release != nil {
+		<-f.release
+		// A provider call on a cancelled context fails, as the real one
+		// does.
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+	}
 	// block waits for the caller's deadline, which is how a slow provider
 	// looks from here.
 	if f.block {
@@ -88,8 +109,8 @@ func readySteps(t *testing.T) []llm.Step {
 		askJSON(t))
 }
 
-// TestReadySessionStreamsTheDeck is the PR-8 hand-over. The question
-// workflow reports READY, and the deck reaches the user on the same turn.
+// TestReadySessionStreamsTheDeck: the question workflow reports READY,
+// and the deck reaches the user on the same turn.
 func TestReadySessionStreamsTheDeck(t *testing.T) {
 	store := newFakeStore()
 	deck := &mtgv1.Deck{
@@ -132,7 +153,7 @@ func TestReadySessionStreamsTheDeck(t *testing.T) {
 // already stored and already sent, so a build error must not lose them.
 func TestBuildFailureKeepsTheTurn(t *testing.T) {
 	store := newFakeStore()
-	fd := &fakeDecks{err: context.DeadlineExceeded}
+	fd := &fakeDecks{err: errors.New("the model is down")}
 	client, _ := testServerOpts(t, store, buildOpts(t, fd), readySteps(t)...)
 
 	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
@@ -156,8 +177,8 @@ func TestBuildFailureKeepsTheTurn(t *testing.T) {
 	}
 }
 
-// TestReadyWithoutAGeneratorSaysSo keeps the PR-7 behavior for a
-// deployment that wires no generator.
+// TestReadyWithoutAGeneratorSaysSo covers a deployment that wires no
+// generator: the turn says so and builds nothing.
 func TestReadyWithoutAGeneratorSaysSo(t *testing.T) {
 	store := newFakeStore()
 	client, _ := testServer(t, store, readySteps(t)...)
@@ -235,7 +256,11 @@ func (f *fakeDeckStore) Get(_ context.Context, _ string, id string) (*mtgv1.Deck
 	return nil, fmt.Errorf("deck %s not found", id)
 }
 
-func (f *fakeDeckStore) Put(_ context.Context, _ string, d *mtgv1.Deck) error {
+func (f *fakeDeckStore) Put(ctx context.Context, _ string, d *mtgv1.Deck) error {
+	// A write on a cancelled context fails, as Firestore does.
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	if f.fail != nil {
 		return f.fail
 	}
@@ -243,9 +268,8 @@ func (f *fakeDeckStore) Put(_ context.Context, _ string, d *mtgv1.Deck) error {
 	return nil
 }
 
-// TestTheDeckIsKeptAndRecorded is D-245. The build streamed a deck and
-// let it go, so session.deck_ids stayed empty, AfterBuild was never true,
-// and the variance row was dead for every real user.
+// TestTheDeckIsKeptAndRecorded is D-245: the built deck is stored and
+// its id lands on the session.
 func TestTheDeckIsKeptAndRecorded(t *testing.T) {
 	store := newFakeStore()
 	ds := &fakeDeckStore{}
@@ -314,9 +338,8 @@ func TestNoDeckStoreStillBuilds(t *testing.T) {
 	}
 }
 
-// TestDeckColorsFollowEveryCommander is G-7 of the 2026-08-28 audit. The
-// basics followed the first commander only, so a partner pair got half
-// its basics.
+// TestDeckColorsFollowEveryCommander: the basics follow every
+// commander, so a partner pair gets both halves.
 func TestDeckColorsFollowEveryCommander(t *testing.T) {
 	w := &mtgv1.Card{ColorIdentity: []mtgv1.Color{mtgv1.Color_COLOR_W}}
 	ug := &mtgv1.Card{ColorIdentity: []mtgv1.Color{mtgv1.Color_COLOR_U, mtgv1.Color_COLOR_G}}
@@ -367,10 +390,9 @@ func buildServer(t *testing.T, fd *fakeDecks, idx *cards.Index, extra ...Option)
 	return srv
 }
 
-// TestThinCommanderPoolRunsNoBuild is G-11 of the 2026-08-28 audit. A
-// Commander session that delegated the commander, over a library with
-// none for the theme, ran a build the engine had to refuse. No model
-// call is spent on it, and the error names the reason for the user.
+// TestThinCommanderPoolRunsNoBuild is D-232. A Commander session that
+// delegated the commander, over a library with none for the theme, runs
+// no build: no model call is spent, and the error names the reason.
 func TestThinCommanderPoolRunsNoBuild(t *testing.T) {
 	// No legendary creature at all, so the commander pool is empty.
 	welcome := &mtgv1.Card{
@@ -388,7 +410,7 @@ func TestThinCommanderPoolRunsNoBuild(t *testing.T) {
 		PoolRule: mtgv1.PoolRule_POOL_RULE_OWNED_ONLY,
 	}}
 	st := &questions.State{Slots: session.GetSlots()}
-	res, err := srv.buildDeck(context.Background(), "u1", session, st, nil)
+	res, err := srv.buildDeck(context.Background(), "u1", session, st, nil, nil)
 	if !errors.Is(err, ErrThinCommanderPool) {
 		t.Fatalf("err = %v, want ErrThinCommanderPool", err)
 	}
@@ -397,10 +419,9 @@ func TestThinCommanderPoolRunsNoBuild(t *testing.T) {
 	}
 }
 
-// TestUnresolvedPreconKeepsNoShare pins the unresolved-precon rule. The
-// loader counted the rows the index could not answer, and nothing read
-// the count. A precon with any is not trustworthy for the share rule, so
-// the build runs without it. A two-card index resolves no precon, so
+// TestUnresolvedPreconKeepsNoShare pins the unresolved-precon rule. A
+// precon with rows the index could not answer gives a wrong share, so
+// the build runs without it. A one-card index resolves no precon, so
 // every one is such a list here.
 func TestUnresolvedPreconKeepsNoShare(t *testing.T) {
 	karlov := &mtgv1.Card{
@@ -418,7 +439,7 @@ func TestUnresolvedPreconKeepsNoShare(t *testing.T) {
 		t.Fatal("the one-card index resolved a precon, so the test proves nothing")
 	}
 	fd := &fakeDecks{res: &generate.Result{Deck: &mtgv1.Deck{Validation: &mtgv1.ValidationResult{}}}}
-	srv := buildServer(t, fd, idx, WithPrecons(set))
+	srv := buildServer(t, fd, idx, WithPreconSource(&fakePrecons{set: set}))
 	session := &mtgv1.Session{Id: "s-1", Slots: &mtgv1.Slots{
 		Format:   &mtgv1.Format{Id: mtgv1.FormatId_FORMAT_ID_COMMANDER},
 		Theme:    "lifegain",
@@ -427,7 +448,7 @@ func TestUnresolvedPreconKeepsNoShare(t *testing.T) {
 	st := &questions.State{Slots: session.GetSlots(), CommanderNames: []string{"Karlov of the Ghost Council"}}
 	st.Ctx.Precon = true
 	st.Ctx.Words = "upgrade my avengers assemble precon"
-	if _, err := srv.buildDeck(context.Background(), "u1", session, st, nil); err != nil {
+	if _, err := srv.buildDeck(context.Background(), "u1", session, st, nil, nil); err != nil {
 		t.Fatalf("build: %v", err)
 	}
 	if fd.runs != 1 {
@@ -438,10 +459,8 @@ func TestUnresolvedPreconKeepsNoShare(t *testing.T) {
 	}
 }
 
-// TestBuildCopiesTheHouseRules is A-6 of the 2026-08-28 audit. The
-// house-rules row asked its question for 24 gate runs, and the answer
-// never left the session. The slot now reaches the build request, and
-// the deck's Format carries it from there (D-3).
+// TestBuildCopiesTheHouseRules: the house-rules slot reaches the build
+// request, and the deck's Format carries it from there (D-3).
 func TestBuildCopiesTheHouseRules(t *testing.T) {
 	welcome := &mtgv1.Card{
 		OracleId: "o-welcome", Name: "Ajani's Welcome", TypeLine: "Enchantment",
@@ -459,7 +478,7 @@ func TestBuildCopiesTheHouseRules(t *testing.T) {
 		HouseRules: "any card, no ban list",
 	}}
 	st := &questions.State{Slots: session.GetSlots()}
-	if _, err := srv.buildDeck(context.Background(), "u1", session, st, nil); err != nil {
+	if _, err := srv.buildDeck(context.Background(), "u1", session, st, nil, nil); err != nil {
 		t.Fatalf("build: %v", err)
 	}
 	if fd.runs != 1 {
@@ -523,14 +542,20 @@ func TestShortlistFollowsTheCommanderIdentity(t *testing.T) {
 }
 
 // fakeCollections answers the owned counts and the owned printings of
-// one collection.
+// one collection. countsErr is what OracleCounts fails with, and reads
+// counts how often it was called.
 type fakeCollections struct {
 	counts    map[string]int32
 	printings map[string][]string
+	countsErr error
+	reads     *int
 }
 
 func (f fakeCollections) OracleCounts(context.Context, string, string) (map[string]int32, error) {
-	return f.counts, nil
+	if f.reads != nil {
+		*f.reads++
+	}
+	return f.counts, f.countsErr
 }
 
 func (f fakeCollections) OwnedPrintings(context.Context, string, string) (map[string][]string, error) {
@@ -582,5 +607,257 @@ func TestOwnedCardShowsThePriciestOwnedPrinting(t *testing.T) {
 	}
 	if second.deck.GetCards()[1].GetOwnedPrinting() != nil {
 		t.Error("an unowned card got an owned printing")
+	}
+}
+
+// TestTurnDuringABuildIsRefused is D-303. A second message while a
+// build runs must not start a second billed build.
+func TestTurnDuringABuildIsRefused(t *testing.T) {
+	store := newFakeStore()
+	ds := &fakeDeckStore{}
+	deck := &mtgv1.Deck{Summary: "a deck", Validation: &mtgv1.ValidationResult{}}
+	fd := &fakeDecks{res: &generate.Result{Deck: deck}, started: make(chan struct{}), release: make(chan struct{})}
+	client, _ := testServerOpts(t, store, append(buildOpts(t, fd), WithDeckStore(ds)), readySteps(t)...)
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+
+	done := make(chan events, 1)
+	go func() {
+		done <- chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
+	}()
+	select {
+	case <-fd.started:
+	case <-time.After(5 * time.Second):
+		t.Fatal("the build never started")
+	}
+	stream, err := client.Chat(context.Background(), connect.NewRequest(&mtgv1.ChatRequest{SessionId: first.started, Message: "another one"}))
+	if err == nil {
+		for stream.Receive() {
+		}
+		err = stream.Err()
+		_ = stream.Close()
+	}
+	if connect.CodeOf(err) != connect.CodeAborted || !strings.Contains(err.Error(), "a build is in progress") {
+		t.Errorf("a turn during a build gave %v, want Aborted with the reason: %v", connect.CodeOf(err), err)
+	}
+	close(fd.release)
+	second := <-done
+	if second.deck == nil || fd.runs != 1 {
+		t.Errorf("the first build did not finish alone: deck %v, runs %d", second.deck != nil, fd.runs)
+	}
+	// The marker is gone, so the next turn is admitted.
+	stream, err = client.Chat(context.Background(), connect.NewRequest(&mtgv1.ChatRequest{SessionId: first.started, Message: "thanks"}))
+	if err == nil {
+		for stream.Receive() {
+		}
+		err = stream.Err()
+		_ = stream.Close()
+	}
+	if connect.CodeOf(err) == connect.CodeAborted {
+		t.Errorf("the build marker outlived the build: %v", err)
+	}
+}
+
+// TestDisconnectMidBuildStillStoresTheDeck is D-303. The client leaves
+// after the paid call started, and the deck is stored and recorded.
+func TestDisconnectMidBuildStillStoresTheDeck(t *testing.T) {
+	store := newFakeStore()
+	ds := &fakeDeckStore{}
+	deck := &mtgv1.Deck{Summary: "a deck", Validation: &mtgv1.ValidationResult{}}
+	fd := &fakeDecks{res: &generate.Result{Deck: deck}, started: make(chan struct{}), release: make(chan struct{})}
+	client, _ := testServerOpts(t, store, append(buildOpts(t, fd), WithDeckStore(ds)), readySteps(t)...)
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		stream, err := client.Chat(ctx, connect.NewRequest(&mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"}))
+		if err != nil {
+			return
+		}
+		for stream.Receive() {
+		}
+		_ = stream.Close()
+	}()
+	select {
+	case <-fd.started:
+	case <-time.After(5 * time.Second):
+		close(fd.release)
+		t.Fatal("the build never started")
+	}
+	cancel()
+	<-done
+	close(fd.release)
+	deadline := time.After(5 * time.Second)
+	for len(store.deckIDs(first.started)) == 0 {
+		select {
+		case <-deadline:
+			t.Fatalf("the deck id never reached the session: decks kept %d", len(ds.put))
+		case <-time.After(20 * time.Millisecond):
+		}
+	}
+	if got := store.status(first.started); got != mtgv1.SessionStatus_SESSION_STATUS_BUILT {
+		t.Errorf("status = %v, want BUILT", got)
+	}
+}
+
+// TestDeckIDWriteRetriesAfterAConflict is D-303. Another write lands
+// between the turn's Put and the deck id write, and the id is appended
+// to the current session instead of lost.
+func TestDeckIDWriteRetriesAfterAConflict(t *testing.T) {
+	store := newFakeStore()
+	ds := &fakeDeckStore{}
+	deck := &mtgv1.Deck{Summary: "a deck", Validation: &mtgv1.ValidationResult{}}
+	fd := &fakeDecks{res: &generate.Result{Deck: deck}}
+	client, _ := testServerOpts(t, store, append(buildOpts(t, fd), WithDeckStore(ds)), readySteps(t)...)
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	store.onPut = func(s *mtgv1.Session) {
+		if len(s.GetDeckIds()) > 0 {
+			store.onPut = nil
+			store.versions[s.GetId()]++
+		}
+	}
+	second := chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
+	if second.deck == nil {
+		t.Fatalf("no deck: %v", second.order)
+	}
+	if ids := store.deckIDs(first.started); len(ids) != 1 || ids[0] != fd.got.DeckID {
+		t.Errorf("deck ids = %v, want the built deck after the retry", ids)
+	}
+	if store.status(first.started) != mtgv1.SessionStatus_SESSION_STATUS_BUILT {
+		t.Error("the retry lost the built status")
+	}
+	if got := store.versionOf(first.started); got != 4 {
+		t.Errorf("version = %d, want 4: turn, bump, and the retried deck id", got)
+	}
+}
+
+// TestCollectionCountsAreReadOncePerTurn: the hints and the build share
+// one read.
+func TestCollectionCountsAreReadOncePerTurn(t *testing.T) {
+	store := newFakeStore()
+	deck := &mtgv1.Deck{Validation: &mtgv1.ValidationResult{}}
+	fd := &fakeDecks{res: &generate.Result{Deck: deck}}
+	reads := 0
+	cols := fakeCollections{counts: map[string]int32{"o-welcome": 1}, reads: &reads}
+	client, _ := testServerOpts(t, store, append(buildOpts(t, fd), WithCollections(cols)), readySteps(t)...)
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck", CollectionId: "c1"})
+	if reads != 1 {
+		t.Errorf("the first turn read the counts %d times, want 1", reads)
+	}
+	second := chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
+	if second.deck == nil {
+		t.Fatalf("no deck: %v", second.order)
+	}
+	if reads != 2 {
+		t.Errorf("the building turn read the counts %d times in total, want 2", reads)
+	}
+	if fd.got.OracleCounts["o-welcome"] != 1 {
+		t.Error("the build did not get the counts")
+	}
+}
+
+// TestNewSessionWithAMissingCollectionIsNotFound covers a new session
+// that names a collection the store does not hold.
+func TestNewSessionWithAMissingCollectionIsNotFound(t *testing.T) {
+	cols := fakeCollections{countsErr: status.Error(codes.NotFound, "no such document")}
+	client, sc := testServerOpts(t, newFakeStore(), []Option{WithCollections(cols)}, firstTurn(t)...)
+	stream, err := client.Chat(context.Background(), connect.NewRequest(&mtgv1.ChatRequest{Message: "build me a deck", CollectionId: "gone"}))
+	if err == nil {
+		for stream.Receive() {
+		}
+		err = stream.Err()
+		_ = stream.Close()
+	}
+	if connect.CodeOf(err) != connect.CodeNotFound {
+		t.Errorf("code = %v, want NotFound: %v", connect.CodeOf(err), err)
+	}
+	if len(sc.Calls) != 0 {
+		t.Errorf("a refused turn made %d model calls", len(sc.Calls))
+	}
+}
+
+// TestRevisionCapKeepsTheCommanderAndTheLockedCards: a mana value cap
+// never drops a commander or a locked card from the pool, because the
+// engine blocks a deck without them (D-242).
+func TestRevisionCapKeepsTheCommanderAndTheLockedCards(t *testing.T) {
+	karlov := &mtgv1.Card{
+		OracleId: "o-karlov", Name: "Karlov of the Ghost Council", ManaValue: 9,
+		TypeLine: "Legendary Creature — Spirit Advisor", CanBeCommander: true, CardTypes: []string{"Creature"},
+		ColorIdentity: []mtgv1.Color{mtgv1.Color_COLOR_W, mtgv1.Color_COLOR_B},
+		Legalities:    map[string]mtgv1.LegalityStatus{"commander": mtgv1.LegalityStatus_LEGALITY_STATUS_LEGAL},
+	}
+	locked := &mtgv1.Card{
+		OracleId: "o-locked", Name: "Locked Thing", ManaValue: 6, TypeLine: "Creature", CardTypes: []string{"Creature"},
+		ColorIdentity: []mtgv1.Color{mtgv1.Color_COLOR_W},
+		Legalities:    map[string]mtgv1.LegalityStatus{"commander": mtgv1.LegalityStatus_LEGALITY_STATUS_LEGAL},
+	}
+	other := &mtgv1.Card{
+		OracleId: "o-other", Name: "Other Thing", ManaValue: 6, TypeLine: "Creature", CardTypes: []string{"Creature"},
+		ColorIdentity: []mtgv1.Color{mtgv1.Color_COLOR_W},
+		Legalities:    map[string]mtgv1.LegalityStatus{"commander": mtgv1.LegalityStatus_LEGALITY_STATUS_LEGAL},
+	}
+	idx := cards.NewIndex([]*mtgv1.Card{karlov, locked, other}, nil, nil, time.Unix(1000, 0).UTC())
+	fd := &fakeDecks{res: &generate.Result{Deck: &mtgv1.Deck{Validation: &mtgv1.ValidationResult{}}}}
+	srv := buildServer(t, fd, idx)
+	session := &mtgv1.Session{Id: "s-1", Slots: &mtgv1.Slots{
+		Format:     &mtgv1.Format{Id: mtgv1.FormatId_FORMAT_ID_COMMANDER},
+		Theme:      "lifegain",
+		PoolRule:   mtgv1.PoolRule_POOL_RULE_ANY_CARD,
+		SlotStates: map[string]mtgv1.SlotState{},
+	}}
+	st := questions.NewState(false)
+	st.Slots = session.GetSlots()
+	st.SetCommander("Karlov of the Ghost Council")
+	st.AddLocked("Locked Thing")
+	rev := &generate.Revision{Base: []*mtgv1.DeckCard{{OracleId: "o-other", Name: "Other Thing", Count: 1}}, MaxManaValue: 4}
+	if _, err := srv.buildDeckFrom(context.Background(), "u1", session, st, nil, nil, rev); err != nil {
+		t.Fatalf("build: %v", err)
+	}
+	got := fd.got.Revision
+	if got == nil || len(got.Exempt) != 2 || got.Exempt[0] != "o-karlov" || got.Exempt[1] != "o-locked" {
+		t.Fatalf("exempt = %v, want the commander and the locked card", got)
+	}
+	for _, id := range []string{"o-karlov", "o-locked"} {
+		if _, ok := fd.got.Pool.ByOracleID(id); !ok {
+			t.Errorf("%s left the pool over the cap", id)
+		}
+	}
+	if _, ok := fd.got.Pool.ByOracleID("o-other"); ok {
+		t.Error("a base card over the cap stayed in the pool")
+	}
+}
+
+// TestBuildNamesTheMissingWiring: each missing piece has its own error.
+func TestBuildNamesTheMissingWiring(t *testing.T) {
+	cat, err := questions.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	client, _ := fakeClient(t)
+	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
+	fd := &fakeDecks{}
+	session := &mtgv1.Session{Id: "s-1", Slots: &mtgv1.Slots{Format: &mtgv1.Format{Id: mtgv1.FormatId_FORMAT_ID_MODERN}}}
+	st := &questions.State{Slots: session.GetSlots()}
+	cb, err := candidates.New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		name string
+		opts []Option
+		want error
+	}{
+		{"no index source", []Option{WithDecks(fd)}, errNoIndexSource},
+		{"no builder", []Option{WithDecks(fd), WithCandidates(fixedIndex{}, nil)}, errNoCandidateBuilder},
+		{"no index loaded", []Option{WithDecks(fd), WithCandidates(fixedIndex{}, cb)}, errNoIndexLoaded},
+	} {
+		srv, err := New(cat, client, newFakeStore(), func(context.Context) string { return "u1" }, append([]Option{WithLogger(quiet)}, tc.opts...)...)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := srv.buildDeck(context.Background(), "u1", session, st, nil, nil); !errors.Is(err, tc.want) {
+			t.Errorf("%s: err = %v, want %v", tc.name, err, tc.want)
+		}
 	}
 }

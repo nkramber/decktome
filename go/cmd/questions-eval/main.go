@@ -7,6 +7,8 @@
 // command applies a rubric, and it can not decide one.
 //
 // CAUTION: this calls a real provider and costs money. Set QUESTIONS_EVAL=1.
+// The command refuses an -out or -json file that exists before it makes
+// the first call: a paid result is never overwritten (D-65).
 //
 // Usage:
 //
@@ -54,6 +56,9 @@ func run(in, out, jsonOut string, budget float64, limit, holdout int) error {
 	if in == "" {
 		return fmt.Errorf("give -in, a gate document")
 	}
+	if err := gatekit.RefuseExisting(out, jsonOut); err != nil {
+		return err
+	}
 	gate, err := tune.ReadRun(in)
 	if err != nil {
 		return err
@@ -90,6 +95,9 @@ func run(in, out, jsonOut string, budget float64, limit, holdout int) error {
 	missed := map[string][]string{}
 	unjudged := map[string]string{}
 	var errored []string
+	// scored counts the conversations the eval was asked about, so the
+	// budget-stop message reports a count and not a map size.
+	scored := 0
 	for _, conv := range convs {
 		// A conversation that errored in the gate asked nothing after the
 		// error. It is named, and it counts for nobody (T-5).
@@ -107,19 +115,20 @@ func run(in, out, jsonOut string, budget float64, limit, holdout int) error {
 		// same conversations as a full one (D-181).
 		held := tune.HeldOut(conv.Name, holdout)
 		// The budget is a hard stop, checked before every call. A run that
-		// costs more than the owner allowed is worse than a short run.
+		// costs more than -budget allows is worse than a short run.
 		spent, err := costOf(acc, model)
 		if err != nil {
 			return err
 		}
 		if spent >= budget {
-			stopped = fmt.Sprintf("the budget of $%.2f stopped the run after %d conversations", budget, len(missed))
+			stopped = fmt.Sprintf("the budget of $%.2f stopped the run after %d conversations", budget, scored)
 			break
 		}
 		vs, miss, err := score(client, acc, gate.Name, conv, checker.facts(conv))
 		if err != nil {
 			return fmt.Errorf("%s: %w", conv.Name, err)
 		}
+		scored++
 		// One verdict per question asked, or the conversation is unjudged
 		// and the document says so (T-9).
 		if why := mismatch(conv, vs); why != "" {
@@ -212,9 +221,8 @@ func score(client *llm.Client, acc *llm.Accumulator, run string, conv tune.Conve
 	}
 	// The transcript is interleaved, turn by turn. A flat list of messages
 	// beside a flat list of questions makes the reader hold the order in
-	// its head, and the cost tier did not. The calibration of 2026-08-26
-	// found seven questions marked as duplicates of an answer the user
-	// gave one or two turns later (D-141).
+	// its head, and a question then reads as a duplicate of an answer the
+	// user gave a turn later (D-141).
 	type turnIn struct {
 		Turn int `json:"turn"`
 		// User is the message that arrived on this turn.
@@ -371,7 +379,7 @@ func write(w io.Writer, _ *tune.Run, s tune.Summary, missed map[string][]string,
 	}
 
 	p("## The counters the ratio can not see\n\n")
-	p("A run that asks less scores better and serves the user worse. Gate run 7 of 2026-08-25 passed both bars with 26 of 30 conversations unanswered.\n\n")
+	p("A run that asks less scores better and serves the user worse. A run can pass both bars with most of its conversations unanswered, so read these counters with the ratio.\n\n")
 	p("| Counter | Value |\n|---|---|\n")
 	p("| Questions asked | %d |\n", s.Metrics.Questions)
 	p("| Questions that closed a slot | %d |\n", s.Metrics.CatalogFilled)

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
 )
 
 // The role targets and the limits block come from the corpus role guide
@@ -45,7 +46,9 @@ func LimitsFor(format mtgv1.FormatId) string {
 		return "Exactly 100 cards, the commander included. List exactly 99 cards, and do not list the commander. " +
 			"One copy of each name, basic lands excepted. Every card must fit the commander's color identity. " +
 			"No sideboard."
-	case mtgv1.FormatId_FORMAT_ID_STANDARD, mtgv1.FormatId_FORMAT_ID_MODERN:
+	// The house format allows a sideboard, like the other 60-card
+	// formats (D-302).
+	case mtgv1.FormatId_FORMAT_ID_STANDARD, mtgv1.FormatId_FORMAT_ID_MODERN, mtgv1.FormatId_FORMAT_ID_HOUSE:
 		return "At least 60 cards in the main deck. At most four copies of each name, basic lands excepted. " +
 			"A sideboard of up to 15 cards, under the same copy limit across both."
 	default:
@@ -74,7 +77,7 @@ func DeckSize(format mtgv1.FormatId) int {
 	switch format {
 	case mtgv1.FormatId_FORMAT_ID_COMMANDER:
 		return 100
-	case mtgv1.FormatId_FORMAT_ID_STANDARD, mtgv1.FormatId_FORMAT_ID_MODERN:
+	case mtgv1.FormatId_FORMAT_ID_STANDARD, mtgv1.FormatId_FORMAT_ID_MODERN, mtgv1.FormatId_FORMAT_ID_HOUSE:
 		return 60
 	}
 	return 0
@@ -121,13 +124,20 @@ const CodeOverBudget = "over_budget"
 
 // BuyCost is what the user must buy: every copy the collection does not
 // cover, at the card's display price. A deck built from an owned pool
-// costs nothing to buy.
-func BuyCost(deck *mtgv1.Deck) float64 {
+// costs nothing to buy. The commanders are not deck cards, so a caller
+// with a card index uses BuyCostWith to charge them.
+func BuyCost(deck *mtgv1.Deck) float64 { return BuyCostWith(deck, nil, nil) }
+
+// BuyCostWith is BuyCost with the commanders charged. cards prices a
+// commander, and owned is the collection count per oracle id, so the
+// sum counts the commander the way the ownership check does (D-37). The
+// copies of one oracle id are summed across the main deck and the
+// sideboard before the owned copies come off.
+func BuyCostWith(deck *mtgv1.Deck, cards rules.CardSource, owned map[string]int32) float64 {
 	total := 0.0
-	for _, c := range allCards(deck) {
-		short := c.GetCount() - c.GetOwnedCount()
-		if short > 0 && c.GetPriceUsd() > 0 {
-			total += float64(short) * c.GetPriceUsd()
+	for _, l := range deckLines(deck, cards, owned) {
+		if short := l.count - l.owned; short > 0 && l.price > 0 {
+			total += float64(short) * l.price
 		}
 	}
 	return total
@@ -135,12 +145,63 @@ func BuyCost(deck *mtgv1.Deck) float64 {
 
 // DeckCost is what the whole deck is worth, owned copies included. The
 // budget-scope question of D-77 asks the user which of the two they mean.
-func DeckCost(deck *mtgv1.Deck) float64 {
+// A caller with a card index uses DeckCostWith to count the commanders.
+func DeckCost(deck *mtgv1.Deck) float64 { return DeckCostWith(deck, nil) }
+
+// DeckCostWith is DeckCost with the commanders priced from cards.
+func DeckCostWith(deck *mtgv1.Deck, cards rules.CardSource) float64 {
 	total := 0.0
-	for _, c := range allCards(deck) {
-		total += float64(c.GetCount()) * c.GetPriceUsd()
+	for _, l := range deckLines(deck, cards, nil) {
+		total += float64(l.count) * l.price
 	}
 	return total
+}
+
+// deckLine is one oracle id of a deck with its copies summed.
+type deckLine struct {
+	count, owned int32
+	price        float64
+}
+
+// deckLines sums the deck per oracle id: the main deck, the sideboard,
+// and the commanders. A commander is priced from cards and owned from
+// owned, because it is not a deck card. Without cards, no commander is
+// counted.
+func deckLines(deck *mtgv1.Deck, cards rules.CardSource, owned map[string]int32) []deckLine {
+	byID := map[string]*deckLine{}
+	var order []*deckLine
+	line := func(id string) *deckLine {
+		l, ok := byID[id]
+		if !ok {
+			l = &deckLine{}
+			byID[id] = l
+			order = append(order, l)
+		}
+		return l
+	}
+	for _, c := range allCards(deck) {
+		l := line(c.GetOracleId())
+		l.count += c.GetCount()
+		l.owned = c.GetOwnedCount()
+		l.price = c.GetPriceUsd()
+	}
+	if cards != nil {
+		for _, id := range deck.GetCommanderOracleIds() {
+			c, ok := cards.ByOracleID(id)
+			if !ok {
+				continue
+			}
+			l := line(id)
+			l.count++
+			l.owned = owned[id]
+			l.price = c.GetPriceUsd()
+		}
+	}
+	out := make([]deckLine, 0, len(order))
+	for _, l := range order {
+		out = append(out, *l)
+	}
+	return out
 }
 
 func allCards(deck *mtgv1.Deck) []*mtgv1.DeckCard {
@@ -153,10 +214,8 @@ func allCards(deck *mtgv1.Deck) []*mtgv1.DeckCard {
 const CodeLockedCardMissing = "locked_card_missing"
 
 // PreconSharePercent is how much of a named precon a built deck keeps.
-// The owner set it on 2026-08-26, and called it a start and not a settled
-// figure (D-218, answers OQ-21). On 2026-08-28 the owner set the base:
-// the nonbasic names of the precon, with basic lands free to swap. The
-// rest is a ceiling and not a target (A-5 of the 2026-08-28 audit).
+// The base is the nonbasic names of the precon, with basic lands free to
+// swap. The rest is a ceiling and not a target (D-218).
 const PreconSharePercent = 85
 
 // CodePreconShare is the finding an upgrade gets when it drops too much
@@ -164,10 +223,9 @@ const PreconSharePercent = 85
 const CodePreconShare = "precon_share"
 
 // PreconKeepCount is how many of a precon's nonbasic names a built deck
-// must keep (D-218, A-5). The share is a percentage, and the prompt
-// states a count: a model asked for a percentage must do arithmetic
-// against a list it is still writing, and deck gate prompts 17 and 18
-// kept 68 and 29 percent of theirs (D-248).
+// must keep (D-218). The share is a percentage, and the prompt states a
+// count: a model asked for a percentage must do arithmetic against a
+// list it is still writing (D-248).
 func PreconKeepCount(total int) int {
 	if total <= 0 {
 		return 0

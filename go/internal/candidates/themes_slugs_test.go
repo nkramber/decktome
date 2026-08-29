@@ -5,9 +5,8 @@ import (
 	"testing"
 )
 
-// TestThemeSlugsExist guards defect A of the PR-6 gate (2026-08-24).
-// themes.json held 16 slugs that Scryfall Tagger does not have. The
-// matcher drops an unknown slug without a message, so a theme silently
+// TestThemeSlugsExist checks every slug of themes.json against the Tagger
+// data. The matcher drops an unknown slug without a message, so a theme
 // loses its payoff half. The test needs a local snapshot. It skips
 // without one, and `make themes-check` runs it with the snapshot.
 func TestThemeSlugsExist(t *testing.T) {

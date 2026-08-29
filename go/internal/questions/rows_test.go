@@ -11,9 +11,9 @@ import (
 // The row tests: the scope row, the one-deck row, the option net, the
 // house rules, and the rule table.
 
-// TestWordRulesRunInOrder holds the order of the word rules (audit
-// Q-15). A rule that moves changes what a later rule reads, so the order
-// is explicit here and a change to it must change this list.
+// TestWordRulesRunInOrder holds the order of the word rules. A rule that
+// moves changes what a later rule reads, so the order is explicit here
+// and a change to it must change this list.
 func TestWordRulesRunInOrder(t *testing.T) {
 	want := []string{
 		"format_from_words", "accept_nearest_format", "unsupported_format",
@@ -35,9 +35,9 @@ func TestWordRulesRunInOrder(t *testing.T) {
 	}
 }
 
-// TestOutOfScopeRepeats is audit Q-10. A user who asks for another game
-// a second time heard nothing: the row was gated on its asked mark. The
-// fact is raised again on the second message, so the row fires again.
+// TestOutOfScopeRepeats is D-99. A user who asks for another game a
+// second time must hear the decline again: the fact is raised again on
+// the second message, so the row fires again.
 func TestOutOfScopeRepeats(t *testing.T) {
 	other := classifyOut{Format: "unknown", PoolRule: "unknown"}
 	other.Facts.OutOfScope = true
@@ -71,7 +71,7 @@ func TestOutOfScopeRepeats(t *testing.T) {
 	}
 }
 
-// TestOneDeckRepeats is the one-deck half of audit Q-10. A user who asks
+// TestOneDeckRepeats is the one-deck half of D-112. A user who asks
 // for a second deck again hears the sentence again.
 func TestOneDeckRepeats(t *testing.T) {
 	unknown := classifyOut{Format: "unknown", PoolRule: "unknown"}
@@ -102,7 +102,7 @@ func TestOneDeckRepeats(t *testing.T) {
 	}
 }
 
-// TestPlanRepeatsTheLimitRowsOnTheFact holds the planner half of Q-10.
+// TestPlanRepeatsTheLimitRowsOnTheFact holds the planner half of D-99.
 // The asked mark no longer gates the two limit rows.
 func TestPlanRepeatsTheLimitRowsOnTheFact(t *testing.T) {
 	c := load(t)
@@ -122,9 +122,9 @@ func TestPlanRepeatsTheLimitRowsOnTheFact(t *testing.T) {
 	}
 }
 
-// TestCompetitiveRequestInfersTheTournamentStep is D-107. Conversation 16
-// opens with "I want the strongest Modern deck, money is no object", and
-// every run then asked how strong the deck should be.
+// TestCompetitiveRequestInfersTheTournamentStep is D-107. "I want the
+// strongest Modern deck, money is no object" names the power, so the
+// agent must not ask how strong the deck should be.
 func TestCompetitiveRequestInfersTheTournamentStep(t *testing.T) {
 	out := classifyOut{Format: "modern", Theme: "best deck", PoolRule: "unknown"}
 	out.Colors = []string{"R"}
@@ -158,8 +158,8 @@ func TestCompetitiveRequestInfersTheTournamentStep(t *testing.T) {
 	}
 }
 
-// TestTwoDeckRequestAsksNothingElse is D-112. Probe 50 chose a deck
-// silently in gate runs 11 to 13.
+// TestTwoDeckRequestAsksNothingElse is D-112. The agent must not choose
+// a deck in silence.
 func TestTwoDeckRequestAsksNothingElse(t *testing.T) {
 	out := classifyOut{Format: "unknown", PoolRule: "unknown"}
 	a, _ := testAgent(t, classifyStep(t, out))
@@ -177,9 +177,9 @@ func TestTwoDeckRequestAsksNothingElse(t *testing.T) {
 }
 
 // TestFixedRowIsNeverReplaced covers the rows that state what this app
-// does or does not do. The smoke run of 2026-08-26 replaced "I build one
-// deck at a time. Which deck do you want first?" with a question that
-// never said the app builds one deck at a time.
+// does or does not do. A replacement of "I build one deck at a time.
+// Which deck do you want first?" drops the sentence that names the
+// limit (D-117).
 func TestFixedRowIsNeverReplaced(t *testing.T) {
 	out := classifyOut{Format: "unknown", PoolRule: "unknown"}
 	// No score and no ask step: a fixed row goes out as written, so a
@@ -219,12 +219,11 @@ func TestEveryLimitRowIsFixed(t *testing.T) {
 	}
 }
 
-// TestAnswerThatRepeatsAnOptionClosesTheKey is D-119. Conversation 5 asks
+// TestAnswerThatRepeatsAnOptionClosesTheKey is D-119. The agent asks
 // "When you say anything goes, do you mean any card with no ban list, or
 // Vintage rules?" The user answers "Any card, no ban list." The
-// classifier left the key open in gate run 13 and in the batch run. The
-// slot is typed since A-6 of the 2026-08-28 audit, so the repeated
-// option is also the value the slot holds.
+// classifier can leave the key open. The slot is typed (D-265), so the
+// repeated option is also the value the slot holds.
 func TestAnswerThatRepeatsAnOptionClosesTheKey(t *testing.T) {
 	first := classifyOut{Format: "unknown", PoolRule: "unknown", Theme: "dragons"}
 	// Turn 2 names the format and the theme, and reports no closed key.
@@ -250,10 +249,9 @@ func TestAnswerThatRepeatsAnOptionClosesTheKey(t *testing.T) {
 	}
 }
 
-// TestHouseRulesCloseOnTheUsersWords is A-6 of the 2026-08-28 audit. The
-// house-rules row asked its question for 24 gate runs, and nothing
-// stored the answer. The classifier now reports the user's own words,
-// the slot holds them, and a bare key name can not close the slot.
+// TestHouseRulesCloseOnTheUsersWords is D-265. The house-rules row asks
+// its question, the classifier reports the user's own words, the slot
+// holds them, and a bare key name can not close the slot.
 func TestHouseRulesCloseOnTheUsersWords(t *testing.T) {
 	first := classifyOut{Format: "modern", Theme: "dragons", PoolRule: "unknown"}
 	byName := classifyOut{Format: "unknown", PoolRule: "unknown", ClosedKeys: []string{"house_rules"}}
@@ -341,9 +339,9 @@ func TestAMessageThatAnswersItsOwnTriggerAsksNothing(t *testing.T) {
 	_ = res
 }
 
-// TestOneRowPerKeyWhileAQuestionIsOut is D-126. Probe 33 asked the theme
-// through the competitive row, got no answer, and asked it again through
-// the general row one turn later.
+// TestOneRowPerKeyWhileAQuestionIsOut is D-126. The theme asked through
+// the competitive row must not be asked again through the general row
+// one turn later.
 func TestOneRowPerKeyWhileAQuestionIsOut(t *testing.T) {
 	c := load(t)
 	ctx := Context{
@@ -373,13 +371,11 @@ func TestOneRowPerKeyWhileAQuestionIsOut(t *testing.T) {
 // supports. The row bundles three limits into one yes-or-no question:
 // "do the normal limits hold: ...". The ask role rewrote it as "should
 // the deck use a 60-card minimum, four copies per name, and a 15-card
-// sideboard?", and the eval read three questions in one (conversations
-// 21 and 34 of run 20260826-191225-000). A fixed row never reaches the
-// ask role.
+// sideboard?", which reads as three questions in one (D-162). A fixed
+// row never reaches the ask role.
 //
 // The confirm row is not fixed. Its own words assert a premise the user
-// may not have given, and the eval refused the fixed text in
-// conversations 33, 49, and 68 of run 20260826-191225-001.
+// may not have given (D-201).
 func TestHouseLimitsRowGoesOutAsWritten(t *testing.T) {
 	c := load(t)
 	row, ok := c.Row("house_format_limits")
@@ -417,9 +413,8 @@ func TestHouseLimitsRowGoesOutAsWritten(t *testing.T) {
 }
 
 // TestColorlessClosesTheColorSlot is D-165. The classify schema holds the
-// five colors alone, so no model call can report a colorless deck. Probe
-// 73 of gate run 18 answered "A colorless Commander deck" and got the
-// color question.
+// five colors alone, so no model call can report a colorless deck, and
+// "A colorless Commander deck" must not get the color question.
 func TestColorlessClosesTheColorSlot(t *testing.T) {
 	if !colorlessRequest("a colorless Commander deck built around big artifacts") {
 		t.Error("a colorless request was not read")

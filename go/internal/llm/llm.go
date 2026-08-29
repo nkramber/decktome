@@ -5,8 +5,8 @@
 // retry classes, validates the structured output against the caller's JSON
 // Schema, and records usage. No call site ever names a model.
 //
-// PR-0c shipped the seam and the fixture Fake. PR-10 adds the role layer,
-// the OpenAI and Anthropic adapters (D-21, D-22), and usage accounting (M-1).
+// The package holds the seam, the fixture Fake, the role layer, the
+// OpenAI and Anthropic adapters (D-21, D-22), and usage accounting (M-1).
 package llm
 
 import (
@@ -19,7 +19,7 @@ import (
 // a model, a reasoning effort, and an output cap.
 type Role string
 
-// The six roles of the agent (roadmap PR-10, D-133).
+// The roles of the agent (D-133, D-283). Roles lists them all.
 const (
 	RoleClassify Role = "classify"
 	RoleAsk      Role = "ask"
@@ -29,13 +29,12 @@ const (
 	// RoleEval scores the questions the agent asked, for the automated
 	// M-5 lane. It is not RoleJudge: the judge rates a deck (D-4), and
 	// D-22 keeps it off the generator's provider. The eval role rates a
-	// question, and the owner set it on the cost tier so a whole run
-	// costs cents (D-133).
+	// question and runs on the cost tier (D-133).
 	RoleEval Role = "eval"
 	// RoleRevise reads a message after a build and returns the revision
 	// brief: what to remove, what to keep, the limits, one question when
 	// the request is unclear, and what it declines with a reason
-	// (PR-12B, D-283, D-284).
+	// (D-283, D-284).
 	RoleRevise Role = "revise"
 )
 

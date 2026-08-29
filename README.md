@@ -2,11 +2,11 @@
 
 An agentic Magic: The Gathering deck builder. You upload a ManaBox collection export (optional), describe the deck you want, answer a few questions, and get a legal, validated deck with card art. Go + Protobuf (Connect-RPC) + TypeScript (React). Design: `docs/design-roadmap.md`.
 
-Status: `docs/SESSION-HANDOFF.md` says where the work stands. The local stack serves the card database, the collection import, the LLM role layer, the question workflow (`AgentService.Chat`), and the deck generator.
+Status: `docs/SESSION-HANDOFF.md` says where the work stands. The local stack serves the card database, the collection import, the LLM role layer, and the question workflow (`AgentService.Chat`). It also serves the deck generator, the revision turn, and the web app.
 
 ## Run it locally
 
-Everything runs on your machine with no cloud account and no credentials.
+The whole stack runs on your machine with no cloud account and no credentials.
 
 ### 1. Check your tools
 
@@ -14,7 +14,7 @@ Everything runs on your machine with no cloud account and no credentials.
 make doctor
 ```
 
-Each `MISSING` line shows the fix command. Full install steps: `docs/setup.md`. You need: Go, Node 22 LTS (22.23.2) + pnpm, the firebase CLI, and Java 17. An optional tool prints a `warn` line and not a failure: `brew`, the `docker` CLI, `gcloud`, `python3`, and `shellcheck`. A stopped Docker daemon is a `warn` line too.
+Each `MISSING` line shows the fix command. Full install steps: `docs/setup.md`. You need: Go, Node 22.12 or newer on the 22 line (`.nvmrc` pins 22.23.2) + pnpm, the firebase CLI, and Java 17. An optional tool prints a `warn` line and not a failure: `brew`, the `docker` CLI, `gcloud`, `python3`, and `shellcheck`. A stopped Docker daemon is a `warn` line too.
 
 ### 2. Install the web dependencies
 
@@ -41,6 +41,8 @@ This starts five processes under one supervisor. One Ctrl-C stops them all:
 | Web (Vite) | 5180 | http://localhost:5180 |
 
 Note: the ports avoid the Wallabee dev stack (8080, 8181, 4000, 5173), which can run on the same machine.
+
+The web app reads two optional variables. `VITE_API_BASE_URL` sets the API origin, and the default is empty, so the app calls the same origin (the Vite proxy in dev). `VITE_AUTH_EMULATOR_HOST` names the Auth emulator, and the dev default is `127.0.0.1:9199` (`web/apps/web/src/lib/api.ts` and `lib/firebase.ts`).
 
 ### 4. Load the card database (first run only)
 
@@ -92,14 +94,14 @@ PY
 
 ### 6. Test it in the browser
 
-The web app is the product's front door. Open http://localhost:5180 while `make dev` runs. This is what works today, and what does not. The roadmap slices are PR-11 and PR-12 (`docs/reference/ui-plan-2026-08-28.md`).
+The web app is the front door of the product. Open http://localhost:5180 while `make dev` runs. It shows the sign-in form, and the API health line sits in the footer. This is what works today, and what does not. The roadmap slices are PR-11 and PR-12 (`docs/reference/ui-plan-2026-08-28.md`).
 
 1. Sign in. The form runs over the Firebase Auth emulator, so any email and password work. Click "Create account" the first time. The account survives a restart of `make dev`, because the emulator exports its users to `.local/firestore` at exit.
 2. Upload a collection, or skip. Choose a ManaBox CSV export. `go/internal/collections/testdata/manabox_collection.csv` is a real one with 2,548 rows. The screen shows the card count, the rows that did not resolve, and the reason for each. Earlier uploads appear as a list, and one of them is the active collection. "Skip, build from any card" clears the active collection (D-37).
-3. Continue to chat. Write what you want, for example "a mono-green Commander deck around elves", and press Enter. The agent streams its questions. Click an option, or type an answer in the field under each question, then click "Submit answers". A commander offer shows each card with its art and its rules text (D-287). The button waits until every open question has an answer. The message box hides while the agent works and while a question waits. "Stop" ends a turn that hangs. The status line says when the build runs, and the spend line shows the session cost (M-1).
-4. Read the deck. It opens beside the thread when the agent has built one. The cards group by role, with the art, the artist, and the copyright under each image (D-6). A double-faced card shows both faces. An owned card is marked, and a card to buy shows its price. The findings, the legality date, the mana curve, and the color sources sit above the cards. "Oracle text" under a card opens the rules text.
+3. Continue to chat. Write what you want, for example "a mono-green Commander deck around elves", and press Enter. The agent streams its questions. Click an option, or type an answer in the field under each question, then click "Submit answers". A commander offer shows each card image with a pick button (D-291). The button waits until every open question has an answer. The message box hides while the agent works and while a question waits. "Stop" ends a turn that hangs. The status line says when the build runs, and the spend line shows the session cost (M-1).
+4. Read the deck. It opens beside the thread after the agent builds one. The cards group by role, and each card tile shows the full image and no caption (D-290). A double-faced card shows both faces. An owned card carries a mark, and a card to buy shows its price. The findings, the legality date, the mana curve, and the color sources sit above the cards.
 5. Open "Decks". The list reads `DeckService.ListDecks`. "View" opens a deck in place. The session link returns to its chat, and a reload of the chat rebuilds the thread from the stored session.
-6. Read the footer. It shows the API status and the date of the card snapshot. "Card data: not loaded yet" means step 4 above has not run.
+6. Read the footer. It shows the API status and the date of the card snapshot. "Card data: not loaded yet" means step 4 above did not run.
 
 After the deck, write what you want changed, for example "no 6 or 7 mana cards". The agent answers in words. Then it asks a question when the request is unclear, revises the deck when it is clear, or says why it made no change (D-283, D-284). The deck view shows what changed. A change to a setting, for example the format or the bracket, builds the deck again from the start.
 
@@ -125,7 +127,7 @@ The web checks run with `pnpm --dir web lint`, `typecheck`, `test`, and `build`.
 make dev-docker
 ```
 
-Compose runs the emulators, fake GCS, and the API in containers. Compose reads `.env`, and the API fails fast with a key error when no provider key is set (D-267). The native `make dev` is the normal path. To load the card database in the container stack, run `docker compose --profile seed run --rm worker`. The API loads the snapshot within 15 seconds. Verified end to end on 2026-08-24.
+Compose runs the emulators, fake GCS, and the API in containers. Compose reads `.env`, and the API fails fast with a key error when `.env` holds no provider key (D-267). The native `make dev` is the normal path. To load the card database in the container stack, run `docker compose --profile seed run --rm worker`. The API loads the snapshot within 15 seconds. Verified end to end on 2026-08-24.
 
 ## Development commands
 
@@ -160,22 +162,24 @@ make candidates-review   # write the PR-6 gate document from the local snapshot
 
 `cd go && go run ./cmd/tune-check` compares an eval summary with its baseline, and it costs nothing.
 
-CAUTION: the eight targets below call the real LLM providers and spend money. Ask the owner before each run, and write to a new output file (D-65). Each target refuses to overwrite a scored output, and each one needs `.env`.
+CAUTION: the nine targets below and `scripts/autotune.sh` call the real LLM providers and spend money. `make autotune` is free. Ask the owner before each run, and write to a new output file (D-65). Each gate target refuses to overwrite a scored output, and each one needs `.env`.
 
 ```bash
 make questions-gate    # 104 conversations, $0.15 to $0.17, about 20 minutes
-make questions-eval    # score a gate run, $0.09 to $0.10, about 13 minutes
+make questions-eval    # score a gate run, $0.092 to $0.104 (runs 14 to 25), about 13 minutes
 make eval-calibrate    # eval model against claude-sonnet-5, $0.25 to $0.30
-make autotune          # print how to start the tuning loop (scripts/autotune.sh)
-make deck-gate         # the PR-8 gate document, about $0.90 for 16 to 18 prompts
+make autotune          # free: print how to start the paid loop, scripts/autotune.sh ($0.25 an iteration)
+make deck-gate         # the PR-8 gate document, $1.09 for 18 prompts (run 8)
+make revise-gate       # two base decks and six revisions (PR-12B), about $0.30 (run 2, $0.29)
 make chat-probe        # drive the real Chat RPC to a deck, a few cents
 make generate-probe    # build one deck with the real generate role, a few cents
 make summary-judge     # judge every deck summary of a gate document (F-26), a few cents
+make test-smoke        # live LLM smoke test, reads .env, a few cents
 ```
 
-The gate costs were measured on 2026-08-26, and the deck gate on 2026-08-28.
+The question gate cost is from 2026-08-26, and the deck gate cost is from run 8 (2026-08-29).
 
-CI runs on pull requests only, and a new push to a branch cancels the run in progress. A first job reads the diff against the base branch. Each job runs only when its inputs changed, so a docs change runs the STE check and nothing else. A merge to `main` runs nothing, because the pull request verified the same tree. The owner hit 90 percent of the monthly minutes in six days on 2026-08-28, and each run cost 25 billed minutes before this rule (D-286).
+CI runs on pull requests only, and a new push to a branch cancels the run in progress. A first job reads the diff against the base branch. Each job runs only when its inputs changed, so a docs change runs the STE check and nothing else. A merge to `main` runs nothing, because the pull request verified the same tree. A weekly schedule runs govulncheck alone, at about 2 minutes a week (D-305). The owner hit 90 percent of the monthly minutes in six days on 2026-08-28, and each run cost 25 billed minutes before this rule (D-286).
 
 Rules for contributors and agents: `AGENTS.md`. Machine setup: `docs/setup.md`. Design and roadmap: `docs/design-roadmap.md`. Decisions: `docs/decisions.md`.
 

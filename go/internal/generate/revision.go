@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	"github.com/nkramber/mtg-deck-builder/go/internal/candidates"
 	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
 )
 
@@ -21,16 +22,17 @@ const (
 // CheckRevision reads the brief against the deck the model returned. The
 // pool already dropped the removed cards and the cards over the cap, so
 // a finding here means the model named a card outside the pool, or a
-// kept card is absent.
+// kept card is absent. The sideboard counts as the deck, and a commander
+// counts as held: it is in the deck, in the command zone.
 func CheckRevision(deck *mtgv1.Deck, r *Revision, cards rules.CardSource) []*mtgv1.Finding {
 	var out []*mtgv1.Finding
-	present := map[string]*mtgv1.DeckCard{}
-	for _, c := range deck.GetCards() {
-		present[fold(c.GetName())] = c
+	present := map[string]bool{}
+	for _, c := range allCards(deck) {
+		present[candidates.FoldName(c.GetName())] = true
 	}
 	var stayed []string
 	for _, name := range r.Remove {
-		if _, ok := present[fold(name)]; ok {
+		if present[candidates.FoldName(name)] {
 			stayed = append(stayed, name)
 		}
 	}
@@ -38,9 +40,16 @@ func CheckRevision(deck *mtgv1.Deck, r *Revision, cards rules.CardSource) []*mtg
 		out = append(out, &mtgv1.Finding{Code: CodeRevisionRemovedPresent, Severity: mtgv1.Severity_SEVERITY_BLOCK,
 			Message: fmt.Sprintf("the deck still holds %s, which you asked to remove", strings.Join(stayed, ", "))})
 	}
+	if cards != nil {
+		for _, id := range deck.GetCommanderOracleIds() {
+			if c, ok := cards.ByOracleID(id); ok {
+				present[candidates.FoldName(c.GetName())] = true
+			}
+		}
+	}
 	var gone []string
 	for _, name := range r.Keep {
-		if _, ok := present[fold(name)]; !ok {
+		if !present[candidates.FoldName(name)] {
 			gone = append(gone, name)
 		}
 	}
@@ -70,20 +79,32 @@ func CheckRevision(deck *mtgv1.Deck, r *Revision, cards rules.CardSource) []*mtg
 // AllowedByRevision says whether a card may sit in the pool of a revised
 // build: not one the user wants out, and not a nonland over the cap.
 // The pool is the whole contract with the model (D-222), so a card the
-// brief forbids never reaches it.
+// brief forbids never reaches it. A kept card and an exempt card pass
+// the cap, or the deck must hold a card the model can not name.
 func AllowedByRevision(r *Revision, card *mtgv1.Card) bool {
 	if r == nil {
 		return true
 	}
-	for _, name := range r.Remove {
-		if fold(name) == fold(card.GetName()) {
+	name := candidates.FoldName(card.GetName())
+	for _, n := range r.Remove {
+		if candidates.FoldName(n) == name {
 			return false
 		}
 	}
-	if r.MaxManaValue > 0 && !isLand(card) && card.GetManaValue() > r.MaxManaValue {
-		return false
+	if r.MaxManaValue <= 0 || isLand(card) || card.GetManaValue() <= r.MaxManaValue {
+		return true
 	}
-	return true
+	for _, n := range r.Keep {
+		if candidates.FoldName(n) == name {
+			return true
+		}
+	}
+	for _, id := range r.Exempt {
+		if id == card.GetOracleId() {
+			return true
+		}
+	}
+	return false
 }
 
 func isLand(c *mtgv1.Card) bool {
@@ -94,5 +115,3 @@ func isLand(c *mtgv1.Card) bool {
 	}
 	return false
 }
-
-func fold(s string) string { return strings.ToLower(strings.TrimSpace(s)) }
