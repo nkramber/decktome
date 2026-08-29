@@ -374,7 +374,11 @@ type DeckCard struct {
 	OwnedCount int32 `protobuf:"varint,7,opt,name=owned_count,json=ownedCount,proto3" json:"owned_count,omitempty"`
 	// price_usd is the card's display price at build time (D-17). Zero means
 	// no price.
-	PriceUsd      float64 `protobuf:"fixed64,8,opt,name=price_usd,json=priceUsd,proto3" json:"price_usd,omitempty"`
+	PriceUsd float64 `protobuf:"fixed64,8,opt,name=price_usd,json=priceUsd,proto3" json:"price_usd,omitempty"`
+	// owned_printing is the priciest printing of this card in the user's
+	// collection, when the collection holds one. The UI shows its art in
+	// place of the default printing (D-299). Unset when not owned.
+	OwnedPrinting *Printing `protobuf:"bytes,9,opt,name=owned_printing,json=ownedPrinting,proto3" json:"owned_printing,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -463,6 +467,13 @@ func (x *DeckCard) GetPriceUsd() float64 {
 		return x.PriceUsd
 	}
 	return 0
+}
+
+func (x *DeckCard) GetOwnedPrinting() *Printing {
+	if x != nil {
+		return x.OwnedPrinting
+	}
+	return nil
 }
 
 // ValidationResult is the rules-engine verdict (guardrail 1, PR-5).
@@ -622,7 +633,7 @@ var File_mtg_v1_deck_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\n" +
-	"\x11mtg/v1/deck.proto\x12\x06mtg.v1\x1a\x13mtg/v1/format.proto\x1a\x14mtg/v1/session.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xfc\x05\n" +
+	"\x11mtg/v1/deck.proto\x12\x06mtg.v1\x1a\x11mtg/v1/card.proto\x1a\x13mtg/v1/format.proto\x1a\x14mtg/v1/session.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xfc\x05\n" +
 	"\x04Deck\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12&\n" +
@@ -648,7 +659,7 @@ const file_mtg_v1_deck_proto_rawDesc = "" +
 	"buyCostUsd\x12/\n" +
 	"\x14revised_from_deck_id\x18\x13 \x01(\tR\x11revisedFromDeckId\x12#\n" +
 	"\rrevision_note\x18\x14 \x01(\tR\frevisionNoteJ\x04\b\n" +
-	"\x10\vR\x04seed\"\xe3\x01\n" +
+	"\x10\vR\x04seed\"\x9c\x02\n" +
 	"\bDeckCard\x12\x1b\n" +
 	"\toracle_id\x18\x01 \x01(\tR\boracleId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
@@ -658,7 +669,8 @@ const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\x05owned\x18\x06 \x01(\bR\x05owned\x12\x1f\n" +
 	"\vowned_count\x18\a \x01(\x05R\n" +
 	"ownedCount\x12\x1b\n" +
-	"\tprice_usd\x18\b \x01(\x01R\bpriceUsd\"\xd6\x01\n" +
+	"\tprice_usd\x18\b \x01(\x01R\bpriceUsd\x127\n" +
+	"\x0eowned_printing\x18\t \x01(\v2\x10.mtg.v1.PrintingR\rownedPrinting\"\xd6\x01\n" +
 	"\x10ValidationResult\x12+\n" +
 	"\bfindings\x18\x01 \x03(\v2\x0f.mtg.v1.FindingR\bfindings\x12\x16\n" +
 	"\x06passed\x18\x02 \x01(\bR\x06passed\x12$\n" +
@@ -713,8 +725,9 @@ var file_mtg_v1_deck_proto_goTypes = []any{
 	(*Format)(nil),                // 6: mtg.v1.Format
 	(*PowerLevel)(nil),            // 7: mtg.v1.PowerLevel
 	(*timestamppb.Timestamp)(nil), // 8: google.protobuf.Timestamp
-	(PoolRule)(0),                 // 9: mtg.v1.PoolRule
-	(FormatId)(0),                 // 10: mtg.v1.FormatId
+	(*Printing)(nil),              // 9: mtg.v1.Printing
+	(PoolRule)(0),                 // 10: mtg.v1.PoolRule
+	(FormatId)(0),                 // 11: mtg.v1.FormatId
 }
 var file_mtg_v1_deck_proto_depIdxs = []int32{
 	6,  // 0: mtg.v1.Deck.format:type_name -> mtg.v1.Format
@@ -725,15 +738,16 @@ var file_mtg_v1_deck_proto_depIdxs = []int32{
 	3,  // 5: mtg.v1.Deck.sideboard:type_name -> mtg.v1.DeckCard
 	3,  // 6: mtg.v1.Deck.upgrades:type_name -> mtg.v1.DeckCard
 	0,  // 7: mtg.v1.DeckCard.role:type_name -> mtg.v1.CardRole
-	5,  // 8: mtg.v1.ValidationResult.findings:type_name -> mtg.v1.Finding
-	9,  // 9: mtg.v1.ValidationResult.pool_rule:type_name -> mtg.v1.PoolRule
-	10, // 10: mtg.v1.ValidationResult.format:type_name -> mtg.v1.FormatId
-	1,  // 11: mtg.v1.Finding.severity:type_name -> mtg.v1.Severity
-	12, // [12:12] is the sub-list for method output_type
-	12, // [12:12] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	9,  // 8: mtg.v1.DeckCard.owned_printing:type_name -> mtg.v1.Printing
+	5,  // 9: mtg.v1.ValidationResult.findings:type_name -> mtg.v1.Finding
+	10, // 10: mtg.v1.ValidationResult.pool_rule:type_name -> mtg.v1.PoolRule
+	11, // 11: mtg.v1.ValidationResult.format:type_name -> mtg.v1.FormatId
+	1,  // 12: mtg.v1.Finding.severity:type_name -> mtg.v1.Severity
+	13, // [13:13] is the sub-list for method output_type
+	13, // [13:13] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_mtg_v1_deck_proto_init() }
@@ -741,6 +755,7 @@ func file_mtg_v1_deck_proto_init() {
 	if File_mtg_v1_deck_proto != nil {
 		return
 	}
+	file_mtg_v1_card_proto_init()
 	file_mtg_v1_format_proto_init()
 	file_mtg_v1_session_proto_init()
 	type x struct{}

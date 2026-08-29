@@ -72,6 +72,9 @@ const DefaultChatLimit = 8
 // CollectionSource gives the owned count per Oracle id (D-37).
 type CollectionSource interface {
 	OracleCounts(ctx context.Context, userID, collectionID string) (map[string]int32, error)
+	// OwnedPrintings maps each Oracle id to the printing ids the user
+	// holds, so a deck card can show the printing the user owns (D-299).
+	OwnedPrintings(ctx context.Context, userID, collectionID string) (map[string][]string, error)
 }
 
 // Server answers AgentService requests.

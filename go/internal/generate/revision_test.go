@@ -80,3 +80,17 @@ func TestRepairableReadsTheManaCap(t *testing.T) {
 		t.Error("the mana cap warning did not buy the repair turn")
 	}
 }
+
+// TestMissingLockedNamesACardOutsideThePool is D-301. A revision drops a
+// locked card from the pool, and the finding must still name it.
+func TestMissingLockedNamesACardOutsideThePool(t *testing.T) {
+	arena := &mtgv1.Card{OracleId: "o-arena", Name: "Arena of Glory"}
+	req := Request{Locked: []string{"o-arena"}, Pool: NewPool(nil, nil)}
+	got := missingLocked(&mtgv1.Deck{}, req, cardMap{"o-arena": arena})
+	if len(got) != 1 || got[0] != "Arena of Glory" {
+		t.Errorf("missing = %v, want the name", got)
+	}
+	if got := missingLocked(&mtgv1.Deck{}, req, nil); len(got) != 1 || got[0] != "o-arena" {
+		t.Errorf("with no card source: %v", got)
+	}
+}

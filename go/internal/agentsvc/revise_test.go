@@ -183,3 +183,38 @@ func TestSlotChangeAfterBuildRebuilds(t *testing.T) {
 		t.Errorf("deck = %v", third.deck)
 	}
 }
+
+// TestRevisionUnlocksARemovedCard is D-301. The classify call reads a
+// named card as a card to keep, the brief removes it, and the lock must
+// go with it.
+func TestRevisionUnlocksARemovedCard(t *testing.T) {
+	store := newFakeStore()
+	ds := &fakeDeckStore{}
+	base := &mtgv1.Deck{Name: "lifegain Commander", Validation: &mtgv1.ValidationResult{},
+		Cards: []*mtgv1.DeckCard{{OracleId: "o-welcome", Name: "Ajani's Welcome", Count: 1}, {OracleId: "o-plains", Name: "Plains", Count: 30}}}
+	fd := &fakeDecks{res: &generate.Result{Deck: base}}
+	steps := append(builtSteps(t),
+		classifyJSON(t, map[string]any{"locked_names": []string{"Ajani's Welcome"}}),
+		reviseJSON(t, map[string]any{"changes": []string{"Replace Ajani's Welcome with a card the user does not own"}, "remove": []string{"Ajani's Welcome"}}))
+	client, _ := testServerOpts(t, store, append(buildOpts(t, fd), WithDeckStore(ds)), steps...)
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
+	fd.res = &generate.Result{Deck: &mtgv1.Deck{Validation: &mtgv1.ValidationResult{}, Cards: []*mtgv1.DeckCard{{OracleId: "o-plains", Name: "Plains", Count: 31}}}}
+	third := chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Replace Ajani's Welcome with a card I do not own"})
+	if third.deck == nil {
+		t.Fatalf("no revised deck: %v", third.order)
+	}
+	if len(fd.got.Locked) != 0 {
+		t.Errorf("the removed card stayed locked: %v", fd.got.Locked)
+	}
+	if _, ok := fd.got.Pool.ByOracleID("o-welcome"); ok {
+		t.Error("the removed card stayed in the pool")
+	}
+	// The stored state dropped the lock too.
+	snap := store.states[first.started]
+	for _, n := range snap.LockedNames {
+		if n == "Ajani's Welcome" {
+			t.Error("the stored state still locks the removed card")
+		}
+	}
+}

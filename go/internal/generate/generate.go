@@ -257,7 +257,7 @@ func (b *Builder) assemble(req Request, out *deckOut) pass {
 	}
 	// A card the user said to keep must be in the deck. A deck without
 	// it answers the user's own instruction with silence (D-242).
-	if missing := missingLocked(deck, req); len(missing) > 0 {
+	if missing := missingLocked(deck, req, b.cards); len(missing) > 0 {
 		addFinding(deck, CodeLockedCardMissing, mtgv1.Severity_SEVERITY_BLOCK,
 			fmt.Sprintf("the deck does not hold %s, which you asked to keep", strings.Join(missing, ", ")))
 	}

@@ -243,6 +243,18 @@ func (s *State) AddLocked(name string) {
 	s.Close("named_card_role")
 }
 
+// Unlock drops a card from the locked names. A revision that removes a
+// card unlocks it, whatever the classifier read from the message (D-301).
+func (s *State) Unlock(name string) {
+	var kept []string
+	for _, n := range s.LockedNames {
+		if !sameCard(n, name) {
+			kept = append(kept, n)
+		}
+	}
+	s.LockedNames = kept
+}
+
 // LockedCards are the named cards that are not the commander. The build
 // keeps every one of them (D-242). The locked row that once asked to
 // keep or cut them is retired: the live run of 2026-08-24 asked the user

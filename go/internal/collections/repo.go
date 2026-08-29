@@ -112,6 +112,16 @@ func (r *Repo) Get(ctx context.Context, uid, id string) (*mtgv1.Collection, erro
 	return col, nil
 }
 
+// OwnedPrintings maps each Oracle id of a collection to the printing ids
+// the user holds of it (D-299).
+func (r *Repo) OwnedPrintings(ctx context.Context, uid, id string) (map[string][]string, error) {
+	col, err := r.Get(ctx, uid, id)
+	if err != nil {
+		return nil, err
+	}
+	return OwnedPrintings(col.GetEntries()), nil
+}
+
 // OracleCounts reads the stored per-Oracle-id count map of one collection.
 // It inflates only the count payload, not the entries (D-37 ownership
 // check in DeckService.Validate).

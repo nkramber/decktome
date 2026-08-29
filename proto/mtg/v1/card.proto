@@ -107,6 +107,9 @@ message Printing {
   // digital marks an online-only printing. Digital printings are out of
   // the price search (D-17) and can differ in legality (F-12).
   bool digital = 8;
+  // price_usd is this printing's USD price on the snapshot day. Zero
+  // means no price. Set on an owned printing of a deck card (D-299).
+  double price_usd = 9;
 }
 
 // PartnerKind lists the two-commander mechanics.

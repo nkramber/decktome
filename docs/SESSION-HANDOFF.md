@@ -40,6 +40,9 @@ Branch `pr-12b` holds the revision turn (F-27, D-283 to D-285). The tree is gree
 - `internal/generate`: `Request.Revision`, the revision block of the generate prompt, `CheckRevision`, `AllowedByRevision`, and `Pool.Filter`. The pool drops the removed cards and the cards over the cap.
 - `internal/agentsvc`: `sendRevision` runs after a build when no slot changed, and `slotsChanged` decides. A slot change rebuilds from the start with a status line. `DeckStore` gained `Get`. `Turn.agent_message` is written now.
 - `Deck.revised_from_deck_id` and `Deck.revision_note` are additive proto fields. The deck view shows the note and the diff against the deck before it.
+- A card the revision brief removes is unlocked, and a missing locked card is named (D-301).
+- The deck view drops the not_owned warnings, and keeps a not_owned block (D-300).
+- An owned deck card shows the priciest printing the user holds, through `DeckCard.owned_printing` (D-299).
 - The mana sources table shows the deck's own colors only (D-298).
 - The commander offer ranks on quality in owned-first too, the commander row is fixed, and the pick row says "Which commander" (D-297). Run 27 no longer baselines the two row texts.
 - A closed question offers no free-text field, through `Question.closed` and the catalog flag (D-295).

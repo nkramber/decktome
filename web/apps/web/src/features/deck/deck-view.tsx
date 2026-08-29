@@ -52,7 +52,10 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
   const sourceRows = colorLetters.filter((c) => (colorsOfDeck.size === 0 ? c.color === Color.C : colorsOfDeck.has(c.color)));
   const total = deck.cards.reduce((n, c) => n + c.count, 0);
   const validation = deck.validation;
-  const findings = validation?.findings ?? [];
+  // A not_owned warning repeats what the tile says under the card, and
+  // an owned-first deck carries one per card to buy. The list drops them.
+  // A not_owned block in owned-only still shows (D-300).
+  const findings = (validation?.findings ?? []).filter((f) => !(f.code === "not_owned" && f.severity !== Severity.BLOCK));
   const legalityAsOf = deck.legalityAsOf || validation?.legalityAsOf || "an unknown date";
   const curveMax = Math.max(1, ...curve);
 

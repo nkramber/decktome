@@ -11,6 +11,7 @@ import (
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/candidates"
+	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
 	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 	"github.com/nkramber/mtg-deck-builder/go/internal/questions"
@@ -227,7 +228,40 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 	if err != nil {
 		return nil, err
 	}
+	s.markOwnedPrintings(ctx, uid, session, idx, res.Deck)
 	return res, nil
+}
+
+// markOwnedPrintings sets DeckCard.owned_printing to the priciest printing
+// the collection holds of each owned card (D-299). A missing collection
+// or a printing the snapshot dropped leaves the field empty.
+func (s *Server) markOwnedPrintings(ctx context.Context, uid string, session *mtgv1.Session, idx *cards.Index, deck *mtgv1.Deck) {
+	if s.collections == nil || session.GetCollectionId() == "" || deck == nil {
+		return
+	}
+	owned, err := s.collections.OwnedPrintings(ctx, uid, session.GetCollectionId())
+	if err != nil {
+		s.log.WarnContext(ctx, "owned printings unavailable", "collection", session.GetCollectionId(), "err", err)
+		return
+	}
+	for _, list := range [][]*mtgv1.DeckCard{deck.GetCards(), deck.GetSideboard()} {
+		for _, dc := range list {
+			if dc.GetOwnedCount() == 0 {
+				continue
+			}
+			var best *mtgv1.Printing
+			for _, id := range owned[dc.GetOracleId()] {
+				p, ok := idx.Printing(id)
+				if !ok || p.GetImageUris() == nil {
+					continue
+				}
+				if best == nil || p.GetPriceUsd() > best.GetPriceUsd() {
+					best = p
+				}
+			}
+			dc.OwnedPrinting = best
+		}
+	}
 }
 
 // deckColors is the color set the basic lands follow. In Commander it is
@@ -438,6 +472,13 @@ func (s *Server) sendRevision(ctx context.Context, uid string, session *mtgv1.Se
 		record(note)
 		return stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_TextDelta{TextDelta: note}})
 	}
+	// A card the brief removes is not a card to keep, whatever the
+	// classify call read from the same message. The state drops the lock
+	// before the build, and the stored state follows (D-301).
+	for _, name := range brief.Remove {
+		st.Unlock(name)
+	}
+	snap = st.Snapshot()
 	if err := stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Status{Status: "revising the deck"}}); err != nil {
 		return err
 	}

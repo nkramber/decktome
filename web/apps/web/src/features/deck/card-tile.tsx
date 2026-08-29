@@ -11,9 +11,23 @@ import { priceText } from "./deck-stats";
 type Face = { name: string; artist: string; imageUris?: ImageUris; typeLine: string; oracleText: string; manaCost: string };
 
 // faces returns one entry per face (F-9). A card with no face data falls
-// back to the default printing, which carries the artist too.
-export function facesOf(card: Card | undefined): Face[] {
+// back to the default printing, which carries the artist too. An owned
+// printing with an image replaces the default one on a single-faced card,
+// so the user sees the copy they hold (D-299).
+export function facesOf(card: Card | undefined, owned?: { imageUris?: ImageUris; artist: string }): Face[] {
   if (!card) return [];
+  if (owned?.imageUris && card.faces.length <= 1) {
+    return [
+      {
+        name: card.name,
+        artist: owned.artist || card.defaultPrinting?.artist || "",
+        imageUris: owned.imageUris,
+        typeLine: card.typeLine,
+        oracleText: card.oracleText,
+        manaCost: card.manaCost,
+      },
+    ];
+  }
   if (card.faces.length > 0) {
     return card.faces.map((f: CardFace) => ({
       name: f.name,
@@ -68,7 +82,7 @@ function FaceImage({ face }: { face: Face }) {
 }
 
 // CardTile shows one deck entry: every face with its art and attribution,
-// the count, the owned mark or the price, and the Oracle text on demand.
+// the count, and the owned mark or the price. The image carries the rules text.
 // hideOwnership is for a commander entry built from the card data: the
 // deck carries no owned mark for it, so the tile shows none.
 export function CardTile({
@@ -82,7 +96,7 @@ export function CardTile({
   isCommander?: boolean;
   hideOwnership?: boolean;
 }) {
-  const faces = facesOf(card);
+  const faces = facesOf(card, entry.ownedPrinting);
   const name = card?.name || entry.name;
   return (
     <li className="flex flex-col gap-1 rounded border border-neutral-200 p-2" data-testid="card-tile">
@@ -122,20 +136,6 @@ export function CardTile({
       </p>
       )}
       {entry.reason && <p className="text-xs text-neutral-700">{entry.reason}</p>}
-      {card && (
-        <details className="text-sm">
-          <summary className="cursor-pointer">Oracle text</summary>
-          {faces.map((face, i) => (
-            <div key={i} className="mt-1">
-              <p className="font-medium">
-                {face.name} {face.manaCost}
-              </p>
-              <p className="text-neutral-700">{face.typeLine}</p>
-              <p className="whitespace-pre-line">{face.oracleText || "No rules text."}</p>
-            </div>
-          ))}
-        </details>
-      )}
     </li>
   );
 }

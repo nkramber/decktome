@@ -3,7 +3,6 @@ import { CardRole, type Deck, Severity } from "@mtg/api-client/mtg/v1/deck_pb";
 import { FormatId } from "@mtg/api-client/mtg/v1/format_pb";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, within } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { axe } from "jest-axe";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -166,14 +165,6 @@ describe("DeckView", () => {
     expect(within(sources).queryByRole("row", { name: /Colorless/ })).not.toBeInTheDocument();
   });
 
-  it("opens the Oracle text on demand", async () => {
-    renderDeck();
-    await screen.findByAltText("Forest (card)");
-    const ramp = screen.getByRole("region", { name: "Ramp (4)" });
-    await userEvent.setup().click(within(ramp).getByText("Oracle text"));
-    expect(within(ramp).getByText("{T}: Add {G}.")).toBeVisible();
-  });
-
   it("falls back to the small image when the normal one fails", async () => {
     renderDeck();
     const image = await screen.findByAltText("Forest (card)");
@@ -236,6 +227,36 @@ describe("DeckView", () => {
     await screen.findByAltText("Forest (card)");
     expect(screen.getByTestId("revision-note")).toHaveTextContent("note");
     expect(screen.queryByTestId("revision-diff")).not.toBeInTheDocument();
+  });
+
+  it("drops the not_owned warnings from the findings and keeps a not_owned block (D-300)", async () => {
+    getCards.mockResolvedValue({ cards, missingOracleIds: [] });
+    renderDeck({
+      ...deck,
+      validation: {
+        passed: false,
+        legalityAsOf: "2026-08-24",
+        findings: [
+          { code: "not_owned", severity: Severity.WARN, message: "Llanowar Elves: the deck needs 4, the collection has 0", oracleId: "o-elf" },
+          { code: "not_owned", severity: Severity.BLOCK, message: "Forest: the deck needs 20, the collection has 0", oracleId: "o-forest" },
+          { code: "curve_summary", severity: Severity.INFO, message: "average mana value 2.1", oracleId: "" },
+        ],
+      },
+    } as unknown as Deck);
+    await screen.findByAltText("Forest (card)");
+    const findings = screen.getByRole("region", { name: "Findings" });
+    const items = within(findings).getAllByRole("listitem").map((li) => li.textContent);
+    expect(items).toHaveLength(2);
+    expect(items[0]).toContain("Block (not_owned): Forest");
+    expect(items[1]).toContain("average mana value 2.1");
+  });
+
+  it("shows the owned printing's image when the deck carries one (D-299)", async () => {
+    renderDeck({
+      ...deck,
+      cards: [{ ...deck.cards[0], ownedPrinting: { scryfallId: "p-old", artist: "Rob Alexander", imageUris: img("forest-alpha"), priceUsd: 40 } }],
+    } as unknown as Deck);
+    expect(await screen.findByAltText("Forest (card)")).toHaveAttribute("src", "https://cards.scryfall.io/normal/forest-alpha.jpg");
   });
 
   it("reports a GetCards failure", async () => {

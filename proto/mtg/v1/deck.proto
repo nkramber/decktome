@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package mtg.v1;
 
+import "mtg/v1/card.proto";
 import "mtg/v1/format.proto";
 import "mtg/v1/session.proto";
 import "google/protobuf/timestamp.proto";
@@ -72,6 +73,10 @@ message DeckCard {
   // price_usd is the card's display price at build time (D-17). Zero means
   // no price.
   double price_usd = 8;
+  // owned_printing is the priciest printing of this card in the user's
+  // collection, when the collection holds one. The UI shows its art in
+  // place of the default printing (D-299). Unset when not owned.
+  Printing owned_printing = 9;
 }
 
 // CardRole is the job a card does in the deck (corpus section 6).

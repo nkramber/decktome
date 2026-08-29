@@ -102,3 +102,25 @@ func TestFullNameTiePrefersPlayableCard(t *testing.T) {
 		})
 	}
 }
+
+// TestIndexKeepsPrintings is D-299. A playable printing keeps its display
+// fields and its price, and a dropped one answers false.
+func TestIndexKeepsPrintings(t *testing.T) {
+	card := &mtgv1.Card{OracleId: "o1", Name: "Forest", DefaultPrinting: &mtgv1.Printing{ScryfallId: "p-new"}}
+	printings := []Printing{
+		{ScryfallID: "p-old", OracleID: "o1", Name: "Forest", SetCode: "lea", CollectorNumber: "294", Artist: "Christopher Rush",
+			ImageUris: &mtgv1.ImageUris{Normal: "https://x/old.jpg"}, PriceUSD: 40},
+		{ScryfallID: "p-token", OracleID: "o-none", Name: "Elf", Layout: "token"},
+	}
+	idx := NewIndex([]*mtgv1.Card{card}, printings, nil, time.Now())
+	p, ok := idx.Printing("p-old")
+	if !ok || p.GetPriceUsd() != 40 || p.GetImageUris().GetNormal() != "https://x/old.jpg" || p.GetArtist() != "Christopher Rush" {
+		t.Errorf("printing = %v, ok = %v", p, ok)
+	}
+	if _, ok := idx.Printing("p-token"); ok {
+		t.Error("a token printing entered the index")
+	}
+	if _, ok := idx.Printing("nope"); ok {
+		t.Error("an unknown id answered true")
+	}
+}
