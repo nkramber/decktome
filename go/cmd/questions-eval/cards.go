@@ -3,28 +3,19 @@ package main
 import (
 	"context"
 	"io"
-	"log/slog"
-	"os"
 	"regexp"
 	"sort"
 	"strings"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
+	"github.com/nkramber/mtg-deck-builder/go/internal/gatekit"
 	"github.com/nkramber/mtg-deck-builder/go/internal/tune"
 )
 
 // The eval invents card facts of its own, and a false one changes a
-// verdict. Eval run 14 refused three questions on two such claims:
-//
-//	"'Ran and Shaw' is not a real Magic card or commander option."
-//	"'Quina, Qu Gourmet' is not a valid Magic card option."
-//
-// Both cards are real. Ran and Shaw is a Legendary Creature - Dragon,
-// mono-red, and the request was for a red dragon deck. Quina, Qu Gourmet
-// is a Legendary Creature - Qu, mono-green. Both are legal in Commander.
-// The calibration of 2026-08-26 showed that claude-sonnet-5 invents card
-// facts as well, so no second judge fixes this class (D-149).
+// verdict: a real card read as unreal refuses a warranted question. A
+// second judge model invents card facts as well, so no judge fixes this
+// class (D-149).
 //
 // The check is deterministic and it costs nothing. Every claim of this
 // shape names the card, and the snapshot answers whether it exists.
@@ -42,8 +33,8 @@ var denialSigns = []string{
 	"is not a card",
 }
 
-// quotedName reads a card name the reason puts in quotes. Both false
-// claims of run 14 quoted the name. The bounds keep a whole sentence out.
+// quotedName reads a card name the reason puts in quotes. The bounds
+// keep a whole sentence out.
 var quotedName = regexp.MustCompile(`["'\x{201C}\x{2018}]([^"'\x{201C}\x{201D}\x{2018}\x{2019}]{3,60})["'\x{201D}\x{2019}]`)
 
 // cardChecker answers whether a card name is real, from the local
@@ -54,13 +45,11 @@ type cardChecker struct{ idx *cards.Index }
 // the check and never fails the run: the eval still reports, and the
 // document says the check did not run.
 func newCardChecker() (cardChecker, string) {
-	dir := os.Getenv("CARDS_SNAPSHOT_DIR")
-	if dir == "" {
+	if _, err := gatekit.SnapshotDir(); err != nil {
 		return cardChecker{}, "no card snapshot: the eval card check did not run"
 	}
-	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
-	idx, err := cards.LoadIndex(context.Background(), cards.DirStore{Root: dir}, quiet)
-	if err != nil || idx == nil {
+	idx, err := gatekit.LoadSnapshot(context.Background(), gatekit.Quiet())
+	if err != nil {
 		return cardChecker{}, "the card snapshot did not load: the eval card check did not run"
 	}
 	return cardChecker{idx: idx}, ""
@@ -157,11 +146,8 @@ func writeCardCheck(w io.Writer, note string, corrected map[string]string) {
 }
 
 // cardFact is what the eval is told about one card a question names.
-// The eval invents facts about a card it does not know, and every miss so
-// far came from a crossover set: Quina, Qu Gourmet from Final Fantasy,
-// Ran and Shaw from Avatar, Cloak and Dagger, Entwined and Shadow the
-// Hedgehog from Marvel and Sonic. It called four of them unreal or
-// inapplicable, and all four are real and legal.
+// The eval invents facts about a card it does not know, and a card of a
+// crossover set is the usual miss.
 //
 // The check of D-149 refutes a claim after the model makes it, and it
 // reads existence alone. This block prevents the claim instead, and it
@@ -174,18 +160,11 @@ type cardFact struct {
 	CommanderList bool     `json:"legal_as_a_commander"`
 }
 
-// colorLetter names a color the way Scryfall does.
-var colorLetter = map[mtgv1.Color]string{
-	mtgv1.Color_COLOR_W: "W", mtgv1.Color_COLOR_U: "U", mtgv1.Color_COLOR_B: "B",
-	mtgv1.Color_COLOR_R: "R", mtgv1.Color_COLOR_G: "G",
-}
-
 // facts reads every card the questions of one conversation name, and
 // answers what the snapshot holds about each one.
 //
 // It reads the options, because that is where the pick row puts the
-// commander names, and every invented claim so far was about a name the
-// pick row offered. A string that the index does not hold is left out:
+// commander names. A string that the index does not hold is left out:
 // the eval is told about real cards, and nothing is claimed about the
 // rest.
 func (c cardChecker) facts(conv tune.Conversation) []cardFact {
@@ -205,17 +184,12 @@ func (c cardChecker) facts(conv tune.Conversation) []cardFact {
 				continue
 			}
 			seen[strings.ToLower(name)] = true
-			f := cardFact{
+			out = append(out, cardFact{
 				Name:          card.GetName(),
 				TypeLine:      card.GetTypeLine(),
+				ColorIdentity: gatekit.ColorLetters(card.GetColorIdentity()),
 				CommanderList: card.GetCanBeCommander() || card.GetIsBackground(),
-			}
-			for _, col := range card.GetColorIdentity() {
-				if l, ok := colorLetter[col]; ok {
-					f.ColorIdentity = append(f.ColorIdentity, l)
-				}
-			}
-			out = append(out, f)
+			})
 		}
 	}
 	return out

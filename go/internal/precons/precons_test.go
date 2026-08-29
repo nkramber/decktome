@@ -69,47 +69,23 @@ func TestFindReadsTheUsersWords(t *testing.T) {
 		{"make my Tricky Terrain deck better", "tricky-terrain-collectors-edition"},
 		// A short phrase whose every word is in the name.
 		{"riders of rohan", "lotr-riders-of-rohan"},
-		{"Rohan", "lotr-riders-of-rohan"},
+		{"rohan riders", "lotr-riders-of-rohan"},
 	} {
 		got, ok := s.Find(tc.words)
 		if !ok || got.Slug != tc.want {
 			t.Errorf("Find(%q) = %v, want %s", tc.words, got, tc.want)
 		}
 	}
-	if _, ok := s.Find("build me a lifegain deck"); ok {
-		t.Error("a message that names no precon found one")
-	}
-}
-
-// TestKeptCountsTheCardsADeckHolds is the measure D-218's share reads.
-func TestKeptCountsTheCardsADeckHolds(t *testing.T) {
-	s := loadSet(t)
-	p, ok := s.Get("avengers-assemble")
-	if !ok {
-		t.Fatal("no avengers-assemble precon")
-	}
-	if p.Kept(&mtgv1.Deck{}) != 0 {
-		t.Error("an empty deck kept a card")
-	}
-	// A deck of the whole precon keeps all of it, and the commander
-	// counts from the command zone.
-	all := &mtgv1.Deck{}
-	for i, id := range p.OracleIDs {
-		if i == 0 {
-			all.CommanderOracleIds = []string{id}
-			continue
+	// One title word alone names nothing.
+	for _, words := range []string{"build me a lifegain deck", "power", "of", "Rohan", "storm"} {
+		if p, ok := s.Find(words); ok {
+			t.Errorf("Find(%q) = %s, want no precon", words, p.Slug)
 		}
-		all.Cards = append(all.Cards, &mtgv1.DeckCard{OracleId: id, Count: 1})
-	}
-	if got := p.Kept(all); got != len(p.OracleIDs) {
-		t.Errorf("kept = %d, want every one of %d", got, len(p.OracleIDs))
 	}
 }
 
-// TestSideboardIsNotPartOfTheHundred is D-247. From Cute to Brute lists
-// five Secret Lair cards after its deck, and Tricky Terrain lists an
-// alternate commander. Neither is one of the hundred, and counting them
-// would make the share rule of D-218 measure the wrong list.
+// TestSideboardIsNotPartOfTheHundred is D-247: a sideboard is not one of
+// the hundred the share rule of D-218 measures.
 func TestSideboardIsNotPartOfTheHundred(t *testing.T) {
 	s := loadSet(t)
 	for _, tc := range []struct {
@@ -158,8 +134,21 @@ func TestSplitSideboardReadsTheHeader(t *testing.T) {
 	}
 }
 
-// TestTitlesAreProductNames is G-12 of the 2026-08-28 audit. A slug is a
-// file name, and the user reads the product name.
+// TestSplitSideboardStopsAtTheNextSection: a Commander section after the
+// sideboard is not sideboard.
+func TestSplitSideboardStopsAtTheNextSection(t *testing.T) {
+	const text = "1 Sol Ring (SLD) 2417\n\n// SIDEBOARD\n2 Omo, Queen of Vesuva (M3C) 149\n\n// COMMANDER\n1 Zada, Hedron Grinder (SLD) 2406\n"
+	deck, side := splitSideboard(text)
+	if side != 2 {
+		t.Errorf("sideboard = %d, want 2: the later Commander section is not sideboard", side)
+	}
+	if strings.Contains(deck, "Zada") || strings.Contains(deck, "Omo") {
+		t.Error("a later section reached the deck")
+	}
+}
+
+// TestTitlesAreProductNames: a slug is a file name, and the user reads
+// the product name.
 func TestTitlesAreProductNames(t *testing.T) {
 	for _, tc := range []struct{ slug, want string }{
 		{"lotr-riders-of-rohan", "Riders of Rohan"},
@@ -176,7 +165,7 @@ func TestTitlesAreProductNames(t *testing.T) {
 }
 
 // TestWordsOfMatchesAShortForm covers the phrase rule without the
-// snapshot.
+// snapshot. One title word alone names nothing.
 func TestWordsOfMatchesAShortForm(t *testing.T) {
 	title := strings.Fields("riders of rohan")
 	for _, tc := range []struct {
@@ -184,7 +173,9 @@ func TestWordsOfMatchesAShortForm(t *testing.T) {
 		want   bool
 	}{
 		{"riders of rohan", true},
-		{"rohan", true},
+		{"rohan", false},
+		{"of", false},
+		{"rohan rohan", false},
 		{"rohan, riders", true},
 		{"upgrade my riders of rohan precon", false},
 		{"", false},
@@ -195,10 +186,9 @@ func TestWordsOfMatchesAShortForm(t *testing.T) {
 	}
 }
 
-// TestUnresolvedListsTheLostLists is G-8 of the 2026-08-28 audit. A
-// precon the index can not answer must not feed the share rule, and the
-// loader now says which ones those are. A two-card index answers no
-// precon, so every one is listed.
+// TestUnresolvedListsTheLostLists: a precon the index can not answer
+// must not feed the share rule, and the loader says which ones those
+// are. A one-card index answers no precon, so every one is listed.
 func TestUnresolvedListsTheLostLists(t *testing.T) {
 	idx := cards.NewIndex([]*mtgv1.Card{
 		{OracleId: "o-solring", Name: "Sol Ring", TypeLine: "Artifact"},
@@ -217,7 +207,7 @@ func TestUnresolvedListsTheLostLists(t *testing.T) {
 	}
 }
 
-// TestNothingIsUnresolvedAgainstTheSnapshot is the other half of G-8.
+// TestNothingIsUnresolvedAgainstTheSnapshot: every embedded list resolves.
 func TestNothingIsUnresolvedAgainstTheSnapshot(t *testing.T) {
 	s := loadSet(t)
 	if got := s.Unresolved(); len(got) != 0 {

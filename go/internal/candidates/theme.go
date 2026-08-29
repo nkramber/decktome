@@ -7,6 +7,8 @@ import (
 	"slices"
 	"sort"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
@@ -274,8 +276,10 @@ const minWordLen = 3
 // name a hyphenated row join first, so "go wide" finds the go-wide row.
 // Then a token shorter than minWordLen or made of digits goes.
 func (t *themeTable) words(theme string) []string {
+	// A letter of any script is part of a word, so a non-ASCII theme word
+	// stays whole.
 	f := func(r rune) bool {
-		return (r < 'a' || r > 'z') && (r < '0' || r > '9') && r != '-'
+		return !unicode.IsLetter(r) && !unicode.IsDigit(r) && r != '-'
 	}
 	var tokens []string
 	for _, w := range strings.FieldsFunc(strings.ToLower(theme), f) {
@@ -287,7 +291,7 @@ func (t *themeTable) words(theme string) []string {
 	var out []string
 	seen := map[string]bool{}
 	for _, w := range tokens {
-		if len(w) < minWordLen || allDigits(w) || stopWords[w] || seen[w] {
+		if utf8.RuneCountInString(w) < minWordLen || allDigits(w) || stopWords[w] || seen[w] {
 			continue
 		}
 		seen[w] = true

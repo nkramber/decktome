@@ -30,6 +30,7 @@ import (
 // fakeStore is an in-memory Store. It keeps the two halves apart, the
 // same way Firestore does, so a test can prove the private state moves.
 type fakeStore struct {
+	mu       sync.Mutex
 	sessions map[string]*mtgv1.Session
 	states   map[string]questions.Snapshot
 	versions map[string]int64
@@ -38,6 +39,9 @@ type fakeStore struct {
 	// onGetState runs after each GetState, so a test can slip a write in
 	// between the read and the Put, the way an overlapping turn does.
 	onGetState func()
+	// onPut runs before each Put's version check, with the session about
+	// to be written.
+	onPut func(*mtgv1.Session)
 }
 
 func newFakeStore() *fakeStore {
@@ -53,20 +57,37 @@ func (f *fakeStore) NewID(string) string {
 	return "sess-" + string(rune('0'+f.ids))
 }
 
-func (f *fakeStore) Put(_ context.Context, _ string, s *mtgv1.Session, snap questions.Snapshot, expected int64) error {
+func (f *fakeStore) Put(ctx context.Context, _ string, s *mtgv1.Session, snap questions.Snapshot, expected int64) error {
+	// A write on a cancelled context fails, as Firestore does.
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	if f.putErr != nil {
 		return f.putErr
+	}
+	if f.onPut != nil {
+		f.onPut(s)
 	}
 	if f.versions[s.GetId()] != expected {
 		return sessions.ErrConflict
 	}
-	f.sessions[s.GetId()] = s
+	// A copy, as Firestore stores one. The service goes on editing its
+	// own session after the Put.
+	f.sessions[s.GetId()] = proto.Clone(s).(*mtgv1.Session)
 	f.states[s.GetId()] = snap
 	f.versions[s.GetId()] = expected + 1
 	return nil
 }
 
 func (f *fakeStore) Get(_ context.Context, _, id string) (*mtgv1.Session, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.get(id)
+}
+
+func (f *fakeStore) get(id string) (*mtgv1.Session, error) {
 	s, ok := f.sessions[id]
 	if !ok {
 		return nil, sessions.ErrNotFound
@@ -76,8 +97,10 @@ func (f *fakeStore) Get(_ context.Context, _, id string) (*mtgv1.Session, error)
 	return proto.Clone(s).(*mtgv1.Session), nil
 }
 
-func (f *fakeStore) GetState(ctx context.Context, uid, id string) (*mtgv1.Session, questions.Snapshot, int64, error) {
-	s, err := f.Get(ctx, uid, id)
+func (f *fakeStore) GetState(_ context.Context, _, id string) (*mtgv1.Session, questions.Snapshot, int64, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	s, err := f.get(id)
 	if err != nil {
 		return nil, questions.Snapshot{}, 0, err
 	}
@@ -86,6 +109,26 @@ func (f *fakeStore) GetState(ctx context.Context, uid, id string) (*mtgv1.Sessio
 		f.onGetState()
 	}
 	return s, snap, version, nil
+}
+
+// deckIDs, status, and versionOf read one stored session under the lock,
+// for a test that polls while a turn still runs.
+func (f *fakeStore) deckIDs(id string) []string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.sessions[id].GetDeckIds()
+}
+
+func (f *fakeStore) status(id string) mtgv1.SessionStatus {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.sessions[id].GetStatus()
+}
+
+func (f *fakeStore) versionOf(id string) int64 {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.versions[id]
 }
 
 // classifyJSON writes one classify answer that satisfies the schema.
@@ -98,7 +141,7 @@ func classifyJSON(t *testing.T, fields map[string]any) llm.Step {
 		"house_rules": "", "closed_keys": []string{}, "declined_keys": []string{},
 		"facts": map[string]bool{
 			"named_card": false, "buy_list": false,
-			"house_format": false, "two_plans": false, "budget_ambiguous": false,
+			"house_format": false, "budget_ambiguous": false,
 			"power_competitive": false, "wants_suggestion": false, "out_of_scope": false,
 		},
 	}
@@ -174,8 +217,8 @@ func testServer(t *testing.T, store Store, steps ...llm.Step) (mtgv1connect.Agen
 	return testServerOpts(t, store, nil, steps...)
 }
 
-// testServerOpts builds the server with extra options, for the wiring
-// that PR-8 adds.
+// testServerOpts builds the server with extra options, for the build
+// wiring.
 func testServerOpts(t *testing.T, store Store, extra []Option, steps ...llm.Step) (mtgv1connect.AgentServiceClient, *llm.Script) {
 	t.Helper()
 	cat, err := questions.Load()
@@ -285,7 +328,7 @@ func TestChatStartsASessionAndAsks(t *testing.T) {
 // document (D-74): the second turn knows what the first one asked.
 func TestChatResumesWithoutRepeating(t *testing.T) {
 	store := newFakeStore()
-	// A typed slot closes on its value, never by name (D-83).
+	// A typed slot closes on its value, not by name (D-83).
 	steps := append(firstTurn(t),
 		classifyJSON(t, map[string]any{
 			"power":           "bracket 3",
@@ -328,7 +371,7 @@ func TestChatResumesWithoutRepeating(t *testing.T) {
 }
 
 // TestAnswersReachTheClassifier proves an option index becomes words the
-// classifier can map, which is what the UI sends (PR-12).
+// classifier can map, which is what the UI sends.
 func TestAnswersReachTheClassifier(t *testing.T) {
 	store := newFakeStore()
 	steps := append(firstTurn(t),
@@ -416,9 +459,9 @@ func TestEmptyRequestIsRefused(t *testing.T) {
 	}
 }
 
-// TestAfterBuildAsksNothingMore is what the variance row used to test.
-// The row is retired with PR-9 (D-256), so a session that holds a deck
-// and has every slot settled asks nothing at all: it builds again.
+// TestAfterBuildAsksNothingMore is D-256: the variance row is retired,
+// so a session that holds a deck and has every slot settled asks nothing
+// at all.
 func TestAfterBuildAsksNothingMore(t *testing.T) {
 	store := newFakeStore()
 	client, _ := testServer(t, store, firstTurn(t)...)
@@ -440,14 +483,12 @@ func TestAfterBuildAsksNothingMore(t *testing.T) {
 	}
 	client2, _ := testServer(t, store, steps...)
 	second := chat(t, client2, &mtgv1.ChatRequest{SessionId: first.started, Message: "give me another version"})
-	for _, q := range second.questions {
-		if q.GetSlot() == "plan_variant" {
-			t.Errorf("the retired variance row fired on a stored deck: %q", q.GetText())
-		}
+	if len(second.questions) != 0 {
+		t.Errorf("a settled session with a deck asked %d questions: %v", len(second.questions), second.questions)
 	}
 }
 
-// TestChatStaleVersionIsAborted is the H-7 guard at the service. A turn
+// TestChatStaleVersionIsAborted: a turn
 // reads the session, another write lands, and the turn's Put must fail
 // with CodeAborted and store nothing.
 func TestChatStaleVersionIsAborted(t *testing.T) {
@@ -505,7 +546,7 @@ func TestChatSecondTurnAdvancesTheVersion(t *testing.T) {
 	}
 }
 
-// TestAddUsageKeepsPricedOnAnEmptyTurn is M-8. A frozen turn makes no
+// TestAddUsageKeepsPricedOnAnEmptyTurn: a frozen turn makes no
 // call and reports no cost. That is not an unpriced call.
 func TestAddUsageKeepsPricedOnAnEmptyTurn(t *testing.T) {
 	cost := 0.01
@@ -548,9 +589,9 @@ func TestAnswerTextWinsOverOptionZero(t *testing.T) {
 	}
 }
 
-// TestBuildStoresThePostTurnState is L-3 and L-11. The second write of
-// a building turn must carry the turn's asked rows and the built status,
-// or the next turn repeats a question and the session never says BUILT.
+// TestBuildStoresThePostTurnState: the second write of a building turn
+// must carry the turn's asked rows and the built status, or the next
+// turn repeats a question and the session never says BUILT.
 func TestBuildStoresThePostTurnState(t *testing.T) {
 	store := newFakeStore()
 	ds := &fakeDeckStore{}
@@ -583,8 +624,8 @@ func TestBuildStoresThePostTurnState(t *testing.T) {
 	}
 }
 
-// TestBuildFailureKeepsReady covers the other side of L-11: a build that
-// kept no deck leaves the session READY.
+// TestBuildFailureKeepsReady: a build that kept no deck leaves the
+// session READY.
 func TestBuildFailureKeepsReady(t *testing.T) {
 	store := newFakeStore()
 	fd := &fakeDecks{err: errors.New("the model is down")}
@@ -596,8 +637,9 @@ func TestBuildFailureKeepsReady(t *testing.T) {
 	}
 }
 
-// TestMessageCap is A-7: a message or an answer past MaxMessageBytes is
-// refused before any model call.
+// TestMessageCap: a message or an answer past MaxMessageBytes, too many
+// answers, or answers that together pass the cap are refused before any
+// model call.
 func TestMessageCap(t *testing.T) {
 	long := strings.Repeat("x", MaxMessageBytes+1)
 	tests := []struct {
@@ -608,6 +650,14 @@ func TestMessageCap(t *testing.T) {
 		{name: "long message", req: &mtgv1.ChatRequest{Message: long}, want: connect.CodeInvalidArgument},
 		{name: "long answer", req: &mtgv1.ChatRequest{Answers: []*mtgv1.Answer{{QuestionId: "q", Text: long}}}, want: connect.CodeInvalidArgument},
 		{name: "at the cap", req: &mtgv1.ChatRequest{Message: strings.Repeat("x", MaxMessageBytes)}, want: 0},
+		{name: "too many answers", req: &mtgv1.ChatRequest{Answers: manyAnswers(MaxAnswers + 1)}, want: connect.CodeInvalidArgument},
+		{name: "answers at the count cap", req: &mtgv1.ChatRequest{Answers: manyAnswers(MaxAnswers)}, want: 0},
+		{name: "answers long together", req: &mtgv1.ChatRequest{Answers: []*mtgv1.Answer{
+			{QuestionId: "a", Text: strings.Repeat("x", MaxMessageBytes/2+1)},
+			{QuestionId: "b", Text: strings.Repeat("x", MaxMessageBytes/2+1)},
+		}}, want: connect.CodeInvalidArgument},
+		{name: "path session id", req: &mtgv1.ChatRequest{Message: "hi", SessionId: "../x"}, want: connect.CodeInvalidArgument},
+		{name: "path collection id", req: &mtgv1.ChatRequest{Message: "hi", CollectionId: "a/b"}, want: connect.CodeInvalidArgument},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -666,7 +716,7 @@ func (g *gate) Complete(ctx context.Context, call llm.Call) (llm.Response, error
 	return llm.Response{Output: st.Output, Model: call.Model, Usage: st.Usage}, nil
 }
 
-// TestConcurrencyCap is A-7: the turn past the limit answers
+// TestConcurrencyCap: the turn past the limit answers
 // ResourceExhausted at once, and the running turn is not disturbed.
 func TestConcurrencyCap(t *testing.T) {
 	cat, err := questions.Load()
@@ -742,7 +792,7 @@ func TestConcurrencyCap(t *testing.T) {
 	}
 }
 
-// TestFailureMessages is L-12.
+// TestFailureMessages covers the failure codes the UI acts on.
 func TestFailureMessages(t *testing.T) {
 	mk := func(class llm.Class, status int, msg string) error {
 		return &llm.Error{Class: class, Provider: "p", Model: "m", Status: status, Err: errors.New(msg)}
@@ -776,7 +826,7 @@ func TestFailureMessages(t *testing.T) {
 	}
 }
 
-// TestStoreErrorCodes covers L-8: a session past the document limit is
+// TestStoreErrorCodes: a session past the document limit is
 // refused with a message, not bricked as Internal.
 func TestStoreErrorCodes(t *testing.T) {
 	tests := []struct {
@@ -807,8 +857,8 @@ type fakePrecons struct{ set *precons.Set }
 
 func (f *fakePrecons) Current() *precons.Set { return f.set }
 
-// TestPreconSourceIsLateBound is L-2 at the service: the set the source
-// holds now is the set the build reads.
+// TestPreconSourceIsLateBound: the set the source holds now is the set
+// the build reads.
 func TestPreconSourceIsLateBound(t *testing.T) {
 	cat, err := questions.Load()
 	if err != nil {
@@ -827,14 +877,13 @@ func TestPreconSourceIsLateBound(t *testing.T) {
 	if srv.preconSet() != src.set {
 		t.Error("the late set did not reach the service")
 	}
-	// Without a source the static set stands.
-	static := &precons.Set{}
-	srv, err = New(cat, client, newFakeStore(), func(context.Context) string { return "u1" }, WithPrecons(static))
+	// Without a source there is no set.
+	srv, err = New(cat, client, newFakeStore(), func(context.Context) string { return "u1" })
 	if err != nil {
 		t.Fatal(err)
 	}
-	if srv.preconSet() != static {
-		t.Error("the static set was lost")
+	if srv.preconSet() != nil {
+		t.Error("a server with no source gave a set")
 	}
 }
 
@@ -856,4 +905,82 @@ func TestCardOptionsCarryOracleIds(t *testing.T) {
 		t.Errorf("format ids = %v", format.GetOptionOracleIds())
 	}
 	cardOptions([]*mtgv1.Question{offer}, nil)
+}
+
+// manyAnswers makes n short answers.
+func manyAnswers(n int) []*mtgv1.Answer {
+	out := make([]*mtgv1.Answer, n)
+	for i := range out {
+		out[i] = &mtgv1.Answer{QuestionId: fmt.Sprintf("q%d", i), Text: "yes"}
+	}
+	return out
+}
+
+// TestGetSessionRefusesAPathID: an id with a slash addresses another
+// document path, so it is refused before the store sees it.
+func TestGetSessionRefusesAPathID(t *testing.T) {
+	client, _ := testServer(t, newFakeStore())
+	for _, id := range []string{"a/b", "..", ".", strings.Repeat("x", 1501)} {
+		_, err := client.GetSession(context.Background(), connect.NewRequest(&mtgv1.GetSessionRequest{SessionId: id}))
+		if connect.CodeOf(err) != connect.CodeInvalidArgument {
+			t.Errorf("id %q gave %v, want InvalidArgument", id, connect.CodeOf(err))
+		}
+	}
+}
+
+// TestSessionStartedFollowsTheRequest: session_started is sent when the
+// request names no session, and not when it resumes one.
+func TestSessionStartedFollowsTheRequest(t *testing.T) {
+	store := newFakeStore()
+	client, _ := testServer(t, store, append(firstTurn(t), classifyJSON(t, nil), scoreJSON(t), askJSON(t))...)
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	if first.started == "" {
+		t.Fatal("the first turn sent no session_started")
+	}
+	// A stored session with no created_at still resumes without a
+	// second session_started.
+	store.sessions[first.started].CreatedAt = nil
+	second := chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "bracket 3"})
+	if second.started != "" {
+		t.Errorf("a resumed session sent session_started %q", second.started)
+	}
+}
+
+// TestRevisionQuestionSetsAsking: a session that asked a revision
+// question is ASKING again, not BUILT.
+func TestRevisionQuestionSetsAsking(t *testing.T) {
+	store := newFakeStore()
+	ds := &fakeDeckStore{}
+	fd := &fakeDecks{res: &generate.Result{Deck: &mtgv1.Deck{Validation: &mtgv1.ValidationResult{}, Cards: []*mtgv1.DeckCard{{OracleId: "o-plains", Name: "Plains", Count: 30}}}}}
+	steps := append(builtSteps(t),
+		classifyJSON(t, nil),
+		reviseJSON(t, map[string]any{"question": "Which lands?"}))
+	client, _ := testServerOpts(t, store, append(buildOpts(t, fd), WithDeckStore(ds)), steps...)
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
+	chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Better lands please"})
+	if got := store.status(first.started); got != mtgv1.SessionStatus_SESSION_STATUS_ASKING {
+		t.Errorf("status = %v, want ASKING", got)
+	}
+}
+
+func TestSlotsChangedGuardsNil(t *testing.T) {
+	if slotsChanged(nil, nil) {
+		t.Error("two nil slot sets differ")
+	}
+	if !slotsChanged(nil, &mtgv1.Slots{Theme: "x"}) {
+		t.Error("nil and a theme do not differ")
+	}
+	if slotsChanged(nil, &mtgv1.Slots{SlotStates: map[string]mtgv1.SlotState{"theme": mtgv1.SlotState_SLOT_STATE_ASKED}}) {
+		t.Error("a fill state counted as a setting")
+	}
+}
+
+func TestOperatorFaultGuardsNilErr(t *testing.T) {
+	if operatorFault(&llm.Error{Class: llm.ClassTerminal, Status: 400}) {
+		t.Error("a 400 with no inner error was the operator's")
+	}
+	if !operatorFault(&llm.Error{Class: llm.ClassTerminal, Status: 401}) {
+		t.Error("a 401 with no inner error was not the operator's")
+	}
 }

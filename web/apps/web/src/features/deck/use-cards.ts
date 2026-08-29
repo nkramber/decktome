@@ -10,8 +10,7 @@ export const getCardsMax = 120;
 
 export function deckOracleIds(deck: Deck): string[] {
   const ids = new Set<string>();
-  // The commander sits in commander_oracle_ids and not in cards: the
-  // generator lists the 99 and the command zone is chosen (D-289).
+  // The commander sits in commander_oracle_ids and can stay out of cards (D-289).
   for (const id of deck.commanderOracleIds) ids.add(id);
   for (const dc of [...deck.cards, ...deck.sideboard, ...deck.upgrades]) {
     if (dc.oracleId) ids.add(dc.oracleId);
@@ -36,15 +35,18 @@ export async function fetchCards(ids: string[]): Promise<{ byId: Map<string, Car
 
 // useDeckCards loads the card data of one deck: art, faces, type line,
 // mana value, and produced mana. Keyed by the deck id and the id list, so
-// a deck that changes refetches.
+// a deck that changes refetches. The last deck's data stays on screen as
+// placeholder data while the new ids load, so the view does not blank
+// out. `missing` comes from the current ids, never from the placeholder.
 export function useDeckCards(deck: Deck) {
   const ids = deckOracleIds(deck);
-  return useQuery({
+  const query = useQuery({
     queryKey: ["cards", deck.id, ids],
     queryFn: () => fetchCards(ids),
     staleTime: Infinity,
-    // A rebuilt deck keeps the last card data on screen while the new
-    // ids load, so the tables and the images do not blank out.
     placeholderData: (prev) => prev,
   });
+  const byId = query.data?.byId ?? new Map<string, Card>();
+  const missing = query.data && !query.isPlaceholderData ? ids.filter((id) => !byId.has(id)) : [];
+  return { ...query, byId, missing };
 }

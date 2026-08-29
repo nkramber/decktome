@@ -85,7 +85,7 @@ func TestCollectPairsBothTexts(t *testing.T) {
 // TestScorableDropsWhatTheOwnerCanNotJudge is the D-66 rule for a
 // replacement: the rubric compares two questions, so a replacement with
 // one text is not scorable. A row the catalog no longer holds is not
-// worth the owner's time either.
+// worth a scorer's time either.
 //
 // A question the model left alone is now kept. It becomes a plain item,
 // and version 1 of the sheet could not hold one (D-104).

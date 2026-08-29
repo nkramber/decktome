@@ -34,6 +34,8 @@ type tc struct {
 	commanderBanned          bool
 	gameChanger              bool
 	partner                  mtgv1.PartnerKind
+	// digital marks a card whose only printing is digital (D-306).
+	digital bool
 }
 
 // fixture builds an index with a tag file from the test cards.
@@ -74,6 +76,9 @@ func fixture(t *testing.T, list []tc) *cards.Index {
 			CanBeCommander: legendary && creature,
 			Partner:        c.partner,
 		})
+		if c.digital {
+			protoCards[len(protoCards)-1].DefaultPrinting = &mtgv1.Printing{Digital: true}
+		}
 		for _, tg := range c.tags {
 			tagCards[tg] = append(tagCards[tg], c.id)
 		}
@@ -338,6 +343,8 @@ func TestThemeWords(t *testing.T) {
 		// A short token that names no row goes.
 		{"ub mill", []string{"mill"}},
 		{"2024 zombies", []string{"zombies"}},
+		// A letter outside ASCII is part of the word.
+		{"nazgûl tribal", []string{"nazgûl", "tribal"}},
 	}
 	for _, c := range cases {
 		got := b.themes.words(c.theme)
@@ -379,88 +386,12 @@ func TestThemeUnmatchedReportsDeadWords(t *testing.T) {
 	}
 }
 
-// TestThemeColorsIgnoreStaples is M-1 of the 2026-08-26 review. Build
-// emits the staple roles first, so the first 100 cards of a list were
-// lands, ramp, draw, and removal. The colors of the staples are not the
-// colors of the theme. Here every staple is white and every theme card
-// is black, and the old tally reported white.
-func TestThemeColorsIgnoreStaples(t *testing.T) {
-	b, _ := New()
-	var list []tc
-	for i := 0; i < 12; i++ {
-		list = append(list,
-			tc{id: fmt.Sprintf("ramp%d", i), name: fmt.Sprintf("White Rock %d", i), typeLine: "Artifact",
-				text: "{T}: Add {W}.", identity: []mtgv1.Color{W}, mv: 2, rank: int32(10 + i), tags: []string{"ramp"}},
-			tc{id: fmt.Sprintf("draw%d", i), name: fmt.Sprintf("White Draw %d", i), typeLine: "Sorcery",
-				text: "Draw two cards.", identity: []mtgv1.Color{W}, mv: 2, rank: int32(100 + i), tags: []string{"draw"}},
-			tc{id: fmt.Sprintf("kill%d", i), name: fmt.Sprintf("White Kill %d", i), typeLine: "Instant",
-				text: "Destroy target creature.", identity: []mtgv1.Color{W}, mv: 2, rank: int32(200 + i), tags: []string{"removal"}},
-		)
-	}
-	for i := 0; i < 4; i++ {
-		list = append(list, tc{id: fmt.Sprintf("syn%d", i), name: fmt.Sprintf("Black Artist %d", i), typeLine: "Creature — Vampire",
-			text: "Whenever another creature dies, you gain 1 life.", identity: []mtgv1.Color{B}, mv: 2, rank: int32(1000 + i), tags: []string{"lifegain"}})
-	}
-	idx := fixture(t, list)
-	got, err := b.ThemeColors(idx, cmdr, "lifegain", 100, 0.25)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(got) != 1 || got[0] != B {
-		t.Errorf("ThemeColors = %v, want [B]: the white staples must not count", got)
-	}
-}
-
-// TestThemeColorsSnapshot measures the fix on the local snapshot. It
-// skips without one. Measured 2026-08-26 over the 100 best theme-role
-// cards: aristocrats B 88, R 18, G 16, W 15, U 4. Dragons R 54, G 22,
-// B 21. The second color of aristocrats sits under the 25 percent
-// share, so the test asserts only the lead color of each theme.
-func TestThemeColorsSnapshot(t *testing.T) {
-	idx := snapshotIndex(t)
-	b, _ := New()
-	// The lead color and at most one second color, the way players name
-	// an archetype (D-205). Measured on the snapshot of 2026-08-24.
-	cases := []struct {
-		theme string
-		want  []mtgv1.Color
-	}{
-		{"aristocrats", []mtgv1.Color{B, mtgv1.Color_COLOR_R}},
-		{"dragons", []mtgv1.Color{mtgv1.Color_COLOR_R, mtgv1.Color_COLOR_G}},
-		{"lifegain", []mtgv1.Color{W, B}},
-		{"blink", []mtgv1.Color{W, mtgv1.Color_COLOR_U}},
-	}
-	for _, c := range cases {
-		got, err := b.ThemeColors(idx, cmdr, c.theme, 100, 0.15)
-		if err != nil {
-			t.Fatal(err)
-		}
-		t.Logf("%s: %v", c.theme, got)
-		if len(got) > 2 {
-			t.Errorf("%s: %v names more than two colors", c.theme, got)
-		}
-		if strings.Join(colorNames(got), " ") != strings.Join(colorNames(c.want), " ") {
-			t.Errorf("%s: %v, want %v", c.theme, got, c.want)
-		}
-	}
-}
-
-func colorNames(cs []mtgv1.Color) []string {
-	var out []string
-	for _, c := range cs {
-		out = append(out, c.String())
-	}
-	return out
-}
-
-// TestDoctorPairIsOffered is M-2 of the 2026-08-26 review. The Doctor
-// carries no partner kind, so canPair dropped every Doctor and the
-// Doctor's companion arms of rules.ValidPair were unreachable. The fixture
-// types follow the snapshot: The Tenth Doctor is "Time Lord Doctor".
-func TestDoctorPairIsOffered(t *testing.T) {
-	b, _ := New()
+// doctorCards is the lifegain fixture plus a Doctor and a companion. The
+// Doctor carries no partner kind, so canPair must read its creature
+// types (CR 702.124m). The type line follows the snapshot.
+func doctorCards() []tc {
 	R, U := mtgv1.Color_COLOR_R, mtgv1.Color_COLOR_U
-	list := append(testCards(),
+	return append(testCards(),
 		tc{id: "tenth", name: "The Tenth Doctor", typeLine: "Legendary Creature — Time Lord Doctor",
 			text: "Whenever you gain life, draw a card.", identity: []mtgv1.Color{U, R}, mv: 5, rank: 800,
 			subtypes: []string{"Time", "Lord", "Doctor"}, tags: []string{"lifegain"}},
@@ -468,7 +399,14 @@ func TestDoctorPairIsOffered(t *testing.T) {
 			text: "Doctor's companion", identity: nil, mv: 2, rank: 900,
 			subtypes: []string{"Human", "Advisor"}, partner: mtgv1.PartnerKind_PARTNER_KIND_DOCTORS_COMPANION},
 	)
-	idx := fixture(t, list)
+}
+
+// TestDoctorPairIsOffered checks that a Doctor pairs with a companion
+// (D-154).
+func TestDoctorPairIsOffered(t *testing.T) {
+	b, _ := New()
+	R, U := mtgv1.Color_COLOR_R, mtgv1.Color_COLOR_U
+	idx := fixture(t, doctorCards())
 	if doctor, ok := idx.ByName("The Tenth Doctor"); !ok || !canPair(doctor) {
 		t.Fatal("a Doctor must pass canPair")
 	}
@@ -486,6 +424,51 @@ func TestDoctorPairIsOffered(t *testing.T) {
 		got = append(got, c.DisplayName())
 	}
 	t.Errorf("no Doctor pair offered: %v", got)
+}
+
+// TestCommanderPairsSkipExcludedIds checks that an excluded commander is
+// out of the pairs, as it is out of the 99.
+func TestCommanderPairsSkipExcludedIds(t *testing.T) {
+	b, _ := New()
+	R, U := mtgv1.Color_COLOR_R, mtgv1.Color_COLOR_U
+	idx := fixture(t, doctorCards())
+	pool, err := b.CommanderPool(idx, Request{Format: cmdr, Theme: "lifegain", Colors: []mtgv1.Color{U, R},
+		WantPair: true, CommanderOracleIDs: []string{"tenth"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range pool {
+		if c.Partner != nil && (c.Card.OracleId == "tenth" || c.Partner.OracleId == "tenth") {
+			t.Errorf("an excluded commander is in a pair: %s", c.DisplayName())
+		}
+	}
+}
+
+// TestHouseFormatOffersPaperCardsOnly is D-306. A card with no paper
+// printing never reaches the shortlist, and a banned card stays allowed.
+func TestHouseFormatOffersPaperCardsOnly(t *testing.T) {
+	b, _ := New()
+	list := append(testCards(),
+		tc{id: "alchemy", name: "A-Digital Rock", typeLine: "Artifact", text: "{T}: Add {W}.",
+			identity: []mtgv1.Color{W}, mv: 2, rank: 40, tags: []string{"ramp"}, digital: true},
+		tc{id: "bannedrock", name: "Banned Rock", typeLine: "Artifact", text: "{T}: Add {W}.",
+			identity: []mtgv1.Color{W}, mv: 2, rank: 41, tags: []string{"ramp"}, commanderBanned: true},
+	)
+	idx := fixture(t, list)
+	house, err := b.Build(idx, Request{Format: mtgv1.FormatId_FORMAT_ID_HOUSE, Colors: []mtgv1.Color{W}, Theme: "lifegain"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := find(house.Candidates, "A-Digital Rock"); ok {
+		t.Errorf("house offers a card with no paper printing: %v", names(house.Candidates))
+	}
+	if _, ok := find(house.Candidates, "Banned Rock"); !ok {
+		t.Errorf("house dropped a banned card: %v", names(house.Candidates))
+	}
+	commander, _ := b.Build(idx, Request{Format: cmdr, Colors: []mtgv1.Color{W}, Theme: "lifegain"})
+	if _, ok := find(commander.Candidates, "Banned Rock"); ok {
+		t.Error("Commander offers a banned card")
+	}
 }
 
 func TestBuildNilIndex(t *testing.T) {
@@ -545,9 +528,8 @@ func TestThinTheme(t *testing.T) {
 	}
 }
 
-// TestExileIsRemoval guards defect C of the PR-6 gate (2026-08-24). The
-// text fallback called every "exile target" clause removal, so blink
-// spells got role removal and the signal text:destroy target.
+// TestExileIsRemoval checks that a blink clause is not removal: the text
+// fallback must read the whole "exile target" clause.
 func TestExileIsRemoval(t *testing.T) {
 	cases := []struct {
 		name string
@@ -585,9 +567,8 @@ func commanderCards() []tc {
 		// rank. The 99-card list keeps it. A commander list must not.
 		{id: "landlegend", name: "Ojer Stand-In", typeLine: "Legendary Creature — God",
 			text: "{T}: Add {W}.", identity: []mtgv1.Color{W}, mv: 2, rank: 1, tags: []string{"ramp"}},
-		// The one white-black lifegain legend. Verified against the card
-		// snapshot of 2026-08-24: Legendary Creature - Spirit Advisor,
-		// color identity white and black, legal in Commander.
+		// The one white-black lifegain legend. The type line and the
+		// identity follow the card snapshot.
 		{id: "karlov", name: "Karlov of the Ghost Council", typeLine: "Legendary Creature — Spirit Advisor",
 			text:     "Whenever you gain life, put two +1/+1 counters on Karlov of the Ghost Council.",
 			identity: []mtgv1.Color{W, B}, mv: 2, rank: 300, tags: []string{"lifegain"}},
@@ -651,10 +632,9 @@ func TestCommandersRespectColorIdentity(t *testing.T) {
 	}
 }
 
-// TestCommanderPoolTakesEveryNamedColor is D-148. Conversation 22 of gate
-// run 14 asked for a blue-red deck and was offered Birgi, God of
-// Storytelling (mono-red) and Emrakul, the Promised End (colorless). A
-// colorless commander makes a deck that can play no colored card.
+// TestCommanderPoolTakesEveryNamedColor is D-148. A commander must hold
+// every named color: a colorless commander makes a deck that can play no
+// colored card.
 func TestCommanderPoolTakesEveryNamedColor(t *testing.T) {
 	allowed := map[mtgv1.Color]bool{W: true, B: true}
 	cases := []struct {
@@ -807,7 +787,7 @@ func TestCommanderQualitySnapshot(t *testing.T) {
 				if i == 0 && score < 0.5 {
 					t.Errorf("the first commander %s scores %.2f, want 0.50 or more", c.Card.GetName(), score)
 				}
-				if len(tcse.colors) > 0 && !identityFits(c.Card.ColorIdentity, colorSetOf(tcse.colors)) {
+				if len(tcse.colors) > 0 && !IdentityFits(c.Card.ColorIdentity, colorSetOf(tcse.colors)) {
 					t.Errorf("%s sits outside the requested color identity", c.Card.GetName())
 				}
 			}

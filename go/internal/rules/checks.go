@@ -144,9 +144,8 @@ func checkLegality(res *mtgv1.ValidationResult, in Input, fr FormatRules) {
 			continue
 		}
 		switch card.Legalities[fr.ScryfallKey] {
-		// RESTRICTED still reads as legal. No format the app builds has a
-		// restricted list since D-155, so this arm is about the card data
-		// and not about a deck the app can produce.
+		// RESTRICTED reads as legal. No format the app builds has a
+		// restricted list (D-155).
 		case mtgv1.LegalityStatus_LEGALITY_STATUS_LEGAL, mtgv1.LegalityStatus_LEGALITY_STATUS_RESTRICTED:
 		case mtgv1.LegalityStatus_LEGALITY_STATUS_BANNED:
 			add(res, CodeBannedCard, mtgv1.Severity_SEVERITY_BLOCK,
@@ -168,17 +167,26 @@ func checkCommander(res *mtgv1.ValidationResult, in Input) {
 		add(res, CodeBadCommander, mtgv1.Severity_SEVERITY_BLOCK, "more than two commanders", "")
 		return
 	}
+	// One card can not fill both seats of a pair (CR 702.124f).
+	if len(ids) == 2 && ids[0] == ids[1] {
+		add(res, CodeBadPartner, mtgv1.Severity_SEVERITY_BLOCK, "duplicate commander: one card is named twice", ids[0])
+		return
+	}
 	cmdrs := make([]*mtgv1.Card, 0, 2)
 	for _, oid := range ids {
 		c, ok := in.Cards.ByOracleID(oid)
 		if !ok {
-			return // unknown_card already reported
+			continue // unknown_card comes from checkLegality
 		}
 		cmdrs = append(cmdrs, c)
 		if !c.CanBeCommander && !c.IsBackground {
 			add(res, CodeBadCommander, mtgv1.Severity_SEVERITY_BLOCK,
 				fmt.Sprintf("%s can not be a commander", c.Name), c.OracleId)
 		}
+	}
+	// The pair rules need both cards. An unknown id already has its finding.
+	if len(cmdrs) != len(ids) {
+		return
 	}
 	// A Background is a commander only beside a "choose a Background"
 	// commander (CR 702.124k). Alone, or beside any other card, it is not.
@@ -211,6 +219,10 @@ func checkCommander(res *mtgv1.ValidationResult, in Input) {
 // to reach four colors: WUBR, WBRG, and UBRG hold one legal single
 // commander each (D-154).
 func ValidPair(a, b *mtgv1.Card) bool {
+	// A card never pairs with itself (CR 702.124f).
+	if a.OracleId != "" && a.OracleId == b.OracleId {
+		return false
+	}
 	pk := func(c *mtgv1.Card) mtgv1.PartnerKind { return c.Partner }
 	switch {
 	case pk(a) == mtgv1.PartnerKind_PARTNER_KIND_PARTNER && pk(b) == mtgv1.PartnerKind_PARTNER_KIND_PARTNER:
@@ -267,7 +279,7 @@ func checkColorIdentity(res *mtgv1.ValidationResult, in Input) {
 			}
 		}
 	}
-	for _, dc := range in.Deck.Cards {
+	for _, dc := range counted(in.Deck.Cards) {
 		check(dc.OracleId)
 	}
 	if in.Deck.CompanionOracleId != "" {
@@ -277,8 +289,7 @@ func checkColorIdentity(res *mtgv1.ValidationResult, in Input) {
 
 // checkBracket counts Game Changers in the 99, the command zone, and the
 // companion. A Game Changer commander counts as one of the three at
-// Bracket 3, and can not play in Brackets 1 and 2. Verified 2026-08-26
-// against the Wizards announcement (see brackets.json).
+// Bracket 3, and can not play in Brackets 1 and 2 (D-60, brackets.json).
 func checkBracket(cfg *Config, res *mtgv1.ValidationResult, in Input) {
 	bracket := in.Deck.GetPower().GetBracket()
 	if bracket == 0 {
@@ -374,8 +385,7 @@ func checkOwnership(res *mtgv1.ValidationResult, in Input) {
 			continue
 		}
 		if isBasic(card) {
-			// D-37 exception (owner decision 2026-08-24): basic lands are
-			// always available, also in owned-only mode.
+			// Basic lands are always available, also in owned-only mode (D-37).
 			continue
 		}
 		if owned := in.OracleCounts[oid]; owned < need[oid] {
@@ -403,7 +413,7 @@ func checkManaBase(res *mtgv1.ValidationResult, in Input, fr FormatRules) {
 	}
 	lo, hi := int32(20), int32(27)
 	if fr.Commander {
-		lo, hi = 34, 38 // corpus section 6, the owner's guide
+		lo, hi = 34, 38 // corpus section 6 (D-60)
 	}
 	if lands < lo || lands > hi {
 		add(res, CodeLandCount, mtgv1.Severity_SEVERITY_WARN,

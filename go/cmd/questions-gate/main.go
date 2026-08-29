@@ -15,9 +15,8 @@
 // model invents a question, so this half needs a live run.
 //
 // CAUTION: this command spends money. It makes about three model calls
-// per turn. The live run of 2026-08-24 measured about $0.0002 per call,
-// so a full run of 30 conversations costs a few cents. QUESTIONS_GATE=1
-// is required, so it can not run by accident.
+// per turn, on the cost tier. QUESTIONS_GATE=1 is required, so it can
+// not run by accident.
 //
 // Usage:
 //
@@ -36,7 +35,6 @@ import (
 	"io"
 	"os"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -121,7 +119,7 @@ type asked struct {
 	// NearCopy marks a turn where the model offered a replacement and the
 	// agent refused it as a reword (D-88).
 	NearCopy bool
-	// Refused is the text of that replacement, for the owner to judge.
+	// Refused is the text of that replacement, for the M-5 sheet to judge.
 	Refused string
 	// Resolved is the catalog row before the ask role phrased it. The
 	// reword guard compared the replacement against this text (D-116).
@@ -200,13 +198,13 @@ func run(collectionPath string, limit int, only string, w io.Writer) error {
 	}
 
 	list := file.Conversations
-	if only != "" {
+	ids, err := gatekit.ParseIDs(only)
+	if err != nil {
+		return fmt.Errorf("questions-gate: %w", err)
+	}
+	if ids != nil {
 		want := map[int]bool{}
-		for _, s := range strings.Split(only, ",") {
-			id, err := strconv.Atoi(strings.TrimSpace(s))
-			if err != nil {
-				return fmt.Errorf("-only takes conversation ids: %w", err)
-			}
+		for _, id := range ids {
 			want[id] = true
 		}
 		var kept []conversation
@@ -280,8 +278,8 @@ func runOne(cat *questions.Catalog, client *llm.Client, idx *cards.Index, builde
 	if conv.HasDeck {
 		for _, k := range builtSlots {
 			// Close, not Ctx.Filled: a slot the planner calls filled and
-			// the record calls never asked reads as a premature session,
-			// and run 23 failed the gate on it (D-252).
+			// the record calls never asked reads as a premature session
+			// (D-252).
 			st.Close(k)
 		}
 		st.Ctx.CommanderSet = true
@@ -382,7 +380,7 @@ func required(st *questions.State, hasCollection bool) []string {
 	return req
 }
 
-// slotState reads one slot as a word the owner can scan.
+// slotState reads one slot as a word a reader can scan.
 func slotState(st *questions.State, key string) string {
 	switch st.Slots.GetSlotStates()[key] {
 	case mtgv1.SlotState_SLOT_STATE_FILLED:
@@ -412,7 +410,7 @@ func source(invented bool) string {
 	return "catalog"
 }
 
-// loadIndex reads the local snapshot and the owner's export. Both are
+// loadIndex reads the local snapshot and the collection export. Both are
 // optional: without them every clause that needs a value is dropped.
 func loadIndex(collectionPath string) (*cards.Index, map[string]int32, string, error) {
 	dir := os.Getenv("CARDS_SNAPSHOT_DIR")
@@ -560,7 +558,7 @@ func write(w io.Writer, file gateFile, results []result, cov coverages,
 	if report.CostUSD != nil {
 		_, _ = fmt.Fprintf(w, "- Cost: $%.4f.\n", *report.CostUSD)
 	} else {
-		_, _ = fmt.Fprintf(w, "- Cost: unknown. A model in this run has no price row.\n")
+		_, _ = fmt.Fprintf(w, "- Cost: unpriced. A model in this run has no price row.\n")
 	}
 	_, _ = fmt.Fprintln(w)
 

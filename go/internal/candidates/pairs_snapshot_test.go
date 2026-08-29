@@ -13,7 +13,7 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
 )
 
-// The snapshot is 103 MB and loads in seconds. Every snapshot test in
+// The snapshot is large and loads in seconds. Every snapshot test in
 // the package shares one load.
 var (
 	snapshotOnce sync.Once
@@ -85,9 +85,9 @@ func TestPairsReachFourColors(t *testing.T) {
 	}
 }
 
-// TestBackgroundPairMatchesTheColors is probe 73 of gate run 16. The user
-// asked for a Background pair and red-white. A mono-red leader with
-// "choose a Background" plus a white Background is a red-white deck.
+// TestBackgroundPairMatchesTheColors checks a Background pair against the
+// named colors. A mono-red leader with "choose a Background" plus a white
+// Background is a red-white deck.
 //
 // WantBackground is what makes the Background appear. A Background holds
 // no theme signal of its own, so a pair that holds one loses on score to

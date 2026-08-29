@@ -33,10 +33,10 @@ type Index struct {
 
 // Collisions counts name keys that more than one card claimed at build
 // time (C-16). On a full-name tie the card that is legal in at least one
-// format wins, and among equals the first card wins. A face name never
-// overrides a full name. A face name that two cards share resolves to
-// nothing: the lookup is exact, and a guess is a wrong card. The log
-// line shows the counts.
+// format wins. A name that two equally playable cards share resolves to
+// nothing, full name or face name: the lookup is exact, and a guess is
+// a wrong card. A face name never overrides a full name. The log line
+// shows the counts.
 type Collisions struct {
 	// FullNames counts a full name that a later card also carried.
 	FullNames int
@@ -85,6 +85,10 @@ func NewIndex(cardList []*mtgv1.Card, printings []Printing, tags *TagIndex, asOf
 		tags:        tags,
 		AsOf:        asOf,
 	}
+	// fullAmbiguous holds a full name that two equally playable cards
+	// share. It stays in byName through the face walk, so no face name
+	// takes it, and leaves before the index is returned.
+	fullAmbiguous := map[string]bool{}
 	for _, c := range cardList {
 		if c.PriceUsd > 0 && c.PriceAsOf == "" {
 			c.PriceAsOf = priceDate
@@ -93,10 +97,14 @@ func NewIndex(cardList []*mtgv1.Card, printings []Printing, tags *TagIndex, asOf
 		k := normName(c.Name)
 		if taken, ok := idx.byName[k]; ok {
 			idx.collisions.FullNames++
-			// A playable card beats one that is legal nowhere. Otherwise
-			// the first card keeps the name.
-			if !legalSomewhere(taken) && legalSomewhere(c) {
+			// A playable card beats one that is legal nowhere. Two cards
+			// of equal standing make the name ambiguous.
+			switch {
+			case !legalSomewhere(taken) && legalSomewhere(c):
 				idx.byName[k] = c
+				delete(fullAmbiguous, k)
+			case legalSomewhere(taken) == legalSomewhere(c):
+				fullAmbiguous[k] = true
 			}
 		} else {
 			idx.byName[k] = c
@@ -135,6 +143,9 @@ func NewIndex(cardList []*mtgv1.Card, printings []Printing, tags *TagIndex, asOf
 			idx.byName[k] = c
 		}
 	}
+	for k := range fullAmbiguous {
+		delete(idx.byName, k)
+	}
 	// paper collects a replacement for every card whose default printing
 	// is digital and whose paper printing the file also holds (D-221).
 	paper := map[string]Printing{}
@@ -164,17 +175,14 @@ func NewIndex(cardList []*mtgv1.Card, printings []Printing, tags *TagIndex, asOf
 		if p.SetCode != "" && p.CollectorNumber != "" {
 			idx.bySetNo[setNoKey(p.SetCode, p.CollectorNumber)] = c
 		}
-		// The oracle_cards file names one printing per card, and for some
-		// cards that printing is digital. Diamond Valley read as Masters
-		// Edition, an online set, while its paper printing is Arabian
-		// Nights. A digital default costs the price search (D-17), the
-		// image, and the artist credit (D-6), and the rules engine reports
-		// a paper problem the card does not have (D-221).
+		// A digital default printing is replaced by a paper one: the
+		// price (D-17), the image, and the artist credit (D-6) follow the
+		// printing (D-221).
 		if !p.Digital && c.DefaultPrinting.GetDigital() {
 			paper[c.OracleId] = newerPaper(paper[c.OracleId], p)
 		}
 	}
-	// The swap runs after the walk, so the newest paper printing wins
+	// The swap runs after the walk, so the chosen paper printing wins
 	// whatever order the file holds.
 	for oid, p := range paper {
 		c, ok := idx.byOracleID[oid]
@@ -190,8 +198,7 @@ func NewIndex(cardList []*mtgv1.Card, printings []Printing, tags *TagIndex, asOf
 			Artist:          p.Artist,
 			ImageUris:       p.ImageUris,
 		}
-		// The price follows the printing. A digital printing carries no
-		// USD price, so the card read as free before this (D-231).
+		// The price follows the printing (D-231).
 		if p.PriceUSD > 0 {
 			c.PriceUsd = p.PriceUSD
 			c.PriceAsOf = priceDate
@@ -201,10 +208,20 @@ func NewIndex(cardList []*mtgv1.Card, printings []Printing, tags *TagIndex, asOf
 	return idx
 }
 
-// newerPaper keeps the later of two paper printings. A player buys the
-// newest one, so it is the one to show and to price.
+// newerPaper keeps the later of two paper printings, and a printing with
+// a USD price beats one without. A player buys the newest one, and a
+// printing with no price would make the card free to the budget (D-231).
 func newerPaper(have, next Printing) Printing {
-	if have.ScryfallID == "" || next.ReleasedAt > have.ReleasedAt {
+	if have.ScryfallID == "" {
+		return next
+	}
+	if (next.PriceUSD > 0) != (have.PriceUSD > 0) {
+		if next.PriceUSD > 0 {
+			return next
+		}
+		return have
+	}
+	if next.ReleasedAt > have.ReleasedAt {
 		return next
 	}
 	return have

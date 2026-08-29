@@ -1,11 +1,30 @@
 // errorMessage turns a thrown value into text a user can read.
-// Firebase Auth errors carry a code like auth/wrong-password. The code says
-// more than the message, so the code wins when it is present.
+// A Firebase Auth error carries a code like auth/wrong-password. The
+// code maps to a sentence when the app knows it, else the code shows.
 export function errorMessage(err: unknown): string {
-  if (typeof err === "object" && err !== null && "code" in err && typeof err.code === "string") {
-    return authErrorText(err.code) ?? `Sign-in failed (${err.code}).`;
+  const code = authCode(err);
+  if (code) {
+    return authErrorText(code) ?? code;
   }
   return err instanceof Error ? err.message : String(err);
+}
+
+// signInErrorMessage is errorMessage with the sign-in prefix on an
+// unknown auth code. Only the sign-in page uses it.
+export function signInErrorMessage(err: unknown): string {
+  const code = authCode(err);
+  if (code) {
+    return authErrorText(code) ?? `Sign-in failed (${code}).`;
+  }
+  return errorMessage(err);
+}
+
+// authCode returns the Firebase Auth code of an error, or an empty string.
+export function authCode(err: unknown): string {
+  if (typeof err === "object" && err !== null && "code" in err && typeof err.code === "string" && err.code.startsWith("auth/")) {
+    return err.code;
+  }
+  return "";
 }
 
 const authErrors: Record<string, string> = {
@@ -16,6 +35,8 @@ const authErrors: Record<string, string> = {
   "auth/weak-password": "The password needs at least six characters.",
   "auth/invalid-email": "The email address is not valid.",
   "auth/network-request-failed": "The auth server did not answer. Is the emulator up?",
+  "auth/user-token-expired": "Your session expired. Sign in again.",
+  "auth/user-disabled": "This account is disabled.",
 };
 
 function authErrorText(code: string): string | undefined {

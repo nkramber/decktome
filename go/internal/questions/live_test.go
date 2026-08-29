@@ -20,8 +20,7 @@ import (
 // with QUESTIONS_LIVE=1 and the API keys in the environment.
 //
 // The test prints every question with its source and fit score, then the
-// usage report. The owner approved one run of this size on 2026-08-24, to
-// measure the token cost of a turn.
+// usage report, which measures the token cost of a turn (D-60).
 func TestLiveConversation(t *testing.T) {
 	if os.Getenv("QUESTIONS_LIVE") != "1" {
 		t.Skip("set QUESTIONS_LIVE=1 and the API keys to run the live conversation")

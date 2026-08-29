@@ -2,9 +2,9 @@ package llm
 
 import "testing"
 
-// TestZeroAccumulatorRecords covers the zero value. A caller that writes
-// &Accumulator{} instead of NewAccumulator panicked on a nil map, and the
-// panic reached a real generate call on 2026-08-27.
+// TestZeroAccumulatorRecords covers the zero value. A caller may write
+// &Accumulator{} instead of NewAccumulator, and Record must not panic on
+// the nil map.
 func TestZeroAccumulatorRecords(t *testing.T) {
 	var a Accumulator
 	a.Record(RoleGenerate, "m", &Usage{InputTokens: 10, OutputTokens: 5}, 0)

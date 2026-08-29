@@ -243,10 +243,24 @@ func TestCompleteTruncationEscalatesOnce(t *testing.T) {
 }
 
 func TestEscalate(t *testing.T) {
-	tests := []struct{ in, want int }{{100, 8192}, {1024, 8192}, {2048, 16384}, {16384, 65536}, {65536, 65536}, {70000, 70000}}
+	tests := []struct {
+		in, want int
+		provider string
+	}{
+		{100, 8192, FakeName}, {1024, 8192, FakeName}, {2048, 16384, FakeName},
+		{16384, 65536, FakeName}, {65536, 65536, FakeName}, {70000, 70000, FakeName},
+		// The provider's own output limit clamps the escalation.
+		{16384, 65536, AnthropicName}, {65536, 65536, AnthropicName},
+		{16384, 65536, OpenAIName}, {65536, 65536, OpenAIName},
+	}
 	for _, tt := range tests {
-		if got := escalate(tt.in); got != tt.want {
-			t.Errorf("escalate(%d) = %d, want %d", tt.in, got, tt.want)
+		if got := escalate(tt.in, tt.provider); got != tt.want {
+			t.Errorf("escalate(%d, %s) = %d, want %d", tt.in, tt.provider, got, tt.want)
+		}
+	}
+	for name, limit := range providerMaxOutput {
+		if limit < escalationFloor {
+			t.Errorf("%s: provider limit %d is under the escalation floor", name, limit)
 		}
 	}
 }
@@ -271,13 +285,19 @@ func TestCompleteTransientBackoff(t *testing.T) {
 func TestCompleteAttemptBudget(t *testing.T) {
 	tr := newErr(ClassTransient, FakeName, "m", 503, errors.New("down"))
 	sc := NewScript(Step{Err: tr}, Step{Err: tr}, Step{Err: tr}, Step{Err: tr}, Step{Err: tr})
-	c := newTestClient(t, sc)
+	var slept []time.Duration
+	c := newTestClient(t, sc, WithSleeper(func(_ context.Context, d time.Duration) error { slept = append(slept, d); return nil }))
 	_, err := c.Complete(context.Background(), RoleClassify, Request{Schema: json.RawMessage(testSchema)}, nil)
 	if ClassOf(err) != ClassBudget {
 		t.Errorf("class = %v, err = %v", ClassOf(err), err)
 	}
 	if len(sc.Calls) != 4 {
 		t.Errorf("calls = %d, want 4", len(sc.Calls))
+	}
+	// No backoff after the last permitted attempt: the budget is checked
+	// before the sleep.
+	if want := c.budget.MaxAttempts - 1; len(slept) != want {
+		t.Errorf("slept %d times, want %d", len(slept), want)
 	}
 }
 

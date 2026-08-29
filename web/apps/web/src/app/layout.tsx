@@ -1,24 +1,35 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { signOut } from "firebase/auth";
+import { useState } from "react";
 import { Link, Outlet } from "react-router";
 
 import { useAuth } from "../features/auth/auth-context";
+import { errorMessage } from "../lib/errors";
 import { auth } from "../lib/firebase";
 import { useAppStore } from "../lib/store";
 import { HealthFooter } from "./components/health-footer";
+
+// signOutAndClear clears the persisted ids and the query cache, so the
+// next account on this browser starts with nothing of the last one.
+export async function signOutAndClear(reset: () => void, clear: () => void) {
+  await signOut(auth);
+  reset();
+  clear();
+}
 
 // The layout wraps every page: a header with the nav and sign-out, the page, and the health footer.
 export function Layout() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const reset = useAppStore((s) => s.reset);
+  const [signOutError, setSignOutError] = useState("");
 
-  // Sign-out clears the persisted ids and the query cache, so the next
-  // account on this browser starts with nothing of the last one.
-  async function signOutAndClear() {
-    await signOut(auth);
-    reset();
-    queryClient.clear();
+  async function onSignOut() {
+    try {
+      await signOutAndClear(reset, () => queryClient.clear());
+    } catch (err) {
+      setSignOutError(errorMessage(err));
+    }
   }
 
   return (
@@ -41,10 +52,15 @@ export function Layout() {
         {user && (
           <>
             <span className="min-w-0 truncate text-sm text-neutral-600">{user.email}</span>
-            <button type="button" onClick={() => void signOutAndClear()} className="rounded border px-2 py-1 text-sm">
+            <button type="button" onClick={() => void onSignOut()} className="rounded border px-2 py-1 text-sm">
               Sign out
             </button>
           </>
+        )}
+        {signOutError && (
+          <p role="alert" className="w-full text-sm text-red-700">
+            Sign-out failed: {signOutError}
+          </p>
         )}
       </header>
       <main className="grow">

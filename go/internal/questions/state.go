@@ -46,9 +46,8 @@ type State struct {
 	// not lead a deck (D-129).
 	IllegalCommander string
 	// CurrentOffer are the names on the table now. The pick row repeats
-	// with these same names until the user asks for others. The gate run
-	// of 2026-08-25 named three others every turn, which read as if the
-	// agent had ignored the answer.
+	// with these same names until the user asks for others, so the user
+	// never reads a new list as an ignored answer (D-80).
 	CurrentOffer []string
 	// OfferAsked are the names the pick row sent last. The row asks again
 	// only when CurrentOffer differs from these, so a turn that changes
@@ -61,7 +60,7 @@ type State struct {
 	Turn int
 	// Messages are the user's messages, oldest first. The classify call
 	// reads the last few of them, so the model sees what the user wrote
-	// before and never has to guess at it (audit Q-13).
+	// before and never has to guess at it (D-90).
 	Messages []string
 	// Asks are the M-4 records, oldest first.
 	Asks []Ask
@@ -151,19 +150,19 @@ func (s *State) RetireOffer() {
 // commanderKeys are the state keys of the rows that ask for the commander.
 // A named commander closes all of them: the pick row and the role row ask
 // the same thing in other words, and the illegal row asked for a
-// replacement that has now arrived (H-6).
+// replacement that has now arrived (D-196).
 var commanderKeys = []string{"commander", "commander_pick", "named_card_role", "commander_illegal"}
 
 // RefreshFacts reads the planner facts a FactSource answers, from the
 // slots as they stand now. agentsvc calls it before the turn, and the
-// agent calls it again after the classify call (M-6).
+// agent calls it again after the classify call (D-198).
 func RefreshFacts(s *State, src FactSource) {
 	if src == nil || !s.Ctx.HasCollection {
 		return
 	}
-	// The not-owned row is retired (D-226, closes OQ-36). The rules engine
-	// reports ownership per card after the build, which names the exact
-	// card and count and costs no turn.
+	// The not-owned row is retired (D-226). The rules engine reports
+	// ownership per card after the build, which names the exact card
+	// and count and costs no turn.
 	// The weak-pool row is retired (D-232). It sat on the commander key,
 	// and a delegated commander fills that key, so the row could not
 	// reach the user who needed it. PR-8 reports the thin pool instead.
@@ -207,6 +206,24 @@ func (s *State) Reopen(key string) {
 	delete(s.Slots.SlotStates, key)
 }
 
+// ReopenRows reopens a key and clears the asked mark of every row that
+// owns it. A reopened key with the mark in place can not ask again: the
+// planner skips an asked row that carries no repeat, so a second illegal
+// commander or a reopened format got silence (D-129, D-195). A repeat
+// row keeps its mark, because its own change rule decides when it asks
+// again (D-163, D-210). A nil catalog keeps every mark.
+func (s *State) ReopenRows(c *Catalog, key string) {
+	s.Reopen(key)
+	if c == nil {
+		return
+	}
+	for _, r := range c.Rows {
+		if r.StateKey() == key && !r.Repeat {
+			delete(s.Ctx.Asked, r.ID)
+		}
+	}
+}
+
 // ClearCommander drops the commander the user chose and reopens every
 // commander row. The user asked for another one, and a closed key would
 // otherwise leave the agent with nothing to ask (D-130).
@@ -231,10 +248,8 @@ func (s *State) ClearCommander() {
 // commander. The role of that card is then settled, so the role question
 // closes with it.
 //
-// Gate runs 10 to 13 of 2026-08-25 asked conversation 27 "Do you want
-// Grist, the Hunger Tide as your commander, or as one card in the 99?"
-// The first message of that conversation reads "but not as my commander".
-// The row fired in all four runs (D-70).
+// "Build around Grist, but not as my commander" answers the role
+// question before it goes out, so the row must not fire (D-70).
 func (s *State) AddLocked(name string) {
 	if name = strings.TrimSpace(name); name == "" {
 		return
@@ -257,9 +272,8 @@ func (s *State) Unlock(name string) {
 
 // LockedCards are the named cards that are not the commander. The build
 // keeps every one of them (D-242). The locked row that once asked to
-// keep or cut them is retired: the live run of 2026-08-24 asked the user
-// to keep or cut a list that held only their commander (D-70), and no
-// function ever read the answer (A-6 of the 2026-08-28 audit).
+// keep or cut them is retired: it could name a list that held only the
+// commander (D-70), and no function read the answer (D-260).
 func (s *State) LockedCards() []string {
 	var out []string
 	for _, name := range s.LockedNames {
@@ -300,9 +314,8 @@ func baseName(s string) string {
 // hold a comma stay apart, because "Toph, Hardheaded Teacher" and "Toph,
 // the Blind Bandit" are two different cards.
 //
-// Gate runs 10 to 12 of 2026-08-25 asked "Must the deck keep Grist, the
-// Hunger Tide and Grist ...", because the two forms both reached the
-// locked list.
+// Without the merge, the full name and the short name both reach the
+// locked list, and a question stutters the card (D-70).
 func sameCard(a, b string) bool {
 	x, y := normName(a), normName(b)
 	switch {
@@ -425,14 +438,14 @@ func (s *State) MarkAsked(rowID, key, slot string) {
 // A retired key leaves the asked state. Ready reads that state, and the
 // only other ways out of it are an answer and a decline, so a retired
 // question kept the session from ever reporting ready, and it offered
-// the dead key to the classifier every turn (H-5).
+// the dead key to the classifier every turn (D-195).
 //
 // The rows of a retired key lose their asked mark too. The theme and the
 // colors have one row each, so a retired theme question could never be
 // asked again, and the build ran with the slot empty. A row may ask a
-// retired question once more, because the user never answered it (audit
-// Q-8, owner decision of 2026-08-28). The catalog maps the keys onto the
-// rows, and a nil catalog keeps the marks.
+// retired question once more, because the user never answered it
+// (D-195). The catalog maps the keys onto the rows, and a nil catalog
+// keeps the marks.
 func (s *State) RetireOutstanding(c *Catalog) {
 	for key := range s.Ctx.Outstanding {
 		if s.Slots.GetSlotStates()[key] == mtgv1.SlotState_SLOT_STATE_ASKED {

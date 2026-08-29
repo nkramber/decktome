@@ -1,17 +1,12 @@
 package main
 
-// The eval prompt. It encodes the standard the owner applied while
-// scoring items 1 to 32 of the version-1 M-5 sheet on 2026-08-25, and the
-// sixteen defects the batch sweep found the day after (D-104 to D-132).
+// The eval prompt. It encodes the standard of the hand-scored M-5 sheet
+// and the defects that sheet found (D-104 to D-132).
 //
 // Keep it stable. A changed prompt invalidates every score before it, the
-// same way a changed classify prompt does (D-66).
-// Version 3 gives the reader the cards the questions name, as the local
-// snapshot holds them. Eval run 14 called Ran and Shaw and Quina, Qu
-// Gourmet unreal, and eval run 16 called Cloak and Dagger, Entwined
-// inapplicable and Vincent, Vengeful Atoner and Shadow the Hedgehog
-// invalid. All five are real and legal in Commander, and every one comes
-// from a crossover set (D-152).
+// same way a changed classify prompt does (D-66). Version 3 gives the
+// reader the cards the questions name, as the local snapshot holds them,
+// so the eval can not call a real card unreal or inapplicable (D-152).
 const evalVersion = 3
 
 const evalInstructions = `You score the clarifying questions a Magic: The Gathering deck-building agent asked one user.

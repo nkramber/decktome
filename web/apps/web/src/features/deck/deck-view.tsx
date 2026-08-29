@@ -1,6 +1,5 @@
 import { type Card, Color } from "@mtg/api-client/mtg/v1/card_pb";
-import type { Deck, DeckCard } from "@mtg/api-client/mtg/v1/deck_pb";
-import { CardRole, Severity } from "@mtg/api-client/mtg/v1/deck_pb";
+import { CardRole, type Deck, type DeckCard, Severity } from "@mtg/api-client/mtg/v1/deck_pb";
 
 import { errorMessage } from "../../lib/errors";
 import { CardTile } from "./card-tile";
@@ -28,8 +27,7 @@ import { useDeckCards } from "./use-cards";
 export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
   const diff = base && deck.revisedFromDeckId && base.id === deck.revisedFromDeckId ? diffDecks(base, deck) : undefined;
   const cards = useDeckCards(deck);
-  const byId = cards.data?.byId ?? new Map<string, Card>();
-  const missing = cards.data?.missing ?? [];
+  const { byId, missing } = cards;
   const allEntries = [...deck.cards, ...deck.sideboard, ...deck.upgrades];
   const nameOf = (id: string) => allEntries.find((c) => c.oracleId === id)?.name ?? byId.get(id)?.name ?? id;
   const commanders = new Set(deck.commanderOracleIds);
@@ -47,10 +45,12 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
   const sources = colorSources(deck.cards, byId);
   // The table shows the colors the deck pays for, and colorless for a
   // colorless deck. A mono-green deck full of rocks that make any color
-  // is not a five-color deck.
-  const colorsOfDeck = deckColors(deck.cards, byId);
+  // is not a five-color deck. The commander's identity counts too.
+  const colorsOfDeck = deckColors(deck.cards, byId, deck.commanderOracleIds);
   const sourceRows = colorLetters.filter((c) => (colorsOfDeck.size === 0 ? c.color === Color.C : colorsOfDeck.has(c.color)));
-  const total = deck.cards.reduce((n, c) => n + c.count, 0);
+  // The count is the main deck without the command zone, whether the
+  // commander sits in cards or not.
+  const total = main.reduce((n, c) => n + c.count, 0);
   const validation = deck.validation;
   // A not_owned warning repeats what the tile says under the card, and
   // an owned-first deck carries one per card to buy. The list drops them.
@@ -125,6 +125,7 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
 
       <div className="text-sm">
         {cards.isPending && <p role="status">Loading card data...</p>}
+        {cards.isPlaceholderData && <p role="status">Refreshing card data...</p>}
         {cards.isError && (
           <p role="alert" className="text-red-700">
             Could not load the card data: {errorMessage(cards.error)}

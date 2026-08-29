@@ -40,7 +40,7 @@ type Store interface {
 	ListVersions(ctx context.Context) ([]string, error)
 	// ListIncompleteVersions returns every version with files and no
 	// completion marker, oldest first. Prune reads it. A download in
-	// progress is one of them, so a caller never deletes the newest.
+	// progress is one of them, and it is newer than every complete one.
 	ListIncompleteVersions(ctx context.Context) ([]string, error)
 	// Open reads one file of one version. The caller closes it.
 	Open(ctx context.Context, version, file string) (io.ReadCloser, error)

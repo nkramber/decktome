@@ -100,7 +100,7 @@ func TestSizeTestCountsLikeRun(t *testing.T) {
 	}
 }
 
-// TestConversationSetOfA9 pins the owner's decision of 2026-08-28: no
+// TestConversationSetOfA9 pins the conversation set rule (A-9): no
 // two conversations share a script, and every after-build conversation
 // carries the flag.
 func TestConversationSetOfA9(t *testing.T) {
@@ -134,7 +134,7 @@ func TestConversationSetOfA9(t *testing.T) {
 	}
 }
 
-// TestDocumentRoundTrip is the lock the audit named: the document this
+// TestDocumentRoundTrip is the round-trip lock: the document this
 // command writes is what tune.ReadRun reads. A changed heading or label
 // would leave the loop reading nothing, and nothing said so before.
 func TestDocumentRoundTrip(t *testing.T) {

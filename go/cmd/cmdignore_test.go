@@ -15,30 +15,39 @@ import (
 // A per-binary list is the wrong shape of fix, because it only covers the
 // binaries someone happened to see. This test fails when a command has no
 // ignore line, so a new command cannot slip through the same way.
+//
+// .dockerignore holds the same list, so a binary never enters the build
+// context of the images. Its lines have no leading slash.
 func TestEveryCommandIsIgnored(t *testing.T) {
 	entries, err := os.ReadDir(".")
 	if err != nil {
 		t.Fatalf("read the command directory: %v", err)
 	}
-	raw, err := os.ReadFile(filepath.Join("..", "..", ".gitignore"))
-	if err != nil {
-		t.Fatalf("read .gitignore: %v", err)
+	ignoreFiles := []struct{ name, prefix string }{
+		{".gitignore", "/go/"},
+		{".dockerignore", "go/"},
 	}
-	lines := map[string]bool{}
-	for _, l := range strings.Split(string(raw), "\n") {
-		lines[strings.TrimSpace(l)] = true
-	}
-	var missing []string
-	for _, e := range entries {
-		if !e.IsDir() {
-			continue
+	for _, f := range ignoreFiles {
+		raw, err := os.ReadFile(filepath.Join("..", "..", f.name))
+		if err != nil {
+			t.Fatalf("read %s: %v", f.name, err)
 		}
-		if !lines["/go/"+e.Name()] {
-			missing = append(missing, e.Name())
+		lines := map[string]bool{}
+		for _, l := range strings.Split(string(raw), "\n") {
+			lines[strings.TrimSpace(l)] = true
 		}
-	}
-	if len(missing) > 0 {
-		t.Errorf("commands with no ignore line: %v.\nAdd /go/<name> to .gitignore, or `go build ./cmd/<name>` drops the binary in the repo.", missing)
+		var missing []string
+		for _, e := range entries {
+			if !e.IsDir() {
+				continue
+			}
+			if !lines[f.prefix+e.Name()] {
+				missing = append(missing, e.Name())
+			}
+		}
+		if len(missing) > 0 {
+			t.Errorf("commands with no ignore line in %s: %v.\nAdd %s<name> to %s, or `go build ./cmd/<name>` drops the binary in the repo.", f.name, missing, f.prefix, f.name)
+		}
 	}
 }
 

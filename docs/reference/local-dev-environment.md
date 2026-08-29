@@ -1,6 +1,6 @@
 # Reference: local test environment, including a local Firestore
 
-Status: research note, frozen as history (D-42). Verified 2026-08-23. The port numbers in the recipe below are superseded by D-36 (Firestore 8281, UI 4100, API 8090). Answers the owner's question: "Investigate how we can handle a local Firestore database. Is that possible?"
+Status: research note, frozen as history (D-42). Verified 2026-08-23. D-36 supersedes the port numbers in the recipe below (Firestore 8281, UI 4100, API 8090). Answers the owner's question: "Investigate how we can handle a local Firestore database. Is that possible?"
 
 ## Short answer
 
@@ -55,11 +55,11 @@ The role-to-model layer gets a `fake` provider. It returns canned structured res
 
 ### Card data
 
-The card database comes from Scryfall bulk files (`oracle_cards`, 24.5 MB compressed, daily). Local mode reads one committed snapshot or one downloaded file from `.local/scryfall/`. No network is needed after the first download. Card images are hotlinked from `*.scryfall.io` and need network in the browser only.
+The card database comes from Scryfall bulk files (`oracle_cards`, 24.5 MB compressed, daily). Local mode reads one committed snapshot or one downloaded file from `.local/scryfall/`. Local mode needs no network after the first download. The browser loads card images from `*.scryfall.io` and needs network for them only.
 
 ### UI
 
-The Vite dev server proxies `/api` to the Go API on `localhost:8080`. Connect-RPC works over HTTP/1.1, so no proxy for gRPC is needed.
+The Vite dev server proxies `/api` to the Go API on `localhost:8080`. Connect-RPC works over HTTP/1.1, so the dev server needs no proxy for gRPC.
 
 ## One command
 

@@ -163,8 +163,8 @@ func TestBuildAttachesTheValidationResult(t *testing.T) {
 	if !got.Repaired || len(sc.Calls) != 2 {
 		t.Errorf("repaired = %v, calls = %d, want a repair turn", got.Repaired, len(sc.Calls))
 	}
-	if len(blocking(got.Deck.GetValidation())) == 0 {
-		t.Error("a four-card Modern deck produced no block finding")
+	if got.Deck.GetValidation().GetPassed() {
+		t.Error("a four-card Modern deck passed validation")
 	}
 	// One cache key per session, on both turns (roadmap PR-8).
 	for i, c := range sc.Calls {
@@ -175,8 +175,7 @@ func TestBuildAttachesTheValidationResult(t *testing.T) {
 }
 
 // TestSixtyCardDeckCarriesNoCommander is D-233. Only Commander has a
-// command zone. A probe of 2026-08-27 built a Modern deck with Karlov in
-// the command zone, and the engine refused it as not legal in the format.
+// command zone, and the engine refuses a 60-card deck with one.
 func TestSixtyCardDeckCarriesNoCommander(t *testing.T) {
 	one := step(t, deckOut{Summary: "burn", Cards: []Entry{
 		{Name: "Ajani's Welcome", Count: 4, Role: "synergy", Reason: "gains life"},
@@ -266,9 +265,9 @@ func TestLockedCommanderCounts(t *testing.T) {
 	}
 }
 
-// TestAssembleCarriesTheHouseRules is A-6 of the 2026-08-28 audit. The
-// house-rules answer reaches the deck's Format, so a reader of the deck
-// sees what "anything goes" meant to this user (D-3).
+// TestAssembleCarriesTheHouseRules is D-3. The house-rules answer reaches
+// the deck's Format, so a reader of the deck sees what "anything goes"
+// meant to this user.
 func TestAssembleCarriesTheHouseRules(t *testing.T) {
 	b, _, _ := testBuilder(t)
 	req := testRequest()
@@ -279,5 +278,44 @@ func TestAssembleCarriesTheHouseRules(t *testing.T) {
 	}
 	if got.deck.GetFormat().GetId() != req.Format {
 		t.Errorf("deck format = %v, want %v", got.deck.GetFormat().GetId(), req.Format)
+	}
+}
+
+// TestShortlistOmitsTheCommander is D-302. The prompt says the commander
+// is not one of the cards to list, so the shortlist omits it. The pool
+// keeps it, and a 60-card session still lists it.
+func TestShortlistOmitsTheCommander(t *testing.T) {
+	b, _, _ := testBuilder(t)
+	for _, tc := range []struct {
+		format mtgv1.FormatId
+		listed bool
+	}{
+		{mtgv1.FormatId_FORMAT_ID_COMMANDER, false},
+		{mtgv1.FormatId_FORMAT_ID_MODERN, true},
+	} {
+		req := testRequest()
+		req.Format, req.Commanders = tc.format, []string{"o-karlov"}
+		in := b.input(req, nil, nil)
+		if got := strings.Contains(in, "- Karlov of the Ghost Council"); got != tc.listed {
+			t.Errorf("%s: the shortlist lists the commander = %v, want %v", tc.format, got, tc.listed)
+		}
+		if _, ok := req.Pool.ByOracleID("o-karlov"); !ok {
+			t.Errorf("%s: the pool lost the commander", tc.format)
+		}
+	}
+	if PromptVersion != 10 {
+		t.Errorf("PromptVersion = %d, want 10", PromptVersion)
+	}
+}
+
+// TestHouseFormatHasASideboard is D-302. The rules give the house format
+// a sideboard of 15, so the limits text and the deck size say so.
+func TestHouseFormatHasASideboard(t *testing.T) {
+	house := mtgv1.FormatId_FORMAT_ID_HOUSE
+	if got := LimitsFor(house); !strings.Contains(got, "A sideboard of up to 15 cards") {
+		t.Errorf("LimitsFor(house) = %q, want the sideboard sentence", got)
+	}
+	if got := DeckSize(house); got != 60 {
+		t.Errorf("DeckSize(house) = %d, want 60", got)
 	}
 }

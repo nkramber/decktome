@@ -166,11 +166,7 @@ func parseCard(line []byte) (*mtgv1.Card, error) {
 			Loyalty: r.Loyalty, ImageUris: r.ImageUris.proto(), Artist: r.Artist,
 		}}
 	}
-	if usd := r.Prices["usd"]; usd != "" {
-		if v, err := strconv.ParseFloat(usd, 64); err == nil {
-			c.PriceUsd = v
-		}
-	}
+	c.PriceUsd, _ = usdPrice(r.Prices)
 	derive(c)
 	return c, nil
 }
@@ -194,10 +190,8 @@ type Printing struct {
 	// art cards) stay out of the index but are remembered by id, so an
 	// import can report them instead of a silent name fallback.
 	Layout string
-	// Digital marks an online-only printing. The oracle_cards file names
-	// one printing per card, and for some cards that printing is digital.
-	// Diamond Valley reads as Masters Edition, and its paper printing is
-	// Arabian Nights (D-221).
+	// Digital marks an online-only printing. The index replaces a digital
+	// default printing with a paper one (D-221).
 	Digital bool
 	// ReleasedAt is the printing date, ISO 8601. The index prefers the
 	// newest paper printing, because that is the one a player can buy.
@@ -207,10 +201,12 @@ type Printing struct {
 	Artist     string
 	ImageUris  *mtgv1.ImageUris
 	// PriceUSD is the printing's USD price, 0 when it has none. A digital
-	// printing carries no USD price at all, only MTGO tickets, so a card
-	// whose default printing is digital reads as free. The price must
-	// follow the printing the index shows (D-231, extends D-221 and D-17).
+	// printing carries no USD price, so the price follows the printing
+	// the index shows (D-231).
 	PriceUSD float64
+	// PriceFinish names the Scryfall price key PriceUSD came from: "usd",
+	// "usd_foil", or "usd_etched". Empty when the printing has no price.
+	PriceFinish string
 }
 
 // parsePrinting reads the minimal printing row for collection resolution.
@@ -240,19 +236,25 @@ func parsePrinting(line []byte) (Printing, error) {
 	if r.OracleID == "" && len(r.CardFaces) > 0 {
 		r.OracleID = r.CardFaces[0].OracleID
 	}
-	return Printing{ScryfallID: r.ID, OracleID: r.OracleID, Name: r.Name,
+	p := Printing{ScryfallID: r.ID, OracleID: r.OracleID, Name: r.Name,
 		SetCode: r.Set, CollectorNumber: r.CollectorNumber, Layout: r.Layout,
 		Digital: r.Digital, ReleasedAt: r.ReleasedAt, SetName: r.SetName,
-		Rarity: r.Rarity, Artist: r.Artist, ImageUris: r.ImageUris.proto(),
-		PriceUSD: usdPrice(r.Prices)}, nil
+		Rarity: r.Rarity, Artist: r.Artist, ImageUris: r.ImageUris.proto()}
+	p.PriceUSD, p.PriceFinish = usdPrice(r.Prices)
+	return p, nil
 }
 
-// usdPrice reads the USD price of a printing. A digital printing has
-// none, and the field may be absent or null (D-231).
-func usdPrice(prices map[string]string) float64 {
-	v, err := strconv.ParseFloat(prices["usd"], 64)
-	if err != nil {
-		return 0
+// priceKeys is the order of the Scryfall USD price keys. A printing sold
+// only in foil or etched foil takes that price rather than none (D-17).
+var priceKeys = []string{"usd", "usd_foil", "usd_etched"}
+
+// usdPrice reads the USD price of a printing and names the key it came
+// from. A digital printing has none, and a key may be absent or null.
+func usdPrice(prices map[string]string) (float64, string) {
+	for _, k := range priceKeys {
+		if v, err := strconv.ParseFloat(prices[k], 64); err == nil && v > 0 {
+			return v, k
+		}
 	}
-	return v
+	return 0, ""
 }

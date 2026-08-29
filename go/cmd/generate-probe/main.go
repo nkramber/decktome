@@ -158,18 +158,21 @@ func reportCall(n int, before, after llm.Report) {
 	in := a.InputTokens - b.InputTokens
 	cached := a.CachedInputTokens - b.CachedInputTokens
 	out := a.OutputTokens - b.OutputTokens
-	cost := 0.0
+	// The delta of two priced reports. A nil on either side is unpriced,
+	// never $0 (M-1).
+	cost := "unpriced"
 	if after.CostUSD != nil {
-		cost = *after.CostUSD
+		c := *after.CostUSD
 		if before.CostUSD != nil {
-			cost -= *before.CostUSD
+			c -= *before.CostUSD
 		}
+		cost = fmt.Sprintf("$%.5f", c)
 	}
 	share := 0.0
 	if in > 0 {
 		share = 100 * float64(cached) / float64(in)
 	}
-	fmt.Printf("call %d: input %6d (cached %6d, %5.1f%%)  output %6d  cost $%.5f\n",
+	fmt.Printf("call %d: input %6d (cached %6d, %5.1f%%)  output %6d  cost %s\n",
 		n, in, cached, share, out, cost)
 }
 
@@ -178,29 +181,21 @@ func reportCall(n int, before, after llm.Report) {
 // that is true of the input alone.
 func reportCache(acc *llm.Accumulator, calls int) {
 	rep := acc.Report()
-	t := rep.Tokens
-	cost := 0.0
-	if rep.CostUSD != nil {
-		cost = *rep.CostUSD
+	var t llm.Usage
+	if rep.Tokens != nil {
+		t = *rep.Tokens
 	}
 	fmt.Printf("\ntotals over %d calls: input %d, cached %d, output %d, reasoning %d\n",
 		calls, t.InputTokens, t.CachedInputTokens, t.OutputTokens, t.ReasoningTokens)
-	fmt.Printf("reported cost: $%.5f\n", cost)
+	fmt.Printf("reported cost: %s\n", gatekit.CostWord(rep))
 }
 
 func report(pool *generate.Pool, res *generate.Result, acc *llm.Accumulator) {
 	d := res.Deck
-	total := 0
-	for _, c := range d.GetCards() {
-		total += int(c.GetCount())
-	}
 	fmt.Printf("shortlist: %d names\n", pool.Size())
 	fmt.Printf("repair turn ran: %v\n", res.Repaired)
-	side := 0
-	for _, c := range d.GetSideboard() {
-		side += int(c.GetCount())
-	}
-	fmt.Printf("cards listed: %d entries, %d with counts. Sideboard: %d cards.\n", len(d.GetCards()), total, side)
+	fmt.Printf("cards listed: %d entries, %d with counts. Sideboard: %d cards.\n",
+		len(d.GetCards()), gatekit.CountCards(d), gatekit.CountSideboard(d))
 	fmt.Printf("notes (names that missed twice): %d\n", len(res.Notes))
 	for _, n := range res.Notes {
 		fmt.Printf("  - %s\n", n)

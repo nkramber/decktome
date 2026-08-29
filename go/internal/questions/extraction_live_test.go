@@ -12,11 +12,10 @@ import (
 )
 
 // TestLiveFormatExtraction guards D-92, which no offline test can catch.
-// The format field carried a schema enum until 2026-08-25. The enum
-// suppressed the field: the model answered "unknown" for a message that
-// named the format outright, and it filled every free-text field around
-// it. Measured over four samples each, the enum extracted 1 of 8 and a
-// free string extracted 7 of 8.
+// A schema enum on the format field suppresses it: the model answers
+// "unknown" for a message that names the format outright, and it fills
+// every free-text field around it. A free string extracts what the enum
+// misses.
 //
 // The failure is invisible offline, because a fake provider answers
 // whatever the test tells it to. Only a real call shows it. Run this
@@ -26,8 +25,8 @@ import (
 //	  go test ./internal/questions -run TestLiveFormatExtraction -v -count=1
 //
 // TestLiveDecline guards D-93. A decline is the only way a user hands a
-// choice back, and `State.Skip` sat unused until 2026-08-25 because no
-// field carried one. An offline test can not prove the model emits the
+// choice back, and the schema must carry a field for it. An offline
+// test can not prove the model emits the
 // field, so this one asks the real provider.
 func TestLiveDecline(t *testing.T) {
 	if os.Getenv("QUESTIONS_LIVE") != "1" {
@@ -108,10 +107,10 @@ func TestLiveDecline(t *testing.T) {
 	}
 }
 
-// TestLiveOutOfScope guards D-99. Gate run 11 answered "Can you build me
-// a Yu-Gi-Oh deck?" with "Which Yu-Gi-Oh format would you like?", because
-// the catalog held no way to decline. The row is useless unless the
-// classifier raises the fact, and only a real call proves that.
+// TestLiveOutOfScope guards D-99. "Can you build me a Yu-Gi-Oh deck?"
+// must get a decline and not "Which Yu-Gi-Oh format would you like?".
+// The row is useless unless the classifier raises the fact, and only a
+// real call proves that.
 func TestLiveOutOfScope(t *testing.T) {
 	if os.Getenv("QUESTIONS_LIVE") != "1" {
 		t.Skip("set QUESTIONS_LIVE=1 and the API keys to run the live scope check")

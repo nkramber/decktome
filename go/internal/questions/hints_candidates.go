@@ -34,24 +34,22 @@ type CandidateHints struct {
 	commanders map[string][]string
 	// The thin-theme count runs the whole PR-6 build, so it runs once per
 	// key and the answer is kept. The key carries the format, the
-	// colors, and the pool rule, as every other hint's does (D-82,
-	// audit Q-12).
+	// colors, and the pool rule, as every other hint's does (D-82).
 	thinDone  map[string]bool
 	thin      map[string]bool
 	thinCount map[string]int
 }
 
-// CanLead reports whether a named card can lead a deck. Probe 41 asks
-// for "Commander deck with Lightning Bolt as my commander", and every run
-// before 2026-08-26 accepted it in silence (D-129).
+// CanLead reports whether a named card can lead a deck. "Lightning Bolt
+// as my commander" must not pass in silence (D-129).
 //
 // It answers "not known" for any legendary card it can not confirm. The
 // engine reads a type line, and a type line is wrong about a whole class
 // of commander. Grist, the Hunger Tide is "Legendary Planeswalker" and it
 // is a legal commander, because a characteristic-defining ability makes
-// it a creature card everywhere except the battlefield (Scryfall ruling,
-// 2021-06-18). Gate run 14 told a user that Grist can not lead a deck.
-// The gate passed and the linter found nothing, and the claim was false.
+// it a creature card everywhere except the battlefield (D-269). A false
+// "can not lead" passes the gate and the linter, so the engine says
+// nothing it can not prove.
 //
 // A confident "no" therefore needs a card that is not legendary at all.
 // Lightning Bolt is an instant and Sol Ring is not legendary, so both
@@ -64,8 +62,13 @@ func (h *CandidateHints) CanLead(name string) (canLead, known bool) {
 	if !ok {
 		return false, false
 	}
-	if card.GetCanBeCommander() || card.GetIsBackground() {
+	if card.GetCanBeCommander() {
 		return true, true
+	}
+	// A Background alone can not lead a deck. It joins a creature that
+	// chooses a Background, and the pair is the commander (D-154).
+	if card.GetIsBackground() {
+		return false, true
 	}
 	if strings.Contains(strings.ToLower(card.GetTypeLine()), "legendary") {
 		// A legendary card the engine can not confirm. Say nothing.
@@ -181,7 +184,7 @@ func (h *CandidateHints) Commanders(theme string, skip []string) []string {
 // OwnedThemeCount is the on-theme owned count PR-6 reported. A count
 // ThinTheme measured under the same key wins over the one the caller
 // set, so the {n} clause of the thin-theme question reads the count that
-// belongs to these colors (M-6, audit Q-12).
+// belongs to these colors (D-198, D-82).
 func (h *CandidateHints) OwnedThemeCount(theme string) int {
 	if h == nil {
 		return 0
@@ -201,8 +204,8 @@ func (h *CandidateHints) warn(what string, err error) {
 }
 
 // key is the cache key of one hint. It carries every value the answer
-// depends on. A key of the theme alone kept a colorless commander list
-// after the user named their colors (the gate run of 2026-08-25).
+// depends on. A key of the theme alone keeps a colorless commander list
+// after the user names their colors (D-82).
 func (h *CandidateHints) key(theme string) string {
 	var b strings.Builder
 	b.WriteString(theme)
@@ -226,7 +229,7 @@ func (h *CandidateHints) key(theme string) string {
 //
 // The answer is cached by key, so a count taken before the user named
 // the colors is not served after. It leaves OnThemeOwned alone: the
-// count reaches OwnedThemeCount through the same cache (audit Q-12).
+// count reaches OwnedThemeCount through the same cache (D-82).
 func (h *CandidateHints) ThinTheme(theme string) (bool, int) {
 	if h == nil || strings.TrimSpace(theme) == "" {
 		return false, 0

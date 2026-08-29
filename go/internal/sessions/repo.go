@@ -1,5 +1,5 @@
 // Package sessions stores deck-building conversations in Firestore
-// (roadmap PR-7, D-74). One session is two documents:
+// (D-74). One session is two documents:
 //
 //	users/{uid}/sessions/{id}          the proto Session, the public contract
 //	users/{uid}/sessions/{id}/private/state   the agent's private state
@@ -11,34 +11,22 @@
 package sessions
 
 import (
-	"bytes"
-	"compress/gzip"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"time"
 
 	"cloud.google.com/go/firestore"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/encoding/protojson"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	"github.com/nkramber/mtg-deck-builder/go/internal/gzstore"
 	"github.com/nkramber/mtg-deck-builder/go/internal/questions"
 )
 
 // schemaVersion marks the document shape.
 const schemaVersion = 1
-
-// maxStoredBytes bounds one stored payload. Firestore caps a document at
-// 1 MiB, and the other fields use the rest. A conversation of 40 turns
-// stays far under it.
-const maxStoredBytes = 900 << 10
-
-// maxInflatedBytes bounds the inflated read of a stored payload.
-const maxInflatedBytes = 8 << 20
 
 // ErrNotFound reports a session id no document answers.
 var ErrNotFound = errors.New("session not found")
@@ -69,8 +57,8 @@ type storedSession struct {
 	SessionGz     []byte    `firestore:"session_gz"`
 	SchemaVersion int64     `firestore:"schema_version"`
 	// Version counts the writes. Put compares it before it writes, so two
-	// overlapping turns can not both land. A document from before this
-	// field reads as version 0.
+	// overlapping turns can not both land. A document without this field
+	// reads as version 0.
 	Version int64 `firestore:"version"`
 }
 
@@ -104,19 +92,19 @@ func (r *Repo) Put(ctx context.Context, uid string, s *mtgv1.Session, snap quest
 	if s.GetId() == "" {
 		return errors.New("sessions: a session needs an id")
 	}
-	sessionGz, err := gzProto(s)
+	sessionGz, err := gzstore.MarshalProto(s)
 	if err != nil {
 		return err
 	}
-	stateGz, err := gzJSON(snap)
+	stateGz, err := gzstore.MarshalJSON(snap)
 	if err != nil {
 		return err
 	}
-	if len(sessionGz) > maxStoredBytes || len(stateGz) > maxStoredBytes {
+	if len(sessionGz) > gzstore.MaxStoredBytes || len(stateGz) > gzstore.MaxStoredBytes {
 		return fmt.Errorf("%w: %d and %d bytes", ErrTooLarge, len(sessionGz), len(stateGz))
 	}
-	// The session carries its own clock: the service stamps updated_at,
-	// so the flat field agrees with the proto (L-9).
+	// The service stamps updated_at, so the flat field agrees with the
+	// proto.
 	now := time.Now().UTC()
 	if t := s.GetUpdatedAt(); t != nil {
 		now = t.AsTime()
@@ -136,10 +124,9 @@ func (r *Repo) Put(ctx context.Context, uid string, s *mtgv1.Session, snap quest
 	}
 	private := storedState{StateGz: stateGz, SchemaVersion: schemaVersion}
 	// One transaction, because a session and its state must never
-	// disagree. A half write would repeat a question the user answered.
-	// The read inside it is the version check (H-7): Firestore retries
-	// the transaction when the document changes under it, so the check
-	// and the write are one step.
+	// disagree. The read inside it is the version check: Firestore
+	// retries the transaction when the document changes under it, so the
+	// check and the write are one step.
 	err = r.client.RunTransaction(ctx, func(_ context.Context, tx *firestore.Transaction) error {
 		current, err := storedVersion(tx, r.doc(uid, s.GetId()))
 		if err != nil {
@@ -178,121 +165,63 @@ func storedVersion(tx *firestore.Transaction, ref *firestore.DocumentRef) (int64
 
 // Get reads the public session alone. GetSession answers from it.
 func (r *Repo) Get(ctx context.Context, uid, id string) (*mtgv1.Session, error) {
-	s, _, err := r.get(ctx, uid, id)
-	return s, err
-}
-
-// get reads the public session and its stored version.
-func (r *Repo) get(ctx context.Context, uid, id string) (*mtgv1.Session, int64, error) {
 	snap, err := r.doc(uid, id).Get(ctx)
 	if err != nil {
 		if status.Code(err) == codes.NotFound {
-			return nil, 0, fmt.Errorf("%w: %s", ErrNotFound, id)
+			return nil, fmt.Errorf("%w: %s", ErrNotFound, id)
 		}
-		return nil, 0, err
+		return nil, err
 	}
+	s, _, err := decodeSession(id, snap)
+	return s, err
+}
+
+// decodeSession reads the public document into a proto and its version.
+func decodeSession(id string, snap *firestore.DocumentSnapshot) (*mtgv1.Session, int64, error) {
 	var stored storedSession
 	if err := snap.DataTo(&stored); err != nil {
 		return nil, 0, fmt.Errorf("session %s: %w", id, err)
 	}
 	var out mtgv1.Session
-	if err := ungzProto(stored.SessionGz, &out); err != nil {
+	if err := gzstore.UnmarshalProto(stored.SessionGz, &out); err != nil {
 		return nil, 0, fmt.Errorf("session %s: %w", id, err)
 	}
 	out.Id = id
 	return &out, stored.Version, nil
 }
 
-// GetState reads the session and its private state, for the next turn.
-// The version it returns is the one Put must expect.
+// GetState reads the session and its private state in one read, for the
+// next turn. The version it returns is the one Put must expect.
 func (r *Repo) GetState(ctx context.Context, uid, id string) (*mtgv1.Session, questions.Snapshot, int64, error) {
-	s, version, err := r.get(ctx, uid, id)
+	snaps, err := r.client.GetAll(ctx, []*firestore.DocumentRef{r.doc(uid, id), r.stateDoc(uid, id)})
 	if err != nil {
 		return nil, questions.Snapshot{}, 0, err
 	}
-	snap, err := r.stateDoc(uid, id).Get(ctx)
+	if len(snaps) != 2 || !snaps[0].Exists() {
+		return nil, questions.Snapshot{}, 0, fmt.Errorf("%w: %s", ErrNotFound, id)
+	}
+	s, version, err := decodeSession(id, snaps[0])
 	if err != nil {
-		if status.Code(err) == codes.NotFound {
-			// The public session exists and the private state does not.
-			// A zero snapshot opens a new state, which asks again rather
-			// than answer from nothing.
-			return s, questions.Snapshot{}, version, nil
-		}
 		return nil, questions.Snapshot{}, 0, err
+	}
+	if !snaps[1].Exists() {
+		// The public session exists and the private state does not. A
+		// zero snapshot opens a new state, which asks again rather than
+		// answer from nothing. It keeps the one fact the session carries.
+		var out questions.Snapshot
+		out.Ctx.HasCollection = s.GetCollectionId() != ""
+		return s, out, version, nil
 	}
 	var stored storedState
-	if err := snap.DataTo(&stored); err != nil {
+	if err := snaps[1].DataTo(&stored); err != nil {
 		return nil, questions.Snapshot{}, 0, fmt.Errorf("session %s state: %w", id, err)
 	}
 	var out questions.Snapshot
-	if err := ungzJSON(stored.StateGz, &out); err != nil {
+	if err := gzstore.UnmarshalJSON(stored.StateGz, &out); err != nil {
 		return nil, questions.Snapshot{}, 0, fmt.Errorf("session %s state: %w", id, err)
 	}
 	if out.Version > questions.SnapshotVersion {
 		return nil, questions.Snapshot{}, 0, fmt.Errorf("session %s state: version %d is newer than %d", id, out.Version, questions.SnapshotVersion)
 	}
 	return s, out, version, nil
-}
-
-func gzProto(m *mtgv1.Session) ([]byte, error) {
-	raw, err := protojson.Marshal(m)
-	if err != nil {
-		return nil, fmt.Errorf("sessions: encode: %w", err)
-	}
-	return gzBytes(raw)
-}
-
-func ungzProto(payload []byte, m *mtgv1.Session) error {
-	raw, err := ungzBytes(payload)
-	if err != nil {
-		return err
-	}
-	return protojson.Unmarshal(raw, m)
-}
-
-func gzJSON(v any) ([]byte, error) {
-	raw, err := json.Marshal(v)
-	if err != nil {
-		return nil, fmt.Errorf("sessions: encode: %w", err)
-	}
-	return gzBytes(raw)
-}
-
-func ungzJSON(payload []byte, v any) error {
-	raw, err := ungzBytes(payload)
-	if err != nil {
-		return err
-	}
-	return json.Unmarshal(raw, v)
-}
-
-func gzBytes(raw []byte) ([]byte, error) {
-	var buf bytes.Buffer
-	zw := gzip.NewWriter(&buf)
-	if _, err := zw.Write(raw); err != nil {
-		return nil, fmt.Errorf("sessions: compress: %w", err)
-	}
-	if err := zw.Close(); err != nil {
-		return nil, fmt.Errorf("sessions: compress: %w", err)
-	}
-	return buf.Bytes(), nil
-}
-
-func ungzBytes(payload []byte) ([]byte, error) {
-	if len(payload) == 0 {
-		return []byte("{}"), nil
-	}
-	zr, err := gzip.NewReader(bytes.NewReader(payload))
-	if err != nil {
-		return nil, fmt.Errorf("sessions: read: %w", err)
-	}
-	defer func() { _ = zr.Close() }()
-	raw, err := io.ReadAll(io.LimitReader(zr, maxInflatedBytes))
-	if err != nil {
-		return nil, fmt.Errorf("sessions: read: %w", err)
-	}
-	if len(raw) == maxInflatedBytes {
-		return nil, fmt.Errorf("sessions: stored payload is larger than %d bytes", maxInflatedBytes)
-	}
-	return raw, nil
 }

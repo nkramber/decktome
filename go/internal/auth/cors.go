@@ -7,7 +7,7 @@ import (
 
 // CORS answers the browser's cross-origin checks for the origins in
 // allowed. An empty list allows no cross-origin call, which is the
-// same-origin deployment of one host (L-5). A request from another
+// same-origin deployment of one host. A request from another
 // origin gets no CORS headers, and the browser refuses it.
 func CORS(allowed []string, next http.Handler) http.Handler {
 	set := map[string]bool{}

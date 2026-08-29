@@ -7,7 +7,7 @@ import (
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 )
 
-// extraByName loads the rules-only fixture rows (Scryfall API, 2026-08-24).
+// extraByName loads the shared fixture and the rules-only fixture rows.
 func extraByName(t *testing.T) map[string]*mtgv1.Card {
 	t.Helper()
 	out := map[string]*mtgv1.Card{}
@@ -137,5 +137,34 @@ func TestDeriveTextRules(t *testing.T) {
 	}
 	if c := mk("Legendary Artifact — Vehicle", "Crew 1"); c.CanBeCommander {
 		t.Error("a Vehicle with no power/toughness box is not eligible")
+	}
+}
+
+// TestCommanderPermissionReadsTheFrontFace: only the front face counts
+// (CR 712.8a), so a permission on the back face does not qualify.
+func TestCommanderPermissionReadsTheFrontFace(t *testing.T) {
+	back := &mtgv1.Card{
+		TypeLine:   "Artifact // Legendary Planeswalker — Test",
+		OracleText: "Front text.\n//\nTest can be your commander.",
+		Faces: []*mtgv1.CardFace{
+			{TypeLine: "Artifact", OracleText: "Front text."},
+			{TypeLine: "Legendary Planeswalker — Test", OracleText: "Test can be your commander."},
+		},
+	}
+	derive(back)
+	if back.CanBeCommander {
+		t.Error("a permission on the back face must not make a card eligible")
+	}
+	front := &mtgv1.Card{
+		TypeLine:   "Legendary Planeswalker — Test // Artifact",
+		OracleText: "Test can be your commander.\n//\nBack text.",
+		Faces: []*mtgv1.CardFace{
+			{TypeLine: "Legendary Planeswalker — Test", OracleText: "Test can be your commander."},
+			{TypeLine: "Artifact", OracleText: "Back text."},
+		},
+	}
+	derive(front)
+	if !front.CanBeCommander {
+		t.Error("a permission on the front face must make a card eligible")
 	}
 }

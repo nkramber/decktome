@@ -1,10 +1,10 @@
-import { screen } from "@testing-library/react";
+import { act, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { signOut } from "firebase/auth";
+import { onAuthStateChanged, signOut, type User } from "firebase/auth";
 import { axe } from "jest-axe";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { fakeUser, state } from "../../test-auth-state";
+import { emit, emitError, fakeUser, state } from "../../test-auth-state";
 import { renderAt } from "../../test-utils";
 
 vi.mock("firebase/app");
@@ -22,6 +22,8 @@ vi.mock("../../lib/api", () => ({
 beforeEach(() => {
   state.user = null;
   localStorage.clear();
+  vi.mocked(signOut).mockReset();
+  vi.mocked(signOut).mockResolvedValue();
 });
 
 describe("route guard", () => {
@@ -50,7 +52,43 @@ describe("route guard", () => {
     expect(router.state.location.pathname).toBe("/collection");
   });
 
-  it("shows the session placeholder with the id, and signs out from the header", async () => {
+  it("returns to the page the guard redirected after the sign-in", async () => {
+    const { router } = renderAt("/session/abc123");
+    await screen.findByRole("heading", { level: 1, name: "Sign in" });
+    expect(router.state.location.pathname).toBe("/sign-in");
+    await act(async () => emit(fakeUser));
+    expect(await screen.findByTestId("session-id")).toHaveTextContent("Session id: abc123");
+    expect(router.state.location.pathname).toBe("/session/abc123");
+  });
+
+  it("shows the loading line on / and under the guard until auth is ready", () => {
+    vi.mocked(onAuthStateChanged).mockImplementationOnce(() => () => {});
+    renderAt("/");
+    expect(screen.getByText("Loading your session...")).toBeInTheDocument();
+  });
+
+  it("an auth listener error ends the wait and shows the message", async () => {
+    vi.mocked(onAuthStateChanged).mockImplementationOnce((_auth, next, error) => {
+      state.listeners.add({ next: next as (u: User | null) => void, error: error as (e: Error) => void });
+      return () => {};
+    });
+    renderAt("/collection");
+    expect(screen.getByText("Loading your session...")).toBeInTheDocument();
+    await act(async () => emitError(new Error("auth is down")));
+    expect(await screen.findByRole("heading", { level: 1, name: "Sign in" })).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("auth is down");
+  });
+
+  it("shows a sign-out failure in the header", async () => {
+    state.user = fakeUser;
+    vi.mocked(signOut).mockRejectedValue(new Error("network down"));
+    renderAt("/decks");
+    await screen.findByText("No decks yet.");
+    await userEvent.setup().click(screen.getByRole("button", { name: "Sign out" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Sign-out failed: network down");
+  });
+
+  it("shows the stored session's id while it loads, and signs out from the header", async () => {
     state.user = fakeUser;
     renderAt("/session/abc123");
     expect(await screen.findByTestId("session-id")).toHaveTextContent("Session id: abc123");

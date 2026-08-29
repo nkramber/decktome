@@ -12,11 +12,9 @@ import (
 // The question linter (D-115). Every rule here reads text alone, so it
 // costs no model call and it can not drift between runs.
 //
-// The rules come from the owner's M-5 scoring of items 1 to 32 on
-// 2026-08-25. Measured over the 793 questions of gate runs 10 to 13, they
-// find a defect in 61 questions, and in 159 when the presumed-table rule
-// counts. The linter can not judge tone or relevance. The owner's scoring
-// still owns that.
+// The rules come from the M-5 scoring of the gate documents (D-66). The
+// linter can not judge tone or relevance. The M-5 scoring still owns
+// that.
 
 // LintQuestion is one question as it went out.
 type LintQuestion struct {
@@ -54,8 +52,7 @@ var tableEvidence = []string{
 
 // illegalOffers are questions that offer an answer the rules forbid. The
 // color identity of a commander is the color identity of the deck, and
-// nothing may offer to leave it. Gate run 14 asked "Do you want to use
-// any colors beyond Grist's color identity?" (D-144).
+// nothing may offer to leave it (D-144).
 var illegalOffers = []string{
 	"beyond the color identity", "beyond its color identity",
 	"colors beyond", "colors outside", "outside the color identity",
@@ -66,18 +63,15 @@ var illegalOffers = []string{
 // such as "within Grist's color identity".
 //
 // D-144 refused this shape as a list of prepositions: "colors beyond",
-// "outside the color identity". Gate run 14 said "beyond Grist's color
-// identity", and the rule caught it. Runs 15 and 16 then said "within
-// Grist's color identity", and the rule did not. The model kept the
-// shape and changed the preposition, so the rule now reads the shape.
+// "outside the color identity". The model keeps the shape and changes
+// the preposition, so the rule reads the shape.
 //
 // No legitimate case exists. Every row that asks about the colors
 // carries `commander_set: false`, so it fires only when no commander is
 // settled. A card's color identity therefore settles nothing, and the
-// question presumes that the card leads the deck. Conversation 3 is the
-// case: the user wrote "Build around Grist, the Hunger Tide", which
-// names a card and no role at all (D-118). The format was still open in
-// the same turn, and color identity is a Commander term (D-151).
+// question presumes that the card leads the deck. "Build around Grist,
+// the Hunger Tide" names a card and no role at all (D-118), the format
+// can still be open, and color identity is a Commander term (D-151).
 var possessiveIdentity = regexp.MustCompile(`(?i)['\x{2019}]s\s+color\s+identity`)
 
 // factClaims are the shapes of a claim about the game. A question states
@@ -92,9 +86,8 @@ var stutterStops = map[string]bool{
 }
 
 // stutteredName finds a capitalized name the text repeats after "and",
-// such as "Grist, the Hunger Tide and Grist". Gate runs 10 to 12 sent
-// that question three times, because the short name and the full name
-// both reached the locked list.
+// such as "Grist, the Hunger Tide and Grist". The short name and the
+// full name both reach the locked list without the D-70 merge.
 //
 // Go regular expressions hold no back reference, so this scans the words.
 func stutteredName(text string) (string, bool) {
@@ -199,7 +192,7 @@ func LintConversation(messages []string, qs []LintQuestion) []Finding {
 }
 
 // LintCatalog checks the rows themselves. It runs offline, in CI, and it
-// needs no gate run.
+// needs no model call.
 func LintCatalog(c *Catalog) []Finding {
 	var out []Finding
 	for _, r := range c.Rows {
@@ -252,7 +245,7 @@ func triggersProveATable(r Row) bool {
 // lastNamedFormat reads the format the user named last, up to and
 // including the turn that carried the question. It reads one message at
 // a time, so one unsupported word on turn 1 does not blind the rule for
-// the rest of the conversation (audit Q-7). A later unsupported format
+// the rest of the conversation (D-125). A later unsupported format
 // clears an earlier supported one: the decline row owns the format from
 // then on, and the plain row may ask.
 func lastNamedFormat(messages []string, turn int) (mtgv1.FormatId, bool) {

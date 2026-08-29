@@ -2,9 +2,8 @@
 // finished deck, through the whole production path.
 //
 // The deck gate calls internal/generate directly, so it never runs
-// agentsvc. Every fault found there so far lived in that gap: the
-// delegated commander of D-232 survived four deck-gate runs because no
-// gate prompt reached agentsvc at all.
+// agentsvc. This probe covers that gap: a fault in the path from the RPC
+// to the build shows here and nowhere else (D-232).
 //
 // CAUTION: this calls the real providers and it costs money. One session
 // is a few classify and ask calls plus one generate call. CHAT_PROBE=1 is
@@ -217,26 +216,15 @@ func run() error {
 }
 
 func report(d *mtgv1.Deck, took time.Duration) {
-	main, side := 0, 0
-	for _, c := range d.GetCards() {
-		main += int(c.GetCount())
-	}
-	for _, c := range d.GetSideboard() {
-		side += int(c.GetCount())
-	}
 	fmt.Printf("\n=== the deck reached the user ===\n")
 	fmt.Printf("format: %v. Commanders: %d. Cards: %d main, %d sideboard.\n",
-		d.GetFormat().GetId(), len(d.GetCommanderOracleIds()), main, side)
+		d.GetFormat().GetId(), len(d.GetCommanderOracleIds()), gatekit.CountCards(d), gatekit.CountSideboard(d))
 	fmt.Printf("cost: $%.2f to buy, $%.2f the whole deck.\n", generate.BuyCost(d), generate.DeckCost(d))
 	fmt.Printf("summary: %s\n", d.GetSummary())
-	blocks := 0
 	for _, f := range d.GetValidation().GetFindings() {
-		if f.GetSeverity() == mtgv1.Severity_SEVERITY_BLOCK {
-			blocks++
-		}
 		fmt.Printf("  [%s] %s: %s\n", strings.TrimPrefix(f.GetSeverity().String(), "SEVERITY_"), f.GetCode(), f.GetMessage())
 	}
-	fmt.Printf("block findings: %d. Time: %.0fs\n", blocks, took.Seconds())
+	fmt.Printf("block findings: %d. Time: %.0fs\n", len(gatekit.BlockFindings(d)), took.Seconds())
 	if claims := generate.LintSummary(d.GetSummary()); len(claims) > 0 {
 		fmt.Printf("summary rules claims (F-26): %v\n", claims)
 	}

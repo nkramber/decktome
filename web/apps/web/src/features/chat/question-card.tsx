@@ -29,6 +29,9 @@ export function QuestionCard({
   const cards = useOptionCards(question);
   const withCards = hasCardOptions(question);
   const byId = new Map((cards.data?.cards ?? []).map((c) => [c.oracleId, c]));
+  // A closed question with no options gives the user nothing to pick, so
+  // the text field shows as for an open one (D-295).
+  const closed = question.closed && question.options.length > 0;
 
   const button = (opt: string, i: number) => {
     const picked = draft.optionIndex === i;
@@ -53,6 +56,11 @@ export function QuestionCard({
     <div className="flex flex-col gap-2 rounded border border-blue-400 bg-blue-50 p-3" role="group" aria-label={`Question: ${question.text}`}>
       <p className="font-medium">{question.text}</p>
       {withCards && cards.isError && <CardOptionsError error={cards.error} />}
+      {withCards && cards.isPending && (
+        <p role="status" className="text-sm text-neutral-600">
+          Loading the card data...
+        </p>
+      )}
       {withCards ? (
         // Each card option is a tile: the art and the rules text, then
         // the pick button. A non-card option keeps its plain button.
@@ -62,7 +70,7 @@ export function QuestionCard({
               const id = question.optionOracleIds[i] ?? "";
               return (
                 <li key={i} className="flex flex-col gap-2 rounded border border-neutral-200 bg-white p-2">
-                  {id ? cards.isPending ? <p role="status" className="text-sm text-neutral-600">Loading {opt}...</p> : <CardOption card={byId.get(id)} name={opt} /> : null}
+                  {id && !cards.isPending ? <CardOption card={byId.get(id)} name={opt} /> : null}
                   <div>{button(opt, i)}</div>
                 </li>
               );
@@ -72,7 +80,7 @@ export function QuestionCard({
       ) : (
         question.options.length > 0 && <div className="flex flex-wrap gap-2">{question.options.map(button)}</div>
       )}
-      {!question.closed && (
+      {!closed && (
       <label className="flex flex-col gap-1 text-sm">
         <span>{question.options.length > 0 ? "Or answer in your own words" : "Your answer"}</span>
         <input

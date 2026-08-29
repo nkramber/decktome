@@ -1,27 +1,29 @@
 # MtG Deck Builder - Design Roadmap
 
-Status: **approved (D-31), living document.** The owner approved draft 1 on 2026-08-23. Each PR entry carries its merge status. A ✅ means the code is merged on `main` (D-42). The doc follows the structure of `connector-syncer-docs/docs/document-summary-roadmap.md`. It is written in ASD-STE100.
+Status: **approved (D-31), living document.** The owner approved draft 1 on 2026-08-23. Each PR entry carries its merge status. A ✅ means the code is merged on `main` (D-42). The doc follows the structure of `connector-syncer-docs/docs/document-summary-roadmap.md`. The text follows ASD-STE100.
 
-External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline. Sources: Scryfall (API and bulk data), the Wizards of the Coast announcements of 2026-08-10 and 2026-02-09, mtgcommander.net, and the local checkouts of connector-syncer and wallabee-ui. The Comprehensive Rules file is `MagicCompRules 20260819.txt`, verified 2026-08-28 (D-272). Every rules citation here was checked against the 2026-08-07 text, and the sub-letters are unverified against the new file. MtG rules and ban lists change. Re-verify every dated fact before you cite it in a PR.
+External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline. Sources: Scryfall (API and bulk data), the Wizards of the Coast announcements of 2026-08-10 and 2026-02-09, mtgcommander.net, and the local checkouts of connector-syncer and wallabee-ui. The Comprehensive Rules file is `MagicCompRules 20260819.txt`, verified 2026-08-28 (D-272). The pass of 2026-08-23 checked every rules citation here against the 2026-08-07 text, and the sub-letters are unverified against the new file. MtG rules and ban lists change. Re-verify every dated fact before you cite it in a PR.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-08-29 correction pass 27 (quality audit, `docs/audit-2026-08-29.md`, D-302 to D-306): PR-12B merged (#41). The generate prompt is at version 10, and the classify prompt version rose. The gate baselines of question run 27 and deck run 8 do not compare with `main` until the owner re-runs them (D-302). Consistency fixes of this pass: F-27 and step 18 show PR-12B merged, and the PR-1 layout names the packages the code uses. The eval cost is $0.092 to $0.104, and the cost table gains the deck gate. The pass strikes the PR-12 Oracle-text hover (D-291). The grammar pass of D-304 rewrote passive sentences, modal verbs, and -ing forms across the doc, with no change of fact.
+
 2026-08-28 correction pass 26 (PR-11 merged, #38): the web shell, sign-in over the Auth emulator, and the collection screen. The gate held in the browser the same day. Changes: PR-11, sequencing step 18.
 
-2026-08-28 correction pass 26 (the first live conversation): a message after a build was dropped, and the deck was rebuilt from the first message (F-27). PR-12B adds the revision turn (D-283).
+2026-08-28 correction pass 26 (the first live conversation): the agent dropped a message after a build, and it rebuilt the deck from the first message (F-27). PR-12B adds the revision turn (D-283).
 2026-08-28 correction pass 25 (UI plan, `docs/reference/ui-plan-2026-08-28.md`): the owner scoped the live test (D-273 to D-276). It covers the whole user path, on the roadmap stack, with real sign-in over the Auth emulator, locally. PR-12 gains `CardService.GetCards`, and PR-13 gains `DeckService.ExportDeck`.
 
-2026-08-28 correction pass 24 (full audit, `docs/audit-2026-08-28.md`): PR-8 merged (#15), and #16 ignores every command binary (D-255). PR-9 leaves the MVP (D-256). The audit found the deployable API could not build a deck, and the owner ruled it a defect (D-257). Decisions D-247 to D-272 recorded, five catalog rows retired (D-260), and the gate set changed with no run (D-263). The Comprehensive Rules file is 2026-08-19 (D-272). The register table is one table again, the freeze and the restricted check are marked retired, and the STE check runs in `make lint` (D-264).
+2026-08-28 correction pass 24 (full audit, `docs/audit-2026-08-28.md`): PR-8 merged (#15), and #16 ignores every command binary (D-255). PR-9 leaves the MVP (D-256). The audit found the deployable API was unable to build a deck, and the owner ruled it a defect (D-257). Decisions D-247 to D-272 recorded, five catalog rows retired (D-260), and the gate set changed with no run (D-263). The Comprehensive Rules file is 2026-08-19 (D-272). The register table is one table again, the freeze and the restricted check carry the retired mark, and the STE check runs in `make lint` (D-264).
 
-2026-08-27 correction pass 23: PR-8 built, and its gate runs began. The build-run freeze is retired (D-241). The gate harness can start a conversation after a build (D-239). The judge lane answers F-26 (D-229), and the cache saving is measured (D-227). Decisions D-226 to D-243 recorded.
+2026-08-27 correction pass 23: PR-8 built, and its gate runs began. The build-run freeze is retired (D-241). The gate harness can start a conversation after a build (D-239). The judge lane answers F-26 (D-229), and D-227 measures the cache saving. Decisions D-226 to D-243 recorded.
 
-2026-08-25 correction pass 22: the owner's scoring found a seventh fault and a hole in the reword guard (D-103). A truncation is now refused.
+2026-08-25 correction pass 22: the owner's scoring found a seventh fault and a hole in the reword guard (D-103). The guard now refuses a truncation.
 
-2026-08-26 correction pass 21 (owner directive): the app builds three formats, Commander, Standard, and Modern (D-155). Pioneer, Legacy, Vintage, and Pauper are removed. The proto keeps no dead ids: the four enum values are deleted and reserved. `buf.yaml` moved from FILE to WIRE_JSON, which still refuses every wire-breaking and JSON-breaking change. Nothing is deployed, so no session needed migration. Two rules died with Vintage and were removed: the restricted-card check had no format left that carries a restricted list. "Anything goes" is not a format the user may select. It stays a house-rules layer on one of the three (D-3).
+2026-08-26 correction pass 21 (owner directive): the app builds three formats, Commander, Standard, and Modern (D-155). D-155 removes Pioneer, Legacy, Vintage, and Pauper. The proto keeps no dead ids: the proto deletes and reserves the four enum values. `buf.yaml` moved from FILE to WIRE_JSON, which still refuses every wire-breaking and JSON-breaking change. No deployment exists, so no session needed migration. Two rules died with Vintage and left the code: the restricted-card check had no format left that carries a restricted list. "Anything goes" is not a format the user can select. It stays a house-rules layer on one of the three (D-3).
 
 2026-08-26 correction pass 20: PR-7B added, the automated eval lane. The owner's hand scoring does not scale past 32 items, and a run asks about 250 questions. A new `eval` role scores every one for about eleven cents (D-133). Every third conversation is a holdout (D-134). The owner answered OQ-24, OQ-26, and OQ-27 the same day (D-135 to D-137). PR-7 gained sixteen fixes from the batch sweep of all 66 conversations (D-117 to D-132).
 
-2026-08-25 correction pass 19: the owner scored items 1 to 32 of the M-5 sheet, and the scores asked for 16 rewords and one deletion. The correction session that followed recorded D-104 to D-116. The sheet could hold only 60 of 793 questions, which is where most defects hid (D-104).
+2026-08-25 correction pass 19: the owner scored items 1 to 32 of the M-5 sheet, and the scores asked for 16 rewords and one deletion. The correction session that followed recorded D-104 to D-116. The sheet held only 60 of 793 questions, which is where most defects hid (D-104).
 
 2026-08-25 correction pass 18: two gaps closed before PR-7 is committed. The session store now runs against the Firestore emulator (D-101), and `cmd/m5-report` reads the scored sheet and computes the thresholds (D-102).
 
@@ -35,7 +37,7 @@ Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/
 
 2026-08-25 correction pass 13: runs 7 and 8 found the root cause under D-83. A schema enum suppressed the format field, and the model answered "unknown" for a message that named the format outright (D-92). Both enum fields are free strings now.
 
-2026-08-25 correction pass 12: gate runs 5 and 6. The catalog bar is met at 30 of 30, and a second bar now applies. D-91 fails a session that calls itself complete with a needed slot unanswered, which run 6 did five times. D-83 reached its third and final form, and D-90 makes a field the only record of an answer.
+2026-08-25 correction pass 12: gate runs 5 and 6. The runs meet the catalog bar at 30 of 30, and a second bar now applies. D-91 fails a session that calls itself complete with a needed slot unanswered, which run 6 did five times. D-83 reached its third and final form, and D-90 makes a field the only record of an answer.
 
 2026-08-25 correction pass 11: gate run 3 measured the fault checklist and found a regression in D-83. Changes: the PR-7 entry. D-86 corrects a side effect of D-79. D-87 deletes the acquisition row on the owner's challenge: the app can not act on a delivery date.
 
@@ -43,11 +45,11 @@ Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/
 
 2026-08-25 correction pass 9: the PR-7 live gate ran and failed at 21 of 30. Changes: the PR-7 entry. Decisions D-78 to D-82 record the five defects the run exposed and their fixes. The worst one offered commanders outside the deck color identity.
 
-2026-08-24 correction pass 8: PR-7 completed except for the live gate run. Changes: the PR-7 entry. Decisions D-70 to D-74 record the three items of the second live run, the "none" rule, and the session store. Four more dead rows were found while the service was wired.
+2026-08-24 correction pass 8: PR-7 completed except for the live gate run. Changes: the PR-7 entry. Decisions D-70 to D-74 record the three items of the second live run, the "none" rule, and the session store. The service wiring found four more dead rows.
 
 2026-08-24 correction pass 7: PR-7 built in two halves. Changes: the PR-7 entry, PR-6 gains two helpers for PR-7, and D-69 records the gap-score call shape and its first threshold. One live conversation measured the cost of a turn.
 
-2026-08-24 correction pass 6: PR-6 merged (#11) after a second gate run. Changes: PR-6 status and text, M-5 gains the OQ-19 rubric (D-66), section 9 open questions, and three engine defects recorded in the PR-6 entry. PR-7 gains the pool-question timing (D-67) and the slot freeze (D-68), both from eight dogfood conversations. The corpus question catalog was revised the same day.
+2026-08-24 correction pass 6: PR-6 merged (#11) after a second gate run. Changes: PR-6 status and text, M-5 gains the OQ-19 rubric (D-66), section 9 open questions, and three engine defects recorded in the PR-6 entry. PR-7 gains the pool-question timing (D-67) and the slot freeze (D-68), both from eight dogfood conversations. The corpus question catalog changed the same day.
 
 2026-08-24 correction pass 5 (full audit, `docs/audit-2026-08-24.md`): every PR status set to its merge state (#1 to #9). Register rows F-21 to F-25 added. PR-1b (contract amendment) added before PR-6. PR-3 added to section 8. Decisions D-42 to D-60 recorded. The fixes ship on branch `audit-fixes`.
 
@@ -57,7 +59,7 @@ Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/
 
 2026-08-23 correction pass 2: the owner answered OQ-1 to OQ-12 (D-15 to D-25). Changes in this pass: F-4 resolved, F-14 rewritten, F-16 and F-17 added, PR-4 storage decided. Also: PR-7 gains the gap score and M-4, PR-8 gains the deck summary, I-2 has a price spec, and the GCP project ids are set.
 
-House rule (from connector-syncer): no PR, branch name, commit message, comment, or other artifact may contain AI-attribution text.
+House rule (from connector-syncer): no PR, branch name, commit message, comment, or other artifact carries AI-attribution text.
 
 ---
 
@@ -74,7 +76,7 @@ We sequence the program so that each layer is testable before the next one exist
 ## 2. Lessons learned (carried in from connector-syncer, and from this research)
 
 1. **One concern per PR.** The reference roadmap lost a full attempt (#724) to a bundled change.
-2. **Verify platform claims before you build on them.** Lesson 7 in the reference doc. Here: Scryfall rate limits, ManaBox column names, and emulator behavior were each checked against the real thing, not the docs alone.
+2. **Verify platform claims before you build on them.** Lesson 7 in the reference doc. Here, we checked Scryfall rate limits, ManaBox column names, and emulator behavior against the real thing, not the docs alone.
 3. **Model churn is a standing tax.** The role-to-model layer (D-1) and a bake-off protocol are the only durable answer. Record the resolved model in every eval row.
 4. **Normalize model output against ground truth after every call.** A card name that does not exist is our hallucinated citation.
 5. **Evaluate on the payload you change.** A prompt tested only on Commander tells nothing about Standard.
@@ -111,13 +113,13 @@ Three structural facts drive the plan:
 
 - **LLM.** One deck-build session runs 2 to 4 question turns on the small model, at about 2k tokens each. It then runs 1 to 3 generation turns on the strong model, at about 15k input with the candidate card list and 3k output. Estimate: under $0.10 per session on 2026 list prices. Unknown until M-1 measures it. Prompt caching of the format rules and the candidate list cuts the input cost. The role layer must expose the provider's caching knob (D-1, D-21).
 - **Card data.** Scryfall bulk: 24.5 MB compressed per day for Oracle cards, 77.5 MB for all English printings. Free. Images hotlinked (D-6), zero storage. GCS: one snapshot per day, about 100 MB, cheap lifecycle to 30 days.
-- **Meta data.** Unknown. The source terms passed the legal check (D-5). MTGO decklists are official and free. Aggregator use is allowed.
+- **Meta data.** Unknown. The source terms passed the legal check (D-5). MTGO decklists are official and free. The legal check allows aggregator use.
 - **Firestore.** Per user: one collection doc set (PR-4 decided one gzip document per collection, about 500 KB for a 5,000-card binder, D-16), sessions, decks. Low.
 - **Cloud Run.** Two services plus a worker, scale to zero. Low until users exist.
 - **Eval.** Deterministic checks are free. Judge runs cost per deck. Cap per run as connector-syncer does ($5 cap in its bake-off).
 - **Unknowns to measure first:** tokens per session (M-1), Scryfall refresh lag after an announcement (M-2), ManaBox import failure rate on real files (M-3).
 
-> *In plain English:* the AI is the only real cost, and one deck should cost cents. Card data is free. Images are free because Scryfall lets us link to them. We will measure instead of guess.
+> *In plain English:* the AI is the only real cost, and the target is cents per deck. Card data is free. Images are free because Scryfall lets us link to them. We will measure instead of guess.
 
 ## 5. Defect and finding register
 
@@ -151,19 +153,19 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-24 | **The LLM layer under-counted the judge.** Anthropic thinking tokens were dropped, cache writes were priced at 1x instead of 1.25x, and `LLM_JUDGE_PROVIDER=fake` passed under `LLM_REQUIRE_KEYS=1`. Found in the 2026-08-24 audit of PR-10. | ✅ audit fix: thinking tokens counted, `cache_write` price column, keys required by default (D-51). |
 | F-25 | **The proto lacked fields PR-6 to PR-9 need.** No upgrade list, no slot state, no question id, no structured answer, no seed override, no `Usage`, no per-face artist. | ✅ PR-1b (audit branch): all fields added in one contract amendment (D-46). `buf breaking` guards it from now on. |
 | F-26 | **The phrasing role invents claims about the game, and no gate catches them.** Gate run 14 of 2026-08-26 passed the gate with zero linter findings and told one user two false things. It said "Grist, the Hunger Tide can not lead a deck", which the rules contradict (Scryfall ruling, 2021-06-18). It asked "Do you want to use any colors beyond Grist's color identity?", which the rules allow no answer to. The catalog rows say neither. The ask role added both, and the ask prompt already said to state no fact about the game. | ✅ answered for PR-8 by the judge lane (D-229): the judge role reads every deck summary for a rule of the game and for the truth of it, on another provider than the generator, and a false rule fails the deck gate. Deck gate run 6 found none in 16 summaries, at $0.0034 a deck. The deterministic net reads the shape of a claim and never its truth, which is why the judge decides (D-224). Earlier: 🔧 partly fixed: D-140 silences the commander row for a legendary card the engine can not confirm, and D-144 puts the color-identity rule in the prompt and the shape in the linter. ⚠ binds PR-8: the generate role writes a deck summary in prose, and the same failure has more room there. The eval lane found both, and the deterministic linter found neither. |
-| F-27 | **A message after a build is dropped, and the deck is rebuilt from the first message.** Session `eIrL12hRY2YNTTCo3iS4`, 2026-08-28: the user wrote "Replace some lands with better options if possible. Also tune the mana curve lower - no 6 or 7 mana cards needed". The agent sent no reply, `plan()` read turn 1 and the slots only, and the generator built a second deck 2.5 minutes after the first with 24 Plains and the same four 6- and 7-mana cards. Three cards changed, all by variance (D-18). The turn cost a full build and answered nothing. | 🔧 PR-12B built 2026-08-28, gate not run. |
+| F-27 | **A message after a build is dropped, and the deck is rebuilt from the first message.** Session `eIrL12hRY2YNTTCo3iS4`, 2026-08-28: the user wrote "Replace some lands with better options if possible. Also tune the mana curve lower - no 6 or 7 mana cards needed". The agent sent no reply, `plan()` read turn 1 and the slots only, and the generator built a second deck 2.5 minutes after the first with 24 Plains and the same four 6- and 7-mana cards. Three cards changed, all by variance (D-18). The turn cost a full build and answered nothing. | ✅ PR-12B merged 2026-08-29 (#41). |
 
-> *In plain English:* these are the traps we found before writing code. The biggest ones: ban lists change every few weeks. The collection file format is not documented. The AI can name a card that sounds right but is not. Each one has a planned fix or a rule that prevents it.
+> *In plain English:* these are the traps we found before we wrote code. The biggest ones: ban lists change every few weeks. The collection file format has no documentation. The AI can name a card that sounds right but is not. Each one has a planned fix or a rule that prevents it.
 
 ## 6. Guardrails (the safety contract for every PR)
 
-1. **No card reaches the user before the rules engine has checked it.** The engine validates every generated list for size, copies, legality on the query date, color identity, bracket, and ownership. A failed check blocks the response or marks the card, never silently drops it.
-2. **No ban list, rotation date, or Game Changers list in any prompt or code constant.** Legality comes from the card database, which comes from Scryfall daily. Prompts may say "the engine will check legality".
+1. **No card reaches the user before the rules engine checks it.** The engine validates every generated list for size, copies, legality on the query date, color identity, bracket, and ownership. A failed check blocks the response or marks the card, never silently drops it.
+2. **No ban list, rotation date, or Game Changers list in any prompt or code constant.** Legality comes from the card database, which comes from Scryfall daily. Prompts can say "the engine will check legality".
 3. **No model id at a call site.** All models come from the role layer (D-1). CI warns on a default change, as in connector-syncer.
 4. **Exact card names only.** The model returns exact Oracle names. The normalizer does an exact match. Anything else becomes a user-visible suggestion, never a substitution (F-13).
-5. **The pool mode is explicit, and ownership is always visible (D-2, D-37).** Every deck records its pool mode. When a collection is attached, every card carries an `owned` flag with the count, in every mode. Owned-first is the default with a library, any-card without one. The engine never silently narrows or widens the pool.
-6. **The agent asks before it assumes** on format, power level, and house rules. Max three questions per turn. Defaults are allowed only when the user says "you decide" (D-3).
-7. **Attribution on every image.** The full card image shows its printed artist and copyright. Images are not cropped or altered, and no paywall sits in front of card data (Scryfall terms, D-6, D-291). A separate credit line is needed only beside an art crop, which the app never shows.
+5. **The pool mode is explicit, and ownership is always visible (D-2, D-37).** Every deck records its pool mode. When the session has a collection, every card carries an `owned` flag with the count, in every mode. Owned-first is the default with a library, any-card without one. The engine never silently narrows or widens the pool.
+6. **The agent asks before it assumes** on format, power level, and house rules. Max three questions per turn. A default applies only when the user says "you decide" (D-3).
+7. **Attribution on every image.** The full card image shows its printed artist and copyright. The app does not crop or alter an image, and no paywall sits in front of card data (Scryfall terms, D-6, D-291). Only an art crop needs a separate credit line, and the app never shows one.
 8. **Generated proto code is committed and CI diffs it.** No hand edits. Pinned buf and plugin versions.
 9. **Local mode has no cloud dependency.** Every service starts with emulators or fakes (D-9). A new cloud dependency must ship with its local fake in the same PR.
 10. **One concern per PR. Evidence committed.** Golden decks and A/B outputs live in the repo.
@@ -182,7 +184,7 @@ Ids: PR-# code, M-# measurement, I-# integration, D-# decisions (in `decisions.m
 
 **PR-0a: Monorepo scaffold.** ✅ merged 2026-08-24 (#1, branch `pr-0a`). Deviations from the plan, recorded in D-35: Vite 7 instead of 8, dev port 5180, buf built into `.bin/` from a `go tool` directive. Node moved to 22.12 LTS in the audit (D-52).
 
-Layout: `proto/` (buf module), `go/` (Go workspace with `cmd/api`, `cmd/worker`, `internal/cards`, `internal/collections`, `internal/rules`, `internal/agent`, `internal/meta`), `web/` (pnpm workspace: `apps/web`, `packages/api-client` for generated TypeScript), `docs/`, `.claude/`. Makefile as the single entry point: `proto`, `lint`, `test`, `test-repeat`, `cover`, `dev`, `dev-seed`. Pinned versions: Go, buf, protoc-gen-go, protoc-gen-connect-go, protoc-gen-es, pnpm, Node, golangci-lint. CI: `verify:*` matrix with a fan-in job, a proto-diff gate, and a `buf breaking` gate (audit). Path filters were planned and struck (D-56): a skipped required check blocks a merge. AGENTS.md with the commands and never-edit rules.
+Layout: `proto/` (buf module), `go/` (Go workspace with `cmd/api`, `cmd/worker`, `internal/cards`, `internal/collections`, `internal/rules`, `internal/agent`, `internal/meta`) (planned names, 2026-08-23, the code uses `internal/agentsvc`, and nothing built `internal/meta`), `web/` (pnpm workspace: `apps/web`, `packages/api-client` for generated TypeScript), `docs/`, `.claude/`. Makefile as the single entry point: `proto`, `lint`, `test`, `test-repeat`, `cover`, `dev`, `dev-seed`. Pinned versions: Go, buf, protoc-gen-go, protoc-gen-connect-go, protoc-gen-es, pnpm, Node, golangci-lint. CI: `verify:*` matrix with a fan-in job, a proto-diff gate, and a `buf breaking` gate (audit). The plan had path filters, and D-56 struck them: a skipped required check blocks a merge. AGENTS.md with the commands and never-edit rules.
 
 Gate: `make dev` starts an empty API and an empty UI.
 
@@ -227,26 +229,26 @@ Messages: `Card`, `CardFace`, `Legality`, `Collection`, `CollectionEntry`, `Deck
 > *In plain English:* the shared contract gains every field the next four steps need. One change now, so each later step touches only code.
 
 **PR-2: Card database from Scryfall bulk.** ✅ merged 2026-08-24 (#5). The 200 tricky names resolve 200/200. The committed fixture covers split cards, DFCs, face names, apostrophes, and Aether spellings. End-to-end verified on the local stack. The worker downloads the three bulk files through fake-gcs and writes the completion marker (F-20). The API loads the index (about 34,000 cards) and answers Lookup and Search. Derivation facts learned from the data: the "Choose a Background" keyword has a lowercase b, and "Doctor's companion" sits on the companion card, not on the Doctor. Both are pinned by tests. This PR found and fixed F-19 and F-20.
-A worker job downloads `oracle_cards`, `default_cards`, and `oracle_tags` daily (F-3: bulk only). It writes a versioned snapshot to GCS and an in-memory index in the `cards` service. The index holds the name, Oracle ID, printing ID, legalities, color identity, keywords, type line, MV, produced mana, Oracle tags, `game_changer`, `edhrec_rank`, and the image URIs per face. Faces are normalized (F-9). The `oracle_tags` file loads into a tag tree. Rulings load on demand.
+A worker job downloads `oracle_cards`, `default_cards`, and `oracle_tags` daily (F-3: bulk only). It writes a versioned snapshot to GCS and an in-memory index in the `cards` service. The index holds the name, Oracle ID, printing ID, legalities, color identity, keywords, type line, MV, produced mana, Oracle tags, `game_changer`, `edhrec_rank`, and the image URIs per face. The index normalizes faces (F-9). The `oracle_tags` file loads into a tag tree. Rulings load on demand.
 
-A `CardService.Lookup` by exact name, by Scryfall ID, and by Oracle ID. A `CardService.Search` with structured filters (colors, types, keywords, tags, format-legal). Gate: 100% of a fixed list of 200 tricky names resolve (split, DFC, "Aether" spelling, commas, apostrophes). Snapshot age is exposed as a metric.
+A `CardService.Lookup` by exact name, by Scryfall ID, and by Oracle ID. A `CardService.Search` with structured filters (colors, types, keywords, tags, format-legal). Gate: 100% of a fixed list of 200 tricky names resolve (split, DFC, "Aether" spelling, commas, apostrophes). A metric shows the snapshot age.
 > *In plain English:* every night we download the whole card list, keep a copy, and load it into memory. Anyone can ask "which green cards with lifelink are legal in Modern?" and get a fast exact answer with no AI involved.
 
 **PR-3: Legality freshness and announcement-day fast path (F-1).** ✅ merged 2026-08-24 (#6). The calendar is `announcement_dates.json`, embedded, with a verification date (next date: 2026-10-12). The worker checks hourly, and every 15 minutes from an announcement date until a snapshot with a legality change lands (F-23, D-47). On that snapshot, the worker logs `legality_lag` with the hours (M-2). The previous version comes from the store, not from process memory, so a restart keeps the metric. In production the worker is a Cloud Run job under Cloud Scheduler (D-48). The UI shows "Card data as of" from `/healthz`. The real M-2 number arrives with the 2026-10-12 announcement.
 The worker checks the Scryfall bulk `updated_at` every hour. On and after a B&R announcement day (a committed calendar, next 2026-10-12), it checks every 15 minutes until a snapshot from that day or later lands. Every deck response carries `legality_as_of` (the snapshot date). The UI shows it. Gate: M-2 shows the lag between an announcement and the snapshot that reflects it.
-> *In plain English:* ban announcements come on known dates. On those days we check more often. Every deck says which day's rules it was checked against, so the user knows.
+> *In plain English:* ban announcements come on known dates. On those days we check more often. Every deck says which day's rules the engine checked it against, so the user knows.
 
 **PR-4: ManaBox import (F-2, F-12).** ✅ merged 2026-08-24 (#7). Audit note: the gate count included one token row (F-21). The fix reports such rows as `NOT_PLAYABLE`. The owner's real export (2,548 rows, 4,317 cards, 18 columns) is the committed gate fixture at `go/internal/collections/testdata/`. End-to-end through the API against the full snapshot: 2,548 of 2,548 rows resolve, with zero unresolved. An identical re-upload updates the same document. Get and List work. Storage per D-16: one Firestore document with gzip entry and count payloads. Auth debt: a debug user id stands in until PR-11. M-3 rides the `ImportReport` counts until the analytics phase adds events.
-CSV parser driven by the header row, not by column position. Required: `Scryfall ID`, or `Set code` plus `Collector number`, or `Name` plus `Set name`. Optional: `Quantity`, `Foil`, `Condition`, `Language`, binder name. Unknown columns are ignored and logged once. Rows that do not resolve are returned to the user as a list, not dropped silently.
+CSV parser driven by the header row, not by column position. Required: `Scryfall ID`, or `Set code` plus `Collector number`, or `Name` plus `Set name`. Optional: `Quantity`, `Foil`, `Condition`, `Language`, binder name. The parser ignores unknown columns and logs them once. It returns rows that do not resolve to the user as a list, and it does not drop them silently.
 
-The result is a `Collection` with counts per Oracle ID and per printing. Also accepts the Arena text format (`4 Lightning Bolt (STA) 42`). Storage: the full collection is stored (D-16). One document per collection holds a compressed entry array (printing id, quantity, finish, condition, language). 
+The result is a `Collection` with counts per Oracle ID and per printing. Also accepts the Arena text format (`4 Lightning Bolt (STA) 42`). Storage: the store keeps the full collection (D-16). One document per collection holds a compressed entry array (printing id, quantity, finish, condition, language). 
 
-A per-Oracle-ID count map sits beside it for fast ownership checks. A content hash of the upload detects an identical re-upload. Non-English rows are reported to the user and skipped (D-23). Gate: a fixture set of real exports (owner-provided, anonymized) imports with zero silent drops. M-3 counts unresolved rows.
-> *In plain English:* upload the file ManaBox gives you. We match every line to a real card and count how many you own. We show you the lines we could not match. We do not hide them.
+A per-Oracle-ID count map sits beside it for fast ownership checks. A content hash of the upload detects an identical re-upload. The parser reports non-English rows to the user and skips them (D-23). Gate: a fixture set of real exports (owner-provided, anonymized) imports with zero silent drops. M-3 counts unresolved rows.
+> *In plain English:* upload the file ManaBox gives you. We match every line to a real card and count how many you own. We show you the lines we did not match. We do not hide them.
 
-**PR-5: Rules engine.** ✅ merged 2026-08-24 (#8). Audit 2026-08-24: five eligibility gaps fixed (F-22). The companion is now checked for legality, color identity, and singleton. `banned_as_companion` is Commander-only. Ownership aggregates per Oracle id. The golden gate is 41 good and 53 bad decks, with a test that enforces at least 30 of each. `DeckService.Validate` accepts `pool_rule` and `collection_id`, reads the owned counts from the stored collection, and returns `legality_as_of`. A pure library in `internal/rules` with embedded, dated data files: `formats.json`, `brackets.json`, and `companion_bans.json` (the F-18 list Scryfall can not express). Checks: size, copies (basics and any-count exempt), legality, commander eligibility, and all five partner mechanics. Also: color identity, Game Changers per bracket, companion (Lutri blocked as companion, legal in the 99), ownership per pool mode (D-37), and land-count and curve advisories. The golden gate ran 27 good and 31 bad decks at merge. The audit padded it to 41 and 53. `DeckService.Validate` is wired and smoke-tested end to end. Still open from F-11: the bracket prose rules (mass land denial, extra turns, combos) emit an info finding, not a check. Fixture lesson: Scryfall Oracle data contains token objects that share a real card's name, and the fixture builder now prefers real layouts.
+**PR-5: Rules engine.** ✅ merged 2026-08-24 (#8). Audit 2026-08-24: five eligibility gaps fixed (F-22). The engine now checks the companion for legality, color identity, and singleton. `banned_as_companion` is Commander-only. Ownership aggregates per Oracle id. The golden gate is 41 good and 53 bad decks, with a test that enforces at least 30 of each. `DeckService.Validate` accepts `pool_rule` and `collection_id`, reads the owned counts from the stored collection, and returns `legality_as_of`. A pure library in `internal/rules` with embedded, dated data files: `formats.json`, `brackets.json`, and `companion_bans.json` (the F-18 list Scryfall can not express). Checks: size, copies (basics and any-count exempt), legality, commander eligibility, and all five partner mechanics. Also: color identity, Game Changers per bracket, companion (Lutri blocked as companion, legal in the 99), ownership per pool mode (D-37), and land-count and curve advisories. The golden gate ran 27 good and 31 bad decks at merge. The audit padded it to 41 and 53. `DeckService.Validate` is wired and smoke-tested end to end. Still open from F-11: the bracket prose rules (mass land denial, extra turns, combos) emit an info finding, not a check. Fixture lesson: Scryfall Oracle data contains token objects that share a real card's name, and the fixture builder now prefers real layouts.
 A pure Go library. Inputs: a deck, a format, a power level, a collection, a card snapshot. Checks:
-- deck size and copy limits (4, singleton). The restricted check was removed with Vintage on 2026-08-26 (D-155),
+- deck size and copy limits (4, singleton). The restricted check left with Vintage on 2026-08-26 (D-155),
 - legality per card on the snapshot date,
 - Commander eligibility and color identity,
 - Game Changer count per bracket, with the bracket prose rules encoded as data with a version date (F-11),
@@ -272,43 +274,43 @@ The turn-based core. A `Session` holds filled slots (format, commander, power, c
 
 The user answers in free text. The small model maps answers to slots.
 
-Slots are stored, summarized, and carried to the next turn, as connector-syncer's schema agent does. A slot stays open through the question phase, and a later answer replaces an earlier one. The build-run freeze of D-68 was retired on 2026-08-27 (D-241): a change after a build starts a new build. The card-pool question waits for the format, the colors, and the theme, because PR-6 needs those three before it can count on-theme owned cards (D-67).
+The agent stores, summarizes, and carries slots to the next turn, as connector-syncer's schema agent does. A slot stays open through the question phase, and a later answer replaces an earlier one. The build-run freeze of D-68 was retired on 2026-08-27 (D-241): a change after a build starts a new build. The card-pool question waits for the format, the colors, and the theme, because PR-6 needs those three before it can count on-theme owned cards (D-67).
 
-The catalog is the first source of questions (D-25). A **gap score** decides when the catalog is not enough. It is the best catalog match between the empty slot and the user's words, from a small classifier. Below a threshold (D-27, set by M-5 with the OQ-19 rubric), the model may propose a question of its own. It gives a reason and the gap score with it. 
+The catalog is the first source of questions (D-25). A **gap score** decides when the catalog is not enough. It is the best catalog match between the empty slot and the user's words, from a small classifier. Below a threshold (D-27, set by M-5 with the OQ-19 rubric), the model can propose a question of its own. It gives a reason and the gap score with it. 
 
 Every invented question is logged with its slot and outcome. M-4 reports how often this happens. Repeated invented questions become catalog candidates (PR-15). "Anything goes" and similar phrases route to the house-rules question (D-3). The pool-mode slot: with a library, the agent asks or defaults to owned-first. Without one, it defaults to any-card and does not ask (D-37).
 
 Gate: 30 scripted conversations reach a complete slot set in at most four turns, with no repeated question. At least 25 of the counted gate conversations use catalog questions only (`has_deck` rows leave the count, D-263). The gap-score threshold is set by M-5, not by this PR.
 
-Built on 2026-08-24, in two halves. The deterministic half holds the catalog. `catalog.json` carries the rows of corpus section 11 as data. The planner picks the questions for one turn by ask order. It asks at most three, one per proto slot, never a repeat. The freeze of D-68 is retired (D-241), so nothing is silenced after a build.
+Built on 2026-08-24, in two halves. The deterministic half holds the catalog. `catalog.json` carries the rows of corpus section 11 as data. The planner picks the questions for one turn by ask order. It asks at most three, one per proto slot, never a repeat. The freeze of D-68 is retired (D-241), so the planner silences nothing after a build.
 
 A row carries a `slot` and a `key`. The slot is the proto field the answer informs, and the key is the row's own state. A refinement question such as table tolerance therefore survives a filled power slot.
 
-The model half: three calls per turn (D-69). `classify` fills slots from free text. A second `classify` call scores the catalog fit and may offer a replacement. `ask` then phrases what the agent chose. The agent decides, never the model: a replacement counts only when the fit is under 0.35.
+The model half: three calls per turn (D-69). `classify` fills slots from free text. A second `classify` call scores the catalog fit and can offer a replacement. `ask` then phrases what the agent chose. The agent decides, never the model: a replacement counts only when the fit is under 0.35.
 
-Two guards sit between the model and the user. A placeholder is resolved before any model sees a row, and a clause with no value is dropped. A placeholder-free fallback stands in when the first sentence does not survive. A phrasing goes back to the resolved catalog text when it comes back wrong. The faults are a brace, two question marks, none at all, or a length far over the row.
+Two guards sit between the model and the user. The agent resolves a placeholder before any model sees a row, and it drops a clause with no value. A placeholder-free fallback stands in when the first sentence does not survive. A phrasing goes back to the resolved catalog text when it comes back wrong. The faults are a brace, two question marks, none at all, or a length far over the row.
 
 Eight dogfood conversations ran on 2026-08-24, before any code. None of the eight was catalog-only, and only 5 of 26 catalog questions survived without a rewrite. One cause gave three of the invented questions: the catalog offered commander suggestions and held no question to close the slot. Section 11 of the corpus went from 11 rows to 26 from those runs. It gained 11 new rows, two rows split in two, an ask order, and a word-routing rule.
 
 One live conversation ran on 2026-08-24 with the owner's approval, to measure a turn. Four calls, 1,875 input and 350 output tokens, $0.000795, both roles on `gpt-5.6-luna`.
 
-It found four defects that every offline test had missed. Two were mine and are fixed. The agent trusted the classifier's list of closed slots, which ended a session with three slots empty. The agent also shipped raw placeholders to the model. The model turned the agent's own statement into a second question for the user.
+It found four defects that every offline test missed. Two were mine and are fixed. The agent trusted the classifier's list of closed slots, which ended a session with three slots empty. The agent also shipped raw placeholders to the model. The model turned the agent's own statement into a second question for the user.
 
-Two more came out of the fixes. A surviving trailing clause read as a dangling question. `Ready` also called a session complete while its questions were still unanswered. The no-repeat rule empties the plan as soon as a question goes out.
+Two more came out of the fixes. A surviving trailing clause read as a dangling question. `Ready` also called a session complete while its questions still had no answer. The no-repeat rule empties the plan as soon as a question goes out.
 
 A second live run on 2026-08-24 confirmed every fix. It also named three items that come before the rest of PR-7. First, the locked-cards row asks the user to keep or cut a list they never gave. It fires whenever a card is named, the commander included. The scorer rated it 0.15 and the model replaced it, which is the first real M-5 row.
 
-Second, the commander row scored 0.05, because it asks whether the user has a commander and names three in the same breath. Its follow-up row can not fire at all: `Context.Suggested` is declared and read, and nothing ever sets it. Third, PR-7 passes no cache key, which costs one line when the session id exists.
+Second, the commander row scored 0.05, because it asks whether the user has a commander and names three in the same breath. Its follow-up row can not fire at all: The code declares and reads `Context.Suggested`, and nothing ever sets it. Third, PR-7 passes no cache key, which costs one line when the session id exists.
 
-The three items are fixed. The locked-cards row now fires only for a named card that is not the commander, and its text no longer presumes a list (D-70). The commander row is split. The base row asks whether the user has a commander, and the pick row carries the three names.
+The three items are fixed. The locked-cards row now fires only for a named card that is not the commander, and its text no longer presumes a list (D-70). The commander row splits in two. The base row asks whether the user has a commander, and the pick row carries the three names.
 
 The classify schema gained `facts.wants_suggestion`, which sets the fact the pick row needs (D-71). A name the user gives as the commander closes all three commander rows. Every model call carries the session id as the provider cache key (D-72). On the owner's call, the pick row repeats after a "none" answer, and each round names three commanders the agent did not offer before (D-73).
 
-`AgentService.Chat` and `GetSession` are built. `internal/sessions` stores one conversation as two Firestore documents in one transaction (D-74). The first is the proto session, which `GetSession` returns. The second is a private state document with the asked rows, the user's words, the card names, and the planner triggers. Chat streams the session id, one event per question, the slots, and the usage total. A model failure ends the turn with a failure event, and the slots that the turn already filled are stored.
+`AgentService.Chat` and `GetSession` exist. `internal/sessions` stores one conversation as two Firestore documents in one transaction (D-74). The first is the proto session, which `GetSession` returns. The second is a private state document with the asked rows, the user's words, the card names, and the planner triggers. Chat streams the session id, one event per question, the slots, and the usage total. A model failure ends the turn with a failure event, and the store keeps the slots that the turn already filled.
 
 The M-4 report is data, not a log line. Each question leaves a record with its row, slot, source, gap score, threshold, and the fact that its key closed. `Coverage` sums the records over one session or over many. `cmd/questions-gate` runs the 30 gate conversations against the real providers and writes the gate document.
 
-The service wiring found four more defects, each one a row that could never fire. First, the classifier was never offered the key of the question it had just asked. An advisory key could then never close, and the session was never ready.
+The service wiring found four more defects, each one a row that never fired. First, the agent never offered the classifier the key of the question it just asked. An advisory key then never closed, and the session was never ready.
 
 Second, a commander the user named left the color slot open, which blocked the card-pool question forever (D-67). The commander now fills that slot, because its color identity is the deck's color identity.
 
@@ -316,7 +318,7 @@ Third, `Context.AfterBuild` had no source, so the variance row was dead. The ser
 
 Gate status: the offline half holds. Thirty scripted conversations reach a complete slot set in at most four turns, with no repeated question. Every catalog row fires in at least one of them.
 
-Run 1 of the live half failed on 2026-08-25 (`docs/reference/pr7-question-gate.md`). It scored 21 of 30 catalog-only, and the bar is 25. The run cost $0.0439 over 212 calls and 365 seconds. It asked 108 questions, and the model replaced 11 of them. Two replacements filled a slot other than the one they were given, which is the `right_slot` field of the D-66 rubric. Two more lost the owned-only pool mode, so they were worse than the row they replaced (D-37).
+Run 1 of the live half failed on 2026-08-25 (`docs/reference/pr7-question-gate.md`). It scored 21 of 30 catalog-only, and the bar is 25. The run cost $0.0439 over 212 calls and 365 seconds. It asked 108 questions, and the model replaced 11 of them. Two replacements filled a slot other than the one the agent gave them, which is the `right_slot` field of the D-66 rubric. Two more lost the owned-only pool mode, so they were worse than the row they replaced (D-37).
 
 The run exposed five defects. The worst one is D-82: the resolver asked the PR-6 hint source for every row, and it cached the answer under the theme alone. A commander list built before the user named their colors therefore survived the whole conversation.
 
@@ -324,75 +326,75 @@ Conversation 22 asked for a blue-red deck and got Lotho, Corrupt Shirriff (white
 
 The other four are smaller. "Casual" alone triggered the house-rules row (D-78). The competitive theme row never closed its key (D-79). The pick row named three other commanders on every turn (D-80). Two rows fired before their context existed (D-81). The owner approved all five fixes on 2026-08-25.
 
-The gap-score threshold stays at 0.35. The 11 replacements scored 0.02, 0.05 four times, 0.10, 0.18, 0.20 twice, 0.22, and 0.30. A threshold near 0.15 would block five of them and probably pass the gate. M-5 sets that number from the D-66 rubric, and a change made to pass a gate would make the number meaningless.
+The gap-score threshold stays at 0.35. The 11 replacements scored 0.02, 0.05 four times, 0.10, 0.18, 0.20 twice, 0.22, and 0.30. A threshold near 0.15 blocks five of them and probably passes the gate. M-5 sets that number from the D-66 rubric, and a change made to pass a gate makes the number meaningless.
 
 Run 2 scored 23 of 30 (`docs/reference/pr7-question-gate-run2.md`). It cost $0.0411 over 192 calls, and it asked 91 questions with 7 replacements. Two fixes hold under live conditions. Conversation 24 named three commanders inside the color identity, against three outside it in run 1. The pick row kept its three names when the user answered another question, against three new names in run 1.
 
-Run 2 also exposed two deeper defects. The first is D-83. The classifier could retire a slot by name, and it retired power and the pool rule from "Brago blink deck from my library". That session called itself complete after one question, and the deck would have had a power level nobody chose. A slot with a typed value now closes only on that value.
+Run 2 also exposed two deeper defects. The first is D-83. The classifier was able to retire a slot by name, and it retired power and the pool rule from "Brago blink deck from my library". That session called itself complete after one question, and the deck then gets a power level nobody chose. A slot with a typed value now closes only on that value.
 
 The second is D-84, and it binds the gate itself. The gap score was not reproducible. One question scored 0.02 and 0.98 in two turns of one conversation, and 0.98 then 0.02 across the two runs. Six conversations improved between the runs and four regressed. The bar of 25 sits inside that noise band, so the number measured the scorer more than the catalog.
 
 The score prompt asked a question of taste. It now names four faults, and the score follows the fault count.
 
-Five of the seven run-2 replacements were not improvements. One restated the catalog row almost word for word. One dropped the bracket definitions, and one dropped the owned-only pool mode again. One asked for a budget the user gave a turn earlier. The last replaced three named commanders with an open question, after the user had asked the agent to choose.
+Five of the seven run-2 replacements were not improvements. One restated the catalog row almost word for word. One dropped the bracket definitions, and one dropped the owned-only pool mode again. One asked for a budget the user gave a turn earlier. The last replaced three named commanders with an open question, after the user asked the agent to choose.
 
 Run 3 scored 23 of 30 again (`docs/reference/pr7-question-gate-run3.md`), and it changed the instrument. Every fit landed on the fault scale: 0.90 for 67 questions, 0.20 for 7, and 0.05 for 12. Runs 1 and 2 scattered over nine values between 0.02 and 1.00.
 
-The score now reports a fault count, so the threshold has a meaning it did not have before. At 0.35 the agent invents on any clear fault. At 0.10 it would invent only on two faults or more, which in run 3 was 5 replacements instead of 10. M-5 still owns the number (D-27).
+The score now reports a fault count, so the threshold has a meaning it did not have before. At 0.35 the agent invents on any clear fault. At 0.10 it invents only on two faults or more, which in run 3 was 5 replacements instead of 10. M-5 still owns the number (D-27).
 
-Run 3 also found a regression in D-83. The first rule blocked a typed slot from closing by name, on the theory that the classifier always returns a typed value. It does not. It reports the answer in the free-text list and leaves the field unknown. The format slot therefore stayed open after a user answered "Pioneer", and the agent asked for the format again.
+Run 3 also found a regression in D-83. The first rule blocked a close by name on a typed slot, on the theory that the classifier always returns a typed value. It does not. It reports the answer in the free-text list and leaves the field unknown. The format slot therefore stayed open after a user answered "Pioneer", and the agent asked for the format again.
 
-The rule is now the question, not the field type: a key closes by name only while its question is out. That still blocks every case the rule was built for, because none of those keys had a question out.
+The rule is now the question, not the field type: a key closes by name only while its question is out. That still blocks every case the rule exists for, because none of those keys had a question out.
 
 Three of the run-3 replacements hit the color row. Each one replaced a statement that read as nonsense: "the best deck under budget is strongest in white, blue, black, and green". D-79 made that phrase a theme value, and the color clause used it as a subject. D-86 drops the clause when the theme names no archetype, and when the answer holds more than two colors.
 
 The owner deleted the acquisition row on 2026-08-25 (D-87). It asked where the user buys and by what date they need the cards. The app holds no store stock and no delivery times. Scryfall gives a price estimate rather than availability (D-17).
 
-No reader could act on the answer. The row also asked two things in one sentence, and every run replaced it. The catalog holds 25 rows.
+No reader was able to act on the answer. The row also asked two things in one sentence, and every run replaced it. The catalog holds 25 rows.
 
 Run 5 scored 29 of 30 and run 6 scored 30 of 30 on the catalog bar. Neither number stands on its own. The reword guard of D-88 refused 15 of the 16 replacements the model offered in run 5. The guard therefore decides the count, and its 0.6 threshold came from run-4 data rather than from the rubric. The M-5 sheet now carries refused rewords for that reason.
 
 Run 6 also carried a second bar for the first time (D-91). It scored 30 of 30 and still failed, because five sessions called themselves complete with no power level. The old bar alone called that run perfect, which is the point: a conversation that stops its questions looks the same as one that finished.
 
-The cause was the second form of D-83. The classifier closed the format by name, the format value stayed empty, and every row that triggers on the format stopped firing. D-83 is now settled in its third form. A typed slot closes on its value alone, because a name says "answered" and never says what the answer was. Asking twice is the safe failure, and building a deck with no format is not. D-90 puts the same rule in the classify prompt.
+The cause was the second form of D-83. The classifier closed the format by name, the format value stayed empty, and every row that triggers on the format went silent. D-83 now stands in its third form. A typed slot closes on its value alone, because a name says "answered" and never says what the answer was. A second question is the safe failure, and a deck with no format is not. D-90 puts the same rule in the classify prompt.
 
-Run 7 confirmed the D-83 fix and exposed what the fix had hidden. It passed both bars, at 28 of 30 with no premature session, and the pass was hollow. Twenty-six of the thirty conversations ended with a slot unanswered, and twenty-five of those sat on "format (asked, no answer)". The agent asked the format, the user answered it, and the answer never landed. Fewer slots filled means fewer rows fire, fewer questions go out, and fewer chances to invent one. Both bars improved while the product got worse.
+Run 7 confirmed the D-83 fix and exposed what the fix hid. It passed both bars, at 28 of 30 with no premature session, and the pass was hollow. Twenty-six of the thirty conversations ended with a slot unanswered, and twenty-five of those sat on "format (asked, no answer)". The agent asked the format, the user answered it, and the answer never landed. Fewer slots filled means fewer rows fire, fewer questions go out, and fewer chances to invent one. Both bars improved while the product got worse.
 
 D-92 is the cause, and it sits under the whole D-83 history. The classify schema constrained `format` and `pool_rule` to an enum that held "unknown". The model answered "unknown" for a message that named the format outright, while it filled every free-text field in the same reply. It even guessed colors and a power step from "I want a Modern burn deck" and still left the format empty.
 
 Four samples per variant measured it. The enum extracted 1 of 8, an enum with an empty member 3 of 8, and a free string 7 of 8. With the field freed the same probe reads 16 of 16, including the negative case where no format is named.
 
-That explains the earlier symptom rather than excusing it. The model reported the format through `closed_keys` because the field itself was suppressed. Every version of D-83 argued about which channel to trust, and none asked why the field was empty. A live probe of about ninety calls, for roughly two cents, answered in minutes what four gate runs could not.
+That explains the earlier symptom, and it does not excuse it. The model reported the format through `closed_keys` because the field itself stayed suppressed. Every version of D-83 argued about which channel to trust, and none asked why the field was empty. A live probe of about ninety calls, for roughly two cents, answered in minutes what four gate runs did not.
 
 Run 8 is the first honest pass, at 26 of 30 with no premature session. It asked 135 questions, the most of any run, and the format-stuck count fell from 25 to 3.
 
-Run 9 closes the last dead method. `State.Skip` was declared and never called, so nothing let a user hand a choice back. Run 8 measured the cost: conversation 4 answered "any colors are fine" and still ended with the color slot open. D-93 adds `declined_keys`. A decline closes any key and names no value. The generator applies the default the corpus lists, and the skipped state is what tells it to.
+Run 9 closes the last dead method. The code declared `State.Skip` and never called it, so nothing let a user hand a choice back. Run 8 measured the cost: conversation 4 answered "any colors are fine" and still ended with the color slot open. D-93 adds `declined_keys`. A decline closes any key and names no value. The generator applies the default the corpus lists, and the skipped state is what tells it to.
 
 Run 9 scores 29 of 30 with no premature session. The count of conversations holding an unanswered slot fell from 26 in run 7 to 14.
 
-A live check caught one precision fault before the run. The first wording let "any colors are fine" decline the bracket as well, which would have skipped a slot the user never mentioned. Two probes and one prompt sentence fixed it.
+A live check caught one precision fault before the run. The first wording let "any colors are fine" decline the bracket as well, which skips a slot the user never mentioned. Two probes and one prompt sentence fixed it.
 
 Run 10 adds D-94, a PR-6 correction found through PR-7. `Commanders` read the 99-card shortlist and took the first legends it met. That list ends in `capByRole`, which emits one role bucket after another with lands first, so it carries no score order at all. A blink request answered with three Ojer modal double-faced cards, which the theme scorer rates 0.16. Eighty-five on-theme blink commanders existed, and Emiel the Blessed rated 0.56.
 
 `CommanderPool` now walks the index itself. It requires a theme signal, drops the staple-role fallback, and applies no role cap, because one card fills no role quota. The 99-card pipeline is untouched, so the PR-6 gate holds.
 
-The same pass closes the last open PR-7 item. The count of on-theme commanders in an owned pool is the weak-commander-pool signal (D-63), so no score bar had to be invented. Run 10 asked 138 questions and closed 92, both the best of any run. A lifegain user with no library is offered Vito, Thorn of the Dusk Rose and Heliod, Sun-Crowned. The same user with the owner's library is offered the best lifegain commanders that library holds, because owned-first orders them first (D-37).
+The same pass closes the last open PR-7 item. The count of on-theme commanders in an owned pool is the weak-commander-pool signal (D-63), so nobody had to invent a score bar. Run 10 asked 138 questions and closed 92, both the best of any run. The agent offers a lifegain user with no library Vito, Thorn of the Dusk Rose and Heliod, Sun-Crowned. It offers the same user with the owner's library the best lifegain commanders that library holds, because owned-first orders them first (D-37).
 
 Run 11 added 22 probe conversations (D-97). Every one of the 30 gate conversations holds a cooperative user who answers what the agent asks. A probe does not. It changes its mind, contradicts itself, asks a question back, or wants something the app can not build. A probe runs beside the gate and feeds the M-5 sheet. It does not count toward the catalog-only bar, because adding conversations to a bar moves the bar.
 
-The gate set passed run 11 at 27 of 30, with no premature session. The probes found two defects at once. A declined format left the planner with nothing to route on, so no power row could fire (D-98). A Yu-Gi-Oh request drew the answer "Which Yu-Gi-Oh format would you like?", because no catalog row could decline (D-99). They also surfaced three catalog gaps with no row at all: an out-of-scope request, a sideboard-only request, and a request for two decks at once.
+The gate set passed run 11 at 27 of 30, with no premature session. The probes found two defects at once. A declined format left the planner with nothing to route on, so no power row fired (D-98). A Yu-Gi-Oh request drew the answer "Which Yu-Gi-Oh format would you like?", because the catalog had no row that declines (D-99). They also surfaced three catalog gaps with no row at all: an out-of-scope request, a sideboard-only request, and a request for two decks at once.
 
-The M-5 sheet now reads engine-current runs alone (D-96). A run made before a defect was fixed measures the defect. Run 3 is the clearest case. The format enum threw the user's answer away, the format row fired again, and the model invented a repair question. Scoring that item would push the D-27 threshold up on evidence about a bug that no longer exists.
+The M-5 sheet now reads engine-current runs alone (D-96). A run made before a defect was fixed measures the defect. Run 3 is the clearest case. The format enum threw the user's answer away, the format row fired again, and the model invented a repair question. A score on that item pushes the D-27 threshold up on evidence about a bug that no longer exists.
 
-Runs 12 and 13 confirm both fixes. Neither holds a premature session, across the 30 gate conversations and the 22 probes, and each passes the catalog bar at 27 of 30. The probes asked 88 and 84 questions and drew 6 replacements each, against 6 from 78 in run 11. The new scope row absorbed the request that had forced the model to improvise.
+Runs 12 and 13 confirm both fixes. Neither holds a premature session, across the 30 gate conversations and the 22 probes, and each passes the catalog bar at 27 of 30. The probes asked 88 and 84 questions and drew 6 replacements each, against 6 from 78 in run 11. The new scope row absorbed the request that forced the model to improvise.
 
-Two gaps closed before the commit. The session store had never executed. Every Firestore path in `internal/sessions` sat at zero coverage. `Put` ran only far enough to reject a session with no id. The code that persists every conversation was unverified. Seven emulator tests now drive it, and coverage went from 31.9% to 78.0% (D-101).
+Two gaps closed before the commit. The session store never executed. Every Firestore path in `internal/sessions` sat at zero coverage. `Put` ran only far enough to reject a session with no id. The code that persists every conversation was unverified. Seven emulator tests now drive it, and coverage went from 31.9% to 78.0% (D-101).
 
 A round trip alone was not enough. `Put` and `GetState` agree with each other whatever path they use, and a rename of the private path passed. Two tests read the literal document path and hold the D-74 layout: the private state stays out of the document `GetSession` returns.
 
-The second gap was the arithmetic. Nothing read a scored sheet, so the threshold had to be counted by hand. `cmd/m5-report` reads it and reports the fit threshold, the reword guard, and what the catalog needs (D-102). It reads the first word of a field, so the owner's free text survives. A refused reword is left out of the fit threshold, because it never reached a user.
+The second gap was the arithmetic. Nothing read a scored sheet, so the threshold count was manual. `cmd/m5-report` reads it and reports the fit threshold, the reword guard, and what the catalog needs (D-102). It reads the first word of a field, so the owner's free text survives. A refused reword is left out of the fit threshold, because it never reached a user.
 
-The scoring pays for itself before it finishes. Item 8 named a fault the six of D-66 did not hold. A replacement dropped the sentence that says what the answer is for, so the user could not tell whether to name decks, colors, or archetypes. `vague` is the seventh fault, and the fit is unaffected, because `faults` never enters the threshold calculation.
+The scoring pays for itself before it finishes. Item 8 named a fault the six of D-66 did not hold. A replacement dropped the sentence that says what the answer is for, so the user did not know whether to name decks, colors, or archetypes. `vague` is the seventh fault, and the fit does not change, because `faults` never enters the threshold calculation.
 
 The same item exposed the reword guard. Word overlap is symmetric, so a replacement that deletes half the row scores low and passes, although it says strictly less. Item 8 scored 0.44 against a 0.60 bar. The guard now refuses a truncation as well. That is a replacement that borrows 0.8 or more of its words from the row and keeps under 0.6 of it. Measured against all 60 items, the rule refuses item 8 and nothing else (D-103).
 
@@ -400,18 +402,19 @@ Open in PR-7: the M-5 scoring, then the threshold and one confirming run.
 
 > *In plain English:* the chat. "Build me a lifegain deck" fills in "theme: lifegain" and leaves format, power, and colors empty. The app asks those three, remembers the answers, and never asks twice. If the user says something vague, the app asks what they mean. It does not guess.
 
-**PR-7B: Automated eval lane.** ✅ merged 2026-08-26 (#13). A container branch the owner names holds what the loop writes (D-142). `pr-7c` was that branch until it merged as #14. The first three evals ran on 2026-08-26, and the lane earned its place at once. It found two false rules claims that gate run 14 passed with zero linter findings (F-26, D-140, D-144). It also exposed two defects of its own. The eval judged a question against answers the user gave later, which read the ratio as 39.5 percent instead of 17.4 (D-141). It could not see that a collection was attached (D-143). The calibration agreed 80 percent, and the ten disagreements are where the value sat: two real defects, and two card facts `claude-sonnet-5` invented. Gate run 24 is the latest baseline for the loop, on the set of D-145, D-155, and D-230. D-263 changed the set on 2026-08-28 with no run, so the next run is the new baseline. PR-7 proved that reading transcripts finds defects and that scoring replacements does not. The version-1 M-5 sheet could hold 60 of 793 questions, because it held only a question the model offered to replace (D-104). The batch sweep of 2026-08-26 read all 66 conversations by hand and found sixteen more defects, none of which could have reached that sheet. PR-7B makes that reading automatic.
+**PR-7B: Automated eval lane.** ✅ merged 2026-08-26 (#13). A container branch the owner names holds what the loop writes (D-142). `pr-7c` was that branch until it merged as #14. The first three evals ran on 2026-08-26, and the lane earned its place at once. It found two false rules claims that gate run 14 passed with zero linter findings (F-26, D-140, D-144). It also exposed two defects of its own. The eval judged a question against answers the user gave later, which read the ratio as 39.5 percent instead of 17.4 (D-141). It did not see that the session had a collection (D-143). The calibration agreed 80 percent, and the ten disagreements are where the value sat: two real defects, and two card facts `claude-sonnet-5` invented. Gate run 24 was the baseline on the set of D-145, D-155, and D-230. Gate run 27 of 2026-08-28 is the baseline on the set of D-263. D-302 changed the prompts on 2026-08-29, so run 27 does not compare with `main` until the owner re-runs it. PR-7 proved that reading transcripts finds defects and that scoring replacements does not. The version-1 M-5 sheet held 60 of 793 questions, because it held only a question the model offered to replace (D-104). The batch sweep of 2026-08-26 read all 66 conversations by hand and found sixteen more defects, none of which had a path to that sheet. PR-7B makes that reading automatic.
 
-A sixth role, `eval`, scores every question of a gate run against the rubric the owner applied by hand (D-133). It runs on `gpt-5.6-luna`, the cost tier, so a 104-conversation run costs $0.092 to $0.099 (measured 2026-08-26). It is not the judge role: D-4 gives the judge a deck, and D-22 keeps the judge off the generator's provider. The eval role shares a model with the classify and ask roles, which the owner accepted with the risk named (D-136). Every ratio it reports is a floor.
+A sixth role, `eval`, scores every question of a gate run against the rubric the owner applied by hand (D-133). It runs on `gpt-5.6-luna`, the cost tier, so a 104-conversation run costs $0.092 to $0.104 (runs 14 to 25, first measured 2026-08-26). It is not the judge role: D-4 gives the judge a deck, and D-22 keeps the judge off the generator's provider. The eval role shares a model with the classify and ask roles, which the owner accepted with the risk named (D-136). Every ratio it reports is a floor.
 
-`internal/tune` reads a gate document back and holds the accept rules. `cmd/questions-eval` writes a report a person reads and a summary a script reads. `cmd/tune-check` decides whether one iteration may be kept, and it costs nothing. `scripts/autotune.sh` is the loop, and it refuses to start without `AUTOTUNE_ALLOW_UNATTENDED=1`.
+`internal/tune` reads a gate document back and holds the accept rules. `cmd/questions-eval` writes a report a person reads and a summary a script reads. `cmd/tune-check` decides whether the loop keeps one iteration, and it costs nothing. `scripts/autotune.sh` is the loop, and it refuses to start without `AUTOTUNE_ALLOW_UNATTENDED=1`.
 
 Three evals run first, in this order.
 
 | Eval | What it measures | Cost |
 |---|---|---|
 | Gate run | The transcript. 104 conversations, 30 gate and 74 probe, read the count from `conversations.json` (D-145, D-155, D-263). | $0.152 to $0.165, measured 2026-08-26 |
-| Question eval | Every question, scored for whether it deserved to be asked. | $0.092 to $0.099, measured 2026-08-26 |
+| Question eval | Every question, scored for whether it deserved to be asked. | $0.092 to $0.104, runs 14 to 25, first measured 2026-08-26 |
+| Deck gate | 16 to 18 golden prompts through the generator, the engine, and the judge. | $1.09, run 8 with 18 prompts, measured 2026-08-28 |
 | Eval calibration | The cost-tier eval against `claude-sonnet-5` on 12 conversations. | $0.25 to $0.30 |
 
 The calibration answers the one question the cost tier raises: how gently does a model score work its own model produced? It scores the same 12 conversations twice, once on the cost tier and once on `claude-sonnet-5`, and `cmd/tune-check -agree` compares the two question by question. It reports how often they agree, and how many questions each one refused. A cost-tier eval that refuses four where the stronger model refuses twelve is not measuring the agent. It reports a floor, and the real number sits above it. OQ-39 holds what the owner does with that gap.
@@ -420,7 +423,7 @@ Four counters guard the ratio, because a run that asks less scores better and se
 
 Every third conversation is a holdout (D-134). The eval scores it, the report never names its failures, and the loop reads its ratio. A ratio that falls on the two thirds the fixer saw, and stands still on the holdout, is a reworded test set.
 
-The loop that consumes these evals comes second, and it starts only when the gate below holds. The owner settled its four terms on 2026-08-26. It may change the catalog inside an approved run (D-135). It may share a model with the agent it scores (D-136). It stops at a 5 percent holdout ratio (D-137). It works on a branch of its own and pushes nothing (D-138).
+The loop that consumes these evals comes second, and it starts only when the gate below holds. The owner settled its four terms on 2026-08-26. It can change the catalog inside an approved run (D-135). It can share a model with the agent it scores (D-136). It stops at a 5 percent holdout ratio (D-137). It works on a branch of its own and pushes nothing unless the owner passes `--push` (D-138).
 
 `docs/reference/autotune-design.md` is the authority on how it runs: the guards, the accept rules, and the owner's duties run by run. It also names the one cost the loop can not see, which is the fixer agent's own tokens.
 
@@ -434,19 +437,19 @@ The container matters more than it looks. A loop that always starts from `main` 
 
 Gate: the three evals run. The report names every defect class the batch sweep of 2026-08-26 found by hand. The calibration reports the agreement between the two eval models, and the owner accepts that number or names a stronger model (OQ-39).
 
-> *In plain English:* the owner spent hours scoring 32 questions by hand, and one test run asks 250. This adds a second model that reads every question and says whether it deserved to be asked. It writes a short report instead of a spreadsheet. A third of the conversations are hidden from anything that tries to fix the code. That way we can tell a real gain from a reworded test. The scorer is cheap, and cheap scorers are kind, so we measure how kind before we trust the number.
+> *In plain English:* the owner spent hours scoring 32 questions by hand, and one test run asks 250. This adds a second model that reads every question and says whether the agent had reason to ask it. It writes a short report instead of a spreadsheet. The loop hides a third of the conversations from anything that tries to fix the code. That way we can tell a real gain from a reworded test. The scorer is cheap, and cheap scorers are kind, so we measure how kind before we trust the number.
 
 **PR-8: Deck generator and normalizer (F-13).** ✅ merged 2026-08-28. Deck gate run 6 passed all three bars on 16 golden prompts. Every deck passed the block checks, no invented name reached the user, and no summary stated a false rule of the game. It cost $0.8776 and it ran at prompt version 4.
 
-The shortlist is the whole contract with the model. A card outside it is a miss even when the card index knows it, and a near name is reported and never substituted (D-222). Two real calls copied 198 names exactly. One repair turn covers a miss, a block finding, and a deck over budget. A name that misses twice reaches the user as a note (D-223, D-244).
+The shortlist is the whole contract with the model. A card outside it is a miss even when the card index knows it. The normalizer reports a near name and never substitutes it (D-222). Two real calls copied 198 names exactly. One repair turn covers a miss, a block finding, and a deck over budget. A name that misses twice reaches the user as a note (D-223, D-244).
 
-Five faults came out of the gate runs, and each one was a thing the code gathered and never used. The shortlist leaves basic lands out on purpose, so no deck held one (D-225). No prompt named no commander, so the generator had never run the path a user reaches with the words "you pick" (D-232). A 60-card deck was handed a commander (D-233). The locked card the user asked to keep never reached the build (D-242). The deck itself was streamed and dropped, so nothing could read it again (D-245).
+Five faults came out of the gate runs, and each one was a thing the code gathered and never used. The shortlist leaves basic lands out on purpose, so no deck held one (D-225). No prompt named no commander, so the generator never ran the path a user reaches with the words "you pick" (D-232). The generator handed a 60-card deck a commander (D-233). The locked card the user asked to keep never reached the build (D-242). The API streamed the deck itself and dropped it, so nothing read it again (D-245).
 
-`TestEverySlotIsReadOrNamed` now checks every slot against the build, so the sixth is caught in a test (D-243).
+`TestEverySlotIsReadOrNamed` now checks every slot against the build, so a test catches the sixth (D-243).
 
-The prompt cache is measured, not assumed. A cache read costs a tenth of a fresh read, which is true of the input alone. A generate call is output-heavy, so the whole call falls 19.7 percent and not 90 (D-227). The judge lane answers F-26, at $0.0034 a deck, and it is a bar of the gate (D-229).
+The prompt-cache saving is a measurement, not an assumption. A cache read costs a tenth of a fresh read, which is true of the input alone. A generate call is output-heavy, so the whole call falls 19.7 percent and not 90 (D-227). The judge lane answers F-26, at $0.0034 a deck, and it is a bar of the gate (D-229).
 
-The precon share of D-218 is built. The nine precon decklists live in the repo (D-247). The share is a count over the nonbasic names, and it is a ceiling (D-248, D-259). An upgrade keeps the precon's own shape and mana base (D-249 to D-251).
+The precon share of D-218 exists in code. The nine precon decklists live in the repo (D-247). The share is a count over the nonbasic names, and it is a ceiling (D-248, D-259). An upgrade keeps the precon's own shape and mana base (D-249 to D-251).
 
 Prompt caching pays here, not in PR-7. The generate role runs on the middle model, and its prompt carries a candidate list of about 300 cards. That list is the same across a repair retry, and a cache read costs a tenth of a fresh read. Two rules protect the lever: keep the stable text first and the session text last, and hold one cache key per session.
 
@@ -454,22 +457,22 @@ The PR-7 measurements of 2026-08-24 read zero cached tokens, because each call s
 
 With all slots filled, the strong model gets four inputs. They are the rules summary for the format, the candidate list with roles, the role targets, and the plan request. It returns a structured deck (D-19). First, one summary paragraph on the deck's style and purpose. Then cards with exact names, counts, roles, and one line each. 
 
-The normalizer exact-matches every name to the candidate list. A miss is returned to the model once as a tool error. A second miss becomes a user-visible note.
+The normalizer exact-matches every name to the candidate list. The normalizer returns a miss to the model once as a tool error. A second miss becomes a user-visible note.
 
 The engine validates (PR-5). 
 
 The ownership check runs only in the owned modes. In any-card mode, ownership marks are information, never findings (D-37). A `block` finding triggers one repair turn with the findings as input. Then the deck goes to the user with the `ValidationResult` attached. Gate: on the golden prompts, 100% of returned decks pass `block` checks. Zero invented names reach the user.
-> *In plain English:* the AI writes the deck from the shortlist, with a plan and a reason for each card. The code checks every name and every rule. If something is wrong, the AI gets one chance to fix it. What the user sees has already passed the referee.
+> *In plain English:* the AI writes the deck from the shortlist, with a plan and a reason for each card. The code checks every name and every rule. If something is wrong, the AI gets one chance to fix it. What the user sees already passed the referee.
 
-**PR-9: Designed variance (F-14, D-18).** ⏸ out of MVP scope, 2026-08-28 (D-256, amends D-18). Three reasons. Phase 3 waits on PR-8's gate and not on this one, and that gate held on 2026-08-28. The gate below asks for 30 percent, which this document already calls a placeholder until PR-15 measures it. Nobody can hold the work to that bar. No user has asked for it: D-18 is a preference recorded before a user existed.
+**PR-9: Designed variance (F-14, D-18).** ⏸ out of MVP scope, 2026-08-28 (D-256, amends D-18). Three reasons. Phase 3 waits on PR-8's gate and not on this one, and that gate held on 2026-08-28. The gate below asks for 30 percent, which this document already calls a placeholder until PR-15 measures it. Nobody can hold the work to that bar. No user asked for it: D-18 is a preference recorded before a user existed.
 
-The variance row is retired with the item, because it asked which kind of variance the user wanted and nothing read the answer. `Deck.seed` and `Slots.plan_variant` are removed from the contract, with the field numbers and the names reserved. A later PR-9 must choose new numbers, and no stored message can be misread.
+The variance row is retired with the item, because it asked which kind of variance the user wanted and nothing read the answer. `Deck.seed` and `Slots.plan_variant` leave the contract, with the field numbers and the names reserved. A later PR-9 must choose new numbers, and no stored message can be misread.
 
-What a user has instead: the deck store keeps every build (D-245). The generate role is not deterministic, so a second ask gives a different deck. That is not designed variance, and it is not nothing.
+What a user has instead: the deck store keeps every build (D-245). The generate role is not deterministic, so a second ask gives a different deck. That is not variance by design, and it is not nothing.
 
 Original text, superseded by D-256 on 2026-08-28 and kept for the record: Random variance is a feature (D-18). Variance comes from three levers, not from temperature alone. Lever 1: a seeded shuffle within each role tier of the candidate list. 
 
-Lever 2: a "plan variant" slot (for example "lifegain aristocrats" versus "lifegain go-wide"). Lever 3: a "keep these, change the rest" re-roll. The seed is stored with the deck so a build can be reproduced on request. Identical output on identical input is not a requirement (D-18). Gate: two builds of the same prompt differ in at least 30% of nonland cards and both pass validation.
+Lever 2: a "plan variant" slot (for example "lifegain aristocrats" versus "lifegain go-wide"). Lever 3: a "keep these, change the rest" re-roll. The store keeps the seed with the deck, so the app can reproduce a build on request. Identical output on identical input is not a requirement (D-18). Gate: two builds of the same prompt differ in at least 30% of nonland cards and both pass validation.
 > *In plain English:* ask twice, get two different but sensible decks. Each deck remembers the dice roll that made it, so you can get the same deck back.
 
 **PR-10: LLM role layer (D-1).** ✅ merged 2026-08-24 (#9). The live smoke passed on both adapters. Classify ran on `gpt-5.6-luna` (69 in, 21 out, 2.7 s), and judge on `claude-sonnet-5` (316 in, 20 out, 3.0 s). The pair cost $0.0013 at list price.
@@ -482,7 +485,7 @@ Refusal, schema, and terminal errors return at once.
 
 `Accumulator` reports tokens and USD per session from a dated `prices.json`. It reports null when a call gave no usage or an unpriced model.
 
-Thinking tokens count on both providers, and Anthropic cache writes are priced at 1.25x (F-24). `make llm-defaults-check` warns in CI when `roles.json` or `prices.json` changes. Keys live in `.env` (D-41). Keys are required by default. `LLM_REQUIRE_KEYS=0` (set by `make dev`) lets the fixture fake stand in (D-51).
+Both providers count thinking tokens, and Anthropic prices cache writes at 1.25x (F-24). `make llm-defaults-check` warns in CI when `roles.json` or `prices.json` changes. Keys live in `.env` (D-41). The app requires keys by default. `LLM_REQUIRE_KEYS=0` (set by `make dev`) lets the fixture fake stand in (D-51).
 
 Gate: unit tests over the fakes and `httptest` adapters pass in CI. The live smoke (`make test-smoke`) proves both adapters against the real APIs.
 
@@ -500,19 +503,19 @@ The owner uses the product on a fixed set of prompts. For each model-invented qu
 - `faults`: mandatory on every row that is not clean. One or more of duplicate, two questions in one, jargon, assumes an answer, unanswerable, out of scope.
 - `catalog_action`: none, add, or reword an existing entry. This feeds D-25 and PR-15.
 
-Scales hold three points, because a five-point scale drifts between sessions and makes the rows hard to compare. An invention is warranted when `catalog_enough` is no and `invented_better` is not worse. An `unsure` row is reported and left out of the fit. 
+Scales hold three points, because a five-point scale drifts between sessions and makes the rows hard to compare. An invention has warrant when `catalog_enough` is no and `invented_better` is not worse. The report shows an `unsure` row and leaves it out of the fit. 
 
-Scores go to the eval store with the prompt version, the model id, and the rubric version. The threshold is the gap score that best separates a warranted invention from an unwarranted one. A precision floor binds the choice: of the inventions the threshold allows, at least 80% must be warranted (D-66).
+Scores go to the eval store with the prompt version, the model id, and the rubric version. The threshold is the gap score that best separates a warranted invention from an unwarranted one. A precision floor binds the choice: of the inventions the threshold allows, at least 80% must have warrant (D-66).
 
 Every tenth item repeats an earlier one, which measures self-consistency across sessions. A change to the rubric invalidates the fit. The threshold is re-checked after each catalog change (D-28: the owner approves changes). Gate: at least 50 scored invented questions before the threshold is set.
-> *In plain English:* the app sometimes has to make up a question. The owner will use the app and see each made-up question next to the fixed questions it could have used. The owner grades it on six fixed fields. Those grades decide how eager the app is to make up questions. The rule is strict: at least four of every five made-up questions must be ones the fixed list could not cover.
+> *In plain English:* the app sometimes has to make up a question. The owner will use the app and see each made-up question next to the fixed questions it had available. The owner grades it on six fixed fields. Those grades decide how eager the app is to make up questions. The rule is strict: at least four of every five made-up questions must be ones the fixed list does not cover.
 
 **M-4: Catalog coverage metric (F-17).** Per session: catalog questions asked, invented questions asked, gap scores, and whether the invented question filled its slot. A weekly report lists invented questions by frequency. This is the input for catalog changes (D-25).
 > *In plain English:* we count how often the app had to invent a question. If the same invented question appears again and again, it belongs in the fixed list.
 
 ### Phase 3 - UI (gated on PR-8)
 
-**PR-11: Web app shell.** ✅ merged 2026-08-28 (#38). The gate held in the browser on 2026-08-28. The owner signed in over the Auth emulator, uploaded the real export and saw the count, and took the skip path to the chat placeholder. The token path is proved with curl too. The unresolved rows show the line and a reason in plain words, and not the raw row. 23 web tests, axe on each page. The bundle is 546 kB, almost all `firebase/auth`, and a code split is later polish.
+**PR-11: Web app shell.** ✅ merged 2026-08-28 (#38). The gate held in the browser on 2026-08-28. The owner signed in over the Auth emulator, uploaded the real export and saw the count, and took the skip path to the chat placeholder. A curl call proves the token path too. The unresolved rows show the line and a reason in plain words, and not the raw row. 23 web tests, axe on each page. The bundle is 546 kB, almost all `firebase/auth`, and a code split is later polish.
 React 19, Vite, TypeScript, Tailwind, the wallabee-ui patterns (TanStack Query, Zustand, lint-enforced import boundaries). Firebase Auth (D-11) with the emulator in local mode. Generated Connect client in `packages/api-client`. Gate: sign-in, then either upload a collection and see the count, or skip the upload and still reach the chat (D-37).
 
 Detail of 2026-08-28: `docs/reference/ui-plan-2026-08-28.md` holds the user path, the architecture, and the live-test procedure (D-273 to D-276). The sign-in is real, over the Auth emulator, and the token reaches the API through the interceptor of D-268.
@@ -521,14 +524,14 @@ Detail of 2026-08-28: `docs/reference/ui-plan-2026-08-28.md` holds the user path
 **PR-12: Chat and deck view.** ✅ merged 2026-08-28 (#40). The test gate held. Axe passes on the session page and the deck view, and a test asserts the full card image, uncropped, on every card (D-291). The browser gate waits for the owner (README section 6).
 A streaming chat thread over the `Chat` RPC. The deck view groups cards by role. It shows card art from Scryfall image URIs with artist and copyright (D-6, guardrail 7). It shows both faces for DFCs (F-9). 
 
-It marks owned versus to-buy when a collection is attached. It shows the pool-mode toggle ("use only cards in my library") with the session's mode (D-37). In any-card mode, the buy list can be the whole deck.
+It marks owned versus to-buy when the session has a collection. It shows the pool-mode toggle ("use only cards in my library") with the session's mode (D-37). In any-card mode, the buy list can be the whole deck.
 
-It shows the mana curve, the color sources, the `ValidationResult` findings, and `legality_as_of`. Hover or tap shows Oracle text. Gate: a11y checks pass. Every image has attribution in the DOM.
+It shows the mana curve, the color sources, the `ValidationResult` findings, and `legality_as_of`. ~~Hover or tap shows Oracle text.~~ (Struck 2026-08-29, D-290 and D-291: a card tile shows no caption and no Oracle-text hover.) Gate: a11y checks pass. Every image has attribution in the DOM.
 
 Contract addition of 2026-08-28: `CardService.GetCards` returns up to 120 cards by Oracle id in one call. `DeckCard` carries only the id and the name, and one `Lookup` per card is 100 calls per deck (ui plan, section 4). Landed 2026-08-28 (D-277). The chat holds an open question across a turn that asks nothing (D-278). The attribution line is the one the Scryfall docs ask for (D-279).
 > *In plain English:* the main screen. The conversation on one side, the deck on the other with real card pictures, grouped by what each card does, with your own cards marked.
 
-**PR-12B: Deck revision turns.** 🔧 built 2026-08-28 on branch `pr-12b` (F-27, D-283 to D-285). Gate run 1 on 2026-08-28: 5 of 6 revisions met their bar. The sixth failed the gate's own bar on a mixed message, and not the model (D-296). Run 2 the same day, with the bar fixed: 6 of 6, $0.29. The gate held.
+**PR-12B: Deck revision turns.** ✅ merged 2026-08-29 (#41). Built 2026-08-28 on branch `pr-12b` (F-27, D-283 to D-285). Gate run 1 on 2026-08-28: 5 of 6 revisions met their bar. The sixth failed the gate's own bar on a mixed message, and not the model (D-296). Run 2 the same day, with the bar fixed: 6 of 6, $0.29. The gate held.
 After a build, every message is a request to change the latest deck. The turn has three parts. First, the classify call runs as today for a slot change. A changed slot means a full rebuild with a note that says so (D-241). Second, with no slot change, a new revise call reads the message and the current deck list. It returns a revision brief with four parts:
 
 - the cards to remove,
@@ -537,14 +540,14 @@ After a build, every message is a request to change the latest deck. The turn ha
 - one clarifying question when the request is unclear. The question passes the same lint as every other question,
 - the requests it declines, each with a reason.
 
-A request has three outcomes: a question, a change, or a decline with a reason (D-284). "Replace some lands with better options" is unclear on its own, so the agent asks what the user means, for example faster mana, utility lands, or more colors. When no change would help, the reply says so in plain words: "for a casual mono-white deck, all basic lands is fine". A decline is not silence, and the deck stays as it was.
+A request has three outcomes: a question, a change, or a decline with a reason (D-284). "Replace some lands with better options" is unclear on its own, so the agent asks what the user means, for example faster mana, utility lands, or more colors. When no change helps, the reply says so in plain words: "for a casual mono-white deck, all basic lands is fine". A decline is not silence, and the deck stays as it was.
 
 Third, the generator gets the brief and the base deck in `generate.Request`, and its instructions say to keep every card the brief does not touch.
 
 A deterministic check reads the brief after the build. A removed card that is still present is a finding. So is a kept card that is absent, and so is a card over the mana limit. The repair turn reads these findings like any other.
 
-The reply is prose from the diff, not from the model, for example "I removed four cards over 5 mana, added four, and replaced six Plains". The server stores it in `Turn.agent_message`, which exists and was never written, and streams it as `text_delta`. The new deck gets `revised_from_deck_id` and `revision_note`, both additive, and the deck view shows the diff. Gate: six revision prompts over two stored decks. Each result keeps every untouched card, holds every limit of the brief, and passes the engine. A paid run, so the owner says when.
-> *In plain English:* today, anything you type after the deck appears is thrown away, and the app quietly builds the same deck again. After this change, "cut the 7-drops and fix the lands" gives you a short answer and a deck that did those two things, or a question when the request is unclear.
+The reply is prose from the diff, not from the model, for example "I removed four cards over 5 mana, added four, and replaced six Plains". The server stores it in `Turn.agent_message`, which existed and had no writer, and streams it as `text_delta`. The new deck gets `revised_from_deck_id` and `revision_note`, both additive, and the deck view shows the diff. Gate: six revision prompts over two stored decks. Each result keeps every untouched card, holds every limit of the brief, and passes the engine. A paid run, so the owner says when.
+> *In plain English:* today, the app throws away anything you type after the deck appears, and the app quietly builds the same deck again. After this change, "cut the 7-drops and fix the lands" gives you a short answer and a deck that did those two things, or a question when the request is unclear.
 
 **PR-13: Export and share.**
 Export as ManaBox text first (D-15). Other formats later. A buy list with Scryfall purchase links. Gate: a round trip ManaBox export to import loses nothing.
@@ -556,7 +559,7 @@ Contract addition of 2026-08-28: `DeckService.ExportDeck` lands with this PR, wi
 
 **PR-14: Meta ingest, MTGO first.**
 A worker job pulls published MTGO decklists per format (official source, D-5). It computes archetype shares and the most-played cards per archetype for the last 30 days. Aggregator and EDHREC ingesters follow, in order of structure: MTGTop8, MTGGoldfish, Aetherhub, EDHREC (D-5, legal check passed). The meta snapshot is advisory input to PR-6 and PR-8 for competitive power levels only. Gate: the snapshot for Modern lists at least 10 archetypes with card lists.
-> *In plain English:* what wins right now. We start with the official tournament lists. Other sites are added only after someone checks their rules.
+> *In plain English:* what wins right now. We start with the official tournament lists. We add other sites only after someone checks their rules.
 
 **PR-15: Eval harness.**
 Golden prompts with expected slot sets and expected validation outcomes. Deterministic checks are the gate (legality, ownership, size, curve, names). A judge role scores plan quality and usefulness on a fixed rubric. Long-format results table, corpus fingerprint per run (model, effort, snapshot date, prompt version), suffix rows for informational metrics, "observe-only is not pass". Tier 0 in CI ($0).
@@ -569,14 +572,14 @@ A job reads the Wizards announcement feed and detects the Scryfall snapshot that
 
 A deck with a now-illegal card gets a `stale` flag with the list of affected cards. The UI shows a banner on that deck with a "rerun" button.
 
-An impact classifier scopes the rerun. Its inputs: how many cards are affected, which roles they filled, and whether the commander or a win condition is among them. 
+An impact classifier scopes the rerun. Its inputs: how many cards the change touches, which roles they filled, and whether the commander or a win condition is among them. 
 
 Low impact: a patch turn that replaces only the affected cards from the same candidate list. 
 
 High impact (threshold OQ-18): a full rebuild with the original slots and a new seed. The banner states which case applies and why. Gate: on the golden decks, every synthetic ban produces the correct case and a legal deck.
 > *In plain English:* when Wizards bans a card, every deck we built that uses it gets a warning and a rerun button. If the ban only touches one filler card, we swap that card. If it guts the deck, we rebuild it from your answers.
 
-**I-2: Price-aware buy list** (D-17, F-16). USD. Each card carries the lowest Scryfall NM market price across legal printings and finishes. It is a 7-day rolling average, and an outlier day is rejected. An outlier is a day more than 2x the 7-day median (D-26). Digital-only and gold-bordered printings excluded. The UI labels it "NM market estimate" with the price date.
+**I-2: Price-aware buy list** (D-17, F-16). USD. Each card carries the lowest Scryfall NM market price across legal printings and finishes. It is a 7-day rolling average, and the average rejects an outlier day. An outlier is a day more than 2x the 7-day median (D-26). Digital-only and gold-bordered printings excluded. The UI labels it "NM market estimate" with the price date.
 
 **I-3: Semantic card search** over Oracle text as a fourth candidate signal, only if PR-6's gate shows tags are not enough.
 
@@ -610,7 +613,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 15. PR-8 generator.
 16. PR-9 variance. ⏸ out of MVP scope (D-256). It blocks nothing: the Phase 3 gate below reads PR-8's gate.
 17. **GATE.** Phase 3 starts only when PR-8's gate holds on the golden prompts. ✅ held on 2026-08-28, deck gate run 6.
-18. PR-11 ✅ merged 2026-08-28 (#38). PR-12 ✅ merged 2026-08-28 (#40). PR-12B 🔧 built 2026-08-28 on branch `pr-12b`, gate not run. Then PR-13.
+18. PR-11 ✅ merged 2026-08-28 (#38). PR-12 ✅ merged 2026-08-28 (#40). PR-12B ✅ merged 2026-08-29 (#41). Then PR-13.
 19. PR-15 eval harness (can start after step 15, in parallel with the UI, if a second owner exists). M-5 manual scoring runs on the first UI build (after PR-12).
 20. PR-14 meta, then I-1, I-2, I-3 on evidence.
 21. Phase 5 stays parked.

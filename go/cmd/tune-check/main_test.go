@@ -78,15 +78,10 @@ func TestOmittedPreviousIsAFirstRun(t *testing.T) {
 	}
 }
 
-// TestNamedPreviousMustExist replaces a test that read a named and
-// missing file as a first run. That reading hid a real defect: the loop
-// passed a relative path into a subshell that had changed directory, the
-// file was not there, and the comparison was skipped in silence. An
-// iteration that raised the holdout ratio was accepted and committed
-// (D-171).
-//
-// A path the owner gave and a path the owner omitted mean different
-// things. Only the second is a first run.
+// TestNamedPreviousMustExist is D-171. A named baseline that is missing
+// is an error and not a first run: a skipped comparison in silence
+// accepts a regression. A path that was given and a path that was
+// omitted mean different things, and only the second is a first run.
 func TestNamedPreviousMustExist(t *testing.T) {
 	dir := t.TempDir()
 	path := write(t, dir, "next.json", tune.Summary{Judged: 10, Bad: 5, Ratio: 0.50,

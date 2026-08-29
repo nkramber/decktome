@@ -8,46 +8,35 @@ package questions
 // document records it, so a scored M-5 sheet names the prompts that
 // produced it (D-66).
 //
-// Version 1 ran gate runs 1 to 13. Version 2 followed the owner's
-// scoring of items 1 to 32 on 2026-08-25: the classify role reads a
-// format from an adjective and from a commander phrase, and the ask role
-// adds no clause that repeats a value the user gave (D-116).
+// Version 2: the classify role reads a format from an adjective and from
+// a commander phrase, and the ask role adds no clause that repeats a
+// value the user gave (D-116).
 //
 // Version 3 added the named_cards list. "Build around X" names a card
-// and no role, and the classifier reported X as the commander. The role
-// question then never fired, in every run from 11 to 13 (D-118).
+// and no role, and the classifier must not report X as the commander
+// (D-118).
 //
-// Version 6 followed gate run 15. The ask role fitted a question to the
-// format the agent had just declined: "What should the Oathbreaker deck
-// focus on?" went out one line under "I do not build Oathbreaker". The
-// linter refused both, and the run failed on them (D-150).
+// Version 6: the ask role must not fit a question to the format the
+// agent has just declined (D-150).
 //
-// Version 7 followed gate run 16. The ask role named one card's color
-// identity in runs 14, 15, and 16, and it changed the preposition each
-// time D-144 caught the old one. The rule now reads the shape (D-151).
+// Version 7: the ask role must not name one card's color identity, in
+// any preposition (D-151).
 //
 // Version 8 followed D-155, which narrowed the app to Commander,
 // Standard, and Modern. The classify role must not resolve a format the
 // app no longer builds, because the unsupported-format row declines it
 // by name instead.
 //
-// Version 9 followed the eval of gate run 18. The classify role reads
-// cEDH as bracket 5, which probe 75 gave in its first message and the
-// agent asked for again (D-164).
+// Version 9: the classify role reads cEDH as bracket 5 (D-164).
 //
-// Version 10 followed D-238. The budget-scope row asked whether a cap
-// covers the cards to buy or the whole deck, and nothing stored the
-// answer, so the agent asked and discarded it. The classify role now
-// reports the scope.
+// Version 10: the classify role reports the budget scope, so the answer
+// to the budget-scope row is stored (D-238).
 //
-// Version 11 followed the audit of 2026-08-28. The classify role asked
-// the model to repeat a value from an earlier message it never saw
-// (audit Q-13). The input now carries prior_messages, the user's last
-// five earlier messages, and the rule is gone. The input also carries
-// nearest_format, so a "yes" to the decline row fills the format (audit
-// Q-4). The instruction prefix is unchanged in shape, so the provider
-// cache still serves it, and the input differs on every turn in any
-// case.
+// Version 11: the input carries prior_messages, the user's last five
+// earlier messages, in place of a rule that told the model to repeat a
+// value it never saw (D-90). The input also carries nearest_format, so
+// a "yes" to the decline row fills the format (D-112). The instruction
+// prefix is unchanged in shape, so the provider cache still serves it.
 //
 // Version 12 stores the house-rules answer (D-265). The schema gains a
 // house_rules string, and five rows left the catalog (D-260), so the
@@ -56,7 +45,9 @@ package questions
 // Version 13 rewrites the example of the ask prompt to the commander row
 // of D-290. The instruction text changed, so the provider cache prefix
 // changed with it, and the question gate re-baselines (D-66).
-const PromptVersion = 13
+// Version 14 drops the two_plans fact from the classify role. No catalog
+// row reads it, and the owned_mode fact left the planner with it (D-302).
+const PromptVersion = 14
 
 const classifyInstructions = `You map one message from a Magic: The Gathering deck-building conversation onto slots.
 
@@ -80,7 +71,6 @@ Rules:
 - facts.named_card: the user named a specific card.
 - facts.buy_list: the deck will need cards the user does not own.
 - facts.house_format: the user described their own rule set instead of a real format.
-- facts.two_plans: the theme has two common plans and the user has not chosen one.
 - facts.budget_ambiguous: the user named one money number without saying whether it caps purchases or the whole deck.
 - house_rules: what the user means by "anything goes", "kitchen table", or "no ban list", in the user's own words, for example "any card, no ban list" or "Modern with proxies". Fill it when the user answers the house-rules question, or states the rules unprompted. Leave it empty otherwise.
 - budget_scope: what the cap covers, when the user says. "buy" means the cards they must acquire, and "deck" means the whole deck value, owned copies included. Leave it "unknown" when the user did not say.
@@ -115,12 +105,11 @@ const classifySchema = `{
     "facts": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["named_card","buy_list","house_format","two_plans","budget_ambiguous","power_competitive","wants_suggestion","out_of_scope"],
+      "required": ["named_card","buy_list","house_format","budget_ambiguous","power_competitive","wants_suggestion","out_of_scope"],
       "properties": {
         "named_card": {"type": "boolean"},
         "buy_list": {"type": "boolean"},
         "house_format": {"type": "boolean"},
-        "two_plans": {"type": "boolean"},
         "budget_ambiguous": {"type": "boolean"},
         "power_competitive": {"type": "boolean"},
         "wants_suggestion": {"type": "boolean"},
@@ -173,9 +162,9 @@ const askSchema = `{
   }
 }`
 
-// The gap score has its own classifier call (owner directive, 2026-08-24).
-// The roadmap asks for a small classifier, and a scorer that also phrases
-// the question rates its own work. The cost is one more call per turn.
+// The gap score has its own classifier call (D-69). A scorer that also
+// phrases the question rates its own work. The cost is one more call
+// per turn.
 
 const scoreInstructions = `You check a fixed catalog question against one user of a Magic: The Gathering deck builder.
 

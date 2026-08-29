@@ -30,8 +30,9 @@ updates:
     groups:
       web: { patterns: ["*"] }
     ignore:
-      # typescript-eslint 8 does not support TypeScript 7. Both move
-      # together in PR-11, by hand.
+      # typescript-eslint 8 does not support TypeScript 7. TypeScript and
+      # typescript-eslint move together, by hand, when typescript-eslint
+      # supports the new major.
       - dependency-name: typescript
         update-types: ["version-update:semver-major"]
       - dependency-name: vite
@@ -51,3 +52,21 @@ updates:
       # Bump those pins first, then the image, by hand.
       - dependency-name: golang
       - dependency-name: node
+  # compose.yaml pins the fake-gcs-server image by digest, and Dependabot
+  # reads Compose files from the directory that holds them.
+  - package-ecosystem: docker
+    directory: /
+    schedule: { interval: monthly }
+    open-pull-requests-limit: 1
+    rebase-strategy: disabled
+    groups:
+      compose: { patterns: ["*"] }
+
+# Pins Dependabot cannot see. Each one is a version string inside a script,
+# a workflow step, a Dockerfile RUN line, or the Makefile. Bump every copy
+# of a pin together, by hand.
+# - firebase-tools 14.14.0: .github/workflows/verify.yml,
+#   docker/emulators.Dockerfile, scripts/doctor.sh.
+# - govulncheck v1.7.0: .github/workflows/verify.yml.
+# - fake-gcs-server v1.56.1: .github/workflows/verify.yml, scripts/dev.sh.
+# - GOLANGCI_LINT_VERSION: Makefile.

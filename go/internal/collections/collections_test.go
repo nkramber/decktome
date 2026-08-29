@@ -116,7 +116,7 @@ func TestHeaderVariants(t *testing.T) {
 	}
 }
 
-// TestRealExportNoSilentDrops is the PR-4 gate on the owner's real file:
+// TestRealExportNoSilentDrops runs a real export through the parser (D-23):
 // every row parses, and every row lands in entries or in the report.
 // Resolution uses the small test index, so most rows report unknown-card
 // here. The resolution RATE gate runs against the full snapshot (e2e).
@@ -210,7 +210,7 @@ func TestHashAndCounts(t *testing.T) {
 }
 
 // smallIndex builds an index with one real card and one token printing
-// that shares the card's name (the Pawpatch Recruit case, C-1).
+// that shares the card's name (the Pawpatch Recruit case).
 func smallIndex() *cards.Index {
 	card := &mtgv1.Card{
 		OracleId: "50ab0194-0000-0000-0000-000000000000",
@@ -240,8 +240,8 @@ func parseOne(t *testing.T, line string) ([]Row, []*mtgv1.UnresolvedRow) {
 	return rows, bad
 }
 
-// TestTokenRowNotPlayable is the PR-4 gate regression: fixture line 186
-// is a token. It must be reported, never resolved to the real card.
+// TestTokenRowNotPlayable: fixture line 186 is a token. It must be
+// reported, never resolved to the real card.
 func TestTokenRowNotPlayable(t *testing.T) {
 	idx := smallIndex()
 	f, err := os.Open("testdata/manabox_collection.csv")
@@ -281,7 +281,8 @@ func TestTokenRowNotPlayable(t *testing.T) {
 	}
 }
 
-// TestNameOnlyMatchStoresDefaultPrinting covers C-5.
+// TestNameOnlyMatchStoresDefaultPrinting: a name-only match stores the
+// card's default printing.
 func TestNameOnlyMatchStoresDefaultPrinting(t *testing.T) {
 	idx := smallIndex()
 	rows, _ := parseOne(t, manaboxLine("Pawpatch Recruit", "ZZZ", "999", "normal", "2", "not-a-known-id", "near_mint", "en"))
@@ -317,7 +318,7 @@ func TestDuplicateRowsMerge(t *testing.T) {
 	}
 }
 
-// TestMergedQuantityStopsAtCap is M-3 of the 2026-08-26 review. Each row
+// TestMergedQuantityStopsAtCap: each row
 // stays under maxQuantity, so the parser accepts it, and the merge sum
 // wrapped int32 negative on a long enough file. The row that would push
 // the entry over the cap is a BAD_ROW, so the row arithmetic holds.
@@ -491,5 +492,21 @@ func TestOwnedPrintings(t *testing.T) {
 	}
 	if len(got) != 1 {
 		t.Errorf("got %v", got)
+	}
+}
+
+// TestDocIDFollowsTheHash: one content hash names one document, so two
+// identical uploads that race land on the same id.
+func TestDocIDFollowsTheHash(t *testing.T) {
+	upload := []byte("a,b\n1,2\n")
+	first, again := DocID(ContentHash(upload)), DocID(ContentHash(upload))
+	if first != again {
+		t.Errorf("one upload gave two ids: %q and %q", first, again)
+	}
+	if first == DocID(ContentHash([]byte("x"))) {
+		t.Error("two uploads gave one id")
+	}
+	if strings.Contains(first, "/") || len(first) > 1500 {
+		t.Errorf("id %q is not a valid document id", first)
 	}
 }

@@ -14,8 +14,8 @@ import (
 
 // The store talks to Firestore, and no unit test can reach that. A wrong
 // collection path, a bad `firestore` struct tag, or a query without its
-// index would pass every green test in the repo, which is the lesson the
-// session store learned on 2026-08-25.
+// index passes every unit test, so these tests run the paths against
+// the emulator.
 //
 // These tests need the local emulator, so CI skips them:
 //

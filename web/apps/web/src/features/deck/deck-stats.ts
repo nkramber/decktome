@@ -76,12 +76,16 @@ export const colorLetters: { color: Color; letter: string; name: string }[] = [
   { color: Color.C, letter: "C", name: "Colorless" },
 ];
 
-// deckColors is the set of colors the deck's cards are. A colorless deck
-// gives an empty set, and the sources table then shows colorless only.
-export function deckColors(cards: DeckCard[], byId: Map<string, Card>): Set<Color> {
+// deckColors is the set of colors the deck's cards are, plus the color
+// identity of each commander. A colorless deck gives an empty set, and
+// the sources table then shows colorless only.
+export function deckColors(cards: DeckCard[], byId: Map<string, Card>, commanderIds: string[] = []): Set<Color> {
   const out = new Set<Color>();
   for (const dc of cards) {
     for (const c of byId.get(dc.oracleId)?.colors ?? []) out.add(c);
+  }
+  for (const id of commanderIds) {
+    for (const c of byId.get(id)?.colorIdentity ?? []) out.add(c);
   }
   return out;
 }
@@ -152,19 +156,36 @@ export function priceText(usd: number): string {
 // (PR-12B). The deck view shows it under the header.
 export type DeckDiff = { added: string[]; removed: string[]; changed: string[] };
 
+// The key is the oracle id (the name when the entry has none), and the
+// sideboard is its own zone, so a card that moves between zones shows
+// as one removal and one addition.
+type Entry = { label: string; count: number };
+
+function countByKey(deck: Deck): Map<string, Entry> {
+  const out = new Map<string, Entry>();
+  const add = (cards: DeckCard[], zone: string) => {
+    for (const c of cards) {
+      const key = `${c.oracleId || c.name}${zone}`;
+      const prev = out.get(key);
+      out.set(key, { label: `${c.name}${zone}`, count: (prev?.count ?? 0) + c.count });
+    }
+  };
+  add(deck.cards, "");
+  add(deck.sideboard, " (sideboard)");
+  return out;
+}
+
 export function diffDecks(base: Deck, revised: Deck): DeckDiff {
-  const before = new Map<string, number>();
-  const after = new Map<string, number>();
-  for (const c of base.cards) before.set(c.name, (before.get(c.name) ?? 0) + c.count);
-  for (const c of revised.cards) after.set(c.name, (after.get(c.name) ?? 0) + c.count);
+  const before = countByKey(base);
+  const after = countByKey(revised);
   const diff: DeckDiff = { added: [], removed: [], changed: [] };
-  for (const [name, n] of after) {
-    const m = before.get(name);
-    if (m === undefined) diff.added.push(`${n} ${name}`);
-    else if (m !== n) diff.changed.push(`${name}: ${m} to ${n}`);
+  for (const [key, { label, count: n }] of after) {
+    const m = before.get(key)?.count;
+    if (m === undefined) diff.added.push(`${n} ${label}`);
+    else if (m !== n) diff.changed.push(`${label}: ${m} to ${n}`);
   }
-  for (const [name, m] of before) {
-    if (!after.has(name)) diff.removed.push(`${m} ${name}`);
+  for (const [key, { label, count: m }] of before) {
+    if (!after.has(key)) diff.removed.push(`${m} ${label}`);
   }
   diff.added.sort();
   diff.removed.sort();

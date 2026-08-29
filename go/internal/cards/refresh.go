@@ -121,11 +121,16 @@ func copyBulk(ctx context.Context, client *scryfall.Client, store Store, version
 		return err
 	}
 	defer func() { _ = body.Close() }()
-	w, err := store.Create(ctx, version, name)
+	// The writer gets its own context. A Close after a copy error would
+	// commit a truncated object, so the context is canceled first.
+	wctx, wcancel := context.WithCancel(ctx)
+	defer wcancel()
+	w, err := store.Create(wctx, version, name)
 	if err != nil {
 		return err
 	}
 	if _, err := io.Copy(w, body); err != nil {
+		wcancel()
 		_ = w.Close()
 		return fmt.Errorf("store %s/%s: %w", version, name, err)
 	}
@@ -133,9 +138,9 @@ func copyBulk(ctx context.Context, client *scryfall.Client, store Store, version
 }
 
 // Prune deletes every complete version except the newest keep. It also
-// deletes an incomplete version that is older than the newest complete
-// one, because a download that old is a failed one. The newest
-// incomplete version always stays: it can be a download in progress.
+// deletes every incomplete version that is older than the newest complete
+// one, because a download that old is a failed one. An incomplete
+// version newer than that stays: it can be a download in progress.
 func Prune(ctx context.Context, store Store, keep int, logger *slog.Logger) error {
 	versions, err := store.ListVersions(ctx)
 	if err != nil {
@@ -163,10 +168,6 @@ func Prune(ctx context.Context, store Store, keep int, logger *slog.Logger) erro
 	incomplete, err := store.ListIncompleteVersions(ctx)
 	if err != nil {
 		return err
-	}
-	sortByVersionTime(incomplete)
-	if len(incomplete) > 0 {
-		incomplete = incomplete[:len(incomplete)-1]
 	}
 	for _, v := range incomplete {
 		t, err := VersionTime(v)

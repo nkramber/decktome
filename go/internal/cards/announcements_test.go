@@ -79,8 +79,9 @@ func TestEmbeddedCalendarLoads(t *testing.T) {
 	}
 }
 
-// TestCheckInterval covers C-2: the 09:00Z snapshot on announcement day
-// does not count as coverage. Only a legality diff does.
+// TestCheckInterval covers C-2: only a legality diff counts as coverage
+// (D-47). A diff on the announcement date itself covers it, because the
+// date is UTC midnight and Wizards posts later that day.
 func TestCheckInterval(t *testing.T) {
 	cal := calFor("2026-10-12")
 	tests := []struct {
@@ -91,7 +92,6 @@ func TestCheckInterval(t *testing.T) {
 	}{
 		{"before announcement day", "2026-10-11T12:00:00Z", "2026-10-01T09:00:00Z", NormalCheckInterval},
 		{"announcement day, no diff yet", "2026-10-12T20:00:00Z", "2026-10-01T09:00:00Z", FastCheckInterval},
-		{"announcement day, same-day snapshot with no diff", "2026-10-12T20:00:00Z", "2026-10-01T09:00:00Z", FastCheckInterval},
 		{"day after, still no diff", "2026-10-13T12:00:00Z", "2026-10-01T09:00:00Z", FastCheckInterval},
 		{"diff landed the day after", "2026-10-13T12:00:00Z", "2026-10-13T09:01:00Z", NormalCheckInterval},
 		{"diff landed on the date itself", "2026-10-12T20:00:00Z", "2026-10-12T09:01:00Z", NormalCheckInterval},

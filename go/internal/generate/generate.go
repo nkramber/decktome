@@ -51,8 +51,7 @@ type Request struct {
 	Limits string
 	// Precon names the precon the user asked to upgrade, and it is empty
 	// otherwise. PreconOracleIDs holds its cards (D-218). The share rule
-	// reads the nonbasic ones, and basic lands swap free (A-5 of the
-	// 2026-08-28 audit).
+	// reads the nonbasic ones, and basic lands swap free (D-218).
 	Precon          string
 	PreconOracleIDs []string
 	// PreconLands is how many lands the precon runs, copies included. The
@@ -99,8 +98,14 @@ type Revision struct {
 	// refused.
 	Keep []string
 	// MaxManaValue caps the mana value of every nonland card. Zero means
-	// no cap. The pool drops every card above it.
+	// no cap. The pool drops every card above it, the Keep names and the
+	// Exempt ids excepted.
 	MaxManaValue float64
+	// Exempt lists the oracle ids the cap never drops: the locked cards
+	// and the commanders. A locked card the pool dropped blocks as
+	// missing, and the model can not put back what it can not name
+	// (D-242).
+	Exempt []string
 }
 
 // Result is one finished build.
@@ -112,7 +117,6 @@ type Result struct {
 	Notes []string
 	// Repaired says the repair turn ran. RepairReason says why, as a short
 	// line the gate document prints: the miss count and the finding codes.
-	// A reader of deck gate run 8 could not tell a miss from a budget.
 	Repaired     bool
 	RepairReason string
 }
@@ -150,7 +154,7 @@ func (b *Builder) Build(ctx context.Context, req Request, acc *llm.Accumulator) 
 	// One repair turn covers every refusal: a name the shortlist does not
 	// hold, a block finding from the engine, and the two warnings that
 	// buy a repair on their own. The repair turn reads every one of them,
-	// or it cannot fix what it was not told (G-1 of the 2026-08-28 audit).
+	// or it cannot fix what it was not told (D-244, D-248).
 	if findings := repairable(res.deck.GetValidation()); len(res.misses) > 0 || len(findings) > 0 {
 		b.log.Info("the deck was refused, so one repair turn runs",
 			"session", req.SessionID, "misses", len(res.misses), "findings", len(findings))
@@ -185,6 +189,9 @@ type pass struct {
 func (b *Builder) assemble(req Request, out *deckOut) pass {
 	main := Normalize(req.Pool, out.Cards)
 	side := Normalize(req.Pool, out.Sideboard)
+	// The copy limit spans both lists, so the owned flag reads the count
+	// of an oracle id across both (D-37).
+	markOwned(append(append([]*mtgv1.DeckCard(nil), main.Cards...), side.Cards...))
 	// Only Commander has a command zone. A 60-card session whose
 	// classifier reported a commander name would otherwise build a deck
 	// with one, and the engine refuses it as not legal in the format
@@ -217,11 +224,10 @@ func (b *Builder) assemble(req Request, out *deckOut) pass {
 	padded := padWithBasics(deck, req)
 	// The model can not count its own list reliably, so a small precon
 	// shortfall is closed here (D-250). It runs before the engine, so
-	// every finding describes the deck the user gets (G-5 of the
-	// 2026-08-28 audit).
+	// every finding describes the deck the user gets.
 	swapped := 0
 	if req.Precon != "" {
-		swapped = swapBackPrecon(deck, req)
+		swapped = swapBackPrecon(deck, req, b.cards)
 	}
 	deck.Validation = b.rules.Validate(rules.Input{
 		Deck:         deck,
@@ -237,7 +243,7 @@ func (b *Builder) assemble(req Request, out *deckOut) pass {
 	// The precon share is a build rule and not a rules-engine rule, so
 	// it is added here (D-218).
 	if req.Precon != "" {
-		checkPreconShare(deck, req)
+		checkPreconShare(deck, req, b.cards)
 	}
 	if padded > 0 {
 		addFinding(deck, CodeBasicsAdded, mtgv1.Severity_SEVERITY_INFO,
@@ -246,9 +252,9 @@ func (b *Builder) assemble(req Request, out *deckOut) pass {
 	// The price is a daily estimate and not a rule, so going over budget
 	// warns and never blocks (D-236). It does buy the repair turn (D-244).
 	if req.BudgetUSD > 0 {
-		cost, what := BuyCost(deck), "the cards you must buy"
+		cost, what := BuyCostWith(deck, b.cards, req.OracleCounts), "the cards you must buy"
 		if req.BudgetWholeDeck {
-			cost, what = DeckCost(deck), "the whole deck"
+			cost, what = DeckCostWith(deck, b.cards), "the whole deck"
 		}
 		if cost > req.BudgetUSD {
 			addFinding(deck, CodeOverBudget, mtgv1.Severity_SEVERITY_WARN,
@@ -277,17 +283,15 @@ func (b *Builder) assemble(req Request, out *deckOut) pass {
 	}
 	// The deck carries what it costs, so a reader needs no card index to
 	// see it (D-245).
-	deck.BuyCostUsd = BuyCost(deck)
+	deck.BuyCostUsd = BuyCostWith(deck, b.cards, req.OracleCounts)
 	// The summary is prose, and F-26 lives there. The net reads the shape
 	// of a rules claim and never its truth.
 	lintSummaryInto(deck)
 	return pass{deck: deck, misses: append(main.Misses, side.Misses...)}
 }
 
-// addFinding appends one finding and keeps Passed true to its meaning.
-// The engine set Passed before the builder's own checks ran, and a BLOCK
-// added after that shipped under passed = true (G-2 of the 2026-08-28
-// audit).
+// addFinding appends one finding and keeps Passed true to its meaning: a
+// BLOCK added after the engine ran clears it.
 func addFinding(deck *mtgv1.Deck, code string, sev mtgv1.Severity, msg string) {
 	v := deck.GetValidation()
 	if v == nil {
@@ -319,17 +323,6 @@ func (b *Builder) call(ctx context.Context, role llm.Role, instructions, input, 
 		return nil, fmt.Errorf("generate: %s output: %w", role, err)
 	}
 	return &out, nil
-}
-
-// blocking lists the findings that stop a deck.
-func blocking(v *mtgv1.ValidationResult) []*mtgv1.Finding {
-	var out []*mtgv1.Finding
-	for _, f := range v.GetFindings() {
-		if f.GetSeverity() == mtgv1.Severity_SEVERITY_BLOCK {
-			out = append(out, f)
-		}
-	}
-	return out
 }
 
 // repairable lists the findings that buy the repair turn: every BLOCK,

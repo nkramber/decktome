@@ -99,8 +99,9 @@ func TestRetryAfterHeader(t *testing.T) {
 	}
 }
 
-// TestClientHonorsRetryAfter is L-6: the delay is max(schedule, hint),
-// capped at the budget that is left.
+// TestClientHonorsRetryAfter is L-6: the delay is max(schedule, hint).
+// A hint longer than the budget that is left ends the call at once with
+// ClassBudget, and no sleep runs.
 func TestClientHonorsRetryAfter(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -110,7 +111,6 @@ func TestClientHonorsRetryAfter(t *testing.T) {
 	}{
 		{"schedule wins", 200 * time.Millisecond, time.Minute, time.Second},
 		{"hint wins", 10 * time.Second, time.Minute, 10 * time.Second},
-		{"budget caps the hint", 10 * time.Minute, time.Minute, time.Minute},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -129,6 +129,22 @@ func TestClientHonorsRetryAfter(t *testing.T) {
 			}
 		})
 	}
+	t.Run("a hint over the budget ends the call", func(t *testing.T) {
+		e := newErr(ClassTransient, FakeName, "m", 429, errors.New("rate"))
+		e.RetryAfter = 10 * time.Minute
+		sc := NewScript(Step{Err: e}, Step{Output: json.RawMessage(`{"format":"x"}`)})
+		var slept []time.Duration
+		c := newTestClient(t, sc,
+			WithSleeper(func(_ context.Context, d time.Duration) error { slept = append(slept, d); return nil }),
+			WithBudget(Budget{MaxAttempts: 4, Deadline: time.Minute, BaseDelay: time.Second}))
+		_, err := c.Complete(context.Background(), RoleClassify, Request{Schema: json.RawMessage(testSchema)}, nil)
+		if ClassOf(err) != ClassBudget || !strings.Contains(err.Error(), "10m0s") {
+			t.Errorf("class = %v, err = %v; want ClassBudget that names the hint", ClassOf(err), err)
+		}
+		if len(slept) != 0 || len(sc.Calls) != 1 {
+			t.Errorf("slept %v, calls %d; want no sleep and one call", slept, len(sc.Calls))
+		}
+	})
 }
 
 // TestAdaptersReadRetryAfter proves both adapters carry the header onto

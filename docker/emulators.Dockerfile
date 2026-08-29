@@ -4,9 +4,15 @@
 # Digest resolved from the registry manifest on 2026-08-28. Bump the tag
 # and the digest together.
 FROM node:22.23.2-slim@sha256:83f487e0a63425e5b4d146fb5e5be574bcbe1b7b843d3ebafdd95eaf7767a7e5
-# default-jre-headless is the Debian release's own Java (21 on trixie).
-# The Firestore emulator needs Java 11 or newer, so the major is free to
-# move with the image. Java 17 in scripts/doctor.sh is the laptop pin.
+# default-jre-headless is the Debian release's own Java: 17 on bookworm,
+# which is the release behind the node:22 digest above. The Firestore
+# emulator needs Java 11 or newer, so the major moves with the image.
+# Java 17 in scripts/doctor.sh is the laptop pin. The apt version is not
+# pinned by choice: Debian removes an old package version from the
+# archive, so a pinned build breaks at the next security release. The
+# image digest fixes the apt index the build starts from.
+# verified_at: 2026-08-29, source: `docker run --rm node:22.23.2-slim@<digest> cat /etc/os-release`
+# and `apt-cache policy default-jre-headless` (candidate 2:1.17-74).
 RUN apt-get update \
     && apt-get install -y --no-install-recommends default-jre-headless \
     && rm -rf /var/lib/apt/lists/* \

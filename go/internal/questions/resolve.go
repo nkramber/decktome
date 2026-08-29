@@ -13,10 +13,8 @@ import (
 // the commander names from the card index. A nil Hints means no value, and the
 // clause that needs one is dropped.
 //
-// The live run of 2026-08-24 showed why this exists: the agent sent
-// "{theme} is strongest in {colors}" to the model with both braces intact,
-// and the model turned the agent's own statement into a second question
-// aimed back at the user.
+// A brace that reaches the model comes back as a question aimed at the
+// user, so every placeholder is filled or its clause is dropped (D-82).
 type Hints interface {
 	// Commanders names up to three commanders for the theme and colors.
 	// skip holds the names the agent already offered, so a user who
@@ -29,18 +27,15 @@ type Hints interface {
 
 // SlotAware lets a hint source read the slots as they stand inside the
 // turn. The gate runner and agentsvc build the hint source before the
-// turn runs, so a value the classifier has just filled is invisible to
-// it. Conversation 23 of the batch run offered Jodah, the Unifier, a
-// five-color commander, for a red-green deck, because the color slot
-// filled in the same turn (D-124, the same class as D-82).
+// turn runs, so a value the classifier has just filled would otherwise
+// be invisible to it, and the offer could name a commander outside the
+// colors (D-124, the same class as D-82).
 type SlotAware interface {
 	UseSlots(format mtgv1.FormatId, colors []mtgv1.Color, pool mtgv1.PoolRule)
 }
 
 // PairAware lets a hint source know the user asked for a two-commander
-// pair. Probe 73 writes "A Commander deck with a Background commander
-// pair", and every run before D-154 answered it with three single
-// legends, one of them off color.
+// pair. Three single legends do not answer that request (D-154).
 type PairAware interface {
 	UseWantPair(want, background bool)
 }
@@ -49,11 +44,10 @@ type PairAware interface {
 // the collection. The classifier can not answer them, and each one gates
 // a catalog row.
 //
-// agentsvc read them once before the turn, so a one-message answer such
-// as "Modern red burn deck from my library" filled the format and the
-// theme inside the turn, and the thin-theme count was never taken. The
-// user got the plain pool question, and the {n} count of D-67 never
-// showed. The agent reads them again after the classify call (M-6).
+// agentsvc reads them once before the turn, so a one-message answer such
+// as "Modern red burn deck from my library" fills the format and the
+// theme inside the turn. The agent reads them again after the classify
+// call, so the thin-theme count is taken (D-198).
 type FactSource interface {
 	// ThinTheme reports whether the collection holds fewer than 30
 	// on-theme cards, and the count (D-63).
@@ -73,11 +67,9 @@ type CommanderChecker interface {
 // hint source that holds the card index implements it.
 //
 // The pick row keeps the names on the table until the user refuses them
-// (D-80, D-123). When the colors arrive after the offer, those names were
-// never checked again. Probe 73 offered Jaheira, Friend of the Forest,
-// which is mono-green, on turn 1 with no colors named. The user answered
-// "Red and white" on turn 2, and the same three names went out on turns 2
-// and 3 (D-153).
+// (D-80, D-123). When the colors arrive after the offer, those names
+// must be checked again, or an off-color name stays on the table
+// (D-153).
 //
 // known is false when the index does not hold the name. An unknown name
 // is not proof of anything, and the agent drops nothing on it.
@@ -113,8 +105,8 @@ const noneOption = "None, name three more"
 // row carries no options of its own, because the names change every time.
 //
 // The pick row goes out as written (D-131), so the ask role no longer
-// supplies its options. The names are the question, and the owner scored
-// a replacement that dropped them as worse than the row (M-5 item 31).
+// supplies its options. The names are the question, and a replacement
+// that drops them is worse than the row (D-66).
 func pickOptions(row Row, offered []string) []string {
 	if len(offered) == 0 || len(row.Options) > 0 || len(commanderKeysIn(row.Text)) == 0 {
 		return row.Options
@@ -158,14 +150,11 @@ func substitute(text string, st *State, h Hints) (string, []string) {
 	}
 	// Ask the hint source only for a value the row names. An eager call
 	// runs a whole PR-6 build for a row that holds no placeholder, and it
-	// fills the hint cache before the colors are known. The gate run of
-	// 2026-08-25 offered three commanders outside the deck's colors for
-	// exactly that reason.
+	// fills the hint cache before the colors are known (D-82).
 	if h != nil {
 		// No catalog row names {colors} since D-108: the colors row stated
-		// which colors a theme is strongest in, and the claim was wrong in
-		// gate run 13. The hint that answered it left with the audit of
-		// 2026-08-28 (Q-17), so a {colors} clause drops.
+		// which colors a theme is strongest in, and the claim was wrong.
+		// The hint that answered it is gone, so a {colors} clause drops.
 		if names, keys := commanderKeysIn(text), 0; len(names) > 0 {
 			// The names on the table stay on the table. A new set comes
 			// only after the user asks for one (D-73).
@@ -251,22 +240,19 @@ func splitSentences(text string) []string {
 // MaxRewordOverlap is how much of a replacement may repeat the row it
 // replaces. Above it, the replacement is a reword, not a new question.
 //
-// Gate run 4 of 2026-08-25 measured a median word overlap of 0.67 over
-// eight replacements. Seven of the eight only added the user's colors,
-// format, or card name, which the ask role adds anyway. The score prompt
-// already says that is not a fault (D-88).
+// A replacement that only adds the user's colors, format, or card name
+// repeats the row, and the ask role adds those words anyway. The score
+// prompt already says that is not a fault (D-88).
 const MaxRewordOverlap = 0.6
 
 // MinRowCoverage and MaxBorrowed catch the other shape of a reword: a
 // truncation. Overlap is symmetric, so a replacement that deletes half
 // the row scores low and passes, although it says strictly less.
 //
-// Item 8 of the M-5 sheet is the case. The row read "What do people play
-// at your event? I tune the 15 sideboard cards to it." The replacement
-// read "What do people play at your Modern event?" It dropped the
-// sentence that says what the answer is for. It scored 0.44 overlap,
-// well under the reword bar, and the owner scored it worse than the row
-// (D-103).
+// A row that reads "What do people play at your event? I tune the 15
+// sideboard cards to it." loses its point in the replacement "What do
+// people play at your Modern event?". The overlap is low, and the
+// replacement says strictly less (D-103).
 //
 // A truncation borrows nearly all its words from the row and keeps only
 // a part of it. A genuinely different question borrows few words, so it
@@ -343,8 +329,8 @@ func words(text string) map[string]bool {
 }
 
 // guard checks the model's phrasing before it reaches the user. A phrasing
-// that fails goes back to the resolved catalog text (the live run of
-// 2026-08-24 sent out a compound question the ask role invented).
+// that fails goes back to the resolved catalog text, so a compound
+// question the ask role invents never goes out (D-116).
 func guard(rowID, phrased, resolved string) string {
 	p := strings.TrimSpace(phrased)
 	switch {
@@ -361,18 +347,16 @@ func guard(rowID, phrased, resolved string) string {
 }
 
 // The guard also refuses a phrasing that names one card's color identity,
-// which possessiveIdentity reads. Gate runs 14, 15, and 16 each sent one,
-// and the model changed the preposition every time D-144 caught it
-// (D-151).
+// which possessiveIdentity reads. The model keeps the shape and changes
+// the preposition, so the rule reads the shape (D-151).
 
 // namesUnsupportedFormat reports whether a phrasing names a format this
 // app does not build. The ask role fits a question to the user's words,
 // and it fitted the format the agent had just declined.
 //
-// Gate run 15 asked "What should the Oathbreaker deck focus on?" one line
-// under "I do not build Oathbreaker", and it did the same for Historic.
-// Both went out in the same turn, so the agent contradicted itself inside
-// one message. The linter refuses the shape, and it failed run 15 (D-150).
+// "What should the Oathbreaker deck focus on?" one line under "I do not
+// build Oathbreaker" contradicts the agent inside one message. The
+// linter refuses the shape (D-150).
 //
 // A row that exists to decline such a format is exempt, because naming it
 // is the whole job of that row. Those rows carry `fixed` and never reach

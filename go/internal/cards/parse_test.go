@@ -64,8 +64,9 @@ func TestIndexCollisionsAndPriceAsOf(t *testing.T) {
 	if col.FullNames != 1 || col.FaceNames != 2 {
 		t.Errorf("collisions = %+v, want {1 2}", col)
 	}
-	if c, _ := idx.ByName("Same Name"); c.OracleId != "o1" {
-		t.Errorf("first card must keep the full name, got %q", c.OracleId)
+	// Two cards of equal standing make the full name ambiguous.
+	if c, ok := idx.ByName("Same Name"); ok {
+		t.Errorf("an ambiguous full name resolved to %q", c.OracleId)
 	}
 	if cardList[0].PriceAsOf != "2026-08-24" {
 		t.Errorf("price_as_of = %q, want 2026-08-24", cardList[0].PriceAsOf)
@@ -89,5 +90,35 @@ func TestSearchOrderIsRankSorted(t *testing.T) {
 	// The caller's slice keeps its order.
 	if cardList[0].Name != "Unranked" {
 		t.Error("NewIndex reordered the caller's slice")
+	}
+}
+
+// TestUSDPriceFallsBackToFoil is D-17: a printing sold only in foil or
+// etched foil takes that price, and names the key it used.
+func TestUSDPriceFallsBackToFoil(t *testing.T) {
+	for _, tc := range []struct {
+		prices map[string]string
+		want   float64
+		key    string
+	}{
+		{map[string]string{"usd": "1.50", "usd_foil": "9.00"}, 1.5, "usd"},
+		{map[string]string{"usd": "", "usd_foil": "9.00"}, 9, "usd_foil"},
+		{map[string]string{"usd_etched": "4.25"}, 4.25, "usd_etched"},
+		{map[string]string{"usd": "0", "usd_foil": "2.00"}, 2, "usd_foil"},
+		{map[string]string{"tix": "0.5"}, 0, ""},
+		{nil, 0, ""},
+	} {
+		got, key := usdPrice(tc.prices)
+		if got != tc.want || key != tc.key {
+			t.Errorf("usdPrice(%v) = %v %q, want %v %q", tc.prices, got, key, tc.want, tc.key)
+		}
+	}
+	p, err := parsePrinting([]byte(`{"id":"p1","oracle_id":"o1","name":"Foil Only","prices":{"usd":null,"usd_foil":"3.10"}}`))
+	if err != nil || p.PriceUSD != 3.1 || p.PriceFinish != "usd_foil" {
+		t.Errorf("parsePrinting = %+v, %v", p, err)
+	}
+	c, err := parseCard([]byte(`{"oracle_id":"o1","name":"Foil Only","layout":"normal","prices":{"usd_foil":"3.10"}}`))
+	if err != nil || c.PriceUsd != 3.1 {
+		t.Errorf("parseCard price = %v, %v", c.GetPriceUsd(), err)
 	}
 }

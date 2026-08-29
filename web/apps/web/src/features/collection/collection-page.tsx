@@ -6,6 +6,7 @@ import { useNavigate } from "react-router";
 
 import { collectionClient } from "../../lib/api";
 import { errorMessage } from "../../lib/errors";
+import { maxUploadBytes } from "../../lib/limits";
 import { useAppStore } from "../../lib/store";
 import { ImportResult } from "./import-result";
 
@@ -19,6 +20,8 @@ export function CollectionPage() {
   const clearCollection = useAppStore((s) => s.clearCollection);
 
   const [file, setFile] = useState<File | null>(null);
+  // fileKey remounts the file input, which is the one way to empty it.
+  const [fileKey, setFileKey] = useState(0);
   const [name, setName] = useState("");
   const [result, setResult] = useState<ImportCollectionResponse | null>(null);
 
@@ -39,7 +42,7 @@ export function CollectionPage() {
     onSuccess: (res) => {
       setResult(res);
       // The form empties, so a second click can not import the file again.
-      setFile(null);
+      clearFile();
       setName("");
       if (res.collection) {
         setCollection(res.collection.id);
@@ -48,13 +51,23 @@ export function CollectionPage() {
     },
   });
 
+  // The server refuses an upload over maxUploadBytes, so the page says so
+  // before the bytes go out.
+  const fileTooLarge = file !== null && file.size > maxUploadBytes;
+
+  function clearFile() {
+    setFile(null);
+    setFileKey((k) => k + 1);
+  }
+
   function onSubmit(e: FormEvent) {
     e.preventDefault();
-    if (file) upload.mutate(file);
+    if (file && !fileTooLarge) upload.mutate(file);
   }
 
   function skip() {
     clearCollection();
+    clearFile();
     setResult(null);
     navigate("/session/new");
   }
@@ -71,7 +84,7 @@ export function CollectionPage() {
         <label className="flex flex-col gap-1">
           <span>ManaBox CSV file</span>
           <input
-            key={result?.collection?.id ?? "new"}
+            key={fileKey}
             type="file"
             name="file"
             accept=".csv,text/csv"
@@ -92,7 +105,7 @@ export function CollectionPage() {
         <div className="flex gap-3">
           <button
             type="submit"
-            disabled={!file || upload.isPending}
+            disabled={!file || fileTooLarge || upload.isPending}
             className="rounded bg-neutral-900 px-3 py-2 text-white disabled:bg-neutral-300 disabled:text-neutral-600"
           >
             Upload
@@ -102,6 +115,11 @@ export function CollectionPage() {
           </button>
         </div>
         <div className="min-h-6">
+          {fileTooLarge && (
+            <p role="alert" className="text-red-700">
+              The file is {(file.size / (1 << 20)).toFixed(1)} MiB. The limit is {maxUploadBytes >> 20} MiB.
+            </p>
+          )}
           {upload.isPending && <p role="status">Uploading and resolving cards...</p>}
           {upload.isError && (
             <p role="alert" className="text-red-700">
@@ -136,6 +154,7 @@ export function CollectionPage() {
                     onClick={() => {
                       // A second click on the active one clears it (D-37).
                       setResult(null);
+                      clearFile();
                       if (isActive) clearCollection();
                       else setCollection(c.id);
                     }}

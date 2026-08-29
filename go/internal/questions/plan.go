@@ -24,10 +24,9 @@ type Context struct {
 	Asked map[string]bool `json:"asked"`
 	// Outstanding maps a state key whose question is out with no answer
 	// onto the slot that key informs.
-	// No other row may ask that key while it is out. Probe 33 asked the
-	// theme through the competitive row, got no answer, and asked it
-	// again through the general row one turn later. To the user that
-	// reads as the same question in other words (D-126).
+	// No other row may ask that key while it is out. Two rows that ask
+	// one key one turn apart read as the same question in other words
+	// (D-126).
 	//
 	// The commander rows are unaffected. Each one carries its own key, so
 	// the pick row still follows the base row (D-71).
@@ -48,7 +47,6 @@ type Context struct {
 	// Nothing else is worth asking until it is settled (D-99).
 	OutOfScope       bool `json:"out_of_scope"`
 	HasCollection    bool `json:"has_collection"`
-	OwnedMode        bool `json:"owned_mode"`
 	ThinTheme        bool `json:"thin_theme"`
 	CommanderSet     bool `json:"commander_set"`
 	NamedCard        bool `json:"named_card"`
@@ -57,7 +55,6 @@ type Context struct {
 	BuyList          bool `json:"buy_list"`
 	BudgetAmbiguous  bool `json:"budget_ambiguous"`
 	HouseFormat      bool `json:"house_format"`
-	TwoPlans         bool `json:"two_plans"`
 	// AfterBuild says the session holds a built deck. agentsvc and
 	// cmd/questions-gate set it. No row reads it since PR-9 left the MVP
 	// (D-256), and it stays for the callers that set it.
@@ -65,7 +62,7 @@ type Context struct {
 	// TwoDecks marks a request for more than one deck in this message.
 	// The app builds one at a time, and it says so before it asks
 	// anything else (D-112). The fact is read each turn, so a user who
-	// asks for a second deck again hears the sentence again (audit Q-10).
+	// asks for a second deck again hears the sentence again (D-112).
 	TwoDecks bool `json:"two_decks"`
 	// UnsupportedFormat marks a format this app does not build, such as
 	// Brawl. State holds the name and the nearest format (D-112).
@@ -93,23 +90,22 @@ func (c *Catalog) Plan(ctx Context) []Row {
 	var out []Row
 	usedKey, usedSlot := map[string]bool{}, map[string]bool{}
 	// An out-of-scope request gets one question and no others. Asking the
-	// format beside it reads as if the agent had not heard the request.
-	// Gate run 11 asked "Which Yu-Gi-Oh format would you like?" (D-99).
+	// format beside it reads as if the agent had not heard the request
+	// (D-99).
 	//
 	// Both facts below are read on this message alone, and the row fires
 	// whenever the fact holds. The asked mark does not stop it: a user
 	// who asks for another game a second time hears the sentence a second
-	// time, and the agent reopens the key before the plan runs (audit
-	// Q-10).
+	// time, and the agent reopens the key before the plan runs (D-99,
+	// D-112).
 	if ctx.OutOfScope && !ctx.Filled["scope"] {
 		if row, ok := c.Row("out_of_scope"); ok {
 			return []Row{row}
 		}
 	}
 	// A two-deck request also gets one question and no others. Every other
-	// row belongs to one deck, so the agent settles which deck first.
-	// Probe 50 of gate runs 11 to 13 chose a deck silently, and it never
-	// said that the app builds one at a time (D-112).
+	// row belongs to one deck, so the agent settles which deck first, and
+	// it says that the app builds one deck at a time (D-112).
 	if ctx.TwoDecks && !ctx.Filled["deck_count"] {
 		if row, ok := c.Row("one_deck"); ok {
 			return []Row{row}
@@ -144,9 +140,7 @@ func (c *Catalog) Plan(ctx Context) []Row {
 // A plain repeat row always may. A row that narrows the repeat asks again
 // only when its content changed. The pick row names three commanders, so
 // a repeat with the same three names is the same question in the same
-// words. Conversations 1, 77, and 90 of gate run 18 each got one, and the
-// eval refused every one of them as a duplicate. The user answered some
-// other slot, and the agent read that as a reason to ask again.
+// words, and the user answered some other slot.
 //
 // This is the D-158 rule for another row: the question is out, it is
 // recorded as asked with no answer, and the gate reports it. Silence
@@ -197,15 +191,13 @@ func (w When) matches(ctx Context) bool {
 		return false
 	}
 	// A trigger word reads through anyPhrase, which refuses a negated
-	// match. Probe 38 of gate run 11 wrote "no proxies", and the plain
-	// substring test fired the house-rules row on it (D-111).
+	// match: "no proxies" must not fire the house-rules row (D-111).
 	if len(w.Words) > 0 && !anyPhrase(ctx.Words, w.Words) {
 		return false
 	}
 	// A row may wait for the answer to another row. The commander row
 	// waits for the role question: whether the named card leads the deck
-	// decides whether a commander question is needed at all. Probe 39
-	// asked both, one turn apart (D-128).
+	// decides whether a commander question is needed at all (D-128).
 	for _, k := range w.NotOutstanding {
 		if _, out := ctx.Outstanding[k]; out {
 			return false
@@ -219,14 +211,12 @@ func (w When) matches(ctx Context) bool {
 		{w.PowerCompetitive, ctx.PowerCompetitive},
 		{w.NamedCard, ctx.NamedCard},
 		{w.Suggested, ctx.Suggested},
-		{w.OwnedMode, ctx.OwnedMode},
 		{w.CommanderSet, ctx.CommanderSet},
 		{w.HasCollection, ctx.HasCollection},
 		{w.ThinTheme, ctx.ThinTheme},
 		{w.BuyList, ctx.BuyList},
 		{w.BudgetAmbiguous, ctx.BudgetAmbiguous},
 		{w.HouseFormat, ctx.HouseFormat},
-		{w.TwoPlans, ctx.TwoPlans},
 		{w.TwoDecks, ctx.TwoDecks},
 		{w.UnsupportedFormat, ctx.UnsupportedFormat},
 		{w.NoNearFormat, ctx.NoNearFormat},
@@ -260,10 +250,9 @@ func sixtyCard(f mtgv1.FormatId) bool {
 }
 
 // Route maps a user phrase to the slot it belongs to (corpus section 11).
-// It returns an empty string when no rule fires. The rules exist because
-// the dogfood runs of 2026-08-24 showed three phrase families with no
-// home: house rules, power, and jank. A jank word routes to power: the
-// jank row retired with A-6 of the 2026-08-28 audit.
+// It returns an empty string when no rule fires. The rules cover three
+// phrase families with no home: house rules, power, and jank. A jank
+// word routes to power, because the jank row is retired (D-260).
 func Route(text string) string {
 	t := strings.ToLower(text)
 	switch {
