@@ -26,13 +26,19 @@ PR-11 to PR-13 built a live-test UI (D-273). It has four screens on plain Tailwi
 
 shadcn/ui components on Radix, copied into `web/apps/web/src/components/ui/` as the shadcn convention. Each one is a file the repo owns, so a fix never waits on a release.
 
-PR-16 adds only the primitives that the shell and the moved screens use (D-321). A survey of the four screens on 2026-08-29 found four controls: the button, the input (email, password, text, and file), the checkbox, and the label. So the set is Button, Input, Label, Checkbox, Card, Badge, Separator, DropdownMenu, Skeleton, and the toast.
+PR-16 adds only the primitives that the shell and the moved screens use (D-321). The set is Button, Input, Label, Textarea, Checkbox, Card, Skeleton, DropdownMenu, and the toast. The chat composer needs the Textarea, so it moves from PR-19 to here. Badge and Separator left the set on the build of 2026-08-29, because no screen used either one.
 
-Each later slice adds the primitives that it needs. PR-17 and PR-18 add Command for the search, Dialog and AlertDialog for the rename and the delete, and Tabs. PR-19 adds Textarea and Select for the form. PR-20 adds Sheet and Tooltip for the card detail. An unused primitive never enters the repo.
+Each later slice adds the primitives that it needs. PR-17 and PR-18 add Command for the search, Dialog and AlertDialog for the rename and the delete, and Tabs. PR-19 adds Select for the form. PR-20 adds Sheet and Tooltip for the card detail. An unused primitive never enters the repo.
+
+The build writes the primitives by hand, in the shadcn shape, with relative imports. The shadcn command line installs a `@` path alias. The import boundary of this repo matches relative paths only, so the alias passes every feature boundary with no finding.
 
 ### 3.2 Tokens and themes
 
-Tailwind 4 tokens in `src/styles/tokens.css`: a neutral scale, one accent, the five mana colors as fixed tokens (white, blue, black, red, green) plus colorless, and the semantic roles (background, surface, border, text, muted, danger, success). The dark theme overrides the neutral scale and the surfaces only. The mana colors do not change between themes. The theme follows `prefers-color-scheme` by default, and a toggle stores a choice in `localStorage`. The toggle sits in the sidebar on a desktop and in the account menu on a phone, because the shell has no header.
+Tailwind 4 tokens in `src/styles/tokens.css`: a neutral scale, one accent, the five mana colors as fixed tokens (white, blue, black, red, green) plus colorless, and the semantic roles (background, surface, border, text, muted, link, danger, warning, success). The dark theme overrides the neutral scale, the surfaces, and the link only. The mana colors do not change between themes.
+
+The link token is apart from the accent. An accent that reads well as a solid fill reads poorly as text on a dark background. The warning token serves the two caution panels of the app.
+
+The theme follows `prefers-color-scheme` by default, and a toggle stores a choice in `localStorage`. The toggle sits in the sidebar on a desktop and in the account menu on a phone, because the shell has no header. A script in `index.html` sets the class before the first paint, so a dark reader sees no white flash.
 
 Card art carries the color. Surfaces are neutral, and a deck page takes one accent from the commander's colors, through the mana tokens.
 
@@ -40,6 +46,8 @@ Card art carries the color. Surfaces are neutral, and a deck page takes one acce
 
 - Desktop: a left sidebar with the navigation (Build, Decks, Collection), the theme toggle, and the account menu. The content fills the rest.
 - Phone: a bottom tab bar with the same three entries, and the account menu behind the avatar.
+- The shell renders one navigation, and a media query picks which one. Two navigations with one name fail the axe landmark-unique rule, and a reader hears the same three entries twice.
+- Build opens `/session/new`, the path the collection page already sends to.
 - One `PageHeader` component: title, one-line description, and the actions on the right.
 - One `EmptyState` component: an icon, a sentence, and one action.
 - One `ErrorState` component for a failed query, with a retry.
@@ -52,7 +60,7 @@ Every existing screen moves onto the primitives with no new feature. The screens
 
 The import boundary of `web/apps/web/eslint.config.js` allows a feature to import `src/lib` and `src/app/components` only. PR-16 adds `src/components/ui` to that allowlist and to the comment table of the rule. A primitive imports no feature and no app code, the same rule that `src/lib` holds today.
 
-### 3.5 The baseline of 2026-08-29
+### 3.5 The baseline of 2026-08-29, and what the bar can be
 
 A measurement on branch `phase-3b-roadmap` gives the numbers that PR-16 must beat or hold:
 
@@ -60,12 +68,23 @@ A measurement on branch `phase-3b-roadmap` gives the numbers that PR-16 must bea
 - 118 web tests pass in 16 files, under Node 22.23.2.
 - `make ste-check` reports zero findings.
 
+A second measurement found the floor of the first paint. React and react-dom are 60.85 kB gzipped, the router is 30.27 kB, and TanStack Query is 10.39 kB. Those three are 101.51 kB together, and no choice of this slice moves them. So a raw bar of 200 kB and a gzipped bar of 120 kB are both out of reach. D-323 sets the bar at 130 kB gzipped.
+
+Five things leave the first paint. They are `firebase/auth`, the Connect client, the five feature pages, the two shell menus, and the toast host. Each one loads when the app first needs it.
+
 ### 3.6 Gate
 
 - axe passes on every route in both themes.
 - The 118 web tests hold, with the assertions updated to the new markup only.
-- The chunks of the first paint hold under 200 kB of raw JavaScript, from the Vite build report (D-320). The gate counts the raw bytes, not the gzipped bytes, and the roadmap records both. The sign-in route loads `firebase/auth` on its own chunk.
+- The chunks of the first paint hold under 130 kB of gzipped JavaScript, from the Vite build report (D-323). The roadmap records the raw number beside it.
 - The owner walks the whole path in the browser on a desktop and on a phone.
+
+### 3.7 The result of 2026-08-29
+
+- The first paint is one file of 363.25 kB raw and 116.31 kB gzipped, with 25.00 kB of CSS. The bar is 130 kB.
+- 135 web tests pass in 17 files. The 118 tests of the baseline hold, and 17 are new.
+- axe passes on the four routes in both themes.
+- The tests call `renderAt` with an await now, because the pages load on their own routes.
 
 ## 4. The deck library (PR-17)
 

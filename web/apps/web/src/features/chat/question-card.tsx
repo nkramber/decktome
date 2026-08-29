@@ -1,5 +1,10 @@
 import type { Question } from "@mtg/api-client/mtg/v1/session_pb";
+import { useId } from "react";
 
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import { Label } from "../../components/ui/label";
+import { cn } from "../../lib/cn";
 import { CardOption, CardOptionsError, hasCardOptions, useOptionCards } from "./card-options";
 
 // Draft is the user's answer to one question before the submit. An option
@@ -26,6 +31,7 @@ export function QuestionCard({
   disabled: boolean;
   onChange: (d: Draft) => void;
 }) {
+  const answerId = useId();
   const cards = useOptionCards(question);
   const withCards = hasCardOptions(question);
   const byId = new Map((cards.data?.cards ?? []).map((c) => [c.oracleId, c]));
@@ -36,28 +42,27 @@ export function QuestionCard({
   const button = (opt: string, i: number) => {
     const picked = draft.optionIndex === i;
     return (
-      <button
+      <Button
         key={i}
-        type="button"
+        variant={picked ? "default" : "outline"}
+        size="sm"
         disabled={disabled}
         aria-pressed={picked}
         onClick={() => onChange(picked ? { text: "" } : { optionIndex: i, text: "" })}
-        className={`rounded border px-2 py-1 text-sm disabled:bg-neutral-200 disabled:text-neutral-500 ${
-          picked ? "border-neutral-900 bg-neutral-900 text-white" : "border-neutral-400 bg-white"
-        }`}
+        className={cn("h-auto py-1 whitespace-normal", picked && "border-accent")}
       >
         {picked && <span aria-hidden="true">✓ </span>}
         {opt}
-      </button>
+      </Button>
     );
   };
 
   return (
-    <div className="flex flex-col gap-2 rounded border border-blue-400 bg-blue-50 p-3" role="group" aria-label={`Question: ${question.text}`}>
+    <div className="flex flex-col gap-2 rounded-card border border-accent/40 bg-accent/5 p-3" role="group" aria-label={`Question: ${question.text}`}>
       <p className="font-medium">{question.text}</p>
       {withCards && cards.isError && <CardOptionsError error={cards.error} />}
       {withCards && cards.isPending && (
-        <p role="status" className="text-sm text-neutral-600">
+        <p role="status" className="text-sm text-muted-foreground">
           Loading the card data...
         </p>
       )}
@@ -69,7 +74,7 @@ export function QuestionCard({
             {question.options.map((opt, i) => {
               const id = question.optionOracleIds[i] ?? "";
               return (
-                <li key={i} className="flex flex-col gap-2 rounded border border-neutral-200 bg-white p-2">
+                <li key={i} className="flex flex-col gap-2 rounded-card border border-border bg-surface p-2">
                   {id && !cards.isPending ? <CardOption card={byId.get(id)} name={opt} /> : null}
                   <div>{button(opt, i)}</div>
                 </li>
@@ -81,18 +86,12 @@ export function QuestionCard({
         question.options.length > 0 && <div className="flex flex-wrap gap-2">{question.options.map(button)}</div>
       )}
       {!closed && (
-      <label className="flex flex-col gap-1 text-sm">
-        <span>{question.options.length > 0 ? "Or answer in your own words" : "Your answer"}</span>
-        <input
-          type="text"
-          value={draft.text}
-          disabled={disabled}
-          onChange={(e) => onChange({ text: e.target.value })}
-          className="rounded border border-neutral-400 bg-white px-2 py-1 text-neutral-900"
-        />
-      </label>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor={answerId}>{question.options.length > 0 ? "Or answer in your own words" : "Your answer"}</Label>
+        <Input id={answerId} type="text" value={draft.text} disabled={disabled} onChange={(e) => onChange({ text: e.target.value })} />
+      </div>
       )}
-      {question.invented && <p className="text-xs text-neutral-600">This question is not in the catalog (D-25).</p>}
+      {question.invented && <p className="text-xs text-muted-foreground">This question is not in the catalog (D-25).</p>}
     </div>
   );
 }

@@ -63,7 +63,7 @@ export function FaceImage({ face }: { face: Face }) {
   }
   if (!src) {
     return (
-      <div className="flex aspect-[488/680] w-full items-center justify-center rounded border border-neutral-300 bg-neutral-100 p-2 text-center text-sm">
+      <div className="flex aspect-[488/680] w-full items-center justify-center rounded-card border border-border bg-muted p-2 text-center text-sm">
         {face.name} (no image)
       </div>
     );
@@ -99,24 +99,24 @@ export function CardTile({
   const faces = facesOf(card, entry.ownedPrinting);
   const name = card?.name || entry.name;
   return (
-    <li className="flex flex-col gap-1 rounded border border-neutral-200 p-2" data-testid="card-tile">
+    <li className="flex flex-col gap-1 rounded-card border border-border p-2" data-testid="card-tile">
       <div className="flex items-baseline justify-between gap-2">
         <span className="min-w-0 wrap-anywhere font-medium">
-          {entry.count > 1 && <span className="mr-1 text-neutral-600">{entry.count}×</span>}
+          {entry.count > 1 && <span className="mr-1 text-muted-foreground">{entry.count}×</span>}
           {name}
         </span>
         {isCommander && (
-          <span className="rounded border border-amber-300 bg-amber-100 px-1 text-xs" data-testid="commander-mark">
+          <span className="rounded border border-warning/50 bg-warning/15 px-1 text-xs" data-testid="commander-mark">
             Commander
           </span>
         )}
       </div>
-      {faces.length === 0 && <p className="text-sm text-neutral-600">No card data for this entry.</p>}
+      {faces.length === 0 && <p className="text-sm text-muted-foreground">No card data for this entry.</p>}
       {faces.map((face, i) => (
         <figure key={`${entry.oracleId}-${i}`} className="flex flex-col gap-1">
           <FaceImage face={face} />
           {faces.length > 1 && (
-            <figcaption className="text-xs text-neutral-700">
+            <figcaption className="text-xs text-muted-foreground">
               {face.name} (face {i + 1} of {faces.length})
             </figcaption>
           )}
@@ -125,17 +125,17 @@ export function CardTile({
       {!hideOwnership && (
       <p className="text-xs">
         {entry.owned ? (
-          <span className="rounded border border-green-300 bg-green-100 px-1" data-testid="owned-mark">
+          <span className="rounded border border-success/50 bg-success/15 px-1" data-testid="owned-mark">
             Owned{entry.ownedCount > 0 ? ` (${entry.ownedCount})` : ""}
           </span>
         ) : (
-          <span className="rounded border border-red-300 bg-red-100 px-1" data-testid="buy-mark">
+          <span className="rounded border border-danger/50 bg-danger/15 px-1" data-testid="buy-mark">
             To buy: {priceText(entry.priceUsd)}
           </span>
         )}
       </p>
       )}
-      {entry.reason && <p className="text-xs text-neutral-700">{entry.reason}</p>}
+      {entry.reason && <p className="text-xs text-muted-foreground">{entry.reason}</p>}
     </li>
   );
 }

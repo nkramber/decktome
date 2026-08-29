@@ -1,10 +1,21 @@
 import { ImportSource } from "@mtg/api-client/mtg/v1/collection_pb";
 import type { ImportCollectionResponse } from "@mtg/api-client/mtg/v1/collection_service_pb";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { BookOpenIcon } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { useNavigate } from "react-router";
 
+import { EmptyState } from "../../app/components/empty-state";
+import { ErrorState } from "../../app/components/error-state";
+import { notify } from "../../app/components/notify";
+import { PageHeader } from "../../app/components/page-header";
+import { Button } from "../../components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { Input } from "../../components/ui/input";
+import { Label } from "../../components/ui/label";
+import { Skeleton } from "../../components/ui/skeleton";
 import { collectionClient } from "../../lib/api";
+import { cn } from "../../lib/cn";
 import { errorMessage } from "../../lib/errors";
 import { maxUploadBytes } from "../../lib/limits";
 import { useAppStore } from "../../lib/store";
@@ -47,8 +58,10 @@ export function CollectionPage() {
       if (res.collection) {
         setCollection(res.collection.id);
       }
+      void notify("success", "Collection imported", `${res.collection?.cardCount ?? 0} cards are ready.`);
       void queryClient.invalidateQueries({ queryKey: ["collections"] });
     },
+    onError: (err) => void notify("error", "Upload failed", errorMessage(err)),
   });
 
   // The server refuses an upload over maxUploadBytes, so the page says so
@@ -76,80 +89,70 @@ export function CollectionPage() {
   const active = collections.find((c) => c.id === collectionId) ?? result?.collection;
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-6 p-6">
-      <h1 className="text-2xl font-semibold">Your collection</h1>
+    <div className="mx-auto flex max-w-3xl flex-col gap-6 p-4 md:p-6">
+      <PageHeader title="Your collection" description="Upload a ManaBox export, or skip it and build from any card." />
 
-      <form onSubmit={onSubmit} className="flex flex-col gap-3 rounded border border-neutral-200 p-4">
-        <h2 className="text-lg font-medium">Upload a ManaBox export</h2>
-        <label className="flex flex-col gap-1">
-          <span>ManaBox CSV file</span>
-          <input
-            key={fileKey}
-            type="file"
-            name="file"
-            accept=".csv,text/csv"
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            className="file:mr-3 file:rounded file:border file:border-neutral-400 file:bg-neutral-100 file:px-3 file:py-1"
-          />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span>Collection name (optional, defaults to the file name)</span>
-          <input
-            type="text"
-            name="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="rounded border border-neutral-400 bg-white px-2 py-1 text-neutral-900"
-          />
-        </label>
-        <div className="flex gap-3">
-          <button
-            type="submit"
-            disabled={!file || fileTooLarge || upload.isPending}
-            className="rounded bg-neutral-900 px-3 py-2 text-white disabled:bg-neutral-300 disabled:text-neutral-600"
-          >
-            Upload
-          </button>
-          <button type="button" onClick={skip} className="rounded border border-neutral-400 px-3 py-2">
-            Skip, build from any card
-          </button>
-        </div>
-        <div className="min-h-6">
-          {fileTooLarge && (
-            <p role="alert" className="text-red-700">
-              The file is {(file.size / (1 << 20)).toFixed(1)} MiB. The limit is {maxUploadBytes >> 20} MiB.
-            </p>
-          )}
-          {upload.isPending && <p role="status">Uploading and resolving cards...</p>}
-          {upload.isError && (
-            <p role="alert" className="text-red-700">
-              Upload failed: {errorMessage(upload.error)}
-            </p>
-          )}
-        </div>
+      <form onSubmit={onSubmit}>
+        <Card>
+          <CardHeader>
+            <CardTitle>Upload a ManaBox export</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="file">ManaBox CSV file</Label>
+              <Input key={fileKey} id="file" type="file" name="file" accept=".csv,text/csv" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="name">Collection name (optional, defaults to the file name)</Label>
+              <Input id="name" type="text" name="name" value={name} onChange={(e) => setName(e.target.value)} />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button type="submit" disabled={!file || fileTooLarge || upload.isPending}>
+                Upload
+              </Button>
+              <Button type="button" variant="outline" onClick={skip}>
+                Skip, build from any card
+              </Button>
+            </div>
+            <div className="min-h-6 text-sm">
+              {fileTooLarge && (
+                <p role="alert" className="text-danger">
+                  The file is {(file.size / (1 << 20)).toFixed(1)} MiB. The limit is {maxUploadBytes >> 20} MiB.
+                </p>
+              )}
+              {upload.isPending && <p role="status">Uploading and resolving cards...</p>}
+              {upload.isError && (
+                <p role="alert" className="text-danger">
+                  Upload failed: {errorMessage(upload.error)}
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </form>
 
       {result && <ImportResult result={result} />}
 
-      <section className="flex flex-col gap-2">
+      <section className="flex flex-col gap-3">
         <h2 className="text-lg font-medium">Earlier uploads</h2>
-        <div>
-          {list.isPending && <p role="status">Loading collections...</p>}
-          {list.isError && (
-            <p role="alert" className="text-red-700">
-              Could not list collections: {errorMessage(list.error)}
-            </p>
-          )}
-        </div>
-        {list.isSuccess && collections.length === 0 && <p>No uploads yet.</p>}
+        {list.isPending && (
+          <div role="status" className="flex flex-col gap-2">
+            <span className="sr-only">Loading collections...</span>
+            <Skeleton className="h-9 w-full" />
+            <Skeleton className="h-9 w-2/3" />
+          </div>
+        )}
+        {list.isError && <ErrorState title="Could not list collections" message={errorMessage(list.error)} onRetry={() => void list.refetch()} />}
+        {list.isSuccess && collections.length === 0 && <EmptyState icon={BookOpenIcon} title="No uploads yet." description="Upload a ManaBox export above, or skip and build from any card." />}
         {collections.length > 0 && (
-          <ul className="flex flex-col gap-1">
+          <ul className="flex flex-col gap-2">
             {collections.map((c) => {
               const isActive = c.id === collectionId;
               return (
-                <li key={c.id} className="flex items-center gap-3">
-                  <button
-                    type="button"
+                <li key={c.id} className="flex flex-wrap items-center gap-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
                     aria-pressed={isActive}
                     onClick={() => {
                       // A second click on the active one clears it (D-37).
@@ -158,12 +161,12 @@ export function CollectionPage() {
                       if (isActive) clearCollection();
                       else setCollection(c.id);
                     }}
-                    className={`rounded border px-2 py-1 ${isActive ? "border-neutral-900 bg-neutral-100 font-semibold ring-2 ring-neutral-900" : "border-neutral-400"}`}
+                    className={cn(isActive && "border-accent font-semibold ring-2 ring-ring")}
                   >
                     {isActive && <span aria-hidden="true">✓ </span>}
                     {c.name}
-                  </button>
-                  <span className="text-sm text-neutral-600">
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
                     {c.cardCount} cards
                     {c.importedAt?.seconds ? `, imported ${new Date(Number(c.importedAt.seconds) * 1000).toLocaleDateString()}` : null}
                   </span>
@@ -174,22 +177,18 @@ export function CollectionPage() {
         )}
       </section>
 
-      <section className="flex items-center gap-4 rounded border border-neutral-200 p-4">
-        <p data-testid="active-collection" className="grow">
-          {collectionId && active
-            ? `Active collection: ${active.name} (${active.cardCount} cards). The agent uses only these cards.`
-            : collectionId
-              ? `Active collection: ${collectionId}.`
-              : "No active collection. The agent builds from any card (D-37)."}
-        </p>
-        <button
-          type="button"
-          onClick={() => navigate("/session/new")}
-          className="rounded bg-neutral-900 px-3 py-2 text-white"
-        >
-          Continue to chat
-        </button>
-      </section>
+      <Card>
+        <CardContent className="flex flex-wrap items-center gap-4">
+          <p data-testid="active-collection" className="grow text-sm">
+            {collectionId && active
+              ? `Active collection: ${active.name} (${active.cardCount} cards). The agent uses only these cards.`
+              : collectionId
+                ? `Active collection: ${collectionId}.`
+                : "No active collection. The agent builds from any card (D-37)."}
+          </p>
+          <Button onClick={() => navigate("/session/new")}>Continue to chat</Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }

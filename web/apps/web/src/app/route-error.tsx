@@ -2,6 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, useRouteError } from "react-router";
 
+import { Button } from "../components/ui/button";
 import { errorMessage } from "../lib/errors";
 import { useAppStore } from "../lib/store";
 import { signOutAndClear } from "./layout";
@@ -24,21 +25,23 @@ export function RouteError() {
   }
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-3 p-6">
-      <h1 className="text-2xl font-semibold">Something went wrong</h1>
-      <p role="alert" className="wrap-anywhere text-red-700">
+    <div className="mx-auto flex max-w-3xl flex-col items-start gap-3 p-4 md:p-6">
+      <h1 className="text-2xl font-semibold tracking-tight">Something went wrong</h1>
+      <p role="alert" className="wrap-anywhere text-danger">
         {errorMessage(error)}
       </p>
-      <p className="flex gap-4">
-        <Link to="/collection" className="underline" reloadDocument>
-          Go to your collection
-        </Link>
-        <button type="button" onClick={() => void onSignOut()} className="underline">
+      <div className="flex flex-wrap gap-2">
+        <Button asChild variant="outline">
+          <Link to="/collection" reloadDocument>
+            Go to your collection
+          </Link>
+        </Button>
+        <Button variant="ghost" onClick={() => void onSignOut()}>
           Sign out
-        </button>
-      </p>
+        </Button>
+      </div>
       {signOutError && (
-        <p role="alert" className="text-sm text-red-700">
+        <p role="alert" className="text-sm text-danger">
           Sign-out failed: {signOutError}
         </p>
       )}

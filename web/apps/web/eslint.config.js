@@ -3,8 +3,10 @@ import reactHooks from "eslint-plugin-react-hooks";
 import tseslint from "typescript-eslint";
 
 // Import boundaries are lint rules, not prose (wallabee-ui pattern).
-// A feature may import src/lib, src/app/components, and the sibling features
-// in its allowlist. Nothing else. src/lib imports no feature and no React.
+// A feature may import src/lib, src/components/ui, src/app/components, and
+// the sibling features in its allowlist. Nothing else. src/lib imports no
+// feature and no React. src/components/ui holds the design-system
+// primitives (D-311), so it imports src/lib and nothing of the app.
 //
 // | Feature    | May import from features |
 // |------------|--------------------------|
@@ -52,6 +54,17 @@ export default tseslint.config(
   reactHooks.configs.flat.recommended,
   jsxA11y.flatConfigs.recommended,
   ...features.map(featureBoundary),
+  {
+    files: ["src/components/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [{ regex: "^(\\.\\./)+(features|app)(/|$)", message: "A primitive imports no feature and no app code. It takes what it needs as props." }],
+        },
+      ],
+    },
+  },
   {
     files: ["src/lib/**/*.{ts,tsx}"],
     rules: {
