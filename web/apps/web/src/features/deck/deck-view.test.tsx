@@ -12,6 +12,7 @@ import { DeckView } from "./deck-view";
 const getCards = vi.fn();
 vi.mock("../../lib/api", () => ({
   cardClient: { getCards: (...args: unknown[]) => getCards(...args) },
+  deckClient: { exportDeck: vi.fn() },
 }));
 
 const img = (n: string) => ({ small: `https://cards.scryfall.io/small/${n}.jpg`, normal: `https://cards.scryfall.io/normal/${n}.jpg` });

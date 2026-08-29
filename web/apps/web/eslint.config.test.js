@@ -28,8 +28,8 @@ describe("featureBoundary", () => {
     expect(messages("chat", 'import x from "../../features/deck/deck-view";')).toEqual([]);
     expect(messages("chat", 'import x from "../../lib/api";')).toEqual([]);
     expect(messages("chat", 'import x from "../../app/components/health-footer";')).toEqual([]);
-    expect(messages("export", 'import x from "../deck/deck-stats";')).toEqual([]);
-    expect(messages("export", "export {};")).toEqual([]);
+    expect(messages("deck", 'import x from "../export/export-panel";')).toEqual([]);
+    expect(messages("export", 'import x from "../deck/deck-stats";')).toHaveLength(1);
   });
 
   it("blocks the router, the layout, and the providers", () => {

@@ -2,6 +2,7 @@ import { type Card, Color } from "@mtg/api-client/mtg/v1/card_pb";
 import { CardRole, type Deck, type DeckCard, Severity } from "@mtg/api-client/mtg/v1/deck_pb";
 
 import { errorMessage } from "../../lib/errors";
+import { ExportPanel } from "../export/export-panel";
 import { CardTile } from "./card-tile";
 import {
   colorLetters,
@@ -83,6 +84,8 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
         </p>
         {deck.summary && <p className="mt-1">{deck.summary}</p>}
       </header>
+
+      <ExportPanel deck={deck} byId={byId} />
 
       {deck.revisionNote && (
         <section aria-labelledby={`revision-title-${deck.id}`} className="rounded border border-blue-400 bg-blue-50 p-3 text-sm">

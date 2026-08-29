@@ -1,5 +1,5 @@
-// Package decksvc serves DeckService: Validate, and the reads of the
-// decks a build kept (D-245). Export is a later step.
+// Package decksvc serves DeckService: Validate, the reads of the decks a
+// build kept (D-245), and ExportDeck (D-15).
 package decksvc
 
 import (
@@ -17,6 +17,7 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/auth"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cardsvc"
 	"github.com/nkramber/mtg-deck-builder/go/internal/decks"
+	"github.com/nkramber/mtg-deck-builder/go/internal/export"
 	"github.com/nkramber/mtg-deck-builder/go/internal/gzstore"
 	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
 )
@@ -192,6 +193,30 @@ func (s *Server) ListDecks(ctx context.Context, _ *connect.Request[mtgv1.ListDec
 	}
 	return connect.NewResponse(&mtgv1.ListDecksResponse{Decks: list}), nil
 }
+
+// ExportDeck renders one of the caller's decks as text (D-15). The card
+// index gives the names and the printings. Without an index the text
+// falls back to the names the deck stored, so an export never waits on
+// a snapshot load.
+func (s *Server) ExportDeck(ctx context.Context, req *connect.Request[mtgv1.ExportDeckRequest]) (*connect.Response[mtgv1.ExportDeckResponse], error) {
+	deck, err := s.GetDeck(ctx, connect.NewRequest(&mtgv1.GetDeckRequest{DeckId: req.Msg.GetDeckId()}))
+	if err != nil {
+		return nil, err
+	}
+	var lookup export.Lookup = noCards{}
+	if idx := s.index.Current(); idx != nil {
+		lookup = idx
+	}
+	text, name, err := export.Render(deck.Msg.GetDeck(), lookup, req.Msg.GetFormat())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	}
+	return connect.NewResponse(&mtgv1.ExportDeckResponse{Text: text, FileName: name}), nil
+}
+
+type noCards struct{}
+
+func (noCards) ByOracleID(string) (*mtgv1.Card, bool) { return nil, false }
 
 // user reads the caller's id, or empty when no source is wired.
 func (s *Server) user(ctx context.Context) string {

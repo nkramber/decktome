@@ -24,7 +24,7 @@ vi.mock("../../lib/api", () => ({
     chat: (...args: unknown[]) => chat(...args),
     getSession: (...args: unknown[]) => getSession(...args),
   },
-  deckClient: { getDeck: (...args: unknown[]) => getDeck(...args) },
+  deckClient: { getDeck: (...args: unknown[]) => getDeck(...args), exportDeck: vi.fn() },
   cardClient: { getCards: (...args: unknown[]) => getCards(...args) },
 }));
 
