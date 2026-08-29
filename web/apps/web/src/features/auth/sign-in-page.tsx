@@ -1,15 +1,18 @@
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
 import { type FormEvent, useState } from "react";
-import { Navigate } from "react-router";
+import { type Location, Navigate, useLocation } from "react-router";
 
-import { errorMessage } from "../../lib/errors";
+import { signInErrorMessage } from "../../lib/errors";
 import { auth } from "../../lib/firebase";
 import { useAuth } from "./auth-context";
 
 // One form for sign-in and sign-up (D-275). The emulator accepts any email
-// and any password of six or more characters.
+// and any password of six or more characters. A visit the route guard
+// redirected goes back to the page it wanted after the sign-in.
 export function SignInPage() {
-  const { user, ready } = useAuth();
+  const { user, ready, error: authError } = useAuth();
+  const location = useLocation();
+  const from = (location.state as { from?: Location } | null)?.from?.pathname ?? "/collection";
   const [mode, setMode] = useState<"sign-in" | "sign-up">("sign-in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -18,7 +21,7 @@ export function SignInPage() {
 
   if (!ready) return null;
   if (user) {
-    return <Navigate to="/collection" replace />;
+    return <Navigate to={from} replace />;
   }
 
   async function onSubmit(e: FormEvent) {
@@ -32,7 +35,7 @@ export function SignInPage() {
         await signInWithEmailAndPassword(auth, email, password);
       }
     } catch (err) {
-      setError(errorMessage(err));
+      setError(signInErrorMessage(err));
     } finally {
       setBusy(false);
     }
@@ -77,7 +80,7 @@ export function SignInPage() {
           {creating ? "Create account" : "Sign in"}
         </button>
         <div role="alert" className="min-h-6 text-red-700">
-          {error}
+          {error || authError}
         </div>
       </form>
       <button

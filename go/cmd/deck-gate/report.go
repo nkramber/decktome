@@ -7,63 +7,17 @@ import (
 	"strings"
 	"time"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
 	"github.com/nkramber/mtg-deck-builder/go/internal/gatekit"
 	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 )
 
-var sixtySteps = map[string]mtgv1.SixtyStep{
-	"casual": mtgv1.SixtyStep_SIXTY_STEP_CASUAL,
-	"fnm":    mtgv1.SixtyStep_SIXTY_STEP_FNM,
-	// The corpus calls the top step tournament-meta.
-	"tournament": mtgv1.SixtyStep_SIXTY_STEP_TOURNAMENT,
-}
-
-func power(p prompt) *mtgv1.PowerLevel {
-	if p.Bracket > 0 {
-		return &mtgv1.PowerLevel{Level: &mtgv1.PowerLevel_Bracket{Bracket: p.Bracket}}
-	}
-	if step, ok := sixtySteps[strings.ToLower(p.Power)]; ok {
-		return &mtgv1.PowerLevel{Level: &mtgv1.PowerLevel_SixtyStep{SixtyStep: step}}
-	}
-	return nil
-}
-
-func blocks(d *mtgv1.Deck) []*mtgv1.Finding {
-	var out []*mtgv1.Finding
-	for _, f := range d.GetValidation().GetFindings() {
-		if f.GetSeverity() == mtgv1.Severity_SEVERITY_BLOCK {
-			out = append(out, f)
-		}
-	}
-	return out
-}
-
-// countSide counts the sideboard. A 60-card format wants 15, and the
-// engine only refuses a sideboard that is too big, so a deck with none
-// passes every check (D-233).
-func countSide(d *mtgv1.Deck) int {
-	n := 0
-	for _, c := range d.GetSideboard() {
-		n += int(c.GetCount())
-	}
-	return n
-}
-
-func countCards(d *mtgv1.Deck) int {
-	n := 0
-	for _, c := range d.GetCards() {
-		n += int(c.GetCount())
-	}
-	return n
-}
-
-// report writes the gate document. The two bars come from the roadmap:
-// every returned deck passes the block checks, and no invented name
-// reaches the user.
-func report(w io.Writer, rs []result, acc *llm.Accumulator, idx *cards.Index, took time.Duration) {
+// report writes the gate document and returns the verdict. The bars come
+// from the roadmap: every returned deck passes the block checks, no
+// invented name reaches the user, and no summary states a false rule. A
+// run of zero prompts fails: there is nothing to pass.
+func report(w io.Writer, rs []result, acc *llm.Accumulator, idx *cards.Index, took time.Duration) bool {
 	built, clean, notes, repaired, errs := 0, 0, 0, 0, 0
 	judged, falseRules, statesRule, judgeErrs := 0, 0, 0, 0
 	for _, r := range rs {
@@ -75,7 +29,7 @@ func report(w io.Writer, rs []result, acc *llm.Accumulator, idx *cards.Index, to
 			errs++
 		case r.deck != nil:
 			built++
-			if len(blocks(r.deck)) == 0 {
+			if len(gatekit.BlockFindings(r.deck)) == 0 {
 				clean++
 			}
 			notes += len(r.notes)
@@ -92,11 +46,10 @@ func report(w io.Writer, rs []result, acc *llm.Accumulator, idx *cards.Index, to
 			}
 		}
 	}
-	// F-26 is a bar and not a footnote. A summary that states a false rule
-	// of the game reached a user twice before, and both passed the gate
-	// and the deterministic linter (D-229). A deck the judge could not
+	// F-26 is a bar and not a footnote: the deterministic linter can not
+	// read the truth of a rules claim (D-229). A deck the judge could not
 	// read has no verdict on that bar, so it can not pass it (T-17).
-	pass := errs == 0 && built == len(rs) && clean == built && notes == 0 && falseRules == 0 && judgeErrs == 0
+	pass := len(rs) > 0 && errs == 0 && built == len(rs) && clean == built && notes == 0 && falseRules == 0 && judgeErrs == 0
 	verdict := "FAIL"
 	if pass {
 		verdict = "PASS"
@@ -105,6 +58,9 @@ func report(w io.Writer, rs []result, acc *llm.Accumulator, idx *cards.Index, to
 	_, _ = fmt.Fprintf(w, "Run date: %s. Card snapshot: %s.\n\n", time.Now().UTC().Format("2006-01-02"), idx.AsOf.Format("2006-01-02"))
 	_, _ = fmt.Fprintf(w, "Verdict: %s. %d of %d decks passed every block check, %d invented names reached the user, and %d summaries stated a false rule of the game. All three bars are zero tolerance.\n\n",
 		verdict, clean, len(rs), notes, falseRules)
+	if len(rs) == 0 {
+		_, _ = fmt.Fprintf(w, "The run held no prompt. A gate can not pass with nothing to measure.\n\n")
+	}
 	if errs > 0 {
 		_, _ = fmt.Fprintf(w, "%d prompts failed before a deck existed. A gate can not pass with an error.\n\n", errs)
 	}
@@ -126,11 +82,7 @@ func report(w io.Writer, rs []result, acc *llm.Accumulator, idx *cards.Index, to
 	_, _ = fmt.Fprintf(w, "| Prompt version | %d |\n", generate.PromptVersion)
 	rep := acc.Report()
 	_, _ = fmt.Fprintf(w, "| Calls | %d |\n", rep.Calls)
-	cost := 0.0
-	if rep.CostUSD != nil {
-		cost = *rep.CostUSD
-	}
-	_, _ = fmt.Fprintf(w, "| Cost | $%.4f |\n", cost)
+	_, _ = fmt.Fprintf(w, "| Cost | %s |\n", gatekit.CostWord(rep))
 	_, _ = fmt.Fprintf(w, "| Time | %.0f seconds |\n\n", took.Seconds())
 
 	_, _ = fmt.Fprintf(w, "## Findings by code\n\nA block stops the deck. A warning and a note are reports.\n\n")
@@ -159,6 +111,7 @@ func report(w io.Writer, rs []result, acc *llm.Accumulator, idx *cards.Index, to
 	for _, r := range rs {
 		writeDeck(w, r)
 	}
+	return pass
 }
 
 func writeDeck(w io.Writer, r result) {
@@ -175,8 +128,10 @@ func writeDeck(w io.Writer, r result) {
 	if r.repaired {
 		repair = "yes, for " + r.repairReason
 	}
+	// The sideboard count is printed because the engine refuses only a
+	// sideboard that is too big, and a deck with none passes (D-233).
 	_, _ = fmt.Fprintf(w, "Cards: %d main, %d sideboard. Repair turn: %s. Block findings: %d.\n\n",
-		countCards(d), countSide(d), repair, len(blocks(d)))
+		gatekit.CountCards(d), gatekit.CountSideboard(d), repair, len(gatekit.BlockFindings(d)))
 	_, _ = fmt.Fprintf(w, "Cost: $%.2f to buy, $%.2f the whole deck.\n\n",
 		generate.BuyCost(d), generate.DeckCost(d))
 	_, _ = fmt.Fprintf(w, "**Summary:** %s\n\n", d.GetSummary())

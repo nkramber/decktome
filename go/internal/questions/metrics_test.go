@@ -125,9 +125,9 @@ func TestNilHintsAreSafe(t *testing.T) {
 	}
 }
 
-// TestHintsAreAskedOnlyForWhatARowNames is the first half of the
-// commander defect the gate run of 2026-08-25 found. An eager call runs a
-// whole PR-6 build for a row that holds no placeholder.
+// TestHintsAreAskedOnlyForWhatARowNames is the first half of D-82. An
+// eager call runs a whole PR-6 build for a row that holds no
+// placeholder.
 func TestHintsAreAskedOnlyForWhatARowNames(t *testing.T) {
 	c := load(t)
 	cases := []struct {
@@ -155,12 +155,10 @@ func TestHintsAreAskedOnlyForWhatARowNames(t *testing.T) {
 	}
 }
 
-// TestHintCacheKeyCarriesTheColors is the second half. One key per theme
-// kept the colorless commander list after the user named their colors.
-// Conversation 24 of the gate run offered Lotho, Corrupt Shirriff (white
-// and black), Zhao, the Moon Slayer (red), and Troyan, Gutsy Explorer
-// (green and blue) for a white-blue deck. All three are outside the
-// color identity.
+// TestHintCacheKeyCarriesTheColors is the second half of D-82. One key
+// per theme keeps the colorless commander list after the user names
+// their colors, and every offered name can sit outside the color
+// identity.
 func TestHintCacheKeyCarriesTheColors(t *testing.T) {
 	none := &CandidateHints{Format: mtgv1.FormatId_FORMAT_ID_COMMANDER}
 	white := &CandidateHints{Format: mtgv1.FormatId_FORMAT_ID_COMMANDER,
@@ -176,11 +174,10 @@ func TestHintCacheKeyCarriesTheColors(t *testing.T) {
 	}
 }
 
-// TestThinThemeCacheCarriesTheColors is audit Q-12. ThinTheme cached by
-// the theme alone, which the D-82 comment names as the defect, and it
-// overwrote OnThemeOwned as a side effect. The cache now keys on the
-// same key as every other hint, and the count reaches the {n} clause
-// through the cache.
+// TestThinThemeCacheCarriesTheColors is D-82 for ThinTheme. A cache keyed
+// by the theme alone serves a stale count, and it must not overwrite
+// OnThemeOwned as a side effect. The cache keys on the same key as every
+// other hint, and the count reaches the {n} clause through the cache.
 func TestThinThemeCacheCarriesTheColors(t *testing.T) {
 	h := &CandidateHints{Format: mtgv1.FormatId_FORMAT_ID_COMMANDER,
 		Colors: []mtgv1.Color{mtgv1.Color_COLOR_W}, OnThemeOwned: 40}

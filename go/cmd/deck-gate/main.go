@@ -5,10 +5,11 @@
 // checks, and no invented name reaches the user.
 //
 // CAUTION: this calls a real provider and it costs money. DECK_GATE=1 is
-// required, so it can not run by accident. Ask the owner before every
-// run. `make deck-gate` writes to DECK_GATE_OUT and refuses a file that
-// already holds a verdict: a rerun must never overwrite a scored document
-// (D-65). A -dry run calls no provider and needs no guard.
+// required, so it can not run by accident. `make deck-gate` writes to
+// DECK_GATE_OUT and refuses a file that already holds a verdict: a rerun
+// must never overwrite a scored document (D-65). A -dry run calls no
+// provider and needs no guard. The exit code is 1 on a FAIL verdict, and
+// the document is written first.
 //
 // Usage:
 //
@@ -20,11 +21,10 @@ import (
 	"context"
 	_ "embed"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
-	"strconv"
-	"strings"
 	"time"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
@@ -69,6 +69,7 @@ type result struct {
 	judged       *generate.Judgement
 	// judgeErr is the judge lane's failure. A deck with one has no
 	// verdict on F-26, so it can not count as a pass on that bar (T-17).
+	// An empty summary counts as one: the judge has nothing to read.
 	judgeErr error
 	err      error
 }
@@ -84,7 +85,7 @@ func run() error {
 	collPath := flag.String("collection", "", "a ManaBox CSV for the owned modes")
 	only := flag.String("only", "", "run these prompt ids only, comma separated")
 	dry := flag.Bool("dry", false, "build every shortlist and stop before the provider calls")
-	noJudge := flag.Bool("no-judge", false, "skip the F-26 judge lane, which costs about $0.0034 a deck")
+	noJudge := flag.Bool("no-judge", false, "skip the F-26 judge lane, which costs one judge call a deck")
 	flag.Parse()
 
 	var file struct {
@@ -93,23 +94,11 @@ func run() error {
 	if err := json.Unmarshal(promptsJSON, &file); err != nil {
 		return fmt.Errorf("prompts: %w", err)
 	}
-	if *only != "" {
-		want := map[int]bool{}
-		for _, s := range strings.Split(*only, ",") {
-			id, err := strconv.Atoi(strings.TrimSpace(s))
-			if err != nil {
-				return fmt.Errorf("-only takes prompt ids: %w", err)
-			}
-			want[id] = true
-		}
-		var kept []prompt
-		for _, p := range file.Prompts {
-			if want[p.ID] {
-				kept = append(kept, p)
-			}
-		}
-		file.Prompts = kept
+	prompts, err := selectPrompts(file.Prompts, *only)
+	if err != nil {
+		return err
 	}
+	file.Prompts = prompts
 
 	// A dry run calls no provider, so it needs no guard.
 	if !*dry {
@@ -165,13 +154,10 @@ func run() error {
 		r := build(context.Background(), b, cb, idx, owned, p, acc, *dry, preconSet)
 		// The judge lane is the real check for F-26, and the deterministic
 		// net can not read the truth of a rules claim (D-229).
-		if !*dry && !*noJudge && r.deck != nil && r.deck.GetSummary() != "" {
-			j, err := generate.JudgeSummary(context.Background(), client, p.Name, r.deck.GetSummary(), acc)
-			if err != nil {
-				r.judgeErr = err
-				fmt.Fprintf(os.Stderr, "  judge %d failed: %v\n", p.ID, err)
-			} else {
-				r.judged = j
+		if !*dry && !*noJudge && r.deck != nil {
+			r.judged, r.judgeErr = judge(context.Background(), client, p.Name, r.deck, acc)
+			if r.judgeErr != nil {
+				fmt.Fprintf(os.Stderr, "  judge %d failed: %v\n", p.ID, r.judgeErr)
 			}
 		}
 		results = append(results, r)
@@ -181,8 +167,54 @@ func run() error {
 		fmt.Fprintf(os.Stderr, "\ndry run: %d shortlists built, no provider call ran\n", len(results))
 		return nil
 	}
-	report(os.Stdout, results, acc, idx, time.Since(start))
+	if !report(os.Stdout, results, acc, idx, time.Since(start)) {
+		return errGateFailed
+	}
 	return nil
+}
+
+// errGateFailed is the exit reason after a FAIL verdict. The document is
+// written before it, so the record stays complete.
+var errGateFailed = errors.New("deck gate failed: read the verdict line of the document")
+
+// selectPrompts keeps the prompts -only names, or all of them when -only
+// is empty. A list that names no prompt is an error: a run of zero
+// prompts can not pass a gate.
+func selectPrompts(all []prompt, only string) ([]prompt, error) {
+	ids, err := gatekit.ParseIDs(only)
+	if err != nil {
+		return nil, fmt.Errorf("deck-gate: %w", err)
+	}
+	if ids == nil {
+		return all, nil
+	}
+	want := map[int]bool{}
+	for _, id := range ids {
+		want[id] = true
+	}
+	var kept []prompt
+	for _, p := range all {
+		if want[p.ID] {
+			kept = append(kept, p)
+		}
+	}
+	if len(kept) == 0 {
+		return nil, fmt.Errorf("-only %q matches no prompt", only)
+	}
+	return kept, nil
+}
+
+// errEmptySummary is the judge error of a deck with no summary. The F-26
+// bar needs a verdict on the summary, and an empty one gives none.
+var errEmptySummary = errors.New("the deck has no summary to judge")
+
+// judge runs the F-26 judge lane on one deck. An empty summary is a judge
+// error and not a pass.
+func judge(ctx context.Context, client *llm.Client, name string, d *mtgv1.Deck, acc *llm.Accumulator) (*generate.Judgement, error) {
+	if d.GetSummary() == "" {
+		return nil, errEmptySummary
+	}
+	return generate.JudgeSummary(ctx, client, name, d.GetSummary(), acc)
 }
 
 func status(r result) string {
@@ -193,7 +225,7 @@ func status(r result) string {
 		return "no deck"
 	default:
 		return fmt.Sprintf("%d cards, %d blocks, %d notes, repaired %v",
-			countCards(r.deck), len(blocks(r.deck)), len(r.notes), r.repaired)
+			gatekit.CountCards(r.deck), len(gatekit.BlockFindings(r.deck)), len(r.notes), r.repaired)
 	}
 }
 
@@ -300,7 +332,7 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 	res, err := b.Build(ctx, generate.Request{
 		SessionID:       fmt.Sprintf("gate-%d", p.ID),
 		Format:          format,
-		Power:           power(p),
+		Power:           gatekit.PowerLevel(p.Bracket, p.Power),
 		Plan:            plan,
 		Pool:            pool,
 		Commanders:      commanderIDs,
@@ -311,7 +343,7 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 		PoolRule:        poolRule,
 		OracleCounts:    own,
 		Roles:           generate.Roles(list),
-		Targets:         generate.TargetsFor(format, power(p)),
+		Targets:         generate.TargetsFor(format, gatekit.PowerLevel(p.Bracket, p.Power)),
 		Limits:          generate.LimitsFor(format),
 		LegalityAsOf:    idx.AsOf.Format("2006-01-02"),
 		BudgetUSD:       p.Budget,

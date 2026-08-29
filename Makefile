@@ -1,6 +1,11 @@
 # mtg-deck-builder - single human entry point.
 # Every target prints what it does. Versions are pinned in go/go.mod, web/package.json, and here.
 
+# Every recipe runs under bash with pipefail, so a command that fails
+# inside a pipe (for example before a tee) fails the target.
+SHELL := bash
+.SHELLFLAGS := -o pipefail -c
+
 GOLANGCI_LINT_VERSION := v2.13.2
 GO := go -C go
 BUF := .bin/buf
@@ -33,11 +38,8 @@ proto-check: proto ## Fail if generated code differs from the committed code
 		|| (echo "Generated code is stale. Run: make proto && git add -A" && exit 1)
 
 # The ref to compare against. A CI checkout of a pull request has no local
-# main branch, only refs/remotes/origin/main, so "branch=main" fails there
-# with "couldn't find remote ref main". A push to main does create the
-# local branch, which is why this passed on main and failed on every pull
-# request (D-254). origin/main exists in both, and the fallback covers a
-# clone with no remote.
+# main branch, only refs/remotes/origin/main (D-254). origin/main exists
+# in both, and the fallback covers a clone with no remote.
 PROTO_BASE = $(shell git rev-parse --verify --quiet origin/main >/dev/null && echo origin/main || echo main)
 
 proto-breaking: $(BUF) ## Fail on a breaking proto change against the main branch (needs fetch-depth 0 in CI)
@@ -58,10 +60,14 @@ lint-web: ## Lint and typecheck TypeScript
 	@$(PNPM) typecheck
 
 # Every .md file follows ASD-STE100 (CLAUDE.md rule 2). The script reads
-# the prose and skips tables and code blocks. The gate and eval documents
-# under docs/reference/ are machine output, and the frozen research notes
-# keep their date, so both stay out of the list.
-STE_FILES := $(shell git ls-files '*.md' | grep -vE '^docs/reference/(pr[0-9]|session-log|connector-syncer|wallabee)')
+# the prose and skips tables and code blocks. Tracked and untracked files
+# are both checked, so a new document is checked before its first commit.
+# Dated records are exempt on purpose (D-304): the gate and eval documents
+# (docs/reference/pr[0-9]*) and the session logs are machine output or a
+# record of one day, and the connector-syncer and wallabee notes are
+# frozen copies of another repo. The audits (docs/audit-*) are a record of
+# one day, so they are exempt too. Test fixtures under testdata are data.
+STE_FILES := $(shell (git ls-files '*.md'; git ls-files --others --exclude-standard '*.md') | sort -u | grep -vE '^docs/reference/(pr[0-9]|session-log|connector-syncer|wallabee)|^docs/audit-|/testdata/')
 
 ste-check: ## Check every hand-written .md file against the STE rules (no cost)
 	@echo "==> ste-check"
@@ -74,7 +80,7 @@ test: ## Run Go and web unit tests
 	@$(PNPM) test
 
 test-repeat: ## Run one Go test N times to catch flakes. Usage: make test-repeat TEST=TestCheck RUNS=25
-	@[ -n "$(TEST)" ] || { echo "test-repeat: set TEST=TestName, or every test runs $(or $(RUNS),25) times."; exit 1; }
+	@[ -n "$(TEST)" ] || { echo "test-repeat: set TEST=TestName. Usage: make test-repeat TEST=TestCheck RUNS=$(or $(RUNS),25)"; exit 1; }
 	@$(GO) test -race -run '$(TEST)' -count=$(or $(RUNS),25) ./...
 
 # Keys are required here on purpose (LLM_REQUIRE_KEYS keeps its default).
@@ -89,12 +95,15 @@ llm-defaults-check: ## Warn when roles.json or prices.json differ from the merge
 # REVIEW_OUT names the gate document. A rerun must never overwrite a
 # document that already holds scores (D-65). Raise the run number instead.
 REVIEW_OUT ?= docs/reference/pr6-candidate-review-run2.md
+# REVIEW_SCORED matches a filled "On theme" cell of the summary table, or
+# a filled total line. The tool writes both empty.
+REVIEW_SCORED := ^\| [0-9]+ \|[^|]*\|[^|]*\|[[:space:]]*[^[:space:]|]|^Total on theme: [0-9]
 
-candidates-review: ## Write the PR-6 gate document from the local snapshot and the owner's export
-	@test ! -f $(REVIEW_OUT) || ! grep -q '^Verdict:' $(REVIEW_OUT) || \
+candidates-review: ## Write the PR-6 gate document from the local snapshot and the test collection (no model calls, no cost)
+	@test ! -f $(REVIEW_OUT) || ! grep -qE '$(REVIEW_SCORED)' $(REVIEW_OUT) || \
 		{ echo "$(REVIEW_OUT) holds scores. Set REVIEW_OUT to a new file."; exit 1; }
 	@CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall $(GO) run ./cmd/candidates-review \
-		-collection internal/collections/testdata/manabox_collection.csv > $(REVIEW_OUT)
+		-collection internal/collections/testdata/manabox_collection.csv -out $(abspath $(REVIEW_OUT))
 	@echo "wrote $(REVIEW_OUT)"
 
 # GATE_OUT names the PR-7 gate document. A rerun must never overwrite a
@@ -110,10 +119,12 @@ questions-gate: ## Write the PR-7 gate document. CAUTION: this calls the real pr
 		$(GO) run ./cmd/questions-gate -collection internal/collections/testdata/manabox_collection.csv > $(GATE_OUT)
 	@echo "wrote $(GATE_OUT)"
 
-# --- The PR-8 gate and the three probes (audit 2026-08-28, T-18) -------
+# --- The PR-8 gate, the revise gate, and the three probes (T-18) --------
 # Each target calls a real provider and costs money. Each one has the
 # same two guards as questions-gate: an env variable the command checks,
-# and an output file a rerun must never overwrite (D-65).
+# and an output file a rerun must never overwrite (D-65). A gate writes
+# its document first and then exits 1 on a FAIL verdict, so the file is
+# complete when the target fails.
 DECK_GATE_OUT ?= docs/reference/pr8-deck-gate.md
 CHAT_PROBE_OUT ?= .local/probes/chat-probe.txt
 GENERATE_PROBE_OUT ?= .local/probes/generate-probe.txt
@@ -174,27 +185,20 @@ summary-judge: ## Judge every deck summary of a deck gate document (F-26). CAUTI
 # --- end of the PR-8 gate and probe targets ------------------------------
 
 # M5_OUT names the scoring sheet. A rerun must never overwrite a sheet
-# the owner has scored.
-# M5_OUT stays the version-1 sheet, because `make m5-report` reads it and
-# the owner is still scoring it. The scored-sheet guard below refuses to
-# write over it, so building the version-2 sheet needs a new name:
+# that holds scores (D-65). `make m5-report` reads this sheet, so a new
+# sheet needs a new name:
 #
 #   M5_OUT=docs/reference/pr7-m5-scoring-run18.md make m5-sheet
 M5_OUT ?= docs/reference/pr7-m5-scoring.md
 
 # M5_RUNS names the gate documents the sheet may read. Only a run whose
-# engine matches the current code belongs here (D-96). A run made before
-# a defect was fixed measures the defect, not the catalog.
-#
-# Runs 1 to 13 are all held back now. The fixes of 2026-08-25 changed the
-# catalog rows, the classify and ask prompts, and the conversation set
-# (D-104 to D-116). A sheet built from them would measure the old engine.
-# The next sheet reads the latest gate document alone.
+# engine matches the current code belongs here (D-96): a run made before
+# a prompt or catalog change measures the old engine, not the catalog.
 # Paths are repo-relative. The recipe makes them absolute for the Go
 # tool, which runs from go/. An absolute path also works.
 M5_RUNS ?= docs/reference/pr7-question-gate-run24.md
 
-# The guard reads every field the owner fills, in any case, and free text
+# The guard reads every field a scorer fills, in any case, and free text
 # counts. filled_slot is left out because the generator pre-fills it.
 M5_SCORED := \| (catalog_enough|invented_better|right_slot|faults|catalog_action) \|[[:space:]]*[^[:space:]|]
 
@@ -208,14 +212,15 @@ m5-report: ## Read the scored M-5 sheet and compute the thresholds (no model cal
 	@$(GO) run ./cmd/m5-report $(abspath $(M5_OUT))
 
 # EVAL_RUN names the gate document the eval scores, and EVAL_OUT the
-# document it writes. The eval calls a real provider, so it costs money.
-# A 66-conversation run on the cost tier is about eleven cents (D-133).
+# document it writes. The eval calls a real provider on the cost tier, so
+# it costs money (D-133).
 #
 # The defaults name the latest gate run. Its eval document and its JSON
 # summary already exist, so the guards below refuse a run with the
 # defaults. That is correct: set EVAL_OUT and EVAL_JSON to new names for
 # a rerun. EVAL_JSON is the baseline that tune-check compares against, so
-# a rerun must never overwrite it (D-65).
+# a rerun must never overwrite it (D-65). The command checks both paths
+# again before its first call.
 EVAL_RUN ?= docs/reference/pr7-question-gate-run24.md
 EVAL_OUT ?= docs/reference/pr7-question-eval-run24.md
 EVAL_JSON ?= .local/tune/run24.json
@@ -229,13 +234,13 @@ questions-eval: ## Score every question of a gate run. CAUTION: calls a real pro
 	@mkdir -p $(dir $(EVAL_JSON))
 	@set -a && . ./.env && set +a && QUESTIONS_EVAL=1 \
 		CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall \
-		$(GO) run ./cmd/questions-eval -in ../$(EVAL_RUN) -out ../$(EVAL_OUT) \
-		-json ../$(EVAL_JSON) -budget $(EVAL_BUDGET)
+		$(GO) run ./cmd/questions-eval -in $(abspath $(EVAL_RUN)) -out $(abspath $(EVAL_OUT)) \
+		-json $(abspath $(EVAL_JSON)) -budget $(EVAL_BUDGET)
 	@echo "wrote $(EVAL_OUT)"
 
-# The eval role runs on the model that also writes the questions, which
-# the owner chose for cost (D-133). This target measures what that costs
-# in judgment: it scores a sample twice and compares the two verdicts.
+# The eval role runs on the model that also writes the questions, for
+# cost (D-133). This target measures what that costs in judgment: it
+# scores a sample twice and compares the two verdicts.
 CALIBRATE_N ?= 12
 CALIBRATE_MODEL ?= claude-sonnet-5
 CALIBRATE_PROVIDER ?= anthropic
@@ -263,7 +268,7 @@ eval-calibrate: ## Measure the eval model against a stronger one on a sample. CA
 		-next $(abspath $(CALIBRATE_BASE)) -prev $(abspath $(CALIBRATE_STRONG))
 
 autotune: ## Print how to start the overnight tuning loop. It never starts one
-	@echo "The loop edits code and pushes with nobody watching."
+	@echo "The loop edits code and commits to its own branch with nobody watching. It pushes only with --push."
 	@echo "docs/reference/autotune-readme.md holds every command."
 	@echo "docs/reference/autotune-design.md holds the reasons and the limits."
 	@echo

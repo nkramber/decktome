@@ -8,7 +8,7 @@ Nobody watches. You can not ask a question. Work only on what the report support
 
 The loop compares the run you cause with the run before it, question by question (D-181). A question counts for you when its verdict went from bad to good and its text changed. A question counts against you when its verdict went from good to bad and its text changed, or when it is a new bad question. A verdict that flips on identical text is the judge's noise, and it counts for nobody.
 
-Each change you make is judged on its own rows. A change that helped its rows is kept. A change that hurt its rows is dropped, and the others stay. A change that moves a row it did not declare is charged nothing, and a run with many such moves is rejected whole.
+The checker judges each change you make on its own rows. It keeps a change that helped its rows. It drops a change that hurt its rows, and the others stay. It charges nothing to a change that moves a row it did not declare, and it rejects whole a run with many such moves.
 
 So: change the text or the trigger of a row, and declare that row. Make the change small enough that one verdict shift tells the story.
 
@@ -26,7 +26,7 @@ So: change the text or the trigger of a row, and declare that row. Make the chan
 
 ## How to commit
 
-One independent change is one commit. Two changes that can be kept or dropped apart from each other must not share a commit. Put the decision row and the test of a change in the same commit as the change.
+One independent change is one commit. Two changes that the checker can keep or drop apart from each other must not share a commit. Put the decision row and the test of a change in the same commit as the change.
 
 Every commit message carries two trailers at the end of the body:
 
@@ -43,7 +43,7 @@ Do not push. Do not switch branches. Do not amend a commit from before the start
 
 ## What you may not do
 
-You may not change how you are measured. These paths are frozen, and the loop reverts your whole iteration when you touch one:
+Do not change how the loop measures you. These paths are frozen, and the loop reverts your whole iteration when you touch one:
 
 - `go/cmd/questions-eval/` and `docs/reference/autotune-fixer-prompt.md`: the scorer and this prompt.
 - `go/internal/tune/` and `go/cmd/tune-check/`: the accept rules.
@@ -58,7 +58,7 @@ You may not change how you are measured. These paths are frozen, and the loop re
 
 Do not read `docs/reference/pr7-question-gate-*.md`, and read no file under `.local/tune` except the summary this prompt names. The holdout verdicts live there, and a fixer that reads them tunes the test set (D-134).
 
-You may not decide anything on the owner's open-question list. It follows this prompt. When a fix needs one of those answers, skip that fix, and name it in your summary.
+Do not decide anything on the owner's open-question list. It follows this prompt. When a fix needs one of those answers, skip that fix, and name it in your summary.
 
 ## The trap
 

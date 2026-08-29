@@ -31,7 +31,7 @@ func loadFixture(path string) []*mtgv1.Card {
 }
 
 // TestMain loads the shared cards fixture plus the rules-only rows in
-// testdata/cards_extra.jsonl (Scryfall API rows, fetched 2026-08-24).
+// testdata/cards_extra.jsonl (Scryfall API rows).
 func TestMain(m *testing.M) {
 	cardList := loadFixture("../cards/testdata/cards_fixture.jsonl")
 	cardList = append(cardList, loadFixture("testdata/cards_extra.jsonl")...)
@@ -353,8 +353,7 @@ func TestGoldenDecks(t *testing.T) {
 	})
 
 	// Grist, the Hunger Tide is a creature outside the battlefield by a
-	// characteristic-defining ability, so it leads a deck (D-140, G-4 of
-	// the 2026-08-28 audit).
+	// characteristic-defining ability, so it leads a deck (D-140).
 	wantPass(t, "grist leads by its creature CDA", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2,
 		commanders: []string{"Grist, the Hunger Tide"},
 		fill:       "Swamp", fillTo: 100})
@@ -492,9 +491,8 @@ func TestGoldenDecks(t *testing.T) {
 		commanders: []string{"Niv-Mizzet, Parun"}, companion: "Jegantha, the Wellspring",
 		cards: map[string]int32{"Jegantha, the Wellspring": 1},
 		fill:  "Island", fillTo: 100}, CodeCopyLimit)
-	// A legendary planeswalker with no creature CDA is not a commander.
-	// Grist is, and it sits with the good decks (G-4 of the 2026-08-28
-	// audit).
+	// A legendary planeswalker with no creature CDA is not a commander
+	// (D-140).
 	wantBlock(t, "planeswalker without the creature CDA", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2,
 		commanders: []string{"Kaya, Ghost Haunter"},
 		fill:       "Swamp", fillTo: 100}, CodeBadCommander)
@@ -531,8 +529,8 @@ func TestGoldenDecks(t *testing.T) {
 	})
 }
 
-// TestNegativeCountBlocks is M-4 of the 2026-08-26 review. A 101-card
-// list plus one entry with count -1 summed to 100 and passed deck_size.
+// TestNegativeCountBlocks: a count under one is a bad_count, and no sum
+// reads it.
 func TestNegativeCountBlocks(t *testing.T) {
 	deck := monoW([]string{"Heliod, Sun-Crowned"}, nil, 0).build(t)
 	deck.Cards = append(deck.Cards,
@@ -582,8 +580,8 @@ func TestLoadData(t *testing.T) {
 	if len(cfg.Formats) < 4 {
 		t.Errorf("formats = %d", len(cfg.Formats))
 	}
-	if cfg.MaxGameChangers[3] != 3 || cfg.MaxGameChangers[4] != -1 {
-		t.Errorf("brackets = %v", cfg.MaxGameChangers)
+	if cfg.Brackets[3].MaxGameChangers != 3 || cfg.Brackets[4].MaxGameChangers != -1 {
+		t.Errorf("brackets = %v", cfg.Brackets)
 	}
 	if !slices.Contains(cfg.BannedAsCompanion["Lutri, the Spellchaser"], "commander") {
 		t.Error("Lutri missing from companion bans for commander")
@@ -603,8 +601,7 @@ func TestLoadData(t *testing.T) {
 
 // TestGoldenCounts is the PR-5 gate size: at least 30 good and 30 bad
 // decks. It reads the counters that TestGoldenDecks filled. The set holds
-// 31 good and 30 bad since 2026-08-28: Grist moved to the good decks, and
-// a planeswalker without the creature CDA took its place (G-4).
+// 31 good and 30 bad decks (D-140).
 func TestGoldenCounts(t *testing.T) {
 	if goldenGood == 0 && goldenBad == 0 {
 		t.Skip("TestGoldenDecks did not run")
@@ -613,4 +610,53 @@ func TestGoldenCounts(t *testing.T) {
 		t.Errorf("golden gate: %d good, %d bad, want at least 31 and 30", goldenGood, goldenBad)
 	}
 	t.Logf("golden gate: %d good, %d bad", goldenGood, goldenBad)
+}
+
+// TestSecondCommanderIsCheckedAfterAnUnknownFirst: an unknown first id
+// must not hide a second commander that can not lead.
+func TestSecondCommanderIsCheckedAfterAnUnknownFirst(t *testing.T) {
+	deck := deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2, fill: "Plains", fillTo: 100}.build(t)
+	deck.CommanderOracleIds = []string{"not-an-id", oid(t, "Serra Angel")}
+	res := testCfg.Validate(Input{Deck: deck, Cards: testIndex})
+	blocks := codes(res, mtgv1.Severity_SEVERITY_BLOCK)
+	if blocks[CodeUnknownCard] == 0 || blocks[CodeBadCommander] == 0 {
+		t.Errorf("want unknown_card and bad_commander, got %v", blocks)
+	}
+	if blocks[CodeBadPartner] != 0 {
+		t.Errorf("a pair with an unknown card must not be judged: %v", blocks)
+	}
+}
+
+// TestDuplicateCommanderIsABadPartner: the same Oracle id twice is not a
+// pair (CR 702.124f).
+func TestDuplicateCommanderIsABadPartner(t *testing.T) {
+	deck := deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2,
+		commanders: []string{"Thrasios, Triton Hero", "Thrasios, Triton Hero"},
+		fill:       "Island", fillTo: 100}.build(t)
+	res := testCfg.Validate(Input{Deck: deck, Cards: testIndex})
+	var found bool
+	for _, f := range res.Findings {
+		if f.Code == CodeBadPartner && strings.Contains(f.Message, "duplicate commander") {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("want a duplicate commander bad_partner, got %v", res.Findings)
+	}
+	c, _ := testIndex.ByName("Thrasios, Triton Hero")
+	if ValidPair(c, c) {
+		t.Error("ValidPair(a, a) must be false")
+	}
+}
+
+// TestZeroCountRowIsNotOffColor: a zero-count row is a bad_count and
+// nothing else reads it.
+func TestZeroCountRowIsNotOffColor(t *testing.T) {
+	deck := monoW([]string{"Heliod, Sun-Crowned"}, nil, 2).build(t)
+	deck.Cards = append(deck.Cards, &mtgv1.DeckCard{OracleId: oid(t, "Murder"), Name: "Murder", Count: 0})
+	res := testCfg.Validate(Input{Deck: deck, Cards: testIndex})
+	blocks := codes(res, mtgv1.Severity_SEVERITY_BLOCK)
+	if blocks[CodeBadCount] != 1 || blocks[CodeOffColor] != 0 {
+		t.Errorf("want one bad_count and no off_color, got %v", blocks)
+	}
 }

@@ -12,10 +12,10 @@ import (
 )
 
 // Resolve joins parsed rows against the card index.
-// Join order (F-2): Scryfall ID, then set code plus collector number,
+// Join order: Scryfall ID, then set code plus collector number,
 // then exact name. Non-English rows are reported, never imported (D-23).
 // A token, emblem, or art card row is reported as NOT_PLAYABLE before
-// the name fallback, so it never counts as the real card (C-1).
+// the name fallback, so it never counts as the real card.
 //
 // Rows with the same printing, finish, and condition merge into one
 // entry. Quantities add up, so ownership counts do not change. A merged
@@ -32,12 +32,8 @@ func Resolve(rows []Row, idx *cards.Index) ([]*mtgv1.CollectionEntry, []*mtgv1.U
 			bad = append(bad, unresolved(row.Line, row.Raw, mtgv1.UnresolvedReason_UNRESOLVED_REASON_NON_ENGLISH))
 			continue
 		}
-		card, byName, ok := resolveOne(row, idx)
-		if !ok {
-			reason := mtgv1.UnresolvedReason_UNRESOLVED_REASON_UNKNOWN_CARD
-			if _, np := idx.NonPlayablePrinting(row.ScryfallID, row.SetCode, row.Collector); np {
-				reason = mtgv1.UnresolvedReason_UNRESOLVED_REASON_NOT_PLAYABLE
-			}
+		card, byName, reason := resolveOne(row, idx)
+		if card == nil {
 			bad = append(bad, unresolved(row.Line, row.Raw, reason))
 			continue
 		}
@@ -59,7 +55,7 @@ func Resolve(rows []Row, idx *cards.Index) ([]*mtgv1.CollectionEntry, []*mtgv1.U
 
 // buildEntry fills an entry from a row and its card. When the match
 // came from the name alone, the input id and number point at a printing
-// the index does not know (C-5). The entry then takes the card's
+// the index does not know. The entry then takes the card's
 // default printing id, and keeps the input set code and number only when
 // they match that printing. The proto has no field for this fact. A
 // caller can detect it: the entry's scryfall_id differs from the input
@@ -90,31 +86,32 @@ func buildEntry(row Row, card *mtgv1.Card, byName bool) *mtgv1.CollectionEntry {
 	return e
 }
 
-// resolveOne returns the card and whether only the name matched.
-func resolveOne(row Row, idx *cards.Index) (card *mtgv1.Card, byName, ok bool) {
+// resolveOne returns the card and whether only the name matched. A nil
+// card carries the reason the row failed.
+func resolveOne(row Row, idx *cards.Index) (card *mtgv1.Card, byName bool, reason mtgv1.UnresolvedReason) {
 	if row.ScryfallID != "" {
 		if c, ok := idx.ByPrintingID(row.ScryfallID); ok {
-			return c, false, true
+			return c, false, mtgv1.UnresolvedReason_UNRESOLVED_REASON_UNSPECIFIED
 		}
 	}
 	if row.SetCode != "" && row.Collector != "" {
 		if c, ok := idx.BySetCollector(row.SetCode, row.Collector); ok {
-			return c, false, true
+			return c, false, mtgv1.UnresolvedReason_UNRESOLVED_REASON_UNSPECIFIED
 		}
 	}
 	// A known non-playable printing must not fall through to the name.
 	if _, np := idx.NonPlayablePrinting(row.ScryfallID, row.SetCode, row.Collector); np {
-		return nil, false, false
+		return nil, false, mtgv1.UnresolvedReason_UNRESOLVED_REASON_NOT_PLAYABLE
 	}
 	if row.Name != "" {
 		if c, ok := idx.ByName(row.Name); ok {
-			return c, true, true
+			return c, true, mtgv1.UnresolvedReason_UNRESOLVED_REASON_UNSPECIFIED
 		}
 	}
-	return nil, false, false
+	return nil, false, mtgv1.UnresolvedReason_UNRESOLVED_REASON_UNKNOWN_CARD
 }
 
-// ReasonCounts counts unresolved rows per reason name (M-3).
+// ReasonCounts counts unresolved rows per reason name.
 func ReasonCounts(bad []*mtgv1.UnresolvedRow) map[string]int32 {
 	if len(bad) == 0 {
 		return nil

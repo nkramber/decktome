@@ -17,12 +17,11 @@ func commanderClassify() classifyOut {
 	return out
 }
 
-// TestNamedCommanderIsNotALockedCard is D-70. The live run of 2026-08-24
-// asked "Should I keep all of those, or can I cut some if they do not
-// fit?" after the user had named exactly one card, and that card was the
-// commander. The locked row retired with A-6 of the 2026-08-28 audit,
-// and the list it read still feeds the build, so the list must stay
-// right: the commander is never in it, and a card named later is.
+// TestNamedCommanderIsNotALockedCard is D-70. A locked list that holds
+// the commander asks the user to keep or cut their own commander. The
+// locked row is retired (D-260), and the list it read still feeds the
+// build, so the list must stay right: the commander is never in it, and
+// a card named later is.
 func TestNamedCommanderIsNotALockedCard(t *testing.T) {
 	first := commanderClassify()
 	first.CommanderNames = []string{"Karlov of the Ghost Council"}
@@ -83,10 +82,10 @@ func TestNameThatBecomesTheCommanderStopsBeingLocked(t *testing.T) {
 	}
 }
 
-// TestSuggestionFiresThePickRow is D-71. The commander row asked two
-// things at once and scored 0.05 in the live run. Split, the base row asks
-// whether the user has one, and the pick row carries the names. Nothing
-// set the Suggested fact before this change, so the pick row was dead code.
+// TestSuggestionFiresThePickRow is D-71. A commander row that asks two
+// things at once scores badly. Split, the base row asks whether the user
+// has one, and the pick row carries the names. The Suggested fact is what
+// fires the pick row.
 func TestSuggestionFiresThePickRow(t *testing.T) {
 	hints := &fakeHints{commanders: []string{
 		"Karlov of the Ghost Council", "Oloro, Ageless Ascetic", "Trelasarra, Moon Dancer",
@@ -167,10 +166,9 @@ func TestSuggestionFiresThePickRow(t *testing.T) {
 	}
 
 	// A message that does not ask for other names keeps the same three,
-	// and it gets no second copy of the same question. The gate run of
-	// 2026-08-25 named three others on every turn, which read as if the
-	// agent had ignored the answer (D-73). Gate run 18 then named the
-	// same three twice, which the eval refused as a duplicate (D-163).
+	// and it gets no second copy of the same question. Three other names
+	// on every turn read as an ignored answer (D-73), and the same three
+	// twice is a duplicate (D-163).
 	res, err = a.Turn(context.Background(), st, "my table accepts stax", nil)
 	if err != nil {
 		t.Fatalf("turn 4: %v", err)
@@ -250,11 +248,10 @@ func TestAskedKeyCanClose(t *testing.T) {
 	}
 }
 
-// TestOnlyAnOpenQuestionCloses is D-83. Gate run 2 of 2026-08-25 ended
-// conversation 9 after one question, because the classifier retired
-// power and the pool rule by name from "Brago blink deck from my
-// library". Neither word appears in that message, and neither question
-// was out.
+// TestOnlyAnOpenQuestionCloses is D-83. The classifier can retire power
+// and the pool rule by name from "Brago blink deck from my library".
+// Neither word appears in that message, and neither question is out, so
+// the session must not end after one question.
 func TestOnlyAnOpenQuestionCloses(t *testing.T) {
 	first := commanderClassify()
 	// The classifier claims power and pool rule are done, and gives no
@@ -287,11 +284,10 @@ func TestOnlyAnOpenQuestionCloses(t *testing.T) {
 }
 
 // TestTypedSlotNeverClosesWithoutAValue is the invariant the third
-// version of D-83 rests on. Gate run 6 of 2026-08-25 closed the format
-// by name, so the format value stayed empty. Every row that triggers on
-// the format then stopped firing, and five sessions ended with no power
-// level. A deck can not be built from a slot that says "answered" and
-// holds nothing.
+// version of D-83 rests on. A format closed by name stays empty, every
+// row that triggers on the format stops firing, and the session ends
+// with no power level. A deck can not be built from a slot that says
+// "answered" and holds nothing.
 func TestTypedSlotNeverClosesWithoutAValue(t *testing.T) {
 	// The budget carries a value from the first message. Without one the
 	// budget row fires, because a session with no collection buys every
@@ -350,9 +346,9 @@ func TestRestoreWithoutSnapshot(t *testing.T) {
 }
 
 // TestInventedQuestionKeepsTheOptions is D-37 through the back door.
-// Gate run 4 of 2026-08-25 replaced the card-pool question twice, and
-// each replacement offered two of the three pool modes. A user who never
-// sees "only my library" can not choose it.
+// A replacement of the card-pool question that offers two of the three
+// pool modes loses one. A user who never sees "only my library" can not
+// choose it.
 func TestInventedQuestionKeepsTheOptions(t *testing.T) {
 	out := commanderClassify()
 	out.PoolRule = "unknown"
@@ -381,10 +377,9 @@ func TestInventedQuestionKeepsTheOptions(t *testing.T) {
 	}
 }
 
-// TestRewordIsRefused is D-88. Gate run 4 of 2026-08-25 measured a median
-// word overlap of 0.67 between a replacement and the row it replaced.
-// Seven of eight replacements only added the user's colors, format, or
-// card name, which the ask role adds anyway.
+// TestRewordIsRefused is D-88. A replacement that only adds the user's
+// colors, format, or card name repeats the row, and the ask role adds
+// those words anyway.
 func TestRewordIsRefused(t *testing.T) {
 	row := "Must the deck keep Sanguine Bond, or may I cut a card that does not fit the plan?"
 	cases := []struct {
@@ -514,10 +509,8 @@ func TestPoolRuleWordIsNormalized(t *testing.T) {
 	}
 }
 
-// TestDeclineClosesASlot is D-93. `State.Skip` was declared and never
-// called, so nothing let a user hand a choice back. Gate run 8 of
-// 2026-08-25 shows the cost: conversation 4 answered "any colors are
-// fine" in turn 3 and still ended with the color slot open.
+// TestDeclineClosesASlot is D-93. A user who answers "any colors are
+// fine" has handed the choice back, and the color slot must close.
 func TestDeclineClosesASlot(t *testing.T) {
 	first := classifyOut{Format: "commander", Theme: "sacrifice", PoolRule: "unknown"}
 	second := classifyOut{Format: "unknown", PoolRule: "unknown"}
@@ -608,10 +601,10 @@ func TestDeclineRecordsTheAskAsAnswered(t *testing.T) {
 	}
 }
 
-// TestDeclinedFormatTakesTheDefault is D-98. Probe 35 of gate run 11
-// declined the format, so the planner had nothing to route on. Every
-// power row triggers on the format, so none could fire, and the session
-// finished with no power level.
+// TestDeclinedFormatTakesTheDefault is D-98. A declined format left
+// empty gives the planner nothing to route on: every power row triggers
+// on the format, so none could fire, and the session would finish with
+// no power level.
 func TestDeclinedFormatTakesTheDefault(t *testing.T) {
 	first := classifyOut{Format: "unknown", PoolRule: "unknown"}
 	declined := classifyOut{Format: "unknown", PoolRule: "unknown"}
@@ -644,9 +637,8 @@ func TestDeclinedFormatTakesTheDefault(t *testing.T) {
 	}
 }
 
-// TestOutOfScopeAsksOneThing is D-99. Gate run 11 answered a Yu-Gi-Oh
-// request with "Which Yu-Gi-Oh format would you like?", because the
-// catalog held no way to decline.
+// TestOutOfScopeAsksOneThing is D-99. A Yu-Gi-Oh request must get a
+// decline and not "Which Yu-Gi-Oh format would you like?".
 func TestOutOfScopeAsksOneThing(t *testing.T) {
 	out := classifyOut{Format: "unknown", PoolRule: "unknown"}
 	out.Facts.OutOfScope = true
@@ -707,9 +699,8 @@ func TestBackInScopeAsksNormally(t *testing.T) {
 
 // TestTruncationIsRefused is D-103. Overlap is symmetric, so a
 // replacement that deletes half the row scores low and used to pass,
-// although it says strictly less. Item 8 of the M-5 sheet is the case:
-// the row explained what the answer is for, and the replacement dropped
-// that sentence.
+// although it says strictly less: the row explains what the answer is
+// for, and the replacement drops that sentence.
 func TestTruncationIsRefused(t *testing.T) {
 	row := "What do people play at your event? I tune the 15 sideboard cards to it."
 	cases := []struct {

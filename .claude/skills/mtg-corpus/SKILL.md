@@ -7,7 +7,7 @@ description: Magic: The Gathering terminology, formats, deck-construction rules,
 
 This skill is the knowledge base for the deck-builder agent. It is also the seed of the app's own corpus. Facts carry a date. Rules and ban lists change. Check the date before you trust a fact.
 
-Snapshot date: **2026-08-23**. Section 11 revised 2026-08-28: five rows retired (A-6 of the 2026-08-28 audit), after the PR-7 dogfood runs of 2026-08-24 (D-66, D-67, D-68). Sources: Scryfall API and bulk data, Wizards of the Coast announcements, mtgcommander.net, and the Commander Format Panel.
+Snapshot date: **2026-08-23**, ban list and Standard re-verified 2026-08-24. Section 11 revised 2026-08-28: five rows retired (A-6 of the 2026-08-28 audit), after the PR-7 dogfood runs of 2026-08-24 (D-66, D-67, D-68). Sources: Scryfall API and bulk data, Wizards of the Coast announcements, mtgcommander.net, and the Commander Format Panel.
 
 Reference files in `references/`:
 - `scryfall-catalogs.md` - all keyword abilities, keyword actions, ability words, and type lists.
@@ -67,7 +67,7 @@ Legal Oracle-card counts on 2026-08-23, for the three formats the app builds: co
 - Two commanders: Partner, Partner with, Partner—[text] (Friends forever, Father & son, Survivors, Character select: equal text only), Choose a Background plus a Background, and Doctor's companion with a Time Lord Doctor. A Background alone can not be a commander.
 - Every card must fit the commander's color identity.
 - 40 life. Four players is the normal table. 21 combat damage from one commander kills a player.
-- The commander goes to the command zone when it would leave. It costs 2 more each time you cast it from there (the "commander tax").
+- The commander goes to the command zone in place of any other zone it leaves to. It costs 2 more each time you cast it from there (the "commander tax").
 - Rules and ban list: the Commander Format Panel (from 2024-09, owned by Wizards of the Coast with a community panel). Site: mtgcommander.net.
 - Commander is a social format. Power level matters more than in any other format. Always ask about the bracket.
 
@@ -85,7 +85,7 @@ Source: the Wizards article of 2025-10-21 and its infographic. The 2025-10-21 re
 
 The commander counts toward the Game Changer limit. The Wizards bracket article of 2025-02-11 says a Game Changer commander counts as one of the three at Bracket 3. Such a commander can not play in Brackets 1 and 2. The engine counts the command zone (verified 2026-08-26, source in section 13).
 
-Game Changers: 53 cards on 2026-08-24 (Scryfall `is:gamechanger`). The list changed on 2025-04-22, 2025-10-21, and 2026-02-09. Scryfall flags them with `game_changer: true`. Examples: Rhystic Study, Cyclonic Rift, Smothering Tithe, Thassa's Oracle, Demonic Tutor, Vampiric Tutor, Ancient Tomb, The One Ring, Gaea's Cradle, Force of Will. Note: Mana Crypt is banned, so it is not a Game Changer.
+Game Changers: 53 cards on 2026-08-24 (Scryfall `is:gamechanger`). The list changed on 2025-04-22, 2025-10-21, and 2026-02-09. Scryfall flags them with `game_changer: true`. Examples: Rhystic Study, Cyclonic Rift, Smothering Tithe, Thassa's Oracle, Demonic Tutor, Vampiric Tutor, Ancient Tomb, The One Ring, Gaea's Cradle, Force of Will. Note: the ban list holds Mana Crypt, so it is not a Game Changer.
 
 ### 2.4 Formats the app does not build
 
@@ -221,7 +221,7 @@ Sideboard (60-card formats): 15 cards. Answer the expected metagame. Not used in
 | Cut | Remove a card from the deck. "What do I cut?" is the most common question. |
 | Sol Ring | The one-mana artifact that every Commander deck runs. Not a Game Changer. |
 | Boros, Golgari, ... | Guild names for color pairs (see section 4). |
-| MV / CMC | Mana value. The old name is converted mana cost. |
+| MV / CMC | Mana value. The old name was converted mana cost. |
 | ETB, LTB, dies, cast trigger | Trigger types. |
 | Poison | Ten poison counters lose the game. |
 | Commander damage | 21 combat damage from one commander loses. |
@@ -250,11 +250,11 @@ ManaBox exports a CSV. A real whole-collection export (verified 2026-08-24 again
 
 Values: `Foil` is `normal`, `foil`, or `etched`. `Condition` is `mint`, `near_mint`, `excellent`, `good`, `light_played`, `played`, `poor`. `Language` is a code such as `en`, `ja`, `zh_CN`.
 
-Language: the app supports English only (D-23). Rows with another language code are reported to the user and skipped.
+Language: the app supports English only (D-23). The import reports rows with another language code to the user and skips them.
 
 The `Scryfall ID` column is the join key. It identifies one printing. Map it to `oracle_id` to count copies of one card across printings. Fallback when the ID is missing: `Set code` plus `Collector number`, then `Name` plus `Set name`.
 
-ManaBox also exports decks as text in the MTG Arena format: `4 Lightning Bolt (STA) 42`. The app should import both.
+ManaBox also exports decks as text in the MTG Arena format: `4 Lightning Bolt (STA) 42`. The app must import both.
 
 ## 10. Scryfall facts for the app
 
@@ -293,11 +293,11 @@ Five more rows retired on 2026-08-28 (A-6 of the audit): theme (card named), jan
 | Power (60-card) | The user asked for no strong deck. Ask again when the user names a step and also says competitive, strong, best, or serious. Those words conflict with the named step. | "How strong should this be: casual, FNM level, or tournament-meta?" |
 | Colors | The user gave no preference. Never ask when a commander is set. The color identity fills this slot. "Colorless" is an answer, and it closes the slot (D-165). State no fact about which colors are strongest (D-108). | "Any color preference?" |
 | Card pool (precon) | The user asked to upgrade a precon (D-113). This row replaces the row below, and it names the precon. The build keeps 85 percent of the precon's cards, and it reads the product name from the user's own words (D-218, D-247). | "Should I build from your {precon} precon first, use only cards from it, or ignore it for a fully optimized deck?" |
-| Card pool | A collection is attached (D-37), and the format, the colors, and the theme are filled (D-67). | "Build from your library first, only your library, or ignore it for a fully optimized deck?" |
+| Card pool | The session has a collection (D-37), and the format, the colors, and the theme have values (D-67). | "Build from your library first, only your library, or ignore it for a fully optimized deck?" |
 | Card pool (thin theme) | `ThinTheme` is set (D-63). This row replaces the row above. | "Your library holds {n} {theme} cards. I want 30 or more. Build owned-first with a buy list, or use the whole pool?" |
-| Budget | The user mentions cost, a buy list is needed, or the pool mode is any-card. A session with no collection always needs a buy list, because the user owns nothing to build from (D-168). "Money is no object" answers the row (D-168). | "Is there a budget for cards to buy?" |
-| Budget scope | A collection is attached and the user named one number, and the message did not say which the cap covers. A phrase that names the buy list answers it, and a proxy rule is not a budget at all (D-253). The answer is stored, and the build reads it: a cap on the cards to buy checks what the user must acquire, and a cap on the whole deck checks every copy (D-238). | "Is that a cap on the cards you buy, or on the whole deck value?" |
-| House rules | "Anything goes", "kitchen table", or "no ban list". "Casual" alone does not fire this row (D-78). "Proxy" and "whatever" do not fire it either (D-111). A negation stops every trigger word. The row names no format, because Vintage is not one the app builds (D-155). The answer is stored in the user's own words, and the build copies it to the deck's format (A-6). | "When you say anything goes, do you mean any card with no ban list?" |
+| Budget | The user mentions cost, the deck needs a buy list, or the pool mode is any-card. A session with no collection always needs a buy list, because the user owns nothing to build from (D-168). "Money is no object" answers the row (D-168). | "Is there a budget for cards to buy?" |
+| Budget scope | The session has a collection and the user named one number, and the message did not say which the cap covers. A phrase that names the buy list answers it, and a proxy rule is not a budget at all (D-253). The session stores the answer, and the build reads it: a cap on the cards to buy checks what the user must acquire, and a cap on the whole deck checks every copy (D-238). | "Is that a cap on the cards you buy, or on the whole deck value?" |
+| House rules | "Anything goes", "kitchen table", or "no ban list". "Casual" alone does not fire this row (D-78). "Proxy" and "whatever" do not fire it either (D-111). A negation stops every trigger word. The row names no format, because Vintage is not one the app builds (D-155). The session stores the answer in the user's own words, and the build copies it to the deck's format (A-6). | "When you say anything goes, do you mean any card with no ban list?" |
 | House format limits | House rules set a house format, and the user answered the house-rules question (D-81). The row goes out word for word: a rewrite reads as three questions (D-162). The row names no list of limits, because a list reads as one question for each item (D-212). | "Inside your house format, do the normal 60-card deck limits hold?" |
 
 The agent does not ask the user to confirm a power step it inferred. A user who asks for the strongest deck gives the answer, and a question about it repeats the answer (D-216). The agent fills the tournament step, closes the slot, and marks the step as inferred. The plan states the step, and the user can change it.
@@ -318,7 +318,7 @@ An occasion routes nowhere. "For an event" and "at my store" name a place or a h
 
 Negation rule (D-111): a negator before a trigger word stops that trigger. "No proxies" is not a proxy user. The negators are "no", "not", "never", "without", and the short negative verb forms. One shape is exempt: "not as my commander" denies the role of a card, and it names the Commander format.
 
-Format inference (D-116): read the format from an adjective, such as "a Commander deck" or "a Modern burn deck". "EDH" means Commander. A message with "my commander", "in the 99", "bracket 3", or "my precon" means Commander, even with no format word. Gate run 11 asked conversation 23 for the format. The user had written "A land destruction Commander deck."
+Format inference (D-116): read the format from an adjective, such as "a Commander deck" or "a Modern burn deck". "EDH" means Commander. A message with "my commander", "in the 99", "bracket 3", or "my precon" means Commander, even with no format word. Gate run 11 asked conversation 23 for the format. The user wrote "A land destruction Commander deck."
 
 A message that names a format this app does not build names no format. That holds even when the message holds a format word. "Duel Commander" and "Pauper Commander" are not Commander. The unsupported-format row declines them (D-112).
 
@@ -330,13 +330,13 @@ Commander rules: a name the user gives as the commander closes every commander r
 
 A superlative such as "buy the best lifegain commander" hands the choice to the agent, as "you pick" does (D-147, D-167).
 
-Locked-card rule: a card that becomes the commander is not a locked card (D-70). The locked row retired on 2026-08-28 (A-6). The classifier names the locked cards, the session state holds them, and the build keeps every one (D-242). No question asks whether the deck may cut one.
+Locked-card rule: a card that becomes the commander is not a locked card (D-70). The locked row retired on 2026-08-28 (A-6). The classifier names the locked cards, the session state holds them, and the build keeps every one (D-242). No question asks whether the deck can cut one.
 
 Question source rule (D-25): use a catalog question when one fits the empty slot. Compute a gap score: how well the best catalog question matches the slot and the user's words. When the score is below the threshold, invent a question and log it with the score. The owner scores each invented question on the six-field rubric (D-66). Invented questions that repeat become catalog candidates.
 
 Decline rule (D-93): a user can hand any slot back. "Any colors are fine", "you decide", and "surprise me" are declines. A decline names no value, and the slot goes to the skipped state. The agent does not ask again, and the generator applies the default below. The agent must ask the question before the user can decline it.
 
-Default answers when the user says "you decide": format Commander (the most played format in 2026), bracket 2 to 3, colors from the collection's strongest overlap with the theme. Pool mode: owned-first when a collection is attached, any-card when none is (D-37). A user without a collection never gets the card-pool question.
+Default answers when the user says "you decide": format Commander (the most played format in 2026), bracket 2 to 3, colors from the collection's strongest overlap with the theme. Pool mode: owned-first when the session has a collection, any-card when it has none (D-37). A user without a collection never gets the card-pool question.
 
 ## 12. Validation checklist (deterministic, run after every build)
 
@@ -362,13 +362,13 @@ Model-side checks (PR-8, not the engine):
 - Scryfall API docs: https://scryfall.com/docs/api (fetched 2026-08-23).
 - Banned and Restricted 2026-08-10: https://magic.wizards.com/en/news/announcements/banned-and-restricted-august-10-2026
 - Commander B&R 2026-02-09: https://magic.wizards.com/en/news/announcements/commander-banned-and-restricted-february-9-2026
-- Commander rules: https://mtgcommander.net/index.php/rules/ Note: its ban page still lists Biorhythm as banned on 2026-08-26. Wizards and Scryfall are the authority, and Biorhythm is unbanned (2026-02-09).
+- Commander rules: https://mtgcommander.net/index.php/rules/ Note: its ban page still lists Biorhythm as banned on 2026-08-26. Wizards and Scryfall are the authority, and the 2026-02-09 announcement unbanned Biorhythm.
 - Commander brackets, Game Changer commander rule: https://magic.wizards.com/en/news/announcements/introducing-commander-brackets-beta (2025-02-11, read 2026-08-26).
 - Pauper Commander rules: https://pdhhomebase.com/rules (read 2026-08-26).
 - Game Changers list: https://playgroup.gg/commander/game-changers (2026-08-24 update)
 - Commander brackets revision: https://magic.wizards.com/en/news/announcements/commander-brackets-beta-update-october-21-2025
 - Banned and Restricted 2026-05-18 and 2026-06-29: https://magic.wizards.com/en/news/announcements/banned-and-restricted-may-18-2026 and .../banned-and-restricted-june-29-2026
-- Comprehensive Rules 2026-08-07: https://media.wizards.com/2026/downloads/MagicCompRules%2020260819.txt
+- Comprehensive Rules 2026-08-19 (citations checked against the 2026-08-07 text, D-272): https://media.wizards.com/2026/downloads/MagicCompRules%2020260819.txt
 - Standard sets: https://draftsim.com/mtg-standard-rotation/ (2026-08)
 - ManaBox import/export: https://www.manabox.app/guides/collection/import-export/
 - ManaBox CSV columns: https://github.com/StepKie/MtgCsvHelper (appsettings.json)

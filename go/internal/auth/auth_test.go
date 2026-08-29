@@ -66,6 +66,10 @@ func TestInterceptor(t *testing.T) {
 		{name: "bad token", header: "Bearer nope", wantCode: connect.CodeUnauthenticated},
 		{name: "bad token with a fallback set is still refused", header: "Bearer nope", fallback: "local-dev", wantCode: connect.CodeUnauthenticated},
 		{name: "empty bearer", header: "Bearer ", fallback: "local-dev", wantCode: connect.CodeUnauthenticated},
+		{name: "bare bearer with a fallback is refused", header: "Bearer", fallback: "local-dev", wantCode: connect.CodeUnauthenticated},
+		{name: "bare bearer without a fallback", header: "Bearer", wantCode: connect.CodeUnauthenticated},
+		{name: "tab after the scheme is refused", header: "Bearer\tgood", fallback: "local-dev", wantCode: connect.CodeUnauthenticated},
+		{name: "scheme glued to a word is another scheme", header: "Bearerx good", fallback: "local-dev", wantUID: "local-dev"},
 		{name: "no token, no fallback", wantCode: connect.CodeUnauthenticated},
 		{name: "no token, fallback", fallback: "local-dev", wantUID: "local-dev"},
 		{name: "other scheme, fallback", header: "Basic abc", fallback: "local-dev", wantUID: "local-dev"},
@@ -170,5 +174,27 @@ func TestCORS(t *testing.T) {
 				t.Errorf("allow origin = %q, want %q", got, tt.wantAllow)
 			}
 		})
+	}
+}
+
+func TestBearer(t *testing.T) {
+	for _, tc := range []struct {
+		in      string
+		token   string
+		present bool
+	}{
+		{"Bearer abc", "abc", true},
+		{"bearer abc", "abc", true},
+		{"Bearer", "", true},
+		{"Bearer ", "", true},
+		{"Bearer\tabc", "", true},
+		{"Basic abc", "", false},
+		{"", "", false},
+		{"Bearerx abc", "", false},
+	} {
+		token, present := bearer(tc.in)
+		if token != tc.token || present != tc.present {
+			t.Errorf("bearer(%q) = %q, %v, want %q, %v", tc.in, token, present, tc.token, tc.present)
+		}
 	}
 }

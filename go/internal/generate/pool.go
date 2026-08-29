@@ -18,7 +18,7 @@ import (
 //
 // The always cards carry no owned count here. A caller with a collection
 // uses FromListOwned, or the user's own precon cards count as purchases
-// (G-3 of the 2026-08-28 audit).
+// (D-37).
 func FromList(l *candidates.List, always []*mtgv1.Card, buyList bool) *Pool {
 	return FromListOwned(l, always, nil, buyList)
 }
@@ -92,12 +92,8 @@ func roleWord(r mtgv1.CardRole) string {
 
 // basicNames are the five basic lands, one per color. The shortlist
 // leaves them out on purpose: ranking a Plains against a real card means
-// nothing (candidates.go). A deck still needs them, and a Commander deck
-// that runs 36 lands and no basic is a deck nobody can afford.
-//
-// Gate run 1 of 2026-08-27 returned 12 decks and not one basic land. Two
-// of them came up one card short, and one asked for a Plains the pool did
-// not hold (D-225).
+// nothing (candidates.go). A deck still needs them, so they join the pool
+// as always cards (D-225).
 var basicNames = map[mtgv1.Color]string{
 	mtgv1.Color_COLOR_W: "Plains",
 	mtgv1.Color_COLOR_U: "Island",
@@ -107,7 +103,7 @@ var basicNames = map[mtgv1.Color]string{
 }
 
 // AllColors is the five colors in color order. A 60-card session with no
-// color choice gets every basic (G-7 of the 2026-08-28 audit).
+// color choice gets every basic (D-225).
 var AllColors = []mtgv1.Color{
 	mtgv1.Color_COLOR_W, mtgv1.Color_COLOR_U, mtgv1.Color_COLOR_B,
 	mtgv1.Color_COLOR_R, mtgv1.Color_COLOR_G,
@@ -140,19 +136,9 @@ func hasColor(list []mtgv1.Color, want mtgv1.Color) bool {
 	return false
 }
 
-// IsBasic reports whether a card is a basic land.
-func IsBasic(c *mtgv1.Card) bool {
-	for _, s := range c.GetSupertypes() {
-		if s == "Basic" {
-			return true
-		}
-	}
-	return false
-}
-
 // deckCard makes the entry for a card the builder inserts itself. The
 // owned count and the price come from the pool, so a card the user owns
-// is never charged as a purchase (G-3 of the 2026-08-28 audit).
+// is never charged as a purchase (D-37).
 func deckCard(pool *Pool, c *mtgv1.Card, count int32, role mtgv1.CardRole, reason string) *mtgv1.DeckCard {
 	owned := pool.OwnedCount(c.GetOracleId())
 	return &mtgv1.DeckCard{
@@ -189,7 +175,7 @@ func padWithBasics(deck *mtgv1.Deck, req Request) int {
 	var basics []*mtgv1.Card
 	for _, name := range req.Pool.Names() {
 		c, ok := req.Pool.Card(name)
-		if ok && IsBasic(c) {
+		if ok && candidates.IsBasicLand(c) {
 			basics = append(basics, c)
 		}
 	}
@@ -257,14 +243,15 @@ func missingLocked(deck *mtgv1.Deck, req Request, cards rules.CardSource) []stri
 
 // preconNonbasics is the set of the precon's nonbasic oracle ids. The
 // share rule of D-218 measures these: basic lands swap free, so a deck
-// that trades a Swamp for a Forest has kept the precon (A-5 of the
-// 2026-08-28 audit). A precon card the pool does not hold still counts,
-// because the deck can not keep what the model can not name, and the
-// share must say so.
-func preconNonbasics(req Request) map[string]bool {
+// that trades a Swamp for a Forest has kept the precon. A precon card the
+// pool does not hold still counts, because the deck can not keep what
+// the model can not name, and the share must say so. The card index
+// names a basic the pool does not hold, so a Wastes or a snow basic is
+// never counted as a nonbasic.
+func preconNonbasics(req Request, cards rules.CardSource) map[string]bool {
 	out := make(map[string]bool, len(req.PreconOracleIDs))
 	for _, id := range req.PreconOracleIDs {
-		if c, ok := req.Pool.ByOracleID(id); ok && IsBasic(c) {
+		if c, ok := lookup(req.Pool, cards, id); ok && candidates.IsBasicLand(c) {
 			continue
 		}
 		out[id] = true
@@ -272,25 +259,23 @@ func preconNonbasics(req Request) map[string]bool {
 	return out
 }
 
-// MaxPreconSwap is the largest precon shortfall the builder closes
-// itself. The model chose which cards to drop, and putting one back is
-// what the user asked for. A larger gap means the model built a different
-// deck, and that stays a finding for the user to see (D-250).
-const MaxPreconSwap = 3
-
-// swapBackPrecon puts precon cards back until the share is met, and
-// returns how many it moved. It trades a card the precon does not hold
-// for one it does, so the deck size does not change.
-//
-// The model repaired prompt 17 of 2026-08-28 to 67 of the 68 it needed,
-// read the finding that said so, and returned 67 again. It can not count
-// its own list reliably, so the builder finishes the job.
-func swapBackPrecon(deck *mtgv1.Deck, req Request) int {
-	in := preconNonbasics(req)
-	want := len(in)
-	if want == 0 {
-		return 0
+// lookup reads a card from the pool first and the card index second.
+func lookup(pool *Pool, cards rules.CardSource, id string) (*mtgv1.Card, bool) {
+	if pool != nil {
+		if c, ok := pool.ByOracleID(id); ok {
+			return c, true
+		}
 	}
+	if cards != nil {
+		return cards.ByOracleID(id)
+	}
+	return nil, false
+}
+
+// heldPrecon is the set of precon ids the deck holds, the commanders
+// included: a commander is in the deck, in the command zone. It is a set,
+// so two entries of one card count once.
+func heldPrecon(deck *mtgv1.Deck, in map[string]bool) map[string]bool {
 	held := map[string]bool{}
 	for _, c := range deck.GetCards() {
 		if in[c.GetOracleId()] {
@@ -302,20 +287,45 @@ func swapBackPrecon(deck *mtgv1.Deck, req Request) int {
 			held[id] = true
 		}
 	}
+	return held
+}
+
+// MaxPreconSwap is the largest precon shortfall the builder closes
+// itself. The model chose which cards to drop, and putting one back is
+// what the user asked for. A larger gap means the model built a different
+// deck, and that stays a finding for the user to see (D-250).
+const MaxPreconSwap = 3
+
+// swapBackPrecon puts precon cards back until the share is met, and
+// returns how many it moved. It trades a card the precon does not hold
+// for one it does, so the deck size does not change. The model can not
+// count its own list reliably, so the builder finishes the job (D-250).
+func swapBackPrecon(deck *mtgv1.Deck, req Request, cards rules.CardSource) int {
+	in := preconNonbasics(req, cards)
+	want := len(in)
+	if want == 0 {
+		return 0
+	}
+	held := heldPrecon(deck, in)
 	short := PreconKeepCount(want) - len(held)
 	if short <= 0 || short > MaxPreconSwap {
 		return 0
 	}
 	// The cards to put back, in the precon's own order so the choice is
-	// stable. A card the pool does not hold can not go back.
+	// stable. A card the pool does not hold can not go back, and a card
+	// outside the chosen commanders' color identity can not either (CR
+	// 903.5c).
+	identity := commanderIdentity(deck, req.Pool, cards)
 	var missing []*mtgv1.Card
 	for _, id := range req.PreconOracleIDs {
 		if !in[id] || held[id] {
 			continue
 		}
-		if c, ok := req.Pool.ByOracleID(id); ok {
-			missing = append(missing, c)
+		c, ok := req.Pool.ByOracleID(id)
+		if !ok || (identity != nil && !candidates.IdentityFits(c.GetColorIdentity(), identity)) {
+			continue
 		}
+		missing = append(missing, c)
 	}
 	locked := map[string]bool{}
 	for _, id := range req.Locked {
@@ -330,7 +340,7 @@ func swapBackPrecon(deck *mtgv1.Deck, req Request) int {
 		if in[c.GetOracleId()] || locked[c.GetOracleId()] || c.GetCount() != 1 {
 			continue
 		}
-		if pc, ok := req.Pool.ByOracleID(c.GetOracleId()); ok && IsBasic(pc) {
+		if pc, ok := req.Pool.ByOracleID(c.GetOracleId()); ok && candidates.IsBasicLand(pc) {
 			continue
 		}
 		deck.Cards[i] = deckCard(req.Pool, missing[moved], 1, c.GetRole(),
@@ -338,4 +348,26 @@ func swapBackPrecon(deck *mtgv1.Deck, req Request) int {
 		moved++
 	}
 	return moved
+}
+
+// commanderIdentity is the union of the chosen commanders' color
+// identities, as an allowed-color set. Nil means no commander is chosen,
+// so no color test applies.
+func commanderIdentity(deck *mtgv1.Deck, pool *Pool, cards rules.CardSource) map[mtgv1.Color]bool {
+	var colors []mtgv1.Color
+	found := false
+	for _, id := range deck.GetCommanderOracleIds() {
+		if c, ok := lookup(pool, cards, id); ok {
+			found = true
+			colors = append(colors, c.GetColorIdentity()...)
+		}
+	}
+	if !found {
+		return nil
+	}
+	set := candidates.ColorSet(colors)
+	if set == nil {
+		set = map[mtgv1.Color]bool{}
+	}
+	return set
 }

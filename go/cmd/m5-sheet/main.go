@@ -1,11 +1,9 @@
 // Command m5-sheet builds the M-5 scoring sheet from one or more gate
 // documents (D-66, D-104).
 //
-// Version 1 held only a question the model offered to replace. That was
-// 60 of the 793 questions of gate runs 10 to 13, or 7.6 percent, and a
+// Version 1 held only a question the model offered to replace, so a
 // question that was wrong but that the model never challenged could not
-// become an item. The owner found such questions anyway, by reading
-// around the items. The sheet now holds both kinds (D-104):
+// become an item. The sheet holds both kinds (D-104):
 //
 //   - A replacement item pairs the question the model wrote with the
 //     catalog row it replaced. It carries the six fields of D-66, and it
@@ -17,7 +15,7 @@
 // over the rows, so one noisy row does not fill it and every row appears.
 //
 // Every tenth item repeats an earlier one, unlabeled, so the sheet
-// measures the owner's self-consistency (D-66).
+// measures the scorer's self-consistency (D-66).
 //
 // Usage:
 //
@@ -40,12 +38,12 @@ import (
 
 // RubricVersion versions the fields. A change to them invalidates every
 // score already given (D-66). Version 2 adds the `warranted` field, the
-// three faults the owner used while scoring version 1, and the `n/a`
+// three faults the version-1 scoring added, and the `n/a`
 // value for a row that must not exist (D-104, D-114).
 const RubricVersion = 2
 
-// DefaultItems is the sheet size the owner chose on 2026-08-25. It keeps
-// the scoring workload the same as version 1.
+// DefaultItems is the sheet size. It keeps the scoring workload the same
+// as version 1 (D-104).
 const DefaultItems = 60
 
 // item is one question the agent asked.
@@ -168,7 +166,7 @@ func collect(patterns []string) ([]item, error) {
 	return out, nil
 }
 
-// scorable keeps the items the owner can actually score. A replacement
+// scorable keeps the items a scorer can judge. A replacement
 // with no catalog text goes, because the rubric compares the two. Any
 // item whose row the catalog no longer holds goes too.
 func scorable(items []item) (kept []item, dropped map[string]int, err error) {
@@ -232,9 +230,8 @@ func pick(items []item, n int) []item {
 			break
 		}
 	}
-	// The repeats sit inside the count. The sheet used to be cut after
-	// the repeats went in, which dropped real items off the end while
-	// every repeat stayed (audit 2026-08-28).
+	// The repeats sit inside the count, so the cut runs before they go
+	// in and no real item is dropped for a repeat (D-66).
 	for n > 0 && len(withRepeats(base)) > n {
 		base = base[:len(base)-1]
 	}

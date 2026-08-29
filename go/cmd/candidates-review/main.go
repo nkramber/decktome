@@ -1,13 +1,17 @@
 // Command candidates-review writes the PR-6 gate document. It runs the
-// gate prompts (prompts.json) against a local snapshot and prints a
-// Markdown file for the owner to score: top 40 candidates per prompt,
-// with role, owned count, and the signals that put each card there.
+// gate prompts (prompts.json) against a local snapshot and writes a
+// Markdown file a person scores: top 40 candidates per prompt, with
+// role, owned count, and the signals that put each card there.
+//
+// It calls no provider. With -out it refuses a file that exists: a
+// scored document is never overwritten (D-65). Without -out it writes
+// to stdout.
 //
 // Usage:
 //
 //	CARDS_SNAPSHOT_DIR=.local/gcs/mtg-local-cards/scryfall \
-//	  go run ./cmd/candidates-review -collection ../go/internal/collections/testdata/manabox_collection.csv \
-//	  > ../docs/reference/pr6-candidate-review.md
+//	  go run ./cmd/candidates-review -collection internal/collections/testdata/manabox_collection.csv \
+//	  -out ../docs/reference/pr6-candidate-review.md
 package main
 
 import (
@@ -41,11 +45,31 @@ type prompt struct {
 func main() {
 	collectionPath := flag.String("collection", "", "ManaBox CSV for the owned-first prompts")
 	top := flag.Int("top", 40, "candidates to print per prompt")
+	out := flag.String("out", "", "write the document here (default stdout); an existing file is refused")
 	flag.Parse()
-	if err := run(*collectionPath, *top, os.Stdout); err != nil {
+	if err := runTo(*collectionPath, *top, *out); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+}
+
+// runTo writes the document to path, or to stdout when path is empty.
+func runTo(collectionPath string, top int, path string) error {
+	if path == "" {
+		return run(collectionPath, top, os.Stdout)
+	}
+	if err := gatekit.RefuseExisting(path); err != nil {
+		return err
+	}
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600) // #nosec G304 -- the operator names the file.
+	if err != nil {
+		return err
+	}
+	if err := run(collectionPath, top, f); err != nil {
+		_ = f.Close()
+		return err
+	}
+	return f.Close()
 }
 
 func run(collectionPath string, top int, w io.Writer) error {

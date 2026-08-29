@@ -1,8 +1,8 @@
-// Package collections imports and stores user card collections (PR-4).
+// Package collections imports and stores user card collections.
 //
-// Import rules: parse by header name, never by column position (F-2).
-// Every input row either resolves to a card or comes back in the report
-// with a reason. Nothing is dropped in silence (D-23, PR-4 gate).
+// Import rules: parse by header name, never by column position. Every
+// input row either resolves to a card or comes back in the report with
+// a reason. Nothing is dropped in silence (D-23).
 package collections
 
 import (
@@ -34,18 +34,17 @@ type Row struct {
 }
 
 // maxQuantity caps one row. ManaBox has no documented cap. A row above
-// this is a typo or an attack, and int32 stays safe (C-9).
+// this is a typo or an attack, and int32 stays safe.
 const maxQuantity = 10_000
 
 // maxRawBytes bounds the echoed row text in a report.
 const maxRawBytes = 200
 
-// Known ManaBox value vocabularies (C-15). Sources, 2026-08-24:
-//   - The owner's export of 2026-08-24 uses Foil = normal|foil|etched
-//     and Condition = near_mint only.
-//   - The ManaBox guide (https://www.manabox.app/guides/collection/import-export/)
-//     lists the required columns (Name plus Set code or Set name). It
-//     gives no value vocabulary for Foil or Condition.
+// Known ManaBox value vocabularies. A real export uses Foil =
+// normal|foil|etched and Condition = near_mint. The ManaBox guide
+// (https://www.manabox.app/guides/collection/import-export/) lists the
+// required columns (Name plus Set code or Set name) and gives no value
+// vocabulary for Foil or Condition.
 //
 // The condition names below beyond near_mint follow the ManaBox app's
 // condition picker (mint, near_mint, excellent, good, light_played,
@@ -87,7 +86,7 @@ func ParseManaBoxCSV(r io.Reader) ([]Row, []*mtgv1.UnresolvedRow, error) {
 		return nil, nil, fmt.Errorf("manabox csv: no header: %w", err)
 	}
 	// A UTF-8 BOM before the first header cell is part of the cell
-	// for encoding/csv. Strip it (C-15).
+	// for encoding/csv. Strip it.
 	if len(header) > 0 {
 		header[0] = strings.TrimPrefix(header[0], "\uFEFF")
 	}
@@ -127,14 +126,14 @@ func ParseManaBoxCSV(r io.Reader) ([]Row, []*mtgv1.UnresolvedRow, error) {
 			break
 		}
 		if err != nil {
-			// A broken record has no field positions. ParseError
-			// carries the line instead.
+			// A broken record has no fields to echo. ParseError carries
+			// the line, and the report names it.
 			line := 0
 			var pe *csv.ParseError
 			if errors.As(err, &pe) {
 				line = pe.Line
 			}
-			bad = append(bad, unresolved(line, strings.Join(rec, ","), mtgv1.UnresolvedReason_UNRESOLVED_REASON_BAD_ROW))
+			bad = append(bad, unresolved(line, fmt.Sprintf("unparseable record at line %d", line), mtgv1.UnresolvedReason_UNRESOLVED_REASON_BAD_ROW))
 			continue
 		}
 		// FieldPos gives the physical line of the record. A quoted
@@ -219,9 +218,8 @@ func ParseArenaText(r io.Reader) ([]Row, []*mtgv1.UnresolvedRow, error) {
 			continue
 		}
 		row.Line = line
-		// The raw line names the row a later step could not resolve. It
-		// was empty before, so an unresolved deck row said nothing about
-		// which line failed (D-246).
+		// The raw line names the row a later step could not resolve
+		// (D-246).
 		row.Raw = text
 		rows = append(rows, row)
 	}
@@ -240,10 +238,9 @@ func parseArenaLine(text string) (Row, bool) {
 	rest := fields[1:]
 	row := Row{Quantity: qty, Finish: mtgv1.Finish_FINISH_NORMAL, Condition: mtgv1.Condition_CONDITION_NEAR_MINT, Language: "en"}
 	// A finish marker trails the line: "*F*" is foil and "*E*" is etched.
-	// It sits after the collector number, so the set and number pair below
-	// can not be found while it is there. The Avengers Assemble precon of
-	// 2026-08-28 marked its commander foil, and the whole line became the
-	// card name: the deck lost the one card it is built around (D-246).
+	// It sits after the collector number, so it comes off before the set
+	// and number pair is read, or the whole line becomes the card name
+	// (D-246).
 	if len(rest) > 0 {
 		if f, ok := arenaFinish(rest[len(rest)-1]); ok {
 			row.Finish = f
@@ -271,7 +268,7 @@ func unresolved(line int, raw string, reason mtgv1.UnresolvedReason) *mtgv1.Unre
 }
 
 // truncateRaw cuts raw to maxRawBytes on a rune boundary, so the
-// protobuf string stays valid UTF-8 (C-7). Invalid input bytes are
+// protobuf string stays valid UTF-8. Invalid input bytes are
 // replaced too.
 func truncateRaw(raw string) string {
 	if len(raw) > maxRawBytes {

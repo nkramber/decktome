@@ -1,5 +1,5 @@
 // Package revise reads a message after a build and turns it into a
-// revision brief (roadmap PR-12B, D-283). A request has three outcomes
+// revision brief (D-283). A request has three outcomes
 // and never silence: a question when it is unclear, a change, or a
 // decline with a reason (D-284).
 package revise

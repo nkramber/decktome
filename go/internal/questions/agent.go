@@ -14,11 +14,10 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 )
 
-// DefaultFitThreshold is the gap-score threshold (D-27). A catalog
+// DefaultFitThreshold is the gap-score threshold (D-27, D-69). A catalog
 // question with a fit at or above it wins. Below it, the model may
-// invent one. The value is conservative on the owner's instruction of
-// 2026-08-24, so the agent almost never invents. The M-5 sheets read the
-// value from the gate document (D-66).
+// invent one. The value is conservative, so the agent almost never
+// invents. The M-5 sheets read the value from the gate document (D-66).
 const DefaultFitThreshold = 0.35
 
 // Agent runs one conversation turn: it maps the user's words onto slots,
@@ -29,8 +28,8 @@ const DefaultFitThreshold = 0.35
 // fits the user's words, and offers a replacement when the fit is poor
 // (D-25). The ask role then phrases what the agent decided to ask. A
 // turn whose every row is fixed skips the last two calls. The score has
-// its own call on the owner's directive of 2026-08-24: a model that
-// phrases a question must not also rate its own wording.
+// its own call: a model that phrases a question must not also rate its
+// own wording (D-69).
 type Agent struct {
 	cat       *Catalog
 	llm       *llm.Client
@@ -111,7 +110,7 @@ func (a *Agent) classify(ctx context.Context, st *State, message string, acc *ll
 	st.AddMessage(message)
 	st.Turn++
 	// The keys a deck slot fills before this turn. An out-of-scope
-	// question closes when the user fills one afterwards (H-6).
+	// question closes when the user fills one afterwards (D-196).
 	deckKeysBefore := deckKeysFilled(st)
 	// The word rules read the user's own words. A quoted question is the
 	// agent's text, and its format list is not a two-deck request.
@@ -122,7 +121,7 @@ func (a *Agent) classify(ctx context.Context, st *State, message string, acc *ll
 	// The scope question closes when the user answers it with a deck.
 	// The row offers "Yes, a Magic deck", and a user who writes "a Modern
 	// burn deck" instead has said the same thing. Nothing else closed
-	// that key, so the session never reported ready (H-6).
+	// that key, so the session never reported ready (D-196).
 	if st.Slots.GetSlotStates()["scope"] == mtgv1.SlotState_SLOT_STATE_ASKED &&
 		!st.Ctx.OutOfScope && deckKeysFilled(st) > deckKeysBefore {
 		a.log.Info("the user asked for a Magic deck, so the scope question closed",
@@ -140,7 +139,7 @@ func (a *Agent) classify(ctx context.Context, st *State, message string, acc *ll
 // otherwise be invisible to it (D-124). The facts it answers move with
 // the slots, so they are read again here and not only before the turn:
 // a one-message answer filled the format and the theme, and the
-// thin-theme count was never taken (M-6).
+// thin-theme count was never taken (D-198).
 func (a *Agent) readFacts(st *State) {
 	if pa, ok := a.hints.(PairAware); ok && st.Ctx.WantPair {
 		pa.UseWantPair(true, st.Ctx.WantBackground)
@@ -156,9 +155,7 @@ func (a *Agent) readFacts(st *State) {
 	// table, and the color check drops a name the colors exclude (D-163).
 	st.Ctx.OfferChanged = st.OfferChanged()
 	// The decline rows ask again only when the user names another format
-	// this app does not build. Probes 18 and 26 of gate run
-	// 20260826-220840-000 named the same one twice, and got the same
-	// sentence twice (D-210).
+	// this app does not build (D-210).
 	st.Ctx.BadFormatChanged = st.BadFormatChanged()
 }
 
@@ -174,10 +171,8 @@ type resolvedRows struct {
 // brace that reaches a model comes back as a question aimed at the user.
 func (a *Agent) plan(st *State, message string) ([]Row, resolvedRows) {
 	rows := a.cat.Plan(st.Ctx)
-	// A user can answer a question in the same message that raises it.
-	// Conversation 21 writes "Any card, no ban list. Call it Vintage",
-	// which triggers the house-rules row and answers it at once. The
-	// agent asked it anyway (D-122).
+	// A user can answer a question in the same message that raises it, and
+	// the agent must not ask it (D-122).
 	//
 	// A closed key can free a row that waited on it, so the planner runs
 	// once more.
@@ -193,21 +188,16 @@ func (a *Agent) plan(st *State, message string) ([]Row, resolvedRows) {
 	for _, r := range rows {
 		text, opts, names := resolve(r, st, a.hints)
 		// A row that exists to name commanders can not do its job when
-		// the pool gives none. Probe 35 asked "Which commander would you
-		// like, or should I suggest three more?" twice, with nothing to
-		// suggest, because the user named no theme. The agent chooses
-		// instead, and the skipped state records that nobody picked
-		// (D-127).
+		// the pool gives none. The agent chooses instead, and the skipped
+		// state records that nobody picked (D-127).
 		if len(commanderKeysIn(r.Text)) > 0 && len(names) == 0 {
 			a.log.Info("no commander to offer, so the agent chooses",
 				"session", st.SessionID, "row", r.ID)
 			st.Skip(r.StateKey())
-			// The agent has taken the choice, so the slot is settled too.
-			// Probe 47 declines every question, and the session then
-			// called itself complete with the commander never asked
-			// (D-127). A slot the user filled stays filled: a row with its
-			// own key must not overwrite the commander the user named
-			// (M-5).
+			// The agent has taken the choice, so the slot is settled too, and
+			// the session must not report ready with the commander never asked
+			// (D-127). A slot the user filled stays filled: a row with its own
+			// key must not overwrite the commander the user named (D-131).
 			if r.Slot != r.StateKey() && !st.Ctx.Filled[r.Slot] {
 				st.Skip(r.Slot)
 			}
@@ -226,12 +216,12 @@ func (a *Agent) plan(st *State, message string) ([]Row, resolvedRows) {
 //
 // A turn whose every row is fixed makes no score call. A fixed row goes
 // out as written whatever the score says, so the call could change
-// nothing (audit, 2026-08-28).
+// nothing (D-117).
 func (a *Agent) choose(ctx context.Context, st *State, message string, rows []Row, resolved map[string]string, acc *llm.Accumulator) ([]choice, error) {
 	scores := map[string]scored{}
-	if !allFixed(rows) {
+	if open := notFixed(rows); len(open) > 0 {
 		var err error
-		scores, err = a.score(ctx, st, message, rows, resolved, acc)
+		scores, err = a.score(ctx, st, message, open, resolved, acc)
 		if err != nil {
 			return nil, err
 		}
@@ -272,11 +262,8 @@ func (a *Agent) choose(ctx context.Context, st *State, message string, rows []Ro
 					"replacement", custom, "row_text", c.Text)
 			default:
 				// The options stay. A row's option set is its decision
-				// space, and a replacement must keep it (the score prompt
-				// says so). Gate run 4 of 2026-08-25 replaced the
-				// card-pool question twice, and each replacement offered
-				// two of the three pool modes, so the user lost
-				// owned-only or owned-first (D-37).
+				// space, and a replacement must keep it, or the user loses a
+				// pool mode (D-37).
 				c.Text, c.Invented = custom, true
 			}
 		}
@@ -285,24 +272,25 @@ func (a *Agent) choose(ctx context.Context, st *State, message string, rows []Ro
 	return chosen, nil
 }
 
-// allFixed reports whether every planned row goes out as written.
-func allFixed(rows []Row) bool {
+// notFixed returns the rows a score can change. A fixed row goes out as
+// written whatever its score, so it never reaches the score call
+// (D-117).
+func notFixed(rows []Row) []Row {
+	var out []Row
 	for _, r := range rows {
 		if !r.Fixed {
-			return false
+			out = append(out, r)
 		}
 	}
-	return len(rows) > 0
+	return out
 }
 
 // send phrases the chosen questions, records them, and builds the
 // result.
 //
-// A fixed row never reaches the ask role. Making it unreplaceable was
-// not enough: the smoke run before gate 14 (2026-08-26 UTC) saw the ask
-// role rewrite "I build one deck at a time. Which deck do you want
-// first?" as "Which deck would you like to build first: Commander or
-// Modern?" The sentence that names the limit went away again.
+// A fixed row never reaches the ask role. Making it unreplaceable is
+// not enough: a rephrasing drops the sentence that names the limit
+// (D-117, D-131).
 func (a *Agent) send(ctx context.Context, st *State, message string, chosen []choice, resolved resolvedRows, acc *llm.Accumulator) (Result, error) {
 	var phrase []choice
 	for _, c := range chosen {
@@ -337,7 +325,10 @@ func (a *Agent) send(ctx context.Context, st *State, message string, chosen []ch
 			if kept := guard(c.Row.ID, p.Text, c.Text); kept != c.Text {
 				q.Text = kept
 			}
-			if len(p.Options) > 0 {
+			// A closed row keeps the catalog options. The UI offers them
+			// as the whole answer space, and the option net compares the
+			// answer with the catalog words (D-295, D-119).
+			if len(p.Options) > 0 && !c.Row.Closed {
 				q.Options = p.Options
 			}
 		}
@@ -371,7 +362,7 @@ func (a *Agent) send(ctx context.Context, st *State, message string, chosen []ch
 		}
 		rec.NearCopy, rec.RefusedText = c.NearCopy, c.Refused
 		// Keep the resolved row whenever the phrasing changed it. The
-		// guard read the resolved text, so the owner must see it (D-116).
+		// guard read the resolved text, so the M-5 sheet must show it (D-116).
 		if q.GetText() != resolved.text[c.Row.ID] {
 			rec.ResolvedText = resolved.text[c.Row.ID]
 		}
@@ -421,8 +412,8 @@ type classifyOut struct {
 	// asks it, and nothing stored the answer before D-238.
 	BudgetScope string `json:"budget_scope"`
 	// HouseRules is what the user means by "anything goes", in the
-	// user's own words. The house-rules row asks it, and nothing stored
-	// the answer before A-6 of the 2026-08-28 audit (D-3).
+	// user's own words. The house-rules row asks it, and the build reads
+	// the answer (D-3, D-265).
 	HouseRules string   `json:"house_rules"`
 	ClosedKeys []string `json:"closed_keys"`
 	// DeclinedKeys are the keys the user handed back to the agent. A
@@ -433,7 +424,6 @@ type classifyOut struct {
 		NamedCard        bool `json:"named_card"`
 		BuyList          bool `json:"buy_list"`
 		HouseFormat      bool `json:"house_format"`
-		TwoPlans         bool `json:"two_plans"`
 		BudgetAmbiguous  bool `json:"budget_ambiguous"`
 		PowerCompetitive bool `json:"power_competitive"`
 		// WantsSuggestion says the user asked the agent to name a
@@ -450,9 +440,9 @@ type classifyOut struct {
 //
 // prior_messages carries the user's earlier messages, so the model reads
 // them instead of a rule that told it to repeat values it never saw
-// (audit Q-13). The provider cache keys on the instruction prefix and
-// the session, and the input differs on every turn in any case, so the
-// list costs no cache hit.
+// (D-90). The provider cache keys on the instruction prefix and the
+// session, and the input differs on every turn in any case, so the list
+// costs no cache hit.
 func (a *Agent) classifyCall(ctx context.Context, st *State, message string, open []string, acc *llm.Accumulator) (classifyOut, error) {
 	prior := st.Prior()
 	if prior == nil {
@@ -466,7 +456,7 @@ func (a *Agent) classifyCall(ctx context.Context, st *State, message string, ope
 		"open_keys":          open,
 		"offered_commanders": st.CurrentOffer,
 		// The format the agent offered in place of one it does not build.
-		// A "yes" fills the format from it (audit Q-4).
+		// A "yes" fills the format from it (D-112).
 		"nearest_format": st.NearestFormat,
 	})
 	if err != nil {
@@ -497,12 +487,9 @@ const minOptionMatch = 8
 // options that question offered. It is a net under the classifier, and it
 // closes nothing the classifier already closed.
 //
-// Conversation 5 is the evidence. The agent asks "When you say anything
-// goes, do you mean any card with no ban list, or Vintage rules?" The
-// user answers "Any card, no ban list." The classifier left the key open
-// in gate run 13 and in the batch run of 2026-08-26. The house-format
-// row waits on that key, so it never fired, and the user's next message
-// answered a question nobody had asked (D-119).
+// The classifier can leave the key open when the user repeats an option
+// word for word. The house-format row waits on that key, so it would
+// never fire (D-119).
 //
 // A typed slot is left alone. Such a slot closes on its value, and a
 // name says only "answered" (D-83).
@@ -605,7 +592,7 @@ type turnWords struct {
 	Message string
 	// Declined and Closed are the keys the classifier put the message
 	// under. A delegation reads them to learn which question the user
-	// answered (audit Q-11).
+	// answered (D-147).
 	Declined, Closed []string
 	// Open are the keys that were out when the turn began. A rule reads
 	// them to learn which question a value answers (D-288).
@@ -638,8 +625,7 @@ type wordRule struct {
 // wordRules are the deterministic word rules, in the order they run.
 // Every rule here needs no model call, so it costs nothing and it can not
 // drift between runs. They fill a gap the classify role left, and they
-// never replace a value it gave. Each one answers a defect a gate run
-// recorded.
+// never replace a value it gave.
 //
 // The order matters in four places. The format rules run first, because
 // every later row routes on the format. The nearest-format acceptance
@@ -678,12 +664,11 @@ func (a *Agent) applyWords(st *State, in turnWords) {
 	}
 }
 
-// ruleFormatFromWords reads a format the classifier missed. Conversation
-// 23 of run 11 opened with "A land destruction Commander deck." and still
-// got the format question. Conversation 27 says "not as my commander" in
-// every run, which names no format and can only mean Commander.
+// ruleFormatFromWords reads a format the classifier missed. "A land
+// destruction Commander deck" names the format, and "not as my
+// commander" names no format and can only mean Commander (D-116).
 //
-// It reads this message alone (audit Q-7).
+// It reads this message alone (D-125).
 func ruleFormatFromWords(a *Agent, st *State, in turnWords) {
 	if st.Ctx.Format != mtgv1.FormatId_FORMAT_ID_UNSPECIFIED {
 		return
@@ -697,8 +682,7 @@ func ruleFormatFromWords(a *Agent, st *State, in turnWords) {
 
 // ruleAcceptNearestFormat fills the format when the user accepts the
 // nearest one. The decline row offers "Yes, use the nearest format", and
-// no path filled the slot on that answer: the turn returned no question
-// and no status (audit Q-4).
+// the slot must fill on that answer (D-112).
 //
 // The rule fires only while the decline row is the open format question,
 // so a bare "yes" reaches nothing else.
@@ -728,22 +712,18 @@ func (a *Agent) setFormat(st *State, id mtgv1.FormatId) {
 	st.Close("format")
 }
 
-// ruleUnsupportedFormat reads a format this app does not build. Run 13
-// offered Brawl to probe 46.
+// ruleUnsupportedFormat reads a format this app does not build (D-112).
 //
 // It reads this message alone. A user who names one after a supported
-// format is filled gets the decline row, through the D-125 path that a
-// format change takes: the open questions retire and the format reopens
-// (audit Q-6). Before that fix the message got silence.
+// format is filled gets the decline row, through the path that a format
+// change takes: the open questions retire and the format reopens
+// (D-125).
 func ruleUnsupportedFormat(a *Agent, st *State, in turnWords) {
 	name, near, ok := unsupportedFormat(in.Message)
 	declared := st.Ctx.Asked["format_unsupported"] || st.Ctx.Asked["format_unsupported_open"]
 	if !ok {
 		// The row states the limit once, and it asks again only while
-		// the user keeps naming the format. D-157 made it repeat every
-		// turn, and eval run 17 refused 14 questions on this one row.
-		// Probe 18 answered "Casual power, and 25 dollars is the cap"
-		// on turn 3 and got the same format question a third time (D-158).
+		// the user keeps naming the format (D-158, narrows D-157).
 		if declared {
 			st.Ctx.UnsupportedFormat = false
 		}
@@ -753,19 +733,16 @@ func ruleUnsupportedFormat(a *Agent, st *State, in turnWords) {
 		a.log.Info("the user named a format this app does not build after a format was filled, so the format reopens",
 			"session", st.SessionID, "from", st.Ctx.Format.String(), "format", name)
 		st.RetireOutstanding(a.cat)
-		st.Reopen("format")
+		st.ReopenRows(a.cat, "format")
 		st.Slots.Format, st.Ctx.Format = nil, mtgv1.FormatId_FORMAT_ID_UNSPECIFIED
 	} else if !declared && !st.Ctx.UnsupportedFormat {
 		// A newly named unsupported format retires the questions that
 		// are out. The plain format row is one of them, and D-126
-		// blocks every other row on that key while it waits. Probe 21
-		// asked the format on turn 1, the user answered "Call it
-		// Vintage" on turn 2, and the agent could never say that it
-		// does not build Vintage (D-157).
-		// "Declared" is sticky, and the firing fact is not. Reading
-		// the fact to decide the first time made it oscillate: true on
-		// turn 1, false on turn 2, and true again on turn 3, so the
-		// row asked a third time in probes 61 and 97 (D-158).
+		// blocks every other row on that key while it waits, so the
+		// decline could never go out (D-157).
+		// "Declared" is sticky, and the firing fact is not. The fact
+		// alone oscillates from turn to turn, and the row would ask a
+		// third time (D-158).
 		a.log.Info("the user named a format this app does not build",
 			"session", st.SessionID, "format", name)
 		st.RetireOutstanding(a.cat)
@@ -779,22 +756,21 @@ func ruleUnsupportedFormat(a *Agent, st *State, in turnWords) {
 
 // ruleOneDeck reads a request for two decks from one message, and never
 // from the whole conversation. A user who changes the format across two
-// turns has not asked for two decks, and probe 31 does exactly that
-// (D-112).
+// turns has not asked for two decks (D-112).
 //
 // The fact is not sticky. A second request on a later turn raises it
-// again, and the one-deck row says its sentence again (audit Q-10).
+// again, and the one-deck row says its sentence again (D-112).
 func ruleOneDeck(a *Agent, st *State, in turnWords) {
 	st.Ctx.TwoDecks = oneDeckRequest(in.Message)
 	switch {
 	case st.Ctx.TwoDecks && st.Ctx.Filled["deck_count"]:
 		a.log.Info("the user asked for two decks again, so the one-deck question reopens",
 			"session", st.SessionID)
-		st.Reopen("deck_count")
+		st.ReopenRows(a.cat, "deck_count")
 	case !st.Ctx.TwoDecks && st.Slots.GetSlotStates()["deck_count"] == mtgv1.SlotState_SLOT_STATE_ASKED:
 		// The one-deck question is out, and the user wrote about one
 		// deck. That is the answer. Nothing else closed the key, so the
-		// session never reported ready (H-6).
+		// session never reported ready (D-196).
 		a.log.Info("the user named one deck, so the one-deck question closed",
 			"session", st.SessionID)
 		st.Skip("deck_count")
@@ -820,9 +796,7 @@ func ruleProxyUser(a *Agent, st *State, _ turnWords) {
 		return
 	}
 	st.Skip("budget")
-	// No budget means no scope to ask about. Probe 92 of gate run 24
-	// said "I proxy anything over 20 dollars", and the scope row
-	// still asked which of the two the cap covers (D-253).
+	// No budget means no scope to ask about (D-253).
 	st.Skip("budget_scope")
 	a.log.Info("the user proxies their cards, so the budget slot is closed",
 		"session", st.SessionID)
@@ -830,10 +804,8 @@ func ruleProxyUser(a *Agent, st *State, _ turnWords) {
 
 // ruleBudgetScope reads the scope of a cap from the words. A message
 // that names the buy list names the scope with it, so the scope row has
-// its answer. Conversation 2 of gate run 24 said "Build owned-first with
-// a buy list" and was asked anyway (D-253). "The whole deck" is the other
-// option of the row, and the scope is typed, so the words must carry the
-// value (audit Q-9).
+// its answer (D-253). "The whole deck" is the other option of the row,
+// and the scope is typed, so the words must carry the value (D-238).
 func ruleBudgetScope(a *Agent, st *State, in turnWords) {
 	if st.Slots.GetBudgetScope() != mtgv1.BudgetScope_BUDGET_SCOPE_UNSPECIFIED {
 		return
@@ -875,10 +847,7 @@ func ruleNoSpendingLimit(a *Agent, st *State, in turnWords) {
 // ruleBuyList sets the buy-list fact. A buy list exists when the user
 // owns nothing to build from, or when the pool rule lets the deck hold a
 // card they do not own. The corpus fires the budget row on a buy list or
-// an any-card pool, and only a model fact carried that. 61 of the 63
-// sessions of gate run 18 that had no collection were never asked about
-// the budget, and the eval named the budget in 20 of its unasked slots
-// (D-168).
+// an any-card pool, and a model fact alone misses most of them (D-168).
 func ruleBuyList(_ *Agent, st *State, _ turnWords) {
 	if !st.Ctx.HasCollection || buysCards(st.Slots.GetPoolRule()) {
 		st.Ctx.BuyList = true
@@ -897,9 +866,8 @@ func ruleColorless(a *Agent, st *State, in turnWords) {
 		"session", st.SessionID)
 }
 
-// ruleCEDH fills bracket 5 for cEDH. It is bracket 5 by definition, and
-// the bracket question asked probe 75 for a value its first message gave
-// (D-164).
+// ruleCEDH fills bracket 5 for cEDH. It is bracket 5 by definition, so
+// the bracket question has its answer (D-164).
 func ruleCEDH(a *Agent, st *State, _ turnWords) {
 	if !cedhRequest(st.Ctx.Words) || st.Slots.GetPower() != nil {
 		return
@@ -912,9 +880,9 @@ func ruleCEDH(a *Agent, st *State, _ turnWords) {
 
 // ruleHouseRules stores the house rules when the user repeats the option
 // the house-rules row offers. The slot is typed, so the D-119 net can not
-// close it by name, and the classifier missed this answer in gate run 13
-// and in the batch run of 2026-08-26. The option the user repeated is
-// the user's own words for what "anything goes" means.
+// close it by name, and the classifier can miss the answer. The option
+// the user repeated is the user's own words for what "anything goes"
+// means (D-265).
 //
 // The rule fires when the row's question is out, or when the same
 // message raises the row and answers it (D-122).
@@ -954,8 +922,7 @@ func ruleCardInThe99(_ *Agent, st *State, in turnWords) {
 
 // ruleNamedCardAsCommander sets the commander from the named card when
 // the user gives it that role. The role row offers "As my commander",
-// and the option closed the row with no commander set: the key is typed,
-// and its value is the card (audit Q-14).
+// and the key is typed: its value is the card (D-118, D-83).
 func ruleNamedCardAsCommander(a *Agent, st *State, in turnWords) {
 	if st.Ctx.CommanderSet || len(st.NamedCards) == 0 {
 		return
@@ -1001,27 +968,24 @@ func ruleCommanderPair(a *Agent, st *State, in turnWords) {
 }
 
 // ruleDelegateCommander reads a commander choice the user handed to the
-// agent. "You pick the commander" reads as neither a refusal nor a pick,
-// so every rule before D-147 ignored it. The pick row carries "repeat":
-// true, so it asked again every turn until the messages ran out. Eval
-// run 14 refused 18 of its 43 bad questions on that row alone.
+// agent. "You pick the commander" is neither a refusal nor a pick, and
+// the pick row would otherwise ask again every turn (D-147).
 //
 // A delegation is a decline (D-93). It closes the key, it names no
 // value, and the generator takes the best commander of the pool. The
 // names on the table leave with it, so a later color change has nothing
-// to reopen (D-153, audit Q-5).
+// to reopen (D-153).
 //
 // The scope guard keeps "up to you" from closing the commander choice
 // when the user answered some other question with it. The classifier
 // says which question the message answered: a delegation it filed under
 // the colors is not about the commander, even while a commander question
 // is out. Without a classifier verdict, the commander question must be
-// the only one out, or the message must name a commander (audit Q-11).
+// the only one out, or the message must name a commander (D-147).
 //
 // A superlative delegates too. "Buy the best lifegain commander" names
-// no card and asks the agent to select one, and conversation 10 answered
-// it with three names to choose from. That form carries its own guard:
-// the message must name a commander (D-167).
+// no card and asks the agent to select one. That form carries its own
+// guard: the message must name a commander (D-167).
 func ruleDelegateCommander(a *Agent, st *State, in turnWords) {
 	if st.Ctx.CommanderSet || (!delegatesChoice(in.Message) && !delegatesCommander(in.Message)) {
 		return
@@ -1062,9 +1026,9 @@ func delegationIsAboutTheCommander(st *State, in turnWords) bool {
 	return true
 }
 
-// rulePickByPlace reads a commander chosen by its place. Conversation 14
-// answers "The first of the new three is good", and the classifier can
-// not map that onto a name, because it never sees the names (D-121).
+// rulePickByPlace reads a commander chosen by its place, such as "the
+// first of the new three". The classifier can not map that onto a name,
+// because it never sees the names (D-121).
 func rulePickByPlace(a *Agent, st *State, in turnWords) {
 	if !st.Ctx.Asked["commander_pick"] || st.Ctx.Filled["commander_pick"] || refusedOffer(in.Message) {
 		return
@@ -1078,7 +1042,8 @@ func rulePickByPlace(a *Agent, st *State, in turnWords) {
 
 // ruleRefuseOffer retires the names on the table when the user refuses
 // them, and the pick row asks again with three others. The classifier
-// reported the refusal as an answer in gate runs 12 and 13 (D-73, D-120).
+// can report the refusal as an answer, so a word rule reads it (D-73,
+// D-120).
 func ruleRefuseOffer(a *Agent, st *State, in turnWords) {
 	if !st.Ctx.Asked["commander_pick"] || st.Ctx.Filled["commander_pick"] || !refusedOffer(in.Message) {
 		return
@@ -1138,7 +1103,6 @@ func (a *Agent) apply(st *State, out classifyOut, open []string, message string)
 	a.applyNames(st, out)
 	if rule, ok := poolRules[slotWord(out.PoolRule)]; ok {
 		st.Slots.PoolRule = rule
-		st.Ctx.OwnedMode = rule != mtgv1.PoolRule_POOL_RULE_ANY_CARD
 		st.Close("pool_rule")
 	}
 	a.applyPower(st, out, message)
@@ -1153,7 +1117,7 @@ func (a *Agent) apply(st *State, out classifyOut, open []string, message string)
 		st.Close("budget_scope")
 	}
 	// The house rules close on the user's words, so the build can copy
-	// them to Format.house_rules (A-6 of the 2026-08-28 audit).
+	// them to Format.house_rules (D-265).
 	if s := strings.TrimSpace(out.HouseRules); s != "" {
 		st.Slots.HouseRules = s
 		st.Close("house_rules")
@@ -1163,16 +1127,13 @@ func (a *Agent) apply(st *State, out classifyOut, open []string, message string)
 }
 
 // applyFormat writes the format the classifier reported. A filled format
-// changes only when the message names the new one. The classify prompt
-// told the model to repeat a value the user gave earlier, and in probe 31
-// it repeated the value the user had just replaced. The format went back
-// to Commander two turns after the user asked for Modern, and the agent
-// then asked for a commander (D-125).
+// changes only when the message names the new one, because the model can
+// repeat a value the user has just replaced (D-125).
 //
 // A message that names a format this app does not build gives no format
 // at all. "I play Duel Commander" holds the word "commander", and the
-// classifier reported Commander for it. The unsupported-format row then
-// never fired, and the app built the wrong deck in silence (M-9, D-112).
+// classifier can report Commander for it. The unsupported-format row
+// must decline it instead (D-199, D-112).
 func (a *Agent) applyFormat(st *State, out classifyOut, message string) {
 	id, ok := formatIDs[slotWord(out.Format)]
 	if !ok || id == mtgv1.FormatId_FORMAT_ID_UNSPECIFIED {
@@ -1187,7 +1148,7 @@ func (a *Agent) applyFormat(st *State, out classifyOut, message string) {
 		// A changed format retires every question that is still out.
 		// The bracket question means nothing in Modern, and D-126
 		// would otherwise block the 60-card power question behind it.
-		// A retired row may ask again (audit Q-8).
+		// A retired row may ask again (D-195).
 		if st.Ctx.Format != mtgv1.FormatId_FORMAT_ID_UNSPECIFIED && st.Ctx.Format != id {
 			a.log.Info("the user changed the format, so the open questions retire",
 				"session", st.SessionID, "from", st.Ctx.Format.String(), "to", id.String())
@@ -1219,16 +1180,13 @@ func (a *Agent) applyColors(st *State, out classifyOut) {
 	st.Slots.Colors = colors
 	st.Close("colors")
 	// The names on the table were chosen before these colors arrived,
-	// and nothing checked them again. Probe 73 offered mono-green
-	// Jaheira on turn 1 with no colors named, and the same three names
-	// went out on turns 2 and 3 after the user answered "Red and white"
-	// (D-153).
+	// so they are checked against the colors again (D-153).
 	a.dropOffColorOffers(st)
 }
 
 // applyNames writes the three card lists. The lists are kept apart.
 // Merged, one name that becomes the commander also reads as a card to
-// keep, which is the defect the live run of 2026-08-24 found (D-70).
+// keep (D-70).
 func (a *Agent) applyNames(st *State, out classifyOut) {
 	named := append([]string(nil), out.CommanderNames...)
 	named = append(named, out.LockedNames...)
@@ -1236,10 +1194,23 @@ func (a *Agent) applyNames(st *State, out classifyOut) {
 	for _, name := range named {
 		if name = strings.TrimSpace(name); name != "" {
 			// mergeFront keeps one entry per card. The classifier reports
-			// the full name in one turn and the short name in the next, and
-			// both reached the list before (D-70).
+			// the full name in one turn and the short name in the next
+			// (D-70).
 			st.NamedCards = mergeFront(st.NamedCards, name)
 			st.Ctx.NamedCard = true
+		}
+	}
+	// A card named with no role after the commander is set gets the role
+	// question. SetCommander closed the role key, and a card the user
+	// names later must not sit in the 99 in silence (D-118).
+	if st.Ctx.CommanderSet {
+		for _, name := range out.NamedCards {
+			if name = strings.TrimSpace(name); name != "" && !hasName(st.CommanderNames, name) && !hasName(st.LockedNames, name) {
+				a.log.Info("a card was named after the commander was set, so the role question reopens",
+					"session", st.SessionID, "card", name)
+				st.ReopenRows(a.cat, "named_card_role")
+				break
+			}
 		}
 	}
 	for _, name := range out.LockedNames {
@@ -1247,11 +1218,8 @@ func (a *Agent) applyNames(st *State, out classifyOut) {
 	}
 	ck, checks := a.hints.(CommanderChecker)
 	// A named card that can not lead a deck has a settled role: it can
-	// only sit in the 99. The role question then asks what the card
-	// itself answers. Conversation 74 of gate run 19 named Sol Ring and
-	// got "Should Sol Ring be your commander or one of the 99 cards?".
-	// D-129 read the commander list alone, and this card was never on it
-	// (D-220, extends D-129 and D-70).
+	// only sit in the 99. The role question would ask what the card
+	// itself answers (D-220, extends D-129 and D-70).
 	if checks {
 		for _, name := range out.NamedCards {
 			if name = strings.TrimSpace(name); name == "" {
@@ -1265,16 +1233,14 @@ func (a *Agent) applyNames(st *State, out classifyOut) {
 		}
 	}
 	for _, name := range out.CommanderNames {
-		// A card that can not lead a deck is not a commander. Probe 41
-		// named Lightning Bolt, and every run accepted it in silence
-		// (D-129).
+		// A card that can not lead a deck is not a commander (D-129).
 		if checks {
 			if canLead, known := ck.CanLead(name); known && !canLead {
 				st.IllegalCommander = strings.TrimSpace(name)
 				st.Ctx.CommanderIllegal = true
-				// A legal commander closed the illegal row (H-6). A new
+				// A legal commander closed the illegal row (D-196). A new
 				// illegal name raises it again.
-				st.Reopen("commander_illegal")
+				st.ReopenRows(a.cat, "commander_illegal")
 				// The user still wants the card in the deck, and its role
 				// is settled: it can only sit in the 99. AddLocked closes
 				// the role question with it (D-70).
@@ -1288,12 +1254,10 @@ func (a *Agent) applyNames(st *State, out classifyOut) {
 	}
 }
 
-// applyPower writes the power level. An occasion is not a power level.
-// Conversation 33 of gate run 19 opened with "A Modern deck for an
-// event", and the classifier answered the tournament step. The step
-// filled the slot, so no power question went out, and the user said
-// "FNM level" two turns later. The open power row asks instead (D-219,
-// extends D-215).
+// applyPower writes the power level. An occasion is not a power level:
+// "a Modern deck for an event" names no step, and the classifier can
+// answer the tournament step for it. The open power row asks instead
+// (D-219, extends D-215).
 func (a *Agent) applyPower(st *State, out classifyOut, message string) {
 	p := power(out.Power)
 	if p == nil {
@@ -1306,11 +1270,9 @@ func (a *Agent) applyPower(st *State, out classifyOut, message string) {
 	}
 	st.Slots.Power = p
 	st.Close("power")
-	// The corpus triggers the meta row and the competitive theme row
-	// on the power value: FNM or tournament-meta. The code triggered
-	// them on a separate fact, so a user who named the step outright
-	// never got either. Conversation 62 asks for sideboard help at
-	// tournament level and was never asked what it faces (D-132).
+	// The corpus triggers the competitive theme row on the power
+	// value: FNM or tournament-meta. A user who names the step
+	// outright must reach it too (D-132).
 	switch p.GetSixtyStep() {
 	case mtgv1.SixtyStep_SIXTY_STEP_FNM, mtgv1.SixtyStep_SIXTY_STEP_TOURNAMENT:
 		st.Ctx.PowerCompetitive = true
@@ -1320,19 +1282,14 @@ func (a *Agent) applyPower(st *State, out classifyOut, message string) {
 // applyKeys closes and declines keys by name.
 //
 // A key closes by name only when two things hold: its question is out,
-// and it carries no typed value. Three gate runs paid for that pair of
-// conditions.
+// and it carries no typed value.
 //
-// The question must be out, because on 2026-08-25 the classifier retired
-// power and the pool rule from "Brago blink deck from my library". The
-// session then called itself complete after one question, and neither
-// key had ever been asked.
+// The question must be out, because the classifier can retire a key
+// nobody asked, and the session then calls itself complete (D-76).
 //
 // A typed slot must close on its value, because a name says only
-// "answered" and never says what the answer was. Run 6 of 2026-08-25
-// closed the format by name, so the format value stayed empty. Every row
-// that triggers on the format then stopped firing, five sessions ended
-// with no power level, and PR-8 would have had no format to build from.
+// "answered" and never says what the answer was. A format closed by
+// name stays empty, and every row that triggers on the format stops.
 // Asking the format twice is the safe failure. Building a deck with no
 // format is not (D-83).
 func (a *Agent) applyKeys(st *State, out classifyOut, open []string, message string) {
@@ -1362,7 +1319,7 @@ func (a *Agent) applyKeys(st *State, out classifyOut, open []string, message str
 		}
 		// One shape must not reach it: "None of those" refuses the names
 		// on the table and asks for others. It is not a decline, and the
-		// classifier reported it as one in gate runs 12 and 13 (D-120).
+		// classifier can report it as one (D-120).
 		if k == "commander_pick" && refusedOffer(message) {
 			a.log.Warn("a refusal of the offered names is not a decline", "key", k)
 			continue
@@ -1378,17 +1335,16 @@ func (a *Agent) applyKeys(st *State, out classifyOut, open []string, message str
 		// pick row carries its own key, so the skip above leaves the
 		// commander slot unspecified, and the D-147 rule can not close it
 		// either: its guard reads the outstanding pick question that this
-		// skip just removed. Conversation 39 of gate run
-		// 20260826-212512-000 then reported ready with the commander
-		// never asked (D-208).
+		// skip just removed, so the session would report ready with the
+		// commander never asked (D-208).
 		if k == "commander_pick" && !st.Ctx.Filled["commander"] {
 			st.Skip("commander")
 			st.CurrentOffer = nil
 		}
 		// The format is the one slot the planner routes on. Every power
 		// row, and every Commander row, triggers on it. A declined format
-		// left it empty, so no power row could ever fire and the session
-		// finished with no power level (probe 35 of gate run 11).
+		// left empty would fire no power row, and the session would finish
+		// with no power level.
 		//
 		// The corpus names the default under "default answers", so
 		// nothing is invented here. The slot keeps the SKIPPED state,
@@ -1408,34 +1364,27 @@ func (a *Agent) applyFacts(st *State, out classifyOut, message string) {
 	st.Ctx.NamedCard = st.Ctx.NamedCard || f.NamedCard
 	st.Ctx.BuyList = st.Ctx.BuyList || f.BuyList
 	st.Ctx.HouseFormat = st.Ctx.HouseFormat || f.HouseFormat
-	st.Ctx.TwoPlans = st.Ctx.TwoPlans || f.TwoPlans
 	st.Ctx.BudgetAmbiguous = st.Ctx.BudgetAmbiguous || f.BudgetAmbiguous
-	// The classifier reads an occasion as a power level. Conversation 33
-	// of gate run 20260826-220840-000 opened with "A Modern deck for an
-	// event", the model set power_competitive, and the agent filled the
-	// tournament step from it. The user answered "FNM level" two turns
-	// later. The user's own words carry the fact, as they carry the
-	// format, and the fact is sticky, so one read per message is enough
-	// (D-215, extends D-199).
+	// The classifier can read an occasion as a power level. The
+	// user's own words carry the fact, as they carry the format, and
+	// the fact is sticky, so one read per message is enough (D-215,
+	// extends D-199).
 	st.Ctx.PowerCompetitive = st.Ctx.PowerCompetitive || competitiveRequest(message)
 	// The fact is not sticky. A user who asks for a Magic deck after the
 	// agent declines is back in scope. A user who asks for another game
-	// again hears the sentence again, so the key reopens (audit Q-10).
+	// again hears the sentence again, so the key reopens (D-99).
 	st.Ctx.OutOfScope = f.OutOfScope
 	if f.OutOfScope && st.Ctx.Filled["scope"] {
 		a.log.Info("the user asked for another game again, so the scope question reopens",
 			"session", st.SessionID)
-		st.Reopen("scope")
+		st.ReopenRows(a.cat, "scope")
 	}
 	// A user who asks for a suggestion gets the pick row next turn. A user
 	// who then names one closes every commander row, so the fact does not
 	// need to be cleared.
-	// A request for a suggestion no longer retires the names on the
-	// table. D-80 says the same three stay until the user asks for
-	// others, and a refusal is what asks (D-120). The classifier reported
-	// wants_suggestion again in conversation 23 of the batch run, on a
-	// message that refused nothing, and the agent swapped all three
-	// commanders under the user (D-123).
+	// A request for a suggestion does not retire the names on the
+	// table. The same three stay until the user asks for others, and
+	// a refusal is what asks (D-80, D-120, D-123).
 	st.Ctx.Suggested = st.Ctx.Suggested || f.WantsSuggestion
 	// A word rule can fire when the classifier misses one (corpus 11).
 	// anyPhrase reads the negation, so "we have a ban list" fires nothing.
@@ -1470,32 +1419,27 @@ func power(s string) *mtgv1.PowerLevel {
 var typedSlots = map[string]bool{
 	"format": true, "theme": true, "colors": true,
 	"power": true, "pool_rule": true, "budget": true,
-	// The scope of a cap is a typed value since D-238. An option match
-	// closed it with the value UNSPECIFIED (audit Q-9).
+	// The scope of a cap is a typed value. An option match would close
+	// it with the value UNSPECIFIED (D-238).
 	"budget_scope": true,
 	// The house rules close on the user's words, which the build copies
-	// to Format.house_rules (A-6 of the 2026-08-28 audit).
+	// to Format.house_rules (D-265).
 	"house_rules": true,
 	// The commander closes on a name, and that name closes the color
 	// slot and the two other commander rows with it.
 	"commander": true,
 	// The pick row closes on a name as well. Its answer is a commander,
-	// and "none of those" is a refusal and not an answer.
-	//
-	// Conversation 14 is named "the user says none, then picks". The
-	// classifier closed the pick row by name on "None of those." in gate
-	// runs 12 and 13, and in the batch run of 2026-08-26. The session
-	// then called itself complete, and the fourth message never went out.
-	// A deck would have carried a commander nobody chose (D-120).
+	// and "none of those" is a refusal and not an answer. A pick closed
+	// by name would carry a commander nobody chose (D-120).
 	"commander_pick": true,
 	// The role row closes on the card's role: "As my commander" sets the
-	// commander, and "In the 99" locks the card. A name closed it with
-	// neither (audit Q-14).
+	// commander, and "In the 99" locks the card. A name closes it with
+	// neither (D-118).
 	"named_card_role": true,
 }
 
 // deckKeys are the slots a deck request fills. A user who fills one has
-// asked for a Magic deck, whatever else they asked for before (H-6).
+// asked for a Magic deck, whatever else they asked for before (D-196).
 var deckKeys = []string{"format", "theme", "colors", "commander"}
 
 // deckKeysFilled counts the deck keys the session holds.
@@ -1666,8 +1610,8 @@ func (a *Agent) ask(ctx context.Context, st *State, message string, chosen []cho
 // settles the case where the pool has none.
 //
 // A settled choice stays settled. A user who delegated the commander, or
-// who named one, gets no pick question from a color change: D-153 says
-// the offer leaves, and the delegation stands (audit Q-5).
+// who named one, gets no pick question from a color change: the offer
+// leaves, and the delegation stands (D-153).
 func (a *Agent) dropOffColorOffers(st *State) {
 	if st.Ctx.CommanderSet || st.Ctx.Filled["commander_pick"] {
 		st.CurrentOffer = nil
@@ -1700,7 +1644,7 @@ func (a *Agent) dropOffColorOffers(st *State) {
 	}
 	st.CurrentOffer = kept
 	// The pick row must ask again with a full set of names.
-	st.Reopen("commander_pick")
+	st.ReopenRows(a.cat, "commander_pick")
 	st.Ctx.Suggested = true
 }
 

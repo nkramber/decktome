@@ -10,12 +10,10 @@ import (
 // The deterministic word rules. Every rule here needs no model call, so
 // it costs nothing and it can not drift between runs.
 //
-// The rules exist because gate runs 10 to 13 of 2026-08-25 showed three
-// failures that a model call alone did not catch. A word trigger fired on
-// a negation ("no proxies" fired the house-rules row, probe 38). The
-// classifier missed a format the user had named outright (conversation 23
-// of run 11). And no rule read "not as my commander", so the agent asked
-// the role question the user had already answered, in all four runs.
+// The rules cover three failures a model call alone does not catch. A
+// word trigger fires on a negation ("no proxies" is not a proxy user,
+// D-111). The classifier misses a format the user named outright
+// (D-116). And "not as my commander" settles the role of a card (D-70).
 
 // negators stop a word trigger. A user who writes "no proxies" is not a
 // user who proxies.
@@ -53,8 +51,7 @@ func matchAt(toks, phrase []string, i int) bool {
 //
 // One shape is exempt. "Not as my commander" denies the role and not the
 // format: the user wants a Commander deck, and they want that card in the
-// 99. Conversation 27 asked the format in all four runs of 2026-08-25 for
-// exactly this reason.
+// 99 (D-70, D-116).
 func negatedAt(toks []string, i int) bool {
 	if i >= 2 && toks[i-2] == "as" {
 		switch toks[i-1] {
@@ -122,9 +119,9 @@ var commanderSigns = []string{
 // a safety net under the classifier, not a replacement for it: the agent
 // calls it only when the classify role left the format empty.
 //
-// It reads one message. The whole conversation held every format the
-// user ever named, so one "pauper" on turn 1 turned the net off for the
-// rest of the session (audit Q-7). The linter reads it per message too.
+// It reads one message. The whole conversation holds every format the
+// user ever named, so one unsupported word would turn the net off for
+// the rest of the session (D-125). The linter reads it per message too.
 //
 // It answers nothing when the user named more than one format. Two named
 // formats is a two-deck request, and oneDeckRequest reads that.
@@ -151,9 +148,8 @@ func FormatFromWords(text string) (mtgv1.FormatId, bool) {
 
 // namesFormatWord reports whether the text names a format word outright.
 // A word inside a comparison names no format: "It is like Commander but
-// 60 cards on Arena" describes Brawl, and gate conversation 50 wrote
-// exactly that while the decline row was out. The word rule must leave
-// that turn to the decline flow (audit follow-up, 2026-08-28).
+// 60 cards on Arena" describes Brawl, and the word rule must leave that
+// turn to the decline flow (D-112).
 func namesFormatWord(text, word string) bool {
 	toks, want := tokens(text), tokens(word)
 	if len(want) == 0 {
@@ -203,7 +199,7 @@ func comparedAt(toks []string, i, n int) bool {
 // A message that names a sub-format this app does not build names no
 // format here. "I play Duel Commander" holds the word "commander", and
 // the classifier may report Commander for it. The unsupported-format
-// row must decline it instead (M-9, D-112).
+// row must decline it instead (D-199, D-112).
 func namesFormat(message string, id mtgv1.FormatId) bool {
 	if _, _, ok := unsupportedFormat(message); ok {
 		return false
@@ -218,37 +214,25 @@ func namesFormat(message string, id mtgv1.FormatId) bool {
 }
 
 // unsupported is a format this app does not build, and the nearest one it
-// does. Verified 2026-08-25 against the format definitions.
+// does.
 //
 // Brawl is 100-card singleton with a commander on Arena, and Standard
-// Brawl is the 60-card version (owner ruling, 2026-08-26). Commander is
-// nearest to both. The owner confirmed that reading: probe 46 answers
-// "treat it as Commander". Oathbreaker, Duel Commander, and Canadian Highlander are
-// singleton formats with the same shape. Alchemy is Standard with the
-// Arena-only rebalanced cards.
+// Brawl is the 60-card version (D-192). Commander is nearest to both.
+// Oathbreaker, Duel Commander, and Canadian Highlander are singleton
+// formats with the same shape. Alchemy is Standard with the Arena-only
+// rebalanced cards.
 //
-// Historic and Timeless name no nearest format, which closes OQ-22
-// (D-146). Both are Arena formats, and the card pools were measured
-// against the snapshot of 2026-08-24 rather than argued from memory.
-// Pioneer is the nearest of the seven by Jaccard similarity, at 0.680 for
-// Historic and 0.694 for Timeless, against 0.568 and 0.581 for Modern.
-// The earlier mapping to Modern and to Legacy matched neither. Historic
-// and Timeless are also 0.968 similar to each other, so no measurement
-// separates them. The owner chose to name no substitute over naming one
-// the data does not support. An empty near sets Context.NoNearFormat, and
-// a second row then asks which format to build.
+// Historic and Timeless name no nearest format (D-146). Both are Arena
+// formats. Pioneer is the nearest of the seven by card-pool similarity,
+// and the app does not build Pioneer, so no substitute holds. An empty
+// near sets Context.NoNearFormat, and a second row then asks which
+// format to build.
+//
 // D-155 narrowed the app to Commander, Standard, and Modern. Pioneer,
-// Legacy, Vintage, and Pauper joined this list and name no substitute.
-//
-// Pool similarity was measured for each one and it was not used. Legacy
-// and Vintage read nearest to Commander at 0.994 Jaccard, because
-// Commander is also an all-sets format of the same size. That number
-// compares two different games: a Legacy player does not want a 100-card
-// singleton multiplayer deck. Restricted to the 60-card formats the app
-// keeps, all four read Modern, but only Pioneer carries its whole card
-// pool (100 percent). Legacy and Vintage carry 71 percent, and Pauper
-// loses the commons-only rule that defines it. The owner chose to name no
-// substitute for any of the four over a claim the data does not support.
+// Legacy, Vintage, and Pauper name no substitute (D-156): Legacy and
+// Vintage read nearest to Commander by pool size, which compares two
+// different games, and Pauper loses the commons-only rule that defines
+// it.
 //
 // The list is read in order and the first match wins, so a longer phrase
 // stands before the word it holds: "pauper commander" before "pauper".
@@ -271,15 +255,47 @@ var unsupported = []struct{ phrase, display, near string }{
 // the name the user wrote and the nearest format the app does build.
 //
 // The list is in longest-phrase order, so "pauper commander" wins over
-// "pauper". Gate run 13 of 2026-08-25 offered Brawl to a user, which
-// the app can not build (probe 46).
+// "pauper" (D-112).
 func unsupportedFormat(text string) (name, near string, ok bool) {
 	for _, u := range unsupported {
-		if hasPhrase(text, u.phrase) {
-			return u.display, u.near, true
+		if !hasPhrase(text, u.phrase) {
+			continue
 		}
+		if u.phrase == "historic" && !historicIsAFormat(text) {
+			continue
+		}
+		return u.display, u.near, true
 	}
 	return "", "", false
+}
+
+// historicContext are the words that make "historic" a format name.
+// They follow the word ("historic deck", "historic on Arena") or they
+// stand elsewhere in the message ("on arena").
+var historicContext = map[string]bool{"format": true, "deck": true, "decks": true, "on": true, "arena": true}
+
+// historicNotAFormat are the words that make "historic" a card class.
+// "Historic matters" and "historic spells" name the card type, and a
+// deck about them is not a request for the Arena format.
+var historicNotAFormat = map[string]bool{"matters": true, "spells": true, "permanents": true, "creatures": true, "cards": true}
+
+// historicIsAFormat reports whether "historic" names the Arena format.
+// The word is also a card class, so it needs a format context and no
+// card-class word after it (D-146).
+func historicIsAFormat(text string) bool {
+	toks := tokens(text)
+	for i, t := range toks {
+		if t != "historic" || negatedAt(toks, i) {
+			continue
+		}
+		if i+1 < len(toks) && historicNotAFormat[toks[i+1]] {
+			return false
+		}
+		if i+1 < len(toks) && historicContext[toks[i+1]] {
+			return true
+		}
+	}
+	return hasPhrase(text, "on arena")
 }
 
 // twoDeckSigns name a request for more than one deck outright.
@@ -313,8 +329,8 @@ func UserWords(message string) string {
 // oneDeckRequest reports whether one message asks for more than one deck.
 //
 // It reads one message and never the whole conversation. A user who
-// changes the format across two turns has not asked for two decks, and
-// probe 31 does exactly that.
+// changes the format across two turns has not asked for two decks
+// (D-112).
 func oneDeckRequest(message string) bool {
 	if anyPhrase(message, twoDeckSigns) {
 		return true
@@ -375,9 +391,8 @@ var swapSigns = []string{
 }
 
 // swapsCommander reports whether the user wants to replace a commander
-// they already chose. Probe 49 writes "Actually use a different
-// commander, suggest one", and every run before 2026-08-26 asked nothing
-// after it (D-130).
+// they already chose. Every commander row is closed by then, so nothing
+// else could ask (D-130).
 func swapsCommander(message string) bool {
 	toks := tokens(message)
 	for _, p := range swapSigns {
@@ -424,8 +439,7 @@ func refusedOffer(message string) bool {
 //
 // A pair is also the only practical way to reach four colors. WUBR, WBRG,
 // and UBRG hold exactly one legal single commander each: Breya, Etherium
-// Shaper, Saskia the Unyielding, and Yidris, Maelstrom Wielder (measured
-// 2026-08-26 against the snapshot of 2026-08-24).
+// Shaper, Saskia the Unyielding, and Yidris, Maelstrom Wielder (D-154).
 var pairSigns = []string{
 	"partner", "partners", "background", "backgrounds",
 	"two commanders", "2 commanders", "commander pair", "pair of commanders",
@@ -434,8 +448,8 @@ var pairSigns = []string{
 }
 
 // wantsCommanderPair reports whether the user asked for two commanders.
-// Probe 73 writes "A Commander deck with a Background commander pair",
-// and every run before D-154 answered it with three single legends.
+// "A Commander deck with a Background commander pair" is such a request,
+// and three single legends do not answer it (D-154).
 //
 // The negation guard applies: "no partners" asks for one commander.
 func wantsCommanderPair(message string) bool {
@@ -452,9 +466,8 @@ func wantsCommanderPair(message string) bool {
 }
 
 // wantsBackgroundPair reports whether the user named a Background. It
-// narrows a pair request: probe 73 asked for a "Background commander
-// pair", and no Background ranked among the best pairs for its theme,
-// because a Background carries no theme signal of its own (D-154).
+// narrows a pair request, because a Background carries no theme signal
+// of its own and would not rank among the best pairs (D-154).
 func wantsBackgroundPair(message string) bool {
 	toks := tokens(message)
 	for _, p := range []string{"background", "backgrounds"} {
@@ -486,11 +499,8 @@ var delegateSigns = []string{
 // delegatesChoice reports whether the message hands the choice to the
 // agent. The caller decides which key the answer closes.
 //
-// Eighteen of the 100 gate conversations hold such a phrase, and no rule
-// read one before D-147. The commander pick carries "repeat": true, so
-// the row asked again every turn until the messages ran out. Eval run 14
-// refused 18 of its 43 bad questions on that row alone, which is more
-// than the next four rows together.
+// The pick row carries "repeat": true, so an unread delegation makes the
+// row ask again every turn until the messages run out (D-147).
 func delegatesChoice(message string) bool {
 	toks := tokens(message)
 	for _, p := range delegateSigns {
@@ -530,9 +540,20 @@ var notAPick = map[string]bool{
 	"precon": true, "deck": true, "cards": true, "pool": true,
 }
 
+// offerWords are the words that follow an ordinal when it names an
+// offered commander: "second one", "third commander", "first option".
+var offerWords = map[string]bool{
+	"one": true, "commander": true, "option": true, "choice": true,
+	"name": true, "pick": true, "suggestion": true, "of": true,
+}
+
 // offeredPick reads a commander chosen by its place, such as "the first
 // of the new three". The caller checks that the pick row is out, so an
 // ordinal about anything else reaches nothing.
+//
+// A bare ordinal is not a pick. "First, make it budget" orders the
+// sentence and chooses nothing. The ordinal must follow "the", or an
+// offer word must follow it (D-121).
 func offeredPick(message string) (int, bool) {
 	toks := tokens(message)
 	for j, t := range toks {
@@ -541,6 +562,11 @@ func offeredPick(message string) (int, bool) {
 			continue
 		}
 		if j > 0 && notAPick[toks[j-1]] {
+			continue
+		}
+		afterThe := j > 0 && toks[j-1] == "the"
+		beforeOffer := j+1 < len(toks) && offerWords[toks[j+1]]
+		if !afterThe && !beforeOffer {
 			continue
 		}
 		return i, true
@@ -571,9 +597,8 @@ var occasionSigns = []string{"event", "store", "lgs", "game night"}
 var stepSigns = []string{"casual", "fnm", "friday night", "tournament", "kitchen table"}
 
 // occasionOnly reports whether a message names an occasion and no power
-// step. The classifier reads such a message as the tournament step.
-// Conversation 33 of gate run 19 opened with "A Modern deck for an
-// event", and the user answered "FNM level" two turns later (D-219).
+// step. The classifier can read such a message as the tournament step,
+// and the user then names the step later (D-219).
 func occasionOnly(message string) bool {
 	return anyPhrase(message, occasionSigns) &&
 		!anyPhrase(message, stepSigns) && !competitiveRequest(message)
@@ -586,9 +611,9 @@ func occasionOnly(message string) bool {
 // and it does not name bracket 5, and the two are three brackets apart.
 var cedhSigns = []string{"cedh", "competitive edh"}
 
-// cedhRequest reports whether the user asked for a cEDH deck. Probe 75
-// of gate run 18 opens with "A cEDH deck", and the agent asked which
-// power bracket to target. The user had named it (D-164).
+// cedhRequest reports whether the user asked for a cEDH deck. "A cEDH
+// deck" names the bracket, so the bracket question has its answer
+// (D-164).
 func cedhRequest(text string) bool { return anyPhrase(text, cedhSigns) }
 
 // buyListSigns name the cards the user must acquire. A budget beside one
@@ -604,9 +629,7 @@ func namesTheBuyList(text string) bool { return anyPhrase(text, buyListSigns) }
 //
 // No model call can report this answer. The classify schema offers the
 // five colors alone, so an empty list means "the user said nothing" and
-// "the user said colorless" at the same time. Probe 73 of gate run 18
-// opens with "A colorless Commander deck", and the color question went
-// out (D-165).
+// "the user said colorless" at the same time (D-165).
 var colorlessSigns = []string{"colorless", "no colors", "no color"}
 
 // colorlessRequest reports whether the user asked for a colorless deck.
@@ -618,9 +641,8 @@ func colorlessRequest(text string) bool { return anyPhrase(text, colorlessSigns)
 var bestSigns = []string{"the best", "the strongest", "the top"}
 
 // delegatesCommander reports whether the message asks the agent to pick
-// the commander. Conversation 10 of gate run 18 writes "Buy the best
-// lifegain commander", and the agent answered with three names to choose
-// from. The user had asked the agent to choose (D-167).
+// the commander. "Buy the best lifegain commander" asks the agent to
+// choose, and three names to choose from do not answer it (D-167).
 //
 // The message must name a commander. Without that guard "the best" would
 // hand over the commander choice whenever any commander question is out,
@@ -670,7 +692,7 @@ var acceptSigns = []string{"use that", "that works", "treat it as", "go with tha
 // acceptsOffer reports whether a message says yes to the question that
 // is out. It reads a leading yes-word or an acceptance phrase. The caller
 // checks which question is out, so a bare "yes" reaches only the row
-// that offered something (audit Q-4).
+// that offered something (D-112).
 func acceptsOffer(message string) bool {
 	toks := tokens(message)
 	if len(toks) > 0 && yesWords[toks[0]] {
@@ -693,7 +715,7 @@ var commanderRoleSigns = []string{"as my commander", "as the commander", "as com
 
 // namedCardAsCommander reports whether the user gave a named card the
 // commander role. The role row offers "As my commander", and closing it
-// must set the commander from the card (audit Q-14).
+// must set the commander from the card (D-118).
 func namedCardAsCommander(message string) bool { return anyPhrase(message, commanderRoleSigns) }
 
 // buysCards reports whether a pool rule lets the deck hold a card the

@@ -1,10 +1,6 @@
-// Package decks stores built decks in Firestore (roadmap PR-8).
-//
-// PR-8 built a deck, streamed it, and let it go. Nothing held it, so
-// `session.deck_ids` stayed empty, `Context.AfterBuild` was never true,
-// and the variance row was dead for every real user. `GetDeck`,
-// `ListDecks`, and `Export` had nothing to read, and the staleness job of
-// PR-3 had nothing to re-validate (D-245).
+// Package decks stores built decks in Firestore (D-245). A kept deck is
+// what `GetDeck`, `ListDecks`, `Export`, and the staleness job read, and
+// its id on the session is what makes `Context.AfterBuild` true.
 //
 // The shape follows internal/sessions: one document per deck under the
 // user, the proto stored as gzip protojson so a proto change reads back
@@ -12,32 +8,23 @@
 package decks
 
 import (
-	"bytes"
-	"compress/gzip"
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"time"
 
 	"cloud.google.com/go/firestore"
 	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	"github.com/nkramber/mtg-deck-builder/go/internal/gzstore"
 )
 
 // schemaVersion counts the stored shape, not the proto.
 const schemaVersion = 1
-
-// maxInflatedBytes bounds the inflated read of a stored payload. A deck
-// is far smaller than a conversation, and the bound is the same.
-const maxInflatedBytes = 8 << 20
-
-// maxStoredBytes is the Firestore document limit with room to spare.
-const maxStoredBytes = 900 << 10
 
 // ErrNotFound reports a deck id no document answers.
 var ErrNotFound = errors.New("deck not found")
@@ -67,6 +54,10 @@ type storedDeck struct {
 	SchemaVersion int64     `firestore:"schema_version"`
 }
 
+// listFields are the flat fields List reads. The list never inflates a
+// deck: it answers from these alone.
+var listFields = []string{"session_id", "name", "format_id", "created_at", "legality_as_of", "buy_cost_usd", "stale"}
+
 func (r *Repo) col(uid string) *firestore.CollectionRef {
 	return r.client.Collection("users").Doc(uid).Collection("decks")
 }
@@ -87,11 +78,11 @@ func (r *Repo) Put(ctx context.Context, uid string, d *mtgv1.Deck) error {
 	if uid == "" {
 		return errors.New("decks: a deck needs a user")
 	}
-	payload, err := gzProto(d)
+	payload, err := gzstore.MarshalProto(d)
 	if err != nil {
 		return err
 	}
-	if len(payload) > maxStoredBytes {
+	if len(payload) > gzstore.MaxStoredBytes {
 		return ErrTooLarge
 	}
 	created := d.GetCreatedAt().AsTime()
@@ -126,15 +117,18 @@ func (r *Repo) Get(ctx context.Context, uid, id string) (*mtgv1.Deck, error) {
 		return nil, err
 	}
 	var d mtgv1.Deck
-	if err := ungzProto(sd.DeckGz, &d); err != nil {
+	if err := gzstore.UnmarshalProto(sd.DeckGz, &d); err != nil {
 		return nil, err
 	}
 	return &d, nil
 }
 
-// List reads the user's decks, newest first. limit of 0 reads them all.
+// List reads the user's decks, newest first, from the flat fields alone.
+// A listed deck carries its id, name, session, format, cost, legality
+// date, and staleness, and no cards: Get reads the whole deck. limit of
+// 0 reads them all.
 func (r *Repo) List(ctx context.Context, uid string, limit int) ([]*mtgv1.Deck, error) {
-	q := r.col(uid).OrderBy("created_at", firestore.Desc)
+	q := r.col(uid).Select(listFields...).OrderBy("created_at", firestore.Desc)
 	if limit > 0 {
 		q = q.Limit(limit)
 	}
@@ -151,44 +145,22 @@ func (r *Repo) List(ctx context.Context, uid string, limit int) ([]*mtgv1.Deck, 
 		}
 		var sd storedDeck
 		if err := snap.DataTo(&sd); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("deck %s: %w", snap.Ref.ID, err)
 		}
-		var d mtgv1.Deck
-		if err := ungzProto(sd.DeckGz, &d); err != nil {
-			return nil, err
-		}
-		out = append(out, &d)
+		out = append(out, storedToProto(snap.Ref.ID, sd))
 	}
 }
 
-func gzProto(m *mtgv1.Deck) ([]byte, error) {
-	raw, err := protojson.Marshal(m)
-	if err != nil {
-		return nil, err
+// storedToProto builds the list view of a deck from its flat fields.
+func storedToProto(id string, sd storedDeck) *mtgv1.Deck {
+	return &mtgv1.Deck{
+		Id:           id,
+		Name:         sd.Name,
+		SessionId:    sd.SessionID,
+		Format:       &mtgv1.Format{Id: mtgv1.FormatId(sd.FormatID)}, //nolint:gosec // FormatID was an enum at Put
+		LegalityAsOf: sd.LegalityAsOf,
+		BuyCostUsd:   sd.BuyCostUSD,
+		Stale:        sd.Stale,
+		CreatedAt:    timestamppb.New(sd.CreatedAt),
 	}
-	var buf bytes.Buffer
-	zw := gzip.NewWriter(&buf)
-	if _, err := zw.Write(raw); err != nil {
-		return nil, err
-	}
-	if err := zw.Close(); err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
-}
-
-func ungzProto(payload []byte, m *mtgv1.Deck) error {
-	zr, err := gzip.NewReader(bytes.NewReader(payload))
-	if err != nil {
-		return err
-	}
-	defer func() { _ = zr.Close() }()
-	raw, err := io.ReadAll(io.LimitReader(zr, maxInflatedBytes))
-	if err != nil {
-		return err
-	}
-	if len(raw) == maxInflatedBytes {
-		return fmt.Errorf("decks: stored deck is larger than %d bytes", maxInflatedBytes)
-	}
-	return protojson.Unmarshal(raw, m)
 }

@@ -163,14 +163,16 @@ type Deck struct {
 	CommanderOracleIds []string          `protobuf:"bytes,6,rep,name=commander_oracle_ids,json=commanderOracleIds,proto3" json:"commander_oracle_ids,omitempty"`
 	Cards              []*DeckCard       `protobuf:"bytes,7,rep,name=cards,proto3" json:"cards,omitempty"`
 	Validation         *ValidationResult `protobuf:"bytes,8,opt,name=validation,proto3" json:"validation,omitempty"`
-	// legality_as_of is the card-snapshot date the deck was checked against,
-	// ISO 8601. The UI shows it (roadmap PR-3).
+	// legality_as_of is the card-snapshot date of the build's validation,
+	// ISO 8601. It is a copy: validation.legality_as_of is authoritative,
+	// because the last validation writes it. The UI shows this copy.
 	LegalityAsOf string                 `protobuf:"bytes,9,opt,name=legality_as_of,json=legalityAsOf,proto3" json:"legality_as_of,omitempty"`
 	SessionId    string                 `protobuf:"bytes,11,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	CreatedAt    *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	// stale marks a deck that a rule change made illegal (D-29, I-1).
+	// stale is reserved for the staleness pass (D-29, I-1), unset today.
 	Stale bool `protobuf:"varint,13,opt,name=stale,proto3" json:"stale,omitempty"`
-	// stale_oracle_ids lists the now-illegal cards.
+	// stale_oracle_ids is reserved for the staleness pass (D-29, I-1),
+	// unset today.
 	StaleOracleIds []string `protobuf:"bytes,14,rep,name=stale_oracle_ids,json=staleOracleIds,proto3" json:"stale_oracle_ids,omitempty"`
 	// sideboard holds up to 15 cards in 60-card formats. Empty in Commander.
 	Sideboard []*DeckCard `protobuf:"bytes,15,rep,name=sideboard,proto3" json:"sideboard,omitempty"`
@@ -483,7 +485,9 @@ type ValidationResult struct {
 	// passed means no finding has severity BLOCK.
 	Passed bool `protobuf:"varint,2,opt,name=passed,proto3" json:"passed,omitempty"`
 	// legality_as_of is the card-snapshot date the engine checked against,
-	// ISO 8601. Empty when the engine ran without a snapshot.
+	// ISO 8601. Empty when the engine ran without a snapshot. This field is
+	// authoritative: the last validation writes it, and Deck.legality_as_of
+	// is the copy from the build.
 	LegalityAsOf string `protobuf:"bytes,3,opt,name=legality_as_of,json=legalityAsOf,proto3" json:"legality_as_of,omitempty"`
 	// pool_rule is the ownership mode the engine applied (D-37).
 	PoolRule PoolRule `protobuf:"varint,4,opt,name=pool_rule,json=poolRule,proto3,enum=mtg.v1.PoolRule" json:"pool_rule,omitempty"`

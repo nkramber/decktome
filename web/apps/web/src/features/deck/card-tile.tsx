@@ -8,7 +8,7 @@ import { priceText } from "./deck-stats";
 // CSS crops it. The Scryfall guidelines ask for a separate line only
 // beside an art_crop, which the app never shows (D-6, D-291).
 
-type Face = { name: string; artist: string; imageUris?: ImageUris; typeLine: string; oracleText: string; manaCost: string };
+export type Face = { name: string; artist: string; imageUris?: ImageUris; typeLine: string; oracleText: string; manaCost: string };
 
 // faces returns one entry per face (F-9). A card with no face data falls
 // back to the default printing, which carries the artist too. An owned
@@ -51,7 +51,7 @@ export function facesOf(card: Card | undefined, owned?: { imageUris?: ImageUris;
   ];
 }
 
-function FaceImage({ face }: { face: Face }) {
+export function FaceImage({ face }: { face: Face }) {
   // The normal image is 488 by 680. If the CDN refuses it, the small one
   // (146 by 204) takes its place (ui plan, section 8). The width scales
   // and the aspect ratio stays, so nothing is cropped or skewed (D-6).
@@ -113,7 +113,7 @@ export function CardTile({
       </div>
       {faces.length === 0 && <p className="text-sm text-neutral-600">No card data for this entry.</p>}
       {faces.map((face, i) => (
-        <figure key={face.imageUris?.normal || face.name || i} className="flex flex-col gap-1">
+        <figure key={`${entry.oracleId}-${i}`} className="flex flex-col gap-1">
           <FaceImage face={face} />
           {faces.length > 1 && (
             <figcaption className="text-xs text-neutral-700">

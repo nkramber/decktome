@@ -30,7 +30,7 @@ func snapshotChecker(t *testing.T) cardChecker {
 	return checkerIdx
 }
 
-// TestDeniesExistence is D-149. The two false claims of eval run 14 are
+// TestDeniesExistence is D-149. Two false claims of the shape the eval makes are
 // the first two cases. The rest are reasons that name a card and claim
 // nothing about whether it exists, and every one must pass through.
 func TestDeniesExistence(t *testing.T) {
@@ -57,7 +57,7 @@ func TestDeniesExistence(t *testing.T) {
 }
 
 // TestQuotedNames reads the card name out of a reason. The eval writes
-// straight quotes and curly quotes, and run 14 used both.
+// straight quotes and curly quotes, because the eval uses both.
 func TestQuotedNames(t *testing.T) {
 	cases := []struct {
 		reason string
@@ -115,7 +115,7 @@ func TestCardCheckReportsWhenItDidNotRun(t *testing.T) {
 
 // TestSnapshotRefutesRunFourteen is the live half of D-149. It runs only
 // where the card snapshot is present, and it proves the two claims of
-// eval run 14 against it rather than against memory.
+// the eval against it rather than against memory.
 func TestSnapshotRefutesRunFourteen(t *testing.T) {
 	c := snapshotChecker(t)
 	cases := []struct{ reason, card string }{
@@ -195,7 +195,7 @@ func TestFactsNameTheCardsAQuestionOffers(t *testing.T) {
 		}
 	}
 	// The color identity is what refutes an applicability claim. Cloak and
-	// Dagger, Entwined is white and black, and eval run 16 called it
+	// Dagger, Entwined is white and black, and the eval called it
 	// inapplicable to a white-black lifegain deck.
 	if id := by["Cloak and Dagger, Entwined"].ColorIdentity; len(id) != 2 {
 		t.Errorf("Cloak and Dagger, Entwined color identity = %v, want two colors", id)

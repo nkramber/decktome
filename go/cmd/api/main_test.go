@@ -7,13 +7,18 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"net/http"
+	"net/http/httptest"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/nkramber/mtg-deck-builder/go/internal/agentsvc"
 	"github.com/nkramber/mtg-deck-builder/go/internal/auth"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cardsvc"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
+	"github.com/nkramber/mtg-deck-builder/go/internal/precons"
 	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
 )
 
@@ -120,9 +125,9 @@ func TestReloadLoop(t *testing.T) {
 	<-done
 }
 
-// TestPreconSourceFollowsTheIndex is L-2. The agent service is built
-// before the first snapshot lands, so the precon set must resolve late
-// and again on every snapshot change.
+// TestPreconSourceFollowsTheIndex: the agent service is built before the
+// first snapshot lands, so the precon set must resolve late and again on
+// every snapshot change.
 func TestPreconSourceFollowsTheIndex(t *testing.T) {
 	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
 	server := cardsvc.New()
@@ -168,8 +173,8 @@ func TestPreconSourceFollowsTheIndex(t *testing.T) {
 	<-done
 }
 
-// TestAgentServiceBuildsWithoutAnIndex proves the wiring of L-1 and L-2
-// needs no snapshot at startup: the generator and the precons bind late.
+// TestAgentServiceBuildsWithoutAnIndex proves the wiring needs no
+// snapshot at startup: the generator and the precons bind late.
 func TestAgentServiceBuildsWithoutAnIndex(t *testing.T) {
 	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
 	rulesCfg, err := rules.Load()
@@ -239,5 +244,50 @@ func TestAuthOptions(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// TestPreconSourceResolvesOutsideTheLock: two callers that see a new
+// index at once both get one set, and the resolve holds no lock.
+func TestPreconSourceResolvesOutsideTheLock(t *testing.T) {
+	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
+	server := cardsvc.New()
+	src := newPreconSource(server, quiet)
+	store := cards.DirStore{Root: t.TempDir()}
+	writeVersion(t, store, "20260824T090000", false)
+	loadSnapshot(context.Background(), store, server, "", quiet)
+	var wg sync.WaitGroup
+	sets := make([]*precons.Set, 4)
+	for i := range sets {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			sets[i] = src.Current()
+		}()
+	}
+	wg.Wait()
+	for i, set := range sets {
+		if set == nil || set != sets[0] {
+			t.Errorf("caller %d got %p, want the one set %p", i, set, sets[0])
+		}
+	}
+}
+
+func TestInflightCounter(t *testing.T) {
+	c := &inflightCounter{}
+	var seen int64
+	h := c.wrap(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		seen = c.n.Load()
+		w.WriteHeader(http.StatusOK)
+	}))
+	h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/x", nil))
+	if seen != 1 || c.n.Load() != 0 {
+		t.Errorf("in flight during = %d, after = %d", seen, c.n.Load())
+	}
+}
+
+func TestShutdownWindowCoversABuild(t *testing.T) {
+	if shutdownTimeout <= agentsvc.DefaultBuildLimit {
+		t.Errorf("shutdown window %v does not cover a build of %v", shutdownTimeout, agentsvc.DefaultBuildLimit)
 	}
 }

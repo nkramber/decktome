@@ -2,10 +2,9 @@ package generate
 
 import "testing"
 
-// TestLintSummaryCatchesTheTwoClaimsThatReachedAUser is F-26. Gate run 14
-// of 2026-08-26 told one user that Grist, the Hunger Tide can not lead a
-// deck, which the rules contradict, and it named a card's color identity
-// as a rule. Both passed the gate and the linter.
+// TestLintSummaryCatchesTheTwoClaimsThatReachedAUser is F-26. A summary
+// told a user that a card can not lead a deck, which the rules
+// contradict, and it named a card's color identity as a rule.
 func TestLintSummaryCatchesTheTwoClaimsThatReachedAUser(t *testing.T) {
 	claims := []string{
 		"Grist, the Hunger Tide can not lead a deck, so it sits in the 99.",

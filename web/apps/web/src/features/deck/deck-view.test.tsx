@@ -106,10 +106,10 @@ describe("DeckView", () => {
     expect(screen.getByRole("region", { name: "Ramp (4)" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Threats (2)" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Other (1)" })).toHaveTextContent("No card data for this entry.");
-    expect(screen.getByRole("alert", { name: "" })).toHaveTextContent("1 card of this deck are not in the card database: Missing Card.");
+    expect(screen.getByText(/not in the card database/)).toHaveTextContent("1 card of this deck are not in the card database: Missing Card.");
   });
 
-  it("shows every card as its full image, uncropped, with no caption to repeat what the card prints (D-6, D-291)", async () => {
+  it("gives every image the full-width class and the 488 by 680 size, and no artist caption (D-6, D-291)", async () => {
     renderDeck();
     await screen.findByAltText("Forest (card)");
     const images = screen.getAllByRole("img");
@@ -189,6 +189,41 @@ describe("DeckView", () => {
     expect((getCards.mock.calls[0][0] as { oracleIds: string[] }).oracleIds).toContain("o-elf");
     expect(screen.queryByRole("region", { name: /^Ramp/ })).not.toBeInTheDocument();
     expect(screen.getByText("Commander · Bracket 2 · 20 cards + 1 commander")).toBeInTheDocument();
+  });
+
+  it("counts the main deck without a commander that sits in cards (D-289)", async () => {
+    getCards.mockResolvedValue({ cards, missingOracleIds: [] });
+    renderDeck({
+      ...deck,
+      format: { id: FormatId.COMMANDER, houseRules: "" },
+      power: undefined,
+      commanderOracleIds: ["o-elf"],
+      cards: deck.cards.slice(0, 2),
+    } as unknown as Deck);
+    await screen.findByRole("region", { name: "Commander (1)" });
+    expect(screen.getByText("Commander · 20 cards + 1 commander")).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /^Ramp/ })).not.toBeInTheDocument();
+  });
+
+  it("keeps the last cards on screen while a new deck loads, with no stale missing list", async () => {
+    getCards.mockResolvedValue({ cards, missingOracleIds: ["o-gone"] });
+    const client = makeQueryClient();
+    const view = render(
+      <QueryClientProvider client={client}>
+        <DeckView deck={deck} />
+      </QueryClientProvider>,
+    );
+    await screen.findByAltText("Forest (card)");
+    expect(screen.getByText(/not in the card database/)).toBeInTheDocument();
+    getCards.mockReturnValue(new Promise(() => {}));
+    view.rerender(
+      <QueryClientProvider client={client}>
+        <DeckView deck={{ ...deck, id: "d2", cards: [deck.cards[0], { ...deck.cards[1], oracleId: "o-new", name: "New Card" }] } as unknown as Deck} />
+      </QueryClientProvider>,
+    );
+    expect(await screen.findByRole("status")).toHaveTextContent("Refreshing card data...");
+    expect(screen.getByAltText("Forest (card)")).toBeInTheDocument();
+    expect(screen.queryByText(/not in the card database/)).not.toBeInTheDocument();
   });
 
   it("shows the revision note and the diff against the base deck (PR-12B)", async () => {

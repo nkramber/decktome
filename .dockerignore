@@ -11,7 +11,7 @@ web/apps/web/dist/
 go/bin/
 go/coverage.out
 # `go build ./cmd/X` drops a 40 to 90 MB binary at go/X. The list mirrors
-# .gitignore, and go/cmd/cmdignore_test.go keeps that list complete.
+# .gitignore, and go/cmd/cmdignore_test.go keeps both lists complete.
 go/api
 go/candidates-review
 go/chat-probe
@@ -21,6 +21,7 @@ go/m5-report
 go/m5-sheet
 go/questions-eval
 go/questions-gate
+go/revise-gate
 go/summary-judge
 go/tune-check
 go/worker

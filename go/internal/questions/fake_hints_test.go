@@ -9,8 +9,8 @@ import (
 // one interface the agent reads, and a zero field answers nothing, so a
 // test sets only what it measures.
 //
-// Five fakes did this work before the audit of 2026-08-28, one per
-// interface. A change to Hints then touched all five.
+// One fake serves every interface, so a change to Hints touches one
+// type.
 type fakeHints struct {
 	// commanders are the names the source offers first. second replaces
 	// them once the first set is retired, which is what the real source
@@ -51,7 +51,7 @@ func (f *fakeHints) Commanders(_ string, skip []string) []string {
 }
 
 // OwnedThemeCount answers the count ThinTheme measured when no owned
-// count is set, which is what the real source does (M-6).
+// count is set, which is what the real source does (D-198).
 func (f *fakeHints) OwnedThemeCount(string) int {
 	if f.owned != 0 {
 		return f.owned

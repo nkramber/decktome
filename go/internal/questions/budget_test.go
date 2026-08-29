@@ -12,9 +12,9 @@ import (
 // The budget tests: the cap, the buy list, the proxy user, and the scope
 // of a cap.
 
-// TestBudgetScopeIsTyped is audit Q-9. The scope is a typed value since
-// D-238, and it was not in typedSlots, so an option match or a key name
-// closed it with the value UNSPECIFIED.
+// TestBudgetScopeIsTyped is D-238. The scope is a typed value, so an
+// option match or a key name must not close it with the value
+// UNSPECIFIED (D-83).
 func TestBudgetScopeIsTyped(t *testing.T) {
 	cases := []struct {
 		name, answer string
@@ -83,10 +83,8 @@ func TestProxyUserGetsNoBudgetQuestion(t *testing.T) {
 	}
 }
 
-// TestNoCollectionAsksTheBudget is D-168. 61 of the 63 sessions of gate
-// run 18 that held no collection were never asked about the budget, and
-// the eval named the budget in 20 of its unasked slots. A user with no
-// library buys every card.
+// TestNoCollectionAsksTheBudget is D-168. A user with no library buys
+// every card, so the budget row must ask.
 func TestNoCollectionAsksTheBudget(t *testing.T) {
 	out := classifyOut{Format: "modern", Theme: "burn", PoolRule: "unknown"}
 	out.Colors = []string{"R"}
@@ -164,9 +162,8 @@ func TestBudgetScopeIsStored(t *testing.T) {
 	}
 }
 
-// TestBudgetScopeIsNotAskedWhenTheWordsAnswerIt is D-253. The row held
-// two of the twenty bad questions of gate run 24, and both were trigger
-// faults: it asked what the message had already said.
+// TestBudgetScopeIsNotAskedWhenTheWordsAnswerIt is D-253. The row must
+// not ask what the message has already said.
 func TestBudgetScopeIsNotAskedWhenTheWordsAnswerIt(t *testing.T) {
 	for _, s := range []string{
 		"build owned-first with a buy list", "40 dollars for the cards to buy",

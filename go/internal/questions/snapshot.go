@@ -10,8 +10,8 @@ import mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 // Version 1 carried the card lists, the offer, the counters, and the M-4
 // records. Version 2 adds the format decline facts, the precon name, the
 // illegal commander, and the user's messages. Production restores from
-// the snapshot on every turn, so a fact that stayed in memory only worked
-// in the gate harness (audit Q-1, 2026-08-28).
+// the snapshot on every turn, so a fact that stays in memory only works
+// in the gate harness (D-74).
 const SnapshotVersion = 2
 
 // Snapshot is the private state of one session, as data (D-74). The proto

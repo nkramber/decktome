@@ -3,7 +3,7 @@
 The loop reads the eval report and the lessons file, and lets a fixer
 agent edit the code. Then it runs a new gate and a new eval. It keeps each
 change the fixer made only when its own rows got better (D-181). It
-commits to a branch of its own and it pushes nothing.
+commits to a branch of its own and it pushes only with `--push`.
 
 `autotune-design.md` holds the reasons and the honest limits. This file
 holds the commands.
@@ -28,7 +28,7 @@ holds the commands.
    (D-159). The `--budget` flag is a separate thing, and it pays for the
    gate and the eval.
 
-   The loop withholds `ANTHROPIC_API_KEY` and `OPENAI_API_KEY` from the fixer (D-161). Claude Code reads the first in preference to a claude.ai login. Without this the fixer bills per token to the key and not to the plan. The second key is withheld so the fixer can not pay for a gate run the loop does not count.
+   The loop withholds `ANTHROPIC_API_KEY` and `OPENAI_API_KEY` from the fixer (D-161). Claude Code reads the first in preference to a claude.ai login. Without this the fixer bills per token to the key and not to the plan. The loop withholds the second key so the fixer can not pay for a gate run the loop does not count.
 
    Every other name in `.env` does reach the fixer, so keep other secrets
    out of that file.
@@ -44,8 +44,8 @@ holds the commands.
    so two nights rewrite the same rows and never add up (D-142).
 
 3. Commit every change. The loop refuses a dirty tree and an untracked
-   file, because it commits with `git add -A` and an untracked file would
-   ride into a loop commit under your name (D-184). It does not need a
+   file, because it commits with `git add -A` and an untracked file then
+   rides into a loop commit under your name (D-184). It does not need a
    clean history, and a merge commit is fine. Commit an edit to
    `scripts/autotune.sh` before a run, because that path is frozen.
 
@@ -107,18 +107,18 @@ autotune --branch <container> --budget 3.00 --max 20 --baseline .local/tune/BASE
 this command runs two gate and eval pairs: the baseline, then iteration 1.
 It costs about $0.50 and takes about an hour.
 
-Use it when the code has changed since the last scored run. A baseline
+Use it when the code changed since the last scored run. A baseline
 that measured other code makes the loop credit the fixer with work it did
 not do.
 
 ## What one iteration does
 
-1. The fixer reads the last eval report, the owner questions, and the lessons file. It commits each change on its own, with a `Rows` trailer and a `Hypothesis` trailer (D-181). A commit with no `Rows` trailer is rejected (D-271).
+1. The fixer reads the last eval report, the owner questions, and the lessons file. It commits each change on its own, with a `Rows` trailer and a `Hypothesis` trailer (D-181). The loop rejects a commit with no `Rows` trailer (D-271).
 2. The loop checks the frozen paths, strips any attribution line from the commit messages, and builds the tree.
 3. The gate and the eval run. About $0.25 and 33 to 35 minutes. A partial eval stops the loop, because a partial run decides nothing.
 4. `tune-check` compares the run with the best accepted run of the night, question by question (D-271). It charges every moved question to the change that declared its row.
 5. Every change kept: one commit `v0.N`. Every change dropped: the tree reverts. Some kept: the loop cherry-picks the kept commits and runs the gate again on the conversations their rows touch. It folds that eval into the baseline, and commits `v0.N` if the merged run holds.
-6. The lesson is written and committed, whatever the outcome (D-182).
+6. The loop writes and commits the lesson, whatever the outcome (D-182).
 
 ## Nothing is ever overwritten
 
@@ -191,7 +191,7 @@ git log --oneline <container>..auto-tune/<stamp>
 git diff <container>..auto-tune/<stamp>
 ```
 
-Keep it. The night was cut from the container, so the merge is a fast-forward:
+Keep it. The night branch started from the container, so the merge is a fast-forward:
 
 ```
 git switch <container>
@@ -223,7 +223,7 @@ and an eval over a few conversations, which is cents.
 A budget of $3.00 buys about 12 iterations, which is about six hours. Wall
 clock therefore binds before the budget does. One night fits eight to ten.
 
-The budget is checked before each iteration, so the spend can end one
+The loop checks the budget before each iteration, so the spend can end one
 iteration past it.
 
 The fixer is not in that number. It bills against the monthly plan.
@@ -246,7 +246,7 @@ The fixer is not in that number. It bills against the monthly plan.
 
 ## Where it stops by itself
 
-- The budget is spent.
+- The loop spent the budget.
 - The iteration count reaches `--max`.
 - Three iterations in a row change nothing that holds.
 - The holdout ratio reaches the target. The stop reads the holdout, not the whole set (D-271).
@@ -256,7 +256,7 @@ The fixer is not in that number. It bills against the monthly plan.
 
 The loop reverts any change that breaks the build, that scores worse on
 its own rows, or that touches a frozen path. These paths are the
-measurement and the memory, and the fixer may not edit them:
+measurement and the memory, and the fixer must not edit them:
 
 `go/cmd/questions-eval`, `go/cmd/tune-check`, `go/internal/tune`, `go/internal/questions/lint.go`, `go/internal/questions/lint_test.go`, `go/internal/questions/metrics.go`, `go/cmd/questions-gate/main.go`, `go/cmd/questions-gate/conversations.json`, `go/internal/llm/roles.json`, `go/internal/llm/prices.json`, `scripts/autotune.sh`, `scripts/autotune-fix.sh`, `docs/owner-questions.md`, `docs/reference/autotune-fixer-prompt.md`, `docs/reference/autotune-lessons.md`. The gate command, its metrics, the role table, and the price table are the scorecard, and they joined the list on 2026-08-28 (D-271).
 

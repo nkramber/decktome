@@ -2,9 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 
 import { healthClient } from "../../lib/api";
 
-// legality_as_of surface (roadmap PR-3): every screen that shows deck data
-// must show which day's card data it rests on. The Check RPC carries the
-// snapshot date and age, so one call fills the footer.
+// Every screen that shows deck data must show which day's card data it
+// rests on (legality_as_of). The Check RPC carries the snapshot date and
+// age, so one call fills the footer.
 export function HealthFooter() {
   const health = useQuery({
     queryKey: ["health"],

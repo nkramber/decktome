@@ -1,5 +1,7 @@
 import { initializeApp } from "firebase/app";
-import { browserLocalPersistence, connectAuthEmulator, initializeAuth } from "firebase/auth";
+import { browserLocalPersistence, connectAuthEmulator, initializeAuth, signOut } from "firebase/auth";
+
+import { authCode } from "./errors";
 
 // Firebase Auth over the local emulator (D-275). The API checks the token
 // through the emulator path (D-268). The project id must match the one the
@@ -16,10 +18,23 @@ if (emulatorHost) {
   connectAuthEmulator(auth, `http://${emulatorHost}`, { disableWarnings: true });
 }
 
+// A token refresh that fails with one of these codes can never succeed
+// again. The user signs out, and the route guard sends them to /sign-in.
+const deadSessionCodes = new Set(["auth/user-token-expired", "auth/user-disabled"]);
+
 // currentIdToken waits for the persisted session to load, then returns the
 // token of the signed-in user. Empty when nobody is signed in.
 export async function currentIdToken(): Promise<string> {
   await auth.authStateReady();
   const user = auth.currentUser;
-  return user ? user.getIdToken() : "";
+  if (!user) return "";
+  try {
+    return await user.getIdToken();
+  } catch (err) {
+    if (deadSessionCodes.has(authCode(err))) {
+      await signOut(auth);
+      return "";
+    }
+    throw err;
+  }
 }

@@ -1,6 +1,6 @@
 // Package auth names the caller. A Connect interceptor reads the Firebase
 // ID token from the Authorization header, verifies it, and puts the user
-// id in the context (A-12). The services read it with UserID.
+// id in the context. The services read it with UserID.
 //
 // Local mode keeps the debug user: a request with no bearer token falls
 // back to the fallback id when one is set. A request that carries a
@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"unicode"
 
 	"connectrpc.com/connect"
 	firebase "firebase.google.com/go/v4"
@@ -73,6 +74,10 @@ func (f *Firebase) Verify(ctx context.Context, idToken string) (string, error) {
 }
 
 type ctxKey struct{}
+
+// UserFunc reads the caller's user id from the request context. UserID is
+// the one implementation, and every service takes this type.
+type UserFunc func(ctx context.Context) string
 
 // UserID reads the user id the interceptor stored, or "" when none.
 func UserID(ctx context.Context) string {
@@ -142,7 +147,10 @@ func (i *interceptor) resolve(ctx context.Context, authorization string) (contex
 
 // bearer splits "Bearer <token>". present is false when the header is
 // absent or names another scheme. A bare "Bearer" is present with an
-// empty token, because the transport trims the trailing space.
+// empty token, because the transport trims the trailing space. A scheme
+// followed by a tab or another separator that is not a space is a
+// malformed bearer: present with an empty token, so it is refused and
+// never falls back to the debug user.
 func bearer(authorization string) (token string, present bool) {
 	const scheme = "bearer"
 	v := strings.TrimSpace(authorization)
@@ -150,7 +158,13 @@ func bearer(authorization string) (token string, present bool) {
 		return "", false
 	}
 	rest := v[len(scheme):]
-	if rest != "" && rest[0] != ' ' {
+	if rest == "" {
+		return "", true
+	}
+	if rest[0] != ' ' {
+		if unicode.IsSpace(rune(rest[0])) {
+			return "", true
+		}
 		return "", false
 	}
 	return strings.TrimSpace(rest), true

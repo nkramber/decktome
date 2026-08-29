@@ -1,6 +1,8 @@
 package gatekit
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -85,5 +87,80 @@ func TestSnapshotDirNeedsTheVariable(t *testing.T) {
 	t.Setenv("CARDS_SNAPSHOT_DIR", "")
 	if _, err := SnapshotDir(); err == nil {
 		t.Error("an empty CARDS_SNAPSHOT_DIR was accepted")
+	}
+}
+
+func TestRefuseExisting(t *testing.T) {
+	dir := t.TempDir()
+	taken := filepath.Join(dir, "taken.md")
+	if err := os.WriteFile(taken, []byte("x"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := RefuseExisting("", filepath.Join(dir, "free.md"), os.DevNull); err != nil {
+		t.Errorf("a free path was refused: %v", err)
+	}
+	err := RefuseExisting(filepath.Join(dir, "free.md"), taken)
+	if err == nil || !strings.Contains(err.Error(), "D-65") {
+		t.Errorf("err = %v, want a D-65 refusal of %s", err, taken)
+	}
+}
+
+func TestParseIDs(t *testing.T) {
+	got, err := ParseIDs(" 3, 1 ,12")
+	if err != nil || len(got) != 3 || got[0] != 3 || got[1] != 1 || got[2] != 12 {
+		t.Errorf("ParseIDs = %v, %v", got, err)
+	}
+	if got, err := ParseIDs(""); err != nil || got != nil {
+		t.Errorf("empty = %v, %v", got, err)
+	}
+	if _, err := ParseIDs("1,x"); err == nil {
+		t.Error("a word was accepted as an id")
+	}
+}
+
+func TestCostWord(t *testing.T) {
+	if got := CostWord(llm.Report{}); got != "unpriced" {
+		t.Errorf("nil cost = %q, want unpriced", got)
+	}
+	c := 0.12345
+	if got := CostWord(llm.Report{CostUSD: &c}); got != "$0.1235" {
+		t.Errorf("cost = %q", got)
+	}
+	zero := 0.0
+	if got := CostWord(llm.Report{CostUSD: &zero}); got != "$0.0000" {
+		t.Errorf("measured zero = %q, want $0.0000", got)
+	}
+}
+
+func TestDeckHelpers(t *testing.T) {
+	d := &mtgv1.Deck{
+		Cards:     []*mtgv1.DeckCard{{Name: "a", Count: 4}, {Name: "b", Count: 1}},
+		Sideboard: []*mtgv1.DeckCard{{Name: "c", Count: 15}},
+		Validation: &mtgv1.ValidationResult{Findings: []*mtgv1.Finding{
+			{Code: "deck_size", Severity: mtgv1.Severity_SEVERITY_BLOCK},
+			{Code: "note", Severity: mtgv1.Severity_SEVERITY_INFO},
+		}},
+	}
+	if CountCards(d) != 5 || CountSideboard(d) != 15 {
+		t.Errorf("counts = %d main, %d side", CountCards(d), CountSideboard(d))
+	}
+	if got := BlockFindings(d); len(got) != 1 || got[0].GetCode() != "deck_size" {
+		t.Errorf("blocks = %v", got)
+	}
+	if CountCards(nil) != 0 || len(BlockFindings(nil)) != 0 {
+		t.Error("a nil deck must count as empty")
+	}
+	if p := PowerLevel(3, "casual"); p.GetBracket() != 3 {
+		t.Errorf("bracket wins: %v", p)
+	}
+	if p := PowerLevel(0, "Tournament"); p.GetSixtyStep() != mtgv1.SixtyStep_SIXTY_STEP_TOURNAMENT {
+		t.Errorf("step = %v", p)
+	}
+	if PowerLevel(0, "") != nil || PowerLevel(0, "mythic") != nil {
+		t.Error("no bracket and no step must give nil")
+	}
+	letters := ColorLetters([]mtgv1.Color{mtgv1.Color_COLOR_W, mtgv1.Color_COLOR_UNSPECIFIED, mtgv1.Color_COLOR_G})
+	if strings.Join(letters, "") != "WG" {
+		t.Errorf("letters = %v", letters)
 	}
 }

@@ -46,8 +46,6 @@ type Bracket struct {
 type Config struct {
 	Formats  map[string]FormatRules `json:"-"`
 	Brackets map[int32]Bracket      `json:"-"`
-	// MaxGameChangers mirrors Brackets for callers that only need the limit.
-	MaxGameChangers map[int32]int `json:"-"`
 	// BannedAsCompanion maps a card name to the Scryfall format keys where
 	// the card can not be a companion (F-18).
 	BannedAsCompanion map[string][]string `json:"-"`
@@ -83,8 +81,7 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("companion_bans.json: %w", err)
 	}
 	dates := map[string]string{"formats.json": f.VerifiedAt, "brackets.json": b.VerifiedAt, "companion_bans.json": c.VerifiedAt}
-	// The names are sorted, so the error reads the same on every run
-	// (G-13 of the 2026-08-28 audit).
+	// The names are sorted, so the error reads the same on every run.
 	for _, name := range slices.Sorted(maps.Keys(dates)) {
 		if dates[name] == "" {
 			return nil, fmt.Errorf("%s: verified_at is missing", name)
@@ -93,7 +90,6 @@ func Load() (*Config, error) {
 	cfg := &Config{
 		Formats:           f.Formats,
 		Brackets:          map[int32]Bracket{},
-		MaxGameChangers:   map[int32]int{},
 		BannedAsCompanion: map[string][]string{},
 		VerifiedAt: map[string]string{
 			"formats.json": f.VerifiedAt, "brackets.json": b.VerifiedAt, "companion_bans.json": c.VerifiedAt,
@@ -105,7 +101,6 @@ func Load() (*Config, error) {
 			return nil, fmt.Errorf("brackets.json: bad bracket %q", k)
 		}
 		cfg.Brackets[n] = v
-		cfg.MaxGameChangers[n] = v.MaxGameChangers
 	}
 	for _, row := range c.Banned {
 		if row.Name == "" || row.Format == "" {

@@ -41,8 +41,7 @@ type Request struct {
 	// MetaBoost gives a meta score in [0,1] per Oracle id (PR-14). Nil today.
 	MetaBoost func(oracleID string) float64
 	// WantBackground narrows a pair request to pairs that hold a
-	// Background. Probe 73 asked for a "Background commander pair", and
-	// no Background ranked among the best pairs for its theme (D-154).
+	// Background, because a Background rarely ranks on theme alone (D-154).
 	WantBackground bool
 	// WantPair asks CommanderPool to offer two-commander pairs beside
 	// single commanders. The pool also offers them when too few single
@@ -114,7 +113,7 @@ type List struct {
 	Stats Stats
 }
 
-// Stats counts the funnel for M-3 style reporting and for the gate doc.
+// Stats counts the funnel for the gate doc.
 type Stats struct {
 	Pool        int // cards after legality, color, and commander filters
 	OnTheme     int // cards with at least one theme signal
@@ -150,8 +149,8 @@ func New() (*Builder, error) {
 
 // legalKeys maps a format to its Scryfall legality column. The app builds
 // three formats (D-155). HOUSE has no key on purpose: the user defined
-// the rules, so no ban list applies (D-3). An unknown format skips the
-// legality filter as well.
+// the rules, so no ban list applies (D-3, D-306). An unknown format skips
+// the legality filter as well.
 var legalKeys = map[mtgv1.FormatId]string{
 	mtgv1.FormatId_FORMAT_ID_COMMANDER: "commander",
 	mtgv1.FormatId_FORMAT_ID_STANDARD:  "standard",
@@ -192,13 +191,19 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 	var scored []Candidate
 	fired := firedSignals{}
 	for _, c := range idx.All() {
-		if excluded[c.OracleId] || isBasicLand(c) {
+		if excluded[c.OracleId] || IsBasicLand(c) {
 			continue
 		}
 		if legalKey != "" && !legalIn(c, legalKey) {
 			continue
 		}
-		if colorSet != nil && !identityFits(c.ColorIdentity, colorSet) {
+		// Every format offers paper cards only. A card with no paper
+		// printing never reaches the shortlist, and a banned card stays
+		// allowed where no legality key applies (D-306).
+		if !hasPaperPrinting(c) {
+			continue
+		}
+		if colorSet != nil && !IdentityFits(c.ColorIdentity, colorSet) {
 			continue
 		}
 		if c.GameChanger && req.Bracket > 0 && req.Bracket <= 2 {
@@ -421,20 +426,16 @@ func IdentityMatches(identity []mtgv1.Color, colors []mtgv1.Color) bool {
 	if set == nil {
 		return true
 	}
-	return identityFits(identity, set) && identityCovers(identity, set)
+	return IdentityFits(identity, set) && identityCovers(identity, set)
 }
 
 // identityCovers reports whether the identity holds every color the user
-// named. identityFits is a subset test, which is right for the 99: a
+// named. IdentityFits is a subset test, which is right for the 99: a
 // mono-red card belongs in a blue-red deck. It is wrong for the commander,
-// because the commander's identity is the deck's identity (CR 903.4).
+// because the commander's identity is the deck's identity (CR 903.4), so
+// a commander must hold every named color (D-148).
 //
-// Conversation 22 of gate run 14 asked for a blue-red deck and was offered
-// Birgi, God of Storytelling (mono-red) and Emrakul, the Promised End
-// (colorless). A colorless commander makes a deck that can play no colored
-// card at all. The owner chose to require every named color (D-148).
-//
-// Colorless is skipped on both sides, as it is in identityFits. It is not
+// Colorless is skipped on both sides, as it is in IdentityFits. It is not
 // a color, so it can neither fail the test nor satisfy it.
 func identityCovers(identity []mtgv1.Color, allowed map[mtgv1.Color]bool) bool {
 	have := map[mtgv1.Color]bool{}
@@ -452,7 +453,11 @@ func identityCovers(identity []mtgv1.Color, allowed map[mtgv1.Color]bool) bool {
 	return true
 }
 
-func identityFits(identity []mtgv1.Color, allowed map[mtgv1.Color]bool) bool {
+// IdentityFits reports whether a color identity is a subset of the allowed
+// colors. Colorless is not a color, so it never fails the test. The
+// generate package shares it, so the 99 and the precon swap apply one
+// test (D-154).
+func IdentityFits(identity []mtgv1.Color, allowed map[mtgv1.Color]bool) bool {
 	for _, c := range identity {
 		if c == mtgv1.Color_COLOR_C {
 			continue
@@ -464,9 +469,26 @@ func identityFits(identity []mtgv1.Color, allowed map[mtgv1.Color]bool) bool {
 	return true
 }
 
-func isBasicLand(c *mtgv1.Card) bool {
-	return slices.Contains(c.Supertypes, "Basic") && slices.Contains(c.CardTypes, "Land")
+// ColorSet is the allowed-color set IdentityFits reads. Empty colors give
+// nil, which every caller reads as "any color".
+func ColorSet(colors []mtgv1.Color) map[mtgv1.Color]bool { return colorSetOf(colors) }
+
+// IsBasicLand reports whether a card is a basic land: the Basic supertype
+// on a Land. The generate package shares it, so one test decides what a
+// shortlist omits and what a deck pads with (D-225).
+func IsBasicLand(c *mtgv1.Card) bool {
+	return slices.Contains(c.GetSupertypes(), "Basic") && slices.Contains(c.GetCardTypes(), "Land")
 }
+
+// FoldName is the name match key: lower case, with the outer spaces
+// removed. Nothing else is folded, because a punctuation change makes a
+// different card name (F-13).
+func FoldName(s string) string { return strings.ToLower(strings.TrimSpace(s)) }
+
+// hasPaperPrinting reports whether the card's shown printing is a paper
+// one. The index swaps a digital default for a paper printing when one
+// exists (D-221), so a digital default means the card has none (D-306).
+func hasPaperPrinting(c *mtgv1.Card) bool { return !c.GetDefaultPrinting().GetDigital() }
 
 func stapleRole(r mtgv1.CardRole) bool {
 	switch r {
@@ -480,78 +502,6 @@ func stapleRole(r mtgv1.CardRole) bool {
 // RoleName is the short lowercase role name for logs and the gate doc.
 func RoleName(r mtgv1.CardRole) string {
 	return strings.ToLower(strings.TrimPrefix(r.String(), "CARD_ROLE_"))
-}
-
-// ThemeColors returns the colors a theme is strongest in, in WUBRG order.
-// It tallies the color identity of the theme's best cards and keeps a
-// color that carries at least share of them. PR-7 uses it to fill the
-// {colors} clause of the color question, so the agent states a fact
-// instead of asking the user for it.
-//
-// Only the theme-bearing roles count: synergy, threat, wincon, and
-// other. Build emits one role bucket after another with the staples
-// first, so the first 100 cards of the list were lands, ramp, draw, and
-// removal, and not one synergy piece. Measured 2026-08-26 on the local
-// snapshot: "aristocrats" reported black only, "dragons" blue and red,
-// and "blink" four colors. A staple says nothing about a theme's colors.
-func (b *Builder) ThemeColors(idx *cards.Index, format mtgv1.FormatId, theme string, top int, share float64) ([]mtgv1.Color, error) {
-	if top <= 0 {
-		top = 100
-	}
-	if share <= 0 {
-		share = 0.15
-	}
-	list, err := b.Build(idx, Request{Format: format, Theme: theme})
-	if err != nil {
-		return nil, err
-	}
-	count := map[mtgv1.Color]int{}
-	seen := 0
-	for _, c := range list.Candidates {
-		if seen >= top {
-			break
-		}
-		if stapleRole(c.Role) {
-			continue // a staple role carries no theme signal of its own
-		}
-		if len(c.Card.ColorIdentity) == 0 {
-			continue // colorless cards say nothing about a theme's colors
-		}
-		seen++
-		for _, col := range c.Card.ColorIdentity {
-			count[col]++
-		}
-	}
-	if seen == 0 {
-		return nil, nil
-	}
-	// The lead color always goes out, and at most one second color joins
-	// it when its share reaches the bar. Players name an archetype by its
-	// lead and one partner: aristocrats is black and red, dragons is red
-	// and green. A flat share reported black alone for aristocrats at 25
-	// percent, and five colors for dragons at 15 percent (D-205).
-	wubrg := []mtgv1.Color{mtgv1.Color_COLOR_W, mtgv1.Color_COLOR_U, mtgv1.Color_COLOR_B, mtgv1.Color_COLOR_R, mtgv1.Color_COLOR_G}
-	lead, second := mtgv1.Color_COLOR_UNSPECIFIED, mtgv1.Color_COLOR_UNSPECIFIED
-	for _, col := range wubrg {
-		if lead == mtgv1.Color_COLOR_UNSPECIFIED || count[col] > count[lead] {
-			lead = col
-		}
-	}
-	for _, col := range wubrg {
-		if col == lead || float64(count[col])/float64(seen) < share {
-			continue
-		}
-		if second == mtgv1.Color_COLOR_UNSPECIFIED || count[col] > count[second] {
-			second = col
-		}
-	}
-	var out []mtgv1.Color
-	for _, col := range wubrg {
-		if col == lead || col == second {
-			out = append(out, col)
-		}
-	}
-	return out, nil
 }
 
 // Commanders returns up to n commander-eligible candidates for a request,
@@ -575,11 +525,7 @@ func (b *Builder) Commanders(idx *cards.Index, req Request, n int) ([]Candidate,
 //
 // It walks the card index itself rather than the 99-card shortlist. The
 // shortlist ends in capByRole, which emits one role bucket after another
-// with lands first, so it is not ordered by score at all. Reading the
-// first legends out of it returned whichever ones landed in the land
-// bucket: a blink request was answered with three Ojer modal double-faced
-// cards, scoring 0.16 on the theme, while 85 on-theme blink commanders
-// existed and Emiel the Blessed scored 0.56 (measured 2026-08-25, D-94).
+// with lands first, so it is not ordered by score at all (D-94).
 //
 // Two rules differ from the 99. A commander must carry a theme signal,
 // because the staple-role fallback that keeps a useful land in the deck
@@ -611,12 +557,11 @@ func (b *Builder) CommanderPool(idx *cards.Index, req Request) ([]Candidate, err
 		if !c.GetCanBeCommander() || !legalIn(c, legalKeys[mtgv1.FormatId_FORMAT_ID_COMMANDER]) {
 			continue
 		}
-		// A commander must hold every color the user named, and no other.
-		// The subset test alone offered a mono-red and a colorless
-		// commander for a blue-red request (D-148). The 99 keeps the
-		// subset test, because a mono-red card belongs in that deck.
+		// A commander must hold every color the user named, and no other
+		// (D-148). The 99 keeps the subset test, because a mono-red card
+		// belongs in a blue-red deck.
 		if colorSet != nil &&
-			(!identityFits(c.ColorIdentity, colorSet) || !identityCovers(c.ColorIdentity, colorSet)) {
+			(!IdentityFits(c.ColorIdentity, colorSet) || !identityCovers(c.ColorIdentity, colorSet)) {
 			continue
 		}
 		if c.GameChanger && req.Bracket > 0 && req.Bracket <= 2 {
@@ -660,23 +605,26 @@ const commanderNames = 3
 // commanderPairs builds the two-commander candidates whose combined color
 // identity matches the request.
 //
-// Only 177 of the 3,384 commander-legal leaders can pair at all, and 30
-// Backgrounds exist, so the search space is small enough to walk whole
-// (measured 2026-08-26 against the snapshot of 2026-08-24).
+// Few leaders can pair at all, so the search space is small enough to
+// walk whole (D-154).
 //
 // The pairing rules live in internal/rules, which the deck validator
 // already uses. One term per concept: a pair this offers is a pair that
 // passes validation.
 func (b *Builder) commanderPairs(idx *cards.Index, req Request, theme ThemeMatch,
 	colorSet map[mtgv1.Color]bool, mode mtgv1.PoolRule, maxRank float64) []Candidate {
+	excluded := map[string]bool{}
+	for _, id := range req.CommanderOracleIDs {
+		excluded[id] = true
+	}
 	var pairable []*mtgv1.Card
 	for _, c := range idx.All() {
-		if !legalIn(c, legalKeys[mtgv1.FormatId_FORMAT_ID_COMMANDER]) {
+		// An excluded commander is out of the pairs, as it is out of the 99.
+		if excluded[c.OracleId] || !legalIn(c, legalKeys[mtgv1.FormatId_FORMAT_ID_COMMANDER]) {
 			continue
 		}
-		// A card that can not pair never reaches the walk. The index
-		// holds PARTNER_KIND_NONE for those, and reading UNSPECIFIED here
-		// let every one of the 3,384 leaders into an O(n squared) loop.
+		// A card that can not pair never reaches the walk, which keeps the
+		// pair loop small (D-154).
 		if !canPair(c) {
 			continue
 		}
@@ -699,7 +647,7 @@ func (b *Builder) commanderPairs(idx *cards.Index, req Request, theme ThemeMatch
 			}
 			// The union of the two identities is the deck's identity.
 			union := append(append([]mtgv1.Color(nil), a.ColorIdentity...), c.ColorIdentity...)
-			if colorSet != nil && (!identityFits(union, colorSet) || !identityCovers(union, colorSet)) {
+			if colorSet != nil && (!IdentityFits(union, colorSet) || !identityCovers(union, colorSet)) {
 				continue
 			}
 			// The user asked for a Background by name, so a pair without
@@ -748,14 +696,11 @@ func (b *Builder) commanderPairs(idx *cards.Index, req Request, theme ThemeMatch
 }
 
 // canPair reports whether a card can be half of a two-commander pair.
-// Only 177 of the 3,384 commander-legal leaders can, plus 31 Backgrounds,
-// so this cut is what keeps the pair walk small (D-154).
+// Few leaders can, so this cut is what keeps the pair walk small (D-154).
 //
 // A Doctor carries no partner kind: the Doctor's companion card carries
 // it (derive.go). The Doctor passes on its creature types instead, which
-// is the test rules.ValidPair applies (CR 702.124m). Without it the
-// snapshot offered 0 pairs from 17 Doctors and 26 companions (measured
-// 2026-08-26).
+// is the test rules.ValidPair applies (CR 702.124m).
 func canPair(c *mtgv1.Card) bool {
 	if c.GetIsBackground() || rules.IsDoctor(c) {
 		return true
