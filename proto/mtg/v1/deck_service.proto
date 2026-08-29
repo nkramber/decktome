@@ -7,17 +7,49 @@ import "mtg/v1/session.proto";
 
 option go_package = "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1";
 
-// DeckService reads and validates decks.
+// DeckService reads, validates, and exports decks.
 //
-// An Export RPC with ExportRequest, ExportResponse, and ExportFormat sat
-// here from PR-0a to 2026-08-28 with no implementation, so every call
-// answered Unimplemented. The export of D-15 returns with the PR that
-// implements it, under a new name if the shape changes (D-266).
+// An Export RPC with ExportRequest, ExportResponse, and ExportFormat left
+// the contract with no implementation (D-266). ExportDeck is its
+// replacement, and it lands with its implementation (PR-13, D-15).
 service DeckService {
   rpc GetDeck(GetDeckRequest) returns (GetDeckResponse) {}
   rpc ListDecks(ListDecksRequest) returns (ListDecksResponse) {}
   // Validate runs the rules engine on a deck (roadmap PR-5).
   rpc Validate(ValidateRequest) returns (ValidateResponse) {}
+  // ExportDeck renders one of the caller's decks as text (D-15, D-307
+  // to D-309).
+  rpc ExportDeck(ExportDeckRequest) returns (ExportDeckResponse) {}
+}
+
+// ExportFormat names a text shape of a deck.
+enum ExportFormat {
+  EXPORT_FORMAT_UNSPECIFIED = 0;
+  // EXPORT_FORMAT_ARENA_TEXT is one card per line: the count, the full
+  // name, the set code in parentheses, and the collector number. The
+  // commander comes first under a "Commander" header, the main deck
+  // under "Deck", and the sideboard under "Sideboard". ManaBox imports
+  // this shape, and collections.ParseArenaText reads it (D-15). An owned
+  // card names the owned printing, else the default paper printing
+  // (D-307).
+  EXPORT_FORMAT_ARENA_TEXT = 1;
+  // EXPORT_FORMAT_BUY_LIST_TEXT is one "count name" line per card the
+  // user still needs: the count minus the owned count over the commander,
+  // the main deck, and the sideboard, then the upgrades under an
+  // "Upgrades" header (D-308, D-309).
+  EXPORT_FORMAT_BUY_LIST_TEXT = 2;
+}
+
+message ExportDeckRequest {
+  string deck_id = 1;
+  // format defaults to EXPORT_FORMAT_ARENA_TEXT when unspecified.
+  ExportFormat format = 2;
+}
+
+message ExportDeckResponse {
+  string text = 1;
+  // file_name is the suggested download name, with its extension.
+  string file_name = 2;
 }
 
 message GetDeckRequest {

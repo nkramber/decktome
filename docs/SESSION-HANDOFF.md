@@ -7,10 +7,11 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 ## Where things stand (2026-08-29)
 
 - `main` is at `7924658`, PR-12B merged (#41, 2026-08-29). Merged: PR-0a to PR-8, PR-7B, PR-10, PR-11 (#38), PR-12 (#40), PR-12B (#41).
-- Branch `quality-audit-fixes` holds the quality audit of 2026-08-29 and every fix (D-302 to D-306, `docs/audit-2026-08-29.md`). The pull request is open. The owner reads the checks and merges.
-- The tree is green on the branch: Go build, vet, `-race` tests, golangci-lint, `buf breaking`, web lint, typecheck, 107 web tests, and the web build. `make lint` runs the extended STE check and reports zero findings.
+- The quality audit of 2026-08-29 is merged (#43, D-302 to D-306, `docs/audit-2026-08-29.md`).
+- Branch `pr-13` holds PR-13 (D-307 to D-309): `DeckService.ExportDeck`, `go/internal/export`, the export panel, and the buy list. The round-trip gate held. The pull request is open. The owner did not run it in the browser yet.
+- The tree is green on the branch: Go build, vet, `-race` tests, golangci-lint, `buf breaking`, web lint, typecheck, 118 web tests, and the web build. `make lint` runs the extended STE check and reports zero findings.
 - The revise gate held on run 2 (D-296). The paid gates did not run on 2026-08-29.
-- PR-9 is out of the MVP (D-256). Next is PR-13, then PR-15.
+- PR-9 is out of the MVP (D-256). After PR-13 comes PR-15.
 - Pull request #42 (Dependabot, anthropic-sdk-go 1.66.0 to 1.67.0) is open and waits for the owner.
 
 ## The numbers, and why none of them compare with `main` now
@@ -43,13 +44,20 @@ CAUTION: `tune-check` paired zero questions between run 24 and run 25, because t
 - The STE checker flags passive voice, modals and perfect tenses, -ing forms, and the 20-word step limit (D-304). Dated records are exempt: `docs/reference/pr[0-9]*`, the session logs, `docs/audit-*`, and testdata.
 - Every code comment states a rule and cites a decision id. No comment carries a date, a session id, a run number, or "the owner".
 
+## PR-13, what it holds (2026-08-29)
+
+- `DeckService.ExportDeck(deck_id, format)` returns the text and a file name. `EXPORT_FORMAT_ARENA_TEXT` is the ManaBox shape, and `EXPORT_FORMAT_BUY_LIST_TEXT` is one "count name" line per card to buy (D-309).
+- `go/internal/export`: `ArenaText`, `BuyList`, `BuyListText`, `FileName`, `Render`. The Arena line names the owned printing when the card is owned, else the default paper printing (D-307). The line carries the full card name, and the index resolves it without ambiguity. `TestArenaTextRoundTrip` is the gate.
+- The buy list is the shortfall of the commander, the main deck, and the sideboard, summed per Oracle id, and the upgrades apart (D-308). A commander with no entry in the card list counts as one card to buy.
+- `web/apps/web/src/features/export`: `export-panel.tsx` (four buttons, the status line, the buy list with a Scryfall link per card) and `buy-list.ts` (the same rules as the Go package, for the screen). The deck view mounts the panel under its header. `export` is a leaf feature, and `deck` imports it.
+- The web app reads the text from the API, so the copy and the file match what the API renders.
+
 ## Next steps, in order
 
-1. The owner reads the checks on the audit pull request and merges it.
+1. The owner tests the export in the browser: the Arena text into ManaBox, and the buy list. Then the owner merges `pr-13`.
 2. The owner runs the question gate and the deck gate to re-baseline (D-302). Ask before each run. Write each to a new `GATE_OUT` file (D-65). Record the numbers here and in the roadmap.
-3. PR-13: `DeckService.ExportDeck`, the export button, and the buy list with Scryfall links. UI plan section 4 gives the text shape, and the gate is the round trip through `ParseArenaText`.
-4. Run the M-5 manual scoring on the PR-12 build (sequencing step 19). Ask the owner before any paid run.
-5. PR-15, the bake-off.
+3. Run the M-5 manual scoring on the PR-12 build (sequencing step 19). Ask the owner before any paid run.
+4. PR-15, the bake-off.
 
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 
