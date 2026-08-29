@@ -11,10 +11,13 @@ import tseslint from "typescript-eslint";
 // | auth       | none                     |
 // | collection | none                     |
 // | chat       | deck                     |
-// | deck       | none                     |
-// | export     | deck                     |
+// | deck       | export                   |
+// | export     | none                     |
+//
+// export is a leaf: the deck view mounts the export panel, and the panel
+// reads the deck and the card data it is given (PR-13).
 const features = ["auth", "collection", "chat", "deck", "export"];
-const allow = { auth: [], collection: [], chat: ["deck"], deck: [], export: ["deck"] };
+const allow = { auth: [], collection: [], chat: ["deck"], deck: ["export"], export: [] };
 
 // A feature reaches a sibling by a relative path: ../deck/x from
 // features/chat, ../../deck/x from features/chat/components, or

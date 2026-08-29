@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-08-29 correction pass 28 (PR-13 built on branch `pr-13`, D-307 to D-309): `DeckService.ExportDeck`, the export panel, and the buy list with a Scryfall link per card. The round-trip gate holds in `go/internal/export`. Changes: PR-13, sequencing step 18.
+
 2026-08-29 correction pass 27 (quality audit, `docs/audit-2026-08-29.md`, D-302 to D-306): PR-12B merged (#41). The generate prompt is at version 10, and the classify prompt version rose. The gate baselines of question run 27 and deck run 8 do not compare with `main` until the owner re-runs them (D-302). Consistency fixes of this pass: F-27 and step 18 show PR-12B merged, and the PR-1 layout names the packages the code uses. The eval cost is $0.092 to $0.104, and the cost table gains the deck gate. The pass strikes the PR-12 Oracle-text hover (D-291). The grammar pass of D-304 rewrote passive sentences, modal verbs, and -ing forms across the doc, with no change of fact.
 
 2026-08-28 correction pass 26 (PR-11 merged, #38): the web shell, sign-in over the Auth emulator, and the collection screen. The gate held in the browser the same day. Changes: PR-11, sequencing step 18.
@@ -553,6 +555,10 @@ The reply is prose from the diff, not from the model, for example "I removed fou
 Export as ManaBox text first (D-15). Other formats later. A buy list with Scryfall purchase links. Gate: a round trip ManaBox export to import loses nothing.
 
 Contract addition of 2026-08-28: `DeckService.ExportDeck` lands with this PR, with `EXPORT_FORMAT_ARENA_TEXT` first. ManaBox imports the Arena text shape, and `collections.ParseArenaText` reads it, so the gate runs against our own parser (ui plan, section 4). The Export RPC of PR-0a left the contract on 2026-08-28 because nothing implemented it (D-266).
+
+Built 2026-08-29 on branch `pr-13` (D-307 to D-309). The Arena line names the owned printing when the user owns the card, else the default paper printing (D-307). The buy list holds the shortfall of the commander, the main deck, and the sideboard, with a Scryfall link to the printing (D-308). The upgrades sit under their own heading. A second format, `EXPORT_FORMAT_BUY_LIST_TEXT`, exports the buy list as "count name" lines (D-309). The export line carries the full card name, because the index resolves a full name without ambiguity.
+
+`go/internal/export` holds the renderer, and `TestArenaTextRoundTrip` is the gate: it held on 2026-08-29. The panel sits in the deck view, and `export` is a leaf feature that `deck` imports.
 > *In plain English:* get the deck out of the app and into ManaBox or Arena with one click, plus a shopping list.
 
 ### Phase 4 - Meta and quality (gated on Phase 3)
@@ -613,7 +619,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 15. PR-8 generator.
 16. PR-9 variance. ⏸ out of MVP scope (D-256). It blocks nothing: the Phase 3 gate below reads PR-8's gate.
 17. **GATE.** Phase 3 starts only when PR-8's gate holds on the golden prompts. ✅ held on 2026-08-28, deck gate run 6.
-18. PR-11 ✅ merged 2026-08-28 (#38). PR-12 ✅ merged 2026-08-28 (#40). PR-12B ✅ merged 2026-08-29 (#41). Then PR-13.
+18. PR-11 ✅ merged 2026-08-28 (#38). PR-12 ✅ merged 2026-08-28 (#40). PR-12B ✅ merged 2026-08-29 (#41). PR-13 🔧 built 2026-08-29 on branch `pr-13`, gate held. Then PR-15.
 19. PR-15 eval harness (can start after step 15, in parallel with the UI, if a second owner exists). M-5 manual scoring runs on the first UI build (after PR-12).
 20. PR-14 meta, then I-1, I-2, I-3 on evidence.
 21. Phase 5 stays parked.

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -331,6 +332,57 @@ func TestListDecks(t *testing.T) {
 		}
 		if src.limit != listLimit {
 			t.Errorf("limit = %d, want %d", src.limit, listLimit)
+		}
+	})
+}
+
+func TestExportDeck(t *testing.T) {
+	ctx := context.Background()
+	idx := loadIndex(t)
+	sol, _ := idx.ByName("Sol Ring")
+	pl, _ := idx.ByName("Plains")
+	owned := &mtgv1.DeckCard{OracleId: pl.OracleId, Name: pl.Name, Count: 30, Owned: true, OwnedCount: 40}
+	deck := &mtgv1.Deck{Id: "d1", Name: "Rocks", Cards: []*mtgv1.DeckCard{{OracleId: sol.OracleId, Name: "sol ring", Count: 1}, owned}}
+	src := &fakeDecks{decks: map[string]*mtgv1.Deck{"d1": deck}}
+	export := func(s *Server, id string, f mtgv1.ExportFormat) (*connect.Response[mtgv1.ExportDeckResponse], error) {
+		return s.ExportDeck(ctx, connect.NewRequest(&mtgv1.ExportDeckRequest{DeckId: id, Format: f}))
+	}
+	t.Run("arena text with the index names and printings", func(t *testing.T) {
+		res, err := export(newServer(t, idx, WithDecks(src), asUser("u1")), "d1", mtgv1.ExportFormat_EXPORT_FORMAT_UNSPECIFIED)
+		if err != nil {
+			t.Fatal(err)
+		}
+		dp := sol.GetDefaultPrinting()
+		if want := "Deck\n1 Sol Ring (" + strings.ToUpper(dp.GetSetCode()) + ") " + dp.GetCollectorNumber() + "\n"; !strings.HasPrefix(res.Msg.GetText(), want) {
+			t.Errorf("text %q, want prefix %q", res.Msg.GetText(), want)
+		}
+		if res.Msg.GetFileName() != "rocks.txt" {
+			t.Errorf("file name %q", res.Msg.GetFileName())
+		}
+	})
+	t.Run("buy list", func(t *testing.T) {
+		res, err := export(newServer(t, idx, WithDecks(src), asUser("u1")), "d1", mtgv1.ExportFormat_EXPORT_FORMAT_BUY_LIST_TEXT)
+		if err != nil || res.Msg.GetText() != "1 Sol Ring\n" || res.Msg.GetFileName() != "rocks-buy-list.txt" {
+			t.Errorf("res %v, err %v", res, err)
+		}
+	})
+	t.Run("no index falls back to the stored names", func(t *testing.T) {
+		res, err := export(newServer(t, nil, WithDecks(src), asUser("u1")), "d1", mtgv1.ExportFormat_EXPORT_FORMAT_ARENA_TEXT)
+		if err != nil || res.Msg.GetText() != "Deck\n1 sol ring\n30 Plains\n" {
+			t.Errorf("res %v, err %v", res, err)
+		}
+	})
+	t.Run("the read errors pass through", func(t *testing.T) {
+		if _, err := export(newServer(t, idx, WithDecks(src), asUser("u1")), "nope", mtgv1.ExportFormat_EXPORT_FORMAT_ARENA_TEXT); codeOf(t, err) != connect.CodeNotFound {
+			t.Errorf("code = %v", codeOf(t, err))
+		}
+		if _, err := export(newServer(t, idx, WithDecks(src)), "d1", mtgv1.ExportFormat_EXPORT_FORMAT_ARENA_TEXT); codeOf(t, err) != connect.CodeUnauthenticated {
+			t.Errorf("code = %v", codeOf(t, err))
+		}
+	})
+	t.Run("an unknown format is invalid", func(t *testing.T) {
+		if _, err := export(newServer(t, idx, WithDecks(src), asUser("u1")), "d1", mtgv1.ExportFormat(99)); codeOf(t, err) != connect.CodeInvalidArgument {
+			t.Errorf("code = %v", codeOf(t, err))
 		}
 	})
 }

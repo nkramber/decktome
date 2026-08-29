@@ -2,8 +2,8 @@
 // @generated from file mtg/v1/deck_service.proto (package mtg.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Deck, ValidationResult } from "./deck_pb";
 import { file_mtg_v1_deck } from "./deck_pb";
 import type { PoolRule } from "./session_pb";
@@ -14,7 +14,55 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file mtg/v1/deck_service.proto.
  */
 export const file_mtg_v1_deck_service: GenFile = /*@__PURE__*/
-  fileDesc("ChltdGcvdjEvZGVja19zZXJ2aWNlLnByb3RvEgZtdGcudjEiIQoOR2V0RGVja1JlcXVlc3QSDwoHZGVja19pZBgBIAEoCSItCg9HZXREZWNrUmVzcG9uc2USGgoEZGVjaxgBIAEoCzIMLm10Zy52MS5EZWNrIhIKEExpc3REZWNrc1JlcXVlc3QiMAoRTGlzdERlY2tzUmVzcG9uc2USGwoFZGVja3MYASADKAsyDC5tdGcudjEuRGVjayJpCg9WYWxpZGF0ZVJlcXVlc3QSGgoEZGVjaxgBIAEoCzIMLm10Zy52MS5EZWNrEiMKCXBvb2xfcnVsZRgCIAEoDjIQLm10Zy52MS5Qb29sUnVsZRIVCg1jb2xsZWN0aW9uX2lkGAMgASgJIjwKEFZhbGlkYXRlUmVzcG9uc2USKAoGcmVzdWx0GAEgASgLMhgubXRnLnYxLlZhbGlkYXRpb25SZXN1bHQy0AEKC0RlY2tTZXJ2aWNlEjwKB0dldERlY2sSFi5tdGcudjEuR2V0RGVja1JlcXVlc3QaFy5tdGcudjEuR2V0RGVja1Jlc3BvbnNlIgASQgoJTGlzdERlY2tzEhgubXRnLnYxLkxpc3REZWNrc1JlcXVlc3QaGS5tdGcudjEuTGlzdERlY2tzUmVzcG9uc2UiABI/CghWYWxpZGF0ZRIXLm10Zy52MS5WYWxpZGF0ZVJlcXVlc3QaGC5tdGcudjEuVmFsaWRhdGVSZXNwb25zZSIAQjpaOGdpdGh1Yi5jb20vbmtyYW1iZXIvbXRnLWRlY2stYnVpbGRlci9nby9nZW4vbXRnL3YxO210Z3YxYgZwcm90bzM", [file_mtg_v1_deck, file_mtg_v1_session]);
+  fileDesc("ChltdGcvdjEvZGVja19zZXJ2aWNlLnByb3RvEgZtdGcudjEiSgoRRXhwb3J0RGVja1JlcXVlc3QSDwoHZGVja19pZBgBIAEoCRIkCgZmb3JtYXQYAiABKA4yFC5tdGcudjEuRXhwb3J0Rm9ybWF0IjUKEkV4cG9ydERlY2tSZXNwb25zZRIMCgR0ZXh0GAEgASgJEhEKCWZpbGVfbmFtZRgCIAEoCSIhCg5HZXREZWNrUmVxdWVzdBIPCgdkZWNrX2lkGAEgASgJIi0KD0dldERlY2tSZXNwb25zZRIaCgRkZWNrGAEgASgLMgwubXRnLnYxLkRlY2siEgoQTGlzdERlY2tzUmVxdWVzdCIwChFMaXN0RGVja3NSZXNwb25zZRIbCgVkZWNrcxgBIAMoCzIMLm10Zy52MS5EZWNrImkKD1ZhbGlkYXRlUmVxdWVzdBIaCgRkZWNrGAEgASgLMgwubXRnLnYxLkRlY2sSIwoJcG9vbF9ydWxlGAIgASgOMhAubXRnLnYxLlBvb2xSdWxlEhUKDWNvbGxlY3Rpb25faWQYAyABKAkiPAoQVmFsaWRhdGVSZXNwb25zZRIoCgZyZXN1bHQYASABKAsyGC5tdGcudjEuVmFsaWRhdGlvblJlc3VsdCpsCgxFeHBvcnRGb3JtYXQSHQoZRVhQT1JUX0ZPUk1BVF9VTlNQRUNJRklFRBAAEhwKGEVYUE9SVF9GT1JNQVRfQVJFTkFfVEVYVBABEh8KG0VYUE9SVF9GT1JNQVRfQlVZX0xJU1RfVEVYVBACMpcCCgtEZWNrU2VydmljZRI8CgdHZXREZWNrEhYubXRnLnYxLkdldERlY2tSZXF1ZXN0GhcubXRnLnYxLkdldERlY2tSZXNwb25zZSIAEkIKCUxpc3REZWNrcxIYLm10Zy52MS5MaXN0RGVja3NSZXF1ZXN0GhkubXRnLnYxLkxpc3REZWNrc1Jlc3BvbnNlIgASPwoIVmFsaWRhdGUSFy5tdGcudjEuVmFsaWRhdGVSZXF1ZXN0GhgubXRnLnYxLlZhbGlkYXRlUmVzcG9uc2UiABJFCgpFeHBvcnREZWNrEhkubXRnLnYxLkV4cG9ydERlY2tSZXF1ZXN0GhoubXRnLnYxLkV4cG9ydERlY2tSZXNwb25zZSIAQjpaOGdpdGh1Yi5jb20vbmtyYW1iZXIvbXRnLWRlY2stYnVpbGRlci9nby9nZW4vbXRnL3YxO210Z3YxYgZwcm90bzM", [file_mtg_v1_deck, file_mtg_v1_session]);
+
+/**
+ * @generated from message mtg.v1.ExportDeckRequest
+ */
+export type ExportDeckRequest = Message<"mtg.v1.ExportDeckRequest"> & {
+  /**
+   * @generated from field: string deck_id = 1;
+   */
+  deckId: string;
+
+  /**
+   * format defaults to EXPORT_FORMAT_ARENA_TEXT when unspecified.
+   *
+   * @generated from field: mtg.v1.ExportFormat format = 2;
+   */
+  format: ExportFormat;
+};
+
+/**
+ * Describes the message mtg.v1.ExportDeckRequest.
+ * Use `create(ExportDeckRequestSchema)` to create a new message.
+ */
+export const ExportDeckRequestSchema: GenMessage<ExportDeckRequest> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_deck_service, 0);
+
+/**
+ * @generated from message mtg.v1.ExportDeckResponse
+ */
+export type ExportDeckResponse = Message<"mtg.v1.ExportDeckResponse"> & {
+  /**
+   * @generated from field: string text = 1;
+   */
+  text: string;
+
+  /**
+   * file_name is the suggested download name, with its extension.
+   *
+   * @generated from field: string file_name = 2;
+   */
+  fileName: string;
+};
+
+/**
+ * Describes the message mtg.v1.ExportDeckResponse.
+ * Use `create(ExportDeckResponseSchema)` to create a new message.
+ */
+export const ExportDeckResponseSchema: GenMessage<ExportDeckResponse> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_deck_service, 1);
 
 /**
  * @generated from message mtg.v1.GetDeckRequest
@@ -31,7 +79,7 @@ export type GetDeckRequest = Message<"mtg.v1.GetDeckRequest"> & {
  * Use `create(GetDeckRequestSchema)` to create a new message.
  */
 export const GetDeckRequestSchema: GenMessage<GetDeckRequest> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_deck_service, 0);
+  messageDesc(file_mtg_v1_deck_service, 2);
 
 /**
  * @generated from message mtg.v1.GetDeckResponse
@@ -48,7 +96,7 @@ export type GetDeckResponse = Message<"mtg.v1.GetDeckResponse"> & {
  * Use `create(GetDeckResponseSchema)` to create a new message.
  */
 export const GetDeckResponseSchema: GenMessage<GetDeckResponse> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_deck_service, 1);
+  messageDesc(file_mtg_v1_deck_service, 3);
 
 /**
  * @generated from message mtg.v1.ListDecksRequest
@@ -61,7 +109,7 @@ export type ListDecksRequest = Message<"mtg.v1.ListDecksRequest"> & {
  * Use `create(ListDecksRequestSchema)` to create a new message.
  */
 export const ListDecksRequestSchema: GenMessage<ListDecksRequest> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_deck_service, 2);
+  messageDesc(file_mtg_v1_deck_service, 4);
 
 /**
  * @generated from message mtg.v1.ListDecksResponse
@@ -78,7 +126,7 @@ export type ListDecksResponse = Message<"mtg.v1.ListDecksResponse"> & {
  * Use `create(ListDecksResponseSchema)` to create a new message.
  */
 export const ListDecksResponseSchema: GenMessage<ListDecksResponse> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_deck_service, 3);
+  messageDesc(file_mtg_v1_deck_service, 5);
 
 /**
  * @generated from message mtg.v1.ValidateRequest
@@ -110,7 +158,7 @@ export type ValidateRequest = Message<"mtg.v1.ValidateRequest"> & {
  * Use `create(ValidateRequestSchema)` to create a new message.
  */
 export const ValidateRequestSchema: GenMessage<ValidateRequest> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_deck_service, 4);
+  messageDesc(file_mtg_v1_deck_service, 6);
 
 /**
  * @generated from message mtg.v1.ValidateResponse
@@ -127,15 +175,55 @@ export type ValidateResponse = Message<"mtg.v1.ValidateResponse"> & {
  * Use `create(ValidateResponseSchema)` to create a new message.
  */
 export const ValidateResponseSchema: GenMessage<ValidateResponse> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_deck_service, 5);
+  messageDesc(file_mtg_v1_deck_service, 7);
 
 /**
- * DeckService reads and validates decks.
+ * ExportFormat names a text shape of a deck.
  *
- * An Export RPC with ExportRequest, ExportResponse, and ExportFormat sat
- * here from PR-0a to 2026-08-28 with no implementation, so every call
- * answered Unimplemented. The export of D-15 returns with the PR that
- * implements it, under a new name if the shape changes (D-266).
+ * @generated from enum mtg.v1.ExportFormat
+ */
+export enum ExportFormat {
+  /**
+   * @generated from enum value: EXPORT_FORMAT_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * EXPORT_FORMAT_ARENA_TEXT is one card per line: the count, the full
+   * name, the set code in parentheses, and the collector number. The
+   * commander comes first under a "Commander" header, the main deck
+   * under "Deck", and the sideboard under "Sideboard". ManaBox imports
+   * this shape, and collections.ParseArenaText reads it (D-15). An owned
+   * card names the owned printing, else the default paper printing
+   * (D-307).
+   *
+   * @generated from enum value: EXPORT_FORMAT_ARENA_TEXT = 1;
+   */
+  ARENA_TEXT = 1,
+
+  /**
+   * EXPORT_FORMAT_BUY_LIST_TEXT is one "count name" line per card the
+   * user still needs: the count minus the owned count over the commander,
+   * the main deck, and the sideboard, then the upgrades under an
+   * "Upgrades" header (D-308, D-309).
+   *
+   * @generated from enum value: EXPORT_FORMAT_BUY_LIST_TEXT = 2;
+   */
+  BUY_LIST_TEXT = 2,
+}
+
+/**
+ * Describes the enum mtg.v1.ExportFormat.
+ */
+export const ExportFormatSchema: GenEnum<ExportFormat> = /*@__PURE__*/
+  enumDesc(file_mtg_v1_deck_service, 0);
+
+/**
+ * DeckService reads, validates, and exports decks.
+ *
+ * An Export RPC with ExportRequest, ExportResponse, and ExportFormat left
+ * the contract with no implementation (D-266). ExportDeck is its
+ * replacement, and it lands with its implementation (PR-13, D-15).
  *
  * @generated from service mtg.v1.DeckService
  */
@@ -165,6 +253,17 @@ export const DeckService: GenService<{
     methodKind: "unary";
     input: typeof ValidateRequestSchema;
     output: typeof ValidateResponseSchema;
+  },
+  /**
+   * ExportDeck renders one of the caller's decks as text (D-15, D-307
+   * to D-309).
+   *
+   * @generated from rpc mtg.v1.DeckService.ExportDeck
+   */
+  exportDeck: {
+    methodKind: "unary";
+    input: typeof ExportDeckRequestSchema;
+    output: typeof ExportDeckResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_mtg_v1_deck_service, 0);
