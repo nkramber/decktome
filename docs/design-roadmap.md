@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-08-29 correction pass 29b (D-320 to D-322): the PR-16 bundle gate reads raw bytes, not gzipped bytes, and the slice adds only the primitives that it uses. The PR-22 entry no longer decides OQ-45. The PR-21 rate limit reads the forwarded address. Changes: PR-16, PR-21, PR-22, `docs/open-questions.md` table.
+
 2026-08-29 correction pass 29 (Phase 3B, the product UI, D-310 to D-319): the live-test UI of PR-11 to PR-13 is not a product (F-28). A new phase, PR-16 to PR-23, builds one. It holds the design system, the four flows of D-312, the share link, the deploy for invited users, and a Playwright smoke flow. `docs/reference/ui-phase-plan-2026-08-29.md` holds the detail. Changes: F-28, guardrail 13, the system map row of `web`, Phase 3B, Phase 5 (D-318), sequencing steps 18 to 23, open questions 5 and 6.
 
 2026-08-29 correction pass 28 (PR-13 built on branch `pr-13`, D-307 to D-309): `DeckService.ExportDeck`, the export panel, and the buy list with a Scryfall link per card. The round-trip gate holds in `go/internal/export`. Changes: PR-13, sequencing step 18.
@@ -583,15 +585,17 @@ The four flows of D-312 come in this order:
 > *In plain English:* what exists today is a test bench with a browser on it. This phase makes it an app a person can use every day, on a laptop or a phone, and later from anywhere with an invitation.
 
 **PR-16: Design system and app shell (D-311, D-317).**
-shadcn/ui components on Radix, copied into the repo. Tailwind 4 tokens: a neutral scale, one accent, the five mana colors and colorless as fixed tokens, and the semantic roles. The dark theme overrides the neutrals and the surfaces only. The theme follows the system by default, and a header toggle stores a choice.
+shadcn/ui components on Radix, copied into the repo. PR-16 adds only the primitives that the shell and the moved screens use (D-321), and each later slice adds its own. Tailwind 4 tokens: a neutral scale, one accent, the five mana colors and colorless as fixed tokens, and the semantic roles. The dark theme overrides the neutrals and the surfaces only. The theme follows the system by default, and a toggle in the sidebar stores a choice.
 
-The shell is a sidebar on a desktop and a bottom tab bar on a phone, with Build, Decks, and Collection. One `PageHeader`, one `EmptyState`, one `ErrorState`, a toast for every mutation, and an AlertDialog before every destructive action. Every existing screen moves onto the primitives with no new feature. The bundle splits by route, so `firebase/auth` loads on the sign-in route only.
+The shell is a sidebar on a desktop and a bottom tab bar on a phone, with Build, Decks, and Collection. One `PageHeader`, one `EmptyState`, one `ErrorState`, a toast for every mutation, and an AlertDialog before every destructive action. Every existing screen moves onto the primitives with no new feature. The bundle splits by route, so `firebase/auth` loads on the sign-in route only. The import boundary of the lint gains `src/components/ui`, and a primitive imports no feature.
+
+The baseline of 2026-08-29 is one chunk of 584.07 kB raw and 179.81 kB gzipped. It also holds 14.24 kB of CSS and 118 web tests.
 
 Gate:
 
 - axe passes on every route in both themes.
 - The 118 web tests hold.
-- The app shell loads under 200 kB of JavaScript.
+- The chunks of the first paint hold under 200 kB of raw JavaScript, from the Vite build report (D-320). The roadmap records the gzipped number beside it.
 - The owner walks the whole path on a desktop and on a phone.
 
 > *In plain English:* the look and the bones. Buttons, dialogs, menus, and a dark mode that all match, on a layout that works on a phone. Nothing new to do yet, but everything looks and feels like one app.
@@ -662,12 +666,14 @@ Gate:
 
 - A revoked link answers `NotFound`.
 - A test reads the shared message and finds no user field (guardrail 13).
-- The rate limit refuses the 61st call in a minute.
+- The rate limit refuses the 61st call in a minute, and it reads the client address from `X-Forwarded-For`.
+
+CAUTION: behind Firebase Hosting and Cloud Run, `RemoteAddr` holds the address of the proxy. A limiter that reads it puts every visitor in one bucket, and the gate then passes for the wrong reason.
 
 > *In plain English:* send a deck to a friend with one link, and print it for the table. The link shows the deck and nothing about you.
 
 **PR-22: Deploy to GCP for invited users (D-310, D-314).**
-The API and the worker run on Cloud Run from the Dockerfiles of PR-0c, with min instances at zero. The web app runs on Firebase Hosting, with a rewrite of `/mtg.v1.*` to the API. Real Firebase Auth with email and password. The interceptor reads the allowlist from `ALLOWED_EMAILS`, and a uid off the list gets `CodePermissionDenied` with one sentence. Firestore runs in Native mode with the deny-all rules of the repo.
+The API and the worker run on Cloud Run from the Dockerfiles of PR-0c, with min instances at zero. The web app runs on Firebase Hosting, with a rewrite of `/mtg.v1.*` to the API. Real Firebase Auth with email and password. The interceptor reads the allowlist of D-314, and a uid off the list gets `CodePermissionDenied` with one sentence. OQ-45 holds the store of the list, and the owner answers it before the slice starts. Firestore runs in Native mode with the deny-all rules of the repo.
 
 The worker refreshes the card snapshot in a GCS bucket on Cloud Scheduler, and Secret Manager holds the provider keys. A per-user monthly spend cap reads `Usage`, and a budget alert sits on the project.
 

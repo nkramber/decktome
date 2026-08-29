@@ -24,11 +24,15 @@ PR-11 to PR-13 built a live-test UI (D-273). It has four screens on plain Tailwi
 
 ### 3.1 Primitives
 
-shadcn/ui components on Radix, copied into `web/apps/web/src/components/ui/` as the shadcn convention. The first set: Button, Input, Textarea, Select, Checkbox, Switch, Dialog, AlertDialog, Sheet, DropdownMenu, Tabs, Tooltip, Toast, Skeleton, Badge, Card, Separator, ScrollArea, and Command (the search palette). Each one is a file the repo owns, so a fix never waits on a release.
+shadcn/ui components on Radix, copied into `web/apps/web/src/components/ui/` as the shadcn convention. Each one is a file the repo owns, so a fix never waits on a release.
+
+PR-16 adds only the primitives that the shell and the moved screens use (D-321). A survey of the four screens on 2026-08-29 found four controls: the button, the input (email, password, text, and file), the checkbox, and the label. So the set is Button, Input, Label, Checkbox, Card, Badge, Separator, DropdownMenu, Skeleton, and the toast.
+
+Each later slice adds the primitives that it needs. PR-17 and PR-18 add Command for the search, Dialog and AlertDialog for the rename and the delete, and Tabs. PR-19 adds Textarea and Select for the form. PR-20 adds Sheet and Tooltip for the card detail. An unused primitive never enters the repo.
 
 ### 3.2 Tokens and themes
 
-Tailwind 4 tokens in `src/styles/tokens.css`: a neutral scale, one accent, the five mana colors as fixed tokens (white, blue, black, red, green) plus colorless, and the semantic roles (background, surface, border, text, muted, danger, success). The dark theme overrides the neutral scale and the surfaces only. The mana colors do not change between themes. The theme follows `prefers-color-scheme` by default, and a toggle in the header stores a choice in `localStorage`.
+Tailwind 4 tokens in `src/styles/tokens.css`: a neutral scale, one accent, the five mana colors as fixed tokens (white, blue, black, red, green) plus colorless, and the semantic roles (background, surface, border, text, muted, danger, success). The dark theme overrides the neutral scale and the surfaces only. The mana colors do not change between themes. The theme follows `prefers-color-scheme` by default, and a toggle stores a choice in `localStorage`. The toggle sits in the sidebar on a desktop and in the account menu on a phone, because the shell has no header.
 
 Card art carries the color. Surfaces are neutral, and a deck page takes one accent from the commander's colors, through the mana tokens.
 
@@ -46,11 +50,21 @@ Card art carries the color. Surfaces are neutral, and a deck page takes one acce
 
 Every existing screen moves onto the primitives with no new feature. The screens are sign-in, the collection upload, the chat, the question cards, the deck view, the export panel, and the deck list. The bundle splits by route, so `firebase/auth` loads on the sign-in route and the app shell loads first.
 
-### 3.5 Gate
+The import boundary of `web/apps/web/eslint.config.js` allows a feature to import `src/lib` and `src/app/components` only. PR-16 adds `src/components/ui` to that allowlist and to the comment table of the rule. A primitive imports no feature and no app code, the same rule that `src/lib` holds today.
+
+### 3.5 The baseline of 2026-08-29
+
+A measurement on branch `phase-3b-roadmap` gives the numbers that PR-16 must beat or hold:
+
+- The production build is one chunk of 584.07 kB raw and 179.81 kB gzipped, plus 14.24 kB of CSS.
+- 118 web tests pass in 16 files, under Node 22.23.2.
+- `make ste-check` reports zero findings.
+
+### 3.6 Gate
 
 - axe passes on every route in both themes.
 - The 118 web tests hold, with the assertions updated to the new markup only.
-- The first paint of the app shell loads under 200 kB of JavaScript, measured by the Vite build report and recorded in the roadmap.
+- The chunks of the first paint hold under 200 kB of raw JavaScript, from the Vite build report (D-320). The gate counts the raw bytes, not the gzipped bytes, and the roadmap records both. The sign-in route loads `firebase/auth` on its own chunk.
 - The owner walks the whole path in the browser on a desktop and on a phone.
 
 ## 4. The deck library (PR-17)
@@ -147,13 +161,15 @@ axe passes on the Sheet. The sample hand draws from the exact list, checked by a
 
 A revoked link answers `NotFound`. A test reads the shared deck message and finds no uid, session id, collection id, owned flag, or owned printing. The rate limit refuses the 61st call in a minute.
 
+CAUTION: behind Firebase Hosting and Cloud Run, `RemoteAddr` holds the address of the proxy. A limiter that reads it puts every visitor in one bucket, and the gate then passes for the wrong reason. The limiter reads the client address from `X-Forwarded-For`, and a test proves that two forwarded addresses get two buckets.
+
 ## 9. Deploy to GCP for invited users (PR-22)
 
 ### 9.1 Shape
 
 - The API and the worker on Cloud Run, from the Dockerfiles of PR-0c, with the min instances at zero.
 - The web app on Firebase Hosting, with a rewrite of `/mtg.v1.*` to the API.
-- Real Firebase Auth with email and password. The allowlist of D-314 in one env var, `ALLOWED_EMAILS`, read by the interceptor. A uid off the list gets `CodePermissionDenied` with one sentence.
+- Real Firebase Auth with email and password. The interceptor reads the allowlist of D-314, and a uid off the list gets `CodePermissionDenied` with one sentence. OQ-45 holds the store of the list, one env var or one Firestore document, and the owner answers it before PR-22.
 - Firestore in Native mode with the rules of the repo, which deny every client read (the Admin SDK reads).
 - The card snapshot in a GCS bucket, refreshed by the worker on Cloud Scheduler.
 - Secrets in Secret Manager: the provider keys.
