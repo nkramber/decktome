@@ -646,11 +646,10 @@ func (b *Builder) CommanderPool(idx *cards.Index, req Request) ([]Candidate, err
 		out = append(out, b.commanderPairs(idx, req, theme, colorSet, mode, maxRank)...)
 		sortCandidates(out)
 	}
-	// Owned-first offers what the user already has, before a card they
-	// would need to buy.
-	if mode == mtgv1.PoolRule_POOL_RULE_OWNED_FIRST {
-		out = append(filterOwned(out, true), filterOwned(out, false)...)
-	}
+	// Owned-first ranks on quality like any card. The commander is one
+	// card, the buy list carries it, and a deck led by the best fit beats
+	// a deck led by a legend the user happens to own (D-297). Owned-only
+	// filtered above, because there the commander must be owned.
 	return out, nil
 }
 

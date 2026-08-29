@@ -1,4 +1,4 @@
-import type { Card } from "@mtg/api-client/mtg/v1/card_pb";
+import { type Card, Color } from "@mtg/api-client/mtg/v1/card_pb";
 import type { Deck, DeckCard } from "@mtg/api-client/mtg/v1/deck_pb";
 import { CardRole, Severity } from "@mtg/api-client/mtg/v1/deck_pb";
 
@@ -8,6 +8,7 @@ import {
   colorLetters,
   colorSources,
   curveSteps,
+  deckColors,
   diffDecks,
   formatLabel,
   groupByRole,
@@ -44,6 +45,11 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
   const groups = groupByRole(main);
   const curve = manaCurve(deck.cards, byId);
   const sources = colorSources(deck.cards, byId);
+  // The table shows the colors the deck pays for, and colorless for a
+  // colorless deck. A mono-green deck full of rocks that make any color
+  // is not a five-color deck.
+  const colorsOfDeck = deckColors(deck.cards, byId);
+  const sourceRows = colorLetters.filter((c) => (colorsOfDeck.size === 0 ? c.color === Color.C : colorsOfDeck.has(c.color)));
   const total = deck.cards.reduce((n, c) => n + c.count, 0);
   const validation = deck.validation;
   const findings = validation?.findings ?? [];
@@ -162,7 +168,7 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
             </tbody>
           </table>
           <table className="text-sm">
-            <caption className="text-left font-medium">Color sources, copies of cards that make each color</caption>
+            <caption className="text-left font-medium">Mana sources, cards that make each of the deck's colors</caption>
             <thead>
               <tr>
                 <th scope="col" className="pr-2 text-left">
@@ -174,7 +180,7 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
               </tr>
             </thead>
             <tbody>
-              {colorLetters.map((c) => (
+              {sourceRows.map((c) => (
                 <tr key={c.letter}>
                   <th scope="row" className="pr-2 text-left font-normal">
                     {c.name} ({c.letter})

@@ -34,6 +34,7 @@ const cards = [
     name: "Llanowar Elves",
     typeLine: "Creature — Elf Druid",
     cardTypes: ["Creature"],
+    colors: [Color.G],
     manaValue: 1,
     manaCost: "{G}",
     producedMana: [Color.G],
@@ -46,6 +47,7 @@ const cards = [
     name: "Delver of Secrets // Insectile Aberration",
     typeLine: "Creature — Human Wizard // Creature — Human Insect",
     cardTypes: ["Creature"],
+    colors: [Color.U],
     manaValue: 1,
     producedMana: [],
     faces: [
@@ -156,9 +158,12 @@ describe("DeckView", () => {
     const curve = screen.getByRole("table", { name: /Mana curve, lands excluded/ });
     const one = within(curve).getByRole("row", { name: /^1 / });
     expect(one).toHaveTextContent("6");
-    const sources = screen.getByRole("table", { name: /Color sources, copies/ });
+    // The deck's cards are green and blue, so those two rows show and the rest do not.
+    const sources = screen.getByRole("table", { name: /Mana sources/ });
     expect(within(sources).getByRole("row", { name: /Green/ })).toHaveTextContent("24");
     expect(within(sources).getByRole("row", { name: /Blue/ })).toHaveTextContent("0");
+    expect(within(sources).queryByRole("row", { name: /White/ })).not.toBeInTheDocument();
+    expect(within(sources).queryByRole("row", { name: /Colorless/ })).not.toBeInTheDocument();
   });
 
   it("opens the Oracle text on demand", async () => {

@@ -16,14 +16,13 @@ func TestCoverageCountsTheSources(t *testing.T) {
 	// budget row fires. A named cap closes it, and this test counts the
 	// commander rows alone (D-168).
 	first.BudgetUSD = 50
-	// The commander row fits poorly, so the model replaces it. The bracket
-	// row fits, so the catalog wins.
+	// The bracket row fits poorly, so the model replaces it. The commander
+	// row is fixed and fits, so the catalog wins.
 	score := scoreStep(t,
-		scored{RowID: "commander", Fit: 0.10, CustomText: "Which legend do you enjoy playing?", Reason: "test"},
-		scored{RowID: "power_commander", Fit: 0.90, Reason: "fits"})
-	// Turn 2 answers the invented question and leaves the bracket open.
-	second := classifyOut{Format: "unknown", PoolRule: "unknown"}
-	second.CommanderNames = []string{"Karlov of the Ghost Council"}
+		scored{RowID: "power_commander", Fit: 0.10, CustomText: "How strong a table do you play at?", Reason: "test"},
+		scored{RowID: "commander", Fit: 0.90, Reason: "fits"})
+	// Turn 2 answers the invented question and leaves the commander open.
+	second := classifyOut{Format: "unknown", PoolRule: "unknown", Power: "bracket 3"}
 
 	a, _ := testAgent(t,
 		classifyStep(t, first), score, askStep(t),
@@ -44,7 +43,7 @@ func TestCoverageCountsTheSources(t *testing.T) {
 		t.Errorf("median fit = %v, want 0.5", got)
 	}
 
-	res, err = a.Turn(context.Background(), st, "Karlov", nil)
+	res, err = a.Turn(context.Background(), st, "bracket 3", nil)
 	if err != nil {
 		t.Fatalf("turn 2: %v", err)
 	}
@@ -52,10 +51,10 @@ func TestCoverageCountsTheSources(t *testing.T) {
 		t.Errorf("the invented question filled no slot: %+v", res.Coverage)
 	}
 	if res.Coverage.CatalogFilled != 0 {
-		t.Errorf("the bracket question is still open, but the report calls it filled")
+		t.Errorf("the commander question is still open, but the report calls it filled")
 	}
-	if n := res.Coverage.InventedByRow["commander"]; n != 1 {
-		t.Errorf("invented by row = %v, want one for the commander row", res.Coverage.InventedByRow)
+	if n := res.Coverage.InventedByRow["power_commander"]; n != 1 {
+		t.Errorf("invented by row = %v, want one for the bracket row", res.Coverage.InventedByRow)
 	}
 	for _, ask := range st.Asks {
 		if ask.QuestionID == "" || ask.Slot == "" || ask.Turn == 0 {

@@ -203,14 +203,15 @@
           "named_card_role"
         ],
         "suggested": false
-      }
+      },
+      "fixed": true
     },
     {
       "id": "commander_pick",
       "slot": "commander",
       "order": 81,
       "fixed": true,
-      "text": "Which one do you want: {a}, {b}, or {c}? Say \"none\" and I name three more.",
+      "text": "Which commander do you want: {a}, {b}, or {c}? Say \"none\" and I name three more.",
       "when": {
         "format": "commander",
         "suggested": true

@@ -40,6 +40,8 @@ Branch `pr-12b` holds the revision turn (F-27, D-283 to D-285). The tree is gree
 - `internal/generate`: `Request.Revision`, the revision block of the generate prompt, `CheckRevision`, `AllowedByRevision`, and `Pool.Filter`. The pool drops the removed cards and the cards over the cap.
 - `internal/agentsvc`: `sendRevision` runs after a build when no slot changed, and `slotsChanged` decides. A slot change rebuilds from the start with a status line. `DeckStore` gained `Get`. `Turn.agent_message` is written now.
 - `Deck.revised_from_deck_id` and `Deck.revision_note` are additive proto fields. The deck view shows the note and the diff against the deck before it.
+- The mana sources table shows the deck's own colors only (D-298).
+- The commander offer ranks on quality in owned-first too, the commander row is fixed, and the pick row says "Which commander" (D-297). Run 27 no longer baselines the two row texts.
 - A closed question offers no free-text field, through `Question.closed` and the catalog flag (D-295).
 - The commander rows come last in the catalog order, after the power, the colors, the pool, and the budget (D-294).
 - A commander offer before the pool question ranks on quality alone (D-293). The conversation words hold the user words only (D-292). Both came from the browser sessions of the evening.

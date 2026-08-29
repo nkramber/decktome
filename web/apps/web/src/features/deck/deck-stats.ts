@@ -76,8 +76,19 @@ export const colorLetters: { color: Color; letter: string; name: string }[] = [
   { color: Color.C, letter: "C", name: "Colorless" },
 ];
 
+// deckColors is the set of colors the deck's cards are. A colorless deck
+// gives an empty set, and the sources table then shows colorless only.
+export function deckColors(cards: DeckCard[], byId: Map<string, Card>): Set<Color> {
+  const out = new Set<Color>();
+  for (const dc of cards) {
+    for (const c of byId.get(dc.oracleId)?.colors ?? []) out.add(c);
+  }
+  return out;
+}
+
 // colorSources counts the copies of every card that can produce each color.
-// A dual land counts once for each of its colors.
+// A dual land counts once for each of its colors. A rock that makes any
+// color counts for every color, so the view shows the deck's own colors.
 export function colorSources(cards: DeckCard[], byId: Map<string, Card>): Map<Color, number> {
   const sources = new Map<Color, number>(colorLetters.map((c) => [c.color, 0]));
   for (const dc of cards) {
