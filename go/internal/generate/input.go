@@ -89,6 +89,26 @@ func (b *Builder) input(req Request, misses []Miss, findings []*mtgv1.Finding) s
 		}
 		s.WriteString("Count the names you keep before you answer. The count above is a limit and not a goal.\n")
 	}
+	if r := req.Revision; r != nil {
+		s.WriteString("\n## The deck you are revising\n\n")
+		s.WriteString("The user read this deck and asked for a change. Keep every card the change does not touch.\n\n")
+		for _, c := range r.Base {
+			fmt.Fprintf(&s, "- %d %s (%s)\n", c.GetCount(), c.GetName(), roleWord(c.GetRole()))
+		}
+		s.WriteString("\n## The change the user asked for\n\n")
+		for _, line := range r.Instructions {
+			fmt.Fprintf(&s, "- %s\n", line)
+		}
+		if len(r.Remove) > 0 {
+			fmt.Fprintf(&s, "- Out: %s. These are not on the shortlist, so never name them.\n", strings.Join(r.Remove, ", "))
+		}
+		if len(r.Keep) > 0 {
+			fmt.Fprintf(&s, "- Keep: %s.\n", strings.Join(r.Keep, ", "))
+		}
+		if r.MaxManaValue > 0 {
+			fmt.Fprintf(&s, "- No nonland card above mana value %g. The shortlist holds none.\n", r.MaxManaValue)
+		}
+	}
 	// An upgrade keeps the precon's own composition. The generic job
 	// targets prescribe the whole deck, and the share demands most of
 	// those slots come from the precon, so the two instructions fight and
@@ -104,7 +124,7 @@ func (b *Builder) input(req Request, misses []Miss, findings []*mtgv1.Finding) s
 	// the upgrade prompt names the precon's land count in its own block
 	// and sends no target here (D-251).
 	targets := req.Targets
-	if req.Precon != "" {
+	if req.Precon != "" || req.Revision != nil {
 		targets = nil
 	}
 	if len(targets) > 0 {

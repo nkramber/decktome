@@ -139,8 +139,7 @@ function ChatPanel({
   const tooLong = bytes > maxMessageBytes;
   const beforeFirstMessage = state.sessionId === "";
   // The message box hides the moment a send starts, and while a question
-  // waits. It returns when the turn ends with no question open (owner,
-  // 2026-08-28).
+  // waits. It returns when the turn ends with no question open (D-282).
   const showComposer = !state.busy && state.openQuestions.length === 0;
 
   // New output scrolls into view. The sentinel sits under the thread.
@@ -151,8 +150,8 @@ function ChatPanel({
     end.current?.scrollIntoView?.({ block: "nearest" });
   }, [state.thread.length, lastLength, state.openQuestions.length]);
 
-  // Every open question needs an answer before the submit (owner,
-  // 2026-08-28). One send carries them all.
+  // Every open question needs an answer before the submit, and one send
+  // carries them all (D-282).
   const allAnswered = state.openQuestions.length > 0 && state.openQuestions.every((q) => draftAnswered(drafts[q.id]));
 
   function onSubmitAnswers(e: FormEvent) {
@@ -304,7 +303,7 @@ function ChatPanel({
           </p>
         )}
         {state.deck ? (
-          <DeckView deck={state.deck} />
+          <DeckView deck={state.deck} base={state.baseDeck} />
         ) : (
           !deckError && <p className="text-neutral-600">The deck shows here when the agent has built one.</p>
         )}

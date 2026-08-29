@@ -472,3 +472,24 @@ func TestStoredToProtoImportedAt(t *testing.T) {
 		t.Errorf("col = %v", col)
 	}
 }
+
+// TestOwnedPrintings is D-299: one entry per printing per card, and a row
+// with no quantity or no printing stays out.
+func TestOwnedPrintings(t *testing.T) {
+	got := OwnedPrintings([]*mtgv1.CollectionEntry{
+		{OracleId: "o1", ScryfallId: "p1", Quantity: 2},
+		{OracleId: "o1", ScryfallId: "p1", Quantity: 1, Finish: mtgv1.Finish_FINISH_FOIL},
+		{OracleId: "o1", ScryfallId: "p2", Quantity: 1},
+		{OracleId: "o2", ScryfallId: "p3", Quantity: 0},
+		{OracleId: "", ScryfallId: "p4", Quantity: 1},
+	})
+	if len(got["o1"]) != 2 || got["o1"][0] != "p1" || got["o1"][1] != "p2" {
+		t.Errorf("o1 = %v", got["o1"])
+	}
+	if _, ok := got["o2"]; ok {
+		t.Error("a zero-quantity row counted")
+	}
+	if len(got) != 1 {
+		t.Errorf("got %v", got)
+	}
+}

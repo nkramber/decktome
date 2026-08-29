@@ -2,6 +2,8 @@ package questions
 
 import (
 	"context"
+	"io"
+	"log/slog"
 	"testing"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
@@ -203,5 +205,32 @@ func TestBudgetScopeIsNotAskedWhenTheWordsAnswerIt(t *testing.T) {
 	}
 	if got := st2.Slots.GetSlotStates()["budget_scope"]; got == mtgv1.SlotState_SLOT_STATE_ASKED {
 		t.Error("a proxy user was asked what their budget covers")
+	}
+}
+
+// TestBudgetNumberAnswersTheCardsToBuyQuestion is D-288. The budget row
+// names the scope in its text, so "$100" as its answer is a cap on the
+// cards to buy, and the scope row must not ask again.
+func TestBudgetNumberAnswersTheCardsToBuyQuestion(t *testing.T) {
+	a := &Agent{log: slog.New(slog.NewTextHandler(io.Discard, nil))}
+	st := Restore("s", &mtgv1.Slots{BudgetUsd: 100}, Snapshot{Version: SnapshotVersion})
+	ruleBudgetScope(a, st, turnWords{Message: "$100", Open: []string{"budget"}})
+	if st.Slots.GetBudgetScope() != mtgv1.BudgetScope_BUDGET_SCOPE_CARDS_TO_BUY {
+		t.Errorf("scope = %v, want cards to buy", st.Slots.GetBudgetScope())
+	}
+	if st.Slots.GetSlotStates()["budget_scope"] != mtgv1.SlotState_SLOT_STATE_FILLED {
+		t.Errorf("budget_scope state = %v, want filled", st.Slots.GetSlotStates()["budget_scope"])
+	}
+	// The words win: "$100 for the whole deck" as the same answer is the deck value.
+	st = Restore("s", &mtgv1.Slots{BudgetUsd: 100, SlotStates: map[string]mtgv1.SlotState{"budget_scope": mtgv1.SlotState_SLOT_STATE_ASKED}}, Snapshot{Version: SnapshotVersion})
+	ruleBudgetScope(a, st, turnWords{Message: "$100 for the whole deck", Open: []string{"budget", "budget_scope"}})
+	if st.Slots.GetBudgetScope() != mtgv1.BudgetScope_BUDGET_SCOPE_WHOLE_DECK {
+		t.Errorf("scope = %v, want the whole deck", st.Slots.GetBudgetScope())
+	}
+	// No budget number, no scope.
+	st = Restore("s", &mtgv1.Slots{}, Snapshot{Version: SnapshotVersion})
+	ruleBudgetScope(a, st, turnWords{Message: "no", Open: []string{"budget"}})
+	if st.Slots.GetBudgetScope() != mtgv1.BudgetScope_BUDGET_SCOPE_UNSPECIFIED {
+		t.Errorf("scope = %v, want unspecified", st.Slots.GetBudgetScope())
 	}
 }

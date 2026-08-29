@@ -3,6 +3,7 @@ package generate
 import (
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/candidates"
+	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
 )
 
 // FromList makes the pool the model may write from out of a shortlist.
@@ -220,7 +221,7 @@ func padWithBasics(deck *mtgv1.Deck, req Request) int {
 // not hold. A commander counts as held: it is in the deck, in the command
 // zone. The names come from the pool, so the message reads as the user
 // wrote them (D-242).
-func missingLocked(deck *mtgv1.Deck, req Request) []string {
+func missingLocked(deck *mtgv1.Deck, req Request, cards rules.CardSource) []string {
 	if len(req.Locked) == 0 {
 		return nil
 	}
@@ -239,9 +240,15 @@ func missingLocked(deck *mtgv1.Deck, req Request) []string {
 		if have[id] {
 			continue
 		}
+		// The pool may have dropped the card, for example when a revision
+		// removed it, so the card index names it then (D-301).
 		name := id
 		if c, ok := req.Pool.ByOracleID(id); ok {
 			name = c.GetName()
+		} else if cards != nil {
+			if c, ok := cards.ByOracleID(id); ok {
+				name = c.GetName()
+			}
 		}
 		out = append(out, name)
 	}

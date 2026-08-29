@@ -42,9 +42,9 @@ func conversations() []conversation {
 	c1.ctx.HasCollection, c1.ctx.Theme = true, "lifegain"
 	c1.steps = []step{
 		{want: []string{"format", "theme", "colors"}, fill: []string{"format", "theme", "colors"}, set: commander},
-		{want: []string{"commander", "power_commander", "pool"}, fill: []string{"power", "pool_rule"},
+		{want: []string{"power_commander", "pool", "commander"}, fill: []string{"power", "pool_rule"},
 			set: func(c *Context) { c.OwnedMode, c.BuyList, c.Suggested = true, true, true }},
-		{want: []string{"commander_pick", "budget"}, fill: []string{"commander", "commander_pick", "budget"},
+		{want: []string{"budget", "commander_pick"}, fill: []string{"commander", "commander_pick", "budget"},
 			set: func(c *Context) { c.CommanderSet = true }},
 	}
 	cs = append(cs, c1)
@@ -54,7 +54,7 @@ func conversations() []conversation {
 	c2.ctx.HasCollection, c2.ctx.ThinTheme, c2.ctx.Theme = true, true, "blink"
 	c2.steps = []step{
 		{want: []string{"format", "theme", "colors"}, fill: []string{"format", "theme", "colors"}, set: commander},
-		{want: []string{"commander", "power_commander", "pool_thin"}, fill: []string{"power", "pool_rule", "commander"},
+		{want: []string{"power_commander", "pool_thin", "commander"}, fill: []string{"power", "pool_rule", "commander"},
 			set: func(c *Context) { c.OwnedMode, c.BuyList, c.CommanderSet = true, true, true }},
 		{want: []string{"budget"}, fill: []string{"budget"}},
 	}
@@ -82,7 +82,7 @@ func conversations() []conversation {
 	c4.steps = []step{
 		{want: []string{"format", "theme", "colors"}, fill: []string{"format", "theme", "colors"},
 			set: func(c *Context) { commander(c); c.Theme = "sacrifice" }},
-		{want: []string{"commander", "power_commander", "pool"}, fill: []string{"power", "pool_rule"},
+		{want: []string{"power_commander", "pool", "commander"}, fill: []string{"power", "pool_rule"},
 			set: func(c *Context) { c.Suggested = true }},
 		{want: []string{"commander_pick"}, fill: []string{"commander", "commander_pick"},
 			set: func(c *Context) { c.CommanderSet = true }},
@@ -133,11 +133,12 @@ func conversations() []conversation {
 	c8.steps = []step{
 		{want: []string{"format", "theme", "colors"}, fill: []string{"format", "theme", "colors"},
 			set: func(c *Context) { commander(c); c.TwoPlans = true }},
-		{want: []string{"commander", "power_commander", "pool"}, fill: []string{"power", "pool_rule", "commander"},
-			set: func(c *Context) { c.OwnedMode, c.CommanderSet = true, true }},
+		{want: []string{"power_commander", "pool", "budget_scope"}, fill: []string{"power", "pool_rule", "budget_scope", "budget"},
+			set: func(c *Context) { c.OwnedMode = true }},
 		// The plan-choice row retired with PR-9 (D-256, A-6 of the
-		// 2026-08-28 audit), so two plans raise no question.
-		{want: []string{"budget_scope"}, fill: []string{"budget_scope", "budget"}},
+		// 2026-08-28 audit), so two plans raise no question. The
+		// commander comes last (D-294).
+		{want: []string{"commander"}, fill: []string{"commander"}, set: func(c *Context) { c.CommanderSet = true }},
 	}
 	cs = append(cs, c8)
 
@@ -149,7 +150,7 @@ func conversations() []conversation {
 	c9.steps = []step{
 		// The not-owned row is retired (D-226), so the base commander row
 		// asks and the rules engine reports ownership after the build.
-		{want: []string{"commander", "power_commander", "colors"},
+		{want: []string{"power_commander", "colors", "commander"},
 			fill: []string{"commander", "power", "colors"}, set: func(c *Context) { c.CommanderSet, c.BuyList = true, true }},
 		{want: []string{"pool", "budget"}, fill: []string{"pool_rule", "budget"}},
 	}
@@ -164,7 +165,7 @@ func conversations() []conversation {
 	c10.ctx.Theme, c10.ctx.Format = "lifegain", mtgv1.FormatId_FORMAT_ID_COMMANDER
 	c10.ctx.Filled["format"], c10.ctx.Filled["theme"], c10.ctx.Filled["colors"] = true, true, true
 	c10.steps = []step{
-		{want: []string{"commander", "power_commander", "pool"},
+		{want: []string{"power_commander", "pool", "commander"},
 			fill: []string{"commander", "power", "pool_rule", "budget"}, set: func(c *Context) { c.CommanderSet = true }},
 	}
 	cs = append(cs, c10)
@@ -209,7 +210,7 @@ func conversations() []conversation {
 		c14.ctx.Filled[k] = true
 	}
 	c14.steps = []step{
-		{want: []string{"commander", "power_commander"}, fill: []string{"power"},
+		{want: []string{"power_commander", "commander"}, fill: []string{"power"},
 			set: func(c *Context) { c.Suggested = true }},
 		// The user answers "none of those", which retires the names. The
 		// row asks again only for that reason now: three names the user
@@ -290,7 +291,7 @@ func conversations() []conversation {
 	c19.steps = []step{
 		{want: []string{"format", "theme", "colors"}, fill: []string{"format", "theme", "colors"},
 			set: func(c *Context) { commander(c); c.Theme = "tokens" }},
-		{want: []string{"commander", "power_commander", "pool"},
+		{want: []string{"power_commander", "pool", "commander"},
 			fill: []string{"commander", "commander_pick", "power", "pool_rule"},
 			set:  func(c *Context) { c.CommanderSet = true }},
 	}
@@ -305,7 +306,7 @@ func conversations() []conversation {
 	c20.steps = []step{
 		{want: []string{"format", "theme", "colors"}, fill: []string{"format", "theme", "colors"},
 			set: func(c *Context) { commander(c); c.Theme = "dinosaurs" }},
-		{want: []string{"commander", "power_commander", "pool"},
+		{want: []string{"power_commander", "pool", "commander"},
 			fill: []string{"commander", "commander_pick", "power", "pool_rule"},
 			set:  func(c *Context) { c.CommanderSet = true }},
 	}
@@ -333,7 +334,7 @@ func conversations() []conversation {
 	c22.steps = []step{
 		{want: []string{"format", "theme", "colors"}, fill: []string{"format", "theme", "colors"},
 			set: func(c *Context) { commander(c); c.Theme = "extra turns" }},
-		{want: []string{"commander", "power_commander", "pool"},
+		{want: []string{"power_commander", "pool", "commander"},
 			fill: []string{"commander", "commander_pick", "power", "pool_rule"},
 			set:  func(c *Context) { c.CommanderSet = true }},
 	}
@@ -344,7 +345,7 @@ func conversations() []conversation {
 	c23.ctx.HasCollection, c23.ctx.Theme = true, "land destruction"
 	c23.steps = []step{
 		{want: []string{"format", "theme", "colors"}, fill: []string{"format", "theme", "colors"}, set: commander},
-		{want: []string{"commander", "power_commander", "pool"},
+		{want: []string{"power_commander", "pool", "commander"},
 			fill: []string{"commander", "commander_pick", "power", "pool_rule"},
 			set:  func(c *Context) { c.CommanderSet = true }},
 	}
@@ -355,7 +356,7 @@ func conversations() []conversation {
 	c24.ctx.HasCollection, c24.ctx.OwnedMode, c24.ctx.Theme = true, true, "stax"
 	c24.steps = []step{
 		{want: []string{"format", "theme", "colors"}, fill: []string{"format", "theme", "colors"}, set: commander},
-		{want: []string{"commander", "power_commander", "pool"},
+		{want: []string{"power_commander", "pool", "commander"},
 			fill: []string{"commander", "commander_pick", "power", "pool_rule"},
 			set:  func(c *Context) { c.CommanderSet = true }},
 	}
@@ -403,7 +404,7 @@ func conversations() []conversation {
 	c28.ctx.HasCollection, c28.ctx.TwoPlans, c28.ctx.Theme = true, true, "reanimator"
 	c28.steps = []step{
 		{want: []string{"format", "theme", "colors"}, fill: []string{"format", "theme", "colors"}, set: commander},
-		{want: []string{"commander", "power_commander", "pool"},
+		{want: []string{"power_commander", "pool", "commander"},
 			fill: []string{"commander", "commander_pick", "power", "pool_rule"},
 			set:  func(c *Context) { c.CommanderSet = true }},
 	}
@@ -415,11 +416,11 @@ func conversations() []conversation {
 	c29.ctx.Theme = "artifacts"
 	c29.steps = []step{
 		{want: []string{"format", "theme", "colors"}, fill: []string{"format", "theme", "colors"}, set: commander},
-		{want: []string{"commander", "power_commander", "pool"},
-			fill: []string{"commander", "commander_pick", "power", "pool_rule"},
+		{want: []string{"power_commander", "pool", "budget"}, fill: []string{"power", "pool_rule", "budget"}},
+		// The commander comes after the budget (D-294).
+		{want: []string{"budget_scope", "commander"},
+			fill: []string{"budget_scope", "commander", "commander_pick"},
 			set:  func(c *Context) { c.CommanderSet = true }},
-		{want: []string{"budget"}, fill: []string{"budget"}},
-		{want: []string{"budget_scope"}, fill: []string{"budget_scope"}},
 	}
 	cs = append(cs, c29)
 
@@ -444,7 +445,7 @@ func conversations() []conversation {
 			set: func(c *Context) { c.OutOfScope = false }},
 		{want: []string{"format", "theme", "colors"}, fill: []string{"format", "theme", "colors"},
 			set: func(c *Context) { commander(c); c.Theme = "dragons" }},
-		{want: []string{"commander", "power_commander"},
+		{want: []string{"power_commander", "commander"},
 			fill: []string{"commander", "commander_pick", "power"},
 			set:  func(c *Context) { c.CommanderSet = true }},
 	}
@@ -458,7 +459,7 @@ func conversations() []conversation {
 	c32.steps = []step{
 		{want: []string{"one_deck"}, fill: []string{"deck_count", "format", "theme"},
 			set: func(c *Context) { commander(c); c.Theme = "dragons" }},
-		{want: []string{"commander", "power_commander", "colors"},
+		{want: []string{"power_commander", "colors", "commander"},
 			fill: []string{"commander", "commander_pick", "power", "colors"},
 			set:  func(c *Context) { c.CommanderSet = true }},
 	}
@@ -476,7 +477,7 @@ func conversations() []conversation {
 				commander(c)
 				c.Theme, c.UnsupportedFormat = "dragons", false
 			}},
-		{want: []string{"commander", "power_commander"},
+		{want: []string{"power_commander", "commander"},
 			fill: []string{"commander", "commander_pick", "power"},
 			set:  func(c *Context) { c.CommanderSet = true }},
 	}
@@ -497,7 +498,7 @@ func conversations() []conversation {
 				c.Theme = "dragons"
 				c.UnsupportedFormat, c.NoNearFormat = false, false
 			}},
-		{want: []string{"commander", "power_commander"},
+		{want: []string{"power_commander", "commander"},
 			fill: []string{"commander", "commander_pick", "power"},
 			set:  func(c *Context) { c.CommanderSet = true }},
 	}

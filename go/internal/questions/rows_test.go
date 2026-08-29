@@ -574,3 +574,29 @@ func TestColorsSurviveAnUnknownColorWord(t *testing.T) {
 		t.Errorf("colors state = %v, want FILLED", got)
 	}
 }
+
+// TestClosedRowsHaveOptions is D-295. A closed row must offer options,
+// or the user has no way to answer it.
+func TestClosedRowsHaveOptions(t *testing.T) {
+	c := load(t)
+	closed := 0
+	for _, r := range c.Rows {
+		if !r.Closed {
+			continue
+		}
+		closed++
+		if len(r.Options) < 2 {
+			t.Errorf("closed row %q has %d options", r.ID, len(r.Options))
+		}
+	}
+	if closed == 0 {
+		t.Error("no row is closed, and the format row must be")
+	}
+	row, ok := c.Row("format")
+	if !ok || !row.Closed {
+		t.Error("the format row is not closed")
+	}
+	if row, _ := c.Row("commander"); row.Closed {
+		t.Error("the commander row is closed, and it takes a name")
+	}
+}

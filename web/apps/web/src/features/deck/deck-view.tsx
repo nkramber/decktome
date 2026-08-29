@@ -1,6 +1,6 @@
-import type { Card } from "@mtg/api-client/mtg/v1/card_pb";
+import { type Card, Color } from "@mtg/api-client/mtg/v1/card_pb";
 import type { Deck, DeckCard } from "@mtg/api-client/mtg/v1/deck_pb";
-import { Severity } from "@mtg/api-client/mtg/v1/deck_pb";
+import { CardRole, Severity } from "@mtg/api-client/mtg/v1/deck_pb";
 
 import { errorMessage } from "../../lib/errors";
 import { CardTile } from "./card-tile";
@@ -8,6 +8,8 @@ import {
   colorLetters,
   colorSources,
   curveSteps,
+  deckColors,
+  diffDecks,
   formatLabel,
   groupByRole,
   manaCurve,
@@ -22,7 +24,9 @@ import { useDeckCards } from "./use-cards";
 // and attribution (D-6), both faces for a DFC (F-9), the owned mark or
 // the price (D-2, D-37), the findings, legality_as_of, the curve, and
 // the color sources.
-export function DeckView({ deck }: { deck: Deck }) {
+// base is the deck this one revised, when the page holds it (PR-12B).
+export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
+  const diff = base && deck.revisedFromDeckId && base.id === deck.revisedFromDeckId ? diffDecks(base, deck) : undefined;
   const cards = useDeckCards(deck);
   const byId = cards.data?.byId ?? new Map<string, Card>();
   const missing = cards.data?.missing ?? [];
@@ -30,13 +34,28 @@ export function DeckView({ deck }: { deck: Deck }) {
   const nameOf = (id: string) => allEntries.find((c) => c.oracleId === id)?.name ?? byId.get(id)?.name ?? id;
   const commanders = new Set(deck.commanderOracleIds);
   const main = deck.cards.filter((c) => !commanders.has(c.oracleId));
-  const commanderEntries = deck.cards.filter((c) => commanders.has(c.oracleId));
+  // The command zone: one entry per commander id, from cards when the
+  // list holds it and from the card data otherwise (D-289).
+  const commanderEntries: DeckCard[] = deck.commanderOracleIds.map(
+    (id) =>
+      deck.cards.find((c) => c.oracleId === id) ??
+      ({ oracleId: id, name: byId.get(id)?.name ?? "Commander", count: 1, role: CardRole.UNSPECIFIED, owned: false, ownedCount: 0, priceUsd: 0, reason: "" } as DeckCard),
+  );
+  const commanderCount = deck.commanderOracleIds.length;
   const groups = groupByRole(main);
   const curve = manaCurve(deck.cards, byId);
   const sources = colorSources(deck.cards, byId);
+  // The table shows the colors the deck pays for, and colorless for a
+  // colorless deck. A mono-green deck full of rocks that make any color
+  // is not a five-color deck.
+  const colorsOfDeck = deckColors(deck.cards, byId);
+  const sourceRows = colorLetters.filter((c) => (colorsOfDeck.size === 0 ? c.color === Color.C : colorsOfDeck.has(c.color)));
   const total = deck.cards.reduce((n, c) => n + c.count, 0);
   const validation = deck.validation;
-  const findings = validation?.findings ?? [];
+  // A not_owned warning repeats what the tile says under the card, and
+  // an owned-first deck carries one per card to buy. The list drops them.
+  // A not_owned block in owned-only still shows (D-300).
+  const findings = (validation?.findings ?? []).filter((f) => !(f.code === "not_owned" && f.severity !== Severity.BLOCK));
   const legalityAsOf = deck.legalityAsOf || validation?.legalityAsOf || "an unknown date";
   const curveMax = Math.max(1, ...curve);
 
@@ -50,6 +69,7 @@ export function DeckView({ deck }: { deck: Deck }) {
           {formatLabel(deck.format?.id, deck.format?.houseRules ?? "")}
           {powerLabel(deck.power) && ` · ${powerLabel(deck.power)}`}
           {` · ${total} cards`}
+          {commanderCount > 0 && ` + ${commanderCount} commander${commanderCount > 1 ? "s" : ""}`}
           {deck.sideboard.length > 0 && ` · ${deck.sideboard.reduce((n, c) => n + c.count, 0)} sideboard`}
         </p>
         <p className="text-sm" data-testid="legality-line">
@@ -63,6 +83,28 @@ export function DeckView({ deck }: { deck: Deck }) {
         </p>
         {deck.summary && <p className="mt-1">{deck.summary}</p>}
       </header>
+
+      {deck.revisionNote && (
+        <section aria-labelledby={`revision-title-${deck.id}`} className="rounded border border-blue-400 bg-blue-50 p-3 text-sm">
+          <h3 id={`revision-title-${deck.id}`} className="font-medium">
+            What changed
+          </h3>
+          <p data-testid="revision-note">{deck.revisionNote}</p>
+          {diff && (
+            <ul className="mt-2 list-disc pl-5" data-testid="revision-diff">
+              {diff.removed.map((x) => (
+                <li key={`r-${x}`}>Removed {x}</li>
+              ))}
+              {diff.added.map((x) => (
+                <li key={`a-${x}`}>Added {x}</li>
+              ))}
+              {diff.changed.map((x) => (
+                <li key={`c-${x}`}>Count of {x}</li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
 
       {findings.length > 0 && (
         <section aria-labelledby={`findings-title-${deck.id}`}>
@@ -129,7 +171,7 @@ export function DeckView({ deck }: { deck: Deck }) {
             </tbody>
           </table>
           <table className="text-sm">
-            <caption className="text-left font-medium">Color sources, copies of cards that make each color</caption>
+            <caption className="text-left font-medium">Mana sources, cards that make each of the deck's colors</caption>
             <thead>
               <tr>
                 <th scope="col" className="pr-2 text-left">
@@ -141,7 +183,7 @@ export function DeckView({ deck }: { deck: Deck }) {
               </tr>
             </thead>
             <tbody>
-              {colorLetters.map((c) => (
+              {sourceRows.map((c) => (
                 <tr key={c.letter}>
                   <th scope="row" className="pr-2 text-left font-normal">
                     {c.name} ({c.letter})
@@ -160,7 +202,7 @@ export function DeckView({ deck }: { deck: Deck }) {
       </p>
 
       {commanderEntries.length > 0 && (
-        <CardGroup title="Commander" count={commanderEntries.reduce((n, c) => n + c.count, 0)} entries={commanderEntries} byId={byId} commanders={commanders} />
+        <CardGroup title="Commander" count={commanderEntries.length} entries={commanderEntries} byId={byId} commanders={commanders} hideOwnership />
       )}
       {groups.map((g) => (
         <CardGroup key={g.role} title={roleLabel(g.role)} count={g.count} entries={g.cards} byId={byId} commanders={commanders} />
@@ -181,12 +223,14 @@ function CardGroup({
   entries,
   byId,
   commanders,
+  hideOwnership = false,
 }: {
   title: string;
   count: number;
   entries: DeckCard[];
   byId: Map<string, Card>;
   commanders: Set<string>;
+  hideOwnership?: boolean;
 }) {
   return (
     <section aria-label={`${title} (${count})`} className="@container">
@@ -195,7 +239,7 @@ function CardGroup({
       </h3>
       <ul className="mt-2 grid grid-cols-1 items-start gap-2 @sm:grid-cols-2 @2xl:grid-cols-3 @4xl:grid-cols-4">
         {entries.map((e, i) => (
-          <CardTile key={`${e.oracleId}-${i}`} entry={e} card={byId.get(e.oracleId)} isCommander={commanders.has(e.oracleId)} />
+          <CardTile key={`${e.oracleId}-${i}`} entry={e} card={byId.get(e.oracleId)} isCommander={commanders.has(e.oracleId)} hideOwnership={hideOwnership} />
         ))}
       </ul>
     </section>

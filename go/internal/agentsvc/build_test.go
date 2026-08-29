@@ -226,6 +226,15 @@ func (f *fakeDeckStore) NewID(string) string {
 	return fmt.Sprintf("deck-%d", f.n)
 }
 
+func (f *fakeDeckStore) Get(_ context.Context, _ string, id string) (*mtgv1.Deck, error) {
+	for _, d := range f.put {
+		if d.GetId() == id {
+			return d, nil
+		}
+	}
+	return nil, fmt.Errorf("deck %s not found", id)
+}
+
 func (f *fakeDeckStore) Put(_ context.Context, _ string, d *mtgv1.Deck) error {
 	if f.fail != nil {
 		return f.fail
@@ -458,5 +467,120 @@ func TestBuildCopiesTheHouseRules(t *testing.T) {
 	}
 	if fd.got.HouseRules != "any card, no ban list" {
 		t.Errorf("the build request carries house rules %q, want the slot value", fd.got.HouseRules)
+	}
+}
+
+// TestShortlistFollowsTheCommanderIdentity is D-289. A user who says "any
+// colors are fine" leaves the color slot empty, and the shortlist must
+// still hold the commander's identity and nothing outside it.
+func TestShortlistFollowsTheCommanderIdentity(t *testing.T) {
+	store := newFakeStore()
+	fd := &fakeDecks{res: &generate.Result{Deck: &mtgv1.Deck{Validation: &mtgv1.ValidationResult{}}}}
+	// A green lifegain card, so the theme ranks it and only the color
+	// identity can keep it out.
+	elves := &mtgv1.Card{
+		OracleId: "o-elves", Name: "Llanowar Elves", TypeLine: "Creature — Elf Druid",
+		OracleText: "Lifelink. Whenever you gain life, put a +1/+1 counter on Llanowar Elves.", Keywords: []string{"Lifelink"},
+		ColorIdentity: []mtgv1.Color{mtgv1.Color_COLOR_G}, CardTypes: []string{"Creature"}, EdhrecRank: 10,
+		Legalities: map[string]mtgv1.LegalityStatus{"commander": mtgv1.LegalityStatus_LEGALITY_STATUS_LEGAL},
+	}
+	karlov := &mtgv1.Card{
+		OracleId: "o-karlov", Name: "Karlov of the Ghost Council",
+		TypeLine: "Legendary Creature — Spirit Advisor", CanBeCommander: true,
+		ColorIdentity: []mtgv1.Color{mtgv1.Color_COLOR_W, mtgv1.Color_COLOR_B}, CardTypes: []string{"Creature"},
+		Legalities: map[string]mtgv1.LegalityStatus{"commander": mtgv1.LegalityStatus_LEGALITY_STATUS_LEGAL},
+	}
+	welcome := &mtgv1.Card{
+		OracleId: "o-welcome", Name: "Ajani's Welcome", TypeLine: "Enchantment",
+		ColorIdentity: []mtgv1.Color{mtgv1.Color_COLOR_W}, CardTypes: []string{"Enchantment"},
+		Legalities: map[string]mtgv1.LegalityStatus{"commander": mtgv1.LegalityStatus_LEGALITY_STATUS_LEGAL},
+	}
+	idx := cards.NewIndex([]*mtgv1.Card{karlov, welcome, elves}, nil, nil, time.Unix(1000, 0).UTC())
+	cb, err := candidates.New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	steps := []llm.Step{
+		classifyJSON(t, map[string]any{
+			"format": "commander", "theme": "lifegain", "colors": []string{}, "pool_rule": "any_card", "budget_usd": 50,
+		}),
+		scoreJSON(t, "commander", "power_commander"),
+		askJSON(t),
+		classifyJSON(t, map[string]any{"power": "bracket 3", "commander_names": []string{"Karlov of the Ghost Council"}}),
+	}
+	client, _ := testServerOpts(t, store, []Option{WithDecks(fd), WithCandidates(fixedIndex{idx}, cb)}, steps...)
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck, any colors are fine"})
+	second := chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
+	if second.deck == nil || fd.got.Pool == nil {
+		t.Fatalf("no build: %v", second.order)
+	}
+	if _, ok := fd.got.Pool.ByOracleID("o-elves"); ok {
+		t.Error("a green card reached the pool of a W/B commander")
+	}
+	if _, ok := fd.got.Pool.ByOracleID("o-karlov"); !ok {
+		t.Error("the commander left the pool")
+	}
+}
+
+// fakeCollections answers the owned counts and the owned printings of
+// one collection.
+type fakeCollections struct {
+	counts    map[string]int32
+	printings map[string][]string
+}
+
+func (f fakeCollections) OracleCounts(context.Context, string, string) (map[string]int32, error) {
+	return f.counts, nil
+}
+
+func (f fakeCollections) OwnedPrintings(context.Context, string, string) (map[string][]string, error) {
+	return f.printings, nil
+}
+
+// TestOwnedCardShowsThePriciestOwnedPrinting is D-299.
+func TestOwnedCardShowsThePriciestOwnedPrinting(t *testing.T) {
+	store := newFakeStore()
+	deck := &mtgv1.Deck{Validation: &mtgv1.ValidationResult{}, Cards: []*mtgv1.DeckCard{
+		{OracleId: "o-welcome", Name: "Ajani's Welcome", Count: 1, Owned: true, OwnedCount: 2},
+		{OracleId: "o-karlov", Name: "Karlov of the Ghost Council", Count: 1, Owned: false},
+	}}
+	fd := &fakeDecks{res: &generate.Result{Deck: deck}}
+	karlov := &mtgv1.Card{
+		OracleId: "o-karlov", Name: "Karlov of the Ghost Council", TypeLine: "Legendary Creature — Spirit Advisor", CanBeCommander: true,
+		ColorIdentity: []mtgv1.Color{mtgv1.Color_COLOR_W, mtgv1.Color_COLOR_B},
+		Legalities:    map[string]mtgv1.LegalityStatus{"commander": mtgv1.LegalityStatus_LEGALITY_STATUS_LEGAL},
+	}
+	welcome := &mtgv1.Card{
+		OracleId: "o-welcome", Name: "Ajani's Welcome", TypeLine: "Enchantment",
+		ColorIdentity:   []mtgv1.Color{mtgv1.Color_COLOR_W},
+		Legalities:      map[string]mtgv1.LegalityStatus{"commander": mtgv1.LegalityStatus_LEGALITY_STATUS_LEGAL},
+		DefaultPrinting: &mtgv1.Printing{ScryfallId: "p-default"},
+	}
+	printings := []cards.Printing{
+		{ScryfallID: "p-cheap", OracleID: "o-welcome", Name: "Ajani's Welcome", ImageUris: &mtgv1.ImageUris{Normal: "https://x/cheap.jpg"}, PriceUSD: 0.5},
+		{ScryfallID: "p-dear", OracleID: "o-welcome", Name: "Ajani's Welcome", ImageUris: &mtgv1.ImageUris{Normal: "https://x/dear.jpg"}, PriceUSD: 12},
+		{ScryfallID: "p-noimg", OracleID: "o-welcome", Name: "Ajani's Welcome", PriceUSD: 99},
+	}
+	idx := cards.NewIndex([]*mtgv1.Card{karlov, welcome}, printings, nil, time.Unix(1000, 0).UTC())
+	cb, err := candidates.New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cols := fakeCollections{
+		counts:    map[string]int32{"o-welcome": 2},
+		printings: map[string][]string{"o-welcome": {"p-cheap", "p-dear", "p-noimg"}},
+	}
+	client, _ := testServerOpts(t, store, []Option{WithDecks(fd), WithCandidates(fixedIndex{idx}, cb), WithCollections(cols)}, readySteps(t)...)
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck", CollectionId: "c1"})
+	second := chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
+	if second.deck == nil {
+		t.Fatalf("no deck: %v", second.order)
+	}
+	got := second.deck.GetCards()[0].GetOwnedPrinting()
+	if got.GetScryfallId() != "p-dear" || got.GetImageUris().GetNormal() != "https://x/dear.jpg" || got.GetPriceUsd() != 12 {
+		t.Errorf("owned printing = %v, want the dear one with an image", got)
+	}
+	if second.deck.GetCards()[1].GetOwnedPrinting() != nil {
+		t.Error("an unowned card got an owned printing")
 	}
 }

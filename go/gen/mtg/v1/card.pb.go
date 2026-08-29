@@ -663,7 +663,10 @@ type Printing struct {
 	ImageUris *ImageUris `protobuf:"bytes,7,opt,name=image_uris,json=imageUris,proto3" json:"image_uris,omitempty"`
 	// digital marks an online-only printing. Digital printings are out of
 	// the price search (D-17) and can differ in legality (F-12).
-	Digital       bool `protobuf:"varint,8,opt,name=digital,proto3" json:"digital,omitempty"`
+	Digital bool `protobuf:"varint,8,opt,name=digital,proto3" json:"digital,omitempty"`
+	// price_usd is this printing's USD price on the snapshot day. Zero
+	// means no price. Set on an owned printing of a deck card (D-299).
+	PriceUsd      float64 `protobuf:"fixed64,9,opt,name=price_usd,json=priceUsd,proto3" json:"price_usd,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -752,6 +755,13 @@ func (x *Printing) GetDigital() bool {
 		return x.Digital
 	}
 	return false
+}
+
+func (x *Printing) GetPriceUsd() float64 {
+	if x != nil {
+		return x.PriceUsd
+	}
+	return 0
 }
 
 // ImageUris are Scryfall image links. The UI hotlinks them (D-6).
@@ -885,7 +895,7 @@ const file_mtg_v1_card_proto_rawDesc = "" +
 	"\aloyalty\x18\a \x01(\tR\aloyalty\x120\n" +
 	"\n" +
 	"image_uris\x18\b \x01(\v2\x11.mtg.v1.ImageUrisR\timageUris\x12\x16\n" +
-	"\x06artist\x18\t \x01(\tR\x06artist\"\x88\x02\n" +
+	"\x06artist\x18\t \x01(\tR\x06artist\"\xa5\x02\n" +
 	"\bPrinting\x12\x1f\n" +
 	"\vscryfall_id\x18\x01 \x01(\tR\n" +
 	"scryfallId\x12\x19\n" +
@@ -896,7 +906,8 @@ const file_mtg_v1_card_proto_rawDesc = "" +
 	"\x06artist\x18\x06 \x01(\tR\x06artist\x120\n" +
 	"\n" +
 	"image_uris\x18\a \x01(\v2\x11.mtg.v1.ImageUrisR\timageUris\x12\x18\n" +
-	"\adigital\x18\b \x01(\bR\adigital\"j\n" +
+	"\adigital\x18\b \x01(\bR\adigital\x12\x1b\n" +
+	"\tprice_usd\x18\t \x01(\x01R\bpriceUsd\"j\n" +
 	"\tImageUris\x12\x14\n" +
 	"\x05small\x18\x01 \x01(\tR\x05small\x12\x16\n" +
 	"\x06normal\x18\x02 \x01(\tR\x06normal\x12\x14\n" +

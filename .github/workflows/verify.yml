@@ -1,9 +1,14 @@
 name: verify
 
+# The workflow runs on pull requests only. A merge to main is the tree
+# the pull request already verified, so a second run on push buys
+# nothing. A new push to a branch cancels the run in progress (D-286).
 on:
   pull_request:
-  push:
-    branches: [main]
+
+concurrency:
+  group: verify-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -12,15 +17,53 @@ permissions:
 # resolved to on 2026-08-24. Bump the SHA and the comment together.
 # Every job has a timeout. A hung test or install runs to the 6-hour
 # default otherwise.
+#
+# Each job is billed by the minute, rounded up, so a job that need not
+# run is skipped. The changes job reads the diff against the base branch
+# and every other job waits on its answer.
 jobs:
-  go:
-    name: "verify:go"
+  changes:
+    name: "verify:changes"
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 5
+    outputs:
+      go: ${{ steps.diff.outputs.go }}
+      gosum: ${{ steps.diff.outputs.gosum }}
+      web: ${{ steps.diff.outputs.web }}
+      proto: ${{ steps.diff.outputs.proto }}
+      emulator: ${{ steps.diff.outputs.emulator }}
+      docker: ${{ steps.diff.outputs.docker }}
+      shell: ${{ steps.diff.outputs.shell }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+      - id: diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="origin/${{ github.base_ref }}"
+          git diff --name-only "$base...HEAD" > changed.txt
+          echo "changed files:"; cat changed.txt
+          has() { grep -Eq "$1" changed.txt && echo true || echo false; }
+          {
+            echo "go=$(has '^(go/|Makefile$|\.golangci\.yml$|\.github/workflows/)')"
+            echo "gosum=$(has '^go/go\.(mod|sum)$')"
+            echo "web=$(has '^(web/|\.nvmrc$|\.github/workflows/)')"
+            echo "proto=$(has '^(proto/|buf\.|go/gen/|go/go\.(mod|sum)$|web/packages/api-client/|\.github/workflows/)')"
+            echo "emulator=$(has '^(go/internal/(sessions|decks|cards)/|go/go\.(mod|sum)$|\.github/workflows/)')"
+            echo "docker=$(has '^(docker/|compose\.yaml$|go/go\.(mod|sum)$|\.nvmrc$|\.github/workflows/)')"
+            echo "shell=$(has '^(scripts/|docs/|.*\.md$|Makefile$|\.github/workflows/)')"
+          } | tee -a "$GITHUB_OUTPUT"
+
+  go:
+    name: "verify:go"
+    needs: changes
+    if: needs.changes.outputs.go == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go/go.mod
@@ -35,8 +78,11 @@ jobs:
       - name: test
         run: go -C go test -race ./...
       # The known-vulnerability scan. It fails only on a vulnerability
-      # that this code reaches (govulncheck reads the call graph).
+      # that this code reaches (govulncheck reads the call graph). It
+      # runs when the module graph changed, which is when the answer
+      # can change. The weekly Dependabot pull request touches go.sum.
       - name: govulncheck
+        if: needs.changes.outputs.gosum == 'true'
         run: go -C go run golang.org/x/vuln/cmd/govulncheck@v1.7.0 ./...
       # Guardrail 3: a model or price default change is a warning, never a failure.
       - name: llm defaults
@@ -46,6 +92,8 @@ jobs:
   # their tests without an emulator. This job gives them one.
   emulator:
     name: "verify:emulator"
+    needs: changes
+    if: needs.changes.outputs.emulator == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -75,6 +123,8 @@ jobs:
 
   web:
     name: "verify:web"
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -97,6 +147,8 @@ jobs:
 
   proto:
     name: "verify:proto"
+    needs: changes
+    if: needs.changes.outputs.proto == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -130,6 +182,8 @@ jobs:
 
   shell:
     name: "verify:shell"
+    needs: changes
+    if: needs.changes.outputs.shell == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -145,10 +199,13 @@ jobs:
       - name: ste check
         run: make ste-check
 
-  # The three images build on every run, with no push. The README claim
-  # "verified end to end" then stays true (audit 2026-08-28, P-11).
+  # The three images build when their inputs change, with no push. The
+  # Go job already compiles the code the images hold, so a Go change
+  # alone does not rebuild them.
   docker:
     name: "verify:docker"
+    needs: changes
+    if: needs.changes.outputs.docker == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -156,14 +213,3 @@ jobs:
       - run: docker build -f docker/api.Dockerfile .
       - run: docker build -f docker/worker.Dockerfile .
       - run: docker build -f docker/emulators.Dockerfile .
-
-  verify:
-    name: verify
-    needs: [go, emulator, web, proto, shell, docker]
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      - name: fan-in
-        run: |
-          echo "go=${{ needs.go.result }} emulator=${{ needs.emulator.result }} web=${{ needs.web.result }} proto=${{ needs.proto.result }} shell=${{ needs.shell.result }} docker=${{ needs.docker.result }}"
-          [ "${{ needs.go.result }}" = success ] && [ "${{ needs.emulator.result }}" = success ] && [ "${{ needs.web.result }}" = success ] && [ "${{ needs.proto.result }}" = success ] && [ "${{ needs.shell.result }}" = success ] && [ "${{ needs.docker.result }}" = success ]

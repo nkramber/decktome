@@ -60,6 +60,9 @@ type Row struct {
 	// The user was never told that the app builds one deck at a time,
 	// which is exactly what D-112 asks the row to say.
 	Fixed bool `json:"fixed"`
+	// Closed says the options are the whole answer space, so the UI
+	// offers no free-text field (D-295).
+	Closed bool `json:"closed"`
 	// Repeat exempts a row from the no-repeat rule. Only the commander
 	// pick row uses it: a user who answers "none" gets three new names
 	// until one fits (D-73). The row still closes when its key closes.

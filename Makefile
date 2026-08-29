@@ -6,7 +6,7 @@ GO := go -C go
 BUF := .bin/buf
 PNPM := pnpm --dir web
 
-.PHONY: candidates-review questions-gate deck-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check themes-check ste-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
+.PHONY: candidates-review questions-gate deck-gate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check themes-check ste-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-14s %s\n", $$1, $$2}'
@@ -133,6 +133,17 @@ deck-gate: ## Write the PR-8 deck gate document. CAUTION: calls a real provider 
 		DECK_GATE=1 CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall \
 		$(GO) run ./cmd/deck-gate -collection internal/collections/testdata/manabox_collection.csv > $(DECK_GATE_OUT)
 	@echo "wrote $(DECK_GATE_OUT)"
+
+REVISE_GATE_OUT ?= docs/reference/pr12b-revise-gate.md
+
+revise-gate: ## Write the PR-12B revise gate document. CAUTION: calls a real provider and costs money
+	@[ -f .env ] || { echo "revise-gate: .env is absent."; exit 1; }
+	@test ! -f $(REVISE_GATE_OUT) || ! grep -q '^Verdict:' $(REVISE_GATE_OUT) || \
+		{ echo "$(REVISE_GATE_OUT) holds a verdict. Set REVISE_GATE_OUT to a new file."; exit 1; }
+	@set -a && . ./.env && set +a && \
+		REVISE_GATE=1 CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall \
+		$(GO) run ./cmd/revise-gate > $(REVISE_GATE_OUT)
+	@echo "wrote $(REVISE_GATE_OUT)"
 
 chat-probe: ## Drive the real Chat RPC to a deck. CAUTION: calls the real providers and costs money
 	@[ -f .env ] || { echo "chat-probe: .env is absent."; exit 1; }

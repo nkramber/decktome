@@ -85,7 +85,9 @@ func TestDelegationFollowsTheClassifier(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			first := classifyOut{Format: "commander", Theme: "lifegain", PoolRule: "unknown"}
+			// A named cap closes the budget row, so the commander row sits
+			// in the first three open rows (D-294).
+			first := classifyOut{Format: "commander", Theme: "lifegain", PoolRule: "unknown", BudgetUSD: 50}
 			second := classifyOut{Format: "unknown", PoolRule: "unknown", DeclinedKeys: tc.declined}
 			a, _ := testAgent(t,
 				classifyStep(t, first), fits(t, "commander", "power_commander", "colors"), askStep(t),
@@ -378,6 +380,7 @@ func TestOffColorOfferLeavesTheTable(t *testing.T) {
 	first := commanderClassify()
 	first.Facts.WantsSuggestion = true
 	first.Colors = nil
+	first.BudgetUSD = 50
 	second := commanderClassify()
 	second.Facts.WantsSuggestion = true
 	second.Colors = []string{"R", "W"}
@@ -470,6 +473,7 @@ func TestPickRowWithNoNamesAsksNothing(t *testing.T) {
 	out := commanderClassify()
 	out.Theme = ""
 	out.Facts.WantsSuggestion = true
+	out.BudgetUSD = 50
 	// The hint source names no commander, which is what an empty theme
 	// gives.
 	a, _ := testAgentHints(t, &fakeHints{}, classifyStep(t, out), fits(t, "power_commander"), askStep(t))

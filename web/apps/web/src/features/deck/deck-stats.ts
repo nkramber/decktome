@@ -1,5 +1,5 @@
 import { type Card, Color } from "@mtg/api-client/mtg/v1/card_pb";
-import { CardRole, type DeckCard, Severity } from "@mtg/api-client/mtg/v1/deck_pb";
+import { CardRole, type Deck, type DeckCard, Severity } from "@mtg/api-client/mtg/v1/deck_pb";
 import { FormatId, type PowerLevel, SixtyStep } from "@mtg/api-client/mtg/v1/format_pb";
 
 // Pure helpers for the deck view. The mana curve and the color sources
@@ -76,8 +76,19 @@ export const colorLetters: { color: Color; letter: string; name: string }[] = [
   { color: Color.C, letter: "C", name: "Colorless" },
 ];
 
+// deckColors is the set of colors the deck's cards are. A colorless deck
+// gives an empty set, and the sources table then shows colorless only.
+export function deckColors(cards: DeckCard[], byId: Map<string, Card>): Set<Color> {
+  const out = new Set<Color>();
+  for (const dc of cards) {
+    for (const c of byId.get(dc.oracleId)?.colors ?? []) out.add(c);
+  }
+  return out;
+}
+
 // colorSources counts the copies of every card that can produce each color.
-// A dual land counts once for each of its colors.
+// A dual land counts once for each of its colors. A rock that makes any
+// color counts for every color, so the view shows the deck's own colors.
 export function colorSources(cards: DeckCard[], byId: Map<string, Card>): Map<Color, number> {
   const sources = new Map<Color, number>(colorLetters.map((c) => [c.color, 0]));
   for (const dc of cards) {
@@ -135,4 +146,28 @@ export function severityLabel(s: Severity): string {
 
 export function priceText(usd: number): string {
   return usd > 0 ? `$${usd.toFixed(2)}` : "no price";
+}
+
+// DeckDiff is what changed between a deck and the one it revised
+// (PR-12B). The deck view shows it under the header.
+export type DeckDiff = { added: string[]; removed: string[]; changed: string[] };
+
+export function diffDecks(base: Deck, revised: Deck): DeckDiff {
+  const before = new Map<string, number>();
+  const after = new Map<string, number>();
+  for (const c of base.cards) before.set(c.name, (before.get(c.name) ?? 0) + c.count);
+  for (const c of revised.cards) after.set(c.name, (after.get(c.name) ?? 0) + c.count);
+  const diff: DeckDiff = { added: [], removed: [], changed: [] };
+  for (const [name, n] of after) {
+    const m = before.get(name);
+    if (m === undefined) diff.added.push(`${n} ${name}`);
+    else if (m !== n) diff.changed.push(`${name}: ${m} to ${n}`);
+  }
+  for (const [name, m] of before) {
+    if (!after.has(name)) diff.removed.push(`${m} ${name}`);
+  }
+  diff.added.sort();
+  diff.removed.sort();
+  diff.changed.sort();
+  return diff;
 }

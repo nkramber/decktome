@@ -61,7 +61,8 @@
         "unsupported_format": true,
         "no_near_format": true
       },
-      "fallback": "I do not build that format. Which format should I build instead?"
+      "fallback": "I do not build that format. Which format should I build instead?",
+      "closed": true
     },
     {
       "id": "format_store",
@@ -82,7 +83,8 @@
           "tournament",
           "event"
         ]
-      }
+      },
+      "closed": true
     },
     {
       "id": "format",
@@ -93,7 +95,8 @@
         "Commander",
         "Standard",
         "Modern"
-      ]
+      ],
+      "closed": true
     },
     {
       "id": "theme_competitive",
@@ -180,15 +183,15 @@
         "format": "commander"
       },
       "key": "named_card_role",
-      "fallback": "Do you want that card as your commander, or as one card in the 99?"
+      "fallback": "Do you want that card as your commander, or as one card in the 99?",
+      "closed": true
     },
     {
       "id": "commander",
       "slot": "commander",
-      "order": 31,
-      "text": "Do you have a commander in mind, or should I suggest one?",
+      "order": 80,
+      "text": "Which commander do you want? Name one, or I suggest three.",
       "options": [
-        "I have one in mind",
         "Suggest one"
       ],
       "when": {
@@ -200,14 +203,15 @@
           "named_card_role"
         ],
         "suggested": false
-      }
+      },
+      "fixed": true
     },
     {
       "id": "commander_pick",
       "slot": "commander",
-      "order": 32,
+      "order": 81,
       "fixed": true,
-      "text": "Which one do you want: {a}, {b}, or {c}? Say \"none\" and I name three more.",
+      "text": "Which commander do you want: {a}, {b}, or {c}? Say \"none\" and I name three more.",
       "when": {
         "format": "commander",
         "suggested": true
@@ -231,7 +235,8 @@
       ],
       "when": {
         "format": "commander"
-      }
+      },
+      "closed": true
     },
     {
       "id": "power_sixty",
@@ -246,7 +251,8 @@
       "when": {
         "format": "sixty",
         "power_competitive": false
-      }
+      },
+      "closed": true
     },
     {
       "id": "colors",
@@ -276,7 +282,8 @@
           "theme"
         ]
       },
-      "fallback": "Should I build from your precon first, use only cards from it, or ignore it for a fully optimized deck?"
+      "fallback": "Should I build from your precon first, use only cards from it, or ignore it for a fully optimized deck?",
+      "closed": true
     },
     {
       "id": "pool",
@@ -296,7 +303,8 @@
           "theme"
         ],
         "thin_theme": false
-      }
+      },
+      "closed": true
     },
     {
       "id": "pool_thin",
@@ -316,7 +324,8 @@
           "theme"
         ]
       },
-      "fallback": "Your library is thin for this theme. Build owned-first with a buy list, or use the whole pool?"
+      "fallback": "Your library is thin for this theme. Build owned-first with a buy list, or use the whole pool?",
+      "closed": true
     },
     {
       "id": "budget",
@@ -340,7 +349,8 @@
         "has_collection": true,
         "budget_ambiguous": true
       },
-      "key": "budget_scope"
+      "key": "budget_scope",
+      "closed": true
     }
   ]
 }

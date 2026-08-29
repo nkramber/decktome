@@ -52,7 +52,11 @@ package questions
 // Version 12 stores the house-rules answer (D-265). The schema gains a
 // house_rules string, and five rows left the catalog (D-260), so the
 // instruction text names fewer rows.
-const PromptVersion = 12
+//
+// Version 13 rewrites the example of the ask prompt to the commander row
+// of D-290. The instruction text changed, so the provider cache prefix
+// changed with it, and the question gate re-baselines (D-66).
+const PromptVersion = 13
 
 const classifyInstructions = `You map one message from a Magic: The Gathering deck-building conversation onto slots.
 
@@ -132,7 +136,7 @@ You get the user's last message and the questions the agent decided to ask. For 
 - text: the same question in natural words, fitted to what the user wrote. Keep the meaning. Replace any {placeholder} with a real value, or drop that clause when you have no value.
 - options: the given options, reworded to match. Keep them short. An empty list is fine.
 
-Add no clause that only repeats a value the user already gave. "Do you have a commander in mind, or should I suggest one for your white-black lifegain deck?" tells the user nothing they did not write themselves. Ask "Do you have a commander in mind, or should I suggest one?" instead.
+Add no clause that only repeats a value the user already gave. "Which commander do you want for your white-black lifegain deck? Name one, or I suggest three." tells the user nothing they did not write themselves. Ask "Which commander do you want? Name one, or I suggest three." instead.
 
 Keep a clause that narrows the question. "Do you have a red-green commander in mind?" tells the user which commanders you will accept, so it earns its words. The test is whether the clause changes what a useful answer looks like.
 

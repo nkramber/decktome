@@ -79,6 +79,20 @@ func NewPool(cards []*mtgv1.Card, owned map[string]int32) *Pool {
 // Size is how many distinct names the pool holds.
 func (p *Pool) Size() int { return len(p.byName) }
 
+// Filter returns the pool without the cards keep refuses. A revision
+// drops the cards the user wants out and the cards over the cap, so the
+// model can not name them (PR-12B).
+func (p *Pool) Filter(keep func(*mtgv1.Card) bool) *Pool {
+	var cards []*mtgv1.Card
+	for _, name := range p.names {
+		c := p.byName[foldName(name)]
+		if keep(c) {
+			cards = append(cards, c)
+		}
+	}
+	return NewPool(cards, p.owned)
+}
+
 // Names lists the pool names in sort order. The prompt writes this list,
 // and the repair turn reads it again.
 func (p *Pool) Names() []string { return append([]string(nil), p.names...) }

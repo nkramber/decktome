@@ -132,6 +132,25 @@ func ContentHash(content []byte) string {
 	return hex.EncodeToString(sum[:])
 }
 
+// OwnedPrintings lists the printing ids per Oracle id, each once, from
+// the entries of one collection (D-299).
+func OwnedPrintings(entries []*mtgv1.CollectionEntry) map[string][]string {
+	out := map[string][]string{}
+	seen := map[string]bool{}
+	for _, e := range entries {
+		if e.GetOracleId() == "" || e.GetScryfallId() == "" || e.GetQuantity() <= 0 {
+			continue
+		}
+		key := e.GetOracleId() + "|" + e.GetScryfallId()
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		out[e.GetOracleId()] = append(out[e.GetOracleId()], e.GetScryfallId())
+	}
+	return out
+}
+
 // OracleCounts sums owned copies per Oracle id across printings. The
 // sum saturates at the int32 maximum, it never wraps.
 func OracleCounts(entries []*mtgv1.CollectionEntry) map[string]int32 {
