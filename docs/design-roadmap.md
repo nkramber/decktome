@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-08-29 correction pass 29 (Phase 3B, the product UI, D-310 to D-319): the live-test UI of PR-11 to PR-13 is not a product (F-28). A new phase, PR-16 to PR-23, builds one. It holds the design system, the four flows of D-312, the share link, the deploy for invited users, and a Playwright smoke flow. `docs/reference/ui-phase-plan-2026-08-29.md` holds the detail. Changes: F-28, guardrail 13, the system map row of `web`, Phase 3B, Phase 5 (D-318), sequencing steps 18 to 23, open questions 5 and 6.
+
 2026-08-29 correction pass 28 (PR-13 built on branch `pr-13`, D-307 to D-309): `DeckService.ExportDeck`, the export panel, and the buy list with a Scryfall link per card. The round-trip gate holds in `go/internal/export`. Changes: PR-13, sequencing step 18.
 
 2026-08-29 correction pass 27 (quality audit, `docs/audit-2026-08-29.md`, D-302 to D-306): PR-12B merged (#41). The generate prompt is at version 10, and the classify prompt version rose. The gate baselines of question run 27 and deck run 8 do not compare with `main` until the owner re-runs them (D-302). Consistency fixes of this pass: F-27 and step 18 show PR-12B merged, and the PR-1 layout names the packages the code uses. The eval cost is $0.092 to $0.104, and the cost table gains the deck gate. The pass strikes the PR-12 Oracle-text hover (D-291). The grammar pass of D-304 rewrote passive sentences, modal verbs, and -ing forms across the doc, with no change of fact.
@@ -99,7 +101,7 @@ We sequence the program so that each layer is testable before the next one exist
 | `agent` service | Go | Turn-based chat, question workflow, deck generation, LLM role layer | `cards`, `collections`, `rules`, `meta` | Firestore `users/{uid}/sessions/`, `decks/` | High - the product |
 | `meta` service | Go | Metagame snapshots per format | MTGO decklists, aggregators (D-5), EDHREC | Firestore `meta/`, GCS raw | Medium - advisory input to the agent |
 | `worker` | Go | Scheduled jobs: Scryfall refresh, meta refresh, ban-list watch | Cloud Scheduler, Cloud Tasks | see above | Medium |
-| `web` (UI) | TypeScript, React, Vite | Chat, deck view with card art, collection upload, export | Connect-RPC API | none | Medium |
+| `web` (UI) | TypeScript, React, Vite | Chat, deck view with card art, collection upload, export, the deck library, the binder, the share page (Phase 3B) | Connect-RPC API | none | Medium |
 | `proto` | Protobuf | The one contract between Go and TypeScript | - | generated code, committed | High - a schema change is a cross-stack change |
 | `eval` | Go + fixtures | Golden decks, deterministic checks, judge runs | all services in-process | BigQuery `evals.*` | Medium |
 
@@ -156,6 +158,7 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-25 | **The proto lacked fields PR-6 to PR-9 need.** No upgrade list, no slot state, no question id, no structured answer, no seed override, no `Usage`, no per-face artist. | ✅ PR-1b (audit branch): all fields added in one contract amendment (D-46). `buf breaking` guards it from now on. |
 | F-26 | **The phrasing role invents claims about the game, and no gate catches them.** Gate run 14 of 2026-08-26 passed the gate with zero linter findings and told one user two false things. It said "Grist, the Hunger Tide can not lead a deck", which the rules contradict (Scryfall ruling, 2021-06-18). It asked "Do you want to use any colors beyond Grist's color identity?", which the rules allow no answer to. The catalog rows say neither. The ask role added both, and the ask prompt already said to state no fact about the game. | ✅ answered for PR-8 by the judge lane (D-229): the judge role reads every deck summary for a rule of the game and for the truth of it, on another provider than the generator, and a false rule fails the deck gate. Deck gate run 6 found none in 16 summaries, at $0.0034 a deck. The deterministic net reads the shape of a claim and never its truth, which is why the judge decides (D-224). Earlier: 🔧 partly fixed: D-140 silences the commander row for a legendary card the engine can not confirm, and D-144 puts the color-identity rule in the prompt and the shape in the linter. ⚠ binds PR-8: the generate role writes a deck summary in prose, and the same failure has more room there. The eval lane found both, and the deterministic linter found neither. |
 | F-27 | **A message after a build is dropped, and the deck is rebuilt from the first message.** Session `eIrL12hRY2YNTTCo3iS4`, 2026-08-28: the user wrote "Replace some lands with better options if possible. Also tune the mana curve lower - no 6 or 7 mana cards needed". The agent sent no reply, `plan()` read turn 1 and the slots only, and the generator built a second deck 2.5 minutes after the first with 24 Plains and the same four 6- and 7-mana cards. Three cards changed, all by variance (D-18). The turn cost a full build and answered nothing. | ✅ PR-12B merged 2026-08-29 (#41). |
+| F-28 | **The UI is a live-test UI, not a product.** PR-11 to PR-13 built four screens on plain Tailwind for the owner's browser test (D-273). No design system, one theme, no navigation on a phone, no rename or delete of any object, no card detail, no share, and `firebase/auth` on every route. Found 2026-08-29 when the owner asked for a user-facing UI (D-310). Binds PR-16 to PR-23. | 🔧 Phase 3B |
 
 > *In plain English:* these are the traps we found before we wrote code. The biggest ones: ban lists change every few weeks. The collection file format has no documentation. The AI can name a card that sounds right but is not. Each one has a planned fix or a rule that prevents it.
 
@@ -173,8 +176,9 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 10. **One concern per PR. Evidence committed.** Golden decks and A/B outputs live in the repo.
 11. **No raw user prompts in analytics.** Hashes and ids only, as in connector-syncer's event registry.
 12. **Dated facts.** Every rules or format fact in the corpus carries a source and a verification date.
+13. **The allowlist gates every deployed request, and a public page carries no user data (D-314, D-315).** On GCP the interceptor refuses a uid whose email is not on the allowlist. The shared deck message holds no user field, and a test proves it.
 
-> *In plain English:* twelve promises every change must keep. The most important: the code, not the AI, has the final say on every card. And the app never quietly swaps a card the AI got wrong for one it guessed.
+> *In plain English:* thirteen promises every change must keep. The most important: the code, not the AI, has the final say on every card. And the app never quietly swaps a card the AI got wrong for one it guessed.
 
 ---
 
@@ -561,7 +565,126 @@ Built 2026-08-29 on branch `pr-13` (D-307 to D-309). The Arena line names the ow
 `go/internal/export` holds the renderer, and `TestArenaTextRoundTrip` is the gate: it held on 2026-08-29. The panel sits in the deck view, and `export` is a leaf feature that `deck` imports.
 > *In plain English:* get the deck out of the app and into ManaBox or Arena with one click, plus a shopping list.
 
-### Phase 4 - Meta and quality (gated on Phase 3)
+### Phase 3B - The product UI (gated on PR-13)
+
+The live-test UI of Phase 3 served one purpose: the owner tests the agent in a browser (D-273, F-28). This phase builds the product (D-310). It runs for the owner locally, and for invited users on GCP at the end of the phase. The look is shadcn/Radix primitives, a light and a dark theme, card art forward, and a responsive layout (D-311). The test bar is Vitest with axe per pull request and one Playwright smoke flow on a manual trigger (D-313). `docs/reference/ui-phase-plan-2026-08-29.md` holds the screens, the components, the contract changes, and the deploy shape.
+
+The four flows of D-312 come in this order:
+
+- PR-16, the design system and the shell.
+- PR-17, the deck library.
+- PR-18, the collection management.
+- PR-19, the chat and build experience.
+- PR-20, the deck view and the card detail.
+- PR-21, the share link and the print view.
+- PR-22, the deploy for invited users.
+- PR-23, the Playwright smoke flow.
+
+> *In plain English:* what exists today is a test bench with a browser on it. This phase makes it an app a person can use every day, on a laptop or a phone, and later from anywhere with an invitation.
+
+**PR-16: Design system and app shell (D-311, D-317).**
+shadcn/ui components on Radix, copied into the repo. Tailwind 4 tokens: a neutral scale, one accent, the five mana colors and colorless as fixed tokens, and the semantic roles. The dark theme overrides the neutrals and the surfaces only. The theme follows the system by default, and a header toggle stores a choice.
+
+The shell is a sidebar on a desktop and a bottom tab bar on a phone, with Build, Decks, and Collection. One `PageHeader`, one `EmptyState`, one `ErrorState`, a toast for every mutation, and an AlertDialog before every destructive action. Every existing screen moves onto the primitives with no new feature. The bundle splits by route, so `firebase/auth` loads on the sign-in route only.
+
+Gate:
+
+- axe passes on every route in both themes.
+- The 118 web tests hold.
+- The app shell loads under 200 kB of JavaScript.
+- The owner walks the whole path on a desktop and on a phone.
+
+> *In plain English:* the look and the bones. Buttons, dialogs, menus, and a dark mode that all match, on a layout that works on a phone. Nothing new to do yet, but everything looks and feels like one app.
+
+**PR-17: Deck library.**
+A grid of decks with the commander art, the name, the format, the power, the count, the buy cost, and the date. Search by name and commander, filter by format and power, sort by date, name, and cost, and a favorite star. A deck page holds the deck view, the export panel, and the actions: rename, favorite, delete, and share (PR-21). Version history comes from the `revised_from_deck_id` chain, with any two versions side by side and their diff. The grid compares any two decks.
+
+Contract, additive: `DeckService.UpdateDeck(name, favorite)`, `DeleteDeck`, `Deck.favorite`, and paging with filters on `ListDecks`, flat fields only (D-245).
+
+Gate:
+
+- Each action round-trips through the API and shows in the grid with no reload.
+- A deleted deck answers `NotFound`.
+- A grid of 100 decks renders under one second.
+
+> *In plain English:* a home for your decks. Find one fast, name it, star it, throw one away, see how a deck changed over its revisions, and put two side by side.
+
+**PR-18: Collection management.**
+The list of collections shows the name, the count, the date, and the active mark, with rename and delete. An upload dialog shows the progress and the import report. A re-upload whose hash differs from the active collection shows the diff first: added, removed, and changed counts, then "Replace". A binder view per collection is a virtualized grid of the cards with art, count, finish, and condition. It has search, filters by color, type, set, and count, and sort by name, price, and count.
+
+Contract, additive: `CollectionService.UpdateCollection`, `DeleteCollection`, `DiffCollections`, and paging on `GetCollection`.
+
+Gate:
+
+- The same file uploaded twice diffs empty.
+- The binder of the owner's export (2,657 rows) scrolls at 60 frames per second on the owner's laptop.
+- A session that names a deleted collection falls back to any-card mode with a notice (D-37).
+
+> *In plain English:* your binder, on screen. Several uploads, a name on each, and a clean "what changed since last time" when you upload a new export. Browse it like a real binder, with the pictures.
+
+**PR-19: Chat and build experience.**
+A start screen with a short form: the format, the power, the pool rule, the budget, and a theme line. Each form answer goes out as a structured answer to the catalog row it fills. So the agent asks nothing the form answered, and "Just chat" skips the form. The thread moves onto the new primitives: choice chips, art tiles for a card option, and no field on a closed question (D-295). A stepper shows the build phases from the `status` events, which gain an additive `phase`.
+
+Error recovery has three parts. A failed turn shows the reason and a retry. A build in progress shows the D-303 notice. A lost stream resumes from `GetSession`. A sessions list shows the first message, the date, the deck count, and the cost, with rename, delete, and resume.
+
+Contract, additive: `AgentService.ListSessions`, `UpdateSession`, `DeleteSession`, `GetCatalog`, `Session.name`, and `status.phase`.
+
+Gate:
+
+- A session started from a full form asks no catalog question the form answered. The check replays the 30 gate conversations with their answers as form input.
+- The stepper shows every phase of a real build.
+- The owner builds one deck from the form and one from the chat.
+
+CAUTION: the form path sends the `Q:`/`A:` shape to the classify call (D-280), which only the browser sends today. PR-19 adds that shape to the gate's conversation set, so the next paid run measures it.
+> *In plain English:* a friendlier start. Tell the app the basics with a few clicks, and watch the build move through its steps. Pick up an old conversation where you left it.
+
+**PR-20: Deck view and card detail (D-318).**
+A click on a card opens a detail panel. It shows the full image and both faces, the Oracle text, the type line, the mana cost, and the rulings with dates. It also shows the legalities, the printings with prices, the deck's reason line, and "Open on Scryfall". The deck view gains filters by role, color, mana value, type, and owned, and sort by mana value, name, and price. Stats show as small charts with a text table under each one.
+
+The stats are the curve, the color sources, the type counts, the average mana value, and the buy cost. A sample hand draws seven from the exact main deck, mulligans to six and five, and draws one. It simulates no turn (D-318, amends D-20).
+
+Contract, additive: `CardService.GetRulings`, from the Scryfall rulings bulk file the worker downloads with the daily snapshot.
+
+Gate:
+
+- axe passes on the panel.
+- A test draws every card of a 60-card deck through the sample hand.
+- The rulings show their dates and the snapshot date.
+
+> *In plain English:* tap a card and read everything about it. Filter the deck the way you think about it. Shuffle up and look at a seven-card hand.
+
+**PR-21: Share link and print view (D-315).**
+"Share" on the deck page makes an unguessable token and shows the link, and "Revoke" ends it. A public read-only page at `/d/<token>` shows the name, the format, the power, the summary, the cards by role with art, and the export button. It shows no owner name, no collection, no session, and no owned printing. A print stylesheet renders the deck page as the list by role in black on white, with no images.
+
+Contract: `DeckService.ShareDeck`, `RevokeShare`, and `GetSharedDeck`. The last one needs no sign-in, and a rate limit per IP bounds it. The deck stores a hash of the token, never the token.
+
+Gate:
+
+- A revoked link answers `NotFound`.
+- A test reads the shared message and finds no user field (guardrail 13).
+- The rate limit refuses the 61st call in a minute.
+
+> *In plain English:* send a deck to a friend with one link, and print it for the table. The link shows the deck and nothing about you.
+
+**PR-22: Deploy to GCP for invited users (D-310, D-314).**
+The API and the worker run on Cloud Run from the Dockerfiles of PR-0c, with min instances at zero. The web app runs on Firebase Hosting, with a rewrite of `/mtg.v1.*` to the API. Real Firebase Auth with email and password. The interceptor reads the allowlist from `ALLOWED_EMAILS`, and a uid off the list gets `CodePermissionDenied` with one sentence. Firestore runs in Native mode with the deny-all rules of the repo.
+
+The worker refreshes the card snapshot in a GCS bucket on Cloud Scheduler, and Secret Manager holds the provider keys. A per-user monthly spend cap reads `Usage`, and a budget alert sits on the project.
+
+Gate:
+
+- An allowlisted user signs in on the deployed URL, uploads a collection, builds a deck, revises it, and exports it.
+- The first RPC refuses a user off the list.
+- The roadmap records the measured monthly cost at idle.
+- Guardrail 9 holds: `make dev` still runs with no cloud dependency.
+
+> *In plain English:* the app on the internet, for the people you invite and nobody else. A cap limits what any one person can spend.
+
+**PR-23: Playwright smoke flow (D-313).**
+One flow on `workflow_dispatch` only. It signs in over the emulator and uploads the fixture export. Then it starts a session from the form with the fake provider, opens the deck, and exports it. The fake provider serves canned answers for the classify, ask, and generate roles, so the flow costs nothing. One run takes about 5 minutes of Actions time, and the owner triggers it before a merge that touches the user path. Gate: the flow passes on the emulators.
+> *In plain English:* a robot that clicks through the whole app once, on demand. A change that breaks the path shows up before it ships.
+
+### Phase 4 - Meta and quality (gated on Phase 3B, D-316)
 
 **PR-14: Meta ingest, MTGO first.**
 A worker job pulls published MTGO decklists per format (official source, D-5). It computes archetype shares and the most-played cards per archetype for the last 30 days. Aggregator and EDHREC ingesters follow, in order of structure: MTGTop8, MTGGoldfish, Aetherhub, EDHREC (D-5, legal check passed). The meta snapshot is advisory input to PR-6 and PR-8 for competitive power levels only. Gate: the snapshot for Modern lists at least 10 archetypes with card lists.
@@ -591,7 +714,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 
 ### Phase 5 - Parked (product decisions required)
 
-- Sample-hand and goldfish simulator (D-20: later, not at launch).
+- ~~Sample-hand and~~ goldfish simulator (D-20: later, not at launch). The sample hand left the lot on 2026-08-29 and sits in PR-20 (D-318). The goldfish simulator stays here.
 - Per-card explanations longer than one line (D-19 gives one line per card).
 - Non-English collections (D-23: English only for now).
 - Brawl, Oathbreaker, Pauper Commander, Duel Commander, Canadian Highlander.
@@ -619,10 +742,11 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 15. PR-8 generator.
 16. PR-9 variance. ⏸ out of MVP scope (D-256). It blocks nothing: the Phase 3 gate below reads PR-8's gate.
 17. **GATE.** Phase 3 starts only when PR-8's gate holds on the golden prompts. ✅ held on 2026-08-28, deck gate run 6.
-18. PR-11 ✅ merged 2026-08-28 (#38). PR-12 ✅ merged 2026-08-28 (#40). PR-12B ✅ merged 2026-08-29 (#41). PR-13 🔧 built 2026-08-29 on branch `pr-13`, gate held. Then PR-15.
-19. PR-15 eval harness (can start after step 15, in parallel with the UI, if a second owner exists). M-5 manual scoring runs on the first UI build (after PR-12).
-20. PR-14 meta, then I-1, I-2, I-3 on evidence.
-21. Phase 5 stays parked.
+18. PR-11 ✅ merged 2026-08-28 (#38). PR-12 ✅ merged 2026-08-28 (#40). PR-12B ✅ merged 2026-08-29 (#41). PR-13 ✅ merged 2026-08-29 (#45). Then Phase 3B.
+19. **Phase 3B** (D-316, D-317): PR-16 to PR-23 in the order of the phase list. Each gate holds before the next slice starts. The paid re-baseline of D-302 runs in parallel, on the owner's word.
+20. PR-15 eval harness. M-5 manual scoring runs on the first UI build (after PR-12).
+21. PR-14 meta, then I-1, I-2, I-3 on evidence.
+22. Phase 5 stays parked.
 
 ## 9. Open questions
 
@@ -632,3 +756,5 @@ See `docs/open-questions.md` for the full list with "ask when" dates. The ones t
 2. **OQ-18 rerun depth rule** gates I-1.
 3. **OQ-20 public anonymized ManaBox exports** widen the PR-4 fixture set when found (D-43).
 4. PR-9's 30% variance number is a placeholder until PR-15 measures it. PR-9 is out of the MVP (D-256), so nothing waits on it.
+5. **OQ-45 the allowlist store.** D-314 allows one env var or one Firestore document. An env var needs a deploy per change, and a document needs an admin write path. PR-22 decides, and the owner confirms. Ask before PR-22.
+6. **OQ-46 the spend cap number.** PR-22 sets a per-user monthly cap from `Usage`. The number is the owner's. Ask before PR-22.

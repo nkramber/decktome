@@ -10,6 +10,9 @@ Questions not yet asked, or asked and not yet answered. Move each answered quest
 | OQ-20 | Where can we find public anonymized ManaBox exports for the import fixture set? | D-43. One real export is the gate today. More files widen column and value coverage. | Before PR-13, when time allows. PR-11 merged on 2026-08-28 without it. |
 | OQ-44 | What is the ManaBox condition vocabulary? The import knows `near_mint` from one export. | `docs/audit-2026-08-24.md` section 8 left it open. One export with a played card confirms the other values. | When the owner has such an export, before PR-13. PR-11 merged on 2026-08-28 without it. |
 
+| OQ-45 | Where does the email allowlist live: one env var, or one Firestore document with an admin write path? | D-314 allows both. An env var needs a deploy per change. | Before PR-22. |
+| OQ-46 | What is the per-user monthly spend cap on GCP? | PR-22 refuses a turn over the cap, and the number is the owner's. | Before PR-22. |
+
 ## Asked, waiting
 
 OQ-23, OQ-28 to OQ-31, OQ-37, and OQ-39 sit in `docs/owner-questions.md`, the decision queue. This file does not repeat them.

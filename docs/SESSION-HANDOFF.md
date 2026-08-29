@@ -8,10 +8,11 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 - `main` is at `7924658`, PR-12B merged (#41, 2026-08-29). Merged: PR-0a to PR-8, PR-7B, PR-10, PR-11 (#38), PR-12 (#40), PR-12B (#41).
 - The quality audit of 2026-08-29 is merged (#43, D-302 to D-306, `docs/audit-2026-08-29.md`).
-- Branch `pr-13` holds PR-13 (D-307 to D-309): `DeckService.ExportDeck`, `go/internal/export`, the export panel, and the buy list. The round-trip gate held. The pull request is open. The owner did not run it in the browser yet.
+- PR-13 is merged (#45, D-307 to D-309). The owner did not run the export in the browser yet.
+- Phase 3B, the product UI, has a plan and no code yet (D-310 to D-319). The roadmap holds PR-16 to PR-23, and `docs/reference/ui-phase-plan-2026-08-29.md` holds the detail. The first slice is PR-16, the design system and the shell (D-317). The owner asked for the roadmap first and no code (D-319).
 - The tree is green on the branch: Go build, vet, `-race` tests, golangci-lint, `buf breaking`, web lint, typecheck, 118 web tests, and the web build. `make lint` runs the extended STE check and reports zero findings.
 - The revise gate held on run 2 (D-296). The paid gates did not run on 2026-08-29.
-- PR-9 is out of the MVP (D-256). After PR-13 comes PR-15.
+- PR-9 is out of the MVP (D-256). Phase 3B comes before Phase 4 (D-316).
 - Pull request #42 (Dependabot, anthropic-sdk-go 1.66.0 to 1.67.0) is open and waits for the owner.
 
 ## The numbers, and why none of them compare with `main` now
@@ -54,14 +55,15 @@ CAUTION: `tune-check` paired zero questions between run 24 and run 25, because t
 
 ## Next steps, in order
 
-1. The owner tests the export in the browser: the Arena text into ManaBox, and the buy list. Then the owner merges `pr-13`.
-2. The owner runs the question gate and the deck gate to re-baseline (D-302). Ask before each run. Write each to a new `GATE_OUT` file (D-65). Record the numbers here and in the roadmap.
-3. Run the M-5 manual scoring on the PR-12 build (sequencing step 19). Ask the owner before any paid run.
-4. PR-15, the bake-off.
+1. The owner reads the Phase 3B roadmap and the plan, and says when PR-16 starts. Work on a branch named `pr-16`.
+2. PR-16: the design system and the shell, with no new feature. Then PR-17 to PR-23 in order, one gate each.
+3. The owner runs the question gate and the deck gate to re-baseline (D-302), in parallel. Ask before each run. Write each to a new `GATE_OUT` file (D-65). Record the numbers here and in the roadmap.
+4. Before PR-22, ask OQ-45 (the allowlist store) and OQ-46 (the spend cap).
+5. After Phase 3B: PR-15, then PR-14.
 
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 
-Seven owner rows wait in `docs/owner-questions.md`: OQ-23, OQ-28 to OQ-31, OQ-37, and OQ-39. OQ-20 and OQ-44 wait in `docs/open-questions.md`.
+Seven owner rows wait in `docs/owner-questions.md`: OQ-23, OQ-28 to OQ-31, OQ-37, and OQ-39. OQ-20, OQ-44, OQ-45, and OQ-46 wait in `docs/open-questions.md`.
 
 ## Facts that expire
 
