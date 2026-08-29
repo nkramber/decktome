@@ -759,7 +759,16 @@ type Question struct {
 	// catalog_text is the catalog question an invented question replaced.
 	// Empty when invented is false. M-5 scores catalog_enough and
 	// invented_better, and neither can be judged without both texts (D-66).
-	CatalogText   string `protobuf:"bytes,7,opt,name=catalog_text,json=catalogText,proto3" json:"catalog_text,omitempty"`
+	CatalogText string `protobuf:"bytes,7,opt,name=catalog_text,json=catalogText,proto3" json:"catalog_text,omitempty"`
+	// option_oracle_ids is parallel to options. An option that is an exact
+	// card name carries the card's Oracle id, so the UI can show the art
+	// and the rules text of a commander offer (D-287). An option that is
+	// not a card carries an empty string. Empty when no option is a card.
+	OptionOracleIds []string `protobuf:"bytes,8,rep,name=option_oracle_ids,json=optionOracleIds,proto3" json:"option_oracle_ids,omitempty"`
+	// closed says the options are the whole answer space, for example the
+	// three formats the app builds. The UI offers no free-text field for
+	// a closed question (D-295).
+	Closed        bool `protobuf:"varint,9,opt,name=closed,proto3" json:"closed,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -843,6 +852,20 @@ func (x *Question) GetCatalogText() string {
 	return ""
 }
 
+func (x *Question) GetOptionOracleIds() []string {
+	if x != nil {
+		return x.OptionOracleIds
+	}
+	return nil
+}
+
+func (x *Question) GetClosed() bool {
+	if x != nil {
+		return x.Closed
+	}
+	return false
+}
+
 var File_mtg_v1_session_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_session_proto_rawDesc = "" +
@@ -899,7 +922,7 @@ const file_mtg_v1_session_proto_rawDesc = "" +
 	"questionId\x12&\n" +
 	"\foption_index\x18\x02 \x01(\x05H\x00R\voptionIndex\x88\x01\x01\x12\x12\n" +
 	"\x04text\x18\x03 \x01(\tR\x04textB\x0f\n" +
-	"\r_option_index\"\xb8\x01\n" +
+	"\r_option_index\"\xfc\x01\n" +
 	"\bQuestion\x12\x0e\n" +
 	"\x02id\x18\x06 \x01(\tR\x02id\x12\x12\n" +
 	"\x04slot\x18\x01 \x01(\tR\x04slot\x12\x12\n" +
@@ -907,7 +930,9 @@ const file_mtg_v1_session_proto_rawDesc = "" +
 	"\aoptions\x18\x03 \x03(\tR\aoptions\x12\x1a\n" +
 	"\binvented\x18\x04 \x01(\bR\binvented\x12\x1b\n" +
 	"\tgap_score\x18\x05 \x01(\x01R\bgapScore\x12!\n" +
-	"\fcatalog_text\x18\a \x01(\tR\vcatalogText*~\n" +
+	"\fcatalog_text\x18\a \x01(\tR\vcatalogText\x12*\n" +
+	"\x11option_oracle_ids\x18\b \x03(\tR\x0foptionOracleIds\x12\x16\n" +
+	"\x06closed\x18\t \x01(\bR\x06closed*~\n" +
 	"\rSessionStatus\x12\x1e\n" +
 	"\x1aSESSION_STATUS_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15SESSION_STATUS_ASKING\x10\x01\x12\x18\n" +

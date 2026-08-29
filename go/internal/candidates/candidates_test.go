@@ -723,11 +723,37 @@ func TestCommanderPoolOwnedFirst(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got) < 2 || got[0].Card.Name != "Vito, Thorn of the Dusk Rose" {
-		t.Errorf("owned-first pool = %v, want the owned commander first", names(got))
+	// The ranking wins, and the owned commander keeps its mark (D-297).
+	if len(got) < 2 || got[0].Card.Name == "Vito, Thorn of the Dusk Rose" {
+		t.Errorf("owned-first pool = %v, want the ranking and not the owned commander first", names(got))
 	}
-	if got[0].Owned == 0 {
-		t.Error("the first commander is not marked owned")
+	for _, c := range got {
+		if c.Card.Name == "Vito, Thorn of the Dusk Rose" && c.Owned == 0 {
+			t.Error("the owned commander lost its mark")
+		}
+	}
+}
+
+// TestCommanderPoolUnsetRuleRanksOnQuality is D-293. The offer goes out
+// before the pool question, and a collection must not turn it into the
+// legends the user happens to own.
+func TestCommanderPoolUnsetRuleRanksOnQuality(t *testing.T) {
+	idx := fixture(t, commanderCards())
+	b, _ := New()
+	got, err := b.CommanderPool(idx, Request{
+		Format: cmdr, Theme: "lifegain",
+		Owned: map[string]int32{"vito": 1},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) < 2 || got[0].Card.Name == "Vito, Thorn of the Dusk Rose" {
+		t.Errorf("unset-rule pool = %v, want the ranking and not the owned commander first", names(got))
+	}
+	for _, c := range got {
+		if c.Card.Name == "Vito, Thorn of the Dusk Rose" && c.Owned == 0 {
+			t.Error("the owned commander lost its owned count")
+		}
 	}
 }
 

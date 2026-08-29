@@ -32,10 +32,15 @@ const (
 	// question, and the owner set it on the cost tier so a whole run
 	// costs cents (D-133).
 	RoleEval Role = "eval"
+	// RoleRevise reads a message after a build and returns the revision
+	// brief: what to remove, what to keep, the limits, one question when
+	// the request is unclear, and what it declines with a reason
+	// (PR-12B, D-283, D-284).
+	RoleRevise Role = "revise"
 )
 
 // Roles lists every role in config order. Config validation requires all.
-var Roles = []Role{RoleClassify, RoleAsk, RoleGenerate, RoleRepair, RoleJudge, RoleEval}
+var Roles = []Role{RoleClassify, RoleAsk, RoleGenerate, RoleRepair, RoleJudge, RoleEval, RoleRevise}
 
 // Request is one structured-output call as the call site writes it.
 type Request struct {

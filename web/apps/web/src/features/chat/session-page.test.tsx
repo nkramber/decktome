@@ -107,7 +107,7 @@ describe("SessionPage", () => {
     expect(within(screen.getByRole("list", { name: "Conversation" })).getAllByRole("listitem")[2]).toHaveTextContent("Modern");
     expect(screen.getByText("building the deck")).toBeInTheDocument();
     expect(screen.getByText("Here is your deck.")).toBeInTheDocument();
-    expect(await screen.findByAltText("Llanowar Elves")).toBeInTheDocument();
+    expect(await screen.findByAltText("Llanowar Elves (card)")).toBeInTheDocument();
   });
 
   it("one submit sends every answer, and waits until each question has one", async () => {
@@ -121,10 +121,10 @@ describe("SessionPage", () => {
     await user.click(screen.getByRole("button", { name: "Send" }));
     const first = await screen.findByRole("group", { name: "Question: Which format?" });
     const second = screen.getByRole("group", { name: "Question: How strong?" });
-    await user.type(within(first).getByLabelText("Or answer in your own words"), "Pauper");
+    await user.type(within(first).getByRole("textbox"), "Pauper");
     // One answer of two: the submit waits.
     expect(screen.getByRole("button", { name: "Submit answers" })).toBeDisabled();
-    await user.type(within(second).getByLabelText("Or answer in your own words"), "bracket 2");
+    await user.type(within(second).getByRole("textbox"), "bracket 2");
     await user.click(screen.getByRole("button", { name: "Submit answers" }));
 
     const req = chat.mock.calls[1][0] as { answers: { questionId: string; text: string }[] };
@@ -135,6 +135,18 @@ describe("SessionPage", () => {
     await waitFor(() => expect(screen.queryByText("The agent is working...")).not.toBeInTheDocument());
     expect(screen.queryByRole("group", { name: /Question:/ })).not.toBeInTheDocument();
     expect(await screen.findByLabelText("Your message")).toBeInTheDocument();
+  });
+
+  it("a closed question offers no free-text field (D-295)", async () => {
+    chat.mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("question", { ...formatQuestion, closed: true })]));
+    renderAt("/session/new");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "elves");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    const card = await screen.findByRole("group", { name: "Question: Which format?" });
+    expect(within(card).queryByRole("textbox")).not.toBeInTheDocument();
+    await user.click(within(card).getByRole("button", { name: "Modern" }));
+    expect(screen.getByRole("button", { name: "Submit answers" })).toBeEnabled();
   });
 
   it("an option pick toggles, and a second pick replaces it", async () => {
@@ -165,7 +177,7 @@ describe("SessionPage", () => {
     await user.click(screen.getByRole("button", { name: "Send" }));
     await user.click(await screen.findByRole("button", { name: "Modern" }));
     const colorsCard = screen.getByRole("group", { name: "Question: Any color preference?" });
-    await user.type(within(colorsCard).getByLabelText("Or answer in your own words"), "green");
+    await user.type(within(colorsCard).getByRole("textbox"), "green");
     await user.click(screen.getByRole("button", { name: "Submit answers" }));
     await screen.findByRole("group", { name: "Question: How strong?" });
     // A later turn that leaves a question open keeps it, and drops the answered ones.
@@ -268,6 +280,67 @@ describe("SessionPage", () => {
     expect(within(screen.getByRole("list", { name: "Conversation" })).getAllByRole("listitem")[3]).toHaveTextContent("Modern");
   });
 
+  it("a message after the deck streams the reply and the revised deck with its diff (PR-12B)", async () => {
+    const revised = {
+      ...deck,
+      id: "d2",
+      revisedFromDeckId: "d1",
+      revisionNote: "I changed the count of Llanowar Elves: 4 to 2.",
+      cards: [{ ...deck.cards[0], count: 2 }],
+    };
+    chat
+      .mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("deck", deck), ev("usage", { calls: 2 })]))
+      .mockReturnValueOnce(
+        events([ev("status", "reading your request"), ev("status", "revising the deck"), ev("textDelta", "I changed the count of Llanowar Elves: 4 to 2."), ev("deck", revised), ev("usage", { calls: 4 })]),
+      );
+    renderAt("/session/new");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "elves");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    await screen.findByRole("heading", { name: "Elves" });
+    await user.type(await screen.findByLabelText("Your message"), "fewer elves{enter}");
+    expect(await screen.findByTestId("revision-note")).toHaveTextContent("I changed the count of Llanowar Elves: 4 to 2.");
+    expect(screen.getByTestId("revision-diff")).toHaveTextContent("Count of Llanowar Elves: 4 to 2");
+    expect(screen.getByText("I changed the count of Llanowar Elves: 4 to 2.", { selector: "p.whitespace-pre-line" })).toBeInTheDocument();
+    expect((chat.mock.calls[1][0] as { sessionId: string; message: string }).message).toBe("fewer elves");
+  });
+
+  it("shows a commander offer as full card images (D-287)", async () => {
+    getCards.mockResolvedValue({
+      cards: [
+        { oracleId: "o-ghalta", name: "Ghalta, Primal Hunger", typeLine: "Legendary Creature — Elder Dinosaur", manaCost: "{10}{G}{G}", oracleText: "Ghalta costs {X} less to cast.\nTrample", cardTypes: ["Creature"], faces: [], defaultPrinting: { artist: "Chase Stone", imageUris: { normal: "https://x/ghalta.jpg", small: "https://x/ghalta-s.jpg" } } },
+        { oracleId: "o-reptil", name: "Reptil, Dinomorpher", typeLine: "Legendary Creature — Human Druid", manaCost: "{1}{G}", oracleText: "Whenever a Dinosaur enters, draw a card.", cardTypes: ["Creature"], faces: [], defaultPrinting: { artist: "Someone", imageUris: { normal: "https://x/reptil.jpg", small: "https://x/reptil-s.jpg" } } },
+      ],
+      missingOracleIds: [],
+    });
+    const offer = {
+      id: "q5",
+      slot: "commander",
+      text: "Which one do you want: Ghalta, Primal Hunger, or Reptil, Dinomorpher?",
+      options: ["Ghalta, Primal Hunger", "Reptil, Dinomorpher", "None, name three more"],
+      optionOracleIds: ["o-ghalta", "o-reptil", ""],
+    };
+    chat.mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("question", offer)]));
+    renderAt("/session/new");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "dinosaurs");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    const card = await screen.findByRole("group", { name: /Question: Which one/ });
+    expect(await within(card).findByAltText("Ghalta, Primal Hunger (card)")).toHaveAttribute("src", "https://x/ghalta.jpg");
+    expect(within(card).queryByText(/Illustrated by/)).not.toBeInTheDocument();
+    // The image carries the rules text, so the tile repeats none of it.
+    expect(within(card).queryByText("Legendary Creature — Elder Dinosaur")).not.toBeInTheDocument();
+    expect(within(card).queryByText(/Ghalta costs \{X\} less to cast/)).not.toBeInTheDocument();
+    expect(within(card).getAllByTestId("card-option")).toHaveLength(2);
+    expect((getCards.mock.calls[0][0] as { oracleIds: string[] }).oracleIds).toEqual(["o-ghalta", "o-reptil"]);
+    // The non-card option keeps a plain button, and every option still picks.
+    await user.click(within(card).getByRole("button", { name: "None, name three more" }));
+    expect(within(card).getByRole("button", { name: "None, name three more" })).toHaveAttribute("aria-pressed", "true");
+    await user.click(within(card).getByRole("button", { name: "Reptil, Dinomorpher" }));
+    expect(within(card).getByRole("button", { name: "Reptil, Dinomorpher" })).toHaveAttribute("aria-pressed", "true");
+    expect(await axe(card)).toHaveNoViolations();
+  });
+
   it("refuses a message over the 8 KiB cap", async () => {
     renderAt("/session/new");
     const user = userEvent.setup();
@@ -303,12 +376,12 @@ describe("SessionPage", () => {
     expect(screen.queryByRole("group", { name: "Question: Which format?" })).not.toBeInTheDocument();
     expect(screen.getByRole("group", { name: "Question: How strong?" })).toBeInTheDocument();
 
-    // The message box hides while a question waits (owner, 2026-08-28).
+    // The message box hides while a question waits (D-282).
     expect(screen.queryByLabelText("Your message")).not.toBeInTheDocument();
     chat.mockReturnValue(events([ev("slots", {})]));
     const user = userEvent.setup();
     const card = screen.getByRole("group", { name: "Question: How strong?" });
-    await user.type(within(card).getByLabelText("Or answer in your own words"), "bracket 2");
+    await user.type(within(card).getByRole("textbox"), "bracket 2");
     await user.click(screen.getByRole("button", { name: "Submit answers" }));
     expect((chat.mock.calls[0][0] as { sessionId: string }).sessionId).toBe("s1");
     // A stored session carries its own collection, so the request sends none.
@@ -329,7 +402,7 @@ describe("SessionPage", () => {
     const user = userEvent.setup();
     await user.type(await screen.findByLabelText("Your message"), "elves");
     await user.click(screen.getByRole("button", { name: "Send" }));
-    await screen.findByAltText("Llanowar Elves");
+    await screen.findByAltText("Llanowar Elves (card)");
     expect(await axe(container)).toHaveNoViolations();
   });
 });

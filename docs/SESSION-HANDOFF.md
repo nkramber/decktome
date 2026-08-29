@@ -9,13 +9,13 @@
 - The tree is green: build, vet, `-race` tests, golangci-lint, staticcheck, `buf lint`, `buf breaking`, govulncheck (zero reachable), web lint, typecheck, tests, and build. `make ste-check` is part of `make lint` now.
 - `make test` takes seconds again. The four snapshot tests of `candidates` gate on `CARDS_SNAPSHOT_DIR` and run under `make themes-check`.
 - The deployable API builds decks now (D-257). Before today only `chat-probe` could.
-- PR-8 is done and merged (#15). PR-9 is out of the MVP (D-256). Phase 3 started on 2026-08-28: PR-11 is merged (#38) and its browser gate held. PR-12 is code complete on branch `pr-12` and not merged (D-277 to D-279). Its browser gate is open. Then PR-13 and PR-15.
+- PR-8 is done and merged (#15). PR-9 is out of the MVP (D-256). Phase 3 started on 2026-08-28: PR-11 (#38) and PR-12 (#40) are merged. PR-12B is built on branch `pr-12b` and not merged (D-283 to D-285). Its paid gate has not run. Then PR-13 and PR-15.
 
 ## The numbers, and why none of them compare with the last run
 
 Every measured number below moved on 2026-08-28. Question gate run 25 and deck gate run 8 ran on the new code the same day, and they are the baselines now. Runs 1 to 24 and deck gate runs 1 to 7 do not compare with them (D-66, D-263):
 
-- The classify and ask prompts are at version 12 (D-260, D-265). The generate prompt is at version 9 (D-259).
+- The classify prompt is at version 12 (D-260, D-265), and the ask prompt at version 13 (D-290). The generate prompt is at version 10 (D-285). Runs 25 and 26 do not compare with the next run.
 - The catalog holds 22 rows. Five retired (D-260), and `house_rules` stores its answer (D-265).
 - The conversation set holds 104 conversations, 30 gate and 74 probe, with ids 1 to 105 and no id 67 (D-263). A `has_deck` conversation leaves the catalog-only count.
 - The question agent changed in seven places a gate could not see before (audit Q-1 to Q-14). The snapshot carries every field. The nearest-format acceptance fills the slot. A retired row may ask again. The word rules read the current message.
@@ -24,12 +24,37 @@ Every measured number below moved on 2026-08-28. Question gate run 25 and deck g
 
 | Measure | Baseline | Where measured |
 |---|---|---|
-| Question gate | PASS 25 of 27 counted, 2 invented, 0 premature, 0 lint | run 26, 2026-08-28, prompt 12, after D-280 |
+| Question gate | PASS 25 of 27 counted, 2 invented, 0 premature, 0 lint, $0.16 | run 27, 2026-08-28, ask prompt 13, catalog of D-290 and D-294 |
 | Question eval | 19 bad of 382, holdout 8 of 111 (7.2 percent) | eval of run 25, 5 conversations unjudged |
 | Deck gate | PASS 18 of 18, 2 repairs, $1.09 | run 8, 2026-08-28, generate prompt 9 |
+| Revise gate | PASS 6 of 6, $0.29 | run 2, 2026-08-28 (D-296) |
 | Loop | off since 2026-08-26 | seven starts, nothing kept |
 
 CAUTION: `tune-check` paired zero questions between run 24 and run 25, because the catalog and the prompt changed. The paired guard says nothing across that line, and the whole-run margins carry the verdict. The eval leaves a conversation unjudged when the judge returns fewer verdicts than questions. So 382 is the honest count, not a drop from 435.
+
+## PR-12B, what it holds (2026-08-28)
+
+Branch `pr-12b` holds the revision turn (F-27, D-283 to D-285). The tree is green on the branch: Go build, vet, `-race` tests, golangci-lint, `buf breaking`, web lint, typecheck, 55 web tests, and the web build. Nothing paid has run.
+
+- `internal/revise`: the `revise` role call, the brief, `DiffDecks`, `Note`, and `DeclineNote`. The reply comes from the diff and the declines, never from the model.
+- `internal/generate`: `Request.Revision`, the revision block of the generate prompt, `CheckRevision`, `AllowedByRevision`, and `Pool.Filter`. The pool drops the removed cards and the cards over the cap.
+- `internal/agentsvc`: `sendRevision` runs after a build when no slot changed, and `slotsChanged` decides. A slot change rebuilds from the start with a status line. `DeckStore` gained `Get`. `Turn.agent_message` is written now.
+- `Deck.revised_from_deck_id` and `Deck.revision_note` are additive proto fields. The deck view shows the note and the diff against the deck before it.
+- A card the revision brief removes is unlocked, and a missing locked card is named (D-301).
+- The deck view drops the not_owned warnings, and keeps a not_owned block (D-300).
+- An owned deck card shows the priciest printing the user holds, through `DeckCard.owned_printing` (D-299).
+- The mana sources table shows the deck's own colors only (D-298).
+- The commander offer ranks on quality in owned-first too, the commander row is fixed, and the pick row says "Which commander" (D-297). Run 27 no longer baselines the two row texts.
+- A closed question offers no free-text field, through `Question.closed` and the catalog flag (D-295).
+- The commander rows come last in the catalog order, after the power, the colors, the pool, and the budget (D-294).
+- A commander offer before the pool question ranks on quality alone (D-293). The conversation words hold the user words only (D-292). Both came from the browser sessions of the evening.
+- A card tile shows the full image and no caption (D-291). The commander offer tile shows the image and the pick button only.
+- The commander row asks for a name or a suggestion in one step (D-290). The catalog text changed, so the next question gate run re-baselines (D-66).
+- The shortlist follows the commander identity, and the deck view shows the commander from `commander_oracle_ids` (D-289). Before this, a mono-green commander got nine off-color Dinosaurs and no commander tile.
+- A commander offer shows each card with its art and its rules text, through the new `Question.option_oracle_ids` (D-287). The branch holds it too.
+- `cmd/revise-gate` and `make revise-gate` are the paid gate: two bases, six revisions, a verdict per revision. Ask the owner before the run, then record the numbers here and in the roadmap.
+
+Revise gate run 1 (D-296): 5 of 6, $0.33, the one failure the gate's own bar. Run 2 with the bar fixed: PASS 6 of 6, $0.29, 3 minutes 22 seconds (`docs/reference/pr12b-revise-gate-run2.md`). The gate held.
 
 ## PR-12, what it holds (2026-08-28)
 
@@ -38,6 +63,7 @@ Branch `pr-12` holds the slice of the ui plan, section 6. The tree is green on t
 - `CardService.GetCards` returns up to 120 cards by Oracle id, in request order, with a `missing_oracle_ids` list (D-277). `go/internal/cardsvc` holds it and its tests.
 - `web/apps/web/src/features/chat`: `use-chat.ts` reads the `Chat` stream and holds the open questions (D-278). `session-page.tsx` is the chat beside the deck. `question-card.tsx` shows the options as buttons and a free-text field. A reload rebuilds the thread from `GetSession` and the latest deck from `GetDeck`.
 - `web/apps/web/src/features/deck`: `deck-view.tsx` groups the cards by role and shows the findings, the legality date, the curve, and the color sources. `card-tile.tsx` shows every face with "Illustrated by <artist>. © Wizards of the Coast, LLC" (D-279). `deck-stats.ts` holds the pure helpers. The decks page opens a deck in place.
+- Gate run 27 is the baseline after D-290 and D-294: PASS, 25 of 27 on a bar of 25, $0.16. The two gate inventions replaced `pool_thin` once and the new `commander` row once, both at fit 0.20. The ask role rewrote the commander row to name the colors ("Do you have a black-green commander in mind, or should I suggest three?"), which is a reword and not a gap. Runs 25 and 26 do not compare with it.
 - Gate run 26 ran after D-280: PASS, 25 of 27 on a bar of 25, against 26 of 27 in run 25. The two invented gate questions are `pool` in conversation 4 and `colors` in one other, and run 25 invented `budget` once. The gate sends plain messages, and `UserWords` returns a plain message unchanged. So the gate ran the code of run 25, and the drop is model noise (D-230). The `Q:`/`A:` shape is still unmeasured, because only the browser sends it.
 - The owner's first live session (`eIrL12hRY2YNTTCo3iS4`) showed that a message after a build is dropped and the deck is rebuilt from turn 1 (F-27). PR-12B is the fix, and it is planned and not started (D-283, D-284). Collection delete is not on the roadmap (owner, 2026-08-28).
 - The answers go out in one request through "Submit answers", and the message box hides on Send (D-282).
@@ -49,10 +75,10 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## Next steps, in order
 
-1. The owner runs the PR-12 browser gate on the audited build: `make dev` with provider keys, then README section 6 steps 1 to 6. Ask the owner before the run, because every chat turn spends money. Then the owner merges `pr-12`.
-2. PR-12B, the revision turn (F-27, D-283). A message after a build is dropped today, and the deck is rebuilt from the first message. The roadmap entry holds the design, and `.local/session-eIrL12hRY2YNTTCo3iS4.txt` holds the session that showed it. Cut the branch from `main` after `pr-12` merges.
+1. The owner tests a revision in the browser, then merges `pr-12b`. The revise gate held on run 2.
+2. Watch the first pull request under the new `verify` workflow (D-286). The `changes` job prints the diff and its answers, so a job that skipped when it should have run is visible in that log. The workflow file is one of the inputs of every job, so this pull request runs them all.
 3. PR-13: `DeckService.ExportDeck`, the export button, and the buy list with Scryfall links. Ui plan section 4 gives the text shape, and the gate is the round trip through `ParseArenaText`.
-4. Add a ruleset that requires the `verify` check on `main`, if it is not there yet. Four Dependabot majors merged without it on 2026-08-28 and broke `main` twice.
+4. A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The fan-in job left the workflow for that reason (D-286). The owner reads the checks before a merge.
 5. After PR-12 merges, run the M-5 manual scoring on the first UI build (sequencing step 19), and ask the owner before any paid run.
 
 Done on 2026-08-28: the audit merged (#17), the baselines merged (#34), Go moved to 1.27.0 (#37), and PR-11 merged (#38). Every Dependabot pull request of the day is merged or closed. PR-11 holds the stack, the router, the boundary lint, sign-in and sign-up over the Auth emulator, the token interceptor, and the collection screen. The owner ran the gate in the browser on the real export: 4,952 cards, 2,657 rows, one token row reported as not playable. README section 6 is the browser procedure.

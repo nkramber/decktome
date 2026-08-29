@@ -23,6 +23,8 @@ export type ChatState = {
   slots?: Slots;
   usage?: Usage;
   deck?: Deck;
+  // baseDeck is the deck the latest one revised, for the diff (PR-12B).
+  baseDeck?: Deck;
   busy: boolean;
 };
 
@@ -206,7 +208,7 @@ function apply(res: ChatResponse, asked: Question[], update: (f: (s: ChatState) 
       return;
     case "deck": {
       const deck = ev.value;
-      update((s) => ({ ...s, deck, thread: [...s.thread, { kind: "deck", deck }] }));
+      update((s) => ({ ...s, deck, baseDeck: s.deck, thread: [...s.thread, { kind: "deck", deck }] }));
       return;
     }
     case "failure":

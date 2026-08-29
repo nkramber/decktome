@@ -7,12 +7,15 @@ import (
 	"strings"
 
 	"connectrpc.com/connect"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/candidates"
+	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
 	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 	"github.com/nkramber/mtg-deck-builder/go/internal/questions"
+	"github.com/nkramber/mtg-deck-builder/go/internal/revise"
 )
 
 // The build runs when every slot is answered (roadmap PR-8). The
@@ -29,6 +32,14 @@ var ErrThinCommanderPool = errors.New("your library holds no commander for this 
 // server has no generator wired, so a deployment without one keeps the
 // PR-7 behavior and says so.
 func (s *Server) buildDeck(ctx context.Context, uid string, session *mtgv1.Session, st *questions.State, acc *llm.Accumulator) (*generate.Result, error) {
+	return s.buildDeckFrom(ctx, uid, session, st, acc, nil)
+}
+
+// buildDeckFrom is buildDeck with an optional revision brief. The base
+// deck's cards join the pool so the model can keep them, the brief's
+// removed cards and the cards over its cap leave the pool, and the
+// request carries the brief (PR-12B).
+func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.Session, st *questions.State, acc *llm.Accumulator, rev *generate.Revision) (*generate.Result, error) {
 	if s.decks == nil || s.index == nil || s.builder == nil {
 		return nil, nil
 	}
@@ -102,9 +113,12 @@ func (s *Server) buildDeck(ctx context.Context, uid string, session *mtgv1.Sessi
 		}
 	}
 
+	// The shortlist follows the commander's color identity, and the slot
+	// colors only when no commander is chosen. The slot can hold every
+	// color, and the engine refuses each card outside the identity (D-289).
 	list, err := s.builder.Build(idx, candidates.Request{
 		Format:             format,
-		Colors:             slots.GetColors(),
+		Colors:             deckColors(format, slots.GetColors(), commanders),
 		Theme:              slots.GetTheme(),
 		CommanderOracleIDs: commanderIDs,
 		PoolRule:           slots.GetPoolRule(),
@@ -163,9 +177,21 @@ func (s *Server) buildDeck(ctx context.Context, uid string, session *mtgv1.Sessi
 				"session", session.GetId())
 		}
 	}
+	// A revision keeps every card the brief does not touch, so the base
+	// deck's cards must be nameable (PR-12B).
+	if rev != nil {
+		for _, dc := range rev.Base {
+			if c, ok := idx.ByOracleID(dc.GetOracleId()); ok {
+				always = append(always, c)
+			}
+		}
+	}
 	// The always cards read their owned count from the collection, so a
 	// precon card the user holds is never charged as a purchase (G-3).
 	pool := generate.FromListOwned(list, always, owned, buyList)
+	if rev != nil {
+		pool = pool.Filter(func(c *mtgv1.Card) bool { return generate.AllowedByRevision(rev, c) })
+	}
 
 	// The deck carries its own id, so the store reserves one first
 	// (D-245).
@@ -197,11 +223,45 @@ func (s *Server) buildDeck(ctx context.Context, uid string, session *mtgv1.Sessi
 		Targets:         generate.TargetsFor(format, slots.GetPower()),
 		Limits:          generate.LimitsFor(format),
 		LegalityAsOf:    idx.AsOf.Format("2006-01-02"),
+		Revision:        rev,
 	}, acc)
 	if err != nil {
 		return nil, err
 	}
+	s.markOwnedPrintings(ctx, uid, session, idx, res.Deck)
 	return res, nil
+}
+
+// markOwnedPrintings sets DeckCard.owned_printing to the priciest printing
+// the collection holds of each owned card (D-299). A missing collection
+// or a printing the snapshot dropped leaves the field empty.
+func (s *Server) markOwnedPrintings(ctx context.Context, uid string, session *mtgv1.Session, idx *cards.Index, deck *mtgv1.Deck) {
+	if s.collections == nil || session.GetCollectionId() == "" || deck == nil {
+		return
+	}
+	owned, err := s.collections.OwnedPrintings(ctx, uid, session.GetCollectionId())
+	if err != nil {
+		s.log.WarnContext(ctx, "owned printings unavailable", "collection", session.GetCollectionId(), "err", err)
+		return
+	}
+	for _, list := range [][]*mtgv1.DeckCard{deck.GetCards(), deck.GetSideboard()} {
+		for _, dc := range list {
+			if dc.GetOwnedCount() == 0 {
+				continue
+			}
+			var best *mtgv1.Printing
+			for _, id := range owned[dc.GetOracleId()] {
+				p, ok := idx.Printing(id)
+				if !ok || p.GetImageUris() == nil {
+					continue
+				}
+				if best == nil || p.GetPriceUsd() > best.GetPriceUsd() {
+					best = p
+				}
+			}
+			dc.OwnedPrinting = best
+		}
+	}
 }
 
 // deckColors is the color set the basic lands follow. In Commander it is
@@ -341,4 +401,148 @@ func (s *Server) storeDeck(ctx context.Context, uid string, session *mtgv1.Sessi
 		s.log.ErrorContext(ctx, "the deck id was not recorded on the session",
 			"session", session.GetId(), "deck", d.GetId(), "err", err)
 	}
+}
+
+// sendRevision runs the turn after a build: the revise call reads the
+// message and the deck the user read, and the outcome is a question, a
+// decline with a reason, or a revised deck. Silence is never an outcome
+// (D-283, D-284). The reply lands in Turn.agent_message and streams as
+// text_delta.
+func (s *Server) sendRevision(ctx context.Context, uid string, session *mtgv1.Session, st *questions.State,
+	snap questions.Snapshot, version int64, acc *llm.Accumulator, message string, turn *mtgv1.Turn,
+	stream *connect.ServerStream[mtgv1.ChatResponse]) error {
+	if s.decks == nil || s.deckStore == nil {
+		return stream.Send(&mtgv1.ChatResponse{
+			Event: &mtgv1.ChatResponse_Status{Status: "the deck can not be revised here, because no deck store is wired"},
+		})
+	}
+	ids := session.GetDeckIds()
+	base, err := s.deckStore.Get(ctx, uid, ids[len(ids)-1])
+	if err != nil {
+		s.log.ErrorContext(ctx, "the base deck could not be read", "session", session.GetId(), "deck", ids[len(ids)-1], "err", err)
+		return stream.Send(&mtgv1.ChatResponse{
+			Event: &mtgv1.ChatResponse_Status{Status: "the last deck could not be read, please ask again"},
+		})
+	}
+	if err := stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Status{Status: "reading your request"}}); err != nil {
+		return err
+	}
+	var cards revise.CardSource
+	if s.index != nil {
+		if idx := s.index.Current(); idx != nil {
+			cards = idx
+		}
+	}
+	slots := session.GetSlots()
+	brief, err := revise.Call(ctx, s.client, revise.Input{
+		SessionID: session.GetId(),
+		Message:   message,
+		Prior:     priorUserMessage(session),
+		Deck:      base,
+		Format:    generate.FormatWord(slots.GetFormat().GetId()),
+		Power:     powerWord(slots.GetPower()),
+		Cards:     cards,
+	}, acc)
+	if err != nil {
+		s.log.ErrorContext(ctx, "the revise call failed", "session", session.GetId(), "err", err)
+		return stream.Send(&mtgv1.ChatResponse{
+			Event: &mtgv1.ChatResponse_Status{Status: "your request could not be read, please ask again"},
+		})
+	}
+	record := func(text string) {
+		turn.AgentMessage = text
+		session.UpdatedAt = timestamppb.New(s.now())
+		if err := s.store.Put(ctx, uid, session, snap, version); err != nil {
+			s.log.ErrorContext(ctx, "the reply was not recorded on the session", "session", session.GetId(), "err", err)
+		}
+	}
+	if brief.Question != "" {
+		q := &mtgv1.Question{
+			Id:       fmt.Sprintf("revise-%d", len(session.GetTurns())),
+			Slot:     "revision",
+			Text:     brief.Question,
+			Invented: true,
+		}
+		turn.Questions = append(turn.Questions, q)
+		record(q.GetText())
+		return stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Question{Question: q}})
+	}
+	if !brief.Acts() {
+		note := revise.DeclineNote(brief)
+		record(note)
+		return stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_TextDelta{TextDelta: note}})
+	}
+	// A card the brief removes is not a card to keep, whatever the
+	// classify call read from the same message. The state drops the lock
+	// before the build, and the stored state follows (D-301).
+	for _, name := range brief.Remove {
+		st.Unlock(name)
+	}
+	snap = st.Snapshot()
+	if err := stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Status{Status: "revising the deck"}}); err != nil {
+		return err
+	}
+	limit := s.buildLimit
+	if limit <= 0 {
+		limit = DefaultBuildLimit
+	}
+	bctx, cancel := context.WithTimeout(ctx, limit)
+	defer cancel()
+	rev := &generate.Revision{
+		BaseDeckID:   base.GetId(),
+		Base:         base.GetCards(),
+		Instructions: brief.Changes,
+		Remove:       brief.Remove,
+		Keep:         brief.Keep,
+		MaxManaValue: brief.MaxManaValue,
+	}
+	res, err := s.buildDeckFrom(bctx, uid, session, st, acc, rev)
+	if err != nil || res == nil {
+		s.log.ErrorContext(ctx, "the revision failed", "session", session.GetId(), "err", err)
+		msg := "the revision failed, please ask again"
+		if errors.Is(bctx.Err(), context.DeadlineExceeded) {
+			msg = "the revision ran past its time limit, please ask again"
+		}
+		return stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Status{Status: msg}})
+	}
+	if base.GetName() != "" {
+		res.Deck.Name = base.GetName()
+	}
+	note := revise.Note(brief, revise.DiffDecks(base, res.Deck))
+	res.Deck.RevisionNote = note
+	res.Deck.RevisedFromDeckId = base.GetId()
+	// storeDeck writes the session with the deck id, and the turn holds
+	// the reply, so one write records both.
+	turn.AgentMessage = note
+	s.storeDeck(ctx, uid, session, snap, version, res.Deck)
+	if err := stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_TextDelta{TextDelta: note}}); err != nil {
+		return err
+	}
+	for _, n := range res.Notes {
+		if err := stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_TextDelta{TextDelta: n}}); err != nil {
+			return err
+		}
+	}
+	return stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Deck{Deck: res.Deck}})
+}
+
+// priorUserMessage is the user's message of the turn before this one,
+// so a revise call that follows its own question reads the request too.
+func priorUserMessage(session *mtgv1.Session) string {
+	turns := session.GetTurns()
+	if len(turns) < 2 {
+		return ""
+	}
+	return questions.UserWords(turns[len(turns)-2].GetUserMessage())
+}
+
+// powerWord is the power as the revise prompt names it.
+func powerWord(p *mtgv1.PowerLevel) string {
+	if br := p.GetBracket(); br > 0 {
+		return fmt.Sprintf("bracket %d", br)
+	}
+	if step := p.GetSixtyStep(); step != mtgv1.SixtyStep_SIXTY_STEP_UNSPECIFIED {
+		return strings.ToLower(strings.TrimPrefix(step.String(), "SIXTY_STEP_"))
+	}
+	return ""
 }

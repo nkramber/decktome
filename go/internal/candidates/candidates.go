@@ -592,12 +592,12 @@ func (b *Builder) CommanderPool(idx *cards.Index, req Request) ([]Candidate, err
 	if idx == nil {
 		return nil, fmt.Errorf("candidates: no card index")
 	}
+	// An unasked pool rule ranks on quality alone. The commander offer
+	// goes out before the pool question, and a collection must not turn
+	// it into a list of the legends the user happens to own (D-293).
 	mode := req.PoolRule
 	if mode == mtgv1.PoolRule_POOL_RULE_UNSPECIFIED {
 		mode = mtgv1.PoolRule_POOL_RULE_ANY_CARD
-		if req.Owned != nil {
-			mode = mtgv1.PoolRule_POOL_RULE_OWNED_FIRST
-		}
 	}
 	if mode != mtgv1.PoolRule_POOL_RULE_ANY_CARD && req.Owned == nil {
 		return nil, fmt.Errorf("candidates: pool rule %s needs a collection", mode)
@@ -646,11 +646,10 @@ func (b *Builder) CommanderPool(idx *cards.Index, req Request) ([]Candidate, err
 		out = append(out, b.commanderPairs(idx, req, theme, colorSet, mode, maxRank)...)
 		sortCandidates(out)
 	}
-	// Owned-first offers what the user already has, before a card they
-	// would need to buy.
-	if mode == mtgv1.PoolRule_POOL_RULE_OWNED_FIRST {
-		out = append(filterOwned(out, true), filterOwned(out, false)...)
-	}
+	// Owned-first ranks on quality like any card. The commander is one
+	// card, the buy list carries it, and a deck led by the best fit beats
+	// a deck led by a legend the user happens to own (D-297). Owned-only
+	// filtered above, because there the commander must be owned.
 	return out, nil
 }
 

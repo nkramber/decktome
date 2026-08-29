@@ -19,6 +19,7 @@ import (
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1/mtgv1connect"
+	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
 	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 	"github.com/nkramber/mtg-deck-builder/go/internal/precons"
@@ -835,4 +836,24 @@ func TestPreconSourceIsLateBound(t *testing.T) {
 	if srv.preconSet() != static {
 		t.Error("the static set was lost")
 	}
+}
+
+// TestCardOptionsCarryOracleIds is D-287: an option that names a card
+// carries its id, a non-card option an empty string, and a question with
+// no card option keeps the field empty.
+func TestCardOptionsCarryOracleIds(t *testing.T) {
+	idx := cards.NewIndex([]*mtgv1.Card{
+		{OracleId: "o-karlov", Name: "Karlov of the Ghost Council"},
+		{OracleId: "o-giada", Name: "Giada, Font of Hope"},
+	}, nil, nil, time.Unix(1000, 0).UTC())
+	offer := &mtgv1.Question{Options: []string{"Karlov of the Ghost Council", "giada, font of hope", "None, name three more"}}
+	format := &mtgv1.Question{Options: []string{"Commander", "Modern"}}
+	cardOptions([]*mtgv1.Question{offer, format}, idx)
+	if got := offer.GetOptionOracleIds(); len(got) != 3 || got[0] != "o-karlov" || got[1] != "o-giada" || got[2] != "" {
+		t.Errorf("offer ids = %v", got)
+	}
+	if len(format.GetOptionOracleIds()) != 0 {
+		t.Errorf("format ids = %v", format.GetOptionOracleIds())
+	}
+	cardOptions([]*mtgv1.Question{offer}, nil)
 }

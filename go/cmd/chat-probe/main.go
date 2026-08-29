@@ -93,6 +93,10 @@ func (i indexSrc) Current() *cards.Index { return i.idx }
 // ownedSrc answers the owned counts of one collection.
 type ownedSrc struct{ counts map[string]int32 }
 
+func (o ownedSrc) OwnedPrintings(context.Context, string, string) (map[string][]string, error) {
+	return nil, nil
+}
+
 func (o ownedSrc) OracleCounts(context.Context, string, string) (map[string]int32, error) {
 	return o.counts, nil
 }

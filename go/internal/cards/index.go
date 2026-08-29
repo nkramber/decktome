@@ -15,7 +15,10 @@ type Index struct {
 	byOracleID map[string]*mtgv1.Card
 	byName     map[string]*mtgv1.Card // key: normalized full or face name
 	byPrinting map[string]*mtgv1.Card // key: scryfall printing id
-	bySetNo    map[string]*mtgv1.Card // key: "setcode/collectornumber", lowercase
+	// printings keeps the display fields of every playable printing, so
+	// the deck view can show the printing the user owns (D-299).
+	printings map[string]*mtgv1.Printing
+	bySetNo   map[string]*mtgv1.Card // key: "setcode/collectornumber", lowercase
 	// nonPlayable maps a dropped printing (Scryfall id and set/collector
 	// key) to its layout, so an import can name the reason.
 	nonPlayable map[string]string
@@ -76,6 +79,7 @@ func NewIndex(cardList []*mtgv1.Card, printings []Printing, tags *TagIndex, asOf
 		byOracleID:  make(map[string]*mtgv1.Card, len(cardList)),
 		byName:      make(map[string]*mtgv1.Card, len(cardList)*2),
 		byPrinting:  make(map[string]*mtgv1.Card, len(printings)),
+		printings:   make(map[string]*mtgv1.Printing, len(printings)),
 		bySetNo:     make(map[string]*mtgv1.Card, len(printings)),
 		nonPlayable: make(map[string]string),
 		tags:        tags,
@@ -146,6 +150,17 @@ func NewIndex(cardList []*mtgv1.Card, printings []Printing, tags *TagIndex, asOf
 			continue
 		}
 		idx.byPrinting[p.ScryfallID] = c
+		idx.printings[p.ScryfallID] = &mtgv1.Printing{
+			ScryfallId:      p.ScryfallID,
+			SetCode:         p.SetCode,
+			SetName:         p.SetName,
+			CollectorNumber: p.CollectorNumber,
+			Rarity:          p.Rarity,
+			Artist:          p.Artist,
+			ImageUris:       p.ImageUris,
+			Digital:         p.Digital,
+			PriceUsd:        p.PriceUSD,
+		}
 		if p.SetCode != "" && p.CollectorNumber != "" {
 			idx.bySetNo[setNoKey(p.SetCode, p.CollectorNumber)] = c
 		}
@@ -222,6 +237,13 @@ func (x *Index) ByName(name string) (*mtgv1.Card, bool) {
 func (x *Index) ByOracleID(id string) (*mtgv1.Card, bool) {
 	c, ok := x.byOracleID[id]
 	return c, ok
+}
+
+// Printing returns the display fields of one playable printing, or false
+// when the snapshot does not hold it (D-299).
+func (x *Index) Printing(id string) (*mtgv1.Printing, bool) {
+	p, ok := x.printings[id]
+	return p, ok
 }
 
 // ByPrintingID finds a card by a Scryfall printing id (ManaBox join key).
