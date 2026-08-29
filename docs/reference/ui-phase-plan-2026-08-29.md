@@ -101,6 +101,18 @@ Five things leave the first paint. They are `firebase/auth`, the Connect client,
 - `DeckService.DeleteDeck(deck_id)`: a hard delete of the deck document. The session keeps the id in `deck_ids`, and the chat shows "deck deleted" for it.
 - `ListDecksRequest` gains `page_size`, `page_token`, `format`, `favorite`, and `query`. The list stays flat fields only (D-245).
 
+Built 2026-08-29 on branch `pr-17`, the proto and the Go side. What the build settled:
+
+- `name` and `favorite` on `UpdateDeckRequest` are `optional`, so an unset field stays as it is. An empty name is an invalid argument, and a name takes at most 200 bytes.
+- `favorite` on `ListDecksRequest` is `optional` too. Unset keeps every deck.
+- `Deck` gains `favorite` (21) and `card_count` (22). The list view carries no cards, so it sets `card_count` instead. Today the deck list on screen reads `cards.length` from the list view and always shows zero. The web slice reads `card_count`.
+- The listing filter runs in Go over the rows Firestore returns, not as a Firestore query. One read serves every filter, and no composite index has to exist. A scan cap of 500 rows bounds the read. A user with more decks than that needs a search index, and PR-17 has none.
+- `page_token` carries the offset and a fingerprint of the filter. A token of another filter is an invalid argument, because its offset counts a different list. The default page is 24 decks and the cap is 100.
+- The stored document gains five flat fields: `favorite`, `power_bracket`, `power_sixty_step`, `card_count`, `commander_oracle_ids`, and `commander_names`. A deck written before PR-17 holds none of them and reads them as zero. A rename or a favorite write fills them for that deck.
+- A search by commander reads `commander_names`, which the Put fills from the deck's card list. A commander the card list omits contributes no name, so a search by that commander misses that deck.
+
+OPEN: section 4.1 asks for a filter by power, and this section names no power field. The owner settles it before the web slice starts (OQ-47).
+
 ### 4.3 Gate
 
 Each action round-trips through the API and shows in the grid without a reload. A deleted deck answers `NotFound`. The grid of 100 decks renders under one second.

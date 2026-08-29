@@ -3,7 +3,9 @@ package decksvc
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -11,6 +13,7 @@ import (
 	"connectrpc.com/connect"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
@@ -227,11 +230,17 @@ func TestValidateOwnedFlow(t *testing.T) {
 	})
 }
 
-// fakeDecks answers GetDeck and ListDecks.
+// fakeDecks answers GetDeck, ListDecks, UpdateDeck, and DeleteDeck. The
+// order slice fixes the listing order, because a map has none and the
+// paging tests read positions.
 type fakeDecks struct {
-	decks map[string]*mtgv1.Deck
-	err   error
-	limit int
+	decks   map[string]*mtgv1.Deck
+	order   []string
+	err     error
+	scan    int
+	filter  decks.Filter
+	deleted []string
+	updates int
 }
 
 func (f *fakeDecks) Get(_ context.Context, _, id string) (*mtgv1.Deck, error) {
@@ -245,16 +254,63 @@ func (f *fakeDecks) Get(_ context.Context, _, id string) (*mtgv1.Deck, error) {
 	return d, nil
 }
 
-func (f *fakeDecks) List(_ context.Context, _ string, limit int) ([]*mtgv1.Deck, error) {
-	f.limit = limit
+func (f *fakeDecks) List(_ context.Context, _ string, filter decks.Filter, scan int) ([]*mtgv1.Deck, error) {
+	f.scan = scan
+	f.filter = filter
 	if f.err != nil {
 		return nil, f.err
 	}
 	var out []*mtgv1.Deck
-	for _, d := range f.decks {
-		out = append(out, d)
+	for _, id := range f.listOrder() {
+		out = append(out, f.decks[id])
 	}
 	return out, nil
+}
+
+// listOrder gives the fixed order, or the map keys sorted when the test
+// named none.
+func (f *fakeDecks) listOrder() []string {
+	if len(f.order) > 0 {
+		return f.order
+	}
+	ids := make([]string, 0, len(f.decks))
+	for id := range f.decks {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	return ids
+}
+
+func (f *fakeDecks) Update(_ context.Context, _, id string, name *string, favorite *bool) (*mtgv1.Deck, error) {
+	f.updates++
+	if f.err != nil {
+		return nil, f.err
+	}
+	d, ok := f.decks[id]
+	if !ok {
+		return nil, decks.ErrNotFound
+	}
+	out := proto.Clone(d).(*mtgv1.Deck) //nolint:errcheck,forcetypeassert // Clone of a Deck is a Deck
+	if name != nil {
+		out.Name = *name
+	}
+	if favorite != nil {
+		out.Favorite = *favorite
+	}
+	f.decks[id] = out
+	return out, nil
+}
+
+func (f *fakeDecks) Delete(_ context.Context, _, id string) error {
+	if f.err != nil {
+		return f.err
+	}
+	if _, ok := f.decks[id]; !ok {
+		return decks.ErrNotFound
+	}
+	delete(f.decks, id)
+	f.deleted = append(f.deleted, id)
+	return nil
 }
 
 func asUser(uid string) Option { return WithUser(func(context.Context) string { return uid }) }
@@ -325,13 +381,13 @@ func TestListDecks(t *testing.T) {
 			t.Errorf("code = %v", codeOf(t, err))
 		}
 	})
-	t.Run("lists with the cap", func(t *testing.T) {
+	t.Run("lists with the scan cap", func(t *testing.T) {
 		res, err := list(newServer(t, nil, WithDecks(src), asUser("u1")))
 		if err != nil || len(res.Msg.GetDecks()) != 2 {
 			t.Errorf("decks = %v, err %v", res, err)
 		}
-		if src.limit != listLimit {
-			t.Errorf("limit = %d, want %d", src.limit, listLimit)
+		if src.scan != maxScan {
+			t.Errorf("scan = %d, want %d", src.scan, maxScan)
 		}
 	})
 }
@@ -382,6 +438,272 @@ func TestExportDeck(t *testing.T) {
 	})
 	t.Run("an unknown format is invalid", func(t *testing.T) {
 		if _, err := export(newServer(t, idx, WithDecks(src), asUser("u1")), "d1", mtgv1.ExportFormat(99)); codeOf(t, err) != connect.CodeInvalidArgument {
+			t.Errorf("code = %v", codeOf(t, err))
+		}
+	})
+}
+
+// manyDecks builds n decks named d1..dn in a fixed order, newest first.
+func manyDecks(n int) *fakeDecks {
+	f := &fakeDecks{decks: make(map[string]*mtgv1.Deck, n)}
+	for i := 1; i <= n; i++ {
+		id := fmt.Sprintf("d%d", i)
+		f.decks[id] = &mtgv1.Deck{Id: id, Name: id}
+		f.order = append(f.order, id)
+	}
+	return f
+}
+
+func TestListDecksPaging(t *testing.T) {
+	ctx := context.Background()
+	list := func(src *fakeDecks, req *mtgv1.ListDecksRequest) (*connect.Response[mtgv1.ListDecksResponse], error) {
+		return newServer(t, nil, WithDecks(src), asUser("u1")).ListDecks(ctx, connect.NewRequest(req))
+	}
+	ids := func(res *connect.Response[mtgv1.ListDecksResponse]) []string {
+		var out []string
+		for _, d := range res.Msg.GetDecks() {
+			out = append(out, d.GetId())
+		}
+		return out
+	}
+
+	t.Run("a page of the default size, then the next", func(t *testing.T) {
+		src := manyDecks(defaultPageSize + 3)
+		first, err := list(src, &mtgv1.ListDecksRequest{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := len(first.Msg.GetDecks()); got != defaultPageSize {
+			t.Fatalf("first page = %d decks, want %d", got, defaultPageSize)
+		}
+		if first.Msg.GetNextPageToken() == "" {
+			t.Fatal("want a next token")
+		}
+		second, err := list(src, &mtgv1.ListDecksRequest{PageToken: first.Msg.GetNextPageToken()})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := ids(second); len(got) != 3 || got[0] != "d25" {
+			t.Fatalf("second page = %v", got)
+		}
+		if second.Msg.GetNextPageToken() != "" {
+			t.Error("the last page carries no token")
+		}
+	})
+
+	t.Run("the size caps at the maximum", func(t *testing.T) {
+		src := manyDecks(maxPageSize + 5)
+		res, err := list(src, &mtgv1.ListDecksRequest{PageSize: maxPageSize + 50})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := len(res.Msg.GetDecks()); got != maxPageSize {
+			t.Errorf("page = %d decks, want %d", got, maxPageSize)
+		}
+	})
+
+	t.Run("a token of another filter is an invalid argument", func(t *testing.T) {
+		src := manyDecks(defaultPageSize + 1)
+		first, err := list(src, &mtgv1.ListDecksRequest{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = list(src, &mtgv1.ListDecksRequest{PageToken: first.Msg.GetNextPageToken(), Query: "elves"})
+		if codeOf(t, err) != connect.CodeInvalidArgument {
+			t.Errorf("code = %v", codeOf(t, err))
+		}
+	})
+
+	t.Run("a damaged token is an invalid argument", func(t *testing.T) {
+		src := manyDecks(2)
+		if _, err := list(src, &mtgv1.ListDecksRequest{PageToken: "not-a-token!"}); codeOf(t, err) != connect.CodeInvalidArgument {
+			t.Errorf("code = %v", codeOf(t, err))
+		}
+	})
+
+	t.Run("an offset past the end gives an empty page", func(t *testing.T) {
+		src := manyDecks(defaultPageSize + 1)
+		first, _ := list(src, &mtgv1.ListDecksRequest{})
+		token := first.Msg.GetNextPageToken()
+		// The second page ends the listing, and its own token is empty.
+		second, err := list(src, &mtgv1.ListDecksRequest{PageToken: token})
+		if err != nil || len(second.Msg.GetDecks()) != 1 {
+			t.Fatalf("second page = %v, err %v", ids(second), err)
+		}
+		src.decks = map[string]*mtgv1.Deck{}
+		src.order = nil
+		empty, err := list(src, &mtgv1.ListDecksRequest{PageToken: token})
+		if err != nil || len(empty.Msg.GetDecks()) != 0 || empty.Msg.GetNextPageToken() != "" {
+			t.Errorf("empty page = %v, token %q, err %v", ids(empty), empty.Msg.GetNextPageToken(), err)
+		}
+	})
+
+	t.Run("the filter reaches the store", func(t *testing.T) {
+		src := manyDecks(2)
+		yes := true
+		if _, err := list(src, &mtgv1.ListDecksRequest{Format: mtgv1.FormatId_FORMAT_ID_COMMANDER, Favorite: &yes, Query: "  Atraxa  "}); err != nil {
+			t.Fatal(err)
+		}
+		if src.filter.Format != mtgv1.FormatId_FORMAT_ID_COMMANDER {
+			t.Errorf("format = %v", src.filter.Format)
+		}
+		if src.filter.Favorite == nil || !*src.filter.Favorite {
+			t.Errorf("favorite = %v", src.filter.Favorite)
+		}
+		if src.filter.Query != "Atraxa" {
+			t.Errorf("query = %q, want the trimmed text", src.filter.Query)
+		}
+	})
+}
+
+func TestUpdateDeck(t *testing.T) {
+	ctx := context.Background()
+	update := func(src *fakeDecks, req *mtgv1.UpdateDeckRequest, opts ...Option) (*connect.Response[mtgv1.UpdateDeckResponse], error) {
+		all := append([]Option{WithDecks(src), asUser("u1")}, opts...)
+		return newServer(t, nil, all...).UpdateDeck(ctx, connect.NewRequest(req))
+	}
+	fresh := func() *fakeDecks {
+		return &fakeDecks{decks: map[string]*mtgv1.Deck{"d1": {Id: "d1", Name: "a deck"}}}
+	}
+	name := func(s string) *string { return &s }
+	mark := func(b bool) *bool { return &b }
+
+	t.Run("writes the name and the mark", func(t *testing.T) {
+		src := fresh()
+		res, err := update(src, &mtgv1.UpdateDeckRequest{DeckId: "d1", Name: name("  Elf ball  "), Favorite: mark(true)})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := res.Msg.GetDeck().GetName(); got != "Elf ball" {
+			t.Errorf("name = %q, want the trimmed name", got)
+		}
+		if !res.Msg.GetDeck().GetFavorite() {
+			t.Error("favorite = false")
+		}
+	})
+
+	t.Run("writes one field alone", func(t *testing.T) {
+		src := fresh()
+		res, err := update(src, &mtgv1.UpdateDeckRequest{DeckId: "d1", Favorite: mark(true)})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if res.Msg.GetDeck().GetName() != "a deck" {
+			t.Errorf("name = %q, want it unchanged", res.Msg.GetDeck().GetName())
+		}
+	})
+
+	t.Run("clears the mark", func(t *testing.T) {
+		src := &fakeDecks{decks: map[string]*mtgv1.Deck{"d1": {Id: "d1", Name: "a deck", Favorite: true}}}
+		res, err := update(src, &mtgv1.UpdateDeckRequest{DeckId: "d1", Favorite: mark(false)})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if res.Msg.GetDeck().GetFavorite() {
+			t.Error("favorite = true, want the mark cleared")
+		}
+	})
+
+	for _, tc := range []struct {
+		name string
+		req  *mtgv1.UpdateDeckRequest
+		want connect.Code
+	}{
+		{"no id", &mtgv1.UpdateDeckRequest{Name: name("x")}, connect.CodeInvalidArgument},
+		{"a bad id", &mtgv1.UpdateDeckRequest{DeckId: "a/b", Name: name("x")}, connect.CodeInvalidArgument},
+		{"an empty name", &mtgv1.UpdateDeckRequest{DeckId: "d1", Name: name("   ")}, connect.CodeInvalidArgument},
+		{"a long name", &mtgv1.UpdateDeckRequest{DeckId: "d1", Name: name(strings.Repeat("a", maxNameBytes+1))}, connect.CodeInvalidArgument},
+		{"nothing to write", &mtgv1.UpdateDeckRequest{DeckId: "d1"}, connect.CodeInvalidArgument},
+		{"an unknown deck", &mtgv1.UpdateDeckRequest{DeckId: "d9", Name: name("x")}, connect.CodeNotFound},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			src := fresh()
+			if _, err := update(src, tc.req); codeOf(t, err) != tc.want {
+				t.Errorf("code = %v, want %v", codeOf(t, err), tc.want)
+			}
+			if tc.want == connect.CodeInvalidArgument && src.updates != 0 {
+				t.Errorf("the store saw %d writes, want none", src.updates)
+			}
+		})
+	}
+
+	t.Run("unimplemented without a store", func(t *testing.T) {
+		s := newServer(t, nil, asUser("u1"))
+		_, err := s.UpdateDeck(ctx, connect.NewRequest(&mtgv1.UpdateDeckRequest{DeckId: "d1", Name: name("x")}))
+		if codeOf(t, err) != connect.CodeUnimplemented {
+			t.Errorf("code = %v", codeOf(t, err))
+		}
+	})
+
+	t.Run("unauthenticated without a user", func(t *testing.T) {
+		s := newServer(t, nil, WithDecks(fresh()))
+		_, err := s.UpdateDeck(ctx, connect.NewRequest(&mtgv1.UpdateDeckRequest{DeckId: "d1", Name: name("x")}))
+		if codeOf(t, err) != connect.CodeUnauthenticated {
+			t.Errorf("code = %v", codeOf(t, err))
+		}
+	})
+
+	t.Run("a store failure is internal", func(t *testing.T) {
+		bad := &fakeDecks{err: errors.New("firestore down")}
+		if _, err := update(bad, &mtgv1.UpdateDeckRequest{DeckId: "d1", Name: name("x")}); codeOf(t, err) != connect.CodeInternal {
+			t.Errorf("code = %v", codeOf(t, err))
+		}
+	})
+}
+
+func TestDeleteDeck(t *testing.T) {
+	ctx := context.Background()
+	del := func(src *fakeDecks, id string, opts ...Option) error {
+		all := append([]Option{WithDecks(src), asUser("u1")}, opts...)
+		_, err := newServer(t, nil, all...).DeleteDeck(ctx, connect.NewRequest(&mtgv1.DeleteDeckRequest{DeckId: id}))
+		return err
+	}
+	fresh := func() *fakeDecks {
+		return &fakeDecks{decks: map[string]*mtgv1.Deck{"d1": {Id: "d1"}}}
+	}
+
+	t.Run("removes the deck, and a second delete is not found", func(t *testing.T) {
+		src := fresh()
+		if err := del(src, "d1"); err != nil {
+			t.Fatal(err)
+		}
+		if len(src.deleted) != 1 || src.deleted[0] != "d1" {
+			t.Errorf("deleted = %v", src.deleted)
+		}
+		if err := del(src, "d1"); codeOf(t, err) != connect.CodeNotFound {
+			t.Errorf("code = %v", codeOf(t, err))
+		}
+	})
+
+	t.Run("an unknown deck is not found", func(t *testing.T) {
+		if err := del(fresh(), "d9"); codeOf(t, err) != connect.CodeNotFound {
+			t.Errorf("code = %v", codeOf(t, err))
+		}
+	})
+
+	t.Run("a bad id is an invalid argument", func(t *testing.T) {
+		if err := del(fresh(), "a/b"); codeOf(t, err) != connect.CodeInvalidArgument {
+			t.Errorf("code = %v", codeOf(t, err))
+		}
+	})
+
+	t.Run("no id is an invalid argument", func(t *testing.T) {
+		if err := del(fresh(), "  "); codeOf(t, err) != connect.CodeInvalidArgument {
+			t.Errorf("code = %v", codeOf(t, err))
+		}
+	})
+
+	t.Run("unimplemented without a store", func(t *testing.T) {
+		s := newServer(t, nil, asUser("u1"))
+		_, err := s.DeleteDeck(ctx, connect.NewRequest(&mtgv1.DeleteDeckRequest{DeckId: "d1"}))
+		if codeOf(t, err) != connect.CodeUnimplemented {
+			t.Errorf("code = %v", codeOf(t, err))
+		}
+	})
+
+	t.Run("a store failure is internal", func(t *testing.T) {
+		bad := &fakeDecks{err: errors.New("firestore down")}
+		if err := del(bad, "d1"); codeOf(t, err) != connect.CodeInternal {
 			t.Errorf("code = %v", codeOf(t, err))
 		}
 	})

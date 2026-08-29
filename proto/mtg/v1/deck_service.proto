@@ -3,6 +3,7 @@ syntax = "proto3";
 package mtg.v1;
 
 import "mtg/v1/deck.proto";
+import "mtg/v1/format.proto";
 import "mtg/v1/session.proto";
 
 option go_package = "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1";
@@ -20,6 +21,12 @@ service DeckService {
   // ExportDeck renders one of the caller's decks as text (D-15, D-307
   // to D-309).
   rpc ExportDeck(ExportDeckRequest) returns (ExportDeckResponse) {}
+  // UpdateDeck writes the two fields a user owns: the name and the
+  // favorite mark (PR-17). It changes nothing the agent built.
+  rpc UpdateDeck(UpdateDeckRequest) returns (UpdateDeckResponse) {}
+  // DeleteDeck removes one deck for good (PR-17). The session keeps the
+  // id in deck_ids, and the chat shows the deck as deleted.
+  rpc DeleteDeck(DeleteDeckRequest) returns (DeleteDeckResponse) {}
 }
 
 // ExportFormat names a text shape of a deck.
@@ -60,11 +67,49 @@ message GetDeckResponse {
   Deck deck = 1;
 }
 
-message ListDecksRequest {}
+message ListDecksRequest {
+  // page_size caps one page. Zero means 24, and the server caps it at 100.
+  int32 page_size = 1;
+  // page_token continues the listing of the same filter. An empty token
+  // starts at the newest deck. A token from another filter is an invalid
+  // argument.
+  string page_token = 2;
+  // format keeps the decks of one format. UNSPECIFIED keeps them all.
+  FormatId format = 3;
+  // favorite keeps the favorites when true, and the rest when false.
+  // Unset keeps them all.
+  optional bool favorite = 4;
+  // query keeps the decks whose name or commander name holds this text,
+  // without regard to case. Empty keeps them all.
+  string query = 5;
+}
 
 message ListDecksResponse {
   repeated Deck decks = 1;
+  // next_page_token reads the next page of the same filter. Empty means
+  // the listing ended.
+  string next_page_token = 2;
 }
+
+message UpdateDeckRequest {
+  string deck_id = 1;
+  // name renames the deck. Unset leaves the name as it is, and an empty
+  // string is an invalid argument.
+  optional string name = 2;
+  // favorite sets or clears the star. Unset leaves the mark as it is.
+  optional bool favorite = 3;
+}
+
+message UpdateDeckResponse {
+  // deck is the whole deck after the write.
+  Deck deck = 1;
+}
+
+message DeleteDeckRequest {
+  string deck_id = 1;
+}
+
+message DeleteDeckResponse {}
 
 message ValidateRequest {
   Deck deck = 1;

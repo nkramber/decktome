@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-08-29 correction pass 33 (PR-17 started on branch `pr-17`): the proto and the Go side of the deck library. `UpdateDeck`, `DeleteDeck`, `Deck.favorite`, `Deck.card_count`, and the paged, filtered `ListDecks`. OQ-47 asks whether the grid filters by power. Changes: PR-17, sequencing step 19, open question 7.
+
 2026-08-29 correction pass 32 (PR-16B, the visual pass, D-325 and D-326): the screens of PR-16 kept the composition of PR-11, so the app read as a test bench. The pass adds a type face, an elevation scale, a docked composer, and a thread with hierarchy. Changes: PR-16B, sequencing step 19.
 
 2026-08-29 correction pass 30 (PR-16 built on branch `pr-16`, D-323): the design system, the two themes, and the app shell. The first paint is 116.31 kB gzipped, from 179.81 kB. The bar of D-320 was out of reach, and D-323 amends it. Changes: PR-16, sequencing step 19.
@@ -608,7 +610,7 @@ CAUTION: D-320 set this bar at 200 kB of raw JavaScript, and a measurement showe
 
 > *In plain English:* the look and the bones. Buttons, dialogs, menus, and a dark mode that all match, on a layout that works on a phone. Nothing new to do yet, but everything looks and feels like one app.
 
-**PR-16B: The visual pass (D-325, D-326).** 🔧 built 2026-08-29 on branch `pr-16b`.
+**PR-16B: The visual pass (D-325, D-326).** ✅ merged 2026-08-29 (#48).
 PR-16 moved every screen onto the primitives and kept each composition, per D-317. So the system changed and the screens did not, and the app still read as the test bench of PR-11. The owner said so after the merge.
 
 The pass gives the app one type face, Geist, that ships with the build and waits on no network. It adds an elevation scale of three shadows, a wider radius scale, and a reading measure of about 68 characters.
@@ -622,14 +624,16 @@ Gate:
 - The 135 web tests hold. ✅
 - axe passes on every route in both themes. ✅
 - The first paint holds under 130 kB of gzipped JavaScript (D-323). ✅ 116.57 kB, from 116.31 kB. The font is a separate asset of 29.4 kB.
-- The owner reads the app in the browser. ⏳
+- The owner reads the app in the browser. ⏳ the owner merged the slice and reads it next.
 
 > *In plain English:* the app looked like a test bench with a dark mode on it. This makes it look like a product. A real typeface, depth, a chat that reads like a conversation, and a message box where you expect it.
 
 **PR-17: Deck library.**
 A grid of decks with the commander art, the name, the format, the power, the count, the buy cost, and the date. Search by name and commander, filter by format and power, sort by date, name, and cost, and a favorite star. A deck page holds the deck view, the export panel, and the actions: rename, favorite, delete, and share (PR-21). Version history comes from the `revised_from_deck_id` chain, with any two versions side by side and their diff. The grid compares any two decks.
 
-Contract, additive: `DeckService.UpdateDeck(name, favorite)`, `DeleteDeck`, `Deck.favorite`, and paging with filters on `ListDecks`, flat fields only (D-245).
+Contract, additive: `DeckService.UpdateDeck(name, favorite)`, `DeleteDeck`, `Deck.favorite`, `Deck.card_count`, and paging with filters on `ListDecks` (D-245). 🔧 the proto and the Go side landed 2026-08-29 on branch `pr-17`. The web side follows.
+
+The listing filter runs in Go over the rows Firestore returns, not as a Firestore query. One read serves every filter, and no composite index has to exist. A scan cap of 500 rows bounds the read, and a user beyond it needs a search index. The page token carries the offset and a fingerprint of the filter, so a token of another filter is an invalid argument.
 
 Gate:
 
@@ -775,7 +779,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 16. PR-9 variance. ⏸ out of MVP scope (D-256). It blocks nothing: the Phase 3 gate below reads PR-8's gate.
 17. **GATE.** Phase 3 starts only when PR-8's gate holds on the golden prompts. ✅ held on 2026-08-28, deck gate run 6.
 18. PR-11 ✅ merged 2026-08-28 (#38). PR-12 ✅ merged 2026-08-28 (#40). PR-12B ✅ merged 2026-08-29 (#41). PR-13 ✅ merged 2026-08-29 (#45). Then Phase 3B.
-19. **Phase 3B** (D-316, D-317): PR-16 to PR-23 in the order of the phase list. Each gate holds before the next slice starts. PR-16 ✅ merged 2026-08-29 (#47). PR-16B 🔧 the visual pass, branch `pr-16b`. The paid re-baseline of D-302 runs in parallel, on the owner's word.
+19. **Phase 3B** (D-316, D-317): PR-16 to PR-23 in the order of the phase list. Each gate holds before the next slice starts. PR-16 ✅ merged 2026-08-29 (#47). PR-16B ✅ merged 2026-08-29 (#48). PR-17 🔧 started, the proto and the Go side. The paid re-baseline of D-302 runs in parallel, on the owner's word.
 20. PR-15 eval harness. M-5 manual scoring runs on the first UI build (after PR-12).
 21. PR-14 meta, then I-1, I-2, I-3 on evidence.
 22. Phase 5 stays parked.
@@ -790,3 +794,4 @@ See `docs/open-questions.md` for the full list with "ask when" dates. The ones t
 4. PR-9's 30% variance number is a placeholder until PR-15 measures it. PR-9 is out of the MVP (D-256), so nothing waits on it.
 5. **OQ-45 the allowlist store.** D-314 allows one env var or one Firestore document. An env var needs a deploy per change, and a document needs an admin write path. PR-22 decides, and the owner confirms. Ask before PR-22.
 6. **OQ-46 the spend cap number.** PR-22 sets a per-user monthly cap from `Usage`. The number is the owner's. Ask before PR-22.
+7. **OQ-47 the power filter of the deck grid.** The UI plan asks for it in one section and names no field in the other. Ask before the PR-17 web slice.

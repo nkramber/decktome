@@ -11,9 +11,8 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 - PR-13 is merged (#45, D-307 to D-309). The owner did not run the export in the browser yet.
 - Phase 3B, the product UI, has a plan and no code yet (D-310 to D-322). The roadmap holds PR-16 to PR-23, and `docs/reference/ui-phase-plan-2026-08-29.md` holds the detail. The first slice is PR-16, the design system and the shell (D-317). The owner asked for the roadmap first and no code (D-319).
 - The Phase 3B roadmap merged (#46, D-310 to D-322).
-- PR-16 is merged (#47, D-323).
-- Branch `pr-16b` holds the visual pass (D-325, D-326). PR-16 kept the composition of every screen, per D-317, so the app still read as the test bench of PR-11. The pass adds the type face, the elevation scale, the docked composer, and a thread with hierarchy. The browser read waits for the owner.
-- Branch `pr-17` holds the proto and the Go side of the deck library. The web side follows. It carries no visual pass, so it needs a rebase after `pr-16b` merges.
+- PR-16 is merged (#47, D-323), and PR-16B is merged (#48, D-325 and D-326).
+- Branch `pr-17` holds the proto and the Go side of the deck library. The web side follows. OQ-47 waits for the owner before that.
 - A review of the PR-16 plan on 2026-08-29 fixed five items. The bundle gate had no unit. The first slice listed 19 primitives. The PR-22 entry decided OQ-45. The PR-21 rate limit read the wrong address. The open-questions table broke at OQ-45.
 - The web baseline of 2026-08-29, before PR-16: one chunk of 584.07 kB raw and 179.81 kB gzipped. It also holds 14.24 kB of CSS and 118 tests.
 - The tree is green on the branch: Go build, vet, `-race` tests, golangci-lint, `buf breaking`, web lint, typecheck, 135 web tests, and the web build. `make lint` runs the extended STE check and reports zero findings.
@@ -69,10 +68,22 @@ CAUTION: `tune-check` paired zero questions between run 24 and run 25, because t
 - `renderAt` in `src/test-utils.tsx` is async now, and every test awaits it. It warms the page modules and the auth SDK, then flushes one act.
 - `src/test-setup.ts` adds four jsdom stubs that the Radix menus need.
 
+## PR-17, what the Go side holds (2026-08-29)
+
+- `DeckService.UpdateDeck` writes the name and the favorite mark, and `DeleteDeck` removes a deck for good. Both are additive, and `buf breaking` passes.
+- `Deck.favorite` and `Deck.card_count` are new. The list view carries no cards, so it sets `card_count`. The deck list on screen reads `cards.length` today and always shows zero.
+- `ListDecks` takes `page_size`, `page_token`, `format`, `favorite`, and `query`.
+- The filter runs in Go over the rows Firestore returns, not as a query. One read serves every filter, and no composite index has to exist. The scan cap is 500 rows.
+- The stored document gains six flat fields. A deck written before PR-17 reads them as zero, and a rename fills them.
+- `internal/decks/filter_test.go` is new, and the emulator tests cover Update, Delete, and the filter. `make store-check` passes.
+
+CAUTION: a `t.Cleanup` can not delete from Firestore. Go cancels `t.Context` before a cleanup runs, so the delete fails and the next run reads the leftovers. Each emulator test takes a fresh user id instead.
+
 ## Next steps, in order
 
-1. The owner reads `pr-16b` in the browser, on a desktop and on a phone. The owner says what still reads as dated.
-2. Then PR-17 to PR-23 in order, one gate each.
+1. The owner reads the app in the browser, on a desktop and on a phone. The owner says what still reads as dated.
+2. The owner answers OQ-47. Then the PR-17 web side: the deck grid, the deck page, the version history, and the compare.
+3. Then PR-18 to PR-23 in order, one gate each.
 3. The owner runs the question gate and the deck gate to re-baseline (D-302), in parallel. Ask before each run. Write each to a new `GATE_OUT` file (D-65). Record the numbers here and in the roadmap.
 4. Before PR-22, ask OQ-45 (the allowlist store) and OQ-46 (the spend cap).
 5. After Phase 3B: PR-15, then PR-14.

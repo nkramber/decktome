@@ -4,8 +4,12 @@ package decksvc
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"connectrpc.com/connect"
@@ -31,11 +35,14 @@ type CollectionSource interface {
 // Option configures the server.
 type Option func(*Server)
 
-// DeckSource reads the decks a build kept (D-245). List answers from the
-// flat fields and carries no cards.
+// DeckSource reads and writes the decks a build kept (D-245). List
+// answers from the flat fields and carries no cards. Update writes the
+// two fields the user owns, and Delete removes a deck for good (PR-17).
 type DeckSource interface {
 	Get(ctx context.Context, uid, id string) (*mtgv1.Deck, error)
-	List(ctx context.Context, uid string, limit int) ([]*mtgv1.Deck, error)
+	List(ctx context.Context, uid string, f decks.Filter, scan int) ([]*mtgv1.Deck, error)
+	Update(ctx context.Context, uid, id string, name *string, favorite *bool) (*mtgv1.Deck, error)
+	Delete(ctx context.Context, uid, id string) error
 }
 
 // WithDecks wires the deck store. Without it GetDeck and ListDecks
@@ -51,9 +58,19 @@ func WithUser(userFn auth.UserFunc) Option {
 	return func(s *Server) { s.userFn = userFn }
 }
 
-// listLimit caps one ListDecks answer. The request carries no paging
-// field, so the cap keeps one response inside a sane size.
-const listLimit = 100
+// maxNameBytes caps a deck name, so one document keeps a sane size.
+const maxNameBytes = 200
+
+const (
+	// defaultPageSize serves a request that names no size.
+	defaultPageSize = 24
+	// maxPageSize caps one page, so one response stays a sane size.
+	maxPageSize = 100
+	// maxScan caps the rows one listing reads. The filter runs in Go, so
+	// a listing reads the newest rows and keeps the ones that pass. A
+	// user with more decks than this needs a search index (PR-17).
+	maxScan = 500
+)
 
 // WithCollections wires the ownership check. Without it, Validate refuses
 // a request that names a collection.
@@ -89,6 +106,9 @@ var (
 	errNoDeckID       = errors.New("give a deck id")
 	errNoUser         = errors.New("no user in the request context")
 	errBadDeckID      = fmt.Errorf("deck_id: %w", gzstore.ErrBadID)
+	errEmptyName      = errors.New("name: a deck name needs a character that is not a space")
+	errLongName       = fmt.Errorf("name: a deck name takes at most %d bytes", maxNameBytes)
+	errNoUpdate       = errors.New("give a name or a favorite mark to write")
 	errBadCollection  = fmt.Errorf("collection_id: %w", gzstore.ErrBadID)
 )
 
@@ -178,8 +198,8 @@ func (s *Server) GetDeck(ctx context.Context, req *connect.Request[mtgv1.GetDeck
 
 // ListDecks reads the caller's decks, newest first (D-245). The list
 // carries the flat fields of each deck and no cards: GetDeck reads one
-// deck whole.
-func (s *Server) ListDecks(ctx context.Context, _ *connect.Request[mtgv1.ListDecksRequest]) (*connect.Response[mtgv1.ListDecksResponse], error) {
+// deck whole. The filter and the page come from the request (PR-17).
+func (s *Server) ListDecks(ctx context.Context, req *connect.Request[mtgv1.ListDecksRequest]) (*connect.Response[mtgv1.ListDecksResponse], error) {
 	if s.decks == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoDeckStore)
 	}
@@ -187,11 +207,152 @@ func (s *Server) ListDecks(ctx context.Context, _ *connect.Request[mtgv1.ListDec
 	if uid == "" {
 		return nil, connect.NewError(connect.CodeUnauthenticated, errNoUser)
 	}
-	list, err := s.decks.List(ctx, uid, listLimit)
+	filter := decks.Filter{
+		Format:   req.Msg.GetFormat(),
+		Favorite: req.Msg.Favorite,
+		Query:    strings.TrimSpace(req.Msg.GetQuery()),
+	}
+	offset, err := decodePageToken(req.Msg.GetPageToken(), filter)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	}
+	size := pageSize(req.Msg.GetPageSize())
+	list, err := s.decks.List(ctx, uid, filter, maxScan)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	return connect.NewResponse(&mtgv1.ListDecksResponse{Decks: list}), nil
+	page, next := slicePage(list, offset, size, filter)
+	return connect.NewResponse(&mtgv1.ListDecksResponse{Decks: page, NextPageToken: next}), nil
+}
+
+// pageSize applies the default and the cap.
+func pageSize(n int32) int {
+	switch {
+	case n <= 0:
+		return defaultPageSize
+	case n > maxPageSize:
+		return maxPageSize
+	default:
+		return int(n)
+	}
+}
+
+// slicePage cuts one page and names the next token. An offset past the
+// end gives an empty page and no token.
+func slicePage(list []*mtgv1.Deck, offset, size int, f decks.Filter) ([]*mtgv1.Deck, string) {
+	if offset >= len(list) {
+		return nil, ""
+	}
+	end := offset + size
+	if end >= len(list) {
+		return list[offset:], ""
+	}
+	return list[offset:end], encodePageToken(end, f)
+}
+
+// The page token carries the offset and a fingerprint of the filter. A
+// token of another filter is an invalid argument, because its offset
+// counts a different list.
+var errBadPageToken = errors.New("page_token: this token belongs to another filter or another listing")
+
+func filterFingerprint(f decks.Filter) string {
+	fav := "unset"
+	if f.Favorite != nil {
+		fav = strconv.FormatBool(*f.Favorite)
+	}
+	sum := sha256.Sum256([]byte(fmt.Sprintf("%d\x00%s\x00%s", f.Format, fav, strings.ToLower(f.Query))))
+	return hex.EncodeToString(sum[:6])
+}
+
+func encodePageToken(offset int, f decks.Filter) string {
+	return base64.RawURLEncoding.EncodeToString([]byte(fmt.Sprintf("%d.%s", offset, filterFingerprint(f))))
+}
+
+func decodePageToken(token string, f decks.Filter) (int, error) {
+	if token == "" {
+		return 0, nil
+	}
+	raw, err := base64.RawURLEncoding.DecodeString(token)
+	if err != nil {
+		return 0, errBadPageToken
+	}
+	offsetText, fingerprint, ok := strings.Cut(string(raw), ".")
+	if !ok || fingerprint != filterFingerprint(f) {
+		return 0, errBadPageToken
+	}
+	offset, err := strconv.Atoi(offsetText)
+	if err != nil || offset < 0 {
+		return 0, errBadPageToken
+	}
+	return offset, nil
+}
+
+// UpdateDeck writes the name and the favorite mark (PR-17). An unset
+// field stays as it is, and an empty name is an invalid argument.
+func (s *Server) UpdateDeck(ctx context.Context, req *connect.Request[mtgv1.UpdateDeckRequest]) (*connect.Response[mtgv1.UpdateDeckResponse], error) {
+	uid, id, err := s.deckRef(ctx, req.Msg.GetDeckId())
+	if err != nil {
+		return nil, err
+	}
+	name := req.Msg.Name
+	if name != nil {
+		trimmed := strings.TrimSpace(*name)
+		if trimmed == "" {
+			return nil, connect.NewError(connect.CodeInvalidArgument, errEmptyName)
+		}
+		if len(trimmed) > maxNameBytes {
+			return nil, connect.NewError(connect.CodeInvalidArgument, errLongName)
+		}
+		name = &trimmed
+	}
+	if name == nil && req.Msg.Favorite == nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errNoUpdate)
+	}
+	d, err := s.decks.Update(ctx, uid, id, name, req.Msg.Favorite)
+	if errors.Is(err, decks.ErrNotFound) {
+		return nil, connect.NewError(connect.CodeNotFound, err)
+	}
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	return connect.NewResponse(&mtgv1.UpdateDeckResponse{Deck: d}), nil
+}
+
+// DeleteDeck removes one deck for good (PR-17). A second delete of the
+// same id answers NotFound.
+func (s *Server) DeleteDeck(ctx context.Context, req *connect.Request[mtgv1.DeleteDeckRequest]) (*connect.Response[mtgv1.DeleteDeckResponse], error) {
+	uid, id, err := s.deckRef(ctx, req.Msg.GetDeckId())
+	if err != nil {
+		return nil, err
+	}
+	err = s.decks.Delete(ctx, uid, id)
+	if errors.Is(err, decks.ErrNotFound) {
+		return nil, connect.NewError(connect.CodeNotFound, err)
+	}
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	return connect.NewResponse(&mtgv1.DeleteDeckResponse{}), nil
+}
+
+// deckRef checks the store, the id, and the caller. Every write of one
+// deck starts here.
+func (s *Server) deckRef(ctx context.Context, rawID string) (uid, id string, err error) {
+	if s.decks == nil {
+		return "", "", connect.NewError(connect.CodeUnimplemented, errNoDeckStore)
+	}
+	id = strings.TrimSpace(rawID)
+	if id == "" {
+		return "", "", connect.NewError(connect.CodeInvalidArgument, errNoDeckID)
+	}
+	if !gzstore.ValidID(id) {
+		return "", "", connect.NewError(connect.CodeInvalidArgument, errBadDeckID)
+	}
+	uid = s.user(ctx)
+	if uid == "" {
+		return "", "", connect.NewError(connect.CodeUnauthenticated, errNoUser)
+	}
+	return uid, id, nil
 }
 
 // ExportDeck renders one of the caller's decks as text (D-15). The card
