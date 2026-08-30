@@ -62,7 +62,7 @@
 /* The identity wash. An element sets --identity-a and --identity-b, and
    the wash carries the deck's own colors across it (D-327). */
 @utility identity-wash {
-  background-image: linear-gradient(135deg, color-mix(in oklab, var(--identity-a) 30%, transparent) 0%, color-mix(in oklab, var(--identity-b) 18%, transparent) 55%, transparent 100%);
+  background-image: linear-gradient(135deg, color-mix(in oklab, var(--identity-a) 55%, transparent) 0%, color-mix(in oklab, var(--identity-b) 38%, transparent) 58%, color-mix(in oklab, var(--identity-b) 8%, transparent) 100%);
 }
 
 /* The identity rule is the same colors as a hairline, for a heading or

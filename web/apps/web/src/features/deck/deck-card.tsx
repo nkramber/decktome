@@ -6,7 +6,7 @@ import { Link } from "react-router";
 
 import { Button } from "../../components/ui/button";
 import { cn } from "../../lib/cn";
-import { identityOf, identityVars } from "./color-identity";
+import { identityOfCommanders, identityVars } from "./color-identity";
 import { formatLabel, powerLabel, priceText } from "./deck-stats";
 import { ManaPips } from "./mana-pips";
 
@@ -15,7 +15,7 @@ import { ManaPips } from "./mana-pips";
 // (D-327). Scryfall serves that artwork as art_crop, so the app crops
 // nothing itself.
 export function DeckCard({ deck, byId, onFavorite }: { deck: Deck; byId: Map<string, Card>; onFavorite: (favorite: boolean) => void }) {
-  const identity = identityOf(deck.commanderOracleIds, byId);
+  const identity = identityOfCommanders(deck.commanderOracleIds, byId);
   const commander = deck.commanderOracleIds.map((id) => byId.get(id)).find(Boolean);
   const face = commander?.faces?.[0] ?? commander?.defaultPrinting;
   const art = face?.imageUris?.artCrop ?? "";
@@ -26,14 +26,15 @@ export function DeckCard({ deck, byId, onFavorite }: { deck: Deck; byId: Map<str
   return (
     <li className="group relative isolate flex flex-col overflow-hidden rounded-panel border border-border bg-surface shadow-card transition-shadow hover:shadow-raised" style={identityVars(identity)}>
       <span aria-hidden="true" className="identity-rule absolute inset-x-0 top-0 z-10 h-1" />
-      <div className="relative h-28 overflow-hidden bg-muted">
+      <div className="relative h-36 overflow-hidden bg-muted">
         {art && !artFailed ? (
-          <img src={art} alt="" aria-hidden="true" loading="lazy" onError={() => setArtFailed(true)} className="size-full object-cover opacity-70 transition-transform duration-500 group-hover:scale-105" />
-        ) : (
-          <span aria-hidden="true" className="identity-wash absolute inset-0" />
-        )}
-        <span aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-surface via-surface/70 to-transparent" />
-        <span aria-hidden="true" className="identity-wash absolute inset-0 opacity-70" />
+          <img src={art} alt="" aria-hidden="true" loading="lazy" onError={() => setArtFailed(true)} className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.08]" />
+        ) : null}
+        {/* The identity paints over the art, so the deck reads as its own
+            colors from across the room. The art keeps the texture. */}
+        <span aria-hidden="true" className="identity-wash absolute inset-0 mix-blend-soft-light" />
+        <span aria-hidden="true" className="identity-wash absolute inset-0 opacity-80" />
+        <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-surface to-transparent" />
         <Button
           variant="ghost"
           size="icon"
@@ -46,16 +47,17 @@ export function DeckCard({ deck, byId, onFavorite }: { deck: Deck; byId: Map<str
         </Button>
       </div>
 
-      <div className="flex grow flex-col gap-2 p-4 pt-2">
+      <div className="relative z-10 -mt-9 flex grow flex-col gap-2 p-4">
         <div className="flex items-start justify-between gap-2">
-          <h2 className="wrap-anywhere text-base leading-tight font-semibold tracking-tight text-balance">
+          <h2 className="wrap-anywhere text-lg leading-tight font-semibold tracking-tight text-balance">
             {/* The whole card is the link target, so the row needs no second control. */}
             <Link to={`/decks/${deck.id}`} className="after:absolute after:inset-0 after:content-['']">
               {title}
             </Link>
           </h2>
-          <ManaPips colors={identity} className="mt-1 shrink-0" />
+          <ManaPips colors={identity} className="mt-1.5 shrink-0" />
         </div>
+        {commander?.name && <p className="-mt-1 truncate text-sm text-muted-foreground">{commander.name}</p>}
 
         <p className="text-xs text-muted-foreground">
           {formatLabel(deck.format?.id, deck.format?.houseRules ?? "")}

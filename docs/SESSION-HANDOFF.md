@@ -92,6 +92,15 @@ D-311 kept every surface neutral and let the card art carry the color. The app r
 
 CAUTION: the binder head calls `GetCollection`, and the answer carries every entry. The owner's export holds 4,952 rows, so one page load moves about one megabyte. PR-18 adds paging, and the head reads a page then.
 
+## Reading the app without the owner (2026-08-30)
+
+`@playwright/test` is a dev dependency of `web/apps/web` now, and Chromium sits in the local cache. A session can read its own work.
+
+- Start the Auth emulator and the Vite dev server. Then drive Chromium with a script that answers every `/mtg.v1.*` call from canned JSON, so no backend has to run.
+- A Connect Timestamp is an RFC 3339 string in JSON, not a `{seconds}` object. A `{seconds}` stub fails with "cannot decode message google.protobuf.Timestamp".
+- The script lives outside the repo, in the session scratchpad. It must run from `web/apps/web`, or the bare import of `@playwright/test` does not resolve.
+- PR-23 holds the real smoke flow (D-313). This is a reading tool, not that.
+
 ## Next steps, in order
 
 1. The owner reads the app in the browser, on a desktop and on a phone. The owner says what still reads as dated.

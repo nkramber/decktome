@@ -60,6 +60,13 @@
   --role-wincon: oklch(0.8 0.15 88);
   --role-other: oklch(0.72 0.02 265);
 
+  /* The four rarities. The game prints silver and black, and neither one
+     reads on a dark track, so these lift toward the light. */
+  --rarity-mythic: oklch(0.66 0.2 32);
+  --rarity-rare: oklch(0.82 0.14 82);
+  --rarity-uncommon: oklch(0.74 0.035 235);
+  --rarity-common: oklch(0.5 0.012 265);
+
   /* Elevation. On a dark ground a surface lifts with its own light. */
   --shadow-card: 0 1px 2px oklch(0 0 0 / 0.4), 0 2px 6px oklch(0 0 0 / 0.3);
   --shadow-raised: 0 2px 6px oklch(0 0 0 / 0.4), 0 12px 32px oklch(0 0 0 / 0.45);
@@ -107,6 +114,11 @@
   --role-synergy: oklch(0.52 0.15 320);
   --role-wincon: oklch(0.58 0.14 85);
   --role-other: oklch(0.55 0.02 265);
+
+  --rarity-mythic: oklch(0.55 0.2 32);
+  --rarity-rare: oklch(0.62 0.13 82);
+  --rarity-uncommon: oklch(0.58 0.035 235);
+  --rarity-common: oklch(0.72 0.012 265);
 
   --shadow-card: 0 1px 2px oklch(0.2 0.02 265 / 0.06), 0 2px 6px oklch(0.2 0.02 265 / 0.07);
   --shadow-raised: 0 2px 6px oklch(0.2 0.02 265 / 0.07), 0 12px 32px oklch(0.2 0.02 265 / 0.1);

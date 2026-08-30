@@ -37,17 +37,23 @@ export function sortIdentity(colors: Color[]): Color[] {
   return wubrg.filter((c) => held.has(c));
 }
 
-// identityOf reads the color identity of a deck from its commanders, and
-// falls back to every card it holds. A list view carries no cards, so the
-// caller passes the commander cards it fetched.
-export function identityOf(commanderIds: string[], byId: Map<string, Card>): Color[] {
+// identityOfCommanders reads the identity of the named commanders alone.
+// The map may hold the commanders of many decks, as the library grid
+// does, so nothing but the named ids counts. A card the index has not
+// answered yet gives no color, and so does a commander that truly has
+// none: both read as colorless, which is correct in both cases.
+export function identityOfCommanders(commanderIds: string[], byId: Map<string, Card>): Color[] {
   const colors: Color[] = [];
   for (const id of commanderIds) {
-    // A card the index has not filled carries no identity yet, and a
-    // partial card carries no field at all. Neither one is an error.
     colors.push(...(byId.get(id)?.colorIdentity ?? []));
   }
-  if (colors.length > 0) return sortIdentity(colors);
+  return sortIdentity(colors);
+}
+
+// identityOfCards reads the identity of every card in the map. Only a
+// view that holds one deck's own cards may call it.
+export function identityOfCards(byId: Map<string, Card>): Color[] {
+  const colors: Color[] = [];
   for (const card of byId.values()) colors.push(...(card.colorIdentity ?? []));
   return sortIdentity(colors);
 }

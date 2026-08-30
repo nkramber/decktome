@@ -4,7 +4,7 @@ import { CardRole, type Deck, type DeckCard, Severity } from "@mtg/api-client/mt
 import { errorMessage } from "../../lib/errors";
 import { ExportPanel } from "../export/export-panel";
 import { CardTile } from "./card-tile";
-import { identityOf, identityVars, roleToken } from "./color-identity";
+import { identityOfCards, identityOfCommanders, identityVars, roleToken } from "./color-identity";
 import { ManaPips } from "./mana-pips";
 import {
   colorLetters,
@@ -64,13 +64,23 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
   const findings = (validation?.findings ?? []).filter((f) => !(f.code === "not_owned" && f.severity !== Severity.BLOCK));
   const legalityAsOf = deck.legalityAsOf || validation?.legalityAsOf || "an unknown date";
   const curveMax = Math.max(1, ...curve);
+  const sourcesMax = Math.max(1, ...sourceRows.map((c) => sources.get(c.color) ?? 0));
   // The deck owns the color of its own page (D-327).
-  const identity = identityOf(deck.commanderOracleIds, byId);
+  // The commanders name the identity. A deck with none, a 60-card deck,
+  // reads its own cards, and this view holds only its own cards.
+  const commanderCard = deck.commanderOracleIds.map((id) => byId.get(id)).find(Boolean);
+  const commanderArt = commanderCard?.faces?.[0]?.imageUris?.artCrop ?? commanderCard?.defaultPrinting?.imageUris?.artCrop ?? "";
+  const fromCommanders = identityOfCommanders(deck.commanderOracleIds, byId);
+  const identity = fromCommanders.length > 0 ? fromCommanders : identityOfCards(byId);
 
   return (
     <article aria-labelledby={`deck-title-${deck.id}`} className="flex flex-col gap-5" style={identityVars(identity)}>
-      <header className="relative isolate flex flex-col gap-1.5 overflow-hidden rounded-panel border border-border bg-surface p-5 shadow-card">
+      <header className="relative isolate flex flex-col gap-1.5 overflow-hidden rounded-panel border border-border bg-surface p-6 shadow-card">
+        {/* The commander's own artwork sits behind its deck. Scryfall
+            serves it as art_crop, so the app crops nothing (D-6). */}
+        {commanderArt && <img src={commanderArt} alt="" aria-hidden="true" className="pointer-events-none absolute inset-0 -z-20 size-full object-cover" />}
         <span aria-hidden="true" className="identity-wash pointer-events-none absolute inset-0 -z-10" />
+        <span aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-r from-surface/85 via-surface/70 to-surface/40" />
         <span aria-hidden="true" className="identity-rule absolute inset-x-0 top-0 h-1" />
         <div className="flex flex-wrap items-center gap-3">
           <h2 id={`deck-title-${deck.id}`} className="wrap-anywhere text-2xl font-semibold tracking-tight text-balance">
@@ -96,8 +106,6 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
         </p>
         {deck.summary && <p className="mt-2 max-w-measure leading-relaxed">{deck.summary}</p>}
       </header>
-
-      <ExportPanel deck={deck} byId={byId} />
 
       {deck.revisionNote && (
         <section aria-labelledby={`revision-title-${deck.id}`} className="rounded-card border border-accent/40 bg-accent/5 p-3 text-sm">
@@ -155,65 +163,71 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
       </div>
 
       {cards.data && (
-        <div className="@container grid gap-6 rounded-card border border-border bg-surface p-4 shadow-card @md:grid-cols-2">
-          <table className="text-sm">
-            <caption className="text-left font-medium">Mana curve, lands excluded</caption>
-            <thead>
+        <div className="@container panel-lit rounded-panel border border-border bg-surface p-5 backdrop-blur-sm">
+          <div className="grid items-start gap-8 @2xl:grid-cols-2">
+          <table className="w-full text-sm">
+            <caption className="mb-3 border-b border-border pb-2 text-left text-sm font-semibold tracking-wide uppercase">Mana curve, lands excluded</caption>
+            <thead className="sr-only">
               <tr>
-                <th scope="col" className="pr-2 text-left">
-                  Mana value
-                </th>
-                <th scope="col" className="text-left">
-                  Cards
-                </th>
+                <th scope="col">Mana value</th>
+                <th scope="col">Cards</th>
               </tr>
             </thead>
             <tbody>
               {curveSteps.map((step, i) => (
                 <tr key={step}>
-                  <th scope="row" className="pr-2 text-left font-normal">
+                  <th scope="row" className="w-8 py-1 pr-3 text-left font-normal tabular-nums text-muted-foreground">
                     {step}
                   </th>
-                  <td>
-                    <span className="flex items-center gap-2">
-                      <span className="block h-3 w-24 max-w-full rounded-sm bg-muted" aria-hidden="true">
-                        <span className="block h-3 rounded-sm bg-accent" style={{ width: `${(curve[i] / curveMax) * 100}%` }} />
+                  <td className="py-1">
+                    <span className="flex items-center gap-3">
+                      <span className="block h-2 max-w-64 grow rounded-full bg-muted" aria-hidden="true">
+                        <span className="block h-2 rounded-full bg-accent transition-[width] duration-500" style={{ width: `${(curve[i] / curveMax) * 100}%` }} />
                       </span>
-                      {curve[i]}
+                      <span className="w-6 text-right tabular-nums">{curve[i]}</span>
                     </span>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <table className="text-sm">
-            <caption className="text-left font-medium">Mana sources, cards that make each of the deck's colors</caption>
-            <thead>
+          <table className="w-full text-sm">
+            <caption className="mb-3 border-b border-border pb-2 text-left text-sm font-semibold tracking-wide uppercase">Mana sources, cards that make each of the deck's colors</caption>
+            <thead className="sr-only">
               <tr>
-                <th scope="col" className="pr-2 text-left">
-                  Color
-                </th>
-                <th scope="col" className="text-left">
-                  Sources
-                </th>
+                <th scope="col">Color</th>
+                <th scope="col">Sources</th>
               </tr>
             </thead>
             <tbody>
-              {sourceRows.map((c) => (
-                <tr key={c.letter}>
-                  <th scope="row" className="pr-2 text-left font-normal">
-                    <span className="flex items-center gap-2">
-                      <span className={`inline-block size-3 rounded-full border border-border ${manaSwatch[c.letter] ?? "bg-mana-c"}`} aria-hidden="true" />
-                      {c.name} ({c.letter})
-                    </span>
-                  </th>
-                  <td>{sources.get(c.color) ?? 0}</td>
-                </tr>
-              ))}
+              {sourceRows.map((c) => {
+                const n = sources.get(c.color) ?? 0;
+                return (
+                  <tr key={c.letter}>
+                    <th scope="row" className="py-1 pr-3 text-left font-normal whitespace-nowrap">
+                      <span className="flex items-center gap-2">
+                        <span className={`inline-block size-3 rounded-full ring-1 ring-black/25 ${manaSwatch[c.letter] ?? "bg-mana-c"}`} aria-hidden="true" />
+                        <span className="text-muted-foreground">{c.name}</span>
+                      </span>
+                    </th>
+                    <td className="py-1">
+                      <span className="flex items-center gap-3">
+                        <span className="block h-2 max-w-64 grow rounded-full bg-muted" aria-hidden="true">
+                          <span className={`block h-2 rounded-full transition-[width] duration-500 ${manaSwatch[c.letter] ?? "bg-mana-c"}`} style={{ width: `${(n / sourcesMax) * 100}%` }} />
+                        </span>
+                        <span className="w-6 text-right tabular-nums">{n}</span>
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
+          </div>
         </div>
       )}
+
+      <ExportPanel deck={deck} byId={byId} />
 
       <p className="text-xs text-muted-foreground">
         Card images and card text are unofficial Fan Content permitted under the Wizards of the Coast Fan Content Policy. They are

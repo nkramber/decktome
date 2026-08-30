@@ -5,10 +5,10 @@ import { artIds, statsOf, useCollectionArt } from "./use-collection";
 
 // The rarity of a printing carries the color the game prints it in.
 const rarityToken: Record<string, string> = {
-  mythic: "var(--role-removal)",
-  rare: "var(--warning)",
-  uncommon: "var(--mana-c)",
-  common: "var(--muted-foreground)",
+  mythic: "var(--rarity-mythic)",
+  rare: "var(--rarity-rare)",
+  uncommon: "var(--rarity-uncommon)",
+  common: "var(--rarity-common)",
 };
 
 const artCount = 10;
@@ -23,14 +23,14 @@ export function CollectionHero({ collection, loading }: { collection: Collection
 
   return (
     <section aria-labelledby="binder-title" className="panel-lit relative isolate overflow-hidden rounded-panel border border-border bg-surface backdrop-blur-sm">
-      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 flex h-40 justify-center gap-2 opacity-30">
-        {cards.map((card, i) => {
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 flex opacity-55">
+        {cards.map((card) => {
           const art = card.faces?.[0]?.imageUris?.artCrop ?? card.defaultPrinting?.imageUris?.artCrop ?? "";
           if (!art) return null;
-          return <img key={card.oracleId} src={art} alt="" loading="lazy" className="h-40 w-32 shrink-0 object-cover" style={{ transform: `translateY(${(i % 3) * 6}px)` }} />;
+          return <img key={card.oracleId} src={art} alt="" loading="lazy" className="h-full min-w-0 flex-1 object-cover" />;
         })}
       </div>
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-surface/85 to-surface" />
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-r from-surface via-surface/90 to-surface/60" />
 
       <div className="relative flex flex-col gap-5 p-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
