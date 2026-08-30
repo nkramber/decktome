@@ -19,7 +19,9 @@ import { cn } from "../../lib/cn";
 import { errorMessage } from "../../lib/errors";
 import { maxUploadBytes } from "../../lib/limits";
 import { useAppStore } from "../../lib/store";
+import { CollectionHero } from "./collection-hero";
 import { ImportResult } from "./import-result";
+import { useCollection } from "./use-collection";
 
 // The collection screen (ui plan, step 2). Upload a ManaBox CSV, or skip and
 // build from any card (D-37). Earlier uploads come from ListCollections.
@@ -87,11 +89,18 @@ export function CollectionPage() {
 
   const collections = list.data?.collections ?? [];
   const active = collections.find((c) => c.id === collectionId) ?? result?.collection;
+  // The binder of the active collection, for the head of the screen. It
+  // loads once, and no other screen needs it (D-327).
+  const binder = useCollection(collectionId);
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-6 p-4 md:p-6">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 md:p-6">
       <PageHeader title="Your collection" description="Upload a ManaBox export, or skip it and build from any card." />
 
+      {binder.data?.collection && <CollectionHero collection={binder.data.collection} loading={binder.isPending} />}
+      {collectionId !== "" && binder.isPending && <Skeleton className="h-56 w-full rounded-panel" />}
+
+      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
       <form onSubmit={onSubmit}>
         <Card>
           <CardHeader>
@@ -130,8 +139,6 @@ export function CollectionPage() {
           </CardContent>
         </Card>
       </form>
-
-      {result && <ImportResult result={result} />}
 
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-medium">Earlier uploads</h2>
@@ -176,6 +183,9 @@ export function CollectionPage() {
           </ul>
         )}
       </section>
+      </div>
+
+      {result && <ImportResult result={result} />}
 
       <Card>
         <CardContent className="flex flex-wrap items-center gap-4">

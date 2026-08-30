@@ -13,11 +13,15 @@ vi.mock("firebase/auth");
 
 const importCollection = vi.fn();
 const listCollections = vi.fn();
+const getCollection = vi.fn();
+const getCards = vi.fn();
 vi.mock("../../lib/api", () => ({
   healthClient: { check: () => Promise.resolve({ status: "ok", version: "test", cardSnapshot: "none" }) },
+  cardClient: { getCards: (...args: unknown[]) => getCards(...args) },
   collectionClient: {
     importCollection: (...args: unknown[]) => importCollection(...args),
     listCollections: (...args: unknown[]) => listCollections(...args),
+    getCollection: (...args: unknown[]) => getCollection(...args),
   },
 }));
 
@@ -32,7 +36,54 @@ beforeEach(() => {
   useAppStore.setState({ collectionId: "", sessionId: "", poolMode: "any" });
   importCollection.mockReset();
   listCollections.mockReset();
+  getCollection.mockReset();
+  getCards.mockReset();
   listCollections.mockResolvedValue({ collections: earlier });
+  getCollection.mockResolvedValue({
+    collection: {
+      id: "c-old",
+      name: "binder-july.csv",
+      cardCount: 4317,
+      importedAt: { seconds: 1756000000n, nanos: 0 },
+      entries: [
+        { oracleId: "o-bolt", name: "Lightning Bolt", quantity: 4, rarity: "common", setName: "Alpha", setCode: "lea" },
+        { oracleId: "o-jace", name: "Jace, the Mind Sculptor", quantity: 1, rarity: "mythic", setName: "Worldwake", setCode: "wwk" },
+        { oracleId: "o-bolt", name: "Lightning Bolt", quantity: 2, rarity: "common", setName: "Alpha", setCode: "lea" },
+      ],
+    },
+  });
+  getCards.mockResolvedValue({
+    cards: [{ oracleId: "o-jace", name: "Jace, the Mind Sculptor", faces: [], defaultPrinting: { artist: "A", imageUris: { artCrop: "https://x/a.jpg" } } }],
+    missingOracleIds: [],
+  });
+});
+
+describe("the binder head", () => {
+  it("shows nothing until a collection is active", async () => {
+    await renderAt("/collection");
+    await screen.findByRole("button", { name: "binder-july.csv" });
+    expect(getCollection).not.toHaveBeenCalled();
+  });
+
+  it("counts the cards, the unique cards, and the rarity of the active collection", async () => {
+    useAppStore.setState({ collectionId: "c-old", poolMode: "owned" });
+    await renderAt("/collection");
+    // 4 + 1 + 2 = 7 cards over two Oracle ids.
+    expect(await screen.findByText("7")).toBeInTheDocument();
+    expect(screen.getByText("Unique cards")).toBeInTheDocument();
+    expect(screen.getByText("2")).toBeInTheDocument();
+    expect(screen.getByText(/Mythic/)).toBeInTheDocument();
+    expect(screen.getByText(/Common/)).toBeInTheDocument();
+    expect(getCollection).toHaveBeenCalledWith({ collectionId: "c-old" });
+  });
+
+  it("asks for the art of the rarest cards first", async () => {
+    useAppStore.setState({ collectionId: "c-old", poolMode: "owned" });
+    await renderAt("/collection");
+    await screen.findByText("7");
+    // The mythic sorts before the common.
+    expect(getCards).toHaveBeenCalledWith({ oracleIds: ["o-jace", "o-bolt"] });
+  });
 });
 
 describe("CollectionPage", () => {

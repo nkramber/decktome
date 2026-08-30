@@ -131,6 +131,10 @@ Each action round-trips through the API and shows in the grid without a reload. 
 - `CollectionService.DiffCollections(a, b)`: the added, removed, and changed entries by Oracle id.
 - `GetCollectionRequest` gains `page_size` and `page_token`. A binder page carries 200 entries.
 
+The head of the collection screen came forward from PR-18 to PR-17, because the screen was a form with nothing on it (D-327). It shows the card count, the unique cards, the rarity spread, and the art of the rarest ten cards.
+
+CAUTION: that head calls `GetCollection`, and the answer carries every entry. The owner's export holds 4,952 rows, so one page load moves about one megabyte. `GetCollectionRequest` gains paging in this slice, and the head reads a page instead.
+
 ### 5.3 Gate
 
 The diff of the same file uploaded twice is empty. The binder of the owner's export scrolls at 60 frames per second on the owner's laptop, measured in the browser's performance panel. A deleted collection that a session names makes the session fall back to any-card mode with a notice (D-37).

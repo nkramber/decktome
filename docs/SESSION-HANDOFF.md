@@ -87,6 +87,10 @@ D-311 kept every surface neutral and let the card art carry the color. The app r
 - `src/features/deck/color-identity.ts` reads the color identity of a deck from its commander. `identityVars` sets `--identity-a` and `--identity-b` on one element, and the `identity-wash` and `identity-rule` utilities read them.
 - Each card role carries its own hue through `roleToken`.
 - `ManaPips` shows an identity as pips, and its screen-reader label names the colors in words.
+- The ground of every page carries two soft lights and a fine grain. A panel takes a hairline of its own light along its top edge.
+- The collection screen shows the binder: the count, the unique cards, the rarity spread, and the art of the rarest ten cards. It came forward from PR-18.
+
+CAUTION: the binder head calls `GetCollection`, and the answer carries every entry. The owner's export holds 4,952 rows, so one page load moves about one megabyte. PR-18 adds paging, and the head reads a page then.
 
 ## Next steps, in order
 

@@ -10,11 +10,11 @@
   /* Neutral scale and surfaces. The base is a blue-black, not a grey:
      card art reads warmer against a cool ground. */
   --background: oklch(0.145 0.013 265);
-  --surface: oklch(0.192 0.015 265);
+  --surface: oklch(0.192 0.015 265 / 0.82);
   --surface-foreground: oklch(0.97 0.005 265);
   --raised: oklch(0.235 0.016 265);
   --foreground: oklch(0.97 0.005 265);
-  --muted: oklch(0.245 0.015 265);
+  --muted: oklch(0.245 0.015 265 / 0.7);
   --muted-foreground: oklch(0.735 0.018 265);
   --border: oklch(0.295 0.017 265);
 

@@ -50,9 +50,9 @@ export function Layout() {
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       {user && !phone && (
-        <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col gap-5 border-r border-border bg-surface p-3">
+        <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col gap-5 border-r border-border bg-surface/60 p-3 backdrop-blur-xl">
           <Link to="/" className="flex items-center gap-2.5 rounded-lg px-2 py-2">
-            <span aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-lg bg-accent text-accent-foreground shadow-card">
+            <span aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-lg bg-accent text-accent-foreground shadow-[0_0_0_1px_color-mix(in_oklab,white_18%,transparent),0_6px_20px_color-mix(in_oklab,var(--accent)_55%,transparent)]">
               <SparklesIcon className="size-4" />
             </span>
             <span className="text-base font-semibold tracking-tight">MtG Deck Builder</span>
