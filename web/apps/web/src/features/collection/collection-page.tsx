@@ -98,8 +98,6 @@ export function CollectionPage() {
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 md:p-6">
       <PageHeader title="Your collection" description="Upload a ManaBox export, or skip it and build from any card." />
 
-      {binder.data?.collection && <CollectionHero collection={binder.data.collection} loading={binder.isPending} />}
-      {collectionId !== "" && binder.isPending && <Skeleton className="h-56 w-full rounded-panel" />}
 
       <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
       <form onSubmit={onSubmit}>
@@ -225,6 +223,11 @@ export function CollectionPage() {
           <Button onClick={() => navigate("/session/new")}>Continue to chat</Button>
         </CardContent>
       </Card>
+
+      {/* The binder sits under the controls, not over them. A click on an
+          earlier upload shows or hides it, and nothing above it moves. */}
+      {binder.data?.collection && <CollectionHero collection={binder.data.collection} loading={binder.isPending} />}
+      {collectionId !== "" && binder.isPending && <Skeleton className="h-56 w-full rounded-card" />}
     </div>
   );
 }

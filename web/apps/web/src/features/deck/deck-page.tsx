@@ -107,7 +107,7 @@ export function DeckPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 p-4 md:p-6">
+    <div className="mx-auto flex w-full max-w-[75rem] flex-col gap-5 p-4 md:p-6">
       <div className="flex flex-wrap items-center gap-2">
         <Button asChild variant="ghost" size="sm">
           <Link to="/decks">

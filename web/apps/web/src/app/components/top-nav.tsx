@@ -1,6 +1,7 @@
 import { NavLink, useLocation } from "react-router";
 
 import { cn } from "../../lib/cn";
+import { BuildMenu } from "./build-menu";
 import { isActive, navItems } from "./nav-items";
 
 // The one navigation of the app (D-328). It sits in the header on every
@@ -11,6 +12,9 @@ export function TopNav() {
     <nav aria-label="Main" className="flex items-center gap-1">
       {navItems.map((item) => {
         const active = isActive(pathname, item.match);
+        // Build asks which cards to use before it opens a chat, so it is
+        // a menu and not a link.
+        if (item.to === "/session/new") return <BuildMenu key={item.to} active={active} />;
         return (
           <NavLink
             key={item.to}

@@ -35,6 +35,10 @@ describe("ExportPanel", () => {
   it("shows the buy list with a Scryfall link per card and the upgrades apart (D-308)", async () => {
     const view = render(<ExportPanel deck={deck} byId={byId} />);
     const list = screen.getByRole("region", { name: "Buy list (3)" });
+    // The list is long, so it stays shut until it is asked for. jsdom
+    // keeps the rows reachable inside a closed details, and a browser
+    // does not, so the check reads the element and not the rows.
+    expect(list.querySelector("details")).not.toHaveAttribute("open");
     expect(list).toHaveTextContent("3 × Soul Warden · $1.50");
     expect(within(list).getByRole("link", { name: "Scryfall" })).toHaveAttribute("href", "https://scryfall.com/card/mm3/24");
     expect(screen.getByRole("region", { name: "Upgrades (1)" })).toHaveTextContent("1 × Rhystic Study · $40.00");

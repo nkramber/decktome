@@ -76,7 +76,7 @@ export function DecksPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 md:p-6">
+    <div className="mx-auto flex w-full max-w-[75rem] flex-col gap-6 p-4 md:p-6">
       <PageHeader title="Your decks" description="Every deck the agent built for you." />
 
       <div className="flex flex-wrap items-center gap-2">

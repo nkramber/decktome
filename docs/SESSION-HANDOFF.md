@@ -89,6 +89,15 @@ The owner gave a reference design, and it settles the look. Our terms win over i
 - Dark is the only theme (D-330). `src/lib/theme.ts` and the no-flash script left with it.
 - A deck owns the whole page, and the conversation docks at the bottom left (D-331). A History control opens the thread over the composer. Before a deck exists, the conversation is the page.
 - The identity wash left (D-329). Color of the game shows in a mana pip and a rarity dot.
+- Build in the header is a menu of the collections (D-332). It sets the pool and opens a chat.
+- The binder head sits under the controls, the buy list opens on request, and a page holds 75 rem (D-333).
+
+A session reads its own work with Playwright, and it measures rather than looks. Four checks ran on 2026-08-30.
+
+- The deck page holds 80 percent of a 1440-pixel screen.
+- The buy list carries no `open` attribute.
+- The Continue-to-chat control does not move when a reader picks an upload.
+- The Build menu lists every collection.
 
 ## The palette of D-327 (2026-08-29), now amended
 

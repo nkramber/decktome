@@ -387,7 +387,7 @@ function ChatPanel({
   // The deck fills the page, and the conversation docks at the corner.
   if (builtDeck) {
     return (
-      <div className="w-full p-4 md:p-6">
+      <div className="mx-auto w-full max-w-[75rem] p-4 md:p-6">
         {deckError && (
           <p role="alert" className="mb-4 text-danger">
             Could not load the deck: {deckError}

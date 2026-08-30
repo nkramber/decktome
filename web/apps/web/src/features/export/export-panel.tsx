@@ -80,17 +80,28 @@ export function ExportPanel({ deck, byId }: { deck: Deck; byId: Map<string, Card
   );
 }
 
+// The list of cards to buy is long, so it stays shut until it is asked
+// for. A deck of a hundred cards would otherwise fill the panel.
 function BuyList({ title, rows, empty }: { title: string; rows: BuyRow[]; empty: string }) {
   const count = rows.reduce((n, r) => n + r.count, 0);
+  const heading = (
+    <>
+      {title} <span className="text-muted-foreground">({count})</span>
+    </>
+  );
+  if (rows.length === 0) {
+    return (
+      <section aria-label={`${title} (${count})`}>
+        <h4 className="font-display text-[13px] font-semibold">{heading}</h4>
+        <p>{empty}</p>
+      </section>
+    );
+  }
   return (
     <section aria-label={`${title} (${count})`}>
-      <h4 className="font-medium">
-        {title} <span className="text-muted-foreground">({count})</span>
-      </h4>
-      {rows.length === 0 ? (
-        <p>{empty}</p>
-      ) : (
-        <ul className="list-disc pl-5">
+      <details>
+        <summary className="font-display cursor-pointer text-[13px] font-semibold marker:text-primary">{heading}</summary>
+        <ul className="mt-1 list-disc pl-5">
           {rows.map((r) => (
             <li key={r.oracleId}>
               {r.count} × {r.name}
@@ -106,7 +117,7 @@ function BuyList({ title, rows, empty }: { title: string; rows: BuyRow[]; empty:
             </li>
           ))}
         </ul>
-      )}
+      </details>
     </section>
   );
 }
