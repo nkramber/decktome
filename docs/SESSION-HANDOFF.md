@@ -11,7 +11,10 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 - PR-13 is merged (#45, D-307 to D-309). The owner did not run the export in the browser yet.
 - Phase 3B, the product UI, has a plan and no code yet (D-310 to D-322). The roadmap holds PR-16 to PR-23, and `docs/reference/ui-phase-plan-2026-08-29.md` holds the detail. The first slice is PR-16, the design system and the shell (D-317). The owner asked for the roadmap first and no code (D-319).
 - The Phase 3B roadmap merged (#46, D-310 to D-322).
-- Branch `pr-16` holds the design system and the app shell (D-323). The test gate held, and the browser gate waits for the owner. A review of the plan on 2026-08-29 fixed five items. The bundle gate had no unit. The first slice listed 19 primitives. The PR-22 entry decided OQ-45. The PR-21 rate limit read the wrong address. The open-questions table broke at OQ-45.
+- PR-16 is merged (#47, D-323).
+- Branch `pr-16b` holds the visual pass (D-325, D-326). PR-16 kept the composition of every screen, per D-317, so the app still read as the test bench of PR-11. The pass adds the type face, the elevation scale, the docked composer, and a thread with hierarchy. The browser read waits for the owner.
+- Branch `pr-17` holds the proto and the Go side of the deck library. The web side follows. It carries no visual pass, so it needs a rebase after `pr-16b` merges.
+- A review of the PR-16 plan on 2026-08-29 fixed five items. The bundle gate had no unit. The first slice listed 19 primitives. The PR-22 entry decided OQ-45. The PR-21 rate limit read the wrong address. The open-questions table broke at OQ-45.
 - The web baseline of 2026-08-29, before PR-16: one chunk of 584.07 kB raw and 179.81 kB gzipped. It also holds 14.24 kB of CSS and 118 tests.
 - The tree is green on the branch: Go build, vet, `-race` tests, golangci-lint, `buf breaking`, web lint, typecheck, 135 web tests, and the web build. `make lint` runs the extended STE check and reports zero findings.
 - The revise gate held on run 2 (D-296). The paid gates did not run on 2026-08-29.
@@ -68,7 +71,7 @@ CAUTION: `tune-check` paired zero questions between run 24 and run 25, because t
 
 ## Next steps, in order
 
-1. The owner walks the app in the browser, on a desktop and on a phone. Then the owner merges PR-16.
+1. The owner reads `pr-16b` in the browser, on a desktop and on a phone. The owner says what still reads as dated.
 2. Then PR-17 to PR-23 in order, one gate each.
 3. The owner runs the question gate and the deck gate to re-baseline (D-302), in parallel. Ask before each run. Write each to a new `GATE_OUT` file (D-65). Record the numbers here and in the roadmap.
 4. Before PR-22, ask OQ-45 (the allowlist store) and OQ-46 (the spend cap).
