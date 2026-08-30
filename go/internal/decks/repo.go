@@ -189,6 +189,13 @@ type Filter struct {
 	// Query keeps a deck whose name or commander name holds this text,
 	// without regard to case. Empty keeps them all.
 	Query string
+	// PowerBracket keeps one Commander bracket, 1 to 5. Zero keeps them
+	// all. PowerLevel is a oneof, so the power filter has two arms
+	// (OQ-47), and a deck matches when either arm matches.
+	PowerBracket int32
+	// PowerSixtyStep keeps one step of the 60-card scale. UNSPECIFIED
+	// keeps them all.
+	PowerSixtyStep mtgv1.SixtyStep
 }
 
 // keep reports whether one stored row passes the filter.
@@ -197,6 +204,12 @@ func (f Filter) keep(sd storedDeck) bool {
 		return false
 	}
 	if f.Favorite != nil && sd.Favorite != *f.Favorite {
+		return false
+	}
+	if f.PowerBracket > 0 && int32(sd.PowerBracket) != f.PowerBracket { //nolint:gosec // PowerBracket was an int32 at Put
+		return false
+	}
+	if f.PowerSixtyStep != mtgv1.SixtyStep_SIXTY_STEP_UNSPECIFIED && mtgv1.SixtyStep(sd.PowerSixtyStep) != f.PowerSixtyStep {
 		return false
 	}
 	if f.Query == "" {

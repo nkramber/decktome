@@ -16,6 +16,7 @@ func TestFilterKeep(t *testing.T) {
 		Name:           "Elf Ball",
 		FormatID:       int64(mtgv1.FormatId_FORMAT_ID_COMMANDER),
 		Favorite:       true,
+		PowerBracket:   3,
 		CommanderNames: []string{"Marwyn, the Nurturer"},
 	}
 	for _, tc := range []struct {
@@ -32,6 +33,9 @@ func TestFilterKeep(t *testing.T) {
 		{"the match ignores case", Filter{Query: "ELF BALL"}, true},
 		{"a commander match keeps it", Filter{Query: "marwyn"}, true},
 		{"no match drops it", Filter{Query: "goblin"}, false},
+		{"the same bracket keeps it", Filter{PowerBracket: 3}, true},
+		{"another bracket drops it", Filter{PowerBracket: 4}, false},
+		{"a sixty step drops a Commander deck", Filter{PowerSixtyStep: mtgv1.SixtyStep_SIXTY_STEP_FNM}, false},
 		{"every part must pass", Filter{Format: mtgv1.FormatId_FORMAT_ID_MODERN, Query: "elf"}, false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -39,6 +43,22 @@ func TestFilterKeep(t *testing.T) {
 				t.Errorf("keep = %v, want %v", got, tc.want)
 			}
 		})
+	}
+}
+
+func TestFilterKeepSixtyStep(t *testing.T) {
+	row := storedDeck{Name: "Goblin storm", FormatID: int64(mtgv1.FormatId_FORMAT_ID_MODERN), PowerSixtyStep: int64(mtgv1.SixtyStep_SIXTY_STEP_FNM)}
+	if !(Filter{PowerSixtyStep: mtgv1.SixtyStep_SIXTY_STEP_FNM}).keep(row) {
+		t.Error("the same step dropped the deck")
+	}
+	if (Filter{PowerSixtyStep: mtgv1.SixtyStep_SIXTY_STEP_TOURNAMENT}).keep(row) {
+		t.Error("another step kept the deck")
+	}
+	if (Filter{PowerBracket: 3}).keep(row) {
+		t.Error("a bracket kept a 60-card deck")
+	}
+	if !(Filter{}).keep(row) {
+		t.Error("the empty filter dropped the deck")
 	}
 }
 
@@ -57,6 +77,9 @@ func TestFilterKeepOldRow(t *testing.T) {
 	}
 	if (Filter{Query: "old deck's commander"}).keep(old) {
 		t.Error("a query matched a deck with no such text")
+	}
+	if (Filter{PowerBracket: 3}).keep(old) {
+		t.Error("a bracket filter kept a deck with no power")
 	}
 }
 

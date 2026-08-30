@@ -109,6 +109,7 @@ var (
 	errEmptyName      = errors.New("name: a deck name needs a character that is not a space")
 	errLongName       = fmt.Errorf("name: a deck name takes at most %d bytes", maxNameBytes)
 	errNoUpdate       = errors.New("give a name or a favorite mark to write")
+	errBadBracket     = errors.New("power_bracket: a Commander bracket is 1 to 5, or 0 for every bracket")
 	errBadCollection  = fmt.Errorf("collection_id: %w", gzstore.ErrBadID)
 )
 
@@ -208,9 +209,14 @@ func (s *Server) ListDecks(ctx context.Context, req *connect.Request[mtgv1.ListD
 		return nil, connect.NewError(connect.CodeUnauthenticated, errNoUser)
 	}
 	filter := decks.Filter{
-		Format:   req.Msg.GetFormat(),
-		Favorite: req.Msg.Favorite,
-		Query:    strings.TrimSpace(req.Msg.GetQuery()),
+		Format:         req.Msg.GetFormat(),
+		Favorite:       req.Msg.Favorite,
+		Query:          strings.TrimSpace(req.Msg.GetQuery()),
+		PowerBracket:   req.Msg.GetPowerBracket(),
+		PowerSixtyStep: req.Msg.GetPowerSixtyStep(),
+	}
+	if b := filter.PowerBracket; b < 0 || b > 5 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errBadBracket)
 	}
 	offset, err := decodePageToken(req.Msg.GetPageToken(), filter)
 	if err != nil {
@@ -260,7 +266,7 @@ func filterFingerprint(f decks.Filter) string {
 	if f.Favorite != nil {
 		fav = strconv.FormatBool(*f.Favorite)
 	}
-	sum := sha256.Sum256([]byte(fmt.Sprintf("%d\x00%s\x00%s", f.Format, fav, strings.ToLower(f.Query))))
+	sum := sha256.Sum256([]byte(fmt.Sprintf("%d\x00%s\x00%s\x00%d\x00%d", f.Format, fav, strings.ToLower(f.Query), f.PowerBracket, f.PowerSixtyStep)))
 	return hex.EncodeToString(sum[:6])
 }
 

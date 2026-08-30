@@ -554,6 +554,44 @@ func TestListDecksPaging(t *testing.T) {
 			t.Errorf("query = %q, want the trimmed text", src.filter.Query)
 		}
 	})
+
+	t.Run("the power filter reaches the store", func(t *testing.T) {
+		src := manyDecks(2)
+		if _, err := list(src, &mtgv1.ListDecksRequest{PowerBracket: 3}); err != nil {
+			t.Fatal(err)
+		}
+		if src.filter.PowerBracket != 3 {
+			t.Errorf("bracket = %d", src.filter.PowerBracket)
+		}
+		if _, err := list(src, &mtgv1.ListDecksRequest{PowerSixtyStep: mtgv1.SixtyStep_SIXTY_STEP_FNM}); err != nil {
+			t.Fatal(err)
+		}
+		if src.filter.PowerSixtyStep != mtgv1.SixtyStep_SIXTY_STEP_FNM {
+			t.Errorf("step = %v", src.filter.PowerSixtyStep)
+		}
+	})
+
+	t.Run("a bracket outside 1 to 5 is an invalid argument", func(t *testing.T) {
+		src := manyDecks(2)
+		if _, err := list(src, &mtgv1.ListDecksRequest{PowerBracket: 6}); codeOf(t, err) != connect.CodeInvalidArgument {
+			t.Errorf("code = %v", codeOf(t, err))
+		}
+		if _, err := list(src, &mtgv1.ListDecksRequest{PowerBracket: -1}); codeOf(t, err) != connect.CodeInvalidArgument {
+			t.Errorf("code = %v", codeOf(t, err))
+		}
+	})
+
+	t.Run("a token of another power filter is an invalid argument", func(t *testing.T) {
+		src := manyDecks(defaultPageSize + 1)
+		first, err := list(src, &mtgv1.ListDecksRequest{PowerBracket: 3})
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = list(src, &mtgv1.ListDecksRequest{PageToken: first.Msg.GetNextPageToken(), PowerBracket: 4})
+		if codeOf(t, err) != connect.CodeInvalidArgument {
+			t.Errorf("code = %v", codeOf(t, err))
+		}
+	})
 }
 
 func TestUpdateDeck(t *testing.T) {

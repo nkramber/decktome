@@ -241,10 +241,12 @@ func TestEmulatorListFilter(t *testing.T) {
 	// The commander sits in the card list, so its name reaches the flat
 	// field a commander search reads.
 	a.Cards = append(a.Cards, &mtgv1.DeckCard{OracleId: "o-karlov", Name: "Karlov of the Ghost Council", Count: 1})
+	a.Power = &mtgv1.PowerLevel{Level: &mtgv1.PowerLevel_Bracket{Bracket: 3}}
 	b := sampleDeck(plain, now.Add(-time.Minute))
 	b.Name = "Goblin storm"
 	b.CommanderOracleIds = nil
 	b.Format = &mtgv1.Format{Id: mtgv1.FormatId_FORMAT_ID_MODERN}
+	b.Power = &mtgv1.PowerLevel{Level: &mtgv1.PowerLevel_SixtyStep{SixtyStep: mtgv1.SixtyStep_SIXTY_STEP_FNM}}
 	for _, d := range []*mtgv1.Deck{a, b} {
 		if err := repo.Put(ctx, uid, d); err != nil {
 			t.Fatalf("put: %v", err)
@@ -262,6 +264,9 @@ func TestEmulatorListFilter(t *testing.T) {
 		{"a name search", Filter{Query: "goblin"}, []string{plain}},
 		{"a commander search", Filter{Query: "ghost council"}, []string{starred}},
 		{"a search reads the name, not the card list", Filter{Query: "ajani"}, nil},
+		{"one Commander bracket", Filter{PowerBracket: 3}, []string{starred}},
+		{"one sixty-card step", Filter{PowerSixtyStep: mtgv1.SixtyStep_SIXTY_STEP_FNM}, []string{plain}},
+		{"another bracket", Filter{PowerBracket: 5}, nil},
 		{"no match", Filter{Query: "zzz"}, nil},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

@@ -6,7 +6,7 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
-2026-08-29 correction pass 33 (PR-17 started on branch `pr-17`): the proto and the Go side of the deck library. `UpdateDeck`, `DeleteDeck`, `Deck.favorite`, `Deck.card_count`, and the paged, filtered `ListDecks`. OQ-47 asks whether the grid filters by power. Changes: PR-17, sequencing step 19, open question 7.
+2026-08-29 correction pass 33 (PR-17 started on branch `pr-17`): the proto and the Go side of the deck library. `UpdateDeck`, `DeleteDeck`, `Deck.favorite`, `Deck.card_count`, and the paged, filtered `ListDecks`. D-324 puts the power filter on the server. Changes: PR-17, sequencing step 19, open question 7.
 
 2026-08-29 correction pass 32 (PR-16B, the visual pass, D-325 and D-326): the screens of PR-16 kept the composition of PR-11, so the app read as a test bench. The pass adds a type face, an elevation scale, a docked composer, and a thread with hierarchy. Changes: PR-16B, sequencing step 19.
 
@@ -631,7 +631,7 @@ Gate:
 **PR-17: Deck library.**
 A grid of decks with the commander art, the name, the format, the power, the count, the buy cost, and the date. Search by name and commander, filter by format and power, sort by date, name, and cost, and a favorite star. A deck page holds the deck view, the export panel, and the actions: rename, favorite, delete, and share (PR-21). Version history comes from the `revised_from_deck_id` chain, with any two versions side by side and their diff. The grid compares any two decks.
 
-Contract, additive: `DeckService.UpdateDeck(name, favorite)`, `DeleteDeck`, `Deck.favorite`, `Deck.card_count`, and paging with filters on `ListDecks` (D-245). 🔧 the proto and the Go side landed 2026-08-29 on branch `pr-17`. The web side follows.
+Contract, additive: `DeckService.UpdateDeck(name, favorite)`, `DeleteDeck`, `Deck.favorite`, `Deck.card_count`, and paging with filters on `ListDecks` (D-245). The power filter has two fields, because `PowerLevel` is a oneof (D-324). 🔧 the proto and the Go side landed 2026-08-29 on branch `pr-17`. The web side follows.
 
 The listing filter runs in Go over the rows Firestore returns, not as a Firestore query. One read serves every filter, and no composite index has to exist. A scan cap of 500 rows bounds the read, and a user beyond it needs a search index. The page token carries the offset and a fingerprint of the filter, so a token of another filter is an invalid argument.
 
@@ -794,4 +794,4 @@ See `docs/open-questions.md` for the full list with "ask when" dates. The ones t
 4. PR-9's 30% variance number is a placeholder until PR-15 measures it. PR-9 is out of the MVP (D-256), so nothing waits on it.
 5. **OQ-45 the allowlist store.** D-314 allows one env var or one Firestore document. An env var needs a deploy per change, and a document needs an admin write path. PR-22 decides, and the owner confirms. Ask before PR-22.
 6. **OQ-46 the spend cap number.** PR-22 sets a per-user monthly cap from `Usage`. The number is the owner's. Ask before PR-22.
-7. **OQ-47 the power filter of the deck grid.** The UI plan asks for it in one section and names no field in the other. Ask before the PR-17 web slice.
+7. **OQ-47** answered 2026-08-29 (D-324). The deck grid filters by power, and the filter runs on the server.

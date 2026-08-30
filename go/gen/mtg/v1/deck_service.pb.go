@@ -291,9 +291,16 @@ type ListDecksRequest struct {
 	Favorite *bool `protobuf:"varint,4,opt,name=favorite,proto3,oneof" json:"favorite,omitempty"`
 	// query keeps the decks whose name or commander name holds this text,
 	// without regard to case. Empty keeps them all.
-	Query         string `protobuf:"bytes,5,opt,name=query,proto3" json:"query,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Query string `protobuf:"bytes,5,opt,name=query,proto3" json:"query,omitempty"`
+	// power_bracket keeps the Commander decks of one bracket, 1 to 5.
+	// Zero keeps them all. PowerLevel is a oneof, so the two arms of the
+	// power filter are two fields (OQ-47).
+	PowerBracket int32 `protobuf:"varint,6,opt,name=power_bracket,json=powerBracket,proto3" json:"power_bracket,omitempty"`
+	// power_sixty_step keeps the 60-card decks of one step.
+	// UNSPECIFIED keeps them all.
+	PowerSixtyStep SixtyStep `protobuf:"varint,7,opt,name=power_sixty_step,json=powerSixtyStep,proto3,enum=mtg.v1.SixtyStep" json:"power_sixty_step,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *ListDecksRequest) Reset() {
@@ -359,6 +366,20 @@ func (x *ListDecksRequest) GetQuery() string {
 		return x.Query
 	}
 	return ""
+}
+
+func (x *ListDecksRequest) GetPowerBracket() int32 {
+	if x != nil {
+		return x.PowerBracket
+	}
+	return 0
+}
+
+func (x *ListDecksRequest) GetPowerSixtyStep() SixtyStep {
+	if x != nil {
+		return x.PowerSixtyStep
+	}
+	return SixtyStep_SIXTY_STEP_UNSPECIFIED
 }
 
 type ListDecksResponse struct {
@@ -724,14 +745,16 @@ const file_mtg_v1_deck_service_proto_rawDesc = "" +
 	"\x0eGetDeckRequest\x12\x17\n" +
 	"\adeck_id\x18\x01 \x01(\tR\x06deckId\"3\n" +
 	"\x0fGetDeckResponse\x12 \n" +
-	"\x04deck\x18\x01 \x01(\v2\f.mtg.v1.DeckR\x04deck\"\xbc\x01\n" +
+	"\x04deck\x18\x01 \x01(\v2\f.mtg.v1.DeckR\x04deck\"\x9e\x02\n" +
 	"\x10ListDecksRequest\x12\x1b\n" +
 	"\tpage_size\x18\x01 \x01(\x05R\bpageSize\x12\x1d\n" +
 	"\n" +
 	"page_token\x18\x02 \x01(\tR\tpageToken\x12(\n" +
 	"\x06format\x18\x03 \x01(\x0e2\x10.mtg.v1.FormatIdR\x06format\x12\x1f\n" +
 	"\bfavorite\x18\x04 \x01(\bH\x00R\bfavorite\x88\x01\x01\x12\x14\n" +
-	"\x05query\x18\x05 \x01(\tR\x05queryB\v\n" +
+	"\x05query\x18\x05 \x01(\tR\x05query\x12#\n" +
+	"\rpower_bracket\x18\x06 \x01(\x05R\fpowerBracket\x12;\n" +
+	"\x10power_sixty_step\x18\a \x01(\x0e2\x11.mtg.v1.SixtyStepR\x0epowerSixtyStepB\v\n" +
 	"\t_favorite\"_\n" +
 	"\x11ListDecksResponse\x12\"\n" +
 	"\x05decks\x18\x01 \x03(\v2\f.mtg.v1.DeckR\x05decks\x12&\n" +
@@ -798,35 +821,37 @@ var file_mtg_v1_deck_service_proto_goTypes = []any{
 	(*ValidateResponse)(nil),   // 12: mtg.v1.ValidateResponse
 	(*Deck)(nil),               // 13: mtg.v1.Deck
 	(FormatId)(0),              // 14: mtg.v1.FormatId
-	(PoolRule)(0),              // 15: mtg.v1.PoolRule
-	(*ValidationResult)(nil),   // 16: mtg.v1.ValidationResult
+	(SixtyStep)(0),             // 15: mtg.v1.SixtyStep
+	(PoolRule)(0),              // 16: mtg.v1.PoolRule
+	(*ValidationResult)(nil),   // 17: mtg.v1.ValidationResult
 }
 var file_mtg_v1_deck_service_proto_depIdxs = []int32{
 	0,  // 0: mtg.v1.ExportDeckRequest.format:type_name -> mtg.v1.ExportFormat
 	13, // 1: mtg.v1.GetDeckResponse.deck:type_name -> mtg.v1.Deck
 	14, // 2: mtg.v1.ListDecksRequest.format:type_name -> mtg.v1.FormatId
-	13, // 3: mtg.v1.ListDecksResponse.decks:type_name -> mtg.v1.Deck
-	13, // 4: mtg.v1.UpdateDeckResponse.deck:type_name -> mtg.v1.Deck
-	13, // 5: mtg.v1.ValidateRequest.deck:type_name -> mtg.v1.Deck
-	15, // 6: mtg.v1.ValidateRequest.pool_rule:type_name -> mtg.v1.PoolRule
-	16, // 7: mtg.v1.ValidateResponse.result:type_name -> mtg.v1.ValidationResult
-	3,  // 8: mtg.v1.DeckService.GetDeck:input_type -> mtg.v1.GetDeckRequest
-	5,  // 9: mtg.v1.DeckService.ListDecks:input_type -> mtg.v1.ListDecksRequest
-	11, // 10: mtg.v1.DeckService.Validate:input_type -> mtg.v1.ValidateRequest
-	1,  // 11: mtg.v1.DeckService.ExportDeck:input_type -> mtg.v1.ExportDeckRequest
-	7,  // 12: mtg.v1.DeckService.UpdateDeck:input_type -> mtg.v1.UpdateDeckRequest
-	9,  // 13: mtg.v1.DeckService.DeleteDeck:input_type -> mtg.v1.DeleteDeckRequest
-	4,  // 14: mtg.v1.DeckService.GetDeck:output_type -> mtg.v1.GetDeckResponse
-	6,  // 15: mtg.v1.DeckService.ListDecks:output_type -> mtg.v1.ListDecksResponse
-	12, // 16: mtg.v1.DeckService.Validate:output_type -> mtg.v1.ValidateResponse
-	2,  // 17: mtg.v1.DeckService.ExportDeck:output_type -> mtg.v1.ExportDeckResponse
-	8,  // 18: mtg.v1.DeckService.UpdateDeck:output_type -> mtg.v1.UpdateDeckResponse
-	10, // 19: mtg.v1.DeckService.DeleteDeck:output_type -> mtg.v1.DeleteDeckResponse
-	14, // [14:20] is the sub-list for method output_type
-	8,  // [8:14] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	15, // 3: mtg.v1.ListDecksRequest.power_sixty_step:type_name -> mtg.v1.SixtyStep
+	13, // 4: mtg.v1.ListDecksResponse.decks:type_name -> mtg.v1.Deck
+	13, // 5: mtg.v1.UpdateDeckResponse.deck:type_name -> mtg.v1.Deck
+	13, // 6: mtg.v1.ValidateRequest.deck:type_name -> mtg.v1.Deck
+	16, // 7: mtg.v1.ValidateRequest.pool_rule:type_name -> mtg.v1.PoolRule
+	17, // 8: mtg.v1.ValidateResponse.result:type_name -> mtg.v1.ValidationResult
+	3,  // 9: mtg.v1.DeckService.GetDeck:input_type -> mtg.v1.GetDeckRequest
+	5,  // 10: mtg.v1.DeckService.ListDecks:input_type -> mtg.v1.ListDecksRequest
+	11, // 11: mtg.v1.DeckService.Validate:input_type -> mtg.v1.ValidateRequest
+	1,  // 12: mtg.v1.DeckService.ExportDeck:input_type -> mtg.v1.ExportDeckRequest
+	7,  // 13: mtg.v1.DeckService.UpdateDeck:input_type -> mtg.v1.UpdateDeckRequest
+	9,  // 14: mtg.v1.DeckService.DeleteDeck:input_type -> mtg.v1.DeleteDeckRequest
+	4,  // 15: mtg.v1.DeckService.GetDeck:output_type -> mtg.v1.GetDeckResponse
+	6,  // 16: mtg.v1.DeckService.ListDecks:output_type -> mtg.v1.ListDecksResponse
+	12, // 17: mtg.v1.DeckService.Validate:output_type -> mtg.v1.ValidateResponse
+	2,  // 18: mtg.v1.DeckService.ExportDeck:output_type -> mtg.v1.ExportDeckResponse
+	8,  // 19: mtg.v1.DeckService.UpdateDeck:output_type -> mtg.v1.UpdateDeckResponse
+	10, // 20: mtg.v1.DeckService.DeleteDeck:output_type -> mtg.v1.DeleteDeckResponse
+	15, // [15:21] is the sub-list for method output_type
+	9,  // [9:15] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_mtg_v1_deck_service_proto_init() }

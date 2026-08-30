@@ -82,6 +82,13 @@ message ListDecksRequest {
   // query keeps the decks whose name or commander name holds this text,
   // without regard to case. Empty keeps them all.
   string query = 5;
+  // power_bracket keeps the Commander decks of one bracket, 1 to 5.
+  // Zero keeps them all. PowerLevel is a oneof, so the two arms of the
+  // power filter are two fields (OQ-47).
+  int32 power_bracket = 6;
+  // power_sixty_step keeps the 60-card decks of one step.
+  // UNSPECIFIED keeps them all.
+  SixtyStep power_sixty_step = 7;
 }
 
 message ListDecksResponse {

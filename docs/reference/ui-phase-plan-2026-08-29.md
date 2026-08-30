@@ -111,7 +111,7 @@ Built 2026-08-29 on branch `pr-17`, the proto and the Go side. What the build se
 - The stored document gains five flat fields: `favorite`, `power_bracket`, `power_sixty_step`, `card_count`, `commander_oracle_ids`, and `commander_names`. A deck written before PR-17 holds none of them and reads them as zero. A rename or a favorite write fills them for that deck.
 - A search by commander reads `commander_names`, which the Put fills from the deck's card list. A commander the card list omits contributes no name, so a search by that commander misses that deck.
 
-OPEN: section 4.1 asks for a filter by power, and this section names no power field. The owner settles it before the web slice starts (OQ-47).
+- The power filter runs on the server (D-324). `PowerLevel` is a oneof, so `ListDecksRequest` carries `power_bracket`, 1 to 5, and `power_sixty_step`. A bracket outside the range is an invalid argument.
 
 ### 4.3 Gate
 
