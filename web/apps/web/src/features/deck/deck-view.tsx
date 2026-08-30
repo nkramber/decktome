@@ -4,6 +4,8 @@ import { CardRole, type Deck, type DeckCard, Severity } from "@mtg/api-client/mt
 import { errorMessage } from "../../lib/errors";
 import { ExportPanel } from "../export/export-panel";
 import { CardTile } from "./card-tile";
+import { identityOf, identityVars, roleToken } from "./color-identity";
+import { ManaPips } from "./mana-pips";
 import {
   colorLetters,
   colorSources,
@@ -62,13 +64,20 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
   const findings = (validation?.findings ?? []).filter((f) => !(f.code === "not_owned" && f.severity !== Severity.BLOCK));
   const legalityAsOf = deck.legalityAsOf || validation?.legalityAsOf || "an unknown date";
   const curveMax = Math.max(1, ...curve);
+  // The deck owns the color of its own page (D-327).
+  const identity = identityOf(deck.commanderOracleIds, byId);
 
   return (
-    <article aria-labelledby={`deck-title-${deck.id}`} className="flex flex-col gap-5">
-      <header className="flex flex-col gap-1.5">
-        <h2 id={`deck-title-${deck.id}`} className="wrap-anywhere text-xl font-semibold tracking-tight text-balance">
-          {deck.name || "Untitled deck"}
-        </h2>
+    <article aria-labelledby={`deck-title-${deck.id}`} className="flex flex-col gap-5" style={identityVars(identity)}>
+      <header className="relative isolate flex flex-col gap-1.5 overflow-hidden rounded-panel border border-border bg-surface p-5 shadow-card">
+        <span aria-hidden="true" className="identity-wash pointer-events-none absolute inset-0 -z-10" />
+        <span aria-hidden="true" className="identity-rule absolute inset-x-0 top-0 h-1" />
+        <div className="flex flex-wrap items-center gap-3">
+          <h2 id={`deck-title-${deck.id}`} className="wrap-anywhere text-2xl font-semibold tracking-tight text-balance">
+            {deck.name || "Untitled deck"}
+          </h2>
+          <ManaPips colors={identity} />
+        </div>
         <p className="text-sm text-muted-foreground">
           {formatLabel(deck.format?.id, deck.format?.houseRules ?? "")}
           {powerLabel(deck.power) && ` · ${powerLabel(deck.power)}`}
@@ -215,7 +224,7 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
         <CardGroup title="Commander" count={commanderEntries.length} entries={commanderEntries} byId={byId} commanders={commanders} hideOwnership />
       )}
       {groups.map((g) => (
-        <CardGroup key={g.role} title={roleLabel(g.role)} count={g.count} entries={g.cards} byId={byId} commanders={commanders} />
+        <CardGroup key={g.role} title={roleLabel(g.role)} count={g.count} entries={g.cards} byId={byId} commanders={commanders} role={g.role} />
       ))}
       {deck.sideboard.length > 0 && (
         <CardGroup title="Sideboard" count={deck.sideboard.reduce((n, c) => n + c.count, 0)} entries={deck.sideboard} byId={byId} commanders={commanders} />
@@ -233,6 +242,7 @@ function CardGroup({
   entries,
   byId,
   commanders,
+  role,
   hideOwnership = false,
 }: {
   title: string;
@@ -240,11 +250,14 @@ function CardGroup({
   entries: DeckCard[];
   byId: Map<string, Card>;
   commanders: Set<string>;
+  role?: CardRole;
   hideOwnership?: boolean;
 }) {
+  const hue = role === undefined ? "var(--role-other)" : roleToken[role];
   return (
     <section aria-label={`${title} (${count})`} className="@container">
-      <h3 className="mb-2 flex items-center gap-2 border-b border-border pb-1.5 text-sm font-semibold tracking-wide uppercase">
+      <h3 className="mb-2.5 flex items-center gap-2 border-b border-border pb-2 text-sm font-semibold tracking-wide uppercase">
+        <span aria-hidden="true" className="inline-block h-3.5 w-1 rounded-full" style={{ backgroundColor: hue }} />
         {title} <span className="font-normal tracking-normal normal-case text-muted-foreground">({count})</span>
       </h3>
       <ul className="mt-2 grid grid-cols-1 items-start gap-2 @sm:grid-cols-2 @2xl:grid-cols-3 @4xl:grid-cols-4">

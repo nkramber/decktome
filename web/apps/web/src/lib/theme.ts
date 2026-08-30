@@ -1,7 +1,8 @@
 import { create } from "zustand";
 
-// The theme follows the system by default, and a choice overrides it and
-// persists (D-311). The resolved value is the class on the root element.
+// Dark leads (D-327). A new reader gets the dark theme, and a choice of
+// light or system overrides it and persists. The resolved value drives
+// the class on the root element, and dark is the class-free base.
 export type ThemeChoice = "light" | "dark" | "system";
 export type Theme = "light" | "dark";
 
@@ -13,9 +14,9 @@ const choices: ThemeChoice[] = ["light", "dark", "system"];
 export function readChoice(): ThemeChoice {
   try {
     const raw = localStorage.getItem(themeStorageKey);
-    return choices.find((c) => c === raw) ?? "system";
+    return choices.find((c) => c === raw) ?? "dark";
   } catch {
-    return "system";
+    return "dark";
   }
 }
 
@@ -30,10 +31,11 @@ export function resolveTheme(choice: ThemeChoice): Theme {
 }
 
 // applyTheme puts the class on the root element and sets color-scheme, so
-// the browser paints its own controls and scrollbars to match.
+// the browser paints its own controls and scrollbars to match. Dark is
+// the base, so only the light theme carries a class (D-327).
 export function applyTheme(theme: Theme) {
   const root = document.documentElement;
-  root.classList.toggle("dark", theme === "dark");
+  root.classList.toggle("light", theme === "light");
   root.style.colorScheme = theme;
 }
 

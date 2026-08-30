@@ -36,7 +36,7 @@ beforeEach(() => {
   state.user = fakeUser;
   localStorage.clear();
   document.documentElement.className = "";
-  useThemeStore.setState({ choice: "system", theme: "light" });
+  useThemeStore.setState({ choice: "dark", theme: "dark" });
 });
 
 afterEach(() => {
@@ -45,15 +45,15 @@ afterEach(() => {
 });
 
 describe("the theme", () => {
-  it("reads system when nothing is stored, and the stored choice after that", () => {
-    expect(readChoice()).toBe("system");
-    localStorage.setItem(themeStorageKey, "dark");
+  it("reads dark when nothing is stored, and the stored choice after that", () => {
     expect(readChoice()).toBe("dark");
+    localStorage.setItem(themeStorageKey, "light");
+    expect(readChoice()).toBe("light");
   });
 
-  it("treats a damaged stored value as system", () => {
+  it("treats a damaged stored value as dark", () => {
     localStorage.setItem(themeStorageKey, "purple");
-    expect(readChoice()).toBe("system");
+    expect(readChoice()).toBe("dark");
   });
 
   it("resolves system from the media query", () => {
@@ -65,20 +65,22 @@ describe("the theme", () => {
   });
 
   it("puts the class and the color scheme on the root element", () => {
+    // Dark is the base, so only the light theme carries a class (D-327).
     applyTheme("dark");
-    expect(document.documentElement).toHaveClass("dark");
+    expect(document.documentElement).not.toHaveClass("light");
     expect(document.documentElement.style.colorScheme).toBe("dark");
     applyTheme("light");
-    expect(document.documentElement).not.toHaveClass("dark");
+    expect(document.documentElement).toHaveClass("light");
+    expect(document.documentElement.style.colorScheme).toBe("light");
   });
 
   it("stores the choice from the sidebar menu and paints the root element", async () => {
     await renderAt("/decks");
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: /^Theme/ }));
-    await user.click(await screen.findByRole("menuitemradio", { name: "Dark" }));
-    expect(localStorage.getItem(themeStorageKey)).toBe("dark");
-    expect(document.documentElement).toHaveClass("dark");
+    await user.click(await screen.findByRole("menuitemradio", { name: "Light" }));
+    expect(localStorage.getItem(themeStorageKey)).toBe("light");
+    expect(document.documentElement).toHaveClass("light");
   });
 });
 

@@ -5,14 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MtG Deck Builder</title>
     <script>
-      // The theme class goes on before the first paint, so a dark reader
-      // never sees a white flash (D-311). The app reads the same key.
+      // The theme class goes on before the first paint, so a reader never
+      // sees the wrong ground (D-327). Dark is the base, and only light
+      // carries a class. The app reads the same key.
       (function () {
         try {
-          var choice = localStorage.getItem("mtg-theme") || "system";
-          var dark = choice === "dark" || (choice === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
-          document.documentElement.classList.toggle("dark", dark);
-          document.documentElement.style.colorScheme = dark ? "dark" : "light";
+          var choice = localStorage.getItem("mtg-theme") || "dark";
+          var light = choice === "light" || (choice === "system" && window.matchMedia("(prefers-color-scheme: light)").matches);
+          document.documentElement.classList.toggle("light", light);
+          document.documentElement.style.colorScheme = light ? "light" : "dark";
         } catch (e) {}
       })();
     </script>

@@ -1,64 +1,116 @@
-/* The design tokens of the product UI (D-311). Surfaces are neutral, and
-   the card art carries the color. The dark theme overrides the neutral
-   scale, the surfaces, and the link color only. The mana colors are fixed
-   in both themes, because a color of the game names one thing. */
+/* The design tokens of the product UI (D-311, D-327).
+ *
+ * The five colors of the game are the palette, not one accent beside a
+ * grey. A deck carries its own color identity, and the page takes that
+ * identity as its accent. Dark leads, and light follows. */
 
 :root {
-  /* Neutral scale and surfaces. */
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.21 0.012 265);
-  --surface: oklch(0.977 0.002 265);
-  --surface-foreground: oklch(0.21 0.012 265);
-  --muted: oklch(0.965 0.004 265);
-  --muted-foreground: oklch(0.5 0.018 265);
-  --border: oklch(0.915 0.006 265);
+  color-scheme: dark;
 
-  /* One accent, for a solid fill with accent-foreground text on it. */
-  --accent: oklch(0.52 0.17 265);
-  --accent-foreground: oklch(0.99 0 0);
-  --ring: oklch(0.55 0.17 265);
+  /* Neutral scale and surfaces. The base is a blue-black, not a grey:
+     card art reads warmer against a cool ground. */
+  --background: oklch(0.145 0.013 265);
+  --surface: oklch(0.192 0.015 265);
+  --surface-foreground: oklch(0.97 0.005 265);
+  --raised: oklch(0.235 0.016 265);
+  --foreground: oklch(0.97 0.005 265);
+  --muted: oklch(0.245 0.015 265);
+  --muted-foreground: oklch(0.735 0.018 265);
+  --border: oklch(0.295 0.017 265);
 
-  /* A link reads as text on the background, so it carries its own token. */
-  --link: oklch(0.47 0.16 265);
+  /* The five colors and colorless. These are the app's palette, and they
+     hold their hue in both themes. */
+  --mana-w: oklch(0.9 0.075 88);
+  --mana-u: oklch(0.66 0.16 248);
+  --mana-b: oklch(0.58 0.11 305);
+  --mana-r: oklch(0.635 0.21 27);
+  --mana-g: oklch(0.66 0.16 150);
+  --mana-c: oklch(0.72 0.02 265);
 
-  /* The two result states. Each one takes its foreground on a solid fill. */
-  --danger: oklch(0.52 0.19 27);
-  --danger-foreground: oklch(0.99 0 0);
-  --success: oklch(0.47 0.12 155);
-  --success-foreground: oklch(0.99 0 0);
-  --warning: oklch(0.58 0.13 75);
-  --warning-foreground: oklch(0.99 0 0);
+  /* identity-a and identity-b carry one deck's color identity. A deck
+     page and a deck card set them inline, and the wash reads them. The
+     fallback is the app's own accent. */
+  --identity-a: var(--accent);
+  --identity-b: var(--accent);
 
-  /* Elevation. A surface lifts with light, not with a hard border. The
-     dark theme keeps the same geometry and a deeper shadow. */
-  --shadow-card: 0 1px 2px oklch(0.2 0.02 265 / 0.05), 0 1px 3px oklch(0.2 0.02 265 / 0.06);
-  --shadow-raised: 0 2px 4px oklch(0.2 0.02 265 / 0.05), 0 8px 24px oklch(0.2 0.02 265 / 0.08);
-  --shadow-overlay: 0 8px 16px oklch(0.2 0.02 265 / 0.08), 0 24px 48px oklch(0.2 0.02 265 / 0.12);
+  /* One accent for the app itself, where no deck owns the space. */
+  --accent: oklch(0.66 0.16 248);
+  --accent-foreground: oklch(0.16 0.02 265);
+  --ring: oklch(0.7 0.15 248);
+  --link: oklch(0.78 0.13 248);
 
-  /* The five colors of the game and colorless. These do not change. */
-  --mana-w: oklch(0.92 0.045 95);
-  --mana-u: oklch(0.66 0.14 245);
-  --mana-b: oklch(0.45 0.035 300);
-  --mana-r: oklch(0.62 0.2 28);
-  --mana-g: oklch(0.6 0.14 150);
-  --mana-c: oklch(0.75 0.008 265);
+  /* The result states. */
+  --danger: oklch(0.66 0.19 27);
+  --danger-foreground: oklch(0.16 0.02 265);
+  --success: oklch(0.7 0.15 150);
+  --success-foreground: oklch(0.16 0.02 265);
+  --warning: oklch(0.79 0.14 78);
+  --warning-foreground: oklch(0.16 0.02 265);
+
+  /* A role of a card carries its own hue, so the eye finds the shape of
+     a deck before it reads one word. */
+  --role-land: oklch(0.7 0.06 120);
+  --role-ramp: oklch(0.66 0.16 150);
+  --role-draw: oklch(0.66 0.16 248);
+  --role-removal: oklch(0.635 0.21 27);
+  --role-wipe: oklch(0.66 0.17 12);
+  --role-threat: oklch(0.72 0.16 55);
+  --role-interaction: oklch(0.68 0.13 200);
+  --role-synergy: oklch(0.68 0.14 320);
+  --role-wincon: oklch(0.8 0.15 88);
+  --role-other: oklch(0.72 0.02 265);
+
+  /* Elevation. On a dark ground a surface lifts with its own light. */
+  --shadow-card: 0 1px 2px oklch(0 0 0 / 0.4), 0 2px 6px oklch(0 0 0 / 0.3);
+  --shadow-raised: 0 2px 6px oklch(0 0 0 / 0.4), 0 12px 32px oklch(0 0 0 / 0.45);
+  --shadow-overlay: 0 8px 20px oklch(0 0 0 / 0.5), 0 28px 60px oklch(0 0 0 / 0.6);
 }
 
-.dark {
-  --background: oklch(0.17 0.01 265);
-  --foreground: oklch(0.96 0.004 265);
-  --surface: oklch(0.215 0.012 265);
-  --surface-foreground: oklch(0.96 0.004 265);
-  --muted: oklch(0.26 0.012 265);
-  --muted-foreground: oklch(0.73 0.016 265);
-  --border: oklch(0.33 0.014 265);
-  --link: oklch(0.78 0.12 265);
-  --danger: oklch(0.65 0.18 27);
-  --success: oklch(0.68 0.13 155);
-  --warning: oklch(0.78 0.13 75);
-  --shadow-card: 0 1px 2px oklch(0 0 0 / 0.3), 0 1px 3px oklch(0 0 0 / 0.25);
-  --shadow-raised: 0 2px 4px oklch(0 0 0 / 0.3), 0 8px 24px oklch(0 0 0 / 0.35);
-  --shadow-overlay: 0 8px 16px oklch(0 0 0 / 0.4), 0 24px 48px oklch(0 0 0 / 0.5);
+:root.light {
+  color-scheme: light;
+
+  --background: oklch(0.985 0.004 265);
+  --surface: oklch(1 0 0);
+  --surface-foreground: oklch(0.2 0.015 265);
+  --raised: oklch(1 0 0);
+  --foreground: oklch(0.2 0.015 265);
+  --muted: oklch(0.955 0.006 265);
+  --muted-foreground: oklch(0.48 0.02 265);
+  --border: oklch(0.9 0.008 265);
+
+  --mana-w: oklch(0.82 0.09 85);
+  --mana-u: oklch(0.55 0.17 250);
+  --mana-b: oklch(0.44 0.11 305);
+  --mana-r: oklch(0.55 0.21 27);
+  --mana-g: oklch(0.53 0.15 152);
+  --mana-c: oklch(0.62 0.02 265);
+
+  --accent: oklch(0.52 0.18 250);
+  --accent-foreground: oklch(0.99 0 0);
+  --ring: oklch(0.55 0.18 250);
+  --link: oklch(0.48 0.17 250);
+
+  --danger: oklch(0.53 0.2 27);
+  --danger-foreground: oklch(0.99 0 0);
+  --success: oklch(0.5 0.14 152);
+  --success-foreground: oklch(0.99 0 0);
+  --warning: oklch(0.62 0.14 75);
+  --warning-foreground: oklch(0.99 0 0);
+
+  --role-land: oklch(0.5 0.06 120);
+  --role-ramp: oklch(0.5 0.15 152);
+  --role-draw: oklch(0.5 0.17 250);
+  --role-removal: oklch(0.53 0.2 27);
+  --role-wipe: oklch(0.5 0.18 12);
+  --role-threat: oklch(0.56 0.16 55);
+  --role-interaction: oklch(0.52 0.13 200);
+  --role-synergy: oklch(0.52 0.15 320);
+  --role-wincon: oklch(0.58 0.14 85);
+  --role-other: oklch(0.55 0.02 265);
+
+  --shadow-card: 0 1px 2px oklch(0.2 0.02 265 / 0.06), 0 2px 6px oklch(0.2 0.02 265 / 0.07);
+  --shadow-raised: 0 2px 6px oklch(0.2 0.02 265 / 0.07), 0 12px 32px oklch(0.2 0.02 265 / 0.1);
+  --shadow-overlay: 0 8px 20px oklch(0.2 0.02 265 / 0.1), 0 28px 60px oklch(0.2 0.02 265 / 0.14);
 }
 
 @theme inline {
@@ -66,6 +118,7 @@
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
   --color-surface-foreground: var(--surface-foreground);
+  --color-raised: var(--raised);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
@@ -79,6 +132,7 @@
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
+
   --color-mana-w: var(--mana-w);
   --color-mana-u: var(--mana-u);
   --color-mana-b: var(--mana-b);
@@ -86,7 +140,20 @@
   --color-mana-g: var(--mana-g);
   --color-mana-c: var(--mana-c);
 
-  /* One radius scale. A product of 2026 reads round, not square. */
+  --color-identity-a: var(--identity-a);
+  --color-identity-b: var(--identity-b);
+
+  --color-role-land: var(--role-land);
+  --color-role-ramp: var(--role-ramp);
+  --color-role-draw: var(--role-draw);
+  --color-role-removal: var(--role-removal);
+  --color-role-wipe: var(--role-wipe);
+  --color-role-threat: var(--role-threat);
+  --color-role-interaction: var(--role-interaction);
+  --color-role-synergy: var(--role-synergy);
+  --color-role-wincon: var(--role-wincon);
+  --color-role-other: var(--role-other);
+
   --radius-card: 0.875rem;
   --radius-panel: 1.25rem;
 
@@ -94,11 +161,8 @@
   --shadow-raised: var(--shadow-raised);
   --shadow-overlay: var(--shadow-overlay);
 
-  /* Geist ships with the app, so the type never waits on a network and
-     never falls back to a different face on a second machine. */
   --font-sans: "Geist Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 
-  /* The reading measure of long text: about 68 characters (PR-16B). */
   --container-measure: 40rem;
   --max-width-measure: 40rem;
 }

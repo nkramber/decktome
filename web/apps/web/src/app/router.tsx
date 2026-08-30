@@ -14,6 +14,7 @@ const SignInPage = lazy(async () => ({ default: (await import("../features/auth/
 const CollectionPage = lazy(async () => ({ default: (await import("../features/collection/collection-page")).CollectionPage }));
 const SessionPage = lazy(async () => ({ default: (await import("../features/chat/session-page")).SessionPage }));
 const DecksPage = lazy(async () => ({ default: (await import("../features/deck/decks-page")).DecksPage }));
+const DeckPage = lazy(async () => ({ default: (await import("../features/deck/deck-page")).DeckPage }));
 
 function page(node: ReactNode) {
   return <Suspense fallback={<PageFallback />}>{node}</Suspense>;
@@ -33,6 +34,7 @@ export function appRoutes(extra: RouteObject[] = []): RouteObject[] {
             { path: "/collection", element: page(<CollectionPage />) },
             { path: "/session/:id", element: page(<SessionPage />) },
             { path: "/decks", element: page(<DecksPage />) },
+            { path: "/decks/:id", element: page(<DeckPage />) },
             ...extra,
           ],
         },

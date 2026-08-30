@@ -3,9 +3,10 @@
 @import "@fontsource-variable/geist";
 @import "./styles/tokens.css";
 
-/* The dark theme applies from a class on the root element. The theme
-   script of index.html sets the class before the first paint (D-311). */
-@custom-variant dark (&:is(.dark *));
+/* Dark is the base, and the light theme applies from a class on the root
+   element (D-327). The theme script of index.html sets the class before
+   the first paint. */
+@custom-variant light (&:is(.light *));
 
 @layer base {
   * {
@@ -29,4 +30,16 @@
     outline: 2px solid var(--ring);
     outline-offset: 2px;
   }
+}
+
+/* The identity wash. An element sets --identity-a and --identity-b, and
+   the wash carries the deck's own colors across it (D-327). */
+@utility identity-wash {
+  background-image: linear-gradient(135deg, color-mix(in oklab, var(--identity-a) 30%, transparent) 0%, color-mix(in oklab, var(--identity-b) 18%, transparent) 55%, transparent 100%);
+}
+
+/* The identity rule is the same colors as a hairline, for a heading or
+   the top edge of a card. */
+@utility identity-rule {
+  background-image: linear-gradient(90deg, var(--identity-a) 0%, var(--identity-b) 100%);
 }
