@@ -16,7 +16,7 @@ export function AlertDialogContent({ className, ...props }: ComponentProps<typeo
       <AlertDialogPrimitive.Content
         data-slot="alert-dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded-panel border border-border bg-surface p-5 text-surface-foreground shadow-overlay",
+          "fixed top-1/2 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded-panel border border-border bg-card p-5 text-card-foreground shadow-overlay",
           "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
           className,
         )}

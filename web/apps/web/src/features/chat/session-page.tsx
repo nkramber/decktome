@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, type KeyboardEvent, useCallback, useEffect, useRef, useState } from "react";
 import { Link, useBlocker, useLocation, useNavigate, useParams } from "react-router";
 
-import { AlertTriangleIcon, ArrowUpIcon, CheckIcon, LayersIcon } from "lucide-react";
+import { AlertTriangleIcon, ArrowUpIcon, CheckIcon, ChevronDownIcon, ChevronUpIcon, LayersIcon } from "lucide-react";
 
 import { Button } from "../../components/ui/button";
 import { Checkbox } from "../../components/ui/checkbox";
@@ -253,25 +253,190 @@ function ChatPanel({
   }
 
   const poolText = poolLabel(state.slots?.poolRule, sendCollection);
+  // The deck owns the page once one exists, and the conversation docks
+  // at the corner (D-331). Before that, the conversation is the page.
+  const builtDeck = state.deck;
+  const [historyOpen, setHistoryOpen] = useState(false);
 
+  const thread = (
+    <ol className="flex flex-col gap-5" aria-label="Conversation">
+      {state.thread.map((item) => (
+        <li key={item.id}>
+          <ThreadLine item={item} />
+        </li>
+      ))}
+    </ol>
+  );
+
+  const questions = openCount > 0 && (
+    <form ref={questionsForm} tabIndex={-1} onSubmit={onSubmitAnswers} className="flex flex-col gap-2" data-testid="open-questions">
+      {state.openQuestions.map((q) => (
+        <QuestionCard
+          key={q.id}
+          question={q}
+          draft={drafts[q.id] ?? emptyDraft}
+          disabled={state.busy}
+          onChange={(d) => setDrafts((all) => pruneDrafts({ ...all, [q.id]: d }, state.openQuestions))}
+        />
+      ))}
+      {answerTooLong && (
+        <p role="alert" className="text-sm text-danger">
+          An answer is over the {maxMessageBytes} byte cap. Shorten it.
+        </p>
+      )}
+      <Button type="submit" className="self-start" disabled={!allAnswered || answerTooLong || state.busy}>
+        Submit answers
+      </Button>
+      {!allAnswered && !state.busy && <p className="text-xs text-muted-foreground">Answer every question, then submit.</p>}
+    </form>
+  );
+
+  const working = (
+    <div className="flex items-center gap-3 text-sm text-muted-foreground" role="status">
+      {state.busy && (
+        <>
+          <span className="flex items-center gap-2">
+            <span className="flex gap-1" aria-hidden="true">
+              <span className="size-1.5 animate-bounce rounded-full bg-primary [animation-delay:-0.3s]" />
+              <span className="size-1.5 animate-bounce rounded-full bg-primary [animation-delay:-0.15s]" />
+              <span className="size-1.5 animate-bounce rounded-full bg-primary" />
+            </span>
+            The agent is working...
+          </span>
+          <Button type="button" variant="ghost" size="sm" onClick={stop}>
+            Stop
+          </Button>
+        </>
+      )}
+    </div>
+  );
+
+  const composer = showComposer && (
+    <form onSubmit={onSubmit} className="flex flex-col gap-2">
+      <div className="flex flex-col rounded-card border border-border bg-card transition-colors focus-within:border-primary">
+        <Label htmlFor="message" className="sr-only">
+          Your message
+        </Label>
+        <Textarea
+          id="message"
+          ref={textarea}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          onKeyDown={onKeyDown}
+          rows={2}
+          placeholder={beforeFirstMessage ? "Build me a mono-green Commander deck around elves." : "Ask for a change, or say what to build next."}
+          className="max-h-40 resize-none border-0 bg-transparent px-4 pt-3 pb-1"
+        />
+        <div className="flex items-end justify-between gap-3 px-3 pb-3">
+          <p className={cn("font-mono text-[10px]", tooLong ? "text-danger" : "text-muted-foreground")}>
+            Enter to send · Shift+Enter for new line · {bytes} of {maxMessageBytes} bytes
+          </p>
+          <Button type="submit" size="icon" aria-label="Send" className="size-8" disabled={tooLong || !message.trim()}>
+            <ArrowUpIcon aria-hidden="true" />
+          </Button>
+        </div>
+      </div>
+      {tooLong && (
+        <p role="alert" className="text-sm text-danger">
+          The message is over the {maxMessageBytes} byte cap. Shorten it.
+        </p>
+      )}
+    </form>
+  );
+
+  const leaveWarning = blocker.state === "blocked" && (
+    <div role="alertdialog" aria-labelledby="leave-title" aria-describedby="leave-text" className="flex flex-col gap-2 rounded-card border border-warning/50 bg-warning/10 p-3">
+      <p id="leave-title" className="font-display font-semibold">
+        The agent is still working.
+      </p>
+      <p id="leave-text" className="text-sm">
+        The build continues on the server. Open this session again, and the deck shows when it is done.
+      </p>
+      <div className="flex gap-2">
+        <Button size="sm" onClick={() => blocker.reset()}>
+          Stay
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => blocker.proceed()}>
+          Leave
+        </Button>
+      </div>
+    </div>
+  );
+
+  const idLine = (
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[11px] text-muted-foreground">
+      <span className="wrap-anywhere" data-testid="session-id">
+        {beforeFirstMessage ? "No session yet." : `Session id: ${state.sessionId}`}
+      </span>
+      <span aria-hidden="true">·</span>
+      <span className="wrap-anywhere" data-testid="pool-mode">
+        {poolText}
+      </span>
+      {state.usage && state.usage.calls > 0 && (
+        <>
+          <span aria-hidden="true">·</span>
+          <span data-testid="usage">
+            Session spend: {state.usage.calls} calls, {String(state.usage.inputTokens)} in, {String(state.usage.outputTokens)} out,{" "}
+            {state.usage.priced ? `$${state.usage.costUsd.toFixed(4)}` : "cost unknown"} (M-1).
+          </span>
+        </>
+      )}
+    </div>
+  );
+
+  // The deck fills the page, and the conversation docks at the corner.
+  if (builtDeck) {
+    return (
+      <div className="w-full p-4 md:p-6">
+        {deckError && (
+          <p role="alert" className="mb-4 text-danger">
+            Could not load the deck: {deckError}
+          </p>
+        )}
+        <section aria-label="Deck" className="pb-40">
+          <DeckView deck={builtDeck} base={state.baseDeck} />
+        </section>
+
+        <aside aria-labelledby="chat-title" className="fixed bottom-4 left-4 z-40 flex w-[min(30rem,calc(100vw-2rem))] flex-col gap-2">
+          <h1 id="chat-title" className="sr-only">
+            Chat
+          </h1>
+          {historyOpen && (
+            <div className="max-h-[55vh] overflow-y-auto rounded-card border border-border bg-card p-4 shadow-overlay">
+              {thread}
+              <div ref={end} />
+            </div>
+          )}
+          <div className="flex flex-col gap-2 rounded-card border border-border bg-card p-3 shadow-overlay">
+            <div className="flex items-center justify-between gap-2">
+              <Button variant="ghost" size="sm" aria-expanded={historyOpen} onClick={() => setHistoryOpen((v) => !v)}>
+                {historyOpen ? <ChevronDownIcon aria-hidden="true" /> : <ChevronUpIcon aria-hidden="true" />}
+                History ({state.thread.length})
+              </Button>
+              {working}
+            </div>
+            {leaveWarning}
+            {questions}
+            {composer}
+            {idLine}
+          </div>
+        </aside>
+      </div>
+    );
+  }
+
+  // Before a deck exists the conversation is the page, so it fills the
+  // frame and its composer sits at the foot (D-331).
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 md:p-6 lg:flex-row lg:items-start lg:gap-8">
-      <section aria-labelledby="chat-title" className="flex min-w-0 flex-1 flex-col gap-4 lg:max-w-2xl">
+    <div className="mx-auto flex min-h-[calc(100vh-9rem)] w-full max-w-4xl flex-col p-4 md:p-6">
+      <section aria-labelledby="chat-title" className="flex min-w-0 grow flex-col gap-4">
         {/* The identifiers are for support, not for reading. They sit in
             one quiet row under the title, and never in the thread. */}
         <div className="flex flex-col gap-1.5">
-          <h1 id="chat-title" className="text-2xl font-semibold tracking-tight">
+          <h1 id="chat-title" className="font-display text-2xl font-semibold">
             Chat
           </h1>
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-            <span className="wrap-anywhere font-mono" data-testid="session-id">
-              {beforeFirstMessage ? "No session yet." : `Session id: ${state.sessionId}`}
-            </span>
-            <span aria-hidden="true">·</span>
-            <span className="wrap-anywhere" data-testid="pool-mode">
-              {poolText}
-            </span>
-          </div>
+          {idLine}
         </div>
         {beforeFirstMessage && resumeId && (
           <p className="text-sm">
@@ -281,135 +446,28 @@ function ChatPanel({
           </p>
         )}
         {beforeFirstMessage && collectionId ? (
-          <Label className="w-fit rounded-card border border-border bg-surface px-3 py-2 text-sm font-normal shadow-card">
+          <Label className="w-fit rounded-card border border-border bg-card px-3 py-2 text-sm font-normal shadow-card">
             <Checkbox checked={poolMode === "owned"} onCheckedChange={(v) => setPoolMode(v === true ? "owned" : "any")} />
             Use only cards in my collection
           </Label>
         ) : null}
 
-        {blocker.state === "blocked" && (
-          <div role="alertdialog" aria-labelledby="leave-title" aria-describedby="leave-text" className="flex flex-col gap-2 rounded-card border border-warning/50 bg-warning/10 p-3">
-            <p id="leave-title" className="font-medium">
-              The agent is still working.
-            </p>
-            <p id="leave-text" className="text-sm">
-              The build continues on the server. Open this session again, and the deck shows when it is done.
-            </p>
-            <div className="flex gap-2">
-              <Button size="sm" onClick={() => blocker.reset()}>
-                Stay
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => blocker.proceed()}>
-                Leave
-              </Button>
-            </div>
-          </div>
-        )}
+        {leaveWarning}
 
-        <ol className="flex flex-col gap-5" aria-label="Conversation">
-          {state.thread.map((item) => (
-            <li key={item.id}>
-              <ThreadLine item={item} />
-            </li>
-          ))}
-        </ol>
-
-        {openCount > 0 && (
-          <form ref={questionsForm} tabIndex={-1} onSubmit={onSubmitAnswers} className="flex flex-col gap-2" data-testid="open-questions">
-            {state.openQuestions.map((q) => (
-              <QuestionCard
-                key={q.id}
-                question={q}
-                draft={drafts[q.id] ?? emptyDraft}
-                disabled={state.busy}
-                onChange={(d) => setDrafts((all) => pruneDrafts({ ...all, [q.id]: d }, state.openQuestions))}
-              />
-            ))}
-            {answerTooLong && (
-              <p role="alert" className="text-sm text-danger">
-                An answer is over the {maxMessageBytes} byte cap. Shorten it.
-              </p>
-            )}
-            <Button type="submit" className="self-start" disabled={!allAnswered || answerTooLong || state.busy}>
-              Submit answers
-            </Button>
-            {!allAnswered && !state.busy && <p className="text-xs text-muted-foreground">Answer every question, then submit.</p>}
-          </form>
-        )}
-
-        <div className="flex items-center gap-3 text-sm text-muted-foreground" role="status">
-          {state.busy && (
-            <>
-              <span className="flex items-center gap-2">
-                <span className="flex gap-1" aria-hidden="true">
-                  <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.3s]" />
-                  <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.15s]" />
-                  <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground" />
-                </span>
-                The agent is working...
-              </span>
-              <Button type="button" variant="ghost" size="sm" onClick={stop}>
-                Stop
-              </Button>
-            </>
-          )}
+        <div className="flex grow flex-col gap-5">
+          {thread}
+          {questions}
+          {working}
+          <div ref={end} />
         </div>
 
-        {showComposer && (
-          <form onSubmit={onSubmit} className="sticky bottom-0 z-10 flex flex-col gap-2 bg-background pt-2 pb-3">
-            <div className="flex flex-col rounded-panel border border-border bg-surface shadow-card transition-colors focus-within:border-accent/60">
-              <Label htmlFor="message" className="sr-only">
-                Your message
-              </Label>
-              <Textarea
-                id="message"
-                ref={textarea}
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyDown={onKeyDown}
-                rows={2}
-                placeholder={beforeFirstMessage ? "Build me a mono-green Commander deck around elves." : "Ask for a change, or say what to build next."}
-                className="max-h-56 resize-none border-0 bg-transparent px-4 pt-3 pb-1 focus-visible:outline-none"
-              />
-              <div className="flex items-end justify-between gap-3 px-3 pb-3">
-                <p className={cn("text-xs", tooLong ? "text-danger" : "text-muted-foreground")}>
-                  Enter sends, Shift+Enter makes a new line. {bytes} of {maxMessageBytes} bytes.
-                </p>
-                <Button type="submit" size="sm" disabled={tooLong || !message.trim()}>
-                  Send
-                  <ArrowUpIcon aria-hidden="true" />
-                </Button>
-              </div>
-            </div>
-            {tooLong && (
-              <p role="alert" className="text-sm text-danger">
-                The message is over the {maxMessageBytes} byte cap. Shorten it.
-              </p>
-            )}
-          </form>
-        )}
-        <div ref={end} />
-
-        {state.usage && state.usage.calls > 0 && (
-          <p className="text-[11px] text-muted-foreground/80" data-testid="usage">
-            Session spend: {state.usage.calls} calls, {String(state.usage.inputTokens)} in, {String(state.usage.outputTokens)} out,{" "}
-            {state.usage.priced ? `$${state.usage.costUsd.toFixed(4)}` : "cost unknown"} (M-1).
-          </p>
-        )}
+        {composer}
       </section>
-
-      <section aria-label="Deck" className="min-w-0 flex-1 lg:sticky lg:top-6">
-        {deckError && (
-          <p role="alert" className="text-danger">
-            Could not load the deck: {deckError}
-          </p>
-        )}
-        {state.deck ? (
-          <DeckView deck={state.deck} base={state.baseDeck} />
-        ) : (
-          !deckError && <p className="text-muted-foreground">The deck shows here when the agent has built one.</p>
-        )}
-      </section>
+      {deckError && (
+        <p role="alert" className="text-danger">
+          Could not load the deck: {deckError}
+        </p>
+      )}
     </div>
   );
 }
@@ -432,21 +490,40 @@ export function poolLabel(rule: PoolRule | undefined, collectionId: string): str
 // measure. The rest are notes about the turn, and they stay quiet
 // (PR-16B). A bubble on both sides reads as a messenger, and this is a
 // tool.
+// The mark of the agent, the same four-point star the header carries.
+function SparkMark() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
+      <path d="M7 0l1.7 5.3L14 7l-5.3 1.7L7 14l-1.7-5.3L0 7l5.3-1.7z" />
+    </svg>
+  );
+}
+
 function ThreadLine({ item }: { item: ThreadItem }) {
   switch (item.kind) {
     case "user":
       return (
-        <p className="ml-auto max-w-[85%] rounded-panel border border-border bg-surface px-4 py-2.5 shadow-card whitespace-pre-line">
+        <p className="ml-auto max-w-[85%] rounded-card bg-accent px-4 py-2.5 text-accent-foreground whitespace-pre-line">
           <span className="sr-only">You: </span>
           {item.text}
         </p>
       );
     case "agent":
       return (
-        <p className="max-w-measure leading-relaxed whitespace-pre-line">
-          <span className="sr-only">Agent: </span>
-          {item.text}
-        </p>
+        <div className="flex items-start gap-2.5">
+          <span aria-hidden="true" className="mt-5 grid size-7 shrink-0 place-items-center rounded-full bg-accent text-accent-foreground">
+            <SparkMark />
+          </span>
+          <span className="min-w-0">
+            <span className="font-display mb-1.5 block text-[10px] tracking-[0.15em] text-muted-foreground uppercase" aria-hidden="true">
+              Agent
+            </span>
+            <p className="max-w-measure rounded-card border border-border bg-card px-4 py-3 leading-relaxed whitespace-pre-line">
+              <span className="sr-only">Agent: </span>
+              {item.text}
+            </p>
+          </span>
+        </div>
       );
     case "status":
       return (

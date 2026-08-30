@@ -4,7 +4,7 @@ import { CardRole, type Deck, type DeckCard, Severity } from "@mtg/api-client/mt
 import { errorMessage } from "../../lib/errors";
 import { ExportPanel } from "../export/export-panel";
 import { CardTile } from "./card-tile";
-import { identityOfCards, identityOfCommanders, identityVars, roleToken } from "./color-identity";
+import { identityOfCards, identityOfCommanders } from "./color-identity";
 import { ManaPips } from "./mana-pips";
 import {
   colorLetters,
@@ -74,14 +74,13 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
   const identity = fromCommanders.length > 0 ? fromCommanders : identityOfCards(byId);
 
   return (
-    <article aria-labelledby={`deck-title-${deck.id}`} className="flex flex-col gap-5" style={identityVars(identity)}>
-      <header className="relative isolate flex flex-col gap-1.5 overflow-hidden rounded-panel border border-border bg-surface p-6 shadow-card">
+    <article aria-labelledby={`deck-title-${deck.id}`} className="flex flex-col gap-5">
+      <header className="relative isolate flex flex-col gap-1.5 overflow-hidden rounded-card border border-border bg-card p-6 shadow-card">
         {/* The commander's own artwork sits behind its deck. Scryfall
             serves it as art_crop, so the app crops nothing (D-6). */}
-        {commanderArt && <img src={commanderArt} alt="" aria-hidden="true" className="pointer-events-none absolute inset-0 -z-20 size-full object-cover" />}
-        <span aria-hidden="true" className="identity-wash pointer-events-none absolute inset-0 -z-10" />
-        <span aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-r from-surface/85 via-surface/70 to-surface/40" />
-        <span aria-hidden="true" className="identity-rule absolute inset-x-0 top-0 h-1" />
+        {commanderArt && <img src={commanderArt} alt="" aria-hidden="true" className="pointer-events-none absolute inset-0 -z-20 size-full object-cover opacity-25" />}
+        <span aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-r from-card via-card/90 to-card/60" />
+        <span aria-hidden="true" className="hatch pointer-events-none absolute inset-0 -z-10 opacity-[0.03]" />
         <div className="flex flex-wrap items-center gap-3">
           <h2 id={`deck-title-${deck.id}`} className="wrap-anywhere text-2xl font-semibold tracking-tight text-balance">
             {deck.name || "Untitled deck"}
@@ -163,7 +162,7 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
       </div>
 
       {cards.data && (
-        <div className="@container panel-lit rounded-panel border border-border bg-surface p-5 backdrop-blur-sm">
+        <div className="@container shadow-card rounded-panel border border-border bg-card p-5 backdrop-blur-sm">
           <div className="grid items-start gap-8 @2xl:grid-cols-2">
           <table className="w-full text-sm">
             <caption className="mb-3 border-b border-border pb-2 text-left text-sm font-semibold tracking-wide uppercase">Mana curve, lands excluded</caption>
@@ -238,7 +237,7 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
         <CardGroup title="Commander" count={commanderEntries.length} entries={commanderEntries} byId={byId} commanders={commanders} hideOwnership />
       )}
       {groups.map((g) => (
-        <CardGroup key={g.role} title={roleLabel(g.role)} count={g.count} entries={g.cards} byId={byId} commanders={commanders} role={g.role} />
+        <CardGroup key={g.role} title={roleLabel(g.role)} count={g.count} entries={g.cards} byId={byId} commanders={commanders} />
       ))}
       {deck.sideboard.length > 0 && (
         <CardGroup title="Sideboard" count={deck.sideboard.reduce((n, c) => n + c.count, 0)} entries={deck.sideboard} byId={byId} commanders={commanders} />
@@ -256,7 +255,6 @@ function CardGroup({
   entries,
   byId,
   commanders,
-  role,
   hideOwnership = false,
 }: {
   title: string;
@@ -264,17 +262,15 @@ function CardGroup({
   entries: DeckCard[];
   byId: Map<string, Card>;
   commanders: Set<string>;
-  role?: CardRole;
   hideOwnership?: boolean;
 }) {
-  const hue = role === undefined ? "var(--role-other)" : roleToken[role];
   return (
     <section aria-label={`${title} (${count})`} className="@container">
-      <h3 className="mb-2.5 flex items-center gap-2 border-b border-border pb-2 text-sm font-semibold tracking-wide uppercase">
-        <span aria-hidden="true" className="inline-block h-3.5 w-1 rounded-full" style={{ backgroundColor: hue }} />
-        {title} <span className="font-normal tracking-normal normal-case text-muted-foreground">({count})</span>
+      <h3 className="font-display mb-2.5 flex items-center gap-2 border-b border-border pb-2 text-xs tracking-[0.15em] text-muted-foreground uppercase">
+        <span aria-hidden="true" className="inline-block h-3 w-0.5 bg-primary" />
+        {title} <span>({count})</span>
       </h3>
-      <ul className="mt-2 grid grid-cols-1 items-start gap-2 @sm:grid-cols-2 @2xl:grid-cols-3 @4xl:grid-cols-4">
+      <ul className="mt-2 grid grid-cols-2 items-start gap-3 @xl:grid-cols-3 @3xl:grid-cols-4 @5xl:grid-cols-5 @7xl:grid-cols-6">
         {entries.map((e, i) => (
           <CardTile key={`${e.oracleId}-${i}`} entry={e} card={byId.get(e.oracleId)} isCommander={commanders.has(e.oracleId)} hideOwnership={hideOwnership} />
         ))}

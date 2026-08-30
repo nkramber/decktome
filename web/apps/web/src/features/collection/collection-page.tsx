@@ -1,7 +1,7 @@
 import { ImportSource } from "@mtg/api-client/mtg/v1/collection_pb";
 import type { ImportCollectionResponse } from "@mtg/api-client/mtg/v1/collection_service_pb";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BookOpenIcon } from "lucide-react";
+import { BookOpenIcon, PackageIcon } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { useNavigate } from "react-router";
 
@@ -36,6 +36,7 @@ export function CollectionPage() {
   // fileKey remounts the file input, which is the one way to empty it.
   const [fileKey, setFileKey] = useState(0);
   const [name, setName] = useState("");
+  const [dragOver, setDragOver] = useState(false);
   const [result, setResult] = useState<ImportCollectionResponse | null>(null);
 
   const list = useQuery({
@@ -108,8 +109,33 @@ export function CollectionPage() {
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="file">ManaBox CSV file</Label>
-              <Input key={fileKey} id="file" type="file" name="file" accept=".csv,text/csv" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+              <Label htmlFor="file" className="sr-only">
+                ManaBox CSV file
+              </Label>
+              {/* The drop zone is the label of the file input, so a click
+                  and a drop both reach the one control. */}
+              <label
+                htmlFor="file"
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragOver(true);
+                }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragOver(false);
+                  setFile(e.dataTransfer.files?.[0] ?? null);
+                }}
+                className={cn(
+                  "flex cursor-pointer flex-col items-center gap-1.5 rounded-card border-2 border-dashed px-6 py-10 text-center transition-colors",
+                  dragOver ? "border-primary bg-secondary" : "border-border hover:border-accent hover:bg-muted",
+                )}
+              >
+                <PackageIcon className="size-7 text-primary" aria-hidden="true" />
+                <span className="font-display text-[15px]">{file ? file.name : "Drop your ManaBox export here"}</span>
+                <span className="font-mono text-[11px] text-muted-foreground">.csv — or click to browse</span>
+              </label>
+              <Input key={fileKey} id="file" type="file" name="file" accept=".csv,text/csv" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="sr-only" />
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="name">Collection name (optional, defaults to the file name)</Label>
@@ -141,7 +167,7 @@ export function CollectionPage() {
       </form>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium">Earlier uploads</h2>
+        <h2 className="font-display text-lg font-semibold">Earlier uploads</h2>
         {list.isPending && (
           <div role="status" className="flex flex-col gap-2">
             <span className="sr-only">Loading collections...</span>

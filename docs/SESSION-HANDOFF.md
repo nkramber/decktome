@@ -79,7 +79,18 @@ CAUTION: `tune-check` paired zero questions between run 24 and run 25, because t
 
 CAUTION: a `t.Cleanup` can not delete from Firestore. Go cancels `t.Context` before a cleanup runs, so the delete fails and the next run reads the leftovers. Each emulator test takes a fresh user id instead.
 
-## The palette of D-327 (2026-08-29)
+## The look of 2026-08-30 (D-328 to D-331)
+
+The owner gave a reference design, and it settles the look. Our terms win over its terms: the app is the MtG Deck Builder, and its entries are Build, Decks, and Collection.
+
+- Three faces, three jobs. Cinzel engraves a heading, a label, and a button. Crimson Pro reads a paragraph. JetBrains Mono carries an id, a count, and a date. Each one ships with the build.
+- The palette is navy, gold, and purple, with parchment for text. The radius is 4 px, and every panel carries a faint gold hatch.
+- The shell is one top bar (D-328). The sidebar, the phone tab bar, and the theme toggle are gone.
+- Dark is the only theme (D-330). `src/lib/theme.ts` and the no-flash script left with it.
+- A deck owns the whole page, and the conversation docks at the bottom left (D-331). A History control opens the thread over the composer. Before a deck exists, the conversation is the page.
+- The identity wash left (D-329). Color of the game shows in a mana pip and a rarity dot.
+
+## The palette of D-327 (2026-08-29), now amended
 
 D-311 kept every surface neutral and let the card art carry the color. The app read as boring, and the owner said so twice. The five colors of the game are the palette now, and dark leads.
 

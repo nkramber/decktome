@@ -1,6 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { lazy, Suspense } from "react";
-import { SparklesIcon } from "lucide-react";
 import { Link, Outlet } from "react-router";
 
 import { useAuth } from "../features/auth/auth-context";
@@ -8,9 +7,7 @@ import { errorMessage } from "../lib/errors";
 import { signOutOfApp } from "../lib/firebase";
 import { useAppStore } from "../lib/store";
 import { AccountMenu } from "./components/account-menu";
-import { BottomNav, SidebarNav } from "./components/app-nav";
-import { ThemeMenu } from "./components/theme-menu";
-import { useIsPhone } from "./components/use-viewport";
+import { TopNav } from "./components/top-nav";
 
 // The footer holds the one call that pulls the Connect client, so it loads
 // after the shell paints (D-320).
@@ -28,13 +25,12 @@ export async function signOutAndClear(reset: () => void, clear: () => void) {
   clear();
 }
 
-// The layout is the shell (D-311, D-317): a sidebar on a desktop and a
-// bottom tab bar on a phone. A signed-out visitor gets the page alone.
+// The layout is the shell (D-328): one header over the whole width, the
+// page under it, and the card-data line at the foot.
 export function Layout() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const reset = useAppStore((s) => s.reset);
-  const phone = useIsPhone();
 
   async function onSignOut() {
     try {
@@ -45,42 +41,48 @@ export function Layout() {
     }
   }
 
-  const email = user?.email ?? "";
-
   return (
-    <div className="flex min-h-screen bg-background text-foreground">
-      {user && !phone && (
-        <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col gap-5 border-r border-border bg-surface/60 p-3 backdrop-blur-xl">
-          <Link to="/" className="flex items-center gap-2.5 rounded-lg px-2 py-2">
-            <span aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-lg bg-accent text-accent-foreground shadow-[0_0_0_1px_color-mix(in_oklab,white_18%,transparent),0_6px_20px_color-mix(in_oklab,var(--accent)_55%,transparent)]">
-              <SparklesIcon className="size-4" />
-            </span>
-            <span className="text-base font-semibold tracking-tight">MtG Deck Builder</span>
-          </Link>
-          <SidebarNav />
-          <div className="grow" />
-          <div className="flex flex-col gap-1 border-t border-border pt-3">
-            <ThemeMenu />
-            <AccountMenu email={email} onSignOut={() => void onSignOut()} />
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <header className="flex shrink-0 items-center justify-between gap-4 border-b border-border bg-muted px-4 py-3 md:px-6">
+        <Link to="/" className="flex items-center gap-3 transition-opacity hover:opacity-80">
+          <span aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-card bg-accent text-accent-foreground">
+            <SparkMark />
+          </span>
+          <span className="flex flex-col">
+            <span className="font-display gold-shimmer text-[15px] font-semibold">MtG Deck Builder</span>
+            <span className="font-mono text-[10px] tracking-wide text-muted-foreground">DECK FORGE · AGENTIC</span>
+          </span>
+        </Link>
+
+        {user && (
+          <div className="flex items-center gap-1">
+            <TopNav />
+            <div className="ml-2 flex items-center gap-2 border-l border-border pl-3">
+              <AccountMenu email={user.email ?? ""} onSignOut={() => void onSignOut()} side="bottom" align="end" />
+            </div>
           </div>
-        </aside>
-      )}
-      <div className="flex min-w-0 grow flex-col">
-        <main className={user && phone ? "grow pb-16" : "grow"}>
-          <Outlet />
-        </main>
-        <Suspense fallback={null}>
-          <HealthFooter className={user && phone ? "pb-16" : undefined} />
-        </Suspense>
-      </div>
-      {user && phone && (
-        <BottomNav>
-          <AccountMenu email={email} onSignOut={() => void onSignOut()} withTheme trigger="tab" side="top" align="end" />
-        </BottomNav>
-      )}
+        )}
+      </header>
+
+      <main className="grow">
+        <Outlet />
+      </main>
+
+      <Suspense fallback={null}>
+        <HealthFooter />
+      </Suspense>
       <Suspense fallback={null}>
         <Toaster />
       </Suspense>
     </div>
+  );
+}
+
+// The mark of the app: a four-point star, cut rather than drawn.
+function SparkMark() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
+      <path d="M7 0l1.7 5.3L14 7l-5.3 1.7L7 14l-1.7-5.3L0 7l5.3-1.7z" />
+    </svg>
   );
 }

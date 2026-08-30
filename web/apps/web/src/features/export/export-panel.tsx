@@ -49,7 +49,7 @@ export function ExportPanel({ deck, byId }: { deck: Deck; byId: Map<string, Card
 
   const canExport = deck.id !== "" && !busy;
   return (
-    <section aria-labelledby={`export-title-${deck.id}`} className="flex flex-col gap-3 rounded-card border border-border bg-surface p-4 text-sm shadow-card">
+    <section aria-labelledby={`export-title-${deck.id}`} className="flex flex-col gap-3 rounded-card border border-border bg-card p-4 text-sm shadow-card">
       <h3 id={`export-title-${deck.id}`} className="font-medium">
         Export
       </h3>

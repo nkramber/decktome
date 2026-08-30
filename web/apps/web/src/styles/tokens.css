@@ -1,149 +1,75 @@
-/* The design tokens of the product UI (D-311, D-327).
+/* The design tokens of the product UI (D-328 to D-330).
  *
- * The five colors of the game are the palette, not one accent beside a
- * grey. A deck carries its own color identity, and the page takes that
- * identity as its accent. Dark leads, and light follows. */
+ * The look is an engraved card frame: a navy ground, gold as the one
+ * accent, purple beside it, and parchment for text. Dark is the only
+ * theme. Color of the game appears in the mana pips and the rarity dots,
+ * and nowhere else. */
 
 :root {
   color-scheme: dark;
 
-  /* Neutral scale and surfaces. The base is a blue-black, not a grey:
-     card art reads warmer against a cool ground. */
-  --background: oklch(0.145 0.013 265);
-  --surface: oklch(0.192 0.015 265 / 0.82);
-  --surface-foreground: oklch(0.97 0.005 265);
-  --raised: oklch(0.235 0.016 265);
-  --foreground: oklch(0.97 0.005 265);
-  --muted: oklch(0.245 0.015 265 / 0.7);
-  --muted-foreground: oklch(0.735 0.018 265);
-  --border: oklch(0.295 0.017 265);
+  --background: #0a0c16;
+  --foreground: #e8dcc8;
+  --card: #13162a;
+  --card-foreground: #e8dcc8;
+  --secondary: #1e2140;
+  --secondary-foreground: #b8adc4;
+  --muted: #171a30;
+  --muted-foreground: #8a8098;
+  --border: #2a2d4a;
 
-  /* The five colors and colorless. These are the app's palette, and they
-     hold their hue in both themes. */
-  --mana-w: oklch(0.9 0.075 88);
-  --mana-u: oklch(0.66 0.16 248);
-  --mana-b: oklch(0.58 0.11 305);
-  --mana-r: oklch(0.635 0.21 27);
-  --mana-g: oklch(0.66 0.16 150);
-  --mana-c: oklch(0.72 0.02 265);
+  /* Gold leads. Purple sits beside it, never over it. */
+  --primary: #c89b3c;
+  --primary-foreground: #0a0c16;
+  --accent: #7b5ea7;
+  --accent-foreground: #e8dcc8;
+  --ring: #c89b3c;
 
-  /* identity-a and identity-b carry one deck's color identity. A deck
-     page and a deck card set them inline, and the wash reads them. The
-     fallback is the app's own accent. */
-  --identity-a: var(--accent);
-  --identity-b: var(--accent);
+  --danger: #d05a4a;
+  --danger-foreground: #0a0c16;
+  --success: #3f9a68;
+  --warning: #c89b3c;
 
-  /* One accent for the app itself, where no deck owns the space. */
-  --accent: oklch(0.66 0.16 248);
-  --accent-foreground: oklch(0.16 0.02 265);
-  --ring: oklch(0.7 0.15 248);
-  --link: oklch(0.78 0.13 248);
+  /* The five colors of the game, for a mana pip only. */
+  --mana-w: #f9faf0;
+  --mana-w-ink: #1a1a1a;
+  --mana-u: #3a6eb5;
+  --mana-b: #1a1020;
+  --mana-b-ink: #c8a8e0;
+  --mana-r: #b83020;
+  --mana-g: #2a7040;
+  --mana-c: #8a8898;
 
-  /* The result states. */
-  --danger: oklch(0.66 0.19 27);
-  --danger-foreground: oklch(0.16 0.02 265);
-  --success: oklch(0.7 0.15 150);
-  --success-foreground: oklch(0.16 0.02 265);
-  --warning: oklch(0.79 0.14 78);
-  --warning-foreground: oklch(0.16 0.02 265);
+  /* The four rarities, as the game prints them. */
+  --rarity-common: #a1a1aa;
+  --rarity-uncommon: #cbd5e1;
+  --rarity-rare: #facc15;
+  --rarity-mythic: #f97316;
 
-  /* A role of a card carries its own hue, so the eye finds the shape of
-     a deck before it reads one word. */
-  --role-land: oklch(0.7 0.06 120);
-  --role-ramp: oklch(0.66 0.16 150);
-  --role-draw: oklch(0.66 0.16 248);
-  --role-removal: oklch(0.635 0.21 27);
-  --role-wipe: oklch(0.66 0.17 12);
-  --role-threat: oklch(0.72 0.16 55);
-  --role-interaction: oklch(0.68 0.13 200);
-  --role-synergy: oklch(0.68 0.14 320);
-  --role-wincon: oklch(0.8 0.15 88);
-  --role-other: oklch(0.72 0.02 265);
-
-  /* The four rarities. The game prints silver and black, and neither one
-     reads on a dark track, so these lift toward the light. */
-  --rarity-mythic: oklch(0.66 0.2 32);
-  --rarity-rare: oklch(0.82 0.14 82);
-  --rarity-uncommon: oklch(0.74 0.035 235);
-  --rarity-common: oklch(0.5 0.012 265);
-
-  /* Elevation. On a dark ground a surface lifts with its own light. */
-  --shadow-card: 0 1px 2px oklch(0 0 0 / 0.4), 0 2px 6px oklch(0 0 0 / 0.3);
-  --shadow-raised: 0 2px 6px oklch(0 0 0 / 0.4), 0 12px 32px oklch(0 0 0 / 0.45);
-  --shadow-overlay: 0 8px 20px oklch(0 0 0 / 0.5), 0 28px 60px oklch(0 0 0 / 0.6);
-}
-
-:root.light {
-  color-scheme: light;
-
-  --background: oklch(0.985 0.004 265);
-  --surface: oklch(1 0 0);
-  --surface-foreground: oklch(0.2 0.015 265);
-  --raised: oklch(1 0 0);
-  --foreground: oklch(0.2 0.015 265);
-  --muted: oklch(0.955 0.006 265);
-  --muted-foreground: oklch(0.48 0.02 265);
-  --border: oklch(0.9 0.008 265);
-
-  --mana-w: oklch(0.82 0.09 85);
-  --mana-u: oklch(0.55 0.17 250);
-  --mana-b: oklch(0.44 0.11 305);
-  --mana-r: oklch(0.55 0.21 27);
-  --mana-g: oklch(0.53 0.15 152);
-  --mana-c: oklch(0.62 0.02 265);
-
-  --accent: oklch(0.52 0.18 250);
-  --accent-foreground: oklch(0.99 0 0);
-  --ring: oklch(0.55 0.18 250);
-  --link: oklch(0.48 0.17 250);
-
-  --danger: oklch(0.53 0.2 27);
-  --danger-foreground: oklch(0.99 0 0);
-  --success: oklch(0.5 0.14 152);
-  --success-foreground: oklch(0.99 0 0);
-  --warning: oklch(0.62 0.14 75);
-  --warning-foreground: oklch(0.99 0 0);
-
-  --role-land: oklch(0.5 0.06 120);
-  --role-ramp: oklch(0.5 0.15 152);
-  --role-draw: oklch(0.5 0.17 250);
-  --role-removal: oklch(0.53 0.2 27);
-  --role-wipe: oklch(0.5 0.18 12);
-  --role-threat: oklch(0.56 0.16 55);
-  --role-interaction: oklch(0.52 0.13 200);
-  --role-synergy: oklch(0.52 0.15 320);
-  --role-wincon: oklch(0.58 0.14 85);
-  --role-other: oklch(0.55 0.02 265);
-
-  --rarity-mythic: oklch(0.55 0.2 32);
-  --rarity-rare: oklch(0.62 0.13 82);
-  --rarity-uncommon: oklch(0.58 0.035 235);
-  --rarity-common: oklch(0.72 0.012 265);
-
-  --shadow-card: 0 1px 2px oklch(0.2 0.02 265 / 0.06), 0 2px 6px oklch(0.2 0.02 265 / 0.07);
-  --shadow-raised: 0 2px 6px oklch(0.2 0.02 265 / 0.07), 0 12px 32px oklch(0.2 0.02 265 / 0.1);
-  --shadow-overlay: 0 8px 20px oklch(0.2 0.02 265 / 0.1), 0 28px 60px oklch(0.2 0.02 265 / 0.14);
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-raised: 0 8px 24px rgb(200 155 60 / 0.15);
+  --shadow-overlay: 0 12px 32px rgb(0 0 0 / 0.6);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-surface: var(--surface);
-  --color-surface-foreground: var(--surface-foreground);
-  --color-raised: var(--raised);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-ring: var(--ring);
-  --color-link: var(--link);
   --color-danger: var(--danger);
   --color-danger-foreground: var(--danger-foreground);
   --color-success: var(--success);
-  --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
-  --color-warning-foreground: var(--warning-foreground);
 
   --color-mana-w: var(--mana-w);
   --color-mana-u: var(--mana-u);
@@ -152,28 +78,24 @@
   --color-mana-g: var(--mana-g);
   --color-mana-c: var(--mana-c);
 
-  --color-identity-a: var(--identity-a);
-  --color-identity-b: var(--identity-b);
+  --color-rarity-common: var(--rarity-common);
+  --color-rarity-uncommon: var(--rarity-uncommon);
+  --color-rarity-rare: var(--rarity-rare);
+  --color-rarity-mythic: var(--rarity-mythic);
 
-  --color-role-land: var(--role-land);
-  --color-role-ramp: var(--role-ramp);
-  --color-role-draw: var(--role-draw);
-  --color-role-removal: var(--role-removal);
-  --color-role-wipe: var(--role-wipe);
-  --color-role-threat: var(--role-threat);
-  --color-role-interaction: var(--role-interaction);
-  --color-role-synergy: var(--role-synergy);
-  --color-role-wincon: var(--role-wincon);
-  --color-role-other: var(--role-other);
-
-  --radius-card: 0.875rem;
-  --radius-panel: 1.25rem;
+  /* A card frame is cut, not rounded. */
+  --radius-card: 4px;
+  --radius-panel: 4px;
 
   --shadow-card: var(--shadow-card);
   --shadow-raised: var(--shadow-raised);
   --shadow-overlay: var(--shadow-overlay);
 
-  --font-sans: "Geist Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* Three faces, three jobs. The display face engraves a heading, the
+     body face reads a paragraph, and the mono face carries the data. */
+  --font-display: "Cinzel Variable", Georgia, serif;
+  --font-sans: "Crimson Pro Variable", Georgia, serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
 
   --container-measure: 40rem;
   --max-width-measure: 40rem;

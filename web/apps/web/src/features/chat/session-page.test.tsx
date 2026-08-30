@@ -105,7 +105,9 @@ describe("SessionPage", () => {
 
     expect(await screen.findByRole("heading", { name: "Elves" })).toBeInTheDocument();
     expect(screen.queryByRole("group", { name: /Question:/ })).not.toBeInTheDocument();
-    // The option the user clicked shows as their line.
+    // The option the user clicked shows as their line, once the dock's
+    // History is open.
+    await user.click(screen.getByRole("button", { name: /^History/ }));
     expect(within(screen.getByRole("list", { name: "Conversation" })).getAllByRole("listitem")[2]).toHaveTextContent("Modern");
     expect(screen.getByText("building the deck")).toBeInTheDocument();
     expect(screen.getByText("Here is your deck.")).toBeInTheDocument();
@@ -503,6 +505,8 @@ describe("SessionPage", () => {
     await user.type(await screen.findByLabelText("Your message"), "fewer elves{enter}");
     expect(await screen.findByTestId("revision-note")).toHaveTextContent("I changed the count of Llanowar Elves: 4 to 2.");
     expect(screen.getByTestId("revision-diff")).toHaveTextContent("Count of Llanowar Elves: 4 to 2");
+    // The same words reach the thread, behind the dock's History (D-331).
+    await user.click(screen.getByRole("button", { name: /^History/ }));
     expect(screen.getByText("I changed the count of Llanowar Elves: 4 to 2.", { selector: "p.whitespace-pre-line" })).toBeInTheDocument();
     expect((chat.mock.calls[1][0] as { sessionId: string; message: string }).message).toBe("fewer elves");
   });
@@ -613,8 +617,15 @@ describe("SessionPage", () => {
     await renderAt("/session/s1");
     expect(await screen.findByTestId("revision-diff")).toHaveTextContent("Count of Llanowar Elves: 4 to 2");
     expect(getDeck).toHaveBeenCalledWith({ deckId: "d0" });
+    await userEvent.setup().click(screen.getByRole("button", { name: /^History/ }));
     const items = within(screen.getByRole("list", { name: "Conversation" })).getAllByRole("listitem");
-    expect(items.map((li) => li.textContent)).toEqual(["You: elves", "Deck built: Elves.", "You: fewer elves", "Agent: done"]);
+    // The agent turn carries a visible label beside its screen-reader
+    // one, so the check reads each item rather than the joined text.
+    expect(items).toHaveLength(4);
+    expect(items[0]).toHaveTextContent("You: elves");
+    expect(items[1]).toHaveTextContent("Deck built: Elves.");
+    expect(items[2]).toHaveTextContent("You: fewer elves");
+    expect(items[3]).toHaveTextContent("Agent: done");
   });
 
   it("a closed question with no options shows the text field", async () => {

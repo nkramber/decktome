@@ -1,9 +1,7 @@
 import { screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { axe } from "jest-axe";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { applyTheme, readChoice, resolveTheme, themeStorageKey, useThemeStore } from "../lib/theme";
 import { fakeUser, state } from "../test-auth-state";
 import { renderAt } from "../test-utils";
 
@@ -11,97 +9,22 @@ vi.mock("firebase/app");
 vi.mock("firebase/auth");
 vi.mock("../lib/api", () => ({
   healthClient: { check: () => Promise.resolve({ status: "ok", version: "test", cardSnapshot: "2026-08-24T09:01:52Z", cardSnapshotAgeHours: 2.5 }) },
-  collectionClient: { listCollections: () => Promise.resolve({ collections: [] }) },
-  deckClient: { listDecks: () => Promise.resolve({ decks: [] }) },
+  collectionClient: { listCollections: () => Promise.resolve({ collections: [] }), getCollection: vi.fn() },
+  deckClient: { listDecks: () => Promise.resolve({ decks: [], nextPageToken: "" }), getDeck: vi.fn(), updateDeck: vi.fn(), deleteDeck: vi.fn() },
   agentClient: { getSession: () => Promise.resolve({ session: { id: "abc123", turns: [], deckIds: [] } }) },
-  cardClient: { getCards: () => Promise.resolve({ cards: [] }) },
+  cardClient: { getCards: () => Promise.resolve({ cards: [], missingOracleIds: [] }) },
 }));
-
-// matchMediaStub answers one query with a fixed result, so a test can play
-// a phone or a dark-theme reader.
-function matchMediaStub(match: (query: string) => boolean) {
-  vi.stubGlobal("matchMedia", (query: string) => ({
-    matches: match(query),
-    media: query,
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    addListener: () => {},
-    removeListener: () => {},
-    dispatchEvent: () => false,
-    onchange: null,
-  }));
-}
 
 beforeEach(() => {
   state.user = fakeUser;
   localStorage.clear();
-  document.documentElement.className = "";
-  useThemeStore.setState({ choice: "dark", theme: "dark" });
-});
-
-afterEach(() => {
-  vi.unstubAllGlobals();
-  document.documentElement.className = "";
-});
-
-describe("the theme", () => {
-  it("reads dark when nothing is stored, and the stored choice after that", () => {
-    expect(readChoice()).toBe("dark");
-    localStorage.setItem(themeStorageKey, "light");
-    expect(readChoice()).toBe("light");
-  });
-
-  it("treats a damaged stored value as dark", () => {
-    localStorage.setItem(themeStorageKey, "purple");
-    expect(readChoice()).toBe("dark");
-  });
-
-  it("resolves system from the media query", () => {
-    matchMediaStub((q) => q.includes("dark"));
-    expect(resolveTheme("system")).toBe("dark");
-    matchMediaStub(() => false);
-    expect(resolveTheme("system")).toBe("light");
-    expect(resolveTheme("dark")).toBe("dark");
-  });
-
-  it("puts the class and the color scheme on the root element", () => {
-    // Dark is the base, so only the light theme carries a class (D-327).
-    applyTheme("dark");
-    expect(document.documentElement).not.toHaveClass("light");
-    expect(document.documentElement.style.colorScheme).toBe("dark");
-    applyTheme("light");
-    expect(document.documentElement).toHaveClass("light");
-    expect(document.documentElement.style.colorScheme).toBe("light");
-  });
-
-  it("stores the choice from the sidebar menu and paints the root element", async () => {
-    await renderAt("/decks");
-    const user = userEvent.setup();
-    await user.click(screen.getByRole("button", { name: /^Theme/ }));
-    await user.click(await screen.findByRole("menuitemradio", { name: "Light" }));
-    expect(localStorage.getItem(themeStorageKey)).toBe("light");
-    expect(document.documentElement).toHaveClass("light");
-  });
 });
 
 describe("the shell", () => {
-  it("shows the sidebar on a desktop and the bottom bar on a phone", async () => {
-    matchMediaStub(() => false);
-    const desktop = await renderAt("/decks");
-    expect(screen.getByRole("navigation", { name: "Main" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "MtG Deck Builder" })).toBeInTheDocument();
-    desktop.unmount();
-
-    matchMediaStub((q) => q.includes("max-width"));
-    await renderAt("/decks");
-    expect(screen.getByRole("navigation", { name: "Main" })).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "MtG Deck Builder" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Account menu" })).toBeInTheDocument();
-  });
-
-  it("has one Main landmark, never two", async () => {
+  it("carries one navigation, in the header (D-328)", async () => {
     await renderAt("/decks");
     expect(screen.getAllByRole("navigation", { name: "Main" })).toHaveLength(1);
+    expect(screen.getByRole("link", { name: /MtG Deck Builder/ })).toBeInTheDocument();
   });
 
   it("marks the entry that owns the path", async () => {
@@ -110,14 +33,20 @@ describe("the shell", () => {
     expect(screen.getByRole("link", { name: "Collection" })).not.toHaveAttribute("aria-current");
   });
 
+  it("shows the account menu to a signed-in reader", async () => {
+    await renderAt("/decks");
+    expect(screen.getByRole("button", { name: "Account menu" })).toBeInTheDocument();
+  });
+
   it("shows no navigation to a signed-out visitor", async () => {
     state.user = null;
     await renderAt("/sign-in");
     expect(screen.queryByRole("navigation", { name: "Main" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Account menu" })).not.toBeInTheDocument();
   });
 });
 
-// The gate asks for axe on every route in both themes (PR-16).
+// Dark is the only theme now (D-330), so axe runs once per route.
 const routes: [string, string][] = [
   ["/sign-in", "sign-in"],
   ["/collection", "collection"],
@@ -125,10 +54,9 @@ const routes: [string, string][] = [
   ["/session/new", "chat"],
 ];
 
-describe.each(["light", "dark"] as const)("axe in the %s theme", (theme) => {
+describe("axe", () => {
   it.each(routes)("passes on %s", async (path) => {
     state.user = path === "/sign-in" ? null : fakeUser;
-    applyTheme(theme);
     const { container } = await renderAt(path);
     await screen.findByRole("heading", { level: 1 });
     expect(await axe(container)).toHaveNoViolations();

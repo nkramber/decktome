@@ -4,19 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MtG Deck Builder</title>
-    <script>
-      // The theme class goes on before the first paint, so a reader never
-      // sees the wrong ground (D-327). Dark is the base, and only light
-      // carries a class. The app reads the same key.
-      (function () {
-        try {
-          var choice = localStorage.getItem("mtg-theme") || "dark";
-          var light = choice === "light" || (choice === "system" && window.matchMedia("(prefers-color-scheme: light)").matches);
-          document.documentElement.classList.toggle("light", light);
-          document.documentElement.style.colorScheme = light ? "light" : "dark";
-        } catch (e) {}
-      })();
-    </script>
   </head>
   <body>
     <div id="root"></div>

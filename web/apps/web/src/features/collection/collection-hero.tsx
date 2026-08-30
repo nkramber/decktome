@@ -22,7 +22,7 @@ export function CollectionHero({ collection, loading }: { collection: Collection
   const total = stats.total || collection.cardCount;
 
   return (
-    <section aria-labelledby="binder-title" className="panel-lit relative isolate overflow-hidden rounded-panel border border-border bg-surface backdrop-blur-sm">
+    <section aria-labelledby="binder-title" className="shadow-card relative isolate overflow-hidden rounded-panel border border-border bg-card backdrop-blur-sm">
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 flex opacity-55">
         {cards.map((card) => {
           const art = card.faces?.[0]?.imageUris?.artCrop ?? card.defaultPrinting?.imageUris?.artCrop ?? "";
@@ -30,7 +30,7 @@ export function CollectionHero({ collection, loading }: { collection: Collection
           return <img key={card.oracleId} src={art} alt="" loading="lazy" className="h-full min-w-0 flex-1 object-cover" />;
         })}
       </div>
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-r from-surface via-surface/90 to-surface/60" />
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-r from-card via-card/90 to-card/60" />
 
       <div className="relative flex flex-col gap-5 p-6">
         <div className="flex flex-wrap items-end justify-between gap-4">

@@ -74,7 +74,7 @@ export function QuestionCard({
             {question.options.map((opt, i) => {
               const id = question.optionOracleIds[i] ?? "";
               return (
-                <li key={i} className="flex flex-col gap-2 rounded-card border border-border bg-surface p-2">
+                <li key={i} className="flex flex-col gap-2 rounded-card border border-border bg-card p-2">
                   {id && !cards.isPending ? <CardOption card={byId.get(id)} name={opt} /> : null}
                   <div>{button(opt, i)}</div>
                 </li>

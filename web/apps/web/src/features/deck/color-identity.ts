@@ -1,9 +1,7 @@
 import { type Card, Color } from "@mtg/api-client/mtg/v1/card_pb";
-import { CardRole } from "@mtg/api-client/mtg/v1/deck_pb";
-import type { CSSProperties } from "react";
 
-// The five colors of the game are the palette (D-327). A deck carries its
-// own identity, and the page it owns takes that identity as its accent.
+// The colors of the game appear in a mana pip and nowhere else (D-329).
+// Gold and purple are the app's own palette, and every deck wears them.
 
 // wubrg is the order the game prints its colors in. Every list of colors
 // in the app follows it, so two decks of the same colors read the same.
@@ -17,6 +15,28 @@ export const manaToken: Record<Color, string> = {
   [Color.G]: "var(--mana-g)",
   [Color.C]: "var(--mana-c)",
   [Color.UNSPECIFIED]: "var(--mana-c)",
+};
+
+// The ink of a pip. White and black need their own, because the game
+// prints one nearly white and one nearly black.
+export const manaInk: Record<Color, string> = {
+  [Color.W]: "var(--mana-w-ink)",
+  [Color.U]: "#fff",
+  [Color.B]: "var(--mana-b-ink)",
+  [Color.R]: "#fff",
+  [Color.G]: "#fff",
+  [Color.C]: "#fff",
+  [Color.UNSPECIFIED]: "#fff",
+};
+
+export const manaLetter: Record<Color, string> = {
+  [Color.W]: "W",
+  [Color.U]: "U",
+  [Color.B]: "B",
+  [Color.R]: "R",
+  [Color.G]: "G",
+  [Color.C]: "C",
+  [Color.UNSPECIFIED]: "C",
 };
 
 export const colorName: Record<Color, string> = {
@@ -58,19 +78,6 @@ export function identityOfCards(byId: Map<string, Card>): Color[] {
   return sortIdentity(colors);
 }
 
-// identityVars gives one element the two stops of its identity wash. One
-// color washes in its own hue, two or more wash from the first to the
-// last, and a colorless deck washes in steel.
-export function identityVars(colors: Color[]): CSSProperties {
-  const sorted = sortIdentity(colors);
-  if (sorted.length === 0) {
-    return { "--identity-a": manaToken[Color.C], "--identity-b": manaToken[Color.C] } as CSSProperties;
-  }
-  const first = manaToken[sorted[0]];
-  const last = manaToken[sorted[sorted.length - 1]];
-  return { "--identity-a": first, "--identity-b": last } as CSSProperties;
-}
-
 // identityLabel names the identity for a screen reader and for a filter,
 // for example "White and Blue" or "Colorless".
 export function identityLabel(colors: Color[]): string {
@@ -81,18 +88,3 @@ export function identityLabel(colors: Color[]): string {
   return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
 }
 
-// roleToken gives one card role its hue, so the eye finds the shape of a
-// deck before it reads one word.
-export const roleToken: Record<CardRole, string> = {
-  [CardRole.LAND]: "var(--role-land)",
-  [CardRole.RAMP]: "var(--role-ramp)",
-  [CardRole.DRAW]: "var(--role-draw)",
-  [CardRole.REMOVAL]: "var(--role-removal)",
-  [CardRole.WIPE]: "var(--role-wipe)",
-  [CardRole.THREAT]: "var(--role-threat)",
-  [CardRole.INTERACTION]: "var(--role-interaction)",
-  [CardRole.SYNERGY]: "var(--role-synergy)",
-  [CardRole.WINCON]: "var(--role-wincon)",
-  [CardRole.OTHER]: "var(--role-other)",
-  [CardRole.UNSPECIFIED]: "var(--role-other)",
-};
