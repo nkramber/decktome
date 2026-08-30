@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { healthClient } from "../../lib/api";
+import { cn } from "../../lib/cn";
 
 // Every screen that shows deck data must show which day's card data it
 // rests on (legality_as_of). The Check RPC carries the snapshot date and
 // age, so one call fills the footer.
-export function HealthFooter() {
+export function HealthFooter({ className }: { className?: string }) {
   const health = useQuery({
     queryKey: ["health"],
     queryFn: () => healthClient.check({}),
@@ -30,7 +31,7 @@ export function HealthFooter() {
   }
 
   return (
-    <footer className="border-t border-neutral-200 px-6 py-2 text-sm text-neutral-600" >
+    <footer className={cn("border-t border-border px-4 py-2 text-sm text-muted-foreground md:px-6", className)}>
       <span data-testid="health">{api}</span>
       {" · "}
       <span data-testid="freshness">{cards}</span>

@@ -31,7 +31,7 @@ export function useOptionCards(q: Question) {
 export function CardOption({ card, name }: { card: Card | undefined; name: string }) {
   const faces = facesOf(card);
   if (!card || faces.length === 0) {
-    return <p className="text-sm text-neutral-600">No card data for {name}.</p>;
+    return <p className="text-sm text-muted-foreground">No card data for {name}.</p>;
   }
   return (
     <div className="flex flex-col gap-2" data-testid="card-option">
@@ -39,7 +39,7 @@ export function CardOption({ card, name }: { card: Card | undefined; name: strin
         <figure key={`${card.oracleId}-${i}`} className="flex flex-col gap-1">
           <FaceImage face={face} />
           {faces.length > 1 && (
-            <figcaption className="text-xs text-neutral-700">
+            <figcaption className="text-xs text-muted-foreground">
               {face.name} (face {i + 1} of {faces.length})
             </figcaption>
           )}
@@ -51,7 +51,7 @@ export function CardOption({ card, name }: { card: Card | undefined; name: strin
 
 export function CardOptionsError({ error }: { error: unknown }) {
   return (
-    <p role="alert" className="text-sm text-red-700">
+    <p role="alert" className="text-sm text-danger">
       Could not load the card data: {errorMessage(error)}
     </p>
   );

@@ -23,8 +23,8 @@ beforeEach(() => {
 });
 
 describe("SignInPage", () => {
-  it("renders the form with labeled inputs", () => {
-    renderAt("/sign-in");
+  it("renders the form with labeled inputs", async () => {
+    await renderAt("/sign-in");
     expect(screen.getByRole("heading", { level: 1, name: "Sign in" })).toBeInTheDocument();
     expect(screen.getByLabelText("Email")).toBeInTheDocument();
     expect(screen.getByLabelText("Password")).toBeInTheDocument();
@@ -32,7 +32,7 @@ describe("SignInPage", () => {
 
   it("submits email and password to signInWithEmailAndPassword", async () => {
     signIn.mockResolvedValue({} as never);
-    renderAt("/sign-in");
+    await renderAt("/sign-in");
     const user = userEvent.setup();
     await user.type(screen.getByLabelText("Email"), "nate@example.com");
     await user.type(screen.getByLabelText("Password"), "secret1");
@@ -43,7 +43,7 @@ describe("SignInPage", () => {
 
   it("toggles to create account and calls createUserWithEmailAndPassword", async () => {
     signUp.mockResolvedValue({} as never);
-    renderAt("/sign-in");
+    await renderAt("/sign-in");
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: /Create account/ }));
     expect(screen.getByRole("heading", { level: 1, name: "Create account" })).toBeInTheDocument();
@@ -55,7 +55,7 @@ describe("SignInPage", () => {
 
   it("shows a readable message for a Firebase error", async () => {
     signIn.mockRejectedValue({ code: "auth/invalid-credential", message: "Firebase: Error" });
-    renderAt("/sign-in");
+    await renderAt("/sign-in");
     const user = userEvent.setup();
     await user.type(screen.getByLabelText("Email"), "nate@example.com");
     await user.type(screen.getByLabelText("Password"), "wrong12");
@@ -64,7 +64,7 @@ describe("SignInPage", () => {
   });
 
   it("has no axe violations", async () => {
-    const { container } = renderAt("/sign-in");
+    const { container } = await renderAt("/sign-in");
     await screen.findByText(/API: ok/);
     expect(await axe(container)).toHaveNoViolations();
   });

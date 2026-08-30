@@ -64,7 +64,7 @@ beforeEach(() => {
 describe("SessionPage", () => {
   it("sends the first message, takes the session id, and shows the question with its options", async () => {
     chat.mockReturnValue(events([ev("sessionStarted", "s1"), ev("question", formatQuestion), ev("slots", { poolRule: PoolRule.ANY_CARD }), ev("usage", { calls: 1, inputTokens: 100n, outputTokens: 20n, costUsd: 0.001, priced: true })]));
-    const { router } = renderAt("/session/new");
+    const { router } = await renderAt("/session/new");
     expect(await screen.findByTestId("session-id")).toHaveTextContent("No session yet.");
     const user = userEvent.setup();
     await user.type(screen.getByLabelText("Your message"), "Build me an elf deck");
@@ -89,7 +89,7 @@ describe("SessionPage", () => {
     chat
       .mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("question", formatQuestion)]))
       .mockReturnValueOnce(events([ev("slots", { poolRule: PoolRule.ANY_CARD }), ev("status", "building the deck"), ev("textDelta", "Here is "), ev("textDelta", "your deck."), ev("deck", deck), ev("usage", { calls: 3 })]));
-    renderAt("/session/new");
+    await renderAt("/session/new");
     const user = userEvent.setup();
     await user.type(await screen.findByLabelText("Your message"), "elves");
     await user.click(screen.getByRole("button", { name: "Send" }));
@@ -117,7 +117,7 @@ describe("SessionPage", () => {
     chat
       .mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("question", formatQuestion), ev("question", q2)]))
       .mockReturnValueOnce(events([ev("slots", {})]));
-    renderAt("/session/new");
+    await renderAt("/session/new");
     const user = userEvent.setup();
     await user.type(await screen.findByLabelText("Your message"), "elves");
     await user.click(screen.getByRole("button", { name: "Send" }));
@@ -141,7 +141,7 @@ describe("SessionPage", () => {
 
   it("a closed question offers no free-text field (D-295)", async () => {
     chat.mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("question", { ...formatQuestion, closed: true })]));
-    renderAt("/session/new");
+    await renderAt("/session/new");
     const user = userEvent.setup();
     await user.type(await screen.findByLabelText("Your message"), "elves");
     await user.click(screen.getByRole("button", { name: "Send" }));
@@ -153,7 +153,7 @@ describe("SessionPage", () => {
 
   it("an option pick toggles, and a second pick replaces it", async () => {
     chat.mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("question", formatQuestion)]));
-    renderAt("/session/new");
+    await renderAt("/session/new");
     const user = userEvent.setup();
     await user.type(await screen.findByLabelText("Your message"), "elves");
     await user.click(screen.getByRole("button", { name: "Send" }));
@@ -173,7 +173,7 @@ describe("SessionPage", () => {
     chat
       .mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("question", formatQuestion), ev("question", colors)]))
       .mockReturnValueOnce(events([ev("question", power), ev("slots", {})]));
-    renderAt("/session/new");
+    await renderAt("/session/new");
     const user = userEvent.setup();
     await user.type(await screen.findByLabelText("Your message"), "angels");
     await user.click(screen.getByRole("button", { name: "Send" }));
@@ -194,7 +194,7 @@ describe("SessionPage", () => {
 
   it("shows a failure event and a stream error as alerts", async () => {
     chat.mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("failure", { code: "llm_unavailable", message: "The model did not answer.", retryable: true })]));
-    renderAt("/session/new");
+    await renderAt("/session/new");
     const user = userEvent.setup();
     await user.type(await screen.findByLabelText("Your message"), "elves");
     await user.click(screen.getByRole("button", { name: "Send" }));
@@ -211,7 +211,7 @@ describe("SessionPage", () => {
   it("sends the collection id in owned mode on the first message only", async () => {
     useAppStore.setState({ collectionId: "c1", poolMode: "owned" });
     chat.mockReturnValue(events([ev("sessionStarted", "s1")]));
-    renderAt("/session/new");
+    await renderAt("/session/new");
     const user = userEvent.setup();
     const box = await screen.findByLabelText("Use only cards in my collection");
     expect(box).toBeChecked();
@@ -239,7 +239,7 @@ describe("SessionPage", () => {
       yield ev("sessionStarted", "s1");
       yield ev("slots", {});
     });
-    renderAt("/session/new");
+    await renderAt("/session/new");
     const user = userEvent.setup();
     await user.type(await screen.findByLabelText("Your message"), "elves");
     await user.click(screen.getByRole("button", { name: "Send" }));
@@ -255,7 +255,7 @@ describe("SessionPage", () => {
       yield ev("sessionStarted", "s1");
       await new Promise((_, reject) => opts.signal.addEventListener("abort", () => reject(new ConnectError("canceled", Code.Canceled))));
     });
-    renderAt("/session/new");
+    await renderAt("/session/new");
     const user = userEvent.setup();
     await user.type(await screen.findByLabelText("Your message"), "elves");
     await user.click(screen.getByRole("button", { name: "Send" }));
@@ -273,7 +273,7 @@ describe("SessionPage", () => {
       yield ev("sessionStarted", "s1");
       await new Promise(() => {});
     });
-    const { unmount } = renderAt("/session/new");
+    const { unmount } = await renderAt("/session/new");
     const user = userEvent.setup();
     await user.type(await screen.findByLabelText("Your message"), "elves");
     await user.click(screen.getByRole("button", { name: "Send" }));
@@ -288,7 +288,7 @@ describe("SessionPage", () => {
       .mockImplementationOnce(() => {
         throw new ConnectError("down", Code.Unavailable);
       });
-    renderAt("/session/new");
+    await renderAt("/session/new");
     const user = userEvent.setup();
     await user.type(await screen.findByLabelText("Your message"), "elves");
     await user.click(screen.getByRole("button", { name: "Send" }));
@@ -304,7 +304,7 @@ describe("SessionPage", () => {
     chat.mockImplementationOnce(() => {
       throw new ConnectError("a build is in progress", Code.Aborted);
     });
-    renderAt("/session/new");
+    await renderAt("/session/new");
     const user = userEvent.setup();
     await user.type(await screen.findByLabelText("Your message"), "elves{enter}");
     expect(await screen.findByRole("alert")).toHaveTextContent("a build is in progress. The build continues on the server, and the deck shows on reload. (aborted) You can try again.");
@@ -314,7 +314,7 @@ describe("SessionPage", () => {
     chat.mockImplementationOnce(() => {
       throw new Error("boom");
     });
-    renderAt("/session/new");
+    await renderAt("/session/new");
     const user = userEvent.setup();
     await user.type(await screen.findByLabelText("Your message"), "elves{enter}");
     expect(await screen.findByRole("alert")).toHaveTextContent("boom (stream)");
@@ -329,7 +329,7 @@ describe("SessionPage", () => {
       await gate;
       yield ev("slots", {});
     });
-    const { router } = renderAt("/session/new");
+    const { router } = await renderAt("/session/new");
     const user = userEvent.setup();
     await user.type(await screen.findByLabelText("Your message"), "elves");
     await user.click(screen.getByRole("button", { name: "Send" }));
@@ -356,7 +356,7 @@ describe("SessionPage", () => {
   });
 
   it("Enter during an IME composition sends nothing", async () => {
-    renderAt("/session/new");
+    await renderAt("/session/new");
     const user = userEvent.setup();
     const box = await screen.findByLabelText("Your message");
     await user.type(box, "elves");
@@ -367,7 +367,7 @@ describe("SessionPage", () => {
 
   it("moves focus to a new question group", async () => {
     chat.mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("question", formatQuestion)]));
-    renderAt("/session/new");
+    await renderAt("/session/new");
     const user = userEvent.setup();
     await user.type(await screen.findByLabelText("Your message"), "elves{enter}");
     await screen.findByRole("group", { name: "Question: Which format?" });
@@ -376,7 +376,7 @@ describe("SessionPage", () => {
 
   it("refuses an answer over the 8 KiB cap", async () => {
     chat.mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("question", { id: "q2", slot: "power", text: "How strong?", options: [], optionOracleIds: [] })]));
-    renderAt("/session/new");
+    await renderAt("/session/new");
     const user = userEvent.setup();
     await user.type(await screen.findByLabelText("Your message"), "elves{enter}");
     const card = await screen.findByRole("group", { name: "Question: How strong?" });
@@ -391,7 +391,7 @@ describe("SessionPage", () => {
       session: { id: "s1", collectionId: "", deckIds: [], turns: [{ userMessage: "elves", agentMessage: "Here is a plan.", questions: [], answers: [] }] },
     });
     chat.mockReturnValueOnce(events([ev("textDelta", "And "), ev("textDelta", "more.")]));
-    renderAt("/session/s1");
+    await renderAt("/session/s1");
     const user = userEvent.setup();
     await user.type(await screen.findByLabelText("Your message"), "go on{enter}");
     await screen.findByText("And more.", { selector: "p.whitespace-pre-line" });
@@ -403,7 +403,7 @@ describe("SessionPage", () => {
     Element.prototype.scrollIntoView = scroll;
     const rect = vi.spyOn(Element.prototype, "getBoundingClientRect").mockReturnValue({ top: 5000 } as DOMRect);
     chat.mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("textDelta", "hi")]));
-    renderAt("/session/new");
+    await renderAt("/session/new");
     const user = userEvent.setup();
     await user.type(await screen.findByLabelText("Your message"), "elves{enter}");
     await screen.findByText("hi", { selector: "p.whitespace-pre-line" });
@@ -420,19 +420,19 @@ describe("SessionPage", () => {
   it("forgets a stored session id the server does not know, and keeps it on another error", async () => {
     useAppStore.setState({ sessionId: "s1" });
     getSession.mockRejectedValueOnce(new ConnectError("down", Code.Unavailable));
-    const first = renderAt("/session/s1");
+    const first = await renderAt("/session/s1");
     await screen.findByRole("alert");
     expect(useAppStore.getState().sessionId).toBe("s1");
     first.unmount();
     getSession.mockRejectedValueOnce(new ConnectError("no session", Code.NotFound));
-    renderAt("/session/s1");
+    await renderAt("/session/s1");
     await screen.findByRole("alert");
     await waitFor(() => expect(useAppStore.getState().sessionId).toBe(""));
   });
 
   it("a second visit to /session/new starts a fresh panel", async () => {
     chat.mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("textDelta", "hello")]));
-    const { router } = renderAt("/session/new");
+    const { router } = await renderAt("/session/new");
     const user = userEvent.setup();
     await user.type(await screen.findByLabelText("Your message"), "elves{enter}");
     await screen.findByText("hello", { selector: "p.whitespace-pre-line" });
@@ -445,7 +445,7 @@ describe("SessionPage", () => {
     chat.mockImplementationOnce(() => {
       throw new ConnectError("down", Code.Unavailable);
     });
-    renderAt("/session/new");
+    await renderAt("/session/new");
     const user = userEvent.setup();
     await user.type(await screen.findByLabelText("Your message"), "elves{enter}");
     expect(await screen.findByRole("alert")).toHaveTextContent("down (unavailable) You can try again.");
@@ -455,7 +455,7 @@ describe("SessionPage", () => {
 
   it("offers to resume the stored session on /session/new", async () => {
     useAppStore.setState({ sessionId: "s9" });
-    renderAt("/session/new");
+    await renderAt("/session/new");
     expect(await screen.findByTestId("resume-link")).toHaveAttribute("href", "/session/s9");
   });
 
@@ -471,7 +471,7 @@ describe("SessionPage", () => {
         ],
       },
     });
-    renderAt("/session/s1");
+    await renderAt("/session/s1");
     await screen.findByRole("group", { name: "Question: How strong?" });
     expect(screen.getByRole("group", { name: "Question: Any color preference?" })).toBeInTheDocument();
     expect(screen.queryByRole("group", { name: "Question: Which format?" })).not.toBeInTheDocument();
@@ -492,7 +492,7 @@ describe("SessionPage", () => {
       .mockReturnValueOnce(
         events([ev("status", "reading your request"), ev("status", "revising the deck"), ev("textDelta", "I changed the count of Llanowar Elves: 4 to 2."), ev("deck", revised), ev("usage", { calls: 4 })]),
       );
-    renderAt("/session/new");
+    await renderAt("/session/new");
     const user = userEvent.setup();
     await user.type(await screen.findByLabelText("Your message"), "elves");
     await user.click(screen.getByRole("button", { name: "Send" }));
@@ -520,7 +520,7 @@ describe("SessionPage", () => {
       optionOracleIds: ["o-ghalta", "o-reptil", ""],
     };
     chat.mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("question", offer)]));
-    renderAt("/session/new");
+    await renderAt("/session/new");
     const user = userEvent.setup();
     await user.type(await screen.findByLabelText("Your message"), "dinosaurs");
     await user.click(screen.getByRole("button", { name: "Send" }));
@@ -545,7 +545,7 @@ describe("SessionPage", () => {
   });
 
   it("refuses a message over the 8 KiB cap", async () => {
-    renderAt("/session/new");
+    await renderAt("/session/new");
     const user = userEvent.setup();
     const box = await screen.findByLabelText("Your message");
     await user.click(box);
@@ -570,7 +570,7 @@ describe("SessionPage", () => {
       },
     });
     getDeck.mockResolvedValue({ deck });
-    renderAt("/session/s1");
+    await renderAt("/session/s1");
     expect(await screen.findByRole("heading", { name: "Elves" })).toBeInTheDocument();
     expect(getDeck).toHaveBeenCalledWith({ deckId: "d1" });
     expect(screen.getByTestId("session-id")).toHaveTextContent("Session id: s1");
@@ -607,7 +607,7 @@ describe("SessionPage", () => {
       },
     });
     getDeck.mockImplementation(({ deckId }: { deckId: string }) => Promise.resolve({ deck: deckId === "d1" ? revised : { ...deck, id: "d0" } }));
-    renderAt("/session/s1");
+    await renderAt("/session/s1");
     expect(await screen.findByTestId("revision-diff")).toHaveTextContent("Count of Llanowar Elves: 4 to 2");
     expect(getDeck).toHaveBeenCalledWith({ deckId: "d0" });
     const items = within(screen.getByRole("list", { name: "Conversation" })).getAllByRole("listitem");
@@ -616,7 +616,7 @@ describe("SessionPage", () => {
 
   it("a closed question with no options shows the text field", async () => {
     chat.mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("question", { id: "q2", slot: "power", text: "How strong?", options: [], optionOracleIds: [], closed: true })]));
-    renderAt("/session/new");
+    await renderAt("/session/new");
     const user = userEvent.setup();
     await user.type(await screen.findByLabelText("Your message"), "elves{enter}");
     const card = await screen.findByRole("group", { name: "Question: How strong?" });
@@ -625,7 +625,7 @@ describe("SessionPage", () => {
 
   it("reports a session that does not load", async () => {
     getSession.mockRejectedValue(new Error("[not_found] no session"));
-    renderAt("/session/nope");
+    await renderAt("/session/nope");
     expect(await screen.findByRole("alert")).toHaveTextContent("Could not load the session: [not_found] no session");
   });
 
@@ -633,7 +633,7 @@ describe("SessionPage", () => {
     getCards.mockReturnValue(new Promise(() => {}));
     const offer = { id: "q5", slot: "commander", text: "Which one?", options: ["A", "B"], optionOracleIds: ["o-a", "o-b"] };
     chat.mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("question", offer)]));
-    renderAt("/session/new");
+    await renderAt("/session/new");
     const user = userEvent.setup();
     await user.type(await screen.findByLabelText("Your message"), "elves{enter}");
     const card = await screen.findByRole("group", { name: "Question: Which one?" });
@@ -642,7 +642,7 @@ describe("SessionPage", () => {
 
   it("has no axe violations with a question and a deck on screen", async () => {
     chat.mockReturnValue(events([ev("sessionStarted", "s1"), ev("question", formatQuestion), ev("deck", deck)]));
-    const { container } = renderAt("/session/new");
+    const { container } = await renderAt("/session/new");
     const user = userEvent.setup();
     await user.type(await screen.findByLabelText("Your message"), "elves");
     await user.click(screen.getByRole("button", { name: "Send" }));
@@ -650,7 +650,7 @@ describe("SessionPage", () => {
     expect(await axe(container)).toHaveNoViolations();
   });
 
-  it("poolLabel names the pool rule, and the collection before the rule is set", () => {
+  it("poolLabel names the pool rule, and the collection before the rule is set", async () => {
     expect(poolLabel(PoolRule.OWNED_ONLY, "c1")).toBe("Pool: only cards in your collection.");
     expect(poolLabel(PoolRule.OWNED_FIRST, "")).toBe("Pool: your collection first, with upgrades to buy.");
     expect(poolLabel(PoolRule.ANY_CARD, "c1")).toBe("Pool: any card (D-37).");
@@ -658,7 +658,7 @@ describe("SessionPage", () => {
     expect(poolLabel(undefined, "")).toBe("Pool: any card (D-37).");
   });
 
-  it("pruneDrafts drops the drafts of questions no longer open", () => {
+  it("pruneDrafts drops the drafts of questions no longer open", async () => {
     expect(pruneDrafts({ q1: { text: "a" }, q2: { optionIndex: 1, text: "" } }, [{ id: "q2" }])).toEqual({ q2: { optionIndex: 1, text: "" } });
   });
 });

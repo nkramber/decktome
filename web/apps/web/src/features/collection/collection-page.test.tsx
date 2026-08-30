@@ -37,7 +37,7 @@ beforeEach(() => {
 
 describe("CollectionPage", () => {
   it("lists earlier uploads and picks one as the active collection", async () => {
-    renderAt("/collection");
+    await renderAt("/collection");
     expect(await screen.findByRole("button", { name: "binder-july.csv" })).toBeInTheDocument();
     expect(screen.getByText(/4317 cards/)).toBeInTheDocument();
     await userEvent.setup().click(screen.getByRole("button", { name: "binder-july.csv" }));
@@ -60,7 +60,7 @@ describe("CollectionPage", () => {
         ],
       },
     });
-    renderAt("/collection");
+    await renderAt("/collection");
     await screen.findByRole("button", { name: "binder-july.csv" });
     const user = userEvent.setup();
     const file = new File(["Name,Set code\nLightning Bolt,LEA\n"], "export.csv", { type: "text/csv" });
@@ -91,7 +91,7 @@ describe("CollectionPage", () => {
 
   it("uses the typed name over the file name", async () => {
     importCollection.mockResolvedValue({ collection: { id: "c-new", name: "Mine", cardCount: 1 }, report: {} });
-    renderAt("/collection");
+    await renderAt("/collection");
     const user = userEvent.setup();
     await user.type(screen.getByLabelText(/Collection name/), "Mine");
     await user.upload(screen.getByLabelText("ManaBox CSV file"), new File(["x"], "export.csv"));
@@ -102,7 +102,7 @@ describe("CollectionPage", () => {
 
   it("shows the RPC error when the upload fails", async () => {
     importCollection.mockRejectedValue(new Error("[unauthenticated] no token"));
-    renderAt("/collection");
+    await renderAt("/collection");
     const user = userEvent.setup();
     await user.upload(screen.getByLabelText("ManaBox CSV file"), new File(["x"], "export.csv"));
     await user.click(screen.getByRole("button", { name: "Upload" }));
@@ -110,7 +110,7 @@ describe("CollectionPage", () => {
   });
 
   it("refuses a file over the 5 MiB upload cap before the upload", async () => {
-    renderAt("/collection");
+    await renderAt("/collection");
     const user = userEvent.setup();
     const big = new File([new Uint8Array((5 << 20) + 1)], "big.csv", { type: "text/csv" });
     await user.upload(screen.getByLabelText("ManaBox CSV file"), big);
@@ -120,7 +120,7 @@ describe("CollectionPage", () => {
   });
 
   it("clears the picked file on Skip and on a click on an earlier upload", async () => {
-    const { router } = renderAt("/collection");
+    const { router } = await renderAt("/collection");
     await screen.findByRole("button", { name: "binder-july.csv" });
     const user = userEvent.setup();
     await user.upload(screen.getByLabelText("ManaBox CSV file"), new File(["x"], "export.csv"));
@@ -136,7 +136,7 @@ describe("CollectionPage", () => {
 
   it("skip clears the active collection and goes to the chat (D-37)", async () => {
     useAppStore.setState({ collectionId: "c-old", poolMode: "owned" });
-    const { router } = renderAt("/collection");
+    const { router } = await renderAt("/collection");
     await screen.findByRole("button", { name: "binder-july.csv" });
     await userEvent.setup().click(screen.getByRole("button", { name: "Skip, build from any card" }));
     expect(useAppStore.getState().collectionId).toBe("");
@@ -146,14 +146,14 @@ describe("CollectionPage", () => {
   });
 
   it("continue to chat goes to /session/new", async () => {
-    const { router } = renderAt("/collection");
+    const { router } = await renderAt("/collection");
     await screen.findByRole("button", { name: "binder-july.csv" });
     await userEvent.setup().click(screen.getByRole("button", { name: "Continue to chat" }));
     expect(router.state.location.pathname).toBe("/session/new");
   });
 
   it("has no axe violations", async () => {
-    const { container } = renderAt("/collection");
+    const { container } = await renderAt("/collection");
     await screen.findByRole("button", { name: "binder-july.csv" });
     expect(await axe(container)).toHaveNoViolations();
   });

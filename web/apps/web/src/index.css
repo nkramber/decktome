@@ -1,18 +1,21 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "./styles/tokens.css";
 
-/* The app commits to one light look. The text colors are fixed, so the
-   background must be too, or a dark browser paints dark on dark. */
-:root {
-  color-scheme: light;
-}
+/* The dark theme applies from a class on the root element. The theme
+   script of index.html sets the class before the first paint (D-311). */
+@custom-variant dark (&:is(.dark *));
 
 @layer base {
+  * {
+    border-color: var(--border);
+  }
   body {
-    background-color: var(--color-white);
-    color: var(--color-neutral-900);
+    background-color: var(--background);
+    color: var(--foreground);
   }
   :focus-visible {
-    outline: 2px solid var(--color-blue-600);
+    outline: 2px solid var(--ring);
     outline-offset: 2px;
   }
 }

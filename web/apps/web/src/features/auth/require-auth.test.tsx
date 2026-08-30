@@ -28,32 +28,32 @@ beforeEach(() => {
 
 describe("route guard", () => {
   it("sends an unauthenticated visit to /collection to /sign-in", async () => {
-    const { router } = renderAt("/collection");
+    const { router } = await renderAt("/collection");
     expect(await screen.findByRole("heading", { level: 1, name: "Sign in" })).toBeInTheDocument();
     expect(router.state.location.pathname).toBe("/sign-in");
   });
 
   it("sends / to /sign-in when signed out and to /collection when signed in", async () => {
-    const out = renderAt("/");
+    const out = await renderAt("/");
     expect(await screen.findByRole("heading", { level: 1, name: "Sign in" })).toBeInTheDocument();
     expect(out.router.state.location.pathname).toBe("/sign-in");
     out.unmount();
 
     state.user = fakeUser;
-    const inn = renderAt("/");
+    const inn = await renderAt("/");
     expect(await screen.findByRole("heading", { level: 1, name: "Your collection" })).toBeInTheDocument();
     expect(inn.router.state.location.pathname).toBe("/collection");
   });
 
   it("sends a signed-in visit to /sign-in on to /collection", async () => {
     state.user = fakeUser;
-    const { router } = renderAt("/sign-in");
+    const { router } = await renderAt("/sign-in");
     await screen.findByRole("heading", { level: 1, name: "Your collection" });
     expect(router.state.location.pathname).toBe("/collection");
   });
 
   it("returns to the page the guard redirected after the sign-in", async () => {
-    const { router } = renderAt("/session/abc123");
+    const { router } = await renderAt("/session/abc123");
     await screen.findByRole("heading", { level: 1, name: "Sign in" });
     expect(router.state.location.pathname).toBe("/sign-in");
     await act(async () => emit(fakeUser));
@@ -61,9 +61,9 @@ describe("route guard", () => {
     expect(router.state.location.pathname).toBe("/session/abc123");
   });
 
-  it("shows the loading line on / and under the guard until auth is ready", () => {
+  it("shows the loading line on / and under the guard until auth is ready", async () => {
     vi.mocked(onAuthStateChanged).mockImplementationOnce(() => () => {});
-    renderAt("/");
+    await renderAt("/");
     expect(screen.getByText("Loading your session...")).toBeInTheDocument();
   });
 
@@ -72,39 +72,44 @@ describe("route guard", () => {
       state.listeners.add({ next: next as (u: User | null) => void, error: error as (e: Error) => void });
       return () => {};
     });
-    renderAt("/collection");
+    await renderAt("/collection");
     expect(screen.getByText("Loading your session...")).toBeInTheDocument();
     await act(async () => emitError(new Error("auth is down")));
     expect(await screen.findByRole("heading", { level: 1, name: "Sign in" })).toBeInTheDocument();
     expect(screen.getByRole("alert")).toHaveTextContent("auth is down");
   });
 
-  it("shows a sign-out failure in the header", async () => {
+  it("reports a sign-out failure as a toast", async () => {
     state.user = fakeUser;
     vi.mocked(signOut).mockRejectedValue(new Error("network down"));
-    renderAt("/decks");
+    await renderAt("/decks");
     await screen.findByText("No decks yet.");
-    await userEvent.setup().click(screen.getByRole("button", { name: "Sign out" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("Sign-out failed: network down");
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Account menu" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Sign out" }));
+    expect(await screen.findByText("Sign-out failed")).toBeInTheDocument();
+    expect(await screen.findByText("network down")).toBeInTheDocument();
   });
 
-  it("shows the stored session's id while it loads, and signs out from the header", async () => {
+  it("shows the stored session's id while it loads, and signs out from the account menu", async () => {
     state.user = fakeUser;
-    renderAt("/session/abc123");
+    await renderAt("/session/abc123");
     expect(await screen.findByTestId("session-id")).toHaveTextContent("Session id: abc123");
-    await userEvent.setup().click(screen.getByRole("button", { name: "Sign out" }));
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Account menu" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Sign out" }));
     expect(vi.mocked(signOut)).toHaveBeenCalled();
   });
 
   it("treats /session/new as no session yet", async () => {
     state.user = fakeUser;
-    renderAt("/session/new");
+    await renderAt("/session/new");
     expect(await screen.findByTestId("session-id")).toHaveTextContent("No session yet.");
   });
 
   it("lists decks, empty, and shows the health footer", async () => {
     state.user = fakeUser;
-    const { container } = renderAt("/decks");
+    const { container } = await renderAt("/decks");
     expect(await screen.findByText("No decks yet.")).toBeInTheDocument();
     expect(await screen.findByTestId("health")).toHaveTextContent("API: ok, version test");
     expect(screen.getByTestId("freshness")).toHaveTextContent("Card data as of 2026-08-24T09:01:52Z (2.5 h old)");
@@ -113,7 +118,7 @@ describe("route guard", () => {
 
   it("session page has no axe violations", async () => {
     state.user = fakeUser;
-    const { container } = renderAt("/session/new");
+    const { container } = await renderAt("/session/new");
     await screen.findByTestId("session-id");
     await screen.findByText(/API: ok/);
     expect(await axe(container)).toHaveNoViolations();
