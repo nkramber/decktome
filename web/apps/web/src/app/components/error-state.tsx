@@ -6,8 +6,10 @@ import { Button } from "../../components/ui/button";
 // goes in an alert, so a screen reader announces it.
 export function ErrorState({ title = "That did not load", message, onRetry }: { title?: string; message: string; onRetry?: () => void }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-card border border-border bg-surface px-6 py-10 text-center">
-      <AlertTriangleIcon className="size-8 text-danger" aria-hidden="true" />
+    <div className="flex flex-col items-center gap-3 rounded-panel border border-border bg-surface px-6 py-12 text-center shadow-card">
+      <span aria-hidden="true" className="grid size-11 place-items-center rounded-full bg-danger/10 text-danger">
+        <AlertTriangleIcon className="size-5" />
+      </span>
       <p className="font-medium">{title}</p>
       <p role="alert" className="max-w-prose wrap-anywhere text-sm text-danger">
         {message}

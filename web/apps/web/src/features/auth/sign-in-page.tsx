@@ -47,8 +47,8 @@ export function SignInPage() {
   const creating = mode === "sign-up";
 
   return (
-    <div className="mx-auto flex min-h-[70vh] max-w-sm flex-col justify-center p-4 md:p-6">
-      <Card>
+    <div className="mx-auto flex min-h-[80vh] w-full max-w-sm flex-col justify-center p-4 md:p-6">
+      <Card className="shadow-raised">
         <CardHeader>
           <CardTitle asChild className="text-2xl tracking-tight">
             <h1>{creating ? "Create account" : "Sign in"}</h1>

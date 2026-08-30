@@ -231,7 +231,7 @@ describe("SessionPage", () => {
     expect((chat.mock.calls[1][0] as { sessionId: string }).sessionId).toBe("s1");
   });
 
-  it("disables the message box the moment a send starts, and focuses it again at the end", async () => {
+  it("takes the message box away while the agent works, and focuses it again at the end", async () => {
     let release = () => {};
     const gate = new Promise<void>((r) => (release = r));
     chat.mockImplementationOnce(async function* () {
@@ -243,10 +243,13 @@ describe("SessionPage", () => {
     const user = userEvent.setup();
     await user.type(await screen.findByLabelText("Your message"), "elves");
     await user.click(screen.getByRole("button", { name: "Send" }));
-    expect(screen.getByLabelText("Your message")).toBeDisabled();
+    // A box that stays and does nothing reads as a dead control, so the
+    // working row and its Stop take its place (PR-16B).
+    expect(screen.queryByLabelText("Your message")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Send" })).not.toBeInTheDocument();
     expect(screen.getByText("The agent is working...")).toBeInTheDocument();
     release();
-    await waitFor(() => expect(screen.getByLabelText("Your message")).toBeEnabled());
+    await waitFor(() => expect(screen.getByLabelText("Your message")).toBeInTheDocument());
     expect(screen.getByLabelText("Your message")).toHaveFocus();
   });
 

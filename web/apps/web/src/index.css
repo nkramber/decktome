@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "@fontsource-variable/geist";
 @import "./styles/tokens.css";
 
 /* The dark theme applies from a class on the root element. The theme
@@ -13,6 +14,16 @@
   body {
     background-color: var(--background);
     color: var(--foreground);
+    font-family: var(--font-sans);
+    /* Tabular figures keep a count column from moving as it changes. */
+    font-feature-settings: "cv11", "ss01";
+    -webkit-font-smoothing: antialiased;
+  }
+  /* A heading reads tighter than its body, the way a product does. */
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.02em;
   }
   :focus-visible {
     outline: 2px solid var(--ring);

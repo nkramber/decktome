@@ -38,9 +38,9 @@ export function DecksPage() {
         <ul className="flex flex-col gap-3">
           {decks.data.decks.map((d) => (
             <li key={d.id}>
-              <Card>
+              <Card className="transition-shadow hover:shadow-raised">
                 <CardContent className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                  <span className="font-medium">{d.name || d.id}</span>
+                  <span className="text-base font-medium">{d.name || d.id}</span>
                   <span className="text-sm text-muted-foreground">
                     {d.cards.length} entries, legality as of {d.legalityAsOf || "unknown"}
                   </span>
