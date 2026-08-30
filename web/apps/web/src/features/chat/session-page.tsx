@@ -4,7 +4,12 @@ import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, type KeyboardEvent, useCallback, useEffect, useRef, useState } from "react";
 import { Link, useBlocker, useLocation, useNavigate, useParams } from "react-router";
 
+import { Button } from "../../components/ui/button";
+import { Checkbox } from "../../components/ui/checkbox";
+import { Label } from "../../components/ui/label";
+import { Textarea } from "../../components/ui/textarea";
 import { agentClient, deckClient } from "../../lib/api";
+import { cn } from "../../lib/cn";
 import { errorMessage } from "../../lib/errors";
 import { useAppStore } from "../../lib/store";
 import { DeckView } from "../deck/deck-view";
@@ -70,12 +75,12 @@ export function SessionPage() {
   }
   if (session.isPending || (deckId && deck.isPending) || (baseId && base.isPending)) {
     return (
-      <div className="p-6">
-        <h1 className="text-2xl font-semibold">Chat</h1>
-        <p className="wrap-anywhere text-sm text-neutral-600" data-testid="session-id">
+      <div className="flex flex-col gap-2 p-4 md:p-6">
+        <h1 className="text-2xl font-semibold tracking-tight">Chat</h1>
+        <p className="wrap-anywhere text-sm text-muted-foreground" data-testid="session-id">
           Session id: {id}
         </p>
-        <p role="status" className="text-neutral-600">
+        <p role="status" className="text-muted-foreground">
           Loading the session...
         </p>
       </div>
@@ -83,17 +88,17 @@ export function SessionPage() {
   }
   if (session.isError || !session.data.session) {
     return (
-      <div className="p-6">
-        <h1 className="text-2xl font-semibold">Chat</h1>
-        <p className="wrap-anywhere text-sm text-neutral-600" data-testid="session-id">
+      <div className="flex flex-col items-start gap-2 p-4 md:p-6">
+        <h1 className="text-2xl font-semibold tracking-tight">Chat</h1>
+        <p className="wrap-anywhere text-sm text-muted-foreground" data-testid="session-id">
           Session id: {id}
         </p>
-        <p role="alert" className="text-red-700">
+        <p role="alert" className="text-danger">
           Could not load the session: {session.isError ? errorMessage(session.error) : "the server returned no session"}
         </p>
-        <Link to="/session/new" className="underline">
-          Start a new chat
-        </Link>
+        <Button asChild variant="outline">
+          <Link to="/session/new">Start a new chat</Link>
+        </Button>
       </div>
     );
   }
@@ -247,33 +252,33 @@ function ChatPanel({
   const poolText = poolLabel(state.slots?.poolRule, sendCollection);
 
   return (
-    <div className="mx-auto flex max-w-7xl flex-col gap-4 p-6 lg:flex-row">
+    <div className="mx-auto flex max-w-7xl flex-col gap-4 p-4 md:p-6 lg:flex-row">
       <section aria-labelledby="chat-title" className="flex min-w-0 flex-1 flex-col gap-3 lg:max-w-xl">
-        <h1 id="chat-title" className="text-2xl font-semibold">
+        <h1 id="chat-title" className="text-2xl font-semibold tracking-tight">
           Chat
         </h1>
-        <p className="wrap-anywhere text-sm text-neutral-600" data-testid="session-id">
+        <p className="wrap-anywhere text-sm text-muted-foreground" data-testid="session-id">
           {beforeFirstMessage ? "No session yet." : `Session id: ${state.sessionId}`}
         </p>
         {beforeFirstMessage && resumeId && (
           <p className="text-sm">
-            <Link to={`/session/${resumeId}`} className="underline" data-testid="resume-link">
+            <Link to={`/session/${resumeId}`} className="text-link underline underline-offset-4" data-testid="resume-link">
               Resume your last chat
             </Link>
           </p>
         )}
         {beforeFirstMessage && collectionId ? (
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={poolMode === "owned"} onChange={(e) => setPoolMode(e.target.checked ? "owned" : "any")} />
+          <Label className="text-sm font-normal">
+            <Checkbox checked={poolMode === "owned"} onCheckedChange={(v) => setPoolMode(v === true ? "owned" : "any")} />
             Use only cards in my collection
-          </label>
+          </Label>
         ) : null}
-        <p className="wrap-anywhere text-sm text-neutral-600" data-testid="pool-mode">
+        <p className="wrap-anywhere text-sm text-muted-foreground" data-testid="pool-mode">
           {poolText}
         </p>
 
         {blocker.state === "blocked" && (
-          <div role="alertdialog" aria-labelledby="leave-title" aria-describedby="leave-text" className="flex flex-col gap-2 rounded border border-amber-400 bg-amber-50 p-3">
+          <div role="alertdialog" aria-labelledby="leave-title" aria-describedby="leave-text" className="flex flex-col gap-2 rounded-card border border-warning/50 bg-warning/10 p-3">
             <p id="leave-title" className="font-medium">
               The agent is still working.
             </p>
@@ -281,12 +286,12 @@ function ChatPanel({
               The build continues on the server. Open this session again, and the deck shows when it is done.
             </p>
             <div className="flex gap-2">
-              <button type="button" onClick={() => blocker.reset()} className="rounded bg-neutral-900 px-3 py-1 text-white">
+              <Button size="sm" onClick={() => blocker.reset()}>
                 Stay
-              </button>
-              <button type="button" onClick={() => blocker.proceed()} className="rounded border border-neutral-400 px-3 py-1">
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => blocker.proceed()}>
                 Leave
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -311,68 +316,60 @@ function ChatPanel({
               />
             ))}
             {answerTooLong && (
-              <p role="alert" className="text-sm text-red-700">
+              <p role="alert" className="text-sm text-danger">
                 An answer is over the {maxMessageBytes} byte cap. Shorten it.
               </p>
             )}
-            <button
-              type="submit"
-              disabled={!allAnswered || answerTooLong || state.busy}
-              className="self-start rounded bg-neutral-900 px-3 py-2 text-white disabled:bg-neutral-300 disabled:text-neutral-600"
-            >
+            <Button type="submit" className="self-start" disabled={!allAnswered || answerTooLong || state.busy}>
               Submit answers
-            </button>
-            {!allAnswered && !state.busy && <p className="text-xs text-neutral-600">Answer every question, then submit.</p>}
+            </Button>
+            {!allAnswered && !state.busy && <p className="text-xs text-muted-foreground">Answer every question, then submit.</p>}
           </form>
         )}
 
-        <div className="flex items-center gap-3 text-sm text-neutral-600" role="status">
+        <div className="flex items-center gap-3 text-sm text-muted-foreground" role="status">
           {state.busy && (
             <>
               <span>The agent is working...</span>
-              <button type="button" onClick={stop} className="rounded border border-neutral-400 px-2 py-0.5">
+              <Button type="button" variant="outline" size="sm" onClick={stop}>
                 Stop
-              </button>
+              </Button>
             </>
           )}
         </div>
 
         {showComposer && (
           <form onSubmit={onSubmit} className="flex flex-col gap-2">
-            <label className="flex flex-col gap-1">
-              <span>Your message</span>
-              <textarea
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="message">Your message</Label>
+              <Textarea
+                id="message"
                 ref={textarea}
                 value={message}
                 disabled={state.busy}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyDown={onKeyDown}
                 rows={3}
-                className="rounded border border-neutral-400 bg-white px-2 py-1 text-neutral-900 disabled:bg-neutral-100 disabled:text-neutral-500"
                 placeholder={beforeFirstMessage ? "Build me a mono-green Commander deck around elves." : ""}
               />
-            </label>
-            <p className={`text-xs ${tooLong ? "text-red-700" : "text-neutral-600"}`}>
+            </div>
+            <p className={cn("text-xs", tooLong ? "text-danger" : "text-muted-foreground")}>
               Enter sends, Shift+Enter makes a new line. {bytes} of {maxMessageBytes} bytes.
             </p>
             {tooLong && (
-              <p role="alert" className="text-sm text-red-700">
+              <p role="alert" className="text-sm text-danger">
                 The message is over the {maxMessageBytes} byte cap. Shorten it.
               </p>
             )}
-            <button
-              type="submit"
-              disabled={state.busy || tooLong || !message.trim()}
-              className="self-start rounded bg-neutral-900 px-3 py-2 text-white disabled:bg-neutral-300 disabled:text-neutral-600"
-            >
+            <Button type="submit" className="self-start" disabled={state.busy || tooLong || !message.trim()}>
               Send
-            </button>
+            </Button>
           </form>
         )}
         <div ref={end} />
 
         {state.usage && state.usage.calls > 0 && (
-          <p className="text-xs text-neutral-600" data-testid="usage">
+          <p className="text-xs text-muted-foreground" data-testid="usage">
             Session spend: {state.usage.calls} calls, {String(state.usage.inputTokens)} in, {String(state.usage.outputTokens)} out,{" "}
             {state.usage.priced ? `$${state.usage.costUsd.toFixed(4)}` : "cost unknown"} (M-1).
           </p>
@@ -381,14 +378,14 @@ function ChatPanel({
 
       <section aria-label="Deck" className="min-w-0 flex-1">
         {deckError && (
-          <p role="alert" className="text-red-700">
+          <p role="alert" className="text-danger">
             Could not load the deck: {deckError}
           </p>
         )}
         {state.deck ? (
           <DeckView deck={state.deck} base={state.baseDeck} />
         ) : (
-          !deckError && <p className="text-neutral-600">The deck shows here when the agent has built one.</p>
+          !deckError && <p className="text-muted-foreground">The deck shows here when the agent has built one.</p>
         )}
       </section>
     </div>
@@ -412,7 +409,7 @@ function ThreadLine({ item }: { item: ThreadItem }) {
   switch (item.kind) {
     case "user":
       return (
-        <p className="ml-auto max-w-[85%] whitespace-pre-line rounded bg-neutral-100 px-3 py-2">
+        <p className="ml-auto max-w-[85%] rounded-card bg-muted px-3 py-2 whitespace-pre-line">
           <span className="sr-only">You: </span>
           {item.text}
         </p>
@@ -425,16 +422,16 @@ function ThreadLine({ item }: { item: ThreadItem }) {
         </p>
       );
     case "status":
-      return <p className="px-3 text-sm italic text-neutral-600">{item.text}</p>;
+      return <p className="px-3 text-sm text-muted-foreground italic">{item.text}</p>;
     case "question":
-      return <p className="px-3 text-sm text-neutral-700">Asked: {item.question.text}</p>;
+      return <p className="px-3 text-sm text-muted-foreground">Asked: {item.question.text}</p>;
     case "failure":
       return (
-        <p role="alert" className="rounded bg-red-50 px-3 py-2 text-red-700">
+        <p role="alert" className="rounded-card bg-danger/10 px-3 py-2 text-danger">
           {item.failure.message} ({item.failure.code}){item.failure.retryable ? " You can try again." : ""}
         </p>
       );
     case "deck":
-      return <p className="px-3 text-sm text-neutral-700">Deck built: {item.deck.name || item.deck.id}.</p>;
+      return <p className="px-3 text-sm text-muted-foreground">Deck built: {item.deck.name || item.deck.id}.</p>;
   }
 }

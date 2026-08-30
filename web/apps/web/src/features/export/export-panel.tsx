@@ -3,6 +3,7 @@ import { ExportFormat } from "@mtg/api-client/mtg/v1/deck_service_pb";
 import type { Deck } from "@mtg/api-client/mtg/v1/deck_pb";
 import { useState } from "react";
 
+import { Button } from "../../components/ui/button";
 import { deckClient } from "../../lib/api";
 import { errorMessage } from "../../lib/errors";
 import { type BuyRow, buyRows, downloadText } from "./buy-list";
@@ -48,28 +49,28 @@ export function ExportPanel({ deck, byId }: { deck: Deck; byId: Map<string, Card
 
   const canExport = deck.id !== "" && !busy;
   return (
-    <section aria-labelledby={`export-title-${deck.id}`} className="flex flex-col gap-2 rounded border border-neutral-300 p-3 text-sm">
+    <section aria-labelledby={`export-title-${deck.id}`} className="flex flex-col gap-2 rounded-card border border-border p-3 text-sm">
       <h3 id={`export-title-${deck.id}`} className="font-medium">
         Export
       </h3>
       <div className="flex flex-wrap gap-2">
-        <button type="button" className="rounded border px-2 py-1" disabled={!canExport} onClick={() => run(ExportFormat.ARENA_TEXT, "copy")}>
+        <Button type="button" variant="outline" size="sm" disabled={!canExport} onClick={() => run(ExportFormat.ARENA_TEXT, "copy")}>
           Copy Arena text
-        </button>
-        <button type="button" className="rounded border px-2 py-1" disabled={!canExport} onClick={() => run(ExportFormat.ARENA_TEXT, "download")}>
+        </Button>
+        <Button type="button" variant="outline" size="sm" disabled={!canExport} onClick={() => run(ExportFormat.ARENA_TEXT, "download")}>
           Download Arena text
-        </button>
-        <button type="button" className="rounded border px-2 py-1" disabled={!canExport} onClick={() => run(ExportFormat.BUY_LIST_TEXT, "copy")}>
+        </Button>
+        <Button type="button" variant="outline" size="sm" disabled={!canExport} onClick={() => run(ExportFormat.BUY_LIST_TEXT, "copy")}>
           Copy buy list
-        </button>
-        <button type="button" className="rounded border px-2 py-1" disabled={!canExport} onClick={() => run(ExportFormat.BUY_LIST_TEXT, "download")}>
+        </Button>
+        <Button type="button" variant="outline" size="sm" disabled={!canExport} onClick={() => run(ExportFormat.BUY_LIST_TEXT, "download")}>
           Download buy list
-        </button>
+        </Button>
       </div>
-      <p className="text-xs text-neutral-600">ManaBox imports the Arena text. The buy list pastes into a shop&apos;s mass-entry form.</p>
+      <p className="text-xs text-muted-foreground">ManaBox imports the Arena text. The buy list pastes into a shop&apos;s mass-entry form.</p>
       {status && <p role="status">{status}</p>}
       {error && (
-        <p role="alert" className="text-red-700">
+        <p role="alert" className="text-danger">
           {error}
         </p>
       )}
@@ -84,7 +85,7 @@ function BuyList({ title, rows, empty }: { title: string; rows: BuyRow[]; empty:
   return (
     <section aria-label={`${title} (${count})`}>
       <h4 className="font-medium">
-        {title} <span className="text-neutral-600">({count})</span>
+        {title} <span className="text-muted-foreground">({count})</span>
       </h4>
       {rows.length === 0 ? (
         <p>{empty}</p>

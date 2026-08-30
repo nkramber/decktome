@@ -1,15 +1,24 @@
+import { lazy, Suspense, type ReactNode } from "react";
 import { createBrowserRouter, createMemoryRouter, type RouteObject } from "react-router";
 
 import { RequireAuth, RootRedirect } from "../features/auth/require-auth";
-import { SignInPage } from "../features/auth/sign-in-page";
-import { SessionPage } from "../features/chat/session-page";
-import { CollectionPage } from "../features/collection/collection-page";
-import { DecksPage } from "../features/deck/decks-page";
+import { PageFallback } from "./components/page-fallback";
 import { Layout } from "./layout";
 import { RouteError } from "./route-error";
 
-// Four routes (ui plan, section 5). Every route except /sign-in sits under
-// RequireAuth. The layout route catches a render error from any page.
+// Every page loads on its own route (D-320), so the first paint carries the
+// shell alone. The Connect clients and the generated code ride with the
+// first page that needs them, not with the shell. The shell and the route
+// guard stay eager, so a redirect needs no download.
+const SignInPage = lazy(async () => ({ default: (await import("../features/auth/sign-in-page")).SignInPage }));
+const CollectionPage = lazy(async () => ({ default: (await import("../features/collection/collection-page")).CollectionPage }));
+const SessionPage = lazy(async () => ({ default: (await import("../features/chat/session-page")).SessionPage }));
+const DecksPage = lazy(async () => ({ default: (await import("../features/deck/decks-page")).DecksPage }));
+
+function page(node: ReactNode) {
+  return <Suspense fallback={<PageFallback />}>{node}</Suspense>;
+}
+
 export function appRoutes(extra: RouteObject[] = []): RouteObject[] {
   return [
     {
@@ -17,10 +26,15 @@ export function appRoutes(extra: RouteObject[] = []): RouteObject[] {
       errorElement: <RouteError />,
       children: [
         { path: "/", element: <RootRedirect /> },
-        { path: "/sign-in", element: <SignInPage /> },
+        { path: "/sign-in", element: page(<SignInPage />) },
         {
           element: <RequireAuth />,
-          children: [{ path: "/collection", element: <CollectionPage /> }, { path: "/session/:id", element: <SessionPage /> }, { path: "/decks", element: <DecksPage /> }, ...extra],
+          children: [
+            { path: "/collection", element: page(<CollectionPage />) },
+            { path: "/session/:id", element: page(<SessionPage />) },
+            { path: "/decks", element: page(<DecksPage />) },
+            ...extra,
+          ],
         },
       ],
     },

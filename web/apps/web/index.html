@@ -4,6 +4,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MtG Deck Builder</title>
+    <script>
+      // The theme class goes on before the first paint, so a dark reader
+      // never sees a white flash (D-311). The app reads the same key.
+      (function () {
+        try {
+          var choice = localStorage.getItem("mtg-theme") || "system";
+          var dark = choice === "dark" || (choice === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.classList.toggle("dark", dark);
+          document.documentElement.style.colorScheme = dark ? "dark" : "light";
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -25,6 +25,9 @@ import { useDeckCards } from "./use-cards";
 // the price (D-2, D-37), the findings, legality_as_of, the curve, and
 // the color sources.
 // base is the deck this one revised, when the page holds it (PR-12B).
+// The five colors of the game and colorless carry fixed tokens (D-311).
+const manaSwatch: Record<string, string> = { W: "bg-mana-w", U: "bg-mana-u", B: "bg-mana-b", R: "bg-mana-r", G: "bg-mana-g", C: "bg-mana-c" };
+
 export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
   const diff = base && deck.revisedFromDeckId && base.id === deck.revisedFromDeckId ? diffDecks(base, deck) : undefined;
   const cards = useDeckCards(deck);
@@ -66,7 +69,7 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
         <h2 id={`deck-title-${deck.id}`} className="wrap-anywhere text-xl font-semibold">
           {deck.name || "Untitled deck"}
         </h2>
-        <p className="text-sm text-neutral-700">
+        <p className="text-sm text-muted-foreground">
           {formatLabel(deck.format?.id, deck.format?.houseRules ?? "")}
           {powerLabel(deck.power) && ` · ${powerLabel(deck.power)}`}
           {` · ${total} cards`}
@@ -88,7 +91,7 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
       <ExportPanel deck={deck} byId={byId} />
 
       {deck.revisionNote && (
-        <section aria-labelledby={`revision-title-${deck.id}`} className="rounded border border-blue-400 bg-blue-50 p-3 text-sm">
+        <section aria-labelledby={`revision-title-${deck.id}`} className="rounded-card border border-accent/40 bg-accent/5 p-3 text-sm">
           <h3 id={`revision-title-${deck.id}`} className="font-medium">
             What changed
           </h3>
@@ -116,9 +119,9 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
           </h3>
           <ul className="list-disc pl-5 text-sm">
             {findings.map((f, i) => (
-              <li key={i} className={f.severity === Severity.BLOCK ? "text-red-700" : ""}>
+              <li key={i} className={f.severity === Severity.BLOCK ? "text-danger" : ""}>
                 <span className="font-medium">{severityLabel(f.severity)}</span>
-                {f.code && <span className="text-neutral-600"> ({f.code})</span>}: {f.message}
+                {f.code && <span className="text-muted-foreground"> ({f.code})</span>}: {f.message}
                 {f.oracleId && ` — ${nameOf(f.oracleId)}`}
               </li>
             ))}
@@ -130,12 +133,12 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
         {cards.isPending && <p role="status">Loading card data...</p>}
         {cards.isPlaceholderData && <p role="status">Refreshing card data...</p>}
         {cards.isError && (
-          <p role="alert" className="text-red-700">
+          <p role="alert" className="text-danger">
             Could not load the card data: {errorMessage(cards.error)}
           </p>
         )}
         {missing.length > 0 && (
-          <p role="alert" className="text-red-700">
+          <p role="alert" className="text-danger">
             {missing.length} card{missing.length === 1 ? "" : "s"} of this deck are not in the card database:{" "}
             {missing.map(nameOf).join(", ")}.
           </p>
@@ -164,8 +167,8 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
                   </th>
                   <td>
                     <span className="flex items-center gap-2">
-                      <span className="block h-3 w-24 max-w-full bg-neutral-200" aria-hidden="true">
-                        <span className="block h-3 bg-neutral-700" style={{ width: `${(curve[i] / curveMax) * 100}%` }} />
+                      <span className="block h-3 w-24 max-w-full rounded-sm bg-muted" aria-hidden="true">
+                        <span className="block h-3 rounded-sm bg-accent" style={{ width: `${(curve[i] / curveMax) * 100}%` }} />
                       </span>
                       {curve[i]}
                     </span>
@@ -190,7 +193,10 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
               {sourceRows.map((c) => (
                 <tr key={c.letter}>
                   <th scope="row" className="pr-2 text-left font-normal">
-                    {c.name} ({c.letter})
+                    <span className="flex items-center gap-2">
+                      <span className={`inline-block size-3 rounded-full border border-border ${manaSwatch[c.letter] ?? "bg-mana-c"}`} aria-hidden="true" />
+                      {c.name} ({c.letter})
+                    </span>
                   </th>
                   <td>{sources.get(c.color) ?? 0}</td>
                 </tr>
@@ -200,7 +206,7 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
         </div>
       )}
 
-      <p className="text-xs text-neutral-600">
+      <p className="text-xs text-muted-foreground">
         Card images and card text are unofficial Fan Content permitted under the Wizards of the Coast Fan Content Policy. They are
         copyright Wizards of the Coast, LLC, and come from Scryfall.
       </p>
@@ -239,7 +245,7 @@ function CardGroup({
   return (
     <section aria-label={`${title} (${count})`} className="@container">
       <h3 className="font-medium">
-        {title} <span className="text-neutral-600">({count})</span>
+        {title} <span className="text-muted-foreground">({count})</span>
       </h3>
       <ul className="mt-2 grid grid-cols-1 items-start gap-2 @sm:grid-cols-2 @2xl:grid-cols-3 @4xl:grid-cols-4">
         {entries.map((e, i) => (

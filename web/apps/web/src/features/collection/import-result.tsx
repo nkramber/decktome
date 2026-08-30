@@ -1,6 +1,8 @@
 import { UnresolvedReason } from "@mtg/api-client/mtg/v1/collection_pb";
 import type { ImportCollectionResponse } from "@mtg/api-client/mtg/v1/collection_service_pb";
 
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+
 // reasonLabel turns an UnresolvedReason into words a user can act on. The
 // server keys unresolvedByReason by the full enum name, and the row carries
 // the number, so both shapes land here.
@@ -26,9 +28,14 @@ export function ImportResult({ result }: { result: ImportCollectionResponse }) {
   const byReason = Object.entries(report?.unresolvedByReason ?? {});
 
   return (
-    <section className="flex flex-col gap-3 rounded border border-neutral-200 p-4">
-      <h2 className="text-lg font-medium">Import result</h2>
-      <p data-testid="card-count" role="status">
+    <Card>
+      <CardHeader>
+        <CardTitle asChild>
+          <h2>Import result</h2>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        <p data-testid="card-count" role="status">
         {collection
           ? `${collection.name}: ${collection.cardCount} cards, ${report?.resolvedCount ?? 0} rows resolved, ${unresolved.length} unresolved.`
           : "The import returned no collection."}
@@ -67,6 +74,7 @@ export function ImportResult({ result }: { result: ImportCollectionResponse }) {
           </table>
         </div>
       )}
-    </section>
+      </CardContent>
+    </Card>
   );
 }

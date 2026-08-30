@@ -27,7 +27,7 @@ describe("route error element", () => {
     const assign = vi.fn();
     vi.stubGlobal("location", { ...window.location, assign });
     vi.spyOn(console, "error").mockImplementation(() => {});
-    renderAt("/boom", [{ path: "/boom", element: <Boom /> }]);
+    await renderAt("/boom", [{ path: "/boom", element: <Boom /> }]);
     expect(await screen.findByRole("alert")).toHaveTextContent("the page broke");
     expect(screen.getByRole("link", { name: "Go to your collection" })).toHaveAttribute("href", "/collection");
     await userEvent.setup().click(screen.getByRole("button", { name: "Sign out" }));

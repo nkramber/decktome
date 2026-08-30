@@ -1,13 +1,21 @@
 import { Navigate, Outlet, useLocation } from "react-router";
 
+import { Skeleton } from "../../components/ui/skeleton";
 import { useAuth } from "./auth-context";
 
-// LoadingSession shows while firebase/auth reads the persisted session.
+// LoadingSession shows while firebase/auth loads and reads the persisted
+// session. The SDK arrives after the first paint (D-320), so the shell
+// paints this first.
 export function LoadingSession() {
   return (
-    <p className="p-6 text-neutral-600" aria-live="polite">
-      Loading your session...
-    </p>
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 p-4 md:p-6" aria-busy="true">
+      <p className="sr-only" aria-live="polite">
+        Loading your session...
+      </p>
+      <Skeleton className="h-8 w-56" />
+      <Skeleton className="h-4 w-80" />
+      <Skeleton className="h-40 w-full" />
+    </div>
   );
 }
 

@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-08-29 correction pass 30 (PR-16 built on branch `pr-16`, D-323): the design system, the two themes, and the app shell. The first paint is 116.31 kB gzipped, from 179.81 kB. The bar of D-320 was out of reach, and D-323 amends it. Changes: PR-16, sequencing step 19.
+
 2026-08-29 correction pass 29b (D-320 to D-322): the PR-16 bundle gate reads raw bytes, not gzipped bytes, and the slice adds only the primitives that it uses. The PR-22 entry no longer decides OQ-45. The PR-21 rate limit reads the forwarded address. Changes: PR-16, PR-21, PR-22, `docs/open-questions.md` table.
 
 2026-08-29 correction pass 29 (Phase 3B, the product UI, D-310 to D-319): the live-test UI of PR-11 to PR-13 is not a product (F-28). A new phase, PR-16 to PR-23, builds one. It holds the design system, the four flows of D-312, the share link, the deploy for invited users, and a Playwright smoke flow. `docs/reference/ui-phase-plan-2026-08-29.md` holds the detail. Changes: F-28, guardrail 13, the system map row of `web`, Phase 3B, Phase 5 (D-318), sequencing steps 18 to 23, open questions 5 and 6.
@@ -584,19 +586,23 @@ The four flows of D-312 come in this order:
 
 > *In plain English:* what exists today is a test bench with a browser on it. This phase makes it an app a person can use every day, on a laptop or a phone, and later from anywhere with an invitation.
 
-**PR-16: Design system and app shell (D-311, D-317).**
-shadcn/ui components on Radix, copied into the repo. PR-16 adds only the primitives that the shell and the moved screens use (D-321), and each later slice adds its own. Tailwind 4 tokens: a neutral scale, one accent, the five mana colors and colorless as fixed tokens, and the semantic roles. The dark theme overrides the neutrals and the surfaces only. The theme follows the system by default, and a toggle in the sidebar stores a choice.
+**PR-16: Design system and app shell (D-311, D-317).** 🔧 built 2026-08-29 on branch `pr-16`. The test gate held. The browser gate waits for the owner.
+Nine shadcn primitives on Radix, written by hand into `src/components/ui`: Button, Input, Label, Textarea, Checkbox, Card, Skeleton, DropdownMenu, and the toast (D-321). Each later slice adds its own. Tailwind 4 tokens in `src/styles/tokens.css`: a neutral scale, one accent, a link color, the six mana colors, and the semantic roles. The dark theme overrides the neutrals, the surfaces, and the link only. The theme follows the system by default, and a menu in the sidebar stores a choice. A script in `index.html` paints the class before the first paint.
 
-The shell is a sidebar on a desktop and a bottom tab bar on a phone, with Build, Decks, and Collection. One `PageHeader`, one `EmptyState`, one `ErrorState`, a toast for every mutation, and an AlertDialog before every destructive action. Every existing screen moves onto the primitives with no new feature. The bundle splits by route, so `firebase/auth` loads on the sign-in route only. The import boundary of the lint gains `src/components/ui`, and a primitive imports no feature.
+The shell is a sidebar on a desktop and a bottom tab bar on a phone, with Build, Decks, and Collection. A media query picks one of the two, because two navigations with one name fail the axe landmark-unique rule. One `PageHeader`, one `EmptyState`, one `ErrorState`, and a toast for every mutation. Every existing screen moves onto the primitives with no new feature. The import boundary of the lint gains `src/components/ui`, and a primitive imports no feature and no app code.
+
+Five things leave the first paint. They are `firebase/auth`, the Connect client, the five feature pages, the two shell menus, and the toast host. Each one loads when the app first needs it.
 
 The baseline of 2026-08-29 is one chunk of 584.07 kB raw and 179.81 kB gzipped. It also holds 14.24 kB of CSS and 118 web tests.
 
 Gate:
 
-- axe passes on every route in both themes.
-- The 118 web tests hold.
-- The chunks of the first paint hold under 200 kB of raw JavaScript, from the Vite build report (D-320). The roadmap records the gzipped number beside it.
-- The owner walks the whole path on a desktop and on a phone.
+- axe passes on every route in both themes. ✅ four routes, two themes.
+- The 118 web tests hold. ✅ 135 tests pass in 17 files, and the 118 hold.
+- The first paint holds under 130 kB of gzipped JavaScript (D-323). ✅ one file of 116.31 kB gzipped, 363.25 kB raw.
+- The owner walks the whole path on a desktop and on a phone. ⏳ waits for the owner.
+
+CAUTION: D-320 set this bar at 200 kB of raw JavaScript, and a measurement showed that no build can reach it. React, the router, and TanStack Query are 101.51 kB gzipped and 319.51 kB raw together. D-323 amends the bar to 130 kB gzipped.
 
 > *In plain English:* the look and the bones. Buttons, dialogs, menus, and a dark mode that all match, on a layout that works on a phone. Nothing new to do yet, but everything looks and feels like one app.
 
@@ -749,7 +755,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 16. PR-9 variance. ⏸ out of MVP scope (D-256). It blocks nothing: the Phase 3 gate below reads PR-8's gate.
 17. **GATE.** Phase 3 starts only when PR-8's gate holds on the golden prompts. ✅ held on 2026-08-28, deck gate run 6.
 18. PR-11 ✅ merged 2026-08-28 (#38). PR-12 ✅ merged 2026-08-28 (#40). PR-12B ✅ merged 2026-08-29 (#41). PR-13 ✅ merged 2026-08-29 (#45). Then Phase 3B.
-19. **Phase 3B** (D-316, D-317): PR-16 to PR-23 in the order of the phase list. Each gate holds before the next slice starts. The paid re-baseline of D-302 runs in parallel, on the owner's word.
+19. **Phase 3B** (D-316, D-317): PR-16 to PR-23 in the order of the phase list. Each gate holds before the next slice starts. PR-16 🔧 built 2026-08-29 on branch `pr-16`, test gate held. The paid re-baseline of D-302 runs in parallel, on the owner's word.
 20. PR-15 eval harness. M-5 manual scoring runs on the first UI build (after PR-12).
 21. PR-14 meta, then I-1, I-2, I-3 on evidence.
 22. Phase 5 stays parked.

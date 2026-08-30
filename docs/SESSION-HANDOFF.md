@@ -10,9 +10,10 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 - The quality audit of 2026-08-29 is merged (#43, D-302 to D-306, `docs/audit-2026-08-29.md`).
 - PR-13 is merged (#45, D-307 to D-309). The owner did not run the export in the browser yet.
 - Phase 3B, the product UI, has a plan and no code yet (D-310 to D-322). The roadmap holds PR-16 to PR-23, and `docs/reference/ui-phase-plan-2026-08-29.md` holds the detail. The first slice is PR-16, the design system and the shell (D-317). The owner asked for the roadmap first and no code (D-319).
-- Branch `phase-3b-roadmap` holds the roadmap, the plan, and correction pass 29b (D-320 to D-322). The pull request is open and waits for the owner (D-322). A review of the plan on 2026-08-29 fixed five items. The bundle gate had no unit. The first slice listed 19 primitives. The PR-22 entry decided OQ-45. The PR-21 rate limit read the wrong address. The open-questions table broke at OQ-45.
+- The Phase 3B roadmap merged (#46, D-310 to D-322).
+- Branch `pr-16` holds the design system and the app shell (D-323). The test gate held, and the browser gate waits for the owner. A review of the plan on 2026-08-29 fixed five items. The bundle gate had no unit. The first slice listed 19 primitives. The PR-22 entry decided OQ-45. The PR-21 rate limit read the wrong address. The open-questions table broke at OQ-45.
 - The web baseline of 2026-08-29, before PR-16: one chunk of 584.07 kB raw and 179.81 kB gzipped. It also holds 14.24 kB of CSS and 118 tests.
-- The tree is green on the branch: Go build, vet, `-race` tests, golangci-lint, `buf breaking`, web lint, typecheck, 118 web tests, and the web build. `make lint` runs the extended STE check and reports zero findings.
+- The tree is green on the branch: Go build, vet, `-race` tests, golangci-lint, `buf breaking`, web lint, typecheck, 135 web tests, and the web build. `make lint` runs the extended STE check and reports zero findings.
 - The revise gate held on run 2 (D-296). The paid gates did not run on 2026-08-29.
 - PR-9 is out of the MVP (D-256). Phase 3B comes before Phase 4 (D-316).
 - Pull request #42 (Dependabot, anthropic-sdk-go 1.66.0 to 1.67.0) is open and waits for the owner.
@@ -55,10 +56,20 @@ CAUTION: `tune-check` paired zero questions between run 24 and run 25, because t
 - `web/apps/web/src/features/export`: `export-panel.tsx` (four buttons, the status line, the buy list with a Scryfall link per card) and `buy-list.ts` (the same rules as the Go package, for the screen). The deck view mounts the panel under its header. `export` is a leaf feature, and `deck` imports it.
 - The web app reads the text from the API, so the copy and the file match what the API renders.
 
+## PR-16, what it holds (2026-08-29)
+
+- Nine primitives in `web/apps/web/src/components/ui`: Button, Input, Label, Textarea, Checkbox, Card, Skeleton, DropdownMenu, and the toast. Each one is a hand-written shadcn shape on Radix, with relative imports. The shadcn command line installs a `@` alias, and the import boundary of this repo reads relative paths only.
+- `src/styles/tokens.css` holds the tokens. The dark theme overrides the neutrals, the surfaces, and the link. The six mana colors do not change. A script in `index.html` paints the class before the first paint.
+- The shell is a sidebar on a desktop and a bottom tab bar on a phone. A media query picks one of the two. Two navigations with one name fail the axe landmark-unique rule.
+- Sign-out moved into the account menu. A failed sign-out reports as a toast.
+- Five things leave the first paint: `firebase/auth`, the Connect client, the five pages, the two shell menus, and the toast host.
+- `renderAt` in `src/test-utils.tsx` is async now, and every test awaits it. It warms the page modules and the auth SDK, then flushes one act.
+- `src/test-setup.ts` adds four jsdom stubs that the Radix menus need.
+
 ## Next steps, in order
 
-1. The owner merges the `phase-3b-roadmap` pull request.
-2. PR-16 starts on a branch named `pr-16`, off `main`. It holds the design system and the shell, with no new feature. Then PR-17 to PR-23 in order, one gate each.
+1. The owner walks the app in the browser, on a desktop and on a phone. Then the owner merges PR-16.
+2. Then PR-17 to PR-23 in order, one gate each.
 3. The owner runs the question gate and the deck gate to re-baseline (D-302), in parallel. Ask before each run. Write each to a new `GATE_OUT` file (D-65). Record the numbers here and in the roadmap.
 4. Before PR-22, ask OQ-45 (the allowlist store) and OQ-46 (the spend cap).
 5. After Phase 3B: PR-15, then PR-14.
