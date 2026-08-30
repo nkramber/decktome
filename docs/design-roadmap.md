@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-08-30 correction pass 35 (the reference design and the one deck screen, D-328 to D-335): the owner gave a reference design, and it settles the look. Three faces, a navy and gold palette, one top bar, and dark alone. The identity wash of D-327 left, and the color of the game now shows in a mana pip and a rarity dot. A deck has one screen and one address. Changes: Phase 3B, PR-16, PR-16B, PR-17, sequencing step 19.
+
 2026-08-29 correction pass 34 (the palette of D-327): the five colors of the game are the app's palette, and dark leads. D-311 kept every surface neutral, and the result read as boring. A deck now carries its own color identity, and a card role carries its own hue. Changes: PR-17, guardrail 13 unchanged.
 
 2026-08-29 correction pass 33 (PR-17 started on branch `pr-17`): the proto and the Go side of the deck library. `UpdateDeck`, `DeleteDeck`, `Deck.favorite`, `Deck.card_count`, and the paged, filtered `ListDecks`. D-324 puts the power filter on the server. Changes: PR-17, sequencing step 19, open question 7.
@@ -577,7 +579,13 @@ Built 2026-08-29 on branch `pr-13` (D-307 to D-309). The Arena line names the ow
 
 ### Phase 3B - The product UI (gated on PR-13)
 
-The live-test UI of Phase 3 served one purpose: the owner tests the agent in a browser (D-273, F-28). This phase builds the product (D-310). It runs for the owner locally, and for invited users on GCP at the end of the phase. The look is shadcn/Radix primitives, a light and a dark theme, card art forward, and a responsive layout (D-311). The test bar is Vitest with axe per pull request and one Playwright smoke flow on a manual trigger (D-313). `docs/reference/ui-phase-plan-2026-08-29.md` holds the screens, the components, the contract changes, and the deploy shape.
+The live-test UI of Phase 3 served one purpose: the owner tests the agent in a browser (D-273, F-28). This phase builds the product (D-310). It runs for the owner locally, and for invited users on GCP at the end of the phase.
+
+The look comes from a reference design the owner gave on 2026-08-30 (D-328 to D-330). Three faces carry three jobs. Cinzel engraves a heading, Crimson Pro reads a paragraph, and JetBrains Mono carries an id or a count.
+
+The palette is navy, gold, and purple, with parchment for text, and the radius is 4 px. The shell is one top bar, and dark is the only theme. Radix primitives still carry the behavior (D-311), and the app owns each file.
+
+The test bar is Vitest with axe per pull request and one Playwright smoke flow on a manual trigger (D-313). A session also reads its own work with Playwright from 2026-08-30, and it measures rather than looks. `docs/reference/ui-phase-plan-2026-08-29.md` holds the screens, the components, the contract changes, and the deploy shape.
 
 The four flows of D-312 come in this order:
 
@@ -592,8 +600,12 @@ The four flows of D-312 come in this order:
 
 > *In plain English:* what exists today is a test bench with a browser on it. This phase makes it an app a person can use every day, on a laptop or a phone, and later from anywhere with an invitation.
 
-**PR-16: Design system and app shell (D-311, D-317).** 🔧 built 2026-08-29 on branch `pr-16`. The test gate held. The browser gate waits for the owner.
-Nine shadcn primitives on Radix, written by hand into `src/components/ui`: Button, Input, Label, Textarea, Checkbox, Card, Skeleton, DropdownMenu, and the toast (D-321). Each later slice adds its own. Tailwind 4 tokens in `src/styles/tokens.css`: a neutral scale, one accent, a link color, the six mana colors, and the semantic roles. The dark theme overrides the neutrals, the surfaces, and the link only. The theme follows the system by default, and a menu in the sidebar stores a choice. A script in `index.html` paints the class before the first paint.
+**PR-16: Design system and app shell (D-311, D-317).** ✅ merged 2026-08-29 (#47).
+
+CAUTION: the palette, the shell, and the theme of this slice all changed on 2026-08-30. D-328 replaced the sidebar with a top bar, D-329 removed the color identity of a deck, and D-330 removed the light theme. The primitives and the route split of this slice stand.
+Nine shadcn primitives on Radix, written by hand into `src/components/ui`: Button, Input, Label, Textarea, Checkbox, Card, Skeleton, DropdownMenu, and the toast (D-321). Each later slice adds its own.
+
+Tailwind 4 tokens in `src/styles/tokens.css`: a neutral scale, one accent, a link color, the six mana colors, and the semantic roles. The dark theme overrides the neutrals, the surfaces, and the link only. The theme follows the system by default, and a menu in the sidebar stores a choice. A script in `index.html` paints the class before the first paint.
 
 The shell is a sidebar on a desktop and a bottom tab bar on a phone, with Build, Decks, and Collection. A media query picks one of the two, because two navigations with one name fail the axe landmark-unique rule. One `PageHeader`, one `EmptyState`, one `ErrorState`, and a toast for every mutation. Every existing screen moves onto the primitives with no new feature. The import boundary of the lint gains `src/components/ui`, and a primitive imports no feature and no app code.
 
@@ -630,24 +642,27 @@ Gate:
 
 > *In plain English:* the app looked like a test bench with a dark mode on it. This makes it look like a product. A real typeface, depth, a chat that reads like a conversation, and a message box where you expect it.
 
-**PR-17: Deck library.**
-A grid of decks with the commander art, the name, the format, the power, the count, the buy cost, and the date. Search by name and commander, filter by format and power, sort by date, name, and cost, and a favorite star. A deck page holds the deck view, the export panel, and the actions: rename, favorite, delete, and share (PR-21). Version history comes from the `revised_from_deck_id` chain, with any two versions side by side and their diff. The grid compares any two decks.
+**PR-17: Deck library.** 🔧 built 2026-08-30 on branch `pr-17`, nine commits. The version history and the compare remain.
+A grid of decks with the name, the commander, the mana pips, the format, the power, the count, the buy cost, and the date. Search by name and commander, filter by format, power, and favorites, and a favorite star. Every filter runs on the server, so a match on a later page still shows.
 
 Contract, additive: `DeckService.UpdateDeck(name, favorite)`, `DeleteDeck`, `Deck.favorite`, `Deck.card_count`, and paging with filters on `ListDecks` (D-245). The power filter has two fields, because `PowerLevel` is a oneof (D-324).
 
-🔧 built 2026-08-29 on branch `pr-17`: the proto, the Go side, the grid, and the deck page. The version history and the compare follow.
+A deck has one screen and one address (D-335). `/decks/<id>` holds the deck, the actions the user owns, and the conversation that built it. `/session/<id>` holds a build with no deck yet, and it hands the reader over the moment a turn ends with a deck. The deck fills the page, and the conversation docks at the bottom left with a History control (D-331). `src/features/workspace` is the one feature with a path to both chat and deck, and the import boundary of the lint carries that rule.
 
-The slice also carries the palette of D-327. A deck reads its color identity from its commander, and that identity washes its grid card and its page. A card role carries its own hue on every group heading. The grid card shows the commander artwork that Scryfall serves as `art_crop`, so the app crops nothing itself.
+Build in the header asks which cards the deck draws on, and then opens a chat (D-332). A signed-in reader lands there (D-334).
 
 The listing filter runs in Go over the rows Firestore returns, not as a Firestore query. One read serves every filter, and no composite index has to exist. A scan cap of 500 rows bounds the read, and a user beyond it needs a search index. The page token carries the offset and a fingerprint of the filter, so a token of another filter is an invalid argument.
 
 Gate:
 
-- Each action round-trips through the API and shows in the grid with no reload.
-- A deleted deck answers `NotFound`.
-- A grid of 100 decks renders under one second.
+- Each action round-trips through the API and shows in the grid with no reload. ✅
+- A deleted deck answers `NotFound`. ✅
+- A grid of 100 decks renders under one second. ⏳ the owner reads it with real decks.
+- The first paint holds under 130 kB gzipped (D-323). ✅ 115.72 kB, 361.69 kB raw.
 
-> *In plain English:* a home for your decks. Find one fast, name it, star it, throw one away, see how a deck changed over its revisions, and put two side by side.
+CAUTION: this branch carries six concerns. They are the contract, the Go side, the reference design, the layout of D-331, the Build menu, and the one deck screen. Guardrail 10 asks for one. A split before the merge needs the owner's word.
+
+> *In plain English:* a home for your decks. Find one fast, name it, star it, throw one away, and talk to the agent about it on the same page.
 
 **PR-18: Collection management.**
 The list of collections shows the name, the count, the date, and the active mark, with rename and delete. An upload dialog shows the progress and the import report. A re-upload whose hash differs from the active collection shows the diff first: added, removed, and changed counts, then "Replace". A binder view per collection is a virtualized grid of the cards with art, count, finish, and condition. It has search, filters by color, type, set, and count, and sort by name, price, and count.
@@ -785,7 +800,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 16. PR-9 variance. ⏸ out of MVP scope (D-256). It blocks nothing: the Phase 3 gate below reads PR-8's gate.
 17. **GATE.** Phase 3 starts only when PR-8's gate holds on the golden prompts. ✅ held on 2026-08-28, deck gate run 6.
 18. PR-11 ✅ merged 2026-08-28 (#38). PR-12 ✅ merged 2026-08-28 (#40). PR-12B ✅ merged 2026-08-29 (#41). PR-13 ✅ merged 2026-08-29 (#45). Then Phase 3B.
-19. **Phase 3B** (D-316, D-317): PR-16 to PR-23 in the order of the phase list. Each gate holds before the next slice starts. PR-16 ✅ merged 2026-08-29 (#47). PR-16B ✅ merged 2026-08-29 (#48). PR-17 🔧 started, the proto and the Go side. The paid re-baseline of D-302 runs in parallel, on the owner's word.
+19. **Phase 3B** (D-316, D-317): PR-16 to PR-23 in the order of the phase list. Each gate holds before the next slice starts. PR-16 ✅ merged 2026-08-29 (#47). PR-16B ✅ merged 2026-08-29 (#48). PR-17 🔧 built on branch `pr-17`, less the version history and the compare. The paid re-baseline of D-302 runs in parallel, on the owner's word.
 20. PR-15 eval harness. M-5 manual scoring runs on the first UI build (after PR-12).
 21. PR-14 meta, then I-1, I-2, I-3 on evidence.
 22. Phase 5 stays parked.

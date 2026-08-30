@@ -4,21 +4,17 @@
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. On the owner's machine `~/.nvm/versions/node/v22.23.2/bin` on the PATH fixes it.
 
-## Where things stand (2026-08-29)
+## Where things stand (2026-08-30)
 
-- `main` is at `7924658`, PR-12B merged (#41, 2026-08-29). Merged: PR-0a to PR-8, PR-7B, PR-10, PR-11 (#38), PR-12 (#40), PR-12B (#41).
-- The quality audit of 2026-08-29 is merged (#43, D-302 to D-306, `docs/audit-2026-08-29.md`).
-- PR-13 is merged (#45, D-307 to D-309). The owner did not run the export in the browser yet.
-- Phase 3B, the product UI, has a plan and no code yet (D-310 to D-322). The roadmap holds PR-16 to PR-23, and `docs/reference/ui-phase-plan-2026-08-29.md` holds the detail. The first slice is PR-16, the design system and the shell (D-317). The owner asked for the roadmap first and no code (D-319).
-- The Phase 3B roadmap merged (#46, D-310 to D-322).
-- PR-16 is merged (#47, D-323), and PR-16B is merged (#48, D-325 and D-326).
-- Branch `pr-17` holds the deck library: the proto, the Go side, the palette of D-327, the grid, and the deck page. The version history and the compare follow.
-- A review of the PR-16 plan on 2026-08-29 fixed five items. The bundle gate had no unit. The first slice listed 19 primitives. The PR-22 entry decided OQ-45. The PR-21 rate limit read the wrong address. The open-questions table broke at OQ-45.
-- The web baseline of 2026-08-29, before PR-16: one chunk of 584.07 kB raw and 179.81 kB gzipped. It also holds 14.24 kB of CSS and 118 tests.
-- The tree is green on the branch: Go build, vet, `-race` tests, golangci-lint, `buf breaking`, web lint, typecheck, 135 web tests, and the web build. `make lint` runs the extended STE check and reports zero findings.
-- The revise gate held on run 2 (D-296). The paid gates did not run on 2026-08-29.
+- `main` is at `6f871c3`. Merged: PR-0a to PR-8, PR-7B, PR-10 to PR-13, the audits, the Phase 3B roadmap (#46), PR-16 (#47), and PR-16B (#48).
+- No pull request is open. The Dependabot bump of the go group merged as #44.
+- Branch `pr-17` holds the deck library and the look of the reference design, in nine commits over `main`. The version history and the compare remain.
+- The tree is green on `pr-17`: Go build, vet, `-race` tests, golangci-lint, `buf breaking`, `proto-check`, web lint, typecheck, 165 web tests, and the web build. `make lint` reports zero findings.
+- The first paint is 361.69 kB raw and 115.72 kB gzipped. The bar of D-323 is 130 kB.
+- The revise gate held on run 2 (D-296). The paid gates did not run since 2026-08-28.
 - PR-9 is out of the MVP (D-256). Phase 3B comes before Phase 4 (D-316).
-- Pull request #42 (Dependabot, anthropic-sdk-go 1.66.0 to 1.67.0) is open and waits for the owner.
+
+CAUTION: branch `pr-17` carries six concerns. They are the contract, the Go side, the reference design, the layout of D-331, the Build menu, and the one deck screen. Guardrail 10 asks for one per pull request. A split before the merge needs the owner's word.
 
 ## The numbers, and why none of them compare with `main` now
 
@@ -60,6 +56,8 @@ CAUTION: `tune-check` paired zero questions between run 24 and run 25, because t
 
 ## PR-16, what it holds (2026-08-29)
 
+CAUTION: three parts of this slice changed on 2026-08-30. The sidebar became a top bar (D-328), the light theme went (D-330), and the color identity of a deck went (D-329). The primitives, the route split, and the test helper below still hold.
+
 - Nine primitives in `web/apps/web/src/components/ui`: Button, Input, Label, Textarea, Checkbox, Card, Skeleton, DropdownMenu, and the toast. Each one is a hand-written shadcn shape on Radix, with relative imports. The shadcn command line installs a `@` alias, and the import boundary of this repo reads relative paths only.
 - `src/styles/tokens.css` holds the tokens. The dark theme overrides the neutrals, the surfaces, and the link. The six mana colors do not change. A script in `index.html` paints the class before the first paint.
 - The shell is a sidebar on a desktop and a bottom tab bar on a phone. A media query picks one of the two. Two navigations with one name fail the axe landmark-unique rule.
@@ -68,7 +66,18 @@ CAUTION: `tune-check` paired zero questions between run 24 and run 25, because t
 - `renderAt` in `src/test-utils.tsx` is async now, and every test awaits it. It warms the page modules and the auth SDK, then flushes one act.
 - `src/test-setup.ts` adds four jsdom stubs that the Radix menus need.
 
-## PR-17, what the Go side holds (2026-08-29)
+## PR-17, what the branch holds (2026-08-30)
+
+The web side, in one list:
+
+- The library grid at `/decks`: the name, the commander, the mana pips, the format, the power, the count, the cost, the date, and a favorite star. Search by name and commander, and filter by format, power, and favorites. Every filter runs on the server.
+- `/decks/<id>` is the one screen of a deck (D-335). It holds the deck, the actions, and the conversation that built it.
+- `/session/<id>` holds a build with no deck. It hands the reader to the deck's address the moment a turn ends with a deck.
+- `src/features/workspace` is the one feature with a path to both chat and deck.
+- Build in the header is a menu of the collections (D-332), and a signed-in reader lands there (D-334).
+- The look of the reference design: three faces, the navy and gold palette, one top bar, dark alone.
+
+The Go side, in one list:
 
 - `DeckService.UpdateDeck` writes the name and the favorite mark, and `DeleteDeck` removes a deck for good. Both are additive, and `buf breaking` passes.
 - `Deck.favorite` and `Deck.card_count` are new. The list view carries no cards, so it sets `card_count`. The deck list on screen reads `cards.length` today and always shows zero.
@@ -130,12 +139,12 @@ CAUTION: the binder head calls `GetCollection`, and the answer carries every ent
 
 ## Next steps, in order
 
-1. The owner reads the app in the browser, on a desktop and on a phone. The owner says what still reads as dated.
-2. The PR-17 web side: the deck grid, the deck page, the version history, and the compare.
-3. Then PR-18 to PR-23 in order, one gate each.
-3. The owner runs the question gate and the deck gate to re-baseline (D-302), in parallel. Ask before each run. Write each to a new `GATE_OUT` file (D-65). Record the numbers here and in the roadmap.
-4. Before PR-22, ask OQ-45 (the allowlist store) and OQ-46 (the spend cap).
-5. After Phase 3B: PR-15, then PR-14.
+1. The owner reads `pr-17` in the browser and says whether the look and the one deck screen are right.
+2. The owner says whether to split `pr-17` before the merge. Six concerns sit on it.
+3. Finish PR-17: the version history from the `revised_from_deck_id` chain, and the compare of two decks.
+4. The owner runs the question gate and the deck gate to re-baseline (D-302), in parallel. Ask before each run. Write each to a new `GATE_OUT` file (D-65). Record the numbers here and in the roadmap.
+5. Then PR-18 to PR-23 in order, one gate each. Before PR-22, ask OQ-45 and OQ-46.
+6. After Phase 3B: PR-15, then PR-14.
 
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 

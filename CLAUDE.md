@@ -6,7 +6,9 @@ Read this file first. Then read `docs/SESSION-HANDOFF.md`. It tells you where th
 
 This repo is a Go + Protobuf + TypeScript monorepo for an agentic MtG deck builder. The app reads a user's ManaBox collection export. The user gives a prompt. The agent asks questions, then builds a legal, useful deck.
 
-Stage (2026-08-29): `main` is at `7924658`. Merged: PR-0a to PR-8, PR-7B, PR-10, PR-11 (#38), PR-12 (#40), and PR-12B (#41). PR-9 is out of the MVP (D-256), and the next roadmap item is PR-13 (`DeckService.ExportDeck`), then PR-15. The audit of 2026-08-29 (D-302) moved the generate prompt to version 10 and bumped the classify prompt version. The gate baselines (question gate run 27, deck gate run 8) do not compare with `main` until the owner reruns them. `docs/SESSION-HANDOFF.md` holds the moving parts, and `docs/reference/autotune-readme.md` holds the loop commands.
+Stage (2026-08-30): `main` is at `6f871c3`. Merged: PR-0a to PR-8, PR-7B, PR-10 to PR-13, the Phase 3B roadmap (#46), PR-16 (#47), and PR-16B (#48). PR-9 is out of the MVP (D-256).
+
+Phase 3B, the product UI, is the current phase, and branch `pr-17` holds the deck library. The look follows a reference design the owner gave on 2026-08-30 (D-328 to D-335). The gate baselines (question gate run 27, deck gate run 8) do not compare with `main` until the owner reruns them (D-302). `docs/SESSION-HANDOFF.md` holds the moving parts, and `docs/reference/autotune-readme.md` holds the loop commands.
 
 Run `git pull`, then `git status`, before you change anything. The owner commits and pushes. Do not commit unless the owner asks.
 
