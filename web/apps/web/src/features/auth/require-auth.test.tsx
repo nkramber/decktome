@@ -33,7 +33,7 @@ describe("route guard", () => {
     expect(router.state.location.pathname).toBe("/sign-in");
   });
 
-  it("sends / to /sign-in when signed out and to /collection when signed in", async () => {
+  it("sends / to /sign-in when signed out and to Build when signed in (D-334)", async () => {
     const out = await renderAt("/");
     expect(await screen.findByRole("heading", { level: 1, name: "Sign in" })).toBeInTheDocument();
     expect(out.router.state.location.pathname).toBe("/sign-in");
@@ -41,15 +41,15 @@ describe("route guard", () => {
 
     state.user = fakeUser;
     const inn = await renderAt("/");
-    expect(await screen.findByRole("heading", { level: 1, name: "Your collection" })).toBeInTheDocument();
-    expect(inn.router.state.location.pathname).toBe("/collection");
+    expect(await screen.findByRole("heading", { level: 1, name: "Chat" })).toBeInTheDocument();
+    expect(inn.router.state.location.pathname).toBe("/session/new");
   });
 
-  it("sends a signed-in visit to /sign-in on to /collection", async () => {
+  it("sends a signed-in visit to /sign-in on to Build (D-334)", async () => {
     state.user = fakeUser;
     const { router } = await renderAt("/sign-in");
-    await screen.findByRole("heading", { level: 1, name: "Your collection" });
-    expect(router.state.location.pathname).toBe("/collection");
+    await screen.findByRole("heading", { level: 1, name: "Chat" });
+    expect(router.state.location.pathname).toBe("/session/new");
   });
 
   it("returns to the page the guard redirected after the sign-in", async () => {

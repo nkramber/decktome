@@ -33,9 +33,10 @@ export function RequireAuth() {
   return <Outlet />;
 }
 
-// The root path goes to the collection when signed in, else to sign-in.
+// The root path goes to Build when signed in, else to sign-in. Build is
+// what the app is for, and the collection is a step on the way (D-334).
 export function RootRedirect() {
   const { user, ready } = useAuth();
   if (!ready) return <LoadingSession />;
-  return <Navigate to={user ? "/collection" : "/sign-in"} replace />;
+  return <Navigate to={user ? "/session/new" : "/sign-in"} replace />;
 }

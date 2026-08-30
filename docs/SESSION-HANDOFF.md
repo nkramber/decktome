@@ -89,7 +89,12 @@ The owner gave a reference design, and it settles the look. Our terms win over i
 - Dark is the only theme (D-330). `src/lib/theme.ts` and the no-flash script left with it.
 - A deck owns the whole page, and the conversation docks at the bottom left (D-331). A History control opens the thread over the composer. Before a deck exists, the conversation is the page.
 - The identity wash left (D-329). Color of the game shows in a mana pip and a rarity dot.
-- Build in the header is a menu of the collections (D-332). It sets the pool and opens a chat.
+- Build in the header is a menu of the collections (D-332). It sets the pool and opens a chat. With no collection it offers the way to the upload screen (D-334).
+- A signed-in reader lands on Build, not on the collection (D-334).
+
+CAUTION: a trigger of a Radix menu must pass on every prop it takes. The ref is among them, and Radix measures the trigger through it to place the panel.
+
+A trigger that keeps only the props it names drops the ref. The panel then lands at the top left corner, outside the window, and a click never reaches it. Both menus of the shell carried this defect. jsdom has no layout, so no test there sees it. Playwright found it in one run.
 - The binder head sits under the controls, the buy list opens on request, and a page holds 75 rem (D-333).
 
 A session reads its own work with Playwright, and it measures rather than looks. Four checks ran on 2026-08-30.

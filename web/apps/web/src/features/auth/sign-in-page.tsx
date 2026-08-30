@@ -15,7 +15,7 @@ import { useAuth } from "./auth-context";
 export function SignInPage() {
   const { user, ready, error: authError } = useAuth();
   const location = useLocation();
-  const from = (location.state as { from?: Location } | null)?.from?.pathname ?? "/collection";
+  const from = (location.state as { from?: Location } | null)?.from?.pathname ?? "/session/new";
   const [mode, setMode] = useState<"sign-in" | "sign-up">("sign-in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

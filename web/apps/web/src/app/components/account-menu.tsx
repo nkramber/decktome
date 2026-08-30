@@ -1,5 +1,5 @@
 import { UserIcon } from "lucide-react";
-import { lazy, Suspense, useState } from "react";
+import { type ComponentProps, lazy, Suspense, useState } from "react";
 
 import { Button } from "../../components/ui/button";
 
@@ -9,9 +9,11 @@ const AccountMenuContent = lazy(async () => ({ default: (await import("./shell-m
 
 export type AccountMenuProps = { email: string; onSignOut: () => void; align?: "start" | "center" | "end"; side?: "top" | "bottom" };
 
-function AccountTrigger({ email, onClick }: { email: string; onClick?: () => void }) {
+// The trigger passes every prop it is given to its button, including the
+// ref Radix measures to place the panel.
+function AccountTrigger({ email, ...props }: { email: string } & ComponentProps<"button">) {
   return (
-    <Button variant="ghost" size="sm" aria-haspopup="menu" aria-label="Account menu" onClick={onClick}>
+    <Button variant="ghost" size="sm" aria-haspopup="menu" aria-label="Account menu" {...props}>
       <UserIcon aria-hidden="true" />
       <span className="hidden max-w-32 truncate lg:inline">{email}</span>
     </Button>

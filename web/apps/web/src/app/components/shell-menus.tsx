@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { LogOutIcon } from "lucide-react";
+import { LogOutIcon, PlusIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router";
 
@@ -15,6 +15,12 @@ import {
 } from "../../components/ui/dropdown-menu";
 import { collectionClient } from "../../lib/api";
 import { useAppStore } from "../../lib/store";
+
+// A menu of the shell loads on the first open, and it opens itself once
+// it arrives. Radix measures the trigger to place the panel, and it
+// reaches the trigger through the ref it passes as a prop. Every trigger
+// here forwards the props it is given, or the panel lands outside the
+// window with no way to click it.
 
 // The account menu, in one module the shell loads on the first open
 // (D-320). Radix and its layer code stay off the first paint. The menu
@@ -83,7 +89,16 @@ export function BuildMenuContent({ trigger }: { trigger: ReactNode }) {
             </DropdownMenuRadioItem>
           ))}
         </DropdownMenuRadioGroup>
-        {list.isSuccess && collections.length === 0 && <DropdownMenuLabel className="font-normal text-muted-foreground">No collection yet. Upload one under Collection.</DropdownMenuLabel>}
+        {list.isSuccess && collections.length === 0 && (
+          <>
+            <DropdownMenuLabel className="font-normal text-muted-foreground">No collection yet. The agent builds from any card until you add one.</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={() => void navigate("/collection")}>
+              <PlusIcon aria-hidden="true" />
+              Add a collection
+            </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

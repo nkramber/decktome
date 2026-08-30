@@ -1,5 +1,5 @@
 import { SparklesIcon } from "lucide-react";
-import { lazy, Suspense, useState } from "react";
+import { type ComponentProps, lazy, Suspense, useState } from "react";
 
 import { cn } from "../../lib/cn";
 
@@ -7,15 +7,19 @@ import { cn } from "../../lib/cn";
 // the same element in both states, so nothing moves when it arrives.
 const BuildMenuContent = lazy(async () => ({ default: (await import("./shell-menus")).BuildMenuContent }));
 
-function BuildTrigger({ active, onClick }: { active: boolean; onClick?: () => void }) {
+// The trigger passes every prop it is given to its button, including the
+// ref. Radix measures the trigger through that ref to place the panel,
+// and a trigger that drops it leaves the panel outside the window.
+function BuildTrigger({ active, className, ...props }: { active: boolean } & ComponentProps<"button">) {
   return (
     <button
       type="button"
       aria-haspopup="menu"
-      onClick={onClick}
+      {...props}
       className={cn(
         "font-display flex items-center gap-1.5 rounded-card px-3 py-1.5 text-xs tracking-wide transition-all",
         active ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground",
+        className,
       )}
     >
       <SparklesIcon className="size-3.5" aria-hidden="true" />

@@ -9,10 +9,12 @@ import { renderAt } from "../test-utils";
 
 vi.mock("firebase/app");
 vi.mock("firebase/auth");
+
+const listCollections = vi.fn();
 vi.mock("../lib/api", () => ({
   healthClient: { check: () => Promise.resolve({ status: "ok", version: "test", cardSnapshot: "2026-08-24T09:01:52Z", cardSnapshotAgeHours: 2.5 }) },
   collectionClient: {
-    listCollections: () => Promise.resolve({ collections: [{ id: "c-old", name: "binder-july.csv", cardCount: 4317 }] }),
+    listCollections: (...a: unknown[]) => listCollections(...a),
     getCollection: vi.fn(),
   },
   deckClient: { listDecks: () => Promise.resolve({ decks: [], nextPageToken: "" }), getDeck: vi.fn(), updateDeck: vi.fn(), deleteDeck: vi.fn() },
@@ -24,6 +26,8 @@ beforeEach(() => {
   state.user = fakeUser;
   localStorage.clear();
   useAppStore.setState({ collectionId: "", sessionId: "", poolMode: "any" });
+  listCollections.mockReset();
+  listCollections.mockResolvedValue({ collections: [{ id: "c-old", name: "binder-july.csv", cardCount: 4317 }] });
 });
 
 describe("the shell", () => {
@@ -100,5 +104,43 @@ describe("the Build menu", () => {
     await user.click(await screen.findByRole("menuitemradio", { name: "Any card" }));
     expect(useAppStore.getState().collectionId).toBe("");
     expect(useAppStore.getState().poolMode).toBe("any");
+  });
+});
+
+describe("a menu trigger", () => {
+  // Radix places its panel from the trigger's rectangle, and it reaches
+  // the trigger through the ref it passes as a prop. A trigger that
+  // keeps only the props it names drops that ref, and the panel lands
+  // outside the window. jsdom has no layout, so the check reads the
+  // state Radix writes onto the trigger instead.
+  // An open menu marks the rest of the page aria-hidden, so a role query
+  // no longer reaches the trigger. The check reads the DOM instead.
+  const openTrigger = () => document.querySelector('[aria-haspopup="menu"][aria-expanded="true"]');
+
+  it("takes the props Radix gives it, on Build", async () => {
+    const user = userEvent.setup();
+    await renderAt("/decks");
+    await user.click(screen.getByRole("button", { name: "Build" }));
+    await screen.findByRole("menuitemradio", { name: "Any card" });
+    expect(openTrigger()).not.toBeNull();
+  });
+
+  it("takes the props Radix gives it, on the account menu", async () => {
+    const user = userEvent.setup();
+    await renderAt("/decks");
+    await user.click(screen.getByRole("button", { name: "Account menu" }));
+    await screen.findByRole("menuitem", { name: "Sign out" });
+    expect(openTrigger()).not.toBeNull();
+  });
+});
+
+describe("the Build menu with no collection", () => {
+  it("offers the way to add one", async () => {
+    listCollections.mockResolvedValueOnce({ collections: [] });
+    const user = userEvent.setup();
+    const { router } = await renderAt("/decks");
+    await user.click(screen.getByRole("button", { name: "Build" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Add a collection" }));
+    expect(router.state.location.pathname).toBe("/collection");
   });
 });
