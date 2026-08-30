@@ -17,7 +17,7 @@ function loadModules() {
     import("./features/collection/collection-page"),
     import("./features/chat/session-page"),
     import("./features/deck/decks-page"),
-    import("./features/deck/deck-page"),
+    import("./features/workspace/deck-screen"),
     import("firebase/app"),
     import("firebase/auth"),
   ]);

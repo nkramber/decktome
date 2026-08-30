@@ -85,11 +85,11 @@ describe("SessionPage", () => {
     expect(screen.queryByLabelText("Your message")).not.toBeInTheDocument();
   });
 
-  it("an option click sends option_index, and the deck event opens the deck view", async () => {
+  it("an option click sends option_index, and a built deck hands over to its address (D-335)", async () => {
     chat
       .mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("question", formatQuestion)]))
       .mockReturnValueOnce(events([ev("slots", { poolRule: PoolRule.ANY_CARD }), ev("status", "building the deck"), ev("textDelta", "Here is "), ev("textDelta", "your deck."), ev("deck", deck), ev("usage", { calls: 3 })]));
-    await renderAt("/session/new");
+    const { router } = await renderAt("/session/new");
     const user = userEvent.setup();
     await user.type(await screen.findByLabelText("Your message"), "elves");
     await user.click(screen.getByRole("button", { name: "Send" }));
@@ -103,15 +103,9 @@ describe("SessionPage", () => {
     expect(req.message).toBe("");
     expect(req.answers).toEqual([{ questionId: "q1", optionIndex: 2, text: "" }]);
 
-    expect(await screen.findByRole("heading", { name: "Elves" })).toBeInTheDocument();
-    expect(screen.queryByRole("group", { name: /Question:/ })).not.toBeInTheDocument();
-    // The option the user clicked shows as their line, once the dock's
-    // History is open.
-    await user.click(screen.getByRole("button", { name: /^History/ }));
-    expect(within(screen.getByRole("list", { name: "Conversation" })).getAllByRole("listitem")[2]).toHaveTextContent("Modern");
-    expect(screen.getByText("building the deck")).toBeInTheDocument();
-    expect(screen.getByText("Here is your deck.")).toBeInTheDocument();
-    expect(await screen.findByAltText("Llanowar Elves (card)")).toBeInTheDocument();
+    // A built deck lives at its own address, and the session hands the
+    // reader over to it (D-335).
+    await waitFor(() => expect(router.state.location.pathname).toBe("/decks/d1"));
   });
 
   it("one submit sends every answer, and waits until each question has one", async () => {
@@ -484,32 +478,6 @@ describe("SessionPage", () => {
     expect(within(screen.getByRole("list", { name: "Conversation" })).getAllByRole("listitem")[3]).toHaveTextContent("Modern");
   });
 
-  it("a message after the deck streams the reply and the revised deck with its diff (PR-12B)", async () => {
-    const revised = {
-      ...deck,
-      id: "d2",
-      revisedFromDeckId: "d1",
-      revisionNote: "I changed the count of Llanowar Elves: 4 to 2.",
-      cards: [{ ...deck.cards[0], count: 2 }],
-    };
-    chat
-      .mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("deck", deck), ev("usage", { calls: 2 })]))
-      .mockReturnValueOnce(
-        events([ev("status", "reading your request"), ev("status", "revising the deck"), ev("textDelta", "I changed the count of Llanowar Elves: 4 to 2."), ev("deck", revised), ev("usage", { calls: 4 })]),
-      );
-    await renderAt("/session/new");
-    const user = userEvent.setup();
-    await user.type(await screen.findByLabelText("Your message"), "elves");
-    await user.click(screen.getByRole("button", { name: "Send" }));
-    await screen.findByRole("heading", { name: "Elves" });
-    await user.type(await screen.findByLabelText("Your message"), "fewer elves{enter}");
-    expect(await screen.findByTestId("revision-note")).toHaveTextContent("I changed the count of Llanowar Elves: 4 to 2.");
-    expect(screen.getByTestId("revision-diff")).toHaveTextContent("Count of Llanowar Elves: 4 to 2");
-    // The same words reach the thread, behind the dock's History (D-331).
-    await user.click(screen.getByRole("button", { name: /^History/ }));
-    expect(screen.getByText("I changed the count of Llanowar Elves: 4 to 2.", { selector: "p.whitespace-pre-line" })).toBeInTheDocument();
-    expect((chat.mock.calls[1][0] as { sessionId: string; message: string }).message).toBe("fewer elves");
-  });
 
   it("shows a commander offer as full card images (D-287)", async () => {
     getCards.mockResolvedValue({
@@ -562,12 +530,12 @@ describe("SessionPage", () => {
     expect(chat).not.toHaveBeenCalled();
   });
 
-  it("rebuilds the thread and the deck from a stored session on reload", async () => {
+  it("rebuilds the thread of a stored session with no deck on reload", async () => {
     getSession.mockResolvedValue({
       session: {
         id: "s1",
         collectionId: "c1",
-        deckIds: ["d0", "d1"],
+        deckIds: [],
         slots: { poolRule: PoolRule.OWNED_ONLY },
         usage: { calls: 4, inputTokens: 10n, outputTokens: 5n, priced: false },
         turns: [
@@ -578,10 +546,8 @@ describe("SessionPage", () => {
     });
     getDeck.mockResolvedValue({ deck });
     await renderAt("/session/s1");
-    expect(await screen.findByRole("heading", { name: "Elves" })).toBeInTheDocument();
-    expect(getDeck).toHaveBeenCalledWith({ deckId: "d1" });
+    expect(await screen.findByTestId("pool-mode")).toHaveTextContent("Pool: only cards in your collection.");
     expect(screen.getByTestId("session-id")).toHaveTextContent("Session id: s1");
-    expect(screen.getByTestId("pool-mode")).toHaveTextContent("Pool: only cards in your collection.");
     expect(screen.getByTestId("usage")).toHaveTextContent("cost unknown");
     expect(screen.queryByRole("group", { name: "Question: Which format?" })).not.toBeInTheDocument();
     expect(screen.getByRole("group", { name: "Question: How strong?" })).toBeInTheDocument();
@@ -600,33 +566,6 @@ describe("SessionPage", () => {
     expect(await screen.findByLabelText("Your message")).toBeInTheDocument();
   });
 
-  it("loads the base deck of a revised deck on reload and places the deck line by time (PR-12B)", async () => {
-    const revised = { ...deck, id: "d1", revisedFromDeckId: "d0", revisionNote: "fewer elves", cards: [{ ...deck.cards[0], count: 2 }], createdAt: { seconds: 200n, nanos: 0 } };
-    getSession.mockResolvedValue({
-      session: {
-        id: "s1",
-        collectionId: "",
-        deckIds: ["d0", "d1"],
-        turns: [
-          { userMessage: "elves", agentMessage: "", questions: [], answers: [], at: { seconds: 100n, nanos: 0 } },
-          { userMessage: "fewer elves", agentMessage: "done", questions: [], answers: [], at: { seconds: 300n, nanos: 0 } },
-        ],
-      },
-    });
-    getDeck.mockImplementation(({ deckId }: { deckId: string }) => Promise.resolve({ deck: deckId === "d1" ? revised : { ...deck, id: "d0" } }));
-    await renderAt("/session/s1");
-    expect(await screen.findByTestId("revision-diff")).toHaveTextContent("Count of Llanowar Elves: 4 to 2");
-    expect(getDeck).toHaveBeenCalledWith({ deckId: "d0" });
-    await userEvent.setup().click(screen.getByRole("button", { name: /^History/ }));
-    const items = within(screen.getByRole("list", { name: "Conversation" })).getAllByRole("listitem");
-    // The agent turn carries a visible label beside its screen-reader
-    // one, so the check reads each item rather than the joined text.
-    expect(items).toHaveLength(4);
-    expect(items[0]).toHaveTextContent("You: elves");
-    expect(items[1]).toHaveTextContent("Deck built: Elves.");
-    expect(items[2]).toHaveTextContent("You: fewer elves");
-    expect(items[3]).toHaveTextContent("Agent: done");
-  });
 
   it("a closed question with no options shows the text field", async () => {
     chat.mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("question", { id: "q2", slot: "power", text: "How strong?", options: [], optionOracleIds: [], closed: true })]));
@@ -654,13 +593,13 @@ describe("SessionPage", () => {
     expect(within(card).getAllByRole("status")).toHaveLength(1);
   });
 
-  it("has no axe violations with a question and a deck on screen", async () => {
-    chat.mockReturnValue(events([ev("sessionStarted", "s1"), ev("question", formatQuestion), ev("deck", deck)]));
+  it("has no axe violations with a question on screen", async () => {
+    chat.mockReturnValue(events([ev("sessionStarted", "s1"), ev("question", formatQuestion)]));
     const { container } = await renderAt("/session/new");
     const user = userEvent.setup();
     await user.type(await screen.findByLabelText("Your message"), "elves");
     await user.click(screen.getByRole("button", { name: "Send" }));
-    await screen.findByAltText("Llanowar Elves (card)");
+    await screen.findByRole("group", { name: "Question: Which format?" });
     expect(await axe(container)).toHaveNoViolations();
   });
 

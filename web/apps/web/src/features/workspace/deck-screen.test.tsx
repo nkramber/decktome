@@ -12,12 +12,23 @@ vi.mock("firebase/app");
 vi.mock("firebase/auth");
 
 const getDeck = vi.fn();
+const getSession = vi.fn();
+const chat = vi.fn();
+
+type Ev = { event: { case: string; value: unknown } };
+async function* events(list: Ev[]) {
+  for (const e of list) {
+    await Promise.resolve();
+    yield e;
+  }
+}
+const ev = (c: string, value: unknown): Ev => ({ event: { case: c, value } });
 const updateDeck = vi.fn();
 const deleteDeck = vi.fn();
 vi.mock("../../lib/api", () => ({
   healthClient: { check: () => Promise.resolve({ status: "ok", version: "test", cardSnapshot: "none" }) },
   collectionClient: { listCollections: () => Promise.resolve({ collections: [] }) },
-  agentClient: { getSession: vi.fn() },
+  agentClient: { getSession: (...a: unknown[]) => getSession(...a), chat: (...a: unknown[]) => chat(...a) },
   cardClient: { getCards: () => Promise.resolve({ cards: [], missingOracleIds: [] }) },
   deckClient: {
     listDecks: () => Promise.resolve({ decks: [], nextPageToken: "" }),
@@ -46,6 +57,10 @@ beforeEach(() => {
   state.user = fakeUser;
   localStorage.clear();
   getDeck.mockReset();
+  getSession.mockReset();
+  chat.mockReset();
+  chat.mockReturnValue(events([]));
+  getSession.mockResolvedValue({ session: { id: "s1", turns: [], deckIds: ["d1"] } });
   updateDeck.mockReset();
   deleteDeck.mockReset();
   getDeck.mockResolvedValue({ deck });
@@ -53,7 +68,7 @@ beforeEach(() => {
   deleteDeck.mockResolvedValue({});
 });
 
-describe("DeckPage", () => {
+describe("DeckScreen", () => {
   it("reads the deck of the path and shows it", async () => {
     await renderAt("/decks/d1");
     expect(await screen.findByRole("heading", { name: "Elf Ball" })).toBeInTheDocument();
@@ -113,6 +128,43 @@ describe("DeckPage", () => {
   });
 
   it("has no axe violations", async () => {
+    const { container } = await renderAt("/decks/d1");
+    await screen.findByRole("heading", { name: "Elf Ball" });
+    expect(await axe(container)).toHaveNoViolations();
+  });
+});
+
+// The revision turn of PR-12B now happens on the deck screen (D-335).
+describe("a revision on the deck screen", () => {
+  const revised = {
+    ...deck,
+    id: "d2",
+    name: "Elf Ball, fewer elves",
+    revisedFromDeckId: "d1",
+    revisionNote: "I changed the count of Llanowar Elves: 4 to 2.",
+    cards: [{ oracleId: "o-elf", name: "Llanowar Elves", count: 2 }],
+  };
+
+  it("shows the note and the diff against the deck it revised", async () => {
+    getDeck.mockImplementation(({ deckId }: { deckId: string }) => Promise.resolve({ deck: deckId === "d2" ? revised : { ...deck, cards: [{ oracleId: "o-elf", name: "Llanowar Elves", count: 4 }] } }));
+    await renderAt("/decks/d2");
+    // The base deck arrives after the deck, so the diff comes second.
+    expect(await screen.findByTestId("revision-diff")).toHaveTextContent("Count of Llanowar Elves: 4 to 2");
+    expect(screen.getByTestId("revision-note")).toHaveTextContent("I changed the count of Llanowar Elves: 4 to 2.");
+    // The base deck comes from the chain, not from the session's latest.
+    expect(getDeck).toHaveBeenCalledWith({ deckId: "d1" });
+  });
+
+  it("moves to the address of the deck a turn builds", async () => {
+    chat.mockReturnValue(events([ev("agentMessage", "done"), ev("deck", revised)]));
+    const { router } = await renderAt("/decks/d1");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "fewer elves");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/decks/d2"));
+  });
+
+  it("has no axe violations with the deck and its dock on screen", async () => {
     const { container } = await renderAt("/decks/d1");
     await screen.findByRole("heading", { name: "Elf Ball" });
     expect(await axe(container)).toHaveNoViolations();

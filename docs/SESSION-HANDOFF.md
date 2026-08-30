@@ -87,6 +87,8 @@ The owner gave a reference design, and it settles the look. Our terms win over i
 - The palette is navy, gold, and purple, with parchment for text. The radius is 4 px, and every panel carries a faint gold hatch.
 - The shell is one top bar (D-328). The sidebar, the phone tab bar, and the theme toggle are gone.
 - Dark is the only theme (D-330). `src/lib/theme.ts` and the no-flash script left with it.
+- A deck has one screen and one address (D-335). `/decks/<id>` holds the deck, its actions, and its conversation. `/session/<id>` holds a build with no deck, and it hands over the moment a deck exists.
+- `src/features/workspace` is the one feature with a path to both chat and deck. The lint carries that rule.
 - A deck owns the whole page, and the conversation docks at the bottom left (D-331). A History control opens the thread over the composer. Before a deck exists, the conversation is the page.
 - The identity wash left (D-329). Color of the game shows in a mana pip and a rarity dot.
 - Build in the header is a menu of the collections (D-332). It sets the pool and opens a chat. With no collection it offers the way to the upload screen (D-334).

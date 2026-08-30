@@ -1,7 +1,8 @@
 import { Code, ConnectError } from "@connectrpc/connect";
+import type { Deck } from "@mtg/api-client/mtg/v1/deck_pb";
 import { type Answer, PoolRule, type Session } from "@mtg/api-client/mtg/v1/session_pb";
 import { useQuery } from "@tanstack/react-query";
-import { type FormEvent, type KeyboardEvent, useCallback, useEffect, useRef, useState } from "react";
+import { type FormEvent, type KeyboardEvent, type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { Link, useBlocker, useLocation, useNavigate, useParams } from "react-router";
 
 import { AlertTriangleIcon, ArrowUpIcon, CheckIcon, ChevronDownIcon, ChevronUpIcon, LayersIcon } from "lucide-react";
@@ -24,6 +25,7 @@ import { byteLength, type ChatState, emptyState, fromSession, maxMessageBytes, t
 // loads too when the latest revised it, for the diff (PR-12B).
 export function SessionPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const location = useLocation();
   const isNew = !id || id === "new";
   const storedSessionId = useAppStore((s) => s.sessionId);
@@ -72,8 +74,10 @@ export function SessionPage() {
     if (code === Code.NotFound || code === Code.PermissionDenied) setSessionId("");
   }, [session.isError, session.error, storedSessionId, id, setSessionId]);
 
+  const toDeck = useCallback((deckId: string) => void navigate(`/decks/${deckId}`, { replace: true }), [navigate]);
+
   if (live) {
-    return <ChatPanel key={panelKey} initial={emptyState} onStarted={onStarted} resumeId={isNew && storedSessionId ? storedSessionId : ""} />;
+    return <ChatPanel key={panelKey} initial={emptyState} onStarted={onStarted} resumeId={isNew && storedSessionId ? storedSessionId : ""} onDeckBuilt={toDeck} />;
   }
   if (session.isPending || (deckId && deck.isPending) || (baseId && base.isPending)) {
     return (
@@ -105,7 +109,7 @@ export function SessionPage() {
     );
   }
   const deckError = [deck.isError ? errorMessage(deck.error) : "", base.isError ? errorMessage(base.error) : ""].filter(Boolean).join(" ");
-  return <ChatPanel key={panelKey} initial={fromSession(session.data.session, deck.data?.deck, base.data?.deck)} session={session.data.session} deckError={deckError} />;
+  return <ChatPanel key={panelKey} initial={fromSession(session.data.session, deck.data?.deck, base.data?.deck)} session={session.data.session} deckError={deckError} onDeckBuilt={toDeck} />;
 }
 
 // pruneDrafts keeps the drafts of the open questions only.
@@ -118,18 +122,30 @@ export function pruneDrafts(drafts: Record<string, Draft>, open: { id: string }[
 // of the thread, so new output does not pull them away from an earlier line.
 const nearBottomPx = 240;
 
-function ChatPanel({
+// ChatPanel serves both screens of a deck (D-335). On the session route
+// it shows the conversation alone, and it hands over to the deck's own
+// address the moment a deck exists. On the deck route it shows the deck
+// the address names, with the actions the user owns, and its dock.
+export function ChatPanel({
   initial,
   session,
   onStarted,
   resumeId = "",
   deckError = "",
+  deckOverride,
+  baseOverride,
+  actions,
+  onDeckBuilt,
 }: {
   initial: ChatState;
   session?: Session;
   onStarted?: (id: string) => void;
   resumeId?: string;
   deckError?: string;
+  deckOverride?: Deck;
+  baseOverride?: Deck;
+  actions?: ReactNode;
+  onDeckBuilt?: (deckId: string) => void;
 }) {
   const navigate = useNavigate();
   const navigateRef = useRef(navigate);
@@ -255,7 +271,14 @@ function ChatPanel({
   const poolText = poolLabel(state.slots?.poolRule, sendCollection);
   // The deck owns the page once one exists, and the conversation docks
   // at the corner (D-331). Before that, the conversation is the page.
-  const builtDeck = state.deck;
+  // The address of a deck names which deck shows. A build that ends with
+  // a new deck tells the page, and the page moves to that address.
+  const builtDeck = deckOverride ?? state.deck;
+  const streamedDeckId = state.deck?.id;
+  useEffect(() => {
+    if (!streamedDeckId || state.busy) return;
+    if (streamedDeckId !== deckOverride?.id) onDeckBuilt?.(streamedDeckId);
+  }, [streamedDeckId, state.busy, deckOverride?.id, onDeckBuilt]);
   const [historyOpen, setHistoryOpen] = useState(false);
 
   const thread = (
@@ -393,8 +416,9 @@ function ChatPanel({
             Could not load the deck: {deckError}
           </p>
         )}
+        {actions}
         <section aria-label="Deck" className="pb-40">
-          <DeckView deck={builtDeck} base={state.baseDeck} />
+          <DeckView deck={builtDeck} base={deckOverride ? baseOverride : state.baseDeck} />
         </section>
 
         <aside aria-labelledby="chat-title" className="fixed bottom-4 left-4 z-40 flex w-[min(30rem,calc(100vw-2rem))] flex-col gap-2">

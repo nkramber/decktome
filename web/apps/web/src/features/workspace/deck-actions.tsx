@@ -1,10 +1,8 @@
-import { Code, ConnectError } from "@connectrpc/connect";
-import { useQuery } from "@tanstack/react-query";
-import { ArrowLeftIcon, MessageSquareIcon, PencilIcon, StarIcon, Trash2Icon } from "lucide-react";
+import type { Deck } from "@mtg/api-client/mtg/v1/deck_pb";
+import { ArrowLeftIcon, PencilIcon, StarIcon, Trash2Icon } from "lucide-react";
 import { type FormEvent, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router";
+import { Link, useNavigate } from "react-router";
 
-import { ErrorState } from "../../app/components/error-state";
 import { notify } from "../../app/components/notify";
 import {
   AlertDialog,
@@ -21,57 +19,19 @@ import { Button } from "../../components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../../components/ui/dialog";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
-import { Skeleton } from "../../components/ui/skeleton";
-import { deckClient } from "../../lib/api";
 import { cn } from "../../lib/cn";
 import { errorMessage } from "../../lib/errors";
-import { DeckView } from "./deck-view";
-import { useDeckWrites } from "./use-decks";
+import { useDeckWrites } from "../deck/use-decks";
 
-// The page of one deck (PR-17). It holds the deck view and the actions a
-// user owns: rename, favorite, and delete. The agent owns everything else.
-export function DeckPage() {
-  const { id = "" } = useParams();
+// The actions a user owns over a deck (D-335): the way back, the
+// favorite mark, the name, and the delete. Each one keeps its own state,
+// so the screen around it needs to know none of it.
+export function DeckActions({ deck }: { deck: Deck }) {
+  const id = deck.id;
   const navigate = useNavigate();
   const { rename, setFavorite, remove } = useDeckWrites();
-
-  const deckQuery = useQuery({
-    queryKey: ["deck", id],
-    queryFn: () => deckClient.getDeck({ deckId: id }),
-    enabled: id !== "",
-  });
-  const deck = deckQuery.data?.deck;
-
   const [renameOpen, setRenameOpen] = useState(false);
   const [draftName, setDraftName] = useState("");
-
-  if (deckQuery.isPending) {
-    return (
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 p-4 md:p-6" role="status">
-        <span className="sr-only">Loading the deck...</span>
-        <Skeleton className="h-9 w-40" />
-        <Skeleton className="h-32 w-full rounded-panel" />
-        <Skeleton className="h-64 w-full rounded-panel" />
-      </div>
-    );
-  }
-
-  if (deckQuery.isError || !deck) {
-    const gone = deckQuery.isError && ConnectError.from(deckQuery.error).code === Code.NotFound;
-    return (
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 p-4 md:p-6">
-        <ErrorState
-          title={gone ? "That deck is gone" : "Could not load the deck"}
-          message={gone ? "Someone deleted this deck, or the link is wrong." : deckQuery.isError ? errorMessage(deckQuery.error) : "The server returned no deck."}
-          onRetry={gone ? undefined : () => void deckQuery.refetch()}
-        />
-        <Button asChild variant="outline" className="self-center">
-          <Link to="/decks">Back to your decks</Link>
-        </Button>
-      </div>
-    );
-  }
-
   const title = deck.name || "Untitled deck";
 
   async function onRename(e: FormEvent) {
@@ -88,7 +48,7 @@ export function DeckPage() {
   }
 
   async function onFavorite() {
-    const next = !deck?.favorite;
+    const next = !deck.favorite;
     try {
       await setFavorite.mutateAsync({ deckId: id, favorite: next });
     } catch (err) {
@@ -107,8 +67,7 @@ export function DeckPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-[75rem] flex-col gap-5 p-4 md:p-6">
-      <div className="flex flex-wrap items-center gap-2">
+<div className="mb-5 flex flex-wrap items-center gap-2">
         <Button asChild variant="ghost" size="sm">
           <Link to="/decks">
             <ArrowLeftIcon aria-hidden="true" />
@@ -159,14 +118,6 @@ export function DeckPage() {
           </DialogContent>
         </Dialog>
 
-        {deck.sessionId && (
-          <Button asChild variant="outline" size="sm">
-            <Link to={`/session/${deck.sessionId}`}>
-              <MessageSquareIcon aria-hidden="true" />
-              Open the chat
-            </Link>
-          </Button>
-        )}
 
         <AlertDialog>
           <AlertDialogTrigger asChild>
@@ -187,8 +138,5 @@ export function DeckPage() {
           </AlertDialogContent>
         </AlertDialog>
       </div>
-
-      <DeckView deck={deck} />
-    </div>
   );
 }
