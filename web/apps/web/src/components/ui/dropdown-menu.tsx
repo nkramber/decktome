@@ -15,7 +15,7 @@ export function DropdownMenuContent({ className, sideOffset = 6, ...props }: Com
         data-slot="dropdown-menu-content"
         sideOffset={sideOffset}
         className={cn(
-          "z-50 min-w-40 overflow-hidden rounded-md border border-border bg-surface p-1 text-surface-foreground shadow-md",
+          "z-50 min-w-40 overflow-hidden rounded-card border border-border bg-surface p-1.5 text-surface-foreground shadow-overlay",
           "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0",
           className,
         )}
@@ -31,7 +31,7 @@ export function DropdownMenuItem({ className, variant = "default", ...props }: C
       data-slot="dropdown-menu-item"
       data-variant={variant}
       className={cn(
-        "relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none",
+        "relative flex cursor-default items-center gap-2 rounded-md px-2 py-1.5 text-sm outline-hidden select-none",
         "focus:bg-muted data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         "data-[variant=destructive]:text-danger data-[variant=destructive]:focus:bg-danger data-[variant=destructive]:focus:text-danger-foreground",
         "[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
@@ -50,7 +50,7 @@ export function DropdownMenuRadioItem({ className, children, ...props }: Compone
   return (
     <DropdownMenuPrimitive.RadioItem
       data-slot="dropdown-menu-radio-item"
-      className={cn("relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none focus:bg-muted", className)}
+      className={cn("relative flex cursor-default items-center gap-2 rounded-md py-1.5 pr-2 pl-8 text-sm outline-hidden select-none focus:bg-muted", className)}
       {...props}
     >
       <span className="pointer-events-none absolute left-2 flex size-4 items-center justify-center">

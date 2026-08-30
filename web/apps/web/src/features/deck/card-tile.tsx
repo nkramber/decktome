@@ -99,14 +99,14 @@ export function CardTile({
   const faces = facesOf(card, entry.ownedPrinting);
   const name = card?.name || entry.name;
   return (
-    <li className="flex flex-col gap-1 rounded-card border border-border p-2" data-testid="card-tile">
+    <li className="flex flex-col gap-1.5 rounded-card border border-border bg-surface p-2 transition-shadow hover:shadow-raised" data-testid="card-tile">
       <div className="flex items-baseline justify-between gap-2">
         <span className="min-w-0 wrap-anywhere font-medium">
           {entry.count > 1 && <span className="mr-1 text-muted-foreground">{entry.count}×</span>}
           {name}
         </span>
         {isCommander && (
-          <span className="rounded border border-warning/50 bg-warning/15 px-1 text-xs" data-testid="commander-mark">
+          <span className="rounded-md border border-warning/50 bg-warning/15 px-1.5 py-0.5 text-xs font-medium" data-testid="commander-mark">
             Commander
           </span>
         )}
@@ -125,11 +125,11 @@ export function CardTile({
       {!hideOwnership && (
       <p className="text-xs">
         {entry.owned ? (
-          <span className="rounded border border-success/50 bg-success/15 px-1" data-testid="owned-mark">
+          <span className="rounded-md border border-success/50 bg-success/15 px-1.5 py-0.5 font-medium" data-testid="owned-mark">
             Owned{entry.ownedCount > 0 ? ` (${entry.ownedCount})` : ""}
           </span>
         ) : (
-          <span className="rounded border border-danger/50 bg-danger/15 px-1" data-testid="buy-mark">
+          <span className="rounded-md border border-danger/50 bg-danger/15 px-1.5 py-0.5 font-medium" data-testid="buy-mark">
             To buy: {priceText(entry.priceUsd)}
           </span>
         )}

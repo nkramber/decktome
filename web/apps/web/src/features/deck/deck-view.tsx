@@ -64,9 +64,9 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
   const curveMax = Math.max(1, ...curve);
 
   return (
-    <article aria-labelledby={`deck-title-${deck.id}`} className="flex flex-col gap-4">
-      <header className="flex flex-col gap-1">
-        <h2 id={`deck-title-${deck.id}`} className="wrap-anywhere text-xl font-semibold">
+    <article aria-labelledby={`deck-title-${deck.id}`} className="flex flex-col gap-5">
+      <header className="flex flex-col gap-1.5">
+        <h2 id={`deck-title-${deck.id}`} className="wrap-anywhere text-xl font-semibold tracking-tight text-balance">
           {deck.name || "Untitled deck"}
         </h2>
         <p className="text-sm text-muted-foreground">
@@ -85,7 +85,7 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
         <p className="text-sm" data-testid="buy-cost">
           To buy: {deck.buyCostUsd > 0 ? priceText(deck.buyCostUsd) : "nothing. Every card is owned, or no price is known."}
         </p>
-        {deck.summary && <p className="mt-1">{deck.summary}</p>}
+        {deck.summary && <p className="mt-2 max-w-measure leading-relaxed">{deck.summary}</p>}
       </header>
 
       <ExportPanel deck={deck} byId={byId} />
@@ -146,7 +146,7 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
       </div>
 
       {cards.data && (
-        <div className="@container grid gap-4 @md:grid-cols-2">
+        <div className="@container grid gap-6 rounded-card border border-border bg-surface p-4 shadow-card @md:grid-cols-2">
           <table className="text-sm">
             <caption className="text-left font-medium">Mana curve, lands excluded</caption>
             <thead>
@@ -244,8 +244,8 @@ function CardGroup({
 }) {
   return (
     <section aria-label={`${title} (${count})`} className="@container">
-      <h3 className="font-medium">
-        {title} <span className="text-muted-foreground">({count})</span>
+      <h3 className="mb-2 flex items-center gap-2 border-b border-border pb-1.5 text-sm font-semibold tracking-wide uppercase">
+        {title} <span className="font-normal tracking-normal normal-case text-muted-foreground">({count})</span>
       </h3>
       <ul className="mt-2 grid grid-cols-1 items-start gap-2 @sm:grid-cols-2 @2xl:grid-cols-3 @4xl:grid-cols-4">
         {entries.map((e, i) => (

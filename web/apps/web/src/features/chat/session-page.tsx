@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, type KeyboardEvent, useCallback, useEffect, useRef, useState } from "react";
 import { Link, useBlocker, useLocation, useNavigate, useParams } from "react-router";
 
+import { AlertTriangleIcon, ArrowUpIcon, CheckIcon, LayersIcon } from "lucide-react";
+
 import { Button } from "../../components/ui/button";
 import { Checkbox } from "../../components/ui/checkbox";
 import { Label } from "../../components/ui/label";
@@ -162,9 +164,10 @@ function ChatPanel({
   const tooLong = bytes > maxMessageBytes;
   const beforeFirstMessage = state.sessionId === "";
   // The message box hides while a question waits, and returns when the
-  // turn ends with no question open (D-282). It stays mounted through a
-  // send, disabled, so focus does not fall to the page body.
-  const showComposer = state.openQuestions.length === 0;
+  // turn ends with no question open (D-282). It also leaves while the
+  // agent works: a disabled box beside "the agent is working" reads as a
+  // dead control (PR-16B). The working row and its Stop take its place.
+  const showComposer = state.openQuestions.length === 0 && !state.busy;
 
   // A build runs on after the page leaves, and the deck shows on reload
   // (D-303). The page says so before a navigation or an unload mid-turn.
@@ -252,14 +255,24 @@ function ChatPanel({
   const poolText = poolLabel(state.slots?.poolRule, sendCollection);
 
   return (
-    <div className="mx-auto flex max-w-7xl flex-col gap-4 p-4 md:p-6 lg:flex-row">
-      <section aria-labelledby="chat-title" className="flex min-w-0 flex-1 flex-col gap-3 lg:max-w-xl">
-        <h1 id="chat-title" className="text-2xl font-semibold tracking-tight">
-          Chat
-        </h1>
-        <p className="wrap-anywhere text-sm text-muted-foreground" data-testid="session-id">
-          {beforeFirstMessage ? "No session yet." : `Session id: ${state.sessionId}`}
-        </p>
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 md:p-6 lg:flex-row lg:items-start lg:gap-8">
+      <section aria-labelledby="chat-title" className="flex min-w-0 flex-1 flex-col gap-4 lg:max-w-2xl">
+        {/* The identifiers are for support, not for reading. They sit in
+            one quiet row under the title, and never in the thread. */}
+        <div className="flex flex-col gap-1.5">
+          <h1 id="chat-title" className="text-2xl font-semibold tracking-tight">
+            Chat
+          </h1>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+            <span className="wrap-anywhere font-mono" data-testid="session-id">
+              {beforeFirstMessage ? "No session yet." : `Session id: ${state.sessionId}`}
+            </span>
+            <span aria-hidden="true">·</span>
+            <span className="wrap-anywhere" data-testid="pool-mode">
+              {poolText}
+            </span>
+          </div>
+        </div>
         {beforeFirstMessage && resumeId && (
           <p className="text-sm">
             <Link to={`/session/${resumeId}`} className="text-link underline underline-offset-4" data-testid="resume-link">
@@ -268,14 +281,11 @@ function ChatPanel({
           </p>
         )}
         {beforeFirstMessage && collectionId ? (
-          <Label className="text-sm font-normal">
+          <Label className="w-fit rounded-card border border-border bg-surface px-3 py-2 text-sm font-normal shadow-card">
             <Checkbox checked={poolMode === "owned"} onCheckedChange={(v) => setPoolMode(v === true ? "owned" : "any")} />
             Use only cards in my collection
           </Label>
         ) : null}
-        <p className="wrap-anywhere text-sm text-muted-foreground" data-testid="pool-mode">
-          {poolText}
-        </p>
 
         {blocker.state === "blocked" && (
           <div role="alertdialog" aria-labelledby="leave-title" aria-describedby="leave-text" className="flex flex-col gap-2 rounded-card border border-warning/50 bg-warning/10 p-3">
@@ -296,7 +306,7 @@ function ChatPanel({
           </div>
         )}
 
-        <ol className="flex flex-col gap-2" aria-label="Conversation">
+        <ol className="flex flex-col gap-5" aria-label="Conversation">
           {state.thread.map((item) => (
             <li key={item.id}>
               <ThreadLine item={item} />
@@ -330,8 +340,15 @@ function ChatPanel({
         <div className="flex items-center gap-3 text-sm text-muted-foreground" role="status">
           {state.busy && (
             <>
-              <span>The agent is working...</span>
-              <Button type="button" variant="outline" size="sm" onClick={stop}>
+              <span className="flex items-center gap-2">
+                <span className="flex gap-1" aria-hidden="true">
+                  <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.3s]" />
+                  <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.15s]" />
+                  <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground" />
+                </span>
+                The agent is working...
+              </span>
+              <Button type="button" variant="ghost" size="sm" onClick={stop}>
                 Stop
               </Button>
             </>
@@ -339,44 +356,49 @@ function ChatPanel({
         </div>
 
         {showComposer && (
-          <form onSubmit={onSubmit} className="flex flex-col gap-2">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="message">Your message</Label>
+          <form onSubmit={onSubmit} className="sticky bottom-0 z-10 flex flex-col gap-2 bg-background pt-2 pb-3">
+            <div className="flex flex-col rounded-panel border border-border bg-surface shadow-card transition-colors focus-within:border-accent/60">
+              <Label htmlFor="message" className="sr-only">
+                Your message
+              </Label>
               <Textarea
                 id="message"
                 ref={textarea}
                 value={message}
-                disabled={state.busy}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyDown={onKeyDown}
-                rows={3}
-                placeholder={beforeFirstMessage ? "Build me a mono-green Commander deck around elves." : ""}
+                rows={2}
+                placeholder={beforeFirstMessage ? "Build me a mono-green Commander deck around elves." : "Ask for a change, or say what to build next."}
+                className="max-h-56 resize-none border-0 bg-transparent px-4 pt-3 pb-1 focus-visible:outline-none"
               />
+              <div className="flex items-end justify-between gap-3 px-3 pb-3">
+                <p className={cn("text-xs", tooLong ? "text-danger" : "text-muted-foreground")}>
+                  Enter sends, Shift+Enter makes a new line. {bytes} of {maxMessageBytes} bytes.
+                </p>
+                <Button type="submit" size="sm" disabled={tooLong || !message.trim()}>
+                  Send
+                  <ArrowUpIcon aria-hidden="true" />
+                </Button>
+              </div>
             </div>
-            <p className={cn("text-xs", tooLong ? "text-danger" : "text-muted-foreground")}>
-              Enter sends, Shift+Enter makes a new line. {bytes} of {maxMessageBytes} bytes.
-            </p>
             {tooLong && (
               <p role="alert" className="text-sm text-danger">
                 The message is over the {maxMessageBytes} byte cap. Shorten it.
               </p>
             )}
-            <Button type="submit" className="self-start" disabled={state.busy || tooLong || !message.trim()}>
-              Send
-            </Button>
           </form>
         )}
         <div ref={end} />
 
         {state.usage && state.usage.calls > 0 && (
-          <p className="text-xs text-muted-foreground" data-testid="usage">
+          <p className="text-[11px] text-muted-foreground/80" data-testid="usage">
             Session spend: {state.usage.calls} calls, {String(state.usage.inputTokens)} in, {String(state.usage.outputTokens)} out,{" "}
             {state.usage.priced ? `$${state.usage.costUsd.toFixed(4)}` : "cost unknown"} (M-1).
           </p>
         )}
       </section>
 
-      <section aria-label="Deck" className="min-w-0 flex-1">
+      <section aria-label="Deck" className="min-w-0 flex-1 lg:sticky lg:top-6">
         {deckError && (
           <p role="alert" className="text-danger">
             Could not load the deck: {deckError}
@@ -405,33 +427,56 @@ export function poolLabel(rule: PoolRule | undefined, collectionId: string): str
   }
 }
 
+// One line of the thread. A turn of the user reads as a block on its own
+// surface, and a turn of the agent reads as plain text at a comfortable
+// measure. The rest are notes about the turn, and they stay quiet
+// (PR-16B). A bubble on both sides reads as a messenger, and this is a
+// tool.
 function ThreadLine({ item }: { item: ThreadItem }) {
   switch (item.kind) {
     case "user":
       return (
-        <p className="ml-auto max-w-[85%] rounded-card bg-muted px-3 py-2 whitespace-pre-line">
+        <p className="ml-auto max-w-[85%] rounded-panel border border-border bg-surface px-4 py-2.5 shadow-card whitespace-pre-line">
           <span className="sr-only">You: </span>
           {item.text}
         </p>
       );
     case "agent":
       return (
-        <p className="whitespace-pre-line px-3 py-2">
+        <p className="max-w-measure leading-relaxed whitespace-pre-line">
           <span className="sr-only">Agent: </span>
           {item.text}
         </p>
       );
     case "status":
-      return <p className="px-3 text-sm text-muted-foreground italic">{item.text}</p>;
+      return (
+        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+          <CheckIcon className="size-3.5 shrink-0" aria-hidden="true" />
+          {item.text}
+        </p>
+      );
     case "question":
-      return <p className="px-3 text-sm text-muted-foreground">Asked: {item.question.text}</p>;
+      return (
+        <p className="border-l-2 border-accent/40 pl-3 text-sm text-muted-foreground">
+          <span className="sr-only">Asked: </span>
+          {item.question.text}
+        </p>
+      );
     case "failure":
       return (
-        <p role="alert" className="rounded-card bg-danger/10 px-3 py-2 text-danger">
-          {item.failure.message} ({item.failure.code}){item.failure.retryable ? " You can try again." : ""}
+        <p role="alert" className="flex items-start gap-2 rounded-card border border-danger/30 bg-danger/10 px-3 py-2.5 text-sm text-danger">
+          <AlertTriangleIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          <span>
+            {item.failure.message} ({item.failure.code}){item.failure.retryable ? " You can try again." : ""}
+          </span>
         </p>
       );
     case "deck":
-      return <p className="px-3 text-sm text-muted-foreground">Deck built: {item.deck.name || item.deck.id}.</p>;
+      return (
+        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+          <LayersIcon className="size-3.5 shrink-0" aria-hidden="true" />
+          Deck built: {item.deck.name || item.deck.id}.
+        </p>
+      );
   }
 }

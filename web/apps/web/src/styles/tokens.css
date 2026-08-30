@@ -7,7 +7,7 @@
   /* Neutral scale and surfaces. */
   --background: oklch(1 0 0);
   --foreground: oklch(0.21 0.012 265);
-  --surface: oklch(0.985 0.002 265);
+  --surface: oklch(0.977 0.002 265);
   --surface-foreground: oklch(0.21 0.012 265);
   --muted: oklch(0.965 0.004 265);
   --muted-foreground: oklch(0.5 0.018 265);
@@ -28,6 +28,12 @@
   --success-foreground: oklch(0.99 0 0);
   --warning: oklch(0.58 0.13 75);
   --warning-foreground: oklch(0.99 0 0);
+
+  /* Elevation. A surface lifts with light, not with a hard border. The
+     dark theme keeps the same geometry and a deeper shadow. */
+  --shadow-card: 0 1px 2px oklch(0.2 0.02 265 / 0.05), 0 1px 3px oklch(0.2 0.02 265 / 0.06);
+  --shadow-raised: 0 2px 4px oklch(0.2 0.02 265 / 0.05), 0 8px 24px oklch(0.2 0.02 265 / 0.08);
+  --shadow-overlay: 0 8px 16px oklch(0.2 0.02 265 / 0.08), 0 24px 48px oklch(0.2 0.02 265 / 0.12);
 
   /* The five colors of the game and colorless. These do not change. */
   --mana-w: oklch(0.92 0.045 95);
@@ -50,6 +56,9 @@
   --danger: oklch(0.65 0.18 27);
   --success: oklch(0.68 0.13 155);
   --warning: oklch(0.78 0.13 75);
+  --shadow-card: 0 1px 2px oklch(0 0 0 / 0.3), 0 1px 3px oklch(0 0 0 / 0.25);
+  --shadow-raised: 0 2px 4px oklch(0 0 0 / 0.3), 0 8px 24px oklch(0 0 0 / 0.35);
+  --shadow-overlay: 0 8px 16px oklch(0 0 0 / 0.4), 0 24px 48px oklch(0 0 0 / 0.5);
 }
 
 @theme inline {
@@ -76,5 +85,20 @@
   --color-mana-r: var(--mana-r);
   --color-mana-g: var(--mana-g);
   --color-mana-c: var(--mana-c);
-  --radius-card: 0.75rem;
+
+  /* One radius scale. A product of 2026 reads round, not square. */
+  --radius-card: 0.875rem;
+  --radius-panel: 1.25rem;
+
+  --shadow-card: var(--shadow-card);
+  --shadow-raised: var(--shadow-raised);
+  --shadow-overlay: var(--shadow-overlay);
+
+  /* Geist ships with the app, so the type never waits on a network and
+     never falls back to a different face on a second machine. */
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* The reading measure of long text: about 68 characters (PR-16B). */
+  --container-measure: 40rem;
+  --max-width-measure: 40rem;
 }

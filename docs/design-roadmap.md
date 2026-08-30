@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-08-29 correction pass 32 (PR-16B, the visual pass, D-325 and D-326): the screens of PR-16 kept the composition of PR-11, so the app read as a test bench. The pass adds a type face, an elevation scale, a docked composer, and a thread with hierarchy. Changes: PR-16B, sequencing step 19.
+
 2026-08-29 correction pass 30 (PR-16 built on branch `pr-16`, D-323): the design system, the two themes, and the app shell. The first paint is 116.31 kB gzipped, from 179.81 kB. The bar of D-320 was out of reach, and D-323 amends it. Changes: PR-16, sequencing step 19.
 
 2026-08-29 correction pass 29b (D-320 to D-322): the PR-16 bundle gate reads raw bytes, not gzipped bytes, and the slice adds only the primitives that it uses. The PR-22 entry no longer decides OQ-45. The PR-21 rate limit reads the forwarded address. Changes: PR-16, PR-21, PR-22, `docs/open-questions.md` table.
@@ -606,6 +608,24 @@ CAUTION: D-320 set this bar at 200 kB of raw JavaScript, and a measurement showe
 
 > *In plain English:* the look and the bones. Buttons, dialogs, menus, and a dark mode that all match, on a layout that works on a phone. Nothing new to do yet, but everything looks and feels like one app.
 
+**PR-16B: The visual pass (D-325, D-326).** 🔧 built 2026-08-29 on branch `pr-16b`.
+PR-16 moved every screen onto the primitives and kept each composition, per D-317. So the system changed and the screens did not, and the app still read as the test bench of PR-11. The owner said so after the merge.
+
+The pass gives the app one type face, Geist, that ships with the build and waits on no network. It adds an elevation scale of three shadows, a wider radius scale, and a reading measure of about 68 characters.
+
+The chat thread carries hierarchy. A turn of the user reads as a block on its own surface. A turn of the agent reads as plain text at the measure. The notes of a turn stay quiet. A bubble on both sides reads as a messenger, and this is a tool.
+
+The composer docks at the foot of the column with its control inside it, and it leaves while the agent works (D-325). The session id, the pool line, and the spend line leave the reading column. The sidebar takes a mark and an active bar, and the bottom bar takes one too.
+
+Gate:
+
+- The 135 web tests hold. ✅
+- axe passes on every route in both themes. ✅
+- The first paint holds under 130 kB of gzipped JavaScript (D-323). ✅ 116.57 kB, from 116.31 kB. The font is a separate asset of 29.4 kB.
+- The owner reads the app in the browser. ⏳
+
+> *In plain English:* the app looked like a test bench with a dark mode on it. This makes it look like a product. A real typeface, depth, a chat that reads like a conversation, and a message box where you expect it.
+
 **PR-17: Deck library.**
 A grid of decks with the commander art, the name, the format, the power, the count, the buy cost, and the date. Search by name and commander, filter by format and power, sort by date, name, and cost, and a favorite star. A deck page holds the deck view, the export panel, and the actions: rename, favorite, delete, and share (PR-21). Version history comes from the `revised_from_deck_id` chain, with any two versions side by side and their diff. The grid compares any two decks.
 
@@ -755,7 +775,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 16. PR-9 variance. ⏸ out of MVP scope (D-256). It blocks nothing: the Phase 3 gate below reads PR-8's gate.
 17. **GATE.** Phase 3 starts only when PR-8's gate holds on the golden prompts. ✅ held on 2026-08-28, deck gate run 6.
 18. PR-11 ✅ merged 2026-08-28 (#38). PR-12 ✅ merged 2026-08-28 (#40). PR-12B ✅ merged 2026-08-29 (#41). PR-13 ✅ merged 2026-08-29 (#45). Then Phase 3B.
-19. **Phase 3B** (D-316, D-317): PR-16 to PR-23 in the order of the phase list. Each gate holds before the next slice starts. PR-16 🔧 built 2026-08-29 on branch `pr-16`, test gate held. The paid re-baseline of D-302 runs in parallel, on the owner's word.
+19. **Phase 3B** (D-316, D-317): PR-16 to PR-23 in the order of the phase list. Each gate holds before the next slice starts. PR-16 ✅ merged 2026-08-29 (#47). PR-16B 🔧 the visual pass, branch `pr-16b`. The paid re-baseline of D-302 runs in parallel, on the owner's word.
 20. PR-15 eval harness. M-5 manual scoring runs on the first UI build (after PR-12).
 21. PR-14 meta, then I-1, I-2, I-3 on evidence.
 22. Phase 5 stays parked.

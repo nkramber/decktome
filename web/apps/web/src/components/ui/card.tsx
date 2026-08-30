@@ -9,11 +9,11 @@ type WithChild = { asChild?: boolean };
 
 export function Card({ className, asChild = false, ...props }: ComponentProps<"div"> & WithChild) {
   const Comp = asChild ? Slot : "div";
-  return <Comp data-slot="card" className={cn("flex flex-col gap-4 rounded-card border border-border bg-surface py-4 text-surface-foreground", className)} {...props} />;
+  return <Comp data-slot="card" className={cn("flex flex-col gap-4 rounded-card border border-border bg-surface py-5 text-surface-foreground shadow-card", className)} {...props} />;
 }
 
 export function CardHeader({ className, ...props }: ComponentProps<"div">) {
-  return <div data-slot="card-header" className={cn("flex flex-col gap-1 px-4", className)} {...props} />;
+  return <div data-slot="card-header" className={cn("flex flex-col gap-1 px-5", className)} {...props} />;
 }
 
 export function CardTitle({ className, asChild = false, ...props }: ComponentProps<"div"> & WithChild) {
@@ -26,9 +26,9 @@ export function CardDescription({ className, ...props }: ComponentProps<"div">) 
 }
 
 export function CardContent({ className, ...props }: ComponentProps<"div">) {
-  return <div data-slot="card-content" className={cn("px-4", className)} {...props} />;
+  return <div data-slot="card-content" className={cn("px-5", className)} {...props} />;
 }
 
 export function CardFooter({ className, ...props }: ComponentProps<"div">) {
-  return <div data-slot="card-footer" className={cn("flex items-center px-4", className)} {...props} />;
+  return <div data-slot="card-footer" className={cn("flex items-center px-5", className)} {...props} />;
 }
