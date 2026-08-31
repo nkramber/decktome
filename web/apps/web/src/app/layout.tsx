@@ -1,24 +1,20 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { lazy, Suspense } from "react";
-import { SparklesIcon } from "lucide-react";
+import { useEffect } from "react";
 import { Link, Outlet } from "react-router";
 
 import { useAuth } from "../features/auth/auth-context";
 import { errorMessage } from "../lib/errors";
 import { signOutOfApp } from "../lib/firebase";
 import { useAppStore } from "../lib/store";
+import { healthFooterChunk, scheduleWarm, toasterChunk } from "./chunks";
 import { AccountMenu } from "./components/account-menu";
-import { BottomNav, SidebarNav } from "./components/app-nav";
-import { ThemeMenu } from "./components/theme-menu";
-import { useIsPhone } from "./components/use-viewport";
+import { TopNav } from "./components/top-nav";
 
-// The footer holds the one call that pulls the Connect client, so it loads
-// after the shell paints (D-320).
-const HealthFooter = lazy(async () => ({ default: (await import("./components/health-footer")).HealthFooter }));
-
-// The toast host loads after the first paint (D-320). Nothing shows a
-// toast before a mutation, and a mutation needs a click first.
-const Toaster = lazy(async () => ({ default: (await import("../components/ui/toaster")).Toaster }));
+// The footer holds the one call that pulls the Connect client, and the
+// toast host waits for a mutation. Both arrive after the first paint
+// (D-320), and neither has a Suspense boundary of its own.
+const HealthFooter = healthFooterChunk.Mount;
+const Toaster = toasterChunk.Mount;
 
 // signOutAndClear clears the persisted ids and the query cache, so the
 // next account on this browser starts with nothing of the last one.
@@ -28,13 +24,17 @@ export async function signOutAndClear(reset: () => void, clear: () => void) {
   clear();
 }
 
-// The layout is the shell (D-311, D-317): a sidebar on a desktop and a
-// bottom tab bar on a phone. A signed-out visitor gets the page alone.
+// The layout is the shell (D-328): one header over the whole width, the
+// page under it, and the card-data line at the foot.
 export function Layout() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const reset = useAppStore((s) => s.reset);
-  const phone = useIsPhone();
+
+
+  // The deferred chunks arrive in the idle time after the first paint,
+  // so the first click on a menu or a nav entry opens at once.
+  useEffect(scheduleWarm, []);
 
   async function onSignOut() {
     try {
@@ -45,42 +45,47 @@ export function Layout() {
     }
   }
 
-  const email = user?.email ?? "";
-
   return (
-    <div className="flex min-h-screen bg-background text-foreground">
-      {user && !phone && (
-        <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col gap-5 border-r border-border bg-surface p-3">
-          <Link to="/" className="flex items-center gap-2.5 rounded-lg px-2 py-2">
-            <span aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-lg bg-accent text-accent-foreground shadow-card">
-              <SparklesIcon className="size-4" />
-            </span>
-            <span className="text-base font-semibold tracking-tight">MtG Deck Builder</span>
-          </Link>
-          <SidebarNav />
-          <div className="grow" />
-          <div className="flex flex-col gap-1 border-t border-border pt-3">
-            <ThemeMenu />
-            <AccountMenu email={email} onSignOut={() => void onSignOut()} />
+    <div className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
+      <header className="flex shrink-0 items-center justify-between gap-4 border-b border-border bg-muted px-4 py-3 md:px-6">
+        <Link to="/" className="flex items-center gap-3 transition-opacity hover:opacity-80">
+          <span aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-card bg-accent text-accent-foreground">
+            <SparkMark />
+          </span>
+          <span className="flex flex-col">
+            <span className="font-display gold-shimmer text-[15px] font-semibold">MtG Deck Builder</span>
+            <span className="font-mono text-[10px] tracking-wide text-muted-foreground">DECK FORGE · AGENTIC</span>
+          </span>
+        </Link>
+
+        {user && (
+          <div className="flex items-center gap-1">
+            <TopNav />
+            <div className="ml-2 flex items-center gap-2 border-l border-border pl-3">
+              <AccountMenu email={user.email ?? ""} onSignOut={() => void onSignOut()} side="bottom" align="end" />
+            </div>
           </div>
-        </aside>
-      )}
-      <div className="flex min-w-0 grow flex-col">
-        <main className={user && phone ? "grow pb-16" : "grow"}>
-          <Outlet />
-        </main>
-        <Suspense fallback={null}>
-          <HealthFooter className={user && phone ? "pb-16" : undefined} />
-        </Suspense>
-      </div>
-      {user && phone && (
-        <BottomNav>
-          <AccountMenu email={email} onSignOut={() => void onSignOut()} withTheme trigger="tab" side="top" align="end" />
-        </BottomNav>
-      )}
-      <Suspense fallback={null}>
-        <Toaster />
-      </Suspense>
+        )}
+      </header>
+
+      {/* The header and the card-data line hold their place, and the
+          page scrolls between them (D-364). A docked chat can then fill
+          the frame and never run past it. */}
+      <main className="grow overflow-y-auto">
+        <Outlet />
+      </main>
+
+      <HealthFooter />
+      <Toaster />
     </div>
+  );
+}
+
+// The mark of the app: a four-point star, cut rather than drawn.
+function SparkMark() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
+      <path d="M7 0l1.7 5.3L14 7l-5.3 1.7L7 14l-1.7-5.3L0 7l5.3-1.7z" />
+    </svg>
   );
 }

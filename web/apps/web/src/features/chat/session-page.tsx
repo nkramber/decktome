@@ -1,20 +1,22 @@
 import { Code, ConnectError } from "@connectrpc/connect";
+import type { Deck } from "@mtg/api-client/mtg/v1/deck_pb";
 import { type Answer, PoolRule, type Session } from "@mtg/api-client/mtg/v1/session_pb";
 import { useQuery } from "@tanstack/react-query";
-import { type FormEvent, type KeyboardEvent, useCallback, useEffect, useRef, useState } from "react";
+import { type FormEvent, type KeyboardEvent, type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { Link, useBlocker, useLocation, useNavigate, useParams } from "react-router";
 
 import { AlertTriangleIcon, ArrowUpIcon, CheckIcon, LayersIcon } from "lucide-react";
 
 import { Button } from "../../components/ui/button";
-import { Checkbox } from "../../components/ui/checkbox";
 import { Label } from "../../components/ui/label";
 import { Textarea } from "../../components/ui/textarea";
 import { agentClient, deckClient } from "../../lib/api";
 import { cn } from "../../lib/cn";
 import { errorMessage } from "../../lib/errors";
-import { useAppStore } from "../../lib/store";
+import { type PoolMode, useAppStore } from "../../lib/store";
 import { DeckView } from "../deck/deck-view";
+import { PoolPicker, useCollections } from "./pool-picker";
+import { RecentDecks, useRecentDecks } from "./recent-decks";
 import { type Draft, draftAnswered, emptyDraft, QuestionCard } from "./question-card";
 import { byteLength, type ChatState, emptyState, fromSession, maxMessageBytes, type ThreadItem, useChat } from "./use-chat";
 
@@ -24,6 +26,7 @@ import { byteLength, type ChatState, emptyState, fromSession, maxMessageBytes, t
 // loads too when the latest revised it, for the diff (PR-12B).
 export function SessionPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const location = useLocation();
   const isNew = !id || id === "new";
   const storedSessionId = useAppStore((s) => s.sessionId);
@@ -72,8 +75,10 @@ export function SessionPage() {
     if (code === Code.NotFound || code === Code.PermissionDenied) setSessionId("");
   }, [session.isError, session.error, storedSessionId, id, setSessionId]);
 
+  const toDeck = useCallback((deckId: string) => void navigate(`/decks/${deckId}`, { replace: true }), [navigate]);
+
   if (live) {
-    return <ChatPanel key={panelKey} initial={emptyState} onStarted={onStarted} resumeId={isNew && storedSessionId ? storedSessionId : ""} />;
+    return <ChatPanel key={panelKey} initial={emptyState} onStarted={onStarted} onDeckBuilt={toDeck} />;
   }
   if (session.isPending || (deckId && deck.isPending) || (baseId && base.isPending)) {
     return (
@@ -105,7 +110,7 @@ export function SessionPage() {
     );
   }
   const deckError = [deck.isError ? errorMessage(deck.error) : "", base.isError ? errorMessage(base.error) : ""].filter(Boolean).join(" ");
-  return <ChatPanel key={panelKey} initial={fromSession(session.data.session, deck.data?.deck, base.data?.deck)} session={session.data.session} deckError={deckError} />;
+  return <ChatPanel key={panelKey} initial={fromSession(session.data.session, deck.data?.deck, base.data?.deck)} session={session.data.session} deckError={deckError} onDeckBuilt={toDeck} />;
 }
 
 // pruneDrafts keeps the drafts of the open questions only.
@@ -114,22 +119,46 @@ export function pruneDrafts(drafts: Record<string, Draft>, open: { id: string }[
   return Object.fromEntries(Object.entries(drafts).filter(([id]) => ids.has(id)));
 }
 
-// The sentinel scrolls into view only while the reader is near the end
-// of the thread, so new output does not pull them away from an earlier line.
+// The reader's own last message is the top of what they need to read
+// (D-360). Everything the turn produced lands under it: the agent's
+// prose, the questions it asked, and the button that sends the answers.
+// The scroll therefore puts that message at the top of the frame rather
+// than chasing the foot of the thread. A turn whose output fits shows
+// the message and the submit together, and one that does not keeps the
+// message, which is the half the reader needs.
+//
+// The sentinel below still serves a thread with no message of the user
+// in it yet.
 const nearBottomPx = 240;
 
-function ChatPanel({
+// wheelFactor slows the thread against the wheel (D-370). One notch of a
+// mouse wheel moves a browser about 100 px, which is a large step in a
+// column this narrow: a whole turn goes by in one notch. The thread takes
+// a fraction of that instead.
+const wheelFactor = 0.4;
+
+// ChatPanel serves both screens of a deck (D-335). On the session route
+// it shows the conversation alone, and it hands over to the deck's own
+// address the moment a deck exists. On the deck route it shows the deck
+// the address names, with the actions the user owns, and its dock.
+export function ChatPanel({
   initial,
   session,
   onStarted,
-  resumeId = "",
   deckError = "",
+  deckOverride,
+  baseOverride,
+  actions,
+  onDeckBuilt,
 }: {
   initial: ChatState;
   session?: Session;
   onStarted?: (id: string) => void;
-  resumeId?: string;
   deckError?: string;
+  deckOverride?: Deck;
+  baseOverride?: Deck;
+  actions?: ReactNode;
+  onDeckBuilt?: (deckId: string) => void;
 }) {
   const navigate = useNavigate();
   const navigateRef = useRef(navigate);
@@ -138,12 +167,16 @@ function ChatPanel({
   }, [navigate]);
   const collectionId = useAppStore((s) => s.collectionId);
   const poolMode = useAppStore((s) => s.poolMode);
-  const setPoolMode = useAppStore((s) => s.setPoolMode);
   const setSessionId = useAppStore((s) => s.setSessionId);
 
   // The collection goes with the first message only. A stored session
   // holds its own collection id, and the server reads that one.
-  const sendCollection = initial.sessionId === "" && poolMode === "owned" ? collectionId : (session?.collectionId ?? "");
+  // The collection goes with the first message whenever the reader named
+  // one. Unchecking "Only cards I own" no longer drops it: it says the
+  // collection leads and the database fills a gap (D-359). A stored
+  // session holds its own collection, and the server reads that one.
+  const sendCollection = initial.sessionId === "" ? collectionId : (session?.collectionId ?? "");
+  const sendPoolRule = initial.sessionId === "" ? poolRuleOf(poolMode, collectionId) : PoolRule.UNSPECIFIED;
 
   // ownPath is the route of this panel's session. The move from
   // /session/new to it is never blocked.
@@ -157,7 +190,7 @@ function ChatPanel({
     },
     [setSessionId, onStarted],
   );
-  const { state, send, stop } = useChat(initial, sendCollection, onSessionStarted);
+  const { state, send, stop } = useChat(initial, sendCollection, sendPoolRule, onSessionStarted);
   const [message, setMessage] = useState("");
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const bytes = byteLength(message);
@@ -197,16 +230,61 @@ function ChatPanel({
     prevOpenCount.current = openCount;
   }, [openCount]);
 
+  // The thread scrolls at its own pace (D-370). The handler is native and
+  // not passive, because a passive listener may not stop the browser from
+  // scrolling its own distance first.
+  const threadScroll = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = threadScroll.current;
+    if (!el) return;
+    function onWheel(e: WheelEvent) {
+      const box = threadScroll.current;
+      if (!box || e.ctrlKey) return;
+      // A wheel at the end of the thread belongs to whatever is under it.
+      const atTop = box.scrollTop <= 0 && e.deltaY < 0;
+      const atEnd = Math.ceil(box.scrollTop + box.clientHeight) >= box.scrollHeight && e.deltaY > 0;
+      if (atTop || atEnd) return;
+      e.preventDefault();
+      // deltaMode 1 counts lines, and 2 counts pages. Both are rare, and
+      // a line is about 16 px.
+      const step = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+      box.scrollTop += step * wheelFactor;
+    }
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, []);
+
   // New output scrolls into view. The sentinel sits under the thread.
   const end = useRef<HTMLDivElement>(null);
+  const lastSubmission = useRef<HTMLLIElement>(null);
   const last = state.thread[state.thread.length - 1];
   const lastLength = last && "text" in last ? last.text.length : 0;
   useEffect(() => {
+    const mine = lastSubmission.current;
+    if (mine) {
+      // scrollIntoView scrolls every scrollable ancestor, and an
+      // overflow-hidden box still scrolls when code asks it to. On a deck
+      // screen that pushed the whole chat column off the top of the
+      // frame. Inside its own box the thread scrolls itself, and nothing
+      // above it moves (D-370).
+      const box = threadScroll.current;
+      if (box?.contains(mine)) {
+        box.scrollTop += mine.getBoundingClientRect().top - box.getBoundingClientRect().top;
+        return;
+      }
+      mine.scrollIntoView?.({ block: "start" });
+      return;
+    }
     const el = end.current;
     if (!el) return;
+    const box = threadScroll.current;
+    if (box?.contains(el)) {
+      box.scrollTop = box.scrollHeight;
+      return;
+    }
     if (el.getBoundingClientRect().top - window.innerHeight > nearBottomPx) return;
     el.scrollIntoView?.({ block: "nearest" });
-  }, [state.thread.length, lastLength, openCount]);
+  }, [state.thread.length, lastLength, openCount, state.busy]);
 
   // Every open question needs an answer before the submit, and one send
   // carries them all (D-282). Each answer text has the same cap as a message.
@@ -218,6 +296,8 @@ function ChatPanel({
     if (!allAnswered || answerTooLong || state.busy) return;
     const answers = state.openQuestions.map((q) => {
       const d = drafts[q.id];
+      // A decline carries no value on purpose (D-353).
+      if (d.declined) return { questionId: q.id, declined: true, text: "" } as Answer;
       return { questionId: q.id, optionIndex: d.text.trim() ? undefined : d.optionIndex, text: d.text.trim() } as Answer;
     });
     const sent = drafts;
@@ -252,178 +332,283 @@ function ChatPanel({
     }
   }
 
-  const poolText = poolLabel(state.slots?.poolRule, sendCollection);
+  // The pool line names the collection, not its id. The picker and the
+  // header menu read the same list, so one call serves all three.
+  const collections = useCollections(sendCollection !== "");
+  const collectionName = collections.data?.collections.find((c) => c.id === sendCollection)?.name ?? sendCollection;
+  const poolText = poolLabel(state.slots?.poolRule, sendCollection ? collectionName : "");
+  // The newest decks head a new chat (D-350). The title names them when
+  // there are any, so the page opens on the reader's own work.
+  const recent = useRecentDecks(beforeFirstMessage);
+  // The deck owns the page once one exists, and the conversation docks
+  // at the corner (D-331). Before that, the conversation is the page.
+  // The address of a deck names which deck shows. A build that ends with
+  // a new deck tells the page, and the page moves to that address.
+  const builtDeck = deckOverride ?? state.deck;
+  const streamedDeckId = state.deck?.id;
+  useEffect(() => {
+    if (!streamedDeckId || state.busy) return;
+    if (streamedDeckId !== deckOverride?.id) onDeckBuilt?.(streamedDeckId);
+  }, [streamedDeckId, state.busy, deckOverride?.id, onDeckBuilt]);
+  // A question sits in the thread and in the open list at the same time,
+  // and the card below it takes the answer. The thread holds the line for
+  // the history, so it shows the question only after it is answered.
+  const openIds = new Set(state.openQuestions.map((q) => q.id));
+  const shown = state.thread.filter((item) => item.kind !== "question" || !openIds.has(item.question.id));
+  // The reader's last message, which the scroll holds at the top (D-360).
+  const lastMineId = shown.reduce((id, item) => (item.kind === "user" ? item.id : id), -1);
+  const thread = (
+    <ol className="flex flex-col gap-5" aria-label="Conversation">
+      {shown.map((item) => (
+        <li key={item.id} ref={item.id === lastMineId ? lastSubmission : undefined} className="scroll-mt-4">
+          <ThreadLine item={item} />
+        </li>
+      ))}
+    </ol>
+  );
 
-  return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 md:p-6 lg:flex-row lg:items-start lg:gap-8">
-      <section aria-labelledby="chat-title" className="flex min-w-0 flex-1 flex-col gap-4 lg:max-w-2xl">
-        {/* The identifiers are for support, not for reading. They sit in
-            one quiet row under the title, and never in the thread. */}
-        <div className="flex flex-col gap-1.5">
-          <h1 id="chat-title" className="text-2xl font-semibold tracking-tight">
+  const questions = openCount > 0 && (
+    <form ref={questionsForm} tabIndex={-1} onSubmit={onSubmitAnswers} className="flex flex-col gap-2" data-testid="open-questions">
+      {state.openQuestions.map((q) => (
+        <QuestionCard
+          key={q.id}
+          question={q}
+          draft={drafts[q.id] ?? emptyDraft}
+          disabled={state.busy}
+          onChange={(d) => setDrafts((all) => pruneDrafts({ ...all, [q.id]: d }, state.openQuestions))}
+        />
+      ))}
+      {answerTooLong && (
+        <p role="alert" className="text-sm text-danger">
+          One of your answers is too long. Shorten it.
+        </p>
+      )}
+      <Button type="submit" className="self-start" disabled={!allAnswered || answerTooLong || state.busy}>
+        Submit answers
+      </Button>
+      {!allAnswered && !state.busy && <p className="text-xs text-muted-foreground">Answer every question, then submit.</p>}
+    </form>
+  );
+
+  // What the agent is doing right now, in its own words. A build runs for
+  // minutes, and "the agent is working" says nothing about which minute
+  // this is. The newest status line carries that, so the working row says
+  // it rather than a line of its own (D-375).
+  const step = state.busy ? (shown.reduce((text, item) => (item.kind === "status" ? item.text : text), "") ?? "") : "";
+  const working = (
+    <div className="flex flex-wrap items-center gap-3" role="status">
+      {state.busy && (
+        <>
+          <span className="flex items-center gap-2.5">
+            <span className="flex gap-1" aria-hidden="true">
+              <span className="size-2 animate-bounce rounded-full bg-primary [animation-delay:-0.3s]" />
+              <span className="size-2 animate-bounce rounded-full bg-primary [animation-delay:-0.15s]" />
+              <span className="size-2 animate-bounce rounded-full bg-primary" />
+            </span>
+            <span className="font-display text-[15px] font-semibold text-foreground">{sentence(step) || "The agent is working..."}</span>
+          </span>
+          <Button type="button" variant="outline" size="sm" onClick={stop}>
+            Stop
+          </Button>
+        </>
+      )}
+    </div>
+  );
+
+  const composer = showComposer && (
+    // The cards sit close under the title they belong to, and the message
+    // box stands apart as a section of its own (D-369).
+    <form onSubmit={onSubmit} className={cn("flex flex-col gap-2", beforeFirstMessage && "mt-20")}>
+      {beforeFirstMessage && (
+        <h2 className="font-display text-2xl font-semibold">Build a new deck</h2>
+      )}
+      <div className="flex flex-col rounded-card border border-border bg-card transition-colors focus-within:border-primary">
+        <Label htmlFor="message" className="sr-only">
+          Your message
+        </Label>
+        <Textarea
+          id="message"
+          ref={textarea}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          onKeyDown={onKeyDown}
+          rows={2}
+          placeholder={beforeFirstMessage ? "Build me a mono-green Commander deck around elves." : "Ask for a change."}
+          className="max-h-40 resize-none border-0 bg-transparent px-4 pt-3 pb-1"
+        />
+        <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-2 px-3 pb-3">
+          <div className="flex min-w-0 flex-col gap-2">{beforeFirstMessage && <PoolPicker />}</div>
+          <Button type="submit" size="icon" aria-label="Send" className="size-8" disabled={tooLong || !message.trim()}>
+            <ArrowUpIcon aria-hidden="true" />
+          </Button>
+        </div>
+      </div>
+      {tooLong && (
+        <p role="alert" className="text-sm text-danger">
+          That message is too long. Shorten it.
+        </p>
+      )}
+    </form>
+  );
+
+  const leaveWarning = blocker.state === "blocked" && (
+    <div role="alertdialog" aria-labelledby="leave-title" aria-describedby="leave-text" className="flex flex-col gap-2 rounded-card border border-warning/50 bg-warning/10 p-3">
+      <p id="leave-title" className="font-display font-semibold">
+        The agent is still working.
+      </p>
+      <p id="leave-text" className="text-sm">
+        The build continues on the server. Open this session again, and the deck shows when it is done.
+      </p>
+      <div className="flex gap-2">
+        <Button size="sm" onClick={() => blocker.reset()}>
+          Stay
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => blocker.proceed()}>
+          Leave
+        </Button>
+      </div>
+    </div>
+  );
+
+  const idLine = (
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[11px] text-muted-foreground">
+      <span className="wrap-anywhere" data-testid="session-id">
+        {beforeFirstMessage ? "No session yet." : `Session id: ${state.sessionId}`}
+      </span>
+      <span aria-hidden="true">·</span>
+      <span className="wrap-anywhere" data-testid="pool-mode">
+        {poolText}
+      </span>
+      {state.usage && state.usage.calls > 0 && (
+        <>
+          <span aria-hidden="true">·</span>
+          <span data-testid="usage">
+            Session spend: {state.usage.calls} calls, {String(state.usage.inputTokens)} in, {String(state.usage.outputTokens)} out,{" "}
+            {state.usage.priced ? `$${state.usage.costUsd.toFixed(4)}` : "cost unknown"}
+          </span>
+        </>
+      )}
+    </div>
+  );
+
+  // The deck owns the page, and the conversation is a pinned column at
+  // its left (D-346). The gap between the two equals the gap between the
+  // deck and the right edge of the window, so the deck sits in an even
+  // frame. The column overlaps nothing.
+  if (builtDeck) {
+    return (
+      <div className="flex flex-col gap-6 p-4 md:p-6 lg:h-full lg:flex-row lg:overflow-hidden">
+        {/* The chat is a column of its own, and it always fits the frame
+            (D-364). The page scrolls under it, so it sticks to the top of
+            the scrolling area and its own thread scrolls inside it. */}
+        <aside
+          aria-labelledby="chat-title"
+          className="flex w-full shrink-0 flex-col gap-2 rounded-card border border-border bg-card p-3 lg:h-full lg:w-[26.62rem]"
+        >
+          <h1 id="chat-title" className="font-display text-[10px] tracking-[0.15em] text-muted-foreground uppercase">
             Chat
           </h1>
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-            <span className="wrap-anywhere font-mono" data-testid="session-id">
-              {beforeFirstMessage ? "No session yet." : `Session id: ${state.sessionId}`}
-            </span>
-            <span aria-hidden="true">·</span>
-            <span className="wrap-anywhere" data-testid="pool-mode">
-              {poolText}
-            </span>
-          </div>
-        </div>
-        {beforeFirstMessage && resumeId && (
-          <p className="text-sm">
-            <Link to={`/session/${resumeId}`} className="text-link underline underline-offset-4" data-testid="resume-link">
-              Resume your last chat
-            </Link>
-          </p>
-        )}
-        {beforeFirstMessage && collectionId ? (
-          <Label className="w-fit rounded-card border border-border bg-surface px-3 py-2 text-sm font-normal shadow-card">
-            <Checkbox checked={poolMode === "owned"} onCheckedChange={(v) => setPoolMode(v === true ? "owned" : "any")} />
-            Use only cards in my collection
-          </Label>
-        ) : null}
-
-        {blocker.state === "blocked" && (
-          <div role="alertdialog" aria-labelledby="leave-title" aria-describedby="leave-text" className="flex flex-col gap-2 rounded-card border border-warning/50 bg-warning/10 p-3">
-            <p id="leave-title" className="font-medium">
-              The agent is still working.
-            </p>
-            <p id="leave-text" className="text-sm">
-              The build continues on the server. Open this session again, and the deck shows when it is done.
-            </p>
-            <div className="flex gap-2">
-              <Button size="sm" onClick={() => blocker.reset()}>
-                Stay
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => blocker.proceed()}>
-                Leave
-              </Button>
+          <div className="flex min-h-0 grow flex-col gap-2">
+            <div ref={threadScroll} className="min-h-0 grow overflow-y-auto overscroll-contain">
+              {thread}
+              <div ref={end} />
             </div>
+            {working}
+            {leaveWarning}
+            {questions}
+            {composer}
+            {idLine}
           </div>
-        )}
+        </aside>
 
-        <ol className="flex flex-col gap-5" aria-label="Conversation">
-          {state.thread.map((item) => (
-            <li key={item.id}>
-              <ThreadLine item={item} />
-            </li>
-          ))}
-        </ol>
-
-        {openCount > 0 && (
-          <form ref={questionsForm} tabIndex={-1} onSubmit={onSubmitAnswers} className="flex flex-col gap-2" data-testid="open-questions">
-            {state.openQuestions.map((q) => (
-              <QuestionCard
-                key={q.id}
-                question={q}
-                draft={drafts[q.id] ?? emptyDraft}
-                disabled={state.busy}
-                onChange={(d) => setDrafts((all) => pruneDrafts({ ...all, [q.id]: d }, state.openQuestions))}
-              />
-            ))}
-            {answerTooLong && (
-              <p role="alert" className="text-sm text-danger">
-                An answer is over the {maxMessageBytes} byte cap. Shorten it.
-              </p>
-            )}
-            <Button type="submit" className="self-start" disabled={!allAnswered || answerTooLong || state.busy}>
-              Submit answers
-            </Button>
-            {!allAnswered && !state.busy && <p className="text-xs text-muted-foreground">Answer every question, then submit.</p>}
-          </form>
-        )}
-
-        <div className="flex items-center gap-3 text-sm text-muted-foreground" role="status">
-          {state.busy && (
-            <>
-              <span className="flex items-center gap-2">
-                <span className="flex gap-1" aria-hidden="true">
-                  <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.3s]" />
-                  <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.15s]" />
-                  <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground" />
-                </span>
-                The agent is working...
-              </span>
-              <Button type="button" variant="ghost" size="sm" onClick={stop}>
-                Stop
-              </Button>
-            </>
+        {/* The deck column carries the scroll, so the chat beside it holds
+            its place and always fits the frame (D-364). */}
+        <div className="min-w-0 grow lg:h-full lg:overflow-y-auto">
+          {deckError && (
+            <p role="alert" className="mb-4 text-danger">
+              Could not load the deck: {deckError}
+            </p>
           )}
+          {actions}
+          <section aria-label="Deck">
+            <DeckView deck={builtDeck} base={deckOverride ? baseOverride : state.baseDeck} />
+          </section>
         </div>
+      </div>
+    );
+  }
 
-        {showComposer && (
-          <form onSubmit={onSubmit} className="sticky bottom-0 z-10 flex flex-col gap-2 bg-background pt-2 pb-3">
-            <div className="flex flex-col rounded-panel border border-border bg-surface shadow-card transition-colors focus-within:border-accent/60">
-              <Label htmlFor="message" className="sr-only">
-                Your message
-              </Label>
-              <Textarea
-                id="message"
-                ref={textarea}
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyDown={onKeyDown}
-                rows={2}
-                placeholder={beforeFirstMessage ? "Build me a mono-green Commander deck around elves." : "Ask for a change, or say what to build next."}
-                className="max-h-56 resize-none border-0 bg-transparent px-4 pt-3 pb-1 focus-visible:outline-none"
-              />
-              <div className="flex items-end justify-between gap-3 px-3 pb-3">
-                <p className={cn("text-xs", tooLong ? "text-danger" : "text-muted-foreground")}>
-                  Enter sends, Shift+Enter makes a new line. {bytes} of {maxMessageBytes} bytes.
-                </p>
-                <Button type="submit" size="sm" disabled={tooLong || !message.trim()}>
-                  Send
-                  <ArrowUpIcon aria-hidden="true" />
-                </Button>
-              </div>
-            </div>
-            {tooLong && (
-              <p role="alert" className="text-sm text-danger">
-                The message is over the {maxMessageBytes} byte cap. Shorten it.
-              </p>
-            )}
-          </form>
-        )}
-        <div ref={end} />
+  // Before a deck exists the conversation is the page, so it fills the
+  // frame and its composer sits at the foot (D-331). A chat with no
+  // session yet is two blocks instead: the decks the reader already has,
+  // and the box that builds the next one. Stretching that to the
+  // viewport put a void between them (D-358).
+  return (
+    <div className={cn("mx-auto flex w-full max-w-4xl flex-col p-4 pt-8 md:p-6 md:pt-14", !beforeFirstMessage && "min-h-[calc(100vh-9rem)]")}>
+      <section aria-labelledby="chat-title" className={cn("flex min-w-0 flex-col", beforeFirstMessage ? "gap-4" : "grow gap-4")}>
+        {/* The identifiers are for support, not for reading. They sit in
+            one quiet row under the title, and never in the thread. */}
+        {/* A new chat says nothing of its session: it has none, and the
+            picker in the message box names the pool (D-356). */}
+        <div className="flex flex-col gap-1.5">
+          <h1 id="chat-title" className="font-display text-2xl font-semibold">
+            {!beforeFirstMessage ? "Chat" : recent.decks.length > 0 ? "Pick up where you left off" : "New deck"}
+          </h1>
+          {!beforeFirstMessage && idLine}
+        </div>
+        {beforeFirstMessage && <RecentDecks decks={recent.decks} isPending={recent.isPending} />}
 
-        {state.usage && state.usage.calls > 0 && (
-          <p className="text-[11px] text-muted-foreground/80" data-testid="usage">
-            Session spend: {state.usage.calls} calls, {String(state.usage.inputTokens)} in, {String(state.usage.outputTokens)} out,{" "}
-            {state.usage.priced ? `$${state.usage.costUsd.toFixed(4)}` : "cost unknown"} (M-1).
-          </p>
+        {leaveWarning}
+
+        {/* The thread block holds nothing at all on a new chat, and an
+            empty block still takes its gaps. It stays away until there
+            is something to read (D-358). */}
+        {(!beforeFirstMessage || state.thread.length > 0 || openCount > 0 || state.busy) && (
+          <div className={cn("flex flex-col gap-5", !beforeFirstMessage && "grow")}>
+            {thread}
+            {questions}
+            {working}
+            <div ref={end} />
+          </div>
         )}
+
+        {composer}
       </section>
-
-      <section aria-label="Deck" className="min-w-0 flex-1 lg:sticky lg:top-6">
-        {deckError && (
-          <p role="alert" className="text-danger">
-            Could not load the deck: {deckError}
-          </p>
-        )}
-        {state.deck ? (
-          <DeckView deck={state.deck} base={state.baseDeck} />
-        ) : (
-          !deckError && <p className="text-muted-foreground">The deck shows here when the agent has built one.</p>
-        )}
-      </section>
+      {deckError && (
+        <p role="alert" className="text-danger">
+          Could not load the deck: {deckError}
+        </p>
+      )}
     </div>
   );
 }
 
-export function poolLabel(rule: PoolRule | undefined, collectionId: string): string {
+// poolRuleOf maps the reader's choice onto the contract (D-359). With no
+// collection there is nothing to prefer, so the rule stays unset and the
+// agent asks nothing about a pool the user does not have.
+export function poolRuleOf(mode: PoolMode, collectionId: string): PoolRule {
+  if (collectionId === "") return PoolRule.UNSPECIFIED;
+  return mode === "owned_only" ? PoolRule.OWNED_ONLY : PoolRule.OWNED_FIRST;
+}
+
+// sentence gives a status line a capital and a full stop of its own. The
+// server writes them in lower case, for a line in a thread.
+export function sentence(text: string): string {
+  const t = text.trim();
+  if (t === "") return "";
+  return t[0].toUpperCase() + t.slice(1) + "...";
+}
+
+export function poolLabel(rule: PoolRule | undefined, collection: string): string {
   switch (rule) {
     case PoolRule.OWNED_ONLY:
-      return "Pool: only cards in your collection.";
+      return "Pool: only cards in your collection";
     case PoolRule.OWNED_FIRST:
-      return "Pool: your collection first, with upgrades to buy.";
+      return "Pool: your collection first, and the whole card database fills a gap";
     case PoolRule.ANY_CARD:
-      return "Pool: any card (D-37).";
+      return "Pool: any card";
     default:
-      return collectionId ? `Pool: your collection (${collectionId}). The agent asks how strict.` : "Pool: any card (D-37).";
+      return collection ? `Pool: ${collection}, and the agent asks how strict` : "Pool: any card";
   }
 }
 
@@ -432,21 +617,40 @@ export function poolLabel(rule: PoolRule | undefined, collectionId: string): str
 // measure. The rest are notes about the turn, and they stay quiet
 // (PR-16B). A bubble on both sides reads as a messenger, and this is a
 // tool.
+// The mark of the agent, the same four-point star the header carries.
+function SparkMark() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
+      <path d="M7 0l1.7 5.3L14 7l-5.3 1.7L7 14l-1.7-5.3L0 7l5.3-1.7z" />
+    </svg>
+  );
+}
+
 function ThreadLine({ item }: { item: ThreadItem }) {
   switch (item.kind) {
     case "user":
       return (
-        <p className="ml-auto max-w-[85%] rounded-panel border border-border bg-surface px-4 py-2.5 shadow-card whitespace-pre-line">
+        <p className="ml-auto w-fit max-w-[85%] rounded-card bg-accent px-4 py-2.5 text-accent-foreground whitespace-pre-line">
           <span className="sr-only">You: </span>
           {item.text}
         </p>
       );
     case "agent":
       return (
-        <p className="max-w-measure leading-relaxed whitespace-pre-line">
-          <span className="sr-only">Agent: </span>
-          {item.text}
-        </p>
+        <div className="flex items-start gap-2.5">
+          <span aria-hidden="true" className="mt-5 grid size-7 shrink-0 place-items-center rounded-full bg-accent text-accent-foreground">
+            <SparkMark />
+          </span>
+          <span className="min-w-0">
+            <span className="font-display mb-1.5 block text-[10px] tracking-[0.15em] text-muted-foreground uppercase" aria-hidden="true">
+              Agent
+            </span>
+            <p className="max-w-measure rounded-card border border-border bg-card px-4 py-3 leading-relaxed whitespace-pre-line">
+              <span className="sr-only">Agent: </span>
+              {item.text}
+            </p>
+          </span>
+        </div>
       );
     case "status":
       return (

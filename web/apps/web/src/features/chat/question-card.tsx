@@ -5,16 +5,17 @@ import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { cn } from "../../lib/cn";
-import { CardOption, CardOptionsError, hasCardOptions, useOptionCards } from "./card-options";
+import { CardOption, CardOptionsError, hasCardOptions, partnerIds, useOptionCards } from "./card-options";
 
 // Draft is the user's answer to one question before the submit. An option
-// pick and free text exclude each other: the last one the user touched wins.
-export type Draft = { optionIndex?: number; text: string };
+// pick, free text, and a decline exclude each other: the last one the
+// user touched wins.
+export type Draft = { optionIndex?: number; text: string; declined?: boolean };
 
 export const emptyDraft: Draft = { text: "" };
 
 export function draftAnswered(d: Draft | undefined): boolean {
-  return d !== undefined && (d.optionIndex !== undefined || d.text.trim() !== "");
+  return d !== undefined && (d.declined === true || d.optionIndex !== undefined || d.text.trim() !== "");
 }
 
 // One open question: the options as toggle buttons and a free-text field
@@ -73,9 +74,17 @@ export function QuestionCard({
           <ul className="grid grid-cols-1 gap-3 @md:grid-cols-2 @3xl:grid-cols-3">
             {question.options.map((opt, i) => {
               const id = question.optionOracleIds[i] ?? "";
+              // A commander pair shows both cards, because the option is
+              // both of them (D-361).
+              const partner = partnerIds(question)[i] ?? "";
               return (
-                <li key={i} className="flex flex-col gap-2 rounded-card border border-border bg-surface p-2">
-                  {id && !cards.isPending ? <CardOption card={byId.get(id)} name={opt} /> : null}
+                <li key={i} className="flex flex-col gap-2 rounded-card border border-border bg-card p-2">
+                  {id && !cards.isPending ? (
+                    <div className={cn("grid gap-2", partner && "grid-cols-2")}>
+                      <CardOption card={byId.get(id)} name={opt} />
+                      {partner && <CardOption card={byId.get(partner)} name={opt} />}
+                    </div>
+                  ) : null}
                   <div>{button(opt, i)}</div>
                 </li>
               );
@@ -86,12 +95,26 @@ export function QuestionCard({
         question.options.length > 0 && <div className="flex flex-wrap gap-2">{question.options.map(button)}</div>
       )}
       {!closed && (
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor={answerId}>{question.options.length > 0 ? "Or answer in your own words" : "Your answer"}</Label>
-        <Input id={answerId} type="text" value={draft.text} disabled={disabled} onChange={(e) => onChange({ text: e.target.value })} />
-      </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor={answerId}>{question.options.length > 0 ? "Or answer in your own words" : "Your answer"}</Label>
+          <Input id={answerId} type="text" value={draft.text} disabled={disabled} onChange={(e) => onChange({ text: e.target.value })} />
+        </div>
       )}
-      {question.invented && <p className="text-xs text-muted-foreground">This question is not in the catalog (D-25).</p>}
+      {/* A decline hands the choice back with no value (D-353). The
+          agent applies the default its corpus names, and the question
+          closes for good. */}
+      <div>
+        <Button
+          variant={draft.declined ? "default" : "outline"}
+          size="sm"
+          disabled={disabled}
+          aria-pressed={draft.declined === true}
+          onClick={() => onChange(draft.declined ? { text: "" } : { text: "", declined: true })}
+        >
+          {draft.declined && <span aria-hidden="true">✓ </span>}
+          You decide
+        </Button>
+      </div>
     </div>
   );
 }

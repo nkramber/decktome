@@ -13,7 +13,17 @@ service CollectionService {
   rpc ImportCollection(ImportCollectionRequest) returns (ImportCollectionResponse) {}
   rpc GetCollection(GetCollectionRequest) returns (GetCollectionResponse) {}
   rpc ListCollections(ListCollectionsRequest) returns (ListCollectionsResponse) {}
+  // DeleteCollection removes one collection for good (D-347). A deck
+  // built from it keeps every card. Its chat builds from the whole card
+  // database from then on, and it says so.
+  rpc DeleteCollection(DeleteCollectionRequest) returns (DeleteCollectionResponse) {}
 }
+
+message DeleteCollectionRequest {
+  string collection_id = 1;
+}
+
+message DeleteCollectionResponse {}
 
 message ImportCollectionRequest {
   string name = 1;

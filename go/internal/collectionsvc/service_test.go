@@ -30,6 +30,17 @@ func newFakeRepo() *fakeRepo {
 	return &fakeRepo{byHash: map[string]string{}, stored: map[string]*mtgv1.Collection{}}
 }
 
+func (f *fakeRepo) Delete(_ context.Context, _ string, id string) error {
+	if f.getErr != nil {
+		return f.getErr
+	}
+	if _, ok := f.stored[id]; !ok {
+		return status.Error(codes.NotFound, "no such collection")
+	}
+	delete(f.stored, id)
+	return nil
+}
+
 func (f *fakeRepo) Put(_ context.Context, _ string, col *mtgv1.Collection) (string, error) {
 	if f.putErr != nil {
 		return "", f.putErr
@@ -293,4 +304,36 @@ func TestNoUserIsUnauthenticated(t *testing.T) {
 	if _, err := s.ListCollections(ctx, connect.NewRequest(&mtgv1.ListCollectionsRequest{})); connect.CodeOf(err) != connect.CodeUnauthenticated {
 		t.Errorf("list: %v", err)
 	}
+}
+
+// DeleteCollection removes one collection for good (D-347).
+func TestDeleteCollection(t *testing.T) {
+	ctx := context.Background()
+	del := func(repo *fakeRepo, id string) error {
+		_, err := newServer(repo, nil).DeleteCollection(ctx, connect.NewRequest(&mtgv1.DeleteCollectionRequest{CollectionId: id}))
+		return err
+	}
+
+	t.Run("it removes the collection", func(t *testing.T) {
+		repo := newFakeRepo()
+		repo.stored["doc0"] = &mtgv1.Collection{Id: "doc0", Name: "binder.csv"}
+		if err := del(repo, "doc0"); err != nil {
+			t.Fatal(err)
+		}
+		if _, ok := repo.stored["doc0"]; ok {
+			t.Error("the collection is still stored")
+		}
+	})
+
+	t.Run("a collection that is gone is NotFound", func(t *testing.T) {
+		if err := del(newFakeRepo(), "doc0"); connect.CodeOf(err) != connect.CodeNotFound {
+			t.Errorf("code = %v", connect.CodeOf(err))
+		}
+	})
+
+	t.Run("an empty id is an invalid argument", func(t *testing.T) {
+		if err := del(newFakeRepo(), " "); connect.CodeOf(err) != connect.CodeInvalidArgument {
+			t.Errorf("code = %v", connect.CodeOf(err))
+		}
+	})
 }

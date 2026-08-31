@@ -27,6 +27,11 @@ message ChatRequest {
   // ones and no stored request can be misread (D-266).
   reserved 5, 6;
   reserved "seed", "keep_oracle_ids";
+  // pool_rule answers the card-pool question before it is asked (D-359).
+  // The chat screen knows the answer already: the reader named a
+  // collection and said whether the deck may reach past it. UNSPECIFIED
+  // leaves the question to the agent.
+  PoolRule pool_rule = 7;
 }
 
 // AgentError is a failure the UI can act on.

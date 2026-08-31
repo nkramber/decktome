@@ -58,6 +58,13 @@ message Deck {
   // changed, and what the agent declined and why (D-284). Built from the
   // diff, not from the model.
   string revision_note = 20;
+  // favorite marks a deck the user starred in the library (PR-17).
+  // UpdateDeck is the one writer.
+  bool favorite = 21;
+  // card_count sums count over cards, the main deck alone. The list view
+  // of ListDecks carries no cards, so it sets this field instead
+  // (PR-17). GetDeck reads the whole deck, and its cards are the source.
+  int32 card_count = 22;
 }
 
 // DeckCard is one card choice with its reason.

@@ -33,6 +33,7 @@ type Repo interface {
 	Get(ctx context.Context, uid, id string) (*mtgv1.Collection, error)
 	List(ctx context.Context, uid string) ([]*mtgv1.Collection, error)
 	FindByHash(ctx context.Context, uid, hash string) (string, error)
+	Delete(ctx context.Context, uid, id string) error
 }
 
 // Server answers CollectionService requests.
@@ -160,6 +161,31 @@ func (s *Server) GetCollection(ctx context.Context, req *connect.Request[mtgv1.G
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	return connect.NewResponse(&mtgv1.GetCollectionResponse{Collection: col}), nil
+}
+
+// DeleteCollection removes one collection for good (D-347). A deck built
+// from it keeps every card it holds. Its chat notices the collection is
+// gone on the next turn, builds from the whole card database, and says
+// so.
+func (s *Server) DeleteCollection(ctx context.Context, req *connect.Request[mtgv1.DeleteCollectionRequest]) (*connect.Response[mtgv1.DeleteCollectionResponse], error) {
+	uid := s.user(ctx)
+	if uid == "" {
+		return nil, connect.NewError(connect.CodeUnauthenticated, errNoUser)
+	}
+	id := strings.TrimSpace(req.Msg.GetCollectionId())
+	if id == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errNoID)
+	}
+	if !gzstore.ValidID(id) {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errBadID)
+	}
+	if err := s.repo.Delete(ctx, uid, id); err != nil {
+		if status.Code(err) == codes.NotFound {
+			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("collection %q: %w", id, err))
+		}
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	return connect.NewResponse(&mtgv1.DeleteCollectionResponse{}), nil
 }
 
 // ListCollections returns the user's collections without entries.

@@ -1,58 +1,39 @@
 import { LogOutIcon } from "lucide-react";
 import type { ReactNode } from "react";
 
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger } from "../../components/ui/dropdown-menu";
-import { type ThemeChoice, useThemeStore } from "../../lib/theme";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../../components/ui/dropdown-menu";
 
-// The two shell menus, in one module the shell loads on the first open
-// (D-320). Radix and its layer code stay off the first paint. Each menu
-// opens by itself once it arrives, so the first click needs no second one.
+// A menu of the shell mounts closed once its chunk lands, and the caller
+// owns the open state. Radix measures the trigger to place the panel, and
+// it reaches the trigger through the ref it passes as a prop. Every
+// trigger here forwards the props it is given, or the panel lands
+// outside the window with no way to click it.
 
-const options: { value: ThemeChoice; label: string }[] = [
-  { value: "light", label: "Light" },
-  { value: "dark", label: "Dark" },
-  { value: "system", label: "System" },
-];
-
-export function ThemeChoiceItems() {
-  const choice = useThemeStore((s) => s.choice);
-  const setChoice = useThemeStore((s) => s.setChoice);
+// The account menu, in one module the shell keeps off the first paint
+// (D-320). Radix and its layer code arrive in the idle time after it.
+// The theme choice left with the light theme (D-330).
+export function AccountMenuContent({
+  trigger,
+  email,
+  onSignOut,
+  align = "start",
+  side = "top",
+  open,
+  onOpenChange,
+}: {
+  trigger: ReactNode;
+  email: string;
+  onSignOut: () => void;
+  align?: "start" | "center" | "end";
+  side?: "top" | "bottom";
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
   return (
-    <DropdownMenuRadioGroup value={choice} onValueChange={(v) => setChoice(v as ThemeChoice)}>
-      {options.map((o) => (
-        <DropdownMenuRadioItem key={o.value} value={o.value}>
-          {o.label}
-        </DropdownMenuRadioItem>
-      ))}
-    </DropdownMenuRadioGroup>
-  );
-}
-
-export function ThemeMenuContent({ trigger }: { trigger: ReactNode }) {
-  return (
-    <DropdownMenu defaultOpen>
-      <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-40">
-        <DropdownMenuLabel>Theme</DropdownMenuLabel>
-        <ThemeChoiceItems />
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
-export function AccountMenuContent({ trigger, email, onSignOut, withTheme = false, align = "start", side = "top" }: { trigger: ReactNode; email: string; onSignOut: () => void; withTheme?: boolean; align?: "start" | "center" | "end"; side?: "top" | "bottom" }) {
-  return (
-    <DropdownMenu defaultOpen>
+    <DropdownMenu open={open} onOpenChange={onOpenChange}>
       <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
       <DropdownMenuContent align={align} side={side} className="w-56">
         <DropdownMenuLabel className="truncate font-normal text-muted-foreground">{email}</DropdownMenuLabel>
-        {withTheme && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel>Theme</DropdownMenuLabel>
-            <ThemeChoiceItems />
-          </>
-        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" onSelect={onSignOut}>
           <LogOutIcon aria-hidden="true" />

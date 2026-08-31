@@ -133,6 +133,12 @@ func LintConversation(messages []string, qs []LintQuestion) []Finding {
 		prior := priorWords(messages, q.Turn)
 		lower := strings.ToLower(q.Text)
 
+		// An acronym the reader has never seen explains itself the first
+		// time (D-374). The user writes "FNM" freely once they have read
+		// it, so the rule reads the questions and not their answers.
+		if strings.Contains(lower, "fnm") && !strings.Contains(lower, "friday night") && !anyPlain(strings.ToLower(prior), []string{"fnm", "friday night"}) {
+			add(q, "unexplained_acronym", "the question says FNM, and neither the user nor an earlier question has spelled it out")
+		}
 		// The user named the format and the agent asked for it anyway.
 		if q.Slot == "format" && !declinesFormat(q.RowID) {
 			if id, ok := lastNamedFormat(messages, q.Turn); ok {

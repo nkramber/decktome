@@ -336,9 +336,15 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 		return connect.NewError(connect.CodeResourceExhausted, errBusy)
 	}
 
-	session, snap, version, owned, err := s.load(ctx, uid, req.Msg)
+	session, snap, version, owned, collectionGone, err := s.load(ctx, uid, req.Msg)
 	if err != nil {
 		return err
+	}
+	if collectionGone {
+		if err := stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Status{
+			Status: "the collection this deck was built from is gone, so this chat builds from the whole card database now"}}); err != nil {
+			return err
+		}
 	}
 	if req.Msg.GetSessionId() == "" {
 		if err := stream.Send(&mtgv1.ChatResponse{
@@ -352,6 +358,18 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 	}
 
 	st := questions.Restore(session.GetId(), session.GetSlots(), snap)
+	// A pool rule the request carried needs no question (D-359).
+	if session.GetSlots().GetPoolRule() != mtgv1.PoolRule_POOL_RULE_UNSPECIFIED &&
+		st.Slots.GetSlotStates()["pool_rule"] == mtgv1.SlotState_SLOT_STATE_UNSPECIFIED {
+		st.Close("pool_rule")
+	}
+	// A bare "no" to a yes-or-no question is a whole answer, and the
+	// classifier reads it as neither a value nor a decline (D-352). The
+	// pairing is exact here, because the answer names its question.
+	for _, key := range declineNegatives(st, req.Msg.GetAnswers(), session) {
+		s.log.InfoContext(ctx, "the user answered a yes-or-no question with a bare negative, so the key closed",
+			"session", session.GetId(), "key", key)
+	}
 	message := withAnswers(req.Msg.GetMessage(), req.Msg.GetAnswers(), session)
 	if len(message) > maxFoldedBytes {
 		return connect.NewError(connect.CodeInvalidArgument, errTooLong)
@@ -368,6 +386,7 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 		return err
 	}
 	acc := llm.NewAccumulator(s.prices)
+	var stalled []string
 	res, turnErr := agent.Turn(ctx, st, message, acc)
 	// The turn is stored either way. A failed turn keeps the slots the
 	// classify call already filled, so a retry does not start again.
@@ -386,6 +405,20 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 			cardOptions(res.Questions, s.index.Current())
 		}
 		turn.Questions = res.Questions
+		// A turn that asks nothing new and is not ready can never move
+		// again: the agent does not repeat a question it already asked,
+		// so the questions that are out stay out for good, and no build
+		// ever starts. The reader sees a chat that does nothing. Close
+		// those questions with no value and build (D-351).
+		if !res.Ready && len(res.Questions) == 0 {
+			if closed := st.CloseStalled(); len(closed) > 0 {
+				s.log.WarnContext(ctx, "a turn asked nothing and was not ready, so the open questions were closed",
+					"session", session.GetId(), "keys", closed)
+				res.Ready = st.Ready(s.cat)
+				session.Slots = st.Slots
+				stalled = closed
+			}
+		}
 		session.Status = mtgv1.SessionStatus_SESSION_STATUS_ASKING
 		if res.Ready {
 			session.Status = mtgv1.SessionStatus_SESSION_STATUS_READY
@@ -406,6 +439,20 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 		return stream.Send(&mtgv1.ChatResponse{
 			Event: &mtgv1.ChatResponse_Failure{Failure: failure(turnErr)},
 		})
+	}
+	// The pool offered no commander, so the agent took the choice (D-127).
+	// Silence there reads as a bug, and the reader must hear it (D-366).
+	if res.ChoseCommander {
+		if err := stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Status{
+			Status: "I have no more commanders that fit this deck, so I chose one for you"}}); err != nil {
+			return err
+		}
+	}
+	if len(stalled) > 0 {
+		if err := stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Status{
+			Status: "I did not read an answer to every question, so I am building with what I have"}}); err != nil {
+			return err
+		}
 	}
 	for _, q := range res.Questions {
 		if err := stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Question{Question: q}}); err != nil {
@@ -456,11 +503,11 @@ func buildKey(uid, sessionID string) string { return uid + "/" + sessionID }
 // counts of its collection once for the whole turn. The version is the
 // one Put must expect, and a new session expects 0. A new session that
 // names a collection the store does not hold is NotFound.
-func (s *Server) load(ctx context.Context, uid string, msg *mtgv1.ChatRequest) (*mtgv1.Session, questions.Snapshot, int64, map[string]int32, error) {
+func (s *Server) load(ctx context.Context, uid string, msg *mtgv1.ChatRequest) (*mtgv1.Session, questions.Snapshot, int64, map[string]int32, bool, error) {
 	if id := msg.GetSessionId(); id != "" {
 		session, snap, version, err := s.store.GetState(ctx, uid, id)
 		if err != nil {
-			return nil, questions.Snapshot{}, 0, nil, storeError(err)
+			return nil, questions.Snapshot{}, 0, nil, false, storeError(err)
 		}
 		owned, err := s.ownedCounts(ctx, uid, session.GetCollectionId())
 		if err != nil {
@@ -469,15 +516,27 @@ func (s *Server) load(ctx context.Context, uid string, msg *mtgv1.ChatRequest) (
 			// back to their short wording.
 			s.log.WarnContext(ctx, "owned counts unavailable", "collection", session.GetCollectionId(), "err", err)
 		}
-		return session, snap, version, owned, nil
+		// A deleted collection is not a failure of this turn. The chat
+		// builds from the whole card database from now on, and it says
+		// so once (D-347). The session forgets the collection, so every
+		// later turn reads no collection at all.
+		gone := err != nil && status.Code(err) == codes.NotFound
+		if gone {
+			session.CollectionId = ""
+			snap.Ctx.HasCollection = false
+			if session.GetSlots().GetPoolRule() != mtgv1.PoolRule_POOL_RULE_UNSPECIFIED {
+				session.Slots.PoolRule = mtgv1.PoolRule_POOL_RULE_ANY_CARD
+			}
+		}
+		return session, snap, version, owned, gone, nil
 	}
 	owned, err := s.ownedCounts(ctx, uid, msg.GetCollectionId())
 	if err != nil {
 		if status.Code(err) == codes.NotFound {
-			return nil, questions.Snapshot{}, 0, nil, connect.NewError(connect.CodeNotFound,
+			return nil, questions.Snapshot{}, 0, nil, false, connect.NewError(connect.CodeNotFound,
 				fmt.Errorf("collection %q: %w", msg.GetCollectionId(), err))
 		}
-		return nil, questions.Snapshot{}, 0, nil, connect.NewError(connect.CodeInternal, err)
+		return nil, questions.Snapshot{}, 0, nil, false, connect.NewError(connect.CodeInternal, err)
 	}
 	id := s.store.NewID(uid)
 	session := &mtgv1.Session{
@@ -485,10 +544,16 @@ func (s *Server) load(ctx context.Context, uid string, msg *mtgv1.ChatRequest) (
 		CollectionId: msg.GetCollectionId(),
 		Status:       mtgv1.SessionStatus_SESSION_STATUS_ASKING,
 	}
+	// The chat screen knows the card pool already: the reader named a
+	// collection and said whether the deck may reach past it. The agent
+	// takes that as the answer and asks nothing (D-359).
+	if rule := msg.GetPoolRule(); rule != mtgv1.PoolRule_POOL_RULE_UNSPECIFIED {
+		session.Slots = &mtgv1.Slots{PoolRule: rule}
+	}
 	// A user with no collection never gets the card-pool question (D-37).
 	snap := questions.Snapshot{Version: questions.SnapshotVersion}
 	snap.Ctx.HasCollection = msg.GetCollectionId() != ""
-	return session, snap, 0, owned, nil
+	return session, snap, 0, owned, false, nil
 }
 
 // ownedCounts reads the owned counts of one collection. It answers nil
@@ -550,6 +615,43 @@ func (s *Server) hints(_ *mtgv1.Session, st *questions.State, owned map[string]i
 		Owned:   owned,
 		Log:     s.log,
 	}
+}
+
+// declineNegatives closes every key whose question the user answered
+// with a bare negative (D-352). It returns the keys it closed.
+func declineNegatives(st *questions.State, answers []*mtgv1.Answer, session *mtgv1.Session) []string {
+	if len(answers) == 0 {
+		return nil
+	}
+	asked := map[string]*mtgv1.Question{}
+	for _, turn := range session.GetTurns() {
+		for _, q := range turn.GetQuestions() {
+			asked[q.GetId()] = q
+		}
+	}
+	var closed []string
+	for _, a := range answers {
+		q := asked[a.GetQuestionId()]
+		if q == nil {
+			continue
+		}
+		// A declined answer says outright that the user named no value
+		// (D-353). It needs no reading of the words.
+		if a.GetDeclined() {
+			if key, ok := st.Decline(q.GetId()); ok {
+				closed = append(closed, key)
+			}
+			continue
+		}
+		// An option index names a value, never a negative.
+		if a.OptionIndex != nil {
+			continue
+		}
+		if key, ok := st.DeclineNegative(q.GetId(), q.GetText(), a.GetText()); ok {
+			closed = append(closed, key)
+		}
+	}
+	return closed
 }
 
 // withAnswers folds the structured replies into the message the
@@ -704,24 +806,48 @@ func slotsChanged(before, after *mtgv1.Slots) bool {
 	return !proto.Equal(a, b)
 }
 
+// pairSeparator joins the two names of a commander pair in one option.
+const pairSeparator = " + "
+
 // cardOptions fills Question.option_oracle_ids for every option that is
 // an exact card name. A question with no card option keeps the field
 // empty, so a client can tell the two apart.
+//
+// A commander pair reads as "A + B" in one option, and neither half is
+// the whole option, so a lookup of the option text finds nothing and the
+// tile showed no card at all (D-361). Each half is resolved on its own:
+// the first into option_oracle_ids, the second into the partner list.
 func cardOptions(qs []*mtgv1.Question, idx *cards.Index) {
 	if idx == nil {
 		return
 	}
 	for _, q := range qs {
 		ids := make([]string, len(q.GetOptions()))
-		found := false
+		partners := make([]string, len(q.GetOptions()))
+		found, anyPartner := false, false
 		for i, opt := range q.GetOptions() {
 			if c, ok := idx.ByName(opt); ok {
 				ids[i] = c.GetOracleId()
 				found = true
+				continue
 			}
+			first, second, ok := strings.Cut(opt, pairSeparator)
+			if !ok {
+				continue
+			}
+			a, aok := idx.ByName(strings.TrimSpace(first))
+			b, bok := idx.ByName(strings.TrimSpace(second))
+			if !aok || !bok {
+				continue
+			}
+			ids[i], partners[i] = a.GetOracleId(), b.GetOracleId()
+			found, anyPartner = true, true
 		}
 		if found {
 			q.OptionOracleIds = ids
+		}
+		if anyPartner {
+			q.OptionPartnerOracleIds = partners
 		}
 	}
 }

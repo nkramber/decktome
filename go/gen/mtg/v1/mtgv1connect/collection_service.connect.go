@@ -42,6 +42,9 @@ const (
 	// CollectionServiceListCollectionsProcedure is the fully-qualified name of the CollectionService's
 	// ListCollections RPC.
 	CollectionServiceListCollectionsProcedure = "/mtg.v1.CollectionService/ListCollections"
+	// CollectionServiceDeleteCollectionProcedure is the fully-qualified name of the CollectionService's
+	// DeleteCollection RPC.
+	CollectionServiceDeleteCollectionProcedure = "/mtg.v1.CollectionService/DeleteCollection"
 )
 
 // CollectionServiceClient is a client for the mtg.v1.CollectionService service.
@@ -51,6 +54,10 @@ type CollectionServiceClient interface {
 	ImportCollection(context.Context, *connect.Request[v1.ImportCollectionRequest]) (*connect.Response[v1.ImportCollectionResponse], error)
 	GetCollection(context.Context, *connect.Request[v1.GetCollectionRequest]) (*connect.Response[v1.GetCollectionResponse], error)
 	ListCollections(context.Context, *connect.Request[v1.ListCollectionsRequest]) (*connect.Response[v1.ListCollectionsResponse], error)
+	// DeleteCollection removes one collection for good (D-347). A deck
+	// built from it keeps every card. Its chat builds from the whole card
+	// database from then on, and it says so.
+	DeleteCollection(context.Context, *connect.Request[v1.DeleteCollectionRequest]) (*connect.Response[v1.DeleteCollectionResponse], error)
 }
 
 // NewCollectionServiceClient constructs a client for the mtg.v1.CollectionService service. By
@@ -82,6 +89,12 @@ func NewCollectionServiceClient(httpClient connect.HTTPClient, baseURL string, o
 			connect.WithSchema(collectionServiceMethods.ByName("ListCollections")),
 			connect.WithClientOptions(opts...),
 		),
+		deleteCollection: connect.NewClient[v1.DeleteCollectionRequest, v1.DeleteCollectionResponse](
+			httpClient,
+			baseURL+CollectionServiceDeleteCollectionProcedure,
+			connect.WithSchema(collectionServiceMethods.ByName("DeleteCollection")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -90,6 +103,7 @@ type collectionServiceClient struct {
 	importCollection *connect.Client[v1.ImportCollectionRequest, v1.ImportCollectionResponse]
 	getCollection    *connect.Client[v1.GetCollectionRequest, v1.GetCollectionResponse]
 	listCollections  *connect.Client[v1.ListCollectionsRequest, v1.ListCollectionsResponse]
+	deleteCollection *connect.Client[v1.DeleteCollectionRequest, v1.DeleteCollectionResponse]
 }
 
 // ImportCollection calls mtg.v1.CollectionService.ImportCollection.
@@ -107,6 +121,11 @@ func (c *collectionServiceClient) ListCollections(ctx context.Context, req *conn
 	return c.listCollections.CallUnary(ctx, req)
 }
 
+// DeleteCollection calls mtg.v1.CollectionService.DeleteCollection.
+func (c *collectionServiceClient) DeleteCollection(ctx context.Context, req *connect.Request[v1.DeleteCollectionRequest]) (*connect.Response[v1.DeleteCollectionResponse], error) {
+	return c.deleteCollection.CallUnary(ctx, req)
+}
+
 // CollectionServiceHandler is an implementation of the mtg.v1.CollectionService service.
 type CollectionServiceHandler interface {
 	// Import parses an uploaded ManaBox CSV or Arena text list.
@@ -114,6 +133,10 @@ type CollectionServiceHandler interface {
 	ImportCollection(context.Context, *connect.Request[v1.ImportCollectionRequest]) (*connect.Response[v1.ImportCollectionResponse], error)
 	GetCollection(context.Context, *connect.Request[v1.GetCollectionRequest]) (*connect.Response[v1.GetCollectionResponse], error)
 	ListCollections(context.Context, *connect.Request[v1.ListCollectionsRequest]) (*connect.Response[v1.ListCollectionsResponse], error)
+	// DeleteCollection removes one collection for good (D-347). A deck
+	// built from it keeps every card. Its chat builds from the whole card
+	// database from then on, and it says so.
+	DeleteCollection(context.Context, *connect.Request[v1.DeleteCollectionRequest]) (*connect.Response[v1.DeleteCollectionResponse], error)
 }
 
 // NewCollectionServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -141,6 +164,12 @@ func NewCollectionServiceHandler(svc CollectionServiceHandler, opts ...connect.H
 		connect.WithSchema(collectionServiceMethods.ByName("ListCollections")),
 		connect.WithHandlerOptions(opts...),
 	)
+	collectionServiceDeleteCollectionHandler := connect.NewUnaryHandler(
+		CollectionServiceDeleteCollectionProcedure,
+		svc.DeleteCollection,
+		connect.WithSchema(collectionServiceMethods.ByName("DeleteCollection")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/mtg.v1.CollectionService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case CollectionServiceImportCollectionProcedure:
@@ -149,6 +178,8 @@ func NewCollectionServiceHandler(svc CollectionServiceHandler, opts ...connect.H
 			collectionServiceGetCollectionHandler.ServeHTTP(w, r)
 		case CollectionServiceListCollectionsProcedure:
 			collectionServiceListCollectionsHandler.ServeHTTP(w, r)
+		case CollectionServiceDeleteCollectionProcedure:
+			collectionServiceDeleteCollectionHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -168,4 +199,8 @@ func (UnimplementedCollectionServiceHandler) GetCollection(context.Context, *con
 
 func (UnimplementedCollectionServiceHandler) ListCollections(context.Context, *connect.Request[v1.ListCollectionsRequest]) (*connect.Response[v1.ListCollectionsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("mtg.v1.CollectionService.ListCollections is not implemented"))
+}
+
+func (UnimplementedCollectionServiceHandler) DeleteCollection(context.Context, *connect.Request[v1.DeleteCollectionRequest]) (*connect.Response[v1.DeleteCollectionResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("mtg.v1.CollectionService.DeleteCollection is not implemented"))
 }

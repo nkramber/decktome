@@ -41,6 +41,10 @@ const (
 	DeckServiceValidateProcedure = "/mtg.v1.DeckService/Validate"
 	// DeckServiceExportDeckProcedure is the fully-qualified name of the DeckService's ExportDeck RPC.
 	DeckServiceExportDeckProcedure = "/mtg.v1.DeckService/ExportDeck"
+	// DeckServiceUpdateDeckProcedure is the fully-qualified name of the DeckService's UpdateDeck RPC.
+	DeckServiceUpdateDeckProcedure = "/mtg.v1.DeckService/UpdateDeck"
+	// DeckServiceDeleteDeckProcedure is the fully-qualified name of the DeckService's DeleteDeck RPC.
+	DeckServiceDeleteDeckProcedure = "/mtg.v1.DeckService/DeleteDeck"
 )
 
 // DeckServiceClient is a client for the mtg.v1.DeckService service.
@@ -52,6 +56,12 @@ type DeckServiceClient interface {
 	// ExportDeck renders one of the caller's decks as text (D-15, D-307
 	// to D-309).
 	ExportDeck(context.Context, *connect.Request[v1.ExportDeckRequest]) (*connect.Response[v1.ExportDeckResponse], error)
+	// UpdateDeck writes the two fields a user owns: the name and the
+	// favorite mark (PR-17). It changes nothing the agent built.
+	UpdateDeck(context.Context, *connect.Request[v1.UpdateDeckRequest]) (*connect.Response[v1.UpdateDeckResponse], error)
+	// DeleteDeck removes one deck for good (PR-17). The session keeps the
+	// id in deck_ids, and the chat shows the deck as deleted.
+	DeleteDeck(context.Context, *connect.Request[v1.DeleteDeckRequest]) (*connect.Response[v1.DeleteDeckResponse], error)
 }
 
 // NewDeckServiceClient constructs a client for the mtg.v1.DeckService service. By default, it uses
@@ -89,6 +99,18 @@ func NewDeckServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(deckServiceMethods.ByName("ExportDeck")),
 			connect.WithClientOptions(opts...),
 		),
+		updateDeck: connect.NewClient[v1.UpdateDeckRequest, v1.UpdateDeckResponse](
+			httpClient,
+			baseURL+DeckServiceUpdateDeckProcedure,
+			connect.WithSchema(deckServiceMethods.ByName("UpdateDeck")),
+			connect.WithClientOptions(opts...),
+		),
+		deleteDeck: connect.NewClient[v1.DeleteDeckRequest, v1.DeleteDeckResponse](
+			httpClient,
+			baseURL+DeckServiceDeleteDeckProcedure,
+			connect.WithSchema(deckServiceMethods.ByName("DeleteDeck")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -98,6 +120,8 @@ type deckServiceClient struct {
 	listDecks  *connect.Client[v1.ListDecksRequest, v1.ListDecksResponse]
 	validate   *connect.Client[v1.ValidateRequest, v1.ValidateResponse]
 	exportDeck *connect.Client[v1.ExportDeckRequest, v1.ExportDeckResponse]
+	updateDeck *connect.Client[v1.UpdateDeckRequest, v1.UpdateDeckResponse]
+	deleteDeck *connect.Client[v1.DeleteDeckRequest, v1.DeleteDeckResponse]
 }
 
 // GetDeck calls mtg.v1.DeckService.GetDeck.
@@ -120,6 +144,16 @@ func (c *deckServiceClient) ExportDeck(ctx context.Context, req *connect.Request
 	return c.exportDeck.CallUnary(ctx, req)
 }
 
+// UpdateDeck calls mtg.v1.DeckService.UpdateDeck.
+func (c *deckServiceClient) UpdateDeck(ctx context.Context, req *connect.Request[v1.UpdateDeckRequest]) (*connect.Response[v1.UpdateDeckResponse], error) {
+	return c.updateDeck.CallUnary(ctx, req)
+}
+
+// DeleteDeck calls mtg.v1.DeckService.DeleteDeck.
+func (c *deckServiceClient) DeleteDeck(ctx context.Context, req *connect.Request[v1.DeleteDeckRequest]) (*connect.Response[v1.DeleteDeckResponse], error) {
+	return c.deleteDeck.CallUnary(ctx, req)
+}
+
 // DeckServiceHandler is an implementation of the mtg.v1.DeckService service.
 type DeckServiceHandler interface {
 	GetDeck(context.Context, *connect.Request[v1.GetDeckRequest]) (*connect.Response[v1.GetDeckResponse], error)
@@ -129,6 +163,12 @@ type DeckServiceHandler interface {
 	// ExportDeck renders one of the caller's decks as text (D-15, D-307
 	// to D-309).
 	ExportDeck(context.Context, *connect.Request[v1.ExportDeckRequest]) (*connect.Response[v1.ExportDeckResponse], error)
+	// UpdateDeck writes the two fields a user owns: the name and the
+	// favorite mark (PR-17). It changes nothing the agent built.
+	UpdateDeck(context.Context, *connect.Request[v1.UpdateDeckRequest]) (*connect.Response[v1.UpdateDeckResponse], error)
+	// DeleteDeck removes one deck for good (PR-17). The session keeps the
+	// id in deck_ids, and the chat shows the deck as deleted.
+	DeleteDeck(context.Context, *connect.Request[v1.DeleteDeckRequest]) (*connect.Response[v1.DeleteDeckResponse], error)
 }
 
 // NewDeckServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -162,6 +202,18 @@ func NewDeckServiceHandler(svc DeckServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(deckServiceMethods.ByName("ExportDeck")),
 		connect.WithHandlerOptions(opts...),
 	)
+	deckServiceUpdateDeckHandler := connect.NewUnaryHandler(
+		DeckServiceUpdateDeckProcedure,
+		svc.UpdateDeck,
+		connect.WithSchema(deckServiceMethods.ByName("UpdateDeck")),
+		connect.WithHandlerOptions(opts...),
+	)
+	deckServiceDeleteDeckHandler := connect.NewUnaryHandler(
+		DeckServiceDeleteDeckProcedure,
+		svc.DeleteDeck,
+		connect.WithSchema(deckServiceMethods.ByName("DeleteDeck")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/mtg.v1.DeckService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case DeckServiceGetDeckProcedure:
@@ -172,6 +224,10 @@ func NewDeckServiceHandler(svc DeckServiceHandler, opts ...connect.HandlerOption
 			deckServiceValidateHandler.ServeHTTP(w, r)
 		case DeckServiceExportDeckProcedure:
 			deckServiceExportDeckHandler.ServeHTTP(w, r)
+		case DeckServiceUpdateDeckProcedure:
+			deckServiceUpdateDeckHandler.ServeHTTP(w, r)
+		case DeckServiceDeleteDeckProcedure:
+			deckServiceDeleteDeckHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -195,4 +251,12 @@ func (UnimplementedDeckServiceHandler) Validate(context.Context, *connect.Reques
 
 func (UnimplementedDeckServiceHandler) ExportDeck(context.Context, *connect.Request[v1.ExportDeckRequest]) (*connect.Response[v1.ExportDeckResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("mtg.v1.DeckService.ExportDeck is not implemented"))
+}
+
+func (UnimplementedDeckServiceHandler) UpdateDeck(context.Context, *connect.Request[v1.UpdateDeckRequest]) (*connect.Response[v1.UpdateDeckResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("mtg.v1.DeckService.UpdateDeck is not implemented"))
+}
+
+func (UnimplementedDeckServiceHandler) DeleteDeck(context.Context, *connect.Request[v1.DeleteDeckRequest]) (*connect.Response[v1.DeleteDeckResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("mtg.v1.DeckService.DeleteDeck is not implemented"))
 }

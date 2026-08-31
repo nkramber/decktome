@@ -1,40 +1,39 @@
 import { UserIcon } from "lucide-react";
-import { lazy, Suspense, useState } from "react";
+import { type ComponentProps, useState } from "react";
 
 import { Button } from "../../components/ui/button";
+import { accountMenuChunk } from "../chunks";
 
-// The menu itself loads on the first open (D-320). The trigger below is
-// the same element in both states, so nothing moves when it arrives.
-const AccountMenuContent = lazy(async () => ({ default: (await import("./shell-menus")).AccountMenuContent }));
+// The menu itself stays off the first paint (D-320). It mounts closed as
+// soon as its chunk lands, so the first click opens it and waits for
+// nothing. The trigger below is the same element in every state.
 
-export type AccountMenuProps = { email: string; onSignOut: () => void; withTheme?: boolean; trigger?: "sidebar" | "tab"; align?: "start" | "center" | "end"; side?: "top" | "bottom" };
+export type AccountMenuProps = { email: string; onSignOut: () => void; align?: "start" | "center" | "end"; side?: "top" | "bottom" };
 
-function AccountTrigger({ email, trigger = "sidebar", onClick }: { email: string; trigger?: "sidebar" | "tab"; onClick?: () => void }) {
-  if (trigger === "tab") {
-    return (
-      <button type="button" aria-haspopup="menu" aria-label="Account menu" onClick={onClick} className="flex flex-1 flex-col items-center gap-1 px-1 py-2 text-xs font-medium text-muted-foreground">
-        <UserIcon className="size-5" aria-hidden="true" />
-        Account
-      </button>
-    );
-  }
+// The trigger passes every prop it is given to its button, including the
+// ref Radix measures to place the panel.
+function AccountTrigger({ email, ...props }: { email: string } & ComponentProps<"button">) {
   return (
-    <Button variant="ghost" className="w-full justify-start" aria-haspopup="menu" aria-label="Account menu" onClick={onClick}>
+    <Button variant="ghost" size="sm" aria-haspopup="menu" aria-label="Account menu" {...props}>
       <UserIcon aria-hidden="true" />
-      <span className="min-w-0 truncate">{email}</span>
+      <span className="hidden max-w-32 truncate lg:inline">{email}</span>
     </Button>
   );
 }
 
-// The account menu holds the email and the sign-out (D-311). On a phone it
-// also holds the theme choice, because the bottom bar has no room for a
-// second control.
-export function AccountMenu({ email, onSignOut, withTheme = false, trigger = "sidebar", align = "start", side = "top" }: AccountMenuProps) {
-  const [opened, setOpened] = useState(false);
-  if (!opened) return <AccountTrigger email={email} trigger={trigger} onClick={() => setOpened(true)} />;
-  return (
-    <Suspense fallback={<AccountTrigger email={email} trigger={trigger} />}>
-      <AccountMenuContent trigger={<AccountTrigger email={email} trigger={trigger} />} email={email} onSignOut={onSignOut} withTheme={withTheme} align={align} side={side} />
-    </Suspense>
+// The account menu holds the email and the sign-out (D-328).
+const Menu = accountMenuChunk.Mount;
+
+export function AccountMenu({ email, onSignOut, align = "end", side = "bottom" }: AccountMenuProps) {
+  const [open, setOpen] = useState(false);
+  const waiting = (
+    <AccountTrigger
+      email={email}
+      onClick={() => {
+        accountMenuChunk.preload();
+        setOpen(true);
+      }}
+    />
   );
+  return <Menu fallback={waiting} open={open} onOpenChange={setOpen} trigger={<AccountTrigger email={email} />} email={email} onSignOut={onSignOut} align={align} side={side} />;
 }

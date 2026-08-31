@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/ca
 // the number, so both shapes land here.
 const reasonLabels: Record<string, string> = {
   UNKNOWN_CARD: "Unknown card: the name and printing match nothing in the card database",
-  NON_ENGLISH: "Non-English printing: the app reads English cards only (D-23)",
+  NON_ENGLISH: "Non-English printing: the app reads English cards only",
   BAD_ROW: "Bad row: the line does not parse as a ManaBox row",
   NOT_PLAYABLE: "Not a playable card: a token, emblem, or art card",
   UNKNOWN_VALUE: "Unknown value: a finish or condition the app does not know",

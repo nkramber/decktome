@@ -6,6 +6,8 @@ import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobu
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Deck, ValidationResult } from "./deck_pb";
 import { file_mtg_v1_deck } from "./deck_pb";
+import type { FormatId, SixtyStep } from "./format_pb";
+import { file_mtg_v1_format } from "./format_pb";
 import type { PoolRule } from "./session_pb";
 import { file_mtg_v1_session } from "./session_pb";
 import type { Message } from "@bufbuild/protobuf";
@@ -14,7 +16,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file mtg/v1/deck_service.proto.
  */
 export const file_mtg_v1_deck_service: GenFile = /*@__PURE__*/
-  fileDesc("ChltdGcvdjEvZGVja19zZXJ2aWNlLnByb3RvEgZtdGcudjEiSgoRRXhwb3J0RGVja1JlcXVlc3QSDwoHZGVja19pZBgBIAEoCRIkCgZmb3JtYXQYAiABKA4yFC5tdGcudjEuRXhwb3J0Rm9ybWF0IjUKEkV4cG9ydERlY2tSZXNwb25zZRIMCgR0ZXh0GAEgASgJEhEKCWZpbGVfbmFtZRgCIAEoCSIhCg5HZXREZWNrUmVxdWVzdBIPCgdkZWNrX2lkGAEgASgJIi0KD0dldERlY2tSZXNwb25zZRIaCgRkZWNrGAEgASgLMgwubXRnLnYxLkRlY2siEgoQTGlzdERlY2tzUmVxdWVzdCIwChFMaXN0RGVja3NSZXNwb25zZRIbCgVkZWNrcxgBIAMoCzIMLm10Zy52MS5EZWNrImkKD1ZhbGlkYXRlUmVxdWVzdBIaCgRkZWNrGAEgASgLMgwubXRnLnYxLkRlY2sSIwoJcG9vbF9ydWxlGAIgASgOMhAubXRnLnYxLlBvb2xSdWxlEhUKDWNvbGxlY3Rpb25faWQYAyABKAkiPAoQVmFsaWRhdGVSZXNwb25zZRIoCgZyZXN1bHQYASABKAsyGC5tdGcudjEuVmFsaWRhdGlvblJlc3VsdCpsCgxFeHBvcnRGb3JtYXQSHQoZRVhQT1JUX0ZPUk1BVF9VTlNQRUNJRklFRBAAEhwKGEVYUE9SVF9GT1JNQVRfQVJFTkFfVEVYVBABEh8KG0VYUE9SVF9GT1JNQVRfQlVZX0xJU1RfVEVYVBACMpcCCgtEZWNrU2VydmljZRI8CgdHZXREZWNrEhYubXRnLnYxLkdldERlY2tSZXF1ZXN0GhcubXRnLnYxLkdldERlY2tSZXNwb25zZSIAEkIKCUxpc3REZWNrcxIYLm10Zy52MS5MaXN0RGVja3NSZXF1ZXN0GhkubXRnLnYxLkxpc3REZWNrc1Jlc3BvbnNlIgASPwoIVmFsaWRhdGUSFy5tdGcudjEuVmFsaWRhdGVSZXF1ZXN0GhgubXRnLnYxLlZhbGlkYXRlUmVzcG9uc2UiABJFCgpFeHBvcnREZWNrEhkubXRnLnYxLkV4cG9ydERlY2tSZXF1ZXN0GhoubXRnLnYxLkV4cG9ydERlY2tSZXNwb25zZSIAQjpaOGdpdGh1Yi5jb20vbmtyYW1iZXIvbXRnLWRlY2stYnVpbGRlci9nby9nZW4vbXRnL3YxO210Z3YxYgZwcm90bzM", [file_mtg_v1_deck, file_mtg_v1_session]);
+  fileDesc("ChltdGcvdjEvZGVja19zZXJ2aWNlLnByb3RvEgZtdGcudjEiSgoRRXhwb3J0RGVja1JlcXVlc3QSDwoHZGVja19pZBgBIAEoCRIkCgZmb3JtYXQYAiABKA4yFC5tdGcudjEuRXhwb3J0Rm9ybWF0IjUKEkV4cG9ydERlY2tSZXNwb25zZRIMCgR0ZXh0GAEgASgJEhEKCWZpbGVfbmFtZRgCIAEoCSIhCg5HZXREZWNrUmVxdWVzdBIPCgdkZWNrX2lkGAEgASgJIi0KD0dldERlY2tSZXNwb25zZRIaCgRkZWNrGAEgASgLMgwubXRnLnYxLkRlY2si5gEKEExpc3REZWNrc1JlcXVlc3QSEQoJcGFnZV9zaXplGAEgASgFEhIKCnBhZ2VfdG9rZW4YAiABKAkSIAoGZm9ybWF0GAMgASgOMhAubXRnLnYxLkZvcm1hdElkEhUKCGZhdm9yaXRlGAQgASgISACIAQESDQoFcXVlcnkYBSABKAkSFQoNcG93ZXJfYnJhY2tldBgGIAEoBRIrChBwb3dlcl9zaXh0eV9zdGVwGAcgASgOMhEubXRnLnYxLlNpeHR5U3RlcBISCgpzZXNzaW9uX2lkGAggASgJQgsKCV9mYXZvcml0ZSJJChFMaXN0RGVja3NSZXNwb25zZRIbCgVkZWNrcxgBIAMoCzIMLm10Zy52MS5EZWNrEhcKD25leHRfcGFnZV90b2tlbhgCIAEoCSJkChFVcGRhdGVEZWNrUmVxdWVzdBIPCgdkZWNrX2lkGAEgASgJEhEKBG5hbWUYAiABKAlIAIgBARIVCghmYXZvcml0ZRgDIAEoCEgBiAEBQgcKBV9uYW1lQgsKCV9mYXZvcml0ZSIwChJVcGRhdGVEZWNrUmVzcG9uc2USGgoEZGVjaxgBIAEoCzIMLm10Zy52MS5EZWNrIiQKEURlbGV0ZURlY2tSZXF1ZXN0Eg8KB2RlY2tfaWQYASABKAkiFAoSRGVsZXRlRGVja1Jlc3BvbnNlImkKD1ZhbGlkYXRlUmVxdWVzdBIaCgRkZWNrGAEgASgLMgwubXRnLnYxLkRlY2sSIwoJcG9vbF9ydWxlGAIgASgOMhAubXRnLnYxLlBvb2xSdWxlEhUKDWNvbGxlY3Rpb25faWQYAyABKAkiPAoQVmFsaWRhdGVSZXNwb25zZRIoCgZyZXN1bHQYASABKAsyGC5tdGcudjEuVmFsaWRhdGlvblJlc3VsdCpsCgxFeHBvcnRGb3JtYXQSHQoZRVhQT1JUX0ZPUk1BVF9VTlNQRUNJRklFRBAAEhwKGEVYUE9SVF9GT1JNQVRfQVJFTkFfVEVYVBABEh8KG0VYUE9SVF9GT1JNQVRfQlVZX0xJU1RfVEVYVBACMqUDCgtEZWNrU2VydmljZRI8CgdHZXREZWNrEhYubXRnLnYxLkdldERlY2tSZXF1ZXN0GhcubXRnLnYxLkdldERlY2tSZXNwb25zZSIAEkIKCUxpc3REZWNrcxIYLm10Zy52MS5MaXN0RGVja3NSZXF1ZXN0GhkubXRnLnYxLkxpc3REZWNrc1Jlc3BvbnNlIgASPwoIVmFsaWRhdGUSFy5tdGcudjEuVmFsaWRhdGVSZXF1ZXN0GhgubXRnLnYxLlZhbGlkYXRlUmVzcG9uc2UiABJFCgpFeHBvcnREZWNrEhkubXRnLnYxLkV4cG9ydERlY2tSZXF1ZXN0GhoubXRnLnYxLkV4cG9ydERlY2tSZXNwb25zZSIAEkUKClVwZGF0ZURlY2sSGS5tdGcudjEuVXBkYXRlRGVja1JlcXVlc3QaGi5tdGcudjEuVXBkYXRlRGVja1Jlc3BvbnNlIgASRQoKRGVsZXRlRGVjaxIZLm10Zy52MS5EZWxldGVEZWNrUmVxdWVzdBoaLm10Zy52MS5EZWxldGVEZWNrUmVzcG9uc2UiAEI6WjhnaXRodWIuY29tL25rcmFtYmVyL210Zy1kZWNrLWJ1aWxkZXIvZ28vZ2VuL210Zy92MTttdGd2MWIGcHJvdG8z", [file_mtg_v1_deck, file_mtg_v1_format, file_mtg_v1_session]);
 
 /**
  * @generated from message mtg.v1.ExportDeckRequest
@@ -102,6 +104,69 @@ export const GetDeckResponseSchema: GenMessage<GetDeckResponse> = /*@__PURE__*/
  * @generated from message mtg.v1.ListDecksRequest
  */
 export type ListDecksRequest = Message<"mtg.v1.ListDecksRequest"> & {
+  /**
+   * page_size caps one page. Zero means 24, and the server caps it at 100.
+   *
+   * @generated from field: int32 page_size = 1;
+   */
+  pageSize: number;
+
+  /**
+   * page_token continues the listing of the same filter. An empty token
+   * starts at the newest deck. A token from another filter is an invalid
+   * argument.
+   *
+   * @generated from field: string page_token = 2;
+   */
+  pageToken: string;
+
+  /**
+   * format keeps the decks of one format. UNSPECIFIED keeps them all.
+   *
+   * @generated from field: mtg.v1.FormatId format = 3;
+   */
+  format: FormatId;
+
+  /**
+   * favorite keeps the favorites when true, and the rest when false.
+   * Unset keeps them all.
+   *
+   * @generated from field: optional bool favorite = 4;
+   */
+  favorite?: boolean | undefined;
+
+  /**
+   * query keeps the decks whose name or commander name holds this text,
+   * without regard to case. Empty keeps them all.
+   *
+   * @generated from field: string query = 5;
+   */
+  query: string;
+
+  /**
+   * power_bracket keeps the Commander decks of one bracket, 1 to 5.
+   * Zero keeps them all. PowerLevel is a oneof, so the two arms of the
+   * power filter are two fields (OQ-47).
+   *
+   * @generated from field: int32 power_bracket = 6;
+   */
+  powerBracket: number;
+
+  /**
+   * power_sixty_step keeps the 60-card decks of one step.
+   * UNSPECIFIED keeps them all.
+   *
+   * @generated from field: mtg.v1.SixtyStep power_sixty_step = 7;
+   */
+  powerSixtyStep: SixtyStep;
+
+  /**
+   * session_id keeps the decks one chat built, which is the version
+   * history of a deck (PR-17). Empty keeps them all.
+   *
+   * @generated from field: string session_id = 8;
+   */
+  sessionId: string;
 };
 
 /**
@@ -119,6 +184,14 @@ export type ListDecksResponse = Message<"mtg.v1.ListDecksResponse"> & {
    * @generated from field: repeated mtg.v1.Deck decks = 1;
    */
   decks: Deck[];
+
+  /**
+   * next_page_token reads the next page of the same filter. Empty means
+   * the listing ended.
+   *
+   * @generated from field: string next_page_token = 2;
+   */
+  nextPageToken: string;
 };
 
 /**
@@ -127,6 +200,87 @@ export type ListDecksResponse = Message<"mtg.v1.ListDecksResponse"> & {
  */
 export const ListDecksResponseSchema: GenMessage<ListDecksResponse> = /*@__PURE__*/
   messageDesc(file_mtg_v1_deck_service, 5);
+
+/**
+ * @generated from message mtg.v1.UpdateDeckRequest
+ */
+export type UpdateDeckRequest = Message<"mtg.v1.UpdateDeckRequest"> & {
+  /**
+   * @generated from field: string deck_id = 1;
+   */
+  deckId: string;
+
+  /**
+   * name renames the deck. Unset leaves the name as it is, and an empty
+   * string is an invalid argument.
+   *
+   * @generated from field: optional string name = 2;
+   */
+  name?: string | undefined;
+
+  /**
+   * favorite sets or clears the star. Unset leaves the mark as it is.
+   *
+   * @generated from field: optional bool favorite = 3;
+   */
+  favorite?: boolean | undefined;
+};
+
+/**
+ * Describes the message mtg.v1.UpdateDeckRequest.
+ * Use `create(UpdateDeckRequestSchema)` to create a new message.
+ */
+export const UpdateDeckRequestSchema: GenMessage<UpdateDeckRequest> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_deck_service, 6);
+
+/**
+ * @generated from message mtg.v1.UpdateDeckResponse
+ */
+export type UpdateDeckResponse = Message<"mtg.v1.UpdateDeckResponse"> & {
+  /**
+   * deck is the whole deck after the write.
+   *
+   * @generated from field: mtg.v1.Deck deck = 1;
+   */
+  deck?: Deck | undefined;
+};
+
+/**
+ * Describes the message mtg.v1.UpdateDeckResponse.
+ * Use `create(UpdateDeckResponseSchema)` to create a new message.
+ */
+export const UpdateDeckResponseSchema: GenMessage<UpdateDeckResponse> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_deck_service, 7);
+
+/**
+ * @generated from message mtg.v1.DeleteDeckRequest
+ */
+export type DeleteDeckRequest = Message<"mtg.v1.DeleteDeckRequest"> & {
+  /**
+   * @generated from field: string deck_id = 1;
+   */
+  deckId: string;
+};
+
+/**
+ * Describes the message mtg.v1.DeleteDeckRequest.
+ * Use `create(DeleteDeckRequestSchema)` to create a new message.
+ */
+export const DeleteDeckRequestSchema: GenMessage<DeleteDeckRequest> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_deck_service, 8);
+
+/**
+ * @generated from message mtg.v1.DeleteDeckResponse
+ */
+export type DeleteDeckResponse = Message<"mtg.v1.DeleteDeckResponse"> & {
+};
+
+/**
+ * Describes the message mtg.v1.DeleteDeckResponse.
+ * Use `create(DeleteDeckResponseSchema)` to create a new message.
+ */
+export const DeleteDeckResponseSchema: GenMessage<DeleteDeckResponse> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_deck_service, 9);
 
 /**
  * @generated from message mtg.v1.ValidateRequest
@@ -158,7 +312,7 @@ export type ValidateRequest = Message<"mtg.v1.ValidateRequest"> & {
  * Use `create(ValidateRequestSchema)` to create a new message.
  */
 export const ValidateRequestSchema: GenMessage<ValidateRequest> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_deck_service, 6);
+  messageDesc(file_mtg_v1_deck_service, 10);
 
 /**
  * @generated from message mtg.v1.ValidateResponse
@@ -175,7 +329,7 @@ export type ValidateResponse = Message<"mtg.v1.ValidateResponse"> & {
  * Use `create(ValidateResponseSchema)` to create a new message.
  */
 export const ValidateResponseSchema: GenMessage<ValidateResponse> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_deck_service, 7);
+  messageDesc(file_mtg_v1_deck_service, 11);
 
 /**
  * ExportFormat names a text shape of a deck.
@@ -264,6 +418,28 @@ export const DeckService: GenService<{
     methodKind: "unary";
     input: typeof ExportDeckRequestSchema;
     output: typeof ExportDeckResponseSchema;
+  },
+  /**
+   * UpdateDeck writes the two fields a user owns: the name and the
+   * favorite mark (PR-17). It changes nothing the agent built.
+   *
+   * @generated from rpc mtg.v1.DeckService.UpdateDeck
+   */
+  updateDeck: {
+    methodKind: "unary";
+    input: typeof UpdateDeckRequestSchema;
+    output: typeof UpdateDeckResponseSchema;
+  },
+  /**
+   * DeleteDeck removes one deck for good (PR-17). The session keeps the
+   * id in deck_ids, and the chat shows the deck as deleted.
+   *
+   * @generated from rpc mtg.v1.DeckService.DeleteDeck
+   */
+  deleteDeck: {
+    methodKind: "unary";
+    input: typeof DeleteDeckRequestSchema;
+    output: typeof DeleteDeckResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_mtg_v1_deck_service, 0);

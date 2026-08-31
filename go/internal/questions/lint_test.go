@@ -142,3 +142,38 @@ func TestLintCatchesAnIllegalOffer(t *testing.T) {
 		t.Errorf("the linter fired on a clean question: %s", f.Detail)
 	}
 }
+
+// An acronym the reader has never seen explains itself the first time
+// (D-374). The catalog spells FNM out, and the rule catches a rewording
+// that drops it.
+func TestLintUnexplainedAcronym(t *testing.T) {
+	rules := func(fs []Finding) []string {
+		var out []string
+		for _, f := range fs {
+			out = append(out, f.Rule)
+		}
+		return out
+	}
+	msgs := []string{"a 60-card deck"}
+
+	t.Run("a bare FNM is a finding", func(t *testing.T) {
+		got := LintConversation(msgs, []LintQuestion{{Turn: 1, RowID: "power_sixty", Slot: "power", Text: "How strong: casual, FNM level, or tournament-meta?"}})
+		if !contains(rules(got), "unexplained_acronym") {
+			t.Errorf("findings = %v, want unexplained_acronym", rules(got))
+		}
+	})
+
+	t.Run("the spelled-out form passes", func(t *testing.T) {
+		got := LintConversation(msgs, []LintQuestion{{Turn: 1, RowID: "power_sixty", Slot: "power", Text: "How strong should this be: casual, Friday Night Magic (FNM) level, or tournament-meta?"}})
+		if contains(rules(got), "unexplained_acronym") {
+			t.Errorf("the spelled-out question was flagged: %v", rules(got))
+		}
+	})
+
+	t.Run("a reader who wrote FNM first hears it back", func(t *testing.T) {
+		got := LintConversation([]string{"a deck for FNM"}, []LintQuestion{{Turn: 1, RowID: "power_sixty", Slot: "power", Text: "How strong: casual, FNM level, or tournament-meta?"}})
+		if contains(rules(got), "unexplained_acronym") {
+			t.Errorf("the user used the acronym first, so the question may: %v", rules(got))
+		}
+	})
+}

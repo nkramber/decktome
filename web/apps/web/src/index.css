@@ -1,11 +1,9 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "@fontsource-variable/geist";
+@import "@fontsource-variable/cinzel";
+@import "@fontsource-variable/crimson-pro";
+@import "@fontsource-variable/jetbrains-mono";
 @import "./styles/tokens.css";
-
-/* The dark theme applies from a class on the root element. The theme
-   script of index.html sets the class before the first paint (D-311). */
-@custom-variant dark (&:is(.dark *));
 
 @layer base {
   * {
@@ -15,18 +13,74 @@
     background-color: var(--background);
     color: var(--foreground);
     font-family: var(--font-sans);
-    /* Tabular figures keep a count column from moving as it changes. */
-    font-feature-settings: "cv11", "ss01";
-    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
   }
-  /* A heading reads tighter than its body, the way a product does. */
+  /* A heading is engraved: the display face, wide letters, small caps. */
   h1,
   h2,
   h3 {
-    letter-spacing: -0.02em;
+    font-family: var(--font-display);
+    letter-spacing: 0.01em;
   }
   :focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
+  }
+  /* The scrollbar is a hairline, so it never competes with the frame. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 2px;
+  }
+}
+
+/* The display face, for a label or a button that is not a heading. */
+@utility font-display {
+  font-family: var(--font-display);
+}
+
+/* A gold rule of light passes over the wordmark. */
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+@utility gold-shimmer {
+  background: linear-gradient(90deg, #c89b3c 0%, #f0d070 40%, #c89b3c 60%, #a07830 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 4s linear infinite;
+}
+
+/* Every panel carries a faint engraved hatch, the way a card frame does. */
+@utility hatch {
+  background-image: repeating-linear-gradient(45deg, #c89b3c 0, #c89b3c 1px, transparent 0, transparent 50%);
+  background-size: 8px 8px;
+}
+
+/* A panel lifts on hover, and the light it throws is gold. */
+@utility card-hover {
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-raised);
   }
 }

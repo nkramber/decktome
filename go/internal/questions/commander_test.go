@@ -882,3 +882,83 @@ func TestBareOrdinalPicksNoCommander(t *testing.T) {
 		t.Errorf(`"The second one" did not pick the second commander: %v`, p.st.CommanderNames)
 	}
 }
+
+// The production shape of D-73 and D-120, from session
+// 5A1p1rznS2vap8UQg5D2 on 2026-08-31. The reader clicked the option
+// "None, name three more", and the classifier reported nothing at all
+// for the key: no close, no decline. The word rule alone must reopen the
+// row. The test above drives the same refusal through the classifier,
+// and this one drives it through the words.
+func TestRefusalByOptionAloneRepeatsThePickRow(t *testing.T) {
+	base := commanderClassify()
+	wants := commanderClassify()
+	wants.Facts.WantsSuggestion = true
+	// The classifier says nothing about the key. The words are all there is.
+	silent := commanderClassify()
+	h := &fakeHints{
+		commanders: []string{"Vito, Thorn of the Dusk Rose", "Heliod, Sun-Crowned", "Haliya, Guided by Light"},
+		second:     []string{"Karlov of the Ghost Council", "Oloro, Ageless Ascetic", "Ayli, Eternal Pilgrim"},
+	}
+	a, _ := testAgentHints(t, h,
+		classifyStep(t, base), fits(t, "commander", "power_commander"), askStep(t),
+		classifyStep(t, wants),
+		classifyStep(t, silent))
+	st := NewState(false)
+	if _, err := a.Turn(context.Background(), st, "a lifegain commander deck", nil); err != nil {
+		t.Fatalf("turn 1: %v", err)
+	}
+	if _, err := a.Turn(context.Background(), st, "Bracket 3. I have no commander in mind, so suggest one.", nil); err != nil {
+		t.Fatalf("turn 2: %v", err)
+	}
+
+	res, err := a.Turn(context.Background(), st, "None, name three more", nil)
+	if err != nil {
+		t.Fatalf("turn 3: %v", err)
+	}
+	if st.Ready(a.cat) {
+		t.Fatal("the session called itself ready after a refusal, so it built with a commander nobody chose")
+	}
+	q := question(res.Questions, "commander")
+	if q == nil {
+		t.Fatal("the pick row did not ask again after the refusal")
+	}
+	for _, old := range h.commanders {
+		if strings.Contains(q.GetText(), old) {
+			t.Errorf("the agent offered %q again after the user refused it", old)
+		}
+	}
+}
+
+// What happens when the pool has no more names to offer. Session
+// 5A1p1rznS2vap8UQg5D2 refused three and the turn then asked nothing at
+// all, so the session went on to build with a commander nobody chose.
+func TestRefusalWithNoMoreNames(t *testing.T) {
+	base := commanderClassify()
+	wants := commanderClassify()
+	wants.Facts.WantsSuggestion = true
+	silent := commanderClassify()
+	h := &fakeHints{
+		commanders: []string{"Vito, Thorn of the Dusk Rose", "Heliod, Sun-Crowned", "Haliya, Guided by Light"},
+		second:     nil, // the pool is out of names
+	}
+	a, _ := testAgentHints(t, h,
+		classifyStep(t, base), fits(t, "commander", "power_commander"), askStep(t),
+		classifyStep(t, wants),
+		classifyStep(t, silent))
+	st := NewState(false)
+	if _, err := a.Turn(context.Background(), st, "a lifegain commander deck", nil); err != nil {
+		t.Fatalf("turn 1: %v", err)
+	}
+	if _, err := a.Turn(context.Background(), st, "Bracket 3. I have no commander in mind, so suggest one.", nil); err != nil {
+		t.Fatalf("turn 2: %v", err)
+	}
+	res, err := a.Turn(context.Background(), st, "None, name three more", nil)
+	if err != nil {
+		t.Fatalf("turn 3: %v", err)
+	}
+	t.Logf("questions asked = %d, ready = %v, offer = %v, asked-mark = %v",
+		len(res.Questions), st.Ready(a.cat), st.CurrentOffer, st.Ctx.Asked["commander_pick"])
+	for _, q := range res.Questions {
+		t.Logf("  asked slot=%s text=%q", q.GetSlot(), q.GetText())
+	}
+}
