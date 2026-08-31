@@ -99,7 +99,7 @@ export function CardTile({
   const faces = facesOf(card, entry.ownedPrinting);
   const name = card?.name || entry.name;
   return (
-    <li className="flex flex-col gap-1.5 rounded-card border border-border bg-surface p-2 transition-shadow hover:shadow-raised" data-testid="card-tile">
+    <li className="flex flex-col gap-1.5 rounded-card border border-border bg-card p-2 transition-shadow hover:shadow-raised" data-testid="card-tile">
       <div className="flex items-baseline justify-between gap-2">
         <span className="min-w-0 wrap-anywhere font-medium">
           {entry.count > 1 && <span className="mr-1 text-muted-foreground">{entry.count}×</span>}

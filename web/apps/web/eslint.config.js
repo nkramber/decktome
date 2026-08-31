@@ -15,11 +15,16 @@ import tseslint from "typescript-eslint";
 // | chat       | deck                     |
 // | deck       | export                   |
 // | export     | none                     |
+// | workspace  | chat, deck, export       |
 //
 // export is a leaf: the deck view mounts the export panel, and the panel
 // reads the deck and the card data it is given (PR-13).
-const features = ["auth", "collection", "chat", "deck", "export"];
-const allow = { auth: [], collection: [], chat: ["deck"], deck: ["export"], export: [] };
+//
+// workspace is the one screen of a deck (D-335). It holds the deck, the
+// actions the user owns, and the conversation that built it, so it is
+// the only feature that may reach both chat and deck.
+const features = ["auth", "collection", "chat", "deck", "export", "workspace"];
+const allow = { auth: [], collection: [], chat: ["deck"], deck: ["export"], export: [], workspace: ["chat", "deck", "export"] };
 
 // A feature reaches a sibling by a relative path: ../deck/x from
 // features/chat, ../../deck/x from features/chat/components, or

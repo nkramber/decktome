@@ -254,7 +254,7 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 	case mtgv1.PoolRule_POOL_RULE_OWNED_ONLY:
 		main = capByRole(filterOwned(scored, true), lim)
 	case mtgv1.PoolRule_POOL_RULE_OWNED_FIRST:
-		main = capByRole(filterOwned(scored, true), lim)
+		main = ownedFirst(scored, lim)
 		upgrades = topUpgrades(filterOwned(scored, false), main, lim.Upgrades)
 	}
 	stats.Returned = len(main)
@@ -328,15 +328,23 @@ func capByRole(in []Candidate, lim Limits) []Candidate {
 
 // topUpgrades picks the best unowned cards that beat the weakest owned
 // card of the same role, so an upgrade is a real improvement.
-func topUpgrades(unowned, owned []Candidate, limit int) []Candidate {
+func topUpgrades(unowned, main []Candidate, limit int) []Candidate {
 	floor := map[mtgv1.CardRole]float64{}
-	for _, c := range owned {
+	// A card the main list already carries is not an upgrade. It is in
+	// the deck, and the buy list already names it when the user does not
+	// own it (D-359).
+	inMain := make(map[*mtgv1.Card]bool, len(main))
+	for _, c := range main {
+		inMain[c.Card] = true
 		if v, ok := floor[c.Role]; !ok || c.Score < v {
 			floor[c.Role] = c.Score
 		}
 	}
 	var out []Candidate
 	for _, c := range unowned {
+		if inMain[c.Card] {
+			continue
+		}
 		if v, ok := floor[c.Role]; ok && c.Score <= v {
 			continue
 		}
@@ -346,6 +354,70 @@ func topUpgrades(unowned, owned []Candidate, limit int) []Candidate {
 		}
 	}
 	return out
+}
+
+// OwnedFillFloor is the main-list size under which a collection can not
+// build a deck on its own (D-362). A Commander deck is 99 cards, and
+// deck gate run 8 built one with nothing to buy from a shortlist of 168
+// owned names. Above this floor the collection is enough, and the fill
+// stays away.
+//
+// The floor is not the shortlist cap. Filling to the cap offered the
+// model 120 unowned cards it did not need, and gate run 9 turned four
+// decks that cost nothing into decks that cost $40 to $168. A reader
+// who says "my collection first" is not asking for that.
+const OwnedFillFloor = 150
+
+// ownedFirst builds the main list from the collection, then fills what
+// the collection can not (D-359).
+//
+// The collection leads: every owned candidate that fits the caps is in
+// the list before one unowned card is read. A thin collection then
+// leaves a hole, and a deck with a hole is not a deck, so the database
+// fills the rest in score order. A reader who says "only cards I own"
+// takes POOL_RULE_OWNED_ONLY and no fill at all.
+//
+// The color identity is applied before this, so a card outside the
+// deck's colors is in neither half.
+func ownedFirst(in []Candidate, lim Limits) []Candidate {
+	owned := capByRole(filterOwned(in, true), lim)
+	// The fill reaches the floor, never the cap (D-362). A collection
+	// that already builds a deck is left exactly as it is.
+	target := OwnedFillFloor
+	if lim.Total < target {
+		target = lim.Total
+	}
+	room := target - len(owned)
+	if room <= 0 {
+		return owned
+	}
+	// The caps the owned half did not use. A role the collection filled
+	// takes no fill, and the total never grows.
+	used := map[mtgv1.CardRole]int{}
+	for _, c := range owned {
+		used[c.Role]++
+	}
+	left := Limits{Total: room, PerRole: map[mtgv1.CardRole]int{}}
+	for role, n := range lim.PerRole {
+		if free := n - used[role]; free > 0 {
+			left.PerRole[role] = free
+		}
+	}
+	fill := capByRole(filterOwned(in, false), left)
+	if len(fill) == 0 {
+		return owned
+	}
+	// The list reads by role, the way capByRole returns one, so the
+	// owned half and the fill do not sit in two blocks.
+	merged := make([]Candidate, 0, len(owned)+len(fill))
+	byRole := map[mtgv1.CardRole][]Candidate{}
+	for _, c := range append(append([]Candidate{}, owned...), fill...) {
+		byRole[c.Role] = append(byRole[c.Role], c)
+	}
+	for _, r := range roleOrder {
+		merged = append(merged, byRole[r]...)
+	}
+	return merged
 }
 
 func filterOwned(in []Candidate, want bool) []Candidate {
@@ -591,11 +663,71 @@ func (b *Builder) CommanderPool(idx *cards.Index, req Request) ([]Candidate, err
 		out = append(out, b.commanderPairs(idx, req, theme, colorSet, mode, maxRank)...)
 		sortCandidates(out)
 	}
+	// A theme the tag table does not know leaves the pool nearly empty.
+	// "Hobbit" names a handful of legends, and a reader who refuses those
+	// has nothing left to be offered: the row falls silent and D-127
+	// hands the choice to the agent with no word to the reader (D-367).
+	//
+	// The theme still leads. Below the floor the pool takes the
+	// commanders that fit the format and the colors on popularity alone,
+	// so "name three more" always has three more.
+	if len(out) < CommanderPoolFloor {
+		out = append(out, b.unthemed(idx, req, colorSet, mode, maxRank, out)...)
+	}
 	// Owned-first ranks on quality like any card. The commander is one
 	// card, the buy list carries it, and a deck led by the best fit beats
 	// a deck led by a legend the user happens to own (D-297). Owned-only
 	// filtered above, because there the commander must be owned.
 	return out, nil
+}
+
+// CommanderPoolFloor is the pool size under which the theme filter has
+// left too little to choose from. The pick row names three at a time, so
+// a reader who refuses twice needs nine, and a little room over that.
+const CommanderPoolFloor = 12
+
+// unthemed ranks the commanders that fit the format and the colors but
+// carry no theme signal, best first on popularity (D-367). They go after
+// every themed commander, so the theme still leads.
+func (b *Builder) unthemed(idx *cards.Index, req Request, colorSet map[mtgv1.Color]bool,
+	mode mtgv1.PoolRule, maxRank float64, have []Candidate,
+) []Candidate {
+	seen := make(map[string]bool, len(have))
+	for _, c := range have {
+		seen[c.Card.GetOracleId()] = true
+	}
+	var out []Candidate
+	for _, c := range idx.All() {
+		if seen[c.GetOracleId()] {
+			continue
+		}
+		if !c.GetCanBeCommander() || !legalIn(c, legalKeys[mtgv1.FormatId_FORMAT_ID_COMMANDER]) {
+			continue
+		}
+		if !hasPaperPrinting(c) {
+			continue
+		}
+		// The same color rule as the themed half: a commander holds every
+		// color the user named, and no other (D-148).
+		if colorSet != nil &&
+			(!IdentityFits(c.GetColorIdentity(), colorSet) || !identityCovers(c.GetColorIdentity(), colorSet)) {
+			continue
+		}
+		if c.GetGameChanger() && req.Bracket > 0 && req.Bracket <= 2 {
+			continue
+		}
+		owned := req.Owned[c.GetOracleId()]
+		if mode == mtgv1.PoolRule_POOL_RULE_OWNED_ONLY && owned == 0 {
+			continue
+		}
+		out = append(out, Candidate{
+			Card: c, Role: mtgv1.CardRole_CARD_ROLE_THREAT,
+			Score: popularity(c, maxRank),
+			Owned: owned, Signals: []string{"no theme signal"},
+		})
+	}
+	sortCandidates(out)
+	return out
 }
 
 // commanderNames is how many names the pick row holds (catalog row

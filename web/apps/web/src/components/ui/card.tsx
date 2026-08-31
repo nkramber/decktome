@@ -9,7 +9,7 @@ type WithChild = { asChild?: boolean };
 
 export function Card({ className, asChild = false, ...props }: ComponentProps<"div"> & WithChild) {
   const Comp = asChild ? Slot : "div";
-  return <Comp data-slot="card" className={cn("flex flex-col gap-4 rounded-card border border-border bg-surface py-5 text-surface-foreground shadow-card", className)} {...props} />;
+  return <Comp data-slot="card" className={cn("relative flex flex-col gap-4 overflow-hidden rounded-card border border-border bg-card py-5 text-card-foreground shadow-card", className)} {...props} />;
 }
 
 export function CardHeader({ className, ...props }: ComponentProps<"div">) {
@@ -18,7 +18,7 @@ export function CardHeader({ className, ...props }: ComponentProps<"div">) {
 
 export function CardTitle({ className, asChild = false, ...props }: ComponentProps<"div"> & WithChild) {
   const Comp = asChild ? Slot : "div";
-  return <Comp data-slot="card-title" className={cn("font-semibold", className)} {...props} />;
+  return <Comp data-slot="card-title" className={cn("font-display text-[15px] font-semibold", className)} {...props} />;
 }
 
 export function CardDescription({ className, ...props }: ComponentProps<"div">) {

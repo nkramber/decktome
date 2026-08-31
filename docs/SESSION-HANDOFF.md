@@ -4,22 +4,17 @@
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. On the owner's machine `~/.nvm/versions/node/v22.23.2/bin` on the PATH fixes it.
 
-## Where things stand (2026-08-29)
+## Where things stand (2026-08-30)
 
-- `main` is at `7924658`, PR-12B merged (#41, 2026-08-29). Merged: PR-0a to PR-8, PR-7B, PR-10, PR-11 (#38), PR-12 (#40), PR-12B (#41).
-- The quality audit of 2026-08-29 is merged (#43, D-302 to D-306, `docs/audit-2026-08-29.md`).
-- PR-13 is merged (#45, D-307 to D-309). The owner did not run the export in the browser yet.
-- Phase 3B, the product UI, has a plan and no code yet (D-310 to D-322). The roadmap holds PR-16 to PR-23, and `docs/reference/ui-phase-plan-2026-08-29.md` holds the detail. The first slice is PR-16, the design system and the shell (D-317). The owner asked for the roadmap first and no code (D-319).
-- The Phase 3B roadmap merged (#46, D-310 to D-322).
-- PR-16 is merged (#47, D-323).
-- Branch `pr-16b` holds the visual pass (D-325, D-326). PR-16 kept the composition of every screen, per D-317, so the app still read as the test bench of PR-11. The pass adds the type face, the elevation scale, the docked composer, and a thread with hierarchy. The browser read waits for the owner.
-- Branch `pr-17` holds the proto and the Go side of the deck library. The web side follows. It carries no visual pass, so it needs a rebase after `pr-16b` merges.
-- A review of the PR-16 plan on 2026-08-29 fixed five items. The bundle gate had no unit. The first slice listed 19 primitives. The PR-22 entry decided OQ-45. The PR-21 rate limit read the wrong address. The open-questions table broke at OQ-45.
-- The web baseline of 2026-08-29, before PR-16: one chunk of 584.07 kB raw and 179.81 kB gzipped. It also holds 14.24 kB of CSS and 118 tests.
-- The tree is green on the branch: Go build, vet, `-race` tests, golangci-lint, `buf breaking`, web lint, typecheck, 135 web tests, and the web build. `make lint` runs the extended STE check and reports zero findings.
-- The revise gate held on run 2 (D-296). The paid gates did not run on 2026-08-29.
+- `main` is at `6f871c3`. Merged: PR-0a to PR-8, PR-7B, PR-10 to PR-13, the audits, the Phase 3B roadmap (#46), PR-16 (#47), and PR-16B (#48).
+- No pull request is open. The Dependabot bump of the go group merged as #44.
+- Branch `pr-17` holds the deck library and the look of the reference design, in nine commits over `main`. The version history and the compare remain.
+- The tree is green on `pr-17`: Go build, vet, `-race` tests, golangci-lint, `buf breaking`, `proto-check`, web lint, typecheck, 165 web tests, and the web build. `make lint` reports zero findings.
+- The first paint is 361.69 kB raw and 115.72 kB gzipped. The bar of D-323 is 130 kB.
+- The revise gate held on run 2 (D-296). The paid gates did not run since 2026-08-28.
 - PR-9 is out of the MVP (D-256). Phase 3B comes before Phase 4 (D-316).
-- Pull request #42 (Dependabot, anthropic-sdk-go 1.66.0 to 1.67.0) is open and waits for the owner.
+
+CAUTION: branch `pr-17` carries eight concerns. They are the contract, the Go side, the reference design, and the layout of D-331. They are also the Build menu, the one deck screen, the pool picker, and the speed of the app. Guardrail 10 asks for one. The owner chose to ship it whole (D-344).
 
 ## The numbers, and why none of them compare with `main` now
 
@@ -61,6 +56,8 @@ CAUTION: `tune-check` paired zero questions between run 24 and run 25, because t
 
 ## PR-16, what it holds (2026-08-29)
 
+CAUTION: three parts of this slice changed on 2026-08-30. The sidebar became a top bar (D-328), the light theme went (D-330), and the color identity of a deck went (D-329). The primitives, the route split, and the test helper below still hold.
+
 - Nine primitives in `web/apps/web/src/components/ui`: Button, Input, Label, Textarea, Checkbox, Card, Skeleton, DropdownMenu, and the toast. Each one is a hand-written shadcn shape on Radix, with relative imports. The shadcn command line installs a `@` alias, and the import boundary of this repo reads relative paths only.
 - `src/styles/tokens.css` holds the tokens. The dark theme overrides the neutrals, the surfaces, and the link. The six mana colors do not change. A script in `index.html` paints the class before the first paint.
 - The shell is a sidebar on a desktop and a bottom tab bar on a phone. A media query picks one of the two. Two navigations with one name fail the axe landmark-unique rule.
@@ -69,17 +66,155 @@ CAUTION: `tune-check` paired zero questions between run 24 and run 25, because t
 - `renderAt` in `src/test-utils.tsx` is async now, and every test awaits it. It warms the page modules and the auth SDK, then flushes one act.
 - `src/test-setup.ts` adds four jsdom stubs that the Radix menus need.
 
+## PR-17, what the branch holds (2026-08-30)
+
+The web side, in one list:
+
+- The library grid at `/decks`: the name, the commander, the mana pips, the format, the power, the count, the cost, the date, and a favorite star. Search by name and commander, and filter by format, power, and favorites. Every filter runs on the server.
+- `/decks/<id>` is the one screen of a deck (D-335). It holds the deck, the actions, and the conversation that built it.
+- `/session/<id>` holds a build with no deck. It hands the reader to the deck's address the moment a turn ends with a deck.
+- `src/features/workspace` is the one feature with a path to both chat and deck.
+- Build in the header is a menu of the collections (D-332), and a signed-in reader lands there (D-334).
+- The look of the reference design: three faces, the navy and gold palette, one top bar, dark alone.
+- A "Build from" picker sits under the title of a new chat (D-336). It names the pool, and it changes it without a trip to another page.
+- The deck screen carries the version history and the compare (D-343). The decks of one chat are the versions of one deck.
+
+CAUTION: no chunk of this app loads behind a Suspense boundary (D-338). React holds a committed fallback for 300 ms, and it holds every later reveal with it. `src/app/deferred.tsx` replaces `React.lazy` everywhere. Do not put `React.lazy` back.
+
+
+The Go side, in one list:
+
+- `DeckService.UpdateDeck` writes the name and the favorite mark, and `DeleteDeck` removes a deck for good. Both are additive, and `buf breaking` passes.
+- `Deck.favorite` and `Deck.card_count` are new. The list view carries no cards, so it sets `card_count`. The deck list on screen reads `cards.length` today and always shows zero.
+- `ListDecks` takes `page_size`, `page_token`, `format`, `favorite`, `query`, `power_bracket`, `power_sixty_step` (D-324), and `session_id` (D-343).
+- The filter runs in Go over the rows Firestore returns, not as a query. One read serves every filter, and no composite index has to exist. The scan cap is 500 rows.
+- The stored document gains six flat fields. A deck written before PR-17 reads them as zero, and a rename fills them.
+- `internal/decks/filter_test.go` is new, and the emulator tests cover Update, Delete, and the filter. `make store-check` passes.
+
+CAUTION: a `t.Cleanup` can not delete from Firestore. Go cancels `t.Context` before a cleanup runs, so the delete fails and the next run reads the leftovers. Each emulator test takes a fresh user id instead.
+
+## The look of 2026-08-30 (D-328 to D-331)
+
+The owner gave a reference design, and it settles the look. Our terms win over its terms: the app is the MtG Deck Builder, and its entries are Build, Decks, and Collection.
+
+- Three faces, three jobs. Cinzel engraves a heading, a label, and a button. Crimson Pro reads a paragraph. JetBrains Mono carries an id, a count, and a date. Each one ships with the build.
+- The palette is navy, gold, and purple, with parchment for text. The radius is 4 px, and every panel carries a faint gold hatch.
+- The shell is one top bar (D-328). The sidebar, the phone tab bar, and the theme toggle are gone.
+- Dark is the only theme (D-330). `src/lib/theme.ts` and the no-flash script left with it.
+- A deck has one screen and one address (D-335). `/decks/<id>` holds the deck, its actions, and its conversation. `/session/<id>` holds a build with no deck, and it hands over the moment a deck exists.
+- `src/features/workspace` is the one feature with a path to both chat and deck. The lint carries that rule.
+- A deck owns the whole page, and the conversation docks at the bottom left (D-331). A History control opens the thread over the composer. Before a deck exists, the conversation is the page.
+- The identity wash left (D-329). Color of the game shows in a mana pip and a rarity dot.
+- Build in the header is a menu of the collections (D-332). It sets the pool and opens a chat. With no collection it offers the way to the upload screen (D-334).
+- A signed-in reader lands on Build, not on the collection (D-334).
+
+CAUTION: a trigger of a Radix menu must pass on every prop it takes. The ref is among them, and Radix measures the trigger through it to place the panel.
+
+A trigger that keeps only the props it names drops the ref. The panel then lands at the top left corner, outside the window, and a click never reaches it. Both menus of the shell carried this defect. jsdom has no layout, so no test there sees it. Playwright found it in one run.
+- The binder head sits under the controls, the buy list opens on request, and a page holds 75 rem (D-333).
+
+A session reads its own work with Playwright, and it measures rather than looks. Four checks ran on 2026-08-30.
+
+- The deck page holds 80 percent of a 1440-pixel screen.
+- The buy list carries no `open` attribute.
+- The Continue-to-chat control does not move when a reader picks an upload.
+- The Build menu lists every collection.
+
+## The palette of D-327 (2026-08-29), now amended
+
+D-311 kept every surface neutral and let the card art carry the color. The app read as boring, and the owner said so twice. The five colors of the game are the palette now, and dark leads.
+
+- `src/styles/tokens.css` holds the dark base and a `.light` class. Dark is the class-free base, so a light reader carries the class.
+- `src/features/deck/color-identity.ts` reads the color identity of a deck from its commander. `identityVars` sets `--identity-a` and `--identity-b` on one element, and the `identity-wash` and `identity-rule` utilities read them.
+- Each card role carries its own hue through `roleToken`.
+- `ManaPips` shows an identity as pips, and its screen-reader label names the colors in words.
+- The ground of every page carries two soft lights and a fine grain. A panel takes a hairline of its own light along its top edge.
+- The collection screen shows the binder: the count, the unique cards, the rarity spread, and the art of the rarest ten cards. It came forward from PR-18.
+
+CAUTION: the binder head calls `GetCollection`, and the answer carries every entry. The owner's export holds 4,952 rows, so one page load moves about one megabyte. PR-18 adds paging, and the head reads a page then.
+
+## Reading the app without the owner (2026-08-30)
+
+`@playwright/test` is a dev dependency of `web/apps/web` now, and Chromium sits in the local cache. A session can read its own work.
+
+- Start the Auth emulator and the Vite dev server. Then drive Chromium with a script that answers every `/mtg.v1.*` call from canned JSON, so no backend has to run.
+- A Connect Timestamp is an RFC 3339 string in JSON, not a `{seconds}` object. A `{seconds}` stub fails with "cannot decode message google.protobuf.Timestamp".
+- The script lives outside the repo, in the session scratchpad. It must run from `web/apps/web`, or the bare import of `@playwright/test` does not resolve.
+- PR-23 holds the real smoke flow (D-313). This is a reading tool, not that.
+
+## PR-17B, the set filter (F-29, D-373)
+
+The app never applied a set as a constraint. `candidates.Request` carries the format, the colors, the theme, the commander ids, the pool rule, the owned counts, and the bracket, and it carries no set. A deck asked for one set held cards of any set.
+
+CAUTION: a card does not have one set. The snapshot of 2026-08-30 holds 988 paper sets over 37,557 Oracle cards, and 16,765 of those cards hold printings in two or more. `Card.set_codes` is a list. A field that holds one set drops a reprint.
+
+A set name is not a set code. "The Hobbit" names `hob`, `hoc`, and `thob` in that snapshot. OQ-47 asks which of them a reader means.
+
 ## Next steps, in order
 
-1. The owner reads `pr-16b` in the browser, on a desktop and on a phone. The owner says what still reads as dated.
-2. Then PR-17 to PR-23 in order, one gate each.
-3. The owner runs the question gate and the deck gate to re-baseline (D-302), in parallel. Ask before each run. Write each to a new `GATE_OUT` file (D-65). Record the numbers here and in the roadmap.
-4. Before PR-22, ask OQ-45 (the allowlist store) and OQ-46 (the spend cap).
-5. After Phase 3B: PR-15, then PR-14.
+1. The owner reads `pr-17` in the browser, then merges it. PR-17 is whole (D-344). The one gate line the owner still owns is a grid of 100 real decks under one second.
+2. **PR-17B, the set filter** (F-29, D-373). It follows the PR-17 merge. Ask OQ-47 first: which sets a product name covers.
+3. Then PR-18 to PR-23 in order, one gate each. Before PR-22, ask OQ-45 and OQ-46.
+4. After Phase 3B: PR-15, then PR-14.
+
+The re-baseline of D-302 is done: question gate run 28, eval run 28, and deck gate run 10. The section below holds the numbers.
+
+CAUTION: `pr-17` carries eight concerns on one branch, and guardrail 10 asks for one. The owner chose to ship it whole (D-344). Read the branch as one slice, not as eight.
 
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 
 Seven owner rows wait in `docs/owner-questions.md`: OQ-23, OQ-28 to OQ-31, OQ-37, and OQ-39. OQ-20, OQ-44, OQ-45, and OQ-46 wait in `docs/open-questions.md`.
+
+## The dead conversation of 2026-08-31 (D-351 to D-354)
+
+Session `0EqqY19J6A4BxCVgsmAE` stopped for good. The reader answered "No" to two yes-or-no questions, and both keys stayed in the asked state. Readiness needs no key in that state, so no build started. The agent never repeats a question it asked, so no new question came. Every later turn ended with no question, no message, and no deck.
+
+Four changes close the hole:
+
+- `State.DeclineNegative` reads a bare negative and closes the key (D-352). It pairs the answer with its question by id, so it matches no text.
+- `Answer.declined` and the "You decide" control on a question card say the same thing outright (D-353).
+- The classifier prompt now names a negative answer as a decline (D-354). Its "none closes no key" rule reads as commander_pick alone.
+- A turn that asks nothing new and is not ready closes what is out and builds (D-351). That is the net under the three above.
+
+CAUTION: D-352 and D-354 change what the questions engine does with an answer. Read the run 28 gate and its eval against run 27 before you trust a comparison with an older run.
+
+## The paid runs of 2026-08-31
+
+The re-baseline of D-302 is done for the question gate and the deck gate. Total spend: $1.31.
+
+| Run | File | Result |
+|---|---|---|
+| Question gate 28 | `pr7-question-gate-run28.md` | PASS. 26 of 27 catalog-only, over the bar of 25. Run 27 sat on it at 25. $0.1589. |
+| Question eval 28 | `pr7-question-eval-run28.md` | 6.8 percent bad on the holdout, from 7.2. The tune split reads 2.2 percent, from 4.1. $0.0916. |
+| Deck gate 9 | `pr8-deck-gate-run9.md` | PASS, and it found a defect the verdict can not see. $1.0450. |
+
+CAUTION: deck gate run 9 ran with the unbounded owned-first fill. Four decks that cost nothing to buy on run 8 cost $39.81, $80.24, $60.77, and $167.98 on run 9. D-362 bounds the fill at 150 names, and every owned-first prompt of run 8 sits above that floor. A run 10 must show the run 8 costs again. Read the buy cost of each owned-first prompt, not the verdict: all three bars of this gate read legality, never cost.
+
+## The dead-end check of the question gate (D-357)
+
+`cmd/questions-gate/stall.go` fails a dead-end conversation. A dead end is a last turn that sent no question and did not report ready. Such a turn also left every slot as it found it, with a question still out. The gate reports a stall that a later turn recovers, and it fails neither.
+
+The check has 11 unit cases and one live smoke run of 8 conversations, which found no dead end. The other 96 conversations of the set are unproven. Read the first full run: a false failure means one line goes, `len(deadEnds) == 0` in the pass expression.
+
+## Speed, measured on 2026-08-30
+
+Every number below comes from Playwright over the built app on `vite preview`, with each RPC stubbed. `scripts` in the scratchpad hold the runs. The same measurement on the dev server gives larger numbers, because Vite serves each module on its own there.
+
+| What | Before | After |
+|---|---|---|
+| Content of `/session/new`, from navigation start | 347 ms | 44 ms |
+| First open of the Build menu | 323 ms | 16 ms |
+| Second open of the Build menu | 8 ms | 12 ms |
+| Hop to a page it already read | 1 call | 0 calls |
+| First-paint chunk, gzipped | 115.93 kB | 116.13 kB |
+
+Three changes give that:
+
+- `src/app/deferred.tsx` replaces `React.lazy` (D-338). A deferred unit starts a download and mounts the component the moment the code is here. Nothing suspends, so React throttles nothing.
+- `src/app/chunks.ts` lists every deferred chunk, and the layout warms them all in the idle time after the first paint (D-339).
+- The query client keeps server state fresh for 30 seconds (D-340).
+
+CAUTION: the first-paint bar of D-323 is 130 kB gzipped. Read the Vite build report after any change to `src/app/chunks.ts`. A chunk that moves into the entry chunk spends that budget.
 
 ## Facts that expire
 

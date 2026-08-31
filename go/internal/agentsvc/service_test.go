@@ -15,6 +15,8 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
@@ -982,5 +984,39 @@ func TestOperatorFaultGuardsNilErr(t *testing.T) {
 	}
 	if !operatorFault(&llm.Error{Class: llm.ClassTerminal, Status: 401}) {
 		t.Error("a 401 with no inner error was not the operator's")
+	}
+}
+
+// A collection the user deleted must not end a turn (D-347). The chat
+// forgets it, builds from the whole card database, and says so once.
+func TestChatWithADeletedCollection(t *testing.T) {
+	store := newFakeStore()
+	store.sessions["s1"] = &mtgv1.Session{
+		Id:           "s1",
+		CollectionId: "gone",
+		Slots:        &mtgv1.Slots{PoolRule: mtgv1.PoolRule_POOL_RULE_OWNED_ONLY},
+		Status:       mtgv1.SessionStatus_SESSION_STATUS_ASKING,
+	}
+	store.states["s1"] = questions.Snapshot{Version: questions.SnapshotVersion}
+	missing := fakeCollections{countsErr: status.Error(codes.NotFound, "no such collection")}
+	client, _ := testServerOpts(t, store, []Option{WithCollections(missing)}, firstTurn(t)...)
+
+	got := chat(t, client, &mtgv1.ChatRequest{SessionId: "s1", Message: "swap the removal"})
+
+	var warned bool
+	for _, s := range got.statuses {
+		if strings.Contains(s, "whole card database") {
+			warned = true
+		}
+	}
+	if !warned {
+		t.Errorf("the chat said nothing about the deleted collection: %q", got.statuses)
+	}
+	stored := store.sessions["s1"]
+	if stored.GetCollectionId() != "" {
+		t.Errorf("the session still names the collection %q", stored.GetCollectionId())
+	}
+	if stored.GetSlots().GetPoolRule() != mtgv1.PoolRule_POOL_RULE_ANY_CARD {
+		t.Errorf("pool rule = %v, want ANY_CARD", stored.GetSlots().GetPoolRule())
 	}
 }

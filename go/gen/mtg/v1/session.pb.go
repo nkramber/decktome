@@ -201,7 +201,10 @@ type PoolRule int32
 
 const (
 	PoolRule_POOL_RULE_UNSPECIFIED PoolRule = 0
-	// POOL_RULE_OWNED_FIRST builds from owned cards and lists upgrades.
+	// POOL_RULE_OWNED_FIRST leads with owned cards and fills what the
+	// collection can not from the whole database, in score order (D-359).
+	// It lists upgrades on top: cards worth buying that the deck does not
+	// already hold.
 	PoolRule_POOL_RULE_OWNED_FIRST PoolRule = 1
 	PoolRule_POOL_RULE_OWNED_ONLY  PoolRule = 2
 	PoolRule_POOL_RULE_ANY_CARD    PoolRule = 3
@@ -685,8 +688,12 @@ type Answer struct {
 	// option_index is the chosen option. Unset means free text in
 	// `text`. Explicit presence separates "option 0" from "no option",
 	// which the proto3 default of 0 could not (D-266).
-	OptionIndex   *int32 `protobuf:"varint,2,opt,name=option_index,json=optionIndex,proto3,oneof" json:"option_index,omitempty"`
-	Text          string `protobuf:"bytes,3,opt,name=text,proto3" json:"text,omitempty"`
+	OptionIndex *int32 `protobuf:"varint,2,opt,name=option_index,json=optionIndex,proto3,oneof" json:"option_index,omitempty"`
+	Text        string `protobuf:"bytes,3,opt,name=text,proto3" json:"text,omitempty"`
+	// declined is true when the user handed the choice back with no value
+	// (D-353). The slot closes and the generator applies the default the
+	// corpus names. A declined answer carries no option_index and no text.
+	Declined      bool `protobuf:"varint,4,opt,name=declined,proto3" json:"declined,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -742,6 +749,13 @@ func (x *Answer) GetText() string {
 	return ""
 }
 
+func (x *Answer) GetDeclined() bool {
+	if x != nil {
+		return x.Declined
+	}
+	return false
+}
+
 // Question is one clarifying question (roadmap PR-7, D-25).
 type Question struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -768,9 +782,14 @@ type Question struct {
 	// closed says the options are the whole answer space, for example the
 	// three formats the app builds. The UI offers no free-text field for
 	// a closed question (D-295).
-	Closed        bool `protobuf:"varint,9,opt,name=closed,proto3" json:"closed,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Closed bool `protobuf:"varint,9,opt,name=closed,proto3" json:"closed,omitempty"`
+	// option_partner_oracle_ids is parallel to options as well. A commander
+	// pair reads as "A + B" in one option, and one Oracle id can not carry
+	// two cards (D-361). The first card goes in option_oracle_ids, and the
+	// second one here. Every other option carries an empty string.
+	OptionPartnerOracleIds []string `protobuf:"bytes,10,rep,name=option_partner_oracle_ids,json=optionPartnerOracleIds,proto3" json:"option_partner_oracle_ids,omitempty"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Question) Reset() {
@@ -866,6 +885,13 @@ func (x *Question) GetClosed() bool {
 	return false
 }
 
+func (x *Question) GetOptionPartnerOracleIds() []string {
+	if x != nil {
+		return x.OptionPartnerOracleIds
+	}
+	return nil
+}
+
 var File_mtg_v1_session_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_session_proto_rawDesc = "" +
@@ -916,13 +942,14 @@ const file_mtg_v1_session_proto_rawDesc = "" +
 	"\ragent_message\x18\x02 \x01(\tR\fagentMessage\x12.\n" +
 	"\tquestions\x18\x03 \x03(\v2\x10.mtg.v1.QuestionR\tquestions\x12*\n" +
 	"\x02at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x02at\x12(\n" +
-	"\aanswers\x18\x05 \x03(\v2\x0e.mtg.v1.AnswerR\aanswers\"v\n" +
+	"\aanswers\x18\x05 \x03(\v2\x0e.mtg.v1.AnswerR\aanswers\"\x92\x01\n" +
 	"\x06Answer\x12\x1f\n" +
 	"\vquestion_id\x18\x01 \x01(\tR\n" +
 	"questionId\x12&\n" +
 	"\foption_index\x18\x02 \x01(\x05H\x00R\voptionIndex\x88\x01\x01\x12\x12\n" +
-	"\x04text\x18\x03 \x01(\tR\x04textB\x0f\n" +
-	"\r_option_index\"\xfc\x01\n" +
+	"\x04text\x18\x03 \x01(\tR\x04text\x12\x1a\n" +
+	"\bdeclined\x18\x04 \x01(\bR\bdeclinedB\x0f\n" +
+	"\r_option_index\"\xb7\x02\n" +
 	"\bQuestion\x12\x0e\n" +
 	"\x02id\x18\x06 \x01(\tR\x02id\x12\x12\n" +
 	"\x04slot\x18\x01 \x01(\tR\x04slot\x12\x12\n" +
@@ -932,7 +959,9 @@ const file_mtg_v1_session_proto_rawDesc = "" +
 	"\tgap_score\x18\x05 \x01(\x01R\bgapScore\x12!\n" +
 	"\fcatalog_text\x18\a \x01(\tR\vcatalogText\x12*\n" +
 	"\x11option_oracle_ids\x18\b \x03(\tR\x0foptionOracleIds\x12\x16\n" +
-	"\x06closed\x18\t \x01(\bR\x06closed*~\n" +
+	"\x06closed\x18\t \x01(\bR\x06closed\x129\n" +
+	"\x19option_partner_oracle_ids\x18\n" +
+	" \x03(\tR\x16optionPartnerOracleIds*~\n" +
 	"\rSessionStatus\x12\x1e\n" +
 	"\x1aSESSION_STATUS_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15SESSION_STATUS_ASKING\x10\x01\x12\x18\n" +

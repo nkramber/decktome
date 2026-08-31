@@ -1,5 +1,5 @@
 import { ImportSource, UnresolvedReason } from "@mtg/api-client/mtg/v1/collection_pb";
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { axe } from "jest-axe";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -13,11 +13,17 @@ vi.mock("firebase/auth");
 
 const importCollection = vi.fn();
 const listCollections = vi.fn();
+const getCollection = vi.fn();
+const getCards = vi.fn();
+const deleteCollection = vi.fn();
 vi.mock("../../lib/api", () => ({
   healthClient: { check: () => Promise.resolve({ status: "ok", version: "test", cardSnapshot: "none" }) },
+  cardClient: { getCards: (...args: unknown[]) => getCards(...args) },
   collectionClient: {
     importCollection: (...args: unknown[]) => importCollection(...args),
     listCollections: (...args: unknown[]) => listCollections(...args),
+    getCollection: (...args: unknown[]) => getCollection(...args),
+    deleteCollection: (...args: unknown[]) => deleteCollection(...args),
   },
 }));
 
@@ -32,7 +38,55 @@ beforeEach(() => {
   useAppStore.setState({ collectionId: "", sessionId: "", poolMode: "any" });
   importCollection.mockReset();
   listCollections.mockReset();
+  getCollection.mockReset();
+  getCards.mockReset();
+  deleteCollection.mockReset();
   listCollections.mockResolvedValue({ collections: earlier });
+  getCollection.mockResolvedValue({
+    collection: {
+      id: "c-old",
+      name: "binder-july.csv",
+      cardCount: 4317,
+      importedAt: { seconds: 1756000000n, nanos: 0 },
+      entries: [
+        { oracleId: "o-bolt", name: "Lightning Bolt", quantity: 4, rarity: "common", setName: "Alpha", setCode: "lea" },
+        { oracleId: "o-jace", name: "Jace, the Mind Sculptor", quantity: 1, rarity: "mythic", setName: "Worldwake", setCode: "wwk" },
+        { oracleId: "o-bolt", name: "Lightning Bolt", quantity: 2, rarity: "common", setName: "Alpha", setCode: "lea" },
+      ],
+    },
+  });
+  getCards.mockResolvedValue({
+    cards: [{ oracleId: "o-jace", name: "Jace, the Mind Sculptor", faces: [], defaultPrinting: { artist: "A", imageUris: { artCrop: "https://x/a.jpg" } } }],
+    missingOracleIds: [],
+  });
+});
+
+describe("the binder head", () => {
+  it("shows nothing until a collection is active", async () => {
+    await renderAt("/collection");
+    await screen.findByRole("button", { name: "binder-july.csv" });
+    expect(getCollection).not.toHaveBeenCalled();
+  });
+
+  it("counts the cards, the unique cards, and the rarity of the active collection", async () => {
+    useAppStore.setState({ collectionId: "c-old", poolMode: "owned_only" });
+    await renderAt("/collection");
+    // 4 + 1 + 2 = 7 cards over two Oracle ids.
+    expect(await screen.findByText("7")).toBeInTheDocument();
+    expect(screen.getByText("Unique cards")).toBeInTheDocument();
+    expect(screen.getByText("2")).toBeInTheDocument();
+    expect(screen.getByText(/Mythic/)).toBeInTheDocument();
+    expect(screen.getByText(/Common/)).toBeInTheDocument();
+    expect(getCollection).toHaveBeenCalledWith({ collectionId: "c-old" });
+  });
+
+  it("asks for the art of the rarest cards first", async () => {
+    useAppStore.setState({ collectionId: "c-old", poolMode: "owned_only" });
+    await renderAt("/collection");
+    await screen.findByText("7");
+    // The mythic sorts before the common.
+    expect(getCards).toHaveBeenCalledWith({ oracleIds: ["o-jace", "o-bolt"] });
+  });
 });
 
 describe("CollectionPage", () => {
@@ -42,7 +96,7 @@ describe("CollectionPage", () => {
     expect(screen.getByText(/4317 cards/)).toBeInTheDocument();
     await userEvent.setup().click(screen.getByRole("button", { name: "binder-july.csv" }));
     expect(useAppStore.getState().collectionId).toBe("c-old");
-    expect(useAppStore.getState().poolMode).toBe("owned");
+    expect(useAppStore.getState().poolMode).toBe("owned_first");
     expect(screen.getByTestId("active-collection")).toHaveTextContent("Active collection: binder-july.csv (4317 cards)");
     expect(screen.getByRole("button", { name: "binder-july.csv" })).toHaveAttribute("aria-pressed", "true");
   });
@@ -135,14 +189,14 @@ describe("CollectionPage", () => {
   });
 
   it("skip clears the active collection and goes to the chat (D-37)", async () => {
-    useAppStore.setState({ collectionId: "c-old", poolMode: "owned" });
+    useAppStore.setState({ collectionId: "c-old", poolMode: "owned_only" });
     const { router } = await renderAt("/collection");
     await screen.findByRole("button", { name: "binder-july.csv" });
     await userEvent.setup().click(screen.getByRole("button", { name: "Skip, build from any card" }));
     expect(useAppStore.getState().collectionId).toBe("");
     expect(useAppStore.getState().poolMode).toBe("any");
     expect(router.state.location.pathname).toBe("/session/new");
-    expect(await screen.findByTestId("session-id")).toHaveTextContent("No session yet.");
+    expect(await screen.findByRole("heading", { level: 1, name: "New deck" })).toBeInTheDocument();
   });
 
   it("continue to chat goes to /session/new", async () => {
@@ -156,5 +210,47 @@ describe("CollectionPage", () => {
     const { container } = await renderAt("/collection");
     await screen.findByRole("button", { name: "binder-july.csv" });
     expect(await axe(container)).toHaveNoViolations();
+  });
+});
+
+describe("the file dialog on arrival", () => {
+  it("stays shut when the reader came here on their own", async () => {
+    const clicks: string[] = [];
+    const realClick = HTMLInputElement.prototype.click;
+    HTMLInputElement.prototype.click = function click(this: HTMLInputElement) {
+      clicks.push(this.type);
+    };
+    try {
+      await renderAt("/collection");
+      await screen.findByRole("button", { name: "binder-july.csv" });
+      expect(clicks).not.toContain("file");
+    } finally {
+      HTMLInputElement.prototype.click = realClick;
+    }
+  });
+});
+
+// Deleting a collection is for good (D-347). The decks it built keep
+// their cards, and their chats fall back to the whole card database.
+describe("deleting a collection", () => {
+  it("asks first, then removes it and clears the active choice", async () => {
+    useAppStore.setState({ collectionId: "c-old", poolMode: "owned_only" });
+    deleteCollection.mockResolvedValue({});
+    await renderAt("/collection");
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Delete binder-july.csv" }));
+    expect(await screen.findByText(/Every deck you built from it keeps all of its cards/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Delete the collection" }));
+    await waitFor(() => expect(deleteCollection).toHaveBeenCalledWith({ collectionId: "c-old" }));
+    await waitFor(() => expect(useAppStore.getState().collectionId).toBe(""));
+    expect(useAppStore.getState().poolMode).toBe("any");
+  });
+
+  it("keeps the collection when the reader backs out", async () => {
+    await renderAt("/collection");
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Delete binder-july.csv" }));
+    await user.click(await screen.findByRole("button", { name: "Keep it" }));
+    expect(deleteCollection).not.toHaveBeenCalled();
   });
 });

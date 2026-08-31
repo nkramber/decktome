@@ -6,6 +6,18 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-08-30 correction pass 35 (the reference design and the one deck screen, D-328 to D-335): the owner gave a reference design, and it settles the look. Three faces, a navy and gold palette, one top bar, and dark alone. The identity wash of D-327 left, and the color of the game now shows in a mana pip and a rarity dot. A deck has one screen and one address. Changes: Phase 3B, PR-16, PR-16B, PR-17, sequencing step 19.
+2026-08-30 correction pass 36 (the collection picker and the speed of the app, D-336 to D-340): the pool lived in the header menu alone, and the owner did not find it. A "Build from" picker now sits on the chat screen. No screen shows a decision id or a Firestore id. No chunk loads behind a Suspense boundary. React holds a committed fallback for 300 ms. Content on the landing page went from 347 ms to 44 ms. The first open of the Build menu went from 323 ms to 16 ms. Changes: PR-17.
+2026-08-30 correction pass 37 (the version history and the compare, D-343): the last two items of PR-17. The decks of one chat are the versions of one deck, so `ListDecks` takes a session id and the deck screen reads its own history. Any two versions compare with the diff the revision note already used. Changes: PR-17, sequencing step 19.
+2026-08-31 correction pass 38 (the dead conversation, D-351 to D-355): a bare "No" to a yes-or-no question left its key in the asked state. The agent never repeats a question it asked, so no new question came, and the session was never ready. Every later turn did nothing. Three fixes now close such a key. The code reads the negative. A question card carries a "You decide" control. The classifier prompt names the shape. A turn that asks nothing and is not ready closes what is out and builds. Changes: PR-17, PR-7.
+2026-08-31 correction pass 39 (the gate dead end, the pool floor, and the fixed frame, D-357 to D-364): the question gate now fails a conversation that can not move. A commander pair option carries two card ids, because one id can not hold two cards. The owned-first fill reaches a viable floor and not the shortlist cap. A fill to the cap turned four free decks into decks that cost $40 to $168 on deck gate run 9. The shell is a fixed frame, and the docked chat always fits it. Changes: PR-7, PR-8, PR-17.
+2026-08-31 correction pass 40 (the commander pool and the deck tile, D-365 to D-367): `CommanderPool` dropped every commander with no theme signal. A theme the tag table does not know left three names or fewer, and a reader who refused those had nothing left to read. The theme still leads, and under a floor of 12 the pool fills from the whole format. The agent now says so when it takes the commander choice. The whole deck tile opens the deck. Changes: PR-6, PR-7, PR-17.
+2026-08-31 correction pass 41 (the set filter, F-29, D-371 to D-373): the app never applied a set as a constraint. The request carried no set, and the words reached the theme alone. A deck asked for one set then held cards of any set. PR-17B adds `Card.set_codes` and the filter over it. A card holds printings in 2.3 sets on average, so the field is a list. The classifier also read "build only from the Hobbit set" as an ownership rule. An owned rule with no collection then emptied every pool. Changes: PR-17B, F-29, sequencing step 20.
+
+2026-08-29 correction pass 34 (the palette of D-327): the five colors of the game are the app's palette, and dark leads. D-311 kept every surface neutral, and the result read as boring. A deck now carries its own color identity, and a card role carries its own hue. Changes: PR-17, guardrail 13 unchanged.
+
+2026-08-29 correction pass 33 (PR-17 started on branch `pr-17`): the proto and the Go side of the deck library. `UpdateDeck`, `DeleteDeck`, `Deck.favorite`, `Deck.card_count`, and the paged, filtered `ListDecks`. D-324 puts the power filter on the server. Changes: PR-17, sequencing step 19, open question 7.
+
 2026-08-29 correction pass 32 (PR-16B, the visual pass, D-325 and D-326): the screens of PR-16 kept the composition of PR-11, so the app read as a test bench. The pass adds a type face, an elevation scale, a docked composer, and a thread with hierarchy. Changes: PR-16B, sequencing step 19.
 
 2026-08-29 correction pass 30 (PR-16 built on branch `pr-16`, D-323): the design system, the two themes, and the app shell. The first paint is 116.31 kB gzipped, from 179.81 kB. The bar of D-320 was out of reach, and D-323 amends it. Changes: PR-16, sequencing step 19.
@@ -165,6 +177,7 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-26 | **The phrasing role invents claims about the game, and no gate catches them.** Gate run 14 of 2026-08-26 passed the gate with zero linter findings and told one user two false things. It said "Grist, the Hunger Tide can not lead a deck", which the rules contradict (Scryfall ruling, 2021-06-18). It asked "Do you want to use any colors beyond Grist's color identity?", which the rules allow no answer to. The catalog rows say neither. The ask role added both, and the ask prompt already said to state no fact about the game. | ✅ answered for PR-8 by the judge lane (D-229): the judge role reads every deck summary for a rule of the game and for the truth of it, on another provider than the generator, and a false rule fails the deck gate. Deck gate run 6 found none in 16 summaries, at $0.0034 a deck. The deterministic net reads the shape of a claim and never its truth, which is why the judge decides (D-224). Earlier: 🔧 partly fixed: D-140 silences the commander row for a legendary card the engine can not confirm, and D-144 puts the color-identity rule in the prompt and the shape in the linter. ⚠ binds PR-8: the generate role writes a deck summary in prose, and the same failure has more room there. The eval lane found both, and the deterministic linter found neither. |
 | F-27 | **A message after a build is dropped, and the deck is rebuilt from the first message.** Session `eIrL12hRY2YNTTCo3iS4`, 2026-08-28: the user wrote "Replace some lands with better options if possible. Also tune the mana curve lower - no 6 or 7 mana cards needed". The agent sent no reply, `plan()` read turn 1 and the slots only, and the generator built a second deck 2.5 minutes after the first with 24 Plains and the same four 6- and 7-mana cards. Three cards changed, all by variance (D-18). The turn cost a full build and answered nothing. | ✅ PR-12B merged 2026-08-29 (#41). |
 | F-28 | **The UI is a live-test UI, not a product.** PR-11 to PR-13 built four screens on plain Tailwind for the owner's browser test (D-273). No design system, one theme, no navigation on a phone, no rename or delete of any object, no card detail, no share, and `firebase/auth` on every route. Found 2026-08-29 when the owner asked for a user-facing UI (D-310). Binds PR-16 to PR-23. | 🔧 Phase 3B |
+| F-29 | **A set is not a constraint the app can apply.** Session `WJbs7FP2csZCULi4SVJu`, 2026-08-31: the owner asked for a tier-5 Commander deck from the Hobbit set. `candidates.Request` carries the format, the colors, the theme, the commander ids, the pool rule, the owned counts, and the bracket. It carries no set. The words reached the theme, the theme matched Scryfall tags, and no card was ever tested for its set. The deck could hold any card of any set. The snapshot of 2026-08-30 holds 988 paper sets over 37,557 Oracle cards. | 🔧 PR-17B |
 
 > *In plain English:* these are the traps we found before we wrote code. The biggest ones: ban lists change every few weeks. The collection file format has no documentation. The AI can name a card that sounds right but is not. Each one has a planned fix or a rule that prevents it.
 
@@ -573,7 +586,13 @@ Built 2026-08-29 on branch `pr-13` (D-307 to D-309). The Arena line names the ow
 
 ### Phase 3B - The product UI (gated on PR-13)
 
-The live-test UI of Phase 3 served one purpose: the owner tests the agent in a browser (D-273, F-28). This phase builds the product (D-310). It runs for the owner locally, and for invited users on GCP at the end of the phase. The look is shadcn/Radix primitives, a light and a dark theme, card art forward, and a responsive layout (D-311). The test bar is Vitest with axe per pull request and one Playwright smoke flow on a manual trigger (D-313). `docs/reference/ui-phase-plan-2026-08-29.md` holds the screens, the components, the contract changes, and the deploy shape.
+The live-test UI of Phase 3 served one purpose: the owner tests the agent in a browser (D-273, F-28). This phase builds the product (D-310). It runs for the owner locally, and for invited users on GCP at the end of the phase.
+
+The look comes from a reference design the owner gave on 2026-08-30 (D-328 to D-330). Three faces carry three jobs. Cinzel engraves a heading, Crimson Pro reads a paragraph, and JetBrains Mono carries an id or a count.
+
+The palette is navy, gold, and purple, with parchment for text, and the radius is 4 px. The shell is one top bar, and dark is the only theme. Radix primitives still carry the behavior (D-311), and the app owns each file.
+
+The test bar is Vitest with axe per pull request and one Playwright smoke flow on a manual trigger (D-313). A session also reads its own work with Playwright from 2026-08-30, and it measures rather than looks. `docs/reference/ui-phase-plan-2026-08-29.md` holds the screens, the components, the contract changes, and the deploy shape.
 
 The four flows of D-312 come in this order:
 
@@ -588,8 +607,12 @@ The four flows of D-312 come in this order:
 
 > *In plain English:* what exists today is a test bench with a browser on it. This phase makes it an app a person can use every day, on a laptop or a phone, and later from anywhere with an invitation.
 
-**PR-16: Design system and app shell (D-311, D-317).** 🔧 built 2026-08-29 on branch `pr-16`. The test gate held. The browser gate waits for the owner.
-Nine shadcn primitives on Radix, written by hand into `src/components/ui`: Button, Input, Label, Textarea, Checkbox, Card, Skeleton, DropdownMenu, and the toast (D-321). Each later slice adds its own. Tailwind 4 tokens in `src/styles/tokens.css`: a neutral scale, one accent, a link color, the six mana colors, and the semantic roles. The dark theme overrides the neutrals, the surfaces, and the link only. The theme follows the system by default, and a menu in the sidebar stores a choice. A script in `index.html` paints the class before the first paint.
+**PR-16: Design system and app shell (D-311, D-317).** ✅ merged 2026-08-29 (#47).
+
+CAUTION: the palette, the shell, and the theme of this slice all changed on 2026-08-30. D-328 replaced the sidebar with a top bar, D-329 removed the color identity of a deck, and D-330 removed the light theme. The primitives and the route split of this slice stand.
+Nine shadcn primitives on Radix, written by hand into `src/components/ui`: Button, Input, Label, Textarea, Checkbox, Card, Skeleton, DropdownMenu, and the toast (D-321). Each later slice adds its own.
+
+Tailwind 4 tokens in `src/styles/tokens.css`: a neutral scale, one accent, a link color, the six mana colors, and the semantic roles. The dark theme overrides the neutrals, the surfaces, and the link only. The theme follows the system by default, and a menu in the sidebar stores a choice. A script in `index.html` paints the class before the first paint.
 
 The shell is a sidebar on a desktop and a bottom tab bar on a phone, with Build, Decks, and Collection. A media query picks one of the two, because two navigations with one name fail the axe landmark-unique rule. One `PageHeader`, one `EmptyState`, one `ErrorState`, and a toast for every mutation. Every existing screen moves onto the primitives with no new feature. The import boundary of the lint gains `src/components/ui`, and a primitive imports no feature and no app code.
 
@@ -608,7 +631,7 @@ CAUTION: D-320 set this bar at 200 kB of raw JavaScript, and a measurement showe
 
 > *In plain English:* the look and the bones. Buttons, dialogs, menus, and a dark mode that all match, on a layout that works on a phone. Nothing new to do yet, but everything looks and feels like one app.
 
-**PR-16B: The visual pass (D-325, D-326).** 🔧 built 2026-08-29 on branch `pr-16b`.
+**PR-16B: The visual pass (D-325, D-326).** ✅ merged 2026-08-29 (#48).
 PR-16 moved every screen onto the primitives and kept each composition, per D-317. So the system changed and the screens did not, and the app still read as the test bench of PR-11. The owner said so after the merge.
 
 The pass gives the app one type face, Geist, that ships with the build and waits on no network. It adds an elevation scale of three shadows, a wider radius scale, and a reading measure of about 68 characters.
@@ -622,22 +645,61 @@ Gate:
 - The 135 web tests hold. ✅
 - axe passes on every route in both themes. ✅
 - The first paint holds under 130 kB of gzipped JavaScript (D-323). ✅ 116.57 kB, from 116.31 kB. The font is a separate asset of 29.4 kB.
-- The owner reads the app in the browser. ⏳
+- The owner reads the app in the browser. ⏳ the owner merged the slice and reads it next.
 
 > *In plain English:* the app looked like a test bench with a dark mode on it. This makes it look like a product. A real typeface, depth, a chat that reads like a conversation, and a message box where you expect it.
 
-**PR-17: Deck library.**
-A grid of decks with the commander art, the name, the format, the power, the count, the buy cost, and the date. Search by name and commander, filter by format and power, sort by date, name, and cost, and a favorite star. A deck page holds the deck view, the export panel, and the actions: rename, favorite, delete, and share (PR-21). Version history comes from the `revised_from_deck_id` chain, with any two versions side by side and their diff. The grid compares any two decks.
+**PR-17: Deck library.** 🔧 built 2026-08-30 on branch `pr-17`. The owner reads it in the browser, then merges.
+A grid of decks with the name, the commander, the mana pips, the format, the power, the count, the buy cost, and the date. Search by name and commander, filter by format, power, and favorites, and a favorite star. Every filter runs on the server, so a match on a later page still shows.
 
-Contract, additive: `DeckService.UpdateDeck(name, favorite)`, `DeleteDeck`, `Deck.favorite`, and paging with filters on `ListDecks`, flat fields only (D-245).
+Contract, additive: `DeckService.UpdateDeck(name, favorite)`, `DeleteDeck`, `Deck.favorite`, `Deck.card_count`, and paging with filters on `ListDecks` (D-245). The power filter has two fields, because `PowerLevel` is a oneof (D-324). `ListDecks` also takes a `session_id` (D-343).
+
+A deck carries its version history (D-343). A revision turn writes a new deck in the same chat, so the decks of one chat are the versions of one deck. The screen reads them with one `ListDecks` call on the session id, oldest first, and every version keeps its own address. Compare takes any two of them and reads the diff that the revision note already used.
+
+A deck has one screen and one address (D-335). `/decks/<id>` holds the deck, the actions the user owns, and the conversation that built it. `/session/<id>` holds a build with no deck yet, and it hands the reader over the moment a turn ends with a deck. The deck fills the page, and the conversation docks at the bottom left with a History control (D-331). `src/features/workspace` is the one feature with a path to both chat and deck, and the import boundary of the lint carries that rule.
+
+Build in the header asks which cards the deck draws on, and then opens a chat (D-332). A signed-in reader lands there (D-334). The chat screen carries the same choice as a "Build from" picker under its title (D-336). A control in a menu alone is a control a reader does not find.
+
+No chunk of this app loads behind a Suspense boundary (D-338). React holds a committed fallback for 300 ms, and it holds every later reveal with it. A chunk that is already in the browser therefore costs the reader a third of a second. `src/app/deferred.tsx` starts a download and mounts the component the moment the code is here. `src/app/chunks.ts` lists every deferred chunk, and the shell warms them all in the idle time after the first paint (D-339).
+
+The listing filter runs in Go over the rows Firestore returns, not as a Firestore query. One read serves every filter, and no composite index has to exist. A scan cap of 500 rows bounds the read, and a user beyond it needs a search index. The page token carries the offset and a fingerprint of the filter, so a token of another filter is an invalid argument.
 
 Gate:
 
-- Each action round-trips through the API and shows in the grid with no reload.
-- A deleted deck answers `NotFound`.
-- A grid of 100 decks renders under one second.
+- Each action round-trips through the API and shows in the grid with no reload. ✅
+- A deleted deck answers `NotFound`. ✅
+- A grid of 100 decks renders under one second. ⏳ the owner reads it with real decks.
+- The version history lists every deck of one chat, and any two compare. ✅
+- The first paint holds under 130 kB gzipped (D-323). ✅ 116.13 kB, 362.42 kB raw.
+- Content of the landing page shows under 100 ms, measured over the built app. ✅ 44 ms, from 347 ms.
+- The first open of a shell menu costs under 50 ms. ✅ 16 ms, from 323 ms.
 
-> *In plain English:* a home for your decks. Find one fast, name it, star it, throw one away, see how a deck changed over its revisions, and put two side by side.
+CAUTION: this branch carries eight concerns. They are the contract, the Go side, the reference design, and the layout of D-331. They are also the Build menu, the one deck screen, the pool picker, and the speed of the app. Guardrail 10 asks for one. The owner chose to ship it whole (D-344).
+
+> *In plain English:* a home for your decks. Find one fast, name it, star it, throw one away, and talk to the agent about it on the same page. Every revision keeps its own copy, so you can read an earlier one and see what changed.
+
+**PR-17B: The set filter.** 🔧 next, after PR-17 merges.
+A deck can be limited to one set or to several. The request carries the set codes, and every stage reads them: the 99-card shortlist, the commander pool, and the basic lands. A card passes when it holds a paper printing in one of the named sets.
+
+The card data carries the sets. `Card.set_codes` is every paper set the card has a printing in, lowercase, sorted. The index already reads every printing to build `bySetNo`. It collects the codes in that same walk, and it stores no second copy of a printing.
+
+The snapshot of 2026-08-30 holds 117,608 printing rows, and 9,345 of them are digital. It holds 37,557 Oracle cards. A card carries 2.3 sets on average, and the card with the most carries 224. In all, 16,765 cards hold printings in more than one set.
+
+CAUTION: a card does not have one set. Nearly half of them hold printings in two or more, so the field is a list and never a value. A filter that reads one set per card drops a reprint the user owns.
+
+The name a reader gives is not a code. "The Hobbit" names three sets in the snapshot: `hob` The Hobbit, `hoc` The Hobbit Eternal, and `thob` The Hobbit Tokens. The index gains a set table: the set code, the set name, and the release date. The classifier maps the words onto codes, and the app names the sets it applied. Tokens are not playable cards, and the resolver drops a token set.
+
+Contract, additive: `Slots.set_codes`, `ChatRequest.set_codes`, `Card.set_codes`, and `CardService.ListSets`. The catalog gains one row, so the agent asks which sets when the user names one this app can not resolve.
+
+Gate:
+
+- A deck asked for one set holds cards of that set alone, and the check reads `set_codes` of every card of the deck.
+- A commander offer for one set names commanders of that set. The Hobbit set offers Smaug the Impenetrable, Thranduil the Elvenking, and Smaug Wicked Worm, which the owner named on 2026-08-31.
+- A set too thin to build a legal deck ends the turn with a reason, never a deck of another set.
+- A set name the app can not resolve asks the user, and it names the sets it does hold.
+- The index builds in the same time, plus or minus one second, and it holds under 40 MB more.
+
+> *In plain English:* today you can ask for a deck from one set and get cards from anywhere. Nothing checks the set, because the app never recorded which sets a card is in. This adds that record and the filter over it. A card can be in many sets, so the app keeps them all: a reprint still counts. The app also learns the names of the sets, because you say "the Hobbit set" and the data says "hob".
 
 **PR-18: Collection management.**
 The list of collections shows the name, the count, the date, and the active mark, with rename and delete. An upload dialog shows the progress and the import report. A re-upload whose hash differs from the active collection shows the diff first: added, removed, and changed counts, then "Replace". A binder view per collection is a virtualized grid of the cards with art, count, finish, and condition. It has search, filters by color, type, set, and count, and sort by name, price, and count.
@@ -775,10 +837,11 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 16. PR-9 variance. ⏸ out of MVP scope (D-256). It blocks nothing: the Phase 3 gate below reads PR-8's gate.
 17. **GATE.** Phase 3 starts only when PR-8's gate holds on the golden prompts. ✅ held on 2026-08-28, deck gate run 6.
 18. PR-11 ✅ merged 2026-08-28 (#38). PR-12 ✅ merged 2026-08-28 (#40). PR-12B ✅ merged 2026-08-29 (#41). PR-13 ✅ merged 2026-08-29 (#45). Then Phase 3B.
-19. **Phase 3B** (D-316, D-317): PR-16 to PR-23 in the order of the phase list. Each gate holds before the next slice starts. PR-16 ✅ merged 2026-08-29 (#47). PR-16B 🔧 the visual pass, branch `pr-16b`. The paid re-baseline of D-302 runs in parallel, on the owner's word.
-20. PR-15 eval harness. M-5 manual scoring runs on the first UI build (after PR-12).
-21. PR-14 meta, then I-1, I-2, I-3 on evidence.
-22. Phase 5 stays parked.
+19. **Phase 3B** (D-316, D-317): PR-16 to PR-23 in the order of the phase list. Each gate holds before the next slice starts. PR-16 ✅ merged 2026-08-29 (#47). PR-16B ✅ merged 2026-08-29 (#48). PR-17 🔧 built on branch `pr-17`, whole. The owner reads it, then merges. The paid re-baseline of D-302 runs in parallel, on the owner's word.
+20. **PR-17B** the set filter (F-29). It follows the PR-17 merge, and PR-18 follows it.
+21. PR-15 eval harness. M-5 manual scoring runs on the first UI build (after PR-12).
+22. PR-14 meta, then I-1, I-2, I-3 on evidence.
+23. Phase 5 stays parked.
 
 ## 9. Open questions
 
@@ -790,3 +853,4 @@ See `docs/open-questions.md` for the full list with "ask when" dates. The ones t
 4. PR-9's 30% variance number is a placeholder until PR-15 measures it. PR-9 is out of the MVP (D-256), so nothing waits on it.
 5. **OQ-45 the allowlist store.** D-314 allows one env var or one Firestore document. An env var needs a deploy per change, and a document needs an admin write path. PR-22 decides, and the owner confirms. Ask before PR-22.
 6. **OQ-46 the spend cap number.** PR-22 sets a per-user monthly cap from `Usage`. The number is the owner's. Ask before PR-22.
+7. **OQ-47** answered 2026-08-29 (D-324). The deck grid filters by power, and the filter runs on the server.

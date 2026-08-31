@@ -1,6 +1,8 @@
 # The product UI, Phase 3B: the plan behind the roadmap
 
-Status: plan, 2026-08-29. The roadmap holds the entries PR-16 to PR-23 (`docs/design-roadmap.md`, Phase 3B). This document holds the detail: the screens, the components, the contract changes, the deploy shape, and the gates. The owner asked for the roadmap before any code (D-319). Decisions D-310 to D-319 scope the phase.
+Status: plan of 2026-08-29, amended 2026-08-30. The owner gave a reference design on that day. D-328 to D-335 amend the look, the shell, the theme, and the shape of a deck screen. Each amended section says so.
+
+Original status: plan, 2026-08-29. The roadmap holds the entries PR-16 to PR-23 (`docs/design-roadmap.md`, Phase 3B). This document holds the detail: the screens, the components, the contract changes, the deploy shape, and the gates. The owner asked for the roadmap before any code (D-319). Decisions D-310 to D-319 scope the phase.
 
 ## 1. What exists, and why it is not a product
 
@@ -19,8 +21,29 @@ PR-11 to PR-13 built a live-test UI (D-273). It has four screens on plain Tailwi
 | D-316 | Phase 3B before Phase 4. The paid re-baseline runs in parallel. |
 | D-317 | The design system and the shell come first. |
 | D-318 | The sample hand is in. The goldfish simulator stays parked. |
+| D-320 | The bundle gate reads the first-paint chunks. D-323 makes that 130 kB gzipped. |
+| D-321 | A slice adds only the primitives it uses. |
+| D-325 | The message box leaves while the agent works. |
+| D-326 | The screens of PR-16 kept the composition of PR-11, so the app took a visual pass. |
+| D-327 | The five colors were the palette, and dark led. D-329 and D-330 amend it. |
+| D-328 | The shell is one top bar. The sidebar and the phone tab bar go. |
+| D-329 | Gold and purple dress every deck. Color of the game shows in a pip and a rarity dot. |
+| D-330 | Dark is the only theme. |
+| D-331 | A deck owns the page, and the conversation docks at the corner. |
+| D-332 | Build asks which cards the deck draws on, then opens a chat. |
+| D-333 | The binder head sits under the controls, and the buy list opens on request. |
+| D-334 | Build is where a signed-in reader lands. |
+| D-335 | A deck has one screen and one address. |
 
 ## 3. The design system (PR-16)
+
+AMENDED 2026-08-30. The palette, the shell, and the theme of this section changed. The look now follows the owner's reference design (D-328 to D-330).
+
+- Cinzel engraves a heading, Crimson Pro reads a paragraph, and JetBrains Mono carries an id.
+- The palette is navy, gold, and purple, with parchment for text.
+- The radius is 4 px, the shell is one top bar, and dark is the only theme.
+
+The primitives, the tokens file, and the first-paint rules below still hold.
 
 ### 3.1 Primitives
 
@@ -88,6 +111,8 @@ Five things leave the first paint. They are `firebase/auth`, the Connect client,
 
 ## 4. The deck library (PR-17)
 
+AMENDED 2026-08-30. A deck has one screen and one address (D-335). `/decks/<id>` holds the deck, the actions, and the conversation that built it, and the deck page of section 4.1 is that screen. `/session/<id>` holds a build with no deck, and it hands over once a deck exists. The version history and the compare of section 4.1 are the only parts not built.
+
 ### 4.1 Screens
 
 - `/decks`: a grid of deck cards. Each card shows the commander art or the first threat as its image. It shows the name, the format, the power, the count, the buy cost, and the date. Search by name and commander. Filter by format and by power. Sort by date, name, and cost. A favorite star.
@@ -100,6 +125,19 @@ Five things leave the first paint. They are `firebase/auth`, the Connect client,
 - `DeckService.UpdateDeck(deck_id, name, favorite)`: the two mutable fields. `Deck.favorite` is a new additive field.
 - `DeckService.DeleteDeck(deck_id)`: a hard delete of the deck document. The session keeps the id in `deck_ids`, and the chat shows "deck deleted" for it.
 - `ListDecksRequest` gains `page_size`, `page_token`, `format`, `favorite`, and `query`. The list stays flat fields only (D-245).
+
+Built 2026-08-29 on branch `pr-17`, the proto and the Go side. What the build settled:
+
+- `name` and `favorite` on `UpdateDeckRequest` are `optional`, so an unset field stays as it is. An empty name is an invalid argument, and a name takes at most 200 bytes.
+- `favorite` on `ListDecksRequest` is `optional` too. Unset keeps every deck.
+- `Deck` gains `favorite` (21) and `card_count` (22). The list view carries no cards, so it sets `card_count` instead. Today the deck list on screen reads `cards.length` from the list view and always shows zero. The web slice reads `card_count`.
+- The listing filter runs in Go over the rows Firestore returns, not as a Firestore query. One read serves every filter, and no composite index has to exist. A scan cap of 500 rows bounds the read. A user with more decks than that needs a search index, and PR-17 has none.
+- `page_token` carries the offset and a fingerprint of the filter. A token of another filter is an invalid argument, because its offset counts a different list. The default page is 24 decks and the cap is 100.
+- The stored document gains five flat fields: `favorite`, `power_bracket`, `power_sixty_step`, `card_count`, `commander_oracle_ids`, and `commander_names`. A deck written before PR-17 holds none of them and reads them as zero. A rename or a favorite write fills them for that deck.
+- A search by commander reads `commander_names`, which the Put fills from the deck's card list. A commander the card list omits contributes no name, so a search by that commander misses that deck.
+
+- Build in the header is a menu of the collections (D-332), and a signed-in reader lands there (D-334).
+- The power filter runs on the server (D-324). `PowerLevel` is a oneof, so `ListDecksRequest` carries `power_bracket`, 1 to 5, and `power_sixty_step`. A bracket outside the range is an invalid argument.
 
 ### 4.3 Gate
 
@@ -118,6 +156,10 @@ Each action round-trips through the API and shows in the grid without a reload. 
 - `CollectionService.UpdateCollection(collection_id, name)` and `DeleteCollection(collection_id)`.
 - `CollectionService.DiffCollections(a, b)`: the added, removed, and changed entries by Oracle id.
 - `GetCollectionRequest` gains `page_size` and `page_token`. A binder page carries 200 entries.
+
+The head of the collection screen came forward from PR-18 to PR-17, because the screen was a form with nothing on it (D-327). It shows the card count, the unique cards, the rarity spread, and the art of the rarest ten cards.
+
+CAUTION: that head calls `GetCollection`, and the answer carries every entry. The owner's export holds 4,952 rows, so one page load moves about one megabyte. `GetCollectionRequest` gains paging in this slice, and the head reads a page instead.
 
 ### 5.3 Gate
 

@@ -35,6 +35,10 @@ describe("ExportPanel", () => {
   it("shows the buy list with a Scryfall link per card and the upgrades apart (D-308)", async () => {
     const view = render(<ExportPanel deck={deck} byId={byId} />);
     const list = screen.getByRole("region", { name: "Buy list (3)" });
+    // The list is long, so it stays shut until it is asked for. jsdom
+    // keeps the rows reachable inside a closed details, and a browser
+    // does not, so the check reads the element and not the rows.
+    expect(list.querySelector("details")).not.toHaveAttribute("open");
     expect(list).toHaveTextContent("3 × Soul Warden · $1.50");
     expect(within(list).getByRole("link", { name: "Scryfall" })).toHaveAttribute("href", "https://scryfall.com/card/mm3/24");
     expect(screen.getByRole("region", { name: "Upgrades (1)" })).toHaveTextContent("1 × Rhystic Study · $40.00");
@@ -47,12 +51,12 @@ describe("ExportPanel", () => {
     expect(screen.queryByRole("region", { name: /Upgrades/ })).toBeNull();
   });
 
-  it("copies the Arena text from ExportDeck (D-15)", async () => {
+  it("copies the whole deck list from ExportDeck (D-15)", async () => {
     render(<ExportPanel deck={deck} byId={byId} />);
-    await userEvent.click(screen.getByRole("button", { name: "Copy Arena text" }));
+    await userEvent.click(screen.getByRole("button", { name: "Copy deck list" }));
     expect(exportDeck).toHaveBeenCalledWith({ deckId: "d1", format: ExportFormat.ARENA_TEXT });
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith("Deck\n3 Soul Warden (MM3) 24\n");
-    expect(await screen.findByRole("status")).toHaveTextContent("Copied the Arena text: 2 lines.");
+    expect(await screen.findByRole("status")).toHaveTextContent("Copied the deck list: 2 lines.");
   });
 
   it("downloads the buy list under the file name the API gives (D-309)", async () => {
@@ -72,7 +76,7 @@ describe("ExportPanel", () => {
   it("shows an export failure and enables the buttons again", async () => {
     exportDeck.mockRejectedValue(new Error("deck not found"));
     render(<ExportPanel deck={deck} byId={byId} />);
-    const button = screen.getByRole("button", { name: "Copy Arena text" });
+    const button = screen.getByRole("button", { name: "Copy deck list" });
     await userEvent.click(button);
     expect(await screen.findByRole("alert")).toHaveTextContent("Export failed: deck not found");
     expect(button).toBeEnabled();
@@ -80,6 +84,6 @@ describe("ExportPanel", () => {
 
   it("disables the buttons for a deck with no id", () => {
     render(<ExportPanel deck={{ ...deck, id: "" } as Deck} byId={byId} />);
-    expect(screen.getByRole("button", { name: "Copy Arena text" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Copy deck list" })).toBeDisabled();
   });
 });

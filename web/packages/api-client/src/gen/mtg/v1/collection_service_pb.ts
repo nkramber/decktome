@@ -12,7 +12,37 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file mtg/v1/collection_service.proto.
  */
 export const file_mtg_v1_collection_service: GenFile = /*@__PURE__*/
-  fileDesc("Ch9tdGcvdjEvY29sbGVjdGlvbl9zZXJ2aWNlLnByb3RvEgZtdGcudjEiXgoXSW1wb3J0Q29sbGVjdGlvblJlcXVlc3QSDAoEbmFtZRgBIAEoCRIkCgZzb3VyY2UYAiABKA4yFC5tdGcudjEuSW1wb3J0U291cmNlEg8KB2NvbnRlbnQYAyABKAwiaAoYSW1wb3J0Q29sbGVjdGlvblJlc3BvbnNlEiYKCmNvbGxlY3Rpb24YASABKAsyEi5tdGcudjEuQ29sbGVjdGlvbhIkCgZyZXBvcnQYAiABKAsyFC5tdGcudjEuSW1wb3J0UmVwb3J0Ii0KFEdldENvbGxlY3Rpb25SZXF1ZXN0EhUKDWNvbGxlY3Rpb25faWQYASABKAkiPwoVR2V0Q29sbGVjdGlvblJlc3BvbnNlEiYKCmNvbGxlY3Rpb24YASABKAsyEi5tdGcudjEuQ29sbGVjdGlvbiIYChZMaXN0Q29sbGVjdGlvbnNSZXF1ZXN0IkIKF0xpc3RDb2xsZWN0aW9uc1Jlc3BvbnNlEicKC2NvbGxlY3Rpb25zGAEgAygLMhIubXRnLnYxLkNvbGxlY3Rpb24ykgIKEUNvbGxlY3Rpb25TZXJ2aWNlElcKEEltcG9ydENvbGxlY3Rpb24SHy5tdGcudjEuSW1wb3J0Q29sbGVjdGlvblJlcXVlc3QaIC5tdGcudjEuSW1wb3J0Q29sbGVjdGlvblJlc3BvbnNlIgASTgoNR2V0Q29sbGVjdGlvbhIcLm10Zy52MS5HZXRDb2xsZWN0aW9uUmVxdWVzdBodLm10Zy52MS5HZXRDb2xsZWN0aW9uUmVzcG9uc2UiABJUCg9MaXN0Q29sbGVjdGlvbnMSHi5tdGcudjEuTGlzdENvbGxlY3Rpb25zUmVxdWVzdBofLm10Zy52MS5MaXN0Q29sbGVjdGlvbnNSZXNwb25zZSIAQjpaOGdpdGh1Yi5jb20vbmtyYW1iZXIvbXRnLWRlY2stYnVpbGRlci9nby9nZW4vbXRnL3YxO210Z3YxYgZwcm90bzM", [file_mtg_v1_collection]);
+  fileDesc("Ch9tdGcvdjEvY29sbGVjdGlvbl9zZXJ2aWNlLnByb3RvEgZtdGcudjEiMAoXRGVsZXRlQ29sbGVjdGlvblJlcXVlc3QSFQoNY29sbGVjdGlvbl9pZBgBIAEoCSIaChhEZWxldGVDb2xsZWN0aW9uUmVzcG9uc2UiXgoXSW1wb3J0Q29sbGVjdGlvblJlcXVlc3QSDAoEbmFtZRgBIAEoCRIkCgZzb3VyY2UYAiABKA4yFC5tdGcudjEuSW1wb3J0U291cmNlEg8KB2NvbnRlbnQYAyABKAwiaAoYSW1wb3J0Q29sbGVjdGlvblJlc3BvbnNlEiYKCmNvbGxlY3Rpb24YASABKAsyEi5tdGcudjEuQ29sbGVjdGlvbhIkCgZyZXBvcnQYAiABKAsyFC5tdGcudjEuSW1wb3J0UmVwb3J0Ii0KFEdldENvbGxlY3Rpb25SZXF1ZXN0EhUKDWNvbGxlY3Rpb25faWQYASABKAkiPwoVR2V0Q29sbGVjdGlvblJlc3BvbnNlEiYKCmNvbGxlY3Rpb24YASABKAsyEi5tdGcudjEuQ29sbGVjdGlvbiIYChZMaXN0Q29sbGVjdGlvbnNSZXF1ZXN0IkIKF0xpc3RDb2xsZWN0aW9uc1Jlc3BvbnNlEicKC2NvbGxlY3Rpb25zGAEgAygLMhIubXRnLnYxLkNvbGxlY3Rpb24y6wIKEUNvbGxlY3Rpb25TZXJ2aWNlElcKEEltcG9ydENvbGxlY3Rpb24SHy5tdGcudjEuSW1wb3J0Q29sbGVjdGlvblJlcXVlc3QaIC5tdGcudjEuSW1wb3J0Q29sbGVjdGlvblJlc3BvbnNlIgASTgoNR2V0Q29sbGVjdGlvbhIcLm10Zy52MS5HZXRDb2xsZWN0aW9uUmVxdWVzdBodLm10Zy52MS5HZXRDb2xsZWN0aW9uUmVzcG9uc2UiABJUCg9MaXN0Q29sbGVjdGlvbnMSHi5tdGcudjEuTGlzdENvbGxlY3Rpb25zUmVxdWVzdBofLm10Zy52MS5MaXN0Q29sbGVjdGlvbnNSZXNwb25zZSIAElcKEERlbGV0ZUNvbGxlY3Rpb24SHy5tdGcudjEuRGVsZXRlQ29sbGVjdGlvblJlcXVlc3QaIC5tdGcudjEuRGVsZXRlQ29sbGVjdGlvblJlc3BvbnNlIgBCOlo4Z2l0aHViLmNvbS9ua3JhbWJlci9tdGctZGVjay1idWlsZGVyL2dvL2dlbi9tdGcvdjE7bXRndjFiBnByb3RvMw", [file_mtg_v1_collection]);
+
+/**
+ * @generated from message mtg.v1.DeleteCollectionRequest
+ */
+export type DeleteCollectionRequest = Message<"mtg.v1.DeleteCollectionRequest"> & {
+  /**
+   * @generated from field: string collection_id = 1;
+   */
+  collectionId: string;
+};
+
+/**
+ * Describes the message mtg.v1.DeleteCollectionRequest.
+ * Use `create(DeleteCollectionRequestSchema)` to create a new message.
+ */
+export const DeleteCollectionRequestSchema: GenMessage<DeleteCollectionRequest> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_collection_service, 0);
+
+/**
+ * @generated from message mtg.v1.DeleteCollectionResponse
+ */
+export type DeleteCollectionResponse = Message<"mtg.v1.DeleteCollectionResponse"> & {
+};
+
+/**
+ * Describes the message mtg.v1.DeleteCollectionResponse.
+ * Use `create(DeleteCollectionResponseSchema)` to create a new message.
+ */
+export const DeleteCollectionResponseSchema: GenMessage<DeleteCollectionResponse> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_collection_service, 1);
 
 /**
  * @generated from message mtg.v1.ImportCollectionRequest
@@ -41,7 +71,7 @@ export type ImportCollectionRequest = Message<"mtg.v1.ImportCollectionRequest"> 
  * Use `create(ImportCollectionRequestSchema)` to create a new message.
  */
 export const ImportCollectionRequestSchema: GenMessage<ImportCollectionRequest> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_collection_service, 0);
+  messageDesc(file_mtg_v1_collection_service, 2);
 
 /**
  * @generated from message mtg.v1.ImportCollectionResponse
@@ -63,7 +93,7 @@ export type ImportCollectionResponse = Message<"mtg.v1.ImportCollectionResponse"
  * Use `create(ImportCollectionResponseSchema)` to create a new message.
  */
 export const ImportCollectionResponseSchema: GenMessage<ImportCollectionResponse> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_collection_service, 1);
+  messageDesc(file_mtg_v1_collection_service, 3);
 
 /**
  * @generated from message mtg.v1.GetCollectionRequest
@@ -80,7 +110,7 @@ export type GetCollectionRequest = Message<"mtg.v1.GetCollectionRequest"> & {
  * Use `create(GetCollectionRequestSchema)` to create a new message.
  */
 export const GetCollectionRequestSchema: GenMessage<GetCollectionRequest> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_collection_service, 2);
+  messageDesc(file_mtg_v1_collection_service, 4);
 
 /**
  * @generated from message mtg.v1.GetCollectionResponse
@@ -97,7 +127,7 @@ export type GetCollectionResponse = Message<"mtg.v1.GetCollectionResponse"> & {
  * Use `create(GetCollectionResponseSchema)` to create a new message.
  */
 export const GetCollectionResponseSchema: GenMessage<GetCollectionResponse> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_collection_service, 3);
+  messageDesc(file_mtg_v1_collection_service, 5);
 
 /**
  * @generated from message mtg.v1.ListCollectionsRequest
@@ -110,7 +140,7 @@ export type ListCollectionsRequest = Message<"mtg.v1.ListCollectionsRequest"> & 
  * Use `create(ListCollectionsRequestSchema)` to create a new message.
  */
 export const ListCollectionsRequestSchema: GenMessage<ListCollectionsRequest> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_collection_service, 4);
+  messageDesc(file_mtg_v1_collection_service, 6);
 
 /**
  * @generated from message mtg.v1.ListCollectionsResponse
@@ -129,7 +159,7 @@ export type ListCollectionsResponse = Message<"mtg.v1.ListCollectionsResponse"> 
  * Use `create(ListCollectionsResponseSchema)` to create a new message.
  */
 export const ListCollectionsResponseSchema: GenMessage<ListCollectionsResponse> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_collection_service, 5);
+  messageDesc(file_mtg_v1_collection_service, 7);
 
 /**
  * CollectionService imports and reads the user's collections (roadmap PR-4).
@@ -163,6 +193,18 @@ export const CollectionService: GenService<{
     methodKind: "unary";
     input: typeof ListCollectionsRequestSchema;
     output: typeof ListCollectionsResponseSchema;
+  },
+  /**
+   * DeleteCollection removes one collection for good (D-347). A deck
+   * built from it keeps every card. Its chat builds from the whole card
+   * database from then on, and it says so.
+   *
+   * @generated from rpc mtg.v1.CollectionService.DeleteCollection
+   */
+  deleteCollection: {
+    methodKind: "unary";
+    input: typeof DeleteCollectionRequestSchema;
+    output: typeof DeleteCollectionResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_mtg_v1_collection_service, 0);

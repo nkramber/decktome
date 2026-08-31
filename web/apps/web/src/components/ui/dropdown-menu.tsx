@@ -15,7 +15,7 @@ export function DropdownMenuContent({ className, sideOffset = 6, ...props }: Com
         data-slot="dropdown-menu-content"
         sideOffset={sideOffset}
         className={cn(
-          "z-50 min-w-40 overflow-hidden rounded-card border border-border bg-surface p-1.5 text-surface-foreground shadow-overlay",
+          "z-50 min-w-40 overflow-hidden rounded-card border border-border bg-card p-1.5 text-card-foreground shadow-overlay",
           "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0",
           className,
         )}

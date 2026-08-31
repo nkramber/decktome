@@ -1,7 +1,7 @@
 import { Code, ConnectError } from "@connectrpc/connect";
 import type { AgentError, ChatResponse } from "@mtg/api-client/mtg/v1/agent_service_pb";
 import type { Deck } from "@mtg/api-client/mtg/v1/deck_pb";
-import type { Answer, Question, Session, Slots, Usage } from "@mtg/api-client/mtg/v1/session_pb";
+import { type Answer, PoolRule, type Question, type Session, type Slots, type Usage } from "@mtg/api-client/mtg/v1/session_pb";
 import type { Timestamp } from "@bufbuild/protobuf/wkt";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -149,7 +149,7 @@ export type SendResult = { ok: boolean; restored: Question[] };
 // The session id and the collection id live in refs, so a send that
 // starts before React commits the session_started event still carries
 // the right id, and the collection goes with the first message only.
-export function useChat(initial: ChatState, collectionId: string, onSessionStarted?: (id: string) => void) {
+export function useChat(initial: ChatState, collectionId: string, poolRule: PoolRule, onSessionStarted?: (id: string) => void) {
   const [state, setState] = useState<ChatState>(initial);
   // latest mirrors the committed state, so a send that fails before the
   // first render still knows which questions it took off the open list.
@@ -201,7 +201,15 @@ export function useChat(initial: ChatState, collectionId: string, onSessionStart
       });
       try {
         const stream = agentClient.chat(
-          { sessionId: sessionId.current, collectionId: sessionId.current === "" ? collectionId : "", message, answers },
+          {
+            sessionId: sessionId.current,
+            collectionId: sessionId.current === "" ? collectionId : "",
+            // The pool rule goes with the first message alone. A stored
+            // session holds its own rule (D-359).
+            poolRule: sessionId.current === "" ? poolRule : PoolRule.UNSPECIFIED,
+            message,
+            answers,
+          },
           { signal: controller.signal },
         );
         for await (const res of stream) {
@@ -229,7 +237,7 @@ export function useChat(initial: ChatState, collectionId: string, onSessionStart
       }
       return { ok: ok && !controller.signal.aborted, restored: ok ? [] : answeredQuestions };
     },
-    [collectionId, update],
+    [collectionId, poolRule, update],
   );
 
   return { state, send, stop };

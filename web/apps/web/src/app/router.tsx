@@ -1,8 +1,10 @@
-import { lazy, Suspense, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { createBrowserRouter, createMemoryRouter, type RouteObject } from "react-router";
 
 import { RequireAuth, RootRedirect } from "../features/auth/require-auth";
+import { collectionChunk, decksChunk, deckScreenChunk, sessionChunk, signInChunk } from "./chunks";
 import { PageFallback } from "./components/page-fallback";
+import type { Deferred } from "./deferred";
 import { Layout } from "./layout";
 import { RouteError } from "./route-error";
 
@@ -10,13 +12,24 @@ import { RouteError } from "./route-error";
 // shell alone. The Connect clients and the generated code ride with the
 // first page that needs them, not with the shell. The shell and the route
 // guard stay eager, so a redirect needs no download.
-const SignInPage = lazy(async () => ({ default: (await import("../features/auth/sign-in-page")).SignInPage }));
-const CollectionPage = lazy(async () => ({ default: (await import("../features/collection/collection-page")).CollectionPage }));
-const SessionPage = lazy(async () => ({ default: (await import("../features/chat/session-page")).SessionPage }));
-const DecksPage = lazy(async () => ({ default: (await import("../features/deck/decks-page")).DecksPage }));
-
-function page(node: ReactNode) {
-  return <Suspense fallback={<PageFallback />}>{node}</Suspense>;
+//
+// A page renders with no Suspense boundary. React holds a committed
+// fallback for 300 ms, and a page whose chunk is already here must not
+// pay it. See `deferred.ts`.
+function page(chunk: Deferred<object>): ReactNode {
+  const Mount = chunk.Mount;
+  function Page() {
+    // The download starts with the first render of the route, not at the
+    // idle warm-up, so a link typed into the address bar waits for
+    // nothing else.
+    chunk.preload();
+    // A download that fails leaves the reader with a skeleton and no way
+    // out, so the failure goes to the error element of the layout.
+    const failure = chunk.useError();
+    if (failure) throw failure;
+    return <Mount fallback={<PageFallback />} />;
+  }
+  return <Page />;
 }
 
 export function appRoutes(extra: RouteObject[] = []): RouteObject[] {
@@ -26,13 +39,14 @@ export function appRoutes(extra: RouteObject[] = []): RouteObject[] {
       errorElement: <RouteError />,
       children: [
         { path: "/", element: <RootRedirect /> },
-        { path: "/sign-in", element: page(<SignInPage />) },
+        { path: "/sign-in", element: page(signInChunk) },
         {
           element: <RequireAuth />,
           children: [
-            { path: "/collection", element: page(<CollectionPage />) },
-            { path: "/session/:id", element: page(<SessionPage />) },
-            { path: "/decks", element: page(<DecksPage />) },
+            { path: "/collection", element: page(collectionChunk) },
+            { path: "/session/:id", element: page(sessionChunk) },
+            { path: "/decks", element: page(decksChunk) },
+            { path: "/decks/:id", element: page(deckScreenChunk) },
             ...extra,
           ],
         },

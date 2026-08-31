@@ -1,11 +1,22 @@
 import { ImportSource } from "@mtg/api-client/mtg/v1/collection_pb";
 import type { ImportCollectionResponse } from "@mtg/api-client/mtg/v1/collection_service_pb";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BookOpenIcon } from "lucide-react";
-import { type FormEvent, useState } from "react";
-import { useNavigate } from "react-router";
+import { BookOpenIcon, PackageIcon, Trash2Icon } from "lucide-react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router";
 
 import { EmptyState } from "../../app/components/empty-state";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "../../components/ui/alert-dialog";
 import { ErrorState } from "../../app/components/error-state";
 import { notify } from "../../app/components/notify";
 import { PageHeader } from "../../app/components/page-header";
@@ -19,12 +30,15 @@ import { cn } from "../../lib/cn";
 import { errorMessage } from "../../lib/errors";
 import { maxUploadBytes } from "../../lib/limits";
 import { useAppStore } from "../../lib/store";
+import { CollectionHero } from "./collection-hero";
 import { ImportResult } from "./import-result";
+import { useCollection } from "./use-collection";
 
 // The collection screen (ui plan, step 2). Upload a ManaBox CSV, or skip and
 // build from any card (D-37). Earlier uploads come from ListCollections.
 export function CollectionPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const collectionId = useAppStore((s) => s.collectionId);
   const setCollection = useAppStore((s) => s.setCollection);
@@ -33,12 +47,39 @@ export function CollectionPage() {
   const [file, setFile] = useState<File | null>(null);
   // fileKey remounts the file input, which is the one way to empty it.
   const [fileKey, setFileKey] = useState(0);
+  const fileInput = useRef<HTMLInputElement>(null);
   const [name, setName] = useState("");
+  const [dragOver, setDragOver] = useState(false);
   const [result, setResult] = useState<ImportCollectionResponse | null>(null);
 
   const list = useQuery({
     queryKey: ["collections"],
     queryFn: () => collectionClient.listCollections({}),
+  });
+
+  // "Add a collection" in the Build menu and in the pool picker sends the
+  // reader here to pick a file, so the file dialog opens on arrival. The
+  // history entry drops the mark first, so a reload opens no dialog.
+  const askForFile = (location.state as { pickFile?: boolean } | null)?.pickFile === true;
+  useEffect(() => {
+    if (!askForFile) return;
+    navigate(location.pathname, { replace: true, state: null });
+    fileInput.current?.click();
+  }, [askForFile, navigate, location.pathname]);
+
+  // Deleting a collection is for good (D-347). A deck built from it keeps
+  // every card. Its chat builds from the whole card database from then
+  // on, and the chat says so on its next turn.
+  const removeCollection = useMutation({
+    mutationFn: (id: string) => collectionClient.deleteCollection({ collectionId: id }),
+    onSuccess: (_res, id) => {
+      if (id === collectionId) clearCollection();
+      setResult(null);
+      void notify("success", "Collection deleted", "A deck built from it keeps its cards.");
+      void queryClient.invalidateQueries({ queryKey: ["collections"] });
+      void queryClient.invalidateQueries({ queryKey: ["collection", id] });
+    },
+    onError: (err) => void notify("error", "Could not delete the collection", errorMessage(err)),
   });
 
   const upload = useMutation({
@@ -87,11 +128,16 @@ export function CollectionPage() {
 
   const collections = list.data?.collections ?? [];
   const active = collections.find((c) => c.id === collectionId) ?? result?.collection;
+  // The binder of the active collection, for the head of the screen. It
+  // loads once, and no other screen needs it (D-327).
+  const binder = useCollection(collectionId);
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-6 p-4 md:p-6">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 md:p-6">
       <PageHeader title="Your collection" description="Upload a ManaBox export, or skip it and build from any card." />
 
+
+      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
       <form onSubmit={onSubmit}>
         <Card>
           <CardHeader>
@@ -99,8 +145,33 @@ export function CollectionPage() {
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="file">ManaBox CSV file</Label>
-              <Input key={fileKey} id="file" type="file" name="file" accept=".csv,text/csv" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+              <Label htmlFor="file" className="sr-only">
+                ManaBox CSV file
+              </Label>
+              {/* The drop zone is the label of the file input, so a click
+                  and a drop both reach the one control. */}
+              <label
+                htmlFor="file"
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragOver(true);
+                }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragOver(false);
+                  setFile(e.dataTransfer.files?.[0] ?? null);
+                }}
+                className={cn(
+                  "flex cursor-pointer flex-col items-center gap-1.5 rounded-card border-2 border-dashed px-6 py-10 text-center transition-colors",
+                  dragOver ? "border-primary bg-secondary" : "border-border hover:border-accent hover:bg-muted",
+                )}
+              >
+                <PackageIcon className="size-7 text-primary" aria-hidden="true" />
+                <span className="font-display text-[15px]">{file ? file.name : "Drop your ManaBox export here"}</span>
+                <span className="font-mono text-[11px] text-muted-foreground">.csv — or click to browse</span>
+              </label>
+              <Input key={fileKey} ref={fileInput} id="file" type="file" name="file" accept=".csv,text/csv" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="sr-only" />
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="name">Collection name (optional, defaults to the file name)</Label>
@@ -131,10 +202,8 @@ export function CollectionPage() {
         </Card>
       </form>
 
-      {result && <ImportResult result={result} />}
-
       <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium">Earlier uploads</h2>
+        <h2 className="font-display text-lg font-semibold">Earlier uploads</h2>
         {list.isPending && (
           <div role="status" className="flex flex-col gap-2">
             <span className="sr-only">Loading collections...</span>
@@ -170,25 +239,55 @@ export function CollectionPage() {
                     {c.cardCount} cards
                     {c.importedAt?.seconds ? `, imported ${new Date(Number(c.importedAt.seconds) * 1000).toLocaleDateString()}` : null}
                   </span>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" aria-label={`Delete ${c.name}`} className="ml-auto size-7 text-danger hover:text-danger">
+                        <Trash2Icon aria-hidden="true" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete {c.name}?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This can not be undone. Every deck you built from it keeps all of its cards. The chat of each one builds from the whole card database from
+                          now on, and it says so.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Keep it</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => removeCollection.mutate(c.id)}>Delete the collection</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </li>
               );
             })}
           </ul>
         )}
       </section>
+      </div>
+
+      {result && <ImportResult result={result} />}
 
       <Card>
         <CardContent className="flex flex-wrap items-center gap-4">
           <p data-testid="active-collection" className="grow text-sm">
             {collectionId && active
               ? `Active collection: ${active.name} (${active.cardCount} cards). The agent uses only these cards.`
-              : collectionId
-                ? `Active collection: ${collectionId}.`
-                : "No active collection. The agent builds from any card (D-37)."}
+              : collectionId && !list.isSuccess
+                ? "Active collection: loading..."
+                : collectionId
+                  ? "That collection is gone. Pick another, or upload one."
+                  : "No active collection. The agent builds from any card."}
           </p>
           <Button onClick={() => navigate("/session/new")}>Continue to chat</Button>
         </CardContent>
       </Card>
+
+      {/* The binder sits under the controls, not over them. A click on an
+          earlier upload shows or hides it, and nothing above it moves. */}
+      {binder.data?.collection && <CollectionHero collection={binder.data.collection} loading={binder.isPending} />}
+      {collectionId !== "" && binder.isPending && <Skeleton className="h-56 w-full rounded-card" />}
     </div>
   );
 }

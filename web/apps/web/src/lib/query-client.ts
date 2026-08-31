@@ -4,6 +4,8 @@ import { QueryClient } from "@tanstack/react-query";
 // not retry by itself, so an auth error shows at once instead of after three tries.
 export function makeQueryClient(): QueryClient {
   return new QueryClient({
-    defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } },
+    // A short stale window keeps a return to a page instant. A mutation
+    // invalidates its key, so a change still shows at once.
+    defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false, staleTime: 30_000 } },
   });
 }

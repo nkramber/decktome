@@ -73,6 +73,11 @@ type Result struct {
 	Invented int
 	// Coverage is the session's M-4 report after this turn.
 	Coverage Coverage
+	// ChoseCommander is true when the pool offered no commander this turn
+	// and the agent took the choice under D-127. The turn then asks
+	// nothing about the commander, and the reader must be told why
+	// (D-366).
+	ChoseCommander bool
 }
 
 // Turn maps one user message onto the slots and returns the next
@@ -85,11 +90,13 @@ func (a *Agent) Turn(ctx context.Context, st *State, message string, acc *llm.Ac
 		return Result{}, err
 	}
 	a.readFacts(st)
+	// The mark is of this turn alone (D-366).
+	st.Ctx.ChoseCommander = false
 	rows, resolved := a.plan(st, UserWords(message))
 	if len(rows) == 0 {
 		// The classify call may have closed a key, so the M-4 report
 		// changes even on a turn that asks nothing.
-		return Result{Slots: st.Slots, Ready: st.Ready(a.cat), Coverage: st.Metrics()}, nil
+		return Result{Slots: st.Slots, Ready: st.Ready(a.cat), Coverage: st.Metrics(), ChoseCommander: st.Ctx.ChoseCommander}, nil
 	}
 	chosen, err := a.choose(ctx, st, message, rows, resolved.text, acc)
 	if err != nil {
@@ -193,6 +200,9 @@ func (a *Agent) plan(st *State, message string) ([]Row, resolvedRows) {
 		if len(commanderKeysIn(r.Text)) > 0 && len(names) == 0 {
 			a.log.Info("no commander to offer, so the agent chooses",
 				"session", st.SessionID, "row", r.ID)
+			// The reader hears about this. A refusal of the names on the
+			// table that is answered with silence reads as a bug (D-366).
+			st.Ctx.ChoseCommander = true
 			st.Skip(r.StateKey())
 			// The agent has taken the choice, so the slot is settled too, and
 			// the session must not report ready with the commander never asked
@@ -307,7 +317,7 @@ func (a *Agent) send(ctx context.Context, st *State, message string, chosen []ch
 			return Result{}, err
 		}
 	}
-	res := Result{Slots: st.Slots}
+	res := Result{Slots: st.Slots, ChoseCommander: st.Ctx.ChoseCommander}
 	for _, c := range chosen {
 		st.AskCount++
 		q := &mtgv1.Question{
@@ -1102,6 +1112,16 @@ func (a *Agent) apply(st *State, out classifyOut, open []string, message string)
 	a.applyColors(st, out)
 	a.applyNames(st, out)
 	if rule, ok := poolRules[slotWord(out.PoolRule)]; ok {
+		// An owned rule needs a collection. A reader with none who says
+		// "build only from the Hobbit set" names a set, not their
+		// library, and the classifier reads the word "only" as ownership.
+		// The rule then empties the card pool and the commander pool, and
+		// the deck can not be built at all (D-371).
+		if rule != mtgv1.PoolRule_POOL_RULE_ANY_CARD && !st.Ctx.HasCollection {
+			a.log.Info("an owned pool rule needs a collection, and this session has none",
+				"session", st.SessionID, "rule", rule)
+			rule = mtgv1.PoolRule_POOL_RULE_ANY_CARD
+		}
 		st.Slots.PoolRule = rule
 		st.Close("pool_rule")
 	}

@@ -8,8 +8,8 @@ export function Input({ className, type, ...props }: ComponentProps<"input">) {
       type={type}
       data-slot="input"
       className={cn(
-        "flex h-9 w-full min-w-0 rounded-lg border border-border bg-background px-3 py-1 text-base shadow-card transition-colors placeholder:text-muted-foreground hover:border-foreground/20 focus-visible:border-accent/60 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
-        "file:mr-3 file:h-7 file:rounded-md file:border-0 file:bg-muted file:px-3 file:text-sm file:font-medium file:text-foreground",
+        "flex h-9 w-full min-w-0 rounded-card border border-border bg-secondary px-3 py-1 text-[15px] transition-colors outline-none placeholder:text-muted-foreground focus:border-primary disabled:cursor-not-allowed disabled:opacity-50",
+        "file:mr-3 file:h-7 file:rounded-card file:border file:border-border file:bg-muted file:px-3 file:text-xs file:tracking-widest file:text-secondary-foreground file:uppercase",
         "aria-invalid:border-danger",
         className,
       )}

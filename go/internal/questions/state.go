@@ -1,6 +1,7 @@
 package questions
 
 import (
+	"sort"
 	"strings"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
@@ -461,6 +462,26 @@ func (s *State) RetireOutstanding(c *Catalog) {
 		}
 	}
 	s.Ctx.Outstanding = map[string]string{}
+}
+
+// CloseStalled closes every question that is out, with no value (D-351).
+// It is the way out of a dead conversation: a turn that asks nothing new
+// and is not ready can never move again, because the agent does not
+// repeat a question it already asked. The slot takes the skipped state,
+// not the asked state, so no later turn offers it again.
+//
+// It returns the keys it closed, for the log and for the reader.
+func (s *State) CloseStalled() []string {
+	var closed []string
+	for key, state := range s.Slots.GetSlotStates() {
+		if state == mtgv1.SlotState_SLOT_STATE_ASKED {
+			s.Slots.SlotStates[key] = mtgv1.SlotState_SLOT_STATE_SKIPPED
+			closed = append(closed, key)
+		}
+	}
+	sort.Strings(closed)
+	s.Ctx.Outstanding = map[string]string{}
+	return closed
 }
 
 // AddWords keeps every word the user has written. The routing rules and

@@ -94,17 +94,17 @@ PY
 
 ### 6. Test it in the browser
 
-The web app is the front door of the product. Open http://localhost:5180 while `make dev` runs. It shows the sign-in form, and the API health line sits in the footer. This is what works today, and what does not. The roadmap slices are PR-11 and PR-12 (`docs/reference/ui-plan-2026-08-28.md`).
+The web app is the front door of the product. Open http://localhost:5180 while `make dev` runs. The card-data line sits in the footer of every screen. This is what works today (Phase 3B, PR-16 to PR-17).
 
-1. Sign in. The form runs over the Firebase Auth emulator, so any email and password work. Click "Create account" the first time. The account survives a restart of `make dev`, because the emulator exports its users to `.local/firestore` at exit.
-2. Upload a collection, or skip. Choose a ManaBox CSV export. `go/internal/collections/testdata/manabox_collection.csv` is a real one with 2,548 rows. The screen shows the card count, the rows that did not resolve, and the reason for each. Earlier uploads appear as a list, and one of them is the active collection. "Skip, build from any card" clears the active collection (D-37).
-3. Continue to chat. Write what you want, for example "a mono-green Commander deck around elves", and press Enter. The agent streams its questions. Click an option, or type an answer in the field under each question, then click "Submit answers". A commander offer shows each card image with a pick button (D-291). The button waits until every open question has an answer. The message box hides while the agent works and while a question waits. "Stop" ends a turn that hangs. The status line says when the build runs, and the spend line shows the session cost (M-1).
-4. Read the deck. It opens beside the thread after the agent builds one. The cards group by role, and each card tile shows the full image and no caption (D-290). A double-faced card shows both faces. An owned card carries a mark, and a card to buy shows its price. The findings, the legality date, the mana curve, and the color sources sit above the cards.
-5. Export the deck. The "Export" panel under the deck header copies or downloads the Arena text, which ManaBox imports (D-15, D-307). It copies or downloads the buy list as text for a shop's mass-entry form (D-309). The buy list on screen names each card to buy, with its price and a Scryfall link (D-308). The upgrades show under their own heading.
-6. Open "Decks". The list reads `DeckService.ListDecks`. "View" opens a deck in place. The session link returns to its chat, and a reload of the chat rebuilds the thread from the stored session.
-7. Read the footer. It shows the API status and the date of the card snapshot. "Card data: not loaded yet" means step 4 above did not run.
-
-After the deck, write what you want changed, for example "no 6 or 7 mana cards". The agent answers in words. Then it asks a question when the request is unclear, revises the deck when it is clear, or says why it made no change (D-283, D-284). The deck view shows what changed. A change to a setting, for example the format or the bracket, builds the deck again from the start.
+1. Sign in. The form runs over the Firebase Auth emulator, so any email and password work. Click "Create account" the first time. The account lives in the emulator and goes when it stops.
+2. You land on Build. A signed-in reader starts at the chat, because that is what the app is for (D-334).
+3. Add a collection, or skip it. Open "Collection" and drop a ManaBox CSV export on the zone. `go/internal/collections/testdata/manabox_collection.csv` is a real one. The head of the screen then shows the count, the unique cards, and the rarity spread.
+4. Pick the pool. "Build" in the header opens a menu of your collections. Choose one, or choose "Any card" (D-332).
+5. Write what you want, for example "a mono-green Commander deck around elves", and press Enter. The agent streams its questions, and the message box leaves while it works (D-325).
+6. Read the deck. The moment a deck exists, the app moves to its own address, `/decks/<id>` (D-335). The deck fills the page, and the conversation docks at the bottom left. "History" opens the thread over it.
+7. Use the deck. Rename it, star it, or delete it from the row above the deck. The export panel under the deck copies or downloads the Arena text, which ManaBox imports (D-15, D-307). The buy list opens on request.
+8. Ask for a change. Write "no 6 or 7 mana cards" in the dock. The agent answers in words, and a new deck moves you to its address (PR-12B).
+9. Open "Decks". The library reads `DeckService.ListDecks`. Search by name or commander, and filter by format, power, or favorites.
 
 A chat turn calls the real providers and spends money, at the rates of `docs/SESSION-HANDOFF.md`. The card images come from the Scryfall CDN, so the deck view needs the internet.
 

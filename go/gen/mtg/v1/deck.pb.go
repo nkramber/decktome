@@ -193,7 +193,14 @@ type Deck struct {
 	// revision_note is the reply the user read with the revision: what
 	// changed, and what the agent declined and why (D-284). Built from the
 	// diff, not from the model.
-	RevisionNote  string `protobuf:"bytes,20,opt,name=revision_note,json=revisionNote,proto3" json:"revision_note,omitempty"`
+	RevisionNote string `protobuf:"bytes,20,opt,name=revision_note,json=revisionNote,proto3" json:"revision_note,omitempty"`
+	// favorite marks a deck the user starred in the library (PR-17).
+	// UpdateDeck is the one writer.
+	Favorite bool `protobuf:"varint,21,opt,name=favorite,proto3" json:"favorite,omitempty"`
+	// card_count sums count over cards, the main deck alone. The list view
+	// of ListDecks carries no cards, so it sets this field instead
+	// (PR-17). GetDeck reads the whole deck, and its cards are the source.
+	CardCount     int32 `protobuf:"varint,22,opt,name=card_count,json=cardCount,proto3" json:"card_count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -359,6 +366,20 @@ func (x *Deck) GetRevisionNote() string {
 		return x.RevisionNote
 	}
 	return ""
+}
+
+func (x *Deck) GetFavorite() bool {
+	if x != nil {
+		return x.Favorite
+	}
+	return false
+}
+
+func (x *Deck) GetCardCount() int32 {
+	if x != nil {
+		return x.CardCount
+	}
+	return 0
 }
 
 // DeckCard is one card choice with its reason.
@@ -637,7 +658,7 @@ var File_mtg_v1_deck_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\n" +
-	"\x11mtg/v1/deck.proto\x12\x06mtg.v1\x1a\x11mtg/v1/card.proto\x1a\x13mtg/v1/format.proto\x1a\x14mtg/v1/session.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xfc\x05\n" +
+	"\x11mtg/v1/deck.proto\x12\x06mtg.v1\x1a\x11mtg/v1/card.proto\x1a\x13mtg/v1/format.proto\x1a\x14mtg/v1/session.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xb7\x06\n" +
 	"\x04Deck\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12&\n" +
@@ -662,7 +683,10 @@ const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\fbuy_cost_usd\x18\x12 \x01(\x01R\n" +
 	"buyCostUsd\x12/\n" +
 	"\x14revised_from_deck_id\x18\x13 \x01(\tR\x11revisedFromDeckId\x12#\n" +
-	"\rrevision_note\x18\x14 \x01(\tR\frevisionNoteJ\x04\b\n" +
+	"\rrevision_note\x18\x14 \x01(\tR\frevisionNote\x12\x1a\n" +
+	"\bfavorite\x18\x15 \x01(\bR\bfavorite\x12\x1d\n" +
+	"\n" +
+	"card_count\x18\x16 \x01(\x05R\tcardCountJ\x04\b\n" +
 	"\x10\vR\x04seed\"\x9c\x02\n" +
 	"\bDeckCard\x12\x1b\n" +
 	"\toracle_id\x18\x01 \x01(\tR\boracleId\x12\x12\n" +
