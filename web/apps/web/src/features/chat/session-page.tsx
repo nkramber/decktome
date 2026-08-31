@@ -409,7 +409,7 @@ export function ChatPanel({
           <span aria-hidden="true">·</span>
           <span data-testid="usage">
             Session spend: {state.usage.calls} calls, {String(state.usage.inputTokens)} in, {String(state.usage.outputTokens)} out,{" "}
-            {state.usage.priced ? `$${state.usage.costUsd.toFixed(4)}` : "cost unknown"} (M-1).
+            {state.usage.priced ? `$${state.usage.costUsd.toFixed(4)}` : "cost unknown"}.
           </span>
         </>
       )}

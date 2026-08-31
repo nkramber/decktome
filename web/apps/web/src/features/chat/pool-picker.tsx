@@ -37,7 +37,11 @@ export function PoolPicker() {
 
   function choose(value: string) {
     if (value === addValue) {
-      void navigate("/collection");
+      // The reader asked for a new collection, so the old one is not the
+      // answer. A cancelled file dialog therefore leaves no collection
+      // active, and the upload screen opens its file dialog at once.
+      clearCollection();
+      void navigate("/collection", { state: { pickFile: true } });
       return;
     }
     if (value === "") clearCollection();

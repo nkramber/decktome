@@ -14,7 +14,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 - The revise gate held on run 2 (D-296). The paid gates did not run since 2026-08-28.
 - PR-9 is out of the MVP (D-256). Phase 3B comes before Phase 4 (D-316).
 
-CAUTION: branch `pr-17` carries six concerns. They are the contract, the Go side, the reference design, the layout of D-331, the Build menu, and the one deck screen. Guardrail 10 asks for one per pull request. A split before the merge needs the owner's word.
+CAUTION: branch `pr-17` carries eight concerns. They are the contract, the Go side, the reference design, and the layout of D-331. They are also the Build menu, the one deck screen, the pool picker, and the speed of the app. Guardrail 10 asks for one. The owner chose to ship it whole (D-344).
 
 ## The numbers, and why none of them compare with `main` now
 
@@ -77,6 +77,7 @@ The web side, in one list:
 - Build in the header is a menu of the collections (D-332), and a signed-in reader lands there (D-334).
 - The look of the reference design: three faces, the navy and gold palette, one top bar, dark alone.
 - A "Build from" picker sits under the title of a new chat (D-336). It names the pool, and it changes it without a trip to another page.
+- The deck screen carries the version history and the compare (D-343). The decks of one chat are the versions of one deck.
 
 CAUTION: no chunk of this app loads behind a Suspense boundary (D-338). React holds a committed fallback for 300 ms, and it holds every later reveal with it. `src/app/deferred.tsx` replaces `React.lazy` everywhere. Do not put `React.lazy` back.
 
@@ -85,7 +86,7 @@ The Go side, in one list:
 
 - `DeckService.UpdateDeck` writes the name and the favorite mark, and `DeleteDeck` removes a deck for good. Both are additive, and `buf breaking` passes.
 - `Deck.favorite` and `Deck.card_count` are new. The list view carries no cards, so it sets `card_count`. The deck list on screen reads `cards.length` today and always shows zero.
-- `ListDecks` takes `page_size`, `page_token`, `format`, `favorite`, `query`, `power_bracket`, and `power_sixty_step` (D-324).
+- `ListDecks` takes `page_size`, `page_token`, `format`, `favorite`, `query`, `power_bracket`, `power_sixty_step` (D-324), and `session_id` (D-343).
 - The filter runs in Go over the rows Firestore returns, not as a query. One read serves every filter, and no composite index has to exist. The scan cap is 500 rows.
 - The stored document gains six flat fields. A deck written before PR-17 reads them as zero, and a rename fills them.
 - `internal/decks/filter_test.go` is new, and the emulator tests cover Update, Delete, and the filter. `make store-check` passes.
@@ -143,12 +144,12 @@ CAUTION: the binder head calls `GetCollection`, and the answer carries every ent
 
 ## Next steps, in order
 
-1. The owner reads `pr-17` in the browser and says whether the look and the one deck screen are right.
-2. The owner says whether to split `pr-17` before the merge. Six concerns sit on it.
-3. Finish PR-17: the version history from the `revised_from_deck_id` chain, and the compare of two decks.
-4. The owner runs the question gate and the deck gate to re-baseline (D-302), in parallel. Ask before each run. Write each to a new `GATE_OUT` file (D-65). Record the numbers here and in the roadmap.
-5. Then PR-18 to PR-23 in order, one gate each. Before PR-22, ask OQ-45 and OQ-46.
-6. After Phase 3B: PR-15, then PR-14.
+1. The owner reads `pr-17` in the browser, then merges it. PR-17 is whole (D-344). The one gate line the owner still owns is a grid of 100 real decks under one second.
+2. The owner runs the question gate and the deck gate to re-baseline (D-302), in parallel. Ask before each run. Write each to a new `GATE_OUT` file (D-65). Record the numbers here and in the roadmap.
+3. Then PR-18 to PR-23 in order, one gate each. Before PR-22, ask OQ-45 and OQ-46.
+4. After Phase 3B: PR-15, then PR-14.
+
+CAUTION: `pr-17` carries eight concerns on one branch, and guardrail 10 asks for one. The owner chose to ship it whole (D-344). Read the branch as one slice, not as eight.
 
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 

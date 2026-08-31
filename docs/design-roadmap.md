@@ -8,6 +8,7 @@ Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/
 
 2026-08-30 correction pass 35 (the reference design and the one deck screen, D-328 to D-335): the owner gave a reference design, and it settles the look. Three faces, a navy and gold palette, one top bar, and dark alone. The identity wash of D-327 left, and the color of the game now shows in a mana pip and a rarity dot. A deck has one screen and one address. Changes: Phase 3B, PR-16, PR-16B, PR-17, sequencing step 19.
 2026-08-30 correction pass 36 (the collection picker and the speed of the app, D-336 to D-340): the pool lived in the header menu alone, and the owner did not find it. A "Build from" picker now sits on the chat screen. No screen shows a decision id or a Firestore id. No chunk loads behind a Suspense boundary. React holds a committed fallback for 300 ms. Content on the landing page went from 347 ms to 44 ms. The first open of the Build menu went from 323 ms to 16 ms. Changes: PR-17.
+2026-08-30 correction pass 37 (the version history and the compare, D-343): the last two items of PR-17. The decks of one chat are the versions of one deck, so `ListDecks` takes a session id and the deck screen reads its own history. Any two versions compare with the diff the revision note already used. Changes: PR-17, sequencing step 19.
 
 2026-08-29 correction pass 34 (the palette of D-327): the five colors of the game are the app's palette, and dark leads. D-311 kept every surface neutral, and the result read as boring. A deck now carries its own color identity, and a card role carries its own hue. Changes: PR-17, guardrail 13 unchanged.
 
@@ -643,10 +644,12 @@ Gate:
 
 > *In plain English:* the app looked like a test bench with a dark mode on it. This makes it look like a product. A real typeface, depth, a chat that reads like a conversation, and a message box where you expect it.
 
-**PR-17: Deck library.** 🔧 built 2026-08-30 on branch `pr-17`, eleven commits. The version history and the compare remain.
+**PR-17: Deck library.** 🔧 built 2026-08-30 on branch `pr-17`. The owner reads it in the browser, then merges.
 A grid of decks with the name, the commander, the mana pips, the format, the power, the count, the buy cost, and the date. Search by name and commander, filter by format, power, and favorites, and a favorite star. Every filter runs on the server, so a match on a later page still shows.
 
-Contract, additive: `DeckService.UpdateDeck(name, favorite)`, `DeleteDeck`, `Deck.favorite`, `Deck.card_count`, and paging with filters on `ListDecks` (D-245). The power filter has two fields, because `PowerLevel` is a oneof (D-324).
+Contract, additive: `DeckService.UpdateDeck(name, favorite)`, `DeleteDeck`, `Deck.favorite`, `Deck.card_count`, and paging with filters on `ListDecks` (D-245). The power filter has two fields, because `PowerLevel` is a oneof (D-324). `ListDecks` also takes a `session_id` (D-343).
+
+A deck carries its version history (D-343). A revision turn writes a new deck in the same chat, so the decks of one chat are the versions of one deck. The screen reads them with one `ListDecks` call on the session id, oldest first, and every version keeps its own address. Compare takes any two of them and reads the diff that the revision note already used.
 
 A deck has one screen and one address (D-335). `/decks/<id>` holds the deck, the actions the user owns, and the conversation that built it. `/session/<id>` holds a build with no deck yet, and it hands the reader over the moment a turn ends with a deck. The deck fills the page, and the conversation docks at the bottom left with a History control (D-331). `src/features/workspace` is the one feature with a path to both chat and deck, and the import boundary of the lint carries that rule.
 
@@ -661,13 +664,14 @@ Gate:
 - Each action round-trips through the API and shows in the grid with no reload. ✅
 - A deleted deck answers `NotFound`. ✅
 - A grid of 100 decks renders under one second. ⏳ the owner reads it with real decks.
+- The version history lists every deck of one chat, and any two compare. ✅
 - The first paint holds under 130 kB gzipped (D-323). ✅ 116.13 kB, 362.42 kB raw.
 - Content of the landing page shows under 100 ms, measured over the built app. ✅ 44 ms, from 347 ms.
 - The first open of a shell menu costs under 50 ms. ✅ 16 ms, from 323 ms.
 
-CAUTION: this branch carries six concerns. They are the contract, the Go side, the reference design, the layout of D-331, the Build menu, and the one deck screen. Guardrail 10 asks for one. A split before the merge needs the owner's word.
+CAUTION: this branch carries eight concerns. They are the contract, the Go side, the reference design, and the layout of D-331. They are also the Build menu, the one deck screen, the pool picker, and the speed of the app. Guardrail 10 asks for one. The owner chose to ship it whole (D-344).
 
-> *In plain English:* a home for your decks. Find one fast, name it, star it, throw one away, and talk to the agent about it on the same page.
+> *In plain English:* a home for your decks. Find one fast, name it, star it, throw one away, and talk to the agent about it on the same page. Every revision keeps its own copy, so you can read an earlier one and see what changed.
 
 **PR-18: Collection management.**
 The list of collections shows the name, the count, the date, and the active mark, with rename and delete. An upload dialog shows the progress and the import report. A re-upload whose hash differs from the active collection shows the diff first: added, removed, and changed counts, then "Replace". A binder view per collection is a virtualized grid of the cards with art, count, finish, and condition. It has search, filters by color, type, set, and count, and sort by name, price, and count.
@@ -805,7 +809,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 16. PR-9 variance. ⏸ out of MVP scope (D-256). It blocks nothing: the Phase 3 gate below reads PR-8's gate.
 17. **GATE.** Phase 3 starts only when PR-8's gate holds on the golden prompts. ✅ held on 2026-08-28, deck gate run 6.
 18. PR-11 ✅ merged 2026-08-28 (#38). PR-12 ✅ merged 2026-08-28 (#40). PR-12B ✅ merged 2026-08-29 (#41). PR-13 ✅ merged 2026-08-29 (#45). Then Phase 3B.
-19. **Phase 3B** (D-316, D-317): PR-16 to PR-23 in the order of the phase list. Each gate holds before the next slice starts. PR-16 ✅ merged 2026-08-29 (#47). PR-16B ✅ merged 2026-08-29 (#48). PR-17 🔧 built on branch `pr-17`, less the version history and the compare. The paid re-baseline of D-302 runs in parallel, on the owner's word.
+19. **Phase 3B** (D-316, D-317): PR-16 to PR-23 in the order of the phase list. Each gate holds before the next slice starts. PR-16 ✅ merged 2026-08-29 (#47). PR-16B ✅ merged 2026-08-29 (#48). PR-17 🔧 built on branch `pr-17`, whole. The owner reads it, then merges. The paid re-baseline of D-302 runs in parallel, on the owner's word.
 20. PR-15 eval harness. M-5 manual scoring runs on the first UI build (after PR-12).
 21. PR-14 meta, then I-1, I-2, I-3 on evidence.
 22. Phase 5 stays parked.

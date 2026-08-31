@@ -14,6 +14,7 @@ func mark(b bool) *bool { return &b }
 func TestFilterKeep(t *testing.T) {
 	row := storedDeck{
 		Name:           "Elf Ball",
+		SessionID:      "s1",
 		FormatID:       int64(mtgv1.FormatId_FORMAT_ID_COMMANDER),
 		Favorite:       true,
 		PowerBracket:   3,
@@ -36,6 +37,8 @@ func TestFilterKeep(t *testing.T) {
 		{"the same bracket keeps it", Filter{PowerBracket: 3}, true},
 		{"another bracket drops it", Filter{PowerBracket: 4}, false},
 		{"a sixty step drops a Commander deck", Filter{PowerSixtyStep: mtgv1.SixtyStep_SIXTY_STEP_FNM}, false},
+		{"the same session keeps it", Filter{SessionID: "s1"}, true},
+		{"another session drops it", Filter{SessionID: "s2"}, false},
 		{"every part must pass", Filter{Format: mtgv1.FormatId_FORMAT_ID_MODERN, Query: "elf"}, false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

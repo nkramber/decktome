@@ -1,6 +1,6 @@
 import { Code, ConnectError } from "@connectrpc/connect";
 import { FormatId } from "@mtg/api-client/mtg/v1/format_pb";
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { axe } from "jest-axe";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -25,13 +25,14 @@ async function* events(list: Ev[]) {
 const ev = (c: string, value: unknown): Ev => ({ event: { case: c, value } });
 const updateDeck = vi.fn();
 const deleteDeck = vi.fn();
+const listDecks = vi.fn();
 vi.mock("../../lib/api", () => ({
   healthClient: { check: () => Promise.resolve({ status: "ok", version: "test", cardSnapshot: "none" }) },
   collectionClient: { listCollections: () => Promise.resolve({ collections: [] }) },
   agentClient: { getSession: (...a: unknown[]) => getSession(...a), chat: (...a: unknown[]) => chat(...a) },
   cardClient: { getCards: () => Promise.resolve({ cards: [], missingOracleIds: [] }) },
   deckClient: {
-    listDecks: () => Promise.resolve({ decks: [], nextPageToken: "" }),
+    listDecks: (...a: unknown[]) => listDecks(...a),
     getDeck: (...a: unknown[]) => getDeck(...a),
     updateDeck: (...a: unknown[]) => updateDeck(...a),
     deleteDeck: (...a: unknown[]) => deleteDeck(...a),
@@ -63,6 +64,8 @@ beforeEach(() => {
   getSession.mockResolvedValue({ session: { id: "s1", turns: [], deckIds: ["d1"] } });
   updateDeck.mockReset();
   deleteDeck.mockReset();
+  listDecks.mockReset();
+  listDecks.mockResolvedValue({ decks: [], nextPageToken: "" });
   getDeck.mockResolvedValue({ deck });
   updateDeck.mockResolvedValue({ deck });
   deleteDeck.mockResolvedValue({});
@@ -168,5 +171,78 @@ describe("a revision on the deck screen", () => {
     const { container } = await renderAt("/decks/d1");
     await screen.findByRole("heading", { name: "Elf Ball" });
     expect(await axe(container)).toHaveNoViolations();
+  });
+});
+
+// The version history of a deck (PR-17). A revision turn writes a new
+// deck in the same chat, so the decks of one chat are its versions.
+const card = (name: string, count: number) => ({ oracleId: `o-${name}`, name, count, role: 0, owned: true, ownedCount: count, priceUsd: 0, reason: "" });
+const v1 = { ...deck, id: "d0", name: "Elf Ball", createdAt: { seconds: 1755000000n, nanos: 0 }, cards: [card("Llanowar Elves", 4), card("Forest", 20)] };
+const v2 = { ...deck, id: "d1", name: "Elf Ball, tuned", createdAt: { seconds: 1756000000n, nanos: 0 }, revisedFromDeckId: "d0", cards: [card("Llanowar Elves", 2), card("Forest", 20), card("Elvish Mystic", 3)] };
+
+function withVersions() {
+  // The listing answers newest first.
+  listDecks.mockResolvedValue({ decks: [v2, v1], nextPageToken: "" });
+  getDeck.mockImplementation((req: { deckId: string }) => Promise.resolve({ deck: req.deckId === "d0" ? v1 : v2 }));
+}
+
+describe("the version history", () => {
+  it("stays away when the chat built one deck", async () => {
+    listDecks.mockResolvedValue({ decks: [deck], nextPageToken: "" });
+    await renderAt("/decks/d1");
+    await screen.findByRole("heading", { name: "Elf Ball" });
+    expect(screen.queryByRole("list", { name: "Versions" })).not.toBeInTheDocument();
+  });
+
+  it("asks for the decks of this chat alone", async () => {
+    withVersions();
+    await renderAt("/decks/d1");
+    await screen.findByRole("list", { name: "Versions" });
+    expect(listDecks).toHaveBeenCalledWith({ sessionId: "s1", pageSize: 100 });
+  });
+
+  it("lists every version oldest first, and marks the one on screen", async () => {
+    withVersions();
+    await renderAt("/decks/d1");
+    const list = await screen.findByRole("list", { name: "Versions" });
+    const buttons = within(list).getAllByRole("button");
+    // The date reads in the runner's own zone, so the check builds it.
+    const day = (seconds: bigint) => new Date(Number(seconds) * 1000).toLocaleDateString();
+    expect(buttons.map((b) => b.textContent)).toEqual([`v1Elf Ball${day(1755000000n)}`, `v2Elf Ball, tuned${day(1756000000n)}now`]);
+    expect(buttons[1]).toHaveAttribute("aria-current", "page");
+    expect(buttons[1]).toBeDisabled();
+  });
+
+  it("opens an earlier version at its own address", async () => {
+    withVersions();
+    const { router } = await renderAt("/decks/d1");
+    const list = await screen.findByRole("list", { name: "Versions" });
+    await userEvent.setup().click(within(list).getAllByRole("button")[0]);
+    expect(router.state.location.pathname).toBe("/decks/d0");
+  });
+
+  it("compares two versions and names every change", async () => {
+    withVersions();
+    await renderAt("/decks/d1");
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Compare" }));
+    // The default reads the version before the one on screen.
+    expect((screen.getByLabelText("Compare from") as HTMLSelectElement).value).toBe("d0");
+    expect((screen.getByLabelText("With") as HTMLSelectElement).value).toBe("d1");
+    const diff = await screen.findByTestId("compare-diff");
+    expect(within(diff).getAllByRole("listitem").map((i) => i.textContent)).toEqual([
+      "Added 3 Elvish Mystic",
+      "Count of Llanowar Elves: 4 to 2",
+    ]);
+  });
+
+  it("says so when the two sides are the same version", async () => {
+    withVersions();
+    await renderAt("/decks/d1");
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Compare" }));
+    await user.selectOptions(screen.getByLabelText("Compare from"), "d1");
+    expect(screen.getByText("Pick two different versions.")).toBeInTheDocument();
+    expect(screen.queryByTestId("compare-diff")).not.toBeInTheDocument();
   });
 });

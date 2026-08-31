@@ -514,6 +514,20 @@ func TestListDecksPaging(t *testing.T) {
 		}
 	})
 
+	t.Run("a token of one session does not read another listing", func(t *testing.T) {
+		src := manyDecks(defaultPageSize + 1)
+		first, err := list(src, &mtgv1.ListDecksRequest{SessionId: "s1"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := list(src, &mtgv1.ListDecksRequest{PageToken: first.Msg.GetNextPageToken()}); codeOf(t, err) != connect.CodeInvalidArgument {
+			t.Errorf("code = %v", codeOf(t, err))
+		}
+		if _, err := list(src, &mtgv1.ListDecksRequest{PageToken: first.Msg.GetNextPageToken(), SessionId: "s1"}); err != nil {
+			t.Errorf("the same session must read its own token: %v", err)
+		}
+	})
+
 	t.Run("a damaged token is an invalid argument", func(t *testing.T) {
 		src := manyDecks(2)
 		if _, err := list(src, &mtgv1.ListDecksRequest{PageToken: "not-a-token!"}); codeOf(t, err) != connect.CodeInvalidArgument {

@@ -20,6 +20,7 @@ import {
   roleLabel,
   severityLabel,
 } from "./deck-stats";
+import { DiffList } from "./deck-diff";
 import { useDeckCards } from "./use-cards";
 
 // The deck view (ui plan, step 4). Cards group by role, each with its art
@@ -113,17 +114,7 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
           </h3>
           <p data-testid="revision-note">{deck.revisionNote}</p>
           {diff && (
-            <ul className="mt-2 list-disc pl-5" data-testid="revision-diff">
-              {diff.removed.map((x) => (
-                <li key={`r-${x}`}>Removed {x}</li>
-              ))}
-              {diff.added.map((x) => (
-                <li key={`a-${x}`}>Added {x}</li>
-              ))}
-              {diff.changed.map((x) => (
-                <li key={`c-${x}`}>Count of {x}</li>
-              ))}
-            </ul>
+            <DiffList diff={diff} testId="revision-diff" />
           )}
         </section>
       )}

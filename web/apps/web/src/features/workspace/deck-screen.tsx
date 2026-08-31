@@ -11,6 +11,7 @@ import { errorMessage } from "../../lib/errors";
 import { ChatPanel } from "../chat/session-page";
 import { emptyState, fromSession } from "../chat/use-chat";
 import { DeckActions } from "./deck-actions";
+import { DeckVersions } from "./deck-versions";
 
 // The one screen of a deck (D-335). A deck's address shows the deck, the
 // actions the user owns, and the conversation that built it. Nothing of a
@@ -94,7 +95,12 @@ export function DeckScreen() {
       session={session}
       deckOverride={deck}
       baseOverride={base}
-      actions={<DeckActions deck={deck} />}
+      actions={
+        <>
+          <DeckActions deck={deck} />
+          <DeckVersions deck={deck} />
+        </>
+      }
       onDeckBuilt={(newId) => void navigate(`/decks/${newId}`, { replace: true })}
     />
   );

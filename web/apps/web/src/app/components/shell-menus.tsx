@@ -98,7 +98,7 @@ export function BuildMenuContent({ trigger, open, onOpenChange }: { trigger: Rea
           <>
             <DropdownMenuLabel className="font-normal text-muted-foreground">No collection yet. The agent builds from any card until you add one.</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => void navigate("/collection")}>
+            <DropdownMenuItem onSelect={() => void navigate("/collection", { state: { pickFile: true } })}>
               <PlusIcon aria-hidden="true" />
               Add a collection
             </DropdownMenuItem>

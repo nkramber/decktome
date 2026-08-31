@@ -89,6 +89,9 @@ message ListDecksRequest {
   // power_sixty_step keeps the 60-card decks of one step.
   // UNSPECIFIED keeps them all.
   SixtyStep power_sixty_step = 7;
+  // session_id keeps the decks one chat built, which is the version
+  // history of a deck (PR-17). Empty keeps them all.
+  string session_id = 8;
 }
 
 message ListDecksResponse {

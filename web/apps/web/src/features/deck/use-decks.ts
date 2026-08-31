@@ -51,6 +51,25 @@ export function useDeckList(filter: DeckFilter) {
   });
 }
 
+// useDeckVersions reads every deck one chat built, oldest first. That is
+// the version history of a deck (PR-17): a revision turn writes a new
+// deck in the same session, and `revised_from_deck_id` names the one it
+// revised. A deck with no session has one version, itself.
+export function useDeckVersions(sessionId: string) {
+  const query = useQuery({
+    queryKey: ["decks", "session", sessionId],
+    queryFn: () => deckClient.listDecks({ sessionId, pageSize: maxVersions }),
+    enabled: sessionId !== "",
+  });
+  const decks = query.data?.decks ?? [];
+  // The listing answers newest first, and a history reads oldest first.
+  return { ...query, versions: [...decks].reverse() };
+}
+
+// maxVersions is the server's page cap. A chat with more revisions than
+// this shows the newest of them.
+const maxVersions = 100;
+
 // useCommanderCards loads the commander of every deck on the page. A deck
 // with no commander needs nothing, and a page with none makes no call.
 export function useCommanderCards(decks: Deck[]) {

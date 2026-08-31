@@ -214,6 +214,7 @@ func (s *Server) ListDecks(ctx context.Context, req *connect.Request[mtgv1.ListD
 		Query:          strings.TrimSpace(req.Msg.GetQuery()),
 		PowerBracket:   req.Msg.GetPowerBracket(),
 		PowerSixtyStep: req.Msg.GetPowerSixtyStep(),
+		SessionID:      req.Msg.GetSessionId(),
 	}
 	if b := filter.PowerBracket; b < 0 || b > 5 {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errBadBracket)
@@ -266,7 +267,7 @@ func filterFingerprint(f decks.Filter) string {
 	if f.Favorite != nil {
 		fav = strconv.FormatBool(*f.Favorite)
 	}
-	sum := sha256.Sum256([]byte(fmt.Sprintf("%d\x00%s\x00%s\x00%d\x00%d", f.Format, fav, strings.ToLower(f.Query), f.PowerBracket, f.PowerSixtyStep)))
+	sum := sha256.Sum256([]byte(fmt.Sprintf("%d\x00%s\x00%s\x00%d\x00%d\x00%s", f.Format, fav, strings.ToLower(f.Query), f.PowerBracket, f.PowerSixtyStep, f.SessionID)))
 	return hex.EncodeToString(sum[:6])
 }
 

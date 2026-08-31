@@ -76,7 +76,7 @@ describe("SessionPage", () => {
     expect(useAppStore.getState().sessionId).toBe("s1");
     expect(screen.getByTestId("session-id")).toHaveTextContent("Session id: s1");
     expect(screen.getByRole("button", { name: "Commander" })).toBeInTheDocument();
-    expect(screen.getByTestId("usage")).toHaveTextContent("Session spend: 1 calls, 100 in, 20 out, $0.0010");
+    expect(screen.getByTestId("usage")).toHaveTextContent("Session spend: 1 calls, 100 in, 20 out, $0.0010.");
     expect(screen.getByTestId("pool-mode")).toHaveTextContent("Pool: any card.");
     const req = chat.mock.calls[0][0] as { sessionId: string; collectionId: string; message: string; answers: unknown[] };
     expect(req).toMatchObject({ sessionId: "", collectionId: "", message: "Build me an elf deck", answers: [] });
@@ -692,5 +692,30 @@ describe("a question that is open", () => {
     // The answer closes the card, and the asked line takes its place.
     await waitFor(() => expect(screen.queryByRole("group", { name: "Question: Which format?" })).not.toBeInTheDocument());
     expect(within(screen.getByRole("list", { name: "Conversation" })).getByText("Which format?")).toBeInTheDocument();
+  });
+});
+
+// "Add a collection" goes to the upload screen and opens the file dialog
+// there. A cancelled dialog therefore leaves no collection active.
+describe("add a collection from the picker", () => {
+  it("clears the collection and asks the upload screen for a file", async () => {
+    useAppStore.setState({ collectionId: "c1", poolMode: "owned" });
+    const clicks: string[] = [];
+    const realClick = HTMLInputElement.prototype.click;
+    HTMLInputElement.prototype.click = function click(this: HTMLInputElement) {
+      clicks.push(this.type);
+    };
+    try {
+      const { router } = await renderAt("/session/new");
+      await userEvent.setup().selectOptions(await screen.findByLabelText("Build from"), "add:collection");
+      expect(router.state.location.pathname).toBe("/collection");
+      expect(useAppStore.getState().collectionId).toBe("");
+      expect(useAppStore.getState().poolMode).toBe("any");
+      await waitFor(() => expect(clicks).toContain("file"));
+      // The mark leaves the history entry, so a reload opens no dialog.
+      expect(router.state.location.state).toBeNull();
+    } finally {
+      HTMLInputElement.prototype.click = realClick;
+    }
   });
 });

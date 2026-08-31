@@ -209,3 +209,20 @@ describe("CollectionPage", () => {
     expect(await axe(container)).toHaveNoViolations();
   });
 });
+
+describe("the file dialog on arrival", () => {
+  it("stays shut when the reader came here on their own", async () => {
+    const clicks: string[] = [];
+    const realClick = HTMLInputElement.prototype.click;
+    HTMLInputElement.prototype.click = function click(this: HTMLInputElement) {
+      clicks.push(this.type);
+    };
+    try {
+      await renderAt("/collection");
+      await screen.findByRole("button", { name: "binder-july.csv" });
+      expect(clicks).not.toContain("file");
+    } finally {
+      HTMLInputElement.prototype.click = realClick;
+    }
+  });
+});

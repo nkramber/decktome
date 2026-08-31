@@ -196,6 +196,9 @@ type Filter struct {
 	// PowerSixtyStep keeps one step of the 60-card scale. UNSPECIFIED
 	// keeps them all.
 	PowerSixtyStep mtgv1.SixtyStep
+	// SessionID keeps the decks one chat built, which is the version
+	// history of a deck. Empty keeps them all.
+	SessionID string
 }
 
 // keep reports whether one stored row passes the filter.
@@ -210,6 +213,9 @@ func (f Filter) keep(sd storedDeck) bool {
 		return false
 	}
 	if f.PowerSixtyStep != mtgv1.SixtyStep_SIXTY_STEP_UNSPECIFIED && mtgv1.SixtyStep(sd.PowerSixtyStep) != f.PowerSixtyStep {
+		return false
+	}
+	if f.SessionID != "" && sd.SessionID != f.SessionID {
 		return false
 	}
 	if f.Query == "" {

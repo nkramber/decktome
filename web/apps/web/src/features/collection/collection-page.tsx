@@ -2,8 +2,8 @@ import { ImportSource } from "@mtg/api-client/mtg/v1/collection_pb";
 import type { ImportCollectionResponse } from "@mtg/api-client/mtg/v1/collection_service_pb";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookOpenIcon, PackageIcon } from "lucide-react";
-import { type FormEvent, useState } from "react";
-import { useNavigate } from "react-router";
+import { type FormEvent, useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router";
 
 import { EmptyState } from "../../app/components/empty-state";
 import { ErrorState } from "../../app/components/error-state";
@@ -27,6 +27,7 @@ import { useCollection } from "./use-collection";
 // build from any card (D-37). Earlier uploads come from ListCollections.
 export function CollectionPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const collectionId = useAppStore((s) => s.collectionId);
   const setCollection = useAppStore((s) => s.setCollection);
@@ -35,6 +36,7 @@ export function CollectionPage() {
   const [file, setFile] = useState<File | null>(null);
   // fileKey remounts the file input, which is the one way to empty it.
   const [fileKey, setFileKey] = useState(0);
+  const fileInput = useRef<HTMLInputElement>(null);
   const [name, setName] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const [result, setResult] = useState<ImportCollectionResponse | null>(null);
@@ -43,6 +45,16 @@ export function CollectionPage() {
     queryKey: ["collections"],
     queryFn: () => collectionClient.listCollections({}),
   });
+
+  // "Add a collection" in the Build menu and in the pool picker sends the
+  // reader here to pick a file, so the file dialog opens on arrival. The
+  // history entry drops the mark first, so a reload opens no dialog.
+  const askForFile = (location.state as { pickFile?: boolean } | null)?.pickFile === true;
+  useEffect(() => {
+    if (!askForFile) return;
+    navigate(location.pathname, { replace: true, state: null });
+    fileInput.current?.click();
+  }, [askForFile, navigate, location.pathname]);
 
   const upload = useMutation({
     mutationFn: async (f: File) => {
@@ -133,7 +145,7 @@ export function CollectionPage() {
                 <span className="font-display text-[15px]">{file ? file.name : "Drop your ManaBox export here"}</span>
                 <span className="font-mono text-[11px] text-muted-foreground">.csv — or click to browse</span>
               </label>
-              <Input key={fileKey} id="file" type="file" name="file" accept=".csv,text/csv" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="sr-only" />
+              <Input key={fileKey} ref={fileInput} id="file" type="file" name="file" accept=".csv,text/csv" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="sr-only" />
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="name">Collection name (optional, defaults to the file name)</Label>
@@ -216,9 +228,11 @@ export function CollectionPage() {
           <p data-testid="active-collection" className="grow text-sm">
             {collectionId && active
               ? `Active collection: ${active.name} (${active.cardCount} cards). The agent uses only these cards.`
-              : collectionId
-                ? `Active collection: ${collectionId}.`
-                : "No active collection. The agent builds from any card (D-37)."}
+              : collectionId && !list.isSuccess
+                ? "Active collection: loading..."
+                : collectionId
+                  ? "That collection is gone. Pick another, or upload one."
+                  : "No active collection. The agent builds from any card."}
           </p>
           <Button onClick={() => navigate("/session/new")}>Continue to chat</Button>
         </CardContent>

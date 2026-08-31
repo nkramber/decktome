@@ -299,8 +299,11 @@ type ListDecksRequest struct {
 	// power_sixty_step keeps the 60-card decks of one step.
 	// UNSPECIFIED keeps them all.
 	PowerSixtyStep SixtyStep `protobuf:"varint,7,opt,name=power_sixty_step,json=powerSixtyStep,proto3,enum=mtg.v1.SixtyStep" json:"power_sixty_step,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// session_id keeps the decks one chat built, which is the version
+	// history of a deck (PR-17). Empty keeps them all.
+	SessionId     string `protobuf:"bytes,8,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListDecksRequest) Reset() {
@@ -380,6 +383,13 @@ func (x *ListDecksRequest) GetPowerSixtyStep() SixtyStep {
 		return x.PowerSixtyStep
 	}
 	return SixtyStep_SIXTY_STEP_UNSPECIFIED
+}
+
+func (x *ListDecksRequest) GetSessionId() string {
+	if x != nil {
+		return x.SessionId
+	}
+	return ""
 }
 
 type ListDecksResponse struct {
@@ -745,7 +755,7 @@ const file_mtg_v1_deck_service_proto_rawDesc = "" +
 	"\x0eGetDeckRequest\x12\x17\n" +
 	"\adeck_id\x18\x01 \x01(\tR\x06deckId\"3\n" +
 	"\x0fGetDeckResponse\x12 \n" +
-	"\x04deck\x18\x01 \x01(\v2\f.mtg.v1.DeckR\x04deck\"\x9e\x02\n" +
+	"\x04deck\x18\x01 \x01(\v2\f.mtg.v1.DeckR\x04deck\"\xbd\x02\n" +
 	"\x10ListDecksRequest\x12\x1b\n" +
 	"\tpage_size\x18\x01 \x01(\x05R\bpageSize\x12\x1d\n" +
 	"\n" +
@@ -754,7 +764,9 @@ const file_mtg_v1_deck_service_proto_rawDesc = "" +
 	"\bfavorite\x18\x04 \x01(\bH\x00R\bfavorite\x88\x01\x01\x12\x14\n" +
 	"\x05query\x18\x05 \x01(\tR\x05query\x12#\n" +
 	"\rpower_bracket\x18\x06 \x01(\x05R\fpowerBracket\x12;\n" +
-	"\x10power_sixty_step\x18\a \x01(\x0e2\x11.mtg.v1.SixtyStepR\x0epowerSixtyStepB\v\n" +
+	"\x10power_sixty_step\x18\a \x01(\x0e2\x11.mtg.v1.SixtyStepR\x0epowerSixtyStep\x12\x1d\n" +
+	"\n" +
+	"session_id\x18\b \x01(\tR\tsessionIdB\v\n" +
 	"\t_favorite\"_\n" +
 	"\x11ListDecksResponse\x12\"\n" +
 	"\x05decks\x18\x01 \x03(\v2\f.mtg.v1.DeckR\x05decks\x12&\n" +
