@@ -176,4 +176,9 @@ message Question {
   // three formats the app builds. The UI offers no free-text field for
   // a closed question (D-295).
   bool closed = 9;
+  // option_partner_oracle_ids is parallel to options as well. A commander
+  // pair reads as "A + B" in one option, and one Oracle id can not carry
+  // two cards (D-361). The first card goes in option_oracle_ids, and the
+  // second one here. Every other option carries an empty string.
+  repeated string option_partner_oracle_ids = 10;
 }

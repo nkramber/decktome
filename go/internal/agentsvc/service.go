@@ -798,24 +798,48 @@ func slotsChanged(before, after *mtgv1.Slots) bool {
 	return !proto.Equal(a, b)
 }
 
+// pairSeparator joins the two names of a commander pair in one option.
+const pairSeparator = " + "
+
 // cardOptions fills Question.option_oracle_ids for every option that is
 // an exact card name. A question with no card option keeps the field
 // empty, so a client can tell the two apart.
+//
+// A commander pair reads as "A + B" in one option, and neither half is
+// the whole option, so a lookup of the option text finds nothing and the
+// tile showed no card at all (D-361). Each half is resolved on its own:
+// the first into option_oracle_ids, the second into the partner list.
 func cardOptions(qs []*mtgv1.Question, idx *cards.Index) {
 	if idx == nil {
 		return
 	}
 	for _, q := range qs {
 		ids := make([]string, len(q.GetOptions()))
-		found := false
+		partners := make([]string, len(q.GetOptions()))
+		found, anyPartner := false, false
 		for i, opt := range q.GetOptions() {
 			if c, ok := idx.ByName(opt); ok {
 				ids[i] = c.GetOracleId()
 				found = true
+				continue
 			}
+			first, second, ok := strings.Cut(opt, pairSeparator)
+			if !ok {
+				continue
+			}
+			a, aok := idx.ByName(strings.TrimSpace(first))
+			b, bok := idx.ByName(strings.TrimSpace(second))
+			if !aok || !bok {
+				continue
+			}
+			ids[i], partners[i] = a.GetOracleId(), b.GetOracleId()
+			found, anyPartner = true, true
 		}
 		if found {
 			q.OptionOracleIds = ids
+		}
+		if anyPartner {
+			q.OptionPartnerOracleIds = partners
 		}
 	}
 }

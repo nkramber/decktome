@@ -5,7 +5,7 @@ import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { cn } from "../../lib/cn";
-import { CardOption, CardOptionsError, hasCardOptions, useOptionCards } from "./card-options";
+import { CardOption, CardOptionsError, hasCardOptions, partnerIds, useOptionCards } from "./card-options";
 
 // Draft is the user's answer to one question before the submit. An option
 // pick, free text, and a decline exclude each other: the last one the
@@ -74,9 +74,17 @@ export function QuestionCard({
           <ul className="grid grid-cols-1 gap-3 @md:grid-cols-2 @3xl:grid-cols-3">
             {question.options.map((opt, i) => {
               const id = question.optionOracleIds[i] ?? "";
+              // A commander pair shows both cards, because the option is
+              // both of them (D-361).
+              const partner = partnerIds(question)[i] ?? "";
               return (
                 <li key={i} className="flex flex-col gap-2 rounded-card border border-border bg-card p-2">
-                  {id && !cards.isPending ? <CardOption card={byId.get(id)} name={opt} /> : null}
+                  {id && !cards.isPending ? (
+                    <div className={cn("grid gap-2", partner && "grid-cols-2")}>
+                      <CardOption card={byId.get(id)} name={opt} />
+                      {partner && <CardOption card={byId.get(partner)} name={opt} />}
+                    </div>
+                  ) : null}
                   <div>{button(opt, i)}</div>
                 </li>
               );

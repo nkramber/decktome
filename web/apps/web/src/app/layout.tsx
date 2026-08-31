@@ -46,7 +46,7 @@ export function Layout() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground">
+    <div className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
       <header className="flex shrink-0 items-center justify-between gap-4 border-b border-border bg-muted px-4 py-3 md:px-6">
         <Link to="/" className="flex items-center gap-3 transition-opacity hover:opacity-80">
           <span aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-card bg-accent text-accent-foreground">
@@ -68,7 +68,10 @@ export function Layout() {
         )}
       </header>
 
-      <main className="grow">
+      {/* The header and the card-data line hold their place, and the
+          page scrolls between them (D-364). A docked chat can then fill
+          the frame and never run past it. */}
+      <main className="grow overflow-y-auto">
         <Outlet />
       </main>
 

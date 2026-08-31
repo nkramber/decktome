@@ -997,3 +997,67 @@ func TestOwnedFirstPrefersTheCollection(t *testing.T) {
 		}
 	})
 }
+
+// The fill reaches a viable floor, never the shortlist cap (D-362).
+// Gate run 9 proved the difference: filling to the cap turned four decks
+// that cost nothing into decks that cost $40 to $168.
+func TestOwnedFirstFillsToTheFloorNotTheCap(t *testing.T) {
+	role := mtgv1.CardRole_CARD_ROLE_SYNERGY
+	card := func(name string, ownedCount int32, score float64) Candidate {
+		return Candidate{Card: &mtgv1.Card{Name: name, OracleId: name}, Role: role, Score: score, Owned: ownedCount}
+	}
+	pool := func(ownedN, unownedN int) []Candidate {
+		var out []Candidate
+		for i := 0; i < unownedN; i++ {
+			out = append(out, card(fmt.Sprintf("unowned-%03d", i), 0, 100))
+		}
+		for i := 0; i < ownedN; i++ {
+			out = append(out, card(fmt.Sprintf("owned-%03d", i), 1, 1))
+		}
+		return out
+	}
+	lim := Limits{Total: 300, PerRole: map[mtgv1.CardRole]int{role: 300}}
+
+	t.Run("a collection over the floor takes no fill at all", func(t *testing.T) {
+		got := ownedFirst(pool(OwnedFillFloor+20, 200), lim)
+		if len(got) != OwnedFillFloor+20 {
+			t.Fatalf("main = %d names, want the %d owned ones alone", len(got), OwnedFillFloor+20)
+		}
+		for _, c := range got {
+			if c.Owned == 0 {
+				t.Fatalf("the database filled %s while the collection was already enough", c.Card.Name)
+			}
+		}
+	})
+
+	t.Run("a collection exactly at the floor takes no fill", func(t *testing.T) {
+		got := ownedFirst(pool(OwnedFillFloor, 200), lim)
+		if len(got) != OwnedFillFloor {
+			t.Errorf("main = %d, want %d", len(got), OwnedFillFloor)
+		}
+	})
+
+	t.Run("a thin collection is filled to the floor and no further", func(t *testing.T) {
+		got := ownedFirst(pool(30, 500), lim)
+		if len(got) != OwnedFillFloor {
+			t.Fatalf("main = %d names, want the floor of %d", len(got), OwnedFillFloor)
+		}
+		owned := 0
+		for _, c := range got {
+			if c.Owned > 0 {
+				owned++
+			}
+		}
+		if owned != 30 {
+			t.Errorf("the fill dropped an owned card: %d of 30 kept", owned)
+		}
+	})
+
+	t.Run("a cap under the floor bounds the fill", func(t *testing.T) {
+		small := Limits{Total: 40, PerRole: map[mtgv1.CardRole]int{role: 40}}
+		got := ownedFirst(pool(10, 200), small)
+		if len(got) != 40 {
+			t.Errorf("main = %d, want the cap of 40", len(got))
+		}
+	})
+}

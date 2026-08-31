@@ -356,6 +356,18 @@ func topUpgrades(unowned, main []Candidate, limit int) []Candidate {
 	return out
 }
 
+// OwnedFillFloor is the main-list size under which a collection can not
+// build a deck on its own (D-362). A Commander deck is 99 cards, and
+// deck gate run 8 built one with nothing to buy from a shortlist of 168
+// owned names. Above this floor the collection is enough, and the fill
+// stays away.
+//
+// The floor is not the shortlist cap. Filling to the cap offered the
+// model 120 unowned cards it did not need, and gate run 9 turned four
+// decks that cost nothing into decks that cost $40 to $168. A reader
+// who says "my collection first" is not asking for that.
+const OwnedFillFloor = 150
+
 // ownedFirst builds the main list from the collection, then fills what
 // the collection can not (D-359).
 //
@@ -369,7 +381,13 @@ func topUpgrades(unowned, main []Candidate, limit int) []Candidate {
 // deck's colors is in neither half.
 func ownedFirst(in []Candidate, lim Limits) []Candidate {
 	owned := capByRole(filterOwned(in, true), lim)
-	room := lim.Total - len(owned)
+	// The fill reaches the floor, never the cap (D-362). A collection
+	// that already builds a deck is left exactly as it is.
+	target := OwnedFillFloor
+	if lim.Total < target {
+		target = lim.Total
+	}
+	room := target - len(owned)
 	if room <= 0 {
 		return owned
 	}

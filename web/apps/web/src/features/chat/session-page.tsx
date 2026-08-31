@@ -119,8 +119,16 @@ export function pruneDrafts(drafts: Record<string, Draft>, open: { id: string }[
   return Object.fromEntries(Object.entries(drafts).filter(([id]) => ids.has(id)));
 }
 
-// The sentinel scrolls into view only while the reader is near the end
-// of the thread, so new output does not pull them away from an earlier line.
+// The reader's own last message is the top of what they need to read
+// (D-360). Everything the turn produced lands under it: the agent's
+// prose, the questions it asked, and the button that sends the answers.
+// The scroll therefore puts that message at the top of the frame rather
+// than chasing the foot of the thread. A turn whose output fits shows
+// the message and the submit together, and one that does not keeps the
+// message, which is the half the reader needs.
+//
+// The sentinel below still serves a thread with no message of the user
+// in it yet.
 const nearBottomPx = 240;
 
 // ChatPanel serves both screens of a deck (D-335). On the session route
@@ -218,14 +226,20 @@ export function ChatPanel({
 
   // New output scrolls into view. The sentinel sits under the thread.
   const end = useRef<HTMLDivElement>(null);
+  const lastSubmission = useRef<HTMLLIElement>(null);
   const last = state.thread[state.thread.length - 1];
   const lastLength = last && "text" in last ? last.text.length : 0;
   useEffect(() => {
+    const mine = lastSubmission.current;
+    if (mine) {
+      mine.scrollIntoView?.({ block: "start" });
+      return;
+    }
     const el = end.current;
     if (!el) return;
     if (el.getBoundingClientRect().top - window.innerHeight > nearBottomPx) return;
     el.scrollIntoView?.({ block: "nearest" });
-  }, [state.thread.length, lastLength, openCount]);
+  }, [state.thread.length, lastLength, openCount, state.busy]);
 
   // Every open question needs an answer before the submit, and one send
   // carries them all (D-282). Each answer text has the same cap as a message.
@@ -295,15 +309,16 @@ export function ChatPanel({
   // and the card below it takes the answer. The thread holds the line for
   // the history, so it shows the question only after it is answered.
   const openIds = new Set(state.openQuestions.map((q) => q.id));
+  const shown = state.thread.filter((item) => item.kind !== "question" || !openIds.has(item.question.id));
+  // The reader's last message, which the scroll holds at the top (D-360).
+  const lastMineId = shown.reduce((id, item) => (item.kind === "user" ? item.id : id), -1);
   const thread = (
     <ol className="flex flex-col gap-5" aria-label="Conversation">
-      {state.thread
-        .filter((item) => item.kind !== "question" || !openIds.has(item.question.id))
-        .map((item) => (
-          <li key={item.id}>
-            <ThreadLine item={item} />
-          </li>
-        ))}
+      {shown.map((item) => (
+        <li key={item.id} ref={item.id === lastMineId ? lastSubmission : undefined} className="scroll-mt-4">
+          <ThreadLine item={item} />
+        </li>
+      ))}
     </ol>
   );
 
@@ -320,7 +335,7 @@ export function ChatPanel({
       ))}
       {answerTooLong && (
         <p role="alert" className="text-sm text-danger">
-          An answer is over the {maxMessageBytes} byte cap. Shorten it.
+          One of your answers is too long. Shorten it.
         </p>
       )}
       <Button type="submit" className="self-start" disabled={!allAnswered || answerTooLong || state.busy}>
@@ -373,7 +388,7 @@ export function ChatPanel({
           <div className="flex min-w-0 flex-col gap-2">
             {beforeFirstMessage && <PoolPicker />}
             <p className={cn("font-mono text-[10px]", tooLong ? "text-danger" : "text-muted-foreground")}>
-              Enter to send · Shift+Enter for new line · {bytes} of {maxMessageBytes} bytes
+              Enter to send · Shift+Enter for new line
             </p>
           </div>
           <Button type="submit" size="icon" aria-label="Send" className="size-8" disabled={tooLong || !message.trim()}>
@@ -383,7 +398,7 @@ export function ChatPanel({
       </div>
       {tooLong && (
         <p role="alert" className="text-sm text-danger">
-          The message is over the {maxMessageBytes} byte cap. Shorten it.
+          That message is too long. Shorten it.
         </p>
       )}
     </form>
@@ -422,7 +437,7 @@ export function ChatPanel({
           <span aria-hidden="true">·</span>
           <span data-testid="usage">
             Session spend: {state.usage.calls} calls, {String(state.usage.inputTokens)} in, {String(state.usage.outputTokens)} out,{" "}
-            {state.usage.priced ? `$${state.usage.costUsd.toFixed(4)}` : "cost unknown"}.
+            {state.usage.priced ? `$${state.usage.costUsd.toFixed(4)}` : "cost unknown"}
           </span>
         </>
       )}
@@ -435,10 +450,13 @@ export function ChatPanel({
   // frame. The column overlaps nothing.
   if (builtDeck) {
     return (
-      <div className="flex flex-col gap-6 p-4 md:p-6 lg:flex-row">
+      <div className="flex flex-col gap-6 p-4 md:p-6 lg:h-full lg:flex-row lg:overflow-hidden">
+        {/* The chat is a column of its own, and it always fits the frame
+            (D-364). The page scrolls under it, so it sticks to the top of
+            the scrolling area and its own thread scrolls inside it. */}
         <aside
           aria-labelledby="chat-title"
-          className="flex w-full shrink-0 flex-col gap-2 rounded-card border border-border bg-card p-3 lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)] lg:w-[22rem]"
+          className="flex w-full shrink-0 flex-col gap-2 rounded-card border border-border bg-card p-3 lg:h-full lg:w-[24.2rem]"
         >
           <h1 id="chat-title" className="font-display text-[10px] tracking-[0.15em] text-muted-foreground uppercase">
             Chat
@@ -454,7 +472,9 @@ export function ChatPanel({
           {idLine}
         </aside>
 
-        <div className="min-w-0 grow">
+        {/* The deck column carries the scroll, so the chat beside it holds
+            its place and always fits the frame (D-364). */}
+        <div className="min-w-0 grow lg:h-full lg:overflow-y-auto">
           {deckError && (
             <p role="alert" className="mb-4 text-danger">
               Could not load the deck: {deckError}
@@ -532,13 +552,13 @@ export function poolRuleOf(mode: PoolMode, collectionId: string): PoolRule {
 export function poolLabel(rule: PoolRule | undefined, collection: string): string {
   switch (rule) {
     case PoolRule.OWNED_ONLY:
-      return "Pool: only cards in your collection.";
+      return "Pool: only cards in your collection";
     case PoolRule.OWNED_FIRST:
-      return "Pool: your collection first, with upgrades to buy.";
+      return "Pool: your collection first, and the whole card database fills a gap";
     case PoolRule.ANY_CARD:
-      return "Pool: any card.";
+      return "Pool: any card";
     default:
-      return collection ? `Pool: ${collection}. The agent asks how strict.` : "Pool: any card.";
+      return collection ? `Pool: ${collection}, and the agent asks how strict` : "Pool: any card";
   }
 }
 

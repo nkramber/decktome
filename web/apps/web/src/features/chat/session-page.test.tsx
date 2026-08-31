@@ -78,8 +78,8 @@ describe("SessionPage", () => {
     expect(useAppStore.getState().sessionId).toBe("s1");
     expect(screen.getByTestId("session-id")).toHaveTextContent("Session id: s1");
     expect(screen.getByRole("button", { name: "Commander" })).toBeInTheDocument();
-    expect(screen.getByTestId("usage")).toHaveTextContent("Session spend: 1 calls, 100 in, 20 out, $0.0010.");
-    expect(screen.getByTestId("pool-mode")).toHaveTextContent("Pool: any card.");
+    expect(screen.getByTestId("usage")).toHaveTextContent("Session spend: 1 calls, 100 in, 20 out, $0.0010");
+    expect(screen.getByTestId("pool-mode")).toHaveTextContent("Pool: any card");
     const req = chat.mock.calls[0][0] as { sessionId: string; collectionId: string; message: string; answers: unknown[] };
     expect(req).toMatchObject({ sessionId: "", collectionId: "", message: "Build me an elf deck", answers: [] });
     // The conversation shows the user line and the asked line.
@@ -389,7 +389,7 @@ describe("SessionPage", () => {
     const card = await screen.findByRole("group", { name: "Question: How strong?" });
     await user.click(within(card).getByRole("textbox"));
     await user.paste("x".repeat(8193));
-    expect(screen.getByRole("alert")).toHaveTextContent("An answer is over the 8192 byte cap.");
+    expect(screen.getByRole("alert")).toHaveTextContent("One of your answers is too long. Shorten it.");
     expect(screen.getByRole("button", { name: "Submit answers" })).toBeDisabled();
   });
 
@@ -405,7 +405,10 @@ describe("SessionPage", () => {
     expect(screen.getByText("Here is a plan.", { selector: "p.whitespace-pre-line" })).toBeInTheDocument();
   });
 
-  it("scrolls the thread only while the reader is near the end", async () => {
+  // The reader's own last line is held at the top after every turn,
+  // wherever they had scrolled to (D-360). The old rule chased the foot
+  // of the thread and only when the reader was already near it.
+  it("anchors the reader's last line however far up the thread they are", async () => {
     const scroll = vi.fn();
     Element.prototype.scrollIntoView = scroll;
     const rect = vi.spyOn(Element.prototype, "getBoundingClientRect").mockReturnValue({ top: 5000 } as DOMRect);
@@ -414,13 +417,7 @@ describe("SessionPage", () => {
     const user = userEvent.setup();
     await user.type(await screen.findByLabelText("Your message"), "elves{enter}");
     await screen.findByText("hi", { selector: "p.whitespace-pre-line" });
-    expect(scroll).not.toHaveBeenCalled();
-    rect.mockReturnValue({ top: 0 } as DOMRect);
-    chat.mockReturnValueOnce(events([ev("textDelta", "again")]));
-    await waitFor(() => expect(screen.getByLabelText("Your message")).toBeEnabled());
-    await user.type(screen.getByLabelText("Your message"), "more{enter}");
-    await screen.findByText("again", { selector: "p.whitespace-pre-line" });
-    expect(scroll).toHaveBeenCalled();
+    expect(scroll).toHaveBeenCalledWith({ block: "start" });
     rect.mockRestore();
   });
 
@@ -534,7 +531,7 @@ describe("SessionPage", () => {
     const box = await screen.findByLabelText("Your message");
     await user.click(box);
     await user.paste("x".repeat(8193));
-    expect(screen.getByRole("alert")).toHaveTextContent("over the 8192 byte cap");
+    expect(screen.getByRole("alert")).toHaveTextContent("That message is too long. Shorten it.");
     expect(screen.getByRole("button", { name: "Send" })).toBeDisabled();
     expect(chat).not.toHaveBeenCalled();
   });
@@ -555,7 +552,7 @@ describe("SessionPage", () => {
     });
     getDeck.mockResolvedValue({ deck });
     await renderAt("/session/s1");
-    expect(await screen.findByTestId("pool-mode")).toHaveTextContent("Pool: only cards in your collection.");
+    expect(await screen.findByTestId("pool-mode")).toHaveTextContent("Pool: only cards in your collection");
     expect(screen.getByTestId("session-id")).toHaveTextContent("Session id: s1");
     expect(screen.getByTestId("usage")).toHaveTextContent("cost unknown");
     expect(screen.queryByRole("group", { name: "Question: Which format?" })).not.toBeInTheDocument();
@@ -613,11 +610,11 @@ describe("SessionPage", () => {
   });
 
   it("poolLabel names the pool rule, and the collection before the rule is set", async () => {
-    expect(poolLabel(PoolRule.OWNED_ONLY, "c1")).toBe("Pool: only cards in your collection.");
-    expect(poolLabel(PoolRule.OWNED_FIRST, "")).toBe("Pool: your collection first, with upgrades to buy.");
-    expect(poolLabel(PoolRule.ANY_CARD, "binder-july.csv")).toBe("Pool: any card.");
-    expect(poolLabel(undefined, "binder-july.csv")).toBe("Pool: binder-july.csv. The agent asks how strict.");
-    expect(poolLabel(undefined, "")).toBe("Pool: any card.");
+    expect(poolLabel(PoolRule.OWNED_ONLY, "c1")).toBe("Pool: only cards in your collection");
+    expect(poolLabel(PoolRule.OWNED_FIRST, "")).toBe("Pool: your collection first, and the whole card database fills a gap");
+    expect(poolLabel(PoolRule.ANY_CARD, "binder-july.csv")).toBe("Pool: any card");
+    expect(poolLabel(undefined, "binder-july.csv")).toBe("Pool: binder-july.csv, and the agent asks how strict");
+    expect(poolLabel(undefined, "")).toBe("Pool: any card");
   });
 
   it("pruneDrafts drops the drafts of questions no longer open", async () => {
@@ -849,5 +846,80 @@ describe("poolRuleOf", () => {
     expect(poolRuleOf("any", "")).toBe(PoolRule.UNSPECIFIED);
     // No collection means nothing to prefer, whatever the mode says.
     expect(poolRuleOf("owned_first", "")).toBe(PoolRule.UNSPECIFIED);
+  });
+});
+
+// The reader's own last message is the top of what a turn produced, so
+// the scroll holds it at the top of the frame (D-360).
+describe("the scroll after a turn", () => {
+  it("puts the reader's last message at the top, not the foot of the thread", async () => {
+    const seen: { text: string; block: string }[] = [];
+    const real = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = function scrollIntoView(this: Element, arg?: boolean | ScrollIntoViewOptions) {
+      seen.push({ text: this.textContent ?? "", block: typeof arg === "object" ? (arg.block ?? "") : "" });
+    };
+    try {
+      chat.mockReturnValue(events([ev("sessionStarted", "s1"), ev("question", formatQuestion)]));
+      await renderAt("/session/new");
+      const user = userEvent.setup();
+      await user.type(await screen.findByLabelText("Your message"), "Build me an elf deck");
+      await user.click(screen.getByRole("button", { name: "Send" }));
+      await screen.findByRole("group", { name: "Question: Which format?" });
+
+      const anchored = seen.filter((s) => s.block === "start");
+      expect(anchored.length).toBeGreaterThan(0);
+      // The element held at the top is the reader's own line.
+      expect(anchored.at(-1)?.text).toContain("Build me an elf deck");
+    } finally {
+      Element.prototype.scrollIntoView = real;
+    }
+  });
+
+  it("falls back to the foot while the reader has said nothing", async () => {
+    const blocks: string[] = [];
+    const real = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = function scrollIntoView(this: Element, arg?: boolean | ScrollIntoViewOptions) {
+      blocks.push(typeof arg === "object" ? (arg.block ?? "") : "");
+    };
+    try {
+      getSession.mockResolvedValue({
+        session: { id: "s1", collectionId: "", deckIds: [], turns: [{ userMessage: "", agentMessage: "here", questions: [], answers: [] }] },
+      });
+      await renderAt("/session/s1");
+      await screen.findByText("here");
+      expect(blocks).not.toContain("start");
+    } finally {
+      Element.prototype.scrollIntoView = real;
+    }
+  });
+});
+
+// A commander pair reads as "A + B" in one option, and one Oracle id can
+// not carry two cards (D-361). The tile showed nothing at all for it.
+describe("a commander pair option", () => {
+  it("shows both cards, and asks for both", async () => {
+    const pairQuestion = {
+      id: "q6",
+      slot: "commander",
+      text: "Which commander do you want?",
+      options: ["Sam, Loyal Attendant", "Sam, Loyal Attendant + Frodo, Adventurous Hobbit", "None, name three more"],
+      optionOracleIds: ["o-sam", "o-sam", ""],
+      optionPartnerOracleIds: ["", "o-frodo", ""],
+    };
+    getCards.mockResolvedValue({
+      cards: [
+        { oracleId: "o-sam", name: "Sam, Loyal Attendant", faces: [{ name: "Sam, Loyal Attendant", imageUris: { normal: "https://x/sam.jpg" } }], defaultPrinting: {} },
+        { oracleId: "o-frodo", name: "Frodo, Adventurous Hobbit", faces: [{ name: "Frodo, Adventurous Hobbit", imageUris: { normal: "https://x/frodo.jpg" } }], defaultPrinting: {} },
+      ],
+      missingOracleIds: [],
+    });
+    getSession.mockResolvedValue({
+      session: { id: "s1", collectionId: "", deckIds: [], turns: [{ userMessage: "hobbits", questions: [pairQuestion], answers: [] }] },
+    });
+    await renderAt("/session/s1");
+    await screen.findByRole("group", { name: /Which commander do you want\?/ });
+    // Both halves of the pair are asked for, so both can be shown.
+    await waitFor(() => expect(getCards).toHaveBeenCalledWith({ oracleIds: ["o-sam", "o-sam", "o-frodo"] }));
+    expect(await screen.findByRole("img", { name: /Frodo, Adventurous Hobbit/ })).toBeInTheDocument();
   });
 });

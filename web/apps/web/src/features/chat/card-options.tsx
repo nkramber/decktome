@@ -11,7 +11,13 @@ import { FaceImage, facesOf } from "../deck/card-tile";
 // the rules text, the artist, and the copyright line, so the tile
 // repeats none of them (D-287, D-291).
 export function optionIds(q: Question): string[] {
-  return q.optionOracleIds;
+  return q.optionOracleIds ?? [];
+}
+
+// partnerIds is parallel to the options as well. A commander pair reads
+// as "A + B" in one option, and the second card lands here (D-361).
+export function partnerIds(q: Question): string[] {
+  return q.optionPartnerOracleIds ?? [];
 }
 
 export function hasCardOptions(q: Question): boolean {
@@ -19,7 +25,7 @@ export function hasCardOptions(q: Question): boolean {
 }
 
 export function useOptionCards(q: Question) {
-  const ids = optionIds(q).filter((id) => id !== "");
+  const ids = [...optionIds(q), ...partnerIds(q)].filter((id) => id !== "");
   return useQuery({
     queryKey: ["cards", "options", ids],
     queryFn: () => cardClient.getCards({ oracleIds: ids }),
