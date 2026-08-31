@@ -16,6 +16,7 @@ import { errorMessage } from "../../lib/errors";
 import { useAppStore } from "../../lib/store";
 import { DeckView } from "../deck/deck-view";
 import { PoolPicker, useCollections } from "./pool-picker";
+import { RecentDecks } from "./recent-decks";
 import { type Draft, draftAnswered, emptyDraft, QuestionCard } from "./question-card";
 import { byteLength, type ChatState, emptyState, fromSession, maxMessageBytes, type ThreadItem, useChat } from "./use-chat";
 
@@ -77,7 +78,7 @@ export function SessionPage() {
   const toDeck = useCallback((deckId: string) => void navigate(`/decks/${deckId}`, { replace: true }), [navigate]);
 
   if (live) {
-    return <ChatPanel key={panelKey} initial={emptyState} onStarted={onStarted} resumeId={isNew && storedSessionId ? storedSessionId : ""} onDeckBuilt={toDeck} />;
+    return <ChatPanel key={panelKey} initial={emptyState} onStarted={onStarted} onDeckBuilt={toDeck} />;
   }
   if (session.isPending || (deckId && deck.isPending) || (baseId && base.isPending)) {
     return (
@@ -130,7 +131,6 @@ export function ChatPanel({
   initial,
   session,
   onStarted,
-  resumeId = "",
   deckError = "",
   deckOverride,
   baseOverride,
@@ -140,7 +140,6 @@ export function ChatPanel({
   initial: ChatState;
   session?: Session;
   onStarted?: (id: string) => void;
-  resumeId?: string;
   deckError?: string;
   deckOverride?: Deck;
   baseOverride?: Deck;
@@ -233,6 +232,8 @@ export function ChatPanel({
     if (!allAnswered || answerTooLong || state.busy) return;
     const answers = state.openQuestions.map((q) => {
       const d = drafts[q.id];
+      // A decline carries no value on purpose (D-353).
+      if (d.declined) return { questionId: q.id, declined: true, text: "" } as Answer;
       return { questionId: q.id, optionIndex: d.text.trim() ? undefined : d.optionIndex, text: d.text.trim() } as Answer;
     });
     const sent = drafts;
@@ -343,6 +344,9 @@ export function ChatPanel({
 
   const composer = showComposer && (
     <form onSubmit={onSubmit} className="flex flex-col gap-2">
+      {beforeFirstMessage && (
+        <h2 className="font-display text-[10px] tracking-[0.15em] text-muted-foreground uppercase">Build a new deck</h2>
+      )}
       <div className="flex flex-col rounded-card border border-border bg-card transition-colors focus-within:border-primary">
         <Label htmlFor="message" className="sr-only">
           Your message
@@ -357,10 +361,13 @@ export function ChatPanel({
           placeholder={beforeFirstMessage ? "Build me a mono-green Commander deck around elves." : "Ask for a change."}
           className="max-h-40 resize-none border-0 bg-transparent px-4 pt-3 pb-1"
         />
-        <div className="flex items-end justify-between gap-3 px-3 pb-3">
-          <p className={cn("font-mono text-[10px]", tooLong ? "text-danger" : "text-muted-foreground")}>
-            Enter to send · Shift+Enter for new line · {bytes} of {maxMessageBytes} bytes
-          </p>
+        <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-2 px-3 pb-3">
+          <div className="flex min-w-0 flex-col gap-2">
+            {beforeFirstMessage && <PoolPicker />}
+            <p className={cn("font-mono text-[10px]", tooLong ? "text-danger" : "text-muted-foreground")}>
+              Enter to send · Shift+Enter for new line · {bytes} of {maxMessageBytes} bytes
+            </p>
+          </div>
           <Button type="submit" size="icon" aria-label="Send" className="size-8" disabled={tooLong || !message.trim()}>
             <ArrowUpIcon aria-hidden="true" />
           </Button>
@@ -463,18 +470,11 @@ export function ChatPanel({
             one quiet row under the title, and never in the thread. */}
         <div className="flex flex-col gap-1.5">
           <h1 id="chat-title" className="font-display text-2xl font-semibold">
-            Chat
+            {beforeFirstMessage ? "New deck" : "Chat"}
           </h1>
           {idLine}
         </div>
-        {beforeFirstMessage && resumeId && (
-          <p className="text-sm">
-            <Link to={`/session/${resumeId}`} className="text-link underline underline-offset-4" data-testid="resume-link">
-              Resume your last chat
-            </Link>
-          </p>
-        )}
-        {beforeFirstMessage && <PoolPicker />}
+        {beforeFirstMessage && <RecentDecks />}
 
         {leaveWarning}
 

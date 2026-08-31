@@ -685,8 +685,12 @@ type Answer struct {
 	// option_index is the chosen option. Unset means free text in
 	// `text`. Explicit presence separates "option 0" from "no option",
 	// which the proto3 default of 0 could not (D-266).
-	OptionIndex   *int32 `protobuf:"varint,2,opt,name=option_index,json=optionIndex,proto3,oneof" json:"option_index,omitempty"`
-	Text          string `protobuf:"bytes,3,opt,name=text,proto3" json:"text,omitempty"`
+	OptionIndex *int32 `protobuf:"varint,2,opt,name=option_index,json=optionIndex,proto3,oneof" json:"option_index,omitempty"`
+	Text        string `protobuf:"bytes,3,opt,name=text,proto3" json:"text,omitempty"`
+	// declined is true when the user handed the choice back with no value
+	// (D-353). The slot closes and the generator applies the default the
+	// corpus names. A declined answer carries no option_index and no text.
+	Declined      bool `protobuf:"varint,4,opt,name=declined,proto3" json:"declined,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -740,6 +744,13 @@ func (x *Answer) GetText() string {
 		return x.Text
 	}
 	return ""
+}
+
+func (x *Answer) GetDeclined() bool {
+	if x != nil {
+		return x.Declined
+	}
+	return false
 }
 
 // Question is one clarifying question (roadmap PR-7, D-25).
@@ -916,12 +927,13 @@ const file_mtg_v1_session_proto_rawDesc = "" +
 	"\ragent_message\x18\x02 \x01(\tR\fagentMessage\x12.\n" +
 	"\tquestions\x18\x03 \x03(\v2\x10.mtg.v1.QuestionR\tquestions\x12*\n" +
 	"\x02at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x02at\x12(\n" +
-	"\aanswers\x18\x05 \x03(\v2\x0e.mtg.v1.AnswerR\aanswers\"v\n" +
+	"\aanswers\x18\x05 \x03(\v2\x0e.mtg.v1.AnswerR\aanswers\"\x92\x01\n" +
 	"\x06Answer\x12\x1f\n" +
 	"\vquestion_id\x18\x01 \x01(\tR\n" +
 	"questionId\x12&\n" +
 	"\foption_index\x18\x02 \x01(\x05H\x00R\voptionIndex\x88\x01\x01\x12\x12\n" +
-	"\x04text\x18\x03 \x01(\tR\x04textB\x0f\n" +
+	"\x04text\x18\x03 \x01(\tR\x04text\x12\x1a\n" +
+	"\bdeclined\x18\x04 \x01(\bR\bdeclinedB\x0f\n" +
 	"\r_option_index\"\xfc\x01\n" +
 	"\bQuestion\x12\x0e\n" +
 	"\x02id\x18\x06 \x01(\tR\x02id\x12\x12\n" +

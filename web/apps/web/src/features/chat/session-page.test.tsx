@@ -18,13 +18,14 @@ const chat = vi.fn();
 const getSession = vi.fn();
 const getDeck = vi.fn();
 const getCards = vi.fn();
+const listDecks = vi.fn();
 vi.mock("../../lib/api", () => ({
   healthClient: { check: () => Promise.resolve({ status: "ok", version: "test", cardSnapshot: "none" }) },
   agentClient: {
     chat: (...args: unknown[]) => chat(...args),
     getSession: (...args: unknown[]) => getSession(...args),
   },
-  deckClient: { getDeck: (...args: unknown[]) => getDeck(...args), exportDeck: vi.fn() },
+  deckClient: { getDeck: (...args: unknown[]) => getDeck(...args), exportDeck: vi.fn(), listDecks: (...args: unknown[]) => listDecks(...args) },
   cardClient: { getCards: (...args: unknown[]) => getCards(...args) },
   collectionClient: { listCollections: () => Promise.resolve({ collections: [{ id: "c1", name: "binder-july.csv", cardCount: 4317 }] }) },
 }));
@@ -59,6 +60,8 @@ beforeEach(() => {
   getSession.mockReset();
   getDeck.mockReset();
   getCards.mockReset();
+  listDecks.mockReset();
+  listDecks.mockResolvedValue({ decks: [], nextPageToken: "" });
   getCards.mockResolvedValue({ cards: [{ oracleId: "o-elf", name: "Llanowar Elves", cardTypes: ["Creature"], manaValue: 1, faces: [], defaultPrinting: { artist: "A", imageUris: { normal: "https://x/n.jpg", small: "https://x/s.jpg" } } }], missingOracleIds: [] });
 });
 
@@ -210,7 +213,7 @@ describe("SessionPage", () => {
     chat.mockReturnValue(events([ev("sessionStarted", "s1")]));
     await renderAt("/session/new");
     const user = userEvent.setup();
-    const box = await screen.findByLabelText("Use only cards in my collection");
+    const box = await screen.findByLabelText("Only cards I own");
     expect(box).toBeChecked();
     // The line names the collection, never its id.
     expect(await screen.findByTestId("pool-mode")).toHaveTextContent("Pool: binder-july.csv. The agent asks how strict.");
@@ -221,7 +224,7 @@ describe("SessionPage", () => {
     await user.click(screen.getByRole("button", { name: "Send" }));
     await screen.findByText("Session id: s1");
     expect((chat.mock.calls[0][0] as { collectionId: string }).collectionId).toBe("c1");
-    expect(screen.queryByLabelText("Use only cards in my collection")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Only cards I own")).not.toBeInTheDocument();
     await waitFor(() => expect(screen.getByLabelText("Your message")).toBeEnabled());
     await user.type(screen.getByLabelText("Your message"), "more{enter}");
     await waitFor(() => expect(chat).toHaveBeenCalledTimes(2));
@@ -454,12 +457,6 @@ describe("SessionPage", () => {
     expect((chat.mock.calls[0][0] as { message: string }).message).toBe("elves");
   });
 
-  it("offers to resume the stored session on /session/new", async () => {
-    useAppStore.setState({ sessionId: "s9" });
-    await renderAt("/session/new");
-    expect(await screen.findByTestId("resume-link")).toHaveAttribute("href", "/session/s9");
-  });
-
   it("keeps a stored session's open question when a later turn asked another (reload merge)", async () => {
     getSession.mockResolvedValue({
       session: {
@@ -639,7 +636,7 @@ describe("the pool picker", () => {
     await userEvent.setup().selectOptions(select, "c1");
     expect(useAppStore.getState().collectionId).toBe("c1");
     expect(useAppStore.getState().poolMode).toBe("owned");
-    expect(await screen.findByLabelText("Use only cards in my collection")).toBeChecked();
+    expect(await screen.findByLabelText("Only cards I own")).toBeChecked();
   });
 
   it("any card clears the collection", async () => {
@@ -734,6 +731,67 @@ describe("the pool of a new chat", () => {
   it("opens at any card when nothing chose a collection", async () => {
     await renderAt("/session/new");
     expect(await screen.findByLabelText("Build from")).toHaveValue("");
-    expect(screen.queryByLabelText("Use only cards in my collection")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Only cards I own")).not.toBeInTheDocument();
+  });
+});
+
+// The head of a new chat carries the three newest decks (D-350).
+describe("the head of a new chat", () => {
+  it("shows the three newest decks, each at its own address", async () => {
+    listDecks.mockResolvedValue({
+      decks: [
+        { id: "d1", name: "Elf Ball", cardCount: 100, createdAt: { seconds: 1756000000n, nanos: 0 }, cards: [], sideboard: [], upgrades: [], commanderOracleIds: [] },
+        { id: "d2", name: "Dimir Mill", cardCount: 99, createdAt: { seconds: 1755000000n, nanos: 0 }, cards: [], sideboard: [], upgrades: [], commanderOracleIds: [] },
+      ],
+      nextPageToken: "",
+    });
+    await renderAt("/session/new");
+    expect(await screen.findByRole("link", { name: /Elf Ball/ })).toHaveAttribute("href", "/decks/d1");
+    expect(screen.getByRole("link", { name: /Dimir Mill/ })).toHaveAttribute("href", "/decks/d2");
+    expect(listDecks).toHaveBeenCalledWith({ pageSize: 3 });
+  });
+
+  it("shows nothing of the kind before the first deck", async () => {
+    await renderAt("/session/new");
+    await screen.findByLabelText("Build from");
+    expect(screen.queryByText("Pick up where you left off")).not.toBeInTheDocument();
+  });
+
+  it("keeps the pool picker in the foot of the message box", async () => {
+    await renderAt("/session/new");
+    const box = (await screen.findByLabelText("Your message")).closest("form");
+    expect(box).not.toBeNull();
+    expect(within(box as HTMLElement).getByLabelText("Build from")).toBeInTheDocument();
+  });
+});
+
+// A decline hands the choice back with no value (D-353).
+describe("declining a question", () => {
+  it("sends declined, not words", async () => {
+    getSession.mockResolvedValue({
+      session: { id: "s1", collectionId: "", deckIds: [], turns: [{ userMessage: "elves", questions: [formatQuestion], answers: [] }] },
+    });
+    await renderAt("/session/s1");
+    const user = userEvent.setup();
+    const card = await screen.findByRole("group", { name: "Question: Which format?" });
+    await user.click(within(card).getByRole("button", { name: "You decide" }));
+    expect(within(card).getByRole("button", { name: /You decide/ })).toHaveAttribute("aria-pressed", "true");
+    chat.mockReturnValue(events([ev("slots", {})]));
+    await user.click(screen.getByRole("button", { name: "Submit answers" }));
+    await waitFor(() => expect(chat).toHaveBeenCalled());
+    const req = chat.mock.calls[0][0] as { answers: { questionId: string; declined?: boolean; text: string }[] };
+    expect(req.answers).toEqual([{ questionId: "q1", declined: true, text: "" }]);
+  });
+
+  it("an option pick clears the decline", async () => {
+    getSession.mockResolvedValue({
+      session: { id: "s1", collectionId: "", deckIds: [], turns: [{ userMessage: "elves", questions: [formatQuestion], answers: [] }] },
+    });
+    await renderAt("/session/s1");
+    const user = userEvent.setup();
+    const card = await screen.findByRole("group", { name: "Question: Which format?" });
+    await user.click(within(card).getByRole("button", { name: "You decide" }));
+    await user.click(within(card).getByRole("button", { name: "Commander" }));
+    expect(within(card).getByRole("button", { name: "You decide" })).toHaveAttribute("aria-pressed", "false");
   });
 });

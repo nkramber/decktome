@@ -141,6 +141,10 @@ message Answer {
   // which the proto3 default of 0 could not (D-266).
   optional int32 option_index = 2;
   string text = 3;
+  // declined is true when the user handed the choice back with no value
+  // (D-353). The slot closes and the generator applies the default the
+  // corpus names. A declined answer carries no option_index and no text.
+  bool declined = 4;
 }
 
 // Question is one clarifying question (roadmap PR-7, D-25).

@@ -3,7 +3,6 @@ import { deferred } from "./deferred";
 // Every chunk the shell defers, in one place. The router and the layout
 // render these, and the idle warm-up below brings them in before the
 // first click asks for one.
-export const buildMenuChunk = deferred(async () => ({ default: (await import("./components/shell-menus")).BuildMenuContent }));
 export const accountMenuChunk = deferred(async () => ({ default: (await import("./components/shell-menus")).AccountMenuContent }));
 export const healthFooterChunk = deferred(async () => ({ default: (await import("./components/health-footer")).HealthFooter }));
 export const toasterChunk = deferred(async () => ({ default: (await import("../components/ui/toaster")).Toaster }));
@@ -14,7 +13,7 @@ export const sessionChunk = deferred(async () => ({ default: (await import("../f
 export const decksChunk = deferred(async () => ({ default: (await import("../features/deck/decks-page")).DecksPage }));
 export const deckScreenChunk = deferred(async () => ({ default: (await import("../features/workspace/deck-screen")).DeckScreen }));
 
-const all = [buildMenuChunk, accountMenuChunk, healthFooterChunk, toasterChunk, signInChunk, collectionChunk, sessionChunk, decksChunk, deckScreenChunk];
+const all = [accountMenuChunk, healthFooterChunk, toasterChunk, signInChunk, collectionChunk, sessionChunk, decksChunk, deckScreenChunk];
 
 // warmChunks brings in every deferred chunk. A menu that mounts on the
 // click costs about 320 ms of that click, measured on 2026-08-30, and a

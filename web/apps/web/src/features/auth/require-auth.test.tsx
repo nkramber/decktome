@@ -41,14 +41,14 @@ describe("route guard", () => {
 
     state.user = fakeUser;
     const inn = await renderAt("/");
-    expect(await screen.findByRole("heading", { level: 1, name: "Chat" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "New deck" })).toBeInTheDocument();
     expect(inn.router.state.location.pathname).toBe("/session/new");
   });
 
   it("sends a signed-in visit to /sign-in on to Build (D-334)", async () => {
     state.user = fakeUser;
     const { router } = await renderAt("/sign-in");
-    await screen.findByRole("heading", { level: 1, name: "Chat" });
+    await screen.findByRole("heading", { level: 1, name: "New deck" });
     expect(router.state.location.pathname).toBe("/session/new");
   });
 

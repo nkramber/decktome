@@ -155,6 +155,19 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 Seven owner rows wait in `docs/owner-questions.md`: OQ-23, OQ-28 to OQ-31, OQ-37, and OQ-39. OQ-20, OQ-44, OQ-45, and OQ-46 wait in `docs/open-questions.md`.
 
+## The dead conversation of 2026-08-31 (D-351 to D-354)
+
+Session `0EqqY19J6A4BxCVgsmAE` stopped for good. The reader answered "No" to two yes-or-no questions, and both keys stayed in the asked state. Readiness needs no key in that state, so no build started. The agent never repeats a question it asked, so no new question came. Every later turn ended with no question, no message, and no deck.
+
+Four changes close the hole:
+
+- `State.DeclineNegative` reads a bare negative and closes the key (D-352). It pairs the answer with its question by id, so it matches no text.
+- `Answer.declined` and the "You decide" control on a question card say the same thing outright (D-353).
+- The classifier prompt now names a negative answer as a decline (D-354). Its "none closes no key" rule reads as commander_pick alone.
+- A turn that asks nothing new and is not ready closes what is out and builds (D-351). That is the net under the three above.
+
+CAUTION: D-352 and D-354 change what the questions engine does with an answer. Read the run 28 gate and its eval against run 27 before you trust a comparison with an older run.
+
 ## Speed, measured on 2026-08-30
 
 Every number below comes from Playwright over the built app on `vite preview`, with each RPC stubbed. `scripts` in the scratchpad hold the runs. The same measurement on the dev server gives larger numbers, because Vite serves each module on its own there.

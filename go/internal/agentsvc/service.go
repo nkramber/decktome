@@ -358,6 +358,13 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 	}
 
 	st := questions.Restore(session.GetId(), session.GetSlots(), snap)
+	// A bare "no" to a yes-or-no question is a whole answer, and the
+	// classifier reads it as neither a value nor a decline (D-352). The
+	// pairing is exact here, because the answer names its question.
+	for _, key := range declineNegatives(st, req.Msg.GetAnswers(), session) {
+		s.log.InfoContext(ctx, "the user answered a yes-or-no question with a bare negative, so the key closed",
+			"session", session.GetId(), "key", key)
+	}
 	message := withAnswers(req.Msg.GetMessage(), req.Msg.GetAnswers(), session)
 	if len(message) > maxFoldedBytes {
 		return connect.NewError(connect.CodeInvalidArgument, errTooLong)
@@ -374,6 +381,7 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 		return err
 	}
 	acc := llm.NewAccumulator(s.prices)
+	var stalled []string
 	res, turnErr := agent.Turn(ctx, st, message, acc)
 	// The turn is stored either way. A failed turn keeps the slots the
 	// classify call already filled, so a retry does not start again.
@@ -392,6 +400,20 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 			cardOptions(res.Questions, s.index.Current())
 		}
 		turn.Questions = res.Questions
+		// A turn that asks nothing new and is not ready can never move
+		// again: the agent does not repeat a question it already asked,
+		// so the questions that are out stay out for good, and no build
+		// ever starts. The reader sees a chat that does nothing. Close
+		// those questions with no value and build (D-351).
+		if !res.Ready && len(res.Questions) == 0 {
+			if closed := st.CloseStalled(); len(closed) > 0 {
+				s.log.WarnContext(ctx, "a turn asked nothing and was not ready, so the open questions were closed",
+					"session", session.GetId(), "keys", closed)
+				res.Ready = st.Ready(s.cat)
+				session.Slots = st.Slots
+				stalled = closed
+			}
+		}
 		session.Status = mtgv1.SessionStatus_SESSION_STATUS_ASKING
 		if res.Ready {
 			session.Status = mtgv1.SessionStatus_SESSION_STATUS_READY
@@ -412,6 +434,12 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 		return stream.Send(&mtgv1.ChatResponse{
 			Event: &mtgv1.ChatResponse_Failure{Failure: failure(turnErr)},
 		})
+	}
+	if len(stalled) > 0 {
+		if err := stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Status{
+			Status: "I did not read an answer to every question, so I am building with what I have"}}); err != nil {
+			return err
+		}
 	}
 	for _, q := range res.Questions {
 		if err := stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Question{Question: q}}); err != nil {
@@ -568,6 +596,43 @@ func (s *Server) hints(_ *mtgv1.Session, st *questions.State, owned map[string]i
 		Owned:   owned,
 		Log:     s.log,
 	}
+}
+
+// declineNegatives closes every key whose question the user answered
+// with a bare negative (D-352). It returns the keys it closed.
+func declineNegatives(st *questions.State, answers []*mtgv1.Answer, session *mtgv1.Session) []string {
+	if len(answers) == 0 {
+		return nil
+	}
+	asked := map[string]*mtgv1.Question{}
+	for _, turn := range session.GetTurns() {
+		for _, q := range turn.GetQuestions() {
+			asked[q.GetId()] = q
+		}
+	}
+	var closed []string
+	for _, a := range answers {
+		q := asked[a.GetQuestionId()]
+		if q == nil {
+			continue
+		}
+		// A declined answer says outright that the user named no value
+		// (D-353). It needs no reading of the words.
+		if a.GetDeclined() {
+			if key, ok := st.Decline(q.GetId()); ok {
+				closed = append(closed, key)
+			}
+			continue
+		}
+		// An option index names a value, never a negative.
+		if a.OptionIndex != nil {
+			continue
+		}
+		if key, ok := st.DeclineNegative(q.GetId(), q.GetText(), a.GetText()); ok {
+			closed = append(closed, key)
+		}
+	}
+	return closed
 }
 
 // withAnswers folds the structured replies into the message the

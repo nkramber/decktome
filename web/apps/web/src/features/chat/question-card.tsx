@@ -8,13 +8,14 @@ import { cn } from "../../lib/cn";
 import { CardOption, CardOptionsError, hasCardOptions, useOptionCards } from "./card-options";
 
 // Draft is the user's answer to one question before the submit. An option
-// pick and free text exclude each other: the last one the user touched wins.
-export type Draft = { optionIndex?: number; text: string };
+// pick, free text, and a decline exclude each other: the last one the
+// user touched wins.
+export type Draft = { optionIndex?: number; text: string; declined?: boolean };
 
 export const emptyDraft: Draft = { text: "" };
 
 export function draftAnswered(d: Draft | undefined): boolean {
-  return d !== undefined && (d.optionIndex !== undefined || d.text.trim() !== "");
+  return d !== undefined && (d.declined === true || d.optionIndex !== undefined || d.text.trim() !== "");
 }
 
 // One open question: the options as toggle buttons and a free-text field
@@ -86,12 +87,26 @@ export function QuestionCard({
         question.options.length > 0 && <div className="flex flex-wrap gap-2">{question.options.map(button)}</div>
       )}
       {!closed && (
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor={answerId}>{question.options.length > 0 ? "Or answer in your own words" : "Your answer"}</Label>
-        <Input id={answerId} type="text" value={draft.text} disabled={disabled} onChange={(e) => onChange({ text: e.target.value })} />
-      </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor={answerId}>{question.options.length > 0 ? "Or answer in your own words" : "Your answer"}</Label>
+          <Input id={answerId} type="text" value={draft.text} disabled={disabled} onChange={(e) => onChange({ text: e.target.value })} />
+        </div>
       )}
-      {question.invented && <p className="text-xs text-muted-foreground">This question is not in the catalog (D-25).</p>}
+      {/* A decline hands the choice back with no value (D-353). The
+          agent applies the default its corpus names, and the question
+          closes for good. */}
+      <div>
+        <Button
+          variant={draft.declined ? "default" : "outline"}
+          size="sm"
+          disabled={disabled}
+          aria-pressed={draft.declined === true}
+          onClick={() => onChange(draft.declined ? { text: "" } : { text: "", declined: true })}
+        >
+          {draft.declined && <span aria-hidden="true">✓ </span>}
+          You decide
+        </Button>
+      </div>
     </div>
   );
 }
