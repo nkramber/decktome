@@ -336,9 +336,15 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 		return connect.NewError(connect.CodeResourceExhausted, errBusy)
 	}
 
-	session, snap, version, owned, err := s.load(ctx, uid, req.Msg)
+	session, snap, version, owned, collectionGone, err := s.load(ctx, uid, req.Msg)
 	if err != nil {
 		return err
+	}
+	if collectionGone {
+		if err := stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Status{
+			Status: "the collection this deck was built from is gone, so this chat builds from the whole card database now"}}); err != nil {
+			return err
+		}
 	}
 	if req.Msg.GetSessionId() == "" {
 		if err := stream.Send(&mtgv1.ChatResponse{
@@ -456,11 +462,11 @@ func buildKey(uid, sessionID string) string { return uid + "/" + sessionID }
 // counts of its collection once for the whole turn. The version is the
 // one Put must expect, and a new session expects 0. A new session that
 // names a collection the store does not hold is NotFound.
-func (s *Server) load(ctx context.Context, uid string, msg *mtgv1.ChatRequest) (*mtgv1.Session, questions.Snapshot, int64, map[string]int32, error) {
+func (s *Server) load(ctx context.Context, uid string, msg *mtgv1.ChatRequest) (*mtgv1.Session, questions.Snapshot, int64, map[string]int32, bool, error) {
 	if id := msg.GetSessionId(); id != "" {
 		session, snap, version, err := s.store.GetState(ctx, uid, id)
 		if err != nil {
-			return nil, questions.Snapshot{}, 0, nil, storeError(err)
+			return nil, questions.Snapshot{}, 0, nil, false, storeError(err)
 		}
 		owned, err := s.ownedCounts(ctx, uid, session.GetCollectionId())
 		if err != nil {
@@ -469,15 +475,27 @@ func (s *Server) load(ctx context.Context, uid string, msg *mtgv1.ChatRequest) (
 			// back to their short wording.
 			s.log.WarnContext(ctx, "owned counts unavailable", "collection", session.GetCollectionId(), "err", err)
 		}
-		return session, snap, version, owned, nil
+		// A deleted collection is not a failure of this turn. The chat
+		// builds from the whole card database from now on, and it says
+		// so once (D-347). The session forgets the collection, so every
+		// later turn reads no collection at all.
+		gone := err != nil && status.Code(err) == codes.NotFound
+		if gone {
+			session.CollectionId = ""
+			snap.Ctx.HasCollection = false
+			if session.GetSlots().GetPoolRule() != mtgv1.PoolRule_POOL_RULE_UNSPECIFIED {
+				session.Slots.PoolRule = mtgv1.PoolRule_POOL_RULE_ANY_CARD
+			}
+		}
+		return session, snap, version, owned, gone, nil
 	}
 	owned, err := s.ownedCounts(ctx, uid, msg.GetCollectionId())
 	if err != nil {
 		if status.Code(err) == codes.NotFound {
-			return nil, questions.Snapshot{}, 0, nil, connect.NewError(connect.CodeNotFound,
+			return nil, questions.Snapshot{}, 0, nil, false, connect.NewError(connect.CodeNotFound,
 				fmt.Errorf("collection %q: %w", msg.GetCollectionId(), err))
 		}
-		return nil, questions.Snapshot{}, 0, nil, connect.NewError(connect.CodeInternal, err)
+		return nil, questions.Snapshot{}, 0, nil, false, connect.NewError(connect.CodeInternal, err)
 	}
 	id := s.store.NewID(uid)
 	session := &mtgv1.Session{
@@ -488,7 +506,7 @@ func (s *Server) load(ctx context.Context, uid string, msg *mtgv1.ChatRequest) (
 	// A user with no collection never gets the card-pool question (D-37).
 	snap := questions.Snapshot{Version: questions.SnapshotVersion}
 	snap.Ctx.HasCollection = msg.GetCollectionId() != ""
-	return session, snap, 0, owned, nil
+	return session, snap, 0, owned, false, nil
 }
 
 // ownedCounts reads the owned counts of one collection. It answers nil

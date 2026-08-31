@@ -7,7 +7,9 @@ import { createJSONStorage, persist } from "zustand/middleware";
 export type PoolMode = "owned" | "any";
 
 export type AppState = {
-  // The active collection, or empty in any-card mode (D-37).
+  // The active collection, or empty in any-card mode (D-37). It lives
+  // for one page load: a new load builds from any card until the reader
+  // names a collection (D-345).
   collectionId: string;
   // The current chat session, or empty before the first message.
   sessionId: string;
@@ -36,7 +38,12 @@ export const useAppStore = create<AppState>()(
     {
       name: "mtg-deck-builder",
       storage: createJSONStorage(() => localStorage),
-      partialize: (s) => ({ collectionId: s.collectionId, sessionId: s.sessionId, poolMode: s.poolMode }),
+      // Only the session id survives a reload. The pool is a choice of
+      // one chat, not a setting of the app, so every load starts at any
+      // card (D-345). A browser that stored the old shape drops it.
+      version: 1,
+      migrate: (persisted) => ({ sessionId: (persisted as { sessionId?: string } | null)?.sessionId ?? "" }) as Partial<AppState>,
+      partialize: (s) => ({ sessionId: s.sessionId }),
     },
   ),
 );

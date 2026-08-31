@@ -61,9 +61,8 @@ export function DeckCard({ deck, byId, onFavorite }: { deck: Deck; byId: Map<str
         </div>
       </div>
 
-      <div className="relative mt-auto flex items-center justify-between pt-1">
+      <div className="relative mt-auto pt-1">
         <span className="font-mono text-[10px] text-muted-foreground">{deck.createdAt?.seconds ? new Date(Number(deck.createdAt.seconds) * 1000).toLocaleDateString() : ""}</span>
-        <span className="font-display text-[11px] tracking-widest text-muted-foreground uppercase">Open →</span>
       </div>
     </li>
   );

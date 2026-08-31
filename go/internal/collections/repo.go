@@ -135,6 +135,17 @@ func (r *Repo) OracleCounts(ctx context.Context, uid, id string) (map[string]int
 	return counts, nil
 }
 
+// Delete removes one collection for good (D-347). A deck built from it
+// keeps every card it holds, and its chat builds from the whole card
+// database from then on.
+func (r *Repo) Delete(ctx context.Context, uid, id string) error {
+	if _, err := r.doc(uid, id).Get(ctx); err != nil {
+		return err
+	}
+	_, err := r.doc(uid, id).Delete(ctx)
+	return err
+}
+
 // List returns every collection of a user, without entries.
 func (r *Repo) List(ctx context.Context, uid string) ([]*mtgv1.Collection, error) {
 	snaps, err := r.client.Collection("users").Doc(uid).Collection("collections").Documents(ctx).GetAll()

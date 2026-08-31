@@ -1,11 +1,22 @@
 import { ImportSource } from "@mtg/api-client/mtg/v1/collection_pb";
 import type { ImportCollectionResponse } from "@mtg/api-client/mtg/v1/collection_service_pb";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BookOpenIcon, PackageIcon } from "lucide-react";
+import { BookOpenIcon, PackageIcon, Trash2Icon } from "lucide-react";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 
 import { EmptyState } from "../../app/components/empty-state";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "../../components/ui/alert-dialog";
 import { ErrorState } from "../../app/components/error-state";
 import { notify } from "../../app/components/notify";
 import { PageHeader } from "../../app/components/page-header";
@@ -55,6 +66,21 @@ export function CollectionPage() {
     navigate(location.pathname, { replace: true, state: null });
     fileInput.current?.click();
   }, [askForFile, navigate, location.pathname]);
+
+  // Deleting a collection is for good (D-347). A deck built from it keeps
+  // every card. Its chat builds from the whole card database from then
+  // on, and the chat says so on its next turn.
+  const removeCollection = useMutation({
+    mutationFn: (id: string) => collectionClient.deleteCollection({ collectionId: id }),
+    onSuccess: (_res, id) => {
+      if (id === collectionId) clearCollection();
+      setResult(null);
+      void notify("success", "Collection deleted", "A deck built from it keeps its cards.");
+      void queryClient.invalidateQueries({ queryKey: ["collections"] });
+      void queryClient.invalidateQueries({ queryKey: ["collection", id] });
+    },
+    onError: (err) => void notify("error", "Could not delete the collection", errorMessage(err)),
+  });
 
   const upload = useMutation({
     mutationFn: async (f: File) => {
@@ -213,6 +239,26 @@ export function CollectionPage() {
                     {c.cardCount} cards
                     {c.importedAt?.seconds ? `, imported ${new Date(Number(c.importedAt.seconds) * 1000).toLocaleDateString()}` : null}
                   </span>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" aria-label={`Delete ${c.name}`} className="ml-auto size-7 text-danger hover:text-danger">
+                        <Trash2Icon aria-hidden="true" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete {c.name}?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This can not be undone. Every deck you built from it keeps all of its cards. The chat of each one builds from the whole card database from
+                          now on, and it says so.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Keep it</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => removeCollection.mutate(c.id)}>Delete the collection</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </li>
               );
             })}

@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, type KeyboardEvent, type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { Link, useBlocker, useLocation, useNavigate, useParams } from "react-router";
 
-import { AlertTriangleIcon, ArrowUpIcon, CheckIcon, ChevronDownIcon, ChevronUpIcon, LayersIcon } from "lucide-react";
+import { AlertTriangleIcon, ArrowUpIcon, CheckIcon, LayersIcon } from "lucide-react";
 
 import { Button } from "../../components/ui/button";
 import { Label } from "../../components/ui/label";
@@ -282,8 +282,6 @@ export function ChatPanel({
     if (!streamedDeckId || state.busy) return;
     if (streamedDeckId !== deckOverride?.id) onDeckBuilt?.(streamedDeckId);
   }, [streamedDeckId, state.busy, deckOverride?.id, onDeckBuilt]);
-  const [historyOpen, setHistoryOpen] = useState(false);
-
   // A question sits in the thread and in the open list at the same time,
   // and the card below it takes the answer. The thread holds the line for
   // the history, so it shows the question only after it is answered.
@@ -356,7 +354,7 @@ export function ChatPanel({
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={onKeyDown}
           rows={2}
-          placeholder={beforeFirstMessage ? "Build me a mono-green Commander deck around elves." : "Ask for a change, or say what to build next."}
+          placeholder={beforeFirstMessage ? "Build me a mono-green Commander deck around elves." : "Ask for a change."}
           className="max-h-40 resize-none border-0 bg-transparent px-4 pt-3 pb-1"
         />
         <div className="flex items-end justify-between gap-3 px-3 pb-3">
@@ -416,44 +414,42 @@ export function ChatPanel({
     </div>
   );
 
-  // The deck fills the page, and the conversation docks at the corner.
+  // The deck owns the page, and the conversation is a pinned column at
+  // its left (D-346). The gap between the two equals the gap between the
+  // deck and the right edge of the window, so the deck sits in an even
+  // frame. The column overlaps nothing.
   if (builtDeck) {
     return (
-      <div className="mx-auto w-full max-w-[75rem] p-4 md:p-6">
-        {deckError && (
-          <p role="alert" className="mb-4 text-danger">
-            Could not load the deck: {deckError}
-          </p>
-        )}
-        {actions}
-        <section aria-label="Deck" className="pb-40">
-          <DeckView deck={builtDeck} base={deckOverride ? baseOverride : state.baseDeck} />
-        </section>
-
-        <aside aria-labelledby="chat-title" className="fixed bottom-4 left-4 z-40 flex w-[min(30rem,calc(100vw-2rem))] flex-col gap-2">
-          <h1 id="chat-title" className="sr-only">
+      <div className="flex flex-col gap-6 p-4 md:p-6 lg:flex-row">
+        <aside
+          aria-labelledby="chat-title"
+          className="flex w-full shrink-0 flex-col gap-2 rounded-card border border-border bg-card p-3 lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)] lg:w-[22rem]"
+        >
+          <h1 id="chat-title" className="font-display text-[10px] tracking-[0.15em] text-muted-foreground uppercase">
             Chat
           </h1>
-          {historyOpen && (
-            <div className="max-h-[55vh] overflow-y-auto rounded-card border border-border bg-card p-4 shadow-overlay">
-              {thread}
-              <div ref={end} />
-            </div>
-          )}
-          <div className="flex flex-col gap-2 rounded-card border border-border bg-card p-3 shadow-overlay">
-            <div className="flex items-center justify-between gap-2">
-              <Button variant="ghost" size="sm" aria-expanded={historyOpen} onClick={() => setHistoryOpen((v) => !v)}>
-                {historyOpen ? <ChevronDownIcon aria-hidden="true" /> : <ChevronUpIcon aria-hidden="true" />}
-                History ({state.thread.length})
-              </Button>
-              {working}
-            </div>
-            {leaveWarning}
-            {questions}
-            {composer}
-            {idLine}
+          <div className="min-h-0 grow overflow-y-auto">
+            {thread}
+            <div ref={end} />
           </div>
+          {working}
+          {leaveWarning}
+          {questions}
+          {composer}
+          {idLine}
         </aside>
+
+        <div className="min-w-0 grow">
+          {deckError && (
+            <p role="alert" className="mb-4 text-danger">
+              Could not load the deck: {deckError}
+            </p>
+          )}
+          {actions}
+          <section aria-label="Deck">
+            <DeckView deck={builtDeck} base={deckOverride ? baseOverride : state.baseDeck} />
+          </section>
+        </div>
       </div>
     );
   }

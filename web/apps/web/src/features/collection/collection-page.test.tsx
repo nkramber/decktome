@@ -1,5 +1,5 @@
 import { ImportSource, UnresolvedReason } from "@mtg/api-client/mtg/v1/collection_pb";
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { axe } from "jest-axe";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -15,6 +15,7 @@ const importCollection = vi.fn();
 const listCollections = vi.fn();
 const getCollection = vi.fn();
 const getCards = vi.fn();
+const deleteCollection = vi.fn();
 vi.mock("../../lib/api", () => ({
   healthClient: { check: () => Promise.resolve({ status: "ok", version: "test", cardSnapshot: "none" }) },
   cardClient: { getCards: (...args: unknown[]) => getCards(...args) },
@@ -22,6 +23,7 @@ vi.mock("../../lib/api", () => ({
     importCollection: (...args: unknown[]) => importCollection(...args),
     listCollections: (...args: unknown[]) => listCollections(...args),
     getCollection: (...args: unknown[]) => getCollection(...args),
+    deleteCollection: (...args: unknown[]) => deleteCollection(...args),
   },
 }));
 
@@ -38,6 +40,7 @@ beforeEach(() => {
   listCollections.mockReset();
   getCollection.mockReset();
   getCards.mockReset();
+  deleteCollection.mockReset();
   listCollections.mockResolvedValue({ collections: earlier });
   getCollection.mockResolvedValue({
     collection: {
@@ -224,5 +227,30 @@ describe("the file dialog on arrival", () => {
     } finally {
       HTMLInputElement.prototype.click = realClick;
     }
+  });
+});
+
+// Deleting a collection is for good (D-347). The decks it built keep
+// their cards, and their chats fall back to the whole card database.
+describe("deleting a collection", () => {
+  it("asks first, then removes it and clears the active choice", async () => {
+    useAppStore.setState({ collectionId: "c-old", poolMode: "owned" });
+    deleteCollection.mockResolvedValue({});
+    await renderAt("/collection");
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Delete binder-july.csv" }));
+    expect(await screen.findByText(/Every deck you built from it keeps all of its cards/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Delete the collection" }));
+    await waitFor(() => expect(deleteCollection).toHaveBeenCalledWith({ collectionId: "c-old" }));
+    await waitFor(() => expect(useAppStore.getState().collectionId).toBe(""));
+    expect(useAppStore.getState().poolMode).toBe("any");
+  });
+
+  it("keeps the collection when the reader backs out", async () => {
+    await renderAt("/collection");
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Delete binder-july.csv" }));
+    await user.click(await screen.findByRole("button", { name: "Keep it" }));
+    expect(deleteCollection).not.toHaveBeenCalled();
   });
 });
