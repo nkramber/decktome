@@ -246,3 +246,19 @@ describe("the version history", () => {
     expect(screen.queryByTestId("compare-diff")).not.toBeInTheDocument();
   });
 });
+
+// The docked chat has no fold: it holds one width and stays open
+// (D-370, amends D-368).
+describe("the docked chat", () => {
+  it("is always open, and it scrolls on its own", async () => {
+    withVersions();
+    await renderAt("/decks/d1");
+    expect(await screen.findByRole("textbox", { name: "Your message" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Hide the chat" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Show the chat" })).not.toBeInTheDocument();
+    // The thread keeps its own scroll box, so the deck beside it is free
+    // to scroll on its own.
+    const thread = screen.getByRole("list", { name: "Conversation" }).parentElement;
+    expect(thread).toHaveClass("overflow-y-auto");
+  });
+});

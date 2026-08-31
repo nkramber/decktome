@@ -168,6 +168,24 @@ Four changes close the hole:
 
 CAUTION: D-352 and D-354 change what the questions engine does with an answer. Read the run 28 gate and its eval against run 27 before you trust a comparison with an older run.
 
+## The paid runs of 2026-08-31
+
+The re-baseline of D-302 is done for the question gate and the deck gate. Total spend: $1.31.
+
+| Run | File | Result |
+|---|---|---|
+| Question gate 28 | `pr7-question-gate-run28.md` | PASS. 26 of 27 catalog-only, over the bar of 25. Run 27 sat on it at 25. $0.1589. |
+| Question eval 28 | `pr7-question-eval-run28.md` | 6.8 percent bad on the holdout, from 7.2. The tune split reads 2.2 percent, from 4.1. $0.0916. |
+| Deck gate 9 | `pr8-deck-gate-run9.md` | PASS, and it found a defect the verdict can not see. $1.0450. |
+
+CAUTION: deck gate run 9 ran with the unbounded owned-first fill. Four decks that cost nothing to buy on run 8 cost $39.81, $80.24, $60.77, and $167.98 on run 9. D-362 bounds the fill at 150 names, and every owned-first prompt of run 8 sits above that floor. A run 10 must show the run 8 costs again. Read the buy cost of each owned-first prompt, not the verdict: all three bars of this gate read legality, never cost.
+
+## The dead-end check of the question gate (D-357)
+
+`cmd/questions-gate/stall.go` fails a dead-end conversation. A dead end is a last turn that sent no question and did not report ready. Such a turn also left every slot as it found it, with a question still out. The gate reports a stall that a later turn recovers, and it fails neither.
+
+The check has 11 unit cases and one live smoke run of 8 conversations, which found no dead end. The other 96 conversations of the set are unproven. Read the first full run: a false failure means one line goes, `len(deadEnds) == 0` in the pass expression.
+
 ## Speed, measured on 2026-08-30
 
 Every number below comes from Playwright over the built app on `vite preview`, with each RPC stubbed. `scripts` in the scratchpad hold the runs. The same measurement on the dev server gives larger numbers, because Vite serves each module on its own there.

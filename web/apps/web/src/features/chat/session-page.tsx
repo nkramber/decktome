@@ -131,6 +131,12 @@ export function pruneDrafts(drafts: Record<string, Draft>, open: { id: string }[
 // in it yet.
 const nearBottomPx = 240;
 
+// wheelFactor slows the thread against the wheel (D-370). One notch of a
+// mouse wheel moves a browser about 100 px, which is a large step in a
+// column this narrow: a whole turn goes by in one notch. The thread takes
+// a fraction of that instead.
+const wheelFactor = 0.4;
+
 // ChatPanel serves both screens of a deck (D-335). On the session route
 // it shows the conversation alone, and it hands over to the deck's own
 // address the moment a deck exists. On the deck route it shows the deck
@@ -224,6 +230,30 @@ export function ChatPanel({
     prevOpenCount.current = openCount;
   }, [openCount]);
 
+  // The thread scrolls at its own pace (D-370). The handler is native and
+  // not passive, because a passive listener may not stop the browser from
+  // scrolling its own distance first.
+  const threadScroll = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = threadScroll.current;
+    if (!el) return;
+    function onWheel(e: WheelEvent) {
+      const box = threadScroll.current;
+      if (!box || e.ctrlKey) return;
+      // A wheel at the end of the thread belongs to whatever is under it.
+      const atTop = box.scrollTop <= 0 && e.deltaY < 0;
+      const atEnd = Math.ceil(box.scrollTop + box.clientHeight) >= box.scrollHeight && e.deltaY > 0;
+      if (atTop || atEnd) return;
+      e.preventDefault();
+      // deltaMode 1 counts lines, and 2 counts pages. Both are rare, and
+      // a line is about 16 px.
+      const step = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+      box.scrollTop += step * wheelFactor;
+    }
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, []);
+
   // New output scrolls into view. The sentinel sits under the thread.
   const end = useRef<HTMLDivElement>(null);
   const lastSubmission = useRef<HTMLLIElement>(null);
@@ -232,11 +262,26 @@ export function ChatPanel({
   useEffect(() => {
     const mine = lastSubmission.current;
     if (mine) {
+      // scrollIntoView scrolls every scrollable ancestor, and an
+      // overflow-hidden box still scrolls when code asks it to. On a deck
+      // screen that pushed the whole chat column off the top of the
+      // frame. Inside its own box the thread scrolls itself, and nothing
+      // above it moves (D-370).
+      const box = threadScroll.current;
+      if (box?.contains(mine)) {
+        box.scrollTop += mine.getBoundingClientRect().top - box.getBoundingClientRect().top;
+        return;
+      }
       mine.scrollIntoView?.({ block: "start" });
       return;
     }
     const el = end.current;
     if (!el) return;
+    const box = threadScroll.current;
+    if (box?.contains(el)) {
+      box.scrollTop = box.scrollHeight;
+      return;
+    }
     if (el.getBoundingClientRect().top - window.innerHeight > nearBottomPx) return;
     el.scrollIntoView?.({ block: "nearest" });
   }, [state.thread.length, lastLength, openCount, state.busy]);
@@ -366,9 +411,11 @@ export function ChatPanel({
   );
 
   const composer = showComposer && (
-    <form onSubmit={onSubmit} className="flex flex-col gap-2">
+    // The cards sit close under the title they belong to, and the message
+    // box stands apart as a section of its own (D-369).
+    <form onSubmit={onSubmit} className={cn("flex flex-col gap-2", beforeFirstMessage && "mt-20")}>
       {beforeFirstMessage && (
-        <h2 className="font-display text-xl font-semibold">Build a new deck</h2>
+        <h2 className="font-display text-2xl font-semibold">Build a new deck</h2>
       )}
       <div className="flex flex-col rounded-card border border-border bg-card transition-colors focus-within:border-primary">
         <Label htmlFor="message" className="sr-only">
@@ -385,12 +432,7 @@ export function ChatPanel({
           className="max-h-40 resize-none border-0 bg-transparent px-4 pt-3 pb-1"
         />
         <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-2 px-3 pb-3">
-          <div className="flex min-w-0 flex-col gap-2">
-            {beforeFirstMessage && <PoolPicker />}
-            <p className={cn("font-mono text-[10px]", tooLong ? "text-danger" : "text-muted-foreground")}>
-              Enter to send · Shift+Enter for new line
-            </p>
-          </div>
+          <div className="flex min-w-0 flex-col gap-2">{beforeFirstMessage && <PoolPicker />}</div>
           <Button type="submit" size="icon" aria-label="Send" className="size-8" disabled={tooLong || !message.trim()}>
             <ArrowUpIcon aria-hidden="true" />
           </Button>
@@ -456,20 +498,22 @@ export function ChatPanel({
             the scrolling area and its own thread scrolls inside it. */}
         <aside
           aria-labelledby="chat-title"
-          className="flex w-full shrink-0 flex-col gap-2 rounded-card border border-border bg-card p-3 lg:h-full lg:w-[24.2rem]"
+          className="flex w-full shrink-0 flex-col gap-2 rounded-card border border-border bg-card p-3 lg:h-full lg:w-[26.62rem]"
         >
           <h1 id="chat-title" className="font-display text-[10px] tracking-[0.15em] text-muted-foreground uppercase">
             Chat
           </h1>
-          <div className="min-h-0 grow overflow-y-auto">
-            {thread}
-            <div ref={end} />
+          <div className="flex min-h-0 grow flex-col gap-2">
+            <div ref={threadScroll} className="min-h-0 grow overflow-y-auto overscroll-contain">
+              {thread}
+              <div ref={end} />
+            </div>
+            {working}
+            {leaveWarning}
+            {questions}
+            {composer}
+            {idLine}
           </div>
-          {working}
-          {leaveWarning}
-          {questions}
-          {composer}
-          {idLine}
         </aside>
 
         {/* The deck column carries the scroll, so the chat beside it holds
@@ -495,23 +539,16 @@ export function ChatPanel({
   // and the box that builds the next one. Stretching that to the
   // viewport put a void between them (D-358).
   return (
-    <div className={cn("mx-auto flex w-full max-w-4xl flex-col p-4 md:p-6", !beforeFirstMessage && "min-h-[calc(100vh-9rem)]")}>
-      <section aria-labelledby="chat-title" className={cn("flex min-w-0 flex-col", beforeFirstMessage ? "gap-8" : "grow gap-4")}>
+    <div className={cn("mx-auto flex w-full max-w-4xl flex-col p-4 pt-8 md:p-6 md:pt-14", !beforeFirstMessage && "min-h-[calc(100vh-9rem)]")}>
+      <section aria-labelledby="chat-title" className={cn("flex min-w-0 flex-col", beforeFirstMessage ? "gap-4" : "grow gap-4")}>
         {/* The identifiers are for support, not for reading. They sit in
             one quiet row under the title, and never in the thread. */}
         {/* A new chat says nothing of its session: it has none, and the
             picker in the message box names the pool (D-356). */}
         <div className="flex flex-col gap-1.5">
-          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-            <h1 id="chat-title" className="font-display text-2xl font-semibold">
-              {!beforeFirstMessage ? "Chat" : recent.decks.length > 0 ? "Pick up where you left off" : "New deck"}
-            </h1>
-            {beforeFirstMessage && recent.decks.length > 0 && (
-              <Link to="/decks" className="font-mono text-[11px] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
-                All decks
-              </Link>
-            )}
-          </div>
+          <h1 id="chat-title" className="font-display text-2xl font-semibold">
+            {!beforeFirstMessage ? "Chat" : recent.decks.length > 0 ? "Pick up where you left off" : "New deck"}
+          </h1>
           {!beforeFirstMessage && idLine}
         </div>
         {beforeFirstMessage && <RecentDecks decks={recent.decks} isPending={recent.isPending} />}

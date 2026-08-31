@@ -663,11 +663,71 @@ func (b *Builder) CommanderPool(idx *cards.Index, req Request) ([]Candidate, err
 		out = append(out, b.commanderPairs(idx, req, theme, colorSet, mode, maxRank)...)
 		sortCandidates(out)
 	}
+	// A theme the tag table does not know leaves the pool nearly empty.
+	// "Hobbit" names a handful of legends, and a reader who refuses those
+	// has nothing left to be offered: the row falls silent and D-127
+	// hands the choice to the agent with no word to the reader (D-367).
+	//
+	// The theme still leads. Below the floor the pool takes the
+	// commanders that fit the format and the colors on popularity alone,
+	// so "name three more" always has three more.
+	if len(out) < CommanderPoolFloor {
+		out = append(out, b.unthemed(idx, req, colorSet, mode, maxRank, out)...)
+	}
 	// Owned-first ranks on quality like any card. The commander is one
 	// card, the buy list carries it, and a deck led by the best fit beats
 	// a deck led by a legend the user happens to own (D-297). Owned-only
 	// filtered above, because there the commander must be owned.
 	return out, nil
+}
+
+// CommanderPoolFloor is the pool size under which the theme filter has
+// left too little to choose from. The pick row names three at a time, so
+// a reader who refuses twice needs nine, and a little room over that.
+const CommanderPoolFloor = 12
+
+// unthemed ranks the commanders that fit the format and the colors but
+// carry no theme signal, best first on popularity (D-367). They go after
+// every themed commander, so the theme still leads.
+func (b *Builder) unthemed(idx *cards.Index, req Request, colorSet map[mtgv1.Color]bool,
+	mode mtgv1.PoolRule, maxRank float64, have []Candidate,
+) []Candidate {
+	seen := make(map[string]bool, len(have))
+	for _, c := range have {
+		seen[c.Card.GetOracleId()] = true
+	}
+	var out []Candidate
+	for _, c := range idx.All() {
+		if seen[c.GetOracleId()] {
+			continue
+		}
+		if !c.GetCanBeCommander() || !legalIn(c, legalKeys[mtgv1.FormatId_FORMAT_ID_COMMANDER]) {
+			continue
+		}
+		if !hasPaperPrinting(c) {
+			continue
+		}
+		// The same color rule as the themed half: a commander holds every
+		// color the user named, and no other (D-148).
+		if colorSet != nil &&
+			(!IdentityFits(c.GetColorIdentity(), colorSet) || !identityCovers(c.GetColorIdentity(), colorSet)) {
+			continue
+		}
+		if c.GetGameChanger() && req.Bracket > 0 && req.Bracket <= 2 {
+			continue
+		}
+		owned := req.Owned[c.GetOracleId()]
+		if mode == mtgv1.PoolRule_POOL_RULE_OWNED_ONLY && owned == 0 {
+			continue
+		}
+		out = append(out, Candidate{
+			Card: c, Role: mtgv1.CardRole_CARD_ROLE_THREAT,
+			Score: popularity(c, maxRank),
+			Owned: owned, Signals: []string{"no theme signal"},
+		})
+	}
+	sortCandidates(out)
+	return out
 }
 
 // commanderNames is how many names the pick row holds (catalog row

@@ -34,6 +34,10 @@ type Context struct {
 	// Words is every word the user has written so far, lowercased. The
 	// word-routing rules read it.
 	Words string `json:"words"`
+	// ChoseCommander marks the turn where the pool offered no commander
+	// and the agent took the choice (D-127, D-366). It is turn state: the
+	// Result carries it out, and the next turn starts with it clear.
+	ChoseCommander bool `json:"-"`
 	// OfferChanged says the commanders on the table differ from the ones
 	// the pick row named last. Only a row with RepeatOnChange reads it
 	// (D-163).

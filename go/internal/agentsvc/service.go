@@ -440,6 +440,14 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 			Event: &mtgv1.ChatResponse_Failure{Failure: failure(turnErr)},
 		})
 	}
+	// The pool offered no commander, so the agent took the choice (D-127).
+	// Silence there reads as a bug, and the reader must hear it (D-366).
+	if res.ChoseCommander {
+		if err := stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Status{
+			Status: "I have no more commanders that fit this deck, so I chose one for you"}}); err != nil {
+			return err
+		}
+	}
 	if len(stalled) > 0 {
 		if err := stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Status{
 			Status: "I did not read an answer to every question, so I am building with what I have"}}); err != nil {

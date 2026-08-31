@@ -132,3 +132,23 @@ describe("DecksPage", () => {
     expect(await axe(container)).toHaveNoViolations();
   });
 });
+
+// The whole tile opens the deck (D-365). The stretched link used to
+// resolve against the header row, so only the name was clickable.
+describe("a deck tile", () => {
+  it("covers the whole card with one link", async () => {
+    await renderAt("/decks");
+    await waitFor(() => expect(document.querySelector("li.card-hover")).not.toBeNull());
+    const card = document.querySelector("li.card-hover");
+    expect(card).not.toBeNull();
+    // The tile is the one positioned ancestor, so the stretched link of
+    // the title spans the whole card.
+    expect(card).toHaveClass("relative");
+    // A positioned row in between would take the link's ::after with it.
+    // The favorite button is the one exception: it sits above the link.
+    const positioned = [...(card as HTMLElement).children].filter(
+      (el) => el.className.includes("relative") && !el.className.includes("z-10"),
+    );
+    expect(positioned.map((el) => el.tagName)).toEqual([]);
+  });
+});

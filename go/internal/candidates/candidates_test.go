@@ -1061,3 +1061,47 @@ func TestOwnedFirstFillsToTheFloorNotTheCap(t *testing.T) {
 		}
 	})
 }
+
+// A theme the tag table does not know leaves the commander pool nearly
+// empty, and a reader who refuses the names has nothing left to be
+// offered (D-367). The theme still leads.
+func TestCommanderPoolFillsAThinTheme(t *testing.T) {
+	idx := fixture(t, commanderCards())
+	b, _ := New()
+
+	// A theme no card carries. Every commander of the fixture is unthemed
+	// for it, so the floor decides the pool.
+	pool, err := b.CommanderPool(idx, Request{Format: cmdr, Theme: "zzzz-no-such-theme"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(pool) == 0 {
+		t.Fatal("a theme the table does not know left no commander to offer at all")
+	}
+	for _, c := range pool {
+		if !contains(c.Signals, "no theme signal") {
+			t.Errorf("%s claims a theme signal for a theme no card carries", c.Card.Name)
+		}
+	}
+
+	// The colors still bind: the fill takes the same rule as the themed
+	// half, so a mono-white legend stays out of a white-black list (D-148).
+	wb, err := b.CommanderPool(idx, Request{Format: cmdr, Theme: "zzzz-no-such-theme", Colors: []mtgv1.Color{W, B}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, partial := range []string{"Heliod, Sun-Crowned", "Vito, Thorn of the Dusk Rose", "Green Legend"} {
+		if contains(names(wb), partial) {
+			t.Errorf("the fill ignored the color rule and offered %q: %v", partial, names(wb))
+		}
+	}
+
+	// A themed commander still leads the list.
+	themed, err := b.CommanderPool(idx, Request{Format: cmdr, Theme: "lifegain"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(themed) == 0 || contains(themed[0].Signals, "no theme signal") {
+		t.Errorf("an unthemed commander led a themed pool: %v", names(themed))
+	}
+}

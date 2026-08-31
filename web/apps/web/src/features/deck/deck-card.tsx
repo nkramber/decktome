@@ -12,16 +12,19 @@ import { ManaPips } from "./mana-pips";
 // One deck in the library grid (PR-17). Every deck wears the same gold
 // frame over a hatched ground (D-329), and the colors of the game appear
 // in its mana pips alone.
+// The li is the one positioned ancestor of the card, so the stretched
+// link covers the whole tile. A positioned row in between took the
+// link's ::after with it, and only that row opened the deck (D-365).
 export function DeckCard({ deck, byId, onFavorite }: { deck: Deck; byId: Map<string, Card>; onFavorite: (favorite: boolean) => void }) {
   const identity = identityOfCommanders(deck.commanderOracleIds, byId);
   const commander = deck.commanderOracleIds.map((id) => byId.get(id)).find(Boolean);
   const title = deck.name || "Untitled deck";
 
   return (
-    <li className="card-hover relative flex flex-col gap-3 overflow-hidden rounded-card border border-border bg-card p-4">
-      <span aria-hidden="true" className="hatch pointer-events-none absolute inset-0 opacity-[0.03]" />
+    <li className="card-hover relative isolate flex flex-col gap-3 overflow-hidden rounded-card border border-border bg-card p-4">
+      <span aria-hidden="true" className="hatch pointer-events-none absolute inset-0 -z-10 opacity-[0.03]" />
 
-      <div className="relative flex items-start justify-between gap-2">
+      <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <h2 className="font-display wrap-anywhere text-[15px] leading-tight font-semibold">
             {/* The whole card is the link target, so the row needs no second control. */}
@@ -46,12 +49,12 @@ export function DeckCard({ deck, byId, onFavorite }: { deck: Deck; byId: Map<str
         </Button>
       </div>
 
-      <div className="relative flex items-center gap-2">
+      <div className="flex items-center gap-2">
         <ManaPips colors={identity} size="sm" />
         {commander?.name && <span className="truncate text-[13px] text-secondary-foreground">{commander.name}</span>}
       </div>
 
-      <div className="relative">
+      <div>
         <div className="mb-1 flex justify-between font-mono text-[11px] text-muted-foreground">
           <span>{deck.cardCount > 0 ? `${deck.cardCount} cards` : "No cards"}</span>
           <span>{deck.buyCostUsd > 0 ? `${priceText(deck.buyCostUsd)} to buy` : "Nothing to buy"}</span>
@@ -61,7 +64,7 @@ export function DeckCard({ deck, byId, onFavorite }: { deck: Deck; byId: Map<str
         </div>
       </div>
 
-      <div className="relative mt-auto pt-1">
+      <div className="mt-auto pt-1">
         <span className="font-mono text-[10px] text-muted-foreground">{deck.createdAt?.seconds ? new Date(Number(deck.createdAt.seconds) * 1000).toLocaleDateString() : ""}</span>
       </div>
     </li>
