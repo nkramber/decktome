@@ -77,7 +77,7 @@ describe("axe", () => {
 // pool picker of the chat names a collection.
 describe("Build in the header", () => {
   it("is a link, and it clears the collection", async () => {
-    useAppStore.setState({ collectionId: "c-old", poolMode: "owned" });
+    useAppStore.setState({ collectionId: "c-old", poolMode: "owned_only" });
     const user = userEvent.setup();
     const { router } = await renderAt("/decks");
     const build = screen.getByRole("link", { name: "Build" });

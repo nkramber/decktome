@@ -1,33 +1,48 @@
 import type { Deck } from "@mtg/api-client/mtg/v1/deck_pb";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router";
 
-import { deckClient } from "../../lib/api";
 import { Skeleton } from "../../components/ui/skeleton";
+import { deckClient } from "../../lib/api";
+import { notify } from "../../app/components/notify";
+import { errorMessage } from "../../lib/errors";
+import { DeckCard } from "../deck/deck-card";
+import { useCommanderCards, useDeckWrites } from "../deck/use-decks";
 
-// The three newest decks, at the head of a new chat (D-350). A reader who
-// came back for a deck they already built finds it here, instead of one
-// link to the last conversation.
+// The three newest decks, at the head of a new chat (D-350). They wear
+// the same tile as the library, art and all: a reader who came back for
+// a deck reads the same thing in both places (D-358).
 const recentCount = 3;
 
-function dateOf(deck: Deck): string {
-  const seconds = deck.createdAt?.seconds;
-  return seconds ? new Date(Number(seconds) * 1000).toLocaleDateString() : "";
-}
-
-export function RecentDecks() {
+// useRecentDecks reads the newest decks. The page reads the same list
+// for its title, so one call serves both.
+export function useRecentDecks(enabled: boolean) {
   const list = useQuery({
     queryKey: ["decks", "recent", recentCount],
     queryFn: () => deckClient.listDecks({ pageSize: recentCount }),
+    enabled,
   });
-  const decks = list.data?.decks ?? [];
+  return { decks: list.data?.decks ?? [], isPending: list.isPending && enabled };
+}
 
-  if (list.isPending) {
+export function RecentDecks({ decks, isPending }: { decks: Deck[]; isPending: boolean }) {
+  const byId = useCommanderCards(decks);
+  const { setFavorite } = useDeckWrites();
+
+  async function onFavorite(deck: Deck, favorite: boolean) {
+    try {
+      await setFavorite.mutateAsync({ deckId: deck.id, favorite });
+    } catch (err) {
+      await notify("error", "Could not change the favorite mark", errorMessage(err));
+    }
+  }
+
+  if (isPending) {
     return (
-      <div role="status" className="flex flex-wrap gap-3">
+      <div role="status" className="grid gap-4 sm:grid-cols-3">
         <span className="sr-only">Loading your decks...</span>
-        <Skeleton className="h-16 w-56 rounded-card" />
-        <Skeleton className="h-16 w-56 rounded-card" />
+        <Skeleton className="h-40 rounded-card" />
+        <Skeleton className="h-40 rounded-card" />
+        <Skeleton className="h-40 rounded-card" />
       </div>
     );
   }
@@ -35,29 +50,10 @@ export function RecentDecks() {
   if (decks.length === 0) return null;
 
   return (
-    <section aria-labelledby="recent-title" className="flex flex-col gap-2">
-      <div className="flex items-baseline justify-between gap-3">
-        <h2 id="recent-title" className="font-display text-[10px] tracking-[0.15em] text-muted-foreground uppercase">
-          Pick up where you left off
-        </h2>
-        <Link to="/decks" className="font-mono text-[11px] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
-          All decks
-        </Link>
-      </div>
-      <ul className="grid gap-3 sm:grid-cols-3">
+    <section aria-label="Your newest decks">
+      <ul className="grid gap-4 sm:grid-cols-3">
         {decks.map((deck) => (
-          <li key={deck.id}>
-            <Link
-              to={`/decks/${deck.id}`}
-              className="card-hover flex h-full flex-col gap-1 rounded-card border border-border bg-card p-3 transition-colors hover:border-primary/60"
-            >
-              <span className="font-display truncate text-[13px] font-semibold">{deck.name || "Untitled deck"}</span>
-              <span className="font-mono text-[10px] text-muted-foreground">
-                {deck.cardCount > 0 ? `${deck.cardCount} cards` : "No cards"}
-                {dateOf(deck) && ` · ${dateOf(deck)}`}
-              </span>
-            </Link>
-          </li>
+          <DeckCard key={deck.id} deck={deck} byId={byId} onFavorite={(favorite) => void onFavorite(deck, favorite)} />
         ))}
       </ul>
     </section>

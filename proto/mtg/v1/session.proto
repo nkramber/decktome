@@ -112,7 +112,10 @@ enum SlotState {
 // PoolRule says how the collection constrains the deck (D-2).
 enum PoolRule {
   POOL_RULE_UNSPECIFIED = 0;
-  // POOL_RULE_OWNED_FIRST builds from owned cards and lists upgrades.
+  // POOL_RULE_OWNED_FIRST leads with owned cards and fills what the
+  // collection can not from the whole database, in score order (D-359).
+  // It lists upgrades on top: cards worth buying that the deck does not
+  // already hold.
   POOL_RULE_OWNED_FIRST = 1;
   POOL_RULE_OWNED_ONLY = 2;
   POOL_RULE_ANY_CARD = 3;

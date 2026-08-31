@@ -358,6 +358,11 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 	}
 
 	st := questions.Restore(session.GetId(), session.GetSlots(), snap)
+	// A pool rule the request carried needs no question (D-359).
+	if session.GetSlots().GetPoolRule() != mtgv1.PoolRule_POOL_RULE_UNSPECIFIED &&
+		st.Slots.GetSlotStates()["pool_rule"] == mtgv1.SlotState_SLOT_STATE_UNSPECIFIED {
+		st.Close("pool_rule")
+	}
 	// A bare "no" to a yes-or-no question is a whole answer, and the
 	// classifier reads it as neither a value nor a decline (D-352). The
 	// pairing is exact here, because the answer names its question.
@@ -530,6 +535,12 @@ func (s *Server) load(ctx context.Context, uid string, msg *mtgv1.ChatRequest) (
 		Id:           id,
 		CollectionId: msg.GetCollectionId(),
 		Status:       mtgv1.SessionStatus_SESSION_STATUS_ASKING,
+	}
+	// The chat screen knows the card pool already: the reader named a
+	// collection and said whether the deck may reach past it. The agent
+	// takes that as the answer and asks nothing (D-359).
+	if rule := msg.GetPoolRule(); rule != mtgv1.PoolRule_POOL_RULE_UNSPECIFIED {
+		session.Slots = &mtgv1.Slots{PoolRule: rule}
 	}
 	// A user with no collection never gets the card-pool question (D-37).
 	snap := questions.Snapshot{Version: questions.SnapshotVersion}

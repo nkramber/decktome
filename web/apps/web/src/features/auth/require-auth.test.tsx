@@ -101,10 +101,12 @@ describe("route guard", () => {
     expect(vi.mocked(signOut)).toHaveBeenCalled();
   });
 
-  it("treats /session/new as no session yet", async () => {
+  // A new chat says nothing of its session, because it has none (D-356).
+  it("opens a new chat with no session line", async () => {
     state.user = fakeUser;
     await renderAt("/session/new");
-    expect(await screen.findByTestId("session-id")).toHaveTextContent("No session yet.");
+    expect(await screen.findByRole("heading", { level: 1, name: "New deck" })).toBeInTheDocument();
+    expect(screen.queryByTestId("session-id")).not.toBeInTheDocument();
   });
 
   it("lists decks, empty, and shows the health footer", async () => {
@@ -119,7 +121,7 @@ describe("route guard", () => {
   it("session page has no axe violations", async () => {
     state.user = fakeUser;
     const { container } = await renderAt("/session/new");
-    await screen.findByTestId("session-id");
+    await screen.findByRole("heading", { level: 1 });
     await screen.findByText(/API: ok/);
     expect(await axe(container)).toHaveNoViolations();
   });

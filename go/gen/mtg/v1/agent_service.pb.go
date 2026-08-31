@@ -28,7 +28,12 @@ type ChatRequest struct {
 	CollectionId string `protobuf:"bytes,2,opt,name=collection_id,json=collectionId,proto3" json:"collection_id,omitempty"`
 	Message      string `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
 	// answers carries structured replies to the last turn's questions.
-	Answers       []*Answer `protobuf:"bytes,4,rep,name=answers,proto3" json:"answers,omitempty"`
+	Answers []*Answer `protobuf:"bytes,4,rep,name=answers,proto3" json:"answers,omitempty"`
+	// pool_rule answers the card-pool question before it is asked (D-359).
+	// The chat screen knows the answer already: the reader named a
+	// collection and said whether the deck may reach past it. UNSPECIFIED
+	// leaves the question to the agent.
+	PoolRule      PoolRule `protobuf:"varint,7,opt,name=pool_rule,json=poolRule,proto3,enum=mtg.v1.PoolRule" json:"pool_rule,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -89,6 +94,13 @@ func (x *ChatRequest) GetAnswers() []*Answer {
 		return x.Answers
 	}
 	return nil
+}
+
+func (x *ChatRequest) GetPoolRule() PoolRule {
+	if x != nil {
+		return x.PoolRule
+	}
+	return PoolRule_POOL_RULE_UNSPECIFIED
 }
 
 // AgentError is a failure the UI can act on.
@@ -453,13 +465,14 @@ var File_mtg_v1_agent_service_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_agent_service_proto_rawDesc = "" +
 	"\n" +
-	"\x1amtg/v1/agent_service.proto\x12\x06mtg.v1\x1a\x11mtg/v1/deck.proto\x1a\x14mtg/v1/session.proto\"\xb8\x01\n" +
+	"\x1amtg/v1/agent_service.proto\x12\x06mtg.v1\x1a\x11mtg/v1/deck.proto\x1a\x14mtg/v1/session.proto\"\xe7\x01\n" +
 	"\vChatRequest\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\tR\tsessionId\x12#\n" +
 	"\rcollection_id\x18\x02 \x01(\tR\fcollectionId\x12\x18\n" +
 	"\amessage\x18\x03 \x01(\tR\amessage\x12(\n" +
-	"\aanswers\x18\x04 \x03(\v2\x0e.mtg.v1.AnswerR\aanswersJ\x04\b\x05\x10\x06J\x04\b\x06\x10\aR\x04seedR\x0fkeep_oracle_ids\"X\n" +
+	"\aanswers\x18\x04 \x03(\v2\x0e.mtg.v1.AnswerR\aanswers\x12-\n" +
+	"\tpool_rule\x18\a \x01(\x0e2\x10.mtg.v1.PoolRuleR\bpoolRuleJ\x04\b\x05\x10\x06J\x04\b\x06\x10\aR\x04seedR\x0fkeep_oracle_ids\"X\n" +
 	"\n" +
 	"AgentError\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12\x18\n" +
@@ -507,29 +520,31 @@ var file_mtg_v1_agent_service_proto_goTypes = []any{
 	(*GetSessionRequest)(nil),  // 3: mtg.v1.GetSessionRequest
 	(*GetSessionResponse)(nil), // 4: mtg.v1.GetSessionResponse
 	(*Answer)(nil),             // 5: mtg.v1.Answer
-	(*Question)(nil),           // 6: mtg.v1.Question
-	(*Slots)(nil),              // 7: mtg.v1.Slots
-	(*Deck)(nil),               // 8: mtg.v1.Deck
-	(*Usage)(nil),              // 9: mtg.v1.Usage
-	(*Session)(nil),            // 10: mtg.v1.Session
+	(PoolRule)(0),              // 6: mtg.v1.PoolRule
+	(*Question)(nil),           // 7: mtg.v1.Question
+	(*Slots)(nil),              // 8: mtg.v1.Slots
+	(*Deck)(nil),               // 9: mtg.v1.Deck
+	(*Usage)(nil),              // 10: mtg.v1.Usage
+	(*Session)(nil),            // 11: mtg.v1.Session
 }
 var file_mtg_v1_agent_service_proto_depIdxs = []int32{
 	5,  // 0: mtg.v1.ChatRequest.answers:type_name -> mtg.v1.Answer
-	6,  // 1: mtg.v1.ChatResponse.question:type_name -> mtg.v1.Question
-	7,  // 2: mtg.v1.ChatResponse.slots:type_name -> mtg.v1.Slots
-	8,  // 3: mtg.v1.ChatResponse.deck:type_name -> mtg.v1.Deck
-	1,  // 4: mtg.v1.ChatResponse.failure:type_name -> mtg.v1.AgentError
-	9,  // 5: mtg.v1.ChatResponse.usage:type_name -> mtg.v1.Usage
-	10, // 6: mtg.v1.GetSessionResponse.session:type_name -> mtg.v1.Session
-	0,  // 7: mtg.v1.AgentService.Chat:input_type -> mtg.v1.ChatRequest
-	3,  // 8: mtg.v1.AgentService.GetSession:input_type -> mtg.v1.GetSessionRequest
-	2,  // 9: mtg.v1.AgentService.Chat:output_type -> mtg.v1.ChatResponse
-	4,  // 10: mtg.v1.AgentService.GetSession:output_type -> mtg.v1.GetSessionResponse
-	9,  // [9:11] is the sub-list for method output_type
-	7,  // [7:9] is the sub-list for method input_type
-	7,  // [7:7] is the sub-list for extension type_name
-	7,  // [7:7] is the sub-list for extension extendee
-	0,  // [0:7] is the sub-list for field type_name
+	6,  // 1: mtg.v1.ChatRequest.pool_rule:type_name -> mtg.v1.PoolRule
+	7,  // 2: mtg.v1.ChatResponse.question:type_name -> mtg.v1.Question
+	8,  // 3: mtg.v1.ChatResponse.slots:type_name -> mtg.v1.Slots
+	9,  // 4: mtg.v1.ChatResponse.deck:type_name -> mtg.v1.Deck
+	1,  // 5: mtg.v1.ChatResponse.failure:type_name -> mtg.v1.AgentError
+	10, // 6: mtg.v1.ChatResponse.usage:type_name -> mtg.v1.Usage
+	11, // 7: mtg.v1.GetSessionResponse.session:type_name -> mtg.v1.Session
+	0,  // 8: mtg.v1.AgentService.Chat:input_type -> mtg.v1.ChatRequest
+	3,  // 9: mtg.v1.AgentService.GetSession:input_type -> mtg.v1.GetSessionRequest
+	2,  // 10: mtg.v1.AgentService.Chat:output_type -> mtg.v1.ChatResponse
+	4,  // 11: mtg.v1.AgentService.GetSession:output_type -> mtg.v1.GetSessionResponse
+	10, // [10:12] is the sub-list for method output_type
+	8,  // [8:10] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_mtg_v1_agent_service_proto_init() }

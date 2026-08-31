@@ -529,7 +529,10 @@ export enum PoolRule {
   UNSPECIFIED = 0,
 
   /**
-   * POOL_RULE_OWNED_FIRST builds from owned cards and lists upgrades.
+   * POOL_RULE_OWNED_FIRST leads with owned cards and fills what the
+   * collection can not from the whole database, in score order (D-359).
+   * It lists upgrades on top: cards worth buying that the deck does not
+   * already hold.
    *
    * @generated from enum value: POOL_RULE_OWNED_FIRST = 1;
    */

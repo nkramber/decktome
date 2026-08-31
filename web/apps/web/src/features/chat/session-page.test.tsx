@@ -9,7 +9,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useAppStore } from "../../lib/store";
 import { fakeUser, state } from "../../test-auth-state";
 import { renderAt } from "../../test-utils";
-import { poolLabel, pruneDrafts } from "./session-page";
+import { poolLabel, poolRuleOf, pruneDrafts } from "./session-page";
 
 vi.mock("firebase/app");
 vi.mock("firebase/auth");
@@ -69,9 +69,8 @@ describe("SessionPage", () => {
   it("sends the first message, takes the session id, and shows the question with its options", async () => {
     chat.mockReturnValue(events([ev("sessionStarted", "s1"), ev("question", formatQuestion), ev("slots", { poolRule: PoolRule.ANY_CARD }), ev("usage", { calls: 1, inputTokens: 100n, outputTokens: 20n, costUsd: 0.001, priced: true })]));
     const { router } = await renderAt("/session/new");
-    expect(await screen.findByTestId("session-id")).toHaveTextContent("No session yet.");
     const user = userEvent.setup();
-    await user.type(screen.getByLabelText("Your message"), "Build me an elf deck");
+    await user.type(await screen.findByLabelText("Your message"), "Build me an elf deck");
     await user.click(screen.getByRole("button", { name: "Send" }));
 
     expect(await screen.findByRole("group", { name: "Question: Which format?" })).toBeInTheDocument();
@@ -209,16 +208,20 @@ describe("SessionPage", () => {
   });
 
   it("sends the collection id in owned mode on the first message only", async () => {
-    useAppStore.setState({ collectionId: "c1", poolMode: "owned" });
+    useAppStore.setState({ collectionId: "c1", poolMode: "owned_only" });
     chat.mockReturnValue(events([ev("sessionStarted", "s1")]));
     await renderAt("/session/new");
     const user = userEvent.setup();
     const box = await screen.findByLabelText("Only cards I own");
     expect(box).toBeChecked();
-    // The line names the collection, never its id.
-    expect(await screen.findByTestId("pool-mode")).toHaveTextContent("Pool: binder-july.csv. The agent asks how strict.");
+    // The picker names the collection, never its id (D-337).
+    expect((await screen.findByLabelText("Build from")) as HTMLSelectElement).toHaveValue("c1");
+    expect(screen.getByRole("option", { name: /binder-july\.csv/ })).toBeInTheDocument();
+    // Unchecking no longer drops the collection: it says the collection
+    // leads and the database fills a gap (D-359).
     await user.click(box);
-    expect(useAppStore.getState().poolMode).toBe("any");
+    expect(useAppStore.getState().poolMode).toBe("owned_first");
+    expect(useAppStore.getState().collectionId).toBe("c1");
     await user.click(box);
     await user.type(screen.getByLabelText("Your message"), "elves");
     await user.click(screen.getByRole("button", { name: "Send" }));
@@ -441,7 +444,9 @@ describe("SessionPage", () => {
     await user.type(await screen.findByLabelText("Your message"), "elves{enter}");
     await screen.findByText("hello", { selector: "p.whitespace-pre-line" });
     await act(() => router.navigate("/session/new"));
-    expect(await screen.findByTestId("session-id")).toHaveTextContent("No session yet.");
+    // A fresh panel shows the heading of a new chat and no session line.
+    expect(await screen.findByRole("heading", { level: 1, name: "New deck" })).toBeInTheDocument();
+    expect(screen.queryByTestId("session-id")).not.toBeInTheDocument();
     expect(screen.queryByText("hello", { selector: "p.whitespace-pre-line" })).not.toBeInTheDocument();
   });
 
@@ -635,12 +640,14 @@ describe("the pool picker", () => {
     const select = await screen.findByLabelText("Build from");
     await userEvent.setup().selectOptions(select, "c1");
     expect(useAppStore.getState().collectionId).toBe("c1");
-    expect(useAppStore.getState().poolMode).toBe("owned");
-    expect(await screen.findByLabelText("Only cards I own")).toBeChecked();
+    expect(useAppStore.getState().poolMode).toBe("owned_first");
+    // The collection leads by default, and the box is the way to refuse
+    // the fill (D-359).
+    expect(await screen.findByLabelText("Only cards I own")).not.toBeChecked();
   });
 
   it("any card clears the collection", async () => {
-    useAppStore.setState({ collectionId: "c1", poolMode: "owned" });
+    useAppStore.setState({ collectionId: "c1", poolMode: "owned_only" });
     await renderAt("/session/new");
     const select = await screen.findByLabelText("Build from");
     await userEvent.setup().selectOptions(select, "");
@@ -696,7 +703,7 @@ describe("a question that is open", () => {
 // there. A cancelled dialog therefore leaves no collection active.
 describe("add a collection from the picker", () => {
   it("clears the collection and asks the upload screen for a file", async () => {
-    useAppStore.setState({ collectionId: "c1", poolMode: "owned" });
+    useAppStore.setState({ collectionId: "c1", poolMode: "owned_only" });
     const clicks: string[] = [];
     const realClick = HTMLInputElement.prototype.click;
     HTMLInputElement.prototype.click = function click(this: HTMLInputElement) {
@@ -793,5 +800,54 @@ describe("declining a question", () => {
     await user.click(within(card).getByRole("button", { name: "You decide" }));
     await user.click(within(card).getByRole("button", { name: "Commander" }));
     expect(within(card).getByRole("button", { name: "You decide" })).toHaveAttribute("aria-pressed", "false");
+  });
+});
+
+// The collection leads, and the database fills a gap (D-359).
+describe("the card pool of the first message", () => {
+  it("sends owned-first when the reader keeps the fill", async () => {
+    useAppStore.setState({ collectionId: "c1", poolMode: "owned_first" });
+    chat.mockReturnValue(events([ev("sessionStarted", "s1")]));
+    await renderAt("/session/new");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "elves");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    await waitFor(() => expect(chat).toHaveBeenCalled());
+    const req = chat.mock.calls[0][0] as { collectionId: string; poolRule: PoolRule };
+    expect(req.collectionId).toBe("c1");
+    expect(req.poolRule).toBe(PoolRule.OWNED_FIRST);
+  });
+
+  it("sends owned-only when the reader refuses the fill", async () => {
+    useAppStore.setState({ collectionId: "c1", poolMode: "owned_only" });
+    chat.mockReturnValue(events([ev("sessionStarted", "s1")]));
+    await renderAt("/session/new");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "elves");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    await waitFor(() => expect(chat).toHaveBeenCalled());
+    expect((chat.mock.calls[0][0] as { poolRule: PoolRule }).poolRule).toBe(PoolRule.OWNED_ONLY);
+  });
+
+  it("sends no rule with no collection, so the agent asks nothing about a pool", async () => {
+    chat.mockReturnValue(events([ev("sessionStarted", "s1")]));
+    await renderAt("/session/new");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "elves");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    await waitFor(() => expect(chat).toHaveBeenCalled());
+    const req = chat.mock.calls[0][0] as { collectionId: string; poolRule: PoolRule };
+    expect(req.collectionId).toBe("");
+    expect(req.poolRule).toBe(PoolRule.UNSPECIFIED);
+  });
+});
+
+describe("poolRuleOf", () => {
+  it("maps the reader's choice onto the contract", () => {
+    expect(poolRuleOf("owned_only", "c1")).toBe(PoolRule.OWNED_ONLY);
+    expect(poolRuleOf("owned_first", "c1")).toBe(PoolRule.OWNED_FIRST);
+    expect(poolRuleOf("any", "")).toBe(PoolRule.UNSPECIFIED);
+    // No collection means nothing to prefer, whatever the mode says.
+    expect(poolRuleOf("owned_first", "")).toBe(PoolRule.UNSPECIFIED);
   });
 });

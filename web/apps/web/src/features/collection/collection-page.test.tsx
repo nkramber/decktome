@@ -69,7 +69,7 @@ describe("the binder head", () => {
   });
 
   it("counts the cards, the unique cards, and the rarity of the active collection", async () => {
-    useAppStore.setState({ collectionId: "c-old", poolMode: "owned" });
+    useAppStore.setState({ collectionId: "c-old", poolMode: "owned_only" });
     await renderAt("/collection");
     // 4 + 1 + 2 = 7 cards over two Oracle ids.
     expect(await screen.findByText("7")).toBeInTheDocument();
@@ -81,7 +81,7 @@ describe("the binder head", () => {
   });
 
   it("asks for the art of the rarest cards first", async () => {
-    useAppStore.setState({ collectionId: "c-old", poolMode: "owned" });
+    useAppStore.setState({ collectionId: "c-old", poolMode: "owned_only" });
     await renderAt("/collection");
     await screen.findByText("7");
     // The mythic sorts before the common.
@@ -96,7 +96,7 @@ describe("CollectionPage", () => {
     expect(screen.getByText(/4317 cards/)).toBeInTheDocument();
     await userEvent.setup().click(screen.getByRole("button", { name: "binder-july.csv" }));
     expect(useAppStore.getState().collectionId).toBe("c-old");
-    expect(useAppStore.getState().poolMode).toBe("owned");
+    expect(useAppStore.getState().poolMode).toBe("owned_first");
     expect(screen.getByTestId("active-collection")).toHaveTextContent("Active collection: binder-july.csv (4317 cards)");
     expect(screen.getByRole("button", { name: "binder-july.csv" })).toHaveAttribute("aria-pressed", "true");
   });
@@ -189,14 +189,14 @@ describe("CollectionPage", () => {
   });
 
   it("skip clears the active collection and goes to the chat (D-37)", async () => {
-    useAppStore.setState({ collectionId: "c-old", poolMode: "owned" });
+    useAppStore.setState({ collectionId: "c-old", poolMode: "owned_only" });
     const { router } = await renderAt("/collection");
     await screen.findByRole("button", { name: "binder-july.csv" });
     await userEvent.setup().click(screen.getByRole("button", { name: "Skip, build from any card" }));
     expect(useAppStore.getState().collectionId).toBe("");
     expect(useAppStore.getState().poolMode).toBe("any");
     expect(router.state.location.pathname).toBe("/session/new");
-    expect(await screen.findByTestId("session-id")).toHaveTextContent("No session yet.");
+    expect(await screen.findByRole("heading", { level: 1, name: "New deck" })).toBeInTheDocument();
   });
 
   it("continue to chat goes to /session/new", async () => {
@@ -234,7 +234,7 @@ describe("the file dialog on arrival", () => {
 // their cards, and their chats fall back to the whole card database.
 describe("deleting a collection", () => {
   it("asks first, then removes it and clears the active choice", async () => {
-    useAppStore.setState({ collectionId: "c-old", poolMode: "owned" });
+    useAppStore.setState({ collectionId: "c-old", poolMode: "owned_only" });
     deleteCollection.mockResolvedValue({});
     await renderAt("/collection");
     const user = userEvent.setup();

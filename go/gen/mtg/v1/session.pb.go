@@ -201,7 +201,10 @@ type PoolRule int32
 
 const (
 	PoolRule_POOL_RULE_UNSPECIFIED PoolRule = 0
-	// POOL_RULE_OWNED_FIRST builds from owned cards and lists upgrades.
+	// POOL_RULE_OWNED_FIRST leads with owned cards and fills what the
+	// collection can not from the whole database, in score order (D-359).
+	// It lists upgrades on top: cards worth buying that the deck does not
+	// already hold.
 	PoolRule_POOL_RULE_OWNED_FIRST PoolRule = 1
 	PoolRule_POOL_RULE_OWNED_ONLY  PoolRule = 2
 	PoolRule_POOL_RULE_ANY_CARD    PoolRule = 3

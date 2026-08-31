@@ -6,7 +6,7 @@ import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegen
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Deck } from "./deck_pb";
 import { file_mtg_v1_deck } from "./deck_pb";
-import type { Answer, Question, Session, Slots, Usage } from "./session_pb";
+import type { Answer, PoolRule, Question, Session, Slots, Usage } from "./session_pb";
 import { file_mtg_v1_session } from "./session_pb";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file mtg/v1/agent_service.proto.
  */
 export const file_mtg_v1_agent_service: GenFile = /*@__PURE__*/
-  fileDesc("ChptdGcvdjEvYWdlbnRfc2VydmljZS5wcm90bxIGbXRnLnYxIo0BCgtDaGF0UmVxdWVzdBISCgpzZXNzaW9uX2lkGAEgASgJEhUKDWNvbGxlY3Rpb25faWQYAiABKAkSDwoHbWVzc2FnZRgDIAEoCRIfCgdhbnN3ZXJzGAQgAygLMg4ubXRnLnYxLkFuc3dlckoECAUQBkoECAYQB1IEc2VlZFIPa2VlcF9vcmFjbGVfaWRzIj4KCkFnZW50RXJyb3ISDAoEY29kZRgBIAEoCRIPCgdtZXNzYWdlGAIgASgJEhEKCXJldHJ5YWJsZRgDIAEoCCKaAgoMQ2hhdFJlc3BvbnNlEhkKD3Nlc3Npb25fc3RhcnRlZBgBIAEoCUgAEhQKCnRleHRfZGVsdGEYAiABKAlIABIkCghxdWVzdGlvbhgDIAEoCzIQLm10Zy52MS5RdWVzdGlvbkgAEh4KBXNsb3RzGAQgASgLMg0ubXRnLnYxLlNsb3RzSAASEAoGc3RhdHVzGAUgASgJSAASHAoEZGVjaxgGIAEoCzIMLm10Zy52MS5EZWNrSAASEwoFZXJyb3IYByABKAlCAhgBSAASJQoHZmFpbHVyZRgIIAEoCzISLm10Zy52MS5BZ2VudEVycm9ySAASHgoFdXNhZ2UYCSABKAsyDS5tdGcudjEuVXNhZ2VIAEIHCgVldmVudCInChFHZXRTZXNzaW9uUmVxdWVzdBISCgpzZXNzaW9uX2lkGAEgASgJIjYKEkdldFNlc3Npb25SZXNwb25zZRIgCgdzZXNzaW9uGAEgASgLMg8ubXRnLnYxLlNlc3Npb24yjAEKDEFnZW50U2VydmljZRI1CgRDaGF0EhMubXRnLnYxLkNoYXRSZXF1ZXN0GhQubXRnLnYxLkNoYXRSZXNwb25zZSIAMAESRQoKR2V0U2Vzc2lvbhIZLm10Zy52MS5HZXRTZXNzaW9uUmVxdWVzdBoaLm10Zy52MS5HZXRTZXNzaW9uUmVzcG9uc2UiAEI6WjhnaXRodWIuY29tL25rcmFtYmVyL210Zy1kZWNrLWJ1aWxkZXIvZ28vZ2VuL210Zy92MTttdGd2MWIGcHJvdG8z", [file_mtg_v1_deck, file_mtg_v1_session]);
+  fileDesc("ChptdGcvdjEvYWdlbnRfc2VydmljZS5wcm90bxIGbXRnLnYxIrIBCgtDaGF0UmVxdWVzdBISCgpzZXNzaW9uX2lkGAEgASgJEhUKDWNvbGxlY3Rpb25faWQYAiABKAkSDwoHbWVzc2FnZRgDIAEoCRIfCgdhbnN3ZXJzGAQgAygLMg4ubXRnLnYxLkFuc3dlchIjCglwb29sX3J1bGUYByABKA4yEC5tdGcudjEuUG9vbFJ1bGVKBAgFEAZKBAgGEAdSBHNlZWRSD2tlZXBfb3JhY2xlX2lkcyI+CgpBZ2VudEVycm9yEgwKBGNvZGUYASABKAkSDwoHbWVzc2FnZRgCIAEoCRIRCglyZXRyeWFibGUYAyABKAgimgIKDENoYXRSZXNwb25zZRIZCg9zZXNzaW9uX3N0YXJ0ZWQYASABKAlIABIUCgp0ZXh0X2RlbHRhGAIgASgJSAASJAoIcXVlc3Rpb24YAyABKAsyEC5tdGcudjEuUXVlc3Rpb25IABIeCgVzbG90cxgEIAEoCzINLm10Zy52MS5TbG90c0gAEhAKBnN0YXR1cxgFIAEoCUgAEhwKBGRlY2sYBiABKAsyDC5tdGcudjEuRGVja0gAEhMKBWVycm9yGAcgASgJQgIYAUgAEiUKB2ZhaWx1cmUYCCABKAsyEi5tdGcudjEuQWdlbnRFcnJvckgAEh4KBXVzYWdlGAkgASgLMg0ubXRnLnYxLlVzYWdlSABCBwoFZXZlbnQiJwoRR2V0U2Vzc2lvblJlcXVlc3QSEgoKc2Vzc2lvbl9pZBgBIAEoCSI2ChJHZXRTZXNzaW9uUmVzcG9uc2USIAoHc2Vzc2lvbhgBIAEoCzIPLm10Zy52MS5TZXNzaW9uMowBCgxBZ2VudFNlcnZpY2USNQoEQ2hhdBITLm10Zy52MS5DaGF0UmVxdWVzdBoULm10Zy52MS5DaGF0UmVzcG9uc2UiADABEkUKCkdldFNlc3Npb24SGS5tdGcudjEuR2V0U2Vzc2lvblJlcXVlc3QaGi5tdGcudjEuR2V0U2Vzc2lvblJlc3BvbnNlIgBCOlo4Z2l0aHViLmNvbS9ua3JhbWJlci9tdGctZGVjay1idWlsZGVyL2dvL2dlbi9tdGcvdjE7bXRndjFiBnByb3RvMw", [file_mtg_v1_deck, file_mtg_v1_session]);
 
 /**
  * @generated from message mtg.v1.ChatRequest
@@ -43,6 +43,16 @@ export type ChatRequest = Message<"mtg.v1.ChatRequest"> & {
    * @generated from field: repeated mtg.v1.Answer answers = 4;
    */
   answers: Answer[];
+
+  /**
+   * pool_rule answers the card-pool question before it is asked (D-359).
+   * The chat screen knows the answer already: the reader named a
+   * collection and said whether the deck may reach past it. UNSPECIFIED
+   * leaves the question to the agent.
+   *
+   * @generated from field: mtg.v1.PoolRule pool_rule = 7;
+   */
+  poolRule: PoolRule;
 };
 
 /**

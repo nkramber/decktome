@@ -254,7 +254,7 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 	case mtgv1.PoolRule_POOL_RULE_OWNED_ONLY:
 		main = capByRole(filterOwned(scored, true), lim)
 	case mtgv1.PoolRule_POOL_RULE_OWNED_FIRST:
-		main = capByRole(filterOwned(scored, true), lim)
+		main = ownedFirst(scored, lim)
 		upgrades = topUpgrades(filterOwned(scored, false), main, lim.Upgrades)
 	}
 	stats.Returned = len(main)
@@ -328,15 +328,23 @@ func capByRole(in []Candidate, lim Limits) []Candidate {
 
 // topUpgrades picks the best unowned cards that beat the weakest owned
 // card of the same role, so an upgrade is a real improvement.
-func topUpgrades(unowned, owned []Candidate, limit int) []Candidate {
+func topUpgrades(unowned, main []Candidate, limit int) []Candidate {
 	floor := map[mtgv1.CardRole]float64{}
-	for _, c := range owned {
+	// A card the main list already carries is not an upgrade. It is in
+	// the deck, and the buy list already names it when the user does not
+	// own it (D-359).
+	inMain := make(map[*mtgv1.Card]bool, len(main))
+	for _, c := range main {
+		inMain[c.Card] = true
 		if v, ok := floor[c.Role]; !ok || c.Score < v {
 			floor[c.Role] = c.Score
 		}
 	}
 	var out []Candidate
 	for _, c := range unowned {
+		if inMain[c.Card] {
+			continue
+		}
 		if v, ok := floor[c.Role]; ok && c.Score <= v {
 			continue
 		}
@@ -346,6 +354,52 @@ func topUpgrades(unowned, owned []Candidate, limit int) []Candidate {
 		}
 	}
 	return out
+}
+
+// ownedFirst builds the main list from the collection, then fills what
+// the collection can not (D-359).
+//
+// The collection leads: every owned candidate that fits the caps is in
+// the list before one unowned card is read. A thin collection then
+// leaves a hole, and a deck with a hole is not a deck, so the database
+// fills the rest in score order. A reader who says "only cards I own"
+// takes POOL_RULE_OWNED_ONLY and no fill at all.
+//
+// The color identity is applied before this, so a card outside the
+// deck's colors is in neither half.
+func ownedFirst(in []Candidate, lim Limits) []Candidate {
+	owned := capByRole(filterOwned(in, true), lim)
+	room := lim.Total - len(owned)
+	if room <= 0 {
+		return owned
+	}
+	// The caps the owned half did not use. A role the collection filled
+	// takes no fill, and the total never grows.
+	used := map[mtgv1.CardRole]int{}
+	for _, c := range owned {
+		used[c.Role]++
+	}
+	left := Limits{Total: room, PerRole: map[mtgv1.CardRole]int{}}
+	for role, n := range lim.PerRole {
+		if free := n - used[role]; free > 0 {
+			left.PerRole[role] = free
+		}
+	}
+	fill := capByRole(filterOwned(in, false), left)
+	if len(fill) == 0 {
+		return owned
+	}
+	// The list reads by role, the way capByRole returns one, so the
+	// owned half and the fill do not sit in two blocks.
+	merged := make([]Candidate, 0, len(owned)+len(fill))
+	byRole := map[mtgv1.CardRole][]Candidate{}
+	for _, c := range append(append([]Candidate{}, owned...), fill...) {
+		byRole[c.Role] = append(byRole[c.Role], c)
+	}
+	for _, r := range roleOrder {
+		merged = append(merged, byRole[r]...)
+	}
+	return merged
 }
 
 func filterOwned(in []Candidate, want bool) []Candidate {

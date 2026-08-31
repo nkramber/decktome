@@ -77,7 +77,7 @@ export function PoolPicker() {
 
       {collectionId ? (
         <Label className="flex items-center gap-2 text-xs font-normal">
-          <Checkbox checked={poolMode === "owned"} onCheckedChange={(v) => setPoolMode(v === true ? "owned" : "any")} />
+          <Checkbox checked={poolMode === "owned_only"} onCheckedChange={(v) => setPoolMode(v === true ? "owned_only" : "owned_first")} />
           Only cards I own
         </Label>
       ) : null}

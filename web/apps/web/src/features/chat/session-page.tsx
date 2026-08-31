@@ -13,10 +13,10 @@ import { Textarea } from "../../components/ui/textarea";
 import { agentClient, deckClient } from "../../lib/api";
 import { cn } from "../../lib/cn";
 import { errorMessage } from "../../lib/errors";
-import { useAppStore } from "../../lib/store";
+import { type PoolMode, useAppStore } from "../../lib/store";
 import { DeckView } from "../deck/deck-view";
 import { PoolPicker, useCollections } from "./pool-picker";
-import { RecentDecks } from "./recent-decks";
+import { RecentDecks, useRecentDecks } from "./recent-decks";
 import { type Draft, draftAnswered, emptyDraft, QuestionCard } from "./question-card";
 import { byteLength, type ChatState, emptyState, fromSession, maxMessageBytes, type ThreadItem, useChat } from "./use-chat";
 
@@ -157,7 +157,12 @@ export function ChatPanel({
 
   // The collection goes with the first message only. A stored session
   // holds its own collection id, and the server reads that one.
-  const sendCollection = initial.sessionId === "" && poolMode === "owned" ? collectionId : (session?.collectionId ?? "");
+  // The collection goes with the first message whenever the reader named
+  // one. Unchecking "Only cards I own" no longer drops it: it says the
+  // collection leads and the database fills a gap (D-359). A stored
+  // session holds its own collection, and the server reads that one.
+  const sendCollection = initial.sessionId === "" ? collectionId : (session?.collectionId ?? "");
+  const sendPoolRule = initial.sessionId === "" ? poolRuleOf(poolMode, collectionId) : PoolRule.UNSPECIFIED;
 
   // ownPath is the route of this panel's session. The move from
   // /session/new to it is never blocked.
@@ -171,7 +176,7 @@ export function ChatPanel({
     },
     [setSessionId, onStarted],
   );
-  const { state, send, stop } = useChat(initial, sendCollection, onSessionStarted);
+  const { state, send, stop } = useChat(initial, sendCollection, sendPoolRule, onSessionStarted);
   const [message, setMessage] = useState("");
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const bytes = byteLength(message);
@@ -273,6 +278,9 @@ export function ChatPanel({
   const collections = useCollections(sendCollection !== "");
   const collectionName = collections.data?.collections.find((c) => c.id === sendCollection)?.name ?? sendCollection;
   const poolText = poolLabel(state.slots?.poolRule, sendCollection ? collectionName : "");
+  // The newest decks head a new chat (D-350). The title names them when
+  // there are any, so the page opens on the reader's own work.
+  const recent = useRecentDecks(beforeFirstMessage);
   // The deck owns the page once one exists, and the conversation docks
   // at the corner (D-331). Before that, the conversation is the page.
   // The address of a deck names which deck shows. A build that ends with
@@ -345,7 +353,7 @@ export function ChatPanel({
   const composer = showComposer && (
     <form onSubmit={onSubmit} className="flex flex-col gap-2">
       {beforeFirstMessage && (
-        <h2 className="font-display text-[10px] tracking-[0.15em] text-muted-foreground uppercase">Build a new deck</h2>
+        <h2 className="font-display text-xl font-semibold">Build a new deck</h2>
       )}
       <div className="flex flex-col rounded-card border border-border bg-card transition-colors focus-within:border-primary">
         <Label htmlFor="message" className="sr-only">
@@ -462,28 +470,45 @@ export function ChatPanel({
   }
 
   // Before a deck exists the conversation is the page, so it fills the
-  // frame and its composer sits at the foot (D-331).
+  // frame and its composer sits at the foot (D-331). A chat with no
+  // session yet is two blocks instead: the decks the reader already has,
+  // and the box that builds the next one. Stretching that to the
+  // viewport put a void between them (D-358).
   return (
-    <div className="mx-auto flex min-h-[calc(100vh-9rem)] w-full max-w-4xl flex-col p-4 md:p-6">
-      <section aria-labelledby="chat-title" className="flex min-w-0 grow flex-col gap-4">
+    <div className={cn("mx-auto flex w-full max-w-4xl flex-col p-4 md:p-6", !beforeFirstMessage && "min-h-[calc(100vh-9rem)]")}>
+      <section aria-labelledby="chat-title" className={cn("flex min-w-0 flex-col", beforeFirstMessage ? "gap-8" : "grow gap-4")}>
         {/* The identifiers are for support, not for reading. They sit in
             one quiet row under the title, and never in the thread. */}
+        {/* A new chat says nothing of its session: it has none, and the
+            picker in the message box names the pool (D-356). */}
         <div className="flex flex-col gap-1.5">
-          <h1 id="chat-title" className="font-display text-2xl font-semibold">
-            {beforeFirstMessage ? "New deck" : "Chat"}
-          </h1>
-          {idLine}
+          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+            <h1 id="chat-title" className="font-display text-2xl font-semibold">
+              {!beforeFirstMessage ? "Chat" : recent.decks.length > 0 ? "Pick up where you left off" : "New deck"}
+            </h1>
+            {beforeFirstMessage && recent.decks.length > 0 && (
+              <Link to="/decks" className="font-mono text-[11px] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
+                All decks
+              </Link>
+            )}
+          </div>
+          {!beforeFirstMessage && idLine}
         </div>
-        {beforeFirstMessage && <RecentDecks />}
+        {beforeFirstMessage && <RecentDecks decks={recent.decks} isPending={recent.isPending} />}
 
         {leaveWarning}
 
-        <div className="flex grow flex-col gap-5">
-          {thread}
-          {questions}
-          {working}
-          <div ref={end} />
-        </div>
+        {/* The thread block holds nothing at all on a new chat, and an
+            empty block still takes its gaps. It stays away until there
+            is something to read (D-358). */}
+        {(!beforeFirstMessage || state.thread.length > 0 || openCount > 0 || state.busy) && (
+          <div className={cn("flex flex-col gap-5", !beforeFirstMessage && "grow")}>
+            {thread}
+            {questions}
+            {working}
+            <div ref={end} />
+          </div>
+        )}
 
         {composer}
       </section>
@@ -494,6 +519,14 @@ export function ChatPanel({
       )}
     </div>
   );
+}
+
+// poolRuleOf maps the reader's choice onto the contract (D-359). With no
+// collection there is nothing to prefer, so the rule stays unset and the
+// agent asks nothing about a pool the user does not have.
+export function poolRuleOf(mode: PoolMode, collectionId: string): PoolRule {
+  if (collectionId === "") return PoolRule.UNSPECIFIED;
+  return mode === "owned_only" ? PoolRule.OWNED_ONLY : PoolRule.OWNED_FIRST;
 }
 
 export function poolLabel(rule: PoolRule | undefined, collection: string): string {

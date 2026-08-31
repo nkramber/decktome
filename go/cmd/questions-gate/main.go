@@ -148,7 +148,16 @@ type result struct {
 	// Findings are the deterministic defects the linter found in the
 	// questions this conversation sent (D-115).
 	Findings []questions.Finding
-	Err      error
+	// Stalls are the turns that moved nothing while a question was out
+	// (D-357). A stall in the middle of a conversation is a report: a
+	// later turn may still name a value and move on.
+	Stalls []stall
+	// DeadEnd marks a conversation whose last turn stalled and that never
+	// reported ready. Nothing can follow it: the questions that are out
+	// stay out, no build starts, and every later turn does the same
+	// nothing. That is a gate failure.
+	DeadEnd bool
+	Err     error
 }
 
 func main() {
@@ -310,10 +319,16 @@ func runOne(cat *questions.Catalog, client *llm.Client, idx *cards.Index, builde
 			break
 		}
 		res.Turns = i + 1
+		// The slots on each side of the turn. A turn that moves none of
+		// them, asks nothing, and is not ready has gone nowhere (D-357).
+		before := slotsOf(st)
 		turn, err := agent.Turn(context.Background(), st, msg, acc)
 		if err != nil {
 			res.Err = fmt.Errorf("turn %d: %w", i+1, err)
 			break
+		}
+		if open := openKeys(st); stalledTurn(len(turn.Questions), turn.Ready, before, slotsOf(st), open) {
+			res.Stalls = append(res.Stalls, stall{Turn: i + 1, Message: msg, Open: open})
 		}
 		for _, q := range turn.Questions {
 			res.Questions = append(res.Questions, asked{
@@ -363,6 +378,10 @@ func runOne(cat *questions.Catalog, client *llm.Client, idx *cards.Index, builde
 	// A session that ran out of messages is not a defect: the script
 	// ended. A session that called itself complete with a slot open is.
 	res.Premature = res.Ready && len(res.Unanswered) > 0
+	// A stall on the last turn that ran is a dead end: no later turn
+	// recovered it, and none could (D-357).
+	res.DeadEnd = !res.Ready && res.Err == nil && len(res.Stalls) > 0 &&
+		res.Stalls[len(res.Stalls)-1].Turn == res.Turns
 	return res
 }
 
@@ -434,11 +453,22 @@ func loadIndex(collectionPath string) (*cards.Index, map[string]int32, string, e
 func write(w io.Writer, file gateFile, results []result, cov coverages,
 	report llm.Report, cfg *llm.Config, ownedNote string, elapsed time.Duration) error {
 	total, probes := cov.total, cov.probes
-	var premature []string
+	var premature, deadEnds, stallLines []string
+	stalls := 0
 	gate, counted, afterBuild := 0, 0, 0
 	for _, r := range results {
 		if r.Premature {
 			premature = append(premature, r.Name)
+		}
+		if r.DeadEnd {
+			deadEnds = append(deadEnds, fmt.Sprintf("%s (turn %d, waiting on %s)",
+				r.Name, r.Stalls[len(r.Stalls)-1].Turn, strings.Join(r.Stalls[len(r.Stalls)-1].Open, ", ")))
+		}
+		for _, st := range r.Stalls {
+			stalls++
+			if !r.DeadEnd {
+				stallLines = append(stallLines, fmt.Sprintf("%s turn %d (%s)", r.Name, st.Turn, strings.Join(st.Open, ", ")))
+			}
 		}
 		switch {
 		case r.Probe:
@@ -462,7 +492,7 @@ func write(w io.Writer, file gateFile, results []result, cov coverages,
 		}
 	}
 	pass := total.CatalogOnly >= CatalogOnlyBar && gate >= questions.MinGateSize &&
-		len(premature) == 0 && findings == 0
+		len(premature) == 0 && findings == 0 && len(deadEnds) == 0
 	verdict := "FAIL"
 	if pass {
 		verdict = "PASS"
@@ -484,6 +514,15 @@ func write(w io.Writer, file gateFile, results []result, cov coverages,
 	if probes.Sessions > 0 {
 		_, _ = fmt.Fprintf(w, "%d probe conversations ran beside the gate. They asked %d questions, and the model offered %d replacements. A probe explores catalog coverage and does not move the verdict (D-96).\n\n",
 			probes.Sessions, probes.Asked, probes.Invented+probes.NearCopies)
+	}
+	if len(deadEnds) > 0 {
+		_, _ = fmt.Fprintf(w, "%d conversations reached a dead end, which fails the gate: %s. A dead end is a turn that sent no question, did not report ready, and left every slot as it found it, with a question of an earlier turn still out. Nothing can follow such a turn (D-357).\n\n",
+			len(deadEnds), strings.Join(deadEnds, "; "))
+	} else {
+		_, _ = fmt.Fprintf(w, "No conversation reached a dead end (D-357).\n\n")
+	}
+	if stalls > 0 {
+		_, _ = fmt.Fprintf(w, "%d turns moved nothing while a question was out, and a later turn recovered each one. A turn that repeats here is a catalog or classifier candidate: %s.\n\n", stalls, strings.Join(stallLines, "; "))
 	}
 	if len(premature) > 0 {
 		_, _ = fmt.Fprintf(w, "%d conversations called themselves complete with a slot still unanswered, which fails the gate: %s.\n\n",

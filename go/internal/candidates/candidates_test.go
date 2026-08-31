@@ -133,6 +133,17 @@ func names(cs []Candidate) []string {
 	return out
 }
 
+// findID looks one candidate up by its Oracle id, which is what the
+// owned map is keyed by.
+func findID(cs []Candidate, oracleID string) (Candidate, bool) {
+	for _, c := range cs {
+		if c.Card.OracleId == oracleID {
+			return c, true
+		}
+	}
+	return Candidate{}, false
+}
+
 func find(cs []Candidate, name string) (Candidate, bool) {
 	for _, c := range cs {
 		if c.Card.Name == name {
@@ -224,32 +235,36 @@ func TestBuildOwnedModes(t *testing.T) {
 	owned := map[string]int32{"soulwarden": 1, "solring": 1, "swords": 2, "land": 1, "lifelinker": 1}
 	req := Request{Format: cmdr, Colors: []mtgv1.Color{W, B}, Theme: "lifegain", Owned: owned}
 
-	// Default with a collection is owned-first.
+	// Default with a collection is owned-first. The collection leads, and
+	// the database fills what the collection can not (D-359). This
+	// fixture holds five owned cards against a cap of 300, so the fill
+	// runs and the main list carries both halves.
 	list, err := b.Build(idx, req)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, c := range list.Candidates {
-		if c.Owned == 0 {
-			t.Errorf("owned-first main list has unowned %s", c.Card.Name)
+	for name := range owned {
+		if _, ok := findID(list.Candidates, name); !ok {
+			t.Errorf("owned-first dropped the owned card %s", name)
 		}
 	}
-	if len(list.Upgrades) == 0 {
-		t.Fatal("owned-first must list upgrades")
+	if _, ok := find(list.Candidates, "Archangel of Thune"); !ok {
+		t.Errorf("owned-first left a hole rather than filling it: %v", names(list.Candidates))
 	}
 	for _, c := range list.Upgrades {
 		if c.Owned != 0 {
 			t.Errorf("upgrade %s is owned", c.Card.Name)
 		}
+		if _, ok := find(list.Candidates, c.Card.Name); ok {
+			t.Errorf("upgrade %s is already in the main list", c.Card.Name)
+		}
 	}
-	if _, ok := find(list.Upgrades, "Archangel of Thune"); !ok {
-		t.Errorf("upgrades = %v, want Archangel of Thune", names(list.Upgrades))
-	}
-	// An unowned card weaker than the weakest owned card of its role is
-	// not an upgrade: Lone Rider (owned, synergy, weak) sets the floor,
-	// Soul Warden is owned. Blood Artist beats Lone Rider, so it is one.
-	if _, ok := find(list.Upgrades, "Blood Artist"); !ok {
-		t.Errorf("upgrades = %v, want Blood Artist", names(list.Upgrades))
+	// This fixture is small enough that the fill takes every unowned
+	// card, so nothing is left to suggest buying on top. That is the
+	// right answer: a card the deck already holds is named by the buy
+	// list, never by the upgrades (D-359).
+	if _, ok := find(list.Candidates, "Blood Artist"); !ok {
+		t.Errorf("the fill left Blood Artist out: %v", names(list.Candidates))
 	}
 
 	req.PoolRule = mtgv1.PoolRule_POOL_RULE_OWNED_ONLY
@@ -918,4 +933,67 @@ func TestTextFallbacksOnlyWithoutTags(t *testing.T) {
 	if c, ok := find(list.Candidates, "Tagged Draw"); !ok || c.Role != mtgv1.CardRole_CARD_ROLE_DRAW {
 		t.Error("the tagged draw card must keep its role")
 	}
+}
+
+// The collection leads (D-359). When the owned half already fills the
+// caps, no unowned card reaches the main list, and a thin collection is
+// the only reason one ever does.
+func TestOwnedFirstPrefersTheCollection(t *testing.T) {
+	role := mtgv1.CardRole_CARD_ROLE_SYNERGY
+	card := func(name string, ownedCount int32, score float64) Candidate {
+		return Candidate{Card: &mtgv1.Card{Name: name, OracleId: name}, Role: role, Score: score, Owned: ownedCount}
+	}
+	// Two owned cards and two unowned ones, the unowned scoring higher.
+	in := []Candidate{
+		card("unowned-best", 0, 9),
+		card("owned-a", 1, 2),
+		card("unowned-next", 0, 8),
+		card("owned-b", 2, 1),
+	}
+
+	t.Run("a full collection leaves no room for the database", func(t *testing.T) {
+		lim := Limits{Total: 2, PerRole: map[mtgv1.CardRole]int{role: 2}}
+		got := ownedFirst(in, lim)
+		if len(got) != 2 {
+			t.Fatalf("main = %v, want the two owned cards", names(got))
+		}
+		for _, c := range got {
+			if c.Owned == 0 {
+				t.Errorf("the database filled %s while the collection had room to spare", c.Card.Name)
+			}
+		}
+	})
+
+	t.Run("a thin collection is topped up in score order", func(t *testing.T) {
+		lim := Limits{Total: 3, PerRole: map[mtgv1.CardRole]int{role: 3}}
+		got := ownedFirst(in, lim)
+		if len(got) != 3 {
+			t.Fatalf("main = %v, want three", names(got))
+		}
+		if _, ok := find(got, "owned-a"); !ok {
+			t.Error("an owned card left the list to make room for the database")
+		}
+		if _, ok := find(got, "owned-b"); !ok {
+			t.Error("an owned card left the list to make room for the database")
+		}
+		if _, ok := find(got, "unowned-best"); !ok {
+			t.Errorf("the hole was filled with the wrong card: %v", names(got))
+		}
+	})
+
+	t.Run("no room at all leaves the owned list alone", func(t *testing.T) {
+		lim := Limits{Total: 1, PerRole: map[mtgv1.CardRole]int{role: 1}}
+		got := ownedFirst(in, lim)
+		if len(got) != 1 || got[0].Owned == 0 {
+			t.Errorf("main = %v, want one owned card", names(got))
+		}
+	})
+
+	t.Run("an empty collection takes the whole fill", func(t *testing.T) {
+		lim := Limits{Total: 2, PerRole: map[mtgv1.CardRole]int{role: 2}}
+		got := ownedFirst([]Candidate{in[0], in[2]}, lim)
+		if len(got) != 2 {
+			t.Errorf("main = %v, want two", names(got))
+		}
+	})
 }
