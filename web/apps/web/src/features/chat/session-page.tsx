@@ -390,19 +390,24 @@ export function ChatPanel({
     </form>
   );
 
+  // What the agent is doing right now, in its own words. A build runs for
+  // minutes, and "the agent is working" says nothing about which minute
+  // this is. The newest status line carries that, so the working row says
+  // it rather than a line of its own (D-375).
+  const step = state.busy ? (shown.reduce((text, item) => (item.kind === "status" ? item.text : text), "") ?? "") : "";
   const working = (
-    <div className="flex items-center gap-3 text-sm text-muted-foreground" role="status">
+    <div className="flex flex-wrap items-center gap-3" role="status">
       {state.busy && (
         <>
-          <span className="flex items-center gap-2">
+          <span className="flex items-center gap-2.5">
             <span className="flex gap-1" aria-hidden="true">
-              <span className="size-1.5 animate-bounce rounded-full bg-primary [animation-delay:-0.3s]" />
-              <span className="size-1.5 animate-bounce rounded-full bg-primary [animation-delay:-0.15s]" />
-              <span className="size-1.5 animate-bounce rounded-full bg-primary" />
+              <span className="size-2 animate-bounce rounded-full bg-primary [animation-delay:-0.3s]" />
+              <span className="size-2 animate-bounce rounded-full bg-primary [animation-delay:-0.15s]" />
+              <span className="size-2 animate-bounce rounded-full bg-primary" />
             </span>
-            The agent is working...
+            <span className="font-display text-[15px] font-semibold text-foreground">{sentence(step) || "The agent is working..."}</span>
           </span>
-          <Button type="button" variant="ghost" size="sm" onClick={stop}>
+          <Button type="button" variant="outline" size="sm" onClick={stop}>
             Stop
           </Button>
         </>
@@ -584,6 +589,14 @@ export function ChatPanel({
 export function poolRuleOf(mode: PoolMode, collectionId: string): PoolRule {
   if (collectionId === "") return PoolRule.UNSPECIFIED;
   return mode === "owned_only" ? PoolRule.OWNED_ONLY : PoolRule.OWNED_FIRST;
+}
+
+// sentence gives a status line a capital and a full stop of its own. The
+// server writes them in lower case, for a line in a thread.
+export function sentence(text: string): string {
+  const t = text.trim();
+  if (t === "") return "";
+  return t[0].toUpperCase() + t.slice(1) + "...";
 }
 
 export function poolLabel(rule: PoolRule | undefined, collection: string): string {

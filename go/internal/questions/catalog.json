@@ -242,7 +242,7 @@
       "id": "power_sixty",
       "slot": "power",
       "order": 41,
-      "text": "How strong should this be: casual, FNM level, or tournament-meta?",
+      "text": "How strong should this be: casual, Friday Night Magic (FNM) level, or tournament-meta?",
       "options": [
         "Casual",
         "FNM",

@@ -9,7 +9,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useAppStore } from "../../lib/store";
 import { fakeUser, state } from "../../test-auth-state";
 import { renderAt } from "../../test-utils";
-import { poolLabel, poolRuleOf, pruneDrafts } from "./session-page";
+import { poolLabel, poolRuleOf, pruneDrafts, sentence } from "./session-page";
 
 vi.mock("firebase/app");
 vi.mock("firebase/auth");
@@ -921,5 +921,64 @@ describe("a commander pair option", () => {
     // Both halves of the pair are asked for, so both can be shown.
     await waitFor(() => expect(getCards).toHaveBeenCalledWith({ oracleIds: ["o-sam", "o-sam", "o-frodo"] }));
     expect(await screen.findByRole("img", { name: /Frodo, Adventurous Hobbit/ })).toBeInTheDocument();
+  });
+});
+
+// A build runs for minutes, and "the agent is working" says nothing
+// about which minute this is (D-375).
+describe("the working line", () => {
+  // A stream that stays open, so the turn is still running when the
+  // check reads the line.
+  function held(list: Ev[]) {
+    let release = () => {};
+    const open = new Promise<void>((r) => {
+      release = r;
+    });
+    async function* run() {
+      for (const e of list) {
+        await Promise.resolve();
+        yield e;
+      }
+      await open;
+    }
+    return { stream: run(), release };
+  }
+
+  it("says what the agent is doing, in its own words", async () => {
+    const h = held([ev("sessionStarted", "s1"), ev("status", "building the deck")]);
+    chat.mockReturnValue(h.stream);
+    try {
+      await renderAt("/session/new");
+      const user = userEvent.setup();
+      await user.type(await screen.findByLabelText("Your message"), "elves");
+      await user.click(screen.getByRole("button", { name: "Send" }));
+      // The newest status carries the working line, with a capital of its own.
+      expect(await screen.findByText("Building the deck...")).toBeInTheDocument();
+      expect(screen.queryByText("The agent is working...")).not.toBeInTheDocument();
+    } finally {
+      h.release();
+    }
+  });
+
+  it("falls back while the agent has said nothing yet", async () => {
+    const h = held([ev("sessionStarted", "s1")]);
+    chat.mockReturnValue(h.stream);
+    try {
+      await renderAt("/session/new");
+      const user = userEvent.setup();
+      await user.type(await screen.findByLabelText("Your message"), "elves");
+      await user.click(screen.getByRole("button", { name: "Send" }));
+      expect(await screen.findByText("The agent is working...")).toBeInTheDocument();
+    } finally {
+      h.release();
+    }
+  });
+});
+
+describe("sentence", () => {
+  it("gives a status line a capital and an ellipsis", () => {
+    expect(sentence("building the deck")).toBe("Building the deck...");
+    expect(sentence("  reading your request  ")).toBe("Reading your request...");
+    expect(sentence("")).toBe("");
   });
 });
