@@ -12,6 +12,7 @@ Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/
 2026-08-31 correction pass 38 (the dead conversation, D-351 to D-355): a bare "No" to a yes-or-no question left its key in the asked state. The agent never repeats a question it asked, so no new question came, and the session was never ready. Every later turn did nothing. Three fixes now close such a key. The code reads the negative. A question card carries a "You decide" control. The classifier prompt names the shape. A turn that asks nothing and is not ready closes what is out and builds. Changes: PR-17, PR-7.
 2026-08-31 correction pass 39 (the gate dead end, the pool floor, and the fixed frame, D-357 to D-364): the question gate now fails a conversation that can not move. A commander pair option carries two card ids, because one id can not hold two cards. The owned-first fill reaches a viable floor and not the shortlist cap. A fill to the cap turned four free decks into decks that cost $40 to $168 on deck gate run 9. The shell is a fixed frame, and the docked chat always fits it. Changes: PR-7, PR-8, PR-17.
 2026-08-31 correction pass 40 (the commander pool and the deck tile, D-365 to D-367): `CommanderPool` dropped every commander with no theme signal. A theme the tag table does not know left three names or fewer, and a reader who refused those had nothing left to read. The theme still leads, and under a floor of 12 the pool fills from the whole format. The agent now says so when it takes the commander choice. The whole deck tile opens the deck. Changes: PR-6, PR-7, PR-17.
+2026-08-31 correction pass 41 (the set filter, F-29, D-371 to D-373): the app never applied a set as a constraint. The request carried no set, and the words reached the theme alone. A deck asked for one set then held cards of any set. PR-17B adds `Card.set_codes` and the filter over it. A card holds printings in 2.3 sets on average, so the field is a list. The classifier also read "build only from the Hobbit set" as an ownership rule. An owned rule with no collection then emptied every pool. Changes: PR-17B, F-29, sequencing step 20.
 
 2026-08-29 correction pass 34 (the palette of D-327): the five colors of the game are the app's palette, and dark leads. D-311 kept every surface neutral, and the result read as boring. A deck now carries its own color identity, and a card role carries its own hue. Changes: PR-17, guardrail 13 unchanged.
 
@@ -176,6 +177,7 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-26 | **The phrasing role invents claims about the game, and no gate catches them.** Gate run 14 of 2026-08-26 passed the gate with zero linter findings and told one user two false things. It said "Grist, the Hunger Tide can not lead a deck", which the rules contradict (Scryfall ruling, 2021-06-18). It asked "Do you want to use any colors beyond Grist's color identity?", which the rules allow no answer to. The catalog rows say neither. The ask role added both, and the ask prompt already said to state no fact about the game. | ✅ answered for PR-8 by the judge lane (D-229): the judge role reads every deck summary for a rule of the game and for the truth of it, on another provider than the generator, and a false rule fails the deck gate. Deck gate run 6 found none in 16 summaries, at $0.0034 a deck. The deterministic net reads the shape of a claim and never its truth, which is why the judge decides (D-224). Earlier: 🔧 partly fixed: D-140 silences the commander row for a legendary card the engine can not confirm, and D-144 puts the color-identity rule in the prompt and the shape in the linter. ⚠ binds PR-8: the generate role writes a deck summary in prose, and the same failure has more room there. The eval lane found both, and the deterministic linter found neither. |
 | F-27 | **A message after a build is dropped, and the deck is rebuilt from the first message.** Session `eIrL12hRY2YNTTCo3iS4`, 2026-08-28: the user wrote "Replace some lands with better options if possible. Also tune the mana curve lower - no 6 or 7 mana cards needed". The agent sent no reply, `plan()` read turn 1 and the slots only, and the generator built a second deck 2.5 minutes after the first with 24 Plains and the same four 6- and 7-mana cards. Three cards changed, all by variance (D-18). The turn cost a full build and answered nothing. | ✅ PR-12B merged 2026-08-29 (#41). |
 | F-28 | **The UI is a live-test UI, not a product.** PR-11 to PR-13 built four screens on plain Tailwind for the owner's browser test (D-273). No design system, one theme, no navigation on a phone, no rename or delete of any object, no card detail, no share, and `firebase/auth` on every route. Found 2026-08-29 when the owner asked for a user-facing UI (D-310). Binds PR-16 to PR-23. | 🔧 Phase 3B |
+| F-29 | **A set is not a constraint the app can apply.** Session `WJbs7FP2csZCULi4SVJu`, 2026-08-31: the owner asked for a tier-5 Commander deck from the Hobbit set. `candidates.Request` carries the format, the colors, the theme, the commander ids, the pool rule, the owned counts, and the bracket. It carries no set. The words reached the theme, the theme matched Scryfall tags, and no card was ever tested for its set. The deck could hold any card of any set. The snapshot of 2026-08-30 holds 988 paper sets over 37,557 Oracle cards. | 🔧 PR-17B |
 
 > *In plain English:* these are the traps we found before we wrote code. The biggest ones: ban lists change every few weeks. The collection file format has no documentation. The AI can name a card that sounds right but is not. Each one has a planned fix or a rule that prevents it.
 
@@ -676,6 +678,29 @@ CAUTION: this branch carries eight concerns. They are the contract, the Go side,
 
 > *In plain English:* a home for your decks. Find one fast, name it, star it, throw one away, and talk to the agent about it on the same page. Every revision keeps its own copy, so you can read an earlier one and see what changed.
 
+**PR-17B: The set filter.** 🔧 next, after PR-17 merges.
+A deck can be limited to one set or to several. The request carries the set codes, and every stage reads them: the 99-card shortlist, the commander pool, and the basic lands. A card passes when it holds a paper printing in one of the named sets.
+
+The card data carries the sets. `Card.set_codes` is every paper set the card has a printing in, lowercase, sorted. The index already reads every printing to build `bySetNo`. It collects the codes in that same walk, and it stores no second copy of a printing.
+
+The snapshot of 2026-08-30 holds 117,608 printing rows, and 9,345 of them are digital. It holds 37,557 Oracle cards. A card carries 2.3 sets on average, and the card with the most carries 224. In all, 16,765 cards hold printings in more than one set.
+
+CAUTION: a card does not have one set. Nearly half of them hold printings in two or more, so the field is a list and never a value. A filter that reads one set per card drops a reprint the user owns.
+
+The name a reader gives is not a code. "The Hobbit" names three sets in the snapshot: `hob` The Hobbit, `hoc` The Hobbit Eternal, and `thob` The Hobbit Tokens. The index gains a set table: the set code, the set name, and the release date. The classifier maps the words onto codes, and the app names the sets it applied. Tokens are not playable cards, and the resolver drops a token set.
+
+Contract, additive: `Slots.set_codes`, `ChatRequest.set_codes`, `Card.set_codes`, and `CardService.ListSets`. The catalog gains one row, so the agent asks which sets when the user names one this app can not resolve.
+
+Gate:
+
+- A deck asked for one set holds cards of that set alone, and the check reads `set_codes` of every card of the deck.
+- A commander offer for one set names commanders of that set. The Hobbit set offers Smaug the Impenetrable, Thranduil the Elvenking, and Smaug Wicked Worm, which the owner named on 2026-08-31.
+- A set too thin to build a legal deck ends the turn with a reason, never a deck of another set.
+- A set name the app can not resolve asks the user, and it names the sets it does hold.
+- The index builds in the same time, plus or minus one second, and it holds under 40 MB more.
+
+> *In plain English:* today you can ask for a deck from one set and get cards from anywhere. Nothing checks the set, because the app never recorded which sets a card is in. This adds that record and the filter over it. A card can be in many sets, so the app keeps them all: a reprint still counts. The app also learns the names of the sets, because you say "the Hobbit set" and the data says "hob".
+
 **PR-18: Collection management.**
 The list of collections shows the name, the count, the date, and the active mark, with rename and delete. An upload dialog shows the progress and the import report. A re-upload whose hash differs from the active collection shows the diff first: added, removed, and changed counts, then "Replace". A binder view per collection is a virtualized grid of the cards with art, count, finish, and condition. It has search, filters by color, type, set, and count, and sort by name, price, and count.
 
@@ -813,9 +838,10 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 17. **GATE.** Phase 3 starts only when PR-8's gate holds on the golden prompts. ✅ held on 2026-08-28, deck gate run 6.
 18. PR-11 ✅ merged 2026-08-28 (#38). PR-12 ✅ merged 2026-08-28 (#40). PR-12B ✅ merged 2026-08-29 (#41). PR-13 ✅ merged 2026-08-29 (#45). Then Phase 3B.
 19. **Phase 3B** (D-316, D-317): PR-16 to PR-23 in the order of the phase list. Each gate holds before the next slice starts. PR-16 ✅ merged 2026-08-29 (#47). PR-16B ✅ merged 2026-08-29 (#48). PR-17 🔧 built on branch `pr-17`, whole. The owner reads it, then merges. The paid re-baseline of D-302 runs in parallel, on the owner's word.
-20. PR-15 eval harness. M-5 manual scoring runs on the first UI build (after PR-12).
-21. PR-14 meta, then I-1, I-2, I-3 on evidence.
-22. Phase 5 stays parked.
+20. **PR-17B** the set filter (F-29). It follows the PR-17 merge, and PR-18 follows it.
+21. PR-15 eval harness. M-5 manual scoring runs on the first UI build (after PR-12).
+22. PR-14 meta, then I-1, I-2, I-3 on evidence.
+23. Phase 5 stays parked.
 
 ## 9. Open questions
 

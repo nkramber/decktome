@@ -142,12 +142,22 @@ CAUTION: the binder head calls `GetCollection`, and the answer carries every ent
 - The script lives outside the repo, in the session scratchpad. It must run from `web/apps/web`, or the bare import of `@playwright/test` does not resolve.
 - PR-23 holds the real smoke flow (D-313). This is a reading tool, not that.
 
+## PR-17B, the set filter (F-29, D-373)
+
+The app never applied a set as a constraint. `candidates.Request` carries the format, the colors, the theme, the commander ids, the pool rule, the owned counts, and the bracket, and it carries no set. A deck asked for one set held cards of any set.
+
+CAUTION: a card does not have one set. The snapshot of 2026-08-30 holds 988 paper sets over 37,557 Oracle cards, and 16,765 of those cards hold printings in two or more. `Card.set_codes` is a list. A field that holds one set drops a reprint.
+
+A set name is not a set code. "The Hobbit" names `hob`, `hoc`, and `thob` in that snapshot. OQ-47 asks which of them a reader means.
+
 ## Next steps, in order
 
 1. The owner reads `pr-17` in the browser, then merges it. PR-17 is whole (D-344). The one gate line the owner still owns is a grid of 100 real decks under one second.
-2. The owner runs the question gate and the deck gate to re-baseline (D-302), in parallel. Ask before each run. Write each to a new `GATE_OUT` file (D-65). Record the numbers here and in the roadmap.
+2. **PR-17B, the set filter** (F-29, D-373). It follows the PR-17 merge. Ask OQ-47 first: which sets a product name covers.
 3. Then PR-18 to PR-23 in order, one gate each. Before PR-22, ask OQ-45 and OQ-46.
 4. After Phase 3B: PR-15, then PR-14.
+
+The re-baseline of D-302 is done: question gate run 28, eval run 28, and deck gate run 10. The section below holds the numbers.
 
 CAUTION: `pr-17` carries eight concerns on one branch, and guardrail 10 asks for one. The owner chose to ship it whole (D-344). Read the branch as one slice, not as eight.
 

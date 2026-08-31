@@ -6,7 +6,9 @@ Read this file first. Then read `docs/SESSION-HANDOFF.md`. It tells you where th
 
 This repo is a Go + Protobuf + TypeScript monorepo for an agentic MtG deck builder. The app reads a user's ManaBox collection export. The user gives a prompt. The agent asks questions, then builds a legal, useful deck.
 
-Stage (2026-08-30): `main` is at `6f871c3`. Merged: PR-0a to PR-8, PR-7B, PR-10 to PR-13, the Phase 3B roadmap (#46), PR-16 (#47), and PR-16B (#48). PR-9 is out of the MVP (D-256).
+Stage (2026-08-31): `main` is at `6f871c3`. Merged: PR-0a to PR-8, PR-7B, PR-10 to PR-13, the Phase 3B roadmap (#46), PR-16 (#47), and PR-16B (#48). PR-9 is out of the MVP (D-256).
+
+Branch `pr-17` holds the deck library, and it is whole (D-344). The owner reads it, then merges. **PR-17B, the set filter, follows it** (F-29, D-373). The app never applied a set as a constraint. A deck asked for one set held cards of any set. The re-baseline of D-302 is done: question gate run 28, eval run 28, and deck gate run 10.
 
 Phase 3B, the product UI, is the current phase, and branch `pr-17` holds the deck library. The look follows a reference design the owner gave on 2026-08-30 (D-328 to D-335). The gate baselines (question gate run 27, deck gate run 8) do not compare with `main` until the owner reruns them (D-302). `docs/SESSION-HANDOFF.md` holds the moving parts, and `docs/reference/autotune-readme.md` holds the loop commands.
 
