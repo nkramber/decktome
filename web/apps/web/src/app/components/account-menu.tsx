@@ -1,11 +1,12 @@
 import { UserIcon } from "lucide-react";
-import { type ComponentProps, lazy, Suspense, useState } from "react";
+import { type ComponentProps, useState } from "react";
 
 import { Button } from "../../components/ui/button";
+import { accountMenuChunk } from "../chunks";
 
-// The menu itself loads on the first open (D-320). The trigger below is
-// the same element in both states, so nothing moves when it arrives.
-const AccountMenuContent = lazy(async () => ({ default: (await import("./shell-menus")).AccountMenuContent }));
+// The menu itself stays off the first paint (D-320). It mounts closed as
+// soon as its chunk lands, so the first click opens it and waits for
+// nothing. The trigger below is the same element in every state.
 
 export type AccountMenuProps = { email: string; onSignOut: () => void; align?: "start" | "center" | "end"; side?: "top" | "bottom" };
 
@@ -21,12 +22,18 @@ function AccountTrigger({ email, ...props }: { email: string } & ComponentProps<
 }
 
 // The account menu holds the email and the sign-out (D-328).
+const Menu = accountMenuChunk.Mount;
+
 export function AccountMenu({ email, onSignOut, align = "end", side = "bottom" }: AccountMenuProps) {
-  const [opened, setOpened] = useState(false);
-  if (!opened) return <AccountTrigger email={email} onClick={() => setOpened(true)} />;
-  return (
-    <Suspense fallback={<AccountTrigger email={email} />}>
-      <AccountMenuContent trigger={<AccountTrigger email={email} />} email={email} onSignOut={onSignOut} align={align} side={side} />
-    </Suspense>
+  const [open, setOpen] = useState(false);
+  const waiting = (
+    <AccountTrigger
+      email={email}
+      onClick={() => {
+        accountMenuChunk.preload();
+        setOpen(true);
+      }}
+    />
   );
+  return <Menu fallback={waiting} open={open} onOpenChange={setOpen} trigger={<AccountTrigger email={email} />} email={email} onSignOut={onSignOut} align={align} side={side} />;
 }

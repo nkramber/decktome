@@ -8,7 +8,6 @@ import { Link, useBlocker, useLocation, useNavigate, useParams } from "react-rou
 import { AlertTriangleIcon, ArrowUpIcon, CheckIcon, ChevronDownIcon, ChevronUpIcon, LayersIcon } from "lucide-react";
 
 import { Button } from "../../components/ui/button";
-import { Checkbox } from "../../components/ui/checkbox";
 import { Label } from "../../components/ui/label";
 import { Textarea } from "../../components/ui/textarea";
 import { agentClient, deckClient } from "../../lib/api";
@@ -16,6 +15,7 @@ import { cn } from "../../lib/cn";
 import { errorMessage } from "../../lib/errors";
 import { useAppStore } from "../../lib/store";
 import { DeckView } from "../deck/deck-view";
+import { PoolPicker, useCollections } from "./pool-picker";
 import { type Draft, draftAnswered, emptyDraft, QuestionCard } from "./question-card";
 import { byteLength, type ChatState, emptyState, fromSession, maxMessageBytes, type ThreadItem, useChat } from "./use-chat";
 
@@ -154,7 +154,6 @@ export function ChatPanel({
   }, [navigate]);
   const collectionId = useAppStore((s) => s.collectionId);
   const poolMode = useAppStore((s) => s.poolMode);
-  const setPoolMode = useAppStore((s) => s.setPoolMode);
   const setSessionId = useAppStore((s) => s.setSessionId);
 
   // The collection goes with the first message only. A stored session
@@ -268,7 +267,11 @@ export function ChatPanel({
     }
   }
 
-  const poolText = poolLabel(state.slots?.poolRule, sendCollection);
+  // The pool line names the collection, not its id. The picker and the
+  // header menu read the same list, so one call serves all three.
+  const collections = useCollections(sendCollection !== "");
+  const collectionName = collections.data?.collections.find((c) => c.id === sendCollection)?.name ?? sendCollection;
+  const poolText = poolLabel(state.slots?.poolRule, sendCollection ? collectionName : "");
   // The deck owns the page once one exists, and the conversation docks
   // at the corner (D-331). Before that, the conversation is the page.
   // The address of a deck names which deck shows. A build that ends with
@@ -281,13 +284,19 @@ export function ChatPanel({
   }, [streamedDeckId, state.busy, deckOverride?.id, onDeckBuilt]);
   const [historyOpen, setHistoryOpen] = useState(false);
 
+  // A question sits in the thread and in the open list at the same time,
+  // and the card below it takes the answer. The thread holds the line for
+  // the history, so it shows the question only after it is answered.
+  const openIds = new Set(state.openQuestions.map((q) => q.id));
   const thread = (
     <ol className="flex flex-col gap-5" aria-label="Conversation">
-      {state.thread.map((item) => (
-        <li key={item.id}>
-          <ThreadLine item={item} />
-        </li>
-      ))}
+      {state.thread
+        .filter((item) => item.kind !== "question" || !openIds.has(item.question.id))
+        .map((item) => (
+          <li key={item.id}>
+            <ThreadLine item={item} />
+          </li>
+        ))}
     </ol>
   );
 
@@ -469,12 +478,7 @@ export function ChatPanel({
             </Link>
           </p>
         )}
-        {beforeFirstMessage && collectionId ? (
-          <Label className="w-fit rounded-card border border-border bg-card px-3 py-2 text-sm font-normal shadow-card">
-            <Checkbox checked={poolMode === "owned"} onCheckedChange={(v) => setPoolMode(v === true ? "owned" : "any")} />
-            Use only cards in my collection
-          </Label>
-        ) : null}
+        {beforeFirstMessage && <PoolPicker />}
 
         {leaveWarning}
 
@@ -496,16 +500,16 @@ export function ChatPanel({
   );
 }
 
-export function poolLabel(rule: PoolRule | undefined, collectionId: string): string {
+export function poolLabel(rule: PoolRule | undefined, collection: string): string {
   switch (rule) {
     case PoolRule.OWNED_ONLY:
       return "Pool: only cards in your collection.";
     case PoolRule.OWNED_FIRST:
       return "Pool: your collection first, with upgrades to buy.";
     case PoolRule.ANY_CARD:
-      return "Pool: any card (D-37).";
+      return "Pool: any card.";
     default:
-      return collectionId ? `Pool: your collection (${collectionId}). The agent asks how strict.` : "Pool: any card (D-37).";
+      return collection ? `Pool: ${collection}. The agent asks how strict.` : "Pool: any card.";
   }
 }
 
@@ -527,7 +531,7 @@ function ThreadLine({ item }: { item: ThreadItem }) {
   switch (item.kind) {
     case "user":
       return (
-        <p className="ml-auto max-w-[85%] rounded-card bg-accent px-4 py-2.5 text-accent-foreground whitespace-pre-line">
+        <p className="ml-auto w-fit max-w-[85%] rounded-card bg-accent px-4 py-2.5 text-accent-foreground whitespace-pre-line">
           <span className="sr-only">You: </span>
           {item.text}
         </p>

@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { axe } from "jest-axe";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -142,5 +142,25 @@ describe("the Build menu with no collection", () => {
     await user.click(screen.getByRole("button", { name: "Build" }));
     await user.click(await screen.findByRole("menuitem", { name: "Add a collection" }));
     expect(router.state.location.pathname).toBe("/collection");
+  });
+});
+
+// The menus mount closed once the idle warm-up brings their chunk in.
+// A click then opens them at once, and a second click closes them.
+describe("a menu after the warm-up", () => {
+  it("opens and closes with no reload", async () => {
+    const { warmChunks } = await import("./chunks");
+    warmChunks();
+    const user = userEvent.setup();
+    await renderAt("/decks");
+    // A mounted menu marks its trigger closed. A trigger with no such
+    // mark is the plain button of the state before the chunk lands.
+    await waitFor(() => expect(screen.getByRole("button", { name: "Build" })).toHaveAttribute("aria-expanded", "false"));
+    await user.click(screen.getByRole("button", { name: "Build" }));
+    await screen.findByRole("menuitemradio", { name: "Any card" });
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("menuitemradio", { name: "Any card" })).not.toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: "Build" }));
+    expect(await screen.findByRole("menuitemradio", { name: "Any card" })).toBeInTheDocument();
   });
 });

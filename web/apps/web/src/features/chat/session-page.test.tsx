@@ -26,6 +26,7 @@ vi.mock("../../lib/api", () => ({
   },
   deckClient: { getDeck: (...args: unknown[]) => getDeck(...args), exportDeck: vi.fn() },
   cardClient: { getCards: (...args: unknown[]) => getCards(...args) },
+  collectionClient: { listCollections: () => Promise.resolve({ collections: [{ id: "c1", name: "binder-july.csv", cardCount: 4317 }] }) },
 }));
 
 type Ev = { event: { case: string; value: unknown } };
@@ -76,7 +77,7 @@ describe("SessionPage", () => {
     expect(screen.getByTestId("session-id")).toHaveTextContent("Session id: s1");
     expect(screen.getByRole("button", { name: "Commander" })).toBeInTheDocument();
     expect(screen.getByTestId("usage")).toHaveTextContent("Session spend: 1 calls, 100 in, 20 out, $0.0010");
-    expect(screen.getByTestId("pool-mode")).toHaveTextContent("Pool: any card (D-37).");
+    expect(screen.getByTestId("pool-mode")).toHaveTextContent("Pool: any card.");
     const req = chat.mock.calls[0][0] as { sessionId: string; collectionId: string; message: string; answers: unknown[] };
     expect(req).toMatchObject({ sessionId: "", collectionId: "", message: "Build me an elf deck", answers: [] });
     // The conversation shows the user line and the asked line.
@@ -211,7 +212,8 @@ describe("SessionPage", () => {
     const user = userEvent.setup();
     const box = await screen.findByLabelText("Use only cards in my collection");
     expect(box).toBeChecked();
-    expect(screen.getByTestId("pool-mode")).toHaveTextContent("Pool: your collection (c1). The agent asks how strict.");
+    // The line names the collection, never its id.
+    expect(await screen.findByTestId("pool-mode")).toHaveTextContent("Pool: binder-july.csv. The agent asks how strict.");
     await user.click(box);
     expect(useAppStore.getState().poolMode).toBe("any");
     await user.click(box);
@@ -474,8 +476,13 @@ describe("SessionPage", () => {
     await screen.findByRole("group", { name: "Question: How strong?" });
     expect(screen.getByRole("group", { name: "Question: Any color preference?" })).toBeInTheDocument();
     expect(screen.queryByRole("group", { name: "Question: Which format?" })).not.toBeInTheDocument();
-    // The clicked option shows as the user's line.
-    expect(within(screen.getByRole("list", { name: "Conversation" })).getAllByRole("listitem")[3]).toHaveTextContent("Modern");
+    // The clicked option shows as the user's line. The two open questions
+    // sit in their cards, so the thread holds three lines: the message,
+    // the answered question, and the answer.
+    const lines = within(screen.getByRole("list", { name: "Conversation" })).getAllByRole("listitem");
+    expect(lines).toHaveLength(3);
+    expect(lines[1]).toHaveTextContent("Which format?");
+    expect(lines.at(-1)).toHaveTextContent("Modern");
   });
 
 
@@ -606,12 +613,84 @@ describe("SessionPage", () => {
   it("poolLabel names the pool rule, and the collection before the rule is set", async () => {
     expect(poolLabel(PoolRule.OWNED_ONLY, "c1")).toBe("Pool: only cards in your collection.");
     expect(poolLabel(PoolRule.OWNED_FIRST, "")).toBe("Pool: your collection first, with upgrades to buy.");
-    expect(poolLabel(PoolRule.ANY_CARD, "c1")).toBe("Pool: any card (D-37).");
-    expect(poolLabel(undefined, "c1")).toBe("Pool: your collection (c1). The agent asks how strict.");
-    expect(poolLabel(undefined, "")).toBe("Pool: any card (D-37).");
+    expect(poolLabel(PoolRule.ANY_CARD, "binder-july.csv")).toBe("Pool: any card.");
+    expect(poolLabel(undefined, "binder-july.csv")).toBe("Pool: binder-july.csv. The agent asks how strict.");
+    expect(poolLabel(undefined, "")).toBe("Pool: any card.");
   });
 
   it("pruneDrafts drops the drafts of questions no longer open", async () => {
     expect(pruneDrafts({ q1: { text: "a" }, q2: { optionIndex: 1, text: "" } }, [{ id: "q2" }])).toEqual({ q2: { optionIndex: 1, text: "" } });
+  });
+});
+
+// The picker is the first control of a new chat. Before it, the only way
+// to change the pool was the header menu, and a reader did not find it.
+describe("the pool picker", () => {
+  it("lists any card, every collection, and the way to add one", async () => {
+    await renderAt("/session/new");
+    const select = (await screen.findByLabelText("Build from")) as HTMLSelectElement;
+    expect([...select.options].map((o) => o.textContent)).toEqual(["Any card", "binder-july.csv (4317 cards)", "Add a collection..."]);
+    expect(select.value).toBe("");
+  });
+
+  it("takes a collection and sets the owned pool", async () => {
+    await renderAt("/session/new");
+    const select = await screen.findByLabelText("Build from");
+    await userEvent.setup().selectOptions(select, "c1");
+    expect(useAppStore.getState().collectionId).toBe("c1");
+    expect(useAppStore.getState().poolMode).toBe("owned");
+    expect(await screen.findByLabelText("Use only cards in my collection")).toBeChecked();
+  });
+
+  it("any card clears the collection", async () => {
+    useAppStore.setState({ collectionId: "c1", poolMode: "owned" });
+    await renderAt("/session/new");
+    const select = await screen.findByLabelText("Build from");
+    await userEvent.setup().selectOptions(select, "");
+    expect(useAppStore.getState().collectionId).toBe("");
+    expect(useAppStore.getState().poolMode).toBe("any");
+  });
+
+  it("add a collection goes to the upload page", async () => {
+    const { router } = await renderAt("/session/new");
+    const select = await screen.findByLabelText("Build from");
+    await userEvent.setup().selectOptions(select, "add:collection");
+    expect(router.state.location.pathname).toBe("/collection");
+  });
+
+  it("leaves once the session starts", async () => {
+    chat.mockReturnValue(events([ev("sessionStarted", "s1")]));
+    await renderAt("/session/new");
+    await screen.findByLabelText("Build from");
+    const user = userEvent.setup();
+    await user.type(screen.getByLabelText("Your message"), "elves");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    await screen.findByText("Session id: s1");
+    expect(screen.queryByLabelText("Build from")).not.toBeInTheDocument();
+  });
+});
+
+// A question sits in the thread and in the open list at the same time.
+// The card takes the answer, so the thread waits for the answer.
+describe("a question that is open", () => {
+  it("shows once, and joins the thread after the answer", async () => {
+    chat.mockReturnValue(events([ev("sessionStarted", "s1"), ev("question", formatQuestion)]));
+    await renderAt("/session/new");
+    const user = userEvent.setup();
+    await user.type(screen.getByLabelText("Your message"), "elves");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+
+    const card = await screen.findByRole("group", { name: "Question: Which format?" });
+    expect(card).toBeInTheDocument();
+    const thread = screen.getByRole("list", { name: "Conversation" });
+    expect(within(thread).queryByText("Which format?")).not.toBeInTheDocument();
+
+    chat.mockReturnValue(events([ev("slots", {})]));
+    await user.click(within(card).getByRole("button", { name: "Commander" }));
+    await user.click(screen.getByRole("button", { name: "Submit answers" }));
+
+    // The answer closes the card, and the asked line takes its place.
+    await waitFor(() => expect(screen.queryByRole("group", { name: "Question: Which format?" })).not.toBeInTheDocument());
+    expect(within(screen.getByRole("list", { name: "Conversation" })).getByText("Which format?")).toBeInTheDocument();
   });
 });

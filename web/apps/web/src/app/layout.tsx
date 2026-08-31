@@ -1,21 +1,20 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { lazy, Suspense } from "react";
+import { useEffect } from "react";
 import { Link, Outlet } from "react-router";
 
 import { useAuth } from "../features/auth/auth-context";
 import { errorMessage } from "../lib/errors";
 import { signOutOfApp } from "../lib/firebase";
 import { useAppStore } from "../lib/store";
+import { healthFooterChunk, scheduleWarm, toasterChunk } from "./chunks";
 import { AccountMenu } from "./components/account-menu";
 import { TopNav } from "./components/top-nav";
 
-// The footer holds the one call that pulls the Connect client, so it loads
-// after the shell paints (D-320).
-const HealthFooter = lazy(async () => ({ default: (await import("./components/health-footer")).HealthFooter }));
-
-// The toast host loads after the first paint (D-320). Nothing shows a
-// toast before a mutation, and a mutation needs a click first.
-const Toaster = lazy(async () => ({ default: (await import("../components/ui/toaster")).Toaster }));
+// The footer holds the one call that pulls the Connect client, and the
+// toast host waits for a mutation. Both arrive after the first paint
+// (D-320), and neither has a Suspense boundary of its own.
+const HealthFooter = healthFooterChunk.Mount;
+const Toaster = toasterChunk.Mount;
 
 // signOutAndClear clears the persisted ids and the query cache, so the
 // next account on this browser starts with nothing of the last one.
@@ -31,6 +30,11 @@ export function Layout() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const reset = useAppStore((s) => s.reset);
+
+
+  // The deferred chunks arrive in the idle time after the first paint,
+  // so the first click on a menu or a nav entry opens at once.
+  useEffect(scheduleWarm, []);
 
   async function onSignOut() {
     try {
@@ -68,12 +72,8 @@ export function Layout() {
         <Outlet />
       </main>
 
-      <Suspense fallback={null}>
-        <HealthFooter />
-      </Suspense>
-      <Suspense fallback={null}>
-        <Toaster />
-      </Suspense>
+      <HealthFooter />
+      <Toaster />
     </div>
   );
 }

@@ -7,6 +7,7 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
 2026-08-30 correction pass 35 (the reference design and the one deck screen, D-328 to D-335): the owner gave a reference design, and it settles the look. Three faces, a navy and gold palette, one top bar, and dark alone. The identity wash of D-327 left, and the color of the game now shows in a mana pip and a rarity dot. A deck has one screen and one address. Changes: Phase 3B, PR-16, PR-16B, PR-17, sequencing step 19.
+2026-08-30 correction pass 36 (the collection picker and the speed of the app, D-336 to D-340): the pool lived in the header menu alone, and the owner did not find it. A "Build from" picker now sits on the chat screen. No screen shows a decision id or a Firestore id. No chunk loads behind a Suspense boundary. React holds a committed fallback for 300 ms. Content on the landing page went from 347 ms to 44 ms. The first open of the Build menu went from 323 ms to 16 ms. Changes: PR-17.
 
 2026-08-29 correction pass 34 (the palette of D-327): the five colors of the game are the app's palette, and dark leads. D-311 kept every surface neutral, and the result read as boring. A deck now carries its own color identity, and a card role carries its own hue. Changes: PR-17, guardrail 13 unchanged.
 
@@ -642,14 +643,16 @@ Gate:
 
 > *In plain English:* the app looked like a test bench with a dark mode on it. This makes it look like a product. A real typeface, depth, a chat that reads like a conversation, and a message box where you expect it.
 
-**PR-17: Deck library.** 🔧 built 2026-08-30 on branch `pr-17`, nine commits. The version history and the compare remain.
+**PR-17: Deck library.** 🔧 built 2026-08-30 on branch `pr-17`, eleven commits. The version history and the compare remain.
 A grid of decks with the name, the commander, the mana pips, the format, the power, the count, the buy cost, and the date. Search by name and commander, filter by format, power, and favorites, and a favorite star. Every filter runs on the server, so a match on a later page still shows.
 
 Contract, additive: `DeckService.UpdateDeck(name, favorite)`, `DeleteDeck`, `Deck.favorite`, `Deck.card_count`, and paging with filters on `ListDecks` (D-245). The power filter has two fields, because `PowerLevel` is a oneof (D-324).
 
 A deck has one screen and one address (D-335). `/decks/<id>` holds the deck, the actions the user owns, and the conversation that built it. `/session/<id>` holds a build with no deck yet, and it hands the reader over the moment a turn ends with a deck. The deck fills the page, and the conversation docks at the bottom left with a History control (D-331). `src/features/workspace` is the one feature with a path to both chat and deck, and the import boundary of the lint carries that rule.
 
-Build in the header asks which cards the deck draws on, and then opens a chat (D-332). A signed-in reader lands there (D-334).
+Build in the header asks which cards the deck draws on, and then opens a chat (D-332). A signed-in reader lands there (D-334). The chat screen carries the same choice as a "Build from" picker under its title (D-336). A control in a menu alone is a control a reader does not find.
+
+No chunk of this app loads behind a Suspense boundary (D-338). React holds a committed fallback for 300 ms, and it holds every later reveal with it. A chunk that is already in the browser therefore costs the reader a third of a second. `src/app/deferred.tsx` starts a download and mounts the component the moment the code is here. `src/app/chunks.ts` lists every deferred chunk, and the shell warms them all in the idle time after the first paint (D-339).
 
 The listing filter runs in Go over the rows Firestore returns, not as a Firestore query. One read serves every filter, and no composite index has to exist. A scan cap of 500 rows bounds the read, and a user beyond it needs a search index. The page token carries the offset and a fingerprint of the filter, so a token of another filter is an invalid argument.
 
@@ -658,7 +661,9 @@ Gate:
 - Each action round-trips through the API and shows in the grid with no reload. ✅
 - A deleted deck answers `NotFound`. ✅
 - A grid of 100 decks renders under one second. ⏳ the owner reads it with real decks.
-- The first paint holds under 130 kB gzipped (D-323). ✅ 115.72 kB, 361.69 kB raw.
+- The first paint holds under 130 kB gzipped (D-323). ✅ 116.13 kB, 362.42 kB raw.
+- Content of the landing page shows under 100 ms, measured over the built app. ✅ 44 ms, from 347 ms.
+- The first open of a shell menu costs under 50 ms. ✅ 16 ms, from 323 ms.
 
 CAUTION: this branch carries six concerns. They are the contract, the Go side, the reference design, the layout of D-331, the Build menu, and the one deck screen. Guardrail 10 asks for one. A split before the merge needs the owner's word.
 

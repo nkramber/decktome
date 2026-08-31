@@ -76,6 +76,10 @@ The web side, in one list:
 - `src/features/workspace` is the one feature with a path to both chat and deck.
 - Build in the header is a menu of the collections (D-332), and a signed-in reader lands there (D-334).
 - The look of the reference design: three faces, the navy and gold palette, one top bar, dark alone.
+- A "Build from" picker sits under the title of a new chat (D-336). It names the pool, and it changes it without a trip to another page.
+
+CAUTION: no chunk of this app loads behind a Suspense boundary (D-338). React holds a committed fallback for 300 ms, and it holds every later reveal with it. `src/app/deferred.tsx` replaces `React.lazy` everywhere. Do not put `React.lazy` back.
+
 
 The Go side, in one list:
 
@@ -149,6 +153,26 @@ CAUTION: the binder head calls `GetCollection`, and the answer carries every ent
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 
 Seven owner rows wait in `docs/owner-questions.md`: OQ-23, OQ-28 to OQ-31, OQ-37, and OQ-39. OQ-20, OQ-44, OQ-45, and OQ-46 wait in `docs/open-questions.md`.
+
+## Speed, measured on 2026-08-30
+
+Every number below comes from Playwright over the built app on `vite preview`, with each RPC stubbed. `scripts` in the scratchpad hold the runs. The same measurement on the dev server gives larger numbers, because Vite serves each module on its own there.
+
+| What | Before | After |
+|---|---|---|
+| Content of `/session/new`, from navigation start | 347 ms | 44 ms |
+| First open of the Build menu | 323 ms | 16 ms |
+| Second open of the Build menu | 8 ms | 12 ms |
+| Hop to a page it already read | 1 call | 0 calls |
+| First-paint chunk, gzipped | 115.93 kB | 116.13 kB |
+
+Three changes give that:
+
+- `src/app/deferred.tsx` replaces `React.lazy` (D-338). A deferred unit starts a download and mounts the component the moment the code is here. Nothing suspends, so React throttles nothing.
+- `src/app/chunks.ts` lists every deferred chunk, and the layout warms them all in the idle time after the first paint (D-339).
+- The query client keeps server state fresh for 30 seconds (D-340).
+
+CAUTION: the first-paint bar of D-323 is 130 kB gzipped. Read the Vite build report after any change to `src/app/chunks.ts`. A chunk that moves into the entry chunk spends that budget.
 
 ## Facts that expire
 
