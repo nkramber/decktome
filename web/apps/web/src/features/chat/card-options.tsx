@@ -42,8 +42,13 @@ export function CardOption({ card, name }: { card: Card | undefined; name: strin
   return (
     <div className="flex flex-col gap-2" data-testid="card-option">
       {faces.map((face, i) => (
-        <figure key={`${card.oracleId}-${i}`} className="flex flex-col gap-1">
-          <FaceImage face={face} />
+        // A card in a tile this small is too small to read its rules text.
+        // The pointer lifts it over whatever sits beside it, and the row
+        // keeps its own height, so nothing below moves (D-372).
+        <figure key={`${card.oracleId}-${i}`} className="group/card flex flex-col gap-1">
+          <span className="relative z-0 block origin-center transition-transform duration-150 group-hover/card:z-50 group-hover/card:scale-[1.75] motion-reduce:transition-none motion-reduce:group-hover/card:scale-100">
+            <FaceImage face={face} />
+          </span>
           {faces.length > 1 && (
             <figcaption className="text-xs text-muted-foreground">
               {face.name} (face {i + 1} of {faces.length})

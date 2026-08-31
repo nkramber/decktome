@@ -1112,6 +1112,16 @@ func (a *Agent) apply(st *State, out classifyOut, open []string, message string)
 	a.applyColors(st, out)
 	a.applyNames(st, out)
 	if rule, ok := poolRules[slotWord(out.PoolRule)]; ok {
+		// An owned rule needs a collection. A reader with none who says
+		// "build only from the Hobbit set" names a set, not their
+		// library, and the classifier reads the word "only" as ownership.
+		// The rule then empties the card pool and the commander pool, and
+		// the deck can not be built at all (D-371).
+		if rule != mtgv1.PoolRule_POOL_RULE_ANY_CARD && !st.Ctx.HasCollection {
+			a.log.Info("an owned pool rule needs a collection, and this session has none",
+				"session", st.SessionID, "rule", rule)
+			rule = mtgv1.PoolRule_POOL_RULE_ANY_CARD
+		}
 		st.Slots.PoolRule = rule
 		st.Close("pool_rule")
 	}

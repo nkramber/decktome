@@ -1,6 +1,8 @@
 package questions
 
 import (
+	"io"
+	"log/slog"
 	"testing"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
@@ -116,6 +118,51 @@ func TestDeclineNegative(t *testing.T) {
 		s.Slots.SlotStates["colors"] = mtgv1.SlotState_SLOT_STATE_FILLED
 		if _, ok := s.DeclineNegative("q2-colors", "Do you have a color preference?", "No"); ok {
 			t.Error("a filled key closed again")
+		}
+	})
+}
+
+// An owned pool rule needs a collection (D-371). Session
+// WJbs7FP2csZCULi4SVJu asked for "only from the 'Hobbit' set" with no
+// collection at all. The classifier read the word "only" as ownership,
+// and the empty rule left no card and no commander to build with.
+func TestOwnedPoolRuleNeedsACollection(t *testing.T) {
+	newAgent := func(hasCollection bool) (*Agent, *State) {
+		a := &Agent{log: slog.New(slog.NewTextHandler(io.Discard, nil))}
+		st := NewState(false)
+		st.Ctx.HasCollection = hasCollection
+		return a, st
+	}
+
+	t.Run("owned_only with no collection reads as any card", func(t *testing.T) {
+		a, st := newAgent(false)
+		a.apply(st, classifyOut{PoolRule: "owned_only"}, nil, "build only from the Hobbit set")
+		if got := st.Slots.GetPoolRule(); got != mtgv1.PoolRule_POOL_RULE_ANY_CARD {
+			t.Errorf("pool rule = %v, want ANY_CARD", got)
+		}
+	})
+
+	t.Run("owned_first with no collection reads as any card", func(t *testing.T) {
+		a, st := newAgent(false)
+		a.apply(st, classifyOut{PoolRule: "owned_first"}, nil, "only artifacts")
+		if got := st.Slots.GetPoolRule(); got != mtgv1.PoolRule_POOL_RULE_ANY_CARD {
+			t.Errorf("pool rule = %v, want ANY_CARD", got)
+		}
+	})
+
+	t.Run("a collection keeps the rule the user named", func(t *testing.T) {
+		a, st := newAgent(true)
+		a.apply(st, classifyOut{PoolRule: "owned_only"}, nil, "only cards I own")
+		if got := st.Slots.GetPoolRule(); got != mtgv1.PoolRule_POOL_RULE_OWNED_ONLY {
+			t.Errorf("pool rule = %v, want OWNED_ONLY", got)
+		}
+	})
+
+	t.Run("the key still closes, so the question does not come back", func(t *testing.T) {
+		a, st := newAgent(false)
+		a.apply(st, classifyOut{PoolRule: "owned_only"}, nil, "only from one set")
+		if st.Slots.GetSlotStates()["pool_rule"] == mtgv1.SlotState_SLOT_STATE_ASKED {
+			t.Error("the pool question is still out after the rule was read")
 		}
 	})
 }
