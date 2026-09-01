@@ -36,6 +36,13 @@ const earlier = [
   { id: "c-older", name: "binder-june.csv", cardCount: 12, importedAt: undefined },
 ];
 
+// The upload lives in a dialog (roadmap PR-18). openUpload opens it and
+// gives back the file input inside it.
+async function openUpload(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(await screen.findByRole("button", { name: "Upload a collection" }));
+  return await screen.findByLabelText("ManaBox CSV file");
+}
+
 beforeEach(() => {
   state.user = fakeUser;
   localStorage.clear();
@@ -151,7 +158,7 @@ describe("CollectionPage", () => {
     await screen.findByRole("button", { name: "binder-july.csv" });
     const user = userEvent.setup();
     const file = new File(["Name,Set code\nLightning Bolt,LEA\n"], "export.csv", { type: "text/csv" });
-    await user.upload(screen.getByLabelText("ManaBox CSV file"), file);
+    await user.upload(await openUpload(user), file);
     await user.click(screen.getByRole("button", { name: "Upload" }));
 
     expect(await screen.findByTestId("card-count")).toHaveTextContent(
@@ -180,8 +187,9 @@ describe("CollectionPage", () => {
     importCollection.mockResolvedValue({ collection: { id: "c-new", name: "Mine", cardCount: 1 }, report: {} });
     await renderAt("/collection");
     const user = userEvent.setup();
+    const input = await openUpload(user);
     await user.type(screen.getByLabelText(/Collection name/), "Mine");
-    await user.upload(screen.getByLabelText("ManaBox CSV file"), new File(["x"], "export.csv"));
+    await user.upload(input, new File(["x"], "export.csv"));
     await user.click(screen.getByRole("button", { name: "Upload" }));
     await screen.findByTestId("card-count");
     expect((importCollection.mock.calls[0][0] as { name: string }).name).toBe("Mine");
@@ -191,7 +199,7 @@ describe("CollectionPage", () => {
     importCollection.mockRejectedValue(new Error("[unauthenticated] no token"));
     await renderAt("/collection");
     const user = userEvent.setup();
-    await user.upload(screen.getByLabelText("ManaBox CSV file"), new File(["x"], "export.csv"));
+    await user.upload(await openUpload(user), new File(["x"], "export.csv"));
     await user.click(screen.getByRole("button", { name: "Upload" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Upload failed: [unauthenticated] no token");
   });
@@ -200,23 +208,30 @@ describe("CollectionPage", () => {
     await renderAt("/collection");
     const user = userEvent.setup();
     const big = new File([new Uint8Array((5 << 20) + 1)], "big.csv", { type: "text/csv" });
-    await user.upload(screen.getByLabelText("ManaBox CSV file"), big);
+    await user.upload(await openUpload(user), big);
     expect(await screen.findByRole("alert")).toHaveTextContent("The file is 5.0 MiB. The limit is 5 MiB.");
     expect(screen.getByRole("button", { name: "Upload" })).toBeDisabled();
     expect(importCollection).not.toHaveBeenCalled();
   });
 
-  it("clears the picked file on Skip and on a click on an earlier upload", async () => {
+  it("drops the picked file when the dialog closes, and Skip leaves the page", async () => {
     const { router } = await renderAt("/collection");
     await screen.findByRole("button", { name: "binder-july.csv" });
     const user = userEvent.setup();
-    await user.upload(screen.getByLabelText("ManaBox CSV file"), new File(["x"], "export.csv"));
+    await user.upload(await openUpload(user), new File(["x"], "export.csv"));
     expect(screen.getByRole("button", { name: "Upload" })).toBeEnabled();
-    await user.click(screen.getByRole("button", { name: "binder-july.csv" }));
+
+    // Cancel closes the dialog. A second open starts clean, so no file
+    // of an abandoned upload reaches the server.
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    await waitFor(() => expect(screen.queryByLabelText("ManaBox CSV file")).not.toBeInTheDocument());
+    const again = await openUpload(user);
+    expect((again as HTMLInputElement).files).toHaveLength(0);
     expect(screen.getByRole("button", { name: "Upload" })).toBeDisabled();
-    expect((screen.getByLabelText("ManaBox CSV file") as HTMLInputElement).files).toHaveLength(0);
-    await user.upload(screen.getByLabelText("ManaBox CSV file"), new File(["x"], "export.csv"));
-    expect(screen.getByRole("button", { name: "Upload" })).toBeEnabled();
+    expect(importCollection).not.toHaveBeenCalled();
+
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByLabelText("ManaBox CSV file")).not.toBeInTheDocument());
     await user.click(screen.getByRole("button", { name: "Skip, build from any card" }));
     expect(router.state.location.pathname).toBe("/session/new");
   });
@@ -334,7 +349,7 @@ describe("a re-upload over an active collection", () => {
     const user = userEvent.setup();
     await renderAt("/collection");
 
-    await user.upload(screen.getByLabelText("ManaBox CSV file"), file());
+    await user.upload(await openUpload(user), file());
     await user.click(screen.getByRole("button", { name: "Upload" }));
 
     // The diff reads, and nothing is imported yet.
@@ -360,7 +375,7 @@ describe("a re-upload over an active collection", () => {
     useAppStore.setState({ collectionId: "c-old", poolMode: "owned_only" });
     const user = userEvent.setup();
     await renderAt("/collection");
-    await user.upload(screen.getByLabelText("ManaBox CSV file"), file());
+    await user.upload(await openUpload(user), file());
     await user.click(screen.getByRole("button", { name: "Upload" }));
 
     expect(await screen.findByText("Nothing changed")).toBeInTheDocument();
@@ -371,10 +386,63 @@ describe("a re-upload over an active collection", () => {
     importCollection.mockResolvedValue({ collection: { id: "c-new", name: "binder-august.csv", cardCount: 1 }, report: { unresolved: [], resolvedCount: 1, unresolvedByReason: {} } });
     const user = userEvent.setup();
     await renderAt("/collection");
-    await user.upload(screen.getByLabelText("ManaBox CSV file"), file());
+    await user.upload(await openUpload(user), file());
     await user.click(screen.getByRole("button", { name: "Upload" }));
     await waitFor(() => expect(importCollection).toHaveBeenCalled());
     expect(diffCollections).not.toHaveBeenCalled();
     expect(importCollection).toHaveBeenCalledWith(expect.objectContaining({ replaceCollectionId: "" }));
+  });
+});
+
+// The upload dialog holds the file, the progress, and the report, so the
+// page behind it never changes shape while a reader uploads (PR-18).
+describe("the upload dialog", () => {
+  const file = () => new File(["Name,Set code\nBolt,LEA\n"], "export.csv", { type: "text/csv" });
+
+  it("shows a progress bar while the upload runs, and takes it away at the end", async () => {
+    let release: (v: unknown) => void = () => {};
+    importCollection.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          release = resolve;
+        }),
+    );
+    const user = userEvent.setup();
+    await renderAt("/collection");
+    await user.upload(await openUpload(user), file());
+    await user.click(screen.getByRole("button", { name: "Upload" }));
+
+    const bar = await screen.findByRole("progressbar");
+    expect(bar).toHaveAccessibleName("Uploading and resolving cards...");
+    expect(screen.getByRole("button", { name: "Working..." })).toBeDisabled();
+
+    release({ collection: { id: "c-new", name: "export.csv", cardCount: 1 }, report: { unresolved: [], resolvedCount: 1, unresolvedByReason: {} } });
+    await screen.findByTestId("card-count");
+    expect(screen.queryByTestId("upload-progress")).not.toBeInTheDocument();
+  });
+
+  it("keeps the report on the page after the dialog closes", async () => {
+    importCollection.mockResolvedValue({
+      collection: { id: "c-new", name: "export.csv", cardCount: 1 },
+      report: { unresolved: [{ line: 4, raw: "x", reason: UnresolvedReason.UNKNOWN_CARD }], resolvedCount: 1, unresolvedByReason: { UNRESOLVED_REASON_UNKNOWN_CARD: 1 } },
+    });
+    const user = userEvent.setup();
+    await renderAt("/collection");
+    await user.upload(await openUpload(user), file());
+    await user.click(screen.getByRole("button", { name: "Upload" }));
+    await screen.findByTestId("card-count");
+
+    await user.click(screen.getByRole("button", { name: "Done" }));
+    // One report at a time: the dialog holds it, then the page does.
+    await waitFor(() => expect(screen.getAllByTestId("card-count")).toHaveLength(1));
+    expect(screen.getByTestId("card-count")).toHaveTextContent("export.csv: 1 cards, 1 rows resolved, 1 unresolved.");
+    expect(screen.getByRole("heading", { name: "Import result" })).toBeInTheDocument();
+  });
+
+  it("the open dialog raises no accessibility violation", async () => {
+    const { container } = await renderAt("/collection");
+    await screen.findByRole("button", { name: "binder-july.csv" });
+    await openUpload(userEvent.setup());
+    expect(await axe(container.ownerDocument.body)).toHaveNoViolations();
   });
 });

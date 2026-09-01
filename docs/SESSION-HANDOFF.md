@@ -6,9 +6,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## Where things stand (2026-09-01)
 
-- `main` is at `275964c`. Merged: PR-0a to PR-8, PR-7B, PR-10 to PR-13, the audits, the Phase 3B roadmap (#46), PR-16 (#47), PR-16B (#48), and PR-17 (#49).
-- Branch `pr-17b` holds the set filter. Nothing on it is committed. It changes 57 files and adds 13.
-- The tree is green on `pr-17b`: Go build, vet, `-race` tests, golangci-lint, `buf breaking`, web lint, typecheck, 201 web tests. `make lint` reports zero findings.
+- `main` is at `e8782b5`. Merged: PR-0a to PR-8, PR-7B, PR-10 to PR-13, the audits, the Phase 3B roadmap (#46), PR-16 (#47), PR-16B (#48), PR-17 (#49), and PR-17B (#50).
+- Branch `pr-18` holds collection management. Two commits are on it, and the upload dialog is not committed yet.
+- The tree is green on `pr-18`: Go build, vet, `-race` tests, golangci-lint, `buf breaking`, web lint, typecheck, 218 web tests. `make lint` reports zero findings.
 - Question gate run 31 passes every bar. The set deck gate passes 6 of 6.
 - Every gate stands and passes: question gate 32, the set deck gate, revise gate 4, and deck gate 10.
 - PR-9 is out of the MVP (D-256). Phase 3B comes before Phase 4 (D-316).
@@ -268,7 +268,9 @@ Branch `pr-18`. The collections list gained a rename, a re-upload shows a diff b
 - The head reads `Collection.summary` and asks for no entry (D-392). `useCollectionHead` sends `entries_omitted`, and the art ids ride on the summary, so the strip still shows the rarest cards.
 - `useBinderPages` reads the rows a page at a time, 200 to a page. The grid asks for the next page two rows before the end.
 - `binder-grid.tsx` holds the search, the set filter, the sort, and the tiles. The set list comes from the rows the binder holds, so it needs no set table.
-- `collection-diff.tsx` shows the counts, a sample of each list, and the two buttons. Replace names the collection it replaces (D-393).
+- `upload-dialog.tsx` holds the whole upload: the file, the progress, the diff, and the report (D-395). The page behind it never changes shape. "Add a collection" opens the dialog and the file picker with it (D-342).
+- `collection-diff.tsx` shows the counts and a sample of each list. The dialog holds the frame and the two buttons. Replace names the collection it replaces (D-393).
+- `import-result.tsx` exports `ImportReportBody`, the report with no frame. The dialog and the page both draw it, so the two read alike.
 
 A session read the screen in a real browser with Playwright, and it measured rather than looked.
 
@@ -281,8 +283,13 @@ A session read the screen in a real browser with Playwright, and it measured rat
 | Rows after a scroll to the foot | 200, then 1,800 |
 | Search "Sol Ring" | 400 of 2,000 rows |
 | Horizontal overflow | none |
+| Dialog radius, border, ground, and pad | 4 px, `#2a2d4a`, `#13162a`, 20 px, which are the panel tokens |
+| Dialog title | Cinzel Variable, 18 px, weight 600 |
+| Dialog box at 1440 px | 576 by 431 px, centered |
+| Dialog box at 390 px | 358 px wide, with 16 px each side |
+| Horizontal overflow, both widths | none |
 
-Playwright found one defect. The grid held its scroll position when the filter changed, so a reader searched and landed in the middle of the answer. The grid returns to the top now.
+Playwright found two defects. The grid held its scroll position when the filter changed, so a reader searched and landed in the middle of the answer. The grid returns to the top now. The diff drew a card inside the dialog, which is a frame in a frame. The diff lost its frame, and the dialog footer holds the buttons.
 
 CAUTION: `Repo.Get` returns a collection the caller owns. A page is a slice of the entry list, taken in place. A repo that shares one object across calls hands the next reader a collection the last page truncated. The test fake answers a clone.
 
@@ -290,14 +297,13 @@ CAUTION: the active collection is a choice of one visit, and the store keeps onl
 
 ## Next steps, in order
 
-1. The owner reads branch `pr-17b` in the browser, then commits and merges it. Nothing on it is committed yet. The one screen to read is a deck built from a set. Every card the sets do not hold carries a red mark.
-2. The owner decides on a question eval of run 31, which costs about $0.09. Eval 29 scored a gate run that failed, so no clean quality baseline stands beside run 28 today.
-3. Then PR-18 to PR-23 in order, one gate each. Before PR-22, ask OQ-45 and OQ-46.
-4. After Phase 3B: PR-15, then PR-14.
+1. The owner reads branch `pr-18` in the browser. The screens to read are the collection screen, the binder grid, and the upload dialog.
+2. One PR-18 gate line is open. Only the owner can close it: 60 frames a second on the real 2,657-row export.
+3. No PR is open for PR-18 yet.
+4. Then PR-19 to PR-23 in order, one gate each. Before PR-22, ask OQ-45 and OQ-46.
+5. After Phase 3B: PR-15, then PR-14.
 
-Deck gate run 10 is done. It ran on 2026-08-31, before this branch, and `CLAUDE.md` recorded it while this file still asked for it. A session that reads only the prose here spends $1.09 on a run that exists. Read `docs/reference/` before you plan a paid run.
-
-CAUTION: branch `pr-17b` carries the set filter and three fixes to PR-17's own decisions (D-384 to D-386). The three came out of the gate runs of this branch, and none of them belongs to the set filter. Read them as a separate slice inside one branch.
+Deck gate run 10 is done. It ran on 2026-08-31, and `CLAUDE.md` recorded it while this file still asked for it. A session that reads only the prose here spends $1.09 on a run that exists. Read `docs/reference/` before you plan a paid run.
 
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 

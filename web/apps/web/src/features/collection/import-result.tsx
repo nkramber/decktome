@@ -20,13 +20,10 @@ export function reasonLabel(reason: string | number): string {
   return reasonLabels[short] ?? short;
 }
 
-// ImportResult shows the counts and the unresolved rows of one upload (F-2, M-3).
+// ImportResult shows the counts and the unresolved rows of one upload
+// (F-2, M-3). The upload dialog shows the same body inside itself, so
+// the two read alike and one function writes both.
 export function ImportResult({ result }: { result: ImportCollectionResponse }) {
-  const collection = result.collection;
-  const report = result.report;
-  const unresolved = report?.unresolved ?? [];
-  const byReason = Object.entries(report?.unresolvedByReason ?? {});
-
   return (
     <Card>
       <CardHeader>
@@ -35,7 +32,23 @@ export function ImportResult({ result }: { result: ImportCollectionResponse }) {
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
-        <p data-testid="card-count" role="status">
+        <ImportReportBody result={result} />
+      </CardContent>
+    </Card>
+  );
+}
+
+// ImportReportBody is the counts and the rows, with no frame around
+// them. The dialog holds its own frame (roadmap PR-18).
+export function ImportReportBody({ result }: { result: ImportCollectionResponse }) {
+  const collection = result.collection;
+  const report = result.report;
+  const unresolved = report?.unresolved ?? [];
+  const byReason = Object.entries(report?.unresolvedByReason ?? {});
+
+  return (
+    <div className="flex flex-col gap-3">
+      <p data-testid="card-count" role="status">
         {collection
           ? `${collection.name}: ${collection.cardCount} cards, ${report?.resolvedCount ?? 0} rows resolved, ${unresolved.length} unresolved.`
           : "The import returned no collection."}
@@ -50,7 +63,7 @@ export function ImportResult({ result }: { result: ImportCollectionResponse }) {
         </ul>
       )}
       {unresolved.length > 0 && (
-        <div className="overflow-x-auto">
+        <div className="max-h-64 overflow-auto">
           <table className="w-full text-left text-sm">
             <caption className="text-left font-medium">
               Unresolved rows. The line number points at the row in your export: open your file at this line.
@@ -74,7 +87,6 @@ export function ImportResult({ result }: { result: ImportCollectionResponse }) {
           </table>
         </div>
       )}
-      </CardContent>
-    </Card>
+    </div>
   );
 }
