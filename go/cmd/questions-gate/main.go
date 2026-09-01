@@ -152,6 +152,15 @@ type result struct {
 	// (D-357). A stall in the middle of a conversation is a report: a
 	// later turn may still name a value and move on.
 	Stalls []stall
+	// Closed are the turns where the net of D-351 closed the questions
+	// that were out, so the conversation could build. agentsvc.Chat runs
+	// that net on every turn, and the gate runs it too since run 30.
+	Closed []stall
+	// Waiting are the turns where the net held back, because every
+	// question that was out is still inside its grace period (D-386).
+	// The reader answers it next turn, so a script that ends here is not
+	// a dead end.
+	Waiting []stall
 	// DeadEnd marks a conversation whose last turn stalled and that never
 	// reported ready. Nothing can follow it: the questions that are out
 	// stay out, no build starts, and every later turn does the same
@@ -330,6 +339,27 @@ func runOne(cat *questions.Catalog, client *llm.Client, idx *cards.Index, builde
 		if open := openKeys(st); stalledTurn(len(turn.Questions), turn.Ready, before, slotsOf(st), open) {
 			res.Stalls = append(res.Stalls, stall{Turn: i + 1, Message: msg, Open: open})
 		}
+		// The net of D-351, which agentsvc.Chat runs on every turn. A
+		// turn that asks nothing new and is not ready closes the
+		// questions that are out and builds with what it has.
+		//
+		// The gate ran without it until run 29, so it measured an agent
+		// production does not have. All 10 dead ends of that run were
+		// turns this net heals. A dead end now means the net itself
+		// could not move the turn, which is the case D-357 exists for.
+		if !turn.Ready && len(turn.Questions) == 0 {
+			closed, waiting := st.CloseStalled()
+			if len(closed) > 0 {
+				res.Closed = append(res.Closed, stall{Turn: i + 1, Message: msg, Open: closed})
+				turn.Ready = st.Ready(cat)
+			}
+			// A question inside its grace period is not proof of a dead
+			// conversation. The reader answers it on the next turn, and
+			// a script that ends here proves nothing either way (D-386).
+			if len(waiting) > 0 {
+				res.Waiting = append(res.Waiting, stall{Turn: i + 1, Message: msg, Open: waiting})
+			}
+		}
 		for _, q := range turn.Questions {
 			res.Questions = append(res.Questions, asked{
 				Turn: i + 1, Slot: q.GetSlot(), Source: source(q.GetInvented()),
@@ -361,7 +391,8 @@ func runOne(cat *questions.Catalog, client *llm.Client, idx *cards.Index, builde
 	// that came before them. It costs no model call (D-115).
 	lint := make([]questions.LintQuestion, 0, len(res.Questions))
 	for _, q := range res.Questions {
-		lint = append(lint, questions.LintQuestion{Turn: q.Turn, RowID: q.Row, Slot: q.Slot, Text: q.Text})
+		lint = append(lint, questions.LintQuestion{
+			Turn: q.Turn, RowID: q.Row, Slot: q.Slot, Text: q.Text, Options: q.Options})
 	}
 	res.Findings = questions.LintConversation(conv.Messages[:res.Turns], lint)
 	res.Coverage = st.Metrics()
@@ -370,31 +401,59 @@ func runOne(cat *questions.Catalog, client *llm.Client, idx *cards.Index, builde
 	for _, key := range builtSlots {
 		res.Slots[key] = slotState(st, key)
 	}
-	for _, key := range required(st, conv.Collection) {
-		if state := res.Slots[key]; state != "filled" && state != "skipped" {
-			res.Unanswered = append(res.Unanswered, key+" ("+state+")")
+	for _, keys := range required(st, conv.Collection) {
+		answered := false
+		for _, key := range keys {
+			if state := slotState(st, key); state == "filled" || state == "skipped" {
+				answered = true
+				break
+			}
+		}
+		if !answered {
+			res.Unanswered = append(res.Unanswered, keys[0]+" ("+slotState(st, keys[0])+")")
 		}
 	}
 	// A session that ran out of messages is not a defect: the script
 	// ended. A session that called itself complete with a slot open is.
 	res.Premature = res.Ready && len(res.Unanswered) > 0
 	// A stall on the last turn that ran is a dead end: no later turn
-	// recovered it, and none could (D-357).
+	// recovered it, and the net of D-351 did not either (D-357).
 	res.DeadEnd = !res.Ready && res.Err == nil && len(res.Stalls) > 0 &&
-		res.Stalls[len(res.Stalls)-1].Turn == res.Turns
+		res.Stalls[len(res.Stalls)-1].Turn == res.Turns &&
+		!closedOnTurn(res.Closed, res.Turns) && !closedOnTurn(res.Waiting, res.Turns)
 	return res
 }
 
-// required lists the slots the deck can not be built without. The
+// closedOnTurn reports whether one turn is in a list. A stalled turn the
+// net healed is not a dead end, and neither is one the net held back on,
+// because the grace period had not run out (D-351, D-386).
+func closedOnTurn(closed []stall, turn int) bool {
+	for _, c := range closed {
+		if c.Turn == turn {
+			return true
+		}
+	}
+	return false
+}
+
+// required lists the slots the deck can not be built without. Each entry
+// holds the keys that answer it, and one of them is enough. The
 // commander applies to Commander alone, and the pool rule applies only
 // when the user has a library (D-37).
-func required(st *questions.State, hasCollection bool) []string {
-	req := []string{"format", "theme", "colors", "power"}
+//
+// The commander needs all four of its keys. Four rows ask for it, and
+// each refinement row carries its own key (D-71, D-196). A session that
+// answered the pick row leaves the plain "commander" key empty for good,
+// and a check that reads that key alone calls the session premature.
+// Gate run 30 reported 6 such conversations, and every one had settled
+// its commander.
+func required(st *questions.State, hasCollection bool) [][]string {
+	req := [][]string{{"format"}, {"theme"}, {"colors"}, {"power"}}
 	if st.Slots.GetFormat().GetId() == mtgv1.FormatId_FORMAT_ID_COMMANDER {
-		req = append(req, "commander")
+		req = append(req, questions.CommanderKeys())
 	}
 	if hasCollection {
-		req = append(req, "pool_rule")
+		req = append(req, []string{"pool_rule"})
 	}
 	return req
 }
@@ -453,7 +512,7 @@ func loadIndex(collectionPath string) (*cards.Index, map[string]int32, string, e
 func write(w io.Writer, file gateFile, results []result, cov coverages,
 	report llm.Report, cfg *llm.Config, ownedNote string, elapsed time.Duration) error {
 	total, probes := cov.total, cov.probes
-	var premature, deadEnds, stallLines []string
+	var premature, deadEnds, stallLines, closedLines []string
 	stalls := 0
 	gate, counted, afterBuild := 0, 0, 0
 	for _, r := range results {
@@ -469,6 +528,9 @@ func write(w io.Writer, file gateFile, results []result, cov coverages,
 			if !r.DeadEnd {
 				stallLines = append(stallLines, fmt.Sprintf("%s turn %d (%s)", r.Name, st.Turn, strings.Join(st.Open, ", ")))
 			}
+		}
+		for _, c := range r.Closed {
+			closedLines = append(closedLines, fmt.Sprintf("%s turn %d (%s)", r.Name, c.Turn, strings.Join(c.Open, ", ")))
 		}
 		switch {
 		case r.Probe:
@@ -521,8 +583,12 @@ func write(w io.Writer, file gateFile, results []result, cov coverages,
 	} else {
 		_, _ = fmt.Fprintf(w, "No conversation reached a dead end (D-357).\n\n")
 	}
-	if stalls > 0 {
-		_, _ = fmt.Fprintf(w, "%d turns moved nothing while a question was out, and a later turn recovered each one. A turn that repeats here is a catalog or classifier candidate: %s.\n\n", stalls, strings.Join(stallLines, "; "))
+	if stalls > 0 && len(stallLines) > 0 {
+		_, _ = fmt.Fprintf(w, "%d turns moved nothing while a question was out, and a later turn recovered each one. A turn that repeats here is a catalog or classifier candidate: %s.\n\n", len(stallLines), strings.Join(stallLines, "; "))
+	}
+	if len(closedLines) > 0 {
+		_, _ = fmt.Fprintf(w, "The net of D-351 healed %d turns. Each one asked nothing new and was not ready, so it closed the questions that were out and built with what it had. agentsvc.Chat runs the same net on every turn. A turn here is a catalog or classifier candidate, because the reader answered nothing the agent could read: %s.\n\n",
+			len(closedLines), strings.Join(closedLines, "; "))
 	}
 	if len(premature) > 0 {
 		_, _ = fmt.Fprintf(w, "%d conversations called themselves complete with a slot still unanswered, which fails the gate: %s.\n\n",

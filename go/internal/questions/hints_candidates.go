@@ -8,6 +8,7 @@ import (
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/candidates"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
+	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
 )
 
 // CandidateHints answers the placeholder values from the card index, so
@@ -38,6 +39,13 @@ type CandidateHints struct {
 	thinDone  map[string]bool
 	thin      map[string]bool
 	thinCount map[string]int
+	// The mana count of D-382 walks the index, so it runs once per key
+	// and the answer is kept. The key carries the sets, the format, and
+	// the colors.
+	manaDone map[string]bool
+	manaThin map[string]bool
+	manaHave map[string]int
+	manaWant map[string]int
 }
 
 // CanLead reports whether a named card can lead a deck. "Lightning Bolt
@@ -266,4 +274,77 @@ func (h *CandidateHints) cacheThin(key string, thin bool, count int) {
 		h.thinDone, h.thin, h.thinCount = map[string]bool{}, map[string]bool{}, map[string]int{}
 	}
 	h.thinDone[key], h.thin[key], h.thinCount[key] = true, thin, count
+}
+
+// ResolveSet maps the words a reader wrote onto a set family (D-376). It
+// answers the SetResolver contract of the question workflow.
+//
+// ok is false when the phrase names no set this snapshot holds, or when
+// it names two or more base sets. options then holds the names the
+// question offers, and it is empty for an unknown name.
+func (h *CandidateHints) ResolveSet(phrase string) (codes, names, options []string, ok bool) {
+	if h == nil || h.Index == nil {
+		return nil, nil, nil, false
+	}
+	tbl := h.Index.Sets()
+	res := tbl.Resolve(phrase)
+	switch res.Kind {
+	case cards.ResolveOne:
+		return res.Codes, tbl.Names(res.Codes), nil, true
+	case cards.ResolveMany:
+		for _, s := range res.Candidates {
+			options = append(options, s.Name)
+		}
+		return nil, nil, options, false
+	}
+	return nil, nil, nil, false
+}
+
+// ThinSetMana counts the mana cards a set family offers against the count
+// the deck wants (D-382). It answers the ManaSource contract.
+//
+// The mana roles are ramp and land. Basic lands are out of both counts:
+// no set limit filters them, and they repeat without limit, so counting
+// them would say every set has a mana base.
+//
+// want is zero when this source can not answer, and the row then drops
+// the clause that names the two counts.
+func (h *CandidateHints) ThinSetMana(codes []string, format mtgv1.FormatId,
+	colors []mtgv1.Color, power *mtgv1.PowerLevel,
+) (thin bool, have, want int) {
+	if h == nil || h.Index == nil || h.Builder == nil || len(codes) == 0 {
+		return false, 0, 0
+	}
+	if format == mtgv1.FormatId_FORMAT_ID_UNSPECIFIED {
+		format = h.Format
+	}
+	if format == mtgv1.FormatId_FORMAT_ID_UNSPECIFIED {
+		return false, 0, 0
+	}
+	key := strings.Join(codes, ",") + "|" + format.String() + "|" + colorKey(colors)
+	if h.manaDone[key] {
+		return h.manaThin[key], h.manaHave[key], h.manaWant[key]
+	}
+	targets := generate.TargetsFor(format, power)
+	want = targets["ramp"] + targets["land"]
+	have = h.Builder.CountManaInSets(h.Index, candidates.Request{
+		Format: format, Colors: colors, SetCodes: codes,
+	})
+	thin = have < want
+	if h.manaDone == nil {
+		h.manaDone, h.manaThin = map[string]bool{}, map[string]bool{}
+		h.manaHave, h.manaWant = map[string]int{}, map[string]int{}
+	}
+	h.manaDone[key], h.manaThin[key] = true, thin
+	h.manaHave[key], h.manaWant[key] = have, want
+	return thin, have, want
+}
+
+// colorKey reads a color list as one cache key.
+func colorKey(colors []mtgv1.Color) string {
+	var b strings.Builder
+	for _, c := range colors {
+		b.WriteString(c.String())
+	}
+	return b.String()
 }

@@ -143,3 +143,67 @@ func (c *Client) Download(ctx context.Context, uri string) (io.ReadCloser, error
 	}
 	return res.Body, nil
 }
+
+// SetRow is one set from the /sets endpoint. The bulk card files carry
+// no parent link, so this endpoint is the only source of a set family
+// (D-376, D-377).
+type SetRow struct {
+	Code string `json:"code"`
+	Name string `json:"name"`
+	// SetType is the Scryfall product kind, for example "expansion",
+	// "commander", "eternal", "token", or "promo".
+	SetType string `json:"set_type"`
+	// ReleasedAt is the release date, ISO 8601. A set with no date yet
+	// carries an empty string.
+	ReleasedAt string `json:"released_at"`
+	// ParentSetCode names the base set of a companion product. "hoc"
+	// carries "hob", and "ltc" carries "ltr".
+	ParentSetCode string `json:"parent_set_code"`
+	Digital       bool   `json:"digital"`
+	CardCount     int    `json:"card_count"`
+}
+
+// setPages bounds the paging loop of Sets. The endpoint answered
+// has_more false with 1,049 rows on 2026-08-31, so one page is the real
+// case and the bound guards a change.
+const setPages = 20
+
+// Sets returns every set Scryfall knows, in the order the endpoint gives.
+// It follows next_page while has_more holds.
+func (c *Client) Sets(ctx context.Context) ([]SetRow, error) {
+	uri := c.baseURL + "/sets"
+	var out []SetRow
+	for page := 0; uri != ""; page++ {
+		if page >= setPages {
+			return nil, fmt.Errorf("scryfall sets: more than %d pages", setPages)
+		}
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, uri, nil)
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Accept", "application/json")
+		res, err := c.do(ctx, req, "scryfall sets")
+		if err != nil {
+			return nil, err
+		}
+		var payload struct {
+			Data     []SetRow `json:"data"`
+			HasMore  bool     `json:"has_more"`
+			NextPage string   `json:"next_page"`
+		}
+		err = json.NewDecoder(res.Body).Decode(&payload)
+		_ = res.Body.Close()
+		if err != nil {
+			return nil, fmt.Errorf("scryfall sets: decode: %w", err)
+		}
+		out = append(out, payload.Data...)
+		uri = ""
+		if payload.HasMore {
+			uri = payload.NextPage
+		}
+	}
+	if len(out) == 0 {
+		return nil, fmt.Errorf("scryfall sets: the endpoint returned no set")
+	}
+	return out, nil
+}

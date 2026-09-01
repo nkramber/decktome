@@ -87,6 +87,13 @@ func run(ctx context.Context, once bool, logger *slog.Logger) error {
 		if err != nil {
 			return err
 		}
+		// A snapshot stored before the set file existed gains it here,
+		// so the set family resolves without a whole re-download
+		// (D-377). A failure costs the families, not the cards, so it
+		// logs and the cycle goes on.
+		if _, err := cards.BackfillSets(refreshCtx, client, store, logger); err != nil {
+			logger.Error("cards refresh: the set file could not be backfilled", "err", err)
+		}
 		if current == previous || previous == "" {
 			return nil
 		}

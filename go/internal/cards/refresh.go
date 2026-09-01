@@ -1,6 +1,7 @@
 package cards
 
 import (
+	"compress/gzip"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -67,6 +68,12 @@ func Refresh(ctx context.Context, client *scryfall.Client, store Store, logger *
 			return "", err
 		}
 	}
+	// The set file is not a bulk file. It comes from the /sets endpoint,
+	// and it is the only source of a set family (D-377). It goes in
+	// before the marker, so a complete version always holds it.
+	if err := copySets(ctx, client, store, remote); err != nil {
+		return "", err
+	}
 	if err := store.Finalize(ctx, remote); err != nil {
 		return "", fmt.Errorf("finalize %s: %w", remote, err)
 	}
@@ -77,6 +84,56 @@ func Refresh(ctx context.Context, client *scryfall.Client, store Store, logger *
 		logger.Error("cards refresh: prune failed", "err", err)
 	}
 	return remote, nil
+}
+
+// copySets fetches the set table and stores it in one version.
+func copySets(ctx context.Context, client *scryfall.Client, store Store, version string) error {
+	ctx, cancel := context.WithTimeout(ctx, DownloadTimeout)
+	defer cancel()
+	rows, err := client.Sets(ctx)
+	if err != nil {
+		return err
+	}
+	wctx, wcancel := context.WithCancel(ctx)
+	defer wcancel()
+	w, err := store.Create(wctx, version, SetsFile)
+	if err != nil {
+		return err
+	}
+	gz := gzip.NewWriter(w)
+	if err := EncodeSets(gz, SetRowsFrom(rows)); err != nil {
+		wcancel()
+		_ = w.Close()
+		return fmt.Errorf("store %s/%s: %w", version, SetsFile, err)
+	}
+	if err := gz.Close(); err != nil {
+		wcancel()
+		_ = w.Close()
+		return fmt.Errorf("store %s/%s: %w", version, SetsFile, err)
+	}
+	return w.Close()
+}
+
+// BackfillSets writes the set file into the newest complete version when
+// that version has none. A snapshot stored before the set file existed
+// then gains the family links without a whole re-download (D-377). It
+// returns true when it wrote the file.
+func BackfillSets(ctx context.Context, client *scryfall.Client, store Store, logger *slog.Logger) (bool, error) {
+	version, err := store.LatestVersion(ctx)
+	if err != nil || version == "" {
+		return false, err
+	}
+	r, err := store.Open(ctx, version, SetsFile)
+	if err == nil {
+		_ = r.Close()
+		return false, nil
+	}
+	logger.Info("cards refresh: the newest snapshot holds no set file, fetching it", "version", version)
+	if err := copySets(ctx, client, store, version); err != nil {
+		return false, err
+	}
+	logger.Info("cards refresh: set file written", "version", version)
+	return true, nil
 }
 
 // newerVersion reports whether remote is strictly newer than current.
@@ -307,12 +364,28 @@ func LoadIndex(ctx context.Context, store Store, logger *slog.Logger) (*Index, e
 	if err != nil {
 		return nil, err
 	}
-	idx := NewIndex(parsed, printings, tags, asOf)
+	// A snapshot stored before the set file existed holds none. The
+	// index then derives a table from the printings, which carries no
+	// family link, and the log says so (D-377).
+	var sets []SetInfo
+	sf, err := store.Open(ctx, version, SetsFile)
+	if err != nil {
+		logger.Warn("cards index: the snapshot holds no set file, so no set family resolves",
+			"version", version, "file", SetsFile, "err", err)
+	} else {
+		sets, err = LoadSets(sf, SetsFile)
+		_ = sf.Close()
+		if err != nil {
+			return nil, fmt.Errorf("%s/%s: %w", version, SetsFile, err)
+		}
+	}
+	idx := NewIndex(parsed, printings, tags, asOf, WithSets(sets))
 	col := idx.Collisions()
 	logger.Info("cards index loaded", "version", version, "cards", idx.Len(),
 		"printings", len(printings), "tags", tags.Len(),
 		"name_collisions", col.FullNames, "face_name_collisions", col.FaceNames,
 		"paper_swaps", idx.PaperSwaps(),
+		"sets", idx.Sets().Len(), "sets_derived", idx.Sets().Derived(),
 		"took", time.Since(start).String())
 	return idx, nil
 }

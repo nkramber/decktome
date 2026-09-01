@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
 	"github.com/nkramber/mtg-deck-builder/go/internal/gatekit"
 	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
@@ -107,7 +108,9 @@ func report(w io.Writer, rs []result, acc *llm.Accumulator, idx *cards.Index, to
 	for _, s := range []string{"BLOCK", "WARN", "INFO"} {
 		_, _ = fmt.Fprintf(w, "%s %d. ", s, bySev[s])
 	}
-	_, _ = fmt.Fprintf(w, "\n\n## Decks\n\n")
+	_, _ = fmt.Fprintf(w, "\n\n")
+	setReport(w, rs)
+	_, _ = fmt.Fprintf(w, "## Decks\n\n")
 	for _, r := range rs {
 		writeDeck(w, r)
 	}
@@ -158,4 +161,37 @@ func writeDeck(w io.Writer, r result) {
 			strings.ToLower(strings.TrimPrefix(c.GetRole().String(), "CARD_ROLE_")), c.GetReason())
 	}
 	_, _ = fmt.Fprintf(w, "\n</details>\n\n")
+}
+
+// setReport writes the PR-17B block: which sets each limited prompt
+// applied, how many cards they held, and how many cards of the deck the
+// sets do not hold (D-373, D-383). A run with no set-limited prompt
+// writes nothing.
+func setReport(w io.Writer, rs []result) {
+	var limited []result
+	for _, r := range rs {
+		if len(r.setCodes) > 0 {
+			limited = append(limited, r)
+		}
+	}
+	if len(limited) == 0 {
+		return
+	}
+	_, _ = fmt.Fprintf(w, "## The set filter (PR-17B)\n\n")
+	_, _ = fmt.Fprintf(w, "A deck asked for a set holds cards of that set family alone. Three things earn an exception, and each one is marked: a card the reader named (D-381), a mana card the reader allowed from outside (D-382), and a basic land, which no set limit filters (D-378).\n\n")
+	_, _ = fmt.Fprintf(w, "| # | Prompt | Sets | In set | Fill | Deck cards outside | Marked |\n|---|---|---|---|---|---|---|\n")
+	for _, r := range limited {
+		outside, marked := 0, 0
+		for _, list := range [][]*mtgv1.DeckCard{r.deck.GetCards(), r.deck.GetSideboard()} {
+			for _, dc := range list {
+				if dc.GetOutsideRequestedSets() {
+					marked++
+				}
+			}
+		}
+		outside = marked
+		_, _ = fmt.Fprintf(w, "| %d | %s | `%s` | %d | %d | %d | %d |\n",
+			r.prompt.ID, r.prompt.Name, strings.Join(r.setCodes, ","), r.inSet, r.outside, outside, marked)
+	}
+	_, _ = fmt.Fprintf(w, "\n")
 }

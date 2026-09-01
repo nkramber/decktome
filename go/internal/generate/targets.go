@@ -238,3 +238,15 @@ func PreconKeepCount(total int) int {
 // to meet the share. It is an INFO: the deck is what the user asked for,
 // and they should know the builder finished the job (D-250).
 const CodePreconCardsRestored = "precon_cards_restored"
+
+// CodeOutsideSet reports the deck cards the reader's sets do not hold.
+// It is a WARN and never a BLOCK: every such card is there because the
+// reader named it (D-381), because the reader allowed the mana fill
+// (D-382), or because it is a basic land, which no set limit filters
+// (D-378).
+const CodeOutsideSet = "outside_requested_set"
+
+// CodeSetTooThin reports a set family that can not build a legal deck of
+// this format (D-380). The turn ends with the reason and no deck, so the
+// message is what the reader reads.
+const CodeSetTooThin = "set_too_thin"

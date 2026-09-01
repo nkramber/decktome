@@ -76,6 +76,12 @@ message Card {
   // example 7 for Seven Dwarves or 9 for Nazgûl (CR 113.6n). Zero means
   // the format limit applies. any_count_in_deck covers the unlimited case.
   int32 max_copies_override = 32;
+  // set_codes lists every paper set this card has a printing in,
+  // lowercase and sorted. A card is not in one set: nearly half of them
+  // hold printings in two or more, and one holds 225. A field that held
+  // one value would drop a reprint (D-373). Empty for a card with no
+  // paper printing.
+  repeated string set_codes = 33;
 }
 
 // CardFace is one face of a card. Images live per face (F-9).

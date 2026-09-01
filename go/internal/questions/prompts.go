@@ -47,7 +47,13 @@ package questions
 // changed with it, and the question gate re-baselines (D-66).
 // Version 14 drops the two_plans fact from the classify role. No catalog
 // row reads it, and the owned_mode fact left the planner with it (D-302).
-const PromptVersion = 14
+//
+// Version 15 adds set_names to the classify role (D-373). A set is a
+// constraint the app applies now, so the words that name one no longer
+// go into the theme alone. The D-371 sentence that read a set limit as a
+// theme is rewritten, and the ownership half of it stays: "only" is
+// about a library and never about a set.
+const PromptVersion = 15
 
 const classifyInstructions = `You map one message from a Magic: The Gathering deck-building conversation onto slots.
 
@@ -64,7 +70,10 @@ Rules:
 - power: a Commander bracket as "bracket 3", or a 60-card step as "casual", "fnm", or "tournament". Vague words such as "strongest", "competitive", or "best" are not a step. Leave power empty for those and set facts.power_competitive.
 - "cEDH" is a power level and a format. It means bracket 5, and the deck is Commander. "Competitive Commander" is not the same thing: it names no bracket.
 - pool_rule: "owned_first" when the user builds from their library first, "owned_only" when only owned cards may be used, "any_card" when the library does not constrain the deck.
-- pool_rule is about ownership alone. A limit to a set, a block, a color, or a card type is a theme, and it names no pool rule. "Build only from the Hobbit set", "only cards from Bloomburrow", and "only artifacts" all leave pool_rule empty and go in the theme. The word "only" means owned_only when it is about the user's own cards, as in "only cards I own" or "only what is in my collection".
+- pool_rule is about ownership alone. A limit to a set, a block, a color, or a card type names no pool rule. "Build only from the Hobbit set", "only cards from Bloomburrow", and "only artifacts" all leave pool_rule empty. The word "only" means owned_only when it is about the user's own cards, as in "only cards I own" or "only what is in my collection".
+- set_names: the Magic sets or products the user wants the deck built from, in the user's own words. "Build only from the Hobbit set" gives ["the Hobbit set"]. "Cards from Bloomburrow and Duskmourn" gives ["Bloomburrow", "Duskmourn"]. Write the name the user wrote, and add no set the user did not name. Leave the list empty when the user named no set.
+- A set is not a theme. "Build only from the Hobbit set" names a set and no theme, so set_names holds it and theme stays empty. "A Hobbit-set dragons deck" names both: set_names holds "the Hobbit set" and theme holds "dragons".
+- A creature type, a mechanic, a play style, or a card type is a theme and never a set. "only artifacts" is a theme. A set is a product name, such as Bloomburrow, Duskmourn, Final Fantasy, or Modern Horizons 3.
 - A refusal of the names on the table is neither an answer nor a decline. Under commander_pick alone, "None of those", "none of these", and "name three more" leave that key open, and they name no key in either list. This rule is about the offered names only. It never applies to another key.
 - declined_keys: the keys in open_keys that the user handed back to you. A decline is not an answer, and it names no value. Name a key only when the user's words are about that key. "Any colors are fine" declines the colors and nothing else. "You decide" with no subject declines every key in open_keys. Never put a key in both lists.
 - A negative answer to a question that invites a yes or a no is a decline. "Do you have a color preference?" answered "No" declines colors. "Do you have a budget for cards to buy?" answered "No" declines budget. Read "no", "none", "no preference", "not really", "any", and "it does not matter" the same way. The user has said there is no such constraint, so the key must close. Leaving it open stops the deck for good.
@@ -90,7 +99,7 @@ Answer with the schema only.`
 const classifySchema = `{
   "type": "object",
   "additionalProperties": false,
-  "required": ["format","theme","colors","commander_names","locked_names","named_cards","power","pool_rule","budget_usd","budget_scope","house_rules","closed_keys","declined_keys","facts"],
+  "required": ["format","theme","colors","commander_names","locked_names","named_cards","set_names","power","pool_rule","budget_usd","budget_scope","house_rules","closed_keys","declined_keys","facts"],
   "properties": {
     "format": {"type": "string"},
     "theme": {"type": "string"},
@@ -98,6 +107,7 @@ const classifySchema = `{
     "commander_names": {"type": "array", "items": {"type": "string"}},
     "locked_names": {"type": "array", "items": {"type": "string"}},
     "named_cards": {"type": "array", "items": {"type": "string"}},
+    "set_names": {"type": "array", "items": {"type": "string"}},
     "power": {"type": "string"},
     "pool_rule": {"type": "string"},
     "budget_usd": {"type": "number"},

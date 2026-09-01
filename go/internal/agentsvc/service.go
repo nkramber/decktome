@@ -411,7 +411,7 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 		// ever starts. The reader sees a chat that does nothing. Close
 		// those questions with no value and build (D-351).
 		if !res.Ready && len(res.Questions) == 0 {
-			if closed := st.CloseStalled(); len(closed) > 0 {
+			if closed, _ := st.CloseStalled(); len(closed) > 0 {
 				s.log.WarnContext(ctx, "a turn asked nothing and was not ready, so the open questions were closed",
 					"session", session.GetId(), "keys", closed)
 				res.Ready = st.Ready(s.cat)

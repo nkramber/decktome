@@ -1,8 +1,13 @@
 package generate
 
 import (
+	"fmt"
+	"sort"
+	"strings"
+
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/candidates"
+	cardsets "github.com/nkramber/mtg-deck-builder/go/internal/cards"
 	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
 )
 
@@ -370,4 +375,39 @@ func commanderIdentity(deck *mtgv1.Deck, pool *Pool, cards rules.CardSource) map
 		set = map[mtgv1.Color]bool{}
 	}
 	return set
+}
+
+// markOutsideSets sets DeckCard.outside_requested_sets on every card the
+// reader's sets do not hold, and adds one warning that counts them
+// (D-383). A deck with no set limit is left alone.
+//
+// The mark is written once, at build time, so it says what was true then
+// and a later snapshot does not move it. A basic land is never marked:
+// the mana base is out of a set limit (D-378).
+func markOutsideSets(deck *mtgv1.Deck, req Request, cards rules.CardSource) {
+	codes := cardsets.CodeSet(req.SetCodes)
+	if codes == nil {
+		return
+	}
+	var outside []string
+	for _, list := range [][]*mtgv1.DeckCard{deck.GetCards(), deck.GetSideboard()} {
+		for _, dc := range list {
+			c, ok := lookup(req.Pool, cards, dc.GetOracleId())
+			if !ok || candidates.IsBasicLand(c) {
+				continue
+			}
+			if cardsets.InSets(c, codes) {
+				continue
+			}
+			dc.OutsideRequestedSets = true
+			outside = append(outside, dc.GetName())
+		}
+	}
+	if len(outside) == 0 {
+		return
+	}
+	sort.Strings(outside)
+	addFinding(deck, CodeOutsideSet, mtgv1.Severity_SEVERITY_WARN,
+		fmt.Sprintf("the sets you named do not hold %s: %s",
+			plural(len(outside), "card"), strings.Join(outside, ", ")))
 }

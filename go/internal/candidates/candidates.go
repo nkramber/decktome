@@ -38,6 +38,17 @@ type Request struct {
 	// Bracket is the Commander bracket, 0 when unknown. Brackets 1 and 2
 	// drop Game Changers from the list, so the model never picks one.
 	Bracket int32
+	// SetCodes limits the list to cards printed in these paper sets. It
+	// holds a whole set family (D-376). Empty means every set. Basic
+	// lands are out of the shortlist in any case, and a set limit never
+	// filters them (D-378).
+	SetCodes []string
+	// OutsideRoles names the roles that may be filled from outside
+	// SetCodes, with the wanted count of each. A set family short of
+	// mana cards gets them from the whole database, up to the count and
+	// no further, and every such card is marked (D-382). Nil means no
+	// card comes from outside.
+	OutsideRoles map[mtgv1.CardRole]int
 	// MetaBoost gives a meta score in [0,1] per Oracle id (PR-14). Nil today.
 	MetaBoost func(oracleID string) float64
 	// WantBackground narrows a pair request to pairs that hold a
@@ -97,6 +108,10 @@ type Candidate struct {
 	Partner *mtgv1.Card
 	// Owned is the owned count, 0 without a collection.
 	Owned int32
+	// Outside marks a card the request's sets do not hold. It reaches
+	// the list only through OutsideRoles, and the deck marks it (D-382,
+	// D-383).
+	Outside bool
 	// Signals lists why the card is here, for example "tag:lifegain".
 	Signals []string
 }
@@ -126,6 +141,14 @@ type Stats struct {
 	// ThinThemeFloor on-theme cards. PR-7 asks the pool-mode question
 	// again on this flag (D-63).
 	ThinTheme bool
+	// InSet counts the pool cards the request's sets hold. It is zero when
+	// no set limit applies, because no card is then inside a set the
+	// reader named. The viability floor of D-380 reads the same number
+	// through CountInSets.
+	InSet int
+	// Outside counts the cards the fill took from outside the sets
+	// (D-382).
+	Outside int
 }
 
 // ThinThemeFloor is the on-theme owned count under which a collection is
@@ -164,6 +187,15 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 		return nil, fmt.Errorf("candidates: no card index")
 	}
 	lim := req.Limits.withDefaults()
+	// A set limit drops the per-role caps as well as the theme cut
+	// (D-379). The caps shape a shortlist drawn from 12,718 cards. Drawn
+	// from 128, they only lose: the "other" cap of 10 cut 40 of the 128
+	// cards the Hobbit family offers in black-red, and a Commander deck
+	// needs 99. The total cap still bounds the list, and a caller that
+	// names its own caps keeps them.
+	if len(req.SetCodes) > 0 && req.Limits.PerRole == nil {
+		lim.PerRole = map[mtgv1.CardRole]int{}
+	}
 	mode := req.PoolRule
 	if mode == mtgv1.PoolRule_POOL_RULE_UNSPECIFIED {
 		mode = mtgv1.PoolRule_POOL_RULE_ANY_CARD
@@ -181,6 +213,7 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 	useText := idx.Tags().Len() == 0
 	legalKey := legalKeys[req.Format]
 	colorSet := colorSetOf(req.Colors)
+	setCodes := cards.CodeSet(req.SetCodes)
 	excluded := map[string]bool{}
 	for _, id := range req.CommanderOracleIDs {
 		excluded[id] = true
@@ -219,10 +252,27 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 		if themeScore > 0 {
 			stats.OnTheme++
 		}
+		// The set limit (D-373). A card the sets do not hold reaches the
+		// list only through the mana fill, which OutsideRoles names.
+		outside := !cards.InSets(c, setCodes)
+		if outside {
+			if len(req.OutsideRoles) == 0 || req.OutsideRoles[role] == 0 {
+				continue
+			}
+			signals = append(signals, "outside the sets")
+		} else if setCodes != nil {
+			stats.InSet++
+		}
 		// A card with no theme signal stays only when it fills a staple
 		// role (lands, ramp, draw, removal, wipes, interaction). Threats
 		// and synergy pieces need a theme signal.
-		if themeScore == 0 && !stapleRole(role) {
+		//
+		// A set limit lifts the cut (D-379). The Hobbit family offers 128
+		// cards in black-red, and the cut left 75 to 89 of them, which
+		// can not fill 99. Inside a set the theme ranks the list and does
+		// not cut it: the staple penalty below still puts every on-theme
+		// card first.
+		if themeScore == 0 && !stapleRole(role) && setCodes == nil {
 			continue
 		}
 		pop := popularity(c, maxRank)
@@ -242,20 +292,31 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 				stats.OnThemeOwned++
 			}
 		}
-		scored = append(scored, Candidate{Card: c, Role: role, Score: score, Owned: owned, Signals: signals})
+		scored = append(scored, Candidate{Card: c, Role: role, Score: score, Owned: owned, Outside: outside, Signals: signals})
 	}
 	sortCandidates(scored)
 	theme.Unmatched = theme.unmatchedWords(fired)
 
+	// The cards the sets hold rank on their own. The outside cards are a
+	// fill and never a competitor, so they are held back and added after
+	// the caps run (D-382).
+	inSet, outsideCards := scored, []Candidate(nil)
+	if setCodes != nil && len(req.OutsideRoles) > 0 {
+		inSet, outsideCards = splitOutside(scored)
+	}
 	var main, upgrades []Candidate
 	switch mode {
 	case mtgv1.PoolRule_POOL_RULE_ANY_CARD:
-		main = capByRole(scored, lim)
+		main = capByRole(inSet, lim)
 	case mtgv1.PoolRule_POOL_RULE_OWNED_ONLY:
-		main = capByRole(filterOwned(scored, true), lim)
+		main = capByRole(filterOwned(inSet, true), lim)
 	case mtgv1.PoolRule_POOL_RULE_OWNED_FIRST:
-		main = ownedFirst(scored, lim)
-		upgrades = topUpgrades(filterOwned(scored, false), main, lim.Upgrades)
+		main = ownedFirst(inSet, lim)
+		upgrades = topUpgrades(filterOwned(inSet, false), main, lim.Upgrades)
+	}
+	if fill := outsideFill(main, outsideCards, req.OutsideRoles); len(fill) > 0 {
+		main = mergeByRole(main, fill)
+		stats.Outside = len(fill)
 	}
 	stats.Returned = len(main)
 	stats.UpgradeSize = len(upgrades)
@@ -418,6 +479,67 @@ func ownedFirst(in []Candidate, lim Limits) []Candidate {
 		merged = append(merged, byRole[r]...)
 	}
 	return merged
+}
+
+// splitOutside separates the cards the sets hold from the ones the fill
+// may take.
+func splitOutside(in []Candidate) (inSet, outside []Candidate) {
+	for _, c := range in {
+		if c.Outside {
+			outside = append(outside, c)
+			continue
+		}
+		inSet = append(inSet, c)
+	}
+	return inSet, outside
+}
+
+// outsideFill takes the best outside cards of each named role, up to the
+// shortfall against the role's wanted count (D-382). A role the sets
+// already fill takes nothing.
+//
+// The fill is additive: it runs after the caps, because it exists to
+// close a hole the caps can not close. A shortfall of ten ramp cards is
+// ten names, so the total grows by a little and never by a lot.
+func outsideFill(main, outside []Candidate, want map[mtgv1.CardRole]int) []Candidate {
+	if len(outside) == 0 || len(want) == 0 {
+		return nil
+	}
+	have := map[mtgv1.CardRole]int{}
+	for _, c := range main {
+		have[c.Role]++
+	}
+	// outside is already in score order, because the whole list was
+	// sorted before the split.
+	var out []Candidate
+	taken := map[mtgv1.CardRole]int{}
+	for _, c := range outside {
+		room := want[c.Role] - have[c.Role] - taken[c.Role]
+		if room <= 0 {
+			continue
+		}
+		taken[c.Role]++
+		out = append(out, c)
+	}
+	return out
+}
+
+// mergeByRole joins two lists and returns them in role order, which is
+// the order capByRole emits. Without it the fill would sit in one block
+// at the end of the shortlist.
+func mergeByRole(a, b []Candidate) []Candidate {
+	byRole := map[mtgv1.CardRole][]Candidate{}
+	for _, c := range a {
+		byRole[c.Role] = append(byRole[c.Role], c)
+	}
+	for _, c := range b {
+		byRole[c.Role] = append(byRole[c.Role], c)
+	}
+	out := make([]Candidate, 0, len(a)+len(b))
+	for _, r := range roleOrder {
+		out = append(out, byRole[r]...)
+	}
+	return out
 }
 
 func filterOwned(in []Candidate, want bool) []Candidate {
@@ -622,11 +744,17 @@ func (b *Builder) CommanderPool(idx *cards.Index, req Request) ([]Candidate, err
 	}
 	theme := b.themes.match(req.Theme, idx.Tags())
 	colorSet := colorSetOf(req.Colors)
+	setCodes := cards.CodeSet(req.SetCodes)
 	maxRank := maxRankOf(idx)
 
 	var out []Candidate
 	for _, c := range idx.All() {
 		if !c.GetCanBeCommander() || !legalIn(c, legalKeys[mtgv1.FormatId_FORMAT_ID_COMMANDER]) {
+			continue
+		}
+		// A commander is the identity of the deck, so it comes from the
+		// sets the reader named and never from the mana fill (D-382).
+		if !cards.InSets(c, setCodes) {
 			continue
 		}
 		// A commander must hold every color the user named, and no other
@@ -660,7 +788,7 @@ func (b *Builder) CommanderPool(idx *cards.Index, req Request) ([]Candidate, err
 	// the user asked for one, and when too few single commanders fit the
 	// colors to fill the three names the pick row holds.
 	if req.WantPair || len(out) < commanderNames {
-		out = append(out, b.commanderPairs(idx, req, theme, colorSet, mode, maxRank)...)
+		out = append(out, b.commanderPairs(idx, req, theme, colorSet, setCodes, mode, maxRank)...)
 		sortCandidates(out)
 	}
 	// A theme the tag table does not know leaves the pool nearly empty.
@@ -672,7 +800,7 @@ func (b *Builder) CommanderPool(idx *cards.Index, req Request) ([]Candidate, err
 	// commanders that fit the format and the colors on popularity alone,
 	// so "name three more" always has three more.
 	if len(out) < CommanderPoolFloor {
-		out = append(out, b.unthemed(idx, req, colorSet, mode, maxRank, out)...)
+		out = append(out, b.unthemed(idx, req, colorSet, setCodes, mode, maxRank, out)...)
 	}
 	// Owned-first ranks on quality like any card. The commander is one
 	// card, the buy list carries it, and a deck led by the best fit beats
@@ -690,7 +818,7 @@ const CommanderPoolFloor = 12
 // carry no theme signal, best first on popularity (D-367). They go after
 // every themed commander, so the theme still leads.
 func (b *Builder) unthemed(idx *cards.Index, req Request, colorSet map[mtgv1.Color]bool,
-	mode mtgv1.PoolRule, maxRank float64, have []Candidate,
+	setCodes map[string]bool, mode mtgv1.PoolRule, maxRank float64, have []Candidate,
 ) []Candidate {
 	seen := make(map[string]bool, len(have))
 	for _, c := range have {
@@ -704,7 +832,7 @@ func (b *Builder) unthemed(idx *cards.Index, req Request, colorSet map[mtgv1.Col
 		if !c.GetCanBeCommander() || !legalIn(c, legalKeys[mtgv1.FormatId_FORMAT_ID_COMMANDER]) {
 			continue
 		}
-		if !hasPaperPrinting(c) {
+		if !hasPaperPrinting(c) || !cards.InSets(c, setCodes) {
 			continue
 		}
 		// The same color rule as the themed half: a commander holds every
@@ -744,7 +872,7 @@ const commanderNames = 3
 // already uses. One term per concept: a pair this offers is a pair that
 // passes validation.
 func (b *Builder) commanderPairs(idx *cards.Index, req Request, theme ThemeMatch,
-	colorSet map[mtgv1.Color]bool, mode mtgv1.PoolRule, maxRank float64) []Candidate {
+	colorSet map[mtgv1.Color]bool, setCodes map[string]bool, mode mtgv1.PoolRule, maxRank float64) []Candidate {
 	excluded := map[string]bool{}
 	for _, id := range req.CommanderOracleIDs {
 		excluded[id] = true
@@ -757,7 +885,7 @@ func (b *Builder) commanderPairs(idx *cards.Index, req Request, theme ThemeMatch
 		}
 		// A card that can not pair never reaches the walk, which keeps the
 		// pair loop small (D-154).
-		if !canPair(c) {
+		if !canPair(c) || !cards.InSets(c, setCodes) {
 			continue
 		}
 		if !c.GetCanBeCommander() && !c.GetIsBackground() {
@@ -856,4 +984,97 @@ func (c Candidate) DisplayName() string {
 		return c.Card.GetName()
 	}
 	return c.Card.GetName() + " + " + c.Partner.GetName()
+}
+
+// CountInSets counts the distinct nonbasic cards a set-limited request
+// can draw on: format-legal, on paper, inside the color identity, and
+// printed in one of the named sets. It is the number the viability floor
+// of D-380 reads.
+//
+// It walks the index and scores nothing, so it costs a fraction of a
+// Build. The floor runs twice per build, once before the commander is
+// chosen and once after, because the commander narrows the colors.
+//
+// Basic lands are out of the count. They repeat without limit and they
+// are never filtered by a set (D-378), so counting them would say a
+// five-card set can build a deck.
+func CountInSets(idx *cards.Index, req Request) int {
+	if idx == nil || len(req.SetCodes) == 0 {
+		return 0
+	}
+	setCodes := cards.CodeSet(req.SetCodes)
+	colorSet := colorSetOf(req.Colors)
+	legalKey := legalKeys[req.Format]
+	n := 0
+	for _, c := range idx.All() {
+		if IsBasicLand(c) || !hasPaperPrinting(c) {
+			continue
+		}
+		if legalKey != "" && !legalIn(c, legalKey) {
+			continue
+		}
+		if colorSet != nil && !IdentityFits(c.GetColorIdentity(), colorSet) {
+			continue
+		}
+		if !cards.InSets(c, setCodes) {
+			continue
+		}
+		n++
+	}
+	return n
+}
+
+// SetFloor is the distinct nonbasic count under which a set family can
+// not build a deck of this format (D-380).
+//
+// A Commander deck holds 99 cards beside the commander. About 36 of them
+// are lands, and basic lands fill most of that, so about 70 distinct
+// nonbasic cards is the real need. Measured on the 2026-08-31 snapshot,
+// the Hobbit family clears it in every two-color identity (114 to 132)
+// and in mono white, red, and green, and falls under it in mono black
+// (68). Of 287 playable-product families, 163 clear it.
+//
+// A 60-card deck runs four copies of a name, so half the count builds it.
+func SetFloor(format mtgv1.FormatId) int {
+	if format == mtgv1.FormatId_FORMAT_ID_COMMANDER {
+		return 70
+	}
+	return 35
+}
+
+// CountManaInSets counts the ramp cards and the nonbasic lands a set
+// family offers in the deck's colors (D-382). The mana row compares it
+// with the role targets of the format.
+//
+// It assigns a role, so it costs more than CountInSets and less than a
+// whole Build: nothing is scored, sorted, or capped.
+func (b *Builder) CountManaInSets(idx *cards.Index, req Request) int {
+	if idx == nil || len(req.SetCodes) == 0 {
+		return 0
+	}
+	setCodes := cards.CodeSet(req.SetCodes)
+	colorSet := colorSetOf(req.Colors)
+	legalKey := legalKeys[req.Format]
+	roleTags := b.themes.roleSets(idx.Tags())
+	useText := idx.Tags().Len() == 0
+	n := 0
+	for _, c := range idx.All() {
+		if IsBasicLand(c) || !hasPaperPrinting(c) {
+			continue
+		}
+		if legalKey != "" && !legalIn(c, legalKey) {
+			continue
+		}
+		if colorSet != nil && !IdentityFits(c.GetColorIdentity(), colorSet) {
+			continue
+		}
+		if !cards.InSets(c, setCodes) {
+			continue
+		}
+		switch role, _ := assignRole(c, roleTags, false, useText); role {
+		case mtgv1.CardRole_CARD_ROLE_RAMP, mtgv1.CardRole_CARD_ROLE_LAND:
+			n++
+		}
+	}
+	return n
 }

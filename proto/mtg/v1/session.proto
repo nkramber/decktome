@@ -73,11 +73,17 @@ message Slots {
   // that closed on it retired with A-6 of the 2026-08-28 audit.
   reserved 9;
   reserved "plan_variant";
+  // set_codes limits the deck to the sets the reader named, lowercase
+  // and sorted. It holds a whole set family: a base set and every
+  // product Scryfall names as its child (D-376). Empty means every set.
+  // Basic lands are never filtered by it (D-378).
+  repeated string set_codes = 13;
   // slot_states is keyed by slot name: scope, deck_count, format,
   // power, colors, theme, commander, pool_rule, budget, house_rules.
   // A refinement row keys its own name beside them, for example
   // budget_scope or commander_pick. "scope" records that the agent said
   // it builds Magic decks only, after the user asked for something else.
+  // "set" and "set_outside_mana" are the two set rows (D-376, D-382).
   map<string, SlotState> slot_states = 10;
 }
 

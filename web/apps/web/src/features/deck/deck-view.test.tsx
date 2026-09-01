@@ -70,7 +70,7 @@ const deck = {
   upgrades: [],
   cards: [
     { oracleId: "o-forest", name: "Forest", count: 20, role: CardRole.LAND, owned: true, ownedCount: 40, priceUsd: 0 },
-    { oracleId: "o-elf", name: "Llanowar Elves", count: 4, role: CardRole.RAMP, owned: false, ownedCount: 0, priceUsd: 0.5, reason: "Turn-one mana." },
+    { oracleId: "o-elf", name: "Llanowar Elves", count: 4, role: CardRole.RAMP, owned: false, ownedCount: 0, priceUsd: 0.5, reason: "Turn-one mana.", outsideRequestedSets: true },
     { oracleId: "o-dfc", name: "Delver of Secrets // Insectile Aberration", count: 2, role: CardRole.THREAT, owned: true, ownedCount: 2, priceUsd: 0 },
     { oracleId: "o-gone", name: "Missing Card", count: 1, role: CardRole.OTHER, owned: false, ownedCount: 0, priceUsd: 0 },
   ],
@@ -131,6 +131,17 @@ describe("DeckView", () => {
     expect(screen.getByAltText("Delver of Secrets (card)")).toHaveAttribute("src", "https://cards.scryfall.io/normal/delver-a.jpg");
     expect(screen.getByAltText("Insectile Aberration (card)")).toHaveAttribute("src", "https://cards.scryfall.io/normal/delver-b.jpg");
     expect(screen.getByText("Delver of Secrets (face 1 of 2)")).toBeInTheDocument();
+  });
+
+  it("marks a card the requested sets do not hold (D-383)", async () => {
+    renderDeck();
+    await screen.findByAltText("Forest (card)");
+    const ramp = screen.getByRole("region", { name: "Ramp (4)" });
+    expect(within(ramp).getByTestId("outside-set-mark")).toHaveTextContent("Not from requested set");
+    // Every other card carries no mark.
+    const lands = screen.getByRole("region", { name: "Lands (20)" });
+    expect(within(lands).queryByTestId("outside-set-mark")).not.toBeInTheDocument();
+    expect(screen.getAllByTestId("outside-set-mark")).toHaveLength(1);
   });
 
   it("marks owned cards and prices the rest", async () => {

@@ -11,7 +11,6 @@ Questions not yet asked, or asked and not yet answered. Move each answered quest
 | OQ-44 | What is the ManaBox condition vocabulary? The import knows `near_mint` from one export. | `docs/audit-2026-08-24.md` section 8 left it open. One export with a played card confirms the other values. | When the owner has such an export, before PR-13. PR-11 merged on 2026-08-28 without it. |
 | OQ-45 | Where does the email allowlist live: one env var, or one Firestore document with an admin write path? | D-314 allows both. An env var needs a deploy per change. | Before PR-22. |
 | OQ-46 | What is the per-user monthly spend cap on GCP? | PR-22 refuses a turn over the cap, and the number is the owner's. | Before PR-22. |
-| OQ-47 | Which sets does a product name cover? | "The Hobbit" names three sets in the snapshot of 2026-08-30: `hob` The Hobbit, `hoc` The Hobbit Eternal, and `thob` The Hobbit Tokens. A token set holds no playable card, so the resolver drops it. The question is whether `hoc` belongs with `hob` when the user says "the Hobbit set", and whether the app asks or decides. | Before PR-17B. |
 
 ## Asked, waiting
 
@@ -31,3 +30,4 @@ OQ-23, OQ-28 to OQ-31, OQ-37, and OQ-39 sit in `docs/owner-questions.md`, the de
 - OQ-38: answered 2026-08-27 (D-239).
 - Two questions carry the id OQ-40, and neither gets a new number. D-139 closed the first OQ-40 on 2026-08-26 (the loop starts from `main`). D-247 closed the second on 2026-08-28 (the precon data source, opened by D-240).
 - OQ-41 to OQ-43 answered 2026-08-26 (D-151, D-152, D-154).
+- Two questions carry the id OQ-47, and neither gets a new number, as with the two OQ-40 rows. D-324 closed the first on 2026-08-29 (the deck grid filters by power). D-376 closed the second on 2026-08-31 (a set name resolves to a whole set family).

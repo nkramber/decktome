@@ -39,6 +39,12 @@ type Request struct {
 	Locked []string
 	// PoolRule decides whether ownership is a finding or a mark (D-37).
 	PoolRule mtgv1.PoolRule
+	// SetCodes are the paper sets the reader limited the deck to, a whole
+	// set family (D-376). Empty means no limit. The pool already holds
+	// the cards the limit allows, so this is what marks the exceptions:
+	// a card the reader named (D-381), a mana card the fill took from
+	// outside (D-382), and a basic land the sets do not print (D-378).
+	SetCodes []string
 	// OracleCounts is the owned count per oracle id, nil with no
 	// collection.
 	OracleCounts map[string]int32
@@ -271,6 +277,9 @@ func (b *Builder) assemble(req Request, out *deckOut) pass {
 		addFinding(deck, CodeThinCommanderPool, mtgv1.Severity_SEVERITY_WARN,
 			"your library holds no commander for this theme, so the deck was built without one from it")
 	}
+	// The set limit is a build rule and not a rule of the game, so it is
+	// marked here and never blocks (D-373, D-383).
+	markOutsideSets(deck, req, b.cards)
 	// A revision must do what the brief says. The pool already dropped
 	// the removed cards and the cards over the cap, so these fire only
 	// on a kept card the model left out, or a pool the brief could not

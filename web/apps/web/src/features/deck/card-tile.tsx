@@ -111,6 +111,17 @@ export function CardTile({
           </span>
         )}
       </div>
+      {/* The build marks a card the reader's sets do not hold (D-383). */}
+      {entry.outsideRequestedSets && (
+        <p className="text-xs">
+          <span
+            className="rounded-md border border-danger/50 bg-danger/15 px-1.5 py-0.5 font-medium text-danger"
+            data-testid="outside-set-mark"
+          >
+            <span aria-hidden="true">! </span>Not from requested set
+          </span>
+        </p>
+      )}
       {faces.length === 0 && <p className="text-sm text-muted-foreground">No card data for this entry.</p>}
       {faces.map((face, i) => (
         <figure key={`${entry.oracleId}-${i}`} className="flex flex-col gap-1">

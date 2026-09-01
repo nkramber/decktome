@@ -126,6 +126,9 @@ questions-gate: ## Write the PR-7 gate document. CAUTION: this calls the real pr
 # its document first and then exits 1 on a FAIL verdict, so the file is
 # complete when the target fails.
 DECK_GATE_OUT ?= docs/reference/pr8-deck-gate.md
+# DECK_GATE_ARGS passes flags to the gate, for example -only 19,20 to run
+# the set prompts of PR-17B alone.
+DECK_GATE_ARGS ?=
 CHAT_PROBE_OUT ?= .local/probes/chat-probe.txt
 GENERATE_PROBE_OUT ?= .local/probes/generate-probe.txt
 # SUMMARY_JUDGE_IN is the deck gate document the judge reads.
@@ -142,7 +145,7 @@ deck-gate: ## Write the PR-8 deck gate document. CAUTION: calls a real provider 
 		{ echo "$(DECK_GATE_OUT) holds a verdict. Set DECK_GATE_OUT to a new file."; exit 1; }
 	@set -a && . ./.env && set +a && \
 		DECK_GATE=1 CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall \
-		$(GO) run ./cmd/deck-gate -collection internal/collections/testdata/manabox_collection.csv > $(DECK_GATE_OUT)
+		$(GO) run ./cmd/deck-gate -collection internal/collections/testdata/manabox_collection.csv $(DECK_GATE_ARGS) > $(DECK_GATE_OUT)
 	@echo "wrote $(DECK_GATE_OUT)"
 
 REVISE_GATE_OUT ?= docs/reference/pr12b-revise-gate.md
