@@ -1,3 +1,4 @@
+import { Color } from "@mtg/api-client/mtg/v1/card_pb";
 import { ImportSource, UnresolvedReason } from "@mtg/api-client/mtg/v1/collection_pb";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -84,9 +85,11 @@ beforeEach(() => {
               cardCount: 7,
               importedAt: { seconds: 1756000000n, nanos: 0 },
               entries: [
-                { oracleId: "o-bolt", name: "Lightning Bolt", quantity: 4, rarity: "common", setName: "Alpha", setCode: "lea", scryfallId: "p1", collectorNumber: "1" },
-                { oracleId: "o-jace", name: "Jace, the Mind Sculptor", quantity: 1, rarity: "mythic", setName: "Worldwake", setCode: "wwk", scryfallId: "p2", collectorNumber: "2" },
-                { oracleId: "o-bolt", name: "Lightning Bolt", quantity: 2, rarity: "common", setName: "Alpha", setCode: "lea", scryfallId: "p3", collectorNumber: "3" },
+                // The server fills colors, cardTypes, and priceUsd from
+                // the card index of the day (D-396).
+                { oracleId: "o-bolt", name: "Lightning Bolt", quantity: 4, rarity: "common", setName: "Alpha", setCode: "lea", scryfallId: "p1", collectorNumber: "1", colors: [Color.R], cardTypes: ["Instant"], priceUsd: 2 },
+                { oracleId: "o-jace", name: "Jace, the Mind Sculptor", quantity: 1, rarity: "mythic", setName: "Worldwake", setCode: "wwk", scryfallId: "p2", collectorNumber: "2", colors: [Color.U], cardTypes: ["Planeswalker"], priceUsd: 90 },
+                { oracleId: "o-bolt", name: "Lightning Bolt", quantity: 2, rarity: "common", setName: "Alpha", setCode: "lea", scryfallId: "p3", collectorNumber: "3", colors: [Color.R], cardTypes: ["Instant"], priceUsd: 2 },
               ],
             },
             nextPageToken: "",

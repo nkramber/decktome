@@ -3,6 +3,7 @@ syntax = "proto3";
 package mtg.v1;
 
 import "google/protobuf/timestamp.proto";
+import "mtg/v1/card.proto";
 
 option go_package = "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1";
 
@@ -72,6 +73,13 @@ message CollectionEntry {
   // language is the ManaBox language code, "en" today (D-23).
   string language = 10;
   string set_name = 11;
+  // colors, card_types, and price_usd are display fields. No document
+  // stores them. GetCollection fills them from the card index of the
+  // day, so the price is never stale and an older collection needs no
+  // rewrite (D-396). The binder filters and sorts on them.
+  repeated Color colors = 12;
+  repeated string card_types = 13;
+  double price_usd = 14;
 }
 
 // CollectionDiff is what changed between a stored collection and an

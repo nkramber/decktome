@@ -537,8 +537,15 @@ type CollectionEntry struct {
 	// rarity of this printing (D-16).
 	Rarity string `protobuf:"bytes,9,opt,name=rarity,proto3" json:"rarity,omitempty"`
 	// language is the ManaBox language code, "en" today (D-23).
-	Language      string `protobuf:"bytes,10,opt,name=language,proto3" json:"language,omitempty"`
-	SetName       string `protobuf:"bytes,11,opt,name=set_name,json=setName,proto3" json:"set_name,omitempty"`
+	Language string `protobuf:"bytes,10,opt,name=language,proto3" json:"language,omitempty"`
+	SetName  string `protobuf:"bytes,11,opt,name=set_name,json=setName,proto3" json:"set_name,omitempty"`
+	// colors, card_types, and price_usd are display fields. No document
+	// stores them. GetCollection fills them from the card index of the
+	// day, so the price is never stale and an older collection needs no
+	// rewrite (D-396). The binder filters and sorts on them.
+	Colors        []Color  `protobuf:"varint,12,rep,packed,name=colors,proto3,enum=mtg.v1.Color" json:"colors,omitempty"`
+	CardTypes     []string `protobuf:"bytes,13,rep,name=card_types,json=cardTypes,proto3" json:"card_types,omitempty"`
+	PriceUsd      float64  `protobuf:"fixed64,14,opt,name=price_usd,json=priceUsd,proto3" json:"price_usd,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -648,6 +655,27 @@ func (x *CollectionEntry) GetSetName() string {
 		return x.SetName
 	}
 	return ""
+}
+
+func (x *CollectionEntry) GetColors() []Color {
+	if x != nil {
+		return x.Colors
+	}
+	return nil
+}
+
+func (x *CollectionEntry) GetCardTypes() []string {
+	if x != nil {
+		return x.CardTypes
+	}
+	return nil
+}
+
+func (x *CollectionEntry) GetPriceUsd() float64 {
+	if x != nil {
+		return x.PriceUsd
+	}
+	return 0
 }
 
 // CollectionDiff is what changed between a stored collection and an
@@ -949,7 +977,7 @@ var File_mtg_v1_collection_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_collection_proto_rawDesc = "" +
 	"\n" +
-	"\x17mtg/v1/collection.proto\x12\x06mtg.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xc5\x02\n" +
+	"\x17mtg/v1/collection.proto\x12\x06mtg.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x11mtg/v1/card.proto\"\xc5\x02\n" +
 	"\n" +
 	"Collection\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
@@ -978,7 +1006,7 @@ const file_mtg_v1_collection_proto_rawDesc = "" +
 	"\bSetCount\x12\x19\n" +
 	"\bset_code\x18\x01 \x01(\tR\asetCode\x12\x19\n" +
 	"\bset_name\x18\x02 \x01(\tR\asetName\x12\x14\n" +
-	"\x05count\x18\x03 \x01(\x05R\x05count\"\xed\x02\n" +
+	"\x05count\x18\x03 \x01(\x05R\x05count\"\xd0\x03\n" +
 	"\x0fCollectionEntry\x12\x1f\n" +
 	"\vscryfall_id\x18\x01 \x01(\tR\n" +
 	"scryfallId\x12\x1b\n" +
@@ -992,7 +1020,11 @@ const file_mtg_v1_collection_proto_rawDesc = "" +
 	"\x06rarity\x18\t \x01(\tR\x06rarity\x12\x1a\n" +
 	"\blanguage\x18\n" +
 	" \x01(\tR\blanguage\x12\x19\n" +
-	"\bset_name\x18\v \x01(\tR\asetName\"\xad\x02\n" +
+	"\bset_name\x18\v \x01(\tR\asetName\x12%\n" +
+	"\x06colors\x18\f \x03(\x0e2\r.mtg.v1.ColorR\x06colors\x12\x1d\n" +
+	"\n" +
+	"card_types\x18\r \x03(\tR\tcardTypes\x12\x1b\n" +
+	"\tprice_usd\x18\x0e \x01(\x01R\bpriceUsd\"\xad\x02\n" +
 	"\x0eCollectionDiff\x12-\n" +
 	"\x05added\x18\x01 \x03(\v2\x17.mtg.v1.CollectionEntryR\x05added\x121\n" +
 	"\aremoved\x18\x02 \x03(\v2\x17.mtg.v1.CollectionEntryR\aremoved\x120\n" +
@@ -1076,6 +1108,7 @@ var file_mtg_v1_collection_proto_goTypes = []any{
 	nil,                           // 13: mtg.v1.CollectionSummary.ByColorEntry
 	nil,                           // 14: mtg.v1.ImportReport.UnresolvedByReasonEntry
 	(*timestamppb.Timestamp)(nil), // 15: google.protobuf.Timestamp
+	(Color)(0),                    // 16: mtg.v1.Color
 }
 var file_mtg_v1_collection_proto_depIdxs = []int32{
 	0,  // 0: mtg.v1.Collection.source:type_name -> mtg.v1.ImportSource
@@ -1087,18 +1120,19 @@ var file_mtg_v1_collection_proto_depIdxs = []int32{
 	13, // 6: mtg.v1.CollectionSummary.by_color:type_name -> mtg.v1.CollectionSummary.ByColorEntry
 	1,  // 7: mtg.v1.CollectionEntry.finish:type_name -> mtg.v1.Finish
 	2,  // 8: mtg.v1.CollectionEntry.condition:type_name -> mtg.v1.Condition
-	7,  // 9: mtg.v1.CollectionDiff.added:type_name -> mtg.v1.CollectionEntry
-	7,  // 10: mtg.v1.CollectionDiff.removed:type_name -> mtg.v1.CollectionEntry
-	9,  // 11: mtg.v1.CollectionDiff.changed:type_name -> mtg.v1.QuantityChange
-	7,  // 12: mtg.v1.QuantityChange.entry:type_name -> mtg.v1.CollectionEntry
-	11, // 13: mtg.v1.ImportReport.unresolved:type_name -> mtg.v1.UnresolvedRow
-	14, // 14: mtg.v1.ImportReport.unresolved_by_reason:type_name -> mtg.v1.ImportReport.UnresolvedByReasonEntry
-	3,  // 15: mtg.v1.UnresolvedRow.reason:type_name -> mtg.v1.UnresolvedReason
-	16, // [16:16] is the sub-list for method output_type
-	16, // [16:16] is the sub-list for method input_type
-	16, // [16:16] is the sub-list for extension type_name
-	16, // [16:16] is the sub-list for extension extendee
-	0,  // [0:16] is the sub-list for field type_name
+	16, // 9: mtg.v1.CollectionEntry.colors:type_name -> mtg.v1.Color
+	7,  // 10: mtg.v1.CollectionDiff.added:type_name -> mtg.v1.CollectionEntry
+	7,  // 11: mtg.v1.CollectionDiff.removed:type_name -> mtg.v1.CollectionEntry
+	9,  // 12: mtg.v1.CollectionDiff.changed:type_name -> mtg.v1.QuantityChange
+	7,  // 13: mtg.v1.QuantityChange.entry:type_name -> mtg.v1.CollectionEntry
+	11, // 14: mtg.v1.ImportReport.unresolved:type_name -> mtg.v1.UnresolvedRow
+	14, // 15: mtg.v1.ImportReport.unresolved_by_reason:type_name -> mtg.v1.ImportReport.UnresolvedByReasonEntry
+	3,  // 16: mtg.v1.UnresolvedRow.reason:type_name -> mtg.v1.UnresolvedReason
+	17, // [17:17] is the sub-list for method output_type
+	17, // [17:17] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_mtg_v1_collection_proto_init() }
@@ -1106,6 +1140,7 @@ func file_mtg_v1_collection_proto_init() {
 	if File_mtg_v1_collection_proto != nil {
 		return
 	}
+	file_mtg_v1_card_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

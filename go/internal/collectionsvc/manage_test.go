@@ -303,3 +303,67 @@ func TestDiffCodes(t *testing.T) {
 		})
 	}
 }
+
+// TestGetCollectionFillsTheDisplayFields is D-396. No document stores
+// the colors, the card types, or the price. The index of the day fills
+// a page, so the price is never stale.
+func TestGetCollectionFillsTheDisplayFields(t *testing.T) {
+	c := &mtgv1.Card{
+		OracleId:  "o-bolt",
+		Name:      "Lightning Bolt",
+		Colors:    []mtgv1.Color{mtgv1.Color_COLOR_R},
+		CardTypes: []string{"Instant"},
+		PriceUsd:  1.25,
+	}
+	printings := []cards.Printing{
+		{ScryfallID: "p-1", OracleID: "o-bolt", Name: c.Name, SetCode: "lea", CollectorNumber: "161", Layout: "normal", PriceUSD: 42.5},
+		{ScryfallID: "p-2", OracleID: "o-bolt", Name: c.Name, SetCode: "m10", CollectorNumber: "146", Layout: "normal"},
+	}
+	repo := newFakeRepo()
+	repo.stored["col-1"] = &mtgv1.Collection{
+		Id: "col-1", Name: "Binder", CardCount: 3, ContentHash: "hash-1",
+		Entries: []*mtgv1.CollectionEntry{
+			{ScryfallId: "p-1", OracleId: "o-bolt", Name: c.Name, SetCode: "lea", Quantity: 1},
+			{ScryfallId: "p-2", OracleId: "o-bolt", Name: c.Name, SetCode: "m10", Quantity: 1},
+			{ScryfallId: "p-9", OracleId: "o-unknown", Name: "Nothing", SetCode: "zzz", Quantity: 1},
+		},
+	}
+	s := newServer(repo, cards.NewIndex([]*mtgv1.Card{c}, printings, nil, time.Now()))
+
+	res, err := s.GetCollection(context.Background(), connect.NewRequest(&mtgv1.GetCollectionRequest{CollectionId: "col-1"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := res.Msg.GetCollection().GetEntries()
+	if len(got) != 3 {
+		t.Fatalf("read %d entries, want 3", len(got))
+	}
+	if len(got[0].GetColors()) != 1 || got[0].GetColors()[0] != mtgv1.Color_COLOR_R {
+		t.Errorf("colors = %v, want red", got[0].GetColors())
+	}
+	if len(got[0].GetCardTypes()) != 1 || got[0].GetCardTypes()[0] != "Instant" {
+		t.Errorf("card types = %v, want Instant", got[0].GetCardTypes())
+	}
+	// The reader owns this printing, so its price is the one that counts.
+	if got[0].GetPriceUsd() != 42.5 {
+		t.Errorf("price of the Alpha printing = %v, want 42.5", got[0].GetPriceUsd())
+	}
+	// A printing with no price falls back to the card price (D-231).
+	if got[1].GetPriceUsd() != 1.25 {
+		t.Errorf("price of the unpriced printing = %v, want the card price 1.25", got[1].GetPriceUsd())
+	}
+	// A row the index does not know keeps its empty fields.
+	if len(got[2].GetColors()) != 0 || got[2].GetPriceUsd() != 0 {
+		t.Errorf("an unknown row = %v", got[2])
+	}
+	// The head reads no entry, so it fills nothing (D-392).
+	head, err := s.GetCollection(context.Background(), connect.NewRequest(&mtgv1.GetCollectionRequest{
+		CollectionId: "col-1", EntriesOmitted: true,
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(head.Msg.GetCollection().GetEntries()) != 0 {
+		t.Error("the head carries entries")
+	}
+}

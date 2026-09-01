@@ -1,4 +1,4 @@
-import type { Card } from "@mtg/api-client/mtg/v1/card_pb";
+import { type Card, Color } from "@mtg/api-client/mtg/v1/card_pb";
 import { type CollectionEntry, Condition, Finish } from "@mtg/api-client/mtg/v1/collection_pb";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { SearchIcon } from "lucide-react";
@@ -42,23 +42,80 @@ const conditionLabel: Record<number, string> = {
   [Condition.POOR]: "Poor",
 };
 
-export type BinderSort = "name" | "count" | "set";
+export type BinderSort = "name" | "count" | "set" | "price";
 
 const sortOptions: { value: BinderSort; label: string }[] = [
   { value: "name", label: "By name" },
   { value: "count", label: "By count" },
   { value: "set", label: "By set" },
+  { value: "price", label: "By price" },
 ];
 
-// filterEntries keeps the rows that match the search and the set. The
-// search reads the card name alone: a reader types a card, not a code.
-export function filterEntries(entries: CollectionEntry[], query: string, set: string): CollectionEntry[] {
-  const q = query.trim().toLowerCase();
+// The color filter reads the colors of the card, not its color identity.
+// A reader who asks for red cards means the red cards, and "Colorless"
+// is a color a reader picks like any other.
+export const colorOptions: { value: string; label: string }[] = [
+  { value: "", label: "Every color" },
+  { value: "W", label: "White" },
+  { value: "U", label: "Blue" },
+  { value: "B", label: "Black" },
+  { value: "R", label: "Red" },
+  { value: "G", label: "Green" },
+  { value: "C", label: "Colorless" },
+];
+
+const colorKeys: Record<number, string> = {
+  [Color.W]: "W",
+  [Color.U]: "U",
+  [Color.B]: "B",
+  [Color.R]: "R",
+  [Color.G]: "G",
+};
+
+// The count filter groups the copies a reader thinks in. Four is a
+// playset, and every count above it reads the same way.
+export const countOptions: { value: string; label: string }[] = [
+  { value: "", label: "Every count" },
+  { value: "1", label: "1 copy" },
+  { value: "2", label: "2 copies" },
+  { value: "3", label: "3 copies" },
+  { value: "4", label: "4 or more" },
+];
+
+// BinderFilter is what the reader chose. An empty string is no choice,
+// which keeps every row.
+export type BinderFilter = {
+  query: string;
+  set: string;
+  color: string;
+  type: string;
+  count: string;
+};
+
+export const noFilter: BinderFilter = { query: "", set: "", color: "", type: "", count: "" };
+
+// filterEntries keeps the rows that match every choice. The search reads
+// the card name alone: a reader types a card, not a code. The colors and
+// the card types ride on the entry, and the server fills them from the
+// card index of the day (D-396).
+export function filterEntries(entries: CollectionEntry[], f: BinderFilter): CollectionEntry[] {
+  const q = f.query.trim().toLowerCase();
+  const want = Number(f.count);
   return entries.filter((e) => {
-    if (set !== "" && e.setCode !== set) return false;
+    if (f.set !== "" && e.setCode !== f.set) return false;
+    if (f.color !== "" && !hasColor(e, f.color)) return false;
+    if (f.type !== "" && !e.cardTypes.includes(f.type)) return false;
+    if (f.count !== "" && !(want === 4 ? e.quantity >= 4 : e.quantity === want)) return false;
     if (q === "") return true;
     return e.name.toLowerCase().includes(q);
   });
+}
+
+// hasColor answers the color filter. A card of two colors answers to
+// both. A card of none answers to "Colorless" alone.
+function hasColor(e: CollectionEntry, want: string): boolean {
+  if (want === "C") return e.colors.length === 0;
+  return e.colors.some((c) => colorKeys[c] === want);
 }
 
 // sortEntries orders the rows. The name breaks every tie, so one binder
@@ -68,9 +125,30 @@ export function sortEntries(entries: CollectionEntry[], by: BinderSort): Collect
   out.sort((a, b) => {
     if (by === "count" && a.quantity !== b.quantity) return b.quantity - a.quantity;
     if (by === "set" && a.setCode !== b.setCode) return a.setCode.localeCompare(b.setCode);
+    // Dearest first, because a reader who sorts by price looks for the
+    // cards that carry the value. An unpriced row sorts last.
+    if (by === "price" && a.priceUsd !== b.priceUsd) return b.priceUsd - a.priceUsd;
     return a.name.localeCompare(b.name);
   });
   return out;
+}
+
+// typeOptions lists the card types the rows hold, largest first. The
+// binder filters on what it holds, so a binder with no planeswalker
+// offers no planeswalker.
+export function typeOptions(entries: CollectionEntry[]): { value: string; label: string }[] {
+  const byType = new Map<string, number>();
+  for (const e of entries) {
+    for (const t of e.cardTypes) {
+      byType.set(t, (byType.get(t) ?? 0) + e.quantity);
+    }
+  }
+  return [
+    { value: "", label: "Every type" },
+    ...[...byType.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .map(([t, n]) => ({ value: t, label: `${t} (${n})` })),
+  ];
 }
 
 // setOptions lists the sets the rows hold, largest first. The binder
@@ -109,14 +187,14 @@ export function BinderGrid({
   loading: boolean;
   onReachEnd?: () => void;
 }) {
-  const [query, setQuery] = useState("");
-  const [set, setSet] = useState("");
+  const [filter, setFilter] = useState<BinderFilter>(noFilter);
   const [by, setBy] = useState<BinderSort>("name");
   const scroller = useRef<HTMLDivElement>(null);
   const [columns, setColumns] = useState(3);
 
   const sets = useMemo(() => setOptions(entries), [entries]);
-  const shown = useMemo(() => sortEntries(filterEntries(entries, query, set), by), [entries, query, set, by]);
+  const types = useMemo(() => typeOptions(entries), [entries]);
+  const shown = useMemo(() => sortEntries(filterEntries(entries, filter), by), [entries, filter, by]);
 
   // The column count follows the width of the scroller, so the tiles
   // keep their shape from a phone to a wide desktop.
@@ -130,11 +208,11 @@ export function BinderGrid({
     return () => observer.disconnect();
   }, []);
 
-  // A new search or set is a new list, so the reader reads it from the
+  // A new filter or sort is a new list, so the reader reads it from the
   // top. Without this they search and land in the middle of the answer.
   useEffect(() => {
     scroller.current?.scrollTo(0, 0);
-  }, [query, set, by]);
+  }, [filter, by]);
 
   const rows = Math.ceil(shown.length / columns);
   // The React Compiler skips this component, because the virtualizer
@@ -148,6 +226,12 @@ export function BinderGrid({
     // the real height after the first paint, so this is the start value.
     estimateSize: () => 312,
     overscan: 3,
+    // The library flushes a scroll render synchronously by default, and
+    // React refuses a flush from inside a lifecycle. Every scroll wrote
+    // console errors that hide real ones. A frame test over 120 frames
+    // measured the same times either way, so the flush buys nothing
+    // here (D-397).
+    useFlushSync: false,
   });
 
   // The next page loads before the reader reaches the end, so the scroll
@@ -183,13 +267,34 @@ export function BinderGrid({
             type="search"
             aria-label="Search the binder by card name"
             placeholder="Search by name"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            value={filter.query}
+            onChange={(e) => setFilter({ ...filter, query: e.target.value })}
             className="pl-8"
           />
         </div>
-        <Select aria-label="Filter by set" value={set} onChange={(e) => setSet(e.target.value)}>
+        <Select aria-label="Filter by set" value={filter.set} onChange={(e) => setFilter({ ...filter, set: e.target.value })}>
           {sets.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </Select>
+        <Select aria-label="Filter by color" value={filter.color} onChange={(e) => setFilter({ ...filter, color: e.target.value })}>
+          {colorOptions.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </Select>
+        <Select aria-label="Filter by card type" value={filter.type} onChange={(e) => setFilter({ ...filter, type: e.target.value })}>
+          {types.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </Select>
+        <Select aria-label="Filter by count" value={filter.count} onChange={(e) => setFilter({ ...filter, count: e.target.value })}>
+          {countOptions.map((o) => (
             <option key={o.value} value={o.value}>
               {o.label}
             </option>
@@ -205,7 +310,7 @@ export function BinderGrid({
       </div>
 
       {shown.length === 0 && !loading && (
-        <EmptyState icon={SearchIcon} title="No card matches." description="Clear the search, or choose another set." />
+        <EmptyState icon={SearchIcon} title="No card matches." description="Clear the search, or choose another filter." />
       )}
 
       {shown.length > 0 && (
@@ -277,6 +382,13 @@ function BinderTile({ entry, card }: { entry: CollectionEntry; card: Card | unde
           </span>
         )}
         {condition && <span data-testid="condition-mark">{condition}</span>}
+        {/* The reader sorts by price, so the price reads on the tile.
+            An unpriced row shows nothing (D-396). */}
+        {entry.priceUsd > 0 && (
+          <span className="ml-auto tabular-nums" data-testid="binder-price">
+            ${entry.priceUsd.toFixed(2)}
+          </span>
+        )}
       </p>
     </article>
   );

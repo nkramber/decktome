@@ -220,7 +220,39 @@ func (s *Server) GetCollection(ctx context.Context, req *connect.Request[mtgv1.G
 	} else {
 		col.Entries = entries[offset:]
 	}
+	s.decorate(col.GetEntries())
 	return connect.NewResponse(&mtgv1.GetCollectionResponse{Collection: col, NextPageToken: next}), nil
+}
+
+// decorate fills the display fields of one page: the colors, the card
+// types, and the price of the printing the reader owns (D-396). No
+// document holds them. The index of the day answers, so a price is
+// never stale and an older collection needs no rewrite. A row the
+// index does not know keeps its empty fields, and the binder reads it
+// as a row no filter matches.
+func (s *Server) decorate(entries []*mtgv1.CollectionEntry) {
+	if s.index == nil {
+		return
+	}
+	idx := s.index.Current()
+	if idx == nil {
+		return
+	}
+	for _, e := range entries {
+		c, ok := idx.ByOracleID(e.GetOracleId())
+		if !ok {
+			continue
+		}
+		e.Colors = c.GetColors()
+		e.CardTypes = c.GetCardTypes()
+		// The reader owns one printing, and its price is the one that
+		// counts. The card price is the default printing's (D-231), so
+		// it stands in only when the printing is unknown.
+		e.PriceUsd = c.GetPriceUsd()
+		if p, ok := idx.Printing(e.GetScryfallId()); ok && p.GetPriceUsd() > 0 {
+			e.PriceUsd = p.GetPriceUsd()
+		}
+	}
 }
 
 // DefaultPageSize and MaxPageSize bound the entries of one answer
