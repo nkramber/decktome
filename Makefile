@@ -277,10 +277,10 @@ autotune: ## Print how to start the overnight tuning loop. It never starts one
 	@echo
 	@echo "  AUTOTUNE_ALLOW_UNATTENDED=1 AUTOTUNE_FIXER_CMD=... scripts/autotune.sh --budget 3.00"
 
-store-check: ## Run the session and deck stores against the local Firestore emulator (needs `firebase emulators:start --only firestore`)
+store-check: ## Run the session, deck, and collection stores against the local Firestore emulator (needs `firebase emulators:start --only firestore`)
 	@nc -z 127.0.0.1 8281 2>/dev/null || \
 		{ echo "no Firestore emulator on :8281. Start one: firebase emulators:start --only firestore --project mtg-local"; exit 1; }
-	@FIRESTORE_EMULATOR_HOST=127.0.0.1:8281 $(GO) test ./internal/sessions ./internal/decks -count=1
+	@FIRESTORE_EMULATOR_HOST=127.0.0.1:8281 $(GO) test ./internal/sessions ./internal/decks ./internal/collections -count=1
 
 themes-check: ## Check the theme slugs and the commander ranking against the local snapshot
 	@CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall $(GO) test ./internal/candidates -run 'TestThemeSlugsExist|TestCommanderQualitySnapshot' -count=1

@@ -1,7 +1,7 @@
 import type { Collection } from "@mtg/api-client/mtg/v1/collection_pb";
 
 import { Skeleton } from "../../components/ui/skeleton";
-import { artIds, statsOf, useCollectionArt } from "./use-collection";
+import { statsFrom, useCollectionArt } from "./use-collection";
 
 // The rarity of a printing carries the color the game prints it in.
 const rarityToken: Record<string, string> = {
@@ -11,14 +11,14 @@ const rarityToken: Record<string, string> = {
   common: "var(--rarity-common)",
 };
 
-const artCount = 10;
-
 // The head of the collection screen: what the binder holds, and the look
 // of it. A collection of five thousand cards must show cards (D-327).
+//
+// It reads the summary the import stored, and never an entry (D-392).
+// The art ids ride on the summary for the same reason.
 export function CollectionHero({ collection, loading }: { collection: Collection; loading: boolean }) {
-  const entries = collection.entries;
-  const stats = statsOf(entries);
-  const cards = useCollectionArt(artIds(entries, artCount));
+  const stats = statsFrom(collection.summary, collection.cardCount);
+  const cards = useCollectionArt(collection.summary?.artOracleIds ?? []);
   const total = stats.total || collection.cardCount;
 
   return (

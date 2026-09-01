@@ -6,11 +6,11 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## Where things stand (2026-09-01)
 
-- `main` is at `275964c`. Merged: PR-0a to PR-8, PR-7B, PR-10 to PR-13, the audits, the Phase 3B roadmap (#46), PR-16 (#47), PR-16B (#48), and PR-17 (#49).
-- Branch `pr-17b` holds the set filter. Nothing on it is committed. It changes 57 files and adds 13.
-- The tree is green on `pr-17b`: Go build, vet, `-race` tests, golangci-lint, `buf breaking`, web lint, typecheck, 201 web tests. `make lint` reports zero findings.
+- `main` is at `e8782b5`. Merged: PR-0a to PR-8, PR-7B, PR-10 to PR-13, the audits, the Phase 3B roadmap (#46), PR-16 (#47), PR-16B (#48), PR-17 (#49), and PR-17B (#50).
+- Branch `pr-18` holds collection management. Three commits are on it, and the binder filters are not committed yet.
+- The tree is green on `pr-18`: Go build, vet, `-race` tests, golangci-lint, `buf breaking`, web lint, typecheck, 227 web tests. `make lint` reports zero findings.
 - Question gate run 31 passes every bar. The set deck gate passes 6 of 6.
-- The revise gate held on run 2 (D-296). Deck gate run 10 is open, and it predates this branch.
+- Every gate stands and passes: question gate 32, the set deck gate, revise gate 4, and deck gate 10.
 - PR-9 is out of the MVP (D-256). Phase 3B comes before Phase 4 (D-316).
 
 CAUTION: branch `pr-17` carries eight concerns. They are the contract, the Go side, the reference design, and the layout of D-331. They are also the Build menu, the one deck screen, the pool picker, and the speed of the app. Guardrail 10 asks for one. The owner chose to ship it whole (D-344).
@@ -130,7 +130,7 @@ D-311 kept every surface neutral and let the card art carry the color. The app r
 - The ground of every page carries two soft lights and a fine grain. A panel takes a hairline of its own light along its top edge.
 - The collection screen shows the binder: the count, the unique cards, the rarity spread, and the art of the rarest ten cards. It came forward from PR-18.
 
-CAUTION: the binder head calls `GetCollection`, and the answer carries every entry. The owner's export holds 4,952 rows, so one page load moves about one megabyte. PR-18 adds paging, and the head reads a page then.
+CAUTION: the binder head calls `GetCollection`, and the answer carries every entry. The owner's export holds 2,657 rows and 4,952 cards, so one page load moves about one megabyte. PR-18 stores the summary on the collection, and the head then reads no entry at all (D-392).
 
 ## Reading the app without the owner (2026-08-30)
 
@@ -261,16 +261,57 @@ Two defects of the set filter reached the gate, and both are fixed:
 
 CAUTION: the eight snapshots on the owner's disk held no set file. A session wrote one into `20260831T090157` by hand, so the tests and the gates read a real table. Every other version falls back to a derived table with no family link, and the worker fills the newest one on its next cycle.
 
+## PR-18, the web side (2026-09-01)
+
+Branch `pr-18`. The collections list gained a rename, a re-upload shows a diff before it replaces anything, and the binder is a virtualized grid.
+
+- The head reads `Collection.summary` and asks for no entry (D-392). `useCollectionHead` sends `entries_omitted`, and the art ids ride on the summary, so the strip still shows the rarest cards.
+- `useBinderPages` reads the rows a page at a time, 200 to a page. The grid asks for the next page two rows before the end.
+- `binder-grid.tsx` holds the search, four filters, the sort, and the tiles. The filters are the set, the color, the card type, and the count. The sort is the name, the count, the set, or the price. The set list and the type list come from the rows the binder holds, so neither needs a table.
+- No document stores the colors, the card types, or the price of a row. `GetCollection` fills the three from the card index of the day, for the page it serves (D-396). A price is never stale, and an older collection needs no rewrite.
+- `upload-dialog.tsx` holds the whole upload: the file, the progress, the diff, and the report (D-395). The page behind it never changes shape. "Add a collection" opens the dialog and the file picker with it (D-342).
+- `collection-diff.tsx` shows the counts and a sample of each list. The dialog holds the frame and the two buttons. Replace names the collection it replaces (D-393).
+- `import-result.tsx` exports `ImportReportBody`, the report with no frame. The dialog and the page both draw it, so the two read alike.
+
+A session read the screen in a real browser with Playwright, and it measured rather than looked.
+
+| What | Measured |
+|---|---|
+| Tile radius, border, and ground | 4 px, `#2a2d4a`, `#13162a`, which are the card tokens |
+| Heading face | Cinzel Variable, the same face the deck library uses |
+| Body face | Crimson Pro Variable |
+| Tiles drawn of 2,657 rows | 15 at rest, 27 after a scroll |
+| Rows after a scroll to the foot | 200, then 1,800 |
+| Search "Sol Ring" | 400 of 2,000 rows |
+| Horizontal overflow | none |
+| Dialog radius, border, ground, and pad | 4 px, `#2a2d4a`, `#13162a`, 20 px, which are the panel tokens |
+| Dialog title | Cinzel Variable, 18 px, weight 600 |
+| Dialog box at 1440 px | 576 by 431 px, centered |
+| Dialog box at 390 px | 358 px wide, with 16 px each side |
+| Horizontal overflow, both widths | none |
+| Binder controls at 1440, 1024, 768, 390 px | one row, one row, two rows, three rows, and no overflow |
+| Filters chained: red, then Land, then 4 or more | 2,000 rows, then 333, then 66, then 33 |
+| Scroll over 120 frames | median 11.5 ms, p95 26.8 ms, 13 frames over 16.7 ms |
+
+CAUTION: the frame numbers come from headless Chromium against the dev server. They say the grid is in the right range. They are not the gate line, which is the owner's own measurement on a production build.
+
+Playwright found three defects. The grid held its scroll position when the filter changed, so a reader searched and landed in the middle of the answer. The grid returns to the top now. The diff drew a card inside the dialog, which is a frame in a frame. The diff lost its frame, and the dialog footer holds the buttons.
+
+The third defect was the console. One scroll of the binder wrote 4 to 16 errors, from the synchronous flush of the virtualizer. The flush is off, and a frame test measured no cost (D-397).
+
+CAUTION: `Repo.Get` returns a collection the caller owns. A page is a slice of the entry list, taken in place. A repo that shares one object across calls hands the next reader a collection the last page truncated. The test fake answers a clone.
+
+CAUTION: the active collection is a choice of one visit, and the store keeps only the session id (D-345). A Playwright run can not seed it through localStorage. The script clicks the collection, as a reader does.
+
 ## Next steps, in order
 
-1. The owner reads branch `pr-17b` in the browser, then commits and merges it. Nothing on it is committed yet. The one screen to read is a deck built from a set. Every card the sets do not hold carries a red mark.
-2. The owner decides on a question eval of run 31, which costs about $0.09. Eval 29 scored a gate run that failed, so no clean quality baseline stands beside run 28 today.
-3. Then PR-18 to PR-23 in order, one gate each. Before PR-22, ask OQ-45 and OQ-46.
-4. After Phase 3B: PR-15, then PR-14.
+1. The owner reads branch `pr-18` in the browser. The screens to read are the collection screen, the binder grid, and the upload dialog.
+2. One PR-18 gate line is open. Only the owner can close it: 60 frames a second on the real 2,657-row export.
+3. No PR is open for PR-18 yet.
+4. Then PR-19 to PR-23 in order, one gate each. Before PR-22, ask OQ-45 and OQ-46.
+5. After Phase 3B: PR-15, then PR-14.
 
-CAUTION: deck gate run 10 is still open, and it predates this branch. D-362 bounds the owned-first fill at 150 names, and run 9 showed four decks that cost $39.81 to $167.98 where run 8 cost nothing. A run 10 must show the run 8 costs again. It costs about $1.09.
-
-CAUTION: branch `pr-17b` carries the set filter and three fixes to PR-17's own decisions (D-384 to D-386). The three came out of the gate runs of this branch, and none of them belongs to the set filter. Read them as a separate slice inside one branch.
+Deck gate run 10 is done. It ran on 2026-08-31, and `CLAUDE.md` recorded it while this file still asked for it. A session that reads only the prose here spends $1.09 on a run that exists. Read `docs/reference/` before you plan a paid run.
 
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 
@@ -299,7 +340,22 @@ The re-baseline of D-302 is done for the question gate and the deck gate. Total 
 | Question eval 28 | `pr7-question-eval-run28.md` | 6.8 percent bad on the holdout, from 7.2. The tune split reads 2.2 percent, from 4.1. $0.0916. |
 | Deck gate 9 | `pr8-deck-gate-run9.md` | PASS, and it found a defect the verdict can not see. $1.0450. |
 
-CAUTION: deck gate run 9 ran with the unbounded owned-first fill. Four decks that cost nothing to buy on run 8 cost $39.81, $80.24, $60.77, and $167.98 on run 9. D-362 bounds the fill at 150 names, and every owned-first prompt of run 8 sits above that floor. A run 10 must show the run 8 costs again. Read the buy cost of each owned-first prompt, not the verdict: all three bars of this gate read legality, never cost.
+Deck gate run 9 ran with the unbounded owned-first fill. Four decks that cost nothing to buy on run 8 cost $39.81, $80.24, $60.77, and $167.98 on run 9. D-362 bounds the fill at 150 names.
+
+Run 10 proves the bound. Every one of those four decks costs nothing again, and the two other owned-first prompts hold their shape.
+
+| # | Prompt | Run 8 | Run 9 | Run 10 |
+|---|---|---|---|---|
+| 2 | aristocrats, owned first | $0.00 | $39.81 | $0.00 |
+| 5 | blink, owned first | $0.00 | $80.24 | $0.00 |
+| 13 | the commander is not owned | $0.00 | $60.77 | $0.00 |
+| 15 | delegated commander | $0.00 | $167.98 | $0.00 |
+| 16 | a tight budget | $6.17 | $6.83 | $23.03 |
+| 17 | upgrade a precon | $73.55 | $77.12 | $78.47 |
+
+Run 10: PASS, 18 of 18, one repair turn, $1.0787.
+
+CAUTION: read the buy cost of each owned-first prompt, not the verdict. All three bars of this gate read legality, never cost. Prompt 16 rose from $6.17 to $23.03 over two runs. Its budget is $25, so no finding fires. Read it again on the next run.
 
 ## The dead-end check of the question gate (D-357)
 

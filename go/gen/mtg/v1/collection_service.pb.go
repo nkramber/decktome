@@ -21,6 +21,221 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type UpdateCollectionRequest struct {
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	CollectionId string                 `protobuf:"bytes,1,opt,name=collection_id,json=collectionId,proto3" json:"collection_id,omitempty"`
+	// name is the new name. An empty name is an invalid argument, and a
+	// name takes at most 200 bytes, as a deck name does.
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateCollectionRequest) Reset() {
+	*x = UpdateCollectionRequest{}
+	mi := &file_mtg_v1_collection_service_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateCollectionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateCollectionRequest) ProtoMessage() {}
+
+func (x *UpdateCollectionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_collection_service_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateCollectionRequest.ProtoReflect.Descriptor instead.
+func (*UpdateCollectionRequest) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_collection_service_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *UpdateCollectionRequest) GetCollectionId() string {
+	if x != nil {
+		return x.CollectionId
+	}
+	return ""
+}
+
+func (x *UpdateCollectionRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+type UpdateCollectionResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Collection    *Collection            `protobuf:"bytes,1,opt,name=collection,proto3" json:"collection,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateCollectionResponse) Reset() {
+	*x = UpdateCollectionResponse{}
+	mi := &file_mtg_v1_collection_service_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateCollectionResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateCollectionResponse) ProtoMessage() {}
+
+func (x *UpdateCollectionResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_collection_service_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateCollectionResponse.ProtoReflect.Descriptor instead.
+func (*UpdateCollectionResponse) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_collection_service_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *UpdateCollectionResponse) GetCollection() *Collection {
+	if x != nil {
+		return x.Collection
+	}
+	return nil
+}
+
+type DiffCollectionsRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// collection_id is the stored collection to compare against.
+	CollectionId string `protobuf:"bytes,1,opt,name=collection_id,json=collectionId,proto3" json:"collection_id,omitempty"`
+	// source and content are the uploaded file, the same two fields
+	// ImportCollection takes. The file is parsed and never stored.
+	Source        ImportSource `protobuf:"varint,2,opt,name=source,proto3,enum=mtg.v1.ImportSource" json:"source,omitempty"`
+	Content       []byte       `protobuf:"bytes,3,opt,name=content,proto3" json:"content,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DiffCollectionsRequest) Reset() {
+	*x = DiffCollectionsRequest{}
+	mi := &file_mtg_v1_collection_service_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DiffCollectionsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DiffCollectionsRequest) ProtoMessage() {}
+
+func (x *DiffCollectionsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_collection_service_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DiffCollectionsRequest.ProtoReflect.Descriptor instead.
+func (*DiffCollectionsRequest) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_collection_service_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *DiffCollectionsRequest) GetCollectionId() string {
+	if x != nil {
+		return x.CollectionId
+	}
+	return ""
+}
+
+func (x *DiffCollectionsRequest) GetSource() ImportSource {
+	if x != nil {
+		return x.Source
+	}
+	return ImportSource_IMPORT_SOURCE_UNSPECIFIED
+}
+
+func (x *DiffCollectionsRequest) GetContent() []byte {
+	if x != nil {
+		return x.Content
+	}
+	return nil
+}
+
+type DiffCollectionsResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Diff  *CollectionDiff        `protobuf:"bytes,1,opt,name=diff,proto3" json:"diff,omitempty"`
+	// report lists the rows of the uploaded file that did not resolve. A
+	// reader must not replace a collection on a file half of which failed.
+	Report        *ImportReport `protobuf:"bytes,2,opt,name=report,proto3" json:"report,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DiffCollectionsResponse) Reset() {
+	*x = DiffCollectionsResponse{}
+	mi := &file_mtg_v1_collection_service_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DiffCollectionsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DiffCollectionsResponse) ProtoMessage() {}
+
+func (x *DiffCollectionsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_collection_service_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DiffCollectionsResponse.ProtoReflect.Descriptor instead.
+func (*DiffCollectionsResponse) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_collection_service_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *DiffCollectionsResponse) GetDiff() *CollectionDiff {
+	if x != nil {
+		return x.Diff
+	}
+	return nil
+}
+
+func (x *DiffCollectionsResponse) GetReport() *ImportReport {
+	if x != nil {
+		return x.Report
+	}
+	return nil
+}
+
 type DeleteCollectionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CollectionId  string                 `protobuf:"bytes,1,opt,name=collection_id,json=collectionId,proto3" json:"collection_id,omitempty"`
@@ -30,7 +245,7 @@ type DeleteCollectionRequest struct {
 
 func (x *DeleteCollectionRequest) Reset() {
 	*x = DeleteCollectionRequest{}
-	mi := &file_mtg_v1_collection_service_proto_msgTypes[0]
+	mi := &file_mtg_v1_collection_service_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -42,7 +257,7 @@ func (x *DeleteCollectionRequest) String() string {
 func (*DeleteCollectionRequest) ProtoMessage() {}
 
 func (x *DeleteCollectionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_collection_service_proto_msgTypes[0]
+	mi := &file_mtg_v1_collection_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -55,7 +270,7 @@ func (x *DeleteCollectionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteCollectionRequest.ProtoReflect.Descriptor instead.
 func (*DeleteCollectionRequest) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_collection_service_proto_rawDescGZIP(), []int{0}
+	return file_mtg_v1_collection_service_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *DeleteCollectionRequest) GetCollectionId() string {
@@ -73,7 +288,7 @@ type DeleteCollectionResponse struct {
 
 func (x *DeleteCollectionResponse) Reset() {
 	*x = DeleteCollectionResponse{}
-	mi := &file_mtg_v1_collection_service_proto_msgTypes[1]
+	mi := &file_mtg_v1_collection_service_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -85,7 +300,7 @@ func (x *DeleteCollectionResponse) String() string {
 func (*DeleteCollectionResponse) ProtoMessage() {}
 
 func (x *DeleteCollectionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_collection_service_proto_msgTypes[1]
+	mi := &file_mtg_v1_collection_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -98,7 +313,7 @@ func (x *DeleteCollectionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteCollectionResponse.ProtoReflect.Descriptor instead.
 func (*DeleteCollectionResponse) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_collection_service_proto_rawDescGZIP(), []int{1}
+	return file_mtg_v1_collection_service_proto_rawDescGZIP(), []int{5}
 }
 
 type ImportCollectionRequest struct {
@@ -106,14 +321,20 @@ type ImportCollectionRequest struct {
 	Name   string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Source ImportSource           `protobuf:"varint,2,opt,name=source,proto3,enum=mtg.v1.ImportSource" json:"source,omitempty"`
 	// content is the raw uploaded file.
-	Content       []byte `protobuf:"bytes,3,opt,name=content,proto3" json:"content,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Content []byte `protobuf:"bytes,3,opt,name=content,proto3" json:"content,omitempty"`
+	// replace_collection_id names the collection this upload replaces. The
+	// reader read the diff and said to replace, so the entries are written
+	// into that same collection and every deck and chat that names it
+	// still works (D-393). Empty means a new collection, or the one an
+	// identical hash already made (D-16).
+	ReplaceCollectionId string `protobuf:"bytes,4,opt,name=replace_collection_id,json=replaceCollectionId,proto3" json:"replace_collection_id,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *ImportCollectionRequest) Reset() {
 	*x = ImportCollectionRequest{}
-	mi := &file_mtg_v1_collection_service_proto_msgTypes[2]
+	mi := &file_mtg_v1_collection_service_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -125,7 +346,7 @@ func (x *ImportCollectionRequest) String() string {
 func (*ImportCollectionRequest) ProtoMessage() {}
 
 func (x *ImportCollectionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_collection_service_proto_msgTypes[2]
+	mi := &file_mtg_v1_collection_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -138,7 +359,7 @@ func (x *ImportCollectionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImportCollectionRequest.ProtoReflect.Descriptor instead.
 func (*ImportCollectionRequest) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_collection_service_proto_rawDescGZIP(), []int{2}
+	return file_mtg_v1_collection_service_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ImportCollectionRequest) GetName() string {
@@ -162,6 +383,13 @@ func (x *ImportCollectionRequest) GetContent() []byte {
 	return nil
 }
 
+func (x *ImportCollectionRequest) GetReplaceCollectionId() string {
+	if x != nil {
+		return x.ReplaceCollectionId
+	}
+	return ""
+}
+
 type ImportCollectionResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Collection    *Collection            `protobuf:"bytes,1,opt,name=collection,proto3" json:"collection,omitempty"`
@@ -172,7 +400,7 @@ type ImportCollectionResponse struct {
 
 func (x *ImportCollectionResponse) Reset() {
 	*x = ImportCollectionResponse{}
-	mi := &file_mtg_v1_collection_service_proto_msgTypes[3]
+	mi := &file_mtg_v1_collection_service_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -184,7 +412,7 @@ func (x *ImportCollectionResponse) String() string {
 func (*ImportCollectionResponse) ProtoMessage() {}
 
 func (x *ImportCollectionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_collection_service_proto_msgTypes[3]
+	mi := &file_mtg_v1_collection_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -197,7 +425,7 @@ func (x *ImportCollectionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImportCollectionResponse.ProtoReflect.Descriptor instead.
 func (*ImportCollectionResponse) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_collection_service_proto_rawDescGZIP(), []int{3}
+	return file_mtg_v1_collection_service_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ImportCollectionResponse) GetCollection() *Collection {
@@ -215,15 +443,25 @@ func (x *ImportCollectionResponse) GetReport() *ImportReport {
 }
 
 type GetCollectionRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CollectionId  string                 `protobuf:"bytes,1,opt,name=collection_id,json=collectionId,proto3" json:"collection_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	CollectionId string                 `protobuf:"bytes,1,opt,name=collection_id,json=collectionId,proto3" json:"collection_id,omitempty"`
+	// page_size caps the entries in the answer. Zero takes the default,
+	// and the server caps it (D-392). A reader who wants the head alone
+	// asks for no entry with entries_omitted.
+	PageSize int32 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	// page_token is the token the last answer returned. An empty token
+	// reads the first page.
+	PageToken string `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	// entries_omitted asks for the collection without its entries. The
+	// binder head reads the summary alone, and it moves no megabyte.
+	EntriesOmitted bool `protobuf:"varint,4,opt,name=entries_omitted,json=entriesOmitted,proto3" json:"entries_omitted,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *GetCollectionRequest) Reset() {
 	*x = GetCollectionRequest{}
-	mi := &file_mtg_v1_collection_service_proto_msgTypes[4]
+	mi := &file_mtg_v1_collection_service_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -235,7 +473,7 @@ func (x *GetCollectionRequest) String() string {
 func (*GetCollectionRequest) ProtoMessage() {}
 
 func (x *GetCollectionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_collection_service_proto_msgTypes[4]
+	mi := &file_mtg_v1_collection_service_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -248,7 +486,7 @@ func (x *GetCollectionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCollectionRequest.ProtoReflect.Descriptor instead.
 func (*GetCollectionRequest) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_collection_service_proto_rawDescGZIP(), []int{4}
+	return file_mtg_v1_collection_service_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *GetCollectionRequest) GetCollectionId() string {
@@ -258,16 +496,40 @@ func (x *GetCollectionRequest) GetCollectionId() string {
 	return ""
 }
 
+func (x *GetCollectionRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *GetCollectionRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+func (x *GetCollectionRequest) GetEntriesOmitted() bool {
+	if x != nil {
+		return x.EntriesOmitted
+	}
+	return false
+}
+
 type GetCollectionResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Collection    *Collection            `protobuf:"bytes,1,opt,name=collection,proto3" json:"collection,omitempty"`
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	Collection *Collection            `protobuf:"bytes,1,opt,name=collection,proto3" json:"collection,omitempty"`
+	// next_page_token reads the page after this one. Empty on the last
+	// page, and empty when the request omitted the entries.
+	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetCollectionResponse) Reset() {
 	*x = GetCollectionResponse{}
-	mi := &file_mtg_v1_collection_service_proto_msgTypes[5]
+	mi := &file_mtg_v1_collection_service_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -279,7 +541,7 @@ func (x *GetCollectionResponse) String() string {
 func (*GetCollectionResponse) ProtoMessage() {}
 
 func (x *GetCollectionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_collection_service_proto_msgTypes[5]
+	mi := &file_mtg_v1_collection_service_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -292,7 +554,7 @@ func (x *GetCollectionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCollectionResponse.ProtoReflect.Descriptor instead.
 func (*GetCollectionResponse) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_collection_service_proto_rawDescGZIP(), []int{5}
+	return file_mtg_v1_collection_service_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *GetCollectionResponse) GetCollection() *Collection {
@@ -300,6 +562,13 @@ func (x *GetCollectionResponse) GetCollection() *Collection {
 		return x.Collection
 	}
 	return nil
+}
+
+func (x *GetCollectionResponse) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
 }
 
 type ListCollectionsRequest struct {
@@ -310,7 +579,7 @@ type ListCollectionsRequest struct {
 
 func (x *ListCollectionsRequest) Reset() {
 	*x = ListCollectionsRequest{}
-	mi := &file_mtg_v1_collection_service_proto_msgTypes[6]
+	mi := &file_mtg_v1_collection_service_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -322,7 +591,7 @@ func (x *ListCollectionsRequest) String() string {
 func (*ListCollectionsRequest) ProtoMessage() {}
 
 func (x *ListCollectionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_collection_service_proto_msgTypes[6]
+	mi := &file_mtg_v1_collection_service_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -335,7 +604,7 @@ func (x *ListCollectionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCollectionsRequest.ProtoReflect.Descriptor instead.
 func (*ListCollectionsRequest) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_collection_service_proto_rawDescGZIP(), []int{6}
+	return file_mtg_v1_collection_service_proto_rawDescGZIP(), []int{10}
 }
 
 type ListCollectionsResponse struct {
@@ -348,7 +617,7 @@ type ListCollectionsResponse struct {
 
 func (x *ListCollectionsResponse) Reset() {
 	*x = ListCollectionsResponse{}
-	mi := &file_mtg_v1_collection_service_proto_msgTypes[7]
+	mi := &file_mtg_v1_collection_service_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -360,7 +629,7 @@ func (x *ListCollectionsResponse) String() string {
 func (*ListCollectionsResponse) ProtoMessage() {}
 
 func (x *ListCollectionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_collection_service_proto_msgTypes[7]
+	mi := &file_mtg_v1_collection_service_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -373,7 +642,7 @@ func (x *ListCollectionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCollectionsResponse.ProtoReflect.Descriptor instead.
 func (*ListCollectionsResponse) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_collection_service_proto_rawDescGZIP(), []int{7}
+	return file_mtg_v1_collection_service_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *ListCollectionsResponse) GetCollections() []*Collection {
@@ -387,33 +656,55 @@ var File_mtg_v1_collection_service_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_collection_service_proto_rawDesc = "" +
 	"\n" +
-	"\x1fmtg/v1/collection_service.proto\x12\x06mtg.v1\x1a\x17mtg/v1/collection.proto\">\n" +
+	"\x1fmtg/v1/collection_service.proto\x12\x06mtg.v1\x1a\x17mtg/v1/collection.proto\"R\n" +
+	"\x17UpdateCollectionRequest\x12#\n" +
+	"\rcollection_id\x18\x01 \x01(\tR\fcollectionId\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"N\n" +
+	"\x18UpdateCollectionResponse\x122\n" +
+	"\n" +
+	"collection\x18\x01 \x01(\v2\x12.mtg.v1.CollectionR\n" +
+	"collection\"\x85\x01\n" +
+	"\x16DiffCollectionsRequest\x12#\n" +
+	"\rcollection_id\x18\x01 \x01(\tR\fcollectionId\x12,\n" +
+	"\x06source\x18\x02 \x01(\x0e2\x14.mtg.v1.ImportSourceR\x06source\x12\x18\n" +
+	"\acontent\x18\x03 \x01(\fR\acontent\"s\n" +
+	"\x17DiffCollectionsResponse\x12*\n" +
+	"\x04diff\x18\x01 \x01(\v2\x16.mtg.v1.CollectionDiffR\x04diff\x12,\n" +
+	"\x06report\x18\x02 \x01(\v2\x14.mtg.v1.ImportReportR\x06report\">\n" +
 	"\x17DeleteCollectionRequest\x12#\n" +
 	"\rcollection_id\x18\x01 \x01(\tR\fcollectionId\"\x1a\n" +
-	"\x18DeleteCollectionResponse\"u\n" +
+	"\x18DeleteCollectionResponse\"\xa9\x01\n" +
 	"\x17ImportCollectionRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12,\n" +
 	"\x06source\x18\x02 \x01(\x0e2\x14.mtg.v1.ImportSourceR\x06source\x12\x18\n" +
-	"\acontent\x18\x03 \x01(\fR\acontent\"|\n" +
+	"\acontent\x18\x03 \x01(\fR\acontent\x122\n" +
+	"\x15replace_collection_id\x18\x04 \x01(\tR\x13replaceCollectionId\"|\n" +
 	"\x18ImportCollectionResponse\x122\n" +
 	"\n" +
 	"collection\x18\x01 \x01(\v2\x12.mtg.v1.CollectionR\n" +
 	"collection\x12,\n" +
-	"\x06report\x18\x02 \x01(\v2\x14.mtg.v1.ImportReportR\x06report\";\n" +
+	"\x06report\x18\x02 \x01(\v2\x14.mtg.v1.ImportReportR\x06report\"\xa0\x01\n" +
 	"\x14GetCollectionRequest\x12#\n" +
-	"\rcollection_id\x18\x01 \x01(\tR\fcollectionId\"K\n" +
+	"\rcollection_id\x18\x01 \x01(\tR\fcollectionId\x12\x1b\n" +
+	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x03 \x01(\tR\tpageToken\x12'\n" +
+	"\x0fentries_omitted\x18\x04 \x01(\bR\x0eentriesOmitted\"s\n" +
 	"\x15GetCollectionResponse\x122\n" +
 	"\n" +
 	"collection\x18\x01 \x01(\v2\x12.mtg.v1.CollectionR\n" +
-	"collection\"\x18\n" +
+	"collection\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\x18\n" +
 	"\x16ListCollectionsRequest\"O\n" +
 	"\x17ListCollectionsResponse\x124\n" +
-	"\vcollections\x18\x01 \x03(\v2\x12.mtg.v1.CollectionR\vcollections2\xeb\x02\n" +
+	"\vcollections\x18\x01 \x03(\v2\x12.mtg.v1.CollectionR\vcollections2\x9a\x04\n" +
 	"\x11CollectionService\x12W\n" +
 	"\x10ImportCollection\x12\x1f.mtg.v1.ImportCollectionRequest\x1a .mtg.v1.ImportCollectionResponse\"\x00\x12N\n" +
 	"\rGetCollection\x12\x1c.mtg.v1.GetCollectionRequest\x1a\x1d.mtg.v1.GetCollectionResponse\"\x00\x12T\n" +
 	"\x0fListCollections\x12\x1e.mtg.v1.ListCollectionsRequest\x1a\x1f.mtg.v1.ListCollectionsResponse\"\x00\x12W\n" +
-	"\x10DeleteCollection\x12\x1f.mtg.v1.DeleteCollectionRequest\x1a .mtg.v1.DeleteCollectionResponse\"\x00B:Z8github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1b\x06proto3"
+	"\x10DeleteCollection\x12\x1f.mtg.v1.DeleteCollectionRequest\x1a .mtg.v1.DeleteCollectionResponse\"\x00\x12W\n" +
+	"\x10UpdateCollection\x12\x1f.mtg.v1.UpdateCollectionRequest\x1a .mtg.v1.UpdateCollectionResponse\"\x00\x12T\n" +
+	"\x0fDiffCollections\x12\x1e.mtg.v1.DiffCollectionsRequest\x1a\x1f.mtg.v1.DiffCollectionsResponse\"\x00B:Z8github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1b\x06proto3"
 
 var (
 	file_mtg_v1_collection_service_proto_rawDescOnce sync.Once
@@ -427,39 +718,52 @@ func file_mtg_v1_collection_service_proto_rawDescGZIP() []byte {
 	return file_mtg_v1_collection_service_proto_rawDescData
 }
 
-var file_mtg_v1_collection_service_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_mtg_v1_collection_service_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_mtg_v1_collection_service_proto_goTypes = []any{
-	(*DeleteCollectionRequest)(nil),  // 0: mtg.v1.DeleteCollectionRequest
-	(*DeleteCollectionResponse)(nil), // 1: mtg.v1.DeleteCollectionResponse
-	(*ImportCollectionRequest)(nil),  // 2: mtg.v1.ImportCollectionRequest
-	(*ImportCollectionResponse)(nil), // 3: mtg.v1.ImportCollectionResponse
-	(*GetCollectionRequest)(nil),     // 4: mtg.v1.GetCollectionRequest
-	(*GetCollectionResponse)(nil),    // 5: mtg.v1.GetCollectionResponse
-	(*ListCollectionsRequest)(nil),   // 6: mtg.v1.ListCollectionsRequest
-	(*ListCollectionsResponse)(nil),  // 7: mtg.v1.ListCollectionsResponse
-	(ImportSource)(0),                // 8: mtg.v1.ImportSource
-	(*Collection)(nil),               // 9: mtg.v1.Collection
-	(*ImportReport)(nil),             // 10: mtg.v1.ImportReport
+	(*UpdateCollectionRequest)(nil),  // 0: mtg.v1.UpdateCollectionRequest
+	(*UpdateCollectionResponse)(nil), // 1: mtg.v1.UpdateCollectionResponse
+	(*DiffCollectionsRequest)(nil),   // 2: mtg.v1.DiffCollectionsRequest
+	(*DiffCollectionsResponse)(nil),  // 3: mtg.v1.DiffCollectionsResponse
+	(*DeleteCollectionRequest)(nil),  // 4: mtg.v1.DeleteCollectionRequest
+	(*DeleteCollectionResponse)(nil), // 5: mtg.v1.DeleteCollectionResponse
+	(*ImportCollectionRequest)(nil),  // 6: mtg.v1.ImportCollectionRequest
+	(*ImportCollectionResponse)(nil), // 7: mtg.v1.ImportCollectionResponse
+	(*GetCollectionRequest)(nil),     // 8: mtg.v1.GetCollectionRequest
+	(*GetCollectionResponse)(nil),    // 9: mtg.v1.GetCollectionResponse
+	(*ListCollectionsRequest)(nil),   // 10: mtg.v1.ListCollectionsRequest
+	(*ListCollectionsResponse)(nil),  // 11: mtg.v1.ListCollectionsResponse
+	(*Collection)(nil),               // 12: mtg.v1.Collection
+	(ImportSource)(0),                // 13: mtg.v1.ImportSource
+	(*CollectionDiff)(nil),           // 14: mtg.v1.CollectionDiff
+	(*ImportReport)(nil),             // 15: mtg.v1.ImportReport
 }
 var file_mtg_v1_collection_service_proto_depIdxs = []int32{
-	8,  // 0: mtg.v1.ImportCollectionRequest.source:type_name -> mtg.v1.ImportSource
-	9,  // 1: mtg.v1.ImportCollectionResponse.collection:type_name -> mtg.v1.Collection
-	10, // 2: mtg.v1.ImportCollectionResponse.report:type_name -> mtg.v1.ImportReport
-	9,  // 3: mtg.v1.GetCollectionResponse.collection:type_name -> mtg.v1.Collection
-	9,  // 4: mtg.v1.ListCollectionsResponse.collections:type_name -> mtg.v1.Collection
-	2,  // 5: mtg.v1.CollectionService.ImportCollection:input_type -> mtg.v1.ImportCollectionRequest
-	4,  // 6: mtg.v1.CollectionService.GetCollection:input_type -> mtg.v1.GetCollectionRequest
-	6,  // 7: mtg.v1.CollectionService.ListCollections:input_type -> mtg.v1.ListCollectionsRequest
-	0,  // 8: mtg.v1.CollectionService.DeleteCollection:input_type -> mtg.v1.DeleteCollectionRequest
-	3,  // 9: mtg.v1.CollectionService.ImportCollection:output_type -> mtg.v1.ImportCollectionResponse
-	5,  // 10: mtg.v1.CollectionService.GetCollection:output_type -> mtg.v1.GetCollectionResponse
-	7,  // 11: mtg.v1.CollectionService.ListCollections:output_type -> mtg.v1.ListCollectionsResponse
-	1,  // 12: mtg.v1.CollectionService.DeleteCollection:output_type -> mtg.v1.DeleteCollectionResponse
-	9,  // [9:13] is the sub-list for method output_type
-	5,  // [5:9] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	12, // 0: mtg.v1.UpdateCollectionResponse.collection:type_name -> mtg.v1.Collection
+	13, // 1: mtg.v1.DiffCollectionsRequest.source:type_name -> mtg.v1.ImportSource
+	14, // 2: mtg.v1.DiffCollectionsResponse.diff:type_name -> mtg.v1.CollectionDiff
+	15, // 3: mtg.v1.DiffCollectionsResponse.report:type_name -> mtg.v1.ImportReport
+	13, // 4: mtg.v1.ImportCollectionRequest.source:type_name -> mtg.v1.ImportSource
+	12, // 5: mtg.v1.ImportCollectionResponse.collection:type_name -> mtg.v1.Collection
+	15, // 6: mtg.v1.ImportCollectionResponse.report:type_name -> mtg.v1.ImportReport
+	12, // 7: mtg.v1.GetCollectionResponse.collection:type_name -> mtg.v1.Collection
+	12, // 8: mtg.v1.ListCollectionsResponse.collections:type_name -> mtg.v1.Collection
+	6,  // 9: mtg.v1.CollectionService.ImportCollection:input_type -> mtg.v1.ImportCollectionRequest
+	8,  // 10: mtg.v1.CollectionService.GetCollection:input_type -> mtg.v1.GetCollectionRequest
+	10, // 11: mtg.v1.CollectionService.ListCollections:input_type -> mtg.v1.ListCollectionsRequest
+	4,  // 12: mtg.v1.CollectionService.DeleteCollection:input_type -> mtg.v1.DeleteCollectionRequest
+	0,  // 13: mtg.v1.CollectionService.UpdateCollection:input_type -> mtg.v1.UpdateCollectionRequest
+	2,  // 14: mtg.v1.CollectionService.DiffCollections:input_type -> mtg.v1.DiffCollectionsRequest
+	7,  // 15: mtg.v1.CollectionService.ImportCollection:output_type -> mtg.v1.ImportCollectionResponse
+	9,  // 16: mtg.v1.CollectionService.GetCollection:output_type -> mtg.v1.GetCollectionResponse
+	11, // 17: mtg.v1.CollectionService.ListCollections:output_type -> mtg.v1.ListCollectionsResponse
+	5,  // 18: mtg.v1.CollectionService.DeleteCollection:output_type -> mtg.v1.DeleteCollectionResponse
+	1,  // 19: mtg.v1.CollectionService.UpdateCollection:output_type -> mtg.v1.UpdateCollectionResponse
+	3,  // 20: mtg.v1.CollectionService.DiffCollections:output_type -> mtg.v1.DiffCollectionsResponse
+	15, // [15:21] is the sub-list for method output_type
+	9,  // [9:15] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_mtg_v1_collection_service_proto_init() }
@@ -474,7 +778,7 @@ func file_mtg_v1_collection_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_mtg_v1_collection_service_proto_rawDesc), len(file_mtg_v1_collection_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

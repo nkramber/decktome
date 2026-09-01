@@ -10,6 +10,7 @@ import (
 	"connectrpc.com/connect"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
@@ -41,6 +42,46 @@ func (f *fakeRepo) Delete(_ context.Context, _ string, id string) error {
 	return nil
 }
 
+// GetHead answers the binder head, which reads no entry (D-392).
+func (f *fakeRepo) GetHead(ctx context.Context, uid, id string) (*mtgv1.Collection, error) {
+	col, err := f.Get(ctx, uid, id)
+	if err != nil {
+		return nil, err
+	}
+	head := proto.Clone(col).(*mtgv1.Collection)
+	head.Entries = nil
+	if head.GetSummary() == nil {
+		head.Summary = collections.Summarize(col.GetEntries(), nil)
+	}
+	return head, nil
+}
+
+// Rename writes the name and keeps everything else.
+func (f *fakeRepo) Rename(ctx context.Context, uid, id, name string) (*mtgv1.Collection, error) {
+	if f.getErr != nil {
+		return nil, f.getErr
+	}
+	col, ok := f.stored[id]
+	if !ok {
+		return nil, status.Error(codes.NotFound, "no such collection")
+	}
+	col.Name = name
+	return f.GetHead(ctx, uid, id)
+}
+
+// Replace writes new entries into one collection and keeps its id.
+func (f *fakeRepo) Replace(ctx context.Context, uid, id string, col *mtgv1.Collection) (*mtgv1.Collection, error) {
+	old, ok := f.stored[id]
+	if !ok {
+		return nil, status.Error(codes.NotFound, "no such collection")
+	}
+	col.Id, col.Name = id, old.GetName()
+	if _, err := f.Put(ctx, uid, col); err != nil {
+		return nil, err
+	}
+	return f.GetHead(ctx, uid, id)
+}
+
 func (f *fakeRepo) Put(_ context.Context, _ string, col *mtgv1.Collection) (string, error) {
 	if f.putErr != nil {
 		return "", f.putErr
@@ -55,6 +96,10 @@ func (f *fakeRepo) Put(_ context.Context, _ string, col *mtgv1.Collection) (stri
 	return id, nil
 }
 
+// Get answers a collection the caller owns, as the Repo contract says.
+// The real repo unmarshals a fresh object on every call, and a fake that
+// shares one hands the next reader a collection the last page
+// truncated.
 func (f *fakeRepo) Get(_ context.Context, _, id string) (*mtgv1.Collection, error) {
 	if f.getErr != nil {
 		return nil, f.getErr
@@ -64,7 +109,7 @@ func (f *fakeRepo) Get(_ context.Context, _, id string) (*mtgv1.Collection, erro
 		// The real repo passes the Firestore status through.
 		return nil, status.Error(codes.NotFound, "not found")
 	}
-	return c, nil
+	return proto.Clone(c).(*mtgv1.Collection), nil
 }
 
 func (f *fakeRepo) List(context.Context, string) ([]*mtgv1.Collection, error) {

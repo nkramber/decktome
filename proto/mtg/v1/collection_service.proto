@@ -17,6 +17,40 @@ service CollectionService {
   // built from it keeps every card. Its chat builds from the whole card
   // database from then on, and it says so.
   rpc DeleteCollection(DeleteCollectionRequest) returns (DeleteCollectionResponse) {}
+  // UpdateCollection writes the name. It is the rename of the
+  // collections list (roadmap PR-18).
+  rpc UpdateCollection(UpdateCollectionRequest) returns (UpdateCollectionResponse) {}
+  // DiffCollections compares an uploaded file with a stored collection,
+  // and it stores nothing. The reader reads what changed before they
+  // replace anything (roadmap PR-18, D-393).
+  rpc DiffCollections(DiffCollectionsRequest) returns (DiffCollectionsResponse) {}
+}
+
+message UpdateCollectionRequest {
+  string collection_id = 1;
+  // name is the new name. An empty name is an invalid argument, and a
+  // name takes at most 200 bytes, as a deck name does.
+  string name = 2;
+}
+
+message UpdateCollectionResponse {
+  Collection collection = 1;
+}
+
+message DiffCollectionsRequest {
+  // collection_id is the stored collection to compare against.
+  string collection_id = 1;
+  // source and content are the uploaded file, the same two fields
+  // ImportCollection takes. The file is parsed and never stored.
+  ImportSource source = 2;
+  bytes content = 3;
+}
+
+message DiffCollectionsResponse {
+  CollectionDiff diff = 1;
+  // report lists the rows of the uploaded file that did not resolve. A
+  // reader must not replace a collection on a file half of which failed.
+  ImportReport report = 2;
 }
 
 message DeleteCollectionRequest {
@@ -30,6 +64,12 @@ message ImportCollectionRequest {
   ImportSource source = 2;
   // content is the raw uploaded file.
   bytes content = 3;
+  // replace_collection_id names the collection this upload replaces. The
+  // reader read the diff and said to replace, so the entries are written
+  // into that same collection and every deck and chat that names it
+  // still works (D-393). Empty means a new collection, or the one an
+  // identical hash already made (D-16).
+  string replace_collection_id = 4;
 }
 
 message ImportCollectionResponse {
@@ -39,10 +79,23 @@ message ImportCollectionResponse {
 
 message GetCollectionRequest {
   string collection_id = 1;
+  // page_size caps the entries in the answer. Zero takes the default,
+  // and the server caps it (D-392). A reader who wants the head alone
+  // asks for no entry with entries_omitted.
+  int32 page_size = 2;
+  // page_token is the token the last answer returned. An empty token
+  // reads the first page.
+  string page_token = 3;
+  // entries_omitted asks for the collection without its entries. The
+  // binder head reads the summary alone, and it moves no megabyte.
+  bool entries_omitted = 4;
 }
 
 message GetCollectionResponse {
   Collection collection = 1;
+  // next_page_token reads the page after this one. Empty on the last
+  // page, and empty when the request omitted the entries.
+  string next_page_token = 2;
 }
 
 message ListCollectionsRequest {}

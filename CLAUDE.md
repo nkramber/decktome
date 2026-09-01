@@ -8,7 +8,7 @@ This repo is a Go + Protobuf + TypeScript monorepo for an agentic MtG deck build
 
 Stage (2026-08-31): `main` is at `6f871c3`. Merged: PR-0a to PR-8, PR-7B, PR-10 to PR-13, the Phase 3B roadmap (#46), PR-16 (#47), and PR-16B (#48). PR-9 is out of the MVP (D-256).
 
-PR-17 merged. **Branch `pr-17b` holds the set filter** (F-29, D-373 to D-383). The app never applied a set as a constraint, and a deck asked for one set held cards of any set. A set name now resolves to a whole set family, through the Scryfall parent link. The gates stand at question gate run 31 (PASS), question eval run 29, deck gate run 9, and the PR-17B set gate run 1 (PASS).
+PR-17 merged. **Branch `pr-17b` holds the set filter** (F-29, D-373 to D-383). The app never applied a set as a constraint, and a deck asked for one set held cards of any set. A set name now resolves to a whole set family, through the Scryfall parent link. Every gate passes: question gate run 32, deck gate run 10, revise gate run 4, and the PR-17B set gate run 1.
 
 Phase 3B, the product UI, is the current phase. The look follows a reference design the owner gave on 2026-08-30 (D-328 to D-335). `docs/SESSION-HANDOFF.md` holds the moving parts, and `docs/reference/autotune-readme.md` holds the loop commands.
 

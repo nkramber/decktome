@@ -45,6 +45,12 @@ const (
 	// CollectionServiceDeleteCollectionProcedure is the fully-qualified name of the CollectionService's
 	// DeleteCollection RPC.
 	CollectionServiceDeleteCollectionProcedure = "/mtg.v1.CollectionService/DeleteCollection"
+	// CollectionServiceUpdateCollectionProcedure is the fully-qualified name of the CollectionService's
+	// UpdateCollection RPC.
+	CollectionServiceUpdateCollectionProcedure = "/mtg.v1.CollectionService/UpdateCollection"
+	// CollectionServiceDiffCollectionsProcedure is the fully-qualified name of the CollectionService's
+	// DiffCollections RPC.
+	CollectionServiceDiffCollectionsProcedure = "/mtg.v1.CollectionService/DiffCollections"
 )
 
 // CollectionServiceClient is a client for the mtg.v1.CollectionService service.
@@ -58,6 +64,13 @@ type CollectionServiceClient interface {
 	// built from it keeps every card. Its chat builds from the whole card
 	// database from then on, and it says so.
 	DeleteCollection(context.Context, *connect.Request[v1.DeleteCollectionRequest]) (*connect.Response[v1.DeleteCollectionResponse], error)
+	// UpdateCollection writes the name. It is the rename of the
+	// collections list (roadmap PR-18).
+	UpdateCollection(context.Context, *connect.Request[v1.UpdateCollectionRequest]) (*connect.Response[v1.UpdateCollectionResponse], error)
+	// DiffCollections compares an uploaded file with a stored collection,
+	// and it stores nothing. The reader reads what changed before they
+	// replace anything (roadmap PR-18, D-393).
+	DiffCollections(context.Context, *connect.Request[v1.DiffCollectionsRequest]) (*connect.Response[v1.DiffCollectionsResponse], error)
 }
 
 // NewCollectionServiceClient constructs a client for the mtg.v1.CollectionService service. By
@@ -95,6 +108,18 @@ func NewCollectionServiceClient(httpClient connect.HTTPClient, baseURL string, o
 			connect.WithSchema(collectionServiceMethods.ByName("DeleteCollection")),
 			connect.WithClientOptions(opts...),
 		),
+		updateCollection: connect.NewClient[v1.UpdateCollectionRequest, v1.UpdateCollectionResponse](
+			httpClient,
+			baseURL+CollectionServiceUpdateCollectionProcedure,
+			connect.WithSchema(collectionServiceMethods.ByName("UpdateCollection")),
+			connect.WithClientOptions(opts...),
+		),
+		diffCollections: connect.NewClient[v1.DiffCollectionsRequest, v1.DiffCollectionsResponse](
+			httpClient,
+			baseURL+CollectionServiceDiffCollectionsProcedure,
+			connect.WithSchema(collectionServiceMethods.ByName("DiffCollections")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -104,6 +129,8 @@ type collectionServiceClient struct {
 	getCollection    *connect.Client[v1.GetCollectionRequest, v1.GetCollectionResponse]
 	listCollections  *connect.Client[v1.ListCollectionsRequest, v1.ListCollectionsResponse]
 	deleteCollection *connect.Client[v1.DeleteCollectionRequest, v1.DeleteCollectionResponse]
+	updateCollection *connect.Client[v1.UpdateCollectionRequest, v1.UpdateCollectionResponse]
+	diffCollections  *connect.Client[v1.DiffCollectionsRequest, v1.DiffCollectionsResponse]
 }
 
 // ImportCollection calls mtg.v1.CollectionService.ImportCollection.
@@ -126,6 +153,16 @@ func (c *collectionServiceClient) DeleteCollection(ctx context.Context, req *con
 	return c.deleteCollection.CallUnary(ctx, req)
 }
 
+// UpdateCollection calls mtg.v1.CollectionService.UpdateCollection.
+func (c *collectionServiceClient) UpdateCollection(ctx context.Context, req *connect.Request[v1.UpdateCollectionRequest]) (*connect.Response[v1.UpdateCollectionResponse], error) {
+	return c.updateCollection.CallUnary(ctx, req)
+}
+
+// DiffCollections calls mtg.v1.CollectionService.DiffCollections.
+func (c *collectionServiceClient) DiffCollections(ctx context.Context, req *connect.Request[v1.DiffCollectionsRequest]) (*connect.Response[v1.DiffCollectionsResponse], error) {
+	return c.diffCollections.CallUnary(ctx, req)
+}
+
 // CollectionServiceHandler is an implementation of the mtg.v1.CollectionService service.
 type CollectionServiceHandler interface {
 	// Import parses an uploaded ManaBox CSV or Arena text list.
@@ -137,6 +174,13 @@ type CollectionServiceHandler interface {
 	// built from it keeps every card. Its chat builds from the whole card
 	// database from then on, and it says so.
 	DeleteCollection(context.Context, *connect.Request[v1.DeleteCollectionRequest]) (*connect.Response[v1.DeleteCollectionResponse], error)
+	// UpdateCollection writes the name. It is the rename of the
+	// collections list (roadmap PR-18).
+	UpdateCollection(context.Context, *connect.Request[v1.UpdateCollectionRequest]) (*connect.Response[v1.UpdateCollectionResponse], error)
+	// DiffCollections compares an uploaded file with a stored collection,
+	// and it stores nothing. The reader reads what changed before they
+	// replace anything (roadmap PR-18, D-393).
+	DiffCollections(context.Context, *connect.Request[v1.DiffCollectionsRequest]) (*connect.Response[v1.DiffCollectionsResponse], error)
 }
 
 // NewCollectionServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -170,6 +214,18 @@ func NewCollectionServiceHandler(svc CollectionServiceHandler, opts ...connect.H
 		connect.WithSchema(collectionServiceMethods.ByName("DeleteCollection")),
 		connect.WithHandlerOptions(opts...),
 	)
+	collectionServiceUpdateCollectionHandler := connect.NewUnaryHandler(
+		CollectionServiceUpdateCollectionProcedure,
+		svc.UpdateCollection,
+		connect.WithSchema(collectionServiceMethods.ByName("UpdateCollection")),
+		connect.WithHandlerOptions(opts...),
+	)
+	collectionServiceDiffCollectionsHandler := connect.NewUnaryHandler(
+		CollectionServiceDiffCollectionsProcedure,
+		svc.DiffCollections,
+		connect.WithSchema(collectionServiceMethods.ByName("DiffCollections")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/mtg.v1.CollectionService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case CollectionServiceImportCollectionProcedure:
@@ -180,6 +236,10 @@ func NewCollectionServiceHandler(svc CollectionServiceHandler, opts ...connect.H
 			collectionServiceListCollectionsHandler.ServeHTTP(w, r)
 		case CollectionServiceDeleteCollectionProcedure:
 			collectionServiceDeleteCollectionHandler.ServeHTTP(w, r)
+		case CollectionServiceUpdateCollectionProcedure:
+			collectionServiceUpdateCollectionHandler.ServeHTTP(w, r)
+		case CollectionServiceDiffCollectionsProcedure:
+			collectionServiceDiffCollectionsHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -203,4 +263,12 @@ func (UnimplementedCollectionServiceHandler) ListCollections(context.Context, *c
 
 func (UnimplementedCollectionServiceHandler) DeleteCollection(context.Context, *connect.Request[v1.DeleteCollectionRequest]) (*connect.Response[v1.DeleteCollectionResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("mtg.v1.CollectionService.DeleteCollection is not implemented"))
+}
+
+func (UnimplementedCollectionServiceHandler) UpdateCollection(context.Context, *connect.Request[v1.UpdateCollectionRequest]) (*connect.Response[v1.UpdateCollectionResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("mtg.v1.CollectionService.UpdateCollection is not implemented"))
+}
+
+func (UnimplementedCollectionServiceHandler) DiffCollections(context.Context, *connect.Request[v1.DiffCollectionsRequest]) (*connect.Response[v1.DiffCollectionsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("mtg.v1.CollectionService.DiffCollections is not implemented"))
 }
