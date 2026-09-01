@@ -454,6 +454,16 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 			return err
 		}
 	}
+	// A set name is a product, and one product is often several sets.
+	// "The Hobbit" is two of them. The deck marks every card the sets do
+	// not hold, and a mark explains nothing until the reader knows what
+	// the limit is (D-390).
+	if len(res.SetsApplied) > 0 {
+		if err := stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Status{
+			Status: setNote(res.SetsApplied)}}); err != nil {
+			return err
+		}
+	}
 	for _, q := range res.Questions {
 		if err := stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Question{Question: q}}); err != nil {
 			return err

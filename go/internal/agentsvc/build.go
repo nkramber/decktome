@@ -705,3 +705,24 @@ func setNames(names []string) []string {
 	}
 	return append(append([]string(nil), names[:2]...), "and the other sets you named")
 }
+
+// setNote is the line that tells the reader which sets a build applies
+// (D-390). It names every set, because a reader who wrote one product
+// name has no way to know it became two.
+func setNote(names []string) string {
+	return "I will build from " + englishList(names) + " only"
+}
+
+// englishList joins names the way a sentence does: "a", "a and b", or
+// "a, b, and c".
+func englishList(names []string) string {
+	switch len(names) {
+	case 0:
+		return ""
+	case 1:
+		return names[0]
+	case 2:
+		return names[0] + " and " + names[1]
+	}
+	return strings.Join(names[:len(names)-1], ", ") + ", and " + names[len(names)-1]
+}

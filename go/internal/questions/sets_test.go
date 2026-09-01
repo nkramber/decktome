@@ -212,3 +212,25 @@ func TestTheSetRowAsksOncePerName(t *testing.T) {
 		t.Error("a new name the app can not settle must ask again")
 	}
 }
+
+// TestTheTurnCarriesTheSetsItApplied is D-390. The turn names the sets
+// it read, so the chat can tell the reader. It is turn state: the next
+// turn starts with it clear, the way the commander mark of D-366 does.
+func TestTheTurnCarriesTheSetsItApplied(t *testing.T) {
+	a, st := setAgent(t)
+	a.applySets(st, classifyOut{SetNames: []string{"the Hobbit set"}})
+	if !slices.Equal(st.setsThisTurn, []string{"hob", "hoc"}) {
+		t.Errorf("setsThisTurn = %v, want the two set names", st.setsThisTurn)
+	}
+	// A message that names no set carries nothing, so the chat says
+	// nothing twice.
+	st.setsThisTurn = nil
+	a.applySets(st, classifyOut{})
+	if len(st.setsThisTurn) != 0 {
+		t.Errorf("setsThisTurn = %v, want none on a turn that named no set", st.setsThisTurn)
+	}
+	// The set limit itself survives, so only the note is per turn.
+	if !slices.Equal(st.Slots.GetSetCodes(), []string{"hob", "hoc"}) {
+		t.Errorf("set codes = %v, want the limit to survive", st.Slots.GetSetCodes())
+	}
+}

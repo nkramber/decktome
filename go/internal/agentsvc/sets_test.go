@@ -226,3 +226,24 @@ func TestManaRolesFollowTheTargets(t *testing.T) {
 		t.Error("a tournament 60-card deck has no ramp target, so the fill must name no ramp role")
 	}
 }
+
+// TestTheSetNoteNamesEverySet is D-390. A reader who wrote one product
+// name has no way to know it became two sets, and the deck marks every
+// card the sets do not hold. A mark explains nothing until the reader
+// knows the limit.
+func TestTheSetNoteNamesEverySet(t *testing.T) {
+	for _, tc := range []struct {
+		names []string
+		want  string
+	}{
+		{[]string{"The Hobbit"}, "I will build from The Hobbit only"},
+		{[]string{"The Hobbit", "The Hobbit Eternal"},
+			"I will build from The Hobbit and The Hobbit Eternal only"},
+		{[]string{"Bloomburrow", "Bloomburrow Commander", "Bloomburrow Promos"},
+			"I will build from Bloomburrow, Bloomburrow Commander, and Bloomburrow Promos only"},
+	} {
+		if got := setNote(tc.names); got != tc.want {
+			t.Errorf("setNote(%v) = %q, want %q", tc.names, got, tc.want)
+		}
+	}
+}

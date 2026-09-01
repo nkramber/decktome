@@ -228,6 +228,10 @@ func (b *Builder) assemble(req Request, out *deckOut) pass {
 	// engine reads it, rather than return a deck the engine must refuse
 	// (D-225).
 	padded := padWithBasics(deck, req)
+	// The same counting slip, the other way. A deck one or two cards
+	// over is blocked whole by the engine, and the reader gets nothing
+	// (D-391).
+	trimmed := trimToSize(deck, req)
 	// The model can not count its own list reliably, so a small precon
 	// shortfall is closed here (D-250). It runs before the engine, so
 	// every finding describes the deck the user gets.
@@ -254,6 +258,11 @@ func (b *Builder) assemble(req Request, out *deckOut) pass {
 	if padded > 0 {
 		addFinding(deck, CodeBasicsAdded, mtgv1.Severity_SEVERITY_INFO,
 			fmt.Sprintf("the list was %s short, so the builder added %s", plural(padded, "card"), plural(padded, "basic land")))
+	}
+	if len(trimmed) > 0 {
+		addFinding(deck, CodeCardsTrimmed, mtgv1.Severity_SEVERITY_INFO,
+			fmt.Sprintf("the list was %s over, so the builder cut %s: %s",
+				plural(len(trimmed), "card"), these(len(trimmed)), strings.Join(trimmed, ", ")))
 	}
 	// The price is a daily estimate and not a rule, so going over budget
 	// warns and never blocks (D-236). It does buy the repair turn (D-244).

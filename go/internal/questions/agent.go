@@ -78,6 +78,11 @@ type Result struct {
 	// nothing about the commander, and the reader must be told why
 	// (D-366).
 	ChoseCommander bool
+	// SetsApplied names the sets this turn read out of the reader's
+	// words, when it read any. A reader who writes "the Hobbit set" gets
+	// two sets, and a red mark on every card outside them. The turn must
+	// say which sets it applied, or the marks explain nothing (D-390).
+	SetsApplied []string
 }
 
 // Turn maps one user message onto the slots and returns the next
@@ -90,13 +95,15 @@ func (a *Agent) Turn(ctx context.Context, st *State, message string, acc *llm.Ac
 		return Result{}, err
 	}
 	a.readFacts(st)
-	// The mark is of this turn alone (D-366).
+	// Both marks are of this turn alone (D-366, D-390).
 	st.Ctx.ChoseCommander = false
+	st.setsThisTurn = nil
 	rows, resolved := a.plan(st, UserWords(message))
 	if len(rows) == 0 {
 		// The classify call may have closed a key, so the M-4 report
 		// changes even on a turn that asks nothing.
-		return Result{Slots: st.Slots, Ready: st.Ready(a.cat), Coverage: st.Metrics(), ChoseCommander: st.Ctx.ChoseCommander}, nil
+		return Result{Slots: st.Slots, Ready: st.Ready(a.cat), Coverage: st.Metrics(),
+			ChoseCommander: st.Ctx.ChoseCommander, SetsApplied: st.setsThisTurn}, nil
 	}
 	chosen, err := a.choose(ctx, st, message, rows, resolved.text, acc)
 	if err != nil {
@@ -369,7 +376,7 @@ func (a *Agent) send(ctx context.Context, st *State, message string, chosen []ch
 			return Result{}, err
 		}
 	}
-	res := Result{Slots: st.Slots, ChoseCommander: st.Ctx.ChoseCommander}
+	res := Result{Slots: st.Slots, ChoseCommander: st.Ctx.ChoseCommander, SetsApplied: st.setsThisTurn}
 	for _, c := range chosen {
 		st.AskCount++
 		q := &mtgv1.Question{
@@ -1380,6 +1387,10 @@ func (a *Agent) applySets(st *State, out classifyOut) {
 			"session", st.SessionID, "phrase", strings.Join(out.SetNames, ", "),
 			"sets", strings.Join(codes, ","))
 		st.SetLimit(strings.Join(out.SetNames, ", "), codes, names)
+		// The reader hears which sets the words became. "The Hobbit"
+		// is two sets, and a red mark on a card explains nothing until
+		// the reader knows what the limit is (D-390).
+		st.setsThisTurn = names
 	}
 	if unresolved != "" {
 		a.log.Info("the reader named a set this app can not settle",

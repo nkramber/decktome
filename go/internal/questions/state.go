@@ -84,6 +84,11 @@ type State struct {
 	Messages []string
 	// Asks are the M-4 records, oldest first.
 	Asks []Ask
+	// setsThisTurn names the sets this turn read out of the reader's
+	// words. It is turn state, not session state: the Result carries it
+	// out and the next turn starts with it clear, the way the commander
+	// mark of D-366 does. The snapshot therefore does not hold it.
+	setsThisTurn []string
 }
 
 // PriorMessages is how many earlier messages the classify call sees.

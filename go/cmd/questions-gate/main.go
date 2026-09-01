@@ -512,8 +512,7 @@ func loadIndex(collectionPath string) (*cards.Index, map[string]int32, string, e
 func write(w io.Writer, file gateFile, results []result, cov coverages,
 	report llm.Report, cfg *llm.Config, ownedNote string, elapsed time.Duration) error {
 	total, probes := cov.total, cov.probes
-	var premature, deadEnds, stallLines, closedLines []string
-	stalls := 0
+	var premature, deadEnds, stallLines, closedLines, waitLines []string
 	gate, counted, afterBuild := 0, 0, 0
 	for _, r := range results {
 		if r.Premature {
@@ -524,13 +523,15 @@ func write(w io.Writer, file gateFile, results []result, cov coverages,
 				r.Name, r.Stalls[len(r.Stalls)-1].Turn, strings.Join(r.Stalls[len(r.Stalls)-1].Open, ", ")))
 		}
 		for _, st := range r.Stalls {
-			stalls++
 			if !r.DeadEnd {
 				stallLines = append(stallLines, fmt.Sprintf("%s turn %d (%s)", r.Name, st.Turn, strings.Join(st.Open, ", ")))
 			}
 		}
 		for _, c := range r.Closed {
 			closedLines = append(closedLines, fmt.Sprintf("%s turn %d (%s)", r.Name, c.Turn, strings.Join(c.Open, ", ")))
+		}
+		for _, w := range r.Waiting {
+			waitLines = append(waitLines, fmt.Sprintf("%s turn %d (%s)", r.Name, w.Turn, strings.Join(w.Open, ", ")))
 		}
 		switch {
 		case r.Probe:
@@ -583,8 +584,15 @@ func write(w io.Writer, file gateFile, results []result, cov coverages,
 	} else {
 		_, _ = fmt.Fprintf(w, "No conversation reached a dead end (D-357).\n\n")
 	}
-	if stalls > 0 && len(stallLines) > 0 {
+	if len(stallLines) > 0 {
 		_, _ = fmt.Fprintf(w, "%d turns moved nothing while a question was out, and a later turn recovered each one. A turn that repeats here is a catalog or classifier candidate: %s.\n\n", len(stallLines), strings.Join(stallLines, "; "))
+	}
+	// The grace period of D-386 is the number that says whether two turns
+	// is the right wait. A run with none of these closed every question
+	// on the reader's first reply, which is the defect run 30 showed.
+	if len(waitLines) > 0 {
+		_, _ = fmt.Fprintf(w, "The net of D-351 held back on %d turns, because every question that was out is still inside its grace period. The reader answers it next turn, or the net closes it on the turn after. StallGrace is %d turns: %s.\n\n",
+			len(waitLines), questions.StallGrace, strings.Join(waitLines, "; "))
 	}
 	if len(closedLines) > 0 {
 		_, _ = fmt.Fprintf(w, "The net of D-351 healed %d turns. Each one asked nothing new and was not ready, so it closed the questions that were out and built with what it had. agentsvc.Chat runs the same net on every turn. A turn here is a catalog or classifier candidate, because the reader answered nothing the agent could read: %s.\n\n",
