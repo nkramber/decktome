@@ -4,7 +4,7 @@
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { Collection, ImportReport, ImportSource } from "./collection_pb";
+import type { Collection, CollectionDiff, ImportReport, ImportSource } from "./collection_pb";
 import { file_mtg_v1_collection } from "./collection_pb";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -12,7 +12,106 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file mtg/v1/collection_service.proto.
  */
 export const file_mtg_v1_collection_service: GenFile = /*@__PURE__*/
-  fileDesc("Ch9tdGcvdjEvY29sbGVjdGlvbl9zZXJ2aWNlLnByb3RvEgZtdGcudjEiMAoXRGVsZXRlQ29sbGVjdGlvblJlcXVlc3QSFQoNY29sbGVjdGlvbl9pZBgBIAEoCSIaChhEZWxldGVDb2xsZWN0aW9uUmVzcG9uc2UiXgoXSW1wb3J0Q29sbGVjdGlvblJlcXVlc3QSDAoEbmFtZRgBIAEoCRIkCgZzb3VyY2UYAiABKA4yFC5tdGcudjEuSW1wb3J0U291cmNlEg8KB2NvbnRlbnQYAyABKAwiaAoYSW1wb3J0Q29sbGVjdGlvblJlc3BvbnNlEiYKCmNvbGxlY3Rpb24YASABKAsyEi5tdGcudjEuQ29sbGVjdGlvbhIkCgZyZXBvcnQYAiABKAsyFC5tdGcudjEuSW1wb3J0UmVwb3J0Ii0KFEdldENvbGxlY3Rpb25SZXF1ZXN0EhUKDWNvbGxlY3Rpb25faWQYASABKAkiPwoVR2V0Q29sbGVjdGlvblJlc3BvbnNlEiYKCmNvbGxlY3Rpb24YASABKAsyEi5tdGcudjEuQ29sbGVjdGlvbiIYChZMaXN0Q29sbGVjdGlvbnNSZXF1ZXN0IkIKF0xpc3RDb2xsZWN0aW9uc1Jlc3BvbnNlEicKC2NvbGxlY3Rpb25zGAEgAygLMhIubXRnLnYxLkNvbGxlY3Rpb24y6wIKEUNvbGxlY3Rpb25TZXJ2aWNlElcKEEltcG9ydENvbGxlY3Rpb24SHy5tdGcudjEuSW1wb3J0Q29sbGVjdGlvblJlcXVlc3QaIC5tdGcudjEuSW1wb3J0Q29sbGVjdGlvblJlc3BvbnNlIgASTgoNR2V0Q29sbGVjdGlvbhIcLm10Zy52MS5HZXRDb2xsZWN0aW9uUmVxdWVzdBodLm10Zy52MS5HZXRDb2xsZWN0aW9uUmVzcG9uc2UiABJUCg9MaXN0Q29sbGVjdGlvbnMSHi5tdGcudjEuTGlzdENvbGxlY3Rpb25zUmVxdWVzdBofLm10Zy52MS5MaXN0Q29sbGVjdGlvbnNSZXNwb25zZSIAElcKEERlbGV0ZUNvbGxlY3Rpb24SHy5tdGcudjEuRGVsZXRlQ29sbGVjdGlvblJlcXVlc3QaIC5tdGcudjEuRGVsZXRlQ29sbGVjdGlvblJlc3BvbnNlIgBCOlo4Z2l0aHViLmNvbS9ua3JhbWJlci9tdGctZGVjay1idWlsZGVyL2dvL2dlbi9tdGcvdjE7bXRndjFiBnByb3RvMw", [file_mtg_v1_collection]);
+  fileDesc("Ch9tdGcvdjEvY29sbGVjdGlvbl9zZXJ2aWNlLnByb3RvEgZtdGcudjEiPgoXVXBkYXRlQ29sbGVjdGlvblJlcXVlc3QSFQoNY29sbGVjdGlvbl9pZBgBIAEoCRIMCgRuYW1lGAIgASgJIkIKGFVwZGF0ZUNvbGxlY3Rpb25SZXNwb25zZRImCgpjb2xsZWN0aW9uGAEgASgLMhIubXRnLnYxLkNvbGxlY3Rpb24iZgoWRGlmZkNvbGxlY3Rpb25zUmVxdWVzdBIVCg1jb2xsZWN0aW9uX2lkGAEgASgJEiQKBnNvdXJjZRgCIAEoDjIULm10Zy52MS5JbXBvcnRTb3VyY2USDwoHY29udGVudBgDIAEoDCJlChdEaWZmQ29sbGVjdGlvbnNSZXNwb25zZRIkCgRkaWZmGAEgASgLMhYubXRnLnYxLkNvbGxlY3Rpb25EaWZmEiQKBnJlcG9ydBgCIAEoCzIULm10Zy52MS5JbXBvcnRSZXBvcnQiMAoXRGVsZXRlQ29sbGVjdGlvblJlcXVlc3QSFQoNY29sbGVjdGlvbl9pZBgBIAEoCSIaChhEZWxldGVDb2xsZWN0aW9uUmVzcG9uc2UifQoXSW1wb3J0Q29sbGVjdGlvblJlcXVlc3QSDAoEbmFtZRgBIAEoCRIkCgZzb3VyY2UYAiABKA4yFC5tdGcudjEuSW1wb3J0U291cmNlEg8KB2NvbnRlbnQYAyABKAwSHQoVcmVwbGFjZV9jb2xsZWN0aW9uX2lkGAQgASgJImgKGEltcG9ydENvbGxlY3Rpb25SZXNwb25zZRImCgpjb2xsZWN0aW9uGAEgASgLMhIubXRnLnYxLkNvbGxlY3Rpb24SJAoGcmVwb3J0GAIgASgLMhQubXRnLnYxLkltcG9ydFJlcG9ydCJtChRHZXRDb2xsZWN0aW9uUmVxdWVzdBIVCg1jb2xsZWN0aW9uX2lkGAEgASgJEhEKCXBhZ2Vfc2l6ZRgCIAEoBRISCgpwYWdlX3Rva2VuGAMgASgJEhcKD2VudHJpZXNfb21pdHRlZBgEIAEoCCJYChVHZXRDb2xsZWN0aW9uUmVzcG9uc2USJgoKY29sbGVjdGlvbhgBIAEoCzISLm10Zy52MS5Db2xsZWN0aW9uEhcKD25leHRfcGFnZV90b2tlbhgCIAEoCSIYChZMaXN0Q29sbGVjdGlvbnNSZXF1ZXN0IkIKF0xpc3RDb2xsZWN0aW9uc1Jlc3BvbnNlEicKC2NvbGxlY3Rpb25zGAEgAygLMhIubXRnLnYxLkNvbGxlY3Rpb24ymgQKEUNvbGxlY3Rpb25TZXJ2aWNlElcKEEltcG9ydENvbGxlY3Rpb24SHy5tdGcudjEuSW1wb3J0Q29sbGVjdGlvblJlcXVlc3QaIC5tdGcudjEuSW1wb3J0Q29sbGVjdGlvblJlc3BvbnNlIgASTgoNR2V0Q29sbGVjdGlvbhIcLm10Zy52MS5HZXRDb2xsZWN0aW9uUmVxdWVzdBodLm10Zy52MS5HZXRDb2xsZWN0aW9uUmVzcG9uc2UiABJUCg9MaXN0Q29sbGVjdGlvbnMSHi5tdGcudjEuTGlzdENvbGxlY3Rpb25zUmVxdWVzdBofLm10Zy52MS5MaXN0Q29sbGVjdGlvbnNSZXNwb25zZSIAElcKEERlbGV0ZUNvbGxlY3Rpb24SHy5tdGcudjEuRGVsZXRlQ29sbGVjdGlvblJlcXVlc3QaIC5tdGcudjEuRGVsZXRlQ29sbGVjdGlvblJlc3BvbnNlIgASVwoQVXBkYXRlQ29sbGVjdGlvbhIfLm10Zy52MS5VcGRhdGVDb2xsZWN0aW9uUmVxdWVzdBogLm10Zy52MS5VcGRhdGVDb2xsZWN0aW9uUmVzcG9uc2UiABJUCg9EaWZmQ29sbGVjdGlvbnMSHi5tdGcudjEuRGlmZkNvbGxlY3Rpb25zUmVxdWVzdBofLm10Zy52MS5EaWZmQ29sbGVjdGlvbnNSZXNwb25zZSIAQjpaOGdpdGh1Yi5jb20vbmtyYW1iZXIvbXRnLWRlY2stYnVpbGRlci9nby9nZW4vbXRnL3YxO210Z3YxYgZwcm90bzM", [file_mtg_v1_collection]);
+
+/**
+ * @generated from message mtg.v1.UpdateCollectionRequest
+ */
+export type UpdateCollectionRequest = Message<"mtg.v1.UpdateCollectionRequest"> & {
+  /**
+   * @generated from field: string collection_id = 1;
+   */
+  collectionId: string;
+
+  /**
+   * name is the new name. An empty name is an invalid argument, and a
+   * name takes at most 200 bytes, as a deck name does.
+   *
+   * @generated from field: string name = 2;
+   */
+  name: string;
+};
+
+/**
+ * Describes the message mtg.v1.UpdateCollectionRequest.
+ * Use `create(UpdateCollectionRequestSchema)` to create a new message.
+ */
+export const UpdateCollectionRequestSchema: GenMessage<UpdateCollectionRequest> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_collection_service, 0);
+
+/**
+ * @generated from message mtg.v1.UpdateCollectionResponse
+ */
+export type UpdateCollectionResponse = Message<"mtg.v1.UpdateCollectionResponse"> & {
+  /**
+   * @generated from field: mtg.v1.Collection collection = 1;
+   */
+  collection?: Collection | undefined;
+};
+
+/**
+ * Describes the message mtg.v1.UpdateCollectionResponse.
+ * Use `create(UpdateCollectionResponseSchema)` to create a new message.
+ */
+export const UpdateCollectionResponseSchema: GenMessage<UpdateCollectionResponse> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_collection_service, 1);
+
+/**
+ * @generated from message mtg.v1.DiffCollectionsRequest
+ */
+export type DiffCollectionsRequest = Message<"mtg.v1.DiffCollectionsRequest"> & {
+  /**
+   * collection_id is the stored collection to compare against.
+   *
+   * @generated from field: string collection_id = 1;
+   */
+  collectionId: string;
+
+  /**
+   * source and content are the uploaded file, the same two fields
+   * ImportCollection takes. The file is parsed and never stored.
+   *
+   * @generated from field: mtg.v1.ImportSource source = 2;
+   */
+  source: ImportSource;
+
+  /**
+   * @generated from field: bytes content = 3;
+   */
+  content: Uint8Array;
+};
+
+/**
+ * Describes the message mtg.v1.DiffCollectionsRequest.
+ * Use `create(DiffCollectionsRequestSchema)` to create a new message.
+ */
+export const DiffCollectionsRequestSchema: GenMessage<DiffCollectionsRequest> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_collection_service, 2);
+
+/**
+ * @generated from message mtg.v1.DiffCollectionsResponse
+ */
+export type DiffCollectionsResponse = Message<"mtg.v1.DiffCollectionsResponse"> & {
+  /**
+   * @generated from field: mtg.v1.CollectionDiff diff = 1;
+   */
+  diff?: CollectionDiff | undefined;
+
+  /**
+   * report lists the rows of the uploaded file that did not resolve. A
+   * reader must not replace a collection on a file half of which failed.
+   *
+   * @generated from field: mtg.v1.ImportReport report = 2;
+   */
+  report?: ImportReport | undefined;
+};
+
+/**
+ * Describes the message mtg.v1.DiffCollectionsResponse.
+ * Use `create(DiffCollectionsResponseSchema)` to create a new message.
+ */
+export const DiffCollectionsResponseSchema: GenMessage<DiffCollectionsResponse> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_collection_service, 3);
 
 /**
  * @generated from message mtg.v1.DeleteCollectionRequest
@@ -29,7 +128,7 @@ export type DeleteCollectionRequest = Message<"mtg.v1.DeleteCollectionRequest"> 
  * Use `create(DeleteCollectionRequestSchema)` to create a new message.
  */
 export const DeleteCollectionRequestSchema: GenMessage<DeleteCollectionRequest> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_collection_service, 0);
+  messageDesc(file_mtg_v1_collection_service, 4);
 
 /**
  * @generated from message mtg.v1.DeleteCollectionResponse
@@ -42,7 +141,7 @@ export type DeleteCollectionResponse = Message<"mtg.v1.DeleteCollectionResponse"
  * Use `create(DeleteCollectionResponseSchema)` to create a new message.
  */
 export const DeleteCollectionResponseSchema: GenMessage<DeleteCollectionResponse> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_collection_service, 1);
+  messageDesc(file_mtg_v1_collection_service, 5);
 
 /**
  * @generated from message mtg.v1.ImportCollectionRequest
@@ -64,6 +163,17 @@ export type ImportCollectionRequest = Message<"mtg.v1.ImportCollectionRequest"> 
    * @generated from field: bytes content = 3;
    */
   content: Uint8Array;
+
+  /**
+   * replace_collection_id names the collection this upload replaces. The
+   * reader read the diff and said to replace, so the entries are written
+   * into that same collection and every deck and chat that names it
+   * still works (D-393). Empty means a new collection, or the one an
+   * identical hash already made (D-16).
+   *
+   * @generated from field: string replace_collection_id = 4;
+   */
+  replaceCollectionId: string;
 };
 
 /**
@@ -71,7 +181,7 @@ export type ImportCollectionRequest = Message<"mtg.v1.ImportCollectionRequest"> 
  * Use `create(ImportCollectionRequestSchema)` to create a new message.
  */
 export const ImportCollectionRequestSchema: GenMessage<ImportCollectionRequest> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_collection_service, 2);
+  messageDesc(file_mtg_v1_collection_service, 6);
 
 /**
  * @generated from message mtg.v1.ImportCollectionResponse
@@ -93,7 +203,7 @@ export type ImportCollectionResponse = Message<"mtg.v1.ImportCollectionResponse"
  * Use `create(ImportCollectionResponseSchema)` to create a new message.
  */
 export const ImportCollectionResponseSchema: GenMessage<ImportCollectionResponse> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_collection_service, 3);
+  messageDesc(file_mtg_v1_collection_service, 7);
 
 /**
  * @generated from message mtg.v1.GetCollectionRequest
@@ -103,6 +213,31 @@ export type GetCollectionRequest = Message<"mtg.v1.GetCollectionRequest"> & {
    * @generated from field: string collection_id = 1;
    */
   collectionId: string;
+
+  /**
+   * page_size caps the entries in the answer. Zero takes the default,
+   * and the server caps it (D-392). A reader who wants the head alone
+   * asks for no entry with entries_omitted.
+   *
+   * @generated from field: int32 page_size = 2;
+   */
+  pageSize: number;
+
+  /**
+   * page_token is the token the last answer returned. An empty token
+   * reads the first page.
+   *
+   * @generated from field: string page_token = 3;
+   */
+  pageToken: string;
+
+  /**
+   * entries_omitted asks for the collection without its entries. The
+   * binder head reads the summary alone, and it moves no megabyte.
+   *
+   * @generated from field: bool entries_omitted = 4;
+   */
+  entriesOmitted: boolean;
 };
 
 /**
@@ -110,7 +245,7 @@ export type GetCollectionRequest = Message<"mtg.v1.GetCollectionRequest"> & {
  * Use `create(GetCollectionRequestSchema)` to create a new message.
  */
 export const GetCollectionRequestSchema: GenMessage<GetCollectionRequest> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_collection_service, 4);
+  messageDesc(file_mtg_v1_collection_service, 8);
 
 /**
  * @generated from message mtg.v1.GetCollectionResponse
@@ -120,6 +255,14 @@ export type GetCollectionResponse = Message<"mtg.v1.GetCollectionResponse"> & {
    * @generated from field: mtg.v1.Collection collection = 1;
    */
   collection?: Collection | undefined;
+
+  /**
+   * next_page_token reads the page after this one. Empty on the last
+   * page, and empty when the request omitted the entries.
+   *
+   * @generated from field: string next_page_token = 2;
+   */
+  nextPageToken: string;
 };
 
 /**
@@ -127,7 +270,7 @@ export type GetCollectionResponse = Message<"mtg.v1.GetCollectionResponse"> & {
  * Use `create(GetCollectionResponseSchema)` to create a new message.
  */
 export const GetCollectionResponseSchema: GenMessage<GetCollectionResponse> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_collection_service, 5);
+  messageDesc(file_mtg_v1_collection_service, 9);
 
 /**
  * @generated from message mtg.v1.ListCollectionsRequest
@@ -140,7 +283,7 @@ export type ListCollectionsRequest = Message<"mtg.v1.ListCollectionsRequest"> & 
  * Use `create(ListCollectionsRequestSchema)` to create a new message.
  */
 export const ListCollectionsRequestSchema: GenMessage<ListCollectionsRequest> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_collection_service, 6);
+  messageDesc(file_mtg_v1_collection_service, 10);
 
 /**
  * @generated from message mtg.v1.ListCollectionsResponse
@@ -159,7 +302,7 @@ export type ListCollectionsResponse = Message<"mtg.v1.ListCollectionsResponse"> 
  * Use `create(ListCollectionsResponseSchema)` to create a new message.
  */
 export const ListCollectionsResponseSchema: GenMessage<ListCollectionsResponse> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_collection_service, 7);
+  messageDesc(file_mtg_v1_collection_service, 11);
 
 /**
  * CollectionService imports and reads the user's collections (roadmap PR-4).
@@ -205,6 +348,29 @@ export const CollectionService: GenService<{
     methodKind: "unary";
     input: typeof DeleteCollectionRequestSchema;
     output: typeof DeleteCollectionResponseSchema;
+  },
+  /**
+   * UpdateCollection writes the name. It is the rename of the
+   * collections list (roadmap PR-18).
+   *
+   * @generated from rpc mtg.v1.CollectionService.UpdateCollection
+   */
+  updateCollection: {
+    methodKind: "unary";
+    input: typeof UpdateCollectionRequestSchema;
+    output: typeof UpdateCollectionResponseSchema;
+  },
+  /**
+   * DiffCollections compares an uploaded file with a stored collection,
+   * and it stores nothing. The reader reads what changed before they
+   * replace anything (roadmap PR-18, D-393).
+   *
+   * @generated from rpc mtg.v1.CollectionService.DiffCollections
+   */
+  diffCollections: {
+    methodKind: "unary";
+    input: typeof DiffCollectionsRequestSchema;
+    output: typeof DiffCollectionsResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_mtg_v1_collection_service, 0);

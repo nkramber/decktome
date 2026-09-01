@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file mtg/v1/collection.proto.
  */
 export const file_mtg_v1_collection: GenFile = /*@__PURE__*/
-  fileDesc("ChdtdGcvdjEvY29sbGVjdGlvbi5wcm90bxIGbXRnLnYxItEBCgpDb2xsZWN0aW9uEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSJAoGc291cmNlGAMgASgOMhQubXRnLnYxLkltcG9ydFNvdXJjZRIvCgtpbXBvcnRlZF9hdBgEIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASFAoMY29udGVudF9oYXNoGAUgASgJEigKB2VudHJpZXMYBiADKAsyFy5tdGcudjEuQ29sbGVjdGlvbkVudHJ5EhIKCmNhcmRfY291bnQYByABKAUi/wEKD0NvbGxlY3Rpb25FbnRyeRITCgtzY3J5ZmFsbF9pZBgBIAEoCRIRCglvcmFjbGVfaWQYAiABKAkSDAoEbmFtZRgDIAEoCRIQCghzZXRfY29kZRgEIAEoCRIYChBjb2xsZWN0b3JfbnVtYmVyGAUgASgJEhAKCHF1YW50aXR5GAYgASgFEh4KBmZpbmlzaBgHIAEoDjIOLm10Zy52MS5GaW5pc2gSJAoJY29uZGl0aW9uGAggASgOMhEubXRnLnYxLkNvbmRpdGlvbhIOCgZyYXJpdHkYCSABKAkSEAoIbGFuZ3VhZ2UYCiABKAkSEAoIc2V0X25hbWUYCyABKAki2AEKDEltcG9ydFJlcG9ydBIpCgp1bnJlc29sdmVkGAEgAygLMhUubXRnLnYxLlVucmVzb2x2ZWRSb3cSFgoOcmVzb2x2ZWRfY291bnQYAiABKAUSSgoUdW5yZXNvbHZlZF9ieV9yZWFzb24YAyADKAsyLC5tdGcudjEuSW1wb3J0UmVwb3J0LlVucmVzb2x2ZWRCeVJlYXNvbkVudHJ5GjkKF1VucmVzb2x2ZWRCeVJlYXNvbkVudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoBToCOAEiVAoNVW5yZXNvbHZlZFJvdxIMCgRsaW5lGAEgASgFEgsKA3JhdxgCIAEoCRIoCgZyZWFzb24YAyABKA4yGC5tdGcudjEuVW5yZXNvbHZlZFJlYXNvbipqCgxJbXBvcnRTb3VyY2USHQoZSU1QT1JUX1NPVVJDRV9VTlNQRUNJRklFRBAAEh0KGUlNUE9SVF9TT1VSQ0VfTUFOQUJPWF9DU1YQARIcChhJTVBPUlRfU09VUkNFX0FSRU5BX1RFWFQQAipXCgZGaW5pc2gSFgoSRklOSVNIX1VOU1BFQ0lGSUVEEAASEQoNRklOSVNIX05PUk1BTBABEg8KC0ZJTklTSF9GT0lMEAISEQoNRklOSVNIX0VUQ0hFRBADKsYBCglDb25kaXRpb24SGQoVQ09ORElUSU9OX1VOU1BFQ0lGSUVEEAASEgoOQ09ORElUSU9OX01JTlQQARIXChNDT05ESVRJT05fTkVBUl9NSU5UEAISFwoTQ09ORElUSU9OX0VYQ0VMTEVOVBADEhIKDkNPTkRJVElPTl9HT09EEAQSGgoWQ09ORElUSU9OX0xJR0hUX1BMQVlFRBAFEhQKEENPTkRJVElPTl9QTEFZRUQQBhISCg5DT05ESVRJT05fUE9PUhAHKuQBChBVbnJlc29sdmVkUmVhc29uEiEKHVVOUkVTT0xWRURfUkVBU09OX1VOU1BFQ0lGSUVEEAASIgoeVU5SRVNPTFZFRF9SRUFTT05fVU5LTk9XTl9DQVJEEAESIQodVU5SRVNPTFZFRF9SRUFTT05fTk9OX0VOR0xJU0gQAhIdChlVTlJFU09MVkVEX1JFQVNPTl9CQURfUk9XEAMSIgoeVU5SRVNPTFZFRF9SRUFTT05fTk9UX1BMQVlBQkxFEAQSIwofVU5SRVNPTFZFRF9SRUFTT05fVU5LTk9XTl9WQUxVRRAFQjpaOGdpdGh1Yi5jb20vbmtyYW1iZXIvbXRnLWRlY2stYnVpbGRlci9nby9nZW4vbXRnL3YxO210Z3YxYgZwcm90bzM", [file_google_protobuf_timestamp]);
+  fileDesc("ChdtdGcvdjEvY29sbGVjdGlvbi5wcm90bxIGbXRnLnYxIv0BCgpDb2xsZWN0aW9uEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSJAoGc291cmNlGAMgASgOMhQubXRnLnYxLkltcG9ydFNvdXJjZRIvCgtpbXBvcnRlZF9hdBgEIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASFAoMY29udGVudF9oYXNoGAUgASgJEigKB2VudHJpZXMYBiADKAsyFy5tdGcudjEuQ29sbGVjdGlvbkVudHJ5EhIKCmNhcmRfY291bnQYByABKAUSKgoHc3VtbWFyeRgIIAEoCzIZLm10Zy52MS5Db2xsZWN0aW9uU3VtbWFyeSK3AgoRQ29sbGVjdGlvblN1bW1hcnkSEQoJcm93X2NvdW50GAEgASgFEhQKDHVuaXF1ZV9jYXJkcxgCIAEoBRI6CglieV9yYXJpdHkYAyADKAsyJy5tdGcudjEuQ29sbGVjdGlvblN1bW1hcnkuQnlSYXJpdHlFbnRyeRIiCgh0b3Bfc2V0cxgEIAMoCzIQLm10Zy52MS5TZXRDb3VudBI4CghieV9jb2xvchgFIAMoCzImLm10Zy52MS5Db2xsZWN0aW9uU3VtbWFyeS5CeUNvbG9yRW50cnkaLwoNQnlSYXJpdHlFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAU6AjgBGi4KDEJ5Q29sb3JFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAU6AjgBIj0KCFNldENvdW50EhAKCHNldF9jb2RlGAEgASgJEhAKCHNldF9uYW1lGAIgASgJEg0KBWNvdW50GAMgASgFIv8BCg9Db2xsZWN0aW9uRW50cnkSEwoLc2NyeWZhbGxfaWQYASABKAkSEQoJb3JhY2xlX2lkGAIgASgJEgwKBG5hbWUYAyABKAkSEAoIc2V0X2NvZGUYBCABKAkSGAoQY29sbGVjdG9yX251bWJlchgFIAEoCRIQCghxdWFudGl0eRgGIAEoBRIeCgZmaW5pc2gYByABKA4yDi5tdGcudjEuRmluaXNoEiQKCWNvbmRpdGlvbhgIIAEoDjIRLm10Zy52MS5Db25kaXRpb24SDgoGcmFyaXR5GAkgASgJEhAKCGxhbmd1YWdlGAogASgJEhAKCHNldF9uYW1lGAsgASgJIuEBCg5Db2xsZWN0aW9uRGlmZhImCgVhZGRlZBgBIAMoCzIXLm10Zy52MS5Db2xsZWN0aW9uRW50cnkSKAoHcmVtb3ZlZBgCIAMoCzIXLm10Zy52MS5Db2xsZWN0aW9uRW50cnkSJwoHY2hhbmdlZBgDIAMoCzIWLm10Zy52MS5RdWFudGl0eUNoYW5nZRITCgthZGRlZF9jYXJkcxgEIAEoBRIVCg1yZW1vdmVkX2NhcmRzGAUgASgFEhUKDWNoYW5nZWRfY2FyZHMYBiABKAUSEQoJaWRlbnRpY2FsGAcgASgIIlIKDlF1YW50aXR5Q2hhbmdlEiYKBWVudHJ5GAEgASgLMhcubXRnLnYxLkNvbGxlY3Rpb25FbnRyeRIMCgRmcm9tGAIgASgFEgoKAnRvGAMgASgFItgBCgxJbXBvcnRSZXBvcnQSKQoKdW5yZXNvbHZlZBgBIAMoCzIVLm10Zy52MS5VbnJlc29sdmVkUm93EhYKDnJlc29sdmVkX2NvdW50GAIgASgFEkoKFHVucmVzb2x2ZWRfYnlfcmVhc29uGAMgAygLMiwubXRnLnYxLkltcG9ydFJlcG9ydC5VbnJlc29sdmVkQnlSZWFzb25FbnRyeRo5ChdVbnJlc29sdmVkQnlSZWFzb25FbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAU6AjgBIlQKDVVucmVzb2x2ZWRSb3cSDAoEbGluZRgBIAEoBRILCgNyYXcYAiABKAkSKAoGcmVhc29uGAMgASgOMhgubXRnLnYxLlVucmVzb2x2ZWRSZWFzb24qagoMSW1wb3J0U291cmNlEh0KGUlNUE9SVF9TT1VSQ0VfVU5TUEVDSUZJRUQQABIdChlJTVBPUlRfU09VUkNFX01BTkFCT1hfQ1NWEAESHAoYSU1QT1JUX1NPVVJDRV9BUkVOQV9URVhUEAIqVwoGRmluaXNoEhYKEkZJTklTSF9VTlNQRUNJRklFRBAAEhEKDUZJTklTSF9OT1JNQUwQARIPCgtGSU5JU0hfRk9JTBACEhEKDUZJTklTSF9FVENIRUQQAyrGAQoJQ29uZGl0aW9uEhkKFUNPTkRJVElPTl9VTlNQRUNJRklFRBAAEhIKDkNPTkRJVElPTl9NSU5UEAESFwoTQ09ORElUSU9OX05FQVJfTUlOVBACEhcKE0NPTkRJVElPTl9FWENFTExFTlQQAxISCg5DT05ESVRJT05fR09PRBAEEhoKFkNPTkRJVElPTl9MSUdIVF9QTEFZRUQQBRIUChBDT05ESVRJT05fUExBWUVEEAYSEgoOQ09ORElUSU9OX1BPT1IQByrkAQoQVW5yZXNvbHZlZFJlYXNvbhIhCh1VTlJFU09MVkVEX1JFQVNPTl9VTlNQRUNJRklFRBAAEiIKHlVOUkVTT0xWRURfUkVBU09OX1VOS05PV05fQ0FSRBABEiEKHVVOUkVTT0xWRURfUkVBU09OX05PTl9FTkdMSVNIEAISHQoZVU5SRVNPTFZFRF9SRUFTT05fQkFEX1JPVxADEiIKHlVOUkVTT0xWRURfUkVBU09OX05PVF9QTEFZQUJMRRAEEiMKH1VOUkVTT0xWRURfUkVBU09OX1VOS05PV05fVkFMVUUQBUI6WjhnaXRodWIuY29tL25rcmFtYmVyL210Zy1kZWNrLWJ1aWxkZXIvZ28vZ2VuL210Zy92MTttdGd2MWIGcHJvdG8z", [file_google_protobuf_timestamp]);
 
 /**
  * Collection is one imported card list. The full collection is stored (D-16).
@@ -58,6 +58,15 @@ export type Collection = Message<"mtg.v1.Collection"> & {
    * @generated from field: int32 card_count = 7;
    */
   cardCount: number;
+
+  /**
+   * summary holds the counts the binder head shows. The import fills it
+   * once, so the head reads a Collection with no entries and moves no
+   * megabyte (D-392). A re-import refills it.
+   *
+   * @generated from field: mtg.v1.CollectionSummary summary = 8;
+   */
+  summary?: CollectionSummary | undefined;
 };
 
 /**
@@ -66,6 +75,91 @@ export type Collection = Message<"mtg.v1.Collection"> & {
  */
 export const CollectionSchema: GenMessage<Collection> = /*@__PURE__*/
   messageDesc(file_mtg_v1_collection, 0);
+
+/**
+ * CollectionSummary is what the binder head shows about a collection,
+ * without its entries (D-392). The import computes it, so no reader
+ * counts 2,657 rows to draw one header.
+ *
+ * @generated from message mtg.v1.CollectionSummary
+ */
+export type CollectionSummary = Message<"mtg.v1.CollectionSummary"> & {
+  /**
+   * row_count is how many entries the collection holds. A ManaBox row is
+   * one printing in one finish and one condition, so one card can hold
+   * several (D-393).
+   *
+   * @generated from field: int32 row_count = 1;
+   */
+  rowCount: number;
+
+  /**
+   * unique_cards counts the distinct Oracle ids.
+   *
+   * @generated from field: int32 unique_cards = 2;
+   */
+  uniqueCards: number;
+
+  /**
+   * by_rarity counts cards per Scryfall rarity, copies included. The key
+   * is the rarity as the snapshot writes it, for example "mythic".
+   *
+   * @generated from field: map<string, int32> by_rarity = 3;
+   */
+  byRarity: { [key: string]: number };
+
+  /**
+   * top_sets are the sets the collection holds most of, largest first.
+   *
+   * @generated from field: repeated mtg.v1.SetCount top_sets = 4;
+   */
+  topSets: SetCount[];
+
+  /**
+   * by_color counts cards per color of the card's identity, copies
+   * included. A card of two colors counts once under each. The key is
+   * the Color enum name, for example "COLOR_W".
+   *
+   * @generated from field: map<string, int32> by_color = 5;
+   */
+  byColor: { [key: string]: number };
+};
+
+/**
+ * Describes the message mtg.v1.CollectionSummary.
+ * Use `create(CollectionSummarySchema)` to create a new message.
+ */
+export const CollectionSummarySchema: GenMessage<CollectionSummary> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_collection, 1);
+
+/**
+ * SetCount is one set and how many cards of it a collection holds.
+ *
+ * @generated from message mtg.v1.SetCount
+ */
+export type SetCount = Message<"mtg.v1.SetCount"> & {
+  /**
+   * @generated from field: string set_code = 1;
+   */
+  setCode: string;
+
+  /**
+   * @generated from field: string set_name = 2;
+   */
+  setName: string;
+
+  /**
+   * @generated from field: int32 count = 3;
+   */
+  count: number;
+};
+
+/**
+ * Describes the message mtg.v1.SetCount.
+ * Use `create(SetCountSchema)` to create a new message.
+ */
+export const SetCountSchema: GenMessage<SetCount> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_collection, 2);
 
 /**
  * CollectionEntry is one row: one printing with a quantity.
@@ -142,7 +236,107 @@ export type CollectionEntry = Message<"mtg.v1.CollectionEntry"> & {
  * Use `create(CollectionEntrySchema)` to create a new message.
  */
 export const CollectionEntrySchema: GenMessage<CollectionEntry> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_collection, 1);
+  messageDesc(file_mtg_v1_collection, 3);
+
+/**
+ * CollectionDiff is what changed between a stored collection and an
+ * uploaded file (D-393). It stores nothing: the reader reads it and
+ * then chooses whether to replace.
+ *
+ * A row is one printing in one finish and one condition, which is the
+ * row a ManaBox export writes. So a foil and a normal copy of one card
+ * are two rows, and a quantity change reads as changed rather than as
+ * an add beside a remove.
+ *
+ * @generated from message mtg.v1.CollectionDiff
+ */
+export type CollectionDiff = Message<"mtg.v1.CollectionDiff"> & {
+  /**
+   * added are the rows the file holds and the collection does not.
+   *
+   * @generated from field: repeated mtg.v1.CollectionEntry added = 1;
+   */
+  added: CollectionEntry[];
+
+  /**
+   * removed are the rows the collection holds and the file does not.
+   *
+   * @generated from field: repeated mtg.v1.CollectionEntry removed = 2;
+   */
+  removed: CollectionEntry[];
+
+  /**
+   * changed are the rows both hold with another quantity.
+   *
+   * @generated from field: repeated mtg.v1.QuantityChange changed = 3;
+   */
+  changed: QuantityChange[];
+
+  /**
+   * added_cards, removed_cards, and changed_cards count the cards those
+   * three lists move, copies included. A reader reads the counts before
+   * the lists.
+   *
+   * @generated from field: int32 added_cards = 4;
+   */
+  addedCards: number;
+
+  /**
+   * @generated from field: int32 removed_cards = 5;
+   */
+  removedCards: number;
+
+  /**
+   * @generated from field: int32 changed_cards = 6;
+   */
+  changedCards: number;
+
+  /**
+   * identical says the file and the collection hold the same rows with
+   * the same quantities. The content hash answers the same question for
+   * an unchanged file, and this answers it for a file that was written
+   * again with no change (D-16).
+   *
+   * @generated from field: bool identical = 7;
+   */
+  identical: boolean;
+};
+
+/**
+ * Describes the message mtg.v1.CollectionDiff.
+ * Use `create(CollectionDiffSchema)` to create a new message.
+ */
+export const CollectionDiffSchema: GenMessage<CollectionDiff> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_collection, 4);
+
+/**
+ * QuantityChange is one row both sides hold, with two quantities.
+ *
+ * @generated from message mtg.v1.QuantityChange
+ */
+export type QuantityChange = Message<"mtg.v1.QuantityChange"> & {
+  /**
+   * @generated from field: mtg.v1.CollectionEntry entry = 1;
+   */
+  entry?: CollectionEntry | undefined;
+
+  /**
+   * @generated from field: int32 from = 2;
+   */
+  from: number;
+
+  /**
+   * @generated from field: int32 to = 3;
+   */
+  to: number;
+};
+
+/**
+ * Describes the message mtg.v1.QuantityChange.
+ * Use `create(QuantityChangeSchema)` to create a new message.
+ */
+export const QuantityChangeSchema: GenMessage<QuantityChange> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_collection, 5);
 
 /**
  * ImportReport lists what an import could not use. Nothing is dropped
@@ -174,7 +368,7 @@ export type ImportReport = Message<"mtg.v1.ImportReport"> & {
  * Use `create(ImportReportSchema)` to create a new message.
  */
 export const ImportReportSchema: GenMessage<ImportReport> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_collection, 2);
+  messageDesc(file_mtg_v1_collection, 6);
 
 /**
  * UnresolvedRow is one input row the importer rejected, with the reason.
@@ -203,7 +397,7 @@ export type UnresolvedRow = Message<"mtg.v1.UnresolvedRow"> & {
  * Use `create(UnresolvedRowSchema)` to create a new message.
  */
 export const UnresolvedRowSchema: GenMessage<UnresolvedRow> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_collection, 3);
+  messageDesc(file_mtg_v1_collection, 7);
 
 /**
  * ImportSource names the file format of an import.

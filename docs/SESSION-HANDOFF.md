@@ -130,7 +130,7 @@ D-311 kept every surface neutral and let the card art carry the color. The app r
 - The ground of every page carries two soft lights and a fine grain. A panel takes a hairline of its own light along its top edge.
 - The collection screen shows the binder: the count, the unique cards, the rarity spread, and the art of the rarest ten cards. It came forward from PR-18.
 
-CAUTION: the binder head calls `GetCollection`, and the answer carries every entry. The owner's export holds 4,952 rows, so one page load moves about one megabyte. PR-18 adds paging, and the head reads a page then.
+CAUTION: the binder head calls `GetCollection`, and the answer carries every entry. The owner's export holds 2,657 rows and 4,952 cards, so one page load moves about one megabyte. PR-18 stores the summary on the collection, and the head then reads no entry at all (D-392).
 
 ## Reading the app without the owner (2026-08-30)
 
