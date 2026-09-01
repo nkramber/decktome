@@ -10,7 +10,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 - Branch `pr-17b` holds the set filter. Nothing on it is committed. It changes 57 files and adds 13.
 - The tree is green on `pr-17b`: Go build, vet, `-race` tests, golangci-lint, `buf breaking`, web lint, typecheck, 201 web tests. `make lint` reports zero findings.
 - Question gate run 31 passes every bar. The set deck gate passes 6 of 6.
-- The revise gate held on run 2 (D-296). Deck gate run 10 is open, and it predates this branch.
+- Every gate stands and passes: question gate 32, the set deck gate, revise gate 4, and deck gate 10.
 - PR-9 is out of the MVP (D-256). Phase 3B comes before Phase 4 (D-316).
 
 CAUTION: branch `pr-17` carries eight concerns. They are the contract, the Go side, the reference design, and the layout of D-331. They are also the Build menu, the one deck screen, the pool picker, and the speed of the app. Guardrail 10 asks for one. The owner chose to ship it whole (D-344).
@@ -268,7 +268,7 @@ CAUTION: the eight snapshots on the owner's disk held no set file. A session wro
 3. Then PR-18 to PR-23 in order, one gate each. Before PR-22, ask OQ-45 and OQ-46.
 4. After Phase 3B: PR-15, then PR-14.
 
-CAUTION: deck gate run 10 is still open, and it predates this branch. D-362 bounds the owned-first fill at 150 names, and run 9 showed four decks that cost $39.81 to $167.98 where run 8 cost nothing. A run 10 must show the run 8 costs again. It costs about $1.09.
+Deck gate run 10 is done. It ran on 2026-08-31, before this branch, and `CLAUDE.md` recorded it while this file still asked for it. A session that reads only the prose here spends $1.09 on a run that exists. Read `docs/reference/` before you plan a paid run.
 
 CAUTION: branch `pr-17b` carries the set filter and three fixes to PR-17's own decisions (D-384 to D-386). The three came out of the gate runs of this branch, and none of them belongs to the set filter. Read them as a separate slice inside one branch.
 
@@ -299,7 +299,22 @@ The re-baseline of D-302 is done for the question gate and the deck gate. Total 
 | Question eval 28 | `pr7-question-eval-run28.md` | 6.8 percent bad on the holdout, from 7.2. The tune split reads 2.2 percent, from 4.1. $0.0916. |
 | Deck gate 9 | `pr8-deck-gate-run9.md` | PASS, and it found a defect the verdict can not see. $1.0450. |
 
-CAUTION: deck gate run 9 ran with the unbounded owned-first fill. Four decks that cost nothing to buy on run 8 cost $39.81, $80.24, $60.77, and $167.98 on run 9. D-362 bounds the fill at 150 names, and every owned-first prompt of run 8 sits above that floor. A run 10 must show the run 8 costs again. Read the buy cost of each owned-first prompt, not the verdict: all three bars of this gate read legality, never cost.
+Deck gate run 9 ran with the unbounded owned-first fill. Four decks that cost nothing to buy on run 8 cost $39.81, $80.24, $60.77, and $167.98 on run 9. D-362 bounds the fill at 150 names.
+
+Run 10 proves the bound. Every one of those four decks costs nothing again, and the two other owned-first prompts hold their shape.
+
+| # | Prompt | Run 8 | Run 9 | Run 10 |
+|---|---|---|---|---|
+| 2 | aristocrats, owned first | $0.00 | $39.81 | $0.00 |
+| 5 | blink, owned first | $0.00 | $80.24 | $0.00 |
+| 13 | the commander is not owned | $0.00 | $60.77 | $0.00 |
+| 15 | delegated commander | $0.00 | $167.98 | $0.00 |
+| 16 | a tight budget | $6.17 | $6.83 | $23.03 |
+| 17 | upgrade a precon | $73.55 | $77.12 | $78.47 |
+
+Run 10: PASS, 18 of 18, one repair turn, $1.0787.
+
+CAUTION: read the buy cost of each owned-first prompt, not the verdict. All three bars of this gate read legality, never cost. Prompt 16 rose from $6.17 to $23.03 over two runs. Its budget is $25, so no finding fires. Read it again on the next run.
 
 ## The dead-end check of the question gate (D-357)
 
