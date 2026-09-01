@@ -15,6 +15,14 @@ import (
 // list, and a collection can hold cards of hundreds of sets.
 const TopSets = 6
 
+// ArtCards is how many cards the binder head shows the art of. The head
+// reads no entry, so the summary carries the ids (D-392).
+const ArtCards = 10
+
+// artRank orders the rarities the art strip prefers. The rarest come
+// first, so the strip shows the collection at its best.
+var artRank = map[string]int{"mythic": 0, "rare": 1, "uncommon": 2, "common": 3}
+
 // CardSource resolves an Oracle id to a card. The color counts read the
 // color identity, which a collection entry does not carry.
 type CardSource interface {
@@ -78,6 +86,46 @@ func Summarize(entries []*mtgv1.CollectionEntry, cards CardSource) *mtgv1.Collec
 		sets = sets[:TopSets]
 	}
 	out.TopSets = sets
+	out.ArtOracleIds = artIDs(entries)
+	return out
+}
+
+// artIDs picks the cards the head shows the art of, the rarest first
+// (D-392). A card the reader owns in two printings appears once, and
+// the name breaks every tie, so two runs of one collection give one
+// strip.
+func artIDs(entries []*mtgv1.CollectionEntry) []string {
+	seen := map[string]bool{}
+	picked := make([]*mtgv1.CollectionEntry, 0, len(entries))
+	for _, e := range entries {
+		id := e.GetOracleId()
+		if id == "" || seen[id] {
+			continue
+		}
+		seen[id] = true
+		picked = append(picked, e)
+	}
+	sort.SliceStable(picked, func(i, j int) bool {
+		ri, ok := artRank[picked[i].GetRarity()]
+		if !ok {
+			ri = len(artRank)
+		}
+		rj, ok := artRank[picked[j].GetRarity()]
+		if !ok {
+			rj = len(artRank)
+		}
+		if ri != rj {
+			return ri < rj
+		}
+		return picked[i].GetName() < picked[j].GetName()
+	})
+	if len(picked) > ArtCards {
+		picked = picked[:ArtCards]
+	}
+	out := make([]string, 0, len(picked))
+	for _, e := range picked {
+		out = append(out, e.GetOracleId())
+	}
 	return out
 }
 

@@ -379,7 +379,11 @@ type CollectionSummary struct {
 	// by_color counts cards per color of the card's identity, copies
 	// included. A card of two colors counts once under each. The key is
 	// the Color enum name, for example "COLOR_W".
-	ByColor       map[string]int32 `protobuf:"bytes,5,rep,name=by_color,json=byColor,proto3" json:"by_color,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	ByColor map[string]int32 `protobuf:"bytes,5,rep,name=by_color,json=byColor,proto3" json:"by_color,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	// art_oracle_ids are the cards the binder head shows the art of, the
+	// rarest first. The head reads no entry, so the import picks them
+	// (D-392). A card the reader owns in two printings appears once.
+	ArtOracleIds  []string `protobuf:"bytes,6,rep,name=art_oracle_ids,json=artOracleIds,proto3" json:"art_oracle_ids,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -445,6 +449,13 @@ func (x *CollectionSummary) GetTopSets() []*SetCount {
 func (x *CollectionSummary) GetByColor() map[string]int32 {
 	if x != nil {
 		return x.ByColor
+	}
+	return nil
+}
+
+func (x *CollectionSummary) GetArtOracleIds() []string {
+	if x != nil {
+		return x.ArtOracleIds
 	}
 	return nil
 }
@@ -950,13 +961,14 @@ const file_mtg_v1_collection_proto_rawDesc = "" +
 	"\aentries\x18\x06 \x03(\v2\x17.mtg.v1.CollectionEntryR\aentries\x12\x1d\n" +
 	"\n" +
 	"card_count\x18\a \x01(\x05R\tcardCount\x123\n" +
-	"\asummary\x18\b \x01(\v2\x19.mtg.v1.CollectionSummaryR\asummary\"\x82\x03\n" +
+	"\asummary\x18\b \x01(\v2\x19.mtg.v1.CollectionSummaryR\asummary\"\xa8\x03\n" +
 	"\x11CollectionSummary\x12\x1b\n" +
 	"\trow_count\x18\x01 \x01(\x05R\browCount\x12!\n" +
 	"\funique_cards\x18\x02 \x01(\x05R\vuniqueCards\x12D\n" +
 	"\tby_rarity\x18\x03 \x03(\v2'.mtg.v1.CollectionSummary.ByRarityEntryR\bbyRarity\x12+\n" +
 	"\btop_sets\x18\x04 \x03(\v2\x10.mtg.v1.SetCountR\atopSets\x12A\n" +
-	"\bby_color\x18\x05 \x03(\v2&.mtg.v1.CollectionSummary.ByColorEntryR\abyColor\x1a;\n" +
+	"\bby_color\x18\x05 \x03(\v2&.mtg.v1.CollectionSummary.ByColorEntryR\abyColor\x12$\n" +
+	"\x0eart_oracle_ids\x18\x06 \x03(\tR\fartOracleIds\x1a;\n" +
 	"\rByRarityEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01\x1a:\n" +

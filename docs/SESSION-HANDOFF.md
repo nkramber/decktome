@@ -261,6 +261,33 @@ Two defects of the set filter reached the gate, and both are fixed:
 
 CAUTION: the eight snapshots on the owner's disk held no set file. A session wrote one into `20260831T090157` by hand, so the tests and the gates read a real table. Every other version falls back to a derived table with no family link, and the worker fills the newest one on its next cycle.
 
+## PR-18, the web side (2026-09-01)
+
+Branch `pr-18`. The collections list gained a rename, a re-upload shows a diff before it replaces anything, and the binder is a virtualized grid.
+
+- The head reads `Collection.summary` and asks for no entry (D-392). `useCollectionHead` sends `entries_omitted`, and the art ids ride on the summary, so the strip still shows the rarest cards.
+- `useBinderPages` reads the rows a page at a time, 200 to a page. The grid asks for the next page two rows before the end.
+- `binder-grid.tsx` holds the search, the set filter, the sort, and the tiles. The set list comes from the rows the binder holds, so it needs no set table.
+- `collection-diff.tsx` shows the counts, a sample of each list, and the two buttons. Replace names the collection it replaces (D-393).
+
+A session read the screen in a real browser with Playwright, and it measured rather than looked.
+
+| What | Measured |
+|---|---|
+| Tile radius, border, and ground | 4 px, `#2a2d4a`, `#13162a`, which are the card tokens |
+| Heading face | Cinzel Variable, the same face the deck library uses |
+| Body face | Crimson Pro Variable |
+| Tiles drawn of 2,657 rows | 15 at rest, 27 after a scroll |
+| Rows after a scroll to the foot | 200, then 1,800 |
+| Search "Sol Ring" | 400 of 2,000 rows |
+| Horizontal overflow | none |
+
+Playwright found one defect. The grid held its scroll position when the filter changed, so a reader searched and landed in the middle of the answer. The grid returns to the top now.
+
+CAUTION: `Repo.Get` returns a collection the caller owns. A page is a slice of the entry list, taken in place. A repo that shares one object across calls hands the next reader a collection the last page truncated. The test fake answers a clone.
+
+CAUTION: the active collection is a choice of one visit, and the store keeps only the session id (D-345). A Playwright run can not seed it through localStorage. The script clicks the collection, as a reader does.
+
 ## Next steps, in order
 
 1. The owner reads branch `pr-17b` in the browser, then commits and merges it. Nothing on it is committed yet. The one screen to read is a deck built from a set. Every card the sets do not hold carries a red mark.

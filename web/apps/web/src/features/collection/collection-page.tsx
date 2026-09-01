@@ -1,8 +1,8 @@
-import { ImportSource } from "@mtg/api-client/mtg/v1/collection_pb";
+import { type CollectionDiff, ImportSource } from "@mtg/api-client/mtg/v1/collection_pb";
 import type { ImportCollectionResponse } from "@mtg/api-client/mtg/v1/collection_service_pb";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BookOpenIcon, PackageIcon, Trash2Icon } from "lucide-react";
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { BookOpenIcon, PackageIcon, PencilIcon, Trash2Icon } from "lucide-react";
+import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 
 import { EmptyState } from "../../app/components/empty-state";
@@ -32,7 +32,9 @@ import { maxUploadBytes } from "../../lib/limits";
 import { useAppStore } from "../../lib/store";
 import { CollectionHero } from "./collection-hero";
 import { ImportResult } from "./import-result";
-import { useCollection } from "./use-collection";
+import { BinderGrid } from "./binder-grid";
+import { CollectionDiffView } from "./collection-diff";
+import { useBinderPages, useCollectionHead } from "./use-collection";
 
 // The collection screen (ui plan, step 2). Upload a ManaBox CSV, or skip and
 // build from any card (D-37). Earlier uploads come from ListCollections.
@@ -82,6 +84,43 @@ export function CollectionPage() {
     onError: (err) => void notify("error", "Could not delete the collection", errorMessage(err)),
   });
 
+  // The rename of the collections list. It writes the name alone, so it
+  // rewrites no entry and it keeps the import date.
+  const [renaming, setRenaming] = useState("");
+  const [renameTo, setRenameTo] = useState("");
+  const renameCollection = useMutation({
+    mutationFn: (v: { id: string; name: string }) => collectionClient.updateCollection({ collectionId: v.id, name: v.name }),
+    onSuccess: () => {
+      setRenaming("");
+      void notify("success", "Collection renamed", "");
+      void queryClient.invalidateQueries({ queryKey: ["collections"] });
+      void queryClient.invalidateQueries({ queryKey: ["collection"] });
+    },
+    onError: (err) => void notify("error", "Could not rename the collection", errorMessage(err)),
+  });
+
+  // The diff of a re-upload against the active collection (D-393). It
+  // stores nothing: the reader reads it and then chooses.
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [diffResult, setDiffResult] = useState<CollectionDiff | null>(null);
+  const diff = useMutation({
+    mutationFn: async (f: File) => {
+      const content = new Uint8Array(await f.arrayBuffer());
+      return collectionClient.diffCollections({ collectionId, source: ImportSource.MANABOX_CSV, content });
+    },
+    onSuccess: (res, f) => {
+      setPendingFile(f);
+      setDiffResult(res.diff ?? null);
+    },
+    onError: (err) => void notify("error", "Could not read that file", errorMessage(err)),
+  });
+
+  function cancelDiff() {
+    setPendingFile(null);
+    setDiffResult(null);
+    clearFile();
+  }
+
   const upload = useMutation({
     mutationFn: async (f: File) => {
       const content = new Uint8Array(await f.arrayBuffer());
@@ -89,6 +128,9 @@ export function CollectionPage() {
         name: name.trim() || f.name,
         source: ImportSource.MANABOX_CSV,
         content,
+        // A replacement keeps the collection id, so every deck and chat
+        // that names it still works (D-393).
+        replaceCollectionId: pendingFile ? collectionId : "",
       });
     },
     onSuccess: (res) => {
@@ -96,11 +138,14 @@ export function CollectionPage() {
       // The form empties, so a second click can not import the file again.
       clearFile();
       setName("");
+      setPendingFile(null);
+      setDiffResult(null);
       if (res.collection) {
         setCollection(res.collection.id);
       }
       void notify("success", "Collection imported", `${res.collection?.cardCount ?? 0} cards are ready.`);
       void queryClient.invalidateQueries({ queryKey: ["collections"] });
+      void queryClient.invalidateQueries({ queryKey: ["collection"] });
     },
     onError: (err) => void notify("error", "Upload failed", errorMessage(err)),
   });
@@ -116,7 +161,14 @@ export function CollectionPage() {
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
-    if (file && !fileTooLarge) upload.mutate(file);
+    if (!file || fileTooLarge) return;
+    // A re-upload over an active collection shows what changes first
+    // (D-393). A first upload has nothing to compare against.
+    if (collectionId !== "") {
+      diff.mutate(file);
+      return;
+    }
+    upload.mutate(file);
   }
 
   function skip() {
@@ -130,7 +182,14 @@ export function CollectionPage() {
   const active = collections.find((c) => c.id === collectionId) ?? result?.collection;
   // The binder of the active collection, for the head of the screen. It
   // loads once, and no other screen needs it (D-327).
-  const binder = useCollection(collectionId);
+  const binder = useCollectionHead(collectionId);
+  // The rows of the binder, a page at a time. The grid asks for the next
+  // page as the reader scrolls (D-392).
+  const pages = useBinderPages(collectionId);
+  const rows = useMemo(() => (pages.data?.pages ?? []).flatMap((p) => p.collection?.entries ?? []), [pages.data]);
+  const loadMore = useCallback(() => {
+    if (pages.hasNextPage && !pages.isFetchingNextPage) void pages.fetchNextPage();
+  }, [pages]);
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 md:p-6">
@@ -239,9 +298,21 @@ export function CollectionPage() {
                     {c.cardCount} cards
                     {c.importedAt?.seconds ? `, imported ${new Date(Number(c.importedAt.seconds) * 1000).toLocaleDateString()}` : null}
                   </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`Rename ${c.name}`}
+                    className="ml-auto size-7"
+                    onClick={() => {
+                      setRenaming(c.id);
+                      setRenameTo(c.name);
+                    }}
+                  >
+                    <PencilIcon aria-hidden="true" />
+                  </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon" aria-label={`Delete ${c.name}`} className="ml-auto size-7 text-danger hover:text-danger">
+                      <Button variant="ghost" size="icon" aria-label={`Delete ${c.name}`} className="size-7 text-danger hover:text-danger">
                         <Trash2Icon aria-hidden="true" />
                       </Button>
                     </AlertDialogTrigger>
@@ -259,6 +330,36 @@ export function CollectionPage() {
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
+                  {renaming === c.id && (
+                    <form
+                      className="flex w-full flex-wrap items-center gap-2"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        const next = renameTo.trim();
+                        if (next !== "") renameCollection.mutate({ id: c.id, name: next });
+                      }}
+                    >
+                      <Label htmlFor={`rename-${c.id}`} className="sr-only">
+                        New name for {c.name}
+                      </Label>
+                      {/* The reader opened this form, so the cursor
+                          belongs in it. A ref focuses on mount, which
+                          autoFocus can not do accessibly. */}
+                      <Input
+                        id={`rename-${c.id}`}
+                        ref={(el) => el?.focus()}
+                        value={renameTo}
+                        onChange={(e) => setRenameTo(e.target.value)}
+                        className="h-8 max-w-64"
+                      />
+                      <Button type="submit" size="sm" disabled={renameTo.trim() === "" || renameCollection.isPending}>
+                        Save
+                      </Button>
+                      <Button type="button" size="sm" variant="outline" onClick={() => setRenaming("")}>
+                        Cancel
+                      </Button>
+                    </form>
+                  )}
                 </li>
               );
             })}
@@ -266,6 +367,16 @@ export function CollectionPage() {
         )}
       </section>
       </div>
+
+      {diffResult && pendingFile && (
+        <CollectionDiffView
+          name={active?.name ?? "this collection"}
+          diff={diffResult}
+          pending={upload.isPending}
+          onReplace={() => upload.mutate(pendingFile)}
+          onCancel={cancelDiff}
+        />
+      )}
 
       {result && <ImportResult result={result} />}
 
@@ -288,6 +399,11 @@ export function CollectionPage() {
           earlier upload shows or hides it, and nothing above it moves. */}
       {binder.data?.collection && <CollectionHero collection={binder.data.collection} loading={binder.isPending} />}
       {collectionId !== "" && binder.isPending && <Skeleton className="h-56 w-full rounded-card" />}
+      {/* The rows load a page at a time, and the head above reads none
+          of them (D-392). */}
+      {collectionId !== "" && rows.length > 0 && (
+        <BinderGrid entries={rows} loading={pages.isFetchingNextPage} onReachEnd={loadMore} />
+      )}
     </div>
   );
 }

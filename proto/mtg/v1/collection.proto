@@ -42,6 +42,10 @@ message CollectionSummary {
   // included. A card of two colors counts once under each. The key is
   // the Color enum name, for example "COLOR_W".
   map<string, int32> by_color = 5;
+  // art_oracle_ids are the cards the binder head shows the art of, the
+  // rarest first. The head reads no entry, so the import picks them
+  // (D-392). A card the reader owns in two printings appears once.
+  repeated string art_oracle_ids = 6;
 }
 
 // SetCount is one set and how many cards of it a collection holds.
