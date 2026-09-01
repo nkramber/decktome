@@ -36,12 +36,17 @@ type tc struct {
 	partner                  mtgv1.PartnerKind
 	// digital marks a card whose only printing is digital (D-306).
 	digital bool
+	// sets are the paper sets the card is printed in. The fixture turns
+	// them into printings, because the index owns Card.set_codes and
+	// builds it from the printings alone (D-373).
+	sets []string
 }
 
 // fixture builds an index with a tag file from the test cards.
 func fixture(t *testing.T, list []tc) *cards.Index {
 	t.Helper()
 	var protoCards []*mtgv1.Card
+	var printings []cards.Printing
 	tagCards := map[string][]string{}
 	for _, c := range list {
 		types := strings.Split(strings.Split(c.typeLine, " — ")[0], " ")
@@ -79,6 +84,12 @@ func fixture(t *testing.T, list []tc) *cards.Index {
 		if c.digital {
 			protoCards[len(protoCards)-1].DefaultPrinting = &mtgv1.Printing{Digital: true}
 		}
+		for i, code := range c.sets {
+			printings = append(printings, cards.Printing{
+				ScryfallID: fmt.Sprintf("%s-%d", c.id, i), OracleID: c.id,
+				SetCode: code, CollectorNumber: fmt.Sprintf("%d", i+1),
+			})
+		}
 		for _, tg := range c.tags {
 			tagCards[tg] = append(tagCards[tg], c.id)
 		}
@@ -99,7 +110,12 @@ func fixture(t *testing.T, list []tc) *cards.Index {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return cards.NewIndex(protoCards, nil, tags, time.Date(2026, 8, 24, 0, 0, 0, 0, time.UTC))
+	return cards.NewIndex(protoCards, printings, tags, time.Date(2026, 8, 24, 0, 0, 0, 0, time.UTC),
+		cards.WithSets([]cards.SetInfo{
+			{Code: "hob", Name: "The Hobbit", Type: "expansion", ReleasedAt: "2026-08-14"},
+			{Code: "hoc", Name: "The Hobbit Eternal", Type: "eternal", ReleasedAt: "2026-08-14", ParentCode: "hob"},
+			{Code: "m19", Name: "Core Set 2019", Type: "core", ReleasedAt: "2018-07-13"},
+		}))
 }
 
 func testCards() []tc {

@@ -86,6 +86,13 @@ message DeckCard {
   // collection, when the collection holds one. The UI shows its art in
   // place of the default printing (D-299). Unset when not owned.
   Printing owned_printing = 9;
+  // outside_requested_sets marks a card that the sets of Slots.set_codes
+  // do not hold. The build sets it once, so the mark says what was true
+  // then, and a later snapshot does not move it (D-383). It is false on
+  // every deck built with no set limit. Three things earn it: a card the
+  // reader named by name (D-381), a mana card the reader allowed from
+  // outside (D-382), and a basic land the sets do not print (D-378).
+  bool outside_requested_sets = 10;
 }
 
 // CardRole is the job a card does in the deck (corpus section 6).

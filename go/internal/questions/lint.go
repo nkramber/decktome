@@ -23,6 +23,17 @@ type LintQuestion struct {
 	RowID string
 	Slot  string
 	Text  string
+	// Options are the answers the question offered. The reader reads
+	// them beside the text, so a rule that reads the text alone misses
+	// what an option says. Gate run 29 sent 11 questions whose text
+	// named no acronym and whose options said FNM (D-374).
+	Options []string
+}
+
+// shown reads a question the way a reader meets it: the text and the
+// options together, in lower case.
+func (q LintQuestion) shown() string {
+	return strings.ToLower(q.Text + " " + strings.Join(q.Options, " "))
 }
 
 // Finding is one defect the linter found.
@@ -136,8 +147,13 @@ func LintConversation(messages []string, qs []LintQuestion) []Finding {
 		// An acronym the reader has never seen explains itself the first
 		// time (D-374). The user writes "FNM" freely once they have read
 		// it, so the rule reads the questions and not their answers.
-		if strings.Contains(lower, "fnm") && !strings.Contains(lower, "friday night") && !anyPlain(strings.ToLower(prior), []string{"fnm", "friday night"}) {
-			add(q, "unexplained_acronym", "the question says FNM, and neither the user nor an earlier question has spelled it out")
+		//
+		// It reads the options beside the text. A reader meets both at
+		// once, and an option that says FNM is as bare as a text that
+		// does. The text alone caught 2 of the 13 cases of gate run 29.
+		shown := q.shown()
+		if strings.Contains(shown, "fnm") && !strings.Contains(shown, "friday night") && !anyPlain(strings.ToLower(prior), []string{"fnm", "friday night"}) {
+			add(q, "unexplained_acronym", "the question or its options say FNM, and neither the user nor an earlier question has spelled it out")
 		}
 		// The user named the format and the agent asked for it anyway.
 		if q.Slot == "format" && !declinesFormat(q.RowID) {

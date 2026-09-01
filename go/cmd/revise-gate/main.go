@@ -41,15 +41,20 @@ import (
 var promptsJSON []byte
 
 type base struct {
-	ID        int        `json:"id"`
-	Name      string     `json:"name"`
-	Format    string     `json:"format"`
-	Power     string     `json:"power"`
-	Bracket   int32      `json:"bracket"`
-	Colors    []string   `json:"colors"`
-	Commander string     `json:"commander"`
-	Theme     string     `json:"theme"`
-	Plan      string     `json:"plan"`
+	ID        int      `json:"id"`
+	Name      string   `json:"name"`
+	Format    string   `json:"format"`
+	Power     string   `json:"power"`
+	Bracket   int32    `json:"bracket"`
+	Colors    []string `json:"colors"`
+	Commander string   `json:"commander"`
+	Theme     string   `json:"theme"`
+	Plan      string   `json:"plan"`
+	// Sets names the sets the reader wrote, in their own words. The gate
+	// resolves each one to a set family through the index (D-376). A
+	// revision reads the same slots as the build, so a set-limited base
+	// proves the filter survives a revision (D-373).
+	Sets      []string   `json:"sets"`
 	Revisions []revision `json:"revisions"`
 }
 
@@ -258,9 +263,14 @@ func buildBase(ctx context.Context, b *generate.Builder, cb *candidates.Builder,
 	if len(commanders) > 0 {
 		colors = commanders[0].GetColorIdentity()
 	}
+	setCodes, err := resolveSets(idx, bs.Sets)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
 	list, err := cb.Build(idx, candidates.Request{
 		Format: format, Colors: colors, Theme: bs.Theme, CommanderOracleIDs: commanderIDs,
 		PoolRule: mtgv1.PoolRule_POOL_RULE_ANY_CARD, Bracket: bs.Bracket,
+		SetCodes: setCodes,
 	})
 	if err != nil {
 		return nil, nil, nil, nil, fmt.Errorf("candidates: %w", err)
@@ -292,7 +302,41 @@ func request(bs base, idx *cards.Index, pool *generate.Pool, list *candidates.Li
 		Limits:       generate.LimitsFor(format),
 		LegalityAsOf: idx.AsOf.Format("2006-01-02"),
 		Revision:     rev,
+		SetCodes:     setCodesOf(idx, bs),
 	}
+}
+
+// setCodesOf resolves the base's set names. A name this snapshot can not
+// settle is a gate error, and build() reports it before this runs.
+func setCodesOf(idx *cards.Index, bs base) []string {
+	codes, _ := resolveSets(idx, bs.Sets)
+	return codes
+}
+
+// resolveSets maps the set names of a base onto one set family, the way
+// the chat does (D-376). A name this snapshot can not settle is an error
+// here: the gate proves the filter, and the chat asks the reader.
+func resolveSets(idx *cards.Index, names []string) ([]string, error) {
+	if len(names) == 0 {
+		return nil, nil
+	}
+	tbl := idx.Sets()
+	seen := map[string]bool{}
+	var out []string
+	for _, name := range names {
+		res := tbl.Resolve(name)
+		if res.Kind != cards.ResolveOne {
+			return nil, fmt.Errorf("the set name %q resolves to %d sets, not one", name, len(res.Candidates))
+		}
+		for _, c := range res.Codes {
+			if !seen[c] {
+				seen[c] = true
+				out = append(out, c)
+			}
+		}
+	}
+	sort.Strings(out)
+	return out, nil
 }
 
 // highestNonland is the base deck's dearest nonland card by mana value.

@@ -8,9 +8,9 @@ This repo is a Go + Protobuf + TypeScript monorepo for an agentic MtG deck build
 
 Stage (2026-08-31): `main` is at `6f871c3`. Merged: PR-0a to PR-8, PR-7B, PR-10 to PR-13, the Phase 3B roadmap (#46), PR-16 (#47), and PR-16B (#48). PR-9 is out of the MVP (D-256).
 
-Branch `pr-17` holds the deck library, and it is whole (D-344). The owner reads it, then merges. **PR-17B, the set filter, follows it** (F-29, D-373). The app never applied a set as a constraint. A deck asked for one set held cards of any set. The re-baseline of D-302 is done: question gate run 28, eval run 28, and deck gate run 10.
+PR-17 merged. **Branch `pr-17b` holds the set filter** (F-29, D-373 to D-383). The app never applied a set as a constraint, and a deck asked for one set held cards of any set. A set name now resolves to a whole set family, through the Scryfall parent link. The gates stand at question gate run 31 (PASS), question eval run 29, deck gate run 9, and the PR-17B set gate run 1 (PASS).
 
-Phase 3B, the product UI, is the current phase, and branch `pr-17` holds the deck library. The look follows a reference design the owner gave on 2026-08-30 (D-328 to D-335). The gate baselines (question gate run 27, deck gate run 8) do not compare with `main` until the owner reruns them (D-302). `docs/SESSION-HANDOFF.md` holds the moving parts, and `docs/reference/autotune-readme.md` holds the loop commands.
+Phase 3B, the product UI, is the current phase. The look follows a reference design the owner gave on 2026-08-30 (D-328 to D-335). `docs/SESSION-HANDOFF.md` holds the moving parts, and `docs/reference/autotune-readme.md` holds the loop commands.
 
 Run `git pull`, then `git status`, before you change anything. The owner commits and pushes. Do not commit unless the owner asks.
 
@@ -52,6 +52,7 @@ Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
 - `docs/reference/` - research notes with sources and dates, and every dated gate document.
 - `docs/audit-2026-08-28.md` - the full audit of 2026-08-28, its owner answers, and the change plan.
 - `docs/audit-2026-08-29.md` - the quality audit of 2026-08-29 and its fixes (D-302 to D-306).
+- `docs/reference/set-data-2026-08-31.md` - every set number PR-17B rests on, with its source and date.
 
 ## Commands that cost money
 
@@ -66,6 +67,8 @@ Five more targets spend money, and each has an overwrite guard and an env guard.
 `make summary-judge` judges every deck summary of a gate document (F-26). Each probe costs a few cents. Ask the owner before every run.
 
 `make revise-gate` builds two base decks and runs six revisions over them (PR-12B). It has the same two guards. One run costs about $0.30 (run 2, $0.29).
+
+`DECK_GATE_ARGS` passes flags to `make deck-gate`. `DECK_GATE_ARGS="-only 19,20,21,22,23,24"` runs the six set prompts of PR-17B alone, for about $0.35.
 
 `make test-smoke` runs the live LLM smoke test and reads the keys from `.env`. It spends a few cents. The paid targets are these nine plus the script: questions-gate, questions-eval, eval-calibrate, deck-gate, revise-gate, chat-probe, generate-probe, summary-judge, and test-smoke.
 

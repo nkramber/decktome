@@ -14,9 +14,10 @@ import (
 // unreadSlots names the Slots fields the build does not read, and why.
 // A field leaves this map when the build starts reading it.
 var unreadSlots = map[string]string{
-	// slot_states is the question layer's own bookkeeping. The build reads
-	// the values, not whether they were asked.
-	"slot_states": "the question layer's bookkeeping, not a build input",
+	// slot_states was listed here until PR-17B. The build reads one key of
+	// it now: set_outside_mana is filled when the reader allowed mana
+	// cards from outside the named sets, and skipped when they did not
+	// (D-382). Every other key is still the question layer's bookkeeping.
 
 	// locked_oracle_ids is the proto's copy. The build reads the same
 	// cards from the private state, which holds the names the user wrote

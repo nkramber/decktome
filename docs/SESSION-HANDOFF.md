@@ -4,14 +4,13 @@
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. On the owner's machine `~/.nvm/versions/node/v22.23.2/bin` on the PATH fixes it.
 
-## Where things stand (2026-08-30)
+## Where things stand (2026-09-01)
 
-- `main` is at `6f871c3`. Merged: PR-0a to PR-8, PR-7B, PR-10 to PR-13, the audits, the Phase 3B roadmap (#46), PR-16 (#47), and PR-16B (#48).
-- No pull request is open. The Dependabot bump of the go group merged as #44.
-- Branch `pr-17` holds the deck library and the look of the reference design, in nine commits over `main`. The version history and the compare remain.
-- The tree is green on `pr-17`: Go build, vet, `-race` tests, golangci-lint, `buf breaking`, `proto-check`, web lint, typecheck, 165 web tests, and the web build. `make lint` reports zero findings.
-- The first paint is 361.69 kB raw and 115.72 kB gzipped. The bar of D-323 is 130 kB.
-- The revise gate held on run 2 (D-296). The paid gates did not run since 2026-08-28.
+- `main` is at `275964c`. Merged: PR-0a to PR-8, PR-7B, PR-10 to PR-13, the audits, the Phase 3B roadmap (#46), PR-16 (#47), PR-16B (#48), and PR-17 (#49).
+- Branch `pr-17b` holds the set filter. Nothing on it is committed. It changes 57 files and adds 13.
+- The tree is green on `pr-17b`: Go build, vet, `-race` tests, golangci-lint, `buf breaking`, web lint, typecheck, 201 web tests. `make lint` reports zero findings.
+- Question gate run 31 passes every bar. The set deck gate passes 6 of 6.
+- The revise gate held on run 2 (D-296). Deck gate run 10 is open, and it predates this branch.
 - PR-9 is out of the MVP (D-256). Phase 3B comes before Phase 4 (D-316).
 
 CAUTION: branch `pr-17` carries eight concerns. They are the contract, the Go side, the reference design, and the layout of D-331. They are also the Build menu, the one deck screen, the pool picker, and the speed of the app. Guardrail 10 asks for one. The owner chose to ship it whole (D-344).
@@ -142,28 +141,140 @@ CAUTION: the binder head calls `GetCollection`, and the answer carries every ent
 - The script lives outside the repo, in the session scratchpad. It must run from `web/apps/web`, or the bare import of `@playwright/test` does not resolve.
 - PR-23 holds the real smoke flow (D-313). This is a reading tool, not that.
 
-## PR-17B, the set filter (F-29, D-373)
+## PR-17B, the set filter (F-29, D-373 to D-383)
 
-The app never applied a set as a constraint. `candidates.Request` carries the format, the colors, the theme, the commander ids, the pool rule, the owned counts, and the bracket, and it carries no set. A deck asked for one set held cards of any set.
+Branch `pr-17b` holds it. The app never applied a set as a constraint, and a deck asked for one set held cards of any set.
 
-CAUTION: a card does not have one set. The snapshot of 2026-08-30 holds 988 paper sets over 37,557 Oracle cards, and 16,765 of those cards hold printings in two or more. `Card.set_codes` is a list. A field that holds one set drops a reprint.
+The eight decisions, in short:
 
-A set name is not a set code. "The Hobbit" names `hob`, `hoc`, and `thob` in that snapshot. OQ-47 asks which of them a reader means.
+- D-376: a set name resolves to a whole set family, through the Scryfall parent link. "The Hobbit" gives `hob` and `hoc`. A phrase that names two base sets asks.
+- D-377: the snapshot carries a fourth file, `sets.json.gz`, from the `/sets` endpoint. No bulk card file holds `parent_set_code`.
+- D-378: a set limit never filters basic lands.
+- D-379: inside a set limit the theme ranks the shortlist, and neither the theme cut nor the role caps apply.
+- D-380: a family under 70 nonbasic cards in the deck colors builds no deck. The floor is 35 for a 60-card format.
+- D-381: a card the reader named by name beats the set limit, and the deck marks it.
+- D-382: ramp cards and nonbasic lands come from outside the sets only after the reader says yes.
+- D-383: `DeckCard.outside_requested_sets` carries the mark, and the deck screen shows it in red.
+
+CAUTION: a card does not have one set. The snapshot of 2026-08-31 holds 988 paper sets over 34,599 playable Oracle cards, and 16,247 of them hold printings in two or more. `Card.set_codes` is a list, 80,193 pairs in all, about two megabytes.
+
+CAUTION: a name prefix can not build a set family. `ltc` is "Tales of Middle-earth Commander" and its base set is "The Lord of the Rings: Tales of Middle-earth". The two names share no prefix, and only `parent_set_code` links them.
+
+CAUTION: the roadmap gate line named two cards that do not exist. The snapshot holds "Thranduil, the Elvenking" and "Smaug, Wicked Worm", both with a comma. Smaug the Impenetrable is in `hoc`, not in `hob`, so only the family rule of D-376 satisfies that line.
+
+What the branch changed, in one list:
+
+- `internal/cards/sets.go` is new: the set table, the family walk, and the resolver. `internal/cards/index.go` fills `Card.set_codes` in the printings walk it already runs, and it shares one string per set code.
+- `scryfall.Client.Sets` reads `/sets`. `cards.Refresh` stores the file, and `cards.BackfillSets` fills a snapshot stored before the file existed. The worker calls it every cycle.
+- `candidates.Request` takes `SetCodes` and `OutsideRoles`. `CountInSets` and `SetFloor` answer the viability floor, and `CountManaInSets` answers the mana row.
+- `generate.Request.SetCodes` marks every deck card the sets do not hold, and one warning counts them.
+- `agentsvc` runs the floor twice, before the commander pool and after the colors settle. `ErrThinSet` carries the counts.
+- The classify prompt is at version 15 and reports `set_names`. The catalog holds two new rows. The snapshot is at version 3.
+- `web/apps/web/src/features/deck/card-tile.tsx` shows the red mark.
+
+CAUTION: the role caps were the second cut, and the first dry run found it. The "other" cap of 10 cut 40 of the 128 cards the Hobbit family offers in black-red. The shortlist reached 61, and a Commander deck needs 99. Both cuts lift under a set limit now.
+
+## The paid runs of PR-17B (2026-08-31)
+
+| Run | File | Result |
+|---|---|---|
+| Set deck gate 1 | `pr17b-set-gate-run1.md` | PASS. 6 of 6 decks, 0 blocks, 0 notes, 0 repairs. $0.3539 over 306 seconds. |
+| Question gate 29 | `pr7-question-gate-run29.md` | FAIL. 29 of 30 catalog-only, over the bar of 25. Two failures, and neither comes from the set filter. $0.16. |
+| Question eval 29 | `pr7-question-eval-run29.md` | 11.2 percent bad on the holdout, from 6.8. Read the caution below before you act on that number. $0.09. |
+| Question gate 30 | `pr7-question-gate-run30.md` | FAIL. 27 of 27 catalog-only, 0 lint, 0 dead ends. 7 premature, which found two more defects. $0.16. |
+| Question gate 31 | `pr7-question-gate-run31.md` | **PASS.** 27 of 27 catalog-only, 0 lint, 0 dead ends, 0 premature. $0.16. |
+| Question eval 31 | `pr7-question-eval-run31.md` | 7.9 percent bad on the holdout, from 6.8 on run 28. $0.09. |
+| Question gate 32 | `pr7-question-gate-run32.md` | **PASS.** 27 of 27 catalog-only, 0 lint, 0 dead ends, 0 premature. Prompt version 16. $0.16. |
+| Question eval 32 | `pr7-question-eval-run32.md` | 22 bad of 393, from 27 of 413. The three changed rows fall from 11 findings to 4. $0.09. |
+| Revise gate 3 | `pr12b-revise-gate-run3.md` | FAIL, 7 of 8. It found D-391. $0.57. |
+| Revise gate 4 | `pr12b-revise-gate-run4.md` | **PASS, 8 of 8.** $0.54. |
+
+The revise gate gained a set-limited base on 2026-09-01. A revision reads the same slots as the build, so base 3 is the one run that proves the set filter survives a revision. It does. The revised deck holds Arcane Signet, Delighted Halfling, and Elvish Mystic, and all three are in The Hobbit Eternal. It holds no Sol Ring, which is in neither set.
+
+Run 3 failed on one revision, and the failure had nothing to do with the sets. The model removed six cards and added seven under a mana cap, and the engine blocked the whole deck for one card. D-391 adds the trim, and run 4 passed.
+
+## The question-quality pass of 2026-09-01 (D-387 to D-389)
+
+Eval run 31 found 10 warranted defects over 413 questions, and 6 sat on the budget, the colors, and the format rows. Seven changes answer them, and run 32 measures the result.
+
+| Measure | Run 31 | Run 32 |
+|---|---|---|
+| Questions scored | 413 | 393 |
+| Not warranted | 27 | 22 |
+| Detailed findings on budget, colors, and format | 11 | 4 |
+| budget | 6 | 1 |
+| format | 2 | 0 |
+| colors | 3 | 3 |
+
+Gate run 32 passes every bar: 27 of 27 catalog-only, 0 lint, 0 dead ends, 0 premature.
+
+The three colors findings that remain are ones this repo refuses, and each cites a rule that predates them.
+
+- "Whatever is winning" is not a color delegation. The corpus routes "whatever" nowhere, after gate runs 11 to 13 read it as house rules six times (D-111).
+- The Atraxa question fires on turn 1 of a conversation whose whole point is a misspelling. The reader wrote "Atraxa, Praetor's Voice", and the card is "Atraxa, Praetors' Voice". The index does not hold the first spelling, so the rule of D-388 claims nothing about it. Guardrail 4 and D-140 both say the engine states nothing it can not prove. The reader corrects the name on turn 2, and the row does not fire again.
+- The duplicate color question of conversation 7 follows a format decline. The reader named Pioneer, the decline row retired every open question (D-125), and a retired row asks once more (D-195). That is by design.
+
+CAUTION: the whole-run bad count drifts. Run 28 found 14 of 391, run 29 found 22 of 398, and run 31 found 27 of 413. The step from run 28 to run 31 is 13 questions. D-230 measures the judge noise at up to 9 between two runs of identical code. Each single step sits inside that band, and the sum does not. Watch it on the next run.
+
+The drift belongs to no part of this branch. Not one bad question sits on `set_unresolved`, on `set_outside_mana`, or on `power_sixty`. Every one sits on `budget`, `colors`, `format`, `power_commander`, `theme`, `pool_thin`, `named_card_role`, or `format_unsupported_open`. `budget` leads every eval: 3 of 6 detailed findings on run 28, and 6 of 17 on run 31. The gate is the contract, and the eval is advisory (D-136).
+
+Three runs measure the net of D-351, because run 29 ran without it and the other two ran with it. The table below is the whole case for D-386.
+
+| Run | The net | Conversations that ended before the script did | Questions the reader answered | Turns the net healed |
+|---|---|---|---|---|
+| 29 | none | 6 | 316 | 0 |
+| 30 | closes on the reader's first reply | 45 | 264 | 82 |
+| 31 | closes after two turns (D-386) | 11 | 308 | 34 |
+
+The grace period returned 44 of the 52 answers run 30 threw away. It also kept every gain: run 31 reports no dead end.
+
+Run 30 found two more defects beyond the eager net. The gate asked for the `commander` key while `commander_pick` answered it, which called 6 conversations premature. Each of the six holds a commander. `required` reads all four commander keys now.
+
+CAUTION: the eval numbers do not compare cleanly. Run 28 scored 391 questions and found 14 not warranted. Run 29 scored 398 and found 22. The margin is 8 questions, and D-230 measures the judge noise at up to 9 between two runs of identical code. `tune-check` paired zero questions across the line, because the catalog and the prompt both changed. So the run is neither proof of a regression nor proof of none.
+
+The three set conversations reach neither the bad-question list nor the missing-question list of the eval. Every one of the 8 extra findings sits on a `commander_pick`, `colors`, or `budget` row of a conversation that predates this branch.
+
+The set gate proves every deck line. A session read every card of all six decks against the raw snapshot. Only two decks hold a card outside their family, and the app marked every one. Prompt 21 holds 8 lands of the mana fill, and prompt 22 holds Sol Ring. Prompts 19, 20, 23, and 24 hold none.
+
+A free dry run proves the thin-set refusal of D-380. A mono-black Hobbit commander gives 68 cards, the floor is 70, and the turn ends with the count and no deck.
+
+The owner settled every failure of run 29 and run 30 (D-384, D-385, D-386). Run 31 passes every bar.
+
+- The 60-card power row is fixed now, so the ask role sends it word for word. The acronym rule reads the options beside the text, because a reader meets both at once.
+- The gate runs the D-351 net, as `agentsvc.Chat` does. A test reads both turn loops and fails when they guard the net on different conditions.
+
+The three defects below are closed. This file still records them, because a session that reads a run 29 or run 30 document needs to know what it holds.
+
+CAUTION: question gate run 29 fails on two things, and PR-17B causes neither. Run 28 and run 29 built the identical conversation for every named case, so a session compared them line for line.
+
+- The linter found 2 questions that say FNM with no expansion. D-374 changed the `power_sixty` row on 2026-08-31 and added that rule, both after run 28. Run 29 is the first run under them. The ask role kept the expansion 4 times and dropped it 2 times, out of 17 firings of the row.
+- The dead-end check of D-357 reports 10 conversations, and 8 of them wait on the budget. Run 28 held the same conversations and the same open keys. The check did not exist then, so run 29 is its first full run.
+
+CAUTION: the root cause of those 10 was the gate harness, not the agent. `agentsvc.Chat` closes the open questions on a turn that asks nothing new, and the gate did not. All 10 sat on the last scripted turn, and production heals every one. D-385 puts the net in the gate.
+
+A session marked the three set conversations as probes after this run, so they now sit outside the count. They ran as gate conversations, which raised the counted set from 27 to 30. The bar holds either way, and the next run counts 27 again.
+
+Two defects of the set filter reached the gate, and both are fixed:
+
+- The role caps were a second cut beside the theme cut. The "other" cap of 10 dropped 40 of the 128 cards the Hobbit family offers in black-red. A free dry run found it before any paid call.
+- The set row asked about Tarkir on two turns in a row, because nothing recorded the phrase it had already named. It follows the D-210 rule now.
+
+CAUTION: the eight snapshots on the owner's disk held no set file. A session wrote one into `20260831T090157` by hand, so the tests and the gates read a real table. Every other version falls back to a derived table with no family link, and the worker fills the newest one on its next cycle.
 
 ## Next steps, in order
 
-1. The owner reads `pr-17` in the browser, then merges it. PR-17 is whole (D-344). The one gate line the owner still owns is a grid of 100 real decks under one second.
-2. **PR-17B, the set filter** (F-29, D-373). It follows the PR-17 merge. Ask OQ-47 first: which sets a product name covers.
+1. The owner reads branch `pr-17b` in the browser, then commits and merges it. Nothing on it is committed yet. The one screen to read is a deck built from a set. Every card the sets do not hold carries a red mark.
+2. The owner decides on a question eval of run 31, which costs about $0.09. Eval 29 scored a gate run that failed, so no clean quality baseline stands beside run 28 today.
 3. Then PR-18 to PR-23 in order, one gate each. Before PR-22, ask OQ-45 and OQ-46.
 4. After Phase 3B: PR-15, then PR-14.
 
-The re-baseline of D-302 is done: question gate run 28, eval run 28, and deck gate run 10. The section below holds the numbers.
+CAUTION: deck gate run 10 is still open, and it predates this branch. D-362 bounds the owned-first fill at 150 names, and run 9 showed four decks that cost $39.81 to $167.98 where run 8 cost nothing. A run 10 must show the run 8 costs again. It costs about $1.09.
 
-CAUTION: `pr-17` carries eight concerns on one branch, and guardrail 10 asks for one. The owner chose to ship it whole (D-344). Read the branch as one slice, not as eight.
+CAUTION: branch `pr-17b` carries the set filter and three fixes to PR-17's own decisions (D-384 to D-386). The three came out of the gate runs of this branch, and none of them belongs to the set filter. Read them as a separate slice inside one branch.
 
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 
-Seven owner rows wait in `docs/owner-questions.md`: OQ-23, OQ-28 to OQ-31, OQ-37, and OQ-39. OQ-20, OQ-44, OQ-45, and OQ-46 wait in `docs/open-questions.md`.
+Seven owner rows wait in `docs/owner-questions.md`: OQ-23, OQ-28 to OQ-31, OQ-37, and OQ-39. OQ-20, OQ-44, OQ-45, and OQ-46 wait in `docs/open-questions.md`. The second OQ-47 closed on 2026-08-31 (D-376).
 
 ## The dead conversation of 2026-08-31 (D-351 to D-354)
 

@@ -78,6 +78,11 @@ type Result struct {
 	// nothing about the commander, and the reader must be told why
 	// (D-366).
 	ChoseCommander bool
+	// SetsApplied names the sets this turn read out of the reader's
+	// words, when it read any. A reader who writes "the Hobbit set" gets
+	// two sets, and a red mark on every card outside them. The turn must
+	// say which sets it applied, or the marks explain nothing (D-390).
+	SetsApplied []string
 }
 
 // Turn maps one user message onto the slots and returns the next
@@ -90,13 +95,15 @@ func (a *Agent) Turn(ctx context.Context, st *State, message string, acc *llm.Ac
 		return Result{}, err
 	}
 	a.readFacts(st)
-	// The mark is of this turn alone (D-366).
+	// Both marks are of this turn alone (D-366, D-390).
 	st.Ctx.ChoseCommander = false
+	st.setsThisTurn = nil
 	rows, resolved := a.plan(st, UserWords(message))
 	if len(rows) == 0 {
 		// The classify call may have closed a key, so the M-4 report
 		// changes even on a turn that asks nothing.
-		return Result{Slots: st.Slots, Ready: st.Ready(a.cat), Coverage: st.Metrics(), ChoseCommander: st.Ctx.ChoseCommander}, nil
+		return Result{Slots: st.Slots, Ready: st.Ready(a.cat), Coverage: st.Metrics(),
+			ChoseCommander: st.Ctx.ChoseCommander, SetsApplied: st.setsThisTurn}, nil
 	}
 	chosen, err := a.choose(ctx, st, message, rows, resolved.text, acc)
 	if err != nil {
@@ -125,6 +132,7 @@ func (a *Agent) classify(ctx context.Context, st *State, message string, acc *ll
 	a.apply(st, out, open, words)
 	a.applyWords(st, turnWords{Message: words, Declined: out.DeclinedKeys, Closed: out.ClosedKeys, Open: open})
 	a.closeByOption(st, words)
+	a.applyManaPermission(st, words)
 	// The scope question closes when the user answers it with a deck.
 	// The row offers "Yes, a Magic deck", and a user who writes "a Modern
 	// burn deck" instead has said the same thing. Nothing else closed
@@ -136,6 +144,34 @@ func (a *Agent) classify(ctx context.Context, st *State, message string, acc *ll
 		st.Skip("scope")
 	}
 	return nil
+}
+
+// applyManaPermission reads the answer to the mana row (D-382). The row
+// asks one permission, so a "yes" fills the key and every other answer
+// skips it.
+//
+// The key can not close by an option match: both options start with a
+// word the match would take, and the difference between them is the
+// whole answer. A skipped key means the deck stays inside the sets,
+// which is the literal reading of what the reader asked for.
+func (a *Agent) applyManaPermission(st *State, message string) {
+	if st.Slots.GetSlotStates()[SlotSetOutsideMana] != mtgv1.SlotState_SLOT_STATE_ASKED {
+		return
+	}
+	row, ok := a.askedRow(st, SlotSetOutsideMana)
+	if !ok || row.ID != "set_outside_mana" {
+		return
+	}
+	switch {
+	case len(row.Options) > 0 && optionAnswered(message, row.Options[0]), acceptsOffer(message):
+		a.log.Info("the reader allowed mana cards from outside the named sets",
+			"session", st.SessionID)
+		st.Close(SlotSetOutsideMana)
+	case len(row.Options) > 1 && optionAnswered(message, row.Options[1]), BareNegative(message):
+		a.log.Info("the reader kept the mana base inside the named sets",
+			"session", st.SessionID)
+		st.Skip(SlotSetOutsideMana)
+	}
 }
 
 // readFacts hands the slots of this turn to the hint source and reads
@@ -164,6 +200,29 @@ func (a *Agent) readFacts(st *State) {
 	// The decline rows ask again only when the user names another format
 	// this app does not build (D-210).
 	st.Ctx.BadFormatChanged = st.BadFormatChanged()
+	// The set row follows the same rule (D-376).
+	st.Ctx.SetChanged = st.BadSetChanged()
+	// A named card that can lead a deck may fix the deck's color
+	// identity, and nothing has settled its role yet. The color row
+	// waits, or it asks for colors the commander already decides (D-388).
+	st.Ctx.NamedLeader = false
+	if cc, ok := a.hints.(CommanderChecker); ok && !st.Ctx.CommanderSet && !st.Ctx.Filled["named_card_role"] {
+		for _, name := range st.NamedCards {
+			if lead, known := cc.CanLead(name); known && lead {
+				st.Ctx.NamedLeader = true
+				break
+			}
+		}
+	}
+	// The mana row needs the count the sets offer against the count the
+	// deck wants (D-382). It only matters while a set limit is on and
+	// the key is open.
+	st.Ctx.ThinSetMana = false
+	if ms, ok := a.hints.(ManaSource); ok && st.Ctx.SetLimited && !st.Ctx.Filled[SlotSetOutsideMana] {
+		thin, _, _ := ms.ThinSetMana(st.Slots.GetSetCodes(), st.Slots.GetFormat().GetId(),
+			st.Slots.GetColors(), st.Slots.GetPower())
+		st.Ctx.ThinSetMana = thin
+	}
 }
 
 // resolvedRows holds the placeholder-free text, the options, and the
@@ -317,7 +376,7 @@ func (a *Agent) send(ctx context.Context, st *State, message string, chosen []ch
 			return Result{}, err
 		}
 	}
-	res := Result{Slots: st.Slots, ChoseCommander: st.Ctx.ChoseCommander}
+	res := Result{Slots: st.Slots, ChoseCommander: st.Ctx.ChoseCommander, SetsApplied: st.setsThisTurn}
 	for _, c := range chosen {
 		st.AskCount++
 		q := &mtgv1.Question{
@@ -360,6 +419,13 @@ func (a *Agent) send(ctx context.Context, st *State, message string, chosen []ch
 			st.RecordAskedOffer(resolved.offered[c.Row.ID])
 			if declinesFormat(c.Row.ID) {
 				st.RecordAskedBadFormat()
+			}
+			// The set row follows the same rule (D-376). Without this it
+			// asked the same question every turn until the reader
+			// answered it, which gate run 29 showed twice in one
+			// conversation.
+			if c.Row.StateKey() == SlotSetUnresolved {
+				st.RecordAskedSet()
 			}
 		}
 		st.MarkAsked(c.Row.ID, c.Row.StateKey(), c.Row.Slot)
@@ -415,9 +481,13 @@ type classifyOut struct {
 	// exists for exactly this case, and the classifier used to report the
 	// card as the commander, so the question never fired (D-118).
 	NamedCards []string `json:"named_cards"`
-	Power      string   `json:"power"`
-	PoolRule   string   `json:"pool_rule"`
-	BudgetUSD  float64  `json:"budget_usd"`
+	// SetNames are the sets the reader wants the deck built from, in the
+	// reader's own words. A set is a constraint the app applies now, so
+	// the words no longer reach the theme alone (D-373).
+	SetNames  []string `json:"set_names"`
+	Power     string   `json:"power"`
+	PoolRule  string   `json:"pool_rule"`
+	BudgetUSD float64  `json:"budget_usd"`
 	// BudgetScope is "buy", "deck", or "unknown". The budget-scope row
 	// asks it, and nothing stored the answer before D-238.
 	BudgetScope string `json:"budget_scope"`
@@ -662,6 +732,8 @@ var wordRules = []wordRule{
 	{"swap_commander", ruleSwapCommander},
 	{"commander_pair", ruleCommanderPair},
 	{"delegate_commander", ruleDelegateCommander},
+	{"delegate_colors", ruleDelegateColors},
+	{"format_from_named_leader", ruleFormatFromNamedLeader},
 	{"pick_by_place", rulePickByPlace},
 	{"refuse_offer", ruleRefuseOffer},
 	{"infer_power", ruleInferPower},
@@ -850,7 +922,7 @@ func ruleNoSpendingLimit(a *Agent, st *State, in turnWords) {
 		return
 	}
 	st.Skip("budget")
-	a.log.Info("the user set no spending limit, so the budget slot is closed",
+	a.log.Info("the user answered the budget row without a number, so the slot is closed",
 		"session", st.SessionID)
 }
 
@@ -1010,6 +1082,71 @@ func ruleDelegateCommander(a *Agent, st *State, in turnWords) {
 	st.CurrentOffer = nil
 }
 
+// ruleDelegateColors closes the color slot on a delegation that is not
+// about the commander (D-388). "Surprise me" hands back every open key,
+// and the classifier reads the commander half of that and misses the
+// colors.
+//
+// A delegation about the commander closes the colors on its own, because
+// the commander's identity is the deck's identity (D-70).
+//
+// "Whatever is winning" is not a delegation here. The corpus routes
+// "whatever" nowhere, after gate runs 11 to 13 read it as house rules
+// six times (D-111).
+func ruleDelegateColors(a *Agent, st *State, in turnWords) {
+	if st.Ctx.Filled["colors"] || len(st.Slots.GetColors()) > 0 {
+		return
+	}
+	if !delegatesChoice(in.Message) {
+		return
+	}
+	// A delegation the classifier assigned to a commander key answers
+	// that key alone. "You pick" against the pick row chooses a
+	// commander, and it says nothing about the colors.
+	//
+	// The word test of delegationIsAboutTheCommander is too wide here.
+	// It reads "a Commander deck, surprise me" as a commander answer,
+	// and that message delegates every open key (D-93).
+	if in.hasKey("commander") || in.hasKey("commander_pick") {
+		return
+	}
+	a.log.Info("the user handed the color choice to the agent",
+		"session", st.SessionID)
+	st.Skip("colors")
+}
+
+// ruleFormatFromNamedLeader reads the format from a card that can only
+// lead a Commander deck (D-388).
+//
+// A legendary creature names no format on its own: many of them play in
+// Standard and Modern too. A card that can lead and is legal in neither
+// leaves one format this app builds, so the format row must not offer
+// three. Eval run 31 flagged that question on Atraxa, Praetor's Voice.
+func ruleFormatFromNamedLeader(a *Agent, st *State, in turnWords) {
+	if st.Ctx.Format != mtgv1.FormatId_FORMAT_ID_UNSPECIFIED {
+		return
+	}
+	// A format this app does not build is declined by its own row, and a
+	// card must never override that (D-112).
+	if _, _, bad := unsupportedFormat(in.Message); bad {
+		return
+	}
+	fc, ok := a.hints.(FormatChecker)
+	if !ok {
+		return
+	}
+	for _, name := range st.NamedCards {
+		only, known := fc.OnlyCommander(name)
+		if !known || !only {
+			continue
+		}
+		a.log.Info("the user named a card that can only lead a Commander deck",
+			"session", st.SessionID, "card", name)
+		a.setFormat(st, mtgv1.FormatId_FORMAT_ID_COMMANDER)
+		return
+	}
+}
+
 // delegationIsAboutTheCommander reports whether a delegation in the
 // message answers a commander question.
 func delegationIsAboutTheCommander(st *State, in turnWords) bool {
@@ -1111,6 +1248,7 @@ func (a *Agent) apply(st *State, out classifyOut, open []string, message string)
 	}
 	a.applyColors(st, out)
 	a.applyNames(st, out)
+	a.applySets(st, out)
 	if rule, ok := poolRules[slotWord(out.PoolRule)]; ok {
 		// An owned rule needs a collection. A reader with none who says
 		// "build only from the Hobbit set" names a set, not their
@@ -1202,6 +1340,97 @@ func (a *Agent) applyColors(st *State, out classifyOut) {
 	// The names on the table were chosen before these colors arrived,
 	// so they are checked against the colors again (D-153).
 	a.dropOffColorOffers(st)
+}
+
+// applySets resolves the set names the reader wrote onto a set family
+// and writes it to the slots (D-376).
+//
+// A phrase that names one base set closes the set row. A phrase this app
+// can not settle opens it, and the row asks. A message that names no set
+// changes nothing: a set the reader gave before stays until they replace
+// it, which is the rule every other slot follows.
+func (a *Agent) applySets(st *State, out classifyOut) {
+	if len(out.SetNames) == 0 {
+		return
+	}
+	r, ok := a.hints.(SetResolver)
+	if !ok {
+		return
+	}
+	var codes, names []string
+	var unresolved string
+	var options []string
+	for _, phrase := range out.SetNames {
+		if strings.TrimSpace(phrase) == "" {
+			continue
+		}
+		gotCodes, gotNames, gotOptions, done := r.ResolveSet(phrase)
+		if !done {
+			// The first phrase this app can not settle is the one the row
+			// asks about. A second one waits for its turn.
+			if unresolved == "" {
+				unresolved, options = phrase, gotOptions
+			}
+			continue
+		}
+		codes = append(codes, gotCodes...)
+		names = append(names, gotNames...)
+	}
+	// A message can name two sets and resolve one of them. The resolved
+	// set fills the slot, and the row still asks about the other. Both
+	// halves run, so neither answer is dropped in silence (D-376).
+	if len(codes) > 0 {
+		codes = append(codes, st.Slots.GetSetCodes()...)
+		names = append(names, st.SetNames...)
+		codes, names = dedupeSets(codes, names)
+		a.log.Info("the deck is limited to the sets the reader named",
+			"session", st.SessionID, "phrase", strings.Join(out.SetNames, ", "),
+			"sets", strings.Join(codes, ","))
+		st.SetLimit(strings.Join(out.SetNames, ", "), codes, names)
+		// The reader hears which sets the words became. "The Hobbit"
+		// is two sets, and a red mark on a card explains nothing until
+		// the reader knows what the limit is (D-390).
+		st.setsThisTurn = names
+	}
+	if unresolved != "" {
+		a.log.Info("the reader named a set this app can not settle",
+			"session", st.SessionID, "phrase", unresolved, "options", len(options))
+		st.SetUnresolved(unresolved, options)
+		return
+	}
+	// Every phrase of this message named a set, so the row that asks
+	// which set a name means has its answer.
+	if st.Ctx.SetUnresolved || st.UnresolvedSet != "" {
+		st.SetResolved()
+	}
+}
+
+// dedupeSets drops a repeated code and keeps the names beside it. Two
+// phrases can name one family, and one set must not be listed twice.
+func dedupeSets(codes, names []string) ([]string, []string) {
+	byCode := map[string]string{}
+	for i, c := range codes {
+		if _, seen := byCode[c]; seen {
+			continue
+		}
+		name := c
+		if i < len(names) && strings.TrimSpace(names[i]) != "" {
+			name = names[i]
+		}
+		byCode[c] = name
+	}
+	outCodes := make([]string, 0, len(byCode))
+	for c := range byCode {
+		outCodes = append(outCodes, c)
+	}
+	// Sorted, so two runs of one session read the same and a log line
+	// compares with the next one.
+	sort.Strings(outCodes)
+	outNames := make([]string, 0, len(outCodes))
+	for _, c := range outCodes {
+		outNames = append(outNames, byCode[c])
+	}
+	return outCodes, outNames
 }
 
 // applyNames writes the three card lists. The lists are kept apart.
@@ -1448,6 +1677,11 @@ var typedSlots = map[string]bool{
 	// The commander closes on a name, and that name closes the color
 	// slot and the two other commander rows with it.
 	"commander": true,
+	// The set closes on a resolved set family, and the mana row closes
+	// on a permission. An option match would close the mana row on a
+	// "no" as if it were a "yes" (D-376, D-382).
+	SlotSet:            true,
+	SlotSetOutsideMana: true,
 	// The pick row closes on a name as well. Its answer is a commander,
 	// and "none of those" is a refusal and not an answer. A pick closed
 	// by name would carry a commander nobody chose (D-120).

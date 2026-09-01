@@ -25,6 +25,8 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"sort"
+	"strings"
 	"time"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
@@ -56,7 +58,14 @@ type prompt struct {
 	// (D-218, D-247).
 	Precon string  `json:"precon"`
 	Budget float64 `json:"budget"`
-	Plan   string  `json:"plan"`
+	// Sets names the sets the reader wrote, in their own words. The gate
+	// resolves each one to a set family through the index (D-376), so a
+	// prompt reads the way a reader speaks and never as a code list.
+	Sets []string `json:"sets"`
+	// OutsideMana allows the mana fill of D-382. The reader answers the
+	// mana row with a yes, and the gate says so here.
+	OutsideMana bool   `json:"outside_mana"`
+	Plan        string `json:"plan"`
 }
 
 type result struct {
@@ -66,7 +75,12 @@ type result struct {
 	repaired     bool
 	repairReason string
 	poolSize     int
-	judged       *generate.Judgement
+	// setCodes is the family the prompt's set names resolved to, and
+	// inSet is how many pool cards the sets hold (D-376, D-380).
+	setCodes []string
+	inSet    int
+	outside  int
+	judged   *generate.Judgement
 	// judgeErr is the judge lane's failure. A deck with one has no
 	// verdict on F-26, so it can not count as a pass on that bar (T-17).
 	// An empty summary counts as one: the judge has nothing to read.
@@ -161,7 +175,7 @@ func run() error {
 			}
 		}
 		results = append(results, r)
-		fmt.Fprintf(os.Stderr, "  %2d. %-38s pool %3d  %s\n", p.ID, p.Name, r.poolSize, status(r))
+		fmt.Fprintf(os.Stderr, "  %2d. %-38s pool %3d%s  %s\n", p.ID, p.Name, r.poolSize, setWord(r), status(r))
 	}
 	if *dry {
 		fmt.Fprintf(os.Stderr, "\ndry run: %d shortlists built, no provider call ran\n", len(results))
@@ -217,6 +231,15 @@ func judge(ctx context.Context, client *llm.Client, name string, d *mtgv1.Deck, 
 	return generate.JudgeSummary(ctx, client, name, d.GetSummary(), acc)
 }
 
+// setWord names the set limit of one result, for the progress line and
+// the gate document. An unlimited prompt reads as nothing (D-373).
+func setWord(r result) string {
+	if len(r.setCodes) == 0 {
+		return ""
+	}
+	return fmt.Sprintf("  sets %s in %d out %d", strings.Join(r.setCodes, ","), r.inSet, r.outside)
+}
+
 func status(r result) string {
 	switch {
 	case r.err != nil:
@@ -237,6 +260,15 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 		out.err = fmt.Errorf("unknown format %q", p.Format)
 		return out
 	}
+	// The set names resolve to a set family, the way the chat does
+	// (D-376). A name this snapshot can not settle fails the prompt: the
+	// gate proves the filter, and the chat asks the reader.
+	setCodes, err := resolveSets(idx, p.Sets)
+	if err != nil {
+		out.err = err
+		return out
+	}
+	out.setCodes = setCodes
 	var commanders []*mtgv1.Card
 	var commanderIDs []string
 	// A prompt with no commander delegates the pick, as a user who says
@@ -245,6 +277,7 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 		pool, err := cb.CommanderPool(idx, candidates.Request{
 			Format: format, Theme: p.Theme, Colors: gatekit.Colors(p.Colors),
 			PoolRule: gatekit.PoolRuleID(p.Pool), Owned: ownedFor(p, owned), Bracket: p.Bracket,
+			SetCodes: setCodes,
 		})
 		if err != nil {
 			out.err = fmt.Errorf("commander pool: %w", err)
@@ -272,6 +305,19 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 	}
 	poolRule := gatekit.PoolRuleID(p.Pool)
 	own := ownedFor(p, owned)
+	// The viability floor of D-380. A family too thin for the format in
+	// these colors builds nothing, and the reason names the counts.
+	if len(setCodes) > 0 {
+		have := candidates.CountInSets(idx, candidates.Request{Format: format, Colors: colors, SetCodes: setCodes})
+		if want := candidates.SetFloor(format); have < want {
+			out.err = fmt.Errorf("the sets hold %d cards in these colors, and this format needs about %d", have, want)
+			return out
+		}
+	}
+	var outsideRoles map[mtgv1.CardRole]int
+	if len(setCodes) > 0 && p.OutsideMana {
+		outsideRoles = manaRoles(generate.TargetsFor(format, gatekit.PowerLevel(p.Bracket, p.Power)))
+	}
 	list, err := cb.Build(idx, candidates.Request{
 		Format:             format,
 		Colors:             colors,
@@ -280,11 +326,14 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 		PoolRule:           poolRule,
 		Owned:              own,
 		Bracket:            p.Bracket,
+		SetCodes:           setCodes,
+		OutsideRoles:       outsideRoles,
 	})
 	if err != nil {
 		out.err = fmt.Errorf("candidates: %w", err)
 		return out
 	}
+	out.inSet, out.outside = list.Stats.InSet, list.Stats.Outside
 	// A locked card must be nameable, or the deck can not hold it (D-70).
 	// The build reads the ids and states the cards in its own prompt, so
 	// the gate adds nothing to the plan text by hand (D-242).
@@ -347,12 +396,56 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 		Limits:          generate.LimitsFor(format),
 		LegalityAsOf:    idx.AsOf.Format("2006-01-02"),
 		BudgetUSD:       p.Budget,
+		SetCodes:        setCodes,
 	}, acc)
 	if err != nil {
 		out.err = err
 		return out
 	}
 	out.deck, out.notes, out.repaired, out.repairReason = res.Deck, res.Notes, res.Repaired, res.RepairReason
+	return out
+}
+
+// resolveSets maps the set names of a prompt onto one set family, the
+// way the chat does (D-376). A name this snapshot can not settle is an
+// error here: the gate proves the filter, and the chat asks the reader.
+func resolveSets(idx *cards.Index, names []string) ([]string, error) {
+	if len(names) == 0 {
+		return nil, nil
+	}
+	tbl := idx.Sets()
+	seen := map[string]bool{}
+	var out []string
+	for _, name := range names {
+		res := tbl.Resolve(name)
+		if res.Kind != cards.ResolveOne {
+			return nil, fmt.Errorf("the set name %q resolves to %d sets, not one", name, len(res.Candidates))
+		}
+		for _, c := range res.Codes {
+			if !seen[c] {
+				seen[c] = true
+				out = append(out, c)
+			}
+		}
+	}
+	sort.Strings(out)
+	return out, nil
+}
+
+// manaRoles are the roles a set-limited deck may fill from outside the
+// named sets (D-382). It mirrors the same function in agentsvc, because
+// the gate builds a request the way the service does.
+func manaRoles(targets map[string]int) map[mtgv1.CardRole]int {
+	out := map[mtgv1.CardRole]int{}
+	if n := targets["ramp"]; n > 0 {
+		out[mtgv1.CardRole_CARD_ROLE_RAMP] = n
+	}
+	if n := targets["land"]; n > 0 {
+		out[mtgv1.CardRole_CARD_ROLE_LAND] = n
+	}
+	if len(out) == 0 {
+		return nil
+	}
 	return out
 }
 

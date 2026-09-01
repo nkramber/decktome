@@ -54,6 +54,25 @@ type FactSource interface {
 	ThinTheme(theme string) (thin bool, count int)
 }
 
+// SetResolver maps the words a reader wrote onto a set family. A hint
+// source that holds the card index implements it (D-376).
+type SetResolver interface {
+	// ResolveSet returns the family codes and the set names for a phrase.
+	// ok is false when the phrase names no set or names two base sets,
+	// and options then holds the names the question offers.
+	ResolveSet(phrase string) (codes, names, options []string, ok bool)
+}
+
+// ManaSource counts the mana cards a set family offers against the count
+// the deck wants (D-382). A hint source that holds the card index
+// implements it.
+type ManaSource interface {
+	// ThinSetMana reports whether the sets hold fewer mana cards than the
+	// deck wants, with the two counts. want is zero when the source can
+	// not answer, and the clause that names the counts then drops.
+	ThinSetMana(codes []string, format mtgv1.FormatId, colors []mtgv1.Color, power *mtgv1.PowerLevel) (thin bool, have, want int)
+}
+
 // CommanderChecker reports whether a named card can lead a deck. A hint
 // source that holds the card index implements it.
 //
@@ -61,6 +80,20 @@ type FactSource interface {
 // is not proof of anything, and the agent claims nothing about it.
 type CommanderChecker interface {
 	CanLead(name string) (canLead, known bool)
+}
+
+// FormatChecker reports whether a named card can only be played in
+// Commander. A hint source that holds the card index implements it.
+//
+// A legendary creature is not proof of the format: many of them are
+// legal in Standard or Modern too. A card that can lead a deck and is
+// legal in neither leaves Commander as the one format this app builds
+// for it (D-388).
+type FormatChecker interface {
+	// OnlyCommander returns whether the card can only be played in
+	// Commander here. known is false when the index does not hold the
+	// name, and the caller then claims nothing.
+	OnlyCommander(name string) (only, known bool)
 }
 
 // IdentityChecker reports whether a named card fits a set of colors. A
@@ -95,8 +128,45 @@ func resolve(row Row, st *State, h Hints) (text string, opts []string, offered [
 	if !usable(text) || !keptFirst {
 		return strings.TrimSpace(row.Fallback), row.Options, nil
 	}
-	return text, pickOptions(row, offered), offered
+	return text, rowOptions(row, st, offered), offered
 }
+
+// rowOptions builds the option list of one resolved row. The set row
+// offers the sets its text names, so the reader picks one instead of
+// typing a name the app already listed (D-376). Every other row goes
+// through pickOptions.
+func rowOptions(row Row, st *State, offered []string) []string {
+	if row.StateKey() == SlotSetUnresolved && len(st.SetOptions) > 0 {
+		return append(append([]string(nil), st.SetOptions...), everySetOption)
+	}
+	// A reader who asked for a 60-card deck can not mean Commander, and
+	// Commander is a 100-card format. The row offered it anyway, and
+	// eval run 31 called the question inaccurate (D-388).
+	if row.Slot == "format" && sixtyCardRequest(st.Ctx.Words) {
+		return withoutCommander(row.Options)
+	}
+	return pickOptions(row, offered)
+}
+
+// withoutCommander drops Commander from an option list. An empty result
+// never reaches the reader: the caller keeps the original list then.
+func withoutCommander(options []string) []string {
+	out := make([]string, 0, len(options))
+	for _, o := range options {
+		if strings.EqualFold(strings.TrimSpace(o), "commander") {
+			continue
+		}
+		out = append(out, o)
+	}
+	if len(out) == 0 {
+		return options
+	}
+	return out
+}
+
+// everySetOption drops the set limit. A reader who meant no set at all
+// needs a way to say so, and the row is closed to free text.
+const everySetOption = "Use every set"
 
 // noneOption is the answer that asks for three other commanders (D-73).
 const noneOption = "None, name three more"
@@ -139,6 +209,22 @@ func substitute(text string, st *State, h Hints) (string, []string) {
 	// The precon row names the deck the user wants to upgrade (D-113).
 	if s := strings.TrimSpace(st.PreconName); s != "" {
 		rep["{precon}"] = s
+	}
+	// The set row names the phrase this app could not settle, and the
+	// sets it may have meant (D-376).
+	if v := strings.TrimSpace(st.UnresolvedSet); v != "" {
+		rep["{bad_set}"] = v
+	}
+	// The row names every set the phrase could mean. The count is not
+	// fixed, so one placeholder carries the whole list: three fixed
+	// placeholders dropped the sentence whenever a phrase named two sets,
+	// and the question then named none of them.
+	if s := englishList(st.SetOptions); s != "" {
+		rep["{set_options}"] = s
+	}
+	// The mana row names the sets the reader chose (D-382).
+	if s := englishList(st.SetNames); s != "" {
+		rep["{sets}"] = s
 	}
 	// The unsupported-format row names what the user asked for, and the
 	// nearest format this app builds (D-112).
@@ -186,6 +272,16 @@ func substitute(text string, st *State, h Hints) (string, []string) {
 		if strings.Contains(text, "{n}") {
 			if n := h.OwnedThemeCount(theme); n > 0 {
 				rep["{n}"] = strconv.Itoa(n)
+			}
+		}
+		// The mana row names the count the sets hold and the count the
+		// deck wants (D-382). A source that can not count drops both, and
+		// the fallback carries the question.
+		if ms, ok := h.(ManaSource); ok && strings.Contains(text, "{n_mana}") {
+			if _, have, want := ms.ThinSetMana(st.Slots.GetSetCodes(), st.Slots.GetFormat().GetId(),
+				st.Slots.GetColors(), st.Slots.GetPower()); want > 0 {
+				rep["{n_mana}"] = strconv.Itoa(have)
+				rep["{m_mana}"] = strconv.Itoa(want)
 			}
 		}
 	}

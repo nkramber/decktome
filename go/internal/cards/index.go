@@ -25,6 +25,9 @@ type Index struct {
 	// paperSwaps counts the cards whose digital default printing was
 	// replaced by a paper one (D-221).
 	paperSwaps int
+	// sets is the set table: the code, the name, and the family link of
+	// every set (D-377). It is never nil.
+	sets       *SetTable
 	tags       *TagIndex
 	collisions Collisions
 	// AsOf is the Scryfall updated_at of the snapshot (roadmap PR-3).
@@ -65,10 +68,28 @@ func normName(name string) string {
 	return strings.ToLower(strings.TrimSpace(name))
 }
 
+// IndexOption changes one build input of NewIndex. The option shape
+// keeps the 20 call sites of NewIndex free of a fourth argument they do
+// not use.
+type IndexOption func(*indexOpts)
+
+type indexOpts struct{ sets []SetInfo }
+
+// WithSets supplies the set table rows from the snapshot's set file. A
+// build with no rows derives a table from the printings instead, and
+// that table holds no family link (D-377).
+func WithSets(rows []SetInfo) IndexOption {
+	return func(o *indexOpts) { o.sets = rows }
+}
+
 // NewIndex builds the index. printings and tags are optional. The card
 // list is copied and sorted by EDHREC rank once, so Search never sorts.
 // A card with a price gets price_as_of set to the snapshot date.
-func NewIndex(cardList []*mtgv1.Card, printings []Printing, tags *TagIndex, asOf time.Time) *Index {
+func NewIndex(cardList []*mtgv1.Card, printings []Printing, tags *TagIndex, asOf time.Time, opts ...IndexOption) *Index {
+	var o indexOpts
+	for _, fn := range opts {
+		fn(&o)
+	}
 	sorted := slices.Clone(cardList)
 	slices.SortStableFunc(sorted, func(a, b *mtgv1.Card) int {
 		return rankOf(a) - rankOf(b)
@@ -149,6 +170,10 @@ func NewIndex(cardList []*mtgv1.Card, printings []Printing, tags *TagIndex, asOf
 	// paper collects a replacement for every card whose default printing
 	// is digital and whose paper printing the file also holds (D-221).
 	paper := map[string]Printing{}
+	// setCodes interns one string per set code, and cardSets collects the
+	// codes per Oracle id (D-373).
+	setCodes := map[string]string{}
+	cardSets := make(map[string][]string, len(cardList))
 	for _, p := range printings {
 		c, ok := idx.byOracleID[p.OracleID]
 		if !ok {
@@ -174,6 +199,16 @@ func NewIndex(cardList []*mtgv1.Card, printings []Printing, tags *TagIndex, asOf
 		}
 		if p.SetCode != "" && p.CollectorNumber != "" {
 			idx.bySetNo[setNoKey(p.SetCode, p.CollectorNumber)] = c
+		}
+		// Every paper set the card is printed in. A card is not in one
+		// set, so the field is a list (D-373). A digital printing is out:
+		// this app offers paper cards only (D-306). The code string is
+		// shared across every card that holds it, so the whole field
+		// costs about two megabytes over 34,599 cards.
+		if !p.Digital && !SkipLayouts[p.Layout] {
+			if code := internSet(setCodes, p.SetCode); code != "" {
+				cardSets[c.OracleId] = appendSet(cardSets[c.OracleId], code)
+			}
 		}
 		// A digital default printing is replaced by a paper one: the
 		// price (D-17), the image, and the artist credit (D-6) follow the
@@ -205,7 +240,79 @@ func NewIndex(cardList []*mtgv1.Card, printings []Printing, tags *TagIndex, asOf
 		}
 		idx.paperSwaps++
 	}
+	for _, c := range cardList {
+		if codes := cardSets[c.OracleId]; len(codes) > 0 {
+			slices.Sort(codes)
+			c.SetCodes = codes
+		} else {
+			c.SetCodes = nil
+		}
+	}
+	if len(o.sets) > 0 {
+		idx.sets = NewSetTable(o.sets)
+	} else {
+		idx.sets = derivedSetTable(printings)
+	}
 	return idx
+}
+
+// Sets returns the set table. It is never nil.
+func (x *Index) Sets() *SetTable { return x.sets }
+
+// internSet returns one shared string per set code, lowercased.
+func internSet(pool map[string]string, code string) string {
+	code = strings.ToLower(strings.TrimSpace(code))
+	if code == "" {
+		return ""
+	}
+	if got, ok := pool[code]; ok {
+		return got
+	}
+	pool[code] = code
+	return code
+}
+
+// appendSet adds a code once. A card holds 2.4 sets on average and 225
+// at the most, so a linear scan is the cheap answer.
+func appendSet(have []string, code string) []string {
+	if slices.Contains(have, code) {
+		return have
+	}
+	return append(have, code)
+}
+
+// InSets reports whether a card holds a paper printing in one of the
+// codes. An empty code list means no set limit, so every card passes
+// (D-373). A basic land passes whatever the codes hold, because a set
+// limit never filters the mana base (D-378).
+func InSets(c *mtgv1.Card, codes map[string]bool) bool {
+	if len(codes) == 0 {
+		return true
+	}
+	for _, s := range c.GetSetCodes() {
+		if codes[s] {
+			return true
+		}
+	}
+	return false
+}
+
+// CodeSet reads a code list as a lookup set. An empty list gives nil,
+// which every caller reads as "every set".
+func CodeSet(codes []string) map[string]bool {
+	if len(codes) == 0 {
+		return nil
+	}
+	out := make(map[string]bool, len(codes))
+	for _, c := range codes {
+		if c = strings.ToLower(strings.TrimSpace(c)); c != "" {
+			out[c] = true
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }
 
 // newerPaper keeps the later of two paper printings, and a printing with

@@ -33,6 +33,10 @@ func fullState() *State {
 	st.OfferAsked = []string{"Oloro, Ageless Ascetic"}
 	st.UnsupportedFormatName, st.NearestFormat, st.UnsupportedFormatAsked = "Brawl", "Commander", "Brawl"
 	st.PreconName, st.IllegalCommander = "Atraxa, Praetors' Voice", "Lightning Bolt"
+	st.SetPhrase, st.SetNames = "the Hobbit set", []string{"The Hobbit", "The Hobbit Eternal"}
+	st.UnresolvedSet, st.UnresolvedSetAsked = "Tarkir", "Tarkir"
+	st.SetOptions = []string{"Tarkir: Dragonstorm", "Dragons of Tarkir"}
+	st.Ctx.SetLimited, st.Ctx.SetUnresolved, st.Ctx.ThinSetMana = true, true, true
 	st.AskCount, st.Turn = 2, 2
 	st.Messages = []string{"karlov lifegain", "keep sanguine bond"}
 	st.Asks = []Ask{{QuestionID: "q1-theme", RowID: "theme", Slot: "theme", Key: "theme", Fit: 0.9, Threshold: 0.35, Turn: 1}}

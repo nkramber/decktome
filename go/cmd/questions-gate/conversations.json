@@ -1,6 +1,6 @@
 {
-  "verified_at": "2026-08-28",
-  "note": "The PR-7 gate conversations as user messages. A conversation without \"probe\" is a gate conversation, and the file holds 30 of them among ids 1 to 34. TestConversations proves the deterministic half offline. The catalog-only bar counts the gate conversations that do not start after a build: a conversation marked \"has_deck\" starts with its build slots closed, so it can not invent a question and it leaves the count (A-9). Conversations marked \"probe\" do not count toward the verdict. They exist to find catalog gaps, so they hold the shapes the gate set never takes: a user who changes their mind, contradicts themselves, asks a question back, or wants something the app can not serve. Their questions still reach the M-5 sheet (D-96). Conversations 53 to 66 are the terse set (D-105). Their users never repeat a value they already gave, so a redundant question strands the conversation instead of getting an answer. Every gate conversation before them restates the format at turn 2, which hid that defect and let both bars reward it. The terse set counts as probes, so the catalog-only bar stays comparable to runs 1 to 13. Conversations 68 to 100 joined on 2026-08-26 (D-145). They are terse like 53 to 66, and they take the shapes the first 66 never took: bracket 1 and bracket 5, five colors and no colors, a companion, a Background pair, a corrected card name, a corrected color, a zero budget, a partial proxy, a per-card cap beside a total cap, a collection of lands alone, a library that does not exist, Pauper Commander, Oathbreaker, Historic, and a user who answers with a bare digit. They count as probes. Id 67 was a copy of 38 and was removed on 2026-08-28 (A-9). The ids keep their numbers, because the holdout split and the paired comparison key on them (D-134, D-181).",
+  "verified_at": "2026-08-31",
+  "note": "The PR-7 gate conversations as user messages. A conversation without \"probe\" is a gate conversation, and the file holds 30 of them among ids 1 to 34. TestConversations proves the deterministic half offline. The catalog-only bar counts the gate conversations that do not start after a build: a conversation marked \"has_deck\" starts with its build slots closed, so it can not invent a question and it leaves the count (A-9). Conversations marked \"probe\" do not count toward the verdict. They exist to find catalog gaps, so they hold the shapes the gate set never takes: a user who changes their mind, contradicts themselves, asks a question back, or wants something the app can not serve. Their questions still reach the M-5 sheet (D-96). Conversations 53 to 66 are the terse set (D-105). Their users never repeat a value they already gave, so a redundant question strands the conversation instead of getting an answer. Every gate conversation before them restates the format at turn 2, which hid that defect and let both bars reward it. The terse set counts as probes, so the catalog-only bar stays comparable to runs 1 to 13. Conversations 68 to 100 joined on 2026-08-26 (D-145). They are terse like 53 to 66, and they take the shapes the first 66 never took: bracket 1 and bracket 5, five colors and no colors, a companion, a Background pair, a corrected card name, a corrected color, a zero budget, a partial proxy, a per-card cap beside a total cap, a collection of lands alone, a library that does not exist, Pauper Commander, Oathbreaker, Historic, and a user who answers with a bare digit. They count as probes. Id 67 was a copy of 38 and was removed on 2026-08-28 (A-9). The ids keep their numbers, because the holdout split and the paired comparison key on them (D-134, D-181). Conversations 106 to 108 joined on 2026-08-31 with PR-17B (D-376, D-382). They name a set: one that resolves to a family, one that names two base sets and must ask, and one that names a set beside a theme. They count as probes.",
   "conversations": [
     {
       "id": 1,
@@ -1133,6 +1133,37 @@
         "Bracket 3.",
         "You pick the commander."
       ]
+    },
+    {
+      "id": 106,
+      "name": "a set that resolves to one family",
+      "messages": [
+        "Build me a Commander deck only from the Hobbit set.",
+        "Bracket 3, and you pick the commander.",
+        "Any colors are fine."
+      ],
+      "probe": true
+    },
+    {
+      "id": 107,
+      "name": "a set name that names two base sets",
+      "messages": [
+        "I want a Tarkir deck.",
+        "Commander, dragons, bracket 3.",
+        "Tarkir: Dragonstorm.",
+        "No color preference."
+      ],
+      "probe": true
+    },
+    {
+      "id": 108,
+      "name": "a set beside a theme",
+      "messages": [
+        "A Bloomburrow deck about animals.",
+        "Commander, bracket 2.",
+        "Green and white, and you pick the commander."
+      ],
+      "probe": true
     }
   ]
 }

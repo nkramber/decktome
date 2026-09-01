@@ -177,3 +177,80 @@ func TestLintUnexplainedAcronym(t *testing.T) {
 		}
 	})
 }
+
+// TestUnexplainedAcronymReadsTheOptions is D-374, widened after gate run
+// 29. The reader meets the text and the options at once, so an option
+// that says FNM is as bare as a text that does. The text alone caught 2
+// of the 13 cases of that run.
+func TestUnexplainedAcronymReadsTheOptions(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		messages []string
+		q        LintQuestion
+		want     bool
+	}{
+		{
+			name:     "the text says the acronym alone",
+			messages: []string{"A Standard burn deck."},
+			q:        LintQuestion{Turn: 1, RowID: "power_sixty", Slot: "power", Text: "How strong should the deck be: casual, FNM-level, or tournament-meta?"},
+			want:     true,
+		},
+		{
+			name:     "the text drops it and the options keep it",
+			messages: []string{"A Standard burn deck."},
+			q: LintQuestion{Turn: 1, RowID: "power_sixty", Slot: "power",
+				Text: "How strong should the deck be?", Options: []string{"Casual", "FNM", "Tournament-meta"}},
+			want: true,
+		},
+		{
+			name:     "the text spells it out",
+			messages: []string{"A Standard burn deck."},
+			q: LintQuestion{Turn: 1, RowID: "power_sixty", Slot: "power",
+				Text:    "How strong should this be: casual, Friday Night Magic (FNM) level, or tournament-meta?",
+				Options: []string{"Casual", "FNM", "Tournament-meta"}},
+			want: false,
+		},
+		{
+			name:     "the user wrote it first",
+			messages: []string{"I need a deck for FNM on Friday."},
+			q: LintQuestion{Turn: 1, RowID: "power_sixty", Slot: "power",
+				Text: "How strong should the deck be?", Options: []string{"Casual", "FNM", "Tournament-meta"}},
+			want: false,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var got bool
+			for _, f := range LintConversation(tc.messages, []LintQuestion{tc.q}) {
+				if f.Rule == "unexplained_acronym" {
+					got = true
+				}
+			}
+			if got != tc.want {
+				t.Errorf("unexplained_acronym = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
+// TestTheSixtyPowerRowGoesOutWholeis D-374 fix A: the row is fixed, so
+// the ask role can not drop the words that explain the acronym.
+func TestTheSixtyPowerRowGoesOutWhole(t *testing.T) {
+	c, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	row, ok := c.Row("power_sixty")
+	if !ok {
+		t.Fatal("no power_sixty row")
+	}
+	if !row.Fixed {
+		t.Error("the 60-card power row must be fixed, or the ask role can drop the expansion (D-374)")
+	}
+	// The row itself must pass the rule it exists to satisfy.
+	q := LintQuestion{Turn: 1, RowID: row.ID, Slot: row.Slot, Text: row.Text, Options: row.Options}
+	for _, f := range LintConversation([]string{"A Standard burn deck."}, []LintQuestion{q}) {
+		if f.Rule == "unexplained_acronym" {
+			t.Errorf("the catalog row itself fails the rule: %s", f.Detail)
+		}
+	}
+}

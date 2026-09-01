@@ -1,8 +1,13 @@
 package generate
 
 import (
+	"fmt"
+	"sort"
+	"strings"
+
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/candidates"
+	cardsets "github.com/nkramber/mtg-deck-builder/go/internal/cards"
 	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
 )
 
@@ -370,4 +375,116 @@ func commanderIdentity(deck *mtgv1.Deck, pool *Pool, cards rules.CardSource) map
 		set = map[mtgv1.Color]bool{}
 	}
 	return set
+}
+
+// markOutsideSets sets DeckCard.outside_requested_sets on every card the
+// reader's sets do not hold, and adds one warning that counts them
+// (D-383). A deck with no set limit is left alone.
+//
+// The mark is written once, at build time, so it says what was true then
+// and a later snapshot does not move it. A basic land is never marked:
+// the mana base is out of a set limit (D-378).
+func markOutsideSets(deck *mtgv1.Deck, req Request, cards rules.CardSource) {
+	codes := cardsets.CodeSet(req.SetCodes)
+	if codes == nil {
+		return
+	}
+	var outside []string
+	for _, list := range [][]*mtgv1.DeckCard{deck.GetCards(), deck.GetSideboard()} {
+		for _, dc := range list {
+			c, ok := lookup(req.Pool, cards, dc.GetOracleId())
+			if !ok || candidates.IsBasicLand(c) {
+				continue
+			}
+			if cardsets.InSets(c, codes) {
+				continue
+			}
+			dc.OutsideRequestedSets = true
+			outside = append(outside, dc.GetName())
+		}
+	}
+	if len(outside) == 0 {
+		return
+	}
+	sort.Strings(outside)
+	addFinding(deck, CodeOutsideSet, mtgv1.Severity_SEVERITY_WARN,
+		fmt.Sprintf("the sets you named do not hold %s: %s",
+			plural(len(outside), "card"), strings.Join(outside, ", ")))
+}
+
+// trimToSize drops cards until the deck holds the exact size, and it
+// returns the names it cut (D-391). It is the mirror of padWithBasics.
+//
+// A deck one or two cards over is a counting slip, the same slip D-225
+// pads when it falls the other way. Revise gate run 3 saw the model
+// remove six cards and add seven under a mana cap, and the engine
+// blocked the whole deck for one card.
+//
+// It never cuts a commander, a locked card, a card the reader named, or
+// an entry of more than one copy: those are the mana base and the
+// instructions. Among the rest it drops the dearest card first, because
+// a revision that lowers the curve is the case this arose in, and the
+// cheapest cards are the ones the deck can least afford to lose.
+func trimToSize(deck *mtgv1.Deck, req Request) []string {
+	size := DeckSize(req.Format)
+	if size == 0 {
+		return nil
+	}
+	have := len(deck.GetCommanderOracleIds())
+	for _, c := range deck.GetCards() {
+		have += int(c.GetCount())
+	}
+	over := have - size
+	if over <= 0 || over > MaxTrim {
+		return nil
+	}
+	keep := map[string]bool{}
+	for _, id := range req.Commanders {
+		keep[id] = true
+	}
+	for _, id := range req.Locked {
+		keep[id] = true
+	}
+	if req.Revision != nil {
+		for _, id := range req.Revision.Exempt {
+			keep[id] = true
+		}
+	}
+	// The candidates, dearest first. A single copy only: an entry of two
+	// or more is the mana base, and cutting one copy of it is a change
+	// the reader did not ask for.
+	type row struct {
+		index int
+		mv    float64
+	}
+	var rows []row
+	for i, dc := range deck.GetCards() {
+		if keep[dc.GetOracleId()] || dc.GetCount() != 1 {
+			continue
+		}
+		c, ok := req.Pool.ByOracleID(dc.GetOracleId())
+		if !ok || candidates.IsBasicLand(c) {
+			continue
+		}
+		rows = append(rows, row{index: i, mv: c.GetManaValue()})
+	}
+	if len(rows) < over {
+		return nil
+	}
+	sort.SliceStable(rows, func(i, j int) bool { return rows[i].mv > rows[j].mv })
+	cut := map[int]bool{}
+	var names []string
+	for _, r := range rows[:over] {
+		cut[r.index] = true
+		names = append(names, deck.GetCards()[r.index].GetName())
+	}
+	kept := make([]*mtgv1.DeckCard, 0, len(deck.GetCards())-over)
+	for i, dc := range deck.GetCards() {
+		if !cut[i] {
+			kept = append(kept, dc)
+		}
+	}
+	deck.Cards = kept
+	sort.Strings(names)
+	return names
 }
