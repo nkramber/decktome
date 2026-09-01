@@ -2,6 +2,7 @@ package scryfall
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -130,5 +131,68 @@ func TestRateLimitContextCancel(t *testing.T) {
 	defer cancel()
 	if _, err := c.BulkFiles(ctx); err == nil {
 		t.Fatal("want error on cancelled wait")
+	}
+}
+
+// TestSetsReadsTheEndpoint is D-377: the set family comes from /sets,
+// because no bulk card file carries a parent link.
+func TestSetsReadsTheEndpoint(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/sets" {
+			w.WriteHeader(404)
+			return
+		}
+		_, _ = fmt.Fprint(w, `{"object":"list","has_more":false,"data":[
+			{"code":"hob","name":"The Hobbit","set_type":"expansion","released_at":"2026-08-14","digital":false,"card_count":321},
+			{"code":"hoc","name":"The Hobbit Eternal","set_type":"eternal","released_at":"2026-08-14","parent_set_code":"hob"}]}`)
+	}))
+	defer srv.Close()
+	rows, err := New(srv.Client(), srv.URL, slog.Default()).Sets(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 2 {
+		t.Fatalf("read %d rows, want 2", len(rows))
+	}
+	if rows[0].Code != "hob" || rows[0].CardCount != 321 {
+		t.Errorf("row 0 = %+v", rows[0])
+	}
+	if rows[1].ParentSetCode != "hob" {
+		t.Errorf("row 1 parent = %q, want hob", rows[1].ParentSetCode)
+	}
+}
+
+// TestSetsFollowsThePages covers a paged answer. The endpoint answered
+// has_more false on 2026-08-31, and the loop must still work if it does
+// not.
+func TestSetsFollowsThePages(t *testing.T) {
+	var srv *httptest.Server
+	srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("page") == "2" {
+			_, _ = fmt.Fprint(w, `{"has_more":false,"data":[{"code":"hoc","name":"The Hobbit Eternal"}]}`)
+			return
+		}
+		_, _ = fmt.Fprintf(w, `{"has_more":true,"next_page":%q,"data":[{"code":"hob","name":"The Hobbit"}]}`,
+			srv.URL+"/sets?page=2")
+	}))
+	defer srv.Close()
+	rows, err := New(srv.Client(), srv.URL, slog.Default()).Sets(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 2 || rows[1].Code != "hoc" {
+		t.Fatalf("rows = %+v", rows)
+	}
+}
+
+// TestSetsRefusesAnEmptyAnswer: an empty set table would silently turn
+// every set filter off.
+func TestSetsRefusesAnEmptyAnswer(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = fmt.Fprint(w, `{"has_more":false,"data":[]}`)
+	}))
+	defer srv.Close()
+	if _, err := New(srv.Client(), srv.URL, slog.Default()).Sets(t.Context()); err == nil {
+		t.Fatal("an empty /sets answer must be an error")
 	}
 }

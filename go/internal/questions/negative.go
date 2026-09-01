@@ -31,7 +31,7 @@ var bareNegatives = map[string]bool{
 // yesNoOpeners start a question that invites a yes or a no. "Which
 // commander do you want?" is not one of them, and a bare negative
 // answers it with nothing.
-var yesNoOpeners = []string{"do you ", "did you ", "are there ", "is there ", "have you ", "would you like ", "any "}
+var yesNoOpeners = []string{"do you ", "did you ", "are there ", "is there ", "have you ", "would you like ", "any ", "may i ", "shall i "}
 
 // noNegativeClose names the keys a bare negative may never close. The
 // commander rows offer names, and "none of those" refuses the names

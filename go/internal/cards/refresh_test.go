@@ -45,6 +45,15 @@ func newFakeScryfall(t *testing.T, at time.Time) *fakeScryfall {
 			_, _ = fmt.Fprintf(w, `{"data":[%s]}`, strings.Join(items, ","))
 			return
 		}
+		if r.URL.Path == "/sets" {
+			// The set file is not a bulk file. It comes from /sets, and a
+			// refresh stores it beside the three bulk files (D-377).
+			_, _ = fmt.Fprint(w, `{"object":"list","has_more":false,"data":[`+
+				`{"code":"hob","name":"The Hobbit","set_type":"expansion","released_at":"2026-08-14"},`+
+				`{"code":"hoc","name":"The Hobbit Eternal","set_type":"eternal","released_at":"2026-08-14","parent_set_code":"hob"}`+
+				`]}`)
+			return
+		}
 		typ := strings.TrimPrefix(r.URL.Path, "/file/")
 		body, ok := f.bodies[typ]
 		if !ok {
@@ -564,5 +573,75 @@ func TestCopyBulkCancelsTheWriterOnError(t *testing.T) {
 	}
 	if store.saved != nil {
 		t.Errorf("the truncated object was committed: %q", store.saved)
+	}
+}
+
+// TestRefreshStoresTheSetFile is D-377: the set file goes in before the
+// completion marker, so a complete version always holds it.
+func TestRefreshStoresTheSetFile(t *testing.T) {
+	at := time.Date(2026, 8, 24, 9, 1, 0, 0, time.UTC)
+	f := newFakeScryfall(t, at)
+	store := DirStore{Root: t.TempDir()}
+	version, err := Refresh(t.Context(), f.client(), store, slog.Default())
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, err := store.Open(t.Context(), version, SetsFile)
+	if err != nil {
+		t.Fatalf("the snapshot holds no %s: %v", SetsFile, err)
+	}
+	defer func() { _ = r.Close() }()
+	rows, err := LoadSets(r, SetsFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 2 || rows[1].ParentCode != "hob" {
+		t.Fatalf("stored rows = %+v", rows)
+	}
+	if got := NewSetTable(rows).Family("hob"); len(got) != 2 {
+		t.Errorf("Family(hob) = %v, want two codes", got)
+	}
+}
+
+// TestBackfillSetsFillsAnOlderSnapshot is D-377: a version stored before
+// the set file existed gains it without a whole re-download.
+func TestBackfillSetsFillsAnOlderSnapshot(t *testing.T) {
+	at := time.Date(2026, 8, 24, 9, 1, 0, 0, time.UTC)
+	f := newFakeScryfall(t, at)
+	store := DirStore{Root: t.TempDir()}
+	version := VersionFor(at)
+	for _, name := range SnapshotFiles {
+		w, err := store.Create(t.Context(), version, name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := w.Write(gzipBytes(t, "")); err != nil {
+			t.Fatal(err)
+		}
+		if err := w.Close(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := store.Finalize(t.Context(), version); err != nil {
+		t.Fatal(err)
+	}
+	wrote, err := BackfillSets(t.Context(), f.client(), store, slog.Default())
+	if err != nil || !wrote {
+		t.Fatalf("BackfillSets = %v, %v, want true, nil", wrote, err)
+	}
+	// A second call finds the file and writes nothing.
+	wrote, err = BackfillSets(t.Context(), f.client(), store, slog.Default())
+	if err != nil || wrote {
+		t.Fatalf("second BackfillSets = %v, %v, want false, nil", wrote, err)
+	}
+}
+
+// TestBackfillSetsOnAnEmptyStore does nothing, because there is no
+// version to fill.
+func TestBackfillSetsOnAnEmptyStore(t *testing.T) {
+	f := newFakeScryfall(t, time.Now())
+	wrote, err := BackfillSets(t.Context(), f.client(), DirStore{Root: t.TempDir()}, slog.Default())
+	if err != nil || wrote {
+		t.Fatalf("BackfillSets = %v, %v, want false, nil", wrote, err)
 	}
 }

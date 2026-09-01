@@ -411,7 +411,7 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 		// ever starts. The reader sees a chat that does nothing. Close
 		// those questions with no value and build (D-351).
 		if !res.Ready && len(res.Questions) == 0 {
-			if closed := st.CloseStalled(); len(closed) > 0 {
+			if closed, _ := st.CloseStalled(); len(closed) > 0 {
 				s.log.WarnContext(ctx, "a turn asked nothing and was not ready, so the open questions were closed",
 					"session", session.GetId(), "keys", closed)
 				res.Ready = st.Ready(s.cat)
@@ -451,6 +451,16 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 	if len(stalled) > 0 {
 		if err := stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Status{
 			Status: "I did not read an answer to every question, so I am building with what I have"}}); err != nil {
+			return err
+		}
+	}
+	// A set name is a product, and one product is often several sets.
+	// "The Hobbit" is two of them. The deck marks every card the sets do
+	// not hold, and a mark explains nothing until the reader knows what
+	// the limit is (D-390).
+	if len(res.SetsApplied) > 0 {
+		if err := stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Status{
+			Status: setNote(res.SetsApplied)}}); err != nil {
 			return err
 		}
 	}

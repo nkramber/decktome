@@ -402,8 +402,15 @@ type DeckCard struct {
 	// collection, when the collection holds one. The UI shows its art in
 	// place of the default printing (D-299). Unset when not owned.
 	OwnedPrinting *Printing `protobuf:"bytes,9,opt,name=owned_printing,json=ownedPrinting,proto3" json:"owned_printing,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	// outside_requested_sets marks a card that the sets of Slots.set_codes
+	// do not hold. The build sets it once, so the mark says what was true
+	// then, and a later snapshot does not move it (D-383). It is false on
+	// every deck built with no set limit. Three things earn it: a card the
+	// reader named by name (D-381), a mana card the reader allowed from
+	// outside (D-382), and a basic land the sets do not print (D-378).
+	OutsideRequestedSets bool `protobuf:"varint,10,opt,name=outside_requested_sets,json=outsideRequestedSets,proto3" json:"outside_requested_sets,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *DeckCard) Reset() {
@@ -497,6 +504,13 @@ func (x *DeckCard) GetOwnedPrinting() *Printing {
 		return x.OwnedPrinting
 	}
 	return nil
+}
+
+func (x *DeckCard) GetOutsideRequestedSets() bool {
+	if x != nil {
+		return x.OutsideRequestedSets
+	}
+	return false
 }
 
 // ValidationResult is the rules-engine verdict (guardrail 1, PR-5).
@@ -687,7 +701,7 @@ const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\bfavorite\x18\x15 \x01(\bR\bfavorite\x12\x1d\n" +
 	"\n" +
 	"card_count\x18\x16 \x01(\x05R\tcardCountJ\x04\b\n" +
-	"\x10\vR\x04seed\"\x9c\x02\n" +
+	"\x10\vR\x04seed\"\xd2\x02\n" +
 	"\bDeckCard\x12\x1b\n" +
 	"\toracle_id\x18\x01 \x01(\tR\boracleId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
@@ -698,7 +712,9 @@ const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\vowned_count\x18\a \x01(\x05R\n" +
 	"ownedCount\x12\x1b\n" +
 	"\tprice_usd\x18\b \x01(\x01R\bpriceUsd\x127\n" +
-	"\x0eowned_printing\x18\t \x01(\v2\x10.mtg.v1.PrintingR\rownedPrinting\"\xd6\x01\n" +
+	"\x0eowned_printing\x18\t \x01(\v2\x10.mtg.v1.PrintingR\rownedPrinting\x124\n" +
+	"\x16outside_requested_sets\x18\n" +
+	" \x01(\bR\x14outsideRequestedSets\"\xd6\x01\n" +
 	"\x10ValidationResult\x12+\n" +
 	"\bfindings\x18\x01 \x03(\v2\x0f.mtg.v1.FindingR\bfindings\x12\x16\n" +
 	"\x06passed\x18\x02 \x01(\bR\x06passed\x12$\n" +

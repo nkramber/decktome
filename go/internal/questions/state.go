@@ -43,6 +43,25 @@ type State struct {
 	// PreconName is the precon the user wants to upgrade, named by its
 	// commander (D-113).
 	PreconName string
+	// SetPhrase is the set the reader named, in the reader's own words,
+	// for example "the Hobbit set" (D-376). It is empty when the reader
+	// named no set.
+	SetPhrase string
+	// UnresolvedSet is a set phrase the resolver could not settle: an
+	// unknown name, or one that names two base sets. The set row asks
+	// about it, and it clears when the reader answers.
+	UnresolvedSet string
+	// UnresolvedSetAsked is the phrase the set row named last. The row
+	// asks again only when the phrase differs, which is the D-210 rule
+	// for the format decline rows.
+	UnresolvedSetAsked string
+	// SetOptions are the set names the row offers when a phrase names two
+	// or more base sets. Empty for an unknown name.
+	SetOptions []string
+	// SetNames are the names of the sets the deck is limited to, in
+	// Slots.set_codes order. A message names them, so the reader reads
+	// "The Hobbit" and never "hob".
+	SetNames []string
 	// IllegalCommander is a card the user named as the commander that can
 	// not lead a deck (D-129).
 	IllegalCommander string
@@ -65,6 +84,11 @@ type State struct {
 	Messages []string
 	// Asks are the M-4 records, oldest first.
 	Asks []Ask
+	// setsThisTurn names the sets this turn read out of the reader's
+	// words. It is turn state, not session state: the Result carries it
+	// out and the next turn starts with it clear, the way the commander
+	// mark of D-366 does. The snapshot therefore does not hold it.
+	setsThisTurn []string
 }
 
 // PriorMessages is how many earlier messages the classify call sees.
@@ -148,11 +172,69 @@ func (s *State) RetireOffer() {
 	s.CurrentOffer = nil
 }
 
+// SlotSet is the state key of the set limit (D-376).
+const SlotSet = "set"
+
+// SlotSetUnresolved is the state key of the row that asks which set a
+// name means. It is its own key, not the set slot: a message can name
+// two sets, resolve one, and leave the other open. The resolved set then
+// fills the slot, and the row still asks about the rest (D-376).
+const SlotSetUnresolved = "set_unresolved"
+
+// SlotSetOutsideMana is the state key of the mana-fill row: may the deck
+// take ramp and lands from outside the named sets (D-382)?
+const SlotSetOutsideMana = "set_outside_mana"
+
+// SetLimit records the sets the reader named, and closes the set row.
+// codes is the whole family, and names is what a message calls them.
+func (s *State) SetLimit(phrase string, codes, names []string) {
+	s.SetPhrase = strings.TrimSpace(phrase)
+	s.SetNames = names
+	s.Slots.SetCodes = codes
+	s.Ctx.SetLimited = len(codes) > 0
+	s.Close(SlotSet)
+}
+
+// SetResolved closes the row that asks which set a name means. Every
+// phrase the reader gave now names a set, so the question is answered.
+func (s *State) SetResolved() {
+	s.UnresolvedSet, s.SetOptions = "", nil
+	s.Ctx.SetUnresolved = false
+	s.Close(SlotSetUnresolved)
+}
+
+// SetUnresolved records a set phrase the resolver could not settle. The
+// set row asks about it, and options names the sets it may offer.
+func (s *State) SetUnresolved(phrase string, options []string) {
+	phrase = strings.TrimSpace(phrase)
+	if phrase == "" {
+		return
+	}
+	s.UnresolvedSet, s.SetOptions = phrase, options
+	s.Ctx.SetUnresolved = true
+}
+
+// RecordAskedSet keeps the set phrase the row just named.
+func (s *State) RecordAskedSet() { s.UnresolvedSetAsked = s.UnresolvedSet }
+
+// BadSetChanged reports whether the set phrase the row would name differs
+// from the one it named last. A reader who repeats a name this app can
+// not resolve hears the same sentence once, and not twice (D-210).
+func (s *State) BadSetChanged() bool {
+	return !strings.EqualFold(strings.TrimSpace(s.UnresolvedSet), strings.TrimSpace(s.UnresolvedSetAsked))
+}
+
 // commanderKeys are the state keys of the rows that ask for the commander.
 // A named commander closes all of them: the pick row and the role row ask
 // the same thing in other words, and the illegal row asked for a
 // replacement that has now arrived (D-196).
 var commanderKeys = []string{"commander", "commander_pick", "named_card_role", "commander_illegal"}
+
+// CommanderKeys are the state keys of the rows that ask for the
+// commander. A caller that reads whether the commander is settled must
+// read all four: the pick row carries its own key, so a session that
+// answered it leaves the plain "commander" key empty for good.
+func CommanderKeys() []string { return append([]string(nil), commanderKeys...) }
 
 // RefreshFacts reads the planner facts a FactSource answers, from the
 // slots as they stand now. agentsvc calls it before the turn, and the
@@ -464,24 +546,60 @@ func (s *State) RetireOutstanding(c *Catalog) {
 	s.Ctx.Outstanding = map[string]string{}
 }
 
-// CloseStalled closes every question that is out, with no value (D-351).
-// It is the way out of a dead conversation: a turn that asks nothing new
-// and is not ready can never move again, because the agent does not
-// repeat a question it already asked. The slot takes the skipped state,
-// not the asked state, so no later turn offers it again.
+// StallGrace is how many turns the reader may take to answer a question
+// before the net of D-351 closes it. Two means the reader gets a whole
+// turn beyond the first reply (D-386).
 //
-// It returns the keys it closed, for the log and for the reader.
-func (s *State) CloseStalled() []string {
-	var closed []string
+// A grace of one closed a question on the turn the reader first replied
+// to it. Gate run 30 ended 32 of 107 conversations on turn 2 that way,
+// and 31 conversations lost an answer the reader had given. Run 29 built
+// the same conversations without the net and played them out.
+const StallGrace = 2
+
+// CloseStalled closes a question that has been out for StallGrace turns
+// or more, with no value (D-351, D-386). It is the way out of a dead
+// conversation: a turn that asks nothing new and is not ready can never
+// move again, because the agent does not repeat a question it already
+// asked. The slot takes the skipped state, not the asked state, so no
+// later turn offers it again.
+//
+// A question that is still inside the grace period stays out. The reader
+// answers it on the next turn, or the net closes it on the turn after.
+//
+// It returns the keys it closed and the keys it left, for the log, for
+// the reader, and for the gate.
+func (s *State) CloseStalled() (closed, waiting []string) {
 	for key, state := range s.Slots.GetSlotStates() {
-		if state == mtgv1.SlotState_SLOT_STATE_ASKED {
-			s.Slots.SlotStates[key] = mtgv1.SlotState_SLOT_STATE_SKIPPED
-			closed = append(closed, key)
+		if state != mtgv1.SlotState_SLOT_STATE_ASKED {
+			continue
 		}
+		if s.askAge(key) < StallGrace {
+			waiting = append(waiting, key)
+			continue
+		}
+		s.Slots.SlotStates[key] = mtgv1.SlotState_SLOT_STATE_SKIPPED
+		closed = append(closed, key)
+		delete(s.Ctx.Outstanding, key)
 	}
 	sort.Strings(closed)
-	s.Ctx.Outstanding = map[string]string{}
-	return closed
+	sort.Strings(waiting)
+	return closed, waiting
+}
+
+// askAge is how many turns the reader has had to answer the newest open
+// question for one key. A question sent this turn has age 0, and the
+// reader's first reply reads it at age 1.
+//
+// A key with no M-4 record has no age this can read. It answers the
+// grace, so the net still closes it: a session restored without its
+// records must not stall for good.
+func (s *State) askAge(key string) int {
+	for i := len(s.Asks) - 1; i >= 0; i-- {
+		if s.Asks[i].Key == key && !s.Asks[i].Filled {
+			return s.Turn - s.Asks[i].Turn
+		}
+	}
+	return StallGrace
 }
 
 // AddWords keeps every word the user has written. The routing rules and

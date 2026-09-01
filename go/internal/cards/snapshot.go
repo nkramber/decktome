@@ -14,16 +14,33 @@ import (
 // this. A bound keeps a corrupt file from eating memory.
 const maxLine = 4 << 20
 
+// nopCloser wraps a reader that needs no close, so maybeGunzip returns
+// one type for both cases.
+type nopCloser struct{ io.Reader }
+
+func (nopCloser) Close() error { return nil }
+
+// maybeGunzip wraps a stream in a gzip reader when the name ends in .gz.
+// The caller closes the result.
+func maybeGunzip(r io.Reader, name string) (io.ReadCloser, error) {
+	if !strings.HasSuffix(name, ".gz") {
+		return nopCloser{r}, nil
+	}
+	gz, err := gzip.NewReader(r)
+	if err != nil {
+		return nil, fmt.Errorf("open %s: %w", name, err)
+	}
+	return gz, nil
+}
+
 // readLines runs fn over every line of a JSONL stream, gzip or plain.
 func readLines(r io.Reader, name string, fn func(line []byte) error) error {
-	if strings.HasSuffix(name, ".gz") {
-		gz, err := gzip.NewReader(r)
-		if err != nil {
-			return fmt.Errorf("open %s: %w", name, err)
-		}
-		defer func() { _ = gz.Close() }()
-		r = gz
+	rc, err := maybeGunzip(r, name)
+	if err != nil {
+		return err
 	}
+	defer func() { _ = rc.Close() }()
+	r = rc
 	sc := bufio.NewScanner(r)
 	sc.Buffer(make([]byte, 1<<20), maxLine)
 	n := 0

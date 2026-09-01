@@ -45,12 +45,19 @@ type Row struct {
 	// Fixed marks a row whose exact words carry the meaning. The model
 	// may neither replace it nor phrase it again.
 	//
-	// Two kinds of row need it. The first states what this app does or
+	// Three kinds of row need it. The first states what this app does or
 	// does not do: the sentence that names the limit is the point of it,
 	// and a replacement drops that sentence (D-112, D-117). The second
 	// bundles several values into one yes-or-no question. The house-limits
 	// row asks "do the normal limits hold", and a rephrasing that lists
 	// the limits reads as three questions in one (D-162).
+	//
+	// The third explains an acronym the reader has never seen (D-374).
+	// The 60-card power row spells out Friday Night Magic. Gate run 29
+	// reworded that row 17 times: it kept the expansion 4 times, cut it
+	// to the bare acronym 2 times, and dropped the whole option list 11
+	// times. The options still say FNM in every one of those 11. A fixed
+	// row can not lose the words that carry the meaning.
 	Fixed bool `json:"fixed"`
 	// Closed says the options are the whole answer space, so the UI
 	// offers no free-text field (D-295).
@@ -98,6 +105,17 @@ type When struct {
 	Precon *bool `json:"precon"`
 	// CommanderIllegal marks a named commander that can not lead (D-129).
 	CommanderIllegal *bool `json:"commander_illegal"`
+	// SetLimited marks a deck limited to the sets the reader named
+	// (D-376).
+	SetLimited *bool `json:"set_limited"`
+	// SetUnresolved marks a set name this app can not settle (D-376).
+	SetUnresolved *bool `json:"set_unresolved"`
+	// ThinSetMana marks named sets that hold too few mana cards (D-382).
+	ThinSetMana *bool `json:"thin_set_mana"`
+	// NamedLeader marks a card the reader named that can lead a deck,
+	// while its role is still unsettled (D-388). Such a card may fix the
+	// deck's color identity, so the color row waits for the role.
+	NamedLeader *bool `json:"named_leader"`
 }
 
 // Catalog is the loaded table.
@@ -122,6 +140,11 @@ var slots = map[string]bool{
 	// build copies it to Format.house_rules (D-3, D-265). locked,
 	// plan_variant, and meta left with their rows (D-260).
 	"house_rules": true,
+	// set holds the sets the reader limited the deck to (D-376), and
+	// set_outside_mana holds whether the mana base may reach past them
+	// (D-382).
+	SlotSet:            true,
+	SlotSetOutsideMana: true,
 }
 
 // Load reads the embedded catalog and checks it.

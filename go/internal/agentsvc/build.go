@@ -28,6 +28,24 @@ import (
 // must fail the engine, so none runs, and the user reads why (D-232).
 var ErrThinCommanderPool = errors.New("your library holds no commander for this theme, so no deck was built: name a commander, or allow cards you do not own")
 
+// ErrThinSet says the sets the reader named hold too few cards in the
+// deck's colors to build a legal deck (D-380). The build stops before it
+// spends a model call, and the reader reads the count and the sets. A
+// deck of another set is never the answer.
+type ErrThinSet struct {
+	// Sets are the set names, as a reader wrote them.
+	Sets []string
+	// Have is the distinct nonbasic count the sets offer in the deck's
+	// colors, and Want is the floor for the format.
+	Have, Want int
+}
+
+func (e *ErrThinSet) Error() string {
+	return fmt.Sprintf("%s hold %d cards in these colors, and a deck of this format needs about %d: "+
+		"name another set beside them, drop the set limit, or choose other colors",
+		strings.Join(e.Sets, " and "), e.Have, e.Want)
+}
+
 // The wiring a build needs, each named so a log says which one is
 // missing.
 var (
@@ -72,6 +90,15 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 	}
 	slots := session.GetSlots()
 	format := slots.GetFormat().GetId()
+	setCodes := slots.GetSetCodes()
+
+	// The set floor runs before the commander pool, so a family too thin
+	// to build ends the turn with a reason and spends no model call
+	// (D-380). It runs on the slot colors here and again on the
+	// commander's identity below, because the commander narrows them.
+	if err := s.checkSetFloor(ctx, idx, format, slots.GetColors(), setCodes); err != nil {
+		return nil, err
+	}
 
 	var commanders []*mtgv1.Card
 	var commanderIDs []string
@@ -99,6 +126,7 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 			PoolRule: slots.GetPoolRule(),
 			Owned:    owned,
 			Bracket:  slots.GetPower().GetBracket(),
+			SetCodes: setCodes,
 		})
 		switch {
 		case err != nil:
@@ -128,6 +156,19 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 	// slot can hold every color, and the engine refuses each card outside
 	// the identity (D-289).
 	colors := deckColors(format, slots.GetColors(), commanders)
+	// The commander settles the colors, so the floor runs once more on
+	// the identity the deck will actually have (D-380).
+	if err := s.checkSetFloor(ctx, idx, format, colors, setCodes); err != nil {
+		return nil, err
+	}
+	// A set family short of mana cards takes them from the whole
+	// database, up to the role target and no further. The reader allowed
+	// it in the set_outside_mana row, and every such card is marked
+	// (D-382).
+	var outsideRoles map[mtgv1.CardRole]int
+	if len(setCodes) > 0 && slots.GetSlotStates()[questions.SlotSetOutsideMana] == mtgv1.SlotState_SLOT_STATE_FILLED {
+		outsideRoles = manaRoles(generate.TargetsFor(format, slots.GetPower()))
+	}
 	list, err := s.builder.Build(idx, candidates.Request{
 		Format:             format,
 		Colors:             colors,
@@ -136,9 +177,16 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 		PoolRule:           slots.GetPoolRule(),
 		Owned:              owned,
 		Bracket:            slots.GetPower().GetBracket(),
+		SetCodes:           setCodes,
+		OutsideRoles:       outsideRoles,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("build: candidates: %w", err)
+	}
+	if len(setCodes) > 0 {
+		s.log.InfoContext(ctx, "the deck is limited to the sets the reader named",
+			"session", session.GetId(), "sets", strings.Join(setCodes, ","),
+			"in_set", list.Stats.InSet, "outside", list.Stats.Outside)
 	}
 	// Upgrades reach the model only when the session may buy cards. A
 	// deck must not name a card the user can neither own nor buy (D-37).
@@ -232,6 +280,7 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 		Commanders:      commanderIDs,
 		Locked:          lockedIDs,
 		PoolRule:        slots.GetPoolRule(),
+		SetCodes:        setCodes,
 		OracleCounts:    owned,
 		Roles:           generate.Roles(list),
 		Targets:         generate.TargetsFor(format, slots.GetPower()),
@@ -363,9 +412,14 @@ func (s *Server) sendDeck(ctx context.Context, uid string, session *mtgv1.Sessio
 	if err != nil {
 		s.log.ErrorContext(ctx, "the build failed", "session", session.GetId(), "err", err)
 		msg := "the deck build failed, please ask again"
+		var thinSet *ErrThinSet
 		switch {
 		case errors.Is(err, ErrThinCommanderPool):
 			msg = err.Error()
+		// A set family too thin for a legal deck ends the turn with the
+		// reason, and never with a deck of another set (D-380).
+		case errors.As(err, &thinSet):
+			msg = thinSet.Error()
 		case errors.Is(err, errNoIndexSource), errors.Is(err, errNoIndexLoaded), errors.Is(err, errNoCandidateBuilder):
 			msg = "the deck can not be built here: " + strings.TrimPrefix(err.Error(), "build: ")
 		case errors.Is(bctx.Err(), context.DeadlineExceeded):
@@ -553,7 +607,11 @@ func (s *Server) sendRevision(ctx context.Context, uid string, session *mtgv1.Se
 	if err != nil || res == nil {
 		s.log.ErrorContext(ctx, "the revision failed", "session", session.GetId(), "err", err)
 		msg := "the revision failed, please ask again"
-		if errors.Is(bctx.Err(), context.DeadlineExceeded) {
+		var thinSet *ErrThinSet
+		switch {
+		case errors.As(err, &thinSet):
+			msg = thinSet.Error()
+		case errors.Is(bctx.Err(), context.DeadlineExceeded):
 			msg = "the revision ran past its time limit, please ask again"
 		}
 		s.sendOrLog(ctx, stream, session, &mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Status{Status: msg}})
@@ -596,4 +654,75 @@ func powerWord(p *mtgv1.PowerLevel) string {
 		return strings.ToLower(strings.TrimPrefix(step.String(), "SIXTY_STEP_"))
 	}
 	return ""
+}
+
+// manaRoles are the roles a set-limited deck may fill from outside the
+// named sets: the ramp and the nonbasic lands (D-382). The counts come
+// from the role targets of the format, so the fill reaches the wanted
+// number and stops.
+func manaRoles(targets map[string]int) map[mtgv1.CardRole]int {
+	out := map[mtgv1.CardRole]int{}
+	if n := targets["ramp"]; n > 0 {
+		out[mtgv1.CardRole_CARD_ROLE_RAMP] = n
+	}
+	if n := targets["land"]; n > 0 {
+		out[mtgv1.CardRole_CARD_ROLE_LAND] = n
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+// checkSetFloor refuses a build whose sets can not fill a legal deck in
+// these colors (D-380). It counts and scores nothing, so it costs a
+// fraction of a shortlist build.
+func (s *Server) checkSetFloor(ctx context.Context, idx *cards.Index,
+	format mtgv1.FormatId, colors []mtgv1.Color, setCodes []string,
+) error {
+	if len(setCodes) == 0 {
+		return nil
+	}
+	have := candidates.CountInSets(idx, candidates.Request{
+		Format: format, Colors: colors, SetCodes: setCodes,
+	})
+	want := candidates.SetFloor(format)
+	if have >= want {
+		return nil
+	}
+	names := idx.Sets().Names(setCodes)
+	s.log.WarnContext(ctx, "the sets hold too few cards to build a deck in these colors",
+		"sets", strings.Join(setCodes, ","), "have", have, "want", want)
+	return &ErrThinSet{Sets: setNames(names), Have: have, Want: want}
+}
+
+// setNames reads a set-name list as a reader would hear it. A family
+// reads as its base set, because "The Hobbit and The Hobbit Eternal" is
+// how a reader names one product, and a list of six promo sets is not.
+func setNames(names []string) []string {
+	if len(names) <= 2 {
+		return names
+	}
+	return append(append([]string(nil), names[:2]...), "and the other sets you named")
+}
+
+// setNote is the line that tells the reader which sets a build applies
+// (D-390). It names every set, because a reader who wrote one product
+// name has no way to know it became two.
+func setNote(names []string) string {
+	return "I will build from " + englishList(names) + " only"
+}
+
+// englishList joins names the way a sentence does: "a", "a and b", or
+// "a, b, and c".
+func englishList(names []string) string {
+	switch len(names) {
+	case 0:
+		return ""
+	case 1:
+		return names[0]
+	case 2:
+		return names[0] + " and " + names[1]
+	}
+	return strings.Join(names[:len(names)-1], ", ") + ", and " + names[len(names)-1]
 }

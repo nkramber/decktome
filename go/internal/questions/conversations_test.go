@@ -519,6 +519,44 @@ func conversations() []conversation {
 	}
 	cs = append(cs, c34)
 
+	// D-376: the reader names a set this app can not settle. "Tarkir"
+	// names three base sets, so the row asks which one.
+	c35 := conversation{name: "a set name that names three sets"}
+	c35.ctx = newCtx("build me a tarkir deck")
+	c35.ctx.Format, c35.ctx.Theme = mtgv1.FormatId_FORMAT_ID_COMMANDER, "dragons"
+	c35.ctx.SetUnresolved = true
+	for _, k := range []string{"format", "theme"} {
+		c35.ctx.Filled[k] = true
+	}
+	c35.steps = []step{
+		{want: []string{"set_unresolved", "power_commander", "colors"},
+			fill: []string{"set_unresolved", "set", "power", "colors"},
+			set: func(c *Context) {
+				c.SetUnresolved, c.SetLimited = false, true
+			}},
+		{want: []string{"commander"}, fill: []string{"commander"},
+			set: func(c *Context) { c.CommanderSet = true }},
+	}
+	cs = append(cs, c35)
+
+	// D-382: the sets hold too few mana cards, so the agent asks whether
+	// the mana base may reach outside them.
+	c36 := conversation{name: "a set family short of mana cards"}
+	c36.ctx = newCtx("a hobbit set deck")
+	c36.ctx.Format, c36.ctx.Theme = mtgv1.FormatId_FORMAT_ID_COMMANDER, "hobbits"
+	c36.ctx.SetLimited, c36.ctx.ThinSetMana = true, true
+	for _, k := range []string{"format", "theme", "set"} {
+		c36.ctx.Filled[k] = true
+	}
+	c36.steps = []step{
+		{want: []string{"set_outside_mana", "power_commander", "colors"},
+			fill: []string{"set_outside_mana", "power", "colors"},
+			set:  func(c *Context) { c.ThinSetMana = false }},
+		{want: []string{"commander"}, fill: []string{"commander"},
+			set: func(c *Context) { c.CommanderSet = true }},
+	}
+	cs = append(cs, c36)
+
 	return cs
 }
 

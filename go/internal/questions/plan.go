@@ -85,6 +85,25 @@ type Context struct {
 	CommanderIllegal bool `json:"commander_illegal"`
 	// Theme is the theme slot in the user's words.
 	Theme string `json:"theme"`
+	// SetLimited says the deck is limited to the sets the reader named
+	// (D-376). Slots.set_codes holds them.
+	SetLimited bool `json:"set_limited"`
+	// SetUnresolved says the reader named a set this app can not settle:
+	// an unknown name, or one that names two base sets. The set row asks
+	// about it (D-376).
+	SetUnresolved bool `json:"set_unresolved"`
+	// SetChanged says the set phrase the row would name differs from the
+	// one it named last. Only a row with RepeatOnChange reads it, and it
+	// is the D-210 rule for the set row.
+	SetChanged bool `json:"set_changed"`
+	// ThinSetMana says the named sets hold fewer mana cards than the deck
+	// wants. The mana row asks whether the fill may reach outside them
+	// (D-382).
+	ThinSetMana bool `json:"thin_set_mana"`
+	// NamedLeader says the reader named a card that can lead a deck, and
+	// nothing has settled its role yet. Such a card fixes the deck's
+	// color identity when it leads, so the color row waits (D-388).
+	NamedLeader bool `json:"named_leader"`
 }
 
 // Plan returns the questions to ask this turn, in ask order, at most
@@ -170,6 +189,8 @@ func (c Context) contentChanged(slot string) bool {
 		return c.OfferChanged
 	case "format":
 		return c.BadFormatChanged
+	case SlotSet:
+		return c.SetChanged
 	}
 	return false
 }
@@ -226,6 +247,10 @@ func (w When) matches(ctx Context) bool {
 		{w.NoNearFormat, ctx.NoNearFormat},
 		{w.Precon, ctx.Precon},
 		{w.CommanderIllegal, ctx.CommanderIllegal},
+		{w.SetLimited, ctx.SetLimited},
+		{w.SetUnresolved, ctx.SetUnresolved},
+		{w.ThinSetMana, ctx.ThinSetMana},
+		{w.NamedLeader, ctx.NamedLeader},
 	}
 	for _, f := range facts {
 		if f.want != nil && *f.want != f.have {

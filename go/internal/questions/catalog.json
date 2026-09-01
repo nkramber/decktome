@@ -1,5 +1,5 @@
 {
-  "verified_at": "2026-08-28",
+  "verified_at": "2026-08-31",
   "note": "The question catalog of the mtg-corpus skill, section 11, as data. `slot` is the proto slot the answer informs. `key` is the question's own state key, and it defaults to the slot. A refinement question (budget scope, house format limits, named card role, commander pick) carries its own key, so a filled proto slot does not cancel it. Keep the rows in step with the skill file. TestCatalogMatchesCorpus checks it.",
   "rows": [
     {
@@ -116,6 +116,42 @@
       "slot": "theme",
       "order": 20,
       "text": "What should the deck do: a creature type, a mechanic, or a play style?"
+    },
+    {
+      "id": "set_unresolved",
+      "slot": "set",
+      "order": 21,
+      "fixed": true,
+      "repeat": true,
+      "repeat_on_change": true,
+      "text": "I do not know which set you mean by {bad_set}. Which one: {set_options}?",
+      "when": {
+        "set_unresolved": true
+      },
+      "fallback": "Which set do you mean? Name it, or say to use every set.",
+      "key": "set_unresolved"
+    },
+    {
+      "id": "set_outside_mana",
+      "slot": "set_outside_mana",
+      "key": "set_outside_mana",
+      "order": 22,
+      "fixed": true,
+      "text": "{sets} hold {n_mana} mana cards, and this deck wants {m_mana}. May I use mana rocks and lands from outside them?",
+      "options": [
+        "Yes, mana from any set",
+        "No, only these sets"
+      ],
+      "when": {
+        "set_limited": true,
+        "thin_set_mana": true,
+        "requires": [
+          "format",
+          "theme"
+        ]
+      },
+      "fallback": "The sets you named hold few mana cards. May I use mana rocks and lands from outside them?",
+      "closed": true
     },
     {
       "id": "house_rules",
@@ -252,7 +288,8 @@
         "format": "sixty",
         "power_competitive": false
       },
-      "closed": true
+      "closed": true,
+      "fixed": true
     },
     {
       "id": "colors",
@@ -260,7 +297,8 @@
       "order": 50,
       "text": "Any color preference?",
       "when": {
-        "commander_set": false
+        "commander_set": false,
+        "named_leader": false
       }
     },
     {
@@ -331,7 +369,7 @@
       "id": "budget",
       "slot": "budget",
       "order": 70,
-      "text": "Is there a budget for cards to buy?",
+      "text": "What spending limit, if any, should I use for cards you do not own?",
       "when": {
         "buy_list": true
       }

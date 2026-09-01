@@ -54,6 +54,32 @@
           "message": "Add two more cards that draw cards, and cut two of the weakest creatures."
         }
       ]
+    },
+    {
+      "id": 3,
+      "name": "Commander from the Hobbit set, bracket 3",
+      "format": "commander",
+      "bracket": 3,
+      "commander": "Thranduil, the Elvenking",
+      "theme": "hobbits and food",
+      "sets": [
+        "The Hobbit"
+      ],
+      "plan": "Build a Commander deck from the Hobbit set, led by Thranduil, the Elvenking.\nTheme: hobbits and food\nCommander bracket: 3",
+      "revisions": [
+        {
+          "id": 7,
+          "message": "Lower the mana curve. Nothing over 5 mana.",
+          "cap": 5,
+          "note": "A set-limited revision must stay inside the sets. The pool is small, so the cap bites."
+        },
+        {
+          "id": 8,
+          "message": "Take out {{HIGHEST}}.",
+          "remove_highest": true,
+          "note": "A removal inside a set limit. The replacement must come from the same sets."
+        }
+      ]
     }
   ]
 }

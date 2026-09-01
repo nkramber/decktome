@@ -280,8 +280,14 @@ type Card struct {
 	// example 7 for Seven Dwarves or 9 for Nazgûl (CR 113.6n). Zero means
 	// the format limit applies. any_count_in_deck covers the unlimited case.
 	MaxCopiesOverride int32 `protobuf:"varint,32,opt,name=max_copies_override,json=maxCopiesOverride,proto3" json:"max_copies_override,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// set_codes lists every paper set this card has a printing in,
+	// lowercase and sorted. A card is not in one set: nearly half of them
+	// hold printings in two or more, and one holds 225. A field that held
+	// one value would drop a reprint (D-373). Empty for a card with no
+	// paper printing.
+	SetCodes      []string `protobuf:"bytes,33,rep,name=set_codes,json=setCodes,proto3" json:"set_codes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Card) Reset() {
@@ -536,6 +542,13 @@ func (x *Card) GetMaxCopiesOverride() int32 {
 		return x.MaxCopiesOverride
 	}
 	return 0
+}
+
+func (x *Card) GetSetCodes() []string {
+	if x != nil {
+		return x.SetCodes
+	}
+	return nil
 }
 
 // CardFace is one face of a card. Images live per face (F-9).
@@ -838,7 +851,8 @@ var File_mtg_v1_card_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_card_proto_rawDesc = "" +
 	"\n" +
-	"\x11mtg/v1/card.proto\x12\x06mtg.v1\"\xe5\t\n" +
+	"\x11mtg/v1/card.proto\x12\x06mtg.v1\"\x82\n" +
+	"\n" +
 	"\x04Card\x12\x1b\n" +
 	"\toracle_id\x18\x01 \x01(\tR\boracleId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1b\n" +
@@ -880,7 +894,8 @@ const file_mtg_v1_card_proto_rawDesc = "" +
 	"\ris_background\x18\x1d \x01(\bR\fisBackground\x12!\n" +
 	"\fis_companion\x18\x1e \x01(\bR\visCompanion\x12!\n" +
 	"\fpartner_text\x18\x1f \x01(\tR\vpartnerText\x12.\n" +
-	"\x13max_copies_override\x18  \x01(\x05R\x11maxCopiesOverride\x1aU\n" +
+	"\x13max_copies_override\x18  \x01(\x05R\x11maxCopiesOverride\x12\x1b\n" +
+	"\tset_codes\x18! \x03(\tR\bsetCodes\x1aU\n" +
 	"\x0fLegalitiesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12,\n" +
 	"\x05value\x18\x02 \x01(\x0e2\x16.mtg.v1.LegalityStatusR\x05value:\x028\x01\"\x91\x02\n" +
