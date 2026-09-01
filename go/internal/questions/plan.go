@@ -100,6 +100,10 @@ type Context struct {
 	// wants. The mana row asks whether the fill may reach outside them
 	// (D-382).
 	ThinSetMana bool `json:"thin_set_mana"`
+	// NamedLeader says the reader named a card that can lead a deck, and
+	// nothing has settled its role yet. Such a card fixes the deck's
+	// color identity when it leads, so the color row waits (D-388).
+	NamedLeader bool `json:"named_leader"`
 }
 
 // Plan returns the questions to ask this turn, in ask order, at most
@@ -246,6 +250,7 @@ func (w When) matches(ctx Context) bool {
 		{w.SetLimited, ctx.SetLimited},
 		{w.SetUnresolved, ctx.SetUnresolved},
 		{w.ThinSetMana, ctx.ThinSetMana},
+		{w.NamedLeader, ctx.NamedLeader},
 	}
 	for _, f := range facts {
 		if f.want != nil && *f.want != f.have {

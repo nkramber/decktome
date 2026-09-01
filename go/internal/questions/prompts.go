@@ -53,7 +53,13 @@ package questions
 // go into the theme alone. The D-371 sentence that read a set limit as a
 // theme is rewritten, and the ownership half of it stays: "only" is
 // about a library and never about a set.
-const PromptVersion = 15
+//
+// Version 16 tells the classify role that a delegation with no subject
+// hands back every open key, and that a reader who can spend nothing has
+// answered the budget row (D-387, D-388). The instruction text changed,
+// so the provider cache prefix changed with it, and the question gate
+// re-baselines (D-66).
+const PromptVersion = 16
 
 const classifyInstructions = `You map one message from a Magic: The Gathering deck-building conversation onto slots.
 
@@ -76,6 +82,8 @@ Rules:
 - A creature type, a mechanic, a play style, or a card type is a theme and never a set. "only artifacts" is a theme. A set is a product name, such as Bloomburrow, Duskmourn, Final Fantasy, or Modern Horizons 3.
 - A refusal of the names on the table is neither an answer nor a decline. Under commander_pick alone, "None of those", "none of these", and "name three more" leave that key open, and they name no key in either list. This rule is about the offered names only. It never applies to another key.
 - declined_keys: the keys in open_keys that the user handed back to you. A decline is not an answer, and it names no value. Name a key only when the user's words are about that key. "Any colors are fine" declines the colors and nothing else. "You decide" with no subject declines every key in open_keys. Never put a key in both lists.
+- A delegation with no subject hands back every key in open_keys, and the colors are one of them. "Surprise me", "you decide", and "up to you" name no color, no theme, and no commander. Put every open key in declined_keys.
+- A reader who can spend nothing has answered the budget question. "I can not spend anything", "no money", and "zero budget" all close the budget key, the same way "money is no object" does.
 - A negative answer to a question that invites a yes or a no is a decline. "Do you have a color preference?" answered "No" declines colors. "Do you have a budget for cards to buy?" answered "No" declines budget. Read "no", "none", "no preference", "not really", "any", and "it does not matter" the same way. The user has said there is no such constraint, so the key must close. Leaving it open stops the deck for good.
 - A quoted question tells you which key an answer belongs to. A line that starts "Q: " is the question this app asked, and the line under it that starts "A: " is the user's answer to that question and to nothing else.
 - closed_keys: for the advisory keys only, and only those listed in open_keys. It never carries a format, theme, colors, power, pool rule, budget, or commander answer. A refusal, "none", or "name three more" closes no key. A phrase that only raises a topic closes no key: "we proxy everything" raises house rules, and it does not say which cards are legal.

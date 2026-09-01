@@ -82,6 +82,20 @@ type CommanderChecker interface {
 	CanLead(name string) (canLead, known bool)
 }
 
+// FormatChecker reports whether a named card can only be played in
+// Commander. A hint source that holds the card index implements it.
+//
+// A legendary creature is not proof of the format: many of them are
+// legal in Standard or Modern too. A card that can lead a deck and is
+// legal in neither leaves Commander as the one format this app builds
+// for it (D-388).
+type FormatChecker interface {
+	// OnlyCommander returns whether the card can only be played in
+	// Commander here. known is false when the index does not hold the
+	// name, and the caller then claims nothing.
+	OnlyCommander(name string) (only, known bool)
+}
+
 // IdentityChecker reports whether a named card fits a set of colors. A
 // hint source that holds the card index implements it.
 //
@@ -125,7 +139,29 @@ func rowOptions(row Row, st *State, offered []string) []string {
 	if row.StateKey() == SlotSetUnresolved && len(st.SetOptions) > 0 {
 		return append(append([]string(nil), st.SetOptions...), everySetOption)
 	}
+	// A reader who asked for a 60-card deck can not mean Commander, and
+	// Commander is a 100-card format. The row offered it anyway, and
+	// eval run 31 called the question inaccurate (D-388).
+	if row.Slot == "format" && sixtyCardRequest(st.Ctx.Words) {
+		return withoutCommander(row.Options)
+	}
 	return pickOptions(row, offered)
+}
+
+// withoutCommander drops Commander from an option list. An empty result
+// never reaches the reader: the caller keeps the original list then.
+func withoutCommander(options []string) []string {
+	out := make([]string, 0, len(options))
+	for _, o := range options {
+		if strings.EqualFold(strings.TrimSpace(o), "commander") {
+			continue
+		}
+		out = append(out, o)
+	}
+	if len(out) == 0 {
+		return options
+	}
+	return out
 }
 
 // everySetOption drops the set limit. A reader who meant no set at all

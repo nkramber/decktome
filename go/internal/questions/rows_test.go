@@ -20,7 +20,8 @@ func TestWordRulesRunInOrder(t *testing.T) {
 		"one_deck", "precon", "proxy_user", "budget_scope", "no_spending_limit",
 		"buy_list", "colorless", "cedh", "house_rules", "card_in_the_99",
 		"named_card_as_commander", "swap_commander", "commander_pair",
-		"delegate_commander", "pick_by_place", "refuse_offer", "infer_power",
+		"delegate_commander", "delegate_colors", "format_from_named_leader",
+		"pick_by_place", "refuse_offer", "infer_power",
 	}
 	if len(wordRules) != len(want) {
 		t.Fatalf("%d word rules, want %d", len(wordRules), len(want))

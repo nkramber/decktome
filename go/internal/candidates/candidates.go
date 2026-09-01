@@ -752,6 +752,12 @@ func (b *Builder) CommanderPool(idx *cards.Index, req Request) ([]Candidate, err
 		if !c.GetCanBeCommander() || !legalIn(c, legalKeys[mtgv1.FormatId_FORMAT_ID_COMMANDER]) {
 			continue
 		}
+		// Every format offers paper cards only (D-306). The unthemed fill
+		// of D-367 always tested this, and the themed half above it never
+		// did, so a digital-only legend could lead an offer.
+		if !hasPaperPrinting(c) {
+			continue
+		}
 		// A commander is the identity of the deck, so it comes from the
 		// sets the reader named and never from the mana fill (D-382).
 		if !cards.InSets(c, setCodes) {
@@ -885,7 +891,7 @@ func (b *Builder) commanderPairs(idx *cards.Index, req Request, theme ThemeMatch
 		}
 		// A card that can not pair never reaches the walk, which keeps the
 		// pair loop small (D-154).
-		if !canPair(c) || !cards.InSets(c, setCodes) {
+		if !canPair(c) || !hasPaperPrinting(c) || !cards.InSets(c, setCodes) {
 			continue
 		}
 		if !c.GetCanBeCommander() && !c.GetIsBackground() {

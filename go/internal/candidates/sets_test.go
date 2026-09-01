@@ -335,3 +335,35 @@ func countRole(cs []Candidate, want mtgv1.CardRole) int {
 	}
 	return n
 }
+
+// TestCommanderPoolOffersPaperCardsOnly is D-306. The unthemed fill of
+// D-367 always tested this, and the themed half never did, so a
+// digital-only legend could lead an offer.
+func TestCommanderPoolOffersPaperCardsOnly(t *testing.T) {
+	b, err := New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	idx := fixture(t, []tc{
+		{id: "paper", name: "Thranduil, the Elvenking", typeLine: "Legendary Creature — Elf",
+			text: "Whenever you gain life, draw a card.", identity: []mtgv1.Color{W},
+			mv: 4, rank: 90, tags: []string{"lifegain"}, sets: []string{"hob"}},
+		{id: "digital", name: "Alchemy Legend", typeLine: "Legendary Creature — Spirit",
+			text: "Whenever you gain life, draw a card.", identity: []mtgv1.Color{W},
+			mv: 3, rank: 1, tags: []string{"lifegain"}, digital: true},
+	})
+	pool, err := b.CommanderPool(idx, Request{
+		Format: mtgv1.FormatId_FORMAT_ID_COMMANDER, Theme: "lifegain",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range pool {
+		if c.Card.GetOracleId() == "digital" {
+			t.Fatal("the commander pool offered a card with no paper printing (D-306)")
+		}
+	}
+	if len(pool) == 0 || pool[0].Card.GetOracleId() != "paper" {
+		t.Errorf("the paper commander is not the offer: %v", pool)
+	}
+}

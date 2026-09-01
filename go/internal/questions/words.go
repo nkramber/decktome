@@ -658,10 +658,21 @@ var noBudgetSigns = []string{
 	"money is no object", "price is no object", "cost is no object",
 	"no budget", "no spending limit", "no price limit",
 	"spend what you need", "spend whatever", "budget is no issue",
+	// The other direction answers the row just as clearly. A reader who
+	// can spend nothing has named their cap, and the list held only the
+	// unlimited half until eval run 31 flagged it (D-387).
+	"can not spend anything", "cannot spend anything", "can not spend any",
+	"nothing to spend", "no money", "zero budget", "spend nothing",
+	"can not buy anything", "cannot buy anything", "not buying anything",
+	"buy nothing", "free cards only", "without spending",
 }
 
-// noSpendingLimit reports whether the user refused a budget cap. The
-// budget row must not ask a user who has answered it.
+// noSpendingLimit reports whether the user answered the budget row
+// without naming a number. Both directions count: a reader who will
+// spend anything and a reader who can spend nothing have each said what
+// the row asks (D-387). The row must not ask either of them.
+//
+// A number the reader names later still closes the slot on its value.
 //
 // It reads one message and never the whole conversation, which is the
 // D-125 rule. A cap the user names later still closes the slot on its
@@ -727,3 +738,11 @@ func buysCards(r mtgv1.PoolRule) bool {
 	}
 	return false
 }
+
+// sixtyCardSigns name a deck size this app builds as Standard, Modern,
+// or the house format. Commander is 100 cards, so it can not answer
+// them (D-388).
+var sixtyCardSigns = []string{"60 card", "60-card", "sixty card", "sixty-card"}
+
+// sixtyCardRequest reports whether the user asked for a 60-card deck.
+func sixtyCardRequest(text string) bool { return anyPhrase(text, sixtyCardSigns) }

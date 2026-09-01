@@ -112,6 +112,10 @@ type When struct {
 	SetUnresolved *bool `json:"set_unresolved"`
 	// ThinSetMana marks named sets that hold too few mana cards (D-382).
 	ThinSetMana *bool `json:"thin_set_mana"`
+	// NamedLeader marks a card the reader named that can lead a deck,
+	// while its role is still unsettled (D-388). Such a card may fix the
+	// deck's color identity, so the color row waits for the role.
+	NamedLeader *bool `json:"named_leader"`
 }
 
 // Catalog is the loaded table.

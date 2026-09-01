@@ -195,6 +195,18 @@ func (a *Agent) readFacts(st *State) {
 	st.Ctx.BadFormatChanged = st.BadFormatChanged()
 	// The set row follows the same rule (D-376).
 	st.Ctx.SetChanged = st.BadSetChanged()
+	// A named card that can lead a deck may fix the deck's color
+	// identity, and nothing has settled its role yet. The color row
+	// waits, or it asks for colors the commander already decides (D-388).
+	st.Ctx.NamedLeader = false
+	if cc, ok := a.hints.(CommanderChecker); ok && !st.Ctx.CommanderSet && !st.Ctx.Filled["named_card_role"] {
+		for _, name := range st.NamedCards {
+			if lead, known := cc.CanLead(name); known && lead {
+				st.Ctx.NamedLeader = true
+				break
+			}
+		}
+	}
 	// The mana row needs the count the sets offer against the count the
 	// deck wants (D-382). It only matters while a set limit is on and
 	// the key is open.
@@ -713,6 +725,8 @@ var wordRules = []wordRule{
 	{"swap_commander", ruleSwapCommander},
 	{"commander_pair", ruleCommanderPair},
 	{"delegate_commander", ruleDelegateCommander},
+	{"delegate_colors", ruleDelegateColors},
+	{"format_from_named_leader", ruleFormatFromNamedLeader},
 	{"pick_by_place", rulePickByPlace},
 	{"refuse_offer", ruleRefuseOffer},
 	{"infer_power", ruleInferPower},
@@ -901,7 +915,7 @@ func ruleNoSpendingLimit(a *Agent, st *State, in turnWords) {
 		return
 	}
 	st.Skip("budget")
-	a.log.Info("the user set no spending limit, so the budget slot is closed",
+	a.log.Info("the user answered the budget row without a number, so the slot is closed",
 		"session", st.SessionID)
 }
 
@@ -1059,6 +1073,71 @@ func ruleDelegateCommander(a *Agent, st *State, in turnWords) {
 	st.Skip("commander_pick")
 	st.Skip("commander")
 	st.CurrentOffer = nil
+}
+
+// ruleDelegateColors closes the color slot on a delegation that is not
+// about the commander (D-388). "Surprise me" hands back every open key,
+// and the classifier reads the commander half of that and misses the
+// colors.
+//
+// A delegation about the commander closes the colors on its own, because
+// the commander's identity is the deck's identity (D-70).
+//
+// "Whatever is winning" is not a delegation here. The corpus routes
+// "whatever" nowhere, after gate runs 11 to 13 read it as house rules
+// six times (D-111).
+func ruleDelegateColors(a *Agent, st *State, in turnWords) {
+	if st.Ctx.Filled["colors"] || len(st.Slots.GetColors()) > 0 {
+		return
+	}
+	if !delegatesChoice(in.Message) {
+		return
+	}
+	// A delegation the classifier assigned to a commander key answers
+	// that key alone. "You pick" against the pick row chooses a
+	// commander, and it says nothing about the colors.
+	//
+	// The word test of delegationIsAboutTheCommander is too wide here.
+	// It reads "a Commander deck, surprise me" as a commander answer,
+	// and that message delegates every open key (D-93).
+	if in.hasKey("commander") || in.hasKey("commander_pick") {
+		return
+	}
+	a.log.Info("the user handed the color choice to the agent",
+		"session", st.SessionID)
+	st.Skip("colors")
+}
+
+// ruleFormatFromNamedLeader reads the format from a card that can only
+// lead a Commander deck (D-388).
+//
+// A legendary creature names no format on its own: many of them play in
+// Standard and Modern too. A card that can lead and is legal in neither
+// leaves one format this app builds, so the format row must not offer
+// three. Eval run 31 flagged that question on Atraxa, Praetor's Voice.
+func ruleFormatFromNamedLeader(a *Agent, st *State, in turnWords) {
+	if st.Ctx.Format != mtgv1.FormatId_FORMAT_ID_UNSPECIFIED {
+		return
+	}
+	// A format this app does not build is declined by its own row, and a
+	// card must never override that (D-112).
+	if _, _, bad := unsupportedFormat(in.Message); bad {
+		return
+	}
+	fc, ok := a.hints.(FormatChecker)
+	if !ok {
+		return
+	}
+	for _, name := range st.NamedCards {
+		only, known := fc.OnlyCommander(name)
+		if !known || !only {
+			continue
+		}
+		a.log.Info("the user named a card that can only lead a Commander deck",
+			"session", st.SessionID, "card", name)
+		a.setFormat(st, mtgv1.FormatId_FORMAT_ID_COMMANDER)
+		return
+	}
 }
 
 // delegationIsAboutTheCommander reports whether a delegation in the

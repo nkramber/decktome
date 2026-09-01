@@ -348,3 +348,34 @@ func colorKey(colors []mtgv1.Color) string {
 	}
 	return b.String()
 }
+
+// OnlyCommander reports whether a named card can only be played in
+// Commander here (D-388). It answers the FormatChecker contract.
+//
+// A legendary creature is not proof of the format. Sheoldred, the
+// Apocalypse leads a Commander deck and plays in Standard, so it names
+// no format. Atraxa, Praetor's Voice leads a Commander deck and is legal
+// in neither of the other two formats this app builds, so it does.
+//
+// known is false for a name the index does not hold, and the caller
+// claims nothing about it.
+func (h *CandidateHints) OnlyCommander(name string) (only, known bool) {
+	if h == nil || h.Index == nil {
+		return false, false
+	}
+	card, ok := h.Index.ByName(strings.TrimSpace(name))
+	if !ok {
+		return false, false
+	}
+	if !card.GetCanBeCommander() {
+		return false, true
+	}
+	for _, key := range []string{"standard", "modern"} {
+		switch card.GetLegalities()[key] {
+		case mtgv1.LegalityStatus_LEGALITY_STATUS_LEGAL,
+			mtgv1.LegalityStatus_LEGALITY_STATUS_RESTRICTED:
+			return false, true
+		}
+	}
+	return true, true
+}

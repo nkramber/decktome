@@ -297,7 +297,8 @@
       "order": 50,
       "text": "Any color preference?",
       "when": {
-        "commander_set": false
+        "commander_set": false,
+        "named_leader": false
       }
     },
     {
@@ -368,7 +369,7 @@
       "id": "budget",
       "slot": "budget",
       "order": 70,
-      "text": "Is there a budget for cards to buy?",
+      "text": "What spending limit, if any, should I use for cards you do not own?",
       "when": {
         "buy_list": true
       }
