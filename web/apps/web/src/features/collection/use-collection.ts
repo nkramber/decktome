@@ -1,12 +1,12 @@
 import type { Card } from "@mtg/api-client/mtg/v1/card_pb";
-import type { CollectionEntry } from "@mtg/api-client/mtg/v1/collection_pb";
-import { useQuery } from "@tanstack/react-query";
+import type { CollectionEntry, CollectionSummary } from "@mtg/api-client/mtg/v1/collection_pb";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 
 import { cardClient, collectionClient } from "../../lib/api";
 
 // The collection screen shows the binder, not only the form that filled
-// it (D-327). The stats below come from the entries alone, so they need
-// no card lookup: rarity and set name ride on every row.
+// it (D-327). The head reads the summary the import stored, and never an
+// entry, so a binder of 2,657 rows costs one small answer (D-392).
 
 export type CollectionStats = {
   total: number;
@@ -22,6 +22,23 @@ const rarityOrder = [
   { key: "common", label: "Common" },
 ];
 
+// statsFrom reads the stored summary (D-392). The head shows cards and
+// not rows, copies included, and the rarity bar needs a total to divide
+// by, so the total is the sum of the rarity counts.
+export function statsFrom(summary: CollectionSummary | undefined, cardCount: number): CollectionStats {
+  const rarity = rarityOrder
+    .map((r) => ({ ...r, count: summary?.byRarity[r.key] ?? 0 }))
+    .filter((r) => r.count > 0);
+  return {
+    total: cardCount || rarity.reduce((n, r) => n + r.count, 0),
+    unique: summary?.uniqueCards ?? 0,
+    rarity,
+    sets: (summary?.topSets ?? []).map((s) => ({ name: s.setName || s.setCode, count: s.count })),
+  };
+}
+
+// statsOf counts a page of entries. The binder grid reads it for the
+// rows it holds, and the head reads statsFrom instead.
 export function statsOf(entries: CollectionEntry[]): CollectionStats {
   const byRarity = new Map<string, number>();
   const bySet = new Map<string, number>();
@@ -60,10 +77,30 @@ export function artIds(entries: CollectionEntry[], want: number): string[] {
   return picked.slice(0, want).map((e) => e.oracleId);
 }
 
-export function useCollection(collectionId: string) {
+// useCollectionHead reads the collection without its entries (D-392).
+// The head draws from the summary alone, so it moves no megabyte.
+export function useCollectionHead(collectionId: string) {
   return useQuery({
-    queryKey: ["collection", collectionId],
-    queryFn: () => collectionClient.getCollection({ collectionId }),
+    queryKey: ["collection", "head", collectionId],
+    queryFn: () => collectionClient.getCollection({ collectionId, entriesOmitted: true }),
+    enabled: collectionId !== "",
+    staleTime: Infinity,
+  });
+}
+
+// binderPageSize is how many rows one page of the binder holds. The grid
+// asks for the next page as the reader scrolls.
+export const binderPageSize = 200;
+
+// useBinderPages reads the binder a page at a time (D-392).
+export function useBinderPages(collectionId: string) {
+  return useInfiniteQuery({
+    queryKey: ["collection", "binder", collectionId],
+    queryFn: ({ pageParam }) =>
+      collectionClient.getCollection({ collectionId, pageSize: binderPageSize, pageToken: pageParam }),
+    initialPageParam: "",
+    // An empty token is the last page.
+    getNextPageParam: (last) => last.nextPageToken || undefined,
     enabled: collectionId !== "",
     staleTime: Infinity,
   });

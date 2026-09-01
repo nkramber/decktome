@@ -1,3 +1,4 @@
+import { Color } from "@mtg/api-client/mtg/v1/card_pb";
 import { ImportSource, UnresolvedReason } from "@mtg/api-client/mtg/v1/collection_pb";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -16,6 +17,8 @@ const listCollections = vi.fn();
 const getCollection = vi.fn();
 const getCards = vi.fn();
 const deleteCollection = vi.fn();
+const updateCollection = vi.fn();
+const diffCollections = vi.fn();
 vi.mock("../../lib/api", () => ({
   healthClient: { check: () => Promise.resolve({ status: "ok", version: "test", cardSnapshot: "none" }) },
   cardClient: { getCards: (...args: unknown[]) => getCards(...args) },
@@ -24,6 +27,8 @@ vi.mock("../../lib/api", () => ({
     listCollections: (...args: unknown[]) => listCollections(...args),
     getCollection: (...args: unknown[]) => getCollection(...args),
     deleteCollection: (...args: unknown[]) => deleteCollection(...args),
+    updateCollection: (...args: unknown[]) => updateCollection(...args),
+    diffCollections: (...args: unknown[]) => diffCollections(...args),
   },
 }));
 
@@ -31,6 +36,13 @@ const earlier = [
   { id: "c-old", name: "binder-july.csv", cardCount: 4317, importedAt: { seconds: 1756000000n, nanos: 0 } },
   { id: "c-older", name: "binder-june.csv", cardCount: 12, importedAt: undefined },
 ];
+
+// The upload lives in a dialog (roadmap PR-18). openUpload opens it and
+// gives back the file input inside it.
+async function openUpload(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(await screen.findByRole("button", { name: "Upload a collection" }));
+  return await screen.findByLabelText("ManaBox CSV file");
+}
 
 beforeEach(() => {
   state.user = fakeUser;
@@ -41,20 +53,49 @@ beforeEach(() => {
   getCollection.mockReset();
   getCards.mockReset();
   deleteCollection.mockReset();
+  updateCollection.mockReset();
+  diffCollections.mockReset();
   listCollections.mockResolvedValue({ collections: earlier });
-  getCollection.mockResolvedValue({
-    collection: {
-      id: "c-old",
-      name: "binder-july.csv",
-      cardCount: 4317,
-      importedAt: { seconds: 1756000000n, nanos: 0 },
-      entries: [
-        { oracleId: "o-bolt", name: "Lightning Bolt", quantity: 4, rarity: "common", setName: "Alpha", setCode: "lea" },
-        { oracleId: "o-jace", name: "Jace, the Mind Sculptor", quantity: 1, rarity: "mythic", setName: "Worldwake", setCode: "wwk" },
-        { oracleId: "o-bolt", name: "Lightning Bolt", quantity: 2, rarity: "common", setName: "Alpha", setCode: "lea" },
-      ],
-    },
-  });
+  // The head reads the summary the import stored, and never an entry
+  // (D-392). A paged read carries the rows the binder grid shows.
+  getCollection.mockImplementation((req: { entriesOmitted?: boolean }) =>
+    Promise.resolve(
+      req.entriesOmitted
+        ? {
+            collection: {
+              id: "c-old",
+              name: "binder-july.csv",
+              cardCount: 7,
+              importedAt: { seconds: 1756000000n, nanos: 0 },
+              entries: [],
+              summary: {
+                rowCount: 3,
+                uniqueCards: 2,
+                byRarity: { common: 6, mythic: 1 },
+                byColor: {},
+                topSets: [{ setCode: "lea", setName: "Alpha", count: 6 }],
+                artOracleIds: ["o-jace", "o-bolt"],
+              },
+            },
+          }
+        : {
+            collection: {
+              id: "c-old",
+              name: "binder-july.csv",
+              cardCount: 7,
+              importedAt: { seconds: 1756000000n, nanos: 0 },
+              entries: [
+                // The server fills colors, cardTypes, and priceUsd from
+                // the card index of the day (D-396).
+                { oracleId: "o-bolt", name: "Lightning Bolt", quantity: 4, rarity: "common", setName: "Alpha", setCode: "lea", scryfallId: "p1", collectorNumber: "1", colors: [Color.R], cardTypes: ["Instant"], priceUsd: 2 },
+                { oracleId: "o-jace", name: "Jace, the Mind Sculptor", quantity: 1, rarity: "mythic", setName: "Worldwake", setCode: "wwk", scryfallId: "p2", collectorNumber: "2", colors: [Color.U], cardTypes: ["Planeswalker"], priceUsd: 90 },
+                { oracleId: "o-bolt", name: "Lightning Bolt", quantity: 2, rarity: "common", setName: "Alpha", setCode: "lea", scryfallId: "p3", collectorNumber: "3", colors: [Color.R], cardTypes: ["Instant"], priceUsd: 2 },
+              ],
+            },
+            nextPageToken: "",
+          },
+    ),
+  );
   getCards.mockResolvedValue({
     cards: [{ oracleId: "o-jace", name: "Jace, the Mind Sculptor", faces: [], defaultPrinting: { artist: "A", imageUris: { artCrop: "https://x/a.jpg" } } }],
     missingOracleIds: [],
@@ -68,23 +109,25 @@ describe("the binder head", () => {
     expect(getCollection).not.toHaveBeenCalled();
   });
 
-  it("counts the cards, the unique cards, and the rarity of the active collection", async () => {
+  it("reads the stored summary and asks for no entry (D-392)", async () => {
     useAppStore.setState({ collectionId: "c-old", poolMode: "owned_only" });
     await renderAt("/collection");
-    // 4 + 1 + 2 = 7 cards over two Oracle ids.
+    // 4 + 1 + 2 = 7 cards over two Oracle ids, all from the summary.
     expect(await screen.findByText("7")).toBeInTheDocument();
     expect(screen.getByText("Unique cards")).toBeInTheDocument();
     expect(screen.getByText("2")).toBeInTheDocument();
     expect(screen.getByText(/Mythic/)).toBeInTheDocument();
     expect(screen.getByText(/Common/)).toBeInTheDocument();
-    expect(getCollection).toHaveBeenCalledWith({ collectionId: "c-old" });
+    // The head asks for the collection without its entries. Before
+    // D-392 it read every row and counted them here.
+    expect(getCollection).toHaveBeenCalledWith({ collectionId: "c-old", entriesOmitted: true });
   });
 
-  it("asks for the art of the rarest cards first", async () => {
+  it("asks for the art the summary names, rarest first", async () => {
     useAppStore.setState({ collectionId: "c-old", poolMode: "owned_only" });
     await renderAt("/collection");
     await screen.findByText("7");
-    // The mythic sorts before the common.
+    // The import picked them, and the mythic sorts before the common.
     expect(getCards).toHaveBeenCalledWith({ oracleIds: ["o-jace", "o-bolt"] });
   });
 });
@@ -118,7 +161,7 @@ describe("CollectionPage", () => {
     await screen.findByRole("button", { name: "binder-july.csv" });
     const user = userEvent.setup();
     const file = new File(["Name,Set code\nLightning Bolt,LEA\n"], "export.csv", { type: "text/csv" });
-    await user.upload(screen.getByLabelText("ManaBox CSV file"), file);
+    await user.upload(await openUpload(user), file);
     await user.click(screen.getByRole("button", { name: "Upload" }));
 
     expect(await screen.findByTestId("card-count")).toHaveTextContent(
@@ -147,8 +190,9 @@ describe("CollectionPage", () => {
     importCollection.mockResolvedValue({ collection: { id: "c-new", name: "Mine", cardCount: 1 }, report: {} });
     await renderAt("/collection");
     const user = userEvent.setup();
+    const input = await openUpload(user);
     await user.type(screen.getByLabelText(/Collection name/), "Mine");
-    await user.upload(screen.getByLabelText("ManaBox CSV file"), new File(["x"], "export.csv"));
+    await user.upload(input, new File(["x"], "export.csv"));
     await user.click(screen.getByRole("button", { name: "Upload" }));
     await screen.findByTestId("card-count");
     expect((importCollection.mock.calls[0][0] as { name: string }).name).toBe("Mine");
@@ -158,7 +202,7 @@ describe("CollectionPage", () => {
     importCollection.mockRejectedValue(new Error("[unauthenticated] no token"));
     await renderAt("/collection");
     const user = userEvent.setup();
-    await user.upload(screen.getByLabelText("ManaBox CSV file"), new File(["x"], "export.csv"));
+    await user.upload(await openUpload(user), new File(["x"], "export.csv"));
     await user.click(screen.getByRole("button", { name: "Upload" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Upload failed: [unauthenticated] no token");
   });
@@ -167,23 +211,30 @@ describe("CollectionPage", () => {
     await renderAt("/collection");
     const user = userEvent.setup();
     const big = new File([new Uint8Array((5 << 20) + 1)], "big.csv", { type: "text/csv" });
-    await user.upload(screen.getByLabelText("ManaBox CSV file"), big);
+    await user.upload(await openUpload(user), big);
     expect(await screen.findByRole("alert")).toHaveTextContent("The file is 5.0 MiB. The limit is 5 MiB.");
     expect(screen.getByRole("button", { name: "Upload" })).toBeDisabled();
     expect(importCollection).not.toHaveBeenCalled();
   });
 
-  it("clears the picked file on Skip and on a click on an earlier upload", async () => {
+  it("drops the picked file when the dialog closes, and Skip leaves the page", async () => {
     const { router } = await renderAt("/collection");
     await screen.findByRole("button", { name: "binder-july.csv" });
     const user = userEvent.setup();
-    await user.upload(screen.getByLabelText("ManaBox CSV file"), new File(["x"], "export.csv"));
+    await user.upload(await openUpload(user), new File(["x"], "export.csv"));
     expect(screen.getByRole("button", { name: "Upload" })).toBeEnabled();
-    await user.click(screen.getByRole("button", { name: "binder-july.csv" }));
+
+    // Cancel closes the dialog. A second open starts clean, so no file
+    // of an abandoned upload reaches the server.
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    await waitFor(() => expect(screen.queryByLabelText("ManaBox CSV file")).not.toBeInTheDocument());
+    const again = await openUpload(user);
+    expect((again as HTMLInputElement).files).toHaveLength(0);
     expect(screen.getByRole("button", { name: "Upload" })).toBeDisabled();
-    expect((screen.getByLabelText("ManaBox CSV file") as HTMLInputElement).files).toHaveLength(0);
-    await user.upload(screen.getByLabelText("ManaBox CSV file"), new File(["x"], "export.csv"));
-    expect(screen.getByRole("button", { name: "Upload" })).toBeEnabled();
+    expect(importCollection).not.toHaveBeenCalled();
+
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByLabelText("ManaBox CSV file")).not.toBeInTheDocument());
     await user.click(screen.getByRole("button", { name: "Skip, build from any card" }));
     expect(router.state.location.pathname).toBe("/session/new");
   });
@@ -252,5 +303,149 @@ describe("deleting a collection", () => {
     await user.click(await screen.findByRole("button", { name: "Delete binder-july.csv" }));
     await user.click(await screen.findByRole("button", { name: "Keep it" }));
     expect(deleteCollection).not.toHaveBeenCalled();
+  });
+});
+
+describe("renaming a collection", () => {
+  it("writes the new name and closes the form", async () => {
+    updateCollection.mockResolvedValue({ collection: { id: "c-old", name: "My binder" } });
+    const user = userEvent.setup();
+    await renderAt("/collection");
+    await user.click(await screen.findByRole("button", { name: "Rename binder-july.csv" }));
+
+    const field = screen.getByRole("textbox", { name: "New name for binder-july.csv" });
+    expect(field).toHaveValue("binder-july.csv");
+    await user.clear(field);
+    await user.type(field, "My binder");
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(updateCollection).toHaveBeenCalledWith({ collectionId: "c-old", name: "My binder" }));
+    await waitFor(() => expect(screen.queryByRole("textbox", { name: /New name/ })).not.toBeInTheDocument());
+  });
+
+  it("refuses an empty name, and Cancel writes nothing", async () => {
+    const user = userEvent.setup();
+    await renderAt("/collection");
+    await user.click(await screen.findByRole("button", { name: "Rename binder-july.csv" }));
+    const field = screen.getByRole("textbox", { name: "New name for binder-july.csv" });
+    await user.clear(field);
+    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(updateCollection).not.toHaveBeenCalled();
+  });
+});
+
+describe("a re-upload over an active collection", () => {
+  const file = () => new File(["Name,Set code\nBolt,LEA\n"], "binder-august.csv", { type: "text/csv" });
+
+  it("shows what changes before it replaces anything (D-393)", async () => {
+    diffCollections.mockResolvedValue({
+      diff: {
+        added: [{ name: "Path to Exile", quantity: 2 }],
+        removed: [],
+        changed: [{ entry: { name: "Lightning Bolt" }, from: 4, to: 2 }],
+        addedCards: 2, removedCards: 0, changedCards: 2, identical: false,
+      },
+      report: { unresolved: [], resolvedCount: 1, unresolvedByReason: {} },
+    });
+    useAppStore.setState({ collectionId: "c-old", poolMode: "owned_only" });
+    const user = userEvent.setup();
+    await renderAt("/collection");
+
+    await user.upload(await openUpload(user), file());
+    await user.click(screen.getByRole("button", { name: "Upload" }));
+
+    // The diff reads, and nothing is imported yet.
+    expect(await screen.findByTestId("collection-diff")).toBeInTheDocument();
+    expect(screen.getByTestId("diff-added")).toHaveTextContent("1 row");
+    expect(screen.getByTestId("diff-changed")).toHaveTextContent("1 row");
+    expect(screen.getByText("Lightning Bolt: 4 → 2")).toBeInTheDocument();
+    expect(importCollection).not.toHaveBeenCalled();
+
+    // Replace names the collection it replaces, so the id survives.
+    importCollection.mockResolvedValue({ collection: { id: "c-old", name: "binder-july.csv", cardCount: 5 }, report: { unresolved: [], resolvedCount: 1, unresolvedByReason: {} } });
+    await user.click(screen.getByRole("button", { name: "Replace the collection" }));
+    await waitFor(() =>
+      expect(importCollection).toHaveBeenCalledWith(expect.objectContaining({ replaceCollectionId: "c-old" })),
+    );
+  });
+
+  it("says so when nothing changed, and offers no replace", async () => {
+    diffCollections.mockResolvedValue({
+      diff: { added: [], removed: [], changed: [], addedCards: 0, removedCards: 0, changedCards: 0, identical: true },
+      report: { unresolved: [], resolvedCount: 1, unresolvedByReason: {} },
+    });
+    useAppStore.setState({ collectionId: "c-old", poolMode: "owned_only" });
+    const user = userEvent.setup();
+    await renderAt("/collection");
+    await user.upload(await openUpload(user), file());
+    await user.click(screen.getByRole("button", { name: "Upload" }));
+
+    expect(await screen.findByText("Nothing changed")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Replace the collection" })).not.toBeInTheDocument();
+  });
+
+  it("imports straight away when no collection is active", async () => {
+    importCollection.mockResolvedValue({ collection: { id: "c-new", name: "binder-august.csv", cardCount: 1 }, report: { unresolved: [], resolvedCount: 1, unresolvedByReason: {} } });
+    const user = userEvent.setup();
+    await renderAt("/collection");
+    await user.upload(await openUpload(user), file());
+    await user.click(screen.getByRole("button", { name: "Upload" }));
+    await waitFor(() => expect(importCollection).toHaveBeenCalled());
+    expect(diffCollections).not.toHaveBeenCalled();
+    expect(importCollection).toHaveBeenCalledWith(expect.objectContaining({ replaceCollectionId: "" }));
+  });
+});
+
+// The upload dialog holds the file, the progress, and the report, so the
+// page behind it never changes shape while a reader uploads (PR-18).
+describe("the upload dialog", () => {
+  const file = () => new File(["Name,Set code\nBolt,LEA\n"], "export.csv", { type: "text/csv" });
+
+  it("shows a progress bar while the upload runs, and takes it away at the end", async () => {
+    let release: (v: unknown) => void = () => {};
+    importCollection.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          release = resolve;
+        }),
+    );
+    const user = userEvent.setup();
+    await renderAt("/collection");
+    await user.upload(await openUpload(user), file());
+    await user.click(screen.getByRole("button", { name: "Upload" }));
+
+    const bar = await screen.findByRole("progressbar");
+    expect(bar).toHaveAccessibleName("Uploading and resolving cards...");
+    expect(screen.getByRole("button", { name: "Working..." })).toBeDisabled();
+
+    release({ collection: { id: "c-new", name: "export.csv", cardCount: 1 }, report: { unresolved: [], resolvedCount: 1, unresolvedByReason: {} } });
+    await screen.findByTestId("card-count");
+    expect(screen.queryByTestId("upload-progress")).not.toBeInTheDocument();
+  });
+
+  it("keeps the report on the page after the dialog closes", async () => {
+    importCollection.mockResolvedValue({
+      collection: { id: "c-new", name: "export.csv", cardCount: 1 },
+      report: { unresolved: [{ line: 4, raw: "x", reason: UnresolvedReason.UNKNOWN_CARD }], resolvedCount: 1, unresolvedByReason: { UNRESOLVED_REASON_UNKNOWN_CARD: 1 } },
+    });
+    const user = userEvent.setup();
+    await renderAt("/collection");
+    await user.upload(await openUpload(user), file());
+    await user.click(screen.getByRole("button", { name: "Upload" }));
+    await screen.findByTestId("card-count");
+
+    await user.click(screen.getByRole("button", { name: "Done" }));
+    // One report at a time: the dialog holds it, then the page does.
+    await waitFor(() => expect(screen.getAllByTestId("card-count")).toHaveLength(1));
+    expect(screen.getByTestId("card-count")).toHaveTextContent("export.csv: 1 cards, 1 rows resolved, 1 unresolved.");
+    expect(screen.getByRole("heading", { name: "Import result" })).toBeInTheDocument();
+  });
+
+  it("the open dialog raises no accessibility violation", async () => {
+    const { container } = await renderAt("/collection");
+    await screen.findByRole("button", { name: "binder-july.csv" });
+    await openUpload(userEvent.setup());
+    expect(await axe(container.ownerDocument.body)).toHaveNoViolations();
   });
 });
