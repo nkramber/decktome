@@ -397,3 +397,113 @@ func TestOffBandMessageShapes(t *testing.T) {
 		}
 	}
 }
+
+func TestReadNearTwoCardComboReadsOneStepSlower(t *testing.T) {
+	// Sanguine Bond and Exquisite Blood: the endpoint reads the pair as a
+	// near two-card combo at speed 5, which is speed 4 for the cap.
+	near := &spellbook.Result{Combos: []spellbook.ClassifiedCombo{{
+		Combo: spellbook.ComboRef{ID: "2", Uses: []spellbook.ComboUse{
+			{Card: spellbook.CardRef{Name: "Sanguine Bond"}}, {Card: spellbook.CardRef{Name: "Exquisite Blood"}}}},
+		Relevant: true, ArguablyTwoCard: true, DefinitelyTwoCard: false, Speed: 5,
+	}}}
+	for _, tc := range []struct {
+		bracket int32
+		hit     bool
+	}{{1, true}, {2, true}, {3, true}, {4, false}} {
+		p := newProfiler(t, &fakeClassifier{res: near})
+		prof, findings := p.Read(context.Background(), deckOf(tc.bracket, shaped()...), source(testCards))
+		var hit bool
+		for _, f := range findings {
+			if f.GetCode() == CodeTwoCardCombo {
+				hit = true
+				if !strings.Contains(f.GetMessage(), "near two-card") {
+					t.Errorf("the finding must say near two-card: %s", f.GetMessage())
+				}
+			}
+		}
+		if hit != tc.hit {
+			t.Errorf("bracket %d near combo hit %v, want %v", tc.bracket, hit, tc.hit)
+		}
+		if c := prof.GetContent().GetCombos(); len(c) != 1 || !c[0].GetTwoCard() || c[0].GetSpeed() != 5 {
+			t.Errorf("combo hit %v", c)
+		}
+	}
+	// A near combo at speed 4 reads as 3, which bracket 3 allows.
+	near.Combos[0].Speed = 4
+	p := newProfiler(t, &fakeClassifier{res: near})
+	_, findings := p.Read(context.Background(), deckOf(3, shaped()...), source(testCards))
+	for _, f := range findings {
+		if f.GetCode() == CodeTwoCardCombo {
+			t.Errorf("bracket 3 allows a near combo at speed 4: %s", f.GetMessage())
+		}
+	}
+}
+
+func TestCutShortlistDropsWhatTheBracketForbids(t *testing.T) {
+	res := &spellbook.Result{Cards: []spellbook.ClassifiedCard{
+		{Card: spellbook.CardRef{Name: "Armageddon"}, MassLandDenial: true},
+		{Card: spellbook.CardRef{Name: "Time Warp"}, ExtraTurn: true},
+		{Card: spellbook.CardRef{Name: "Sol Ring"}},
+	}}
+	names := []string{"Armageddon", "Time Warp", "Sol Ring"}
+	cases := []struct {
+		bracket int32
+		want    []string
+	}{
+		{1, []string{"Armageddon", "Time Warp"}},
+		{2, []string{"Armageddon"}},
+		{3, []string{"Armageddon"}},
+		{4, nil},
+		{5, nil},
+		{9, nil},
+	}
+	for _, tc := range cases {
+		fc := &fakeClassifier{res: res}
+		p := newProfiler(t, fc)
+		got, err := p.CutShortlist(context.Background(), mtgv1.FormatId_FORMAT_ID_COMMANDER, tc.bracket, []string{"Karlov of the Ghost Council"}, names)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if strings.Join(got, ",") != strings.Join(tc.want, ",") {
+			t.Errorf("bracket %d: drop %v, want %v", tc.bracket, got, tc.want)
+		}
+		if tc.want == nil && fc.sent != nil {
+			t.Errorf("bracket %d needs no call", tc.bracket)
+		}
+	}
+	// A 60-card format never calls, and a failed call drops nothing.
+	fc := &fakeClassifier{res: res}
+	p := newProfiler(t, fc)
+	if got, err := p.CutShortlist(context.Background(), mtgv1.FormatId_FORMAT_ID_MODERN, 1, nil, names); got != nil || err != nil || fc.sent != nil {
+		t.Errorf("modern: %v %v sent %v", got, err, fc.sent)
+	}
+	p = newProfiler(t, &fakeClassifier{err: errors.New("status 502")})
+	if got, err := p.CutShortlist(context.Background(), mtgv1.FormatId_FORMAT_ID_COMMANDER, 1, nil, names); got != nil || err == nil {
+		t.Errorf("a failed call must drop nothing and say so: %v %v", got, err)
+	}
+	p = newProfiler(t, nil)
+	if got, err := p.CutShortlist(context.Background(), mtgv1.FormatId_FORMAT_ID_COMMANDER, 1, nil, names); got != nil || err != nil {
+		t.Errorf("no classifier: %v %v", got, err)
+	}
+}
+
+func TestReadWithNoTagSource(t *testing.T) {
+	cfg, err := rules.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, err := New(cfg, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p.SetHands(50)
+	prof, _ := p.Read(context.Background(), deckOf(2, shaped()...), source(testCards))
+	for _, f := range prof.GetFeatures() {
+		if f.GetKey() == KeyTutor {
+			t.Error("no tag source means no tutor row")
+		}
+	}
+	if prof.GetGoldfish() == nil {
+		t.Error("the rest of the profile must still read")
+	}
+}

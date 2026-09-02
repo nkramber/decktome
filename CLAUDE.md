@@ -8,7 +8,7 @@ This repo is a Go + Protobuf + TypeScript monorepo for an agentic MtG deck build
 
 Stage (2026-09-02): `main` is at `eafbd39`. Merged: PR-0a to PR-8, PR-7B, PR-10 to PR-13, the Phase 3B roadmap (#46), PR-16 (#47), PR-16B (#48), PR-17 (#49), PR-17B (#50), PR-18 (#53), the review fixes of PR-18 (#54), PR-19 (#55), and its follow-ups (#56). PR-9 is out of the MVP (D-256).
 
-**The session of 2026-09-02 built PR-14A, the bracket profile, on branch `pr-14a`** (D-451 to D-453, D-459 to D-464), and it is not merged. A bracket is a set of numbers now: the content rules per bracket, and a feature vector per built deck with a band per bracket. A goldfish simulation and a check against Commander Spellbook complete it. `make bracket-gate` is its gate, and it did not run yet. Deck gate run 12 is due after it. The session calls of D-461 to D-464 wait for the owner as OQ-52. PR-14B comes right after PR-14A (D-460), then PR-24, then PR-20 to PR-23.
+**The session of 2026-09-02 built PR-14A, the bracket profile, on branch `pr-14a`** (D-451 to D-453, D-459 to D-464), and it is not merged. A bracket is a set of numbers now: the content rules per bracket, and a feature vector per built deck with a band per bracket. A goldfish simulation and a check against Commander Spellbook complete it. `make bracket-gate` is its gate. Run 1 reads FAIL on the band bar and the judge bar, and the bracket 5 misses are the power signal of PR-14B. Deck gate run 12 is due. The owner confirmed the session calls on 2026-09-02 (D-467 to D-469). PR-14B comes right after PR-14A (D-460), then PR-24, then PR-20 to PR-23.
 
 PR-19, the chat and build experience, is merged (D-432 to D-458, #55 and #56). Every gate passes: question gate 32, deck gate 11, revise gate 7, and the PR-17B set gate run 1.
 
@@ -69,7 +69,7 @@ Five more targets spend money, and each has an overwrite guard and an env guard.
 
 `make summary-judge` judges every deck summary of a gate document (F-26). Each probe costs a few cents. Ask the owner before every run.
 
-`make bracket-gate` builds three commanders at each bracket, 15 decks, and asks the judge role for the bracket of each (PR-14A). It has the same two guards, `BRACKET_GATE=1` and a verdict check on `BRACKET_GATE_OUT`. No run exists yet, and the estimate is $1 to $1.50. `BRACKET_GATE_ARGS="-only 7,8,9"` runs the bracket 3 prompts alone, and `-dry` is free.
+`make bracket-gate` builds three commanders at each bracket, 15 decks, and asks the judge role for the bracket of each (PR-14A). It has the same two guards, `BRACKET_GATE=1` and a verdict check on `BRACKET_GATE_OUT`. Run 1 cost $2.08 for the builds and $0.26 for the judge lane. `BRACKET_GATE_ARGS="-only 7,8,9"` runs the bracket 3 prompts alone, `-rejudge <document>` judges the decks of a document for about $0.26, and `-dry` is free.
 
 `make revise-gate` builds three base decks and runs nine revisions over them, twelve turns with the answered questions (PR-12B, D-448). It has the same two guards. Run 7 cost $0.74 for eleven turns, and runs 4 to 6 cost $0.54 to $0.81.
 

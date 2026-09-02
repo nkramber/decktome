@@ -121,3 +121,78 @@ func TestSelectPrompts(t *testing.T) {
 		t.Error("a list that names no prompt must fail")
 	}
 }
+
+func TestReadDecksParsesAGateDocument(t *testing.T) {
+	doc := `# PR-14A bracket gate
+
+Verdict: FAIL.
+
+## Decks
+
+### 7. Bracket 3, Karlov of the Ghost Council, lifegain
+
+Pool 303. 99 cards, 0 block findings, repaired true (profile_off_band).
+
+Findings:
+
+- WARN ` + "`land_count`" + `: 39 lands
+
+Cards:
+
+- 17 Plains
+- 1 Sol Ring
+
+### 13. Bracket 5, Gishath, Sun's Avatar, combo
+
+Cards:
+
+- 1 Sol Ring
+
+`
+	idx := cards.NewIndex([]*mtgv1.Card{
+		{OracleId: "k", Name: "Karlov of the Ghost Council", CardTypes: []string{"Creature"}, Supertypes: []string{"Legendary"}},
+		{OracleId: "g", Name: "Gishath, Sun's Avatar", CardTypes: []string{"Creature"}, Supertypes: []string{"Legendary"}},
+		{OracleId: "p", Name: "Plains", CardTypes: []string{"Land"}, Supertypes: []string{"Basic"}},
+		{OracleId: "s", Name: "Sol Ring", CardTypes: []string{"Artifact"}},
+	}, nil, nil, time.Now())
+	rs, err := readDecks(strings.NewReader(doc), idx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rs) != 2 || rs[0].prompt.ID != 7 || rs[0].prompt.Bracket != 3 || rs[0].prompt.Theme != "lifegain" || rs[1].prompt.Bracket != 5 {
+		t.Errorf("prompts %+v %+v", rs[0].prompt, rs[1].prompt)
+	}
+	if d := rs[0].deck; len(d.Cards) != 2 || d.Cards[0].Count != 17 || d.Cards[0].OracleId != "p" || d.CommanderOracleIds[0] != "k" || d.GetPower().GetBracket() != 3 {
+		t.Errorf("deck %v", d)
+	}
+	if len(rs[1].deck.Cards) != 1 || rs[1].prompt.Commander != "Gishath, Sun's Avatar" || rs[1].prompt.Theme != "combo" || rs[1].deck.CommanderOracleIds[0] != "g" {
+		t.Errorf("second deck %+v %v", rs[1].prompt, rs[1].deck)
+	}
+	if _, err := readDecks(strings.NewReader(strings.Replace(doc, "Sol Ring", "Not A Card", 1)), idx); err == nil {
+		t.Error("an unknown name must fail")
+	}
+	if _, err := readDecks(strings.NewReader("# nothing\n"), idx); err == nil {
+		t.Error("a document with no deck must fail")
+	}
+}
+
+func TestReportJudge(t *testing.T) {
+	var rs []result
+	for i := 1; i <= 5; i++ {
+		rs = append(rs, good(i, 3))
+	}
+	rs[0].judged.Bracket = 4
+	var buf bytes.Buffer
+	idx := cards.NewIndex(nil, nil, nil, time.Now())
+	if !reportJudge(&buf, "run1.md", rs, llm.NewAccumulator(nil), idx, time.Second) {
+		t.Errorf("4 of 5 must pass:\n%s", buf.String())
+	}
+	if !strings.Contains(buf.String(), "| 1 | 3 | 4 | no | Karlov of the Ghost Council |") {
+		t.Errorf("table:\n%s", buf.String())
+	}
+	rs[1].judged, rs[1].judgeErr = nil, errors.New("boom")
+	buf.Reset()
+	if reportJudge(&buf, "run1.md", rs, llm.NewAccumulator(nil), idx, time.Second) {
+		t.Error("a judge error must fail")
+	}
+}

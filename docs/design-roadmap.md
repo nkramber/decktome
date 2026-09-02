@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-02 correction pass 56 (the owner's answers, D-467 to D-469): the session calls of PR-14A stand, with one change. Commander Spellbook reads the shortlist too, before the build, and the builder drops what it flags for the bracket (D-468). The engine's Commander land range is 27 to 41, the union of the bands (D-469, amends D-60). Changes: PR-14A, OQ-52, OQ-53.
+2026-09-02 correction pass 55 (bracket gate run 1, D-465 and D-466): 15 of 15 decks pass the block checks, and none holds a content violation. 8 of 15 sit in every band, and the judge agrees on 8 of 15. The verdict is FAIL on the band bar and the judge bar. The judge lane ran twice, because the first schema refused every call (D-465). The near two-card combo joins the check (D-466). The bracket 5 decks are theme decks with no power signal, which PR-14B answers. Changes: PR-14A, OQ-53.
 2026-09-02 correction pass 54 (PR-14A built, D-461 to D-464): the session built the bracket profile on branch `pr-14a`, and its gate did not run yet. A profile finding warns and buys the repair turn, and the tags cut the shortlist. Commander Spellbook checks the deck, and the bands start as estimates the gate tunes. The session calls wait for the owner as OQ-52. Changes: PR-14A, F-11, F-33, `docs/reference/bracket-profile-2026-09-02.md`.
 2026-09-02 correction pass 53 (OQ-50 closed, PR-14B moved, D-459 and D-460): the owner read the Commander Spellbook terms, and they allow the bracket endpoint. The app holds itself to 90 requests a minute. The owner asked why PR-14B sat after Phase 3B, and no code dependency held it there. PR-14B now comes right after PR-14A, and it builds the precon table of D-407 that its baseline tier needs. PR-24 follows it. Changes: PR-14A, PR-14B, PR-24, sequencing steps 19 and 22.
 2026-09-02 correction pass 52 (deck gate run 11, F-33): 24 of 24 decks pass, $1.46. A read of every mana base shows the count of nonbasic lands swings from 0 to 33 on the same shortlist, run to run. D-450 cut the colorless lands by two thirds. The mana base is a band for PR-14A, not a prompt line. Changes: F-33, PR-14A gate.
@@ -839,7 +841,7 @@ One flow on `workflow_dispatch` only. It signs in over the emulator and uploads 
 
 ### Phase 4 - Meta and quality (gated on Phase 3B, D-316)
 
-**PR-14A: The bracket profile (D-451 to D-453, D-459 to D-464).** 🔧 built 2026-09-02 on branch `pr-14a`. The bracket gate did not run yet, and the deck gate re-run is due.
+**PR-14A: The bracket profile (D-451 to D-453, D-459 to D-469).** 🔧 built 2026-09-02 on branch `pr-14a`. Bracket gate run 1 ran the same day and reads FAIL on two bars, and the deck gate re-run is due.
 Today a bracket reaches the build as one prose line, "Commander bracket: 3", and one cut: no Game Changers under bracket 3. The role targets are one table for every bracket. The engine checks legality and the Game Changer count, and it notes that the prose rules of the bracket are not machine-checkable. No check reads power after the build. A 3 is whatever the model believes a 3 is.
 
 The profile is a specification per bracket, in data and not in prose. It has four parts.
@@ -848,7 +850,7 @@ The content rules. What a bracket forbids, as card flags: Game Changers, mass la
 
 It answered an anonymous call on 2026-09-02, and its backend is MIT-licensed. The owner read the terms on 2026-09-02, and they allow the call (D-459, closes OQ-50). The client holds itself to 90 requests a minute, and it sends a named agent.
 
-The shortlist drops what the bracket forbids by the tags `mass-land-denial` and `extra-turn` (D-462). The endpoint checks the built deck, and the repair turn fixes a miss. The note in `checkBracket` left.
+The shortlist drops what the bracket forbids twice. The tags `mass-land-denial` and `extra-turn` cut it for free (D-462). Then the endpoint reads it, and the builder drops every card it flags for the bracket (D-468). The endpoint checks the built deck, and the repair turn fixes a miss. The note in `checkBracket` left.
 
 The deck bands. A feature vector per built deck. It holds the average mana value and the curve, and the ramp, draw, removal, wipe, and interaction counts. It holds the tutor and fast-mana counts, the untapped share of the lands, and the color sources against the pips by the Karsten tables. It holds the combo count and the Game Changer count.
 
@@ -867,6 +869,16 @@ What the build holds (2026-09-02). `internal/spellbook` is the client, at 90 req
 The generator reads the band midpoints as its job targets, and the prompt carries a deck shape block with the rest. A profile finding is a warning that buys the repair turn, and a profile finding alone buys one more pass (D-461). `cmd/bracket-gate` and `make bracket-gate` are the gate, with the spend guard and the overwrite guard. `docs/reference/bracket-profile-2026-09-02.md` holds every source.
 
 CAUTION: five band groups have no published source (D-463). They are the average mana value, the tapped and colorless caps, the tutor and fast mana caps, and the goldfish floors. The first gate run measures them. Read the off-band table of the document before you move a band, and give each move a decision id.
+
+Bracket gate run 1 (2026-09-02, `docs/reference/pr14a-bracket-gate-run1.md` and its judge lane `-run1-judge.md`). The builds cost $2.08 over 46 calls, and the judge lane $0.26. Every deck passed the block checks, and none held a content violation. Seven decks sat off band, all at brackets 3 to 5, and the mana on turn four was the feature that missed most, seven times.
+
+The judge agreed with the bracket on 8 of 15. It read every bracket 1 deck as a 2 or a 3. It read two of the three bracket 5 decks as a 3 or a 4.
+
+The bracket 5 decks are the finding that matters. The shortlist ranks on theme and popularity. So a "cEDH" prompt gets a warrior deck at an average mana value of 3.4 and no fast mana. The bands and the judge both saw it, and no band move fixes it. That is the power signal of PR-14B (F-30, D-413).
+
+The bracket 1 decks are the other side. The generator builds the strongest on-theme list the bands allow, and the judge reads that as a 2. No band moved on this run.
+
+The judge invented one fact. It named Heliod, Sun-Crowned with Archangel of Thune as an infinite combo in three decks, and the endpoint lists no such pair. The judge bar reads the bracket alone, and its reasons are for a reader, never for a rule.
 
 > *In plain English:* a bracket becomes a set of numbers the app builds to and checks, not a word it hopes the model understands. The app also deals ten thousand opening hands to see how fast the deck really gets going. The brackets are about how many turns a game lasts, so that number matters.
 

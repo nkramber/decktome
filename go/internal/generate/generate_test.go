@@ -10,7 +10,9 @@ import (
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
+	"github.com/nkramber/mtg-deck-builder/go/internal/profile"
 	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
+	"github.com/nkramber/mtg-deck-builder/go/internal/spellbook"
 )
 
 func fakeConfig() *llm.Config {
@@ -317,5 +319,87 @@ func TestHouseFormatHasASideboard(t *testing.T) {
 	}
 	if got := DeckSize(house); got != 60 {
 		t.Errorf("DeckSize(house) = %d, want 60", got)
+	}
+}
+
+// cutClassifier flags one name on the first call, the shortlist read of
+// D-468, and nothing on the calls after it, the content check.
+type cutClassifier struct {
+	flag  string
+	calls int
+	sent  [][]string
+}
+
+func (c *cutClassifier) EstimateBracket(_ context.Context, _ []string, main []string) (*spellbook.Result, error) {
+	c.calls++
+	c.sent = append(c.sent, main)
+	res := &spellbook.Result{}
+	if c.calls == 1 {
+		res.Cards = []spellbook.ClassifiedCard{{Card: spellbook.CardRef{Name: c.flag}, MassLandDenial: true}}
+	}
+	return res, nil
+}
+
+// TestBuildCutsTheShortlistByTheEndpoint is D-468 end to end: the card
+// the endpoint flags leaves the shortlist before the model reads it,
+// the deck says so, and a locked card stays.
+func TestBuildCutsTheShortlistByTheEndpoint(t *testing.T) {
+	deck := step(t, deckOut{Summary: "a deck", Cards: []Entry{{Name: "Ajani's Welcome", Count: 1, Role: "synergy", Reason: "gains life"}}})
+	for _, locked := range []bool{false, true} {
+		b, src, sc := testBuilder(t, deck, deck, deck)
+		cfg, _ := rules.Load()
+		cc := &cutClassifier{flag: "Ajani's Pridemate"}
+		prof, err := profile.New(cfg, nil, cc)
+		if err != nil {
+			t.Fatal(err)
+		}
+		prof.SetHands(50)
+		b.profiler = prof
+		req := testRequest()
+		req.Format = mtgv1.FormatId_FORMAT_ID_COMMANDER
+		req.Power = &mtgv1.PowerLevel{Level: &mtgv1.PowerLevel_Bracket{Bracket: 2}}
+		req.Limits = "Exactly 100 cards."
+		if locked {
+			c, _ := req.Pool.Card("Ajani's Pridemate")
+			req.Locked = []string{c.GetOracleId()}
+		}
+		got, err := b.Build(context.Background(), req, nil)
+		if err != nil {
+			t.Fatalf("build: %v", err)
+		}
+		if cc.calls < 2 {
+			t.Fatalf("locked %v: endpoint calls %d, want the shortlist read and the content check", locked, cc.calls)
+		}
+		for _, n := range cc.sent[0] {
+			if n == "Plains" {
+				t.Errorf("a basic land was sent to the endpoint")
+			}
+		}
+		in := sc.Calls[0].Input
+		var cut bool
+		for _, f := range got.Deck.GetValidation().GetFindings() {
+			if f.GetCode() == CodeShortlistCut {
+				cut = true
+				if !strings.Contains(f.GetMessage(), "Ajani's Pridemate") || !strings.Contains(f.GetMessage(), "bracket 2") {
+					t.Errorf("cut finding %q", f.GetMessage())
+				}
+			}
+		}
+		if locked {
+			if !strings.Contains(in, "Ajani's Pridemate") {
+				t.Error("a locked card must stay on the shortlist (D-242)")
+			}
+			if cut {
+				t.Error("a locked card that stays is not a cut")
+			}
+			continue
+		}
+		if strings.Contains(in, "- Ajani's Pridemate") {
+			t.Error("the flagged card reached the model")
+		}
+		if !cut {
+			t.Errorf("want the %s finding, got %v", CodeShortlistCut, got.Deck.GetValidation().GetFindings())
+		}
+		_ = src
 	}
 }

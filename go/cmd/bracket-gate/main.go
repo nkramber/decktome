@@ -71,7 +71,11 @@ func run() error {
 	only := flag.String("only", "", "run these prompt ids only, comma separated")
 	dry := flag.Bool("dry", false, "build every shortlist and stop before the provider calls")
 	noJudge := flag.Bool("no-judge", false, "skip the judge lane, which costs one judge call a deck")
+	rejudge := flag.String("rejudge", "", "judge the decks of this gate document, and build nothing")
 	flag.Parse()
+	if *rejudge != "" {
+		return runRejudge(*rejudge)
+	}
 
 	var file struct {
 		Prompts []prompt `json:"prompts"`

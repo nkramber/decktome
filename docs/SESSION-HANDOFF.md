@@ -7,7 +7,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 ## Where things stand (2026-09-02)
 
 - `main` is at `eafbd39`. Merged: PR-0a to PR-8, PR-7B, PR-10 to PR-13, the audits, the Phase 3B roadmap (#46), PR-16 (#47), PR-16B (#48), PR-17 (#49), PR-17B (#50), PR-18 (#53), the review fixes of PR-18 (#54), PR-19 (#55), and its follow-ups (#56).
-- The session of 2026-09-02 built PR-14A, the bracket profile, on branch `pr-14a` (D-459 to D-464), and it is not merged. The tree is green: Go build, vet, `-race` tests, golangci-lint, the web typecheck, and the proto check. The bracket gate did not run yet, and deck gate run 12 is due. The section below holds the moving parts.
+- The session of 2026-09-02 built PR-14A, the bracket profile, on branch `pr-14a` (D-459 to D-469), and it is not merged. The tree is green: Go build, vet, `-race` tests, golangci-lint, the web typecheck, and the proto check. Bracket gate run 1 ran and reads FAIL on the band bar and the judge bar, and deck gate run 12 is due. The section below holds the moving parts.
 - PR-19, the chat and build experience, is merged (D-432 to D-458, #55 and #56). It holds the land-swap fix of the revision turn (F-31, D-448), the split land bucket of the shortlist (F-32, D-450), and the one-chat-one-deck delete (D-456). Branches `pr-19` and `tile-fixes` can go.
 - The tree is green on `nits-and-fixes`: Go build, vet, `-race` tests, golangci-lint, web lint, typecheck, and 219 web tests. The emulator tests of the collection store pass, and `make lint` reports zero findings.
 - Question gate run 31 passes every bar. The set deck gate passes 6 of 6.
@@ -363,7 +363,7 @@ The branch holds the whole of PR-14A but its gate run. Read `docs/reference/brac
 - `go/internal/spellbook` calls `estimate-bracket` at 90 requests a minute with a named agent (D-459). The limiter spaces calls with no burst, and a 429 retries once.
 - `go/internal/profile` is the library. `bands.json` holds a band per feature per bracket, and per power step for a 60-card deck. `profile.go` measures 16 features, `karsten.go` holds the two source tables, `goldfish.go` deals 10,000 hands, and the content check reads the endpoint.
 - `go/internal/rules/brackets.json` gained `mass_land_denial`, `max_extra_turn_cards`, and `max_combo_speed` per bracket. The prose note of F-11 left `checkBracket`.
-- `candidates.Build` drops mass land denial through bracket 3 and extra turns at bracket 1, by the tags (D-462). `themes.json` names the two slugs under `roles`.
+- `candidates.Build` drops mass land denial through bracket 3 and extra turns at bracket 1, by the tags (D-462). `themes.json` names the two slugs under `roles`. `generate.Builder.cutShortlist` then sends the pool to the endpoint and drops what it flags, the commanders and the locked cards excepted (D-468). Every build makes two endpoint calls now.
 - `generate.TargetsFor` reads the band midpoints for Commander. The prompt carries a deck shape block, and prompt version 12 reads a profile finding in the repair turn. `MaxRepairs` is 2, and the second pass runs for a profile finding alone (D-461).
 - `Deck.profile` is field 23, additive. `make proto` regenerated the TypeScript, and no screen reads it yet: PR-20 shows it.
 - `cmd/bracket-gate` and `make bracket-gate` are the gate, 15 prompts, with `-dry`, `-only`, and `-no-judge`. The dry run resolves every commander and builds every shortlist for free, and it ran clean on 2026-09-02.
@@ -375,7 +375,26 @@ CAUTION: the bands are first values (D-463). The first bracket gate run will fin
 
 CAUTION: every build now makes one call to Commander Spellbook after the engine check. A failed call leaves an `content_unchecked` info finding and no content finding, so the build never waits on the endpoint's health.
 
-OQ-52 asks the owner to confirm D-461 to D-464. Nothing blocks on it.
+The owner answered OQ-52 and OQ-53 on 2026-09-02 (D-467 to D-469). The session calls stand. Two things changed. The endpoint reads the shortlist before the build, and the builder drops what it flags, with an info finding `shortlist_cut` on the deck (D-468). The engine's Commander land range is 27 to 41 (D-469).
+
+## Bracket gate run 1 (2026-09-02)
+
+`docs/reference/pr14a-bracket-gate-run1.md` holds the builds, and `pr14a-bracket-gate-run1-judge.md` holds the judge lane. The builds cost $2.08 over 46 calls, above the $1.50 estimate, because nine decks took a repair turn and four took two. The judge lane cost $0.26.
+
+| Bar | Result |
+|---|---|
+| Block checks | 15 of 15 |
+| In every band | 8 of 15 |
+| No content violation | 15 of 15 |
+| Judge agrees | 8 of 15, 53 percent, the bar is 80 |
+
+The off-band features: `mana_turn_four` 7, `avg_mana_value` 4, `color_sources` 2, `commander_turn_over_mv` 2, `tapped_land` 1. Brackets 1 and 2 sat in every band. The misses are all at brackets 3 to 5, and the bracket 5 decks miss most. A five-color warrior deck at an average mana value of 3.42 with no fast mana is not a cEDH deck. The profile said so.
+
+The judge read every bracket 1 deck as a 2 or a 3, and read Kinnan as a 4 and Najeela as a 3. It named a Heliod and Archangel of Thune combo that the endpoint does not list, so its reasons are not facts.
+
+No band moved on this run. The bracket 5 misses are the missing power signal of PR-14B, and the bracket 1 reads are the generator at its strongest on-theme list. Both are product findings, not band findings. OQ-53 records the one mixed message: the engine's land warning against the band.
+
+CAUTION: the first judge lane failed on every call. The schema bounded an integer, and the Anthropic structured output refuses that (D-465). The re-judge mode of `bracket-gate -rejudge <document>` reads the decks back and judges them, for a quarter of the build cost.
 
 ## The bracket profile, decided (2026-09-02)
 
@@ -426,9 +445,8 @@ The chat ran a turn with no card index before D-405. The commander question then
 
 ## Next steps, in order
 
-1. Run the bracket gate: `make bracket-gate`, about $1 to $1.50 for 15 builds and 15 judge calls, on the owner's word. Read the off-band table, then tune the bands with a decision id each.
-2. Run deck gate 12: `DECK_GATE_OUT=docs/reference/pr8-deck-gate-run12.md make deck-gate`, about $1.50, on the owner's word. It proves no regression under the profile, and it reads the mana bases of F-33 again.
-3. The owner reads the branch, confirms or amends D-461 to D-464 (OQ-52), and merges PR-14A.
+1. Run deck gate 12: `DECK_GATE_OUT=docs/reference/pr8-deck-gate-run12.md make deck-gate`, about $2 with the profile's repair passes, on the owner's word. It proves no regression under the profile, and it reads the mana bases of F-33 again.
+2. The owner reads the branch and the run 1 documents, and merges PR-14A. The bracket gate reads FAIL until PR-14B gives the shortlist a power signal. The owner decides whether the merge waits on that.
 4. PR-14B, the deck quality model, right after (D-460). OQ-51 holds the Moxfield bracket field check. Then PR-24, then PR-20 to PR-23 in order, one gate each. PR-15 stays after Phase 3B.
 
 Deck gate run 11 ran on 2026-09-02 and passed 24 of 24. The read of every mana base is F-33. The nonbasic count swings from 0 to 33 on the same prompt, run to run, and no rule holds it. The fix is the land band of PR-14A, not a prompt line.

@@ -14,7 +14,6 @@ No owner question blocks it. The owner answered OQ-24 to OQ-27 on 2026-08-26 (D-
 
 | # | Question | Why only you | What it blocks |
 |---|---|---|---|
-| OQ-52 | Do D-461 to D-464 stand as written? They are the session calls of PR-14A: a profile finding warns and buys a repair, the tags cut the shortlist, the bands start as estimates, and the gate has four bars. | The bands and the thresholds set what a bracket means in this app, and that is the promise to your users (D-452). | Nothing blocks on it. The bracket gate runs on the values as they are, and a change after the run needs a new decision id. |
 
 ## The two numbers M-5 exists to set
 

@@ -11,6 +11,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	"github.com/nkramber/mtg-deck-builder/go/internal/candidates"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 	"github.com/nkramber/mtg-deck-builder/go/internal/profile"
 	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
@@ -178,6 +179,7 @@ func (b *Builder) Build(ctx context.Context, req Request, acc *llm.Accumulator) 
 		return nil, fmt.Errorf("generate: the shortlist is empty")
 	}
 	req.phase(mtgv1.BuildPhase_BUILD_PHASE_BUILDING)
+	cut := b.cutShortlist(ctx, &req)
 	out, err := b.call(ctx, llm.RoleGenerate, generateInstructions, b.input(req, nil, nil), req.SessionID, acc)
 	if err != nil {
 		return nil, err
@@ -217,6 +219,11 @@ func (b *Builder) Build(ctx context.Context, req Request, acc *llm.Accumulator) 
 		}
 		res.repairReason = reason
 	}
+	if len(cut) > 0 {
+		addFinding(res.deck, CodeShortlistCut, mtgv1.Severity_SEVERITY_INFO,
+			fmt.Sprintf("bracket %d does not allow %s, so the shortlist left %s out: %s",
+				req.Power.GetBracket(), these(len(cut)), these(len(cut)), strings.Join(cut, ", ")))
+	}
 	final := &Result{Deck: res.deck, Repaired: res.repaired, RepairReason: res.repairReason}
 	// A name that missed twice never reaches the deck, and the user reads
 	// why it is absent.
@@ -232,6 +239,62 @@ type pass struct {
 	misses       []Miss
 	repaired     bool
 	repairReason string
+}
+
+// CodeShortlistCut reports the cards Commander Spellbook flagged for the
+// bracket before the build, which the shortlist then left out (D-468).
+// It is an INFO: the deck is what the bracket allows, and the reader
+// should know what it never saw.
+const CodeShortlistCut = "shortlist_cut"
+
+// cutShortlist asks the profiler which shortlist cards the bracket
+// forbids, and drops them from the pool (D-468). A locked card and a
+// commander stay: the user named them (D-242). A failed call drops
+// nothing and is logged, and the check after the build still runs.
+func (b *Builder) cutShortlist(ctx context.Context, req *Request) []string {
+	if b.profiler == nil || req.Format != mtgv1.FormatId_FORMAT_ID_COMMANDER || req.Power.GetBracket() == 0 {
+		return nil
+	}
+	keep := map[string]bool{}
+	for _, id := range append(append([]string(nil), req.Commanders...), req.Locked...) {
+		keep[id] = true
+	}
+	var names, commanders []string
+	for _, id := range req.Commanders {
+		if c, ok := b.cards.ByOracleID(id); ok {
+			commanders = append(commanders, c.GetName())
+		}
+	}
+	for _, name := range req.Pool.Names() {
+		c, ok := req.Pool.Card(name)
+		if !ok || keep[c.GetOracleId()] || candidates.IsBasicLand(c) {
+			continue
+		}
+		names = append(names, c.GetName())
+	}
+	drop, err := b.profiler.CutShortlist(ctx, req.Format, req.Power.GetBracket(), commanders, names)
+	if err != nil {
+		b.log.Warn("the shortlist was not read for the bracket, so nothing left it", "session", req.SessionID, "err", err)
+		return nil
+	}
+	if len(drop) == 0 {
+		return nil
+	}
+	// Only a card that was on the pool and not kept has left, and only
+	// those are reported.
+	gone := map[string]bool{}
+	var removed []string
+	for _, n := range drop {
+		if c, ok := req.Pool.Card(n); ok && !keep[c.GetOracleId()] {
+			gone[c.GetOracleId()] = true
+			removed = append(removed, c.GetName())
+		}
+	}
+	if len(removed) == 0 {
+		return nil
+	}
+	req.Pool = req.Pool.Filter(func(c *mtgv1.Card) bool { return !gone[c.GetOracleId()] })
+	return removed
 }
 
 // MaxRepairs is the most repair turns one build runs. The first covers

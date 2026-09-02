@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
@@ -115,19 +116,28 @@ The Commander brackets, from the Commander Format Panel (2025-02-11, revised 202
 
 Read the card list for its speed, its mana base, its fast mana and tutors, its interaction, its combos, and its Game Changers. Name one bracket, 1 to 5, and say why in two or three sentences. Judge the deck as it is, and not the bracket the builder may have aimed at.`
 
+// The bracket is a string enum and not a bounded integer: the Anthropic
+// structured-output schema refuses minimum and maximum on an integer
+// (bracket gate run 1, 2026-09-02).
 const bracketJudgeSchema = `{
   "type": "object",
   "additionalProperties": false,
   "required": ["bracket", "why"],
   "properties": {
-    "bracket": {"type": "integer", "minimum": 1, "maximum": 5},
+    "bracket": {"type": "string", "enum": ["1", "2", "3", "4", "5"]},
     "why": {"type": "string"}
   }
 }`
 
 // BracketJudgement is the judge's bracket for one deck.
 type BracketJudgement struct {
-	Bracket int32  `json:"bracket"`
+	Bracket int32  `json:"-"`
+	Why     string `json:"why"`
+}
+
+// bracketOut is the judge's answer as the schema shapes it.
+type bracketOut struct {
+	Bracket string `json:"bracket"`
 	Why     string `json:"why"`
 }
 
@@ -144,16 +154,20 @@ func JudgeBracket(ctx context.Context, c *llm.Client, deck *mtgv1.Deck, cards ru
 	if err != nil {
 		return nil, fmt.Errorf("judge bracket: %w", err)
 	}
-	var out BracketJudgement
+	var out bracketOut
 	if err := json.Unmarshal(res.Output, &out); err != nil {
 		return nil, fmt.Errorf("judge bracket output: %w", err)
 	}
-	return &out, nil
+	n, err := strconv.Atoi(out.Bracket)
+	if err != nil || n < 1 || n > 5 {
+		return nil, fmt.Errorf("judge bracket output: bracket %q", out.Bracket)
+	}
+	return &BracketJudgement{Bracket: int32(n), Why: out.Why}, nil
 }
 
 // DeckText writes a deck as the judge reads it: the commander, then one
-// line per card with its count and its job. No bracket, no summary, and
-// no finding.
+// line per card with its count and its job, when the deck names one. No
+// bracket, no summary, and no finding.
 func DeckText(deck *mtgv1.Deck, cards rules.CardSource) string {
 	var s strings.Builder
 	for _, id := range deck.GetCommanderOracleIds() {
@@ -163,6 +177,10 @@ func DeckText(deck *mtgv1.Deck, cards rules.CardSource) string {
 	}
 	s.WriteString("\nCards:\n")
 	for _, dc := range deck.GetCards() {
+		if dc.GetRole() == mtgv1.CardRole_CARD_ROLE_UNSPECIFIED {
+			fmt.Fprintf(&s, "%d %s\n", dc.GetCount(), dc.GetName())
+			continue
+		}
 		fmt.Fprintf(&s, "%d %s (%s)\n", dc.GetCount(), dc.GetName(), roleWord(dc.GetRole()))
 	}
 	return s.String()

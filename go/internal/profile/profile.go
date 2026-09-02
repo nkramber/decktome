@@ -138,9 +138,13 @@ func (p *Profiler) Read(ctx context.Context, deck *mtgv1.Deck, src rules.CardSou
 	}
 	colors := deckColors(entries, commanders, commander)
 
+	var tags *cards.TagIndex
+	if p.tags != nil {
+		tags = p.tags()
+	}
 	f := &features{}
 	f.counts(entries, commanders)
-	f.tutors(entries, p.tags())
+	f.tutors(entries, tags)
 	f.sources(entries, colors, deckSize(format))
 	f.goldfish(entries, commanders, commander, p.hands, p.seed)
 
@@ -447,8 +451,21 @@ func (p *Profiler) content(ctx context.Context, entries []entry, commanders []*m
 	var fastCombos []string
 	br, known := p.rules.Brackets[bracket]
 	for _, v := range res.Combos {
+		// A near two-card combo, one that needs a common third piece
+		// such as a lifegain trigger, reads one speed step slower than a
+		// sure one. That is the endpoint's own rule: a sure combo at
+		// speed 4 is Ruthless, and a near one at speed 4 is Spicy
+		// (variant.py, read 2026-09-02).
+		two := v.Relevant && v.DefinitelyTwoCard
+		speed := v.Speed
+		near := ""
+		if !two && v.Relevant && v.ArguablyTwoCard {
+			two = true
+			speed--
+			near = ", near two-card"
+		}
 		hit := &mtgv1.ComboHit{
-			Id: v.Combo.ID, Cards: v.Combo.Names(), TwoCard: v.Relevant && v.DefinitelyTwoCard,
+			Id: v.Combo.ID, Cards: v.Combo.Names(), TwoCard: two,
 			Speed: int32(v.Speed), ExtraTurn: v.ExtraTurn, MassLandDenial: v.MassLandDenial,
 		}
 		check.Combos = append(check.Combos, hit)
@@ -459,8 +476,8 @@ func (p *Profiler) content(ctx context.Context, entries []entry, commanders []*m
 		if v.MassLandDenial {
 			mldCombos = append(mldCombos, line)
 		}
-		if known && hit.TwoCard && br.MaxComboSpeed >= 0 && v.Speed > br.MaxComboSpeed {
-			fastCombos = append(fastCombos, fmt.Sprintf("%s (speed %d)", line, v.Speed))
+		if known && two && br.MaxComboSpeed >= 0 && speed > br.MaxComboSpeed {
+			fastCombos = append(fastCombos, fmt.Sprintf("%s (speed %d%s)", line, v.Speed, near))
 		}
 	}
 	if !known {
@@ -613,4 +630,33 @@ func plural(n int, noun string) string {
 		return fmt.Sprintf("%d %s", n, noun)
 	}
 	return fmt.Sprintf("%d %ss", n, noun)
+}
+
+// CutShortlist asks the endpoint which cards of a shortlist the bracket
+// forbids, before the model sees the list (D-468). It returns the names
+// to drop: mass land denial through bracket 3, and an extra-turn card
+// at bracket 1, by the rules of brackets.json. A call that fails drops
+// nothing and returns the error, so the build goes on and the check
+// after the build still runs. A 60-card format and a bracket the rules
+// do not know drop nothing.
+func (p *Profiler) CutShortlist(ctx context.Context, format mtgv1.FormatId, bracket int32, commanders, names []string) ([]string, error) {
+	if format != mtgv1.FormatId_FORMAT_ID_COMMANDER || p.classify == nil || len(names) == 0 {
+		return nil, nil
+	}
+	br, ok := p.rules.Brackets[bracket]
+	if !ok || (br.MassLandDenial && br.MaxExtraTurnCards != 0) {
+		return nil, nil
+	}
+	res, err := p.classify.EstimateBracket(ctx, commanders, names)
+	if err != nil {
+		return nil, err
+	}
+	var drop []string
+	for _, c := range res.Cards {
+		if (!br.MassLandDenial && c.MassLandDenial) || (br.MaxExtraTurnCards == 0 && c.ExtraTurn) {
+			drop = append(drop, c.Card.Name)
+		}
+	}
+	sort.Strings(drop)
+	return drop, nil
 }

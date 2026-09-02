@@ -33,5 +33,6 @@ OQ-23, OQ-28 to OQ-31, OQ-37, and OQ-39 sit in `docs/owner-questions.md`, the de
 - OQ-20 closed 2026-09-01 (D-431): the owner's export and a generator from the snapshot.
 
 - OQ-50 answered 2026-09-02 (D-459): the Commander Spellbook terms allow the bracket endpoint, at 90 requests a minute on the app's side.
-- OQ-52 (2026-09-02): the session calls of PR-14A, D-461 to D-464, wait for the owner's confirmation in `docs/owner-questions.md`.
+- OQ-52 answered 2026-09-02 (D-467, D-468): the session calls of PR-14A stand, and Spellbook reads the shortlist too.
+- OQ-53 answered 2026-09-02 (D-469): the engine's Commander land range is 27 to 41.
 - OQ-51 (2026-09-02): the Moxfield bracket field. Public decks carry a bracket their owner set, and the unofficial client library filters on it. The help page answered 403 to a plain fetch. Before PR-14B reads it, confirm the field on the public deck endpoint of D-419 and that the terms the owner read cover it.
