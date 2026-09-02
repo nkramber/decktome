@@ -9,6 +9,7 @@ package mtgv1
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -20,6 +21,472 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
+
+// BuildPhase names where a turn stands (roadmap PR-19). The stepper of
+// the chat reads it beside the status lines.
+type BuildPhase int32
+
+const (
+	BuildPhase_BUILD_PHASE_UNSPECIFIED BuildPhase = 0
+	// BUILD_PHASE_READING: the classifier reads the request.
+	BuildPhase_BUILD_PHASE_READING BuildPhase = 1
+	// BUILD_PHASE_SHORTLIST: the candidate list is built.
+	BuildPhase_BUILD_PHASE_SHORTLIST BuildPhase = 2
+	// BUILD_PHASE_BUILDING: the generator writes the deck.
+	BuildPhase_BUILD_PHASE_BUILDING BuildPhase = 3
+	// BUILD_PHASE_CHECKING: the rules engine checks the deck.
+	BuildPhase_BUILD_PHASE_CHECKING BuildPhase = 4
+	// BUILD_PHASE_REPAIRING: the repair turn runs.
+	BuildPhase_BUILD_PHASE_REPAIRING BuildPhase = 5
+	// BUILD_PHASE_DONE: the turn ended, with or without a deck.
+	BuildPhase_BUILD_PHASE_DONE BuildPhase = 6
+)
+
+// Enum value maps for BuildPhase.
+var (
+	BuildPhase_name = map[int32]string{
+		0: "BUILD_PHASE_UNSPECIFIED",
+		1: "BUILD_PHASE_READING",
+		2: "BUILD_PHASE_SHORTLIST",
+		3: "BUILD_PHASE_BUILDING",
+		4: "BUILD_PHASE_CHECKING",
+		5: "BUILD_PHASE_REPAIRING",
+		6: "BUILD_PHASE_DONE",
+	}
+	BuildPhase_value = map[string]int32{
+		"BUILD_PHASE_UNSPECIFIED": 0,
+		"BUILD_PHASE_READING":     1,
+		"BUILD_PHASE_SHORTLIST":   2,
+		"BUILD_PHASE_BUILDING":    3,
+		"BUILD_PHASE_CHECKING":    4,
+		"BUILD_PHASE_REPAIRING":   5,
+		"BUILD_PHASE_DONE":        6,
+	}
+)
+
+func (x BuildPhase) Enum() *BuildPhase {
+	p := new(BuildPhase)
+	*p = x
+	return p
+}
+
+func (x BuildPhase) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (BuildPhase) Descriptor() protoreflect.EnumDescriptor {
+	return file_mtg_v1_agent_service_proto_enumTypes[0].Descriptor()
+}
+
+func (BuildPhase) Type() protoreflect.EnumType {
+	return &file_mtg_v1_agent_service_proto_enumTypes[0]
+}
+
+func (x BuildPhase) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use BuildPhase.Descriptor instead.
+func (BuildPhase) EnumDescriptor() ([]byte, []int) {
+	return file_mtg_v1_agent_service_proto_rawDescGZIP(), []int{0}
+}
+
+type ListSessionsRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// page_size caps the answer. Zero takes the default, and the server
+	// caps it.
+	PageSize      int32  `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	PageToken     string `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListSessionsRequest) Reset() {
+	*x = ListSessionsRequest{}
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListSessionsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListSessionsRequest) ProtoMessage() {}
+
+func (x *ListSessionsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListSessionsRequest.ProtoReflect.Descriptor instead.
+func (*ListSessionsRequest) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_agent_service_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *ListSessionsRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListSessionsRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+type ListSessionsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Sessions      []*SessionSummary      `protobuf:"bytes,1,rep,name=sessions,proto3" json:"sessions,omitempty"`
+	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListSessionsResponse) Reset() {
+	*x = ListSessionsResponse{}
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListSessionsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListSessionsResponse) ProtoMessage() {}
+
+func (x *ListSessionsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListSessionsResponse.ProtoReflect.Descriptor instead.
+func (*ListSessionsResponse) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_agent_service_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *ListSessionsResponse) GetSessions() []*SessionSummary {
+	if x != nil {
+		return x.Sessions
+	}
+	return nil
+}
+
+func (x *ListSessionsResponse) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
+}
+
+// SessionSummary is one row of the sessions list: what a reader needs to
+// find a conversation again, without its turns.
+type SessionSummary struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// name is what the reader called it, or empty. The list then shows
+	// the first message.
+	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	// first_message is the reader's first message, which names the request.
+	FirstMessage  string                 `protobuf:"bytes,3,opt,name=first_message,json=firstMessage,proto3" json:"first_message,omitempty"`
+	CollectionId  string                 `protobuf:"bytes,4,opt,name=collection_id,json=collectionId,proto3" json:"collection_id,omitempty"`
+	Status        SessionStatus          `protobuf:"varint,5,opt,name=status,proto3,enum=mtg.v1.SessionStatus" json:"status,omitempty"`
+	DeckCount     int32                  `protobuf:"varint,6,opt,name=deck_count,json=deckCount,proto3" json:"deck_count,omitempty"`
+	Usage         *Usage                 `protobuf:"bytes,7,opt,name=usage,proto3" json:"usage,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SessionSummary) Reset() {
+	*x = SessionSummary{}
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SessionSummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SessionSummary) ProtoMessage() {}
+
+func (x *SessionSummary) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SessionSummary.ProtoReflect.Descriptor instead.
+func (*SessionSummary) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_agent_service_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *SessionSummary) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *SessionSummary) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *SessionSummary) GetFirstMessage() string {
+	if x != nil {
+		return x.FirstMessage
+	}
+	return ""
+}
+
+func (x *SessionSummary) GetCollectionId() string {
+	if x != nil {
+		return x.CollectionId
+	}
+	return ""
+}
+
+func (x *SessionSummary) GetStatus() SessionStatus {
+	if x != nil {
+		return x.Status
+	}
+	return SessionStatus_SESSION_STATUS_UNSPECIFIED
+}
+
+func (x *SessionSummary) GetDeckCount() int32 {
+	if x != nil {
+		return x.DeckCount
+	}
+	return 0
+}
+
+func (x *SessionSummary) GetUsage() *Usage {
+	if x != nil {
+		return x.Usage
+	}
+	return nil
+}
+
+func (x *SessionSummary) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *SessionSummary) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
+}
+
+type UpdateSessionRequest struct {
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	SessionId string                 `protobuf:"bytes,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	// name is the new name. An empty name is an invalid argument, and a
+	// name takes at most 200 bytes, as a deck name does.
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateSessionRequest) Reset() {
+	*x = UpdateSessionRequest{}
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateSessionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateSessionRequest) ProtoMessage() {}
+
+func (x *UpdateSessionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateSessionRequest.ProtoReflect.Descriptor instead.
+func (*UpdateSessionRequest) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_agent_service_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *UpdateSessionRequest) GetSessionId() string {
+	if x != nil {
+		return x.SessionId
+	}
+	return ""
+}
+
+func (x *UpdateSessionRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+type UpdateSessionResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Session       *SessionSummary        `protobuf:"bytes,1,opt,name=session,proto3" json:"session,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateSessionResponse) Reset() {
+	*x = UpdateSessionResponse{}
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateSessionResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateSessionResponse) ProtoMessage() {}
+
+func (x *UpdateSessionResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateSessionResponse.ProtoReflect.Descriptor instead.
+func (*UpdateSessionResponse) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_agent_service_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *UpdateSessionResponse) GetSession() *SessionSummary {
+	if x != nil {
+		return x.Session
+	}
+	return nil
+}
+
+type DeleteSessionRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SessionId     string                 `protobuf:"bytes,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteSessionRequest) Reset() {
+	*x = DeleteSessionRequest{}
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteSessionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteSessionRequest) ProtoMessage() {}
+
+func (x *DeleteSessionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteSessionRequest.ProtoReflect.Descriptor instead.
+func (*DeleteSessionRequest) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_agent_service_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *DeleteSessionRequest) GetSessionId() string {
+	if x != nil {
+		return x.SessionId
+	}
+	return ""
+}
+
+type DeleteSessionResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteSessionResponse) Reset() {
+	*x = DeleteSessionResponse{}
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteSessionResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteSessionResponse) ProtoMessage() {}
+
+func (x *DeleteSessionResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteSessionResponse.ProtoReflect.Descriptor instead.
+func (*DeleteSessionResponse) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_agent_service_proto_rawDescGZIP(), []int{6}
+}
 
 type ChatRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -40,7 +507,7 @@ type ChatRequest struct {
 
 func (x *ChatRequest) Reset() {
 	*x = ChatRequest{}
-	mi := &file_mtg_v1_agent_service_proto_msgTypes[0]
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -52,7 +519,7 @@ func (x *ChatRequest) String() string {
 func (*ChatRequest) ProtoMessage() {}
 
 func (x *ChatRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_agent_service_proto_msgTypes[0]
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -65,7 +532,7 @@ func (x *ChatRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChatRequest.ProtoReflect.Descriptor instead.
 func (*ChatRequest) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_agent_service_proto_rawDescGZIP(), []int{0}
+	return file_mtg_v1_agent_service_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ChatRequest) GetSessionId() string {
@@ -117,7 +584,7 @@ type AgentError struct {
 
 func (x *AgentError) Reset() {
 	*x = AgentError{}
-	mi := &file_mtg_v1_agent_service_proto_msgTypes[1]
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -129,7 +596,7 @@ func (x *AgentError) String() string {
 func (*AgentError) ProtoMessage() {}
 
 func (x *AgentError) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_agent_service_proto_msgTypes[1]
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -142,7 +609,7 @@ func (x *AgentError) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentError.ProtoReflect.Descriptor instead.
 func (*AgentError) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_agent_service_proto_rawDescGZIP(), []int{1}
+	return file_mtg_v1_agent_service_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *AgentError) GetCode() string {
@@ -180,6 +647,7 @@ type ChatResponse struct {
 	//	*ChatResponse_Error
 	//	*ChatResponse_Failure
 	//	*ChatResponse_Usage
+	//	*ChatResponse_Phase
 	Event         isChatResponse_Event `protobuf_oneof:"event"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -187,7 +655,7 @@ type ChatResponse struct {
 
 func (x *ChatResponse) Reset() {
 	*x = ChatResponse{}
-	mi := &file_mtg_v1_agent_service_proto_msgTypes[2]
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -199,7 +667,7 @@ func (x *ChatResponse) String() string {
 func (*ChatResponse) ProtoMessage() {}
 
 func (x *ChatResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_agent_service_proto_msgTypes[2]
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -212,7 +680,7 @@ func (x *ChatResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChatResponse.ProtoReflect.Descriptor instead.
 func (*ChatResponse) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_agent_service_proto_rawDescGZIP(), []int{2}
+	return file_mtg_v1_agent_service_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ChatResponse) GetEvent() isChatResponse_Event {
@@ -304,6 +772,15 @@ func (x *ChatResponse) GetUsage() *Usage {
 	return nil
 }
 
+func (x *ChatResponse) GetPhase() BuildPhase {
+	if x != nil {
+		if x, ok := x.Event.(*ChatResponse_Phase); ok {
+			return x.Phase
+		}
+	}
+	return BuildPhase_BUILD_PHASE_UNSPECIFIED
+}
+
 type isChatResponse_Event interface {
 	isChatResponse_Event()
 }
@@ -355,6 +832,13 @@ type ChatResponse_Usage struct {
 	Usage *Usage `protobuf:"bytes,9,opt,name=usage,proto3,oneof"`
 }
 
+type ChatResponse_Phase struct {
+	// phase says where the turn stands. It is additive beside status:
+	// the status line carries the words, and the phase carries the step
+	// the stepper lights (roadmap PR-19).
+	Phase BuildPhase `protobuf:"varint,10,opt,name=phase,proto3,enum=mtg.v1.BuildPhase,oneof"`
+}
+
 func (*ChatResponse_SessionStarted) isChatResponse_Event() {}
 
 func (*ChatResponse_TextDelta) isChatResponse_Event() {}
@@ -373,6 +857,8 @@ func (*ChatResponse_Failure) isChatResponse_Event() {}
 
 func (*ChatResponse_Usage) isChatResponse_Event() {}
 
+func (*ChatResponse_Phase) isChatResponse_Event() {}
+
 type GetSessionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	SessionId     string                 `protobuf:"bytes,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
@@ -382,7 +868,7 @@ type GetSessionRequest struct {
 
 func (x *GetSessionRequest) Reset() {
 	*x = GetSessionRequest{}
-	mi := &file_mtg_v1_agent_service_proto_msgTypes[3]
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -394,7 +880,7 @@ func (x *GetSessionRequest) String() string {
 func (*GetSessionRequest) ProtoMessage() {}
 
 func (x *GetSessionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_agent_service_proto_msgTypes[3]
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -407,7 +893,7 @@ func (x *GetSessionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSessionRequest.ProtoReflect.Descriptor instead.
 func (*GetSessionRequest) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_agent_service_proto_rawDescGZIP(), []int{3}
+	return file_mtg_v1_agent_service_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *GetSessionRequest) GetSessionId() string {
@@ -426,7 +912,7 @@ type GetSessionResponse struct {
 
 func (x *GetSessionResponse) Reset() {
 	*x = GetSessionResponse{}
-	mi := &file_mtg_v1_agent_service_proto_msgTypes[4]
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -438,7 +924,7 @@ func (x *GetSessionResponse) String() string {
 func (*GetSessionResponse) ProtoMessage() {}
 
 func (x *GetSessionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_agent_service_proto_msgTypes[4]
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -451,7 +937,7 @@ func (x *GetSessionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSessionResponse.ProtoReflect.Descriptor instead.
 func (*GetSessionResponse) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_agent_service_proto_rawDescGZIP(), []int{4}
+	return file_mtg_v1_agent_service_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *GetSessionResponse) GetSession() *Session {
@@ -465,7 +951,37 @@ var File_mtg_v1_agent_service_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_agent_service_proto_rawDesc = "" +
 	"\n" +
-	"\x1amtg/v1/agent_service.proto\x12\x06mtg.v1\x1a\x11mtg/v1/deck.proto\x1a\x14mtg/v1/session.proto\"\xe7\x01\n" +
+	"\x1amtg/v1/agent_service.proto\x12\x06mtg.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x11mtg/v1/deck.proto\x1a\x14mtg/v1/session.proto\"Q\n" +
+	"\x13ListSessionsRequest\x12\x1b\n" +
+	"\tpage_size\x18\x01 \x01(\x05R\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x02 \x01(\tR\tpageToken\"r\n" +
+	"\x14ListSessionsResponse\x122\n" +
+	"\bsessions\x18\x01 \x03(\v2\x16.mtg.v1.SessionSummaryR\bsessions\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\xe7\x02\n" +
+	"\x0eSessionSummary\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12#\n" +
+	"\rfirst_message\x18\x03 \x01(\tR\ffirstMessage\x12#\n" +
+	"\rcollection_id\x18\x04 \x01(\tR\fcollectionId\x12-\n" +
+	"\x06status\x18\x05 \x01(\x0e2\x15.mtg.v1.SessionStatusR\x06status\x12\x1d\n" +
+	"\n" +
+	"deck_count\x18\x06 \x01(\x05R\tdeckCount\x12#\n" +
+	"\x05usage\x18\a \x01(\v2\r.mtg.v1.UsageR\x05usage\x129\n" +
+	"\n" +
+	"created_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
+	"\n" +
+	"updated_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"I\n" +
+	"\x14UpdateSessionRequest\x12\x1d\n" +
+	"\n" +
+	"session_id\x18\x01 \x01(\tR\tsessionId\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"I\n" +
+	"\x15UpdateSessionResponse\x120\n" +
+	"\asession\x18\x01 \x01(\v2\x16.mtg.v1.SessionSummaryR\asession\"5\n" +
+	"\x14DeleteSessionRequest\x12\x1d\n" +
+	"\n" +
+	"session_id\x18\x01 \x01(\tR\tsessionId\"\x17\n" +
+	"\x15DeleteSessionResponse\"\xe7\x01\n" +
 	"\vChatRequest\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\tR\tsessionId\x12#\n" +
@@ -477,7 +993,7 @@ const file_mtg_v1_agent_service_proto_rawDesc = "" +
 	"AgentError\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12\x1c\n" +
-	"\tretryable\x18\x03 \x01(\bR\tretryable\"\xeb\x02\n" +
+	"\tretryable\x18\x03 \x01(\bR\tretryable\"\x97\x03\n" +
 	"\fChatResponse\x12)\n" +
 	"\x0fsession_started\x18\x01 \x01(\tH\x00R\x0esessionStarted\x12\x1f\n" +
 	"\n" +
@@ -488,17 +1004,31 @@ const file_mtg_v1_agent_service_proto_rawDesc = "" +
 	"\x04deck\x18\x06 \x01(\v2\f.mtg.v1.DeckH\x00R\x04deck\x12\x1a\n" +
 	"\x05error\x18\a \x01(\tB\x02\x18\x01H\x00R\x05error\x12.\n" +
 	"\afailure\x18\b \x01(\v2\x12.mtg.v1.AgentErrorH\x00R\afailure\x12%\n" +
-	"\x05usage\x18\t \x01(\v2\r.mtg.v1.UsageH\x00R\x05usageB\a\n" +
+	"\x05usage\x18\t \x01(\v2\r.mtg.v1.UsageH\x00R\x05usage\x12*\n" +
+	"\x05phase\x18\n" +
+	" \x01(\x0e2\x12.mtg.v1.BuildPhaseH\x00R\x05phaseB\a\n" +
 	"\x05event\"2\n" +
 	"\x11GetSessionRequest\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\tR\tsessionId\"?\n" +
 	"\x12GetSessionResponse\x12)\n" +
-	"\asession\x18\x01 \x01(\v2\x0f.mtg.v1.SessionR\asession2\x8c\x01\n" +
+	"\asession\x18\x01 \x01(\v2\x0f.mtg.v1.SessionR\asession*\xc2\x01\n" +
+	"\n" +
+	"BuildPhase\x12\x1b\n" +
+	"\x17BUILD_PHASE_UNSPECIFIED\x10\x00\x12\x17\n" +
+	"\x13BUILD_PHASE_READING\x10\x01\x12\x19\n" +
+	"\x15BUILD_PHASE_SHORTLIST\x10\x02\x12\x18\n" +
+	"\x14BUILD_PHASE_BUILDING\x10\x03\x12\x18\n" +
+	"\x14BUILD_PHASE_CHECKING\x10\x04\x12\x19\n" +
+	"\x15BUILD_PHASE_REPAIRING\x10\x05\x12\x14\n" +
+	"\x10BUILD_PHASE_DONE\x10\x062\xf9\x02\n" +
 	"\fAgentService\x125\n" +
 	"\x04Chat\x12\x13.mtg.v1.ChatRequest\x1a\x14.mtg.v1.ChatResponse\"\x000\x01\x12E\n" +
 	"\n" +
-	"GetSession\x12\x19.mtg.v1.GetSessionRequest\x1a\x1a.mtg.v1.GetSessionResponse\"\x00B:Z8github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1b\x06proto3"
+	"GetSession\x12\x19.mtg.v1.GetSessionRequest\x1a\x1a.mtg.v1.GetSessionResponse\"\x00\x12K\n" +
+	"\fListSessions\x12\x1b.mtg.v1.ListSessionsRequest\x1a\x1c.mtg.v1.ListSessionsResponse\"\x00\x12N\n" +
+	"\rUpdateSession\x12\x1c.mtg.v1.UpdateSessionRequest\x1a\x1d.mtg.v1.UpdateSessionResponse\"\x00\x12N\n" +
+	"\rDeleteSession\x12\x1c.mtg.v1.DeleteSessionRequest\x1a\x1d.mtg.v1.DeleteSessionResponse\"\x00B:Z8github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1b\x06proto3"
 
 var (
 	file_mtg_v1_agent_service_proto_rawDescOnce sync.Once
@@ -512,39 +1042,63 @@ func file_mtg_v1_agent_service_proto_rawDescGZIP() []byte {
 	return file_mtg_v1_agent_service_proto_rawDescData
 }
 
-var file_mtg_v1_agent_service_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_mtg_v1_agent_service_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_mtg_v1_agent_service_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_mtg_v1_agent_service_proto_goTypes = []any{
-	(*ChatRequest)(nil),        // 0: mtg.v1.ChatRequest
-	(*AgentError)(nil),         // 1: mtg.v1.AgentError
-	(*ChatResponse)(nil),       // 2: mtg.v1.ChatResponse
-	(*GetSessionRequest)(nil),  // 3: mtg.v1.GetSessionRequest
-	(*GetSessionResponse)(nil), // 4: mtg.v1.GetSessionResponse
-	(*Answer)(nil),             // 5: mtg.v1.Answer
-	(PoolRule)(0),              // 6: mtg.v1.PoolRule
-	(*Question)(nil),           // 7: mtg.v1.Question
-	(*Slots)(nil),              // 8: mtg.v1.Slots
-	(*Deck)(nil),               // 9: mtg.v1.Deck
-	(*Usage)(nil),              // 10: mtg.v1.Usage
-	(*Session)(nil),            // 11: mtg.v1.Session
+	(BuildPhase)(0),               // 0: mtg.v1.BuildPhase
+	(*ListSessionsRequest)(nil),   // 1: mtg.v1.ListSessionsRequest
+	(*ListSessionsResponse)(nil),  // 2: mtg.v1.ListSessionsResponse
+	(*SessionSummary)(nil),        // 3: mtg.v1.SessionSummary
+	(*UpdateSessionRequest)(nil),  // 4: mtg.v1.UpdateSessionRequest
+	(*UpdateSessionResponse)(nil), // 5: mtg.v1.UpdateSessionResponse
+	(*DeleteSessionRequest)(nil),  // 6: mtg.v1.DeleteSessionRequest
+	(*DeleteSessionResponse)(nil), // 7: mtg.v1.DeleteSessionResponse
+	(*ChatRequest)(nil),           // 8: mtg.v1.ChatRequest
+	(*AgentError)(nil),            // 9: mtg.v1.AgentError
+	(*ChatResponse)(nil),          // 10: mtg.v1.ChatResponse
+	(*GetSessionRequest)(nil),     // 11: mtg.v1.GetSessionRequest
+	(*GetSessionResponse)(nil),    // 12: mtg.v1.GetSessionResponse
+	(SessionStatus)(0),            // 13: mtg.v1.SessionStatus
+	(*Usage)(nil),                 // 14: mtg.v1.Usage
+	(*timestamppb.Timestamp)(nil), // 15: google.protobuf.Timestamp
+	(*Answer)(nil),                // 16: mtg.v1.Answer
+	(PoolRule)(0),                 // 17: mtg.v1.PoolRule
+	(*Question)(nil),              // 18: mtg.v1.Question
+	(*Slots)(nil),                 // 19: mtg.v1.Slots
+	(*Deck)(nil),                  // 20: mtg.v1.Deck
+	(*Session)(nil),               // 21: mtg.v1.Session
 }
 var file_mtg_v1_agent_service_proto_depIdxs = []int32{
-	5,  // 0: mtg.v1.ChatRequest.answers:type_name -> mtg.v1.Answer
-	6,  // 1: mtg.v1.ChatRequest.pool_rule:type_name -> mtg.v1.PoolRule
-	7,  // 2: mtg.v1.ChatResponse.question:type_name -> mtg.v1.Question
-	8,  // 3: mtg.v1.ChatResponse.slots:type_name -> mtg.v1.Slots
-	9,  // 4: mtg.v1.ChatResponse.deck:type_name -> mtg.v1.Deck
-	1,  // 5: mtg.v1.ChatResponse.failure:type_name -> mtg.v1.AgentError
-	10, // 6: mtg.v1.ChatResponse.usage:type_name -> mtg.v1.Usage
-	11, // 7: mtg.v1.GetSessionResponse.session:type_name -> mtg.v1.Session
-	0,  // 8: mtg.v1.AgentService.Chat:input_type -> mtg.v1.ChatRequest
-	3,  // 9: mtg.v1.AgentService.GetSession:input_type -> mtg.v1.GetSessionRequest
-	2,  // 10: mtg.v1.AgentService.Chat:output_type -> mtg.v1.ChatResponse
-	4,  // 11: mtg.v1.AgentService.GetSession:output_type -> mtg.v1.GetSessionResponse
-	10, // [10:12] is the sub-list for method output_type
-	8,  // [8:10] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	3,  // 0: mtg.v1.ListSessionsResponse.sessions:type_name -> mtg.v1.SessionSummary
+	13, // 1: mtg.v1.SessionSummary.status:type_name -> mtg.v1.SessionStatus
+	14, // 2: mtg.v1.SessionSummary.usage:type_name -> mtg.v1.Usage
+	15, // 3: mtg.v1.SessionSummary.created_at:type_name -> google.protobuf.Timestamp
+	15, // 4: mtg.v1.SessionSummary.updated_at:type_name -> google.protobuf.Timestamp
+	3,  // 5: mtg.v1.UpdateSessionResponse.session:type_name -> mtg.v1.SessionSummary
+	16, // 6: mtg.v1.ChatRequest.answers:type_name -> mtg.v1.Answer
+	17, // 7: mtg.v1.ChatRequest.pool_rule:type_name -> mtg.v1.PoolRule
+	18, // 8: mtg.v1.ChatResponse.question:type_name -> mtg.v1.Question
+	19, // 9: mtg.v1.ChatResponse.slots:type_name -> mtg.v1.Slots
+	20, // 10: mtg.v1.ChatResponse.deck:type_name -> mtg.v1.Deck
+	9,  // 11: mtg.v1.ChatResponse.failure:type_name -> mtg.v1.AgentError
+	14, // 12: mtg.v1.ChatResponse.usage:type_name -> mtg.v1.Usage
+	0,  // 13: mtg.v1.ChatResponse.phase:type_name -> mtg.v1.BuildPhase
+	21, // 14: mtg.v1.GetSessionResponse.session:type_name -> mtg.v1.Session
+	8,  // 15: mtg.v1.AgentService.Chat:input_type -> mtg.v1.ChatRequest
+	11, // 16: mtg.v1.AgentService.GetSession:input_type -> mtg.v1.GetSessionRequest
+	1,  // 17: mtg.v1.AgentService.ListSessions:input_type -> mtg.v1.ListSessionsRequest
+	4,  // 18: mtg.v1.AgentService.UpdateSession:input_type -> mtg.v1.UpdateSessionRequest
+	6,  // 19: mtg.v1.AgentService.DeleteSession:input_type -> mtg.v1.DeleteSessionRequest
+	10, // 20: mtg.v1.AgentService.Chat:output_type -> mtg.v1.ChatResponse
+	12, // 21: mtg.v1.AgentService.GetSession:output_type -> mtg.v1.GetSessionResponse
+	2,  // 22: mtg.v1.AgentService.ListSessions:output_type -> mtg.v1.ListSessionsResponse
+	5,  // 23: mtg.v1.AgentService.UpdateSession:output_type -> mtg.v1.UpdateSessionResponse
+	7,  // 24: mtg.v1.AgentService.DeleteSession:output_type -> mtg.v1.DeleteSessionResponse
+	20, // [20:25] is the sub-list for method output_type
+	15, // [15:20] is the sub-list for method input_type
+	15, // [15:15] is the sub-list for extension type_name
+	15, // [15:15] is the sub-list for extension extendee
+	0,  // [0:15] is the sub-list for field type_name
 }
 
 func init() { file_mtg_v1_agent_service_proto_init() }
@@ -554,7 +1108,7 @@ func file_mtg_v1_agent_service_proto_init() {
 	}
 	file_mtg_v1_deck_proto_init()
 	file_mtg_v1_session_proto_init()
-	file_mtg_v1_agent_service_proto_msgTypes[2].OneofWrappers = []any{
+	file_mtg_v1_agent_service_proto_msgTypes[9].OneofWrappers = []any{
 		(*ChatResponse_SessionStarted)(nil),
 		(*ChatResponse_TextDelta)(nil),
 		(*ChatResponse_Question)(nil),
@@ -564,19 +1118,21 @@ func file_mtg_v1_agent_service_proto_init() {
 		(*ChatResponse_Error)(nil),
 		(*ChatResponse_Failure)(nil),
 		(*ChatResponse_Usage)(nil),
+		(*ChatResponse_Phase)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_mtg_v1_agent_service_proto_rawDesc), len(file_mtg_v1_agent_service_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   5,
+			NumEnums:      1,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_mtg_v1_agent_service_proto_goTypes,
 		DependencyIndexes: file_mtg_v1_agent_service_proto_depIdxs,
+		EnumInfos:         file_mtg_v1_agent_service_proto_enumTypes,
 		MessageInfos:      file_mtg_v1_agent_service_proto_msgTypes,
 	}.Build()
 	File_mtg_v1_agent_service_proto = out.File

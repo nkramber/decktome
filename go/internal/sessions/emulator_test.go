@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"testing"
+	"time"
 
 	"cloud.google.com/go/firestore"
 	"google.golang.org/protobuf/proto"
@@ -315,5 +316,73 @@ func TestEmulatorPutConflict(t *testing.T) {
 	fresh.Id = repo.NewID("u6")
 	if err := repo.Put(ctx, "u6", fresh, sampleState(), 3); !errors.Is(err, ErrConflict) {
 		t.Errorf("put over a missing document with expected 3 gave %v, want ErrConflict", err)
+	}
+}
+
+// TestEmulatorListRenameDelete is the sessions list of D-433. The list
+// reads summaries newest first, a rename keeps the turns and the
+// updated_at, and a delete removes both documents.
+func TestEmulatorListRenameDelete(t *testing.T) {
+	repo, done := emulatorRepo(t)
+	defer done()
+	uid := "u-" + t.Name()
+	put := func(id, first string, at time.Time) {
+		t.Helper()
+		s := &mtgv1.Session{
+			Id: id, Status: mtgv1.SessionStatus_SESSION_STATUS_ASKING,
+			Turns:     []*mtgv1.Turn{{UserMessage: first}},
+			DeckIds:   []string{"d1"},
+			CreatedAt: timestamppb.New(at), UpdatedAt: timestamppb.New(at),
+		}
+		if err := repo.Put(t.Context(), uid, s, questions.Snapshot{}, 0); err != nil {
+			t.Fatal(err)
+		}
+	}
+	base := time.Date(2026, 9, 2, 10, 0, 0, 0, time.UTC)
+	put("s-old", "an old request", base)
+	put("s-new", "a new request", base.Add(time.Hour))
+
+	list, err := repo.List(t.Context(), uid)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(list) != 2 || list[0].GetId() != "s-new" || list[0].GetFirstMessage() != "a new request" || list[0].GetDeckCount() != 1 {
+		t.Fatalf("list = %v, want the new one first with its message and deck count", list)
+	}
+
+	sum, err := repo.Rename(t.Context(), uid, "s-old", "My lifegain chat")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sum.GetName() != "My lifegain chat" || !sum.GetUpdatedAt().AsTime().Equal(base) {
+		t.Errorf("rename gave %v, want the name and the same updated_at", sum)
+	}
+	// The turns survive, and the next turn expects the bumped version.
+	got, _, version, err := repo.GetState(t.Context(), uid, "s-old")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.GetTurns()) != 1 || got.GetName() != "My lifegain chat" || version != 2 {
+		t.Errorf("after a rename: %d turns, name %q, version %d", len(got.GetTurns()), got.GetName(), version)
+	}
+	if _, err := repo.Rename(t.Context(), uid, "missing", "x"); !isNotFound(err) {
+		t.Errorf("a rename of a missing session gave %v, want ErrNotFound", err)
+	}
+
+	if err := repo.Delete(t.Context(), uid, "s-old"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := repo.Get(t.Context(), uid, "s-old"); !isNotFound(err) {
+		t.Errorf("after a delete, Get gave %v, want ErrNotFound", err)
+	}
+	if _, _, _, err := repo.GetState(t.Context(), uid, "s-old"); err == nil {
+		t.Error("after a delete, the private state must be gone")
+	}
+	if err := repo.Delete(t.Context(), uid, "s-old"); !isNotFound(err) {
+		t.Errorf("a second delete gave %v, want ErrNotFound", err)
+	}
+	list, err = repo.List(t.Context(), uid)
+	if err != nil || len(list) != 1 {
+		t.Errorf("list after delete = %v (%v), want one", list, err)
 	}
 }

@@ -65,11 +65,18 @@ type fakeDecks struct {
 	started   chan struct{}
 	startOnce sync.Once
 	release   chan struct{}
+	// record makes the fake spend one generate call on the accumulator,
+	// as the real generator does, so a test can read the session total
+	// (D-447).
+	record bool
 }
 
-func (f *fakeDecks) Build(ctx context.Context, req generate.Request, _ *llm.Accumulator) (*generate.Result, error) {
+func (f *fakeDecks) Build(ctx context.Context, req generate.Request, acc *llm.Accumulator) (*generate.Result, error) {
 	f.runs++
 	f.got = req
+	if f.record && acc != nil {
+		acc.Record(llm.RoleGenerate, "fake-generate", &llm.Usage{InputTokens: 15000, OutputTokens: 3000}, 0)
+	}
 	if f.started != nil {
 		f.startOnce.Do(func() { close(f.started) })
 	}
@@ -410,7 +417,7 @@ func TestThinCommanderPoolRunsNoBuild(t *testing.T) {
 		PoolRule: mtgv1.PoolRule_POOL_RULE_OWNED_ONLY,
 	}}
 	st := &questions.State{Slots: session.GetSlots()}
-	res, err := srv.buildDeck(context.Background(), "u1", session, st, nil, nil)
+	res, err := srv.buildDeck(context.Background(), "u1", session, st, nil, nil, nil)
 	if !errors.Is(err, ErrThinCommanderPool) {
 		t.Fatalf("err = %v, want ErrThinCommanderPool", err)
 	}
@@ -448,7 +455,7 @@ func TestUnresolvedPreconKeepsNoShare(t *testing.T) {
 	st := &questions.State{Slots: session.GetSlots(), CommanderNames: []string{"Karlov of the Ghost Council"}}
 	st.Ctx.Precon = true
 	st.Ctx.Words = "upgrade my avengers assemble precon"
-	if _, err := srv.buildDeck(context.Background(), "u1", session, st, nil, nil); err != nil {
+	if _, err := srv.buildDeck(context.Background(), "u1", session, st, nil, nil, nil); err != nil {
 		t.Fatalf("build: %v", err)
 	}
 	if fd.runs != 1 {
@@ -478,7 +485,7 @@ func TestBuildCopiesTheHouseRules(t *testing.T) {
 		HouseRules: "any card, no ban list",
 	}}
 	st := &questions.State{Slots: session.GetSlots()}
-	if _, err := srv.buildDeck(context.Background(), "u1", session, st, nil, nil); err != nil {
+	if _, err := srv.buildDeck(context.Background(), "u1", session, st, nil, nil, nil); err != nil {
 		t.Fatalf("build: %v", err)
 	}
 	if fd.runs != 1 {
@@ -811,7 +818,7 @@ func TestRevisionCapKeepsTheCommanderAndTheLockedCards(t *testing.T) {
 	st.SetCommander("Karlov of the Ghost Council")
 	st.AddLocked("Locked Thing")
 	rev := &generate.Revision{Base: []*mtgv1.DeckCard{{OracleId: "o-other", Name: "Other Thing", Count: 1}}, MaxManaValue: 4}
-	if _, err := srv.buildDeckFrom(context.Background(), "u1", session, st, nil, nil, rev); err != nil {
+	if _, err := srv.buildDeckFrom(context.Background(), "u1", session, st, nil, nil, rev, nil); err != nil {
 		t.Fatalf("build: %v", err)
 	}
 	got := fd.got.Revision
@@ -856,8 +863,42 @@ func TestBuildNamesTheMissingWiring(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if _, err := srv.buildDeck(context.Background(), "u1", session, st, nil, nil); !errors.Is(err, tc.want) {
+		if _, err := srv.buildDeck(context.Background(), "u1", session, st, nil, nil, nil); !errors.Is(err, tc.want) {
 			t.Errorf("%s: err = %v, want %v", tc.name, err, tc.want)
 		}
+	}
+}
+
+// TestSessionSpendHoldsTheBuild is D-447. Session vAvg4eteJhmuPEuJwBul
+// showed 9 calls and $0.0023 after a build that costs about $0.06 on
+// its own: the turn summed its report before the build and never
+// again. The streamed total and the stored total hold the build now.
+func TestSessionSpendHoldsTheBuild(t *testing.T) {
+	store := newFakeStore()
+	deck := &mtgv1.Deck{Summary: "a lifegain deck", Validation: &mtgv1.ValidationResult{}, Cards: []*mtgv1.DeckCard{{Name: "Ajani's Welcome", Count: 1}}}
+	fd := &fakeDecks{res: &generate.Result{Deck: deck}, record: true}
+	// The post-build write of the session runs with a deck store, as in
+	// production, and that write is the one that carries the build.
+	ds := &fakeDeckStore{}
+	client, _ := testServerOpts(t, store, append(buildOpts(t, fd), WithDeckStore(ds)), readySteps(t)...)
+
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	afterQuestions := first.usage.GetCalls()
+	second := chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
+	if second.deck == nil {
+		t.Fatalf("no deck reached the user: %v", second.order)
+	}
+	// The second turn spends its own question calls and the one build.
+	questionCalls := second.usage.GetCalls() - afterQuestions
+	if questionCalls < 2 {
+		t.Fatalf("the second turn reports %d calls over the first, want the question calls and the build", questionCalls)
+	}
+	if second.usage.GetInputTokens() < first.usage.GetInputTokens()+15000 {
+		t.Errorf("the streamed total holds %d input tokens, want the build's 15000 on top of %d", second.usage.GetInputTokens(), first.usage.GetInputTokens())
+	}
+	stored := store.sessions[first.started]
+	if stored.GetUsage().GetCalls() != second.usage.GetCalls() || stored.GetUsage().GetInputTokens() != second.usage.GetInputTokens() {
+		t.Errorf("the stored total (%d calls, %d in) differs from the streamed one (%d calls, %d in)",
+			stored.GetUsage().GetCalls(), stored.GetUsage().GetInputTokens(), second.usage.GetCalls(), second.usage.GetInputTokens())
 	}
 }

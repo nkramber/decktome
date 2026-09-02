@@ -14,6 +14,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/firestore"
@@ -224,4 +225,109 @@ func (r *Repo) GetState(ctx context.Context, uid, id string) (*mtgv1.Session, qu
 		return nil, questions.Snapshot{}, 0, fmt.Errorf("session %s state: version %d is newer than %d", id, out.Version, questions.SnapshotVersion)
 	}
 	return s, out, version, nil
+}
+
+// ListScanCap bounds the sessions one list reads, as the deck list does.
+// A reader with more has the newest ones, which is what a list of
+// conversations is for.
+const ListScanCap = 500
+
+// List returns the reader's sessions, newest first by updated_at, as
+// summaries (roadmap PR-19). It inflates each stored session, because a
+// session is a few kilobytes and the summary needs its first message
+// and its deck count. The caller pages over the slice.
+func (r *Repo) List(ctx context.Context, uid string) ([]*mtgv1.SessionSummary, error) {
+	snaps, err := r.client.Collection("users").Doc(uid).Collection("sessions").
+		OrderBy("updated_at", firestore.Desc).Limit(ListScanCap).Documents(ctx).GetAll()
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*mtgv1.SessionSummary, 0, len(snaps))
+	for _, snap := range snaps {
+		s, _, err := decodeSession(snap.Ref.ID, snap)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, Summarize(s))
+	}
+	return out, nil
+}
+
+// Summarize reads the list row of one session.
+func Summarize(s *mtgv1.Session) *mtgv1.SessionSummary {
+	first := ""
+	for _, t := range s.GetTurns() {
+		if m := strings.TrimSpace(t.GetUserMessage()); m != "" {
+			first = m
+			break
+		}
+	}
+	return &mtgv1.SessionSummary{
+		Id:           s.GetId(),
+		Name:         s.GetName(),
+		FirstMessage: first,
+		CollectionId: s.GetCollectionId(),
+		Status:       s.GetStatus(),
+		DeckCount:    int32(len(s.GetDeckIds())), //nolint:gosec // a session holds a handful of decks
+		Usage:        s.GetUsage(),
+		CreatedAt:    s.GetCreatedAt(),
+		UpdatedAt:    s.GetUpdatedAt(),
+	}
+}
+
+// Rename writes the name of one session (roadmap PR-19). It rewrites the
+// public document alone, inside the version check, so a turn that lands
+// at the same time can not lose the name or the turn. The updated_at
+// stays: a rename must not move a conversation up the list.
+func (r *Repo) Rename(ctx context.Context, uid, id, name string) (*mtgv1.SessionSummary, error) {
+	var out *mtgv1.SessionSummary
+	err := r.client.RunTransaction(ctx, func(_ context.Context, tx *firestore.Transaction) error {
+		snap, err := tx.Get(r.doc(uid, id))
+		if err != nil {
+			if status.Code(err) == codes.NotFound {
+				return fmt.Errorf("%w: %s", ErrNotFound, id)
+			}
+			return err
+		}
+		var stored storedSession
+		if err := snap.DataTo(&stored); err != nil {
+			return fmt.Errorf("session %s: %w", id, err)
+		}
+		var s mtgv1.Session
+		if err := gzstore.UnmarshalProto(stored.SessionGz, &s); err != nil {
+			return fmt.Errorf("session %s: %w", id, err)
+		}
+		s.Id = id
+		s.Name = name
+		gz, err := gzstore.MarshalProto(&s)
+		if err != nil {
+			return err
+		}
+		stored.SessionGz = gz
+		stored.Version++
+		out = Summarize(&s)
+		return tx.Set(r.doc(uid, id), stored)
+	})
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// Delete removes a session and its private state for good (roadmap
+// PR-19). The decks it built stay: a deck carries its own id, and the
+// deck library reads it without the session.
+func (r *Repo) Delete(ctx context.Context, uid, id string) error {
+	return r.client.RunTransaction(ctx, func(_ context.Context, tx *firestore.Transaction) error {
+		if _, err := tx.Get(r.doc(uid, id)); err != nil {
+			if status.Code(err) == codes.NotFound {
+				return fmt.Errorf("%w: %s", ErrNotFound, id)
+			}
+			return err
+		}
+		if err := tx.Delete(r.doc(uid, id)); err != nil {
+			return err
+		}
+		return tx.Delete(r.stateDoc(uid, id))
+	})
 }

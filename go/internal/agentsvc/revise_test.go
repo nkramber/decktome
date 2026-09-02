@@ -4,8 +4,11 @@ import (
 	"encoding/json"
 	"strings"
 	"testing"
+	"time"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	"github.com/nkramber/mtg-deck-builder/go/internal/candidates"
+	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
 	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 )
@@ -15,7 +18,7 @@ func reviseJSON(t *testing.T, fields map[string]any) llm.Step {
 	t.Helper()
 	out := map[string]any{
 		"changes": []string{}, "remove": []string{}, "keep": []string{},
-		"max_mana_value": 0.0, "question": "", "declined": []any{},
+		"max_mana_value": 0.0, "swap_basics": 0, "land_kinds": "", "question": "", "declined": []any{},
 	}
 	for k, v := range fields {
 		out[k] = v
@@ -215,6 +218,62 @@ func TestRevisionUnlocksARemovedCard(t *testing.T) {
 	for _, n := range snap.LockedNames {
 		if n == "Ajani's Welcome" {
 			t.Error("the stored state still locks the removed card")
+		}
+	}
+}
+
+// TestRevisionSwapsBasicsAndKeepsTheBrief is D-448 and D-449. The swap
+// count of the brief reaches the generator, fitted to the nonbasic
+// lands the pool offers, and the turn stores the brief.
+func TestRevisionSwapsBasicsAndKeepsTheBrief(t *testing.T) {
+	store := newFakeStore()
+	ds := &fakeDeckStore{}
+	base := &mtgv1.Deck{Name: "lifegain Commander", Validation: &mtgv1.ValidationResult{},
+		Cards: []*mtgv1.DeckCard{{OracleId: "o-welcome", Name: "Ajani's Welcome", Count: 1}, {OracleId: "o-plains", Name: "Plains", Count: 30}}}
+	fd := &fakeDecks{res: &generate.Result{Deck: base}}
+	legal := map[string]mtgv1.LegalityStatus{"commander": mtgv1.LegalityStatus_LEGALITY_STATUS_LEGAL}
+	karlov := &mtgv1.Card{OracleId: "o-karlov", Name: "Karlov of the Ghost Council", TypeLine: "Legendary Creature — Spirit Advisor",
+		CanBeCommander: true, ColorIdentity: []mtgv1.Color{mtgv1.Color_COLOR_W, mtgv1.Color_COLOR_B}, Legalities: legal}
+	welcome := &mtgv1.Card{OracleId: "o-welcome", Name: "Ajani's Welcome", TypeLine: "Enchantment", ColorIdentity: []mtgv1.Color{mtgv1.Color_COLOR_W}, Legalities: legal}
+	plains := &mtgv1.Card{OracleId: "o-plains", Name: "Plains", TypeLine: "Basic Land — Plains", CardTypes: []string{"Land"}, Supertypes: []string{"Basic"}, Legalities: legal}
+	tower := &mtgv1.Card{OracleId: "o-tower", Name: "Command Tower", TypeLine: "Land", CardTypes: []string{"Land"}, Legalities: legal}
+	idx := cards.NewIndex([]*mtgv1.Card{karlov, welcome, plains, tower}, nil, nil, time.Unix(1000, 0).UTC())
+	cb, err := candidates.New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	opts := []Option{WithDecks(fd), WithCandidates(fixedIndex{idx}, cb), WithDeckStore(ds)}
+	steps := append(builtSteps(t),
+		classifyJSON(t, nil),
+		reviseJSON(t, map[string]any{
+			"changes": []string{"Replace basic lands with dual lands"}, "swap_basics": 12, "land_kinds": "dual lands that enter untapped",
+		}))
+	client, _ := testServerOpts(t, store, opts, steps...)
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
+	fd.res = &generate.Result{Deck: &mtgv1.Deck{Validation: &mtgv1.ValidationResult{}, Cards: []*mtgv1.DeckCard{{OracleId: "o-plains", Name: "Plains", Count: 29}, {OracleId: "o-tower", Name: "Command Tower", Count: 1}}}}
+	third := chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Add better lands instead of the basics"})
+	if third.deck == nil {
+		t.Fatalf("no revised deck: %v", third.order)
+	}
+	rev := fd.got.Revision
+	if rev == nil {
+		t.Fatal("the generator got no revision")
+	}
+	// The pool offers one nonbasic land the base does not hold, so the
+	// ask of 12 fits to 1.
+	if rev.SwapBasics != 1 || rev.LandKinds != "dual lands that enter untapped" {
+		t.Errorf("revision swap = %d %q, want 1 and the kinds", rev.SwapBasics, rev.LandKinds)
+	}
+	session := store.sessions[first.started]
+	turns := session.GetTurns()
+	last := turns[len(turns)-1]
+	if !strings.Contains(last.GetRevisionBrief(), `"swap_basics":12`) {
+		t.Errorf("the turn did not keep the brief: %q", last.GetRevisionBrief())
+	}
+	for _, turn := range turns[:len(turns)-1] {
+		if turn.GetRevisionBrief() != "" {
+			t.Errorf("a turn with no revise call holds a brief: %q", turn.GetRevisionBrief())
 		}
 	}
 }

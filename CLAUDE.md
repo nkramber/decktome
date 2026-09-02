@@ -6,9 +6,9 @@ Read this file first. Then read `docs/SESSION-HANDOFF.md`. It tells you where th
 
 This repo is a Go + Protobuf + TypeScript monorepo for an agentic MtG deck builder. The app reads a user's ManaBox collection export. The user gives a prompt. The agent asks questions, then builds a legal, useful deck.
 
-Stage (2026-09-01): `main` is at `e8782b5`. Merged: PR-0a to PR-8, PR-7B, PR-10 to PR-13, the Phase 3B roadmap (#46), PR-16 (#47), PR-16B (#48), PR-17 (#49), and PR-17B (#50). PR-9 is out of the MVP (D-256).
+Stage (2026-09-02): `main` is at `13ca8dd`. Merged: PR-0a to PR-8, PR-7B, PR-10 to PR-13, the Phase 3B roadmap (#46), PR-16 (#47), PR-16B (#48), PR-17 (#49), PR-17B (#50), PR-18 (#53), and the review fixes of PR-18 (#54). PR-9 is out of the MVP (D-256).
 
-PR-18 merged (#53). **Branch `nits-and-fixes` holds the review fixes of PR-18** (D-398 to D-406). The binder filter, the sort, and the search run on the server now. The upload dialog offers a choice between a replacement and a new collection. Every gate passes: question gate run 32, deck gate run 10, revise gate run 4, and the PR-17B set gate run 1.
+**Branch `pr-19` holds the chat and build experience** (D-432 to D-449). It adds the unfinished chats on a new chat, the stepper, and the retry. It also adds the deck delete on a tile, the pointer cursor, a smooth dialog, and the commander offer under a set limit. The owner refused a start form (D-436), and the app stays chat. It also fixes the revision turn: a land swap is a counted change (F-31, D-448). Every gate passes: question gate run 32, deck gate run 10, revise gate run 4, and the PR-17B set gate run 1. Revise gate run 5 is due, because run 4 does not cover the land-swap bars.
 
 Phase 3B, the product UI, is the current phase. The look follows a reference design the owner gave on 2026-08-30 (D-328 to D-335). `docs/SESSION-HANDOFF.md` holds the moving parts, and `docs/reference/autotune-readme.md` holds the loop commands.
 
@@ -66,7 +66,7 @@ Five more targets spend money, and each has an overwrite guard and an env guard.
 
 `make summary-judge` judges every deck summary of a gate document (F-26). Each probe costs a few cents. Ask the owner before every run.
 
-`make revise-gate` builds two base decks and runs six revisions over them (PR-12B). It has the same two guards. One run costs about $0.30 (run 2, $0.29).
+`make revise-gate` builds three base decks and runs nine revisions over them, twelve turns with the answered questions (PR-12B, D-448). It has the same two guards. Run 4 cost $0.54 for eight turns.
 
 `DECK_GATE_ARGS` passes flags to `make deck-gate`. `DECK_GATE_ARGS="-only 19,20,21,22,23,24"` runs the six set prompts of PR-17B alone, for about $0.35.
 

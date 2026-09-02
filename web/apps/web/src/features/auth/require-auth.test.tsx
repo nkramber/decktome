@@ -16,7 +16,8 @@ vi.mock("../../lib/api", () => ({
   },
   collectionClient: { listCollections: () => Promise.resolve({ collections: [] }) },
   deckClient: { listDecks: () => Promise.resolve({ decks: [] }) },
-  agentClient: { getSession: () => Promise.resolve({ session: { id: "abc123", turns: [], deckIds: [] } }) },
+  agentClient: {
+    listSessions: () => Promise.resolve({ sessions: [], nextPageToken: "" }), getSession: () => Promise.resolve({ session: { id: "abc123", turns: [], deckIds: [] } }) },
 }));
 
 beforeEach(() => {

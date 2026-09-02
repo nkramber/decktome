@@ -6,6 +6,9 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-02 correction pass 49 (a land upgrade rebuilt one basic, F-31, D-448 and D-449): the owner asked for better lands in place of the basics, and the rebuild moved one Plains to one Island. The brief counts the basic lands to replace, and the check holds the deck to the count. The generator's revision rule names group changes, and the revise gate plays the turn after its question. The generate prompt is at version 11. A turn stores its brief. Changes: F-31, PR-12B, the cost model line of the revise gate. Revise gate run 5 is due.
+2026-09-02 correction pass 48 (the owner's read of PR-19, D-438 to D-447): the unfinished chats moved under the message box and hide when there is none. A deck tile carries a delete, and every control shows the pointer cursor. The delete dialogs stuttered, and an elimination run found the cause in the wordmark's endless shimmer, not in the dialog. The gap over the message box equals the gap under the top bar. Changes: PR-19.
+2026-09-02 correction pass 47 (PR-19 built, then the form refused, D-432 to D-437): PR-19 built a start form, the unfinished chats, the stepper, and the retry. The owner read the form and refused it: the app is chat, and the pool picker is the one control outside it (D-436). The form left the same day. A session the owner read found the commander offer bare under a declined theme. The offer now serves an empty theme and reads the set limit (D-437). Changes: PR-19.
 2026-09-01 correction pass 46 (Topdeck.gg joins the sources, D-417): the owner added the Topdeck.gg API and its credit line the same day. It amends D-415. cEDH standings and decklists come from the API. The app shows "Tournament data by TopDeck.gg" with a link. Changes: the system map, PR-14, guardrail 7 unchanged.
 2026-09-01 correction pass 45 (PR-14 becomes the deck quality model, D-413 to D-416): the owner asked for a model of what makes a deck good, bad, and great. It covers Standard, Modern, and Commander at every quality. PR-14 was a meta feed. It is a scorer now. It reads the lists that MTGO, MTGTop8, the cEDH database, and EDHREC publish. It labels them by placement, and it fits a weight per feature per format. The owner declined Topdeck.gg, then added it (D-417). The owner chose synthetic bad decks as the bottom of the ladder, and one PR. Changes: the system map, the cost model, F-30, PR-14, Phase 5, sequencing step 22.
 2026-09-01 correction pass 44 (three findings from the owner's reads, D-410 to D-412): the deck name carried the format twice. The commander offer for "the best deck you can" ranked on the words "you" and "can", which sit in the text of most cards. The pool now drops a generic text needle that more than a tenth of the cards hold. The words of a request are stop words. The merged PR-18 summary fields stay reserved, because the wire guard refused their rename. Changes: PR-6, PR-8, PR-18.
@@ -159,6 +162,7 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-3 | **Scryfall API rate limits are hard.** 2 requests per second on `/cards/named`, `/cards/search`, `/cards/random`, `/cards/collection`. 10 per minute on `/cards/manifest`. 10 per second elsewhere (verified 2026-08-24). A 429 blocks for 30 seconds. Repeated overload gets a ban. Bulk files have no limit. | ⚠ binds PR-2: all card lookups go to the local snapshot. The live API is for single-card fallback only, behind a client-side limiter. |
 | F-4 | **Aggregator terms of use unknown.** MTGGoldfish, MTGTop8, Aetherhub, and EDHREC have no public API and their terms were unchecked. | ✅ 2026-08-23: the owner confirmed the legal check passed (D-5). All five sources may be used. PR-14 still starts with MTGO because it is the only structured source. |
 | F-5 | **Oracle tags are community data.** Scryfall Tagger tags are volunteer-made. Coverage is uneven. `lifegain` is rich (3,374 cards). Niche themes may have few tags. Weights are `median` style, not scores. | ⚠ binds PR-6: tags seed the candidate list. They never gate a card. Keywords and type lines are the second signal. The model is the third. |
+| F-31 | **A land upgrade rebuilt one basic land.** Session `vAvg4eteJhmuPEuJwBul`, 2026-09-01: the owner asked for better lands in place of the basics on a three-color Commander deck. The agent asked what kind, the owner answered a mix, and the rebuild moved one Plains to one Island. The shortlist held 40 nonbasic lands, among them Command Tower, the three shock lands of the colors, the fetch lands, and Cavern of Souls. The generator's revision rule asks for the smallest change, the brief named no count, and no check reads a free-text change. Revise gate runs 1 to 4 stopped at the question on both land rows, so the turn after the answer never ran under a bar. | 🔧 fixed on `pr-19` (D-448, D-449), revise gate run 5 due. |
 | F-30 | **No signal of deck quality exists.** The pool ranks on theme fit and EDHREC popularity, and the bracket drops Game Changers under bracket 3 and nothing else. A bracket 5 request got the three most popular legends whose text held "you" and "can" (session t8o1nGGquK6UdTQkfY3V, D-411, 2026-09-01). | 🔧 binds PR-14 (D-413). |
 | F-6 | **No Cloud Tasks emulator.** Local mode can not run real Cloud Tasks. | ✅ PR-0c (#3): a `Dispatcher` interface with a local in-process implementation. |
 | F-7 | **Docker absent on the dev machine.** | ✅ PR-0b (#2): Docker 29.7.2 installed. Native `make dev` does not need it. |
@@ -579,6 +583,8 @@ Third, the generator gets the brief and the base deck in `generate.Request`, and
 
 A deterministic check reads the brief after the build. A removed card that is still present is a finding. So is a kept card that is absent, and so is a card over the mana limit. The repair turn reads these findings like any other.
 
+2026-09-02 correction (F-31, D-448, D-449): a land swap is a counted change. The brief holds the number of basic lands to replace and the kind. The count fits the base deck and the pool. A deck that holds fewer new nonbasic lands gets a block finding. The repair turn reads the block. The generator's revision rule says a change that names a group and a number touches that many cards. The revise prompt says the earlier message still stands after the answer to its question. The gate answers its own questions and scores the rebuild, and it holds a clear land-swap row on the Karlov base. A turn stores its brief. Revise gate run 5 must pass before the branch merges.
+
 The reply is prose from the diff, not from the model, for example "I removed four cards over 5 mana, added four, and replaced six Plains". The server stores it in `Turn.agent_message`, which existed and had no writer, and streams it as `text_delta`. The new deck gets `revised_from_deck_id` and `revision_note`, both additive, and the deck view shows the diff. Gate: six revision prompts over two stored decks. Each result keeps every untouched card, holds every limit of the brief, and passes the engine. A paid run, so the owner says when.
 > *In plain English:* today, the app throws away anything you type after the deck appears, and the app quietly builds the same deck again. After this change, "cut the 7-drops and fix the lands" gives you a short answer and a deck that did those two things, or a question when the request is unclear.
 
@@ -741,21 +747,33 @@ Gate:
 
 > *In plain English:* your binder, on screen. Several uploads, a name on each, and a clean "what changed since last time" when you upload a new export. Browse it like a real binder, with the pictures, and search the whole binder rather than the part on your screen.
 
-**PR-19: Chat and build experience.**
-A start screen with a short form: the format, the power, the pool rule, the budget, and a theme line. Each form answer goes out as a structured answer to the catalog row it fills. So the agent asks nothing the form answered, and "Just chat" skips the form. The thread moves onto the new primitives: choice chips, art tiles for a card option, and no field on a closed question (D-295). A stepper shows the build phases from the `status` events, which gain an additive `phase`.
+**PR-19: Chat and build experience (D-432 to D-447).** 🔧 built 2026-09-02 on branch `pr-19`. The owner reads it in the browser, then merges.
+The chat is the whole start (D-436). The owner read a start form on 2026-09-02 and refused it. The one control outside the conversation is the pool picker, the collection or any card. The form, its rows in the contract, and the gate's form conversations left the same day. D-432 and D-434 record the form, and D-436 amends both.
 
-Error recovery has three parts. A failed turn shows the reason and a retry. A build in progress shows the D-303 notice. A lost stream resumes from `GetSession`. A sessions list shows the first message, the date, the deck count, and the cost, with rename, delete, and resume.
+The thread already holds the primitives of D-295: option buttons, art tiles for a card option, and no field on a closed question. A stepper lights the phase the server streams: understand, shortlist, build, check, and repair when one ran (D-435).
 
-Contract, additive: `AgentService.ListSessions`, `UpdateSession`, `DeleteSession`, `GetCatalog`, `Session.name`, and `status.phase`.
+Error recovery has three parts. A failed turn shows the reason and a "Try again" that sends the same turn. A build in progress shows the D-303 notice. A lost stream offers "Reload the session", which reads the stored session again.
+
+A new chat lists the unfinished chats under its message box, and only when there is one (D-433, D-438). Those are the conversations with no deck yet, with resume, rename, and delete. A finished chat lives on its deck, and the top bar keeps three entries.
+
+Contract, additive: `AgentService.ListSessions`, `UpdateSession`, and `DeleteSession`, with `SessionSummary`. `Session.name` and `ChatResponse.phase` are new fields, and `generate.Request` carries a phase callback.
+
+The slice also carries five findings of the owner's read. A deck tile carries a delete (D-439), and every control shows the pointer cursor (D-440). The wordmark's shimmer no longer runs forever, and a dialog overlay fades with no backdrop filter, so a delete dialog opens with no stutter (D-441).
+
+The gap over the message box equals the gap under the top bar (D-442).
+
+A half of a commander pair zooms to a single card's size, and a single card never zooms (D-443). The art of an option picks it, as its name does (D-444), and the tile lifts under the pointer (D-445). A stored question closes with its slot, so the docked chat of a fresh deck shows the pick and not the offer (D-446).
+
+The session spend holds the build, which it never did (D-447). The commander offer is fixed (D-437). A declined theme answered no name, so the pick row went out bare and the build chose a commander with no word to the reader. The offer now serves an empty theme on popularity, and it reads the set limit, so a Hobbit-only request offers Hobbit commanders.
 
 Gate:
 
-- A session started from a full form asks no catalog question the form answered. The check replays the 30 gate conversations with their answers as form input.
-- The stepper shows every phase of a real build.
-- The owner builds one deck from the form and one from the chat.
+- The stepper shows every phase of a real build. The phase events come from the generator itself, so a step the stepper shows is a step that ran.
+- A declined theme under a set limit offers three commanders of the sets. ✅ held in `TestCommandersWithNoThemeInsideTheSets` on 2026-09-02.
+- The owner builds one deck from the chat and reads the stepper.
 
-CAUTION: the form path sends the `Q:`/`A:` shape to the classify call (D-280), which only the browser sends today. PR-19 adds that shape to the gate's conversation set, so the next paid run measures it.
-> *In plain English:* a friendlier start. Tell the app the basics with a few clicks, and watch the build move through its steps. Pick up an old conversation where you left it.
+CAUTION: the form path of the first plan sent the `Q:`/`A:` shape to the classify call (D-280). The form left (D-436), so only the browser sends that shape, as before.
+> *In plain English:* the chat is the whole start, and it shows the build move through its steps. A turn that fails offers a retry, and a lost connection offers a reload. A chat you left before a deck waits under the message box, and a deck you no longer want goes from its tile.
 
 **PR-20: Deck view and card detail (D-318).**
 A click on a card opens a detail panel. It shows the full image and both faces, the Oracle text, the type line, the mana cost, and the rulings with dates. It also shows the legalities, the printings with prices, the deck's reason line, and "Open on Scryfall". The deck view gains filters by role, color, mana value, type, and owned, and sort by mana value, name, and price. Stats show as small charts with a text table under each one.

@@ -92,7 +92,7 @@ func TestInputNamesManaValues(t *testing.T) {
 	src := fakeCards{"o1": {Name: "Angel of Serenity", TypeLine: "Creature — Angel", ManaValue: 7, CardTypes: []string{"Creature"}},
 		"o2": {Name: "Plains", TypeLine: "Basic Land — Plains", CardTypes: []string{"Land"}}}
 	got := input(Input{Message: "no 7 drops", Prior: "build angels", Deck: d, Format: "Modern", Power: "casual", Cards: src})
-	for _, want := range []string{"Format: Modern. Power: casual.", "- 1 Angel of Serenity (Creature — Angel, mana value 7)", "- 24 Plains (Basic Land — Plains)", "## The user's earlier message\n\nbuild angels", "## The user's message\n\nno 7 drops"} {
+	for _, want := range []string{"Format: Modern. Power: casual.", "- 1 Angel of Serenity (Creature — Angel, mana value 7)", "- 24 Plains (Basic Land — Plains)", "Act on both.\n\nbuild angels", "## The user's message\n\nno 7 drops"} {
 		if !strings.Contains(got, want) {
 			t.Errorf("input lacks %q:\n%s", want, got)
 		}
@@ -102,3 +102,32 @@ func TestInputNamesManaValues(t *testing.T) {
 type fakeCards map[string]*mtgv1.Card
 
 func (f fakeCards) ByOracleID(id string) (*mtgv1.Card, bool) { c, ok := f[id]; return c, ok }
+
+// TestActsOnASwapAndJSON is D-448 and D-449: a land swap acts on its own,
+// and the brief marshals for the turn.
+func TestActsOnASwapAndJSON(t *testing.T) {
+	b := &Brief{SwapBasics: 12, LandKinds: "dual lands that enter untapped"}
+	if !b.Acts() {
+		t.Error("a land swap does not act")
+	}
+	got := b.JSON()
+	for _, want := range []string{`"swap_basics":12`, `"land_kinds":"dual lands that enter untapped"`, `"changes":null`} {
+		if !strings.Contains(got, want) {
+			t.Errorf("json lacks %q: %s", want, got)
+		}
+	}
+}
+
+// TestInputTellsTheModelThePriorWasAnswered: the earlier message carries
+// the line that says the new message answers a question about it, so the
+// clear parts of the earlier message still stand (D-448).
+func TestInputTellsTheModelThePriorWasAnswered(t *testing.T) {
+	d := &mtgv1.Deck{Cards: []*mtgv1.DeckCard{{OracleId: "o2", Name: "Plains", Count: 24}}}
+	got := input(Input{Message: "Q: Which lands?\nA: A mix.", Prior: "Better lands, and no 6 drops", Deck: d, Format: "Modern"})
+	if !strings.Contains(got, "## The user's earlier message\n\nYou asked a question about this message, and the message below answers it. Act on both.\n\nBetter lands, and no 6 drops") {
+		t.Errorf("input:\n%s", got)
+	}
+	if strings.Contains(input(Input{Message: "x", Deck: d, Format: "Modern"}), "earlier message") {
+		t.Error("a first message carries the prior section")
+	}
+}

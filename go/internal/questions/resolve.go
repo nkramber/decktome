@@ -34,6 +34,12 @@ type SlotAware interface {
 	UseSlots(format mtgv1.FormatId, colors []mtgv1.Color, pool mtgv1.PoolRule)
 }
 
+// SetAware lets a hint source read the set limit as it stands inside the
+// turn, so the commander offer stays inside the sets (D-437).
+type SetAware interface {
+	UseSets(codes []string)
+}
+
 // PairAware lets a hint source know the user asked for a two-commander
 // pair. Three single legends do not answer that request (D-154).
 type PairAware interface {

@@ -69,6 +69,10 @@ type Request struct {
 	// DeckID is the id the store reserved. A deck carries its own id, so
 	// the caller reserves one before the build (D-245).
 	DeckID string
+	// OnPhase reports where the build stands, so the chat can light a
+	// step (D-435). Nil reports nothing. The builder calls it before the
+	// generate call, before each check, and before the repair turn.
+	OnPhase func(mtgv1.BuildPhase)
 	// Name is what the user sees the deck called.
 	Name string
 	// Now stamps the deck. Tests give a fixed clock.
@@ -112,6 +116,11 @@ type Revision struct {
 	// missing, and the model can not put back what it can not name
 	// (D-242).
 	Exempt []string
+	// SwapBasics is how many basic lands the deck must replace with
+	// nonbasic lands, and LandKinds says what kind. Zero means no land
+	// swap. A deck that adds fewer is refused (D-448).
+	SwapBasics int
+	LandKinds  string
 }
 
 // Result is one finished build.
@@ -152,10 +161,12 @@ func (b *Builder) Build(ctx context.Context, req Request, acc *llm.Accumulator) 
 	if req.Pool == nil || req.Pool.Size() == 0 {
 		return nil, fmt.Errorf("generate: the shortlist is empty")
 	}
+	req.phase(mtgv1.BuildPhase_BUILD_PHASE_BUILDING)
 	out, err := b.call(ctx, llm.RoleGenerate, generateInstructions, b.input(req, nil, nil), req.SessionID, acc)
 	if err != nil {
 		return nil, err
 	}
+	req.phase(mtgv1.BuildPhase_BUILD_PHASE_CHECKING)
 	res := b.assemble(req, out)
 	// One repair turn covers every refusal: a name the shortlist does not
 	// hold, a block finding from the engine, and the two warnings that
@@ -164,12 +175,14 @@ func (b *Builder) Build(ctx context.Context, req Request, acc *llm.Accumulator) 
 	if findings := repairable(res.deck.GetValidation()); len(res.misses) > 0 || len(findings) > 0 {
 		b.log.Info("the deck was refused, so one repair turn runs",
 			"session", req.SessionID, "misses", len(res.misses), "findings", len(findings))
+		req.phase(mtgv1.BuildPhase_BUILD_PHASE_REPAIRING)
 		out2, err := b.call(ctx, llm.RoleRepair, repairInstructions,
 			b.input(req, res.misses, findings), req.SessionID, acc)
 		if err != nil {
 			return nil, err
 		}
 		reason := repairReason(res.misses, findings)
+		req.phase(mtgv1.BuildPhase_BUILD_PHASE_CHECKING)
 		res = b.assemble(req, out2)
 		res.repaired = true
 		res.repairReason = reason
@@ -370,4 +383,11 @@ func repairReason(misses []Miss, findings []*mtgv1.Finding) string {
 		parts = append(parts, f.GetCode())
 	}
 	return strings.Join(parts, ", ")
+}
+
+// phase reports a build step to the caller that asked for it (D-435).
+func (r Request) phase(p mtgv1.BuildPhase) {
+	if r.OnPhase != nil {
+		r.OnPhase(p)
+	}
 }

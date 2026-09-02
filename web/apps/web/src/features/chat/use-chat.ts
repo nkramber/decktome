@@ -1,7 +1,7 @@
 import { Code, ConnectError } from "@connectrpc/connect";
-import type { AgentError, ChatResponse } from "@mtg/api-client/mtg/v1/agent_service_pb";
+import { type AgentError, BuildPhase, type ChatResponse } from "@mtg/api-client/mtg/v1/agent_service_pb";
 import type { Deck } from "@mtg/api-client/mtg/v1/deck_pb";
-import { type Answer, PoolRule, type Question, type Session, type Slots, type Usage } from "@mtg/api-client/mtg/v1/session_pb";
+import { type Answer, PoolRule, type Question, type Session, SessionStatus, type Slots, SlotState, type Usage } from "@mtg/api-client/mtg/v1/session_pb";
 import type { Timestamp } from "@bufbuild/protobuf/wkt";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -41,6 +41,15 @@ export type ChatState = {
   // baseDeck is the deck the latest one revised, for the diff (PR-12B).
   baseDeck?: Deck;
   busy: boolean;
+  // phase is where the running turn stands (D-435). UNSPECIFIED between
+  // turns, and DONE once the server ended one.
+  phase: BuildPhase;
+  // repaired says the running turn reached the repair step, so the
+  // stepper shows it.
+  repaired: boolean;
+  // lastInput is what the last send carried, so a failed turn can run
+  // again with one click (PR-19).
+  lastInput?: SendInput;
 };
 
 // mergeOpen keeps every open question the turn did not answer, replaces
@@ -100,16 +109,30 @@ export function fromSession(session: Session, deck?: Deck, baseDeck?: Deck): Cha
   return {
     sessionId: session.id,
     thread,
-    openQuestions: open.filter((q) => !answered.has(q.id)),
+    openQuestions: open.filter((q) => !answered.has(q.id) && stillAsked(session, q)),
     slots: session.slots,
     usage: session.usage,
     deck,
     baseDeck: deck?.revisedFromDeckId && baseDeck?.id === deck.revisedFromDeckId ? baseDeck : undefined,
     busy: false,
+    phase: BuildPhase.UNSPECIFIED,
+    repaired: false,
   };
 }
 
-export const emptyState: ChatState = { sessionId: "", thread: [], openQuestions: [], busy: false };
+// stillAsked reports whether the server still waits on a question. A
+// question closes when its slot is filled or skipped, and every question
+// closes once the session is ready or built (D-446). An answer is not
+// the only way a question closes: the net of D-351 closes a key with no
+// answer recorded, and a session stored before slot states carried no
+// state at all, which reads as still asked.
+export function stillAsked(session: Session, q: Question): boolean {
+  if (session.status === SessionStatus.READY || session.status === SessionStatus.BUILT) return false;
+  const state = session.slots?.slotStates?.[q.slot];
+  return state === undefined || state === SlotState.ASKED;
+}
+
+export const emptyState: ChatState = { sessionId: "", thread: [], openQuestions: [], busy: false, phase: BuildPhase.UNSPECIFIED, repaired: false };
 
 export type SendInput = { message: string; answers: Answer[] };
 
@@ -195,6 +218,9 @@ export function useChat(initial: ChatState, collectionId: string, poolRule: Pool
         return {
           ...s,
           busy: true,
+          phase: BuildPhase.UNSPECIFIED,
+          repaired: false,
+          lastInput: { message, answers },
           thread: userText ? [...s.thread, item({ kind: "user", text: userText })] : s.thread,
           openQuestions: s.openQuestions.filter((q) => !answeredIds.has(q.id)),
         };
@@ -298,6 +324,11 @@ function apply(res: ChatResponse, ctx: StreamContext, update: (f: (s: ChatState)
     case "usage":
       update((s) => ({ ...s, usage: ev.value }));
       return;
+    case "phase": {
+      const phase = ev.value;
+      update((s) => ({ ...s, phase, repaired: s.repaired || phase === BuildPhase.REPAIRING }));
+      return;
+    }
     default:
       return;
   }

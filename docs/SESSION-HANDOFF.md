@@ -6,11 +6,11 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## Where things stand (2026-09-01)
 
-- `main` is at `3e90939`. Merged: PR-0a to PR-8, PR-7B, PR-10 to PR-13, the audits, the Phase 3B roadmap (#46), PR-16 (#47), PR-16B (#48), PR-17 (#49), PR-17B (#50), and PR-18 (#53).
-- Branch `nits-and-fixes` holds D-398 to D-412. That is the review fixes of PR-18, the chat guard, the decline fix, the deck name, the needle guard, and the reserved fields. The last three are not committed.
+- `main` is at `13ca8dd`. Merged: PR-0a to PR-8, PR-7B, PR-10 to PR-13, the audits, the Phase 3B roadmap (#46), PR-16 (#47), PR-16B (#48), PR-17 (#49), PR-17B (#50), PR-18 (#53), and the review fixes of PR-18 (#54).
+- Branch `pr-19` holds the chat and build experience (D-432 to D-449), uncommitted. It also holds the land-swap fix of the revision turn (F-31, D-448), and revise gate run 5 is due before the merge.
 - The tree is green on `nits-and-fixes`: Go build, vet, `-race` tests, golangci-lint, web lint, typecheck, and 219 web tests. The emulator tests of the collection store pass, and `make lint` reports zero findings.
 - Question gate run 31 passes every bar. The set deck gate passes 6 of 6.
-- Every gate stands and passes: question gate 32, the set deck gate, revise gate 4, and deck gate 10.
+- Every gate stands and passes: question gate 32, the set deck gate, revise gate 4, and deck gate 10. Revise gate run 4 does not cover the land-swap bars of D-448, so run 5 is due.
 - PR-9 is out of the MVP (D-256). Phase 3B comes before Phase 4 (D-316).
 
 CAUTION: branch `pr-17` carries eight concerns. They are the contract, the Go side, the reference design, and the layout of D-331. They are also the Build menu, the one deck screen, the pool picker, and the speed of the app. Guardrail 10 asks for one. The owner chose to ship it whole (D-344).
@@ -303,6 +303,51 @@ CAUTION: `Repo.Get` returns a collection the caller owns. A page is a slice of t
 
 CAUTION: the active collection is a choice of one visit, and the store keeps only the session id (D-345). A Playwright run can not seed it through localStorage. The script clicks the collection, as a reader does.
 
+## PR-19, the chat and build experience (2026-09-02)
+
+Branch `pr-19` holds it, from `main` at `13ca8dd`. The decisions are D-432 to D-449.
+
+CAUTION: the branch built a start form at `/build` first (D-432, D-434). The owner read it and refused it the same day: the app is chat, and the pool picker is the one control outside it (D-436). The form, its `GetCatalog` rows, `questions/form.go`, and the six form conversations of the gate left. Do not bring a form back.
+
+- The landing is a new chat at `/session/new`, as D-334 said. The unfinished chats sit under its message box, only when there is one, with resume, rename, and delete (D-433, D-438). `ListSessions`, `UpdateSession`, and `DeleteSession` serve it. The store's `List` inflates each session, because a session is a few kilobytes and the summary needs its first message.
+- A deck tile of the library carries a delete, behind the same question as the deck screen (D-439).
+- Every clickable control shows the pointer cursor, through one base rule in `index.css` (D-440). Tailwind 4 dropped the pointer from buttons.
+- The wordmark's shimmer no longer runs forever, and a dialog overlay fades with no backdrop filter (D-441). The page idled at 18 ms a frame under the endless shimmer, and the delete dialogs stuttered on top of it.
+
+CAUTION: measure the idle page before a dialog. The delete dialogs read as the fault, and the fault was a four-second animation on the wordmark that never stopped. `page.addStyleTag` with one style off at a time found it in one run.
+- The gap over the message box of a new chat equals the gap under the top bar (D-442). That is 56 pixels on a desktop and 32 on a phone.
+- A single card option never zooms, and a half of a commander pair zooms by two to a single card's size (D-443).
+- The card art of an option picks it, as the name button does (D-444). The box over the art takes the click, and the image stays readable.
+- A commander tile lifts under the pointer with the gold light of a deck tile (D-445).
+- A land swap is a counted change (F-31, D-448). Session `vAvg4eteJhmuPEuJwBul` asked for better lands in place of the basics, answered "a mix", and got one Plains moved to one Island. The brief holds `swap_basics` and `land_kinds`. `generate.FitSwapBasics` fits the count to the base deck and the pool. `CheckRevision` blocks a deck that holds fewer new nonbasic lands. The generate prompt is at version 11. The revise gate answers its own questions now (`answer` in `prompts.json`) and holds a clear land-swap row, revision 9. The next run has 12 turns, not 8, and it is due before the merge.
+- A turn stores the brief it acted on in `Turn.revision_brief` (D-449). Read it before you guess what the revise role wrote.
+- The session spend holds the build (D-447). A built session showed $0.0023 for 9 calls, and the build's own calls never reached the total.
+- A stored question closes with its slot, and the turn that builds a deck stales the cached session first (D-446). The docked chat of a fresh deck drew the answered commander question with its art before.
+- The commander offer serves an empty theme and reads the set limit (D-437). Session `DrNPxSaisYj2QVlUkTvB` declined the theme under a Hobbit limit and got a bare pick row, then a commander the build chose. `CandidateHints.SetCodes` and `UseSets` carry the sets, and the hint no longer refuses an empty theme.
+- `ChatResponse.phase` streams reading, shortlist, building, checking, repairing, and done (D-435). The generator reports its three through `generate.Request.OnPhase`. The stepper in the working row lights them.
+- A failed turn offers "Try again" on a retryable failure and "Reload the session" once a session exists. The reload leaves the live panel and reads the stored session again.
+
+A session read the branch in a real browser with Playwright, against the owner's running stack. A canned stream answered the paid Chat call, and every other RPC reached the API. It measured rather than looked.
+
+| What | Measured |
+|---|---|
+| The landing of a signed-in reader | `/session/new`, and the Build entry of the top bar points there |
+| A form on the page | none |
+| The unfinished chats under the message box | two real rows, and a rename that stuck |
+| A retryable failure | the reason with its code, "Try again", and "Reload the session" |
+| Try again | a third request with the same answers as the failed one |
+| The pointer cursor | pointer on a nav link, an enabled button, a select, the drop zone, and the dialog buttons, and the arrow on a disabled button |
+| The delete dialog, open, before and after D-441 | 8 to 12 frames of 40 over budget, then 6, and the p95 from 27 ms to 17 |
+| The idle page, before and after D-441 | 33 frames of 40 over budget, then 10 |
+| The gap under the top bar and over the message box | 56 and 56 pixels on a desktop, 32 and 32 on a phone |
+| Console errors, horizontal overflow | none |
+
+CAUTION: React mounts a component twice in development, and the cleanup of the first mount aborts a send that already left. A send that starts from an effect must wait one tick and cancel on cleanup, so a double mount sends once. The form's first send hit it before the form left, and no jsdom test finds it: the test renderer mounts once.
+
+CAUTION: a Connect stream request carries a 5-byte envelope before its JSON. A Playwright route that reads the body must skip it.
+
+CAUTION: the owner's Firestore emulator refused every transaction on 2026-09-02, and an untouched sessions test timed out after 60 seconds. A private emulator on port 8282, through `firebase emulators:exec` with a scratch config, ran every store test green. Restart the owner's emulator before `make store-check`.
+
 ## The commander offer for a request with no theme (2026-09-01)
 
 Session `t8o1nGGquK6UdTQkfY3V` asked for the best deck, Commander, bracket 5, no colors, no budget, any card. The offer was Toski, Kutzil, and Mondrak. A free test over the snapshot showed why. The theme words were "best", "you", and "can", and each unknown word becomes a text needle. The words "you" and "can" sit in the text of most commanders, so 3,029 of them scored the same. The offer was the three most popular of those.
@@ -346,10 +391,11 @@ The chat ran a turn with no card index before D-405. The commander question then
 
 ## Next steps, in order
 
-1. The owner restarts `make dev`, so the API is the binary of `nits-and-fixes`. Then the owner reads the collection screen, the binder, and the upload dialog in the browser.
-2. The owner commits `nits-and-fixes` and opens its PR.
-3. Then PR-19 to PR-23 in order, one gate each. Before PR-22, ask OQ-45 and OQ-46.
-4. After Phase 3B: PR-15, then PR-14 (the deck quality model) and PR-24. Ask OQ-49 before PR-14.
+1. The owner restarts `make dev`, so the API is the binary of `pr-19`. Then the owner starts a deck from the chat and reads the stepper. A new chat shows the unfinished chats.
+2. Ask the owner for revise gate run 5: `REVISE_GATE_OUT=docs/reference/pr12b-revise-gate-run5.md make revise-gate`. Run 4 cost $0.54 for 8 turns, and run 5 has 12. Read the three land-swap turns first: revisions 1 and 3 after their answers, and revision 9.
+3. The owner commits `pr-19` and opens its PR.
+4. Then PR-20 to PR-23 in order, one gate each.
+5. After Phase 3B: PR-15, then PR-14 (the deck quality model) and PR-24. Ask OQ-49 before PR-14.
 
 Deck gate run 10 is done. It ran on 2026-08-31, and `CLAUDE.md` recorded it while this file still asked for it. A session that reads only the prose here spends $1.09 on a run that exists. Read `docs/reference/` before you plan a paid run.
 

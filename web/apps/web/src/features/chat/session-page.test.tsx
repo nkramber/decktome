@@ -22,6 +22,7 @@ const listDecks = vi.fn();
 vi.mock("../../lib/api", () => ({
   healthClient: { check: () => Promise.resolve({ status: "ok", version: "test", cardSnapshot: "none" }) },
   agentClient: {
+    listSessions: () => Promise.resolve({ sessions: [], nextPageToken: "" }),
     chat: (...args: unknown[]) => chat(...args),
     getSession: (...args: unknown[]) => getSession(...args),
   },
@@ -305,6 +306,29 @@ describe("SessionPage", () => {
     const card = screen.getByRole("group", { name: "Question: Which format?" });
     expect(within(card).getByRole("button", { name: "Modern" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "Submit answers" })).toBeEnabled();
+  });
+
+  it("a retryable failure offers Try again, which sends the same turn, and a reload of the session (PR-19)", async () => {
+    chat
+      .mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("question", formatQuestion)]))
+      .mockImplementationOnce(() => {
+        throw new ConnectError("down", Code.Unavailable);
+      })
+      .mockReturnValueOnce(events([ev("status", "reading your request")]));
+    await renderAt("/session/new");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "elves");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    await user.click(await screen.findByRole("button", { name: "Modern" }));
+    await user.click(screen.getByRole("button", { name: "Submit answers" }));
+    await screen.findByRole("alert");
+    const recovery = await screen.findByTestId("recovery");
+    expect(within(recovery).getByRole("button", { name: "Reload the session" })).toBeInTheDocument();
+    await user.click(within(recovery).getByRole("button", { name: "Try again" }));
+    await waitFor(() => expect(chat).toHaveBeenCalledTimes(3));
+    const second = chat.mock.calls[1][0] as { answers: unknown[] };
+    const third = chat.mock.calls[2][0] as { answers: unknown[] };
+    expect(third.answers).toEqual(second.answers);
   });
 
   it("an Aborted stream names the build in progress and stays retryable (D-303)", async () => {

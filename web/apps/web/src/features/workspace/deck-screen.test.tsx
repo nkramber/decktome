@@ -29,7 +29,8 @@ const listDecks = vi.fn();
 vi.mock("../../lib/api", () => ({
   healthClient: { check: () => Promise.resolve({ status: "ok", version: "test", cardSnapshot: "none" }) },
   collectionClient: { listCollections: () => Promise.resolve({ collections: [] }) },
-  agentClient: { getSession: (...a: unknown[]) => getSession(...a), chat: (...a: unknown[]) => chat(...a) },
+  agentClient: {
+    listSessions: () => Promise.resolve({ sessions: [], nextPageToken: "" }), getSession: (...a: unknown[]) => getSession(...a), chat: (...a: unknown[]) => chat(...a) },
   cardClient: { getCards: () => Promise.resolve({ cards: [], missingOracleIds: [] }) },
   deckClient: {
     listDecks: (...a: unknown[]) => listDecks(...a),

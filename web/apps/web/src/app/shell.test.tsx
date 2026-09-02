@@ -18,7 +18,8 @@ vi.mock("../lib/api", () => ({
     getCollection: vi.fn(),
   },
   deckClient: { listDecks: () => Promise.resolve({ decks: [], nextPageToken: "" }), getDeck: vi.fn(), updateDeck: vi.fn(), deleteDeck: vi.fn() },
-  agentClient: { getSession: () => Promise.resolve({ session: { id: "abc123", turns: [], deckIds: [] } }) },
+  agentClient: {
+    listSessions: () => Promise.resolve({ sessions: [], nextPageToken: "" }), getSession: () => Promise.resolve({ session: { id: "abc123", turns: [], deckIds: [] } }) },
   cardClient: { getCards: () => Promise.resolve({ cards: [], missingOracleIds: [] }) },
 }));
 

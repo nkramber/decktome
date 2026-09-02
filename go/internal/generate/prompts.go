@@ -40,7 +40,11 @@ package generate
 // Version 10: the shortlist omits the commander, which the prompt says
 // is not one of the cards to list, and the house format gets the
 // sideboard sentence (D-302).
-const PromptVersion = 10
+//
+// Version 11: a change that names a group of cards and a number touches
+// that many cards of the group, and the repair turn reads a land swap
+// the deck did not make (D-448).
+const PromptVersion = 11
 
 // generateInstructions is the stable prefix. It names no card, no format,
 // and no session value, so every call of a session shares it.
@@ -65,6 +69,7 @@ Rules for a revision, when the input holds the deck you are revising:
 - The user read that deck and asked for a change. The input lists the change in short lines.
 - Keep every card the change does not touch, at the same count and the same job. A revision is the smallest set of changes that does what the user asked, and not a new deck.
 - Do what every line of the change says. A card the user wants out is not on the shortlist. A card the user wants kept must stay.
+- When a change names a group of cards and a number, for example "replace at least 20 basic lands", it touches that many cards of the group. One card of the group is not the change.
 - Write the summary for the deck as it is now. Never describe the change.
 
 Rules for an upgrade, when the input names a precon:
@@ -93,6 +98,7 @@ Rules:
 - Use only cards from the shortlist, and copy each name exactly as the shortlist writes it.
 - A finding that names a card you invented means the card is not on the shortlist. Replace it with a shortlist card that does the same job. Never write the name again.
 - A finding that the deck costs too much means you must swap dear cards for cheaper ones that do the same job. Each shortlist line ends with the price of one copy. Come under the cap.
+- A finding that the deck holds too few new nonbasic lands means you kept basic lands the change told you to replace. Cut more basic lands and add nonbasic lands from the shortlist, of the kinds the change names, until the count is met. Keep the land total the same.
 - A finding that the deck keeps too few precon names means you dropped too many. Put back the ones marked "precon" until the count is met, and drop cards that are not marked instead. Keep the theme of the precon, and change no more than the fix needs.
 - Return the whole deck, and not the change alone.
 - Write the summary again from nothing. It describes the deck, and never the repair. Name no card you changed, no count, and no slot you filled. A reader of the summary does not know a first turn happened.

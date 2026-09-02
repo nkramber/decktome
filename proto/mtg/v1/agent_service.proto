@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package mtg.v1;
 
+import "google/protobuf/timestamp.proto";
 import "mtg/v1/deck.proto";
 import "mtg/v1/session.proto";
 
@@ -12,6 +13,78 @@ service AgentService {
   // Chat sends one user message and streams the agent's response events.
   rpc Chat(ChatRequest) returns (stream ChatResponse) {}
   rpc GetSession(GetSessionRequest) returns (GetSessionResponse) {}
+  // ListSessions lists the reader's conversations, newest first, without
+  // their turns (roadmap PR-19).
+  rpc ListSessions(ListSessionsRequest) returns (ListSessionsResponse) {}
+  // UpdateSession writes the name (roadmap PR-19).
+  rpc UpdateSession(UpdateSessionRequest) returns (UpdateSessionResponse) {}
+  // DeleteSession removes a conversation for good. The decks it built
+  // stay (roadmap PR-19).
+  rpc DeleteSession(DeleteSessionRequest) returns (DeleteSessionResponse) {}
+}
+
+message ListSessionsRequest {
+  // page_size caps the answer. Zero takes the default, and the server
+  // caps it.
+  int32 page_size = 1;
+  string page_token = 2;
+}
+
+message ListSessionsResponse {
+  repeated SessionSummary sessions = 1;
+  string next_page_token = 2;
+}
+
+// SessionSummary is one row of the sessions list: what a reader needs to
+// find a conversation again, without its turns.
+message SessionSummary {
+  string id = 1;
+  // name is what the reader called it, or empty. The list then shows
+  // the first message.
+  string name = 2;
+  // first_message is the reader's first message, which names the request.
+  string first_message = 3;
+  string collection_id = 4;
+  SessionStatus status = 5;
+  int32 deck_count = 6;
+  Usage usage = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+}
+
+message UpdateSessionRequest {
+  string session_id = 1;
+  // name is the new name. An empty name is an invalid argument, and a
+  // name takes at most 200 bytes, as a deck name does.
+  string name = 2;
+}
+
+message UpdateSessionResponse {
+  SessionSummary session = 1;
+}
+
+message DeleteSessionRequest {
+  string session_id = 1;
+}
+
+message DeleteSessionResponse {}
+
+// BuildPhase names where a turn stands (roadmap PR-19). The stepper of
+// the chat reads it beside the status lines.
+enum BuildPhase {
+  BUILD_PHASE_UNSPECIFIED = 0;
+  // BUILD_PHASE_READING: the classifier reads the request.
+  BUILD_PHASE_READING = 1;
+  // BUILD_PHASE_SHORTLIST: the candidate list is built.
+  BUILD_PHASE_SHORTLIST = 2;
+  // BUILD_PHASE_BUILDING: the generator writes the deck.
+  BUILD_PHASE_BUILDING = 3;
+  // BUILD_PHASE_CHECKING: the rules engine checks the deck.
+  BUILD_PHASE_CHECKING = 4;
+  // BUILD_PHASE_REPAIRING: the repair turn runs.
+  BUILD_PHASE_REPAIRING = 5;
+  // BUILD_PHASE_DONE: the turn ended, with or without a deck.
+  BUILD_PHASE_DONE = 6;
 }
 
 message ChatRequest {
@@ -64,6 +137,10 @@ message ChatResponse {
     AgentError failure = 8;
     // usage is the session total after this turn (M-1).
     Usage usage = 9;
+    // phase says where the turn stands. It is additive beside status:
+    // the status line carries the words, and the phase carries the step
+    // the stepper lights (roadmap PR-19).
+    BuildPhase phase = 10;
   }
 }
 
