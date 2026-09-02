@@ -754,7 +754,7 @@ Gate:
 
 > *In plain English:* your binder, on screen. Several uploads, a name on each, and a clean "what changed since last time" when you upload a new export. Browse it like a real binder, with the pictures, and search the whole binder rather than the part on your screen.
 
-**PR-19: Chat and build experience (D-432 to D-453).** 🔧 built 2026-09-02 on branch `pr-19`, PR opened the same day. The owner reads it in the browser, then merges.
+**PR-19: Chat and build experience (D-432 to D-455).** 🔧 built 2026-09-02 on branch `pr-19`, PR opened the same day. The owner read the stepper on a real build, and it held. Two tile fixes followed (D-454, D-455).
 The chat is the whole start (D-436). The owner read a start form on 2026-09-02 and refused it. The one control outside the conversation is the pool picker, the collection or any card. The form, its rows in the contract, and the gate's form conversations left the same day. D-432 and D-434 record the form, and D-436 amends both.
 
 The thread already holds the primitives of D-295: option buttons, art tiles for a card option, and no field on a closed question. A stepper lights the phase the server streams: understand, shortlist, build, check, and repair when one ran (D-435).

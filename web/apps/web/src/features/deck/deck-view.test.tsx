@@ -200,7 +200,7 @@ describe("DeckView", () => {
     expect(within(commander).queryByTestId("buy-mark")).not.toBeInTheDocument();
     expect((getCards.mock.calls[0][0] as { oracleIds: string[] }).oracleIds).toContain("o-elf");
     expect(screen.queryByRole("region", { name: /^Ramp/ })).not.toBeInTheDocument();
-    expect(screen.getByText("Commander · Bracket 2 · 20 cards + 1 commander")).toBeInTheDocument();
+    expect(screen.getByText("Commander · Bracket 2 · 21 cards")).toBeInTheDocument();
   });
 
   it("counts the main deck without a commander that sits in cards (D-289)", async () => {
@@ -213,7 +213,7 @@ describe("DeckView", () => {
       cards: deck.cards.slice(0, 2),
     } as unknown as Deck);
     await screen.findByRole("region", { name: "Commander (1)" });
-    expect(screen.getByText("Commander · 20 cards + 1 commander")).toBeInTheDocument();
+    expect(screen.getByText("Commander · 21 cards")).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: /^Ramp/ })).not.toBeInTheDocument();
   });
 
