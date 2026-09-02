@@ -2,24 +2,47 @@ package generate
 
 import (
 	"fmt"
+	"sync"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	"github.com/nkramber/mtg-deck-builder/go/internal/profile"
 	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
 )
 
 // The role targets and the limits block come from the corpus role guide
 // (mtg-corpus section 6). They are guide numbers and not rules, so the
-// prompt asks the model to come as close as the shortlist allows, and no
-// check enforces them.
+// prompt asks the model to come as close as the shortlist allows. A
+// Commander target is the middle of the bracket's band, and the profile
+// checks the band after the build (PR-14A).
+
+// bands loads the band table once. The table is embedded data, so a
+// load error is a build error of this package, and the fallback below
+// is the table of before PR-14A.
+var bands = sync.OnceValues(profile.LoadBands)
+
+// CommanderThreats is the threat target of a Commander deck. The bands
+// hold no threat band: a threat is what the theme makes it.
+const CommanderThreats = 12
 
 // TargetsFor is the wanted count per job. Commander counts the 99, and a
 // 60-card format counts the main deck.
 func TargetsFor(format mtgv1.FormatId, power *mtgv1.PowerLevel) map[string]int {
 	if format == mtgv1.FormatId_FORMAT_ID_COMMANDER {
-		return map[string]int{
-			"land": 36, "ramp": 10, "draw": 10, "removal": 8,
-			"wipe": 3, "threat": 12, "interaction": 6, "synergy": 14,
+		b, err := bands()
+		if err != nil {
+			return map[string]int{
+				"land": 36, "ramp": 10, "draw": 10, "removal": 8,
+				"wipe": 3, "threat": 12, "interaction": 6, "synergy": 14,
+			}
 		}
+		out := b.Midpoints(format, power)
+		sum := 0
+		for _, n := range out {
+			sum += n
+		}
+		out["threat"] = CommanderThreats
+		out["synergy"] = max(99-sum-CommanderThreats, 0)
+		return out
 	}
 	// A 60-card deck's land count follows the archetype, and the guide
 	// range is 20 to 27. The middle of that range is the default, and a

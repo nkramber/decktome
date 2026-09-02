@@ -137,10 +137,14 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	prof, err := gatekit.Profiler(idx, rcfg, quiet)
+	if err != nil {
+		return err
+	}
 	opts := []agentsvc.Option{
 		agentsvc.WithLogger(quiet),
 		agentsvc.WithCandidates(indexSrc{idx}, cb),
-		agentsvc.WithDecks(generate.NewBuilder(client, rcfg, idx, quiet)),
+		agentsvc.WithDecks(generate.NewBuilder(client, rcfg, idx, quiet, generate.WithProfiler(prof))),
 	}
 	if *collPath != "" {
 		owned, _, err := gatekit.LoadOwned(*collPath, idx)

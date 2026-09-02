@@ -272,7 +272,7 @@ func TestAssembleCarriesTheHouseRules(t *testing.T) {
 	b, _, _ := testBuilder(t)
 	req := testRequest()
 	req.HouseRules = "any card, no ban list"
-	got := b.assemble(req, &deckOut{Summary: "a lifegain deck"})
+	got := b.assemble(context.Background(), req, &deckOut{Summary: "a lifegain deck"})
 	if got.deck.GetFormat().GetHouseRules() != req.HouseRules {
 		t.Errorf("deck format house rules = %q, want %q", got.deck.GetFormat().GetHouseRules(), req.HouseRules)
 	}
@@ -303,8 +303,8 @@ func TestShortlistOmitsTheCommander(t *testing.T) {
 			t.Errorf("%s: the pool lost the commander", tc.format)
 		}
 	}
-	if PromptVersion != 11 {
-		t.Errorf("PromptVersion = %d, want 11", PromptVersion)
+	if PromptVersion != 12 {
+		t.Errorf("PromptVersion = %d, want 12", PromptVersion)
 	}
 }
 

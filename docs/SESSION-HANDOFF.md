@@ -7,6 +7,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 ## Where things stand (2026-09-02)
 
 - `main` is at `eafbd39`. Merged: PR-0a to PR-8, PR-7B, PR-10 to PR-13, the audits, the Phase 3B roadmap (#46), PR-16 (#47), PR-16B (#48), PR-17 (#49), PR-17B (#50), PR-18 (#53), the review fixes of PR-18 (#54), PR-19 (#55), and its follow-ups (#56).
+- The session of 2026-09-02 built PR-14A, the bracket profile, on branch `pr-14a` (D-459 to D-464), and it is not merged. The tree is green: Go build, vet, `-race` tests, golangci-lint, the web typecheck, and the proto check. The bracket gate did not run yet, and deck gate run 12 is due. The section below holds the moving parts.
 - PR-19, the chat and build experience, is merged (D-432 to D-458, #55 and #56). It holds the land-swap fix of the revision turn (F-31, D-448), the split land bucket of the shortlist (F-32, D-450), and the one-chat-one-deck delete (D-456). Branches `pr-19` and `tile-fixes` can go.
 - The tree is green on `nits-and-fixes`: Go build, vet, `-race` tests, golangci-lint, web lint, typecheck, and 219 web tests. The emulator tests of the collection store pass, and `make lint` reports zero findings.
 - Question gate run 31 passes every bar. The set deck gate passes 6 of 6.
@@ -355,6 +356,27 @@ CAUTION: a Connect stream request carries a 5-byte envelope before its JSON. A P
 
 CAUTION: the owner's Firestore emulator refused every transaction on 2026-09-02, and an untouched sessions test timed out after 60 seconds. A private emulator on port 8282, through `firebase emulators:exec` with a scratch config, ran every store test green. Restart the owner's emulator before `make store-check`.
 
+## PR-14A, the bracket profile, built (2026-09-02)
+
+The branch holds the whole of PR-14A but its gate run. Read `docs/reference/bracket-profile-2026-09-02.md` for every source, and D-459 to D-464 for the calls.
+
+- `go/internal/spellbook` calls `estimate-bracket` at 90 requests a minute with a named agent (D-459). The limiter spaces calls with no burst, and a 429 retries once.
+- `go/internal/profile` is the library. `bands.json` holds a band per feature per bracket, and per power step for a 60-card deck. `profile.go` measures 16 features, `karsten.go` holds the two source tables, `goldfish.go` deals 10,000 hands, and the content check reads the endpoint.
+- `go/internal/rules/brackets.json` gained `mass_land_denial`, `max_extra_turn_cards`, and `max_combo_speed` per bracket. The prose note of F-11 left `checkBracket`.
+- `candidates.Build` drops mass land denial through bracket 3 and extra turns at bracket 1, by the tags (D-462). `themes.json` names the two slugs under `roles`.
+- `generate.TargetsFor` reads the band midpoints for Commander. The prompt carries a deck shape block, and prompt version 12 reads a profile finding in the repair turn. `MaxRepairs` is 2, and the second pass runs for a profile finding alone (D-461).
+- `Deck.profile` is field 23, additive. `make proto` regenerated the TypeScript, and no screen reads it yet: PR-20 shows it.
+- `cmd/bracket-gate` and `make bracket-gate` are the gate, 15 prompts, with `-dry`, `-only`, and `-no-judge`. The dry run resolves every commander and builds every shortlist for free, and it ran clean on 2026-09-02.
+- `generate.JudgeBracket` asks the judge role for the bracket of a card list. The judge never sees the bracket of the build.
+
+A live smoke read ran on 2026-09-02 with the real snapshot and the real endpoint. It read the Karlov deck of deck gate run 11 at bracket 3. Every reader answered. The deck holds 36 lands and 0 tapped lands, and its sources sit at 0.95 of the Karsten requirement. The average mana value is 3.43, the mana on turn four 4.31, and the endpoint tag E. The role counts read 0 there, because the scratch list carried no roles.
+
+CAUTION: the bands are first values (D-463). The first bracket gate run will find off-band features, and that is the point of the run. Read its off-band table, move a band with a decision id, and never widen a band to make the verdict pass.
+
+CAUTION: every build now makes one call to Commander Spellbook after the engine check. A failed call leaves an `content_unchecked` info finding and no content finding, so the build never waits on the endpoint's health.
+
+OQ-52 asks the owner to confirm D-461 to D-464. Nothing blocks on it.
+
 ## The bracket profile, decided (2026-09-02)
 
 The owner asked how a bracket 3 deck can play like a true 3 (D-451 to D-453). PR-14 splits. PR-14A is the bracket profile. It holds the content rules per bracket, a feature vector per built deck with a band per bracket, a goldfish simulation, and a bracket gate. It comes right after PR-19. PR-14B is the learned scorer of D-413, after Phase 3B.
@@ -404,9 +426,10 @@ The chat ran a turn with no card index before D-405. The commander question then
 
 ## Next steps, in order
 
-1. PR-14A, the bracket profile (D-451 to D-453). It holds the land band of F-33. OQ-50 holds the Commander Spellbook terms check, to do first.
-2. Then PR-20 to PR-23 in order, one gate each.
-3. After Phase 3B: PR-15, then PR-14B (the deck quality model) and PR-24. OQ-51 holds the Moxfield bracket field check for PR-14B.
+1. Run the bracket gate: `make bracket-gate`, about $1 to $1.50 for 15 builds and 15 judge calls, on the owner's word. Read the off-band table, then tune the bands with a decision id each.
+2. Run deck gate 12: `DECK_GATE_OUT=docs/reference/pr8-deck-gate-run12.md make deck-gate`, about $1.50, on the owner's word. It proves no regression under the profile, and it reads the mana bases of F-33 again.
+3. The owner reads the branch, confirms or amends D-461 to D-464 (OQ-52), and merges PR-14A.
+4. PR-14B, the deck quality model, right after (D-460). OQ-51 holds the Moxfield bracket field check. Then PR-24, then PR-20 to PR-23 in order, one gate each. PR-15 stays after Phase 3B.
 
 Deck gate run 11 ran on 2026-09-02 and passed 24 of 24. The read of every mana base is F-33. The nonbasic count swings from 0 to 33 on the same prompt, run to run, and no rule holds it. The fix is the land band of PR-14A, not a prompt line.
 

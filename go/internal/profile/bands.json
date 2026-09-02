@@ -1,0 +1,108 @@
+{
+  "_comment": "The deck bands of the bracket profile (PR-14A, D-451). A band is the low and high a feature must sit in for one bracket, and a missing high means no ceiling. The keys are the feature keys of profile.go. Sources: the role counts start from the corpus role guide (mtg-corpus section 6, D-60) and narrow by bracket. The land counts start from Frank Karsten's 99-card formula, 31.42 + 3.13 * average mana value - 0.28 * cheap draw or ramp spells (TCGplayer, 2022-07-29, read 2026-09-02), at the average mana value of each bracket. The color_sources floor is a share of the Karsten 2022 source table (TCGplayer, 2022-08-02, read 2026-09-02). The Game Changer limit is not here: brackets.json holds it. CAUTION: the average mana value, the tapped and colorless land caps, the tutor and fast mana caps, and the goldfish floors are this session's starting values, not a published table. No source states them. The bracket gate tunes them, and each change needs a decision id.",
+  "verified_at": "2026-09-02",
+  "commander": {
+    "1": {
+      "land": {"low": 36, "high": 41},
+      "ramp": {"low": 6, "high": 12},
+      "draw": {"low": 6, "high": 14},
+      "removal": {"low": 4, "high": 10},
+      "wipe": {"low": 0, "high": 4},
+      "interaction": {"low": 0, "high": 8},
+      "avg_mana_value": {"low": 2.4, "high": 4.4},
+      "tutor": {"low": 0, "high": 1},
+      "fast_mana": {"low": 0, "high": 1},
+      "tapped_land": {"low": 0, "high": 14},
+      "colorless_land": {"low": 0, "high": 4},
+      "color_sources": {"low": 0.75},
+      "mana_turn_four": {"low": 3.5},
+      "hands_two_to_four_lands": {"low": 0.7},
+      "commander_turn_over_mv": {"low": -9, "high": 1.5}
+    },
+    "2": {
+      "land": {"low": 35, "high": 40},
+      "ramp": {"low": 8, "high": 12},
+      "draw": {"low": 8, "high": 14},
+      "removal": {"low": 5, "high": 10},
+      "wipe": {"low": 1, "high": 5},
+      "interaction": {"low": 2, "high": 10},
+      "avg_mana_value": {"low": 2.3, "high": 3.9},
+      "tutor": {"low": 0, "high": 2},
+      "fast_mana": {"low": 0, "high": 2},
+      "tapped_land": {"low": 0, "high": 12},
+      "colorless_land": {"low": 0, "high": 4},
+      "color_sources": {"low": 0.8},
+      "mana_turn_four": {"low": 3.8},
+      "hands_two_to_four_lands": {"low": 0.7},
+      "commander_turn_over_mv": {"low": -9, "high": 1.2}
+    },
+    "3": {
+      "land": {"low": 34, "high": 38},
+      "ramp": {"low": 8, "high": 13},
+      "draw": {"low": 8, "high": 14},
+      "removal": {"low": 6, "high": 12},
+      "wipe": {"low": 2, "high": 5},
+      "interaction": {"low": 4, "high": 12},
+      "avg_mana_value": {"low": 2.0, "high": 3.5},
+      "tutor": {"low": 0, "high": 5},
+      "fast_mana": {"low": 0, "high": 3},
+      "tapped_land": {"low": 0, "high": 9},
+      "colorless_land": {"low": 0, "high": 4},
+      "color_sources": {"low": 0.85},
+      "mana_turn_four": {"low": 4.2},
+      "hands_two_to_four_lands": {"low": 0.7},
+      "commander_turn_over_mv": {"low": -9, "high": 0.8}
+    },
+    "4": {
+      "land": {"low": 31, "high": 36},
+      "ramp": {"low": 10, "high": 16},
+      "draw": {"low": 8, "high": 16},
+      "removal": {"low": 6, "high": 14},
+      "wipe": {"low": 0, "high": 5},
+      "interaction": {"low": 6, "high": 16},
+      "avg_mana_value": {"low": 1.6, "high": 3.0},
+      "tutor": {"low": 0},
+      "fast_mana": {"low": 0},
+      "tapped_land": {"low": 0, "high": 5},
+      "colorless_land": {"low": 0, "high": 5},
+      "color_sources": {"low": 0.9},
+      "mana_turn_four": {"low": 4.8},
+      "hands_two_to_four_lands": {"low": 0.7},
+      "commander_turn_over_mv": {"low": -9, "high": 0.5}
+    },
+    "5": {
+      "land": {"low": 27, "high": 33},
+      "ramp": {"low": 12, "high": 22},
+      "draw": {"low": 8, "high": 18},
+      "removal": {"low": 4, "high": 14},
+      "wipe": {"low": 0, "high": 3},
+      "interaction": {"low": 8, "high": 22},
+      "avg_mana_value": {"low": 1.2, "high": 2.4},
+      "tutor": {"low": 0},
+      "fast_mana": {"low": 0},
+      "tapped_land": {"low": 0, "high": 2},
+      "colorless_land": {"low": 0, "high": 6},
+      "color_sources": {"low": 0.9},
+      "mana_turn_four": {"low": 5.5},
+      "hands_two_to_four_lands": {"low": 0.65},
+      "commander_turn_over_mv": {"low": -9, "high": 0.3}
+    }
+  },
+  "sixty": {
+    "casual": {
+      "tapped_land": {"low": 0, "high": 12},
+      "color_sources": {"low": 0.75},
+      "hands_two_to_four_lands": {"low": 0.6}
+    },
+    "fnm": {
+      "tapped_land": {"low": 0, "high": 8},
+      "color_sources": {"low": 0.85},
+      "hands_two_to_four_lands": {"low": 0.65}
+    },
+    "tournament": {
+      "tapped_land": {"low": 0, "high": 4},
+      "color_sources": {"low": 0.9},
+      "hands_two_to_four_lands": {"low": 0.65}
+    }
+  }
+}

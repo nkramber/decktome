@@ -290,6 +290,8 @@ func checkColorIdentity(res *mtgv1.ValidationResult, in Input) {
 // checkBracket counts Game Changers in the 99, the command zone, and the
 // companion. A Game Changer commander counts as one of the three at
 // Bracket 3, and can not play in Brackets 1 and 2 (D-60, brackets.json).
+// The other content rules of a bracket need Commander Spellbook, and the
+// profile checks them after the build (PR-14A).
 func checkBracket(cfg *Config, res *mtgv1.ValidationResult, in Input) {
 	bracket := in.Deck.GetPower().GetBracket()
 	if bracket == 0 {
@@ -313,11 +315,6 @@ func checkBracket(cfg *Config, res *mtgv1.ValidationResult, in Input) {
 		add(res, CodeGameChangers, mtgv1.Severity_SEVERITY_BLOCK,
 			fmt.Sprintf("bracket %d allows %d Game Changers, the deck has %d: %s",
 				bracket, br.MaxGameChangers, len(changers), strings.Join(changers, ", ")), "")
-	}
-	if bracket <= 3 {
-		add(res, CodeBracketProse, mtgv1.Severity_SEVERITY_INFO,
-			fmt.Sprintf("bracket %d (%s, %s turns): the prose rules (mass land denial, extra-turn chains, combo timing) are not machine-checked yet (F-11). Bracket data verified %s",
-				bracket, br.Name, br.ExpectedTurns, cfg.VerifiedAt["brackets.json"]), "")
 	}
 }
 

@@ -4,8 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
+	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
+	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
 )
 
 // The judge lane is the real check for F-26. The deterministic net of
@@ -94,4 +97,73 @@ func JudgeSummary(ctx context.Context, c *llm.Client, deck, summary string, acc 
 		return nil, fmt.Errorf("judge summary output: %w", err)
 	}
 	return &out, nil
+}
+
+// The bracket judge is the second bar of the bracket gate (PR-14A). It
+// reads a deck with the bracket definitions in hand and names the
+// bracket it would play at. The gate asks it to agree with the bracket
+// the deck was built for in eight of ten.
+
+const bracketJudgeInstructions = `You read one Commander deck and name the bracket it plays at.
+
+The Commander brackets, from the Commander Format Panel (2025-02-11, revised 2025-10-21):
+- Bracket 1, Exhibition: an ultra-casual deck, games of nine turns or more. No Game Changers, no mass land denial, no extra turns, no two-card infinite combos.
+- Bracket 2, Core: near the strength of a preconstructed deck, games of eight turns or more. No Game Changers, no mass land denial, few extra turns and never chained, no two-card infinite combos.
+- Bracket 3, Upgraded: souped up beyond a precon, games of six turns or more. Up to three Game Changers, no mass land denial, few extra turns and never chained, no cheap two-card infinite combo in about the first six turns.
+- Bracket 4, Optimized: the strongest cards and decks, games can end from turn four. Only the ban list applies.
+- Bracket 5, cEDH: competitive and metagame-focused, a game can end on any turn. Only the ban list applies. The deck plays the best strategy and not a theme.
+
+Read the card list for its speed, its mana base, its fast mana and tutors, its interaction, its combos, and its Game Changers. Name one bracket, 1 to 5, and say why in two or three sentences. Judge the deck as it is, and not the bracket the builder may have aimed at.`
+
+const bracketJudgeSchema = `{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["bracket", "why"],
+  "properties": {
+    "bracket": {"type": "integer", "minimum": 1, "maximum": 5},
+    "why": {"type": "string"}
+  }
+}`
+
+// BracketJudgement is the judge's bracket for one deck.
+type BracketJudgement struct {
+	Bracket int32  `json:"bracket"`
+	Why     string `json:"why"`
+}
+
+// JudgeBracket asks the judge role which bracket a deck plays at. The
+// deck goes out as a card list with the commander first, and the judge
+// never sees the bracket the deck was built for.
+func JudgeBracket(ctx context.Context, c *llm.Client, deck *mtgv1.Deck, cards rules.CardSource, acc *llm.Accumulator) (*BracketJudgement, error) {
+	res, err := c.Complete(ctx, llm.RoleJudge, llm.Request{
+		Instructions: bracketJudgeInstructions,
+		Input:        DeckText(deck, cards),
+		SchemaName:   "bracket_check",
+		Schema:       json.RawMessage(bracketJudgeSchema),
+	}, acc)
+	if err != nil {
+		return nil, fmt.Errorf("judge bracket: %w", err)
+	}
+	var out BracketJudgement
+	if err := json.Unmarshal(res.Output, &out); err != nil {
+		return nil, fmt.Errorf("judge bracket output: %w", err)
+	}
+	return &out, nil
+}
+
+// DeckText writes a deck as the judge reads it: the commander, then one
+// line per card with its count and its job. No bracket, no summary, and
+// no finding.
+func DeckText(deck *mtgv1.Deck, cards rules.CardSource) string {
+	var s strings.Builder
+	for _, id := range deck.GetCommanderOracleIds() {
+		if c, ok := cards.ByOracleID(id); ok {
+			fmt.Fprintf(&s, "Commander: %s\n", c.GetName())
+		}
+	}
+	s.WriteString("\nCards:\n")
+	for _, dc := range deck.GetCards() {
+		fmt.Fprintf(&s, "%d %s (%s)\n", dc.GetCount(), dc.GetName(), roleWord(dc.GetRole()))
+	}
+	return s.String()
 }

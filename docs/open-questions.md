@@ -32,5 +32,6 @@ OQ-23, OQ-28 to OQ-31, OQ-37, and OQ-39 sit in `docs/owner-questions.md`, the de
 - OQ-44 answered 2026-09-01 (D-429). OQ-23, OQ-28 to OQ-31, OQ-37, and OQ-39 answered the same day (D-422 to D-428), and their rows left `docs/owner-questions.md`.
 - OQ-20 closed 2026-09-01 (D-431): the owner's export and a generator from the snapshot.
 
-- OQ-50 (2026-09-02): the Commander Spellbook terms. The backend is MIT-licensed, and `estimate-bracket` answered an anonymous call on 2026-09-02 with no rate limit stated. Before PR-14A calls it from the worker, read the site's terms and ask the project for a rate, with a named agent. Owner input: none needed unless the terms refuse.
+- OQ-50 answered 2026-09-02 (D-459): the Commander Spellbook terms allow the bracket endpoint, at 90 requests a minute on the app's side.
+- OQ-52 (2026-09-02): the session calls of PR-14A, D-461 to D-464, wait for the owner's confirmation in `docs/owner-questions.md`.
 - OQ-51 (2026-09-02): the Moxfield bracket field. Public decks carry a bracket their owner set, and the unofficial client library filters on it. The help page answered 403 to a plain fetch. Before PR-14B reads it, confirm the field on the public deck endpoint of D-419 and that the terms the owner read cover it.

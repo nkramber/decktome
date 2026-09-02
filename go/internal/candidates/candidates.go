@@ -37,6 +37,8 @@ type Request struct {
 	Owned map[string]int32
 	// Bracket is the Commander bracket, 0 when unknown. Brackets 1 and 2
 	// drop Game Changers from the list, so the model never picks one.
+	// Brackets 1 to 3 drop mass land denial, and bracket 1 drops extra
+	// turns, by the tags (PR-14A).
 	Bracket int32
 	// SetCodes limits the list to cards printed in these paper sets. It
 	// holds a whole set family (D-376). Empty means every set. Basic
@@ -96,6 +98,12 @@ var DefaultLimits = Limits{
 		mtgv1.CardRole_CARD_ROLE_OTHER:       10,
 	},
 }
+
+// The role keys of themes.json the bracket cut reads (PR-14A).
+const (
+	roleMassLandDenial = "mass_land_denial"
+	roleExtraTurn      = "extra_turn"
+)
 
 // Candidate is one shortlisted card with its evidence.
 type Candidate struct {
@@ -251,6 +259,16 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 			continue
 		}
 		if c.GameChanger && req.Bracket > 0 && req.Bracket <= 2 {
+			continue
+		}
+		// The content rules of a bracket, as the tags read them: no mass
+		// land denial through bracket 3, and no extra turn at bracket 1
+		// (rules/brackets.json). The tags seed the list, and Commander
+		// Spellbook checks the deck after the build (PR-14A, F-5).
+		if req.Bracket > 0 && req.Bracket <= 3 && roleTags[roleMassLandDenial][c.OracleId] {
+			continue
+		}
+		if req.Bracket == 1 && roleTags[roleExtraTurn][c.OracleId] {
 			continue
 		}
 		stats.Pool++

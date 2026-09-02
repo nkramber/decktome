@@ -1219,3 +1219,33 @@ func TestFixCount(t *testing.T) {
 		t.Errorf("no color limit: fix = %d, want 5", got)
 	}
 }
+
+// The content rules of a bracket cut the shortlist by the tags: no mass
+// land denial through bracket 3, and no extra turn at bracket 1
+// (PR-14A). Commander Spellbook checks the built deck after.
+func TestBuildBracketDropsMassLandDenialAndExtraTurns(t *testing.T) {
+	b, _ := New()
+	list := append(testCards(),
+		tc{id: "geddon", name: "Armageddon", typeLine: "Sorcery", text: "Destroy all lands.", identity: []mtgv1.Color{W}, mv: 4, rank: 500,
+			tags: []string{"mass-land-denial", "lifegain"}},
+		tc{id: "warp", name: "Time Warp", typeLine: "Sorcery", text: "Target player takes an extra turn after this one.", identity: []mtgv1.Color{W}, mv: 5, rank: 500,
+			tags: []string{"extra-turn", "lifegain"}},
+	)
+	idx := fixture(t, list)
+	for _, tt := range []struct {
+		bracket   int32
+		wantMLD   bool
+		wantExtra bool
+	}{{0, true, true}, {1, false, false}, {2, false, true}, {3, false, true}, {4, true, true}, {5, true, true}} {
+		got, err := b.Build(idx, Request{Format: cmdr, Colors: []mtgv1.Color{W}, Theme: "lifegain", Bracket: tt.bracket})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, ok := find(got.Candidates, "Armageddon"); ok != tt.wantMLD {
+			t.Errorf("bracket %d: Armageddon listed = %v, want %v", tt.bracket, ok, tt.wantMLD)
+		}
+		if _, ok := find(got.Candidates, "Time Warp"); ok != tt.wantExtra {
+			t.Errorf("bracket %d: Time Warp listed = %v, want %v", tt.bracket, ok, tt.wantExtra)
+		}
+	}
+}

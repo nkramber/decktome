@@ -65,6 +65,82 @@ message Deck {
   // of ListDecks carries no cards, so it sets this field instead
   // (PR-17). GetDeck reads the whole deck, and its cards are the source.
   int32 card_count = 22;
+  // profile is the bracket profile of the built deck: the feature
+  // vector, the band of each feature, the goldfish numbers, and the
+  // content check (PR-14A, D-451 to D-453). Unset on a deck built
+  // before PR-14A, and on a deck the profiler did not read.
+  DeckProfile profile = 23;
+}
+
+// DeckProfile is the bracket profile (PR-14A). A bracket is a set of
+// numbers the app builds to and checks, and this is the check.
+message DeckProfile {
+  // bracket is the Commander bracket the bands apply to, 0 for a 60-card
+  // deck, where the bands follow the power step.
+  int32 bracket = 1;
+  // features holds one row per feature, with its band.
+  repeated ProfileFeature features = 2;
+  // goldfish holds the simulation numbers (D-453).
+  Goldfish goldfish = 3;
+  // content is the content-rule check against Commander Spellbook.
+  ContentCheck content = 4;
+  // bands_verified_at is the verified_at date of the band data.
+  string bands_verified_at = 5;
+}
+
+// ProfileFeature is one measured number and the band it must sit in.
+message ProfileFeature {
+  // key names the feature, for example "land" or "avg_mana_value".
+  string key = 1;
+  double value = 2;
+  // low and high are the band. A band with no floor has low 0, and a
+  // band with no ceiling has_high set to false.
+  double low = 3;
+  double high = 4;
+  bool has_high = 5;
+  // off_band says the value sits outside the band.
+  bool off_band = 6;
+  // note is one line for the reader, for example the cards counted.
+  string note = 7;
+}
+
+// Goldfish is the opening-hand simulation (D-453): no opponent, lands
+// and rocks on curve, the London mulligan.
+message Goldfish {
+  // hands is how many games the simulation dealt.
+  int32 hands = 1;
+  // commander_turn is the mean turn the deck can cast its commander.
+  double commander_turn = 2;
+  // mana_turn_four is the mean mana available on turn four.
+  double mana_turn_four = 3;
+  // share_two_to_four_lands is the share of first seven-card hands that
+  // held two to four lands.
+  double share_two_to_four_lands = 4;
+}
+
+// ContentCheck is the content-rule read of a deck: the cards and combos
+// a bracket forbids, from Commander Spellbook (PR-14A).
+message ContentCheck {
+  // checked says the endpoint answered. When false, error says why, and
+  // the deck carries no content finding.
+  bool checked = 1;
+  string error = 2;
+  // source_tag is the endpoint's own bracket word for the deck.
+  string source_tag = 3;
+  repeated string game_changers = 4;
+  repeated string mass_land_denial = 5;
+  repeated string extra_turns = 6;
+  repeated ComboHit combos = 7;
+}
+
+// ComboHit is one combo the deck holds, as the endpoint read it.
+message ComboHit {
+  string id = 1;
+  repeated string cards = 2;
+  bool two_card = 3;
+  int32 speed = 4;
+  bool extra_turn = 5;
+  bool mass_land_denial = 6;
 }
 
 // DeckCard is one card choice with its reason.
