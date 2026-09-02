@@ -163,14 +163,15 @@ make candidates-review   # write the PR-6 gate document from the local snapshot
 
 `cd go && go run ./cmd/tune-check` compares an eval summary with its baseline, and it costs nothing.
 
-CAUTION: the nine targets below and `scripts/autotune.sh` call the real LLM providers and spend money. `make autotune` is free. Ask the owner before each run, and write to a new output file (D-65). Each gate target refuses to overwrite a scored output, and each one needs `.env`.
+CAUTION: the ten targets below and `scripts/autotune.sh` call the real LLM providers and spend money. `make autotune` is free. Ask the owner before each run, and write to a new output file (D-65). Each gate target refuses to overwrite a scored output, and each one needs `.env`.
 
 ```bash
 make questions-gate    # 104 conversations, $0.15 to $0.17, about 20 minutes
 make questions-eval    # score a gate run, $0.092 to $0.104 (runs 14 to 25), about 13 minutes
 make eval-calibrate    # eval model against claude-sonnet-5, $0.25 to $0.30
 make autotune          # free: print how to start the paid loop, scripts/autotune.sh ($0.25 an iteration)
-make deck-gate         # the PR-8 gate document, $1.09 for 18 prompts (run 8)
+make deck-gate         # the PR-8 gate document, $2.24 for 24 prompts under the profile (run 12)
+make bracket-gate      # the PR-14A gate document, 15 builds and a judge lane, $2.08 plus $0.26 (run 1)
 make revise-gate       # two base decks and six revisions (PR-12B), about $0.30 (run 2, $0.29)
 make chat-probe        # drive the real Chat RPC to a deck, a few cents
 make generate-probe    # build one deck with the real generate role, a few cents
@@ -178,7 +179,7 @@ make summary-judge     # judge every deck summary of a gate document (F-26), a f
 make test-smoke        # live LLM smoke test, reads .env, a few cents
 ```
 
-The question gate cost is from 2026-08-26, and the deck gate cost is from run 8 (2026-08-29).
+The question gate cost is from 2026-08-26, and the deck gate and bracket gate costs are from 2026-09-02.
 
 CI runs on pull requests only, and a new push to a branch cancels the run in progress. A first job reads the diff against the base branch. Each job runs only when its inputs changed, so a docs change runs the STE check and nothing else. A merge to `main` runs nothing, because the pull request verified the same tree. A weekly schedule runs govulncheck alone, at about 2 minutes a week (D-305). The owner hit 90 percent of the monthly minutes in six days on 2026-08-28, and each run cost 25 billed minutes before this rule (D-286).
 

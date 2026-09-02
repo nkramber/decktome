@@ -122,6 +122,8 @@ We sequence the program so that each layer is testable before the next one exist
 7. **Instrument cost on day one.** Every cost claim in the reference doc was an estimate until M-1 landed there.
 8. **The user's words are not a spec.** "Anything goes" has no fixed meaning (D-3). The agent asks. This is a product principle, not a fallback.
 9. **Facts have dates.** The ban list changed four times in 2026. Store facts with a verification date and a source.
+10. **A structured-output schema is a provider contract.** Bracket gate run 1 (2026-09-02) lost every judge call to a bounded integer the Anthropic schema refuses. Make one call before a paid run.
+11. **A judge's reasons are for a reader.** The same run's judge named a combo Commander Spellbook does not list. A bar reads the judge's number and never its prose.
 
 > *In plain English:* these are the mistakes the sister project already paid for. We do not pay for them twice.
 
@@ -132,6 +134,7 @@ We sequence the program so that each layer is testable before the next one exist
 | `cards` service (card database) | Go | Scryfall snapshot, legalities, Oracle tags, images URIs | Scryfall bulk daily | Firestore `cards/`, GCS snapshot | High - every legality answer comes from here |
 | `collections` service | Go | ManaBox import, ownership counts per Oracle ID | User CSV upload | Firestore `users/{uid}/collections/` | High - PII-adjacent, user data |
 | `rules` engine (library) | Go | Format rules, deck validation, bracket rules, color identity | `cards` | none | Total - the last gate before the user |
+| `profile` (bracket profile, library) | Go | The bands per bracket, the feature vector, the goldfish simulation, the content check (PR-14A) | `cards`, `rules`, Commander Spellbook | none | High - it says what a bracket means |
 | `agent` service | Go | Turn-based chat, question workflow, deck generation, LLM role layer | `cards`, `collections`, `rules`, `meta` | Firestore `users/{uid}/sessions/`, `decks/` | High - the product |
 | `meta` service | Go | Deck quality model per format: the labeled lists, the fitted weights, the scorer (PR-14) | MTGO decklists, the Topdeck.gg API, MTGTop8, the cEDH database, EDHREC (D-5, D-417) | GCS raw pages and normalized lists, Firestore `meta/` for the weights | Medium - advisory input to the agent, and the code keeps the final say |
 | `worker` | Go | Scheduled jobs: Scryfall refresh, meta refresh, ban-list watch | Cloud Scheduler, Cloud Tasks | see above | Medium |
@@ -155,6 +158,7 @@ Three structural facts drive the plan:
 - **Firestore.** Per user: one collection doc set (PR-4 decided one gzip document per collection, about 500 KB for a 5,000-card binder, D-16), sessions, decks. Low.
 - **Cloud Run.** Two services plus a worker, scale to zero. Low until users exist.
 - **Eval.** Deterministic checks are free. Judge runs cost per deck. Cap per run as connector-syncer does ($5 cap in its bake-off).
+- **Bracket profile (PR-14A, 2026-09-02).** Commander Spellbook is free at 90 calls a minute, two calls per build. The profile's repair passes raise a build from about one model call to two. Deck gate run 12 cost $2.24 against $1.46 for run 11.
 - **Unknowns to measure first:** tokens per session (M-1), Scryfall refresh lag after an announcement (M-2), ManaBox import failure rate on real files (M-3).
 
 > *In plain English:* the AI is the only real cost, and the target is cents per deck. Card data is free. Images are free because Scryfall lets us link to them. We will measure instead of guess.
@@ -995,7 +999,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 16. PR-9 variance. ⏸ out of MVP scope (D-256). It blocks nothing: the Phase 3 gate below reads PR-8's gate.
 17. **GATE.** Phase 3 starts only when PR-8's gate holds on the golden prompts. ✅ held on 2026-08-28, deck gate run 6.
 18. PR-11 ✅ merged 2026-08-28 (#38). PR-12 ✅ merged 2026-08-28 (#40). PR-12B ✅ merged 2026-08-29 (#41). PR-13 ✅ merged 2026-08-29 (#45). Then Phase 3B.
-19. **Phase 3B** (D-316, D-317): PR-16 to PR-23 in the order of the phase list. PR-14A and PR-14B sit between PR-19 and PR-20 (D-452, D-460). PR-19 ✅ merged 2026-09-02 (#55, #56). Each gate holds before the next slice starts. PR-16 ✅ merged 2026-08-29 (#47). PR-16B ✅ merged 2026-08-29 (#48). PR-17 ✅ merged 2026-08-31 (#49). The paid re-baseline of D-302 ran on 2026-08-31.
+19. **Phase 3B** (D-316, D-317): PR-16 to PR-23 in the order of the phase list. PR-14A and PR-14B sit between PR-19 and PR-20 (D-452, D-460). PR-14A 🔧 built 2026-09-02, and PR #57 is open. PR-19 ✅ merged 2026-09-02 (#55, #56). Each gate holds before the next slice starts. PR-16 ✅ merged 2026-08-29 (#47). PR-16B ✅ merged 2026-08-29 (#48). PR-17 ✅ merged 2026-08-31 (#49). The paid re-baseline of D-302 ran on 2026-08-31.
 20. **PR-17B** the set filter (F-29, D-373 to D-383). ✅ merged 2026-09-01 (#50). **PR-18** ✅ merged 2026-09-01 (#53). The review fixes of PR-18 (D-398 to D-406) 🔧 built 2026-09-01 on branch `nits-and-fixes`. The owner reads them, then merges. Then PR-19.
 21. PR-15 eval harness. M-5 manual scoring runs on the first UI build (after PR-12).
 22. PR-24 precon exclusion (D-409, D-460), then I-1, I-2, I-3 on evidence. PR-14B moved into step 19 (D-460).

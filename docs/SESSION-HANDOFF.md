@@ -7,7 +7,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 ## Where things stand (2026-09-02)
 
 - `main` is at `eafbd39`. Merged: PR-0a to PR-8, PR-7B, PR-10 to PR-13, the audits, the Phase 3B roadmap (#46), PR-16 (#47), PR-16B (#48), PR-17 (#49), PR-17B (#50), PR-18 (#53), the review fixes of PR-18 (#54), PR-19 (#55), and its follow-ups (#56).
-- The session of 2026-09-02 built PR-14A, the bracket profile, on branch `pr-14a` (D-459 to D-469), and it is not merged. The tree is green: Go build, vet, `-race` tests, golangci-lint, the web typecheck, and the proto check. Bracket gate run 1 reads FAIL on the band bar and the judge bar. Deck gate run 12 and its rerun 12b together pass all 24 prompts with no regression. The sections below hold the moving parts.
+- The session of 2026-09-02 built PR-14A, the bracket profile, on branch `pr-14a` (D-459 to D-469). PR #57 is open, and the owner merges it. The tree is green: Go build, vet, `-race` tests, golangci-lint, the web typecheck, and the proto check. Bracket gate run 1 reads FAIL on the band bar and the judge bar. Deck gate run 12 and its rerun 12b together pass all 24 prompts with no regression. The sections below hold the moving parts.
 - PR-19, the chat and build experience, is merged (D-432 to D-458, #55 and #56). It holds the land-swap fix of the revision turn (F-31, D-448), the split land bucket of the shortlist (F-32, D-450), and the one-chat-one-deck delete (D-456). Branches `pr-19` and `tile-fixes` can go.
 - The tree is green on `nits-and-fixes`: Go build, vet, `-race` tests, golangci-lint, web lint, typecheck, and 219 web tests. The emulator tests of the collection store pass, and `make lint` reports zero findings.
 - Question gate run 31 passes every bar. The set deck gate passes 6 of 6.
@@ -552,11 +552,11 @@ CAUTION: the first-paint bar of D-323 is 130 kB gzipped. Read the Vite build rep
 
 - Comprehensive Rules: the current file is 2026-08-19 (D-272). The rule citations in the corpus match the 2026-08-07 text.
 - Ban-list snapshot: 2026-08-24. Next announcement 2026-10-12, in `internal/cards/announcement_dates.json`. A test fails when that file holds no future date. This is by design.
-- Commander brackets: the 2025-10-21 revision. Game Changers: 53 cards, list of 2026-02-09. Lutri is banned as a companion only, per the 2026-02-09 announcement (`companion_bans.json` holds the link).
+- Commander brackets: the 2025-10-21 revision. Game Changers: 53 cards, list of 2026-02-09. Lutri is banned as a companion only, per the 2026-02-09 announcement (`companion_bans.json` holds the link). The content rules per bracket in `brackets.json` and the Spellbook thresholds were read 2026-09-02, and the Karsten tables are the 2022 articles, read 2026-09-02 (`docs/reference/bracket-profile-2026-09-02.md`).
 - Standard: 18 sets, Wilds of Eldraine to The Hobbit. Six sets leave at the first 2027 set. Verified 2026-08-24.
-- Card snapshot on disk: `.local/gcs/mtg-local-cards/scryfall/20260824T090152`. Check every card fact against it.
+- Card snapshot on disk: `.local/gcs/mtg-local-cards/scryfall/20260902T090155`, the newest of ten. Check every card fact against it.
 - LLM model ids and prices: `roles.json` and `prices.json`, verified 2026-08-24. The max output per provider in `llm/client.go`, verified 2026-08-29. The OpenAI rows are unverified by anyone but the owner.
-- Run cost: the question gate costs $0.152 to $0.165 over about 20 minutes. The eval costs $0.092 to $0.104 over about 13 minutes. The deck gate cost $1.09 on run 8. The revise gate cost $0.29 on run 2. The next runs re-measure all four.
+- Run cost: the question gate costs $0.152 to $0.165 over about 20 minutes. The eval costs $0.092 to $0.104 over about 13 minutes. The deck gate cost $1.46 on run 11 and $2.24 on run 12 under the profile. The bracket gate cost $2.08 plus $0.26 for the judge lane on run 1. The revise gate cost $0.74 on run 7. The next runs re-measure all five.
 - Toolchain: Go 1.27.0, Node 22.23.2, pnpm 9.2.0, firebase-tools 14.14.0, Java 17.
 
 ## How to resume
