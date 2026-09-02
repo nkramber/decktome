@@ -84,7 +84,7 @@ export function DeckCard({
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete {title}?</AlertDialogTitle>
-                <AlertDialogDescription>The deck goes for good. The chat that built it stays, and you can build again from it.</AlertDialogDescription>
+                <AlertDialogDescription>The deck and the chat that built it go for good.</AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Keep it</AlertDialogCancel>

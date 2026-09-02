@@ -7,7 +7,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 ## Where things stand (2026-09-02)
 
 - `main` is at `13ca8dd`. Merged: PR-0a to PR-8, PR-7B, PR-10 to PR-13, the audits, the Phase 3B roadmap (#46), PR-16 (#47), PR-16B (#48), PR-17 (#49), PR-17B (#50), PR-18 (#53), and the review fixes of PR-18 (#54).
-- Branch `pr-19` holds the chat and build experience (D-432 to D-455), committed and pushed, with its PR open. It also holds the land-swap fix of the revision turn (F-31, D-448) and the split land bucket of the shortlist (F-32, D-450). Revise gate run 6 and deck gate run 11 are due before the merge.
+- Branch `pr-19` holds the chat and build experience (D-432 to D-455), merged as #55. The follow-ups D-454 to D-458 wait on PR #56. It also holds the land-swap fix of the revision turn (F-31, D-448) and the split land bucket of the shortlist (F-32, D-450). Revise gate run 6 and deck gate run 11 are due before the merge.
 - The tree is green on `nits-and-fixes`: Go build, vet, `-race` tests, golangci-lint, web lint, typecheck, and 219 web tests. The emulator tests of the collection store pass, and `make lint` reports zero findings.
 - Question gate run 31 passes every bar. The set deck gate passes 6 of 6.
 - Every gate stands and passes: question gate 32, the set deck gate, deck gate 11, and revise gate 7.
@@ -309,7 +309,7 @@ CAUTION: the active collection is a choice of one visit, and the store keeps onl
 
 ## PR-19, the chat and build experience (2026-09-02)
 
-Branch `pr-19` holds it, from `main` at `13ca8dd`. The decisions are D-432 to D-455.
+Branch `pr-19` holds it, from `main` at `13ca8dd`. The decisions are D-432 to D-458.
 
 CAUTION: the branch built a start form at `/build` first (D-432, D-434). The owner read it and refused it the same day: the app is chat, and the pool picker is the one control outside it (D-436). The form, its `GetCatalog` rows, `questions/form.go`, and the six form conversations of the gate left. Do not bring a form back.
 
@@ -323,6 +323,7 @@ CAUTION: measure the idle page before a dialog. The delete dialogs read as the f
 - A single card option never zooms, and a half of a commander pair zooms by two to a single card's size (D-443).
 - The card art of an option picks it, as the name button does (D-444). The box over the art takes the click, and the image stays readable.
 - A commander tile lifts under the pointer with the gold light of a deck tile (D-445).
+- After the merge of #55, the owner read the app once more. A deck and its chat are one thing, and a delete of either takes both (D-456). An earlier upload sits on one line (D-457), and the collection page holds two cards of one frame with a compact empty state (D-458). These ride with the tile fixes on branch `tile-fixes`, PR #56.
 - The owner read the PR on 2026-09-02: the stepper works, and the gate line of PR-19 holds. Two tile fixes followed. A deck's count includes the commander, so a Commander deck reads 100 (D-454). The favorite star sits with the delete button at the right edge (D-455).
 - A land swap is a counted change (F-31, D-448). Session `vAvg4eteJhmuPEuJwBul` asked for better lands in place of the basics, answered "a mix", and got one Plains moved to one Island. The brief holds `swap_basics` and `land_kinds`. `generate.FitSwapBasics` fits the count to the base deck and the pool. `CheckRevision` blocks a deck that holds fewer new nonbasic lands. The generate prompt is at version 11. The revise gate answers its own questions now (`answer` in `prompts.json`) and holds a clear land-swap row, revision 9. The next run has 12 turns, not 8, and it is due before the merge.
 - The land bucket of the shortlist splits, half mana and half theme (F-32, D-450). Revise gate run 5 played the land ask on the Karlov deck, and the shortlist offered 40 lands that gain life and no untapped dual. `capLands` takes the mana half by `Candidate.Fix`, capped at two, then `Pop`, and the theme half by `Themed`. Probe both decks with a throwaway `cmd` before you touch it: Karlov must show Godless Shrine and Isolated Chapel, and Éowyn the three shock lands.

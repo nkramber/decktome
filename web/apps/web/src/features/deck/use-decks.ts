@@ -91,6 +91,8 @@ export function useDeckWrites() {
   const refresh = () => {
     void client.invalidateQueries({ queryKey: ["decks"] });
     void client.invalidateQueries({ queryKey: ["deck"] });
+    // A deck delete takes its chat (D-456), so the chat list reads again.
+    void client.invalidateQueries({ queryKey: ["sessions"] });
   };
 
   const rename = useMutation({

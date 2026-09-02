@@ -164,7 +164,7 @@ describe("deleting from the library", () => {
     const user = userEvent.setup();
     await renderAt("/decks");
     await user.click(await screen.findByRole("button", { name: /^Delete / }));
-    expect(await screen.findByText(/The deck goes for good/)).toBeInTheDocument();
+    expect(await screen.findByText(/The deck and the chat that built it go for good/)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Delete the deck" }));
     await waitFor(() => expect(deleteDeck).toHaveBeenCalledTimes(1));
   });

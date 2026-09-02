@@ -18,6 +18,7 @@ import (
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/candidates"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
+	"github.com/nkramber/mtg-deck-builder/go/internal/decks"
 	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 	"github.com/nkramber/mtg-deck-builder/go/internal/precons"
@@ -252,6 +253,16 @@ type fakeDeckStore struct {
 func (f *fakeDeckStore) NewID(string) string {
 	f.n++
 	return fmt.Sprintf("deck-%d", f.n)
+}
+
+func (f *fakeDeckStore) Delete(_ context.Context, _ string, id string) error {
+	for i, d := range f.put {
+		if d.GetId() == id {
+			f.put = append(f.put[:i], f.put[i+1:]...)
+			return nil
+		}
+	}
+	return decks.ErrNotFound
 }
 
 func (f *fakeDeckStore) Get(_ context.Context, _ string, id string) (*mtgv1.Deck, error) {

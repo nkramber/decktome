@@ -129,8 +129,10 @@ export function CollectionPage() {
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 md:p-6">
       <PageHeader title="Your collection" description="Upload a ManaBox export, or skip it and build from any card." />
 
-      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
-        <Card>
+      {/* Two cards of one frame, side by side and the same height, so the
+          page reads as one row whatever the right card holds (D-458). */}
+      <div className="grid gap-6 lg:grid-cols-2 lg:items-stretch">
+        <Card className="flex flex-col">
           <CardHeader>
             <CardTitle>Upload a ManaBox export</CardTitle>
           </CardHeader>
@@ -149,8 +151,11 @@ export function CollectionPage() {
           </CardContent>
         </Card>
 
-        <section className="flex flex-col gap-3">
-          <h2 className="font-display text-lg font-semibold">Earlier uploads</h2>
+        <Card className="flex flex-col">
+          <CardHeader>
+            <CardTitle>Earlier uploads</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-1 flex-col justify-center gap-3">
           {list.isPending && (
             <div role="status" className="flex flex-col gap-2">
               <span className="sr-only">Loading collections...</span>
@@ -159,13 +164,16 @@ export function CollectionPage() {
             </div>
           )}
           {list.isError && <ErrorState title="Could not list collections" message={errorMessage(list.error)} onRetry={() => void list.refetch()} />}
-          {list.isSuccess && collections.length === 0 && <EmptyState icon={BookOpenIcon} title="No uploads yet." description="Upload a ManaBox export above, or skip and build from any card." />}
+          {list.isSuccess && collections.length === 0 && <EmptyState compact icon={BookOpenIcon} title="No uploads yet." description="Upload a ManaBox export, or skip and build from any card." />}
           {collections.length > 0 && (
             <ul className="flex flex-col gap-2">
               {collections.map((c) => {
                 const isActive = c.id === collectionId;
+                // One line per upload. The name and the count give way
+                // before the two controls do, so the delete never wraps
+                // under the row (D-457).
                 return (
-                  <li key={c.id} className="flex flex-wrap items-center gap-3">
+                  <li key={c.id} className="flex items-center gap-3">
                     <Button
                       variant="outline"
                       size="sm"
@@ -176,12 +184,12 @@ export function CollectionPage() {
                         if (isActive) clearCollection();
                         else setCollection(c.id);
                       }}
-                      className={cn(isActive && "border-accent font-semibold ring-2 ring-ring")}
+                      className={cn("min-w-0 shrink", isActive && "border-accent font-semibold ring-2 ring-ring")}
                     >
                       {isActive && <span aria-hidden="true">✓ </span>}
-                      {c.name}
+                      <span className="truncate">{c.name}</span>
                     </Button>
-                    <span className="text-sm text-muted-foreground">
+                    <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">
                       {c.cardCount} cards
                       {c.importedAt?.seconds ? `, imported ${new Date(Number(c.importedAt.seconds) * 1000).toLocaleDateString()}` : null}
                     </span>
@@ -189,7 +197,7 @@ export function CollectionPage() {
                       variant="ghost"
                       size="icon"
                       aria-label={`Rename ${c.name}`}
-                      className="ml-auto size-7"
+                      className="size-7 shrink-0"
                       onClick={() => {
                         setRenaming(c.id);
                         setRenameTo(c.name);
@@ -252,7 +260,8 @@ export function CollectionPage() {
               })}
             </ul>
           )}
-        </section>
+          </CardContent>
+        </Card>
       </div>
 
       <UploadDialog

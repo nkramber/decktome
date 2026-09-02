@@ -121,6 +121,7 @@ func run(ctx context.Context, logger *slog.Logger) error {
 	deckServer := decksvc.New(rulesCfg, cardServer,
 		decksvc.WithCollections(collectionRepo),
 		decksvc.WithDecks(deckRepo),
+		decksvc.WithSessions(sessions.NewRepo(fs)),
 		decksvc.WithUser(userFn))
 	// The LLM role layer. Building it here proves the config and the
 	// keys at startup, not on the first user turn.
