@@ -7,7 +7,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 ## Where things stand (2026-09-01)
 
 - `main` is at `3e90939`. Merged: PR-0a to PR-8, PR-7B, PR-10 to PR-13, the audits, the Phase 3B roadmap (#46), PR-16 (#47), PR-16B (#48), PR-17 (#49), PR-17B (#50), and PR-18 (#53).
-- Branch `nits-and-fixes` holds the review fixes of PR-18 and the chat guard (D-398 to D-405).
+- Branch `nits-and-fixes` holds the review fixes of PR-18, the chat guard, and the decline fix (D-398 to D-406). The decline fix is not committed.
 - The tree is green on `nits-and-fixes`: Go build, vet, `-race` tests, golangci-lint, web lint, typecheck, and 219 web tests. The emulator tests of the collection store pass, and `make lint` reports zero findings.
 - Question gate run 31 passes every bar. The set deck gate passes 6 of 6.
 - Every gate stands and passes: question gate 32, the set deck gate, revise gate 4, and deck gate 10.
@@ -274,6 +274,7 @@ PR-18 merged as #53. A review the same day found three defects and four gaps, an
 - `ImportCollection` reads its file through `parseUpload`, as `DiffCollections` does. Delete invalidates the `["collection"]` prefix. The head and the binder show an error state with a retry. `statsOf` and `artIds` left the web app.
 - The decline control of the budget question reads "No budget" (D-404). A declined budget stores no cap.
 - The chat refuses a turn with no card index (D-405). The web app shows the failure as it shows any other.
+- A decline applies its rules on both paths (D-406). The "You decide" control on the format question set no format before. No power row or commander row fired, and the build started with no format. `State.DeclineKey` holds the format default and the commander delegation, and the classifier path calls it too.
 
 CAUTION: `make dev` runs the API binary of its start. A Go change needs a restart, or a browser read proves the old server. A session read the merged binary first, and the run reproduced the D-399 overwrite and ignored every filter. The second read built the working tree into the scratchpad and ran it on port 8091 with the environment of `scripts/dev.sh`. The script rerouted the collection and card calls to it with `page.route` and `route.fetch`. Every number below comes from that second read.
 

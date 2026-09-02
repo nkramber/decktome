@@ -166,3 +166,43 @@ func TestOwnedPoolRuleNeedsACollection(t *testing.T) {
 		}
 	})
 }
+
+// TestDeclineCarriesTheFormatDefault is D-406. Session
+// ERodNKNOrcwWEFsy1gMa declined the format through the "You decide"
+// control, the slot went to SKIPPED with no format, and no power row or
+// commander row could fire. The structured path applies the same rules
+// as the classifier path now.
+func TestDeclineCarriesTheFormatDefault(t *testing.T) {
+	slots := &mtgv1.Slots{SlotStates: map[string]mtgv1.SlotState{
+		"format":         mtgv1.SlotState_SLOT_STATE_ASKED,
+		"commander_pick": mtgv1.SlotState_SLOT_STATE_ASKED,
+	}}
+	snap := Snapshot{
+		Version: SnapshotVersion,
+		Asks: []Ask{
+			{QuestionID: "q1-format", Key: "format"},
+			{QuestionID: "q5-commander", Key: "commander_pick"},
+		},
+	}
+	snap.Ctx.Outstanding = map[string]string{"format": "format", "commander_pick": "commander"}
+	st := Restore("s1", slots, snap)
+
+	if key, ok := st.Decline("q1-format"); !ok || key != "format" {
+		t.Fatalf("decline = %q, %v", key, ok)
+	}
+	// The slot records that the user did not choose, and the corpus
+	// default routes the rows that follow.
+	if st.Slots.GetSlotStates()["format"] != mtgv1.SlotState_SLOT_STATE_SKIPPED {
+		t.Errorf("format state = %v, want SKIPPED", st.Slots.GetSlotStates()["format"])
+	}
+	if st.Slots.GetFormat().GetId() != DefaultFormat || st.Ctx.Format != DefaultFormat {
+		t.Errorf("format = %v (ctx %v), want the corpus default %v", st.Slots.GetFormat().GetId(), st.Ctx.Format, DefaultFormat)
+	}
+	// A declined pick delegates the commander too (D-147).
+	if _, ok := st.Decline("q5-commander"); !ok {
+		t.Fatal("the pick did not decline")
+	}
+	if st.Slots.GetSlotStates()["commander"] != mtgv1.SlotState_SLOT_STATE_SKIPPED {
+		t.Errorf("commander state = %v, want SKIPPED with the pick", st.Slots.GetSlotStates()["commander"])
+	}
+}
