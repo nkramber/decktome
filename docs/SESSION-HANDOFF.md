@@ -6,8 +6,8 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## Where things stand (2026-09-02)
 
-- `main` is at `eafbd39`. Merged: PR-0a to PR-8, PR-7B, PR-10 to PR-13, the audits, the Phase 3B roadmap (#46), PR-16 (#47), PR-16B (#48), PR-17 (#49), PR-17B (#50), PR-18 (#53), the review fixes of PR-18 (#54), PR-19 (#55), and its follow-ups (#56).
-- The session of 2026-09-02 built PR-14A, the bracket profile, on branch `pr-14a` (D-459 to D-469). PR #57 is open, and the owner merges it. The tree is green: Go build, vet, `-race` tests, golangci-lint, the web typecheck, and the proto check. Bracket gate run 1 reads FAIL on the band bar and the judge bar. Deck gate run 12 and its rerun 12b together pass all 24 prompts with no regression. The sections below hold the moving parts.
+- `main` is at `cf46951`. Merged: PR-0a to PR-8, PR-7B, PR-10 to PR-13, the audits, the Phase 3B roadmap (#46), PR-16 (#47), PR-16B (#48), PR-17 (#49), PR-17B (#50), PR-18 (#53), the review fixes of PR-18 (#54), PR-19 (#55), its follow-ups (#56), and PR-14A (#57).
+- PR-14A, the bracket profile, is merged (2026-09-02, #57, D-459 to D-469). The current branch is `pr-14b`, and branches `pr-14a`, `pr-19`, and `tile-fixes` can go. The tree is green: Go build, vet, `-race` tests, golangci-lint, the web typecheck, and the proto check. Bracket gate run 1 reads FAIL on the band bar and the judge bar. Deck gate run 12 and its rerun 12b together pass all 24 prompts with no regression. The sections below hold the moving parts.
 - PR-19, the chat and build experience, is merged (D-432 to D-458, #55 and #56). It holds the land-swap fix of the revision turn (F-31, D-448), the split land bucket of the shortlist (F-32, D-450), and the one-chat-one-deck delete (D-456). Branches `pr-19` and `tile-fixes` can go.
 - The tree is green on `nits-and-fixes`: Go build, vet, `-race` tests, golangci-lint, web lint, typecheck, and 219 web tests. The emulator tests of the collection store pass, and `make lint` reports zero findings.
 - Question gate run 31 passes every bar. The set deck gate passes 6 of 6.
@@ -467,10 +467,11 @@ The chat ran a turn with no card index before D-405. The commander question then
 
 ## Next steps, in order
 
-1. The owner reads the branch and the four gate documents, and merges PR-14A. The bracket gate reads FAIL until PR-14B gives the shortlist a power signal. The owner decides whether the merge waits on that.
-2. PR-14B, the deck quality model, right after (D-460). OQ-51 holds the Moxfield bracket field check. Then PR-24, then PR-20 to PR-23 in order, one gate each. PR-15 stays after Phase 3B.
+1. PR-14B, the deck quality model, on branch `pr-14b` (D-460). The bracket gate reads FAIL until it gives the shortlist a power signal. The owner merged PR-14A with that on record. OQ-51 holds the Moxfield bracket field check.
+2. PR-24, the precon exclusion, after PR-14B (D-460).
+3. PR-20 to PR-23 in order, one gate each. PR-15 stays after Phase 3B.
 
-Deck gate run 11 ran on 2026-09-02 and passed 24 of 24. The read of every mana base is F-33. The nonbasic count swings from 0 to 33 on the same prompt, run to run, and no rule holds it. The fix is the land band of PR-14A, not a prompt line.
+Deck gate run 12 ran on 2026-09-02 under the profile and passed 24 of 24 with its rerun 12b. The read of every mana base is F-33. The land count and the color sources sit in band now, and the nonbasic share still swings from 0 to 36 on the same prompt. No band reads the composition, and F-33 stays open on that point.
 
 CAUTION: `make revise-gate | tee` hides the exit code. Read the verdict line of the document, never the exit code of a pipe.
 

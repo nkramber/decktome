@@ -846,7 +846,7 @@ One flow on `workflow_dispatch` only. It signs in over the emulator and uploads 
 
 ### Phase 4 - Meta and quality (gated on Phase 3B, D-316)
 
-**PR-14A: The bracket profile (D-451 to D-453, D-459 to D-469).** 🔧 built 2026-09-02 on branch `pr-14a`. Bracket gate run 1 reads FAIL on two bars. Deck gate runs 12 and 12b together pass all 24 prompts with no regression.
+**PR-14A: The bracket profile (D-451 to D-453, D-459 to D-469).** ✅ merged 2026-09-02 (#57). Bracket gate run 1 reads FAIL on two bars, and the owner merged with that on record. Deck gate runs 12 and 12b together pass all 24 prompts with no regression.
 Today a bracket reaches the build as one prose line, "Commander bracket: 3", and one cut: no Game Changers under bracket 3. The role targets are one table for every bracket. The engine checks legality and the Game Changer count, and it notes that the prose rules of the bracket are not machine-checkable. No check reads power after the build. A 3 is whatever the model believes a 3 is.
 
 The profile is a specification per bracket, in data and not in prose. It has four parts.
@@ -999,7 +999,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 16. PR-9 variance. ⏸ out of MVP scope (D-256). It blocks nothing: the Phase 3 gate below reads PR-8's gate.
 17. **GATE.** Phase 3 starts only when PR-8's gate holds on the golden prompts. ✅ held on 2026-08-28, deck gate run 6.
 18. PR-11 ✅ merged 2026-08-28 (#38). PR-12 ✅ merged 2026-08-28 (#40). PR-12B ✅ merged 2026-08-29 (#41). PR-13 ✅ merged 2026-08-29 (#45). Then Phase 3B.
-19. **Phase 3B** (D-316, D-317): PR-16 to PR-23 in the order of the phase list. PR-14A and PR-14B sit between PR-19 and PR-20 (D-452, D-460). PR-14A 🔧 built 2026-09-02, and PR #57 is open. PR-19 ✅ merged 2026-09-02 (#55, #56). Each gate holds before the next slice starts. PR-16 ✅ merged 2026-08-29 (#47). PR-16B ✅ merged 2026-08-29 (#48). PR-17 ✅ merged 2026-08-31 (#49). The paid re-baseline of D-302 ran on 2026-08-31.
+19. **Phase 3B** (D-316, D-317): PR-16 to PR-23 in the order of the phase list. PR-14A and PR-14B sit between PR-19 and PR-20 (D-452, D-460). PR-14A ✅ merged 2026-09-02 (#57). PR-19 ✅ merged 2026-09-02 (#55, #56). Each gate holds before the next slice starts. PR-16 ✅ merged 2026-08-29 (#47). PR-16B ✅ merged 2026-08-29 (#48). PR-17 ✅ merged 2026-08-31 (#49). The paid re-baseline of D-302 ran on 2026-08-31.
 20. **PR-17B** the set filter (F-29, D-373 to D-383). ✅ merged 2026-09-01 (#50). **PR-18** ✅ merged 2026-09-01 (#53). The review fixes of PR-18 (D-398 to D-406) 🔧 built 2026-09-01 on branch `nits-and-fixes`. The owner reads them, then merges. Then PR-19.
 21. PR-15 eval harness. M-5 manual scoring runs on the first UI build (after PR-12).
 22. PR-24 precon exclusion (D-409, D-460), then I-1, I-2, I-3 on evidence. PR-14B moved into step 19 (D-460).
