@@ -19,6 +19,7 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
 	"github.com/nkramber/mtg-deck-builder/go/internal/decks"
 	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
+	"github.com/nkramber/mtg-deck-builder/go/internal/sessions"
 )
 
 type fixedIndex struct{ idx *cards.Index }
@@ -753,10 +754,61 @@ func TestDeleteDeck(t *testing.T) {
 		}
 	})
 
+	t.Run("the chat and every deck of the chat go with it (D-456)", func(t *testing.T) {
+		src := &fakeDecks{decks: map[string]*mtgv1.Deck{
+			"d1": {Id: "d1", SessionId: "s1"}, "d2": {Id: "d2", SessionId: "s1", RevisedFromDeckId: "d1"}, "d9": {Id: "d9", SessionId: "s9"},
+		}}
+		chats := &fakeSessions{sessions: map[string]*mtgv1.Session{"s1": {Id: "s1", DeckIds: []string{"d1", "d2", "gone"}}, "s9": {Id: "s9"}}}
+		if err := del(src, "d1", WithSessions(chats)); err != nil {
+			t.Fatal(err)
+		}
+		sort.Strings(src.deleted)
+		if got := strings.Join(src.deleted, ","); got != "d1,d2" {
+			t.Errorf("deleted = %q, want d1 and d2 and not d9", got)
+		}
+		if _, ok := chats.sessions["s1"]; ok {
+			t.Error("the chat is still stored")
+		}
+		if _, ok := chats.sessions["s9"]; !ok {
+			t.Error("another chat went")
+		}
+	})
+
+	t.Run("a deck whose chat is already gone still goes", func(t *testing.T) {
+		src := &fakeDecks{decks: map[string]*mtgv1.Deck{"d1": {Id: "d1", SessionId: "s-gone"}}}
+		if err := del(src, "d1", WithSessions(&fakeSessions{sessions: map[string]*mtgv1.Session{}})); err != nil {
+			t.Fatal(err)
+		}
+		if len(src.deleted) != 1 {
+			t.Errorf("deleted = %v", src.deleted)
+		}
+	})
+
 	t.Run("a store failure is internal", func(t *testing.T) {
 		bad := &fakeDecks{err: errors.New("firestore down")}
 		if err := del(bad, "d1"); codeOf(t, err) != connect.CodeInternal {
 			t.Errorf("code = %v", codeOf(t, err))
 		}
 	})
+}
+
+// fakeSessions is the chat store of the delete test.
+type fakeSessions struct {
+	sessions map[string]*mtgv1.Session
+}
+
+func (f *fakeSessions) Get(_ context.Context, _, id string) (*mtgv1.Session, error) {
+	s, ok := f.sessions[id]
+	if !ok {
+		return nil, sessions.ErrNotFound
+	}
+	return s, nil
+}
+
+func (f *fakeSessions) Delete(_ context.Context, _, id string) error {
+	if _, ok := f.sessions[id]; !ok {
+		return sessions.ErrNotFound
+	}
+	delete(f.sessions, id)
+	return nil
 }

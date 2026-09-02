@@ -73,7 +73,8 @@ describe("DecksPage", () => {
     expect(await screen.findByRole("link", { name: "Elf Ball" })).toHaveAttribute("href", "/decks/d1");
     const card = screen.getByRole("listitem");
     expect(within(card).getByText(/Commander/)).toBeInTheDocument();
-    expect(within(card).getByText(/99 cards/)).toBeInTheDocument();
+    // The commander counts, so a 99 with one commander reads 100 (D-454).
+    expect(within(card).getByText(/100 cards/)).toBeInTheDocument();
     expect(within(card).getByText(/to buy/)).toBeInTheDocument();
   });
 
@@ -163,7 +164,7 @@ describe("deleting from the library", () => {
     const user = userEvent.setup();
     await renderAt("/decks");
     await user.click(await screen.findByRole("button", { name: /^Delete / }));
-    expect(await screen.findByText(/The deck goes for good/)).toBeInTheDocument();
+    expect(await screen.findByText(/The deck and the chat that built it go for good/)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Delete the deck" }));
     await waitFor(() => expect(deleteDeck).toHaveBeenCalledTimes(1));
   });

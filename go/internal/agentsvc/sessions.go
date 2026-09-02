@@ -13,6 +13,7 @@ import (
 	"connectrpc.com/connect"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	"github.com/nkramber/mtg-deck-builder/go/internal/decks"
 	"github.com/nkramber/mtg-deck-builder/go/internal/gzstore"
 )
 
@@ -150,8 +151,22 @@ func (s *Server) DeleteSession(ctx context.Context, req *connect.Request[mtgv1.D
 	if _, busy := s.building.Load(buildKey(uid, id)); busy {
 		return nil, connect.NewError(connect.CodeAborted, errDeleteMidBuild)
 	}
+	// A chat and its decks are one thing (D-456). The chat goes first,
+	// so a deck that outlives a failure is visible and can be deleted
+	// again from its tile.
+	session, err := s.store.Get(ctx, uid, id)
+	if err != nil {
+		return nil, storeError(err)
+	}
 	if err := s.store.Delete(ctx, uid, id); err != nil {
 		return nil, storeError(err)
+	}
+	if s.deckStore != nil {
+		for _, did := range session.GetDeckIds() {
+			if err := s.deckStore.Delete(ctx, uid, did); err != nil && !errors.Is(err, decks.ErrNotFound) {
+				return nil, connect.NewError(connect.CodeInternal, err)
+			}
+		}
 	}
 	return connect.NewResponse(&mtgv1.DeleteSessionResponse{}), nil
 }

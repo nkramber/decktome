@@ -101,3 +101,21 @@ func TestUpdateAndDeleteSession(t *testing.T) {
 		t.Errorf("a second delete gave %v, want NotFound", connect.CodeOf(err))
 	}
 }
+
+// TestDeleteSessionTakesItsDecks is D-456: a chat and its decks are one
+// thing, and a deck of another chat stays.
+func TestDeleteSessionTakesItsDecks(t *testing.T) {
+	store := stockedStore(1)
+	store.sessions["s-x"].DeckIds = []string{"deck-a", "deck-b"}
+	ds := &fakeDeckStore{put: []*mtgv1.Deck{{Id: "deck-a"}, {Id: "deck-b"}, {Id: "deck-other"}}}
+	client, _ := testServerOpts(t, store, []Option{WithDeckStore(ds)})
+	if _, err := client.DeleteSession(context.Background(), connect.NewRequest(&mtgv1.DeleteSessionRequest{SessionId: "s-x"})); err != nil {
+		t.Fatal(err)
+	}
+	if len(ds.put) != 1 || ds.put[0].GetId() != "deck-other" {
+		t.Errorf("decks left = %v, want deck-other alone", ds.put)
+	}
+	if _, ok := store.sessions["s-x"]; ok {
+		t.Error("the session is still stored")
+	}
+}

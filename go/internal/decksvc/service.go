@@ -24,6 +24,7 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/export"
 	"github.com/nkramber/mtg-deck-builder/go/internal/gzstore"
 	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
+	"github.com/nkramber/mtg-deck-builder/go/internal/sessions"
 )
 
 // CollectionSource gives the owned count per Oracle id for one collection
@@ -78,6 +79,19 @@ func WithCollections(src CollectionSource) Option {
 	return func(s *Server) { s.collections = src }
 }
 
+// SessionSource is the chat store the delete reads. A deck and the chat
+// that built it are one thing, so a deck delete takes the chat and every
+// deck of the chat with it (D-456).
+type SessionSource interface {
+	Get(ctx context.Context, uid, id string) (*mtgv1.Session, error)
+	Delete(ctx context.Context, uid, id string) error
+}
+
+// WithSessions wires the chat store for the delete.
+func WithSessions(src SessionSource) Option {
+	return func(s *Server) { s.sessions = src }
+}
+
 // Server answers DeckService requests.
 type Server struct {
 	decks DeckSource
@@ -85,6 +99,7 @@ type Server struct {
 	cfg         *rules.Config
 	index       cardsvc.IndexSource
 	collections CollectionSource
+	sessions    SessionSource
 	userFn      auth.UserFunc
 }
 
@@ -325,21 +340,63 @@ func (s *Server) UpdateDeck(ctx context.Context, req *connect.Request[mtgv1.Upda
 	return connect.NewResponse(&mtgv1.UpdateDeckResponse{Deck: d}), nil
 }
 
-// DeleteDeck removes one deck for good (PR-17). A second delete of the
-// same id answers NotFound.
+// DeleteDeck removes one deck for good (PR-17), and the chat that built
+// it with every deck of that chat (D-456). A second delete of the same
+// id answers NotFound. The chat goes first: a deck that outlives a
+// failed chat delete is visible and can be deleted again, and a chat
+// that outlives its decks is reachable from nowhere.
 func (s *Server) DeleteDeck(ctx context.Context, req *connect.Request[mtgv1.DeleteDeckRequest]) (*connect.Response[mtgv1.DeleteDeckResponse], error) {
 	uid, id, err := s.deckRef(ctx, req.Msg.GetDeckId())
 	if err != nil {
 		return nil, err
 	}
-	err = s.decks.Delete(ctx, uid, id)
+	deck, err := s.decks.Get(ctx, uid, id)
 	if errors.Is(err, decks.ErrNotFound) {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
+	ids := []string{id}
+	if s.sessions != nil && deck.GetSessionId() != "" {
+		siblings, err := s.deleteChat(ctx, uid, deck.GetSessionId())
+		if err != nil {
+			return nil, connect.NewError(connect.CodeInternal, err)
+		}
+		ids = append(ids, siblings...)
+	}
+	seen := map[string]bool{}
+	for _, did := range ids {
+		if seen[did] || !gzstore.ValidID(did) {
+			continue
+		}
+		seen[did] = true
+		err := s.decks.Delete(ctx, uid, did)
+		// A sibling that is already gone is no failure.
+		if err != nil && !errors.Is(err, decks.ErrNotFound) {
+			return nil, connect.NewError(connect.CodeInternal, err)
+		}
+	}
 	return connect.NewResponse(&mtgv1.DeleteDeckResponse{}), nil
+}
+
+// deleteChat removes the chat and returns the ids of its decks. A chat
+// that is already gone returns nothing and no error.
+func (s *Server) deleteChat(ctx context.Context, uid, sessionID string) ([]string, error) {
+	if !gzstore.ValidID(sessionID) {
+		return nil, nil
+	}
+	session, err := s.sessions.Get(ctx, uid, sessionID)
+	if errors.Is(err, sessions.ErrNotFound) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	if err := s.sessions.Delete(ctx, uid, sessionID); err != nil && !errors.Is(err, sessions.ErrNotFound) {
+		return nil, err
+	}
+	return session.GetDeckIds(), nil
 }
 
 // deckRef checks the store, the id, and the caller. Every write of one

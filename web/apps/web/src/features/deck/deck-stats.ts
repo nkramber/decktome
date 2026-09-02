@@ -192,3 +192,9 @@ export function diffDecks(base: Deck, revised: Deck): DeckDiff {
   diff.changed.sort();
   return diff;
 }
+
+// deckSize is the count a reader expects: the main deck plus the command
+// zone, so a Commander deck reads 100 and not 99 (D-454).
+export function deckSize(mainCount: number, commanders: number): number {
+  return mainCount + commanders;
+}

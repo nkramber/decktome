@@ -149,6 +149,9 @@ type DeckStore interface {
 	// id, so the build needs one before it runs.
 	NewID(uid string) string
 	Put(ctx context.Context, uid string, d *mtgv1.Deck) error
+	// Delete removes one deck. A chat delete takes its decks with it
+	// (D-456).
+	Delete(ctx context.Context, uid, id string) error
 	// Get reads one kept deck. A revision starts from the deck the user
 	// read (D-283).
 	Get(ctx context.Context, uid, id string) (*mtgv1.Deck, error)
