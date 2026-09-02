@@ -754,7 +754,7 @@ Gate:
 
 > *In plain English:* your binder, on screen. Several uploads, a name on each, and a clean "what changed since last time" when you upload a new export. Browse it like a real binder, with the pictures, and search the whole binder rather than the part on your screen.
 
-**PR-19: Chat and build experience (D-432 to D-455).** 🔧 built 2026-09-02 on branch `pr-19`, PR opened the same day. The owner read the stepper on a real build, and it held. Two tile fixes followed (D-454, D-455).
+**PR-19: Chat and build experience (D-432 to D-458).** ✅ merged 2026-09-02 (#55), with its follow-ups the same day (#56). The owner read the stepper on a real build, and it held. The follow-ups are five. The count includes the commander (D-454). The favorite star sits at the tile's edge (D-455). A deck and its chat are one thing (D-456). An upload sits on one line (D-457). The collection page holds two cards of one frame (D-458).
 The chat is the whole start (D-436). The owner read a start form on 2026-09-02 and refused it. The one control outside the conversation is the pool picker, the collection or any card. The form, its rows in the contract, and the gate's form conversations left the same day. D-432 and D-434 record the form, and D-436 amends both.
 
 The thread already holds the primitives of D-295: option buttons, art tiles for a card option, and no field on a closed question. A stepper lights the phase the server streams: understand, shortlist, build, check, and repair when one ran (D-435).
@@ -966,7 +966,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 16. PR-9 variance. ⏸ out of MVP scope (D-256). It blocks nothing: the Phase 3 gate below reads PR-8's gate.
 17. **GATE.** Phase 3 starts only when PR-8's gate holds on the golden prompts. ✅ held on 2026-08-28, deck gate run 6.
 18. PR-11 ✅ merged 2026-08-28 (#38). PR-12 ✅ merged 2026-08-28 (#40). PR-12B ✅ merged 2026-08-29 (#41). PR-13 ✅ merged 2026-08-29 (#45). Then Phase 3B.
-19. **Phase 3B** (D-316, D-317): PR-16 to PR-23 in the order of the phase list, with PR-14A between PR-19 and PR-20 (D-452). Each gate holds before the next slice starts. PR-16 ✅ merged 2026-08-29 (#47). PR-16B ✅ merged 2026-08-29 (#48). PR-17 ✅ merged 2026-08-31 (#49). The paid re-baseline of D-302 ran on 2026-08-31.
+19. **Phase 3B** (D-316, D-317): PR-16 to PR-23 in the order of the phase list, with PR-14A between PR-19 and PR-20 (D-452). PR-19 ✅ merged 2026-09-02 (#55, #56). Each gate holds before the next slice starts. PR-16 ✅ merged 2026-08-29 (#47). PR-16B ✅ merged 2026-08-29 (#48). PR-17 ✅ merged 2026-08-31 (#49). The paid re-baseline of D-302 ran on 2026-08-31.
 20. **PR-17B** the set filter (F-29, D-373 to D-383). ✅ merged 2026-09-01 (#50). **PR-18** ✅ merged 2026-09-01 (#53). The review fixes of PR-18 (D-398 to D-406) 🔧 built 2026-09-01 on branch `nits-and-fixes`. The owner reads them, then merges. Then PR-19.
 21. PR-15 eval harness. M-5 manual scoring runs on the first UI build (after PR-12).
 22. PR-14B the deck quality model (D-413 to D-416, D-451) and PR-24 precon exclusion (D-409), then I-1, I-2, I-3 on evidence.
