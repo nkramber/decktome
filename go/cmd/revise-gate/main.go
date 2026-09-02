@@ -98,6 +98,9 @@ type outcome struct {
 	message  string
 	brief    *revise.Brief
 	deck     *mtgv1.Deck
+	// repair names what bought the repair turn, or is empty when none
+	// ran, so a reader sees whether the model got a second try.
+	repair   string
 	note     string
 	kept     float64
 	blocks   []string
@@ -485,6 +488,9 @@ func rebuild(ctx context.Context, b *generate.Builder, idx *cards.Index, bs base
 		return o
 	}
 	o.deck = res.Deck
+	if res.Repaired {
+		o.repair = res.RepairReason
+	}
 	o.note = revise.Note(brief, revise.DiffDecks(baseDeck, res.Deck))
 	o.blocks = append(o.blocks, blocks(res.Deck)...)
 	if len(o.blocks) > 0 {
@@ -642,6 +648,9 @@ func report(w io.Writer, outcomes []outcome, acc *llm.Accumulator, idx *cards.In
 		pf("**The reply:** %s\n\n", o.note)
 		if o.deck != nil {
 			pf("Findings: %s\n\n", findings(o.deck))
+			if o.repair != "" {
+				pf("Repair turn: %s.\n\n", o.repair)
+			}
 			pf("The deck:\n\n")
 			names := make([]string, 0, len(o.deck.GetCards()))
 			for _, c := range o.deck.GetCards() {

@@ -102,6 +102,17 @@ type Candidate struct {
 	Card  *mtgv1.Card
 	Role  mtgv1.CardRole
 	Score float64
+	// Pop is the popularity share of the card, 1 for the most played
+	// card of the snapshot and 0 for a card with no rank. The land cap
+	// reads it apart from the score (D-450).
+	Pop float64
+	// Fix counts the deck colors a land produces, so a dual in the
+	// colors outranks a fetch land that produces nothing. Zero for a
+	// nonland (D-450).
+	Fix int
+	// Themed says the theme matched the card. The land cap fills its
+	// theme half with these alone (D-450).
+	Themed bool
 	// Partner is the second commander of a pair, and nil for every other
 	// candidate. The pair carries the union of the two color identities,
 	// which is what lets a request reach four colors (D-154).
@@ -292,7 +303,7 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 				stats.OnThemeOwned++
 			}
 		}
-		scored = append(scored, Candidate{Card: c, Role: role, Score: score, Owned: owned, Outside: outside, Signals: signals})
+		scored = append(scored, Candidate{Card: c, Role: role, Score: score, Pop: pop, Fix: fixCount(c, colorSet), Themed: themeScore > 0, Owned: owned, Outside: outside, Signals: signals})
 	}
 	sortCandidates(scored)
 	theme.Unmatched = theme.unmatchedWords(fired)
@@ -365,7 +376,11 @@ func capByRole(in []Candidate, lim Limits) []Candidate {
 	for _, r := range roleOrder {
 		cs := byRole[r]
 		if n := lim.PerRole[r]; n > 0 && len(cs) > n {
-			cs = cs[:n]
+			if r == mtgv1.CardRole_CARD_ROLE_LAND {
+				cs = capLands(cs, n)
+			} else {
+				cs = cs[:n]
+			}
 		}
 		out = append(out, cs...)
 	}
@@ -385,6 +400,81 @@ func capByRole(in []Candidate, lim Limits) []Candidate {
 		}
 	}
 	return kept
+}
+
+// manaShare is the share of the land cap that goes to the mana order,
+// theme or not: the duals of the colors and Command Tower. The theme
+// ranks the rest of the cap. A theme whose word sits in land text can
+// fill the whole cap with no fixing otherwise (F-32, D-450).
+const manaShare = 0.5
+
+// capLands takes n lands from a bucket in score order: the mana half
+// first, then the theme lands in score order, then the mana order again
+// when the theme matched too few lands. The mana order ranks by the deck
+// colors a land produces, then by play, so a dual in the colors comes
+// before Command Tower's cousins and an off-color fetch land comes last.
+// The result keeps the bucket's order, so the theme lands still read
+// first.
+func capLands(cs []Candidate, n int) []Candidate {
+	if n <= 0 || len(cs) <= n {
+		return cs
+	}
+	mana := int(math.Round(float64(n) * manaShare))
+	// A land that makes two or more of the deck colors is fixing, and
+	// play ranks the fixing. A count above two would put a Thriving land
+	// or Cavern of Souls, which Scryfall lists as every color, over a
+	// shock land in a three-color deck.
+	byMana := slices.Clone(cs)
+	sort.SliceStable(byMana, func(i, j int) bool {
+		if fi, fj := min(byMana[i].Fix, 2), min(byMana[j].Fix, 2); fi != fj {
+			return fi > fj
+		}
+		return byMana[i].Pop > byMana[j].Pop
+	})
+	keep := make(map[*mtgv1.Card]bool, n)
+	for _, c := range byMana[:mana] {
+		keep[c.Card] = true
+	}
+	for _, c := range cs {
+		if len(keep) >= n {
+			break
+		}
+		if c.Themed {
+			keep[c.Card] = true
+		}
+	}
+	for _, c := range byMana {
+		if len(keep) >= n {
+			break
+		}
+		keep[c.Card] = true
+	}
+	out := make([]Candidate, 0, n)
+	for _, c := range cs {
+		if keep[c.Card] {
+			out = append(out, c)
+		}
+	}
+	return out
+}
+
+// fixCount is the number of deck colors a land produces. With no color
+// limit every color counts. A nonland is 0, whatever it produces: the
+// mana half of the land cap is for lands.
+func fixCount(c *mtgv1.Card, colorSet map[mtgv1.Color]bool) int {
+	if !slices.Contains(c.GetCardTypes(), "Land") {
+		return 0
+	}
+	n := 0
+	for _, col := range c.GetProducedMana() {
+		if col == mtgv1.Color_COLOR_C {
+			continue
+		}
+		if colorSet == nil || colorSet[col] {
+			n++
+		}
+	}
+	return n
 }
 
 // topUpgrades picks the best unowned cards that beat the weakest owned

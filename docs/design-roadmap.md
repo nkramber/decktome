@@ -6,6 +6,9 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-02 correction pass 52 (deck gate run 11, F-33): 24 of 24 decks pass, $1.46. A read of every mana base shows the count of nonbasic lands swings from 0 to 33 on the same shortlist, run to run. D-450 cut the colorless lands by two thirds. The mana base is a band for PR-14A, not a prompt line. Changes: F-33, PR-14A gate.
+2026-09-02 correction pass 51 (the bracket profile, D-451 to D-453): the owner asked how a bracket 3 plays like a true 3. PR-14 splits into PR-14A, the deterministic bracket profile with a goldfish simulation, and PR-14B, the learned scorer. PR-14A comes right after PR-19. Commander Spellbook's bracket endpoint was verified the same day. Changes: PR-14, PR-14A, sequencing steps 19 and 22, OQ-50 and OQ-51.
+2026-09-02 correction pass 50 (the theme fills the land bucket, F-32, D-450): revise gate run 5 passed 10 of 11 turns. It failed the owner's own land ask on the Karlov deck, because the shortlist offered no untapped dual. The land cap splits: half the mana order, half the theme. Changes: F-32, PR-6, PR-12B. Run 5 stays as the record, run 6 and deck gate run 11 are due.
 2026-09-02 correction pass 49 (a land upgrade rebuilt one basic, F-31, D-448 and D-449): the owner asked for better lands in place of the basics, and the rebuild moved one Plains to one Island. The brief counts the basic lands to replace, and the check holds the deck to the count. The generator's revision rule names group changes, and the revise gate plays the turn after its question. The generate prompt is at version 11. A turn stores its brief. Changes: F-31, PR-12B, the cost model line of the revise gate. Revise gate run 5 is due.
 2026-09-02 correction pass 48 (the owner's read of PR-19, D-438 to D-447): the unfinished chats moved under the message box and hide when there is none. A deck tile carries a delete, and every control shows the pointer cursor. The delete dialogs stuttered, and an elimination run found the cause in the wordmark's endless shimmer, not in the dialog. The gap over the message box equals the gap under the top bar. Changes: PR-19.
 2026-09-02 correction pass 47 (PR-19 built, then the form refused, D-432 to D-437): PR-19 built a start form, the unfinished chats, the stepper, and the retry. The owner read the form and refused it: the app is chat, and the pool picker is the one control outside it (D-436). The form left the same day. A session the owner read found the commander offer bare under a declined theme. The offer now serves an empty theme and reads the set limit (D-437). Changes: PR-19.
@@ -163,6 +166,8 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-4 | **Aggregator terms of use unknown.** MTGGoldfish, MTGTop8, Aetherhub, and EDHREC have no public API and their terms were unchecked. | ✅ 2026-08-23: the owner confirmed the legal check passed (D-5). All five sources may be used. PR-14 still starts with MTGO because it is the only structured source. |
 | F-5 | **Oracle tags are community data.** Scryfall Tagger tags are volunteer-made. Coverage is uneven. `lifegain` is rich (3,374 cards). Niche themes may have few tags. Weights are `median` style, not scores. | ⚠ binds PR-6: tags seed the candidate list. They never gate a card. Keywords and type lines are the second signal. The model is the third. |
 | F-31 | **A land upgrade rebuilt one basic land.** Session `vAvg4eteJhmuPEuJwBul`, 2026-09-01: the owner asked for better lands in place of the basics on a three-color Commander deck. The agent asked what kind, the owner answered a mix, and the rebuild moved one Plains to one Island. The shortlist held 40 nonbasic lands, among them Command Tower, the three shock lands of the colors, the fetch lands, and Cavern of Souls. The generator's revision rule asks for the smallest change, the brief named no count, and no check reads a free-text change. Revise gate runs 1 to 4 stopped at the question on both land rows, so the turn after the answer never ran under a bar. | 🔧 fixed on `pr-19` (D-448, D-449), revise gate run 5 due. |
+| F-32 | **The theme fills the land bucket.** Revise gate run 5, 2026-09-02: the brief counted 12 basic lands to replace on the Karlov lifegain deck, and the rebuild added one. The land bucket holds 40 lands ranked by theme text first, and "lifegain" sits in the text of dozens of lands. All 40 slots went to tapped lands that gain life, and Godless Shrine, Isolated Chapel, Caves of Koilos, Marsh Flats, and Command Tower were absent. The model was asked for untapped duals and had none to name. The Éowyn deck of F-31 had its staples because "Human" matches few lands. | 🔧 fixed on `pr-19` (D-450), revise gate run 6 and deck gate run 11 due. |
+| F-33 | **The mana base is model variance.** Deck gate runs 10 and 11, 2026-09-02, read for the lands of every deck. The lifegain Commander prompt got 12 nonbasic lands in run 10, 0 in run 11, and 30 in the base of revise gate run 7, on the same theme and pool. Five two-color Commander decks of run 11 hold 36 basics and no fixing at all, and one holds 3 basics and 33 nonbasic lands. A Standard deck holds 16 tapped lands of 24, and a tournament Modern deck 8 of 24. No rule states what a mana base should be, so the model decides each time. D-450 cut the colorless lands of the 13 shared Commander decks from 91 to 33 and left the tapped count alone. | 🔧 binds PR-14A: the land band, the tapped cap by power, and the Karsten sources. |
 | F-30 | **No signal of deck quality exists.** The pool ranks on theme fit and EDHREC popularity, and the bracket drops Game Changers under bracket 3 and nothing else. A bracket 5 request got the three most popular legends whose text held "you" and "can" (session t8o1nGGquK6UdTQkfY3V, D-411, 2026-09-01). | 🔧 binds PR-14 (D-413). |
 | F-6 | **No Cloud Tasks emulator.** Local mode can not run real Cloud Tasks. | ✅ PR-0c (#3): a `Dispatcher` interface with a local in-process implementation. |
 | F-7 | **Docker absent on the dev machine.** | ✅ PR-0b (#2): Docker 29.7.2 installed. Native `make dev` does not need it. |
@@ -296,6 +301,8 @@ A pure Go library. Inputs: a deck, a format, a power level, a collection, a card
 ### Phase 2 - The agent (gated on Phase 1)
 
 **PR-6: Candidate-list builder.** ✅ merged 2026-08-24 (#11). The human gate failed on run 1 (12 of 20) and held on run 2 (20 of 20, bar 18). Both documents stay: `docs/reference/pr6-candidate-review.md` is run 1, and `pr6-candidate-review-run2.md` is run 2 (D-65). `internal/candidates` filters the index by legality, color identity, and the commander, then scores each card. Signals come in two kinds (D-62). Payoffs reward the theme: a payoff tag such as `lifegain-matters` (1.5) or a payoff needle such as "whenever you gain life" (1.2). Enablers do the thing: a tag such as `lifegain` (1.0), a subtype (0.8), a keyword such as Lifelink (0.5), a text needle (0.4). A kind counts once, so overlapping tags do not stack. EDHREC rank adds 0.3. A staple with no theme signal keeps half its score, so theme leads. `themes.json` maps 55 theme words to Tagger slugs, payoff and enabler apart. Run 1 exposed 16 slugs that Tagger does not have, over 11 rows, which the matcher dropped without a message. `make themes-check` now fails on an unknown slug. Run 1 also showed that a parent tag carries its children. `death-trigger`, `anthem`, `flicker`, and `counters-matter` each pulled in the wrong half of a theme. Payoffs are narrow from run 2 on. An unknown word falls back to a generic rule. Roles come from the tags first (`ramp`, `draw`, `removal`, `sweeper`, `counterspell`, `protection`, `alternate-win-condition`), then from the type line and text. Brackets 1 and 2 drop Game Changers from the list. Pool modes per D-37: any-card returns about 300 by role. Owned-first returns the owned cards plus up to 50 upgrades. An upgrade must beat the weakest owned card of the same role. Owned-only returns the owned cards. Basic lands are not candidates: the generator adds them. `cmd/candidates-review` writes the gate document from a local snapshot and a ManaBox export. Two helpers serve PR-7: `ThemeColors` names the colors a theme is strongest in, and `Commanders` names commander-eligible candidates. PR-7 puts both into its questions, so the agent states a fact and does not ask the user for it. The owner scores `docs/reference/pr6-candidate-review.md` (20 prompts, 10 with the owner's collection). Meta input (PR-14) has a hook and no data. `Stats.ThinTheme` marks an owned mode with under 30 on-theme owned cards. PR-7 asks the pool-mode question again on that flag (D-63).
+
+2026-09-02 correction (F-32, D-450): the land cap splits in two. Twenty slots go to the mana order. The lands that make two or more of the deck colors come first, and the most played lead among them. The theme ranks the other twenty, and a theme that matches fewer lands hands the rest to the mana order. Theme leads everywhere else. The mana base is not a theme matter, as D-251 said of the precon.
 
 Given a format, colors, a theme, a power level, the pool mode, and the collection (optional, D-37), build a ranked candidate list from the engine. 
 
@@ -583,7 +590,7 @@ Third, the generator gets the brief and the base deck in `generate.Request`, and
 
 A deterministic check reads the brief after the build. A removed card that is still present is a finding. So is a kept card that is absent, and so is a card over the mana limit. The repair turn reads these findings like any other.
 
-2026-09-02 correction (F-31, D-448, D-449): a land swap is a counted change. The brief holds the number of basic lands to replace and the kind. The count fits the base deck and the pool. A deck that holds fewer new nonbasic lands gets a block finding. The repair turn reads the block. The generator's revision rule says a change that names a group and a number touches that many cards. The revise prompt says the earlier message still stands after the answer to its question. The gate answers its own questions and scores the rebuild, and it holds a clear land-swap row on the Karlov base. A turn stores its brief. Revise gate run 5 must pass before the branch merges.
+2026-09-02 correction (F-31, D-448, D-449): a land swap is a counted change. The brief holds the number of basic lands to replace and the kind. The count fits the base deck and the pool. A deck that holds fewer new nonbasic lands gets a block finding. The repair turn reads the block. The generator's revision rule says a change that names a group and a number touches that many cards. The revise prompt says the earlier message still stands after the answer to its question. The gate answers its own questions and scores the rebuild, and it holds a clear land-swap row on the Karlov base. A turn stores its brief. Revise gate run 5 ran on 2026-09-02, and 10 of 11 turns passed. The owner's own land ask failed on the Karlov deck, because the shortlist held no untapped dual (F-32, D-450). Run 6 ran the same day: 9 of 10. Revision 9 swapped 14 basic lands for the fixing D-450 put on the list, with no repair turn. Revision 1, the mixed message, skipped its question and acted on a guess, which the prompt's two land rules had left open. The prompt closes it. Run 7 ran the same day: 11 of 11, $0.74. Every land turn asked first, then swapped. Run 7 also showed the other side of D-450. The Karlov base deck took 30 nonbasic lands and 6 basics, about 10 of them colorless utility lands, and run 5 took 24 basics. Deck gate run 11 measures whether that holds across 18 decks before a rule follows.
 
 The reply is prose from the diff, not from the model, for example "I removed four cards over 5 mana, added four, and replaced six Plains". The server stores it in `Turn.agent_message`, which existed and had no writer, and streams it as `text_delta`. The new deck gets `revised_from_deck_id` and `revision_note`, both additive, and the deck view shows the diff. Gate: six revision prompts over two stored decks. Each result keeps every untouched card, holds every limit of the brief, and passes the engine. A paid run, so the owner says when.
 > *In plain English:* today, the app throws away anything you type after the deck appears, and the app quietly builds the same deck again. After this change, "cut the 7-drops and fix the lands" gives you a short answer and a deck that did those two things, or a question when the request is unclear.
@@ -747,7 +754,7 @@ Gate:
 
 > *In plain English:* your binder, on screen. Several uploads, a name on each, and a clean "what changed since last time" when you upload a new export. Browse it like a real binder, with the pictures, and search the whole binder rather than the part on your screen.
 
-**PR-19: Chat and build experience (D-432 to D-447).** 🔧 built 2026-09-02 on branch `pr-19`. The owner reads it in the browser, then merges.
+**PR-19: Chat and build experience (D-432 to D-453).** 🔧 built 2026-09-02 on branch `pr-19`, PR opened the same day. The owner reads it in the browser, then merges.
 The chat is the whole start (D-436). The owner read a start form on 2026-09-02 and refused it. The one control outside the conversation is the pool picker, the collection or any card. The form, its rows in the contract, and the gate's form conversations left the same day. D-432 and D-434 record the form, and D-436 amends both.
 
 The thread already holds the primitives of D-295: option buttons, art tiles for a card option, and no field on a closed question. A stepper lights the phase the server streams: understand, shortlist, build, check, and repair when one ran (D-435).
@@ -766,11 +773,16 @@ A half of a commander pair zooms to a single card's size, and a single card neve
 
 The session spend holds the build, which it never did (D-447). The commander offer is fixed (D-437). A declined theme answered no name, so the pick row went out bare and the build chose a commander with no word to the reader. The offer now serves an empty theme on popularity, and it reads the set limit, so a Hobbit-only request offers Hobbit commanders.
 
+The second half of 2026-09-02 fixed the revision turn and the shortlist. A land swap is a counted change. The brief counts the basic lands to replace, the check holds the deck to the count, and the generator's rule names group changes (F-31, D-448). A turn stores its brief (D-449). The land bucket of the shortlist splits, half mana and half theme (F-32, D-450).
+
+Revise gate runs 5 to 7 and deck gate run 11 are the records, and both gates pass. The read of every mana base is F-33, which binds PR-14A. The same day the owner split PR-14 and put the bracket profile right after this PR (D-451 to D-453).
+
 Gate:
 
 - The stepper shows every phase of a real build. The phase events come from the generator itself, so a step the stepper shows is a step that ran.
 - A declined theme under a set limit offers three commanders of the sets. ✅ held in `TestCommandersWithNoThemeInsideTheSets` on 2026-09-02.
 - The owner builds one deck from the chat and reads the stepper.
+- Revise gate run 7: ✅ 11 of 11 on 2026-09-02, $0.74. Deck gate run 11: ✅ 24 of 24 on 2026-09-02, $1.46.
 
 CAUTION: the form path of the first plan sent the `Q:`/`A:` shape to the classify call (D-280). The form left (D-436), so only the browser sends that shape, as before.
 > *In plain English:* the chat is the whole start, and it shows the build move through its steps. A turn that fails offers a retry, and a lost connection offers a reload. A chat you left before a deck waits under the message box, and a deck you no longer want goes from its tile.
@@ -825,10 +837,35 @@ One flow on `workflow_dispatch` only. It signs in over the emulator and uploads 
 
 ### Phase 4 - Meta and quality (gated on Phase 3B, D-316)
 
-**PR-14: The deck quality model (D-413 to D-417).** 🔧 planned, one PR whole.
+**PR-14A: The bracket profile (D-451 to D-453).** 🔧 planned, right after PR-19 (D-452).
+Today a bracket reaches the build as one prose line, "Commander bracket: 3", and one cut: no Game Changers under bracket 3. The role targets are one table for every bracket. The engine checks legality and the Game Changer count, and it notes that the prose rules of the bracket are not machine-checkable. No check reads power after the build. A 3 is whatever the model believes a 3 is.
+
+The profile is a specification per bracket, in data and not in prose. It has four parts.
+
+The content rules. What a bracket forbids, as card flags: Game Changers, mass land denial, extra turns, tutors, fast mana, and two-card infinite combos. Scryfall flags the first. Commander Spellbook classifies the rest through its `estimate-bracket` endpoint. It takes a deck list and returns a flag per card for Game Changer, mass land denial, and extra turn. It also returns a flag per combo for two-card, speed, lock, and extra turn, with its own bracket tag.
+
+It answered an anonymous call on 2026-09-02, and its backend is MIT-licensed (OQ-50 holds the terms check).
+
+The shortlist drops what the bracket forbids, the engine checks the deck, and the repair turn fixes a miss. The note in `checkBracket` leaves.
+
+The deck bands. A feature vector per built deck. It holds the average mana value and the curve, and the ramp, draw, removal, wipe, and interaction counts. It holds the tutor and fast-mana counts, the untapped share of the lands, and the color sources against the pips by the Karsten tables. It holds the combo count and the Game Changer count.
+
+Each bracket holds a band per feature. The generator reads the bands as its targets, in place of the one table of `TargetsFor`. The check runs after the build, an off-band feature is a finding, and a finding buys the repair turn as a budget miss does (D-244).
+
+The goldfish simulation (D-453). It deals ten thousand opening hands with the London mulligan, and it plays the lands and the rocks on curve. It reports three numbers. They are the turn the deck casts the commander, the mana available on turn four, and the share of hands with two to four lands. The bracket table counts turns, and this is the one number a card list can not give. No opponent model.
+
+The proof. A bracket gate builds three commanders at each bracket, and every deck must sit in band with no content violation. The judge of PR-15 reads each deck with the bracket definitions in hand and must agree with the bracket in eight of ten.
+
+Contract, additive: `Deck.profile` with the features, the bands, and the off-band findings.
+
+Gate: the bracket gate above, and the deck gate re-run with no regression. The land band of F-33 is part of the profile. It holds the basic and nonbasic counts, a cap on colorless lands, and the color sources against the pips. It also holds a cap on tapped lands that falls with the bracket and the power step. The repair turn gains a second pass or a bounded re-roll when the profile stays off band. That is the re-roll of PR-9 with a score to pick by (D-256).
+
+> *In plain English:* a bracket becomes a set of numbers the app builds to and checks, not a word it hopes the model understands. The app also deals ten thousand opening hands to see how fast the deck really gets going. The brackets are about how many turns a game lasts, so that number matters.
+
+**PR-14B: The deck quality model (D-413 to D-417, split from PR-14 by D-451).** 🔧 planned, after Phase 3B.
 The app holds no signal of what makes a deck good (F-30). The pool ranks on theme fit and popularity, and the bracket drops Game Changers under bracket 3 and nothing else. PR-14 builds a scorer that reads a deck and answers a quality tier and the named reasons. It covers Standard, Modern, and Commander, from bracket 1 to cEDH.
 
-The data is every published list the sources of D-5 hold, back to 2015.
+The data is every published list the sources of D-5 hold, back to 2015. Brackets 1 to 4 have no tournament data. The ladder gains the decks their owners tagged with a bracket on Moxfield, read through the public deck endpoint of D-419 (OQ-51 holds the check of that field and the terms). The profile of PR-14A supplies the shape features.
 
 The MTGO event pages embed the lists and the standings. The worker reads each League and Challenge per day, with the placement of each player.
 
@@ -929,10 +966,10 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 16. PR-9 variance. ⏸ out of MVP scope (D-256). It blocks nothing: the Phase 3 gate below reads PR-8's gate.
 17. **GATE.** Phase 3 starts only when PR-8's gate holds on the golden prompts. ✅ held on 2026-08-28, deck gate run 6.
 18. PR-11 ✅ merged 2026-08-28 (#38). PR-12 ✅ merged 2026-08-28 (#40). PR-12B ✅ merged 2026-08-29 (#41). PR-13 ✅ merged 2026-08-29 (#45). Then Phase 3B.
-19. **Phase 3B** (D-316, D-317): PR-16 to PR-23 in the order of the phase list. Each gate holds before the next slice starts. PR-16 ✅ merged 2026-08-29 (#47). PR-16B ✅ merged 2026-08-29 (#48). PR-17 ✅ merged 2026-08-31 (#49). The paid re-baseline of D-302 ran on 2026-08-31.
+19. **Phase 3B** (D-316, D-317): PR-16 to PR-23 in the order of the phase list, with PR-14A between PR-19 and PR-20 (D-452). Each gate holds before the next slice starts. PR-16 ✅ merged 2026-08-29 (#47). PR-16B ✅ merged 2026-08-29 (#48). PR-17 ✅ merged 2026-08-31 (#49). The paid re-baseline of D-302 ran on 2026-08-31.
 20. **PR-17B** the set filter (F-29, D-373 to D-383). ✅ merged 2026-09-01 (#50). **PR-18** ✅ merged 2026-09-01 (#53). The review fixes of PR-18 (D-398 to D-406) 🔧 built 2026-09-01 on branch `nits-and-fixes`. The owner reads them, then merges. Then PR-19.
 21. PR-15 eval harness. M-5 manual scoring runs on the first UI build (after PR-12).
-22. PR-14 the deck quality model (D-413 to D-416) and PR-24 precon exclusion (D-409), then I-1, I-2, I-3 on evidence.
+22. PR-14B the deck quality model (D-413 to D-416, D-451) and PR-24 precon exclusion (D-409), then I-1, I-2, I-3 on evidence.
 23. Phase 5 stays parked.
 
 ## 9. Open questions
