@@ -136,6 +136,18 @@ func (b *Builder) input(req Request, misses []Miss, findings []*mtgv1.Finding) s
 		for _, k := range keys {
 			fmt.Fprintf(&s, "- %s: %d\n", k, targets[k])
 		}
+		// The deck shape is the rest of the bracket's band: the curve,
+		// the mana base, and the power signals the profile checks after
+		// the build (PR-14A). It goes out with the targets, and not to
+		// an upgrade or a revision.
+		if b.profiler != nil {
+			if lines := b.profiler.Bands().Lines(req.Format, req.Power); len(lines) > 0 {
+				s.WriteString("\n## Deck shape\n\nBuild inside these limits. A check reads them after the build.\n\n")
+				for _, line := range lines {
+					s.WriteString(line + "\n")
+				}
+			}
+		}
 	}
 	if len(misses) > 0 {
 		s.WriteString("\n## Names that are not on the shortlist\n\n")

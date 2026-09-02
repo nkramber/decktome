@@ -11,7 +11,7 @@ GO := go -C go
 BUF := .bin/buf
 PNPM := pnpm --dir web
 
-.PHONY: candidates-review questions-gate deck-gate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check themes-check ste-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
+.PHONY: candidates-review questions-gate deck-gate bracket-gate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check themes-check ste-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-14s %s\n", $$1, $$2}'
@@ -147,6 +147,20 @@ deck-gate: ## Write the PR-8 deck gate document. CAUTION: calls a real provider 
 		DECK_GATE=1 CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall \
 		$(GO) run ./cmd/deck-gate -collection internal/collections/testdata/manabox_collection.csv $(DECK_GATE_ARGS) > $(DECK_GATE_OUT)
 	@echo "wrote $(DECK_GATE_OUT)"
+
+# BRACKET_GATE_OUT is the PR-14A gate document, and BRACKET_GATE_ARGS
+# passes flags, for example -only 7,8,9 for the bracket 3 prompts alone.
+BRACKET_GATE_OUT ?= docs/reference/pr14a-bracket-gate.md
+BRACKET_GATE_ARGS ?=
+
+bracket-gate: ## Write the PR-14A bracket gate document. CAUTION: calls a real provider and costs money
+	@[ -f .env ] || { echo "bracket-gate: .env is absent."; exit 1; }
+	@test ! -f $(BRACKET_GATE_OUT) || ! grep -q '^Verdict:' $(BRACKET_GATE_OUT) || \
+		{ echo "$(BRACKET_GATE_OUT) holds a verdict. Set BRACKET_GATE_OUT to a new file."; exit 1; }
+	@set -a && . ./.env && set +a && \
+		BRACKET_GATE=1 CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall \
+		$(GO) run ./cmd/bracket-gate $(BRACKET_GATE_ARGS) > $(BRACKET_GATE_OUT)
+	@echo "wrote $(BRACKET_GATE_OUT)"
 
 REVISE_GATE_OUT ?= docs/reference/pr12b-revise-gate.md
 

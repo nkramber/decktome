@@ -40,6 +40,16 @@ type Bracket struct {
 	ExpectedTurns string `json:"expected_turns"`
 	// MaxGameChangers is the limit. -1 means no limit.
 	MaxGameChangers int `json:"max_game_changers"`
+	// MassLandDenial says whether the bracket allows it (PR-14A).
+	MassLandDenial bool `json:"mass_land_denial"`
+	// MaxExtraTurnCards is how many extra-turn cards the bracket allows.
+	// -1 means no limit, and any other value also forbids an extra-turn
+	// combo (PR-14A).
+	MaxExtraTurnCards int `json:"max_extra_turn_cards"`
+	// MaxComboSpeed is the fastest two-card infinite combo the bracket
+	// allows, on the Commander Spellbook speed scale of 1 to 5. 0 means
+	// none, and -1 means no limit (PR-14A).
+	MaxComboSpeed int `json:"max_combo_speed"`
 }
 
 // Config is the loaded rule data.
@@ -144,7 +154,6 @@ const (
 	CodeOffColor         = "off_color"
 	CodeGameChangers     = "game_changer_limit"
 	CodeUnknownBracket   = "unknown_bracket"
-	CodeBracketProse     = "bracket_prose_rules"
 	CodeBadCompanion     = "bad_companion"
 	CodeCompanionBanned  = "companion_banned"
 	CodeCompanionNotSide = "companion_not_in_sideboard"

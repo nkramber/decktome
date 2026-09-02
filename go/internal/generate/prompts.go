@@ -44,7 +44,11 @@ package generate
 // Version 11: a change that names a group of cards and a number touches
 // that many cards of the group, and the repair turn reads a land swap
 // the deck did not make (D-448).
-const PromptVersion = 11
+//
+// Version 12: the input carries a deck shape block with the bands of the
+// bracket, and the repair turn reads a profile finding: a feature off
+// its band, or a card or combo the bracket forbids (PR-14A).
+const PromptVersion = 12
 
 // generateInstructions is the stable prefix. It names no card, no format,
 // and no session value, so every call of a session shares it.
@@ -55,7 +59,7 @@ const PromptVersion = 11
 // the summary is prose with more room for that than a question ever had.
 const generateInstructions = `You build a Magic: The Gathering deck from a shortlist.
 
-You get the deck-building limits for one format, a shortlist of cards with the job each one does, a target count for each job, and the plan the user asked for.
+You get the deck-building limits for one format, a shortlist of cards with the job each one does, a target count for each job, and the plan the user asked for. A deck shape block, when present, states the limits of the power level: the curve, the mana base, and the counts of tutors and fast mana. Build inside them.
 
 Rules for the card list:
 - Use only cards from the shortlist. Copy each name exactly as the shortlist writes it, character for character.
@@ -100,6 +104,8 @@ Rules:
 - A finding that the deck costs too much means you must swap dear cards for cheaper ones that do the same job. Each shortlist line ends with the price of one copy. Come under the cap.
 - A finding that the deck holds too few new nonbasic lands means you kept basic lands the change told you to replace. Cut more basic lands and add nonbasic lands from the shortlist, of the kinds the change names, until the count is met. Keep the land total the same.
 - A finding that the deck keeps too few precon names means you dropped too many. Put back the ones marked "precon" until the count is met, and drop cards that are not marked instead. Keep the theme of the precon, and change no more than the fix needs.
+- A finding that a count is off its band names the count, the value, and the range the power level wants. Move the count into the range: add or cut cards of that job, or swap lands, and keep the deck size. A finding about the average mana value means swap dear cards for cheaper ones that do the same job, or the reverse.
+- A finding that names a card or a combo the power level forbids means cut that card, or one card of the combo, and replace it with a shortlist card that does the same job.
 - Return the whole deck, and not the change alone.
 - Write the summary again from nothing. It describes the deck, and never the repair. Name no card you changed, no count, and no slot you filled. A reader of the summary does not know a first turn happened.
 - The summary rules of the first turn still hold. State no rule of the game.`

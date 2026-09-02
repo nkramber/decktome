@@ -35,9 +35,11 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/health"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 	"github.com/nkramber/mtg-deck-builder/go/internal/precons"
+	"github.com/nkramber/mtg-deck-builder/go/internal/profile"
 	"github.com/nkramber/mtg-deck-builder/go/internal/questions"
 	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
 	"github.com/nkramber/mtg-deck-builder/go/internal/sessions"
+	"github.com/nkramber/mtg-deck-builder/go/internal/spellbook"
 )
 
 // version is set at build time with -ldflags "-X main.version=...".
@@ -354,11 +356,22 @@ func agentService(client *llm.Client, fs *firestore.Client, index *cardsvc.Serve
 	if err != nil {
 		return nil, err
 	}
+	// The bracket profile reads the live index's tags and the Commander
+	// Spellbook endpoint, at the rate of D-459 (PR-14A).
+	prof, err := profile.New(rulesCfg, func() *cards.TagIndex {
+		if idx := index.Current(); idx != nil {
+			return idx.Tags()
+		}
+		return nil
+	}, spellbook.New(nil, "", logger))
+	if err != nil {
+		return nil, err
+	}
 	opts := []agentsvc.Option{
 		agentsvc.WithLogger(logger),
 		agentsvc.WithCandidates(index, builder),
 		agentsvc.WithCollections(cols),
-		agentsvc.WithDecks(generate.NewBuilder(client, rulesCfg, liveCards{index}, logger)),
+		agentsvc.WithDecks(generate.NewBuilder(client, rulesCfg, liveCards{index}, logger, generate.WithProfiler(prof))),
 		agentsvc.WithDeckStore(deckRepo),
 		agentsvc.WithPreconSource(preconSrc),
 	}
