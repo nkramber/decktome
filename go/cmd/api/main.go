@@ -107,7 +107,9 @@ func run(ctx context.Context, logger *slog.Logger) error {
 	defer func() { _ = fs.Close() }()
 	// The interceptor puts the user id in the context.
 	userFn := auth.UserID
-	collectionRepo := collections.NewRepo(fs)
+	// The repo reads the index for the summary of a collection stored
+	// before the summary existed (D-398).
+	collectionRepo := collections.NewRepo(fs).WithIndex(cardServer.Current)
 	collectionServer := collectionsvc.New(collectionRepo, cardServer, userFn)
 	rulesCfg, err := rules.Load()
 	if err != nil {

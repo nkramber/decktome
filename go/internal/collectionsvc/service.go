@@ -4,6 +4,9 @@ package collectionsvc
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"strconv"
@@ -69,6 +72,9 @@ var (
 	errBadID     = fmt.Errorf("collection_id: %w", gzstore.ErrBadID)
 	errNoUser    = errors.New("no user in the request context")
 	errLongName  = fmt.Errorf("name is longer than %d bytes", MaxNameBytes)
+	// errNothingToReplace refuses a replacement whose file resolved no
+	// row (D-403).
+	errNothingToReplace = errors.New("no row of the file resolved, so the collection was not replaced")
 )
 
 // ImportCollection parses, resolves, and stores an upload. Every input
@@ -80,45 +86,18 @@ func (s *Server) ImportCollection(ctx context.Context, req *connect.Request[mtgv
 	if uid == "" {
 		return nil, connect.NewError(connect.CodeUnauthenticated, errNoUser)
 	}
-	content := req.Msg.Content
-	if len(content) == 0 {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errEmptyBody)
-	}
-	if len(content) > maxUpload {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errTooLarge)
-	}
+	content := req.Msg.GetContent()
 	name := strings.TrimSpace(req.Msg.GetName())
 	if len(name) > MaxNameBytes {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errLongName)
 	}
-	idx := s.index.Current()
-	if idx == nil {
-		return nil, connect.NewError(connect.CodeUnavailable, errNoIndex)
+	target := strings.TrimSpace(req.Msg.GetReplaceCollectionId())
+	if target != "" && !gzstore.ValidID(target) {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errBadID)
 	}
-
-	var rows []collections.Row
-	var badParse []*mtgv1.UnresolvedRow
-	var err error
-	switch req.Msg.Source {
-	case mtgv1.ImportSource_IMPORT_SOURCE_MANABOX_CSV:
-		rows, badParse, err = collections.ParseManaBoxCSV(bytes.NewReader(content))
-	case mtgv1.ImportSource_IMPORT_SOURCE_ARENA_TEXT:
-		rows, badParse, err = collections.ParseArenaText(bytes.NewReader(content))
-	default:
-		return nil, connect.NewError(connect.CodeInvalidArgument, errBadSource)
-	}
+	entries, report, err := s.parseUpload(req.Msg.GetSource(), content)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, err)
-	}
-
-	entries, badResolve := collections.Resolve(rows, idx)
-	unresolved := append(append([]*mtgv1.UnresolvedRow{}, badParse...), badResolve...)
-	// ResolvedCount counts rows, not merged entries, so resolved plus
-	// unresolved equals the input row count.
-	report := &mtgv1.ImportReport{
-		Unresolved:         unresolved,
-		ResolvedCount:      int32(len(rows) - len(badResolve)), //nolint:gosec // bounded by maxUpload
-		UnresolvedByReason: collections.ReasonCounts(unresolved),
+		return nil, err
 	}
 	col := &mtgv1.Collection{
 		Name:        name,
@@ -126,21 +105,30 @@ func (s *Server) ImportCollection(ctx context.Context, req *connect.Request[mtgv
 		ContentHash: collections.ContentHash(content),
 	}
 	if len(entries) == 0 {
+		// A replacement with no resolved row would empty a binder the
+		// reader built decks from, so it is refused outright (D-403). A
+		// new collection with no row stores nothing and answers with the
+		// report, so the reader reads why every row failed.
+		if target != "" {
+			return nil, connect.NewError(connect.CodeFailedPrecondition, errNothingToReplace)
+		}
 		return connect.NewResponse(&mtgv1.ImportCollectionResponse{Collection: col, Report: report}), nil
 	}
-	collections.SortEntries(entries)
 	col.Entries = entries
 	col.CardCount = collections.CardCount(entries)
 	// The binder head reads this and never the entries (D-392). The card
-	// index answers the color counts, which no entry carries.
-	col.Summary = collections.Summarize(entries, idx)
+	// index answers the type counts, which no entry carries (D-398). A
+	// nil index must not reach the interface, because a typed nil is not
+	// a nil interface.
+	var cardSrc collections.CardSource
+	if idx := s.index.Current(); idx != nil {
+		cardSrc = idx
+	}
+	col.Summary = collections.Summarize(entries, cardSrc)
 	// The reader read the diff and said to replace, so the entries go
 	// into that same collection and every deck and chat that names it
 	// still works (D-393). The name stays theirs.
-	if target := strings.TrimSpace(req.Msg.GetReplaceCollectionId()); target != "" {
-		if !gzstore.ValidID(target) {
-			return nil, connect.NewError(connect.CodeInvalidArgument, errBadID)
-		}
+	if target != "" {
 		head, err := s.repo.Replace(ctx, uid, target, col)
 		if err != nil {
 			return nil, s.storeError(target, err)
@@ -191,7 +179,9 @@ func (s *Server) GetCollection(ctx context.Context, req *connect.Request[mtgv1.G
 		}
 		return connect.NewResponse(&mtgv1.GetCollectionResponse{Collection: col}), nil
 	}
-	offset, err := pageOffset(req.Msg.GetPageToken())
+	filter := collections.FilterOf(req.Msg.GetFilter())
+	by := req.Msg.GetSort()
+	offset, err := decodePageToken(req.Msg.GetPageToken(), filter, by)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
@@ -199,11 +189,15 @@ func (s *Server) GetCollection(ctx context.Context, req *connect.Request[mtgv1.G
 	if err != nil {
 		return nil, s.storeError(id, err)
 	}
-	// The grid reads a page at a time. The whole document is one read
-	// whatever the page, so the paging bounds the wire and not the store.
-	// Sharding across documents is a later step (repo.go).
-	entries := col.GetEntries()
-	if offset > len(entries) {
+	// The filter and the sort run over every row (D-398), so a match on
+	// a later page still shows. The display fields fill first, because
+	// the color, the type, and the price filters read them (D-396). The
+	// whole document is one read whatever the page, so the paging bounds
+	// the wire and not the store. Sharding across documents is a later
+	// step (repo.go).
+	s.decorate(col.GetEntries())
+	rows := collections.Apply(col.GetEntries(), filter, by)
+	if offset > len(rows) {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errBadPageToken)
 	}
 	size := int(req.Msg.GetPageSize())
@@ -214,14 +208,17 @@ func (s *Server) GetCollection(ctx context.Context, req *connect.Request[mtgv1.G
 		size = MaxPageSize
 	}
 	next := ""
-	if end := offset + size; end < len(entries) {
-		col.Entries = entries[offset:end]
-		next = pageToken(end)
+	if end := offset + size; end < len(rows) {
+		col.Entries = rows[offset:end]
+		next = encodePageToken(end, filter, by)
 	} else {
-		col.Entries = entries[offset:]
+		col.Entries = rows[offset:]
 	}
-	s.decorate(col.GetEntries())
-	return connect.NewResponse(&mtgv1.GetCollectionResponse{Collection: col, NextPageToken: next}), nil
+	return connect.NewResponse(&mtgv1.GetCollectionResponse{
+		Collection:    col,
+		NextPageToken: next,
+		MatchedRows:   int32(len(rows)), //nolint:gosec // bounded by the entry count
+	}), nil
 }
 
 // decorate fills the display fields of one page: the colors, the card
@@ -231,9 +228,6 @@ func (s *Server) GetCollection(ctx context.Context, req *connect.Request[mtgv1.G
 // index does not know keeps its empty fields, and the binder reads it
 // as a row no filter matches.
 func (s *Server) decorate(entries []*mtgv1.CollectionEntry) {
-	if s.index == nil {
-		return
-	}
 	idx := s.index.Current()
 	if idx == nil {
 		return
@@ -263,21 +257,38 @@ const (
 	MaxPageSize     = 1000
 )
 
-// errBadPageToken reports a token that names a row this collection does
-// not hold. A token of another collection reads as one of these.
-var errBadPageToken = errors.New("the page token does not belong to this collection")
+// errBadPageToken reports a token of another filter, another sort, or a
+// row this collection does not hold. A token of another collection
+// reads as one of these.
+var errBadPageToken = errors.New("the page token belongs to another filter or another collection")
 
-// pageToken writes the offset of the next page. It is the offset alone:
-// a collection is one document, so a page is a slice of one read, and
-// the token needs no filter fingerprint as a deck page token does.
-func pageToken(offset int) string { return strconv.Itoa(offset) }
+// The page token carries the offset and a fingerprint of the filter and
+// the sort, as a deck page token does. A token of another pair is an
+// invalid argument, because its offset counts a different list.
+func binderFingerprint(f collections.Filter, by mtgv1.BinderSort) string {
+	sum := sha256.Sum256([]byte(fmt.Sprintf("%s\x00%s\x00%d\x00%t\x00%s\x00%d\x00%t\x00%d",
+		f.Query, f.SetCode, f.Color, f.Colorless, f.CardType, f.Quantity, f.QuantityOrMore, by)))
+	return hex.EncodeToString(sum[:6])
+}
 
-// pageOffset reads a page token. An empty token is the first page.
-func pageOffset(token string) (int, error) {
+func encodePageToken(offset int, f collections.Filter, by mtgv1.BinderSort) string {
+	return base64.RawURLEncoding.EncodeToString([]byte(fmt.Sprintf("%d.%s", offset, binderFingerprint(f, by))))
+}
+
+// decodePageToken reads a page token. An empty token is the first page.
+func decodePageToken(token string, f collections.Filter, by mtgv1.BinderSort) (int, error) {
 	if token == "" {
 		return 0, nil
 	}
-	n, err := strconv.Atoi(token)
+	raw, err := base64.RawURLEncoding.DecodeString(token)
+	if err != nil {
+		return 0, errBadPageToken
+	}
+	offsetText, fingerprint, ok := strings.Cut(string(raw), ".")
+	if !ok || fingerprint != binderFingerprint(f, by) {
+		return 0, errBadPageToken
+	}
+	n, err := strconv.Atoi(offsetText)
 	if err != nil || n < 0 {
 		return 0, errBadPageToken
 	}

@@ -6,15 +6,15 @@ import (
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 )
 
-// fakeCards answers the color identity of a card.
-type fakeCards map[string][]mtgv1.Color
+// fakeCards answers the card types of a card.
+type fakeCards map[string][]string
 
 func (f fakeCards) ByOracleID(id string) (*mtgv1.Card, bool) {
-	c, ok := f[id]
+	types, ok := f[id]
 	if !ok {
 		return nil, false
 	}
-	return &mtgv1.Card{OracleId: id, ColorIdentity: c}, true
+	return &mtgv1.Card{OracleId: id, CardTypes: types}, true
 }
 
 func entry(scry, oracle, set, rarity string, q int32, opts ...func(*mtgv1.CollectionEntry)) *mtgv1.CollectionEntry {
@@ -38,7 +38,7 @@ func TestSummarizeCountsCardsAndNotRows(t *testing.T) {
 		entry("p2", "o-bolt", "m10", "common", 2),
 		entry("p3", "o-jace", "wwk", "mythic", 1),
 	}
-	cards := fakeCards{"o-bolt": {mtgv1.Color_COLOR_R}, "o-jace": {mtgv1.Color_COLOR_U}}
+	cards := fakeCards{"o-bolt": {"Instant"}, "o-jace": {"Planeswalker"}}
 	got := Summarize(entries, cards)
 
 	if got.GetRowCount() != 3 {
@@ -51,52 +51,52 @@ func TestSummarizeCountsCardsAndNotRows(t *testing.T) {
 	if got.GetByRarity()["common"] != 6 || got.GetByRarity()["mythic"] != 1 {
 		t.Errorf("by rarity = %v, want 6 common and 1 mythic", got.GetByRarity())
 	}
-	if got.GetByColor()["COLOR_R"] != 6 || got.GetByColor()["COLOR_U"] != 1 {
-		t.Errorf("by color = %v, want 6 red and 1 blue", got.GetByColor())
+	if got.GetByType()["Instant"] != 6 || got.GetByType()["Planeswalker"] != 1 {
+		t.Errorf("by type = %v, want 6 instants and 1 planeswalker", got.GetByType())
 	}
 }
 
-// TestSummarizeRanksTheSets: the head shows the sets the collection
-// holds most of, largest first, and a tie reads the same on every run.
-func TestSummarizeRanksTheSets(t *testing.T) {
-	got := Summarize([]*mtgv1.CollectionEntry{
-		entry("p1", "o1", "lea", "common", 1),
-		entry("p2", "o2", "m10", "common", 5),
-		entry("p3", "o3", "aaa", "common", 1),
-	}, nil)
-	if len(got.GetTopSets()) != 3 {
-		t.Fatalf("top sets = %v", got.GetTopSets())
-	}
-	if got.GetTopSets()[0].GetSetCode() != "m10" {
-		t.Errorf("first set = %q, want the largest", got.GetTopSets()[0].GetSetCode())
-	}
-	// The set code breaks the tie between lea and aaa.
-	if got.GetTopSets()[1].GetSetCode() != "aaa" {
-		t.Errorf("second set = %q, want the tie broken by code", got.GetTopSets()[1].GetSetCode())
+// TestSummarizeCountsACardOfTwoTypesUnderEach: the type filter offers
+// both, so an artifact creature answers to Artifact and to Creature.
+func TestSummarizeCountsACardOfTwoTypesUnderEach(t *testing.T) {
+	got := Summarize([]*mtgv1.CollectionEntry{entry("p1", "o-golem", "m10", "rare", 2)},
+		fakeCards{"o-golem": {"Artifact", "Creature"}})
+	if got.GetByType()["Artifact"] != 2 || got.GetByType()["Creature"] != 2 {
+		t.Errorf("by type = %v, want 2 under each", got.GetByType())
 	}
 }
 
-// TestSummarizeWithNoCardIndex: every count but the colors reads the
+// TestSummarizeListsEverySet is D-398. The binder's set filter offers
+// each set the collection holds, largest first, and a tie reads the
+// same on every run.
+func TestSummarizeListsEverySet(t *testing.T) {
+	var entries []*mtgv1.CollectionEntry
+	for i := 0; i < 30; i++ {
+		entries = append(entries, entry("p", "o", string(rune('a'+i)), "common", int32(i+1)))
+	}
+	entries = append(entries, entry("p", "o", "aaa", "common", 30))
+	got := Summarize(entries, nil)
+	if len(got.GetSets()) != 31 {
+		t.Fatalf("sets = %d, want every one of 31", len(got.GetSets()))
+	}
+	// The set code breaks the tie at 30 between "aaa" and the last rune.
+	if got.GetSets()[0].GetSetCode() != "aaa" || got.GetSets()[0].GetCount() != 30 {
+		t.Errorf("first set = %v, want aaa at 30", got.GetSets()[0])
+	}
+	if got.GetSets()[30].GetCount() != 1 {
+		t.Errorf("last set = %v, want the smallest", got.GetSets()[30])
+	}
+}
+
+// TestSummarizeWithNoCardIndex: every count but the types reads the
 // entries alone, because the rarity and the set name ride on every row.
 func TestSummarizeWithNoCardIndex(t *testing.T) {
 	got := Summarize([]*mtgv1.CollectionEntry{entry("p1", "o1", "lea", "rare", 2)}, nil)
 	if got.GetRowCount() != 1 || got.GetUniqueCards() != 1 || got.GetByRarity()["rare"] != 2 {
 		t.Errorf("summary = %v", got)
 	}
-	if len(got.GetByColor()) != 0 {
-		t.Errorf("by color = %v, want none with no card index", got.GetByColor())
-	}
-}
-
-// TestSummarizeBoundsTheSetList: a collection holds cards of hundreds of
-// sets, and the head shows a short list.
-func TestSummarizeBoundsTheSetList(t *testing.T) {
-	var entries []*mtgv1.CollectionEntry
-	for i := 0; i < TopSets+5; i++ {
-		entries = append(entries, entry("p", "o", string(rune('a'+i)), "common", int32(i+1)))
-	}
-	if got := Summarize(entries, nil); len(got.GetTopSets()) != TopSets {
-		t.Errorf("top sets = %d, want %d", len(got.GetTopSets()), TopSets)
+	if len(got.GetByType()) != 0 {
+		t.Errorf("by type = %v, want none with no card index", got.GetByType())
 	}
 }
 

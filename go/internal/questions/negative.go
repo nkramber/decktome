@@ -75,8 +75,39 @@ func (s *State) Decline(questionID string) (string, bool) {
 	if key == "" || s.Slots.GetSlotStates()[key] != mtgv1.SlotState_SLOT_STATE_ASKED {
 		return "", false
 	}
-	s.Skip(key)
+	s.DeclineKey(key)
 	return key, true
+}
+
+// DeclineKey closes a key the user handed back, and it applies the two
+// rules a decline carries. The classifier path and the structured path
+// of D-353 both come here, so the rules can not drift apart (D-406).
+//
+// A declined pick is a delegation (D-147): the user handed the
+// commander choice to the agent, and the generator picks. The pick row
+// carries its own key, so the skip leaves the commander slot
+// unspecified, and the D-147 rule can not close it either: its guard
+// reads the outstanding pick question that this skip just removed, so
+// the session would report ready with the commander never asked
+// (D-208).
+//
+// The format is the one slot the planner routes on. Every power row,
+// and every Commander row, triggers on it. A declined format left empty
+// fires no power row, and the session finishes with no power level and
+// no commander. The corpus names the default under "default answers",
+// so nothing is invented here. The slot keeps the SKIPPED state, which
+// records that the user did not choose it. PR-8 reads the other
+// declined slots the same way (D-98).
+func (s *State) DeclineKey(key string) {
+	s.Skip(key)
+	if key == "commander_pick" && !s.Ctx.Filled["commander"] {
+		s.Skip("commander")
+		s.CurrentOffer = nil
+	}
+	if key == "format" && s.Ctx.Format == mtgv1.FormatId_FORMAT_ID_UNSPECIFIED {
+		s.Slots.Format = &mtgv1.Format{Id: DefaultFormat}
+		s.Ctx.Format = DefaultFormat
+	}
 }
 
 // keyOfQuestion reads the state key of a question the session sent.

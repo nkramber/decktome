@@ -89,6 +89,11 @@ message GetCollectionRequest {
   // entries_omitted asks for the collection without its entries. The
   // binder head reads the summary alone, and it moves no megabyte.
   bool entries_omitted = 4;
+  // filter and sort run on the server over every row (D-398). A page
+  // token belongs to one filter and one sort, and a token of another
+  // pair is an invalid argument.
+  BinderFilter filter = 5;
+  BinderSort sort = 6;
 }
 
 message GetCollectionResponse {
@@ -96,6 +101,9 @@ message GetCollectionResponse {
   // next_page_token reads the page after this one. Empty on the last
   // page, and empty when the request omitted the entries.
   string next_page_token = 2;
+  // matched_rows counts the rows the filter kept over every page, so
+  // the binder reads "12 of 2,657 rows" from one answer (D-398).
+  int32 matched_rows = 3;
 }
 
 message ListCollectionsRequest {}

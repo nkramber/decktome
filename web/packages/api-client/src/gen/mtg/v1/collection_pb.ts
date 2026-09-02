@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file mtg/v1/collection.proto.
  */
 export const file_mtg_v1_collection: GenFile = /*@__PURE__*/
-  fileDesc("ChdtdGcvdjEvY29sbGVjdGlvbi5wcm90bxIGbXRnLnYxIv0BCgpDb2xsZWN0aW9uEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSJAoGc291cmNlGAMgASgOMhQubXRnLnYxLkltcG9ydFNvdXJjZRIvCgtpbXBvcnRlZF9hdBgEIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASFAoMY29udGVudF9oYXNoGAUgASgJEigKB2VudHJpZXMYBiADKAsyFy5tdGcudjEuQ29sbGVjdGlvbkVudHJ5EhIKCmNhcmRfY291bnQYByABKAUSKgoHc3VtbWFyeRgIIAEoCzIZLm10Zy52MS5Db2xsZWN0aW9uU3VtbWFyeSLPAgoRQ29sbGVjdGlvblN1bW1hcnkSEQoJcm93X2NvdW50GAEgASgFEhQKDHVuaXF1ZV9jYXJkcxgCIAEoBRI6CglieV9yYXJpdHkYAyADKAsyJy5tdGcudjEuQ29sbGVjdGlvblN1bW1hcnkuQnlSYXJpdHlFbnRyeRIiCgh0b3Bfc2V0cxgEIAMoCzIQLm10Zy52MS5TZXRDb3VudBI4CghieV9jb2xvchgFIAMoCzImLm10Zy52MS5Db2xsZWN0aW9uU3VtbWFyeS5CeUNvbG9yRW50cnkSFgoOYXJ0X29yYWNsZV9pZHMYBiADKAkaLwoNQnlSYXJpdHlFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAU6AjgBGi4KDEJ5Q29sb3JFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAU6AjgBIj0KCFNldENvdW50EhAKCHNldF9jb2RlGAEgASgJEhAKCHNldF9uYW1lGAIgASgJEg0KBWNvdW50GAMgASgFIsUCCg9Db2xsZWN0aW9uRW50cnkSEwoLc2NyeWZhbGxfaWQYASABKAkSEQoJb3JhY2xlX2lkGAIgASgJEgwKBG5hbWUYAyABKAkSEAoIc2V0X2NvZGUYBCABKAkSGAoQY29sbGVjdG9yX251bWJlchgFIAEoCRIQCghxdWFudGl0eRgGIAEoBRIeCgZmaW5pc2gYByABKA4yDi5tdGcudjEuRmluaXNoEiQKCWNvbmRpdGlvbhgIIAEoDjIRLm10Zy52MS5Db25kaXRpb24SDgoGcmFyaXR5GAkgASgJEhAKCGxhbmd1YWdlGAogASgJEhAKCHNldF9uYW1lGAsgASgJEh0KBmNvbG9ycxgMIAMoDjINLm10Zy52MS5Db2xvchISCgpjYXJkX3R5cGVzGA0gAygJEhEKCXByaWNlX3VzZBgOIAEoASLhAQoOQ29sbGVjdGlvbkRpZmYSJgoFYWRkZWQYASADKAsyFy5tdGcudjEuQ29sbGVjdGlvbkVudHJ5EigKB3JlbW92ZWQYAiADKAsyFy5tdGcudjEuQ29sbGVjdGlvbkVudHJ5EicKB2NoYW5nZWQYAyADKAsyFi5tdGcudjEuUXVhbnRpdHlDaGFuZ2USEwoLYWRkZWRfY2FyZHMYBCABKAUSFQoNcmVtb3ZlZF9jYXJkcxgFIAEoBRIVCg1jaGFuZ2VkX2NhcmRzGAYgASgFEhEKCWlkZW50aWNhbBgHIAEoCCJSCg5RdWFudGl0eUNoYW5nZRImCgVlbnRyeRgBIAEoCzIXLm10Zy52MS5Db2xsZWN0aW9uRW50cnkSDAoEZnJvbRgCIAEoBRIKCgJ0bxgDIAEoBSLYAQoMSW1wb3J0UmVwb3J0EikKCnVucmVzb2x2ZWQYASADKAsyFS5tdGcudjEuVW5yZXNvbHZlZFJvdxIWCg5yZXNvbHZlZF9jb3VudBgCIAEoBRJKChR1bnJlc29sdmVkX2J5X3JlYXNvbhgDIAMoCzIsLm10Zy52MS5JbXBvcnRSZXBvcnQuVW5yZXNvbHZlZEJ5UmVhc29uRW50cnkaOQoXVW5yZXNvbHZlZEJ5UmVhc29uRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgFOgI4ASJUCg1VbnJlc29sdmVkUm93EgwKBGxpbmUYASABKAUSCwoDcmF3GAIgASgJEigKBnJlYXNvbhgDIAEoDjIYLm10Zy52MS5VbnJlc29sdmVkUmVhc29uKmoKDEltcG9ydFNvdXJjZRIdChlJTVBPUlRfU09VUkNFX1VOU1BFQ0lGSUVEEAASHQoZSU1QT1JUX1NPVVJDRV9NQU5BQk9YX0NTVhABEhwKGElNUE9SVF9TT1VSQ0VfQVJFTkFfVEVYVBACKlcKBkZpbmlzaBIWChJGSU5JU0hfVU5TUEVDSUZJRUQQABIRCg1GSU5JU0hfTk9STUFMEAESDwoLRklOSVNIX0ZPSUwQAhIRCg1GSU5JU0hfRVRDSEVEEAMqxgEKCUNvbmRpdGlvbhIZChVDT05ESVRJT05fVU5TUEVDSUZJRUQQABISCg5DT05ESVRJT05fTUlOVBABEhcKE0NPTkRJVElPTl9ORUFSX01JTlQQAhIXChNDT05ESVRJT05fRVhDRUxMRU5UEAMSEgoOQ09ORElUSU9OX0dPT0QQBBIaChZDT05ESVRJT05fTElHSFRfUExBWUVEEAUSFAoQQ09ORElUSU9OX1BMQVlFRBAGEhIKDkNPTkRJVElPTl9QT09SEAcq5AEKEFVucmVzb2x2ZWRSZWFzb24SIQodVU5SRVNPTFZFRF9SRUFTT05fVU5TUEVDSUZJRUQQABIiCh5VTlJFU09MVkVEX1JFQVNPTl9VTktOT1dOX0NBUkQQARIhCh1VTlJFU09MVkVEX1JFQVNPTl9OT05fRU5HTElTSBACEh0KGVVOUkVTT0xWRURfUkVBU09OX0JBRF9ST1cQAxIiCh5VTlJFU09MVkVEX1JFQVNPTl9OT1RfUExBWUFCTEUQBBIjCh9VTlJFU09MVkVEX1JFQVNPTl9VTktOT1dOX1ZBTFVFEAVCOlo4Z2l0aHViLmNvbS9ua3JhbWJlci9tdGctZGVjay1idWlsZGVyL2dvL2dlbi9tdGcvdjE7bXRndjFiBnByb3RvMw", [file_google_protobuf_timestamp, file_mtg_v1_card]);
+  fileDesc("ChdtdGcvdjEvY29sbGVjdGlvbi5wcm90bxIGbXRnLnYxIv0BCgpDb2xsZWN0aW9uEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSJAoGc291cmNlGAMgASgOMhQubXRnLnYxLkltcG9ydFNvdXJjZRIvCgtpbXBvcnRlZF9hdBgEIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASFAoMY29udGVudF9oYXNoGAUgASgJEigKB2VudHJpZXMYBiADKAsyFy5tdGcudjEuQ29sbGVjdGlvbkVudHJ5EhIKCmNhcmRfY291bnQYByABKAUSKgoHc3VtbWFyeRgIIAEoCzIZLm10Zy52MS5Db2xsZWN0aW9uU3VtbWFyeSLoAgoRQ29sbGVjdGlvblN1bW1hcnkSEQoJcm93X2NvdW50GAEgASgFEhQKDHVuaXF1ZV9jYXJkcxgCIAEoBRI6CglieV9yYXJpdHkYAyADKAsyJy5tdGcudjEuQ29sbGVjdGlvblN1bW1hcnkuQnlSYXJpdHlFbnRyeRIWCg5hcnRfb3JhY2xlX2lkcxgGIAMoCRIeCgRzZXRzGAcgAygLMhAubXRnLnYxLlNldENvdW50EjYKB2J5X3R5cGUYCCADKAsyJS5tdGcudjEuQ29sbGVjdGlvblN1bW1hcnkuQnlUeXBlRW50cnkaLwoNQnlSYXJpdHlFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAU6AjgBGi0KC0J5VHlwZUVudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoBToCOAFKBAgEEAVKBAgFEAZSCHRvcF9zZXRzUghieV9jb2xvciI9CghTZXRDb3VudBIQCghzZXRfY29kZRgBIAEoCRIQCghzZXRfbmFtZRgCIAEoCRINCgVjb3VudBgDIAEoBSLFAgoPQ29sbGVjdGlvbkVudHJ5EhMKC3NjcnlmYWxsX2lkGAEgASgJEhEKCW9yYWNsZV9pZBgCIAEoCRIMCgRuYW1lGAMgASgJEhAKCHNldF9jb2RlGAQgASgJEhgKEGNvbGxlY3Rvcl9udW1iZXIYBSABKAkSEAoIcXVhbnRpdHkYBiABKAUSHgoGZmluaXNoGAcgASgOMg4ubXRnLnYxLkZpbmlzaBIkCgljb25kaXRpb24YCCABKA4yES5tdGcudjEuQ29uZGl0aW9uEg4KBnJhcml0eRgJIAEoCRIQCghsYW5ndWFnZRgKIAEoCRIQCghzZXRfbmFtZRgLIAEoCRIdCgZjb2xvcnMYDCADKA4yDS5tdGcudjEuQ29sb3ISEgoKY2FyZF90eXBlcxgNIAMoCRIRCglwcmljZV91c2QYDiABKAEinwEKDEJpbmRlckZpbHRlchINCgVxdWVyeRgBIAEoCRIQCghzZXRfY29kZRgCIAEoCRIcCgVjb2xvchgDIAEoDjINLm10Zy52MS5Db2xvchIRCgljb2xvcmxlc3MYBCABKAgSEQoJY2FyZF90eXBlGAUgASgJEhAKCHF1YW50aXR5GAYgASgFEhgKEHF1YW50aXR5X29yX21vcmUYByABKAgi4QEKDkNvbGxlY3Rpb25EaWZmEiYKBWFkZGVkGAEgAygLMhcubXRnLnYxLkNvbGxlY3Rpb25FbnRyeRIoCgdyZW1vdmVkGAIgAygLMhcubXRnLnYxLkNvbGxlY3Rpb25FbnRyeRInCgdjaGFuZ2VkGAMgAygLMhYubXRnLnYxLlF1YW50aXR5Q2hhbmdlEhMKC2FkZGVkX2NhcmRzGAQgASgFEhUKDXJlbW92ZWRfY2FyZHMYBSABKAUSFQoNY2hhbmdlZF9jYXJkcxgGIAEoBRIRCglpZGVudGljYWwYByABKAgiUgoOUXVhbnRpdHlDaGFuZ2USJgoFZW50cnkYASABKAsyFy5tdGcudjEuQ29sbGVjdGlvbkVudHJ5EgwKBGZyb20YAiABKAUSCgoCdG8YAyABKAUi2AEKDEltcG9ydFJlcG9ydBIpCgp1bnJlc29sdmVkGAEgAygLMhUubXRnLnYxLlVucmVzb2x2ZWRSb3cSFgoOcmVzb2x2ZWRfY291bnQYAiABKAUSSgoUdW5yZXNvbHZlZF9ieV9yZWFzb24YAyADKAsyLC5tdGcudjEuSW1wb3J0UmVwb3J0LlVucmVzb2x2ZWRCeVJlYXNvbkVudHJ5GjkKF1VucmVzb2x2ZWRCeVJlYXNvbkVudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoBToCOAEiVAoNVW5yZXNvbHZlZFJvdxIMCgRsaW5lGAEgASgFEgsKA3JhdxgCIAEoCRIoCgZyZWFzb24YAyABKA4yGC5tdGcudjEuVW5yZXNvbHZlZFJlYXNvbiqCAQoKQmluZGVyU29ydBIbChdCSU5ERVJfU09SVF9VTlNQRUNJRklFRBAAEhQKEEJJTkRFUl9TT1JUX05BTUUQARIVChFCSU5ERVJfU09SVF9DT1VOVBACEhMKD0JJTkRFUl9TT1JUX1NFVBADEhUKEUJJTkRFUl9TT1JUX1BSSUNFEAQqagoMSW1wb3J0U291cmNlEh0KGUlNUE9SVF9TT1VSQ0VfVU5TUEVDSUZJRUQQABIdChlJTVBPUlRfU09VUkNFX01BTkFCT1hfQ1NWEAESHAoYSU1QT1JUX1NPVVJDRV9BUkVOQV9URVhUEAIqVwoGRmluaXNoEhYKEkZJTklTSF9VTlNQRUNJRklFRBAAEhEKDUZJTklTSF9OT1JNQUwQARIPCgtGSU5JU0hfRk9JTBACEhEKDUZJTklTSF9FVENIRUQQAyrGAQoJQ29uZGl0aW9uEhkKFUNPTkRJVElPTl9VTlNQRUNJRklFRBAAEhIKDkNPTkRJVElPTl9NSU5UEAESFwoTQ09ORElUSU9OX05FQVJfTUlOVBACEhcKE0NPTkRJVElPTl9FWENFTExFTlQQAxISCg5DT05ESVRJT05fR09PRBAEEhoKFkNPTkRJVElPTl9MSUdIVF9QTEFZRUQQBRIUChBDT05ESVRJT05fUExBWUVEEAYSEgoOQ09ORElUSU9OX1BPT1IQByrkAQoQVW5yZXNvbHZlZFJlYXNvbhIhCh1VTlJFU09MVkVEX1JFQVNPTl9VTlNQRUNJRklFRBAAEiIKHlVOUkVTT0xWRURfUkVBU09OX1VOS05PV05fQ0FSRBABEiEKHVVOUkVTT0xWRURfUkVBU09OX05PTl9FTkdMSVNIEAISHQoZVU5SRVNPTFZFRF9SRUFTT05fQkFEX1JPVxADEiIKHlVOUkVTT0xWRURfUkVBU09OX05PVF9QTEFZQUJMRRAEEiMKH1VOUkVTT0xWRURfUkVBU09OX1VOS05PV05fVkFMVUUQBUI6WjhnaXRodWIuY29tL25rcmFtYmVyL210Zy1kZWNrLWJ1aWxkZXIvZ28vZ2VuL210Zy92MTttdGd2MWIGcHJvdG8z", [file_google_protobuf_timestamp, file_mtg_v1_card]);
 
 /**
  * Collection is one imported card list. The full collection is stored (D-16).
@@ -79,9 +79,9 @@ export const CollectionSchema: GenMessage<Collection> = /*@__PURE__*/
   messageDesc(file_mtg_v1_collection, 0);
 
 /**
- * CollectionSummary is what the binder head shows about a collection,
- * without its entries (D-392). The import computes it, so no reader
- * counts 2,657 rows to draw one header.
+ * CollectionSummary is what the binder head and the binder controls
+ * show about a collection, without its entries (D-392). The import
+ * computes it, so no reader counts 2,657 rows to draw one header.
  *
  * @generated from message mtg.v1.CollectionSummary
  */
@@ -111,22 +111,6 @@ export type CollectionSummary = Message<"mtg.v1.CollectionSummary"> & {
   byRarity: { [key: string]: number };
 
   /**
-   * top_sets are the sets the collection holds most of, largest first.
-   *
-   * @generated from field: repeated mtg.v1.SetCount top_sets = 4;
-   */
-  topSets: SetCount[];
-
-  /**
-   * by_color counts cards per color of the card's identity, copies
-   * included. A card of two colors counts once under each. The key is
-   * the Color enum name, for example "COLOR_W".
-   *
-   * @generated from field: map<string, int32> by_color = 5;
-   */
-  byColor: { [key: string]: number };
-
-  /**
    * art_oracle_ids are the cards the binder head shows the art of, the
    * rarest first. The head reads no entry, so the import picks them
    * (D-392). A card the reader owns in two printings appears once.
@@ -134,6 +118,25 @@ export type CollectionSummary = Message<"mtg.v1.CollectionSummary"> & {
    * @generated from field: repeated string art_oracle_ids = 6;
    */
   artOracleIds: string[];
+
+  /**
+   * sets are every set the collection holds, largest first. The head
+   * shows the first, and the binder's set filter lists them all (D-398).
+   *
+   * @generated from field: repeated mtg.v1.SetCount sets = 7;
+   */
+  sets: SetCount[];
+
+  /**
+   * by_type counts cards per card type, copies included. A card of two
+   * types counts once under each. The binder's type filter lists the
+   * keys (D-398). The import reads the card index for it, so a
+   * collection stored before the field holds none until the head
+   * computes one.
+   *
+   * @generated from field: map<string, int32> by_type = 8;
+   */
+  byType: { [key: string]: number };
 };
 
 /**
@@ -270,6 +273,76 @@ export const CollectionEntrySchema: GenMessage<CollectionEntry> = /*@__PURE__*/
   messageDesc(file_mtg_v1_collection, 3);
 
 /**
+ * BinderFilter is what the binder grid asks for (D-398). Every field
+ * runs on the server, so a match on a later page still shows. The
+ * color, the type, and the price read the display fields GetCollection
+ * fills from the card index of the day (D-396).
+ *
+ * @generated from message mtg.v1.BinderFilter
+ */
+export type BinderFilter = Message<"mtg.v1.BinderFilter"> & {
+  /**
+   * query keeps a row whose card name holds this text, without regard
+   * to case. Empty keeps them all.
+   *
+   * @generated from field: string query = 1;
+   */
+  query: string;
+
+  /**
+   * set_code keeps one set. Empty keeps them all.
+   *
+   * @generated from field: string set_code = 2;
+   */
+  setCode: string;
+
+  /**
+   * color keeps the cards of this color, and a card of two colors
+   * answers to both. COLOR_UNSPECIFIED keeps them all.
+   *
+   * @generated from field: mtg.v1.Color color = 3;
+   */
+  color: Color;
+
+  /**
+   * colorless keeps the cards of no color. It wins over color.
+   *
+   * @generated from field: bool colorless = 4;
+   */
+  colorless: boolean;
+
+  /**
+   * card_type keeps one card type, as the type line names it, for
+   * example "Instant". Empty keeps them all.
+   *
+   * @generated from field: string card_type = 5;
+   */
+  cardType: string;
+
+  /**
+   * quantity keeps the rows of this many copies. Zero keeps them all.
+   *
+   * @generated from field: int32 quantity = 6;
+   */
+  quantity: number;
+
+  /**
+   * quantity_or_more keeps the rows of quantity copies or more. Four
+   * or more is a playset, and every count above it reads the same way.
+   *
+   * @generated from field: bool quantity_or_more = 7;
+   */
+  quantityOrMore: boolean;
+};
+
+/**
+ * Describes the message mtg.v1.BinderFilter.
+ * Use `create(BinderFilterSchema)` to create a new message.
+ */
+export const BinderFilterSchema: GenMessage<BinderFilter> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_collection, 4);
+
+/**
  * CollectionDiff is what changed between a stored collection and an
  * uploaded file (D-393). It stores nothing: the reader reads it and
  * then chooses whether to replace.
@@ -338,7 +411,7 @@ export type CollectionDiff = Message<"mtg.v1.CollectionDiff"> & {
  * Use `create(CollectionDiffSchema)` to create a new message.
  */
 export const CollectionDiffSchema: GenMessage<CollectionDiff> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_collection, 4);
+  messageDesc(file_mtg_v1_collection, 5);
 
 /**
  * QuantityChange is one row both sides hold, with two quantities.
@@ -367,7 +440,7 @@ export type QuantityChange = Message<"mtg.v1.QuantityChange"> & {
  * Use `create(QuantityChangeSchema)` to create a new message.
  */
 export const QuantityChangeSchema: GenMessage<QuantityChange> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_collection, 5);
+  messageDesc(file_mtg_v1_collection, 6);
 
 /**
  * ImportReport lists what an import could not use. Nothing is dropped
@@ -399,7 +472,7 @@ export type ImportReport = Message<"mtg.v1.ImportReport"> & {
  * Use `create(ImportReportSchema)` to create a new message.
  */
 export const ImportReportSchema: GenMessage<ImportReport> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_collection, 6);
+  messageDesc(file_mtg_v1_collection, 7);
 
 /**
  * UnresolvedRow is one input row the importer rejected, with the reason.
@@ -428,7 +501,53 @@ export type UnresolvedRow = Message<"mtg.v1.UnresolvedRow"> & {
  * Use `create(UnresolvedRowSchema)` to create a new message.
  */
 export const UnresolvedRowSchema: GenMessage<UnresolvedRow> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_collection, 7);
+  messageDesc(file_mtg_v1_collection, 8);
+
+/**
+ * BinderSort orders the rows of a binder page. The name breaks every
+ * tie, so one binder reads the same on every visit.
+ *
+ * @generated from enum mtg.v1.BinderSort
+ */
+export enum BinderSort {
+  /**
+   * BINDER_SORT_UNSPECIFIED orders by name.
+   *
+   * @generated from enum value: BINDER_SORT_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: BINDER_SORT_NAME = 1;
+   */
+  NAME = 1,
+
+  /**
+   * BINDER_SORT_COUNT puts the largest count first.
+   *
+   * @generated from enum value: BINDER_SORT_COUNT = 2;
+   */
+  COUNT = 2,
+
+  /**
+   * @generated from enum value: BINDER_SORT_SET = 3;
+   */
+  SET = 3,
+
+  /**
+   * BINDER_SORT_PRICE puts the dearest row first, and an unpriced row
+   * last.
+   *
+   * @generated from enum value: BINDER_SORT_PRICE = 4;
+   */
+  PRICE = 4,
+}
+
+/**
+ * Describes the enum mtg.v1.BinderSort.
+ */
+export const BinderSortSchema: GenEnum<BinderSort> = /*@__PURE__*/
+  enumDesc(file_mtg_v1_collection, 0);
 
 /**
  * ImportSource names the file format of an import.
@@ -456,7 +575,7 @@ export enum ImportSource {
  * Describes the enum mtg.v1.ImportSource.
  */
 export const ImportSourceSchema: GenEnum<ImportSource> = /*@__PURE__*/
-  enumDesc(file_mtg_v1_collection, 0);
+  enumDesc(file_mtg_v1_collection, 1);
 
 /**
  * Finish mirrors the ManaBox Foil column values.
@@ -489,7 +608,7 @@ export enum Finish {
  * Describes the enum mtg.v1.Finish.
  */
 export const FinishSchema: GenEnum<Finish> = /*@__PURE__*/
-  enumDesc(file_mtg_v1_collection, 1);
+  enumDesc(file_mtg_v1_collection, 2);
 
 /**
  * Condition mirrors the ManaBox Condition column values.
@@ -542,7 +661,7 @@ export enum Condition {
  * Describes the enum mtg.v1.Condition.
  */
 export const ConditionSchema: GenEnum<Condition> = /*@__PURE__*/
-  enumDesc(file_mtg_v1_collection, 2);
+  enumDesc(file_mtg_v1_collection, 3);
 
 /**
  * UnresolvedReason says why a row did not resolve.
@@ -593,5 +712,5 @@ export enum UnresolvedReason {
  * Describes the enum mtg.v1.UnresolvedReason.
  */
 export const UnresolvedReasonSchema: GenEnum<UnresolvedReason> = /*@__PURE__*/
-  enumDesc(file_mtg_v1_collection, 3);
+  enumDesc(file_mtg_v1_collection, 4);
 
