@@ -42,7 +42,7 @@ func TestReportVerdict(t *testing.T) {
 	}
 	failed := good()
 	failed.failures = []string{"kept 50% of the untouched cards, the bar is 80%"}
-	if pass, doc := render(t, []outcome{good(), failed}); pass || !strings.Contains(doc, "1 of 2 revisions") {
+	if pass, doc := render(t, []outcome{good(), failed}); pass || !strings.Contains(doc, "1 of 2 turns") {
 		t.Errorf("a failure passed:\n%s", doc)
 	}
 	errored := good()
@@ -73,5 +73,19 @@ func TestSelectBasesRefusesAnEmptyMatch(t *testing.T) {
 	}
 	if _, err := selectBases(all, "9"); err == nil {
 		t.Error("-only 9 matched nothing and was accepted")
+	}
+}
+
+// TestReportMarksTheAnswerTurn is D-448: the second turn of an unclear
+// request reads as the answer in the table and in its section.
+func TestReportMarksTheAnswerTurn(t *testing.T) {
+	answered := good()
+	answered.answered = true
+	answered.message = "Q: Which lands?\nA: A mix."
+	_, doc := render(t, []outcome{good(), answered})
+	for _, want := range []string{"| 1 | 1 | (the answer) Q: Which lands? A: A mix. |", "## Revision 1, the answer, base 1: a base"} {
+		if !strings.Contains(doc, want) {
+			t.Errorf("doc lacks %q:\n%s", want, doc)
+		}
 	}
 }

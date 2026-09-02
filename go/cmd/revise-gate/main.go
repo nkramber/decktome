@@ -71,6 +71,16 @@ type revision struct {
 	// on an unclear prompt is the clear part of a mixed message, and the
 	// brief must still hold it (D-284).
 	Unclear bool `json:"unclear"`
+	// Answer is what the gate replies to the question an unclear request
+	// earns. With one, a second turn runs: the answer with the first
+	// message as the prior, then the rebuild and every check of a clear
+	// request (D-448). The gate never played that turn before, and the
+	// product failed on it.
+	Answer string `json:"answer"`
+	// SwapBasics says the message, or the answer, asks for basic lands
+	// replaced. The brief must count them, and the revised deck must
+	// hold that many more nonbasic lands.
+	SwapBasics bool `json:"swap_basics"`
 	// Note is for the reader of the prompt file.
 	Note string `json:"note"`
 }
@@ -80,11 +90,17 @@ type revision struct {
 const keepBar = 0.8
 
 type outcome struct {
-	base     base
-	rev      revision
+	base base
+	rev  revision
+	// answered marks the second turn of an unclear request: the gate's
+	// answer to the question, and the rebuild it earns.
+	answered bool
 	message  string
 	brief    *revise.Brief
 	deck     *mtgv1.Deck
+	// repair names what bought the repair turn, or is empty when none
+	// ran, so a reader sees whether the model got a second try.
+	repair   string
 	note     string
 	kept     float64
 	blocks   []string
@@ -175,9 +191,14 @@ func run() error {
 		}
 		fmt.Fprintf(os.Stderr, "  %d cards, %d blocks\n", gatekit.CountCards(baseDeck), len(blocks(baseDeck)))
 		for _, r := range bs.Revisions {
-			o := runRevision(ctx, client, b, idx, bs, r, baseDeck, pool, list, commanderIDs, acc)
-			outcomes = append(outcomes, o)
-			fmt.Fprintf(os.Stderr, "  %d. %s\n", r.ID, status(o))
+			for _, o := range runRevision(ctx, client, b, idx, bs, r, baseDeck, pool, list, commanderIDs, acc) {
+				outcomes = append(outcomes, o)
+				turn := ""
+				if o.answered {
+					turn = " (the answer)"
+				}
+				fmt.Fprintf(os.Stderr, "  %d%s. %s\n", r.ID, turn, status(o))
+			}
 		}
 	}
 	if !report(os.Stdout, outcomes, acc, idx, time.Since(start)) {
@@ -364,41 +385,68 @@ func isLand(c *mtgv1.Card) bool {
 }
 
 // runRevision is one revision from the base: the revise call, then the
-// build with the brief, then the checks against the bars.
+// build with the brief, then the checks against the bars. An unclear
+// request with an answer gets a second turn, so the list holds two
+// outcomes: the question, and the rebuild the answer earns (D-448).
 func runRevision(ctx context.Context, client *llm.Client, b *generate.Builder, idx *cards.Index, bs base, r revision,
-	baseDeck *mtgv1.Deck, basePool *generate.Pool, list *candidates.List, commanderIDs []string, acc *llm.Accumulator) outcome {
+	baseDeck *mtgv1.Deck, basePool *generate.Pool, list *candidates.List, commanderIDs []string, acc *llm.Accumulator) []outcome {
 	o := outcome{base: bs, rev: r}
 	highest := highestNonland(baseDeck, idx)
 	o.message = strings.ReplaceAll(r.Message, "{{HIGHEST}}", highest)
-	brief, err := revise.Call(ctx, client, revise.Input{
-		SessionID: fmt.Sprintf("revise-gate-%d", bs.ID), Message: o.message, Deck: baseDeck,
-		Format: generate.FormatWord(formatOf(bs)), Power: powerWord(bs), Cards: idx,
-	}, acc)
+	brief, err := call(ctx, client, bs, o.message, "", baseDeck, idx, acc)
 	if err != nil {
 		o.err = err
-		return o
+		return []outcome{o}
 	}
 	o.brief = brief
-	if r.Unclear {
-		if brief.Question == "" {
-			o.failures = append(o.failures, "an unclear request got no question")
-		}
-		if brief.Question == "" && !brief.Acts() && len(brief.Declined) > 0 {
-			// A decline with a reason is the other right answer to a land
-			// upgrade in a one-color deck (D-284).
-			o.failures = o.failures[:0]
-		}
-		o.note = revise.DeclineNote(brief)
-		if brief.Question != "" {
-			o.note = "Question: " + brief.Question
-		}
-		// The clear part of a mixed message must be in the brief even
-		// when the unclear part earns a question.
-		if r.Cap > 0 && brief.MaxManaValue != r.Cap {
-			o.failures = append(o.failures, fmt.Sprintf("the brief read the cap as %g, and the message says %g", brief.MaxManaValue, r.Cap))
-		}
-		return o
+	if !r.Unclear {
+		return []outcome{rebuild(ctx, b, idx, bs, r, o, highest, baseDeck, basePool, list, commanderIDs, acc)}
 	}
+	if brief.Question == "" {
+		o.failures = append(o.failures, "an unclear request got no question")
+	}
+	if brief.Question == "" && !brief.Acts() && len(brief.Declined) > 0 {
+		// A decline with a reason is the other right answer to a land
+		// upgrade in a one-color deck (D-284).
+		o.failures = o.failures[:0]
+	}
+	o.note = revise.DeclineNote(brief)
+	if brief.Question != "" {
+		o.note = "Question: " + brief.Question
+	}
+	// The clear part of a mixed message must be in the brief even
+	// when the unclear part earns a question.
+	if r.Cap > 0 && brief.MaxManaValue != r.Cap {
+		o.failures = append(o.failures, fmt.Sprintf("the brief read the cap as %g, and the message says %g", brief.MaxManaValue, r.Cap))
+	}
+	if r.Answer == "" || brief.Question == "" {
+		return []outcome{o}
+	}
+	// The second turn: the answer, in the shape the chat sends it, with
+	// the first message as the prior (agentsvc.withAnswers).
+	a := outcome{base: bs, rev: r, answered: true}
+	a.message = "Q: " + brief.Question + "\nA: " + r.Answer
+	brief2, err := call(ctx, client, bs, a.message, o.message, baseDeck, idx, acc)
+	if err != nil {
+		a.err = err
+		return []outcome{o, a}
+	}
+	a.brief = brief2
+	return []outcome{o, rebuild(ctx, b, idx, bs, r, a, highest, baseDeck, basePool, list, commanderIDs, acc)}
+}
+
+func call(ctx context.Context, client *llm.Client, bs base, message, prior string, baseDeck *mtgv1.Deck, idx *cards.Index, acc *llm.Accumulator) (*revise.Brief, error) {
+	return revise.Call(ctx, client, revise.Input{
+		SessionID: fmt.Sprintf("revise-gate-%d", bs.ID), Message: message, Prior: prior, Deck: baseDeck,
+		Format: generate.FormatWord(formatOf(bs)), Power: powerWord(bs), Cards: idx,
+	}, acc)
+}
+
+// rebuild is the clear-request half of a revision: the brief must act,
+// the build runs with it, and the checks hold the deck to the message.
+func rebuild(ctx context.Context, b *generate.Builder, idx *cards.Index, bs base, r revision, o outcome, highest string,
+	baseDeck *mtgv1.Deck, basePool *generate.Pool, list *candidates.List, commanderIDs []string, acc *llm.Accumulator) outcome {
+	brief := o.brief
 	if brief.Question != "" {
 		o.failures = append(o.failures, "a clear request got a question: "+brief.Question)
 		o.note = "Question: " + brief.Question
@@ -415,9 +463,13 @@ func runRevision(ctx context.Context, client *llm.Client, b *generate.Builder, i
 	if r.RemoveHighest && !contains(brief.Remove, highest) {
 		o.failures = append(o.failures, fmt.Sprintf("the brief did not list %q to remove", highest))
 	}
+	if r.SwapBasics && brief.SwapBasics == 0 {
+		o.failures = append(o.failures, "the brief counted no basic lands to replace")
+	}
 	rev := &generate.Revision{
 		BaseDeckID: baseDeck.GetId(), Base: baseDeck.GetCards(), Instructions: brief.Changes,
 		Remove: brief.Remove, Keep: brief.Keep, MaxManaValue: brief.MaxManaValue,
+		SwapBasics: brief.SwapBasics, LandKinds: brief.LandKinds,
 	}
 	// The base deck's cards join the pool, the way agentsvc does it, and
 	// the brief filters it.
@@ -429,12 +481,16 @@ func runRevision(ctx context.Context, client *llm.Client, b *generate.Builder, i
 	}
 	pool := generate.FromList(list, append(always, poolCards(basePool)...), true)
 	pool = pool.Filter(func(c *mtgv1.Card) bool { return generate.AllowedByRevision(rev, c) })
+	generate.FitSwapBasics(rev, pool)
 	res, err := b.Build(ctx, request(bs, idx, pool, list, commanderIDs, rev), acc)
 	if err != nil {
 		o.err = err
 		return o
 	}
 	o.deck = res.Deck
+	if res.Repaired {
+		o.repair = res.RepairReason
+	}
 	o.note = revise.Note(brief, revise.DiffDecks(baseDeck, res.Deck))
 	o.blocks = append(o.blocks, blocks(res.Deck)...)
 	if len(o.blocks) > 0 {
@@ -451,11 +507,28 @@ func runRevision(ctx context.Context, client *llm.Client, b *generate.Builder, i
 	if r.RemoveHighest && hasName(res.Deck, highest) {
 		o.failures = append(o.failures, fmt.Sprintf("%q is still in the deck", highest))
 	}
+	if r.SwapBasics {
+		rise := nonbasicLands(res.Deck, idx) - nonbasicLands(baseDeck, idx)
+		if rise < rev.SwapBasics || rise == 0 {
+			o.failures = append(o.failures, fmt.Sprintf("the deck holds %d more nonbasic lands, and the brief asked for %d", rise, rev.SwapBasics))
+		}
+	}
 	o.kept = keptShare(baseDeck, res.Deck, rev, idx)
 	if o.kept < keepBar {
 		o.failures = append(o.failures, fmt.Sprintf("kept %.0f%% of the untouched cards, the bar is %.0f%%", o.kept*100, keepBar*100))
 	}
 	return o
+}
+
+// nonbasicLands sums the copies of every nonbasic land in a deck.
+func nonbasicLands(d *mtgv1.Deck, idx *cards.Index) int {
+	n := 0
+	for _, dc := range d.GetCards() {
+		if c, ok := idx.ByOracleID(dc.GetOracleId()); ok && isLand(c) && !candidates.IsBasicLand(c) {
+			n += int(dc.GetCount())
+		}
+	}
+	return n
 }
 
 // poolCards lists the cards of a pool by name lookup.
@@ -534,7 +607,7 @@ func report(w io.Writer, outcomes []outcome, acc *llm.Accumulator, idx *cards.In
 		verdict = "PASS"
 	}
 	pf("# PR-12B revise gate\n\nRun date: %s. Snapshot: %s.\n\n", time.Now().UTC().Format("2006-01-02"), idx.AsOf.Format("2006-01-02"))
-	pf("Verdict: %s. %d of %d revisions met their bar. The bars: an unclear request gets a question or a decline with a reason, a clear request gets a revised deck with no block finding, the deck holds every cap and every removal the message names, and it keeps at least %.0f percent of the untouched cards.\n\n",
+	pf("Verdict: %s. %d of %d turns met their bar. The bars: an unclear request gets a question or a decline with a reason, an answer to that question gets a rebuild, a clear request gets a revised deck with no block finding, the deck holds every cap, every removal, and every land swap the message names, and it keeps at least %.0f percent of the untouched cards.\n\n",
 		verdict, passed, len(outcomes), keepBar*100)
 	r := acc.Report()
 	pf("Cost: %d calls, %s. Time: %s.\n\n", r.Calls, gatekit.CostWord(r), took.Round(time.Second))
@@ -551,11 +624,19 @@ func report(w io.Writer, outcomes []outcome, acc *llm.Accumulator, idx *cards.In
 		if o.deck != nil {
 			kept = fmt.Sprintf("%.0f%%", o.kept*100)
 		}
-		pf("| %d | %d | %s | %s | %s | %s |\n", o.base.ID, o.rev.ID, cell(o.message), out, kept, cell(status(o)))
+		msg := cell(o.message)
+		if o.answered {
+			msg = "(the answer) " + msg
+		}
+		pf("| %d | %d | %s | %s | %s | %s |\n", o.base.ID, o.rev.ID, msg, out, kept, cell(status(o)))
 	}
 	for _, o := range outcomes {
-		pf("\n## Revision %d, base %d: %s\n\n", o.rev.ID, o.base.ID, o.base.Name)
-		pf("**The user:** %s\n\n", o.message)
+		turn := ""
+		if o.answered {
+			turn = ", the answer"
+		}
+		pf("\n## Revision %d%s, base %d: %s\n\n", o.rev.ID, turn, o.base.ID, o.base.Name)
+		pf("**The user:** %s\n\n", cell(o.message))
 		if o.err != nil {
 			pf("ERROR: %v\n", o.err)
 			continue
@@ -567,6 +648,9 @@ func report(w io.Writer, outcomes []outcome, acc *llm.Accumulator, idx *cards.In
 		pf("**The reply:** %s\n\n", o.note)
 		if o.deck != nil {
 			pf("Findings: %s\n\n", findings(o.deck))
+			if o.repair != "" {
+				pf("Repair turn: %s.\n\n", o.repair)
+			}
 			pf("The deck:\n\n")
 			names := make([]string, 0, len(o.deck.GetCards()))
 			for _, c := range o.deck.GetCards() {

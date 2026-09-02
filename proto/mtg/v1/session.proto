@@ -20,6 +20,9 @@ message Session {
   SessionStatus status = 8;
   // usage is the session's LLM token and cost total (M-1).
   Usage usage = 9;
+  // name is what the reader called the conversation (roadmap PR-19).
+  // Empty means no name, and the list shows the first message.
+  string name = 10;
 }
 
 // SessionStatus says where the conversation stands.
@@ -139,6 +142,10 @@ message Turn {
   // answers maps the user's replies to questions, when the client sent
   // structured answers.
   repeated Answer answers = 5;
+  // revision_brief is the brief the revise role returned for this turn,
+  // as the JSON it wrote, so a wrong revision is readable after the
+  // fact (D-449). Empty on a turn with no revise call.
+  string revision_brief = 6;
 }
 
 // Answer is one reply to a Question.

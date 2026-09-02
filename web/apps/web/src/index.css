@@ -26,6 +26,25 @@
     outline: 2px solid var(--ring);
     outline-offset: 2px;
   }
+  /* Every control a reader can click shows the hand (D-440). Tailwind 4
+     dropped the pointer from buttons, and a control that looks inert
+     reads as inert. A disabled control keeps the default arrow. */
+  a[href],
+  button:not(:disabled),
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled),
+  input[type="file"]:not(:disabled),
+  select:not(:disabled),
+  summary,
+  label[for],
+  [role="button"]:not([aria-disabled="true"]),
+  [role="menuitem"],
+  [role="option"],
+  [role="tab"],
+  [role="checkbox"]:not([data-disabled]),
+  [role="switch"]:not([data-disabled]) {
+    cursor: pointer;
+  }
   /* The scrollbar is a hairline, so it never competes with the frame. */
   * {
     scrollbar-width: thin;
@@ -49,7 +68,10 @@
   font-family: var(--font-display);
 }
 
-/* A gold rule of light passes over the wordmark. */
+/* A gold rule of light passes over the wordmark. It passes twice on
+   load and again under the mouse, never forever: a background that moves
+   under clipped text repaints on every frame, and an endless pass held
+   the whole page at 18 ms a frame with nothing else moving (D-441). */
 @keyframes shimmer {
   0% {
     background-position: -200% center;
@@ -65,7 +87,11 @@
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: shimmer 4s linear infinite;
+  animation: shimmer 4s linear 2;
+}
+
+.gold-shimmer:hover {
+  animation: shimmer 2s linear infinite;
 }
 
 /* Every panel carries a faint engraved hatch, the way a card frame does. */

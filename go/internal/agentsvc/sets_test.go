@@ -104,7 +104,7 @@ func TestBuildPassesTheSetsToTheGenerator(t *testing.T) {
 	fd := &fakeDecks{res: &generate.Result{Deck: &mtgv1.Deck{Validation: &mtgv1.ValidationResult{}}}}
 	s := setServer(t, fd, 80)
 	session, st := setSession([]string{"hob", "hoc"}, "Thranduil, the Elvenking")
-	if _, err := s.buildDeck(context.Background(), "u1", session, st, nil, nil); err != nil {
+	if _, err := s.buildDeck(context.Background(), "u1", session, st, nil, nil, nil); err != nil {
 		t.Fatal(err)
 	}
 	if got := strings.Join(fd.got.SetCodes, ","); got != "hob,hoc" {
@@ -126,7 +126,7 @@ func TestThinSetEndsTheTurnWithAReason(t *testing.T) {
 	fd := &fakeDecks{res: &generate.Result{Deck: &mtgv1.Deck{Validation: &mtgv1.ValidationResult{}}}}
 	s := setServer(t, fd, 5)
 	session, st := setSession([]string{"hob", "hoc"}, "Thranduil, the Elvenking")
-	_, err := s.buildDeck(context.Background(), "u1", session, st, nil, nil)
+	_, err := s.buildDeck(context.Background(), "u1", session, st, nil, nil, nil)
 	var thin *ErrThinSet
 	if !errors.As(err, &thin) {
 		t.Fatalf("err = %v, want ErrThinSet", err)
@@ -152,7 +152,7 @@ func TestNoSetLimitSkipsTheFloor(t *testing.T) {
 	fd := &fakeDecks{res: &generate.Result{Deck: &mtgv1.Deck{Validation: &mtgv1.ValidationResult{}}}}
 	s := setServer(t, fd, 2)
 	session, st := setSession(nil, "Karlov of the Ghost Council")
-	if _, err := s.buildDeck(context.Background(), "u1", session, st, nil, nil); err != nil {
+	if _, err := s.buildDeck(context.Background(), "u1", session, st, nil, nil, nil); err != nil {
 		t.Fatalf("a build with no set limit failed: %v", err)
 	}
 	if fd.runs != 1 {
@@ -166,7 +166,7 @@ func TestTheCommanderPoolStaysInTheSets(t *testing.T) {
 	fd := &fakeDecks{res: &generate.Result{Deck: &mtgv1.Deck{Validation: &mtgv1.ValidationResult{}}}}
 	s := setServer(t, fd, 80)
 	session, st := setSession([]string{"hob", "hoc"}, "")
-	if _, err := s.buildDeck(context.Background(), "u1", session, st, nil, nil); err != nil {
+	if _, err := s.buildDeck(context.Background(), "u1", session, st, nil, nil, nil); err != nil {
 		t.Fatal(err)
 	}
 	if len(fd.got.Commanders) == 0 {
@@ -197,7 +197,7 @@ func TestManaFillNeedsThePermission(t *testing.T) {
 			if tc.state != mtgv1.SlotState_SLOT_STATE_UNSPECIFIED {
 				session.Slots.SlotStates[questions.SlotSetOutsideMana] = tc.state
 			}
-			if _, err := s.buildDeck(context.Background(), "u1", session, st, nil, nil); err != nil {
+			if _, err := s.buildDeck(context.Background(), "u1", session, st, nil, nil, nil); err != nil {
 				t.Fatal(err)
 			}
 			_, got := fd.got.Pool.ByOracleID("o-solring")

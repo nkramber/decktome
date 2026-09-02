@@ -26,6 +26,11 @@ type Brief struct {
 	Keep   []string `json:"keep"`
 	// MaxManaValue caps every nonland card. Zero means no cap.
 	MaxManaValue float64 `json:"max_mana_value"`
+	// SwapBasics is how many basic lands the user wants replaced with
+	// nonbasic lands. Zero means no land swap. LandKinds says what kind,
+	// in plain words for the generator (D-448).
+	SwapBasics int    `json:"swap_basics"`
+	LandKinds  string `json:"land_kinds"`
 	// Question is one clarifying question, or empty. A question means
 	// no build this turn.
 	Question string `json:"question"`
@@ -43,7 +48,18 @@ type Decline struct {
 // Acts says the brief changes the deck. A brief with only a question or
 // only declines runs no build.
 func (b *Brief) Acts() bool {
-	return len(b.Changes) > 0 || len(b.Remove) > 0 || len(b.Keep) > 0 || b.MaxManaValue > 0
+	return len(b.Changes) > 0 || len(b.Remove) > 0 || len(b.Keep) > 0 || b.MaxManaValue > 0 || b.SwapBasics > 0
+}
+
+// JSON is the brief as the turn stores it, so a wrong revision is
+// readable after the fact (D-449). A brief that will not marshal is
+// impossible, and an empty string marks it.
+func (b *Brief) JSON() string {
+	raw, err := json.Marshal(b)
+	if err != nil {
+		return ""
+	}
+	return string(raw)
 }
 
 // Input is what the call reads.
@@ -87,6 +103,10 @@ func Call(ctx context.Context, client *llm.Client, in Input, acc *llm.Accumulato
 		return nil, fmt.Errorf("revise: output: %w", err)
 	}
 	b.Question = strings.TrimSpace(b.Question)
+	b.LandKinds = strings.TrimSpace(b.LandKinds)
+	if b.SwapBasics < 0 {
+		b.SwapBasics = 0
+	}
 	b.Remove = onlyInDeck(b.Remove, in.Deck)
 	b.Keep = onlyInDeck(b.Keep, in.Deck)
 	return &b, nil
@@ -135,7 +155,7 @@ func input(in Input) string {
 		fmt.Fprintf(&s, "\nThe deck's summary: %s\n", sum)
 	}
 	if p := strings.TrimSpace(in.Prior); p != "" {
-		fmt.Fprintf(&s, "\n## The user's earlier message\n\n%s\n", p)
+		fmt.Fprintf(&s, "\n## The user's earlier message\n\nYou asked a question about this message, and the message below answers it. Act on both.\n\n%s\n", p)
 	}
 	fmt.Fprintf(&s, "\n## The user's message\n\n%s\n", strings.TrimSpace(in.Message))
 	return s.String()

@@ -38,5 +38,6 @@ export function RequireAuth() {
 export function RootRedirect() {
   const { user, ready } = useAuth();
   if (!ready) return <LoadingSession />;
+  // A signed-in reader lands on a new chat (D-334, D-436).
   return <Navigate to={user ? "/session/new" : "/sign-in"} replace />;
 }

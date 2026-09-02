@@ -1121,3 +1121,101 @@ func TestCommanderPoolFillsAThinTheme(t *testing.T) {
 		t.Errorf("an unthemed commander led a themed pool: %v", names(themed))
 	}
 }
+
+// TestLandCapKeepsTheManaStaples is F-32 and D-450. A theme whose word
+// sits in land text fills the land bucket, and the most played lands of
+// the colors, the fixing, must still make the cap.
+func TestLandCapKeepsTheManaStaples(t *testing.T) {
+	land := func(name string, score, pop float64, fix int) Candidate {
+		return Candidate{Card: &mtgv1.Card{OracleId: name, Name: name}, Role: mtgv1.CardRole_CARD_ROLE_LAND, Score: score, Pop: pop, Fix: fix, Themed: score > 0.2}
+	}
+	var in []Candidate
+	// Twelve theme lands outscore every staple, and none is played much.
+	for i := 0; i < 12; i++ {
+		in = append(in, land(fmt.Sprintf("Lifegain Land %02d", i), 0.5-float64(i)/100, 0.2, 1))
+	}
+	// Six staples with no theme signal. The fetch land is the most
+	// played and produces nothing, so it ranks under every dual.
+	in = append(in, land("Verdant Catacombs", 0.15, 1.0, 0))
+	staples := []string{"Command Tower", "Godless Shrine", "Isolated Chapel", "Caves of Koilos", "Silent Clearing"}
+	for i, name := range staples {
+		in = append(in, land(name, 0.15, 0.95-float64(i)/100, 2))
+	}
+	staples = append(staples, "Verdant Catacombs")
+	sortCandidates(in)
+	got := capLands(in, 10)
+	if len(got) != 10 {
+		t.Fatalf("cap = %d lands, want 10", len(got))
+	}
+	names := map[string]bool{}
+	for _, c := range got {
+		names[c.Card.GetName()] = true
+	}
+	for _, want := range staples[:5] {
+		if !names[want] {
+			t.Errorf("the cap dropped %s, the most played lands are the mana half", want)
+		}
+	}
+	if names["Verdant Catacombs"] {
+		t.Error("an off-color fetch land made the mana half over a dual in the colors")
+	}
+	for i := 0; i < 5; i++ {
+		if name := fmt.Sprintf("Lifegain Land %02d", i); !names[name] {
+			t.Errorf("the cap dropped %s, the theme ranks the other half", name)
+		}
+	}
+	if got[0].Card.GetName() != "Lifegain Land 00" {
+		t.Errorf("the bucket lost its score order: %s first", got[0].Card.GetName())
+	}
+	// A bucket inside the cap is untouched.
+	if got := capLands(in[:8], 10); len(got) != 8 {
+		t.Errorf("a bucket of 8 under a cap of 10 became %d", len(got))
+	}
+	// A theme that matched two lands leaves the rest of its half to the
+	// mana order, and not to the most played fetch land.
+	few := append([]Candidate{}, in[:2]...)
+	few = append(few, land("Verdant Catacombs", 0.15, 1.0, 0), land("Marsh Flats", 0.15, 0.99, 0))
+	for i := 0; i < 8; i++ {
+		few = append(few, land(fmt.Sprintf("Dual %d", i), 0.15, 0.5-float64(i)/100, 2))
+	}
+	sortCandidates(few)
+	got = capLands(few, 6)
+	names = map[string]bool{}
+	for _, c := range got {
+		names[c.Card.GetName()] = true
+	}
+	if !names["Lifegain Land 00"] || !names["Lifegain Land 01"] {
+		t.Errorf("the two theme lands left: %v", names)
+	}
+	if names["Verdant Catacombs"] || names["Marsh Flats"] {
+		t.Errorf("a fetch land filled the theme half over a dual: %v", names)
+	}
+	// A shock land in a three-color deck makes two colors, and a land
+	// Scryfall lists as every color makes three. The shock is the more
+	// played, and two colors is fixing enough, so the shock leads.
+	three := []Candidate{land("Thriving Isle", 0.15, 0.6, 3), land("Hallowed Fountain", 0.15, 0.99, 2), land("Reliquary Tower", 0.15, 1.0, 0)}
+	sortCandidates(three)
+	if got := capLands(three, 2); got[0].Card.GetName() != "Hallowed Fountain" && got[1].Card.GetName() != "Hallowed Fountain" {
+		t.Errorf("the shock land lost to a three-color count: %v", got)
+	}
+}
+
+func TestFixCount(t *testing.T) {
+	wb := map[mtgv1.Color]bool{mtgv1.Color_COLOR_W: true, mtgv1.Color_COLOR_B: true}
+	shrine := &mtgv1.Card{Name: "Godless Shrine", CardTypes: []string{"Land"}, ProducedMana: []mtgv1.Color{mtgv1.Color_COLOR_W, mtgv1.Color_COLOR_B}}
+	tower := &mtgv1.Card{Name: "Command Tower", CardTypes: []string{"Land"}, ProducedMana: []mtgv1.Color{mtgv1.Color_COLOR_W, mtgv1.Color_COLOR_U, mtgv1.Color_COLOR_B, mtgv1.Color_COLOR_R, mtgv1.Color_COLOR_G}}
+	fetch := &mtgv1.Card{Name: "Verdant Catacombs", CardTypes: []string{"Land"}}
+	reliquary := &mtgv1.Card{Name: "Reliquary Tower", CardTypes: []string{"Land"}, ProducedMana: []mtgv1.Color{mtgv1.Color_COLOR_C}}
+	rock := &mtgv1.Card{Name: "Arcane Signet", CardTypes: []string{"Artifact"}, ProducedMana: []mtgv1.Color{mtgv1.Color_COLOR_W, mtgv1.Color_COLOR_B}}
+	for _, tc := range []struct {
+		card *mtgv1.Card
+		want int
+	}{{shrine, 2}, {tower, 2}, {fetch, 0}, {reliquary, 0}, {rock, 0}} {
+		if got := fixCount(tc.card, wb); got != tc.want {
+			t.Errorf("%s: fix = %d, want %d", tc.card.GetName(), got, tc.want)
+		}
+	}
+	if got := fixCount(tower, nil); got != 5 {
+		t.Errorf("no color limit: fix = %d, want 5", got)
+	}
+}

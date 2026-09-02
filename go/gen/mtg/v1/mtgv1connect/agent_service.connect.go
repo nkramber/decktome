@@ -37,6 +37,15 @@ const (
 	AgentServiceChatProcedure = "/mtg.v1.AgentService/Chat"
 	// AgentServiceGetSessionProcedure is the fully-qualified name of the AgentService's GetSession RPC.
 	AgentServiceGetSessionProcedure = "/mtg.v1.AgentService/GetSession"
+	// AgentServiceListSessionsProcedure is the fully-qualified name of the AgentService's ListSessions
+	// RPC.
+	AgentServiceListSessionsProcedure = "/mtg.v1.AgentService/ListSessions"
+	// AgentServiceUpdateSessionProcedure is the fully-qualified name of the AgentService's
+	// UpdateSession RPC.
+	AgentServiceUpdateSessionProcedure = "/mtg.v1.AgentService/UpdateSession"
+	// AgentServiceDeleteSessionProcedure is the fully-qualified name of the AgentService's
+	// DeleteSession RPC.
+	AgentServiceDeleteSessionProcedure = "/mtg.v1.AgentService/DeleteSession"
 )
 
 // AgentServiceClient is a client for the mtg.v1.AgentService service.
@@ -44,6 +53,14 @@ type AgentServiceClient interface {
 	// Chat sends one user message and streams the agent's response events.
 	Chat(context.Context, *connect.Request[v1.ChatRequest]) (*connect.ServerStreamForClient[v1.ChatResponse], error)
 	GetSession(context.Context, *connect.Request[v1.GetSessionRequest]) (*connect.Response[v1.GetSessionResponse], error)
+	// ListSessions lists the reader's conversations, newest first, without
+	// their turns (roadmap PR-19).
+	ListSessions(context.Context, *connect.Request[v1.ListSessionsRequest]) (*connect.Response[v1.ListSessionsResponse], error)
+	// UpdateSession writes the name (roadmap PR-19).
+	UpdateSession(context.Context, *connect.Request[v1.UpdateSessionRequest]) (*connect.Response[v1.UpdateSessionResponse], error)
+	// DeleteSession removes a conversation for good. The decks it built
+	// stay (roadmap PR-19).
+	DeleteSession(context.Context, *connect.Request[v1.DeleteSessionRequest]) (*connect.Response[v1.DeleteSessionResponse], error)
 }
 
 // NewAgentServiceClient constructs a client for the mtg.v1.AgentService service. By default, it
@@ -69,13 +86,34 @@ func NewAgentServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(agentServiceMethods.ByName("GetSession")),
 			connect.WithClientOptions(opts...),
 		),
+		listSessions: connect.NewClient[v1.ListSessionsRequest, v1.ListSessionsResponse](
+			httpClient,
+			baseURL+AgentServiceListSessionsProcedure,
+			connect.WithSchema(agentServiceMethods.ByName("ListSessions")),
+			connect.WithClientOptions(opts...),
+		),
+		updateSession: connect.NewClient[v1.UpdateSessionRequest, v1.UpdateSessionResponse](
+			httpClient,
+			baseURL+AgentServiceUpdateSessionProcedure,
+			connect.WithSchema(agentServiceMethods.ByName("UpdateSession")),
+			connect.WithClientOptions(opts...),
+		),
+		deleteSession: connect.NewClient[v1.DeleteSessionRequest, v1.DeleteSessionResponse](
+			httpClient,
+			baseURL+AgentServiceDeleteSessionProcedure,
+			connect.WithSchema(agentServiceMethods.ByName("DeleteSession")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // agentServiceClient implements AgentServiceClient.
 type agentServiceClient struct {
-	chat       *connect.Client[v1.ChatRequest, v1.ChatResponse]
-	getSession *connect.Client[v1.GetSessionRequest, v1.GetSessionResponse]
+	chat          *connect.Client[v1.ChatRequest, v1.ChatResponse]
+	getSession    *connect.Client[v1.GetSessionRequest, v1.GetSessionResponse]
+	listSessions  *connect.Client[v1.ListSessionsRequest, v1.ListSessionsResponse]
+	updateSession *connect.Client[v1.UpdateSessionRequest, v1.UpdateSessionResponse]
+	deleteSession *connect.Client[v1.DeleteSessionRequest, v1.DeleteSessionResponse]
 }
 
 // Chat calls mtg.v1.AgentService.Chat.
@@ -88,11 +126,34 @@ func (c *agentServiceClient) GetSession(ctx context.Context, req *connect.Reques
 	return c.getSession.CallUnary(ctx, req)
 }
 
+// ListSessions calls mtg.v1.AgentService.ListSessions.
+func (c *agentServiceClient) ListSessions(ctx context.Context, req *connect.Request[v1.ListSessionsRequest]) (*connect.Response[v1.ListSessionsResponse], error) {
+	return c.listSessions.CallUnary(ctx, req)
+}
+
+// UpdateSession calls mtg.v1.AgentService.UpdateSession.
+func (c *agentServiceClient) UpdateSession(ctx context.Context, req *connect.Request[v1.UpdateSessionRequest]) (*connect.Response[v1.UpdateSessionResponse], error) {
+	return c.updateSession.CallUnary(ctx, req)
+}
+
+// DeleteSession calls mtg.v1.AgentService.DeleteSession.
+func (c *agentServiceClient) DeleteSession(ctx context.Context, req *connect.Request[v1.DeleteSessionRequest]) (*connect.Response[v1.DeleteSessionResponse], error) {
+	return c.deleteSession.CallUnary(ctx, req)
+}
+
 // AgentServiceHandler is an implementation of the mtg.v1.AgentService service.
 type AgentServiceHandler interface {
 	// Chat sends one user message and streams the agent's response events.
 	Chat(context.Context, *connect.Request[v1.ChatRequest], *connect.ServerStream[v1.ChatResponse]) error
 	GetSession(context.Context, *connect.Request[v1.GetSessionRequest]) (*connect.Response[v1.GetSessionResponse], error)
+	// ListSessions lists the reader's conversations, newest first, without
+	// their turns (roadmap PR-19).
+	ListSessions(context.Context, *connect.Request[v1.ListSessionsRequest]) (*connect.Response[v1.ListSessionsResponse], error)
+	// UpdateSession writes the name (roadmap PR-19).
+	UpdateSession(context.Context, *connect.Request[v1.UpdateSessionRequest]) (*connect.Response[v1.UpdateSessionResponse], error)
+	// DeleteSession removes a conversation for good. The decks it built
+	// stay (roadmap PR-19).
+	DeleteSession(context.Context, *connect.Request[v1.DeleteSessionRequest]) (*connect.Response[v1.DeleteSessionResponse], error)
 }
 
 // NewAgentServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -114,12 +175,36 @@ func NewAgentServiceHandler(svc AgentServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(agentServiceMethods.ByName("GetSession")),
 		connect.WithHandlerOptions(opts...),
 	)
+	agentServiceListSessionsHandler := connect.NewUnaryHandler(
+		AgentServiceListSessionsProcedure,
+		svc.ListSessions,
+		connect.WithSchema(agentServiceMethods.ByName("ListSessions")),
+		connect.WithHandlerOptions(opts...),
+	)
+	agentServiceUpdateSessionHandler := connect.NewUnaryHandler(
+		AgentServiceUpdateSessionProcedure,
+		svc.UpdateSession,
+		connect.WithSchema(agentServiceMethods.ByName("UpdateSession")),
+		connect.WithHandlerOptions(opts...),
+	)
+	agentServiceDeleteSessionHandler := connect.NewUnaryHandler(
+		AgentServiceDeleteSessionProcedure,
+		svc.DeleteSession,
+		connect.WithSchema(agentServiceMethods.ByName("DeleteSession")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/mtg.v1.AgentService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case AgentServiceChatProcedure:
 			agentServiceChatHandler.ServeHTTP(w, r)
 		case AgentServiceGetSessionProcedure:
 			agentServiceGetSessionHandler.ServeHTTP(w, r)
+		case AgentServiceListSessionsProcedure:
+			agentServiceListSessionsHandler.ServeHTTP(w, r)
+		case AgentServiceUpdateSessionProcedure:
+			agentServiceUpdateSessionHandler.ServeHTTP(w, r)
+		case AgentServiceDeleteSessionProcedure:
+			agentServiceDeleteSessionHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -135,4 +220,16 @@ func (UnimplementedAgentServiceHandler) Chat(context.Context, *connect.Request[v
 
 func (UnimplementedAgentServiceHandler) GetSession(context.Context, *connect.Request[v1.GetSessionRequest]) (*connect.Response[v1.GetSessionResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("mtg.v1.AgentService.GetSession is not implemented"))
+}
+
+func (UnimplementedAgentServiceHandler) ListSessions(context.Context, *connect.Request[v1.ListSessionsRequest]) (*connect.Response[v1.ListSessionsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("mtg.v1.AgentService.ListSessions is not implemented"))
+}
+
+func (UnimplementedAgentServiceHandler) UpdateSession(context.Context, *connect.Request[v1.UpdateSessionRequest]) (*connect.Response[v1.UpdateSessionResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("mtg.v1.AgentService.UpdateSession is not implemented"))
+}
+
+func (UnimplementedAgentServiceHandler) DeleteSession(context.Context, *connect.Request[v1.DeleteSessionRequest]) (*connect.Response[v1.DeleteSessionResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("mtg.v1.AgentService.DeleteSession is not implemented"))
 }

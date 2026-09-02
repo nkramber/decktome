@@ -2,11 +2,13 @@
 // @generated from file mtg/v1/agent_service.proto (package mtg.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { Timestamp } from "@bufbuild/protobuf/wkt";
+import { file_google_protobuf_timestamp } from "@bufbuild/protobuf/wkt";
 import type { Deck } from "./deck_pb";
 import { file_mtg_v1_deck } from "./deck_pb";
-import type { Answer, PoolRule, Question, Session, Slots, Usage } from "./session_pb";
+import type { Answer, PoolRule, Question, Session, SessionStatus, Slots, Usage } from "./session_pb";
 import { file_mtg_v1_session } from "./session_pb";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -14,7 +16,191 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file mtg/v1/agent_service.proto.
  */
 export const file_mtg_v1_agent_service: GenFile = /*@__PURE__*/
-  fileDesc("ChptdGcvdjEvYWdlbnRfc2VydmljZS5wcm90bxIGbXRnLnYxIrIBCgtDaGF0UmVxdWVzdBISCgpzZXNzaW9uX2lkGAEgASgJEhUKDWNvbGxlY3Rpb25faWQYAiABKAkSDwoHbWVzc2FnZRgDIAEoCRIfCgdhbnN3ZXJzGAQgAygLMg4ubXRnLnYxLkFuc3dlchIjCglwb29sX3J1bGUYByABKA4yEC5tdGcudjEuUG9vbFJ1bGVKBAgFEAZKBAgGEAdSBHNlZWRSD2tlZXBfb3JhY2xlX2lkcyI+CgpBZ2VudEVycm9yEgwKBGNvZGUYASABKAkSDwoHbWVzc2FnZRgCIAEoCRIRCglyZXRyeWFibGUYAyABKAgimgIKDENoYXRSZXNwb25zZRIZCg9zZXNzaW9uX3N0YXJ0ZWQYASABKAlIABIUCgp0ZXh0X2RlbHRhGAIgASgJSAASJAoIcXVlc3Rpb24YAyABKAsyEC5tdGcudjEuUXVlc3Rpb25IABIeCgVzbG90cxgEIAEoCzINLm10Zy52MS5TbG90c0gAEhAKBnN0YXR1cxgFIAEoCUgAEhwKBGRlY2sYBiABKAsyDC5tdGcudjEuRGVja0gAEhMKBWVycm9yGAcgASgJQgIYAUgAEiUKB2ZhaWx1cmUYCCABKAsyEi5tdGcudjEuQWdlbnRFcnJvckgAEh4KBXVzYWdlGAkgASgLMg0ubXRnLnYxLlVzYWdlSABCBwoFZXZlbnQiJwoRR2V0U2Vzc2lvblJlcXVlc3QSEgoKc2Vzc2lvbl9pZBgBIAEoCSI2ChJHZXRTZXNzaW9uUmVzcG9uc2USIAoHc2Vzc2lvbhgBIAEoCzIPLm10Zy52MS5TZXNzaW9uMowBCgxBZ2VudFNlcnZpY2USNQoEQ2hhdBITLm10Zy52MS5DaGF0UmVxdWVzdBoULm10Zy52MS5DaGF0UmVzcG9uc2UiADABEkUKCkdldFNlc3Npb24SGS5tdGcudjEuR2V0U2Vzc2lvblJlcXVlc3QaGi5tdGcudjEuR2V0U2Vzc2lvblJlc3BvbnNlIgBCOlo4Z2l0aHViLmNvbS9ua3JhbWJlci9tdGctZGVjay1idWlsZGVyL2dvL2dlbi9tdGcvdjE7bXRndjFiBnByb3RvMw", [file_mtg_v1_deck, file_mtg_v1_session]);
+  fileDesc("ChptdGcvdjEvYWdlbnRfc2VydmljZS5wcm90bxIGbXRnLnYxIjwKE0xpc3RTZXNzaW9uc1JlcXVlc3QSEQoJcGFnZV9zaXplGAEgASgFEhIKCnBhZ2VfdG9rZW4YAiABKAkiWQoUTGlzdFNlc3Npb25zUmVzcG9uc2USKAoIc2Vzc2lvbnMYASADKAsyFi5tdGcudjEuU2Vzc2lvblN1bW1hcnkSFwoPbmV4dF9wYWdlX3Rva2VuGAIgASgJIpECCg5TZXNzaW9uU3VtbWFyeRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEhUKDWZpcnN0X21lc3NhZ2UYAyABKAkSFQoNY29sbGVjdGlvbl9pZBgEIAEoCRIlCgZzdGF0dXMYBSABKA4yFS5tdGcudjEuU2Vzc2lvblN0YXR1cxISCgpkZWNrX2NvdW50GAYgASgFEhwKBXVzYWdlGAcgASgLMg0ubXRnLnYxLlVzYWdlEi4KCmNyZWF0ZWRfYXQYCCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEi4KCnVwZGF0ZWRfYXQYCSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIjgKFFVwZGF0ZVNlc3Npb25SZXF1ZXN0EhIKCnNlc3Npb25faWQYASABKAkSDAoEbmFtZRgCIAEoCSJAChVVcGRhdGVTZXNzaW9uUmVzcG9uc2USJwoHc2Vzc2lvbhgBIAEoCzIWLm10Zy52MS5TZXNzaW9uU3VtbWFyeSIqChREZWxldGVTZXNzaW9uUmVxdWVzdBISCgpzZXNzaW9uX2lkGAEgASgJIhcKFURlbGV0ZVNlc3Npb25SZXNwb25zZSKyAQoLQ2hhdFJlcXVlc3QSEgoKc2Vzc2lvbl9pZBgBIAEoCRIVCg1jb2xsZWN0aW9uX2lkGAIgASgJEg8KB21lc3NhZ2UYAyABKAkSHwoHYW5zd2VycxgEIAMoCzIOLm10Zy52MS5BbnN3ZXISIwoJcG9vbF9ydWxlGAcgASgOMhAubXRnLnYxLlBvb2xSdWxlSgQIBRAGSgQIBhAHUgRzZWVkUg9rZWVwX29yYWNsZV9pZHMiPgoKQWdlbnRFcnJvchIMCgRjb2RlGAEgASgJEg8KB21lc3NhZ2UYAiABKAkSEQoJcmV0cnlhYmxlGAMgASgIIr8CCgxDaGF0UmVzcG9uc2USGQoPc2Vzc2lvbl9zdGFydGVkGAEgASgJSAASFAoKdGV4dF9kZWx0YRgCIAEoCUgAEiQKCHF1ZXN0aW9uGAMgASgLMhAubXRnLnYxLlF1ZXN0aW9uSAASHgoFc2xvdHMYBCABKAsyDS5tdGcudjEuU2xvdHNIABIQCgZzdGF0dXMYBSABKAlIABIcCgRkZWNrGAYgASgLMgwubXRnLnYxLkRlY2tIABITCgVlcnJvchgHIAEoCUICGAFIABIlCgdmYWlsdXJlGAggASgLMhIubXRnLnYxLkFnZW50RXJyb3JIABIeCgV1c2FnZRgJIAEoCzINLm10Zy52MS5Vc2FnZUgAEiMKBXBoYXNlGAogASgOMhIubXRnLnYxLkJ1aWxkUGhhc2VIAEIHCgVldmVudCInChFHZXRTZXNzaW9uUmVxdWVzdBISCgpzZXNzaW9uX2lkGAEgASgJIjYKEkdldFNlc3Npb25SZXNwb25zZRIgCgdzZXNzaW9uGAEgASgLMg8ubXRnLnYxLlNlc3Npb24qwgEKCkJ1aWxkUGhhc2USGwoXQlVJTERfUEhBU0VfVU5TUEVDSUZJRUQQABIXChNCVUlMRF9QSEFTRV9SRUFESU5HEAESGQoVQlVJTERfUEhBU0VfU0hPUlRMSVNUEAISGAoUQlVJTERfUEhBU0VfQlVJTERJTkcQAxIYChRCVUlMRF9QSEFTRV9DSEVDS0lORxAEEhkKFUJVSUxEX1BIQVNFX1JFUEFJUklORxAFEhQKEEJVSUxEX1BIQVNFX0RPTkUQBjL5AgoMQWdlbnRTZXJ2aWNlEjUKBENoYXQSEy5tdGcudjEuQ2hhdFJlcXVlc3QaFC5tdGcudjEuQ2hhdFJlc3BvbnNlIgAwARJFCgpHZXRTZXNzaW9uEhkubXRnLnYxLkdldFNlc3Npb25SZXF1ZXN0GhoubXRnLnYxLkdldFNlc3Npb25SZXNwb25zZSIAEksKDExpc3RTZXNzaW9ucxIbLm10Zy52MS5MaXN0U2Vzc2lvbnNSZXF1ZXN0GhwubXRnLnYxLkxpc3RTZXNzaW9uc1Jlc3BvbnNlIgASTgoNVXBkYXRlU2Vzc2lvbhIcLm10Zy52MS5VcGRhdGVTZXNzaW9uUmVxdWVzdBodLm10Zy52MS5VcGRhdGVTZXNzaW9uUmVzcG9uc2UiABJOCg1EZWxldGVTZXNzaW9uEhwubXRnLnYxLkRlbGV0ZVNlc3Npb25SZXF1ZXN0Gh0ubXRnLnYxLkRlbGV0ZVNlc3Npb25SZXNwb25zZSIAQjpaOGdpdGh1Yi5jb20vbmtyYW1iZXIvbXRnLWRlY2stYnVpbGRlci9nby9nZW4vbXRnL3YxO210Z3YxYgZwcm90bzM", [file_google_protobuf_timestamp, file_mtg_v1_deck, file_mtg_v1_session]);
+
+/**
+ * @generated from message mtg.v1.ListSessionsRequest
+ */
+export type ListSessionsRequest = Message<"mtg.v1.ListSessionsRequest"> & {
+  /**
+   * page_size caps the answer. Zero takes the default, and the server
+   * caps it.
+   *
+   * @generated from field: int32 page_size = 1;
+   */
+  pageSize: number;
+
+  /**
+   * @generated from field: string page_token = 2;
+   */
+  pageToken: string;
+};
+
+/**
+ * Describes the message mtg.v1.ListSessionsRequest.
+ * Use `create(ListSessionsRequestSchema)` to create a new message.
+ */
+export const ListSessionsRequestSchema: GenMessage<ListSessionsRequest> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_agent_service, 0);
+
+/**
+ * @generated from message mtg.v1.ListSessionsResponse
+ */
+export type ListSessionsResponse = Message<"mtg.v1.ListSessionsResponse"> & {
+  /**
+   * @generated from field: repeated mtg.v1.SessionSummary sessions = 1;
+   */
+  sessions: SessionSummary[];
+
+  /**
+   * @generated from field: string next_page_token = 2;
+   */
+  nextPageToken: string;
+};
+
+/**
+ * Describes the message mtg.v1.ListSessionsResponse.
+ * Use `create(ListSessionsResponseSchema)` to create a new message.
+ */
+export const ListSessionsResponseSchema: GenMessage<ListSessionsResponse> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_agent_service, 1);
+
+/**
+ * SessionSummary is one row of the sessions list: what a reader needs to
+ * find a conversation again, without its turns.
+ *
+ * @generated from message mtg.v1.SessionSummary
+ */
+export type SessionSummary = Message<"mtg.v1.SessionSummary"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * name is what the reader called it, or empty. The list then shows
+   * the first message.
+   *
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * first_message is the reader's first message, which names the request.
+   *
+   * @generated from field: string first_message = 3;
+   */
+  firstMessage: string;
+
+  /**
+   * @generated from field: string collection_id = 4;
+   */
+  collectionId: string;
+
+  /**
+   * @generated from field: mtg.v1.SessionStatus status = 5;
+   */
+  status: SessionStatus;
+
+  /**
+   * @generated from field: int32 deck_count = 6;
+   */
+  deckCount: number;
+
+  /**
+   * @generated from field: mtg.v1.Usage usage = 7;
+   */
+  usage?: Usage | undefined;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp created_at = 8;
+   */
+  createdAt?: Timestamp | undefined;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp updated_at = 9;
+   */
+  updatedAt?: Timestamp | undefined;
+};
+
+/**
+ * Describes the message mtg.v1.SessionSummary.
+ * Use `create(SessionSummarySchema)` to create a new message.
+ */
+export const SessionSummarySchema: GenMessage<SessionSummary> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_agent_service, 2);
+
+/**
+ * @generated from message mtg.v1.UpdateSessionRequest
+ */
+export type UpdateSessionRequest = Message<"mtg.v1.UpdateSessionRequest"> & {
+  /**
+   * @generated from field: string session_id = 1;
+   */
+  sessionId: string;
+
+  /**
+   * name is the new name. An empty name is an invalid argument, and a
+   * name takes at most 200 bytes, as a deck name does.
+   *
+   * @generated from field: string name = 2;
+   */
+  name: string;
+};
+
+/**
+ * Describes the message mtg.v1.UpdateSessionRequest.
+ * Use `create(UpdateSessionRequestSchema)` to create a new message.
+ */
+export const UpdateSessionRequestSchema: GenMessage<UpdateSessionRequest> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_agent_service, 3);
+
+/**
+ * @generated from message mtg.v1.UpdateSessionResponse
+ */
+export type UpdateSessionResponse = Message<"mtg.v1.UpdateSessionResponse"> & {
+  /**
+   * @generated from field: mtg.v1.SessionSummary session = 1;
+   */
+  session?: SessionSummary | undefined;
+};
+
+/**
+ * Describes the message mtg.v1.UpdateSessionResponse.
+ * Use `create(UpdateSessionResponseSchema)` to create a new message.
+ */
+export const UpdateSessionResponseSchema: GenMessage<UpdateSessionResponse> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_agent_service, 4);
+
+/**
+ * @generated from message mtg.v1.DeleteSessionRequest
+ */
+export type DeleteSessionRequest = Message<"mtg.v1.DeleteSessionRequest"> & {
+  /**
+   * @generated from field: string session_id = 1;
+   */
+  sessionId: string;
+};
+
+/**
+ * Describes the message mtg.v1.DeleteSessionRequest.
+ * Use `create(DeleteSessionRequestSchema)` to create a new message.
+ */
+export const DeleteSessionRequestSchema: GenMessage<DeleteSessionRequest> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_agent_service, 5);
+
+/**
+ * @generated from message mtg.v1.DeleteSessionResponse
+ */
+export type DeleteSessionResponse = Message<"mtg.v1.DeleteSessionResponse"> & {
+};
+
+/**
+ * Describes the message mtg.v1.DeleteSessionResponse.
+ * Use `create(DeleteSessionResponseSchema)` to create a new message.
+ */
+export const DeleteSessionResponseSchema: GenMessage<DeleteSessionResponse> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_agent_service, 6);
 
 /**
  * @generated from message mtg.v1.ChatRequest
@@ -60,7 +246,7 @@ export type ChatRequest = Message<"mtg.v1.ChatRequest"> & {
  * Use `create(ChatRequestSchema)` to create a new message.
  */
 export const ChatRequestSchema: GenMessage<ChatRequest> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_agent_service, 0);
+  messageDesc(file_mtg_v1_agent_service, 7);
 
 /**
  * AgentError is a failure the UI can act on.
@@ -93,7 +279,7 @@ export type AgentError = Message<"mtg.v1.AgentError"> & {
  * Use `create(AgentErrorSchema)` to create a new message.
  */
 export const AgentErrorSchema: GenMessage<AgentError> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_agent_service, 1);
+  messageDesc(file_mtg_v1_agent_service, 8);
 
 /**
  * ChatResponse is one streamed step of the agent's turn.
@@ -177,6 +363,16 @@ export type ChatResponse = Message<"mtg.v1.ChatResponse"> & {
      */
     value: Usage;
     case: "usage";
+  } | {
+    /**
+     * phase says where the turn stands. It is additive beside status:
+     * the status line carries the words, and the phase carries the step
+     * the stepper lights (roadmap PR-19).
+     *
+     * @generated from field: mtg.v1.BuildPhase phase = 10;
+     */
+    value: BuildPhase;
+    case: "phase";
   } | { case: undefined; value?: undefined };
 };
 
@@ -185,7 +381,7 @@ export type ChatResponse = Message<"mtg.v1.ChatResponse"> & {
  * Use `create(ChatResponseSchema)` to create a new message.
  */
 export const ChatResponseSchema: GenMessage<ChatResponse> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_agent_service, 2);
+  messageDesc(file_mtg_v1_agent_service, 9);
 
 /**
  * @generated from message mtg.v1.GetSessionRequest
@@ -202,7 +398,7 @@ export type GetSessionRequest = Message<"mtg.v1.GetSessionRequest"> & {
  * Use `create(GetSessionRequestSchema)` to create a new message.
  */
 export const GetSessionRequestSchema: GenMessage<GetSessionRequest> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_agent_service, 3);
+  messageDesc(file_mtg_v1_agent_service, 10);
 
 /**
  * @generated from message mtg.v1.GetSessionResponse
@@ -219,7 +415,68 @@ export type GetSessionResponse = Message<"mtg.v1.GetSessionResponse"> & {
  * Use `create(GetSessionResponseSchema)` to create a new message.
  */
 export const GetSessionResponseSchema: GenMessage<GetSessionResponse> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_agent_service, 4);
+  messageDesc(file_mtg_v1_agent_service, 11);
+
+/**
+ * BuildPhase names where a turn stands (roadmap PR-19). The stepper of
+ * the chat reads it beside the status lines.
+ *
+ * @generated from enum mtg.v1.BuildPhase
+ */
+export enum BuildPhase {
+  /**
+   * @generated from enum value: BUILD_PHASE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * BUILD_PHASE_READING: the classifier reads the request.
+   *
+   * @generated from enum value: BUILD_PHASE_READING = 1;
+   */
+  READING = 1,
+
+  /**
+   * BUILD_PHASE_SHORTLIST: the candidate list is built.
+   *
+   * @generated from enum value: BUILD_PHASE_SHORTLIST = 2;
+   */
+  SHORTLIST = 2,
+
+  /**
+   * BUILD_PHASE_BUILDING: the generator writes the deck.
+   *
+   * @generated from enum value: BUILD_PHASE_BUILDING = 3;
+   */
+  BUILDING = 3,
+
+  /**
+   * BUILD_PHASE_CHECKING: the rules engine checks the deck.
+   *
+   * @generated from enum value: BUILD_PHASE_CHECKING = 4;
+   */
+  CHECKING = 4,
+
+  /**
+   * BUILD_PHASE_REPAIRING: the repair turn runs.
+   *
+   * @generated from enum value: BUILD_PHASE_REPAIRING = 5;
+   */
+  REPAIRING = 5,
+
+  /**
+   * BUILD_PHASE_DONE: the turn ended, with or without a deck.
+   *
+   * @generated from enum value: BUILD_PHASE_DONE = 6;
+   */
+  DONE = 6,
+}
+
+/**
+ * Describes the enum mtg.v1.BuildPhase.
+ */
+export const BuildPhaseSchema: GenEnum<BuildPhase> = /*@__PURE__*/
+  enumDesc(file_mtg_v1_agent_service, 0);
 
 /**
  * AgentService is the deck-building conversation (roadmap PR-7, PR-8).
@@ -244,6 +501,38 @@ export const AgentService: GenService<{
     methodKind: "unary";
     input: typeof GetSessionRequestSchema;
     output: typeof GetSessionResponseSchema;
+  },
+  /**
+   * ListSessions lists the reader's conversations, newest first, without
+   * their turns (roadmap PR-19).
+   *
+   * @generated from rpc mtg.v1.AgentService.ListSessions
+   */
+  listSessions: {
+    methodKind: "unary";
+    input: typeof ListSessionsRequestSchema;
+    output: typeof ListSessionsResponseSchema;
+  },
+  /**
+   * UpdateSession writes the name (roadmap PR-19).
+   *
+   * @generated from rpc mtg.v1.AgentService.UpdateSession
+   */
+  updateSession: {
+    methodKind: "unary";
+    input: typeof UpdateSessionRequestSchema;
+    output: typeof UpdateSessionResponseSchema;
+  },
+  /**
+   * DeleteSession removes a conversation for good. The decks it built
+   * stay (roadmap PR-19).
+   *
+   * @generated from rpc mtg.v1.AgentService.DeleteSession
+   */
+  deleteSession: {
+    methodKind: "unary";
+    input: typeof DeleteSessionRequestSchema;
+    output: typeof DeleteSessionResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_mtg_v1_agent_service, 0);

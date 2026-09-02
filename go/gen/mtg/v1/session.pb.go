@@ -265,7 +265,10 @@ type Session struct {
 	UpdatedAt    *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	Status       SessionStatus          `protobuf:"varint,8,opt,name=status,proto3,enum=mtg.v1.SessionStatus" json:"status,omitempty"`
 	// usage is the session's LLM token and cost total (M-1).
-	Usage         *Usage `protobuf:"bytes,9,opt,name=usage,proto3" json:"usage,omitempty"`
+	Usage *Usage `protobuf:"bytes,9,opt,name=usage,proto3" json:"usage,omitempty"`
+	// name is what the reader called the conversation (roadmap PR-19).
+	// Empty means no name, and the list shows the first message.
+	Name          string `protobuf:"bytes,10,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -361,6 +364,13 @@ func (x *Session) GetUsage() *Usage {
 		return x.Usage
 	}
 	return nil
+}
+
+func (x *Session) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
 }
 
 // Usage is the LLM spend of one session (M-1). A false priced means the
@@ -623,7 +633,11 @@ type Turn struct {
 	At        *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=at,proto3" json:"at,omitempty"`
 	// answers maps the user's replies to questions, when the client sent
 	// structured answers.
-	Answers       []*Answer `protobuf:"bytes,5,rep,name=answers,proto3" json:"answers,omitempty"`
+	Answers []*Answer `protobuf:"bytes,5,rep,name=answers,proto3" json:"answers,omitempty"`
+	// revision_brief is the brief the revise role returned for this turn,
+	// as the JSON it wrote, so a wrong revision is readable after the
+	// fact (D-449). Empty on a turn with no revise call.
+	RevisionBrief string `protobuf:"bytes,6,opt,name=revision_brief,json=revisionBrief,proto3" json:"revision_brief,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -691,6 +705,13 @@ func (x *Turn) GetAnswers() []*Answer {
 		return x.Answers
 	}
 	return nil
+}
+
+func (x *Turn) GetRevisionBrief() string {
+	if x != nil {
+		return x.RevisionBrief
+	}
+	return ""
 }
 
 // Answer is one reply to a Question.
@@ -909,7 +930,7 @@ var File_mtg_v1_session_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_session_proto_rawDesc = "" +
 	"\n" +
-	"\x14mtg/v1/session.proto\x12\x06mtg.v1\x1a\x13mtg/v1/format.proto\x1a\x11mtg/v1/card.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xec\x02\n" +
+	"\x14mtg/v1/session.proto\x12\x06mtg.v1\x1a\x13mtg/v1/format.proto\x1a\x11mtg/v1/card.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x80\x03\n" +
 	"\aSession\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12#\n" +
 	"\rcollection_id\x18\x02 \x01(\tR\fcollectionId\x12#\n" +
@@ -921,7 +942,9 @@ const file_mtg_v1_session_proto_rawDesc = "" +
 	"\n" +
 	"updated_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12-\n" +
 	"\x06status\x18\b \x01(\x0e2\x15.mtg.v1.SessionStatusR\x06status\x12#\n" +
-	"\x05usage\x18\t \x01(\v2\r.mtg.v1.UsageR\x05usage\"\xf3\x01\n" +
+	"\x05usage\x18\t \x01(\v2\r.mtg.v1.UsageR\x05usage\x12\x12\n" +
+	"\x04name\x18\n" +
+	" \x01(\tR\x04name\"\xf3\x01\n" +
 	"\x05Usage\x12\x14\n" +
 	"\x05calls\x18\x01 \x01(\x05R\x05calls\x12!\n" +
 	"\finput_tokens\x18\x02 \x01(\x03R\vinputTokens\x12.\n" +
@@ -950,13 +973,14 @@ const file_mtg_v1_session_proto_rawDesc = "" +
 	"\x0fSlotStatesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12'\n" +
 	"\x05value\x18\x02 \x01(\x0e2\x11.mtg.v1.SlotStateR\x05value:\x028\x01J\x04\b\t\x10\n" +
-	"R\fplan_variant\"\xd4\x01\n" +
+	"R\fplan_variant\"\xfb\x01\n" +
 	"\x04Turn\x12!\n" +
 	"\fuser_message\x18\x01 \x01(\tR\vuserMessage\x12#\n" +
 	"\ragent_message\x18\x02 \x01(\tR\fagentMessage\x12.\n" +
 	"\tquestions\x18\x03 \x03(\v2\x10.mtg.v1.QuestionR\tquestions\x12*\n" +
 	"\x02at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x02at\x12(\n" +
-	"\aanswers\x18\x05 \x03(\v2\x0e.mtg.v1.AnswerR\aanswers\"\x92\x01\n" +
+	"\aanswers\x18\x05 \x03(\v2\x0e.mtg.v1.AnswerR\aanswers\x12%\n" +
+	"\x0erevision_brief\x18\x06 \x01(\tR\rrevisionBrief\"\x92\x01\n" +
 	"\x06Answer\x12\x1f\n" +
 	"\vquestion_id\x18\x01 \x01(\tR\n" +
 	"questionId\x12&\n" +

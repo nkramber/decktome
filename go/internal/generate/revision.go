@@ -13,10 +13,15 @@ import (
 // card that left are blocks, like a locked card that is missing (D-242):
 // the deck answers the user's own instruction with silence otherwise. A
 // card over the mana cap warns and buys the repair turn, like a budget.
+//
+// A land swap the deck did not make is a block too (D-448). The user
+// asked for a number of basic lands replaced, and a deck that kept them
+// answered the ask with a shrug.
 const (
 	CodeRevisionRemovedPresent = "revision_removed_present"
 	CodeRevisionKeptMissing    = "revision_kept_missing"
 	CodeRevisionOverManaValue  = "revision_over_mana_value"
+	CodeRevisionLandsKept      = "revision_lands_kept"
 )
 
 // CheckRevision reads the brief against the deck the model returned. The
@@ -56,6 +61,14 @@ func CheckRevision(deck *mtgv1.Deck, r *Revision, cards rules.CardSource) []*mtg
 	if len(gone) > 0 {
 		out = append(out, &mtgv1.Finding{Code: CodeRevisionKeptMissing, Severity: mtgv1.Severity_SEVERITY_BLOCK,
 			Message: fmt.Sprintf("the deck does not hold %s, which you asked to keep", strings.Join(gone, ", "))})
+	}
+	if r.SwapBasics > 0 && cards != nil {
+		before := nonbasicLands(r.Base, cards)
+		after := nonbasicLands(deck.GetCards(), cards)
+		if rise := after - before; rise < r.SwapBasics {
+			out = append(out, &mtgv1.Finding{Code: CodeRevisionLandsKept, Severity: mtgv1.Severity_SEVERITY_BLOCK,
+				Message: fmt.Sprintf("the deck holds %d more nonbasic lands than before, and the change asked for %d basic lands replaced", rise, r.SwapBasics)})
+		}
 	}
 	if r.MaxManaValue > 0 && cards != nil {
 		var over []string
@@ -105,6 +118,47 @@ func AllowedByRevision(r *Revision, card *mtgv1.Card) bool {
 		}
 	}
 	return false
+}
+
+// nonbasicLands sums the copies of every nonbasic land in a card list.
+// A card the source does not know counts as no land.
+func nonbasicLands(list []*mtgv1.DeckCard, cards rules.CardSource) int {
+	n := 0
+	for _, dc := range list {
+		c, ok := cards.ByOracleID(dc.GetOracleId())
+		if ok && isLand(c) && !candidates.IsBasicLand(c) {
+			n += int(dc.GetCount())
+		}
+	}
+	return n
+}
+
+// FitSwapBasics lowers the swap count to what the deck and the pool can
+// give: the basic lands the base deck holds, and the nonbasic lands the
+// pool offers that the base deck does not hold yet. The check of
+// CheckRevision holds the deck to the fitted count, so the model is
+// never blocked for a land it can not name (D-448). It returns the
+// fitted count.
+func FitSwapBasics(r *Revision, pool *Pool) int {
+	if r == nil || r.SwapBasics <= 0 || pool == nil {
+		return 0
+	}
+	basics, held := 0, map[string]bool{}
+	for _, dc := range r.Base {
+		if c, ok := pool.ByOracleID(dc.GetOracleId()); ok && candidates.IsBasicLand(c) {
+			basics += int(dc.GetCount())
+		}
+		held[dc.GetOracleId()] = true
+	}
+	offered := 0
+	for _, name := range pool.Names() {
+		c, ok := pool.Card(name)
+		if ok && isLand(c) && !candidates.IsBasicLand(c) && !held[c.GetOracleId()] {
+			offered++
+		}
+	}
+	r.SwapBasics = min(r.SwapBasics, basics, offered)
+	return r.SwapBasics
 }
 
 func isLand(c *mtgv1.Card) bool {

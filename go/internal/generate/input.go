@@ -105,6 +105,13 @@ func (b *Builder) input(req Request, misses []Miss, findings []*mtgv1.Finding) s
 		if r.MaxManaValue > 0 {
 			fmt.Fprintf(&s, "- No nonland card above mana value %g. The shortlist holds none.\n", r.MaxManaValue)
 		}
+		if r.SwapBasics > 0 {
+			fmt.Fprintf(&s, "- Replace at least %d basic lands with nonbasic lands from the shortlist", r.SwapBasics)
+			if k := strings.TrimSpace(r.LandKinds); k != "" {
+				fmt.Fprintf(&s, ": %s", strings.TrimRight(k, "."))
+			}
+			s.WriteString(". Keep the land total the same. Count the nonbasic lands you add before you answer: the number is a floor and not a ceiling.\n")
+		}
 	}
 	// An upgrade keeps the precon's own composition. The generic job
 	// targets prescribe the whole deck, and the share demands most of
