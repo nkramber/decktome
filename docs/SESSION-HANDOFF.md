@@ -348,15 +348,14 @@ The chat ran a turn with no card index before D-405. The commander question then
 
 1. The owner restarts `make dev`, so the API is the binary of `nits-and-fixes`. Then the owner reads the collection screen, the binder, and the upload dialog in the browser.
 2. The owner commits `nits-and-fixes` and opens its PR.
-3. One PR-18 gate line is open. Only the owner can close it: 60 frames a second on the real 2,657-row export, on a production build.
-4. Then PR-19 to PR-23 in order, one gate each. Before PR-22, ask OQ-45 and OQ-46.
-5. After Phase 3B: PR-15, then PR-14 (the deck quality model) and PR-24. Ask OQ-49 before PR-14.
+3. Then PR-19 to PR-23 in order, one gate each. Before PR-22, ask OQ-45 and OQ-46.
+4. After Phase 3B: PR-15, then PR-14 (the deck quality model) and PR-24. Ask OQ-49 before PR-14.
 
 Deck gate run 10 is done. It ran on 2026-08-31, and `CLAUDE.md` recorded it while this file still asked for it. A session that reads only the prose here spends $1.09 on a run that exists. Read `docs/reference/` before you plan a paid run.
 
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 
-Seven owner rows wait in `docs/owner-questions.md`: OQ-23, OQ-28 to OQ-31, OQ-37, and OQ-39. OQ-20, OQ-44, OQ-45, and OQ-46 wait in `docs/open-questions.md`. The second OQ-47 closed on 2026-08-31 (D-376).
+No owner row waits in `docs/owner-questions.md`, and no row waits in `docs/open-questions.md`. The owner answered every open question on 2026-09-01 (D-419 to D-431). The judge role runs on Opus 5 now (D-430), and `make llm-defaults-check` reports the change on the next run.
 
 ## The dead conversation of 2026-08-31 (D-351 to D-354)
 

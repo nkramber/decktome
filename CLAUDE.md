@@ -58,7 +58,7 @@ Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
 
 `make questions-gate` calls the real providers. One run of the 104 conversations (30 gate and 74 probe) costs $0.152 to $0.165 and takes about 20 minutes, measured on 2026-08-26. Ask the owner before every run, and write to a new `GATE_OUT` file: a rerun must never overwrite a scored document (D-65).
 
-`make questions-eval` scores a gate run with the eval role. One 104-conversation run costs $0.092 to $0.104 (runs 14 to 25) and takes about 13 minutes. `make eval-calibrate` measures the eval model against `claude-sonnet-5` for $0.25 to $0.30.
+`make questions-eval` scores a gate run with the eval role. One 104-conversation run costs $0.092 to $0.104 (runs 14 to 25) and takes about 13 minutes. `make eval-calibrate` measures the eval model against `claude-opus-5` (D-428). It cost $0.25 to $0.30 on Sonnet 5, and Opus 5 costs about 1.7 times that.
 
 `make autotune` is free. It prints the loop instructions and starts nothing. `scripts/autotune.sh` is the paid loop, and it refuses to start without `AUTOTUNE_ALLOW_UNATTENDED=1`. One iteration costs about $0.25 and takes 33 to 35 minutes, so a $3 budget buys about 12 iterations. Read `docs/reference/autotune-readme.md` and `docs/reference/autotune-design.md` first.
 
