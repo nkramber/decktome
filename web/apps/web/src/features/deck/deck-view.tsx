@@ -13,6 +13,7 @@ import {
   deckColors,
   diffDecks,
   formatLabel,
+  deckSize,
   groupByRole,
   manaCurve,
   powerLabel,
@@ -55,9 +56,9 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
   // is not a five-color deck. The commander's identity counts too.
   const colorsOfDeck = deckColors(deck.cards, byId, deck.commanderOracleIds);
   const sourceRows = colorLetters.filter((c) => (colorsOfDeck.size === 0 ? c.color === Color.C : colorsOfDeck.has(c.color)));
-  // The count is the main deck without the command zone, whether the
-  // commander sits in cards or not.
-  const total = main.reduce((n, c) => n + c.count, 0);
+  // The count is the main deck plus the command zone, so a Commander
+  // deck reads 100 (D-454).
+  const total = deckSize(main.reduce((n, c) => n + c.count, 0), commanderCount);
   const validation = deck.validation;
   // A not_owned warning repeats what the tile says under the card, and
   // an owned-first deck carries one per card to buy. The list drops them.
@@ -92,7 +93,6 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
           {formatLabel(deck.format?.id, deck.format?.houseRules ?? "")}
           {powerLabel(deck.power) && ` · ${powerLabel(deck.power)}`}
           {` · ${total} cards`}
-          {commanderCount > 0 && ` + ${commanderCount} commander${commanderCount > 1 ? "s" : ""}`}
           {deck.sideboard.length > 0 && ` · ${deck.sideboard.reduce((n, c) => n + c.count, 0)} sideboard`}
         </p>
         <p className="text-sm" data-testid="legality-line">
