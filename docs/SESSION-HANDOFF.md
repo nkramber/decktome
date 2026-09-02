@@ -313,6 +313,14 @@ CAUTION: the app holds no power signal for a commander. The bracket drops Game C
 
 CAUTION: `buf breaking` runs against `main`, and PR-18 merged before the review renamed two summary fields. D-412 reserves the merged numbers. Never rename a field of a merged PR in place, whatever the deployment state.
 
+## PR-14 is the deck quality model now (2026-09-01)
+
+The owner asked for a model of what makes a deck good, bad, and great, over Standard, Modern, and Commander at every quality. Five decisions settle it (D-413 to D-417), and the PR-14 entry of the roadmap holds the plan. `docs/reference/deck-quality-sources-2026-09-01.md` holds the verified facts.
+
+- An MTGO event page embeds every list and the standings in `window.MTGO.decklists.data`. A raw fetch reads it, and the fetch tool of a session does not, because the page renders on the client.
+- The owner declined Topdeck.gg, then added it the same day (D-417). cEDH standings and decklists come from its API. The app shows the credit line "Tournament data by TopDeck.gg". The key is a secret in `.env` and Secret Manager.
+- The database hosts its lists on Moxfield, and a fetch of the Moxfield terms answered 403. OQ-49 waits on the owner.
+
 ## The precon exclusion, decided (2026-09-01)
 
 The owner asked for a deck that uses no card of a precon they own, for any set. Three decisions settle the slice (D-407 to D-409), and it waits in Phase 4 as PR-24. `docs/reference/precon-data-2026-09-01.md` holds the verified facts. MTGJSON lists 3,013 deck products with a Scryfall id per card, the four Marvel Super Heroes Commander decks among them.
@@ -342,7 +350,7 @@ The chat ran a turn with no card index before D-405. The commander question then
 2. The owner commits `nits-and-fixes` and opens its PR.
 3. One PR-18 gate line is open. Only the owner can close it: 60 frames a second on the real 2,657-row export, on a production build.
 4. Then PR-19 to PR-23 in order, one gate each. Before PR-22, ask OQ-45 and OQ-46.
-5. After Phase 3B: PR-15, then PR-14 and PR-24.
+5. After Phase 3B: PR-15, then PR-14 (the deck quality model) and PR-24. Ask OQ-49 before PR-14.
 
 Deck gate run 10 is done. It ran on 2026-08-31, and `CLAUDE.md` recorded it while this file still asked for it. A session that reads only the prose here spends $1.09 on a run that exists. Read `docs/reference/` before you plan a paid run.
 

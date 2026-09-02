@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-01 correction pass 46 (Topdeck.gg joins the sources, D-417): the owner added the Topdeck.gg API and its credit line the same day. It amends D-415. cEDH standings and decklists come from the API. The app shows "Tournament data by TopDeck.gg" with a link. Changes: the system map, PR-14, guardrail 7 unchanged.
+2026-09-01 correction pass 45 (PR-14 becomes the deck quality model, D-413 to D-416): the owner asked for a model of what makes a deck good, bad, and great. It covers Standard, Modern, and Commander at every quality. PR-14 was a meta feed. It is a scorer now. It reads the lists that MTGO, MTGTop8, the cEDH database, and EDHREC publish. It labels them by placement, and it fits a weight per feature per format. The owner declined Topdeck.gg, then added it (D-417). The owner chose synthetic bad decks as the bottom of the ladder, and one PR. Changes: the system map, the cost model, F-30, PR-14, Phase 5, sequencing step 22.
 2026-09-01 correction pass 44 (three findings from the owner's reads, D-410 to D-412): the deck name carried the format twice. The commander offer for "the best deck you can" ranked on the words "you" and "can", which sit in the text of most cards. The pool now drops a generic text needle that more than a tenth of the cards hold. The words of a request are stop words. The merged PR-18 summary fields stay reserved, because the wire guard refused their rename. Changes: PR-6, PR-8, PR-18.
 2026-09-01 correction pass 43 (the precon exclusion, D-407 to D-409): a reader asks for a deck that uses no card of a precon they own, for any set. MTGJSON publishes every WotC deck product with a Scryfall id per card, 3,013 products on 2026-09-01. The owner chose the Commander decks and the 60-card constructed decks. Ownership reads the printings and their counts, the surplus copies stay usable, and the slice sits in Phase 4 beside PR-14. Changes: Phase 4 gains PR-24, sequencing step 22.
 2026-09-01 correction pass 42 (the review of PR-18, D-398 to D-404): PR-17 merged (#49), PR-17B merged (#50), and PR-18 merged (#53). A review of PR-18 found three defects and four gaps. The binder filtered the loaded pages alone, so a search for a card past row 200 found nothing. A Replace kept an id whose hash moved on, so a later upload of the old file overwrote the replaced collection. Every upload over an active collection forced a replacement. The fixes ship on branch `nits-and-fixes`. The filter, the sort, and the search run on the server now. The summary lists every set and every type, and the upload dialog offers a choice. The chat refuses a turn with no card index (D-405). A decline of the format through the "You decide" control takes the corpus default, as a decline in words does (D-406). Changes: PR-17, PR-17B, PR-18, sequencing steps 19 and 20.
@@ -120,7 +122,7 @@ We sequence the program so that each layer is testable before the next one exist
 | `collections` service | Go | ManaBox import, ownership counts per Oracle ID | User CSV upload | Firestore `users/{uid}/collections/` | High - PII-adjacent, user data |
 | `rules` engine (library) | Go | Format rules, deck validation, bracket rules, color identity | `cards` | none | Total - the last gate before the user |
 | `agent` service | Go | Turn-based chat, question workflow, deck generation, LLM role layer | `cards`, `collections`, `rules`, `meta` | Firestore `users/{uid}/sessions/`, `decks/` | High - the product |
-| `meta` service | Go | Metagame snapshots per format | MTGO decklists, aggregators (D-5), EDHREC | Firestore `meta/`, GCS raw | Medium - advisory input to the agent |
+| `meta` service | Go | Deck quality model per format: the labeled lists, the fitted weights, the scorer (PR-14) | MTGO decklists, the Topdeck.gg API, MTGTop8, the cEDH database, EDHREC (D-5, D-417) | GCS raw pages and normalized lists, Firestore `meta/` for the weights | Medium - advisory input to the agent, and the code keeps the final say |
 | `worker` | Go | Scheduled jobs: Scryfall refresh, meta refresh, ban-list watch | Cloud Scheduler, Cloud Tasks | see above | Medium |
 | `web` (UI) | TypeScript, React, Vite | Chat, deck view with card art, collection upload, export, the deck library, the binder, the share page (Phase 3B) | Connect-RPC API | none | Medium |
 | `proto` | Protobuf | The one contract between Go and TypeScript | - | generated code, committed | High - a schema change is a cross-stack change |
@@ -138,7 +140,7 @@ Three structural facts drive the plan:
 
 - **LLM.** One deck-build session runs 2 to 4 question turns on the small model, at about 2k tokens each. It then runs 1 to 3 generation turns on the strong model, at about 15k input with the candidate card list and 3k output. Estimate: under $0.10 per session on 2026 list prices. Unknown until M-1 measures it. Prompt caching of the format rules and the candidate list cuts the input cost. The role layer must expose the provider's caching knob (D-1, D-21).
 - **Card data.** Scryfall bulk: 24.5 MB compressed per day for Oracle cards, 77.5 MB for all English printings. Free. Images hotlinked (D-6), zero storage. GCS: one snapshot per day, about 100 MB, cheap lifecycle to 30 days.
-- **Meta data.** Unknown. The source terms passed the legal check (D-5). MTGO decklists are official and free. The legal check allows aggregator use.
+- **Meta data.** The source terms passed the legal check (D-5). MTGO decklists are official and free, and one event page is about 330 KB. A year holds about 3,600 events, so the raw pages are about 1.2 GB, and the normalized lists are a few megabytes. A fit runs in seconds in Go and costs no LLM call.
 - **Firestore.** Per user: one collection doc set (PR-4 decided one gzip document per collection, about 500 KB for a 5,000-card binder, D-16), sessions, decks. Low.
 - **Cloud Run.** Two services plus a worker, scale to zero. Low until users exist.
 - **Eval.** Deterministic checks are free. Judge runs cost per deck. Cap per run as connector-syncer does ($5 cap in its bake-off).
@@ -157,6 +159,7 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-3 | **Scryfall API rate limits are hard.** 2 requests per second on `/cards/named`, `/cards/search`, `/cards/random`, `/cards/collection`. 10 per minute on `/cards/manifest`. 10 per second elsewhere (verified 2026-08-24). A 429 blocks for 30 seconds. Repeated overload gets a ban. Bulk files have no limit. | ⚠ binds PR-2: all card lookups go to the local snapshot. The live API is for single-card fallback only, behind a client-side limiter. |
 | F-4 | **Aggregator terms of use unknown.** MTGGoldfish, MTGTop8, Aetherhub, and EDHREC have no public API and their terms were unchecked. | ✅ 2026-08-23: the owner confirmed the legal check passed (D-5). All five sources may be used. PR-14 still starts with MTGO because it is the only structured source. |
 | F-5 | **Oracle tags are community data.** Scryfall Tagger tags are volunteer-made. Coverage is uneven. `lifegain` is rich (3,374 cards). Niche themes may have few tags. Weights are `median` style, not scores. | ⚠ binds PR-6: tags seed the candidate list. They never gate a card. Keywords and type lines are the second signal. The model is the third. |
+| F-30 | **No signal of deck quality exists.** The pool ranks on theme fit and EDHREC popularity, and the bracket drops Game Changers under bracket 3 and nothing else. A bracket 5 request got the three most popular legends whose text held "you" and "can" (session t8o1nGGquK6UdTQkfY3V, D-411, 2026-09-01). | 🔧 binds PR-14 (D-413). |
 | F-6 | **No Cloud Tasks emulator.** Local mode can not run real Cloud Tasks. | ✅ PR-0c (#3): a `Dispatcher` interface with a local in-process implementation. |
 | F-7 | **Docker absent on the dev machine.** | ✅ PR-0b (#2): Docker 29.7.2 installed. Native `make dev` does not need it. |
 | F-8 | **The mtgcommander.net banned-list page reads "last updated September 2024."** It does not show the 2026-02-09 changes. It is not a reliable source for the current list. | ✅ Scryfall `legalities.commander` is the source of truth. The page is for philosophy text only. |
@@ -802,9 +805,45 @@ One flow on `workflow_dispatch` only. It signs in over the emulator and uploads 
 
 ### Phase 4 - Meta and quality (gated on Phase 3B, D-316)
 
-**PR-14: Meta ingest, MTGO first.**
-A worker job pulls published MTGO decklists per format (official source, D-5). It computes archetype shares and the most-played cards per archetype for the last 30 days. Aggregator and EDHREC ingesters follow, in order of structure: MTGTop8, MTGGoldfish, Aetherhub, EDHREC (D-5, legal check passed). The meta snapshot is advisory input to PR-6 and PR-8 for competitive power levels only. Gate: the snapshot for Modern lists at least 10 archetypes with card lists.
-> *In plain English:* what wins right now. We start with the official tournament lists. We add other sites only after someone checks their rules.
+**PR-14: The deck quality model (D-413 to D-417).** 🔧 planned, one PR whole.
+The app holds no signal of what makes a deck good (F-30). The pool ranks on theme fit and popularity, and the bracket drops Game Changers under bracket 3 and nothing else. PR-14 builds a scorer that reads a deck and answers a quality tier and the named reasons. It covers Standard, Modern, and Commander, from bracket 1 to cEDH.
+
+The data is every published list the sources of D-5 hold, back to 2015.
+
+The MTGO event pages embed the lists and the standings. The worker reads each League and Challenge per day, with the placement of each player.
+
+The Topdeck.gg API gives the cEDH tournaments with each player's placement, wins, losses, draws, and win rate, and the decklists the organizers show (D-417). The app credits it with "Tournament data by TopDeck.gg" and a link, as it credits Scryfall (guardrail 7).
+
+MTGTop8 gives the events with placements for Standard, Modern, cEDH, and Duel Commander, and the archetype shares, through a page reader. The cEDH Decklist Database gives the competitive tiers and the commanders. EDHREC gives the deck count per commander and the average deck. The precon table of PR-24 gives the bracket 2 baseline (D-407). The worker stores the raw page in GCS, with a normalized list per format per month beside it. A new parse then needs no new fetch.
+
+The labels are the ladder of D-414: great, good, typical, baseline, and bad. A great list is a top-8 finish or a competitive-tier cEDH list. A good list is a league finish or the rest of a challenge. A typical list is the EDHREC average deck, and a baseline list is a precon.
+
+A bad list is synthetic. The engine takes a real list and breaks one axis at a time: the lands, the curve, the colors, the copies, or the synergy. Each defect then carries its own label.
+
+The features are what a person reads a deck by. Card quality is the inclusion rate of a card in the lists of its format and archetype, smoothed and weighted by placement. Synergy is the lift of a pair of cards in the great and good lists over chance. Shape is the curve, the land count, and the color sources against the pips. Roles are the counts of interaction, ramp, draw, and win conditions, and redundancy is how many cards fill each role.
+
+A commander carries its own signal: the top-cut share in cEDH events at bracket 5, and the deck count at a lower bracket.
+
+The model is one scorer per format, fitted in Go over the ladder by ordinal regression, with the weights stored beside the card snapshot. The scorer answers a tier and the three strongest signals in words, so the agent can say why. It runs on the deterministic side, and no prompt holds a weight. An LLM fine-tune on the same lists is a Phase 5 item, and the eval harness of PR-15 must justify it (D-413).
+
+The score lands in five places. The commander pool ranks a bracket 4 or 5 request by the commander's cEDH signal, which closes OQ-48. The shortlist takes card quality as a signal beside theme and popularity. The generate prompt names the archetype shapes of the format. The deck summary names the tier and the three reasons. The revision turn says so when a change lowers the tier.
+
+Contract, additive: `Deck.quality` with the tier, the score, and the reasons, and `CardService.GetCards` gains a quality field per card.
+
+Gate:
+
+- The scorer separates the ladder on a holdout of each format. A great list scores above a precon in 90 percent of the pairs, and a precon above a synthetic bad deck in 95 percent.
+- A bracket 5 request offers three commanders from the top cuts of the Topdeck.gg cEDH tournaments of the last 90 days.
+- The deck summary names the tier and three reasons for every golden deck. The judge of PR-15 agrees with the tier in 8 of 10.
+- M-6: the parse failure rate per source per week stays under 1 percent, measured over the first month of the worker.
+
+CAUTION: a page reader of MTGO or MTGTop8 breaks when the markup changes. The raw pages stay in GCS, so a fix re-parses and never re-fetches. M-6 reads the failure rate.
+
+CAUTION: the cEDH database hosts its lists on Moxfield, and the Moxfield terms are unverified (OQ-49). Until the answer comes, the database gives the tier and the commander alone, and the cards come from the Topdeck.gg API and MTGTop8's cEDH events.
+
+CAUTION: the Topdeck.gg key is a secret. It lives in `.env` locally and in Secret Manager on GCP, never in the repo. The worker refuses to start its Topdeck job without one.
+
+> *In plain English:* the app learns what a good deck looks like from tens of thousands of real decks and how they placed. It learns the bad side too, from decks we break on purpose. Every deck it builds then gets a grade and three reasons, and a request for a top-power deck gets top-power commanders.
 
 **PR-15: Eval harness.**
 Golden prompts with expected slot sets and expected validation outcomes. Deterministic checks are the gate (legality, ownership, size, curve, names). A judge role scores plan quality and usefulness on a fixed rubric. Long-format results table, corpus fingerprint per run (model, effort, snapshot date, prompt version), suffix rows for informational metrics, "observe-only is not pass". Tier 0 in CI ($0).
@@ -842,6 +881,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 
 - ~~Sample-hand and~~ goldfish simulator (D-20: later, not at launch). The sample hand left the lot on 2026-08-29 and sits in PR-20 (D-318). The goldfish simulator stays here.
 - Per-card explanations longer than one line (D-19 gives one line per card).
+- An LLM fine-tune on the labeled deck lists of PR-14 (D-413). The eval harness of PR-15 must show the scorer falls short first.
 - Non-English collections (D-23: English only for now).
 - Brawl, Oathbreaker, Pauper Commander, Duel Commander, Canadian Highlander.
 - Pioneer, Legacy, Vintage, and Pauper. The app built these until 2026-08-26, and D-155 removed them. The agent declines each one by name and offers no substitute.
@@ -872,7 +912,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 19. **Phase 3B** (D-316, D-317): PR-16 to PR-23 in the order of the phase list. Each gate holds before the next slice starts. PR-16 ✅ merged 2026-08-29 (#47). PR-16B ✅ merged 2026-08-29 (#48). PR-17 ✅ merged 2026-08-31 (#49). The paid re-baseline of D-302 ran on 2026-08-31.
 20. **PR-17B** the set filter (F-29, D-373 to D-383). ✅ merged 2026-09-01 (#50). **PR-18** ✅ merged 2026-09-01 (#53). The review fixes of PR-18 (D-398 to D-406) 🔧 built 2026-09-01 on branch `nits-and-fixes`. The owner reads them, then merges. Then PR-19.
 21. PR-15 eval harness. M-5 manual scoring runs on the first UI build (after PR-12).
-22. PR-14 meta and PR-24 precon exclusion (D-409), then I-1, I-2, I-3 on evidence.
+22. PR-14 the deck quality model (D-413 to D-416) and PR-24 precon exclusion (D-409), then I-1, I-2, I-3 on evidence.
 23. Phase 5 stays parked.
 
 ## 9. Open questions
@@ -886,3 +926,4 @@ See `docs/open-questions.md` for the full list with "ask when" dates. The ones t
 5. **OQ-45 the allowlist store.** D-314 allows one env var or one Firestore document. An env var needs a deploy per change, and a document needs an admin write path. PR-22 decides, and the owner confirms. Ask before PR-22.
 6. **OQ-46 the spend cap number.** PR-22 sets a per-user monthly cap from `Usage`. The number is the owner's. Ask before PR-22.
 7. **OQ-47** answered 2026-08-29 (D-324). The deck grid filters by power, and the filter runs on the server. A second question took the same id. D-376 answered it on 2026-08-31: a set name resolves to a whole set family.
+8. **OQ-49 the Moxfield terms.** The cEDH database hosts its lists on Moxfield, and the terms are unverified. Ask before PR-14.
