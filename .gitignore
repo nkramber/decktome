@@ -31,6 +31,7 @@ coverage/
 /go/candidates-review
 /go/chat-probe
 /go/deck-gate
+/go/bracket-gate
 /go/revise-gate
 /go/generate-probe
 /go/m5-report

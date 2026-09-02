@@ -18,7 +18,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file mtg/v1/deck.proto.
  */
 export const file_mtg_v1_deck: GenFile = /*@__PURE__*/
-  fileDesc("ChFtdGcvdjEvZGVjay5wcm90bxIGbXRnLnYxIskECgREZWNrEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSHgoGZm9ybWF0GAMgASgLMg4ubXRnLnYxLkZvcm1hdBIhCgVwb3dlchgEIAEoCzISLm10Zy52MS5Qb3dlckxldmVsEg8KB3N1bW1hcnkYBSABKAkSHAoUY29tbWFuZGVyX29yYWNsZV9pZHMYBiADKAkSHwoFY2FyZHMYByADKAsyEC5tdGcudjEuRGVja0NhcmQSLAoKdmFsaWRhdGlvbhgIIAEoCzIYLm10Zy52MS5WYWxpZGF0aW9uUmVzdWx0EhYKDmxlZ2FsaXR5X2FzX29mGAkgASgJEhIKCnNlc3Npb25faWQYCyABKAkSLgoKY3JlYXRlZF9hdBgMIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASDQoFc3RhbGUYDSABKAgSGAoQc3RhbGVfb3JhY2xlX2lkcxgOIAMoCRIjCglzaWRlYm9hcmQYDyADKAsyEC5tdGcudjEuRGVja0NhcmQSGwoTY29tcGFuaW9uX29yYWNsZV9pZBgQIAEoCRIiCgh1cGdyYWRlcxgRIAMoCzIQLm10Zy52MS5EZWNrQ2FyZBIUCgxidXlfY29zdF91c2QYEiABKAESHAoUcmV2aXNlZF9mcm9tX2RlY2tfaWQYEyABKAkSFQoNcmV2aXNpb25fbm90ZRgUIAEoCRIQCghmYXZvcml0ZRgVIAEoCBISCgpjYXJkX2NvdW50GBYgASgFSgQIChALUgRzZWVkIusBCghEZWNrQ2FyZBIRCglvcmFjbGVfaWQYASABKAkSDAoEbmFtZRgCIAEoCRINCgVjb3VudBgDIAEoBRIeCgRyb2xlGAQgASgOMhAubXRnLnYxLkNhcmRSb2xlEg4KBnJlYXNvbhgFIAEoCRINCgVvd25lZBgGIAEoCBITCgtvd25lZF9jb3VudBgHIAEoBRIRCglwcmljZV91c2QYCCABKAESKAoOb3duZWRfcHJpbnRpbmcYCSABKAsyEC5tdGcudjEuUHJpbnRpbmcSHgoWb3V0c2lkZV9yZXF1ZXN0ZWRfc2V0cxgKIAEoCCKkAQoQVmFsaWRhdGlvblJlc3VsdBIhCghmaW5kaW5ncxgBIAMoCzIPLm10Zy52MS5GaW5kaW5nEg4KBnBhc3NlZBgCIAEoCBIWCg5sZWdhbGl0eV9hc19vZhgDIAEoCRIjCglwb29sX3J1bGUYBCABKA4yEC5tdGcudjEuUG9vbFJ1bGUSIAoGZm9ybWF0GAUgASgOMhAubXRnLnYxLkZvcm1hdElkIl8KB0ZpbmRpbmcSDAoEY29kZRgBIAEoCRIiCghzZXZlcml0eRgCIAEoDjIQLm10Zy52MS5TZXZlcml0eRIPCgdtZXNzYWdlGAMgASgJEhEKCW9yYWNsZV9pZBgEIAEoCSr/AQoIQ2FyZFJvbGUSGQoVQ0FSRF9ST0xFX1VOU1BFQ0lGSUVEEAASEgoOQ0FSRF9ST0xFX0xBTkQQARISCg5DQVJEX1JPTEVfUkFNUBACEhIKDkNBUkRfUk9MRV9EUkFXEAMSFQoRQ0FSRF9ST0xFX1JFTU9WQUwQBBISCg5DQVJEX1JPTEVfV0lQRRAFEhQKEENBUkRfUk9MRV9USFJFQVQQBhIZChVDQVJEX1JPTEVfSU5URVJBQ1RJT04QBxIVChFDQVJEX1JPTEVfU1lORVJHWRAIEhQKEENBUkRfUk9MRV9XSU5DT04QCRITCg9DQVJEX1JPTEVfT1RIRVIQCipeCghTZXZlcml0eRIYChRTRVZFUklUWV9VTlNQRUNJRklFRBAAEhIKDlNFVkVSSVRZX0JMT0NLEAESEQoNU0VWRVJJVFlfV0FSThACEhEKDVNFVkVSSVRZX0lORk8QA0I6WjhnaXRodWIuY29tL25rcmFtYmVyL210Zy1kZWNrLWJ1aWxkZXIvZ28vZ2VuL210Zy92MTttdGd2MWIGcHJvdG8z", [file_mtg_v1_card, file_mtg_v1_format, file_mtg_v1_session, file_google_protobuf_timestamp]);
+  fileDesc("ChFtdGcvdjEvZGVjay5wcm90bxIGbXRnLnYxIu8ECgREZWNrEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSHgoGZm9ybWF0GAMgASgLMg4ubXRnLnYxLkZvcm1hdBIhCgVwb3dlchgEIAEoCzISLm10Zy52MS5Qb3dlckxldmVsEg8KB3N1bW1hcnkYBSABKAkSHAoUY29tbWFuZGVyX29yYWNsZV9pZHMYBiADKAkSHwoFY2FyZHMYByADKAsyEC5tdGcudjEuRGVja0NhcmQSLAoKdmFsaWRhdGlvbhgIIAEoCzIYLm10Zy52MS5WYWxpZGF0aW9uUmVzdWx0EhYKDmxlZ2FsaXR5X2FzX29mGAkgASgJEhIKCnNlc3Npb25faWQYCyABKAkSLgoKY3JlYXRlZF9hdBgMIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASDQoFc3RhbGUYDSABKAgSGAoQc3RhbGVfb3JhY2xlX2lkcxgOIAMoCRIjCglzaWRlYm9hcmQYDyADKAsyEC5tdGcudjEuRGVja0NhcmQSGwoTY29tcGFuaW9uX29yYWNsZV9pZBgQIAEoCRIiCgh1cGdyYWRlcxgRIAMoCzIQLm10Zy52MS5EZWNrQ2FyZBIUCgxidXlfY29zdF91c2QYEiABKAESHAoUcmV2aXNlZF9mcm9tX2RlY2tfaWQYEyABKAkSFQoNcmV2aXNpb25fbm90ZRgUIAEoCRIQCghmYXZvcml0ZRgVIAEoCBISCgpjYXJkX2NvdW50GBYgASgFEiQKB3Byb2ZpbGUYFyABKAsyEy5tdGcudjEuRGVja1Byb2ZpbGVKBAgKEAtSBHNlZWQirgEKC0RlY2tQcm9maWxlEg8KB2JyYWNrZXQYASABKAUSKAoIZmVhdHVyZXMYAiADKAsyFi5tdGcudjEuUHJvZmlsZUZlYXR1cmUSIgoIZ29sZGZpc2gYAyABKAsyEC5tdGcudjEuR29sZGZpc2gSJQoHY29udGVudBgEIAEoCzIULm10Zy52MS5Db250ZW50Q2hlY2sSGQoRYmFuZHNfdmVyaWZpZWRfYXQYBSABKAkieQoOUHJvZmlsZUZlYXR1cmUSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgBEgsKA2xvdxgDIAEoARIMCgRoaWdoGAQgASgBEhAKCGhhc19oaWdoGAUgASgIEhAKCG9mZl9iYW5kGAYgASgIEgwKBG5vdGUYByABKAkiagoIR29sZGZpc2gSDQoFaGFuZHMYASABKAUSFgoOY29tbWFuZGVyX3R1cm4YAiABKAESFgoObWFuYV90dXJuX2ZvdXIYAyABKAESHwoXc2hhcmVfdHdvX3RvX2ZvdXJfbGFuZHMYBCABKAEiqgEKDENvbnRlbnRDaGVjaxIPCgdjaGVja2VkGAEgASgIEg0KBWVycm9yGAIgASgJEhIKCnNvdXJjZV90YWcYAyABKAkSFQoNZ2FtZV9jaGFuZ2VycxgEIAMoCRIYChBtYXNzX2xhbmRfZGVuaWFsGAUgAygJEhMKC2V4dHJhX3R1cm5zGAYgAygJEiAKBmNvbWJvcxgHIAMoCzIQLm10Zy52MS5Db21ib0hpdCJ0CghDb21ib0hpdBIKCgJpZBgBIAEoCRINCgVjYXJkcxgCIAMoCRIQCgh0d29fY2FyZBgDIAEoCBINCgVzcGVlZBgEIAEoBRISCgpleHRyYV90dXJuGAUgASgIEhgKEG1hc3NfbGFuZF9kZW5pYWwYBiABKAgi6wEKCERlY2tDYXJkEhEKCW9yYWNsZV9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEg0KBWNvdW50GAMgASgFEh4KBHJvbGUYBCABKA4yEC5tdGcudjEuQ2FyZFJvbGUSDgoGcmVhc29uGAUgASgJEg0KBW93bmVkGAYgASgIEhMKC293bmVkX2NvdW50GAcgASgFEhEKCXByaWNlX3VzZBgIIAEoARIoCg5vd25lZF9wcmludGluZxgJIAEoCzIQLm10Zy52MS5QcmludGluZxIeChZvdXRzaWRlX3JlcXVlc3RlZF9zZXRzGAogASgIIqQBChBWYWxpZGF0aW9uUmVzdWx0EiEKCGZpbmRpbmdzGAEgAygLMg8ubXRnLnYxLkZpbmRpbmcSDgoGcGFzc2VkGAIgASgIEhYKDmxlZ2FsaXR5X2FzX29mGAMgASgJEiMKCXBvb2xfcnVsZRgEIAEoDjIQLm10Zy52MS5Qb29sUnVsZRIgCgZmb3JtYXQYBSABKA4yEC5tdGcudjEuRm9ybWF0SWQiXwoHRmluZGluZxIMCgRjb2RlGAEgASgJEiIKCHNldmVyaXR5GAIgASgOMhAubXRnLnYxLlNldmVyaXR5Eg8KB21lc3NhZ2UYAyABKAkSEQoJb3JhY2xlX2lkGAQgASgJKv8BCghDYXJkUm9sZRIZChVDQVJEX1JPTEVfVU5TUEVDSUZJRUQQABISCg5DQVJEX1JPTEVfTEFORBABEhIKDkNBUkRfUk9MRV9SQU1QEAISEgoOQ0FSRF9ST0xFX0RSQVcQAxIVChFDQVJEX1JPTEVfUkVNT1ZBTBAEEhIKDkNBUkRfUk9MRV9XSVBFEAUSFAoQQ0FSRF9ST0xFX1RIUkVBVBAGEhkKFUNBUkRfUk9MRV9JTlRFUkFDVElPThAHEhUKEUNBUkRfUk9MRV9TWU5FUkdZEAgSFAoQQ0FSRF9ST0xFX1dJTkNPThAJEhMKD0NBUkRfUk9MRV9PVEhFUhAKKl4KCFNldmVyaXR5EhgKFFNFVkVSSVRZX1VOU1BFQ0lGSUVEEAASEgoOU0VWRVJJVFlfQkxPQ0sQARIRCg1TRVZFUklUWV9XQVJOEAISEQoNU0VWRVJJVFlfSU5GTxADQjpaOGdpdGh1Yi5jb20vbmtyYW1iZXIvbXRnLWRlY2stYnVpbGRlci9nby9nZW4vbXRnL3YxO210Z3YxYgZwcm90bzM", [file_mtg_v1_card, file_mtg_v1_format, file_mtg_v1_session, file_google_protobuf_timestamp]);
 
 /**
  * Deck is one generated deck.
@@ -170,6 +170,16 @@ export type Deck = Message<"mtg.v1.Deck"> & {
    * @generated from field: int32 card_count = 22;
    */
   cardCount: number;
+
+  /**
+   * profile is the bracket profile of the built deck: the feature
+   * vector, the band of each feature, the goldfish numbers, and the
+   * content check (PR-14A, D-451 to D-453). Unset on a deck built
+   * before PR-14A, and on a deck the profiler did not read.
+   *
+   * @generated from field: mtg.v1.DeckProfile profile = 23;
+   */
+  profile?: DeckProfile | undefined;
 };
 
 /**
@@ -178,6 +188,258 @@ export type Deck = Message<"mtg.v1.Deck"> & {
  */
 export const DeckSchema: GenMessage<Deck> = /*@__PURE__*/
   messageDesc(file_mtg_v1_deck, 0);
+
+/**
+ * DeckProfile is the bracket profile (PR-14A). A bracket is a set of
+ * numbers the app builds to and checks, and this is the check.
+ *
+ * @generated from message mtg.v1.DeckProfile
+ */
+export type DeckProfile = Message<"mtg.v1.DeckProfile"> & {
+  /**
+   * bracket is the Commander bracket the bands apply to, 0 for a 60-card
+   * deck, where the bands follow the power step.
+   *
+   * @generated from field: int32 bracket = 1;
+   */
+  bracket: number;
+
+  /**
+   * features holds one row per feature, with its band.
+   *
+   * @generated from field: repeated mtg.v1.ProfileFeature features = 2;
+   */
+  features: ProfileFeature[];
+
+  /**
+   * goldfish holds the simulation numbers (D-453).
+   *
+   * @generated from field: mtg.v1.Goldfish goldfish = 3;
+   */
+  goldfish?: Goldfish | undefined;
+
+  /**
+   * content is the content-rule check against Commander Spellbook.
+   *
+   * @generated from field: mtg.v1.ContentCheck content = 4;
+   */
+  content?: ContentCheck | undefined;
+
+  /**
+   * bands_verified_at is the verified_at date of the band data.
+   *
+   * @generated from field: string bands_verified_at = 5;
+   */
+  bandsVerifiedAt: string;
+};
+
+/**
+ * Describes the message mtg.v1.DeckProfile.
+ * Use `create(DeckProfileSchema)` to create a new message.
+ */
+export const DeckProfileSchema: GenMessage<DeckProfile> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_deck, 1);
+
+/**
+ * ProfileFeature is one measured number and the band it must sit in.
+ *
+ * @generated from message mtg.v1.ProfileFeature
+ */
+export type ProfileFeature = Message<"mtg.v1.ProfileFeature"> & {
+  /**
+   * key names the feature, for example "land" or "avg_mana_value".
+   *
+   * @generated from field: string key = 1;
+   */
+  key: string;
+
+  /**
+   * @generated from field: double value = 2;
+   */
+  value: number;
+
+  /**
+   * low and high are the band. A band with no floor has low 0, and a
+   * band with no ceiling has_high set to false.
+   *
+   * @generated from field: double low = 3;
+   */
+  low: number;
+
+  /**
+   * @generated from field: double high = 4;
+   */
+  high: number;
+
+  /**
+   * @generated from field: bool has_high = 5;
+   */
+  hasHigh: boolean;
+
+  /**
+   * off_band says the value sits outside the band.
+   *
+   * @generated from field: bool off_band = 6;
+   */
+  offBand: boolean;
+
+  /**
+   * note is one line for the reader, for example the cards counted.
+   *
+   * @generated from field: string note = 7;
+   */
+  note: string;
+};
+
+/**
+ * Describes the message mtg.v1.ProfileFeature.
+ * Use `create(ProfileFeatureSchema)` to create a new message.
+ */
+export const ProfileFeatureSchema: GenMessage<ProfileFeature> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_deck, 2);
+
+/**
+ * Goldfish is the opening-hand simulation (D-453): no opponent, lands
+ * and rocks on curve, the London mulligan.
+ *
+ * @generated from message mtg.v1.Goldfish
+ */
+export type Goldfish = Message<"mtg.v1.Goldfish"> & {
+  /**
+   * hands is how many games the simulation dealt.
+   *
+   * @generated from field: int32 hands = 1;
+   */
+  hands: number;
+
+  /**
+   * commander_turn is the mean turn the deck can cast its commander.
+   *
+   * @generated from field: double commander_turn = 2;
+   */
+  commanderTurn: number;
+
+  /**
+   * mana_turn_four is the mean mana available on turn four.
+   *
+   * @generated from field: double mana_turn_four = 3;
+   */
+  manaTurnFour: number;
+
+  /**
+   * share_two_to_four_lands is the share of first seven-card hands that
+   * held two to four lands.
+   *
+   * @generated from field: double share_two_to_four_lands = 4;
+   */
+  shareTwoToFourLands: number;
+};
+
+/**
+ * Describes the message mtg.v1.Goldfish.
+ * Use `create(GoldfishSchema)` to create a new message.
+ */
+export const GoldfishSchema: GenMessage<Goldfish> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_deck, 3);
+
+/**
+ * ContentCheck is the content-rule read of a deck: the cards and combos
+ * a bracket forbids, from Commander Spellbook (PR-14A).
+ *
+ * @generated from message mtg.v1.ContentCheck
+ */
+export type ContentCheck = Message<"mtg.v1.ContentCheck"> & {
+  /**
+   * checked says the endpoint answered. When false, error says why, and
+   * the deck carries no content finding.
+   *
+   * @generated from field: bool checked = 1;
+   */
+  checked: boolean;
+
+  /**
+   * @generated from field: string error = 2;
+   */
+  error: string;
+
+  /**
+   * source_tag is the endpoint's own bracket word for the deck.
+   *
+   * @generated from field: string source_tag = 3;
+   */
+  sourceTag: string;
+
+  /**
+   * @generated from field: repeated string game_changers = 4;
+   */
+  gameChangers: string[];
+
+  /**
+   * @generated from field: repeated string mass_land_denial = 5;
+   */
+  massLandDenial: string[];
+
+  /**
+   * @generated from field: repeated string extra_turns = 6;
+   */
+  extraTurns: string[];
+
+  /**
+   * @generated from field: repeated mtg.v1.ComboHit combos = 7;
+   */
+  combos: ComboHit[];
+};
+
+/**
+ * Describes the message mtg.v1.ContentCheck.
+ * Use `create(ContentCheckSchema)` to create a new message.
+ */
+export const ContentCheckSchema: GenMessage<ContentCheck> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_deck, 4);
+
+/**
+ * ComboHit is one combo the deck holds, as the endpoint read it.
+ *
+ * @generated from message mtg.v1.ComboHit
+ */
+export type ComboHit = Message<"mtg.v1.ComboHit"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: repeated string cards = 2;
+   */
+  cards: string[];
+
+  /**
+   * @generated from field: bool two_card = 3;
+   */
+  twoCard: boolean;
+
+  /**
+   * @generated from field: int32 speed = 4;
+   */
+  speed: number;
+
+  /**
+   * @generated from field: bool extra_turn = 5;
+   */
+  extraTurn: boolean;
+
+  /**
+   * @generated from field: bool mass_land_denial = 6;
+   */
+  massLandDenial: boolean;
+};
+
+/**
+ * Describes the message mtg.v1.ComboHit.
+ * Use `create(ComboHitSchema)` to create a new message.
+ */
+export const ComboHitSchema: GenMessage<ComboHit> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_deck, 5);
 
 /**
  * DeckCard is one card choice with its reason.
@@ -261,7 +523,7 @@ export type DeckCard = Message<"mtg.v1.DeckCard"> & {
  * Use `create(DeckCardSchema)` to create a new message.
  */
 export const DeckCardSchema: GenMessage<DeckCard> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_deck, 1);
+  messageDesc(file_mtg_v1_deck, 6);
 
 /**
  * ValidationResult is the rules-engine verdict (guardrail 1, PR-5).
@@ -311,7 +573,7 @@ export type ValidationResult = Message<"mtg.v1.ValidationResult"> & {
  * Use `create(ValidationResultSchema)` to create a new message.
  */
 export const ValidationResultSchema: GenMessage<ValidationResult> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_deck, 2);
+  messageDesc(file_mtg_v1_deck, 7);
 
 /**
  * Finding is one problem the rules engine found.
@@ -349,7 +611,7 @@ export type Finding = Message<"mtg.v1.Finding"> & {
  * Use `create(FindingSchema)` to create a new message.
  */
 export const FindingSchema: GenMessage<Finding> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_deck, 3);
+  messageDesc(file_mtg_v1_deck, 8);
 
 /**
  * CardRole is the job a card does in the deck (corpus section 6).

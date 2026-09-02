@@ -338,17 +338,15 @@ func TestGoldenDecks(t *testing.T) {
 			t.Errorf("blocks: %v", codes(res, mtgv1.Severity_SEVERITY_BLOCK))
 		}
 	})
-	goldenRun(t, "good/bracket info names the verified date", func(t *testing.T) {
+	goldenRun(t, "good/bracket 2 with no Game Changer carries no bracket finding", func(t *testing.T) {
+		// The prose note of F-11 left with PR-14A: the profile reads the
+		// content rules after the build, and the engine reports the
+		// Game Changer count alone.
 		res := validate(t, monoW([]string{"Heliod, Sun-Crowned"}, nil, 2))
-		var found bool
 		for _, f := range res.Findings {
-			if f.Code == CodeBracketProse && strings.Contains(f.Message, testCfg.VerifiedAt["brackets.json"]) &&
-				strings.Contains(f.Message, "8+") {
-				found = true
+			if strings.Contains(f.Code, "bracket") || f.Code == CodeGameChangers {
+				t.Errorf("unexpected bracket finding %v", f)
 			}
-		}
-		if !found {
-			t.Errorf("want bracket info with the verified date and expected turns, got %v", res.Findings)
 		}
 	})
 
@@ -582,6 +580,20 @@ func TestLoadData(t *testing.T) {
 	}
 	if cfg.Brackets[3].MaxGameChangers != 3 || cfg.Brackets[4].MaxGameChangers != -1 {
 		t.Errorf("brackets = %v", cfg.Brackets)
+	}
+	// The content rules of PR-14A: no mass land denial through bracket
+	// 3, no extra turn at 1 and one at 2 and 3, and no two-card combo at
+	// 1, a slow one at 2, and none faster than speed 3 at 3.
+	for n := int32(1); n <= 3; n++ {
+		if cfg.Brackets[n].MassLandDenial {
+			t.Errorf("bracket %d allows mass land denial", n)
+		}
+	}
+	if b := cfg.Brackets; b[1].MaxExtraTurnCards != 0 || b[2].MaxExtraTurnCards != 1 || b[3].MaxExtraTurnCards != 1 || b[4].MaxExtraTurnCards != -1 {
+		t.Errorf("extra-turn limits = %v", b)
+	}
+	if b := cfg.Brackets; b[1].MaxComboSpeed != 0 || b[2].MaxComboSpeed != 2 || b[3].MaxComboSpeed != 3 || b[5].MaxComboSpeed != -1 || !b[5].MassLandDenial {
+		t.Errorf("combo limits = %v", b)
 	}
 	if !slices.Contains(cfg.BannedAsCompanion["Lutri, the Spellchaser"], "commander") {
 		t.Error("Lutri missing from companion bans for commander")

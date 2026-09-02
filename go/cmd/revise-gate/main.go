@@ -175,7 +175,11 @@ func run() error {
 		return err
 	}
 	acc := llm.NewAccumulator(prices)
-	b := generate.NewBuilder(client, rcfg, idx, quiet)
+	prof, err := gatekit.Profiler(idx, rcfg, quiet)
+	if err != nil {
+		return err
+	}
+	b := generate.NewBuilder(client, rcfg, idx, quiet, generate.WithProfiler(prof))
 
 	start := time.Now()
 	var outcomes []outcome

@@ -844,6 +844,8 @@
     }
   },
   "roles": {
+    "mass_land_denial": ["mass-land-denial"],
+    "extra_turn": ["extra-turn"],
     "ramp": [
       "ramp",
       "mana-rock",

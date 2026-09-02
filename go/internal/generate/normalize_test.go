@@ -664,7 +664,7 @@ func TestOwnedFlagReadsTheWholeList(t *testing.T) {
 	b, _, _ := testBuilder(t)
 	req := testRequest()
 	req.OracleCounts = map[string]int32{"o-welcome": 4}
-	pass := b.assemble(req, &deckOut{Summary: "s",
+	pass := b.assemble(context.Background(), req, &deckOut{Summary: "s",
 		Cards:     []Entry{{Name: "Ajani's Welcome", Count: 4, Role: "synergy"}},
 		Sideboard: []Entry{{Name: "Ajani's Welcome", Count: 2, Role: "synergy"}},
 	})

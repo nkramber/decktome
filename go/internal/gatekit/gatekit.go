@@ -18,6 +18,9 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
 	"github.com/nkramber/mtg-deck-builder/go/internal/collections"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
+	"github.com/nkramber/mtg-deck-builder/go/internal/profile"
+	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
+	"github.com/nkramber/mtg-deck-builder/go/internal/spellbook"
 )
 
 // SpendGuard refuses a paid run unless the named variable is "1". Every
@@ -241,4 +244,12 @@ func ColorLetters(in []mtgv1.Color) []string {
 		}
 	}
 	return out
+}
+
+// Profiler makes the bracket profiler a gate builds with: the bands, the
+// snapshot's tags, and the live Commander Spellbook client (PR-14A). The
+// endpoint is free and rate limited on this side (D-459), so a gate
+// reads it as the app does.
+func Profiler(idx *cards.Index, cfg *rules.Config, log *slog.Logger) (*profile.Profiler, error) {
+	return profile.New(cfg, func() *cards.TagIndex { return idx.Tags() }, spellbook.New(nil, "", log))
 }

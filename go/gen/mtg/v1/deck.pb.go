@@ -200,7 +200,12 @@ type Deck struct {
 	// card_count sums count over cards, the main deck alone. The list view
 	// of ListDecks carries no cards, so it sets this field instead
 	// (PR-17). GetDeck reads the whole deck, and its cards are the source.
-	CardCount     int32 `protobuf:"varint,22,opt,name=card_count,json=cardCount,proto3" json:"card_count,omitempty"`
+	CardCount int32 `protobuf:"varint,22,opt,name=card_count,json=cardCount,proto3" json:"card_count,omitempty"`
+	// profile is the bracket profile of the built deck: the feature
+	// vector, the band of each feature, the goldfish numbers, and the
+	// content check (PR-14A, D-451 to D-453). Unset on a deck built
+	// before PR-14A, and on a deck the profiler did not read.
+	Profile       *DeckProfile `protobuf:"bytes,23,opt,name=profile,proto3" json:"profile,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -382,6 +387,452 @@ func (x *Deck) GetCardCount() int32 {
 	return 0
 }
 
+func (x *Deck) GetProfile() *DeckProfile {
+	if x != nil {
+		return x.Profile
+	}
+	return nil
+}
+
+// DeckProfile is the bracket profile (PR-14A). A bracket is a set of
+// numbers the app builds to and checks, and this is the check.
+type DeckProfile struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// bracket is the Commander bracket the bands apply to, 0 for a 60-card
+	// deck, where the bands follow the power step.
+	Bracket int32 `protobuf:"varint,1,opt,name=bracket,proto3" json:"bracket,omitempty"`
+	// features holds one row per feature, with its band.
+	Features []*ProfileFeature `protobuf:"bytes,2,rep,name=features,proto3" json:"features,omitempty"`
+	// goldfish holds the simulation numbers (D-453).
+	Goldfish *Goldfish `protobuf:"bytes,3,opt,name=goldfish,proto3" json:"goldfish,omitempty"`
+	// content is the content-rule check against Commander Spellbook.
+	Content *ContentCheck `protobuf:"bytes,4,opt,name=content,proto3" json:"content,omitempty"`
+	// bands_verified_at is the verified_at date of the band data.
+	BandsVerifiedAt string `protobuf:"bytes,5,opt,name=bands_verified_at,json=bandsVerifiedAt,proto3" json:"bands_verified_at,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *DeckProfile) Reset() {
+	*x = DeckProfile{}
+	mi := &file_mtg_v1_deck_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeckProfile) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeckProfile) ProtoMessage() {}
+
+func (x *DeckProfile) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_deck_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeckProfile.ProtoReflect.Descriptor instead.
+func (*DeckProfile) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_deck_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *DeckProfile) GetBracket() int32 {
+	if x != nil {
+		return x.Bracket
+	}
+	return 0
+}
+
+func (x *DeckProfile) GetFeatures() []*ProfileFeature {
+	if x != nil {
+		return x.Features
+	}
+	return nil
+}
+
+func (x *DeckProfile) GetGoldfish() *Goldfish {
+	if x != nil {
+		return x.Goldfish
+	}
+	return nil
+}
+
+func (x *DeckProfile) GetContent() *ContentCheck {
+	if x != nil {
+		return x.Content
+	}
+	return nil
+}
+
+func (x *DeckProfile) GetBandsVerifiedAt() string {
+	if x != nil {
+		return x.BandsVerifiedAt
+	}
+	return ""
+}
+
+// ProfileFeature is one measured number and the band it must sit in.
+type ProfileFeature struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// key names the feature, for example "land" or "avg_mana_value".
+	Key   string  `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Value float64 `protobuf:"fixed64,2,opt,name=value,proto3" json:"value,omitempty"`
+	// low and high are the band. A band with no floor has low 0, and a
+	// band with no ceiling has_high set to false.
+	Low     float64 `protobuf:"fixed64,3,opt,name=low,proto3" json:"low,omitempty"`
+	High    float64 `protobuf:"fixed64,4,opt,name=high,proto3" json:"high,omitempty"`
+	HasHigh bool    `protobuf:"varint,5,opt,name=has_high,json=hasHigh,proto3" json:"has_high,omitempty"`
+	// off_band says the value sits outside the band.
+	OffBand bool `protobuf:"varint,6,opt,name=off_band,json=offBand,proto3" json:"off_band,omitempty"`
+	// note is one line for the reader, for example the cards counted.
+	Note          string `protobuf:"bytes,7,opt,name=note,proto3" json:"note,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProfileFeature) Reset() {
+	*x = ProfileFeature{}
+	mi := &file_mtg_v1_deck_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProfileFeature) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProfileFeature) ProtoMessage() {}
+
+func (x *ProfileFeature) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_deck_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProfileFeature.ProtoReflect.Descriptor instead.
+func (*ProfileFeature) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_deck_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *ProfileFeature) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *ProfileFeature) GetValue() float64 {
+	if x != nil {
+		return x.Value
+	}
+	return 0
+}
+
+func (x *ProfileFeature) GetLow() float64 {
+	if x != nil {
+		return x.Low
+	}
+	return 0
+}
+
+func (x *ProfileFeature) GetHigh() float64 {
+	if x != nil {
+		return x.High
+	}
+	return 0
+}
+
+func (x *ProfileFeature) GetHasHigh() bool {
+	if x != nil {
+		return x.HasHigh
+	}
+	return false
+}
+
+func (x *ProfileFeature) GetOffBand() bool {
+	if x != nil {
+		return x.OffBand
+	}
+	return false
+}
+
+func (x *ProfileFeature) GetNote() string {
+	if x != nil {
+		return x.Note
+	}
+	return ""
+}
+
+// Goldfish is the opening-hand simulation (D-453): no opponent, lands
+// and rocks on curve, the London mulligan.
+type Goldfish struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// hands is how many games the simulation dealt.
+	Hands int32 `protobuf:"varint,1,opt,name=hands,proto3" json:"hands,omitempty"`
+	// commander_turn is the mean turn the deck can cast its commander.
+	CommanderTurn float64 `protobuf:"fixed64,2,opt,name=commander_turn,json=commanderTurn,proto3" json:"commander_turn,omitempty"`
+	// mana_turn_four is the mean mana available on turn four.
+	ManaTurnFour float64 `protobuf:"fixed64,3,opt,name=mana_turn_four,json=manaTurnFour,proto3" json:"mana_turn_four,omitempty"`
+	// share_two_to_four_lands is the share of first seven-card hands that
+	// held two to four lands.
+	ShareTwoToFourLands float64 `protobuf:"fixed64,4,opt,name=share_two_to_four_lands,json=shareTwoToFourLands,proto3" json:"share_two_to_four_lands,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *Goldfish) Reset() {
+	*x = Goldfish{}
+	mi := &file_mtg_v1_deck_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Goldfish) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Goldfish) ProtoMessage() {}
+
+func (x *Goldfish) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_deck_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Goldfish.ProtoReflect.Descriptor instead.
+func (*Goldfish) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_deck_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *Goldfish) GetHands() int32 {
+	if x != nil {
+		return x.Hands
+	}
+	return 0
+}
+
+func (x *Goldfish) GetCommanderTurn() float64 {
+	if x != nil {
+		return x.CommanderTurn
+	}
+	return 0
+}
+
+func (x *Goldfish) GetManaTurnFour() float64 {
+	if x != nil {
+		return x.ManaTurnFour
+	}
+	return 0
+}
+
+func (x *Goldfish) GetShareTwoToFourLands() float64 {
+	if x != nil {
+		return x.ShareTwoToFourLands
+	}
+	return 0
+}
+
+// ContentCheck is the content-rule read of a deck: the cards and combos
+// a bracket forbids, from Commander Spellbook (PR-14A).
+type ContentCheck struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// checked says the endpoint answered. When false, error says why, and
+	// the deck carries no content finding.
+	Checked bool   `protobuf:"varint,1,opt,name=checked,proto3" json:"checked,omitempty"`
+	Error   string `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
+	// source_tag is the endpoint's own bracket word for the deck.
+	SourceTag      string      `protobuf:"bytes,3,opt,name=source_tag,json=sourceTag,proto3" json:"source_tag,omitempty"`
+	GameChangers   []string    `protobuf:"bytes,4,rep,name=game_changers,json=gameChangers,proto3" json:"game_changers,omitempty"`
+	MassLandDenial []string    `protobuf:"bytes,5,rep,name=mass_land_denial,json=massLandDenial,proto3" json:"mass_land_denial,omitempty"`
+	ExtraTurns     []string    `protobuf:"bytes,6,rep,name=extra_turns,json=extraTurns,proto3" json:"extra_turns,omitempty"`
+	Combos         []*ComboHit `protobuf:"bytes,7,rep,name=combos,proto3" json:"combos,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *ContentCheck) Reset() {
+	*x = ContentCheck{}
+	mi := &file_mtg_v1_deck_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ContentCheck) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ContentCheck) ProtoMessage() {}
+
+func (x *ContentCheck) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_deck_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ContentCheck.ProtoReflect.Descriptor instead.
+func (*ContentCheck) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_deck_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *ContentCheck) GetChecked() bool {
+	if x != nil {
+		return x.Checked
+	}
+	return false
+}
+
+func (x *ContentCheck) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
+}
+
+func (x *ContentCheck) GetSourceTag() string {
+	if x != nil {
+		return x.SourceTag
+	}
+	return ""
+}
+
+func (x *ContentCheck) GetGameChangers() []string {
+	if x != nil {
+		return x.GameChangers
+	}
+	return nil
+}
+
+func (x *ContentCheck) GetMassLandDenial() []string {
+	if x != nil {
+		return x.MassLandDenial
+	}
+	return nil
+}
+
+func (x *ContentCheck) GetExtraTurns() []string {
+	if x != nil {
+		return x.ExtraTurns
+	}
+	return nil
+}
+
+func (x *ContentCheck) GetCombos() []*ComboHit {
+	if x != nil {
+		return x.Combos
+	}
+	return nil
+}
+
+// ComboHit is one combo the deck holds, as the endpoint read it.
+type ComboHit struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Cards          []string               `protobuf:"bytes,2,rep,name=cards,proto3" json:"cards,omitempty"`
+	TwoCard        bool                   `protobuf:"varint,3,opt,name=two_card,json=twoCard,proto3" json:"two_card,omitempty"`
+	Speed          int32                  `protobuf:"varint,4,opt,name=speed,proto3" json:"speed,omitempty"`
+	ExtraTurn      bool                   `protobuf:"varint,5,opt,name=extra_turn,json=extraTurn,proto3" json:"extra_turn,omitempty"`
+	MassLandDenial bool                   `protobuf:"varint,6,opt,name=mass_land_denial,json=massLandDenial,proto3" json:"mass_land_denial,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *ComboHit) Reset() {
+	*x = ComboHit{}
+	mi := &file_mtg_v1_deck_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ComboHit) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ComboHit) ProtoMessage() {}
+
+func (x *ComboHit) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_deck_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ComboHit.ProtoReflect.Descriptor instead.
+func (*ComboHit) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_deck_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *ComboHit) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *ComboHit) GetCards() []string {
+	if x != nil {
+		return x.Cards
+	}
+	return nil
+}
+
+func (x *ComboHit) GetTwoCard() bool {
+	if x != nil {
+		return x.TwoCard
+	}
+	return false
+}
+
+func (x *ComboHit) GetSpeed() int32 {
+	if x != nil {
+		return x.Speed
+	}
+	return 0
+}
+
+func (x *ComboHit) GetExtraTurn() bool {
+	if x != nil {
+		return x.ExtraTurn
+	}
+	return false
+}
+
+func (x *ComboHit) GetMassLandDenial() bool {
+	if x != nil {
+		return x.MassLandDenial
+	}
+	return false
+}
+
 // DeckCard is one card choice with its reason.
 type DeckCard struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
@@ -415,7 +866,7 @@ type DeckCard struct {
 
 func (x *DeckCard) Reset() {
 	*x = DeckCard{}
-	mi := &file_mtg_v1_deck_proto_msgTypes[1]
+	mi := &file_mtg_v1_deck_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -427,7 +878,7 @@ func (x *DeckCard) String() string {
 func (*DeckCard) ProtoMessage() {}
 
 func (x *DeckCard) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_deck_proto_msgTypes[1]
+	mi := &file_mtg_v1_deck_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -440,7 +891,7 @@ func (x *DeckCard) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeckCard.ProtoReflect.Descriptor instead.
 func (*DeckCard) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_deck_proto_rawDescGZIP(), []int{1}
+	return file_mtg_v1_deck_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *DeckCard) GetOracleId() string {
@@ -534,7 +985,7 @@ type ValidationResult struct {
 
 func (x *ValidationResult) Reset() {
 	*x = ValidationResult{}
-	mi := &file_mtg_v1_deck_proto_msgTypes[2]
+	mi := &file_mtg_v1_deck_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -546,7 +997,7 @@ func (x *ValidationResult) String() string {
 func (*ValidationResult) ProtoMessage() {}
 
 func (x *ValidationResult) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_deck_proto_msgTypes[2]
+	mi := &file_mtg_v1_deck_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -559,7 +1010,7 @@ func (x *ValidationResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ValidationResult.ProtoReflect.Descriptor instead.
 func (*ValidationResult) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_deck_proto_rawDescGZIP(), []int{2}
+	return file_mtg_v1_deck_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ValidationResult) GetFindings() []*Finding {
@@ -612,7 +1063,7 @@ type Finding struct {
 
 func (x *Finding) Reset() {
 	*x = Finding{}
-	mi := &file_mtg_v1_deck_proto_msgTypes[3]
+	mi := &file_mtg_v1_deck_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -624,7 +1075,7 @@ func (x *Finding) String() string {
 func (*Finding) ProtoMessage() {}
 
 func (x *Finding) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_deck_proto_msgTypes[3]
+	mi := &file_mtg_v1_deck_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -637,7 +1088,7 @@ func (x *Finding) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Finding.ProtoReflect.Descriptor instead.
 func (*Finding) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_deck_proto_rawDescGZIP(), []int{3}
+	return file_mtg_v1_deck_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *Finding) GetCode() string {
@@ -672,7 +1123,7 @@ var File_mtg_v1_deck_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\n" +
-	"\x11mtg/v1/deck.proto\x12\x06mtg.v1\x1a\x11mtg/v1/card.proto\x1a\x13mtg/v1/format.proto\x1a\x14mtg/v1/session.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xb7\x06\n" +
+	"\x11mtg/v1/deck.proto\x12\x06mtg.v1\x1a\x11mtg/v1/card.proto\x1a\x13mtg/v1/format.proto\x1a\x14mtg/v1/session.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xe6\x06\n" +
 	"\x04Deck\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12&\n" +
@@ -700,8 +1151,46 @@ const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\rrevision_note\x18\x14 \x01(\tR\frevisionNote\x12\x1a\n" +
 	"\bfavorite\x18\x15 \x01(\bR\bfavorite\x12\x1d\n" +
 	"\n" +
-	"card_count\x18\x16 \x01(\x05R\tcardCountJ\x04\b\n" +
-	"\x10\vR\x04seed\"\xd2\x02\n" +
+	"card_count\x18\x16 \x01(\x05R\tcardCount\x12-\n" +
+	"\aprofile\x18\x17 \x01(\v2\x13.mtg.v1.DeckProfileR\aprofileJ\x04\b\n" +
+	"\x10\vR\x04seed\"\xe5\x01\n" +
+	"\vDeckProfile\x12\x18\n" +
+	"\abracket\x18\x01 \x01(\x05R\abracket\x122\n" +
+	"\bfeatures\x18\x02 \x03(\v2\x16.mtg.v1.ProfileFeatureR\bfeatures\x12,\n" +
+	"\bgoldfish\x18\x03 \x01(\v2\x10.mtg.v1.GoldfishR\bgoldfish\x12.\n" +
+	"\acontent\x18\x04 \x01(\v2\x14.mtg.v1.ContentCheckR\acontent\x12*\n" +
+	"\x11bands_verified_at\x18\x05 \x01(\tR\x0fbandsVerifiedAt\"\xa8\x01\n" +
+	"\x0eProfileFeature\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\x01R\x05value\x12\x10\n" +
+	"\x03low\x18\x03 \x01(\x01R\x03low\x12\x12\n" +
+	"\x04high\x18\x04 \x01(\x01R\x04high\x12\x19\n" +
+	"\bhas_high\x18\x05 \x01(\bR\ahasHigh\x12\x19\n" +
+	"\boff_band\x18\x06 \x01(\bR\aoffBand\x12\x12\n" +
+	"\x04note\x18\a \x01(\tR\x04note\"\xa3\x01\n" +
+	"\bGoldfish\x12\x14\n" +
+	"\x05hands\x18\x01 \x01(\x05R\x05hands\x12%\n" +
+	"\x0ecommander_turn\x18\x02 \x01(\x01R\rcommanderTurn\x12$\n" +
+	"\x0emana_turn_four\x18\x03 \x01(\x01R\fmanaTurnFour\x124\n" +
+	"\x17share_two_to_four_lands\x18\x04 \x01(\x01R\x13shareTwoToFourLands\"\xf7\x01\n" +
+	"\fContentCheck\x12\x18\n" +
+	"\achecked\x18\x01 \x01(\bR\achecked\x12\x14\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error\x12\x1d\n" +
+	"\n" +
+	"source_tag\x18\x03 \x01(\tR\tsourceTag\x12#\n" +
+	"\rgame_changers\x18\x04 \x03(\tR\fgameChangers\x12(\n" +
+	"\x10mass_land_denial\x18\x05 \x03(\tR\x0emassLandDenial\x12\x1f\n" +
+	"\vextra_turns\x18\x06 \x03(\tR\n" +
+	"extraTurns\x12(\n" +
+	"\x06combos\x18\a \x03(\v2\x10.mtg.v1.ComboHitR\x06combos\"\xaa\x01\n" +
+	"\bComboHit\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x05cards\x18\x02 \x03(\tR\x05cards\x12\x19\n" +
+	"\btwo_card\x18\x03 \x01(\bR\atwoCard\x12\x14\n" +
+	"\x05speed\x18\x04 \x01(\x05R\x05speed\x12\x1d\n" +
+	"\n" +
+	"extra_turn\x18\x05 \x01(\bR\textraTurn\x12(\n" +
+	"\x10mass_land_denial\x18\x06 \x01(\bR\x0emassLandDenial\"\xd2\x02\n" +
 	"\bDeckCard\x12\x1b\n" +
 	"\toracle_id\x18\x01 \x01(\tR\boracleId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
@@ -758,40 +1247,50 @@ func file_mtg_v1_deck_proto_rawDescGZIP() []byte {
 }
 
 var file_mtg_v1_deck_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_mtg_v1_deck_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_mtg_v1_deck_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_mtg_v1_deck_proto_goTypes = []any{
 	(CardRole)(0),                 // 0: mtg.v1.CardRole
 	(Severity)(0),                 // 1: mtg.v1.Severity
 	(*Deck)(nil),                  // 2: mtg.v1.Deck
-	(*DeckCard)(nil),              // 3: mtg.v1.DeckCard
-	(*ValidationResult)(nil),      // 4: mtg.v1.ValidationResult
-	(*Finding)(nil),               // 5: mtg.v1.Finding
-	(*Format)(nil),                // 6: mtg.v1.Format
-	(*PowerLevel)(nil),            // 7: mtg.v1.PowerLevel
-	(*timestamppb.Timestamp)(nil), // 8: google.protobuf.Timestamp
-	(*Printing)(nil),              // 9: mtg.v1.Printing
-	(PoolRule)(0),                 // 10: mtg.v1.PoolRule
-	(FormatId)(0),                 // 11: mtg.v1.FormatId
+	(*DeckProfile)(nil),           // 3: mtg.v1.DeckProfile
+	(*ProfileFeature)(nil),        // 4: mtg.v1.ProfileFeature
+	(*Goldfish)(nil),              // 5: mtg.v1.Goldfish
+	(*ContentCheck)(nil),          // 6: mtg.v1.ContentCheck
+	(*ComboHit)(nil),              // 7: mtg.v1.ComboHit
+	(*DeckCard)(nil),              // 8: mtg.v1.DeckCard
+	(*ValidationResult)(nil),      // 9: mtg.v1.ValidationResult
+	(*Finding)(nil),               // 10: mtg.v1.Finding
+	(*Format)(nil),                // 11: mtg.v1.Format
+	(*PowerLevel)(nil),            // 12: mtg.v1.PowerLevel
+	(*timestamppb.Timestamp)(nil), // 13: google.protobuf.Timestamp
+	(*Printing)(nil),              // 14: mtg.v1.Printing
+	(PoolRule)(0),                 // 15: mtg.v1.PoolRule
+	(FormatId)(0),                 // 16: mtg.v1.FormatId
 }
 var file_mtg_v1_deck_proto_depIdxs = []int32{
-	6,  // 0: mtg.v1.Deck.format:type_name -> mtg.v1.Format
-	7,  // 1: mtg.v1.Deck.power:type_name -> mtg.v1.PowerLevel
-	3,  // 2: mtg.v1.Deck.cards:type_name -> mtg.v1.DeckCard
-	4,  // 3: mtg.v1.Deck.validation:type_name -> mtg.v1.ValidationResult
-	8,  // 4: mtg.v1.Deck.created_at:type_name -> google.protobuf.Timestamp
-	3,  // 5: mtg.v1.Deck.sideboard:type_name -> mtg.v1.DeckCard
-	3,  // 6: mtg.v1.Deck.upgrades:type_name -> mtg.v1.DeckCard
-	0,  // 7: mtg.v1.DeckCard.role:type_name -> mtg.v1.CardRole
-	9,  // 8: mtg.v1.DeckCard.owned_printing:type_name -> mtg.v1.Printing
-	5,  // 9: mtg.v1.ValidationResult.findings:type_name -> mtg.v1.Finding
-	10, // 10: mtg.v1.ValidationResult.pool_rule:type_name -> mtg.v1.PoolRule
-	11, // 11: mtg.v1.ValidationResult.format:type_name -> mtg.v1.FormatId
-	1,  // 12: mtg.v1.Finding.severity:type_name -> mtg.v1.Severity
-	13, // [13:13] is the sub-list for method output_type
-	13, // [13:13] is the sub-list for method input_type
-	13, // [13:13] is the sub-list for extension type_name
-	13, // [13:13] is the sub-list for extension extendee
-	0,  // [0:13] is the sub-list for field type_name
+	11, // 0: mtg.v1.Deck.format:type_name -> mtg.v1.Format
+	12, // 1: mtg.v1.Deck.power:type_name -> mtg.v1.PowerLevel
+	8,  // 2: mtg.v1.Deck.cards:type_name -> mtg.v1.DeckCard
+	9,  // 3: mtg.v1.Deck.validation:type_name -> mtg.v1.ValidationResult
+	13, // 4: mtg.v1.Deck.created_at:type_name -> google.protobuf.Timestamp
+	8,  // 5: mtg.v1.Deck.sideboard:type_name -> mtg.v1.DeckCard
+	8,  // 6: mtg.v1.Deck.upgrades:type_name -> mtg.v1.DeckCard
+	3,  // 7: mtg.v1.Deck.profile:type_name -> mtg.v1.DeckProfile
+	4,  // 8: mtg.v1.DeckProfile.features:type_name -> mtg.v1.ProfileFeature
+	5,  // 9: mtg.v1.DeckProfile.goldfish:type_name -> mtg.v1.Goldfish
+	6,  // 10: mtg.v1.DeckProfile.content:type_name -> mtg.v1.ContentCheck
+	7,  // 11: mtg.v1.ContentCheck.combos:type_name -> mtg.v1.ComboHit
+	0,  // 12: mtg.v1.DeckCard.role:type_name -> mtg.v1.CardRole
+	14, // 13: mtg.v1.DeckCard.owned_printing:type_name -> mtg.v1.Printing
+	10, // 14: mtg.v1.ValidationResult.findings:type_name -> mtg.v1.Finding
+	15, // 15: mtg.v1.ValidationResult.pool_rule:type_name -> mtg.v1.PoolRule
+	16, // 16: mtg.v1.ValidationResult.format:type_name -> mtg.v1.FormatId
+	1,  // 17: mtg.v1.Finding.severity:type_name -> mtg.v1.Severity
+	18, // [18:18] is the sub-list for method output_type
+	18, // [18:18] is the sub-list for method input_type
+	18, // [18:18] is the sub-list for extension type_name
+	18, // [18:18] is the sub-list for extension extendee
+	0,  // [0:18] is the sub-list for field type_name
 }
 
 func init() { file_mtg_v1_deck_proto_init() }
@@ -808,7 +1307,7 @@ func file_mtg_v1_deck_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_mtg_v1_deck_proto_rawDesc), len(file_mtg_v1_deck_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   4,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
