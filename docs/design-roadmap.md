@@ -6,6 +6,7 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-01 correction pass 43 (the precon exclusion, D-407 to D-409): a reader asks for a deck that uses no card of a precon they own, for any set. MTGJSON publishes every WotC deck product with a Scryfall id per card, 3,013 products on 2026-09-01. The owner chose the Commander decks and the 60-card constructed decks. Ownership reads the printings and their counts, the surplus copies stay usable, and the slice sits in Phase 4 beside PR-14. Changes: Phase 4 gains PR-24, sequencing step 22.
 2026-09-01 correction pass 42 (the review of PR-18, D-398 to D-404): PR-17 merged (#49), PR-17B merged (#50), and PR-18 merged (#53). A review of PR-18 found three defects and four gaps. The binder filtered the loaded pages alone, so a search for a card past row 200 found nothing. A Replace kept an id whose hash moved on, so a later upload of the old file overwrote the replaced collection. Every upload over an active collection forced a replacement. The fixes ship on branch `nits-and-fixes`. The filter, the sort, and the search run on the server now. The summary lists every set and every type, and the upload dialog offers a choice. The chat refuses a turn with no card index (D-405). A decline of the format through the "You decide" control takes the corpus default, as a decline in words does (D-406). Changes: PR-17, PR-17B, PR-18, sequencing steps 19 and 20.
 2026-08-30 correction pass 35 (the reference design and the one deck screen, D-328 to D-335): the owner gave a reference design, and it settles the look. Three faces, a navy and gold palette, one top bar, and dark alone. The identity wash of D-327 left, and the color of the game now shows in a mana pip and a rarity dot. A deck has one screen and one address. Changes: Phase 3B, PR-16, PR-16B, PR-17, sequencing step 19.
 2026-08-30 correction pass 36 (the collection picker and the speed of the app, D-336 to D-340): the pool lived in the header menu alone, and the owner did not find it. A "Build from" picker now sits on the chat screen. No screen shows a decision id or a Firestore id. No chunk loads behind a Suspense boundary. React holds a committed fallback for 300 ms. Content on the landing page went from 347 ms to 44 ms. The first open of the Build menu went from 323 ms to 16 ms. Changes: PR-17.
@@ -810,6 +811,16 @@ Golden prompts with expected slot sets and expected validation outcomes. Determi
 Tier 1 nightly. Label-gated full sweep on PRs. Cost cap per run. Gate: the harness runs on PR-8's output and reports named regressions.
 > *In plain English:* the test bench. Fixed questions, expected answers, a score every night. Any change that makes decks worse is named, not averaged away.
 
+**PR-24: Precon exclusion (D-407 to D-409).**
+A reader asks for a deck that uses no card of a precon they own, for any set. The worker reads the MTGJSON deck list once per MTGJSON version and stores a precon table beside the set file (D-377 shape). A row holds the product name, the set code, the type, the release date, and the cards as printing ids with counts. The table holds the Commander decks and the 60-card constructed decks, and leaves out Jumpstart packs, Welcome decks, Secret Lair drops, and land packs (D-407).
+
+A reader owns a precon when the collection holds every printing of it with its count (D-408). The check runs at build time from the collection. The exclusion subtracts the precon counts from the owned counts, so the surplus copies stay usable. `candidates.Request` gains an exclusion list, the commander pool and the 99 both drop it, and the rules check blocks any card that slips through.
+
+A classify fact and a catalog row read "not from my precons" and "not from precon X". The chat names the precons it excluded (D-390). The nine embedded lists of D-247 become a cross-check test, then leave.
+
+`docs/reference/precon-data-2026-09-01.md` holds the verified facts. Gate: a build for a collection that holds Avengers Assemble whole uses none of its cards. A build for a collection that holds 99 of its 100 is free to use any of them.
+> *In plain English:* the app learns every deck Wizards ever sold. When you own one whole, you can ask for a deck that leaves it untouched. The app checks your binder to know which ones you own.
+
 **I-1: Ban-list watch, stale-deck banner, and scoped rerun (D-29).**
 A job reads the Wizards announcement feed and detects the Scryfall snapshot that reflects it. It then re-validates every stored deck in the affected formats. 
 
@@ -860,7 +871,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 19. **Phase 3B** (D-316, D-317): PR-16 to PR-23 in the order of the phase list. Each gate holds before the next slice starts. PR-16 ✅ merged 2026-08-29 (#47). PR-16B ✅ merged 2026-08-29 (#48). PR-17 ✅ merged 2026-08-31 (#49). The paid re-baseline of D-302 ran on 2026-08-31.
 20. **PR-17B** the set filter (F-29, D-373 to D-383). ✅ merged 2026-09-01 (#50). **PR-18** ✅ merged 2026-09-01 (#53). The review fixes of PR-18 (D-398 to D-406) 🔧 built 2026-09-01 on branch `nits-and-fixes`. The owner reads them, then merges. Then PR-19.
 21. PR-15 eval harness. M-5 manual scoring runs on the first UI build (after PR-12).
-22. PR-14 meta, then I-1, I-2, I-3 on evidence.
+22. PR-14 meta and PR-24 precon exclusion (D-409), then I-1, I-2, I-3 on evidence.
 23. Phase 5 stays parked.
 
 ## 9. Open questions

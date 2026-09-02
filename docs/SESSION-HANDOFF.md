@@ -303,6 +303,12 @@ CAUTION: `Repo.Get` returns a collection the caller owns. A page is a slice of t
 
 CAUTION: the active collection is a choice of one visit, and the store keeps only the session id (D-345). A Playwright run can not seed it through localStorage. The script clicks the collection, as a reader does.
 
+## The precon exclusion, decided (2026-09-01)
+
+The owner asked for a deck that uses no card of a precon they own, for any set. Three decisions settle the slice (D-407 to D-409), and it waits in Phase 4 as PR-24. `docs/reference/precon-data-2026-09-01.md` holds the verified facts. MTGJSON lists 3,013 deck products with a Scryfall id per card, the four Marvel Super Heroes Commander decks among them.
+
+CAUTION: the MTGJSON deck endpoint answers 403 to a request with no user agent. A session hit it with Python's default client and passed with curl and a named agent.
+
 ## The dev stack of 2026-09-01: no card index, and why
 
 The owner's `make dev` log wrote "snapshot version check failed: bucket doesn't exist" every 15 seconds, and session `YvyZtBJyUiEcGMNnxOwm` failed on it. The API held no card index, so the commander question offered no name, the agent said it chose one, and the build ended with "no card index is loaded".
@@ -326,7 +332,7 @@ The chat ran a turn with no card index before D-405. The commander question then
 2. The owner commits `nits-and-fixes` and opens its PR.
 3. One PR-18 gate line is open. Only the owner can close it: 60 frames a second on the real 2,657-row export, on a production build.
 4. Then PR-19 to PR-23 in order, one gate each. Before PR-22, ask OQ-45 and OQ-46.
-5. After Phase 3B: PR-15, then PR-14.
+5. After Phase 3B: PR-15, then PR-14 and PR-24.
 
 Deck gate run 10 is done. It ran on 2026-08-31, and `CLAUDE.md` recorded it while this file still asked for it. A session that reads only the prose here spends $1.09 on a run that exists. Read `docs/reference/` before you plan a paid run.
 
