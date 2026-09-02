@@ -206,7 +206,7 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 	if mode != mtgv1.PoolRule_POOL_RULE_ANY_CARD && req.Owned == nil {
 		return nil, fmt.Errorf("candidates: pool rule %s needs a collection", mode)
 	}
-	theme := b.themes.match(req.Theme, idx.Tags())
+	theme := b.themes.matchIn(req.Theme, idx)
 	roleTags := b.themes.roleSets(idx.Tags())
 	// Text fallbacks stand in for the tags only when the snapshot has
 	// none. With tags loaded, an untagged card is not a staple.
@@ -742,7 +742,7 @@ func (b *Builder) CommanderPool(idx *cards.Index, req Request) ([]Candidate, err
 	if mode != mtgv1.PoolRule_POOL_RULE_ANY_CARD && req.Owned == nil {
 		return nil, fmt.Errorf("candidates: pool rule %s needs a collection", mode)
 	}
-	theme := b.themes.match(req.Theme, idx.Tags())
+	theme := b.themes.matchIn(req.Theme, idx)
 	colorSet := colorSetOf(req.Colors)
 	setCodes := cards.CodeSet(req.SetCodes)
 	maxRank := maxRankOf(idx)

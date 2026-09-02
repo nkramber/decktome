@@ -80,6 +80,50 @@ type ThemeMatch struct {
 	// wordOf maps a signal, as score emits it, to the theme word that
 	// produced it. Build reads it to fill Unmatched.
 	wordOf map[string]string
+	// generic lists the text needles the generic rule made from words
+	// the table does not know. pruneNoisy reads it (D-411).
+	generic []string
+}
+
+// noisyShare is the share of the card database above which a generic
+// text needle discriminates nothing (D-411). A needle that sits in the
+// text of one card in ten ranks the pool on chance, and "you" sat in
+// the text of most commanders: the offer for "the best deck you can"
+// was the three most popular legends whose text held "you" and "can".
+const noisyShare = 0.10
+
+// matchIn turns the user's words into signals and drops every generic
+// text needle the card database makes noise of (D-411). Build and
+// CommanderPool read this, and match alone stays for the tests that
+// read the raw needles.
+func (t *themeTable) matchIn(theme string, idx *cards.Index) ThemeMatch {
+	m := t.match(theme, idx.Tags())
+	m.pruneNoisy(idx.All())
+	return m
+}
+
+// pruneNoisy removes each generic text needle that more than noisyShare
+// of the cards hold. One pass lowers each text once, and every needle
+// reads that one string.
+func (m *ThemeMatch) pruneNoisy(all []*mtgv1.Card) {
+	if len(m.generic) == 0 || len(all) == 0 {
+		return
+	}
+	hits := make(map[string]int, len(m.generic))
+	for _, c := range all {
+		text := strings.ToLower(c.GetOracleText())
+		for _, n := range m.generic {
+			if strings.Contains(text, n) {
+				hits[n]++
+			}
+		}
+	}
+	limit := int(noisyShare * float64(len(all)))
+	for _, n := range m.generic {
+		if hits[n] > limit {
+			m.Text = slices.DeleteFunc(m.Text, func(x string) bool { return x == n })
+		}
+	}
 }
 
 // firedSignals is the set of signals that fired on at least one card.
@@ -179,6 +223,7 @@ func (t *themeTable) match(theme string, tags *cards.TagIndex) ThemeMatch {
 			addNeedle(&m.Keywords, "keyword", title(w))
 			addNeedle(&m.Subtypes, "subtype", title(singular(w)))
 			addNeedle(&m.Text, "text", w)
+			m.generic = append(m.generic, w)
 		}
 	}
 	// Build fills Unmatched after it scans the pool.
@@ -328,11 +373,18 @@ func allDigits(w string) bool {
 	return w != ""
 }
 
+// stopWords are the words of a request that name no theme. The second
+// group is the words of "build me the best deck you can", which reached
+// the generic rule and became text needles before D-411.
 var stopWords = map[string]bool{
 	"a": true, "an": true, "the": true, "and": true, "or": true, "of": true, "with": true, "deck": true,
 	"build": true, "me": true, "my": true, "for": true, "in": true, "on": true, "to": true, "some": true,
 	"commander": true, "edh": true, "please": true, "want": true, "i": true, "that": true, "this": true,
 	"cards": true, "card": true, "fun": true, "good": true, "strong": true, "casual": true,
+	"you": true, "your": true, "can": true, "could": true, "would": true, "should": true, "make": true,
+	"give": true, "need": true, "like": true, "best": true, "possible": true, "great": true, "really": true,
+	"very": true, "just": true, "something": true, "anything": true, "decks": true, "play": true,
+	"powerful": true, "competitive": true, "optimal": true, "optimized": true, "strongest": true,
 }
 
 // singularIE lists plurals in -ies whose singular ends in -ie. The rule

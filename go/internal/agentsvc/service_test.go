@@ -1020,3 +1020,22 @@ func TestChatWithADeletedCollection(t *testing.T) {
 		t.Errorf("pool rule = %v, want ANY_CARD", stored.GetSlots().GetPoolRule())
 	}
 }
+
+// TestChatRefusesATurnWithNoIndex is D-405. A turn with no card index
+// resolves no name, offers no commander, and builds nothing, so it
+// waits with Unavailable as ImportCollection does. Before this the turn
+// ran, and the status line claimed a commander it never had.
+func TestChatRefusesATurnWithNoIndex(t *testing.T) {
+	client, _ := testServerOpts(t, newFakeStore(), []Option{WithCandidates(fixedIndex{}, nil)})
+	stream, err := client.Chat(context.Background(), connect.NewRequest(&mtgv1.ChatRequest{Message: "Build the best possible deck you can"}))
+	if err != nil {
+		t.Fatalf("chat: %v", err)
+	}
+	defer func() { _ = stream.Close() }()
+	for stream.Receive() {
+		t.Errorf("a turn with no index sent an event: %v", stream.Msg().GetEvent())
+	}
+	if got := connect.CodeOf(stream.Err()); got != connect.CodeUnavailable {
+		t.Errorf("code = %v, want Unavailable", got)
+	}
+}

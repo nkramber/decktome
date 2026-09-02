@@ -455,8 +455,13 @@ type GetCollectionRequest struct {
 	// entries_omitted asks for the collection without its entries. The
 	// binder head reads the summary alone, and it moves no megabyte.
 	EntriesOmitted bool `protobuf:"varint,4,opt,name=entries_omitted,json=entriesOmitted,proto3" json:"entries_omitted,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// filter and sort run on the server over every row (D-398). A page
+	// token belongs to one filter and one sort, and a token of another
+	// pair is an invalid argument.
+	Filter        *BinderFilter `protobuf:"bytes,5,opt,name=filter,proto3" json:"filter,omitempty"`
+	Sort          BinderSort    `protobuf:"varint,6,opt,name=sort,proto3,enum=mtg.v1.BinderSort" json:"sort,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetCollectionRequest) Reset() {
@@ -517,12 +522,29 @@ func (x *GetCollectionRequest) GetEntriesOmitted() bool {
 	return false
 }
 
+func (x *GetCollectionRequest) GetFilter() *BinderFilter {
+	if x != nil {
+		return x.Filter
+	}
+	return nil
+}
+
+func (x *GetCollectionRequest) GetSort() BinderSort {
+	if x != nil {
+		return x.Sort
+	}
+	return BinderSort_BINDER_SORT_UNSPECIFIED
+}
+
 type GetCollectionResponse struct {
 	state      protoimpl.MessageState `protogen:"open.v1"`
 	Collection *Collection            `protobuf:"bytes,1,opt,name=collection,proto3" json:"collection,omitempty"`
 	// next_page_token reads the page after this one. Empty on the last
 	// page, and empty when the request omitted the entries.
 	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	// matched_rows counts the rows the filter kept over every page, so
+	// the binder reads "12 of 2,657 rows" from one answer (D-398).
+	MatchedRows   int32 `protobuf:"varint,3,opt,name=matched_rows,json=matchedRows,proto3" json:"matched_rows,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -569,6 +591,13 @@ func (x *GetCollectionResponse) GetNextPageToken() string {
 		return x.NextPageToken
 	}
 	return ""
+}
+
+func (x *GetCollectionResponse) GetMatchedRows() int32 {
+	if x != nil {
+		return x.MatchedRows
+	}
+	return 0
 }
 
 type ListCollectionsRequest struct {
@@ -683,18 +712,21 @@ const file_mtg_v1_collection_service_proto_rawDesc = "" +
 	"\n" +
 	"collection\x18\x01 \x01(\v2\x12.mtg.v1.CollectionR\n" +
 	"collection\x12,\n" +
-	"\x06report\x18\x02 \x01(\v2\x14.mtg.v1.ImportReportR\x06report\"\xa0\x01\n" +
+	"\x06report\x18\x02 \x01(\v2\x14.mtg.v1.ImportReportR\x06report\"\xf6\x01\n" +
 	"\x14GetCollectionRequest\x12#\n" +
 	"\rcollection_id\x18\x01 \x01(\tR\fcollectionId\x12\x1b\n" +
 	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\x12\x1d\n" +
 	"\n" +
 	"page_token\x18\x03 \x01(\tR\tpageToken\x12'\n" +
-	"\x0fentries_omitted\x18\x04 \x01(\bR\x0eentriesOmitted\"s\n" +
+	"\x0fentries_omitted\x18\x04 \x01(\bR\x0eentriesOmitted\x12,\n" +
+	"\x06filter\x18\x05 \x01(\v2\x14.mtg.v1.BinderFilterR\x06filter\x12&\n" +
+	"\x04sort\x18\x06 \x01(\x0e2\x12.mtg.v1.BinderSortR\x04sort\"\x96\x01\n" +
 	"\x15GetCollectionResponse\x122\n" +
 	"\n" +
 	"collection\x18\x01 \x01(\v2\x12.mtg.v1.CollectionR\n" +
 	"collection\x12&\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\x18\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\x12!\n" +
+	"\fmatched_rows\x18\x03 \x01(\x05R\vmatchedRows\"\x18\n" +
 	"\x16ListCollectionsRequest\"O\n" +
 	"\x17ListCollectionsResponse\x124\n" +
 	"\vcollections\x18\x01 \x03(\v2\x12.mtg.v1.CollectionR\vcollections2\x9a\x04\n" +
@@ -736,6 +768,8 @@ var file_mtg_v1_collection_service_proto_goTypes = []any{
 	(ImportSource)(0),                // 13: mtg.v1.ImportSource
 	(*CollectionDiff)(nil),           // 14: mtg.v1.CollectionDiff
 	(*ImportReport)(nil),             // 15: mtg.v1.ImportReport
+	(*BinderFilter)(nil),             // 16: mtg.v1.BinderFilter
+	(BinderSort)(0),                  // 17: mtg.v1.BinderSort
 }
 var file_mtg_v1_collection_service_proto_depIdxs = []int32{
 	12, // 0: mtg.v1.UpdateCollectionResponse.collection:type_name -> mtg.v1.Collection
@@ -745,25 +779,27 @@ var file_mtg_v1_collection_service_proto_depIdxs = []int32{
 	13, // 4: mtg.v1.ImportCollectionRequest.source:type_name -> mtg.v1.ImportSource
 	12, // 5: mtg.v1.ImportCollectionResponse.collection:type_name -> mtg.v1.Collection
 	15, // 6: mtg.v1.ImportCollectionResponse.report:type_name -> mtg.v1.ImportReport
-	12, // 7: mtg.v1.GetCollectionResponse.collection:type_name -> mtg.v1.Collection
-	12, // 8: mtg.v1.ListCollectionsResponse.collections:type_name -> mtg.v1.Collection
-	6,  // 9: mtg.v1.CollectionService.ImportCollection:input_type -> mtg.v1.ImportCollectionRequest
-	8,  // 10: mtg.v1.CollectionService.GetCollection:input_type -> mtg.v1.GetCollectionRequest
-	10, // 11: mtg.v1.CollectionService.ListCollections:input_type -> mtg.v1.ListCollectionsRequest
-	4,  // 12: mtg.v1.CollectionService.DeleteCollection:input_type -> mtg.v1.DeleteCollectionRequest
-	0,  // 13: mtg.v1.CollectionService.UpdateCollection:input_type -> mtg.v1.UpdateCollectionRequest
-	2,  // 14: mtg.v1.CollectionService.DiffCollections:input_type -> mtg.v1.DiffCollectionsRequest
-	7,  // 15: mtg.v1.CollectionService.ImportCollection:output_type -> mtg.v1.ImportCollectionResponse
-	9,  // 16: mtg.v1.CollectionService.GetCollection:output_type -> mtg.v1.GetCollectionResponse
-	11, // 17: mtg.v1.CollectionService.ListCollections:output_type -> mtg.v1.ListCollectionsResponse
-	5,  // 18: mtg.v1.CollectionService.DeleteCollection:output_type -> mtg.v1.DeleteCollectionResponse
-	1,  // 19: mtg.v1.CollectionService.UpdateCollection:output_type -> mtg.v1.UpdateCollectionResponse
-	3,  // 20: mtg.v1.CollectionService.DiffCollections:output_type -> mtg.v1.DiffCollectionsResponse
-	15, // [15:21] is the sub-list for method output_type
-	9,  // [9:15] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	16, // 7: mtg.v1.GetCollectionRequest.filter:type_name -> mtg.v1.BinderFilter
+	17, // 8: mtg.v1.GetCollectionRequest.sort:type_name -> mtg.v1.BinderSort
+	12, // 9: mtg.v1.GetCollectionResponse.collection:type_name -> mtg.v1.Collection
+	12, // 10: mtg.v1.ListCollectionsResponse.collections:type_name -> mtg.v1.Collection
+	6,  // 11: mtg.v1.CollectionService.ImportCollection:input_type -> mtg.v1.ImportCollectionRequest
+	8,  // 12: mtg.v1.CollectionService.GetCollection:input_type -> mtg.v1.GetCollectionRequest
+	10, // 13: mtg.v1.CollectionService.ListCollections:input_type -> mtg.v1.ListCollectionsRequest
+	4,  // 14: mtg.v1.CollectionService.DeleteCollection:input_type -> mtg.v1.DeleteCollectionRequest
+	0,  // 15: mtg.v1.CollectionService.UpdateCollection:input_type -> mtg.v1.UpdateCollectionRequest
+	2,  // 16: mtg.v1.CollectionService.DiffCollections:input_type -> mtg.v1.DiffCollectionsRequest
+	7,  // 17: mtg.v1.CollectionService.ImportCollection:output_type -> mtg.v1.ImportCollectionResponse
+	9,  // 18: mtg.v1.CollectionService.GetCollection:output_type -> mtg.v1.GetCollectionResponse
+	11, // 19: mtg.v1.CollectionService.ListCollections:output_type -> mtg.v1.ListCollectionsResponse
+	5,  // 20: mtg.v1.CollectionService.DeleteCollection:output_type -> mtg.v1.DeleteCollectionResponse
+	1,  // 21: mtg.v1.CollectionService.UpdateCollection:output_type -> mtg.v1.UpdateCollectionResponse
+	3,  // 22: mtg.v1.CollectionService.DiffCollections:output_type -> mtg.v1.DiffCollectionsResponse
+	17, // [17:23] is the sub-list for method output_type
+	11, // [11:17] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_mtg_v1_collection_service_proto_init() }

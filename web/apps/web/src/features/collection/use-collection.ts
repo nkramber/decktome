@@ -1,6 +1,7 @@
-import type { Card } from "@mtg/api-client/mtg/v1/card_pb";
-import type { CollectionEntry, CollectionSummary } from "@mtg/api-client/mtg/v1/collection_pb";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { type Card, Color } from "@mtg/api-client/mtg/v1/card_pb";
+import { BinderSort, type CollectionEntry, type CollectionSummary } from "@mtg/api-client/mtg/v1/collection_pb";
+import { keepPreviousData, useInfiniteQuery, useQueries, useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
 
 import { cardClient, collectionClient } from "../../lib/api";
 
@@ -33,48 +34,8 @@ export function statsFrom(summary: CollectionSummary | undefined, cardCount: num
     total: cardCount || rarity.reduce((n, r) => n + r.count, 0),
     unique: summary?.uniqueCards ?? 0,
     rarity,
-    sets: (summary?.topSets ?? []).map((s) => ({ name: s.setName || s.setCode, count: s.count })),
+    sets: (summary?.sets ?? []).map((s) => ({ name: s.setName || s.setCode, count: s.count })),
   };
-}
-
-// statsOf counts a page of entries. The binder grid reads it for the
-// rows it holds, and the head reads statsFrom instead.
-export function statsOf(entries: CollectionEntry[]): CollectionStats {
-  const byRarity = new Map<string, number>();
-  const bySet = new Map<string, number>();
-  const oracle = new Set<string>();
-  let total = 0;
-  for (const e of entries) {
-    total += e.quantity;
-    if (e.oracleId) oracle.add(e.oracleId);
-    byRarity.set(e.rarity, (byRarity.get(e.rarity) ?? 0) + e.quantity);
-    const set = e.setName || e.setCode;
-    if (set) bySet.set(set, (bySet.get(set) ?? 0) + e.quantity);
-  }
-  return {
-    total,
-    unique: oracle.size,
-    rarity: rarityOrder.map((r) => ({ ...r, count: byRarity.get(r.key) ?? 0 })).filter((r) => r.count > 0),
-    sets: [...bySet.entries()]
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 4),
-  };
-}
-
-// artIds picks the cards the strip shows. The rarest come first, so the
-// strip shows the collection at its best, and the order is stable.
-export function artIds(entries: CollectionEntry[], want: number): string[] {
-  const rank: Record<string, number> = { mythic: 0, rare: 1, uncommon: 2, common: 3 };
-  const seen = new Set<string>();
-  const picked: CollectionEntry[] = [];
-  for (const e of entries) {
-    if (!e.oracleId || seen.has(e.oracleId)) continue;
-    seen.add(e.oracleId);
-    picked.push(e);
-  }
-  picked.sort((a, b) => (rank[a.rarity] ?? 9) - (rank[b.rarity] ?? 9) || a.name.localeCompare(b.name));
-  return picked.slice(0, want).map((e) => e.oracleId);
 }
 
 // useCollectionHead reads the collection without its entries (D-392).
@@ -88,22 +49,120 @@ export function useCollectionHead(collectionId: string) {
   });
 }
 
+// BinderChoice is what the binder controls hold. Every string is the
+// value of its control, and "" is no choice.
+export type BinderChoice = { query: string; set: string; color: string; type: string; count: string };
+
+export const noChoice: BinderChoice = { query: "", set: "", color: "", type: "", count: "" };
+
+export type BinderSortKey = "name" | "count" | "set" | "price";
+
+const colorOf: Record<string, Color> = { W: Color.W, U: Color.U, B: Color.B, R: Color.R, G: Color.G };
+
+const sortOf: Record<BinderSortKey, BinderSort> = {
+  name: BinderSort.NAME,
+  count: BinderSort.COUNT,
+  set: BinderSort.SET,
+  price: BinderSort.PRICE,
+};
+
+export type BinderRequestFilter = {
+  query: string;
+  setCode: string;
+  color: Color;
+  colorless: boolean;
+  cardType: string;
+  quantity: number;
+  quantityOrMore: boolean;
+};
+
+// binderFilter turns the controls into the filter the server runs over
+// every row (D-398). "C" is colorless, and "4" is four or more, which
+// is a playset.
+export function binderFilter(c: BinderChoice): BinderRequestFilter {
+  const n = Number(c.count) || 0;
+  return {
+    query: c.query.trim(),
+    setCode: c.set,
+    color: colorOf[c.color] ?? Color.UNSPECIFIED,
+    colorless: c.color === "C",
+    cardType: c.type,
+    quantity: n,
+    quantityOrMore: n >= 4,
+  };
+}
+
+export function binderSort(key: BinderSortKey): BinderSort {
+  return sortOf[key];
+}
+
 // binderPageSize is how many rows one page of the binder holds. The grid
 // asks for the next page as the reader scrolls.
 export const binderPageSize = 200;
 
-// useBinderPages reads the binder a page at a time (D-392).
-export function useBinderPages(collectionId: string) {
+// useBinderPages reads the binder a page at a time (D-392). The filter
+// and the sort go to the server, so a match on a later page still shows
+// and the set list needs no row (D-398).
+export function useBinderPages(collectionId: string, choice: BinderChoice, sort: BinderSortKey) {
+  const filter = binderFilter(choice);
   return useInfiniteQuery({
-    queryKey: ["collection", "binder", collectionId],
+    queryKey: ["collection", "binder", collectionId, filter, sort],
     queryFn: ({ pageParam }) =>
-      collectionClient.getCollection({ collectionId, pageSize: binderPageSize, pageToken: pageParam }),
+      collectionClient.getCollection({ collectionId, pageSize: binderPageSize, pageToken: pageParam, filter, sort: binderSort(sort) }),
     initialPageParam: "",
     // An empty token is the last page.
     getNextPageParam: (last) => last.nextPageToken || undefined,
     enabled: collectionId !== "",
     staleTime: Infinity,
+    // The last answer stays on screen while a new choice loads, so the
+    // grid never blanks between two filters.
+    placeholderData: keepPreviousData,
   });
+}
+
+// useDebounced hands back a value once it has stood still for ms. The
+// search sends one request per pause, not one per keystroke.
+export function useDebounced<T>(value: T, ms: number): T {
+  const [settled, setSettled] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setSettled(value), ms);
+    return () => clearTimeout(timer);
+  }, [value, ms]);
+  return settled;
+}
+
+// artBucket is how many rows share one art request (D-401). A bucket
+// holds at most 100 Oracle ids, under the 120 one GetCards call takes.
+export const artBucket = 100;
+
+// useBinderArt loads the art of the rows in view, one bucket at a time
+// (D-401). A bucket is keyed by its ids, so a scroll inside it asks for
+// nothing, and a scroll back finds it in the cache. Before this, every
+// row that entered the window made a new request.
+export function useBinderArt(rows: CollectionEntry[], first: number, last: number): Map<string, Card> {
+  const buckets = useMemo(() => {
+    const out: string[][] = [];
+    if (rows.length === 0 || last < first) return out;
+    const from = Math.floor(Math.max(first, 0) / artBucket);
+    const to = Math.floor(Math.min(last, rows.length - 1) / artBucket);
+    for (let b = from; b <= to; b++) {
+      const ids = [...new Set(rows.slice(b * artBucket, (b + 1) * artBucket).map((e) => e.oracleId))].filter(Boolean);
+      if (ids.length > 0) out.push(ids);
+    }
+    return out;
+  }, [rows, first, last]);
+  const results = useQueries({
+    queries: buckets.map((ids) => ({
+      queryKey: ["cards", "binder-art", ids],
+      queryFn: () => cardClient.getCards({ oracleIds: ids }),
+      staleTime: Infinity,
+    })),
+  });
+  const byId = new Map<string, Card>();
+  for (const r of results) {
+    for (const c of r.data?.cards ?? []) byId.set(c.oracleId, c);
+  }
+  return byId;
 }
 
 export function useCollectionArt(ids: string[]) {

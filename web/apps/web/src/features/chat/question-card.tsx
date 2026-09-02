@@ -102,7 +102,8 @@ export function QuestionCard({
       )}
       {/* A decline hands the choice back with no value (D-353). The
           agent applies the default its corpus names, and the question
-          closes for good. */}
+          closes for good. A declined budget stores no cap, so its
+          control says what the decline does (D-404). */}
       <div>
         <Button
           variant={draft.declined ? "default" : "outline"}
@@ -112,9 +113,16 @@ export function QuestionCard({
           onClick={() => onChange(draft.declined ? { text: "" } : { text: "", declined: true })}
         >
           {draft.declined && <span aria-hidden="true">✓ </span>}
-          You decide
+          {declineLabel(question.slot)}
         </Button>
       </div>
     </div>
   );
+}
+
+// declineLabel names what a decline of this slot does. A declined
+// budget is no cap at all (D-404), and every other slot hands the
+// choice to the agent.
+function declineLabel(slot: string): string {
+  return slot === "budget" ? "No budget" : "You decide";
 }

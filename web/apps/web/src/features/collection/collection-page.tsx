@@ -32,7 +32,7 @@ import { CollectionHero } from "./collection-hero";
 import { ImportResult } from "./import-result";
 import { BinderGrid } from "./binder-grid";
 import { UploadDialog } from "./upload-dialog";
-import { useBinderPages, useCollectionHead } from "./use-collection";
+import { type BinderChoice, type BinderSortKey, noChoice, useBinderPages, useCollectionHead, useDebounced } from "./use-collection";
 
 // The collection screen (ui plan, step 2). Upload a ManaBox CSV, or skip and
 // build from any card (D-37). Earlier uploads come from ListCollections.
@@ -71,7 +71,7 @@ export function CollectionPage() {
       setResult(null);
       void notify("success", "Collection deleted", "A deck built from it keeps its cards.");
       void queryClient.invalidateQueries({ queryKey: ["collections"] });
-      void queryClient.invalidateQueries({ queryKey: ["collection", id] });
+      void queryClient.invalidateQueries({ queryKey: ["collection"] });
     },
     onError: (err) => void notify("error", "Could not delete the collection", errorMessage(err)),
   });
@@ -110,12 +110,19 @@ export function CollectionPage() {
   // The binder of the active collection, for the head of the screen. It
   // loads once, and no other screen needs it (D-327).
   const binder = useCollectionHead(collectionId);
-  // The rows of the binder, a page at a time. The grid asks for the next
-  // page as the reader scrolls (D-392).
-  const pages = useBinderPages(collectionId);
+  const summary = binder.data?.collection?.summary;
+  // The rows of the binder, a page at a time, under the reader's choice.
+  // Every choice goes to the server (D-398). The search waits for a
+  // pause, so one request goes out per word and not per keystroke.
+  const [choice, setChoice] = useState<BinderChoice>(noChoice);
+  const [sort, setSort] = useState<BinderSortKey>("name");
+  const query = useDebounced(choice.query, 250);
+  const asked = useMemo(() => ({ ...choice, query }), [choice, query]);
+  const pages = useBinderPages(collectionId, asked, sort);
   const rows = useMemo(() => (pages.data?.pages ?? []).flatMap((p) => p.collection?.entries ?? []), [pages.data]);
+  const matched = pages.data?.pages[0]?.matchedRows ?? 0;
   const loadMore = useCallback(() => {
-    if (pages.hasNextPage && !pages.isFetchingNextPage) void pages.fetchNextPage();
+    if (pages.hasNextPage && !pages.isFetchingNextPage && !pages.isPlaceholderData) void pages.fetchNextPage();
   }, [pages]);
 
   return (
@@ -254,12 +261,20 @@ export function CollectionPage() {
         activeCollectionId={collectionId}
         activeCollectionName={active?.name ?? ""}
         askForFile={pickFile}
-        onImported={(res) => {
+        onImported={(res, replaced) => {
           setResult(res);
-          if (res.collection) setCollection(res.collection.id);
-          void notify("success", "Collection imported", `${res.collection?.cardCount ?? 0} cards are ready.`);
+          const id = res.collection?.id ?? "";
+          // An import that resolved no row stores nothing and has no id,
+          // so it names no collection and the pool stays as it was.
+          if (id === "") {
+            void notify("error", "Nothing imported", "No row of the file resolved. The report below says why.");
+            return;
+          }
+          setCollection(id);
+          void notify("success", replaced ? "Collection replaced" : "Collection imported", `${res.collection?.cardCount ?? 0} cards are ready.`);
           void queryClient.invalidateQueries({ queryKey: ["collections"] });
           void queryClient.invalidateQueries({ queryKey: ["collection"] });
+          void queryClient.invalidateQueries({ queryKey: ["cards", "binder-art"] });
         }}
       />
 
@@ -284,12 +299,30 @@ export function CollectionPage() {
 
       {/* The binder sits under the controls, not over them. A click on an
           earlier upload shows or hides it, and nothing above it moves. */}
-      {binder.data?.collection && <CollectionHero collection={binder.data.collection} loading={binder.isPending} />}
+      {binder.data?.collection && <CollectionHero collection={binder.data.collection} />}
       {collectionId !== "" && binder.isPending && <Skeleton className="h-56 w-full rounded-card" />}
+      {collectionId !== "" && binder.isError && (
+        <ErrorState title="Could not read the collection" message={errorMessage(binder.error)} onRetry={() => void binder.refetch()} />
+      )}
       {/* The rows load a page at a time, and the head above reads none
-          of them (D-392). */}
-      {collectionId !== "" && rows.length > 0 && (
-        <BinderGrid entries={rows} loading={pages.isFetchingNextPage} onReachEnd={loadMore} />
+          of them (D-392). The grid stays while a choice loads, so the
+          controls never leave the reader's hands. */}
+      {collectionId !== "" && binder.isSuccess && (
+        <BinderGrid
+          rows={rows}
+          matched={matched}
+          total={summary?.rowCount ?? 0}
+          sets={summary?.sets ?? []}
+          byType={summary?.byType ?? {}}
+          choice={choice}
+          onChoice={setChoice}
+          sort={sort}
+          onSort={setSort}
+          loading={pages.isPending || pages.isFetchingNextPage || pages.isPlaceholderData}
+          error={pages.isError ? errorMessage(pages.error) : undefined}
+          onRetry={() => void pages.refetch()}
+          onReachEnd={loadMore}
+        />
       )}
     </div>
   );

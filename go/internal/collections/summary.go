@@ -11,10 +11,6 @@ import (
 // every entry and counted them in the browser, and the owner's 2,657
 // rows moved about a megabyte on every page load.
 
-// TopSets is how many sets the summary names. The head shows a short
-// list, and a collection can hold cards of hundreds of sets.
-const TopSets = 6
-
 // ArtCards is how many cards the binder head shows the art of. The head
 // reads no entry, so the summary carries the ids (D-392).
 const ArtCards = 10
@@ -23,14 +19,14 @@ const ArtCards = 10
 // first, so the strip shows the collection at its best.
 var artRank = map[string]int{"mythic": 0, "rare": 1, "uncommon": 2, "common": 3}
 
-// CardSource resolves an Oracle id to a card. The color counts read the
-// color identity, which a collection entry does not carry.
+// CardSource resolves an Oracle id to a card. The type counts read the
+// card types, which a collection entry does not carry (D-398).
 type CardSource interface {
 	ByOracleID(id string) (*mtgv1.Card, bool)
 }
 
 // Summarize counts the shape of a collection (D-392). cards may be nil,
-// and the color counts are then empty: every other count reads the
+// and the type counts are then empty: every other count reads the
 // entries alone, because the rarity and the set name ride on every row.
 //
 // Every count is of cards and not of rows, copies included. A row of
@@ -40,7 +36,7 @@ func Summarize(entries []*mtgv1.CollectionEntry, cards CardSource) *mtgv1.Collec
 	out := &mtgv1.CollectionSummary{
 		RowCount: int32(len(entries)), //nolint:gosec // an import caps the rows far under int32
 		ByRarity: map[string]int32{},
-		ByColor:  map[string]int32{},
+		ByType:   map[string]int32{},
 	}
 	oracle := map[string]bool{}
 	type setKey struct{ code, name string }
@@ -63,10 +59,10 @@ func Summarize(entries []*mtgv1.CollectionEntry, cards CardSource) *mtgv1.Collec
 		if !ok {
 			continue
 		}
-		// A card of two colors counts once under each. A colorless card
-		// counts under none, which is what a color filter reads.
-		for _, col := range c.GetColorIdentity() {
-			out.ByColor[col.String()] += q
+		// A card of two types counts once under each, which is what the
+		// type filter reads (D-398).
+		for _, t := range c.GetCardTypes() {
+			out.ByType[t] += q
 		}
 	}
 	out.UniqueCards = int32(len(oracle)) //nolint:gosec // one entry per row, and the rows are capped
@@ -75,17 +71,15 @@ func Summarize(entries []*mtgv1.CollectionEntry, cards CardSource) *mtgv1.Collec
 		sets = append(sets, &mtgv1.SetCount{SetCode: k.code, SetName: k.name, Count: n})
 	}
 	// Largest first, and the set code breaks every tie, so two runs of
-	// one collection give one answer.
+	// one collection give one answer. The list holds every set: the
+	// binder's set filter offers each one (D-398).
 	sort.SliceStable(sets, func(i, j int) bool {
 		if sets[i].GetCount() != sets[j].GetCount() {
 			return sets[i].GetCount() > sets[j].GetCount()
 		}
 		return sets[i].GetSetCode() < sets[j].GetSetCode()
 	})
-	if len(sets) > TopSets {
-		sets = sets[:TopSets]
-	}
-	out.TopSets = sets
+	out.Sets = sets
 	out.ArtOracleIds = artIDs(entries)
 	return out
 }

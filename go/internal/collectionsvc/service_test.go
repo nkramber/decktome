@@ -19,7 +19,6 @@ import (
 
 // fakeRepo is an in-memory Repo. It records what the service stored.
 type fakeRepo struct {
-	byHash  map[string]string
 	stored  map[string]*mtgv1.Collection
 	findErr error
 	putErr  error
@@ -28,7 +27,7 @@ type fakeRepo struct {
 }
 
 func newFakeRepo() *fakeRepo {
-	return &fakeRepo{byHash: map[string]string{}, stored: map[string]*mtgv1.Collection{}}
+	return &fakeRepo{stored: map[string]*mtgv1.Collection{}}
 }
 
 func (f *fakeRepo) Delete(_ context.Context, _ string, id string) error {
@@ -82,17 +81,25 @@ func (f *fakeRepo) Replace(ctx context.Context, uid, id string, col *mtgv1.Colle
 	return f.GetHead(ctx, uid, id)
 }
 
+// Put mirrors the id rule of the real repo (D-399). A collection with no
+// id takes the id its hash derives, unless that document exists and
+// holds another hash, which is a collection a Replace moved on.
 func (f *fakeRepo) Put(_ context.Context, _ string, col *mtgv1.Collection) (string, error) {
 	if f.putErr != nil {
 		return "", f.putErr
 	}
 	f.puts++
 	id := col.Id
+	if id == "" && col.ContentHash != "" {
+		derived := collections.DocID(col.ContentHash)
+		if have, ok := f.stored[derived]; !ok || have.GetContentHash() == col.ContentHash {
+			id = derived
+		}
+	}
 	if id == "" {
 		id = "doc" + string(rune('0'+len(f.stored)))
 	}
 	f.stored[id] = col
-	f.byHash[col.ContentHash] = id
 	return id, nil
 }
 
@@ -120,11 +127,22 @@ func (f *fakeRepo) List(context.Context, string) ([]*mtgv1.Collection, error) {
 	return out, nil
 }
 
+// FindByHash reads the hash each document holds now, as the Firestore
+// query does. A document a Replace moved on answers to its new hash
+// alone.
 func (f *fakeRepo) FindByHash(_ context.Context, _, hash string) (string, error) {
 	if f.findErr != nil {
 		return "", f.findErr
 	}
-	return f.byHash[hash], nil
+	if hash == "" {
+		return "", nil
+	}
+	for id, col := range f.stored {
+		if col.GetContentHash() == hash {
+			return id, nil
+		}
+	}
+	return "", nil
 }
 
 type staticIndex struct{ idx *cards.Index }

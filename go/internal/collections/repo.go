@@ -7,9 +7,12 @@ import (
 	"time"
 
 	"cloud.google.com/go/firestore"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
 	"github.com/nkramber/mtg-deck-builder/go/internal/gzstore"
 )
 
@@ -21,6 +24,11 @@ import (
 // step.
 type Repo struct {
 	client *firestore.Client
+	// index answers the card index of the day, or nil before the first
+	// snapshot loads. A document stored before the summary existed
+	// computes one from its entries, and the type counts need the
+	// index (D-398).
+	index func() *cards.Index
 }
 
 // ErrTooLarge reports a collection that does not fit one document.
@@ -28,6 +36,26 @@ var ErrTooLarge = errors.New("collection too large for one document (max 900 KiB
 
 // NewRepo wraps a Firestore client. The caller owns the client.
 func NewRepo(client *firestore.Client) *Repo { return &Repo{client: client} }
+
+// WithIndex names where the repo reads the card index of the day. The
+// summary of a document stored before schema version 2 reads it.
+func (r *Repo) WithIndex(index func() *cards.Index) *Repo {
+	r.index = index
+	return r
+}
+
+// cardSource is the index as a CardSource, or nil when none is loaded.
+// A nil *cards.Index must not reach the interface, because a typed nil
+// is not a nil interface.
+func (r *Repo) cardSource() CardSource {
+	if r.index == nil {
+		return nil
+	}
+	if idx := r.index(); idx != nil {
+		return idx
+	}
+	return nil
+}
 
 // storedCollection is the Firestore document shape.
 type storedCollection struct {
@@ -70,8 +98,8 @@ func (r *Repo) Put(ctx context.Context, uid string, col *mtgv1.Collection) (stri
 	if err != nil {
 		return "", err
 	}
-	if len(entriesGz)+len(countsGz) > gzstore.MaxStoredBytes {
-		return "", fmt.Errorf("%w: %d bytes", ErrTooLarge, len(entriesGz)+len(countsGz))
+	if size := len(entriesGz) + len(countsGz) + len(summaryGz); size > gzstore.MaxStoredBytes {
+		return "", fmt.Errorf("%w: %d bytes", ErrTooLarge, size)
 	}
 	stored := storedCollection{
 		Name:          col.Name,
@@ -90,7 +118,30 @@ func (r *Repo) Put(ctx context.Context, uid string, col *mtgv1.Collection) (stri
 	case col.Id != "":
 		ref = r.doc(uid, col.Id)
 	case col.ContentHash != "":
-		ref = r.doc(uid, DocID(col.ContentHash))
+		// The derived id belongs to its hash alone (D-399). A Replace
+		// keeps an id whose hash moved on, so a later upload of the old
+		// file must not land on it. Create refuses an existing document,
+		// and the upload then takes a fresh id unless the document holds
+		// this same hash, which is the identical re-upload of D-16.
+		derived := r.doc(uid, DocID(col.ContentHash))
+		_, err := derived.Create(ctx, stored)
+		if err == nil {
+			return derived.ID, nil
+		}
+		if status.Code(err) != codes.AlreadyExists {
+			return "", fmt.Errorf("store collection: %w", err)
+		}
+		snap, err := derived.Get(ctx)
+		if err != nil {
+			return "", fmt.Errorf("store collection: %w", err)
+		}
+		var have storedCollection
+		if err := snap.DataTo(&have); err != nil {
+			return "", fmt.Errorf("collection %s: %w", derived.ID, err)
+		}
+		if have.ContentHash == col.ContentHash {
+			ref = derived
+		}
 	}
 	if _, err := ref.Set(ctx, stored); err != nil {
 		return "", fmt.Errorf("store collection: %w", err)
@@ -126,7 +177,7 @@ func (r *Repo) GetHead(ctx context.Context, uid, id string) (*mtgv1.Collection, 
 	if err := gzstore.UnmarshalJSON(stored.EntriesGz, &entries); err != nil {
 		return nil, fmt.Errorf("collection %s entries: %w", id, err)
 	}
-	col.Summary = Summarize(entries, nil)
+	col.Summary = Summarize(entries, r.cardSource())
 	return col, nil
 }
 
@@ -153,7 +204,7 @@ func (r *Repo) Get(ctx context.Context, uid, id string) (*mtgv1.Collection, erro
 		}
 		col.Summary = &sum
 	} else {
-		col.Summary = Summarize(entries, nil)
+		col.Summary = Summarize(entries, r.cardSource())
 	}
 	return col, nil
 }
@@ -203,11 +254,9 @@ func (r *Repo) Delete(ctx context.Context, uid, id string) error {
 // megabyte the entries hold, and it keeps the import time: a rename must
 // not move the collection up a list ordered by date.
 func (r *Repo) Rename(ctx context.Context, uid, id, name string) (*mtgv1.Collection, error) {
-	ref := r.doc(uid, id)
-	if _, err := ref.Get(ctx); err != nil {
-		return nil, err
-	}
-	if _, err := ref.Update(ctx, []firestore.Update{{Path: "name", Value: name}}); err != nil {
+	// Update refuses a missing document with NotFound, so no read comes
+	// first. The status stays readable through the wrap.
+	if _, err := r.doc(uid, id).Update(ctx, []firestore.Update{{Path: "name", Value: name}}); err != nil {
 		return nil, fmt.Errorf("rename collection %s: %w", id, err)
 	}
 	return r.GetHead(ctx, uid, id)

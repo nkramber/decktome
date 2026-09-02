@@ -1578,30 +1578,9 @@ func (a *Agent) applyKeys(st *State, out classifyOut, open []string, message str
 			continue
 		}
 		a.log.Info("the user declined a slot", "key", k)
-		st.Skip(k)
-		// A declined pick is a delegation (D-147): the user handed the
-		// commander choice to the agent, and the generator picks. The
-		// pick row carries its own key, so the skip above leaves the
-		// commander slot unspecified, and the D-147 rule can not close it
-		// either: its guard reads the outstanding pick question that this
-		// skip just removed, so the session would report ready with the
-		// commander never asked (D-208).
-		if k == "commander_pick" && !st.Ctx.Filled["commander"] {
-			st.Skip("commander")
-			st.CurrentOffer = nil
-		}
-		// The format is the one slot the planner routes on. Every power
-		// row, and every Commander row, triggers on it. A declined format
-		// left empty would fire no power row, and the session would finish
-		// with no power level.
-		//
-		// The corpus names the default under "default answers", so
-		// nothing is invented here. The slot keeps the SKIPPED state,
-		// which records that the user did not choose it. PR-8 reads the
-		// other declined slots the same way (D-98).
-		if k == "format" && st.Ctx.Format == mtgv1.FormatId_FORMAT_ID_UNSPECIFIED {
-			st.Slots.Format = &mtgv1.Format{Id: DefaultFormat}
-			st.Ctx.Format = DefaultFormat
+		formatWasUnset := st.Ctx.Format == mtgv1.FormatId_FORMAT_ID_UNSPECIFIED
+		st.DeclineKey(k)
+		if k == "format" && formatWasUnset {
 			a.log.Info("a declined format took the corpus default", "format", DefaultFormat.String())
 		}
 	}

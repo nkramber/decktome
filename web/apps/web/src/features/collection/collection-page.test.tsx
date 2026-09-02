@@ -1,5 +1,5 @@
 import { Color } from "@mtg/api-client/mtg/v1/card_pb";
-import { ImportSource, UnresolvedReason } from "@mtg/api-client/mtg/v1/collection_pb";
+import { BinderSort, ImportSource, UnresolvedReason } from "@mtg/api-client/mtg/v1/collection_pb";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { axe } from "jest-axe";
@@ -72,8 +72,11 @@ beforeEach(() => {
                 rowCount: 3,
                 uniqueCards: 2,
                 byRarity: { common: 6, mythic: 1 },
-                byColor: {},
-                topSets: [{ setCode: "lea", setName: "Alpha", count: 6 }],
+                sets: [
+                  { setCode: "lea", setName: "Alpha", count: 6 },
+                  { setCode: "wwk", setName: "Worldwake", count: 1 },
+                ],
+                byType: { Instant: 6, Planeswalker: 1 },
                 artOracleIds: ["o-jace", "o-bolt"],
               },
             },
@@ -93,6 +96,7 @@ beforeEach(() => {
               ],
             },
             nextPageToken: "",
+            matchedRows: 3,
           },
     ),
   );
@@ -447,5 +451,97 @@ describe("the upload dialog", () => {
     await screen.findByRole("button", { name: "binder-july.csv" });
     await openUpload(userEvent.setup());
     expect(await axe(container.ownerDocument.body)).toHaveNoViolations();
+  });
+});
+
+// The binder controls send every choice to the server, so a match past
+// the first page still shows (D-398).
+describe("the binder controls", () => {
+  it("lists every set and every type of the summary, and counts the matched rows", async () => {
+    useAppStore.setState({ collectionId: "c-old", poolMode: "owned_only" });
+    await renderAt("/collection");
+    expect(await screen.findByTestId("binder-count")).toHaveTextContent("3 of 3 rows");
+    const sets = screen.getByRole("combobox", { name: "Filter by set" });
+    expect(within(sets).getAllByRole("option").map((o) => o.textContent)).toEqual(["Every set", "Alpha (6)", "Worldwake (1)"]);
+    const types = screen.getByRole("combobox", { name: "Filter by card type" });
+    expect(within(types).getAllByRole("option").map((o) => o.textContent)).toEqual(["Every type", "Instant (6)", "Planeswalker (1)"]);
+  });
+
+  it("sends the search, the filters, and the sort to the server", async () => {
+    useAppStore.setState({ collectionId: "c-old", poolMode: "owned_only" });
+    const user = userEvent.setup();
+    await renderAt("/collection");
+    await screen.findByTestId("binder-count");
+
+    await user.selectOptions(screen.getByRole("combobox", { name: "Filter by color" }), "R");
+    await waitFor(() =>
+      expect(getCollection).toHaveBeenCalledWith(
+        expect.objectContaining({ collectionId: "c-old", filter: expect.objectContaining({ color: Color.R, colorless: false }) }),
+      ),
+    );
+    await user.selectOptions(screen.getByRole("combobox", { name: "Sort the binder" }), "price");
+    await waitFor(() => expect(getCollection).toHaveBeenCalledWith(expect.objectContaining({ sort: BinderSort.PRICE })));
+
+    // The search waits for a pause, then goes out trimmed.
+    await user.type(screen.getByRole("searchbox", { name: "Search the binder by card name" }), "sol ring");
+    await waitFor(() =>
+      expect(getCollection).toHaveBeenCalledWith(expect.objectContaining({ filter: expect.objectContaining({ query: "sol ring" }) })),
+    );
+  });
+
+  it("shows an error state when the binder does not load, with a retry", async () => {
+    getCollection.mockImplementation((req: { entriesOmitted?: boolean }) =>
+      req.entriesOmitted
+        ? Promise.resolve({ collection: { id: "c-old", name: "binder-july.csv", cardCount: 7, entries: [], summary: { rowCount: 3, uniqueCards: 2, byRarity: {}, sets: [], byType: {}, artOracleIds: [] } } })
+        : Promise.reject(new Error("[unavailable] no store")),
+    );
+    useAppStore.setState({ collectionId: "c-old", poolMode: "owned_only" });
+    await renderAt("/collection");
+    expect(await screen.findByText("Could not read the binder")).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("[unavailable] no store");
+  });
+});
+
+// A reader with an active collection chooses what the file does (D-400).
+describe("the upload mode", () => {
+  const file = () => new File(["Name,Set code\nBolt,LEA\n"], "second.csv", { type: "text/csv" });
+
+  it("adds a new collection when the reader says so, and never diffs", async () => {
+    importCollection.mockResolvedValue({ collection: { id: "c-new", name: "second.csv", cardCount: 1 }, report: { unresolved: [], resolvedCount: 1, unresolvedByReason: {} } });
+    useAppStore.setState({ collectionId: "c-old", poolMode: "owned_only" });
+    const user = userEvent.setup();
+    await renderAt("/collection");
+    const input = await openUpload(user);
+    // The name field belongs to a new collection alone.
+    expect(screen.queryByLabelText(/Collection name/)).not.toBeInTheDocument();
+    await user.click(screen.getByRole("radio", { name: /Add it as a new collection/ }));
+    expect(screen.getByLabelText(/Collection name/)).toBeInTheDocument();
+    await user.upload(input, file());
+    await user.click(screen.getByRole("button", { name: "Upload" }));
+    await waitFor(() => expect(importCollection).toHaveBeenCalledWith(expect.objectContaining({ replaceCollectionId: "" })));
+    expect(diffCollections).not.toHaveBeenCalled();
+    expect(useAppStore.getState().collectionId).toBe("c-new");
+  });
+
+  it("offers no choice when no collection is active", async () => {
+    const user = userEvent.setup();
+    await renderAt("/collection");
+    await openUpload(user);
+    expect(screen.queryByRole("radio")).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/Collection name/)).toBeInTheDocument();
+  });
+
+  it("names no collection when the import resolved no row", async () => {
+    importCollection.mockResolvedValue({
+      collection: { id: "", name: "bad.csv", cardCount: 0 },
+      report: { unresolved: [{ line: 2, raw: "x", reason: UnresolvedReason.UNKNOWN_CARD }], resolvedCount: 0, unresolvedByReason: { UNRESOLVED_REASON_UNKNOWN_CARD: 1 } },
+    });
+    const user = userEvent.setup();
+    await renderAt("/collection");
+    await user.upload(await openUpload(user), file());
+    await user.click(screen.getByRole("button", { name: "Upload" }));
+    await screen.findByTestId("card-count");
+    expect(useAppStore.getState().collectionId).toBe("");
+    expect(useAppStore.getState().poolMode).toBe("any");
   });
 });
