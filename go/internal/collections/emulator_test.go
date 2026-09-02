@@ -4,10 +4,14 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	"cloud.google.com/go/firestore"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
 )
 
 // The collection store against the local Firestore emulator (PR-18).
@@ -117,8 +121,8 @@ func TestEmulatorRenameKeepsEverythingElse(t *testing.T) {
 	if len(full.GetEntries()) != 3 || full.GetCardCount() != 6 {
 		t.Errorf("after a rename: %d entries, %d cards", len(full.GetEntries()), full.GetCardCount())
 	}
-	if _, err := repo.Rename(t.Context(), uid, "missing", "x"); err == nil {
-		t.Error("a rename of a missing collection must fail")
+	if _, err := repo.Rename(t.Context(), uid, "missing", "x"); status.Code(err) != codes.NotFound {
+		t.Errorf("a rename of a missing collection gave %v, want NotFound", err)
 	}
 }
 
@@ -195,5 +199,81 @@ func TestEmulatorHeadOfAnOldDocument(t *testing.T) {
 	}
 	if len(head.GetEntries()) != 0 {
 		t.Error("the head still carries no entry")
+	}
+}
+
+// TestEmulatorPutKeepsADerivedIdForItsHashAlone is D-399. A Replace
+// keeps an id whose hash moved on, so a later Put of the old file must
+// take a fresh id and leave the replaced collection as it is.
+func TestEmulatorPutKeepsADerivedIdForItsHashAlone(t *testing.T) {
+	repo, uid := emulatorRepo(t)
+	id, err := repo.Put(t.Context(), uid, sampleCollection("x"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if id != DocID("hash-x") {
+		t.Fatalf("id = %q, want the one the hash derives", id)
+	}
+	next := sampleCollection("y")
+	next.Entries = next.Entries[:1]
+	next.ContentHash = "hash-y"
+	if _, err := repo.Replace(t.Context(), uid, id, next); err != nil {
+		t.Fatal(err)
+	}
+	again, err := repo.Put(t.Context(), uid, sampleCollection("x"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if again == id {
+		t.Fatal("the old file landed on the replaced collection")
+	}
+	kept, err := repo.Get(t.Context(), uid, id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if kept.GetContentHash() != "hash-y" || len(kept.GetEntries()) != 1 {
+		t.Errorf("the replaced collection reads %q with %d rows, want hash-y with 1", kept.GetContentHash(), len(kept.GetEntries()))
+	}
+	// The identical re-upload of D-16 still updates in place: a Put with
+	// the derived id and the same hash lands on that document.
+	same, err := repo.Put(t.Context(), uid, sampleCollection("y"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if same != DocID("hash-y") {
+		t.Errorf("a file with a free derived id took %q", same)
+	}
+	if once, err := repo.Put(t.Context(), uid, sampleCollection("y")); err != nil || once != same {
+		t.Errorf("the same file again took %q (%v), want %q", once, err, same)
+	}
+}
+
+// TestEmulatorHeadOfAnOldDocumentReadsTheIndex is D-398 over D-392. The
+// fallback summary reads the card index for the type counts, so the
+// type filter of an old collection offers its types.
+func TestEmulatorHeadOfAnOldDocumentReadsTheIndex(t *testing.T) {
+	repo, uid := emulatorRepo(t)
+	idx := cards.NewIndex([]*mtgv1.Card{
+		{OracleId: "o-bolt", Name: "Lightning Bolt", CardTypes: []string{"Instant"}},
+	}, nil, nil, time.Now())
+	repo.WithIndex(func() *cards.Index { return idx })
+	id, err := repo.Put(t.Context(), uid, sampleCollection("old"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := repo.doc(uid, id).Update(t.Context(), []firestore.Update{
+		{Path: "summary_gz", Value: nil}, {Path: "schema_version", Value: 1},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	head, err := repo.GetHead(t.Context(), uid, id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if head.GetSummary().GetByType()["Instant"] != 5 {
+		t.Errorf("by type = %v, want 5 instants from the index", head.GetSummary().GetByType())
+	}
+	if len(head.GetSummary().GetSets()) != 2 {
+		t.Errorf("sets = %v, want both", head.GetSummary().GetSets())
 	}
 }

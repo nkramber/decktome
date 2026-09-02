@@ -10,6 +10,7 @@ import (
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
+	"github.com/nkramber/mtg-deck-builder/go/internal/collections"
 )
 
 // stocked is a server whose store holds one collection of n entries.
@@ -365,5 +366,169 @@ func TestGetCollectionFillsTheDisplayFields(t *testing.T) {
 	}
 	if len(head.Msg.GetCollection().GetEntries()) != 0 {
 		t.Error("the head carries entries")
+	}
+}
+
+// TestGetCollectionFiltersEveryRow is D-398. The filter runs on the
+// server, so a match past the first page still shows, and the answer
+// counts every matched row.
+func TestGetCollectionFiltersEveryRow(t *testing.T) {
+	s, repo := stocked(t, 250)
+	// The last row alone carries the name the reader types.
+	repo.stored["col-1"].Entries[249].Name = "Sol Ring"
+	res, err := s.GetCollection(context.Background(), connect.NewRequest(&mtgv1.GetCollectionRequest{
+		CollectionId: "col-1", PageSize: 100, Filter: &mtgv1.BinderFilter{Query: "sol ring"},
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := res.Msg.GetCollection().GetEntries()
+	if len(got) != 1 || got[0].GetName() != "Sol Ring" {
+		t.Fatalf("the filter kept %d rows, want the one past the first page", len(got))
+	}
+	if res.Msg.GetMatchedRows() != 1 || res.Msg.GetNextPageToken() != "" {
+		t.Errorf("matched = %d, token = %q", res.Msg.GetMatchedRows(), res.Msg.GetNextPageToken())
+	}
+	// An unfiltered read counts every row, whatever the page holds.
+	all, err := s.GetCollection(context.Background(), connect.NewRequest(&mtgv1.GetCollectionRequest{CollectionId: "col-1", PageSize: 100}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if all.Msg.GetMatchedRows() != 250 {
+		t.Errorf("matched = %d, want 250", all.Msg.GetMatchedRows())
+	}
+}
+
+// TestGetCollectionRefusesATokenOfAnotherFilter: the offset of one
+// filter counts a different list, so the token names its filter and
+// its sort.
+func TestGetCollectionRefusesATokenOfAnotherFilter(t *testing.T) {
+	s, _ := stocked(t, 250)
+	first, err := s.GetCollection(context.Background(), connect.NewRequest(&mtgv1.GetCollectionRequest{
+		CollectionId: "col-1", PageSize: 100, Sort: mtgv1.BinderSort_BINDER_SORT_COUNT,
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	token := first.Msg.GetNextPageToken()
+	_, err = s.GetCollection(context.Background(), connect.NewRequest(&mtgv1.GetCollectionRequest{
+		CollectionId: "col-1", PageSize: 100, PageToken: token, Sort: mtgv1.BinderSort_BINDER_SORT_NAME,
+	}))
+	if connect.CodeOf(err) != connect.CodeInvalidArgument {
+		t.Errorf("a token under another sort gave %v, want InvalidArgument", connect.CodeOf(err))
+	}
+	_, err = s.GetCollection(context.Background(), connect.NewRequest(&mtgv1.GetCollectionRequest{
+		CollectionId: "col-1", PageSize: 100, PageToken: token, Sort: mtgv1.BinderSort_BINDER_SORT_COUNT, Filter: &mtgv1.BinderFilter{Query: "x"},
+	}))
+	if connect.CodeOf(err) != connect.CodeInvalidArgument {
+		t.Errorf("a token under another filter gave %v, want InvalidArgument", connect.CodeOf(err))
+	}
+	// The same pair reads on.
+	next, err := s.GetCollection(context.Background(), connect.NewRequest(&mtgv1.GetCollectionRequest{
+		CollectionId: "col-1", PageSize: 100, PageToken: token, Sort: mtgv1.BinderSort_BINDER_SORT_COUNT,
+	}))
+	if err != nil || len(next.Msg.GetCollection().GetEntries()) != 100 {
+		t.Errorf("the second page under the same sort: %v, %d rows", err, len(next.Msg.GetCollection().GetEntries()))
+	}
+}
+
+// TestGetCollectionFiltersOnTheDisplayFields is D-396 beside D-398: the
+// color, the type, and the price come from the index of the day, and
+// the filter and the sort read them on the server.
+func TestGetCollectionFiltersOnTheDisplayFields(t *testing.T) {
+	bolt := &mtgv1.Card{OracleId: "o-bolt", Name: "Lightning Bolt", Colors: []mtgv1.Color{mtgv1.Color_COLOR_R}, CardTypes: []string{"Instant"}, PriceUsd: 1.25}
+	ring := &mtgv1.Card{OracleId: "o-ring", Name: "Sol Ring", CardTypes: []string{"Artifact"}, PriceUsd: 3}
+	repo := newFakeRepo()
+	repo.stored["col-1"] = &mtgv1.Collection{
+		Id: "col-1", Name: "Binder", CardCount: 2, ContentHash: "hash-1",
+		Entries: []*mtgv1.CollectionEntry{
+			{ScryfallId: "p-1", OracleId: "o-bolt", Name: "Lightning Bolt", Quantity: 1},
+			{ScryfallId: "p-2", OracleId: "o-ring", Name: "Sol Ring", Quantity: 1},
+		},
+	}
+	s := newServer(repo, cards.NewIndex([]*mtgv1.Card{bolt, ring}, nil, nil, time.Now()))
+	read := func(f *mtgv1.BinderFilter, by mtgv1.BinderSort) []string {
+		t.Helper()
+		res, err := s.GetCollection(context.Background(), connect.NewRequest(&mtgv1.GetCollectionRequest{CollectionId: "col-1", Filter: f, Sort: by}))
+		if err != nil {
+			t.Fatal(err)
+		}
+		var out []string
+		for _, e := range res.Msg.GetCollection().GetEntries() {
+			out = append(out, e.GetName())
+		}
+		return out
+	}
+	if got := read(&mtgv1.BinderFilter{Color: mtgv1.Color_COLOR_R}, 0); len(got) != 1 || got[0] != "Lightning Bolt" {
+		t.Errorf("red kept %v", got)
+	}
+	if got := read(&mtgv1.BinderFilter{Colorless: true}, 0); len(got) != 1 || got[0] != "Sol Ring" {
+		t.Errorf("colorless kept %v", got)
+	}
+	if got := read(&mtgv1.BinderFilter{CardType: "Artifact"}, 0); len(got) != 1 || got[0] != "Sol Ring" {
+		t.Errorf("artifact kept %v", got)
+	}
+	if got := read(nil, mtgv1.BinderSort_BINDER_SORT_PRICE); len(got) != 2 || got[0] != "Sol Ring" {
+		t.Errorf("the price sort gave %v, want the dearest first", got)
+	}
+}
+
+// TestReplaceWithNoResolvedRowIsRefused is D-403. A file that resolves
+// nothing must not empty a binder the reader built decks from.
+func TestReplaceWithNoResolvedRowIsRefused(t *testing.T) {
+	s, id := importedServer(t, oneRowCSV("3"))
+	bad := "Name,Set code,Collector number,Quantity,Scryfall ID,Foil,Condition,Language\n" +
+		"Not A Card,XYZ,1,1,00000000-0000-0000-0000-000000000000,normal,near_mint,en\n"
+	_, err := s.ImportCollection(context.Background(), connect.NewRequest(&mtgv1.ImportCollectionRequest{
+		Name: "x", Source: mtgv1.ImportSource_IMPORT_SOURCE_MANABOX_CSV, Content: []byte(bad), ReplaceCollectionId: id,
+	}))
+	if connect.CodeOf(err) != connect.CodeFailedPrecondition {
+		t.Fatalf("code = %v, want FailedPrecondition", connect.CodeOf(err))
+	}
+	got, err := s.GetCollection(context.Background(), connect.NewRequest(&mtgv1.GetCollectionRequest{CollectionId: id}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if q := got.Msg.GetCollection().GetEntries()[0].GetQuantity(); q != 3 {
+		t.Errorf("the store holds %d after a refused replace, want 3", q)
+	}
+}
+
+// TestAnOldFileNeverOverwritesAReplacedCollection is D-399. A first
+// upload lands on the id its hash derives. A Replace keeps that id and
+// moves the hash on. A later upload of the old file is a new collection,
+// and the replaced one keeps its rows.
+func TestAnOldFileNeverOverwritesAReplacedCollection(t *testing.T) {
+	s, id := importedServer(t, oneRowCSV("3"))
+	if id != collections.DocID(collections.ContentHash([]byte(oneRowCSV("3")))) {
+		t.Fatalf("the first upload took id %q, want the one its hash derives", id)
+	}
+	if _, err := s.ImportCollection(context.Background(), connect.NewRequest(&mtgv1.ImportCollectionRequest{
+		Name: "Binder", Source: mtgv1.ImportSource_IMPORT_SOURCE_MANABOX_CSV, Content: []byte(oneRowCSV("5")), ReplaceCollectionId: id,
+	})); err != nil {
+		t.Fatal(err)
+	}
+	res, err := s.ImportCollection(context.Background(), importReq("Second", mtgv1.ImportSource_IMPORT_SOURCE_MANABOX_CSV, oneRowCSV("3")))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Msg.GetCollection().GetId() == id {
+		t.Fatal("the old file landed on the replaced collection")
+	}
+	kept, err := s.GetCollection(context.Background(), connect.NewRequest(&mtgv1.GetCollectionRequest{CollectionId: id}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if q := kept.Msg.GetCollection().GetEntries()[0].GetQuantity(); q != 5 {
+		t.Errorf("the replaced collection holds %d, want its own 5", q)
+	}
+	// The identical re-upload of D-16 still lands on one document: the
+	// new collection, which holds that hash now.
+	again, err := s.ImportCollection(context.Background(), importReq("Third", mtgv1.ImportSource_IMPORT_SOURCE_MANABOX_CSV, oneRowCSV("3")))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if again.Msg.GetCollection().GetId() != res.Msg.GetCollection().GetId() {
+		t.Errorf("the same file made a third document: %q and %q", again.Msg.GetCollection().GetId(), res.Msg.GetCollection().GetId())
 	}
 }

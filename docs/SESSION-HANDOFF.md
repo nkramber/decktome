@@ -6,9 +6,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## Where things stand (2026-09-01)
 
-- `main` is at `e8782b5`. Merged: PR-0a to PR-8, PR-7B, PR-10 to PR-13, the audits, the Phase 3B roadmap (#46), PR-16 (#47), PR-16B (#48), PR-17 (#49), and PR-17B (#50).
-- Branch `pr-18` holds collection management. Three commits are on it, and the binder filters are not committed yet.
-- The tree is green on `pr-18`: Go build, vet, `-race` tests, golangci-lint, `buf breaking`, web lint, typecheck, 227 web tests. `make lint` reports zero findings.
+- `main` is at `3e90939`. Merged: PR-0a to PR-8, PR-7B, PR-10 to PR-13, the audits, the Phase 3B roadmap (#46), PR-16 (#47), PR-16B (#48), PR-17 (#49), PR-17B (#50), and PR-18 (#53).
+- Branch `nits-and-fixes` holds the review fixes of PR-18 and the chat guard (D-398 to D-405).
+- The tree is green on `nits-and-fixes`: Go build, vet, `-race` tests, golangci-lint, web lint, typecheck, and 219 web tests. The emulator tests of the collection store pass, and `make lint` reports zero findings.
 - Question gate run 31 passes every bar. The set deck gate passes 6 of 6.
 - Every gate stands and passes: question gate 32, the set deck gate, revise gate 4, and deck gate 10.
 - PR-9 is out of the MVP (D-256). Phase 3B comes before Phase 4 (D-316).
@@ -261,53 +261,69 @@ Two defects of the set filter reached the gate, and both are fixed:
 
 CAUTION: the eight snapshots on the owner's disk held no set file. A session wrote one into `20260831T090157` by hand, so the tests and the gates read a real table. Every other version falls back to a derived table with no family link, and the worker fills the newest one on its next cycle.
 
-## PR-18, the web side (2026-09-01)
+## PR-18, and the review fixes on `nits-and-fixes` (2026-09-01)
 
-Branch `pr-18`. The collections list gained a rename, a re-upload shows a diff before it replaces anything, and the binder is a virtualized grid.
+PR-18 merged as #53. A review the same day found three defects and four gaps, and the owner approved every fix (D-398 to D-404). The fixes sit on branch `nits-and-fixes`, which starts at `main`.
 
-- The head reads `Collection.summary` and asks for no entry (D-392). `useCollectionHead` sends `entries_omitted`, and the art ids ride on the summary, so the strip still shows the rarest cards.
-- `useBinderPages` reads the rows a page at a time, 200 to a page. The grid asks for the next page two rows before the end.
-- `binder-grid.tsx` holds the search, four filters, the sort, and the tiles. The filters are the set, the color, the card type, and the count. The sort is the name, the count, the set, or the price. The set list and the type list come from the rows the binder holds, so neither needs a table.
-- No document stores the colors, the card types, or the price of a row. `GetCollection` fills the three from the card index of the day, for the page it serves (D-396). A price is never stale, and an older collection needs no rewrite.
-- `upload-dialog.tsx` holds the whole upload: the file, the progress, the diff, and the report (D-395). The page behind it never changes shape. "Add a collection" opens the dialog and the file picker with it (D-342).
-- `collection-diff.tsx` shows the counts and a sample of each list. The dialog holds the frame and the two buttons. Replace names the collection it replaces (D-393).
-- `import-result.tsx` exports `ImportReportBody`, the report with no frame. The dialog and the page both draw it, so the two read alike.
+- The binder filter, the sort, and the search run on the server (D-398). `GetCollectionRequest` takes a `BinderFilter` and a `BinderSort`, the page token names both, and the answer carries `matched_rows`. `collections.Filter` and `collections.Apply` hold the rule, and `binder_test.go` proves it.
+- The summary lists every set and counts every card type (D-398). `CollectionSummary.sets` replaces `top_sets`, `by_type` is new, and `by_color` left (D-402). The repo reads the card index for the summary of a document stored before the field existed, through `Repo.WithIndex`.
+- A derived document id belongs to its hash alone (D-399). `Repo.Put` creates the derived document, and when it exists with another hash the upload takes a fresh id. An emulator test and a service test both walk the sequence: upload X, replace with Y, upload X again.
+- The upload dialog offers a choice when a collection is active (D-400): replace it after a diff, or add a new one. The name field shows for a new collection alone.
+- The art loads in buckets of 100 rows (D-401). One scroll to the foot of 2,471 rows made 12 page calls and 24 art calls.
+- A replacement whose file resolved no row is FailedPrecondition (D-403), and the page names no collection when an answer has no id.
+- `ImportCollection` reads its file through `parseUpload`, as `DiffCollections` does. Delete invalidates the `["collection"]` prefix. The head and the binder show an error state with a retry. `statsOf` and `artIds` left the web app.
+- The decline control of the budget question reads "No budget" (D-404). A declined budget stores no cap.
+- The chat refuses a turn with no card index (D-405). The web app shows the failure as it shows any other.
 
-A session read the screen in a real browser with Playwright, and it measured rather than looked.
+CAUTION: `make dev` runs the API binary of its start. A Go change needs a restart, or a browser read proves the old server. A session read the merged binary first, and the run reproduced the D-399 overwrite and ignored every filter. The second read built the working tree into the scratchpad and ran it on port 8091 with the environment of `scripts/dev.sh`. The script rerouted the collection and card calls to it with `page.route` and `route.fetch`. Every number below comes from that second read.
+
+A session read the screen in a real browser with Playwright, against the real API and the 2,547-row export in `go/internal/collections/testdata`. It measured rather than looked.
 
 | What | Measured |
 |---|---|
-| Tile radius, border, and ground | 4 px, `#2a2d4a`, `#13162a`, which are the card tokens |
-| Heading face | Cinzel Variable, the same face the deck library uses |
-| Body face | Crimson Pro Variable |
-| Tiles drawn of 2,657 rows | 15 at rest, 27 after a scroll |
-| Rows after a scroll to the foot | 200, then 1,800 |
-| Search "Sol Ring" | 400 of 2,000 rows |
-| Horizontal overflow | none |
-| Dialog radius, border, ground, and pad | 4 px, `#2a2d4a`, `#13162a`, 20 px, which are the panel tokens |
-| Dialog title | Cinzel Variable, 18 px, weight 600 |
-| Dialog box at 1440 px | 576 by 431 px, centered |
-| Dialog box at 390 px | 358 px wide, with 16 px each side |
-| Horizontal overflow, both widths | none |
-| Binder controls at 1440, 1024, 768, 390 px | one row, one row, two rows, three rows, and no overflow |
-| Filters chained: red, then Land, then 4 or more | 2,000 rows, then 333, then 66, then 33 |
-| Scroll over 120 frames | median 11.5 ms, p95 26.8 ms, 13 frames over 16.7 ms |
+| The import | 4,316 cards, 2,547 rows resolved, 1 unresolved, 2,471 rows in the binder |
+| The set menu and the type menu | 126 sets, and 8 types with their counts, from the summary |
+| Search "sol ring" | 7 of 2,471 rows, one request, the first tile Sol Ring |
+| Filters chained: red, then Creature, then 4 or more | 498, then 295, then 15 of 2,471 rows |
+| Sort by price | $92.74 first, and the six dearest in order |
+| Scroll over 120 frames | median 16.4 ms, p95 19.8 ms, 47 frames over 16.7 ms, with the RPC reroute in the path |
+| Art calls over those 120 frames | 0 |
+| Scroll to the foot | 12 page calls, 24 art calls, the last virtual row 801 |
+| The upload dialog with a collection active | two choices, and the name field under "Add" alone |
+| The diff of the synthetic file over the export | 2,602 rows added, 2,438 removed, 21 changed |
+| Replace | the request named the collection, and the list still held one, at 6,605 cards |
+| The old file uploaded as new after the replace | two collections, and the replaced one kept its 6,605 cards |
+| The budget question | "No budget", and "You decide" on the other two |
+| Console errors, horizontal overflow | none |
 
-CAUTION: the frame numbers come from headless Chromium against the dev server. They say the grid is in the right range. They are not the gate line, which is the owner's own measurement on a production build.
-
-Playwright found three defects. The grid held its scroll position when the filter changed, so a reader searched and landed in the middle of the answer. The grid returns to the top now. The diff drew a card inside the dialog, which is a frame in a frame. The diff lost its frame, and the dialog footer holds the buttons.
-
-The third defect was the console. One scroll of the binder wrote 4 to 16 errors, from the synchronous flush of the virtualizer. The flush is off, and a frame test measured no cost (D-397).
+CAUTION: the frame numbers come from headless Chromium against the dev server, with every RPC rerouted through Node. They say the grid is in the right range. They are not the gate line, which is the owner's own measurement on a production build.
 
 CAUTION: `Repo.Get` returns a collection the caller owns. A page is a slice of the entry list, taken in place. A repo that shares one object across calls hands the next reader a collection the last page truncated. The test fake answers a clone.
 
 CAUTION: the active collection is a choice of one visit, and the store keeps only the session id (D-345). A Playwright run can not seed it through localStorage. The script clicks the collection, as a reader does.
 
+## The dev stack of 2026-09-01: no card index, and why
+
+The owner's `make dev` log wrote "snapshot version check failed: bucket doesn't exist" every 15 seconds, and session `YvyZtBJyUiEcGMNnxOwm` failed on it. The API held no card index, so the commander question offered no name, the agent said it chose one, and the build ended with "no card index is loaded".
+
+The cause was one file. fake-gcs-server 1.56.1 keeps the metadata of an object in an extended attribute, `user.metadata`. A session wrote `sets.json.gz` into the snapshot folder by hand on 2026-08-31 (PR-17B), and that file carried no attribute. Every listing of the bucket then answered 404, and a read of one object still answered 200.
+
+The fix was to write the same bytes through the fake GCS API, so the attribute exists. The API loaded the snapshot on its next cycle.
+
+```
+curl -X POST "http://127.0.0.1:4443/upload/storage/v1/b/mtg-local-cards/o?uploadType=media&name=scryfall%2F<version>%2Fsets.json.gz" \
+  -H "Content-Type: application/gzip" --data-binary @sets.json.gz
+```
+
+CAUTION: never write a file into `.local/gcs` by hand. Upload it through the API on port 4443.
+
+The chat ran a turn with no card index before D-405. The commander question then offered no name, and the status line said "I have no more commanders that fit this deck, so I chose one for you", which was not true. `Chat` answers Unavailable before the turn now, as `ImportCollection` does.
+
 ## Next steps, in order
 
-1. The owner reads branch `pr-18` in the browser. The screens to read are the collection screen, the binder grid, and the upload dialog.
-2. One PR-18 gate line is open. Only the owner can close it: 60 frames a second on the real 2,657-row export.
-3. No PR is open for PR-18 yet.
+1. The owner restarts `make dev`, so the API is the binary of `nits-and-fixes`. Then the owner reads the collection screen, the binder, and the upload dialog in the browser.
+2. The owner commits `nits-and-fixes` and opens its PR.
+3. One PR-18 gate line is open. Only the owner can close it: 60 frames a second on the real 2,657-row export, on a production build.
 4. Then PR-19 to PR-23 in order, one gate each. Before PR-22, ask OQ-45 and OQ-46.
 5. After Phase 3B: PR-15, then PR-14.
 

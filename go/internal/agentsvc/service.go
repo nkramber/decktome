@@ -249,6 +249,9 @@ var (
 	errNoSessionID     = errors.New("session_id is required")
 	errBadSessionID    = fmt.Errorf("session_id: %w", gzstore.ErrBadID)
 	errBadCollectionID = fmt.Errorf("collection_id: %w", gzstore.ErrBadID)
+	// errIndexNotLoaded refuses a turn before the first card snapshot
+	// loads (D-405).
+	errIndexNotLoaded = errors.New("the card database is not loaded yet, so the chat waits")
 )
 
 // tooLong reports whether the message, any answer text, or the message
@@ -321,6 +324,12 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 	}
 	if id := req.Msg.GetCollectionId(); id != "" && !gzstore.ValidID(id) {
 		return connect.NewError(connect.CodeInvalidArgument, errBadCollectionID)
+	}
+	// A turn with no card index resolves no name, offers no commander,
+	// and builds nothing. It waits, as ImportCollection does, instead of
+	// a turn that asks and then claims a commander it never had (D-405).
+	if s.index != nil && s.index.Current() == nil {
+		return connect.NewError(connect.CodeUnavailable, errIndexNotLoaded)
 	}
 	if id := req.Msg.GetSessionId(); id != "" {
 		if _, busy := s.building.Load(buildKey(uid, id)); busy {

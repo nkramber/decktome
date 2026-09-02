@@ -24,9 +24,9 @@ message Collection {
   CollectionSummary summary = 8;
 }
 
-// CollectionSummary is what the binder head shows about a collection,
-// without its entries (D-392). The import computes it, so no reader
-// counts 2,657 rows to draw one header.
+// CollectionSummary is what the binder head and the binder controls
+// show about a collection, without its entries (D-392). The import
+// computes it, so no reader counts 2,657 rows to draw one header.
 message CollectionSummary {
   // row_count is how many entries the collection holds. A ManaBox row is
   // one printing in one finish and one condition, so one card can hold
@@ -37,12 +37,15 @@ message CollectionSummary {
   // by_rarity counts cards per Scryfall rarity, copies included. The key
   // is the rarity as the snapshot writes it, for example "mythic".
   map<string, int32> by_rarity = 3;
-  // top_sets are the sets the collection holds most of, largest first.
-  repeated SetCount top_sets = 4;
-  // by_color counts cards per color of the card's identity, copies
-  // included. A card of two colors counts once under each. The key is
-  // the Color enum name, for example "COLOR_W".
-  map<string, int32> by_color = 5;
+  // sets are every set the collection holds, largest first. The head
+  // shows the first, and the binder's set filter lists them all (D-398).
+  repeated SetCount sets = 4;
+  // by_type counts cards per card type, copies included. A card of two
+  // types counts once under each. The binder's type filter lists the
+  // keys (D-398). The import reads the card index for it, so a
+  // collection stored before the field holds none until the head
+  // computes one.
+  map<string, int32> by_type = 5;
   // art_oracle_ids are the cards the binder head shows the art of, the
   // rarest first. The head reads no entry, so the import picks them
   // (D-392). A card the reader owns in two printings appears once.
@@ -80,6 +83,45 @@ message CollectionEntry {
   repeated Color colors = 12;
   repeated string card_types = 13;
   double price_usd = 14;
+}
+
+// BinderFilter is what the binder grid asks for (D-398). Every field
+// runs on the server, so a match on a later page still shows. The
+// color, the type, and the price read the display fields GetCollection
+// fills from the card index of the day (D-396).
+message BinderFilter {
+  // query keeps a row whose card name holds this text, without regard
+  // to case. Empty keeps them all.
+  string query = 1;
+  // set_code keeps one set. Empty keeps them all.
+  string set_code = 2;
+  // color keeps the cards of this color, and a card of two colors
+  // answers to both. COLOR_UNSPECIFIED keeps them all.
+  Color color = 3;
+  // colorless keeps the cards of no color. It wins over color.
+  bool colorless = 4;
+  // card_type keeps one card type, as the type line names it, for
+  // example "Instant". Empty keeps them all.
+  string card_type = 5;
+  // quantity keeps the rows of this many copies. Zero keeps them all.
+  int32 quantity = 6;
+  // quantity_or_more keeps the rows of quantity copies or more. Four
+  // or more is a playset, and every count above it reads the same way.
+  bool quantity_or_more = 7;
+}
+
+// BinderSort orders the rows of a binder page. The name breaks every
+// tie, so one binder reads the same on every visit.
+enum BinderSort {
+  // BINDER_SORT_UNSPECIFIED orders by name.
+  BINDER_SORT_UNSPECIFIED = 0;
+  BINDER_SORT_NAME = 1;
+  // BINDER_SORT_COUNT puts the largest count first.
+  BINDER_SORT_COUNT = 2;
+  BINDER_SORT_SET = 3;
+  // BINDER_SORT_PRICE puts the dearest row first, and an unpriced row
+  // last.
+  BINDER_SORT_PRICE = 4;
 }
 
 // CollectionDiff is what changed between a stored collection and an

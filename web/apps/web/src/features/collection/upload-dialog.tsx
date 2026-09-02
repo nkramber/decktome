@@ -21,11 +21,17 @@ import { ImportReportBody } from "./import-result";
 //
 // A re-upload over an active collection shows what changes before
 // anything replaces anything (D-393). A first upload has nothing to
-// compare against, and it imports.
+// compare against, and it imports. A reader with an active collection
+// chooses between the two, because "Upload a collection" must not
+// force a replacement on a reader who came to add one (D-400).
 
 // step names where the dialog stands. The reader reads one thing at a
 // time, and the buttons follow the step.
 type Step = "pick" | "diff" | "done";
+
+// Mode is what the file does when a collection is active: it replaces
+// that collection after a diff, or it adds a new one (D-400).
+type Mode = "replace" | "new";
 
 type UploadProps = {
   // activeCollectionId is the collection a re-upload compares against
@@ -36,7 +42,9 @@ type UploadProps = {
   // askForFile opens the file picker as the dialog opens. "Add a
   // collection" sends the reader here to pick a file (D-342).
   askForFile: boolean;
-  onImported: (result: ImportCollectionResponse) => void;
+  // onImported reports the answer, and whether it replaced the active
+  // collection. The page names the outcome in its toast.
+  onImported: (result: ImportCollectionResponse, replaced: boolean) => void;
 };
 
 // UploadDialog is the shell. Every state of the upload lives in the body
@@ -68,6 +76,9 @@ function UploadBody({ activeCollectionId, activeCollectionName, askForFile, onIm
   const [name, setName] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const [step, setStep] = useState<Step>("pick");
+  const [mode, setMode] = useState<Mode>("replace");
+  // A replacement is the choice only while a collection is active.
+  const replacing = activeCollectionId !== "" && mode === "replace";
   const [diffResult, setDiffResult] = useState<CollectionDiff | null>(null);
   const [result, setResult] = useState<ImportCollectionResponse | null>(null);
   // The file picker opens once, when the input appears. See the ref of
@@ -104,7 +115,7 @@ function UploadBody({ activeCollectionId, activeCollectionName, askForFile, onIm
     onSuccess: (res) => {
       setResult(res);
       setStep("done");
-      onImported(res);
+      onImported(res, replacing);
     },
   });
 
@@ -113,8 +124,8 @@ function UploadBody({ activeCollectionId, activeCollectionName, askForFile, onIm
   function onSubmit(e: FormEvent) {
     e.preventDefault();
     if (!file || fileTooLarge || busy) return;
-    // A re-upload over an active collection reads first (D-393).
-    if (activeCollectionId !== "") {
+    // A replacement reads what changes first (D-393).
+    if (replacing) {
       diff.mutate(file);
       return;
     }
@@ -190,10 +201,27 @@ function UploadBody({ activeCollectionId, activeCollectionName, askForFile, onIm
               className="sr-only"
             />
           </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="name">Collection name (optional, defaults to the file name)</Label>
-            <Input id="name" type="text" name="name" value={name} onChange={(e) => setName(e.target.value)} />
-          </div>
+          {activeCollectionId !== "" && (
+            <fieldset className="flex flex-col gap-1.5">
+              <legend className="text-sm font-medium">What the file does</legend>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="radio" name="mode" value="replace" checked={mode === "replace"} onChange={() => setMode("replace")} className="accent-primary" />
+                Replace {collectionName}. You read what changes first.
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="radio" name="mode" value="new" checked={mode === "new"} onChange={() => setMode("new")} className="accent-primary" />
+                Add it as a new collection.
+              </label>
+            </fieldset>
+          )}
+          {/* A replacement keeps the name of the collection it replaces,
+              so the name field shows for a new collection alone. */}
+          {!replacing && (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="name">Collection name (optional, defaults to the file name)</Label>
+              <Input id="name" type="text" name="name" value={name} onChange={(e) => setName(e.target.value)} />
+            </div>
+          )}
 
           <UploadProgress busy={busy} label={diff.isPending ? "Reading what changed..." : "Uploading and resolving cards..."} />
 

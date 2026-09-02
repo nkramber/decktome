@@ -22,6 +22,67 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// BinderSort orders the rows of a binder page. The name breaks every
+// tie, so one binder reads the same on every visit.
+type BinderSort int32
+
+const (
+	// BINDER_SORT_UNSPECIFIED orders by name.
+	BinderSort_BINDER_SORT_UNSPECIFIED BinderSort = 0
+	BinderSort_BINDER_SORT_NAME        BinderSort = 1
+	// BINDER_SORT_COUNT puts the largest count first.
+	BinderSort_BINDER_SORT_COUNT BinderSort = 2
+	BinderSort_BINDER_SORT_SET   BinderSort = 3
+	// BINDER_SORT_PRICE puts the dearest row first, and an unpriced row
+	// last.
+	BinderSort_BINDER_SORT_PRICE BinderSort = 4
+)
+
+// Enum value maps for BinderSort.
+var (
+	BinderSort_name = map[int32]string{
+		0: "BINDER_SORT_UNSPECIFIED",
+		1: "BINDER_SORT_NAME",
+		2: "BINDER_SORT_COUNT",
+		3: "BINDER_SORT_SET",
+		4: "BINDER_SORT_PRICE",
+	}
+	BinderSort_value = map[string]int32{
+		"BINDER_SORT_UNSPECIFIED": 0,
+		"BINDER_SORT_NAME":        1,
+		"BINDER_SORT_COUNT":       2,
+		"BINDER_SORT_SET":         3,
+		"BINDER_SORT_PRICE":       4,
+	}
+)
+
+func (x BinderSort) Enum() *BinderSort {
+	p := new(BinderSort)
+	*p = x
+	return p
+}
+
+func (x BinderSort) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (BinderSort) Descriptor() protoreflect.EnumDescriptor {
+	return file_mtg_v1_collection_proto_enumTypes[0].Descriptor()
+}
+
+func (BinderSort) Type() protoreflect.EnumType {
+	return &file_mtg_v1_collection_proto_enumTypes[0]
+}
+
+func (x BinderSort) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use BinderSort.Descriptor instead.
+func (BinderSort) EnumDescriptor() ([]byte, []int) {
+	return file_mtg_v1_collection_proto_rawDescGZIP(), []int{0}
+}
+
 // ImportSource names the file format of an import.
 type ImportSource int32
 
@@ -56,11 +117,11 @@ func (x ImportSource) String() string {
 }
 
 func (ImportSource) Descriptor() protoreflect.EnumDescriptor {
-	return file_mtg_v1_collection_proto_enumTypes[0].Descriptor()
+	return file_mtg_v1_collection_proto_enumTypes[1].Descriptor()
 }
 
 func (ImportSource) Type() protoreflect.EnumType {
-	return &file_mtg_v1_collection_proto_enumTypes[0]
+	return &file_mtg_v1_collection_proto_enumTypes[1]
 }
 
 func (x ImportSource) Number() protoreflect.EnumNumber {
@@ -69,7 +130,7 @@ func (x ImportSource) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ImportSource.Descriptor instead.
 func (ImportSource) EnumDescriptor() ([]byte, []int) {
-	return file_mtg_v1_collection_proto_rawDescGZIP(), []int{0}
+	return file_mtg_v1_collection_proto_rawDescGZIP(), []int{1}
 }
 
 // Finish mirrors the ManaBox Foil column values.
@@ -109,11 +170,11 @@ func (x Finish) String() string {
 }
 
 func (Finish) Descriptor() protoreflect.EnumDescriptor {
-	return file_mtg_v1_collection_proto_enumTypes[1].Descriptor()
+	return file_mtg_v1_collection_proto_enumTypes[2].Descriptor()
 }
 
 func (Finish) Type() protoreflect.EnumType {
-	return &file_mtg_v1_collection_proto_enumTypes[1]
+	return &file_mtg_v1_collection_proto_enumTypes[2]
 }
 
 func (x Finish) Number() protoreflect.EnumNumber {
@@ -122,7 +183,7 @@ func (x Finish) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Finish.Descriptor instead.
 func (Finish) EnumDescriptor() ([]byte, []int) {
-	return file_mtg_v1_collection_proto_rawDescGZIP(), []int{1}
+	return file_mtg_v1_collection_proto_rawDescGZIP(), []int{2}
 }
 
 // Condition mirrors the ManaBox Condition column values.
@@ -174,11 +235,11 @@ func (x Condition) String() string {
 }
 
 func (Condition) Descriptor() protoreflect.EnumDescriptor {
-	return file_mtg_v1_collection_proto_enumTypes[2].Descriptor()
+	return file_mtg_v1_collection_proto_enumTypes[3].Descriptor()
 }
 
 func (Condition) Type() protoreflect.EnumType {
-	return &file_mtg_v1_collection_proto_enumTypes[2]
+	return &file_mtg_v1_collection_proto_enumTypes[3]
 }
 
 func (x Condition) Number() protoreflect.EnumNumber {
@@ -187,7 +248,7 @@ func (x Condition) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Condition.Descriptor instead.
 func (Condition) EnumDescriptor() ([]byte, []int) {
-	return file_mtg_v1_collection_proto_rawDescGZIP(), []int{2}
+	return file_mtg_v1_collection_proto_rawDescGZIP(), []int{3}
 }
 
 // UnresolvedReason says why a row did not resolve.
@@ -238,11 +299,11 @@ func (x UnresolvedReason) String() string {
 }
 
 func (UnresolvedReason) Descriptor() protoreflect.EnumDescriptor {
-	return file_mtg_v1_collection_proto_enumTypes[3].Descriptor()
+	return file_mtg_v1_collection_proto_enumTypes[4].Descriptor()
 }
 
 func (UnresolvedReason) Type() protoreflect.EnumType {
-	return &file_mtg_v1_collection_proto_enumTypes[3]
+	return &file_mtg_v1_collection_proto_enumTypes[4]
 }
 
 func (x UnresolvedReason) Number() protoreflect.EnumNumber {
@@ -251,7 +312,7 @@ func (x UnresolvedReason) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use UnresolvedReason.Descriptor instead.
 func (UnresolvedReason) EnumDescriptor() ([]byte, []int) {
-	return file_mtg_v1_collection_proto_rawDescGZIP(), []int{3}
+	return file_mtg_v1_collection_proto_rawDescGZIP(), []int{4}
 }
 
 // Collection is one imported card list. The full collection is stored (D-16).
@@ -360,9 +421,9 @@ func (x *Collection) GetSummary() *CollectionSummary {
 	return nil
 }
 
-// CollectionSummary is what the binder head shows about a collection,
-// without its entries (D-392). The import computes it, so no reader
-// counts 2,657 rows to draw one header.
+// CollectionSummary is what the binder head and the binder controls
+// show about a collection, without its entries (D-392). The import
+// computes it, so no reader counts 2,657 rows to draw one header.
 type CollectionSummary struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// row_count is how many entries the collection holds. A ManaBox row is
@@ -374,12 +435,15 @@ type CollectionSummary struct {
 	// by_rarity counts cards per Scryfall rarity, copies included. The key
 	// is the rarity as the snapshot writes it, for example "mythic".
 	ByRarity map[string]int32 `protobuf:"bytes,3,rep,name=by_rarity,json=byRarity,proto3" json:"by_rarity,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
-	// top_sets are the sets the collection holds most of, largest first.
-	TopSets []*SetCount `protobuf:"bytes,4,rep,name=top_sets,json=topSets,proto3" json:"top_sets,omitempty"`
-	// by_color counts cards per color of the card's identity, copies
-	// included. A card of two colors counts once under each. The key is
-	// the Color enum name, for example "COLOR_W".
-	ByColor map[string]int32 `protobuf:"bytes,5,rep,name=by_color,json=byColor,proto3" json:"by_color,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	// sets are every set the collection holds, largest first. The head
+	// shows the first, and the binder's set filter lists them all (D-398).
+	Sets []*SetCount `protobuf:"bytes,4,rep,name=sets,proto3" json:"sets,omitempty"`
+	// by_type counts cards per card type, copies included. A card of two
+	// types counts once under each. The binder's type filter lists the
+	// keys (D-398). The import reads the card index for it, so a
+	// collection stored before the field holds none until the head
+	// computes one.
+	ByType map[string]int32 `protobuf:"bytes,5,rep,name=by_type,json=byType,proto3" json:"by_type,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
 	// art_oracle_ids are the cards the binder head shows the art of, the
 	// rarest first. The head reads no entry, so the import picks them
 	// (D-392). A card the reader owns in two printings appears once.
@@ -439,16 +503,16 @@ func (x *CollectionSummary) GetByRarity() map[string]int32 {
 	return nil
 }
 
-func (x *CollectionSummary) GetTopSets() []*SetCount {
+func (x *CollectionSummary) GetSets() []*SetCount {
 	if x != nil {
-		return x.TopSets
+		return x.Sets
 	}
 	return nil
 }
 
-func (x *CollectionSummary) GetByColor() map[string]int32 {
+func (x *CollectionSummary) GetByType() map[string]int32 {
 	if x != nil {
-		return x.ByColor
+		return x.ByType
 	}
 	return nil
 }
@@ -678,6 +742,113 @@ func (x *CollectionEntry) GetPriceUsd() float64 {
 	return 0
 }
 
+// BinderFilter is what the binder grid asks for (D-398). Every field
+// runs on the server, so a match on a later page still shows. The
+// color, the type, and the price read the display fields GetCollection
+// fills from the card index of the day (D-396).
+type BinderFilter struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// query keeps a row whose card name holds this text, without regard
+	// to case. Empty keeps them all.
+	Query string `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
+	// set_code keeps one set. Empty keeps them all.
+	SetCode string `protobuf:"bytes,2,opt,name=set_code,json=setCode,proto3" json:"set_code,omitempty"`
+	// color keeps the cards of this color, and a card of two colors
+	// answers to both. COLOR_UNSPECIFIED keeps them all.
+	Color Color `protobuf:"varint,3,opt,name=color,proto3,enum=mtg.v1.Color" json:"color,omitempty"`
+	// colorless keeps the cards of no color. It wins over color.
+	Colorless bool `protobuf:"varint,4,opt,name=colorless,proto3" json:"colorless,omitempty"`
+	// card_type keeps one card type, as the type line names it, for
+	// example "Instant". Empty keeps them all.
+	CardType string `protobuf:"bytes,5,opt,name=card_type,json=cardType,proto3" json:"card_type,omitempty"`
+	// quantity keeps the rows of this many copies. Zero keeps them all.
+	Quantity int32 `protobuf:"varint,6,opt,name=quantity,proto3" json:"quantity,omitempty"`
+	// quantity_or_more keeps the rows of quantity copies or more. Four
+	// or more is a playset, and every count above it reads the same way.
+	QuantityOrMore bool `protobuf:"varint,7,opt,name=quantity_or_more,json=quantityOrMore,proto3" json:"quantity_or_more,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *BinderFilter) Reset() {
+	*x = BinderFilter{}
+	mi := &file_mtg_v1_collection_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BinderFilter) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BinderFilter) ProtoMessage() {}
+
+func (x *BinderFilter) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_collection_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BinderFilter.ProtoReflect.Descriptor instead.
+func (*BinderFilter) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_collection_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *BinderFilter) GetQuery() string {
+	if x != nil {
+		return x.Query
+	}
+	return ""
+}
+
+func (x *BinderFilter) GetSetCode() string {
+	if x != nil {
+		return x.SetCode
+	}
+	return ""
+}
+
+func (x *BinderFilter) GetColor() Color {
+	if x != nil {
+		return x.Color
+	}
+	return Color_COLOR_UNSPECIFIED
+}
+
+func (x *BinderFilter) GetColorless() bool {
+	if x != nil {
+		return x.Colorless
+	}
+	return false
+}
+
+func (x *BinderFilter) GetCardType() string {
+	if x != nil {
+		return x.CardType
+	}
+	return ""
+}
+
+func (x *BinderFilter) GetQuantity() int32 {
+	if x != nil {
+		return x.Quantity
+	}
+	return 0
+}
+
+func (x *BinderFilter) GetQuantityOrMore() bool {
+	if x != nil {
+		return x.QuantityOrMore
+	}
+	return false
+}
+
 // CollectionDiff is what changed between a stored collection and an
 // uploaded file (D-393). It stores nothing: the reader reads it and
 // then chooses whether to replace.
@@ -711,7 +882,7 @@ type CollectionDiff struct {
 
 func (x *CollectionDiff) Reset() {
 	*x = CollectionDiff{}
-	mi := &file_mtg_v1_collection_proto_msgTypes[4]
+	mi := &file_mtg_v1_collection_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -723,7 +894,7 @@ func (x *CollectionDiff) String() string {
 func (*CollectionDiff) ProtoMessage() {}
 
 func (x *CollectionDiff) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_collection_proto_msgTypes[4]
+	mi := &file_mtg_v1_collection_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -736,7 +907,7 @@ func (x *CollectionDiff) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CollectionDiff.ProtoReflect.Descriptor instead.
 func (*CollectionDiff) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_collection_proto_rawDescGZIP(), []int{4}
+	return file_mtg_v1_collection_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *CollectionDiff) GetAdded() []*CollectionEntry {
@@ -800,7 +971,7 @@ type QuantityChange struct {
 
 func (x *QuantityChange) Reset() {
 	*x = QuantityChange{}
-	mi := &file_mtg_v1_collection_proto_msgTypes[5]
+	mi := &file_mtg_v1_collection_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -812,7 +983,7 @@ func (x *QuantityChange) String() string {
 func (*QuantityChange) ProtoMessage() {}
 
 func (x *QuantityChange) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_collection_proto_msgTypes[5]
+	mi := &file_mtg_v1_collection_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -825,7 +996,7 @@ func (x *QuantityChange) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QuantityChange.ProtoReflect.Descriptor instead.
 func (*QuantityChange) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_collection_proto_rawDescGZIP(), []int{5}
+	return file_mtg_v1_collection_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *QuantityChange) GetEntry() *CollectionEntry {
@@ -863,7 +1034,7 @@ type ImportReport struct {
 
 func (x *ImportReport) Reset() {
 	*x = ImportReport{}
-	mi := &file_mtg_v1_collection_proto_msgTypes[6]
+	mi := &file_mtg_v1_collection_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -875,7 +1046,7 @@ func (x *ImportReport) String() string {
 func (*ImportReport) ProtoMessage() {}
 
 func (x *ImportReport) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_collection_proto_msgTypes[6]
+	mi := &file_mtg_v1_collection_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -888,7 +1059,7 @@ func (x *ImportReport) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImportReport.ProtoReflect.Descriptor instead.
 func (*ImportReport) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_collection_proto_rawDescGZIP(), []int{6}
+	return file_mtg_v1_collection_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ImportReport) GetUnresolved() []*UnresolvedRow {
@@ -924,7 +1095,7 @@ type UnresolvedRow struct {
 
 func (x *UnresolvedRow) Reset() {
 	*x = UnresolvedRow{}
-	mi := &file_mtg_v1_collection_proto_msgTypes[7]
+	mi := &file_mtg_v1_collection_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -936,7 +1107,7 @@ func (x *UnresolvedRow) String() string {
 func (*UnresolvedRow) ProtoMessage() {}
 
 func (x *UnresolvedRow) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_collection_proto_msgTypes[7]
+	mi := &file_mtg_v1_collection_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -949,7 +1120,7 @@ func (x *UnresolvedRow) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnresolvedRow.ProtoReflect.Descriptor instead.
 func (*UnresolvedRow) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_collection_proto_rawDescGZIP(), []int{7}
+	return file_mtg_v1_collection_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *UnresolvedRow) GetLine() int32 {
@@ -989,18 +1160,18 @@ const file_mtg_v1_collection_proto_rawDesc = "" +
 	"\aentries\x18\x06 \x03(\v2\x17.mtg.v1.CollectionEntryR\aentries\x12\x1d\n" +
 	"\n" +
 	"card_count\x18\a \x01(\x05R\tcardCount\x123\n" +
-	"\asummary\x18\b \x01(\v2\x19.mtg.v1.CollectionSummaryR\asummary\"\xa8\x03\n" +
+	"\asummary\x18\b \x01(\v2\x19.mtg.v1.CollectionSummaryR\asummary\"\x9d\x03\n" +
 	"\x11CollectionSummary\x12\x1b\n" +
 	"\trow_count\x18\x01 \x01(\x05R\browCount\x12!\n" +
 	"\funique_cards\x18\x02 \x01(\x05R\vuniqueCards\x12D\n" +
-	"\tby_rarity\x18\x03 \x03(\v2'.mtg.v1.CollectionSummary.ByRarityEntryR\bbyRarity\x12+\n" +
-	"\btop_sets\x18\x04 \x03(\v2\x10.mtg.v1.SetCountR\atopSets\x12A\n" +
-	"\bby_color\x18\x05 \x03(\v2&.mtg.v1.CollectionSummary.ByColorEntryR\abyColor\x12$\n" +
+	"\tby_rarity\x18\x03 \x03(\v2'.mtg.v1.CollectionSummary.ByRarityEntryR\bbyRarity\x12$\n" +
+	"\x04sets\x18\x04 \x03(\v2\x10.mtg.v1.SetCountR\x04sets\x12>\n" +
+	"\aby_type\x18\x05 \x03(\v2%.mtg.v1.CollectionSummary.ByTypeEntryR\x06byType\x12$\n" +
 	"\x0eart_oracle_ids\x18\x06 \x03(\tR\fartOracleIds\x1a;\n" +
 	"\rByRarityEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01\x1a:\n" +
-	"\fByColorEntry\x12\x10\n" +
+	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01\x1a9\n" +
+	"\vByTypeEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01\"V\n" +
 	"\bSetCount\x12\x19\n" +
@@ -1024,7 +1195,15 @@ const file_mtg_v1_collection_proto_rawDesc = "" +
 	"\x06colors\x18\f \x03(\x0e2\r.mtg.v1.ColorR\x06colors\x12\x1d\n" +
 	"\n" +
 	"card_types\x18\r \x03(\tR\tcardTypes\x12\x1b\n" +
-	"\tprice_usd\x18\x0e \x01(\x01R\bpriceUsd\"\xad\x02\n" +
+	"\tprice_usd\x18\x0e \x01(\x01R\bpriceUsd\"\xe5\x01\n" +
+	"\fBinderFilter\x12\x14\n" +
+	"\x05query\x18\x01 \x01(\tR\x05query\x12\x19\n" +
+	"\bset_code\x18\x02 \x01(\tR\asetCode\x12#\n" +
+	"\x05color\x18\x03 \x01(\x0e2\r.mtg.v1.ColorR\x05color\x12\x1c\n" +
+	"\tcolorless\x18\x04 \x01(\bR\tcolorless\x12\x1b\n" +
+	"\tcard_type\x18\x05 \x01(\tR\bcardType\x12\x1a\n" +
+	"\bquantity\x18\x06 \x01(\x05R\bquantity\x12(\n" +
+	"\x10quantity_or_more\x18\a \x01(\bR\x0equantityOrMore\"\xad\x02\n" +
 	"\x0eCollectionDiff\x12-\n" +
 	"\x05added\x18\x01 \x03(\v2\x17.mtg.v1.CollectionEntryR\x05added\x121\n" +
 	"\aremoved\x18\x02 \x03(\v2\x17.mtg.v1.CollectionEntryR\aremoved\x120\n" +
@@ -1050,7 +1229,14 @@ const file_mtg_v1_collection_proto_rawDesc = "" +
 	"\rUnresolvedRow\x12\x12\n" +
 	"\x04line\x18\x01 \x01(\x05R\x04line\x12\x10\n" +
 	"\x03raw\x18\x02 \x01(\tR\x03raw\x120\n" +
-	"\x06reason\x18\x03 \x01(\x0e2\x18.mtg.v1.UnresolvedReasonR\x06reason*j\n" +
+	"\x06reason\x18\x03 \x01(\x0e2\x18.mtg.v1.UnresolvedReasonR\x06reason*\x82\x01\n" +
+	"\n" +
+	"BinderSort\x12\x1b\n" +
+	"\x17BINDER_SORT_UNSPECIFIED\x10\x00\x12\x14\n" +
+	"\x10BINDER_SORT_NAME\x10\x01\x12\x15\n" +
+	"\x11BINDER_SORT_COUNT\x10\x02\x12\x13\n" +
+	"\x0fBINDER_SORT_SET\x10\x03\x12\x15\n" +
+	"\x11BINDER_SORT_PRICE\x10\x04*j\n" +
 	"\fImportSource\x12\x1d\n" +
 	"\x19IMPORT_SOURCE_UNSPECIFIED\x10\x00\x12\x1d\n" +
 	"\x19IMPORT_SOURCE_MANABOX_CSV\x10\x01\x12\x1c\n" +
@@ -1089,50 +1275,53 @@ func file_mtg_v1_collection_proto_rawDescGZIP() []byte {
 	return file_mtg_v1_collection_proto_rawDescData
 }
 
-var file_mtg_v1_collection_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_mtg_v1_collection_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_mtg_v1_collection_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
+var file_mtg_v1_collection_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_mtg_v1_collection_proto_goTypes = []any{
-	(ImportSource)(0),             // 0: mtg.v1.ImportSource
-	(Finish)(0),                   // 1: mtg.v1.Finish
-	(Condition)(0),                // 2: mtg.v1.Condition
-	(UnresolvedReason)(0),         // 3: mtg.v1.UnresolvedReason
-	(*Collection)(nil),            // 4: mtg.v1.Collection
-	(*CollectionSummary)(nil),     // 5: mtg.v1.CollectionSummary
-	(*SetCount)(nil),              // 6: mtg.v1.SetCount
-	(*CollectionEntry)(nil),       // 7: mtg.v1.CollectionEntry
-	(*CollectionDiff)(nil),        // 8: mtg.v1.CollectionDiff
-	(*QuantityChange)(nil),        // 9: mtg.v1.QuantityChange
-	(*ImportReport)(nil),          // 10: mtg.v1.ImportReport
-	(*UnresolvedRow)(nil),         // 11: mtg.v1.UnresolvedRow
-	nil,                           // 12: mtg.v1.CollectionSummary.ByRarityEntry
-	nil,                           // 13: mtg.v1.CollectionSummary.ByColorEntry
-	nil,                           // 14: mtg.v1.ImportReport.UnresolvedByReasonEntry
-	(*timestamppb.Timestamp)(nil), // 15: google.protobuf.Timestamp
-	(Color)(0),                    // 16: mtg.v1.Color
+	(BinderSort)(0),               // 0: mtg.v1.BinderSort
+	(ImportSource)(0),             // 1: mtg.v1.ImportSource
+	(Finish)(0),                   // 2: mtg.v1.Finish
+	(Condition)(0),                // 3: mtg.v1.Condition
+	(UnresolvedReason)(0),         // 4: mtg.v1.UnresolvedReason
+	(*Collection)(nil),            // 5: mtg.v1.Collection
+	(*CollectionSummary)(nil),     // 6: mtg.v1.CollectionSummary
+	(*SetCount)(nil),              // 7: mtg.v1.SetCount
+	(*CollectionEntry)(nil),       // 8: mtg.v1.CollectionEntry
+	(*BinderFilter)(nil),          // 9: mtg.v1.BinderFilter
+	(*CollectionDiff)(nil),        // 10: mtg.v1.CollectionDiff
+	(*QuantityChange)(nil),        // 11: mtg.v1.QuantityChange
+	(*ImportReport)(nil),          // 12: mtg.v1.ImportReport
+	(*UnresolvedRow)(nil),         // 13: mtg.v1.UnresolvedRow
+	nil,                           // 14: mtg.v1.CollectionSummary.ByRarityEntry
+	nil,                           // 15: mtg.v1.CollectionSummary.ByTypeEntry
+	nil,                           // 16: mtg.v1.ImportReport.UnresolvedByReasonEntry
+	(*timestamppb.Timestamp)(nil), // 17: google.protobuf.Timestamp
+	(Color)(0),                    // 18: mtg.v1.Color
 }
 var file_mtg_v1_collection_proto_depIdxs = []int32{
-	0,  // 0: mtg.v1.Collection.source:type_name -> mtg.v1.ImportSource
-	15, // 1: mtg.v1.Collection.imported_at:type_name -> google.protobuf.Timestamp
-	7,  // 2: mtg.v1.Collection.entries:type_name -> mtg.v1.CollectionEntry
-	5,  // 3: mtg.v1.Collection.summary:type_name -> mtg.v1.CollectionSummary
-	12, // 4: mtg.v1.CollectionSummary.by_rarity:type_name -> mtg.v1.CollectionSummary.ByRarityEntry
-	6,  // 5: mtg.v1.CollectionSummary.top_sets:type_name -> mtg.v1.SetCount
-	13, // 6: mtg.v1.CollectionSummary.by_color:type_name -> mtg.v1.CollectionSummary.ByColorEntry
-	1,  // 7: mtg.v1.CollectionEntry.finish:type_name -> mtg.v1.Finish
-	2,  // 8: mtg.v1.CollectionEntry.condition:type_name -> mtg.v1.Condition
-	16, // 9: mtg.v1.CollectionEntry.colors:type_name -> mtg.v1.Color
-	7,  // 10: mtg.v1.CollectionDiff.added:type_name -> mtg.v1.CollectionEntry
-	7,  // 11: mtg.v1.CollectionDiff.removed:type_name -> mtg.v1.CollectionEntry
-	9,  // 12: mtg.v1.CollectionDiff.changed:type_name -> mtg.v1.QuantityChange
-	7,  // 13: mtg.v1.QuantityChange.entry:type_name -> mtg.v1.CollectionEntry
-	11, // 14: mtg.v1.ImportReport.unresolved:type_name -> mtg.v1.UnresolvedRow
-	14, // 15: mtg.v1.ImportReport.unresolved_by_reason:type_name -> mtg.v1.ImportReport.UnresolvedByReasonEntry
-	3,  // 16: mtg.v1.UnresolvedRow.reason:type_name -> mtg.v1.UnresolvedReason
-	17, // [17:17] is the sub-list for method output_type
-	17, // [17:17] is the sub-list for method input_type
-	17, // [17:17] is the sub-list for extension type_name
-	17, // [17:17] is the sub-list for extension extendee
-	0,  // [0:17] is the sub-list for field type_name
+	1,  // 0: mtg.v1.Collection.source:type_name -> mtg.v1.ImportSource
+	17, // 1: mtg.v1.Collection.imported_at:type_name -> google.protobuf.Timestamp
+	8,  // 2: mtg.v1.Collection.entries:type_name -> mtg.v1.CollectionEntry
+	6,  // 3: mtg.v1.Collection.summary:type_name -> mtg.v1.CollectionSummary
+	14, // 4: mtg.v1.CollectionSummary.by_rarity:type_name -> mtg.v1.CollectionSummary.ByRarityEntry
+	7,  // 5: mtg.v1.CollectionSummary.sets:type_name -> mtg.v1.SetCount
+	15, // 6: mtg.v1.CollectionSummary.by_type:type_name -> mtg.v1.CollectionSummary.ByTypeEntry
+	2,  // 7: mtg.v1.CollectionEntry.finish:type_name -> mtg.v1.Finish
+	3,  // 8: mtg.v1.CollectionEntry.condition:type_name -> mtg.v1.Condition
+	18, // 9: mtg.v1.CollectionEntry.colors:type_name -> mtg.v1.Color
+	18, // 10: mtg.v1.BinderFilter.color:type_name -> mtg.v1.Color
+	8,  // 11: mtg.v1.CollectionDiff.added:type_name -> mtg.v1.CollectionEntry
+	8,  // 12: mtg.v1.CollectionDiff.removed:type_name -> mtg.v1.CollectionEntry
+	11, // 13: mtg.v1.CollectionDiff.changed:type_name -> mtg.v1.QuantityChange
+	8,  // 14: mtg.v1.QuantityChange.entry:type_name -> mtg.v1.CollectionEntry
+	13, // 15: mtg.v1.ImportReport.unresolved:type_name -> mtg.v1.UnresolvedRow
+	16, // 16: mtg.v1.ImportReport.unresolved_by_reason:type_name -> mtg.v1.ImportReport.UnresolvedByReasonEntry
+	4,  // 17: mtg.v1.UnresolvedRow.reason:type_name -> mtg.v1.UnresolvedReason
+	18, // [18:18] is the sub-list for method output_type
+	18, // [18:18] is the sub-list for method input_type
+	18, // [18:18] is the sub-list for extension type_name
+	18, // [18:18] is the sub-list for extension extendee
+	0,  // [0:18] is the sub-list for field type_name
 }
 
 func init() { file_mtg_v1_collection_proto_init() }
@@ -1146,8 +1335,8 @@ func file_mtg_v1_collection_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_mtg_v1_collection_proto_rawDesc), len(file_mtg_v1_collection_proto_rawDesc)),
-			NumEnums:      4,
-			NumMessages:   11,
+			NumEnums:      5,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

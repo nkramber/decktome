@@ -1,6 +1,5 @@
 import type { Collection } from "@mtg/api-client/mtg/v1/collection_pb";
 
-import { Skeleton } from "../../components/ui/skeleton";
 import { statsFrom, useCollectionArt } from "./use-collection";
 
 // The rarity of a printing carries the color the game prints it in.
@@ -16,7 +15,7 @@ const rarityToken: Record<string, string> = {
 //
 // It reads the summary the import stored, and never an entry (D-392).
 // The art ids ride on the summary for the same reason.
-export function CollectionHero({ collection, loading }: { collection: Collection; loading: boolean }) {
+export function CollectionHero({ collection }: { collection: Collection }) {
   const stats = statsFrom(collection.summary, collection.cardCount);
   const cards = useCollectionArt(collection.summary?.artOracleIds ?? []);
   const total = stats.total || collection.cardCount;
@@ -46,7 +45,7 @@ export function CollectionHero({ collection, loading }: { collection: Collection
           <dl className="flex flex-wrap gap-x-8 gap-y-2 text-sm">
             <div className="flex flex-col">
               <dt className="text-muted-foreground">Unique cards</dt>
-              <dd className="text-lg font-medium tabular-nums">{loading ? <Skeleton className="h-6 w-16" /> : stats.unique.toLocaleString()}</dd>
+              <dd className="text-lg font-medium tabular-nums">{stats.unique.toLocaleString()}</dd>
             </div>
             {stats.sets[0] && (
               <div className="flex flex-col">

@@ -6,6 +6,7 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-01 correction pass 42 (the review of PR-18, D-398 to D-404): PR-17 merged (#49), PR-17B merged (#50), and PR-18 merged (#53). A review of PR-18 found three defects and four gaps. The binder filtered the loaded pages alone, so a search for a card past row 200 found nothing. A Replace kept an id whose hash moved on, so a later upload of the old file overwrote the replaced collection. Every upload over an active collection forced a replacement. The fixes ship on branch `nits-and-fixes`. The filter, the sort, and the search run on the server now. The summary lists every set and every type, and the upload dialog offers a choice. The chat refuses a turn with no card index (D-405). Changes: PR-17, PR-17B, PR-18, sequencing steps 19 and 20.
 2026-08-30 correction pass 35 (the reference design and the one deck screen, D-328 to D-335): the owner gave a reference design, and it settles the look. Three faces, a navy and gold palette, one top bar, and dark alone. The identity wash of D-327 left, and the color of the game now shows in a mana pip and a rarity dot. A deck has one screen and one address. Changes: Phase 3B, PR-16, PR-16B, PR-17, sequencing step 19.
 2026-08-30 correction pass 36 (the collection picker and the speed of the app, D-336 to D-340): the pool lived in the header menu alone, and the owner did not find it. A "Build from" picker now sits on the chat screen. No screen shows a decision id or a Firestore id. No chunk loads behind a Suspense boundary. React holds a committed fallback for 300 ms. Content on the landing page went from 347 ms to 44 ms. The first open of the Build menu went from 323 ms to 16 ms. Changes: PR-17.
 2026-08-30 correction pass 37 (the version history and the compare, D-343): the last two items of PR-17. The decks of one chat are the versions of one deck, so `ListDecks` takes a session id and the deck screen reads its own history. Any two versions compare with the diff the revision note already used. Changes: PR-17, sequencing step 19.
@@ -649,7 +650,7 @@ Gate:
 
 > *In plain English:* the app looked like a test bench with a dark mode on it. This makes it look like a product. A real typeface, depth, a chat that reads like a conversation, and a message box where you expect it.
 
-**PR-17: Deck library.** 🔧 built 2026-08-30 on branch `pr-17`. The owner reads it in the browser, then merges.
+**PR-17: Deck library.** ✅ merged 2026-08-31 (#49).
 A grid of decks with the name, the commander, the mana pips, the format, the power, the count, the buy cost, and the date. Search by name and commander, filter by format, power, and favorites, and a favorite star. Every filter runs on the server, so a match on a later page still shows.
 
 Contract, additive: `DeckService.UpdateDeck(name, favorite)`, `DeleteDeck`, `Deck.favorite`, `Deck.card_count`, and paging with filters on `ListDecks` (D-245). The power filter has two fields, because `PowerLevel` is a oneof (D-324). `ListDecks` also takes a `session_id` (D-343).
@@ -678,7 +679,7 @@ CAUTION: this branch carries eight concerns. They are the contract, the Go side,
 
 > *In plain English:* a home for your decks. Find one fast, name it, star it, throw one away, and talk to the agent about it on the same page. Every revision keeps its own copy, so you can read an earlier one and see what changed.
 
-**PR-17B: The set filter.** 🔧 branch `pr-17b`, after PR-17 merged.
+**PR-17B: The set filter.** ✅ merged 2026-09-01 (#50).
 A deck can be limited to one set or to several. The request carries the set codes, and every stage reads them: the 99-card shortlist, the commander pool, and the deck check. A card passes when it holds a paper printing in one of the named sets.
 
 The card data carries the sets. `Card.set_codes` is every paper set the card has a printing in, lowercase and sorted. The index already reads every printing to build `bySetNo`. It collects the codes in that same walk, and it shares one string per set code.
@@ -714,18 +715,24 @@ CAUTION: the gate line above named two cards that do not exist. The snapshot hol
 
 > *In plain English:* today you can ask for a deck from one set and get cards from anywhere. Nothing checked the set, because the app never recorded which sets a card is in. This adds that record and the filter over it. A card can be in many sets, so the app keeps them all: a reprint still counts. It also learns set names, because you say "the Hobbit set" and the data says "hob". A set that is too small to build a deck gets a plain answer, not a bad deck.
 
-**PR-18: Collection management.**
-The list of collections shows the name, the count, the date, and the active mark, with rename and delete. An upload dialog shows the progress and the import report. A re-upload whose hash differs from the active collection shows the diff first: added, removed, and changed counts, then "Replace". A binder view per collection is a virtualized grid of the cards with art, count, finish, and condition. It has search, filters by color, type, set, and count, and sort by name, price, and count.
+**PR-18: Collection management.** ✅ merged 2026-09-01 (#53). **The review fixes (D-398 to D-405)** 🔧 built 2026-09-01 on branch `nits-and-fixes`. The owner reads them in the browser, then merges.
+The list of collections shows the name, the count, the date, and the active mark, with rename and delete. An upload dialog holds the file, the progress, the diff, and the import report, one step at a time (D-395). A re-upload over the active collection shows the diff first: the added, removed, and changed rows with their card counts, then "Replace" (D-393). A reader with an active collection chooses between a replacement and a new collection (D-400). Replace keeps the collection id, so every deck and chat that names it still works.
 
-Contract, additive: `CollectionService.UpdateCollection`, `DeleteCollection`, `DiffCollections`, and paging on `GetCollection`.
+The binder is a virtualized grid of the cards with the art, the count, the finish, the condition, and the price (D-394). It has a search, four filters, and four sorts. The filters are the set, the color, the card type, and the count. The sorts are the name, the count, the set, and the price. Every choice runs on the server, so a match on a later page still shows (D-398). The page token names the filter and the sort, as a deck page token names its filter.
+
+A collection carries its own summary (D-392). The import computes the row count, the unique cards, and the rarity spread. It also counts every set and every card type, and it picks the ten rarest cards. The head reads the summary and asks for no entry, and the two filter menus read it too. The colors, the card types, and the price ride on an entry, and no document stores them. `GetCollection` fills the three from the card index of the day (D-396).
+
+Contract, additive: `CollectionService.UpdateCollection` and `DiffCollections`, `ImportCollectionRequest.replace_collection_id`, `Collection.summary`, and the three display fields of `CollectionEntry`. `GetCollectionRequest` gains `page_size`, `page_token`, `entries_omitted`, `filter`, and `sort`, and the answer gains `next_page_token` and `matched_rows`. `DeleteCollection` came in PR-17 (D-347).
+
+CAUTION: a first upload lands on the document id its content hash derives. A Replace keeps that id and moves the hash on. Before D-399, a later upload of the old file derived the same id and overwrote the replaced collection. `Put` creates the derived document now, and when it exists with another hash the upload takes a fresh id.
 
 Gate:
 
-- The same file uploaded twice diffs empty.
-- The binder of the owner's export (2,657 rows) scrolls at 60 frames per second on the owner's laptop.
-- A session that names a deleted collection falls back to any-card mode with a notice (D-37).
+- The same file uploaded twice diffs empty. ✅ held in `TestTheSameFileDiffsEmpty` and in the browser on 2026-09-01.
+- The binder of the owner's export (2,657 rows) scrolls at 60 frames per second on the owner's laptop. Open. A session measured the 2,547-row test export in headless Chromium against the dev server on 2026-09-01, which is not that measurement.
+- A session that names a deleted collection falls back to any-card mode with a notice (D-37). ✅ held since D-347.
 
-> *In plain English:* your binder, on screen. Several uploads, a name on each, and a clean "what changed since last time" when you upload a new export. Browse it like a real binder, with the pictures.
+> *In plain English:* your binder, on screen. Several uploads, a name on each, and a clean "what changed since last time" when you upload a new export. Browse it like a real binder, with the pictures, and search the whole binder rather than the part on your screen.
 
 **PR-19: Chat and build experience.**
 A start screen with a short form: the format, the power, the pool rule, the budget, and a theme line. Each form answer goes out as a structured answer to the catalog row it fills. So the agent asks nothing the form answered, and "Just chat" skips the form. The thread moves onto the new primitives: choice chips, art tiles for a card option, and no field on a closed question (D-295). A stepper shows the build phases from the `status` events, which gain an additive `phase`.
@@ -850,8 +857,8 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 16. PR-9 variance. ⏸ out of MVP scope (D-256). It blocks nothing: the Phase 3 gate below reads PR-8's gate.
 17. **GATE.** Phase 3 starts only when PR-8's gate holds on the golden prompts. ✅ held on 2026-08-28, deck gate run 6.
 18. PR-11 ✅ merged 2026-08-28 (#38). PR-12 ✅ merged 2026-08-28 (#40). PR-12B ✅ merged 2026-08-29 (#41). PR-13 ✅ merged 2026-08-29 (#45). Then Phase 3B.
-19. **Phase 3B** (D-316, D-317): PR-16 to PR-23 in the order of the phase list. Each gate holds before the next slice starts. PR-16 ✅ merged 2026-08-29 (#47). PR-16B ✅ merged 2026-08-29 (#48). PR-17 🔧 built on branch `pr-17`, whole. The owner reads it, then merges. The paid re-baseline of D-302 runs in parallel, on the owner's word.
-20. **PR-17B** the set filter (F-29, D-373 to D-383). It follows the PR-17 merge, and PR-18 follows it.
+19. **Phase 3B** (D-316, D-317): PR-16 to PR-23 in the order of the phase list. Each gate holds before the next slice starts. PR-16 ✅ merged 2026-08-29 (#47). PR-16B ✅ merged 2026-08-29 (#48). PR-17 ✅ merged 2026-08-31 (#49). The paid re-baseline of D-302 ran on 2026-08-31.
+20. **PR-17B** the set filter (F-29, D-373 to D-383). ✅ merged 2026-09-01 (#50). **PR-18** ✅ merged 2026-09-01 (#53). The review fixes of PR-18 (D-398 to D-405) 🔧 built 2026-09-01 on branch `nits-and-fixes`. The owner reads them, then merges. Then PR-19.
 21. PR-15 eval harness. M-5 manual scoring runs on the first UI build (after PR-12).
 22. PR-14 meta, then I-1, I-2, I-3 on evidence.
 23. Phase 5 stays parked.
