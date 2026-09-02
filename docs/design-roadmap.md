@@ -446,9 +446,11 @@ Three evals run first, in this order.
 | Gate run | The transcript. 104 conversations, 30 gate and 74 probe, read the count from `conversations.json` (D-145, D-155, D-263). | $0.152 to $0.165, measured 2026-08-26 |
 | Question eval | Every question, scored for whether it deserved to be asked. | $0.092 to $0.104, runs 14 to 25, first measured 2026-08-26 |
 | Deck gate | 16 to 18 golden prompts through the generator, the engine, and the judge. | $1.09, run 8 with 18 prompts, measured 2026-08-28 |
-| Eval calibration | The cost-tier eval against `claude-sonnet-5` on 12 conversations. | $0.25 to $0.30 |
+| Eval calibration | The cost-tier eval against the reference judge on 12 conversations. Sonnet 5 until 2026-09-01, Opus 5 since (D-428). | $0.25 to $0.30 on Sonnet 5. About 1.7 times that on Opus 5, unmeasured. |
 
-The calibration answers the one question the cost tier raises: how gently does a model score work its own model produced? It scores the same 12 conversations twice, once on the cost tier and once on `claude-sonnet-5`, and `cmd/tune-check -agree` compares the two question by question. It reports how often they agree, and how many questions each one refused. A cost-tier eval that refuses four where the stronger model refuses twelve is not measuring the agent. It reports a floor, and the real number sits above it. OQ-39 holds what the owner does with that gap.
+The calibration answers the one question the cost tier raises: how gently does a model score work its own model produced? It scores the same 12 conversations twice, once on the cost tier and once on the reference judge. `cmd/tune-check -agree` compares the two question by question.
+
+The reference was `claude-sonnet-5` until 2026-09-01 and is `claude-opus-5` since (D-428). It reports how often they agree, and how many questions each one refused. A cost-tier eval that refuses four where the stronger model refuses twelve is not measuring the agent. It reports a floor, and the real number sits above it. D-428 answered OQ-39 on 2026-09-01: ten points of agreement, and under 90 percent the loop's ratio is advisory only.
 
 Four counters guard the ratio, because a run that asks less scores better and serves the user worse. Gate run 7 of 2026-08-25 passed both bars with 26 of 30 conversations unanswered. The counters are the questions asked, the questions that closed a slot, the premature sessions, and the linter findings. They come from the transcript and not from the M-4 table. The table counts the 30 gate conversations alone, and the terse set of D-105 is where the hard cases live.
 
@@ -508,7 +510,7 @@ Lever 2: a "plan variant" slot (for example "lifegain aristocrats" versus "lifeg
 
 **PR-10: LLM role layer (D-1).** ✅ merged 2026-08-24 (#9). The live smoke passed on both adapters. Classify ran on `gpt-5.6-luna` (69 in, 21 out, 2.7 s), and judge on `claude-sonnet-5` (316 in, 20 out, 3.0 s). The pair cost $0.0013 at list price.
 
-`internal/llm` is the one door. `roles.json` is the frozen map, dated, with an owner note per default (D-38, D-39). The baseline: `classify` and `ask` on `gpt-5.6-luna`, `generate` and `repair` on `gpt-5.6-terra`, `judge` on `claude-sonnet-5` at effort medium with thinking on (D-45). Config validation refuses a judge on the generator's provider (D-22).
+`internal/llm` is the one door. `roles.json` is the frozen map, dated, with an owner note per default (D-38, D-39). The baseline: `classify` and `ask` on `gpt-5.6-luna`, `generate` and `repair` on `gpt-5.6-terra`, `judge` on `claude-sonnet-5` at effort medium with thinking on (D-45). D-430 moved the judge to `claude-opus-5` on 2026-09-01. Config validation refuses a judge on the generator's provider (D-22).
 
 Adapters: OpenAI Responses API and Anthropic Messages API through the official Go SDKs (D-40), plus the fixture `Fake` and a scripted fake for tests. Both adapters send a strict JSON Schema. The client validates the output again locally. One `Budget` per logical call: four attempts, three minutes. Truncation retries once at a higher cap, bounded to min(65,536, max(8 x cap, 8,192)). Transient errors back off with a 30-second cap and jitter.
 
@@ -734,7 +736,7 @@ CAUTION: a first upload lands on the document id its content hash derives. A Rep
 Gate:
 
 - The same file uploaded twice diffs empty. ✅ held in `TestTheSameFileDiffsEmpty` and in the browser on 2026-09-01.
-- The binder of the owner's export (2,657 rows) scrolls at 60 frames per second on the owner's laptop. Open. A session measured the 2,547-row test export in headless Chromium against the dev server on 2026-09-01, which is not that measurement.
+- The binder of the owner's export (2,657 rows) scrolls at 60 frames per second on the owner's laptop. ✅ the owner closed it on 2026-09-01. The measurement of a session the same day, over the 2,547-row test export in headless Chromium, was not that measurement.
 - A session that names a deleted collection falls back to any-card mode with a notice (D-37). ✅ held since D-347.
 
 > *In plain English:* your binder, on screen. Several uploads, a name on each, and a clean "what changed since last time" when you upload a new export. Browse it like a real binder, with the pictures, and search the whole binder rather than the part on your screen.
@@ -839,7 +841,7 @@ Gate:
 
 CAUTION: a page reader of MTGO or MTGTop8 breaks when the markup changes. The raw pages stay in GCS, so a fix re-parses and never re-fetches. M-6 reads the failure rate.
 
-CAUTION: the cEDH database hosts its lists on Moxfield, and the Moxfield terms are unverified (OQ-49). Until the answer comes, the database gives the tier and the commander alone, and the cards come from the Topdeck.gg API and MTGTop8's cEDH events.
+The cEDH database hosts its lists on Moxfield. The owner read the Moxfield terms on 2026-09-01, and they allow the fetch (D-419, closes OQ-49). The worker reads each linked list through the public deck endpoint, with a named agent and a slow rate. It stores the raw answer as it stores a page.
 
 CAUTION: the Topdeck.gg key is a secret. It lives in `.env` locally and in Secret Manager on GCP, never in the repo. The worker refuses to start its Topdeck job without one.
 
@@ -921,9 +923,9 @@ See `docs/open-questions.md` for the full list with "ask when" dates. The ones t
 
 1. **OQ-19 scoring rubric** answered 2026-08-24 (D-66). M-5 is no longer gated on it.
 2. **OQ-18 rerun depth rule** gates I-1.
-3. **OQ-20 public anonymized ManaBox exports** widen the PR-4 fixture set when found (D-43).
+3. **OQ-20 public anonymized ManaBox exports** closed 2026-09-01 (D-431). The fixture set is the owner's export and a generator from the card snapshot.
 4. PR-9's 30% variance number is a placeholder until PR-15 measures it. PR-9 is out of the MVP (D-256), so nothing waits on it.
-5. **OQ-45 the allowlist store.** D-314 allows one env var or one Firestore document. An env var needs a deploy per change, and a document needs an admin write path. PR-22 decides, and the owner confirms. Ask before PR-22.
-6. **OQ-46 the spend cap number.** PR-22 sets a per-user monthly cap from `Usage`. The number is the owner's. Ask before PR-22.
+5. **OQ-45 the allowlist store** answered 2026-09-01 (D-420): one Firestore document, written by a make target. The old text stays below. D-314 allows one env var or one Firestore document. An env var needs a deploy per change, and a document needs an admin write path. PR-22 decides, and the owner confirms. Ask before PR-22.
+6. **OQ-46 the spend cap number** answered 2026-09-01 (D-421): $5 per user per month. The old text stays below. PR-22 sets a per-user monthly cap from `Usage`. The number is the owner's. Ask before PR-22.
 7. **OQ-47** answered 2026-08-29 (D-324). The deck grid filters by power, and the filter runs on the server. A second question took the same id. D-376 answered it on 2026-08-31: a set name resolves to a whole set family.
-8. **OQ-49 the Moxfield terms.** The cEDH database hosts its lists on Moxfield, and the terms are unverified. Ask before PR-14.
+8. **OQ-49 the Moxfield terms** answered 2026-09-01 (D-419). The owner read them, and they allow the fetch.

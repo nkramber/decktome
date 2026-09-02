@@ -245,7 +245,7 @@ questions-eval: ## Score every question of a gate run. CAUTION: calls a real pro
 # cost (D-133). This target measures what that costs in judgment: it
 # scores a sample twice and compares the two verdicts.
 CALIBRATE_N ?= 12
-CALIBRATE_MODEL ?= claude-sonnet-5
+CALIBRATE_MODEL ?= claude-opus-5
 CALIBRATE_PROVIDER ?= anthropic
 # CALIBRATE_OUT is the stem of the two summaries this target writes:
 # <stem>-base.json and <stem>-strong.json. A paid result is never

@@ -41,4 +41,4 @@ CAUTION: the lists live on Moxfield, and a fetch of Moxfield's terms answered 40
 
 ## Moxfield
 
-- The terms are unverified: a fetch answered 403 on 2026-09-01 (OQ-49).
+- A fetch of the terms by a session answered 403 on 2026-09-01. The owner read them the same day and reported that they allow the fetch (D-419). No session has read the text, so the fact is the owner's.
