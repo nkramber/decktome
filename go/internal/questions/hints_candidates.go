@@ -22,6 +22,9 @@ type CandidateHints struct {
 	Colors  []mtgv1.Color
 	Owned   map[string]int32
 	Pool    mtgv1.PoolRule
+	// SetCodes are the paper sets the reader limited the deck to, a whole
+	// set family (D-376). The commander offer reads them (D-437).
+	SetCodes []string
 	// WantPair asks the candidate builder for two-commander pairs. The
 	// user asked for partners or a Background (D-154).
 	WantPair bool
@@ -123,6 +126,15 @@ func (h *CandidateHints) UseSlots(format mtgv1.FormatId, colors []mtgv1.Color, p
 	}
 }
 
+// UseSets takes the set limit as it stands inside the turn (D-437). A
+// set the classifier resolved this turn reaches the offer of this turn.
+func (h *CandidateHints) UseSets(codes []string) {
+	if h == nil || len(codes) == 0 {
+		return
+	}
+	h.SetCodes = codes
+}
+
 // UseWantPair records that the user asked for a two-commander pair. The
 // pool offers pairs on its own when too few singles fit the colors, so
 // this only adds the case the words ask for (D-154).
@@ -140,10 +152,16 @@ func (h *CandidateHints) UseWantPair(want, background bool) {
 // one the agent already offered, so a user who answers "none" sees three
 // others (D-73).
 func (h *CandidateHints) Commanders(theme string, skip []string) []string {
-	if h == nil || h.Index == nil || h.Builder == nil || strings.TrimSpace(theme) == "" {
+	// An empty theme is a pool of its own: the reader declined the theme
+	// or named none, and the pool ranks the commanders that fit the
+	// format, the colors, and the sets on popularity (D-367, D-437).
+	// Before this, an empty theme answered no name, the pick row went
+	// out bare, and the build chose a commander with no word to the
+	// reader.
+	if h == nil || h.Index == nil || h.Builder == nil {
 		return nil
 	}
-	cacheKey := h.key(theme) + "\x00" + strings.Join(skip, "\x00")
+	cacheKey := h.key(theme) + "\x00" + strings.Join(skip, "\x00") + "\x00" + strings.Join(h.SetCodes, ",")
 	if h.WantPair {
 		cacheKey += "\x00pair"
 	}
@@ -161,6 +179,10 @@ func (h *CandidateHints) Commanders(theme string, skip []string) []string {
 		Owned:          h.Owned,
 		WantPair:       h.WantPair,
 		WantBackground: h.WantBackground,
+		// A commander comes from the sets the reader named (D-382). The
+		// offer read no set before D-437, so a Hobbit-only request could
+		// offer a commander of any set.
+		SetCodes: h.SetCodes,
 	}
 	list, err := h.Builder.Commanders(h.Index, req, 3+len(skip))
 	if err != nil {

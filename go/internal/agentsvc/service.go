@@ -48,6 +48,13 @@ type Store interface {
 	// GetState reads the session, its private state, and the version
 	// that the next Put must expect.
 	GetState(ctx context.Context, uid, id string) (*mtgv1.Session, questions.Snapshot, int64, error)
+	// List answers every session of a reader as a summary, newest first
+	// (D-433).
+	List(ctx context.Context, uid string) ([]*mtgv1.SessionSummary, error)
+	// Rename writes the name of one session and returns its summary.
+	Rename(ctx context.Context, uid, id, name string) (*mtgv1.SessionSummary, error)
+	// Delete removes a session and its private state.
+	Delete(ctx context.Context, uid, id string) error
 }
 
 // PreconSource hands out the precon set for the current card index, or
@@ -379,6 +386,10 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 		s.log.InfoContext(ctx, "the user answered a yes-or-no question with a bare negative, so the key closed",
 			"session", session.GetId(), "key", key)
 	}
+	// The turn starts with the reading of the request (D-435), and it
+	// ends with the done phase whatever it produced.
+	s.sendPhase(ctx, stream, session, mtgv1.BuildPhase_BUILD_PHASE_READING)
+	defer s.sendPhase(ctx, stream, session, mtgv1.BuildPhase_BUILD_PHASE_DONE)
 	message := withAnswers(req.Msg.GetMessage(), req.Msg.GetAnswers(), session)
 	if len(message) > maxFoldedBytes {
 		return connect.NewError(connect.CodeInvalidArgument, errTooLong)
@@ -395,12 +406,17 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 		return err
 	}
 	acc := llm.NewAccumulator(s.prices)
+	// The total before this turn, kept apart. The turn sums the report
+	// onto it twice: once after the question calls, and once more after
+	// the build, which spends far more (D-447). addUsage writes into the
+	// total it is given, so the copy keeps the second sum honest.
+	usageBefore := cloneUsage(session.GetUsage())
 	var stalled []string
 	res, turnErr := agent.Turn(ctx, st, message, acc)
 	// The turn is stored either way. A failed turn keeps the slots the
 	// classify call already filled, so a retry does not start again.
 	session.Slots = st.Slots
-	session.Usage = addUsage(session.GetUsage(), acc.Report())
+	session.Usage = addUsage(cloneUsage(usageBefore), acc.Report())
 	session.UpdatedAt = timestamppb.New(s.now())
 	turn := &mtgv1.Turn{
 		UserMessage: req.Msg.GetMessage(),
@@ -498,15 +514,15 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 		case before > 0 && !slotsChanged(slotsBefore, session.GetSlots()):
 			// A message after a build with no slot change asks for a
 			// change to the deck the user read (D-283).
-			err = s.sendRevision(ctx, uid, session, st, st.Snapshot(), version+1, owned, acc, message, turn, stream)
+			err = s.sendRevision(ctx, uid, session, st, st.Snapshot(), version+1, owned, acc, usageBefore, message, turn, stream)
 		case before > 0:
 			if err = stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Status{
 				Status: "a deck setting changed, so the deck is built again from the start"}}); err != nil {
 				return err
 			}
-			err = s.sendDeck(ctx, uid, session, st, st.Snapshot(), version+1, owned, acc, stream)
+			err = s.sendDeck(ctx, uid, session, st, st.Snapshot(), version+1, owned, acc, usageBefore, stream)
 		default:
-			err = s.sendDeck(ctx, uid, session, st, st.Snapshot(), version+1, owned, acc, stream)
+			err = s.sendDeck(ctx, uid, session, st, st.Snapshot(), version+1, owned, acc, usageBefore, stream)
 		}
 		if err != nil {
 			return err
@@ -626,13 +642,14 @@ func (s *Server) hints(_ *mtgv1.Session, st *questions.State, owned map[string]i
 		return nil
 	}
 	return &questions.CandidateHints{
-		Index:   idx,
-		Builder: s.builder,
-		Format:  st.Slots.GetFormat().GetId(),
-		Colors:  st.Slots.GetColors(),
-		Pool:    st.Slots.GetPoolRule(),
-		Owned:   owned,
-		Log:     s.log,
+		Index:    idx,
+		Builder:  s.builder,
+		Format:   st.Slots.GetFormat().GetId(),
+		Colors:   st.Slots.GetColors(),
+		Pool:     st.Slots.GetPoolRule(),
+		Owned:    owned,
+		SetCodes: st.Slots.GetSetCodes(),
+		Log:      s.log,
 	}
 }
 
@@ -719,6 +736,15 @@ func withAnswers(message string, answers []*mtgv1.Answer, session *mtgv1.Session
 		lines = append(lines, message)
 	}
 	return strings.Join(lines, "\n")
+}
+
+// cloneUsage copies a total, so a sum onto the copy leaves the original
+// as it was. Nil stays nil, which addUsage reads as an empty total.
+func cloneUsage(u *mtgv1.Usage) *mtgv1.Usage {
+	if u == nil {
+		return nil
+	}
+	return proto.Clone(u).(*mtgv1.Usage)
 }
 
 // addUsage sums one turn's report into the session total. A turn whose

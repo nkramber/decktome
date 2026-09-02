@@ -16,7 +16,9 @@
           "message": "Replace some lands with better options if possible. Also tune the mana curve lower - no 6 or 7 mana cards needed",
           "cap": 5,
           "unclear": true,
-          "note": "Mixed: the lands part is unclear and earns a question, and the cap is clear and must sit in the brief."
+          "note": "Mixed: the lands part is unclear and earns a question, and the cap is clear and must sit in the brief. The answer earns a rebuild that holds the cap and swaps basics (D-448).",
+          "answer": "A mix.",
+          "swap_basics": true
         },
         {
           "id": 2,
@@ -26,7 +28,10 @@
         {
           "id": 3,
           "message": "Better lands please.",
-          "unclear": true
+          "unclear": true,
+          "answer": "Utility lands.",
+          "swap_basics": true,
+          "note": "The answer names the kind, so the rebuild must add utility lands in place of basics (D-448)."
         }
       ]
     },
@@ -52,6 +57,12 @@
         {
           "id": 6,
           "message": "Add two more cards that draw cards, and cut two of the weakest creatures."
+        },
+        {
+          "id": 9,
+          "message": "Add better lands instead of the basics. I mean dual lands that enter untapped where you can, and a couple of utility lands.",
+          "swap_basics": true,
+          "note": "The kind is in the message, so no question. Session vAvg4eteJhmuPEuJwBul rebuilt one basic for this ask (D-448)."
         }
       ]
     },

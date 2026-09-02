@@ -310,9 +310,10 @@ func runOne(cat *questions.Catalog, client *llm.Client, idx *cards.Index, builde
 		if idx != nil {
 			hints := &questions.CandidateHints{
 				Index: idx, Builder: builder, Log: quiet,
-				Format: st.Slots.GetFormat().GetId(),
-				Colors: st.Slots.GetColors(),
-				Pool:   st.Slots.GetPoolRule(),
+				Format:   st.Slots.GetFormat().GetId(),
+				Colors:   st.Slots.GetColors(),
+				Pool:     st.Slots.GetPoolRule(),
+				SetCodes: st.Slots.GetSetCodes(),
 			}
 			if hints.Format == mtgv1.FormatId_FORMAT_ID_UNSPECIFIED {
 				hints.Format = mtgv1.FormatId_FORMAT_ID_COMMANDER

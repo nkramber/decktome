@@ -39,6 +39,7 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 	"github.com/nkramber/mtg-deck-builder/go/internal/questions"
 	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
+	"github.com/nkramber/mtg-deck-builder/go/internal/sessions"
 )
 
 // memStore is the session store, in memory. The probe writes nothing.
@@ -228,4 +229,31 @@ func report(d *mtgv1.Deck, took time.Duration) {
 	if claims := generate.LintSummary(d.GetSummary()); len(claims) > 0 {
 		fmt.Printf("summary rules claims (F-26): %v\n", claims)
 	}
+}
+
+// The sessions list of D-433 is not part of a probe. The store answers
+// what it holds, so the interface is met.
+func (m *memStore) List(_ context.Context, _ string) ([]*mtgv1.SessionSummary, error) {
+	out := make([]*mtgv1.SessionSummary, 0, len(m.sess))
+	for _, s := range m.sess {
+		out = append(out, sessions.Summarize(s))
+	}
+	return out, nil
+}
+
+func (m *memStore) Rename(_ context.Context, _, id, name string) (*mtgv1.SessionSummary, error) {
+	s, ok := m.sess[id]
+	if !ok {
+		return nil, sessions.ErrNotFound
+	}
+	s.Name = name
+	return sessions.Summarize(s), nil
+}
+
+func (m *memStore) Delete(_ context.Context, _, id string) error {
+	if _, ok := m.sess[id]; !ok {
+		return sessions.ErrNotFound
+	}
+	delete(m.sess, id)
+	return nil
 }

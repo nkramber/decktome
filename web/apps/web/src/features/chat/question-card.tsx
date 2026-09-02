@@ -40,6 +40,12 @@ export function QuestionCard({
   // the text field shows as for an open one (D-295).
   const closed = question.closed && question.options.length > 0;
 
+  // toggle picks an option, or clears it when it is the picked one. The
+  // name button and the card art both call it (D-444).
+  const toggle = (i: number) => {
+    const picked = draft.optionIndex === i;
+    onChange(picked ? { text: "" } : { optionIndex: i, text: "" });
+  };
   const button = (opt: string, i: number) => {
     const picked = draft.optionIndex === i;
     return (
@@ -49,7 +55,7 @@ export function QuestionCard({
         size="sm"
         disabled={disabled}
         aria-pressed={picked}
-        onClick={() => onChange(picked ? { text: "" } : { optionIndex: i, text: "" })}
+        onClick={() => toggle(i)}
         className={cn("h-auto py-1 whitespace-normal", picked && "border-accent")}
       >
         {picked && <span aria-hidden="true">✓ </span>}
@@ -78,11 +84,14 @@ export function QuestionCard({
               // both of them (D-361).
               const partner = partnerIds(question)[i] ?? "";
               return (
-                <li key={i} className="flex flex-col gap-2 rounded-card border border-border bg-card p-2">
+                // A commander tile lifts under the pointer with the gold
+                // light every panel throws (D-445), so a reader sees which
+                // one a click takes.
+                <li key={i} className="card-hover flex flex-col gap-2 rounded-card border border-border bg-card p-2 hover:border-primary/60" data-testid="card-option-tile">
                   {id && !cards.isPending ? (
                     <div className={cn("grid gap-2", partner && "grid-cols-2")}>
-                      <CardOption card={byId.get(id)} name={opt} />
-                      {partner && <CardOption card={byId.get(partner)} name={opt} />}
+                      <CardOption card={byId.get(id)} name={opt} zoom={partner ? "left" : undefined} onPick={disabled ? undefined : () => toggle(i)} />
+                      {partner && <CardOption card={byId.get(partner)} name={opt} zoom="right" onPick={disabled ? undefined : () => toggle(i)} />}
                     </div>
                   ) : null}
                   <div>{button(opt, i)}</div>

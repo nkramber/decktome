@@ -64,8 +64,19 @@ export function DecksPage() {
   const list = useDeckList(filter);
   const decks = useMemo(() => list.data?.pages.flatMap((p) => p.decks) ?? [], [list.data]);
   const byId = useCommanderCards(decks);
-  const { setFavorite } = useDeckWrites();
+  const { setFavorite, remove } = useDeckWrites();
   const filtered = query !== "" || format !== FormatId.UNSPECIFIED || power !== "" || favoritesOnly;
+
+  // The delete of the tile (D-439). The library refetches on success,
+  // because the mutation invalidates the deck lists.
+  async function onDelete(deckId: string, name: string) {
+    try {
+      await remove.mutateAsync({ deckId });
+      await notify("success", "Deck deleted", name);
+    } catch (err) {
+      await notify("error", "Could not delete the deck", `${name}: ${errorMessage(err)}`);
+    }
+  }
 
   async function onFavorite(deckId: string, name: string, favorite: boolean) {
     try {
@@ -150,7 +161,13 @@ export function DecksPage() {
       {decks.length > 0 && (
         <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {decks.map((d) => (
-            <DeckCard key={d.id} deck={d} byId={byId} onFavorite={(favorite) => void onFavorite(d.id, d.name || d.id, favorite)} />
+            <DeckCard
+              key={d.id}
+              deck={d}
+              byId={byId}
+              onFavorite={(favorite) => void onFavorite(d.id, d.name || d.id, favorite)}
+              onDelete={() => void onDelete(d.id, d.name || d.id)}
+            />
           ))}
         </ul>
       )}

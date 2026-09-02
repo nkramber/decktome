@@ -62,8 +62,8 @@ const deckIDRetries = 3
 // buildDeck writes the deck for a ready session. It returns nil when the
 // server has no generator wired, so a deployment without one reports
 // that every slot is filled and says so.
-func (s *Server) buildDeck(ctx context.Context, uid string, session *mtgv1.Session, st *questions.State, owned map[string]int32, acc *llm.Accumulator) (*generate.Result, error) {
-	return s.buildDeckFrom(ctx, uid, session, st, owned, acc, nil)
+func (s *Server) buildDeck(ctx context.Context, uid string, session *mtgv1.Session, st *questions.State, owned map[string]int32, acc *llm.Accumulator, phase func(mtgv1.BuildPhase)) (*generate.Result, error) {
+	return s.buildDeckFrom(ctx, uid, session, st, owned, acc, nil, phase)
 }
 
 // buildDeckFrom is buildDeck with an optional revision brief. The base
@@ -71,7 +71,7 @@ func (s *Server) buildDeck(ctx context.Context, uid string, session *mtgv1.Sessi
 // removed cards and the cards over its cap leave the pool, and the
 // request carries the brief (D-283). owned is the collection's count per
 // Oracle id, read once per turn.
-func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.Session, st *questions.State, owned map[string]int32, acc *llm.Accumulator, rev *generate.Revision) (*generate.Result, error) {
+func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.Session, st *questions.State, owned map[string]int32, acc *llm.Accumulator, rev *generate.Revision, phase func(mtgv1.BuildPhase)) (*generate.Result, error) {
 	if s.decks == nil {
 		return nil, nil
 	}
@@ -253,6 +253,8 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 		// put back what it can not name (D-242).
 		rev.Exempt = append(append([]string(nil), commanderIDs...), lockedIDs...)
 		pool = pool.Filter(func(c *mtgv1.Card) bool { return generate.AllowedByRevision(rev, c) })
+		// The swap count fits what the pool offers (D-448).
+		generate.FitSwapBasics(rev, pool)
 	}
 
 	// The deck carries its own id, so the store reserves one first
@@ -263,6 +265,7 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 	}
 
 	res, err := s.decks.Build(ctx, generate.Request{
+		OnPhase:         phase,
 		Precon:          preconName,
 		PreconOracleIDs: preconIDs,
 		PreconLands:     preconLands,
@@ -390,7 +393,7 @@ func (s *Server) sendOrLog(ctx context.Context, stream *connect.ServerStream[mtg
 // the turn: the questions are already stored and already sent, so the
 // user reads a status line and can ask again.
 func (s *Server) sendDeck(ctx context.Context, uid string, session *mtgv1.Session, st *questions.State,
-	snap questions.Snapshot, version int64, owned map[string]int32, acc *llm.Accumulator,
+	snap questions.Snapshot, version int64, owned map[string]int32, acc *llm.Accumulator, usageBefore *mtgv1.Usage,
 	stream *connect.ServerStream[mtgv1.ChatResponse]) error {
 	if s.decks == nil {
 		return stream.Send(&mtgv1.ChatResponse{
@@ -402,13 +405,21 @@ func (s *Server) sendDeck(ctx context.Context, uid string, session *mtgv1.Sessio
 	}); err != nil {
 		return err
 	}
+	// The shortlist comes first, and the generator reports the steps
+	// after it through its callback (D-435).
+	s.sendPhase(ctx, stream, session, mtgv1.BuildPhase_BUILD_PHASE_SHORTLIST)
+	phase := func(p mtgv1.BuildPhase) { s.sendPhase(ctx, stream, session, p) }
 	// The build is bounded, so a slow provider ends the turn with an
 	// error instead of a stream that does not end (D-235). It runs
 	// detached from the client, so a disconnect after the paid call
 	// still stores the deck (D-303).
 	bctx, cancel := detached(ctx, s.buildDeadline())
 	defer cancel()
-	res, err := s.buildDeck(bctx, uid, session, st, owned, acc)
+	res, err := s.buildDeck(bctx, uid, session, st, owned, acc, phase)
+	// The build is the paid part of the turn, and the total the reader
+	// sees must hold it (D-447). The sum lands before the deck is stored,
+	// so the stored session carries it too.
+	session.Usage = addUsage(cloneUsage(usageBefore), acc.Report())
 	if err != nil {
 		s.log.ErrorContext(ctx, "the build failed", "session", session.GetId(), "err", err)
 		msg := "the deck build failed, please ask again"
@@ -490,6 +501,9 @@ func (s *Server) storeDeck(ctx context.Context, uid string, session *mtgv1.Sessi
 		current.DeckIds = append(current.GetDeckIds(), d.GetId())
 		current.Status = mtgv1.SessionStatus_SESSION_STATUS_BUILT
 		current.UpdatedAt = session.GetUpdatedAt()
+		// The build's calls are in the session of this turn and not in
+		// the stored one (D-447).
+		current.Usage = session.GetUsage()
 		if n := len(current.GetTurns()); n > 0 && n == len(session.GetTurns()) {
 			current.Turns[n-1] = session.GetTurns()[n-1]
 		}
@@ -510,7 +524,7 @@ func (s *Server) storeDeck(ctx context.Context, uid string, session *mtgv1.Sessi
 // (D-283, D-284). The reply lands in Turn.agent_message and streams as
 // text_delta.
 func (s *Server) sendRevision(ctx context.Context, uid string, session *mtgv1.Session, st *questions.State,
-	snap questions.Snapshot, version int64, owned map[string]int32, acc *llm.Accumulator, message string, turn *mtgv1.Turn,
+	snap questions.Snapshot, version int64, owned map[string]int32, acc *llm.Accumulator, usageBefore *mtgv1.Usage, message string, turn *mtgv1.Turn,
 	stream *connect.ServerStream[mtgv1.ChatResponse]) error {
 	if s.decks == nil {
 		return stream.Send(&mtgv1.ChatResponse{
@@ -556,6 +570,9 @@ func (s *Server) sendRevision(ctx context.Context, uid string, session *mtgv1.Se
 			Event: &mtgv1.ChatResponse_Status{Status: "your request could not be read, please ask again"},
 		})
 	}
+	// The turn keeps the brief, so a wrong revision is readable after
+	// the fact (D-449).
+	turn.RevisionBrief = brief.JSON()
 	// The revise call is paid, so the write that records its reply runs
 	// detached from the client (D-303).
 	record := func(text string) {
@@ -604,8 +621,12 @@ func (s *Server) sendRevision(ctx context.Context, uid string, session *mtgv1.Se
 		Remove:       brief.Remove,
 		Keep:         brief.Keep,
 		MaxManaValue: brief.MaxManaValue,
+		SwapBasics:   brief.SwapBasics,
+		LandKinds:    brief.LandKinds,
 	}
-	res, err := s.buildDeckFrom(bctx, uid, session, st, owned, acc, rev)
+	res, err := s.buildDeckFrom(bctx, uid, session, st, owned, acc, rev, func(p mtgv1.BuildPhase) { s.sendPhase(ctx, stream, session, p) })
+	// The revision is a paid call, and the total holds it (D-447).
+	session.Usage = addUsage(cloneUsage(usageBefore), acc.Report())
 	if err != nil || res == nil {
 		s.log.ErrorContext(ctx, "the revision failed", "session", session.GetId(), "err", err)
 		msg := "the revision failed, please ask again"

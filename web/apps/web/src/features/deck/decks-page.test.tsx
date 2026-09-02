@@ -13,6 +13,7 @@ vi.mock("firebase/auth");
 
 const listDecks = vi.fn();
 const updateDeck = vi.fn();
+const deleteDeck = vi.fn();
 const getCards = vi.fn();
 vi.mock("../../lib/api", () => ({
   healthClient: { check: () => Promise.resolve({ status: "ok", version: "test", cardSnapshot: "none" }) },
@@ -22,7 +23,7 @@ vi.mock("../../lib/api", () => ({
   deckClient: {
     listDecks: (...a: unknown[]) => listDecks(...a),
     updateDeck: (...a: unknown[]) => updateDeck(...a),
-    deleteDeck: vi.fn(),
+    deleteDeck: (...a: unknown[]) => deleteDeck(...a),
     getDeck: vi.fn(),
   },
 }));
@@ -48,6 +49,7 @@ beforeEach(() => {
   localStorage.clear();
   listDecks.mockReset();
   updateDeck.mockReset();
+  deleteDeck.mockReset();
   getCards.mockReset();
   listDecks.mockResolvedValue({ decks: [deck()], nextPageToken: "" });
   updateDeck.mockResolvedValue({ deck: deck({ favorite: true }) });
@@ -150,5 +152,27 @@ describe("a deck tile", () => {
       (el) => el.className.includes("relative") && !el.className.includes("z-10"),
     );
     expect(positioned.map((el) => el.tagName)).toEqual([]);
+  });
+});
+
+// A deck tile carries a delete, behind the same question as the deck
+// screen (D-439).
+describe("deleting from the library", () => {
+  it("asks first, then removes the deck", async () => {
+    deleteDeck.mockResolvedValue({});
+    const user = userEvent.setup();
+    await renderAt("/decks");
+    await user.click(await screen.findByRole("button", { name: /^Delete / }));
+    expect(await screen.findByText(/The deck goes for good/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Delete the deck" }));
+    await waitFor(() => expect(deleteDeck).toHaveBeenCalledTimes(1));
+  });
+
+  it("keeps the deck when the reader backs out", async () => {
+    const user = userEvent.setup();
+    await renderAt("/decks");
+    await user.click(await screen.findByRole("button", { name: /^Delete / }));
+    await user.click(await screen.findByRole("button", { name: "Keep it" }));
+    expect(deleteDeck).not.toHaveBeenCalled();
   });
 });

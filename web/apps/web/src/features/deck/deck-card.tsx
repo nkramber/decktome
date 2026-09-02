@@ -1,8 +1,19 @@
 import type { Card } from "@mtg/api-client/mtg/v1/card_pb";
 import type { Deck } from "@mtg/api-client/mtg/v1/deck_pb";
-import { StarIcon } from "lucide-react";
+import { StarIcon, Trash2Icon } from "lucide-react";
 import { Link } from "react-router";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "../../components/ui/alert-dialog";
 import { Button } from "../../components/ui/button";
 import { cn } from "../../lib/cn";
 import { identityOfCommanders } from "./color-identity";
@@ -15,7 +26,18 @@ import { ManaPips } from "./mana-pips";
 // The li is the one positioned ancestor of the card, so the stretched
 // link covers the whole tile. A positioned row in between took the
 // link's ::after with it, and only that row opened the deck (D-365).
-export function DeckCard({ deck, byId, onFavorite }: { deck: Deck; byId: Map<string, Card>; onFavorite: (favorite: boolean) => void }) {
+export function DeckCard({
+  deck,
+  byId,
+  onFavorite,
+  onDelete,
+}: {
+  deck: Deck;
+  byId: Map<string, Card>;
+  onFavorite: (favorite: boolean) => void;
+  // onDelete removes the deck for good, after the question (D-439).
+  onDelete?: () => void;
+}) {
   const identity = identityOfCommanders(deck.commanderOracleIds, byId);
   const commander = deck.commanderOracleIds.map((id) => byId.get(id)).find(Boolean);
   const title = deck.name || "Untitled deck";
@@ -47,6 +69,25 @@ export function DeckCard({ deck, byId, onFavorite }: { deck: Deck; byId: Map<str
         >
           <StarIcon className={cn("size-4", deck.favorite && "fill-primary text-primary")} />
         </Button>
+        {onDelete && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="icon" aria-label={`Delete ${title}`} className="relative z-10 -mt-1 -mr-1 size-7 text-danger hover:text-danger">
+                <Trash2Icon className="size-4" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete {title}?</AlertDialogTitle>
+                <AlertDialogDescription>The deck goes for good. The chat that built it stays, and you can build again from it.</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Keep it</AlertDialogCancel>
+                <AlertDialogAction onClick={onDelete}>Delete the deck</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
 
       <div className="flex items-center gap-2">

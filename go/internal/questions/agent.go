@@ -190,6 +190,9 @@ func (a *Agent) readFacts(st *State) {
 	if sa, ok := a.hints.(SlotAware); ok {
 		sa.UseSlots(st.Slots.GetFormat().GetId(), st.Slots.GetColors(), st.Slots.GetPoolRule())
 	}
+	if ss, ok := a.hints.(SetAware); ok {
+		ss.UseSets(st.Slots.GetSetCodes())
+	}
 	if fs, ok := a.hints.(FactSource); ok {
 		RefreshFacts(st, fs)
 	}

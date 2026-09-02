@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"sort"
 	"strings"
 	"sync"
 	"testing"
@@ -1038,4 +1039,46 @@ func TestChatRefusesATurnWithNoIndex(t *testing.T) {
 	if got := connect.CodeOf(stream.Err()); got != connect.CodeUnavailable {
 		t.Errorf("code = %v, want Unavailable", got)
 	}
+}
+
+// List, Rename, and Delete serve the sessions list of D-433.
+func (f *fakeStore) List(_ context.Context, _ string) ([]*mtgv1.SessionSummary, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	out := make([]*mtgv1.SessionSummary, 0, len(f.sessions))
+	for _, s := range f.sessions {
+		out = append(out, sessions.Summarize(s))
+	}
+	sort.Slice(out, func(i, j int) bool {
+		a, b := out[i].GetUpdatedAt().AsTime(), out[j].GetUpdatedAt().AsTime()
+		if !a.Equal(b) {
+			return a.After(b)
+		}
+		return out[i].GetId() > out[j].GetId()
+	})
+	return out, nil
+}
+
+func (f *fakeStore) Rename(_ context.Context, _, id, name string) (*mtgv1.SessionSummary, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	s, ok := f.sessions[id]
+	if !ok {
+		return nil, sessions.ErrNotFound
+	}
+	s.Name = name
+	f.versions[id]++
+	return sessions.Summarize(s), nil
+}
+
+func (f *fakeStore) Delete(_ context.Context, _, id string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if _, ok := f.sessions[id]; !ok {
+		return sessions.ErrNotFound
+	}
+	delete(f.sessions, id)
+	delete(f.states, id)
+	delete(f.versions, id)
+	return nil
 }

@@ -1,7 +1,7 @@
 import { Code, ConnectError } from "@connectrpc/connect";
 import type { Deck } from "@mtg/api-client/mtg/v1/deck_pb";
 import { type Answer, PoolRule, type Session } from "@mtg/api-client/mtg/v1/session_pb";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, type KeyboardEvent, type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { Link, useBlocker, useLocation, useNavigate, useParams } from "react-router";
 
@@ -16,9 +16,11 @@ import { errorMessage } from "../../lib/errors";
 import { type PoolMode, useAppStore } from "../../lib/store";
 import { DeckView } from "../deck/deck-view";
 import { PoolPicker, useCollections } from "./pool-picker";
+import { BuildStepper } from "./build-stepper";
 import { RecentDecks, useRecentDecks } from "./recent-decks";
+import { UnfinishedChats } from "./unfinished-chats";
 import { type Draft, draftAnswered, emptyDraft, QuestionCard } from "./question-card";
-import { byteLength, type ChatState, emptyState, fromSession, maxMessageBytes, type ThreadItem, useChat } from "./use-chat";
+import { byteLength, type ChatState, emptyState, fromSession, maxMessageBytes, type SendInput, type ThreadItem, useChat } from "./use-chat";
 
 // The chat screen (ui plan, step 3). The id "new" means no session yet.
 // A stored session loads through GetSession and its latest deck through
@@ -28,6 +30,7 @@ export function SessionPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const isNew = !id || id === "new";
   const storedSessionId = useAppStore((s) => s.sessionId);
   const setSessionId = useAppStore((s) => s.setSessionId);
@@ -39,14 +42,29 @@ export function SessionPage() {
   // fresh panel, and the started id clears so a return to /session/<id>
   // loads the stored session.
   const [started, setStarted] = useState<{ id: string; key: string } | null>(null);
+  // newKey is the location key of the current /session/new visit. A
+  // replace of the location state keeps the visit, so the panel must
+  // not remount on it: a remount aborts a send that already left.
+  const [newKey, setNewKey] = useState(location.key);
   const wasNew = useRef(isNew);
   useEffect(() => {
-    if (isNew && !wasNew.current) setStarted(null);
+    if (isNew && !wasNew.current) {
+      setStarted(null);
+      setNewKey(location.key);
+    }
     wasNew.current = isNew;
-  }, [isNew]);
+  }, [isNew, location.key]);
   const live = isNew || id === started?.id;
-  const panelKey = isNew ? location.key : started && id === started.id ? started.key : id;
-  const onStarted = useCallback((sid: string) => setStarted({ id: sid, key: location.key }), [location.key]);
+  // A reload of the session, after a lost stream (PR-19). The panel
+  // leaves the live state and reads the stored session again.
+  const [reloads, setReloads] = useState(0);
+  const panelKey = isNew ? newKey : started && id === started.id ? started.key : `${id}:${reloads}`;
+  const onResume = useCallback(() => {
+    setStarted(null);
+    setReloads((n) => n + 1);
+    void queryClient.invalidateQueries({ queryKey: ["session", id] });
+  }, [queryClient, id]);
+  const onStarted = useCallback((sid: string) => setStarted({ id: sid, key: newKey }), [newKey]);
 
   const session = useQuery({
     queryKey: ["session", id],
@@ -78,7 +96,7 @@ export function SessionPage() {
   const toDeck = useCallback((deckId: string) => void navigate(`/decks/${deckId}`, { replace: true }), [navigate]);
 
   if (live) {
-    return <ChatPanel key={panelKey} initial={emptyState} onStarted={onStarted} onDeckBuilt={toDeck} />;
+    return <ChatPanel key={panelKey} initial={emptyState} onStarted={onStarted} onDeckBuilt={toDeck} onResume={isNew ? undefined : onResume} />;
   }
   if (session.isPending || (deckId && deck.isPending) || (baseId && base.isPending)) {
     return (
@@ -110,7 +128,16 @@ export function SessionPage() {
     );
   }
   const deckError = [deck.isError ? errorMessage(deck.error) : "", base.isError ? errorMessage(base.error) : ""].filter(Boolean).join(" ");
-  return <ChatPanel key={panelKey} initial={fromSession(session.data.session, deck.data?.deck, base.data?.deck)} session={session.data.session} deckError={deckError} onDeckBuilt={toDeck} />;
+  return (
+    <ChatPanel
+      key={panelKey}
+      initial={fromSession(session.data.session, deck.data?.deck, base.data?.deck)}
+      session={session.data.session}
+      deckError={deckError}
+      onDeckBuilt={toDeck}
+      onResume={onResume}
+    />
+  );
 }
 
 // pruneDrafts keeps the drafts of the open questions only.
@@ -150,6 +177,7 @@ export function ChatPanel({
   baseOverride,
   actions,
   onDeckBuilt,
+  onResume,
 }: {
   initial: ChatState;
   session?: Session;
@@ -159,6 +187,8 @@ export function ChatPanel({
   baseOverride?: Deck;
   actions?: ReactNode;
   onDeckBuilt?: (deckId: string) => void;
+  // onResume reads the stored session again after a lost stream.
+  onResume?: () => void;
 }) {
   const navigate = useNavigate();
   const navigateRef = useRef(navigate);
@@ -346,10 +376,16 @@ export function ChatPanel({
   // a new deck tells the page, and the page moves to that address.
   const builtDeck = deckOverride ?? state.deck;
   const streamedDeckId = state.deck?.id;
+  const queryClient = useQueryClient();
+  const builtSessionId = state.sessionId;
   useEffect(() => {
     if (!streamedDeckId || state.busy) return;
+    // The deck screen reads the session from the cache, and the cache
+    // may hold the session from before this turn, with the last question
+    // still open (D-446). The turn that built the deck stales it first.
+    void queryClient.invalidateQueries({ queryKey: ["session", builtSessionId] });
     if (streamedDeckId !== deckOverride?.id) onDeckBuilt?.(streamedDeckId);
-  }, [streamedDeckId, state.busy, deckOverride?.id, onDeckBuilt]);
+  }, [streamedDeckId, state.busy, deckOverride?.id, onDeckBuilt, queryClient, builtSessionId]);
   // A question sits in the thread and in the open list at the same time,
   // and the card below it takes the answer. The thread holds the line for
   // the history, so it shows the question only after it is answered.
@@ -393,24 +429,47 @@ export function ChatPanel({
   // What the agent is doing right now, in its own words. A build runs for
   // minutes, and "the agent is working" says nothing about which minute
   // this is. The newest status line carries that, so the working row says
-  // it rather than a line of its own (D-375).
+  // it rather than a line of its own (D-375). The stepper under it lights
+  // the step the server named (D-435).
   const step = state.busy ? (shown.reduce((text, item) => (item.kind === "status" ? item.text : text), "") ?? "") : "";
   const working = (
-    <div className="flex flex-wrap items-center gap-3" role="status">
+    <div className="flex flex-col gap-2" role="status">
       {state.busy && (
         <>
-          <span className="flex items-center gap-2.5">
-            <span className="flex gap-1" aria-hidden="true">
-              <span className="size-2 animate-bounce rounded-full bg-primary [animation-delay:-0.3s]" />
-              <span className="size-2 animate-bounce rounded-full bg-primary [animation-delay:-0.15s]" />
-              <span className="size-2 animate-bounce rounded-full bg-primary" />
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="flex items-center gap-2.5">
+              <span className="flex gap-1" aria-hidden="true">
+                <span className="size-2 animate-bounce rounded-full bg-primary [animation-delay:-0.3s]" />
+                <span className="size-2 animate-bounce rounded-full bg-primary [animation-delay:-0.15s]" />
+                <span className="size-2 animate-bounce rounded-full bg-primary" />
+              </span>
+              <span className="font-display text-[15px] font-semibold text-foreground">{sentence(step) || "The agent is working..."}</span>
             </span>
-            <span className="font-display text-[15px] font-semibold text-foreground">{sentence(step) || "The agent is working..."}</span>
-          </span>
-          <Button type="button" variant="outline" size="sm" onClick={stop}>
-            Stop
-          </Button>
+            <Button type="button" variant="outline" size="sm" onClick={stop}>
+              Stop
+            </Button>
+          </div>
+          <BuildStepper phase={state.phase} repaired={state.repaired} />
         </>
+      )}
+    </div>
+  );
+
+  // A failed turn ends with the reason and a way on (PR-19). A retryable
+  // failure runs the same send again. A lost stream reads the stored
+  // session again, so the turn the server finished shows.
+  const lastFailure = !state.busy && last?.kind === "failure" ? last.failure : undefined;
+  const recovery = lastFailure && (
+    <div className="flex flex-wrap gap-2" data-testid="recovery">
+      {lastFailure.retryable && state.lastInput && (
+        <Button type="button" size="sm" onClick={() => void send(state.lastInput as SendInput)}>
+          Try again
+        </Button>
+      )}
+      {state.sessionId !== "" && onResume && (
+        <Button type="button" size="sm" variant="outline" onClick={onResume}>
+          Reload the session
+        </Button>
       )}
     </div>
   );
@@ -418,7 +477,10 @@ export function ChatPanel({
   const composer = showComposer && (
     // The cards sit close under the title they belong to, and the message
     // box stands apart as a section of its own (D-369).
-    <form onSubmit={onSubmit} className={cn("flex flex-col gap-2", beforeFirstMessage && "mt-20")}>
+    // The gap over the box equals the gap under the top bar (D-442): the
+    // section gap plus this margin is the page's top padding, at each
+    // width.
+    <form onSubmit={onSubmit} className={cn("flex flex-col gap-2", beforeFirstMessage && "mt-4 md:mt-10")}>
       {beforeFirstMessage && (
         <h2 className="font-display text-2xl font-semibold">Build a new deck</h2>
       )}
@@ -514,6 +576,7 @@ export function ChatPanel({
               <div ref={end} />
             </div>
             {working}
+            {recovery}
             {leaveWarning}
             {questions}
             {composer}
@@ -568,11 +631,15 @@ export function ChatPanel({
             {thread}
             {questions}
             {working}
+            {recovery}
             <div ref={end} />
           </div>
         )}
 
         {composer}
+        {/* The unfinished chats sit under the message box, and only when
+            there is one (D-438). */}
+        {beforeFirstMessage && <UnfinishedChats />}
       </section>
       {deckError && (
         <p role="alert" className="text-danger">
