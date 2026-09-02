@@ -8,7 +8,7 @@ This repo is a Go + Protobuf + TypeScript monorepo for an agentic MtG deck build
 
 Stage (2026-09-02): `main` is at `eafbd39`. Merged: PR-0a to PR-8, PR-7B, PR-10 to PR-13, the Phase 3B roadmap (#46), PR-16 (#47), PR-16B (#48), PR-17 (#49), PR-17B (#50), PR-18 (#53), the review fixes of PR-18 (#54), PR-19 (#55), and its follow-ups (#56). PR-9 is out of the MVP (D-256).
 
-**The session of 2026-09-02 built PR-14A, the bracket profile, on branch `pr-14a`** (D-451 to D-453, D-459 to D-464), and it is not merged. A bracket is a set of numbers now: the content rules per bracket, and a feature vector per built deck with a band per bracket. A goldfish simulation and a check against Commander Spellbook complete it. `make bracket-gate` is its gate. Run 1 reads FAIL on the band bar and the judge bar, and the bracket 5 misses are the power signal of PR-14B. Deck gate run 12 is due. The owner confirmed the session calls on 2026-09-02 (D-467 to D-469). PR-14B comes right after PR-14A (D-460), then PR-24, then PR-20 to PR-23.
+**The session of 2026-09-02 built PR-14A, the bracket profile, on branch `pr-14a`** (D-451 to D-453, D-459 to D-464), and it is not merged. A bracket is a set of numbers now: the content rules per bracket, and a feature vector per built deck with a band per bracket. A goldfish simulation and a check against Commander Spellbook complete it. `make bracket-gate` is its gate. Run 1 reads FAIL on the band bar and the judge bar, and the bracket 5 misses are the power signal of PR-14B. Deck gate run 12 and its rerun 12b together pass all 24 prompts with no regression. The owner confirmed the session calls on 2026-09-02 (D-467 to D-469). PR-14B comes right after PR-14A (D-460), then PR-24, then PR-20 to PR-23.
 
 PR-19, the chat and build experience, is merged (D-432 to D-458, #55 and #56). Every gate passes: question gate 32, deck gate 11, revise gate 7, and the PR-17B set gate run 1.
 
@@ -65,7 +65,7 @@ Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
 
 `make autotune` is free. It prints the loop instructions and starts nothing. `scripts/autotune.sh` is the paid loop, and it refuses to start without `AUTOTUNE_ALLOW_UNATTENDED=1`. One iteration costs about $0.25 and takes 33 to 35 minutes, so a $3 budget buys about 12 iterations. Read `docs/reference/autotune-readme.md` and `docs/reference/autotune-design.md` first.
 
-Five more targets spend money, and each has an overwrite guard and an env guard. `make deck-gate` builds the PR-8 gate document. Run 11 cost $1.46 for 24 prompts. `make chat-probe` drives the real `Chat` RPC to a deck. `make generate-probe` builds one deck with the real generate role.
+Five more targets spend money, and each has an overwrite guard and an env guard. `make deck-gate` builds the PR-8 gate document. Run 11 cost $1.46 for 24 prompts, and run 12 cost $2.24 under the profile's repair passes. `make chat-probe` drives the real `Chat` RPC to a deck. `make generate-probe` builds one deck with the real generate role.
 
 `make summary-judge` judges every deck summary of a gate document (F-26). Each probe costs a few cents. Ask the owner before every run.
 

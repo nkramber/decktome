@@ -7,7 +7,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 ## Where things stand (2026-09-02)
 
 - `main` is at `eafbd39`. Merged: PR-0a to PR-8, PR-7B, PR-10 to PR-13, the audits, the Phase 3B roadmap (#46), PR-16 (#47), PR-16B (#48), PR-17 (#49), PR-17B (#50), PR-18 (#53), the review fixes of PR-18 (#54), PR-19 (#55), and its follow-ups (#56).
-- The session of 2026-09-02 built PR-14A, the bracket profile, on branch `pr-14a` (D-459 to D-469), and it is not merged. The tree is green: Go build, vet, `-race` tests, golangci-lint, the web typecheck, and the proto check. Bracket gate run 1 ran and reads FAIL on the band bar and the judge bar, and deck gate run 12 is due. The section below holds the moving parts.
+- The session of 2026-09-02 built PR-14A, the bracket profile, on branch `pr-14a` (D-459 to D-469), and it is not merged. The tree is green: Go build, vet, `-race` tests, golangci-lint, the web typecheck, and the proto check. Bracket gate run 1 reads FAIL on the band bar and the judge bar. Deck gate run 12 and its rerun 12b together pass all 24 prompts with no regression. The sections below hold the moving parts.
 - PR-19, the chat and build experience, is merged (D-432 to D-458, #55 and #56). It holds the land-swap fix of the revision turn (F-31, D-448), the split land bucket of the shortlist (F-32, D-450), and the one-chat-one-deck delete (D-456). Branches `pr-19` and `tile-fixes` can go.
 - The tree is green on `nits-and-fixes`: Go build, vet, `-race` tests, golangci-lint, web lint, typecheck, and 219 web tests. The emulator tests of the collection store pass, and `make lint` reports zero findings.
 - Question gate run 31 passes every bar. The set deck gate passes 6 of 6.
@@ -396,6 +396,28 @@ No band moved on this run. The bracket 5 misses are the missing power signal of 
 
 CAUTION: the first judge lane failed on every call. The schema bounded an integer, and the Anthropic structured output refuses that (D-465). The re-judge mode of `bracket-gate -rejudge <document>` reads the decks back and judges them, for a quarter of the build cost.
 
+## Deck gate run 12 (2026-09-02)
+
+`docs/reference/pr8-deck-gate-run12.md` is the regression run under PR-14A. It cost $2.24 over 63 calls and took 44 minutes.
+
+| Measure | Run 11 | Run 12 |
+|---|---|---|
+| Decks returned | 24 | 22 |
+| Decks with no block finding | 24 | 22 |
+| Invented names | 0 | 0 |
+| False rules in a summary | 0 | 0 |
+| Repair turns | 3 | 11 |
+| Errors | 0 | 2 |
+| Cost | $1.46 | $2.24 |
+
+The two errors are prompt 3, the bracket 4 artifact deck, and prompt 23, two set families at once. On each, the generate model passed the three-minute deadline of the client twice, so the gate got no deck. Run 11 had no such error, and the other 22 prompts with pools as large answered in time.
+
+Run 12b (`pr8-deck-gate-run12b.md`) reran the two alone: PASS, both decks clean, 266 seconds, $0.26. The errors were provider latency. The bracket 4 artifact deck of run 12b costs $3,974.63 to buy with no budget set. That is Mishra's Workshop and its friends in any-card mode, and no rule reads it.
+
+Every repair turn ran for a profile finding. Eight decks ended off band. The sources of a color missed twice. Six other features missed once each. They are the average mana value, the mana on turn four, the draw count, the removal count, the wipe count, and the colorless land cap. One bracket 3 deck holds a near two-card combo the endpoint flagged, Storm-Kiln Artist with Haze of Rage, and the repair turn left it.
+
+The F-33 read. Every Commander land count sat in its band, and the sources band caught two decks short of a color. The share of nonbasic lands still swings. The locked-card deck went from 33 nonbasic lands to 0, and the precon upgrade from 20 to 36, on the same prompt. No band reads the basic-to-nonbasic composition, so F-33 stays open on that point. The owned-first decks cost nothing to buy, and the tight budget deck costs $20.84 under its $25 cap, from $16.51.
+
 ## The bracket profile, decided (2026-09-02)
 
 The owner asked how a bracket 3 deck can play like a true 3 (D-451 to D-453). PR-14 splits. PR-14A is the bracket profile. It holds the content rules per bracket, a feature vector per built deck with a band per bracket, a goldfish simulation, and a bracket gate. It comes right after PR-19. PR-14B is the learned scorer of D-413, after Phase 3B.
@@ -445,9 +467,8 @@ The chat ran a turn with no card index before D-405. The commander question then
 
 ## Next steps, in order
 
-1. Run deck gate 12: `DECK_GATE_OUT=docs/reference/pr8-deck-gate-run12.md make deck-gate`, about $2 with the profile's repair passes, on the owner's word. It proves no regression under the profile, and it reads the mana bases of F-33 again.
-2. The owner reads the branch and the run 1 documents, and merges PR-14A. The bracket gate reads FAIL until PR-14B gives the shortlist a power signal. The owner decides whether the merge waits on that.
-4. PR-14B, the deck quality model, right after (D-460). OQ-51 holds the Moxfield bracket field check. Then PR-24, then PR-20 to PR-23 in order, one gate each. PR-15 stays after Phase 3B.
+1. The owner reads the branch and the four gate documents, and merges PR-14A. The bracket gate reads FAIL until PR-14B gives the shortlist a power signal. The owner decides whether the merge waits on that.
+2. PR-14B, the deck quality model, right after (D-460). OQ-51 holds the Moxfield bracket field check. Then PR-24, then PR-20 to PR-23 in order, one gate each. PR-15 stays after Phase 3B.
 
 Deck gate run 11 ran on 2026-09-02 and passed 24 of 24. The read of every mana base is F-33. The nonbasic count swings from 0 to 33 on the same prompt, run to run, and no rule holds it. The fix is the land band of PR-14A, not a prompt line.
 
