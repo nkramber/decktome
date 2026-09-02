@@ -435,19 +435,19 @@ type CollectionSummary struct {
 	// by_rarity counts cards per Scryfall rarity, copies included. The key
 	// is the rarity as the snapshot writes it, for example "mythic".
 	ByRarity map[string]int32 `protobuf:"bytes,3,rep,name=by_rarity,json=byRarity,proto3" json:"by_rarity,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	// art_oracle_ids are the cards the binder head shows the art of, the
+	// rarest first. The head reads no entry, so the import picks them
+	// (D-392). A card the reader owns in two printings appears once.
+	ArtOracleIds []string `protobuf:"bytes,6,rep,name=art_oracle_ids,json=artOracleIds,proto3" json:"art_oracle_ids,omitempty"`
 	// sets are every set the collection holds, largest first. The head
 	// shows the first, and the binder's set filter lists them all (D-398).
-	Sets []*SetCount `protobuf:"bytes,4,rep,name=sets,proto3" json:"sets,omitempty"`
+	Sets []*SetCount `protobuf:"bytes,7,rep,name=sets,proto3" json:"sets,omitempty"`
 	// by_type counts cards per card type, copies included. A card of two
 	// types counts once under each. The binder's type filter lists the
 	// keys (D-398). The import reads the card index for it, so a
 	// collection stored before the field holds none until the head
 	// computes one.
-	ByType map[string]int32 `protobuf:"bytes,5,rep,name=by_type,json=byType,proto3" json:"by_type,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
-	// art_oracle_ids are the cards the binder head shows the art of, the
-	// rarest first. The head reads no entry, so the import picks them
-	// (D-392). A card the reader owns in two printings appears once.
-	ArtOracleIds  []string `protobuf:"bytes,6,rep,name=art_oracle_ids,json=artOracleIds,proto3" json:"art_oracle_ids,omitempty"`
+	ByType        map[string]int32 `protobuf:"bytes,8,rep,name=by_type,json=byType,proto3" json:"by_type,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -503,6 +503,13 @@ func (x *CollectionSummary) GetByRarity() map[string]int32 {
 	return nil
 }
 
+func (x *CollectionSummary) GetArtOracleIds() []string {
+	if x != nil {
+		return x.ArtOracleIds
+	}
+	return nil
+}
+
 func (x *CollectionSummary) GetSets() []*SetCount {
 	if x != nil {
 		return x.Sets
@@ -513,13 +520,6 @@ func (x *CollectionSummary) GetSets() []*SetCount {
 func (x *CollectionSummary) GetByType() map[string]int32 {
 	if x != nil {
 		return x.ByType
-	}
-	return nil
-}
-
-func (x *CollectionSummary) GetArtOracleIds() []string {
-	if x != nil {
-		return x.ArtOracleIds
 	}
 	return nil
 }
@@ -1160,20 +1160,20 @@ const file_mtg_v1_collection_proto_rawDesc = "" +
 	"\aentries\x18\x06 \x03(\v2\x17.mtg.v1.CollectionEntryR\aentries\x12\x1d\n" +
 	"\n" +
 	"card_count\x18\a \x01(\x05R\tcardCount\x123\n" +
-	"\asummary\x18\b \x01(\v2\x19.mtg.v1.CollectionSummaryR\asummary\"\x9d\x03\n" +
+	"\asummary\x18\b \x01(\v2\x19.mtg.v1.CollectionSummaryR\asummary\"\xbd\x03\n" +
 	"\x11CollectionSummary\x12\x1b\n" +
 	"\trow_count\x18\x01 \x01(\x05R\browCount\x12!\n" +
 	"\funique_cards\x18\x02 \x01(\x05R\vuniqueCards\x12D\n" +
 	"\tby_rarity\x18\x03 \x03(\v2'.mtg.v1.CollectionSummary.ByRarityEntryR\bbyRarity\x12$\n" +
-	"\x04sets\x18\x04 \x03(\v2\x10.mtg.v1.SetCountR\x04sets\x12>\n" +
-	"\aby_type\x18\x05 \x03(\v2%.mtg.v1.CollectionSummary.ByTypeEntryR\x06byType\x12$\n" +
-	"\x0eart_oracle_ids\x18\x06 \x03(\tR\fartOracleIds\x1a;\n" +
+	"\x0eart_oracle_ids\x18\x06 \x03(\tR\fartOracleIds\x12$\n" +
+	"\x04sets\x18\a \x03(\v2\x10.mtg.v1.SetCountR\x04sets\x12>\n" +
+	"\aby_type\x18\b \x03(\v2%.mtg.v1.CollectionSummary.ByTypeEntryR\x06byType\x1a;\n" +
 	"\rByRarityEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01\x1a9\n" +
 	"\vByTypeEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01\"V\n" +
+	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01J\x04\b\x04\x10\x05J\x04\b\x05\x10\x06R\btop_setsR\bby_color\"V\n" +
 	"\bSetCount\x12\x19\n" +
 	"\bset_code\x18\x01 \x01(\tR\asetCode\x12\x19\n" +
 	"\bset_name\x18\x02 \x01(\tR\asetName\x12\x14\n" +

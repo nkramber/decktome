@@ -445,15 +445,17 @@ func (s *Server) sendDeck(ctx context.Context, uid string, session *mtgv1.Sessio
 	return nil
 }
 
-// deckName is what the user sees the deck called. The theme and the
-// format are what a person would name it by.
+// deckName is what the user sees the deck called. The theme names it,
+// and the format stays out: the deck tile and the deck screen show the
+// format under the name, so a name that repeats it reads twice (D-410).
+// A deck with no theme takes the format, because a name must say
+// something.
 func deckName(slots *mtgv1.Slots) string {
 	theme := strings.TrimSpace(slots.GetTheme())
-	format := generate.FormatWord(slots.GetFormat().GetId())
 	if theme == "" {
-		return format + " deck"
+		return generate.FormatWord(slots.GetFormat().GetId()) + " deck"
 	}
-	return theme + " " + format
+	return theme
 }
 
 // storeDeck keeps the deck and records its id on the session. Both

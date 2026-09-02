@@ -28,6 +28,11 @@ message Collection {
 // show about a collection, without its entries (D-392). The import
 // computes it, so no reader counts 2,657 rows to draw one header.
 message CollectionSummary {
+  // The merged PR-18 wrote top_sets and by_color here, and the review
+  // replaced both (D-398, D-402). The numbers and the names stay
+  // reserved, so the wire guard holds and no reader confuses the two.
+  reserved 4, 5;
+  reserved "top_sets", "by_color";
   // row_count is how many entries the collection holds. A ManaBox row is
   // one printing in one finish and one condition, so one card can hold
   // several (D-393).
@@ -37,19 +42,19 @@ message CollectionSummary {
   // by_rarity counts cards per Scryfall rarity, copies included. The key
   // is the rarity as the snapshot writes it, for example "mythic".
   map<string, int32> by_rarity = 3;
+  // art_oracle_ids are the cards the binder head shows the art of, the
+  // rarest first. The head reads no entry, so the import picks them
+  // (D-392). A card the reader owns in two printings appears once.
+  repeated string art_oracle_ids = 6;
   // sets are every set the collection holds, largest first. The head
   // shows the first, and the binder's set filter lists them all (D-398).
-  repeated SetCount sets = 4;
+  repeated SetCount sets = 7;
   // by_type counts cards per card type, copies included. A card of two
   // types counts once under each. The binder's type filter lists the
   // keys (D-398). The import reads the card index for it, so a
   // collection stored before the field holds none until the head
   // computes one.
-  map<string, int32> by_type = 5;
-  // art_oracle_ids are the cards the binder head shows the art of, the
-  // rarest first. The head reads no entry, so the import picks them
-  // (D-392). A card the reader owns in two printings appears once.
-  repeated string art_oracle_ids = 6;
+  map<string, int32> by_type = 8;
 }
 
 // SetCount is one set and how many cards of it a collection holds.

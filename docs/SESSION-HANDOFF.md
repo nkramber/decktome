@@ -7,7 +7,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 ## Where things stand (2026-09-01)
 
 - `main` is at `3e90939`. Merged: PR-0a to PR-8, PR-7B, PR-10 to PR-13, the audits, the Phase 3B roadmap (#46), PR-16 (#47), PR-16B (#48), PR-17 (#49), PR-17B (#50), and PR-18 (#53).
-- Branch `nits-and-fixes` holds the review fixes of PR-18, the chat guard, and the decline fix (D-398 to D-406). The decline fix is not committed.
+- Branch `nits-and-fixes` holds D-398 to D-412. That is the review fixes of PR-18, the chat guard, the decline fix, the deck name, the needle guard, and the reserved fields. The last three are not committed.
 - The tree is green on `nits-and-fixes`: Go build, vet, `-race` tests, golangci-lint, web lint, typecheck, and 219 web tests. The emulator tests of the collection store pass, and `make lint` reports zero findings.
 - Question gate run 31 passes every bar. The set deck gate passes 6 of 6.
 - Every gate stands and passes: question gate 32, the set deck gate, revise gate 4, and deck gate 10.
@@ -302,6 +302,16 @@ CAUTION: the frame numbers come from headless Chromium against the dev server, w
 CAUTION: `Repo.Get` returns a collection the caller owns. A page is a slice of the entry list, taken in place. A repo that shares one object across calls hands the next reader a collection the last page truncated. The test fake answers a clone.
 
 CAUTION: the active collection is a choice of one visit, and the store keeps only the session id (D-345). A Playwright run can not seed it through localStorage. The script clicks the collection, as a reader does.
+
+## The commander offer for a request with no theme (2026-09-01)
+
+Session `t8o1nGGquK6UdTQkfY3V` asked for the best deck, Commander, bracket 5, no colors, no budget, any card. The offer was Toski, Kutzil, and Mondrak. A free test over the snapshot showed why. The theme words were "best", "you", and "can", and each unknown word becomes a text needle. The words "you" and "can" sit in the text of most commanders, so 3,029 of them scored the same. The offer was the three most popular of those.
+
+D-411 drops a needle that more than a tenth of the cards hold, and it adds the words of a request to the stop words. The same request now reaches the unthemed pool, which ranks on EDHREC popularity.
+
+CAUTION: the app holds no power signal for a commander. The bracket drops Game Changers under bracket 3 and nothing else. A bracket 5 request gets the most popular commanders, not the strongest, until PR-14 brings a meta source. OQ-48 records it.
+
+CAUTION: `buf breaking` runs against `main`, and PR-18 merged before the review renamed two summary fields. D-412 reserves the merged numbers. Never rename a field of a merged PR in place, whatever the deployment state.
 
 ## The precon exclusion, decided (2026-09-01)
 
