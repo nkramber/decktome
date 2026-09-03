@@ -9,6 +9,7 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/candidates"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
 	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
+	"github.com/nkramber/mtg-deck-builder/go/internal/precons"
 )
 
 // CandidateHints answers the placeholder values from the card index, so
@@ -35,10 +36,21 @@ type CandidateHints struct {
 	// with no model. A bracket 4 or 5 offer ranks on it (PR-14B, OQ-48).
 	Bracket         int32
 	CommanderSignal func(oracleIDs ...string) float64
+	// Precons is the precon table, nil before the meta job stored one.
+	// The precon exclusion resolves the reader's words against it
+	// (D-496).
+	Precons *precons.Table
+	// PrintingCounts reads the collection's copies per Scryfall id, for
+	// the ownership check of D-408. It runs once per turn at most, and
+	// only on a turn that needs it. Nil means no collection.
+	PrintingCounts func() map[string]int32
 	// OnThemeOwned is PR-6's count for the {n} clause of the thin-theme
 	// question. The caller reads it from candidates.Stats.
 	OnThemeOwned int
 	Log          *slog.Logger
+
+	printingsDone bool
+	printings     map[string]int32
 
 	commanders map[string][]string
 	// The thin-theme count runs the whole PR-6 build, so it runs once per
@@ -332,6 +344,65 @@ func (h *CandidateHints) ResolveSet(phrase string) (codes, names, options []stri
 		return nil, nil, options, false
 	}
 	return nil, nil, nil, false
+}
+
+// printingCounts reads the collection's copies per printing once.
+func (h *CandidateHints) printingCounts() map[string]int32 {
+	if h.printingsDone {
+		return h.printings
+	}
+	h.printingsDone = true
+	if h.PrintingCounts != nil {
+		h.printings = h.PrintingCounts()
+	}
+	return h.printings
+}
+
+// ResolvePrecon maps a phrase onto the products of the precon table, and
+// says whether the collection holds them whole (D-496, D-497). It answers
+// the PreconResolver contract.
+func (h *CandidateHints) ResolvePrecon(phrase string) PreconMatch {
+	if h == nil || h.Precons == nil {
+		return PreconMatch{}
+	}
+	m := h.Precons.Resolve(phrase)
+	if !m.OK() {
+		return PreconMatch{Options: m.Options}
+	}
+	res := PreconMatch{OK: true}
+	for _, p := range m.Products {
+		res.Products = append(res.Products, PreconRef{Key: p.Key, Name: p.Name})
+	}
+	if counts := h.printingCounts(); counts != nil {
+		whole := false
+		for _, p := range m.Products {
+			if p.OwnedWhole(counts) {
+				whole = true
+				break
+			}
+		}
+		if !whole {
+			res.Partial = m.Names()
+		}
+	}
+	return res
+}
+
+// OwnedPrecons lists the products the collection holds whole (D-408). It
+// answers the OwnedPreconSource contract.
+func (h *CandidateHints) OwnedPrecons() ([]PreconRef, bool) {
+	if h == nil || h.Precons == nil {
+		return nil, false
+	}
+	counts := h.printingCounts()
+	if counts == nil {
+		return nil, false
+	}
+	var out []PreconRef
+	for _, p := range h.Precons.Owned(counts) {
+		out = append(out, PreconRef{Key: p.Key, Name: p.Name})
+	}
+	return out, true
 }
 
 // ThinSetMana counts the mana cards a set family offers against the count

@@ -476,6 +476,25 @@ func TestStoredToProtoImportedAt(t *testing.T) {
 
 // TestOwnedPrintings is D-299: one entry per printing per card, and a row
 // with no quantity or no printing stays out.
+// TestPrintingCounts is D-408: the precon ownership check reads the copies
+// per printing, finishes and conditions summed, and a zero row counts
+// for nothing.
+func TestPrintingCounts(t *testing.T) {
+	got := PrintingCounts([]*mtgv1.CollectionEntry{
+		{OracleId: "o1", ScryfallId: "p1", Quantity: 2},
+		{OracleId: "o1", ScryfallId: "p1", Quantity: 1, Finish: mtgv1.Finish_FINISH_FOIL},
+		{OracleId: "o1", ScryfallId: "p2", Quantity: 1},
+		{OracleId: "o2", ScryfallId: "p3", Quantity: 0},
+		{OracleId: "", ScryfallId: "p4", Quantity: 1},
+	})
+	if got["p1"] != 3 || got["p2"] != 1 || got["p4"] != 1 {
+		t.Errorf("counts = %v, want p1 3, p2 1, p4 1", got)
+	}
+	if _, ok := got["p3"]; ok {
+		t.Error("a zero-quantity row counted")
+	}
+}
+
 func TestOwnedPrintings(t *testing.T) {
 	got := OwnedPrintings([]*mtgv1.CollectionEntry{
 		{OracleId: "o1", ScryfallId: "p1", Quantity: 2},

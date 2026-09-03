@@ -10,10 +10,10 @@ import mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 // Version 1 carried the card lists, the offer, the counters, and the M-4
 // records. Version 2 adds the format decline facts, the precon name, the
 // illegal commander, and the user's messages. Version 3 adds the set
-// facts of PR-17B (D-376). Production restores from the snapshot on
-// every turn, so a fact that stays in memory only works in the gate
-// harness (D-74).
-const SnapshotVersion = 3
+// facts of PR-17B (D-376). Version 4 adds the precon exclusion of PR-24
+// (D-496). Production restores from the snapshot on every turn, so a
+// fact that stays in memory only works in the gate harness (D-74).
+const SnapshotVersion = 4
 
 // Snapshot is the private state of one session, as data (D-74). The proto
 // Session carries the slots, the turns, and the usage. It carries none of
@@ -53,6 +53,14 @@ type Snapshot struct {
 	UnresolvedSetAsked string   `json:"unresolved_set_asked,omitempty"`
 	SetOptions         []string `json:"set_options,omitempty"`
 	SetNames           []string `json:"set_names,omitempty"`
+	// The precon exclusion (D-496, D-497). Version 4. An older snapshot
+	// holds none, and the reader names the precons again, which is the
+	// safe failure.
+	PreconPhrase          string   `json:"precon_phrase,omitempty"`
+	ExcludedPreconNames   []string `json:"excluded_precon_names,omitempty"`
+	UnresolvedPrecon      string   `json:"unresolved_precon,omitempty"`
+	UnresolvedPreconAsked string   `json:"unresolved_precon_asked,omitempty"`
+	PreconOptions         []string `json:"precon_options,omitempty"`
 	// Messages are the user's messages, oldest first. The classify call
 	// reads the last few as prior_messages. Version 2.
 	Messages []string `json:"messages,omitempty"`
@@ -83,6 +91,11 @@ func (s *State) Snapshot() Snapshot {
 		UnresolvedSetAsked:     s.UnresolvedSetAsked,
 		SetOptions:             s.SetOptions,
 		SetNames:               s.SetNames,
+		PreconPhrase:           s.PreconPhrase,
+		ExcludedPreconNames:    s.ExcludedPreconNames,
+		UnresolvedPrecon:       s.UnresolvedPrecon,
+		UnresolvedPreconAsked:  s.UnresolvedPreconAsked,
+		PreconOptions:          s.PreconOptions,
 		Messages:               s.Messages,
 		AskCount:               s.AskCount,
 		Turn:                   s.Turn,
@@ -132,6 +145,11 @@ func Restore(id string, slots *mtgv1.Slots, snap Snapshot) *State {
 	st.UnresolvedSetAsked = snap.UnresolvedSetAsked
 	st.SetOptions = snap.SetOptions
 	st.SetNames = snap.SetNames
+	st.PreconPhrase = snap.PreconPhrase
+	st.ExcludedPreconNames = snap.ExcludedPreconNames
+	st.UnresolvedPrecon = snap.UnresolvedPrecon
+	st.UnresolvedPreconAsked = snap.UnresolvedPreconAsked
+	st.PreconOptions = snap.PreconOptions
 	st.Messages = snap.Messages
 	st.AskCount = snap.AskCount
 	st.Turn = snap.Turn

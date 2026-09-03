@@ -72,6 +72,9 @@ func classifyStep(t *testing.T, out classifyOut) llm.Step {
 	if out.SetNames == nil {
 		out.SetNames = []string{}
 	}
+	if out.PreconNames == nil {
+		out.PreconNames = []string{}
+	}
 	if out.ClosedKeys == nil {
 		out.ClosedKeys = []string{}
 	}

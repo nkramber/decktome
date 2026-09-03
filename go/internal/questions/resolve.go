@@ -69,6 +69,35 @@ type SetResolver interface {
 	ResolveSet(phrase string) (codes, names, options []string, ok bool)
 }
 
+// PreconMatch is the answer to ResolvePrecon.
+type PreconMatch struct {
+	// Products are the products the phrase named, by key and by name. A
+	// deck and its Collector's Edition both answer, and the exclusion
+	// counts them once.
+	Products []PreconRef
+	// Partial names the products of Products the collection does not
+	// hold whole, when a collection is attached (D-497).
+	Partial []string
+	// Options are the names the question offers when OK is false.
+	Options []string
+	// OK is false when the phrase names no product, or names products
+	// with different cards.
+	OK bool
+}
+
+// PreconResolver maps the words a reader wrote onto the products of the
+// precon table (D-496). A hint source that holds the table implements it.
+type PreconResolver interface {
+	ResolvePrecon(phrase string) PreconMatch
+}
+
+// OwnedPreconSource lists the precon products the collection holds whole
+// (D-408). ok is false with no table or no collection, and the turn then
+// says it excluded nothing.
+type OwnedPreconSource interface {
+	OwnedPrecons() (owned []PreconRef, ok bool)
+}
+
 // ManaSource counts the mana cards a set family offers against the count
 // the deck wants (D-382). A hint source that holds the card index
 // implements it.
@@ -231,6 +260,14 @@ func substitute(text string, st *State, h Hints) (string, []string) {
 	// The mana row names the sets the reader chose (D-382).
 	if s := englishList(st.SetNames); s != "" {
 		rep["{sets}"] = s
+	}
+	// The precon row names the phrase the table could not settle, and
+	// the products it may have meant (D-496).
+	if v := strings.TrimSpace(st.UnresolvedPrecon); v != "" {
+		rep["{bad_precon}"] = v
+	}
+	if s := englishList(st.PreconOptions); s != "" {
+		rep["{precon_options}"] = s
 	}
 	// The unsupported-format row names what the user asked for, and the
 	// nearest format this app builds (D-112).

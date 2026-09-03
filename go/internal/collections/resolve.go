@@ -148,6 +148,20 @@ func OwnedPrintings(entries []*mtgv1.CollectionEntry) map[string][]string {
 	return out
 }
 
+// PrintingCounts sums owned copies per Scryfall id across finishes and
+// conditions. The precon ownership check reads it: a reader owns a precon
+// when the collection holds every printing of it with its count (D-408).
+func PrintingCounts(entries []*mtgv1.CollectionEntry) map[string]int32 {
+	out := map[string]int32{}
+	for _, e := range entries {
+		if e.GetScryfallId() == "" || e.GetQuantity() <= 0 {
+			continue
+		}
+		out[e.ScryfallId] = addSaturate(out[e.ScryfallId], e.Quantity)
+	}
+	return out
+}
+
 // OracleCounts sums owned copies per Oracle id across printings. The
 // sum saturates at the int32 maximum, it never wraps.
 func OracleCounts(entries []*mtgv1.CollectionEntry) map[string]int32 {

@@ -139,13 +139,13 @@ func classifyJSON(t *testing.T, fields map[string]any) llm.Step {
 	t.Helper()
 	out := map[string]any{
 		"format": "unknown", "theme": "", "colors": []string{},
-		"commander_names": []string{}, "locked_names": []string{}, "named_cards": []string{}, "set_names": []string{},
+		"commander_names": []string{}, "locked_names": []string{}, "named_cards": []string{}, "set_names": []string{}, "precon_names": []string{},
 		"power": "", "pool_rule": "unknown", "budget_usd": 0.0, "budget_scope": "unknown",
 		"house_rules": "", "closed_keys": []string{}, "declined_keys": []string{},
 		"facts": map[string]bool{
 			"named_card": false, "buy_list": false,
 			"house_format": false, "budget_ambiguous": false,
-			"power_competitive": false, "wants_suggestion": false, "out_of_scope": false,
+			"power_competitive": false, "wants_suggestion": false, "out_of_scope": false, "exclude_precons": false,
 		},
 	}
 	for k, v := range fields {

@@ -45,6 +45,10 @@ type Request struct {
 	// lands are out of the shortlist in any case, and a set limit never
 	// filters them (D-378).
 	SetCodes []string
+	// ExcludeOracleIDs are cards the deck must not hold: the cards of a
+	// precon the reader excluded, with no copy to spare (D-408). Both
+	// pools drop them, and the rules check blocks one that slips through.
+	ExcludeOracleIDs []string
 	// OutsideRoles names the roles that may be filled from outside
 	// SetCodes, with the wanted count of each. A set family short of
 	// mana cards gets them from the whole database, up to the count and
@@ -255,6 +259,9 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 	setCodes := cards.CodeSet(req.SetCodes)
 	excluded := map[string]bool{}
 	for _, id := range req.CommanderOracleIDs {
+		excluded[id] = true
+	}
+	for _, id := range req.ExcludeOracleIDs {
 		excluded[id] = true
 	}
 	maxRank := maxRankOf(idx)
@@ -879,9 +886,18 @@ func (b *Builder) CommanderPool(idx *cards.Index, req Request) ([]Candidate, err
 	setCodes := cards.CodeSet(req.SetCodes)
 	maxRank := maxRankOf(idx)
 
+	excluded := map[string]bool{}
+	for _, id := range req.ExcludeOracleIDs {
+		excluded[id] = true
+	}
+
 	var out []Candidate
 	for _, c := range idx.All() {
 		if !c.GetCanBeCommander() || !legalIn(c, legalKeys[mtgv1.FormatId_FORMAT_ID_COMMANDER]) {
+			continue
+		}
+		// A commander of an excluded precon can not lead the deck (D-408).
+		if excluded[c.OracleId] {
 			continue
 		}
 		// Every format offers paper cards only (D-306). The unthemed fill
@@ -973,6 +989,10 @@ func (b *Builder) unthemed(idx *cards.Index, req Request, colorSet map[mtgv1.Col
 	seen := make(map[string]bool, len(have))
 	for _, c := range have {
 		seen[c.Card.GetOracleId()] = true
+	}
+	// The fill drops an excluded commander as the themed half does (D-408).
+	for _, id := range req.ExcludeOracleIDs {
+		seen[id] = true
 	}
 	var out []Candidate
 	for _, c := range idx.All() {
