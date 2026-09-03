@@ -21,6 +21,210 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type GetRulingsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	OracleId      string                 `protobuf:"bytes,1,opt,name=oracle_id,json=oracleId,proto3" json:"oracle_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetRulingsRequest) Reset() {
+	*x = GetRulingsRequest{}
+	mi := &file_mtg_v1_card_service_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetRulingsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetRulingsRequest) ProtoMessage() {}
+
+func (x *GetRulingsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_card_service_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetRulingsRequest.ProtoReflect.Descriptor instead.
+func (*GetRulingsRequest) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_card_service_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *GetRulingsRequest) GetOracleId() string {
+	if x != nil {
+		return x.OracleId
+	}
+	return ""
+}
+
+type GetRulingsResponse struct {
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Rulings []*Ruling              `protobuf:"bytes,1,rep,name=rulings,proto3" json:"rulings,omitempty"`
+	// as_of is the ISO date of the card snapshot the rulings come from.
+	AsOf string `protobuf:"bytes,2,opt,name=as_of,json=asOf,proto3" json:"as_of,omitempty"`
+	// has_rulings is false when the snapshot carried no rulings file, so
+	// a client can tell "no ruling" from "no data".
+	HasRulings    bool `protobuf:"varint,3,opt,name=has_rulings,json=hasRulings,proto3" json:"has_rulings,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetRulingsResponse) Reset() {
+	*x = GetRulingsResponse{}
+	mi := &file_mtg_v1_card_service_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetRulingsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetRulingsResponse) ProtoMessage() {}
+
+func (x *GetRulingsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_card_service_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetRulingsResponse.ProtoReflect.Descriptor instead.
+func (*GetRulingsResponse) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_card_service_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *GetRulingsResponse) GetRulings() []*Ruling {
+	if x != nil {
+		return x.Rulings
+	}
+	return nil
+}
+
+func (x *GetRulingsResponse) GetAsOf() string {
+	if x != nil {
+		return x.AsOf
+	}
+	return ""
+}
+
+func (x *GetRulingsResponse) GetHasRulings() bool {
+	if x != nil {
+		return x.HasRulings
+	}
+	return false
+}
+
+type GetPrintingsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	OracleId      string                 `protobuf:"bytes,1,opt,name=oracle_id,json=oracleId,proto3" json:"oracle_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetPrintingsRequest) Reset() {
+	*x = GetPrintingsRequest{}
+	mi := &file_mtg_v1_card_service_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPrintingsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPrintingsRequest) ProtoMessage() {}
+
+func (x *GetPrintingsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_card_service_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPrintingsRequest.ProtoReflect.Descriptor instead.
+func (*GetPrintingsRequest) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_card_service_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *GetPrintingsRequest) GetOracleId() string {
+	if x != nil {
+		return x.OracleId
+	}
+	return ""
+}
+
+type GetPrintingsResponse struct {
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	Printings []*Printing            `protobuf:"bytes,1,rep,name=printings,proto3" json:"printings,omitempty"`
+	// price_as_of is the ISO date of the prices, the snapshot date.
+	PriceAsOf     string `protobuf:"bytes,2,opt,name=price_as_of,json=priceAsOf,proto3" json:"price_as_of,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetPrintingsResponse) Reset() {
+	*x = GetPrintingsResponse{}
+	mi := &file_mtg_v1_card_service_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPrintingsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPrintingsResponse) ProtoMessage() {}
+
+func (x *GetPrintingsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_card_service_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPrintingsResponse.ProtoReflect.Descriptor instead.
+func (*GetPrintingsResponse) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_card_service_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *GetPrintingsResponse) GetPrintings() []*Printing {
+	if x != nil {
+		return x.Printings
+	}
+	return nil
+}
+
+func (x *GetPrintingsResponse) GetPriceAsOf() string {
+	if x != nil {
+		return x.PriceAsOf
+	}
+	return ""
+}
+
 type GetCardsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// oracle_ids holds at most 120 ids. A repeated id counts once.
@@ -31,7 +235,7 @@ type GetCardsRequest struct {
 
 func (x *GetCardsRequest) Reset() {
 	*x = GetCardsRequest{}
-	mi := &file_mtg_v1_card_service_proto_msgTypes[0]
+	mi := &file_mtg_v1_card_service_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -43,7 +247,7 @@ func (x *GetCardsRequest) String() string {
 func (*GetCardsRequest) ProtoMessage() {}
 
 func (x *GetCardsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_card_service_proto_msgTypes[0]
+	mi := &file_mtg_v1_card_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -56,7 +260,7 @@ func (x *GetCardsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCardsRequest.ProtoReflect.Descriptor instead.
 func (*GetCardsRequest) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_card_service_proto_rawDescGZIP(), []int{0}
+	return file_mtg_v1_card_service_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *GetCardsRequest) GetOracleIds() []string {
@@ -77,7 +281,7 @@ type GetCardsResponse struct {
 
 func (x *GetCardsResponse) Reset() {
 	*x = GetCardsResponse{}
-	mi := &file_mtg_v1_card_service_proto_msgTypes[1]
+	mi := &file_mtg_v1_card_service_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -89,7 +293,7 @@ func (x *GetCardsResponse) String() string {
 func (*GetCardsResponse) ProtoMessage() {}
 
 func (x *GetCardsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_card_service_proto_msgTypes[1]
+	mi := &file_mtg_v1_card_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -102,7 +306,7 @@ func (x *GetCardsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCardsResponse.ProtoReflect.Descriptor instead.
 func (*GetCardsResponse) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_card_service_proto_rawDescGZIP(), []int{1}
+	return file_mtg_v1_card_service_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *GetCardsResponse) GetCards() []*Card {
@@ -133,7 +337,7 @@ type LookupRequest struct {
 
 func (x *LookupRequest) Reset() {
 	*x = LookupRequest{}
-	mi := &file_mtg_v1_card_service_proto_msgTypes[2]
+	mi := &file_mtg_v1_card_service_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -145,7 +349,7 @@ func (x *LookupRequest) String() string {
 func (*LookupRequest) ProtoMessage() {}
 
 func (x *LookupRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_card_service_proto_msgTypes[2]
+	mi := &file_mtg_v1_card_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -158,7 +362,7 @@ func (x *LookupRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LookupRequest.ProtoReflect.Descriptor instead.
 func (*LookupRequest) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_card_service_proto_rawDescGZIP(), []int{2}
+	return file_mtg_v1_card_service_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *LookupRequest) GetKey() isLookupRequest_Key {
@@ -227,7 +431,7 @@ type LookupResponse struct {
 
 func (x *LookupResponse) Reset() {
 	*x = LookupResponse{}
-	mi := &file_mtg_v1_card_service_proto_msgTypes[3]
+	mi := &file_mtg_v1_card_service_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -239,7 +443,7 @@ func (x *LookupResponse) String() string {
 func (*LookupResponse) ProtoMessage() {}
 
 func (x *LookupResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_card_service_proto_msgTypes[3]
+	mi := &file_mtg_v1_card_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -252,7 +456,7 @@ func (x *LookupResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LookupResponse.ProtoReflect.Descriptor instead.
 func (*LookupResponse) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_card_service_proto_rawDescGZIP(), []int{3}
+	return file_mtg_v1_card_service_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *LookupResponse) GetCard() *Card {
@@ -281,7 +485,7 @@ type SearchRequest struct {
 
 func (x *SearchRequest) Reset() {
 	*x = SearchRequest{}
-	mi := &file_mtg_v1_card_service_proto_msgTypes[4]
+	mi := &file_mtg_v1_card_service_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -293,7 +497,7 @@ func (x *SearchRequest) String() string {
 func (*SearchRequest) ProtoMessage() {}
 
 func (x *SearchRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_card_service_proto_msgTypes[4]
+	mi := &file_mtg_v1_card_service_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -306,7 +510,7 @@ func (x *SearchRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchRequest.ProtoReflect.Descriptor instead.
 func (*SearchRequest) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_card_service_proto_rawDescGZIP(), []int{4}
+	return file_mtg_v1_card_service_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *SearchRequest) GetColorsWithin() []Color {
@@ -368,7 +572,7 @@ type SearchResponse struct {
 
 func (x *SearchResponse) Reset() {
 	*x = SearchResponse{}
-	mi := &file_mtg_v1_card_service_proto_msgTypes[5]
+	mi := &file_mtg_v1_card_service_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -380,7 +584,7 @@ func (x *SearchResponse) String() string {
 func (*SearchResponse) ProtoMessage() {}
 
 func (x *SearchResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_card_service_proto_msgTypes[5]
+	mi := &file_mtg_v1_card_service_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -393,7 +597,7 @@ func (x *SearchResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchResponse.ProtoReflect.Descriptor instead.
 func (*SearchResponse) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_card_service_proto_rawDescGZIP(), []int{5}
+	return file_mtg_v1_card_service_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *SearchResponse) GetCards() []*Card {
@@ -415,6 +619,18 @@ var File_mtg_v1_card_service_proto protoreflect.FileDescriptor
 const file_mtg_v1_card_service_proto_rawDesc = "" +
 	"\n" +
 	"\x19mtg/v1/card_service.proto\x12\x06mtg.v1\x1a\x11mtg/v1/card.proto\"0\n" +
+	"\x11GetRulingsRequest\x12\x1b\n" +
+	"\toracle_id\x18\x01 \x01(\tR\boracleId\"t\n" +
+	"\x12GetRulingsResponse\x12(\n" +
+	"\arulings\x18\x01 \x03(\v2\x0e.mtg.v1.RulingR\arulings\x12\x13\n" +
+	"\x05as_of\x18\x02 \x01(\tR\x04asOf\x12\x1f\n" +
+	"\vhas_rulings\x18\x03 \x01(\bR\n" +
+	"hasRulings\"2\n" +
+	"\x13GetPrintingsRequest\x12\x1b\n" +
+	"\toracle_id\x18\x01 \x01(\tR\boracleId\"f\n" +
+	"\x14GetPrintingsResponse\x12.\n" +
+	"\tprintings\x18\x01 \x03(\v2\x10.mtg.v1.PrintingR\tprintings\x12\x1e\n" +
+	"\vprice_as_of\x18\x02 \x01(\tR\tpriceAsOf\"0\n" +
 	"\x0fGetCardsRequest\x12\x1d\n" +
 	"\n" +
 	"oracle_ids\x18\x01 \x03(\tR\toracleIds\"d\n" +
@@ -441,11 +657,14 @@ const file_mtg_v1_card_service_proto_rawDesc = "" +
 	"page_token\x18\a \x01(\tR\tpageToken\"\\\n" +
 	"\x0eSearchResponse\x12\"\n" +
 	"\x05cards\x18\x01 \x03(\v2\f.mtg.v1.CardR\x05cards\x12&\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken2\xc4\x01\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken2\xd8\x02\n" +
 	"\vCardService\x129\n" +
 	"\x06Lookup\x12\x15.mtg.v1.LookupRequest\x1a\x16.mtg.v1.LookupResponse\"\x00\x129\n" +
 	"\x06Search\x12\x15.mtg.v1.SearchRequest\x1a\x16.mtg.v1.SearchResponse\"\x00\x12?\n" +
-	"\bGetCards\x12\x17.mtg.v1.GetCardsRequest\x1a\x18.mtg.v1.GetCardsResponse\"\x00B:Z8github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1b\x06proto3"
+	"\bGetCards\x12\x17.mtg.v1.GetCardsRequest\x1a\x18.mtg.v1.GetCardsResponse\"\x00\x12E\n" +
+	"\n" +
+	"GetRulings\x12\x19.mtg.v1.GetRulingsRequest\x1a\x1a.mtg.v1.GetRulingsResponse\"\x00\x12K\n" +
+	"\fGetPrintings\x12\x1b.mtg.v1.GetPrintingsRequest\x1a\x1c.mtg.v1.GetPrintingsResponse\"\x00B:Z8github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1b\x06proto3"
 
 var (
 	file_mtg_v1_card_service_proto_rawDescOnce sync.Once
@@ -459,33 +678,45 @@ func file_mtg_v1_card_service_proto_rawDescGZIP() []byte {
 	return file_mtg_v1_card_service_proto_rawDescData
 }
 
-var file_mtg_v1_card_service_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_mtg_v1_card_service_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_mtg_v1_card_service_proto_goTypes = []any{
-	(*GetCardsRequest)(nil),  // 0: mtg.v1.GetCardsRequest
-	(*GetCardsResponse)(nil), // 1: mtg.v1.GetCardsResponse
-	(*LookupRequest)(nil),    // 2: mtg.v1.LookupRequest
-	(*LookupResponse)(nil),   // 3: mtg.v1.LookupResponse
-	(*SearchRequest)(nil),    // 4: mtg.v1.SearchRequest
-	(*SearchResponse)(nil),   // 5: mtg.v1.SearchResponse
-	(*Card)(nil),             // 6: mtg.v1.Card
-	(Color)(0),               // 7: mtg.v1.Color
+	(*GetRulingsRequest)(nil),    // 0: mtg.v1.GetRulingsRequest
+	(*GetRulingsResponse)(nil),   // 1: mtg.v1.GetRulingsResponse
+	(*GetPrintingsRequest)(nil),  // 2: mtg.v1.GetPrintingsRequest
+	(*GetPrintingsResponse)(nil), // 3: mtg.v1.GetPrintingsResponse
+	(*GetCardsRequest)(nil),      // 4: mtg.v1.GetCardsRequest
+	(*GetCardsResponse)(nil),     // 5: mtg.v1.GetCardsResponse
+	(*LookupRequest)(nil),        // 6: mtg.v1.LookupRequest
+	(*LookupResponse)(nil),       // 7: mtg.v1.LookupResponse
+	(*SearchRequest)(nil),        // 8: mtg.v1.SearchRequest
+	(*SearchResponse)(nil),       // 9: mtg.v1.SearchResponse
+	(*Ruling)(nil),               // 10: mtg.v1.Ruling
+	(*Printing)(nil),             // 11: mtg.v1.Printing
+	(*Card)(nil),                 // 12: mtg.v1.Card
+	(Color)(0),                   // 13: mtg.v1.Color
 }
 var file_mtg_v1_card_service_proto_depIdxs = []int32{
-	6, // 0: mtg.v1.GetCardsResponse.cards:type_name -> mtg.v1.Card
-	6, // 1: mtg.v1.LookupResponse.card:type_name -> mtg.v1.Card
-	7, // 2: mtg.v1.SearchRequest.colors_within:type_name -> mtg.v1.Color
-	6, // 3: mtg.v1.SearchResponse.cards:type_name -> mtg.v1.Card
-	2, // 4: mtg.v1.CardService.Lookup:input_type -> mtg.v1.LookupRequest
-	4, // 5: mtg.v1.CardService.Search:input_type -> mtg.v1.SearchRequest
-	0, // 6: mtg.v1.CardService.GetCards:input_type -> mtg.v1.GetCardsRequest
-	3, // 7: mtg.v1.CardService.Lookup:output_type -> mtg.v1.LookupResponse
-	5, // 8: mtg.v1.CardService.Search:output_type -> mtg.v1.SearchResponse
-	1, // 9: mtg.v1.CardService.GetCards:output_type -> mtg.v1.GetCardsResponse
-	7, // [7:10] is the sub-list for method output_type
-	4, // [4:7] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	10, // 0: mtg.v1.GetRulingsResponse.rulings:type_name -> mtg.v1.Ruling
+	11, // 1: mtg.v1.GetPrintingsResponse.printings:type_name -> mtg.v1.Printing
+	12, // 2: mtg.v1.GetCardsResponse.cards:type_name -> mtg.v1.Card
+	12, // 3: mtg.v1.LookupResponse.card:type_name -> mtg.v1.Card
+	13, // 4: mtg.v1.SearchRequest.colors_within:type_name -> mtg.v1.Color
+	12, // 5: mtg.v1.SearchResponse.cards:type_name -> mtg.v1.Card
+	6,  // 6: mtg.v1.CardService.Lookup:input_type -> mtg.v1.LookupRequest
+	8,  // 7: mtg.v1.CardService.Search:input_type -> mtg.v1.SearchRequest
+	4,  // 8: mtg.v1.CardService.GetCards:input_type -> mtg.v1.GetCardsRequest
+	0,  // 9: mtg.v1.CardService.GetRulings:input_type -> mtg.v1.GetRulingsRequest
+	2,  // 10: mtg.v1.CardService.GetPrintings:input_type -> mtg.v1.GetPrintingsRequest
+	7,  // 11: mtg.v1.CardService.Lookup:output_type -> mtg.v1.LookupResponse
+	9,  // 12: mtg.v1.CardService.Search:output_type -> mtg.v1.SearchResponse
+	5,  // 13: mtg.v1.CardService.GetCards:output_type -> mtg.v1.GetCardsResponse
+	1,  // 14: mtg.v1.CardService.GetRulings:output_type -> mtg.v1.GetRulingsResponse
+	3,  // 15: mtg.v1.CardService.GetPrintings:output_type -> mtg.v1.GetPrintingsResponse
+	11, // [11:16] is the sub-list for method output_type
+	6,  // [6:11] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_mtg_v1_card_service_proto_init() }
@@ -494,7 +725,7 @@ func file_mtg_v1_card_service_proto_init() {
 		return
 	}
 	file_mtg_v1_card_proto_init()
-	file_mtg_v1_card_service_proto_msgTypes[2].OneofWrappers = []any{
+	file_mtg_v1_card_service_proto_msgTypes[6].OneofWrappers = []any{
 		(*LookupRequest_Name)(nil),
 		(*LookupRequest_ScryfallId)(nil),
 		(*LookupRequest_OracleId)(nil),
@@ -505,7 +736,7 @@ func file_mtg_v1_card_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_mtg_v1_card_service_proto_rawDesc), len(file_mtg_v1_card_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

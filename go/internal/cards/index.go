@@ -18,7 +18,14 @@ type Index struct {
 	// printings keeps the display fields of every playable printing, so
 	// the deck view can show the printing the user owns (D-299).
 	printings map[string]*mtgv1.Printing
-	bySetNo   map[string]*mtgv1.Card // key: "setcode/collectornumber", lowercase
+	// printingsOf lists the playable printing ids of each Oracle id, in
+	// file order, so the card detail can show every printing with its
+	// price (PR-20).
+	printingsOf map[string][]string
+	// rulings holds the rulings of the snapshot per Oracle id, nil when
+	// the snapshot carried no rulings file (PR-20).
+	rulings map[string][]Ruling
+	bySetNo map[string]*mtgv1.Card // key: "setcode/collectornumber", lowercase
 	// nonPlayable maps a dropped printing (Scryfall id and set/collector
 	// key) to its layout, so an import can name the reason.
 	nonPlayable map[string]string
@@ -77,7 +84,10 @@ var foldQuotes = strings.NewReplacer("\u2019", "'", "\u2018", "'", "\u201c", "\"
 // not use.
 type IndexOption func(*indexOpts)
 
-type indexOpts struct{ sets []SetInfo }
+type indexOpts struct {
+	sets    []SetInfo
+	rulings map[string][]Ruling
+}
 
 // WithSets supplies the set table rows from the snapshot's set file. A
 // build with no rows derives a table from the printings instead, and
@@ -105,6 +115,8 @@ func NewIndex(cardList []*mtgv1.Card, printings []Printing, tags *TagIndex, asOf
 		byName:      make(map[string]*mtgv1.Card, len(cardList)*2),
 		byPrinting:  make(map[string]*mtgv1.Card, len(printings)),
 		printings:   make(map[string]*mtgv1.Printing, len(printings)),
+		printingsOf: make(map[string][]string, len(cardList)),
+		rulings:     o.rulings,
 		bySetNo:     make(map[string]*mtgv1.Card, len(printings)),
 		nonPlayable: make(map[string]string),
 		tags:        tags,
@@ -190,6 +202,9 @@ func NewIndex(cardList []*mtgv1.Card, printings []Printing, tags *TagIndex, asOf
 			continue
 		}
 		idx.byPrinting[p.ScryfallID] = c
+		if !SkipLayouts[p.Layout] {
+			idx.printingsOf[c.OracleId] = append(idx.printingsOf[c.OracleId], p.ScryfallID)
+		}
 		idx.printings[p.ScryfallID] = &mtgv1.Printing{
 			ScryfallId:      p.ScryfallID,
 			SetCode:         p.SetCode,

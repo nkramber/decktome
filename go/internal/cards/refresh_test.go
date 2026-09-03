@@ -32,8 +32,8 @@ type fakeScryfall struct {
 func newFakeScryfall(t *testing.T, at time.Time) *fakeScryfall {
 	t.Helper()
 	f := &fakeScryfall{
-		updatedAt: map[string]time.Time{"oracle_cards": at, "default_cards": at, "oracle_tags": at},
-		bodies:    map[string]string{"oracle_cards": "", "default_cards": "", "oracle_tags": ""},
+		updatedAt: map[string]time.Time{"oracle_cards": at, "default_cards": at, "oracle_tags": at, "rulings": at},
+		bodies:    map[string]string{"oracle_cards": "", "default_cards": "", "oracle_tags": "", "rulings": ""},
 	}
 	f.srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/bulk-data" {
@@ -98,14 +98,14 @@ func TestRefresh(t *testing.T) {
 	day1 := time.Date(2026, 8, 23, 9, 1, 0, 0, time.UTC)
 	day2 := day1.Add(24 * time.Hour)
 
-	t.Run("empty store downloads all three files", func(t *testing.T) {
+	t.Run("empty store downloads all four files", func(t *testing.T) {
 		f := newFakeScryfall(t, day1)
 		store := DirStore{Root: t.TempDir()}
 		v, err := Refresh(ctx, f.client(), store, slog.Default())
 		if err != nil {
 			t.Fatal(err)
 		}
-		if v != VersionFor(day1) || f.downloads.Load() != 3 {
+		if v != VersionFor(day1) || f.downloads.Load() != 4 {
 			t.Fatalf("version %q downloads %d", v, f.downloads.Load())
 		}
 		latest, _ := store.LatestVersion(ctx)
@@ -143,7 +143,7 @@ func TestRefresh(t *testing.T) {
 		}
 		f.downloads.Store(0)
 		v, err := Refresh(ctx, f.client(), store, slog.Default())
-		if err != nil || f.downloads.Load() != 3 || v != VersionFor(day1.Add(time.Second)) {
+		if err != nil || f.downloads.Load() != 4 || v != VersionFor(day1.Add(time.Second)) {
 			t.Fatalf("v=%q downloads=%d err=%v", v, f.downloads.Load(), err)
 		}
 	})
