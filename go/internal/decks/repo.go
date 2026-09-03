@@ -59,6 +59,9 @@ type storedDeck struct {
 	CommanderNames     []string  `firestore:"commander_names"`
 	DeckGz             []byte    `firestore:"deck_gz"`
 	SchemaVersion      int64     `firestore:"schema_version"`
+	// ShareTokenHash is the hash of the share token, empty with no link
+	// (D-315). The token itself is never stored.
+	ShareTokenHash string `firestore:"share_token_hash"`
 }
 
 // listFields are the flat fields List reads. The list never inflates a
@@ -354,8 +357,10 @@ func (r *Repo) Update(ctx context.Context, uid, id string, name *string, favorit
 		}
 		updated := toStored(&d, payload)
 		// The stored document keeps the create time it already had. A
-		// rename must not move the deck to the top of the list.
+		// rename must not move the deck to the top of the list, and it
+		// must not drop the share link (D-315).
 		updated.CreatedAt = sd.CreatedAt
+		updated.ShareTokenHash = sd.ShareTokenHash
 		if err := tx.Set(doc, updated); err != nil {
 			return err
 		}

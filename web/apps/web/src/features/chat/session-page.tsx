@@ -565,7 +565,7 @@ export function ChatPanel({
             the scrolling area and its own thread scrolls inside it. */}
         <aside
           aria-labelledby="chat-title"
-          className="flex w-full shrink-0 flex-col gap-2 rounded-card border border-border bg-card p-3 lg:h-full lg:w-[26.62rem]"
+          className="flex w-full shrink-0 flex-col gap-2 rounded-card border border-border bg-card p-3 lg:h-full lg:w-[26.62rem] print:hidden"
         >
           <h1 id="chat-title" className="font-display text-[10px] tracking-[0.15em] text-muted-foreground uppercase">
             Chat

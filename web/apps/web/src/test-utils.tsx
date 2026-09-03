@@ -18,6 +18,7 @@ function loadModules() {
     import("./features/chat/session-page"),
     import("./features/deck/decks-page"),
     import("./features/workspace/deck-screen"),
+    import("./features/share/shared-deck-page"),
     import("firebase/app"),
     import("firebase/auth"),
   ]);

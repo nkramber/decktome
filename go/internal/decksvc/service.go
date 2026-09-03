@@ -44,6 +44,11 @@ type DeckSource interface {
 	List(ctx context.Context, uid string, f decks.Filter, scan int) ([]*mtgv1.Deck, error)
 	Update(ctx context.Context, uid, id string, name *string, favorite *bool) (*mtgv1.Deck, error)
 	Delete(ctx context.Context, uid, id string) error
+	// Share records the hash of a share token, Revoke ends the link, and
+	// LookupShare answers the deck a hash opens (D-315).
+	Share(ctx context.Context, uid, id, hash string) error
+	Revoke(ctx context.Context, uid, id string) error
+	LookupShare(ctx context.Context, hash string) (uid, id string, err error)
 }
 
 // WithDecks wires the deck store. Without it GetDeck and ListDecks

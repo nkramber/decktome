@@ -4,7 +4,7 @@
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { Deck, ValidationResult } from "./deck_pb";
+import type { Deck, SharedDeck, ValidationResult } from "./deck_pb";
 import { file_mtg_v1_deck } from "./deck_pb";
 import type { FormatId, SixtyStep } from "./format_pb";
 import { file_mtg_v1_format } from "./format_pb";
@@ -16,7 +16,146 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file mtg/v1/deck_service.proto.
  */
 export const file_mtg_v1_deck_service: GenFile = /*@__PURE__*/
-  fileDesc("ChltdGcvdjEvZGVja19zZXJ2aWNlLnByb3RvEgZtdGcudjEiSgoRRXhwb3J0RGVja1JlcXVlc3QSDwoHZGVja19pZBgBIAEoCRIkCgZmb3JtYXQYAiABKA4yFC5tdGcudjEuRXhwb3J0Rm9ybWF0IjUKEkV4cG9ydERlY2tSZXNwb25zZRIMCgR0ZXh0GAEgASgJEhEKCWZpbGVfbmFtZRgCIAEoCSIhCg5HZXREZWNrUmVxdWVzdBIPCgdkZWNrX2lkGAEgASgJIi0KD0dldERlY2tSZXNwb25zZRIaCgRkZWNrGAEgASgLMgwubXRnLnYxLkRlY2si5gEKEExpc3REZWNrc1JlcXVlc3QSEQoJcGFnZV9zaXplGAEgASgFEhIKCnBhZ2VfdG9rZW4YAiABKAkSIAoGZm9ybWF0GAMgASgOMhAubXRnLnYxLkZvcm1hdElkEhUKCGZhdm9yaXRlGAQgASgISACIAQESDQoFcXVlcnkYBSABKAkSFQoNcG93ZXJfYnJhY2tldBgGIAEoBRIrChBwb3dlcl9zaXh0eV9zdGVwGAcgASgOMhEubXRnLnYxLlNpeHR5U3RlcBISCgpzZXNzaW9uX2lkGAggASgJQgsKCV9mYXZvcml0ZSJJChFMaXN0RGVja3NSZXNwb25zZRIbCgVkZWNrcxgBIAMoCzIMLm10Zy52MS5EZWNrEhcKD25leHRfcGFnZV90b2tlbhgCIAEoCSJkChFVcGRhdGVEZWNrUmVxdWVzdBIPCgdkZWNrX2lkGAEgASgJEhEKBG5hbWUYAiABKAlIAIgBARIVCghmYXZvcml0ZRgDIAEoCEgBiAEBQgcKBV9uYW1lQgsKCV9mYXZvcml0ZSIwChJVcGRhdGVEZWNrUmVzcG9uc2USGgoEZGVjaxgBIAEoCzIMLm10Zy52MS5EZWNrIiQKEURlbGV0ZURlY2tSZXF1ZXN0Eg8KB2RlY2tfaWQYASABKAkiFAoSRGVsZXRlRGVja1Jlc3BvbnNlImkKD1ZhbGlkYXRlUmVxdWVzdBIaCgRkZWNrGAEgASgLMgwubXRnLnYxLkRlY2sSIwoJcG9vbF9ydWxlGAIgASgOMhAubXRnLnYxLlBvb2xSdWxlEhUKDWNvbGxlY3Rpb25faWQYAyABKAkiPAoQVmFsaWRhdGVSZXNwb25zZRIoCgZyZXN1bHQYASABKAsyGC5tdGcudjEuVmFsaWRhdGlvblJlc3VsdCpsCgxFeHBvcnRGb3JtYXQSHQoZRVhQT1JUX0ZPUk1BVF9VTlNQRUNJRklFRBAAEhwKGEVYUE9SVF9GT1JNQVRfQVJFTkFfVEVYVBABEh8KG0VYUE9SVF9GT1JNQVRfQlVZX0xJU1RfVEVYVBACMqUDCgtEZWNrU2VydmljZRI8CgdHZXREZWNrEhYubXRnLnYxLkdldERlY2tSZXF1ZXN0GhcubXRnLnYxLkdldERlY2tSZXNwb25zZSIAEkIKCUxpc3REZWNrcxIYLm10Zy52MS5MaXN0RGVja3NSZXF1ZXN0GhkubXRnLnYxLkxpc3REZWNrc1Jlc3BvbnNlIgASPwoIVmFsaWRhdGUSFy5tdGcudjEuVmFsaWRhdGVSZXF1ZXN0GhgubXRnLnYxLlZhbGlkYXRlUmVzcG9uc2UiABJFCgpFeHBvcnREZWNrEhkubXRnLnYxLkV4cG9ydERlY2tSZXF1ZXN0GhoubXRnLnYxLkV4cG9ydERlY2tSZXNwb25zZSIAEkUKClVwZGF0ZURlY2sSGS5tdGcudjEuVXBkYXRlRGVja1JlcXVlc3QaGi5tdGcudjEuVXBkYXRlRGVja1Jlc3BvbnNlIgASRQoKRGVsZXRlRGVjaxIZLm10Zy52MS5EZWxldGVEZWNrUmVxdWVzdBoaLm10Zy52MS5EZWxldGVEZWNrUmVzcG9uc2UiAEI6WjhnaXRodWIuY29tL25rcmFtYmVyL210Zy1kZWNrLWJ1aWxkZXIvZ28vZ2VuL210Zy92MTttdGd2MWIGcHJvdG8z", [file_mtg_v1_deck, file_mtg_v1_format, file_mtg_v1_session]);
+  fileDesc("ChltdGcvdjEvZGVja19zZXJ2aWNlLnByb3RvEgZtdGcudjEiIwoQU2hhcmVEZWNrUmVxdWVzdBIPCgdkZWNrX2lkGAEgASgJIiIKEVNoYXJlRGVja1Jlc3BvbnNlEg0KBXRva2VuGAEgASgJIiUKElJldm9rZVNoYXJlUmVxdWVzdBIPCgdkZWNrX2lkGAEgASgJIhUKE1Jldm9rZVNoYXJlUmVzcG9uc2UiJQoUR2V0U2hhcmVkRGVja1JlcXVlc3QSDQoFdG9rZW4YASABKAkiOQoVR2V0U2hhcmVkRGVja1Jlc3BvbnNlEiAKBGRlY2sYASABKAsyEi5tdGcudjEuU2hhcmVkRGVjayIoChdFeHBvcnRTaGFyZWREZWNrUmVxdWVzdBINCgV0b2tlbhgBIAEoCSI7ChhFeHBvcnRTaGFyZWREZWNrUmVzcG9uc2USDAoEdGV4dBgBIAEoCRIRCglmaWxlX25hbWUYAiABKAkiSgoRRXhwb3J0RGVja1JlcXVlc3QSDwoHZGVja19pZBgBIAEoCRIkCgZmb3JtYXQYAiABKA4yFC5tdGcudjEuRXhwb3J0Rm9ybWF0IjUKEkV4cG9ydERlY2tSZXNwb25zZRIMCgR0ZXh0GAEgASgJEhEKCWZpbGVfbmFtZRgCIAEoCSIhCg5HZXREZWNrUmVxdWVzdBIPCgdkZWNrX2lkGAEgASgJIi0KD0dldERlY2tSZXNwb25zZRIaCgRkZWNrGAEgASgLMgwubXRnLnYxLkRlY2si5gEKEExpc3REZWNrc1JlcXVlc3QSEQoJcGFnZV9zaXplGAEgASgFEhIKCnBhZ2VfdG9rZW4YAiABKAkSIAoGZm9ybWF0GAMgASgOMhAubXRnLnYxLkZvcm1hdElkEhUKCGZhdm9yaXRlGAQgASgISACIAQESDQoFcXVlcnkYBSABKAkSFQoNcG93ZXJfYnJhY2tldBgGIAEoBRIrChBwb3dlcl9zaXh0eV9zdGVwGAcgASgOMhEubXRnLnYxLlNpeHR5U3RlcBISCgpzZXNzaW9uX2lkGAggASgJQgsKCV9mYXZvcml0ZSJJChFMaXN0RGVja3NSZXNwb25zZRIbCgVkZWNrcxgBIAMoCzIMLm10Zy52MS5EZWNrEhcKD25leHRfcGFnZV90b2tlbhgCIAEoCSJkChFVcGRhdGVEZWNrUmVxdWVzdBIPCgdkZWNrX2lkGAEgASgJEhEKBG5hbWUYAiABKAlIAIgBARIVCghmYXZvcml0ZRgDIAEoCEgBiAEBQgcKBV9uYW1lQgsKCV9mYXZvcml0ZSIwChJVcGRhdGVEZWNrUmVzcG9uc2USGgoEZGVjaxgBIAEoCzIMLm10Zy52MS5EZWNrIiQKEURlbGV0ZURlY2tSZXF1ZXN0Eg8KB2RlY2tfaWQYASABKAkiFAoSRGVsZXRlRGVja1Jlc3BvbnNlImkKD1ZhbGlkYXRlUmVxdWVzdBIaCgRkZWNrGAEgASgLMgwubXRnLnYxLkRlY2sSIwoJcG9vbF9ydWxlGAIgASgOMhAubXRnLnYxLlBvb2xSdWxlEhUKDWNvbGxlY3Rpb25faWQYAyABKAkiPAoQVmFsaWRhdGVSZXNwb25zZRIoCgZyZXN1bHQYASABKAsyGC5tdGcudjEuVmFsaWRhdGlvblJlc3VsdCpsCgxFeHBvcnRGb3JtYXQSHQoZRVhQT1JUX0ZPUk1BVF9VTlNQRUNJRklFRBAAEhwKGEVYUE9SVF9GT1JNQVRfQVJFTkFfVEVYVBABEh8KG0VYUE9SVF9GT1JNQVRfQlVZX0xJU1RfVEVYVBACMtwFCgtEZWNrU2VydmljZRI8CgdHZXREZWNrEhYubXRnLnYxLkdldERlY2tSZXF1ZXN0GhcubXRnLnYxLkdldERlY2tSZXNwb25zZSIAEkIKCUxpc3REZWNrcxIYLm10Zy52MS5MaXN0RGVja3NSZXF1ZXN0GhkubXRnLnYxLkxpc3REZWNrc1Jlc3BvbnNlIgASPwoIVmFsaWRhdGUSFy5tdGcudjEuVmFsaWRhdGVSZXF1ZXN0GhgubXRnLnYxLlZhbGlkYXRlUmVzcG9uc2UiABJFCgpFeHBvcnREZWNrEhkubXRnLnYxLkV4cG9ydERlY2tSZXF1ZXN0GhoubXRnLnYxLkV4cG9ydERlY2tSZXNwb25zZSIAEkUKClVwZGF0ZURlY2sSGS5tdGcudjEuVXBkYXRlRGVja1JlcXVlc3QaGi5tdGcudjEuVXBkYXRlRGVja1Jlc3BvbnNlIgASRQoKRGVsZXRlRGVjaxIZLm10Zy52MS5EZWxldGVEZWNrUmVxdWVzdBoaLm10Zy52MS5EZWxldGVEZWNrUmVzcG9uc2UiABJCCglTaGFyZURlY2sSGC5tdGcudjEuU2hhcmVEZWNrUmVxdWVzdBoZLm10Zy52MS5TaGFyZURlY2tSZXNwb25zZSIAEkgKC1Jldm9rZVNoYXJlEhoubXRnLnYxLlJldm9rZVNoYXJlUmVxdWVzdBobLm10Zy52MS5SZXZva2VTaGFyZVJlc3BvbnNlIgASTgoNR2V0U2hhcmVkRGVjaxIcLm10Zy52MS5HZXRTaGFyZWREZWNrUmVxdWVzdBodLm10Zy52MS5HZXRTaGFyZWREZWNrUmVzcG9uc2UiABJXChBFeHBvcnRTaGFyZWREZWNrEh8ubXRnLnYxLkV4cG9ydFNoYXJlZERlY2tSZXF1ZXN0GiAubXRnLnYxLkV4cG9ydFNoYXJlZERlY2tSZXNwb25zZSIAQjpaOGdpdGh1Yi5jb20vbmtyYW1iZXIvbXRnLWRlY2stYnVpbGRlci9nby9nZW4vbXRnL3YxO210Z3YxYgZwcm90bzM", [file_mtg_v1_deck, file_mtg_v1_format, file_mtg_v1_session]);
+
+/**
+ * @generated from message mtg.v1.ShareDeckRequest
+ */
+export type ShareDeckRequest = Message<"mtg.v1.ShareDeckRequest"> & {
+  /**
+   * @generated from field: string deck_id = 1;
+   */
+  deckId: string;
+};
+
+/**
+ * Describes the message mtg.v1.ShareDeckRequest.
+ * Use `create(ShareDeckRequestSchema)` to create a new message.
+ */
+export const ShareDeckRequestSchema: GenMessage<ShareDeckRequest> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_deck_service, 0);
+
+/**
+ * @generated from message mtg.v1.ShareDeckResponse
+ */
+export type ShareDeckResponse = Message<"mtg.v1.ShareDeckResponse"> & {
+  /**
+   * token is the secret of the link, shown once. The page is /d/<token>.
+   *
+   * @generated from field: string token = 1;
+   */
+  token: string;
+};
+
+/**
+ * Describes the message mtg.v1.ShareDeckResponse.
+ * Use `create(ShareDeckResponseSchema)` to create a new message.
+ */
+export const ShareDeckResponseSchema: GenMessage<ShareDeckResponse> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_deck_service, 1);
+
+/**
+ * @generated from message mtg.v1.RevokeShareRequest
+ */
+export type RevokeShareRequest = Message<"mtg.v1.RevokeShareRequest"> & {
+  /**
+   * @generated from field: string deck_id = 1;
+   */
+  deckId: string;
+};
+
+/**
+ * Describes the message mtg.v1.RevokeShareRequest.
+ * Use `create(RevokeShareRequestSchema)` to create a new message.
+ */
+export const RevokeShareRequestSchema: GenMessage<RevokeShareRequest> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_deck_service, 2);
+
+/**
+ * @generated from message mtg.v1.RevokeShareResponse
+ */
+export type RevokeShareResponse = Message<"mtg.v1.RevokeShareResponse"> & {
+};
+
+/**
+ * Describes the message mtg.v1.RevokeShareResponse.
+ * Use `create(RevokeShareResponseSchema)` to create a new message.
+ */
+export const RevokeShareResponseSchema: GenMessage<RevokeShareResponse> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_deck_service, 3);
+
+/**
+ * @generated from message mtg.v1.GetSharedDeckRequest
+ */
+export type GetSharedDeckRequest = Message<"mtg.v1.GetSharedDeckRequest"> & {
+  /**
+   * @generated from field: string token = 1;
+   */
+  token: string;
+};
+
+/**
+ * Describes the message mtg.v1.GetSharedDeckRequest.
+ * Use `create(GetSharedDeckRequestSchema)` to create a new message.
+ */
+export const GetSharedDeckRequestSchema: GenMessage<GetSharedDeckRequest> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_deck_service, 4);
+
+/**
+ * @generated from message mtg.v1.GetSharedDeckResponse
+ */
+export type GetSharedDeckResponse = Message<"mtg.v1.GetSharedDeckResponse"> & {
+  /**
+   * @generated from field: mtg.v1.SharedDeck deck = 1;
+   */
+  deck?: SharedDeck | undefined;
+};
+
+/**
+ * Describes the message mtg.v1.GetSharedDeckResponse.
+ * Use `create(GetSharedDeckResponseSchema)` to create a new message.
+ */
+export const GetSharedDeckResponseSchema: GenMessage<GetSharedDeckResponse> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_deck_service, 5);
+
+/**
+ * @generated from message mtg.v1.ExportSharedDeckRequest
+ */
+export type ExportSharedDeckRequest = Message<"mtg.v1.ExportSharedDeckRequest"> & {
+  /**
+   * @generated from field: string token = 1;
+   */
+  token: string;
+};
+
+/**
+ * Describes the message mtg.v1.ExportSharedDeckRequest.
+ * Use `create(ExportSharedDeckRequestSchema)` to create a new message.
+ */
+export const ExportSharedDeckRequestSchema: GenMessage<ExportSharedDeckRequest> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_deck_service, 6);
+
+/**
+ * @generated from message mtg.v1.ExportSharedDeckResponse
+ */
+export type ExportSharedDeckResponse = Message<"mtg.v1.ExportSharedDeckResponse"> & {
+  /**
+   * @generated from field: string text = 1;
+   */
+  text: string;
+
+  /**
+   * @generated from field: string file_name = 2;
+   */
+  fileName: string;
+};
+
+/**
+ * Describes the message mtg.v1.ExportSharedDeckResponse.
+ * Use `create(ExportSharedDeckResponseSchema)` to create a new message.
+ */
+export const ExportSharedDeckResponseSchema: GenMessage<ExportSharedDeckResponse> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_deck_service, 7);
 
 /**
  * @generated from message mtg.v1.ExportDeckRequest
@@ -40,7 +179,7 @@ export type ExportDeckRequest = Message<"mtg.v1.ExportDeckRequest"> & {
  * Use `create(ExportDeckRequestSchema)` to create a new message.
  */
 export const ExportDeckRequestSchema: GenMessage<ExportDeckRequest> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_deck_service, 0);
+  messageDesc(file_mtg_v1_deck_service, 8);
 
 /**
  * @generated from message mtg.v1.ExportDeckResponse
@@ -64,7 +203,7 @@ export type ExportDeckResponse = Message<"mtg.v1.ExportDeckResponse"> & {
  * Use `create(ExportDeckResponseSchema)` to create a new message.
  */
 export const ExportDeckResponseSchema: GenMessage<ExportDeckResponse> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_deck_service, 1);
+  messageDesc(file_mtg_v1_deck_service, 9);
 
 /**
  * @generated from message mtg.v1.GetDeckRequest
@@ -81,7 +220,7 @@ export type GetDeckRequest = Message<"mtg.v1.GetDeckRequest"> & {
  * Use `create(GetDeckRequestSchema)` to create a new message.
  */
 export const GetDeckRequestSchema: GenMessage<GetDeckRequest> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_deck_service, 2);
+  messageDesc(file_mtg_v1_deck_service, 10);
 
 /**
  * @generated from message mtg.v1.GetDeckResponse
@@ -98,7 +237,7 @@ export type GetDeckResponse = Message<"mtg.v1.GetDeckResponse"> & {
  * Use `create(GetDeckResponseSchema)` to create a new message.
  */
 export const GetDeckResponseSchema: GenMessage<GetDeckResponse> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_deck_service, 3);
+  messageDesc(file_mtg_v1_deck_service, 11);
 
 /**
  * @generated from message mtg.v1.ListDecksRequest
@@ -174,7 +313,7 @@ export type ListDecksRequest = Message<"mtg.v1.ListDecksRequest"> & {
  * Use `create(ListDecksRequestSchema)` to create a new message.
  */
 export const ListDecksRequestSchema: GenMessage<ListDecksRequest> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_deck_service, 4);
+  messageDesc(file_mtg_v1_deck_service, 12);
 
 /**
  * @generated from message mtg.v1.ListDecksResponse
@@ -199,7 +338,7 @@ export type ListDecksResponse = Message<"mtg.v1.ListDecksResponse"> & {
  * Use `create(ListDecksResponseSchema)` to create a new message.
  */
 export const ListDecksResponseSchema: GenMessage<ListDecksResponse> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_deck_service, 5);
+  messageDesc(file_mtg_v1_deck_service, 13);
 
 /**
  * @generated from message mtg.v1.UpdateDeckRequest
@@ -231,7 +370,7 @@ export type UpdateDeckRequest = Message<"mtg.v1.UpdateDeckRequest"> & {
  * Use `create(UpdateDeckRequestSchema)` to create a new message.
  */
 export const UpdateDeckRequestSchema: GenMessage<UpdateDeckRequest> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_deck_service, 6);
+  messageDesc(file_mtg_v1_deck_service, 14);
 
 /**
  * @generated from message mtg.v1.UpdateDeckResponse
@@ -250,7 +389,7 @@ export type UpdateDeckResponse = Message<"mtg.v1.UpdateDeckResponse"> & {
  * Use `create(UpdateDeckResponseSchema)` to create a new message.
  */
 export const UpdateDeckResponseSchema: GenMessage<UpdateDeckResponse> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_deck_service, 7);
+  messageDesc(file_mtg_v1_deck_service, 15);
 
 /**
  * @generated from message mtg.v1.DeleteDeckRequest
@@ -267,7 +406,7 @@ export type DeleteDeckRequest = Message<"mtg.v1.DeleteDeckRequest"> & {
  * Use `create(DeleteDeckRequestSchema)` to create a new message.
  */
 export const DeleteDeckRequestSchema: GenMessage<DeleteDeckRequest> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_deck_service, 8);
+  messageDesc(file_mtg_v1_deck_service, 16);
 
 /**
  * @generated from message mtg.v1.DeleteDeckResponse
@@ -280,7 +419,7 @@ export type DeleteDeckResponse = Message<"mtg.v1.DeleteDeckResponse"> & {
  * Use `create(DeleteDeckResponseSchema)` to create a new message.
  */
 export const DeleteDeckResponseSchema: GenMessage<DeleteDeckResponse> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_deck_service, 9);
+  messageDesc(file_mtg_v1_deck_service, 17);
 
 /**
  * @generated from message mtg.v1.ValidateRequest
@@ -312,7 +451,7 @@ export type ValidateRequest = Message<"mtg.v1.ValidateRequest"> & {
  * Use `create(ValidateRequestSchema)` to create a new message.
  */
 export const ValidateRequestSchema: GenMessage<ValidateRequest> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_deck_service, 10);
+  messageDesc(file_mtg_v1_deck_service, 18);
 
 /**
  * @generated from message mtg.v1.ValidateResponse
@@ -329,7 +468,7 @@ export type ValidateResponse = Message<"mtg.v1.ValidateResponse"> & {
  * Use `create(ValidateResponseSchema)` to create a new message.
  */
 export const ValidateResponseSchema: GenMessage<ValidateResponse> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_deck_service, 11);
+  messageDesc(file_mtg_v1_deck_service, 19);
 
 /**
  * ExportFormat names a text shape of a deck.
@@ -440,6 +579,52 @@ export const DeckService: GenService<{
     methodKind: "unary";
     input: typeof DeleteDeckRequestSchema;
     output: typeof DeleteDeckResponseSchema;
+  },
+  /**
+   * ShareDeck makes a share link for one of the caller's decks and
+   * answers the token once (D-315). A deck with a link gets a new one,
+   * and the old link dies. The store keeps a hash of the token, never
+   * the token.
+   *
+   * @generated from rpc mtg.v1.DeckService.ShareDeck
+   */
+  shareDeck: {
+    methodKind: "unary";
+    input: typeof ShareDeckRequestSchema;
+    output: typeof ShareDeckResponseSchema;
+  },
+  /**
+   * RevokeShare ends the link of one of the caller's decks.
+   *
+   * @generated from rpc mtg.v1.DeckService.RevokeShare
+   */
+  revokeShare: {
+    methodKind: "unary";
+    input: typeof RevokeShareRequestSchema;
+    output: typeof RevokeShareResponseSchema;
+  },
+  /**
+   * GetSharedDeck reads a shared deck by its token. It needs no sign-in,
+   * a rate limit per client address bounds it, and the answer carries no
+   * user field (guardrail 13). A revoked or unknown token is NotFound.
+   *
+   * @generated from rpc mtg.v1.DeckService.GetSharedDeck
+   */
+  getSharedDeck: {
+    methodKind: "unary";
+    input: typeof GetSharedDeckRequestSchema;
+    output: typeof GetSharedDeckResponseSchema;
+  },
+  /**
+   * ExportSharedDeck renders a shared deck as Arena text, with the
+   * default paper printings. It needs no sign-in, under the same limit.
+   *
+   * @generated from rpc mtg.v1.DeckService.ExportSharedDeck
+   */
+  exportSharedDeck: {
+    methodKind: "unary";
+    input: typeof ExportSharedDeckRequestSchema;
+    output: typeof ExportSharedDeckResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_mtg_v1_deck_service, 0);

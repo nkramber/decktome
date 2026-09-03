@@ -134,7 +134,7 @@ export function CardTile({
       )}
       {faces.length === 0 && <p className="text-sm text-muted-foreground">No card data for this entry.</p>}
       {faces.map((face, i) => (
-        <figure key={`${entry.oracleId}-${i}`} className="flex flex-col gap-1">
+        <figure key={`${entry.oracleId}-${i}`} className="flex flex-col gap-1 print:hidden">
           <FaceImage face={face} />
           {faces.length > 1 && (
             <figcaption className="text-xs text-muted-foreground">

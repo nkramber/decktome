@@ -196,7 +196,7 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
       </div>
 
       {cards.data && (
-        <div className="@container shadow-card rounded-panel border border-border bg-card p-5 backdrop-blur-sm">
+        <div className="@container shadow-card rounded-panel border border-border bg-card p-5 backdrop-blur-sm print:hidden">
           <div className="grid items-start gap-8 @2xl:grid-cols-2">
             <table className="w-full text-sm">
               <caption className={captionClass}>Mana curve, lands excluded</caption>
@@ -334,16 +334,20 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
         </div>
       )}
 
-      <SampleHand deck={deck} byId={byId} />
+      <div className="print:hidden">
+        <SampleHand deck={deck} byId={byId} />
+      </div>
 
-      <ExportPanel deck={deck} byId={byId} />
+      <div className="print:hidden">
+        <ExportPanel deck={deck} byId={byId} />
+      </div>
 
       <p className="text-xs text-muted-foreground">
         Card images and card text are unofficial Fan Content permitted under the Wizards of the Coast Fan Content Policy. They are
         copyright Wizards of the Coast, LLC, and come from Scryfall.
       </p>
 
-      <section aria-label="Filters and sort" className="flex flex-wrap items-end gap-3 rounded-card border border-border bg-card p-3 text-sm">
+      <section aria-label="Filters and sort" className="flex flex-wrap items-end gap-3 rounded-card border border-border bg-card p-3 text-sm print:hidden">
         <label htmlFor={`filter-role-${deck.id}`} className="flex flex-col gap-1">
           <span className="text-xs text-muted-foreground">Role</span>
           <Select id={`filter-role-${deck.id}`} value={filters.role ?? ""} onChange={(e) => setFilters({ ...filters, role: e.target.value === "" ? undefined : (Number(e.target.value) as CardRole) })}>
@@ -440,7 +444,9 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
   );
 }
 
-function CardGroup({
+// CardGroup is one role section of the deck. The public page of a share
+// link renders it too, with no detail to open (D-315).
+export function CardGroup({
   title,
   count,
   entries,
@@ -455,7 +461,7 @@ function CardGroup({
   byId: Map<string, Card>;
   commanders: Set<string>;
   hideOwnership?: boolean;
-  onOpen: (entry: DeckCard) => void;
+  onOpen?: (entry: DeckCard) => void;
 }) {
   return (
     <section aria-label={`${title} (${count})`} className="@container">
@@ -471,7 +477,7 @@ function CardGroup({
             card={byId.get(e.oracleId)}
             isCommander={commanders.has(e.oracleId)}
             hideOwnership={hideOwnership}
-            onOpen={() => onOpen(e)}
+            onOpen={onOpen ? () => onOpen(e) : undefined}
           />
         ))}
       </ul>

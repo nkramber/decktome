@@ -289,3 +289,67 @@ func TestEmulatorListFilter(t *testing.T) {
 		})
 	}
 }
+
+// TestEmulatorShareRevokeLookup is the store half of the PR-21 gate
+// (D-315): a share stores the hash and answers the lookup, a second
+// share replaces the link, a rename keeps it, and a revoke ends it.
+func TestEmulatorShareRevokeLookup(t *testing.T) {
+	repo, done := emulatorRepo(t)
+	defer done()
+	ctx := t.Context()
+
+	uid := "u-share-" + repo.NewID("seed")
+	id := repo.NewID(uid)
+	if err := repo.Put(ctx, uid, sampleDeck(id, time.Now().UTC())); err != nil {
+		t.Fatalf("put: %v", err)
+	}
+	if _, _, err := repo.LookupShare(ctx, "h-none"); !errors.Is(err, ErrNotFound) {
+		t.Errorf("lookup of an unknown hash = %v, want ErrNotFound", err)
+	}
+	if err := repo.Share(ctx, uid, id, "h-one"); err != nil {
+		t.Fatalf("share: %v", err)
+	}
+	gotUID, gotID, err := repo.LookupShare(ctx, "h-one")
+	if err != nil || gotUID != uid || gotID != id {
+		t.Fatalf("lookup = %q %q %v, want the deck", gotUID, gotID, err)
+	}
+	d, err := repo.Get(ctx, uid, id)
+	if err != nil || !d.Shared {
+		t.Fatalf("the deck reads shared %v, err %v", d.GetShared(), err)
+	}
+	// A rename keeps the link.
+	name := "renamed"
+	if _, err := repo.Update(ctx, uid, id, &name, nil); err != nil {
+		t.Fatalf("update: %v", err)
+	}
+	if _, _, err := repo.LookupShare(ctx, "h-one"); err != nil {
+		t.Errorf("a rename dropped the link: %v", err)
+	}
+	// A second share replaces the link.
+	if err := repo.Share(ctx, uid, id, "h-two"); err != nil {
+		t.Fatalf("second share: %v", err)
+	}
+	if _, _, err := repo.LookupShare(ctx, "h-one"); !errors.Is(err, ErrNotFound) {
+		t.Errorf("the old link still opens: %v", err)
+	}
+	if _, _, err := repo.LookupShare(ctx, "h-two"); err != nil {
+		t.Errorf("the new link does not open: %v", err)
+	}
+	// A revoke ends it.
+	if err := repo.Revoke(ctx, uid, id); err != nil {
+		t.Fatalf("revoke: %v", err)
+	}
+	if _, _, err := repo.LookupShare(ctx, "h-two"); !errors.Is(err, ErrNotFound) {
+		t.Errorf("a revoked link still opens: %v", err)
+	}
+	d, err = repo.Get(ctx, uid, id)
+	if err != nil || d.Shared {
+		t.Errorf("the deck still reads shared %v, err %v", d.GetShared(), err)
+	}
+	if err := repo.Revoke(ctx, uid, id); err != nil {
+		t.Errorf("a second revoke must change nothing: %v", err)
+	}
+	if err := repo.Share(ctx, uid, "d-none", "h-three"); !errors.Is(err, ErrNotFound) {
+		t.Errorf("share of an unknown deck = %v, want ErrNotFound", err)
+	}
+}

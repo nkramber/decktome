@@ -242,6 +242,58 @@ type fakeDecks struct {
 	filter  decks.Filter
 	deleted []string
 	updates int
+	// shares maps a token hash to "uid/id" (D-315).
+	shares map[string]string
+}
+
+func (f *fakeDecks) Share(_ context.Context, uid, id, hash string) error {
+	if f.err != nil {
+		return f.err
+	}
+	d, ok := f.decks[id]
+	if !ok {
+		return decks.ErrNotFound
+	}
+	if f.shares == nil {
+		f.shares = map[string]string{}
+	}
+	for h, ref := range f.shares {
+		if ref == uid+"/"+id {
+			delete(f.shares, h)
+		}
+	}
+	f.shares[hash] = uid + "/" + id
+	d.Shared = true
+	return nil
+}
+
+func (f *fakeDecks) Revoke(_ context.Context, uid, id string) error {
+	if f.err != nil {
+		return f.err
+	}
+	d, ok := f.decks[id]
+	if !ok {
+		return decks.ErrNotFound
+	}
+	for h, ref := range f.shares {
+		if ref == uid+"/"+id {
+			delete(f.shares, h)
+		}
+	}
+	d.Shared = false
+	return nil
+}
+
+func (f *fakeDecks) LookupShare(_ context.Context, hash string) (string, string, error) {
+	if f.err != nil {
+		return "", "", f.err
+	}
+	ref, ok := f.shares[hash]
+	if !ok {
+		return "", "", decks.ErrNotFound
+	}
+	uid, id, _ := strings.Cut(ref, "/")
+	return uid, id, nil
 }
 
 func (f *fakeDecks) Get(_ context.Context, _, id string) (*mtgv1.Deck, error) {

@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { createBrowserRouter, createMemoryRouter, type RouteObject } from "react-router";
 
 import { RequireAuth, RootRedirect } from "../features/auth/require-auth";
-import { collectionChunk, decksChunk, deckScreenChunk, sessionChunk, signInChunk } from "./chunks";
+import { collectionChunk, decksChunk, deckScreenChunk, sessionChunk, sharedDeckChunk, signInChunk } from "./chunks";
 import { PageFallback } from "./components/page-fallback";
 import type { Deferred } from "./deferred";
 import { Layout } from "./layout";
@@ -40,6 +40,9 @@ export function appRoutes(extra: RouteObject[] = []): RouteObject[] {
       children: [
         { path: "/", element: <RootRedirect /> },
         { path: "/sign-in", element: page(signInChunk) },
+        // A share link opens for anyone who holds it, with no sign-in
+        // (D-315).
+        { path: "/d/:token", element: page(sharedDeckChunk) },
         {
           element: <RequireAuth />,
           children: [
