@@ -114,6 +114,10 @@ const (
 	SourceEDHREC  = "edhrec"
 	SourceCEDHDB  = "cedhdb"
 	SourceTopdeck = "topdeck"
+	// SourceMTGTop8 is the paper tournament site, and SourceGoldfish the
+	// user decks of MTGGoldfish (PR-14C, D-502 to D-504).
+	SourceMTGTop8  = "mtgtop8"
+	SourceGoldfish = "mtggoldfish"
 	// SourceSynthetic marks a bad list the engine made (D-414).
 	SourceSynthetic = "synthetic"
 )
