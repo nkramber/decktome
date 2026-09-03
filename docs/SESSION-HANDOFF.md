@@ -6,7 +6,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## Where things stand (2026-09-03)
 
-- PR-21, the share link and the print view, is complete on branch `pr-21` (2026-09-03, D-508). The free gate passes, `docs/reference/pr21-gate-2026-09-03.md`. The tree is green on the branch: Go build, vet, the `-race` suite, golangci-lint, `make ste-check`, the web lint, the web typecheck, and 262 web tests. The owner reads it on the local stack, then merges. The section "PR-21, the share link and the print view, built" below holds the moving parts.
+- PR-21, the share link and the print view, is merged (2026-09-03, #62, D-508). The free gate passes, `docs/reference/pr21-gate-2026-09-03.md`. The tree is green on `main`: Go build, vet, the `-race` suite, golangci-lint, `make ste-check`, the web lint, the web typecheck, and 262 web tests. Branches `pr-24`, `pr-14c`, `pr-20`, and `pr-21` can go. The section "PR-21, the share link and the print view, merged" below holds the moving parts. PR-22 is next, on a new branch from `main` (D-494).
 - PR-20, the deck view and the card detail, is merged (2026-09-03, #61, D-507). The free gate passes, `docs/reference/pr20-gate-2026-09-03.md`. The tree is green on `main`: Go build, vet, the `-race` suite, golangci-lint, `make ste-check`, the web lint, the web typecheck, and 256 web tests. Branches `pr-24`, `pr-14c`, and `pr-20` can go. The section "PR-20, the deck view and the card detail, merged" below holds the moving parts. PR-21 is next, on a new branch from `main` (D-494).
 - PR-14C, MTGTop8 and the casual 60-card decks, is merged (2026-09-03, #60, D-502 to D-506). Both lanes read with zero failures over 500 pages, and the Modern typical rung exists, 149 lists. The gate document is `docs/reference/pr14c-gate-2026-09-03.md`. Quality gate run 12 reads FAIL on the same two bars as run 11: Commander 0.78 and Modern 0.88 on the precon bar. The tree is green on `main`. Branches `pr-24` and `pr-14c` can go. The section "PR-14C, MTGTop8 and the casual 60-card decks, merged" below holds the moving parts. PR-20 is next, on a new branch from `main` (D-494).
 - PR-24, the precon exclusion, is merged (2026-09-03, #59, D-496 to D-498, D-500, D-501). The free gate passes, `docs/reference/pr24-precon-gate-2026-09-03.md`. The tree is green on `main`: Go build, vet, the `-race` suite, golangci-lint, `make ste-check`, the proto check, and the web typecheck and 237 tests. Branches `pr-24` and `pr-14c` can go. The section "PR-24, the precon exclusion, merged" below holds the moving parts. PR-14C is next, on a new branch from `main` (D-494).
@@ -435,9 +435,9 @@ CAUTION: the Topdeck.gg reader follows the docs alone. No session has read a liv
 
 CAUTION: the quality gate has three bars in the code and one outside it. The pair bars and the bracket 5 offer bar are in `cmd/quality-gate`. The judge bar over the golden decks reads the next deck gate run, whose summaries carry the tier. That run costs about $2.24, so ask the owner first.
 
-## PR-21, the share link and the print view, built (2026-09-03)
+## PR-21, the share link and the print view, merged (2026-09-03, #62)
 
-The branch `pr-21` holds PR-21, from `main` at #61 (D-494). The call is D-508, and the free gate is `docs/reference/pr21-gate-2026-09-03.md`.
+PR-21 merged as #62 on 2026-09-03. The call is D-508, and the free gate is `docs/reference/pr21-gate-2026-09-03.md`.
 
 - `DeckService.ShareDeck` makes a 32-byte token, shown once, and `RevokeShare` ends the link. `GetSharedDeck` and `ExportSharedDeck` need no sign-in. The store keeps the hex SHA-256 of the token at `shares/<hash>`, one document with the owner and the deck id. The deck document keeps the hash too. A second share replaces the link, and a rename keeps it.
 - `SharedDeck` and `SharedCard` are the public message. They hold the name, the format, the power, the summary, and the cards by role with the card data inline, and no user field. `decksvc.TestSharedDeckHoldsNoUserField` reads the proto text and proves it (guardrail 13).
@@ -625,7 +625,7 @@ The chat ran a turn with no card index before D-405. The commander question then
 
 ## Next steps, in order
 
-1. PR-21 is complete on branch `pr-21` (D-508). The owner reads it on the local stack and merges it. Then PR-22, the deploy to GCP for invited users (D-310, D-314), on a new branch from `main`. OQ-45 holds the store of the allowlist, and D-429 answered it. Then PR-23.
+1. PR-22, the deploy to GCP for invited users (D-310, D-314), on a new branch from `main`. OQ-45 holds the store of the allowlist, and D-429 answered it. Then PR-23.
 2. `make meta-refresh` daily, and `make quality-gate` to a new `QUALITY_GATE_OUT` after each one. Read the pair bars per format and the per-axis table. A weight against the sense of its feature is a defect in the feature or the labels. Do not tune it. The next weekly EDHREC read falls on 2026-09-10 (D-499).
 3. The paid runs come after PR-14C (D-495). First `make quality-judge` over `pr8-deck-gate-run13b.md`, about $0.31. Then the bracket gate for the bracket 5 decks. Then the question gate for the classifier of version 17 (D-496). Ask the owner before each one.
 4. Deploy the meta job (D-492). It is one Cloud Run job on `worker -meta`, with a Scheduler cron at 06:00 UTC daily. `TOPDECK_API_KEY` goes to Secret Manager. No infra file in this repo holds the worker's schedule. So the deployment is by hand, as the snapshot worker's is.
