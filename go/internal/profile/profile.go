@@ -117,6 +117,23 @@ type entry struct {
 // is read as it is, the sideboard left out. A card the source does not
 // know is skipped, and the rules engine has already reported it.
 func (p *Profiler) Read(ctx context.Context, deck *mtgv1.Deck, src rules.CardSource) (*mtgv1.DeckProfile, []*mtgv1.Finding) {
+	out, findings, entries, commanders := p.measure(deck, src)
+	if deck.GetFormat().GetId() == mtgv1.FormatId_FORMAT_ID_COMMANDER {
+		out.Content, findings = p.content(ctx, entries, commanders, out.GetBracket(), findings)
+	}
+	return out, findings
+}
+
+// Measure builds the profile with no content check and no finding. The
+// quality fit of PR-14B reads thousands of published lists through it,
+// and the endpoint's rate would make that a day's work (D-459).
+func (p *Profiler) Measure(deck *mtgv1.Deck, src rules.CardSource) *mtgv1.DeckProfile {
+	out, _, _, _ := p.measure(deck, src)
+	return out
+}
+
+// measure resolves the deck and measures every feature.
+func (p *Profiler) measure(deck *mtgv1.Deck, src rules.CardSource) (*mtgv1.DeckProfile, []*mtgv1.Finding, []entry, []*mtgv1.Card) {
 	format := deck.GetFormat().GetId()
 	commander := format == mtgv1.FormatId_FORMAT_ID_COMMANDER
 	table, bracket := p.bands.For(format, deck.GetPower())
@@ -182,11 +199,7 @@ func (p *Profiler) Read(ctx context.Context, deck *mtgv1.Deck, src rules.CardSou
 		out.Features = append(out.Features, row)
 	}
 	out.Goldfish = f.sim
-
-	if commander {
-		out.Content, findings = p.content(ctx, entries, commanders, bracket, findings)
-	}
-	return out, findings
+	return out, findings, entries, commanders
 }
 
 // featureOrder is the row order of a profile, the way a reader scans

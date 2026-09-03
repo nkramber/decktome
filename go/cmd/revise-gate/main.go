@@ -179,7 +179,13 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	b := generate.NewBuilder(client, rcfg, idx, quiet, generate.WithProfiler(prof))
+	// The quality model grades every deck the gate builds, and the
+	// summary names the tier (PR-14B). No stored model grades nothing.
+	scorer, err := gatekit.Scorer(ctx)
+	if err != nil {
+		return err
+	}
+	b := generate.NewBuilder(client, rcfg, idx, quiet, generate.WithProfiler(prof), generate.WithScorer(scorer))
 
 	start := time.Now()
 	var outcomes []outcome

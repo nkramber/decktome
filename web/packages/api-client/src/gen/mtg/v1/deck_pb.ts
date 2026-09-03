@@ -18,7 +18,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file mtg/v1/deck.proto.
  */
 export const file_mtg_v1_deck: GenFile = /*@__PURE__*/
-  fileDesc("ChFtdGcvdjEvZGVjay5wcm90bxIGbXRnLnYxIu8ECgREZWNrEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSHgoGZm9ybWF0GAMgASgLMg4ubXRnLnYxLkZvcm1hdBIhCgVwb3dlchgEIAEoCzISLm10Zy52MS5Qb3dlckxldmVsEg8KB3N1bW1hcnkYBSABKAkSHAoUY29tbWFuZGVyX29yYWNsZV9pZHMYBiADKAkSHwoFY2FyZHMYByADKAsyEC5tdGcudjEuRGVja0NhcmQSLAoKdmFsaWRhdGlvbhgIIAEoCzIYLm10Zy52MS5WYWxpZGF0aW9uUmVzdWx0EhYKDmxlZ2FsaXR5X2FzX29mGAkgASgJEhIKCnNlc3Npb25faWQYCyABKAkSLgoKY3JlYXRlZF9hdBgMIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASDQoFc3RhbGUYDSABKAgSGAoQc3RhbGVfb3JhY2xlX2lkcxgOIAMoCRIjCglzaWRlYm9hcmQYDyADKAsyEC5tdGcudjEuRGVja0NhcmQSGwoTY29tcGFuaW9uX29yYWNsZV9pZBgQIAEoCRIiCgh1cGdyYWRlcxgRIAMoCzIQLm10Zy52MS5EZWNrQ2FyZBIUCgxidXlfY29zdF91c2QYEiABKAESHAoUcmV2aXNlZF9mcm9tX2RlY2tfaWQYEyABKAkSFQoNcmV2aXNpb25fbm90ZRgUIAEoCRIQCghmYXZvcml0ZRgVIAEoCBISCgpjYXJkX2NvdW50GBYgASgFEiQKB3Byb2ZpbGUYFyABKAsyEy5tdGcudjEuRGVja1Byb2ZpbGVKBAgKEAtSBHNlZWQirgEKC0RlY2tQcm9maWxlEg8KB2JyYWNrZXQYASABKAUSKAoIZmVhdHVyZXMYAiADKAsyFi5tdGcudjEuUHJvZmlsZUZlYXR1cmUSIgoIZ29sZGZpc2gYAyABKAsyEC5tdGcudjEuR29sZGZpc2gSJQoHY29udGVudBgEIAEoCzIULm10Zy52MS5Db250ZW50Q2hlY2sSGQoRYmFuZHNfdmVyaWZpZWRfYXQYBSABKAkieQoOUHJvZmlsZUZlYXR1cmUSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgBEgsKA2xvdxgDIAEoARIMCgRoaWdoGAQgASgBEhAKCGhhc19oaWdoGAUgASgIEhAKCG9mZl9iYW5kGAYgASgIEgwKBG5vdGUYByABKAkiagoIR29sZGZpc2gSDQoFaGFuZHMYASABKAUSFgoOY29tbWFuZGVyX3R1cm4YAiABKAESFgoObWFuYV90dXJuX2ZvdXIYAyABKAESHwoXc2hhcmVfdHdvX3RvX2ZvdXJfbGFuZHMYBCABKAEiqgEKDENvbnRlbnRDaGVjaxIPCgdjaGVja2VkGAEgASgIEg0KBWVycm9yGAIgASgJEhIKCnNvdXJjZV90YWcYAyABKAkSFQoNZ2FtZV9jaGFuZ2VycxgEIAMoCRIYChBtYXNzX2xhbmRfZGVuaWFsGAUgAygJEhMKC2V4dHJhX3R1cm5zGAYgAygJEiAKBmNvbWJvcxgHIAMoCzIQLm10Zy52MS5Db21ib0hpdCJ0CghDb21ib0hpdBIKCgJpZBgBIAEoCRINCgVjYXJkcxgCIAMoCRIQCgh0d29fY2FyZBgDIAEoCBINCgVzcGVlZBgEIAEoBRISCgpleHRyYV90dXJuGAUgASgIEhgKEG1hc3NfbGFuZF9kZW5pYWwYBiABKAgi6wEKCERlY2tDYXJkEhEKCW9yYWNsZV9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEg0KBWNvdW50GAMgASgFEh4KBHJvbGUYBCABKA4yEC5tdGcudjEuQ2FyZFJvbGUSDgoGcmVhc29uGAUgASgJEg0KBW93bmVkGAYgASgIEhMKC293bmVkX2NvdW50GAcgASgFEhEKCXByaWNlX3VzZBgIIAEoARIoCg5vd25lZF9wcmludGluZxgJIAEoCzIQLm10Zy52MS5QcmludGluZxIeChZvdXRzaWRlX3JlcXVlc3RlZF9zZXRzGAogASgIIqQBChBWYWxpZGF0aW9uUmVzdWx0EiEKCGZpbmRpbmdzGAEgAygLMg8ubXRnLnYxLkZpbmRpbmcSDgoGcGFzc2VkGAIgASgIEhYKDmxlZ2FsaXR5X2FzX29mGAMgASgJEiMKCXBvb2xfcnVsZRgEIAEoDjIQLm10Zy52MS5Qb29sUnVsZRIgCgZmb3JtYXQYBSABKA4yEC5tdGcudjEuRm9ybWF0SWQiXwoHRmluZGluZxIMCgRjb2RlGAEgASgJEiIKCHNldmVyaXR5GAIgASgOMhAubXRnLnYxLlNldmVyaXR5Eg8KB21lc3NhZ2UYAyABKAkSEQoJb3JhY2xlX2lkGAQgASgJKv8BCghDYXJkUm9sZRIZChVDQVJEX1JPTEVfVU5TUEVDSUZJRUQQABISCg5DQVJEX1JPTEVfTEFORBABEhIKDkNBUkRfUk9MRV9SQU1QEAISEgoOQ0FSRF9ST0xFX0RSQVcQAxIVChFDQVJEX1JPTEVfUkVNT1ZBTBAEEhIKDkNBUkRfUk9MRV9XSVBFEAUSFAoQQ0FSRF9ST0xFX1RIUkVBVBAGEhkKFUNBUkRfUk9MRV9JTlRFUkFDVElPThAHEhUKEUNBUkRfUk9MRV9TWU5FUkdZEAgSFAoQQ0FSRF9ST0xFX1dJTkNPThAJEhMKD0NBUkRfUk9MRV9PVEhFUhAKKl4KCFNldmVyaXR5EhgKFFNFVkVSSVRZX1VOU1BFQ0lGSUVEEAASEgoOU0VWRVJJVFlfQkxPQ0sQARIRCg1TRVZFUklUWV9XQVJOEAISEQoNU0VWRVJJVFlfSU5GTxADQjpaOGdpdGh1Yi5jb20vbmtyYW1iZXIvbXRnLWRlY2stYnVpbGRlci9nby9nZW4vbXRnL3YxO210Z3YxYgZwcm90bzM", [file_mtg_v1_card, file_mtg_v1_format, file_mtg_v1_session, file_google_protobuf_timestamp]);
+  fileDesc("ChFtdGcvdjEvZGVjay5wcm90bxIGbXRnLnYxIpUFCgREZWNrEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSHgoGZm9ybWF0GAMgASgLMg4ubXRnLnYxLkZvcm1hdBIhCgVwb3dlchgEIAEoCzISLm10Zy52MS5Qb3dlckxldmVsEg8KB3N1bW1hcnkYBSABKAkSHAoUY29tbWFuZGVyX29yYWNsZV9pZHMYBiADKAkSHwoFY2FyZHMYByADKAsyEC5tdGcudjEuRGVja0NhcmQSLAoKdmFsaWRhdGlvbhgIIAEoCzIYLm10Zy52MS5WYWxpZGF0aW9uUmVzdWx0EhYKDmxlZ2FsaXR5X2FzX29mGAkgASgJEhIKCnNlc3Npb25faWQYCyABKAkSLgoKY3JlYXRlZF9hdBgMIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASDQoFc3RhbGUYDSABKAgSGAoQc3RhbGVfb3JhY2xlX2lkcxgOIAMoCRIjCglzaWRlYm9hcmQYDyADKAsyEC5tdGcudjEuRGVja0NhcmQSGwoTY29tcGFuaW9uX29yYWNsZV9pZBgQIAEoCRIiCgh1cGdyYWRlcxgRIAMoCzIQLm10Zy52MS5EZWNrQ2FyZBIUCgxidXlfY29zdF91c2QYEiABKAESHAoUcmV2aXNlZF9mcm9tX2RlY2tfaWQYEyABKAkSFQoNcmV2aXNpb25fbm90ZRgUIAEoCRIQCghmYXZvcml0ZRgVIAEoCBISCgpjYXJkX2NvdW50GBYgASgFEiQKB3Byb2ZpbGUYFyABKAsyEy5tdGcudjEuRGVja1Byb2ZpbGUSJAoHcXVhbGl0eRgYIAEoCzITLm10Zy52MS5EZWNrUXVhbGl0eUoECAoQC1IEc2VlZCKCAQoLRGVja1F1YWxpdHkSDAoEdGllchgBIAEoCRINCgVzY29yZRgCIAEoARIPCgdyZWFzb25zGAMgAygJEhUKDW1vZGVsX3ZlcnNpb24YBCABKAkSLgoNcHJvYmFiaWxpdGllcxgFIAMoCzIXLm10Zy52MS5UaWVyUHJvYmFiaWxpdHkiNAoPVGllclByb2JhYmlsaXR5EgwKBHRpZXIYASABKAkSEwoLcHJvYmFiaWxpdHkYAiABKAEirgEKC0RlY2tQcm9maWxlEg8KB2JyYWNrZXQYASABKAUSKAoIZmVhdHVyZXMYAiADKAsyFi5tdGcudjEuUHJvZmlsZUZlYXR1cmUSIgoIZ29sZGZpc2gYAyABKAsyEC5tdGcudjEuR29sZGZpc2gSJQoHY29udGVudBgEIAEoCzIULm10Zy52MS5Db250ZW50Q2hlY2sSGQoRYmFuZHNfdmVyaWZpZWRfYXQYBSABKAkieQoOUHJvZmlsZUZlYXR1cmUSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgBEgsKA2xvdxgDIAEoARIMCgRoaWdoGAQgASgBEhAKCGhhc19oaWdoGAUgASgIEhAKCG9mZl9iYW5kGAYgASgIEgwKBG5vdGUYByABKAkiagoIR29sZGZpc2gSDQoFaGFuZHMYASABKAUSFgoOY29tbWFuZGVyX3R1cm4YAiABKAESFgoObWFuYV90dXJuX2ZvdXIYAyABKAESHwoXc2hhcmVfdHdvX3RvX2ZvdXJfbGFuZHMYBCABKAEiqgEKDENvbnRlbnRDaGVjaxIPCgdjaGVja2VkGAEgASgIEg0KBWVycm9yGAIgASgJEhIKCnNvdXJjZV90YWcYAyABKAkSFQoNZ2FtZV9jaGFuZ2VycxgEIAMoCRIYChBtYXNzX2xhbmRfZGVuaWFsGAUgAygJEhMKC2V4dHJhX3R1cm5zGAYgAygJEiAKBmNvbWJvcxgHIAMoCzIQLm10Zy52MS5Db21ib0hpdCJ0CghDb21ib0hpdBIKCgJpZBgBIAEoCRINCgVjYXJkcxgCIAMoCRIQCgh0d29fY2FyZBgDIAEoCBINCgVzcGVlZBgEIAEoBRISCgpleHRyYV90dXJuGAUgASgIEhgKEG1hc3NfbGFuZF9kZW5pYWwYBiABKAgi6wEKCERlY2tDYXJkEhEKCW9yYWNsZV9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEg0KBWNvdW50GAMgASgFEh4KBHJvbGUYBCABKA4yEC5tdGcudjEuQ2FyZFJvbGUSDgoGcmVhc29uGAUgASgJEg0KBW93bmVkGAYgASgIEhMKC293bmVkX2NvdW50GAcgASgFEhEKCXByaWNlX3VzZBgIIAEoARIoCg5vd25lZF9wcmludGluZxgJIAEoCzIQLm10Zy52MS5QcmludGluZxIeChZvdXRzaWRlX3JlcXVlc3RlZF9zZXRzGAogASgIIqQBChBWYWxpZGF0aW9uUmVzdWx0EiEKCGZpbmRpbmdzGAEgAygLMg8ubXRnLnYxLkZpbmRpbmcSDgoGcGFzc2VkGAIgASgIEhYKDmxlZ2FsaXR5X2FzX29mGAMgASgJEiMKCXBvb2xfcnVsZRgEIAEoDjIQLm10Zy52MS5Qb29sUnVsZRIgCgZmb3JtYXQYBSABKA4yEC5tdGcudjEuRm9ybWF0SWQiXwoHRmluZGluZxIMCgRjb2RlGAEgASgJEiIKCHNldmVyaXR5GAIgASgOMhAubXRnLnYxLlNldmVyaXR5Eg8KB21lc3NhZ2UYAyABKAkSEQoJb3JhY2xlX2lkGAQgASgJKv8BCghDYXJkUm9sZRIZChVDQVJEX1JPTEVfVU5TUEVDSUZJRUQQABISCg5DQVJEX1JPTEVfTEFORBABEhIKDkNBUkRfUk9MRV9SQU1QEAISEgoOQ0FSRF9ST0xFX0RSQVcQAxIVChFDQVJEX1JPTEVfUkVNT1ZBTBAEEhIKDkNBUkRfUk9MRV9XSVBFEAUSFAoQQ0FSRF9ST0xFX1RIUkVBVBAGEhkKFUNBUkRfUk9MRV9JTlRFUkFDVElPThAHEhUKEUNBUkRfUk9MRV9TWU5FUkdZEAgSFAoQQ0FSRF9ST0xFX1dJTkNPThAJEhMKD0NBUkRfUk9MRV9PVEhFUhAKKl4KCFNldmVyaXR5EhgKFFNFVkVSSVRZX1VOU1BFQ0lGSUVEEAASEgoOU0VWRVJJVFlfQkxPQ0sQARIRCg1TRVZFUklUWV9XQVJOEAISEQoNU0VWRVJJVFlfSU5GTxADQjpaOGdpdGh1Yi5jb20vbmtyYW1iZXIvbXRnLWRlY2stYnVpbGRlci9nby9nZW4vbXRnL3YxO210Z3YxYgZwcm90bzM", [file_mtg_v1_card, file_mtg_v1_format, file_mtg_v1_session, file_google_protobuf_timestamp]);
 
 /**
  * Deck is one generated deck.
@@ -180,6 +180,15 @@ export type Deck = Message<"mtg.v1.Deck"> & {
    * @generated from field: mtg.v1.DeckProfile profile = 23;
    */
   profile?: DeckProfile | undefined;
+
+  /**
+   * quality is the grade of the deck quality model: the tier, the score,
+   * and the three strongest reasons in words (PR-14B, D-413 to D-417).
+   * Unset on a deck built before PR-14B, and when no model is loaded.
+   *
+   * @generated from field: mtg.v1.DeckQuality quality = 24;
+   */
+  quality?: DeckQuality | undefined;
 };
 
 /**
@@ -188,6 +197,85 @@ export type Deck = Message<"mtg.v1.Deck"> & {
  */
 export const DeckSchema: GenMessage<Deck> = /*@__PURE__*/
   messageDesc(file_mtg_v1_deck, 0);
+
+/**
+ * DeckQuality is the grade of the deck quality model (PR-14B). The
+ * model is one fitted scorer per format over the published lists, and
+ * it runs on the deterministic side: no prompt holds a weight.
+ *
+ * @generated from message mtg.v1.DeckQuality
+ */
+export type DeckQuality = Message<"mtg.v1.DeckQuality"> & {
+  /**
+   * tier is the ladder word of D-414: great, good, typical, baseline,
+   * or bad.
+   *
+   * @generated from field: string tier = 1;
+   */
+  tier: string;
+
+  /**
+   * score is the expected rung over the ladder, 0 for the bottom and
+   * 1 for the top.
+   *
+   * @generated from field: double score = 2;
+   */
+  score: number;
+
+  /**
+   * reasons are the three strongest signals in words, the strongest
+   * first.
+   *
+   * @generated from field: repeated string reasons = 3;
+   */
+  reasons: string[];
+
+  /**
+   * model_version names the fit the grade came from.
+   *
+   * @generated from field: string model_version = 4;
+   */
+  modelVersion: string;
+
+  /**
+   * probabilities holds one entry per tier of the format's ladder, in
+   * ladder order, worst first.
+   *
+   * @generated from field: repeated mtg.v1.TierProbability probabilities = 5;
+   */
+  probabilities: TierProbability[];
+};
+
+/**
+ * Describes the message mtg.v1.DeckQuality.
+ * Use `create(DeckQualitySchema)` to create a new message.
+ */
+export const DeckQualitySchema: GenMessage<DeckQuality> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_deck, 1);
+
+/**
+ * TierProbability is the model's probability of one tier.
+ *
+ * @generated from message mtg.v1.TierProbability
+ */
+export type TierProbability = Message<"mtg.v1.TierProbability"> & {
+  /**
+   * @generated from field: string tier = 1;
+   */
+  tier: string;
+
+  /**
+   * @generated from field: double probability = 2;
+   */
+  probability: number;
+};
+
+/**
+ * Describes the message mtg.v1.TierProbability.
+ * Use `create(TierProbabilitySchema)` to create a new message.
+ */
+export const TierProbabilitySchema: GenMessage<TierProbability> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_deck, 2);
 
 /**
  * DeckProfile is the bracket profile (PR-14A). A bracket is a set of
@@ -238,7 +326,7 @@ export type DeckProfile = Message<"mtg.v1.DeckProfile"> & {
  * Use `create(DeckProfileSchema)` to create a new message.
  */
 export const DeckProfileSchema: GenMessage<DeckProfile> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_deck, 1);
+  messageDesc(file_mtg_v1_deck, 3);
 
 /**
  * ProfileFeature is one measured number and the band it must sit in.
@@ -296,7 +384,7 @@ export type ProfileFeature = Message<"mtg.v1.ProfileFeature"> & {
  * Use `create(ProfileFeatureSchema)` to create a new message.
  */
 export const ProfileFeatureSchema: GenMessage<ProfileFeature> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_deck, 2);
+  messageDesc(file_mtg_v1_deck, 4);
 
 /**
  * Goldfish is the opening-hand simulation (D-453): no opponent, lands
@@ -340,7 +428,7 @@ export type Goldfish = Message<"mtg.v1.Goldfish"> & {
  * Use `create(GoldfishSchema)` to create a new message.
  */
 export const GoldfishSchema: GenMessage<Goldfish> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_deck, 3);
+  messageDesc(file_mtg_v1_deck, 5);
 
 /**
  * ContentCheck is the content-rule read of a deck: the cards and combos
@@ -395,7 +483,7 @@ export type ContentCheck = Message<"mtg.v1.ContentCheck"> & {
  * Use `create(ContentCheckSchema)` to create a new message.
  */
 export const ContentCheckSchema: GenMessage<ContentCheck> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_deck, 4);
+  messageDesc(file_mtg_v1_deck, 6);
 
 /**
  * ComboHit is one combo the deck holds, as the endpoint read it.
@@ -439,7 +527,7 @@ export type ComboHit = Message<"mtg.v1.ComboHit"> & {
  * Use `create(ComboHitSchema)` to create a new message.
  */
 export const ComboHitSchema: GenMessage<ComboHit> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_deck, 5);
+  messageDesc(file_mtg_v1_deck, 7);
 
 /**
  * DeckCard is one card choice with its reason.
@@ -523,7 +611,7 @@ export type DeckCard = Message<"mtg.v1.DeckCard"> & {
  * Use `create(DeckCardSchema)` to create a new message.
  */
 export const DeckCardSchema: GenMessage<DeckCard> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_deck, 6);
+  messageDesc(file_mtg_v1_deck, 8);
 
 /**
  * ValidationResult is the rules-engine verdict (guardrail 1, PR-5).
@@ -573,7 +661,7 @@ export type ValidationResult = Message<"mtg.v1.ValidationResult"> & {
  * Use `create(ValidationResultSchema)` to create a new message.
  */
 export const ValidationResultSchema: GenMessage<ValidationResult> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_deck, 7);
+  messageDesc(file_mtg_v1_deck, 9);
 
 /**
  * Finding is one problem the rules engine found.
@@ -611,7 +699,7 @@ export type Finding = Message<"mtg.v1.Finding"> & {
  * Use `create(FindingSchema)` to create a new message.
  */
 export const FindingSchema: GenMessage<Finding> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_deck, 8);
+  messageDesc(file_mtg_v1_deck, 10);
 
 /**
  * CardRole is the job a card does in the deck (corpus section 6).

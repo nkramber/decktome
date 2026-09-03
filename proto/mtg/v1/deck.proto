@@ -70,6 +70,36 @@ message Deck {
   // content check (PR-14A, D-451 to D-453). Unset on a deck built
   // before PR-14A, and on a deck the profiler did not read.
   DeckProfile profile = 23;
+  // quality is the grade of the deck quality model: the tier, the score,
+  // and the three strongest reasons in words (PR-14B, D-413 to D-417).
+  // Unset on a deck built before PR-14B, and when no model is loaded.
+  DeckQuality quality = 24;
+}
+
+// DeckQuality is the grade of the deck quality model (PR-14B). The
+// model is one fitted scorer per format over the published lists, and
+// it runs on the deterministic side: no prompt holds a weight.
+message DeckQuality {
+  // tier is the ladder word of D-414: great, good, typical, baseline,
+  // or bad.
+  string tier = 1;
+  // score is the expected rung over the ladder, 0 for the bottom and
+  // 1 for the top.
+  double score = 2;
+  // reasons are the three strongest signals in words, the strongest
+  // first.
+  repeated string reasons = 3;
+  // model_version names the fit the grade came from.
+  string model_version = 4;
+  // probabilities holds one entry per tier of the format's ladder, in
+  // ladder order, worst first.
+  repeated TierProbability probabilities = 5;
+}
+
+// TierProbability is the model's probability of one tier.
+message TierProbability {
+  string tier = 1;
+  double probability = 2;
 }
 
 // DeckProfile is the bracket profile (PR-14A). A bracket is a set of

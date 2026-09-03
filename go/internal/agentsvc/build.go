@@ -14,6 +14,7 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
 	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
+	"github.com/nkramber/mtg-deck-builder/go/internal/quality"
 	"github.com/nkramber/mtg-deck-builder/go/internal/questions"
 	"github.com/nkramber/mtg-deck-builder/go/internal/revise"
 	"github.com/nkramber/mtg-deck-builder/go/internal/sessions"
@@ -120,13 +121,14 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 	// one, or the engine refuses the deck for no commander (D-232).
 	if format == mtgv1.FormatId_FORMAT_ID_COMMANDER && len(commanderIDs) == 0 {
 		pool, err := s.builder.CommanderPool(idx, candidates.Request{
-			Format:   format,
-			Theme:    slots.GetTheme(),
-			Colors:   slots.GetColors(),
-			PoolRule: slots.GetPoolRule(),
-			Owned:    owned,
-			Bracket:  slots.GetPower().GetBracket(),
-			SetCodes: setCodes,
+			Format:          format,
+			Theme:           slots.GetTheme(),
+			Colors:          slots.GetColors(),
+			PoolRule:        slots.GetPoolRule(),
+			Owned:           owned,
+			Bracket:         slots.GetPower().GetBracket(),
+			SetCodes:        setCodes,
+			CommanderSignal: s.commanderSignal(),
 		})
 		switch {
 		case err != nil:
@@ -170,6 +172,7 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 		outsideRoles = manaRoles(generate.TargetsFor(format, slots.GetPower()))
 	}
 	list, err := s.builder.Build(idx, candidates.Request{
+		MetaBoost:          s.metaBoost(format),
 		Format:             format,
 		Colors:             colors,
 		Theme:              slots.GetTheme(),
@@ -644,6 +647,10 @@ func (s *Server) sendRevision(ctx context.Context, uid string, session *mtgv1.Se
 		res.Deck.Name = base.GetName()
 	}
 	note := revise.Note(brief, revise.DiffDecks(base, res.Deck))
+	// A change that lowers the grade says so (PR-14B).
+	if drop := quality.TierDrop(base.GetQuality(), res.Deck.GetQuality()); drop != "" {
+		note = strings.TrimSpace(note + "\n\n" + drop)
+	}
 	res.Deck.RevisionNote = note
 	res.Deck.RevisedFromDeckId = base.GetId()
 	// storeDeck writes the session with the deck id, and the turn holds
@@ -748,4 +755,22 @@ func englishList(names []string) string {
 		return names[0] + " and " + names[1]
 	}
 	return strings.Join(names[:len(names)-1], ", ") + ", and " + names[len(names)-1]
+}
+
+// metaBoost answers the shortlist signal of the quality model, nil
+// with no model (PR-14B).
+func (s *Server) metaBoost(format mtgv1.FormatId) func(string) float64 {
+	if s.scorer == nil {
+		return nil
+	}
+	return s.scorer.MetaBoost(format)
+}
+
+// commanderSignal answers the cEDH signal of the quality model, nil
+// with no model (PR-14B, OQ-48).
+func (s *Server) commanderSignal() func(...string) float64 {
+	if s.scorer == nil {
+		return nil
+	}
+	return s.scorer.CommanderSignal()
 }

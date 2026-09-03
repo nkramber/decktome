@@ -7,7 +7,6 @@ Questions not yet asked, or asked and not yet answered. Move each answered quest
 | # | Question | Why it matters | Ask when |
 |---|---|---|---|
 | OQ-18 | Rerun depth rule: when does a ban trigger a full rebuild instead of a patch? | D-29 asks for a rerun scoped to the nature of the change. The rule needs a threshold (for example: a banned commander or win condition means a full rebuild). | Before I-1 ships. |
-| OQ-48 | Which source ranks a commander by power for a bracket 4 or 5 request? | The app holds no power signal. The bracket drops Game Changers under bracket 3 and nothing else, so a bracket 5 request gets the most popular commanders (D-411). PR-14 answers it with the commander's cEDH signal (D-413). | PR-14 closes it. |
 
 ## Asked, waiting
 
@@ -35,4 +34,7 @@ OQ-23, OQ-28 to OQ-31, OQ-37, and OQ-39 sit in `docs/owner-questions.md`, the de
 - OQ-50 answered 2026-09-02 (D-459): the Commander Spellbook terms allow the bracket endpoint, at 90 requests a minute on the app's side.
 - OQ-52 answered 2026-09-02 (D-467, D-468): the session calls of PR-14A stand, and Spellbook reads the shortlist too.
 - OQ-53 answered 2026-09-02 (D-469): the engine's Commander land range is 27 to 41.
-- OQ-51 (2026-09-02): the Moxfield bracket field. Public decks carry a bracket their owner set, and the unofficial client library filters on it. The help page answered 403 to a plain fetch. Before PR-14B reads it, confirm the field on the public deck endpoint of D-419 and that the terms the owner read cover it.
+- OQ-48 answered 2026-09-02 (D-476): a bracket 4 or 5 offer ranks on the cEDH signal of the quality model.
+- OQ-55 closed 2026-09-03 (D-493): the app asks Moxfield for nothing, and PR-14C drops the lane.
+- OQ-54 answered 2026-09-02 (D-479): the owner created the Topdeck.gg key, and a live probe of the API passed the same day.
+- OQ-51 closed 2026-09-02 (D-470): no session can check the Moxfield bracket field. The deck page, the v2 API, and the v3 API answer 403 to a plain client, so PR-14B reads no Moxfield list.

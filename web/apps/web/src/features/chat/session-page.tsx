@@ -613,12 +613,22 @@ export function ChatPanel({
             one quiet row under the title, and never in the thread. */}
         {/* A new chat says nothing of its session: it has none, and the
             picker in the message box names the pool (D-356). */}
-        <div className="flex flex-col gap-1.5">
-          <h1 id="chat-title" className="font-display text-2xl font-semibold">
-            {!beforeFirstMessage ? "Chat" : recent.decks.length > 0 ? "Pick up where you left off" : "New deck"}
+        {/* A new chat with no deck to pick up shows no title: the message
+            box says what the page is, and a heading over nothing is a
+            second heading for the same box. The page keeps its first
+            heading for a screen reader, out of sight. */}
+        {!beforeFirstMessage || recent.decks.length > 0 ? (
+          <div className="flex flex-col gap-1.5">
+            <h1 id="chat-title" className="font-display text-2xl font-semibold">
+              {!beforeFirstMessage ? "Chat" : "Pick up where you left off"}
+            </h1>
+            {!beforeFirstMessage && idLine}
+          </div>
+        ) : (
+          <h1 id="chat-title" className="sr-only">
+            New deck
           </h1>
-          {!beforeFirstMessage && idLine}
-        </div>
+        )}
         {beforeFirstMessage && <RecentDecks decks={recent.decks} isPending={recent.isPending} />}
 
         {leaveWarning}

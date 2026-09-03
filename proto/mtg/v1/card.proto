@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package mtg.v1;
 
+import "mtg/v1/format.proto";
+
 option go_package = "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1";
 
 // Card is one Oracle card: the rules identity, not one printing.
@@ -82,6 +84,24 @@ message Card {
   // one value would drop a reprint (D-373). Empty for a card with no
   // paper printing.
   repeated string set_codes = 33;
+  // quality is the deck quality model's read of the card per format
+  // (PR-14B): the inclusion rate in the great and good lists of the
+  // format, smoothed. GetCards sets it when a model is loaded, and the
+  // index itself never holds it.
+  repeated CardQuality quality = 34;
+}
+
+// CardQuality is the deck quality model's read of one card in one
+// format (PR-14B).
+message CardQuality {
+  FormatId format = 1;
+  // inclusion is the smoothed share of the great and good lists of the
+  // format that hold the card, weighted by placement.
+  double inclusion = 2;
+  // cedh_signal is the bracket 5 power signal of a commander: the
+  // top-cut share of its cEDH tournament entries, or the competitive
+  // tier of the cEDH database. Zero for a card that leads no deck.
+  double cedh_signal = 3;
 }
 
 // CardFace is one face of a card. Images live per face (F-9).

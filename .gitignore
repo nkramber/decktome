@@ -32,6 +32,7 @@ coverage/
 /go/chat-probe
 /go/deck-gate
 /go/bracket-gate
+/go/quality-gate
 /go/revise-gate
 /go/generate-probe
 /go/m5-report
