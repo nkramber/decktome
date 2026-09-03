@@ -26,6 +26,8 @@ const ev = (c: string, value: unknown): Ev => ({ event: { case: c, value } });
 const updateDeck = vi.fn();
 const deleteDeck = vi.fn();
 const listDecks = vi.fn();
+const shareDeck = vi.fn();
+const revokeShare = vi.fn();
 vi.mock("../../lib/api", () => ({
   healthClient: { check: () => Promise.resolve({ status: "ok", version: "test", cardSnapshot: "none" }) },
   collectionClient: { listCollections: () => Promise.resolve({ collections: [] }) },
@@ -37,6 +39,8 @@ vi.mock("../../lib/api", () => ({
     getDeck: (...a: unknown[]) => getDeck(...a),
     updateDeck: (...a: unknown[]) => updateDeck(...a),
     deleteDeck: (...a: unknown[]) => deleteDeck(...a),
+    shareDeck: (...a: unknown[]) => shareDeck(...a),
+    revokeShare: (...a: unknown[]) => revokeShare(...a),
     exportDeck: vi.fn(),
   },
 }));
@@ -88,6 +92,28 @@ describe("DeckScreen", () => {
     await user.type(field, "  Marwyn ramp  ");
     await user.click(screen.getByRole("button", { name: "Save the name" }));
     await waitFor(() => expect(updateDeck).toHaveBeenCalledWith({ deckId: "d1", name: "Marwyn ramp" }));
+  });
+
+  it("makes a share link, shows it once, and revokes it (D-315)", async () => {
+    shareDeck.mockReset();
+    shareDeck.mockResolvedValue({ token: "t".repeat(43) });
+    revokeShare.mockReset();
+    revokeShare.mockResolvedValue({});
+    await renderAt("/decks/d1");
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Share" }));
+    expect(await screen.findByTestId("share-state")).toHaveTextContent("This deck has no link yet.");
+    // The share refreshes the deck, which then carries the shared mark.
+    getDeck.mockResolvedValue({ deck: { ...deck, shared: true } });
+    await user.click(screen.getByRole("button", { name: "Make a link" }));
+    await waitFor(() => expect(shareDeck).toHaveBeenCalledWith({ deckId: "d1" }));
+    const field = await screen.findByLabelText("The link, shown once");
+    expect(field).toHaveValue(`${window.location.origin}/d/${"t".repeat(43)}`);
+    // A shared deck offers the revoke.
+    await user.click(screen.getByRole("button", { name: "Close" }));
+    await user.click(await screen.findByRole("button", { name: "Shared" }));
+    await user.click(await screen.findByRole("button", { name: "Revoke the link" }));
+    await waitFor(() => expect(revokeShare).toHaveBeenCalledWith({ deckId: "d1" }));
   });
 
   it("asks before it deletes, and goes back to the library after", async () => {

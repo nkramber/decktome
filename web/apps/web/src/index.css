@@ -110,3 +110,32 @@
     box-shadow: var(--shadow-raised);
   }
 }
+
+/* The print view (PR-21, D-315): the list by role in black on white,
+   with no image. The screen parts hide through the print variant, and
+   the page itself drops its dark ground, its shadows, and its frame. */
+@media print {
+  body {
+    background: #fff;
+    color: #000;
+    min-height: 0;
+  }
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+  .rounded-card,
+  .rounded-panel {
+    background: #fff !important;
+    border-color: #000 !important;
+  }
+  .text-muted-foreground,
+  .text-primary,
+  .text-danger,
+  .text-secondary-foreground {
+    color: #000 !important;
+  }
+  a[href]::after {
+    content: "";
+  }
+}

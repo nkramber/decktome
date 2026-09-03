@@ -27,6 +27,52 @@ service DeckService {
   // DeleteDeck removes one deck for good (PR-17). The session keeps the
   // id in deck_ids, and the chat shows the deck as deleted.
   rpc DeleteDeck(DeleteDeckRequest) returns (DeleteDeckResponse) {}
+  // ShareDeck makes a share link for one of the caller's decks and
+  // answers the token once (D-315). A deck with a link gets a new one,
+  // and the old link dies. The store keeps a hash of the token, never
+  // the token.
+  rpc ShareDeck(ShareDeckRequest) returns (ShareDeckResponse) {}
+  // RevokeShare ends the link of one of the caller's decks.
+  rpc RevokeShare(RevokeShareRequest) returns (RevokeShareResponse) {}
+  // GetSharedDeck reads a shared deck by its token. It needs no sign-in,
+  // a rate limit per client address bounds it, and the answer carries no
+  // user field (guardrail 13). A revoked or unknown token is NotFound.
+  rpc GetSharedDeck(GetSharedDeckRequest) returns (GetSharedDeckResponse) {}
+  // ExportSharedDeck renders a shared deck as Arena text, with the
+  // default paper printings. It needs no sign-in, under the same limit.
+  rpc ExportSharedDeck(ExportSharedDeckRequest) returns (ExportSharedDeckResponse) {}
+}
+
+message ShareDeckRequest {
+  string deck_id = 1;
+}
+
+message ShareDeckResponse {
+  // token is the secret of the link, shown once. The page is /d/<token>.
+  string token = 1;
+}
+
+message RevokeShareRequest {
+  string deck_id = 1;
+}
+
+message RevokeShareResponse {}
+
+message GetSharedDeckRequest {
+  string token = 1;
+}
+
+message GetSharedDeckResponse {
+  SharedDeck deck = 1;
+}
+
+message ExportSharedDeckRequest {
+  string token = 1;
+}
+
+message ExportSharedDeckResponse {
+  string text = 1;
+  string file_name = 2;
 }
 
 // ExportFormat names a text shape of a deck.

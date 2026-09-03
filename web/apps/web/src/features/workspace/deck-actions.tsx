@@ -1,5 +1,5 @@
 import type { Deck } from "@mtg/api-client/mtg/v1/deck_pb";
-import { ArrowLeftIcon, PencilIcon, StarIcon, Trash2Icon } from "lucide-react";
+import { ArrowLeftIcon, CopyIcon, PencilIcon, Share2Icon, StarIcon, Trash2Icon } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { Link, useNavigate } from "react-router";
 
@@ -24,15 +24,48 @@ import { errorMessage } from "../../lib/errors";
 import { useDeckWrites } from "../deck/use-decks";
 
 // The actions a user owns over a deck (D-335): the way back, the
-// favorite mark, the name, and the delete. Each one keeps its own state,
-// so the screen around it needs to know none of it.
+// favorite mark, the name, the share link (D-315), and the delete. Each
+// one keeps its own state, so the screen around it needs to know none of
+// it.
 export function DeckActions({ deck }: { deck: Deck }) {
   const id = deck.id;
   const navigate = useNavigate();
-  const { rename, setFavorite, remove } = useDeckWrites();
+  const { rename, setFavorite, remove, share, revokeShare } = useDeckWrites();
   const [renameOpen, setRenameOpen] = useState(false);
   const [draftName, setDraftName] = useState("");
+  const [shareOpen, setShareOpen] = useState(false);
+  // The link shows once, after the share, because the store keeps a
+  // hash of the token and never the token (D-315).
+  const [link, setLink] = useState("");
   const title = deck.name || "Untitled deck";
+
+  async function onShare() {
+    try {
+      const res = await share.mutateAsync({ deckId: id });
+      setLink(`${window.location.origin}/d/${res.token}`);
+    } catch (err) {
+      await notify("error", "Could not make the link", errorMessage(err));
+    }
+  }
+
+  async function onCopyLink() {
+    try {
+      await navigator.clipboard.writeText(link);
+      await notify("success", "Link copied", "Anyone who holds it can read the deck.");
+    } catch (err) {
+      await notify("error", "Could not copy the link", errorMessage(err));
+    }
+  }
+
+  async function onRevoke() {
+    try {
+      await revokeShare.mutateAsync({ deckId: id });
+      setLink("");
+      await notify("success", "Link revoked", "The old link opens nothing now.");
+    } catch (err) {
+      await notify("error", "Could not revoke the link", errorMessage(err));
+    }
+  }
 
   async function onRename(e: FormEvent) {
     e.preventDefault();
@@ -118,6 +151,53 @@ export function DeckActions({ deck }: { deck: Deck }) {
           </DialogContent>
         </Dialog>
 
+        <Dialog
+          open={shareOpen}
+          onOpenChange={(open) => {
+            setShareOpen(open);
+            if (!open) setLink("");
+          }}
+        >
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm" aria-pressed={deck.shared}>
+              <Share2Icon aria-hidden="true" />
+              {deck.shared ? "Shared" : "Share"}
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Share the deck</DialogTitle>
+              <DialogDescription>
+                Anyone who holds the link reads the deck: the cards, the summary, and nothing about you. A new link replaces the old one.
+              </DialogDescription>
+            </DialogHeader>
+            {link ? (
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="share-link">The link, shown once</Label>
+                <div className="flex gap-2">
+                  <Input id="share-link" value={link} readOnly onFocus={(e) => e.currentTarget.select()} />
+                  <Button type="button" variant="outline" size="icon" aria-label="Copy the link" onClick={() => void onCopyLink()}>
+                    <CopyIcon aria-hidden="true" />
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm" data-testid="share-state">
+                {deck.shared ? "This deck has a link. Make a new one to see it, and the old one dies." : "This deck has no link yet."}
+              </p>
+            )}
+            <DialogFooter>
+              {deck.shared && (
+                <Button type="button" variant="ghost" className="text-danger hover:bg-danger/10" disabled={revokeShare.isPending} onClick={() => void onRevoke()}>
+                  Revoke the link
+                </Button>
+              )}
+              <Button type="button" disabled={share.isPending} onClick={() => void onShare()}>
+                {deck.shared || link ? "Make a new link" : "Make a link"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <AlertDialog>
           <AlertDialogTrigger asChild>

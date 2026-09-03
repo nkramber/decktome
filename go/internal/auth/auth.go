@@ -103,6 +103,22 @@ func WithFallback(uid string) Option {
 type interceptor struct {
 	verify   Verifier
 	fallback string
+	// public names the procedures that need no sign-in, the shared deck
+	// reads of D-315. Such a call carries no user in its context.
+	public map[string]bool
+}
+
+// WithPublic names the procedures that need no sign-in (D-315). Every
+// other procedure of the same service keeps the check.
+func WithPublic(procedures ...string) Option {
+	return func(i *interceptor) {
+		if i.public == nil {
+			i.public = map[string]bool{}
+		}
+		for _, p := range procedures {
+			i.public[p] = true
+		}
+	}
 }
 
 // Interceptor returns the Connect interceptor. It covers unary and
@@ -172,7 +188,7 @@ func bearer(authorization string) (token string, present bool) {
 
 func (i *interceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
 	return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-		if req.Spec().IsClient {
+		if req.Spec().IsClient || i.public[req.Spec().Procedure] {
 			return next(ctx, req)
 		}
 		ctx, err := i.resolve(ctx, req.Header().Get("Authorization"))
@@ -189,6 +205,9 @@ func (i *interceptor) WrapStreamingClient(next connect.StreamingClientFunc) conn
 
 func (i *interceptor) WrapStreamingHandler(next connect.StreamingHandlerFunc) connect.StreamingHandlerFunc {
 	return func(ctx context.Context, conn connect.StreamingHandlerConn) error {
+		if i.public[conn.Spec().Procedure] {
+			return next(ctx, conn)
+		}
 		ctx, err := i.resolve(ctx, conn.RequestHeader().Get("Authorization"))
 		if err != nil {
 			return err

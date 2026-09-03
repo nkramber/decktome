@@ -39,6 +39,7 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/profile"
 	"github.com/nkramber/mtg-deck-builder/go/internal/quality"
 	"github.com/nkramber/mtg-deck-builder/go/internal/questions"
+	"github.com/nkramber/mtg-deck-builder/go/internal/ratelimit"
 	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
 	"github.com/nkramber/mtg-deck-builder/go/internal/sessions"
 	"github.com/nkramber/mtg-deck-builder/go/internal/spellbook"
@@ -50,6 +51,11 @@ var version = "dev"
 // defaultReloadSeconds is how often the api looks for a newer snapshot.
 // CARDS_RELOAD_SECONDS overrides it (make dev sets 15 for fast seeding).
 const defaultReloadSeconds = 600
+
+// sharedReadsPerMinute caps the public deck reads of one client address
+// (D-315). Sixty is one a second, far above a person and low enough to
+// bound a scan.
+const sharedReadsPerMinute = 60
 
 // maxRequestBytes bounds one request body before it enters memory. The
 // largest expected body is a ManaBox export, under 5 MiB.
@@ -155,11 +161,20 @@ func run(ctx context.Context, logger *slog.Logger) error {
 	// The health RPC answers a probe, which carries no token.
 	probeOpts := []connect.HandlerOption{connect.WithReadMaxBytes(maxRequestBytes)}
 	opts := append([]connect.HandlerOption{connect.WithInterceptors(auth.Interceptor(authOpts.verifier, authOpts.opts...))}, probeOpts...)
+	// The shared deck reads need no sign-in, and a limit per client
+	// address bounds them (D-315). The limiter reads X-Forwarded-For, so
+	// every visitor behind the proxy gets a bucket of their own.
+	public := []string{mtgv1connect.DeckServiceGetSharedDeckProcedure, mtgv1connect.DeckServiceExportSharedDeckProcedure}
+	limiter := ratelimit.New(sharedReadsPerMinute, time.Minute)
+	deckOpts := append([]connect.HandlerOption{connect.WithInterceptors(
+		limiter.Interceptor(public...),
+		auth.Interceptor(authOpts.verifier, append(append([]auth.Option{}, authOpts.opts...), auth.WithPublic(public...))...),
+	)}, probeOpts...)
 	mux := http.NewServeMux()
 	mux.Handle(mtgv1connect.NewHealthServiceHandler(healthServer, probeOpts...))
 	mux.Handle(mtgv1connect.NewCardServiceHandler(cardServer, opts...))
 	mux.Handle(mtgv1connect.NewCollectionServiceHandler(collectionServer, opts...))
-	mux.Handle(mtgv1connect.NewDeckServiceHandler(deckServer, opts...))
+	mux.Handle(mtgv1connect.NewDeckServiceHandler(deckServer, deckOpts...))
 	mux.Handle(mtgv1connect.NewAgentServiceHandler(agentServer, opts...))
 	// /healthz is liveness: the process answers. /readyz is readiness:
 	// a card index is loaded, so the RPCs can answer.

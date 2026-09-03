@@ -45,6 +45,16 @@ const (
 	DeckServiceUpdateDeckProcedure = "/mtg.v1.DeckService/UpdateDeck"
 	// DeckServiceDeleteDeckProcedure is the fully-qualified name of the DeckService's DeleteDeck RPC.
 	DeckServiceDeleteDeckProcedure = "/mtg.v1.DeckService/DeleteDeck"
+	// DeckServiceShareDeckProcedure is the fully-qualified name of the DeckService's ShareDeck RPC.
+	DeckServiceShareDeckProcedure = "/mtg.v1.DeckService/ShareDeck"
+	// DeckServiceRevokeShareProcedure is the fully-qualified name of the DeckService's RevokeShare RPC.
+	DeckServiceRevokeShareProcedure = "/mtg.v1.DeckService/RevokeShare"
+	// DeckServiceGetSharedDeckProcedure is the fully-qualified name of the DeckService's GetSharedDeck
+	// RPC.
+	DeckServiceGetSharedDeckProcedure = "/mtg.v1.DeckService/GetSharedDeck"
+	// DeckServiceExportSharedDeckProcedure is the fully-qualified name of the DeckService's
+	// ExportSharedDeck RPC.
+	DeckServiceExportSharedDeckProcedure = "/mtg.v1.DeckService/ExportSharedDeck"
 )
 
 // DeckServiceClient is a client for the mtg.v1.DeckService service.
@@ -62,6 +72,20 @@ type DeckServiceClient interface {
 	// DeleteDeck removes one deck for good (PR-17). The session keeps the
 	// id in deck_ids, and the chat shows the deck as deleted.
 	DeleteDeck(context.Context, *connect.Request[v1.DeleteDeckRequest]) (*connect.Response[v1.DeleteDeckResponse], error)
+	// ShareDeck makes a share link for one of the caller's decks and
+	// answers the token once (D-315). A deck with a link gets a new one,
+	// and the old link dies. The store keeps a hash of the token, never
+	// the token.
+	ShareDeck(context.Context, *connect.Request[v1.ShareDeckRequest]) (*connect.Response[v1.ShareDeckResponse], error)
+	// RevokeShare ends the link of one of the caller's decks.
+	RevokeShare(context.Context, *connect.Request[v1.RevokeShareRequest]) (*connect.Response[v1.RevokeShareResponse], error)
+	// GetSharedDeck reads a shared deck by its token. It needs no sign-in,
+	// a rate limit per client address bounds it, and the answer carries no
+	// user field (guardrail 13). A revoked or unknown token is NotFound.
+	GetSharedDeck(context.Context, *connect.Request[v1.GetSharedDeckRequest]) (*connect.Response[v1.GetSharedDeckResponse], error)
+	// ExportSharedDeck renders a shared deck as Arena text, with the
+	// default paper printings. It needs no sign-in, under the same limit.
+	ExportSharedDeck(context.Context, *connect.Request[v1.ExportSharedDeckRequest]) (*connect.Response[v1.ExportSharedDeckResponse], error)
 }
 
 // NewDeckServiceClient constructs a client for the mtg.v1.DeckService service. By default, it uses
@@ -111,17 +135,45 @@ func NewDeckServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(deckServiceMethods.ByName("DeleteDeck")),
 			connect.WithClientOptions(opts...),
 		),
+		shareDeck: connect.NewClient[v1.ShareDeckRequest, v1.ShareDeckResponse](
+			httpClient,
+			baseURL+DeckServiceShareDeckProcedure,
+			connect.WithSchema(deckServiceMethods.ByName("ShareDeck")),
+			connect.WithClientOptions(opts...),
+		),
+		revokeShare: connect.NewClient[v1.RevokeShareRequest, v1.RevokeShareResponse](
+			httpClient,
+			baseURL+DeckServiceRevokeShareProcedure,
+			connect.WithSchema(deckServiceMethods.ByName("RevokeShare")),
+			connect.WithClientOptions(opts...),
+		),
+		getSharedDeck: connect.NewClient[v1.GetSharedDeckRequest, v1.GetSharedDeckResponse](
+			httpClient,
+			baseURL+DeckServiceGetSharedDeckProcedure,
+			connect.WithSchema(deckServiceMethods.ByName("GetSharedDeck")),
+			connect.WithClientOptions(opts...),
+		),
+		exportSharedDeck: connect.NewClient[v1.ExportSharedDeckRequest, v1.ExportSharedDeckResponse](
+			httpClient,
+			baseURL+DeckServiceExportSharedDeckProcedure,
+			connect.WithSchema(deckServiceMethods.ByName("ExportSharedDeck")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // deckServiceClient implements DeckServiceClient.
 type deckServiceClient struct {
-	getDeck    *connect.Client[v1.GetDeckRequest, v1.GetDeckResponse]
-	listDecks  *connect.Client[v1.ListDecksRequest, v1.ListDecksResponse]
-	validate   *connect.Client[v1.ValidateRequest, v1.ValidateResponse]
-	exportDeck *connect.Client[v1.ExportDeckRequest, v1.ExportDeckResponse]
-	updateDeck *connect.Client[v1.UpdateDeckRequest, v1.UpdateDeckResponse]
-	deleteDeck *connect.Client[v1.DeleteDeckRequest, v1.DeleteDeckResponse]
+	getDeck          *connect.Client[v1.GetDeckRequest, v1.GetDeckResponse]
+	listDecks        *connect.Client[v1.ListDecksRequest, v1.ListDecksResponse]
+	validate         *connect.Client[v1.ValidateRequest, v1.ValidateResponse]
+	exportDeck       *connect.Client[v1.ExportDeckRequest, v1.ExportDeckResponse]
+	updateDeck       *connect.Client[v1.UpdateDeckRequest, v1.UpdateDeckResponse]
+	deleteDeck       *connect.Client[v1.DeleteDeckRequest, v1.DeleteDeckResponse]
+	shareDeck        *connect.Client[v1.ShareDeckRequest, v1.ShareDeckResponse]
+	revokeShare      *connect.Client[v1.RevokeShareRequest, v1.RevokeShareResponse]
+	getSharedDeck    *connect.Client[v1.GetSharedDeckRequest, v1.GetSharedDeckResponse]
+	exportSharedDeck *connect.Client[v1.ExportSharedDeckRequest, v1.ExportSharedDeckResponse]
 }
 
 // GetDeck calls mtg.v1.DeckService.GetDeck.
@@ -154,6 +206,26 @@ func (c *deckServiceClient) DeleteDeck(ctx context.Context, req *connect.Request
 	return c.deleteDeck.CallUnary(ctx, req)
 }
 
+// ShareDeck calls mtg.v1.DeckService.ShareDeck.
+func (c *deckServiceClient) ShareDeck(ctx context.Context, req *connect.Request[v1.ShareDeckRequest]) (*connect.Response[v1.ShareDeckResponse], error) {
+	return c.shareDeck.CallUnary(ctx, req)
+}
+
+// RevokeShare calls mtg.v1.DeckService.RevokeShare.
+func (c *deckServiceClient) RevokeShare(ctx context.Context, req *connect.Request[v1.RevokeShareRequest]) (*connect.Response[v1.RevokeShareResponse], error) {
+	return c.revokeShare.CallUnary(ctx, req)
+}
+
+// GetSharedDeck calls mtg.v1.DeckService.GetSharedDeck.
+func (c *deckServiceClient) GetSharedDeck(ctx context.Context, req *connect.Request[v1.GetSharedDeckRequest]) (*connect.Response[v1.GetSharedDeckResponse], error) {
+	return c.getSharedDeck.CallUnary(ctx, req)
+}
+
+// ExportSharedDeck calls mtg.v1.DeckService.ExportSharedDeck.
+func (c *deckServiceClient) ExportSharedDeck(ctx context.Context, req *connect.Request[v1.ExportSharedDeckRequest]) (*connect.Response[v1.ExportSharedDeckResponse], error) {
+	return c.exportSharedDeck.CallUnary(ctx, req)
+}
+
 // DeckServiceHandler is an implementation of the mtg.v1.DeckService service.
 type DeckServiceHandler interface {
 	GetDeck(context.Context, *connect.Request[v1.GetDeckRequest]) (*connect.Response[v1.GetDeckResponse], error)
@@ -169,6 +241,20 @@ type DeckServiceHandler interface {
 	// DeleteDeck removes one deck for good (PR-17). The session keeps the
 	// id in deck_ids, and the chat shows the deck as deleted.
 	DeleteDeck(context.Context, *connect.Request[v1.DeleteDeckRequest]) (*connect.Response[v1.DeleteDeckResponse], error)
+	// ShareDeck makes a share link for one of the caller's decks and
+	// answers the token once (D-315). A deck with a link gets a new one,
+	// and the old link dies. The store keeps a hash of the token, never
+	// the token.
+	ShareDeck(context.Context, *connect.Request[v1.ShareDeckRequest]) (*connect.Response[v1.ShareDeckResponse], error)
+	// RevokeShare ends the link of one of the caller's decks.
+	RevokeShare(context.Context, *connect.Request[v1.RevokeShareRequest]) (*connect.Response[v1.RevokeShareResponse], error)
+	// GetSharedDeck reads a shared deck by its token. It needs no sign-in,
+	// a rate limit per client address bounds it, and the answer carries no
+	// user field (guardrail 13). A revoked or unknown token is NotFound.
+	GetSharedDeck(context.Context, *connect.Request[v1.GetSharedDeckRequest]) (*connect.Response[v1.GetSharedDeckResponse], error)
+	// ExportSharedDeck renders a shared deck as Arena text, with the
+	// default paper printings. It needs no sign-in, under the same limit.
+	ExportSharedDeck(context.Context, *connect.Request[v1.ExportSharedDeckRequest]) (*connect.Response[v1.ExportSharedDeckResponse], error)
 }
 
 // NewDeckServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -214,6 +300,30 @@ func NewDeckServiceHandler(svc DeckServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(deckServiceMethods.ByName("DeleteDeck")),
 		connect.WithHandlerOptions(opts...),
 	)
+	deckServiceShareDeckHandler := connect.NewUnaryHandler(
+		DeckServiceShareDeckProcedure,
+		svc.ShareDeck,
+		connect.WithSchema(deckServiceMethods.ByName("ShareDeck")),
+		connect.WithHandlerOptions(opts...),
+	)
+	deckServiceRevokeShareHandler := connect.NewUnaryHandler(
+		DeckServiceRevokeShareProcedure,
+		svc.RevokeShare,
+		connect.WithSchema(deckServiceMethods.ByName("RevokeShare")),
+		connect.WithHandlerOptions(opts...),
+	)
+	deckServiceGetSharedDeckHandler := connect.NewUnaryHandler(
+		DeckServiceGetSharedDeckProcedure,
+		svc.GetSharedDeck,
+		connect.WithSchema(deckServiceMethods.ByName("GetSharedDeck")),
+		connect.WithHandlerOptions(opts...),
+	)
+	deckServiceExportSharedDeckHandler := connect.NewUnaryHandler(
+		DeckServiceExportSharedDeckProcedure,
+		svc.ExportSharedDeck,
+		connect.WithSchema(deckServiceMethods.ByName("ExportSharedDeck")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/mtg.v1.DeckService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case DeckServiceGetDeckProcedure:
@@ -228,6 +338,14 @@ func NewDeckServiceHandler(svc DeckServiceHandler, opts ...connect.HandlerOption
 			deckServiceUpdateDeckHandler.ServeHTTP(w, r)
 		case DeckServiceDeleteDeckProcedure:
 			deckServiceDeleteDeckHandler.ServeHTTP(w, r)
+		case DeckServiceShareDeckProcedure:
+			deckServiceShareDeckHandler.ServeHTTP(w, r)
+		case DeckServiceRevokeShareProcedure:
+			deckServiceRevokeShareHandler.ServeHTTP(w, r)
+		case DeckServiceGetSharedDeckProcedure:
+			deckServiceGetSharedDeckHandler.ServeHTTP(w, r)
+		case DeckServiceExportSharedDeckProcedure:
+			deckServiceExportSharedDeckHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -259,4 +377,20 @@ func (UnimplementedDeckServiceHandler) UpdateDeck(context.Context, *connect.Requ
 
 func (UnimplementedDeckServiceHandler) DeleteDeck(context.Context, *connect.Request[v1.DeleteDeckRequest]) (*connect.Response[v1.DeleteDeckResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("mtg.v1.DeckService.DeleteDeck is not implemented"))
+}
+
+func (UnimplementedDeckServiceHandler) ShareDeck(context.Context, *connect.Request[v1.ShareDeckRequest]) (*connect.Response[v1.ShareDeckResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("mtg.v1.DeckService.ShareDeck is not implemented"))
+}
+
+func (UnimplementedDeckServiceHandler) RevokeShare(context.Context, *connect.Request[v1.RevokeShareRequest]) (*connect.Response[v1.RevokeShareResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("mtg.v1.DeckService.RevokeShare is not implemented"))
+}
+
+func (UnimplementedDeckServiceHandler) GetSharedDeck(context.Context, *connect.Request[v1.GetSharedDeckRequest]) (*connect.Response[v1.GetSharedDeckResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("mtg.v1.DeckService.GetSharedDeck is not implemented"))
+}
+
+func (UnimplementedDeckServiceHandler) ExportSharedDeck(context.Context, *connect.Request[v1.ExportSharedDeckRequest]) (*connect.Response[v1.ExportSharedDeckResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("mtg.v1.DeckService.ExportSharedDeck is not implemented"))
 }

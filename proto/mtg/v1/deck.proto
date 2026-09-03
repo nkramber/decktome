@@ -74,6 +74,9 @@ message Deck {
   // and the three strongest reasons in words (PR-14B, D-413 to D-417).
   // Unset on a deck built before PR-14B, and when no model is loaded.
   DeckQuality quality = 24;
+  // shared says a share link exists for this deck (D-315). The token
+  // itself is never stored, so a new link replaces the old one.
+  bool shared = 25;
 }
 
 // DeckQuality is the grade of the deck quality model (PR-14B). The
@@ -174,6 +177,35 @@ message ComboHit {
 }
 
 // DeckCard is one card choice with its reason.
+// SharedDeck is the public read of a deck through its share link
+// (D-315, guardrail 13). It holds what a reader of the link needs and no
+// user field: no session, no collection, no owned mark, no owned
+// printing, and no price of the owner's copies. A test reads this
+// message and SharedCard from the proto text and proves it.
+message SharedDeck {
+  string name = 1;
+  Format format = 2;
+  PowerLevel power = 3;
+  string summary = 4;
+  repeated string commander_oracle_ids = 5;
+  repeated SharedCard cards = 6;
+  repeated SharedCard sideboard = 7;
+  string legality_as_of = 8;
+  int32 card_count = 9;
+}
+
+// SharedCard is one entry of a shared deck, with the card data inline,
+// so the page needs no second call (D-315). The card carries its
+// default paper printing with the artist (D-6) and the public price.
+message SharedCard {
+  string oracle_id = 1;
+  string name = 2;
+  int32 count = 3;
+  CardRole role = 4;
+  string reason = 5;
+  Card card = 6;
+}
+
 message DeckCard {
   string oracle_id = 1;
   string name = 2;
