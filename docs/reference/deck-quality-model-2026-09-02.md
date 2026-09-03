@@ -11,7 +11,7 @@ This note records every fact and every call the deck quality model of PR-14B res
 | EDHREC | Deck count, rank, bracket counts, and the average deck per commander | `json.edhrec.com/pages/commanders/<slug>.json` and `average-decks/<slug>.json` answer 200. The top pages `commanders/year.json`, `month.json`, and `week.json` hold 100 commanders each. `commanders.json` answers 403. |
 | cEDH Decklist Database | The competitive tier and the commanders of each entry | One page, 1.1 MB, 137 entries: 56 competitive, 9 brews, 72 outdated. |
 | Topdeck.gg | cEDH tournaments with standings and decklists | The docs at `topdeck.gg/docs/tournaments-v2` answer 200. No key was in `.env`, so no session has read a live answer. |
-| Moxfield | The lists the database links | A plain client with a named agent gets 403 from Cloudflare on the deck page, the v2 API, and the v3 API. |
+| Moxfield | The lists the database links | A plain client with a named agent gets 403 from Cloudflare on the deck page, the v2 API, and the v3 API. The `moxfield-api` library, 2.1.0 on Node 22, got the same 403 page on 2026-09-03 (D-493). |
 | MTGTop8 | Events with placements | The format page answers 200 and holds no event link a plain reader can find. |
 
 CAUTION: the Moxfield lists are out of reach for a page reader. The database gives the tier and the commander alone, as the first read foresaw (D-419, D-470). No session can check OQ-51 on the live endpoint.
