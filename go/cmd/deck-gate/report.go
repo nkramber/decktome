@@ -112,12 +112,12 @@ func report(w io.Writer, rs []result, acc *llm.Accumulator, idx *cards.Index, to
 	setReport(w, rs)
 	_, _ = fmt.Fprintf(w, "## Decks\n\n")
 	for _, r := range rs {
-		writeDeck(w, r)
+		writeDeck(w, r, idx)
 	}
 	return pass
 }
 
-func writeDeck(w io.Writer, r result) {
+func writeDeck(w io.Writer, r result, idx *cards.Index) {
 	p := r.prompt
 	_, _ = fmt.Fprintf(w, "### %d. %s\n\n", p.ID, p.Name)
 	_, _ = fmt.Fprintf(w, "Format: %s. Theme: %s. Pool: %s. Shortlist: %d names.\n\n",
@@ -127,6 +127,20 @@ func writeDeck(w io.Writer, r result) {
 		return
 	}
 	d := r.deck
+	// The commander and the grade go out as lines of their own, so the
+	// tier judge lane of PR-14B reads the deck back whole.
+	var commanders []string
+	for _, id := range d.GetCommanderOracleIds() {
+		if c, ok := idx.ByOracleID(id); ok {
+			commanders = append(commanders, c.GetName())
+		}
+	}
+	if len(commanders) > 0 {
+		_, _ = fmt.Fprintf(w, "Commander: %s.\n\n", strings.Join(commanders, ", "))
+	}
+	if q := d.GetQuality(); q != nil {
+		_, _ = fmt.Fprintf(w, "Grade: %s, score %.2f, model %s.\n\n", q.GetTier(), q.GetScore(), q.GetModelVersion())
+	}
 	repair := "no"
 	if r.repaired {
 		repair = "yes, for " + r.repairReason

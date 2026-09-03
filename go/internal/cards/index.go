@@ -65,8 +65,12 @@ func (x *Index) Collisions() Collisions { return x.collisions }
 // normName is the lookup key: lowercase, trimmed. Exact otherwise
 // (guardrail 4: no fuzzy match).
 func normName(name string) string {
-	return strings.ToLower(strings.TrimSpace(name))
+	return strings.ToLower(strings.TrimSpace(foldQuotes.Replace(name)))
 }
+
+// foldQuotes reads a curly apostrophe as the straight one a card name
+// holds, so a lookup of "Commander’s Sphere" finds the card.
+var foldQuotes = strings.NewReplacer("\u2019", "'", "\u2018", "'", "\u201c", "\"", "\u201d", "\"")
 
 // IndexOption changes one build input of NewIndex. The option shape
 // keeps the 20 call sites of NewIndex free of a fourth argument they do

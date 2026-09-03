@@ -8,7 +8,7 @@ This repo is a Go + Protobuf + TypeScript monorepo for an agentic MtG deck build
 
 Stage (2026-09-02): `main` is at `cf46951`. Merged: PR-0a to PR-8, PR-7B, PR-10 to PR-13, the Phase 3B roadmap (#46), PR-16 (#47), PR-16B (#48), PR-17 (#49), PR-17B (#50), PR-18 (#53), the review fixes of PR-18 (#54), PR-19 (#55), its follow-ups (#56), and PR-14A (#57). PR-9 is out of the MVP (D-256).
 
-**PR-14A, the bracket profile, is merged** (2026-09-02, #57, D-451 to D-453, D-459 to D-469). A bracket is a set of numbers now: the content rules per bracket, and a feature vector per built deck with a band per bracket. A goldfish simulation and a check against Commander Spellbook complete it. `make bracket-gate` is its gate. Run 1 reads FAIL on the band bar and the judge bar, and the bracket 5 misses are the power signal of PR-14B. Deck gate run 12 and its rerun 12b together pass all 24 prompts with no regression. PR-14B, the deck quality model, is next (D-460), on branch `pr-14b`. The owner confirmed the session calls on 2026-09-02 (D-467 to D-469). PR-14B comes right after PR-14A (D-460), then PR-24, then PR-20 to PR-23.
+**PR-14A, the bracket profile, is merged** (2026-09-02, #57, D-451 to D-453, D-459 to D-469). A bracket is a set of numbers now: the content rules per bracket, and a feature vector per built deck with a band per bracket. A goldfish simulation and a check against Commander Spellbook complete it. `make bracket-gate` is its gate. Run 1 reads FAIL on the band bar and the judge bar, and the bracket 5 misses are the power signal of PR-14B. Deck gate run 12 and its rerun 12b together pass all 24 prompts with no regression. The session of 2026-09-02 built PR-14B, the deck quality model, on branch `pr-14b` (D-470 to D-488). Gate run 10 passes the top-list bar, deck gate 13b passes, and the tier judge bar stays open on a corpus finding (D-488). The owner merges it with that on record (D-491), and PR-14C gains the casual 60-card decks (D-490). `make meta-refresh` fills the meta store over the network, and `make quality-gate` is the free gate. The Topdeck.gg key is in `.env` (OQ-54, D-479), and PR-14C brings MTGTop8 and Moxfield back after PR-24 (D-482). The owner confirmed the PR-14A calls on 2026-09-02 (D-467 to D-469). PR-24 comes after PR-14B, then PR-20 to PR-23 (D-460).
 
 PR-19, the chat and build experience, is merged (D-432 to D-458, #55 and #56). Every gate passes: question gate 32, deck gate 11, revise gate 7, and the PR-17B set gate run 1.
 
@@ -56,6 +56,7 @@ Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
 - `docs/audit-2026-08-29.md` - the quality audit of 2026-08-29 and its fixes (D-302 to D-306).
 - `docs/reference/set-data-2026-08-31.md` - every set number PR-17B rests on, with its source and date.
 - `docs/reference/bracket-profile-2026-09-02.md` - every bracket rule, Karsten table, and Spellbook threshold PR-14A rests on.
+- `docs/reference/deck-quality-model-2026-09-02.md` - every source fact, feature, and fit rule PR-14B rests on.
 
 ## Commands that cost money
 
@@ -75,9 +76,11 @@ Five more targets spend money, and each has an overwrite guard and an env guard.
 
 `DECK_GATE_ARGS` passes flags to `make deck-gate`. `DECK_GATE_ARGS="-only 19,20,21,22,23,24"` runs the six set prompts of PR-17B alone, for about $0.35.
 
-`make test-smoke` runs the live LLM smoke test and reads the keys from `.env`. It spends a few cents. The paid targets are these ten plus the script: questions-gate, questions-eval, eval-calibrate, deck-gate, bracket-gate, revise-gate, chat-probe, generate-probe, summary-judge, and test-smoke.
+`make quality-judge` asks the judge role for the tier of every graded deck of a deck gate document (PR-14B). It costs a few cents a deck, and it has the guard `QUALITY_JUDGE=1` and a verdict check on `QUALITY_JUDGE_OUT`. Ask the owner before every run.
 
-Each other target is free. `make ste-check` checks every hand-written `.md` file against the STE rules, and `make lint` runs it. `make m5-sheet` builds the scoring sheet, and `make m5-report` reads it. `make themes-check` checks the theme slugs and the commander ranking.
+`make test-smoke` runs the live LLM smoke test and reads the keys from `.env`. It spends a few cents. The paid targets are these eleven plus the script: questions-gate, questions-eval, eval-calibrate, deck-gate, bracket-gate, revise-gate, chat-probe, generate-probe, summary-judge, quality-judge, and test-smoke.
+
+Each other target is free. `make meta-refresh` reads the deck list sources over the network, about 40 minutes on the first run, and calls no model. `make quality-gate` fits the quality model over the local meta store and writes the PR-14B gate document. `make ste-check` checks every hand-written `.md` file against the STE rules, and `make lint` runs it. `make m5-sheet` builds the scoring sheet, and `make m5-report` reads it. `make themes-check` checks the theme slugs and the commander ranking.
 
 `make store-check` runs the session store against the local Firestore emulator. `make candidates-review` writes the PR-6 gate document from a local snapshot. `cd go && go run ./cmd/tune-check` compares an eval summary with its baseline.
 

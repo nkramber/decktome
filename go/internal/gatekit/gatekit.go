@@ -17,8 +17,10 @@ import (
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
 	"github.com/nkramber/mtg-deck-builder/go/internal/collections"
+	"github.com/nkramber/mtg-deck-builder/go/internal/gcpenv"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 	"github.com/nkramber/mtg-deck-builder/go/internal/profile"
+	"github.com/nkramber/mtg-deck-builder/go/internal/quality"
 	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
 	"github.com/nkramber/mtg-deck-builder/go/internal/spellbook"
 )
@@ -252,4 +254,19 @@ func ColorLetters(in []mtgv1.Color) []string {
 // reads it as the app does.
 func Profiler(idx *cards.Index, cfg *rules.Config, log *slog.Logger) (*profile.Profiler, error) {
 	return profile.New(cfg, func() *cards.TagIndex { return idx.Tags() }, spellbook.New(nil, "", log))
+}
+
+// Scorer loads the newest quality model beside the snapshot, so a gate
+// grades decks as the app does (PR-14B). No stored model answers a
+// scorer with no model, and the gate says so.
+func Scorer(ctx context.Context) (*quality.Scorer, error) {
+	store, err := gcpenv.MetaStore(ctx, gcpenv.LocalProject, nil)
+	if err != nil {
+		return nil, err
+	}
+	model, err := quality.Load(ctx, store)
+	if err != nil {
+		return nil, err
+	}
+	return quality.NewScorer(model), nil
 }

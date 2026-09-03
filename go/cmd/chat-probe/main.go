@@ -141,10 +141,17 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	// The quality model grades every deck the gate builds, and the
+	// summary names the tier (PR-14B). No stored model grades nothing.
+	scorer, err := gatekit.Scorer(context.Background())
+	if err != nil {
+		return err
+	}
 	opts := []agentsvc.Option{
 		agentsvc.WithLogger(quiet),
 		agentsvc.WithCandidates(indexSrc{idx}, cb),
-		agentsvc.WithDecks(generate.NewBuilder(client, rcfg, idx, quiet, generate.WithProfiler(prof))),
+		agentsvc.WithDecks(generate.NewBuilder(client, rcfg, idx, quiet, generate.WithProfiler(prof), generate.WithScorer(scorer))),
+		agentsvc.WithScorer(scorer),
 	}
 	if *collPath != "" {
 		owned, _, err := gatekit.LoadOwned(*collPath, idx)

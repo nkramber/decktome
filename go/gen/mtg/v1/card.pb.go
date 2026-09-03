@@ -285,7 +285,12 @@ type Card struct {
 	// hold printings in two or more, and one holds 225. A field that held
 	// one value would drop a reprint (D-373). Empty for a card with no
 	// paper printing.
-	SetCodes      []string `protobuf:"bytes,33,rep,name=set_codes,json=setCodes,proto3" json:"set_codes,omitempty"`
+	SetCodes []string `protobuf:"bytes,33,rep,name=set_codes,json=setCodes,proto3" json:"set_codes,omitempty"`
+	// quality is the deck quality model's read of the card per format
+	// (PR-14B): the inclusion rate in the great and good lists of the
+	// format, smoothed. GetCards sets it when a model is loaded, and the
+	// index itself never holds it.
+	Quality       []*CardQuality `protobuf:"bytes,34,rep,name=quality,proto3" json:"quality,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -551,6 +556,80 @@ func (x *Card) GetSetCodes() []string {
 	return nil
 }
 
+func (x *Card) GetQuality() []*CardQuality {
+	if x != nil {
+		return x.Quality
+	}
+	return nil
+}
+
+// CardQuality is the deck quality model's read of one card in one
+// format (PR-14B).
+type CardQuality struct {
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Format FormatId               `protobuf:"varint,1,opt,name=format,proto3,enum=mtg.v1.FormatId" json:"format,omitempty"`
+	// inclusion is the smoothed share of the great and good lists of the
+	// format that hold the card, weighted by placement.
+	Inclusion float64 `protobuf:"fixed64,2,opt,name=inclusion,proto3" json:"inclusion,omitempty"`
+	// cedh_signal is the bracket 5 power signal of a commander: the
+	// top-cut share of its cEDH tournament entries, or the competitive
+	// tier of the cEDH database. Zero for a card that leads no deck.
+	CedhSignal    float64 `protobuf:"fixed64,3,opt,name=cedh_signal,json=cedhSignal,proto3" json:"cedh_signal,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CardQuality) Reset() {
+	*x = CardQuality{}
+	mi := &file_mtg_v1_card_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CardQuality) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CardQuality) ProtoMessage() {}
+
+func (x *CardQuality) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_card_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CardQuality.ProtoReflect.Descriptor instead.
+func (*CardQuality) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_card_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *CardQuality) GetFormat() FormatId {
+	if x != nil {
+		return x.Format
+	}
+	return FormatId_FORMAT_ID_UNSPECIFIED
+}
+
+func (x *CardQuality) GetInclusion() float64 {
+	if x != nil {
+		return x.Inclusion
+	}
+	return 0
+}
+
+func (x *CardQuality) GetCedhSignal() float64 {
+	if x != nil {
+		return x.CedhSignal
+	}
+	return 0
+}
+
 // CardFace is one face of a card. Images live per face (F-9).
 type CardFace struct {
 	state      protoimpl.MessageState `protogen:"open.v1"`
@@ -571,7 +650,7 @@ type CardFace struct {
 
 func (x *CardFace) Reset() {
 	*x = CardFace{}
-	mi := &file_mtg_v1_card_proto_msgTypes[1]
+	mi := &file_mtg_v1_card_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -583,7 +662,7 @@ func (x *CardFace) String() string {
 func (*CardFace) ProtoMessage() {}
 
 func (x *CardFace) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_card_proto_msgTypes[1]
+	mi := &file_mtg_v1_card_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -596,7 +675,7 @@ func (x *CardFace) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CardFace.ProtoReflect.Descriptor instead.
 func (*CardFace) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_card_proto_rawDescGZIP(), []int{1}
+	return file_mtg_v1_card_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *CardFace) GetName() string {
@@ -686,7 +765,7 @@ type Printing struct {
 
 func (x *Printing) Reset() {
 	*x = Printing{}
-	mi := &file_mtg_v1_card_proto_msgTypes[2]
+	mi := &file_mtg_v1_card_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -698,7 +777,7 @@ func (x *Printing) String() string {
 func (*Printing) ProtoMessage() {}
 
 func (x *Printing) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_card_proto_msgTypes[2]
+	mi := &file_mtg_v1_card_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -711,7 +790,7 @@ func (x *Printing) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Printing.ProtoReflect.Descriptor instead.
 func (*Printing) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_card_proto_rawDescGZIP(), []int{2}
+	return file_mtg_v1_card_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Printing) GetScryfallId() string {
@@ -791,7 +870,7 @@ type ImageUris struct {
 
 func (x *ImageUris) Reset() {
 	*x = ImageUris{}
-	mi := &file_mtg_v1_card_proto_msgTypes[3]
+	mi := &file_mtg_v1_card_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -803,7 +882,7 @@ func (x *ImageUris) String() string {
 func (*ImageUris) ProtoMessage() {}
 
 func (x *ImageUris) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_card_proto_msgTypes[3]
+	mi := &file_mtg_v1_card_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -816,7 +895,7 @@ func (x *ImageUris) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImageUris.ProtoReflect.Descriptor instead.
 func (*ImageUris) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_card_proto_rawDescGZIP(), []int{3}
+	return file_mtg_v1_card_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ImageUris) GetSmall() string {
@@ -851,7 +930,7 @@ var File_mtg_v1_card_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_card_proto_rawDesc = "" +
 	"\n" +
-	"\x11mtg/v1/card.proto\x12\x06mtg.v1\"\x82\n" +
+	"\x11mtg/v1/card.proto\x12\x06mtg.v1\x1a\x13mtg/v1/format.proto\"\xb1\n" +
 	"\n" +
 	"\x04Card\x12\x1b\n" +
 	"\toracle_id\x18\x01 \x01(\tR\boracleId\x12\x12\n" +
@@ -895,10 +974,16 @@ const file_mtg_v1_card_proto_rawDesc = "" +
 	"\fis_companion\x18\x1e \x01(\bR\visCompanion\x12!\n" +
 	"\fpartner_text\x18\x1f \x01(\tR\vpartnerText\x12.\n" +
 	"\x13max_copies_override\x18  \x01(\x05R\x11maxCopiesOverride\x12\x1b\n" +
-	"\tset_codes\x18! \x03(\tR\bsetCodes\x1aU\n" +
+	"\tset_codes\x18! \x03(\tR\bsetCodes\x12-\n" +
+	"\aquality\x18\" \x03(\v2\x13.mtg.v1.CardQualityR\aquality\x1aU\n" +
 	"\x0fLegalitiesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12,\n" +
-	"\x05value\x18\x02 \x01(\x0e2\x16.mtg.v1.LegalityStatusR\x05value:\x028\x01\"\x91\x02\n" +
+	"\x05value\x18\x02 \x01(\x0e2\x16.mtg.v1.LegalityStatusR\x05value:\x028\x01\"v\n" +
+	"\vCardQuality\x12(\n" +
+	"\x06format\x18\x01 \x01(\x0e2\x10.mtg.v1.FormatIdR\x06format\x12\x1c\n" +
+	"\tinclusion\x18\x02 \x01(\x01R\tinclusion\x12\x1f\n" +
+	"\vcedh_signal\x18\x03 \x01(\x01R\n" +
+	"cedhSignal\"\x91\x02\n" +
 	"\bCardFace\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1b\n" +
 	"\tmana_cost\x18\x02 \x01(\tR\bmanaCost\x12\x1b\n" +
@@ -964,33 +1049,37 @@ func file_mtg_v1_card_proto_rawDescGZIP() []byte {
 }
 
 var file_mtg_v1_card_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_mtg_v1_card_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_mtg_v1_card_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_mtg_v1_card_proto_goTypes = []any{
 	(PartnerKind)(0),    // 0: mtg.v1.PartnerKind
 	(LegalityStatus)(0), // 1: mtg.v1.LegalityStatus
 	(Color)(0),          // 2: mtg.v1.Color
 	(*Card)(nil),        // 3: mtg.v1.Card
-	(*CardFace)(nil),    // 4: mtg.v1.CardFace
-	(*Printing)(nil),    // 5: mtg.v1.Printing
-	(*ImageUris)(nil),   // 6: mtg.v1.ImageUris
-	nil,                 // 7: mtg.v1.Card.LegalitiesEntry
+	(*CardQuality)(nil), // 4: mtg.v1.CardQuality
+	(*CardFace)(nil),    // 5: mtg.v1.CardFace
+	(*Printing)(nil),    // 6: mtg.v1.Printing
+	(*ImageUris)(nil),   // 7: mtg.v1.ImageUris
+	nil,                 // 8: mtg.v1.Card.LegalitiesEntry
+	(FormatId)(0),       // 9: mtg.v1.FormatId
 }
 var file_mtg_v1_card_proto_depIdxs = []int32{
 	2,  // 0: mtg.v1.Card.colors:type_name -> mtg.v1.Color
 	2,  // 1: mtg.v1.Card.color_identity:type_name -> mtg.v1.Color
-	7,  // 2: mtg.v1.Card.legalities:type_name -> mtg.v1.Card.LegalitiesEntry
-	4,  // 3: mtg.v1.Card.faces:type_name -> mtg.v1.CardFace
+	8,  // 2: mtg.v1.Card.legalities:type_name -> mtg.v1.Card.LegalitiesEntry
+	5,  // 3: mtg.v1.Card.faces:type_name -> mtg.v1.CardFace
 	2,  // 4: mtg.v1.Card.produced_mana:type_name -> mtg.v1.Color
-	5,  // 5: mtg.v1.Card.default_printing:type_name -> mtg.v1.Printing
+	6,  // 5: mtg.v1.Card.default_printing:type_name -> mtg.v1.Printing
 	0,  // 6: mtg.v1.Card.partner:type_name -> mtg.v1.PartnerKind
-	6,  // 7: mtg.v1.CardFace.image_uris:type_name -> mtg.v1.ImageUris
-	6,  // 8: mtg.v1.Printing.image_uris:type_name -> mtg.v1.ImageUris
-	1,  // 9: mtg.v1.Card.LegalitiesEntry.value:type_name -> mtg.v1.LegalityStatus
-	10, // [10:10] is the sub-list for method output_type
-	10, // [10:10] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	4,  // 7: mtg.v1.Card.quality:type_name -> mtg.v1.CardQuality
+	9,  // 8: mtg.v1.CardQuality.format:type_name -> mtg.v1.FormatId
+	7,  // 9: mtg.v1.CardFace.image_uris:type_name -> mtg.v1.ImageUris
+	7,  // 10: mtg.v1.Printing.image_uris:type_name -> mtg.v1.ImageUris
+	1,  // 11: mtg.v1.Card.LegalitiesEntry.value:type_name -> mtg.v1.LegalityStatus
+	12, // [12:12] is the sub-list for method output_type
+	12, // [12:12] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_mtg_v1_card_proto_init() }
@@ -998,13 +1087,14 @@ func file_mtg_v1_card_proto_init() {
 	if File_mtg_v1_card_proto != nil {
 		return
 	}
+	file_mtg_v1_format_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_mtg_v1_card_proto_rawDesc), len(file_mtg_v1_card_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   5,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -4,13 +4,15 @@
 
 import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
+import type { FormatId } from "./format_pb";
+import { file_mtg_v1_format } from "./format_pb";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file mtg/v1/card.proto.
  */
 export const file_mtg_v1_card: GenFile = /*@__PURE__*/
-  fileDesc("ChFtdGcvdjEvY2FyZC5wcm90bxIGbXRnLnYxIvcGCgRDYXJkEhEKCW9yYWNsZV9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEhEKCW1hbmFfY29zdBgDIAEoCRISCgptYW5hX3ZhbHVlGAQgASgBEh0KBmNvbG9ycxgFIAMoDjINLm10Zy52MS5Db2xvchIlCg5jb2xvcl9pZGVudGl0eRgGIAMoDjINLm10Zy52MS5Db2xvchIRCgl0eXBlX2xpbmUYByABKAkSEwoLb3JhY2xlX3RleHQYCCABKAkSEAoIa2V5d29yZHMYCSADKAkSMAoKbGVnYWxpdGllcxgKIAMoCzIcLm10Zy52MS5DYXJkLkxlZ2FsaXRpZXNFbnRyeRIUCgxnYW1lX2NoYW5nZXIYCyABKAgSEwoLZWRocmVjX3JhbmsYDCABKAUSDgoGbGF5b3V0GA0gASgJEh8KBWZhY2VzGA4gAygLMhAubXRnLnYxLkNhcmRGYWNlEg0KBXBvd2VyGA8gASgJEhEKCXRvdWdobmVzcxgQIAEoCRIPCgdsb3lhbHR5GBEgASgJEiQKDXByb2R1Y2VkX21hbmEYEiADKA4yDS5tdGcudjEuQ29sb3ISKgoQZGVmYXVsdF9wcmludGluZxgTIAEoCzIQLm10Zy52MS5QcmludGluZxIRCglwcmljZV91c2QYFCABKAESEwoLcHJpY2VfYXNfb2YYFSABKAkSEgoKc3VwZXJ0eXBlcxgWIAMoCRISCgpjYXJkX3R5cGVzGBcgAygJEhAKCHN1YnR5cGVzGBggAygJEhkKEWFueV9jb3VudF9pbl9kZWNrGBkgASgIEhgKEGNhbl9iZV9jb21tYW5kZXIYGiABKAgSJAoHcGFydG5lchgbIAEoDjITLm10Zy52MS5QYXJ0bmVyS2luZBIZChFwYXJ0bmVyX3dpdGhfbmFtZRgcIAEoCRIVCg1pc19iYWNrZ3JvdW5kGB0gASgIEhQKDGlzX2NvbXBhbmlvbhgeIAEoCBIUCgxwYXJ0bmVyX3RleHQYHyABKAkSGwoTbWF4X2NvcGllc19vdmVycmlkZRggIAEoBRIRCglzZXRfY29kZXMYISADKAkaSQoPTGVnYWxpdGllc0VudHJ5EgsKA2tleRgBIAEoCRIlCgV2YWx1ZRgCIAEoDjIWLm10Zy52MS5MZWdhbGl0eVN0YXR1czoCOAEivQEKCENhcmRGYWNlEgwKBG5hbWUYASABKAkSEQoJbWFuYV9jb3N0GAIgASgJEhEKCXR5cGVfbGluZRgDIAEoCRITCgtvcmFjbGVfdGV4dBgEIAEoCRINCgVwb3dlchgFIAEoCRIRCgl0b3VnaG5lc3MYBiABKAkSDwoHbG95YWx0eRgHIAEoCRIlCgppbWFnZV91cmlzGAggASgLMhEubXRnLnYxLkltYWdlVXJpcxIOCgZhcnRpc3QYCSABKAkiyAEKCFByaW50aW5nEhMKC3NjcnlmYWxsX2lkGAEgASgJEhAKCHNldF9jb2RlGAIgASgJEhAKCHNldF9uYW1lGAMgASgJEhgKEGNvbGxlY3Rvcl9udW1iZXIYBCABKAkSDgoGcmFyaXR5GAUgASgJEg4KBmFydGlzdBgGIAEoCRIlCgppbWFnZV91cmlzGAcgASgLMhEubXRnLnYxLkltYWdlVXJpcxIPCgdkaWdpdGFsGAggASgIEhEKCXByaWNlX3VzZBgJIAEoASJLCglJbWFnZVVyaXMSDQoFc21hbGwYASABKAkSDgoGbm9ybWFsGAIgASgJEg0KBWxhcmdlGAMgASgJEhAKCGFydF9jcm9wGAQgASgJKt0BCgtQYXJ0bmVyS2luZBIcChhQQVJUTkVSX0tJTkRfVU5TUEVDSUZJRUQQABIVChFQQVJUTkVSX0tJTkRfTk9ORRABEhgKFFBBUlRORVJfS0lORF9QQVJUTkVSEAISFQoRUEFSVE5FUl9LSU5EX1dJVEgQAxIgChxQQVJUTkVSX0tJTkRfRlJJRU5EU19GT1JFVkVSEAQSIgoeUEFSVE5FUl9LSU5EX0NIT09TRV9CQUNLR1JPVU5EEAUSIgoeUEFSVE5FUl9LSU5EX0RPQ1RPUlNfQ09NUEFOSU9OEAYqpwEKDkxlZ2FsaXR5U3RhdHVzEh8KG0xFR0FMSVRZX1NUQVRVU19VTlNQRUNJRklFRBAAEhkKFUxFR0FMSVRZX1NUQVRVU19MRUdBTBABEh0KGUxFR0FMSVRZX1NUQVRVU19OT1RfTEVHQUwQAhIaChZMRUdBTElUWV9TVEFUVVNfQkFOTkVEEAMSHgoaTEVHQUxJVFlfU1RBVFVTX1JFU1RSSUNURUQQBCpsCgVDb2xvchIVChFDT0xPUl9VTlNQRUNJRklFRBAAEgsKB0NPTE9SX1cQARILCgdDT0xPUl9VEAISCwoHQ09MT1JfQhADEgsKB0NPTE9SX1IQBBILCgdDT0xPUl9HEAUSCwoHQ09MT1JfQxAGQjpaOGdpdGh1Yi5jb20vbmtyYW1iZXIvbXRnLWRlY2stYnVpbGRlci9nby9nZW4vbXRnL3YxO210Z3YxYgZwcm90bzM");
+  fileDesc("ChFtdGcvdjEvY2FyZC5wcm90bxIGbXRnLnYxIp0HCgRDYXJkEhEKCW9yYWNsZV9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEhEKCW1hbmFfY29zdBgDIAEoCRISCgptYW5hX3ZhbHVlGAQgASgBEh0KBmNvbG9ycxgFIAMoDjINLm10Zy52MS5Db2xvchIlCg5jb2xvcl9pZGVudGl0eRgGIAMoDjINLm10Zy52MS5Db2xvchIRCgl0eXBlX2xpbmUYByABKAkSEwoLb3JhY2xlX3RleHQYCCABKAkSEAoIa2V5d29yZHMYCSADKAkSMAoKbGVnYWxpdGllcxgKIAMoCzIcLm10Zy52MS5DYXJkLkxlZ2FsaXRpZXNFbnRyeRIUCgxnYW1lX2NoYW5nZXIYCyABKAgSEwoLZWRocmVjX3JhbmsYDCABKAUSDgoGbGF5b3V0GA0gASgJEh8KBWZhY2VzGA4gAygLMhAubXRnLnYxLkNhcmRGYWNlEg0KBXBvd2VyGA8gASgJEhEKCXRvdWdobmVzcxgQIAEoCRIPCgdsb3lhbHR5GBEgASgJEiQKDXByb2R1Y2VkX21hbmEYEiADKA4yDS5tdGcudjEuQ29sb3ISKgoQZGVmYXVsdF9wcmludGluZxgTIAEoCzIQLm10Zy52MS5QcmludGluZxIRCglwcmljZV91c2QYFCABKAESEwoLcHJpY2VfYXNfb2YYFSABKAkSEgoKc3VwZXJ0eXBlcxgWIAMoCRISCgpjYXJkX3R5cGVzGBcgAygJEhAKCHN1YnR5cGVzGBggAygJEhkKEWFueV9jb3VudF9pbl9kZWNrGBkgASgIEhgKEGNhbl9iZV9jb21tYW5kZXIYGiABKAgSJAoHcGFydG5lchgbIAEoDjITLm10Zy52MS5QYXJ0bmVyS2luZBIZChFwYXJ0bmVyX3dpdGhfbmFtZRgcIAEoCRIVCg1pc19iYWNrZ3JvdW5kGB0gASgIEhQKDGlzX2NvbXBhbmlvbhgeIAEoCBIUCgxwYXJ0bmVyX3RleHQYHyABKAkSGwoTbWF4X2NvcGllc19vdmVycmlkZRggIAEoBRIRCglzZXRfY29kZXMYISADKAkSJAoHcXVhbGl0eRgiIAMoCzITLm10Zy52MS5DYXJkUXVhbGl0eRpJCg9MZWdhbGl0aWVzRW50cnkSCwoDa2V5GAEgASgJEiUKBXZhbHVlGAIgASgOMhYubXRnLnYxLkxlZ2FsaXR5U3RhdHVzOgI4ASJXCgtDYXJkUXVhbGl0eRIgCgZmb3JtYXQYASABKA4yEC5tdGcudjEuRm9ybWF0SWQSEQoJaW5jbHVzaW9uGAIgASgBEhMKC2NlZGhfc2lnbmFsGAMgASgBIr0BCghDYXJkRmFjZRIMCgRuYW1lGAEgASgJEhEKCW1hbmFfY29zdBgCIAEoCRIRCgl0eXBlX2xpbmUYAyABKAkSEwoLb3JhY2xlX3RleHQYBCABKAkSDQoFcG93ZXIYBSABKAkSEQoJdG91Z2huZXNzGAYgASgJEg8KB2xveWFsdHkYByABKAkSJQoKaW1hZ2VfdXJpcxgIIAEoCzIRLm10Zy52MS5JbWFnZVVyaXMSDgoGYXJ0aXN0GAkgASgJIsgBCghQcmludGluZxITCgtzY3J5ZmFsbF9pZBgBIAEoCRIQCghzZXRfY29kZRgCIAEoCRIQCghzZXRfbmFtZRgDIAEoCRIYChBjb2xsZWN0b3JfbnVtYmVyGAQgASgJEg4KBnJhcml0eRgFIAEoCRIOCgZhcnRpc3QYBiABKAkSJQoKaW1hZ2VfdXJpcxgHIAEoCzIRLm10Zy52MS5JbWFnZVVyaXMSDwoHZGlnaXRhbBgIIAEoCBIRCglwcmljZV91c2QYCSABKAEiSwoJSW1hZ2VVcmlzEg0KBXNtYWxsGAEgASgJEg4KBm5vcm1hbBgCIAEoCRINCgVsYXJnZRgDIAEoCRIQCghhcnRfY3JvcBgEIAEoCSrdAQoLUGFydG5lcktpbmQSHAoYUEFSVE5FUl9LSU5EX1VOU1BFQ0lGSUVEEAASFQoRUEFSVE5FUl9LSU5EX05PTkUQARIYChRQQVJUTkVSX0tJTkRfUEFSVE5FUhACEhUKEVBBUlRORVJfS0lORF9XSVRIEAMSIAocUEFSVE5FUl9LSU5EX0ZSSUVORFNfRk9SRVZFUhAEEiIKHlBBUlRORVJfS0lORF9DSE9PU0VfQkFDS0dST1VORBAFEiIKHlBBUlRORVJfS0lORF9ET0NUT1JTX0NPTVBBTklPThAGKqcBCg5MZWdhbGl0eVN0YXR1cxIfChtMRUdBTElUWV9TVEFUVVNfVU5TUEVDSUZJRUQQABIZChVMRUdBTElUWV9TVEFUVVNfTEVHQUwQARIdChlMRUdBTElUWV9TVEFUVVNfTk9UX0xFR0FMEAISGgoWTEVHQUxJVFlfU1RBVFVTX0JBTk5FRBADEh4KGkxFR0FMSVRZX1NUQVRVU19SRVNUUklDVEVEEAQqbAoFQ29sb3ISFQoRQ09MT1JfVU5TUEVDSUZJRUQQABILCgdDT0xPUl9XEAESCwoHQ09MT1JfVRACEgsKB0NPTE9SX0IQAxILCgdDT0xPUl9SEAQSCwoHQ09MT1JfRxAFEgsKB0NPTE9SX0MQBkI6WjhnaXRodWIuY29tL25rcmFtYmVyL210Zy1kZWNrLWJ1aWxkZXIvZ28vZ2VuL210Zy92MTttdGd2MWIGcHJvdG8z", [file_mtg_v1_format]);
 
 /**
  * Card is one Oracle card: the rules identity, not one printing.
@@ -249,6 +251,16 @@ export type Card = Message<"mtg.v1.Card"> & {
    * @generated from field: repeated string set_codes = 33;
    */
   setCodes: string[];
+
+  /**
+   * quality is the deck quality model's read of the card per format
+   * (PR-14B): the inclusion rate in the great and good lists of the
+   * format, smoothed. GetCards sets it when a model is loaded, and the
+   * index itself never holds it.
+   *
+   * @generated from field: repeated mtg.v1.CardQuality quality = 34;
+   */
+  quality: CardQuality[];
 };
 
 /**
@@ -257,6 +269,43 @@ export type Card = Message<"mtg.v1.Card"> & {
  */
 export const CardSchema: GenMessage<Card> = /*@__PURE__*/
   messageDesc(file_mtg_v1_card, 0);
+
+/**
+ * CardQuality is the deck quality model's read of one card in one
+ * format (PR-14B).
+ *
+ * @generated from message mtg.v1.CardQuality
+ */
+export type CardQuality = Message<"mtg.v1.CardQuality"> & {
+  /**
+   * @generated from field: mtg.v1.FormatId format = 1;
+   */
+  format: FormatId;
+
+  /**
+   * inclusion is the smoothed share of the great and good lists of the
+   * format that hold the card, weighted by placement.
+   *
+   * @generated from field: double inclusion = 2;
+   */
+  inclusion: number;
+
+  /**
+   * cedh_signal is the bracket 5 power signal of a commander: the
+   * top-cut share of its cEDH tournament entries, or the competitive
+   * tier of the cEDH database. Zero for a card that leads no deck.
+   *
+   * @generated from field: double cedh_signal = 3;
+   */
+  cedhSignal: number;
+};
+
+/**
+ * Describes the message mtg.v1.CardQuality.
+ * Use `create(CardQualitySchema)` to create a new message.
+ */
+export const CardQualitySchema: GenMessage<CardQuality> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_card, 1);
 
 /**
  * CardFace is one face of a card. Images live per face (F-9).
@@ -318,7 +367,7 @@ export type CardFace = Message<"mtg.v1.CardFace"> & {
  * Use `create(CardFaceSchema)` to create a new message.
  */
 export const CardFaceSchema: GenMessage<CardFace> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_card, 1);
+  messageDesc(file_mtg_v1_card, 2);
 
 /**
  * Printing is one physical version of a card.
@@ -387,7 +436,7 @@ export type Printing = Message<"mtg.v1.Printing"> & {
  * Use `create(PrintingSchema)` to create a new message.
  */
 export const PrintingSchema: GenMessage<Printing> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_card, 2);
+  messageDesc(file_mtg_v1_card, 3);
 
 /**
  * ImageUris are Scryfall image links. The UI hotlinks them (D-6).
@@ -422,7 +471,7 @@ export type ImageUris = Message<"mtg.v1.ImageUris"> & {
  * Use `create(ImageUrisSchema)` to create a new message.
  */
 export const ImageUrisSchema: GenMessage<ImageUris> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_card, 3);
+  messageDesc(file_mtg_v1_card, 4);
 
 /**
  * PartnerKind lists the two-commander mechanics.

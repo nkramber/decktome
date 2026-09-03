@@ -192,7 +192,7 @@ func TestAgentServiceBuildsWithoutAnIndex(t *testing.T) {
 	}
 	server := cardsvc.New()
 	src := newPreconSource(server, quiet)
-	srv, err := agentService(client, nil, server, nil, nil, rulesCfg, src, func(context.Context) string { return "u" }, quiet)
+	srv, err := agentService(client, nil, server, nil, nil, rulesCfg, src, nil, func(context.Context) string { return "u" }, quiet)
 	if err != nil {
 		t.Fatalf("agent service with a nil index: %v", err)
 	}
