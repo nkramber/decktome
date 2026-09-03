@@ -4,10 +4,10 @@
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. On the owner's machine `~/.nvm/versions/node/v22.23.2/bin` on the PATH fixes it.
 
-## Where things stand (2026-09-02)
+## Where things stand (2026-09-03)
 
-- `main` is at `cf46951`. Merged: PR-0a to PR-8, PR-7B, PR-10 to PR-13, the audits, the Phase 3B roadmap (#46), PR-16 (#47), PR-16B (#48), PR-17 (#49), PR-17B (#50), PR-18 (#53), the review fixes of PR-18 (#54), PR-19 (#55), its follow-ups (#56), and PR-14A (#57).
-- The session of 2026-09-02 built PR-14B, the deck quality model, on branch `pr-14b` (D-470 to D-478), and its gate did not run. The tree is green: Go build, vet, `-race` tests, golangci-lint, the proto check, and the web typecheck. Nothing is committed. The section "PR-14B, the deck quality model, built" below holds the moving parts, and OQ-54 waits on the owner.
+- PR-14B, the deck quality model, is merged (2026-09-03, #58, D-470 to D-493). Merged before it: PR-0a to PR-8, PR-7B, PR-10 to PR-13, the audits, the Phase 3B roadmap (#46), PR-16 (#47), PR-16B (#48), PR-17 (#49), PR-17B (#50), PR-18 (#53), the review fixes of PR-18 (#54), PR-19 (#55), its follow-ups (#56), and PR-14A (#57).
+- The tree is green on `main`: Go build, vet, `-race` tests, golangci-lint, the proto check, `make ste-check`, and the web lint, typecheck, and 237 tests. Branches `pr-14a`, `pr-14b`, `pr-19`, and `tile-fixes` can go. The section "PR-14B, the deck quality model, built" below holds the moving parts, and no owner row waits.
 - PR-14A, the bracket profile, is merged (2026-09-02, #57, D-459 to D-469). The current branch is `pr-14b`, and branches `pr-14a`, `pr-19`, and `tile-fixes` can go. The tree is green: Go build, vet, `-race` tests, golangci-lint, the web typecheck, and the proto check. Bracket gate run 1 reads FAIL on the band bar and the judge bar. Deck gate run 12 and its rerun 12b together pass all 24 prompts with no regression. The sections below hold the moving parts.
 - PR-19, the chat and build experience, is merged (D-432 to D-458, #55 and #56). It holds the land-swap fix of the revision turn (F-31, D-448), the split land bucket of the shortlist (F-32, D-450), and the one-chat-one-deck delete (D-456). Branches `pr-19` and `tile-fixes` can go.
 - The tree is green on `nits-and-fixes`: Go build, vet, `-race` tests, golangci-lint, web lint, typecheck, and 219 web tests. The emulator tests of the collection store pass, and `make lint` reports zero findings.
@@ -522,7 +522,7 @@ The chat ran a turn with no card index before D-405. The commander question then
 1. `make meta-refresh` ran whole on 2026-09-02. The next run reads 200 more MTGO pages and the last hundred EDHREC commanders. It also reads the 24 pages that answered a redirect. Run it daily, and read the log per source.
 2. `make quality-gate` ran eight times the same day. Run it again to a new `QUALITY_GATE_OUT` after each refresh. Read the pair bars per format and the per-axis table. A weight against the sense of its feature is a defect in the feature or the labels. Do not tune it.
 3. The Topdeck.gg key is in `.env` (D-479). OQ-55 asks the owner for Moxfield API access, for PR-14C.
-4. The owner merges PR-14B with the judge bar on record (D-491). Open the PR from `pr-14b`. After the merge, `make meta-refresh` reads 1,100 commanders on its next weekly EDHREC stamp (D-489). Then refit, and run `make quality-judge` over `pr8-deck-gate-run13b.md` again, about $0.31. Then the bracket gate again, for the bracket 5 decks the power signal exists for.
+4. PR-14B merged with the judge bar on record (D-491, #58). `make meta-refresh` reads 1,100 commanders on its next weekly EDHREC stamp (D-489). Then refit, and run `make quality-judge` over `pr8-deck-gate-run13b.md` again, about $0.31. Then the bracket gate again, for the bracket 5 decks the power signal exists for.
 5. Deploy the meta job (D-492). It is one Cloud Run job on `worker -meta`, with a Scheduler cron at 06:00 UTC daily. `TOPDECK_API_KEY` goes to Secret Manager. No infra file in this repo holds the worker's schedule. So the deployment is by hand, as the snapshot worker's is.
 6. PR-24, the precon exclusion, after PR-14B (D-460). It reads the precon table at `meta/precons/<version>/` (D-472).
 7. PR-14C holds two lanes: the Aetherhub and MTGGoldfish user decks (D-490), and MTGTop8 (D-482). Moxfield is out (D-493).

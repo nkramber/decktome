@@ -894,7 +894,7 @@ Run 12b (`pr8-deck-gate-run12b.md`) reran prompts 3 and 23 alone and passed both
 
 > *In plain English:* a bracket becomes a set of numbers the app builds to and checks, not a word it hopes the model understands. The app also deals ten thousand opening hands to see how fast the deck really gets going. The brackets are about how many turns a game lasts, so that number matters.
 
-**PR-14B: The deck quality model (D-413 to D-417, split from PR-14 by D-451).** 🔧 built on branch `pr-14b` (2026-09-02, D-470 to D-488). Gate run 10 passes the top-list bar in every format and the precon bar in two of three. Deck gate 13b passes. The tier judge bar stays open on a corpus finding (D-488).
+**PR-14B: The deck quality model (D-413 to D-417, split from PR-14 by D-451).** ✅ merged 2026-09-03 (#58, D-470 to D-493). Gate run 10 passes the top-list bar in every format and the precon bar in two of three. Deck gate 13b passes. The tier judge bar stays open on a corpus finding, and the owner merged with that on record (D-488, D-491).
 The app holds no signal of what makes a deck good (F-30). The pool ranks on theme fit and popularity, and the bracket drops Game Changers under bracket 3 and nothing else. PR-14 builds a scorer that reads a deck and answers a quality tier and the named reasons. It covers Standard, Modern, and Commander, from bracket 1 to cEDH.
 
 The data is every published list the sources of D-5 hold, back to 2015. Brackets 1 to 4 have no tournament data. The ladder gains the decks their owners tagged with a bracket on Moxfield, read through the public deck endpoint of D-419 (OQ-51 holds the check of that field and the terms).
@@ -1036,7 +1036,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 16. PR-9 variance. ⏸ out of MVP scope (D-256). It blocks nothing: the Phase 3 gate below reads PR-8's gate.
 17. **GATE.** Phase 3 starts only when PR-8's gate holds on the golden prompts. ✅ held on 2026-08-28, deck gate run 6.
 18. PR-11 ✅ merged 2026-08-28 (#38). PR-12 ✅ merged 2026-08-28 (#40). PR-12B ✅ merged 2026-08-29 (#41). PR-13 ✅ merged 2026-08-29 (#45). Then Phase 3B.
-19. **Phase 3B** (D-316, D-317): PR-16 to PR-23 in the order of the phase list. PR-14A and PR-14B sit between PR-19 and PR-20 (D-452, D-460). PR-14A ✅ merged 2026-09-02 (#57). PR-19 ✅ merged 2026-09-02 (#55, #56). Each gate holds before the next slice starts. PR-16 ✅ merged 2026-08-29 (#47). PR-16B ✅ merged 2026-08-29 (#48). PR-17 ✅ merged 2026-08-31 (#49). The paid re-baseline of D-302 ran on 2026-08-31.
+19. **Phase 3B** (D-316, D-317): PR-16 to PR-23 in the order of the phase list. PR-14A and PR-14B sit between PR-19 and PR-20 (D-452, D-460). PR-14A ✅ merged 2026-09-02 (#57). PR-14B ✅ merged 2026-09-03 (#58). PR-19 ✅ merged 2026-09-02 (#55, #56). Each gate holds before the next slice starts. PR-16 ✅ merged 2026-08-29 (#47). PR-16B ✅ merged 2026-08-29 (#48). PR-17 ✅ merged 2026-08-31 (#49). The paid re-baseline of D-302 ran on 2026-08-31.
 20. **PR-17B** the set filter (F-29, D-373 to D-383). ✅ merged 2026-09-01 (#50). **PR-18** ✅ merged 2026-09-01 (#53). The review fixes of PR-18 (D-398 to D-406) 🔧 built 2026-09-01 on branch `nits-and-fixes`. The owner reads them, then merges. Then PR-19.
 21. PR-15 eval harness. M-5 manual scoring runs on the first UI build (after PR-12).
 22. PR-24 precon exclusion (D-409, D-460), then PR-14C (D-482), then I-1, I-2, I-3 on evidence. PR-14B moved into step 19 (D-460).
