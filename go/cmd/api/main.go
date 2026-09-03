@@ -34,8 +34,10 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
 	"github.com/nkramber/mtg-deck-builder/go/internal/health"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
+	"github.com/nkramber/mtg-deck-builder/go/internal/meta"
 	"github.com/nkramber/mtg-deck-builder/go/internal/precons"
 	"github.com/nkramber/mtg-deck-builder/go/internal/profile"
+	"github.com/nkramber/mtg-deck-builder/go/internal/quality"
 	"github.com/nkramber/mtg-deck-builder/go/internal/questions"
 	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
 	"github.com/nkramber/mtg-deck-builder/go/internal/sessions"
@@ -132,7 +134,15 @@ func run(ctx context.Context, logger *slog.Logger) error {
 		return fmt.Errorf("llm config: %w", err)
 	}
 	preconSrc := newPreconSource(cardServer, logger)
-	agentServer, err := agentService(llmClient, fs, cardServer, collectionRepo, deckRepo, rulesCfg, preconSrc, userFn, logger)
+	// The deck quality model loads beside the card snapshot and swaps
+	// when the worker fits a new one (PR-14B). No model grades nothing.
+	metaStore, err := gcpenv.MetaStore(ctx, project, storageClient)
+	if err != nil {
+		return fmt.Errorf("meta store init: %w", err)
+	}
+	scorer := quality.NewScorer(nil)
+	cardServer.SetQuality(scorer.CardQualities)
+	agentServer, err := agentService(llmClient, fs, cardServer, collectionRepo, deckRepo, rulesCfg, preconSrc, scorer, userFn, logger)
 	if err != nil {
 		return fmt.Errorf("agent service: %w", err)
 	}
@@ -187,11 +197,17 @@ func run(ctx context.Context, logger *slog.Logger) error {
 		preconSrc.refresh()
 		reloadLoop(loopCtx, store, cardServer, loaded, logger, preconSrc.refresh)
 	}()
+	modelDone := make(chan struct{})
+	go func() {
+		defer close(modelDone)
+		modelLoop(loopCtx, metaStore, scorer, logger)
+	}()
 
 	select {
 	case err := <-serveErr:
 		stopLoop()
 		<-loopDone
+		<-modelDone
 		if err != nil {
 			return fmt.Errorf("api server: %w", err)
 		}
@@ -347,7 +363,7 @@ func (p *preconSource) refresh() { p.Current() }
 // A missing price table only costs the cost field of the usage event.
 func agentService(client *llm.Client, fs *firestore.Client, index *cardsvc.Server,
 	cols *collections.Repo, deckRepo *decks.Repo, rulesCfg *rules.Config, preconSrc agentsvc.PreconSource,
-	userFn auth.UserFunc, logger *slog.Logger) (*agentsvc.Server, error) {
+	scorer *quality.Scorer, userFn auth.UserFunc, logger *slog.Logger) (*agentsvc.Server, error) {
 	cat, err := questions.Load()
 	if err != nil {
 		return nil, err
@@ -371,9 +387,10 @@ func agentService(client *llm.Client, fs *firestore.Client, index *cardsvc.Serve
 		agentsvc.WithLogger(logger),
 		agentsvc.WithCandidates(index, builder),
 		agentsvc.WithCollections(cols),
-		agentsvc.WithDecks(generate.NewBuilder(client, rulesCfg, liveCards{index}, logger, generate.WithProfiler(prof))),
+		agentsvc.WithDecks(generate.NewBuilder(client, rulesCfg, liveCards{index}, logger, generate.WithProfiler(prof), generate.WithScorer(scorer))),
 		agentsvc.WithDeckStore(deckRepo),
 		agentsvc.WithPreconSource(preconSrc),
+		agentsvc.WithScorer(scorer),
 	}
 	prices, err := llm.LoadPrices()
 	if err != nil {
@@ -429,6 +446,47 @@ func reloadLoop(ctx context.Context, store cards.Store, server *cardsvc.Server, 
 				onLoad()
 			}
 			lastVersion = next
+		}
+	}
+}
+
+// modelLoop loads the newest quality model, then polls the store on the
+// snapshot cadence and swaps a newer version in (PR-14B). A load error
+// keeps the old model, so the next tick tries again.
+func modelLoop(ctx context.Context, store meta.ObjectStore, scorer *quality.Scorer, logger *slog.Logger) {
+	seconds := defaultReloadSeconds
+	if v, err := strconv.Atoi(os.Getenv("CARDS_RELOAD_SECONDS")); err == nil && v > 0 {
+		seconds = v
+	}
+	load := func() {
+		version, err := meta.LatestModel(ctx, store)
+		if err != nil {
+			logger.Error("quality model version check failed", "err", err)
+			return
+		}
+		if version == "" || version == scorer.Version() {
+			if version == "" && scorer.Version() == "" {
+				logger.Warn("no quality model in store yet, decks carry no grade")
+			}
+			return
+		}
+		m, err := quality.Load(ctx, store)
+		if err != nil {
+			logger.Error("quality model load failed", "version", version, "err", err)
+			return
+		}
+		scorer.Swap(m)
+		logger.Info("quality model loaded", "version", m.Version, "formats", len(m.Formats))
+	}
+	load()
+	ticker := time.NewTicker(time.Duration(seconds) * time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			load()
 		}
 	}
 }

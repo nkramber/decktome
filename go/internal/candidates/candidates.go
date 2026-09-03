@@ -51,8 +51,15 @@ type Request struct {
 	// no further, and every such card is marked (D-382). Nil means no
 	// card comes from outside.
 	OutsideRoles map[mtgv1.CardRole]int
-	// MetaBoost gives a meta score in [0,1] per Oracle id (PR-14). Nil today.
+	// MetaBoost gives the quality model's card signal in [0,1] per
+	// Oracle id: the inclusion rate in the top lists of the format
+	// against the best rate (PR-14B). Nil with no model.
 	MetaBoost func(oracleID string) float64
+	// CommanderSignal gives the bracket 5 power signal of a commander or
+	// a pair, in [0,1] (PR-14B, OQ-48). A bracket 4 or 5 request ranks
+	// its commanders on it first, and theme breaks the tie. Nil with no
+	// model, and the pool ranks on theme and popularity alone.
+	CommanderSignal func(oracleIDs ...string) float64
 	// WantBackground narrows a pair request to pairs that hold a
 	// Background, because a Background rarely ranks on theme alone (D-154).
 	WantBackground bool
@@ -187,6 +194,19 @@ func New() (*Builder, error) {
 		return nil, err
 	}
 	return &Builder{themes: t}, nil
+}
+
+// Roles answers a role reader over one index: the role a card fills
+// with no theme in play. The quality fit of PR-14B reads published
+// lists through it, so a list's role counts read the way a built
+// deck's do. The reader resolves the role tags once.
+func (b *Builder) Roles(idx *cards.Index) func(c *mtgv1.Card) mtgv1.CardRole {
+	roleTags := b.themes.roleSets(idx.Tags())
+	useText := idx.Tags().Len() == 0
+	return func(c *mtgv1.Card) mtgv1.CardRole {
+		role, _ := assignRole(c, roleTags, false, useText)
+		return role
+	}
 }
 
 // legalKeys maps a format to its Scryfall legality column. The app builds
@@ -785,7 +805,11 @@ func IsBasicLand(c *mtgv1.Card) bool {
 // FoldName is the name match key: lower case, with the outer spaces
 // removed. Nothing else is folded, because a punctuation change makes a
 // different card name (F-13).
-func FoldName(s string) string { return strings.ToLower(strings.TrimSpace(s)) }
+func FoldName(s string) string { return strings.ToLower(strings.TrimSpace(foldQuotes.Replace(s))) }
+
+// foldQuotes reads a curly apostrophe as the straight one a card name
+// holds. Deck gate run 13 lost six cards to "Commander’s Sphere".
+var foldQuotes = strings.NewReplacer("\u2019", "'", "\u2018", "'", "\u201c", "\"", "\u201d", "\"")
 
 // hasPaperPrinting reports whether the card's shown printing is a paper
 // one. The index swaps a digital default for a paper printing when one
@@ -915,6 +939,18 @@ func (b *Builder) CommanderPool(idx *cards.Index, req Request) ([]Candidate, err
 	// so "name three more" always has three more.
 	if len(out) < CommanderPoolFloor {
 		out = append(out, b.unthemed(idx, req, colorSet, setCodes, mode, maxRank, out)...)
+	}
+	// A bracket 4 or 5 request wants the strongest commander, not the
+	// most popular one (OQ-48). The cEDH signal of the quality model
+	// leads, and the theme order above breaks the tie (PR-14B).
+	if req.Bracket >= 4 && req.CommanderSignal != nil {
+		signal := func(c Candidate) float64 {
+			if c.Partner != nil {
+				return req.CommanderSignal(c.Card.GetOracleId(), c.Partner.GetOracleId())
+			}
+			return req.CommanderSignal(c.Card.GetOracleId())
+		}
+		sort.SliceStable(out, func(i, j int) bool { return signal(out[i]) > signal(out[j]) })
 	}
 	// Owned-first ranks on quality like any card. The commander is one
 	// card, the buy list carries it, and a deck led by the best fit beats

@@ -13,10 +13,12 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"path/filepath"
 
 	"cloud.google.com/go/storage"
 
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
+	"github.com/nkramber/mtg-deck-builder/go/internal/meta"
 )
 
 // LocalProject is the project name every emulator mode uses.
@@ -115,4 +117,24 @@ func severity(l slog.Level) string {
 		return "INFO"
 	}
 	return "DEBUG"
+}
+
+// MetaStore answers the object store of the deck quality data (PR-14B):
+// the raw pages, the lists, and the fitted model, under meta/ in the
+// card bucket. With CARDS_SNAPSHOT_DIR set it is the parent directory
+// of the snapshot folder, so the local stack keeps the two side by
+// side. The client is the snapshot store's when one exists, and the
+// caller closes it.
+func MetaStore(ctx context.Context, project string, client *storage.Client) (meta.ObjectStore, error) {
+	if dir := os.Getenv("CARDS_SNAPSHOT_DIR"); dir != "" {
+		return meta.DirObjects{Root: filepath.Dir(filepath.Clean(dir))}, nil
+	}
+	if client == nil {
+		var err error
+		client, err = storage.NewClient(ctx, storage.WithJSONReads())
+		if err != nil {
+			return nil, err
+		}
+	}
+	return meta.NewGCSObjects(client, EnvOr("CARDS_BUCKET", project+"-cards")), nil
 }

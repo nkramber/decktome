@@ -148,6 +148,18 @@ func (b *Builder) input(req Request, misses []Miss, findings []*mtgv1.Finding) s
 				}
 			}
 		}
+		// The format shape is what the top lists of the format look
+		// like: their land count, their curve, and the cards they hold
+		// most (PR-14B). It is a description, and the bands above are
+		// the limits.
+		if b.scorer != nil {
+			if lines := b.scorer.ShapeLines(req.Format); len(lines) > 0 {
+				s.WriteString("\n## Format shape\n\nThe published top lists of the format look like this.\n\n")
+				for _, line := range lines {
+					s.WriteString(line + "\n")
+				}
+			}
+		}
 	}
 	if len(misses) > 0 {
 		s.WriteString("\n## Names that are not on the shortlist\n\n")

@@ -296,6 +296,42 @@ store-check: ## Run the session, deck, and collection stores against the local F
 		{ echo "no Firestore emulator on :8281. Start one: firebase emulators:start --only firestore --project mtg-local"; exit 1; }
 	@FIRESTORE_EMULATOR_HOST=127.0.0.1:8281 $(GO) test ./internal/sessions ./internal/decks ./internal/collections -count=1
 
+# QUALITY_GATE_OUT is the PR-14B gate document. The run is free: it
+# fits the model over the stored lists and calls no provider.
+QUALITY_GATE_OUT ?= docs/reference/pr14b-quality-gate.md
+QUALITY_GATE_ARGS ?=
+
+quality-gate: ## Write the PR-14B quality gate document from the local meta store (no model calls, no cost)
+	@test ! -f $(QUALITY_GATE_OUT) || ! grep -q '^Verdict:' $(QUALITY_GATE_OUT) || \
+		{ echo "$(QUALITY_GATE_OUT) holds a verdict. Set QUALITY_GATE_OUT to a new file."; exit 1; }
+	@CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall \
+		$(GO) run ./cmd/quality-gate $(QUALITY_GATE_ARGS) > $(QUALITY_GATE_OUT)
+	@echo "wrote $(QUALITY_GATE_OUT)"
+
+# QUALITY_JUDGE_IN is the deck gate document the tier judge lane reads,
+# and QUALITY_JUDGE_OUT the judge document it writes.
+QUALITY_JUDGE_IN ?= docs/reference/pr8-deck-gate-run13b.md
+QUALITY_JUDGE_OUT ?= docs/reference/pr14b-quality-judge.md
+
+quality-judge: ## Judge the tier of every deck of a deck gate document (PR-14B). CAUTION: calls a real provider and costs money
+	@[ -f .env ] || { echo "quality-judge: .env is absent."; exit 1; }
+	@test -f $(QUALITY_JUDGE_IN) || { echo "no deck gate document at $(QUALITY_JUDGE_IN). Set QUALITY_JUDGE_IN."; exit 1; }
+	@test ! -f $(QUALITY_JUDGE_OUT) || ! grep -q '^Verdict:' $(QUALITY_JUDGE_OUT) || \
+		{ echo "$(QUALITY_JUDGE_OUT) holds a verdict. Set QUALITY_JUDGE_OUT to a new file."; exit 1; }
+	@set -a && . ./.env && set +a && \
+		QUALITY_JUDGE=1 CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall \
+		$(GO) run ./cmd/quality-gate -judge $(abspath $(QUALITY_JUDGE_IN)) > $(QUALITY_JUDGE_OUT)
+	@echo "wrote $(QUALITY_JUDGE_OUT)"
+
+# META_ARGS passes flags to the worker's meta job, for example
+# -meta-months 3 -meta-pages 50 for a short first read.
+META_ARGS ?=
+
+meta-refresh: ## Read the deck list sources into the local meta store and fit the quality model (network, no model calls, no cost)
+	@[ -f .env ] && set -a && . ./.env && set +a; \
+		CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall \
+		$(GO) run ./cmd/worker -meta $(META_ARGS)
+
 themes-check: ## Check the theme slugs and the commander ranking against the local snapshot
 	@CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall $(GO) test ./internal/candidates -run 'TestThemeSlugsExist|TestCommanderQualitySnapshot' -count=1
 

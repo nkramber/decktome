@@ -31,6 +31,7 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/gzstore"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 	"github.com/nkramber/mtg-deck-builder/go/internal/precons"
+	"github.com/nkramber/mtg-deck-builder/go/internal/quality"
 	"github.com/nkramber/mtg-deck-builder/go/internal/questions"
 	"github.com/nkramber/mtg-deck-builder/go/internal/sessions"
 )
@@ -104,6 +105,7 @@ type Server struct {
 	userFn     auth.UserFunc
 	index      cardsvc.IndexSource
 	builder    *candidates.Builder
+	scorer     *quality.Scorer
 	decks      DeckBuilder
 	deckStore  DeckStore
 	preconSrc  PreconSource
@@ -199,6 +201,11 @@ func WithCollections(src CollectionSource) Option {
 
 // WithPrices makes the usage event carry a cost.
 func WithPrices(p *llm.PriceTable) Option { return func(s *Server) { s.prices = p } }
+
+// WithScorer wires the deck quality model (PR-14B). The shortlist takes
+// the card signal, the commander offer takes the cEDH signal at bracket
+// 4 or 5, and the revision turn says so when a change lowers the tier.
+func WithScorer(q *quality.Scorer) Option { return func(s *Server) { s.scorer = q } }
 
 // WithLogger sets the logger.
 func WithLogger(l *slog.Logger) Option { return func(s *Server) { s.log = l } }
@@ -644,7 +651,7 @@ func (s *Server) hints(_ *mtgv1.Session, st *questions.State, owned map[string]i
 	if idx == nil {
 		return nil
 	}
-	return &questions.CandidateHints{
+	h := &questions.CandidateHints{
 		Index:    idx,
 		Builder:  s.builder,
 		Format:   st.Slots.GetFormat().GetId(),
@@ -652,8 +659,13 @@ func (s *Server) hints(_ *mtgv1.Session, st *questions.State, owned map[string]i
 		Pool:     st.Slots.GetPoolRule(),
 		Owned:    owned,
 		SetCodes: st.Slots.GetSetCodes(),
+		Bracket:  st.Slots.GetPower().GetBracket(),
 		Log:      s.log,
 	}
+	if s.scorer != nil {
+		h.CommanderSignal = s.scorer.CommanderSignal()
+	}
+	return h
 }
 
 // declineNegatives closes every key whose question the user answered

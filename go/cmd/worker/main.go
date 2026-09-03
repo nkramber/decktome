@@ -1,5 +1,6 @@
-// Command worker refreshes the Scryfall snapshot from the bulk files
-// only.
+// Command worker refreshes the Scryfall snapshot from the bulk files,
+// and with -meta it reads the deck list sources and fits the quality
+// model (PR-14B).
 //
 // Production shape: a Cloud Run job. One Cloud Scheduler cron
 // starts it with -once:
@@ -38,11 +39,20 @@ const refreshTimeout = 90 * time.Minute
 
 func main() {
 	once := flag.Bool("once", false, "run one refresh and exit (Cloud Run job, make dev-seed)")
+	metaJob := flag.Bool("meta", false, "read the deck list sources, fit the quality model, and exit (PR-14B, make meta-refresh)")
+	metaMonths := flag.Int("meta-months", 0, "how many months of MTGO lists the meta job reads, default 12")
+	metaPages := flag.Int("meta-pages", 0, "the page cap of one meta run, default 200")
+	metaReparse := flag.Bool("meta-reparse", false, "re-read the stored MTGO pages in place of a fetch (M-6)")
 	flag.Parse()
 
 	logger := gcpenv.NewLogger(os.Stdout)
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	err := run(ctx, *once, logger)
+	var err error
+	if *metaJob {
+		err = runMeta(ctx, metaOptions{months: *metaMonths, pages: *metaPages, reparse: *metaReparse}, logger)
+	} else {
+		err = run(ctx, *once, logger)
+	}
 	stop()
 	if err != nil {
 		logger.Error("worker failed", "err", err)

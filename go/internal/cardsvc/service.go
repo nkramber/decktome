@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 
 	"connectrpc.com/connect"
+	"google.golang.org/protobuf/proto"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1/mtgv1connect"
@@ -26,6 +27,23 @@ type IndexSource interface {
 type Server struct {
 	mtgv1connect.UnimplementedCardServiceHandler
 	index atomic.Pointer[cards.Index]
+	// quality answers the quality rows of a card, nil with no model
+	// (PR-14B).
+	quality atomic.Pointer[QualitySource]
+}
+
+// QualitySource answers the quality rows of one card by Oracle id. The
+// quality scorer's CardQualities is the one implementation.
+type QualitySource func(oracleID string) []*mtgv1.CardQuality
+
+// SetQuality installs the quality source. GetCards then carries the
+// rows. A nil source removes them.
+func (s *Server) SetQuality(src QualitySource) {
+	if src == nil {
+		s.quality.Store(nil)
+		return
+	}
+	s.quality.Store(&src)
 }
 
 // New returns a Server with no index. Swap installs one.
@@ -145,8 +163,17 @@ func (s *Server) GetCards(_ context.Context, req *connect.Request[mtgv1.GetCards
 		return nil, connect.NewError(connect.CodeInvalidArgument, errTooManyIDs)
 	}
 	res := &mtgv1.GetCardsResponse{}
+	quality := s.quality.Load()
 	for _, id := range ids {
 		if c, ok := idx.ByOracleID(id); ok {
+			// The index card is shared, so the quality rows go on a copy
+			// (PR-14B).
+			if quality != nil {
+				if rows := (*quality)(id); len(rows) > 0 {
+					c = proto.Clone(c).(*mtgv1.Card)
+					c.Quality = rows
+				}
+			}
 			res.Cards = append(res.Cards, c)
 		} else {
 			res.MissingOracleIds = append(res.MissingOracleIds, id)

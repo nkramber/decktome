@@ -185,3 +185,55 @@ func DeckText(deck *mtgv1.Deck, cards rules.CardSource) string {
 	}
 	return s.String()
 }
+
+// The tier judge of PR-14B: the judge names the rung of the ladder of
+// D-414 a deck sits on, and the gate reads whether it agrees with the
+// quality model's grade in eight of ten.
+const tierJudgeInstructions = `You read one deck list and name its quality tier.
+
+The ladder, from the top:
+- great: a list that would place in the top 8 of a Challenge or the top cut of a cEDH tournament. Tuned, efficient, the cards and the pairs the best lists of the format play.
+- good: a list that would post a winning record in a league or finish mid-field at a Challenge. Sound, on plan, a step below the top.
+- typical: the average deck of its commander or archetype as the community builds it. Reasonable choices, no sharp edge.
+- baseline: the strength of a preconstructed deck as sold. Playable, slow, generic cards, few of the format's best.
+- bad: below a precon. A broken mana base, a curve that never lands its spells, playsets turned to singletons, or cards that do not work together.
+
+Read the card list for its card quality against the format's best lists, its synergy, its mana base, its curve, and its interaction. Name one tier word and say why in two or three sentences. Judge the deck as it is.`
+
+const tierJudgeSchema = `{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["tier", "why"],
+  "properties": {
+    "tier": {"type": "string", "enum": ["great", "good", "typical", "baseline", "bad"]},
+    "why": {"type": "string"}
+  }
+}`
+
+// TierJudgement is the judge's tier for one deck.
+type TierJudgement struct {
+	Tier string `json:"tier"`
+	Why  string `json:"why"`
+}
+
+// JudgeTier asks the judge role for the tier of a deck. The judge sees
+// the format and the card list, and never the grade.
+func JudgeTier(ctx context.Context, c *llm.Client, deck *mtgv1.Deck, cards rules.CardSource, acc *llm.Accumulator) (*TierJudgement, error) {
+	res, err := c.Complete(ctx, llm.RoleJudge, llm.Request{
+		Instructions: tierJudgeInstructions,
+		Input:        "Format: " + FormatWord(deck.GetFormat().GetId()) + "\n" + DeckText(deck, cards),
+		SchemaName:   "tier_check",
+		Schema:       json.RawMessage(tierJudgeSchema),
+	}, acc)
+	if err != nil {
+		return nil, fmt.Errorf("judge tier: %w", err)
+	}
+	var out TierJudgement
+	if err := json.Unmarshal(res.Output, &out); err != nil {
+		return nil, fmt.Errorf("judge tier output: %w", err)
+	}
+	if out.Tier == "" {
+		return nil, fmt.Errorf("judge tier output: no tier")
+	}
+	return &out, nil
+}

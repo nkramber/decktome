@@ -14,6 +14,7 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/candidates"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 	"github.com/nkramber/mtg-deck-builder/go/internal/profile"
+	"github.com/nkramber/mtg-deck-builder/go/internal/quality"
 	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
 )
 
@@ -144,6 +145,7 @@ type Builder struct {
 	rules    *rules.Config
 	cards    rules.CardSource
 	profiler *profile.Profiler
+	scorer   *quality.Scorer
 	log      *slog.Logger
 }
 
@@ -155,6 +157,14 @@ type BuilderOption func(*Builder)
 // buys the repair turn. Without it a deck carries no profile.
 func WithProfiler(p *profile.Profiler) BuilderOption {
 	return func(b *Builder) { b.profiler = p }
+}
+
+// WithScorer wires the deck quality model (PR-14B). Every built deck
+// then carries its grade, the summary names the tier and the reasons,
+// and the prompt names the shape of the format's top lists. A scorer
+// with no model grades nothing, so the builder runs as before.
+func WithScorer(s *quality.Scorer) BuilderOption {
+	return func(b *Builder) { b.scorer = s }
 }
 
 // NewBuilder makes a builder. The card source answers the rules engine,
@@ -386,6 +396,12 @@ func (b *Builder) assemble(ctx context.Context, req Request, out *deckOut) pass 
 		for _, f := range findings {
 			addFinding(deck, f.GetCode(), f.GetSeverity(), f.GetMessage())
 		}
+		// The quality model grades the deck from its profile (PR-14B).
+		// The grade is information: it blocks nothing and buys no repair
+		// turn.
+		if b.scorer != nil {
+			deck.Quality = b.scorer.Score(quality.Input{Deck: deck, Profile: prof, Cards: b.cards})
+		}
 	}
 	if padded > 0 {
 		addFinding(deck, CodeBasicsAdded, mtgv1.Severity_SEVERITY_INFO,
@@ -437,6 +453,11 @@ func (b *Builder) assemble(ctx context.Context, req Request, out *deckOut) pass 
 	// The summary is prose, and F-26 lives there. The net reads the shape
 	// of a rules claim and never its truth.
 	lintSummaryInto(deck)
+	// The grade's sentence goes on after the lint: the code writes it,
+	// and deck gate run 13 read fifteen rule claims from it (D-474).
+	if line := quality.Summary(deck.GetQuality()); line != "" {
+		deck.Summary = strings.TrimSpace(deck.Summary + "\n\n" + line)
+	}
 	return pass{deck: deck, misses: append(main.Misses, side.Misses...)}
 }
 

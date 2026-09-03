@@ -348,7 +348,7 @@ Default answers when the user says "you decide": format Commander (the most play
 2. Copy limits respected (4, singleton by name, per-card overrides such as Seven Dwarves). No restricted list applies, because Vintage left the app (D-155).
 3. Every card legal in the format on the query date, per Scryfall legalities.
 4. Commander: every card inside the color identity. Commander eligible. A two-commander pair is a valid pairing.
-5. Commander: Game Changer count within the bracket. Bracket 1-2: zero.
+5. Commander: Game Changer count within the bracket. Bracket 1-2: zero. Commander Spellbook checks the other content rules after the build: mass land denial, extra turns, and two-card combos (PR-14A, D-462, D-468).
 6. Every card name exists in the card database. No invented names.
 7. Ownership (owned modes only, D-37): every card in the collection with enough copies, or listed as an acquisition. Basic lands are exempt. Owned-first gives a warning, owned-only a block. In any-card mode this check is off, and ownership marks are information.
 8. Sideboard size (15 max in 60-card formats, none in Commander). House format (D-3) skips legality. With a house format the agent states "no legality check applies" in place of a legality date.
@@ -367,7 +367,9 @@ Model-side checks (PR-8, not the engine):
 - Banned and Restricted 2026-08-10: https://magic.wizards.com/en/news/announcements/banned-and-restricted-august-10-2026
 - Commander B&R 2026-02-09: https://magic.wizards.com/en/news/announcements/commander-banned-and-restricted-february-9-2026
 - Commander rules: https://mtgcommander.net/index.php/rules/ Note: its ban page still lists Biorhythm as banned on 2026-08-26. Wizards and Scryfall are the authority, and the 2026-02-09 announcement unbanned Biorhythm.
-- Commander brackets, Game Changer commander rule: https://magic.wizards.com/en/news/announcements/introducing-commander-brackets-beta (2025-02-11, read 2026-08-26).
+- Commander brackets, Game Changer commander rule: https://magic.wizards.com/en/news/announcements/introducing-commander-brackets-beta (2025-02-11, read 2026-08-26, read again 2026-09-02 for the content rules).
+- Commander Spellbook bracket endpoint and its rule: https://backend.commanderspellbook.com/schema/?format=json and `backend/spellbook/models/variant.py` in SpaceCowMedia/commander-spellbook-backend (MIT, read 2026-09-02).
+- Karsten source table: "How Many Sources Do You Need to Consistently Cast Your Spells? A 2022 Update", TCGplayer, 2022-08-02. Land formulas: "How Many Lands Do You Need in Your Deck? An Updated Analysis", 2022-07-29, and "What's an Optimal Mana Curve and Land/Ramp Count for Commander?", 2022-07-15. All read 2026-09-02 (`docs/reference/bracket-profile-2026-09-02.md`).
 - Pauper Commander rules: https://pdhhomebase.com/rules (read 2026-08-26).
 - Game Changers list: https://playgroup.gg/commander/game-changers (2026-08-24 update)
 - Commander brackets revision: https://magic.wizards.com/en/news/announcements/commander-brackets-beta-update-october-21-2025

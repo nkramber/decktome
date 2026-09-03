@@ -30,6 +30,11 @@ type CandidateHints struct {
 	WantPair bool
 	// WantBackground narrows that to pairs that hold a Background.
 	WantBackground bool
+	// Bracket is the Commander bracket the reader named, 0 before the
+	// power row. CommanderSignal is the quality model's cEDH signal, nil
+	// with no model. A bracket 4 or 5 offer ranks on it (PR-14B, OQ-48).
+	Bracket         int32
+	CommanderSignal func(oracleIDs ...string) float64
 	// OnThemeOwned is PR-6's count for the {n} clause of the thin-theme
 	// question. The caller reads it from candidates.Stats.
 	OnThemeOwned int
@@ -162,6 +167,9 @@ func (h *CandidateHints) Commanders(theme string, skip []string) []string {
 		return nil
 	}
 	cacheKey := h.key(theme) + "\x00" + strings.Join(skip, "\x00") + "\x00" + strings.Join(h.SetCodes, ",")
+	if h.Bracket >= 4 && h.CommanderSignal != nil {
+		cacheKey += "\x00power"
+	}
 	if h.WantPair {
 		cacheKey += "\x00pair"
 	}
@@ -179,6 +187,10 @@ func (h *CandidateHints) Commanders(theme string, skip []string) []string {
 		Owned:          h.Owned,
 		WantPair:       h.WantPair,
 		WantBackground: h.WantBackground,
+		Bracket:        h.Bracket,
+		// A bracket 4 or 5 request offers the strongest commanders, not
+		// the most popular (PR-14B, OQ-48).
+		CommanderSignal: h.CommanderSignal,
 		// A commander comes from the sets the reader named (D-382). The
 		// offer read no set before D-437, so a Hobbit-only request could
 		// offer a commander of any set.
