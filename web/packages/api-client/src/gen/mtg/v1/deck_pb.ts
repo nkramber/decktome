@@ -4,7 +4,7 @@
 
 import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
-import type { Printing } from "./card_pb";
+import type { Card, Printing } from "./card_pb";
 import { file_mtg_v1_card } from "./card_pb";
 import type { Format, FormatId, PowerLevel } from "./format_pb";
 import { file_mtg_v1_format } from "./format_pb";
@@ -18,7 +18,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file mtg/v1/deck.proto.
  */
 export const file_mtg_v1_deck: GenFile = /*@__PURE__*/
-  fileDesc("ChFtdGcvdjEvZGVjay5wcm90bxIGbXRnLnYxIpUFCgREZWNrEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSHgoGZm9ybWF0GAMgASgLMg4ubXRnLnYxLkZvcm1hdBIhCgVwb3dlchgEIAEoCzISLm10Zy52MS5Qb3dlckxldmVsEg8KB3N1bW1hcnkYBSABKAkSHAoUY29tbWFuZGVyX29yYWNsZV9pZHMYBiADKAkSHwoFY2FyZHMYByADKAsyEC5tdGcudjEuRGVja0NhcmQSLAoKdmFsaWRhdGlvbhgIIAEoCzIYLm10Zy52MS5WYWxpZGF0aW9uUmVzdWx0EhYKDmxlZ2FsaXR5X2FzX29mGAkgASgJEhIKCnNlc3Npb25faWQYCyABKAkSLgoKY3JlYXRlZF9hdBgMIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASDQoFc3RhbGUYDSABKAgSGAoQc3RhbGVfb3JhY2xlX2lkcxgOIAMoCRIjCglzaWRlYm9hcmQYDyADKAsyEC5tdGcudjEuRGVja0NhcmQSGwoTY29tcGFuaW9uX29yYWNsZV9pZBgQIAEoCRIiCgh1cGdyYWRlcxgRIAMoCzIQLm10Zy52MS5EZWNrQ2FyZBIUCgxidXlfY29zdF91c2QYEiABKAESHAoUcmV2aXNlZF9mcm9tX2RlY2tfaWQYEyABKAkSFQoNcmV2aXNpb25fbm90ZRgUIAEoCRIQCghmYXZvcml0ZRgVIAEoCBISCgpjYXJkX2NvdW50GBYgASgFEiQKB3Byb2ZpbGUYFyABKAsyEy5tdGcudjEuRGVja1Byb2ZpbGUSJAoHcXVhbGl0eRgYIAEoCzITLm10Zy52MS5EZWNrUXVhbGl0eUoECAoQC1IEc2VlZCKCAQoLRGVja1F1YWxpdHkSDAoEdGllchgBIAEoCRINCgVzY29yZRgCIAEoARIPCgdyZWFzb25zGAMgAygJEhUKDW1vZGVsX3ZlcnNpb24YBCABKAkSLgoNcHJvYmFiaWxpdGllcxgFIAMoCzIXLm10Zy52MS5UaWVyUHJvYmFiaWxpdHkiNAoPVGllclByb2JhYmlsaXR5EgwKBHRpZXIYASABKAkSEwoLcHJvYmFiaWxpdHkYAiABKAEirgEKC0RlY2tQcm9maWxlEg8KB2JyYWNrZXQYASABKAUSKAoIZmVhdHVyZXMYAiADKAsyFi5tdGcudjEuUHJvZmlsZUZlYXR1cmUSIgoIZ29sZGZpc2gYAyABKAsyEC5tdGcudjEuR29sZGZpc2gSJQoHY29udGVudBgEIAEoCzIULm10Zy52MS5Db250ZW50Q2hlY2sSGQoRYmFuZHNfdmVyaWZpZWRfYXQYBSABKAkieQoOUHJvZmlsZUZlYXR1cmUSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgBEgsKA2xvdxgDIAEoARIMCgRoaWdoGAQgASgBEhAKCGhhc19oaWdoGAUgASgIEhAKCG9mZl9iYW5kGAYgASgIEgwKBG5vdGUYByABKAkiagoIR29sZGZpc2gSDQoFaGFuZHMYASABKAUSFgoOY29tbWFuZGVyX3R1cm4YAiABKAESFgoObWFuYV90dXJuX2ZvdXIYAyABKAESHwoXc2hhcmVfdHdvX3RvX2ZvdXJfbGFuZHMYBCABKAEiqgEKDENvbnRlbnRDaGVjaxIPCgdjaGVja2VkGAEgASgIEg0KBWVycm9yGAIgASgJEhIKCnNvdXJjZV90YWcYAyABKAkSFQoNZ2FtZV9jaGFuZ2VycxgEIAMoCRIYChBtYXNzX2xhbmRfZGVuaWFsGAUgAygJEhMKC2V4dHJhX3R1cm5zGAYgAygJEiAKBmNvbWJvcxgHIAMoCzIQLm10Zy52MS5Db21ib0hpdCJ0CghDb21ib0hpdBIKCgJpZBgBIAEoCRINCgVjYXJkcxgCIAMoCRIQCgh0d29fY2FyZBgDIAEoCBINCgVzcGVlZBgEIAEoBRISCgpleHRyYV90dXJuGAUgASgIEhgKEG1hc3NfbGFuZF9kZW5pYWwYBiABKAgi6wEKCERlY2tDYXJkEhEKCW9yYWNsZV9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEg0KBWNvdW50GAMgASgFEh4KBHJvbGUYBCABKA4yEC5tdGcudjEuQ2FyZFJvbGUSDgoGcmVhc29uGAUgASgJEg0KBW93bmVkGAYgASgIEhMKC293bmVkX2NvdW50GAcgASgFEhEKCXByaWNlX3VzZBgIIAEoARIoCg5vd25lZF9wcmludGluZxgJIAEoCzIQLm10Zy52MS5QcmludGluZxIeChZvdXRzaWRlX3JlcXVlc3RlZF9zZXRzGAogASgIIqQBChBWYWxpZGF0aW9uUmVzdWx0EiEKCGZpbmRpbmdzGAEgAygLMg8ubXRnLnYxLkZpbmRpbmcSDgoGcGFzc2VkGAIgASgIEhYKDmxlZ2FsaXR5X2FzX29mGAMgASgJEiMKCXBvb2xfcnVsZRgEIAEoDjIQLm10Zy52MS5Qb29sUnVsZRIgCgZmb3JtYXQYBSABKA4yEC5tdGcudjEuRm9ybWF0SWQiXwoHRmluZGluZxIMCgRjb2RlGAEgASgJEiIKCHNldmVyaXR5GAIgASgOMhAubXRnLnYxLlNldmVyaXR5Eg8KB21lc3NhZ2UYAyABKAkSEQoJb3JhY2xlX2lkGAQgASgJKv8BCghDYXJkUm9sZRIZChVDQVJEX1JPTEVfVU5TUEVDSUZJRUQQABISCg5DQVJEX1JPTEVfTEFORBABEhIKDkNBUkRfUk9MRV9SQU1QEAISEgoOQ0FSRF9ST0xFX0RSQVcQAxIVChFDQVJEX1JPTEVfUkVNT1ZBTBAEEhIKDkNBUkRfUk9MRV9XSVBFEAUSFAoQQ0FSRF9ST0xFX1RIUkVBVBAGEhkKFUNBUkRfUk9MRV9JTlRFUkFDVElPThAHEhUKEUNBUkRfUk9MRV9TWU5FUkdZEAgSFAoQQ0FSRF9ST0xFX1dJTkNPThAJEhMKD0NBUkRfUk9MRV9PVEhFUhAKKl4KCFNldmVyaXR5EhgKFFNFVkVSSVRZX1VOU1BFQ0lGSUVEEAASEgoOU0VWRVJJVFlfQkxPQ0sQARIRCg1TRVZFUklUWV9XQVJOEAISEQoNU0VWRVJJVFlfSU5GTxADQjpaOGdpdGh1Yi5jb20vbmtyYW1iZXIvbXRnLWRlY2stYnVpbGRlci9nby9nZW4vbXRnL3YxO210Z3YxYgZwcm90bzM", [file_mtg_v1_card, file_mtg_v1_format, file_mtg_v1_session, file_google_protobuf_timestamp]);
+  fileDesc("ChFtdGcvdjEvZGVjay5wcm90bxIGbXRnLnYxIqUFCgREZWNrEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSHgoGZm9ybWF0GAMgASgLMg4ubXRnLnYxLkZvcm1hdBIhCgVwb3dlchgEIAEoCzISLm10Zy52MS5Qb3dlckxldmVsEg8KB3N1bW1hcnkYBSABKAkSHAoUY29tbWFuZGVyX29yYWNsZV9pZHMYBiADKAkSHwoFY2FyZHMYByADKAsyEC5tdGcudjEuRGVja0NhcmQSLAoKdmFsaWRhdGlvbhgIIAEoCzIYLm10Zy52MS5WYWxpZGF0aW9uUmVzdWx0EhYKDmxlZ2FsaXR5X2FzX29mGAkgASgJEhIKCnNlc3Npb25faWQYCyABKAkSLgoKY3JlYXRlZF9hdBgMIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASDQoFc3RhbGUYDSABKAgSGAoQc3RhbGVfb3JhY2xlX2lkcxgOIAMoCRIjCglzaWRlYm9hcmQYDyADKAsyEC5tdGcudjEuRGVja0NhcmQSGwoTY29tcGFuaW9uX29yYWNsZV9pZBgQIAEoCRIiCgh1cGdyYWRlcxgRIAMoCzIQLm10Zy52MS5EZWNrQ2FyZBIUCgxidXlfY29zdF91c2QYEiABKAESHAoUcmV2aXNlZF9mcm9tX2RlY2tfaWQYEyABKAkSFQoNcmV2aXNpb25fbm90ZRgUIAEoCRIQCghmYXZvcml0ZRgVIAEoCBISCgpjYXJkX2NvdW50GBYgASgFEiQKB3Byb2ZpbGUYFyABKAsyEy5tdGcudjEuRGVja1Byb2ZpbGUSJAoHcXVhbGl0eRgYIAEoCzITLm10Zy52MS5EZWNrUXVhbGl0eRIOCgZzaGFyZWQYGSABKAhKBAgKEAtSBHNlZWQiggEKC0RlY2tRdWFsaXR5EgwKBHRpZXIYASABKAkSDQoFc2NvcmUYAiABKAESDwoHcmVhc29ucxgDIAMoCRIVCg1tb2RlbF92ZXJzaW9uGAQgASgJEi4KDXByb2JhYmlsaXRpZXMYBSADKAsyFy5tdGcudjEuVGllclByb2JhYmlsaXR5IjQKD1RpZXJQcm9iYWJpbGl0eRIMCgR0aWVyGAEgASgJEhMKC3Byb2JhYmlsaXR5GAIgASgBIq4BCgtEZWNrUHJvZmlsZRIPCgdicmFja2V0GAEgASgFEigKCGZlYXR1cmVzGAIgAygLMhYubXRnLnYxLlByb2ZpbGVGZWF0dXJlEiIKCGdvbGRmaXNoGAMgASgLMhAubXRnLnYxLkdvbGRmaXNoEiUKB2NvbnRlbnQYBCABKAsyFC5tdGcudjEuQ29udGVudENoZWNrEhkKEWJhbmRzX3ZlcmlmaWVkX2F0GAUgASgJInkKDlByb2ZpbGVGZWF0dXJlEgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoARILCgNsb3cYAyABKAESDAoEaGlnaBgEIAEoARIQCghoYXNfaGlnaBgFIAEoCBIQCghvZmZfYmFuZBgGIAEoCBIMCgRub3RlGAcgASgJImoKCEdvbGRmaXNoEg0KBWhhbmRzGAEgASgFEhYKDmNvbW1hbmRlcl90dXJuGAIgASgBEhYKDm1hbmFfdHVybl9mb3VyGAMgASgBEh8KF3NoYXJlX3R3b190b19mb3VyX2xhbmRzGAQgASgBIqoBCgxDb250ZW50Q2hlY2sSDwoHY2hlY2tlZBgBIAEoCBINCgVlcnJvchgCIAEoCRISCgpzb3VyY2VfdGFnGAMgASgJEhUKDWdhbWVfY2hhbmdlcnMYBCADKAkSGAoQbWFzc19sYW5kX2RlbmlhbBgFIAMoCRITCgtleHRyYV90dXJucxgGIAMoCRIgCgZjb21ib3MYByADKAsyEC5tdGcudjEuQ29tYm9IaXQidAoIQ29tYm9IaXQSCgoCaWQYASABKAkSDQoFY2FyZHMYAiADKAkSEAoIdHdvX2NhcmQYAyABKAgSDQoFc3BlZWQYBCABKAUSEgoKZXh0cmFfdHVybhgFIAEoCBIYChBtYXNzX2xhbmRfZGVuaWFsGAYgASgIIoICCgpTaGFyZWREZWNrEgwKBG5hbWUYASABKAkSHgoGZm9ybWF0GAIgASgLMg4ubXRnLnYxLkZvcm1hdBIhCgVwb3dlchgDIAEoCzISLm10Zy52MS5Qb3dlckxldmVsEg8KB3N1bW1hcnkYBCABKAkSHAoUY29tbWFuZGVyX29yYWNsZV9pZHMYBSADKAkSIQoFY2FyZHMYBiADKAsyEi5tdGcudjEuU2hhcmVkQ2FyZBIlCglzaWRlYm9hcmQYByADKAsyEi5tdGcudjEuU2hhcmVkQ2FyZBIWCg5sZWdhbGl0eV9hc19vZhgIIAEoCRISCgpjYXJkX2NvdW50GAkgASgFIogBCgpTaGFyZWRDYXJkEhEKCW9yYWNsZV9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEg0KBWNvdW50GAMgASgFEh4KBHJvbGUYBCABKA4yEC5tdGcudjEuQ2FyZFJvbGUSDgoGcmVhc29uGAUgASgJEhoKBGNhcmQYBiABKAsyDC5tdGcudjEuQ2FyZCLrAQoIRGVja0NhcmQSEQoJb3JhY2xlX2lkGAEgASgJEgwKBG5hbWUYAiABKAkSDQoFY291bnQYAyABKAUSHgoEcm9sZRgEIAEoDjIQLm10Zy52MS5DYXJkUm9sZRIOCgZyZWFzb24YBSABKAkSDQoFb3duZWQYBiABKAgSEwoLb3duZWRfY291bnQYByABKAUSEQoJcHJpY2VfdXNkGAggASgBEigKDm93bmVkX3ByaW50aW5nGAkgASgLMhAubXRnLnYxLlByaW50aW5nEh4KFm91dHNpZGVfcmVxdWVzdGVkX3NldHMYCiABKAgipAEKEFZhbGlkYXRpb25SZXN1bHQSIQoIZmluZGluZ3MYASADKAsyDy5tdGcudjEuRmluZGluZxIOCgZwYXNzZWQYAiABKAgSFgoObGVnYWxpdHlfYXNfb2YYAyABKAkSIwoJcG9vbF9ydWxlGAQgASgOMhAubXRnLnYxLlBvb2xSdWxlEiAKBmZvcm1hdBgFIAEoDjIQLm10Zy52MS5Gb3JtYXRJZCJfCgdGaW5kaW5nEgwKBGNvZGUYASABKAkSIgoIc2V2ZXJpdHkYAiABKA4yEC5tdGcudjEuU2V2ZXJpdHkSDwoHbWVzc2FnZRgDIAEoCRIRCglvcmFjbGVfaWQYBCABKAkq/wEKCENhcmRSb2xlEhkKFUNBUkRfUk9MRV9VTlNQRUNJRklFRBAAEhIKDkNBUkRfUk9MRV9MQU5EEAESEgoOQ0FSRF9ST0xFX1JBTVAQAhISCg5DQVJEX1JPTEVfRFJBVxADEhUKEUNBUkRfUk9MRV9SRU1PVkFMEAQSEgoOQ0FSRF9ST0xFX1dJUEUQBRIUChBDQVJEX1JPTEVfVEhSRUFUEAYSGQoVQ0FSRF9ST0xFX0lOVEVSQUNUSU9OEAcSFQoRQ0FSRF9ST0xFX1NZTkVSR1kQCBIUChBDQVJEX1JPTEVfV0lOQ09OEAkSEwoPQ0FSRF9ST0xFX09USEVSEAoqXgoIU2V2ZXJpdHkSGAoUU0VWRVJJVFlfVU5TUEVDSUZJRUQQABISCg5TRVZFUklUWV9CTE9DSxABEhEKDVNFVkVSSVRZX1dBUk4QAhIRCg1TRVZFUklUWV9JTkZPEANCOlo4Z2l0aHViLmNvbS9ua3JhbWJlci9tdGctZGVjay1idWlsZGVyL2dvL2dlbi9tdGcvdjE7bXRndjFiBnByb3RvMw", [file_mtg_v1_card, file_mtg_v1_format, file_mtg_v1_session, file_google_protobuf_timestamp]);
 
 /**
  * Deck is one generated deck.
@@ -189,6 +189,14 @@ export type Deck = Message<"mtg.v1.Deck"> & {
    * @generated from field: mtg.v1.DeckQuality quality = 24;
    */
   quality?: DeckQuality | undefined;
+
+  /**
+   * shared says a share link exists for this deck (D-315). The token
+   * itself is never stored, so a new link replaces the old one.
+   *
+   * @generated from field: bool shared = 25;
+   */
+  shared: boolean;
 };
 
 /**
@@ -531,7 +539,115 @@ export const ComboHitSchema: GenMessage<ComboHit> = /*@__PURE__*/
 
 /**
  * DeckCard is one card choice with its reason.
+ * SharedDeck is the public read of a deck through its share link
+ * (D-315, guardrail 13). It holds what a reader of the link needs and no
+ * user field: no session, no collection, no owned mark, no owned
+ * printing, and no price of the owner's copies. A test reads this
+ * message and SharedCard from the proto text and proves it.
  *
+ * @generated from message mtg.v1.SharedDeck
+ */
+export type SharedDeck = Message<"mtg.v1.SharedDeck"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: mtg.v1.Format format = 2;
+   */
+  format?: Format | undefined;
+
+  /**
+   * @generated from field: mtg.v1.PowerLevel power = 3;
+   */
+  power?: PowerLevel | undefined;
+
+  /**
+   * @generated from field: string summary = 4;
+   */
+  summary: string;
+
+  /**
+   * @generated from field: repeated string commander_oracle_ids = 5;
+   */
+  commanderOracleIds: string[];
+
+  /**
+   * @generated from field: repeated mtg.v1.SharedCard cards = 6;
+   */
+  cards: SharedCard[];
+
+  /**
+   * @generated from field: repeated mtg.v1.SharedCard sideboard = 7;
+   */
+  sideboard: SharedCard[];
+
+  /**
+   * @generated from field: string legality_as_of = 8;
+   */
+  legalityAsOf: string;
+
+  /**
+   * @generated from field: int32 card_count = 9;
+   */
+  cardCount: number;
+};
+
+/**
+ * Describes the message mtg.v1.SharedDeck.
+ * Use `create(SharedDeckSchema)` to create a new message.
+ */
+export const SharedDeckSchema: GenMessage<SharedDeck> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_deck, 8);
+
+/**
+ * SharedCard is one entry of a shared deck, with the card data inline,
+ * so the page needs no second call (D-315). The card carries its
+ * default paper printing with the artist (D-6) and the public price.
+ *
+ * @generated from message mtg.v1.SharedCard
+ */
+export type SharedCard = Message<"mtg.v1.SharedCard"> & {
+  /**
+   * @generated from field: string oracle_id = 1;
+   */
+  oracleId: string;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: int32 count = 3;
+   */
+  count: number;
+
+  /**
+   * @generated from field: mtg.v1.CardRole role = 4;
+   */
+  role: CardRole;
+
+  /**
+   * @generated from field: string reason = 5;
+   */
+  reason: string;
+
+  /**
+   * @generated from field: mtg.v1.Card card = 6;
+   */
+  card?: Card | undefined;
+};
+
+/**
+ * Describes the message mtg.v1.SharedCard.
+ * Use `create(SharedCardSchema)` to create a new message.
+ */
+export const SharedCardSchema: GenMessage<SharedCard> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_deck, 9);
+
+/**
  * @generated from message mtg.v1.DeckCard
  */
 export type DeckCard = Message<"mtg.v1.DeckCard"> & {
@@ -611,7 +727,7 @@ export type DeckCard = Message<"mtg.v1.DeckCard"> & {
  * Use `create(DeckCardSchema)` to create a new message.
  */
 export const DeckCardSchema: GenMessage<DeckCard> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_deck, 8);
+  messageDesc(file_mtg_v1_deck, 10);
 
 /**
  * ValidationResult is the rules-engine verdict (guardrail 1, PR-5).
@@ -661,7 +777,7 @@ export type ValidationResult = Message<"mtg.v1.ValidationResult"> & {
  * Use `create(ValidationResultSchema)` to create a new message.
  */
 export const ValidationResultSchema: GenMessage<ValidationResult> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_deck, 9);
+  messageDesc(file_mtg_v1_deck, 11);
 
 /**
  * Finding is one problem the rules engine found.
@@ -699,7 +815,7 @@ export type Finding = Message<"mtg.v1.Finding"> & {
  * Use `create(FindingSchema)` to create a new message.
  */
 export const FindingSchema: GenMessage<Finding> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_deck, 10);
+  messageDesc(file_mtg_v1_deck, 12);
 
 /**
  * CardRole is the job a card does in the deck (corpus section 6).

@@ -198,3 +198,37 @@ func TestBearer(t *testing.T) {
 		}
 	}
 }
+
+// TestPublicProcedurePassesWithNoToken is D-315: a procedure on the
+// public list needs no bearer token and carries no user, and every other
+// procedure of the service keeps the check.
+func TestPublicProcedurePassesWithNoToken(t *testing.T) {
+	in := Interceptor(RejectAll(), WithPublic("/mtg.v1.DeckService/GetSharedDeck"))
+	var seen string
+	next := in.WrapUnary(func(ctx context.Context, _ connect.AnyRequest) (connect.AnyResponse, error) {
+		seen = UserID(ctx)
+		return nil, nil
+	})
+	call := func(procedure string) error {
+		req := connect.NewRequest(&struct{}{})
+		_, err := next(context.Background(), &specRequest{Request: req, spec: connect.Spec{Procedure: procedure}})
+		return err
+	}
+	if err := call("/mtg.v1.DeckService/GetSharedDeck"); err != nil {
+		t.Fatalf("public procedure: %v", err)
+	}
+	if seen != "" {
+		t.Errorf("a public call carries a user %q", seen)
+	}
+	if err := call("/mtg.v1.DeckService/GetDeck"); connect.CodeOf(err) != connect.CodeUnauthenticated {
+		t.Errorf("another procedure: %v, want Unauthenticated", err)
+	}
+}
+
+// specRequest gives a request the procedure a server sees.
+type specRequest struct {
+	*connect.Request[struct{}]
+	spec connect.Spec
+}
+
+func (r *specRequest) Spec() connect.Spec { return r.spec }

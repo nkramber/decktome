@@ -82,6 +82,359 @@ func (ExportFormat) EnumDescriptor() ([]byte, []int) {
 	return file_mtg_v1_deck_service_proto_rawDescGZIP(), []int{0}
 }
 
+type ShareDeckRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	DeckId        string                 `protobuf:"bytes,1,opt,name=deck_id,json=deckId,proto3" json:"deck_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ShareDeckRequest) Reset() {
+	*x = ShareDeckRequest{}
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ShareDeckRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ShareDeckRequest) ProtoMessage() {}
+
+func (x *ShareDeckRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ShareDeckRequest.ProtoReflect.Descriptor instead.
+func (*ShareDeckRequest) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_deck_service_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *ShareDeckRequest) GetDeckId() string {
+	if x != nil {
+		return x.DeckId
+	}
+	return ""
+}
+
+type ShareDeckResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// token is the secret of the link, shown once. The page is /d/<token>.
+	Token         string `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ShareDeckResponse) Reset() {
+	*x = ShareDeckResponse{}
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ShareDeckResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ShareDeckResponse) ProtoMessage() {}
+
+func (x *ShareDeckResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ShareDeckResponse.ProtoReflect.Descriptor instead.
+func (*ShareDeckResponse) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_deck_service_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *ShareDeckResponse) GetToken() string {
+	if x != nil {
+		return x.Token
+	}
+	return ""
+}
+
+type RevokeShareRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	DeckId        string                 `protobuf:"bytes,1,opt,name=deck_id,json=deckId,proto3" json:"deck_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RevokeShareRequest) Reset() {
+	*x = RevokeShareRequest{}
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RevokeShareRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RevokeShareRequest) ProtoMessage() {}
+
+func (x *RevokeShareRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RevokeShareRequest.ProtoReflect.Descriptor instead.
+func (*RevokeShareRequest) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_deck_service_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *RevokeShareRequest) GetDeckId() string {
+	if x != nil {
+		return x.DeckId
+	}
+	return ""
+}
+
+type RevokeShareResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RevokeShareResponse) Reset() {
+	*x = RevokeShareResponse{}
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RevokeShareResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RevokeShareResponse) ProtoMessage() {}
+
+func (x *RevokeShareResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RevokeShareResponse.ProtoReflect.Descriptor instead.
+func (*RevokeShareResponse) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_deck_service_proto_rawDescGZIP(), []int{3}
+}
+
+type GetSharedDeckRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Token         string                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetSharedDeckRequest) Reset() {
+	*x = GetSharedDeckRequest{}
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetSharedDeckRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetSharedDeckRequest) ProtoMessage() {}
+
+func (x *GetSharedDeckRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetSharedDeckRequest.ProtoReflect.Descriptor instead.
+func (*GetSharedDeckRequest) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_deck_service_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *GetSharedDeckRequest) GetToken() string {
+	if x != nil {
+		return x.Token
+	}
+	return ""
+}
+
+type GetSharedDeckResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Deck          *SharedDeck            `protobuf:"bytes,1,opt,name=deck,proto3" json:"deck,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetSharedDeckResponse) Reset() {
+	*x = GetSharedDeckResponse{}
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetSharedDeckResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetSharedDeckResponse) ProtoMessage() {}
+
+func (x *GetSharedDeckResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetSharedDeckResponse.ProtoReflect.Descriptor instead.
+func (*GetSharedDeckResponse) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_deck_service_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *GetSharedDeckResponse) GetDeck() *SharedDeck {
+	if x != nil {
+		return x.Deck
+	}
+	return nil
+}
+
+type ExportSharedDeckRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Token         string                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ExportSharedDeckRequest) Reset() {
+	*x = ExportSharedDeckRequest{}
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExportSharedDeckRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExportSharedDeckRequest) ProtoMessage() {}
+
+func (x *ExportSharedDeckRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExportSharedDeckRequest.ProtoReflect.Descriptor instead.
+func (*ExportSharedDeckRequest) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_deck_service_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *ExportSharedDeckRequest) GetToken() string {
+	if x != nil {
+		return x.Token
+	}
+	return ""
+}
+
+type ExportSharedDeckResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Text          string                 `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
+	FileName      string                 `protobuf:"bytes,2,opt,name=file_name,json=fileName,proto3" json:"file_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ExportSharedDeckResponse) Reset() {
+	*x = ExportSharedDeckResponse{}
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExportSharedDeckResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExportSharedDeckResponse) ProtoMessage() {}
+
+func (x *ExportSharedDeckResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExportSharedDeckResponse.ProtoReflect.Descriptor instead.
+func (*ExportSharedDeckResponse) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_deck_service_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *ExportSharedDeckResponse) GetText() string {
+	if x != nil {
+		return x.Text
+	}
+	return ""
+}
+
+func (x *ExportSharedDeckResponse) GetFileName() string {
+	if x != nil {
+		return x.FileName
+	}
+	return ""
+}
+
 type ExportDeckRequest struct {
 	state  protoimpl.MessageState `protogen:"open.v1"`
 	DeckId string                 `protobuf:"bytes,1,opt,name=deck_id,json=deckId,proto3" json:"deck_id,omitempty"`
@@ -93,7 +446,7 @@ type ExportDeckRequest struct {
 
 func (x *ExportDeckRequest) Reset() {
 	*x = ExportDeckRequest{}
-	mi := &file_mtg_v1_deck_service_proto_msgTypes[0]
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -105,7 +458,7 @@ func (x *ExportDeckRequest) String() string {
 func (*ExportDeckRequest) ProtoMessage() {}
 
 func (x *ExportDeckRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_deck_service_proto_msgTypes[0]
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -118,7 +471,7 @@ func (x *ExportDeckRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExportDeckRequest.ProtoReflect.Descriptor instead.
 func (*ExportDeckRequest) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_deck_service_proto_rawDescGZIP(), []int{0}
+	return file_mtg_v1_deck_service_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ExportDeckRequest) GetDeckId() string {
@@ -146,7 +499,7 @@ type ExportDeckResponse struct {
 
 func (x *ExportDeckResponse) Reset() {
 	*x = ExportDeckResponse{}
-	mi := &file_mtg_v1_deck_service_proto_msgTypes[1]
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -158,7 +511,7 @@ func (x *ExportDeckResponse) String() string {
 func (*ExportDeckResponse) ProtoMessage() {}
 
 func (x *ExportDeckResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_deck_service_proto_msgTypes[1]
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -171,7 +524,7 @@ func (x *ExportDeckResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExportDeckResponse.ProtoReflect.Descriptor instead.
 func (*ExportDeckResponse) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_deck_service_proto_rawDescGZIP(), []int{1}
+	return file_mtg_v1_deck_service_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ExportDeckResponse) GetText() string {
@@ -197,7 +550,7 @@ type GetDeckRequest struct {
 
 func (x *GetDeckRequest) Reset() {
 	*x = GetDeckRequest{}
-	mi := &file_mtg_v1_deck_service_proto_msgTypes[2]
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -209,7 +562,7 @@ func (x *GetDeckRequest) String() string {
 func (*GetDeckRequest) ProtoMessage() {}
 
 func (x *GetDeckRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_deck_service_proto_msgTypes[2]
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -222,7 +575,7 @@ func (x *GetDeckRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetDeckRequest.ProtoReflect.Descriptor instead.
 func (*GetDeckRequest) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_deck_service_proto_rawDescGZIP(), []int{2}
+	return file_mtg_v1_deck_service_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *GetDeckRequest) GetDeckId() string {
@@ -241,7 +594,7 @@ type GetDeckResponse struct {
 
 func (x *GetDeckResponse) Reset() {
 	*x = GetDeckResponse{}
-	mi := &file_mtg_v1_deck_service_proto_msgTypes[3]
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -253,7 +606,7 @@ func (x *GetDeckResponse) String() string {
 func (*GetDeckResponse) ProtoMessage() {}
 
 func (x *GetDeckResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_deck_service_proto_msgTypes[3]
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -266,7 +619,7 @@ func (x *GetDeckResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetDeckResponse.ProtoReflect.Descriptor instead.
 func (*GetDeckResponse) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_deck_service_proto_rawDescGZIP(), []int{3}
+	return file_mtg_v1_deck_service_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *GetDeckResponse) GetDeck() *Deck {
@@ -308,7 +661,7 @@ type ListDecksRequest struct {
 
 func (x *ListDecksRequest) Reset() {
 	*x = ListDecksRequest{}
-	mi := &file_mtg_v1_deck_service_proto_msgTypes[4]
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -320,7 +673,7 @@ func (x *ListDecksRequest) String() string {
 func (*ListDecksRequest) ProtoMessage() {}
 
 func (x *ListDecksRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_deck_service_proto_msgTypes[4]
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -333,7 +686,7 @@ func (x *ListDecksRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListDecksRequest.ProtoReflect.Descriptor instead.
 func (*ListDecksRequest) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_deck_service_proto_rawDescGZIP(), []int{4}
+	return file_mtg_v1_deck_service_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *ListDecksRequest) GetPageSize() int32 {
@@ -404,7 +757,7 @@ type ListDecksResponse struct {
 
 func (x *ListDecksResponse) Reset() {
 	*x = ListDecksResponse{}
-	mi := &file_mtg_v1_deck_service_proto_msgTypes[5]
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -416,7 +769,7 @@ func (x *ListDecksResponse) String() string {
 func (*ListDecksResponse) ProtoMessage() {}
 
 func (x *ListDecksResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_deck_service_proto_msgTypes[5]
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -429,7 +782,7 @@ func (x *ListDecksResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListDecksResponse.ProtoReflect.Descriptor instead.
 func (*ListDecksResponse) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_deck_service_proto_rawDescGZIP(), []int{5}
+	return file_mtg_v1_deck_service_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ListDecksResponse) GetDecks() []*Deck {
@@ -460,7 +813,7 @@ type UpdateDeckRequest struct {
 
 func (x *UpdateDeckRequest) Reset() {
 	*x = UpdateDeckRequest{}
-	mi := &file_mtg_v1_deck_service_proto_msgTypes[6]
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -472,7 +825,7 @@ func (x *UpdateDeckRequest) String() string {
 func (*UpdateDeckRequest) ProtoMessage() {}
 
 func (x *UpdateDeckRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_deck_service_proto_msgTypes[6]
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -485,7 +838,7 @@ func (x *UpdateDeckRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateDeckRequest.ProtoReflect.Descriptor instead.
 func (*UpdateDeckRequest) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_deck_service_proto_rawDescGZIP(), []int{6}
+	return file_mtg_v1_deck_service_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *UpdateDeckRequest) GetDeckId() string {
@@ -519,7 +872,7 @@ type UpdateDeckResponse struct {
 
 func (x *UpdateDeckResponse) Reset() {
 	*x = UpdateDeckResponse{}
-	mi := &file_mtg_v1_deck_service_proto_msgTypes[7]
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -531,7 +884,7 @@ func (x *UpdateDeckResponse) String() string {
 func (*UpdateDeckResponse) ProtoMessage() {}
 
 func (x *UpdateDeckResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_deck_service_proto_msgTypes[7]
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -544,7 +897,7 @@ func (x *UpdateDeckResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateDeckResponse.ProtoReflect.Descriptor instead.
 func (*UpdateDeckResponse) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_deck_service_proto_rawDescGZIP(), []int{7}
+	return file_mtg_v1_deck_service_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *UpdateDeckResponse) GetDeck() *Deck {
@@ -563,7 +916,7 @@ type DeleteDeckRequest struct {
 
 func (x *DeleteDeckRequest) Reset() {
 	*x = DeleteDeckRequest{}
-	mi := &file_mtg_v1_deck_service_proto_msgTypes[8]
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -575,7 +928,7 @@ func (x *DeleteDeckRequest) String() string {
 func (*DeleteDeckRequest) ProtoMessage() {}
 
 func (x *DeleteDeckRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_deck_service_proto_msgTypes[8]
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -588,7 +941,7 @@ func (x *DeleteDeckRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteDeckRequest.ProtoReflect.Descriptor instead.
 func (*DeleteDeckRequest) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_deck_service_proto_rawDescGZIP(), []int{8}
+	return file_mtg_v1_deck_service_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *DeleteDeckRequest) GetDeckId() string {
@@ -606,7 +959,7 @@ type DeleteDeckResponse struct {
 
 func (x *DeleteDeckResponse) Reset() {
 	*x = DeleteDeckResponse{}
-	mi := &file_mtg_v1_deck_service_proto_msgTypes[9]
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -618,7 +971,7 @@ func (x *DeleteDeckResponse) String() string {
 func (*DeleteDeckResponse) ProtoMessage() {}
 
 func (x *DeleteDeckResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_deck_service_proto_msgTypes[9]
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -631,7 +984,7 @@ func (x *DeleteDeckResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteDeckResponse.ProtoReflect.Descriptor instead.
 func (*DeleteDeckResponse) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_deck_service_proto_rawDescGZIP(), []int{9}
+	return file_mtg_v1_deck_service_proto_rawDescGZIP(), []int{17}
 }
 
 type ValidateRequest struct {
@@ -648,7 +1001,7 @@ type ValidateRequest struct {
 
 func (x *ValidateRequest) Reset() {
 	*x = ValidateRequest{}
-	mi := &file_mtg_v1_deck_service_proto_msgTypes[10]
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -660,7 +1013,7 @@ func (x *ValidateRequest) String() string {
 func (*ValidateRequest) ProtoMessage() {}
 
 func (x *ValidateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_deck_service_proto_msgTypes[10]
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -673,7 +1026,7 @@ func (x *ValidateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ValidateRequest.ProtoReflect.Descriptor instead.
 func (*ValidateRequest) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_deck_service_proto_rawDescGZIP(), []int{10}
+	return file_mtg_v1_deck_service_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *ValidateRequest) GetDeck() *Deck {
@@ -706,7 +1059,7 @@ type ValidateResponse struct {
 
 func (x *ValidateResponse) Reset() {
 	*x = ValidateResponse{}
-	mi := &file_mtg_v1_deck_service_proto_msgTypes[11]
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -718,7 +1071,7 @@ func (x *ValidateResponse) String() string {
 func (*ValidateResponse) ProtoMessage() {}
 
 func (x *ValidateResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_deck_service_proto_msgTypes[11]
+	mi := &file_mtg_v1_deck_service_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -731,7 +1084,7 @@ func (x *ValidateResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ValidateResponse.ProtoReflect.Descriptor instead.
 func (*ValidateResponse) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_deck_service_proto_rawDescGZIP(), []int{11}
+	return file_mtg_v1_deck_service_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *ValidateResponse) GetResult() *ValidationResult {
@@ -745,7 +1098,23 @@ var File_mtg_v1_deck_service_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_deck_service_proto_rawDesc = "" +
 	"\n" +
-	"\x19mtg/v1/deck_service.proto\x12\x06mtg.v1\x1a\x11mtg/v1/deck.proto\x1a\x13mtg/v1/format.proto\x1a\x14mtg/v1/session.proto\"Z\n" +
+	"\x19mtg/v1/deck_service.proto\x12\x06mtg.v1\x1a\x11mtg/v1/deck.proto\x1a\x13mtg/v1/format.proto\x1a\x14mtg/v1/session.proto\"+\n" +
+	"\x10ShareDeckRequest\x12\x17\n" +
+	"\adeck_id\x18\x01 \x01(\tR\x06deckId\")\n" +
+	"\x11ShareDeckResponse\x12\x14\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\"-\n" +
+	"\x12RevokeShareRequest\x12\x17\n" +
+	"\adeck_id\x18\x01 \x01(\tR\x06deckId\"\x15\n" +
+	"\x13RevokeShareResponse\",\n" +
+	"\x14GetSharedDeckRequest\x12\x14\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\"?\n" +
+	"\x15GetSharedDeckResponse\x12&\n" +
+	"\x04deck\x18\x01 \x01(\v2\x12.mtg.v1.SharedDeckR\x04deck\"/\n" +
+	"\x17ExportSharedDeckRequest\x12\x14\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\"K\n" +
+	"\x18ExportSharedDeckResponse\x12\x12\n" +
+	"\x04text\x18\x01 \x01(\tR\x04text\x12\x1b\n" +
+	"\tfile_name\x18\x02 \x01(\tR\bfileName\"Z\n" +
 	"\x11ExportDeckRequest\x12\x17\n" +
 	"\adeck_id\x18\x01 \x01(\tR\x06deckId\x12,\n" +
 	"\x06format\x18\x02 \x01(\x0e2\x14.mtg.v1.ExportFormatR\x06format\"E\n" +
@@ -791,7 +1160,7 @@ const file_mtg_v1_deck_service_proto_rawDesc = "" +
 	"\fExportFormat\x12\x1d\n" +
 	"\x19EXPORT_FORMAT_UNSPECIFIED\x10\x00\x12\x1c\n" +
 	"\x18EXPORT_FORMAT_ARENA_TEXT\x10\x01\x12\x1f\n" +
-	"\x1bEXPORT_FORMAT_BUY_LIST_TEXT\x10\x022\xa5\x03\n" +
+	"\x1bEXPORT_FORMAT_BUY_LIST_TEXT\x10\x022\xdc\x05\n" +
 	"\vDeckService\x12<\n" +
 	"\aGetDeck\x12\x16.mtg.v1.GetDeckRequest\x1a\x17.mtg.v1.GetDeckResponse\"\x00\x12B\n" +
 	"\tListDecks\x12\x18.mtg.v1.ListDecksRequest\x1a\x19.mtg.v1.ListDecksResponse\"\x00\x12?\n" +
@@ -801,7 +1170,11 @@ const file_mtg_v1_deck_service_proto_rawDesc = "" +
 	"\n" +
 	"UpdateDeck\x12\x19.mtg.v1.UpdateDeckRequest\x1a\x1a.mtg.v1.UpdateDeckResponse\"\x00\x12E\n" +
 	"\n" +
-	"DeleteDeck\x12\x19.mtg.v1.DeleteDeckRequest\x1a\x1a.mtg.v1.DeleteDeckResponse\"\x00B:Z8github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1b\x06proto3"
+	"DeleteDeck\x12\x19.mtg.v1.DeleteDeckRequest\x1a\x1a.mtg.v1.DeleteDeckResponse\"\x00\x12B\n" +
+	"\tShareDeck\x12\x18.mtg.v1.ShareDeckRequest\x1a\x19.mtg.v1.ShareDeckResponse\"\x00\x12H\n" +
+	"\vRevokeShare\x12\x1a.mtg.v1.RevokeShareRequest\x1a\x1b.mtg.v1.RevokeShareResponse\"\x00\x12N\n" +
+	"\rGetSharedDeck\x12\x1c.mtg.v1.GetSharedDeckRequest\x1a\x1d.mtg.v1.GetSharedDeckResponse\"\x00\x12W\n" +
+	"\x10ExportSharedDeck\x12\x1f.mtg.v1.ExportSharedDeckRequest\x1a .mtg.v1.ExportSharedDeckResponse\"\x00B:Z8github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1b\x06proto3"
 
 var (
 	file_mtg_v1_deck_service_proto_rawDescOnce sync.Once
@@ -816,54 +1189,72 @@ func file_mtg_v1_deck_service_proto_rawDescGZIP() []byte {
 }
 
 var file_mtg_v1_deck_service_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_mtg_v1_deck_service_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_mtg_v1_deck_service_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_mtg_v1_deck_service_proto_goTypes = []any{
-	(ExportFormat)(0),          // 0: mtg.v1.ExportFormat
-	(*ExportDeckRequest)(nil),  // 1: mtg.v1.ExportDeckRequest
-	(*ExportDeckResponse)(nil), // 2: mtg.v1.ExportDeckResponse
-	(*GetDeckRequest)(nil),     // 3: mtg.v1.GetDeckRequest
-	(*GetDeckResponse)(nil),    // 4: mtg.v1.GetDeckResponse
-	(*ListDecksRequest)(nil),   // 5: mtg.v1.ListDecksRequest
-	(*ListDecksResponse)(nil),  // 6: mtg.v1.ListDecksResponse
-	(*UpdateDeckRequest)(nil),  // 7: mtg.v1.UpdateDeckRequest
-	(*UpdateDeckResponse)(nil), // 8: mtg.v1.UpdateDeckResponse
-	(*DeleteDeckRequest)(nil),  // 9: mtg.v1.DeleteDeckRequest
-	(*DeleteDeckResponse)(nil), // 10: mtg.v1.DeleteDeckResponse
-	(*ValidateRequest)(nil),    // 11: mtg.v1.ValidateRequest
-	(*ValidateResponse)(nil),   // 12: mtg.v1.ValidateResponse
-	(*Deck)(nil),               // 13: mtg.v1.Deck
-	(FormatId)(0),              // 14: mtg.v1.FormatId
-	(SixtyStep)(0),             // 15: mtg.v1.SixtyStep
-	(PoolRule)(0),              // 16: mtg.v1.PoolRule
-	(*ValidationResult)(nil),   // 17: mtg.v1.ValidationResult
+	(ExportFormat)(0),                // 0: mtg.v1.ExportFormat
+	(*ShareDeckRequest)(nil),         // 1: mtg.v1.ShareDeckRequest
+	(*ShareDeckResponse)(nil),        // 2: mtg.v1.ShareDeckResponse
+	(*RevokeShareRequest)(nil),       // 3: mtg.v1.RevokeShareRequest
+	(*RevokeShareResponse)(nil),      // 4: mtg.v1.RevokeShareResponse
+	(*GetSharedDeckRequest)(nil),     // 5: mtg.v1.GetSharedDeckRequest
+	(*GetSharedDeckResponse)(nil),    // 6: mtg.v1.GetSharedDeckResponse
+	(*ExportSharedDeckRequest)(nil),  // 7: mtg.v1.ExportSharedDeckRequest
+	(*ExportSharedDeckResponse)(nil), // 8: mtg.v1.ExportSharedDeckResponse
+	(*ExportDeckRequest)(nil),        // 9: mtg.v1.ExportDeckRequest
+	(*ExportDeckResponse)(nil),       // 10: mtg.v1.ExportDeckResponse
+	(*GetDeckRequest)(nil),           // 11: mtg.v1.GetDeckRequest
+	(*GetDeckResponse)(nil),          // 12: mtg.v1.GetDeckResponse
+	(*ListDecksRequest)(nil),         // 13: mtg.v1.ListDecksRequest
+	(*ListDecksResponse)(nil),        // 14: mtg.v1.ListDecksResponse
+	(*UpdateDeckRequest)(nil),        // 15: mtg.v1.UpdateDeckRequest
+	(*UpdateDeckResponse)(nil),       // 16: mtg.v1.UpdateDeckResponse
+	(*DeleteDeckRequest)(nil),        // 17: mtg.v1.DeleteDeckRequest
+	(*DeleteDeckResponse)(nil),       // 18: mtg.v1.DeleteDeckResponse
+	(*ValidateRequest)(nil),          // 19: mtg.v1.ValidateRequest
+	(*ValidateResponse)(nil),         // 20: mtg.v1.ValidateResponse
+	(*SharedDeck)(nil),               // 21: mtg.v1.SharedDeck
+	(*Deck)(nil),                     // 22: mtg.v1.Deck
+	(FormatId)(0),                    // 23: mtg.v1.FormatId
+	(SixtyStep)(0),                   // 24: mtg.v1.SixtyStep
+	(PoolRule)(0),                    // 25: mtg.v1.PoolRule
+	(*ValidationResult)(nil),         // 26: mtg.v1.ValidationResult
 }
 var file_mtg_v1_deck_service_proto_depIdxs = []int32{
-	0,  // 0: mtg.v1.ExportDeckRequest.format:type_name -> mtg.v1.ExportFormat
-	13, // 1: mtg.v1.GetDeckResponse.deck:type_name -> mtg.v1.Deck
-	14, // 2: mtg.v1.ListDecksRequest.format:type_name -> mtg.v1.FormatId
-	15, // 3: mtg.v1.ListDecksRequest.power_sixty_step:type_name -> mtg.v1.SixtyStep
-	13, // 4: mtg.v1.ListDecksResponse.decks:type_name -> mtg.v1.Deck
-	13, // 5: mtg.v1.UpdateDeckResponse.deck:type_name -> mtg.v1.Deck
-	13, // 6: mtg.v1.ValidateRequest.deck:type_name -> mtg.v1.Deck
-	16, // 7: mtg.v1.ValidateRequest.pool_rule:type_name -> mtg.v1.PoolRule
-	17, // 8: mtg.v1.ValidateResponse.result:type_name -> mtg.v1.ValidationResult
-	3,  // 9: mtg.v1.DeckService.GetDeck:input_type -> mtg.v1.GetDeckRequest
-	5,  // 10: mtg.v1.DeckService.ListDecks:input_type -> mtg.v1.ListDecksRequest
-	11, // 11: mtg.v1.DeckService.Validate:input_type -> mtg.v1.ValidateRequest
-	1,  // 12: mtg.v1.DeckService.ExportDeck:input_type -> mtg.v1.ExportDeckRequest
-	7,  // 13: mtg.v1.DeckService.UpdateDeck:input_type -> mtg.v1.UpdateDeckRequest
-	9,  // 14: mtg.v1.DeckService.DeleteDeck:input_type -> mtg.v1.DeleteDeckRequest
-	4,  // 15: mtg.v1.DeckService.GetDeck:output_type -> mtg.v1.GetDeckResponse
-	6,  // 16: mtg.v1.DeckService.ListDecks:output_type -> mtg.v1.ListDecksResponse
-	12, // 17: mtg.v1.DeckService.Validate:output_type -> mtg.v1.ValidateResponse
-	2,  // 18: mtg.v1.DeckService.ExportDeck:output_type -> mtg.v1.ExportDeckResponse
-	8,  // 19: mtg.v1.DeckService.UpdateDeck:output_type -> mtg.v1.UpdateDeckResponse
-	10, // 20: mtg.v1.DeckService.DeleteDeck:output_type -> mtg.v1.DeleteDeckResponse
-	15, // [15:21] is the sub-list for method output_type
-	9,  // [9:15] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	21, // 0: mtg.v1.GetSharedDeckResponse.deck:type_name -> mtg.v1.SharedDeck
+	0,  // 1: mtg.v1.ExportDeckRequest.format:type_name -> mtg.v1.ExportFormat
+	22, // 2: mtg.v1.GetDeckResponse.deck:type_name -> mtg.v1.Deck
+	23, // 3: mtg.v1.ListDecksRequest.format:type_name -> mtg.v1.FormatId
+	24, // 4: mtg.v1.ListDecksRequest.power_sixty_step:type_name -> mtg.v1.SixtyStep
+	22, // 5: mtg.v1.ListDecksResponse.decks:type_name -> mtg.v1.Deck
+	22, // 6: mtg.v1.UpdateDeckResponse.deck:type_name -> mtg.v1.Deck
+	22, // 7: mtg.v1.ValidateRequest.deck:type_name -> mtg.v1.Deck
+	25, // 8: mtg.v1.ValidateRequest.pool_rule:type_name -> mtg.v1.PoolRule
+	26, // 9: mtg.v1.ValidateResponse.result:type_name -> mtg.v1.ValidationResult
+	11, // 10: mtg.v1.DeckService.GetDeck:input_type -> mtg.v1.GetDeckRequest
+	13, // 11: mtg.v1.DeckService.ListDecks:input_type -> mtg.v1.ListDecksRequest
+	19, // 12: mtg.v1.DeckService.Validate:input_type -> mtg.v1.ValidateRequest
+	9,  // 13: mtg.v1.DeckService.ExportDeck:input_type -> mtg.v1.ExportDeckRequest
+	15, // 14: mtg.v1.DeckService.UpdateDeck:input_type -> mtg.v1.UpdateDeckRequest
+	17, // 15: mtg.v1.DeckService.DeleteDeck:input_type -> mtg.v1.DeleteDeckRequest
+	1,  // 16: mtg.v1.DeckService.ShareDeck:input_type -> mtg.v1.ShareDeckRequest
+	3,  // 17: mtg.v1.DeckService.RevokeShare:input_type -> mtg.v1.RevokeShareRequest
+	5,  // 18: mtg.v1.DeckService.GetSharedDeck:input_type -> mtg.v1.GetSharedDeckRequest
+	7,  // 19: mtg.v1.DeckService.ExportSharedDeck:input_type -> mtg.v1.ExportSharedDeckRequest
+	12, // 20: mtg.v1.DeckService.GetDeck:output_type -> mtg.v1.GetDeckResponse
+	14, // 21: mtg.v1.DeckService.ListDecks:output_type -> mtg.v1.ListDecksResponse
+	20, // 22: mtg.v1.DeckService.Validate:output_type -> mtg.v1.ValidateResponse
+	10, // 23: mtg.v1.DeckService.ExportDeck:output_type -> mtg.v1.ExportDeckResponse
+	16, // 24: mtg.v1.DeckService.UpdateDeck:output_type -> mtg.v1.UpdateDeckResponse
+	18, // 25: mtg.v1.DeckService.DeleteDeck:output_type -> mtg.v1.DeleteDeckResponse
+	2,  // 26: mtg.v1.DeckService.ShareDeck:output_type -> mtg.v1.ShareDeckResponse
+	4,  // 27: mtg.v1.DeckService.RevokeShare:output_type -> mtg.v1.RevokeShareResponse
+	6,  // 28: mtg.v1.DeckService.GetSharedDeck:output_type -> mtg.v1.GetSharedDeckResponse
+	8,  // 29: mtg.v1.DeckService.ExportSharedDeck:output_type -> mtg.v1.ExportSharedDeckResponse
+	20, // [20:30] is the sub-list for method output_type
+	10, // [10:20] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_mtg_v1_deck_service_proto_init() }
@@ -874,15 +1265,15 @@ func file_mtg_v1_deck_service_proto_init() {
 	file_mtg_v1_deck_proto_init()
 	file_mtg_v1_format_proto_init()
 	file_mtg_v1_session_proto_init()
-	file_mtg_v1_deck_service_proto_msgTypes[4].OneofWrappers = []any{}
-	file_mtg_v1_deck_service_proto_msgTypes[6].OneofWrappers = []any{}
+	file_mtg_v1_deck_service_proto_msgTypes[12].OneofWrappers = []any{}
+	file_mtg_v1_deck_service_proto_msgTypes[14].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_mtg_v1_deck_service_proto_rawDesc), len(file_mtg_v1_deck_service_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   12,
+			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

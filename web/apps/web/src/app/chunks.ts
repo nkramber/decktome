@@ -12,8 +12,11 @@ export const collectionChunk = deferred(async () => ({ default: (await import(".
 export const sessionChunk = deferred(async () => ({ default: (await import("../features/chat/session-page")).SessionPage }));
 export const decksChunk = deferred(async () => ({ default: (await import("../features/deck/decks-page")).DecksPage }));
 export const deckScreenChunk = deferred(async () => ({ default: (await import("../features/workspace/deck-screen")).DeckScreen }));
+// The public deck page of a share link (D-315). It pulls in no auth
+// module, so a visitor pays for none.
+export const sharedDeckChunk = deferred(async () => ({ default: (await import("../features/share/shared-deck-page")).SharedDeckPage }));
 
-const all = [accountMenuChunk, healthFooterChunk, toasterChunk, signInChunk, collectionChunk, sessionChunk, decksChunk, deckScreenChunk];
+const all = [accountMenuChunk, healthFooterChunk, toasterChunk, signInChunk, collectionChunk, sessionChunk, decksChunk, deckScreenChunk, sharedDeckChunk];
 
 // warmChunks brings in every deferred chunk. A menu that mounts on the
 // click costs about 320 ms of that click, measured on 2026-08-30, and a
