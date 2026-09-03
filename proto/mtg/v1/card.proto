@@ -120,6 +120,15 @@ message CardFace {
 }
 
 // Printing is one physical version of a card.
+// Ruling is one Scryfall ruling of a card (PR-20).
+message Ruling {
+  // published_at is the ISO date of the ruling.
+  string published_at = 1;
+  string comment = 2;
+  // source is "wotc" or "scryfall".
+  string source = 3;
+}
+
 message Printing {
   // scryfall_id identifies the printing. ManaBox exports it.
   string scryfall_id = 1;

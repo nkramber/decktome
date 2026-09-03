@@ -1,41 +1,61 @@
 import { type Card, Color } from "@mtg/api-client/mtg/v1/card_pb";
 import { CardRole, type Deck, type DeckCard, Severity } from "@mtg/api-client/mtg/v1/deck_pb";
+import { useState } from "react";
 
+import { Button } from "../../components/ui/button";
+import { Select } from "../../components/ui/select";
 import { errorMessage } from "../../lib/errors";
 import { ExportPanel } from "../export/export-panel";
+import { CardDetail } from "./card-detail";
 import { CardTile } from "./card-tile";
 import { identityOfCards, identityOfCommanders } from "./color-identity";
 import { ManaPips } from "./mana-pips";
+import { SampleHand } from "./sample-hand-panel";
 import {
+  averageManaValue,
   colorLetters,
   colorSources,
   curveSteps,
   deckColors,
   diffDecks,
+  filterEntries,
+  type Filters,
   formatLabel,
   deckSize,
   groupByRole,
+  mainTypes,
   manaCurve,
   powerLabel,
   priceText,
   roleLabel,
+  roleOrder,
   severityLabel,
+  sortEntries,
+  type SortKey,
+  typeCounts,
 } from "./deck-stats";
 import { DiffList } from "./deck-diff";
 import { useDeckCards } from "./use-cards";
 
-// The deck view (ui plan, step 4). Cards group by role, each with its art
-// and attribution (D-6), both faces for a DFC (F-9), the owned mark or
-// the price (D-2, D-37), the findings, legality_as_of, the curve, and
-// the color sources.
+// The deck view (ui plan, step 4, and PR-20). Cards group by role, each
+// with its art and attribution (D-6), both faces for a DFC (F-9), the
+// owned mark or the price (D-2, D-37), the findings, legality_as_of,
+// and five stats with a text table each. A click on a name opens the
+// card detail, the filters and the sort narrow the list, and the sample
+// hand draws from the exact main deck (D-318).
 // base is the deck this one revised, when the page holds it (PR-12B).
 // The five colors of the game and colorless carry fixed tokens (D-311).
 const manaSwatch: Record<string, string> = { W: "bg-mana-w", U: "bg-mana-u", B: "bg-mana-b", R: "bg-mana-r", G: "bg-mana-g", C: "bg-mana-c" };
+
+const sortLabels: Record<SortKey, string> = { role: "By role", "mana-value": "Mana value", name: "Name", price: "Price" };
 
 export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
   const diff = base && deck.revisedFromDeckId && base.id === deck.revisedFromDeckId ? diffDecks(base, deck) : undefined;
   const cards = useDeckCards(deck);
   const { byId, missing } = cards;
+  const [filters, setFilters] = useState<Filters>({});
+  const [sort, setSort] = useState<SortKey>("role");
+  const [detail, setDetail] = useState<DeckCard | null>(null);
   const allEntries = [...deck.cards, ...deck.sideboard, ...deck.upgrades];
   const nameOf = (id: string) => allEntries.find((c) => c.oracleId === id)?.name ?? byId.get(id)?.name ?? id;
   const commanders = new Set(deck.commanderOracleIds);
@@ -48,9 +68,25 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
       ({ oracleId: id, name: byId.get(id)?.name ?? "Commander", count: 1, role: CardRole.UNSPECIFIED, owned: false, ownedCount: 0, priceUsd: 0, reason: "" } as DeckCard),
   );
   const commanderCount = deck.commanderOracleIds.length;
-  const groups = groupByRole(main);
+  // The filters and the sort narrow every zone the same way (PR-20).
+  const filterActive = Object.values(filters).some((v) => v !== undefined && v !== "");
+  const show = (entries: DeckCard[]) => sortEntries(filterEntries(entries, byId, filters), byId, sort);
+  const visibleMain = show(main);
+  const visibleSide = show(deck.sideboard);
+  const visibleUpgrades = show(deck.upgrades);
+  const countOf = (entries: DeckCard[]) => entries.reduce((n, c) => n + c.count, 0);
+  const groups = sort === "role" ? groupByRole(visibleMain) : [{ role: CardRole.UNSPECIFIED, cards: visibleMain, count: countOf(visibleMain) }];
+  const rolesInDeck = roleOrder.filter((r) => main.some((c) => c.role === r));
   const curve = manaCurve(deck.cards, byId);
   const sources = colorSources(deck.cards, byId);
+  const types = typeCounts(deck.cards, byId);
+  const typeRows = mainTypes.filter((t) => (types.get(t) ?? 0) > 0);
+  const typesMax = Math.max(1, ...typeRows.map((t) => types.get(t) ?? 0));
+  const avgManaValue = averageManaValue(deck.cards, byId);
+  // The cards to buy, the dearest first, for the buy-cost table.
+  const toBuy = [...deck.cards, ...deck.sideboard]
+    .filter((c) => !c.owned && !commanders.has(c.oracleId))
+    .sort((a, b) => b.priceUsd * b.count - a.priceUsd * a.count || a.name.localeCompare(b.name));
   // The table shows the colors the deck pays for, and colorless for a
   // colorless deck. A mono-green deck full of rocks that make any color
   // is not a five-color deck. The commander's identity counts too.
@@ -58,7 +94,7 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
   const sourceRows = colorLetters.filter((c) => (colorsOfDeck.size === 0 ? c.color === Color.C : colorsOfDeck.has(c.color)));
   // The count is the main deck plus the command zone, so a Commander
   // deck reads 100 (D-454).
-  const total = deckSize(main.reduce((n, c) => n + c.count, 0), commanderCount);
+  const total = deckSize(countOf(main), commanderCount);
   const validation = deck.validation;
   // A not_owned warning repeats what the tile says under the card, and
   // an owned-first deck carries one per card to buy. The list drops them.
@@ -74,6 +110,15 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
   const commanderArt = commanderCard?.faces?.[0]?.imageUris?.artCrop ?? commanderCard?.defaultPrinting?.imageUris?.artCrop ?? "";
   const fromCommanders = identityOfCommanders(deck.commanderOracleIds, byId);
   const identity = fromCommanders.length > 0 ? fromCommanders : identityOfCards(byId);
+  const bar = (n: number, max: number, tone: string) => (
+    <span className="flex items-center gap-3">
+      <span className="block h-2 max-w-64 grow rounded-full bg-muted" aria-hidden="true">
+        <span className={`block h-2 rounded-full transition-[width] duration-500 ${tone}`} style={{ width: `${(n / max) * 100}%` }} />
+      </span>
+      <span className="w-6 text-right tabular-nums">{n}</span>
+    </span>
+  );
+  const captionClass = "mb-3 border-b border-border pb-2 text-left text-sm font-semibold tracking-wide uppercase";
 
   return (
     <article aria-labelledby={`deck-title-${deck.id}`} className="flex flex-col gap-5">
@@ -93,7 +138,7 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
           {formatLabel(deck.format?.id, deck.format?.houseRules ?? "")}
           {powerLabel(deck.power) && ` · ${powerLabel(deck.power)}`}
           {` · ${total} cards`}
-          {deck.sideboard.length > 0 && ` · ${deck.sideboard.reduce((n, c) => n + c.count, 0)} sideboard`}
+          {deck.sideboard.length > 0 && ` · ${countOf(deck.sideboard)} sideboard`}
         </p>
         <p className="text-sm" data-testid="legality-line">
           {validation
@@ -113,9 +158,7 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
             What changed
           </h3>
           <p data-testid="revision-note">{deck.revisionNote}</p>
-          {diff && (
-            <DiffList diff={diff} testId="revision-diff" />
-          )}
+          {diff && <DiffList diff={diff} testId="revision-diff" />}
         </section>
       )}
 
@@ -155,44 +198,35 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
       {cards.data && (
         <div className="@container shadow-card rounded-panel border border-border bg-card p-5 backdrop-blur-sm">
           <div className="grid items-start gap-8 @2xl:grid-cols-2">
-          <table className="w-full text-sm">
-            <caption className="mb-3 border-b border-border pb-2 text-left text-sm font-semibold tracking-wide uppercase">Mana curve, lands excluded</caption>
-            <thead className="sr-only">
-              <tr>
-                <th scope="col">Mana value</th>
-                <th scope="col">Cards</th>
-              </tr>
-            </thead>
-            <tbody>
-              {curveSteps.map((step, i) => (
-                <tr key={step}>
-                  <th scope="row" className="w-8 py-1 pr-3 text-left font-normal tabular-nums text-muted-foreground">
-                    {step}
-                  </th>
-                  <td className="py-1">
-                    <span className="flex items-center gap-3">
-                      <span className="block h-2 max-w-64 grow rounded-full bg-muted" aria-hidden="true">
-                        <span className="block h-2 rounded-full bg-accent transition-[width] duration-500" style={{ width: `${(curve[i] / curveMax) * 100}%` }} />
-                      </span>
-                      <span className="w-6 text-right tabular-nums">{curve[i]}</span>
-                    </span>
-                  </td>
+            <table className="w-full text-sm">
+              <caption className={captionClass}>Mana curve, lands excluded</caption>
+              <thead className="sr-only">
+                <tr>
+                  <th scope="col">Mana value</th>
+                  <th scope="col">Cards</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          <table className="w-full text-sm">
-            <caption className="mb-3 border-b border-border pb-2 text-left text-sm font-semibold tracking-wide uppercase">Mana sources, cards that make each of the deck's colors</caption>
-            <thead className="sr-only">
-              <tr>
-                <th scope="col">Color</th>
-                <th scope="col">Sources</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sourceRows.map((c) => {
-                const n = sources.get(c.color) ?? 0;
-                return (
+              </thead>
+              <tbody>
+                {curveSteps.map((step, i) => (
+                  <tr key={step}>
+                    <th scope="row" className="w-8 py-1 pr-3 text-left font-normal tabular-nums text-muted-foreground">
+                      {step}
+                    </th>
+                    <td className="py-1">{bar(curve[i], curveMax, "bg-accent")}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <table className="w-full text-sm">
+              <caption className={captionClass}>Mana sources, cards that make each of the deck's colors</caption>
+              <thead className="sr-only">
+                <tr>
+                  <th scope="col">Color</th>
+                  <th scope="col">Sources</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sourceRows.map((c) => (
                   <tr key={c.letter}>
                     <th scope="row" className="py-1 pr-3 text-left font-normal whitespace-nowrap">
                       <span className="flex items-center gap-2">
@@ -200,22 +234,107 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
                         <span className="text-muted-foreground">{c.name}</span>
                       </span>
                     </th>
-                    <td className="py-1">
-                      <span className="flex items-center gap-3">
-                        <span className="block h-2 max-w-64 grow rounded-full bg-muted" aria-hidden="true">
-                          <span className={`block h-2 rounded-full transition-[width] duration-500 ${manaSwatch[c.letter] ?? "bg-mana-c"}`} style={{ width: `${(n / sourcesMax) * 100}%` }} />
-                        </span>
-                        <span className="w-6 text-right tabular-nums">{n}</span>
-                      </span>
+                    <td className="py-1">{bar(sources.get(c.color) ?? 0, sourcesMax, manaSwatch[c.letter] ?? "bg-mana-c")}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <table className="w-full text-sm">
+              <caption className={captionClass}>Card types, a card counts once per type</caption>
+              <thead className="sr-only">
+                <tr>
+                  <th scope="col">Type</th>
+                  <th scope="col">Cards</th>
+                </tr>
+              </thead>
+              <tbody>
+                {typeRows.map((t) => (
+                  <tr key={t}>
+                    <th scope="row" className="py-1 pr-3 text-left font-normal text-muted-foreground">
+                      {t}
+                    </th>
+                    <td className="py-1">{bar(types.get(t) ?? 0, typesMax, "bg-primary")}</td>
+                  </tr>
+                ))}
+                {typeRows.length === 0 && (
+                  <tr>
+                    <th scope="row" className="py-1 text-left font-normal text-muted-foreground">
+                      No card data
+                    </th>
+                    <td />
+                  </tr>
+                )}
+              </tbody>
+            </table>
+            <table className="w-full text-sm">
+              <caption className={captionClass}>Average mana value, lands excluded</caption>
+              <thead className="sr-only">
+                <tr>
+                  <th scope="col">Measure</th>
+                  <th scope="col">Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row" className="py-1 pr-3 text-left font-normal text-muted-foreground">
+                    Average
+                  </th>
+                  <td className="py-1 text-3xl font-semibold tabular-nums" data-testid="avg-mana-value">
+                    {avgManaValue.toFixed(2)}
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row" className="py-1 pr-3 text-left font-normal text-muted-foreground">
+                    Nonland cards
+                  </th>
+                  <td className="py-1 tabular-nums">{curve.reduce((n, c) => n + c, 0)}</td>
+                </tr>
+              </tbody>
+            </table>
+            <table className="w-full text-sm @2xl:col-span-2">
+              <caption className={captionClass}>Cards to buy, the dearest first</caption>
+              <thead className="text-left text-xs text-muted-foreground">
+                <tr>
+                  <th scope="col" className="py-1 pr-3 font-normal">
+                    Card
+                  </th>
+                  <th scope="col" className="py-1 pr-3 text-right font-normal">
+                    Copies
+                  </th>
+                  <th scope="col" className="py-1 text-right font-normal">
+                    Price
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {toBuy.slice(0, 5).map((c) => (
+                  <tr key={c.oracleId || c.name}>
+                    <td className="py-1 pr-3">{c.name}</td>
+                    <td className="py-1 pr-3 text-right tabular-nums">{c.count}</td>
+                    <td className="py-1 text-right tabular-nums">{priceText(c.priceUsd)}</td>
+                  </tr>
+                ))}
+                {toBuy.length === 0 && (
+                  <tr>
+                    <td className="py-1 text-muted-foreground" colSpan={3}>
+                      Nothing to buy.
                     </td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                )}
+                <tr className="border-t border-border font-medium">
+                  <th scope="row" className="py-1 pr-3 text-left">
+                    Total
+                  </th>
+                  <td className="py-1 pr-3 text-right tabular-nums">{toBuy.length > 5 ? `${toBuy.length} cards` : ""}</td>
+                  <td className="py-1 text-right tabular-nums">{deck.buyCostUsd > 0 ? priceText(deck.buyCostUsd) : "$0.00"}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       )}
+
+      <SampleHand deck={deck} byId={byId} />
 
       <ExportPanel deck={deck} byId={byId} />
 
@@ -224,18 +343,99 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
         copyright Wizards of the Coast, LLC, and come from Scryfall.
       </p>
 
-      {commanderEntries.length > 0 && (
-        <CardGroup title="Commander" count={commanderEntries.length} entries={commanderEntries} byId={byId} commanders={commanders} hideOwnership />
+      <section aria-label="Filters and sort" className="flex flex-wrap items-end gap-3 rounded-card border border-border bg-card p-3 text-sm">
+        <label htmlFor={`filter-role-${deck.id}`} className="flex flex-col gap-1">
+          <span className="text-xs text-muted-foreground">Role</span>
+          <Select id={`filter-role-${deck.id}`} value={filters.role ?? ""} onChange={(e) => setFilters({ ...filters, role: e.target.value === "" ? undefined : (Number(e.target.value) as CardRole) })}>
+            <option value="">Every role</option>
+            {rolesInDeck.map((r) => (
+              <option key={r} value={r}>
+                {roleLabel(r)}
+              </option>
+            ))}
+          </Select>
+        </label>
+        <label htmlFor={`filter-color-${deck.id}`} className="flex flex-col gap-1">
+          <span className="text-xs text-muted-foreground">Color</span>
+          <Select id={`filter-color-${deck.id}`} value={filters.color ?? ""} onChange={(e) => setFilters({ ...filters, color: e.target.value === "" ? undefined : (Number(e.target.value) as Color) })}>
+            <option value="">Every color</option>
+            {colorLetters.map((c) => (
+              <option key={c.letter} value={c.color}>
+                {c.name}
+              </option>
+            ))}
+          </Select>
+        </label>
+        <label htmlFor={`filter-mana-value-${deck.id}`} className="flex flex-col gap-1">
+          <span className="text-xs text-muted-foreground">Mana value</span>
+          <Select id={`filter-mana-value-${deck.id}`} value={filters.manaValue ?? ""} onChange={(e) => setFilters({ ...filters, manaValue: e.target.value === "" ? undefined : Number(e.target.value) })}>
+            <option value="">Any</option>
+            {curveSteps.map((step, i) => (
+              <option key={step} value={i}>
+                {step}
+              </option>
+            ))}
+          </Select>
+        </label>
+        <label htmlFor={`filter-type-${deck.id}`} className="flex flex-col gap-1">
+          <span className="text-xs text-muted-foreground">Type</span>
+          <Select id={`filter-type-${deck.id}`} value={filters.type ?? ""} onChange={(e) => setFilters({ ...filters, type: e.target.value === "" ? undefined : e.target.value })}>
+            <option value="">Every type</option>
+            {mainTypes.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </Select>
+        </label>
+        <label htmlFor={`filter-owned-${deck.id}`} className="flex flex-col gap-1">
+          <span className="text-xs text-muted-foreground">Owned</span>
+          <Select id={`filter-owned-${deck.id}`} value={filters.owned ?? ""} onChange={(e) => setFilters({ ...filters, owned: e.target.value === "" ? undefined : (e.target.value as Filters["owned"]) })}>
+            <option value="">Owned and to buy</option>
+            <option value="owned">Owned</option>
+            <option value="to-buy">To buy</option>
+          </Select>
+        </label>
+        <label htmlFor={`sort-key-${deck.id}`} className="flex flex-col gap-1">
+          <span className="text-xs text-muted-foreground">Sort</span>
+          <Select id={`sort-key-${deck.id}`} value={sort} onChange={(e) => setSort(e.target.value as SortKey)}>
+            {(Object.keys(sortLabels) as SortKey[]).map((k) => (
+              <option key={k} value={k}>
+                {sortLabels[k]}
+              </option>
+            ))}
+          </Select>
+        </label>
+        {filterActive && (
+          <Button variant="ghost" size="sm" onClick={() => setFilters({})}>
+            Clear filters
+          </Button>
+        )}
+        <p className="basis-full text-xs text-muted-foreground" data-testid="filter-count">
+          {filterActive ? `Showing ${countOf(visibleMain)} of ${countOf(main)} cards.` : `${countOf(main)} cards in the main deck.`}
+        </p>
+      </section>
+
+      {commanderEntries.length > 0 && !filterActive && (
+        <CardGroup title="Commander" count={commanderEntries.length} entries={commanderEntries} byId={byId} commanders={commanders} hideOwnership onOpen={setDetail} />
       )}
       {groups.map((g) => (
-        <CardGroup key={g.role} title={roleLabel(g.role)} count={g.count} entries={g.cards} byId={byId} commanders={commanders} />
+        <CardGroup
+          key={g.role}
+          title={sort === "role" ? roleLabel(g.role) : `Cards by ${sortLabels[sort].toLowerCase()}`}
+          count={g.count}
+          entries={g.cards}
+          byId={byId}
+          commanders={commanders}
+          onOpen={setDetail}
+        />
       ))}
-      {deck.sideboard.length > 0 && (
-        <CardGroup title="Sideboard" count={deck.sideboard.reduce((n, c) => n + c.count, 0)} entries={deck.sideboard} byId={byId} commanders={commanders} />
+      {visibleSide.length > 0 && <CardGroup title="Sideboard" count={countOf(visibleSide)} entries={visibleSide} byId={byId} commanders={commanders} onOpen={setDetail} />}
+      {visibleUpgrades.length > 0 && (
+        <CardGroup title="Upgrades to buy" count={countOf(visibleUpgrades)} entries={visibleUpgrades} byId={byId} commanders={commanders} onOpen={setDetail} />
       )}
-      {deck.upgrades.length > 0 && (
-        <CardGroup title="Upgrades to buy" count={deck.upgrades.reduce((n, c) => n + c.count, 0)} entries={deck.upgrades} byId={byId} commanders={commanders} />
-      )}
+
+      <CardDetail entry={detail ?? undefined} card={detail ? byId.get(detail.oracleId) : undefined} open={detail !== null} onOpenChange={(open) => !open && setDetail(null)} />
     </article>
   );
 }
@@ -247,6 +447,7 @@ function CardGroup({
   byId,
   commanders,
   hideOwnership = false,
+  onOpen,
 }: {
   title: string;
   count: number;
@@ -254,6 +455,7 @@ function CardGroup({
   byId: Map<string, Card>;
   commanders: Set<string>;
   hideOwnership?: boolean;
+  onOpen: (entry: DeckCard) => void;
 }) {
   return (
     <section aria-label={`${title} (${count})`} className="@container">
@@ -263,7 +465,14 @@ function CardGroup({
       </h3>
       <ul className="mt-2 grid grid-cols-2 items-start gap-3 @xl:grid-cols-3 @3xl:grid-cols-4 @5xl:grid-cols-5 @7xl:grid-cols-6">
         {entries.map((e, i) => (
-          <CardTile key={`${e.oracleId}-${i}`} entry={e} card={byId.get(e.oracleId)} isCommander={commanders.has(e.oracleId)} hideOwnership={hideOwnership} />
+          <CardTile
+            key={`${e.oracleId}-${i}`}
+            entry={e}
+            card={byId.get(e.oracleId)}
+            isCommander={commanders.has(e.oracleId)}
+            hideOwnership={hideOwnership}
+            onOpen={() => onOpen(e)}
+          />
         ))}
       </ul>
     </section>

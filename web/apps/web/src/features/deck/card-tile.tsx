@@ -51,12 +51,13 @@ export function facesOf(card: Card | undefined, owned?: { imageUris?: ImageUris;
   ];
 }
 
-export function FaceImage({ face }: { face: Face }) {
+export function FaceImage({ face, size = "normal" }: { face: Face; size?: "normal" | "small" }) {
   // The normal image is 488 by 680. If the CDN refuses it, the small one
   // (146 by 204) takes its place (ui plan, section 8). The width scales
   // and the aspect ratio stays, so nothing is cropped or skewed (D-6).
-  const [src, setSrc] = useState(face.imageUris?.normal || face.imageUris?.small || "");
+  // The sample hand asks for the small one from the start (PR-20).
   const small = face.imageUris?.small ?? "";
+  const [src, setSrc] = useState(size === "small" ? small : face.imageUris?.normal || small);
   // A second load error leaves the text tile, not a broken image.
   function onError() {
     setSrc(small && src !== small ? small : "");
@@ -72,8 +73,8 @@ export function FaceImage({ face }: { face: Face }) {
     <img
       src={src}
       alt={`${face.name} (card)`}
-      width={488}
-      height={680}
+      width={size === "small" ? 146 : 488}
+      height={size === "small" ? 204 : 680}
       loading="lazy"
       className="h-auto w-full rounded"
       onError={onError}
@@ -84,17 +85,20 @@ export function FaceImage({ face }: { face: Face }) {
 // CardTile shows one deck entry: every face with its art and attribution,
 // the count, and the owned mark or the price. The image carries the rules text.
 // hideOwnership is for a commander entry built from the card data: the
-// deck carries no owned mark for it, so the tile shows none.
+// deck carries no owned mark for it, so the tile shows none. onOpen makes
+// the name a button that opens the card detail (PR-20).
 export function CardTile({
   entry,
   card,
   isCommander,
   hideOwnership = false,
+  onOpen,
 }: {
   entry: DeckCard;
   card: Card | undefined;
   isCommander?: boolean;
   hideOwnership?: boolean;
+  onOpen?: () => void;
 }) {
   const faces = facesOf(card, entry.ownedPrinting);
   const name = card?.name || entry.name;
@@ -103,7 +107,13 @@ export function CardTile({
       <div className="flex items-baseline justify-between gap-2">
         <span className="min-w-0 wrap-anywhere font-medium">
           {entry.count > 1 && <span className="mr-1 text-muted-foreground">{entry.count}×</span>}
-          {name}
+          {onOpen ? (
+            <button type="button" onClick={onOpen} className="text-left underline-offset-4 hover:text-primary hover:underline focus-visible:underline" title="Open the card detail">
+              {name}
+            </button>
+          ) : (
+            name
+          )}
         </span>
         {isCommander && (
           <span className="rounded-md border border-warning/50 bg-warning/15 px-1.5 py-0.5 text-xs font-medium" data-testid="commander-mark">

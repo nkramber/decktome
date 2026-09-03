@@ -22,7 +22,7 @@ import (
 const versionFormat = "20060102T150405"
 
 // SnapshotFiles are the files every snapshot holds, in store order.
-var SnapshotFiles = []string{"oracle_cards.jsonl.gz", "default_cards.jsonl.gz", "oracle_tags.jsonl.gz"}
+var SnapshotFiles = []string{"oracle_cards.jsonl.gz", "default_cards.jsonl.gz", "oracle_tags.jsonl.gz", RulingsFile}
 
 // completeMarker is written last. A version without it is mid-write or
 // abandoned, and LatestVersion never returns it. Rule: a listed snapshot

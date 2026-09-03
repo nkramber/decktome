@@ -18,6 +18,37 @@ service CardService {
   // of 2026-08-28, section 4). An id the index does not know goes in
   // missing_oracle_ids, never dropped in silence.
   rpc GetCards(GetCardsRequest) returns (GetCardsResponse) {}
+  // GetRulings returns the Scryfall rulings of one card, oldest first,
+  // with the date of the card snapshot they come from (PR-20). A card the
+  // index does not know answers NotFound. A snapshot with no rulings
+  // file answers an empty list and has_rulings false.
+  rpc GetRulings(GetRulingsRequest) returns (GetRulingsResponse) {}
+  // GetPrintings returns every playable printing of one card with its
+  // price, newest set first (PR-20). A digital printing carries its mark.
+  rpc GetPrintings(GetPrintingsRequest) returns (GetPrintingsResponse) {}
+}
+
+message GetRulingsRequest {
+  string oracle_id = 1;
+}
+
+message GetRulingsResponse {
+  repeated Ruling rulings = 1;
+  // as_of is the ISO date of the card snapshot the rulings come from.
+  string as_of = 2;
+  // has_rulings is false when the snapshot carried no rulings file, so
+  // a client can tell "no ruling" from "no data".
+  bool has_rulings = 3;
+}
+
+message GetPrintingsRequest {
+  string oracle_id = 1;
+}
+
+message GetPrintingsResponse {
+  repeated Printing printings = 1;
+  // price_as_of is the ISO date of the prices, the snapshot date.
+  string price_as_of = 2;
 }
 
 message GetCardsRequest {
