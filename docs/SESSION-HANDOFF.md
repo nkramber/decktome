@@ -6,6 +6,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## Where things stand (2026-09-03)
 
+- PR-14C, MTGTop8 and the casual 60-card decks, is complete on branch `pr-14c` (2026-09-03, D-502 to D-506). Both lanes read with zero failures over 500 pages, and the Modern typical rung exists, 149 lists. The gate document is `docs/reference/pr14c-gate-2026-09-03.md`. Quality gate run 12 reads FAIL on the same two bars as run 11: Commander 0.78 and Modern 0.88 on the precon bar. The tree is green on the branch. The owner reads it, then merges. The section "PR-14C, MTGTop8 and the casual 60-card decks, built" below holds the moving parts.
 - PR-24, the precon exclusion, is merged (2026-09-03, #59, D-496 to D-498, D-500, D-501). The free gate passes, `docs/reference/pr24-precon-gate-2026-09-03.md`. The tree is green on `main`: Go build, vet, the `-race` suite, golangci-lint, `make ste-check`, the proto check, and the web typecheck and 237 tests. Branches `pr-24` and `pr-14c` can go. The section "PR-24, the precon exclusion, merged" below holds the moving parts. PR-14C is next, on a new branch from `main` (D-494).
 - The corpus step of 2026-09-03 is done (D-494 to D-499). `make meta-refresh` ran whole. Quality gate run 11 reads FAIL on two bars: the Commander precon bar at 0.78, and the Modern precon bar at 0.9465 against 0.95. The wider EDHREC read did not move the built decks: 19 of 24 grade bad under the refit. The section "The corpus step of 2026-09-03" below holds the read.
 - The owner set the order on 2026-09-03: the corpus work, then PR-24, then PR-14C, then the paid runs (D-494, D-495). No paid run goes before the PR-14C code lands.
@@ -432,6 +433,27 @@ CAUTION: the Topdeck.gg reader follows the docs alone. No session has read a liv
 
 CAUTION: the quality gate has three bars in the code and one outside it. The pair bars and the bracket 5 offer bar are in `cmd/quality-gate`. The judge bar over the golden decks reads the next deck gate run, whose summaries carry the tier. That run costs about $2.24, so ask the owner first.
 
+## PR-14C, MTGTop8 and the casual 60-card decks, built (2026-09-03)
+
+The branch `pr-14c` holds PR-14C, from `main` at #59 (D-494). The calls are D-502 to D-505, and `docs/reference/pr14c-sources-2026-09-03.md` holds every verified fact about the three sites. The owner dropped the Aetherhub lane (D-502), so the slice has two lanes.
+
+- `meta/mtgtop8.go` reads the paper events of Modern, Standard, and cEDH (D-504). It walks the format pages with their later pages. Then it reads the event pages, with the placements and the field, and the text export of each deck. A top-8 finish in a field of 32 or more is great, and the rest good (D-505). The reader stores and skips an event page that names mtgo.com as its source, because the MTGO lane holds the same lists.
+- `meta/mtggoldfish.go` reads the user decks of Modern and Standard as the typical rung (D-490, D-503). It walks the listing pages, newest first, then the deck page of each. The deck page embeds the whole list in a form field. The reader never touches the download endpoint the robots file disallows.
+- `refresh.go` runs the two lanes after EDHREC, with caps of 300 and 200 requests a run and 100 listing pages a format. The raw pages sit under `raw/mtgtop8/` and `raw/mtggoldfish/`, a page that did not parse under the `-failed` prefix, and `-meta-reparse` covers both lanes (M-6).
+- The fixtures under `meta/testdata/` hold trimmed real pages of 2026-09-03, and `TestJobRun` reads both lanes twice and once more in reparse mode.
+
+CAUTION: Aetherhub answers a Cloudflare challenge page to the app's agent on every page, as Moxfield does. The house rule stands: no spoofed browser (D-470). The app asks the site for nothing.
+
+CAUTION: the robots files of MTGGoldfish and Aetherhub carry `Content-Signal: search=yes,ai-train=no,use=reference`. The owner read it and kept the legal check of D-5 (D-503). Do not reopen that call without new facts.
+
+CAUTION: a user deck is what a person uploaded. Some are short, some hold a card the index does not know, and the fit counts those as unusable. Read the `unusable` count of the fit log per format after each refresh.
+
+The first live run read 300 MTGTop8 pages into 259 lists of 35 paper events, and 200 MTGGoldfish pages into 158 lists, with zero failures. The whole MTGGoldfish cap went to Modern, so the cap is per format since (D-506), and the Standard rung fills on the next run. Quality gate run 12 reads FAIL on the Commander and the Modern precon bars, 0.78 and 0.88.
+
+The Modern bar fell from 0.9465 with the typical rung, as the Commander bar fell in run 11. The user decks hold unseen cards and odd playsets, and the model reads those as less of a defect since. The explain mode over deck gate 13b moved the three casual Modern decks out of the detector's flag. No deck left the bad rung. `docs/reference/pr14c-gate-2026-09-03.md` holds the read.
+
+CAUTION: the gate of PR-14C reads FAIL on record, as PR-14A and PR-14B merged. The bars did not move toward a pass with the typical rungs, and the judge bar of PR-14B stays open (D-488). Read the explain output before you touch a weight, and change no bar.
+
 ## PR-24, the precon exclusion, merged (2026-09-03, #59)
 
 PR-24 merged as #59 on 2026-09-03, with the corpus-step docs of the same day in the same commit. The calls are D-496 to D-498 and D-500, and the free gate is `docs/reference/pr24-precon-gate-2026-09-03.md`. A reader asks for a deck that uses no card of a precon, by name or as "not from my precons", and the build leaves those cards out.
@@ -573,7 +595,7 @@ The chat ran a turn with no card index before D-405. The commander question then
 
 ## Next steps, in order
 
-1. PR-14C, on a new branch from `main` (D-494). It holds two lanes: the Aetherhub and MTGGoldfish user decks (D-490), and MTGTop8 (D-482). Moxfield is out (D-493). The 60-card typical rung is what the judge bar waits on (D-488). Verify each site's page shape first, and keep the raw pages in the store, as the MTGO reader does.
+1. PR-14C is complete on branch `pr-14c` (D-502 to D-506). The owner reads the branch and merges it. Then the daily refresh fills the two typical rungs, Standard from the next run on.
 2. `make meta-refresh` daily, and `make quality-gate` to a new `QUALITY_GATE_OUT` after each one. Read the pair bars per format and the per-axis table. A weight against the sense of its feature is a defect in the feature or the labels. Do not tune it. The next weekly EDHREC read falls on 2026-09-10 (D-499).
 3. The paid runs come after PR-14C (D-495). First `make quality-judge` over `pr8-deck-gate-run13b.md`, about $0.31. Then the bracket gate for the bracket 5 decks. Then the question gate for the classifier of version 17 (D-496). Ask the owner before each one.
 4. Deploy the meta job (D-492). It is one Cloud Run job on `worker -meta`, with a Scheduler cron at 06:00 UTC daily. `TOPDECK_API_KEY` goes to Secret Manager. No infra file in this repo holds the worker's schedule. So the deployment is by hand, as the snapshot worker's is.

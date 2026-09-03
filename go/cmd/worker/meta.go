@@ -93,7 +93,7 @@ func runMeta(ctx context.Context, opts metaOptions, logger *slog.Logger) error {
 
 // logMetaReport writes one line per source.
 func logMetaReport(logger *slog.Logger, rep *meta.Report) {
-	for _, source := range []string{meta.SourceMTGO, meta.SourceMTGJSON, meta.SourceCEDHDB, meta.SourceTopdeck, meta.SourceEDHREC} {
+	for _, source := range []string{meta.SourceMTGO, meta.SourceMTGJSON, meta.SourceCEDHDB, meta.SourceTopdeck, meta.SourceEDHREC, meta.SourceMTGTop8, meta.SourceGoldfish} {
 		logger.Info("meta source", "source", source, "pages", rep.Pages[source], "failures", rep.Failures[source],
 			"fetch_errors", rep.FetchErrors[source], "lists", rep.Lists[source], "skipped", rep.Skipped[source])
 	}

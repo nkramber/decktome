@@ -41,9 +41,16 @@ type Job struct {
 	// the M-6 repair: a parser fix re-reads the raw pages and fetches
 	// nothing.
 	Reparse bool
-	// MTGOBase, MTGJSONBase, EDHRECBase, and CEDHDBURL override the
-	// sites, for the tests.
-	MTGOBase, MTGJSONBase, EDHRECBase, CEDHDBURL string
+	// MTGTop8Pages caps the requests of the MTGTop8 lane in one run:
+	// format pages, event pages, and deck exports together. The default
+	// is 300, five minutes at the fetcher's gap. GoldfishPages caps the
+	// requests of the MTGGoldfish lane the same way, default 200, and
+	// GoldfishListPages caps the listing pages it walks per format,
+	// default 100 (PR-14C).
+	MTGTop8Pages, GoldfishPages, GoldfishListPages int
+	// MTGOBase, MTGJSONBase, EDHRECBase, CEDHDBURL, MTGTop8Base, and
+	// GoldfishBase override the sites, for the tests.
+	MTGOBase, MTGJSONBase, EDHRECBase, CEDHDBURL, MTGTop8Base, GoldfishBase string
 }
 
 // Report counts what one run did.
@@ -113,6 +120,21 @@ func (j *Job) defaults() {
 	if j.CEDHDBURL == "" {
 		j.CEDHDBURL = CEDHDBURL
 	}
+	if j.MTGTop8Base == "" {
+		j.MTGTop8Base = MTGTop8Base
+	}
+	if j.GoldfishBase == "" {
+		j.GoldfishBase = GoldfishBase
+	}
+	if j.MTGTop8Pages <= 0 {
+		j.MTGTop8Pages = 300
+	}
+	if j.GoldfishPages <= 0 {
+		j.GoldfishPages = 200
+	}
+	if j.GoldfishListPages <= 0 {
+		j.GoldfishListPages = 100
+	}
 }
 
 // Run reads every source. The error is the context's alone: a source
@@ -129,6 +151,8 @@ func (j *Job) Run(ctx context.Context) (*Report, error) {
 		{SourceCEDHDB, j.runCEDHDB},
 		{SourceTopdeck, j.runTopdeck},
 		{SourceEDHREC, j.runEDHREC},
+		{SourceMTGTop8, j.runMTGTop8},
+		{SourceGoldfish, j.runGoldfish},
 	}
 	for _, s := range steps {
 		if err := s.run(ctx, rep); err != nil {
@@ -580,4 +604,347 @@ func (j *Job) mergeCommanders(ctx context.Context, day string, reads []Commander
 		}
 	}
 	return WriteCommanders(ctx, j.Store, day, have)
+}
+
+// runMTGTop8 reads the paper events of the covered formats (D-504): the
+// format pages, then every event page the store lacks, then every deck
+// export the store lacks, up to MTGTop8Pages requests a run. An event
+// page names mtgo.com as its source when the MTGO lane holds the same
+// lists, and the reader stores it and reads no deck of it.
+func (j *Job) runMTGTop8(ctx context.Context, rep *Report) error {
+	if j.Reparse {
+		return j.reparseMTGTop8(ctx, rep)
+	}
+	fetched := 0
+	held := func() bool {
+		if fetched < j.MTGTop8Pages {
+			return false
+		}
+		rep.Skipped[SourceMTGTop8] = fmt.Sprintf("the page cap of %d held, and more pages wait", j.MTGTop8Pages)
+		return true
+	}
+	seenPage := map[string]bool{}
+	for _, code := range MTGTop8FormatCodes {
+		pages := []string{MTGTop8FormatURL(j.MTGTop8Base, code)}
+		seenPage[pages[0]] = true
+		for i := 0; i < len(pages); i++ {
+			if held() {
+				return nil
+			}
+			page, err := j.Fetch.Get(ctx, pages[i])
+			if err != nil {
+				if ctx.Err() != nil {
+					return err
+				}
+				rep.FetchErrors[SourceMTGTop8]++
+				j.Logger.Warn("mtgtop8 format page did not fetch", "url", pages[i], "err", err)
+				continue
+			}
+			fetched++
+			rep.Pages[SourceMTGTop8]++
+			events, next := ParseMTGTop8Format(page)
+			if len(events) == 0 {
+				rep.Failures[SourceMTGTop8]++
+				j.Logger.Warn("mtgtop8 format page holds no event", "url", pages[i])
+				continue
+			}
+			for _, href := range next {
+				u := MTGTop8PageURL(j.MTGTop8Base, href)
+				if !seenPage[u] {
+					seenPage[u] = true
+					pages = append(pages, u)
+				}
+			}
+			for _, ev := range events {
+				if !ev.Paper {
+					continue
+				}
+				done, err := j.readMTGTop8Event(ctx, rep, code, ev, &fetched)
+				if err != nil {
+					return err
+				}
+				if !done {
+					held()
+					return nil
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// readMTGTop8Event reads one event: its page from the store or the site,
+// then the deck exports the store lacks. done is false when the cap held
+// before the event was whole, and the next run reads the rest.
+func (j *Job) readMTGTop8Event(ctx context.Context, rep *Report, code string, ev MTGTop8Event, fetched *int) (bool, error) {
+	key := "event_" + ev.ID
+	page, ok, err := GetRaw(ctx, j.Store, SourceMTGTop8, key)
+	if err != nil {
+		return false, err
+	}
+	if !ok {
+		if *fetched >= j.MTGTop8Pages {
+			return false, nil
+		}
+		page, err = j.Fetch.Get(ctx, MTGTop8EventURL(j.MTGTop8Base, ev.ID, code))
+		if err != nil {
+			if ctx.Err() != nil {
+				return false, err
+			}
+			rep.FetchErrors[SourceMTGTop8]++
+			j.Logger.Warn("mtgtop8 event page did not fetch", "event", ev.ID, "err", err)
+			return true, nil
+		}
+		*fetched++
+		rep.Pages[SourceMTGTop8]++
+		if _, _, perr := ParseMTGTop8Event(page); perr != nil {
+			// The page stays apart for a reader to inspect, and the next
+			// run fetches the event again (M-6).
+			rep.Failures[SourceMTGTop8]++
+			j.Logger.Warn("mtgtop8 event page did not parse", "event", ev.ID, "err", perr)
+			return true, PutRaw(ctx, j.Store, SourceMTGTop8+"-failed", key, page)
+		}
+		if err := PutRaw(ctx, j.Store, SourceMTGTop8, key, page); err != nil {
+			return false, err
+		}
+	}
+	info, rows, err := ParseMTGTop8Event(page)
+	if err != nil {
+		rep.Failures[SourceMTGTop8]++
+		return true, nil
+	}
+	if info.Online {
+		return true, nil
+	}
+	var lists []List
+	whole := true
+	for _, row := range rows {
+		deckKey := "deck_" + row.DeckID
+		has, err := HasRaw(ctx, j.Store, SourceMTGTop8, deckKey)
+		if err != nil {
+			return false, err
+		}
+		if has {
+			continue
+		}
+		if *fetched >= j.MTGTop8Pages {
+			whole = false
+			break
+		}
+		text, err := j.Fetch.Get(ctx, MTGTop8DeckURL(j.MTGTop8Base, row.DeckID))
+		if err != nil {
+			if ctx.Err() != nil {
+				return false, err
+			}
+			rep.FetchErrors[SourceMTGTop8]++
+			j.Logger.Warn("mtgtop8 deck export did not fetch", "deck", row.DeckID, "err", err)
+			continue
+		}
+		*fetched++
+		rep.Pages[SourceMTGTop8]++
+		l, ok := MTGTop8List(code, ev, info, row, text)
+		if !ok {
+			rep.Failures[SourceMTGTop8]++
+			j.Logger.Warn("mtgtop8 deck export did not parse", "deck", row.DeckID)
+			if err := PutRaw(ctx, j.Store, SourceMTGTop8+"-failed", deckKey, text); err != nil {
+				return false, err
+			}
+			continue
+		}
+		if err := PutRaw(ctx, j.Store, SourceMTGTop8, deckKey, text); err != nil {
+			return false, err
+		}
+		lists = append(lists, l)
+	}
+	n, err := MergeLists(ctx, j.Store, lists)
+	if err != nil {
+		return false, err
+	}
+	rep.Lists[SourceMTGTop8] += n
+	return whole, nil
+}
+
+// reparseMTGTop8 re-reads every stored event page and its deck exports,
+// and fetches nothing (M-6). The listing row is gone, so the tier reads
+// the field of the page alone.
+func (j *Job) reparseMTGTop8(ctx context.Context, rep *Report) error {
+	prefix := RawPrefix + SourceMTGTop8 + "/"
+	names, err := j.Store.List(ctx, prefix)
+	if err != nil {
+		return err
+	}
+	for _, name := range names {
+		key := strings.TrimSuffix(strings.TrimPrefix(name, prefix), ".gz")
+		if !strings.HasPrefix(key, "event_") {
+			continue
+		}
+		page, ok, err := GetRaw(ctx, j.Store, SourceMTGTop8, key)
+		if err != nil || !ok {
+			return err
+		}
+		rep.Pages[SourceMTGTop8]++
+		info, rows, err := ParseMTGTop8Event(page)
+		if err != nil {
+			rep.Failures[SourceMTGTop8]++
+			continue
+		}
+		if info.Online {
+			continue
+		}
+		ev := MTGTop8Event{ID: strings.TrimPrefix(key, "event_")}
+		var lists []List
+		for _, row := range rows {
+			text, ok, err := GetRaw(ctx, j.Store, SourceMTGTop8, "deck_"+row.DeckID)
+			if err != nil {
+				return err
+			}
+			if !ok {
+				continue
+			}
+			if l, ok := MTGTop8List(info.Format, ev, info, row, text); ok {
+				lists = append(lists, l)
+			}
+		}
+		n, err := MergeLists(ctx, j.Store, lists)
+		if err != nil {
+			return err
+		}
+		rep.Lists[SourceMTGTop8] += n
+	}
+	return nil
+}
+
+// runGoldfish reads the user decks of the 60-card formats as the typical
+// rung (D-490, D-503): the listing pages of a format, newest first, and
+// every deck page the store lacks, up to GoldfishPages requests a run.
+// The walk goes past a listing page whose decks are all stored, so a
+// later run reaches older decks, up to GoldfishListPages a format.
+func (j *Job) runGoldfish(ctx context.Context, rep *Report) error {
+	if j.Reparse {
+		return j.reparseGoldfish(ctx, rep)
+	}
+	// Each format gets its share of the cap, so a run reads Standard
+	// decks too and not the newest Modern decks alone.
+	share := j.GoldfishPages / len(GoldfishFormatWords)
+	if share < 1 {
+		share = 1
+	}
+	for _, word := range GoldfishFormatWords {
+		fetched := 0
+		held := func() bool {
+			if fetched < share {
+				return false
+			}
+			rep.Skipped[SourceGoldfish] = fmt.Sprintf("the page cap of %d held, and more decks wait", j.GoldfishPages)
+			return true
+		}
+		for page := 1; page <= j.GoldfishListPages; page++ {
+			if held() {
+				break
+			}
+			url := GoldfishListingURL(j.GoldfishBase, word, page)
+			listing, err := j.Fetch.Get(ctx, url)
+			if err != nil {
+				if ctx.Err() != nil {
+					return err
+				}
+				rep.FetchErrors[SourceGoldfish]++
+				j.Logger.Warn("mtggoldfish listing did not fetch", "url", url, "err", err)
+				break
+			}
+			fetched++
+			rep.Pages[SourceGoldfish]++
+			ids, more := ParseGoldfishListing(listing)
+			if len(ids) == 0 {
+				rep.Failures[SourceGoldfish]++
+				j.Logger.Warn("mtggoldfish listing holds no deck", "url", url)
+				break
+			}
+			var lists []List
+			for _, id := range ids {
+				key := "deck_" + id
+				has, err := HasRaw(ctx, j.Store, SourceGoldfish, key)
+				if err != nil {
+					return err
+				}
+				if has || fetched >= share {
+					continue
+				}
+				deck, err := j.Fetch.Get(ctx, GoldfishDeckURL(j.GoldfishBase, id))
+				if err != nil {
+					if ctx.Err() != nil {
+						return err
+					}
+					rep.FetchErrors[SourceGoldfish]++
+					j.Logger.Warn("mtggoldfish deck page did not fetch", "deck", id, "err", err)
+					continue
+				}
+				fetched++
+				rep.Pages[SourceGoldfish]++
+				l, err := ParseGoldfishDeck(id, deck)
+				if err != nil {
+					rep.Failures[SourceGoldfish]++
+					j.Logger.Warn("mtggoldfish deck page did not parse", "deck", id, "err", err)
+					if err := PutRaw(ctx, j.Store, SourceGoldfish+"-failed", key, deck); err != nil {
+						return err
+					}
+					continue
+				}
+				if err := PutRaw(ctx, j.Store, SourceGoldfish, key, deck); err != nil {
+					return err
+				}
+				if l != nil {
+					lists = append(lists, *l)
+				}
+			}
+			n, err := MergeLists(ctx, j.Store, lists)
+			if err != nil {
+				return err
+			}
+			rep.Lists[SourceGoldfish] += n
+			if !more {
+				break
+			}
+		}
+	}
+	return nil
+}
+
+// reparseGoldfish re-reads every stored deck page and fetches nothing
+// (M-6).
+func (j *Job) reparseGoldfish(ctx context.Context, rep *Report) error {
+	prefix := RawPrefix + SourceGoldfish + "/"
+	names, err := j.Store.List(ctx, prefix)
+	if err != nil {
+		return err
+	}
+	var lists []List
+	flush := func() error {
+		n, err := MergeLists(ctx, j.Store, lists)
+		rep.Lists[SourceGoldfish] += n
+		lists = nil
+		return err
+	}
+	for _, name := range names {
+		key := strings.TrimSuffix(strings.TrimPrefix(name, prefix), ".gz")
+		page, ok, err := GetRaw(ctx, j.Store, SourceGoldfish, key)
+		if err != nil || !ok {
+			return err
+		}
+		rep.Pages[SourceGoldfish]++
+		l, err := ParseGoldfishDeck(strings.TrimPrefix(key, "deck_"), page)
+		if err != nil {
+			rep.Failures[SourceGoldfish]++
+			continue
+		}
+		if l != nil {
+			lists = append(lists, *l)
+		}
+		if len(lists) >= 50 {
+			if err := flush(); err != nil {
+				return err
+			}
+		}
+	}
+	return flush()
 }
