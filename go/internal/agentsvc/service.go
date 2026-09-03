@@ -66,6 +66,13 @@ type PreconSource interface {
 	Current() *precons.Set
 }
 
+// PreconTableSource hands out the precon table of the meta store, or nil
+// before the meta job stored one (D-407). The precon exclusion of D-408
+// reads it, and the api swaps it when a newer table lands.
+type PreconTableSource interface {
+	Table() *precons.Table
+}
+
 // MaxMessageBytes caps one message, one answer text, and the message
 // and the answers together. A deck request is a few sentences, and a
 // whole ManaBox export goes through ImportCollection, not Chat.
@@ -94,6 +101,10 @@ type CollectionSource interface {
 	// OwnedPrintings maps each Oracle id to the printing ids the user
 	// holds, so a deck card can show the printing the user owns (D-299).
 	OwnedPrintings(ctx context.Context, userID, collectionID string) (map[string][]string, error)
+	// PrintingCounts maps each Scryfall id to the copies the user holds,
+	// for the precon ownership check (D-408). A turn reads it only when
+	// the reader excludes their precons.
+	PrintingCounts(ctx context.Context, userID, collectionID string) (map[string]int32, error)
 }
 
 // Server answers AgentService requests.
@@ -109,6 +120,7 @@ type Server struct {
 	decks      DeckBuilder
 	deckStore  DeckStore
 	preconSrc  PreconSource
+	preconTbl  PreconTableSource
 	buildLimit time.Duration
 	// turns is the concurrency gate: one token per running Chat turn.
 	turns chan struct{}
@@ -164,6 +176,13 @@ type DeckStore interface {
 // as an ordinary owned-first build (D-247).
 func WithPreconSource(src PreconSource) Option {
 	return func(s *Server) { s.preconSrc = src }
+}
+
+// WithPreconTable wires the late-bound precon table. Without it a reader
+// who excludes a precon hears that the table is not loaded, and the
+// build excludes nothing (D-496).
+func WithPreconTable(src PreconTableSource) Option {
+	return func(s *Server) { s.preconTbl = src }
 }
 
 // WithChatLimit caps the Chat turns that run at once. Zero keeps
@@ -230,6 +249,14 @@ func New(cat *questions.Catalog, client *llm.Client, store Store, userFn auth.Us
 		s.turns = make(chan struct{}, DefaultChatLimit)
 	}
 	return s, nil
+}
+
+// preconTable returns the precon table of the meta store, or nil.
+func (s *Server) preconTable() *precons.Table {
+	if s.preconTbl == nil {
+		return nil
+	}
+	return s.preconTbl.Table()
 }
 
 // preconSet returns the precon set for the current index, or nil.
@@ -410,6 +437,7 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 	slotsBefore := proto.Clone(session.GetSlots()).(*mtgv1.Slots)
 
 	hints := s.hints(session, st, owned)
+	s.withPrecons(ctx, uid, session, hints)
 	s.facts(session, st, hints)
 	agent, err := s.agent(hints)
 	if err != nil {
@@ -496,6 +524,14 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 	if len(res.SetsApplied) > 0 {
 		if err := stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Status{
 			Status: setNote(res.SetsApplied)}}); err != nil {
+			return err
+		}
+	}
+	// The precon exclusion says what it excluded, what it excluded
+	// although the collection does not hold it whole, and when it
+	// excluded nothing (D-496, D-497). Silence reads as a bug (D-390).
+	for _, note := range preconNotes(res) {
+		if err := stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Status{Status: note}}); err != nil {
 			return err
 		}
 	}
@@ -666,6 +702,30 @@ func (s *Server) hints(_ *mtgv1.Session, st *questions.State, owned map[string]i
 		h.CommanderSignal = s.scorer.CommanderSignal()
 	}
 	return h
+}
+
+// withPrecons gives the turn's hints the precon table and a late read of
+// the collection's printing counts (D-408). The read runs on a turn that
+// excludes the reader's precons and on no other, because it inflates the
+// whole collection.
+func (s *Server) withPrecons(ctx context.Context, uid string, session *mtgv1.Session, h *questions.CandidateHints) {
+	if h == nil {
+		return
+	}
+	h.Precons = s.preconTable()
+	collectionID := session.GetCollectionId()
+	if s.collections == nil || collectionID == "" {
+		return
+	}
+	h.PrintingCounts = func() map[string]int32 {
+		counts, err := s.collections.PrintingCounts(ctx, uid, collectionID)
+		if err != nil {
+			s.log.WarnContext(ctx, "printing counts unavailable, so no precon reads as owned",
+				"collection", collectionID, "err", err)
+			return map[string]int32{}
+		}
+		return counts
+	}
 }
 
 // declineNegatives closes every key whose question the user answered

@@ -154,6 +154,20 @@
       "closed": true
     },
     {
+      "id": "precon_unresolved",
+      "slot": "precons",
+      "order": 23,
+      "fixed": true,
+      "repeat": true,
+      "repeat_on_change": true,
+      "text": "I do not know a precon named {bad_precon}. Which one: {precon_options}?",
+      "when": {
+        "precon_unresolved": true
+      },
+      "fallback": "Which precon do you mean? Name the product, or say to keep every card.",
+      "key": "precon_unresolved"
+    },
+    {
       "id": "house_rules",
       "slot": "house_rules",
       "order": 25,

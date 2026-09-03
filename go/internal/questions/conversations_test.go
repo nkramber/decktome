@@ -539,6 +539,26 @@ func conversations() []conversation {
 	}
 	cs = append(cs, c35)
 
+	// D-496: the reader names a precon the table can not settle. "Deck A"
+	// names two products with different cards, so the row asks which.
+	cPrecon := conversation{name: "a precon name that names two products"}
+	cPrecon.ctx = newCtx("a dragons deck, not from my Deck A precon")
+	cPrecon.ctx.Format, cPrecon.ctx.Theme = mtgv1.FormatId_FORMAT_ID_COMMANDER, "dragons"
+	cPrecon.ctx.PreconUnresolved = true
+	for _, k := range []string{"format", "theme"} {
+		cPrecon.ctx.Filled[k] = true
+	}
+	cPrecon.steps = []step{
+		{want: []string{"precon_unresolved", "power_commander", "colors"},
+			fill: []string{"precon_unresolved", "precons", "power", "colors"},
+			set: func(c *Context) {
+				c.PreconUnresolved, c.PreconsExcluded = false, true
+			}},
+		{want: []string{"commander"}, fill: []string{"commander"},
+			set: func(c *Context) { c.CommanderSet = true }},
+	}
+	cs = append(cs, cPrecon)
+
 	// D-382: the sets hold too few mana cards, so the agent asks whether
 	// the mana base may reach outside them.
 	c36 := conversation{name: "a set family short of mana cards"}

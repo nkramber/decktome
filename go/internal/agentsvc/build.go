@@ -14,6 +14,7 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
 	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
+	"github.com/nkramber/mtg-deck-builder/go/internal/precons"
 	"github.com/nkramber/mtg-deck-builder/go/internal/quality"
 	"github.com/nkramber/mtg-deck-builder/go/internal/questions"
 	"github.com/nkramber/mtg-deck-builder/go/internal/revise"
@@ -93,6 +94,34 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 	format := slots.GetFormat().GetId()
 	setCodes := slots.GetSetCodes()
 
+	// The precon exclusion (D-408, D-497): the products' copies leave the
+	// owned counts, so a surplus copy stays usable, and a card with no
+	// copy left leaves both pools. A basic land never leaves (D-37).
+	var excludedIDs []string
+	if keys := slots.GetExcludePreconKeys(); len(keys) > 0 {
+		if tbl := s.preconTable(); tbl != nil {
+			var products []*precons.Product
+			for _, key := range keys {
+				p, ok := tbl.Get(key)
+				if !ok {
+					s.log.WarnContext(ctx, "the precon table lost a product the session excludes",
+						"session", session.GetId(), "key", key)
+					continue
+				}
+				products = append(products, p)
+			}
+			owned, excludedIDs = precons.Exclude(products, owned, func(id string) bool {
+				c, ok := idx.ByOracleID(id)
+				return ok && candidates.IsBasicLand(c)
+			})
+			s.log.InfoContext(ctx, "the deck uses no card of the excluded precons",
+				"session", session.GetId(), "products", len(products), "excluded_cards", len(excludedIDs))
+		} else {
+			s.log.WarnContext(ctx, "the session excludes precons and no precon table is loaded, so nothing is excluded",
+				"session", session.GetId())
+		}
+	}
+
 	// The set floor runs before the commander pool, so a family too thin
 	// to build ends the turn with a reason and spends no model call
 	// (D-380). It runs on the slot colors here and again on the
@@ -121,14 +150,15 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 	// one, or the engine refuses the deck for no commander (D-232).
 	if format == mtgv1.FormatId_FORMAT_ID_COMMANDER && len(commanderIDs) == 0 {
 		pool, err := s.builder.CommanderPool(idx, candidates.Request{
-			Format:          format,
-			Theme:           slots.GetTheme(),
-			Colors:          slots.GetColors(),
-			PoolRule:        slots.GetPoolRule(),
-			Owned:           owned,
-			Bracket:         slots.GetPower().GetBracket(),
-			SetCodes:        setCodes,
-			CommanderSignal: s.commanderSignal(),
+			Format:           format,
+			Theme:            slots.GetTheme(),
+			Colors:           slots.GetColors(),
+			PoolRule:         slots.GetPoolRule(),
+			Owned:            owned,
+			Bracket:          slots.GetPower().GetBracket(),
+			SetCodes:         setCodes,
+			CommanderSignal:  s.commanderSignal(),
+			ExcludeOracleIDs: excludedIDs,
 		})
 		switch {
 		case err != nil:
@@ -182,6 +212,7 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 		Bracket:            slots.GetPower().GetBracket(),
 		SetCodes:           setCodes,
 		OutsideRoles:       outsideRoles,
+		ExcludeOracleIDs:   excludedIDs,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("build: candidates: %w", err)
@@ -268,31 +299,32 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 	}
 
 	res, err := s.decks.Build(ctx, generate.Request{
-		OnPhase:         phase,
-		Precon:          preconName,
-		PreconOracleIDs: preconIDs,
-		PreconLands:     preconLands,
-		DeckID:          deckID,
-		Name:            deckName(slots),
-		Now:             s.now,
-		BudgetUSD:       slots.GetBudgetUsd(),
-		BudgetWholeDeck: slots.GetBudgetScope() == mtgv1.BudgetScope_BUDGET_SCOPE_WHOLE_DECK,
-		SessionID:       session.GetId(),
-		Format:          format,
-		HouseRules:      slots.GetHouseRules(),
-		Power:           slots.GetPower(),
-		Plan:            plan(session, slots),
-		Pool:            pool,
-		Commanders:      commanderIDs,
-		Locked:          lockedIDs,
-		PoolRule:        slots.GetPoolRule(),
-		SetCodes:        setCodes,
-		OracleCounts:    owned,
-		Roles:           generate.Roles(list),
-		Targets:         generate.TargetsFor(format, slots.GetPower()),
-		Limits:          generate.LimitsFor(format),
-		LegalityAsOf:    idx.AsOf.Format("2006-01-02"),
-		Revision:        rev,
+		OnPhase:           phase,
+		Precon:            preconName,
+		PreconOracleIDs:   preconIDs,
+		PreconLands:       preconLands,
+		DeckID:            deckID,
+		Name:              deckName(slots),
+		Now:               s.now,
+		BudgetUSD:         slots.GetBudgetUsd(),
+		BudgetWholeDeck:   slots.GetBudgetScope() == mtgv1.BudgetScope_BUDGET_SCOPE_WHOLE_DECK,
+		SessionID:         session.GetId(),
+		Format:            format,
+		HouseRules:        slots.GetHouseRules(),
+		Power:             slots.GetPower(),
+		Plan:              plan(session, slots),
+		Pool:              pool,
+		Commanders:        commanderIDs,
+		Locked:            lockedIDs,
+		PoolRule:          slots.GetPoolRule(),
+		SetCodes:          setCodes,
+		OracleCounts:      owned,
+		ExcludedOracleIDs: excludedIDs,
+		Roles:             generate.Roles(list),
+		Targets:           generate.TargetsFor(format, slots.GetPower()),
+		Limits:            generate.LimitsFor(format),
+		LegalityAsOf:      idx.AsOf.Format("2006-01-02"),
+		Revision:          rev,
 	}, acc)
 	if err != nil {
 		return nil, err
@@ -741,6 +773,29 @@ func setNames(names []string) []string {
 // name has no way to know it became two.
 func setNote(names []string) string {
 	return "I will build from " + englishList(names) + " only"
+}
+
+// preconNotes are the lines that tell the reader what the precon
+// exclusion did this turn (D-496, D-497).
+func preconNotes(res questions.Result) []string {
+	var out []string
+	if len(res.PreconsApplied) > 0 {
+		out = append(out, "I will use no card of "+englishList(res.PreconsApplied))
+	}
+	if len(res.PreconsPartial) > 0 {
+		its := "its cards"
+		if len(res.PreconsPartial) > 1 {
+			its = "their cards"
+		}
+		out = append(out, "Your collection does not hold all of "+englishList(res.PreconsPartial)+", so I excluded "+its+" anyway")
+	}
+	if res.PreconsNone {
+		out = append(out, "Your collection holds no whole precon, so I excluded nothing")
+	}
+	if res.PreconsUnavailable {
+		out = append(out, "I have no precon table loaded yet, so I excluded no precon")
+	}
+	return out
 }
 
 // englishList joins names the way a sentence does: "a", "a and b", or

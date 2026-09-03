@@ -134,7 +134,10 @@ type Input struct {
 	// OracleCounts is the owned count per Oracle id. Nil means no
 	// collection is attached.
 	OracleCounts map[string]int32
-	Cards        CardSource
+	// ExcludedOracleIDs are the cards of a precon the reader excluded
+	// with no copy to spare (D-408). A deck that holds one is blocked.
+	ExcludedOracleIDs map[string]bool
+	Cards             CardSource
 }
 
 // finding codes. The UI and the eval harness key on these.
@@ -163,6 +166,7 @@ const (
 	CodeCurve            = "curve_summary"
 	CodeHouseRules       = "house_rules_limited"
 	CodeDigitalPrinting  = "digital_only_printing"
+	CodeExcludedPrecon   = "excluded_precon_card"
 )
 
 // Validate runs every check and returns one finding per problem.
@@ -201,6 +205,7 @@ func (cfg *Config) Validate(in Input) *mtgv1.ValidationResult {
 	}
 	checkCompanion(cfg, res, in, fr)
 	checkOwnership(res, in)
+	checkExcluded(res, in)
 	checkManaBase(res, in, fr)
 	checkPrintings(res, in)
 	return finish(res)

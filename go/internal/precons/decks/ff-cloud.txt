@@ -30,7 +30,7 @@
 1 Conformer Shuriken (FIC) 98
 1 Conqueror's Flail (FIC) 340
 1 Cultivate (FIC) 300
-1 Dancer's Chakrams (FIC) 17
+1 Furious Rise (FIC) 294
 1 Darksteel Plate (FIC) 342
 1 Decimate (FIC) 323
 1 Dispatch (FIC) 241

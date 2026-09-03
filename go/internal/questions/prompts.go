@@ -59,7 +59,13 @@ package questions
 // answered the budget row (D-387, D-388). The instruction text changed,
 // so the provider cache prefix changed with it, and the question gate
 // re-baselines (D-66).
-const PromptVersion = 16
+//
+// Version 17 adds precon_names and facts.exclude_precons to the classify
+// role (D-496). A reader who wants no card of a precon names it, or says
+// "not from my precons". The instruction text changed, so the provider
+// cache prefix changed with it, and the question gate re-baselines
+// (D-66).
+const PromptVersion = 17
 
 const classifyInstructions = `You map one message from a Magic: The Gathering deck-building conversation onto slots.
 
@@ -80,6 +86,9 @@ Rules:
 - set_names: the Magic sets or products the user wants the deck built from, in the user's own words. "Build only from the Hobbit set" gives ["the Hobbit set"]. "Cards from Bloomburrow and Duskmourn" gives ["Bloomburrow", "Duskmourn"]. Write the name the user wrote, and add no set the user did not name. Leave the list empty when the user named no set.
 - A set is not a theme. "Build only from the Hobbit set" names a set and no theme, so set_names holds it and theme stays empty. "A Hobbit-set dragons deck" names both: set_names holds "the Hobbit set" and theme holds "dragons".
 - A creature type, a mechanic, a play style, or a card type is a theme and never a set. "only artifacts" is a theme. A set is a product name, such as Bloomburrow, Duskmourn, Final Fantasy, or Modern Horizons 3.
+- precon_names: the preconstructed decks the user wants the deck to use no card of, in the user's own words. "Not from my Avengers Assemble precon" gives ["Avengers Assemble"]. "Leave my Turtle Power and Blight Curse decks alone" gives ["Turtle Power", "Blight Curse"]. Write the product name the user wrote, and add no product the user did not name. Leave the list empty when the user named no precon to keep whole.
+- An upgrade is not an exclusion. "Upgrade my Avengers Assemble precon" builds from that precon, so precon_names stays empty for it. A precon the user wants untouched goes in precon_names, and a precon the user wants improved does not.
+- facts.exclude_precons: the user wants no card from the precons they own, and named no product. "Not from my precons", "keep my precons intact", and "do not touch my precon decks" all set it.
 - A refusal of the names on the table is neither an answer nor a decline. Under commander_pick alone, "None of those", "none of these", and "name three more" leave that key open, and they name no key in either list. This rule is about the offered names only. It never applies to another key.
 - declined_keys: the keys in open_keys that the user handed back to you. A decline is not an answer, and it names no value. Name a key only when the user's words are about that key. "Any colors are fine" declines the colors and nothing else. "You decide" with no subject declines every key in open_keys. Never put a key in both lists.
 - A delegation with no subject hands back every key in open_keys, and the colors are one of them. "Surprise me", "you decide", and "up to you" name no color, no theme, and no commander. Put every open key in declined_keys.
@@ -107,7 +116,7 @@ Answer with the schema only.`
 const classifySchema = `{
   "type": "object",
   "additionalProperties": false,
-  "required": ["format","theme","colors","commander_names","locked_names","named_cards","set_names","power","pool_rule","budget_usd","budget_scope","house_rules","closed_keys","declined_keys","facts"],
+  "required": ["format","theme","colors","commander_names","locked_names","named_cards","set_names","precon_names","power","pool_rule","budget_usd","budget_scope","house_rules","closed_keys","declined_keys","facts"],
   "properties": {
     "format": {"type": "string"},
     "theme": {"type": "string"},
@@ -116,6 +125,7 @@ const classifySchema = `{
     "locked_names": {"type": "array", "items": {"type": "string"}},
     "named_cards": {"type": "array", "items": {"type": "string"}},
     "set_names": {"type": "array", "items": {"type": "string"}},
+    "precon_names": {"type": "array", "items": {"type": "string"}},
     "power": {"type": "string"},
     "pool_rule": {"type": "string"},
     "budget_usd": {"type": "number"},
@@ -126,7 +136,7 @@ const classifySchema = `{
     "facts": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["named_card","buy_list","house_format","budget_ambiguous","power_competitive","wants_suggestion","out_of_scope"],
+      "required": ["named_card","buy_list","house_format","budget_ambiguous","power_competitive","wants_suggestion","out_of_scope","exclude_precons"],
       "properties": {
         "named_card": {"type": "boolean"},
         "buy_list": {"type": "boolean"},
@@ -134,7 +144,8 @@ const classifySchema = `{
         "budget_ambiguous": {"type": "boolean"},
         "power_competitive": {"type": "boolean"},
         "wants_suggestion": {"type": "boolean"},
-        "out_of_scope": {"type": "boolean"}
+        "out_of_scope": {"type": "boolean"},
+        "exclude_precons": {"type": "boolean"}
       }
     }
   }

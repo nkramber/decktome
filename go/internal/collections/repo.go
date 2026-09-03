@@ -219,6 +219,17 @@ func (r *Repo) OwnedPrintings(ctx context.Context, uid, id string) (map[string][
 	return OwnedPrintings(col.GetEntries()), nil
 }
 
+// PrintingCounts maps each Scryfall id of a collection to the copies the
+// user holds of it (D-408). It reads the entries, so a caller asks for it
+// on a turn that needs the precon ownership check and not on every turn.
+func (r *Repo) PrintingCounts(ctx context.Context, uid, id string) (map[string]int32, error) {
+	col, err := r.Get(ctx, uid, id)
+	if err != nil {
+		return nil, err
+	}
+	return PrintingCounts(col.GetEntries()), nil
+}
+
 // OracleCounts reads the stored per-Oracle-id count map of one collection.
 // It inflates only the count payload, not the entries (D-37 ownership
 // check in DeckService.Validate).

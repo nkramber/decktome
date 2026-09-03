@@ -62,6 +62,23 @@ type State struct {
 	// Slots.set_codes order. A message names them, so the reader reads
 	// "The Hobbit" and never "hob".
 	SetNames []string
+	// PreconPhrase is what the reader wrote for the precons the deck must
+	// use no card of, for example "my Avengers Assemble precon" (D-496).
+	// It is empty when the reader excluded no precon.
+	PreconPhrase string
+	// ExcludedPreconNames names the products of Slots.exclude_precon_keys
+	// in that order, so a message reads "Avengers Assemble" and never a
+	// key.
+	ExcludedPreconNames []string
+	// UnresolvedPrecon is a precon phrase the table could not settle: a
+	// name it does not hold, or one that names two products with
+	// different cards. The precon row asks about it (D-496).
+	UnresolvedPrecon string
+	// UnresolvedPreconAsked is the phrase the precon row named last. The
+	// row asks again only when the phrase differs (D-210).
+	UnresolvedPreconAsked string
+	// PreconOptions are the product names the precon row offers.
+	PreconOptions []string
 	// IllegalCommander is a card the user named as the commander that can
 	// not lead a deck (D-129).
 	IllegalCommander string
@@ -89,6 +106,16 @@ type State struct {
 	// out and the next turn starts with it clear, the way the commander
 	// mark of D-366 does. The snapshot therefore does not hold it.
 	setsThisTurn []string
+	// preconsThisTurn names the products the deck uses no card of after
+	// this turn, and preconsPartialThisTurn the named ones the collection
+	// does not hold whole (D-497). preconsNoneThisTurn says the reader
+	// excluded their precons and the collection holds none whole.
+	// preconsUnavailableThisTurn says no precon table is loaded. All four
+	// are turn state, as setsThisTurn is.
+	preconsThisTurn            []string
+	preconsPartialThisTurn     []string
+	preconsNoneThisTurn        bool
+	preconsUnavailableThisTurn bool
 }
 
 // PriorMessages is how many earlier messages the classify call sees.
@@ -184,6 +211,61 @@ const SlotSetUnresolved = "set_unresolved"
 // SlotSetOutsideMana is the state key of the mana-fill row: may the deck
 // take ramp and lands from outside the named sets (D-382)?
 const SlotSetOutsideMana = "set_outside_mana"
+
+// SlotPrecons is the state key of the precon exclusion (D-496).
+const SlotPrecons = "precons"
+
+// SlotPreconUnresolved is the state key of the row that asks which precon
+// a name means. It is its own key, as SlotSetUnresolved is, so a message
+// that names two products and settles one keeps the other open.
+const SlotPreconUnresolved = "precon_unresolved"
+
+// PreconRef is one product of the precon table, by key and by name.
+type PreconRef struct {
+	Key  string
+	Name string
+}
+
+// ExcludePrecons records the products the deck uses no card of, and
+// closes the precon row (D-496). An empty list closes the row too: the
+// reader excluded their precons, and the collection holds none whole.
+func (s *State) ExcludePrecons(phrase string, refs []PreconRef) {
+	s.PreconPhrase = strings.TrimSpace(phrase)
+	keys := make([]string, 0, len(refs))
+	names := make([]string, 0, len(refs))
+	for _, r := range refs {
+		keys = append(keys, r.Key)
+		names = append(names, r.Name)
+	}
+	s.ExcludedPreconNames = names
+	s.Slots.ExcludePreconKeys = keys
+	s.Ctx.PreconsExcluded = len(keys) > 0
+	s.Close(SlotPrecons)
+}
+
+// PreconResolved closes the row that asks which precon a name means.
+func (s *State) PreconResolved() {
+	s.UnresolvedPrecon, s.PreconOptions = "", nil
+	s.Ctx.PreconUnresolved = false
+	s.Close(SlotPreconUnresolved)
+}
+
+// PreconUnresolved records a precon phrase the table could not settle.
+// The precon row asks about it, and options names the products it offers.
+func (s *State) PreconUnresolved(phrase string, options []string) {
+	phrase = strings.TrimSpace(phrase)
+	if phrase == "" {
+		return
+	}
+	s.UnresolvedPrecon, s.PreconOptions = phrase, options
+	s.Ctx.PreconUnresolved = true
+}
+
+// BadPreconChanged reports whether the precon row would name another
+// phrase than it named last (D-210).
+func (s *State) BadPreconChanged() bool {
+	return !strings.EqualFold(strings.TrimSpace(s.UnresolvedPrecon), strings.TrimSpace(s.UnresolvedPreconAsked))
+}
 
 // SetLimit records the sets the reader named, and closes the set row.
 // codes is the whole family, and names is what a message calls them.
