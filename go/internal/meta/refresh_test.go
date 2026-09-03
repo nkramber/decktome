@@ -65,6 +65,16 @@ func fakeSites(t *testing.T) (*httptest.Server, *atomic.Int32) {
 			serve(w, "edhrec_average.json")
 		case p == "/v2/tournaments":
 			_, _ = w.Write([]byte(topdeckAnswer))
+		case p == "/format":
+			serve(w, "mtgtop8-format-mo.html")
+		case p == "/event":
+			serve(w, "mtgtop8-event-90258.html")
+		case p == "/mtgo":
+			serve(w, "mtgtop8-deck-885253.txt")
+		case strings.HasPrefix(p, "/deck/custom/"):
+			serve(w, "mtggoldfish-custom-modern.html")
+		case strings.HasPrefix(p, "/deck/"):
+			serve(w, "mtggoldfish-deck-7938202.html")
 		default:
 			w.WriteHeader(http.StatusNotFound)
 		}
@@ -87,6 +97,7 @@ func testJob(t *testing.T, srv *httptest.Server, store ObjectStore) *Job {
 		Store: store, Fetch: fetch, Topdeck: td, TopdeckDays: 7,
 		Now:        func() time.Time { return time.Date(2026, 9, 2, 12, 0, 0, 0, time.UTC) },
 		MTGOMonths: 2, MTGOBase: srv.URL, MTGJSONBase: srv.URL, EDHRECBase: srv.URL, CEDHDBURL: srv.URL + "/cedh/",
+		MTGTop8Base: srv.URL, GoldfishBase: srv.URL, GoldfishListPages: 2,
 		Commanders: []string{"Kinnan, Bonder Prodigy"},
 	}
 }
@@ -126,6 +137,28 @@ func TestJobRun(t *testing.T) {
 	if rep.Commanders == 0 {
 		t.Errorf("no commander read")
 	}
+	// Every paper event of the format page serves the same fixture, so
+	// the first one yields its 64 lists and the others find every deck
+	// stored. The three format pages and the three later pages count,
+	// and the site's own pagination hrefs repeat across formats.
+	events, _ := ParseMTGTop8Format(readTestdata(t, "mtgtop8-format-mo.html"))
+	paper := 0
+	for _, ev := range events {
+		if ev.Paper {
+			paper++
+		}
+	}
+	if paper == 0 {
+		t.Fatal("the format fixture names no paper event")
+	}
+	if rep.Lists[SourceMTGTop8] != 64 || rep.Pages[SourceMTGTop8] != 6+paper+64 || rep.Failures[SourceMTGTop8] != 0 {
+		t.Errorf("mtgtop8 lists %d, pages %d (want %d), failures %d", rep.Lists[SourceMTGTop8], rep.Pages[SourceMTGTop8], 6+paper+64, rep.Failures[SourceMTGTop8])
+	}
+	// Two formats, two listing pages each, and the three decks of the
+	// fixture once.
+	if rep.Lists[SourceGoldfish] != 3 || rep.Pages[SourceGoldfish] != 7 || rep.Failures[SourceGoldfish] != 0 {
+		t.Errorf("mtggoldfish lists %d, pages %d, failures %d", rep.Lists[SourceGoldfish], rep.Pages[SourceGoldfish], rep.Failures[SourceGoldfish])
+	}
 	cs, err := ReadCommanders(ctx, store, "2026-09-02")
 	if err != nil {
 		t.Fatal(err)
@@ -162,7 +195,14 @@ func TestJobRun(t *testing.T) {
 	if rep.Pages[SourceMTGO] != 0 || rep.FetchErrors[SourceMTGO] != 1 || rep.Precons != 0 || rep.Skipped[SourceMTGJSON] == "" || rep.Skipped[SourceCEDHDB] == "" || rep.Skipped[SourceEDHREC] == "" {
 		t.Errorf("second run: %+v", rep)
 	}
-	if hits.Load()-first > 6 {
+	// The MTGTop8 lane reads its six format pages again, and the
+	// MTGGoldfish lane its four listing pages, and both find every event
+	// and every deck stored.
+	if rep.Pages[SourceMTGTop8] != 6 || rep.Lists[SourceMTGTop8] != 0 || rep.Pages[SourceGoldfish] != 4 || rep.Lists[SourceGoldfish] != 0 {
+		t.Errorf("second run: mtgtop8 pages %d lists %d, mtggoldfish pages %d lists %d",
+			rep.Pages[SourceMTGTop8], rep.Lists[SourceMTGTop8], rep.Pages[SourceGoldfish], rep.Lists[SourceGoldfish])
+	}
+	if hits.Load()-first > 16 {
 		t.Errorf("second run made %d requests", hits.Load()-first)
 	}
 
@@ -175,6 +215,9 @@ func TestJobRun(t *testing.T) {
 	}
 	if rep.Pages[SourceMTGO] != 1 || rep.Failures[SourceMTGO] != 0 {
 		t.Errorf("reparse: pages %d, failures %d", rep.Pages[SourceMTGO], rep.Failures[SourceMTGO])
+	}
+	if rep.Pages[SourceMTGTop8] != paper || rep.Pages[SourceGoldfish] != 3 {
+		t.Errorf("reparse: mtgtop8 pages %d (want %d), mtggoldfish pages %d (want 3)", rep.Pages[SourceMTGTop8], paper, rep.Pages[SourceGoldfish])
 	}
 	if hits.Load()-before > 4 {
 		t.Errorf("reparse made %d requests", hits.Load()-before)
