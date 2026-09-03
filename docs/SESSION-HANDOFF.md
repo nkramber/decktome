@@ -6,7 +6,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## Where things stand (2026-09-03)
 
-- PR-24, the precon exclusion, is complete on branch `pr-24` (2026-09-03, D-496 to D-498, D-500, D-501). The free gate passes, `docs/reference/pr24-precon-gate-2026-09-03.md`. The tree is green on the branch: Go build, vet, the `-race` suite, golangci-lint, `make ste-check`, the proto check, and the web typecheck and 237 tests. The owner reads it, then merges. The section "PR-24, the precon exclusion, built" below holds the moving parts.
+- PR-24, the precon exclusion, is merged (2026-09-03, #59, D-496 to D-498, D-500, D-501). The free gate passes, `docs/reference/pr24-precon-gate-2026-09-03.md`. The tree is green on `main`: Go build, vet, the `-race` suite, golangci-lint, `make ste-check`, the proto check, and the web typecheck and 237 tests. Branches `pr-24` and `pr-14c` can go. The section "PR-24, the precon exclusion, merged" below holds the moving parts. PR-14C is next, on a new branch from `main` (D-494).
 - The corpus step of 2026-09-03 is done (D-494 to D-499). `make meta-refresh` ran whole. Quality gate run 11 reads FAIL on two bars: the Commander precon bar at 0.78, and the Modern precon bar at 0.9465 against 0.95. The wider EDHREC read did not move the built decks: 19 of 24 grade bad under the refit. The section "The corpus step of 2026-09-03" below holds the read.
 - The owner set the order on 2026-09-03: the corpus work, then PR-24, then PR-14C, then the paid runs (D-494, D-495). No paid run goes before the PR-14C code lands.
 - PR-14B, the deck quality model, is merged (2026-09-03, #58, D-470 to D-493). Merged before it: PR-0a to PR-8, PR-7B, PR-10 to PR-13, the audits, the Phase 3B roadmap (#46), PR-16 (#47), PR-16B (#48), PR-17 (#49), PR-17B (#50), PR-18 (#53), the review fixes of PR-18 (#54), PR-19 (#55), its follow-ups (#56), and PR-14A (#57).
@@ -432,9 +432,9 @@ CAUTION: the Topdeck.gg reader follows the docs alone. No session has read a liv
 
 CAUTION: the quality gate has three bars in the code and one outside it. The pair bars and the bracket 5 offer bar are in `cmd/quality-gate`. The judge bar over the golden decks reads the next deck gate run, whose summaries carry the tier. That run costs about $2.24, so ask the owner first.
 
-## PR-24, the precon exclusion, built (2026-09-03)
+## PR-24, the precon exclusion, merged (2026-09-03, #59)
 
-The branch `pr-24` holds the whole of PR-24, from `main` (D-494). The calls are D-496 to D-498 and D-500, and the free gate is `docs/reference/pr24-precon-gate-2026-09-03.md`. A reader asks for a deck that uses no card of a precon, by name or as "not from my precons", and the build leaves those cards out.
+PR-24 merged as #59 on 2026-09-03, with the corpus-step docs of the same day in the same commit. The calls are D-496 to D-498 and D-500, and the free gate is `docs/reference/pr24-precon-gate-2026-09-03.md`. A reader asks for a deck that uses no card of a precon, by name or as "not from my precons", and the build leaves those cards out.
 
 - `precons.Table` indexes the MTGJSON table of the meta store: 701 products, by key and by name. `Resolve` maps the reader's words onto products. `Owned` lists the products a collection holds whole (D-408), and `Exclude` takes the products' copies off the owned counts (D-500).
 - `cmd/api` loads the newest table beside the quality model and swaps it on the snapshot cadence. `agentsvc.WithPreconTable` wires it. No table excludes nothing, and the turn says so.
@@ -573,12 +573,11 @@ The chat ran a turn with no card index before D-405. The commander question then
 
 ## Next steps, in order
 
-1. PR-24 is complete on branch `pr-24` (D-494). The owner reads the branch and merges it. The section "PR-24, the precon exclusion, built" above holds the moving parts, and the gate document is `docs/reference/pr24-precon-gate-2026-09-03.md`.
-2. PR-14C holds two lanes: the Aetherhub and MTGGoldfish user decks (D-490), and MTGTop8 (D-482). Moxfield is out (D-493). The 60-card typical rung is what the judge bar waits on (D-488).
-3. `make meta-refresh` daily, and `make quality-gate` to a new `QUALITY_GATE_OUT` after each one. Read the pair bars per format and the per-axis table. A weight against the sense of its feature is a defect in the feature or the labels. Do not tune it. The next weekly EDHREC read falls on 2026-09-10 (D-499).
-4. The paid runs come after PR-14C (D-495). First `make quality-judge` over `pr8-deck-gate-run13b.md`, about $0.31. Then the bracket gate for the bracket 5 decks. Then the question gate for the classifier of version 17 (D-496). Ask the owner before each one.
-5. Deploy the meta job (D-492). It is one Cloud Run job on `worker -meta`, with a Scheduler cron at 06:00 UTC daily. `TOPDECK_API_KEY` goes to Secret Manager. No infra file in this repo holds the worker's schedule. So the deployment is by hand, as the snapshot worker's is.
-6. PR-20 to PR-23 in order, one gate each. PR-15 stays after Phase 3B.
+1. PR-14C, on a new branch from `main` (D-494). It holds two lanes: the Aetherhub and MTGGoldfish user decks (D-490), and MTGTop8 (D-482). Moxfield is out (D-493). The 60-card typical rung is what the judge bar waits on (D-488). Verify each site's page shape first, and keep the raw pages in the store, as the MTGO reader does.
+2. `make meta-refresh` daily, and `make quality-gate` to a new `QUALITY_GATE_OUT` after each one. Read the pair bars per format and the per-axis table. A weight against the sense of its feature is a defect in the feature or the labels. Do not tune it. The next weekly EDHREC read falls on 2026-09-10 (D-499).
+3. The paid runs come after PR-14C (D-495). First `make quality-judge` over `pr8-deck-gate-run13b.md`, about $0.31. Then the bracket gate for the bracket 5 decks. Then the question gate for the classifier of version 17 (D-496). Ask the owner before each one.
+4. Deploy the meta job (D-492). It is one Cloud Run job on `worker -meta`, with a Scheduler cron at 06:00 UTC daily. `TOPDECK_API_KEY` goes to Secret Manager. No infra file in this repo holds the worker's schedule. So the deployment is by hand, as the snapshot worker's is.
+5. PR-20 to PR-23 in order, one gate each. PR-15 stays after Phase 3B.
 
 Deck gate run 12 ran on 2026-09-02 under the profile and passed 24 of 24 with its rerun 12b. The read of every mana base is F-33. The land count and the color sources sit in band now, and the nonbasic share still swings from 0 to 36 on the same prompt. No band reads the composition, and F-33 stays open on that point.
 
