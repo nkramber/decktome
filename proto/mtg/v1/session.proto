@@ -81,12 +81,20 @@ message Slots {
   // product Scryfall names as its child (D-376). Empty means every set.
   // Basic lands are never filtered by it (D-378).
   repeated string set_codes = 13;
+  // exclude_precon_keys are the precon products the deck uses no card
+  // of, as keys of the precon table (D-407, D-408). The build subtracts
+  // each product's copies from the owned counts, so a surplus copy stays
+  // usable, and a card with no copy left leaves the pool. Empty means no
+  // exclusion.
+  repeated string exclude_precon_keys = 14;
   // slot_states is keyed by slot name: scope, deck_count, format,
   // power, colors, theme, commander, pool_rule, budget, house_rules.
   // A refinement row keys its own name beside them, for example
   // budget_scope or commander_pick. "scope" records that the agent said
   // it builds Magic decks only, after the user asked for something else.
   // "set" and "set_outside_mana" are the two set rows (D-376, D-382).
+  // "precons" is the precon exclusion, and "precon_unresolved" the row
+  // that asks which product a name means (D-496).
   map<string, SlotState> slot_states = 10;
 }
 

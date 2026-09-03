@@ -496,12 +496,20 @@ type Slots struct {
 	// product Scryfall names as its child (D-376). Empty means every set.
 	// Basic lands are never filtered by it (D-378).
 	SetCodes []string `protobuf:"bytes,13,rep,name=set_codes,json=setCodes,proto3" json:"set_codes,omitempty"`
+	// exclude_precon_keys are the precon products the deck uses no card
+	// of, as keys of the precon table (D-407, D-408). The build subtracts
+	// each product's copies from the owned counts, so a surplus copy stays
+	// usable, and a card with no copy left leaves the pool. Empty means no
+	// exclusion.
+	ExcludePreconKeys []string `protobuf:"bytes,14,rep,name=exclude_precon_keys,json=excludePreconKeys,proto3" json:"exclude_precon_keys,omitempty"`
 	// slot_states is keyed by slot name: scope, deck_count, format,
 	// power, colors, theme, commander, pool_rule, budget, house_rules.
 	// A refinement row keys its own name beside them, for example
 	// budget_scope or commander_pick. "scope" records that the agent said
 	// it builds Magic decks only, after the user asked for something else.
 	// "set" and "set_outside_mana" are the two set rows (D-376, D-382).
+	// "precons" is the precon exclusion, and "precon_unresolved" the row
+	// that asks which product a name means (D-496).
 	SlotStates    map[string]SlotState `protobuf:"bytes,10,rep,name=slot_states,json=slotStates,proto3" json:"slot_states,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value,enum=mtg.v1.SlotState"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -610,6 +618,13 @@ func (x *Slots) GetLockedOracleIds() []string {
 func (x *Slots) GetSetCodes() []string {
 	if x != nil {
 		return x.SetCodes
+	}
+	return nil
+}
+
+func (x *Slots) GetExcludePreconKeys() []string {
+	if x != nil {
+		return x.ExcludePreconKeys
 	}
 	return nil
 }
@@ -952,7 +967,7 @@ const file_mtg_v1_session_proto_rawDesc = "" +
 	"\routput_tokens\x18\x04 \x01(\x03R\foutputTokens\x12)\n" +
 	"\x10reasoning_tokens\x18\x05 \x01(\x03R\x0freasoningTokens\x12\x19\n" +
 	"\bcost_usd\x18\x06 \x01(\x01R\acostUsd\x12\x16\n" +
-	"\x06priced\x18\a \x01(\bR\x06priced\"\xde\x04\n" +
+	"\x06priced\x18\a \x01(\bR\x06priced\"\x8e\x05\n" +
 	"\x05Slots\x12&\n" +
 	"\x06format\x18\x01 \x01(\v2\x0e.mtg.v1.FormatR\x06format\x12(\n" +
 	"\x05power\x18\x02 \x01(\v2\x12.mtg.v1.PowerLevelR\x05power\x12%\n" +
@@ -966,7 +981,8 @@ const file_mtg_v1_session_proto_rawDesc = "" +
 	"\vhouse_rules\x18\f \x01(\tR\n" +
 	"houseRules\x12*\n" +
 	"\x11locked_oracle_ids\x18\b \x03(\tR\x0flockedOracleIds\x12\x1b\n" +
-	"\tset_codes\x18\r \x03(\tR\bsetCodes\x12>\n" +
+	"\tset_codes\x18\r \x03(\tR\bsetCodes\x12.\n" +
+	"\x13exclude_precon_keys\x18\x0e \x03(\tR\x11excludePreconKeys\x12>\n" +
 	"\vslot_states\x18\n" +
 	" \x03(\v2\x1d.mtg.v1.Slots.SlotStatesEntryR\n" +
 	"slotStates\x1aP\n" +

@@ -142,7 +142,11 @@ func run(ctx context.Context, logger *slog.Logger) error {
 	}
 	scorer := quality.NewScorer(nil)
 	cardServer.SetQuality(scorer.CardQualities)
-	agentServer, err := agentService(llmClient, fs, cardServer, collectionRepo, deckRepo, rulesCfg, preconSrc, scorer, userFn, logger)
+	// The precon table loads beside the model, for the precon exclusion
+	// of PR-24 (D-407, D-408). No table excludes nothing, and the turn
+	// says so.
+	tableSrc := &preconTableSource{}
+	agentServer, err := agentService(llmClient, fs, cardServer, collectionRepo, deckRepo, rulesCfg, preconSrc, tableSrc, scorer, userFn, logger)
 	if err != nil {
 		return fmt.Errorf("agent service: %w", err)
 	}
@@ -202,12 +206,18 @@ func run(ctx context.Context, logger *slog.Logger) error {
 		defer close(modelDone)
 		modelLoop(loopCtx, metaStore, scorer, logger)
 	}()
+	tableDone := make(chan struct{})
+	go func() {
+		defer close(tableDone)
+		preconTableLoop(loopCtx, metaStore, tableSrc, logger)
+	}()
 
 	select {
 	case err := <-serveErr:
 		stopLoop()
 		<-loopDone
 		<-modelDone
+		<-tableDone
 		if err != nil {
 			return fmt.Errorf("api server: %w", err)
 		}
@@ -357,13 +367,74 @@ func (p *preconSource) Current() *precons.Set {
 // that needs it.
 func (p *preconSource) refresh() { p.Current() }
 
+// preconTableSource holds the newest precon table of the meta store. It
+// implements agentsvc.PreconTableSource, and preconTableLoop swaps it.
+type preconTableSource struct {
+	mu    sync.Mutex
+	table *precons.Table
+}
+
+// Table answers the current table, or nil before the first load.
+func (p *preconTableSource) Table() *precons.Table {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.table
+}
+
+func (p *preconTableSource) swap(t *precons.Table) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.table = t
+}
+
+// preconTableLoop loads the newest precon table and swaps it in when the
+// meta job stores a newer version, on the snapshot cadence (D-472).
+func preconTableLoop(ctx context.Context, store meta.ObjectStore, src *preconTableSource, logger *slog.Logger) {
+	seconds := defaultReloadSeconds
+	if v, err := strconv.Atoi(os.Getenv("CARDS_RELOAD_SECONDS")); err == nil && v > 0 {
+		seconds = v
+	}
+	load := func() {
+		version, err := meta.LatestPreconsVersion(ctx, store)
+		if err != nil {
+			logger.Error("precon table version check failed", "err", err)
+			return
+		}
+		current := src.Table()
+		if version == "" || (current != nil && version == current.Version) {
+			if version == "" && current == nil {
+				logger.Warn("no precon table in store yet, a precon exclusion excludes nothing")
+			}
+			return
+		}
+		rows, err := meta.ReadPrecons(ctx, store, version)
+		if err != nil {
+			logger.Error("precon table load failed", "version", version, "err", err)
+			return
+		}
+		src.swap(precons.NewTable(version, rows))
+		logger.Info("precon table loaded", "version", version, "products", len(rows))
+	}
+	load()
+	ticker := time.NewTicker(time.Duration(seconds) * time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			load()
+		}
+	}
+}
+
 // agentService wires the question workflow and the build. The card
 // index and the candidate builder feed the hints, so a question that
 // names a value names a real card. The generator reads the live index.
 // A missing price table only costs the cost field of the usage event.
 func agentService(client *llm.Client, fs *firestore.Client, index *cardsvc.Server,
 	cols *collections.Repo, deckRepo *decks.Repo, rulesCfg *rules.Config, preconSrc agentsvc.PreconSource,
-	scorer *quality.Scorer, userFn auth.UserFunc, logger *slog.Logger) (*agentsvc.Server, error) {
+	tableSrc agentsvc.PreconTableSource, scorer *quality.Scorer, userFn auth.UserFunc, logger *slog.Logger) (*agentsvc.Server, error) {
 	cat, err := questions.Load()
 	if err != nil {
 		return nil, err
@@ -390,6 +461,7 @@ func agentService(client *llm.Client, fs *firestore.Client, index *cardsvc.Serve
 		agentsvc.WithDecks(generate.NewBuilder(client, rulesCfg, liveCards{index}, logger, generate.WithProfiler(prof), generate.WithScorer(scorer))),
 		agentsvc.WithDeckStore(deckRepo),
 		agentsvc.WithPreconSource(preconSrc),
+		agentsvc.WithPreconTable(tableSrc),
 		agentsvc.WithScorer(scorer),
 	}
 	prices, err := llm.LoadPrices()

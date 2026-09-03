@@ -6,6 +6,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## Where things stand (2026-09-03)
 
+- PR-24, the precon exclusion, is merged (2026-09-03, #59, D-496 to D-498, D-500, D-501). The free gate passes, `docs/reference/pr24-precon-gate-2026-09-03.md`. The tree is green on `main`: Go build, vet, the `-race` suite, golangci-lint, `make ste-check`, the proto check, and the web typecheck and 237 tests. Branches `pr-24` and `pr-14c` can go. The section "PR-24, the precon exclusion, merged" below holds the moving parts. PR-14C is next, on a new branch from `main` (D-494).
+- The corpus step of 2026-09-03 is done (D-494 to D-499). `make meta-refresh` ran whole. Quality gate run 11 reads FAIL on two bars: the Commander precon bar at 0.78, and the Modern precon bar at 0.9465 against 0.95. The wider EDHREC read did not move the built decks: 19 of 24 grade bad under the refit. The section "The corpus step of 2026-09-03" below holds the read.
+- The owner set the order on 2026-09-03: the corpus work, then PR-24, then PR-14C, then the paid runs (D-494, D-495). No paid run goes before the PR-14C code lands.
 - PR-14B, the deck quality model, is merged (2026-09-03, #58, D-470 to D-493). Merged before it: PR-0a to PR-8, PR-7B, PR-10 to PR-13, the audits, the Phase 3B roadmap (#46), PR-16 (#47), PR-16B (#48), PR-17 (#49), PR-17B (#50), PR-18 (#53), the review fixes of PR-18 (#54), PR-19 (#55), its follow-ups (#56), and PR-14A (#57).
 - The tree is green on `main`: Go build, vet, `-race` tests, golangci-lint, the proto check, `make ste-check`, and the web lint, typecheck, and 237 tests. Branches `pr-14a`, `pr-14b`, `pr-19`, and `tile-fixes` can go. The section "PR-14B, the deck quality model, built" below holds the moving parts, and no owner row waits.
 - PR-14A, the bracket profile, is merged (2026-09-02, #57, D-459 to D-469). The current branch is `pr-14b`, and branches `pr-14a`, `pr-19`, and `tile-fixes` can go. The tree is green: Go build, vet, `-race` tests, golangci-lint, the web typecheck, and the proto check. Bracket gate run 1 reads FAIL on the band bar and the judge bar. Deck gate run 12 and its rerun 12b together pass all 24 prompts with no regression. The sections below hold the moving parts.
@@ -429,6 +432,57 @@ CAUTION: the Topdeck.gg reader follows the docs alone. No session has read a liv
 
 CAUTION: the quality gate has three bars in the code and one outside it. The pair bars and the bracket 5 offer bar are in `cmd/quality-gate`. The judge bar over the golden decks reads the next deck gate run, whose summaries carry the tier. That run costs about $2.24, so ask the owner first.
 
+## PR-24, the precon exclusion, merged (2026-09-03, #59)
+
+PR-24 merged as #59 on 2026-09-03, with the corpus-step docs of the same day in the same commit. The calls are D-496 to D-498 and D-500, and the free gate is `docs/reference/pr24-precon-gate-2026-09-03.md`. A reader asks for a deck that uses no card of a precon, by name or as "not from my precons", and the build leaves those cards out.
+
+- `precons.Table` indexes the MTGJSON table of the meta store: 701 products, by key and by name. `Resolve` maps the reader's words onto products. `Owned` lists the products a collection holds whole (D-408), and `Exclude` takes the products' copies off the owned counts (D-500).
+- `cmd/api` loads the newest table beside the quality model and swaps it on the snapshot cadence. `agentsvc.WithPreconTable` wires it. No table excludes nothing, and the turn says so.
+- The classifier is version 17: `precon_names` and `facts.exclude_precons` (D-496). `applyPrecons` resolves the names through the turn's hints, and "my precons" reads the printing counts of the collection once, on that turn alone.
+- `Slots.exclude_precon_keys` (field 14) holds the product keys. The snapshot is version 4. The catalog row `precon_unresolved` asks about a name the table can not settle, and the corpus section 11 holds it.
+- The build subtracts the copies per Oracle id, and it passes the excluded ids to both candidate pools and to the generator. The rules check blocks a card that slips through, with the code `excluded_precon_card`.
+- The chat says what left: "I will use no card of X", the partial note of D-497, "holds no whole precon", or "no precon table loaded yet".
+- The nine embedded lists stay (D-498). `TestEmbeddedListsMatchTheTable` compares each with its row and found one wrong card, now corrected (D-501).
+
+CAUTION: the classify model never saw version 17. The unit tests script its output. The next paid question gate reads whether the model fills the two new fields, after PR-14C (D-495). Run it before you trust a live exclusion.
+
+CAUTION: the MTGJSON names are the product names, and 21 names belong to two or more products with different cards, "Deck A" among them. Such a name opens the precon row with the set codes as options. Ninety-nine products carry a one-word name, and one word resolves only as the whole name.
+
+CAUTION: the exclusion resolves once, at classify time, into keys on the session. A later import of the collection does not move it. The reader names the precons again after an import.
+
+## The corpus step of 2026-09-03 (D-494 to D-499)
+
+The owner set the order on 2026-09-03: the corpus work first, then PR-24, then PR-14C, then the paid runs (D-494, D-495). Every new branch starts from `main`. The branch `pr-14c` holds no commit and waits.
+
+`make meta-refresh` ran from 11:46 to 13:38 local, 112 minutes, and every source read with zero parse failures. The report per source:
+
+- MTGO: 200 pages, 54 fetch errors, and 6,188 lists in the months it touched. The 54 are retired event pages that answer 302, and more pages wait behind the cap.
+- MTGJSON: 702 deck files, and the table version `5.3.0+20260903` with 701 products.
+- The cEDH database: 1 page.
+- Topdeck.gg: 1 page and 31 lists, after two 429 answers with a 7-second wait each.
+- EDHREC: 2,079 pages and 838 lists. The commanders file of 2026-09-03 holds 1,563 rows.
+- The fit stored model `20260903T183812Z`, and the API loads it.
+
+CAUTION: the EDHREC read ran although the last read was 2026-09-02. The skip reads a `read` marker under the day's raw prefix, and the run of 2026-09-02 wrote none. So the weekly stamp starts on 2026-09-03, and the next read falls on 2026-09-10 (D-499). D-495 rests on a wrong premise, the skip of the read, and its order of the paid runs stands.
+
+CAUTION: the MTGJSON version stamp carries the day, so the skip on an existing table never holds. The job fetches 702 deck files every day, a few minutes at one a second. A skip on the deck list's own version field ends that. No session looked at it.
+
+Quality gate run 11 is `docs/reference/pr14b-quality-gate-run11.md`, free. It reads FAIL on two bars. The gate fits its own model over the store, `20260903T183943Z`. The stored model is the job's fit of a minute before, over the same lists.
+
+| Format | Great over precon | Precon over bad | Run 10 precon over bad |
+|---|---|---|---|
+| Commander | 0.98 | 0.78 | 0.88 |
+| Standard | 0.92 | 1.00 | 1.00 |
+| Modern | 0.99 | 0.9465 | 0.95 |
+
+The Commander typical rung grew from 159 to 851 train lists, and the bad rung from 1,520 to 4,980. The breaks come from the baseline and the typical lists (D-484). The precons still grade bad: 28 of 44 holdout precons read bad, against 33 of 44 in run 10. The typical rung reads itself right in 100 of 186. The per-axis table reads lands 0.96, curve 0.96, colors 0.92, and synergy 0.77, against 0.98, 0.99, 0.98, and 0.75 in run 10. The bar fell because the model ranks a broken average deck above a precon more often than before.
+
+The Modern weights moved little, and `card_rate` moved most, by 0.14. The great tier grew from 852 to 1,351 lists with the new MTGO pages, and the bar slipped under 0.95 by 0.0035. The weak axes are the same as in run 10: colors 0.61 and copies 0.80.
+
+Three Commander weights changed sign, all small: `color_sources` from +0.02 to -0.02, `high_bracket_share` from -0.15 to +0.11, and `ramp` from -0.01 to +0.04. Four weights against the sense of their feature persist: `draw` -0.24, `wipe` -0.17, `land` -0.25, and `commander_decks` -0.18. The cEDH lists set the great and the good rungs, so the ladder reads a casual shape as worse. No weight changed by hand (D-486).
+
+The explain mode over deck gate 13b ran free with the refit. It grades 19 of 24 built decks bad, 4 typical, and 1 good, and the detector flags 13. The run 10 model read 18 of 24 bad (D-488), so the wider typical rung did not move the built decks. The largest contributions against every Commander deck are `card_rate`, at 0.003 to 0.048 against a mean of 0.21, then `source_spread`, `fast_mana`, and `tapped_share`. Those are cEDH features. The judge bar stays open on the corpus (D-488, D-491), and the 60-card typical rung of PR-14C comes before the judge lane runs (D-495).
+
 ## Bracket gate run 1 (2026-09-02)
 
 `docs/reference/pr14a-bracket-gate-run1.md` holds the builds, and `pr14a-bracket-gate-run1-judge.md` holds the judge lane. The builds cost $2.08 over 46 calls, above the $1.50 estimate, because nine decks took a repair turn and four took two. The judge lane cost $0.26.
@@ -519,14 +573,11 @@ The chat ran a turn with no card index before D-405. The commander question then
 
 ## Next steps, in order
 
-1. `make meta-refresh` ran whole on 2026-09-02. The next run reads 200 more MTGO pages and the last hundred EDHREC commanders. It also reads the 24 pages that answered a redirect. Run it daily, and read the log per source.
-2. `make quality-gate` ran eight times the same day. Run it again to a new `QUALITY_GATE_OUT` after each refresh. Read the pair bars per format and the per-axis table. A weight against the sense of its feature is a defect in the feature or the labels. Do not tune it.
-3. The Topdeck.gg key is in `.env` (D-479). OQ-55 asks the owner for Moxfield API access, for PR-14C.
-4. PR-14B merged with the judge bar on record (D-491, #58). `make meta-refresh` reads 1,100 commanders on its next weekly EDHREC stamp (D-489). Then refit, and run `make quality-judge` over `pr8-deck-gate-run13b.md` again, about $0.31. Then the bracket gate again, for the bracket 5 decks the power signal exists for.
-5. Deploy the meta job (D-492). It is one Cloud Run job on `worker -meta`, with a Scheduler cron at 06:00 UTC daily. `TOPDECK_API_KEY` goes to Secret Manager. No infra file in this repo holds the worker's schedule. So the deployment is by hand, as the snapshot worker's is.
-6. PR-24, the precon exclusion, after PR-14B (D-460). It reads the precon table at `meta/precons/<version>/` (D-472).
-7. PR-14C holds two lanes: the Aetherhub and MTGGoldfish user decks (D-490), and MTGTop8 (D-482). Moxfield is out (D-493).
-8. PR-20 to PR-23 in order, one gate each. PR-15 stays after Phase 3B.
+1. PR-14C, on a new branch from `main` (D-494). It holds two lanes: the Aetherhub and MTGGoldfish user decks (D-490), and MTGTop8 (D-482). Moxfield is out (D-493). The 60-card typical rung is what the judge bar waits on (D-488). Verify each site's page shape first, and keep the raw pages in the store, as the MTGO reader does.
+2. `make meta-refresh` daily, and `make quality-gate` to a new `QUALITY_GATE_OUT` after each one. Read the pair bars per format and the per-axis table. A weight against the sense of its feature is a defect in the feature or the labels. Do not tune it. The next weekly EDHREC read falls on 2026-09-10 (D-499).
+3. The paid runs come after PR-14C (D-495). First `make quality-judge` over `pr8-deck-gate-run13b.md`, about $0.31. Then the bracket gate for the bracket 5 decks. Then the question gate for the classifier of version 17 (D-496). Ask the owner before each one.
+4. Deploy the meta job (D-492). It is one Cloud Run job on `worker -meta`, with a Scheduler cron at 06:00 UTC daily. `TOPDECK_API_KEY` goes to Secret Manager. No infra file in this repo holds the worker's schedule. So the deployment is by hand, as the snapshot worker's is.
+5. PR-20 to PR-23 in order, one gate each. PR-15 stays after Phase 3B.
 
 Deck gate run 12 ran on 2026-09-02 under the profile and passed 24 of 24 with its rerun 12b. The read of every mana base is F-33. The land count and the color sources sit in band now, and the nonbasic share still swings from 0 to 36 on the same prompt. No band reads the composition, and F-33 stays open on that point.
 
@@ -619,7 +670,7 @@ CAUTION: the first-paint bar of D-323 is 130 kB gzipped. Read the Vite build rep
 
 ## How to resume
 
-1. Run `git pull`, then `git status`. Work on `main` or a branch the owner names. The owner commits and pushes.
+1. Run `git pull`, then `git status`. Work on `main` or a branch the owner names. Every new branch starts from `main` (D-494). The owner commits and pushes.
 2. Run `ps aux | grep autotune` before any write. The loop resets the tree when it rejects an iteration.
 3. Load the skills. Load `ste-writing` before you write any `.md`. Load `design-doc-style` before you edit the roadmap. Load `mtg-corpus` before you reason about a format, a legality, or a card term.
 4. Check the tree: `cd go && go build ./... && go vet ./... && go test -race ./...`, then `make lint` from the root. `make lint` runs the STE check too.

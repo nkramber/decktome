@@ -525,6 +525,29 @@ func TestGoldenDecks(t *testing.T) {
 			t.Errorf("want not_owned block, got %v", codes(res, mtgv1.Severity_SEVERITY_BLOCK))
 		}
 	})
+	// The precon exclusion of D-408: a card of an excluded precon with no
+	// copy to spare blocks in every pool mode, once per card, and a basic
+	// land never blocks (D-37).
+	goldenRun(t, "bad/excluded precon card", func(t *testing.T) {
+		ds := deckSpec{format: mtgv1.FormatId_FORMAT_ID_MODERN,
+			cards: map[string]int32{"Soul Warden": 4}, fill: "Plains", fillTo: 60}
+		res := testCfg.Validate(Input{Deck: ds.build(t), Cards: testIndex,
+			PoolRule:          mtgv1.PoolRule_POOL_RULE_ANY_CARD,
+			ExcludedOracleIDs: map[string]bool{oid(t, "Soul Warden"): true, oid(t, "Plains"): true}})
+		if res.Passed || codes(res, mtgv1.Severity_SEVERITY_BLOCK)[CodeExcludedPrecon] != 1 {
+			t.Errorf("want one excluded_precon_card block, got %v", codes(res, mtgv1.Severity_SEVERITY_BLOCK))
+		}
+	})
+	goldenRun(t, "good/excluded precon card absent", func(t *testing.T) {
+		ds := deckSpec{format: mtgv1.FormatId_FORMAT_ID_MODERN,
+			cards: map[string]int32{"Soul Warden": 4}, fill: "Plains", fillTo: 60}
+		res := testCfg.Validate(Input{Deck: ds.build(t), Cards: testIndex,
+			PoolRule:          mtgv1.PoolRule_POOL_RULE_ANY_CARD,
+			ExcludedOracleIDs: map[string]bool{oid(t, "Heliod, Sun-Crowned"): true}})
+		if codes(res, mtgv1.Severity_SEVERITY_BLOCK)[CodeExcludedPrecon] != 0 {
+			t.Errorf("a card outside the deck must not block: %v", res.Findings)
+		}
+	})
 }
 
 // TestNegativeCountBlocks: a count under one is a bad_count, and no sum

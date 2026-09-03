@@ -49,8 +49,13 @@ type Request struct {
 	// outside (D-382), and a basic land the sets do not print (D-378).
 	SetCodes []string
 	// OracleCounts is the owned count per oracle id, nil with no
-	// collection.
+	// collection. With a precon exclusion it is the reduced count, the
+	// product's copies taken out (D-408).
 	OracleCounts map[string]int32
+	// ExcludedOracleIDs are the cards of a precon the reader excluded
+	// with no copy to spare (D-408). The pool lacks them, and the rules
+	// check blocks one that slips through.
+	ExcludedOracleIDs []string
 	// Targets is the wanted count per job, from the corpus role guide.
 	Targets map[string]int
 	// Roles is the job word per oracle id, from the shortlist. The model
@@ -372,11 +377,19 @@ func (b *Builder) assemble(ctx context.Context, req Request, out *deckOut) pass 
 	if req.Precon != "" {
 		swapped = swapBackPrecon(deck, req, b.cards)
 	}
+	var excluded map[string]bool
+	if len(req.ExcludedOracleIDs) > 0 {
+		excluded = make(map[string]bool, len(req.ExcludedOracleIDs))
+		for _, id := range req.ExcludedOracleIDs {
+			excluded[id] = true
+		}
+	}
 	deck.Validation = b.rules.Validate(rules.Input{
-		Deck:         deck,
-		PoolRule:     req.PoolRule,
-		OracleCounts: req.OracleCounts,
-		Cards:        b.cards,
+		Deck:              deck,
+		PoolRule:          req.PoolRule,
+		OracleCounts:      req.OracleCounts,
+		ExcludedOracleIDs: excluded,
+		Cards:             b.cards,
 	})
 	if swapped > 0 {
 		addFinding(deck, CodePreconCardsRestored, mtgv1.Severity_SEVERITY_INFO,

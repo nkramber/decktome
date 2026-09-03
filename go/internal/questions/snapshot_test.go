@@ -37,6 +37,10 @@ func fullState() *State {
 	st.UnresolvedSet, st.UnresolvedSetAsked = "Tarkir", "Tarkir"
 	st.SetOptions = []string{"Tarkir: Dragonstorm", "Dragons of Tarkir"}
 	st.Ctx.SetLimited, st.Ctx.SetUnresolved, st.Ctx.ThinSetMana = true, true, true
+	st.PreconPhrase, st.ExcludedPreconNames = "my Avengers Assemble precon", []string{"Avengers Assemble"}
+	st.UnresolvedPrecon, st.UnresolvedPreconAsked = "Fluffy", "Fluffy"
+	st.PreconOptions = []string{"Turtle Power!"}
+	st.Ctx.PreconsExcluded, st.Ctx.PreconUnresolved, st.Ctx.PreconChanged = true, true, true
 	st.AskCount, st.Turn = 2, 2
 	st.Messages = []string{"karlov lifegain", "keep sanguine bond"}
 	st.Asks = []Ask{{QuestionID: "q1-theme", RowID: "theme", Slot: "theme", Key: "theme", Fit: 0.9, Threshold: 0.35, Turn: 1}}

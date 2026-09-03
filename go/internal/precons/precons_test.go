@@ -13,7 +13,8 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
 )
 
-func loadSet(t *testing.T) *Set {
+// loadIndex reads the local card snapshot, or skips the test without one.
+func loadIndex(t *testing.T) *cards.Index {
 	t.Helper()
 	dir := os.Getenv("CARDS_SNAPSHOT_DIR")
 	if dir == "" {
@@ -24,6 +25,12 @@ func loadSet(t *testing.T) *Set {
 	if err != nil {
 		t.Fatalf("cards: %v", err)
 	}
+	return idx
+}
+
+func loadSet(t *testing.T) *Set {
+	t.Helper()
+	idx := loadIndex(t)
 	s, err := Load(idx)
 	if err != nil {
 		t.Fatalf("precons: %v", err)
@@ -154,9 +161,12 @@ func TestTitlesAreProductNames(t *testing.T) {
 		{"lotr-riders-of-rohan", "Riders of Rohan"},
 		{"tricky-terrain-collectors-edition", "Tricky Terrain"},
 		{"from-cute-to-brute", "From Cute to Brute"},
-		// Unverified product names keep the slug in Title Case.
-		{"ff-cloud", "Ff Cloud"},
-		{"lorwyn-blight-curse", "Lorwyn Blight Curse"},
+		// The MTGJSON table and the Wizards decklist page verified these
+		// two on 2026-09-03 (D-498).
+		{"ff-cloud", "Limit Break"},
+		{"lorwyn-blight-curse", "Blight Curse"},
+		// An unverified product name keeps the slug in Title Case.
+		{"some-new-deck", "Some New Deck"},
 	} {
 		if got := titleOf(tc.slug); got != tc.want {
 			t.Errorf("titleOf(%q) = %q, want %q", tc.slug, got, tc.want)

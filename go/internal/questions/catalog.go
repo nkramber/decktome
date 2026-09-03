@@ -116,6 +116,12 @@ type When struct {
 	// while its role is still unsettled (D-388). Such a card may fix the
 	// deck's color identity, so the color row waits for the role.
 	NamedLeader *bool `json:"named_leader"`
+	// PreconsExcluded marks a deck that uses no card of the reader's
+	// precons (D-496).
+	PreconsExcluded *bool `json:"precons_excluded"`
+	// PreconUnresolved marks a precon name the table can not settle
+	// (D-496).
+	PreconUnresolved *bool `json:"precon_unresolved"`
 }
 
 // Catalog is the loaded table.
@@ -145,6 +151,8 @@ var slots = map[string]bool{
 	// (D-382).
 	SlotSet:            true,
 	SlotSetOutsideMana: true,
+	// precons holds the precon products the deck uses no card of (D-496).
+	SlotPrecons: true,
 }
 
 // Load reads the embedded catalog and checks it.

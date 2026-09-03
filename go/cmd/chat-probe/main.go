@@ -101,6 +101,10 @@ func (o ownedSrc) OracleCounts(context.Context, string, string) (map[string]int3
 	return o.counts, nil
 }
 
+func (o ownedSrc) PrintingCounts(context.Context, string, string) (map[string]int32, error) {
+	return nil, nil
+}
+
 func main() {
 	if err := run(); err != nil {
 		fmt.Fprintln(os.Stderr, err)

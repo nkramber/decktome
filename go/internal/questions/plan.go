@@ -100,6 +100,16 @@ type Context struct {
 	// wants. The mana row asks whether the fill may reach outside them
 	// (D-382).
 	ThinSetMana bool `json:"thin_set_mana"`
+	// PreconsExcluded says the deck uses no card of the precons the
+	// reader named, or of the precons the collection holds whole (D-496).
+	// Slots.exclude_precon_keys holds them.
+	PreconsExcluded bool `json:"precons_excluded"`
+	// PreconUnresolved says the reader named a precon the table can not
+	// settle. The precon row asks about it (D-496).
+	PreconUnresolved bool `json:"precon_unresolved"`
+	// PreconChanged says the phrase the precon row would name differs
+	// from the one it named last, the D-210 rule for that row.
+	PreconChanged bool `json:"precon_changed"`
 	// NamedLeader says the reader named a card that can lead a deck, and
 	// nothing has settled its role yet. Such a card fixes the deck's
 	// color identity when it leads, so the color row waits (D-388).
@@ -191,6 +201,8 @@ func (c Context) contentChanged(slot string) bool {
 		return c.BadFormatChanged
 	case SlotSet:
 		return c.SetChanged
+	case SlotPrecons:
+		return c.PreconChanged
 	}
 	return false
 }
@@ -251,6 +263,8 @@ func (w When) matches(ctx Context) bool {
 		{w.SetUnresolved, ctx.SetUnresolved},
 		{w.ThinSetMana, ctx.ThinSetMana},
 		{w.NamedLeader, ctx.NamedLeader},
+		{w.PreconsExcluded, ctx.PreconsExcluded},
+		{w.PreconUnresolved, ctx.PreconUnresolved},
 	}
 	for _, f := range facts {
 		if f.want != nil && *f.want != f.have {

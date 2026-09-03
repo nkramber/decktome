@@ -563,10 +563,11 @@ func TestShortlistFollowsTheCommanderIdentity(t *testing.T) {
 // one collection. countsErr is what OracleCounts fails with, and reads
 // counts how often it was called.
 type fakeCollections struct {
-	counts    map[string]int32
-	printings map[string][]string
-	countsErr error
-	reads     *int
+	counts         map[string]int32
+	printings      map[string][]string
+	printingCounts map[string]int32
+	countsErr      error
+	reads          *int
 }
 
 func (f fakeCollections) OracleCounts(context.Context, string, string) (map[string]int32, error) {
@@ -578,6 +579,10 @@ func (f fakeCollections) OracleCounts(context.Context, string, string) (map[stri
 
 func (f fakeCollections) OwnedPrintings(context.Context, string, string) (map[string][]string, error) {
 	return f.printings, nil
+}
+
+func (f fakeCollections) PrintingCounts(context.Context, string, string) (map[string]int32, error) {
+	return f.printingCounts, nil
 }
 
 // TestOwnedCardShowsThePriciestOwnedPrinting is D-299.

@@ -392,6 +392,30 @@ func checkOwnership(res *mtgv1.ValidationResult, in Input) {
 	}
 }
 
+// checkExcluded blocks every card of a precon the reader excluded with
+// no copy to spare (D-408). The pool drops these cards before the model
+// sees them, so a finding here is a card that slipped through. A basic
+// land is never excluded (D-37).
+func checkExcluded(res *mtgv1.ValidationResult, in Input) {
+	if len(in.ExcludedOracleIDs) == 0 {
+		return
+	}
+	seen := map[string]bool{}
+	for _, dc := range allCards(in.Deck) {
+		oid := dc.GetOracleId()
+		if !in.ExcludedOracleIDs[oid] || seen[oid] {
+			continue
+		}
+		seen[oid] = true
+		card, ok := in.Cards.ByOracleID(oid)
+		if !ok || isBasic(card) {
+			continue
+		}
+		add(res, CodeExcludedPrecon, mtgv1.Severity_SEVERITY_BLOCK,
+			fmt.Sprintf("%s: a card of a precon you excluded", card.Name), oid)
+	}
+}
+
 // checkManaBase gives guide-range warnings, never blocks (corpus section 6).
 func checkManaBase(res *mtgv1.ValidationResult, in Input, fr FormatRules) {
 	var lands, nonlands int32

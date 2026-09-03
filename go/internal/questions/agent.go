@@ -83,6 +83,16 @@ type Result struct {
 	// two sets, and a red mark on every card outside them. The turn must
 	// say which sets it applied, or the marks explain nothing (D-390).
 	SetsApplied []string
+	// PreconsApplied names the precons the deck uses no card of, after a
+	// turn that read one (D-496). PreconsPartial names the ones the
+	// collection does not hold whole (D-497). PreconsNone says the reader
+	// excluded their precons and the collection holds none whole, and
+	// PreconsUnavailable says no precon table is loaded. The reader hears
+	// each case: silence reads as a bug (D-390).
+	PreconsApplied     []string
+	PreconsPartial     []string
+	PreconsNone        bool
+	PreconsUnavailable bool
 }
 
 // Turn maps one user message onto the slots and returns the next
@@ -102,8 +112,10 @@ func (a *Agent) Turn(ctx context.Context, st *State, message string, acc *llm.Ac
 	if len(rows) == 0 {
 		// The classify call may have closed a key, so the M-4 report
 		// changes even on a turn that asks nothing.
-		return Result{Slots: st.Slots, Ready: st.Ready(a.cat), Coverage: st.Metrics(),
-			ChoseCommander: st.Ctx.ChoseCommander, SetsApplied: st.setsThisTurn}, nil
+		res := Result{Slots: st.Slots, Ready: st.Ready(a.cat), Coverage: st.Metrics(),
+			ChoseCommander: st.Ctx.ChoseCommander, SetsApplied: st.setsThisTurn}
+		st.fillPrecons(&res)
+		return res, nil
 	}
 	chosen, err := a.choose(ctx, st, message, rows, resolved.text, acc)
 	if err != nil {
@@ -205,6 +217,8 @@ func (a *Agent) readFacts(st *State) {
 	st.Ctx.BadFormatChanged = st.BadFormatChanged()
 	// The set row follows the same rule (D-376).
 	st.Ctx.SetChanged = st.BadSetChanged()
+	// So does the precon row (D-496).
+	st.Ctx.PreconChanged = st.BadPreconChanged()
 	// A named card that can lead a deck may fix the deck's color
 	// identity, and nothing has settled its role yet. The color row
 	// waits, or it asks for colors the commander already decides (D-388).
@@ -380,6 +394,7 @@ func (a *Agent) send(ctx context.Context, st *State, message string, chosen []ch
 		}
 	}
 	res := Result{Slots: st.Slots, ChoseCommander: st.Ctx.ChoseCommander, SetsApplied: st.setsThisTurn}
+	st.fillPrecons(&res)
 	for _, c := range chosen {
 		st.AskCount++
 		q := &mtgv1.Question{
@@ -487,10 +502,14 @@ type classifyOut struct {
 	// SetNames are the sets the reader wants the deck built from, in the
 	// reader's own words. A set is a constraint the app applies now, so
 	// the words no longer reach the theme alone (D-373).
-	SetNames  []string `json:"set_names"`
-	Power     string   `json:"power"`
-	PoolRule  string   `json:"pool_rule"`
-	BudgetUSD float64  `json:"budget_usd"`
+	SetNames []string `json:"set_names"`
+	// PreconNames are the precons the reader wants the deck to use no
+	// card of, in the reader's own words (D-496). An upgrade names no
+	// precon here: that is the word rule of D-113.
+	PreconNames []string `json:"precon_names"`
+	Power       string   `json:"power"`
+	PoolRule    string   `json:"pool_rule"`
+	BudgetUSD   float64  `json:"budget_usd"`
 	// BudgetScope is "buy", "deck", or "unknown". The budget-scope row
 	// asks it, and nothing stored the answer before D-238.
 	BudgetScope string `json:"budget_scope"`
@@ -515,6 +534,9 @@ type classifyOut struct {
 		// OutOfScope says the user asked for something other than a
 		// Magic: The Gathering deck (D-99).
 		OutOfScope bool `json:"out_of_scope"`
+		// ExcludePrecons says the user wants no card from the precons
+		// they own, and named no product: "not from my precons" (D-496).
+		ExcludePrecons bool `json:"exclude_precons"`
 	} `json:"facts"`
 }
 
@@ -1252,6 +1274,7 @@ func (a *Agent) apply(st *State, out classifyOut, open []string, message string)
 	a.applyColors(st, out)
 	a.applyNames(st, out)
 	a.applySets(st, out)
+	a.applyPrecons(st, out)
 	if rule, ok := poolRules[slotWord(out.PoolRule)]; ok {
 		// An owned rule needs a collection. A reader with none who says
 		// "build only from the Hobbit set" names a set, not their
@@ -1587,6 +1610,122 @@ func (a *Agent) applyKeys(st *State, out classifyOut, open []string, message str
 			a.log.Info("a declined format took the corpus default", "format", DefaultFormat.String())
 		}
 	}
+}
+
+// applyPrecons reads the precons the deck must use no card of (D-496):
+// the products the message named, and every precon the collection holds
+// whole when the reader says "not from my precons" (D-408). A named
+// product the collection does not hold whole is excluded anyway, and the
+// turn says so (D-497). A phrase the table can not settle opens the
+// precon row, as an unknown set name opens the set row.
+func (a *Agent) applyPrecons(st *State, out classifyOut) {
+	if len(out.PreconNames) == 0 && !out.Facts.ExcludePrecons {
+		return
+	}
+	var refs []PreconRef
+	var partial []string
+	var unresolved string
+	var options []string
+	r, hasResolver := a.hints.(PreconResolver)
+	for _, phrase := range out.PreconNames {
+		if strings.TrimSpace(phrase) == "" {
+			continue
+		}
+		if !hasResolver || !hasTable(r) {
+			st.preconsUnavailableThisTurn = true
+			continue
+		}
+		m := r.ResolvePrecon(phrase)
+		if !m.OK {
+			// The first phrase this app can not settle is the one the row
+			// asks about. A second one waits for its turn.
+			if unresolved == "" {
+				unresolved, options = phrase, m.Options
+			}
+			continue
+		}
+		refs = append(refs, m.Products...)
+		partial = append(partial, m.Partial...)
+	}
+	none := false
+	if out.Facts.ExcludePrecons {
+		if o, ok := a.hints.(OwnedPreconSource); ok {
+			owned, ok := o.OwnedPrecons()
+			switch {
+			case !ok:
+				st.preconsUnavailableThisTurn = true
+			case len(owned) == 0:
+				none = true
+			default:
+				refs = append(refs, owned...)
+			}
+		} else {
+			st.preconsUnavailableThisTurn = true
+		}
+	}
+	if len(refs) > 0 || none {
+		for i, key := range st.Slots.GetExcludePreconKeys() {
+			name := key
+			if i < len(st.ExcludedPreconNames) {
+				name = st.ExcludedPreconNames[i]
+			}
+			refs = append(refs, PreconRef{Key: key, Name: name})
+		}
+		refs = dedupePrecons(refs)
+		phrase := strings.Join(out.PreconNames, ", ")
+		if out.Facts.ExcludePrecons {
+			phrase = strings.TrimPrefix(phrase+", my precons", ", ")
+		}
+		a.log.Info("the deck uses no card of the reader's precons",
+			"session", st.SessionID, "phrase", phrase, "products", len(refs))
+		st.ExcludePrecons(phrase, refs)
+		st.preconsThisTurn = st.ExcludedPreconNames
+		st.preconsPartialThisTurn = partial
+		st.preconsNoneThisTurn = len(refs) == 0
+	}
+	if unresolved != "" {
+		a.log.Info("the reader named a precon this app can not settle",
+			"session", st.SessionID, "phrase", unresolved, "options", len(options))
+		st.PreconUnresolved(unresolved, options)
+		return
+	}
+	if st.Ctx.PreconUnresolved || st.UnresolvedPrecon != "" {
+		st.PreconResolved()
+	}
+}
+
+// hasTable reports whether a resolver holds a precon table at all. A
+// resolver with none answers every phrase with no product and no option.
+func hasTable(r PreconResolver) bool {
+	if h, ok := r.(*CandidateHints); ok {
+		return h != nil && h.Precons != nil
+	}
+	return true
+}
+
+// dedupePrecons keeps the first of each key, in order.
+func dedupePrecons(refs []PreconRef) []PreconRef {
+	seen := map[string]bool{}
+	out := make([]PreconRef, 0, len(refs))
+	for _, r := range refs {
+		if r.Key == "" || seen[r.Key] {
+			continue
+		}
+		seen[r.Key] = true
+		out = append(out, r)
+	}
+	return out
+}
+
+// fillPrecons copies the precon marks of this turn onto the result, and
+// clears them: they are turn state, as setsThisTurn is.
+func (s *State) fillPrecons(res *Result) {
+	res.PreconsApplied = s.preconsThisTurn
+	res.PreconsPartial = s.preconsPartialThisTurn
+	res.PreconsNone = s.preconsNoneThisTurn
+	res.PreconsUnavailable = s.preconsUnavailableThisTurn
+	s.preconsThisTurn, s.preconsPartialThisTurn = nil, nil
+	s.preconsNoneThisTurn, s.preconsUnavailableThisTurn = false, false
 }
 
 // applyFacts writes the classifier facts onto the context.

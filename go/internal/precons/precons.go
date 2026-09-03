@@ -227,12 +227,15 @@ func sectionHeader(line string) string {
 }
 
 // displayNames maps a file slug to the product name a person uses. A
-// slug that is not here reads in Title Case, so "ff-cloud" shows "Ff
-// Cloud": its product name is unverified, and a guessed name would be a
-// mistake the user sees. Add the name here once it is verified.
+// slug that is not here reads in Title Case, and a guessed name would be
+// a mistake the user sees, so a name joins once it is verified. The
+// MTGJSON table and the Wizards decklist page verified "Limit Break" and
+// "Blight Curse" on 2026-09-03 (D-498).
 var displayNames = map[string]string{
 	"avengers-assemble":                 "Avengers Assemble",
+	"ff-cloud":                          "Limit Break",
 	"from-cute-to-brute":                "From Cute to Brute",
+	"lorwyn-blight-curse":               "Blight Curse",
 	"goblin-storm":                      "Goblin Storm",
 	"living-energy":                     "Living Energy",
 	"lotr-riders-of-rohan":              "Riders of Rohan",
