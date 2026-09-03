@@ -3,7 +3,22 @@ import { CardRole, type Deck, type DeckCard, Severity } from "@mtg/api-client/mt
 import { FormatId } from "@mtg/api-client/mtg/v1/format_pb";
 import { describe, expect, it } from "vitest";
 
-import { colorSources, deckColors, diffDecks, formatLabel, groupByRole, manaCurve, powerLabel, priceText, roleLabel, severityLabel } from "./deck-stats";
+import {
+  averageManaValue,
+  colorSources,
+  deckColors,
+  diffDecks,
+  filterEntries,
+  formatLabel,
+  groupByRole,
+  manaCurve,
+  powerLabel,
+  priceText,
+  roleLabel,
+  severityLabel,
+  sortEntries,
+  typeCounts,
+} from "./deck-stats";
 
 const card = (id: string, manaValue: number, types: string[], produced: Color[] = []) =>
   ({ oracleId: id, manaValue, cardTypes: types, producedMana: produced }) as unknown as Card;
@@ -69,6 +84,59 @@ describe("deck-stats", () => {
       removed: ["2 Beta", "2 Side (sideboard)"],
       changed: ["Alpha: 4 to 2"],
     });
+  });
+
+  it("counts the card types once per type, and the average mana value without lands (PR-20)", () => {
+    const withTypes = new Map<string, Card>([
+      ["forest", card("forest", 0, ["Land"], [Color.G])],
+      ["golem", card("golem", 4, ["Artifact", "Creature"])],
+      ["elf", card("elf", 1, ["Creature"])],
+    ]);
+    const entries = [dc("forest", 20, CardRole.LAND), dc("golem", 2, CardRole.THREAT), dc("elf", 4, CardRole.RAMP), dc("unknown", 3, CardRole.OTHER)];
+    const types = typeCounts(entries, withTypes);
+    expect(types.get("Land")).toBe(20);
+    expect(types.get("Creature")).toBe(6);
+    expect(types.get("Artifact")).toBe(2);
+    expect(types.get("Instant")).toBe(0);
+    expect(averageManaValue(entries, withTypes)).toBe(2);
+    expect(averageManaValue([dc("forest", 20, CardRole.LAND)], withTypes)).toBe(0);
+  });
+
+  it("filters by role, color, mana value, type, and owned (PR-20)", () => {
+    const rock = { oracleId: "rock", manaValue: 1, cardTypes: ["Artifact"], colors: [], producedMana: [] } as unknown as Card;
+    const green = { oracleId: "elf", manaValue: 1, cardTypes: ["Creature"], colors: [Color.G], producedMana: [] } as unknown as Card;
+    const big = { oracleId: "big", manaValue: 9.5, cardTypes: ["Creature"], colors: [Color.G], producedMana: [] } as unknown as Card;
+    const land = { oracleId: "forest", manaValue: 0, cardTypes: ["Land"], colors: [], producedMana: [Color.G] } as unknown as Card;
+    const map = new Map<string, Card>([["rock", rock], ["elf", green], ["big", big], ["forest", land]]);
+    const owned = (id: string, role: CardRole, isOwned: boolean) => ({ oracleId: id, name: id, count: 1, role, owned: isOwned, priceUsd: 1 }) as unknown as DeckCard;
+    const entries = [owned("rock", CardRole.RAMP, true), owned("elf", CardRole.RAMP, false), owned("big", CardRole.THREAT, true), owned("forest", CardRole.LAND, true), owned("gone", CardRole.OTHER, true)];
+    const ids = (list: DeckCard[]) => list.map((e) => e.oracleId);
+    expect(ids(filterEntries(entries, map, {}))).toEqual(["rock", "elf", "big", "forest", "gone"]);
+    expect(ids(filterEntries(entries, map, { role: CardRole.RAMP }))).toEqual(["rock", "elf"]);
+    expect(ids(filterEntries(entries, map, { color: Color.G }))).toEqual(["elf", "big"]);
+    expect(ids(filterEntries(entries, map, { color: Color.C }))).toEqual(["rock", "forest"]);
+    expect(ids(filterEntries(entries, map, { manaValue: 1 }))).toEqual(["rock", "elf"]);
+    expect(ids(filterEntries(entries, map, { manaValue: 7 }))).toEqual(["big"]);
+    expect(ids(filterEntries(entries, map, { type: "Land" }))).toEqual(["forest"]);
+    expect(ids(filterEntries(entries, map, { owned: "to-buy" }))).toEqual(["elf"]);
+    expect(ids(filterEntries(entries, map, { owned: "owned", role: CardRole.RAMP }))).toEqual(["rock"]);
+    // A card the data does not know passes no card filter.
+    expect(ids(filterEntries(entries, map, { type: "Creature" }))).toEqual(["elf", "big"]);
+  });
+
+  it("sorts by name, by price, and by mana value with an unknown card last (PR-20)", () => {
+    const map = new Map<string, Card>([
+      ["a", { oracleId: "a", manaValue: 3 } as unknown as Card],
+      ["b", { oracleId: "b", manaValue: 1 } as unknown as Card],
+    ]);
+    const e = (id: string, name: string, priceUsd: number) => ({ oracleId: id, name, count: 1, priceUsd }) as unknown as DeckCard;
+    const entries = [e("a", "Zed", 0.5), e("b", "Alpha", 2), e("c", "Mid", 1)];
+    const names = (list: DeckCard[]) => list.map((x) => x.name);
+    expect(sortEntries(entries, map, "role")).toBe(entries);
+    expect(names(sortEntries(entries, map, "name"))).toEqual(["Alpha", "Mid", "Zed"]);
+    expect(names(sortEntries(entries, map, "price"))).toEqual(["Alpha", "Mid", "Zed"]);
+    expect(names(sortEntries(entries, map, "mana-value"))).toEqual(["Alpha", "Zed", "Mid"]);
+    expect(names(entries)).toEqual(["Zed", "Alpha", "Mid"]);
   });
 
   it("labels prices, severities, and roles", () => {

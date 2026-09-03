@@ -39,6 +39,11 @@ const (
 	CardServiceSearchProcedure = "/mtg.v1.CardService/Search"
 	// CardServiceGetCardsProcedure is the fully-qualified name of the CardService's GetCards RPC.
 	CardServiceGetCardsProcedure = "/mtg.v1.CardService/GetCards"
+	// CardServiceGetRulingsProcedure is the fully-qualified name of the CardService's GetRulings RPC.
+	CardServiceGetRulingsProcedure = "/mtg.v1.CardService/GetRulings"
+	// CardServiceGetPrintingsProcedure is the fully-qualified name of the CardService's GetPrintings
+	// RPC.
+	CardServiceGetPrintingsProcedure = "/mtg.v1.CardService/GetPrintings"
 )
 
 // CardServiceClient is a client for the mtg.v1.CardService service.
@@ -53,6 +58,14 @@ type CardServiceClient interface {
 	// of 2026-08-28, section 4). An id the index does not know goes in
 	// missing_oracle_ids, never dropped in silence.
 	GetCards(context.Context, *connect.Request[v1.GetCardsRequest]) (*connect.Response[v1.GetCardsResponse], error)
+	// GetRulings returns the Scryfall rulings of one card, oldest first,
+	// with the date of the card snapshot they come from (PR-20). A card the
+	// index does not know answers NotFound. A snapshot with no rulings
+	// file answers an empty list and has_rulings false.
+	GetRulings(context.Context, *connect.Request[v1.GetRulingsRequest]) (*connect.Response[v1.GetRulingsResponse], error)
+	// GetPrintings returns every playable printing of one card with its
+	// price, newest set first (PR-20). A digital printing carries its mark.
+	GetPrintings(context.Context, *connect.Request[v1.GetPrintingsRequest]) (*connect.Response[v1.GetPrintingsResponse], error)
 }
 
 // NewCardServiceClient constructs a client for the mtg.v1.CardService service. By default, it uses
@@ -84,14 +97,28 @@ func NewCardServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(cardServiceMethods.ByName("GetCards")),
 			connect.WithClientOptions(opts...),
 		),
+		getRulings: connect.NewClient[v1.GetRulingsRequest, v1.GetRulingsResponse](
+			httpClient,
+			baseURL+CardServiceGetRulingsProcedure,
+			connect.WithSchema(cardServiceMethods.ByName("GetRulings")),
+			connect.WithClientOptions(opts...),
+		),
+		getPrintings: connect.NewClient[v1.GetPrintingsRequest, v1.GetPrintingsResponse](
+			httpClient,
+			baseURL+CardServiceGetPrintingsProcedure,
+			connect.WithSchema(cardServiceMethods.ByName("GetPrintings")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // cardServiceClient implements CardServiceClient.
 type cardServiceClient struct {
-	lookup   *connect.Client[v1.LookupRequest, v1.LookupResponse]
-	search   *connect.Client[v1.SearchRequest, v1.SearchResponse]
-	getCards *connect.Client[v1.GetCardsRequest, v1.GetCardsResponse]
+	lookup       *connect.Client[v1.LookupRequest, v1.LookupResponse]
+	search       *connect.Client[v1.SearchRequest, v1.SearchResponse]
+	getCards     *connect.Client[v1.GetCardsRequest, v1.GetCardsResponse]
+	getRulings   *connect.Client[v1.GetRulingsRequest, v1.GetRulingsResponse]
+	getPrintings *connect.Client[v1.GetPrintingsRequest, v1.GetPrintingsResponse]
 }
 
 // Lookup calls mtg.v1.CardService.Lookup.
@@ -109,6 +136,16 @@ func (c *cardServiceClient) GetCards(ctx context.Context, req *connect.Request[v
 	return c.getCards.CallUnary(ctx, req)
 }
 
+// GetRulings calls mtg.v1.CardService.GetRulings.
+func (c *cardServiceClient) GetRulings(ctx context.Context, req *connect.Request[v1.GetRulingsRequest]) (*connect.Response[v1.GetRulingsResponse], error) {
+	return c.getRulings.CallUnary(ctx, req)
+}
+
+// GetPrintings calls mtg.v1.CardService.GetPrintings.
+func (c *cardServiceClient) GetPrintings(ctx context.Context, req *connect.Request[v1.GetPrintingsRequest]) (*connect.Response[v1.GetPrintingsResponse], error) {
+	return c.getPrintings.CallUnary(ctx, req)
+}
+
 // CardServiceHandler is an implementation of the mtg.v1.CardService service.
 type CardServiceHandler interface {
 	// Lookup finds one card by exact name, Scryfall id, or Oracle id.
@@ -121,6 +158,14 @@ type CardServiceHandler interface {
 	// of 2026-08-28, section 4). An id the index does not know goes in
 	// missing_oracle_ids, never dropped in silence.
 	GetCards(context.Context, *connect.Request[v1.GetCardsRequest]) (*connect.Response[v1.GetCardsResponse], error)
+	// GetRulings returns the Scryfall rulings of one card, oldest first,
+	// with the date of the card snapshot they come from (PR-20). A card the
+	// index does not know answers NotFound. A snapshot with no rulings
+	// file answers an empty list and has_rulings false.
+	GetRulings(context.Context, *connect.Request[v1.GetRulingsRequest]) (*connect.Response[v1.GetRulingsResponse], error)
+	// GetPrintings returns every playable printing of one card with its
+	// price, newest set first (PR-20). A digital printing carries its mark.
+	GetPrintings(context.Context, *connect.Request[v1.GetPrintingsRequest]) (*connect.Response[v1.GetPrintingsResponse], error)
 }
 
 // NewCardServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -148,6 +193,18 @@ func NewCardServiceHandler(svc CardServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(cardServiceMethods.ByName("GetCards")),
 		connect.WithHandlerOptions(opts...),
 	)
+	cardServiceGetRulingsHandler := connect.NewUnaryHandler(
+		CardServiceGetRulingsProcedure,
+		svc.GetRulings,
+		connect.WithSchema(cardServiceMethods.ByName("GetRulings")),
+		connect.WithHandlerOptions(opts...),
+	)
+	cardServiceGetPrintingsHandler := connect.NewUnaryHandler(
+		CardServiceGetPrintingsProcedure,
+		svc.GetPrintings,
+		connect.WithSchema(cardServiceMethods.ByName("GetPrintings")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/mtg.v1.CardService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case CardServiceLookupProcedure:
@@ -156,6 +213,10 @@ func NewCardServiceHandler(svc CardServiceHandler, opts ...connect.HandlerOption
 			cardServiceSearchHandler.ServeHTTP(w, r)
 		case CardServiceGetCardsProcedure:
 			cardServiceGetCardsHandler.ServeHTTP(w, r)
+		case CardServiceGetRulingsProcedure:
+			cardServiceGetRulingsHandler.ServeHTTP(w, r)
+		case CardServiceGetPrintingsProcedure:
+			cardServiceGetPrintingsHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -175,4 +236,12 @@ func (UnimplementedCardServiceHandler) Search(context.Context, *connect.Request[
 
 func (UnimplementedCardServiceHandler) GetCards(context.Context, *connect.Request[v1.GetCardsRequest]) (*connect.Response[v1.GetCardsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("mtg.v1.CardService.GetCards is not implemented"))
+}
+
+func (UnimplementedCardServiceHandler) GetRulings(context.Context, *connect.Request[v1.GetRulingsRequest]) (*connect.Response[v1.GetRulingsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("mtg.v1.CardService.GetRulings is not implemented"))
+}
+
+func (UnimplementedCardServiceHandler) GetPrintings(context.Context, *connect.Request[v1.GetPrintingsRequest]) (*connect.Response[v1.GetPrintingsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("mtg.v1.CardService.GetPrintings is not implemented"))
 }

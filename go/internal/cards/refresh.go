@@ -18,6 +18,7 @@ var bulkTypeByFile = map[string]string{
 	"oracle_cards.jsonl.gz":  "oracle_cards",
 	"default_cards.jsonl.gz": "default_cards",
 	"oracle_tags.jsonl.gz":   "oracle_tags",
+	RulingsFile:              "rulings",
 }
 
 // KeepVersions is how many complete snapshots stay in the store after a
@@ -379,13 +380,28 @@ func LoadIndex(ctx context.Context, store Store, logger *slog.Logger) (*Index, e
 			return nil, fmt.Errorf("%s/%s: %w", version, SetsFile, err)
 		}
 	}
-	idx := NewIndex(parsed, printings, tags, asOf, WithSets(sets))
+	// A snapshot stored before the rulings file existed holds none, and
+	// the card detail then shows no ruling (PR-20).
+	var rulings map[string][]Ruling
+	rf, err := store.Open(ctx, version, RulingsFile)
+	if err != nil {
+		logger.Warn("cards index: the snapshot holds no rulings file, so no card shows a ruling",
+			"version", version, "file", RulingsFile, "err", err)
+	} else {
+		rulings, err = LoadRulings(rf, RulingsFile)
+		_ = rf.Close()
+		if err != nil {
+			return nil, fmt.Errorf("%s/%s: %w", version, RulingsFile, err)
+		}
+	}
+	idx := NewIndex(parsed, printings, tags, asOf, WithSets(sets), WithRulings(rulings))
 	col := idx.Collisions()
 	logger.Info("cards index loaded", "version", version, "cards", idx.Len(),
 		"printings", len(printings), "tags", tags.Len(),
 		"name_collisions", col.FullNames, "face_name_collisions", col.FaceNames,
 		"paper_swaps", idx.PaperSwaps(),
 		"sets", idx.Sets().Len(), "sets_derived", idx.Sets().Derived(),
+		"rulings", len(rulings),
 		"took", time.Since(start).String())
 	return idx, nil
 }

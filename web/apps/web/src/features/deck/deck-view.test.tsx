@@ -3,6 +3,7 @@ import { CardRole, type Deck, Severity } from "@mtg/api-client/mtg/v1/deck_pb";
 import { FormatId } from "@mtg/api-client/mtg/v1/format_pb";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { axe } from "jest-axe";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -10,8 +11,14 @@ import { makeQueryClient } from "../../lib/query-client";
 import { DeckView } from "./deck-view";
 
 const getCards = vi.fn();
+const getRulings = vi.fn();
+const getPrintings = vi.fn();
 vi.mock("../../lib/api", () => ({
-  cardClient: { getCards: (...args: unknown[]) => getCards(...args) },
+  cardClient: {
+    getCards: (...args: unknown[]) => getCards(...args),
+    getRulings: (...args: unknown[]) => getRulings(...args),
+    getPrintings: (...args: unknown[]) => getPrintings(...args),
+  },
   deckClient: { exportDeck: vi.fn() },
 }));
 
@@ -95,6 +102,10 @@ function renderDeck(d: Deck = deck) {
 beforeEach(() => {
   getCards.mockReset();
   getCards.mockResolvedValue({ cards, missingOracleIds: ["o-gone"] });
+  getRulings.mockReset();
+  getRulings.mockResolvedValue({ rulings: [{ publishedAt: "2019-01-25", comment: "Elves tap for green.", source: "wotc" }], asOf: "2026-09-03", hasRulings: true });
+  getPrintings.mockReset();
+  getPrintings.mockResolvedValue({ printings: [], priceAsOf: "2026-09-03" });
 });
 
 describe("DeckView", () => {
@@ -312,9 +323,84 @@ describe("DeckView", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Could not load the card data: [unavailable] card database not loaded yet");
   });
 
+  it("shows the type counts, the average mana value, and the cards to buy (PR-20)", async () => {
+    renderDeck();
+    await screen.findByAltText("Forest (card)");
+    const types = screen.getByRole("table", { name: /Card types/ });
+    expect(within(types).getByRole("row", { name: /Land/ })).toHaveTextContent("20");
+    expect(within(types).getByRole("row", { name: /Creature/ })).toHaveTextContent("6");
+    expect(within(types).queryByRole("row", { name: /Instant/ })).not.toBeInTheDocument();
+    // Six nonland cards at mana value 1.
+    expect(screen.getByTestId("avg-mana-value")).toHaveTextContent("1.00");
+    const buy = screen.getByRole("table", { name: /Cards to buy/ });
+    expect(within(buy).getByRole("row", { name: /Llanowar Elves/ })).toHaveTextContent("$0.50");
+    expect(within(buy).getByRole("row", { name: /Total/ })).toHaveTextContent("$0.50");
+  });
+
+  it("filters the cards and sorts them (PR-20)", async () => {
+    const user = userEvent.setup();
+    renderDeck();
+    await screen.findByAltText("Forest (card)");
+    expect(screen.getByTestId("filter-count")).toHaveTextContent("27 cards in the main deck.");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Owned" }), "to-buy");
+    expect(screen.getByTestId("filter-count")).toHaveTextContent("Showing 5 of 27 cards.");
+    expect(screen.queryByRole("region", { name: /^Lands/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Ramp (4)" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Clear filters" }));
+    expect(screen.getByRole("region", { name: "Lands (20)" })).toBeInTheDocument();
+    await user.selectOptions(screen.getByRole("combobox", { name: "Type" }), "Creature");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Sort" }), "name");
+    const group = screen.getByRole("region", { name: "Cards by name (6)" });
+    const names = within(group).getAllByTestId("card-tile").map((tile) => within(tile).getByRole("button").textContent);
+    expect(names).toEqual(["Delver of Secrets // Insectile Aberration", "Llanowar Elves"]);
+  });
+
+  it("opens the card detail from a tile with the rulings and their dates (PR-20)", async () => {
+    const user = userEvent.setup();
+    renderDeck();
+    await screen.findByAltText("Forest (card)");
+    await user.click(screen.getByRole("button", { name: "Llanowar Elves" }));
+    const dialog = await screen.findByRole("dialog", { name: "Llanowar Elves" });
+    expect(within(dialog).getByTestId("detail-reason")).toHaveTextContent("Turn-one mana.");
+    expect(await within(dialog).findByTestId("rulings")).toHaveTextContent("2019-01-25");
+    expect(within(dialog).getByTestId("rulings-as-of")).toHaveTextContent("Rulings from the card data of 2026-09-03.");
+    expect(getRulings).toHaveBeenCalledWith({ oracleId: "o-elf" });
+    await user.click(within(dialog).getByRole("button", { name: "Close" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("draws a sample hand from the exact main deck (D-318)", async () => {
+    const user = userEvent.setup();
+    renderDeck();
+    await screen.findByAltText("Forest (card)");
+    expect(screen.getByTestId("hand-status")).toHaveTextContent("27 cards in the library. Draw seven to start.");
+    await user.click(screen.getByRole("button", { name: "Draw seven" }));
+    expect(screen.getAllByTestId("hand-card")).toHaveLength(7);
+    expect(screen.getByTestId("hand-status")).toHaveTextContent("7 cards in hand, 20 in the library.");
+    await user.click(screen.getByRole("button", { name: "Mulligan" }));
+    expect(screen.getByTestId("hand-status")).toHaveTextContent("Mulligan 1: choose 1 card to put on the bottom.");
+    expect(screen.getByRole("button", { name: "Draw one" })).toBeDisabled();
+    const bottoms = screen.getAllByRole("button", { name: /on the bottom$/ });
+    expect(bottoms).toHaveLength(7);
+    await user.click(bottoms[0]);
+    expect(screen.getAllByTestId("hand-card")).toHaveLength(6);
+    await user.click(screen.getByRole("button", { name: "Draw one" }));
+    expect(screen.getAllByTestId("hand-card")).toHaveLength(7);
+    expect(screen.getByTestId("hand-status")).toHaveTextContent("7 cards in hand, 20 in the library, 1 mulligan.");
+  });
+
   it("has no axe violations", async () => {
     const { container } = renderDeck();
     await screen.findByAltText("Forest (card)");
     expect(await axe(container)).toHaveNoViolations();
+  });
+
+  it("has no axe violations with the card detail open", async () => {
+    const user = userEvent.setup();
+    const { container } = renderDeck();
+    await screen.findByAltText("Forest (card)");
+    await user.click(screen.getByRole("button", { name: "Forest" }));
+    await screen.findByRole("dialog", { name: "Forest" });
+    expect(await axe(container.ownerDocument.body)).toHaveNoViolations();
   });
 });
