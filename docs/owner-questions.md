@@ -14,7 +14,6 @@ No owner question blocks it. The owner answered OQ-24 to OQ-27 on 2026-08-26 (D-
 
 | # | Question | Why only you | What it blocks |
 |---|---|---|---|
-| OQ-55 | Ask Moxfield for API access for the app, with the named agent `mtg-deck-builder/0.1` (D-482)? | The request names the app's owner, and Moxfield answers a person. | The Moxfield lane of PR-14C: the lists the cEDH database links, and the bracket field of OQ-51. |
 
 ## The two numbers M-5 exists to set
 

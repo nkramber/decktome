@@ -962,17 +962,15 @@ CAUTION: the judge bar is open on the corpus and not on the judge. The next sess
 
 > *In plain English:* the app learns what a good deck looks like from tens of thousands of real decks and how they placed. It learns the bad side too, from decks we break on purpose. Every deck it builds then gets a grade and three reasons, and a request for a top-power deck gets top-power commanders.
 
-**PR-14C: MTGTop8, Moxfield, and the casual 60-card decks (D-482, D-490).** 🔧 planned, after PR-14B.
-PR-14B dropped two sources the roadmap named. Moxfield answers 403 from Cloudflare to every plain client (D-470), and the MTGTop8 format page hides its event links behind a script (D-477). The owner wants both back.
-
-The Moxfield lane waits on API access from Moxfield (OQ-55). With a key and the named agent, the worker reads each list the cEDH database links through the deck endpoint. It stores the raw answer as it stores a page. `MarioMH8/moxfield-api` (MIT) is the reference for the endpoint shapes, and no code of it runs here: it opens nothing by itself.
+**PR-14C: MTGTop8 and the casual 60-card decks (D-482, D-490, D-493).** 🔧 planned, after PR-14B.
+PR-14B dropped two sources the roadmap named. Moxfield answers 403 from Cloudflare to every plain client (D-470), and the MTGTop8 format page hides its event links behind a script (D-477). The owner let Moxfield go (D-493): Topdeck.gg holds the cEDH lists with placements, and the app asks the site for nothing. MTGTop8 comes back.
 
 The typical rung of Standard and Modern comes from the user decks of Aetherhub and MTGGoldfish, two more page readers, verified first (D-490). The ladder of the 60-card formats holds tournament lists and precons and nothing between, and the judge bar fell on that gap (D-488).
 
 The MTGTop8 lane is a reader for the event pages. The format page renders its event list on the client. So the reader takes the event and archetype pages from another entry, or it renders the page. The raw store takes its pages, and M-6 counts its failures.
 
 Gate: each lane adds its lists to the store, the fit reads them, and the free quality gate shows the pair bars with them. The tier judge lane over deck gate 13b reads the bar of PR-14B that stayed open (D-491). No band and no bar moves for a source.
-> *In plain English:* two sites the plan named are closed to a plain program today. One opens with a key we ask for, and the other needs a smarter reader.
+> *In plain English:* two sites the plan named are closed to a plain program today. One we let go, because another site holds the same lists. The other needs a smarter reader, and two more sites bring the decks people build at home.
 
 **PR-15: Eval harness.**
 Golden prompts with expected slot sets and expected validation outcomes. Deterministic checks are the gate (legality, ownership, size, curve, names). A judge role scores plan quality and usefulness on a fixed rubric. Long-format results table, corpus fingerprint per run (model, effort, snapshot date, prompt version), suffix rows for informational metrics, "observe-only is not pass". Tier 0 in CI ($0).

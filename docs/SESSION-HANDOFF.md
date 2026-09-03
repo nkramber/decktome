@@ -525,7 +525,7 @@ The chat ran a turn with no card index before D-405. The commander question then
 4. The owner merges PR-14B with the judge bar on record (D-491). Open the PR from `pr-14b`. After the merge, `make meta-refresh` reads 1,100 commanders on its next weekly EDHREC stamp (D-489). Then refit, and run `make quality-judge` over `pr8-deck-gate-run13b.md` again, about $0.31. Then the bracket gate again, for the bracket 5 decks the power signal exists for.
 5. Deploy the meta job (D-492). It is one Cloud Run job on `worker -meta`, with a Scheduler cron at 06:00 UTC daily. `TOPDECK_API_KEY` goes to Secret Manager. No infra file in this repo holds the worker's schedule. So the deployment is by hand, as the snapshot worker's is.
 6. PR-24, the precon exclusion, after PR-14B (D-460). It reads the precon table at `meta/precons/<version>/` (D-472).
-7. PR-14C holds three lanes. They are the Aetherhub and MTGGoldfish user decks (D-490), MTGTop8, and Moxfield on the key of OQ-55 (D-482).
+7. PR-14C holds two lanes: the Aetherhub and MTGGoldfish user decks (D-490), and MTGTop8 (D-482). Moxfield is out (D-493).
 8. PR-20 to PR-23 in order, one gate each. PR-15 stays after Phase 3B.
 
 Deck gate run 12 ran on 2026-09-02 under the profile and passed 24 of 24 with its rerun 12b. The read of every mana base is F-33. The land count and the color sources sit in band now, and the nonbasic share still swings from 0 to 36 on the same prompt. No band reads the composition, and F-33 stays open on that point.
@@ -538,7 +538,7 @@ Deck gate run 10 is done. It ran on 2026-08-31, and `CLAUDE.md` recorded it whil
 
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 
-One owner row waits in `docs/owner-questions.md`: OQ-55, the Moxfield API access request (D-482). The owner answered OQ-54 on 2026-09-02, and the Topdeck.gg key is in `.env`. No row waits in `docs/open-questions.md`. The owner answered every open question of 2026-09-01 (D-419 to D-431). The judge role runs on Opus 5 now (D-430), and `make llm-defaults-check` reports the change on the next run.
+No owner row waits in `docs/owner-questions.md`. The owner answered OQ-54 on 2026-09-02, the Topdeck.gg key is in `.env`, and OQ-55 closed on 2026-09-03 (D-493). No row waits in `docs/open-questions.md`. The owner answered every open question of 2026-09-01 (D-419 to D-431). The judge role runs on Opus 5 now (D-430), and `make llm-defaults-check` reports the change on the next run.
 
 ## The dead conversation of 2026-08-31 (D-351 to D-354)
 

@@ -35,5 +35,6 @@ OQ-23, OQ-28 to OQ-31, OQ-37, and OQ-39 sit in `docs/owner-questions.md`, the de
 - OQ-52 answered 2026-09-02 (D-467, D-468): the session calls of PR-14A stand, and Spellbook reads the shortlist too.
 - OQ-53 answered 2026-09-02 (D-469): the engine's Commander land range is 27 to 41.
 - OQ-48 answered 2026-09-02 (D-476): a bracket 4 or 5 offer ranks on the cEDH signal of the quality model.
+- OQ-55 closed 2026-09-03 (D-493): the app asks Moxfield for nothing, and PR-14C drops the lane.
 - OQ-54 answered 2026-09-02 (D-479): the owner created the Topdeck.gg key, and a live probe of the API passed the same day.
 - OQ-51 closed 2026-09-02 (D-470): no session can check the Moxfield bracket field. The deck page, the v2 API, and the v3 API answer 403 to a plain client, so PR-14B reads no Moxfield list.
