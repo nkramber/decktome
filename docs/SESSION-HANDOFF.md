@@ -642,7 +642,7 @@ The chat ran a turn with no card index before D-405. The commander question then
 
 ## Next steps, in order
 
-1. PR-22, the deploy to GCP for invited users (D-310, D-314), on a new branch from `main`. OQ-45 holds the store of the allowlist, and D-429 answered it. Then PR-23.
+1. PR-22, the deploy to GCP for invited users (D-310, D-314), on a new branch from `main`. OQ-45 held the store of the allowlist, and D-420 answered it: one Firestore document, `config/allowlist`, written by `make allow EMAIL=...`. Then PR-23.
 2. `make meta-refresh` daily, and `make quality-gate` to a new `QUALITY_GATE_OUT` after each one. Read the pair bars per format and the per-axis table. A weight against the sense of its feature is a defect in the feature or the labels. Do not tune it. The next weekly EDHREC read falls on 2026-09-10 (D-499).
 3. The paid runs come after PR-14C (D-495). First `make quality-judge` over `pr8-deck-gate-run13b.md`, about $0.31. Then the bracket gate for the bracket 5 decks. Then the question gate for the classifier of version 17 (D-496). Ask the owner before each one.
 4. Deploy the meta job (D-492). It is one Cloud Run job on `worker -meta`, with a Scheduler cron at 06:00 UTC daily. `TOPDECK_API_KEY` goes to Secret Manager. No infra file in this repo holds the worker's schedule. So the deployment is by hand, as the snapshot worker's is.
