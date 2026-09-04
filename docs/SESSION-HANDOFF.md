@@ -6,7 +6,8 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## Where things stand (2026-09-04)
 
-- The two corpus items of 2026-09-04 sit on branch `corpus-items`, with a PR open (D-510). The meta job skips the MTGJSON deck files when the deck list names the products of the stored table. Deck gate prompt 25 covers the precon exclusion of PR-24 for the first time, and it waits for a paid run. The section "The corpus items of 2026-09-04" below holds the read, and one owner question came out of it (OQ-56).
+- PR-15, the eval harness, is next (D-511, 2026-09-04), before PR-22 and PR-23. It is in progress on branch `pr-15`, from `main` at f299289. The section "PR-15, the eval harness, prepared" below holds the plan in six slices and the four owner questions, OQ-57 to OQ-60.
+- The two corpus items of 2026-09-04 merged as #64 (D-510). Branches `corpus-items` and `deck-gate-fixes` can go. The meta job skips the MTGJSON deck files when the deck list names the products of the stored table. Deck gate prompt 25 covers the precon exclusion of PR-24 for the first time, and it waits for a paid run. The section "The corpus items of 2026-09-04" below holds the read, and one owner question came out of it (OQ-56).
 - The paid sweep after PR-21 ran on 2026-09-03 and 2026-09-04, $4.60 in all. Question gate 33 and its eval pass. Tier judge run 3 reads 8 of 24, with the bar open on the corpus. Deck gate 14 with 14b reads 24 of 24, and revise gate 8 passes. The one defect it found, F-34, merged fixed as #63 (D-509). The section "The paid runs of 2026-09-03, after PR-21" below holds the read. Branch `deck-gate-fixes` can go.
 - PR-21, the share link and the print view, is merged (2026-09-03, #62, D-508). The free gate passes, `docs/reference/pr21-gate-2026-09-03.md`. The tree is green on `main`: Go build, vet, the `-race` suite, golangci-lint, `make ste-check`, the web lint, the web typecheck, and 262 web tests. Branches `pr-24`, `pr-14c`, `pr-20`, and `pr-21` can go. The section "PR-21, the share link and the print view, merged" below holds the moving parts. PR-22 is next, on a new branch from `main` (D-494).
 - PR-20, the deck view and the card detail, is merged (2026-09-03, #61, D-507). The free gate passes, `docs/reference/pr20-gate-2026-09-03.md`. The tree is green on `main`: Go build, vet, the `-race` suite, golangci-lint, `make ste-check`, the web lint, the web typecheck, and 256 web tests. Branches `pr-24`, `pr-14c`, and `pr-20` can go. The section "PR-20, the deck view and the card detail, merged" below holds the moving parts. PR-21 is next, on a new branch from `main` (D-494).
@@ -454,9 +455,30 @@ The owner chose the deck gate next and left the bracket rejudge for later.
 
 The sweep is complete. Every row of the eval list ran once, for $4.60 together, and one defect came out of it, F-34, fixed and merged as #63.
 
+## PR-15, the eval harness, prepared (2026-09-04, D-511)
+
+The owner moved PR-15 ahead of PR-22 and PR-23 on 2026-09-04 (D-511). It is in progress on branch `pr-15`, from `main` at f299289 (#64). This section holds what a session found on 2026-09-04, the plan in slices, and the four owner questions. The roadmap entry is the authority on the goal, and D-39, D-423, D-427, D-428, and D-430 bind it.
+
+What exists. Eight commands write a gate document, and each one defines its own result type in `package main`. Only `internal/tune` holds a shared shape, `Verdict` and `Summary`, and only `questions-eval` and `tune-check` read it. The fingerprint differs per document. The run date is in every one, the snapshot date in four of eight, the prompt version in three, and the model name in two. `deck-gate`, `bracket-gate`, and `revise-gate` print no model name.
+
+The overwrite guard of D-65 is one shell line, repeated seven times in the Makefile, and `gatekit.RefuseExisting` has one caller. `tune-check` pairs two question runs by conversation and question, and it reads a noise margin (D-230, D-258). CI runs no gate, no probe, and no eval, and it sets no `CARDS_SNAPSHOT_DIR`. The free coverage is `go test -race`, which holds the report tests of each gate, and `make llm-defaults-check`, which warns and never fails. The paid sweep of 2026-09-03 cost $4.60 and about 84 minutes of provider time. A nightly sweep in Actions costs about $140 a month and about 42 hours of runner time, so the "Tier 1 nightly" line is a question (OQ-57).
+
+The plan, in slices. Each slice is one concern, with a free gate.
+
+1. `internal/evalrun`: one `Run` header and long-format `Row` records. The header holds the suite, the run id, the date, and the resolved model and effort per role. It holds the snapshot date, the prompt versions, the quality model version, the precon table version, and the commit. A row holds the item, the metric, the value, the kind (gate, info, or lenient), and a detail. Every gate writes its document as today, a JSONL file beside it under `docs/reference/eval/`, and the same "## Run" fingerprint block. Gate: every writer's test reads the block back.
+2. `cmd/eval compare`: two runs of one suite, paired by item and metric, with the named flips, the margins, and one verdict. A suite with no gate metric reads "not evaluated", never PASS. `docs/reference/eval/baselines.json` names the accepted run per suite, and `tune-check` folds into it. Gate: the compare over deck gate runs 13b and 14b names F-34 as the one flip.
+3. Tier 0 in CI, $0: `eval compare` over the committed baselines and the newest committed run per suite. A fingerprint check replaces `llm-defaults-check`. About one minute of Actions. A trimmed card snapshot in the repo adds the free dry runs of the deck gate. OQ-60 asks the owner about its size.
+4. The golden expectations. Each conversation of `conversations.json` gains `expect`: the slot values at the end. Each deck gate prompt gains `expect` as well. It names the commander, the count, the pool rule, the locked cards, the sets, and the excluded product. The gate reads them as rows, so a wrong slot is a named flip and not a passed count. The 14 terse conversations join the bar here (D-427), and every number rebases at once.
+5. The plan judge. One judge call per built deck on Opus 5 (D-430), with a rubric of four fields on three-point scales. D-66 shaped the M-5 rubric the same way. The rows are `info` until a baseline exists. A bar reads the number and never the prose (lesson 11). OQ-58 asks the owner to confirm the fields.
+6. `cmd/eval sweep`: the paid suites in the order of the eval list, under a cost cap per run (D-4 shape). Each suite keeps its spend guard. It runs on the owner's machine, on the owner's word, as every paid target does today (OQ-57).
+
+What PR-15 does not settle. D-423 sets the fit threshold from the M-5 scores, and the sheet holds 30 scored items of 60 on 2026-09-04. D-66 asks for 50, so the threshold waits on the owner's next 20 scores (OQ-59). The bake-off of D-39 is a paid run the harness makes possible, and it is not part of PR-15.
+
+The free gate of PR-15: every slice's tests, `eval compare` over the committed runs, and Tier 0 green in CI. The paid gate: one sweep through the new command, about $4.60, that reproduces the verdicts of 2026-09-03 and names no flip but F-34.
+
 ## The corpus items of 2026-09-04 (D-510)
 
-Branch `corpus-items` holds the two items the hand-off of 2026-09-04 named, with the F-34 record of #63. The tree is green: Go build, vet, the `-race` suite, golangci-lint, and `make ste-check`.
+PR #64 merged the two items the hand-off of 2026-09-04 named, with the F-34 record of #63. The tree is green: Go build, vet, the `-race` suite, golangci-lint, and `make ste-check`.
 
 The MTGJSON skip. The version stamp of the deck list carries the build day, `5.3.0+20260903`, so the table of yesterday never matched today's stamp. The job fetched 702 deck files every day. `meta.SameProducts` compares the kept products of two deck lists: file name, set code, name, release date, and type. The run reads the stored deck list of the newest table, and it reads no deck file when the products match. The report then names the stored table under `Skipped`.
 
@@ -661,11 +683,11 @@ The chat ran a turn with no card index before D-405. The commander question then
 
 ## Next steps, in order
 
-1. PR-22, the deploy to GCP for invited users (D-310, D-314), on a new branch from `main`. OQ-45 held the store of the allowlist, and D-420 answered it: one Firestore document, `config/allowlist`, written by `make allow EMAIL=...`. Then PR-23.
+1. PR-15, the eval harness (D-511), in progress on branch `pr-15` from `main` at f299289. The section "PR-15, the eval harness, prepared" holds the six slices and OQ-57 to OQ-60. Then PR-22, the deploy to GCP for invited users (D-310, D-314), and PR-23. OQ-45 held the store of the allowlist, and D-420 answered it: one Firestore document, `config/allowlist`, written by `make allow EMAIL=...`. Then PR-23.
 2. `make meta-refresh` daily, and `make quality-gate` to a new `QUALITY_GATE_OUT` after each one. Read the pair bars per format and the per-axis table. A weight against the sense of its feature is a defect in the feature or the labels. Do not tune it. The next weekly EDHREC read falls on 2026-09-10 (D-499).
 3. The paid runs come after PR-14C (D-495). First `make quality-judge` over `pr8-deck-gate-run13b.md`, about $0.31. Then the bracket gate for the bracket 5 decks. Then the question gate for the classifier of version 17 (D-496). Ask the owner before each one.
 4. Deploy the meta job (D-492). It is one Cloud Run job on `worker -meta`, with a Scheduler cron at 06:00 UTC daily. `TOPDECK_API_KEY` goes to Secret Manager. No infra file in this repo holds the worker's schedule. So the deployment is by hand, as the snapshot worker's is.
-5. PR-20 to PR-23 in order, one gate each. PR-15 stays after Phase 3B.
+5. PR-22 and PR-23 in order after PR-15, one gate each (D-511).
 
 Deck gate run 12 ran on 2026-09-02 under the profile and passed 24 of 24 with its rerun 12b. The read of every mana base is F-33. The land count and the color sources sit in band now, and the nonbasic share still swings from 0 to 36 on the same prompt. No band reads the composition, and F-33 stays open on that point.
 
