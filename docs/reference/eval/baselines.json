@@ -1,0 +1,11 @@
+{
+  "decks": [
+    "pr8-deck-gate-run16.jsonl"
+  ],
+  "questions": [
+    "pr7-question-gate-run35.jsonl"
+  ],
+  "revise": [
+    "pr12b-revise-gate-run9.jsonl"
+  ]
+}

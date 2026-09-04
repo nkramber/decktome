@@ -33,6 +33,7 @@ import (
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/candidates"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
+	"github.com/nkramber/mtg-deck-builder/go/internal/evalrun"
 	"github.com/nkramber/mtg-deck-builder/go/internal/gatekit"
 	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
@@ -99,7 +100,11 @@ type result struct {
 	// verdict on F-26, so it can not count as a pass on that bar (T-17).
 	// An empty summary counts as one: the judge has nothing to read.
 	judgeErr error
-	err      error
+	// plan is the plan judge's read of the deck (PR-15). Its rows are
+	// information, and a failure of the lane moves no verdict.
+	plan    *generate.PlanJudgement
+	planErr error
+	err     error
 }
 
 func main() {
@@ -114,6 +119,7 @@ func run() error {
 	only := flag.String("only", "", "run these prompt ids only, comma separated")
 	dry := flag.Bool("dry", false, "build every shortlist and stop before the provider calls")
 	noJudge := flag.Bool("no-judge", false, "skip the F-26 judge lane, which costs one judge call a deck")
+	runOut := flag.String("run-out", "", "write the run header and the rows as JSONL here (PR-15)")
 	flag.Parse()
 
 	var file struct {
@@ -134,11 +140,21 @@ func run() error {
 			return err
 		}
 	}
+	// The run file is never overwritten (D-65), and the check runs before
+	// the first provider call.
+	if err := gatekit.RefuseExisting(*runOut); err != nil {
+		return err
+	}
+	run := evalrun.New("decks", evalrun.RunID(*runOut))
+	run.Header.Prompts["generate"] = generate.PromptVersion
+	run.Header.Prompts["plan_rubric"] = generate.PlanRubricVersion
+	run.LowerIsBetter("blocks", "invented_names", "false_rules", "judge_error", "excluded_in_deck", "warnings", "repaired", "buy_cost", "deck_cost")
 	quiet := gatekit.Quiet()
 	idx, err := gatekit.LoadSnapshot(context.Background(), quiet)
 	if err != nil {
 		return err
 	}
+	run.SetSnapshot(idx.AsOf)
 	binders, err := loadBinders(*collPath, file.Prompts, idx)
 	if err != nil {
 		return err
@@ -156,6 +172,7 @@ func run() error {
 		if preconTbl == nil {
 			return fmt.Errorf("prompt %d excludes a precon, and the meta store holds no precon table: run make meta-refresh", p.ID)
 		}
+		run.Header.Versions["precons"] = preconTbl.Version
 		break
 	}
 	cb, err := candidates.New()
@@ -180,6 +197,7 @@ func run() error {
 		if err != nil {
 			return err
 		}
+		run.SetRoles(client.Config(), llm.RoleGenerate, llm.RoleRepair, llm.RoleJudge)
 		prices, err := llm.LoadPrices()
 		if err != nil {
 			return err
@@ -209,6 +227,10 @@ func run() error {
 			if r.judgeErr != nil {
 				fmt.Fprintf(os.Stderr, "  judge %d failed: %v\n", p.ID, r.judgeErr)
 			}
+			r.plan, r.planErr = generate.JudgePlan(context.Background(), client, p.Plan, r.deck, idx, acc)
+			if r.planErr != nil {
+				fmt.Fprintf(os.Stderr, "  plan judge %d failed: %v\n", p.ID, r.planErr)
+			}
 		}
 		results = append(results, r)
 		fmt.Fprintf(os.Stderr, "  %2d. %-38s pool %3d%s%s  %s\n", p.ID, p.Name, r.poolSize, setWord(r), excludeWord(r), status(r))
@@ -217,7 +239,11 @@ func run() error {
 		fmt.Fprintf(os.Stderr, "\ndry run: %d shortlists built, no provider call ran\n", len(results))
 		return nil
 	}
-	if !report(os.Stdout, results, acc, idx, time.Since(start)) {
+	pass := report(os.Stdout, results, acc, idx, time.Since(start), run)
+	if err := evalrun.WriteFile(*runOut, run); err != nil {
+		return err
+	}
+	if !pass {
 		return errGateFailed
 	}
 	return nil

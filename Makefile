@@ -109,15 +109,19 @@ candidates-review: ## Write the PR-6 gate document from the local snapshot and t
 # GATE_OUT names the PR-7 gate document. A rerun must never overwrite a
 # scored document (D-65).
 GATE_OUT ?= docs/reference/pr7-question-gate.md
+# GATE_RUN is the run file of PR-15, named after the document (D-65).
+GATE_RUN ?= docs/reference/eval/$(notdir $(basename $(GATE_OUT))).jsonl
 
 questions-gate: ## Write the PR-7 gate document. CAUTION: this calls the real providers and costs money
 	@[ -f .env ] || { echo "questions-gate: .env is absent. Run: cp .env.example .env, then add the provider keys."; exit 1; }
 	@test ! -f $(GATE_OUT) || ! grep -q '^Verdict:' $(GATE_OUT) || \
 		{ echo "$(GATE_OUT) holds a verdict. Set GATE_OUT to a new file."; exit 1; }
+	@test ! -f $(GATE_RUN) || { echo "$(GATE_RUN) exists. Set GATE_RUN to a new file."; exit 1; }
 	@set -a && . ./.env && set +a && \
 		QUESTIONS_GATE=1 CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall \
-		$(GO) run ./cmd/questions-gate -collection internal/collections/testdata/manabox_collection.csv > $(GATE_OUT)
-	@echo "wrote $(GATE_OUT)"
+		$(GO) run ./cmd/questions-gate -collection internal/collections/testdata/manabox_collection.csv \
+		-run-out $(abspath $(GATE_RUN)) > $(GATE_OUT)
+	@echo "wrote $(GATE_OUT) and $(GATE_RUN)"
 
 # --- The PR-8 gate, the revise gate, and the three probes (T-18) --------
 # Each target calls a real provider and costs money. Each one has the
@@ -139,39 +143,52 @@ CHAT_PROBE_MESSAGES ?= Build me a lifegain Commander deck from any cards.|Karlov
 GENERATE_PROBE_THEME ?= lifegain
 GENERATE_PROBE_COMMANDER ?= Karlov of the Ghost Council
 
+# DECK_GATE_RUN is the run file of PR-15: the header and the rows of the
+# document, as JSONL, named after the document. The command refuses an
+# existing file (D-65).
+DECK_GATE_RUN ?= docs/reference/eval/$(notdir $(basename $(DECK_GATE_OUT))).jsonl
+
 deck-gate: ## Write the PR-8 deck gate document. CAUTION: calls a real provider and costs money
 	@[ -f .env ] || { echo "deck-gate: .env is absent."; exit 1; }
 	@test ! -f $(DECK_GATE_OUT) || ! grep -q '^Verdict:' $(DECK_GATE_OUT) || \
 		{ echo "$(DECK_GATE_OUT) holds a verdict. Set DECK_GATE_OUT to a new file."; exit 1; }
+	@test ! -f $(DECK_GATE_RUN) || { echo "$(DECK_GATE_RUN) exists. Set DECK_GATE_RUN to a new file."; exit 1; }
 	@set -a && . ./.env && set +a && \
 		DECK_GATE=1 CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall \
-		$(GO) run ./cmd/deck-gate -collection internal/collections/testdata/manabox_collection.csv $(DECK_GATE_ARGS) > $(DECK_GATE_OUT)
-	@echo "wrote $(DECK_GATE_OUT)"
+		$(GO) run ./cmd/deck-gate -collection internal/collections/testdata/manabox_collection.csv \
+		-run-out $(abspath $(DECK_GATE_RUN)) $(DECK_GATE_ARGS) > $(DECK_GATE_OUT)
+	@echo "wrote $(DECK_GATE_OUT) and $(DECK_GATE_RUN)"
 
 # BRACKET_GATE_OUT is the PR-14A gate document, and BRACKET_GATE_ARGS
 # passes flags, for example -only 7,8,9 for the bracket 3 prompts alone.
 BRACKET_GATE_OUT ?= docs/reference/pr14a-bracket-gate.md
 BRACKET_GATE_ARGS ?=
+# BRACKET_GATE_RUN is the run file of PR-15, named after the document.
+BRACKET_GATE_RUN ?= docs/reference/eval/$(notdir $(basename $(BRACKET_GATE_OUT))).jsonl
 
 bracket-gate: ## Write the PR-14A bracket gate document. CAUTION: calls a real provider and costs money
 	@[ -f .env ] || { echo "bracket-gate: .env is absent."; exit 1; }
 	@test ! -f $(BRACKET_GATE_OUT) || ! grep -q '^Verdict:' $(BRACKET_GATE_OUT) || \
 		{ echo "$(BRACKET_GATE_OUT) holds a verdict. Set BRACKET_GATE_OUT to a new file."; exit 1; }
+	@test ! -f $(BRACKET_GATE_RUN) || { echo "$(BRACKET_GATE_RUN) exists. Set BRACKET_GATE_RUN to a new file."; exit 1; }
 	@set -a && . ./.env && set +a && \
 		BRACKET_GATE=1 CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall \
-		$(GO) run ./cmd/bracket-gate $(BRACKET_GATE_ARGS) > $(BRACKET_GATE_OUT)
-	@echo "wrote $(BRACKET_GATE_OUT)"
+		$(GO) run ./cmd/bracket-gate -run-out $(abspath $(BRACKET_GATE_RUN)) $(BRACKET_GATE_ARGS) > $(BRACKET_GATE_OUT)
+	@echo "wrote $(BRACKET_GATE_OUT) and $(BRACKET_GATE_RUN)"
 
 REVISE_GATE_OUT ?= docs/reference/pr12b-revise-gate.md
+# REVISE_GATE_RUN is the run file of PR-15, named after the document.
+REVISE_GATE_RUN ?= docs/reference/eval/$(notdir $(basename $(REVISE_GATE_OUT))).jsonl
 
 revise-gate: ## Write the PR-12B revise gate document. CAUTION: calls a real provider and costs money
 	@[ -f .env ] || { echo "revise-gate: .env is absent."; exit 1; }
 	@test ! -f $(REVISE_GATE_OUT) || ! grep -q '^Verdict:' $(REVISE_GATE_OUT) || \
 		{ echo "$(REVISE_GATE_OUT) holds a verdict. Set REVISE_GATE_OUT to a new file."; exit 1; }
+	@test ! -f $(REVISE_GATE_RUN) || { echo "$(REVISE_GATE_RUN) exists. Set REVISE_GATE_RUN to a new file."; exit 1; }
 	@set -a && . ./.env && set +a && \
 		REVISE_GATE=1 CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall \
-		$(GO) run ./cmd/revise-gate > $(REVISE_GATE_OUT)
-	@echo "wrote $(REVISE_GATE_OUT)"
+		$(GO) run ./cmd/revise-gate -run-out $(abspath $(REVISE_GATE_RUN)) > $(REVISE_GATE_OUT)
+	@echo "wrote $(REVISE_GATE_OUT) and $(REVISE_GATE_RUN)"
 
 chat-probe: ## Drive the real Chat RPC to a deck. CAUTION: calls the real providers and costs money
 	@[ -f .env ] || { echo "chat-probe: .env is absent."; exit 1; }
@@ -242,18 +259,23 @@ EVAL_RUN ?= docs/reference/pr7-question-gate-run24.md
 EVAL_OUT ?= docs/reference/pr7-question-eval-run24.md
 EVAL_JSON ?= .local/tune/run24.json
 EVAL_BUDGET ?= 0.50
+# EVAL_ROWS is the run file of PR-15, named after the eval document.
+# EVAL_RUN is the gate document the eval reads, so this one is not
+# called EVAL_RUN.
+EVAL_ROWS ?= docs/reference/eval/$(notdir $(basename $(EVAL_OUT))).jsonl
 
 questions-eval: ## Score every question of a gate run. CAUTION: calls a real provider and costs money
 	@[ -f .env ] || { echo "questions-eval: .env is absent. Run: cp .env.example .env, then add the provider keys."; exit 1; }
 	@test -f $(EVAL_RUN) || { echo "no gate document at $(EVAL_RUN). Set EVAL_RUN."; exit 1; }
 	@test ! -f $(EVAL_OUT) || { echo "$(EVAL_OUT) exists. Set EVAL_OUT to a new file."; exit 1; }
 	@test ! -f $(EVAL_JSON) || { echo "$(EVAL_JSON) exists. Set EVAL_JSON to a new file."; exit 1; }
+	@test ! -f $(EVAL_ROWS) || { echo "$(EVAL_ROWS) exists. Set EVAL_ROWS to a new file."; exit 1; }
 	@mkdir -p $(dir $(EVAL_JSON))
 	@set -a && . ./.env && set +a && QUESTIONS_EVAL=1 \
 		CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall \
 		$(GO) run ./cmd/questions-eval -in $(abspath $(EVAL_RUN)) -out $(abspath $(EVAL_OUT)) \
-		-json $(abspath $(EVAL_JSON)) -budget $(EVAL_BUDGET)
-	@echo "wrote $(EVAL_OUT)"
+		-json $(abspath $(EVAL_JSON)) -run-out $(abspath $(EVAL_ROWS)) -budget $(EVAL_BUDGET)
+	@echo "wrote $(EVAL_OUT) and $(EVAL_ROWS)"
 
 # The eval role runs on the model that also writes the questions, for
 # cost (D-133). This target measures what that costs in judgment: it
@@ -296,32 +318,48 @@ store-check: ## Run the session, deck, and collection stores against the local F
 		{ echo "no Firestore emulator on :8281. Start one: firebase emulators:start --only firestore --project mtg-local"; exit 1; }
 	@FIRESTORE_EMULATOR_HOST=127.0.0.1:8281 $(GO) test ./internal/sessions ./internal/decks ./internal/collections -count=1
 
+# --- The eval harness of PR-15 (free) -----------------------------------
+# EVAL_DIR holds the run files the gates write and baselines.json. The
+# check reads every suite of the baselines against its newest run and
+# names the flips. It calls no provider, so CI runs it (Tier 0).
+EVAL_DIR ?= docs/reference/eval
+EVAL_MARGIN ?= 0
+
+eval-check: ## Compare every baseline of the eval harness with its newest run (PR-15, no cost)
+	@$(GO) run ./cmd/eval check -dir $(abspath $(EVAL_DIR)) -margin $(EVAL_MARGIN)
+
 # QUALITY_GATE_OUT is the PR-14B gate document. The run is free: it
 # fits the model over the stored lists and calls no provider.
 QUALITY_GATE_OUT ?= docs/reference/pr14b-quality-gate.md
 QUALITY_GATE_ARGS ?=
+# QUALITY_GATE_RUN is the run file of PR-15, named after the document.
+QUALITY_GATE_RUN ?= docs/reference/eval/$(notdir $(basename $(QUALITY_GATE_OUT))).jsonl
 
 quality-gate: ## Write the PR-14B quality gate document from the local meta store (no model calls, no cost)
 	@test ! -f $(QUALITY_GATE_OUT) || ! grep -q '^Verdict:' $(QUALITY_GATE_OUT) || \
 		{ echo "$(QUALITY_GATE_OUT) holds a verdict. Set QUALITY_GATE_OUT to a new file."; exit 1; }
+	@test ! -f $(QUALITY_GATE_RUN) || { echo "$(QUALITY_GATE_RUN) exists. Set QUALITY_GATE_RUN to a new file."; exit 1; }
 	@CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall \
-		$(GO) run ./cmd/quality-gate $(QUALITY_GATE_ARGS) > $(QUALITY_GATE_OUT)
-	@echo "wrote $(QUALITY_GATE_OUT)"
+		$(GO) run ./cmd/quality-gate -run-out $(abspath $(QUALITY_GATE_RUN)) $(QUALITY_GATE_ARGS) > $(QUALITY_GATE_OUT)
+	@echo "wrote $(QUALITY_GATE_OUT) and $(QUALITY_GATE_RUN)"
 
 # QUALITY_JUDGE_IN is the deck gate document the tier judge lane reads,
 # and QUALITY_JUDGE_OUT the judge document it writes.
 QUALITY_JUDGE_IN ?= docs/reference/pr8-deck-gate-run13b.md
 QUALITY_JUDGE_OUT ?= docs/reference/pr14b-quality-judge.md
+# QUALITY_JUDGE_RUN is the run file of PR-15, named after the document.
+QUALITY_JUDGE_RUN ?= docs/reference/eval/$(notdir $(basename $(QUALITY_JUDGE_OUT))).jsonl
 
 quality-judge: ## Judge the tier of every deck of a deck gate document (PR-14B). CAUTION: calls a real provider and costs money
 	@[ -f .env ] || { echo "quality-judge: .env is absent."; exit 1; }
 	@test -f $(QUALITY_JUDGE_IN) || { echo "no deck gate document at $(QUALITY_JUDGE_IN). Set QUALITY_JUDGE_IN."; exit 1; }
 	@test ! -f $(QUALITY_JUDGE_OUT) || ! grep -q '^Verdict:' $(QUALITY_JUDGE_OUT) || \
 		{ echo "$(QUALITY_JUDGE_OUT) holds a verdict. Set QUALITY_JUDGE_OUT to a new file."; exit 1; }
+	@test ! -f $(QUALITY_JUDGE_RUN) || { echo "$(QUALITY_JUDGE_RUN) exists. Set QUALITY_JUDGE_RUN to a new file."; exit 1; }
 	@set -a && . ./.env && set +a && \
 		QUALITY_JUDGE=1 CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall \
-		$(GO) run ./cmd/quality-gate -judge $(abspath $(QUALITY_JUDGE_IN)) > $(QUALITY_JUDGE_OUT)
-	@echo "wrote $(QUALITY_JUDGE_OUT)"
+		$(GO) run ./cmd/quality-gate -judge $(abspath $(QUALITY_JUDGE_IN)) -run-out $(abspath $(QUALITY_JUDGE_RUN)) > $(QUALITY_JUDGE_OUT)
+	@echo "wrote $(QUALITY_JUDGE_OUT) and $(QUALITY_JUDGE_RUN)"
 
 # META_ARGS passes flags to the worker's meta job, for example
 # -meta-months 3 -meta-pages 50 for a short first read.

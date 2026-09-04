@@ -41,6 +41,7 @@ import (
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/candidates"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
+	"github.com/nkramber/mtg-deck-builder/go/internal/evalrun"
 	"github.com/nkramber/mtg-deck-builder/go/internal/gatekit"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 	"github.com/nkramber/mtg-deck-builder/go/internal/questions"
@@ -82,6 +83,10 @@ type conversation struct {
 	// be true. A deck exists only when the build slots were filled, so the
 	// flag fills them too (D-239, OQ-38).
 	HasDeck bool `json:"has_deck"`
+	// Expect names the values the slots must end with, in the words of
+	// slotValues (PR-15). A counted conversation with a miss fails the
+	// gate, and every miss is a row of the run.
+	Expect map[string]string `json:"expect,omitempty"`
 }
 
 // builtSlots are the slots a finished build must have settled. A stored
@@ -139,6 +144,10 @@ type result struct {
 	// the slot state tells the two apart.
 	Ready bool
 	Slots map[string]string
+	// Values are the settled slots as words, and Misses the expectations
+	// they did not meet (PR-15).
+	Values map[string]string
+	Misses []string
 	// Unanswered are the slots the deck needs that no answer filled.
 	Unanswered []string
 	// Premature marks a session that called itself complete with a slot
@@ -175,21 +184,32 @@ func main() {
 	// only names the conversation ids to run, for a cheap check of one
 	// row. A full run costs money, and a wasted one costs it twice.
 	only := flag.String("only", "", "run only these conversation ids, comma separated")
+	runOut := flag.String("run-out", "", "write the run header and the rows as JSONL here (PR-15)")
 	flag.Parse()
-	if err := run(*collectionPath, *limit, *only, os.Stdout); err != nil {
+	if err := run(*collectionPath, *limit, *only, *runOut, os.Stdout); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
 
-func run(collectionPath string, limit int, only string, w io.Writer) error {
+func run(collectionPath string, limit int, only string, runOut string, w io.Writer) error {
 	if err := gatekit.SpendGuard("QUESTIONS_GATE"); err != nil {
+		return err
+	}
+	// The run file is never overwritten (D-65), and the check runs before
+	// the first provider call.
+	if err := gatekit.RefuseExisting(runOut); err != nil {
 		return err
 	}
 	var file gateFile
 	if err := json.Unmarshal(conversationsJSON, &file); err != nil {
 		return fmt.Errorf("conversations.json: %w", err)
 	}
+	rec := evalrun.New("questions", evalrun.RunID(runOut))
+	rec.Header.Prompts["questions"] = questions.PromptVersion
+	rec.LowerIsBetter("error", "premature", "dead_end", "lint_findings", "invented", "refused_rewords", "stalls", "closed_by_net")
+	rec.Header.Versions["conversations"] = file.VerifiedAt
+	rec.Header.Versions["slots_snapshot"] = fmt.Sprintf("%d", questions.SnapshotVersion)
 	if n := gateCount(file.Conversations); n < questions.MinGateSize {
 		return fmt.Errorf("conversations.json holds %d gate conversations, the gate needs %d", n, questions.MinGateSize)
 	}
@@ -202,6 +222,7 @@ func run(collectionPath string, limit int, only string, w io.Writer) error {
 	if err != nil {
 		return err
 	}
+	rec.SetRoles(client.Config(), llm.RoleClassify, llm.RoleAsk)
 	prices, err := llm.LoadPrices()
 	if err != nil {
 		return err
@@ -209,6 +230,9 @@ func run(collectionPath string, limit int, only string, w io.Writer) error {
 	idx, owned, ownedNote, err := loadIndex(collectionPath)
 	if err != nil {
 		return err
+	}
+	if idx != nil {
+		rec.SetSnapshot(idx.AsOf)
 	}
 	builder, err := candidates.New()
 	if err != nil {
@@ -250,7 +274,18 @@ func run(collectionPath string, limit int, only string, w io.Writer) error {
 		fmt.Fprintf(os.Stderr, "%2d/%d %-40s catalog=%d invented=%d%s\n",
 			conv.ID, len(list), conv.Name, res.Coverage.Catalog, res.Coverage.Invented, res.kind())
 	}
-	return write(w, file, results, cov, acc.Report(), client.Config(), ownedNote, time.Since(started))
+	werr := write(w, file, results, cov, acc.Report(), client.Config(), ownedNote, time.Since(started), rec)
+	return writeRunThen(runOut, rec, werr)
+}
+
+// writeRunThen writes the run file and then returns the verdict error of
+// the document. A FAIL is a run too, and the compare reads its rows
+// (PR-15), so the file lands before the exit code.
+func writeRunThen(runOut string, rec *evalrun.Run, werr error) error {
+	if err := evalrun.WriteFile(runOut, rec); err != nil {
+		return err
+	}
+	return werr
 }
 
 // coverages splits the M-4 counts three ways: the counted gate
@@ -402,6 +437,8 @@ func runOne(cat *questions.Catalog, client *llm.Client, idx *cards.Index, builde
 	for _, key := range builtSlots {
 		res.Slots[key] = slotState(st, key)
 	}
+	res.Values = slotValues(st)
+	res.Misses = checkExpect(conv.Expect, res.Values)
 	for _, keys := range required(st, conv.Collection) {
 		answered := false
 		for _, key := range keys {
@@ -511,7 +548,7 @@ func loadIndex(collectionPath string) (*cards.Index, map[string]int32, string, e
 }
 
 func write(w io.Writer, file gateFile, results []result, cov coverages,
-	report llm.Report, cfg *llm.Config, ownedNote string, elapsed time.Duration) error {
+	report llm.Report, cfg *llm.Config, ownedNote string, elapsed time.Duration, rec *evalrun.Run) error {
 	total, probes := cov.total, cov.probes
 	var premature, deadEnds, stallLines, closedLines, waitLines []string
 	gate, counted, afterBuild := 0, 0, 0
@@ -555,8 +592,23 @@ func write(w io.Writer, file gateFile, results []result, cov coverages,
 			byRule[f.Rule]++
 		}
 	}
+	// The golden expectations are the fourth bar (PR-15): a counted
+	// conversation whose slots ended on other values than it names.
+	var missLines []string
+	expected := 0
+	for _, r := range results {
+		if r.Probe || r.HasDeck {
+			continue
+		}
+		if len(r.Expect) > 0 {
+			expected++
+		}
+		for _, m := range r.Misses {
+			missLines = append(missLines, r.Name+": "+m)
+		}
+	}
 	pass := total.CatalogOnly >= CatalogOnlyBar && gate >= questions.MinGateSize &&
-		len(premature) == 0 && findings == 0 && len(deadEnds) == 0
+		len(premature) == 0 && findings == 0 && len(deadEnds) == 0 && len(missLines) == 0
 	verdict := "FAIL"
 	if pass {
 		verdict = "PASS"
@@ -566,6 +618,11 @@ func write(w io.Writer, file gateFile, results []result, cov coverages,
 			verdict, pass = "FAIL", false
 		}
 	}
+	recordRows(rec, results)
+	rec.Gate("suite", "catalog_only", float64(total.CatalogOnly), fmt.Sprintf("%d of %d, the bar is %d", total.CatalogOnly, counted, CatalogOnlyBar))
+	rec.Gate("suite", "gate_size", float64(gate), fmt.Sprintf("the gate needs %d", questions.MinGateSize))
+	rec.Gate("suite", "expectation_misses", float64(len(missLines)), fmt.Sprintf("%d counted conversations name expectations", expected))
+	rec.Finish(report, elapsed, verdict)
 
 	_, _ = fmt.Fprintf(w, "# PR-7 question gate\n\n")
 	_, _ = fmt.Fprintf(w, "Run date: %s. Conversations: %s.\n\n", time.Now().UTC().Format("2006-01-02"), file.VerifiedAt)
@@ -604,6 +661,12 @@ func write(w io.Writer, file gateFile, results []result, cov coverages,
 			len(premature), strings.Join(premature, "; "))
 	} else {
 		_, _ = fmt.Fprintf(w, "No conversation called itself complete with a slot unanswered.\n\n")
+	}
+	switch {
+	case len(missLines) > 0:
+		_, _ = fmt.Fprintf(w, "%d slots ended on a value other than the one the conversation expects, which fails the gate (PR-15). A miss is a wrong slot or a wrong expectation, and the session decides which: %s.\n\n", len(missLines), strings.Join(missLines, "; "))
+	case expected > 0:
+		_, _ = fmt.Fprintf(w, "Every slot of the %d counted conversations that name expectations ended on the expected value (PR-15).\n\n", expected)
 	}
 	if findings > 0 {
 		_, _ = fmt.Fprintf(w, "The linter found %d defective questions, which fails the gate (D-115).\n\n", findings)
@@ -660,19 +723,14 @@ func write(w io.Writer, file gateFile, results []result, cov coverages,
 		_, _ = fmt.Fprintln(w)
 	}
 
-	_, _ = fmt.Fprintf(w, "## Run\n\n")
-	_, _ = fmt.Fprintf(w, "- Roles: classify on `%s`, ask on `%s`.\n",
-		cfg.Roles[llm.RoleClassify].Model, cfg.Roles[llm.RoleAsk].Model)
+	// The fingerprint block is the same in every gate document (PR-15).
+	// The roles of cfg are in the run header, so the block names them.
+	rec.SetRoles(cfg, llm.RoleClassify, llm.RoleAsk)
+	rec.Markdown(w)
 	_, _ = fmt.Fprintf(w, "- Cards: %s.\n", ownedNote)
-	_, _ = fmt.Fprintf(w, "- Calls: %d. Time: %.1f seconds.\n", report.Calls, elapsed.Seconds())
 	if report.Tokens != nil {
 		_, _ = fmt.Fprintf(w, "- Tokens: %d input (%d cached), %d output.\n",
 			report.Tokens.InputTokens, report.Tokens.CachedInputTokens, report.Tokens.OutputTokens)
-	}
-	if report.CostUSD != nil {
-		_, _ = fmt.Fprintf(w, "- Cost: $%.4f.\n", *report.CostUSD)
-	} else {
-		_, _ = fmt.Fprintf(w, "- Cost: unpriced. A model in this run has no price row.\n")
 	}
 	_, _ = fmt.Fprintln(w)
 
@@ -687,6 +745,13 @@ func write(w io.Writer, file gateFile, results []result, cov coverages,
 		if r.Turns < len(r.Messages) {
 			_, _ = fmt.Fprintf(w, "The slots were full after turn %d. The last %d messages never went out.\n\n",
 				r.Turns, len(r.Messages)-r.Turns)
+		}
+		if len(r.Expect) > 0 {
+			if len(r.Misses) > 0 {
+				_, _ = fmt.Fprintf(w, "Expected slots: %d misses. %s.\n\n", len(r.Misses), strings.Join(r.Misses, "; "))
+			} else {
+				_, _ = fmt.Fprintf(w, "Expected slots: every one met.\n\n")
+			}
 		}
 		if len(r.Unanswered) > 0 {
 			label := "Slots the deck needs and nobody answered"
@@ -727,4 +792,67 @@ func write(w io.Writer, file gateFile, results []result, cov coverages,
 			total.CatalogOnly, counted, CatalogOnlyBar, len(premature), findings)
 	}
 	return nil
+}
+
+// recordRows writes the rows of every conversation into the run
+// (PR-15). The zero-tolerance bars are gate rows per conversation. The
+// catalog-only count is a bar over the whole run, so the per-conversation
+// row is information and the suite row is the gate. A probe moves no
+// verdict (D-96), so its rows are information.
+func recordRows(rec *evalrun.Run, results []result) {
+	for _, r := range results {
+		item := fmt.Sprintf("%d", r.ID)
+		counted := !r.Probe && !r.HasDeck
+		flag := func(metric string, on bool, detail string) {
+			v := 0.0
+			if on {
+				v = 1
+			}
+			if counted {
+				rec.Gate(item, metric, v, detail)
+			} else {
+				rec.Info(item, metric, v, detail)
+			}
+		}
+		errText := ""
+		if r.Err != nil {
+			errText = r.Err.Error()
+		}
+		flag("error", r.Err != nil, errText)
+		flag("premature", r.Premature, strings.Join(r.Unanswered, ", "))
+		flag("dead_end", r.DeadEnd, "")
+		var rules []string
+		for _, f := range r.Findings {
+			rules = append(rules, f.Rule)
+		}
+		if counted {
+			rec.Gate(item, "lint_findings", float64(len(r.Findings)), strings.Join(rules, ", "))
+		} else {
+			rec.Info(item, "lint_findings", float64(len(r.Findings)), strings.Join(rules, ", "))
+		}
+		for _, key := range expectKeys {
+			want, ok := r.Expect[key]
+			if !ok {
+				continue
+			}
+			met := 1.0
+			for _, m := range r.Misses {
+				if strings.HasPrefix(m, key+": ") {
+					met = 0
+				}
+			}
+			detail := "want " + orNone(want) + ", got " + orNone(r.Values[key])
+			if counted {
+				rec.Gate(item, "slot_"+key, met, detail)
+			} else {
+				rec.Info(item, "slot_"+key, met, detail)
+			}
+		}
+		rec.Info(item, "catalog_only", float64(r.Coverage.CatalogOnly), r.kind())
+		rec.Info(item, "asked", float64(r.Coverage.Asked), "")
+		rec.Info(item, "invented", float64(r.Coverage.Invented), "")
+		rec.Info(item, "refused_rewords", float64(r.Coverage.NearCopies), "")
+		rec.Info(item, "stalls", float64(len(r.Stalls)), "")
+		rec.Info(item, "closed_by_net", float64(len(r.Closed)), "")
+	}
 }

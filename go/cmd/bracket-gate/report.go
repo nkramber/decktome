@@ -8,6 +8,7 @@ import (
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
+	"github.com/nkramber/mtg-deck-builder/go/internal/evalrun"
 	"github.com/nkramber/mtg-deck-builder/go/internal/gatekit"
 	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
@@ -44,7 +45,7 @@ func contentFindings(d *mtgv1.Deck) []*mtgv1.Finding {
 // report writes the gate document and returns the verdict. A run of
 // zero prompts fails, and so does a deck with no profile or no judge
 // verdict: a bar with nothing to read can not pass.
-func report(w io.Writer, rs []result, acc *llm.Accumulator, idx *cards.Index, took time.Duration) bool {
+func report(w io.Writer, rs []result, acc *llm.Accumulator, idx *cards.Index, took time.Duration, run *evalrun.Run) bool {
 	built, clean, inBand, noContent, unchecked, repaired, errs := 0, 0, 0, 0, 0, 0, 0
 	judged, agreed, judgeErrs, noProfile := 0, 0, 0, 0
 	for _, r := range rs {
@@ -96,6 +97,9 @@ func report(w io.Writer, rs []result, acc *llm.Accumulator, idx *cards.Index, to
 	if pass {
 		verdict = "PASS"
 	}
+	recordRows(run, rs)
+	run.Gate("suite", "judge_agreement", float64(agreement), fmt.Sprintf("%d of %d, the bar is %d", agreed, judged, JudgeAgreementPercent))
+	run.Finish(acc.Report(), took, verdict)
 	_, _ = fmt.Fprintf(w, "# PR-14A bracket gate\n\n")
 	_, _ = fmt.Fprintf(w, "Run date: %s. Card snapshot: %s.\n\n", time.Now().UTC().Format("2006-01-02"), idx.AsOf.Format("2006-01-02"))
 	_, _ = fmt.Fprintf(w, "Verdict: %s. %d of %d decks passed every block check, %d sat in every band, %d held no content violation, and the judge agreed with the bracket on %d of %d (%d percent, the bar is %d).\n\n",
@@ -133,6 +137,8 @@ func report(w io.Writer, rs []result, acc *llm.Accumulator, idx *cards.Index, to
 	_, _ = fmt.Fprintf(w, "| Calls | %d |\n", rep.Calls)
 	_, _ = fmt.Fprintf(w, "| Cost | %s |\n", gatekit.CostWord(rep))
 	_, _ = fmt.Fprintf(w, "| Time | %.0f seconds |\n\n", took.Seconds())
+	run.Markdown(w)
+	_, _ = fmt.Fprintf(w, "\n")
 
 	_, _ = fmt.Fprintf(w, "## Off-band features by key\n\nEach row counts the decks whose feature sat outside its band after the repair turns.\n\n| Feature | Decks off band |\n|---|---|\n")
 	byKey := map[string]int{}
@@ -242,4 +248,63 @@ func writeDeck(w io.Writer, r result) {
 		_, _ = fmt.Fprintf(w, "- %d %s\n", c.GetCount(), c.GetName())
 	}
 	_, _ = fmt.Fprintf(w, "\n")
+}
+
+// recordRows writes one row per bar per deck into the run (PR-15). The
+// judge agreement is a bar over the whole run, so the per-deck row is
+// information and the suite row is the gate.
+func recordRows(run *evalrun.Run, rs []result) {
+	for _, r := range rs {
+		item := fmt.Sprintf("%d", r.prompt.ID)
+		if r.err != nil {
+			run.Gate(item, "built", 0, r.err.Error())
+			continue
+		}
+		if r.deck == nil {
+			run.Gate(item, "built", 0, "no deck")
+			continue
+		}
+		run.Gate(item, "built", 1, "")
+		var codes []string
+		for _, f := range gatekit.BlockFindings(r.deck) {
+			codes = append(codes, f.GetCode())
+		}
+		run.Gate(item, "blocks", float64(len(codes)), strings.Join(codes, ", "))
+		if r.deck.GetProfile() == nil {
+			run.Gate(item, "profile", 0, "no profile")
+		} else {
+			run.Gate(item, "profile", 1, "")
+			var keys []string
+			for _, f := range offBand(r.deck) {
+				keys = append(keys, f.GetKey())
+			}
+			run.Gate(item, "off_band", float64(len(keys)), strings.Join(keys, ", "))
+			var content []string
+			for _, f := range contentFindings(r.deck) {
+				content = append(content, f.GetCode())
+			}
+			run.Gate(item, "content_violations", float64(len(content)), strings.Join(content, ", "))
+			checked := 0.0
+			if r.deck.GetProfile().GetContent().GetChecked() {
+				checked = 1
+			}
+			run.Gate(item, "content_checked", checked, "")
+		}
+		switch {
+		case r.judgeErr != nil:
+			run.Gate(item, "judge_error", 1, r.judgeErr.Error())
+		case r.judged != nil:
+			agrees := 0.0
+			if r.judged.Bracket == r.prompt.Bracket {
+				agrees = 1
+			}
+			run.Info(item, "judge_agrees", agrees, fmt.Sprintf("built for %d, judged %d", r.prompt.Bracket, r.judged.Bracket))
+		}
+		repaired := 0.0
+		if r.repaired {
+			repaired = 1
+		}
+		run.Info(item, "repaired", repaired, r.repairReason)
+		run.Info(item, "pool", float64(r.poolSize), "")
+	}
 }

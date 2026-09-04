@@ -37,8 +37,10 @@ import (
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/candidates"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
+	"github.com/nkramber/mtg-deck-builder/go/internal/evalrun"
 	"github.com/nkramber/mtg-deck-builder/go/internal/gatekit"
 	"github.com/nkramber/mtg-deck-builder/go/internal/gcpenv"
+	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 	"github.com/nkramber/mtg-deck-builder/go/internal/meta"
 	"github.com/nkramber/mtg-deck-builder/go/internal/quality"
 )
@@ -62,19 +64,26 @@ func run() error {
 	judge := flag.String("judge", "", "run the tier judge lane over this deck gate document (CAUTION: costs money, needs QUALITY_JUDGE=1)")
 	prompts := flag.String("prompts", "cmd/deck-gate/prompts.json", "the deck gate prompts, for the commander of a deck the document names none for")
 	explain := flag.String("explain", "", "print how the stored model grades every deck of this deck gate document (free)")
+	runOut := flag.String("run-out", "", "write the run header and the rows as JSONL here (PR-15)")
 	flag.Parse()
 	if *judge != "" {
-		return runJudge(*judge, *prompts)
+		return runJudge(*judge, *prompts, *runOut)
 	}
 	if *explain != "" {
 		return runExplain(*explain, *prompts)
 	}
+	// The run file is never overwritten (D-65).
+	if err := gatekit.RefuseExisting(*runOut); err != nil {
+		return err
+	}
+	run := evalrun.New("quality", evalrun.RunID(*runOut))
 	ctx := context.Background()
 	log := gatekit.Quiet()
 	idx, err := gatekit.LoadSnapshot(ctx, log)
 	if err != nil {
 		return err
 	}
+	run.SetSnapshot(idx.AsOf)
 	store, err := gcpenv.MetaStore(ctx, gcpenv.LocalProject, nil)
 	if err != nil {
 		return err
@@ -101,7 +110,14 @@ func run() error {
 		}
 	}
 	offer, offerErr := offerAtBracketFive(idx, model)
-	pass := report(os.Stdout, idx, model, rep, reads, day, offer, offerErr, time.Since(start))
+	if model != nil {
+		run.Header.Versions["quality_model"] = model.Version
+	}
+	run.Header.Versions["commanders_day"] = gatekit.OrNone(day)
+	pass := report(os.Stdout, idx, model, rep, reads, day, offer, offerErr, time.Since(start), run)
+	if err := evalrun.WriteFile(*runOut, run); err != nil {
+		return err
+	}
 	if !pass {
 		return fmt.Errorf("quality gate: FAIL")
 	}
@@ -145,7 +161,7 @@ func offerAtBracketFive(idx *cards.Index, model *quality.Model) ([]offered, erro
 }
 
 // report writes the document and answers the verdict.
-func report(w io.Writer, idx *cards.Index, model *quality.Model, rep *quality.FitReport, reads []meta.Commander, day string, offer []offered, offerErr error, took time.Duration) bool {
+func report(w io.Writer, idx *cards.Index, model *quality.Model, rep *quality.FitReport, reads []meta.Commander, day string, offer []offered, offerErr error, took time.Duration, run *evalrun.Run) bool {
 	// The document goes to stdout, and a write error there ends the run
 	// with a short document, which the verdict check refuses.
 	p := func(format string, a ...any) { _, _ = fmt.Fprintf(w, format, a...) }
@@ -171,6 +187,7 @@ func report(w io.Writer, idx *cards.Index, model *quality.Model, rep *quality.Fi
 			p("| %s | 0 | 0 | 0 | 0 | no fit | no fit | no fit |\n", word)
 			fails = append(fails, word+": no lists")
 			pass = false
+			run.Gate(word, "fit", 0, "no lists")
 			continue
 		}
 		fm := (*quality.FormatModel)(nil)
@@ -181,10 +198,16 @@ func report(w io.Writer, idx *cards.Index, model *quality.Model, rep *quality.Fi
 			p("| %s | %d | %d | %d | 0 | no fit | no fit | no fit |\n", word, fr.Read, fr.Used, fr.Synthetic)
 			fails = append(fails, word+": no fit")
 			pass = false
+			run.Gate(word, "fit", 0, "no fit")
 			continue
 		}
 		h := fm.Holdout
 		gb, bb := h.GreatOverBaseline, h.BaselineOverBad
+		run.Gate(word, "fit", 1, "")
+		run.Gate(word, "great_over_precon", gb.Share(), fmt.Sprintf("%d pairs, the bar is %.2f", gb.Pairs, barGreatOverBaseline))
+		run.Gate(word, "precon_over_bad", bb.Share(), fmt.Sprintf("%d pairs, the bar is %.2f", bb.Pairs, barBaselineOverBad))
+		run.Info(word, "accuracy", h.Accuracy, "")
+		run.Info(word, "lists", float64(fr.Read), fmt.Sprintf("%d used, %d synthetic, %d holdout", fr.Used, fr.Synthetic, h.Lists))
 		p("| %s | %d | %d | %d | %d | %s | %s | %.2f |\n", word, fr.Read, fr.Used, fr.Synthetic, h.Lists,
 			pairWord(gb, barGreatOverBaseline), pairWord(bb, barBaselineOverBad), h.Accuracy)
 		if gb.Pairs == 0 || gb.Share() < barGreatOverBaseline {
@@ -284,13 +307,23 @@ func report(w io.Writer, idx *cards.Index, model *quality.Model, rep *quality.Fi
 		}
 	}
 
-	// The verdict, last in the file and first for a reader.
-	p("## Verdict" + "\n")
-	p("\n")
+	offerOK := 1.0
+	if offerErr != nil || len(offer) < commanderOffer || !pass && len(fails) > 0 && strings.HasPrefix(fails[len(fails)-1], "offer:") {
+		offerOK = 0
+	}
+	run.Gate("suite", "offer", offerOK, fmt.Sprintf("%d commanders, the bar is %d", len(offer), commanderOffer))
+
 	verdict := "PASS"
 	if !pass {
 		verdict = "FAIL"
 	}
+	run.Finish(llm.Report{}, took, verdict)
+	run.Markdown(w)
+	p("\n")
+
+	// The verdict, last in the file and first for a reader.
+	p("## Verdict" + "\n")
+	p("\n")
 	p("Verdict: %s. Time: %.0f seconds, no provider call.", verdict, took.Seconds())
 	if len(fails) > 0 {
 		p(" Failed bars: %s.", strings.Join(fails, "; "))

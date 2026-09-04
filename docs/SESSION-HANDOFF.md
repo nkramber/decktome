@@ -6,7 +6,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## Where things stand (2026-09-04)
 
-- The two corpus items of 2026-09-04 sit on branch `corpus-items`, with a PR open (D-510). The meta job skips the MTGJSON deck files when the deck list names the products of the stored table. Deck gate prompt 25 covers the precon exclusion of PR-24 for the first time, and it waits for a paid run. The section "The corpus items of 2026-09-04" below holds the read, and one owner question came out of it (OQ-56).
+- The PR-15 paid gate ran on 2026-09-04 (D-514, D-515), $4.53 for three steps. Deck gate run 16 passes 25 of 25 with no gate flip against run 14 with 14b, and it is the decks baseline now. Tier judge run 4 reads 7 of 25 on the open bar, and the sweep stopped there. Question gate run 34 read 21 misses on the fourth bar. The read fixed the renderer, three expectations, and the run file of a FAIL on the branch. The two runs that complete the gate ran on the owner's word (D-516). Question gate run 35 passes with no miss, and revise gate run 9 passes 11 of 11. Every suite has a baseline: runs 35, 16, and 9. The gate document is `docs/reference/pr15-paid-gate-2026-09-04.md`, and it holds F-36 to F-39. The section "The PR-15 paid gate, run" below holds the read and the two commands. The owner committed the session's work as e8e7dbc on `pr-15`, and the documents of runs 35 and 9 wait for a commit. `main` carries a broken commit, dbbcb4e, and the owner resets it to f299289. A second Mac follows `docs/setup-second-mac.md`.
+- PR-15, the eval harness, sits whole on branch `pr-15` as PR #65, from `main` at f299289 (D-511, D-512, 2026-09-04), before PR-22 and PR-23. The free gate is `docs/reference/pr15-gate-2026-09-04.md`. The owner said go to the paid gate on 2026-09-04 (D-513), and it ran the same day (D-514). The branch holds all six slices: the run files, the compare, Tier 0 in CI, the golden expectations, the plan judge, and the sweep. The section "PR-15, what the branch holds" below holds the moving parts, and "PR-15, the eval harness, prepared" holds the plan and the four owner questions, OQ-57 to OQ-60.
+- The two corpus items of 2026-09-04 merged as #64 (D-510). Branches `corpus-items` and `deck-gate-fixes` can go. The meta job skips the MTGJSON deck files when the deck list names the products of the stored table. Deck gate prompt 25 covers the precon exclusion of PR-24 for the first time, and it waits for a paid run. The section "The corpus items of 2026-09-04" below holds the read, and one owner question came out of it (OQ-56).
 - The paid sweep after PR-21 ran on 2026-09-03 and 2026-09-04, $4.60 in all. Question gate 33 and its eval pass. Tier judge run 3 reads 8 of 24, with the bar open on the corpus. Deck gate 14 with 14b reads 24 of 24, and revise gate 8 passes. The one defect it found, F-34, merged fixed as #63 (D-509). The section "The paid runs of 2026-09-03, after PR-21" below holds the read. Branch `deck-gate-fixes` can go.
 - PR-21, the share link and the print view, is merged (2026-09-03, #62, D-508). The free gate passes, `docs/reference/pr21-gate-2026-09-03.md`. The tree is green on `main`: Go build, vet, the `-race` suite, golangci-lint, `make ste-check`, the web lint, the web typecheck, and 262 web tests. Branches `pr-24`, `pr-14c`, `pr-20`, and `pr-21` can go. The section "PR-21, the share link and the print view, merged" below holds the moving parts. PR-22 is next, on a new branch from `main` (D-494).
 - PR-20, the deck view and the card detail, is merged (2026-09-03, #61, D-507). The free gate passes, `docs/reference/pr20-gate-2026-09-03.md`. The tree is green on `main`: Go build, vet, the `-race` suite, golangci-lint, `make ste-check`, the web lint, the web typecheck, and 256 web tests. Branches `pr-24`, `pr-14c`, and `pr-20` can go. The section "PR-20, the deck view and the card detail, merged" below holds the moving parts. PR-21 is next, on a new branch from `main` (D-494).
@@ -454,9 +456,91 @@ The owner chose the deck gate next and left the bracket rejudge for later.
 
 The sweep is complete. Every row of the eval list ran once, for $4.60 together, and one defect came out of it, F-34, fixed and merged as #63.
 
+## PR-15, what the branch holds (2026-09-04)
+
+Branch `pr-15` holds every slice of the plan in the section after this one. The tree is green: Go build, vet, the `-race` suite, golangci-lint, and `make ste-check`.
+
+- `internal/evalrun` (slice 1): `Header`, `Row`, and `Run`, the JSONL writer and reader, `Compare`, and `Merge`. A header holds the suite, the run id, the date, the commit, and the resolved model and effort per role. It holds the snapshot date, the prompt versions, the stored versions, the cost, and the verdict. A row holds one measurement of one item, as a gate row or an information row. The header names the metrics where lower is better, so a committed file describes its own senses.
+- Every gate writes its run file beside its document, and the "## Run" block of every document is one fingerprint (`Run.Markdown`). The writers: `deck-gate`, `bracket-gate` and its `-rejudge` lane, `revise-gate`, `questions-gate`, `questions-eval`, `quality-gate`, and its `-judge` lane. Each one takes `-run-out`, and it refuses an existing file before the first provider call (D-65). The Makefile names the file after the document, under `docs/reference/eval/`: `DECK_GATE_RUN`, `BRACKET_GATE_RUN`, `REVISE_GATE_RUN`, `GATE_RUN`, `EVAL_ROWS`, `QUALITY_GATE_RUN`, and `QUALITY_JUDGE_RUN`.
+- `cmd/eval` (slice 2), four free modes. `compare` reads two runs of one suite and names the flips. `check` reads every suite of `baselines.json` against its newest run. `baseline` records the accepted run files of a suite, a run with its rerun as one. `import` reads a deck gate document from before the run files existed.
+- The verdict of a compare. A gate row that moved against its sense past the margin is a regression, and the verdict fails. A suite with no gate row, or no verdict of its own, reads NOT EVALUATED and never PASS. The information rows fold into one count, and `-info` lists them, because the cost rows move with the daily prices on every run.
+- `docs/reference/eval/` holds the imported runs 13b, 14, and 14b, and `baselines.json` names 14 with 14b as the decks baseline. The compare of 13b against 14 names deck 17, `blocks` 0 to 1 with `deck_size`, as the one gate flip, which is F-34. That is the gate line of slice 2.
+- Tier 0 (slice 3): `make eval-check` is free. The job `verify:eval` runs it on a pull request that touches the run files, the harness code, the Makefile, or the workflow. It takes about one minute of runner time.
+- The plan judge (slice 5): `generate.JudgePlan` grades a built deck on four fields, each no, partly, or yes, with one sentence of reason per field. The fields are `plan_coherent`, `theme_fit`, `useful_as_built`, and `summary_honest`, the proposal of OQ-58, at `PlanRubricVersion` 1. The deck gate calls it after the F-26 judge, unless `-no-judge`. Its rows are information, `plan_<field>` and `plan_score`, and a failure of the lane is a row and never a verdict. The document prints one `- PLAN field=grade: why` line per field, and the summary table counts the decks read and the mean score.
+- The golden expectations (slice 4): a conversation of `conversations.json` can carry `expect`, the values its slots must end with. The gate renders the settled slots as words (`slotValues`) and reads each expected key as a row, `slot_<key>`. A counted conversation with a miss fails the gate, the fourth bar, and the document names every miss. The words: `format` (commander, standard, modern, house), `colors` in WUBRG order, `power` (bracket N, casual, fnm, tournament), `pool_rule`, `commander` (a name, `*` for any pick, or `delegated` for a skipped slot), `budget` (a number, with `to buy` or `whole deck` when the scope matters), `theme` (words inside the slot text), `locked`, and `sets`. The 27 counted conversations carry expectations, written from their messages on 2026-09-04. The three that start after a build carry none, and the probes carry none.
+- The sweep (slice 6): `go run ./cmd/eval sweep -cap <USD>` runs the paid suites through their Makefile targets, in the order of the eval list. The steps: questions, question-eval, decks, tier-judge, and revise. It numbers each document after the highest run of its family, and it names the run file beside it. `-dry` prints the plan with an estimate per step, the cost of the suite's last run file. It needs `EVAL_SWEEP=1`, each target keeps its own guard, and it stops before a step that crosses the cap. A FAIL stops it, as the owner's rule of 2026-09-03 says, and `-continue` goes on. `-suites` picks the steps, and a step whose input step did not run reads the newest document of that family.
+
+CAUTION: question gate run 34 read the 27 expectations through a renderer that read the wrong fields, and named 21 misses. Run 35 read them through the fixed renderer, and every one met. A miss on a later run is a wrong expectation or a wrong slot, and the session decides which before it changes either.
+
+CAUTION: D-427 names 14 terse conversations, and the file holds 47 with "terse:" in the name. OQ-61 asks the owner which join the bar and at what bar. Until then every terse conversation stays a probe, and its expectation rows, when it gets any, are information.
+
+CAUTION: the plan judge costs one judge call a deck, about $0.02 on Opus 5. Deck gate run 16 cost $3.79 for 25 prompts with it, against $2.54 for run 14, and 12 decks needed the repair turn. The sweep's estimate reads the last run file, so set the cap from run 16 and not from run 14. `-no-judge` skips both judge lanes together.
+
+CAUTION: an imported run names no model. Deck gate run 16 and tier judge run 4 carry the first complete fingerprints. The questions suite has no run file yet, because run 34 failed before the gate wrote it and the fix came after. The revise suite has none, because its run waits (OQ-63).
+
+CAUTION: `check` compares the baseline with the newest run of its suite that is newer than every run of the baseline. A run older than the baseline is history, and the check never reads it. Newest reads the date first, then the number the run id ends with.
+
+What comes next: the merge of #65, and the answers to OQ-57 to OQ-61. Slice 3 built the compare lane of Tier 0 without the trimmed snapshot of OQ-60. Slice 6 built the sweep for the owner's machine, the recommendation of OQ-57.
+
+## The PR-15 paid gate, run (2026-09-04, D-514, D-515)
+
+The owner confirmed the go, and the three steps of D-513 ran on 2026-09-04 for $4.53. `docs/reference/pr15-paid-gate-2026-09-04.md` holds the whole read. The short form:
+
+- Step 2, the question gate and its eval, $0.28. Run 34 reads FAIL on the fourth bar with 21 misses over 15 conversations, and the three old bars pass. 17 misses came from the renderer. It read the commander and the locked cards from the id fields of the proto, and the classifier fills the name fields of the state. A reader with no collection read no pool rule, and the build reads any-card for them. The renderer reads the names and the any-card default now. 3 misses were expectations that named a fourth message the net of D-351 never sends, and they changed. 1 miss is a wrong slot: the classifier replaced `infect` with `the best deck under budget` (F-36). The gate wrote no run file for run 34, because it returned the FAIL before the write, and `writeRunThen` fixes the order.
+- Step 7, the deck gate on prompt 25, $0.11. The plan judge schema went through the Anthropic API with no error, and the run block names every role. The build answered the Avengers request with a Syr Konrad list and no superhero identity, and the summary hid it (F-37).
+- Step 9, $4.15. Deck gate run 16 passes 25 of 25, and the compare with run 14 with 14b names no gate flip. 76 information rows moved, 41 worse. Run 16 is the decks baseline. Tier judge run 4 reads 7 of 25 on the open bar, and the sweep stopped there. The revise gate did not run.
+- The plan judge wrote "placeholder" as its reason on `summary_honest` in 10 of 25 decks (F-38). It graded legality from stale card knowledge on decks 2 and 10 (F-39). The schema asks for the reason first, the document counts the empty reasons, the instructions say that code checked the legality, and `PlanRubricVersion` reads 2.
+- `eval check` reads NOT EVALUATED on a baseline with no newer run, and never PASS.
+
+The two runs that complete the gate ran on the owner's word (D-516). Question gate run 35 reads PASS, 27 of 27 catalog-only, and every one of the 27 expectations met. Its eval reads 7.3 percent bad on the holdout. Revise gate run 9 reads PASS, 11 of 11 turns, $1.07, and its run block names generate, repair, and revise on `gpt-5.6-terra`. Runs 35 and 9 are the baselines of their suites. The commands, for the record:
+
+1. Question gate run 35 with its eval, about $0.28 (OQ-62):
+
+   ```
+   EVAL_SWEEP=1 go -C go run ./cmd/eval sweep -cap 0.50 -suites questions,question-eval -continue
+   ```
+
+2. Revise gate run 9, about $1.23 (OQ-63):
+
+   ```
+   EVAL_SWEEP=1 go -C go run ./cmd/eval sweep -cap 1.50 -suites revise
+   ```
+
+Three things wait on the owner. The first is a commit of the four documents and the three run files of runs 35 and 9 on `pr-15`. The second is the reset of `main`, and the third is the merge of #65. The reset, from any branch but `main`:
+
+   ```
+   git branch -f main f299289
+   git push --force-with-lease=main:dbbcb4e origin main
+   ```
+
+CAUTION: a miss of run 35 on a commander name is a name the classifier wrote in other words than the expectation. Read the turn line before you change either.
+
+CAUTION: the sweep stops on the tier judge, which reads FAIL on the open bar of D-488 until the corpus moves. A full sweep needs `-continue` past it, and the cap must hold the plan judge: read the estimate of the deck gate from run 16.
+
+## PR-15, the eval harness, prepared (2026-09-04, D-511)
+
+The owner moved PR-15 ahead of PR-22 and PR-23 on 2026-09-04 (D-511). It is in progress on branch `pr-15`, from `main` at f299289 (#64). This section holds what a session found on 2026-09-04, the plan in slices, and the four owner questions. The roadmap entry is the authority on the goal, and D-39, D-423, D-427, D-428, and D-430 bind it.
+
+What exists. Eight commands write a gate document, and each one defines its own result type in `package main`. Only `internal/tune` holds a shared shape, `Verdict` and `Summary`, and only `questions-eval` and `tune-check` read it. The fingerprint differs per document. The run date is in every one, the snapshot date in four of eight, the prompt version in three, and the model name in two. `deck-gate`, `bracket-gate`, and `revise-gate` print no model name.
+
+The overwrite guard of D-65 is one shell line, repeated seven times in the Makefile, and `gatekit.RefuseExisting` has one caller. `tune-check` pairs two question runs by conversation and question, and it reads a noise margin (D-230, D-258). CI runs no gate, no probe, and no eval, and it sets no `CARDS_SNAPSHOT_DIR`. The free coverage is `go test -race`, which holds the report tests of each gate, and `make llm-defaults-check`, which warns and never fails. The paid sweep of 2026-09-03 cost $4.60 and about 84 minutes of provider time. A nightly sweep in Actions costs about $140 a month and about 42 hours of runner time, so the "Tier 1 nightly" line is a question (OQ-57).
+
+The plan, in slices. Each slice is one concern, with a free gate.
+
+1. `internal/evalrun`: one `Run` header and long-format `Row` records. The header holds the suite, the run id, the date, and the resolved model and effort per role. It holds the snapshot date, the prompt versions, the quality model version, the precon table version, and the commit. A row holds the item, the metric, the value, the kind (gate, info, or lenient), and a detail. Every gate writes its document as today, a JSONL file beside it under `docs/reference/eval/`, and the same "## Run" fingerprint block. Gate: every writer's test reads the block back.
+2. `cmd/eval compare`: two runs of one suite, paired by item and metric, with the named flips, the margins, and one verdict. A suite with no gate metric reads "not evaluated", never PASS. `docs/reference/eval/baselines.json` names the accepted run per suite, and `tune-check` folds into it. Gate: the compare over deck gate runs 13b and 14b names F-34 as the one flip.
+3. Tier 0 in CI, $0: `eval compare` over the committed baselines and the newest committed run per suite. A fingerprint check replaces `llm-defaults-check`. About one minute of Actions. A trimmed card snapshot in the repo adds the free dry runs of the deck gate. OQ-60 asks the owner about its size.
+4. The golden expectations. Each conversation of `conversations.json` gains `expect`: the slot values at the end. Each deck gate prompt gains `expect` as well. It names the commander, the count, the pool rule, the locked cards, the sets, and the excluded product. The gate reads them as rows, so a wrong slot is a named flip and not a passed count. The 14 terse conversations join the bar here (D-427), and every number rebases at once.
+5. The plan judge. One judge call per built deck on Opus 5 (D-430), with a rubric of four fields on three-point scales. D-66 shaped the M-5 rubric the same way. The rows are `info` until a baseline exists. A bar reads the number and never the prose (lesson 11). OQ-58 asks the owner to confirm the fields.
+6. `cmd/eval sweep`: the paid suites in the order of the eval list, under a cost cap per run (D-4 shape). Each suite keeps its spend guard. It runs on the owner's machine, on the owner's word, as every paid target does today (OQ-57).
+
+What PR-15 does not settle. D-423 sets the fit threshold from the M-5 scores, and the sheet holds 30 scored items of 60 on 2026-09-04. D-66 asks for 50, so the threshold waits on the owner's next 20 scores (OQ-59). The bake-off of D-39 is a paid run the harness makes possible, and it is not part of PR-15.
+
+The free gate of PR-15: every slice's tests, `eval compare` over the committed runs, and Tier 0 green in CI. The paid gate: one sweep through the new command, about $4.60, that reproduces the verdicts of 2026-09-03 and names no flip but F-34.
+
 ## The corpus items of 2026-09-04 (D-510)
 
-Branch `corpus-items` holds the two items the hand-off of 2026-09-04 named, with the F-34 record of #63. The tree is green: Go build, vet, the `-race` suite, golangci-lint, and `make ste-check`.
+PR #64 merged the two items the hand-off of 2026-09-04 named, with the F-34 record of #63. The tree is green: Go build, vet, the `-race` suite, golangci-lint, and `make ste-check`.
 
 The MTGJSON skip. The version stamp of the deck list carries the build day, `5.3.0+20260903`, so the table of yesterday never matched today's stamp. The job fetched 702 deck files every day. `meta.SameProducts` compares the kept products of two deck lists: file name, set code, name, release date, and type. The run reads the stored deck list of the newest table, and it reads no deck file when the products match. The report then names the stored table under `Skipped`.
 
@@ -661,11 +745,11 @@ The chat ran a turn with no card index before D-405. The commander question then
 
 ## Next steps, in order
 
-1. PR-22, the deploy to GCP for invited users (D-310, D-314), on a new branch from `main`. OQ-45 held the store of the allowlist, and D-420 answered it: one Firestore document, `config/allowlist`, written by `make allow EMAIL=...`. Then PR-23.
+1. The owner commits the documents of runs 35 and 9 on `pr-15`, resets `main` to f299289, and merges #65. The section "The PR-15 paid gate, run" holds the commands. Then PR-22, the deploy to GCP for invited users (D-310, D-314), and PR-23. OQ-45 held the store of the allowlist, and D-420 answered it: one Firestore document, `config/allowlist`, written by `make allow EMAIL=...`. Then PR-23.
 2. `make meta-refresh` daily, and `make quality-gate` to a new `QUALITY_GATE_OUT` after each one. Read the pair bars per format and the per-axis table. A weight against the sense of its feature is a defect in the feature or the labels. Do not tune it. The next weekly EDHREC read falls on 2026-09-10 (D-499).
-3. The paid runs come after PR-14C (D-495). First `make quality-judge` over `pr8-deck-gate-run13b.md`, about $0.31. Then the bracket gate for the bracket 5 decks. Then the question gate for the classifier of version 17 (D-496). Ask the owner before each one.
+3. After the merge of #65, every paid run goes through `eval sweep` or its Makefile target. Each one writes its run file beside the document. The bracket rejudge of the bracket 5 decks is still open from the sweep of 2026-09-03. Ask the owner before each one.
 4. Deploy the meta job (D-492). It is one Cloud Run job on `worker -meta`, with a Scheduler cron at 06:00 UTC daily. `TOPDECK_API_KEY` goes to Secret Manager. No infra file in this repo holds the worker's schedule. So the deployment is by hand, as the snapshot worker's is.
-5. PR-20 to PR-23 in order, one gate each. PR-15 stays after Phase 3B.
+5. PR-22 and PR-23 in order after PR-15, one gate each (D-511).
 
 Deck gate run 12 ran on 2026-09-02 under the profile and passed 24 of 24 with its rerun 12b. The read of every mana base is F-33. The land count and the color sources sit in band now, and the nonbasic share still swings from 0 to 36 on the same prompt. No band reads the composition, and F-33 stays open on that point.
 
@@ -765,6 +849,8 @@ CAUTION: the first-paint bar of D-323 is 130 kB gzipped. Read the Vite build rep
 5. Do "Next steps, in order" above. Ask questions as they come up. Record each owner answer in `docs/decisions.md`, and delete the row from `docs/owner-questions.md`.
 6. Before you end, update this file.
 
+A second Mac: `docs/setup-second-mac.md` holds what to carry, what to install, and how to prove the machine.
+
 Six things a fresh session gets wrong without this file.
 
 - Nine targets and the loop script spend money: `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make test-smoke`, and `scripts/autotune.sh`. Ask the owner before each run. `make autotune` is free.
@@ -773,3 +859,4 @@ Six things a fresh session gets wrong without this file.
 - `docker compose up` needs provider keys in `.env` now, and fails fast without them (D-267). `make dev` still starts with no keys, and the fake serves the health role only.
 - The eval and the agent share a model. Every ratio it reports is a floor, not a measurement (D-136).
 - The judge is noisy: two runs of identical code move up to nine bad questions (D-230). One run proves nothing on its own.
+- The sweep's estimate of a step is the cost of its last run file. The deck gate estimate read $2.54 from run 14, and run 16 cost $3.79 with the plan judge and 12 repair turns. A cap set from the estimate stops the sweep before its last step.

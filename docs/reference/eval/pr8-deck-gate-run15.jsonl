@@ -1,0 +1,21 @@
+{"suite":"decks","run_id":"pr8-deck-gate-run15","date":"2026-09-04","commit":"ec058b4","roles":{"generate":{"provider":"openai","model":"gpt-5.6-terra","effort":"medium"},"judge":{"provider":"anthropic","model":"claude-opus-5","effort":"medium"},"repair":{"provider":"openai","model":"gpt-5.6-terra","effort":"medium"}},"snapshot":"2026-09-03","prompts":{"generate":12,"plan_rubric":1},"versions":{"precons":"5.3.0+20260903","quality_model":"20260903T210658Z"},"calls":3,"cost_usd":0.10887174999999999,"seconds":81.551194084,"verdict":"PASS","lower":["blocks","invented_names","false_rules","judge_error","excluded_in_deck","warnings","repaired","buy_cost","deck_cost"]}
+{"item":"25","metric":"built","value":1,"kind":"gate"}
+{"item":"25","metric":"blocks","value":0,"kind":"gate"}
+{"item":"25","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"25","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"25","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"25","metric":"repaired","value":0,"kind":"info"}
+{"item":"25","metric":"cards","value":99,"kind":"info"}
+{"item":"25","metric":"pool","value":152,"kind":"info"}
+{"item":"25","metric":"warnings","value":1,"kind":"info"}
+{"item":"25","metric":"buy_cost","value":0,"kind":"info"}
+{"item":"25","metric":"deck_cost","value":249.94000000000005,"kind":"info"}
+{"item":"25","metric":"plan_plan_coherent","value":0.5,"kind":"info","detail":"partly: There is a discernible mono-black -1/-1 counter / attrition subtheme (Blowfly Infestation, Midnight Banshee, Soul Snuffers, Carnifex Demon, Contagion Clasp, Black Sun's Zenith) that also feeds Syr Konrad's death triggers, but the deck carries no self-mill, no meaningful token/sacrifice engine, and a large pile of generic equipment and single-target removal that does little for Konrad, so the pieces only loosely converge."}
+{"item":"25","metric":"plan_theme_fit","value":0,"kind":"info","detail":"no: The request was an Avengers superhero deck, and this is a mono-black Syr Konrad list full of Lord of the Rings, Final Fantasy, and Avatar cards with no Marvel or superhero identity whatsoever."}
+{"item":"25","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: The mono-black mana base and curve are functional and playable, but the win path is vague — few evasive or large threats, no assembled Konrad loop — and several wipes (Black Sun's Zenith, Midnight Banshee, Massacre Girl) actively fight the deck's own small creatures."}
+{"item":"25","metric":"plan_summary_honest","value":0,"kind":"info","detail":"no: The summary describes a generic 'creature-heavy board pressing with larger threats' plan and never mentions Syr Konrad's drain-on-death engine or the -1/-1 counter subtheme, and the claim of a creature-heavy board is false for a list with roughly twenty creatures and dozens of artifacts and removal spells."}
+{"item":"25","metric":"plan_score","value":0.25,"kind":"info"}
+{"item":"25","metric":"grade","value":0.4713,"kind":"info","detail":"typical"}
+{"item":"25","metric":"excluded_in_deck","value":0,"kind":"gate","detail":"Avengers Assemble"}
+{"item":"25","metric":"excluded","value":57,"kind":"info"}
+{"item":"25","metric":"spare","value":27,"kind":"info"}

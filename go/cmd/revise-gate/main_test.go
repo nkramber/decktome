@@ -9,13 +9,14 @@ import (
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
+	"github.com/nkramber/mtg-deck-builder/go/internal/evalrun"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 )
 
 func render(t *testing.T, outcomes []outcome) (bool, string) {
 	t.Helper()
 	var b bytes.Buffer
-	pass := report(&b, outcomes, llm.NewAccumulator(nil), cards.NewIndex(nil, nil, nil, time.Time{}), time.Second)
+	pass := report(&b, outcomes, llm.NewAccumulator(nil), cards.NewIndex(nil, nil, nil, time.Time{}), time.Second, evalrun.New("revise", "test"))
 	doc := b.String()
 	want := "Verdict: FAIL"
 	if pass {
