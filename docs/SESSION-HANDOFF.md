@@ -18,7 +18,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 - PR-19, the chat and build experience, is merged (D-432 to D-458, #55 and #56). It holds the land-swap fix of the revision turn (F-31, D-448), the split land bucket of the shortlist (F-32, D-450), and the one-chat-one-deck delete (D-456). Branches `pr-19` and `tile-fixes` can go.
 - The tree is green on `nits-and-fixes`: Go build, vet, `-race` tests, golangci-lint, web lint, typecheck, and 219 web tests. The emulator tests of the collection store pass, and `make lint` reports zero findings.
 - Question gate run 31 passes every bar. The set deck gate passes 6 of 6.
-- Every gate stands and passes: question gate 32, the set deck gate, deck gate 11, and revise gate 7.
+- Every gate stands and passes: question gate 33, the set deck gate, deck gate 14 with 14b, and revise gate 8. The tier judge bar of PR-14B stays open at 8 of 24 (judge run 3).
 - PR-9 is out of the MVP (D-256). Phase 3B comes before Phase 4 (D-316).
 
 CAUTION: branch `pr-17` carries eight concerns. They are the contract, the Go side, the reference design, and the layout of D-331. They are also the Build menu, the one deck screen, the pool picker, and the speed of the app. Guardrail 10 asks for one. The owner chose to ship it whole (D-344).
@@ -434,6 +434,23 @@ CAUTION: Moxfield answers 403 from Cloudflare to a plain client on the deck page
 CAUTION: the Topdeck.gg reader follows the docs alone. No session has read a live answer, because no key exists (OQ-54). The `deckObj` shape is the documented sketch, and the text list is the fallback. Read the first live answer before you trust the counts.
 
 CAUTION: the quality gate has three bars in the code and one outside it. The pair bars and the bracket 5 offer bar are in `cmd/quality-gate`. The judge bar over the golden decks reads the next deck gate run, whose summaries carry the tier. That run costs about $2.24, so ask the owner first.
+
+## The paid runs of 2026-09-03, after PR-21
+
+The owner opened the paid runs once PR-21 merged, in the order of the eval list. A result that does not make sense, or is not good, stops the sweep. Three ran, $0.60 together.
+
+- Question gate run 33, `docs/reference/pr7-question-gate-run33.md`, $0.18, 20 minutes. PASS: 27 of 27 counted conversations catalog-only, 119 questions, 98 closed a slot, no invented question, no dead end. Run 32 asked 114 and closed 90. The differences sit in 19 of 107 conversations, one question each, both ways. The one precon conversation still takes the upgrade path, and no exclusion sentence appears, so classifier version 17 reads "upgrade my precon" as before (D-496).
+- Question eval run 33, `docs/reference/pr7-question-eval-run33.md`, $0.10, 13 minutes. The bad-question ratio reads 10.3 percent on a holdout of 117, against 8.8 percent on 125 in run 32. Both runs hold the same 22 unwarranted questions. `tune-check` accepts it inside the margin of nine, and no counter fell. The colors row leads the bad questions in both runs.
+- Tier judge run 3, `docs/reference/pr14b-quality-judge-run3.md`, $0.32, three minutes, with the run 12 model. FAIL on the bar: the judge agreed on 8 of 24, against 4 of 24 in run 2, with 5 off by one rung. The model grades five decks typical now: the blink deck, the Modern tempo deck, the two precon upgrades, and the two-family set deck. The judge agrees on all five. The other 19 the model grades bad, and the judge reads them as typical, baseline, or good, the corpus finding of D-488. The judge itself moved on four decks between the runs.
+
+The owner chose the deck gate next and left the bracket rejudge for later.
+
+- Deck gate run 14, `docs/reference/pr8-deck-gate-run14.md`, $2.54, 35 minutes, 62 calls. FAIL on one deck of 24: the Goblin Storm precon upgrade of prompt 17 came back with no cards and a `deck_size` block. No invented name reached the user, and no summary stated a false rule. The other 23 decks passed every block check, with 9 repair turns against 13 in run 13b, and the six set prompts read as before. The grade line reads 18 bad, 2 baseline, and 4 typical under the run 12 model.
+- The cause is a defect and not the model's variance alone (D-509). The bracket cut of D-468 drops a forbidden shortlist card and keeps only the commanders and the locked cards. So precon cards leave the pool too. The share rule of D-218 still asked for 67 of 78 names. The repair turn read fewer marked names, gave up, and answered no cards. The builder then replaced the legal first deck with the empty one. Branch `deck-gate-fixes` holds the two fixes. The share counts the precon names the pool holds. A repair with a block or a miss after a clean pass leaves the clean pass in place, with the note `repair_kept_earlier`. `generate.TestPreconShareCountsThePoolAlone` and `generate.TestBuildKeepsTheLegalDeckWhenTheRepairFails` pin both.
+- Deck gate run 14b, `docs/reference/pr8-deck-gate-run14b.md`, $0.13, two minutes, reran prompt 17 alone with the fix. PASS: 99 cards and no block. The repair turn ran on the two profile findings and the combo, and it kept the share. The model grades the deck typical. Run 14 with 14b reads 24 of 24, as runs 12 and 13 did with their reruns.
+- Revise gate run 8, `docs/reference/pr12b-revise-gate-run8.md`, $1.23, 16 minutes, 33 calls. PASS: 11 of 11 turns met their bar. The revised decks kept 97 to 100 percent of their base, against 96 to 100 in run 7. The cost rose from $0.74 on 25 calls. Five turns bought a repair turn against two in run 7, four of them for a profile finding of PR-14A. On revision 9, the land swap of the Karlov deck, the repair answered a worse deck. The deck before it stood, with the note `repair_kept_earlier` (D-509), and the turn passed with 100 percent kept.
+
+The sweep is complete. Every row of the eval list ran once, for $4.60 together, and one defect came out of it, F-34, with its fix on branch `deck-gate-fixes`.
 
 ## PR-21, the share link and the print view, merged (2026-09-03, #62)
 
