@@ -1,0 +1,52 @@
+{"suite":"tier-judge","run_id":"pr14b-quality-judge-run4","date":"2026-09-04","commit":"ec058b4","roles":{"judge":{"provider":"anthropic","model":"claude-opus-5","effort":"medium"}},"snapshot":"2026-09-03","versions":{"quality_model":"20260903T210658Z","source":"pr8-deck-gate-run16.md"},"calls":25,"cost_usd":0.3610587500000001,"seconds":208.278550333,"verdict":"FAIL"}
+{"item":"1","metric":"judged","value":1,"kind":"gate"}
+{"item":"1","metric":"judge_agrees","value":0,"kind":"info","detail":"graded bad, judged typical"}
+{"item":"2","metric":"judged","value":1,"kind":"gate"}
+{"item":"2","metric":"judge_agrees","value":0,"kind":"info","detail":"graded typical, judged good"}
+{"item":"3","metric":"judged","value":1,"kind":"gate"}
+{"item":"3","metric":"judge_agrees","value":0,"kind":"info","detail":"graded bad, judged typical"}
+{"item":"4","metric":"judged","value":1,"kind":"gate"}
+{"item":"4","metric":"judge_agrees","value":0,"kind":"info","detail":"graded bad, judged typical"}
+{"item":"5","metric":"judged","value":1,"kind":"gate"}
+{"item":"5","metric":"judge_agrees","value":1,"kind":"info","detail":"graded typical, judged typical"}
+{"item":"6","metric":"judged","value":1,"kind":"gate"}
+{"item":"6","metric":"judge_agrees","value":1,"kind":"info","detail":"graded typical, judged typical"}
+{"item":"7","metric":"judged","value":1,"kind":"gate"}
+{"item":"7","metric":"judge_agrees","value":1,"kind":"info","detail":"graded bad, judged bad"}
+{"item":"8","metric":"judged","value":1,"kind":"gate"}
+{"item":"8","metric":"judge_agrees","value":1,"kind":"info","detail":"graded bad, judged bad"}
+{"item":"9","metric":"judged","value":1,"kind":"gate"}
+{"item":"9","metric":"judge_agrees","value":0,"kind":"info","detail":"graded bad, judged baseline"}
+{"item":"10","metric":"judged","value":1,"kind":"gate"}
+{"item":"10","metric":"judge_agrees","value":0,"kind":"info","detail":"graded baseline, judged good"}
+{"item":"11","metric":"judged","value":1,"kind":"gate"}
+{"item":"11","metric":"judge_agrees","value":0,"kind":"info","detail":"graded bad, judged typical"}
+{"item":"12","metric":"judged","value":1,"kind":"gate"}
+{"item":"12","metric":"judge_agrees","value":0,"kind":"info","detail":"graded bad, judged typical"}
+{"item":"13","metric":"judged","value":1,"kind":"gate"}
+{"item":"13","metric":"judge_agrees","value":0,"kind":"info","detail":"graded bad, judged typical"}
+{"item":"14","metric":"judged","value":1,"kind":"gate"}
+{"item":"14","metric":"judge_agrees","value":0,"kind":"info","detail":"graded bad, judged good"}
+{"item":"15","metric":"judged","value":1,"kind":"gate"}
+{"item":"15","metric":"judge_agrees","value":0,"kind":"info","detail":"graded bad, judged typical"}
+{"item":"16","metric":"judged","value":1,"kind":"gate"}
+{"item":"16","metric":"judge_agrees","value":0,"kind":"info","detail":"graded bad, judged typical"}
+{"item":"17","metric":"judged","value":1,"kind":"gate"}
+{"item":"17","metric":"judge_agrees","value":1,"kind":"info","detail":"graded typical, judged typical"}
+{"item":"18","metric":"judged","value":1,"kind":"gate"}
+{"item":"18","metric":"judge_agrees","value":0,"kind":"info","detail":"graded typical, judged baseline"}
+{"item":"19","metric":"judged","value":1,"kind":"gate"}
+{"item":"19","metric":"judge_agrees","value":1,"kind":"info","detail":"graded bad, judged bad"}
+{"item":"20","metric":"judged","value":1,"kind":"gate"}
+{"item":"20","metric":"judge_agrees","value":0,"kind":"info","detail":"graded bad, judged baseline"}
+{"item":"21","metric":"judged","value":1,"kind":"gate"}
+{"item":"21","metric":"judge_agrees","value":0,"kind":"info","detail":"graded bad, judged typical"}
+{"item":"22","metric":"judged","value":1,"kind":"gate"}
+{"item":"22","metric":"judge_agrees","value":0,"kind":"info","detail":"graded bad, judged typical"}
+{"item":"23","metric":"judged","value":1,"kind":"gate"}
+{"item":"23","metric":"judge_agrees","value":1,"kind":"info","detail":"graded typical, judged typical"}
+{"item":"24","metric":"judged","value":1,"kind":"gate"}
+{"item":"24","metric":"judge_agrees","value":0,"kind":"info","detail":"graded baseline, judged bad"}
+{"item":"25","metric":"judged","value":1,"kind":"gate"}
+{"item":"25","metric":"judge_agrees","value":0,"kind":"info","detail":"graded typical, judged good"}
+{"item":"suite","metric":"judge_agreement","value":28.000000000000004,"kind":"gate","detail":"7 of 25, the bar is 80"}

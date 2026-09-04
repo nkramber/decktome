@@ -85,10 +85,11 @@ func report(w io.Writer, rs []result, acc *llm.Accumulator, idx *cards.Index, to
 	_, _ = fmt.Fprintf(w, "| Summaries that state a rule of the game | %d |\n", statesRule)
 	_, _ = fmt.Fprintf(w, "| Summaries that state a FALSE rule | %d |\n", falseRules)
 	_, _ = fmt.Fprintf(w, "| Judge errors | %d |\n", judgeErrs)
-	planJudged, planScore := planTotals(rs)
+	planJudged, planScore, planEmpty := planTotals(rs)
 	_, _ = fmt.Fprintf(w, "| Decks the plan judge read (PR-15, information) | %d |\n", planJudged)
 	if planJudged > 0 {
 		_, _ = fmt.Fprintf(w, "| Mean plan score, 0 to 1 | %.2f |\n", planScore)
+		_, _ = fmt.Fprintf(w, "| Plan reasons the judge left empty | %d |\n", planEmpty)
 	}
 	_, _ = fmt.Fprintf(w, "| Errors | %d |\n", errs)
 	_, _ = fmt.Fprintf(w, "| Prompt version | %d |\n", generate.PromptVersion)
@@ -329,6 +330,7 @@ func recordRows(run *evalrun.Run, rs []result) {
 				run.Info(item, "plan_"+f, g.Value(), g.Grade+": "+g.Why)
 			}
 			run.Info(item, "plan_score", r.plan.Score(), "")
+			run.Info(item, "plan_reasons_empty", float64(r.plan.EmptyReasons()), "")
 		} else if r.planErr != nil {
 			run.Info(item, "plan_judge_error", 1, r.planErr.Error())
 		}
@@ -370,17 +372,19 @@ func recordRows(run *evalrun.Run, rs []result) {
 	}
 }
 
-// planTotals counts the decks the plan judge read and their mean score.
-func planTotals(rs []result) (judged int, mean float64) {
+// planTotals counts the decks the plan judge read, their mean score, and
+// the reasons it left empty.
+func planTotals(rs []result) (judged int, mean float64, empty int) {
 	sum := 0.0
 	for _, r := range rs {
 		if r.plan != nil {
 			judged++
 			sum += r.plan.Score()
+			empty += r.plan.EmptyReasons()
 		}
 	}
 	if judged > 0 {
 		mean = sum / float64(judged)
 	}
-	return judged, mean
+	return judged, mean, empty
 }

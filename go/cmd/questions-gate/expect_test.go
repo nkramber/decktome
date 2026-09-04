@@ -8,26 +8,24 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/questions"
 )
 
-func names(id string) string {
-	return map[string]string{"o-karlov": "Karlov of the Ghost Council", "o-bond": "Sanguine Bond"}[id]
-}
-
 // TestSlotValuesWriteTheVocabulary pins the words an expectation uses.
 func TestSlotValuesWriteTheVocabulary(t *testing.T) {
 	st := questions.NewState(true)
 	st.Slots = &mtgv1.Slots{
-		Format:             &mtgv1.Format{Id: mtgv1.FormatId_FORMAT_ID_COMMANDER},
-		Colors:             []mtgv1.Color{mtgv1.Color_COLOR_B, mtgv1.Color_COLOR_W},
-		Power:              &mtgv1.PowerLevel{Level: &mtgv1.PowerLevel_Bracket{Bracket: 3}},
-		PoolRule:           mtgv1.PoolRule_POOL_RULE_OWNED_FIRST,
-		CommanderOracleIds: []string{"o-karlov"},
-		BudgetUsd:          50,
-		BudgetScope:        mtgv1.BudgetScope_BUDGET_SCOPE_CARDS_TO_BUY,
-		Theme:              "lifegain",
-		LockedOracleIds:    []string{"o-bond"},
-		SetCodes:           []string{"hob", "hoc"},
+		Format:      &mtgv1.Format{Id: mtgv1.FormatId_FORMAT_ID_COMMANDER},
+		Colors:      []mtgv1.Color{mtgv1.Color_COLOR_B, mtgv1.Color_COLOR_W},
+		Power:       &mtgv1.PowerLevel{Level: &mtgv1.PowerLevel_Bracket{Bracket: 3}},
+		PoolRule:    mtgv1.PoolRule_POOL_RULE_OWNED_FIRST,
+		BudgetUsd:   50,
+		BudgetScope: mtgv1.BudgetScope_BUDGET_SCOPE_CARDS_TO_BUY,
+		Theme:       "lifegain",
+		SetCodes:    []string{"hob", "hoc"},
 	}
-	got := slotValues(st, names)
+	// The names live on the state, and a locked name that is also the
+	// commander is not a locked card (D-70).
+	st.CommanderNames = []string{"Karlov of the Ghost Council"}
+	st.LockedNames = []string{"Karlov of the Ghost Council", "Sanguine Bond"}
+	got := slotValues(st)
 	want := map[string]string{
 		"format": "commander", "colors": "WB", "power": "bracket 3", "pool_rule": "owned_first",
 		"commander": "Karlov of the Ghost Council", "budget": "50 to buy", "theme": "lifegain",
@@ -46,9 +44,23 @@ func TestSlotValuesWriteTheVocabulary(t *testing.T) {
 		BudgetUsd:  300,
 		SlotStates: map[string]mtgv1.SlotState{"commander": mtgv1.SlotState_SLOT_STATE_SKIPPED},
 	}
-	got = slotValues(sixty, names)
+	got = slotValues(sixty)
 	if got["format"] != "modern" || got["power"] != "tournament" || got["pool_rule"] != "any_card" || got["budget"] != "300" || got["commander"] != "delegated" || got["colors"] != "" {
 		t.Errorf("sixty = %v", got)
+	}
+	// A reader with no collection never gets the pool question, and the
+	// build reads any-card (D-37). A reader with one and no answer reads
+	// none.
+	if got := slotValues(questions.NewState(false)); got["pool_rule"] != "any_card" {
+		t.Errorf("no collection = %q, want any_card", got["pool_rule"])
+	}
+	if got := slotValues(questions.NewState(true)); got["pool_rule"] != "" {
+		t.Errorf("a collection and no answer = %q, want none", got["pool_rule"])
+	}
+	partners := questions.NewState(true)
+	partners.CommanderNames = []string{"Thrasios, Triton Hero", "Tymna the Weaver"}
+	if got := slotValues(partners); got["commander"] != "Thrasios, Triton Hero + Tymna the Weaver" {
+		t.Errorf("partners = %q", got["commander"])
 	}
 }
 

@@ -68,3 +68,25 @@ func TestJudgePlanRefusesAWordOutsideTheScale(t *testing.T) {
 		t.Error("a word outside the scale reads as 0, never more")
 	}
 }
+
+// TestPlanReasonEmpty: a blank reason and the word "placeholder" count as
+// no reason, and a sentence counts as one.
+func TestPlanReasonEmpty(t *testing.T) {
+	for _, why := range []string{"", "  ", "placeholder", "Placeholder"} {
+		if !(PlanGrade{Grade: "yes", Why: why}).ReasonEmpty() {
+			t.Errorf("%q must read as no reason", why)
+		}
+	}
+	if (PlanGrade{Grade: "no", Why: "the deck has no lands"}).ReasonEmpty() {
+		t.Error("a sentence is a reason")
+	}
+	j := PlanJudgement{
+		PlanCoherent:  PlanGrade{Grade: "yes", Why: "one plan"},
+		ThemeFit:      PlanGrade{Grade: "yes", Why: "placeholder"},
+		UsefulAsBuilt: PlanGrade{Grade: "yes", Why: ""},
+		SummaryHonest: PlanGrade{Grade: "yes", Why: "plain"},
+	}
+	if n := j.EmptyReasons(); n != 2 {
+		t.Errorf("EmptyReasons = %d, want 2", n)
+	}
+}

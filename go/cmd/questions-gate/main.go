@@ -274,10 +274,18 @@ func run(collectionPath string, limit int, only string, runOut string, w io.Writ
 		fmt.Fprintf(os.Stderr, "%2d/%d %-40s catalog=%d invented=%d%s\n",
 			conv.ID, len(list), conv.Name, res.Coverage.Catalog, res.Coverage.Invented, res.kind())
 	}
-	if err := write(w, file, results, cov, acc.Report(), client.Config(), ownedNote, time.Since(started), rec); err != nil {
+	werr := write(w, file, results, cov, acc.Report(), client.Config(), ownedNote, time.Since(started), rec)
+	return writeRunThen(runOut, rec, werr)
+}
+
+// writeRunThen writes the run file and then returns the verdict error of
+// the document. A FAIL is a run too, and the compare reads its rows
+// (PR-15), so the file lands before the exit code.
+func writeRunThen(runOut string, rec *evalrun.Run, werr error) error {
+	if err := evalrun.WriteFile(runOut, rec); err != nil {
 		return err
 	}
-	return evalrun.WriteFile(runOut, rec)
+	return werr
 }
 
 // coverages splits the M-4 counts three ways: the counted gate
@@ -429,15 +437,7 @@ func runOne(cat *questions.Catalog, client *llm.Client, idx *cards.Index, builde
 	for _, key := range builtSlots {
 		res.Slots[key] = slotState(st, key)
 	}
-	res.Values = slotValues(st, func(id string) string {
-		if idx == nil {
-			return ""
-		}
-		if c, ok := idx.ByOracleID(id); ok {
-			return c.GetName()
-		}
-		return ""
-	})
+	res.Values = slotValues(st)
 	res.Misses = checkExpect(conv.Expect, res.Values)
 	for _, keys := range required(st, conv.Collection) {
 		answered := false

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
@@ -18,7 +19,7 @@ import (
 
 // PlanRubricVersion changes when a field or its words change. A change
 // starts a new epoch of the plan rows.
-const PlanRubricVersion = 1
+const PlanRubricVersion = 2
 
 const planJudgeInstructions = `You read one deck a deck builder made for a person, with the request the person wrote and the summary the builder wrote for them. You grade the deck on four fields. Each field takes one of three words: no, partly, or yes.
 
@@ -27,9 +28,12 @@ const planJudgeInstructions = `You read one deck a deck builder made for a perso
 - useful_as_built: a person can pick this deck up and play it as it stands. A deck with a broken mana base, a curve that never lands its spells, or too few ways to win reads no.
 - summary_honest: the summary claims nothing the deck lacks and hides nothing the deck does. A summary that names a strategy the list does not carry reads no.
 
-Give one sentence of reason per field. Judge the deck as it is. Do not grade the power of the deck against tournament lists: that is the job of another judge.`
+Give one sentence of reason per field. Judge the deck as it is. Do not grade the power of the deck against tournament lists: that is the job of another judge. Do not grade the format legality, the color identity, or the card counts: code checked them against the card data of the run date before you read the deck, and your knowledge of the card pool can be older than that data.`
 
-const planGradeSchema = `{"type": "object", "additionalProperties": false, "required": ["grade", "why"], "properties": {"grade": {"type": "string", "enum": ["no", "partly", "yes"]}, "why": {"type": "string"}}}`
+// The reason comes before the grade in the schema. With the grade first
+// the judge wrote "placeholder" as the reason of the last field in 10 of
+// 25 decks (deck gate run 16), and a reason written first is a reason.
+const planGradeSchema = `{"type": "object", "additionalProperties": false, "required": ["why", "grade"], "properties": {"why": {"type": "string"}, "grade": {"type": "string", "enum": ["no", "partly", "yes"]}}}`
 
 var planJudgeSchema = `{
   "type": "object",
@@ -60,6 +64,15 @@ func (g PlanGrade) Value() float64 {
 	return 0
 }
 
+// ReasonEmpty reads a reason the judge did not write: blank, or the one
+// word "placeholder". A grade with no reason still counts, because a bar
+// reads the number and never the prose (lesson 11), and the count of
+// empty reasons is a number of its own.
+func (g PlanGrade) ReasonEmpty() bool {
+	w := strings.ToLower(strings.TrimSpace(g.Why))
+	return w == "" || w == "placeholder"
+}
+
 // PlanJudgement is the judge's four grades for one deck.
 type PlanJudgement struct {
 	PlanCoherent  PlanGrade `json:"plan_coherent"`
@@ -84,6 +97,17 @@ func (j PlanJudgement) Grade(field string) PlanGrade {
 		return j.SummaryHonest
 	}
 	return PlanGrade{}
+}
+
+// EmptyReasons counts the fields whose reason the judge did not write.
+func (j PlanJudgement) EmptyReasons() int {
+	n := 0
+	for _, f := range PlanFields {
+		if j.Grade(f).ReasonEmpty() {
+			n++
+		}
+	}
+	return n
 }
 
 // Score is the mean of the four values, 0 to 1.

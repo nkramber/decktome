@@ -38,7 +38,6 @@
         "power": "bracket 3",
         "pool_rule": "owned_first",
         "commander": "Brago, King Eternal",
-        "budget": "40",
         "theme": "blink"
       }
     },
@@ -136,7 +135,7 @@
         "power": "bracket 3",
         "pool_rule": "owned_first",
         "commander": "Bruvac the Grandiloquent",
-        "budget": "100 to buy",
+        "budget": "100",
         "theme": "mill"
       }
     },
@@ -155,8 +154,7 @@
         "colors": "WU",
         "power": "bracket 3",
         "pool_rule": "owned_first",
-        "commander": "Brago, King Eternal",
-        "budget": "30"
+        "commander": "Brago, King Eternal"
       }
     },
     {

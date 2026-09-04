@@ -267,7 +267,9 @@ func check(w io.Writer, dir string, margin float64, info bool) (int, error) {
 		}
 		newest := newestRun(headers, suite, files)
 		if newest == "" {
-			p("## Suite `%s`: PASS\n\nThe baseline `%s` stands alone, with no newer run.\n\n", suite, base.Header.RunID)
+			// Nothing was compared, so the suite reads NOT EVALUATED and never
+			// PASS. The exit code stays green: nothing regressed.
+			p("## Suite `%s`: NOT EVALUATED\n\nThe baseline `%s` stands alone, with no newer run.\n\n", suite, base.Header.RunID)
 			continue
 		}
 		next, err := evalrun.ReadFile(filepath.Join(dir, newest))

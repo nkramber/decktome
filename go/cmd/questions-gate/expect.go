@@ -13,7 +13,7 @@ import (
 // the values its slots must end with, and the gate reads each one as a
 // row. A wrong slot is then a named flip, and a counted conversation
 // with a miss fails the gate. The vocabulary is the one slotValues
-// writes, and TestConversationExpectations pins it.
+// writes, and TestSlotValuesWriteTheVocabulary pins it.
 //
 // Two words are special. "*" asks for any value, for a pick the pool
 // made. "delegated" on the commander asks for a skipped slot with no
@@ -24,9 +24,12 @@ import (
 // expectKeys are the keys an expectation may name, in report order.
 var expectKeys = []string{"format", "colors", "power", "pool_rule", "commander", "budget", "theme", "locked", "sets"}
 
-// slotValues renders the settled slots of a conversation as words.
-// names maps an Oracle id to a card name.
-func slotValues(st *questions.State, names func(string) string) map[string]string {
+// slotValues renders the settled slots of a conversation as words. The
+// commander and the locked cards are names on the state: the classifier
+// records names, and the build resolves them to cards. A reader with no
+// collection never gets the pool question, and the build reads any-card
+// for them (D-37), so the renderer writes that word.
+func slotValues(st *questions.State) map[string]string {
 	out := map[string]string{}
 	s := st.Slots
 	if s == nil {
@@ -59,8 +62,12 @@ func slotValues(st *questions.State, names func(string) string) map[string]strin
 		out["pool_rule"] = "owned_only"
 	case mtgv1.PoolRule_POOL_RULE_ANY_CARD:
 		out["pool_rule"] = "any_card"
+	default:
+		if !st.Ctx.HasCollection {
+			out["pool_rule"] = "any_card"
+		}
 	}
-	out["commander"] = joinNames(s.GetCommanderOracleIds(), names, " + ")
+	out["commander"] = strings.Join(st.CommanderNames, " + ")
 	if out["commander"] == "" && s.GetSlotStates()["commander"] == mtgv1.SlotState_SLOT_STATE_SKIPPED {
 		out["commander"] = "delegated"
 	}
@@ -74,7 +81,7 @@ func slotValues(st *questions.State, names func(string) string) map[string]strin
 		}
 	}
 	out["theme"] = strings.TrimSpace(s.GetTheme())
-	out["locked"] = joinNames(s.GetLockedOracleIds(), names, ", ")
+	out["locked"] = strings.Join(st.LockedCards(), ", ")
 	out["sets"] = strings.Join(s.GetSetCodes(), ",")
 	return out
 }
@@ -94,18 +101,6 @@ func colorLetters(colors []mtgv1.Color) string {
 		}
 	}
 	return s.String()
-}
-
-func joinNames(ids []string, names func(string) string, sep string) string {
-	var out []string
-	for _, id := range ids {
-		if n := names(id); n != "" {
-			out = append(out, n)
-		} else {
-			out = append(out, id)
-		}
-	}
-	return strings.Join(out, sep)
 }
 
 // checkExpect reads the values against the expectation and names every

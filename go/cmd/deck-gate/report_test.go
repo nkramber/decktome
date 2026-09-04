@@ -317,7 +317,7 @@ func TestPlanJudgeRowsAreInformation(t *testing.T) {
 		PlanCoherent:  generate.PlanGrade{Grade: "yes", Why: "one plan"},
 		ThemeFit:      generate.PlanGrade{Grade: "partly", Why: "half the theme"},
 		UsefulAsBuilt: generate.PlanGrade{Grade: "no", Why: "no lands"},
-		SummaryHonest: generate.PlanGrade{Grade: "yes", Why: "plain"},
+		SummaryHonest: generate.PlanGrade{Grade: "yes", Why: "placeholder"},
 	}
 	failed := goodResult()
 	failed.prompt.ID = 2
@@ -333,6 +333,7 @@ func TestPlanJudgeRowsAreInformation(t *testing.T) {
 		"- PLAN plan_coherent=yes: one plan\n", "- PLAN useful_as_built=no: no lands\n",
 		"- PLAN JUDGE ERROR: the judge timed out\n",
 		"| Decks the plan judge read (PR-15, information) | 1 |\n", "| Mean plan score, 0 to 1 | 0.62 |\n",
+		"| Plan reasons the judge left empty | 1 |\n",
 	} {
 		if !strings.Contains(doc, want) {
 			t.Errorf("the document lacks %q:\n%s", want, doc)
@@ -347,6 +348,9 @@ func TestPlanJudgeRowsAreInformation(t *testing.T) {
 	}
 	if r := got["1/plan_score"]; r.Value != 0.625 {
 		t.Errorf("plan_score = %v, want the mean of 1, 0.5, 0, 1", r.Value)
+	}
+	if r := got["1/plan_reasons_empty"]; r.Value != 1 || r.Kind != evalrun.KindInfo {
+		t.Errorf("plan_reasons_empty row = %+v, want the one placeholder", r)
 	}
 	if r := got["2/plan_judge_error"]; r.Value != 1 || r.Kind != evalrun.KindInfo {
 		t.Errorf("plan_judge_error row = %+v", r)
