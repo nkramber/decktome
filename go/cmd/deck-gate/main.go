@@ -146,6 +146,7 @@ func run() error {
 		return err
 	}
 	run := evalrun.New("decks", evalrun.RunID(*runOut))
+	run.Header.Only = *only
 	run.Header.Prompts["generate"] = generate.PromptVersion
 	run.Header.Prompts["plan_rubric"] = generate.PlanRubricVersion
 	run.LowerIsBetter("blocks", "invented_names", "false_rules", "judge_error", "excluded_in_deck", "warnings", "repaired", "buy_cost", "deck_cost")

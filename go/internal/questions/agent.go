@@ -503,6 +503,11 @@ type classifyOut struct {
 	// reader's own words. A set is a constraint the app applies now, so
 	// the words no longer reach the theme alone (D-373).
 	SetNames []string `json:"set_names"`
+	// SetGroups are the franchises the reader names as a group of sets,
+	// "sets with Marvel characters", in the reader's own words. A group
+	// reaches every family of the franchise, and one product name is a
+	// set and never a group (D-525).
+	SetGroups []string `json:"set_groups"`
 	// PreconNames are the precons the reader wants the deck to use no
 	// card of, in the reader's own words (D-496). An upgrade names no
 	// precon here: that is the word rule of D-113.
@@ -1376,13 +1381,14 @@ func (a *Agent) applyColors(st *State, out classifyOut) {
 // changes nothing: a set the reader gave before stays until they replace
 // it, which is the rule every other slot follows.
 func (a *Agent) applySets(st *State, out classifyOut) {
-	if len(out.SetNames) == 0 {
+	if len(out.SetNames) == 0 && len(out.SetGroups) == 0 {
 		return
 	}
 	r, ok := a.hints.(SetResolver)
 	if !ok {
 		return
 	}
+	phrases := append(append([]string(nil), out.SetNames...), out.SetGroups...)
 	var codes, names []string
 	var unresolved string
 	var options []string
@@ -1402,6 +1408,23 @@ func (a *Agent) applySets(st *State, out classifyOut) {
 		codes = append(codes, gotCodes...)
 		names = append(names, gotNames...)
 	}
+	// A group reaches every family of a franchise (D-525). A group the
+	// snapshot does not know asks the set row, as an unknown name does,
+	// and the row offers no option for it.
+	for _, phrase := range out.SetGroups {
+		if strings.TrimSpace(phrase) == "" {
+			continue
+		}
+		gotCodes, gotNames, done := r.ResolveSetGroup(phrase)
+		if !done {
+			if unresolved == "" {
+				unresolved, options = phrase, nil
+			}
+			continue
+		}
+		codes = append(codes, gotCodes...)
+		names = append(names, gotNames...)
+	}
 	// A message can name two sets and resolve one of them. The resolved
 	// set fills the slot, and the row still asks about the other. Both
 	// halves run, so neither answer is dropped in silence (D-376).
@@ -1410,9 +1433,9 @@ func (a *Agent) applySets(st *State, out classifyOut) {
 		names = append(names, st.SetNames...)
 		codes, names = dedupeSets(codes, names)
 		a.log.Info("the deck is limited to the sets the reader named",
-			"session", st.SessionID, "phrase", strings.Join(out.SetNames, ", "),
+			"session", st.SessionID, "phrase", strings.Join(phrases, ", "),
 			"sets", strings.Join(codes, ","))
-		st.SetLimit(strings.Join(out.SetNames, ", "), codes, names)
+		st.SetLimit(strings.Join(phrases, ", "), codes, names)
 		// The reader hears which sets the words became. "The Hobbit"
 		// is two sets, and a red mark on a card explains nothing until
 		// the reader knows what the limit is (D-390).

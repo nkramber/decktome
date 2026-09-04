@@ -346,6 +346,20 @@ func (h *CandidateHints) ResolveSet(phrase string) (codes, names, options []stri
 	return nil, nil, nil, false
 }
 
+// ResolveSetGroup maps a franchise word onto every family it names
+// (D-525). It answers the SetResolver contract for a group request.
+func (h *CandidateHints) ResolveSetGroup(phrase string) (codes, names []string, ok bool) {
+	if h == nil || h.Index == nil {
+		return nil, nil, false
+	}
+	tbl := h.Index.Sets()
+	codes = tbl.ResolveGroup(phrase)
+	if len(codes) == 0 {
+		return nil, nil, false
+	}
+	return codes, tbl.Names(codes), true
+}
+
 // printingCounts reads the collection's copies per printing once.
 func (h *CandidateHints) printingCounts() map[string]int32 {
 	if h.printingsDone {

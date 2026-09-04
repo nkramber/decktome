@@ -100,6 +100,7 @@ func run() error {
 		return err
 	}
 	run := evalrun.New("bracket", evalrun.RunID(*runOut))
+	run.Header.Only = *only
 	run.Header.Prompts["generate"] = generate.PromptVersion
 	run.LowerIsBetter("blocks", "off_band", "content_violations", "judge_error", "repaired")
 	quiet := gatekit.Quiet()

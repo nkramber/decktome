@@ -36,7 +36,7 @@ CAUTION: `mtg-carry.tgz` holds your API keys. Move it with AirDrop or a USB driv
 4. Run `gh auth login`. Choose GitHub.com, then SSH, and let it upload a new key.
 5. Run `ssh -T git@github.com`. The answer names your account.
 6. Run `git clone git@github.com:nkramber/mtg-deck-builder.git ~/Repos/mtg-deck-builder`.
-7. Run `cd ~/Repos/mtg-deck-builder`, then `git checkout pr-15`.
+7. Run `cd ~/Repos/mtg-deck-builder`. The work continues on `main`, and every new branch starts from it (D-494).
 
 Keep the path `~/Repos/mtg-deck-builder`. Claude Code names its memory directory after the repo path, and section 6 explains the rule.
 
@@ -122,10 +122,9 @@ Ask before every paid run, and write every run to a new document (D-65). Each ta
 
 ## 8. Where the work stands on 2026-09-04
 
-- Branch `pr-15` is PR #65, the eval harness, and its paid gate passed on every lane (D-514 to D-516). The documents of question gate run 35 and revise gate run 9 wait for a commit on `pr-15`.
-- `main` on GitHub carries a broken commit, `dbbcb4e`, with conflict markers in eight files. The owner resets it to `f299289` (#64). The hand-off holds the two commands.
-- After the merge of #65 come PR-22, the deploy for invited users, and PR-23.
-- `docs/SESSION-HANDOFF.md` is the resume point, and `docs/owner-questions.md` holds OQ-57 to OQ-61.
+- PR-15, the eval harness, merged as #65 on 2026-09-04 after its paid gate passed on every lane (D-514 to D-517). The three suites have baselines: question gate run 35, deck gate run 16, and revise gate run 9.
+- `main` is the merge commit, and the tree is clean. PR-22, the deploy for invited users, is next on a new branch from `main`, then PR-23.
+- `docs/SESSION-HANDOFF.md` is the resume point, and `docs/owner-questions.md` holds no open row on 2026-09-04.
 
 ## Known problems
 
@@ -133,7 +132,7 @@ Ask before every paid run, and write every run to a new document (D-65). Each ta
 |---|---|---|
 | Every web test fails with `ERR_REQUIRE_ESM` | Node 20 is on the PATH | Run `nvm use`, or set `nvm alias default 22.23.2`. |
 | `make dev` logs "bucket doesn't exist" every 15 seconds | An object under `.local/gcs` lost its `user.metadata` attribute | Copy the data again with `tar` or `ditto`. Never write into `.local/gcs` by hand. |
-| `go run ./cmd/eval` says "no required module provides package" | The shell is not in the repo root, or the branch is not `pr-15` | Run `cd ~/Repos/mtg-deck-builder && git checkout pr-15`. |
+| `go run ./cmd/eval` says "no required module provides package" | The shell is not in the repo root, or the branch predates #65 | Run `cd ~/Repos/mtg-deck-builder && git checkout main && git pull`. |
 | `make lint` says "No rule to make target" | The shell is in `go/` | Run `make` from the repo root. |
 | A paid target says `.env is absent` | No `.env` in the repo root | Unpack `mtg-carry.tgz` again, or copy `.env.example` and add the keys. |
 | `firebase emulators:start` fails with a Java error | Java is not on the PATH | Repeat step 8 of section 3. |

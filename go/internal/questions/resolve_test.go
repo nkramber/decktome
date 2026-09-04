@@ -203,3 +203,20 @@ func TestHintsNilSafety(t *testing.T) {
 }
 
 var _ = llm.RoleAsk
+
+// TestOrListJoinsTheChoices is D-518: a question that offers choices
+// joins them with "or", and a list of things a deck holds keeps "and".
+func TestOrListJoinsTheChoices(t *testing.T) {
+	if got := orList([]string{"Marvel Super Heroes", "Marvel Universe"}); got != "Marvel Super Heroes or Marvel Universe" {
+		t.Errorf("orList of two = %q", got)
+	}
+	if got := orList([]string{"Khans of Tarkir", "Dragons of Tarkir", "Tarkir: Dragonstorm"}); got != "Khans of Tarkir, Dragons of Tarkir, or Tarkir: Dragonstorm" {
+		t.Errorf("orList of three = %q", got)
+	}
+	if got := englishList([]string{"Sol Ring", "Sanguine Bond"}); got != "Sol Ring and Sanguine Bond" {
+		t.Errorf("englishList of two = %q", got)
+	}
+	if got := orList([]string{" ", "one"}); got != "one" {
+		t.Errorf("orList drops blanks: %q", got)
+	}
+}

@@ -35,6 +35,15 @@ var familySkipTypes = map[string]bool{
 	"token": true, "memorabilia": true, "minigame": true,
 }
 
+// leadSkipTypes are the sets that never lead a family when a phrase
+// matches several. A bonus sheet, Scryfall type "masterpiece", is not a
+// product a reader builds from: "Marvel Universe" is 94 reprints with
+// Marvel art, and a reader who says "Marvel" means Marvel Super Heroes
+// (D-518). An exact code or an exact name still resolves it.
+var leadSkipTypes = map[string]bool{
+	"token": true, "memorabilia": true, "minigame": true, "masterpiece": true,
+}
+
 // SetTable is every set, with the family links. Build it once per
 // snapshot. It is read-only after that.
 type SetTable struct {
@@ -256,7 +265,7 @@ func containsWords(haystack, needle []string) bool {
 // One base set left resolves to its family. Two or more ask.
 //
 // A digital set is never a candidate: this app offers paper cards only
-// (D-306).
+// (D-306). A bonus sheet never leads a family beside a product (D-518).
 func (t *SetTable) Resolve(phrase string) Resolution {
 	if t == nil {
 		return Resolution{}
@@ -307,10 +316,11 @@ func (t *SetTable) Resolve(phrase string) Resolution {
 		roots = append(roots, s)
 	}
 	// A root that holds no playable card of its own is still a root, but
-	// a token or memorabilia product never leads a family.
+	// a token or memorabilia product never leads a family, and a bonus
+	// sheet leads one only when it is the one match (D-518).
 	var kept []*SetInfo
 	for _, s := range roots {
-		if !familySkipTypes[s.Type] {
+		if !leadSkipTypes[s.Type] {
 			kept = append(kept, s)
 		}
 	}
@@ -327,6 +337,69 @@ func (t *SetTable) Resolve(phrase string) Resolution {
 		roots = roots[:maxCandidates]
 	}
 	return Resolution{Kind: ResolveMany, Candidates: roots}
+}
+
+// ResolveGroup maps a franchise word onto every family it names (D-525).
+// "Marvel" reaches Marvel Super Heroes and Marvel's Spider-Man, because
+// the possessive drops before the match, and a bonus sheet never joins.
+// The answer is the union of the families, sorted, and empty means no
+// set. Resolve still reads "Marvel" alone as one product (D-518): the
+// classifier marks a group request, and only a group reaches here.
+func (t *SetTable) ResolveGroup(phrase string) []string {
+	if t == nil {
+		return nil
+	}
+	words := stripPossessive(normSetPhrase(phrase))
+	if len(words) == 0 {
+		return nil
+	}
+	var cands []*SetInfo
+	for _, s := range t.list {
+		if s.Digital {
+			continue
+		}
+		if containsWords(stripPossessive(normSetPhrase(s.Name)), words) {
+			cands = append(cands, s)
+		}
+	}
+	inList := make(map[string]bool, len(cands))
+	for _, s := range cands {
+		inList[s.Code] = true
+	}
+	seen := map[string]bool{}
+	var out []string
+	for _, s := range cands {
+		// A product under a matched set rides with its family, and a
+		// product under a skipped sheet stays out with it.
+		if s.ParentCode != "" && inList[s.ParentCode] {
+			continue
+		}
+		if leadSkipTypes[s.Type] {
+			continue
+		}
+		for _, c := range t.Family(s.Code) {
+			if !seen[c] {
+				seen[c] = true
+				out = append(out, c)
+			}
+		}
+	}
+	sort.Strings(out)
+	return out
+}
+
+// stripPossessive drops a trailing "'s" from each word, so "marvel's"
+// and "marvel" read as one word in a group match (D-525). Resolve keeps
+// the apostrophe on purpose, so one product name stays one product.
+func stripPossessive(words []string) []string {
+	out := make([]string, 0, len(words))
+	for _, w := range words {
+		w = strings.Trim(strings.TrimSuffix(w, "'s"), "'")
+		if w != "" {
+			out = append(out, w)
+		}
+	}
+	return out
 }
 
 // Names reads a code list as set names, for a message the reader sees.
