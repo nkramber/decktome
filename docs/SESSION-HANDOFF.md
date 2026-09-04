@@ -4,8 +4,10 @@
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. On the owner's machine `~/.nvm/versions/node/v22.23.2/bin` on the PATH fixes it.
 
-## Where things stand (2026-09-03)
+## Where things stand (2026-09-04)
 
+- The two corpus items of 2026-09-04 sit on branch `corpus-items`, with a PR open (D-510). The meta job skips the MTGJSON deck files when the deck list names the products of the stored table. Deck gate prompt 25 covers the precon exclusion of PR-24 for the first time, and it waits for a paid run. The section "The corpus items of 2026-09-04" below holds the read, and one owner question came out of it (OQ-56).
+- The paid sweep after PR-21 ran on 2026-09-03 and 2026-09-04, $4.60 in all. Question gate 33 and its eval pass. Tier judge run 3 reads 8 of 24, with the bar open on the corpus. Deck gate 14 with 14b reads 24 of 24, and revise gate 8 passes. The one defect it found, F-34, merged fixed as #63 (D-509). The section "The paid runs of 2026-09-03, after PR-21" below holds the read. Branch `deck-gate-fixes` can go.
 - PR-21, the share link and the print view, is merged (2026-09-03, #62, D-508). The free gate passes, `docs/reference/pr21-gate-2026-09-03.md`. The tree is green on `main`: Go build, vet, the `-race` suite, golangci-lint, `make ste-check`, the web lint, the web typecheck, and 262 web tests. Branches `pr-24`, `pr-14c`, `pr-20`, and `pr-21` can go. The section "PR-21, the share link and the print view, merged" below holds the moving parts. PR-22 is next, on a new branch from `main` (D-494).
 - PR-20, the deck view and the card detail, is merged (2026-09-03, #61, D-507). The free gate passes, `docs/reference/pr20-gate-2026-09-03.md`. The tree is green on `main`: Go build, vet, the `-race` suite, golangci-lint, `make ste-check`, the web lint, the web typecheck, and 256 web tests. Branches `pr-24`, `pr-14c`, and `pr-20` can go. The section "PR-20, the deck view and the card detail, merged" below holds the moving parts. PR-21 is next, on a new branch from `main` (D-494).
 - PR-14C, MTGTop8 and the casual 60-card decks, is merged (2026-09-03, #60, D-502 to D-506). Both lanes read with zero failures over 500 pages, and the Modern typical rung exists, 149 lists. The gate document is `docs/reference/pr14c-gate-2026-09-03.md`. Quality gate run 12 reads FAIL on the same two bars as run 11: Commander 0.78 and Modern 0.88 on the precon bar. The tree is green on `main`. Branches `pr-24` and `pr-14c` can go. The section "PR-14C, MTGTop8 and the casual 60-card decks, merged" below holds the moving parts. PR-20 is next, on a new branch from `main` (D-494).
@@ -446,11 +448,27 @@ The owner opened the paid runs once PR-21 merged, in the order of the eval list.
 The owner chose the deck gate next and left the bracket rejudge for later.
 
 - Deck gate run 14, `docs/reference/pr8-deck-gate-run14.md`, $2.54, 35 minutes, 62 calls. FAIL on one deck of 24: the Goblin Storm precon upgrade of prompt 17 came back with no cards and a `deck_size` block. No invented name reached the user, and no summary stated a false rule. The other 23 decks passed every block check, with 9 repair turns against 13 in run 13b, and the six set prompts read as before. The grade line reads 18 bad, 2 baseline, and 4 typical under the run 12 model.
-- The cause is a defect and not the model's variance alone (D-509). The bracket cut of D-468 drops a forbidden shortlist card and keeps only the commanders and the locked cards. So precon cards leave the pool too. The share rule of D-218 still asked for 67 of 78 names. The repair turn read fewer marked names, gave up, and answered no cards. The builder then replaced the legal first deck with the empty one. Branch `deck-gate-fixes` holds the two fixes. The share counts the precon names the pool holds. A repair with a block or a miss after a clean pass leaves the clean pass in place, with the note `repair_kept_earlier`. `generate.TestPreconShareCountsThePoolAlone` and `generate.TestBuildKeepsTheLegalDeckWhenTheRepairFails` pin both.
+- The cause is a defect and not the model's variance alone (D-509). The bracket cut of D-468 drops a forbidden shortlist card and keeps only the commanders and the locked cards. So precon cards leave the pool too. The share rule of D-218 still asked for 67 of 78 names. The repair turn read fewer marked names, gave up, and answered no cards. The builder then replaced the legal first deck with the empty one. The two fixes merged as #63 on 2026-09-04. The share counts the precon names the pool holds. A repair with a block or a miss after a clean pass leaves the clean pass in place, with the note `repair_kept_earlier`. `generate.TestPreconShareCountsThePoolAlone` and `generate.TestBuildKeepsTheLegalDeckWhenTheRepairFails` pin both.
 - Deck gate run 14b, `docs/reference/pr8-deck-gate-run14b.md`, $0.13, two minutes, reran prompt 17 alone with the fix. PASS: 99 cards and no block. The repair turn ran on the two profile findings and the combo, and it kept the share. The model grades the deck typical. Run 14 with 14b reads 24 of 24, as runs 12 and 13 did with their reruns.
 - Revise gate run 8, `docs/reference/pr12b-revise-gate-run8.md`, $1.23, 16 minutes, 33 calls. PASS: 11 of 11 turns met their bar. The revised decks kept 97 to 100 percent of their base, against 96 to 100 in run 7. The cost rose from $0.74 on 25 calls. Five turns bought a repair turn against two in run 7, four of them for a profile finding of PR-14A. On revision 9, the land swap of the Karlov deck, the repair answered a worse deck. The deck before it stood, with the note `repair_kept_earlier` (D-509), and the turn passed with 100 percent kept.
 
-The sweep is complete. Every row of the eval list ran once, for $4.60 together, and one defect came out of it, F-34, with its fix on branch `deck-gate-fixes`.
+The sweep is complete. Every row of the eval list ran once, for $4.60 together, and one defect came out of it, F-34, fixed and merged as #63.
+
+## The corpus items of 2026-09-04 (D-510)
+
+Branch `corpus-items` holds the two items the hand-off of 2026-09-04 named, with the F-34 record of #63. The tree is green: Go build, vet, the `-race` suite, golangci-lint, and `make ste-check`.
+
+The MTGJSON skip. The version stamp of the deck list carries the build day, `5.3.0+20260903`, so the table of yesterday never matched today's stamp. The job fetched 702 deck files every day. `meta.SameProducts` compares the kept products of two deck lists: file name, set code, name, release date, and type. The run reads the stored deck list of the newest table, and it reads no deck file when the products match. The report then names the stored table under `Skipped`.
+
+A new product reads every file again under the new stamp. A stored table older than `meta.PreconsMaxAge`, 30 days, reads whole again. MTGJSON corrects a deck file now and then with no change to the deck list. The two stored deck lists of 2026-09-02 and 2026-09-03 hold the same 3,029 entries, so the skip holds on the next run. `TestMTGJSONSkipsAnUnchangedDeckList` pins the four cases.
+
+Deck gate prompt 25. The prompt asks for an Avengers superheroes Commander deck from the library first, with no card of the Avengers Assemble precon, and a delegated commander. Two prompt fields are new. `collection_file` names a ManaBox export beside the file of the `-collection` flag, and `exclude_precons` names the products. The gate resolves each name through `precons.Table`, and it checks that the binder holds one product of the name whole. Then it runs `precons.Exclude` before both pools, as the chat does.
+
+The document gains the block "The precon exclusion (PR-24)": the products, the excluded cards, the spare cards, the excluded cards in the deck, and the blocks. `DECK_GATE_ARGS="-only 25"` runs it alone, for about $0.13, the cost of run 14b. The dry run of 2026-09-04 reads a pool of 152, 57 cards excluded, and 27 cards with a spare copy. The 27 are reprints the binder holds from other sets, Arcane Denial and Talisman of Conviction among them, and D-408 keeps them usable. The report column names them, so a reader can tell a spare copy from a card that slipped through.
+
+CAUTION: the fixture `manabox_collection_avengers.csv` is `manabox_collection.csv`, the export of 2026-08-24, byte for byte, plus three rows of basic lands. The file the session of 2026-09-03 left held 91 generated rows, with ManaBox ids from 990001 and the stamp `2026-09-04T00:00:00.000Z`. Only three of them filled a gap of the export. The other 88 gave every card of the product a second copy, so the exclusion of D-408 excluded nothing. The first dry run read 0 cards excluded. A fixture for the exclusion must hold the product once.
+
+CAUTION: the export of 2026-08-24 does not hold Avengers Assemble whole (F-35). Its ManaBox deck binder of 2026-06-27 lacks three basic-land printings, six cards: Plains 288, Island 290, and Mountain 294 of MSH. Under D-408 that binder owns no precon, and "not from my precons" excludes nothing for it. The check counts basic lands, and the exclusion never removes one (D-37). OQ-56 asks the owner whether the check ignores basic lands. No code changed on it.
 
 ## PR-21, the share link and the print view, merged (2026-09-03, #62)
 
@@ -512,6 +530,7 @@ PR-24 merged as #59 on 2026-09-03, with the corpus-step docs of the same day in 
 - The build subtracts the copies per Oracle id, and it passes the excluded ids to both candidate pools and to the generator. The rules check blocks a card that slips through, with the code `excluded_precon_card`.
 - The chat says what left: "I will use no card of X", the partial note of D-497, "holds no whole precon", or "no precon table loaded yet".
 - The nine embedded lists stay (D-498). `TestEmbeddedListsMatchTheTable` compares each with its row and found one wrong card, now corrected (D-501).
+- Deck gate prompt 25 covers the exclusion since 2026-09-04 (D-510), with the fixture `manabox_collection_avengers.csv`. It waits for a paid run.
 
 CAUTION: the classify model never saw version 17. The unit tests script its output. The next paid question gate reads whether the model fills the two new fields, after PR-14C (D-495). Run it before you trust a live exclusion.
 
@@ -534,7 +553,7 @@ The owner set the order on 2026-09-03: the corpus work first, then PR-24, then P
 
 CAUTION: the EDHREC read ran although the last read was 2026-09-02. The skip reads a `read` marker under the day's raw prefix, and the run of 2026-09-02 wrote none. So the weekly stamp starts on 2026-09-03, and the next read falls on 2026-09-10 (D-499). D-495 rests on a wrong premise, the skip of the read, and its order of the paid runs stands.
 
-CAUTION: the MTGJSON version stamp carries the day, so the skip on an existing table never holds. The job fetches 702 deck files every day, a few minutes at one a second. A skip on the deck list's own version field ends that. No session looked at it.
+The MTGJSON version stamp carries the day, so the skip on an existing table never held before 2026-09-04. The job now compares the products of the deck list with the stored deck list of the newest table. It reads no deck file when they match (D-510), and a table older than 30 days reads whole again.
 
 Quality gate run 11 is `docs/reference/pr14b-quality-gate-run11.md`, free. It reads FAIL on two bars. The gate fits its own model over the store, `20260903T183943Z`. The stored model is the job's fit of a minute before, over the same lists.
 

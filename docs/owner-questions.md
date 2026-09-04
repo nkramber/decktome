@@ -24,6 +24,7 @@ No owner question blocks it. The owner answered OQ-24 to OQ-27 on 2026-08-26 (D-
 
 | # | Question | Why only you | What it blocks |
 |---|---|---|---|
+| OQ-56 | Does the whole-precon check of D-408 ignore basic lands? The export of 2026-08-24 holds 84 of the 90 printings of Avengers Assemble, and the six absent cards are basic lands. A ManaBox deck binder can omit them. The exclusion never removes a basic land (D-37), so the check loses nothing without them. | D-408 is your rule, and it decides who owns a precon. | Nothing in code. A reader whose binder omits the basics hears "holds no whole precon" today (F-35). |
 
 ## How to answer
 
