@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -10,6 +11,7 @@ import (
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
+	"github.com/nkramber/mtg-deck-builder/go/internal/evalrun"
 	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
@@ -35,7 +37,7 @@ func render(t *testing.T, rs []result) (string, string) {
 	t.Helper()
 	var b bytes.Buffer
 	idx := cards.NewIndex(nil, nil, nil, time.Time{})
-	pass := report(&b, rs, llm.NewAccumulator(nil), idx, time.Second)
+	pass := report(&b, rs, llm.NewAccumulator(nil), idx, time.Second, evalrun.New("decks", "test"))
 	doc := b.String()
 	verdict := "FAIL"
 	if pass {
@@ -269,5 +271,88 @@ func TestExcludedPreconCardsAreCounted(t *testing.T) {
 
 	if _, doc := render(t, []result{goodResult()}); strings.Contains(doc, "## The precon exclusion") {
 		t.Error("a run with no exclusion prompt wrote the block")
+	}
+}
+
+// TestRunRowsMirrorTheVerdict: the run of PR-15 holds one gate row per
+// bar per deck, the header holds the verdict, and the document carries
+// the fingerprint block.
+func TestRunRowsMirrorTheVerdict(t *testing.T) {
+	blocked := goodResult()
+	blocked.prompt.ID = 2
+	blocked.deck.Validation.Findings = []*mtgv1.Finding{{Code: "deck_size", Severity: mtgv1.Severity_SEVERITY_BLOCK}}
+	run := evalrun.New("decks", "run-test")
+	var b bytes.Buffer
+	idx := cards.NewIndex(nil, nil, nil, time.Time{})
+	pass := report(&b, []result{goodResult(), blocked}, llm.NewAccumulator(nil), idx, time.Second, run)
+	if pass || run.Header.Verdict != "FAIL" {
+		t.Errorf("pass %v, header verdict %q, want FAIL on a block", pass, run.Header.Verdict)
+	}
+	if !strings.Contains(b.String(), "## Run\n\n- Suite `decks`, run `run-test`") {
+		t.Errorf("the document lacks the fingerprint block:\n%s", b.String())
+	}
+	blocks := map[string]float64{}
+	for _, row := range run.Rows {
+		if row.Metric == "blocks" && row.Kind == evalrun.KindGate {
+			blocks[row.Item] = row.Value
+		}
+	}
+	if blocks["1"] != 0 || blocks["2"] != 1 {
+		t.Errorf("blocks rows = %v, want 0 for deck 1 and 1 for deck 2", blocks)
+	}
+	if !run.Gated() {
+		t.Error("the deck gate run must carry gate rows")
+	}
+	if run.Header.Prompts["generate"] != 0 {
+		t.Error("report does not set the prompt version, main does")
+	}
+}
+
+// TestPlanJudgeRowsAreInformation: the plan judge writes four grades
+// and a score per deck as information rows, the document prints them,
+// and neither the grades nor a failure of the lane moves the verdict.
+func TestPlanJudgeRowsAreInformation(t *testing.T) {
+	graded := goodResult()
+	graded.plan = &generate.PlanJudgement{
+		PlanCoherent:  generate.PlanGrade{Grade: "yes", Why: "one plan"},
+		ThemeFit:      generate.PlanGrade{Grade: "partly", Why: "half the theme"},
+		UsefulAsBuilt: generate.PlanGrade{Grade: "no", Why: "no lands"},
+		SummaryHonest: generate.PlanGrade{Grade: "yes", Why: "placeholder"},
+	}
+	failed := goodResult()
+	failed.prompt.ID = 2
+	failed.planErr = errors.New("the judge timed out")
+	run := evalrun.New("decks", "test")
+	var b bytes.Buffer
+	idx := cards.NewIndex(nil, nil, nil, time.Time{})
+	if pass := report(&b, []result{graded, failed}, llm.NewAccumulator(nil), idx, time.Second, run); !pass {
+		t.Errorf("the plan judge moved the verdict:\n%s", b.String())
+	}
+	doc := b.String()
+	for _, want := range []string{
+		"- PLAN plan_coherent=yes: one plan\n", "- PLAN useful_as_built=no: no lands\n",
+		"- PLAN JUDGE ERROR: the judge timed out\n",
+		"| Decks the plan judge read (PR-15, information) | 1 |\n", "| Mean plan score, 0 to 1 | 0.62 |\n",
+		"| Plan reasons the judge left empty | 1 |\n",
+	} {
+		if !strings.Contains(doc, want) {
+			t.Errorf("the document lacks %q:\n%s", want, doc)
+		}
+	}
+	got := map[string]evalrun.Row{}
+	for _, row := range run.Rows {
+		got[row.Item+"/"+row.Metric] = row
+	}
+	if r := got["1/plan_theme_fit"]; r.Value != 0.5 || r.Kind != evalrun.KindInfo || r.Detail != "partly: half the theme" {
+		t.Errorf("theme_fit row = %+v", r)
+	}
+	if r := got["1/plan_score"]; r.Value != 0.625 {
+		t.Errorf("plan_score = %v, want the mean of 1, 0.5, 0, 1", r.Value)
+	}
+	if r := got["1/plan_reasons_empty"]; r.Value != 1 || r.Kind != evalrun.KindInfo {
+		t.Errorf("plan_reasons_empty row = %+v, want the one placeholder", r)
+	}
+	if r := got["2/plan_judge_error"]; r.Value != 1 || r.Kind != evalrun.KindInfo {
+		t.Errorf("plan_judge_error row = %+v", r)
 	}
 }

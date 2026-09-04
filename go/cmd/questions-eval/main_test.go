@@ -24,7 +24,7 @@ func TestRunRefusesAnExistingOutput(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			err := run(filepath.Join(dir, "no-gate.md"), tc.out, tc.json, 0.5, 0, 3)
+			err := run(filepath.Join(dir, "no-gate.md"), tc.out, tc.json, "", 0.5, 0, 3)
 			if err == nil || !strings.Contains(err.Error(), "D-65") {
 				t.Errorf("err = %v, want a D-65 refusal", err)
 			}

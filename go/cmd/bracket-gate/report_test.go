@@ -9,6 +9,7 @@ import (
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
+	"github.com/nkramber/mtg-deck-builder/go/internal/evalrun"
 	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 	"github.com/nkramber/mtg-deck-builder/go/internal/profile"
@@ -34,7 +35,7 @@ func deck(off bool, content bool, checked bool) *mtgv1.Deck {
 func runReport(rs []result) (string, bool) {
 	var buf bytes.Buffer
 	idx := cards.NewIndex(nil, nil, nil, time.Date(2026, 9, 2, 0, 0, 0, 0, time.UTC))
-	pass := report(&buf, rs, llm.NewAccumulator(nil), idx, time.Second)
+	pass := report(&buf, rs, llm.NewAccumulator(nil), idx, time.Second, evalrun.New("bracket", "test"))
 	return buf.String(), pass
 }
 
@@ -184,7 +185,7 @@ func TestReportJudge(t *testing.T) {
 	rs[0].judged.Bracket = 4
 	var buf bytes.Buffer
 	idx := cards.NewIndex(nil, nil, nil, time.Now())
-	if !reportJudge(&buf, "run1.md", rs, llm.NewAccumulator(nil), idx, time.Second) {
+	if !reportJudge(&buf, "run1.md", rs, llm.NewAccumulator(nil), idx, time.Second, evalrun.New("bracket-judge", "test")) {
 		t.Errorf("4 of 5 must pass:\n%s", buf.String())
 	}
 	if !strings.Contains(buf.String(), "| 1 | 3 | 4 | no | Karlov of the Ghost Council |") {
@@ -192,7 +193,7 @@ func TestReportJudge(t *testing.T) {
 	}
 	rs[1].judged, rs[1].judgeErr = nil, errors.New("boom")
 	buf.Reset()
-	if reportJudge(&buf, "run1.md", rs, llm.NewAccumulator(nil), idx, time.Second) {
+	if reportJudge(&buf, "run1.md", rs, llm.NewAccumulator(nil), idx, time.Second, evalrun.New("bracket-judge", "test")) {
 		t.Error("a judge error must fail")
 	}
 }

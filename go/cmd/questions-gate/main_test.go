@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nkramber/mtg-deck-builder/go/internal/evalrun"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 	"github.com/nkramber/mtg-deck-builder/go/internal/questions"
 	"github.com/nkramber/mtg-deck-builder/go/internal/tune"
@@ -70,7 +71,7 @@ func TestConversationsFile(t *testing.T) {
 // TestRunNeedsApproval keeps the command from spending money by accident.
 func TestRunNeedsApproval(t *testing.T) {
 	t.Setenv("QUESTIONS_GATE", "")
-	err := run("", 0, "", io.Discard)
+	err := run("", 0, "", "", io.Discard)
 	if err == nil || !strings.Contains(err.Error(), "QUESTIONS_GATE=1") {
 		t.Errorf("err = %v, want a refusal without QUESTIONS_GATE=1", err)
 	}
@@ -175,7 +176,7 @@ func TestDocumentRoundTrip(t *testing.T) {
 		cov.add(r)
 	}
 	var buf bytes.Buffer
-	_ = write(&buf, gateFile{VerifiedAt: "2026-08-28"}, results, cov, llm.Report{Calls: 3}, cfg, "no snapshot", time.Second)
+	_ = write(&buf, gateFile{VerifiedAt: "2026-08-28"}, results, cov, llm.Report{Calls: 3}, cfg, "no snapshot", time.Second, evalrun.New("questions", "test"))
 	path := filepath.Join(t.TempDir(), "pr7-question-gate-roundtrip.md")
 	if err := os.WriteFile(path, buf.Bytes(), 0o600); err != nil {
 		t.Fatal(err)
@@ -221,5 +222,103 @@ func TestDocumentRoundTrip(t *testing.T) {
 	}
 	if !strings.Contains(buf.String(), "1 of 2 counted gate conversations") {
 		t.Errorf("the verdict line does not read the counted set:\n%s", buf.String())
+	}
+}
+
+// TestExpectationsAreTheFourthBar: a counted conversation whose slots
+// missed an expectation fails the gate, the document names the miss,
+// and the run holds one gate row per expected key. A probe's rows are
+// information, and a conversation with no misses reads as met.
+func TestExpectationsAreTheFourthBar(t *testing.T) {
+	cfg, err := llm.LoadConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+	met := result{
+		conversation: conversation{ID: 1, Name: "lifegain with a collection", Collection: true,
+			Messages: []string{"Build me a lifegain deck."}, Expect: map[string]string{"format": "commander", "theme": "lifegain"}},
+		Turns: 1, Ready: true, Values: map[string]string{"format": "commander", "theme": "a lifegain deck"},
+	}
+	met.Misses = checkExpect(met.Expect, met.Values)
+	missed := result{
+		conversation: conversation{ID: 2, Name: "blink with a thin library", Collection: true,
+			Messages: []string{"A blink deck."}, Expect: map[string]string{"power": "bracket 3"}},
+		Turns: 1, Ready: true, Values: map[string]string{"power": "bracket 2"},
+	}
+	missed.Misses = checkExpect(missed.Expect, missed.Values)
+	probe := result{
+		conversation: conversation{ID: 60, Name: "terse: a format we do not build", Probe: true,
+			Messages: []string{"Brawl."}, Expect: map[string]string{"format": "commander"}},
+		Turns: 1, Ready: true, Values: map[string]string{"format": "modern"},
+	}
+	probe.Misses = checkExpect(probe.Expect, probe.Values)
+	render := func(rs []result) (string, *evalrun.Run) {
+		var cov coverages
+		for _, r := range rs {
+			cov.add(r)
+		}
+		rec := evalrun.New("questions", "test")
+		var buf bytes.Buffer
+		_ = write(&buf, gateFile{VerifiedAt: "2026-08-31"}, rs, cov, llm.Report{Calls: 1}, cfg, "no snapshot", time.Second, rec)
+		return buf.String(), rec
+	}
+	doc, rec := render([]result{met, missed, probe})
+	if !strings.Contains(doc, "Verdict: FAIL") || !strings.Contains(doc, "1 slots ended on a value other than the one the conversation expects") {
+		t.Errorf("a counted miss must fail the gate:\n%s", doc)
+	}
+	if !strings.Contains(doc, "blink with a thin library: power: want bracket 3, got bracket 2") {
+		t.Errorf("the document must name the miss:\n%s", doc)
+	}
+	if !strings.Contains(doc, "Expected slots: every one met.") || !strings.Contains(doc, "Expected slots: 1 misses. power: want bracket 3, got bracket 2.") {
+		t.Errorf("the per-conversation lines:\n%s", doc)
+	}
+	rows := map[string]evalrun.Row{}
+	for _, r := range rec.Rows {
+		rows[r.Item+"/"+r.Metric] = r
+	}
+	if r := rows["1/slot_theme"]; r.Value != 1 || r.Kind != evalrun.KindGate || r.Detail != "want lifegain, got a lifegain deck" {
+		t.Errorf("met row = %+v", r)
+	}
+	if r := rows["2/slot_power"]; r.Value != 0 || r.Kind != evalrun.KindGate {
+		t.Errorf("missed row = %+v", r)
+	}
+	if r := rows["60/slot_format"]; r.Value != 0 || r.Kind != evalrun.KindInfo {
+		t.Errorf("a probe's row is information: %+v", r)
+	}
+	if r := rows["suite/expectation_misses"]; r.Value != 1 || r.Kind != evalrun.KindGate {
+		t.Errorf("suite row = %+v", r)
+	}
+	doc, _ = render([]result{met, probe})
+	if strings.Contains(doc, "which fails the gate (PR-15)") || !strings.Contains(doc, "Every slot of the 1 counted conversations that name expectations ended on the expected value") {
+		t.Errorf("a probe's miss moves no verdict:\n%s", doc)
+	}
+}
+
+// TestEveryCountedConversationNamesItsExpectations pins the data of
+// slice 4: each counted conversation carries an expectation, every key
+// is one slotValues writes, and no probe or after-build conversation
+// carries one yet (OQ-61).
+func TestEveryCountedConversationNamesItsExpectations(t *testing.T) {
+	f := load(t)
+	known := map[string]bool{}
+	for _, k := range expectKeys {
+		known[k] = true
+	}
+	for _, c := range f.Conversations {
+		counted := !c.Probe && !c.HasDeck
+		if counted && len(c.Expect) == 0 {
+			t.Errorf("%d. %s: a counted conversation with no expectation", c.ID, c.Name)
+		}
+		if !counted && len(c.Expect) > 0 {
+			t.Errorf("%d. %s: an expectation on a conversation the bar does not count", c.ID, c.Name)
+		}
+		for k, v := range c.Expect {
+			if !known[k] {
+				t.Errorf("%d. %s: expectation key %q is not one slotValues writes", c.ID, c.Name, k)
+			}
+			if strings.TrimSpace(v) == "" {
+				t.Errorf("%d. %s: expectation %q is empty", c.ID, c.Name, k)
+			}
+		}
 	}
 }

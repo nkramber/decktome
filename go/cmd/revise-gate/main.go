@@ -30,6 +30,7 @@ import (
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/candidates"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
+	"github.com/nkramber/mtg-deck-builder/go/internal/evalrun"
 	"github.com/nkramber/mtg-deck-builder/go/internal/gatekit"
 	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
@@ -120,6 +121,7 @@ func main() {
 func run() error {
 	only := flag.String("only", "", "run these base ids only, comma separated")
 	dry := flag.Bool("dry", false, "load the prompts and the snapshot and stop before the provider calls")
+	runOut := flag.String("run-out", "", "write the run header and the rows as JSONL here (PR-15)")
 	flag.Parse()
 
 	var file struct {
@@ -139,12 +141,21 @@ func run() error {
 			return err
 		}
 	}
+	// The run file is never overwritten (D-65), and the check runs before
+	// the first provider call.
+	if err := gatekit.RefuseExisting(*runOut); err != nil {
+		return err
+	}
+	run := evalrun.New("revise", evalrun.RunID(*runOut))
+	run.Header.Prompts["generate"] = generate.PromptVersion
+	run.LowerIsBetter("blocks", "repaired")
 	quiet := gatekit.Quiet()
 	ctx := context.Background()
 	idx, err := gatekit.LoadSnapshot(ctx, quiet)
 	if err != nil {
 		return err
 	}
+	run.SetSnapshot(idx.AsOf)
 	cb, err := candidates.New()
 	if err != nil {
 		return err
@@ -170,6 +181,7 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	run.SetRoles(client.Config(), llm.RoleGenerate, llm.RoleRepair, llm.RoleRevise)
 	prices, err := llm.LoadPrices()
 	if err != nil {
 		return err
@@ -211,7 +223,11 @@ func run() error {
 			}
 		}
 	}
-	if !report(os.Stdout, outcomes, acc, idx, time.Since(start)) {
+	pass := report(os.Stdout, outcomes, acc, idx, time.Since(start), run)
+	if err := evalrun.WriteFile(*runOut, run); err != nil {
+		return err
+	}
+	if !pass {
 		return errGateFailed
 	}
 	return nil
@@ -601,7 +617,7 @@ func blocks(d *mtgv1.Deck) []string {
 
 // report writes the gate document and returns the verdict. A run of zero
 // revisions fails: there is nothing to pass.
-func report(w io.Writer, outcomes []outcome, acc *llm.Accumulator, idx *cards.Index, took time.Duration) bool {
+func report(w io.Writer, outcomes []outcome, acc *llm.Accumulator, idx *cards.Index, took time.Duration, run *evalrun.Run) bool {
 	// The document is the record, and a write error on stdout ends the
 	// process in any case.
 	pf := func(format string, a ...any) { _, _ = fmt.Fprintf(w, format, a...) }
@@ -616,6 +632,8 @@ func report(w io.Writer, outcomes []outcome, acc *llm.Accumulator, idx *cards.In
 	if pass {
 		verdict = "PASS"
 	}
+	recordRows(run, outcomes)
+	run.Finish(acc.Report(), took, verdict)
 	pf("# PR-12B revise gate\n\nRun date: %s. Snapshot: %s.\n\n", time.Now().UTC().Format("2006-01-02"), idx.AsOf.Format("2006-01-02"))
 	pf("Verdict: %s. %d of %d turns met their bar. The bars: an unclear request gets a question or a decline with a reason, an answer to that question gets a rebuild, a clear request gets a revised deck with no block finding, the deck holds every cap, every removal, and every land swap the message names, and it keeps at least %.0f percent of the untouched cards.\n\n",
 		verdict, passed, len(outcomes), keepBar*100)
@@ -675,7 +693,45 @@ func report(w io.Writer, outcomes []outcome, acc *llm.Accumulator, idx *cards.In
 			pf("\nFailures: %s\n", strings.Join(o.failures, "; "))
 		}
 	}
+	pf("\n")
+	run.Markdown(w)
 	return pass
+}
+
+// recordRows writes one gate row per turn into the run, and the
+// information rows beside it (PR-15). A turn's item is base.revision,
+// with "a" on the answer turn of an unclear request.
+func recordRows(run *evalrun.Run, outcomes []outcome) {
+	for _, o := range outcomes {
+		item := fmt.Sprintf("%d.%d", o.base.ID, o.rev.ID)
+		if o.answered {
+			item += "a"
+		}
+		if o.err != nil {
+			run.Gate(item, "pass", 0, o.err.Error())
+			continue
+		}
+		passed := 0.0
+		if o.pass() {
+			passed = 1
+		}
+		run.Gate(item, "pass", passed, strings.Join(o.failures, "; "))
+		if o.deck != nil {
+			run.Info(item, "kept", o.kept, "")
+			run.Info(item, "blocks", float64(len(o.blocks)), strings.Join(o.blocks, ", "))
+			run.Info(item, "cards", float64(gatekit.CountCards(o.deck)), "")
+		}
+		repaired := 0.0
+		if o.repair != "" {
+			repaired = 1
+		}
+		run.Info(item, "repaired", repaired, o.repair)
+		question := 0.0
+		if o.brief != nil && o.brief.Question != "" {
+			question = 1
+		}
+		run.Info(item, "question", question, "")
+	}
 }
 
 func findings(d *mtgv1.Deck) string {

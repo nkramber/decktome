@@ -30,6 +30,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nkramber/mtg-deck-builder/go/internal/evalrun"
 	"github.com/nkramber/mtg-deck-builder/go/internal/gatekit"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 	"github.com/nkramber/mtg-deck-builder/go/internal/tune"
@@ -42,32 +43,40 @@ func main() {
 	budget := flag.Float64("budget", 0.50, "stop before the run costs more than this, in USD")
 	limit := flag.Int("n", 0, "score only the first n conversations (0 scores all)")
 	holdout := flag.Int("holdout", 3, "hold every nth conversation back from the fixer (0 holds none)")
+	runOut := flag.String("run-out", "", "write the run header and the rows as JSONL here (PR-15)")
 	flag.Parse()
-	if err := run(*in, *out, *jsonOut, *budget, *limit, *holdout); err != nil {
+	if err := run(*in, *out, *jsonOut, *runOut, *budget, *limit, *holdout); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
 
-func run(in, out, jsonOut string, budget float64, limit, holdout int) error {
+func run(in, out, jsonOut, runOut string, budget float64, limit, holdout int) error {
 	if err := gatekit.SpendGuard("QUESTIONS_EVAL"); err != nil {
 		return err
 	}
 	if in == "" {
 		return fmt.Errorf("give -in, a gate document")
 	}
-	if err := gatekit.RefuseExisting(out, jsonOut); err != nil {
+	if err := gatekit.RefuseExisting(out, jsonOut, runOut); err != nil {
 		return err
 	}
 	gate, err := tune.ReadRun(in)
 	if err != nil {
 		return err
 	}
+	// The eval decides nothing on its own, tune-check does, so the run
+	// holds information rows alone and no verdict (PR-15).
+	rec := evalrun.New("question-eval", evalrun.RunID(runOut))
+	rec.Header.Prompts["eval"] = evalVersion
+	rec.LowerIsBetter("bad", "bad_ratio", "bad_ratio_tune", "bad_ratio_holdout", "holdout_bad", "partial", "unjudged", "unsure")
+	rec.Header.Versions["gate_document"] = gate.Name
 	quiet := gatekit.Quiet()
 	client, err := llm.NewFromEnv(gatekit.Env, quiet)
 	if err != nil {
 		return err
 	}
+	rec.SetRoles(client.Config(), llm.RoleEval)
 	prices, err := llm.LoadPrices()
 	if err != nil {
 		return err
@@ -174,8 +183,13 @@ func run(in, out, jsonOut string, budget float64, limit, holdout int) error {
 		defer func() { _ = f.Close() }()
 		w = f
 	}
-	write(w, gate, sum, missed, unjudged, acc.Report(), time.Since(started))
+	recordRows(rec, sum)
+	rec.Finish(acc.Report(), time.Since(started), "")
+	write(w, gate, sum, missed, unjudged, acc.Report(), rec)
 	writeCardCheck(w, checkNote, corrected)
+	if err := evalrun.WriteFile(runOut, rec); err != nil {
+		return err
+	}
 	if jsonOut != "" {
 		if err := os.MkdirAll(filepath.Dir(jsonOut), 0o750); err != nil {
 			return err
@@ -346,7 +360,7 @@ func costOf(acc *llm.Accumulator, model string) (float64, error) {
 	return 0, fmt.Errorf("no price for model %s in prices.json, so the run can not be charged", model)
 }
 
-func write(w io.Writer, _ *tune.Run, s tune.Summary, missed map[string][]string, unjudged map[string]string, rep llm.Report, elapsed time.Duration) {
+func write(w io.Writer, _ *tune.Run, s tune.Summary, missed map[string][]string, unjudged map[string]string, rep llm.Report, rec *evalrun.Run) {
 	p := func(format string, a ...any) { _, _ = fmt.Fprintf(w, format, a...) }
 	p("# PR-7 question eval\n\n")
 	p("Run: `%s`. Eval model: `%s`. Prompt version %d.\n\n", s.Run, s.Model, evalVersion)
@@ -451,12 +465,53 @@ func write(w io.Writer, _ *tune.Run, s tune.Summary, missed map[string][]string,
 		p("\n")
 	}
 
-	p("## Run\n\n")
-	p("- Calls: %d. Time: %.1f seconds.\n", rep.Calls, elapsed.Seconds())
+	rec.Markdown(w)
 	if rep.Tokens != nil {
 		p("- Tokens: %d input (%d cached), %d output.\n", rep.Tokens.InputTokens, rep.Tokens.CachedInputTokens, rep.Tokens.OutputTokens)
 	}
-	p("- Cost: $%.4f.\n", s.CostUSD)
+	p("- Eval cost: $%.4f.\n", s.CostUSD)
+}
+
+// recordRows writes the counters of the eval into the run as
+// information rows (PR-15). A conversation row counts its bad questions
+// on the tune split alone: the fixer may never read which holdout
+// question failed (D-134), and the run file is a committed record.
+func recordRows(rec *evalrun.Run, s tune.Summary) {
+	byConv := map[string]*[2]int{}
+	var order []string
+	for _, v := range s.Verdicts {
+		if v.Holdout || v.Unsure() {
+			continue
+		}
+		c, ok := byConv[v.Conversation]
+		if !ok {
+			c = &[2]int{}
+			byConv[v.Conversation] = c
+			order = append(order, v.Conversation)
+		}
+		c[0]++
+		if v.Bad() {
+			c[1]++
+		}
+	}
+	for _, name := range order {
+		item := fmt.Sprintf("%d", tune.ConversationNumber(name))
+		rec.Info(item, "judged", float64(byConv[name][0]), name)
+		rec.Info(item, "bad", float64(byConv[name][1]), "")
+	}
+	rec.Info("suite", "judged", float64(s.Judged), "")
+	rec.Info("suite", "bad", float64(s.Bad), "")
+	rec.Info("suite", "unsure", float64(s.Unsure), "")
+	rec.Info("suite", "bad_ratio", s.Ratio, "every judged question")
+	rec.Info("suite", "bad_ratio_tune", s.TuneRatio, fmt.Sprintf("%d judged", s.TuneJudged))
+	rec.Info("suite", "bad_ratio_holdout", s.HoldoutRatio, fmt.Sprintf("%d judged", s.HoldoutJudged))
+	rec.Info("suite", "holdout_bad", float64(s.HoldoutBad), "")
+	partial := 0.0
+	if s.Partial {
+		partial = 1
+	}
+	rec.Info("suite", "partial", partial, s.StoppedReason)
+	rec.Info("suite", "unjudged", float64(len(s.Unjudged)), "")
 }
 
 func sortedKeys(m map[string]int) []string {

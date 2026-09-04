@@ -1,0 +1,144 @@
+{"suite":"question-eval","run_id":"pr7-question-eval-run34","date":"2026-09-04","commit":"ec058b4","roles":{"eval":{"provider":"openai","model":"gpt-5.6-luna","effort":"low"}},"prompts":{"eval":3},"versions":{"gate_document":"pr7-question-gate-run34"},"calls":103,"cost_usd":0.09229659999999995,"seconds":713.263144833,"lower":["bad","bad_ratio","bad_ratio_tune","bad_ratio_holdout","holdout_bad","partial","unjudged","unsure"]}
+{"item":"1","metric":"judged","value":6,"kind":"info","detail":"1. lifegain with a collection"}
+{"item":"1","metric":"bad","value":0,"kind":"info"}
+{"item":"2","metric":"judged","value":5,"kind":"info","detail":"2. blink with a thin library"}
+{"item":"2","metric":"bad","value":0,"kind":"info"}
+{"item":"4","metric":"judged","value":5,"kind":"info","detail":"4. fun and janky"}
+{"item":"4","metric":"bad","value":0,"kind":"info"}
+{"item":"5","metric":"judged","value":5,"kind":"info","detail":"5. 60-card anything goes"}
+{"item":"5","metric":"bad","value":1,"kind":"info"}
+{"item":"7","metric":"judged","value":6,"kind":"info","detail":"7. FNM on Friday (probe)"}
+{"item":"7","metric":"bad","value":1,"kind":"info"}
+{"item":"8","metric":"judged","value":6,"kind":"info","detail":"8. mill for a playgroup"}
+{"item":"8","metric":"bad","value":0,"kind":"info"}
+{"item":"10","metric":"judged","value":5,"kind":"info","detail":"10. no strong commander in the library"}
+{"item":"10","metric":"bad","value":1,"kind":"info"}
+{"item":"13","metric":"judged","value":3,"kind":"info","detail":"13. a card to keep that is not the commander"}
+{"item":"13","metric":"bad","value":0,"kind":"info"}
+{"item":"14","metric":"judged","value":5,"kind":"info","detail":"14. the user says none, then picks"}
+{"item":"14","metric":"bad","value":0,"kind":"info"}
+{"item":"16","metric":"judged","value":1,"kind":"info","detail":"16. the strongest modern deck"}
+{"item":"16","metric":"bad","value":0,"kind":"info"}
+{"item":"17","metric":"judged","value":2,"kind":"info","detail":"17. precon upgrade at bracket 2"}
+{"item":"17","metric":"bad","value":0,"kind":"info"}
+{"item":"19","metric":"judged","value":5,"kind":"info","detail":"19. a big library, no theme"}
+{"item":"19","metric":"bad","value":0,"kind":"info"}
+{"item":"20","metric":"judged","value":5,"kind":"info","detail":"20. dinosaur tribal for a child"}
+{"item":"20","metric":"bad","value":0,"kind":"info"}
+{"item":"23","metric":"judged","value":6,"kind":"info","detail":"23. land destruction"}
+{"item":"23","metric":"bad","value":0,"kind":"info"}
+{"item":"25","metric":"judged","value":2,"kind":"info","detail":"25. poison in a tournament"}
+{"item":"25","metric":"bad","value":0,"kind":"info"}
+{"item":"26","metric":"judged","value":4,"kind":"info","detail":"26. legacy for an event (probe)"}
+{"item":"26","metric":"bad","value":1,"kind":"info"}
+{"item":"28","metric":"judged","value":6,"kind":"info","detail":"28. reanimator with two plans"}
+{"item":"28","metric":"bad","value":0,"kind":"info"}
+{"item":"29","metric":"judged","value":5,"kind":"info","detail":"29. two hundred dollars"}
+{"item":"29","metric":"bad","value":0,"kind":"info"}
+{"item":"31","metric":"judged","value":3,"kind":"info","detail":"31. FNM on Friday, Modern"}
+{"item":"31","metric":"bad","value":0,"kind":"info"}
+{"item":"32","metric":"judged","value":2,"kind":"info","detail":"32. burn on a budget"}
+{"item":"32","metric":"bad","value":0,"kind":"info"}
+{"item":"34","metric":"judged","value":5,"kind":"info","detail":"34. no ban list at our table"}
+{"item":"34","metric":"bad","value":0,"kind":"info"}
+{"item":"35","metric":"judged","value":7,"kind":"info","detail":"35. the user changes the format (probe)"}
+{"item":"35","metric":"bad","value":1,"kind":"info"}
+{"item":"37","metric":"judged","value":1,"kind":"info","detail":"37. the user contradicts the budget (probe)"}
+{"item":"37","metric":"bad","value":0,"kind":"info"}
+{"item":"40","metric":"judged","value":5,"kind":"info","detail":"40. the user asks a question back (probe)"}
+{"item":"40","metric":"bad","value":0,"kind":"info"}
+{"item":"41","metric":"judged","value":5,"kind":"info","detail":"41. a request we can not serve (probe)"}
+{"item":"41","metric":"bad","value":0,"kind":"info"}
+{"item":"43","metric":"judged","value":5,"kind":"info","detail":"43. a card name with a typo (probe)"}
+{"item":"43","metric":"bad","value":1,"kind":"info"}
+{"item":"44","metric":"judged","value":4,"kind":"info","detail":"44. a card that is not legal (probe)"}
+{"item":"44","metric":"bad","value":1,"kind":"info"}
+{"item":"46","metric":"judged","value":3,"kind":"info","detail":"46. two partner commanders (probe)"}
+{"item":"46","metric":"bad","value":0,"kind":"info"}
+{"item":"47","metric":"judged","value":5,"kind":"info","detail":"47. a deck as a gift (probe)"}
+{"item":"47","metric":"bad","value":0,"kind":"info"}
+{"item":"49","metric":"judged","value":2,"kind":"info","detail":"49. copy a known deck (probe)"}
+{"item":"49","metric":"bad","value":1,"kind":"info"}
+{"item":"50","metric":"judged","value":7,"kind":"info","detail":"50. a format we do not support (probe)"}
+{"item":"50","metric":"bad","value":0,"kind":"info"}
+{"item":"52","metric":"judged","value":3,"kind":"info","detail":"52. a price cap per card (probe)"}
+{"item":"52","metric":"bad","value":0,"kind":"info"}
+{"item":"55","metric":"judged","value":6,"kind":"info","detail":"55. a returning player (probe)"}
+{"item":"55","metric":"bad","value":0,"kind":"info"}
+{"item":"56","metric":"judged","value":4,"kind":"info","detail":"56. the user answers a different question (probe)"}
+{"item":"56","metric":"bad","value":0,"kind":"info"}
+{"item":"58","metric":"judged","value":6,"kind":"info","detail":"58. terse: a card for the 99 (probe)"}
+{"item":"58","metric":"bad","value":0,"kind":"info"}
+{"item":"59","metric":"judged","value":4,"kind":"info","detail":"59. terse: two decks at once (probe)"}
+{"item":"59","metric":"bad","value":0,"kind":"info"}
+{"item":"61","metric":"judged","value":3,"kind":"info","detail":"61. terse: a proxy table (probe)"}
+{"item":"61","metric":"bad","value":0,"kind":"info"}
+{"item":"62","metric":"judged","value":2,"kind":"info","detail":"62. terse: a precon upgrade (probe)"}
+{"item":"62","metric":"bad","value":1,"kind":"info"}
+{"item":"64","metric":"judged","value":4,"kind":"info","detail":"64. terse: a deck as a gift (probe)"}
+{"item":"64","metric":"bad","value":0,"kind":"info"}
+{"item":"65","metric":"judged","value":3,"kind":"info","detail":"65. terse: a named commander and a locked card (probe)"}
+{"item":"65","metric":"bad","value":0,"kind":"info"}
+{"item":"68","metric":"judged","value":2,"kind":"info","detail":"68. terse: the strongest deck, no collection (probe)"}
+{"item":"68","metric":"bad","value":0,"kind":"info"}
+{"item":"70","metric":"judged","value":4,"kind":"info","detail":"70. terse: a mill deck for a playgroup (probe)"}
+{"item":"70","metric":"bad","value":0,"kind":"info"}
+{"item":"71","metric":"judged","value":3,"kind":"info","detail":"71. terse: one-word answers (probe)"}
+{"item":"71","metric":"bad","value":0,"kind":"info"}
+{"item":"73","metric":"judged","value":3,"kind":"info","detail":"73. terse: a colorless deck (probe)"}
+{"item":"73","metric":"bad","value":0,"kind":"info"}
+{"item":"74","metric":"judged","value":5,"kind":"info","detail":"74. terse: a card the user does not own (probe)"}
+{"item":"74","metric":"bad","value":0,"kind":"info"}
+{"item":"76","metric":"judged","value":3,"kind":"info","detail":"76. terse: a companion (probe)"}
+{"item":"76","metric":"bad","value":0,"kind":"info"}
+{"item":"77","metric":"judged","value":5,"kind":"info","detail":"77. terse: a Background pair (probe)"}
+{"item":"77","metric":"bad","value":0,"kind":"info"}
+{"item":"79","metric":"judged","value":3,"kind":"info","detail":"79. terse: everything buried in one long message (probe)"}
+{"item":"79","metric":"bad","value":0,"kind":"info"}
+{"item":"80","metric":"judged","value":2,"kind":"info","detail":"80. terse: all caps, no punctuation (probe)"}
+{"item":"80","metric":"bad","value":0,"kind":"info"}
+{"item":"82","metric":"judged","value":4,"kind":"info","detail":"82. terse: the user corrects a card name (probe)"}
+{"item":"82","metric":"bad","value":0,"kind":"info"}
+{"item":"83","metric":"judged","value":2,"kind":"info","detail":"83. terse: group hug (probe)"}
+{"item":"83","metric":"bad","value":0,"kind":"info"}
+{"item":"85","metric":"judged","value":3,"kind":"info","detail":"85. terse: chaos (probe)"}
+{"item":"85","metric":"bad","value":0,"kind":"info"}
+{"item":"86","metric":"judged","value":4,"kind":"info","detail":"86. terse: enchantress (probe)"}
+{"item":"86","metric":"bad","value":0,"kind":"info"}
+{"item":"88","metric":"judged","value":3,"kind":"info","detail":"88. terse: no theme at all (probe)"}
+{"item":"88","metric":"bad","value":1,"kind":"info"}
+{"item":"89","metric":"judged","value":4,"kind":"info","detail":"89. terse: teaching a new player (probe)"}
+{"item":"89","metric":"bad","value":0,"kind":"info"}
+{"item":"91","metric":"judged","value":5,"kind":"info","detail":"91. terse: a budget of zero (probe)"}
+{"item":"91","metric":"bad","value":0,"kind":"info"}
+{"item":"92","metric":"judged","value":4,"kind":"info","detail":"92. terse: proxy the expensive cards only (probe)"}
+{"item":"92","metric":"bad","value":0,"kind":"info"}
+{"item":"94","metric":"judged","value":5,"kind":"info","detail":"94. terse: a collection of lands only (probe)"}
+{"item":"94","metric":"bad","value":0,"kind":"info"}
+{"item":"95","metric":"judged","value":5,"kind":"info","detail":"95. terse: a library that does not exist (probe)"}
+{"item":"95","metric":"bad","value":0,"kind":"info"}
+{"item":"97","metric":"judged","value":4,"kind":"info","detail":"97. terse: Pauper Commander (probe)"}
+{"item":"97","metric":"bad","value":0,"kind":"info"}
+{"item":"98","metric":"judged","value":6,"kind":"info","detail":"98. terse: Oathbreaker (probe)"}
+{"item":"98","metric":"bad","value":0,"kind":"info"}
+{"item":"100","metric":"judged","value":3,"kind":"info","detail":"100. terse: a deck for a team event (probe)"}
+{"item":"100","metric":"bad","value":0,"kind":"info"}
+{"item":"101","metric":"judged","value":3,"kind":"info","detail":"101. terse: mill with no table named (probe)"}
+{"item":"101","metric":"bad","value":0,"kind":"info"}
+{"item":"103","metric":"judged","value":3,"kind":"info","detail":"103. terse: two themes at once (probe)"}
+{"item":"103","metric":"bad","value":0,"kind":"info"}
+{"item":"104","metric":"judged","value":5,"kind":"info","detail":"104. terse: the user answers with a number (probe)"}
+{"item":"104","metric":"bad","value":0,"kind":"info"}
+{"item":"106","metric":"judged","value":4,"kind":"info","detail":"106. a set that resolves to one family (probe)"}
+{"item":"106","metric":"bad","value":0,"kind":"info"}
+{"item":"107","metric":"judged","value":6,"kind":"info","detail":"107. a set name that names two base sets (probe)"}
+{"item":"107","metric":"bad","value":0,"kind":"info"}
+{"item":"suite","metric":"judged","value":392,"kind":"info"}
+{"item":"suite","metric":"bad","value":18,"kind":"info"}
+{"item":"suite","metric":"unsure","value":0,"kind":"info"}
+{"item":"suite","metric":"bad_ratio","value":0.04591836734693878,"kind":"info","detail":"every judged question"}
+{"item":"suite","metric":"bad_ratio_tune","value":0.0364963503649635,"kind":"info","detail":"274 judged"}
+{"item":"suite","metric":"bad_ratio_holdout","value":0.06779661016949153,"kind":"info","detail":"118 judged"}
+{"item":"suite","metric":"holdout_bad","value":8,"kind":"info"}
+{"item":"suite","metric":"partial","value":0,"kind":"info"}
+{"item":"suite","metric":"unjudged","value":4,"kind":"info"}

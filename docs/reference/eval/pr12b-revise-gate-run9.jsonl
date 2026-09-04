@@ -1,0 +1,61 @@
+{"suite":"revise","run_id":"pr12b-revise-gate-run9","date":"2026-09-04","commit":"ec058b4","roles":{"generate":{"provider":"openai","model":"gpt-5.6-terra","effort":"medium"},"repair":{"provider":"openai","model":"gpt-5.6-terra","effort":"medium"},"revise":{"provider":"openai","model":"gpt-5.6-terra","effort":"low"}},"snapshot":"2026-09-03","prompts":{"generate":12},"calls":32,"cost_usd":1.072302,"seconds":812.680219333,"verdict":"PASS","lower":["blocks","repaired"]}
+{"item":"1.1","metric":"pass","value":1,"kind":"gate"}
+{"item":"1.1","metric":"repaired","value":0,"kind":"info"}
+{"item":"1.1","metric":"question","value":1,"kind":"info"}
+{"item":"1.1a","metric":"pass","value":1,"kind":"gate"}
+{"item":"1.1a","metric":"kept","value":1,"kind":"info"}
+{"item":"1.1a","metric":"blocks","value":0,"kind":"info"}
+{"item":"1.1a","metric":"cards","value":60,"kind":"info"}
+{"item":"1.1a","metric":"repaired","value":1,"kind":"info","detail":"3 missed names"}
+{"item":"1.1a","metric":"question","value":0,"kind":"info"}
+{"item":"1.2","metric":"pass","value":1,"kind":"gate"}
+{"item":"1.2","metric":"kept","value":1,"kind":"info"}
+{"item":"1.2","metric":"blocks","value":0,"kind":"info"}
+{"item":"1.2","metric":"cards","value":60,"kind":"info"}
+{"item":"1.2","metric":"repaired","value":1,"kind":"info","detail":"1 missed names"}
+{"item":"1.2","metric":"question","value":0,"kind":"info"}
+{"item":"1.3","metric":"pass","value":1,"kind":"gate"}
+{"item":"1.3","metric":"repaired","value":0,"kind":"info"}
+{"item":"1.3","metric":"question","value":1,"kind":"info"}
+{"item":"1.3a","metric":"pass","value":1,"kind":"gate"}
+{"item":"1.3a","metric":"kept","value":1,"kind":"info"}
+{"item":"1.3a","metric":"blocks","value":0,"kind":"info"}
+{"item":"1.3a","metric":"cards","value":60,"kind":"info"}
+{"item":"1.3a","metric":"repaired","value":0,"kind":"info"}
+{"item":"1.3a","metric":"question","value":0,"kind":"info"}
+{"item":"2.4","metric":"pass","value":1,"kind":"gate"}
+{"item":"2.4","metric":"kept","value":1,"kind":"info"}
+{"item":"2.4","metric":"blocks","value":0,"kind":"info"}
+{"item":"2.4","metric":"cards","value":99,"kind":"info"}
+{"item":"2.4","metric":"repaired","value":1,"kind":"info","detail":"6 missed names, deck_size"}
+{"item":"2.4","metric":"question","value":0,"kind":"info"}
+{"item":"2.5","metric":"pass","value":1,"kind":"gate"}
+{"item":"2.5","metric":"kept","value":1,"kind":"info"}
+{"item":"2.5","metric":"blocks","value":0,"kind":"info"}
+{"item":"2.5","metric":"cards","value":99,"kind":"info"}
+{"item":"2.5","metric":"repaired","value":0,"kind":"info"}
+{"item":"2.5","metric":"question","value":0,"kind":"info"}
+{"item":"2.6","metric":"pass","value":1,"kind":"gate"}
+{"item":"2.6","metric":"kept","value":0.9733333333333334,"kind":"info"}
+{"item":"2.6","metric":"blocks","value":0,"kind":"info"}
+{"item":"2.6","metric":"cards","value":99,"kind":"info"}
+{"item":"2.6","metric":"repaired","value":0,"kind":"info"}
+{"item":"2.6","metric":"question","value":0,"kind":"info"}
+{"item":"2.9","metric":"pass","value":1,"kind":"gate"}
+{"item":"2.9","metric":"kept","value":1,"kind":"info"}
+{"item":"2.9","metric":"blocks","value":0,"kind":"info"}
+{"item":"2.9","metric":"cards","value":99,"kind":"info"}
+{"item":"2.9","metric":"repaired","value":1,"kind":"info","detail":"profile_off_band"}
+{"item":"2.9","metric":"question","value":0,"kind":"info"}
+{"item":"3.7","metric":"pass","value":1,"kind":"gate"}
+{"item":"3.7","metric":"kept","value":0.9833333333333333,"kind":"info"}
+{"item":"3.7","metric":"blocks","value":0,"kind":"info"}
+{"item":"3.7","metric":"cards","value":99,"kind":"info"}
+{"item":"3.7","metric":"repaired","value":1,"kind":"info","detail":"2 missed names, profile_off_band"}
+{"item":"3.7","metric":"question","value":0,"kind":"info"}
+{"item":"3.8","metric":"pass","value":1,"kind":"gate"}
+{"item":"3.8","metric":"kept","value":0.9855072463768116,"kind":"info"}
+{"item":"3.8","metric":"blocks","value":0,"kind":"info"}
+{"item":"3.8","metric":"cards","value":99,"kind":"info"}
+{"item":"3.8","metric":"repaired","value":1,"kind":"info","detail":"profile_off_band; then profile_off_band, profile_off_band"}
+{"item":"3.8","metric":"question","value":0,"kind":"info"}

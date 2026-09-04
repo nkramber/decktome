@@ -31,6 +31,7 @@ import (
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/candidates"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
+	"github.com/nkramber/mtg-deck-builder/go/internal/evalrun"
 	"github.com/nkramber/mtg-deck-builder/go/internal/gatekit"
 	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
@@ -72,9 +73,10 @@ func run() error {
 	dry := flag.Bool("dry", false, "build every shortlist and stop before the provider calls")
 	noJudge := flag.Bool("no-judge", false, "skip the judge lane, which costs one judge call a deck")
 	rejudge := flag.String("rejudge", "", "judge the decks of this gate document, and build nothing")
+	runOut := flag.String("run-out", "", "write the run header and the rows as JSONL here (PR-15)")
 	flag.Parse()
 	if *rejudge != "" {
-		return runRejudge(*rejudge)
+		return runRejudge(*rejudge, *runOut)
 	}
 
 	var file struct {
@@ -92,11 +94,20 @@ func run() error {
 			return err
 		}
 	}
+	// The run file is never overwritten (D-65), and the check runs before
+	// the first provider call.
+	if err := gatekit.RefuseExisting(*runOut); err != nil {
+		return err
+	}
+	run := evalrun.New("bracket", evalrun.RunID(*runOut))
+	run.Header.Prompts["generate"] = generate.PromptVersion
+	run.LowerIsBetter("blocks", "off_band", "content_violations", "judge_error", "repaired")
 	quiet := gatekit.Quiet()
 	idx, err := gatekit.LoadSnapshot(context.Background(), quiet)
 	if err != nil {
 		return err
 	}
+	run.SetSnapshot(idx.AsOf)
 	cb, err := candidates.New()
 	if err != nil {
 		return err
@@ -113,6 +124,7 @@ func run() error {
 		if err != nil {
 			return err
 		}
+		run.SetRoles(client.Config(), llm.RoleGenerate, llm.RoleRepair, llm.RoleJudge)
 		prices, err := llm.LoadPrices()
 		if err != nil {
 			return err
@@ -148,7 +160,11 @@ func run() error {
 		fmt.Fprintf(os.Stderr, "\ndry run: %d shortlists built, no provider call ran\n", len(results))
 		return nil
 	}
-	if !report(os.Stdout, results, acc, idx, time.Since(start)) {
+	pass := report(os.Stdout, results, acc, idx, time.Since(start), run)
+	if err := evalrun.WriteFile(*runOut, run); err != nil {
+		return err
+	}
+	if !pass {
 		return errGateFailed
 	}
 	return nil
