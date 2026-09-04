@@ -63,6 +63,10 @@ type Header struct {
 	Seconds  float64           `json:"seconds"`
 	// Verdict is PASS or FAIL, or empty when the suite decides nothing.
 	Verdict string `json:"verdict,omitempty"`
+	// Only is the -only flag of a partial run, and empty on a whole run.
+	// A partial run reads the bars of its own items alone. It never
+	// stands for the suite: the check skips it, and it is no baseline.
+	Only string `json:"only,omitempty"`
 	// Lower names the metrics where a lower value is better, so a
 	// compare of this file knows which way is worse. Every other metric
 	// reads a higher value as better.
@@ -137,6 +141,10 @@ func (r *Run) Finish(rep llm.Report, took time.Duration, verdict string) {
 	r.Header.Seconds = took.Seconds()
 	r.Header.Verdict = verdict
 }
+
+// Partial reports whether the run covered a part of its suite, under
+// -only or a count. A partial run never stands for the suite.
+func (h Header) Partial() bool { return h.Only != "" }
 
 // Gated reports whether the run holds a gate row. A run with none is
 // not evaluated.
@@ -249,6 +257,9 @@ func (r *Run) Markdown(w io.Writer) {
 		commit = "unknown"
 	}
 	p("- Suite `%s`, run `%s`, on %s, commit `%s`.\n", h.Suite, orWord(h.RunID, "unnamed"), h.Date, commit)
+	if h.Partial() {
+		p("- Partial run over `%s`. It reads the bars of its own items, and it never stands for the suite.\n", h.Only)
+	}
 	if len(h.Roles) > 0 {
 		var parts []string
 		for _, role := range sortedKeys(h.Roles) {

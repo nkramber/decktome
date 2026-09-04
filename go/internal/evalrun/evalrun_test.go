@@ -117,4 +117,15 @@ func TestMarkdownIsTheSameBlockEverywhere(t *testing.T) {
 	if !strings.Contains(free.String(), "run `unnamed`") || !strings.Contains(free.String(), "Roles: none, no provider call.") || !strings.Contains(free.String(), "Cost: unpriced.") {
 		t.Errorf("a free run reads wrong:\n%s", free.String())
 	}
+	// A partial run names its part, and a whole run has no such line.
+	part := New("questions", "pr7-question-gate-run36")
+	part.Header.Only = "109"
+	var pbuf bytes.Buffer
+	part.Markdown(&pbuf)
+	if !part.Header.Partial() || !strings.Contains(pbuf.String(), "- Partial run over `109`. It reads the bars of its own items, and it never stands for the suite.\n") {
+		t.Errorf("a partial run names its part:\n%s", pbuf.String())
+	}
+	if sample().Header.Partial() || strings.Contains(doc, "Partial run") {
+		t.Errorf("a whole run reads no partial line:\n%s", doc)
+	}
 }

@@ -294,6 +294,62 @@ func TestExpectationsAreTheFourthBar(t *testing.T) {
 	}
 }
 
+// TestPartialRunReadsItsOwnItems: a run under -only covers a part of the
+// set. The catalog-only bar and the gate size bar need the whole set, so
+// the verdict skips them, their suite rows are information, and the
+// document says so. The same probe on a whole run fails both bars.
+func TestPartialRunReadsItsOwnItems(t *testing.T) {
+	cfg, err := llm.LoadConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+	probe := result{
+		conversation: conversation{ID: 109, Name: "a group of sets by franchise", Probe: true,
+			Messages: []string{"Build the best possible deck from the sets with Marvel characters."},
+			Expect:   map[string]string{"sets": "msc,msh"}},
+		Turns: 1, Ready: true, Values: map[string]string{"sets": "msc,msh"},
+	}
+	probe.Misses = checkExpect(probe.Expect, probe.Values)
+	var cov coverages
+	cov.add(probe)
+	file := gateFile{VerifiedAt: "2026-08-31", Conversations: make([]conversation, 108)}
+
+	rec := evalrun.New("questions", "test")
+	rec.Header.Only = "109"
+	var buf bytes.Buffer
+	err = write(&buf, file, []result{probe}, cov, llm.Report{Calls: 5}, cfg, "no snapshot", time.Second, rec)
+	doc := buf.String()
+	if err != nil || !strings.Contains(doc, "Verdict: PASS. 0 of 0 counted gate conversations") {
+		t.Errorf("a partial run passes on its item bars: %v\n%s", err, doc)
+	}
+	if !strings.Contains(doc, "This is a partial run over `109`: 1 of 108 conversations ran.") {
+		t.Errorf("the document must say it is partial:\n%s", doc)
+	}
+	rows := map[string]evalrun.Row{}
+	for _, r := range rec.Rows {
+		rows[r.Item+"/"+r.Metric] = r
+	}
+	if r := rows["suite/catalog_only"]; r.Kind != evalrun.KindInfo || !strings.HasSuffix(r.Detail, "not read on a partial run") {
+		t.Errorf("the catalog-only suite row of a partial run is information: %+v", r)
+	}
+	if r := rows["suite/gate_size"]; r.Kind != evalrun.KindInfo {
+		t.Errorf("the gate size suite row of a partial run is information: %+v", r)
+	}
+	if r := rows["suite/expectation_misses"]; r.Kind != evalrun.KindGate {
+		t.Errorf("the expectation bar still holds: %+v", r)
+	}
+	if !rec.Gated() {
+		t.Error("a partial run still holds gate rows, so a compare by hand can read it")
+	}
+
+	rec = evalrun.New("questions", "test")
+	buf.Reset()
+	err = write(&buf, file, []result{probe}, cov, llm.Report{Calls: 5}, cfg, "no snapshot", time.Second, rec)
+	if err == nil || !strings.Contains(buf.String(), "Verdict: FAIL.") || strings.Contains(buf.String(), "partial run") {
+		t.Errorf("the same probe on a whole run fails the two bars: %v\n%s", err, buf.String())
+	}
+}
+
 // TestEveryCountedConversationNamesItsExpectations pins the data of
 // slice 4: each counted conversation carries an expectation, every key
 // is one slotValues writes, and an after-build conversation carries
