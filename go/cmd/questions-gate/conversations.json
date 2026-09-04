@@ -11,7 +11,16 @@
         "Commander, and white and black is right.",
         "Bracket 3. Suggest a commander from my library, and build from my library first.",
         "Karlov of the Ghost Council. Keep the buy list under 50 dollars."
-      ]
+      ],
+      "expect": {
+        "format": "commander",
+        "colors": "WB",
+        "power": "bracket 3",
+        "pool_rule": "owned_first",
+        "commander": "Karlov of the Ghost Council",
+        "budget": "50 to buy",
+        "theme": "lifegain"
+      }
     },
     {
       "id": 2,
@@ -22,7 +31,16 @@
         "Commander. White and blue.",
         "Bracket 3, and Brago, King Eternal is my commander. Build owned-first with a buy list.",
         "No more than 40 dollars."
-      ]
+      ],
+      "expect": {
+        "format": "commander",
+        "colors": "WU",
+        "power": "bracket 3",
+        "pool_rule": "owned_first",
+        "commander": "Brago, King Eternal",
+        "budget": "40",
+        "theme": "blink"
+      }
     },
     {
       "id": 3,
@@ -32,7 +50,14 @@
         "Build around Grist, the Hunger Tide.",
         "Commander. Black and green is fine.",
         "Grist is my commander. Bracket 3, and use my library first."
-      ]
+      ],
+      "expect": {
+        "format": "commander",
+        "colors": "BG",
+        "power": "bracket 3",
+        "pool_rule": "owned_first",
+        "commander": "Grist, the Hunger Tide"
+      }
     },
     {
       "id": 4,
@@ -43,7 +68,14 @@
         "Commander. Janky means an odd card nobody expects.",
         "A sacrifice deck. Bracket 2, and any colors are fine.",
         "You pick the commander, and build from my library first."
-      ]
+      ],
+      "expect": {
+        "format": "commander",
+        "power": "bracket 2",
+        "pool_rule": "owned_first",
+        "commander": "delegated",
+        "theme": "sacrifice"
+      }
     },
     {
       "id": 5,
@@ -53,7 +85,13 @@
         "I want a 60-card deck, and anything goes at our table.",
         "Any card, no ban list. Call it Modern. A dragon deck.",
         "The normal limits hold. Casual power, red and green."
-      ]
+      ],
+      "expect": {
+        "colors": "RG",
+        "power": "casual",
+        "pool_rule": "any_card",
+        "theme": "dragon"
+      }
     },
     {
       "id": 6,
@@ -63,7 +101,13 @@
         "Build the strongest deck possible. I own nothing.",
         "Modern. The best deck under budget.",
         "300 dollars, tournament level. People at my shop play aggro and control."
-      ]
+      ],
+      "expect": {
+        "format": "modern",
+        "power": "tournament",
+        "pool_rule": "any_card",
+        "budget": "300"
+      }
     },
     {
       "id": 7,
@@ -85,7 +129,16 @@
         "Commander. Blue and black.",
         "Bracket 3. Bruvac the Grandiloquent is the commander, and build from my library first.",
         "My table accepts mill. The 100 caps the cards I buy. Mill as the win condition."
-      ]
+      ],
+      "expect": {
+        "format": "commander",
+        "colors": "UB",
+        "power": "bracket 3",
+        "pool_rule": "owned_first",
+        "commander": "Bruvac the Grandiloquent",
+        "budget": "100 to buy",
+        "theme": "mill"
+      }
     },
     {
       "id": 9,
@@ -96,7 +149,15 @@
         "Commander, and Brago, King Eternal is the commander.",
         "Add him to the buy list. Bracket 3, white and blue.",
         "Under 30 dollars, and build from my library first."
-      ]
+      ],
+      "expect": {
+        "format": "commander",
+        "colors": "WU",
+        "power": "bracket 3",
+        "pool_rule": "owned_first",
+        "commander": "Brago, King Eternal",
+        "budget": "30"
+      }
     },
     {
       "id": 10,
@@ -106,7 +167,15 @@
         "Lifegain from my collection.",
         "Commander. White and black.",
         "Buy the best lifegain commander. Bracket 3, owned-first, and 60 dollars is the cap."
-      ]
+      ],
+      "expect": {
+        "format": "commander",
+        "colors": "WB",
+        "power": "bracket 3",
+        "pool_rule": "owned_first",
+        "budget": "60",
+        "theme": "lifegain"
+      }
     },
     {
       "id": 11,
@@ -137,7 +206,16 @@
         "Karlov of the Ghost Council lifegain deck, and keep Sanguine Bond in it.",
         "Commander, white and black, bracket 3.",
         "Build from my library first, and lock Sanguine Bond in."
-      ]
+      ],
+      "expect": {
+        "format": "commander",
+        "colors": "WB",
+        "power": "bracket 3",
+        "pool_rule": "owned_first",
+        "commander": "Karlov of the Ghost Council",
+        "locked": "Sanguine Bond",
+        "theme": "lifegain"
+      }
     },
     {
       "id": 14,
@@ -148,7 +226,14 @@
         "Bracket 3. I have no commander in mind, so suggest one.",
         "None of those.",
         "The first of the new three is good."
-      ]
+      ],
+      "expect": {
+        "format": "commander",
+        "power": "bracket 3",
+        "pool_rule": "any_card",
+        "commander": "*",
+        "theme": "lifegain"
+      }
     },
     {
       "id": 15,
@@ -158,7 +243,14 @@
         "I need a Standard deck for my local store.",
         "Standard. An aggro deck, red and white.",
         "FNM level."
-      ]
+      ],
+      "expect": {
+        "format": "standard",
+        "colors": "WR",
+        "power": "fnm",
+        "pool_rule": "any_card",
+        "theme": "aggro"
+      }
     },
     {
       "id": 16,
@@ -168,7 +260,13 @@
         "I want the strongest Modern deck, money is no object.",
         "The best deck under budget. Any colors.",
         "Tournament level, 800 dollars. My shop plays aggro and combo decks."
-      ]
+      ],
+      "expect": {
+        "format": "modern",
+        "power": "tournament",
+        "pool_rule": "any_card",
+        "budget": "800"
+      }
     },
     {
       "id": 17,
@@ -177,7 +275,13 @@
       "messages": [
         "Upgrade my Atraxa, Praetors' Voice precon. We play bracket 2.",
         "A superfriends deck. Build from my library first."
-      ]
+      ],
+      "expect": {
+        "format": "commander",
+        "power": "bracket 2",
+        "pool_rule": "owned_first",
+        "theme": "superfriends"
+      }
     },
     {
       "id": 18,
@@ -198,7 +302,15 @@
         "I have a big collection. Build me something good.",
         "Commander. A token deck, green and white.",
         "You pick the commander. Bracket 3, and build from my library first."
-      ]
+      ],
+      "expect": {
+        "format": "commander",
+        "colors": "WG",
+        "power": "bracket 3",
+        "pool_rule": "owned_first",
+        "commander": "delegated",
+        "theme": "token"
+      }
     },
     {
       "id": 20,
@@ -209,7 +321,15 @@
         "Commander. Dinosaurs. Casual means low power, not a house format.",
         "Gishath, Sun's Avatar is the commander. Bracket 2, red green and white.",
         "Build from my library first."
-      ]
+      ],
+      "expect": {
+        "format": "commander",
+        "colors": "WRG",
+        "power": "bracket 2",
+        "pool_rule": "owned_first",
+        "commander": "Gishath, Sun's Avatar",
+        "theme": "dinosaur"
+      }
     },
     {
       "id": 21,
@@ -231,7 +351,15 @@
         "Commander. Blue and red.",
         "You pick the commander. Bracket 3, and build from my library first.",
         "My table is fine with extra turns."
-      ]
+      ],
+      "expect": {
+        "format": "commander",
+        "colors": "UR",
+        "power": "bracket 3",
+        "pool_rule": "owned_first",
+        "commander": "delegated",
+        "theme": "extra turn"
+      }
     },
     {
       "id": 23,
@@ -242,7 +370,15 @@
         "Commander. Red and green.",
         "You pick the commander. Bracket 3, and build from my library first.",
         "My table does not mind."
-      ]
+      ],
+      "expect": {
+        "format": "commander",
+        "colors": "RG",
+        "power": "bracket 3",
+        "pool_rule": "owned_first",
+        "commander": "delegated",
+        "theme": "land destruction"
+      }
     },
     {
       "id": 24,
@@ -253,7 +389,15 @@
         "Commander. White and blue.",
         "You pick the commander. Bracket 4, owned-only.",
         "My table accepts stax."
-      ]
+      ],
+      "expect": {
+        "format": "commander",
+        "colors": "WU",
+        "power": "bracket 4",
+        "pool_rule": "owned_only",
+        "commander": "delegated",
+        "theme": "stax"
+      }
     },
     {
       "id": 25,
@@ -263,7 +407,14 @@
         "An infect deck for a Modern tournament.",
         "Modern. The best deck under budget.",
         "Tournament level, 400 dollars. My shop plays aggro and control decks."
-      ]
+      ],
+      "expect": {
+        "format": "modern",
+        "power": "tournament",
+        "pool_rule": "any_card",
+        "budget": "400",
+        "theme": "infect"
+      }
     },
     {
       "id": 26,
@@ -285,7 +436,16 @@
         "Commander. A sacrifice deck, black and green.",
         "Grist goes in the 99. Bracket 3, and build from my library first.",
         "You pick the commander, and keep Grist in the deck."
-      ]
+      ],
+      "expect": {
+        "format": "commander",
+        "colors": "BG",
+        "power": "bracket 3",
+        "pool_rule": "owned_first",
+        "commander": "delegated",
+        "locked": "Grist, the Hunger Tide",
+        "theme": "sacrifice"
+      }
     },
     {
       "id": 28,
@@ -296,7 +456,15 @@
         "Commander. Black and green.",
         "Meren of Clan Nel Toth is the commander. Bracket 3, and build from my library first.",
         "Reanimate one big creature, not a value loop."
-      ]
+      ],
+      "expect": {
+        "format": "commander",
+        "colors": "BG",
+        "power": "bracket 3",
+        "pool_rule": "owned_first",
+        "commander": "Meren of Clan Nel Toth",
+        "theme": "reanimat"
+      }
     },
     {
       "id": 29,
@@ -307,7 +475,16 @@
         "Commander. An artifact deck, blue and red.",
         "You pick the commander. Bracket 3, and build from my library first.",
         "The 200 caps the cards I buy."
-      ]
+      ],
+      "expect": {
+        "format": "commander",
+        "colors": "UR",
+        "power": "bracket 3",
+        "pool_rule": "owned_first",
+        "commander": "delegated",
+        "budget": "200 to buy",
+        "theme": "artifact"
+      }
     },
     {
       "id": 30,
@@ -327,7 +504,13 @@
         "I need a deck for FNM on Friday, something competitive.",
         "Modern. The best deck under budget.",
         "200 dollars, tournament level. My shop is mostly aggro decks."
-      ]
+      ],
+      "expect": {
+        "format": "modern",
+        "power": "tournament",
+        "pool_rule": "any_card",
+        "budget": "200"
+      }
     },
     {
       "id": 32,
@@ -336,7 +519,15 @@
         "A Standard burn deck, as cheap as possible.",
         "Standard. Burn, mono red.",
         "Casual power, and 25 dollars is the cap."
-      ]
+      ],
+      "expect": {
+        "format": "standard",
+        "colors": "R",
+        "power": "casual",
+        "pool_rule": "any_card",
+        "budget": "25",
+        "theme": "burn"
+      }
     },
     {
       "id": 33,
@@ -345,7 +536,15 @@
         "A Modern deck for an event.",
         "Modern. A Delver of Secrets tempo deck, blue and red.",
         "FNM level, 600 dollars."
-      ]
+      ],
+      "expect": {
+        "format": "modern",
+        "colors": "UR",
+        "power": "fnm",
+        "pool_rule": "any_card",
+        "budget": "600",
+        "theme": "tempo"
+      }
     },
     {
       "id": 34,
@@ -354,7 +553,12 @@
         "We proxy everything at our table.",
         "Any card, no ban list. Call it Modern. An artifact prison deck.",
         "The normal limits hold. Casual power, mono brown."
-      ]
+      ],
+      "expect": {
+        "power": "casual",
+        "pool_rule": "any_card",
+        "theme": "prison"
+      }
     },
     {
       "id": 35,

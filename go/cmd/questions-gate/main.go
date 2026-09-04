@@ -83,6 +83,10 @@ type conversation struct {
 	// be true. A deck exists only when the build slots were filled, so the
 	// flag fills them too (D-239, OQ-38).
 	HasDeck bool `json:"has_deck"`
+	// Expect names the values the slots must end with, in the words of
+	// slotValues (PR-15). A counted conversation with a miss fails the
+	// gate, and every miss is a row of the run.
+	Expect map[string]string `json:"expect,omitempty"`
 }
 
 // builtSlots are the slots a finished build must have settled. A stored
@@ -140,6 +144,10 @@ type result struct {
 	// the slot state tells the two apart.
 	Ready bool
 	Slots map[string]string
+	// Values are the settled slots as words, and Misses the expectations
+	// they did not meet (PR-15).
+	Values map[string]string
+	Misses []string
 	// Unanswered are the slots the deck needs that no answer filled.
 	Unanswered []string
 	// Premature marks a session that called itself complete with a slot
@@ -421,6 +429,16 @@ func runOne(cat *questions.Catalog, client *llm.Client, idx *cards.Index, builde
 	for _, key := range builtSlots {
 		res.Slots[key] = slotState(st, key)
 	}
+	res.Values = slotValues(st, func(id string) string {
+		if idx == nil {
+			return ""
+		}
+		if c, ok := idx.ByOracleID(id); ok {
+			return c.GetName()
+		}
+		return ""
+	})
+	res.Misses = checkExpect(conv.Expect, res.Values)
 	for _, keys := range required(st, conv.Collection) {
 		answered := false
 		for _, key := range keys {
@@ -574,8 +592,23 @@ func write(w io.Writer, file gateFile, results []result, cov coverages,
 			byRule[f.Rule]++
 		}
 	}
+	// The golden expectations are the fourth bar (PR-15): a counted
+	// conversation whose slots ended on other values than it names.
+	var missLines []string
+	expected := 0
+	for _, r := range results {
+		if r.Probe || r.HasDeck {
+			continue
+		}
+		if len(r.Expect) > 0 {
+			expected++
+		}
+		for _, m := range r.Misses {
+			missLines = append(missLines, r.Name+": "+m)
+		}
+	}
 	pass := total.CatalogOnly >= CatalogOnlyBar && gate >= questions.MinGateSize &&
-		len(premature) == 0 && findings == 0 && len(deadEnds) == 0
+		len(premature) == 0 && findings == 0 && len(deadEnds) == 0 && len(missLines) == 0
 	verdict := "FAIL"
 	if pass {
 		verdict = "PASS"
@@ -588,6 +621,7 @@ func write(w io.Writer, file gateFile, results []result, cov coverages,
 	recordRows(rec, results)
 	rec.Gate("suite", "catalog_only", float64(total.CatalogOnly), fmt.Sprintf("%d of %d, the bar is %d", total.CatalogOnly, counted, CatalogOnlyBar))
 	rec.Gate("suite", "gate_size", float64(gate), fmt.Sprintf("the gate needs %d", questions.MinGateSize))
+	rec.Gate("suite", "expectation_misses", float64(len(missLines)), fmt.Sprintf("%d counted conversations name expectations", expected))
 	rec.Finish(report, elapsed, verdict)
 
 	_, _ = fmt.Fprintf(w, "# PR-7 question gate\n\n")
@@ -627,6 +661,12 @@ func write(w io.Writer, file gateFile, results []result, cov coverages,
 			len(premature), strings.Join(premature, "; "))
 	} else {
 		_, _ = fmt.Fprintf(w, "No conversation called itself complete with a slot unanswered.\n\n")
+	}
+	switch {
+	case len(missLines) > 0:
+		_, _ = fmt.Fprintf(w, "%d slots ended on a value other than the one the conversation expects, which fails the gate (PR-15). A miss is a wrong slot or a wrong expectation, and the session decides which: %s.\n\n", len(missLines), strings.Join(missLines, "; "))
+	case expected > 0:
+		_, _ = fmt.Fprintf(w, "Every slot of the %d counted conversations that name expectations ended on the expected value (PR-15).\n\n", expected)
 	}
 	if findings > 0 {
 		_, _ = fmt.Fprintf(w, "The linter found %d defective questions, which fails the gate (D-115).\n\n", findings)
@@ -706,6 +746,13 @@ func write(w io.Writer, file gateFile, results []result, cov coverages,
 			_, _ = fmt.Fprintf(w, "The slots were full after turn %d. The last %d messages never went out.\n\n",
 				r.Turns, len(r.Messages)-r.Turns)
 		}
+		if len(r.Expect) > 0 {
+			if len(r.Misses) > 0 {
+				_, _ = fmt.Fprintf(w, "Expected slots: %d misses. %s.\n\n", len(r.Misses), strings.Join(r.Misses, "; "))
+			} else {
+				_, _ = fmt.Fprintf(w, "Expected slots: every one met.\n\n")
+			}
+		}
 		if len(r.Unanswered) > 0 {
 			label := "Slots the deck needs and nobody answered"
 			if r.Premature {
@@ -782,6 +829,24 @@ func recordRows(rec *evalrun.Run, results []result) {
 			rec.Gate(item, "lint_findings", float64(len(r.Findings)), strings.Join(rules, ", "))
 		} else {
 			rec.Info(item, "lint_findings", float64(len(r.Findings)), strings.Join(rules, ", "))
+		}
+		for _, key := range expectKeys {
+			want, ok := r.Expect[key]
+			if !ok {
+				continue
+			}
+			met := 1.0
+			for _, m := range r.Misses {
+				if strings.HasPrefix(m, key+": ") {
+					met = 0
+				}
+			}
+			detail := "want " + orNone(want) + ", got " + orNone(r.Values[key])
+			if counted {
+				rec.Gate(item, "slot_"+key, met, detail)
+			} else {
+				rec.Info(item, "slot_"+key, met, detail)
+			}
 		}
 		rec.Info(item, "catalog_only", float64(r.Coverage.CatalogOnly), r.kind())
 		rec.Info(item, "asked", float64(r.Coverage.Asked), "")
