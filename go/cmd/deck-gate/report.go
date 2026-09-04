@@ -85,6 +85,11 @@ func report(w io.Writer, rs []result, acc *llm.Accumulator, idx *cards.Index, to
 	_, _ = fmt.Fprintf(w, "| Summaries that state a rule of the game | %d |\n", statesRule)
 	_, _ = fmt.Fprintf(w, "| Summaries that state a FALSE rule | %d |\n", falseRules)
 	_, _ = fmt.Fprintf(w, "| Judge errors | %d |\n", judgeErrs)
+	planJudged, planScore := planTotals(rs)
+	_, _ = fmt.Fprintf(w, "| Decks the plan judge read (PR-15, information) | %d |\n", planJudged)
+	if planJudged > 0 {
+		_, _ = fmt.Fprintf(w, "| Mean plan score, 0 to 1 | %.2f |\n", planScore)
+	}
 	_, _ = fmt.Fprintf(w, "| Errors | %d |\n", errs)
 	_, _ = fmt.Fprintf(w, "| Prompt version | %d |\n", generate.PromptVersion)
 	_, _ = fmt.Fprintf(w, "| Calls | %d |\n", rep.Calls)
@@ -172,6 +177,15 @@ func writeDeck(w io.Writer, r result, idx *cards.Index) {
 	if r.judged != nil {
 		for _, c := range r.judged.Claims {
 			_, _ = fmt.Fprintf(w, "- JUDGE [%s]: %q. %s\n", c.Truth, c.Text, c.Why)
+		}
+	}
+	if r.planErr != nil {
+		_, _ = fmt.Fprintf(w, "- PLAN JUDGE ERROR: %v\n", r.planErr)
+	}
+	if r.plan != nil {
+		for _, f := range generate.PlanFields {
+			g := r.plan.Grade(f)
+			_, _ = fmt.Fprintf(w, "- PLAN %s=%s: %s\n", f, g.Grade, g.Why)
 		}
 	}
 	for _, f := range d.GetValidation().GetFindings() {
@@ -309,6 +323,15 @@ func recordRows(run *evalrun.Run, rs []result) {
 		run.Info(item, "warnings", float64(warnings), "")
 		run.Info(item, "buy_cost", generate.BuyCost(r.deck), "")
 		run.Info(item, "deck_cost", generate.DeckCost(r.deck), "")
+		if r.plan != nil {
+			for _, f := range generate.PlanFields {
+				g := r.plan.Grade(f)
+				run.Info(item, "plan_"+f, g.Value(), g.Grade+": "+g.Why)
+			}
+			run.Info(item, "plan_score", r.plan.Score(), "")
+		} else if r.planErr != nil {
+			run.Info(item, "plan_judge_error", 1, r.planErr.Error())
+		}
 		if q := r.deck.GetQuality(); q != nil {
 			run.Info(item, "grade", float64(q.GetScore()), q.GetTier())
 			if run.Header.Versions["quality_model"] == "" {
@@ -345,4 +368,19 @@ func recordRows(run *evalrun.Run, rs []result) {
 			run.Info(item, "spare", float64(r.spare), "")
 		}
 	}
+}
+
+// planTotals counts the decks the plan judge read and their mean score.
+func planTotals(rs []result) (judged int, mean float64) {
+	sum := 0.0
+	for _, r := range rs {
+		if r.plan != nil {
+			judged++
+			sum += r.plan.Score()
+		}
+	}
+	if judged > 0 {
+		mean = sum / float64(judged)
+	}
+	return judged, mean
 }

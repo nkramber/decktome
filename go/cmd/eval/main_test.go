@@ -241,3 +241,104 @@ func TestRunRefusesAnUnknownMode(t *testing.T) {
 		t.Error("a check wrote a baselines file")
 	}
 }
+
+// TestSweepPlansUnderTheCap: the plan numbers each document after the
+// highest run of its family, reads the estimate from the last run file,
+// stops before the step that crosses the cap, and stops on a FAIL.
+func TestSweepPlansUnderTheCap(t *testing.T) {
+	root := t.TempDir()
+	docs := filepath.Join(root, "docs", "reference")
+	evalDir := filepath.Join(docs, "eval")
+	if err := os.MkdirAll(evalDir, 0o750); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"pr7-question-gate-run33.md", "pr8-deck-gate-run14.md", "pr8-deck-gate-run14b.md", "pr12b-revise-gate-run8.md"} {
+		if err := os.WriteFile(filepath.Join(docs, name), []byte("# doc\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// The decks suite has a run file with a cost, so its estimate reads it.
+	decks := evalrun.New("decks", "pr8-deck-gate-run14")
+	cost := 2.54
+	decks.Header.CostUSD = &cost
+	decks.Header.Verdict = "FAIL"
+	decks.Gate("1", "blocks", 0, "")
+	if err := evalrun.WriteFile(filepath.Join(evalDir, "pr8-deck-gate-run14.jsonl"), decks); err != nil {
+		t.Fatal(err)
+	}
+
+	var out bytes.Buffer
+	code, err := sweep(&out, root, nil, 3, true, false, nil)
+	if err != nil || code != exitPass {
+		t.Fatalf("dry sweep: code %d, err %v:\n%s", code, err, out.String())
+	}
+	plan := out.String()
+	for _, want := range []string{
+		"| questions | `make questions-gate` | `docs/reference/pr7-question-gate-run34.md` | $0.18 |",
+		"| question-eval | `make questions-eval` | `docs/reference/pr7-question-eval-run1.md` | $0.10 |",
+		"| decks | `make deck-gate` | `docs/reference/pr8-deck-gate-run15.md` | $2.54 |",
+		"| revise | `make revise-gate` | `docs/reference/pr12b-revise-gate-run9.md` | $1.23 |",
+		"over the cap of $3.00",
+		"Dry run: nothing ran",
+	} {
+		if !strings.Contains(plan, want) {
+			t.Errorf("the plan lacks %q:\n%s", want, plan)
+		}
+	}
+
+	// A run: the fake runner writes a run file per step. The eval step
+	// reads the question gate document the sweep names, the deck step
+	// fails and stops the sweep, and the spend counts what ran.
+	t.Setenv("EVAL_SWEEP", "1")
+	var ran []string
+	runner := func(gotRoot, target string, vars []string) error {
+		ran = append(ran, target+" "+strings.Join(vars, " "))
+		var docPath, runPath string
+		for _, v := range vars {
+			k, val, _ := strings.Cut(v, "=")
+			switch k {
+			case "GATE_OUT", "EVAL_OUT", "DECK_GATE_OUT", "REVISE_GATE_OUT", "QUALITY_JUDGE_OUT":
+				docPath = val
+			case "GATE_RUN", "EVAL_ROWS", "DECK_GATE_RUN", "REVISE_GATE_RUN", "QUALITY_JUDGE_RUN":
+				runPath = val
+			}
+		}
+		suite := map[string]string{"questions-gate": "questions", "questions-eval": "question-eval", "deck-gate": "decks", "revise-gate": "revise"}[target]
+		rec := evalrun.New(suite, evalrun.RunID(runPath))
+		c := map[string]float64{"questions": 0.2, "question-eval": 0.1, "decks": 2.5}[suite]
+		rec.Header.CostUSD = &c
+		rec.Header.Verdict = "PASS"
+		if suite == "decks" {
+			rec.Header.Verdict = "FAIL"
+		}
+		rec.Gate("1", "x", 0, "")
+		if err := os.WriteFile(filepath.Join(gotRoot, docPath), []byte("# doc\n"), 0o600); err != nil {
+			return err
+		}
+		return evalrun.WriteFile(filepath.Join(gotRoot, runPath), rec)
+	}
+	out.Reset()
+	code, err = sweep(&out, root, []string{"questions", "question-eval", "decks", "revise"}, 5, false, false, runner)
+	if err != nil || code != exitFail {
+		t.Fatalf("sweep: code %d, err %v:\n%s", code, err, out.String())
+	}
+	if len(ran) != 3 || !strings.HasPrefix(ran[2], "deck-gate ") {
+		t.Errorf("ran %v, want three steps that stop at the deck gate FAIL", ran)
+	}
+	if !strings.Contains(ran[1], "EVAL_RUN=docs/reference/pr7-question-gate-run34.md") || !strings.Contains(ran[1], "EVAL_JSON=.local/tune/run1.json") {
+		t.Errorf("the eval step reads the gate document of this sweep: %s", ran[1])
+	}
+	if !strings.Contains(out.String(), "Spent $2.80 of the cap of $5.00.") || !strings.Contains(out.String(), "The sweep stops here") {
+		t.Errorf("the spend and the stop:\n%s", out.String())
+	}
+
+	// Without the guard nothing runs.
+	t.Setenv("EVAL_SWEEP", "")
+	out.Reset()
+	if code, err := sweep(&out, root, nil, 5, false, false, runner); err == nil || code != exitFault {
+		t.Errorf("the sweep ran without EVAL_SWEEP=1: code %d, err %v", code, err)
+	}
+	if _, err := sweep(&out, root, nil, 0, true, false, nil); err == nil {
+		t.Error("a sweep with no cap planned")
+	}
+}

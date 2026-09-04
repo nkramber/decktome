@@ -78,7 +78,7 @@ Five more targets spend money, and each has an overwrite guard and an env guard.
 
 `make quality-judge` asks the judge role for the tier of every graded deck of a deck gate document (PR-14B). It costs a few cents a deck, and it has the guard `QUALITY_JUDGE=1` and a verdict check on `QUALITY_JUDGE_OUT`. Ask the owner before every run.
 
-`make test-smoke` runs the live LLM smoke test and reads the keys from `.env`. It spends a few cents. The paid targets are these eleven plus the script: questions-gate, questions-eval, eval-calibrate, deck-gate, bracket-gate, revise-gate, chat-probe, generate-probe, summary-judge, quality-judge, and test-smoke.
+`make test-smoke` runs the live LLM smoke test and reads the keys from `.env`. It spends a few cents. The paid targets are these eleven plus the script: questions-gate, questions-eval, eval-calibrate, deck-gate, bracket-gate, revise-gate, chat-probe, generate-probe, summary-judge, quality-judge, and test-smoke. `go run ./cmd/eval sweep -cap <USD>` drives five of them in the order of the eval list under a cap, and it needs `EVAL_SWEEP=1` (PR-15). `-dry` prints the plan for nothing. Since PR-15 the deck gate spends one more judge call a deck on the plan rubric, about $0.45 a run.
 
 Each other target is free. `make meta-refresh` reads the deck list sources over the network, about 40 minutes on the first run, and calls no model. `make quality-gate` fits the quality model over the local meta store and writes the PR-14B gate document. `make ste-check` checks every hand-written `.md` file against the STE rules, and `make lint` runs it. `make m5-sheet` builds the scoring sheet, and `make m5-report` reads it. `make themes-check` checks the theme slugs and the commander ranking.
 

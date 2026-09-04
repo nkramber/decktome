@@ -100,7 +100,11 @@ type result struct {
 	// verdict on F-26, so it can not count as a pass on that bar (T-17).
 	// An empty summary counts as one: the judge has nothing to read.
 	judgeErr error
-	err      error
+	// plan is the plan judge's read of the deck (PR-15). Its rows are
+	// information, and a failure of the lane moves no verdict.
+	plan    *generate.PlanJudgement
+	planErr error
+	err     error
 }
 
 func main() {
@@ -143,6 +147,7 @@ func run() error {
 	}
 	run := evalrun.New("decks", evalrun.RunID(*runOut))
 	run.Header.Prompts["generate"] = generate.PromptVersion
+	run.Header.Prompts["plan_rubric"] = generate.PlanRubricVersion
 	run.LowerIsBetter("blocks", "invented_names", "false_rules", "judge_error", "excluded_in_deck", "warnings", "repaired", "buy_cost", "deck_cost")
 	quiet := gatekit.Quiet()
 	idx, err := gatekit.LoadSnapshot(context.Background(), quiet)
@@ -221,6 +226,10 @@ func run() error {
 			r.judged, r.judgeErr = judge(context.Background(), client, p.Name, r.deck, acc)
 			if r.judgeErr != nil {
 				fmt.Fprintf(os.Stderr, "  judge %d failed: %v\n", p.ID, r.judgeErr)
+			}
+			r.plan, r.planErr = generate.JudgePlan(context.Background(), client, p.Plan, r.deck, idx, acc)
+			if r.planErr != nil {
+				fmt.Fprintf(os.Stderr, "  plan judge %d failed: %v\n", p.ID, r.planErr)
 			}
 		}
 		results = append(results, r)

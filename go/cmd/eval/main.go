@@ -12,6 +12,11 @@
 //	go run ./cmd/eval check [-dir ../docs/reference/eval] [-margin 0]
 //	go run ./cmd/eval baseline -suite decks -run a.jsonl[,b.jsonl] [-dir ...] [-force]
 //	go run ./cmd/eval import -doc ../docs/reference/pr8-deck-gate-run14.md -out ../docs/reference/eval/pr8-deck-gate-run14.jsonl
+//	go run ./cmd/eval sweep -cap 5 -dry
+//	EVAL_SWEEP=1 go run ./cmd/eval sweep -cap 5 [-suites questions,decks] [-continue]
+//
+// The sweep is the one paid mode. It runs the Makefile targets, each
+// under its own guard, and it stops at the cap or at a FAIL.
 package main
 
 import (
@@ -51,7 +56,7 @@ func main() {
 
 func run(args []string, w io.Writer) (int, error) {
 	if len(args) == 0 {
-		return exitFault, errors.New("give a mode: compare, check, baseline, or import")
+		return exitFault, errors.New("give a mode: compare, check, baseline, import, or sweep")
 	}
 	mode, rest := args[0], args[1:]
 	fs := flag.NewFlagSet("eval "+mode, flag.ContinueOnError)
@@ -66,6 +71,11 @@ func run(args []string, w io.Writer) (int, error) {
 	force := fs.Bool("force", false, "record a baseline that fails its own bars")
 	doc := fs.String("doc", "", "the gate document to import")
 	out := fs.String("out", "", "where the import writes the run file")
+	capUSD := fs.Float64("cap", 0, "sweep: the most the sweep may spend, in USD")
+	suites := fs.String("suites", "", "sweep: the suites to run, comma separated, default every one")
+	dry := fs.Bool("dry", false, "sweep: print the plan and run nothing")
+	keepGoing := fs.Bool("continue", false, "sweep: go on after a FAIL")
+	root := fs.String("root", "", "sweep: the repo root, default the git root")
 	if err := fs.Parse(rest); err != nil {
 		return exitFault, fmt.Errorf("eval %s: %w", mode, err)
 	}
@@ -78,8 +88,10 @@ func run(args []string, w io.Writer) (int, error) {
 		return exitPass, setBaseline(w, *dir, *suite, splitList(*runs), *force)
 	case "import":
 		return exitPass, importDoc(w, *doc, *out)
+	case "sweep":
+		return sweep(w, *root, splitList(*suites), *capUSD, *dry, *keepGoing, makeRunner)
 	}
-	return exitFault, fmt.Errorf("unknown mode %q: give compare, check, baseline, or import", mode)
+	return exitFault, fmt.Errorf("unknown mode %q: give compare, check, baseline, import, or sweep", mode)
 }
 
 func splitList(s string) []string {
