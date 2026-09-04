@@ -242,13 +242,21 @@ func newestDoc(docs, prefix string) (string, error) {
 	return fmt.Sprintf("docs/reference/%s%d.md", prefix, n-1), nil
 }
 
-// lastCost is the cost of the newest run file of a suite, or the
-// fallback.
+// lastCost is the cost of the newest full run file of a suite, or the
+// fallback. A rerun of one prompt holds fewer items than a full run,
+// and its cost is no estimate of the next full run, so the newest run
+// among the ones with the most items answers.
 func lastCost(headers []fileHeader, suite string, fallback float64) float64 {
+	most := 0
+	for _, fh := range headers {
+		if fh.header.Suite == suite && fh.header.CostUSD != nil && fh.items > most {
+			most = fh.items
+		}
+	}
 	best := ""
 	var bestHeader evalrun.Header
 	for _, fh := range headers {
-		if fh.header.Suite != suite || fh.header.CostUSD == nil {
+		if fh.header.Suite != suite || fh.header.CostUSD == nil || fh.items < most {
 			continue
 		}
 		if best == "" || runLess(bestHeader, fh.header) {

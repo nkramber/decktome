@@ -257,13 +257,24 @@ func TestSweepPlansUnderTheCap(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	// The decks suite has a run file with a cost, so its estimate reads it.
+	// The decks suite has a run file with a cost, so its estimate reads
+	// it. Its one-prompt rerun is newer and cheaper, and the estimate
+	// reads the full run.
 	decks := evalrun.New("decks", "pr8-deck-gate-run14")
 	cost := 2.54
 	decks.Header.CostUSD = &cost
 	decks.Header.Verdict = "FAIL"
 	decks.Gate("1", "blocks", 0, "")
+	decks.Gate("2", "blocks", 0, "")
 	if err := evalrun.WriteFile(filepath.Join(evalDir, "pr8-deck-gate-run14.jsonl"), decks); err != nil {
+		t.Fatal(err)
+	}
+	rerun := evalrun.New("decks", "pr8-deck-gate-run14b")
+	small := 0.13
+	rerun.Header.CostUSD = &small
+	rerun.Header.Verdict = "PASS"
+	rerun.Gate("2", "blocks", 0, "")
+	if err := evalrun.WriteFile(filepath.Join(evalDir, "pr8-deck-gate-run14b.jsonl"), rerun); err != nil {
 		t.Fatal(err)
 	}
 

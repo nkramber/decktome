@@ -88,10 +88,12 @@ func setBaseline(w io.Writer, dir, suite string, files []string, force bool) err
 	return nil
 }
 
-// fileHeader is one run file of the directory with its header.
+// fileHeader is one run file of the directory with its header and the
+// count of its items.
 type fileHeader struct {
 	name   string
 	header evalrun.Header
+	items  int
 }
 
 // readHeaders reads the header of every run file in the directory.
@@ -112,7 +114,7 @@ func readHeaders(dir string) ([]fileHeader, error) {
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", e.Name(), err)
 		}
-		out = append(out, fileHeader{name: e.Name(), header: r.Header})
+		out = append(out, fileHeader{name: e.Name(), header: r.Header, items: countItems(r)})
 	}
 	return out, nil
 }
