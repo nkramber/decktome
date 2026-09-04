@@ -1,12 +1,16 @@
 package meta
 
 import (
+	"bytes"
 	"context"
+	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -342,5 +346,104 @@ func TestJobKeepsFailedPageApart(t *testing.T) {
 	}
 	if rep.Pages[SourceMTGO] != 2 {
 		t.Errorf("the second run fetched %d pages, want the two again", rep.Pages[SourceMTGO])
+	}
+}
+
+// TestMTGJSONSkipsAnUnchangedDeckList: the version stamp carries the
+// build day, so the table of yesterday never matches today's stamp. The
+// job compares the products instead. It reads no deck file while they
+// hold, and it reads them all again on a new product or after thirty
+// days.
+func TestMTGJSONSkipsAnUnchangedDeckList(t *testing.T) {
+	ctx := context.Background()
+	list := fixture(t, "mtgjson_decklist.json")
+	deck := fixture(t, "mtgjson_commander.json")
+	var mu sync.Mutex
+	version, extra := "5.3.0+20260902", ""
+	var deckHits atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/DeckList.json":
+			mu.Lock()
+			doc := bytes.Replace(list, []byte("5.3.0+20260902"), []byte(version), 1)
+			doc = bytes.Replace(doc, []byte(`"data": [`), []byte(`"data": [`+extra), 1)
+			mu.Unlock()
+			_, _ = w.Write(doc)
+		case strings.HasPrefix(r.URL.Path, "/decks/"):
+			deckHits.Add(1)
+			_, _ = w.Write(deck)
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	t.Cleanup(srv.Close)
+	store := DirObjects{Root: t.TempDir()}
+	job := testJob(t, srv, store)
+	job.Logger = slog.New(slog.NewTextHandler(io.Discard, nil))
+	run := func(v, add string) *Report {
+		t.Helper()
+		mu.Lock()
+		version, extra = v, add
+		mu.Unlock()
+		rep := newReport()
+		if err := job.runMTGJSON(ctx, rep); err != nil {
+			t.Fatalf("%s: %v", v, err)
+		}
+		return rep
+	}
+
+	// The first read stores the table and its deck list.
+	rep := run("5.3.0+20260902", "")
+	if rep.Precons != 8 || rep.PreconsVersion != "5.3.0+20260902" || deckHits.Load() != 8 {
+		t.Fatalf("first run: precons %d of %s, %d deck fetches", rep.Precons, rep.PreconsVersion, deckHits.Load())
+	}
+
+	// The next day's stamp names the same products: no deck fetch, and
+	// the report names the stored table.
+	rep = run("5.3.0+20260903", "")
+	if rep.Precons != 0 || rep.PreconsVersion != "5.3.0+20260902" || rep.Skipped[SourceMTGJSON] == "" || deckHits.Load() != 8 {
+		t.Errorf("same products: precons %d of %s, skipped %q, %d deck fetches", rep.Precons, rep.PreconsVersion, rep.Skipped[SourceMTGJSON], deckHits.Load())
+	}
+	if _, ok, _ := store.Get(ctx, PreconsName("5.3.0+20260903")); ok {
+		t.Error("the skip wrote a table of the new stamp")
+	}
+
+	// A new product reads every file again under the new stamp.
+	newDeck := `{"code": "NEW", "fileName": "NewDeck_NEW", "name": "New Deck", "releaseDate": "2026-09-04", "type": "Commander Deck"}, `
+	rep = run("5.3.0+20260904", newDeck)
+	if rep.Precons != 9 || rep.PreconsVersion != "5.3.0+20260904" || deckHits.Load() != 17 {
+		t.Errorf("new product: precons %d of %s, %d deck fetches", rep.Precons, rep.PreconsVersion, deckHits.Load())
+	}
+
+	// The same products thirty days on read whole again, and the day
+	// after that skips on the fresh table.
+	rep = run("5.3.0+20261010", newDeck)
+	if rep.Precons != 9 || rep.PreconsVersion != "5.3.0+20261010" || deckHits.Load() != 26 {
+		t.Errorf("thirty days: precons %d of %s, %d deck fetches", rep.Precons, rep.PreconsVersion, deckHits.Load())
+	}
+	rep = run("5.3.0+20261011", newDeck)
+	if rep.Precons != 0 || rep.PreconsVersion != "5.3.0+20261010" || deckHits.Load() != 26 {
+		t.Errorf("day after: precons %d of %s, %d deck fetches", rep.Precons, rep.PreconsVersion, deckHits.Load())
+	}
+}
+
+func TestSameProductsReadsTheKeptTypesAlone(t *testing.T) {
+	a := []DeckEntry{
+		{Code: "WHO", FileName: "TimeyWimey_WHO", Name: "Timey-Wimey", ReleaseDate: "2023-10-13", Type: "Commander Deck"},
+		{Code: "J25", FileName: "Pack_J25", Name: "A Jumpstart pack", ReleaseDate: "2024-11-15", Type: "Jumpstart"},
+	}
+	b := []DeckEntry{a[0]}
+	if !SameProducts(a, b) {
+		t.Error("a Jumpstart pack is not a product of the table, so it must not count")
+	}
+	c := []DeckEntry{{Code: "WHO", FileName: "TimeyWimey_WHO", Name: "Timey-Wimey", ReleaseDate: "2023-10-14", Type: "Commander Deck"}}
+	if SameProducts(a, c) {
+		t.Error("a changed release date is a changed product")
+	}
+	if day, ok := VersionDay("5.3.0+20260903"); !ok || day.Format("2006-01-02") != "2026-09-03" {
+		t.Errorf("version day = %v, %v", day, ok)
+	}
+	if _, ok := VersionDay("5.3.0"); ok {
+		t.Error("a stamp with no day has no day")
 	}
 }

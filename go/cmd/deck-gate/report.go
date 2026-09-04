@@ -12,6 +12,7 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/gatekit"
 	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
+	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
 )
 
 // report writes the gate document and returns the verdict. The bars come
@@ -110,6 +111,7 @@ func report(w io.Writer, rs []result, acc *llm.Accumulator, idx *cards.Index, to
 	}
 	_, _ = fmt.Fprintf(w, "\n\n")
 	setReport(w, rs)
+	exclusionReport(w, rs)
 	_, _ = fmt.Fprintf(w, "## Decks\n\n")
 	for _, r := range rs {
 		writeDeck(w, r, idx)
@@ -206,6 +208,49 @@ func setReport(w io.Writer, rs []result) {
 		outside = marked
 		_, _ = fmt.Fprintf(w, "| %d | %s | `%s` | %d | %d | %d | %d |\n",
 			r.prompt.ID, r.prompt.Name, strings.Join(r.setCodes, ","), r.inSet, r.outside, outside, marked)
+	}
+	_, _ = fmt.Fprintf(w, "\n")
+}
+
+// exclusionReport writes the PR-24 block: which precons each prompt
+// excluded, how many cards left the pool, and how many cards of the deck
+// belong to them (D-408). A card that slips through is a block, and the
+// verdict reads it. A run with no such prompt writes nothing.
+func exclusionReport(w io.Writer, rs []result) {
+	var excluding []result
+	for _, r := range rs {
+		if len(r.products) > 0 {
+			excluding = append(excluding, r)
+		}
+	}
+	if len(excluding) == 0 {
+		return
+	}
+	_, _ = fmt.Fprintf(w, "## The precon exclusion (PR-24)\n\n")
+	_, _ = fmt.Fprintf(w, "A deck asked to use no card of a precon holds none of its cards. The products' copies leave the owned counts, so a card with a spare copy in the binder stays usable, and a basic land never leaves (D-408, D-37). An excluded card in the deck is a block.\n\n")
+	_, _ = fmt.Fprintf(w, "| # | Prompt | Products | Cards excluded | Cards spare | Excluded cards in the deck | Blocked |\n|---|---|---|---|---|---|---|\n")
+	for _, r := range excluding {
+		inDeck := 0
+		for _, id := range r.deck.GetCommanderOracleIds() {
+			if r.excluded[id] {
+				inDeck++
+			}
+		}
+		for _, list := range [][]*mtgv1.DeckCard{r.deck.GetCards(), r.deck.GetSideboard()} {
+			for _, dc := range list {
+				if r.excluded[dc.GetOracleId()] {
+					inDeck++
+				}
+			}
+		}
+		blocked := 0
+		for _, f := range r.deck.GetValidation().GetFindings() {
+			if f.GetCode() == rules.CodeExcludedPrecon {
+				blocked++
+			}
+		}
+		_, _ = fmt.Fprintf(w, "| %d | %s | %s | %d | %d | %d | %d |\n",
+			r.prompt.ID, r.prompt.Name, strings.Join(r.products, ", "), len(r.excluded), r.spare, inDeck, blocked)
 	}
 	_, _ = fmt.Fprintf(w, "\n")
 }
