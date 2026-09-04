@@ -256,6 +256,16 @@ func missingLocked(deck *mtgv1.Deck, req Request, cards rules.CardSource) []stri
 func preconNonbasics(req Request, cards rules.CardSource) map[string]bool {
 	out := make(map[string]bool, len(req.PreconOracleIDs))
 	for _, id := range req.PreconOracleIDs {
+		// A precon card the pool no longer holds can not be kept: the
+		// bracket cut of D-468 drops a card the power level forbids, and
+		// the share rule then counts the names the pool still marks. Deck
+		// gate run 14 asked for 67 of 78 names the pool held fewer of, and
+		// the repair turn gave up on it.
+		if req.Pool != nil {
+			if _, ok := req.Pool.ByOracleID(id); !ok {
+				continue
+			}
+		}
 		if c, ok := lookup(req.Pool, cards, id); ok && candidates.IsBasicLand(c) {
 			continue
 		}

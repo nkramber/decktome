@@ -227,11 +227,25 @@ func (b *Builder) Build(ctx context.Context, req Request, acc *llm.Accumulator) 
 		}
 		reason := repairReason(res.misses, findings)
 		req.phase(mtgv1.BuildPhase_BUILD_PHASE_CHECKING)
-		res = b.assemble(ctx, req, out2)
-		res.repaired = true
+		next := b.assemble(ctx, req, out2)
 		if res.repairReason != "" {
 			reason = res.repairReason + "; then " + reason
 		}
+		// A repair that answers a worse deck must not replace a legal one.
+		// Deck gate run 14 saw the repair turn give up and answer no cards,
+		// and the reader got an empty deck with a block. The deck before
+		// the repair stands then, with its warnings and a note.
+		if worseRepair(res, next) {
+			b.log.Warn("the repair turn answered a deck that failed a block check, so the deck before it stands",
+				"session", req.SessionID, "turn", turn, "cards", len(next.deck.GetCards()))
+			addFinding(res.deck, CodeRepairKept, mtgv1.Severity_SEVERITY_INFO,
+				"the repair turn answered a deck that failed a block check, so the deck before it stands with its warnings")
+			res.repaired = true
+			res.repairReason = reason
+			break
+		}
+		res = next
+		res.repaired = true
 		res.repairReason = reason
 	}
 	if len(cut) > 0 {
@@ -310,6 +324,20 @@ func (b *Builder) cutShortlist(ctx context.Context, req *Request) []string {
 	}
 	req.Pool = req.Pool.Filter(func(c *mtgv1.Card) bool { return !gone[c.GetOracleId()] })
 	return removed
+}
+
+// CodeRepairKept reports that a repair turn answered a deck that failed
+// a block check, and the deck before it stands. It is an INFO: the
+// reader gets the legal deck with its warnings, and knows why they stay.
+const CodeRepairKept = "repair_kept_earlier"
+
+// worseRepair says whether a repair answered a worse deck than the one
+// it was to fix: the earlier pass had no miss and no block finding, and
+// the repair has one or the other.
+func worseRepair(prev, next pass) bool {
+	prevClean := len(prev.misses) == 0 && prev.deck.GetValidation().GetPassed()
+	nextClean := len(next.misses) == 0 && next.deck.GetValidation().GetPassed()
+	return prevClean && !nextClean
 }
 
 // MaxRepairs is the most repair turns one build runs. The first covers
