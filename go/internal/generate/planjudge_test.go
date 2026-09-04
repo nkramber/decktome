@@ -46,16 +46,25 @@ func TestJudgePlanReadsTheFourGrades(t *testing.T) {
 }
 
 // TestJudgePlanRefusesAWordOutsideTheScale: a grade the rubric does not
-// hold is an error and never a zero.
+// hold is an error and never a zero. The client checks the schema and
+// retries once, so the script serves the bad answer twice.
 func TestJudgePlanRefusesAWordOutsideTheScale(t *testing.T) {
-	c := planClient(t, `{
+	bad := `{
 		"plan_coherent": {"grade": "excellent", "why": "x"},
 		"theme_fit": {"grade": "yes", "why": "x"},
 		"useful_as_built": {"grade": "yes", "why": "x"},
 		"summary_honest": {"grade": "yes", "why": "x"}
-	}`)
-	_, err := JudgePlan(context.Background(), c, "a deck", &mtgv1.Deck{}, source{}, nil)
-	if err == nil || !strings.Contains(err.Error(), "plan_coherent") {
-		t.Errorf("err = %v, want the field named", err)
+	}`
+	sc := llm.NewScript(llm.Step{Output: json.RawMessage(bad)}, llm.Step{Output: json.RawMessage(bad)})
+	c, err := llm.New(fakeConfig(), []llm.Provider{sc}, llm.WithoutJitter())
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = JudgePlan(context.Background(), c, "a deck", &mtgv1.Deck{}, source{}, nil)
+	if err == nil || !strings.Contains(err.Error(), "judge plan") {
+		t.Errorf("err = %v, want a judge plan error", err)
+	}
+	if j := (PlanJudgement{PlanCoherent: PlanGrade{Grade: "excellent"}}); j.PlanCoherent.Value() != 0 {
+		t.Error("a word outside the scale reads as 0, never more")
 	}
 }
