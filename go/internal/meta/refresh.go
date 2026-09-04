@@ -292,6 +292,17 @@ func (j *Job) runMTGJSON(ctx context.Context, rep *Report) error {
 		rep.Skipped[SourceMTGJSON] = "the table of version " + version + " is stored"
 		return nil
 	}
+	// The version stamp carries the build day, so a new stamp comes
+	// every day while the products stay the same. The deck list stored
+	// with the newest table says whether the products changed, and the
+	// run reads no deck file when they did not.
+	if latest, current, err := j.currentPrecons(ctx, version, entries); err != nil {
+		return err
+	} else if current {
+		rep.PreconsVersion = latest
+		rep.Skipped[SourceMTGJSON] = "the deck list of version " + version + " names the products of the stored table " + latest
+		return nil
+	}
 	if err := PutRaw(ctx, j.Store, SourceMTGJSON, version+"/DeckList", data); err != nil {
 		return err
 	}
@@ -346,6 +357,31 @@ func (j *Job) runMTGJSON(ctx context.Context, rep *Report) error {
 	rep.Precons = len(table)
 	rep.PreconsVersion = version
 	return nil
+}
+
+// currentPrecons reports whether the newest stored table holds the
+// products the deck list names. A table older than PreconsMaxAge is
+// never current, so a corrected deck file reaches the store within the
+// month.
+func (j *Job) currentPrecons(ctx context.Context, version string, entries []DeckEntry) (latest string, current bool, err error) {
+	latest, err = LatestPreconsVersion(ctx, j.Store)
+	if err != nil || latest == "" {
+		return latest, false, err
+	}
+	stored, ok, err := GetRaw(ctx, j.Store, SourceMTGJSON, latest+"/DeckList")
+	if err != nil || !ok {
+		return latest, false, err
+	}
+	_, storedEntries, err := ParseDeckList(stored)
+	if err != nil || !SameProducts(storedEntries, entries) {
+		return latest, false, nil
+	}
+	newDay, okNew := VersionDay(version)
+	oldDay, okOld := VersionDay(latest)
+	if okNew && okOld && newDay.Sub(oldDay) >= PreconsMaxAge {
+		return latest, false, nil
+	}
+	return latest, true, nil
 }
 
 // runCEDHDB reads the database page once a day and marks the

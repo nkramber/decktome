@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 )
 
 // MTGJSONBase is the deck product API (precon-data-2026-09-01).
@@ -40,6 +41,46 @@ func ParseDeckList(data []byte) (version string, entries []DeckEntry, err error)
 		return "", nil, fmt.Errorf("meta: mtgjson deck list carries no version")
 	}
 	return doc.Meta.Version, doc.Data, nil
+}
+
+// SameProducts reports whether two deck lists name the same products the
+// table keeps: the same file names, set codes, names, release dates,
+// and types. The MTGJSON version stamp carries the build day, so a new
+// stamp comes every day while the products stay the same. The job reads
+// the deck files again only when this is false.
+func SameProducts(a, b []DeckEntry) bool {
+	return productKey(a) == productKey(b)
+}
+
+func productKey(entries []DeckEntry) string {
+	var rows []string
+	for _, e := range entries {
+		if _, ok := KeepPrecon(e.Type); !ok {
+			continue
+		}
+		rows = append(rows, strings.Join([]string{e.FileName, e.Code, e.Name, e.ReleaseDate, e.Type}, "\x00"))
+	}
+	sort.Strings(rows)
+	return strings.Join(rows, "\n")
+}
+
+// PreconsMaxAge bounds the skip of SameProducts. MTGJSON corrects a deck
+// file now and then with no change to the deck list, so a stored table
+// older than this reads whole again.
+const PreconsMaxAge = 30 * 24 * time.Hour
+
+// VersionDay reads the build day of an MTGJSON version stamp, such as
+// 5.3.0+20260903. ok is false for a stamp with no day.
+func VersionDay(version string) (day time.Time, ok bool) {
+	_, stamp, found := strings.Cut(version, "+")
+	if !found {
+		return time.Time{}, false
+	}
+	day, err := time.Parse("20060102", stamp)
+	if err != nil {
+		return time.Time{}, false
+	}
+	return day, true
 }
 
 // preconTypes are the product types the table holds (D-407): the

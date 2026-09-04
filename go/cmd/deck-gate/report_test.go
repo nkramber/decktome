@@ -12,6 +12,7 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
 	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
+	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
 )
 
 // A bar that has never failed may not be a bar at all, so every bar is
@@ -230,5 +231,43 @@ func TestCostRowSaysUnpriced(t *testing.T) {
 	_, doc := render(t, []result{goodResult()})
 	if !strings.Contains(doc, "| Cost | unpriced |") {
 		t.Errorf("the report prints a nil cost as a number:\n%s", doc)
+	}
+}
+
+// TestExcludedPreconCardsAreCounted: the PR-24 block names the products
+// and counts the deck cards that belong to them. Such a card is a block
+// on the deck, so the verdict reads it (D-408). A run with no exclusion
+// prompt writes no block.
+func TestExcludedPreconCardsAreCounted(t *testing.T) {
+	slipped := goodResult()
+	slipped.products = []string{"Avengers Assemble"}
+	slipped.excluded = map[string]bool{"o-avenge": true, "o-jarvis": true}
+	slipped.spare = 3
+	slipped.deck.Cards = []*mtgv1.DeckCard{{Name: "Avenge", Count: 1, OracleId: "o-avenge"}, {Name: "Sol Ring", Count: 1, OracleId: "o-sol"}}
+	slipped.deck.Validation.Findings = []*mtgv1.Finding{{
+		Code: rules.CodeExcludedPrecon, Severity: mtgv1.Severity_SEVERITY_BLOCK, Message: "Avenge is a card of Avengers Assemble",
+	}}
+	verdict, doc := render(t, []result{slipped})
+	if verdict != "FAIL" {
+		t.Errorf("verdict = %s, want FAIL on a card of an excluded precon", verdict)
+	}
+	if want := "| 1 | a deck | Avengers Assemble | 2 | 3 | 1 | 1 |"; !strings.Contains(doc, want) {
+		t.Errorf("the block lacks %q:\n%s", want, doc)
+	}
+
+	clean := goodResult()
+	clean.products = []string{"Avengers Assemble"}
+	clean.excluded = map[string]bool{"o-avenge": true}
+	clean.deck.Cards = []*mtgv1.DeckCard{{Name: "Sol Ring", Count: 1, OracleId: "o-sol"}}
+	verdict, doc = render(t, []result{clean})
+	if verdict != "PASS" {
+		t.Errorf("verdict = %s, want PASS when no excluded card is in the deck", verdict)
+	}
+	if want := "| 1 | a deck | Avengers Assemble | 1 | 0 | 0 | 0 |"; !strings.Contains(doc, want) {
+		t.Errorf("the block lacks %q:\n%s", want, doc)
+	}
+
+	if _, doc := render(t, []result{goodResult()}); strings.Contains(doc, "## The precon exclusion") {
+		t.Error("a run with no exclusion prompt wrote the block")
 	}
 }

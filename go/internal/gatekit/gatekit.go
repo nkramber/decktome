@@ -19,6 +19,8 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/collections"
 	"github.com/nkramber/mtg-deck-builder/go/internal/gcpenv"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
+	"github.com/nkramber/mtg-deck-builder/go/internal/meta"
+	"github.com/nkramber/mtg-deck-builder/go/internal/precons"
 	"github.com/nkramber/mtg-deck-builder/go/internal/profile"
 	"github.com/nkramber/mtg-deck-builder/go/internal/quality"
 	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
@@ -118,19 +120,58 @@ func LoadSnapshot(ctx context.Context, log *slog.Logger) (*cards.Index, error) {
 // LoadOwned reads a ManaBox export into owned counts per oracle id. The
 // note says what was read and how many rows resolved to nothing.
 func LoadOwned(path string, idx *cards.Index) (map[string]int32, string, error) {
-	f, err := os.Open(path) // #nosec G304 -- the operator names the file.
+	c, err := LoadCollection(path, idx)
 	if err != nil {
 		return nil, "", err
+	}
+	return c.Oracle, c.Note, nil
+}
+
+// Collection is a ManaBox export read for a gate: the copies per Oracle
+// id, the copies per printing for the precon ownership check (D-408),
+// and a note on the rows.
+type Collection struct {
+	Oracle    map[string]int32
+	Printings map[string]int32
+	Note      string
+}
+
+// LoadCollection reads a ManaBox export.
+func LoadCollection(path string, idx *cards.Index) (*Collection, error) {
+	f, err := os.Open(path) // #nosec G304 -- the operator names the file.
+	if err != nil {
+		return nil, err
 	}
 	defer func() { _ = f.Close() }()
 	rows, bad, err := collections.ParseManaBoxCSV(f)
 	if err != nil {
-		return nil, "", fmt.Errorf("collection: %w", err)
+		return nil, fmt.Errorf("collection: %w", err)
 	}
 	entries, unresolved := collections.Resolve(rows, idx)
-	note := fmt.Sprintf("%d entries, %d cards, %d rows unresolved",
-		len(entries), collections.CardCount(entries), len(bad)+len(unresolved))
-	return collections.OracleCounts(entries), note, nil
+	return &Collection{
+		Oracle:    collections.OracleCounts(entries),
+		Printings: collections.PrintingCounts(entries),
+		Note: fmt.Sprintf("%d entries, %d cards, %d rows unresolved",
+			len(entries), collections.CardCount(entries), len(bad)+len(unresolved)),
+	}, nil
+}
+
+// PreconTable loads the newest precon table of the meta store, or nil
+// when the store holds none (D-407).
+func PreconTable(ctx context.Context) (*precons.Table, error) {
+	store, err := gcpenv.MetaStore(ctx, gcpenv.LocalProject, nil)
+	if err != nil {
+		return nil, err
+	}
+	version, err := meta.LatestPreconsVersion(ctx, store)
+	if err != nil || version == "" {
+		return nil, err
+	}
+	rows, err := meta.ReadPrecons(ctx, store, version)
+	if err != nil {
+		return nil, err
+	}
+	return precons.NewTable(version, rows), nil
 }
 
 // OrNone shows an empty string as the word none.

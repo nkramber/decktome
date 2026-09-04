@@ -25,6 +25,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -53,7 +54,14 @@ type prompt struct {
 	Power      string   `json:"power"`
 	Pool       string   `json:"pool"`
 	Collection bool     `json:"collection"`
-	Locked     []string `json:"locked"`
+	// CollectionFile names a ManaBox export beside the file of the
+	// -collection flag, for a prompt that needs another binder. Empty
+	// reads the flag's file.
+	CollectionFile string `json:"collection_file"`
+	// ExcludePrecons names the precons the deck must use no card of
+	// (D-408). The binder must hold each one whole, or the prompt fails.
+	ExcludePrecons []string `json:"exclude_precons"`
+	Locked         []string `json:"locked"`
 	// Precon names a preconstructed deck the build must keep a share of
 	// (D-218, D-247).
 	Precon string  `json:"precon"`
@@ -80,6 +88,12 @@ type result struct {
 	setCodes []string
 	inSet    int
 	outside  int
+	// products names the precons the prompt excluded, excluded holds the
+	// Oracle ids the exclusion took out of the pool, and spare counts
+	// the product cards that stayed usable on a spare copy (D-408).
+	products []string
+	excluded map[string]bool
+	spare    int
 	judged   *generate.Judgement
 	// judgeErr is the judge lane's failure. A deck with one has no
 	// verdict on F-26, so it can not count as a pass on that bar (T-17).
@@ -125,12 +139,24 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	owned := map[string]int32{}
-	if *collPath != "" {
-		owned, _, err = gatekit.LoadOwned(*collPath, idx)
-		if err != nil {
-			return err
+	binders, err := loadBinders(*collPath, file.Prompts, idx)
+	if err != nil {
+		return err
+	}
+	// The precon table serves the exclusion prompts alone, so a run with
+	// none needs no meta store (D-407).
+	var preconTbl *precons.Table
+	for _, p := range file.Prompts {
+		if len(p.ExcludePrecons) == 0 {
+			continue
 		}
+		if preconTbl, err = gatekit.PreconTable(context.Background()); err != nil {
+			return fmt.Errorf("precon table: %w", err)
+		}
+		if preconTbl == nil {
+			return fmt.Errorf("prompt %d excludes a precon, and the meta store holds no precon table: run make meta-refresh", p.ID)
+		}
+		break
 	}
 	cb, err := candidates.New()
 	if err != nil {
@@ -175,7 +201,7 @@ func run() error {
 	start := time.Now()
 	var results []result
 	for _, p := range file.Prompts {
-		r := build(context.Background(), b, cb, idx, owned, p, acc, *dry, preconSet)
+		r := build(context.Background(), b, cb, idx, binders, p, acc, *dry, preconSet, preconTbl)
 		// The judge lane is the real check for F-26, and the deterministic
 		// net can not read the truth of a rules claim (D-229).
 		if !*dry && !*noJudge && r.deck != nil {
@@ -185,7 +211,7 @@ func run() error {
 			}
 		}
 		results = append(results, r)
-		fmt.Fprintf(os.Stderr, "  %2d. %-38s pool %3d%s  %s\n", p.ID, p.Name, r.poolSize, setWord(r), status(r))
+		fmt.Fprintf(os.Stderr, "  %2d. %-38s pool %3d%s%s  %s\n", p.ID, p.Name, r.poolSize, setWord(r), excludeWord(r), status(r))
 	}
 	if *dry {
 		fmt.Fprintf(os.Stderr, "\ndry run: %d shortlists built, no provider call ran\n", len(results))
@@ -263,7 +289,7 @@ func status(r result) string {
 }
 
 func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx *cards.Index,
-	owned map[string]int32, p prompt, acc *llm.Accumulator, dry bool, preconSet *precons.Set) result {
+	binders map[string]*gatekit.Collection, p prompt, acc *llm.Accumulator, dry bool, preconSet *precons.Set, tbl *precons.Table) result {
 	out := result{prompt: p}
 	format := gatekit.FormatID(p.Format)
 	if format == mtgv1.FormatId_FORMAT_ID_UNSPECIFIED {
@@ -279,6 +305,30 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 		return out
 	}
 	out.setCodes = setCodes
+	binder := binderFor(p, binders)
+	own := binder.Oracle
+	// The precon exclusion runs before both pools, the way the chat runs
+	// it (D-408). The products' copies leave the owned counts, and a
+	// card with no copy left leaves the commander pool and the
+	// shortlist. A basic land never leaves (D-37).
+	var excludedIDs []string
+	if len(p.ExcludePrecons) > 0 {
+		products, names, err := resolvePrecons(tbl, p.ExcludePrecons, binder.Printings)
+		if err != nil {
+			out.err = err
+			return out
+		}
+		own, excludedIDs = precons.Exclude(products, own, func(id string) bool {
+			c, ok := idx.ByOracleID(id)
+			return ok && candidates.IsBasicLand(c)
+		})
+		out.products = names
+		out.excluded = make(map[string]bool, len(excludedIDs))
+		for _, id := range excludedIDs {
+			out.excluded[id] = true
+		}
+		out.spare = spareCards(products, out.excluded, idx)
+	}
 	var commanders []*mtgv1.Card
 	var commanderIDs []string
 	// A prompt with no commander delegates the pick, as a user who says
@@ -286,8 +336,8 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 	if p.Commander == "" && format == mtgv1.FormatId_FORMAT_ID_COMMANDER {
 		pool, err := cb.CommanderPool(idx, candidates.Request{
 			Format: format, Theme: p.Theme, Colors: gatekit.Colors(p.Colors),
-			PoolRule: gatekit.PoolRuleID(p.Pool), Owned: ownedFor(p, owned), Bracket: p.Bracket,
-			SetCodes: setCodes,
+			PoolRule: gatekit.PoolRuleID(p.Pool), Owned: own, Bracket: p.Bracket,
+			SetCodes: setCodes, ExcludeOracleIDs: excludedIDs,
 		})
 		if err != nil {
 			out.err = fmt.Errorf("commander pool: %w", err)
@@ -314,7 +364,6 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 		colors = commanders[0].GetColorIdentity()
 	}
 	poolRule := gatekit.PoolRuleID(p.Pool)
-	own := ownedFor(p, owned)
 	// The viability floor of D-380. A family too thin for the format in
 	// these colors builds nothing, and the reason names the counts.
 	if len(setCodes) > 0 {
@@ -338,6 +387,7 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 		Bracket:            p.Bracket,
 		SetCodes:           setCodes,
 		OutsideRoles:       outsideRoles,
+		ExcludeOracleIDs:   excludedIDs,
 	})
 	if err != nil {
 		out.err = fmt.Errorf("candidates: %w", err)
@@ -389,24 +439,25 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 	}
 	plan := p.Plan
 	res, err := b.Build(ctx, generate.Request{
-		SessionID:       fmt.Sprintf("gate-%d", p.ID),
-		Format:          format,
-		Power:           gatekit.PowerLevel(p.Bracket, p.Power),
-		Plan:            plan,
-		Pool:            pool,
-		Commanders:      commanderIDs,
-		Locked:          lockedIDs,
-		Precon:          preconName,
-		PreconOracleIDs: preconIDs,
-		PreconLands:     preconLands,
-		PoolRule:        poolRule,
-		OracleCounts:    own,
-		Roles:           generate.Roles(list),
-		Targets:         generate.TargetsFor(format, gatekit.PowerLevel(p.Bracket, p.Power)),
-		Limits:          generate.LimitsFor(format),
-		LegalityAsOf:    idx.AsOf.Format("2006-01-02"),
-		BudgetUSD:       p.Budget,
-		SetCodes:        setCodes,
+		SessionID:         fmt.Sprintf("gate-%d", p.ID),
+		Format:            format,
+		Power:             gatekit.PowerLevel(p.Bracket, p.Power),
+		Plan:              plan,
+		Pool:              pool,
+		Commanders:        commanderIDs,
+		Locked:            lockedIDs,
+		Precon:            preconName,
+		PreconOracleIDs:   preconIDs,
+		PreconLands:       preconLands,
+		PoolRule:          poolRule,
+		OracleCounts:      own,
+		ExcludedOracleIDs: excludedIDs,
+		Roles:             generate.Roles(list),
+		Targets:           generate.TargetsFor(format, gatekit.PowerLevel(p.Bracket, p.Power)),
+		Limits:            generate.LimitsFor(format),
+		LegalityAsOf:      idx.AsOf.Format("2006-01-02"),
+		BudgetUSD:         p.Budget,
+		SetCodes:          setCodes,
 	}, acc)
 	if err != nil {
 		out.err = err
@@ -459,10 +510,100 @@ func manaRoles(targets map[string]int) map[mtgv1.CardRole]int {
 	return out
 }
 
-// ownedFor is the collection a prompt reads, empty when it wants none.
-func ownedFor(p prompt, owned map[string]int32) map[string]int32 {
-	if p.Collection {
-		return owned
+// loadBinders reads the collection of the -collection flag under the
+// empty key, and each collection_file a prompt names beside it. A prompt
+// with a collection_file and no flag is an error: the file has no place
+// to sit beside.
+func loadBinders(collPath string, prompts []prompt, idx *cards.Index) (map[string]*gatekit.Collection, error) {
+	binders := map[string]*gatekit.Collection{}
+	if collPath != "" {
+		c, err := gatekit.LoadCollection(collPath, idx)
+		if err != nil {
+			return nil, err
+		}
+		binders[""] = c
 	}
-	return map[string]int32{}
+	for _, p := range prompts {
+		if p.CollectionFile == "" {
+			continue
+		}
+		if _, ok := binders[p.CollectionFile]; ok {
+			continue
+		}
+		if collPath == "" {
+			return nil, fmt.Errorf("prompt %d names collection file %q, and -collection is empty", p.ID, p.CollectionFile)
+		}
+		c, err := gatekit.LoadCollection(filepath.Join(filepath.Dir(collPath), p.CollectionFile), idx)
+		if err != nil {
+			return nil, fmt.Errorf("prompt %d: %w", p.ID, err)
+		}
+		binders[p.CollectionFile] = c
+	}
+	return binders, nil
+}
+
+// binderFor is the collection a prompt reads, empty when it wants none.
+func binderFor(p prompt, binders map[string]*gatekit.Collection) *gatekit.Collection {
+	if c, ok := binders[p.CollectionFile]; ok && p.Collection {
+		return c
+	}
+	return &gatekit.Collection{Oracle: map[string]int32{}}
+}
+
+// resolvePrecons maps the product names of a prompt onto the table, the
+// way the chat does, and checks that the binder holds one product of
+// each name whole (D-408). A deck and its Collector's Edition answer one
+// name together, and the exclusion counts them once. A name that names
+// no product fails the prompt: the gate proves the exclusion, and the
+// chat asks the reader.
+func resolvePrecons(tbl *precons.Table, names []string, printings map[string]int32) ([]*precons.Product, []string, error) {
+	var products []*precons.Product
+	var found []string
+	for _, name := range names {
+		m := tbl.Resolve(name)
+		if !m.OK() {
+			return nil, nil, fmt.Errorf("the precon name %q names no product, near %v", name, m.Options)
+		}
+		whole := false
+		for _, p := range m.Products {
+			if p.OwnedWhole(printings) {
+				whole = true
+			}
+		}
+		if !whole {
+			return nil, nil, fmt.Errorf("the collection does not hold %s whole", strings.Join(m.Names(), " or "))
+		}
+		products = append(products, m.Products...)
+		found = append(found, m.Names()...)
+	}
+	return products, found, nil
+}
+
+// spareCards counts the nonbasic cards of the products the exclusion
+// left in the pool, because the binder holds a copy to spare (D-408).
+// The gate document names the count, so a reader can tell a spare copy
+// from a card that slipped through.
+func spareCards(products []*precons.Product, excluded map[string]bool, idx *cards.Index) int {
+	seen := map[string]bool{}
+	for _, p := range products {
+		for id := range p.Counts() {
+			if seen[id] || excluded[id] {
+				continue
+			}
+			if c, ok := idx.ByOracleID(id); ok && candidates.IsBasicLand(c) {
+				continue
+			}
+			seen[id] = true
+		}
+	}
+	return len(seen)
+}
+
+// excludeWord names the precon exclusion of one result, for the
+// progress line. A prompt with none reads as nothing.
+func excludeWord(r result) string {
+	if len(r.products) == 0 {
+		return ""
+	}
+	return fmt.Sprintf("  excludes %d cards of %s, %d spare", len(r.excluded), strings.Join(r.products, ", "), r.spare)
 }
