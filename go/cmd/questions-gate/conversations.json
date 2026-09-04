@@ -1366,6 +1366,19 @@
         "Green and white, and you pick the commander."
       ],
       "probe": true
+    },
+    {
+      "id": 109,
+      "name": "a group of sets by franchise",
+      "messages": [
+        "Build the best possible deck from the sets with Marvel characters.",
+        "Commander, bracket 3, and you pick the commander.",
+        "Any colors are fine."
+      ],
+      "probe": true,
+      "expect": {
+        "sets": "msc,msh,pspm,spe,spm"
+      }
     }
   ]
 }

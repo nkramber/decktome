@@ -235,3 +235,60 @@ func TestNamesReadsTheCodes(t *testing.T) {
 		t.Errorf("Names = %q, want %q", got, want)
 	}
 }
+
+// TestResolveNeverLeadsWithABonusSheet is D-518: "Marvel" matches the
+// expansion and the bonus sheet, and the sheet never leads a family
+// beside a product. The sheet still resolves by its exact name, and the
+// possessive of "Marvel's Spider-Man" is a different word on purpose.
+func TestResolveNeverLeadsWithABonusSheet(t *testing.T) {
+	tbl := NewSetTable([]SetInfo{
+		{Code: "msh", Name: "Marvel Super Heroes", Type: "expansion", ReleasedAt: "2026-06-26"},
+		{Code: "msc", Name: "Marvel Super Heroes Commander", Type: "commander", ReleasedAt: "2026-06-26", ParentCode: "msh"},
+		{Code: "mar", Name: "Marvel Universe", Type: "masterpiece", ReleasedAt: "2025-09-26"},
+		{Code: "spm", Name: "Marvel's Spider-Man", Type: "expansion", ReleasedAt: "2025-09-26"},
+	})
+	got := tbl.Resolve("Marvel")
+	if got.Kind != ResolveOne || !slices.Equal(got.Codes, []string{"msc", "msh"}) {
+		t.Fatalf("Resolve(Marvel) = %v %v, want the Marvel Super Heroes family alone", got.Kind, got.Codes)
+	}
+	exact := tbl.Resolve("Marvel Universe")
+	if exact.Kind != ResolveOne || !slices.Equal(exact.Codes, []string{"mar"}) {
+		t.Errorf("Resolve(Marvel Universe) = %v %v, want mar by its exact name", exact.Kind, exact.Codes)
+	}
+	sheetOnly := NewSetTable([]SetInfo{
+		{Code: "mar", Name: "Marvel Universe", Type: "masterpiece", ReleasedAt: "2025-09-26"},
+	})
+	if got := sheetOnly.Resolve("Marvel"); got.Kind != ResolveOne || !slices.Equal(got.Codes, []string{"mar"}) {
+		t.Errorf("a sheet that is the one match still resolves: %v %v", got.Kind, got.Codes)
+	}
+}
+
+// TestResolveGroupReadsEveryFamilyOfAFranchise is D-525: a group word
+// reaches every family whose name holds it, the possessive drops before
+// the match, and the bonus sheet and its inserts stay out. "Marvel"
+// alone still resolves to one product (D-518).
+func TestResolveGroupReadsEveryFamilyOfAFranchise(t *testing.T) {
+	tbl := NewSetTable([]SetInfo{
+		{Code: "msh", Name: "Marvel Super Heroes", Type: "expansion", ReleasedAt: "2026-06-26"},
+		{Code: "msc", Name: "Marvel Super Heroes Commander", Type: "commander", ReleasedAt: "2026-06-26", ParentCode: "msh"},
+		{Code: "tmsh", Name: "Marvel Super Heroes Tokens", Type: "token", ReleasedAt: "2026-06-26", ParentCode: "msh"},
+		{Code: "mar", Name: "Marvel Universe", Type: "masterpiece", ReleasedAt: "2025-09-26"},
+		{Code: "lmar", Name: "Marvel Legends Series Inserts", Type: "promo", ReleasedAt: "2025-09-30", ParentCode: "mar"},
+		{Code: "spm", Name: "Marvel's Spider-Man", Type: "expansion", ReleasedAt: "2025-09-26"},
+		{Code: "spe", Name: "Marvel's Spider-Man Eternal", Type: "eternal", ReleasedAt: "2025-09-26", ParentCode: "spm"},
+		{Code: "hob", Name: "The Hobbit", Type: "expansion", ReleasedAt: "2026-08-14"},
+	})
+	want := []string{"msc", "msh", "spe", "spm"}
+	if got := tbl.ResolveGroup("Marvel"); !slices.Equal(got, want) {
+		t.Errorf("ResolveGroup(Marvel) = %v, want %v", got, want)
+	}
+	if got := tbl.ResolveGroup("Marvel's"); !slices.Equal(got, want) {
+		t.Errorf("ResolveGroup(Marvel's) = %v, want %v", got, want)
+	}
+	if got := tbl.ResolveGroup("Star Wars"); got != nil {
+		t.Errorf("an unknown group = %v, want nothing", got)
+	}
+	if got := tbl.Resolve("Marvel"); got.Kind != ResolveOne || !slices.Equal(got.Codes, []string{"msc", "msh"}) {
+		t.Errorf("Resolve(Marvel) = %v %v, want one product", got.Kind, got.Codes)
+	}
+}

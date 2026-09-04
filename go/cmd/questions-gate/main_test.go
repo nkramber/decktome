@@ -296,8 +296,9 @@ func TestExpectationsAreTheFourthBar(t *testing.T) {
 
 // TestEveryCountedConversationNamesItsExpectations pins the data of
 // slice 4: each counted conversation carries an expectation, every key
-// is one slotValues writes, and no probe or after-build conversation
-// carries one yet (OQ-61).
+// is one slotValues writes, and an after-build conversation carries
+// none. A probe may carry one, and its rows are information until the
+// probe joins the bar (D-427, D-522, D-525).
 func TestEveryCountedConversationNamesItsExpectations(t *testing.T) {
 	f := load(t)
 	known := map[string]bool{}
@@ -309,8 +310,8 @@ func TestEveryCountedConversationNamesItsExpectations(t *testing.T) {
 		if counted && len(c.Expect) == 0 {
 			t.Errorf("%d. %s: a counted conversation with no expectation", c.ID, c.Name)
 		}
-		if !counted && len(c.Expect) > 0 {
-			t.Errorf("%d. %s: an expectation on a conversation the bar does not count", c.ID, c.Name)
+		if c.HasDeck && len(c.Expect) > 0 {
+			t.Errorf("%d. %s: an expectation on a conversation that starts after a build", c.ID, c.Name)
 		}
 		for k, v := range c.Expect {
 			if !known[k] {

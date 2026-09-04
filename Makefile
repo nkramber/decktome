@@ -111,6 +111,8 @@ candidates-review: ## Write the PR-6 gate document from the local snapshot and t
 GATE_OUT ?= docs/reference/pr7-question-gate.md
 # GATE_RUN is the run file of PR-15, named after the document (D-65).
 GATE_RUN ?= docs/reference/eval/$(notdir $(basename $(GATE_OUT))).jsonl
+# GATE_ARGS passes flags to the gate, for example -only 109 for one probe.
+GATE_ARGS ?=
 
 questions-gate: ## Write the PR-7 gate document. CAUTION: this calls the real providers and costs money
 	@[ -f .env ] || { echo "questions-gate: .env is absent. Run: cp .env.example .env, then add the provider keys."; exit 1; }
@@ -120,7 +122,7 @@ questions-gate: ## Write the PR-7 gate document. CAUTION: this calls the real pr
 	@set -a && . ./.env && set +a && \
 		QUESTIONS_GATE=1 CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall \
 		$(GO) run ./cmd/questions-gate -collection internal/collections/testdata/manabox_collection.csv \
-		-run-out $(abspath $(GATE_RUN)) > $(GATE_OUT)
+		-run-out $(abspath $(GATE_RUN)) $(GATE_ARGS) > $(GATE_OUT)
 	@echo "wrote $(GATE_OUT) and $(GATE_RUN)"
 
 # --- The PR-8 gate, the revise gate, and the three probes (T-18) --------

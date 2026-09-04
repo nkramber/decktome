@@ -65,7 +65,13 @@ package questions
 // "not from my precons". The instruction text changed, so the provider
 // cache prefix changed with it, and the question gate re-baselines
 // (D-66).
-const PromptVersion = 17
+//
+// Version 18 adds set_groups to the classify role (D-525). A reader who
+// names a franchise as a group, "sets with Marvel characters", reaches
+// every family of that franchise, and one product name stays a set. The
+// instruction text changed, so the provider cache prefix changed with
+// it, and the question gate re-baselines (D-66).
+const PromptVersion = 18
 
 const classifyInstructions = `You map one message from a Magic: The Gathering deck-building conversation onto slots.
 
@@ -85,6 +91,7 @@ Rules:
 - pool_rule is about ownership alone. A limit to a set, a block, a color, or a card type names no pool rule. "Build only from the Hobbit set", "only cards from Bloomburrow", and "only artifacts" all leave pool_rule empty. The word "only" means owned_only when it is about the user's own cards, as in "only cards I own" or "only what is in my collection".
 - set_names: the Magic sets or products the user wants the deck built from, in the user's own words. "Build only from the Hobbit set" gives ["the Hobbit set"]. "Cards from Bloomburrow and Duskmourn" gives ["Bloomburrow", "Duskmourn"]. Write the name the user wrote, and add no set the user did not name. Leave the list empty when the user named no set.
 - A set is not a theme. "Build only from the Hobbit set" names a set and no theme, so set_names holds it and theme stays empty. "A Hobbit-set dragons deck" names both: set_names holds "the Hobbit set" and theme holds "dragons".
+- set_groups: a franchise the user names as a group of sets and not as one product: "sets with Marvel characters", "every Lord of the Rings set", "all the Warhammer products". Write the franchise word the user used, for example ["Marvel"], and put nothing in set_names for it. One product name, such as "Marvel Super Heroes", goes in set_names and never here. Leave the list empty when the user named no group.
 - A creature type, a mechanic, a play style, or a card type is a theme and never a set. "only artifacts" is a theme. A set is a product name, such as Bloomburrow, Duskmourn, Final Fantasy, or Modern Horizons 3.
 - precon_names: the preconstructed decks the user wants the deck to use no card of, in the user's own words. "Not from my Avengers Assemble precon" gives ["Avengers Assemble"]. "Leave my Turtle Power and Blight Curse decks alone" gives ["Turtle Power", "Blight Curse"]. Write the product name the user wrote, and add no product the user did not name. Leave the list empty when the user named no precon to keep whole.
 - An upgrade is not an exclusion. "Upgrade my Avengers Assemble precon" builds from that precon, so precon_names stays empty for it. A precon the user wants untouched goes in precon_names, and a precon the user wants improved does not.
@@ -116,7 +123,7 @@ Answer with the schema only.`
 const classifySchema = `{
   "type": "object",
   "additionalProperties": false,
-  "required": ["format","theme","colors","commander_names","locked_names","named_cards","set_names","precon_names","power","pool_rule","budget_usd","budget_scope","house_rules","closed_keys","declined_keys","facts"],
+  "required": ["format","theme","colors","commander_names","locked_names","named_cards","set_names","set_groups","precon_names","power","pool_rule","budget_usd","budget_scope","house_rules","closed_keys","declined_keys","facts"],
   "properties": {
     "format": {"type": "string"},
     "theme": {"type": "string"},
@@ -125,6 +132,7 @@ const classifySchema = `{
     "locked_names": {"type": "array", "items": {"type": "string"}},
     "named_cards": {"type": "array", "items": {"type": "string"}},
     "set_names": {"type": "array", "items": {"type": "string"}},
+    "set_groups": {"type": "array", "items": {"type": "string"}},
     "precon_names": {"type": "array", "items": {"type": "string"}},
     "power": {"type": "string"},
     "pool_rule": {"type": "string"},
