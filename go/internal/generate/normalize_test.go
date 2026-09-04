@@ -386,7 +386,8 @@ func TestAnUpgradeGetsNoJobTargets(t *testing.T) {
 		t.Error("an ordinary build lost its job targets")
 	}
 	req.Precon = "Goblin Storm"
-	req.PreconOracleIDs = []string{"o-a", "o-b"}
+	// The precon names are pool cards, as the always list makes them.
+	req.PreconOracleIDs = []string{"o-welcome", "o-pridemate"}
 	// The list states the land count, so nothing guesses at it (D-251).
 	req.PreconLands = 34
 	got := b.input(req, nil, nil)
@@ -730,16 +731,24 @@ func TestSwapBackKeepsTheCommanderColors(t *testing.T) {
 
 // TestPreconNonbasicsReadsTheCardIndex: a precon basic the pool does not
 // hold, Wastes or a snow basic, is a basic and not a nonbasic (D-218).
+// A nonbasic the pool does not hold counts for nothing either: the model
+// can not write its name, so the share can not ask for it (deck gate
+// run 14, the bracket cut of D-468).
 func TestPreconNonbasicsReadsTheCardIndex(t *testing.T) {
-	pool := NewPool([]*mtgv1.Card{{OracleId: "o-p1", Name: "Precon One"}}, nil)
-	req := Request{Pool: pool, PreconOracleIDs: []string{"o-p1", "o-wastes", "o-snow"}}
-	cards := cardMap{"o-wastes": basic("o-wastes", "Wastes"), "o-snow": basic("o-snow", "Snow-Covered Forest")}
+	pool := NewPool([]*mtgv1.Card{{OracleId: "o-p1", Name: "Precon One"}, {OracleId: "o-wastes", Name: "Wastes", Supertypes: []string{"Basic"}, CardTypes: []string{"Land"}}}, nil)
+	req := Request{Pool: pool, PreconOracleIDs: []string{"o-p1", "o-wastes", "o-snow", "o-gone"}}
+	cards := cardMap{"o-snow": basic("o-snow", "Snow-Covered Forest"), "o-gone": card("o-gone", "Cut by the bracket")}
 	cards["o-snow"].Supertypes = []string{"Basic", "Snow"}
 	if got := preconNonbasics(req, cards); len(got) != 1 || !got["o-p1"] {
-		t.Errorf("nonbasics = %v, want the one real card", got)
+		t.Errorf("nonbasics = %v, want the one real card the pool holds", got)
 	}
-	if got := preconNonbasics(req, nil); len(got) != 3 {
-		t.Errorf("nonbasics without a card index = %v, want every id the pool can not name", got)
+	if got := preconNonbasics(req, nil); len(got) != 1 || !got["o-p1"] {
+		t.Errorf("nonbasics without a card index = %v, want the pool's one nonbasic", got)
+	}
+	// With no pool the index alone decides, and a nonbasic it knows counts.
+	req.Pool = nil
+	if got := preconNonbasics(req, cards); len(got) != 3 {
+		t.Errorf("nonbasics with no pool = %v, want the three the index does not call basic", got)
 	}
 }
 
