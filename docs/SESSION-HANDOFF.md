@@ -6,7 +6,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## Where things stand (2026-09-04)
 
-- PR-15, the eval harness, sits whole on branch `pr-15` as PR #65, from `main` at f299289 (D-511, D-512, 2026-09-04), before PR-22 and PR-23. The free gate is `docs/reference/pr15-gate-2026-09-04.md`, and the paid gate, one sweep of about $4.37, waits on the owner. The branch holds all six slices: the run files, the compare, Tier 0 in CI, the golden expectations, the plan judge, and the sweep. The section "PR-15, what the branch holds" below holds the moving parts, and "PR-15, the eval harness, prepared" holds the plan and the four owner questions, OQ-57 to OQ-60.
+- PR-15, the eval harness, sits whole on branch `pr-15` as PR #65, from `main` at f299289 (D-511, D-512, 2026-09-04), before PR-22 and PR-23. The free gate is `docs/reference/pr15-gate-2026-09-04.md`. The owner said go to the paid gate on 2026-09-04 (D-513), and the next session runs it. The section "The PR-15 paid gate, the procedure for the next session" below holds the steps, the commands, and the costs. The branch holds all six slices: the run files, the compare, Tier 0 in CI, the golden expectations, the plan judge, and the sweep. The section "PR-15, what the branch holds" below holds the moving parts, and "PR-15, the eval harness, prepared" holds the plan and the four owner questions, OQ-57 to OQ-60.
 - The two corpus items of 2026-09-04 merged as #64 (D-510). Branches `corpus-items` and `deck-gate-fixes` can go. The meta job skips the MTGJSON deck files when the deck list names the products of the stored table. Deck gate prompt 25 covers the precon exclusion of PR-24 for the first time, and it waits for a paid run. The section "The corpus items of 2026-09-04" below holds the read, and one owner question came out of it (OQ-56).
 - The paid sweep after PR-21 ran on 2026-09-03 and 2026-09-04, $4.60 in all. Question gate 33 and its eval pass. Tier judge run 3 reads 8 of 24, with the bar open on the corpus. Deck gate 14 with 14b reads 24 of 24, and revise gate 8 passes. The one defect it found, F-34, merged fixed as #63 (D-509). The section "The paid runs of 2026-09-03, after PR-21" below holds the read. Branch `deck-gate-fixes` can go.
 - PR-21, the share link and the print view, is merged (2026-09-03, #62, D-508). The free gate passes, `docs/reference/pr21-gate-2026-09-03.md`. The tree is green on `main`: Go build, vet, the `-race` suite, golangci-lint, `make ste-check`, the web lint, the web typecheck, and 262 web tests. Branches `pr-24`, `pr-14c`, `pr-20`, and `pr-21` can go. The section "PR-21, the share link and the print view, merged" below holds the moving parts. PR-22 is next, on a new branch from `main` (D-494).
@@ -481,6 +481,53 @@ CAUTION: `check` compares the baseline with the newest run of its suite that is 
 
 What comes next: the first paid runs through the new flags, on the owner's word, and the answers to OQ-57 to OQ-61. Slice 3 built the compare lane of Tier 0 without the trimmed snapshot of OQ-60. Slice 6 built the sweep for the owner's machine, the recommendation of OQ-57.
 
+## The PR-15 paid gate, the procedure for the next session (2026-09-04, D-513)
+
+The owner said go to the paid gate on 2026-09-04, in three steps for about $4.60, and stopped the session for its context window (D-513). A fresh session runs it. Confirm the go with the owner before the first call, because a day passed. Run every command from the repo root, and read `docs/reference/pr15-gate-2026-09-04.md` first.
+
+The first sweep is a calibration run and not a clean pass. The 27 expectations of the question gate are a session's read of the messages. No call reached the Anthropic API with the plan judge schema yet (roadmap lesson 10). So the question steps run alone first, and the deck gate proves the schema on one prompt before the rest spends money.
+
+1. Confirm the go with the owner.
+2. Run the question steps, about $0.28 and 33 minutes:
+
+   ```
+   EVAL_SWEEP=1 go -C go run ./cmd/eval sweep -cap 0.50 -suites questions,question-eval -continue
+   ```
+
+3. Read `docs/reference/pr7-question-gate-run34.md` for the expectation misses.
+4. For each miss, decide: a wrong expectation, or a wrong slot. Read the conversation's messages and its turn lines.
+5. Correct a wrong expectation in `conversations.json`. Record a wrong slot as a finding.
+6. When an expectation changed, ask the owner about run 35, about $0.18.
+7. Run the deck gate on prompt 25 alone, about $0.13:
+
+   ```
+   DECK_GATE_OUT=docs/reference/pr8-deck-gate-run15.md DECK_GATE_ARGS="-only 25" make deck-gate
+   ```
+
+8. Read the document for the `- PLAN` lines and the PR-24 block. A `PLAN JUDGE ERROR` line is a schema refusal: fix the schema before step 9.
+9. Run the rest, about $4.20 and 55 minutes:
+
+   ```
+   EVAL_SWEEP=1 go -C go run ./cmd/eval sweep -cap 4.50 -suites decks,tier-judge,revise
+   ```
+
+10. Read each document as the owner reads it: the verdict, the counts under it, and the flips.
+11. Run `make eval-check`. Then record a baseline for each suite that passed:
+
+    ```
+    go -C go run ./cmd/eval baseline -suite <suite> -run <file.jsonl>
+    ```
+
+12. Update the hand-off, the roadmap, and `CLAUDE.md` with the results, and commit on `pr-15`.
+
+CAUTION: `-continue` on step 2 keeps the eval step alive after a FAIL of the question gate on expectation misses. Without it the sweep stops after the first step.
+
+CAUTION: the sweep numbers each document after the highest run of its family. Step 7 writes run 15 by hand, so the sweep of step 9 writes deck gate run 16. The estimate of step 9 reads run 14, the newest full run.
+
+CAUTION: a plan judge error moves no verdict. The deck gate passes its bars without the plan grades, so read the `- PLAN` lines and not only the verdict.
+
+What a fresh session needs to know: the sweep runs the Makefile targets, and each target sources `.env` and sets its own guard. The run files land under `docs/reference/eval/`, named after the documents. `make eval-check` compares the baseline of 14 with 14b against the newest run, and a run older than the baseline is never read. The owner merges #65 after the paid gate, and its documents ride in the same PR.
+
 ## PR-15, the eval harness, prepared (2026-09-04, D-511)
 
 The owner moved PR-15 ahead of PR-22 and PR-23 on 2026-09-04 (D-511). It is in progress on branch `pr-15`, from `main` at f299289 (#64). This section holds what a session found on 2026-09-04, the plan in slices, and the four owner questions. The roadmap entry is the authority on the goal, and D-39, D-423, D-427, D-428, and D-430 bind it.
@@ -709,9 +756,9 @@ The chat ran a turn with no card index before D-405. The commander question then
 
 ## Next steps, in order
 
-1. PR-15, the eval harness (D-511), in progress on branch `pr-15` from `main` at f299289. The section "PR-15, the eval harness, prepared" holds the six slices and OQ-57 to OQ-60. Then PR-22, the deploy to GCP for invited users (D-310, D-314), and PR-23. OQ-45 held the store of the allowlist, and D-420 answered it: one Firestore document, `config/allowlist`, written by `make allow EMAIL=...`. Then PR-23.
+1. The PR-15 paid gate, in the section "The PR-15 paid gate, the procedure for the next session" (D-513). Then the owner merges #65. Then PR-22, the deploy to GCP for invited users (D-310, D-314), and PR-23. OQ-45 held the store of the allowlist, and D-420 answered it: one Firestore document, `config/allowlist`, written by `make allow EMAIL=...`. Then PR-23.
 2. `make meta-refresh` daily, and `make quality-gate` to a new `QUALITY_GATE_OUT` after each one. Read the pair bars per format and the per-axis table. A weight against the sense of its feature is a defect in the feature or the labels. Do not tune it. The next weekly EDHREC read falls on 2026-09-10 (D-499).
-3. The paid runs come after PR-14C (D-495). First `make quality-judge` over `pr8-deck-gate-run13b.md`, about $0.31. Then the bracket gate for the bracket 5 decks. Then the question gate for the classifier of version 17 (D-496). Ask the owner before each one.
+3. After the merge of #65, every paid run goes through `eval sweep` or its Makefile target. Each one writes its run file beside the document. The bracket rejudge of the bracket 5 decks is still open from the sweep of 2026-09-03. Ask the owner before each one.
 4. Deploy the meta job (D-492). It is one Cloud Run job on `worker -meta`, with a Scheduler cron at 06:00 UTC daily. `TOPDECK_API_KEY` goes to Secret Manager. No infra file in this repo holds the worker's schedule. So the deployment is by hand, as the snapshot worker's is.
 5. PR-22 and PR-23 in order after PR-15, one gate each (D-511).
 
