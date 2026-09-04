@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -16,6 +17,7 @@ import (
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/candidates"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
+	"github.com/nkramber/mtg-deck-builder/go/internal/evalrun"
 	"github.com/nkramber/mtg-deck-builder/go/internal/gatekit"
 	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
@@ -175,15 +177,23 @@ func tierOfWords(words string) string {
 
 // runJudge runs the judge lane over a deck gate document and writes
 // the judge document to stdout.
-func runJudge(path, promptsPath string) error {
+func runJudge(path, promptsPath, runOut string) error {
 	if err := gatekit.SpendGuard("QUALITY_JUDGE"); err != nil {
 		return err
 	}
+	// The run file is never overwritten (D-65), and the check runs before
+	// the first provider call.
+	if err := gatekit.RefuseExisting(runOut); err != nil {
+		return err
+	}
+	run := evalrun.New("tier-judge", evalrun.RunID(runOut))
+	run.Header.Versions["source"] = filepath.Base(path)
 	quiet := gatekit.Quiet()
 	idx, err := gatekit.LoadSnapshot(context.Background(), quiet)
 	if err != nil {
 		return err
 	}
+	run.SetSnapshot(idx.AsOf)
 	commanders, err := promptCommanders(promptsPath)
 	if err != nil {
 		return err
@@ -197,13 +207,16 @@ func runJudge(path, promptsPath string) error {
 	if err != nil {
 		return fmt.Errorf("judge %s: %w", path, err)
 	}
-	if err := regrade(decks, idx); err != nil {
+	modelVersion, err := regrade(decks, idx)
+	if err != nil {
 		return err
 	}
+	run.Header.Versions["quality_model"] = modelVersion
 	client, err := llm.NewFromEnv(gatekit.Env, quiet)
 	if err != nil {
 		return err
 	}
+	run.SetRoles(client.Config(), llm.RoleJudge)
 	prices, err := llm.LoadPrices()
 	if err != nil {
 		return err
@@ -219,7 +232,11 @@ func runJudge(path, promptsPath string) error {
 		}
 		fmt.Fprintf(os.Stderr, "  %2d. document %-9s model %-9s %s\n", d.id, d.grade, d.modelGrade, word)
 	}
-	if !reportJudge(os.Stdout, path, decks, acc, idx, time.Since(start)) {
+	pass := reportJudge(os.Stdout, path, decks, acc, idx, time.Since(start), run)
+	if err := evalrun.WriteFile(runOut, run); err != nil {
+		return err
+	}
+	if !pass {
 		return errors.New("quality judge: FAIL")
 	}
 	return nil
@@ -228,25 +245,25 @@ func runJudge(path, promptsPath string) error {
 // regrade grades every deck with the stored model: the profile with no
 // content check, then the scorer. The roles come from the candidate
 // builder, as the fit reads them.
-func regrade(decks []judged, idx *cards.Index) error {
+func regrade(decks []judged, idx *cards.Index) (modelVersion string, err error) {
 	scorer, err := gatekit.Scorer(context.Background())
 	if err != nil {
-		return err
+		return "", err
 	}
 	if scorer.Version() == "" {
-		return errors.New("no stored quality model, so the judge lane has no grade to check")
+		return "", errors.New("no stored quality model, so the judge lane has no grade to check")
 	}
 	cfg, err := rules.Load()
 	if err != nil {
-		return err
+		return "", err
 	}
 	prof, err := profile.New(cfg, func() *cards.TagIndex { return idx.Tags() }, nil)
 	if err != nil {
-		return err
+		return "", err
 	}
 	builder, err := candidates.New()
 	if err != nil {
-		return err
+		return "", err
 	}
 	roles := builder.Roles(idx)
 	for i := range decks {
@@ -258,15 +275,15 @@ func regrade(decks []judged, idx *cards.Index) error {
 		}
 		q := scorer.Score(quality.Input{Deck: d.deck, Profile: prof.Measure(d.deck, idx), Cards: idx})
 		if q == nil {
-			return fmt.Errorf("deck %d: the model covers no %s", d.id, generate.FormatWord(d.format))
+			return "", fmt.Errorf("deck %d: the model covers no %s", d.id, generate.FormatWord(d.format))
 		}
 		d.modelGrade = q.GetTier()
 	}
-	return nil
+	return scorer.Version(), nil
 }
 
 // reportJudge writes the judge document and answers the verdict.
-func reportJudge(w io.Writer, source string, decks []judged, acc *llm.Accumulator, idx *cards.Index, took time.Duration) bool {
+func reportJudge(w io.Writer, source string, decks []judged, acc *llm.Accumulator, idx *cards.Index, took time.Duration, run *evalrun.Run) bool {
 	p := func(format string, a ...any) { _, _ = fmt.Fprintf(w, format, a...) }
 	agreed, judgedCount, errs := 0, 0, 0
 	// Off by one rung counts apart, so a reader sees a near miss.
@@ -292,6 +309,25 @@ func reportJudge(w io.Writer, source string, decks []judged, acc *llm.Accumulato
 	if !pass {
 		verdict = "FAIL"
 	}
+	for _, d := range decks {
+		item := fmt.Sprintf("%d", d.id)
+		if d.err != nil {
+			run.Gate(item, "judged", 0, d.err.Error())
+			continue
+		}
+		run.Gate(item, "judged", 1, "")
+		agrees := 0.0
+		if d.judgement != nil && d.judgement.Tier == d.modelGrade {
+			agrees = 1
+		}
+		tier := ""
+		if d.judgement != nil {
+			tier = d.judgement.Tier
+		}
+		run.Info(item, "judge_agrees", agrees, fmt.Sprintf("graded %s, judged %s", d.modelGrade, tier))
+	}
+	run.Gate("suite", "judge_agreement", share*100, fmt.Sprintf("%d of %d, the bar is %.0f", agreed, judgedCount, judgeBar*100))
+	run.Finish(acc.Report(), took, verdict)
 	p("# PR-14B quality judge lane\n\n")
 	p("Run date: %s. Card snapshot: %s. Source: %s.\n\n", time.Now().UTC().Format("2006-01-02"), idx.AsOf.Format("2006-01-02"), source)
 	p("Verdict: %s. The judge agreed with the model's grade on %d of %d decks (%.0f percent, the bar is %.0f), %d off by one rung, %d judge errors.\n\n",
@@ -301,6 +337,8 @@ func reportJudge(w io.Writer, source string, decks []judged, acc *llm.Accumulato
 	p("| Decks | %d |\n| Judged | %d |\n| Agreed | %d |\n| Off by one rung | %d |\n| Judge errors | %d |\n", len(decks), judgedCount, agreed, near, errs)
 	rep := acc.Report()
 	p("| Calls | %d |\n| Cost | %s |\n| Time | %.0f seconds |\n\n", rep.Calls, gatekit.CostWord(rep), took.Seconds())
+	run.Markdown(w)
+	p("\n")
 	p("## Decks\n\n| # | Deck | Format | Grade | Document | Judge | Agree |\n|---|---|---|---|---|---|---|\n")
 	for _, d := range decks {
 		judge, agree := "error", ""

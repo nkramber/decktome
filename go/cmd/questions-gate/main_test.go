@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nkramber/mtg-deck-builder/go/internal/evalrun"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 	"github.com/nkramber/mtg-deck-builder/go/internal/questions"
 	"github.com/nkramber/mtg-deck-builder/go/internal/tune"
@@ -70,7 +71,7 @@ func TestConversationsFile(t *testing.T) {
 // TestRunNeedsApproval keeps the command from spending money by accident.
 func TestRunNeedsApproval(t *testing.T) {
 	t.Setenv("QUESTIONS_GATE", "")
-	err := run("", 0, "", io.Discard)
+	err := run("", 0, "", "", io.Discard)
 	if err == nil || !strings.Contains(err.Error(), "QUESTIONS_GATE=1") {
 		t.Errorf("err = %v, want a refusal without QUESTIONS_GATE=1", err)
 	}
@@ -175,7 +176,7 @@ func TestDocumentRoundTrip(t *testing.T) {
 		cov.add(r)
 	}
 	var buf bytes.Buffer
-	_ = write(&buf, gateFile{VerifiedAt: "2026-08-28"}, results, cov, llm.Report{Calls: 3}, cfg, "no snapshot", time.Second)
+	_ = write(&buf, gateFile{VerifiedAt: "2026-08-28"}, results, cov, llm.Report{Calls: 3}, cfg, "no snapshot", time.Second, evalrun.New("questions", "test"))
 	path := filepath.Join(t.TempDir(), "pr7-question-gate-roundtrip.md")
 	if err := os.WriteFile(path, buf.Bytes(), 0o600); err != nil {
 		t.Fatal(err)

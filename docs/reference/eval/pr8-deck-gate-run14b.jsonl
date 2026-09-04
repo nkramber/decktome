@@ -1,0 +1,13 @@
+{"suite":"decks","run_id":"pr8-deck-gate-run14b","date":"2026-09-04","snapshot":"2026-09-03","prompts":{"generate":12},"versions":{"quality_model":"20260903T210658Z"},"calls":3,"cost_usd":0.1342,"seconds":119,"verdict":"PASS","lower":["blocks","invented_names","false_rules","judge_error","warnings","repaired","buy_cost","deck_cost"],"note":"imported from pr8-deck-gate-run14b.md, so the roles are unknown"}
+{"item":"17","metric":"built","value":1,"kind":"gate"}
+{"item":"17","metric":"blocks","value":0,"kind":"gate"}
+{"item":"17","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"17","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"17","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"17","metric":"repaired","value":1,"kind":"info","detail":"profile_off_band, profile_off_band, two_card_combo"}
+{"item":"17","metric":"cards","value":99,"kind":"info"}
+{"item":"17","metric":"pool","value":196,"kind":"info"}
+{"item":"17","metric":"warnings","value":0,"kind":"info"}
+{"item":"17","metric":"buy_cost","value":81.19,"kind":"info"}
+{"item":"17","metric":"deck_cost","value":268.64,"kind":"info"}
+{"item":"17","metric":"grade","value":0.53,"kind":"info","detail":"typical"}

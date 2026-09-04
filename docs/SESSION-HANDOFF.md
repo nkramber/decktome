@@ -6,7 +6,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## Where things stand (2026-09-04)
 
-- PR-15, the eval harness, is next (D-511, 2026-09-04), before PR-22 and PR-23. It is in progress on branch `pr-15`, from `main` at f299289. The section "PR-15, the eval harness, prepared" below holds the plan in six slices and the four owner questions, OQ-57 to OQ-60.
+- PR-15, the eval harness, is in progress on branch `pr-15`, from `main` at f299289 (D-511, 2026-09-04), before PR-22 and PR-23. The branch holds slices 1 to 3 of the plan: the run files, the compare, and Tier 0 in CI. The section "PR-15, what the branch holds" below holds the moving parts, and "PR-15, the eval harness, prepared" holds the plan and the four owner questions, OQ-57 to OQ-60.
 - The two corpus items of 2026-09-04 merged as #64 (D-510). Branches `corpus-items` and `deck-gate-fixes` can go. The meta job skips the MTGJSON deck files when the deck list names the products of the stored table. Deck gate prompt 25 covers the precon exclusion of PR-24 for the first time, and it waits for a paid run. The section "The corpus items of 2026-09-04" below holds the read, and one owner question came out of it (OQ-56).
 - The paid sweep after PR-21 ran on 2026-09-03 and 2026-09-04, $4.60 in all. Question gate 33 and its eval pass. Tier judge run 3 reads 8 of 24, with the bar open on the corpus. Deck gate 14 with 14b reads 24 of 24, and revise gate 8 passes. The one defect it found, F-34, merged fixed as #63 (D-509). The section "The paid runs of 2026-09-03, after PR-21" below holds the read. Branch `deck-gate-fixes` can go.
 - PR-21, the share link and the print view, is merged (2026-09-03, #62, D-508). The free gate passes, `docs/reference/pr21-gate-2026-09-03.md`. The tree is green on `main`: Go build, vet, the `-race` suite, golangci-lint, `make ste-check`, the web lint, the web typecheck, and 262 web tests. Branches `pr-24`, `pr-14c`, `pr-20`, and `pr-21` can go. The section "PR-21, the share link and the print view, merged" below holds the moving parts. PR-22 is next, on a new branch from `main` (D-494).
@@ -454,6 +454,23 @@ The owner chose the deck gate next and left the bracket rejudge for later.
 - Revise gate run 8, `docs/reference/pr12b-revise-gate-run8.md`, $1.23, 16 minutes, 33 calls. PASS: 11 of 11 turns met their bar. The revised decks kept 97 to 100 percent of their base, against 96 to 100 in run 7. The cost rose from $0.74 on 25 calls. Five turns bought a repair turn against two in run 7, four of them for a profile finding of PR-14A. On revision 9, the land swap of the Karlov deck, the repair answered a worse deck. The deck before it stood, with the note `repair_kept_earlier` (D-509), and the turn passed with 100 percent kept.
 
 The sweep is complete. Every row of the eval list ran once, for $4.60 together, and one defect came out of it, F-34, fixed and merged as #63.
+
+## PR-15, what the branch holds (2026-09-04)
+
+Branch `pr-15` holds slices 1 to 3 of the plan in the section after this one. The tree is green: Go build, vet, the `-race` suite, golangci-lint, and `make ste-check`.
+
+- `internal/evalrun` (slice 1): `Header`, `Row`, and `Run`, the JSONL writer and reader, `Compare`, and `Merge`. A header holds the suite, the run id, the date, the commit, and the resolved model and effort per role. It holds the snapshot date, the prompt versions, the stored versions, the cost, and the verdict. A row holds one measurement of one item, as a gate row or an information row. The header names the metrics where lower is better, so a committed file describes its own senses.
+- Every gate writes its run file beside its document, and the "## Run" block of every document is one fingerprint (`Run.Markdown`). The writers: `deck-gate`, `bracket-gate` and its `-rejudge` lane, `revise-gate`, `questions-gate`, `questions-eval`, `quality-gate`, and its `-judge` lane. Each one takes `-run-out`, and it refuses an existing file before the first provider call (D-65). The Makefile names the file after the document, under `docs/reference/eval/`: `DECK_GATE_RUN`, `BRACKET_GATE_RUN`, `REVISE_GATE_RUN`, `GATE_RUN`, `EVAL_ROWS`, `QUALITY_GATE_RUN`, and `QUALITY_JUDGE_RUN`.
+- `cmd/eval` (slice 2), four free modes. `compare` reads two runs of one suite and names the flips. `check` reads every suite of `baselines.json` against its newest run. `baseline` records the accepted run files of a suite, a run with its rerun as one. `import` reads a deck gate document from before the run files existed.
+- The verdict of a compare. A gate row that moved against its sense past the margin is a regression, and the verdict fails. A suite with no gate row, or no verdict of its own, reads NOT EVALUATED and never PASS. The information rows fold into one count, and `-info` lists them, because the cost rows move with the daily prices on every run.
+- `docs/reference/eval/` holds the imported runs 13b, 14, and 14b, and `baselines.json` names 14 with 14b as the decks baseline. The compare of 13b against 14 names deck 17, `blocks` 0 to 1 with `deck_size`, as the one gate flip, which is F-34. That is the gate line of slice 2.
+- Tier 0 (slice 3): `make eval-check` is free. The job `verify:eval` runs it on a pull request that touches the run files, the harness code, the Makefile, or the workflow. It takes about one minute of runner time.
+
+CAUTION: an imported run names no model. A document never printed one, and the header says so in its note. The first paid run of each suite through the new flags writes the first complete fingerprint.
+
+CAUTION: `check` compares the baseline with the newest run of its suite that is newer than every run of the baseline. A run older than the baseline is history, and the check never reads it. Newest reads the date first, then the number the run id ends with.
+
+What comes next: slice 4, the golden expectations, then slice 5, the plan judge, then slice 6, the sweep. OQ-57 to OQ-60 wait on the owner. Slice 3 built the compare lane of Tier 0 without the trimmed snapshot of OQ-60.
 
 ## PR-15, the eval harness, prepared (2026-09-04, D-511)
 

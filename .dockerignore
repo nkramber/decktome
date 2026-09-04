@@ -16,6 +16,7 @@ go/api
 go/candidates-review
 go/chat-probe
 go/deck-gate
+go/eval
 go/bracket-gate
 go/quality-gate
 go/generate-probe

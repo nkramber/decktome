@@ -44,6 +44,7 @@ jobs:
       emulator: ${{ steps.diff.outputs.emulator }}
       docker: ${{ steps.diff.outputs.docker }}
       shell: ${{ steps.diff.outputs.shell }}
+      eval: ${{ steps.diff.outputs.eval }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -70,6 +71,8 @@ jobs:
             # The emulators image copies firebase.json and the firestore files, and asserts on them.
             echo "docker=$(has '^(docker/|compose\.yaml$|\.dockerignore$|firebase\.json$|firestore\.(rules|indexes\.json)$|go/go\.(mod|sum)$|\.nvmrc$|\.github/workflows/)')"
             echo "shell=$(has '^(scripts/|docs/|.*\.md$|Makefile$|\.github/workflows/)')"
+            # Tier 0 of the eval harness reads the committed run files and the code that compares them (PR-15).
+            echo "eval=$(has '^(docs/reference/eval/|go/internal/evalrun/|go/cmd/eval/|Makefile$|\.github/workflows/)')"
           } | tee -a "$GITHUB_OUTPUT"
 
   go:
@@ -243,6 +246,25 @@ jobs:
       # script checks the prose. Tables and code blocks are exempt.
       - name: ste check
         run: make ste-check
+
+  # Tier 0 of the eval harness (PR-15). It compares every baseline of
+  # docs/reference/eval with the newest committed run of its suite and
+  # names the flips. It calls no provider, and it takes about one
+  # minute of runner time. A run file that regresses a gate row fails.
+  eval:
+    name: "verify:eval"
+    needs: changes
+    if: github.event_name == 'pull_request' && needs.changes.outputs.eval == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go/go.mod
+          cache-dependency-path: go/go.sum
+      - name: eval check
+        run: make eval-check
 
   # The three images build when their inputs change, with no push. The
   # Go job already compiles the code the images hold, so a Go change

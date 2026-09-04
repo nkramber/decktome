@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -13,6 +14,7 @@ import (
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
+	"github.com/nkramber/mtg-deck-builder/go/internal/evalrun"
 	"github.com/nkramber/mtg-deck-builder/go/internal/gatekit"
 	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
@@ -110,15 +112,22 @@ func splitHeader(rest string, idx *cards.Index) (*mtgv1.Card, string, bool) {
 	return nil, "", false
 }
 
-func runRejudge(path string) error {
+func runRejudge(path, runOut string) error {
 	if err := gatekit.SpendGuard("BRACKET_GATE"); err != nil {
 		return err
 	}
+	if err := gatekit.RefuseExisting(runOut); err != nil {
+		return err
+	}
+	run := evalrun.New("bracket-judge", evalrun.RunID(runOut))
+	run.Header.Prompts["generate"] = generate.PromptVersion
+	run.Header.Versions["source"] = filepath.Base(path)
 	quiet := gatekit.Quiet()
 	idx, err := gatekit.LoadSnapshot(context.Background(), quiet)
 	if err != nil {
 		return err
 	}
+	run.SetSnapshot(idx.AsOf)
 	f, err := os.Open(path) // #nosec G304 -- the operator names the file.
 	if err != nil {
 		return err
@@ -132,6 +141,7 @@ func runRejudge(path string) error {
 	if err != nil {
 		return err
 	}
+	run.SetRoles(client.Config(), llm.RoleJudge)
 	prices, err := llm.LoadPrices()
 	if err != nil {
 		return err
@@ -147,7 +157,11 @@ func runRejudge(path string) error {
 		}
 		fmt.Fprintf(os.Stderr, "  %2d. bracket %d %-28s %s\n", r.prompt.ID, r.prompt.Bracket, r.prompt.Commander, word)
 	}
-	if !reportJudge(os.Stdout, path, results, acc, idx, time.Since(start)) {
+	pass := reportJudge(os.Stdout, path, results, acc, idx, time.Since(start), run)
+	if err := evalrun.WriteFile(runOut, run); err != nil {
+		return err
+	}
+	if !pass {
 		return errGateFailed
 	}
 	return nil
@@ -155,7 +169,7 @@ func runRejudge(path string) error {
 
 // reportJudge writes the judge lane document and returns its verdict:
 // every deck judged, and the agreement at the bar.
-func reportJudge(w io.Writer, source string, rs []result, acc *llm.Accumulator, idx *cards.Index, took time.Duration) bool {
+func reportJudge(w io.Writer, source string, rs []result, acc *llm.Accumulator, idx *cards.Index, took time.Duration, run *evalrun.Run) bool {
 	judged, agreed, errs := 0, 0, 0
 	for _, r := range rs {
 		switch {
@@ -177,12 +191,32 @@ func reportJudge(w io.Writer, source string, rs []result, acc *llm.Accumulator, 
 	if pass {
 		verdict = "PASS"
 	}
+	for _, r := range rs {
+		item := fmt.Sprintf("%d", r.prompt.ID)
+		switch {
+		case r.judgeErr != nil:
+			run.Gate(item, "judged", 0, r.judgeErr.Error())
+		case r.judged != nil:
+			run.Gate(item, "judged", 1, "")
+			agrees := 0.0
+			if r.judged.Bracket == r.prompt.Bracket {
+				agrees = 1
+			}
+			run.Info(item, "judge_agrees", agrees, fmt.Sprintf("built for %d, judged %d", r.prompt.Bracket, r.judged.Bracket))
+		default:
+			run.Gate(item, "judged", 0, "no verdict")
+		}
+	}
+	run.Gate("suite", "judge_agreement", float64(agreement), fmt.Sprintf("%d of %d, the bar is %d", agreed, judged, JudgeAgreementPercent))
+	run.Finish(acc.Report(), took, verdict)
 	_, _ = fmt.Fprintf(w, "# PR-14A bracket gate, judge lane\n\n")
 	_, _ = fmt.Fprintf(w, "Run date: %s. Card snapshot: %s. Decks read from `%s`.\n\n", time.Now().UTC().Format("2006-01-02"), idx.AsOf.Format("2006-01-02"), source)
 	_, _ = fmt.Fprintf(w, "Verdict: %s. The judge agreed with the bracket on %d of %d decks (%d percent, the bar is %d), with %d judge errors. This document reads the judge bar alone: the block, band, and content bars are in the source document.\n\n",
 		verdict, agreed, judged, agreement, JudgeAgreementPercent, errs)
 	rep := acc.Report()
 	_, _ = fmt.Fprintf(w, "Calls %d. Cost %s. Time %.0f seconds.\n\n", rep.Calls, gatekit.CostWord(rep), took.Seconds())
+	run.Markdown(w)
+	_, _ = fmt.Fprintf(w, "\n")
 	_, _ = fmt.Fprintf(w, "| # | Built for | Judged | Agrees | Commander |\n|---|---|---|---|---|\n")
 	for _, r := range rs {
 		judgedWord, agrees := "error", ""

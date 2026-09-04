@@ -10,6 +10,7 @@ import (
 
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
+	"github.com/nkramber/mtg-deck-builder/go/internal/evalrun"
 	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
@@ -35,7 +36,7 @@ func render(t *testing.T, rs []result) (string, string) {
 	t.Helper()
 	var b bytes.Buffer
 	idx := cards.NewIndex(nil, nil, nil, time.Time{})
-	pass := report(&b, rs, llm.NewAccumulator(nil), idx, time.Second)
+	pass := report(&b, rs, llm.NewAccumulator(nil), idx, time.Second, evalrun.New("decks", "test"))
 	doc := b.String()
 	verdict := "FAIL"
 	if pass {
@@ -269,5 +270,39 @@ func TestExcludedPreconCardsAreCounted(t *testing.T) {
 
 	if _, doc := render(t, []result{goodResult()}); strings.Contains(doc, "## The precon exclusion") {
 		t.Error("a run with no exclusion prompt wrote the block")
+	}
+}
+
+// TestRunRowsMirrorTheVerdict: the run of PR-15 holds one gate row per
+// bar per deck, the header holds the verdict, and the document carries
+// the fingerprint block.
+func TestRunRowsMirrorTheVerdict(t *testing.T) {
+	blocked := goodResult()
+	blocked.prompt.ID = 2
+	blocked.deck.Validation.Findings = []*mtgv1.Finding{{Code: "deck_size", Severity: mtgv1.Severity_SEVERITY_BLOCK}}
+	run := evalrun.New("decks", "run-test")
+	var b bytes.Buffer
+	idx := cards.NewIndex(nil, nil, nil, time.Time{})
+	pass := report(&b, []result{goodResult(), blocked}, llm.NewAccumulator(nil), idx, time.Second, run)
+	if pass || run.Header.Verdict != "FAIL" {
+		t.Errorf("pass %v, header verdict %q, want FAIL on a block", pass, run.Header.Verdict)
+	}
+	if !strings.Contains(b.String(), "## Run\n\n- Suite `decks`, run `run-test`") {
+		t.Errorf("the document lacks the fingerprint block:\n%s", b.String())
+	}
+	blocks := map[string]float64{}
+	for _, row := range run.Rows {
+		if row.Metric == "blocks" && row.Kind == evalrun.KindGate {
+			blocks[row.Item] = row.Value
+		}
+	}
+	if blocks["1"] != 0 || blocks["2"] != 1 {
+		t.Errorf("blocks rows = %v, want 0 for deck 1 and 1 for deck 2", blocks)
+	}
+	if !run.Gated() {
+		t.Error("the deck gate run must carry gate rows")
+	}
+	if run.Header.Prompts["generate"] != 0 {
+		t.Error("report does not set the prompt version, main does")
 	}
 }
