@@ -67,6 +67,10 @@ type SetResolver interface {
 	// ok is false when the phrase names no set or names two base sets,
 	// and options then holds the names the question offers.
 	ResolveSet(phrase string) (codes, names, options []string, ok bool)
+	// ResolveSetGroup returns every family a franchise word names, as
+	// codes and names, for a group request such as "sets with Marvel
+	// characters" (D-525). ok is false when the word names no set.
+	ResolveSetGroup(phrase string) (codes, names []string, ok bool)
 }
 
 // PreconMatch is the answer to ResolvePrecon.
@@ -254,7 +258,7 @@ func substitute(text string, st *State, h Hints) (string, []string) {
 	// fixed, so one placeholder carries the whole list: three fixed
 	// placeholders dropped the sentence whenever a phrase named two sets,
 	// and the question then named none of them.
-	if s := englishList(st.SetOptions); s != "" {
+	if s := orList(st.SetOptions); s != "" {
 		rep["{set_options}"] = s
 	}
 	// The mana row names the sets the reader chose (D-382).
@@ -266,7 +270,7 @@ func substitute(text string, st *State, h Hints) (string, []string) {
 	if v := strings.TrimSpace(st.UnresolvedPrecon); v != "" {
 		rep["{bad_precon}"] = v
 	}
-	if s := englishList(st.PreconOptions); s != "" {
+	if s := orList(st.PreconOptions); s != "" {
 		rep["{precon_options}"] = s
 	}
 	// The unsupported-format row names what the user asked for, and the
@@ -527,7 +531,18 @@ func commanderKeysIn(text string) []string {
 }
 
 // englishList reads a list as English: "one, two, and three".
+// orList joins the choices of a question with "or", because a reader
+// picks one of them. englishList joins with "and", for the things a deck
+// holds together (D-518).
+func orList(items []string) string {
+	return joinList(items, "or")
+}
+
 func englishList(items []string) string {
+	return joinList(items, "and")
+}
+
+func joinList(items []string, word string) string {
 	var kept []string
 	for _, s := range items {
 		if s = strings.TrimSpace(s); s != "" {
@@ -540,8 +555,8 @@ func englishList(items []string) string {
 	case 1:
 		return kept[0]
 	case 2:
-		return kept[0] + " and " + kept[1]
+		return kept[0] + " " + word + " " + kept[1]
 	default:
-		return strings.Join(kept[:len(kept)-1], ", ") + ", and " + kept[len(kept)-1]
+		return strings.Join(kept[:len(kept)-1], ", ") + ", " + word + " " + kept[len(kept)-1]
 	}
 }

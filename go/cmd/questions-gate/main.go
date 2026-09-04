@@ -259,9 +259,11 @@ func run(collectionPath string, limit int, only string, runOut string, w io.Writ
 			return fmt.Errorf("-only %q matches no conversation", only)
 		}
 		list = kept
+		rec.Header.Only = only
 	}
 	if limit > 0 && limit < len(list) {
 		list = list[:limit]
+		rec.Header.Only = strings.TrimSpace(rec.Header.Only + fmt.Sprintf(" first %d", limit))
 	}
 	acc := llm.NewAccumulator(prices)
 	started := time.Now()
@@ -607,8 +609,15 @@ func write(w io.Writer, file gateFile, results []result, cov coverages,
 			missLines = append(missLines, r.Name+": "+m)
 		}
 	}
-	pass := total.CatalogOnly >= CatalogOnlyBar && gate >= questions.MinGateSize &&
-		len(premature) == 0 && findings == 0 && len(deadEnds) == 0 && len(missLines) == 0
+	// A partial run, under -only or -n, covers a part of the set. The
+	// catalog-only bar and the gate size bar need the whole set, so a
+	// partial run reads neither, and it never stands as the gate. The
+	// item bars still hold.
+	partial := rec.Header.Partial()
+	pass := len(premature) == 0 && findings == 0 && len(deadEnds) == 0 && len(missLines) == 0
+	if !partial {
+		pass = pass && total.CatalogOnly >= CatalogOnlyBar && gate >= questions.MinGateSize
+	}
 	verdict := "FAIL"
 	if pass {
 		verdict = "PASS"
@@ -619,8 +628,15 @@ func write(w io.Writer, file gateFile, results []result, cov coverages,
 		}
 	}
 	recordRows(rec, results)
-	rec.Gate("suite", "catalog_only", float64(total.CatalogOnly), fmt.Sprintf("%d of %d, the bar is %d", total.CatalogOnly, counted, CatalogOnlyBar))
-	rec.Gate("suite", "gate_size", float64(gate), fmt.Sprintf("the gate needs %d", questions.MinGateSize))
+	catalogDetail := fmt.Sprintf("%d of %d, the bar is %d", total.CatalogOnly, counted, CatalogOnlyBar)
+	sizeDetail := fmt.Sprintf("the gate needs %d", questions.MinGateSize)
+	if partial {
+		rec.Info("suite", "catalog_only", float64(total.CatalogOnly), catalogDetail+", not read on a partial run")
+		rec.Info("suite", "gate_size", float64(gate), sizeDetail+", not read on a partial run")
+	} else {
+		rec.Gate("suite", "catalog_only", float64(total.CatalogOnly), catalogDetail)
+		rec.Gate("suite", "gate_size", float64(gate), sizeDetail)
+	}
 	rec.Gate("suite", "expectation_misses", float64(len(missLines)), fmt.Sprintf("%d counted conversations name expectations", expected))
 	rec.Finish(report, elapsed, verdict)
 
@@ -628,6 +644,10 @@ func write(w io.Writer, file gateFile, results []result, cov coverages,
 	_, _ = fmt.Fprintf(w, "Run date: %s. Conversations: %s.\n\n", time.Now().UTC().Format("2006-01-02"), file.VerifiedAt)
 	_, _ = fmt.Fprintf(w, "Verdict: %s. %d of %d counted gate conversations used catalog questions only. The bar is %d. The set holds %d gate conversations, and %d of them start after a build and are not counted (A-9).\n\n",
 		verdict, total.CatalogOnly, counted, CatalogOnlyBar, gate, afterBuild)
+	if partial {
+		_, _ = fmt.Fprintf(w, "This is a partial run over `%s`: %d of %d conversations ran. The catalog-only bar and the gate size bar need the whole set, so the verdict reads neither, and this run never stands as the gate. The item bars hold: no premature build, no dead end, no lint finding, and no expectation miss.\n\n",
+			rec.Header.Only, len(results), len(file.Conversations))
+	}
 	if cov.afterBuild.Sessions > 0 {
 		_, _ = fmt.Fprintf(w, "%d conversations after a build ran beside the count. They asked %d questions, and the model offered %d replacements.\n\n",
 			cov.afterBuild.Sessions, cov.afterBuild.Asked, cov.afterBuild.Invented+cov.afterBuild.NearCopies)
@@ -788,6 +808,10 @@ func write(w io.Writer, file gateFile, results []result, cov coverages,
 		}
 	}
 	if !pass {
+		if partial {
+			return fmt.Errorf("partial gate failed: %d premature, %d dead ends, %d lint findings, %d expectation misses",
+				len(premature), len(deadEnds), findings, len(missLines))
+		}
 		return fmt.Errorf("gate failed: %d of %d counted catalog-only (bar %d), %d premature, %d lint findings",
 			total.CatalogOnly, counted, CatalogOnlyBar, len(premature), findings)
 	}

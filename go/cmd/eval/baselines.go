@@ -119,11 +119,42 @@ func readHeaders(dir string) ([]fileHeader, error) {
 	return out, nil
 }
 
-// newestRun names the newest run file of a suite that is newer than
-// every run of the baseline, or "" when none. A run older than the
-// baseline is history, and the check never reads it. Newest reads the
-// date first, then the number at the end of the run id, then the id.
+// newestRun names the newest whole run file of a suite that is newer
+// than every run of the baseline, or "" when none. A run older than the
+// baseline is history, and the check never reads it. A partial run, one
+// of -only or a count, never stands for the suite, so the check skips it
+// and partialRuns lists it. Newest reads the date first, then the number
+// at the end of the run id, then the id.
 func newestRun(headers []fileHeader, suite string, baseline []string) string {
+	best := ""
+	var bestHeader evalrun.Header
+	for _, fh := range sinceBaseline(headers, suite, baseline) {
+		if fh.header.Partial() {
+			continue
+		}
+		if best == "" || runLess(bestHeader, fh.header) {
+			best, bestHeader = fh.name, fh.header
+		}
+	}
+	return best
+}
+
+// partialRuns names the partial runs of a suite newer than the baseline,
+// oldest first. The check lists them and compares none.
+func partialRuns(headers []fileHeader, suite string, baseline []string) []fileHeader {
+	var out []fileHeader
+	for _, fh := range sinceBaseline(headers, suite, baseline) {
+		if fh.header.Partial() {
+			out = append(out, fh)
+		}
+	}
+	sort.Slice(out, func(i, j int) bool { return runLess(out[i].header, out[j].header) })
+	return out
+}
+
+// sinceBaseline keeps the runs of a suite that are newer than every run
+// of the baseline and not in it.
+func sinceBaseline(headers []fileHeader, suite string, baseline []string) []fileHeader {
 	inBase := map[string]bool{}
 	for _, f := range baseline {
 		inBase[f] = true
@@ -135,8 +166,7 @@ func newestRun(headers []fileHeader, suite string, baseline []string) string {
 			floor, hasFloor = fh.header, true
 		}
 	}
-	best := ""
-	var bestHeader evalrun.Header
+	var out []fileHeader
 	for _, fh := range headers {
 		if fh.header.Suite != suite || inBase[fh.name] {
 			continue
@@ -144,11 +174,9 @@ func newestRun(headers []fileHeader, suite string, baseline []string) string {
 		if hasFloor && !runLess(floor, fh.header) {
 			continue
 		}
-		if best == "" || runLess(bestHeader, fh.header) {
-			best, bestHeader = fh.name, fh.header
-		}
+		out = append(out, fh)
 	}
-	return best
+	return out
 }
 
 var trailingNumber = regexp.MustCompile(`(\d+)[a-z]?$`)

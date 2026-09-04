@@ -183,14 +183,14 @@ The question gate cost is from 2026-08-26, and the deck gate and bracket gate co
 
 CI runs on pull requests only, and a new push to a branch cancels the run in progress. A first job reads the diff against the base branch. Each job runs only when its inputs changed, so a docs change runs the STE check and nothing else. A merge to `main` runs nothing, because the pull request verified the same tree. A weekly schedule runs govulncheck alone, at about 2 minutes a week (D-305). The owner hit 90 percent of the monthly minutes in six days on 2026-08-28, and each run cost 25 billed minutes before this rule (D-286).
 
-Rules for contributors and agents: `AGENTS.md`. Machine setup: `docs/setup.md`. Design and roadmap: `docs/design-roadmap.md`. Decisions: `docs/decisions.md`.
+Rules for contributors and agents: `AGENTS.md`. Machine setup: `docs/setup.md`. A second Mac: `docs/setup-second-mac.md`. Design and roadmap: `docs/design-roadmap.md`. Decisions: `docs/decisions.md`.
 
 ## Repo layout
 
 - `proto/` - the one API contract (buf, `mtg.v1`).
 - `go/` - Go module: `cmd/api`, `cmd/worker`, `internal/*`, `gen/` (generated, committed).
 - `web/` - pnpm workspace: `apps/web` (React 19 + Vite), `packages/api-client` (generated, committed).
-- `docs/` - roadmap, decisions, open questions, reference notes, `setup.md`.
+- `docs/` - roadmap, decisions, open questions, reference notes, `setup.md`, `setup-second-mac.md`.
 - `.claude/` - agent skills, including the MtG rules corpus.
 
 ## Data and images

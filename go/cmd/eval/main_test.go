@@ -167,6 +167,21 @@ func TestCheckNamesTheFlip(t *testing.T) {
 		t.Errorf("check with no newer run: code %d, err %v:\n%s", code, err, out.String())
 	}
 
+	// A partial run since the baseline is listed and never compared, so
+	// the suite stays NOT EVALUATED and the exit code stays green.
+	part := evalrun.New("decks", "pr8-deck-gate-run14c")
+	part.Header.Date, part.Header.Only, part.Header.Verdict = "2026-09-05", "17", "PASS"
+	part.Gate("17", "blocks", 0, "")
+	if err := evalrun.WriteFile(filepath.Join(dir, "pr8-deck-gate-run14c.jsonl"), part); err != nil {
+		t.Fatal(err)
+	}
+	out.Reset()
+	code, err = check(&out, dir, 0, false)
+	if err != nil || code != exitPass || !strings.Contains(out.String(), "stands alone") ||
+		!strings.Contains(out.String(), "Partial runs since the baseline, not compared:\n\n- `pr8-deck-gate-run14c` of 2026-09-05 over `17`, 1 items, PASS.\n") {
+		t.Errorf("check with a partial run: code %d, err %v:\n%s", code, err, out.String())
+	}
+
 	// A newer run that is run 14 alone reads the empty deck as the flip.
 	// The information rows fold into a count until -info lists them.
 	write("pr8-deck-gate-run15.jsonl", strings.Replace(run14, "2026-09-04", "2026-09-05", 1))
@@ -209,9 +224,16 @@ func TestNewestRunReadsTheDateThenTheNumber(t *testing.T) {
 		{name: "run10.jsonl", header: evalrun.Header{Suite: "decks", RunID: "pr8-deck-gate-run10", Date: "2026-09-01"}},
 		{name: "run8.jsonl", header: evalrun.Header{Suite: "decks", RunID: "pr8-deck-gate-run8", Date: "2026-09-02"}},
 		{name: "other.jsonl", header: evalrun.Header{Suite: "bracket", RunID: "x", Date: "2026-09-09"}},
+		{name: "run11.jsonl", header: evalrun.Header{Suite: "decks", RunID: "pr8-deck-gate-run11", Date: "2026-09-03", Only: "17"}},
 	}
 	if got := newestRun(headers, "decks", nil); got != "run8.jsonl" {
-		t.Errorf("newest = %s, want the later day", got)
+		t.Errorf("newest = %s, want the later whole run: the partial run 11 never stands for the suite", got)
+	}
+	if got := partialRuns(headers, "decks", []string{"run8.jsonl"}); len(got) != 1 || got[0].name != "run11.jsonl" {
+		t.Errorf("partial runs since run 8 = %v, want run 11", got)
+	}
+	if got := partialRuns(headers, "decks", []string{"run11.jsonl"}); len(got) != 0 {
+		t.Errorf("a partial run in the baseline is not since it: %v", got)
 	}
 	if got := newestRun(headers, "decks", []string{"run8.jsonl"}); got != "" {
 		t.Errorf("newest past the baseline = %q, want none: runs 9 and 10 are older than the baseline of 2026-09-02", got)

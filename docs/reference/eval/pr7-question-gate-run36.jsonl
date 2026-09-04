@@ -1,0 +1,15 @@
+{"suite":"questions","run_id":"pr7-question-gate-run36","date":"2026-09-04","commit":"07856c2","roles":{"ask":{"provider":"openai","model":"gpt-5.6-luna","effort":"low"},"classify":{"provider":"openai","model":"gpt-5.6-luna","effort":"none"}},"snapshot":"2026-09-04","prompts":{"questions":18},"versions":{"conversations":"2026-08-31","slots_snapshot":"4"},"calls":5,"cost_usd":0.0015704400000000002,"seconds":11.128398459,"verdict":"FAIL","only":"109","lower":["error","premature","dead_end","lint_findings","invented","refused_rewords","stalls","closed_by_net"]}
+{"item":"109","metric":"error","value":0,"kind":"info"}
+{"item":"109","metric":"premature","value":0,"kind":"info"}
+{"item":"109","metric":"dead_end","value":0,"kind":"info"}
+{"item":"109","metric":"lint_findings","value":0,"kind":"info"}
+{"item":"109","metric":"slot_sets","value":1,"kind":"info","detail":"want msc,msh,pspm,spe,spm, got msc,msh,pspm,spe,spm"}
+{"item":"109","metric":"catalog_only","value":1,"kind":"info","detail":" (probe)"}
+{"item":"109","metric":"asked","value":3,"kind":"info"}
+{"item":"109","metric":"invented","value":0,"kind":"info"}
+{"item":"109","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"109","metric":"stalls","value":0,"kind":"info"}
+{"item":"109","metric":"closed_by_net","value":1,"kind":"info"}
+{"item":"suite","metric":"catalog_only","value":0,"kind":"gate","detail":"0 of 0, the bar is 25"}
+{"item":"suite","metric":"gate_size","value":0,"kind":"gate","detail":"the gate needs 30"}
+{"item":"suite","metric":"expectation_misses","value":0,"kind":"gate","detail":"0 counted conversations name expectations"}

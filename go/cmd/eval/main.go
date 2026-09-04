@@ -266,10 +266,12 @@ func check(w io.Writer, dir string, margin float64, info bool) (int, error) {
 			return exitFault, fmt.Errorf("baseline of %s: %w", suite, err)
 		}
 		newest := newestRun(headers, suite, files)
+		partial := partialRuns(headers, suite, files)
 		if newest == "" {
 			// Nothing was compared, so the suite reads NOT EVALUATED and never
 			// PASS. The exit code stays green: nothing regressed.
-			p("## Suite `%s`: NOT EVALUATED\n\nThe baseline `%s` stands alone, with no newer run.\n\n", suite, base.Header.RunID)
+			p("## Suite `%s`: NOT EVALUATED\n\nThe baseline `%s` stands alone, with no newer whole run.\n\n", suite, base.Header.RunID)
+			writePartial(w, partial)
 			continue
 		}
 		next, err := evalrun.ReadFile(filepath.Join(dir, newest))
@@ -278,11 +280,31 @@ func check(w io.Writer, dir string, margin float64, info bool) (int, error) {
 		}
 		c := evalrun.Compare(base, next, margin)
 		writeComparison(w, c, info)
+		writePartial(w, partial)
 		if c.Verdict == evalrun.VerdictFail {
 			code = exitFail
 		}
 	}
 	return code, nil
+}
+
+// writePartial lists the partial runs since the baseline. A partial run
+// covers a part of its suite, so the check compares none of them, and
+// none moves the exit code.
+func writePartial(w io.Writer, partial []fileHeader) {
+	if len(partial) == 0 {
+		return
+	}
+	p := func(format string, a ...any) { _, _ = fmt.Fprintf(w, format, a...) }
+	p("Partial runs since the baseline, not compared:\n\n")
+	for _, fh := range partial {
+		verdict := fh.header.Verdict
+		if verdict == "" {
+			verdict = "no verdict"
+		}
+		p("- `%s` of %s over `%s`, %d items, %s.\n", orUnnamed(fh.header.RunID), fh.header.Date, fh.header.Only, fh.items, verdict)
+	}
+	p("\n")
 }
 
 func prefixed(dir string, files []string) []string {
@@ -317,9 +339,14 @@ func importDoc(w io.Writer, doc, out string) error {
 	return nil
 }
 
+// countItems counts the items of a run: the conversations, prompts, or
+// bases. The suite rows are the bars over the whole run, not an item.
 func countItems(r *evalrun.Run) int {
 	seen := map[string]bool{}
 	for _, row := range r.Rows {
+		if row.Item == "suite" {
+			continue
+		}
 		seen[row.Item] = true
 	}
 	return len(seen)

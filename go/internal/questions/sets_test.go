@@ -13,8 +13,16 @@ import (
 // fakeSets answers the SetResolver contract from a fixed table.
 type fakeSets struct {
 	Hints
-	one  map[string][]string
-	many map[string][]string
+	one   map[string][]string
+	many  map[string][]string
+	group map[string][]string
+}
+
+func (f fakeSets) ResolveSetGroup(phrase string) (codes, names []string, ok bool) {
+	if c, hit := f.group[phrase]; hit {
+		return c, c, true
+	}
+	return nil, nil, false
 }
 
 func (f fakeSets) ResolveSet(phrase string) (codes, names, options []string, ok bool) {
@@ -34,8 +42,9 @@ func setAgent(t *testing.T) (*Agent, *State) {
 		t.Fatal(err)
 	}
 	a := &Agent{cat: cat, threshold: DefaultFitThreshold, log: slog.New(slog.NewTextHandler(io.Discard, nil)), hints: fakeSets{
-		one:  map[string][]string{"the Hobbit set": {"hob", "hoc"}, "Bloomburrow": {"blb", "blc"}},
-		many: map[string][]string{"Tarkir": {"Tarkir: Dragonstorm", "Dragons of Tarkir"}},
+		one:   map[string][]string{"the Hobbit set": {"hob", "hoc"}, "Bloomburrow": {"blb", "blc"}},
+		many:  map[string][]string{"Tarkir": {"Tarkir: Dragonstorm", "Dragons of Tarkir"}},
+		group: map[string][]string{"Marvel": {"msc", "msh", "spe", "spm"}},
 	}}
 	return a, NewState(false)
 }
@@ -232,5 +241,24 @@ func TestTheTurnCarriesTheSetsItApplied(t *testing.T) {
 	// The set limit itself survives, so only the note is per turn.
 	if !slices.Equal(st.Slots.GetSetCodes(), []string{"hob", "hoc"}) {
 		t.Errorf("set codes = %v, want the limit to survive", st.Slots.GetSetCodes())
+	}
+}
+
+// TestApplySetsReadsAGroup is D-525: a franchise word the classifier
+// marks as a group reaches every family, and the set row closes. An
+// unknown group asks the set row, as an unknown name does.
+func TestApplySetsReadsAGroup(t *testing.T) {
+	a, st := setAgent(t)
+	a.applySets(st, classifyOut{SetGroups: []string{"Marvel"}})
+	if got := st.Slots.GetSetCodes(); !slices.Equal(got, []string{"msc", "msh", "spe", "spm"}) {
+		t.Errorf("set codes = %v, want every Marvel family", got)
+	}
+	if st.Slots.GetSlotStates()[SlotSet] != mtgv1.SlotState_SLOT_STATE_FILLED {
+		t.Errorf("the set row is not filled: %v", st.Slots.GetSlotStates())
+	}
+	a2, st2 := setAgent(t)
+	a2.applySets(st2, classifyOut{SetGroups: []string{"Star Wars"}})
+	if st2.UnresolvedSet != "Star Wars" || len(st2.SetOptions) != 0 {
+		t.Errorf("an unknown group must ask with no option: %q %v", st2.UnresolvedSet, st2.SetOptions)
 	}
 }
