@@ -43,6 +43,14 @@ func setIndex(t *testing.T, inSet int) *cards.Index {
 	// A mana rock the named sets do not hold. It reaches the pool only
 	// when the reader allowed the mana fill (D-382).
 	add("o-solring", "Sol Ring", "Artifact", "m19", false, "{T}: Add {C}{C}.")
+	// A basic land outside the named sets, for the precon checks that
+	// skip basics (D-37, D-523).
+	list = append(list, &mtgv1.Card{
+		OracleId: "o-plains", Name: "Plains", TypeLine: "Basic Land — Plains",
+		Supertypes: []string{"Basic"}, CardTypes: []string{"Land"},
+		Legalities: map[string]mtgv1.LegalityStatus{"commander": mtgv1.LegalityStatus_LEGALITY_STATUS_LEGAL},
+	})
+	printings = append(printings, cards.Printing{ScryfallID: "o-plains-p", OracleID: "o-plains", SetCode: "m19", CollectorNumber: "2"})
 	for i := 0; i < inSet; i++ {
 		add("o-in-"+string(rune('a'+i%26))+string(rune('a'+i/26)), "Hobbit Card "+string(rune('a'+i%26))+string(rune('a'+i/26)),
 			"Enchantment", "hob", false)

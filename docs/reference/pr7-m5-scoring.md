@@ -701,12 +701,12 @@ The agent refused this one as a reword and sent the catalog question (D-88). Sco
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | no |
+| invented_better | both | same |
+| right_slot | the replacement | yes |
 | filled_slot | the run | yes |
-| faults | the replacement | |
-| catalog_action | our catalog | |
+| faults | the replacement | out of scope - it offers Vintage rules, and the app does not support Vintage |
+| catalog_action | our catalog | none - the question is irrelevant, we do not support Vintage rules, and the current row already dropped that option |
 
 ## Item 34
 
@@ -720,12 +720,12 @@ The agent sent this one in place of the catalog question.
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | no |
+| invented_better | both | better |
+| right_slot | the replacement | yes |
 | filled_slot | the run | no |
-| faults | the replacement | |
-| catalog_action | our catalog | |
+| faults | the replacement | duplicate, two questions in one - the user answered it on turn 4, "keep Grist in the deck", and the run never registered the answer to the slot, so filled_slot stays no |
+| catalog_action | our catalog | none - the locked row left the catalog (D-260), and the old row named the card twice |
 
 ## Item 35
 
@@ -739,12 +739,12 @@ The agent sent this one in place of the catalog question.
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | yes |
+| invented_better | both | same |
+| right_slot | the replacement | yes |
 | filled_slot | the run | yes |
 | faults | the replacement | |
-| catalog_action | our catalog | |
+| catalog_action | our catalog | none |
 
 ## Item 36
 
@@ -758,12 +758,12 @@ The agent refused this one as a reword and sent the catalog question (D-88). Sco
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | yes |
+| invented_better | both | same |
+| right_slot | the replacement | yes |
 | filled_slot | the run | yes |
 | faults | the replacement | |
-| catalog_action | our catalog | |
+| catalog_action | our catalog | none |
 
 ## Item 37
 
@@ -777,12 +777,12 @@ The agent refused this one as a reword and sent the catalog question (D-88). Sco
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | yes |
+| invented_better | both | worse |
+| right_slot | the replacement | yes |
 | filled_slot | the run | yes |
 | faults | the replacement | |
-| catalog_action | our catalog | |
+| catalog_action | our catalog | none |
 
 ## Item 38
 
@@ -815,12 +815,12 @@ The agent sent this one in place of the catalog question.
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | no |
+| invented_better | both | same |
+| right_slot | the replacement | yes |
 | filled_slot | the run | yes |
-| faults | the replacement | |
-| catalog_action | our catalog | |
+| faults | the replacement | out of scope - a sideboard's colors follow the main deck, so the app can not act on the answer |
+| catalog_action | our catalog | none - the current row already dropped the game fact, and Items 16, 20, and 28 carry the reword |
 
 ## Item 40
 
@@ -834,12 +834,12 @@ The agent refused this one as a reword and sent the catalog question (D-88). Sco
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | no |
+| invented_better | both | worse |
+| right_slot | the replacement | yes |
 | filled_slot | the run | no |
-| faults | the replacement | |
-| catalog_action | our catalog | |
+| faults | the replacement | duplicate - the user delegated the pick on turn 3, "You pick the commander", and the row asked them to pick on turns 3 and 4. Same read as Item 41, D-147 |
+| catalog_action | our catalog | none |
 
 ## Item 41
 
@@ -853,12 +853,12 @@ The agent refused this one as a reword and sent the catalog question (D-88). Sco
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | no |
+| invented_better | both | same |
+| right_slot | the replacement | yes |
 | filled_slot | the run | no |
-| faults | the replacement | |
-| catalog_action | our catalog | |
+| faults | the replacement | duplicate - the user delegated the pick on turn 4, "You pick the commander", and the row asked them to pick again. D-147 later made a delegation close the choice |
+| catalog_action | our catalog | none - the row wording is fine, the flow was the fault, and D-147 fixed it |
 
 ## Item 42
 
@@ -872,12 +872,12 @@ The agent sent this one in place of the catalog question.
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | no |
+| invented_better | both | better |
+| right_slot | the replacement | yes |
 | filled_slot | the run | no |
-| faults | the replacement | |
-| catalog_action | our catalog | |
+| faults | the replacement | none - the row fired with no "anything goes" in the request, which is a trigger fault and not a fault of the replacement |
+| catalog_action | our catalog | none - the wording is fine, and the trigger is the fault: the user asked for the winning Standard deck and never said anything goes |
 
 ## Item 43
 
@@ -891,12 +891,12 @@ The agent refused this one as a reword and sent the catalog question (D-88). Sco
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | no |
+| invented_better | both | same |
+| right_slot | the replacement | yes |
 | filled_slot | the run | no |
-| faults | the replacement | |
-| catalog_action | our catalog | |
+| faults | the replacement | duplicate - the user said "keep Sanguine Bond in it" on turn 1, and the row asked again. On turn 3 the user said "lock Sanguine Bond in", and the run never registered it, so filled_slot stays no, the same miss as Item 34 |
+| catalog_action | our catalog | none - the locked row left the catalog (D-260) |
 
 ## Item 44
 
@@ -910,12 +910,12 @@ The agent sent this one in place of the catalog question.
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | yes |
+| invented_better | both | same |
+| right_slot | the replacement | yes |
 | filled_slot | the run | yes |
 | faults | the replacement | |
-| catalog_action | our catalog | |
+| catalog_action | our catalog | none |
 
 ## Item 45
 
@@ -929,12 +929,12 @@ The agent sent this one in place of the catalog question.
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | yes |
+| invented_better | both | worse |
+| right_slot | the replacement | yes |
 | filled_slot | the run | yes |
-| faults | the replacement | |
-| catalog_action | our catalog | |
+| faults | the replacement | jargon - "power level" with no scale, for a gift to a new player. The row also says "your table", and the buyer's table is not the brother's |
+| catalog_action | our catalog | none |
 
 ## Item 46
 
@@ -967,12 +967,12 @@ The agent refused this one as a reword and sent the catalog question (D-88). Sco
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | no |
+| invented_better | both | same |
+| right_slot | the replacement | yes |
 | filled_slot | the run | no |
-| faults | the replacement | |
-| catalog_action | our catalog | |
+| faults | the replacement | duplicate - the user delegated the pick on turn 4, "You pick the commander", and the row asked them to pick, the same read as Items 40 and 41 (D-147). The replacement drops one of three names, which D-131 scored as a loss, but the dropped name was a Grist commander after the user excluded Grist as commander, so the two cancel |
+| catalog_action | our catalog | none - D-147 made a delegation close the choice |
 
 ## Item 48
 
@@ -986,12 +986,12 @@ The agent sent this one in place of the catalog question.
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | no |
+| invented_better | both | same |
+| right_slot | the replacement | yes |
 | filled_slot | the run | no |
-| faults | the replacement | |
-| catalog_action | our catalog | |
+| faults | the replacement | out of scope - it offers Vintage rules, and the app does not support Vintage, the same read as Item 33. The user answered "Any card, no ban list" on turn 2, and the run never registered it, so filled_slot stays no |
+| catalog_action | our catalog | none - the current row already dropped the Vintage option |
 
 ## Item 49
 
@@ -1005,12 +1005,12 @@ The agent sent this one in place of the catalog question.
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | no |
+| invented_better | both | worse |
+| right_slot | the replacement | yes |
 | filled_slot | the run | no |
-| faults | the replacement | |
-| catalog_action | our catalog | |
+| faults | the replacement | duplicate - the user named a Delver of Secrets tempo deck, so Delver stays by definition, and the row read the archetype name as a locked card. The replacement also drops the "or may I cut" half. Legacy is a reserved format now, and this run predates that cut |
+| catalog_action | our catalog | none - the locked row left the catalog (D-260) |
 
 ## Item 50
 
@@ -1024,12 +1024,12 @@ The agent sent this one in place of the catalog question.
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | yes |
+| invented_better | both | worse |
+| right_slot | the replacement | yes |
 | filled_slot | the run | yes |
-| faults | the replacement | |
-| catalog_action | our catalog | |
+| faults | the replacement | out of scope, assumes an answer - it presumes the app builds Yu-Gi-Oh decks. The catalog question names Magic formats and steers the user, who then said "Fine, Magic then" |
+| catalog_action | our catalog | none - a statement that the app builds Magic decks only would serve here, and a statement is not a catalog row |
 
 ## Item 51
 
@@ -1043,12 +1043,12 @@ The agent sent this one in place of the catalog question.
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | yes |
+| invented_better | both | same |
+| right_slot | the replacement | yes |
 | filled_slot | the run | yes |
 | faults | the replacement | |
-| catalog_action | our catalog | |
+| catalog_action | our catalog | none |
 
 ## Item 52
 
@@ -1062,12 +1062,12 @@ The agent sent this one in place of the catalog question.
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | yes |
+| invented_better | both | worse |
+| right_slot | the replacement | yes |
 | filled_slot | the run | yes |
-| faults | the replacement | |
-| catalog_action | our catalog | |
+| faults | the replacement | jargon - "power level or bracket" with no scale, for a player who left in 2015, before brackets existed. The row explains the scale, which is what a returning player needs |
+| catalog_action | our catalog | none |
 
 ## Item 53
 
@@ -1100,12 +1100,12 @@ The agent sent this one in place of the catalog question.
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | no |
+| invented_better | both | better |
+| right_slot | the replacement | yes |
 | filled_slot | the run | no |
-| faults | the replacement | |
-| catalog_action | our catalog | |
+| faults | the replacement | none - the request "edh gruul dino stompy pls, no proxies" never said anything goes, so the row fired on a trigger fault. The replacement drops the false premise, the same read as Item 42 |
+| catalog_action | our catalog | none - the wording is fine, and the trigger is the fault |
 
 ## Item 55
 
@@ -1119,12 +1119,12 @@ The agent refused this one as a reword and sent the catalog question (D-88). Sco
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | no |
+| invented_better | both | better |
+| right_slot | the replacement | yes |
 | filled_slot | the run | no |
-| faults | the replacement | |
-| catalog_action | our catalog | |
+| faults | the replacement | duplicate, two questions in one - the same conversation as Item 34, in run 12. The row names the card twice, the user already put Grist in the 99, and on turn 4 the user said "keep Grist in the deck", which the run never registered, so filled_slot stays no |
+| catalog_action | our catalog | none - the locked row left the catalog (D-260) |
 
 ## Item 56
 
@@ -1138,12 +1138,12 @@ The agent sent this one in place of the catalog question.
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | yes |
+| invented_better | both | worse |
+| right_slot | the replacement | yes |
 | filled_slot | the run | yes |
-| faults | the replacement | |
-| catalog_action | our catalog | |
+| faults | the replacement | assumes an answer - it presumes the precon is the pool. The user answered in library terms, and "use only cards already in it" can not upgrade anything |
+| catalog_action | our catalog | none |
 
 ## Item 57
 
@@ -1176,12 +1176,12 @@ The agent refused this one as a reword and sent the catalog question (D-88). Sco
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | no |
+| invented_better | both | same |
+| right_slot | the replacement | yes |
 | filled_slot | the run | no |
-| faults | the replacement | |
-| catalog_action | our catalog | |
+| faults | the replacement | duplicate - the same conversation as Item 43, in run 13. The user said "keep Sanguine Bond in it" on turn 1, and the row asked again. Turn 3 said "lock Sanguine Bond in", and the run never registered it, so filled_slot stays no |
+| catalog_action | our catalog | none - the locked row left the catalog (D-260) |
 
 ## Item 59
 
@@ -1195,12 +1195,12 @@ The agent refused this one as a reword and sent the catalog question (D-88). Sco
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | yes |
+| invented_better | both | worse |
+| right_slot | the replacement | yes |
 | filled_slot | the run | yes |
 | faults | the replacement | |
-| catalog_action | our catalog | |
+| catalog_action | our catalog | none |
 
 ## Item 60
 
@@ -1214,10 +1214,10 @@ The agent refused this one as a reword and sent the catalog question (D-88). Sco
 
 | Field | Reads | Value |
 |---|---|---|
-| catalog_enough | the catalog question | |
-| invented_better | both | |
-| right_slot | the replacement | |
+| catalog_enough | the catalog question | no |
+| invented_better | both | worse |
+| right_slot | the replacement | yes |
 | filled_slot | the run | yes |
-| faults | the replacement | |
-| catalog_action | our catalog | |
+| faults | the replacement | out of scope, assumes an answer - it offers Vintage rules, which the app does not support, and it presumes an "anything-goes rule" the user never stated. The user said "We proxy everything", and the row kept those words |
+| catalog_action | our catalog | none - the current row already dropped the Vintage option |
 

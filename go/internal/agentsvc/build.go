@@ -110,10 +110,7 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 				}
 				products = append(products, p)
 			}
-			owned, excludedIDs = precons.Exclude(products, owned, func(id string) bool {
-				c, ok := idx.ByOracleID(id)
-				return ok && candidates.IsBasicLand(c)
-			})
+			owned, excludedIDs = precons.Exclude(products, owned, candidates.BasicLandByOracle(idx))
 			s.log.InfoContext(ctx, "the deck uses no card of the excluded precons",
 				"session", session.GetId(), "products", len(products), "excluded_cards", len(excludedIDs))
 		} else {

@@ -128,21 +128,45 @@ func TestResolveOffersNearNamesForAnUnknownPhrase(t *testing.T) {
 func TestOwnedWholeReadsEveryPrinting(t *testing.T) {
 	tbl := NewTable("v1", tableRows())
 	whole := map[string]int32{"s-cap": 1, "s-sol": 1, "s-avenge": 1, "s-plains-a": 10, "s-plains-b": 8}
-	owned := tbl.Owned(whole)
+	owned := tbl.Owned(whole, nil)
 	if len(owned) != 1 || owned[0].Name != "Avengers Assemble" {
 		t.Fatalf("owned = %v, want Avengers Assemble alone", names(owned))
 	}
 	short := map[string]int32{"s-cap": 1, "s-sol": 1, "s-avenge": 1, "s-plains-a": 10, "s-plains-b": 7}
-	if got := tbl.Owned(short); len(got) != 0 {
+	if got := tbl.Owned(short, nil); len(got) != 0 {
 		t.Errorf("99 of 100 reads as owned: %v", names(got))
 	}
 	// A Sol Ring of another set does not make the reader the owner.
 	other := map[string]int32{"s-cap": 1, "s-sol-other": 1, "s-avenge": 1, "s-plains-a": 10, "s-plains-b": 8}
-	if got := tbl.Owned(other); len(got) != 0 {
+	if got := tbl.Owned(other, nil); len(got) != 0 {
 		t.Errorf("another printing reads as the product's: %v", names(got))
 	}
-	if got := tbl.Owned(nil); got != nil {
+	if got := tbl.Owned(nil, nil); got != nil {
 		t.Errorf("no collection owns nothing: %v", names(got))
+	}
+}
+
+// TestOwnedWholeIgnoresBasicLands is D-523: a binder that holds every
+// nonbasic printing owns the product, whatever basic lands it lacks. A
+// nonbasic card still counts, and a test that calls every card basic
+// owns nothing.
+func TestOwnedWholeIgnoresBasicLands(t *testing.T) {
+	tbl := NewTable("v1", tableRows())
+	basic := func(oracleID string) bool { return oracleID == "o-plains" }
+	noBasics := map[string]int32{"s-cap": 1, "s-sol": 1, "s-avenge": 1}
+	if got := tbl.Owned(noBasics, basic); len(got) != 1 || got[0].Name != "Avengers Assemble" {
+		t.Errorf("a binder with no basic lands owns the product: %v", names(got))
+	}
+	if got := tbl.Owned(noBasics, nil); len(got) != 0 {
+		t.Errorf("with no basic test every printing counts: %v", names(got))
+	}
+	noSol := map[string]int32{"s-cap": 1, "s-avenge": 1, "s-plains-a": 10, "s-plains-b": 8}
+	if got := tbl.Owned(noSol, basic); len(got) != 0 {
+		t.Errorf("a missing nonbasic card still reads as not owned: %v", names(got))
+	}
+	all := func(string) bool { return true }
+	if got := tbl.Owned(noBasics, all); len(got) != 0 {
+		t.Errorf("a product with no nonbasic printing is never owned: %v", names(got))
 	}
 }
 
