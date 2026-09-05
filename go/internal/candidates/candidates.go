@@ -809,6 +809,19 @@ func IsBasicLand(c *mtgv1.Card) bool {
 	return slices.Contains(c.GetSupertypes(), "Basic") && slices.Contains(c.GetCardTypes(), "Land")
 }
 
+// BasicLandByOracle is IsBasicLand over an Oracle id, for the precon
+// exclusion and the ownership check (D-37, D-523). An id the index lacks
+// is not a basic land, and a nil index knows none.
+func BasicLandByOracle(idx *cards.Index) func(oracleID string) bool {
+	return func(oracleID string) bool {
+		if idx == nil {
+			return false
+		}
+		c, ok := idx.ByOracleID(oracleID)
+		return ok && IsBasicLand(c)
+	}
+}
+
 // FoldName is the name match key: lower case, with the outer spaces
 // removed. Nothing else is folded, because a punctuation change makes a
 // different card name (F-13).

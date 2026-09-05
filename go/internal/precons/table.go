@@ -21,6 +21,9 @@ type Product struct {
 	counts map[string]int32
 	// printings is the copies per Scryfall id.
 	printings map[string]int32
+	// oracle is the Oracle id of each printing, so the ownership check
+	// can ask whether a printing is a basic land (D-523).
+	oracle map[string]string
 }
 
 // Counts is the copies per Oracle id, the commanders included.
@@ -32,19 +35,25 @@ func (p *Product) Counts() map[string]int32 {
 	return out
 }
 
-// OwnedWhole reports whether a collection holds every printing of the
-// product with its count (D-408). printings is the collection's copies
-// per Scryfall id. A product with no printing id is never owned.
-func (p *Product) OwnedWhole(printings map[string]int32) bool {
-	if len(p.printings) == 0 {
-		return false
-	}
+// OwnedWhole reports whether a collection holds every nonbasic printing
+// of the product with its count (D-408, D-523). printings is the
+// collection's copies per Scryfall id. isBasic says which Oracle ids are
+// basic lands, and the check skips their printings: a ManaBox deck binder
+// can omit the basic lands, and the exclusion never removes one (D-37),
+// so the check loses nothing. A nil isBasic reads every printing. A
+// product with no nonbasic printing is never owned.
+func (p *Product) OwnedWhole(printings map[string]int32, isBasic func(oracleID string) bool) bool {
+	checked := 0
 	for id, n := range p.printings {
+		if isBasic != nil && isBasic(p.oracle[id]) {
+			continue
+		}
+		checked++
 		if printings[id] < n {
 			return false
 		}
 	}
-	return true
+	return checked > 0
 }
 
 // SameCards reports whether two products hold the same cards by Oracle
@@ -77,7 +86,7 @@ func NewTable(version string, rows []meta.Precon) *Table {
 		r := &rows[i]
 		p := &Product{
 			Key: r.Key(), Name: r.Name, Code: r.Code, Type: r.Type, ReleaseDate: r.ReleaseDate,
-			counts: map[string]int32{}, printings: map[string]int32{},
+			counts: map[string]int32{}, printings: map[string]int32{}, oracle: map[string]string{},
 		}
 		for _, list := range [][]meta.PreconCard{r.Commanders, r.Cards} {
 			for _, c := range list {
@@ -89,6 +98,7 @@ func NewTable(version string, rows []meta.Precon) *Table {
 				}
 				if c.ScryfallID != "" {
 					p.printings[c.ScryfallID] += int32(c.Count)
+					p.oracle[c.ScryfallID] = c.OracleID
 				}
 			}
 		}
@@ -125,14 +135,14 @@ func (t *Table) All() []*Product {
 }
 
 // Owned lists the products a collection holds whole (D-408), in table
-// order.
-func (t *Table) Owned(printings map[string]int32) []*Product {
+// order. isBasic is the basic land test of OwnedWhole (D-523).
+func (t *Table) Owned(printings map[string]int32, isBasic func(oracleID string) bool) []*Product {
 	if t == nil || len(printings) == 0 {
 		return nil
 	}
 	var out []*Product
 	for _, p := range t.list {
-		if p.OwnedWhole(printings) {
+		if p.OwnedWhole(printings, isBasic) {
 			out = append(out, p)
 		}
 	}

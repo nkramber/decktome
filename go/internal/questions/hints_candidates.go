@@ -390,7 +390,7 @@ func (h *CandidateHints) ResolvePrecon(phrase string) PreconMatch {
 	if counts := h.printingCounts(); counts != nil {
 		whole := false
 		for _, p := range m.Products {
-			if p.OwnedWhole(counts) {
+			if p.OwnedWhole(counts, candidates.BasicLandByOracle(h.Index)) {
 				whole = true
 				break
 			}
@@ -402,8 +402,8 @@ func (h *CandidateHints) ResolvePrecon(phrase string) PreconMatch {
 	return res
 }
 
-// OwnedPrecons lists the products the collection holds whole (D-408). It
-// answers the OwnedPreconSource contract.
+// OwnedPrecons lists the products the collection holds whole (D-408),
+// basic lands aside (D-523). It answers the OwnedPreconSource contract.
 func (h *CandidateHints) OwnedPrecons() ([]PreconRef, bool) {
 	if h == nil || h.Precons == nil {
 		return nil, false
@@ -413,7 +413,7 @@ func (h *CandidateHints) OwnedPrecons() ([]PreconRef, bool) {
 		return nil, false
 	}
 	var out []PreconRef
-	for _, p := range h.Precons.Owned(counts) {
+	for _, p := range h.Precons.Owned(counts, candidates.BasicLandByOracle(h.Index)) {
 		out = append(out, PreconRef{Key: p.Key, Name: p.Name})
 	}
 	return out, true
