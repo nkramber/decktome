@@ -340,15 +340,13 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 	// shortlist. A basic land never leaves (D-37).
 	var excludedIDs []string
 	if len(p.ExcludePrecons) > 0 {
-		products, names, err := resolvePrecons(tbl, p.ExcludePrecons, binder.Printings)
+		isBasic := candidates.BasicLandByOracle(idx)
+		products, names, err := resolvePrecons(tbl, p.ExcludePrecons, binder.Printings, isBasic)
 		if err != nil {
 			out.err = err
 			return out
 		}
-		own, excludedIDs = precons.Exclude(products, own, func(id string) bool {
-			c, ok := idx.ByOracleID(id)
-			return ok && candidates.IsBasicLand(c)
-		})
+		own, excludedIDs = precons.Exclude(products, own, isBasic)
 		out.products = names
 		out.excluded = make(map[string]bool, len(excludedIDs))
 		for _, id := range excludedIDs {
@@ -579,11 +577,11 @@ func binderFor(p prompt, binders map[string]*gatekit.Collection) *gatekit.Collec
 
 // resolvePrecons maps the product names of a prompt onto the table, the
 // way the chat does, and checks that the binder holds one product of
-// each name whole (D-408). A deck and its Collector's Edition answer one
-// name together, and the exclusion counts them once. A name that names
-// no product fails the prompt: the gate proves the exclusion, and the
-// chat asks the reader.
-func resolvePrecons(tbl *precons.Table, names []string, printings map[string]int32) ([]*precons.Product, []string, error) {
+// each name whole (D-408), basic lands aside (D-523). A deck and its
+// Collector's Edition answer one name together, and the exclusion counts
+// them once. A name that names no product fails the prompt: the gate
+// proves the exclusion, and the chat asks the reader.
+func resolvePrecons(tbl *precons.Table, names []string, printings map[string]int32, isBasic func(oracleID string) bool) ([]*precons.Product, []string, error) {
 	var products []*precons.Product
 	var found []string
 	for _, name := range names {
@@ -593,7 +591,7 @@ func resolvePrecons(tbl *precons.Table, names []string, printings map[string]int
 		}
 		whole := false
 		for _, p := range m.Products {
-			if p.OwnedWhole(printings) {
+			if p.OwnedWhole(printings, isBasic) {
 				whole = true
 			}
 		}

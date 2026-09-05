@@ -18,8 +18,8 @@ type fakeTable struct{ tbl *precons.Table }
 func (f fakeTable) Table() *precons.Table { return f.tbl }
 
 // hobbitPrecon is a product over the cards of setIndex: Smaug leads it,
-// and it holds Sol Ring and two Hobbit cards. The printing ids follow
-// setIndex, so a collection can hold it whole.
+// and it holds Sol Ring, two Hobbit cards, and a Plains. The printing
+// ids follow setIndex, so a collection can hold it whole.
 func hobbitPrecon() *precons.Table {
 	card := func(name, oracle string) meta.PreconCard {
 		return meta.PreconCard{Name: name, Count: 1, OracleID: oracle, ScryfallID: oracle + "-p", SetCode: "hob", Number: "1"}
@@ -29,6 +29,7 @@ func hobbitPrecon() *precons.Table {
 		Commanders: []meta.PreconCard{card("Smaug the Impenetrable", "o-smaug")},
 		Cards: []meta.PreconCard{
 			card("Sol Ring", "o-solring"), card("Hobbit Card aa", "o-in-aa"), card("Hobbit Card ba", "o-in-ba"),
+			card("Plains", "o-plains"),
 		},
 	}})
 }
@@ -100,17 +101,20 @@ func TestNoTableExcludesNothing(t *testing.T) {
 
 // TestOwnedPreconsReadThePrintings is D-408 through the turn's hints: a
 // collection with every printing of the product owns it, and one with 99
-// of 100 does not.
+// of 100 does not. A binder that lacks the basic lands alone owns it
+// (D-523).
 func TestOwnedPreconsReadThePrintings(t *testing.T) {
-	whole := map[string]int32{"o-smaug-p": 1, "o-solring-p": 1, "o-in-aa-p": 1, "o-in-ba-p": 1}
-	short := map[string]int32{"o-smaug-p": 1, "o-solring-p": 1, "o-in-aa-p": 1}
+	whole := map[string]int32{"o-smaug-p": 1, "o-solring-p": 1, "o-in-aa-p": 1, "o-in-ba-p": 1, "o-plains-p": 1}
+	noBasics := map[string]int32{"o-smaug-p": 1, "o-solring-p": 1, "o-in-aa-p": 1, "o-in-ba-p": 1}
+	short := map[string]int32{"o-smaug-p": 1, "o-solring-p": 1, "o-in-aa-p": 1, "o-plains-p": 1}
 	for _, tc := range []struct {
 		name      string
 		printings map[string]int32
 		want      int
 	}{
 		{"whole", whole, 1},
-		{"one printing short", short, 0},
+		{"the basic lands missing", noBasics, 1},
+		{"one nonbasic printing short", short, 0},
 		{"no collection rows", map[string]int32{}, 0},
 	} {
 		fd := &fakeDecks{}
