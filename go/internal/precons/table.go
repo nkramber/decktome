@@ -35,6 +35,16 @@ func (p *Product) Counts() map[string]int32 {
 	return out
 }
 
+// Printings is the copies per Scryfall id, the commanders included. The
+// trimmed snapshot of the deck gate keeps these printings (D-521).
+func (p *Product) Printings() map[string]int32 {
+	out := make(map[string]int32, len(p.printings))
+	for k, v := range p.printings {
+		out[k] = v
+	}
+	return out
+}
+
 // OwnedWhole reports whether a collection holds every nonbasic printing
 // of the product with its count (D-408, D-523). printings is the
 // collection's copies per Scryfall id. isBasic says which Oracle ids are
