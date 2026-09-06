@@ -919,9 +919,9 @@ func ruleProxyUser(a *Agent, st *State, _ turnWords) {
 // its answer (D-253). "The whole deck" is the other option of the row,
 // and the scope is typed, so the words must carry the value (D-238).
 func ruleBudgetScope(a *Agent, st *State, in turnWords) {
-	if st.Slots.GetBudgetScope() != mtgv1.BudgetScope_BUDGET_SCOPE_UNSPECIFIED {
-		return
-	}
+	// The user's own words for the scope win over a scope the classifier
+	// inferred on an earlier turn: "the 100 caps the cards I buy" settles
+	// it whatever came before (D-535).
 	switch {
 	case namesTheBuyList(in.Message):
 		st.Slots.BudgetScope = mtgv1.BudgetScope_BUDGET_SCOPE_CARDS_TO_BUY
@@ -931,6 +931,8 @@ func ruleBudgetScope(a *Agent, st *State, in turnWords) {
 		st.Slots.BudgetScope = mtgv1.BudgetScope_BUDGET_SCOPE_WHOLE_DECK
 		a.log.Info("the user named the whole deck, so the budget scope is the deck value",
 			"session", st.SessionID)
+	case st.Slots.GetBudgetScope() != mtgv1.BudgetScope_BUDGET_SCOPE_UNSPECIFIED:
+		return
 	case slices.Contains(in.Open, "budget") && st.Slots.GetBudgetUsd() > 0:
 		// The budget row asks "Is there a budget for cards to buy?", so a
 		// number that answers it is a cap on the cards to buy, and the
@@ -1272,11 +1274,13 @@ func lockedByWords(st *State, message string) string {
 // the session already filled: a value stays until the user replaces it.
 func (a *Agent) apply(st *State, out classifyOut, open []string, message string) {
 	a.applyFormat(st, out, message)
-	if s := strings.TrimSpace(out.Theme); s != "" {
-		st.Slots.Theme, st.Ctx.Theme = s, strings.ToLower(s)
-		st.Close("theme")
+	a.applyTheme(st, out)
+	// A colorless request names no color, and the classifier can answer
+	// the open color question with all five. The colorless rule closes
+	// the slot instead (D-165, D-535).
+	if !colorlessRequest(message) {
+		a.applyColors(st, out, message)
 	}
-	a.applyColors(st, out)
 	a.applyNames(st, out)
 	a.applySets(st, out)
 	a.applyPrecons(st, out)
@@ -1295,7 +1299,16 @@ func (a *Agent) apply(st *State, out classifyOut, open []string, message string)
 		st.Close("pool_rule")
 	}
 	a.applyPower(st, out, message)
-	if out.BudgetUSD > 0 {
+	// A budget applies only when the message names it (D-537, the D-125
+	// rule for the budget). The classifier answered the open budget
+	// question with 2 on "the best deck under budget", and the session
+	// called itself complete before the user named 400.
+	switch {
+	case out.BudgetUSD <= 0:
+	case !budgetNamed(message, out.BudgetUSD):
+		a.log.Info("the classifier reported a budget the message does not name, so the budget slot keeps its state",
+			"session", st.SessionID, "reported", out.BudgetUSD)
+	default:
 		st.Slots.BudgetUsd = out.BudgetUSD
 		st.Close("budget")
 	}
@@ -1313,6 +1326,25 @@ func (a *Agent) apply(st *State, out classifyOut, open []string, message string)
 	}
 	a.applyKeys(st, out, open, message)
 	a.applyFacts(st, out, message)
+}
+
+// applyTheme writes the theme. A superlative phrase such as "the best
+// deck under budget" is a theme for a deck with none, as the prompt says,
+// and it must not replace a theme the user named: "Modern. The best deck
+// under budget." answers the budget question of an infect deck, and
+// infect stays (D-535, the D-125 rule for the theme).
+func (a *Agent) applyTheme(st *State, out classifyOut) {
+	s := strings.TrimSpace(out.Theme)
+	if s == "" {
+		return
+	}
+	if st.Slots.GetTheme() != "" && anyPhrase(strings.ToLower(s), bestSigns) {
+		a.log.Info("a superlative phrase does not replace the theme the user named",
+			"session", st.SessionID, "theme", st.Slots.GetTheme(), "phrase", s)
+		return
+	}
+	st.Slots.Theme, st.Ctx.Theme = s, strings.ToLower(s)
+	st.Close("theme")
 }
 
 // applyFormat writes the format the classifier reported. A filled format
@@ -1353,8 +1385,18 @@ func (a *Agent) applyFormat(st *State, out classifyOut, message string) {
 // applyColors writes the colors. The old value stays until at least one
 // new color is valid. A list of unknown words wiped the colors the user
 // gave before.
-func (a *Agent) applyColors(st *State, out classifyOut) {
+//
+// A closed color slot changes only when the message names a color
+// (D-535, the D-125 rule for colors). The classifier repeats values, and
+// it answered "Bracket 3." with all five colors for a deck the user had
+// called colorless, over the slot the colorless rule had closed.
+func (a *Agent) applyColors(st *State, out classifyOut, message string) {
 	if len(out.Colors) == 0 {
+		return
+	}
+	if st.Ctx.Filled["colors"] && !namesAColor(message) {
+		a.log.Info("the classifier reported colors on a message that names none, so the closed color slot keeps its value",
+			"session", st.SessionID, "reported", out.Colors)
 		return
 	}
 	var colors []mtgv1.Color
@@ -1547,9 +1589,64 @@ func (a *Agent) applyNames(st *State, out classifyOut) {
 					"session", st.SessionID, "card", name)
 				continue
 			}
+			_, known := ck.CanLead(name)
+			switch {
+			case known:
+				a.dropUnknownCommanders(st, ck, name)
+			case knownCommander(st, ck):
+				// An unknown name never joins a known commander (D-538).
+				// The classifier repeats values, so "I meant Atraxa,
+				// Praetors' Voice" can come back with both spellings in
+				// one turn, and the misspelled one must not lead the deck
+				// beside the right one.
+				a.log.Info("a commander name the index does not know does not join a known one",
+					"session", st.SessionID, "dropped", name)
+				st.NamedCards = withoutName(st.NamedCards, name)
+				continue
+			}
 		}
 		st.SetCommander(name)
 	}
+}
+
+// knownCommander reports whether a commander name the index knows is set.
+func knownCommander(st *State, ck CommanderChecker) bool {
+	for _, n := range st.CommanderNames {
+		if _, known := ck.CanLead(n); known {
+			return true
+		}
+	}
+	return false
+}
+
+// dropUnknownCommanders removes the commander names the index does not
+// know when a known name arrives, so "I meant Atraxa, Praetors' Voice"
+// replaces the misspelled name instead of joining it in the command zone
+// (D-535). The misspelled name leaves the named cards too. keep is the
+// name that arrived.
+func (a *Agent) dropUnknownCommanders(st *State, ck CommanderChecker, keep string) {
+	var kept []string
+	for _, old := range st.CommanderNames {
+		if _, known := ck.CanLead(old); known || sameCard(old, keep) {
+			kept = append(kept, old)
+			continue
+		}
+		a.log.Info("a commander name the index does not know gives way to a known one",
+			"session", st.SessionID, "dropped", old, "kept", keep)
+		st.NamedCards = withoutName(st.NamedCards, old)
+	}
+	st.CommanderNames = kept
+}
+
+// withoutName is the list without the named card.
+func withoutName(list []string, name string) []string {
+	var out []string
+	for _, n := range list {
+		if !sameCard(n, name) {
+			out = append(out, n)
+		}
+	}
+	return out
 }
 
 // applyPower writes the power level. An occasion is not a power level:

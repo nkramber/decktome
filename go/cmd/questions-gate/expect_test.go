@@ -92,4 +92,11 @@ func TestCheckExpectNamesTheMiss(t *testing.T) {
 	if m := checkExpect(nil, values); len(m) != 0 {
 		t.Errorf("no expectation, no miss: %v", m)
 	}
+	// "none" wants an empty slot, the end of a colorless deck (D-165).
+	if m := checkExpect(map[string]string{"colors": "none"}, map[string]string{"colors": ""}); len(m) != 0 {
+		t.Errorf("none matches an empty slot: %v", m)
+	}
+	if m := checkExpect(map[string]string{"colors": "none"}, values); len(m) != 1 || m[0] != "colors: want none, got WB" {
+		t.Errorf("none misses a filled slot: %v", m)
+	}
 }

@@ -13,7 +13,6 @@ import (
 
 	"github.com/nkramber/mtg-deck-builder/go/internal/evalrun"
 	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
-	"github.com/nkramber/mtg-deck-builder/go/internal/questions"
 	"github.com/nkramber/mtg-deck-builder/go/internal/tune"
 )
 
@@ -34,8 +33,8 @@ func TestConversationsFile(t *testing.T) {
 	if f.Note == "" {
 		t.Error("conversations.json has no note")
 	}
-	if n := gateCount(f.Conversations); n < questions.MinGateSize {
-		t.Errorf("%d gate conversations, the gate needs %d", n, questions.MinGateSize)
+	if n := gateCount(f.Conversations); n < GateSize {
+		t.Errorf("%d gate conversations, the gate needs %d", n, GateSize)
 	}
 	seenID := map[int]bool{}
 	seenName := map[string]bool{}
@@ -81,8 +80,8 @@ func TestRunNeedsApproval(t *testing.T) {
 // gate conversations the same way, and both leave the probes out.
 func TestSizeTestCountsLikeRun(t *testing.T) {
 	f := load(t)
-	if n := gateCount(f.Conversations); n < questions.MinGateSize {
-		t.Errorf("%d gate conversations, the gate needs %d", n, questions.MinGateSize)
+	if n := gateCount(f.Conversations); n < GateSize {
+		t.Errorf("%d gate conversations, the gate needs %d", n, GateSize)
 	}
 	cases := []struct {
 		name  string
