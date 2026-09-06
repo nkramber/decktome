@@ -15,6 +15,8 @@ const FakeName = "fake"
 
 // Fake replies from fixture files instead of a network call.
 // Local mode without API keys uses it. The fixture for role R is R.json.
+// A role that answers several schemas has one fixture per schema,
+// R.<schema>.json, and that file wins over R.json (D-552).
 type Fake struct {
 	fsys fs.FS
 }
@@ -27,20 +29,39 @@ func NewFake(fsys fs.FS) *Fake {
 // Name implements Provider.
 func (f *Fake) Name() string { return FakeName }
 
-// Roles lists the roles a fixture file exists for, in name order.
+// Roles lists the roles a fixture file exists for, in name order. A
+// schema fixture counts for its role.
 func (f *Fake) Roles() []string {
 	entries, err := fs.ReadDir(f.fsys, ".")
 	if err != nil {
 		return nil
 	}
+	seen := map[string]bool{}
 	var out []string
 	for _, e := range entries {
-		if name, ok := strings.CutSuffix(e.Name(), ".json"); ok && !e.IsDir() {
-			out = append(out, name)
+		name, ok := strings.CutSuffix(e.Name(), ".json")
+		if !ok || e.IsDir() {
+			continue
+		}
+		role, _, _ := strings.Cut(name, ".")
+		if !seen[role] {
+			seen[role] = true
+			out = append(out, role)
 		}
 	}
 	sort.Strings(out)
 	return out
+}
+
+// read finds the fixture of one call: the schema file of the role when
+// the call names a schema and the file exists, else the role file.
+func (f *Fake) read(call Call) ([]byte, error) {
+	if call.SchemaName != "" {
+		if data, err := fs.ReadFile(f.fsys, string(call.Role)+"."+call.SchemaName+".json"); err == nil {
+			return data, nil
+		}
+	}
+	return fs.ReadFile(f.fsys, string(call.Role)+".json")
 }
 
 // Complete returns the fixture for the call's role.
@@ -49,7 +70,7 @@ func (f *Fake) Roles() []string {
 // fixtures present, so a no-key local run says which roles it can serve
 // (A-11).
 func (f *Fake) Complete(_ context.Context, call Call) (Response, error) {
-	data, err := fs.ReadFile(f.fsys, string(call.Role)+".json")
+	data, err := f.read(call)
 	if err != nil {
 		return Response{}, newErr(ClassTerminal, FakeName, call.Model, 0,
 			fmt.Errorf("the fixture fake cannot serve role %q, it has fixtures for %s only: %w",

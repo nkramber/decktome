@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
@@ -14,6 +15,8 @@ import (
 
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
 	"github.com/nkramber/mtg-deck-builder/go/internal/gatekit"
+	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
+	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
 	"github.com/nkramber/mtg-deck-builder/go/internal/meta"
 	"github.com/nkramber/mtg-deck-builder/go/internal/precons"
 )
@@ -136,6 +139,19 @@ func writeTrimmed(ctx context.Context, log io.Writer, root string, idx *cards.In
 			needed[c.GetOracleId()] = true
 		}
 	}
+	// The smoke flow of PR-23 builds the deck of the generate fixture
+	// over this snapshot, so every card of the fixture stays (D-552).
+	smoke, err := smokeDeckNames()
+	if err != nil {
+		return err
+	}
+	for _, name := range smoke {
+		c, ok := idx.ByName(name)
+		if !ok {
+			return fmt.Errorf("the generate fixture of the fake provider names %q, and the snapshot has no such card", name)
+		}
+		needed[c.GetOracleId()] = true
+	}
 
 	out := cards.DirStore{Root: filepath.Join(root, "scryfall")}
 	sizes := map[string]int64{}
@@ -202,6 +218,26 @@ func writeTrimmed(ctx context.Context, log io.Writer, root string, idx *cards.In
 		return fmt.Errorf("the trimmed snapshot holds %d bytes, over the budget of %d (D-521)", total, trimBudget)
 	}
 	return nil
+}
+
+// smokeDeckNames reads the card names of the generate fixture of the
+// fake provider, the deck the smoke flow of PR-23 builds (D-552).
+func smokeDeckNames() ([]string, error) {
+	data, err := fs.ReadFile(llm.Fixtures(), "generate.json")
+	if err != nil {
+		return nil, fmt.Errorf("the fake provider has no generate fixture: %w", err)
+	}
+	var out struct {
+		Cards []generate.Entry `json:"cards"`
+	}
+	if err := json.Unmarshal(data, &out); err != nil {
+		return nil, fmt.Errorf("the generate fixture of the fake provider: %w", err)
+	}
+	names := make([]string, 0, len(out.Cards))
+	for _, e := range out.Cards {
+		names = append(names, e.Name)
+	}
+	return names, nil
 }
 
 // trimPrintings writes the default cards the fixture keeps: every
