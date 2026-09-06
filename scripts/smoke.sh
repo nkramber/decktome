@@ -40,8 +40,10 @@ done
 
 logs=$(mktemp -d)
 pids=()
-# The two traps below call it.
-# shellcheck disable=SC2329
+# The two traps below call it. shellcheck reads the exit at the end of
+# the script and marks the function unreachable: SC2317 in 0.9.0, the
+# version of the CI runner, and SC2329 in 0.11.0.
+# shellcheck disable=SC2317,SC2329
 cleanup() {
   for p in "${pids[@]}"; do kill -TERM "$p" 2>/dev/null; done
   for _ in $(seq 1 15); do
