@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-06 correction pass 86 (PR #70 merged, OQ-66 and OQ-68 answered, D-546 to D-548): Stage A of the mobile proposal is PR-25, its own PR outside PR-22, after PR-23 in the phase list (D-547). Stage C, the stores, waits on request (D-548). PR-26 holds Stage B and waits on OQ-67, the channels and the events. The entries PR-25 and PR-26 join Phase 3B, and sequence item 24 places them. Changes: D-546 to D-548, PR-25, PR-26, sequence item 24, `docs/owner-questions.md`.
+2026-09-05 correction pass 85 (the mobile and engagement proposal, OQ-66 to OQ-68): the owner asked for a whole solution for the phone and for engagement before any cloud PR. `docs/reference/mobile-and-engagement-2026-09-05.md` proposes three stages. They are the installable web app inside PR-22, push and an email digest for three product events after PR-23, and the stores on request. Engagement reads as six loops around the events of a player, with six counts and no tracking. Three owner questions carry the decisions. Changes: OQ-66 to OQ-68, the note.
 2026-09-05 correction pass 84 (the reword guard closes, D-545): the owner first said loosen the guard of D-88. A measurement of all 60 M-5 items with the guard's own overlap function changed the read. Four of the five live refusals scored better were the D-116 class, and the fifth was the format row with a clause added. The guard stays at 0.60, with no paid run. Changes: D-545.
 2026-09-05 correction pass 83 (OQ-65 answered, D-543, D-544): PR #69 merged, and the three items of D-531 are done. PR-22 builds the direct Cloud Run origin, and Hosting serves the static app alone (D-544). The owner also said go to the reword guard of D-88, on branch `reword-guard`. Changes: D-543, D-544, the PR-22 entry, `docs/setup-gcp.md` section 13, `docs/owner-questions.md`.
 2026-09-05 correction pass 82 (the trimmed snapshot, D-521, D-542): `deck-gate -dry -trim` writes the snapshot cut to the cards a dry run reaches. The fixture holds 4,871 cards and 7,140 printings in 3.9 MB, under the 10 MB of D-521. `TestTrimmedSnapshotBuildsEveryShortlist` runs the dry build of all 25 prompts over it in CI for nothing, and a budget test pins the size. The trimmed index is not the full one, because the theme search reads the whole corpus for its noise rule and its popularity share. The lane proves that every prompt builds and resolves, and not which cards a paid run picks. Branch `tier0-snapshot`, the third of the three items of D-531. Changes: D-542, `cmd/deck-gate/trim.go`, `cmd/deck-gate/testdata/snapshot/`, the Makefile, the PR-15 entry.
@@ -676,6 +678,8 @@ The four flows of D-312 come in this order:
 - PR-21, the share link and the print view.
 - PR-22, the deploy for invited users.
 - PR-23, the Playwright smoke flow.
+- PR-25, the installable web app, Stage A of the mobile proposal (D-547).
+- PR-26, the return channels, Stage B of the mobile proposal (OQ-67).
 
 > *In plain English:* what exists today is a test bench with a browser on it. This phase makes it an app a person can use every day, on a laptop or a phone, and later from anywhere with an invitation.
 
@@ -890,6 +894,25 @@ Gate:
 One flow on `workflow_dispatch` only. It signs in over the emulator and uploads the fixture export. Then it starts a session from the form with the fake provider, opens the deck, and exports it. The fake provider serves canned answers for the classify, ask, and generate roles, so the flow costs nothing. One run takes about 5 minutes of Actions time, and the owner triggers it before a merge that touches the user path. Gate: the flow passes on the emulators.
 > *In plain English:* a robot that clicks through the whole app once, on demand. A change that breaks the path shows up before it ships.
 
+**PR-25: The installable web app (D-547, answers OQ-66).** 🔧 planned, its own PR outside PR-22, after PR-23 in the phase list. The proposal is `docs/reference/mobile-and-engagement-2026-09-05.md`.
+A web manifest with the name, the mark as icons in the required sizes, `display: standalone`, and the dark theme color. A service worker caches the app shell, so a cold open with no network shows the shell and the last deck list. `vite-plugin-pwa` writes both from the Vite build.
+
+An install hint shows once on a phone, after the first deck: on iOS the user taps Share, then Add to Home Screen. The upload dialog accepts `.csv` from the Files picker, and a paste box takes the CSV text. The phone gate becomes explicit. On iOS 26 a Home Screen site opens as a web app by default. A Home Screen web app receives web push since iOS 16.4 (read 2026-09-05).
+
+Gate: every route at 390 pixels wide passes axe in the dark theme. Every touch target is 44 pixels or more, and the chat input stays above the keyboard. Lighthouse reports the app installable. The owner walks the whole path on a phone, which closes the open item of PR-16.
+> *In plain English:* the app becomes something you add to your phone's home screen and open like any other app. It starts with no signal, and the collection file from ManaBox goes in with two taps.
+
+**PR-26: The return channels (OQ-67).** ❓ needs owner input on the channels and the events. Stage B of the proposal.
+Push through Firebase Cloud Messaging and a weekly email digest, each an opt-in per event. Three events come from data the product keeps. A legality change touches a deck, a new set holds cards for a deck, or a build finished. One Cloud Run job reads weekly, and one Firestore document per user holds the opt-ins and the device tokens.
+
+The digest carries one suggested revision, and the revise turn runs on a tap alone, about $0.10, inside the cap of D-421. It follows the ban rerun item, which carries the `stale` flag. Cloud Messaging is free, and the digest sits inside the free tier of one email provider (read 2026-09-05).
+
+Gate: a synthetic legality change reaches an opted-in user by push and by email inside a day. An opted-out user gets nothing. The weekly job costs nothing on a week with no event.
+> *In plain English:* the app taps you on the shoulder when a ban hits your deck or a new set has cards for it. It does so only if you asked, and nothing else pings you.
+
+Stage C of the proposal, the stores, is 🅿 parked on request (D-548). Android packages the web app as a Trusted Web Activity for Google Play, $25 once. On iOS a native shell needs native value, $99 a year, because Apple refuses a bare wrapper under guideline 4.2. Nothing moves until an invited user asks.
+> *In plain English:* the phone gets the app from the home screen, not from a store. A store listing comes when someone asks for one.
+
 ### Phase 4 - Meta and quality (gated on Phase 3B, D-316)
 
 **PR-14A: The bracket profile (D-451 to D-453, D-459 to D-469).** ✅ merged 2026-09-02 (#57). Bracket gate run 1 reads FAIL on two bars, and the owner merged with that on record. Deck gate runs 12 and 12b together pass all 24 prompts with no regression.
@@ -1084,6 +1107,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 21. PR-15 eval harness. ✅ merged 2026-09-04 (#65), after #64 (D-511), before PR-22 and PR-23. The paid gate ran the same day and passes on every lane (D-516). M-5 manual scoring runs on the first UI build (after PR-12).
 22. PR-24 precon exclusion (D-409, D-460) ✅ merged 2026-09-03 (#59). PR-14C (D-482) ✅ merged 2026-09-03 (#60). Then I-1, I-2, I-3 on evidence. PR-14B moved into step 19 (D-460).
 23. Phase 5 stays parked.
+24. PR-25 the installable web app, then PR-26 the return channels, after PR-23 (D-547). Stage C, the stores, waits on request (D-548).
 
 ## 9. Open questions
 
