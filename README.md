@@ -42,7 +42,7 @@ This starts five processes under one supervisor. One Ctrl-C stops them all:
 
 Note: the ports avoid the Wallabee dev stack (8080, 8181, 4000, 5173), which can run on the same machine.
 
-The web app reads two optional variables. `VITE_API_BASE_URL` sets the API origin, and the default is empty, so the app calls the same origin (the Vite proxy in dev). `VITE_AUTH_EMULATOR_HOST` names the Auth emulator, and the dev default is `127.0.0.1:9199` (`web/apps/web/src/lib/api.ts` and `lib/firebase.ts`).
+The web app reads two optional variables. `VITE_API_BASE_URL` sets the API origin, and the default is empty, so the app calls the same origin (the Vite proxy in dev). `VITE_AUTH_EMULATOR_HOST` names the Auth emulator, and the dev default is `127.0.0.1:9199` (`web/apps/web/src/lib/api.ts` and `lib/firebase.ts`). A deployed build also reads `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, and `VITE_FIREBASE_APP_ID`, the web configuration of the Firebase project. Unset, the app talks to the emulator project `mtg-local` (PR-22).
 
 ### 4. Load the card database (first run only)
 

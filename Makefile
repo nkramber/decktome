@@ -11,7 +11,7 @@ GO := go -C go
 BUF := .bin/buf
 PNPM := pnpm --dir web
 
-.PHONY: candidates-review questions-gate deck-gate bracket-gate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check themes-check ste-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
+.PHONY: allow disallow deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check themes-check ste-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-14s %s\n", $$1, $$2}'
@@ -328,10 +328,22 @@ autotune: ## Print how to start the overnight tuning loop. It never starts one
 	@echo
 	@echo "  AUTOTUNE_ALLOW_UNATTENDED=1 AUTOTUNE_FIXER_CMD=... scripts/autotune.sh --budget 3.00"
 
-store-check: ## Run the session, deck, and collection stores against the local Firestore emulator (needs `firebase emulators:start --only firestore`)
+# EMAIL names the invite. PROJECT_ID names the deployed project, and the
+# credentials come from `gcloud auth application-default login` (D-420).
+allow: ## Invite one email to the deployed app: make allow EMAIL=ann@example.com PROJECT_ID=my-project
+	@[ -n "$(EMAIL)" ] || { echo "allow: set EMAIL=..."; exit 1; }
+	@[ -n "$(PROJECT_ID)" ] || { echo "allow: set PROJECT_ID=... to the deployed project"; exit 1; }
+	@PROJECT_ID=$(PROJECT_ID) $(GO) run ./cmd/allow -email "$(EMAIL)"
+
+disallow: ## Take one email off the invite list: make disallow EMAIL=... PROJECT_ID=...
+	@[ -n "$(EMAIL)" ] || { echo "disallow: set EMAIL=..."; exit 1; }
+	@[ -n "$(PROJECT_ID)" ] || { echo "disallow: set PROJECT_ID=... to the deployed project"; exit 1; }
+	@PROJECT_ID=$(PROJECT_ID) $(GO) run ./cmd/allow -email "$(EMAIL)" -remove
+
+store-check: ## Run the session, deck, collection, usage, and allowlist stores against the local Firestore emulator (needs `firebase emulators:start --only firestore`)
 	@nc -z 127.0.0.1 8281 2>/dev/null || \
 		{ echo "no Firestore emulator on :8281. Start one: firebase emulators:start --only firestore --project mtg-local"; exit 1; }
-	@FIRESTORE_EMULATOR_HOST=127.0.0.1:8281 $(GO) test ./internal/sessions ./internal/decks ./internal/collections -count=1
+	@FIRESTORE_EMULATOR_HOST=127.0.0.1:8281 $(GO) test ./internal/sessions ./internal/usage ./internal/allowlist ./internal/decks ./internal/collections -count=1
 
 # --- The eval harness of PR-15 (free) -----------------------------------
 # EVAL_DIR holds the run files the gates write and baselines.json. The

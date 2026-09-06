@@ -34,6 +34,7 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/quality"
 	"github.com/nkramber/mtg-deck-builder/go/internal/questions"
 	"github.com/nkramber/mtg-deck-builder/go/internal/sessions"
+	"github.com/nkramber/mtg-deck-builder/go/internal/usage"
 )
 
 // Store holds the conversations (D-74).
@@ -129,12 +130,36 @@ type Server struct {
 	building    sync.Map
 	collections CollectionSource
 	prices      *llm.PriceTable
-	now         func() time.Time
-	log         *slog.Logger
+	// ledger and capUSD are the per-user monthly spend cap of D-421. A
+	// nil ledger means no cap, which is local mode.
+	ledger Ledger
+	capUSD float64
+	now    func() time.Time
+	log    *slog.Logger
 }
 
 // Option configures the server.
 type Option func(*Server)
+
+// Ledger keeps the spend of each user per month (D-421). internal/usage
+// holds the one implementation, and the interface keeps agentsvc testable
+// without Firestore.
+type Ledger interface {
+	Spent(ctx context.Context, uid, month string) (float64, error)
+	Add(ctx context.Context, uid, month string, costUSD float64, calls int64, at time.Time) error
+}
+
+// WithSpendCap refuses a turn once a user has spent capUSD in the month,
+// and adds the cost of every turn to the ledger (D-421). A cap of zero
+// or less sets no cap.
+func WithSpendCap(l Ledger, capUSD float64) Option {
+	return func(s *Server) {
+		if l == nil || capUSD <= 0 {
+			return
+		}
+		s.ledger, s.capUSD = l, capUSD
+	}
+}
 
 // WithCandidates wires the candidate hints. Without it, every question
 // that names a value drops that clause and falls back.
@@ -443,12 +468,21 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 	if err != nil {
 		return err
 	}
+	// The spend cap of D-421 reads the ledger before the turn, and the
+	// refusal names the day the cap resets. A ledger that can not be read
+	// refuses the turn too: a cap nobody can read is no cap.
+	if err := s.checkSpendCap(ctx, uid); err != nil {
+		return err
+	}
 	acc := llm.NewAccumulator(s.prices)
 	// The total before this turn, kept apart. The turn sums the report
 	// onto it twice: once after the question calls, and once more after
 	// the build, which spends far more (D-447). addUsage writes into the
 	// total it is given, so the copy keeps the second sum honest.
 	usageBefore := cloneUsage(session.GetUsage())
+	// The ledger gets the turn's spend when the turn ends, whatever it
+	// produced: the session keeps the usage of a failed turn too.
+	defer s.recordSpend(ctx, uid, session, usageBefore)
 	var stalled []string
 	res, turnErr := agent.Turn(ctx, st, message, acc)
 	// The turn is stored either way. A failed turn keeps the slots the
@@ -575,6 +609,54 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 		}
 	}
 	return stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Usage{Usage: session.GetUsage()}})
+}
+
+// errCapReached is the refusal of D-421. The date is the first day of
+// the next month.
+func errCapReached(capUSD float64, reset string) error {
+	return connect.NewError(connect.CodeResourceExhausted,
+		fmt.Errorf("you have spent your $%.0f for this month, and the cap resets on %s", capUSD, reset))
+}
+
+// checkSpendCap refuses the turn of a user at or over the monthly cap.
+func (s *Server) checkSpendCap(ctx context.Context, uid string) error {
+	if s.ledger == nil {
+		return nil
+	}
+	month := usage.Month(s.now())
+	spent, err := s.ledger.Spent(ctx, uid, month)
+	if err != nil {
+		s.log.ErrorContext(ctx, "the spend ledger could not be read, so the turn is refused", "user", uid, "err", err)
+		return connect.NewError(connect.CodeUnavailable, errors.New("the spend ledger could not be read"))
+	}
+	if spent < s.capUSD {
+		return nil
+	}
+	reset, err := usage.ResetDate(month)
+	if err != nil {
+		reset = "the first day of next month"
+	}
+	s.log.InfoContext(ctx, "a turn was refused at the monthly spend cap", "user", uid, "spent_usd", spent, "cap_usd", s.capUSD)
+	return errCapReached(s.capUSD, reset)
+}
+
+// recordSpend adds what the turn spent to the ledger: the difference
+// between the session's total after the turn and before it. A ledger
+// write that fails is logged and never fails the turn.
+func (s *Server) recordSpend(ctx context.Context, uid string, session *mtgv1.Session, before *mtgv1.Usage) {
+	if s.ledger == nil {
+		return
+	}
+	after := session.GetUsage()
+	cost := after.GetCostUsd() - before.GetCostUsd()
+	calls := int64(after.GetCalls() - before.GetCalls())
+	if cost <= 0 && calls <= 0 {
+		return
+	}
+	now := s.now()
+	if err := s.ledger.Add(context.WithoutCancel(ctx), uid, usage.Month(now), cost, calls, now); err != nil {
+		s.log.ErrorContext(ctx, "the spend ledger could not be written", "user", uid, "err", err)
+	}
 }
 
 // buildKey names one session in the in-flight build map.

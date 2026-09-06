@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"connectrpc.com/connect"
@@ -17,13 +18,28 @@ import (
 type fakeVerifier struct {
 	token string
 	uid   string
+	email string
 }
 
-func (f fakeVerifier) Verify(_ context.Context, idToken string) (string, error) {
+func (f fakeVerifier) Verify(_ context.Context, idToken string) (Identity, error) {
 	if idToken == f.token {
-		return f.uid, nil
+		return Identity{UID: f.uid, Email: f.email}, nil
 	}
-	return "", errors.New("unknown token")
+	return Identity{}, errors.New("unknown token")
+}
+
+// fakeList allows the emails it holds. A nil error map makes every
+// lookup succeed.
+type fakeList struct {
+	emails map[string]bool
+	err    error
+}
+
+func (f fakeList) Allowed(_ context.Context, email string) (bool, error) {
+	if f.err != nil {
+		return false, f.err
+	}
+	return f.emails[email], nil
 }
 
 // echo answers the unary Check with the user id in the version field,
@@ -43,7 +59,7 @@ func (echo) Chat(ctx context.Context, _ *connect.Request[mtgv1.ChatRequest], str
 
 func newServer(t *testing.T, opts ...Option) (mtgv1connect.HealthServiceClient, mtgv1connect.AgentServiceClient) {
 	t.Helper()
-	ic := connect.WithInterceptors(Interceptor(fakeVerifier{token: "good", uid: "u-42"}, opts...))
+	ic := connect.WithInterceptors(Interceptor(fakeVerifier{token: "good", uid: "u-42", email: "ann@example.com"}, opts...))
 	mux := http.NewServeMux()
 	mux.Handle(mtgv1connect.NewHealthServiceHandler(echo{}, ic))
 	mux.Handle(mtgv1connect.NewAgentServiceHandler(echo{}, ic))
@@ -232,3 +248,36 @@ type specRequest struct {
 }
 
 func (r *specRequest) Spec() connect.Spec { return r.spec }
+
+// TestAllowlistRefusesAnEmailOffTheList is D-314: a verified user whose
+// email is not on the list gets PermissionDenied with one sentence, a
+// user on the list gets in, a list that can not be read answers
+// Unavailable, and the fallback user of local mode never meets the list.
+func TestAllowlistRefusesAnEmailOffTheList(t *testing.T) {
+	call := func(t *testing.T, header string, opts ...Option) (string, error) {
+		t.Helper()
+		health, _ := newServer(t, opts...)
+		req := connect.NewRequest(&mtgv1.CheckRequest{})
+		if header != "" {
+			req.Header().Set("Authorization", header)
+		}
+		res, err := health.Check(context.Background(), req)
+		if err != nil {
+			return "", err
+		}
+		return res.Msg.GetVersion(), nil
+	}
+	if uid, err := call(t, "Bearer good", WithAllowlist(fakeList{emails: map[string]bool{"ann@example.com": true}})); err != nil || uid != "u-42" {
+		t.Errorf("a listed email must get in: %q %v", uid, err)
+	}
+	_, err := call(t, "Bearer good", WithAllowlist(fakeList{emails: map[string]bool{"bob@example.com": true}}))
+	if codeOf(err) != connect.CodePermissionDenied || !strings.Contains(err.Error(), "invited users alone") {
+		t.Errorf("an email off the list: %v", err)
+	}
+	if _, err := call(t, "Bearer good", WithAllowlist(fakeList{err: errors.New("firestore down")})); codeOf(err) != connect.CodeUnavailable {
+		t.Errorf("a list that can not be read: %v", err)
+	}
+	if uid, err := call(t, "", WithFallback("local-dev"), WithAllowlist(fakeList{})); err != nil || uid != "local-dev" {
+		t.Errorf("the fallback user never meets the list: %q %v", uid, err)
+	}
+}
