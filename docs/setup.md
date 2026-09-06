@@ -80,6 +80,8 @@ The `mtg-dev` and `mtg-prod` projects need it (D-24). Local work does not.
 
 Other targets: `make test-smoke` (live LLM test, needs `.env`), `make llm-defaults-check`, `make dev-seed`, `make cover`, `make build`, `make proto-breaking`. Run `make help` for the full list.
 
+Optional: run `pnpm --dir web/apps/web exec playwright install chromium`, then `make smoke`. The flow clicks through the app once over the emulators and the fake provider, and it costs nothing (PR-23, D-553). Stop `make dev` first.
+
 ## 10. Final check
 
 1. Run `make doctor`.

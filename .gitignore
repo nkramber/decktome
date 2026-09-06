@@ -5,6 +5,9 @@ go/coverage.out
 # Node
 node_modules/
 web/apps/web/dist/
+# The Playwright smoke flow writes its traces and its report here (PR-23)
+web/apps/web/test-results/
+web/apps/web/playwright-report/
 # Local stack state
 .local/
 # OS / editor
