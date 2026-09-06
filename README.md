@@ -171,6 +171,7 @@ make questions-eval    # score a gate run, $0.092 to $0.104 (runs 14 to 25), abo
 make eval-calibrate    # eval model against claude-sonnet-5, $0.25 to $0.30
 make autotune          # free: print how to start the paid loop, scripts/autotune.sh ($0.25 an iteration)
 make deck-gate         # the PR-8 gate document, $2.24 for 24 prompts under the profile (run 12)
+make deck-gate-dry     # every shortlist over the trimmed snapshot of the repo, free (D-521)
 make bracket-gate      # the PR-14A gate document, 15 builds and a judge lane, $2.08 plus $0.26 (run 1)
 make revise-gate       # two base decks and six revisions (PR-12B), about $0.30 (run 2, $0.29)
 make chat-probe        # drive the real Chat RPC to a deck, a few cents
