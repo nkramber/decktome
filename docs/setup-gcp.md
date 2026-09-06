@@ -28,12 +28,12 @@ The roadmap (PR-22, D-310, D-314) fixes the shape. One table names each part.
 
 The repo holds the two Dockerfiles and the Firestore rules and indexes. The Go code reads `PROJECT_ID`, `CARDS_BUCKET`, `ALLOWED_ORIGINS`, and the three keys from the environment. `gcpenv.OnCloudRun` reads `K_SERVICE`, which Cloud Run sets, and the API then refuses every request with no token (`cmd/api/main.go`).
 
-Four things are not in the repo yet, and PR-22 adds them:
+PR-22 added four things on 2026-09-06, and this page reads them as they stand:
 
-- A `hosting` block in `firebase.json` for the static app (D-544). The file holds the Firestore and emulator blocks alone.
-- The real Firebase web configuration. `web/apps/web/src/lib/firebase.ts` initializes the app with `apiKey: "demo-key"` and `projectId: "mtg-local"`. A production build needs the values of section 5 through environment variables.
-- The allowlist interceptor and `make allow EMAIL=...` (D-314, D-420).
-- The per-user spend cap of $5 a month (D-421).
+- A `hosting` block in `firebase.json` for the static app (D-544). It names the Vite build directory, the single-page rewrite, and long cache headers on the hashed assets.
+- The Firebase web configuration through four build variables: `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, and `VITE_FIREBASE_APP_ID`. Unset, the app talks to the emulator project.
+- The invite list (D-314, D-420). On Cloud Run the API reads `config/allowlist` before every signed-in request, with a cache of one minute. It refuses an email off the list with one sentence. `make allow EMAIL=... PROJECT_ID=...` writes the list, and `make disallow` takes an email off.
+- The spend cap (D-421). One Firestore document per user and month, `users/<uid>/usage/<YYYY-MM>`, sums the cost of every turn. On Cloud Run the cap is $5 a month, and `SPEND_CAP_USD` moves it. A turn at the cap gets a refusal that names the day the cap resets.
 
 ## 2. Before you start
 
@@ -194,7 +194,7 @@ gcloud run deploy mtg-api \
   --region REGION --platform managed \
   --service-account SA_API \
   --allow-unauthenticated \
-  --set-env-vars PROJECT_ID=PROJECT_ID,CARDS_BUCKET=PROJECT_ID-cards,ALLOWED_ORIGINS=https://DOMAIN \
+  --set-env-vars PROJECT_ID=PROJECT_ID,CARDS_BUCKET=PROJECT_ID-cards,ALLOWED_ORIGINS=https://DOMAIN,SPEND_CAP_USD=5 \
   --set-secrets OPENAI_API_KEY=openai-api-key:1,ANTHROPIC_API_KEY=anthropic-api-key:1 \
   --memory 2Gi --cpu 1 --min-instances 0 --max-instances 3 --concurrency 20 \
   --timeout 900 --port 8080
@@ -208,6 +208,8 @@ Six notes on the flags:
 - `--timeout 900` covers a deck build. The default is 300 seconds and the maximum is 3,600. A build with repair passes takes minutes, and the `Chat` RPC streams for that whole time.
 - `--set-secrets` pins version `1`. Rotate a key with a new version and a new deploy.
 - `PROJECT_ID` must be explicit. Cloud Run sets `K_SERVICE` and not the project id.
+- `SPEND_CAP_USD` names the monthly cap per user (D-421). Cloud Run reads $5 with no value, and `0` turns the cap off.
+- The invite list is on whenever `K_SERVICE` is set. A user off the list reads one sentence with `PermissionDenied`, and a list that can not be read answers `Unavailable`.
 
 Check the service: `curl -s "$(gcloud run services describe mtg-api --region REGION --format='value(status.url)')/healthz"`. It answers 200 once a snapshot exists in the bucket, so run section 12 first when the bucket is empty.
 
@@ -255,28 +257,21 @@ Two jobs stay inside the free tier of three Cloud Scheduler jobs per billing acc
 
 ## 13. Build and deploy the web app
 
-This section needs the two PR-22 additions of section 1: the `hosting` block and the Firebase configuration variables.
+The `hosting` block and the Firebase configuration variables are in the repo (PR-22).
 
 1. Build the web app with the API origin and the Firebase configuration. The API origin is the Cloud Run URL of section 11 until section 14 gives it a name.
 
 ```
 cd web
-VITE_API_BASE_URL=https://mtg-api-XXXX-uc.a.run.app VITE_AUTH_EMULATOR_HOST= pnpm --filter web build
+VITE_API_BASE_URL=https://mtg-api-XXXX-uc.a.run.app VITE_AUTH_EMULATOR_HOST= \
+VITE_FIREBASE_API_KEY=... VITE_FIREBASE_AUTH_DOMAIN=PROJECT_ID.firebaseapp.com \
+VITE_FIREBASE_PROJECT_ID=PROJECT_ID VITE_FIREBASE_APP_ID=... pnpm --filter web build
 cd ..
 ```
 
-2. Add the `hosting` block to `firebase.json`. This example serves the Vite build as a single-page app.
+The four `VITE_FIREBASE_` values come from step 5 of section 5. An empty `VITE_AUTH_EMULATOR_HOST` means real Firebase.
 
-```
-"hosting": {
-  "public": "web/apps/web/dist",
-  "ignore": ["firebase.json", "**/.*"],
-  "rewrites": [
-    { "source": "**", "destination": "/index.html" }
-  ]
-}
-```
-
+2. The `hosting` block of `firebase.json` serves the Vite build as a single-page app. The hashed assets get long cache headers, and the page gets none.
 3. Run `firebase deploy --only hosting`. The site is live on `PROJECT_ID.web.app`.
 
 The web app calls the Cloud Run origin directly (D-544). The API reads `ALLOWED_ORIGINS` for CORS, and the web app reads `VITE_API_BASE_URL`, so step 1 is the whole wiring. No Hosting rewrite carries the RPCs. The reason: Firebase documents a 60-second request timeout for rewrites to Cloud Functions, "Firebase Hosting is subject to a 60-second request timeout". The Cloud Run rewrite page makes no statement about a timeout or about streamed responses. A deck build streams for several minutes over the `Chat` RPC, and no proxy sits in that path.
@@ -293,7 +288,7 @@ The API keeps its `run.app` URL. Cloud Run domain mappings are a preview feature
 
 ## 15. Invite a user and check the deployment
 
-1. Run `make allow EMAIL=user@example.com`. PR-22 adds the target, and it writes the email into `config/allowlist` (D-420).
+1. Run `gcloud auth application-default login` once, so the command writes with your own credentials. Then run `make allow EMAIL=user@example.com PROJECT_ID=PROJECT_ID`. It writes the email into `config/allowlist` (D-420), and the API reads the change inside a minute.
 2. Open `https://DOMAIN`, create the account with that email, and sign in.
 3. Upload a ManaBox export, build a deck, revise it, and export it. This is the PR-22 gate.
 4. Sign in with an email that is not on the list. The first RPC must answer `PermissionDenied` with one sentence.

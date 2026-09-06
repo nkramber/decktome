@@ -19,7 +19,15 @@ async function start() {
   const [{ initializeApp }, mod] = await Promise.all([import("firebase/app"), import("firebase/auth")]);
 
   // The project id must match the one the emulator and the API agree on (D-275).
-  const app = initializeApp({ apiKey: "demo-key", projectId: "mtg-local", authDomain: "localhost" });
+  // A deployed build carries the real Firebase web configuration through the
+  // four VITE_FIREBASE_ variables (PR-22). The dev defaults serve the emulator.
+  const env = import.meta.env;
+  const app = initializeApp({
+    apiKey: env.VITE_FIREBASE_API_KEY || "demo-key",
+    projectId: env.VITE_FIREBASE_PROJECT_ID || "mtg-local",
+    authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || "localhost",
+    appId: env.VITE_FIREBASE_APP_ID || undefined,
+  });
 
   // browserLocalPersistence keeps the session across a reload.
   const auth = mod.initializeAuth(app, { persistence: mod.browserLocalPersistence });
