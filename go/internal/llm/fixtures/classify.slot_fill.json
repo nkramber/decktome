@@ -1,0 +1,28 @@
+{
+  "format": "commander",
+  "theme": "lifegain",
+  "colors": [],
+  "commander_names": ["Karlov of the Ghost Council"],
+  "locked_names": [],
+  "named_cards": [],
+  "set_names": [],
+  "set_groups": [],
+  "precon_names": [],
+  "power": "bracket 3",
+  "pool_rule": "any_card",
+  "budget_usd": 0,
+  "budget_scope": "unknown",
+  "house_rules": "",
+  "closed_keys": [],
+  "declined_keys": [],
+  "facts": {
+    "named_card": false,
+    "buy_list": false,
+    "house_format": false,
+    "budget_ambiguous": false,
+    "power_competitive": false,
+    "wants_suggestion": false,
+    "out_of_scope": false,
+    "exclude_precons": false
+  }
+}

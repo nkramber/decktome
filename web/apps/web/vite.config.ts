@@ -1,6 +1,6 @@
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 
 // The Go API listens on :8090 in local dev, and Connect-RPC routes live
 // under /mtg.v1.*. The dev server proxies them, so the browser talks to
@@ -18,5 +18,7 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["./src/test-setup.ts"],
+    // The Playwright flow under e2e is not a unit test (PR-23).
+    exclude: [...configDefaults.exclude, "e2e/**"],
   },
 });

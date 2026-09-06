@@ -22,7 +22,7 @@ Each `MISSING` line shows the fix command. Full install steps: `docs/setup.md`. 
 cd web && pnpm install && cd ..
 ```
 
-Optional: copy `.env.example` to `.env` and add the LLM provider keys. Without keys, `make dev` sets `LLM_REQUIRE_KEYS=0`, and the fixture fake serves the health role only (D-267). A chat turn then fails with a clear message that names the role it can not serve.
+Optional: copy `.env.example` to `.env` and add the LLM provider keys. Without keys, `make dev` sets `LLM_REQUIRE_KEYS=0`, and the fixture fake serves every role of a build from its fixtures (D-552). A first message then builds one fixed deck, a lifegain Commander deck led by Karlov of the Ghost Council, whatever the message says. A role with no fixture fails with a clear message that names it.
 
 ### 3. Start the stack
 
@@ -144,6 +144,7 @@ make lint-go / make lint-web / make ste-check   # one lane each
 make test          # go test -race, vitest
 make test-repeat TEST=TestName RUNS=25   # flake hunt
 make test-smoke    # live LLM smoke test, reads the keys from .env
+make smoke         # the Playwright smoke flow over the emulators and the fake provider, free (PR-23)
 make llm-defaults-check   # warn when roles.json or prices.json changed
 make cover         # Go coverage summary
 make build         # Go binaries + web bundle
@@ -181,6 +182,10 @@ make test-smoke        # live LLM smoke test, reads .env, a few cents
 ```
 
 The question gate cost is from 2026-08-26, and the deck gate and bracket gate costs are from 2026-09-02.
+
+`make smoke` costs nothing. It starts the emulators empty, the API over the trimmed snapshot with every role on the fake provider, and the web app. Then it runs one Playwright flow (PR-23, D-553). The flow creates an account, uploads the fixture export, builds a deck, opens it, and downloads the deck list. 
+
+It needs the Chromium build of Playwright once: `pnpm --dir web/apps/web exec playwright install chromium`. Stop `make dev` first, because both stacks take the same ports. The workflow `smoke` runs the same flow on GitHub on a manual trigger, at about 5 minutes of Actions time a run.
 
 CI runs on pull requests only, and a new push to a branch cancels the run in progress. A first job reads the diff against the base branch. Each job runs only when its inputs changed, so a docs change runs the STE check and nothing else. A merge to `main` runs nothing, because the pull request verified the same tree. A weekly schedule runs govulncheck alone, at about 2 minutes a week (D-305). The owner hit 90 percent of the monthly minutes in six days on 2026-08-28, and each run cost 25 billed minutes before this rule (D-286).
 

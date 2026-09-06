@@ -1,0 +1,468 @@
+{
+  "summary": "Karlov leads a white-black lifegain deck that develops a resilient creature board, turns repeated life gain into larger threats and pressure, and uses efficient protection and removal to keep its key pieces in play. It wins by snowballing its lifegain synergies into a commanding battlefield, while retaining several board resets for games that get away from it. The deck gives up some speed for a fuller land base and a more creature-focused midgame plan.",
+  "cards": [
+    {
+      "name": "Plains",
+      "count": 13,
+      "role": "land",
+      "reason": "Basic white source for the mana base."
+    },
+    {
+      "name": "Swamp",
+      "count": 11,
+      "role": "land",
+      "reason": "Basic black source for the mana base."
+    },
+    {
+      "name": "Godless Shrine",
+      "count": 1,
+      "role": "land",
+      "reason": "Dual-color land for reliable white and black access."
+    },
+    {
+      "name": "Caves of Koilos",
+      "count": 1,
+      "role": "land",
+      "reason": "Untapped dual-color land."
+    },
+    {
+      "name": "Command Tower",
+      "count": 1,
+      "role": "land",
+      "reason": "Reliable land for the commander’s colors."
+    },
+    {
+      "name": "Vault of Champions",
+      "count": 1,
+      "role": "land",
+      "reason": "Dual-color land for multiplayer games."
+    },
+    {
+      "name": "Shattered Sanctum",
+      "count": 1,
+      "role": "land",
+      "reason": "Dual-color land that supports the early curve."
+    },
+    {
+      "name": "Isolated Chapel",
+      "count": 1,
+      "role": "land",
+      "reason": "Dual-color land for the white-black mana base."
+    },
+    {
+      "name": "Mana Confluence",
+      "count": 1,
+      "role": "land",
+      "reason": "Flexible source for either deck color."
+    },
+    {
+      "name": "Reflecting Pool",
+      "count": 1,
+      "role": "land",
+      "reason": "Flexible dual-color land alongside the rest of the mana base."
+    },
+    {
+      "name": "Radiant Fountain",
+      "count": 1,
+      "role": "land",
+      "reason": "Land slot that supports the lifegain plan."
+    },
+    {
+      "name": "Seraph Sanctuary",
+      "count": 1,
+      "role": "land",
+      "reason": "Land slot that supports the Angel portion of the deck."
+    },
+    {
+      "name": "Restless Fortress",
+      "count": 1,
+      "role": "land",
+      "reason": "Dual-color utility land."
+    },
+    {
+      "name": "High Market",
+      "count": 1,
+      "role": "land",
+      "reason": "Utility land that supplies a sacrifice outlet."
+    },
+    {
+      "name": "Altar of the Pantheon",
+      "count": 1,
+      "role": "ramp",
+      "reason": "Early mana acceleration for the deck’s colored spells."
+    },
+    {
+      "name": "Battle Angels of Tyr",
+      "count": 1,
+      "role": "ramp",
+      "reason": "Threat-based acceleration that advances the board."
+    },
+    {
+      "name": "Carmen, Cruel Skymarcher",
+      "count": 1,
+      "role": "ramp",
+      "reason": "Creature-based mana acceleration for the midgame."
+    },
+    {
+      "name": "Crypt Ghast",
+      "count": 1,
+      "role": "ramp",
+      "reason": "High-impact black mana acceleration."
+    },
+    {
+      "name": "Nuka-Cola Vending Machine",
+      "count": 1,
+      "role": "ramp",
+      "reason": "Artifact ramp that helps develop resources."
+    },
+    {
+      "name": "Orazca Relic",
+      "count": 1,
+      "role": "ramp",
+      "reason": "Mana rock for consistent development."
+    },
+    {
+      "name": "Pristine Talisman",
+      "count": 1,
+      "role": "ramp",
+      "reason": "Mana acceleration that fits the lifegain theme."
+    },
+    {
+      "name": "Phial of Galadriel",
+      "count": 1,
+      "role": "ramp",
+      "reason": "Artifact ramp for the deck’s midgame."
+    },
+    {
+      "name": "The Celestus",
+      "count": 1,
+      "role": "ramp",
+      "reason": "Versatile artifact mana source."
+    },
+    {
+      "name": "Spoils of Evil",
+      "count": 1,
+      "role": "ramp",
+      "reason": "Efficient burst mana acceleration."
+    },
+    {
+      "name": "Archivist of Oghma",
+      "count": 1,
+      "role": "draw",
+      "reason": "Efficient creature-based card advantage."
+    },
+    {
+      "name": "Ayara, First of Locthwain",
+      "count": 1,
+      "role": "draw",
+      "reason": "Repeatable card advantage on a relevant creature."
+    },
+    {
+      "name": "Dawn of Hope",
+      "count": 1,
+      "role": "draw",
+      "reason": "Lifegain-focused source of card advantage."
+    },
+    {
+      "name": "Enduring Innocence",
+      "count": 1,
+      "role": "draw",
+      "reason": "Creature-based draw engine."
+    },
+    {
+      "name": "Mangara, the Diplomat",
+      "count": 1,
+      "role": "draw",
+      "reason": "Reliable multiplayer card advantage."
+    },
+    {
+      "name": "Markov Purifier",
+      "count": 1,
+      "role": "draw",
+      "reason": "Vampire-themed card advantage."
+    },
+    {
+      "name": "Sigarda's Splendor",
+      "count": 1,
+      "role": "draw",
+      "reason": "Lifegain-aligned card advantage."
+    },
+    {
+      "name": "The Gaffer",
+      "count": 1,
+      "role": "draw",
+      "reason": "Creature-based draw that fits the life-total plan."
+    },
+    {
+      "name": "Vampiric Rites",
+      "count": 1,
+      "role": "draw",
+      "reason": "Low-cost draw outlet with sacrifice utility."
+    },
+    {
+      "name": "Well of Lost Dreams",
+      "count": 1,
+      "role": "draw",
+      "reason": "Dedicated lifegain card-advantage engine."
+    },
+    {
+      "name": "Survival Cache",
+      "count": 1,
+      "role": "draw",
+      "reason": "Lifegain-oriented card advantage."
+    },
+    {
+      "name": "Alseid of Life's Bounty",
+      "count": 1,
+      "role": "interaction",
+      "reason": "Low-cost protection for Karlov or a key permanent."
+    },
+    {
+      "name": "Convalescent Care",
+      "count": 1,
+      "role": "synergy",
+      "reason": "Enchantment that supports the lifegain plan."
+    },
+    {
+      "name": "Courageous Resolve",
+      "count": 1,
+      "role": "interaction",
+      "reason": "Protection spell for the board’s key pieces."
+    },
+    {
+      "name": "Metropolis Reformer",
+      "count": 1,
+      "role": "interaction",
+      "reason": "Creature-based defensive interaction."
+    },
+    {
+      "name": "Restoration Magic",
+      "count": 1,
+      "role": "interaction",
+      "reason": "Flexible protective interaction."
+    },
+    {
+      "name": "Rune-Tail, Kitsune Ascendant // Rune-Tail's Essence",
+      "count": 1,
+      "role": "interaction",
+      "reason": "Defensive piece for protecting the creature board."
+    },
+    {
+      "name": "Sword of Light and Shadow",
+      "count": 1,
+      "role": "interaction",
+      "reason": "Equipment-based protection and utility."
+    },
+    {
+      "name": "Werefox Bodyguard",
+      "count": 1,
+      "role": "interaction",
+      "reason": "Creature interaction that supports the board plan."
+    },
+    {
+      "name": "Ayli, Eternal Pilgrim",
+      "count": 1,
+      "role": "removal",
+      "reason": "Low-cost repeatable removal on a lifegain creature."
+    },
+    {
+      "name": "Gumdrop Poisoner // Tempt with Treats",
+      "count": 1,
+      "role": "removal",
+      "reason": "Flexible removal with an additional spell option."
+    },
+    {
+      "name": "Henrika Domnathi // Henrika, Infernal Seer",
+      "count": 1,
+      "role": "removal",
+      "reason": "Versatile creature-based removal."
+    },
+    {
+      "name": "Murderous Rider // Swift End",
+      "count": 1,
+      "role": "removal",
+      "reason": "Flexible targeted removal."
+    },
+    {
+      "name": "Nightmare's Thirst",
+      "count": 1,
+      "role": "removal",
+      "reason": "Cheap targeted creature removal."
+    },
+    {
+      "name": "Solitude",
+      "count": 1,
+      "role": "removal",
+      "reason": "Flexible creature removal."
+    },
+    {
+      "name": "Umezawa's Jitte",
+      "count": 1,
+      "role": "removal",
+      "reason": "Reusable equipment-based removal."
+    },
+    {
+      "name": "Vona, Butcher of Magan",
+      "count": 1,
+      "role": "removal",
+      "reason": "Lifegain-compatible repeatable removal."
+    },
+    {
+      "name": "Cavalier of Night",
+      "count": 1,
+      "role": "removal",
+      "reason": "Creature-based removal for the top end."
+    },
+    {
+      "name": "Fumigate",
+      "count": 1,
+      "role": "wipe",
+      "reason": "Board wipe that aligns with the life-total plan."
+    },
+    {
+      "name": "Kaya's Wrath",
+      "count": 1,
+      "role": "wipe",
+      "reason": "Reliable white-black board wipe."
+    },
+    {
+      "name": "The Battle of Bywater",
+      "count": 1,
+      "role": "wipe",
+      "reason": "Additional reset button for opposing boards."
+    },
+    {
+      "name": "Ajani's Pridemate",
+      "count": 1,
+      "role": "synergy",
+      "reason": "Low-cost lifegain payoff."
+    },
+    {
+      "name": "Angel of Vitality",
+      "count": 1,
+      "role": "synergy",
+      "reason": "Lifegain-focused creature synergy."
+    },
+    {
+      "name": "Cleric Class",
+      "count": 1,
+      "role": "synergy",
+      "reason": "Early enchantment that supports repeated lifegain."
+    },
+    {
+      "name": "Heliod, Sun-Crowned",
+      "count": 1,
+      "role": "synergy",
+      "reason": "Central lifegain payoff and support piece."
+    },
+    {
+      "name": "Indulging Patrician",
+      "count": 1,
+      "role": "synergy",
+      "reason": "Creature payoff for the lifegain strategy."
+    },
+    {
+      "name": "Ocelot Pride",
+      "count": 1,
+      "role": "synergy",
+      "reason": "Low-cost creature that rewards the lifegain plan."
+    },
+    {
+      "name": "Resplendent Angel",
+      "count": 1,
+      "role": "synergy",
+      "reason": "Powerful lifegain payoff threat."
+    },
+    {
+      "name": "Righteous Valkyrie",
+      "count": 1,
+      "role": "synergy",
+      "reason": "Angel-focused lifegain synergy."
+    },
+    {
+      "name": "Vito, Thorn of the Dusk Rose",
+      "count": 1,
+      "role": "synergy",
+      "reason": "Lifegain payoff that pressures opponents."
+    },
+    {
+      "name": "Voice of the Blessed",
+      "count": 1,
+      "role": "synergy",
+      "reason": "Efficient scalable lifegain payoff."
+    },
+    {
+      "name": "Archangel of Thune",
+      "count": 1,
+      "role": "threat",
+      "reason": "High-impact creature threat for a lifegain board."
+    },
+    {
+      "name": "Astarion, the Decadent",
+      "count": 1,
+      "role": "threat",
+      "reason": "Large lifegain-themed finisher."
+    },
+    {
+      "name": "Attended Healer",
+      "count": 1,
+      "role": "threat",
+      "reason": "Board-building creature threat."
+    },
+    {
+      "name": "Celestine, the Living Saint",
+      "count": 1,
+      "role": "threat",
+      "reason": "Recurring value threat for longer games."
+    },
+    {
+      "name": "Cliffhaven Vampire",
+      "count": 1,
+      "role": "threat",
+      "reason": "Lifegain-themed source of pressure."
+    },
+    {
+      "name": "Defiant Bloodlord",
+      "count": 1,
+      "role": "threat",
+      "reason": "High-impact lifegain payoff threat."
+    },
+    {
+      "name": "Divinity of Pride",
+      "count": 1,
+      "role": "threat",
+      "reason": "Efficient large threat for high life totals."
+    },
+    {
+      "name": "Enduring Tenacity",
+      "count": 1,
+      "role": "threat",
+      "reason": "Lifegain-themed creature threat."
+    },
+    {
+      "name": "Nykthos Paragon",
+      "count": 1,
+      "role": "threat",
+      "reason": "Powerful lifegain payoff at the top of the curve."
+    },
+    {
+      "name": "Rhox Faithmender",
+      "count": 1,
+      "role": "threat",
+      "reason": "Lifegain multiplier that becomes a substantial board presence."
+    },
+    {
+      "name": "Valkyrie Harbinger",
+      "count": 1,
+      "role": "threat",
+      "reason": "Large lifegain-themed Angel threat."
+    },
+    {
+      "name": "Wurmcoil Engine",
+      "count": 1,
+      "role": "threat",
+      "reason": "Resilient artifact creature threat."
+    }
+  ],
+  "sideboard": []
+}
