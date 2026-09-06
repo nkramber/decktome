@@ -50,11 +50,17 @@ import (
 //go:embed conversations.json
 var conversationsJSON []byte
 
-// CatalogOnlyBar is the roadmap gate: at least 25 of the counted gate
-// conversations use catalog questions only. A gate conversation that
-// starts after a build is not counted: its build slots are closed before
-// the first message, so it can not invent one (A-9).
-const CatalogOnlyBar = 25
+// CatalogOnlyBar is the roadmap gate: at least 64 of the counted gate
+// conversations use catalog questions only, the share of 25 in 30 kept
+// over the 77 of D-522. A gate conversation that starts after a build is
+// not counted: its build slots are closed before the first message, so
+// it can not invent one (A-9).
+const CatalogOnlyBar = 64
+
+// GateSize is the number of gate conversations the live half holds: the
+// 30 of D-105 and the 47 terse ones that joined under D-522. The offline
+// half of TestConversations keeps its own count, questions.MinGateSize.
+const GateSize = 77
 
 type gateFile struct {
 	VerifiedAt    string         `json:"verified_at"`
@@ -210,8 +216,8 @@ func run(collectionPath string, limit int, only string, runOut string, w io.Writ
 	rec.LowerIsBetter("error", "premature", "dead_end", "lint_findings", "invented", "refused_rewords", "stalls", "closed_by_net")
 	rec.Header.Versions["conversations"] = file.VerifiedAt
 	rec.Header.Versions["slots_snapshot"] = fmt.Sprintf("%d", questions.SnapshotVersion)
-	if n := gateCount(file.Conversations); n < questions.MinGateSize {
-		return fmt.Errorf("conversations.json holds %d gate conversations, the gate needs %d", n, questions.MinGateSize)
+	if n := gateCount(file.Conversations); n < GateSize {
+		return fmt.Errorf("conversations.json holds %d gate conversations, the gate needs %d", n, GateSize)
 	}
 	cat, err := questions.Load()
 	if err != nil {
@@ -616,7 +622,7 @@ func write(w io.Writer, file gateFile, results []result, cov coverages,
 	partial := rec.Header.Partial()
 	pass := len(premature) == 0 && findings == 0 && len(deadEnds) == 0 && len(missLines) == 0
 	if !partial {
-		pass = pass && total.CatalogOnly >= CatalogOnlyBar && gate >= questions.MinGateSize
+		pass = pass && total.CatalogOnly >= CatalogOnlyBar && gate >= GateSize
 	}
 	verdict := "FAIL"
 	if pass {
@@ -629,7 +635,7 @@ func write(w io.Writer, file gateFile, results []result, cov coverages,
 	}
 	recordRows(rec, results)
 	catalogDetail := fmt.Sprintf("%d of %d, the bar is %d", total.CatalogOnly, counted, CatalogOnlyBar)
-	sizeDetail := fmt.Sprintf("the gate needs %d", questions.MinGateSize)
+	sizeDetail := fmt.Sprintf("the gate needs %d", GateSize)
 	if partial {
 		rec.Info("suite", "catalog_only", float64(total.CatalogOnly), catalogDetail+", not read on a partial run")
 		rec.Info("suite", "gate_size", float64(gate), sizeDetail+", not read on a partial run")

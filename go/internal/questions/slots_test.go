@@ -309,7 +309,7 @@ func TestTypedSlotNeverClosesWithoutAValue(t *testing.T) {
 	// No message below names a format. The word rules read a format the
 	// classifier missed (D-116), and this test must isolate the classify
 	// path that D-83 is about.
-	if _, err := a.Turn(context.Background(), st, "i need a deck for fnm on friday", nil); err != nil {
+	if _, err := a.Turn(context.Background(), st, "i need a deck for fnm on friday, 40 dollars", nil); err != nil {
 		t.Fatalf("turn 1: %v", err)
 	}
 	if _, err := a.Turn(context.Background(), st, "yes, that one", nil); err != nil {

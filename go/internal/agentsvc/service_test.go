@@ -191,7 +191,8 @@ func firstTurn(t *testing.T) []llm.Step {
 			"colors": []string{"W", "B"}, "pool_rule": "any_card",
 			// The session holds no collection, so every card must be
 			// bought and the budget row fires. A named cap closes it, and
-			// this test measures the commander rows (D-168).
+			// this test measures the commander rows (D-168). The message
+			// names the cap, or the budget never applies (D-537).
 			"budget_usd": 50,
 		}),
 		scoreJSON(t, "commander", "power_commander"),
@@ -294,7 +295,7 @@ func chat(t *testing.T, c mtgv1connect.AgentServiceClient, req *mtgv1.ChatReques
 func TestChatStartsASessionAndAsks(t *testing.T) {
 	store := newFakeStore()
 	client, _ := testServer(t, store, firstTurn(t)...)
-	got := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	got := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"})
 
 	if got.started == "" || got.order[0] != "started" {
 		t.Fatalf("the first event is not the session id: %v", got.order)
@@ -341,7 +342,7 @@ func TestChatResumesWithoutRepeating(t *testing.T) {
 		askJSON(t))
 	client, _ := testServer(t, store, steps...)
 
-	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"})
 	second := chat(t, client, &mtgv1.ChatRequest{
 		SessionId: first.started,
 		Message:   "Karlov, bracket 3",
@@ -383,7 +384,7 @@ func TestAnswersReachTheClassifier(t *testing.T) {
 		askJSON(t))
 	client, sc := testServer(t, store, steps...)
 
-	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"})
 	var bracket *mtgv1.Question
 	for _, q := range first.questions {
 		if q.GetSlot() == "power" {
@@ -429,7 +430,7 @@ func TestModelFailureEndsTheTurn(t *testing.T) {
 func TestGetSession(t *testing.T) {
 	store := newFakeStore()
 	client, _ := testServer(t, store, firstTurn(t)...)
-	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"})
 
 	res, err := client.GetSession(context.Background(), connect.NewRequest(&mtgv1.GetSessionRequest{SessionId: first.started}))
 	if err != nil {
@@ -468,7 +469,7 @@ func TestEmptyRequestIsRefused(t *testing.T) {
 func TestAfterBuildAsksNothingMore(t *testing.T) {
 	store := newFakeStore()
 	client, _ := testServer(t, store, firstTurn(t)...)
-	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"})
 	for _, q := range first.questions {
 		if q.GetSlot() == "plan_variant" {
 			t.Errorf("the retired variance row fired: %q", q.GetText())
@@ -501,7 +502,7 @@ func TestChatStaleVersionIsAborted(t *testing.T) {
 		scoreJSON(t),
 		askJSON(t))
 	client, _ := testServer(t, store, steps...)
-	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"})
 	before := len(store.sessions[first.started].GetTurns())
 
 	// The overlapping turn wins the write between this turn's read and
@@ -539,7 +540,7 @@ func TestChatSecondTurnAdvancesTheVersion(t *testing.T) {
 		scoreJSON(t),
 		askJSON(t))
 	client, _ := testServer(t, store, steps...)
-	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"})
 	if store.versions[first.started] != 1 {
 		t.Fatalf("version after turn 1 = %d, want 1", store.versions[first.started])
 	}
@@ -603,7 +604,7 @@ func TestBuildStoresThePostTurnState(t *testing.T) {
 	opts := append(buildOpts(t, fd), WithDeckStore(ds))
 	client, _ := testServerOpts(t, store, opts, readySteps(t)...)
 
-	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"})
 	askedBefore := len(store.states[first.started].Ctx.Asked)
 	if askedBefore == 0 {
 		t.Fatal("turn 1 asked nothing, the test proves nothing")
@@ -633,7 +634,7 @@ func TestBuildFailureKeepsReady(t *testing.T) {
 	store := newFakeStore()
 	fd := &fakeDecks{err: errors.New("the model is down")}
 	client, _ := testServerOpts(t, store, buildOpts(t, fd), readySteps(t)...)
-	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"})
 	chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
 	if got := store.sessions[first.started].GetStatus(); got != mtgv1.SessionStatus_SESSION_STATUS_READY {
 		t.Errorf("status = %v, want READY", got)
@@ -749,7 +750,7 @@ func TestConcurrencyCap(t *testing.T) {
 
 	firstDone := make(chan error, 1)
 	go func() {
-		stream, err := c.Chat(context.Background(), connect.NewRequest(&mtgv1.ChatRequest{Message: "build me a lifegain commander deck"}))
+		stream, err := c.Chat(context.Background(), connect.NewRequest(&mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"}))
 		if err != nil {
 			firstDone <- err
 			return
@@ -936,7 +937,7 @@ func TestGetSessionRefusesAPathID(t *testing.T) {
 func TestSessionStartedFollowsTheRequest(t *testing.T) {
 	store := newFakeStore()
 	client, _ := testServer(t, store, append(firstTurn(t), classifyJSON(t, nil), scoreJSON(t), askJSON(t))...)
-	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"})
 	if first.started == "" {
 		t.Fatal("the first turn sent no session_started")
 	}
@@ -959,7 +960,7 @@ func TestRevisionQuestionSetsAsking(t *testing.T) {
 		classifyJSON(t, nil),
 		reviseJSON(t, map[string]any{"question": "Which lands?"}))
 	client, _ := testServerOpts(t, store, append(buildOpts(t, fd), WithDeckStore(ds)), steps...)
-	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"})
 	chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
 	chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Better lands please"})
 	if got := store.status(first.started); got != mtgv1.SessionStatus_SESSION_STATUS_ASKING {

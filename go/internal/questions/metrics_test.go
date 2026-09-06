@@ -29,7 +29,7 @@ func TestCoverageCountsTheSources(t *testing.T) {
 		classifyStep(t, second), fits(t), askStep(t))
 	st := NewState(false)
 
-	res, err := a.Turn(context.Background(), st, "lifegain commander deck", nil)
+	res, err := a.Turn(context.Background(), st, "lifegain commander deck, 50 dollars", nil)
 	if err != nil {
 		t.Fatalf("turn 1: %v", err)
 	}
