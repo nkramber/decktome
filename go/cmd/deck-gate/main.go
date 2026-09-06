@@ -105,6 +105,14 @@ type result struct {
 	plan    *generate.PlanJudgement
 	planErr error
 	err     error
+	// shortlist counts the candidates the theme search kept, and touched
+	// lists every Oracle id the dry run reached: the shortlist, the
+	// upgrades, the always cards, and the top of the commander pool. The
+	// trimmed snapshot of D-521 keeps these cards. productKeys names the
+	// precon products the prompt resolved.
+	shortlist   int
+	touched     []string
+	productKeys []string
 }
 
 func main() {
@@ -120,7 +128,11 @@ func run() error {
 	dry := flag.Bool("dry", false, "build every shortlist and stop before the provider calls")
 	noJudge := flag.Bool("no-judge", false, "skip the F-26 judge lane, which costs one judge call a deck")
 	runOut := flag.String("run-out", "", "write the run header and the rows as JSONL here (PR-15)")
+	trim := flag.String("trim", "", "with -dry: write the snapshot trimmed to the cards the prompts reach under this root (D-521)")
 	flag.Parse()
+	if *trim != "" && !*dry {
+		return errors.New("-trim needs -dry: the trimmed snapshot follows the dry run")
+	}
 
 	var file struct {
 		Prompts []prompt `json:"prompts"`
@@ -238,6 +250,9 @@ func run() error {
 	}
 	if *dry {
 		fmt.Fprintf(os.Stderr, "\ndry run: %d shortlists built, no provider call ran\n", len(results))
+		if *trim != "" {
+			return writeTrimmed(context.Background(), os.Stderr, *trim, idx, results, binders, preconSet, preconTbl)
+		}
 		return nil
 	}
 	pass := report(os.Stdout, results, acc, idx, time.Since(start), run)
@@ -348,6 +363,9 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 		}
 		own, excludedIDs = precons.Exclude(products, own, isBasic)
 		out.products = names
+		for _, pr := range products {
+			out.productKeys = append(out.productKeys, pr.Key)
+		}
 		out.excluded = make(map[string]bool, len(excludedIDs))
 		for _, id := range excludedIDs {
 			out.excluded[id] = true
@@ -374,6 +392,9 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 		}
 		commanders = append(commanders, pool[0].Card)
 		commanderIDs = append(commanderIDs, pool[0].Card.GetOracleId())
+		for _, c := range pool[:min(trimCommanderPool, len(pool))] {
+			out.touched = append(out.touched, c.Card.GetOracleId())
+		}
 	}
 	if p.Commander != "" {
 		c, ok := idx.ByName(p.Commander)
@@ -459,6 +480,16 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 	}
 	pool := generate.FromList(list, always, buyList)
 	out.poolSize = pool.Size()
+	out.shortlist = len(list.Candidates)
+	for _, c := range list.Candidates {
+		out.touched = append(out.touched, c.Card.GetOracleId())
+	}
+	for _, c := range list.Upgrades {
+		out.touched = append(out.touched, c.Card.GetOracleId())
+	}
+	for _, c := range always {
+		out.touched = append(out.touched, c.GetOracleId())
+	}
 	if dry {
 		return out
 	}

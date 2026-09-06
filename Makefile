@@ -178,6 +178,19 @@ bracket-gate: ## Write the PR-14A bracket gate document. CAUTION: calls a real p
 		$(GO) run ./cmd/bracket-gate -run-out $(abspath $(BRACKET_GATE_RUN)) $(BRACKET_GATE_ARGS) > $(BRACKET_GATE_OUT)
 	@echo "wrote $(BRACKET_GATE_OUT) and $(BRACKET_GATE_RUN)"
 
+# The trimmed snapshot of D-521 serves the free dry-run lane of the deck
+# gate. TestTrimmedSnapshotBuildsEveryShortlist runs the same lane in CI.
+TRIM_SNAPSHOT := $(CURDIR)/go/cmd/deck-gate/testdata/snapshot
+
+deck-gate-dry: ## Build every deck gate shortlist over the trimmed snapshot of the repo, no provider call (D-521)
+	@CARDS_SNAPSHOT_DIR=$(TRIM_SNAPSHOT)/scryfall \
+		$(GO) run ./cmd/deck-gate -dry -collection internal/collections/testdata/manabox_collection.csv
+
+deck-gate-trim: ## Rewrite the trimmed snapshot from the local store, after a prompt or a fixture changes (D-521)
+	@rm -rf $(TRIM_SNAPSHOT)
+	@CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall \
+		$(GO) run ./cmd/deck-gate -dry -trim $(TRIM_SNAPSHOT) -collection internal/collections/testdata/manabox_collection.csv
+
 REVISE_GATE_OUT ?= docs/reference/pr12b-revise-gate.md
 # REVISE_GATE_RUN is the run file of PR-15, named after the document.
 REVISE_GATE_RUN ?= docs/reference/eval/$(notdir $(basename $(REVISE_GATE_OUT))).jsonl
