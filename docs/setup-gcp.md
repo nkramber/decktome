@@ -30,7 +30,7 @@ The repo holds the two Dockerfiles and the Firestore rules and indexes. The Go c
 
 Four things are not in the repo yet, and PR-22 adds them:
 
-- A `hosting` block in `firebase.json`. The file holds the Firestore and emulator blocks alone.
+- A `hosting` block in `firebase.json` for the static app (D-544). The file holds the Firestore and emulator blocks alone.
 - The real Firebase web configuration. `web/apps/web/src/lib/firebase.ts` initializes the app with `apiKey: "demo-key"` and `projectId: "mtg-local"`. A production build needs the values of section 5 through environment variables.
 - The allowlist interceptor and `make allow EMAIL=...` (D-314, D-420).
 - The per-user spend cap of $5 a month (D-421).
@@ -279,9 +279,7 @@ cd ..
 
 3. Run `firebase deploy --only hosting`. The site is live on `PROJECT_ID.web.app`.
 
-The roadmap plans a second rewrite, `/mtg.v1.**` to the Cloud Run service, so the browser and the API share one origin. The rewrite needs the Blaze plan and a service that allows unauthenticated invocations, and the syntax is `{ "source": "/mtg.v1.**", "run": { "serviceId": "mtg-api", "region": "REGION" } }`.
-
-CAUTION: Firebase Hosting documents a 60-second request timeout for rewrites to Cloud Functions. The page says: "Firebase Hosting is subject to a 60-second request timeout." The Cloud Run rewrite page makes no statement about a timeout or about streamed responses. A deck build streams for several minutes over the `Chat` RPC. Test one full build through the rewrite before you rely on it. The direct origin of step 1 avoids the question: the API already reads `ALLOWED_ORIGINS` for CORS, and the web app already reads `VITE_API_BASE_URL`. OQ-65 asks the owner to choose.
+The web app calls the Cloud Run origin directly (D-544). The API reads `ALLOWED_ORIGINS` for CORS, and the web app reads `VITE_API_BASE_URL`, so step 1 is the whole wiring. No Hosting rewrite carries the RPCs. The reason: Firebase documents a 60-second request timeout for rewrites to Cloud Functions, "Firebase Hosting is subject to a 60-second request timeout". The Cloud Run rewrite page makes no statement about a timeout or about streamed responses. A deck build streams for several minutes over the `Chat` RPC, and no proxy sits in that path.
 
 ## 14. Connect the domain
 
