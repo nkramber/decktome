@@ -15,11 +15,13 @@ import (
 // with a miss fails the gate. The vocabulary is the one slotValues
 // writes, and TestSlotValuesWriteTheVocabulary pins it.
 //
-// Two words are special. "*" asks for any value, for a pick the pool
+// Three words are special. "*" asks for any value, for a pick the pool
 // made. "delegated" on the commander asks for a skipped slot with no
-// commander, which is the pick the user handed to the agent (D-232). A
-// theme matches when the expected words are inside the slot's text, and
-// a budget with no scope word matches any scope.
+// commander, which is the pick the user handed to the agent (D-232).
+// "none" asks for an empty slot, which is how a colorless deck ends: the
+// color slot closes with no color (D-165). A theme matches when the
+// expected words are inside the slot's text, and a budget with no scope
+// word matches any scope.
 
 // expectKeys are the keys an expectation may name, in report order.
 var expectKeys = []string{"format", "colors", "power", "pool_rule", "commander", "budget", "theme", "locked", "sets"}
@@ -126,6 +128,8 @@ func expectMatches(key, want, got string) bool {
 	switch {
 	case w == "*":
 		return g != "" && g != "delegated"
+	case w == "none":
+		return g == ""
 	case key == "theme":
 		return w != "" && strings.Contains(g, w)
 	case key == "budget":

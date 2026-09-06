@@ -2,9 +2,9 @@ package questions
 
 import "sort"
 
-// MinGateSize is the number of gate conversations the roadmap asks for.
-// TestConversations holds the offline half, and cmd/questions-gate holds
-// the live half.
+// MinGateSize is the number of gate conversations the roadmap asks for
+// of the offline half, TestConversations. The live half in
+// cmd/questions-gate holds 77 since D-522, and GateSize there names it.
 const MinGateSize = 30
 
 // Ask is the M-4 record of one question the agent sent. The roadmap asks

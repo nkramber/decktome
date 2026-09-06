@@ -59,7 +59,7 @@ func TestRevisionTurnKeepsTheBaseAndReportsTheDiff(t *testing.T) {
 			"declined":       []map[string]string{{"request": "Replace some lands with better options", "reason": "for a casual mono-white deck, all basic lands is fine"}},
 		}))
 	client, _ := testServerOpts(t, store, append(buildOpts(t, fd), WithDeckStore(ds)), steps...)
-	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"})
 	second := chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
 	if second.deck == nil || fd.runs != 1 {
 		t.Fatalf("no first deck: runs=%d order=%v", fd.runs, second.order)
@@ -122,7 +122,7 @@ func TestRevisionQuestionEndsTheTurn(t *testing.T) {
 		classifyJSON(t, nil),
 		reviseJSON(t, map[string]any{"question": "Do you mean faster mana, utility lands, or more colors?"}))
 	client, _ := testServerOpts(t, store, append(buildOpts(t, fd), WithDeckStore(ds)), steps...)
-	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"})
 	chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
 	third := chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Better lands please"})
 	if fd.runs != 1 {
@@ -151,7 +151,7 @@ func TestRevisionDeclineIsNotSilent(t *testing.T) {
 		classifyJSON(t, nil),
 		reviseJSON(t, map[string]any{"declined": []map[string]string{{"request": "Replace the lands", "reason": "all basic lands is fine here"}}}))
 	client, _ := testServerOpts(t, store, append(buildOpts(t, fd), WithDeckStore(ds)), steps...)
-	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"})
 	chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
 	third := chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Replace the lands"})
 	if fd.runs != 1 || third.deck != nil {
@@ -173,7 +173,7 @@ func TestSlotChangeAfterBuildRebuilds(t *testing.T) {
 	fd := &fakeDecks{res: &generate.Result{Deck: &mtgv1.Deck{Validation: &mtgv1.ValidationResult{}, Cards: []*mtgv1.DeckCard{{OracleId: "o-plains", Name: "Plains", Count: 30}}}}}
 	steps := append(builtSteps(t), classifyJSON(t, map[string]any{"power": "bracket 2"}))
 	client, _ := testServerOpts(t, store, append(buildOpts(t, fd), WithDeckStore(ds)), steps...)
-	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"})
 	chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
 	third := chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Make it bracket 2"})
 	if fd.runs != 2 || fd.got.Revision != nil {
@@ -200,7 +200,7 @@ func TestRevisionUnlocksARemovedCard(t *testing.T) {
 		classifyJSON(t, map[string]any{"locked_names": []string{"Ajani's Welcome"}}),
 		reviseJSON(t, map[string]any{"changes": []string{"Replace Ajani's Welcome with a card the user does not own"}, "remove": []string{"Ajani's Welcome"}}))
 	client, _ := testServerOpts(t, store, append(buildOpts(t, fd), WithDeckStore(ds)), steps...)
-	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"})
 	chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
 	fd.res = &generate.Result{Deck: &mtgv1.Deck{Validation: &mtgv1.ValidationResult{}, Cards: []*mtgv1.DeckCard{{OracleId: "o-plains", Name: "Plains", Count: 31}}}}
 	third := chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Replace Ajani's Welcome with a card I do not own"})
@@ -249,7 +249,7 @@ func TestRevisionSwapsBasicsAndKeepsTheBrief(t *testing.T) {
 			"changes": []string{"Replace basic lands with dual lands"}, "swap_basics": 12, "land_kinds": "dual lands that enter untapped",
 		}))
 	client, _ := testServerOpts(t, store, opts, steps...)
-	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"})
 	chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
 	fd.res = &generate.Result{Deck: &mtgv1.Deck{Validation: &mtgv1.ValidationResult{}, Cards: []*mtgv1.DeckCard{{OracleId: "o-plains", Name: "Plains", Count: 29}, {OracleId: "o-tower", Name: "Command Tower", Count: 1}}}}
 	third := chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Add better lands instead of the basics"})

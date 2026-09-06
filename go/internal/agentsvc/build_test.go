@@ -129,7 +129,7 @@ func TestReadySessionStreamsTheDeck(t *testing.T) {
 	fd := &fakeDecks{res: &generate.Result{Deck: deck, Notes: []string{"I could not place \"Nonesuch\"."}}}
 	client, _ := testServerOpts(t, store, buildOpts(t, fd), readySteps(t)...)
 
-	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"})
 	if fd.runs != 0 {
 		t.Fatal("the build ran before the session was ready")
 	}
@@ -164,7 +164,7 @@ func TestBuildFailureKeepsTheTurn(t *testing.T) {
 	fd := &fakeDecks{err: errors.New("the model is down")}
 	client, _ := testServerOpts(t, store, buildOpts(t, fd), readySteps(t)...)
 
-	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"})
 	second := chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
 
 	if fd.runs != 1 {
@@ -190,7 +190,7 @@ func TestBuildFailureKeepsTheTurn(t *testing.T) {
 func TestReadyWithoutAGeneratorSaysSo(t *testing.T) {
 	store := newFakeStore()
 	client, _ := testServer(t, store, readySteps(t)...)
-	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"})
 	second := chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
 	if second.deck != nil {
 		t.Error("a server with no generator sent a deck")
@@ -216,7 +216,7 @@ func TestBuildTimeoutEndsTheTurnCleanly(t *testing.T) {
 	opts := append(buildOpts(t, fd), WithBuildTimeout(50*time.Millisecond))
 	client, _ := testServerOpts(t, store, opts, readySteps(t)...)
 
-	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"})
 	second := chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
 
 	if fd.runs != 1 {
@@ -296,7 +296,7 @@ func TestTheDeckIsKeptAndRecorded(t *testing.T) {
 	opts := append(buildOpts(t, fd), WithDeckStore(ds))
 	client, _ := testServerOpts(t, store, opts, readySteps(t)...)
 
-	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"})
 	chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
 
 	if len(ds.put) != 1 {
@@ -326,7 +326,7 @@ func TestAStoreFailureKeepsTheDeck(t *testing.T) {
 	opts := append(buildOpts(t, fd), WithDeckStore(ds))
 	client, _ := testServerOpts(t, store, opts, readySteps(t)...)
 
-	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"})
 	second := chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
 
 	if ds.n != 1 {
@@ -349,7 +349,7 @@ func TestNoDeckStoreStillBuilds(t *testing.T) {
 	deck := &mtgv1.Deck{Summary: "a deck", Validation: &mtgv1.ValidationResult{}}
 	fd := &fakeDecks{res: &generate.Result{Deck: deck}}
 	client, _ := testServerOpts(t, store, buildOpts(t, fd), readySteps(t)...)
-	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"})
 	second := chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
 	if second.deck == nil {
 		t.Error("a server with no deck store sent no deck")
@@ -546,7 +546,7 @@ func TestShortlistFollowsTheCommanderIdentity(t *testing.T) {
 		classifyJSON(t, map[string]any{"power": "bracket 3", "commander_names": []string{"Karlov of the Ghost Council"}}),
 	}
 	client, _ := testServerOpts(t, store, []Option{WithDecks(fd), WithCandidates(fixedIndex{idx}, cb)}, steps...)
-	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck, any colors are fine"})
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars, any colors are fine"})
 	second := chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
 	if second.deck == nil || fd.got.Pool == nil {
 		t.Fatalf("no build: %v", second.order)
@@ -619,7 +619,7 @@ func TestOwnedCardShowsThePriciestOwnedPrinting(t *testing.T) {
 		printings: map[string][]string{"o-welcome": {"p-cheap", "p-dear", "p-noimg"}},
 	}
 	client, _ := testServerOpts(t, store, []Option{WithDecks(fd), WithCandidates(fixedIndex{idx}, cb), WithCollections(cols)}, readySteps(t)...)
-	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck", CollectionId: "c1"})
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars", CollectionId: "c1"})
 	second := chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
 	if second.deck == nil {
 		t.Fatalf("no deck: %v", second.order)
@@ -641,7 +641,7 @@ func TestTurnDuringABuildIsRefused(t *testing.T) {
 	deck := &mtgv1.Deck{Summary: "a deck", Validation: &mtgv1.ValidationResult{}}
 	fd := &fakeDecks{res: &generate.Result{Deck: deck}, started: make(chan struct{}), release: make(chan struct{})}
 	client, _ := testServerOpts(t, store, append(buildOpts(t, fd), WithDeckStore(ds)), readySteps(t)...)
-	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"})
 
 	done := make(chan events, 1)
 	go func() {
@@ -688,7 +688,7 @@ func TestDisconnectMidBuildStillStoresTheDeck(t *testing.T) {
 	deck := &mtgv1.Deck{Summary: "a deck", Validation: &mtgv1.ValidationResult{}}
 	fd := &fakeDecks{res: &generate.Result{Deck: deck}, started: make(chan struct{}), release: make(chan struct{})}
 	client, _ := testServerOpts(t, store, append(buildOpts(t, fd), WithDeckStore(ds)), readySteps(t)...)
-	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"})
 
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
@@ -733,7 +733,7 @@ func TestDeckIDWriteRetriesAfterAConflict(t *testing.T) {
 	deck := &mtgv1.Deck{Summary: "a deck", Validation: &mtgv1.ValidationResult{}}
 	fd := &fakeDecks{res: &generate.Result{Deck: deck}}
 	client, _ := testServerOpts(t, store, append(buildOpts(t, fd), WithDeckStore(ds)), readySteps(t)...)
-	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"})
 	store.onPut = func(s *mtgv1.Session) {
 		if len(s.GetDeckIds()) > 0 {
 			store.onPut = nil
@@ -764,7 +764,7 @@ func TestCollectionCountsAreReadOncePerTurn(t *testing.T) {
 	reads := 0
 	cols := fakeCollections{counts: map[string]int32{"o-welcome": 1}, reads: &reads}
 	client, _ := testServerOpts(t, store, append(buildOpts(t, fd), WithCollections(cols)), readySteps(t)...)
-	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck", CollectionId: "c1"})
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars", CollectionId: "c1"})
 	if reads != 1 {
 		t.Errorf("the first turn read the counts %d times, want 1", reads)
 	}
@@ -898,7 +898,7 @@ func TestSessionSpendHoldsTheBuild(t *testing.T) {
 	ds := &fakeDeckStore{}
 	client, _ := testServerOpts(t, store, append(buildOpts(t, fd), WithDeckStore(ds)), readySteps(t)...)
 
-	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck"})
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"})
 	afterQuestions := first.usage.GetCalls()
 	second := chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
 	if second.deck == nil {

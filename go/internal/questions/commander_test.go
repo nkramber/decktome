@@ -92,7 +92,7 @@ func TestDelegationFollowsTheClassifier(t *testing.T) {
 				classifyStep(t, first), fits(t, "commander", "power_commander", "colors"), askStep(t),
 				classifyStep(t, second), fits(t), askStep(t))
 			st := NewState(false)
-			if _, err := a.Turn(context.Background(), st, "A lifegain Commander deck.", nil); err != nil {
+			if _, err := a.Turn(context.Background(), st, "A lifegain Commander deck, 50 dollars.", nil); err != nil {
 				t.Fatalf("turn 1: %v", err)
 			}
 			for _, key := range []string{"commander", "power", "colors"} {
@@ -397,7 +397,7 @@ func TestOffColorOfferLeavesTheTable(t *testing.T) {
 		classifyStep(t, first), fits(t, "commander_pick", "power_commander"), askStep(t),
 		classifyStep(t, second), fits(t, "commander_pick"), askStep(t))
 	st := NewState(false)
-	if _, err := a.Turn(context.Background(), st, "A Commander deck with a Background commander pair.", nil); err != nil {
+	if _, err := a.Turn(context.Background(), st, "A Commander deck with a Background commander pair, 50 dollars.", nil); err != nil {
 		t.Fatalf("turn 1: %v", err)
 	}
 	if !contains(st.CurrentOffer, "Jaheira, Friend of the Forest") {
@@ -470,7 +470,7 @@ func TestPickRowWithNoNamesAsksNothing(t *testing.T) {
 	// gives.
 	a, _ := testAgentHints(t, &fakeHints{}, classifyStep(t, out), fits(t, "power_commander"), askStep(t))
 	st := NewState(false)
-	res, err := a.Turn(context.Background(), st, "Make me a good deck. I dunno, you pick.", nil)
+	res, err := a.Turn(context.Background(), st, "Make me a good deck for 50 dollars. I dunno, you pick.", nil)
 	if err != nil {
 		t.Fatalf("turn: %v", err)
 	}
@@ -634,7 +634,7 @@ func TestSuperlativeDelegatesTheCommander(t *testing.T) {
 		classifyStep(t, first), fits(t, "commander", "power_commander"), askStep(t),
 		classifyStep(t, second), fits(t))
 	st := NewState(true)
-	if _, err := a.Turn(context.Background(), st, "Lifegain from my collection. Commander, white and black.", nil); err != nil {
+	if _, err := a.Turn(context.Background(), st, "Lifegain from my collection. Commander, white and black, 60 dollars.", nil); err != nil {
 		t.Fatalf("turn 1: %v", err)
 	}
 	res, err := a.Turn(context.Background(), st,

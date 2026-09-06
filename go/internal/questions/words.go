@@ -1,6 +1,8 @@
 package questions
 
 import (
+	"regexp"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -624,6 +626,52 @@ var buyListSigns = []string{"buy list", "buylist", "to buy", "cards i buy", "car
 
 // namesTheBuyList reports whether a message names the cards to buy.
 func namesTheBuyList(text string) bool { return anyPhrase(text, buyListSigns) }
+
+// numberWords are the words a message uses to write a number without a
+// digit, as in "two hundred dollars". budgetNamed reads them.
+var numberWords = []string{
+	"one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
+	"eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty",
+	"thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety", "hundred", "thousand", "grand",
+}
+
+var digitRun = regexp.MustCompile(`\d[\d,]*(?:\.\d+)?`)
+
+// budgetNamed reports whether the message names the budget the classifier
+// reported (D-537, the D-125 rule for the budget). A message with digits
+// must hold the number itself. A message with no digit names the number
+// in words, as "two hundred dollars" does, and the classifier's
+// conversion stands. A message with neither names no budget, and the
+// classifier answered "the best deck under budget" with 2. The rule reads
+// numbers and not money words, so it does not tell a bracket digit from
+// a cap of the same size.
+func budgetNamed(message string, usd float64) bool {
+	matches := digitRun.FindAllString(message, -1)
+	if len(matches) == 0 {
+		return anyPhrase(message, numberWords)
+	}
+	for _, m := range matches {
+		n, err := strconv.ParseFloat(strings.ReplaceAll(m, ",", ""), 64)
+		if err == nil && n == usd {
+			return true
+		}
+	}
+	return false
+}
+
+// colorWords are the words a message uses to name colors: the five
+// colors, the guild and shard names, and the words "color", "colors",
+// "mono", and "wubrg". A closed color slot changes only on a message
+// that holds one of them (D-535, the D-125 rule for colors).
+var colorWords = []string{
+	"white", "blue", "black", "red", "green", "color", "colors", "mono", "wubrg",
+	"azorius", "dimir", "rakdos", "gruul", "selesnya", "orzhov", "izzet", "golgari", "boros", "simic",
+	"bant", "esper", "grixis", "jund", "naya", "abzan", "jeskai", "sultai", "mardu", "temur",
+}
+
+// namesAColor reports whether the message names a color. The negation
+// guard applies, so "not red" names none.
+func namesAColor(text string) bool { return anyPhrase(text, colorWords) }
 
 // colorlessSigns name a deck with no colors.
 //

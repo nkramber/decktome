@@ -596,3 +596,201 @@ func TestClosedRowsHaveOptions(t *testing.T) {
 		t.Error("the commander row is closed, and it takes a name")
 	}
 }
+
+// TestColorlessOverridesTheClassifierColors is D-535: the classifier can
+// answer the open color question with all five colors for "colorless",
+// and the slot must close with none instead.
+func TestColorlessOverridesTheClassifierColors(t *testing.T) {
+	out := classifyOut{Format: "commander", Theme: "artifact", Colors: []string{"W", "U", "B", "R", "G"}, PoolRule: "any_card"}
+	a, _ := testAgent(t, classifyStep(t, out), fits(t, "commander", "power_commander"), askStep(t))
+	st := NewState(false)
+	if _, err := a.Turn(context.Background(), st, "An artifact deck, colorless.", nil); err != nil {
+		t.Fatalf("turn: %v", err)
+	}
+	if got := st.Slots.GetColors(); len(got) != 0 {
+		t.Errorf("colors = %v, want none for a colorless deck", got)
+	}
+	if !st.Ctx.Filled["colors"] {
+		t.Error("the color slot is still open")
+	}
+}
+
+// TestBudgetScopeWordsOverrideAnInferredScope is D-535: "the 100 caps the
+// cards I buy" settles the scope whatever the classifier inferred on an
+// earlier turn, and a message with no scope words leaves it alone.
+func TestBudgetScopeWordsOverrideAnInferredScope(t *testing.T) {
+	a, _ := testAgent(t)
+	st := NewState(true)
+	st.Slots.BudgetUsd = 100
+	st.Slots.BudgetScope = mtgv1.BudgetScope_BUDGET_SCOPE_WHOLE_DECK
+	ruleBudgetScope(a, st, turnWords{Message: UserWords("Bracket 3, build from my library first. The 100 caps the cards I buy.")})
+	if got := st.Slots.GetBudgetScope(); got != mtgv1.BudgetScope_BUDGET_SCOPE_CARDS_TO_BUY {
+		t.Errorf("scope = %v, want the cards to buy", got)
+	}
+	if !st.Ctx.Filled["budget_scope"] {
+		t.Error("the scope slot is still open")
+	}
+	st.Slots.BudgetScope = mtgv1.BudgetScope_BUDGET_SCOPE_WHOLE_DECK
+	ruleBudgetScope(a, st, turnWords{Message: UserWords("Blue and black.")})
+	if got := st.Slots.GetBudgetScope(); got != mtgv1.BudgetScope_BUDGET_SCOPE_WHOLE_DECK {
+		t.Errorf("scope = %v, want the inferred scope kept", got)
+	}
+}
+
+// TestAKnownCommanderReplacesAnUnknownOne is D-535: "I meant Atraxa,
+// Praetors' Voice" corrects a misspelled name, and the deck must not end
+// with both names in the command zone. Two known partners keep each
+// other.
+func TestAKnownCommanderReplacesAnUnknownOne(t *testing.T) {
+	h := leaderHints{
+		canLead: map[string]bool{"Atraxa, Praetors' Voice": true, "Krark, the Thumbless": true, "Sakashima of a Thousand Faces": true},
+		known:   map[string]bool{"Atraxa, Praetors' Voice": true, "Krark, the Thumbless": true, "Sakashima of a Thousand Faces": true},
+	}
+	a, _ := testAgentHints(t, h)
+	st := NewState(false)
+	a.applyNames(st, classifyOut{CommanderNames: []string{"Atraxa, Praetor's Voice"}})
+	if len(st.CommanderNames) != 1 || st.CommanderNames[0] != "Atraxa, Praetor's Voice" {
+		t.Fatalf("names = %v, want the unknown name kept until a known one arrives", st.CommanderNames)
+	}
+	a.applyNames(st, classifyOut{CommanderNames: []string{"Atraxa, Praetors' Voice"}})
+	if len(st.CommanderNames) != 1 || st.CommanderNames[0] != "Atraxa, Praetors' Voice" {
+		t.Errorf("names = %v, want the known name alone", st.CommanderNames)
+	}
+	if hasName(st.NamedCards, "Atraxa, Praetor's Voice") {
+		t.Errorf("named cards = %v, the misspelled name must go too", st.NamedCards)
+	}
+	st = NewState(false)
+	a.applyNames(st, classifyOut{CommanderNames: []string{"Krark, the Thumbless", "Sakashima of a Thousand Faces"}})
+	if len(st.CommanderNames) != 2 {
+		t.Errorf("partners = %v, want both", st.CommanderNames)
+	}
+	// The classifier repeats values, so both spellings can arrive in one
+	// turn, in either order. The known one leads alone (D-538).
+	for _, names := range [][]string{
+		{"Atraxa, Praetors' Voice", "Atraxa, Praetor's Voice"},
+		{"Atraxa, Praetor's Voice", "Atraxa, Praetors' Voice"},
+	} {
+		st = NewState(false)
+		a.applyNames(st, classifyOut{CommanderNames: names})
+		if len(st.CommanderNames) != 1 || st.CommanderNames[0] != "Atraxa, Praetors' Voice" {
+			t.Errorf("names %v -> %v, want the known name alone", names, st.CommanderNames)
+		}
+		if hasName(st.NamedCards, "Atraxa, Praetor's Voice") {
+			t.Errorf("names %v -> named cards %v, the misspelled name must go", names, st.NamedCards)
+		}
+	}
+}
+
+// TestASuperlativeDoesNotReplaceANamedTheme is D-535: "Modern. The best
+// deck under budget." answers the budget question of an infect deck, and
+// the theme stays infect. A deck with no theme still takes the phrase,
+// and a named theme still replaces another.
+func TestASuperlativeDoesNotReplaceANamedTheme(t *testing.T) {
+	a, _ := testAgent(t)
+	st := NewState(false)
+	a.applyTheme(st, classifyOut{Theme: "infect"})
+	a.applyTheme(st, classifyOut{Theme: "the best deck under budget"})
+	if got := st.Slots.GetTheme(); got != "infect" {
+		t.Errorf("theme = %q, want infect kept", got)
+	}
+	a.applyTheme(st, classifyOut{Theme: "mill"})
+	if got := st.Slots.GetTheme(); got != "mill" {
+		t.Errorf("theme = %q, want the named theme to replace", got)
+	}
+	empty := NewState(false)
+	a.applyTheme(empty, classifyOut{Theme: "the best deck under budget"})
+	if got := empty.Slots.GetTheme(); got != "the best deck under budget" || !empty.Ctx.Filled["theme"] {
+		t.Errorf("theme = %q, want the phrase for a deck with no theme", got)
+	}
+}
+
+// TestColorsChangeOnlyWhenTheMessageNamesOne is D-535, the D-125 rule
+// for colors. The classifier answered "Bracket 3." with all five colors
+// over the slot the colorless rule had closed. A closed slot keeps its
+// value on a message that names no color, and changes on one that does.
+// An empty slot takes the classifier's read either way.
+func TestColorsChangeOnlyWhenTheMessageNamesOne(t *testing.T) {
+	for text, want := range map[string]bool{
+		"Red and green.": true, "Bracket 3.": false, "edh gruul dino stompy pls": true,
+		"Actually make it white and green instead.": true, "not red": false, "Any colors are fine.": true,
+	} {
+		if got := namesAColor(UserWords(text)); got != want {
+			t.Errorf("namesAColor(%q) = %v, want %v", text, got, want)
+		}
+	}
+	a, _ := testAgent(t)
+	five := classifyOut{Colors: []string{"W", "U", "B", "R", "G"}}
+	colorless := NewState(false)
+	colorless.Skip("colors")
+	a.applyColors(colorless, five, UserWords("Bracket 3."))
+	if got := colorless.Slots.GetColors(); len(got) != 0 {
+		t.Errorf("colors = %v, want the closed colorless slot kept", got)
+	}
+	st := NewState(false)
+	a.applyColors(st, classifyOut{Colors: []string{"W", "G"}}, UserWords("White and green."))
+	a.applyColors(st, classifyOut{Colors: []string{"W", "B"}}, UserWords("Bracket 3."))
+	if got := wubrg(st.Slots.GetColors()); got != "WG" {
+		t.Errorf("colors = %s, want WG kept on a message with no color word", got)
+	}
+	a.applyColors(st, classifyOut{Colors: []string{"W", "B"}}, UserWords("Actually make it white and black instead."))
+	if got := wubrg(st.Slots.GetColors()); got != "WB" {
+		t.Errorf("colors = %s, want WB after a correction", got)
+	}
+	empty := NewState(false)
+	a.applyColors(empty, five, UserWords("Bracket 3."))
+	if got := wubrg(empty.Slots.GetColors()); got != "WUBRG" {
+		t.Errorf("colors = %s, want an empty slot to take the classifier's read", got)
+	}
+}
+
+// wubrg writes colors as letters in WUBRG order, for the color tests.
+func wubrg(colors []mtgv1.Color) string {
+	letters := map[mtgv1.Color]string{mtgv1.Color_COLOR_W: "W", mtgv1.Color_COLOR_U: "U", mtgv1.Color_COLOR_B: "B", mtgv1.Color_COLOR_R: "R", mtgv1.Color_COLOR_G: "G"}
+	have := map[mtgv1.Color]bool{}
+	for _, c := range colors {
+		have[c] = true
+	}
+	out := ""
+	for _, c := range []mtgv1.Color{mtgv1.Color_COLOR_W, mtgv1.Color_COLOR_U, mtgv1.Color_COLOR_B, mtgv1.Color_COLOR_R, mtgv1.Color_COLOR_G} {
+		if have[c] {
+			out += letters[c]
+		}
+	}
+	return out
+}
+
+// TestBudgetAppliesOnlyWhenTheMessageNamesIt is D-537, the D-125 rule
+// for the budget. The classifier answered "the best deck under budget"
+// with 2, and the session closed before the user named 400. A message
+// with digits must hold the number, a message in number words stands,
+// and a message with neither names no budget. The rule reads numbers and
+// not money words, so a bracket digit still names a budget of that size.
+func TestBudgetAppliesOnlyWhenTheMessageNamesIt(t *testing.T) {
+	for _, tc := range []struct {
+		message string
+		usd     float64
+		want    bool
+	}{
+		{"Modern. The best deck under budget.", 2, false},
+		{"Tournament level, 400 dollars. My shop plays aggro and control decks.", 400, true},
+		{"Bracket 3, and 150 dollars.", 150, true},
+		{"Two hundred dollars, on the cards I buy.", 200, true},
+		{"Under $1,200 for the whole deck.", 1200, true},
+		{"Nothing over 5 dollars a card, and 120 dollars in total.", 120, true},
+		{"You pick the commander.", 50, false},
+	} {
+		if got := budgetNamed(UserWords(tc.message), tc.usd); got != tc.want {
+			t.Errorf("budgetNamed(%q, %g) = %v, want %v", tc.message, tc.usd, got, tc.want)
+		}
+	}
+	a, _ := testAgent(t)
+	st := NewState(false)
+	a.apply(st, classifyOut{BudgetUSD: 2}, nil, UserWords("Modern. The best deck under budget."))
+	if st.Slots.GetBudgetUsd() != 0 || st.Ctx.Filled["budget"] {
+		t.Errorf("budget = %g, want the slot open after a number the message never held", st.Slots.GetBudgetUsd())
+	}
+	a.apply(st, classifyOut{BudgetUSD: 400}, nil, UserWords("Tournament level, 400 dollars."))
+	if st.Slots.GetBudgetUsd() != 400 || !st.Ctx.Filled["budget"] {
+		t.Errorf("budget = %g, want 400 from the message that names it", st.Slots.GetBudgetUsd())
+	}
+}
