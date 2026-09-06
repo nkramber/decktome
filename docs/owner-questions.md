@@ -14,7 +14,6 @@ No owner question blocks it. The owner answered OQ-24 to OQ-27 on 2026-08-26 (D-
 
 | # | Question | Why only you | What it blocks |
 |---|---|---|---|
-| OQ-65 | Does the web app call the API through the Firebase Hosting rewrite of `/mtg.v1.**`, as the PR-22 entry plans, or through the Cloud Run origin with CORS? Firebase documents a 60-second timeout for rewrites to Cloud Functions, and the Cloud Run rewrite page makes no statement. A deck build streams for minutes over `Chat`. The code supports both paths today: `VITE_API_BASE_URL` and `ALLOWED_ORIGINS`. The recommendation is the direct origin, with one test of a full build through the rewrite if you want one origin. | The shape of the deployed app is yours, and the two paths differ in cost and in the domain the browser talks to. | The PR-22 design, and section 13 of `docs/setup-gcp.md`. |
 
 ## The two numbers M-5 exists to set
 
