@@ -30,6 +30,7 @@ coverage/
 /go/api
 /go/candidates-review
 /go/chat-probe
+/go/allow
 /go/deck-gate
 /go/eval
 /go/bracket-gate

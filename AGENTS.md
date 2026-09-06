@@ -29,6 +29,7 @@ make dev           # emulators (:8281, :9199) + fake GCS (:4443) + api (:8090) +
 make dev-seed      # one-shot card snapshot refresh (needs make dev)
 make eval-check    # compare every eval baseline with its newest run, free (PR-15)
 make deck-gate-dry # build every deck gate shortlist over the trimmed snapshot, free (D-521)
+make allow EMAIL=... PROJECT_ID=...  # invite one email to the deployed app (D-420)
 make quality-gate  # the PR-14B gate document from the local meta store, free
 make meta-refresh  # read the deck list sources into the meta store, network, free
 make themes-check  # theme slugs and the commander ranking against the snapshot

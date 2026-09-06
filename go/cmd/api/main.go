@@ -22,6 +22,7 @@ import (
 	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
 	"github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1/mtgv1connect"
 	"github.com/nkramber/mtg-deck-builder/go/internal/agentsvc"
+	"github.com/nkramber/mtg-deck-builder/go/internal/allowlist"
 	"github.com/nkramber/mtg-deck-builder/go/internal/auth"
 	"github.com/nkramber/mtg-deck-builder/go/internal/candidates"
 	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
@@ -43,6 +44,7 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
 	"github.com/nkramber/mtg-deck-builder/go/internal/sessions"
 	"github.com/nkramber/mtg-deck-builder/go/internal/spellbook"
+	"github.com/nkramber/mtg-deck-builder/go/internal/usage"
 )
 
 // version is set at build time with -ldflags "-X main.version=...".
@@ -115,6 +117,13 @@ func run(ctx context.Context, logger *slog.Logger) error {
 		return fmt.Errorf("firestore init: %w", err)
 	}
 	defer func() { _ = fs.Close() }()
+	// The invite list gates every deployed request (D-314, D-420). Local
+	// mode allows every emulator user, and ALLOWLIST=1 turns the list on
+	// there too, for a test of the refusal.
+	if gcpenv.OnCloudRun() || os.Getenv("ALLOWLIST") == "1" {
+		authOpts.opts = append(authOpts.opts, auth.WithAllowlist(allowlist.FromFirestore(fs)))
+		logger.Info("the invite list gates every request", "document", allowlist.Collection+"/"+allowlist.Doc)
+	}
 	// The interceptor puts the user id in the context.
 	userFn := auth.UserID
 	// The repo reads the index for the summary of a collection stored
@@ -485,7 +494,35 @@ func agentService(client *llm.Client, fs *firestore.Client, index *cardsvc.Serve
 	} else {
 		opts = append(opts, agentsvc.WithPrices(prices))
 	}
+	// The per-user monthly spend cap (D-421). Cloud Run gets the $5
+	// default, and local mode gets a cap only when SPEND_CAP_USD names one.
+	if capUSD := spendCap(logger); capUSD > 0 {
+		opts = append(opts, agentsvc.WithSpendCap(usage.NewRepo(fs), capUSD))
+		logger.Info("the monthly spend cap is on", "cap_usd", capUSD)
+	}
 	return agentsvc.New(cat, client, sessions.NewRepo(fs), userFn, opts...)
+}
+
+// defaultSpendCapUSD is the cap of D-421.
+const defaultSpendCapUSD = 5
+
+// spendCap reads SPEND_CAP_USD. Unset, Cloud Run gets the default and
+// local mode gets no cap. Zero turns the cap off anywhere, and a value
+// that is not a number is an error the log names.
+func spendCap(logger *slog.Logger) float64 {
+	raw := os.Getenv("SPEND_CAP_USD")
+	if raw == "" {
+		if gcpenv.OnCloudRun() {
+			return defaultSpendCapUSD
+		}
+		return 0
+	}
+	v, err := strconv.ParseFloat(raw, 64)
+	if err != nil || v < 0 {
+		logger.Error("SPEND_CAP_USD is not a number, so the cap is off", "value", raw)
+		return 0
+	}
+	return v
 }
 
 // loadSnapshot installs the newest stored snapshot when its version

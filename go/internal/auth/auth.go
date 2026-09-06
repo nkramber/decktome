@@ -19,17 +19,31 @@ import (
 	fbauth "firebase.google.com/go/v4/auth"
 )
 
-// Verifier checks one ID token and returns the user id it names.
+// Identity is what a verified token names: the user id, and the email
+// the allowlist reads (D-314). The email is empty for a token with none.
+type Identity struct {
+	UID   string
+	Email string
+}
+
+// Verifier checks one ID token and returns the identity it names.
 type Verifier interface {
-	Verify(ctx context.Context, idToken string) (string, error)
+	Verify(ctx context.Context, idToken string) (Identity, error)
 }
 
 // VerifierFunc adapts a function to Verifier.
-type VerifierFunc func(ctx context.Context, idToken string) (string, error)
+type VerifierFunc func(ctx context.Context, idToken string) (Identity, error)
 
 // Verify implements Verifier.
-func (f VerifierFunc) Verify(ctx context.Context, idToken string) (string, error) {
+func (f VerifierFunc) Verify(ctx context.Context, idToken string) (Identity, error) {
 	return f(ctx, idToken)
+}
+
+// Allowlist says whether an email may use the deployed app (D-314). The
+// interceptor asks it for every verified token, and a fallback user of
+// local mode never reaches it.
+type Allowlist interface {
+	Allowed(ctx context.Context, email string) (bool, error)
 }
 
 // ErrNotConfigured is what RejectAll answers: the server has no verifier.
@@ -38,7 +52,7 @@ var ErrNotConfigured = errors.New("token verification is not configured on this 
 // RejectAll refuses every token. A local server with no Firebase project
 // uses it, so the debug fallback is the only way in.
 func RejectAll() Verifier {
-	return VerifierFunc(func(context.Context, string) (string, error) { return "", ErrNotConfigured })
+	return VerifierFunc(func(context.Context, string) (Identity, error) { return Identity{}, ErrNotConfigured })
 }
 
 // Firebase verifies tokens with the Firebase Admin SDK. With
@@ -61,16 +75,18 @@ func NewFirebase(ctx context.Context, projectID string) (*Firebase, error) {
 	return &Firebase{client: client}, nil
 }
 
-// Verify implements Verifier.
-func (f *Firebase) Verify(ctx context.Context, idToken string) (string, error) {
+// Verify implements Verifier. The email comes from the token's claims,
+// and Firebase sets it for an email and password account.
+func (f *Firebase) Verify(ctx context.Context, idToken string) (Identity, error) {
 	tok, err := f.client.VerifyIDToken(ctx, idToken)
 	if err != nil {
-		return "", err
+		return Identity{}, err
 	}
 	if tok.UID == "" {
-		return "", errors.New("token carries no uid")
+		return Identity{}, errors.New("token carries no uid")
 	}
-	return tok.UID, nil
+	email, _ := tok.Claims["email"].(string)
+	return Identity{UID: tok.UID, Email: email}, nil
 }
 
 type ctxKey struct{}
@@ -100,9 +116,17 @@ func WithFallback(uid string) Option {
 	return func(i *interceptor) { i.fallback = uid }
 }
 
+// WithAllowlist refuses every verified user whose email is not on the
+// list, with PermissionDenied and one sentence (D-314). The deployed API
+// sets it, and local mode does not, so every emulator user gets in.
+func WithAllowlist(a Allowlist) Option {
+	return func(i *interceptor) { i.allow = a }
+}
+
 type interceptor struct {
 	verify   Verifier
 	fallback string
+	allow    Allowlist
 	// public names the procedures that need no sign-in, the shared deck
 	// reads of D-315. Such a call carries no user in its context.
 	public map[string]bool
@@ -134,6 +158,8 @@ func Interceptor(v Verifier, opts ...Option) connect.Interceptor {
 var (
 	errNoToken  = errors.New("a bearer token is required")
 	errBadToken = errors.New("the bearer token was refused")
+	// errNotInvited is the one sentence a user off the list reads (D-314).
+	errNotInvited = errors.New("this app is open to invited users alone, and your email is not on the list")
 )
 
 // resolve reads the Authorization header and returns the context that
@@ -149,16 +175,25 @@ func (i *interceptor) resolve(ctx context.Context, authorization string) (contex
 	if token == "" {
 		return nil, connect.NewError(connect.CodeUnauthenticated, errNoToken)
 	}
-	uid, err := i.verify.Verify(ctx, token)
+	id, err := i.verify.Verify(ctx, token)
 	if err != nil {
 		// The verifier's reason stays in the log, not on the wire: it can
 		// name the project or the key id.
 		return nil, connect.NewError(connect.CodeUnauthenticated, errBadToken)
 	}
-	if uid == "" {
+	if id.UID == "" {
 		return nil, connect.NewError(connect.CodeUnauthenticated, errBadToken)
 	}
-	return WithUserID(ctx, uid), nil
+	if i.allow != nil {
+		ok, err := i.allow.Allowed(ctx, id.Email)
+		if err != nil {
+			return nil, connect.NewError(connect.CodeUnavailable, errors.New("the invite list could not be read"))
+		}
+		if !ok {
+			return nil, connect.NewError(connect.CodePermissionDenied, errNotInvited)
+		}
+	}
+	return WithUserID(ctx, id.UID), nil
 }
 
 // bearer splits "Bearer <token>". present is false when the header is
