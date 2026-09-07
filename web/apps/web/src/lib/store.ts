@@ -18,10 +18,16 @@ export type AppState = {
   // The current chat session, or empty before the first message.
   sessionId: string;
   poolMode: PoolMode;
+  // hadDecks says the reader owned at least one deck the last time the
+  // app read the list. The new chat shows a placeholder for the deck row
+  // only when it is true, so a reader with no deck never sees a box
+  // appear and go (F-67).
+  hadDecks: boolean;
   setCollection: (collectionId: string) => void;
   clearCollection: () => void;
   setSessionId: (sessionId: string) => void;
   setPoolMode: (poolMode: PoolMode) => void;
+  setHadDecks: (hadDecks: boolean) => void;
   // reset forgets every id. Sign-out calls it.
   reset: () => void;
 };
@@ -32,23 +38,29 @@ export const useAppStore = create<AppState>()(
       collectionId: "",
       sessionId: "",
       poolMode: "any",
+      hadDecks: false,
       // A named collection leads by default, and the database fills a
       // gap. A reader who wants no fill checks "Only cards I own".
       setCollection: (collectionId) => set({ collectionId, poolMode: "owned_first" }),
       clearCollection: () => set({ collectionId: "", poolMode: "any" }),
       setSessionId: (sessionId) => set({ sessionId }),
       setPoolMode: (poolMode) => set({ poolMode }),
-      reset: () => set({ collectionId: "", sessionId: "", poolMode: "any" }),
+      setHadDecks: (hadDecks) => set({ hadDecks }),
+      // Sign-out forgets the deck count with the ids: the next reader is
+      // another person.
+      reset: () => set({ collectionId: "", sessionId: "", poolMode: "any", hadDecks: false }),
     }),
     {
       name: "mtg-deck-builder",
       storage: createJSONStorage(() => localStorage),
-      // Only the session id survives a reload. The pool is a choice of
-      // one chat, not a setting of the app, so every load starts at any
-      // card (D-345). A browser that stored the old shape drops it.
+      // The session id and the deck mark survive a reload. The pool is a
+      // choice of one chat, not a setting of the app, so every load
+      // starts at any card (D-345). A browser that stored the old shape
+      // drops it. A store with no hadDecks reads the default, false, so
+      // the mark needs no new version.
       version: 1,
       migrate: (persisted) => ({ sessionId: (persisted as { sessionId?: string } | null)?.sessionId ?? "" }) as Partial<AppState>,
-      partialize: (s) => ({ sessionId: s.sessionId }),
+      partialize: (s) => ({ sessionId: s.sessionId, hadDecks: s.hadDecks }),
     },
   ),
 );
