@@ -1,0 +1,28 @@
+#!/bin/sh
+# Refuse a commit that main must never take (D-583), and refuse a
+# document that fails the STE rules. `make hooks` installs this file.
+set -e
+
+branch=$(git rev-parse --abbrev-ref HEAD)
+if [ "$branch" = "main" ]; then
+  echo "pre-commit: main takes no commit (D-583, hard rule 8)."
+  echo "  Start a branch:  git checkout -b <name>"
+  exit 1
+fi
+
+# A branch whose pull request is already merged takes no more commits.
+# The commit would strand on it, as three did on 2026-09-07 (F-66).
+if command -v gh >/dev/null 2>&1; then
+  state=$(gh pr list --head "$branch" --state all --json state --jq '.[0].state' 2>/dev/null || echo "")
+  if [ "$state" = "MERGED" ]; then
+    echo "pre-commit: the pull request of $branch is MERGED already."
+    echo "  A commit here never reaches main. Start a branch from main:"
+    echo "  git checkout main && git pull && git checkout -b <name>"
+    exit 1
+  fi
+fi
+
+# Every hand-written document meets the STE rules before it lands.
+if git diff --cached --name-only --diff-filter=ACM | grep -q '\.md$'; then
+  make ste-check
+fi
