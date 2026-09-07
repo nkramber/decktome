@@ -1,7 +1,9 @@
 import type { Card, CardFace, ImageUris } from "@mtg/api-client/mtg/v1/card_pb";
 import type { DeckCard } from "@mtg/api-client/mtg/v1/deck_pb";
+import { FeedbackKind } from "@mtg/api-client/mtg/v1/feedback_service_pb";
 import { useState } from "react";
 
+import { Thumbs } from "../feedback/thumbs";
 import { priceText } from "./deck-stats";
 
 // The full card image carries the artist and the copyright line, and no
@@ -86,24 +88,28 @@ export function FaceImage({ face, size = "normal" }: { face: Face; size?: "norma
 // the count, and the owned mark or the price. The image carries the rules text.
 // hideOwnership is for a commander entry built from the card data: the
 // deck carries no owned mark for it, so the tile shows none. onOpen makes
-// the name a button that opens the card detail (PR-20).
+// the name a button that opens the card detail (PR-20). feedbackDeckId
+// puts the thumbs at the foot (PR-27, D-559): a phone shows them always,
+// and a pointer shows them on hover and on focus, and after a verdict.
 export function CardTile({
   entry,
   card,
   isCommander,
   hideOwnership = false,
   onOpen,
+  feedbackDeckId,
 }: {
   entry: DeckCard;
   card: Card | undefined;
   isCommander?: boolean;
   hideOwnership?: boolean;
   onOpen?: () => void;
+  feedbackDeckId?: string;
 }) {
   const faces = facesOf(card, entry.ownedPrinting);
   const name = card?.name || entry.name;
   return (
-    <li className="flex flex-col gap-1.5 rounded-card border border-border bg-card p-2 transition-shadow hover:shadow-raised" data-testid="card-tile">
+    <li className="group flex flex-col gap-1.5 rounded-card border border-border bg-card p-2 transition-shadow hover:shadow-raised" data-testid="card-tile">
       <div className="flex items-baseline justify-between gap-2">
         <span className="min-w-0 wrap-anywhere font-medium">
           {entry.count > 1 && <span className="mr-1 text-muted-foreground">{entry.count}×</span>}
@@ -157,6 +163,13 @@ export function CardTile({
       </p>
       )}
       {entry.reason && <p className="text-xs text-muted-foreground">{entry.reason}</p>}
+      {feedbackDeckId && entry.oracleId && (
+        <Thumbs
+          target={{ kind: FeedbackKind.CARD, deckId: feedbackDeckId, oracleId: entry.oracleId }}
+          itemName={name}
+          className="transition-opacity print:hidden pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 pointer-fine:group-focus-within:opacity-100 pointer-fine:data-[verdict]:opacity-100"
+        />
+      )}
     </li>
   );
 }

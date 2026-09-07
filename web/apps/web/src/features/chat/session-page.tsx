@@ -1,5 +1,6 @@
 import { Code, ConnectError } from "@connectrpc/connect";
 import type { Deck } from "@mtg/api-client/mtg/v1/deck_pb";
+import { FeedbackKind } from "@mtg/api-client/mtg/v1/feedback_service_pb";
 import { type Answer, PoolRule, type Session } from "@mtg/api-client/mtg/v1/session_pb";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, type KeyboardEvent, type ReactNode, useCallback, useEffect, useRef, useState } from "react";
@@ -19,6 +20,7 @@ import { PoolPicker, useCollections } from "./pool-picker";
 import { BuildStepper } from "./build-stepper";
 import { RecentDecks, useRecentDecks } from "./recent-decks";
 import { UnfinishedChats } from "./unfinished-chats";
+import { Thumbs } from "../feedback/thumbs";
 import { type Draft, draftAnswered, emptyDraft, QuestionCard } from "./question-card";
 import { byteLength, type ChatState, emptyState, fromSession, maxMessageBytes, type SendInput, type ThreadItem, useChat } from "./use-chat";
 
@@ -397,7 +399,7 @@ export function ChatPanel({
     <ol className="flex flex-col gap-5" aria-label="Conversation">
       {shown.map((item) => (
         <li key={item.id} ref={item.id === lastMineId ? lastSubmission : undefined} className="scroll-mt-4">
-          <ThreadLine item={item} />
+          <ThreadLine item={item} sessionId={state.sessionId} />
         </li>
       ))}
     </ol>
@@ -412,6 +414,7 @@ export function ChatPanel({
           draft={drafts[q.id] ?? emptyDraft}
           disabled={state.busy}
           onChange={(d) => setDrafts((all) => pruneDrafts({ ...all, [q.id]: d }, state.openQuestions))}
+          sessionId={state.sessionId}
         />
       ))}
       {answerTooLong && (
@@ -703,7 +706,7 @@ function SparkMark() {
   );
 }
 
-function ThreadLine({ item }: { item: ThreadItem }) {
+function ThreadLine({ item, sessionId }: { item: ThreadItem; sessionId: string }) {
   switch (item.kind) {
     case "user":
       return (
@@ -737,11 +740,16 @@ function ThreadLine({ item }: { item: ThreadItem }) {
         </p>
       );
     case "question":
+      // An answered question keeps its thumbs, so a reader can judge it
+      // after the fact (PR-27).
       return (
-        <p className="border-l-2 border-accent/40 pl-3 text-sm text-muted-foreground">
-          <span className="sr-only">Asked: </span>
-          {item.question.text}
-        </p>
+        <div className="flex flex-col gap-1 border-l-2 border-accent/40 pl-3 text-sm text-muted-foreground">
+          <p>
+            <span className="sr-only">Asked: </span>
+            {item.question.text}
+          </p>
+          {sessionId && <Thumbs target={{ kind: FeedbackKind.QUESTION, sessionId, questionId: item.question.id }} itemName={`the question "${item.question.text}"`} name="Rate this question" />}
+        </div>
       );
     case "failure":
       return (

@@ -4,6 +4,7 @@ import { AgentService } from "@mtg/api-client/mtg/v1/agent_service_pb";
 import { CardService } from "@mtg/api-client/mtg/v1/card_service_pb";
 import { CollectionService } from "@mtg/api-client/mtg/v1/collection_service_pb";
 import { DeckService } from "@mtg/api-client/mtg/v1/deck_service_pb";
+import { FeedbackService } from "@mtg/api-client/mtg/v1/feedback_service_pb";
 import { HealthService } from "@mtg/api-client/mtg/v1/health_pb";
 
 import { currentIdToken } from "./firebase";
@@ -30,3 +31,4 @@ export const collectionClient = createClient(CollectionService, transport);
 export const deckClient = createClient(DeckService, transport);
 export const agentClient = createClient(AgentService, transport);
 export const cardClient = createClient(CardService, transport);
+export const feedbackClient = createClient(FeedbackService, transport);

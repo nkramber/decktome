@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package mtg.v1;
+
+option go_package = "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1";
+
+// FeedbackService takes a user's verdict on one thing the app made
+// (PR-27, D-557 to D-559): a question, a deck description, one card of
+// a deck, or the deck as a whole. There is no list RPC. The harvest of
+// PR-28 reads the stored items with the owner's credentials (D-420).
+service FeedbackService {
+  // SubmitFeedback stores one verdict under the caller. The session or
+  // the deck it names must belong to the caller, or the answer is
+  // PermissionDenied. A question id or a card id the object does not
+  // hold is an invalid argument.
+  rpc SubmitFeedback(SubmitFeedbackRequest) returns (SubmitFeedbackResponse) {}
+}
+
+// FeedbackKind names what the verdict is about.
+enum FeedbackKind {
+  FEEDBACK_KIND_UNSPECIFIED = 0;
+  // FEEDBACK_KIND_QUESTION is one clarifying question of a session.
+  FEEDBACK_KIND_QUESTION = 1;
+  // FEEDBACK_KIND_SUMMARY is the description paragraph of a deck.
+  FEEDBACK_KIND_SUMMARY = 2;
+  // FEEDBACK_KIND_CARD is one card of a deck: a main deck card, a
+  // sideboard card, an upgrade, or the commander.
+  FEEDBACK_KIND_CARD = 3;
+  // FEEDBACK_KIND_DECK is the deck as a whole.
+  FEEDBACK_KIND_DECK = 4;
+}
+
+// FeedbackVerdict is the thumb.
+enum FeedbackVerdict {
+  FEEDBACK_VERDICT_UNSPECIFIED = 0;
+  // FEEDBACK_VERDICT_UP: this helped.
+  FEEDBACK_VERDICT_UP = 1;
+  // FEEDBACK_VERDICT_DOWN: this missed. A thumbs down carries at least
+  // one reason key or a text.
+  FEEDBACK_VERDICT_DOWN = 2;
+}
+
+// Feedback is one verdict. The ids a kind does not use stay empty.
+message Feedback {
+  FeedbackKind kind = 1;
+  FeedbackVerdict verdict = 2;
+  // session_id and question_id name the question, for kind QUESTION.
+  string session_id = 3;
+  string question_id = 4;
+  // deck_id names the deck, for kinds SUMMARY, CARD, and DECK.
+  string deck_id = 5;
+  // oracle_id names the card, for kind CARD.
+  string oracle_id = 6;
+  // reasons holds the keys of the prefilled reasons the user checked,
+  // for a thumbs down. The keys per kind are fixed, and the API refuses
+  // one it does not know.
+  repeated string reasons = 7;
+  // text is the "Other" box, at most the message cap of the chat.
+  string text = 8;
+}
+
+message SubmitFeedbackRequest {
+  Feedback feedback = 1;
+}
+
+message SubmitFeedbackResponse {
+  // feedback_id is the id of the stored item.
+  string feedback_id = 1;
+}

@@ -31,6 +31,8 @@ import (
 	"github.com/nkramber/mtg-deck-builder/go/internal/collectionsvc"
 	"github.com/nkramber/mtg-deck-builder/go/internal/decks"
 	"github.com/nkramber/mtg-deck-builder/go/internal/decksvc"
+	"github.com/nkramber/mtg-deck-builder/go/internal/feedback"
+	"github.com/nkramber/mtg-deck-builder/go/internal/feedbacksvc"
 	"github.com/nkramber/mtg-deck-builder/go/internal/gcpenv"
 	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
 	"github.com/nkramber/mtg-deck-builder/go/internal/health"
@@ -137,11 +139,15 @@ func run(ctx context.Context, logger *slog.Logger) error {
 	// The deck store holds what a build produced (D-245). One repo serves
 	// the build and the reads.
 	deckRepo := decks.NewRepo(fs)
+	sessionRepo := sessions.NewRepo(fs)
 	deckServer := decksvc.New(rulesCfg, cardServer,
 		decksvc.WithCollections(collectionRepo),
 		decksvc.WithDecks(deckRepo),
-		decksvc.WithSessions(sessions.NewRepo(fs)),
+		decksvc.WithSessions(sessionRepo),
 		decksvc.WithUser(userFn))
+	// The feedback store takes a verdict on a question, a summary, a
+	// card, or a deck of the caller (PR-27, D-558).
+	feedbackServer := feedbacksvc.New(feedback.NewRepo(fs), sessionRepo, deckRepo, userFn)
 	// The LLM role layer. Building it here proves the config and the
 	// keys at startup, not on the first user turn.
 	llmClient, err := llm.NewFromEnv(os.Getenv, logger)
@@ -185,6 +191,7 @@ func run(ctx context.Context, logger *slog.Logger) error {
 	mux.Handle(mtgv1connect.NewCollectionServiceHandler(collectionServer, opts...))
 	mux.Handle(mtgv1connect.NewDeckServiceHandler(deckServer, deckOpts...))
 	mux.Handle(mtgv1connect.NewAgentServiceHandler(agentServer, opts...))
+	mux.Handle(mtgv1connect.NewFeedbackServiceHandler(feedbackServer, opts...))
 	// /healthz is liveness: the process answers. /readyz is readiness:
 	// a card index is loaded, so the RPCs can answer.
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {

@@ -8,23 +8,41 @@ import tseslint from "typescript-eslint";
 // feature and no React. src/components/ui holds the design-system
 // primitives (D-311), so it imports src/lib and nothing of the app.
 //
-// | Feature    | May import from features |
-// |------------|--------------------------|
-// | auth       | none                     |
-// | collection | none                     |
-// | chat       | deck                     |
-// | deck       | export                   |
-// | export     | none                     |
-// | workspace  | chat, deck, export       |
+// | Feature    | May import from features     |
+// |------------|------------------------------|
+// | auth       | none                         |
+// | collection | none                         |
+// | chat       | deck, feedback               |
+// | deck       | export, feedback             |
+// | export     | none                         |
+// | feedback   | none                         |
+// | share      | deck, export                 |
+// | workspace  | chat, deck, export, feedback |
 //
 // export is a leaf: the deck view mounts the export panel, and the panel
 // reads the deck and the card data it is given (PR-13).
 //
+// feedback is a leaf too (PR-27, D-558): the thumbs and the dialog take
+// the ids of the thing they judge and call the feedback client. The
+// chat, the deck, and the workspace mount them.
+//
+// share is the public page of a share link (D-315). It renders the card
+// groups of the deck feature and nothing that needs a sign-in.
+//
 // workspace is the one screen of a deck (D-335). It holds the deck, the
 // actions the user owns, and the conversation that built it, so it is
 // the only feature that may reach both chat and deck.
-const features = ["auth", "collection", "chat", "deck", "export", "workspace"];
-const allow = { auth: [], collection: [], chat: ["deck"], deck: ["export"], export: [], workspace: ["chat", "deck", "export"] };
+const features = ["auth", "collection", "chat", "deck", "export", "feedback", "share", "workspace"];
+const allow = {
+  auth: [],
+  collection: [],
+  chat: ["deck", "feedback"],
+  deck: ["export", "feedback"],
+  export: [],
+  feedback: [],
+  share: ["deck", "export"],
+  workspace: ["chat", "deck", "export", "feedback"],
+};
 
 // A feature reaches a sibling by a relative path: ../deck/x from
 // features/chat, ../../deck/x from features/chat/components, or

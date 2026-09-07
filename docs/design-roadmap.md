@@ -6,6 +6,7 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-06 correction pass 90 (PR-27 built, D-561): branch `pr-27` holds the feedback harvest. One RPC writes one document per verdict under the user, with the prompt versions of the moment. The thumbs sit in the five places of the design note, and the smoke flow rates the built deck. The free gate passes, `docs/reference/pr27-gate-2026-09-06.md`. The PR-23 entry reads merged now, as #73. Changes: PR-23, PR-27, sequence item 25.
 2026-09-06 correction pass 89 (the feedback system, D-557 to D-559, OQ-70 to OQ-72 answered): the owner asked for a feedback system as the immediate item. PR-27 harvests a thumbs up or down on a question, a deck description, a card, and a deck. A toast and a dialog of prefilled reasons carry it. PR-28 addresses the feedback with the fixer agent of the tuning loop, and the owner merges each fix. `docs/reference/feedback-2026-09-06.md` holds the design. Changes: F-49, D-557 to D-559, PR-27, PR-28, sequence item 25, `docs/owner-questions.md`.
 2026-09-06 correction pass 88 (PR #72 merged, PR-23 built, D-551 to D-553): PR-22 is merged, and the deploy half of its gate waits for the owner's Google steps (D-551). Branch `pr-23` holds PR-23. The fake provider serves a whole build from schema-keyed fixtures (D-552). `make smoke` runs the Playwright flow over the emulators for nothing, and the workflow `smoke` runs it on request (D-553). Its free gate passes. Changes: D-551 to D-553, PR-22, PR-23, sequence item 19, `internal/llm/fake.go` and its fixtures, `cmd/deck-gate/smoke_test.go`, `web/apps/web/e2e`, `scripts/smoke.sh`, the Makefile, `.github/workflows/smoke.yml`, `docs/reference/pr23-gate-2026-09-06.md`.
 2026-09-06 correction pass 87 (PR-22 code built, D-549, D-550): PR #71 merged, and branch `pr-22` holds the four code parts of the deploy. The verifier answers an identity with the email, and the interceptor asks the invite list. The agent service reads a spend ledger before every turn and writes it after. The web app reads the Firebase configuration from four build variables. `make allow` and `make disallow` write the list. The deploy steps stay in `docs/setup-gcp.md`, and they run on the owner's account. Changes: D-549, D-550, `internal/auth`, `internal/allowlist`, `internal/usage`, `internal/agentsvc`, `cmd/allow`, `cmd/api`, `web/apps/web/src/lib/firebase.ts`, `firebase.json`, the Makefile.
@@ -894,7 +895,7 @@ Gate:
 
 > *In plain English:* the app on the internet, for the people you invite and nobody else. A cap limits what any one person can spend.
 
-**PR-23: Playwright smoke flow (D-313).** 🔧 built 2026-09-06 on branch `pr-23` (D-552, D-553). The free gate passes, `docs/reference/pr23-gate-2026-09-06.md`. `make smoke` runs the flow over the emulators, the trimmed snapshot, and the fake provider in about 12 seconds on the owner's Mac. The workflow `smoke` runs it on GitHub on request.
+**PR-23: Playwright smoke flow (D-313).** ✅ merged 2026-09-06 (#73, D-552 to D-554). The free gate passes, `docs/reference/pr23-gate-2026-09-06.md`. `make smoke` runs the flow over the emulators, the trimmed snapshot, and the fake provider in about 12 seconds on the owner's Mac. The workflow `smoke` runs it on GitHub on request.
 One flow on `workflow_dispatch` only. It signs in over the emulator and uploads the fixture export. Then it starts a session from the form with the fake provider, opens the deck, and exports it. The fake provider serves canned answers for the classify, ask, and generate roles, so the flow costs nothing. One run takes about 5 minutes of Actions time, and the owner triggers it before a merge that touches the user path. Gate: the flow passes on the emulators.
 > *In plain English:* a robot that clicks through the whole app once, on demand. A change that breaks the path shows up before it ships.
 
@@ -917,7 +918,7 @@ Gate: a synthetic legality change reaches an opted-in user by push and by email 
 Stage C of the proposal, the stores, is 🅿 parked on request (D-548). Android packages the web app as a Trusted Web Activity for Google Play, $25 once. On iOS a native shell needs native value, $99 a year, because Apple refuses a bare wrapper under guideline 4.2. Nothing moves until an invited user asks.
 > *In plain English:* the phone gets the app from the home screen, not from a store. A store listing comes when someone asks for one.
 
-**PR-27: Feedback on questions, deck descriptions, cards, and decks (F-49, D-557 to D-559).** 🔧 planned, the immediate item, before PR-25. The design is `docs/reference/feedback-2026-09-06.md`.
+**PR-27: Feedback on questions, deck descriptions, cards, and decks (F-49, D-557 to D-559).** 🔧 built 2026-09-06 on branch `pr-27` (D-561). The free gate passes, `docs/reference/pr27-gate-2026-09-06.md`, and the owner triggers the workflow `smoke` before the merge (D-313). The design is `docs/reference/feedback-2026-09-06.md`.
 A thumbs up and a thumbs down sit in four places: under every question card, and beside the deck summary. They sit at the foot of every card tile and in the card detail sheet. They sit in the deck header for the deck as a whole. A thumbs up writes the verdict and shows the toast "Thank you for your feedback!". A thumbs down dims the screen and opens a dialog with the prefilled reasons of that kind and an "Other" text box. Submit shows the same toast.
 
 `FeedbackService.SubmitFeedback` is the one RPC. One Firestore document per item under the user holds the kind, the verdict, the reason keys, and the text. It holds the ids of the session, the question, the deck, or the card, and the prompt versions of the moment. The API refuses an id of another user's object. The web feature `feedback` is a leaf, and the chat, the deck, and the workspace import it.
@@ -1132,7 +1133,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 22. PR-24 precon exclusion (D-409, D-460) ✅ merged 2026-09-03 (#59). PR-14C (D-482) ✅ merged 2026-09-03 (#60). Then I-1, I-2, I-3 on evidence. PR-14B moved into step 19 (D-460).
 23. Phase 5 stays parked.
 24. PR-25 the installable web app, then PR-26 the return channels, after PR-23 (D-547). Stage C, the stores, waits on request (D-548).
-25. **PR-27** the feedback harvest, then **PR-28** the feedback loop, the immediate items before PR-25 (D-557). PR-25 waits for the deploy in any case (D-555).
+25. **PR-27** the feedback harvest, then **PR-28** the feedback loop, the immediate items before PR-25 (D-557). PR-25 waits for the deploy in any case (D-555). Branch `pr-27` holds PR-27, and its free gate passes (D-561).
 
 ## 9. Open questions
 

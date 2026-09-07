@@ -1,7 +1,9 @@
 import { type Card, LegalityStatus } from "@mtg/api-client/mtg/v1/card_pb";
 import { CardRole, type DeckCard } from "@mtg/api-client/mtg/v1/deck_pb";
+import { FeedbackKind, FeedbackVerdict } from "@mtg/api-client/mtg/v1/feedback_service_pb";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { axe } from "jest-axe";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -10,8 +12,10 @@ import { CardDetail, legalityLabel, scryfallURL } from "./card-detail";
 
 const getRulings = vi.fn();
 const getPrintings = vi.fn();
+const submitFeedback = vi.fn();
 vi.mock("../../lib/api", () => ({
   cardClient: { getRulings: (...args: unknown[]) => getRulings(...args), getPrintings: (...args: unknown[]) => getPrintings(...args) },
+  feedbackClient: { submitFeedback: (...args: unknown[]) => submitFeedback(...args) },
 }));
 
 const img = (n: string) => ({ small: `https://cards.scryfall.io/small/${n}.jpg`, normal: `https://cards.scryfall.io/normal/${n}.jpg` });
@@ -64,6 +68,22 @@ beforeEach(() => {
 });
 
 describe("CardDetail", () => {
+  it("carries the thumbs of the card when it knows the deck, and none on a page with no deck (PR-27, D-559)", async () => {
+    const user = userEvent.setup();
+    submitFeedback.mockReset();
+    submitFeedback.mockResolvedValue({ feedbackId: "fb1" });
+    const first = renderDetail({ deckId: "d1" });
+    const dialog = await screen.findByRole("dialog", { name: "Sol Ring" });
+    const thumbs = within(dialog).getByRole("group", { name: "Rate this card" });
+    await user.click(within(thumbs).getByRole("button", { name: "This helped" }));
+    await waitFor(() => expect(submitFeedback).toHaveBeenCalledTimes(1));
+    expect(submitFeedback.mock.calls[0][0]).toEqual({ feedback: { kind: FeedbackKind.CARD, verdict: FeedbackVerdict.UP, reasons: [], text: "", deckId: "d1", oracleId: "o-sol" } });
+    first.unmount();
+    renderDetail();
+    const plain = await screen.findByRole("dialog", { name: "Sol Ring" });
+    expect(within(plain).queryByRole("group", { name: "Rate this card" })).not.toBeInTheDocument();
+  });
+
   it("shows the card, the reason line, the legalities, and the Scryfall link", async () => {
     renderDetail();
     const dialog = await screen.findByRole("dialog", { name: "Sol Ring" });

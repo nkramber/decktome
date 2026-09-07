@@ -1,3 +1,4 @@
+import { FeedbackKind } from "@mtg/api-client/mtg/v1/feedback_service_pb";
 import type { Question } from "@mtg/api-client/mtg/v1/session_pb";
 import { useId } from "react";
 
@@ -5,6 +6,7 @@ import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { cn } from "../../lib/cn";
+import { Thumbs } from "../feedback/thumbs";
 import { CardOption, CardOptionsError, hasCardOptions, partnerIds, useOptionCards } from "./card-options";
 
 // Draft is the user's answer to one question before the submit. An option
@@ -21,16 +23,20 @@ export function draftAnswered(d: Draft | undefined): boolean {
 // One open question: the options as toggle buttons and a free-text field
 // (ui plan, step 3). Nothing sends here. The page sends every answer at
 // once through its "Submit answers" button (D-282).
+// sessionId names the session for the thumbs under the text (PR-27).
+// A card with none shows no thumbs.
 export function QuestionCard({
   question,
   draft,
   disabled,
   onChange,
+  sessionId = "",
 }: {
   question: Question;
   draft: Draft;
   disabled: boolean;
   onChange: (d: Draft) => void;
+  sessionId?: string;
 }) {
   const answerId = useId();
   const cards = useOptionCards(question);
@@ -67,6 +73,7 @@ export function QuestionCard({
   return (
     <div className="flex flex-col gap-2 rounded-card border border-accent/40 bg-accent/5 p-3" role="group" aria-label={`Question: ${question.text}`}>
       <p className="font-medium">{question.text}</p>
+      {sessionId && <Thumbs target={{ kind: FeedbackKind.QUESTION, sessionId, questionId: question.id }} itemName={`the question "${question.text}"`} name="Rate this question" className="-mt-1" />}
       {withCards && cards.isError && <CardOptionsError error={cards.error} />}
       {withCards && cards.isPending && (
         <p role="status" className="text-sm text-muted-foreground">
