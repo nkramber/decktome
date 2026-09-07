@@ -4,7 +4,83 @@
 
 The project is `decktome-prod`, and the region is `us-central1`. The deploy of 2026-09-07 set both. Write in the commands: `TAG` is the short commit of the merge.
 
-## 1. What each merge changes
+## 1. A merge to main deploys itself
+
+The workflow `deploy` builds and releases every merge to `main` (D-582). No step of section 4 or section 5 runs by hand any more. The workflow reads the changed paths first, so a merge of documents alone deploys nothing.
+
+| The merge touches | The workflow does |
+|---|---|
+| Any file under `go/` or `docker/` | Builds both images, deploys the API, points both jobs at the new image, and waits for `/readyz` |
+| Any file under `web/`, or `firebase.json` | Builds the web app and releases it, then reads the site |
+| Only `docs/` | Nothing |
+
+Sections 2 to 6 stay for two jobs: the first deploy of a new project, and a step the workflow cannot do. Section 8 is the rollback, and it stays a command you run.
+
+CAUTION: the workflow deploys `main` and no other branch (D-579). It starts on a push to `main` and on a dispatch, and never on a pull request (D-578).
+
+### 1.1 The one-time setup
+
+The workflow signs in with Workload Identity Federation, so no key of a service account lives in the repository. Run these commands one time, as the owner of the project.
+
+1. Create the deployer:
+
+```
+gcloud iam service-accounts create gh-deployer --display-name="github deployer"
+```
+
+2. Create the pool and the provider. The condition names the repository, so no other repository can sign in as the deployer:
+
+```
+gcloud iam workload-identity-pools create github --location=global \
+  --display-name="GitHub Actions"
+gcloud iam workload-identity-pools providers create-oidc github \
+  --location=global --workload-identity-pool=github \
+  --issuer-uri="https://token.actions.githubusercontent.com" \
+  --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository" \
+  --attribute-condition="assertion.repository=='nkramber/decktome'"
+```
+
+3. Let the repository act as the deployer:
+
+```
+gcloud iam service-accounts add-iam-policy-binding \
+  gh-deployer@decktome-prod.iam.gserviceaccount.com \
+  --role=roles/iam.workloadIdentityUser \
+  --member="principalSet://iam.googleapis.com/projects/492774632746/locations/global/workloadIdentityPools/github/attribute.repository/nkramber/decktome"
+```
+
+4. Grant the deployer what a deploy needs, and nothing else:
+
+```
+for role in roles/run.admin roles/artifactregistry.writer roles/firebasehosting.admin; do
+  gcloud projects add-iam-policy-binding decktome-prod \
+    --member=serviceAccount:gh-deployer@decktome-prod.iam.gserviceaccount.com --role=$role
+done
+```
+
+5. Let the deployer run the API and the jobs as their own accounts. This binding names those two accounts, and never every account of the project:
+
+```
+for sa in mtg-api mtg-worker; do
+  gcloud iam service-accounts add-iam-policy-binding \
+    $sa@decktome-prod.iam.gserviceaccount.com \
+    --member=serviceAccount:gh-deployer@decktome-prod.iam.gserviceaccount.com \
+    --role=roles/iam.serviceAccountUser
+done
+```
+
+6. Write the four Firebase values as repository variables. They reach the browser in the bundle, so they are variables and never secrets:
+
+```
+gh variable set VITE_FIREBASE_PROJECT_ID --body "decktome-prod"
+gh variable set VITE_FIREBASE_AUTH_DOMAIN --body "decktome-prod.firebaseapp.com"
+gh variable set VITE_FIREBASE_API_KEY --body "<the apiKey of firebase apps:sdkconfig>"
+gh variable set VITE_FIREBASE_APP_ID --body "<the appId of firebase apps:sdkconfig>"
+```
+
+Note: one deploy costs about 5 to 8 minutes of Actions time for the API and about 3 to 4 for the web app. A merge that touches documents alone costs about one minute.
+
+## 2. What each merge changes
 
 Read the merged diff first. This table names the part to deploy.
 
@@ -18,7 +94,7 @@ Read the merged diff first. This table names the part to deploy.
 
 The API binary and the worker binary both import `go/internal/quality`. Therefore every change under `go/` needs two new images.
 
-## 2. Before each deploy
+## 3. Before a deploy you run by hand
 
 1. Run `git checkout main`.
 2. Run `git pull`.
