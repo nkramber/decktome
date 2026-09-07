@@ -340,10 +340,10 @@ disallow: ## Take one email off the invite list: make disallow EMAIL=... PROJECT
 	@[ -n "$(PROJECT_ID)" ] || { echo "disallow: set PROJECT_ID=... to the deployed project"; exit 1; }
 	@PROJECT_ID=$(PROJECT_ID) $(GO) run ./cmd/allow -email "$(EMAIL)" -remove
 
-store-check: ## Run the session, deck, collection, usage, and allowlist stores against the local Firestore emulator (needs `firebase emulators:start --only firestore`)
+store-check: ## Run the session, deck, collection, usage, allowlist, and feedback stores against the local Firestore emulator (needs `firebase emulators:start --only firestore`)
 	@nc -z 127.0.0.1 8281 2>/dev/null || \
 		{ echo "no Firestore emulator on :8281. Start one: firebase emulators:start --only firestore --project mtg-local"; exit 1; }
-	@FIRESTORE_EMULATOR_HOST=127.0.0.1:8281 $(GO) test ./internal/sessions ./internal/usage ./internal/allowlist ./internal/decks ./internal/collections -count=1
+	@FIRESTORE_EMULATOR_HOST=127.0.0.1:8281 $(GO) test ./internal/sessions ./internal/usage ./internal/allowlist ./internal/feedback ./internal/decks ./internal/collections -count=1
 
 # --- The eval harness of PR-15 (free) -----------------------------------
 # EVAL_DIR holds the run files the gates write and baselines.json. The

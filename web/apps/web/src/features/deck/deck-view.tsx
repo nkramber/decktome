@@ -1,11 +1,13 @@
 import { type Card, Color } from "@mtg/api-client/mtg/v1/card_pb";
 import { CardRole, type Deck, type DeckCard, Severity } from "@mtg/api-client/mtg/v1/deck_pb";
+import { FeedbackKind } from "@mtg/api-client/mtg/v1/feedback_service_pb";
 import { useState } from "react";
 
 import { Button } from "../../components/ui/button";
 import { Select } from "../../components/ui/select";
 import { errorMessage } from "../../lib/errors";
 import { ExportPanel } from "../export/export-panel";
+import { Thumbs } from "../feedback/thumbs";
 import { CardDetail } from "./card-detail";
 import { CardTile } from "./card-tile";
 import { identityOfCards, identityOfCommanders } from "./color-identity";
@@ -140,16 +142,29 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
           {` · ${total} cards`}
           {deck.sideboard.length > 0 && ` · ${countOf(deck.sideboard)} sideboard`}
         </p>
-        <p className="text-sm" data-testid="legality-line">
-          {validation
-            ? `${validation.passed ? "Legal" : "Not legal"}, checked against the card data of ${legalityAsOf}.`
-            : "Legality not checked yet."}
-          {deck.stale && " CAUTION: a rule change made this deck illegal since."}
-        </p>
+        {/* The thumbs of the deck as a whole sit beside the legality line
+            (PR-27, D-557). The tiles carry one pair each, and the summary
+            its own. */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+          <p className="text-sm" data-testid="legality-line">
+            {validation
+              ? `${validation.passed ? "Legal" : "Not legal"}, checked against the card data of ${legalityAsOf}.`
+              : "Legality not checked yet."}
+            {deck.stale && " CAUTION: a rule change made this deck illegal since."}
+          </p>
+          <Thumbs target={{ kind: FeedbackKind.DECK, deckId: deck.id }} itemName={`the deck ${deck.name || "Untitled deck"}`} label="Rate this deck" className="print:hidden" />
+        </div>
         <p className="text-sm" data-testid="buy-cost">
           To buy: {deck.buyCostUsd > 0 ? priceText(deck.buyCostUsd) : "nothing. Every card is owned, or no price is known."}
         </p>
-        {deck.summary && <p className="mt-2 max-w-measure leading-relaxed">{deck.summary}</p>}
+        {deck.summary && (
+          <div className="mt-2 flex flex-wrap items-start gap-x-3 gap-y-1">
+            <p className="max-w-measure leading-relaxed" data-testid="deck-summary">
+              {deck.summary}
+            </p>
+            <Thumbs target={{ kind: FeedbackKind.SUMMARY, deckId: deck.id }} itemName="the deck description" className="print:hidden" />
+          </div>
+        )}
       </header>
 
       {deck.revisionNote && (
@@ -421,7 +436,7 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
       </section>
 
       {commanderEntries.length > 0 && !filterActive && (
-        <CardGroup title="Commander" count={commanderEntries.length} entries={commanderEntries} byId={byId} commanders={commanders} hideOwnership onOpen={setDetail} />
+        <CardGroup title="Commander" count={commanderEntries.length} entries={commanderEntries} byId={byId} commanders={commanders} hideOwnership onOpen={setDetail} feedbackDeckId={deck.id} />
       )}
       {groups.map((g) => (
         <CardGroup
@@ -431,21 +446,22 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
           entries={g.cards}
           byId={byId}
           commanders={commanders}
-          onOpen={setDetail}
+          onOpen={setDetail} feedbackDeckId={deck.id}
         />
       ))}
-      {visibleSide.length > 0 && <CardGroup title="Sideboard" count={countOf(visibleSide)} entries={visibleSide} byId={byId} commanders={commanders} onOpen={setDetail} />}
+      {visibleSide.length > 0 && <CardGroup title="Sideboard" count={countOf(visibleSide)} entries={visibleSide} byId={byId} commanders={commanders} onOpen={setDetail} feedbackDeckId={deck.id} />}
       {visibleUpgrades.length > 0 && (
-        <CardGroup title="Upgrades to buy" count={countOf(visibleUpgrades)} entries={visibleUpgrades} byId={byId} commanders={commanders} onOpen={setDetail} />
+        <CardGroup title="Upgrades to buy" count={countOf(visibleUpgrades)} entries={visibleUpgrades} byId={byId} commanders={commanders} onOpen={setDetail} feedbackDeckId={deck.id} />
       )}
 
-      <CardDetail entry={detail ?? undefined} card={detail ? byId.get(detail.oracleId) : undefined} open={detail !== null} onOpenChange={(open) => !open && setDetail(null)} />
+      <CardDetail entry={detail ?? undefined} card={detail ? byId.get(detail.oracleId) : undefined} deckId={deck.id} open={detail !== null} onOpenChange={(open) => !open && setDetail(null)} />
     </article>
   );
 }
 
 // CardGroup is one role section of the deck. The public page of a share
-// link renders it too, with no detail to open (D-315).
+// link renders it too, with no detail to open and no thumbs (D-315).
+// feedbackDeckId names the deck for the thumbs of every tile (PR-27).
 export function CardGroup({
   title,
   count,
@@ -454,6 +470,7 @@ export function CardGroup({
   commanders,
   hideOwnership = false,
   onOpen,
+  feedbackDeckId,
 }: {
   title: string;
   count: number;
@@ -462,6 +479,7 @@ export function CardGroup({
   commanders: Set<string>;
   hideOwnership?: boolean;
   onOpen?: (entry: DeckCard) => void;
+  feedbackDeckId?: string;
 }) {
   return (
     <section aria-label={`${title} (${count})`} className="@container">
@@ -478,6 +496,7 @@ export function CardGroup({
             isCommander={commanders.has(e.oracleId)}
             hideOwnership={hideOwnership}
             onOpen={onOpen ? () => onOpen(e) : undefined}
+            feedbackDeckId={feedbackDeckId}
           />
         ))}
       </ul>

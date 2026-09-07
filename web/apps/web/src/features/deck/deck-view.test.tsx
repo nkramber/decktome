@@ -1,8 +1,9 @@
 import { Color } from "@mtg/api-client/mtg/v1/card_pb";
 import { CardRole, type Deck, Severity } from "@mtg/api-client/mtg/v1/deck_pb";
+import { FeedbackKind, FeedbackVerdict } from "@mtg/api-client/mtg/v1/feedback_service_pb";
 import { FormatId } from "@mtg/api-client/mtg/v1/format_pb";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { axe } from "jest-axe";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -13,6 +14,7 @@ import { DeckView } from "./deck-view";
 const getCards = vi.fn();
 const getRulings = vi.fn();
 const getPrintings = vi.fn();
+const submitFeedback = vi.fn();
 vi.mock("../../lib/api", () => ({
   cardClient: {
     getCards: (...args: unknown[]) => getCards(...args),
@@ -20,6 +22,7 @@ vi.mock("../../lib/api", () => ({
     getPrintings: (...args: unknown[]) => getPrintings(...args),
   },
   deckClient: { exportDeck: vi.fn() },
+  feedbackClient: { submitFeedback: (...args: unknown[]) => submitFeedback(...args) },
 }));
 
 const img = (n: string) => ({ small: `https://cards.scryfall.io/small/${n}.jpg`, normal: `https://cards.scryfall.io/normal/${n}.jpg` });
@@ -106,9 +109,46 @@ beforeEach(() => {
   getRulings.mockResolvedValue({ rulings: [{ publishedAt: "2019-01-25", comment: "Elves tap for green.", source: "wotc" }], asOf: "2026-09-03", hasRulings: true });
   getPrintings.mockReset();
   getPrintings.mockResolvedValue({ printings: [], priceAsOf: "2026-09-03" });
+  submitFeedback.mockReset();
+  submitFeedback.mockResolvedValue({ feedbackId: "fb1" });
 });
 
 describe("DeckView", () => {
+  it("puts the thumbs beside the legality line, beside the summary, and at the foot of every tile (PR-27, D-559)", async () => {
+    const user = userEvent.setup();
+    renderDeck();
+    await screen.findByAltText("Forest (card)");
+    // The deck as a whole, with its visible caption.
+    const deckThumbs = screen.getByRole("group", { name: "Rate this deck" });
+    expect(deckThumbs).toHaveTextContent("Rate this deck");
+    await user.click(within(deckThumbs).getByRole("button", { name: "This helped" }));
+    await waitFor(() => expect(submitFeedback).toHaveBeenCalledTimes(1));
+    expect(submitFeedback.mock.calls[0][0]).toEqual({ feedback: { kind: FeedbackKind.DECK, verdict: FeedbackVerdict.UP, reasons: [], text: "", deckId: "d1" } });
+    // The description.
+    const summaryThumbs = screen.getByRole("group", { name: "Rate the deck description" });
+    expect(screen.getByTestId("deck-summary")).toHaveTextContent("A small test deck.");
+    await user.click(within(summaryThumbs).getByRole("button", { name: "This missed" }));
+    const dialog = await screen.findByRole("dialog", { name: "What missed?" });
+    expect(dialog).toHaveTextContent("About the deck description.");
+    await user.click(within(dialog).getByRole("checkbox", { name: "It misses the plan I asked for." }));
+    await user.click(within(dialog).getByRole("button", { name: "Submit" }));
+    await waitFor(() => expect(submitFeedback).toHaveBeenCalledTimes(2));
+    expect(submitFeedback.mock.calls[1][0]).toEqual({ feedback: { kind: FeedbackKind.SUMMARY, verdict: FeedbackVerdict.DOWN, reasons: ["misses_plan"], text: "", deckId: "d1" } });
+    // One pair per tile, hidden under a pointer until hover or focus.
+    const tiles = screen.getAllByTestId("card-tile");
+    expect(tiles).toHaveLength(4);
+    const forest = within(tiles[0]).getByRole("group", { name: "Rate Forest" });
+    expect(forest).toHaveClass("pointer-fine:opacity-0", "pointer-fine:group-hover:opacity-100", "pointer-fine:group-focus-within:opacity-100");
+    await user.click(within(forest).getByRole("button", { name: "This helped" }));
+    await waitFor(() => expect(submitFeedback).toHaveBeenCalledTimes(3));
+    expect(submitFeedback.mock.calls[2][0]).toEqual({ feedback: { kind: FeedbackKind.CARD, verdict: FeedbackVerdict.UP, reasons: [], text: "", deckId: "d1", oracleId: "o-forest" } });
+    expect(forest).toHaveAttribute("data-verdict", "up");
+    // The pair in the detail sheet is its own.
+    await user.click(screen.getByRole("button", { name: "Llanowar Elves" }));
+    const sheet = await screen.findByRole("dialog", { name: "Llanowar Elves" });
+    expect(within(sheet).getByRole("group", { name: "Rate this card" })).toBeInTheDocument();
+  });
+
   it("loads the cards in one GetCards call and groups them by role", async () => {
     renderDeck();
     expect(await screen.findByRole("region", { name: "Lands (20)" })).toBeInTheDocument();
@@ -351,7 +391,7 @@ describe("DeckView", () => {
     await user.selectOptions(screen.getByRole("combobox", { name: "Type" }), "Creature");
     await user.selectOptions(screen.getByRole("combobox", { name: "Sort" }), "name");
     const group = screen.getByRole("region", { name: "Cards by name (6)" });
-    const names = within(group).getAllByTestId("card-tile").map((tile) => within(tile).getByRole("button").textContent);
+    const names = within(group).getAllByTestId("card-tile").map((tile) => within(tile).getByTitle("Open the card detail").textContent);
     expect(names).toEqual(["Delver of Secrets // Insectile Aberration", "Llanowar Elves"]);
   });
 
