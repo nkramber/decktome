@@ -1,11 +1,19 @@
 name: verify
 
-# The workflow runs on pull requests, and on one weekly schedule whose
-# only job is the govulncheck scan. A merge to main is the tree the pull
-# request already verified, so a run on push buys nothing (D-286). A new
-# push to a branch cancels the run in progress (D-286).
+# The workflow runs when the owner asks for it, and on one weekly
+# schedule whose only job is the govulncheck scan (D-578). No pull
+# request starts it: `make verify` runs the same checks on the owner's
+# machine for nothing. A new dispatch cancels the run in progress.
+#
+# `all` runs every job. Without it the changes job reads the diff of this
+# ref against main, and each job waits on that answer.
 on:
-  pull_request:
+  workflow_dispatch:
+    inputs:
+      all:
+        description: "Run every job, and skip the changed-paths gate"
+        type: boolean
+        default: false
   # Monday 06:00 UTC. The vuln job is the only job that runs on the
   # schedule, at about 2 billed minutes a week (D-305).
   schedule:
@@ -33,7 +41,7 @@ permissions:
 jobs:
   changes:
     name: "verify:changes"
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'workflow_dispatch' && !inputs.all
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -54,7 +62,7 @@ jobs:
         # The base branch name enters through env, never through an
         # expression inside the script, so its text cannot run as shell.
         env:
-          BASE_REF: ${{ github.base_ref }}
+          BASE_REF: ${{ github.base_ref || 'main' }}
         run: |
           set -euo pipefail
           base="origin/${BASE_REF}"
@@ -77,8 +85,8 @@ jobs:
 
   go:
     name: "verify:go"
-    needs: changes
-    if: github.event_name == 'pull_request' && needs.changes.outputs.go == 'true'
+    needs: [changes]
+    if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && (inputs.all || needs.changes.outputs.go == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -133,8 +141,8 @@ jobs:
   # their tests without an emulator. This job gives them one.
   emulator:
     name: "verify:emulator"
-    needs: changes
-    if: github.event_name == 'pull_request' && needs.changes.outputs.emulator == 'true'
+    needs: [changes]
+    if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && (inputs.all || needs.changes.outputs.emulator == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -164,8 +172,8 @@ jobs:
 
   web:
     name: "verify:web"
-    needs: changes
-    if: github.event_name == 'pull_request' && needs.changes.outputs.web == 'true'
+    needs: [changes]
+    if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && (inputs.all || needs.changes.outputs.web == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -188,8 +196,8 @@ jobs:
 
   proto:
     name: "verify:proto"
-    needs: changes
-    if: github.event_name == 'pull_request' && needs.changes.outputs.proto == 'true'
+    needs: [changes]
+    if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && (inputs.all || needs.changes.outputs.proto == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -230,8 +238,8 @@ jobs:
 
   shell:
     name: "verify:shell"
-    needs: changes
-    if: github.event_name == 'pull_request' && needs.changes.outputs.shell == 'true'
+    needs: [changes]
+    if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && (inputs.all || needs.changes.outputs.shell == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -253,8 +261,8 @@ jobs:
   # minute of runner time. A run file that regresses a gate row fails.
   eval:
     name: "verify:eval"
-    needs: changes
-    if: github.event_name == 'pull_request' && needs.changes.outputs.eval == 'true'
+    needs: [changes]
+    if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && (inputs.all || needs.changes.outputs.eval == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -271,8 +279,8 @@ jobs:
   # alone does not rebuild them.
   docker:
     name: "verify:docker"
-    needs: changes
-    if: github.event_name == 'pull_request' && needs.changes.outputs.docker == 'true'
+    needs: [changes]
+    if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && (inputs.all || needs.changes.outputs.docker == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:

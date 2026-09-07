@@ -27,7 +27,8 @@ Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
 5. **Make hand-off simple.** Before you end a session, update `docs/SESSION-HANDOFF.md`: the completed work, the open work, and the next step.
 6. **No AI-attribution text** in any PR, branch name, commit message, or comment. This house rule comes from connector-syncer.
 7. **No mistakes.** Check card names, rules, and dates before you write them. When you are not sure, say so and mark the item as unverified.
-8. **Never hesitate to ask or to push back.** Ask a question the moment you have one. When the owner's two statements conflict, say so and quote both. When a request rests on a wrong premise, say so with the evidence. The owner sees this as the key to good LLM-user interaction. Silence is the mistake, not the question.
+8. **Deploy from `main` alone.** Never deploy any other branch to production, for any reason (D-579). Check the branch and the commit before every build, not only the tree. `docs/deploy-and-rollback.md` holds the procedure.
+9. **Never hesitate to ask or to push back.** Ask a question the moment you have one. When the owner's two statements conflict, say so and quote both. When a request rests on a wrong premise, say so with the evidence. The owner sees this as the key to good LLM-user interaction. Silence is the mistake, not the question.
 
 ## Reference material
 

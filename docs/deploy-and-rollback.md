@@ -23,20 +23,20 @@ The API binary and the worker binary both import `go/internal/quality`. Therefor
 1. Run `git checkout main`.
 2. Run `git pull`.
 3. Run `git status`. The tree must be clean.
-4. Run `gcloud config configurations activate decktome`.
-5. Run `gcloud config get-value project`. It must print `decktome-prod`.
-6. Run `TAG=$(git rev-parse --short HEAD)`. Every command below reads this tag.
+4. Run `git rev-parse --abbrev-ref HEAD`. It must print `main`.
+5. Run `gcloud config configurations activate decktome`.
+6. Run `gcloud config get-value project`. It must print `decktome-prod`.
+7. Run `TAG=$(git rev-parse --short HEAD)`. Every command below reads this tag.
 
-CAUTION: a deploy from a dirty tree or from a branch puts unmerged code on the internet. Read step 3 before each build.
+CAUTION: deploy `main` alone (D-579). No other branch goes to production, for any reason. A clean tree is not enough, because a branch commit is clean too. Read step 4 before each build.
 
 ## 3. Check the code
 
 Run the free checks before a deploy. Each one costs nothing.
 
-1. Run `make lint`.
-2. Run `make test`.
-3. Run `make proto-check`.
-4. Run `make build`.
+1. Run `make verify`. It runs every check of the `verify` workflow on this machine, for nothing (D-578).
+
+`make verify` covers the proto, go, web, shell, eval, and docker lanes. The emulator lane needs `make store-check` against a local Firestore emulator, and `govulncheck` runs on the weekly schedule.
 
 A failed check stops the deploy. Repair the code on a branch, and merge the repair first.
 
