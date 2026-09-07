@@ -6,6 +6,8 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## Where things stand (2026-09-06)
 
+- PR #74 merged on 2026-09-06 (D-560), and branch `records-decktome` can go. It held the records D-554 to D-559, the domain note, the GoDaddy path of the deploy guide, and the feedback plan. **PR-27, the feedback harvest, is next**, on branch `pr-27` from `main`, with nothing left open.
+- The feedback system is the immediate item (2026-09-06, D-557 to D-559). `docs/reference/feedback-2026-09-06.md` holds the design of PR-27, the harvest, and PR-28, the loop. The owner answered OQ-70 to OQ-72 the same day (D-559). The card thumbs sit on the tile foot and in the sheet. The harvest file holds the user's words, the deck list, the session id, and the uid, never the email. The loop runs on demand at $2 a cycle. The section "PR-27, what to build" below holds the order of work.
 - The product is Decktome, and the owner bought `decktome.com` at GoDaddy on 2026-09-06 (D-556, answers OQ-69). `docs/setup-gcp.md` section 3 holds the GoDaddy path alone now, at the owner's word, and section 14 adds the Firebase records in the GoDaddy DNS tab. The .app ending waits until the app opens beyond invites. The shell title and the mark still read "MtG Deck Builder", and the rename goes with the manifest of PR-25.
 - The owner asked for candidate product names and domains on 2026-09-06. `docs/reference/domain-names-2026-09-06.md` holds the method, the constraints, 136 names with their status on .com and .app, and the recommendation: curvebrew first, then sigilwright and binderscribe. Thirty-one names are free on both .com and .app as of 2026-09-06. The "binder" family is wide open, and every "deck" compound is gone. The shelf of real fantasy words is empty, so the identity names that survive are coinages on the root "sigil". The owner chose decktome the same day (D-556). Two facts stand on record. "Deck Tome" is a book-shaped deck box of Gamegenic and of FidgetThings, and Decktamer is a 2025 video game one letter away.
 - PR #73 merged on 2026-09-06 (D-554), `main` is b6aa093, and branch `pr-23` is gone. The first run of the workflow `smoke` on `main` passed in 4 minutes 42 seconds of Actions time, with the browser cache empty (D-554). PR-25, the installable web app, is next on branch `pr-25` from `main` (D-547), and it waits for the deploy of PR-22 (D-555). Its phone walk needs the deployed URL, because a service worker and an install need HTTPS.
@@ -42,6 +44,18 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 - PR-9 is out of the MVP (D-256). Phase 3B comes before Phase 4 (D-316).
 
 CAUTION: branch `pr-17` carries eight concerns. They are the contract, the Go side, the reference design, and the layout of D-331. They are also the Build menu, the one deck screen, the pool picker, and the speed of the app. Guardrail 10 asks for one. The owner chose to ship it whole (D-344).
+
+## PR-27, what to build (2026-09-06)
+
+`docs/reference/feedback-2026-09-06.md` is the design, and D-557 to D-559 are the decisions. The order of work:
+
+1. `proto/mtg/v1/feedback_service.proto`: `FeedbackService.SubmitFeedback`, the `Feedback` message with the kind, the verdict, the ids, the reason keys, and the text. Then `make proto`.
+2. `go/internal/feedback`: one document per item under `users/<uid>/feedback/<id>`, with the prompt versions and `created_at`, and an emulator test. `make store-check` runs it with the other five stores.
+3. `go/internal/feedbacksvc`: the handler behind the auth interceptor. It checks that the session or the deck belongs to the caller. It caps the text at the message cap, and it refuses a bad id.
+4. `web/apps/web/src/features/feedback`: `Thumbs` and `FeedbackDialog`, the reasons per kind from section 2.4 of the note, the toast "Thank you for your feedback!". The feature is a leaf, and `eslint.config.js` lets the chat, the deck, and the workspace import it.
+5. The four placements: the question card, the deck summary, the card tile foot with the card detail sheet, and the deck header. Every button is 44 pixels or more on a touch screen.
+6. The smoke flow gives the built deck a thumbs up and reads the toast.
+7. The gate document, `docs/reference/pr27-gate-<date>.md`, free. Then the owner triggers the workflow `smoke` before the merge (D-313).
 
 ## PR-23, what the branch holds (2026-09-06)
 
@@ -777,7 +791,7 @@ The chat ran a turn with no card index before D-405. The commander question then
 1. The three work items of 2026-09-04 are done (D-531). The precon check merged as #67, the terse conversations as #68, and the trimmed snapshot as #69 (D-533, D-541, D-543). The precon check ignores basic lands (D-523, F-35). The 47 terse conversations join the bar (D-522). One paid run of about $0.28 rebases the gate with the new threshold. A trimmed card snapshot of at most 10 MB serves Tier 0 (D-521).
 2. The reword guard of D-88 stays at 0.60 (D-545). The M-5 evidence against it was the D-116 class. Four of the five live refusals scored better were the resolved row with an ask-role clause removed. The fifth was the format row with a clause added. Closed with no run.
 3. The M-5 sheet is complete (D-529, D-530), and the fit threshold stays at 0.35: no candidate meets the 80 percent floor.
-4. PR-22 is merged as #72 (D-551). The deploy follows `docs/setup-gcp.md` on the owner's account, and the deploy half of `docs/reference/pr22-gate-2026-09-06.md` fills in after it. PR-23 is merged as #73 (D-554). PR-25 waits for the deploy (D-555). Then PR-25, the installable web app (D-547), and PR-26, the return channels, once the owner answers OQ-67. OQ-45 held the store of the allowlist, and D-420 answered it: one Firestore document, `config/allowlist`, written by `make allow EMAIL=...`. Then PR-23.
+4. PR-27, the feedback harvest, then PR-28, the feedback loop (D-557). PR-27 starts on branch `pr-27` from `main` now, by `docs/reference/feedback-2026-09-06.md`, with OQ-70 to OQ-72 answered (D-559). PR-22 is merged as #72 (D-551). The deploy follows `docs/setup-gcp.md` on the owner's account, and the deploy half of `docs/reference/pr22-gate-2026-09-06.md` fills in after it. PR-23 is merged as #73 (D-554). PR-25 waits for the deploy (D-555). Then PR-25, the installable web app (D-547), and PR-26, the return channels, once the owner answers OQ-67. OQ-45 held the store of the allowlist, and D-420 answered it: one Firestore document, `config/allowlist`, written by `make allow EMAIL=...`. Then PR-23.
 5. `make meta-refresh` daily, and `make quality-gate` to a new `QUALITY_GATE_OUT` after each one. Read the pair bars per format and the per-axis table. A weight against the sense of its feature is a defect in the feature or the labels. Do not tune it. The next weekly EDHREC read falls on 2026-09-10 (D-499).
 6. Every paid run goes through `eval sweep` or its Makefile target. Each one writes its run file beside the document. The bracket rejudge of 2026-09-03 ran on 2026-09-05 (D-540). Ask the owner before each one.
 7. Deploy the meta job (D-492). It is one Cloud Run job on `worker -meta`, with a Scheduler cron at 06:00 UTC daily. `TOPDECK_API_KEY` goes to Secret Manager. No infra file in this repo holds the worker's schedule. So the deployment is by hand, as the snapshot worker's is.
