@@ -480,28 +480,24 @@ func (j *Job) runTopdeck(ctx context.Context, rep *Report) error {
 }
 
 // runEDHREC reads the top commanders and the named ones, each with its
-// average deck, when the last read is older than EDHRECDays.
+// average deck, when the last complete read is older than EDHRECDays.
 func (j *Job) runEDHREC(ctx context.Context, rep *Report) error {
 	now := j.Now().UTC()
 	day := now.Format("2006-01-02")
-	last, err := LatestCommandersDay(ctx, j.Store)
+	last, err := j.latestEDHRECRead(ctx)
 	if err != nil {
 		return err
 	}
-	if last != "" && last != day {
-		t, err := time.Parse("2006-01-02", last)
-		if err == nil && now.Sub(t) < time.Duration(j.EDHRECDays)*24*time.Hour {
-			if has, _ := j.edhrecReadOn(ctx, last); has {
-				rep.Skipped[SourceEDHREC] = "read on " + last
-				return nil
-			}
-		}
-	}
-	if has, err := j.edhrecReadOn(ctx, day); err != nil {
-		return err
-	} else if has {
+	if last == day {
 		rep.Skipped[SourceEDHREC] = "read today"
 		return nil
+	}
+	if last != "" {
+		t, err := time.Parse("2006-01-02", last)
+		if err == nil && now.Sub(t) < time.Duration(j.EDHRECDays)*24*time.Hour {
+			rep.Skipped[SourceEDHREC] = "read on " + last
+			return nil
+		}
 	}
 	slugs := map[string]string{}
 	var order []string
@@ -598,6 +594,27 @@ func (j *Job) runEDHREC(ctx context.Context, rep *Report) error {
 		return err
 	}
 	return j.Store.Put(ctx, RawName(SourceEDHREC, day+"/read"), []byte(day))
+}
+
+// latestEDHRECRead names the newest day whose EDHREC read completed.
+// The newest commanders day is not that mark: the tournament lane
+// writes the day's file before this lane runs (F-50).
+func (j *Job) latestEDHRECRead(ctx context.Context) (string, error) {
+	names, err := j.Store.List(ctx, CommandersPrefix)
+	if err != nil {
+		return "", err
+	}
+	for i := len(names) - 1; i >= 0; i-- {
+		day := strings.TrimSuffix(strings.TrimPrefix(names[i], CommandersPrefix), ".jsonl.gz")
+		has, err := j.edhrecReadOn(ctx, day)
+		if err != nil {
+			return "", err
+		}
+		if has {
+			return day, nil
+		}
+	}
+	return "", nil
 }
 
 // edhrecReadOn says whether the EDHREC read of a day completed.
