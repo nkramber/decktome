@@ -6,7 +6,9 @@ import (
 	"hash/fnv"
 	"log/slog"
 	"math"
+	"math/rand/v2"
 	"sort"
+	"strings"
 	"time"
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
@@ -28,6 +30,8 @@ type FitInput struct {
 	Logger     *slog.Logger
 	// Formats limits the fit, for the tests. Empty means the three.
 	Formats []mtgv1.FormatId
+	// Folds is how many folds the bars read, FoldCount when zero.
+	Folds int
 }
 
 // FitReport is what the gate document reads.
@@ -48,21 +52,37 @@ type FormatReport struct {
 	// Iterations and Loss are the fit's own numbers.
 	Iterations int
 	Loss       float64
+	// Folds is the holdout read over every fold, each list once, and
+	// FoldCount how many folds ran. The bars read Folds (M-7).
+	Folds     Holdout
+	FoldCount int
+	// Diagnostic reads the misses of the precon bar per axis and per
+	// precon over the folds.
+	Diagnostic *Diagnostic
 }
 
 // The fit constants.
 const (
 	// HoldoutEvery holds out one list in five by the hash of its key.
+	// FoldCount is how many such folds the bars read: every list is
+	// holdout in one fold, so a rung of eight precons reads eight and
+	// not one (F-52). The stored model is the fit of fold 0.
 	HoldoutEvery = 5
+	FoldCount    = 5
 	// Iterations, LearningRate, and L2 are the gradient descent.
 	Iterations   = 3000
 	LearningRate = 0.05
 	L2           = 0.01
-	// MaxPairChecks caps the holdout pairs per bar.
+	// MaxPairChecks caps the holdout pairs per bar. The pairs sample
+	// evenly under it: every upper list meets the same number of lower
+	// lists, drawn by a seeded permutation, so a bar never reads the
+	// first lists alone (F-51).
 	MaxPairChecks = 20000
 	// FitHands is the goldfish hand count of the fit, a tenth of the
 	// profiler's default, because the fit reads thousands of lists.
 	FitHands = 1000
+	// WorstPrecons is how many precons the diagnostic names.
+	WorstPrecons = 10
 )
 
 // Fit fits one scorer per format.
@@ -170,11 +190,38 @@ func capTiers(reals []*Resolved, limit int) []*Resolved {
 	return out
 }
 
-// holdout says whether a key sits in the holdout split.
-func holdout(key string) bool {
+// holdoutFold says whether a key sits in the holdout split of a fold.
+// The folds partition the keys, so every list is holdout in one fold.
+func holdoutFold(key string, fold int) bool {
 	h := fnv.New32a()
 	_, _ = h.Write([]byte(key))
-	return h.Sum32()%HoldoutEvery == 0
+	return int(h.Sum32()%HoldoutEvery) == fold
+}
+
+// holdout is the main split, fold 0, the one the stored model reads.
+func holdout(key string) bool { return holdoutFold(key, 0) }
+
+// baseKey is the key of the real list a copy came from, and the key
+// itself for a real list. A copy's id is the real key, a slash, and
+// the axis the fit asked for (F-55).
+func baseKey(l *meta.List) string {
+	if l.Source != meta.SourceSynthetic {
+		return l.Key()
+	}
+	id := l.ID
+	if i := strings.LastIndex(id, "/"); i >= 0 {
+		id = id[:i]
+	}
+	return id
+}
+
+// listName names a list for a reader: the product or the event, else
+// the id.
+func listName(l *meta.List) string {
+	if l.Event != "" {
+		return l.Event
+	}
+	return l.ID
 }
 
 type sample struct {
@@ -184,9 +231,221 @@ type sample struct {
 	hold     bool
 }
 
-func fitFormat(ctx context.Context, in FitInput, f mtgv1.FormatId) (*FormatModel, *FormatReport, error) {
+// holdRow is one holdout list of a fold, as the bars and the
+// diagnostic read it.
+type holdRow struct {
+	z      []float64
+	level  int
+	defect string
+	key    string
+	base   string
+	name   string
+	date   string
+}
+
+// prepared is one format's rows, resolved, capped, broken, and
+// profiled once, so every fold reads the same lists (M-7).
+type prepared struct {
+	f        mtgv1.FormatId
+	reals    []*Resolved
+	all      []*Resolved
+	tiers    []string
+	level    map[string]int
+	profiles map[string]*mtgv1.DeckProfile
+}
+
+// AxisRead reads the precon bar of one axis over every fold (M-7).
+type AxisRead struct {
+	// Pairs and Wins are the sampled pairs of the bar on this axis.
+	Pairs, Wins int
+	// The misses by kind. BothPassed: the detector passed both and the
+	// ladder put the copy at or above the precon. PreconFlagged: it
+	// flagged the precon and passed the copy. BothFlagged: it flagged
+	// both and read the precon as the more broken.
+	BothPassed, PreconFlagged, BothFlagged int
+	// OwnPairs and OwnWins read each precon against its own copy, and
+	// the own misses split by the same kinds.
+	OwnPairs, OwnWins                               int
+	OwnBothPassed, OwnPreconFlagged, OwnBothFlagged int
+	// LeastMoved and MostMoved name three features each, by the mean
+	// absolute standardized delta between a precon and its own copy.
+	LeastMoved, MostMoved []string
+	moved                 map[string]float64
+	movedN                int
+}
+
+// PreconRead is one holdout precon over the sampled pairs of the
+// precon bar.
+type PreconRead struct {
+	Name   string
+	Date   string
+	Grade  string
+	Defect float64
+	Pairs  int
+	Misses int
+}
+
+// Diagnostic is the read of the misses, per axis and per precon, over
+// every fold (M-7).
+type Diagnostic struct {
+	Axes map[string]*AxisRead
+	// Precons names the ones that lose most, by miss share.
+	Precons []PreconRead
+	precons map[string]*PreconRead
+}
+
+func newDiagnostic() *Diagnostic {
+	return &Diagnostic{Axes: map[string]*AxisRead{}, precons: map[string]*PreconRead{}}
+}
+
+func (d *Diagnostic) axis(name string) *AxisRead {
+	ar := d.Axes[name]
+	if ar == nil {
+		ar = &AxisRead{moved: map[string]float64{}}
+		d.Axes[name] = ar
+	}
+	return ar
+}
+
+// add folds another read into this one. A precon is holdout in one
+// fold alone, so its row arrives once.
+func (d *Diagnostic) add(o *Diagnostic) {
+	for name, oa := range o.Axes {
+		ar := d.axis(name)
+		ar.Pairs += oa.Pairs
+		ar.Wins += oa.Wins
+		ar.BothPassed += oa.BothPassed
+		ar.PreconFlagged += oa.PreconFlagged
+		ar.BothFlagged += oa.BothFlagged
+		ar.OwnPairs += oa.OwnPairs
+		ar.OwnWins += oa.OwnWins
+		ar.OwnBothPassed += oa.OwnBothPassed
+		ar.OwnPreconFlagged += oa.OwnPreconFlagged
+		ar.OwnBothFlagged += oa.OwnBothFlagged
+		ar.movedN += oa.movedN
+		for k, v := range oa.moved {
+			ar.moved[k] += v
+		}
+	}
+	for key, pr := range o.precons {
+		have := d.precons[key]
+		if have == nil {
+			c := *pr
+			d.precons[key] = &c
+			continue
+		}
+		have.Pairs += pr.Pairs
+		have.Misses += pr.Misses
+	}
+}
+
+// finish names the features per axis and the precons that lose most.
+func (d *Diagnostic) finish() *Diagnostic {
+	for _, ar := range d.Axes {
+		type moved struct {
+			key string
+			v   float64
+		}
+		var ms []moved
+		for k, v := range ar.moved {
+			ms = append(ms, moved{k, v})
+		}
+		sort.Slice(ms, func(i, j int) bool {
+			if ms[i].v != ms[j].v {
+				return ms[i].v < ms[j].v
+			}
+			return ms[i].key < ms[j].key
+		})
+		ar.LeastMoved, ar.MostMoved = nil, nil
+		for i := 0; i < len(ms) && i < 3; i++ {
+			ar.LeastMoved = append(ar.LeastMoved, ms[i].key)
+			ar.MostMoved = append(ar.MostMoved, ms[len(ms)-1-i].key)
+		}
+	}
+	d.Precons = d.Precons[:0]
+	for _, pr := range d.precons {
+		if pr.Pairs > 0 {
+			d.Precons = append(d.Precons, *pr)
+		}
+	}
+	share := func(pr PreconRead) float64 { return float64(pr.Misses) / float64(pr.Pairs) }
+	sort.Slice(d.Precons, func(i, j int) bool {
+		a, b := share(d.Precons[i]), share(d.Precons[j])
+		if a != b {
+			return a > b
+		}
+		return d.Precons[i].Name < d.Precons[j].Name
+	})
+	if len(d.Precons) > WorstPrecons {
+		d.Precons = d.Precons[:WorstPrecons]
+	}
+	return d
+}
+
+// MovedShare is the mean absolute standardized delta of a feature
+// between a precon and its own copy on this axis.
+func (a *AxisRead) MovedShare(key string) float64 {
+	if a.movedN == 0 {
+		return 0
+	}
+	return a.moved[key] / float64(a.movedN)
+}
+
+// add folds another holdout read into this one: the pairs and the
+// confusion sum, and the accuracies weigh by their rows.
+func (h *Holdout) add(o Holdout) {
+	total := h.Lists + o.Lists
+	if total > 0 {
+		h.Accuracy = round4((h.Accuracy*float64(h.Lists) + o.Accuracy*float64(o.Lists)) / float64(total))
+	}
+	dtotal := h.DefectLists + o.DefectLists
+	if dtotal > 0 {
+		h.DefectAccuracy = round4((h.DefectAccuracy*float64(h.DefectLists) + o.DefectAccuracy*float64(o.DefectLists)) / float64(dtotal))
+	}
+	h.Lists, h.DefectLists = total, dtotal
+	h.GreatOverBaseline.Pairs += o.GreatOverBaseline.Pairs
+	h.GreatOverBaseline.Wins += o.GreatOverBaseline.Wins
+	h.BaselineOverBad.Pairs += o.BaselineOverBad.Pairs
+	h.BaselineOverBad.Wins += o.BaselineOverBad.Wins
+	h.BaselineOverOwn.Pairs += o.BaselineOverOwn.Pairs
+	h.BaselineOverOwn.Wins += o.BaselineOverOwn.Wins
+	if len(h.Confusion) == 0 {
+		h.Confusion = make([][]int, len(o.Confusion))
+		for i := range o.Confusion {
+			h.Confusion[i] = append([]int(nil), o.Confusion[i]...)
+		}
+	} else {
+		for i := range o.Confusion {
+			for j := range o.Confusion[i] {
+				h.Confusion[i][j] += o.Confusion[i][j]
+			}
+		}
+	}
+	if h.BadByDefect == nil {
+		h.BadByDefect = map[string]PairShare{}
+	}
+	for axis, ps := range o.BadByDefect {
+		c := h.BadByDefect[axis]
+		c.Pairs += ps.Pairs
+		c.Wins += ps.Wins
+		h.BadByDefect[axis] = c
+	}
+	if h.OwnByDefect == nil {
+		h.OwnByDefect = map[string]PairShare{}
+	}
+	for axis, ps := range o.OwnByDefect {
+		c := h.OwnByDefect[axis]
+		c.Pairs += ps.Pairs
+		c.Wins += ps.Wins
+		h.OwnByDefect[axis] = c
+	}
+}
+
+// prepareFormat resolves the lists of a format, keeps the newest of
+// each tier, breaks the baseline and the typical lists, and profiles
+// every row once.
+func prepareFormat(ctx context.Context, in FitInput, f mtgv1.FormatId) (*prepared, *FormatReport, error) {
 	fr := &FormatReport{}
-	src := in.Index
 	pl := newPool(in.Index, f)
 	var reals []*Resolved
 	floor := PoolFloor(f, in.Now)
@@ -235,55 +494,61 @@ func fitFormat(ctx context.Context, in FitInput, f mtgv1.FormatId) (*FormatModel
 	for _, r := range all {
 		present[r.List.Tier] = true
 	}
-	fm := &FormatModel{Format: meta.FormatWord(f), TrainCounts: map[string]int{}, HoldoutCounts: map[string]int{}}
+	prep := &prepared{f: f, reals: reals, all: all, level: map[string]int{}, profiles: map[string]*mtgv1.DeckProfile{}}
 	for _, t := range meta.Tiers {
 		if present[t] {
-			fm.Tiers = append(fm.Tiers, t)
+			prep.tiers = append(prep.tiers, t)
 		}
 	}
-	if len(fm.Tiers) < 2 {
+	if len(prep.tiers) < 2 {
 		return nil, fr, fmt.Errorf("the lists hold one tier alone")
 	}
-	level := map[string]int{}
-	for i, t := range fm.Tiers {
-		level[t] = i
+	for i, t := range prep.tiers {
+		prep.level[t] = i
 	}
-	// The profiles, once per list.
-	profiles := map[string]*mtgv1.DeckProfile{}
+	// The profiles, once per row. A copy keeps its own key, so no copy
+	// reads the profile of another (F-55).
 	for _, r := range all {
 		if err := ctx.Err(); err != nil {
 			return nil, fr, err
 		}
-		profiles[r.List.Key()] = in.Profiler.Measure(r.Deck, src)
+		prep.profiles[r.List.Key()] = in.Profiler.Measure(r.Deck, in.Index)
 	}
+	return prep, fr, nil
+}
+
+// fitFold fits one fold: the corpus over its training split, the
+// scaler, the ladder, and the detector. It reads the holdout of the
+// fold and answers the model and the diagnostic.
+func fitFold(ctx context.Context, in FitInput, prep *prepared, fr *FormatReport, fold int) (*FormatModel, *Diagnostic, error) {
+	src := in.Index
+	fm := &FormatModel{Format: meta.FormatWord(prep.f), Tiers: prep.tiers, TrainCounts: map[string]int{}, HoldoutCounts: map[string]int{}}
 	// The corpus reads the training split alone, so the holdout says
 	// how the scorer does on lists it never saw.
 	var train []*Resolved
-	for _, r := range reals {
-		if !holdout(r.List.Key()) {
+	for _, r := range prep.reals {
+		if !holdoutFold(r.List.Key(), fold) {
 			train = append(train, r)
 		}
 	}
-	buildCorpus(fm, train, profiles, in.Index)
-	if f == mtgv1.FormatId_FORMAT_ID_COMMANDER {
+	buildCorpus(fm, train, prep.profiles, in.Index)
+	if prep.f == mtgv1.FormatId_FORMAT_ID_COMMANDER {
 		commanderSignals(fm, in.Commanders, in.Index)
 	}
-	samples := make([]sample, 0, len(all))
-	for _, r := range all {
-		base := r.List.Key()
-		if r.List.Source == meta.SourceSynthetic {
-			base = base[:len(base)-len("/"+r.List.Defect)]
-			base = base[len(meta.SourceSynthetic)+1:]
+	samples := make([]sample, 0, len(prep.all))
+	for _, r := range prep.all {
+		if err := ctx.Err(); err != nil {
+			return nil, nil, err
 		}
 		samples = append(samples, sample{
-			r: r, level: level[r.List.Tier], hold: holdout(base),
-			features: Features(Input{Deck: r.Deck, Profile: profiles[r.List.Key()], Cards: src}, fm),
+			r: r, level: prep.level[r.List.Tier], hold: holdoutFold(baseKey(r.List), fold),
+			features: Features(Input{Deck: r.Deck, Profile: prep.profiles[r.List.Key()], Cards: src}, fm),
 		})
 	}
 	// The scaler, from the training split, and the keys with spread.
-	var trainX, holdX [][]float64
-	var trainY, holdY []int
-	var holdDefects []string
+	var trainX [][]float64
+	var trainY []int
+	var rows []holdRow
 	means, stds := map[string]float64{}, map[string]float64{}
 	n := 0.0
 	for _, s := range samples {
@@ -307,18 +572,22 @@ func fitFormat(ctx context.Context, in FitInput, f mtgv1.FormatId) (*FormatModel
 			stds[k] += d * d
 		}
 	}
+	var dropped []string
 	for _, k := range Keys {
 		sd := math.Sqrt(stds[k] / n)
 		if sd < 1e-9 {
-			fr.Dropped = append(fr.Dropped, k)
+			dropped = append(dropped, k)
 			continue
 		}
 		fm.Keys = append(fm.Keys, k)
 		fm.Means = append(fm.Means, round4(means[k]))
 		fm.Stds = append(fm.Stds, round4(sd))
 	}
+	if fold == 0 {
+		fr.Dropped = dropped
+	}
 	if len(fm.Keys) == 0 {
-		return nil, fr, fmt.Errorf("no feature has spread")
+		return nil, nil, fmt.Errorf("no feature has spread")
 	}
 	// The detector's rows: every real list as 0, the broken copies as 1.
 	// The group word weighs the rows: the precons and the average decks
@@ -330,8 +599,7 @@ func fitFormat(ctx context.Context, in FitInput, f mtgv1.FormatId) (*FormatModel
 	for _, s := range samples {
 		z := fm.vector(s.features)
 		if s.hold {
-			holdX, holdY = append(holdX, z), append(holdY, s.level)
-			holdDefects = append(holdDefects, s.r.List.Defect)
+			rows = append(rows, holdRow{z: z, level: s.level, defect: s.r.List.Defect, key: s.r.List.Key(), base: baseKey(s.r.List), name: listName(s.r.List), date: s.r.List.Date})
 			fm.HoldoutCounts[s.r.List.Tier]++
 		} else {
 			trainX, trainY = append(trainX, z), append(trainY, s.level)
@@ -366,8 +634,11 @@ func fitFormat(ctx context.Context, in FitInput, f mtgv1.FormatId) (*FormatModel
 	for i, v := range th {
 		fm.Thresholds[i] = round4(v)
 	}
-	fr.Iterations, fr.Loss = Iterations, round4(loss)
-	fm.Holdout = evaluate(fm, holdX, holdY, holdDefects, level)
+	if fold == 0 {
+		fr.Iterations, fr.Loss = Iterations, round4(loss)
+	}
+	var diag *Diagnostic
+	fm.Holdout, diag = evaluate(fm, rows, prep.level, MaxPairChecks)
 	if len(defectHoldX) > 0 {
 		right := 0
 		for i, z := range defectHoldX {
@@ -376,8 +647,38 @@ func fitFormat(ctx context.Context, in FitInput, f mtgv1.FormatId) (*FormatModel
 			}
 		}
 		fm.Holdout.DefectAccuracy = round4(float64(right) / float64(len(defectHoldX)))
+		fm.Holdout.DefectLists = len(defectHoldX)
 	}
-	fr.Holdout = fm.Holdout
+	return fm, diag, nil
+}
+
+// fitFormat fits one format: the model on fold 0, and the bars over
+// every fold, so each list is holdout once (M-7).
+func fitFormat(ctx context.Context, in FitInput, f mtgv1.FormatId) (*FormatModel, *FormatReport, error) {
+	prep, fr, err := prepareFormat(ctx, in, f)
+	if err != nil {
+		return nil, fr, err
+	}
+	folds := in.Folds
+	if folds <= 0 {
+		folds = FoldCount
+	}
+	diag := newDiagnostic()
+	var fm *FormatModel
+	for fold := 0; fold < folds; fold++ {
+		m, fd, err := fitFold(ctx, in, prep, fr, fold)
+		if err != nil {
+			return nil, fr, err
+		}
+		if fold == 0 {
+			fm = m
+		}
+		fr.Folds.add(m.Holdout)
+		diag.add(fd)
+	}
+	fr.FoldCount = folds
+	fr.Diagnostic = diag.finish()
+	fr.Holdout = fr.Folds
 	return fm, fr, nil
 }
 
@@ -689,93 +990,165 @@ func addCutGradient(gp, params []float64, j int, g float64) {
 	}
 }
 
-// evaluate measures the holdout: the pair bars of the gate, the
-// accuracy, and the confusion table.
-func evaluate(fm *FormatModel, x [][]float64, y []int, defects []string, level map[string]int) Holdout {
-	h := Holdout{Lists: len(x)}
+// evaluate measures the holdout of a fold: the pair bars, the
+// accuracy, the confusion table, and the diagnostic of the misses. A
+// bar samples its pairs evenly under the limit: every upper list
+// meets the same number of lower lists, drawn by a seeded permutation
+// (F-51).
+func evaluate(fm *FormatModel, rows []holdRow, level map[string]int, limit int) (Holdout, *Diagnostic) {
+	h := Holdout{Lists: len(rows)}
+	diag := newDiagnostic()
 	levels := len(fm.Tiers)
 	h.Confusion = make([][]int, levels)
 	for i := range h.Confusion {
 		h.Confusion[i] = make([]int, levels)
 	}
-	scores := make([]float64, len(x))
+	scores := make([]float64, len(rows))
+	grades := make([]int, len(rows))
+	flagged := make([]bool, len(rows))
 	right := 0
-	for i, z := range x {
-		p, score := fm.grade(z)
+	for i, r := range rows {
+		p, score := fm.grade(r.z)
 		best := 0
 		for k, v := range p {
 			if v > p[best] {
 				best = k
 			}
 		}
-		scores[i] = score
-		h.Confusion[y[i]][best]++
-		if best == y[i] {
+		scores[i], grades[i], flagged[i] = score, best, fm.flagged(r.z)
+		h.Confusion[r.level][best]++
+		if best == r.level {
 			right++
 		}
 	}
-	if len(x) > 0 {
-		h.Accuracy = round4(float64(right) / float64(len(x)))
+	if len(rows) > 0 {
+		h.Accuracy = round4(float64(right) / float64(len(rows)))
 	}
-	pairBar := func(upper, lower string) PairShare {
-		u, uok := level[upper]
-		l, lok := level[lower]
-		var ps PairShare
-		if !uok || !lok {
-			return ps
-		}
-		var ui, li []int
-		for i, lv := range y {
-			switch lv {
-			case u:
-				ui = append(ui, i)
-			case l:
-				li = append(li, i)
+	byLevel := func(lv int, axis string) []int {
+		var out []int
+		for i, r := range rows {
+			if r.level == lv && (axis == "" || r.defect == axis) {
+				out = append(out, i)
 			}
 		}
-		sort.Ints(ui)
-		sort.Ints(li)
+		return out
+	}
+	bar := func(ui, li []int, seed string, visit func(a, b int, win bool)) PairShare {
+		var ps PairShare
+		if len(ui) == 0 || len(li) == 0 {
+			return ps
+		}
+		per := limit / len(ui)
+		if per < 1 {
+			per = 1
+		}
+		if per > len(li) {
+			per = len(li)
+		}
+		hash := fnv.New64a()
+		_, _ = hash.Write([]byte(seed))
+		rng := rand.New(rand.NewPCG(hash.Sum64(), 11))
 		for _, a := range ui {
-			for _, b := range li {
-				if ps.Pairs >= MaxPairChecks {
-					return ps
+			lower := li
+			if per < len(li) {
+				perm := rng.Perm(len(li))[:per]
+				lower = make([]int, per)
+				for i, j := range perm {
+					lower[i] = li[j]
 				}
+			}
+			for _, b := range lower {
 				ps.Pairs++
-				if scores[a] > scores[b] {
+				win := scores[a] > scores[b]
+				if win {
 					ps.Wins++
+				}
+				if visit != nil {
+					visit(a, b, win)
 				}
 			}
 		}
 		return ps
 	}
-	h.GreatOverBaseline = pairBar(meta.TierGreat, meta.TierBaseline)
-	h.BaselineOverBad = pairBar(meta.TierBaseline, meta.TierBad)
+	u, uok := level[meta.TierBaseline]
+	g, gok := level[meta.TierGreat]
+	l, lok := level[meta.TierBad]
+	if gok && uok {
+		h.GreatOverBaseline = bar(byLevel(g, ""), byLevel(u, ""), "great|baseline", nil)
+	}
+	if !uok || !lok {
+		return h, diag
+	}
+	precons := byLevel(u, "")
+	for _, a := range precons {
+		diag.precons[rows[a].key] = &PreconRead{Name: rows[a].name, Date: rows[a].date, Grade: fm.Tiers[grades[a]], Defect: round4(fm.defect(rows[a].z))}
+	}
+	h.BaselineOverBad = bar(precons, byLevel(l, ""), "baseline|bad", func(a, _ int, win bool) {
+		pr := diag.precons[rows[a].key]
+		pr.Pairs++
+		if !win {
+			pr.Misses++
+		}
+	})
 	// The precon bar per broken axis, so a reader sees which defect the
-	// detector misses.
-	if u, ok := level[meta.TierBaseline]; ok {
-		if l, ok := level[meta.TierBad]; ok {
-			h.BadByDefect = map[string]PairShare{}
-			for _, axis := range Defects {
-				var ps PairShare
-				for a, la := range y {
-					if la != u {
-						continue
-					}
-					for b, lb := range y {
-						if lb != l || defects[b] != axis || ps.Pairs >= MaxPairChecks {
-							continue
-						}
-						ps.Pairs++
-						if scores[a] > scores[b] {
-							ps.Wins++
-						}
-					}
-				}
-				if ps.Pairs > 0 {
-					h.BadByDefect[axis] = ps
-				}
-			}
+	// detector misses, and the misses by kind. Each precon also meets
+	// its own copy, which says how far the break moved each feature.
+	own := map[string][]int{}
+	for i, r := range rows {
+		if r.level == l {
+			own[r.base] = append(own[r.base], i)
 		}
 	}
-	return h
+	h.BadByDefect = map[string]PairShare{}
+	h.OwnByDefect = map[string]PairShare{}
+	for _, axis := range Defects {
+		li := byLevel(l, axis)
+		if len(li) == 0 {
+			continue
+		}
+		ar := diag.axis(axis)
+		ps := bar(precons, li, "baseline|bad|"+axis, func(a, b int, win bool) {
+			if win {
+				return
+			}
+			switch {
+			case !flagged[a] && !flagged[b]:
+				ar.BothPassed++
+			case flagged[a] && !flagged[b]:
+				ar.PreconFlagged++
+			case flagged[a] && flagged[b]:
+				ar.BothFlagged++
+			}
+		})
+		ar.Pairs, ar.Wins = ps.Pairs, ps.Wins
+		h.BadByDefect[axis] = ps
+		for _, a := range precons {
+			for _, b := range own[rows[a].key] {
+				if rows[b].defect != axis {
+					continue
+				}
+				ar.OwnPairs++
+				h.BaselineOverOwn.Pairs++
+				switch {
+				case scores[a] > scores[b]:
+					ar.OwnWins++
+					h.BaselineOverOwn.Wins++
+				case !flagged[a] && !flagged[b]:
+					ar.OwnBothPassed++
+				case flagged[a] && !flagged[b]:
+					ar.OwnPreconFlagged++
+				case flagged[a] && flagged[b]:
+					ar.OwnBothFlagged++
+				}
+				for i, k := range fm.Keys {
+					ar.moved[k] += math.Abs(rows[b].z[i] - rows[a].z[i])
+				}
+				ar.movedN++
+			}
+		}
+		if ar.OwnPairs > 0 {
+			h.OwnByDefect[axis] = PairShare{Pairs: ar.OwnPairs, Wins: ar.OwnWins}
+		}
+	}
+	return h, diag
 }
