@@ -768,14 +768,17 @@ describe("add a collection from the picker", () => {
 });
 
 // The pool is a choice of one chat, not a setting of the app (D-345).
-// Only the session id reaches localStorage, so a new load reads no
-// collection and the picker opens at any card.
+// The collection and the pool never reach localStorage, so a new load
+// reads no collection and the picker opens at any card. The session id
+// and the deck mark of F-67 do reach it.
 describe("the pool of a new chat", () => {
   it("keeps the pool out of the stored state", async () => {
     useAppStore.getState().setCollection("c1");
     await waitFor(() => expect(localStorage.getItem("mtg-deck-builder")).not.toBeNull());
     const stored = JSON.parse(localStorage.getItem("mtg-deck-builder") ?? "{}") as { state: Record<string, unknown> };
-    expect(Object.keys(stored.state)).toEqual(["sessionId"]);
+    expect(Object.keys(stored.state).sort()).toEqual(["hadDecks", "sessionId"]);
+    expect(stored.state).not.toHaveProperty("collectionId");
+    expect(stored.state).not.toHaveProperty("poolMode");
   });
 
   it("opens at any card when nothing chose a collection", async () => {
