@@ -1,0 +1,17 @@
+{"suite":"quality","run_id":"pr14b-quality-gate-run13","date":"2026-09-07","commit":"402ec6f","snapshot":"2026-09-04","versions":{"commanders_day":"2026-09-07","quality_model":"20260907T081746Z"},"calls":0,"seconds":57.858393375,"verdict":"FAIL"}
+{"item":"commander","metric":"fit","value":1,"kind":"gate"}
+{"item":"commander","metric":"great_over_precon","value":0.9737,"kind":"gate","detail":"20000 pairs, the bar is 0.90"}
+{"item":"commander","metric":"precon_over_bad","value":0.78385,"kind":"gate","detail":"20000 pairs, the bar is 0.95"}
+{"item":"commander","metric":"accuracy","value":0.652,"kind":"info"}
+{"item":"commander","metric":"lists","value":23628,"kind":"info","detail":"9229 used, 6145 synthetic, 2997 holdout"}
+{"item":"standard","metric":"fit","value":1,"kind":"gate"}
+{"item":"standard","metric":"great_over_precon","value":0.9772727272727273,"kind":"gate","detail":"308 pairs, the bar is 0.90"}
+{"item":"standard","metric":"precon_over_bad","value":0.88,"kind":"gate","detail":"50 pairs, the bar is 0.95"}
+{"item":"standard","metric":"accuracy","value":0.4374,"kind":"info"}
+{"item":"standard","metric":"lists","value":7356,"kind":"info","detail":"5617 used, 370 synthetic, 1166 holdout"}
+{"item":"modern","metric":"fit","value":1,"kind":"gate"}
+{"item":"modern","metric":"great_over_precon","value":0.98775,"kind":"gate","detail":"20000 pairs, the bar is 0.90"}
+{"item":"modern","metric":"precon_over_bad","value":0.85675,"kind":"gate","detail":"20000 pairs, the bar is 0.95"}
+{"item":"modern","metric":"accuracy","value":0.5334,"kind":"info"}
+{"item":"modern","metric":"lists","value":17666,"kind":"info","detail":"6835 used, 2745 synthetic, 1974 holdout"}
+{"item":"suite","metric":"offer","value":1,"kind":"gate","detail":"3 commanders, the bar is 3"}

@@ -6,9 +6,10 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## Where things stand (2026-09-07)
 
-- Branch `records-pr27`, from `main` at f27e4d1, holds the records of D-562 and the rename of D-563 (2026-09-07). It holds the module path in `go.mod`, the 215 Go files, the 11 proto options, the generated code, the doctor script, and the docs. The tree is green: Go build, vet, the race suite, golangci-lint, `make proto-check`, `make proto-breaking`, `make ste-check`, `make eval-check`, `make store-check`, the web lint, typecheck, and 272 tests. The User-Agent strings keep the product name `mtg-deck-builder/0.1` with the new URL, and the product rename goes with PR-25 (D-556). PR #76 holds it, and the owner reads the checks and merges it.
+- PR #76 merged on 2026-09-07 (D-564), `main` is 402ec6f, and branch `records-pr27` is gone. It held the records of D-562 and the rename of D-563. The rename covers `go.mod`, the 215 Go files, the 11 proto options, the generated code, the doctor script, and the docs. The User-Agent strings keep the product name `mtg-deck-builder/0.1` with the new URL, and the product rename goes with PR-25 (D-556). **The corpus step of 2026-09-07 ran on branch `corpus-refresh`** (D-566). `make meta-refresh` took 96 minutes, and quality gate run 13 reads FAIL on the precon bar of every format. The section "The corpus step of 2026-09-07" below holds the read, and the F-50 fix sits beside it. PR #77 holds it, and the owner reads the checks and merges it.
+- The weekly EDHREC skip never held (2026-09-07, F-50, D-565), found when `make meta-refresh` read EDHREC whole four days after 2026-09-03. The lane took the newest commanders day for the last read, and the tournament lane writes that day's file first. The skip reads the last completed read now, `TestEDHRECSkipsInsideTheWeek` holds it, and the fix sits on branch `corpus-refresh` beside the records. The read of 2026-09-07 ran on under the old code, so the next read falls on 2026-09-14.
 - The repository is `decktome` now, on GitHub and on disk (2026-09-07, D-563). Open the folder `~/Repos/decktome`. GitHub redirects the old name, the origin remote is `git@github.com:nkramber/decktome.git`, and the memory directory has a copy under the new key. The Go module path is `github.com/nkramber/decktome/go` now. The web storage key and the web package name keep the old name until the owner asks (D-563).
-- PR #75 merged on 2026-09-07 (D-562), `main` is f27e4d1, and branch `pr-27` is gone. The owner ran the workflow `smoke` on the branch first, and it passed in 2 minutes 32 seconds. **The next code items wait on the owner.** The deploy of PR-22 by `docs/setup-gcp.md` unblocks PR-25 (D-555), and the first real feedback that PR-28 needs comes from the deployed app (D-557). Until then the free items stand: `make meta-refresh` daily with `make quality-gate` after it, and the weekly EDHREC read on 2026-09-10 (D-499).
+- PR #75 merged on 2026-09-07 (D-562), `main` is f27e4d1, and branch `pr-27` is gone. The owner ran the workflow `smoke` on the branch first, and it passed in 2 minutes 32 seconds. **The next code items wait on the owner.** The deploy of PR-22 by `docs/setup-gcp.md` unblocks PR-25 (D-555), and the first real feedback that PR-28 needs comes from the deployed app (D-557). Until then the free items stand: `make meta-refresh` daily with `make quality-gate` after it, and the weekly EDHREC read on 2026-09-14 (D-499, D-565).
 - Branch `pr-27`, from `main` at 9e91959, held PR-27, the feedback harvest (2026-09-06, D-561), merged as #75 (D-562). `FeedbackService.SubmitFeedback` writes one document per verdict under `users/<uid>/feedback/<id>`, with the reason keys, the text, and the prompt versions of the moment. The API refuses another user's session or deck with `PermissionDenied`. The web feature `feedback` holds `Thumbs` and `FeedbackDialog`, and the pair sits in the five places of the design note. The smoke flow rates the built deck and reads the toast. The tree is green: Go build, vet, the whole race suite, golangci-lint, the web lint, typecheck, and 272 tests, `make store-check` on six stores, `make smoke` in 15.8 seconds, and `make ste-check`. The free gate is `docs/reference/pr27-gate-2026-09-06.md`. **The owner triggers the workflow `smoke` before the merge (D-313).** PR-28, the loop, follows the merge and the first real feedback. The section "PR-27, what the branch holds" below holds the moving parts.
 - PR #74 merged on 2026-09-06 (D-560), and branch `records-decktome` is gone. It held the records D-554 to D-559, the domain note, the GoDaddy path of the deploy guide, and the feedback plan. **PR-27, the feedback harvest, is next**, on branch `pr-27` from `main`, with nothing left open.
 - The feedback system is the immediate item (2026-09-06, D-557 to D-559). `docs/reference/feedback-2026-09-06.md` holds the design of PR-27, the harvest, and PR-28, the loop. The owner answered OQ-70 to OQ-72 the same day (D-559). The card thumbs sit on the tile foot and in the sheet. The harvest file holds the user's words, the deck list, the session id, and the uid, never the email. The loop runs on demand at $2 a cycle. The section "PR-27, what to build" below holds the order of work.
@@ -48,6 +49,36 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 - PR-9 is out of the MVP (D-256). Phase 3B comes before Phase 4 (D-316).
 
 CAUTION: branch `pr-17` carries eight concerns. They are the contract, the Go side, the reference design, and the layout of D-331. They are also the Build menu, the one deck screen, the pool picker, and the speed of the app. Guardrail 10 asks for one. The owner chose to ship it whole (D-344).
+
+## The corpus step of 2026-09-07 (D-564 to D-566)
+
+`make meta-refresh` ran from 01:36 to 03:12 local, 96 minutes, on branch `corpus-refresh`, and every source read with zero parse failures. The report per source:
+
+- MTGO: 200 pages, 38 fetch errors, and 6,029 lists. The 38 are retired event pages, and more pages wait behind the cap.
+- MTGJSON: skipped. The deck list of version `5.3.0+20260906` names the products of the stored table `5.3.0+20260903` (D-510).
+- The cEDH database: 1 page.
+- Topdeck.gg: 1 page and 1,144 lists, after two 429 answers with an 8-second wait each. The run of 2026-09-03 gave 31.
+- EDHREC: 2,077 pages and 3 new lists. The weekly skip never held, and F-50 fixes it (D-565).
+- MTGTop8: 255 pages and 215 lists. MTGGoldfish: 200 pages and 146 lists, and more decks wait behind the cap.
+- The fit stored model `20260907T081149Z` over 48,766 lists and 1,562 commanders.
+
+Quality gate run 13 is `docs/reference/pr14b-quality-gate-run13.md`, free, 58 seconds. It reads FAIL on the precon bar of every format, and it is the first quality run with a run file.
+
+| Format | Great over precon | Precon over bad | Run 12 precon over bad |
+|---|---|---|---|
+| Commander | 0.97 | 0.78 | 0.78 |
+| Standard | 0.98 | 0.88 of 50 | 1.00 of 5 |
+| Modern | 0.99 | 0.86 | 0.88 |
+
+Commander did not move. Every bar and every axis sits within 0.02 of run 12: lands 0.97, curve 0.96, colors 0.92, and synergy 0.78. The two sign changes are under 0.03 in size, `color_sources` and `empty_roles`. The four weights against the sense of their feature persist: `draw` -0.23, `wipe` -0.15, `land` -0.26, and `commander_decks` -0.13. The great and the good rungs hold 4,000 lists each, so the 1,144 tournament lists replaced others inside the cap.
+
+Standard is a different model now. The typical rung exists, 68 casual lists from MTGGoldfish, 57 in train and 9 in the holdout. The synthetic bad rung grew from 40 to 370 lists, five breaks of each baseline and typical list. The precon bar reads 50 pairs instead of 5. The colors axis reads 0.38 of 8, and synergy 0.92 of 13. The other three axes read 1.00.
+
+The Standard weights moved most. `card_rate` fell from +1.89 to +1.40, `synergy` from +1.44 to +0.98, `color_sources` from +0.82 to +0.35, and `avg_mana_value` from -0.21 to -0.87. Four weights changed sign: `land`, `curve_high`, `draw`, and `empty_roles`, each under 0.11 in size after the change. A model fit over 35 bad lists became a model fit over 320, so run 12 and run 13 do not compare on Standard.
+
+Modern moved little. The great rung grew from 1,388 to 1,805 train lists and the bad rung from 1,935 to 2,205. The weak axes are the same: colors 0.51 and copies 0.89, with synergy at 0.86. Four small signs changed, each under 0.04 in size: `mana_turn_four`, `wipe`, `interaction`, and `fast_mana`.
+
+The bracket 5 offer names The Jolly Balloon Man at 0.57, Niv-Mizzet, Parun at 0.50, and Etali, Primal Conqueror at 0.50. Etali holds 76 top cuts in 411 entries. No weight changed by hand (D-486). The judge bar stays open on the corpus (D-488, D-491).
 
 ## PR-27, what the branch held (2026-09-06, merged as #75)
 
@@ -689,6 +720,8 @@ The owner set the order on 2026-09-03: the corpus work first, then PR-24, then P
 
 CAUTION: the EDHREC read ran although the last read was 2026-09-02. The skip reads a `read` marker under the day's raw prefix, and the run of 2026-09-02 wrote none. So the weekly stamp starts on 2026-09-03, and the next read falls on 2026-09-10 (D-499). D-495 rests on a wrong premise, the skip of the read, and its order of the paid runs stands.
 
+That stamp never held either (F-50, D-565). The tournament lane writes the day's commanders file first, so the lane read the last read as today on every run. The read of 2026-09-07 sets the next read on 2026-09-14.
+
 The MTGJSON version stamp carries the day, so the skip on an existing table never held before 2026-09-04. The job now compares the products of the deck list with the stored deck list of the newest table. It reads no deck file when they match (D-510), and a table older than 30 days reads whole again.
 
 Quality gate run 11 is `docs/reference/pr14b-quality-gate-run11.md`, free. It reads FAIL on two bars. The gate fits its own model over the store, `20260903T183943Z`. The stored model is the job's fit of a minute before, over the same lists.
@@ -800,8 +833,8 @@ The chat ran a turn with no card index before D-405. The commander question then
 1. The three work items of 2026-09-04 are done (D-531). The precon check merged as #67, the terse conversations as #68, and the trimmed snapshot as #69 (D-533, D-541, D-543). The precon check ignores basic lands (D-523, F-35). The 47 terse conversations join the bar (D-522). One paid run of about $0.28 rebases the gate with the new threshold. A trimmed card snapshot of at most 10 MB serves Tier 0 (D-521).
 2. The reword guard of D-88 stays at 0.60 (D-545). The M-5 evidence against it was the D-116 class. Four of the five live refusals scored better were the resolved row with an ask-role clause removed. The fifth was the format row with a clause added. Closed with no run.
 3. The M-5 sheet is complete (D-529, D-530), and the fit threshold stays at 0.35: no candidate meets the 80 percent floor.
-4. PR-27, the feedback harvest, is merged as #75 (D-561, D-562). PR-28, the feedback loop, follows the first real feedback (D-557), by `docs/reference/feedback-2026-09-06.md`, with OQ-70 to OQ-72 answered (D-559). The first real feedback needs the deployed app. PR-22 is merged as #72 (D-551). The deploy follows `docs/setup-gcp.md` on the owner's account, and the deploy half of `docs/reference/pr22-gate-2026-09-06.md` fills in after it. PR-23 is merged as #73 (D-554). PR-25 waits for the deploy (D-555). Then PR-25, the installable web app (D-547), and PR-26, the return channels, once the owner answers OQ-67. OQ-45 held the store of the allowlist, and D-420 answered it: one Firestore document, `config/allowlist`, written by `make allow EMAIL=...`. Then PR-23.
-5. `make meta-refresh` daily, and `make quality-gate` to a new `QUALITY_GATE_OUT` after each one. Read the pair bars per format and the per-axis table. A weight against the sense of its feature is a defect in the feature or the labels. Do not tune it. The next weekly EDHREC read falls on 2026-09-10 (D-499).
+4. PR-27, the feedback harvest, is merged as #75 (D-561, D-562). PR #76 merged the records of D-562 and the rename of D-563 (D-564). PR-28, the feedback loop, follows the first real feedback (D-557), by `docs/reference/feedback-2026-09-06.md`, with OQ-70 to OQ-72 answered (D-559). The first real feedback needs the deployed app. PR-22 is merged as #72 (D-551). The deploy follows `docs/setup-gcp.md` on the owner's account, and the deploy half of `docs/reference/pr22-gate-2026-09-06.md` fills in after it. PR-23 is merged as #73 (D-554). PR-25 waits for the deploy (D-555). Then PR-25, the installable web app (D-547), and PR-26, the return channels, once the owner answers OQ-67. OQ-45 held the store of the allowlist, and D-420 answered it: one Firestore document, `config/allowlist`, written by `make allow EMAIL=...`. Then PR-23.
+5. `make meta-refresh` daily, and `make quality-gate` to a new `QUALITY_GATE_OUT` after each one. Read the pair bars per format and the per-axis table. A weight against the sense of its feature is a defect in the feature or the labels. Do not tune it. The next weekly EDHREC read falls on 2026-09-14 (D-499, D-565).
 6. Every paid run goes through `eval sweep` or its Makefile target. Each one writes its run file beside the document. The bracket rejudge of 2026-09-03 ran on 2026-09-05 (D-540). Ask the owner before each one.
 7. Deploy the meta job (D-492). It is one Cloud Run job on `worker -meta`, with a Scheduler cron at 06:00 UTC daily. `TOPDECK_API_KEY` goes to Secret Manager. No infra file in this repo holds the worker's schedule. So the deployment is by hand, as the snapshot worker's is.
 8. PR-22 and PR-23 came in order after PR-15, one gate each (D-511). The owner triggers the workflow `smoke` before a merge that touches the user path (D-313).
