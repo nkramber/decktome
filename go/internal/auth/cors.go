@@ -23,7 +23,10 @@ func CORS(allowed []string, next http.Handler) http.Handler {
 			h.Set("Access-Control-Allow-Origin", origin)
 			h.Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 			h.Set("Access-Control-Allow-Headers", "Authorization, Content-Type, Connect-Protocol-Version, Connect-Timeout-Ms")
-			h.Set("Access-Control-Expose-Headers", "Connect-Protocol-Version")
+			// A browser reads no response header that this list omits.
+			// The refusal header names why a call was refused, and the
+			// web app reads it cross-origin (F-59, D-590).
+			h.Set("Access-Control-Expose-Headers", "Connect-Protocol-Version, "+RefusalHeader)
 			h.Set("Access-Control-Max-Age", "600")
 			h.Add("Vary", "Origin")
 			if r.Method == http.MethodOptions {
