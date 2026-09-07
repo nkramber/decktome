@@ -6,79 +6,61 @@ The project is `decktome-prod`, and the region is `us-central1`. The deploy of 2
 
 ## 1. A merge to main deploys itself
 
-The workflow `deploy` builds and releases every merge to `main` (D-582). No step of section 4 or section 5 runs by hand any more. The workflow reads the changed paths first, so a merge of documents alone deploys nothing.
+Cloud Build builds and releases every merge to `main` (D-584). No step of section 4 or section 5 runs by hand. Two triggers read the diff of the merge, so a merge pays for what it changed.
 
-| The merge touches | The workflow does |
-|---|---|
-| Any file under `go/` or `docker/` | Builds both images, deploys the API, points both jobs at the new image, and waits for `/readyz` |
-| Any file under `web/`, or `firebase.json` | Builds the web app and releases it, then reads the site |
-| Only `docs/` | Nothing |
+| Trigger | It fires on | It does |
+|---|---|---|
+| `deploy-api`, `cloudbuild/api.yaml` | `go/**`, `docker/**` | Builds both images, deploys the API, points both jobs at the new image, and waits for `/readyz` |
+| `deploy-web`, `cloudbuild/web.yaml` | `web/**`, `firebase.json` | Builds the web app, releases it, and reads the site |
 
-Sections 2 to 6 stay for two jobs: the first deploy of a new project, and a step the workflow cannot do. Section 8 is the rollback, and it stays a command you run.
+A merge of documents alone starts no build at all.
 
-CAUTION: the workflow deploys `main` and no other branch (D-579). It starts on a push to `main` and on a dispatch, and never on a pull request (D-578).
+Cloud Build runs the deploy, and not GitHub Actions, to keep the free Actions minutes for the checks (D-584). Cloud Build gives 2,500 build-minutes a month, and a minute costs $0.006 after that. GitHub gives 2,000 minutes a month for a private repository, and a minute costs $0.008. The two pools are apart, so a deploy never takes a minute the checks need.
+
+The workflow `deploy` of GitHub Actions stays as the way back. Nothing starts it on its own, and a dispatch runs the same steps.
+
+CAUTION: the triggers read `main` and no other branch (D-579). A pull request starts no build.
 
 ### 1.1 The one-time setup
 
-The workflow signs in with Workload Identity Federation, so no key of a service account lives in the repository. Run these commands one time, as the owner of the project.
+Run these one time, as the owner of the project.
 
-1. Create the deployer:
+1. Connect the repository. Open Cloud Build, then Triggers, then Connect Repository. Choose GitHub, then `nkramber/decktome`, and install the Cloud Build app on it. This step needs a browser.
 
-```
-gcloud iam service-accounts create gh-deployer --display-name="github deployer"
-```
-
-2. Create the pool and the provider. The condition names the repository, so no other repository can sign in as the deployer:
+2. Create the two triggers:
 
 ```
-gcloud iam workload-identity-pools create github --location=global \
-  --display-name="GitHub Actions"
-gcloud iam workload-identity-pools providers create-oidc github \
-  --location=global --workload-identity-pool=github \
-  --issuer-uri="https://token.actions.githubusercontent.com" \
-  --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository" \
-  --attribute-condition="assertion.repository=='nkramber/decktome'"
+gcloud builds triggers create github --name=deploy-api \
+  --repo-owner=nkramber --repo-name=decktome \
+  --branch-pattern='^main$' --build-config=cloudbuild/api.yaml \
+  --included-files='go/**,docker/**'
+gcloud builds triggers create github --name=deploy-web \
+  --repo-owner=nkramber --repo-name=decktome \
+  --branch-pattern='^main$' --build-config=cloudbuild/web.yaml \
+  --included-files='web/**,firebase.json'
 ```
 
-3. Let the repository act as the deployer:
+3. Grant the build account what a deploy needs:
 
 ```
-gcloud iam service-accounts add-iam-policy-binding \
-  gh-deployer@decktome-prod.iam.gserviceaccount.com \
-  --role=roles/iam.workloadIdentityUser \
-  --member="principalSet://iam.googleapis.com/projects/492774632746/locations/global/workloadIdentityPools/github/attribute.repository/nkramber/decktome"
-```
-
-4. Grant the deployer what a deploy needs, and nothing else:
-
-```
+CB=492774632746@cloudbuild.gserviceaccount.com
 for role in roles/run.admin roles/artifactregistry.writer roles/firebasehosting.admin; do
   gcloud projects add-iam-policy-binding decktome-prod \
-    --member=serviceAccount:gh-deployer@decktome-prod.iam.gserviceaccount.com --role=$role
+    --member=serviceAccount:$CB --role=$role
 done
 ```
 
-5. Let the deployer run the API and the jobs as their own accounts. This binding names those two accounts, and never every account of the project:
+4. Let the build account run the API and the jobs as their own accounts. This binding names those two accounts, and never every account of the project:
 
 ```
 for sa in mtg-api mtg-worker; do
   gcloud iam service-accounts add-iam-policy-binding \
     $sa@decktome-prod.iam.gserviceaccount.com \
-    --member=serviceAccount:gh-deployer@decktome-prod.iam.gserviceaccount.com \
-    --role=roles/iam.serviceAccountUser
+    --member=serviceAccount:$CB --role=roles/iam.serviceAccountUser
 done
 ```
 
-6. Write the four Firebase values as repository variables. They reach the browser in the bundle, so they are variables and never secrets:
-
-```
-gh variable set VITE_FIREBASE_PROJECT_ID --body "decktome-prod"
-gh variable set VITE_FIREBASE_AUTH_DOMAIN --body "decktome-prod.firebaseapp.com"
-gh variable set VITE_FIREBASE_API_KEY --body "<the apiKey of firebase apps:sdkconfig>"
-gh variable set VITE_FIREBASE_APP_ID --body "<the appId of firebase apps:sdkconfig>"
-```
-
-Note: one deploy costs about 5 to 8 minutes of Actions time for the API and about 3 to 4 for the web app. A merge that touches documents alone costs about one minute.
+Note: the Workload Identity Federation setup of D-582 stays. The GitHub workflow reads it when somebody runs the deploy by hand.
 
 ## 2. What each merge changes
 
