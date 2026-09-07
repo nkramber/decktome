@@ -1,0 +1,90 @@
+# The API and the two jobs, built and deployed on Cloud Build (D-584).
+# The trigger fires on a push to main whose diff touches go/ or docker/.
+#
+# Cloud Build has its own free tier of 2,500 build-minutes a month, apart
+# from the Actions minutes of GitHub, and a minute costs less there.
+steps:
+  - id: build-api
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -f
+      - docker/api.Dockerfile
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/mtg/api:$SHORT_SHA
+      - .
+
+  - id: build-worker
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -f
+      - docker/worker.Dockerfile
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/mtg/worker:$SHORT_SHA
+      - .
+
+  - id: push
+    name: gcr.io/cloud-builders/docker
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -euo pipefail
+        base="${_REGION}-docker.pkg.dev/$PROJECT_ID/mtg"
+        docker push "$$base/api:$SHORT_SHA"
+        docker push "$$base/worker:$SHORT_SHA"
+
+  # The deploy names the image alone. Every environment variable, every
+  # secret, and every flag of the revision before it carries over.
+  - id: deploy-api
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - mtg-api
+      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/mtg/api:$SHORT_SHA
+      - --region=${_REGION}
+      - --quiet
+
+  - id: update-jobs
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -euo pipefail
+        for job in mtg-snapshot mtg-meta; do
+          gcloud run jobs update "$$job" --region "${_REGION}" \
+            --image "${_REGION}-docker.pkg.dev/$PROJECT_ID/mtg/worker:$SHORT_SHA" --quiet
+        done
+
+  # /healthz never answers on a run.app URL, because the Google frontend
+  # takes that path. /readyz reads `starting` for about 90 seconds after
+  # a cold start, so the check waits for it.
+  - id: check
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -euo pipefail
+        url=$$(gcloud run services describe mtg-api --region "${_REGION}" --format='value(status.url)')
+        for i in $$(seq 1 20); do
+          body=$$(curl -s -m 60 "$$url/readyz" || true)
+          echo "$$i: $$body"
+          case "$$body" in *'"status":"ok"'*) exit 0 ;; esac
+          sleep 15
+        done
+        echo "the api never read ok"
+        exit 1
+
+substitutions:
+  _REGION: us-central1
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: E2_HIGHCPU_8
+
+timeout: 1800s

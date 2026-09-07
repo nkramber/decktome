@@ -1,15 +1,12 @@
 name: deploy
 
-# A merge to main builds both images and deploys them, and it builds and
-# releases the web app (D-582). Nothing else starts this workflow: a
-# pull request runs no job at all (D-578), and main alone reaches
-# production (D-579). A dispatch runs the same steps by hand.
+# Cloud Build deploys every merge to main (D-584). This workflow is the
+# way back when Cloud Build is down or its trigger is broken, and it
+# spends no Actions minute until somebody starts it by hand.
 #
-# The job reads the changed paths first, so a merge of documents alone
-# deploys nothing and spends no minute beyond the read.
+# Nothing starts it on its own. Main alone reaches production (D-579),
+# so run it from the main branch and no other.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 # One deploy at a time, and never cancel one in flight: a half-applied
@@ -46,18 +43,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          # A dispatch has no previous commit to read, so it deploys all.
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            { echo "go=true"; echo "web=true"; } | tee -a "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          git diff --name-only HEAD^ HEAD > changed.txt
-          echo "changed files:"; cat changed.txt
-          has() { grep -Eq "$1" changed.txt && echo true || echo false; }
-          {
-            echo "go=$(has '^(go/|docker/|\.github/workflows/deploy\.yml$)')"
-            echo "web=$(has '^(web/|firebase\.json$|\.github/workflows/deploy\.yml$)')"
-          } | tee -a "$GITHUB_OUTPUT"
+          # A hand-started deploy rebuilds every part.
+          { echo "go=true"; echo "web=true"; } | tee -a "$GITHUB_OUTPUT"
 
   api:
     name: "deploy:api"
