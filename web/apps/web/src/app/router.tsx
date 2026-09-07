@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
-import { createBrowserRouter, createMemoryRouter, type RouteObject } from "react-router";
+import { createBrowserRouter, createMemoryRouter, Outlet, type RouteObject } from "react-router";
 
-import { RequireAuth, RootRedirect } from "../features/auth/require-auth";
-import { collectionChunk, decksChunk, deckScreenChunk, sessionChunk, sharedDeckChunk, signInChunk } from "./chunks";
+import { LoadingSession, RequireAuth, RootRedirect } from "../features/auth/require-auth";
+import { collectionChunk, decksChunk, deckScreenChunk, inviteGateChunk, sessionChunk, sharedDeckChunk, signInChunk } from "./chunks";
 import { PageFallback } from "./components/page-fallback";
 import type { Deferred } from "./deferred";
 import { Layout } from "./layout";
@@ -32,6 +32,23 @@ function page(chunk: Deferred<object>): ReactNode {
   return <Page />;
 }
 
+const InviteGate = inviteGateChunk.Mount;
+
+// A signed-in reader is not an invited one (F-59). The gate asks the API
+// and holds every protected page until it answers, so a reader off the
+// list never reads a shell that always fails. It sits under the guard
+// and over the pages, because no page may render before the answer.
+function InviteGateRoute() {
+  inviteGateChunk.preload();
+  const failure = inviteGateChunk.useError();
+  if (failure) throw failure;
+  return (
+    <InviteGate fallback={<LoadingSession />}>
+      <Outlet />
+    </InviteGate>
+  );
+}
+
 export function appRoutes(extra: RouteObject[] = []): RouteObject[] {
   return [
     {
@@ -46,10 +63,17 @@ export function appRoutes(extra: RouteObject[] = []): RouteObject[] {
         {
           element: <RequireAuth />,
           children: [
-            { path: "/collection", element: page(collectionChunk) },
-            { path: "/session/:id", element: page(sessionChunk) },
-            { path: "/decks", element: page(decksChunk) },
-            { path: "/decks/:id", element: page(deckScreenChunk) },
+            {
+              element: <InviteGateRoute />,
+              children: [
+                { path: "/collection", element: page(collectionChunk) },
+                { path: "/session/:id", element: page(sessionChunk) },
+                { path: "/decks", element: page(decksChunk) },
+                { path: "/decks/:id", element: page(deckScreenChunk) },
+              ],
+            },
+            // extra is the test seam. It stays outside the gate, so a
+            // test route needs no invite answer.
             ...extra,
           ],
         },

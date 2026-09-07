@@ -724,7 +724,9 @@ describe("a question that is open", () => {
     chat.mockReturnValue(events([ev("sessionStarted", "s1"), ev("question", formatQuestion)]));
     await renderAt("/session/new");
     const user = userEvent.setup();
-    await user.type(screen.getByLabelText("Your message"), "elves");
+    // The invite gate reads the API before the page renders (F-59), so
+    // the box arrives one hop after the render.
+    await user.type(await screen.findByLabelText("Your message"), "elves");
     await user.click(screen.getByRole("button", { name: "Send" }));
 
     const card = await screen.findByRole("group", { name: "Question: Which format?" });

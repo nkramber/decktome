@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import { deferred } from "./deferred";
 
 // Every chunk the shell defers, in one place. The router and the layout
@@ -8,6 +10,10 @@ export const healthFooterChunk = deferred(async () => ({ default: (await import(
 export const toasterChunk = deferred(async () => ({ default: (await import("../components/ui/toaster")).Toaster }));
 
 export const signInChunk = deferred(async () => ({ default: (await import("../features/auth/sign-in-page")).SignInPage }));
+// The invite gate asks the API whether the reader is on the list (F-59).
+// It holds the Connect client, so the route guard stays out of the shell
+// bundle and a redirect still needs no download (D-320).
+export const inviteGateChunk = deferred<{ children: ReactNode }>(async () => ({ default: (await import("../features/auth/invite-gate")).default }));
 export const collectionChunk = deferred(async () => ({ default: (await import("../features/collection/collection-page")).CollectionPage }));
 export const sessionChunk = deferred(async () => ({ default: (await import("../features/chat/session-page")).SessionPage }));
 export const decksChunk = deferred(async () => ({ default: (await import("../features/deck/decks-page")).DecksPage }));
@@ -16,7 +22,7 @@ export const deckScreenChunk = deferred(async () => ({ default: (await import(".
 // module, so a visitor pays for none.
 export const sharedDeckChunk = deferred(async () => ({ default: (await import("../features/share/shared-deck-page")).SharedDeckPage }));
 
-const all = [accountMenuChunk, healthFooterChunk, toasterChunk, signInChunk, collectionChunk, sessionChunk, decksChunk, deckScreenChunk, sharedDeckChunk];
+const all = [accountMenuChunk, healthFooterChunk, toasterChunk, signInChunk, inviteGateChunk, collectionChunk, sessionChunk, decksChunk, deckScreenChunk, sharedDeckChunk];
 
 // warmChunks brings in every deferred chunk. A menu that mounts on the
 // click costs about 320 ms of that click, measured on 2026-08-30, and a

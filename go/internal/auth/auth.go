@@ -176,6 +176,23 @@ var (
 	errNotInvited = errors.New("this app is open to invited users alone, and your email is not on the list")
 )
 
+// RefusalHeader names the state behind a refusal, and RefusalNotInvited
+// is the one value it takes (F-59). A client reads the state from this
+// header alone, and never from the sentence, so the wording of the
+// message stays free to change.
+const (
+	RefusalHeader     = "Deck-Tome-Refusal"
+	RefusalNotInvited = "not-invited"
+)
+
+// notInvited is the refusal a caller off the list reads (D-314). The
+// metadata carries the state, and the message carries the sentence.
+func notInvited() *connect.Error {
+	err := connect.NewError(connect.CodePermissionDenied, errNotInvited)
+	err.Meta().Set(RefusalHeader, RefusalNotInvited)
+	return err
+}
+
 // resolve reads the Authorization header and returns the context that
 // carries the user, or the Connect error to answer with.
 func (i *interceptor) resolve(ctx context.Context, authorization string) (context.Context, error) {
@@ -204,7 +221,7 @@ func (i *interceptor) resolve(ctx context.Context, authorization string) (contex
 			return nil, connect.NewError(connect.CodeUnavailable, errors.New("the invite list could not be read"))
 		}
 		if !ok {
-			return nil, connect.NewError(connect.CodePermissionDenied, errNotInvited)
+			return nil, notInvited()
 		}
 	}
 	return WithEmail(WithUserID(ctx, id.UID), id.Email), nil

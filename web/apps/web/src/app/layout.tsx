@@ -3,8 +3,9 @@ import { useEffect } from "react";
 import { Link, Outlet } from "react-router";
 
 import { useAuth } from "../features/auth/auth-context";
+import { useInviteState } from "../features/auth/invite-state";
+import { signOutAndClear } from "../features/auth/sign-out";
 import { errorMessage } from "../lib/errors";
-import { signOutOfApp } from "../lib/firebase";
 import { useAppStore } from "../lib/store";
 import { healthFooterChunk, scheduleWarm, toasterChunk } from "./chunks";
 import { AccountMenu } from "./components/account-menu";
@@ -16,18 +17,11 @@ import { TopNav } from "./components/top-nav";
 const HealthFooter = healthFooterChunk.Mount;
 const Toaster = toasterChunk.Mount;
 
-// signOutAndClear clears the persisted ids and the query cache, so the
-// next account on this browser starts with nothing of the last one.
-export async function signOutAndClear(reset: () => void, clear: () => void) {
-  await signOutOfApp();
-  reset();
-  clear();
-}
-
 // The layout is the shell (D-328): one header over the whole width, the
 // page under it, and the card-data line at the foot.
 export function Layout() {
   const { user } = useAuth();
+  const invite = useInviteState();
   const queryClient = useQueryClient();
   const reset = useAppStore((s) => s.reset);
 
@@ -60,7 +54,9 @@ export function Layout() {
 
         {user && (
           <div className="flex items-center gap-1">
-            <TopNav />
+            {/* A reader off the invite list reads no navigation (F-59).
+                The account menu stays, because sign-out is the way out. */}
+            {invite !== "refused" && <TopNav />}
             <div className="ml-2 flex items-center gap-2 border-l border-border pl-3">
               <AccountMenu email={user.email ?? ""} onSignOut={() => void onSignOut()} side="bottom" align="end" />
             </div>
