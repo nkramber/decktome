@@ -54,9 +54,12 @@ export function Layout() {
 
         {user && (
           <div className="flex items-center gap-1">
-            {/* A reader off the invite list reads no navigation (F-59).
-                The account menu stays, because sign-out is the way out. */}
-            {invite !== "refused" && <TopNav />}
+            {/* The navigation draws for a reader the API cleared, and
+                for a page that asks nothing, such as a share link
+                (F-59, D-590, D-315). It stays away while the gate waits,
+                so a reader off the list reads no navigation at all. The
+                account menu stays, because sign-out is the way out. */}
+            {(invite === "invited" || invite === "unknown") && <TopNav />}
             <div className="ml-2 flex items-center gap-2 border-l border-border pl-3">
               <AccountMenu email={user.email ?? ""} onSignOut={() => void onSignOut()} side="bottom" align="end" />
             </div>

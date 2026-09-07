@@ -2,8 +2,11 @@ import { useSyncExternalStore } from "react";
 
 // The invite state of the signed-in reader (F-59). The API is the only
 // authority on the list (D-314, D-420), so this holds what it answered.
-// "unknown" is the state before the answer.
-export type InviteState = "unknown" | "invited" | "refused";
+// "unknown" is the state on a page that asks nothing, "checking" is the
+// state while the gate waits for the answer, and "unavailable" is the
+// state when the API gave none. The app draws for "invited" alone
+// (D-590).
+export type InviteState = "unknown" | "checking" | "invited" | "refused" | "unavailable";
 
 // The state lives outside React, because the header and the route guard
 // read it and neither owns it. It stays in this module and not in the
