@@ -5,7 +5,7 @@ import { Link, useRouteError } from "react-router";
 import { Button } from "../components/ui/button";
 import { errorMessage } from "../lib/errors";
 import { useAppStore } from "../lib/store";
-import { signOutAndClear } from "./layout";
+import { signOutAndClear } from "../features/auth/sign-out";
 
 // RouteError is the error element of the layout route. A render error in
 // any page lands here with the message, a way back, and a way out.

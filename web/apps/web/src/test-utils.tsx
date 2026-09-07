@@ -14,6 +14,7 @@ let loaded: Promise<unknown> | null = null;
 function loadModules() {
   loaded ??= Promise.all([
     import("./features/auth/sign-in-page"),
+    import("./features/auth/invite-gate"),
     import("./features/collection/collection-page"),
     import("./features/chat/session-page"),
     import("./features/deck/decks-page"),

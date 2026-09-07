@@ -274,6 +274,23 @@ func TestAllowlistRefusesAnEmailOffTheList(t *testing.T) {
 	if codeOf(err) != connect.CodePermissionDenied || !strings.Contains(err.Error(), "invited users alone") {
 		t.Errorf("an email off the list: %v", err)
 	}
+	// The refusal names the state in a header, so the web guard reads no
+	// sentence (F-59). The check runs over a real round trip, because the
+	// metadata must survive the wire.
+	var connErr *connect.Error
+	if !errors.As(err, &connErr) {
+		t.Fatalf("the refusal must be a connect error: %v", err)
+	}
+	if got := connErr.Meta().Get(RefusalHeader); got != RefusalNotInvited {
+		t.Errorf("%s = %q, want %q", RefusalHeader, got, RefusalNotInvited)
+	}
+	// Every other refusal leaves the header empty, so the guard never
+	// takes an unrelated denial for the invite state.
+	_, listErr := call(t, "Bearer good", WithAllowlist(fakeList{err: errors.New("firestore down")}))
+	var otherErr *connect.Error
+	if errors.As(listErr, &otherErr) && otherErr.Meta().Get(RefusalHeader) != "" {
+		t.Errorf("an unreadable list must name no refusal state: %q", otherErr.Meta().Get(RefusalHeader))
+	}
 	if _, err := call(t, "Bearer good", WithAllowlist(fakeList{err: errors.New("firestore down")})); codeOf(err) != connect.CodeUnavailable {
 		t.Errorf("a list that can not be read: %v", err)
 	}
