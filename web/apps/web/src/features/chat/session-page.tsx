@@ -748,6 +748,12 @@ function ThreadLine({ item, sessionId }: { item: ThreadItem; sessionId: string }
             <span className="sr-only">Asked: </span>
             {item.question.text}
           </p>
+          {item.answer && (
+            <p className="text-foreground">
+              <span className="sr-only">You answered: </span>
+              {item.answer}
+            </p>
+          )}
           {sessionId && <Thumbs target={{ kind: FeedbackKind.QUESTION, sessionId, questionId: item.question.id }} itemName={`the question "${item.question.text}"`} name="Rate this question" />}
         </div>
       );

@@ -1,11 +1,14 @@
 package questions
 
 import (
+	"context"
 	"io"
 	"log/slog"
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/nkramber/decktome/go/internal/llm"
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 )
@@ -53,7 +56,7 @@ func setAgent(t *testing.T) (*Agent, *State) {
 // closes the set row and writes the codes.
 func TestApplySetsFillsTheSlot(t *testing.T) {
 	a, st := setAgent(t)
-	a.applySets(st, classifyOut{SetNames: []string{"the Hobbit set"}})
+	a.applySets(context.Background(), st, classifyOut{SetNames: []string{"the Hobbit set"}}, nil)
 	if got := st.Slots.GetSetCodes(); !slices.Equal(got, []string{"hob", "hoc"}) {
 		t.Errorf("set codes = %v, want hob hoc", got)
 	}
@@ -72,7 +75,7 @@ func TestApplySetsFillsTheSlot(t *testing.T) {
 // base sets, so the row asks and names them.
 func TestApplySetsAsksAboutAnAmbiguousName(t *testing.T) {
 	a, st := setAgent(t)
-	a.applySets(st, classifyOut{SetNames: []string{"Tarkir"}})
+	a.applySets(context.Background(), st, classifyOut{SetNames: []string{"Tarkir"}}, nil)
 	if !st.Ctx.SetUnresolved {
 		t.Fatal("an ambiguous set name must open the row")
 	}
@@ -117,7 +120,7 @@ func TestApplySetsAsksAboutAnAmbiguousName(t *testing.T) {
 // defect this project keeps fixing (D-376).
 func TestApplySetsKeepsBothHalves(t *testing.T) {
 	a, st := setAgent(t)
-	a.applySets(st, classifyOut{SetNames: []string{"Bloomburrow", "Tarkir"}})
+	a.applySets(context.Background(), st, classifyOut{SetNames: []string{"Bloomburrow", "Tarkir"}}, nil)
 	if got := st.Slots.GetSetCodes(); !slices.Equal(got, []string{"blb", "blc"}) {
 		t.Errorf("set codes = %v, want the resolved half", got)
 	}
@@ -136,7 +139,7 @@ func TestApplySetsKeepsBothHalves(t *testing.T) {
 		t.Fatal("the row did not fire beside a filled set slot")
 	}
 	// The answer arrives, and it joins the sets already named.
-	a.applySets(st, classifyOut{SetNames: []string{"the Hobbit set"}})
+	a.applySets(context.Background(), st, classifyOut{SetNames: []string{"the Hobbit set"}}, nil)
 	if got := st.Slots.GetSetCodes(); !slices.Equal(got, []string{"blb", "blc", "hob", "hoc"}) {
 		t.Errorf("set codes after the answer = %v, want both families", got)
 	}
@@ -149,8 +152,8 @@ func TestApplySetsKeepsBothHalves(t *testing.T) {
 // nothing, so a set the reader gave before stays.
 func TestApplySetsIgnoresAnEmptyList(t *testing.T) {
 	a, st := setAgent(t)
-	a.applySets(st, classifyOut{SetNames: []string{"the Hobbit set"}})
-	a.applySets(st, classifyOut{})
+	a.applySets(context.Background(), st, classifyOut{SetNames: []string{"the Hobbit set"}}, nil)
+	a.applySets(context.Background(), st, classifyOut{}, nil)
 	if got := st.Slots.GetSetCodes(); !slices.Equal(got, []string{"hob", "hoc"}) {
 		t.Errorf("set codes = %v, want the sets to survive a message about something else", got)
 	}
@@ -191,7 +194,7 @@ func TestManaPermissionReadsTheAnswer(t *testing.T) {
 // nothing recorded the phrase it had already named.
 func TestTheSetRowAsksOncePerName(t *testing.T) {
 	a, st := setAgent(t)
-	a.applySets(st, classifyOut{SetNames: []string{"Tarkir"}})
+	a.applySets(context.Background(), st, classifyOut{SetNames: []string{"Tarkir"}}, nil)
 	st.Ctx.SetChanged = st.BadSetChanged()
 	if !st.Ctx.SetChanged {
 		t.Fatal("a new set name must let the row ask")
@@ -227,14 +230,14 @@ func TestTheSetRowAsksOncePerName(t *testing.T) {
 // turn starts with it clear, the way the commander mark of D-366 does.
 func TestTheTurnCarriesTheSetsItApplied(t *testing.T) {
 	a, st := setAgent(t)
-	a.applySets(st, classifyOut{SetNames: []string{"the Hobbit set"}})
+	a.applySets(context.Background(), st, classifyOut{SetNames: []string{"the Hobbit set"}}, nil)
 	if !slices.Equal(st.setsThisTurn, []string{"hob", "hoc"}) {
 		t.Errorf("setsThisTurn = %v, want the two set names", st.setsThisTurn)
 	}
 	// A message that names no set carries nothing, so the chat says
 	// nothing twice.
 	st.setsThisTurn = nil
-	a.applySets(st, classifyOut{})
+	a.applySets(context.Background(), st, classifyOut{}, nil)
 	if len(st.setsThisTurn) != 0 {
 		t.Errorf("setsThisTurn = %v, want none on a turn that named no set", st.setsThisTurn)
 	}
@@ -249,7 +252,7 @@ func TestTheTurnCarriesTheSetsItApplied(t *testing.T) {
 // unknown group asks the set row, as an unknown name does.
 func TestApplySetsReadsAGroup(t *testing.T) {
 	a, st := setAgent(t)
-	a.applySets(st, classifyOut{SetGroups: []string{"Marvel"}})
+	a.applySets(context.Background(), st, classifyOut{SetGroups: []string{"Marvel"}}, nil)
 	if got := st.Slots.GetSetCodes(); !slices.Equal(got, []string{"msc", "msh", "spe", "spm"}) {
 		t.Errorf("set codes = %v, want every Marvel family", got)
 	}
@@ -257,8 +260,92 @@ func TestApplySetsReadsAGroup(t *testing.T) {
 		t.Errorf("the set row is not filled: %v", st.Slots.GetSlotStates())
 	}
 	a2, st2 := setAgent(t)
-	a2.applySets(st2, classifyOut{SetGroups: []string{"Star Wars"}})
+	a2.applySets(context.Background(), st2, classifyOut{SetGroups: []string{"Star Wars"}}, nil)
 	if st2.UnresolvedSet != "Star Wars" || len(st2.SetOptions) != 0 {
 		t.Errorf("an unknown group must ask with no option: %q %v", st2.UnresolvedSet, st2.SetOptions)
+	}
+}
+
+// matchSets is a fakeSets that also answers the SetMatchSource contract,
+// so the matcher of D-581 can run in a test.
+type matchSets struct {
+	fakeSets
+	family map[string][]string
+}
+
+func (m matchSets) SetRows() []SetRow {
+	return []SetRow{
+		{Code: "ltr", Name: "The Lord of the Rings: Tales of Middle-earth", Released: "2023-06-23"},
+		{Code: "hob", Name: "The Hobbit", Released: "2026-08-14"},
+	}
+}
+
+func (m matchSets) SetFamily(code string) (codes, names []string, ok bool) {
+	c, hit := m.family[code]
+	if !hit {
+		return nil, nil, false
+	}
+	return c, c, true
+}
+
+// matchAgent builds an agent whose set table settles nothing, and whose
+// matcher answers the script.
+func matchAgent(t *testing.T, output string) (*Agent, *State) {
+	t.Helper()
+	cat, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	sc := llm.NewScript(llm.Step{Output: []byte(output)})
+	client, err := llm.New(fakeConfig(), []llm.Provider{sc}, llm.WithoutJitter())
+	if err != nil {
+		t.Fatalf("client: %v", err)
+	}
+	a := &Agent{
+		cat: cat, threshold: DefaultFitThreshold,
+		log: slog.New(slog.NewTextHandler(io.Discard, nil)),
+		llm: client,
+		hints: matchSets{
+			fakeSets: fakeSets{one: map[string][]string{}, many: map[string][]string{}, group: map[string][]string{}},
+			family:   map[string][]string{"ltr": {"ltc", "ltr"}, "hob": {"hob", "hoc"}},
+		},
+	}
+	return a, NewState(false)
+}
+
+// TestMatchSetsReadsAnAbbreviation is D-581 and F-64: the set table
+// settles no abbreviation, and the model answers the code. "LOTR" is not
+// the code `ltr`, and no set name holds the word.
+func TestMatchSetsReadsAnAbbreviation(t *testing.T) {
+	a, st := matchAgent(t, `{"codes":["ltr"],"candidates":[]}`)
+	a.applySets(context.Background(), st, classifyOut{SetNames: []string{"LOTR"}}, nil)
+	if got := st.Slots.GetSetCodes(); !slices.Equal(got, []string{"ltc", "ltr"}) {
+		t.Fatalf("set codes = %v, want the ltr family", got)
+	}
+	if st.Slots.GetSlotStates()[SlotSet] != mtgv1.SlotState_SLOT_STATE_FILLED {
+		t.Error("the set row did not fill after a match")
+	}
+}
+
+// TestMatchSetsNeverTakesASetTheSnapshotLacks is D-581: every code the
+// model answers meets the table, so an invented set reaches no deck.
+func TestMatchSetsNeverTakesASetTheSnapshotLacks(t *testing.T) {
+	a, st := matchAgent(t, `{"codes":["zzz","made-up"],"candidates":[]}`)
+	a.applySets(context.Background(), st, classifyOut{SetNames: []string{"the set of my dreams"}}, nil)
+	if len(st.Slots.GetSetCodes()) != 0 {
+		t.Fatalf("set codes = %v, want none", st.Slots.GetSetCodes())
+	}
+}
+
+// TestMatchSetsOffersTheCandidatesItNames is D-581: a phrase the model
+// cannot settle asks, and the question offers at most three names.
+func TestMatchSetsOffersTheCandidatesItNames(t *testing.T) {
+	a, st := matchAgent(t, `{"codes":[],"candidates":["ltr","hob","zzz"]}`)
+	a.applySets(context.Background(), st, classifyOut{SetNames: []string{"the ring one"}}, nil)
+	if len(st.Slots.GetSetCodes()) != 0 {
+		t.Fatalf("set codes = %v, want none", st.Slots.GetSetCodes())
+	}
+	if !slices.Equal(st.SetOptions, []string{"ltc", "hob"}) {
+		t.Fatalf("options = %v, want the two the snapshot holds", st.SetOptions)
 	}
 }

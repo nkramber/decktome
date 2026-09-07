@@ -346,6 +346,36 @@ func (h *CandidateHints) ResolveSet(phrase string) (codes, names, options []stri
 	return nil, nil, nil, false
 }
 
+// SetRows answers the SetMatchSource contract: every base set of the
+// snapshot, for the matcher prompt (F-64).
+func (h *CandidateHints) SetRows() []SetRow {
+	if h == nil || h.Index == nil {
+		return nil
+	}
+	base := h.Index.Sets().BaseSets()
+	rows := make([]SetRow, 0, len(base))
+	for _, s := range base {
+		rows = append(rows, SetRow{Code: s.Code, Name: s.Name, Released: s.ReleasedAt})
+	}
+	return rows
+}
+
+// SetFamily answers the family of one base set code. ok is false for a
+// code the snapshot does not hold, so a code the model invents reaches
+// nothing (F-64).
+func (h *CandidateHints) SetFamily(code string) (codes, names []string, ok bool) {
+	if h == nil || h.Index == nil {
+		return nil, nil, false
+	}
+	tbl := h.Index.Sets()
+	s, found := tbl.Get(code)
+	if !found {
+		return nil, nil, false
+	}
+	codes = tbl.Family(s.Code)
+	return codes, tbl.Names(codes), true
+}
+
 // ResolveSetGroup maps a franchise word onto every family it names
 // (D-525). It answers the SetResolver contract for a group request.
 func (h *CandidateHints) ResolveSetGroup(phrase string) (codes, names []string, ok bool) {

@@ -141,7 +141,7 @@ func (a *Agent) classify(ctx context.Context, st *State, message string, acc *ll
 	// The word rules read the user's own words. A quoted question is the
 	// agent's text, and its format list is not a two-deck request.
 	words := UserWords(message)
-	a.apply(st, out, open, words)
+	a.apply(ctx, st, out, open, words, acc)
 	a.applyWords(st, turnWords{Message: words, Declined: out.DeclinedKeys, Closed: out.ClosedKeys, Open: open})
 	a.closeByOption(st, words)
 	a.applyManaPermission(st, words)
@@ -1272,7 +1272,7 @@ func lockedByWords(st *State, message string) string {
 
 // apply writes one classify result onto the state. It never clears a slot
 // the session already filled: a value stays until the user replaces it.
-func (a *Agent) apply(st *State, out classifyOut, open []string, message string) {
+func (a *Agent) apply(ctx context.Context, st *State, out classifyOut, open []string, message string, acc *llm.Accumulator) {
 	a.applyFormat(st, out, message)
 	a.applyTheme(st, out)
 	// A colorless request names no color, and the classifier can answer
@@ -1282,7 +1282,7 @@ func (a *Agent) apply(st *State, out classifyOut, open []string, message string)
 		a.applyColors(st, out, message)
 	}
 	a.applyNames(st, out)
-	a.applySets(st, out)
+	a.applySets(ctx, st, out, acc)
 	a.applyPrecons(st, out)
 	if rule, ok := poolRules[slotWord(out.PoolRule)]; ok {
 		// An owned rule needs a collection. A reader with none who says
@@ -1422,7 +1422,91 @@ func (a *Agent) applyColors(st *State, out classifyOut, message string) {
 // can not settle opens it, and the row asks. A message that names no set
 // changes nothing: a set the reader gave before stays until they replace
 // it, which is the rule every other slot follows.
-func (a *Agent) applySets(st *State, out classifyOut) {
+// setMatchOut is what the set matcher answers (D-581, F-64).
+type setMatchOut struct {
+	Codes      []string `json:"codes"`
+	Candidates []string `json:"candidates"`
+}
+
+// maxSetOptions bounds the sets the question offers after a match. The
+// owner asked for the three most likely (D-581).
+const maxSetOptions = 3
+
+// matchSets asks the model what set a phrase names, when the set table
+// settles nothing (D-581, F-64). It answers the family codes and their
+// names for a definitive match, or the options the question offers.
+//
+// Every code the model answers must be a base set of this snapshot. A
+// code the snapshot does not hold is dropped, so an invented set reaches
+// no deck.
+func (a *Agent) matchSets(ctx context.Context, phrase string, acc *llm.Accumulator) (codes, names, options []string) {
+	src, ok := a.hints.(SetMatchSource)
+	if !ok || a.llm == nil {
+		return nil, nil, nil
+	}
+	rows := src.SetRows()
+	if len(rows) == 0 {
+		return nil, nil, nil
+	}
+	sets := make([]map[string]string, 0, len(rows))
+	for _, r := range rows {
+		sets = append(sets, map[string]string{"code": r.Code, "name": r.Name, "released": r.Released})
+	}
+	input, err := json.Marshal(map[string]any{"phrase": phrase, "sets": sets})
+	if err != nil {
+		return nil, nil, nil
+	}
+	res, err := a.llm.Complete(ctx, llm.RoleSetMatch, llm.Request{
+		Instructions: setMatchInstructions,
+		Input:        string(input),
+		SchemaName:   "set_match",
+		Schema:       json.RawMessage(setMatchSchema),
+		// The set list is the same for every caller of a snapshot, so one
+		// cache key serves them all.
+		CacheKey: "setmatch",
+	}, acc)
+	if err != nil {
+		a.log.Warn("the set matcher failed, so the set row asks", "phrase", phrase, "err", err)
+		return nil, nil, nil
+	}
+	var got setMatchOut
+	if err := json.Unmarshal(res.Output, &got); err != nil {
+		a.log.Warn("the set matcher answered no object, so the set row asks", "phrase", phrase, "err", err)
+		return nil, nil, nil
+	}
+	seen := map[string]bool{}
+	for _, code := range got.Codes {
+		famCodes, famNames, valid := src.SetFamily(strings.ToLower(strings.TrimSpace(code)))
+		if !valid {
+			a.log.Warn("the set matcher named a set the snapshot does not hold", "phrase", phrase, "code", code)
+			continue
+		}
+		for i, c := range famCodes {
+			if seen[c] {
+				continue
+			}
+			seen[c] = true
+			codes = append(codes, c)
+			names = append(names, famNames[i])
+		}
+	}
+	if len(codes) > 0 {
+		return codes, names, nil
+	}
+	for _, code := range got.Candidates {
+		_, famNames, valid := src.SetFamily(strings.ToLower(strings.TrimSpace(code)))
+		if !valid || len(famNames) == 0 {
+			continue
+		}
+		options = append(options, famNames[0])
+		if len(options) == maxSetOptions {
+			break
+		}
+	}
+	return nil, nil, options
+}
+
+func (a *Agent) applySets(ctx context.Context, st *State, out classifyOut, acc *llm.Accumulator) {
 	if len(out.SetNames) == 0 && len(out.SetGroups) == 0 {
 		return
 	}
@@ -1440,10 +1524,23 @@ func (a *Agent) applySets(st *State, out classifyOut) {
 		}
 		gotCodes, gotNames, gotOptions, done := r.ResolveSet(phrase)
 		if !done {
+			// The table settles a name and a code, and it settles no
+			// abbreviation. The model reads the phrase against the set
+			// list before the row asks (D-581, F-64).
+			matchCodes, matchNames, matchOptions := a.matchSets(ctx, phrase, acc)
+			if len(matchCodes) > 0 {
+				codes = append(codes, matchCodes...)
+				names = append(names, matchNames...)
+				continue
+			}
 			// The first phrase this app can not settle is the one the row
 			// asks about. A second one waits for its turn.
 			if unresolved == "" {
-				unresolved, options = phrase, gotOptions
+				unresolved = phrase
+				options = gotOptions
+				if len(options) == 0 {
+					options = matchOptions
+				}
 			}
 			continue
 		}

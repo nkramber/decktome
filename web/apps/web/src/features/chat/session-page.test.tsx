@@ -521,13 +521,13 @@ describe("SessionPage", () => {
     await screen.findByRole("group", { name: "Question: How strong?" });
     expect(screen.getByRole("group", { name: "Question: Any color preference?" })).toBeInTheDocument();
     expect(screen.queryByRole("group", { name: "Question: Which format?" })).not.toBeInTheDocument();
-    // The clicked option shows as the user's line. The two open questions
-    // sit in their cards, so the thread holds three lines: the message,
-    // the answered question, and the answer.
+    // The clicked option reads under the question it answers (F-62). The
+    // two open questions sit in their cards, so the thread holds two
+    // lines: the message, and the answered question with its answer.
     const lines = within(screen.getByRole("list", { name: "Conversation" })).getAllByRole("listitem");
-    expect(lines).toHaveLength(3);
+    expect(lines).toHaveLength(2);
     expect(lines[1]).toHaveTextContent("Which format?");
-    expect(lines.at(-1)).toHaveTextContent("Modern");
+    expect(lines[1]).toHaveTextContent("Modern");
   });
 
 

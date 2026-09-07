@@ -36,10 +36,17 @@ const (
 	// the request is unclear, and what it declines with a reason
 	// (D-283, D-284).
 	RoleRevise Role = "revise"
+	// RoleSetMatch reads the words a reader wrote for a Magic set and
+	// answers the set codes of the snapshot (D-581, F-64). The table
+	// resolves a name and a code, and it never resolved an abbreviation
+	// such as "LOTR". The call carries the real set list, and the caller
+	// checks every code against the table, so a set the model invents
+	// reaches nothing.
+	RoleSetMatch Role = "setmatch"
 )
 
 // Roles lists every role in config order. Config validation requires all.
-var Roles = []Role{RoleClassify, RoleAsk, RoleGenerate, RoleRepair, RoleJudge, RoleEval, RoleRevise}
+var Roles = []Role{RoleClassify, RoleAsk, RoleGenerate, RoleRepair, RoleJudge, RoleEval, RoleRevise, RoleSetMatch}
 
 // Request is one structured-output call as the call site writes it.
 type Request struct {
