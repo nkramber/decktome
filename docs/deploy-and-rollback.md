@@ -27,6 +27,8 @@ Run these one time, as the owner of the project.
 
 1. Connect the repository, in the region `us-central1`. Open Cloud Build, then Repositories, then the 2nd gen tab. Select Create host connection, choose GitHub, and authorize it. Then select Link repository and choose `nkramber/decktome`. This step needs a browser.
 
+Note: the host connection asks for a Cloud KMS key, and it is optional. Leave it empty. Google then encrypts the stored credential with a key it manages, as it does for Firestore, the bucket, and Secret Manager. A key of your own adds a keyring, an IAM binding for the Cloud Build service agent, a charge for each key version, and a rotation to keep.
+
 2. Read the names the connection got, and build the repository path from them:
 
 ```
