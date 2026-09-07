@@ -2,7 +2,7 @@
 
 This page tells you how to put the app on the internet for invited users. It starts at the domain and ends at a deployed web app, an API, and two scheduled jobs. It also estimates the monthly cost for five active users who build three decks a week each.
 
-The page reads the repo as it stands on 2026-09-05. PR-22 is the deploy slice of the roadmap, and it waits for its turn. Section 1 names the code that PR-22 must add before the last steps work. Every price on this page is a list price read on 2026-09-05, and section 17 names the source and the date of each one.
+The page reads the repo as it stands on 2026-09-05. The deploy of `decktome-prod` on 2026-09-07 corrected sections 4, 5, and 11. `docs/deploy-and-rollback.md` runs after every merge that follows. PR-22 is the deploy slice of the roadmap, and it waits for its turn. Section 1 names the code that PR-22 must add before the last steps work. Every price on this page is a list price read on 2026-09-05, and section 17 names the source and the date of each one.
 
 CAUTION: the official pricing pages of Cloud Run, Firestore, and Cloud Storage render in a browser only. Their numbers come from the Google Cloud free-tier document and from two dated third-party reads. Confirm each number in the Google Cloud pricing calculator before an invoice matters.
 
@@ -70,7 +70,7 @@ GoDaddy writes: "Most DNS changes take effect within an hour but could take up t
 
 1. Open https://console.cloud.google.com and sign in.
 2. Create the billing account. The Free Trial gives "$300 Welcome credit to spend over 90 days", and "you must provide a credit card or other payment method". Google does not bill usage during the trial. At the end of the 90 days the trial account closes, and its projects stop. The same happens when the credit is gone. Upgrade to a paid account before you invite a user.
-3. Create the project: `gcloud projects create PROJECT_ID --name="mtg deck builder"`.
+3. Create the project: `gcloud projects create PROJECT_ID --name="Decktome"`.
 4. Link the billing account: `gcloud billing accounts list`, then `gcloud billing projects link PROJECT_ID --billing-account=ACCOUNT_ID`.
 5. Run `gcloud config set project PROJECT_ID`.
 6. Enable the APIs in one command:
@@ -84,6 +84,19 @@ gcloud services enable run.googleapis.com artifactregistry.googleapis.com \
 
 7. Create the budget alert. Open Billing, then Budgets & alerts, then Create budget. Set the scope to the project. Set the amount to $30 a month. Add thresholds at 50, 90, and 100 percent, on actual spend, and one at 100 percent on forecasted spend. Send the emails to the billing administrators.
 
+These two commands make the same budget from the command line:
+
+```
+gcloud services enable billingbudgets.googleapis.com
+gcloud billing budgets create --billing-account=ACCOUNT_ID \
+  --display-name="Decktome monthly" --budget-amount=30USD \
+  --filter-projects=projects/PROJECT_NUMBER \
+  --threshold-rule=percent=0.5 --threshold-rule=percent=0.9 \
+  --threshold-rule=percent=1.0 --threshold-rule=percent=1.0,basis=forecasted-spend
+```
+
+Note: `PROJECT_NUMBER` is the number, not the id. Read it with `gcloud projects describe PROJECT_ID --format='value(projectNumber)'`.
+
 CAUTION: a budget sends emails and stops nothing. Google writes: "Setting an alerts-only budget doesn't automatically cap Google Cloud or Google Maps Platform usage or spending." The per-user cap of D-421 is the control that stops spend, and it lives in the API.
 
 ## 5. Add Firebase to the project
@@ -91,10 +104,34 @@ CAUTION: a budget sends emails and stops nothing. Google writes: "Setting an ale
 1. Run `firebase login`.
 2. Run `firebase projects:addfirebase PROJECT_ID`. It adds the Firebase resources to the project you made.
 3. In the repo root, run `firebase use --add`, choose `PROJECT_ID`, and name the alias `prod`.
-4. Run `firebase apps:create WEB "mtg deck builder"`. Note the app id it prints.
+4. Run `firebase apps:create WEB "Decktome"`. Note the app id it prints.
 5. Run `firebase apps:sdkconfig WEB APP_ID`. It prints the web configuration: `apiKey`, `authDomain`, `projectId`, and `appId`. PR-22 reads these through `VITE_` variables at build time.
 6. Open https://console.firebase.google.com, choose the project, then Authentication, then Sign-in method. Enable Email/Password.
 7. In Authentication, open Settings, then Authorized domains, and add `DOMAIN`.
+
+CAUTION: step 2 answers 403 `PERMISSION_DENIED` on a Google account that never opened the Firebase console. The message names no cause, and the account is a project owner. Read the log with `tail firebase-debug.log`.
+
+The fix runs one time per account. It replaces step 2, and step 3 continues from the command line. Measured on 2026-09-07.
+
+1. Open https://console.firebase.google.com.
+2. Select Create a project, and accept the terms.
+3. Add Firebase to `PROJECT_ID` from the list of Google Cloud projects.
+4. Decline Google Analytics.
+
+Steps 6 and 7 also run from the command line. Firebase Authentication holds no configuration before the first use, and the admin API answers 404 `CONFIGURATION_NOT_FOUND`. These three commands provision it, enable Email/Password, and set the authorized domains:
+
+```
+TOKEN=$(gcloud auth print-access-token)
+curl -s -X POST -H "Authorization: Bearer $TOKEN" -H "x-goog-user-project: PROJECT_ID" \
+  -H "Content-Type: application/json" -d '{}' \
+  "https://identitytoolkit.googleapis.com/v2/projects/PROJECT_ID/identityPlatform:initializeAuth"
+curl -s -X PATCH -H "Authorization: Bearer $TOKEN" -H "x-goog-user-project: PROJECT_ID" \
+  -H "Content-Type: application/json" \
+  -d '{"signIn":{"email":{"enabled":true,"passwordRequired":true}},"authorizedDomains":["PROJECT_ID.firebaseapp.com","PROJECT_ID.web.app","DOMAIN","www.DOMAIN"]}' \
+  "https://identitytoolkit.googleapis.com/admin/v2/projects/PROJECT_ID/config?updateMask=signIn.email.enabled,signIn.email.passwordRequired,authorizedDomains"
+```
+
+Note: the `x-goog-user-project` header names the quota project. Without it the API answers 403 and names the gcloud client project.
 
 The project moved from the Spark plan to the Blaze plan when you linked the billing account. The Hosting rewrites to Cloud Run need Blaze. Authentication stays free to 50,000 monthly active users on both plans.
 
@@ -176,24 +213,37 @@ gcloud run deploy mtg-api \
   --region REGION --platform managed \
   --service-account SA_API \
   --allow-unauthenticated \
-  --set-env-vars PROJECT_ID=PROJECT_ID,CARDS_BUCKET=PROJECT_ID-cards,ALLOWED_ORIGINS=https://DOMAIN,SPEND_CAP_USD=5 \
+  --set-env-vars "^@^PROJECT_ID=PROJECT_ID@CARDS_BUCKET=PROJECT_ID-cards@ALLOWED_ORIGINS=https://DOMAIN,https://www.DOMAIN,https://PROJECT_ID.web.app,https://PROJECT_ID.firebaseapp.com@SPEND_CAP_USD=5" \
   --set-secrets OPENAI_API_KEY=openai-api-key:1,ANTHROPIC_API_KEY=anthropic-api-key:1 \
   --memory 2Gi --cpu 1 --min-instances 0 --max-instances 3 --concurrency 20 \
+  --no-cpu-throttling \
   --timeout 900 --port 8080
 ```
 
 Six notes on the flags:
 
 - `--allow-unauthenticated` opens the URL to the internet. The API checks the Firebase token itself on every request, and a request with no token gets Unauthenticated on Cloud Run. Do not set `ALLOW_DEBUG_USER`.
-- `--min-instances 0` bills nothing at idle. The first request after an idle period starts an instance, and the instance loads the newest snapshot from the bucket. Expect a cold start of some seconds.
+- `--min-instances 0` bills nothing at idle. The first request after an idle period starts an instance, and the instance loads the newest snapshot from the bucket. The load takes about 90 seconds, and the card RPCs answer `Unavailable` until the index lands.
+- `--no-cpu-throttling` keeps the CPU on between the requests (D-574). The snapshot loads in a background goroutine (`cmd/api/main.go`), and the default of Cloud Run gives that goroutine almost no CPU at an idle instance. Without this flag the load never completes, and `/readyz` reads `starting` for as long as the traffic stays low. The flag moves the service to instance-based billing.
 - `--memory 2Gi` is a starting point. The API holds the whole card index in memory. Read the memory chart after the first week and move the number.
 - `--timeout 900` covers a deck build. The default is 300 seconds and the maximum is 3,600. A build with repair passes takes minutes, and the `Chat` RPC streams for that whole time.
 - `--set-secrets` pins version `1`. Rotate a key with a new version and a new deploy.
 - `PROJECT_ID` must be explicit. Cloud Run sets `K_SERVICE` and not the project id.
 - `SPEND_CAP_USD` names the monthly cap per user (D-421). Cloud Run reads $5 with no value, and `0` turns the cap off.
+- `SPEND_CAP_OVERRIDES` gives a named email its own cap (D-576). It reads a comma-separated list of `email:usd` pairs, and `0` turns the cap off for that email alone. Example: `SPEND_CAP_OVERRIDES=owner@example.com:0`. The API drops an entry that names no number, and the log names it.
+- `ALLOWED_ORIGINS` takes a comma-separated list (`auth.ParseOrigins`). The list holds the two Hosting origins as well as the domain. The web app runs on `PROJECT_ID.web.app` until section 14 connects the domain, and the browser blocks the RPCs without that origin.
+- `^@^` is the alternate delimiter of gcloud. A value with a comma in it needs one, or gcloud reads the comma as the end of the variable.
 - The invite list is on whenever `K_SERVICE` is set. A user off the list reads one sentence with `PermissionDenied`, and a list that can not be read answers `Unavailable`.
 
-Check the service: `curl -s "$(gcloud run services describe mtg-api --region REGION --format='value(status.url)')/healthz"`. It answers 200 once a snapshot exists in the bucket, so run section 12 first when the bucket is empty.
+Check the service with `/readyz`:
+
+```
+curl -s "$(gcloud run services describe mtg-api --region REGION --format='value(status.url)')/readyz"
+```
+
+It answers 200 and `"status":"ok"` once the index is in memory. It answers 503 and `"status":"starting"` before that. Run section 12 first when the bucket is empty.
+
+CAUTION: do not check `/healthz` on a `run.app` URL. The Google frontend answers that one path with its own 404 page, and the request never reaches the app. Every other path reaches it. Measured on 2026-09-07.
 
 ## 12. Deploy the jobs and the schedules
 
@@ -210,10 +260,14 @@ gcloud run jobs create mtg-meta \
   --region REGION --service-account SA_WORKER \
   --set-env-vars PROJECT_ID=PROJECT_ID,CARDS_BUCKET=PROJECT_ID-cards \
   --set-secrets TOPDECK_API_KEY=topdeck-api-key:1 \
-  --memory 1Gi --cpu 1 --task-timeout 60m --max-retries 0
+  --memory 8Gi --cpu 2 --task-timeout 150m --max-retries 0
 ```
 
-Run the first snapshot by hand and wait for it: `gcloud run jobs execute mtg-snapshot --region REGION --wait`. The largest bulk file is about 80 MB, and the download timeout inside the worker is 25 minutes. Then run `gcloud run jobs execute mtg-meta --region REGION --wait`. The first meta run reads every source and takes about 40 minutes.
+Run the first snapshot by hand and wait for it: `gcloud run jobs execute mtg-snapshot --region REGION --wait`. The largest bulk file is about 80 MB, and the download timeout inside the worker is 25 minutes. Then run `gcloud run jobs execute mtg-meta --region REGION --wait`. The first meta run reads every source.
+
+CAUTION: give the meta job 8 GiB of memory. The job fits the quality model over about 48,766 lists (D-566), and 1 GiB stopped it after 52 minutes with "The configured memory limit was reached" (F-61). Cloud Run asks for 2 vCPU above 4 GiB, so the two flags move together.
+
+CAUTION: give the meta job a task timeout of 150 minutes. `make meta-refresh` read every source in 96 minutes on 2026-09-07 (D-566), and a timeout of 60 minutes stops the job before it writes the model. A second run skips the sources that hold a read marker of the same day.
 
 Give the scheduler account the invoker role on both jobs:
 
@@ -254,6 +308,8 @@ cd ..
 The four `VITE_FIREBASE_` values come from step 5 of section 5. An empty `VITE_AUTH_EMULATOR_HOST` means real Firebase.
 
 2. The `hosting` block of `firebase.json` serves the Vite build as a single-page app. The hashed assets get long cache headers, and the page gets none.
+
+CAUTION: the last header rule that matches a path wins. The broad rule goes first, and the rule for the hashed assets goes after it. A rule on `/index.html` alone leaves `/` and every other route with the default cache of one hour (F-57, D-575). A reader can then hold a stale page for an hour after a deploy. That page names asset files that the new release does not hold.
 3. Run `firebase deploy --only hosting`. The site is live on `PROJECT_ID.web.app`.
 
 The web app calls the Cloud Run origin directly (D-544). The API reads `ALLOWED_ORIGINS` for CORS, and the web app reads `VITE_API_BASE_URL`, so step 1 is the whole wiring. No Hosting rewrite carries the RPCs. The reason: Firebase documents a 60-second request timeout for rewrites to Cloud Functions, "Firebase Hosting is subject to a 60-second request timeout". The Cloud Run rewrite page makes no statement about a timeout or about streamed responses. A deck build streams for several minutes over the `Chat` RPC, and no proxy sits in that path.
@@ -371,4 +427,11 @@ Every fact of this page carries a date. The repo facts read the code and the doc
 | Firebase CLI command forms | `firebase --help` of firebase-tools 14.14.0 on the owner's Mac |
 | The model prices and roles | `go/internal/llm/prices.json` and `roles.json`, verified 2026-08-24 |
 | The measured gate costs | `docs/reference/pr7-question-gate-run38.md` to `run41.md`, `pr8-deck-gate-run12.md` to `run14.md`, `pr12b-revise-gate-run9.md` |
+| The meta job needs 8 GiB, and 1 GiB stops it after 52 minutes | The first meta run of `decktome-prod` on 2026-09-07 |
+| The last matching header rule of Firebase Hosting wins | Two deploys of `decktome-prod` on 2026-09-07, with both rule orders measured |
+| The Google frontend answers `/healthz` on a `run.app` URL, and `/readyz` reaches the app | The deploy of `decktome-prod` on 2026-09-07, five paths compared |
+| The background snapshot load needs `--no-cpu-throttling` | The deploy of `decktome-prod` on 2026-09-07, measured against 1,422 requests |
+| `addFirebase` answers 403 before the account opens the Firebase console, and the Auth config answers 404 before the first use | The deploy of `decktome-prod` on 2026-09-07, with `firebase-debug.log` |
+| `ALLOWED_ORIGINS` reads a comma-separated list | `go/internal/auth/cors.go`, `ParseOrigins`, read 2026-09-07 |
+| The `^@^` alternate delimiter of `--set-env-vars` | `gcloud run deploy --help`, gcloud 533.0.0, read 2026-09-07 |
 | The snapshot and meta store sizes, and the three kept versions | `.local/gcs/mtg-local-cards` on 2026-09-05 and `go/internal/cards/refresh.go` |
