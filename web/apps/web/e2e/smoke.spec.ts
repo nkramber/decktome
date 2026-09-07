@@ -74,6 +74,11 @@ test("a reader signs in, uploads a collection, builds a deck, and exports it", a
   await expect(page.getByTestId("legality-line")).toHaveText(/^Legal, /);
   await expect(page.getByText("100 cards")).toBeVisible();
 
+  // Rate the deck. The thumbs up writes the verdict under the reader and
+  // thanks them (PR-27, D-557).
+  await page.getByRole("group", { name: "Rate this deck" }).getByRole("button", { name: "This helped" }).click();
+  await expect(page.getByText("Thank you for your feedback!")).toBeVisible();
+
   // Export. The download carries the commander and the deck.
   const downloading = page.waitForEvent("download");
   await page.getByRole("button", { name: "Download deck list" }).click();

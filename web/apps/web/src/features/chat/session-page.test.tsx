@@ -1,5 +1,6 @@
 import { Code, ConnectError } from "@connectrpc/connect";
 import { CardRole } from "@mtg/api-client/mtg/v1/deck_pb";
+import { FeedbackKind, FeedbackVerdict } from "@mtg/api-client/mtg/v1/feedback_service_pb";
 import { PoolRule } from "@mtg/api-client/mtg/v1/session_pb";
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -26,6 +27,7 @@ vi.mock("../../lib/api", () => ({
     chat: (...args: unknown[]) => chat(...args),
     getSession: (...args: unknown[]) => getSession(...args),
   },
+  feedbackClient: { submitFeedback: (...args: unknown[]) => submitFeedback(...args) },
   deckClient: { getDeck: (...args: unknown[]) => getDeck(...args), exportDeck: vi.fn(), listDecks: (...args: unknown[]) => listDecks(...args) },
   cardClient: { getCards: (...args: unknown[]) => getCards(...args) },
   collectionClient: { listCollections: () => Promise.resolve({ collections: [{ id: "c1", name: "binder-july.csv", cardCount: 4317 }] }) },
@@ -40,6 +42,7 @@ async function* events(list: Ev[]) {
 }
 const ev = (c: string, value: unknown): Ev => ({ event: { case: c, value } });
 
+const submitFeedback = vi.fn();
 const formatQuestion = { id: "q1", slot: "format", text: "Which format?", options: ["Commander", "Standard", "Modern"], optionOracleIds: [] };
 const deck = {
   id: "d1",
@@ -288,6 +291,25 @@ describe("SessionPage", () => {
     await screen.findByText("Session id: s1");
     unmount();
     expect(abort).toHaveBeenCalled();
+  });
+
+  it("an open question carries its thumbs, and a thumbs up names the session and the question (PR-27)", async () => {
+    submitFeedback.mockReset();
+    submitFeedback.mockResolvedValue({ feedbackId: "fb1" });
+    chat.mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("question", formatQuestion)]));
+    await renderAt("/session/new");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "elves");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    const card = await screen.findByRole("group", { name: "Question: Which format?" });
+    const thumbs = within(card).getByRole("group", { name: "Rate this question" });
+    await user.click(within(thumbs).getByRole("button", { name: "This helped" }));
+    await waitFor(() => expect(submitFeedback).toHaveBeenCalledTimes(1));
+    expect(submitFeedback.mock.calls[0][0]).toEqual({ feedback: { kind: FeedbackKind.QUESTION, verdict: FeedbackVerdict.UP, reasons: [], text: "", sessionId: "s1", questionId: "q1" } });
+    expect(within(thumbs).getByRole("button", { name: "This helped" })).toHaveAttribute("aria-pressed", "true");
+    // The answer path is untouched: the option buttons still work.
+    await user.click(within(card).getByRole("button", { name: "Modern" }));
+    expect(screen.getByRole("button", { name: "Submit answers" })).toBeEnabled();
   });
 
   it("a thrown send gives the answered questions and their drafts back", async () => {

@@ -1,10 +1,12 @@
 import { type Card, LegalityStatus, type Printing } from "@mtg/api-client/mtg/v1/card_pb";
 import type { DeckCard } from "@mtg/api-client/mtg/v1/deck_pb";
+import { FeedbackKind } from "@mtg/api-client/mtg/v1/feedback_service_pb";
 import { useQuery } from "@tanstack/react-query";
 
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "../../components/ui/sheet";
 import { cardClient } from "../../lib/api";
 import { errorMessage } from "../../lib/errors";
+import { Thumbs } from "../feedback/thumbs";
 import { FaceImage, facesOf } from "./card-tile";
 import { priceText } from "./deck-stats";
 
@@ -50,7 +52,21 @@ export function scryfallURL(printing: Printing | undefined): string {
   return `https://scryfall.com/card/${encodeURIComponent(printing.setCode)}/${encodeURIComponent(printing.collectorNumber)}`;
 }
 
-export function CardDetail({ entry, card, open, onOpenChange }: { entry: DeckCard | undefined; card: Card | undefined; open: boolean; onOpenChange: (open: boolean) => void }) {
+// deckId names the deck for the thumbs under the title (PR-27, D-559).
+// The sheet of a page with no deck of the reader shows none.
+export function CardDetail({
+  entry,
+  card,
+  deckId = "",
+  open,
+  onOpenChange,
+}: {
+  entry: DeckCard | undefined;
+  card: Card | undefined;
+  deckId?: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
   const oracleId = entry?.oracleId ?? "";
   const rulings = useQuery({
     queryKey: ["rulings", oracleId],
@@ -77,6 +93,7 @@ export function CardDetail({ entry, card, open, onOpenChange }: { entry: DeckCar
               <SheetTitle>{name}</SheetTitle>
               <SheetDescription id={`card-detail-type-${oracleId}`}>{card?.typeLine || "Card detail"}</SheetDescription>
             </SheetHeader>
+            {deckId && oracleId && <Thumbs target={{ kind: FeedbackKind.CARD, deckId, oracleId }} itemName={name} label="Rate this card" />}
             {faces.length === 0 && <p className="text-sm text-muted-foreground">No card data for this entry.</p>}
             {faces.map((face, i) => (
               <section key={`${oracleId}-${i}`} aria-label={faces.length > 1 ? `${face.name} (face ${i + 1} of ${faces.length})` : face.name} className="grid gap-3 sm:grid-cols-[minmax(0,12rem)_1fr]">
