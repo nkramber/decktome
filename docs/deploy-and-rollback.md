@@ -62,6 +62,10 @@ done
 
 Note: the Workload Identity Federation setup of D-582 stays. The GitHub workflow reads it when somebody runs the deploy by hand.
 
+The Cloud Build files hold the four Firebase values as substitutions, so a build reads them from the repository. The GitHub workflow reads them from the repository variables of `nkramber/decktome` instead, and `gh variable list` prints what they hold.
+
+CAUTION: never run a command that holds a placeholder in angle brackets. The command writes the placeholder itself as the value. On 2026-09-07 a run of such a command wrote `<the apiKey of firebase apps:sdkconfig>` over the real key. Every sign-in then read `auth/invalid-api-key`, because the app carries that value to the browser (F-65). Read the value first, then write it, then read it back.
+
 ## 2. What each merge changes
 
 Read the merged diff first. This table names the part to deploy.
