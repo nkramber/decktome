@@ -1,0 +1,160 @@
+name: deploy
+
+# A merge to main builds both images and deploys them, and it builds and
+# releases the web app (D-582). Nothing else starts this workflow: a
+# pull request runs no job at all (D-578), and main alone reaches
+# production (D-579). A dispatch runs the same steps by hand.
+#
+# The job reads the changed paths first, so a merge of documents alone
+# deploys nothing and spends no minute beyond the read.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# One deploy at a time, and never cancel one in flight: a half-applied
+# deploy is worse than a late one.
+concurrency:
+  group: deploy-main
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  # The federated token of Workload Identity Federation. No key of a
+  # service account lives in this repository.
+  id-token: write
+
+env:
+  PROJECT_ID: decktome-prod
+  PROJECT_NUMBER: "492774632746"
+  REGION: us-central1
+  API_URL: https://mtg-api-qk2ackpb3q-uc.a.run.app
+
+jobs:
+  changes:
+    name: "deploy:changes"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      go: ${{ steps.diff.outputs.go }}
+      web: ${{ steps.diff.outputs.web }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+      - id: diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          # A dispatch has no previous commit to read, so it deploys all.
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            { echo "go=true"; echo "web=true"; } | tee -a "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git diff --name-only HEAD^ HEAD > changed.txt
+          echo "changed files:"; cat changed.txt
+          has() { grep -Eq "$1" changed.txt && echo true || echo false; }
+          {
+            echo "go=$(has '^(go/|docker/|\.github/workflows/deploy\.yml$)')"
+            echo "web=$(has '^(web/|firebase\.json$|\.github/workflows/deploy\.yml$)')"
+          } | tee -a "$GITHUB_OUTPUT"
+
+  api:
+    name: "deploy:api"
+    needs: [changes]
+    if: needs.changes.outputs.go == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+          workload_identity_provider: projects/${{ env.PROJECT_NUMBER }}/locations/global/workloadIdentityPools/github/providers/github
+          service_account: gh-deployer@decktome-prod.iam.gserviceaccount.com
+      - uses: google-github-actions/setup-gcloud@26f734c2779b00b7dda794207734c511110a4368 # v3.0.0
+      - name: docker auth
+        run: gcloud auth configure-docker "$REGION-docker.pkg.dev" --quiet
+      # The runner is linux/amd64, which is what Cloud Run runs, so no
+      # emulation and no --platform flag.
+      - name: build and push
+        run: |
+          set -euo pipefail
+          TAG=$(git rev-parse --short HEAD)
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+          base="$REGION-docker.pkg.dev/$PROJECT_ID/mtg"
+          docker build -f docker/api.Dockerfile -t "$base/api:$TAG" .
+          docker build -f docker/worker.Dockerfile -t "$base/worker:$TAG" .
+          docker push "$base/api:$TAG"
+          docker push "$base/worker:$TAG"
+      # The deploy names the image alone. Every environment variable, every
+      # secret, and every flag of the revision before it carries over.
+      - name: deploy the api
+        run: |
+          set -euo pipefail
+          gcloud run deploy mtg-api \
+            --image "$REGION-docker.pkg.dev/$PROJECT_ID/mtg/api:$TAG" \
+            --region "$REGION" --quiet
+      - name: point the jobs at the new image
+        run: |
+          set -euo pipefail
+          for job in mtg-snapshot mtg-meta; do
+            gcloud run jobs update "$job" --region "$REGION" \
+              --image "$REGION-docker.pkg.dev/$PROJECT_ID/mtg/worker:$TAG" --quiet
+          done
+      # /healthz never answers on a run.app URL, because the Google
+      # frontend takes that path. /readyz reads `starting` for about 90
+      # seconds after a cold start, so the check waits for it.
+      - name: check the deploy
+        run: |
+          set -euo pipefail
+          url=$(gcloud run services describe mtg-api --region "$REGION" --format='value(status.url)')
+          for i in $(seq 1 20); do
+            body=$(curl -s -m 60 "$url/readyz" || true)
+            echo "$i: $body"
+            case "$body" in *'"status":"ok"'*) exit 0 ;; esac
+            sleep 15
+          done
+          echo "the api never read ok"; exit 1
+
+  web:
+    name: "deploy:web"
+    needs: [changes]
+    if: needs.changes.outputs.web == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+          workload_identity_provider: projects/${{ env.PROJECT_NUMBER }}/locations/global/workloadIdentityPools/github/providers/github
+          service_account: gh-deployer@decktome-prod.iam.gserviceaccount.com
+      - run: pnpm --dir web install --frozen-lockfile
+      # The four VITE_FIREBASE_ values reach the browser in the bundle, so
+      # they are repository variables and never secrets.
+      - name: build the web app
+        env:
+          VITE_API_BASE_URL: ${{ env.API_URL }}
+          VITE_AUTH_EMULATOR_HOST: ""
+          VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID }}
+        run: pnpm --dir web --filter web build
+      # firebase-tools reads the credentials the auth step wrote, through
+      # GOOGLE_APPLICATION_CREDENTIALS. No CI token lives in this repo.
+      - name: release the web app
+        run: npx --yes firebase-tools@14.14.0 deploy --only hosting --project "$PROJECT_ID" --non-interactive
+      - name: check the release
+        run: |
+          set -euo pipefail
+          code=$(curl -s -o /dev/null -m 60 -w '%{http_code}' "https://$PROJECT_ID.web.app/?cb=$GITHUB_SHA")
+          echo "hosting: $code"
+          test "$code" = "200"
