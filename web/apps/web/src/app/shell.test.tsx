@@ -32,15 +32,18 @@ beforeEach(() => {
 });
 
 describe("the shell", () => {
+  // The navigation waits for the API to clear the reader (F-59, D-590),
+  // so it arrives one hop after the render.
   it("carries one navigation, in the header (D-328)", async () => {
     await renderAt("/decks");
+    await screen.findByRole("navigation", { name: "Main" });
     expect(screen.getAllByRole("navigation", { name: "Main" })).toHaveLength(1);
     expect(screen.getByRole("link", { name: /Deck Tome/ })).toBeInTheDocument();
   });
 
   it("marks the entry that owns the path", async () => {
     await renderAt("/decks");
-    expect(screen.getByRole("link", { name: "Decks" })).toHaveAttribute("aria-current", "page");
+    expect(await screen.findByRole("link", { name: "Decks" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "Collection" })).not.toHaveAttribute("aria-current");
   });
 

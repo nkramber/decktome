@@ -49,12 +49,23 @@ beforeEach(() => {
 });
 
 describe("isNotInvited", () => {
-  it("reads the header, and not the sentence", () => {
+  it("reads the code, and the header confirms it", () => {
     expect(isNotInvited(refusal())).toBe(true);
-    // The same code and the same words, with no header, is another denial.
-    expect(isNotInvited(new ConnectError("this app is open to invited users alone", Code.PermissionDenied))).toBe(false);
     expect(isNotInvited(new ConnectError("nope", Code.NotFound, { "Deck-Tome-Refusal": "not-invited" }))).toBe(false);
+    expect(isNotInvited(new ConnectError("firestore down", Code.Unavailable))).toBe(false);
     expect(isNotInvited(new Error("network down"))).toBe(false);
+  });
+
+  // The regression of F-59. `decktome.com` and the API are two origins,
+  // and a browser reads no header the API does not expose. Every refusal
+  // reaches the browser bare, and the first fix read it as an invitation.
+  it("reads a refusal that carries no header, as a browser gets it", () => {
+    expect(isNotInvited(new ConnectError("this app is open to invited users alone", Code.PermissionDenied))).toBe(true);
+  });
+
+  // A header that names another state still discriminates.
+  it("refuses nothing when the header names another state", () => {
+    expect(isNotInvited(new ConnectError("no", Code.PermissionDenied, { "Deck-Tome-Refusal": "other" }))).toBe(false);
   });
 });
 
@@ -74,6 +85,15 @@ describe("the invite gate", () => {
     expect(screen.queryByRole("heading", { level: 1, name: "New deck" })).not.toBeInTheDocument();
   });
 
+  // The shape a browser really delivers: the code alone, no metadata.
+  it("shows the refusal screen when the refusal carries no header", async () => {
+    listCollections.mockRejectedValue(new ConnectError("this app is open to invited users alone", Code.PermissionDenied));
+    await renderAt("/session/new");
+    expect(await screen.findByRole("heading", { level: 1, name: "You are not on the invite list" })).toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: "Main" })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Your message")).not.toBeInTheDocument();
+  });
+
   it("lets an invited reader through to the page", async () => {
     await renderAt("/session/new");
     expect(await screen.findByRole("heading", { level: 1, name: "New deck" })).toBeInTheDocument();
@@ -81,13 +101,17 @@ describe("the invite gate", () => {
     expect(screen.queryByRole("heading", { level: 1, name: "You are not on the invite list" })).not.toBeInTheDocument();
   });
 
-  // An API that is down must never read as a refusal. A cap, a timeout,
-  // or a dropped connection leaves an invited reader in the app.
-  it("lets the reader through when the call fails for another reason", async () => {
+  // The app stays closed when the API gives no answer (D-590). A reader
+  // the API never cleared must not read the app, and a reader who is on
+  // the list must not read a refusal that nobody gave.
+  it("shows the server screen, and no app, when the call fails for another reason", async () => {
     listCollections.mockRejectedValue(new ConnectError("firestore down", Code.Unavailable));
     await renderAt("/session/new");
-    expect(await screen.findByRole("heading", { level: 1, name: "New deck" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Deck Tome could not reach the server" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 1, name: "New deck" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { level: 1, name: "You are not on the invite list" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: "Main" })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Your message")).not.toBeInTheDocument();
   });
 
   it("signs the refused reader out", async () => {
@@ -97,6 +121,17 @@ describe("the invite gate", () => {
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: "Sign out" }));
     expect(vi.mocked(signOut)).toHaveBeenCalled();
+  });
+
+  // Nothing of the app draws while the gate waits. A reader off the list
+  // must read no navigation at any moment, and not only after the answer.
+  it("draws no navigation and no page while the answer is on the way", async () => {
+    listCollections.mockReturnValue(new Promise(() => {}));
+    await renderAt("/session/new");
+    expect(await screen.findByText("Loading your session...")).toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: "Main" })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Your message")).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 1, name: "New deck" })).not.toBeInTheDocument();
   });
 
   // The latch lives in a module, so it must not outlast the account that

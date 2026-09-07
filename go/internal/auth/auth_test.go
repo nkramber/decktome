@@ -193,6 +193,24 @@ func TestCORS(t *testing.T) {
 	}
 }
 
+// TestCORSExposesTheRefusalHeader is the regression of F-59 (D-590). A
+// browser reads no response header that this list omits, and the web app
+// and the API are two origins in production. The gate read the header
+// alone, so every refusal reached the browser bare.
+func TestCORSExposesTheRefusalHeader(t *testing.T) {
+	h := CORS(ParseOrigins("https://app.example"), http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	req := httptest.NewRequest(http.MethodPost, "/x", nil)
+	req.Header.Set("Origin", "https://app.example")
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	exposed := rec.Header().Get("Access-Control-Expose-Headers")
+	if !strings.Contains(exposed, RefusalHeader) {
+		t.Errorf("expose headers = %q, want it to name %q", exposed, RefusalHeader)
+	}
+}
+
 func TestBearer(t *testing.T) {
 	for _, tc := range []struct {
 		in      string
