@@ -6,7 +6,7 @@ The page reads the repo as it stands on 2026-09-05. PR-22 is the deploy slice of
 
 CAUTION: the official pricing pages of Cloud Run, Firestore, and Cloud Storage render in a browser only. Their numbers come from the Google Cloud free-tier document and from two dated third-party reads. Confirm each number in the Google Cloud pricing calculator before an invoice matters.
 
-Write in the commands: `PROJECT_ID` is your project id, `REGION` is `us-central1`, and `DOMAIN` is your domain, for example `decks.example.com`. Section 3 explains the region.
+Write in the commands: `PROJECT_ID` is your project id, `REGION` is `us-central1`, and `DOMAIN` is your domain. The domain is `decktome.com`, bought at GoDaddy on 2026-09-06 (D-556). Section 3 explains the region.
 
 ## 1. What the deployment holds
 
@@ -55,34 +55,16 @@ Choose three names before the first command:
 - `REGION`: this page uses `us-central1`. It is a Tier 1 price region, and it is one of the three regions of the Cloud Storage free tier. Every Cloud Run product is available there.
 - `DOMAIN`: the name the users type.
 
-## 3. Buy the domain
+## 3. The domain
 
-Google Domains closed to new registrations on 2023-09-07, when Squarespace bought it. Three ways remain, and each one works with the steps of this page.
+The domain is `decktome.com`, bought at GoDaddy on 2026-09-06 (D-556). `docs/reference/domain-names-2026-09-06.md` holds the search that led to the name. Keep the DNS at GoDaddy, and add nothing there before section 14 asks for it.
 
-| Registrar | Price of a `.com` | Notes |
-|---|---|---|
-| Cloud Domains, inside Google Cloud | The console and the CLI show the yearly price before you confirm | Squarespace is the registrar of record, and Google bills your Cloud Billing account. Renewal is automatic. You must choose a DNS host at registration: a Cloud DNS zone or custom name servers. |
-| Squarespace Domains | $12 the first year, $20 a year after that (third-party read, 2026-09-05) | WHOIS privacy included. DNS included. |
-| Cloudflare Registrar | About $10 to $12 a year, at the registry cost (third-party read, 2026-09-05) | The lowest renewal. DNS included. Set the Firebase records to DNS only, not proxied. |
+1. Sign in at GoDaddy and open the Domain Portfolio.
+2. Select `decktome.com`, then the DNS tab. This tab is where section 14 adds the Firebase records.
+3. Read the records GoDaddy created with the domain. A new domain holds a parked A record on `@` and often a CNAME on `www`. Section 14 removes the parked A record, because Firebase needs the only A records on the name.
+4. If Domain Protection is on, GoDaddy asks for an identity check on every save. Keep the phone at hand for the code.
 
-Choose Cloud Domains when you want one invoice. Choose Cloudflare when you want the lowest renewal. Do not choose Google Domains DNS: Cloud Domains registrations can not use it since 2023-10-19.
-
-### 3.1 Cloud Domains
-
-1. Create the project and the billing account first (section 4). Cloud Domains needs both.
-2. Run `gcloud services enable domains.googleapis.com`.
-3. Run `gcloud domains registrations search-domains NAME`. It lists the free names near `NAME`.
-4. Run `gcloud domains registrations get-register-parameters DOMAIN`. It prints the availability, the yearly price, and the privacy modes.
-5. If you want Cloud DNS, run `gcloud dns managed-zones create mtg-zone --description="mtg deck builder" --dns-name=DOMAIN.`. Note the trailing dot.
-6. Run `gcloud domains registrations register DOMAIN`. It asks for the DNS host, the contact data, and the privacy mode.
-7. Confirm the yearly price when the command shows it.
-
-CAUTION: Cloud DNS bills per zone and per query. This page did not verify those two prices on 2026-09-05. The registrar's own DNS costs nothing, and this page uses it.
-
-### 3.2 Squarespace or Cloudflare
-
-1. Buy the domain on the registrar's site.
-2. Keep the DNS at the registrar. Section 14 adds the Firebase records there.
+GoDaddy writes: "Most DNS changes take effect within an hour but could take up to 48 hours to update globally." The Firebase certificate follows the records, so the wait of section 14 starts when the records are live.
 
 ## 4. Create the project and the billing account
 
@@ -278,11 +260,14 @@ The web app calls the Cloud Run origin directly (D-544). The API reads `ALLOWED_
 
 ## 14. Connect the domain
 
-1. Open the Firebase console, then Hosting, then Add custom domain. Type `DOMAIN`.
+1. Open the Firebase console, then Hosting, then Add custom domain. Type `DOMAIN`. Check the optional box that redirects a second domain to it, and type `www.DOMAIN`, so `www.decktome.com` opens the same site.
 2. Firebase shows a TXT record. Add it at your DNS host. Keep it there: Firebase reads it again later to prove ownership.
-3. Firebase shows the A and AAAA records. Add them at your DNS host. Remove every other A, AAAA, or CNAME record of the name. On Cloudflare, set the records to DNS only.
+3. Firebase shows the A and AAAA records. Add them at your DNS host. Remove every other A, AAAA, or CNAME record of the name. At GoDaddy, that is the parked A record on `@`.
 4. Wait. Google writes: "It may take up to 24 hours after you point your DNS to Firebase Hosting." Most certificates arrive within a few hours.
 5. Rebuild the web app with `ALLOWED_ORIGINS=https://DOMAIN` on the API and the same origin in the Firebase Authentication authorized domains (section 5, step 7).
+
+At GoDaddy, each record goes in through the DNS tab of the domain: Add New Record, then the Type. The TXT record and the A records take `@` as the Name, which GoDaddy reads as the root domain. The Value is the text or the address Firebase shows, and the TTL stays at the default of 1 hour. Firebase Hosting has no AAAA record for every site, so add an AAAA record only when the console shows one.
+
 
 The API keeps its `run.app` URL. Cloud Run domain mappings are a preview feature, and Google writes that they "are not recommended for production services". A global external Application Load Balancer gives the API a name with a managed certificate. It bills by the hour, so this page leaves it out at this scale.
 
@@ -337,7 +322,7 @@ Every line reads the free tier of the Google Cloud free program document, 2026-0
 | Firebase Hosting | A 2 MB bundle, five users | 10 GB stored, 360 MB a day transferred | $0 | $0.026 a GB stored, $0.15 a GB transferred |
 | Firebase Authentication | 5 monthly active users | 50,000 monthly active users | $0 | Google Cloud pricing above the tier |
 | Network egress | The model calls move about 0.2 GB | 1 GB from North America for Cloud Run | $0 | $0.12 a GB for the first TiB |
-| The domain | One `.com` | None | $0.85 to $1.70 | $10 to $20 a year |
+| The domain | One `.com` at GoDaddy | None | $0.85 to $1.70 | The renewal price on the GoDaddy receipt. A `.com` costs $11 to $20 a year across registrars (Porkbun list price $11.08, read 2026-09-06). |
 
 ### 16.4 The total
 
@@ -358,12 +343,10 @@ Every fact of this page carries a date. The repo facts read the code and the doc
 
 | Fact | Source |
 |---|---|
-| Google Domains sold to Squarespace on 2023-09-07, and the migration finished on 2024-07-10 | https://newsroom.squarespace.com/blog/squarespace-domains-updates and https://docs.cloud.google.com/domains/docs/faq |
-| Cloud Domains still registers domains, Squarespace is the registrar of record, and Google bills | https://docs.cloud.google.com/domains/docs/faq |
-| Google Domains DNS closed to new registrations on 2023-10-19 | https://docs.cloud.google.com/domains/docs/deprecations/feature-deprecations |
-| The Cloud Domains commands | https://docs.cloud.google.com/domains/docs/register-domain |
-| Squarespace `.com` at $12 the first year and $20 a year after | https://www.stackscored.com/pricing/domain-registrars/squarespace-domains/ (third party) |
-| Cloudflare Registrar at cost, about $10 to $12 a year | https://www.stackscored.com/pricing/domain-registrars/compare/cloudflare-registrar-vs-squarespace-domains/ (third party) |
+| GoDaddy: add an A record, the `@` name, the 1 hour default TTL, and the 48 hour propagation note, read 2026-09-06 | https://www.godaddy.com/help/add-an-a-record-19238 |
+| GoDaddy: add a TXT record, read 2026-09-06 | https://www.godaddy.com/help/add-a-txt-record-19232 |
+| Firebase custom domains: the TXT record, the A and AAAA records, the quick setup for a new domain, and the 24 hours, read again 2026-09-06 | https://firebase.google.com/docs/hosting/custom-domain |
+| A `.com` at $11.08 a year, the list price of one registrar, read 2026-09-06 | https://porkbun.com/tld/com |
 | The Free Trial terms and every Always Free amount of section 16 | https://docs.cloud.google.com/free/docs/free-cloud-features |
 | Cloud Run request-based and instance-based prices | https://preprice.app/ai-costs/gcp_cloud_run (third party, verified 2026-06-14) and https://cloudchipr.com/blog/cloud-run-pricing (third party, 2025-11-14). The official page is https://cloud.google.com/run/pricing. |
 | Cloud Run request timeout, default 300 and maximum 3,600 seconds | https://docs.cloud.google.com/run/docs/configuring/request-timeout |
