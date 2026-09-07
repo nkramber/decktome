@@ -51,6 +51,7 @@ Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
 - `docs/SESSION-HANDOFF.md` - resume point for a fresh session.
 - `docs/setup-second-mac.md` - what to carry and what to install to continue the work on another Mac.
 - `docs/setup-gcp.md` - the deploy on Google Cloud from the domain to the running app, with the cost estimate.
+- `docs/deploy-and-rollback.md` - the redeploy after a merge to `main`, and the rollback of each part.
 - `docs/reference/mobile-and-engagement-2026-09-05.md` - the phone and engagement proposal in three stages.
 - `docs/open-questions.md` - questions not yet asked or not yet answered.
 - `docs/owner-questions.md` - the decision queue. Every question here waits for the owner, and the tuning loop refuses to decide one.
