@@ -3,6 +3,8 @@ package agentsvc
 import (
 	"context"
 	"errors"
+	"io"
+	"log/slog"
 	"strings"
 	"sync"
 	"testing"
@@ -11,6 +13,8 @@ import (
 	"connectrpc.com/connect"
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/internal/auth"
+	"github.com/nkramber/decktome/go/internal/questions"
 )
 
 // fakeLedger is the spend ledger of the tests: one total per user and
@@ -108,5 +112,87 @@ func TestNoCapWithoutALedger(t *testing.T) {
 	client, _ := testServerOpts(t, store, []Option{WithSpendCap(nil, 5), WithSpendCap(&fakeLedger{}, 0)}, firstTurn(t)...)
 	if first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"}); first.started == "" {
 		t.Fatal("the turn did not run")
+	}
+}
+
+// capServer builds a server with a cap of 5 and the overrides given, for
+// the checkSpendCap tests of D-576.
+func capServer(t *testing.T, ledger Ledger, overrides map[string]float64) *Server {
+	t.Helper()
+	cat, err := questions.Load()
+	if err != nil {
+		t.Fatalf("catalog: %v", err)
+	}
+	client, _ := fakeClient(t)
+	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
+	srv, err := New(cat, client, newFakeStore(), func(context.Context) string { return "u1" },
+		WithLogger(quiet),
+		WithClock(func() time.Time { return time.Unix(1000, 0).UTC() }),
+		WithSpendCap(ledger, 5),
+		WithSpendCapOverrides(overrides))
+	if err != nil {
+		t.Fatalf("server: %v", err)
+	}
+	return srv
+}
+
+// TestSpendCapOverrideTurnsTheCapOffForOneEmail is D-576: an override of
+// zero lets the named caller past a spend over the cap of every user.
+func TestSpendCapOverrideTurnsTheCapOffForOneEmail(t *testing.T) {
+	ledger := &fakeLedger{spent: map[string]float64{"u1/1970-01": 500}}
+	srv := capServer(t, ledger, map[string]float64{"owner@example.com": 0})
+	ctx := auth.WithEmail(context.Background(), "owner@example.com")
+	if err := srv.checkSpendCap(ctx, "u1"); err != nil {
+		t.Fatalf("the override did not turn the cap off: %v", err)
+	}
+}
+
+// TestSpendCapOverrideKeepsTheCapForEveryOtherEmail: an override on one
+// email never lifts the cap of another caller.
+func TestSpendCapOverrideKeepsTheCapForEveryOtherEmail(t *testing.T) {
+	ledger := &fakeLedger{spent: map[string]float64{"u1/1970-01": 5}}
+	srv := capServer(t, ledger, map[string]float64{"owner@example.com": 0})
+	ctx := auth.WithEmail(context.Background(), "guest@example.com")
+	err := srv.checkSpendCap(ctx, "u1")
+	if connect.CodeOf(err) != connect.CodeResourceExhausted {
+		t.Fatalf("a guest at the cap: %v", err)
+	}
+}
+
+// TestSpendCapOverrideReadsItsOwnNumber: an override that names a number
+// caps the caller at that number, over and under it.
+func TestSpendCapOverrideReadsItsOwnNumber(t *testing.T) {
+	srv := capServer(t, &fakeLedger{spent: map[string]float64{"u1/1970-01": 19.99}},
+		map[string]float64{"big@example.com": 20})
+	ctx := auth.WithEmail(context.Background(), "big@example.com")
+	if err := srv.checkSpendCap(ctx, "u1"); err != nil {
+		t.Fatalf("under the override: %v", err)
+	}
+	srv = capServer(t, &fakeLedger{spent: map[string]float64{"u1/1970-01": 20}},
+		map[string]float64{"big@example.com": 20})
+	if err := srv.checkSpendCap(ctx, "u1"); connect.CodeOf(err) != connect.CodeResourceExhausted {
+		t.Fatalf("at the override: %v", err)
+	}
+}
+
+// TestSpendCapOverrideIgnoresTheCaseOfTheEmail: the token can carry a
+// capital letter, and the override still applies.
+func TestSpendCapOverrideIgnoresTheCaseOfTheEmail(t *testing.T) {
+	ledger := &fakeLedger{spent: map[string]float64{"u1/1970-01": 500}}
+	srv := capServer(t, ledger, map[string]float64{"Owner@Example.com": 0})
+	ctx := auth.WithEmail(context.Background(), "OWNER@example.COM")
+	if err := srv.checkSpendCap(ctx, "u1"); err != nil {
+		t.Fatalf("the override missed on case: %v", err)
+	}
+}
+
+// TestSpendCapWithNoOverrideReadsTheCapOfEveryUser: a caller with no
+// email, which is local mode, keeps the cap of every user.
+func TestSpendCapWithNoOverrideReadsTheCapOfEveryUser(t *testing.T) {
+	ledger := &fakeLedger{spent: map[string]float64{"u1/1970-01": 5}}
+	srv := capServer(t, ledger, map[string]float64{"owner@example.com": 0})
+	err := srv.checkSpendCap(context.Background(), "u1")
+	if connect.CodeOf(err) != connect.CodeResourceExhausted {
+		t.Fatalf("a caller with no email: %v", err)
 	}
 }

@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"syscall"
@@ -77,7 +78,8 @@ const (
 
 // Environment the api reads: PORT, ALLOW_DEBUG_USER, DEBUG_USER_ID,
 // ALLOWED_ORIGINS, FIREBASE_AUTH_EMULATOR_HOST, CARDS_RELOAD_SECONDS,
-// and the LLM_* variables of internal/llm, plus what gcpenv lists.
+// SPEND_CAP_USD, SPEND_CAP_OVERRIDES, and the LLM_* variables of
+// internal/llm, plus what gcpenv lists.
 
 func main() {
 	logger := gcpenv.NewLogger(os.Stdout)
@@ -506,6 +508,10 @@ func agentService(client *llm.Client, fs *firestore.Client, index *cardsvc.Serve
 	if capUSD := spendCap(logger); capUSD > 0 {
 		opts = append(opts, agentsvc.WithSpendCap(usage.NewRepo(fs), capUSD))
 		logger.Info("the monthly spend cap is on", "cap_usd", capUSD)
+		if over := spendCapOverrides(logger); len(over) > 0 {
+			opts = append(opts, agentsvc.WithSpendCapOverrides(over))
+			logger.Info("the spend cap has overrides", "emails", len(over))
+		}
 	}
 	return agentsvc.New(cat, client, sessions.NewRepo(fs), userFn, opts...)
 }
@@ -530,6 +536,37 @@ func spendCap(logger *slog.Logger) float64 {
 		return 0
 	}
 	return v
+}
+
+// spendCapOverrides reads SPEND_CAP_OVERRIDES, a comma-separated list of
+// `email:usd` pairs (D-576). A cap of zero turns the cap off for that
+// email. An entry that names no number is an error the log names, and it
+// never becomes a cap of zero.
+func spendCapOverrides(logger *slog.Logger) map[string]float64 {
+	raw := strings.TrimSpace(os.Getenv("SPEND_CAP_OVERRIDES"))
+	if raw == "" {
+		return nil
+	}
+	out := make(map[string]float64)
+	for _, entry := range strings.Split(raw, ",") {
+		entry = strings.TrimSpace(entry)
+		if entry == "" {
+			continue
+		}
+		email, value, found := strings.Cut(entry, ":")
+		email = strings.ToLower(strings.TrimSpace(email))
+		if !found || email == "" {
+			logger.Error("SPEND_CAP_OVERRIDES holds an entry that is not email:usd, and the entry is dropped", "entry", entry)
+			continue
+		}
+		v, err := strconv.ParseFloat(strings.TrimSpace(value), 64)
+		if err != nil || v < 0 {
+			logger.Error("SPEND_CAP_OVERRIDES holds a cap that is not a number, and the entry is dropped", "email", email)
+			continue
+		}
+		out[email] = v
+	}
+	return out
 }
 
 // loadSnapshot installs the newest stored snapshot when its version

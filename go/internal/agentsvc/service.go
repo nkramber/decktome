@@ -134,8 +134,11 @@ type Server struct {
 	// nil ledger means no cap, which is local mode.
 	ledger Ledger
 	capUSD float64
-	now    func() time.Time
-	log    *slog.Logger
+	// capOverrides holds the cap of a named email, and zero turns the
+	// cap off for that caller (D-576).
+	capOverrides map[string]float64
+	now          func() time.Time
+	log          *slog.Logger
 }
 
 // Option configures the server.
@@ -158,6 +161,21 @@ func WithSpendCap(l Ledger, capUSD float64) Option {
 			return
 		}
 		s.ledger, s.capUSD = l, capUSD
+	}
+}
+
+// WithSpendCapOverrides gives a named email its own cap (D-576). A cap of
+// zero turns the cap off for that caller alone. Every other caller keeps
+// the cap of WithSpendCap. The keys are lower case.
+func WithSpendCapOverrides(m map[string]float64) Option {
+	return func(s *Server) {
+		if len(m) == 0 {
+			return
+		}
+		s.capOverrides = make(map[string]float64, len(m))
+		for email, capUSD := range m {
+			s.capOverrides[strings.ToLower(strings.TrimSpace(email))] = capUSD
+		}
 	}
 }
 
@@ -623,21 +641,38 @@ func (s *Server) checkSpendCap(ctx context.Context, uid string) error {
 	if s.ledger == nil {
 		return nil
 	}
+	capUSD := s.capFor(ctx)
+	if capUSD <= 0 {
+		return nil
+	}
 	month := usage.Month(s.now())
 	spent, err := s.ledger.Spent(ctx, uid, month)
 	if err != nil {
 		s.log.ErrorContext(ctx, "the spend ledger could not be read, so the turn is refused", "user", uid, "err", err)
 		return connect.NewError(connect.CodeUnavailable, errors.New("the spend ledger could not be read"))
 	}
-	if spent < s.capUSD {
+	if spent < capUSD {
 		return nil
 	}
 	reset, err := usage.ResetDate(month)
 	if err != nil {
 		reset = "the first day of next month"
 	}
-	s.log.InfoContext(ctx, "a turn was refused at the monthly spend cap", "user", uid, "spent_usd", spent, "cap_usd", s.capUSD)
-	return errCapReached(s.capUSD, reset)
+	s.log.InfoContext(ctx, "a turn was refused at the monthly spend cap", "user", uid, "spent_usd", spent, "cap_usd", capUSD)
+	return errCapReached(capUSD, reset)
+}
+
+// capFor reads the cap of the caller. An override on the caller's email
+// wins over the cap of every user (D-576).
+func (s *Server) capFor(ctx context.Context) float64 {
+	if len(s.capOverrides) == 0 {
+		return s.capUSD
+	}
+	email := strings.ToLower(auth.Email(ctx))
+	if capUSD, ok := s.capOverrides[email]; ok {
+		return capUSD
+	}
+	return s.capUSD
 }
 
 // recordSpend adds what the turn spent to the ledger: the difference
