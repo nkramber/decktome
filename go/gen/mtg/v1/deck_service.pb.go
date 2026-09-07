@@ -1174,7 +1174,7 @@ const file_mtg_v1_deck_service_proto_rawDesc = "" +
 	"\tShareDeck\x12\x18.mtg.v1.ShareDeckRequest\x1a\x19.mtg.v1.ShareDeckResponse\"\x00\x12H\n" +
 	"\vRevokeShare\x12\x1a.mtg.v1.RevokeShareRequest\x1a\x1b.mtg.v1.RevokeShareResponse\"\x00\x12N\n" +
 	"\rGetSharedDeck\x12\x1c.mtg.v1.GetSharedDeckRequest\x1a\x1d.mtg.v1.GetSharedDeckResponse\"\x00\x12W\n" +
-	"\x10ExportSharedDeck\x12\x1f.mtg.v1.ExportSharedDeckRequest\x1a .mtg.v1.ExportSharedDeckResponse\"\x00B:Z8github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1b\x06proto3"
+	"\x10ExportSharedDeck\x12\x1f.mtg.v1.ExportSharedDeckRequest\x1a .mtg.v1.ExportSharedDeckResponse\"\x00B2Z0github.com/nkramber/decktome/go/gen/mtg/v1;mtgv1b\x06proto3"
 
 var (
 	file_mtg_v1_deck_service_proto_rawDescOnce sync.Once

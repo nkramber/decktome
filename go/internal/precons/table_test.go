@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nkramber/mtg-deck-builder/go/internal/meta"
+	"github.com/nkramber/decktome/go/internal/meta"
 )
 
 func card(name, oracle, scryfall string, n int) meta.PreconCard {

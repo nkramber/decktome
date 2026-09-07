@@ -1,4 +1,4 @@
-module github.com/nkramber/mtg-deck-builder/go
+module github.com/nkramber/decktome/go
 
 go 1.27.0
 

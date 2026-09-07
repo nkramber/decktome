@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"testing"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 )
 
 // The budget tests: the cap, the buy list, the proxy user, and the scope

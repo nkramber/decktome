@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"sync"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
-	"github.com/nkramber/mtg-deck-builder/go/internal/profile"
-	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/internal/profile"
+	"github.com/nkramber/decktome/go/internal/rules"
 )
 
 // The role targets and the limits block come from the corpus role guide

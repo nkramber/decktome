@@ -23,9 +23,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/nkramber/mtg-deck-builder/go/internal/gatekit"
-	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
-	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
+	"github.com/nkramber/decktome/go/internal/gatekit"
+	"github.com/nkramber/decktome/go/internal/generate"
+	"github.com/nkramber/decktome/go/internal/llm"
 )
 
 var (

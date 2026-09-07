@@ -4,7 +4,7 @@ package mtg.v1;
 
 import "mtg/v1/format.proto";
 
-option go_package = "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1";
+option go_package = "github.com/nkramber/decktome/go/gen/mtg/v1;mtgv1";
 
 // Card is one Oracle card: the rules identity, not one printing.
 // The data comes from the daily Scryfall snapshot (roadmap PR-2).

@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nkramber/mtg-deck-builder/go/internal/meta"
-	"github.com/nkramber/mtg-deck-builder/go/internal/precons"
+	"github.com/nkramber/decktome/go/internal/meta"
+	"github.com/nkramber/decktome/go/internal/precons"
 )
 
 // TestResolvePreconsIgnoresBasicLands is D-523 for the gate: a binder

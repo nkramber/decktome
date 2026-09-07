@@ -141,7 +141,7 @@ const file_mtg_v1_health_proto_rawDesc = "" +
 	"\rcard_snapshot\x18\x03 \x01(\tR\fcardSnapshot\x125\n" +
 	"\x17card_snapshot_age_hours\x18\x04 \x01(\x01R\x14cardSnapshotAgeHours2G\n" +
 	"\rHealthService\x126\n" +
-	"\x05Check\x12\x14.mtg.v1.CheckRequest\x1a\x15.mtg.v1.CheckResponse\"\x00B:Z8github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1b\x06proto3"
+	"\x05Check\x12\x14.mtg.v1.CheckRequest\x1a\x15.mtg.v1.CheckResponse\"\x00B2Z0github.com/nkramber/decktome/go/gen/mtg/v1;mtgv1b\x06proto3"
 
 var (
 	file_mtg_v1_health_proto_rawDescOnce sync.Once

@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/nkramber/mtg-deck-builder/go/internal/tune"
+	"github.com/nkramber/decktome/go/internal/tune"
 )
 
 // The snapshot loads once per package. Every snapshot test shares it.

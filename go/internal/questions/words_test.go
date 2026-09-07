@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 )
 
 // The pure word rules. Every test here calls a rule with a string and

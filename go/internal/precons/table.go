@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/nkramber/mtg-deck-builder/go/internal/meta"
+	"github.com/nkramber/decktome/go/internal/meta"
 )
 
 // Product is one row of the MTGJSON precon table, indexed for the precon

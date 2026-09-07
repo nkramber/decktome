@@ -7,12 +7,12 @@ import (
 	"os"
 	"sort"
 
-	"github.com/nkramber/mtg-deck-builder/go/internal/candidates"
-	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
-	"github.com/nkramber/mtg-deck-builder/go/internal/gatekit"
-	"github.com/nkramber/mtg-deck-builder/go/internal/profile"
-	"github.com/nkramber/mtg-deck-builder/go/internal/quality"
-	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
+	"github.com/nkramber/decktome/go/internal/candidates"
+	"github.com/nkramber/decktome/go/internal/cards"
+	"github.com/nkramber/decktome/go/internal/gatekit"
+	"github.com/nkramber/decktome/go/internal/profile"
+	"github.com/nkramber/decktome/go/internal/quality"
+	"github.com/nkramber/decktome/go/internal/rules"
 )
 
 // runExplain reads the decks of a deck gate document and prints how the

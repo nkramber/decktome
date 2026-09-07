@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
-	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/internal/llm"
 )
 
 func planClient(t *testing.T, output string) *llm.Client {

@@ -3,7 +3,7 @@ package feedback
 import (
 	"testing"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 )
 
 // TestNamesAndReasons pins the short names and the reason keys of

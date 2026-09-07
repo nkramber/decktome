@@ -26,9 +26,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
-	"github.com/nkramber/mtg-deck-builder/go/internal/gcpenv"
-	"github.com/nkramber/mtg-deck-builder/go/internal/scryfall"
+	"github.com/nkramber/decktome/go/internal/cards"
+	"github.com/nkramber/decktome/go/internal/gcpenv"
+	"github.com/nkramber/decktome/go/internal/scryfall"
 )
 
 var version = "dev"

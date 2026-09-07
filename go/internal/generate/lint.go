@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 )
 
 // F-26 says the model invents claims about the game, and that no

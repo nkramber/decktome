@@ -6,7 +6,7 @@ import (
 	"strings"
 	"unicode"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 )
 
 // The question linter (D-115). Every rule here reads text alone, so it

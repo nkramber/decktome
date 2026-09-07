@@ -3,7 +3,7 @@ package decks
 import (
 	"testing"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 )
 
 // The filter runs in Go over the flat rows (PR-17), so it needs no

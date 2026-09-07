@@ -8,7 +8,7 @@ import (
 	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
-	v1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	v1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 	http "net/http"
 	strings "strings"
 )
