@@ -49,7 +49,7 @@ version_row() {
   row "ok" "$name" "$have"
 }
 
-echo "mtg-deck-builder doctor (macOS $(sw_vers -productVersion 2>/dev/null || echo ?), $(uname -m))"
+echo "decktome doctor (macOS $(sw_vers -productVersion 2>/dev/null || echo ?), $(uname -m))"
 optional "brew"  brew     "brew --version | awk '{print \$2}'"          ""           "https://brew.sh"
 check "git"      git      "git --version | awk '{print \$3}'"           ""           "xcode-select --install"
 # scripts/dev.sh waits on ports with nc and sweeps them with lsof.

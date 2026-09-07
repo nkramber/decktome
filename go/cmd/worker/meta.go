@@ -8,10 +8,10 @@ import (
 	"sort"
 	"time"
 
-	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
-	"github.com/nkramber/mtg-deck-builder/go/internal/gcpenv"
-	"github.com/nkramber/mtg-deck-builder/go/internal/meta"
-	"github.com/nkramber/mtg-deck-builder/go/internal/quality"
+	"github.com/nkramber/decktome/go/internal/cards"
+	"github.com/nkramber/decktome/go/internal/gcpenv"
+	"github.com/nkramber/decktome/go/internal/meta"
+	"github.com/nkramber/decktome/go/internal/quality"
 )
 
 // metaOptions are the -meta flags.

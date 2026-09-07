@@ -28,8 +28,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/nkramber/mtg-deck-builder/go/internal/evalrun"
-	"github.com/nkramber/mtg-deck-builder/go/internal/gatekit"
+	"github.com/nkramber/decktome/go/internal/evalrun"
+	"github.com/nkramber/decktome/go/internal/gatekit"
 )
 
 // The exit codes.

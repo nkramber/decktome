@@ -14,7 +14,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 )
 
 // Row is one parsed input row before card resolution.

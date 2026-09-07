@@ -6,7 +6,7 @@ import "google/protobuf/timestamp.proto";
 import "mtg/v1/deck.proto";
 import "mtg/v1/session.proto";
 
-option go_package = "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1";
+option go_package = "github.com/nkramber/decktome/go/gen/mtg/v1;mtgv1";
 
 // AgentService is the deck-building conversation (roadmap PR-7, PR-8).
 service AgentService {

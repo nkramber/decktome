@@ -20,8 +20,8 @@ import (
 
 	"cloud.google.com/go/firestore"
 
-	"github.com/nkramber/mtg-deck-builder/go/internal/allowlist"
-	"github.com/nkramber/mtg-deck-builder/go/internal/gcpenv"
+	"github.com/nkramber/decktome/go/internal/allowlist"
+	"github.com/nkramber/decktome/go/internal/gcpenv"
 )
 
 func main() {

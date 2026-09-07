@@ -26,12 +26,12 @@ import (
 	"sync"
 	"time"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 )
 
 // UserAgent identifies this app to every source. MTGJSON answers 403 to
 // a request with no agent (precon-data-2026-09-01).
-const UserAgent = "mtg-deck-builder/0.1 (github.com/nkramber/mtg-deck-builder)"
+const UserAgent = "mtg-deck-builder/0.1 (github.com/nkramber/decktome)"
 
 // The tier words of the ladder (D-414). A great list is a top-8 finish
 // or a competitive cEDH list. A good list is a league finish or the

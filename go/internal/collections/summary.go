@@ -3,7 +3,7 @@ package collections
 import (
 	"sort"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 )
 
 // The binder head reads a collection's shape and never its rows (D-392).

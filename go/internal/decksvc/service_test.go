@@ -15,11 +15,11 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
-	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
-	"github.com/nkramber/mtg-deck-builder/go/internal/decks"
-	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
-	"github.com/nkramber/mtg-deck-builder/go/internal/sessions"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/internal/cards"
+	"github.com/nkramber/decktome/go/internal/decks"
+	"github.com/nkramber/decktome/go/internal/rules"
+	"github.com/nkramber/decktome/go/internal/sessions"
 )
 
 type fixedIndex struct{ idx *cards.Index }

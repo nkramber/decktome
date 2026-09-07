@@ -18,7 +18,7 @@ import (
 )
 
 // UserAgent identifies this app to Scryfall.
-const UserAgent = "mtg-deck-builder/0.1 (github.com/nkramber/mtg-deck-builder)"
+const UserAgent = "mtg-deck-builder/0.1 (github.com/nkramber/decktome)"
 
 // DefaultRetryAfter is the wait after a 429 with no Retry-After header.
 const DefaultRetryAfter = 30 * time.Second

@@ -9,9 +9,9 @@ import (
 
 	"connectrpc.com/connect"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
-	"github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1/mtgv1connect"
-	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/gen/mtg/v1/mtgv1connect"
+	"github.com/nkramber/decktome/go/internal/cards"
 )
 
 // IndexSource gives the current card index, or nil before the first load.

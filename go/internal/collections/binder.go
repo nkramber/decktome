@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 )
 
 // Filter is what the binder grid asks for (D-398). Every field runs on

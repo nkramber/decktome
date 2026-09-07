@@ -6,7 +6,7 @@ import "mtg/v1/format.proto";
 import "mtg/v1/card.proto";
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1";
+option go_package = "github.com/nkramber/decktome/go/gen/mtg/v1;mtgv1";
 
 // Session is one deck-building conversation.
 message Session {

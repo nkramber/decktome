@@ -4,7 +4,7 @@ import (
 	"slices"
 	"testing"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 )
 
 // stalledState is a session with two questions out and one slot filled.

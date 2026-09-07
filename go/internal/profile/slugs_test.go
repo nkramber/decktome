@@ -7,7 +7,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
+	"github.com/nkramber/decktome/go/internal/cards"
 )
 
 // TestTutorSlugsExist checks the tag slugs the profile reads against a

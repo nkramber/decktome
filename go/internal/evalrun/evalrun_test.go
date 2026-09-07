@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
+	"github.com/nkramber/decktome/go/internal/llm"
 )
 
 func sample() *Run {

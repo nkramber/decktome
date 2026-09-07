@@ -10,7 +10,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/nkramber/mtg-deck-builder/go/internal/scryfall"
+	"github.com/nkramber/decktome/go/internal/scryfall"
 )
 
 // bulkTypeByFile maps a snapshot file to its Scryfall bulk type.

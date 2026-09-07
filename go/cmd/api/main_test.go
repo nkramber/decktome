@@ -13,13 +13,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nkramber/mtg-deck-builder/go/internal/agentsvc"
-	"github.com/nkramber/mtg-deck-builder/go/internal/auth"
-	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
-	"github.com/nkramber/mtg-deck-builder/go/internal/cardsvc"
-	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
-	"github.com/nkramber/mtg-deck-builder/go/internal/precons"
-	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
+	"github.com/nkramber/decktome/go/internal/agentsvc"
+	"github.com/nkramber/decktome/go/internal/auth"
+	"github.com/nkramber/decktome/go/internal/cards"
+	"github.com/nkramber/decktome/go/internal/cardsvc"
+	"github.com/nkramber/decktome/go/internal/llm"
+	"github.com/nkramber/decktome/go/internal/precons"
+	"github.com/nkramber/decktome/go/internal/rules"
 )
 
 func gz(t *testing.T, s string) []byte {

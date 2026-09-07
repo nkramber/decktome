@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package mtg.v1;
 
-option go_package = "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1";
+option go_package = "github.com/nkramber/decktome/go/gen/mtg/v1;mtgv1";
 
 // FeedbackService takes a user's verdict on one thing the app made
 // (PR-27, D-557 to D-559): a question, a deck description, one card of

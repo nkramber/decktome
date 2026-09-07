@@ -6,7 +6,7 @@ import "mtg/v1/deck.proto";
 import "mtg/v1/format.proto";
 import "mtg/v1/session.proto";
 
-option go_package = "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1";
+option go_package = "github.com/nkramber/decktome/go/gen/mtg/v1;mtgv1";
 
 // DeckService reads, validates, and exports decks.
 //

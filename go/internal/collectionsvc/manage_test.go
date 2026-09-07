@@ -8,9 +8,9 @@ import (
 
 	"connectrpc.com/connect"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
-	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
-	"github.com/nkramber/mtg-deck-builder/go/internal/collections"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/internal/cards"
+	"github.com/nkramber/decktome/go/internal/collections"
 )
 
 // stocked is a server whose store holds one collection of n entries.

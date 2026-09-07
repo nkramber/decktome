@@ -5,7 +5,7 @@ package mtg.v1;
 import "google/protobuf/timestamp.proto";
 import "mtg/v1/card.proto";
 
-option go_package = "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1";
+option go_package = "github.com/nkramber/decktome/go/gen/mtg/v1;mtgv1";
 
 // Collection is one imported card list. The full collection is stored (D-16).
 message Collection {

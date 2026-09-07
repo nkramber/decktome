@@ -14,17 +14,17 @@ import (
 	"strconv"
 	"strings"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
-	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
-	"github.com/nkramber/mtg-deck-builder/go/internal/collections"
-	"github.com/nkramber/mtg-deck-builder/go/internal/gcpenv"
-	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
-	"github.com/nkramber/mtg-deck-builder/go/internal/meta"
-	"github.com/nkramber/mtg-deck-builder/go/internal/precons"
-	"github.com/nkramber/mtg-deck-builder/go/internal/profile"
-	"github.com/nkramber/mtg-deck-builder/go/internal/quality"
-	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
-	"github.com/nkramber/mtg-deck-builder/go/internal/spellbook"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/internal/cards"
+	"github.com/nkramber/decktome/go/internal/collections"
+	"github.com/nkramber/decktome/go/internal/gcpenv"
+	"github.com/nkramber/decktome/go/internal/llm"
+	"github.com/nkramber/decktome/go/internal/meta"
+	"github.com/nkramber/decktome/go/internal/precons"
+	"github.com/nkramber/decktome/go/internal/profile"
+	"github.com/nkramber/decktome/go/internal/quality"
+	"github.com/nkramber/decktome/go/internal/rules"
+	"github.com/nkramber/decktome/go/internal/spellbook"
 )
 
 // SpendGuard refuses a paid run unless the named variable is "1". Every

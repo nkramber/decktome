@@ -15,14 +15,14 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
-	"github.com/nkramber/mtg-deck-builder/go/internal/candidates"
-	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
-	"github.com/nkramber/mtg-deck-builder/go/internal/decks"
-	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
-	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
-	"github.com/nkramber/mtg-deck-builder/go/internal/precons"
-	"github.com/nkramber/mtg-deck-builder/go/internal/questions"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/internal/candidates"
+	"github.com/nkramber/decktome/go/internal/cards"
+	"github.com/nkramber/decktome/go/internal/decks"
+	"github.com/nkramber/decktome/go/internal/generate"
+	"github.com/nkramber/decktome/go/internal/llm"
+	"github.com/nkramber/decktome/go/internal/precons"
+	"github.com/nkramber/decktome/go/internal/questions"
 )
 
 // fixedIndex is an IndexSource over a hand-built snapshot.

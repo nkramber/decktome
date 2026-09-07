@@ -6,7 +6,7 @@ import (
 
 	"connectrpc.com/connect"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 )
 
 // TestGetCardsQualityRows: the rows ride on a copy, the index card stays

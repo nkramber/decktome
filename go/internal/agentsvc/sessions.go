@@ -12,9 +12,9 @@ import (
 
 	"connectrpc.com/connect"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
-	"github.com/nkramber/mtg-deck-builder/go/internal/decks"
-	"github.com/nkramber/mtg-deck-builder/go/internal/gzstore"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/internal/decks"
+	"github.com/nkramber/decktome/go/internal/gzstore"
 )
 
 // The sessions list of PR-19 (D-433): the conversations a reader can

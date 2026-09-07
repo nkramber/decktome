@@ -1035,7 +1035,7 @@ const file_mtg_v1_session_proto_rawDesc = "" +
 	"\x15POOL_RULE_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15POOL_RULE_OWNED_FIRST\x10\x01\x12\x18\n" +
 	"\x14POOL_RULE_OWNED_ONLY\x10\x02\x12\x16\n" +
-	"\x12POOL_RULE_ANY_CARD\x10\x03B:Z8github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1b\x06proto3"
+	"\x12POOL_RULE_ANY_CARD\x10\x03B2Z0github.com/nkramber/decktome/go/gen/mtg/v1;mtgv1b\x06proto3"
 
 var (
 	file_mtg_v1_session_proto_rawDescOnce sync.Once

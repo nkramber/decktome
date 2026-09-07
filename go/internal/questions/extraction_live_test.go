@@ -8,7 +8,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
+	"github.com/nkramber/decktome/go/internal/llm"
 )
 
 // TestLiveFormatExtraction guards D-92, which no offline test can catch.

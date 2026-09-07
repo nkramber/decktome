@@ -1625,7 +1625,7 @@ const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\x14SEVERITY_UNSPECIFIED\x10\x00\x12\x12\n" +
 	"\x0eSEVERITY_BLOCK\x10\x01\x12\x11\n" +
 	"\rSEVERITY_WARN\x10\x02\x12\x11\n" +
-	"\rSEVERITY_INFO\x10\x03B:Z8github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1b\x06proto3"
+	"\rSEVERITY_INFO\x10\x03B2Z0github.com/nkramber/decktome/go/gen/mtg/v1;mtgv1b\x06proto3"
 
 var (
 	file_mtg_v1_deck_proto_rawDescOnce sync.Once

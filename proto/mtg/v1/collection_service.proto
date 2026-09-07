@@ -4,7 +4,7 @@ package mtg.v1;
 
 import "mtg/v1/collection.proto";
 
-option go_package = "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1";
+option go_package = "github.com/nkramber/decktome/go/gen/mtg/v1;mtgv1";
 
 // CollectionService imports and reads the user's collections (roadmap PR-4).
 service CollectionService {

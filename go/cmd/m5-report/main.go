@@ -26,7 +26,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/nkramber/mtg-deck-builder/go/internal/questions"
+	"github.com/nkramber/decktome/go/internal/questions"
 )
 
 // PrecisionFloor is the D-66 rule: at least this share of the inventions

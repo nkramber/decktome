@@ -7,9 +7,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
-	"github.com/nkramber/mtg-deck-builder/go/internal/gatekit"
-	"github.com/nkramber/mtg-deck-builder/go/internal/tune"
+	"github.com/nkramber/decktome/go/internal/cards"
+	"github.com/nkramber/decktome/go/internal/gatekit"
+	"github.com/nkramber/decktome/go/internal/tune"
 )
 
 // The eval invents card facts of its own, and a false one changes a

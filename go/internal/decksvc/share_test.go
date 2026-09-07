@@ -10,8 +10,8 @@ import (
 
 	"connectrpc.com/connect"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
-	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/internal/cards"
 )
 
 func sharedDeckFixture() *mtgv1.Deck {

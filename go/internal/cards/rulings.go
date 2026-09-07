@@ -5,7 +5,7 @@ import (
 	"io"
 	"sort"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 )
 
 // RulingsFile is the rulings bulk file of a snapshot (PR-20). A snapshot

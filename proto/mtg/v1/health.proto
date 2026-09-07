@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package mtg.v1;
 
-option go_package = "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1";
+option go_package = "github.com/nkramber/decktome/go/gen/mtg/v1;mtgv1";
 
 // HealthService reports service health and the card-snapshot age.
 service HealthService {

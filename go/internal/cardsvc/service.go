@@ -10,9 +10,9 @@ import (
 	"connectrpc.com/connect"
 	"google.golang.org/protobuf/proto"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
-	"github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1/mtgv1connect"
-	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/gen/mtg/v1/mtgv1connect"
+	"github.com/nkramber/decktome/go/internal/cards"
 )
 
 // IndexSource hands out the current card index, or nil before the first

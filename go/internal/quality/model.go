@@ -19,8 +19,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
-	"github.com/nkramber/mtg-deck-builder/go/internal/meta"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/internal/meta"
 )
 
 // The feature keys, in the order a reader scans a deck: the cards, the

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nkramber/mtg-deck-builder/go/internal/evalrun"
+	"github.com/nkramber/decktome/go/internal/evalrun"
 )
 
 // run14 mirrors the lines cmd/deck-gate writes: a clean deck and the

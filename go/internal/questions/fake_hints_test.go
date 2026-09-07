@@ -1,8 +1,8 @@
 package questions
 
 import (
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
-	"github.com/nkramber/mtg-deck-builder/go/internal/candidates"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/internal/candidates"
 )
 
 // fakeHints is the one hint source the tests share. Each field answers

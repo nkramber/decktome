@@ -7,8 +7,8 @@ import (
 	"strings"
 	"sync/atomic"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
-	"github.com/nkramber/mtg-deck-builder/go/internal/meta"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/internal/meta"
 )
 
 // Scorer grades decks with the loaded model. The model swaps when the

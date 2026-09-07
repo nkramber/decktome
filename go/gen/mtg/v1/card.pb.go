@@ -1101,7 +1101,7 @@ const file_mtg_v1_card_proto_rawDesc = "" +
 	"\aCOLOR_B\x10\x03\x12\v\n" +
 	"\aCOLOR_R\x10\x04\x12\v\n" +
 	"\aCOLOR_G\x10\x05\x12\v\n" +
-	"\aCOLOR_C\x10\x06B:Z8github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1b\x06proto3"
+	"\aCOLOR_C\x10\x06B2Z0github.com/nkramber/decktome/go/gen/mtg/v1;mtgv1b\x06proto3"
 
 var (
 	file_mtg_v1_card_proto_rawDescOnce sync.Once

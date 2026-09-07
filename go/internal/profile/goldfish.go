@@ -4,7 +4,7 @@ import (
 	"math/rand/v2"
 	"sort"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 )
 
 // The goldfish simulation (D-453). It deals opening hands, mulligans by

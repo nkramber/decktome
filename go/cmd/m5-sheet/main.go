@@ -33,7 +33,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/nkramber/mtg-deck-builder/go/internal/questions"
+	"github.com/nkramber/decktome/go/internal/questions"
 )
 
 // RubricVersion versions the fields. A change to them invalidates every

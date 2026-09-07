@@ -11,8 +11,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/nkramber/mtg-deck-builder/go/internal/evalrun"
-	"github.com/nkramber/mtg-deck-builder/go/internal/gatekit"
+	"github.com/nkramber/decktome/go/internal/evalrun"
+	"github.com/nkramber/decktome/go/internal/gatekit"
 )
 
 // The sweep runs the paid suites in the order of the eval list, under a

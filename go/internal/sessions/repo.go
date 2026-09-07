@@ -21,9 +21,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
-	"github.com/nkramber/mtg-deck-builder/go/internal/gzstore"
-	"github.com/nkramber/mtg-deck-builder/go/internal/questions"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/internal/gzstore"
+	"github.com/nkramber/decktome/go/internal/questions"
 )
 
 // schemaVersion marks the document shape.

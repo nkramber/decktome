@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/nkramber/mtg-deck-builder/go/internal/evalrun"
+	"github.com/nkramber/decktome/go/internal/evalrun"
 )
 
 // TestFailStillWritesTheRunFile: the run file lands before the verdict

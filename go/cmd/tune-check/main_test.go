@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nkramber/mtg-deck-builder/go/internal/tune"
+	"github.com/nkramber/decktome/go/internal/tune"
 )
 
 func write(t *testing.T, dir, name string, s tune.Summary) string {
