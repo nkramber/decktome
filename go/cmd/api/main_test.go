@@ -291,3 +291,38 @@ func TestShutdownWindowCoversABuild(t *testing.T) {
 		t.Errorf("shutdown window %v does not cover a build of %v", shutdownTimeout, agentsvc.DefaultBuildLimit)
 	}
 }
+
+// TestSpendCapOverrides is D-576: SPEND_CAP_OVERRIDES names a cap per
+// email, and a malformed entry never becomes a cap of zero.
+func TestSpendCapOverrides(t *testing.T) {
+	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
+	tests := []struct {
+		name string
+		raw  string
+		want map[string]float64
+	}{
+		{name: "unset", raw: "", want: nil},
+		{name: "one email at zero", raw: "ann@example.com:0", want: map[string]float64{"ann@example.com": 0}},
+		{name: "two emails", raw: "ann@example.com:0, bo@example.com:20", want: map[string]float64{"ann@example.com": 0, "bo@example.com": 20}},
+		{name: "the case of the email drops", raw: "Ann@Example.COM:0", want: map[string]float64{"ann@example.com": 0}},
+		{name: "no colon drops the entry", raw: "ann@example.com", want: map[string]float64{}},
+		{name: "a cap that is not a number drops the entry", raw: "ann@example.com:many", want: map[string]float64{}},
+		{name: "a cap under zero drops the entry", raw: "ann@example.com:-1", want: map[string]float64{}},
+		{name: "no email drops the entry", raw: ":5", want: map[string]float64{}},
+		{name: "a good entry survives a bad one", raw: "bad,ann@example.com:0", want: map[string]float64{"ann@example.com": 0}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv("SPEND_CAP_OVERRIDES", tt.raw)
+			got := spendCapOverrides(quiet)
+			if len(got) != len(tt.want) {
+				t.Fatalf("overrides = %v, want %v", got, tt.want)
+			}
+			for email, capUSD := range tt.want {
+				if got[email] != capUSD {
+					t.Errorf("cap of %q = %v, want %v", email, got[email], capUSD)
+				}
+			}
+		})
+	}
+}

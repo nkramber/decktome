@@ -281,3 +281,61 @@ func TestAllowlistRefusesAnEmailOffTheList(t *testing.T) {
 		t.Errorf("the fallback user never meets the list: %q %v", uid, err)
 	}
 }
+
+// emailEcho answers the unary Check with the verified email of the
+// context.
+type emailEcho struct {
+	mtgv1connect.UnimplementedHealthServiceHandler
+}
+
+func (emailEcho) Check(ctx context.Context, _ *connect.Request[mtgv1.CheckRequest]) (*connect.Response[mtgv1.CheckResponse], error) {
+	return connect.NewResponse(&mtgv1.CheckResponse{Version: Email(ctx)}), nil
+}
+
+// TestInterceptorCarriesTheEmail is D-576: the spend cap reads the email
+// of the caller, and the interceptor puts it in the context.
+func TestInterceptorCarriesTheEmail(t *testing.T) {
+	ic := connect.WithInterceptors(Interceptor(fakeVerifier{token: "good", uid: "u-42", email: "ann@example.com"}))
+	mux := http.NewServeMux()
+	mux.Handle(mtgv1connect.NewHealthServiceHandler(emailEcho{}, ic))
+	srv := httptest.NewServer(mux)
+	t.Cleanup(srv.Close)
+	client := mtgv1connect.NewHealthServiceClient(srv.Client(), srv.URL)
+	req := connect.NewRequest(&mtgv1.CheckRequest{})
+	req.Header().Set("Authorization", "Bearer good")
+	res, err := client.Check(context.Background(), req)
+	if err != nil {
+		t.Fatalf("check: %v", err)
+	}
+	if got := res.Msg.GetVersion(); got != "ann@example.com" {
+		t.Errorf("email = %q, want ann@example.com", got)
+	}
+}
+
+// TestFallbackUserCarriesNoEmail: local mode has no token and no email,
+// so the spend cap reads the cap of every user.
+func TestFallbackUserCarriesNoEmail(t *testing.T) {
+	ic := connect.WithInterceptors(Interceptor(fakeVerifier{token: "good", uid: "u-42", email: "ann@example.com"}, WithFallback("local-dev")))
+	mux := http.NewServeMux()
+	mux.Handle(mtgv1connect.NewHealthServiceHandler(emailEcho{}, ic))
+	srv := httptest.NewServer(mux)
+	t.Cleanup(srv.Close)
+	client := mtgv1connect.NewHealthServiceClient(srv.Client(), srv.URL)
+	res, err := client.Check(context.Background(), connect.NewRequest(&mtgv1.CheckRequest{}))
+	if err != nil {
+		t.Fatalf("check: %v", err)
+	}
+	if got := res.Msg.GetVersion(); got != "" {
+		t.Errorf("email = %q, want empty", got)
+	}
+}
+
+// TestEmailContextRoundTrip: a context with no email reads empty.
+func TestEmailContextRoundTrip(t *testing.T) {
+	if got := Email(WithEmail(context.Background(), "a@b.c")); got != "a@b.c" {
+		t.Errorf("email = %q, want a@b.c", got)
+	}
+	if got := Email(context.Background()); got != "" {
+		t.Errorf("email with none = %q, want empty", got)
+	}
+}

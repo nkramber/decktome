@@ -106,6 +106,20 @@ func WithUserID(ctx context.Context, uid string) context.Context {
 	return context.WithValue(ctx, ctxKey{}, uid)
 }
 
+type emailKey struct{}
+
+// Email reads the verified email the interceptor stored, or "" when none.
+// The spend cap reads it for a per-user override (D-576).
+func Email(ctx context.Context) string {
+	email, _ := ctx.Value(emailKey{}).(string)
+	return email
+}
+
+// WithEmail returns ctx with email set. Tests and the interceptor use it.
+func WithEmail(ctx context.Context, email string) context.Context {
+	return context.WithValue(ctx, emailKey{}, email)
+}
+
 // Option tunes the interceptor.
 type Option func(*interceptor)
 
@@ -193,7 +207,7 @@ func (i *interceptor) resolve(ctx context.Context, authorization string) (contex
 			return nil, connect.NewError(connect.CodePermissionDenied, errNotInvited)
 		}
 	}
-	return WithUserID(ctx, id.UID), nil
+	return WithEmail(WithUserID(ctx, id.UID), id.Email), nil
 }
 
 // bearer splits "Bearer <token>". present is false when the header is
