@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/nkramber/mtg-deck-builder/go/internal/evalrun"
+	"github.com/nkramber/decktome/go/internal/evalrun"
 )
 
 // The lines of a deck gate document the import reads. They are the

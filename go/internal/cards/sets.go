@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/nkramber/mtg-deck-builder/go/internal/scryfall"
+	"github.com/nkramber/decktome/go/internal/scryfall"
 )
 
 // SetInfo is one Magic set, as the app reads it. The fields come from the

@@ -3,7 +3,7 @@ package candidates
 import (
 	"testing"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 )
 
 // TestBuildDropsTheExcludedCards is D-408: a card of an excluded precon

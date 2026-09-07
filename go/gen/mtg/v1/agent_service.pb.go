@@ -1028,7 +1028,7 @@ const file_mtg_v1_agent_service_proto_rawDesc = "" +
 	"GetSession\x12\x19.mtg.v1.GetSessionRequest\x1a\x1a.mtg.v1.GetSessionResponse\"\x00\x12K\n" +
 	"\fListSessions\x12\x1b.mtg.v1.ListSessionsRequest\x1a\x1c.mtg.v1.ListSessionsResponse\"\x00\x12N\n" +
 	"\rUpdateSession\x12\x1c.mtg.v1.UpdateSessionRequest\x1a\x1d.mtg.v1.UpdateSessionResponse\"\x00\x12N\n" +
-	"\rDeleteSession\x12\x1c.mtg.v1.DeleteSessionRequest\x1a\x1d.mtg.v1.DeleteSessionResponse\"\x00B:Z8github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1b\x06proto3"
+	"\rDeleteSession\x12\x1c.mtg.v1.DeleteSessionRequest\x1a\x1d.mtg.v1.DeleteSessionResponse\"\x00B2Z0github.com/nkramber/decktome/go/gen/mtg/v1;mtgv1b\x06proto3"
 
 var (
 	file_mtg_v1_agent_service_proto_rawDescOnce sync.Once

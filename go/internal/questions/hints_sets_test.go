@@ -7,8 +7,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/nkramber/mtg-deck-builder/go/internal/candidates"
-	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
+	"github.com/nkramber/decktome/go/internal/candidates"
+	"github.com/nkramber/decktome/go/internal/cards"
 )
 
 // TestCommandersWithNoThemeInsideTheSets is D-437. Session

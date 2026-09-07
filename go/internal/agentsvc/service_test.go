@@ -20,14 +20,14 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
-	"github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1/mtgv1connect"
-	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
-	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
-	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
-	"github.com/nkramber/mtg-deck-builder/go/internal/precons"
-	"github.com/nkramber/mtg-deck-builder/go/internal/questions"
-	"github.com/nkramber/mtg-deck-builder/go/internal/sessions"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/gen/mtg/v1/mtgv1connect"
+	"github.com/nkramber/decktome/go/internal/cards"
+	"github.com/nkramber/decktome/go/internal/generate"
+	"github.com/nkramber/decktome/go/internal/llm"
+	"github.com/nkramber/decktome/go/internal/precons"
+	"github.com/nkramber/decktome/go/internal/questions"
+	"github.com/nkramber/decktome/go/internal/sessions"
 )
 
 // fakeStore is an in-memory Store. It keeps the two halves apart, the

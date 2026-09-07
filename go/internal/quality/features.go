@@ -4,9 +4,9 @@ import (
 	"math"
 	"slices"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
-	"github.com/nkramber/mtg-deck-builder/go/internal/profile"
-	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/internal/profile"
+	"github.com/nkramber/decktome/go/internal/rules"
 )
 
 // Input is one deck to measure: the deck, its profile, and the card

@@ -17,8 +17,8 @@ import (
 
 	"cloud.google.com/go/storage"
 
-	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
-	"github.com/nkramber/mtg-deck-builder/go/internal/meta"
+	"github.com/nkramber/decktome/go/internal/cards"
+	"github.com/nkramber/decktome/go/internal/meta"
 )
 
 // LocalProject is the project name every emulator mode uses.

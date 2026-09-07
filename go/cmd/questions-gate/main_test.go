@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nkramber/mtg-deck-builder/go/internal/evalrun"
-	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
-	"github.com/nkramber/mtg-deck-builder/go/internal/tune"
+	"github.com/nkramber/decktome/go/internal/evalrun"
+	"github.com/nkramber/decktome/go/internal/llm"
+	"github.com/nkramber/decktome/go/internal/tune"
 )
 
 func load(t *testing.T) gateFile {

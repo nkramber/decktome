@@ -1,6 +1,6 @@
 package questions
 
-import mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+import mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 
 // SnapshotVersion marks the shape of a stored snapshot. Restore reads
 // every version up to this one. A field a version lacks restores as its

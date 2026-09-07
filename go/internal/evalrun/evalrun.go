@@ -22,7 +22,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
+	"github.com/nkramber/decktome/go/internal/llm"
 )
 
 // The kinds of a row. A gate row decides the verdict, and an info row

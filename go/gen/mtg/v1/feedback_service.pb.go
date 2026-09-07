@@ -364,7 +364,7 @@ const file_mtg_v1_feedback_service_proto_rawDesc = "" +
 	"\x13FEEDBACK_VERDICT_UP\x10\x01\x12\x19\n" +
 	"\x15FEEDBACK_VERDICT_DOWN\x10\x022d\n" +
 	"\x0fFeedbackService\x12Q\n" +
-	"\x0eSubmitFeedback\x12\x1d.mtg.v1.SubmitFeedbackRequest\x1a\x1e.mtg.v1.SubmitFeedbackResponse\"\x00B:Z8github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1b\x06proto3"
+	"\x0eSubmitFeedback\x12\x1d.mtg.v1.SubmitFeedbackRequest\x1a\x1e.mtg.v1.SubmitFeedbackResponse\"\x00B2Z0github.com/nkramber/decktome/go/gen/mtg/v1;mtgv1b\x06proto3"
 
 var (
 	file_mtg_v1_feedback_service_proto_rawDescOnce sync.Once

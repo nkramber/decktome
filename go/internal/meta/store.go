@@ -18,7 +18,7 @@ import (
 	"cloud.google.com/go/storage"
 	"google.golang.org/api/iterator"
 
-	"github.com/nkramber/mtg-deck-builder/go/internal/gzstore"
+	"github.com/nkramber/decktome/go/internal/gzstore"
 )
 
 // ObjectStore holds the raw pages, the normalized lists, and the

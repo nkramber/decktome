@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"testing"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 )
 
 func TestBareNegative(t *testing.T) {

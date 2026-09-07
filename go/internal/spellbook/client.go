@@ -24,7 +24,7 @@ import (
 )
 
 // UserAgent identifies this app to Commander Spellbook.
-const UserAgent = "mtg-deck-builder/0.1 (github.com/nkramber/mtg-deck-builder)"
+const UserAgent = "mtg-deck-builder/0.1 (github.com/nkramber/decktome)"
 
 // DefaultBaseURL is the production backend. Its OpenAPI schema is at
 // /schema/?format=json, read 2026-09-02.

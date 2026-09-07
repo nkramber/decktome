@@ -3,7 +3,7 @@ package questions
 import (
 	"strings"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 )
 
 // A question that invites a yes or a no takes a bare "no" as a whole

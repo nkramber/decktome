@@ -736,7 +736,7 @@ const file_mtg_v1_collection_service_proto_rawDesc = "" +
 	"\x0fListCollections\x12\x1e.mtg.v1.ListCollectionsRequest\x1a\x1f.mtg.v1.ListCollectionsResponse\"\x00\x12W\n" +
 	"\x10DeleteCollection\x12\x1f.mtg.v1.DeleteCollectionRequest\x1a .mtg.v1.DeleteCollectionResponse\"\x00\x12W\n" +
 	"\x10UpdateCollection\x12\x1f.mtg.v1.UpdateCollectionRequest\x1a .mtg.v1.UpdateCollectionResponse\"\x00\x12T\n" +
-	"\x0fDiffCollections\x12\x1e.mtg.v1.DiffCollectionsRequest\x1a\x1f.mtg.v1.DiffCollectionsResponse\"\x00B:Z8github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1b\x06proto3"
+	"\x0fDiffCollections\x12\x1e.mtg.v1.DiffCollectionsRequest\x1a\x1f.mtg.v1.DiffCollectionsResponse\"\x00B2Z0github.com/nkramber/decktome/go/gen/mtg/v1;mtgv1b\x06proto3"
 
 var (
 	file_mtg_v1_collection_service_proto_rawDescOnce sync.Once

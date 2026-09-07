@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 )
 
 // Index is the immutable in-memory card database. Build it once per

@@ -14,17 +14,17 @@ import (
 	"strings"
 	"time"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
-	"github.com/nkramber/mtg-deck-builder/go/internal/candidates"
-	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
-	"github.com/nkramber/mtg-deck-builder/go/internal/evalrun"
-	"github.com/nkramber/mtg-deck-builder/go/internal/gatekit"
-	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
-	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
-	"github.com/nkramber/mtg-deck-builder/go/internal/meta"
-	"github.com/nkramber/mtg-deck-builder/go/internal/profile"
-	"github.com/nkramber/mtg-deck-builder/go/internal/quality"
-	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/internal/candidates"
+	"github.com/nkramber/decktome/go/internal/cards"
+	"github.com/nkramber/decktome/go/internal/evalrun"
+	"github.com/nkramber/decktome/go/internal/gatekit"
+	"github.com/nkramber/decktome/go/internal/generate"
+	"github.com/nkramber/decktome/go/internal/llm"
+	"github.com/nkramber/decktome/go/internal/meta"
+	"github.com/nkramber/decktome/go/internal/profile"
+	"github.com/nkramber/decktome/go/internal/quality"
+	"github.com/nkramber/decktome/go/internal/rules"
 )
 
 // The judge lane reads the decks of a deck gate document and asks the

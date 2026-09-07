@@ -6,7 +6,7 @@ import (
 	"strings"
 	"unicode"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 )
 
 // Hints supply the values the catalog rows name in {braces}. PR-6 answers

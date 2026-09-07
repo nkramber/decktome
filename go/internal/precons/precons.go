@@ -16,8 +16,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
-	"github.com/nkramber/mtg-deck-builder/go/internal/collections"
+	"github.com/nkramber/decktome/go/internal/cards"
+	"github.com/nkramber/decktome/go/internal/collections"
 )
 
 //go:embed decks/*.txt

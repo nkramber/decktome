@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/nkramber/mtg-deck-builder/go/internal/evalrun"
+	"github.com/nkramber/decktome/go/internal/evalrun"
 )
 
 // baselinesFile names the accepted run files per suite, relative to the

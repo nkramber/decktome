@@ -4,7 +4,7 @@ package mtg.v1;
 
 import "mtg/v1/card.proto";
 
-option go_package = "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1";
+option go_package = "github.com/nkramber/decktome/go/gen/mtg/v1;mtgv1";
 
 // CardService reads the card database (roadmap PR-2).
 service CardService {

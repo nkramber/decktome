@@ -16,12 +16,12 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
-	"github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1/mtgv1connect"
-	"github.com/nkramber/mtg-deck-builder/go/internal/auth"
-	"github.com/nkramber/mtg-deck-builder/go/internal/cardsvc"
-	"github.com/nkramber/mtg-deck-builder/go/internal/collections"
-	"github.com/nkramber/mtg-deck-builder/go/internal/gzstore"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/gen/mtg/v1/mtgv1connect"
+	"github.com/nkramber/decktome/go/internal/auth"
+	"github.com/nkramber/decktome/go/internal/cardsvc"
+	"github.com/nkramber/decktome/go/internal/collections"
+	"github.com/nkramber/decktome/go/internal/gzstore"
 )
 
 // maxUpload bounds an uploaded file. A 2,500-row ManaBox export is

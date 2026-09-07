@@ -12,15 +12,15 @@ import (
 
 	"connectrpc.com/connect"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
-	"github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1/mtgv1connect"
-	"github.com/nkramber/mtg-deck-builder/go/internal/auth"
-	"github.com/nkramber/mtg-deck-builder/go/internal/decks"
-	"github.com/nkramber/mtg-deck-builder/go/internal/feedback"
-	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
-	"github.com/nkramber/mtg-deck-builder/go/internal/gzstore"
-	"github.com/nkramber/mtg-deck-builder/go/internal/questions"
-	"github.com/nkramber/mtg-deck-builder/go/internal/sessions"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/gen/mtg/v1/mtgv1connect"
+	"github.com/nkramber/decktome/go/internal/auth"
+	"github.com/nkramber/decktome/go/internal/decks"
+	"github.com/nkramber/decktome/go/internal/feedback"
+	"github.com/nkramber/decktome/go/internal/generate"
+	"github.com/nkramber/decktome/go/internal/gzstore"
+	"github.com/nkramber/decktome/go/internal/questions"
+	"github.com/nkramber/decktome/go/internal/sessions"
 )
 
 // MaxTextBytes caps the "Other" text. It is the message cap of the chat,

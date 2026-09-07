@@ -4,7 +4,7 @@ import (
 	"slices"
 	"strings"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 )
 
 // assignRole gives a card one role (corpus section 6). Tags decide first.

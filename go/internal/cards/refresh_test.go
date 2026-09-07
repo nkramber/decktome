@@ -16,7 +16,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nkramber/mtg-deck-builder/go/internal/scryfall"
+	"github.com/nkramber/decktome/go/internal/scryfall"
 )
 
 // fakeScryfall serves a bulk catalog and gzip JSONL files.

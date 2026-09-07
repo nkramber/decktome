@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
-	"github.com/nkramber/mtg-deck-builder/go/internal/questions"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/internal/questions"
 )
 
 // TestSlotValuesWriteTheVocabulary pins the words an expectation uses.

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 )
 
 // TestCoverageCountsTheSources is the M-4 report (F-17): how many

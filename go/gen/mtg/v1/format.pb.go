@@ -305,7 +305,7 @@ const file_mtg_v1_format_proto_rawDesc = "" +
 	"\x16SIXTY_STEP_UNSPECIFIED\x10\x00\x12\x15\n" +
 	"\x11SIXTY_STEP_CASUAL\x10\x01\x12\x12\n" +
 	"\x0eSIXTY_STEP_FNM\x10\x02\x12\x19\n" +
-	"\x15SIXTY_STEP_TOURNAMENT\x10\x03B:Z8github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1b\x06proto3"
+	"\x15SIXTY_STEP_TOURNAMENT\x10\x03B2Z0github.com/nkramber/decktome/go/gen/mtg/v1;mtgv1b\x06proto3"
 
 var (
 	file_mtg_v1_format_proto_rawDescOnce sync.Once

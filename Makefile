@@ -1,4 +1,4 @@
-# mtg-deck-builder - single human entry point.
+# decktome - single human entry point.
 # Every target prints what it does. Versions are pinned in go/go.mod, web/package.json, and here.
 
 # Every recipe runs under bash with pipefail, so a command that fails

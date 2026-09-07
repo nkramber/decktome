@@ -8,11 +8,11 @@ import (
 	"strings"
 	"testing"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
-	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
-	"github.com/nkramber/mtg-deck-builder/go/internal/profile"
-	"github.com/nkramber/mtg-deck-builder/go/internal/rules"
-	"github.com/nkramber/mtg-deck-builder/go/internal/spellbook"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/internal/llm"
+	"github.com/nkramber/decktome/go/internal/profile"
+	"github.com/nkramber/decktome/go/internal/rules"
+	"github.com/nkramber/decktome/go/internal/spellbook"
 )
 
 func fakeConfig() *llm.Config {

@@ -1261,7 +1261,7 @@ const file_mtg_v1_collection_proto_rawDesc = "" +
 	"\x1dUNRESOLVED_REASON_NON_ENGLISH\x10\x02\x12\x1d\n" +
 	"\x19UNRESOLVED_REASON_BAD_ROW\x10\x03\x12\"\n" +
 	"\x1eUNRESOLVED_REASON_NOT_PLAYABLE\x10\x04\x12#\n" +
-	"\x1fUNRESOLVED_REASON_UNKNOWN_VALUE\x10\x05B:Z8github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1b\x06proto3"
+	"\x1fUNRESOLVED_REASON_UNKNOWN_VALUE\x10\x05B2Z0github.com/nkramber/decktome/go/gen/mtg/v1;mtgv1b\x06proto3"
 
 var (
 	file_mtg_v1_collection_proto_rawDescOnce sync.Once

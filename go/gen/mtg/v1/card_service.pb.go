@@ -664,7 +664,7 @@ const file_mtg_v1_card_service_proto_rawDesc = "" +
 	"\bGetCards\x12\x17.mtg.v1.GetCardsRequest\x1a\x18.mtg.v1.GetCardsResponse\"\x00\x12E\n" +
 	"\n" +
 	"GetRulings\x12\x19.mtg.v1.GetRulingsRequest\x1a\x1a.mtg.v1.GetRulingsResponse\"\x00\x12K\n" +
-	"\fGetPrintings\x12\x1b.mtg.v1.GetPrintingsRequest\x1a\x1c.mtg.v1.GetPrintingsResponse\"\x00B:Z8github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1;mtgv1b\x06proto3"
+	"\fGetPrintings\x12\x1b.mtg.v1.GetPrintingsRequest\x1a\x1c.mtg.v1.GetPrintingsResponse\"\x00B2Z0github.com/nkramber/decktome/go/gen/mtg/v1;mtgv1b\x06proto3"
 
 var (
 	file_mtg_v1_card_service_proto_rawDescOnce sync.Once

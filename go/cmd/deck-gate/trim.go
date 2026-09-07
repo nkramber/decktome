@@ -13,12 +13,12 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/nkramber/mtg-deck-builder/go/internal/cards"
-	"github.com/nkramber/mtg-deck-builder/go/internal/gatekit"
-	"github.com/nkramber/mtg-deck-builder/go/internal/generate"
-	"github.com/nkramber/mtg-deck-builder/go/internal/llm"
-	"github.com/nkramber/mtg-deck-builder/go/internal/meta"
-	"github.com/nkramber/mtg-deck-builder/go/internal/precons"
+	"github.com/nkramber/decktome/go/internal/cards"
+	"github.com/nkramber/decktome/go/internal/gatekit"
+	"github.com/nkramber/decktome/go/internal/generate"
+	"github.com/nkramber/decktome/go/internal/llm"
+	"github.com/nkramber/decktome/go/internal/meta"
+	"github.com/nkramber/decktome/go/internal/precons"
 )
 
 // The trimmed snapshot of D-521. A dry run over the full snapshot reaches

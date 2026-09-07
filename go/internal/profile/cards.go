@@ -4,7 +4,7 @@ import (
 	"slices"
 	"strings"
 
-	mtgv1 "github.com/nkramber/mtg-deck-builder/go/gen/mtg/v1"
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 )
 
 // The card readers of the profile. Each one reads the parsed types, the
