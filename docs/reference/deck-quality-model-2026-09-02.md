@@ -101,6 +101,8 @@ The scorer is a proportional odds model over the standardized features. Gradient
 
 The grade is the most probable rung, and the score is the expected rung over the ladder. The reasons are the three largest products of weight and standardized value, in words.
 
+2026-09-07 amendment (M-7, D-571): the fit runs once per fold, five folds by the hash of the key, so every list is holdout once. The stored model is the fit of fold 0, and the profiles run once for the five. A copy's id carries the axis the fit asked for. So the two copies of one list that both fall to synergy keep two keys (F-55).
+
 ## The defect detector
 
 One linear ladder can not rank a top list over a precon and a precon over its broken copy at once. Gate run 1 read the second in 0.16 to 0.46 of the pairs. A logistic detector over the same features reads the second question (D-485). Every real list is a negative, in three groups of equal weight: the broken copies, the precons with the average decks, and the rest. The detector picks its cut on the training rows.
@@ -125,6 +127,8 @@ The broken copies come from the precons and the average decks alone, on every ax
 
 ## The gate
 
-`make quality-gate` is free. It fits the model over the local meta store and writes the document. The document holds the pair bars per format, the bracket 5 offer, and the model tables. `-write` stores the fitted model. `make meta-refresh` fills the store, over the network, with no model call.
+`make quality-gate` is free. It fits the model over the local meta store and writes the document. The document holds the pair bars per format, the bracket 5 offer, and the model tables.
+
+2026-09-07 amendment (M-7, D-571): the bars read the five folds. The pairs of a bar sample evenly under the cap of 20,000. Every upper list meets the same number of lower lists by a seeded permutation (F-51). The document adds the misses per axis in three kinds, and each precon against its own copy with the features the break moves least. It names the ten precons that lose most. `-write` stores the fitted model. `make meta-refresh` fills the store, over the network, with no model call.
 
 The judge bar over the golden decks reads the next deck gate run: every summary carries the tier, and the summary judge reads it. No run happened on 2026-09-02.
