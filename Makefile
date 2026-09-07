@@ -11,7 +11,7 @@ GO := go -C go
 BUF := .bin/buf
 PNPM := pnpm --dir web
 
-.PHONY: smoke allow disallow deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check themes-check ste-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
+.PHONY: smoke allow disallow deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check themes-check ste-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-14s %s\n", $$1, $$2}'
@@ -75,6 +75,29 @@ ste-check: ## Check every hand-written .md file against the STE rules (no cost)
 
 # LLM_REQUIRE_KEYS is not set here. The unit tests must pass with the
 # package default. Set it in a test with t.Setenv when a case needs it.
+verify: ## Run every check the verify workflow runs, on this machine, for nothing (D-578)
+	@echo "==> proto"
+	@$(MAKE) --no-print-directory proto-check
+	@$(MAKE) --no-print-directory proto-breaking
+	@echo "==> go build"
+	@$(GO) build ./...
+	@$(MAKE) --no-print-directory lint
+	@echo "==> go test -race"
+	@$(GO) test -race ./...
+	@$(MAKE) --no-print-directory llm-defaults-check
+	@echo "==> web"
+	@$(PNPM) install --frozen-lockfile
+	@$(PNPM) audit --audit-level high
+	@$(PNPM) test
+	@$(PNPM) build
+	@$(MAKE) --no-print-directory eval-check
+	@echo "==> shellcheck"
+	@command -v shellcheck >/dev/null && shellcheck scripts/*.sh || echo "shellcheck is not installed, and the workflow covers it"
+	@echo "==> docker"
+	@docker build --platform linux/amd64 -f docker/api.Dockerfile -t decktome-api:verify . >/dev/null
+	@docker build --platform linux/amd64 -f docker/worker.Dockerfile -t decktome-worker:verify . >/dev/null
+	@echo "verify: every check passed. The emulator lane needs 'make store-check', and govulncheck runs weekly."
+
 test: ## Run Go and web unit tests
 	@$(GO) test -race ./...
 	@$(PNPM) test
