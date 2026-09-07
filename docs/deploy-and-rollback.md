@@ -25,22 +25,32 @@ CAUTION: the triggers read `main` and no other branch (D-579). A pull request st
 
 Run these one time, as the owner of the project.
 
-1. Connect the repository. Open Cloud Build, then Triggers, then Connect Repository. Choose GitHub, then `nkramber/decktome`, and install the Cloud Build app on it. This step needs a browser.
+1. Connect the repository, in the region `us-central1`. Open Cloud Build, then Repositories, then the 2nd gen tab. Select Create host connection, choose GitHub, and authorize it. Then select Link repository and choose `nkramber/decktome`. This step needs a browser.
 
-2. Create the two triggers:
+2. Read the names the connection got, and build the repository path from them:
 
 ```
-gcloud builds triggers create github --name=deploy-api \
-  --repo-owner=nkramber --repo-name=decktome \
-  --branch-pattern='^main$' --build-config=cloudbuild/api.yaml \
-  --included-files='go/**,docker/**'
-gcloud builds triggers create github --name=deploy-web \
-  --repo-owner=nkramber --repo-name=decktome \
-  --branch-pattern='^main$' --build-config=cloudbuild/web.yaml \
-  --included-files='web/**,firebase.json'
+gcloud builds connections list --region=us-central1
+gcloud builds repositories list --connection=<the connection> --region=us-central1
 ```
 
-3. Grant the build account what a deploy needs:
+3. Create the two triggers. Every part is regional, so the region of the trigger must equal the region of the connection:
+
+```
+REPO=projects/decktome-prod/locations/us-central1/connections/<the connection>/repositories/<the repository>
+gcloud builds triggers create github --name=deploy-api --region=us-central1 \
+  --repository=$REPO --branch-pattern='^main$' \
+  --build-config=cloudbuild/api.yaml --included-files='go/**,docker/**'
+gcloud builds triggers create github --name=deploy-web --region=us-central1 \
+  --repository=$REPO --branch-pattern='^main$' \
+  --build-config=cloudbuild/web.yaml --included-files='web/**,firebase.json'
+```
+
+CAUTION: `--repo-owner` and `--repo-name` name a 1st-gen repository, and they never reach a 2nd-gen connection. A trigger with no `--region` lands in `global`, and it finds no connection of `us-central1`. Read `gcloud builds triggers list --region=us-central1` after each one.
+
+Note: `us-central1` matches Artifact Registry, Cloud Run, Firestore, and the bucket, so a build pushes an image inside one region.
+
+4. Grant the build account what a deploy needs:
 
 ```
 CB=492774632746@cloudbuild.gserviceaccount.com
@@ -50,7 +60,7 @@ for role in roles/run.admin roles/artifactregistry.writer roles/firebasehosting.
 done
 ```
 
-4. Let the build account run the API and the jobs as their own accounts. This binding names those two accounts, and never every account of the project:
+5. Let the build account run the API and the jobs as their own accounts. This binding names those two accounts, and never every account of the project:
 
 ```
 for sa in mtg-api mtg-worker; do
