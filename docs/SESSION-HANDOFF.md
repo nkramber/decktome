@@ -53,7 +53,7 @@ CAUTION: branch `pr-17` carries eight concerns. They are the contract, the Go si
 2. `go/internal/feedback`: one document per item under `users/<uid>/feedback/<id>`, with the prompt versions and `created_at`, and an emulator test. `make store-check` runs it with the other five stores.
 3. `go/internal/feedbacksvc`: the handler behind the auth interceptor. It checks that the session or the deck belongs to the caller. It caps the text at the message cap, and it refuses a bad id.
 4. `web/apps/web/src/features/feedback`: `Thumbs` and `FeedbackDialog`, the reasons per kind from section 2.4 of the note, the toast "Thank you for your feedback!". The feature is a leaf, and `eslint.config.js` lets the chat, the deck, and the workspace import it.
-5. The four placements: the question card, the deck summary, the card tile foot with the card detail sheet, and the deck header. Every button is 44 pixels or more on a touch screen.
+5. The four placements of section 2.3 of the note. Every button is 44 pixels or more on a touch screen.
 6. The smoke flow gives the built deck a thumbs up and reads the toast.
 7. The gate document, `docs/reference/pr27-gate-<date>.md`, free. Then the owner triggers the workflow `smoke` before the merge (D-313).
 
