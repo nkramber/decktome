@@ -11,7 +11,7 @@ GO := go -C go
 BUF := .bin/buf
 PNPM := pnpm --dir web
 
-.PHONY: smoke allow disallow deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check themes-check ste-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
+.PHONY: smoke allow disallow deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check themes-check ste-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-14s %s\n", $$1, $$2}'
@@ -75,6 +75,13 @@ ste-check: ## Check every hand-written .md file against the STE rules (no cost)
 
 # LLM_REQUIRE_KEYS is not set here. The unit tests must pass with the
 # package default. Set it in a test with t.Setenv when a case needs it.
+where: ## Print the branch, the tree, main, and the pull request state (D-585)
+	@./scripts/where.sh
+
+hooks: ## Install the git hooks that refuse a commit main must not take (D-585)
+	@git config core.hooksPath .githooks
+	@echo "hooks installed from .githooks"
+
 verify: ## Run every check the verify workflow runs, on this machine, for nothing (D-578)
 	@echo "==> proto"
 	@$(MAKE) --no-print-directory proto-check
