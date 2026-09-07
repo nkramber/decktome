@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Deck Tome">
+  <rect width="32" height="32" rx="7" fill="#0a0c16"/>
+  <g transform="translate(4.5 3.5)">
+    <path fill="#f0d070" fill-rule="evenodd" clip-rule="evenodd"
+      d="M1 4.2A3.2 3.2 0 0 1 4.2 1H17a1.4 1.4 0 0 1 1.4 1.4v20.2A1.4 1.4 0 0 1 17 24H4.2A3.2 3.2 0 0 1 1 20.8V4.2Zm4.1-1.3h1.5v19.2H5.1V2.9Zm7.3 6.6 2.05 3.4-2.05 3.4-2.05-3.4 2.05-3.4Z"/>
+    <path fill="#c89b3c" d="M19.4 4.4c1.05 0 1.9.85 1.9 1.9v12.4c0 1.05-.85 1.9-1.9 1.9V4.4Z"/>
+  </g>
+</svg>

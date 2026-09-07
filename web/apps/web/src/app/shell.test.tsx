@@ -35,7 +35,7 @@ describe("the shell", () => {
   it("carries one navigation, in the header (D-328)", async () => {
     await renderAt("/decks");
     expect(screen.getAllByRole("navigation", { name: "Main" })).toHaveLength(1);
-    expect(screen.getByRole("link", { name: /MtG Deck Builder/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Deck Tome/ })).toBeInTheDocument();
   });
 
   it("marks the entry that owns the path", async () => {

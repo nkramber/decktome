@@ -50,11 +50,11 @@ export function Layout() {
       <header className="flex shrink-0 items-center justify-between gap-4 border-b border-border bg-muted px-4 py-3 md:px-6 print:hidden">
         <Link to="/" className="flex items-center gap-3 transition-opacity hover:opacity-80">
           <span aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-card bg-accent text-accent-foreground">
-            <SparkMark />
+            <TomeMark />
           </span>
           <span className="flex flex-col">
-            <span className="font-display gold-shimmer text-[15px] font-semibold">MtG Deck Builder</span>
-            <span className="font-mono text-[10px] tracking-wide text-muted-foreground">DECK FORGE · AGENTIC</span>
+            <span className="font-display gold-shimmer text-[15px] font-semibold">Deck Tome</span>
+            <span className="font-mono text-[10px] tracking-wide text-muted-foreground">AGENTIC DECK BUILDER</span>
           </span>
         </Link>
 
@@ -82,10 +82,18 @@ export function Layout() {
 }
 
 // The mark of the app: a four-point star, cut rather than drawn.
-function SparkMark() {
+// TomeMark is the brand mark: a closed tome with a spine groove, a gem on
+// the cover, and the page block at its edge. The chat keeps SparkMark,
+// because that mark stands for the agent and not for the product.
+function TomeMark() {
   return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
-      <path d="M7 0l1.7 5.3L14 7l-5.3 1.7L7 14l-1.7-5.3L0 7l5.3-1.7z" />
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M4 5.4A3.4 3.4 0 0 1 7.4 2h9.2A1.4 1.4 0 0 1 18 3.4v17.2A1.4 1.4 0 0 1 16.6 22H7.4A3.4 3.4 0 0 1 4 18.6V5.4Zm3.6-1.5h1.3v16.2H7.6V3.9Zm5.7 5.7 1.7 2.4-1.7 2.4-1.7-2.4 1.7-2.4Z"
+      />
+      <path d="M18.9 5.2c.9 0 1.6.7 1.6 1.6v10.4c0 .9-.7 1.6-1.6 1.6V5.2Z" opacity="0.45" />
     </svg>
   );
 }
