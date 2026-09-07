@@ -426,3 +426,145 @@ func TestPoolFloor(t *testing.T) {
 		t.Errorf("commander floor = %s", got)
 	}
 }
+
+// TestPairBarSamplesEvenly: every upper list meets the same number of
+// lower lists under the limit, so a bar never reads the first lists
+// alone (F-51).
+func TestPairBarSamplesEvenly(t *testing.T) {
+	fm := &FormatModel{
+		Tiers: []string{meta.TierBad, meta.TierBaseline, meta.TierGreat},
+		Keys:  []string{"a"}, Means: []float64{0}, Stds: []float64{1}, Weights: []float64{1}, Thresholds: []float64{-1, 1},
+	}
+	level := map[string]int{meta.TierBad: 0, meta.TierBaseline: 1, meta.TierGreat: 2}
+	var rows []holdRow
+	for i := 0; i < 5; i++ {
+		key := fmt.Sprintf("p%d", i)
+		rows = append(rows, holdRow{z: []float64{float64(i)}, level: 1, key: key, base: key, name: key})
+	}
+	for i := 0; i < 100; i++ {
+		rows = append(rows, holdRow{z: []float64{-5}, level: 0, defect: DefectLands, key: fmt.Sprintf("b%d", i), base: fmt.Sprintf("p%d", i%5)})
+	}
+	h, diag := evaluate(fm, rows, level, 50)
+	diag.finish()
+	if h.BaselineOverBad.Pairs != 50 || h.BaselineOverBad.Wins != 50 {
+		t.Errorf("baseline over bad = %+v, want 50 pairs of 5 precons at 10 each", h.BaselineOverBad)
+	}
+	if len(diag.Precons) != 5 {
+		t.Fatalf("precons = %d, want every precon in the sample", len(diag.Precons))
+	}
+	for _, pr := range diag.Precons {
+		if pr.Pairs != 10 || pr.Misses != 0 {
+			t.Errorf("%s met %d lists with %d misses, want 10 and 0", pr.Name, pr.Pairs, pr.Misses)
+		}
+	}
+	ar := diag.Axes[DefectLands]
+	if ar == nil || ar.Pairs != 50 || ar.OwnPairs != 100 || ar.OwnWins != 100 || len(ar.LeastMoved) != 1 {
+		t.Errorf("lands axis = %+v", ar)
+	}
+	if h.BaselineOverOwn.Pairs != 100 || h.BaselineOverOwn.Wins != 100 || h.OwnByDefect[DefectLands] != (PairShare{Pairs: 100, Wins: 100}) {
+		t.Errorf("baseline over own = %+v, per axis %+v, want every precon over its copies", h.BaselineOverOwn, h.OwnByDefect)
+	}
+	// A limit above the pairs reads every pair once.
+	h, _ = evaluate(fm, rows, level, 100000)
+	if h.BaselineOverBad.Pairs != 500 {
+		t.Errorf("unlimited pairs = %d, want 500", h.BaselineOverBad.Pairs)
+	}
+}
+
+// TestFoldsPartition: every key is holdout in one fold alone, and the
+// main split is fold 0 (F-52).
+func TestFoldsPartition(t *testing.T) {
+	for i := 0; i < 1000; i++ {
+		key := fmt.Sprintf("mtgjson:precon/%d", i)
+		n := 0
+		for f := 0; f < FoldCount; f++ {
+			if holdoutFold(key, f) {
+				n++
+			}
+		}
+		if n != 1 {
+			t.Fatalf("%s is holdout in %d folds", key, n)
+		}
+		if holdout(key) != holdoutFold(key, 0) {
+			t.Fatalf("%s: the main split is not fold 0", key)
+		}
+	}
+}
+
+// TestSynthesizeKeepsTwoKeys: the copies-axis copy of a list that
+// falls to synergy keeps its own key beside the synergy copy, and both
+// name the real list as their base (F-55).
+func TestSynthesizeKeepsTwoKeys(t *testing.T) {
+	w := newWorld(t)
+	l := meta.List{Source: meta.SourceMTGJSON, ID: "precon/two", Format: meta.FormatStandard, Date: "2026-09-01", Tier: meta.TierBaseline}
+	l.Cards = append(l.Cards, meta.Card{Name: "Plains", Count: 12}, meta.Card{Name: "Island", Count: 12})
+	l.Cards = append(l.Cards, meta.Card{Name: w.staples[0].GetName(), Count: 4}, meta.Card{Name: w.staples[1].GetName(), Count: 4})
+	for _, c := range w.staples[2:30] {
+		l.Cards = append(l.Cards, meta.Card{Name: c.GetName(), Count: 1})
+	}
+	r := Resolve(&l, w.idx, nil, mtgv1.FormatId_FORMAT_ID_STANDARD)
+	if !r.Usable() {
+		t.Fatalf("unusable: %v", r.Missing)
+	}
+	pl := newPool(w.idx, mtgv1.FormatId_FORMAT_ID_STANDARD)
+	copies := Synthesize(r, DefectCopies, pl, nil)
+	synergy := Synthesize(r, DefectSynergy, pl, nil)
+	if copies.List.Defect != DefectSynergy || synergy.List.Defect != DefectSynergy {
+		t.Errorf("defects = %s and %s, want synergy for both", copies.List.Defect, synergy.List.Defect)
+	}
+	if copies.List.Key() == synergy.List.Key() {
+		t.Errorf("the two copies share the key %s", copies.List.Key())
+	}
+	if baseKey(copies.List) != l.Key() || baseKey(synergy.List) != l.Key() || baseKey(&l) != l.Key() {
+		t.Errorf("bases = %s, %s, %s, want %s", baseKey(copies.List), baseKey(synergy.List), baseKey(&l), l.Key())
+	}
+}
+
+// TestFoldsReadEveryList: the bars over the folds read every row as
+// holdout once, and the diagnostic's kinds sum to the misses (M-7).
+func TestFoldsReadEveryList(t *testing.T) {
+	_, _, rep := fitWorld(t)
+	fr := rep.Formats[meta.FormatStandard]
+	if fr.FoldCount != FoldCount {
+		t.Fatalf("folds = %d", fr.FoldCount)
+	}
+	if fr.Folds.Lists != fr.Used+fr.Synthetic {
+		t.Errorf("the folds read %d rows, want %d", fr.Folds.Lists, fr.Used+fr.Synthetic)
+	}
+	if fr.Holdout.BaselineOverOwn.Pairs != 150 {
+		t.Errorf("baseline over own read %d pairs, want the 150 copies", fr.Holdout.BaselineOverOwn.Pairs)
+	}
+	ownSum := 0
+	for _, ps := range fr.Holdout.OwnByDefect {
+		ownSum += ps.Pairs
+	}
+	if ownSum != fr.Holdout.BaselineOverOwn.Pairs {
+		t.Errorf("the own pairs per axis sum to %d, and the bar reads %d", ownSum, fr.Holdout.BaselineOverOwn.Pairs)
+	}
+	if fr.Holdout.BaselineOverBad.Pairs == 0 || fr.Holdout.BaselineOverBad.Share() < 0.95 {
+		t.Errorf("baseline over bad over the folds = %+v", fr.Holdout.BaselineOverBad)
+	}
+	d := fr.Diagnostic
+	if d == nil || len(d.Axes) == 0 {
+		t.Fatal("no diagnostic")
+	}
+	for axis, ar := range d.Axes {
+		if ar.Pairs-ar.Wins != ar.BothPassed+ar.PreconFlagged+ar.BothFlagged {
+			t.Errorf("%s: %d misses, and the kinds sum to %d", axis, ar.Pairs-ar.Wins, ar.BothPassed+ar.PreconFlagged+ar.BothFlagged)
+		}
+		if ar.OwnPairs == 0 || len(ar.LeastMoved) != 3 || len(ar.MostMoved) != 3 {
+			t.Errorf("%s: own pairs %d, least %v, most %v", axis, ar.OwnPairs, ar.LeastMoved, ar.MostMoved)
+		}
+		if ar.OwnPairs-ar.OwnWins != ar.OwnBothPassed+ar.OwnPreconFlagged+ar.OwnBothFlagged {
+			t.Errorf("%s: %d own misses, and the kinds sum to %d", axis, ar.OwnPairs-ar.OwnWins, ar.OwnBothPassed+ar.OwnPreconFlagged+ar.OwnBothFlagged)
+		}
+	}
+	if len(d.Precons) == 0 || len(d.Precons) > WorstPrecons {
+		t.Errorf("precons named = %d", len(d.Precons))
+	}
+	for _, pr := range d.Precons {
+		if pr.Pairs == 0 || pr.Name == "" || pr.Grade == "" {
+			t.Errorf("precon row = %+v", pr)
+		}
+	}
+}

@@ -179,12 +179,21 @@ func report(w io.Writer, idx *cards.Index, model *quality.Model, rep *quality.Fi
 	words := []string{meta.FormatCommander, meta.FormatStandard, meta.FormatModern}
 	p("## Separation on the holdout" + "\n")
 	p("\n")
-	p("| Format | Lists | Used | Synthetic | Holdout | Great over precon | Precon over bad | Accuracy |" + "\n")
-	p("|---|---|---|---|---|---|---|---|" + "\n")
+	folds := 0
+	for _, fr := range rep.Formats {
+		if fr != nil && fr.FoldCount > folds {
+			folds = fr.FoldCount
+		}
+	}
+	if folds > 1 {
+		p("The bars read %d folds, every list holdout once, and the pairs of a bar sample evenly under the cap of %d (M-7). The precon bar reads each precon against its own broken copies (D-573). The cross pairs, every precon against every copy, stand as information.\n\n", folds, quality.MaxPairChecks)
+	}
+	p("| Format | Lists | Used | Synthetic | Holdout | Great over precon | Precon over own copy | Precon over bad, cross | Accuracy |" + "\n")
+	p("|---|---|---|---|---|---|---|---|---|" + "\n")
 	for _, word := range words {
 		fr := rep.Formats[word]
 		if fr == nil {
-			p("| %s | 0 | 0 | 0 | 0 | no fit | no fit | no fit |\n", word)
+			p("| %s | 0 | 0 | 0 | 0 | no fit | no fit | no fit | no fit |\n", word)
 			fails = append(fails, word+": no lists")
 			pass = false
 			run.Gate(word, "fit", 0, "no lists")
@@ -195,27 +204,29 @@ func report(w io.Writer, idx *cards.Index, model *quality.Model, rep *quality.Fi
 			fm = model.Formats[word]
 		}
 		if fm == nil {
-			p("| %s | %d | %d | %d | 0 | no fit | no fit | no fit |\n", word, fr.Read, fr.Used, fr.Synthetic)
+			p("| %s | %d | %d | %d | 0 | no fit | no fit | no fit | no fit |\n", word, fr.Read, fr.Used, fr.Synthetic)
 			fails = append(fails, word+": no fit")
 			pass = false
 			run.Gate(word, "fit", 0, "no fit")
 			continue
 		}
-		h := fm.Holdout
-		gb, bb := h.GreatOverBaseline, h.BaselineOverBad
+		h := fr.Holdout
+		gb, bb, cross := h.GreatOverBaseline, h.BaselineOverOwn, h.BaselineOverBad
 		run.Gate(word, "fit", 1, "")
 		run.Gate(word, "great_over_precon", gb.Share(), fmt.Sprintf("%d pairs, the bar is %.2f", gb.Pairs, barGreatOverBaseline))
-		run.Gate(word, "precon_over_bad", bb.Share(), fmt.Sprintf("%d pairs, the bar is %.2f", bb.Pairs, barBaselineOverBad))
+		run.Gate(word, "precon_over_own", bb.Share(), fmt.Sprintf("%d pairs, the bar is %.2f", bb.Pairs, barBaselineOverBad))
+		run.Info(word, "precon_over_bad", cross.Share(), fmt.Sprintf("%d cross pairs, information", cross.Pairs))
 		run.Info(word, "accuracy", h.Accuracy, "")
 		run.Info(word, "lists", float64(fr.Read), fmt.Sprintf("%d used, %d synthetic, %d holdout", fr.Used, fr.Synthetic, h.Lists))
-		p("| %s | %d | %d | %d | %d | %s | %s | %.2f |\n", word, fr.Read, fr.Used, fr.Synthetic, h.Lists,
-			pairWord(gb, barGreatOverBaseline), pairWord(bb, barBaselineOverBad), h.Accuracy)
+		run.Info(word, "folds", float64(fr.FoldCount), "")
+		p("| %s | %d | %d | %d | %d | %s | %s | %.2f of %d | %.2f |\n", word, fr.Read, fr.Used, fr.Synthetic, h.Lists,
+			pairWord(gb, barGreatOverBaseline), pairWord(bb, barBaselineOverBad), cross.Share(), cross.Pairs, h.Accuracy)
 		if gb.Pairs == 0 || gb.Share() < barGreatOverBaseline {
 			fails = append(fails, fmt.Sprintf("%s: great over precon %s", word, pairWord(gb, barGreatOverBaseline)))
 			pass = false
 		}
 		if bb.Pairs == 0 || bb.Share() < barBaselineOverBad {
-			fails = append(fails, fmt.Sprintf("%s: precon over bad %s", word, pairWord(bb, barBaselineOverBad)))
+			fails = append(fails, fmt.Sprintf("%s: precon over own copy %s", word, pairWord(bb, barBaselineOverBad)))
 			pass = false
 		}
 	}
@@ -284,20 +295,26 @@ func report(w io.Writer, idx *cards.Index, model *quality.Model, rep *quality.Fi
 				p("| `%s` | %.3f | %.3f | %+.3f |\n", k, fm.Means[i], fm.Stds[i], fm.Weights[i])
 			}
 			p("\n")
-			p("Thresholds: %s. Loss: %.3f over %d iterations. Defect detector accuracy on the holdout: %.2f, at a cut of %.2f.\n\n", floats(fm.Thresholds), fr.Loss, fr.Iterations, fm.Holdout.DefectAccuracy, fm.DefectThreshold)
-			if len(fm.Holdout.BadByDefect) > 0 {
-				p("The precon bar per broken axis:" + "\n")
+			p("Thresholds: %s. Loss: %.3f over %d iterations. Defect detector accuracy on the holdout: %.2f, at a cut of %.2f.\n\n", floats(fm.Thresholds), fr.Loss, fr.Iterations, fr.Holdout.DefectAccuracy, fm.DefectThreshold)
+			if len(fr.Holdout.OwnByDefect) > 0 {
+				p("The precon bar per broken axis, each precon over its own copies, with the cross pairs after it:" + "\n")
 				p("\n")
 				for _, axis := range quality.Defects {
-					if ps, ok := fm.Holdout.BadByDefect[axis]; ok {
-						p("- %s: %.2f of %d\n", axis, ps.Share(), ps.Pairs)
+					own, ok := fr.Holdout.OwnByDefect[axis]
+					if !ok {
+						continue
 					}
+					cross := fr.Holdout.BadByDefect[axis]
+					p("- %s: %.2f of %d, cross %.2f of %d\n", axis, own.Share(), own.Pairs, cross.Share(), cross.Pairs)
+					run.Info(word, "precon_over_own_"+axis, own.Share(), fmt.Sprintf("%d pairs", own.Pairs))
+					run.Info(word, "precon_over_bad_"+axis, cross.Share(), fmt.Sprintf("%d cross pairs", cross.Pairs))
 				}
 				p("\n")
 			}
-			p("Confusion on the holdout, rows are the label and columns the grade, worst first:" + "\n")
+			misses(p, fr.Diagnostic)
+			p("Confusion on the holdout over the folds, rows are the label and columns the grade, worst first:" + "\n")
 			p("\n")
-			for i, row := range fm.Holdout.Confusion {
+			for i, row := range fr.Holdout.Confusion {
 				p("- %s: %v\n", fm.Tiers[i], row)
 			}
 			p("\n")
@@ -330,6 +347,50 @@ func report(w io.Writer, idx *cards.Index, model *quality.Model, rep *quality.Fi
 	}
 	p("\n")
 	return pass
+}
+
+// misses prints the diagnostic of the precon bar: the misses per
+// axis by kind, each precon against its own copy, the features the
+// break moves least and most, and the precons that lose most (M-7).
+func misses(p func(string, ...any), d *quality.Diagnostic) {
+	if d == nil || len(d.Axes) == 0 {
+		return
+	}
+	p("The misses per axis over the folds (M-7). Both passed: the detector passed the precon and the copy, and the ladder put the copy at or above the precon. ")
+	p("Precon flagged: the detector flagged the precon and passed the copy. Both flagged: it flagged both and read the precon as the more broken. ")
+	p("Own copy: each precon against its own copy on the axis, with its misses by the same kinds. Moved: the mean absolute standardized delta between a precon and its own copy, for the corpus features and the three features that move most.\n\n")
+	p("| Axis | Share | Both passed | Precon flagged | Both flagged | Own copy | Own misses | Corpus moved | Most moved |" + "\n")
+	p("|---|---|---|---|---|---|---|---|---|" + "\n")
+	for _, axis := range quality.Defects {
+		ar := d.Axes[axis]
+		if ar == nil || ar.Pairs == 0 {
+			continue
+		}
+		p("| %s | %.2f of %d | %d | %d | %d | %d of %d | %d, %d, %d | %s | %s |\n", axis, float64(ar.Wins)/float64(ar.Pairs), ar.Pairs,
+			ar.BothPassed, ar.PreconFlagged, ar.BothFlagged, ar.OwnWins, ar.OwnPairs, ar.OwnBothPassed, ar.OwnPreconFlagged, ar.OwnBothFlagged,
+			codes(ar, []string{quality.KeyCardRate, quality.KeySynergy, quality.KeyUnseenShare}), codes(ar, ar.MostMoved))
+	}
+	p("\n")
+	if len(d.Precons) == 0 {
+		return
+	}
+	p("The precons that lose most over the sampled pairs of the bar:" + "\n")
+	p("\n")
+	p("| Precon | Grade | Detector | Misses |" + "\n")
+	p("|---|---|---|---|" + "\n")
+	for _, pr := range d.Precons {
+		p("| %s (%s) | %s | %.2f | %d of %d |\n", pr.Name, pr.Date, pr.Grade, pr.Defect, pr.Misses, pr.Pairs)
+	}
+	p("\n")
+}
+
+// codes joins feature keys with their mean move, as code.
+func codes(ar *quality.AxisRead, keys []string) string {
+	parts := make([]string, 0, len(keys))
+	for _, k := range keys {
+		parts = append(parts, fmt.Sprintf("`%s` %.2f", k, ar.MovedShare(k)))
+	}
+	return strings.Join(parts, ", ")
 }
 
 func pairWord(p quality.PairShare, bar float64) string {

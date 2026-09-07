@@ -129,17 +129,25 @@ type FormatModel struct {
 
 // Holdout is the gate measure of a format (roadmap PR-14B): a great
 // list scores above a precon in 90 percent of the pairs, and a precon
-// above a synthetic bad deck in 95 percent. DefectAccuracy is the
+// above its own broken copies in 95 percent (D-573). The cross pairs,
+// every precon against every copy, stand as information. DefectAccuracy is the
 // detector's own accuracy over the held-out precons and their copies.
 type Holdout struct {
 	Lists             int       `json:"lists"`
 	GreatOverBaseline PairShare `json:"great_over_baseline"`
 	BaselineOverBad   PairShare `json:"baseline_over_bad"`
-	Accuracy          float64   `json:"accuracy"`
-	DefectAccuracy    float64   `json:"defect_accuracy"`
-	Confusion         [][]int   `json:"confusion"`
-	// BadByDefect splits BaselineOverBad by the broken axis.
+	// BaselineOverOwn reads each precon against its own broken copies
+	// alone, the clean question under the cross pairs (M-7).
+	BaselineOverOwn PairShare `json:"baseline_over_own,omitempty"`
+	Accuracy        float64   `json:"accuracy"`
+	DefectAccuracy  float64   `json:"defect_accuracy"`
+	// DefectLists counts the rows DefectAccuracy read.
+	DefectLists int     `json:"defect_lists,omitempty"`
+	Confusion   [][]int `json:"confusion"`
+	// BadByDefect splits BaselineOverBad by the broken axis, and
+	// OwnByDefect splits BaselineOverOwn the same way.
 	BadByDefect map[string]PairShare `json:"bad_by_defect,omitempty"`
+	OwnByDefect map[string]PairShare `json:"own_by_defect,omitempty"`
 }
 
 // PairShare counts ordered pairs and the ones the scorer ordered right.

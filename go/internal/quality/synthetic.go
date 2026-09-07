@@ -131,6 +131,7 @@ func colorKey(colors []mtgv1.Color) string {
 // for example a copies defect on a singleton deck, breaks on the
 // synergy axis instead.
 func Synthesize(r *Resolved, axis string, pl *pool, roles Roles) *Resolved {
+	requested := axis
 	deck := r.Deck
 	format := deck.GetFormat().GetId()
 	commander := format == mtgv1.FormatId_FORMAT_ID_COMMANDER
@@ -301,7 +302,10 @@ func Synthesize(r *Resolved, axis string, pl *pool, roles Roles) *Resolved {
 	}
 	list := *r.List
 	list.Source = meta.SourceSynthetic
-	list.ID = r.List.Key() + "/" + axis
+	// The id carries the axis the fit asked for, so the two copies of
+	// a list that both fall to synergy keep two keys (F-55). Defect names
+	// the axis that broke it.
+	list.ID = r.List.Key() + "/" + requested
 	list.Tier = meta.TierBad
 	list.Defect = axis
 	return &Resolved{

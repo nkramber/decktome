@@ -6,6 +6,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## Where things stand (2026-09-07)
 
+- Branch `m7-honest-bars`, from `main` at d2e19f5, holds M-7, the axis diagnostic and the honest bars (2026-09-07, D-570, D-571). The pair bars sample evenly under the cap (F-51). The fit runs five folds, so every list is holdout once (F-52). A copy keeps its own key (F-55, found in the build). The gate document adds the misses per axis by kind and each precon against its own copy with the least-moved features. It names the ten precons that lose most. Four tests hold it, the tree is green on Go build, vet, the quality package under race, and golangci-lint. Quality gate run 14 is its gate (D-572), and the section "M-7, the read of run 14" below holds the read. The owner answered OQ-76 the same day (D-573): the bar reads each precon against its own copies, and the cross pairs stand as information. Under it run 14 reads FAIL on Commander synergy alone, and Standard and Modern pass. PR-31 parks. **PR-29, the casual corpus, is next**, on a branch from `main` after M-7 merges.
 - The weak-axes plan is `docs/reference/weak-axes-2026-09-07.md` (2026-09-07, F-51 to F-54, D-567). Run 13 fails for four causes on record. One of them holds the synergy axis, the weights against sense, and the judge bar: the corpus weighs the casual rungs zero. The plan is M-7, the honest bars and the axis diagnostic, then PR-29 the casual corpus, PR-30 the commander reference, and PR-31 the 60-card breaks. The owner answered OQ-73 to OQ-75 the same day (D-568): M-7 first, the commander reference as one feature, and the work runs now. PR #77 merged, and the plan sits on branch `weak-axes-plan` from `main` as PR #78 (D-569). The owner reads the checks and merges it. **M-7 is next**, on a branch from `main` after the plan merges.
 - PR #76 merged on 2026-09-07 (D-564), `main` is 402ec6f, and branch `records-pr27` is gone. It held the records of D-562 and the rename of D-563. The rename covers `go.mod`, the 215 Go files, the 11 proto options, the generated code, the doctor script, and the docs. The User-Agent strings keep the product name `mtg-deck-builder/0.1` with the new URL, and the product rename goes with PR-25 (D-556). **The corpus step of 2026-09-07 ran on branch `corpus-refresh`** (D-566). `make meta-refresh` took 96 minutes, and quality gate run 13 reads FAIL on the precon bar of every format. The section "The corpus step of 2026-09-07" below holds the read, and the F-50 fix sits beside it. PR #77 merged it on 2026-09-07 (D-569).
 - The weekly EDHREC skip never held (2026-09-07, F-50, D-565), found when `make meta-refresh` read EDHREC whole four days after 2026-09-03. The lane took the newest commanders day for the last read, and the tournament lane writes that day's file first. The skip reads the last completed read now, `TestEDHRECSkipsInsideTheWeek` holds it, and the fix sits on branch `corpus-refresh` beside the records. The read of 2026-09-07 ran on under the old code, so the next read falls on 2026-09-14.
@@ -50,6 +51,24 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 - PR-9 is out of the MVP (D-256). Phase 3B comes before Phase 4 (D-316).
 
 CAUTION: branch `pr-17` carries eight concerns. They are the contract, the Go side, the reference design, and the layout of D-331. They are also the Build menu, the one deck screen, the pool picker, and the speed of the app. Guardrail 10 asks for one. The owner chose to ship it whole (D-344).
+
+## M-7, the read of run 14 (2026-09-07, D-570 to D-572)
+
+`docs/reference/pr14b-quality-gate-run14.md` is the gate of M-7, free, 98 seconds under five folds. The profiles run once for the five, so the gate did not grow to five minutes. The bars read every precon now, and each precon also meets its own broken copies.
+
+| Format | Cross bar, run 13 | Cross bar, run 14 | Own copy, run 14 |
+|---|---|---|---|
+| Commander | 0.78 of 20,000 | 0.86 of 99,933 | 0.88 of 945 |
+| Standard | 0.88 of 50 | 0.87 of 730 | 0.97 of 40 |
+| Modern | 0.86 of 20,000 | 0.85 of 99,754 | 0.99 of 1,635 |
+
+The cross bar mixes two questions (F-56). Each precon beats its own copies almost always, and the cross bar fails, because the precon rung spans bad to good. In Modern, 7,264 of the 9,226 colors misses are pairs the detector passed on both sides. A weak product graded bad loses to the broken copy of a Challenger deck.
+
+The ten precons that lose most in Modern are theme and intro decks of 2004 to 2014. In Commander they are the products of 2011 to 2015. The owner chose the own copies as the bar (D-573).
+
+Commander synergy is the one axis weak on its own copy, 271 of 389. The break moves `card_rate` by 0.08 standard deviations, and `synergy` and `unseen_share` by 0.9 each. The weights on those two are +0.17 and -0.23, and the weight on `card_rate` is +0.98 (F-53, measured). Of the 118 own misses, 54 are the ladder's and 64 involve a precon the detector flags. The flagged products date from 2011 to 2015.
+
+The 60-card breaks are visible on their own copies. Modern reads colors at 74 of 75 and copies at 61 of 61, and Standard colors at 3 of 4. PR-31 waits on OQ-76, because it fixes a break that works on its own copy. F-55, found in the build: 322 of the 1,150 bad holdout rows of Commander read the profile of another copy in run 13.
 
 ## The corpus step of 2026-09-07 (D-564 to D-566)
 
@@ -839,7 +858,7 @@ The chat ran a turn with no card index before D-405. The commander question then
 6. Every paid run goes through `eval sweep` or its Makefile target. Each one writes its run file beside the document. The bracket rejudge of 2026-09-03 ran on 2026-09-05 (D-540). Ask the owner before each one.
 7. Deploy the meta job (D-492). It is one Cloud Run job on `worker -meta`, with a Scheduler cron at 06:00 UTC daily. `TOPDECK_API_KEY` goes to Secret Manager. No infra file in this repo holds the worker's schedule. So the deployment is by hand, as the snapshot worker's is.
 8. PR-22 and PR-23 came in order after PR-15, one gate each (D-511). The owner triggers the workflow `smoke` before a merge that touches the user path (D-313).
-9. The weak-axes plan (D-567, D-568): M-7 now, then PR-29 to PR-31. Read `docs/reference/weak-axes-2026-09-07.md` first. No bar moves (D-486), and no weight changes by hand.
+9. The weak-axes plan (D-567, D-568): M-7 is done, then PR-29 and PR-30, and PR-31 parks (D-573). Read `docs/reference/weak-axes-2026-09-07.md` first. No bar moves (D-486), and no weight changes by hand.
 
 Deck gate run 12 ran on 2026-09-02 under the profile and passed 24 of 24 with its rerun 12b. The read of every mana base is F-33. The land count and the color sources sit in band now, and the nonbasic share still swings from 0 to 36 on the same prompt. No band reads the composition, and F-33 stays open on that point.
 
