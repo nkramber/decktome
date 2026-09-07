@@ -40,7 +40,7 @@ gcloud builds repositories list --connection=<the connection> --region=us-centra
 
 ```
 REPO=projects/decktome-prod/locations/us-central1/connections/decktome-repository/repositories/nkramber-decktome
-SA=projects/-/serviceAccounts/492774632746@cloudbuild.gserviceaccount.com
+SA=projects/-/serviceAccounts/gh-deployer@decktome-prod.iam.gserviceaccount.com
 gcloud builds triggers create github --name=deploy-api --region=us-central1 \
   --repository=$REPO --branch-pattern='^main$' --service-account=$SA \
   --build-config=cloudbuild/api.yaml --included-files='go/**,docker/**'
@@ -53,25 +53,28 @@ CAUTION: a trigger of a 2nd-gen repository needs `--service-account`. Without it
 
 Note: `us-central1` matches Artifact Registry, Cloud Run, Firestore, and the bucket, so a build pushes an image inside one region.
 
-4. Grant the build account what a deploy needs:
+4. Grant the deployer what a build needs. `gh-deployer` is the account the GitHub workflow signs in as (D-582), so one identity deploys on both paths:
 
 ```
-CB=492774632746@cloudbuild.gserviceaccount.com
-for role in roles/run.admin roles/artifactregistry.writer roles/firebasehosting.admin; do
+GH=gh-deployer@decktome-prod.iam.gserviceaccount.com
+for role in roles/run.admin roles/artifactregistry.writer \
+            roles/firebasehosting.admin roles/logging.logWriter; do
   gcloud projects add-iam-policy-binding decktome-prod \
-    --member=serviceAccount:$CB --role=$role --condition=None
+    --member=serviceAccount:$GH --role=$role --condition=None
 done
 ```
 
+CAUTION: a build takes a service account you made, and never the one Google manages. A trigger that names `PROJECT_NUMBER@cloudbuild.gserviceaccount.com` fails before its first step. The message reads "provide a user-managed service account or leave unset". `roles/logging.logWriter` belongs on the list, because the build writes its log with `CLOUD_LOGGING_ONLY`.
+
 Note: the project policy of `decktome-prod` holds a condition, so a binding without `--condition=None` fails in a script. The message names the flag.
 
-5. Let the build account run the API and the jobs as their own accounts. This binding names those two accounts, and never every account of the project:
+5. Let the deployer run the API and the jobs as their own accounts. This binding names those two accounts, and never every account of the project:
 
 ```
 for sa in mtg-api mtg-worker; do
   gcloud iam service-accounts add-iam-policy-binding \
     $sa@decktome-prod.iam.gserviceaccount.com \
-    --member=serviceAccount:$CB --role=roles/iam.serviceAccountUser
+    --member=serviceAccount:$GH --role=roles/iam.serviceAccountUser
 done
 ```
 
