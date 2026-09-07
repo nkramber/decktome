@@ -7,7 +7,7 @@ import { BuildPhase } from "@mtg/api-client/mtg/v1/agent_service_pb";
 
 import { SessionStatus, SlotState } from "@mtg/api-client/mtg/v1/session_pb";
 
-import { answerText, byteLength, codeName, emptyState, fromSession, mergeOpen, stillAsked, streamFailure } from "./use-chat";
+import { answerLabel, answerText, byteLength, codeName, emptyState, fromSession, mergeOpen, stillAsked, streamFailure } from "./use-chat";
 
 vi.mock("../../lib/api", () => ({ agentClient: {} }));
 
@@ -26,6 +26,34 @@ describe("use-chat helpers", () => {
     expect(answerText({ questionId: "q1", optionIndex: 1, text: "" } as never, question)).toBe("Modern");
     expect(answerText({ questionId: "q1", optionIndex: 9, text: "" } as never, question)).toBe("");
     expect(answerText({ questionId: "q1", optionIndex: 1, text: "" } as never, undefined)).toBe("");
+  });
+
+  // F-62: a decline carries no text and no option, and the thread showed
+  // nothing at all for it before.
+  it("answerLabel reads a decline as the choice it is", () => {
+    const question = q("q1", "format", ["Pauper", "Modern"]);
+    const budget = q("q2", "budget");
+    expect(answerLabel({ questionId: "q1", declined: true, text: "" } as never, question)).toBe("You decide");
+    expect(answerLabel({ questionId: "q2", declined: true, text: "" } as never, budget)).toBe("No budget");
+    expect(answerLabel({ questionId: "q1", optionIndex: 1, text: "" } as never, question)).toBe("Modern");
+    expect(answerLabel({ questionId: "q1", text: "Pauper" } as never, question)).toBe("Pauper");
+    expect(answerLabel({ questionId: "q1", declined: true, text: "" } as never, undefined)).toBe("You decide");
+  });
+
+  it("fromSession shows a declined answer under its question", () => {
+    const session = {
+      id: "s1",
+      turns: [
+        { userMessage: "elves", agentMessage: "", questions: [q("q1", "format", ["A", "B"])], answers: [] },
+        { userMessage: "", agentMessage: "", questions: [], answers: [{ questionId: "q1", declined: true, text: "" }] },
+      ],
+      deckIds: [],
+    } as unknown as Session;
+    const state = fromSession(session);
+    const asked = state.thread.find((t) => t.kind === "question");
+    expect(asked?.kind === "question" && asked.answer).toBe("You decide");
+    expect(state.thread.map((t) => t.kind)).toEqual(["user", "question"]);
+    expect(state.openQuestions).toHaveLength(0);
   });
 
   it("byteLength counts UTF-8 bytes", () => {
@@ -47,7 +75,13 @@ describe("use-chat helpers", () => {
     const base = { id: "d0", name: "Old" } as unknown as Deck;
     const state = fromSession(session, deck, base);
     expect(state.sessionId).toBe("s1");
-    expect(state.thread.map((t) => t.kind)).toEqual(["user", "question", "question", "deck", "user", "agent"]);
+    // The answer reads under its own question, and the turn that carried
+    // it holds no message, so it adds no user block (F-62).
+    expect(state.thread.map((t) => t.kind)).toEqual(["user", "question", "question", "deck", "agent"]);
+    const q1 = state.thread.find((t) => t.kind === "question" && t.question.id === "q1");
+    expect(q1?.kind === "question" && q1.answer).toBe("B");
+    const q2 = state.thread.find((t) => t.kind === "question" && t.question.id === "q2");
+    expect(q2?.kind === "question" && q2.answer).toBe(undefined);
     expect(state.thread.map((t) => t.id)).toEqual([...new Set(state.thread.map((t) => t.id))]);
     expect(state.openQuestions.map((x) => x.id)).toEqual(["q2"]);
     expect(state.deck).toBe(deck);

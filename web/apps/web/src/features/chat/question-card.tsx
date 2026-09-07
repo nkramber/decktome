@@ -8,6 +8,7 @@ import { Label } from "../../components/ui/label";
 import { cn } from "../../lib/cn";
 import { Thumbs } from "../feedback/thumbs";
 import { CardOption, CardOptionsError, hasCardOptions, partnerIds, useOptionCards } from "./card-options";
+import { declineLabel } from "./use-chat";
 
 // Draft is the user's answer to one question before the submit. An option
 // pick, free text, and a decline exclude each other: the last one the
@@ -134,11 +135,4 @@ export function QuestionCard({
       </div>
     </div>
   );
-}
-
-// declineLabel names what a decline of this slot does. A declined
-// budget is no cap at all (D-404), and every other slot hands the
-// choice to the agent.
-function declineLabel(slot: string): string {
-  return slot === "budget" ? "No budget" : "You decide";
 }

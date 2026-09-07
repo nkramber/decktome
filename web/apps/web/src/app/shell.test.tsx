@@ -74,10 +74,10 @@ describe("axe", () => {
   });
 });
 
-// Build always opens a chat over the whole card database (D-349). The
-// pool picker of the chat names a collection.
+// Build keeps the pool the reader chose (D-580, F-63). A click of Build
+// dropped the collection before, and the reader read no word of it.
 describe("Build in the header", () => {
-  it("is a link, and it clears the collection", async () => {
+  it("is a link, and it keeps the collection the reader chose", async () => {
     useAppStore.setState({ collectionId: "c-old", poolMode: "owned_only" });
     const user = userEvent.setup();
     const { router } = await renderAt("/decks");
@@ -85,8 +85,8 @@ describe("Build in the header", () => {
     expect(build).not.toHaveAttribute("aria-haspopup");
     await user.click(build);
     expect(router.state.location.pathname).toBe("/session/new");
-    expect(useAppStore.getState().collectionId).toBe("");
-    expect(useAppStore.getState().poolMode).toBe("any");
+    expect(useAppStore.getState().collectionId).toBe("c-old");
+    expect(useAppStore.getState().poolMode).toBe("owned_only");
   });
 });
 

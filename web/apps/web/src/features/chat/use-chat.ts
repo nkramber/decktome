@@ -18,7 +18,10 @@ type ItemBody =
   | { kind: "user"; text: string }
   | { kind: "agent"; text: string }
   | { kind: "status"; text: string }
-  | { kind: "question"; question: Question }
+  // answer is what the reader replied, once they replied. It reads
+  // under the question it answers (F-62), and a decline reads as the
+  // choice it is.
+  | { kind: "question"; question: Question; answer?: string }
   | { kind: "failure"; failure: AgentError }
   | { kind: "deck"; deck: Deck };
 
@@ -70,6 +73,20 @@ export function answerText(a: Answer, question: Question | undefined): string {
   return "";
 }
 
+// declineLabel names what a decline of this slot does. A declined budget
+// is no cap at all (D-404), and every other slot hands the choice to the
+// agent. The card and the thread read the same term.
+export function declineLabel(slot: string): string {
+  return slot === "budget" ? "No budget" : "You decide";
+}
+
+// answerLabel is what the thread shows under a question. A decline reads
+// as the choice it is, and never as an empty string (F-62).
+export function answerLabel(a: Answer, question: Question | undefined): string {
+  if (a.declined) return declineLabel(question?.slot ?? "");
+  return answerText(a, question);
+}
+
 function seconds(t: Timestamp | undefined): number | undefined {
   return t ? Number(t.seconds) + t.nanos / 1e9 : undefined;
 }
@@ -83,6 +100,9 @@ export function fromSession(session: Session, deck?: Deck, baseDeck?: Deck): Cha
   const thread: ThreadItem[] = [];
   const answered = new Set<string>();
   const asked = new Map<string, Question>();
+  // qIndex finds the thread item of a question, so a later turn's answer
+  // reaches it (F-62).
+  const qIndex = new Map<string, number>();
   let open: Question[] = [];
   const deckAt = seconds(deck?.createdAt);
   let deckPlaced = deck === undefined;
@@ -92,15 +112,22 @@ export function fromSession(session: Session, deck?: Deck, baseDeck?: Deck): Cha
       thread.push(item({ kind: "deck", deck }));
       deckPlaced = true;
     }
-    const replies = turn.answers.map((a) => {
+    // Each answer joins the question it answers (F-62). The user block
+    // holds the message alone, so three answers never read as one.
+    for (const a of turn.answers) {
       answered.add(a.questionId);
-      return answerText(a, asked.get(a.questionId));
-    });
-    const userText = [turn.userMessage, ...replies].filter(Boolean).join("\n");
-    if (userText) thread.push(item({ kind: "user", text: userText }));
+      const at = qIndex.get(a.questionId);
+      if (at === undefined) continue;
+      const target = thread[at];
+      if (target?.kind === "question") {
+        thread[at] = { ...target, answer: answerLabel(a, asked.get(a.questionId)) };
+      }
+    }
+    if (turn.userMessage) thread.push(item({ kind: "user", text: turn.userMessage }));
     if (turn.agentMessage) thread.push(item({ kind: "agent", text: turn.agentMessage }));
     for (const q of turn.questions) {
       asked.set(q.id, q);
+      qIndex.set(q.id, thread.length);
       thread.push(item({ kind: "question", question: q }));
     }
     if (turn.questions.length > 0) open = mergeOpen(open, turn.questions);
@@ -212,16 +239,21 @@ export function useChat(initial: ChatState, collectionId: string, poolRule: Pool
       const ctx: StreamContext = { asked: [], newAgentLine: true };
       const answeredQuestions = latest.current.openQuestions.filter((q) => answeredIds.has(q.id));
       update((s) => {
-        const userText = [message, ...answers.map((a) => answerText(a, s.openQuestions.find((q) => q.id === a.questionId)))]
-          .filter(Boolean)
-          .join("\n");
+        // Each answer joins the question it answers, so the live thread
+        // reads the same as the rebuilt one (F-62).
+        const byQuestion = new Map(answers.map((a) => [a.questionId, a]));
+        const marked = s.thread.map((it) => {
+          if (it.kind !== "question") return it;
+          const a = byQuestion.get(it.question.id);
+          return a ? { ...it, answer: answerLabel(a, it.question) } : it;
+        });
         return {
           ...s,
           busy: true,
           phase: BuildPhase.UNSPECIFIED,
           repaired: false,
           lastInput: { message, answers },
-          thread: userText ? [...s.thread, item({ kind: "user", text: userText })] : s.thread,
+          thread: message ? [...marked, item({ kind: "user", text: message })] : marked,
           openQuestions: s.openQuestions.filter((q) => !answeredIds.has(q.id)),
         };
       });

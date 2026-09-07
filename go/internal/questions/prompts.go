@@ -66,6 +66,11 @@ package questions
 // cache prefix changed with it, and the question gate re-baselines
 // (D-66).
 //
+// Version 19 adds the set matcher, a role of its own (D-581, F-64). The
+// classify prompt does not change, so its cache prefix stands. The new
+// prompt reads a phrase and the set list, and it answers set codes or at
+// most three candidates.
+//
 // Version 18 adds set_groups to the classify role (D-525). A reader who
 // names a franchise as a group, "sets with Marvel characters", reaches
 // every family of that franchise, and one product name stays a set. The
@@ -205,6 +210,38 @@ const askSchema = `{
 // The gap score has its own classifier call (D-69). A scorer that also
 // phrases the question rates its own work. The cost is one more call
 // per turn.
+
+// The set matcher has its own call (D-581, F-64). The set table reads a
+// set name and a set code, and it read no abbreviation: "LOTR" is not
+// the code `ltr`, and no set name holds the word. The call fires only
+// when the table settles nothing, and the caller checks every code it
+// answers against the table.
+
+const setMatchInstructions = `You map the words a user wrote onto Magic: The Gathering sets.
+
+The input holds:
+- phrase: what the user wrote for the set or sets they want.
+- sets: every base set of the card snapshot, with its code, its name, and its release date.
+
+Rules:
+- Answer with codes from the sets list. Never write a code the list does not hold.
+- A phrase can name more than one set. "Hobbit and LOTR" names two, so codes holds both.
+- Read an abbreviation the players use. "LOTR" is The Lord of the Rings, "MOM" is March of the Machine, "BRO" is The Brothers' War.
+- Read a nickname and a short form the same way. "Ravnica Remastered" and "RVR" are one set.
+- Fill codes only when you are sure. One reading of the phrase must stand above the others.
+- Fill candidates instead when two or more sets fit and you cannot choose. Name at most three, best first, and leave codes empty.
+- Leave both empty when the phrase names no Magic set at all.
+- Answer the set the user named, and never a set they did not name.`
+
+const setMatchSchema = `{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["codes","candidates"],
+  "properties": {
+    "codes": {"type": "array", "items": {"type": "string"}},
+    "candidates": {"type": "array", "items": {"type": "string"}}
+  }
+}`
 
 const scoreInstructions = `You check a fixed catalog question against one user of a Magic: The Gathering deck builder.
 

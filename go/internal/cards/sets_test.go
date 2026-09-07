@@ -292,3 +292,49 @@ func TestResolveGroupReadsEveryFamilyOfAFranchise(t *testing.T) {
 		t.Errorf("Resolve(Marvel) = %v %v, want one product", got.Kind, got.Codes)
 	}
 }
+
+// TestResolveAllReadsSeveralNamedSets is F-64: a phrase that names two
+// sets answers the union of their families. The whole phrase answers
+// first, so a set name that holds a connector word keeps its meaning.
+func TestResolveAllReadsSeveralNamedSets(t *testing.T) {
+	tbl := NewSetTable(hobbitSets())
+	for _, tc := range []struct {
+		phrase string
+		want   []string
+	}{
+		{"Hobbit and Lord of the Rings", []string{"hob", "hoc", "ltc", "ltr"}},
+		{"Hobbit, Lord of the Rings", []string{"hob", "hoc", "ltc", "ltr"}},
+		{"hob + ltr", []string{"hob", "hoc", "ltc", "ltr"}},
+		{"The Hobbit & the lord of the rings", []string{"hob", "hoc", "ltc", "ltr"}},
+		// A single name still answers as it did, and the order of the
+		// union never repeats a code.
+		{"Hobbit", []string{"hob", "hoc"}},
+		{"Hobbit and the hobbit set", []string{"hob", "hoc"}},
+	} {
+		got := tbl.ResolveAll(tc.phrase)
+		if got.Kind != ResolveOne {
+			t.Errorf("ResolveAll(%q) kind = %v, want ResolveOne", tc.phrase, got.Kind)
+			continue
+		}
+		if !slices.Equal(got.Codes, tc.want) {
+			t.Errorf("ResolveAll(%q) = %v, want %v", tc.phrase, got.Codes, tc.want)
+		}
+	}
+}
+
+// TestResolveAllKeepsTheAnswerOfTheWholePhrase is F-64: a part this app
+// can not settle never becomes a guess. The answer of the whole phrase
+// stands, so the agent asks exactly as it did.
+func TestResolveAllKeepsTheAnswerOfTheWholePhrase(t *testing.T) {
+	tbl := NewSetTable(hobbitSets())
+	for _, phrase := range []string{
+		"Hobbit and LOTR",
+		"LOTR",
+		"Hobbit and nothing anyone printed",
+		"",
+	} {
+		if got := tbl.ResolveAll(phrase); got.Kind == ResolveOne {
+			t.Errorf("ResolveAll(%q) = %v, want no answer", phrase, got.Codes)
+		}
+	}
+}

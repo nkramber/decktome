@@ -3,6 +3,7 @@ package cards
 import (
 	"encoding/json"
 	"io"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -337,6 +338,71 @@ func (t *SetTable) Resolve(phrase string) Resolution {
 		roots = roots[:maxCandidates]
 	}
 	return Resolution{Kind: ResolveMany, Candidates: roots}
+}
+
+// setConnectors split a phrase that names several sets. A reader writes
+// "Hobbit and LOTR", or a comma, or a plus (F-64).
+var setConnectors = regexp.MustCompile(`(?i)\s*(?:,|;|\+|&|\band\b|\bplus\b)\s*`)
+
+// BaseSets are the sets a reader names: no digital set, no child
+// product, and no sheet that never leads a family. The set matcher
+// carries them to the model (F-64).
+func (t *SetTable) BaseSets() []*SetInfo {
+	if t == nil {
+		return nil
+	}
+	out := make([]*SetInfo, 0, len(t.list))
+	for _, s := range t.list {
+		if s.Digital || s.ParentCode != "" || leadSkipTypes[s.Type] {
+			continue
+		}
+		out = append(out, s)
+	}
+	return out
+}
+
+// ResolveAll reads a phrase that may name any number of sets (F-64). It
+// answers the whole phrase first, so a name that holds a connector word
+// keeps its meaning. Only a phrase that answers nothing splits, and
+// every part must name exactly one family. The answer is the union of
+// those families, sorted.
+//
+// A part that names nothing, or names several, gives the answer of the
+// whole phrase back, so the agent still asks what it cannot read.
+func (t *SetTable) ResolveAll(phrase string) Resolution {
+	if t == nil {
+		return Resolution{}
+	}
+	whole := t.Resolve(phrase)
+	if whole.Kind == ResolveOne {
+		return whole
+	}
+	parts := setConnectors.Split(phrase, -1)
+	var named []string
+	for _, p := range parts {
+		if strings.TrimSpace(p) != "" {
+			named = append(named, p)
+		}
+	}
+	if len(named) < 2 {
+		return whole
+	}
+	seen := map[string]bool{}
+	var codes []string
+	for _, p := range named {
+		r := t.Resolve(p)
+		if r.Kind != ResolveOne {
+			return whole
+		}
+		for _, c := range r.Codes {
+			if !seen[c] {
+				seen[c] = true
+				codes = append(codes, c)
+			}
+		}
+	}
+	sort.Strings(codes)
+	return Resolution{Kind: ResolveOne, Codes: codes}
 }
 
 // ResolveGroup maps a franchise word onto every family it names (D-525).
