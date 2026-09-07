@@ -23,7 +23,7 @@ CAUTION: the triggers read `main` and no other branch (D-579). A pull request st
 
 ### 1.1 The one-time setup
 
-Run these one time, as the owner of the project.
+The setup of `decktome-prod` ran on 2026-09-07, and both triggers are live. These steps stand for a new project, and for a repair of this one.
 
 1. Connect the repository, in the region `us-central1`. Open Cloud Build, then Repositories, then the 2nd gen tab. Select Create host connection, choose GitHub, and authorize it. Then select Link repository and choose `nkramber/decktome`. This step needs a browser.
 
@@ -39,16 +39,17 @@ gcloud builds repositories list --connection=<the connection> --region=us-centra
 3. Create the two triggers. Every part is regional, so the region of the trigger must equal the region of the connection:
 
 ```
-REPO=projects/decktome-prod/locations/us-central1/connections/<the connection>/repositories/<the repository>
+REPO=projects/decktome-prod/locations/us-central1/connections/decktome-repository/repositories/nkramber-decktome
+SA=projects/-/serviceAccounts/492774632746@cloudbuild.gserviceaccount.com
 gcloud builds triggers create github --name=deploy-api --region=us-central1 \
-  --repository=$REPO --branch-pattern='^main$' \
+  --repository=$REPO --branch-pattern='^main$' --service-account=$SA \
   --build-config=cloudbuild/api.yaml --included-files='go/**,docker/**'
 gcloud builds triggers create github --name=deploy-web --region=us-central1 \
-  --repository=$REPO --branch-pattern='^main$' \
+  --repository=$REPO --branch-pattern='^main$' --service-account=$SA \
   --build-config=cloudbuild/web.yaml --included-files='web/**,firebase.json'
 ```
 
-CAUTION: `--repo-owner` and `--repo-name` name a 1st-gen repository, and they never reach a 2nd-gen connection. A trigger with no `--region` lands in `global`, and it finds no connection of `us-central1`. Read `gcloud builds triggers list --region=us-central1` after each one.
+CAUTION: a trigger of a 2nd-gen repository needs `--service-account`. Without it the API answers `INVALID_ARGUMENT` and names no field. `--repo-owner` and `--repo-name` name a 1st-gen repository, and they never reach a 2nd-gen connection. A trigger with no `--region` lands in `global`, and it finds no connection of `us-central1`. Read `gcloud builds triggers list --region=us-central1` after each one.
 
 Note: `us-central1` matches Artifact Registry, Cloud Run, Firestore, and the bucket, so a build pushes an image inside one region.
 
@@ -58,9 +59,11 @@ Note: `us-central1` matches Artifact Registry, Cloud Run, Firestore, and the buc
 CB=492774632746@cloudbuild.gserviceaccount.com
 for role in roles/run.admin roles/artifactregistry.writer roles/firebasehosting.admin; do
   gcloud projects add-iam-policy-binding decktome-prod \
-    --member=serviceAccount:$CB --role=$role
+    --member=serviceAccount:$CB --role=$role --condition=None
 done
 ```
+
+Note: the project policy of `decktome-prod` holds a condition, so a binding without `--condition=None` fails in a script. The message names the flag.
 
 5. Let the build account run the API and the jobs as their own accounts. This binding names those two accounts, and never every account of the project:
 
