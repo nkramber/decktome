@@ -559,10 +559,10 @@ func TestColorsSurviveAnUnknownColorWord(t *testing.T) {
 	a, _ := testAgent(t)
 	st := NewState(false)
 	first := commanderClassify()
-	a.apply(st, first, nil, "white-black lifegain commander deck")
+	a.apply(context.Background(), st, first, nil, "white-black lifegain commander deck", nil)
 	second := classifyOut{Format: "unknown", PoolRule: "unknown"}
 	second.Colors = []string{"purple"}
-	a.apply(st, second, nil, "purple is my favourite colour")
+	a.apply(context.Background(), st, second, nil, "purple is my favourite colour", nil)
 	if got := len(st.Slots.GetColors()); got != 2 {
 		t.Errorf("colors = %v, want the two the user gave", st.Slots.GetColors())
 	}
@@ -785,11 +785,11 @@ func TestBudgetAppliesOnlyWhenTheMessageNamesIt(t *testing.T) {
 	}
 	a, _ := testAgent(t)
 	st := NewState(false)
-	a.apply(st, classifyOut{BudgetUSD: 2}, nil, UserWords("Modern. The best deck under budget."))
+	a.apply(context.Background(), st, classifyOut{BudgetUSD: 2}, nil, UserWords("Modern. The best deck under budget."), nil)
 	if st.Slots.GetBudgetUsd() != 0 || st.Ctx.Filled["budget"] {
 		t.Errorf("budget = %g, want the slot open after a number the message never held", st.Slots.GetBudgetUsd())
 	}
-	a.apply(st, classifyOut{BudgetUSD: 400}, nil, UserWords("Tournament level, 400 dollars."))
+	a.apply(context.Background(), st, classifyOut{BudgetUSD: 400}, nil, UserWords("Tournament level, 400 dollars."), nil)
 	if st.Slots.GetBudgetUsd() != 400 || !st.Ctx.Filled["budget"] {
 		t.Errorf("budget = %g, want 400 from the message that names it", st.Slots.GetBudgetUsd())
 	}

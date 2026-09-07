@@ -73,6 +73,24 @@ type SetResolver interface {
 	ResolveSetGroup(phrase string) (codes, names []string, ok bool)
 }
 
+// SetRow is one set of the matcher prompt (F-64).
+type SetRow struct {
+	Code     string
+	Name     string
+	Released string
+}
+
+// SetMatchSource carries the set list to the matcher and expands the code
+// it answers. A hint source that holds the card index implements it
+// (D-581, F-64).
+type SetMatchSource interface {
+	// SetRows is every base set of the snapshot.
+	SetRows() []SetRow
+	// SetFamily expands one base set code to its family. ok is false for
+	// a code the snapshot does not hold.
+	SetFamily(code string) (codes, names []string, ok bool)
+}
+
 // PreconMatch is the answer to ResolvePrecon.
 type PreconMatch struct {
 	// Products are the products the phrase named, by key and by name. A

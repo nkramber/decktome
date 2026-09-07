@@ -1,6 +1,7 @@
 package questions
 
 import (
+	"context"
 	"io"
 	"log/slog"
 	"testing"
@@ -136,7 +137,7 @@ func TestOwnedPoolRuleNeedsACollection(t *testing.T) {
 
 	t.Run("owned_only with no collection reads as any card", func(t *testing.T) {
 		a, st := newAgent(false)
-		a.apply(st, classifyOut{PoolRule: "owned_only"}, nil, "build only from the Hobbit set")
+		a.apply(context.Background(), st, classifyOut{PoolRule: "owned_only"}, nil, "build only from the Hobbit set", nil)
 		if got := st.Slots.GetPoolRule(); got != mtgv1.PoolRule_POOL_RULE_ANY_CARD {
 			t.Errorf("pool rule = %v, want ANY_CARD", got)
 		}
@@ -144,7 +145,7 @@ func TestOwnedPoolRuleNeedsACollection(t *testing.T) {
 
 	t.Run("owned_first with no collection reads as any card", func(t *testing.T) {
 		a, st := newAgent(false)
-		a.apply(st, classifyOut{PoolRule: "owned_first"}, nil, "only artifacts")
+		a.apply(context.Background(), st, classifyOut{PoolRule: "owned_first"}, nil, "only artifacts", nil)
 		if got := st.Slots.GetPoolRule(); got != mtgv1.PoolRule_POOL_RULE_ANY_CARD {
 			t.Errorf("pool rule = %v, want ANY_CARD", got)
 		}
@@ -152,7 +153,7 @@ func TestOwnedPoolRuleNeedsACollection(t *testing.T) {
 
 	t.Run("a collection keeps the rule the user named", func(t *testing.T) {
 		a, st := newAgent(true)
-		a.apply(st, classifyOut{PoolRule: "owned_only"}, nil, "only cards I own")
+		a.apply(context.Background(), st, classifyOut{PoolRule: "owned_only"}, nil, "only cards I own", nil)
 		if got := st.Slots.GetPoolRule(); got != mtgv1.PoolRule_POOL_RULE_OWNED_ONLY {
 			t.Errorf("pool rule = %v, want OWNED_ONLY", got)
 		}
@@ -160,7 +161,7 @@ func TestOwnedPoolRuleNeedsACollection(t *testing.T) {
 
 	t.Run("the key still closes, so the question does not come back", func(t *testing.T) {
 		a, st := newAgent(false)
-		a.apply(st, classifyOut{PoolRule: "owned_only"}, nil, "only from one set")
+		a.apply(context.Background(), st, classifyOut{PoolRule: "owned_only"}, nil, "only from one set", nil)
 		if st.Slots.GetSlotStates()["pool_rule"] == mtgv1.SlotState_SLOT_STATE_ASKED {
 			t.Error("the pool question is still out after the rule was read")
 		}
