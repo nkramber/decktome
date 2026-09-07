@@ -228,6 +228,47 @@ func TestJobRun(t *testing.T) {
 	}
 }
 
+// TestEDHRECSkipsInsideTheWeek: the tournament lane writes the day's
+// commanders file before the EDHREC lane, so the newest commanders day
+// is today on every run. The skip reads the last completed read
+// instead, and it holds for EDHRECDays (F-50).
+func TestEDHRECSkipsInsideTheWeek(t *testing.T) {
+	ctx := context.Background()
+	srv, _ := fakeSites(t)
+	store := DirObjects{Root: t.TempDir()}
+	job := testJob(t, srv, store)
+	if _, err := job.Run(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if has, _ := job.edhrecReadOn(ctx, "2026-09-02"); !has {
+		t.Fatal("the first run left no read marker")
+	}
+
+	job.Now = func() time.Time { return time.Date(2026, 9, 5, 12, 0, 0, 0, time.UTC) }
+	rep, err := job.Run(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if last, _ := LatestCommandersDay(ctx, store); last != "2026-09-05" {
+		t.Fatalf("newest commanders day = %q, want today's file from the tournament lane", last)
+	}
+	if rep.Skipped[SourceEDHREC] != "read on 2026-09-02" || rep.Pages[SourceEDHREC] != 0 {
+		t.Errorf("three days on: skipped %q, pages %d", rep.Skipped[SourceEDHREC], rep.Pages[SourceEDHREC])
+	}
+
+	job.Now = func() time.Time { return time.Date(2026, 9, 10, 12, 0, 0, 0, time.UTC) }
+	rep, err = job.Run(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rep.Skipped[SourceEDHREC] != "" || rep.Pages[SourceEDHREC] == 0 {
+		t.Errorf("eight days on: skipped %q, pages %d", rep.Skipped[SourceEDHREC], rep.Pages[SourceEDHREC])
+	}
+	if has, _ := job.edhrecReadOn(ctx, "2026-09-10"); !has {
+		t.Errorf("the read of the eighth day left no marker")
+	}
+}
+
 func TestJobRunWithoutTopdeck(t *testing.T) {
 	srv, _ := fakeSites(t)
 	job := testJob(t, srv, DirObjects{Root: t.TempDir()})
