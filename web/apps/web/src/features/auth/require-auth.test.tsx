@@ -110,20 +110,23 @@ describe("route guard", () => {
     expect(screen.queryByTestId("session-id")).not.toBeInTheDocument();
   });
 
-  it("lists decks, empty, and shows the health footer", async () => {
+  // D-626: no bar of the app carries the API status or the snapshot age.
+  // A deck names the card data it rests on, on the deck itself.
+  it("lists decks, empty, and carries no health bar", async () => {
     state.user = fakeUser;
     const { container } = await renderAt("/decks");
     expect(await screen.findByText("No decks yet.")).toBeInTheDocument();
-    expect(await screen.findByTestId("health")).toHaveTextContent("API: ok, version test");
-    expect(screen.getByTestId("freshness")).toHaveTextContent("Card data as of 2026-08-24T09:01:52Z (2.5 h old)");
+    expect(screen.queryByTestId("health")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("freshness")).not.toBeInTheDocument();
     expect(await axe(container)).toHaveNoViolations();
   });
 
   it("session page has no axe violations", async () => {
     state.user = fakeUser;
     const { container } = await renderAt("/session/new");
+    // The heading is the settled page. The health bar was the second
+    // signal until D-626, and the bar is gone.
     await screen.findByRole("heading", { level: 1 });
-    await screen.findByText(/API: ok/);
     expect(await axe(container)).toHaveNoViolations();
   });
 });

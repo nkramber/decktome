@@ -39,18 +39,19 @@ async function readsUpAndDownAlone(page: import("@playwright/test").Page, where:
   expect(got.scrollWidth, `${where} scrolls sideways. The widest elements: ${got.over.join(" | ")}`).toBeLessThanOrEqual(got.clientWidth);
 }
 
-// bottomBarIsOnScreen reads the foot of the shell against the viewport.
-// The shell holds overflow-hidden, so a foot below the fold is a foot no
-// reader reaches, and the page then refuses to scroll down (D-625).
-async function bottomBarIsOnScreen(page: import("@playwright/test").Page, where: string) {
-  const foot = page.locator("footer").last();
-  await expect(foot, `${where} has no bottom bar`).toBeVisible();
-  const box = await foot.boundingBox();
-  const height = page.viewportSize()?.height ?? 0;
-  const bottom = (box?.y ?? Number.MAX_SAFE_INTEGER) + (box?.height ?? 0);
-  // A sub-pixel layout puts the last row a fraction past the edge, and
-  // one pixel is not a bar below the fold.
-  expect(bottom, `${where} keeps its bottom bar below the fold: it ends at ${bottom} of ${height}`).toBeLessThanOrEqual(height + 1);
+// theShellFitsTheScreen reads the document against the viewport. The
+// app shell is the whole window and the main region is the one thing
+// that scrolls, so a document taller than the screen is a page that
+// bounces and shows empty ground under the app (D-625, D-626).
+async function theShellFitsTheScreen(page: import("@playwright/test").Page, where: string) {
+  const got = await page.evaluate(() => ({
+    docHeight: document.documentElement.scrollHeight,
+    bodyHeight: document.body.scrollHeight,
+    viewport: window.innerHeight,
+    bodyOverflow: getComputedStyle(document.body).overflowY,
+  }));
+  expect(got.docHeight, `${where}: the document is taller than the screen, so it scrolls under the app`).toBeLessThanOrEqual(got.viewport + 1);
+  expect(got.bodyOverflow, `${where}: the body scrolls, and the main region should be the one that does`).toBe("hidden");
 }
 
 test("every screen of a phone reads up and down alone", async ({ page }) => {
@@ -78,22 +79,14 @@ test("every screen of a phone reads up and down alone", async ({ page }) => {
 
   await page.goto("/decks");
   await readsUpAndDownAlone(page, "the deck list");
-  await bottomBarIsOnScreen(page, "the deck list");
+  await theShellFitsTheScreen(page, "the deck list");
 
-  // The main region is the one that scrolls, and the shell never grows
-  // past the screen. A flex item of min-height auto grows instead of
-  // scrolling, and the shell then clips what nobody can reach (D-625).
-  const shell = await page.evaluate(() => {
+  // The main region is the one that scrolls.
+  const mainOverflow = await page.evaluate(() => {
     const main = document.querySelector("main");
-    return {
-      docHeight: document.documentElement.scrollHeight,
-      viewport: window.innerHeight,
-      mainScrolls: main ? main.scrollHeight > main.clientHeight : false,
-      mainOverflow: main ? getComputedStyle(main).overflowY : "",
-    };
+    return main ? getComputedStyle(main).overflowY : "";
   });
-  expect(shell.docHeight, "the document grows past the screen").toBeLessThanOrEqual(shell.viewport + 1);
-  expect(shell.mainOverflow, "the main region does not scroll on its own").toBe("auto");
+  expect(mainOverflow, "the main region does not scroll on its own").toBe("auto");
 });
 
 // The deck screen holds the widest content of the app: the card grid,
@@ -122,7 +115,7 @@ test("the deck screen of a phone reads up and down alone", async ({ page }) => {
   await page.getByRole("button", { name: "Send" }).click();
   await expect(page.getByTestId("legality-line")).toBeVisible({ timeout: 120_000 });
   await readsUpAndDownAlone(page, "the deck screen");
-  await bottomBarIsOnScreen(page, "the deck screen");
+  await theShellFitsTheScreen(page, "the deck screen");
 
   // The card sheet opens over the deck, and it is its own width. The
   // tile carries the card name, and a card image needs a network this

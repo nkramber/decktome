@@ -8,14 +8,13 @@ import { signOutAndClear } from "../features/auth/sign-out";
 import { InstallHint } from "../features/shell/install-hint";
 import { errorMessage } from "../lib/errors";
 import { useAppStore } from "../lib/store";
-import { healthFooterChunk, scheduleWarm, toasterChunk } from "./chunks";
+import { scheduleWarm, toasterChunk } from "./chunks";
 import { AccountMenu } from "./components/account-menu";
 import { TopNav } from "./components/top-nav";
 
 // The footer holds the one call that pulls the Connect client, and the
 // toast host waits for a mutation. Both arrive after the first paint
 // (D-320), and neither has a Suspense boundary of its own.
-const HealthFooter = healthFooterChunk.Mount;
 const Toaster = toasterChunk.Mount;
 
 // The layout is the shell (D-328): one header over the whole width, the
@@ -84,7 +83,6 @@ export function Layout() {
       </main>
 
       <InstallHint />
-      <HealthFooter />
       <Toaster />
     </div>
   );
