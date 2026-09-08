@@ -67,6 +67,15 @@ type Header struct {
 	// A partial run reads the bars of its own items alone. It never
 	// stands for the suite: the check skips it, and it is no baseline.
 	Only string `json:"only,omitempty"`
+	// Overrides names each role field the run changed from roles.json,
+	// for example "generate.effort". A run with one is an experiment:
+	// it measures a configuration this app does not ship, so it never
+	// stands for the suite either (PR-33, D-612). Deck gate run 17 ran
+	// the generate role at low effort, and it read FAIL. Without this
+	// mark it would stand as the newest decks run for good, and
+	// `make eval-check` would fail every verify until a run at the
+	// shipped configuration replaced it.
+	Overrides []string `json:"overrides,omitempty"`
 	// Lower names the metrics where a lower value is better, so a
 	// compare of this file knows which way is worse. Every other metric
 	// reads a higher value as better.
@@ -118,13 +127,36 @@ func (r *Run) SetRoles(cfg *llm.Config, roles ...llm.Role) {
 	if cfg == nil {
 		return
 	}
+	// The shipped configuration, with no environment override on it. A
+	// field that differs marks the run an experiment (PR-33, D-612).
+	shipped, err := llm.LoadConfig()
 	for _, role := range roles {
 		spec, ok := cfg.Roles[role]
 		if !ok {
 			continue
 		}
 		r.Header.Roles[string(role)] = Model{Provider: spec.Provider, Model: spec.Model, Effort: spec.Effort}
+		if err != nil {
+			continue
+		}
+		def, ok := shipped.Roles[role]
+		if !ok {
+			continue
+		}
+		for _, f := range []struct {
+			name     string
+			got, was string
+		}{
+			{"provider", spec.Provider, def.Provider},
+			{"model", spec.Model, def.Model},
+			{"effort", spec.Effort, def.Effort},
+		} {
+			if f.got != f.was {
+				r.Header.Overrides = append(r.Header.Overrides, string(role)+"."+f.name)
+			}
+		}
 	}
+	sort.Strings(r.Header.Overrides)
 }
 
 // SetSnapshot records the card snapshot date.
@@ -145,6 +177,11 @@ func (r *Run) Finish(rep llm.Report, took time.Duration, verdict string) {
 // Partial reports whether the run covered a part of its suite, under
 // -only or a count. A partial run never stands for the suite.
 func (h Header) Partial() bool { return h.Only != "" }
+
+// Experiment reports whether the run changed a role field from the
+// shipped defaults. Such a run measures a configuration the app does not
+// ship, so it never stands for its suite (PR-33, D-612).
+func (h Header) Experiment() bool { return len(h.Overrides) > 0 }
 
 // Gated reports whether the run holds a gate row. A run with none is
 // not evaluated.

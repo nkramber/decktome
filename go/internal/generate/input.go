@@ -16,6 +16,16 @@ import (
 // The shortlist goes last and it is the longest part. Findings and misses
 // are empty on the first turn. On the repair turn, findings holds every
 // finding that bought the turn, the two warnings included (D-244, D-248).
+// bandWords is the band of one job, in the words the prompt reads. It
+// is empty with no profiler, and for a job the bands hold none of, such
+// as the threat count (F-78).
+func (b *Builder) bandWords(req Request, key string) string {
+	if b.profiler == nil {
+		return ""
+	}
+	return b.profiler.Bands().Words(req.Format, req.Power, key)
+}
+
 func (b *Builder) input(req Request, misses []Miss, findings []*mtgv1.Finding) string {
 	var s strings.Builder
 	fmt.Fprintf(&s, "## Limits\n\n%s\n", strings.TrimSpace(req.Limits))
@@ -134,6 +144,15 @@ func (b *Builder) input(req Request, misses []Miss, findings []*mtgv1.Finding) s
 		}
 		sort.Strings(keys)
 		for _, k := range keys {
+			// The band goes out beside the target (F-78, Part 2). The
+			// target is the middle of the band, and a model that read the
+			// middle alone could not tell a free deviation from one that
+			// leaves the band. Six of the 26 off-band findings of deck
+			// gate run 16 and bracket gate run 1 were role counts.
+			if words := b.bandWords(req, k); words != "" {
+				fmt.Fprintf(&s, "- %s: %s, and %d is the middle\n", k, words, targets[k])
+				continue
+			}
 			fmt.Fprintf(&s, "- %s: %d\n", k, targets[k])
 		}
 		// The deck shape is the rest of the bracket's band: the curve,

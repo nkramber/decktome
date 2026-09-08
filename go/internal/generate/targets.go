@@ -117,6 +117,12 @@ const MaxPad = 5
 // still know the builder finished the list.
 const CodeBasicsAdded = "basics_added"
 
+// CodeManaPass reports the cards the mana pass of PR-33 moved to bring
+// the deck inside its power level. It is an INFO: the deck is legal
+// either way, and the reader should know the builder changed the mana
+// base after the model answered (F-78).
+const CodeManaPass = "mana_pass"
+
 // plural writes a count and its noun. A finding reaches the user, and
 // "1 cards" is a mistake the user sees.
 func plural(n int, noun string) string {
