@@ -39,6 +39,19 @@ type Row struct {
 	Text string `json:"text"`
 	// Options are suggested answers. The user may answer in free text.
 	Options []string `json:"options"`
+	// OptionValues carry the typed value of each option, in the words the
+	// classifier writes: "bracket 4", "commander", "owned_only" (D-597).
+	// A reader who picks an option sends its index, and the engine sets
+	// the slot from this list with no model in the path.
+	//
+	// Before this the index became the option text, the text went into
+	// the message, and the slot filled only when the classifier answered
+	// with a string the slot could read. A model that echoed the option
+	// left the slot asked (F-70).
+	//
+	// It is empty for a row whose options carry no typed value. Load
+	// refuses a list of a length the options do not match.
+	OptionValues []string `json:"option_values"`
 	// Fallback is the wording used when a placeholder has no value. It
 	// holds no placeholder itself. Load enforces that.
 	Fallback string `json:"fallback"`
@@ -179,6 +192,8 @@ func parse(data []byte) (*Catalog, error) {
 			return nil, fmt.Errorf("questions: row %q names slot %q, which the proto does not have", r.ID, r.Slot)
 		case strings.TrimSpace(r.Text) == "":
 			return nil, fmt.Errorf("questions: row %q has no text", r.ID)
+		case len(r.OptionValues) > 0 && len(r.OptionValues) != len(r.Options):
+			return nil, fmt.Errorf("questions: row %q has %d option values for %d options", r.ID, len(r.OptionValues), len(r.Options))
 		case r.Order <= 0:
 			return nil, fmt.Errorf("questions: row %q has no order", r.ID)
 		}

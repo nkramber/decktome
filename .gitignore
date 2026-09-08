@@ -34,6 +34,7 @@ coverage/
 /go/candidates-review
 /go/chat-probe
 /go/allow
+/go/feedback
 /go/deck-gate
 /go/eval
 /go/bracket-gate

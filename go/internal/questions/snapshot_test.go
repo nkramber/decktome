@@ -59,7 +59,10 @@ func TestSnapshotRoundTrip(t *testing.T) {
 	v := reflect.ValueOf(*st)
 	for i := 0; i < v.NumField(); i++ {
 		f := v.Type().Field(i)
-		if !f.IsExported() || f.Name == "Slots" || f.Name == "SessionID" {
+		// OptionAnswers is the input of one turn, not state (D-597). The
+		// caller sets it before Turn and the engine reads it inside that
+		// turn, so no snapshot carries it and a restore starts it empty.
+		if !f.IsExported() || f.Name == "Slots" || f.Name == "SessionID" || f.Name == "OptionAnswers" {
 			continue
 		}
 		if v.Field(i).IsZero() {

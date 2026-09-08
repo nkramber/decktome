@@ -481,6 +481,39 @@ func TestFormatWordIsNormalized(t *testing.T) {
 }
 
 // TestPoolRuleWordIsNormalized covers the other field that lost its enum.
+// TestPowerReadsTheOptionOfItsOwnRow is D-593. Session
+// oUZMC0F2vHe7GGl24LIP answered the power row with "4 optimized", the
+// option the row offers, and the slot stayed asked for good. The
+// readiness gate waits on an asked key, and the agent never repeats a
+// question, so the chat could not go on. Every option of the row must
+// read, whatever the model echoes.
+func TestPowerReadsTheOptionOfItsOwnRow(t *testing.T) {
+	for _, tc := range []struct {
+		in   string
+		want int32
+	}{
+		{"1 exhibition", 1},
+		{"2 core", 2},
+		{"3 upgraded", 3},
+		{"4 optimized", 4},
+		{"5 cEDH", 5},
+		{"bracket 4", 4},
+		{"4", 4},
+	} {
+		got := power(tc.in)
+		if got.GetBracket() != tc.want {
+			t.Errorf("power(%q) = %v, want bracket %d", tc.in, got, tc.want)
+		}
+	}
+	// A number outside the brackets, and a word with no number, read as
+	// no answer. The classifier leaves power empty for a vague word.
+	for _, in := range []string{"", "unknown", "strongest", "9 something", "0 none"} {
+		if got := power(in); got != nil {
+			t.Errorf("power(%q) = %v, want nil", in, got)
+		}
+	}
+}
+
 func TestPoolRuleWordIsNormalized(t *testing.T) {
 	cases := []struct {
 		word string

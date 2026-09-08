@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file mtg/v1/feedback_service.proto.
  */
 export const file_mtg_v1_feedback_service: GenFile = /*@__PURE__*/
-  fileDesc("Ch1tdGcvdjEvZmVlZGJhY2tfc2VydmljZS5wcm90bxIGbXRnLnYxIsQBCghGZWVkYmFjaxIiCgRraW5kGAEgASgOMhQubXRnLnYxLkZlZWRiYWNrS2luZBIoCgd2ZXJkaWN0GAIgASgOMhcubXRnLnYxLkZlZWRiYWNrVmVyZGljdBISCgpzZXNzaW9uX2lkGAMgASgJEhMKC3F1ZXN0aW9uX2lkGAQgASgJEg8KB2RlY2tfaWQYBSABKAkSEQoJb3JhY2xlX2lkGAYgASgJEg8KB3JlYXNvbnMYByADKAkSDAoEdGV4dBgIIAEoCSI7ChVTdWJtaXRGZWVkYmFja1JlcXVlc3QSIgoIZmVlZGJhY2sYASABKAsyEC5tdGcudjEuRmVlZGJhY2siLQoWU3VibWl0RmVlZGJhY2tSZXNwb25zZRITCgtmZWVkYmFja19pZBgBIAEoCSqUAQoMRmVlZGJhY2tLaW5kEh0KGUZFRURCQUNLX0tJTkRfVU5TUEVDSUZJRUQQABIaChZGRUVEQkFDS19LSU5EX1FVRVNUSU9OEAESGQoVRkVFREJBQ0tfS0lORF9TVU1NQVJZEAISFgoSRkVFREJBQ0tfS0lORF9DQVJEEAMSFgoSRkVFREJBQ0tfS0lORF9ERUNLEAQqZwoPRmVlZGJhY2tWZXJkaWN0EiAKHEZFRURCQUNLX1ZFUkRJQ1RfVU5TUEVDSUZJRUQQABIXChNGRUVEQkFDS19WRVJESUNUX1VQEAESGQoVRkVFREJBQ0tfVkVSRElDVF9ET1dOEAIyZAoPRmVlZGJhY2tTZXJ2aWNlElEKDlN1Ym1pdEZlZWRiYWNrEh0ubXRnLnYxLlN1Ym1pdEZlZWRiYWNrUmVxdWVzdBoeLm10Zy52MS5TdWJtaXRGZWVkYmFja1Jlc3BvbnNlIgBCMlowZ2l0aHViLmNvbS9ua3JhbWJlci9kZWNrdG9tZS9nby9nZW4vbXRnL3YxO210Z3YxYgZwcm90bzM");
+  fileDesc("Ch1tdGcvdjEvZmVlZGJhY2tfc2VydmljZS5wcm90bxIGbXRnLnYxIsQBCghGZWVkYmFjaxIiCgRraW5kGAEgASgOMhQubXRnLnYxLkZlZWRiYWNrS2luZBIoCgd2ZXJkaWN0GAIgASgOMhcubXRnLnYxLkZlZWRiYWNrVmVyZGljdBISCgpzZXNzaW9uX2lkGAMgASgJEhMKC3F1ZXN0aW9uX2lkGAQgASgJEg8KB2RlY2tfaWQYBSABKAkSEQoJb3JhY2xlX2lkGAYgASgJEg8KB3JlYXNvbnMYByADKAkSDAoEdGV4dBgIIAEoCSI7ChVTdWJtaXRGZWVkYmFja1JlcXVlc3QSIgoIZmVlZGJhY2sYASABKAsyEC5tdGcudjEuRmVlZGJhY2siLQoWU3VibWl0RmVlZGJhY2tSZXNwb25zZRITCgtmZWVkYmFja19pZBgBIAEoCSqsAQoMRmVlZGJhY2tLaW5kEh0KGUZFRURCQUNLX0tJTkRfVU5TUEVDSUZJRUQQABIaChZGRUVEQkFDS19LSU5EX1FVRVNUSU9OEAESGQoVRkVFREJBQ0tfS0lORF9TVU1NQVJZEAISFgoSRkVFREJBQ0tfS0lORF9DQVJEEAMSFgoSRkVFREJBQ0tfS0lORF9ERUNLEAQSFgoSRkVFREJBQ0tfS0lORF9DSEFUEAUqZwoPRmVlZGJhY2tWZXJkaWN0EiAKHEZFRURCQUNLX1ZFUkRJQ1RfVU5TUEVDSUZJRUQQABIXChNGRUVEQkFDS19WRVJESUNUX1VQEAESGQoVRkVFREJBQ0tfVkVSRElDVF9ET1dOEAIyZAoPRmVlZGJhY2tTZXJ2aWNlElEKDlN1Ym1pdEZlZWRiYWNrEh0ubXRnLnYxLlN1Ym1pdEZlZWRiYWNrUmVxdWVzdBoeLm10Zy52MS5TdWJtaXRGZWVkYmFja1Jlc3BvbnNlIgBCMlowZ2l0aHViLmNvbS9ua3JhbWJlci9kZWNrdG9tZS9nby9nZW4vbXRnL3YxO210Z3YxYgZwcm90bzM");
 
 /**
  * Feedback is one verdict. The ids a kind does not use stay empty.
@@ -29,7 +29,8 @@ export type Feedback = Message<"mtg.v1.Feedback"> & {
   verdict: FeedbackVerdict;
 
   /**
-   * session_id and question_id name the question, for kind QUESTION.
+   * session_id names the session, for kinds QUESTION and CHAT.
+   * question_id names the question, for kind QUESTION alone.
    *
    * @generated from field: string session_id = 3;
    */
@@ -153,6 +154,16 @@ export enum FeedbackKind {
    * @generated from enum value: FEEDBACK_KIND_DECK = 4;
    */
   DECK = 4,
+
+  /**
+   * FEEDBACK_KIND_CHAT is the conversation as a whole (D-594). The
+   * thumbs of a question read one question, and a chat that stops
+   * between questions belongs to none of them. It names the session and
+   * no question.
+   *
+   * @generated from enum value: FEEDBACK_KIND_CHAT = 5;
+   */
+  CHAT = 5,
 }
 
 /**

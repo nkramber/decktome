@@ -83,3 +83,49 @@ func TestFeedbackRoundTrip(t *testing.T) {
 		t.Errorf("the thumbs up = %+v, %v", got, err)
 	}
 }
+
+// TestDownReadsEveryUser is D-596. The documents sit under each user,
+// and the owner asked to read every negative verdict without a walk of
+// the user list. A collection group query answers them all at once, so
+// no caller iterates users and no second store is needed.
+func TestDownReadsEveryUser(t *testing.T) {
+	r := emulatorRepo(t)
+	ctx := context.Background()
+	stamp := time.Now().UTC().Format("150405.000000")
+	at := time.Date(2026, 9, 7, 15, 30, 0, 0, time.UTC)
+
+	// Two users, one down verdict each, and one up that must not show.
+	for i, u := range []string{"g1-" + stamp, "g2-" + stamp} {
+		if _, err := r.Add(ctx, u, Item{
+			Kind: "chat", Verdict: "down", SessionID: "s1",
+			Reasons: []string{"stuck"}, CreatedAt: at.Add(time.Duration(i) * time.Minute),
+		}); err != nil {
+			t.Fatalf("Add down: %v", err)
+		}
+	}
+	upUser := "g3-" + stamp
+	if _, err := r.Add(ctx, upUser, Item{Kind: "deck", Verdict: "up", DeckID: "d1", CreatedAt: at}); err != nil {
+		t.Fatalf("Add up: %v", err)
+	}
+
+	items, err := r.Down(ctx, "down", 100)
+	if err != nil {
+		t.Fatalf("Down: %v", err)
+	}
+	seen := map[string]bool{}
+	for _, it := range items {
+		if it.Verdict != "down" {
+			t.Errorf("Down answered a %q verdict", it.Verdict)
+		}
+		seen[it.UID] = true
+	}
+	// Both users of this run are in one answer, and neither was named.
+	for _, u := range []string{"g1-" + stamp, "g2-" + stamp} {
+		if !seen[u] {
+			t.Errorf("the query missed the verdict of %s", u)
+		}
+	}
+	if seen[upUser] {
+		t.Error("an up verdict came back from the down query")
+	}
+}

@@ -28,6 +28,11 @@ enum FeedbackKind {
   FEEDBACK_KIND_CARD = 3;
   // FEEDBACK_KIND_DECK is the deck as a whole.
   FEEDBACK_KIND_DECK = 4;
+  // FEEDBACK_KIND_CHAT is the conversation as a whole (D-594). The
+  // thumbs of a question read one question, and a chat that stops
+  // between questions belongs to none of them. It names the session and
+  // no question.
+  FEEDBACK_KIND_CHAT = 5;
 }
 
 // FeedbackVerdict is the thumb.
@@ -44,7 +49,8 @@ enum FeedbackVerdict {
 message Feedback {
   FeedbackKind kind = 1;
   FeedbackVerdict verdict = 2;
-  // session_id and question_id name the question, for kind QUESTION.
+  // session_id names the session, for kinds QUESTION and CHAT.
+  // question_id names the question, for kind QUESTION alone.
   string session_id = 3;
   string question_id = 4;
   // deck_id names the deck, for kinds SUMMARY, CARD, and DECK.
