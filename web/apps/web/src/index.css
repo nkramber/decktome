@@ -9,6 +9,17 @@
   * {
     border-color: var(--border);
   }
+  /* The app shell is the whole window, and the main region is the one
+     thing that scrolls. The document itself must not scroll or bounce:
+     a drag on the bottom bar scrolled the document on a phone, and the
+     reader met a band of empty ground under the app (D-626).
+     overscroll-behavior stops the bounce, and the fixed height stops
+     the scroll that carries it. */
+  html,
+  body {
+    height: 100%;
+    overscroll-behavior: none;
+  }
   body {
     background-color: var(--background);
     color: var(--foreground);
@@ -16,6 +27,15 @@
     /* The dynamic viewport height, so a phone with a browser bar reads
        the real height and not the collapsed one (D-625). */
     min-height: 100dvh;
+    overflow: hidden;
+  }
+  /* A printed page is one long sheet, so it flows and it scrolls. */
+  @media print {
+    html,
+    body {
+      height: auto;
+      overflow: visible;
+    }
   }
   /* A heading is engraved: the display face, wide letters, small caps. */
   h1,
