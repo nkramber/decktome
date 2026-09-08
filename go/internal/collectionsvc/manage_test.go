@@ -317,8 +317,10 @@ func TestGetCollectionFillsTheDisplayFields(t *testing.T) {
 		PriceUsd:  1.25,
 	}
 	printings := []cards.Printing{
-		{ScryfallID: "p-1", OracleID: "o-bolt", Name: c.Name, SetCode: "lea", CollectorNumber: "161", Layout: "normal", PriceUSD: 42.5},
-		{ScryfallID: "p-2", OracleID: "o-bolt", Name: c.Name, SetCode: "m10", CollectorNumber: "146", Layout: "normal"},
+		{ScryfallID: "p-1", OracleID: "o-bolt", Name: c.Name, SetCode: "lea", CollectorNumber: "161", Layout: "normal", PriceUSD: 42.5,
+			ImageUris: &mtgv1.ImageUris{Normal: "https://img/lea-161.jpg"}},
+		{ScryfallID: "p-2", OracleID: "o-bolt", Name: c.Name, SetCode: "m10", CollectorNumber: "146", Layout: "normal",
+			ImageUris: &mtgv1.ImageUris{Normal: "https://img/m10-146.jpg"}},
 	}
 	repo := newFakeRepo()
 	repo.stored["col-1"] = &mtgv1.Collection{
@@ -353,8 +355,16 @@ func TestGetCollectionFillsTheDisplayFields(t *testing.T) {
 	if got[1].GetPriceUsd() != 1.25 {
 		t.Errorf("price of the unpriced printing = %v, want the card price 1.25", got[1].GetPriceUsd())
 	}
+	// The art is the printing the reader owns, and not the default one
+	// (F-60). Two rows of one card must not read one image.
+	if got[0].GetImageUris().GetNormal() != "https://img/lea-161.jpg" {
+		t.Errorf("art of the Alpha printing = %q, want the Alpha art", got[0].GetImageUris().GetNormal())
+	}
+	if got[1].GetImageUris().GetNormal() != "https://img/m10-146.jpg" {
+		t.Errorf("art of the M10 printing = %q, want the M10 art", got[1].GetImageUris().GetNormal())
+	}
 	// A row the index does not know keeps its empty fields.
-	if len(got[2].GetColors()) != 0 || got[2].GetPriceUsd() != 0 {
+	if len(got[2].GetColors()) != 0 || got[2].GetPriceUsd() != 0 || got[2].GetImageUris() != nil {
 		t.Errorf("an unknown row = %v", got[2])
 	}
 	// The head reads no entry, so it fills nothing (D-392).

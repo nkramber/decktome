@@ -722,6 +722,9 @@ func (s *Server) load(ctx context.Context, uid string, msg *mtgv1.ChatRequest) (
 		if gone {
 			session.CollectionId = ""
 			snap.Ctx.HasCollection = false
+			// The collection the reader chose is gone, so the choice that
+			// named it goes with it (D-591).
+			snap.Ctx.PoolFromReader = false
 			if session.GetSlots().GetPoolRule() != mtgv1.PoolRule_POOL_RULE_UNSPECIFIED {
 				session.Slots.PoolRule = mtgv1.PoolRule_POOL_RULE_ANY_CARD
 			}
@@ -737,6 +740,7 @@ func (s *Server) load(ctx context.Context, uid string, msg *mtgv1.ChatRequest) (
 		return nil, questions.Snapshot{}, 0, nil, false, connect.NewError(connect.CodeInternal, err)
 	}
 	id := s.store.NewID(uid)
+	snapPoolFromReader := false
 	session := &mtgv1.Session{
 		Id:           id,
 		CollectionId: msg.GetCollectionId(),
@@ -747,10 +751,14 @@ func (s *Server) load(ctx context.Context, uid string, msg *mtgv1.ChatRequest) (
 	// takes that as the answer and asks nothing (D-359).
 	if rule := msg.GetPoolRule(); rule != mtgv1.PoolRule_POOL_RULE_UNSPECIFIED {
 		session.Slots = &mtgv1.Slots{PoolRule: rule}
+		// The choice is the reader's, so the classifier never writes over
+		// it (D-591).
+		snapPoolFromReader = true
 	}
 	// A user with no collection never gets the card-pool question (D-37).
 	snap := questions.Snapshot{Version: questions.SnapshotVersion}
 	snap.Ctx.HasCollection = msg.GetCollectionId() != ""
+	snap.Ctx.PoolFromReader = snapPoolFromReader
 	return session, snap, 0, owned, false, nil
 }
 

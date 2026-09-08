@@ -281,11 +281,22 @@ const gridCols: Record<number, string> = {
   4: "grid-cols-4",
 };
 
+// binderArt picks the image of one row. The printing the reader owns
+// comes first (F-60). A collection names a set code and a collector
+// number per copy, and the binder drew the default printing, so a card
+// owned in one set showed the art of another. A two-faced card carries
+// its art on the faces, and the entry then holds none, so the face
+// follows. The grid is virtualized and draws no row under a test, so
+// this is a function of its own.
+export function binderArt(entry: CollectionEntry, card: Card | undefined): string {
+  return entry.imageUris?.normal ?? card?.faces?.[0]?.imageUris?.normal ?? card?.defaultPrinting?.imageUris?.normal ?? "";
+}
+
 // BinderTile is one row of the binder: the art, the name, the count, and
 // the marks the reader sorted their cards by. It wears the deck card
 // tile's shape, so the two screens read alike.
 function BinderTile({ entry, card }: { entry: CollectionEntry; card: Card | undefined }) {
-  const art = card?.faces?.[0]?.imageUris?.normal ?? card?.defaultPrinting?.imageUris?.normal ?? "";
+  const art = binderArt(entry, card);
   const finish = finishLabel[entry.finish];
   const condition = conditionLabel[entry.condition];
   return (

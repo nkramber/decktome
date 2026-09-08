@@ -999,7 +999,12 @@ func TestChatWithADeletedCollection(t *testing.T) {
 		Slots:        &mtgv1.Slots{PoolRule: mtgv1.PoolRule_POOL_RULE_OWNED_ONLY},
 		Status:       mtgv1.SessionStatus_SESSION_STATUS_ASKING,
 	}
-	store.states["s1"] = questions.Snapshot{Version: questions.SnapshotVersion}
+	// The reader chose this pool, and the collection it named is gone
+	// (D-591). The mark goes with the collection, or the classifier is
+	// locked out of a slot that no longer has an owner.
+	snap := questions.Snapshot{Version: questions.SnapshotVersion}
+	snap.Ctx.PoolFromReader = true
+	store.states["s1"] = snap
 	missing := fakeCollections{countsErr: status.Error(codes.NotFound, "no such collection")}
 	client, _ := testServerOpts(t, store, []Option{WithCollections(missing)}, firstTurn(t)...)
 
@@ -1021,6 +1026,43 @@ func TestChatWithADeletedCollection(t *testing.T) {
 	if stored.GetSlots().GetPoolRule() != mtgv1.PoolRule_POOL_RULE_ANY_CARD {
 		t.Errorf("pool rule = %v, want ANY_CARD", stored.GetSlots().GetPoolRule())
 	}
+	if store.states["s1"].Ctx.PoolFromReader {
+		t.Error("the collection left, and the reader's pool mark stayed")
+	}
+}
+
+// TestTheReaderPoolChoiceIsMarked is D-591. A first turn that carries a
+// pool rule marks the snapshot, so the classifier never writes over the
+// reader's choice. A collection that leaves drops the mark with it,
+// because the choice named that collection.
+func TestTheReaderPoolChoiceIsMarked(t *testing.T) {
+	t.Run("a request that carries a rule marks the snapshot", func(t *testing.T) {
+		store := newFakeStore()
+		client, _ := testServerOpts(t, store, nil, firstTurn(t)...)
+		chat(t, client, &mtgv1.ChatRequest{
+			Message:      "an elves deck from the LOTR sets only",
+			CollectionId: "c1",
+			PoolRule:     mtgv1.PoolRule_POOL_RULE_OWNED_ONLY,
+		})
+		var snap questions.Snapshot
+		for _, st := range store.states {
+			snap = st
+		}
+		if !snap.Ctx.PoolFromReader {
+			t.Error("the snapshot does not mark the reader's pool choice")
+		}
+	})
+
+	t.Run("a request with no rule marks nothing", func(t *testing.T) {
+		store := newFakeStore()
+		client, _ := testServerOpts(t, store, nil, firstTurn(t)...)
+		chat(t, client, &mtgv1.ChatRequest{Message: "an elves deck"})
+		for _, st := range store.states {
+			if st.Ctx.PoolFromReader {
+				t.Error("a request with no pool rule marked the snapshot")
+			}
+		}
+	})
 }
 
 // TestChatRefusesATurnWithNoIndex is D-405. A turn with no card index

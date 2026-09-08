@@ -243,8 +243,15 @@ func (s *Server) decorate(entries []*mtgv1.CollectionEntry) {
 		// counts. The card price is the default printing's (D-231), so
 		// it stands in only when the printing is unknown.
 		e.PriceUsd = c.GetPriceUsd()
-		if p, ok := idx.Printing(e.GetScryfallId()); ok && p.GetPriceUsd() > 0 {
-			e.PriceUsd = p.GetPriceUsd()
+		if p, ok := idx.Printing(e.GetScryfallId()); ok {
+			if p.GetPriceUsd() > 0 {
+				e.PriceUsd = p.GetPriceUsd()
+			}
+			// The art of the printing the reader owns, and not the art of
+			// the default printing (F-60). A two-faced card carries its
+			// art on the faces, so this is empty and the binder falls
+			// back to the face.
+			e.ImageUris = p.GetImageUris()
 		}
 	}
 }
