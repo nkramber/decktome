@@ -113,7 +113,9 @@ describe("SignInPage", () => {
 
   it("has no axe violations", async () => {
     const { container } = await renderAt("/sign-in");
-    await screen.findByText(/API: ok/);
+    // The form is the settled page. It was the health bar until D-626,
+    // and the bar is gone.
+    await screen.findByRole("button", { name: "Sign in" });
     expect(await axe(container)).toHaveNoViolations();
   });
 });
