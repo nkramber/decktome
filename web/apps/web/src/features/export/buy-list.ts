@@ -25,11 +25,15 @@ function shortfall(e: DeckCard): number {
 // appearance, then the upgrades with their full count (D-308).
 export function buyRows(deck: Deck, byId: Map<string, Card>): { needed: BuyRow[]; upgrades: BuyRow[] } {
   const commanders = new Set(deck.commanderOracleIds);
-  const commanderEntries: DeckCard[] = deck.commanderOracleIds.map(
-    (id) =>
-      deck.cards.find((c) => c.oracleId === id) ??
-      ({ oracleId: id, name: byId.get(id)?.name ?? "Commander", count: 1, owned: false, ownedCount: 0, priceUsd: 0 } as DeckCard),
-  );
+  // A commander the deck holds no entry for carries no ownership fact
+  // (F-76). The fallback here wrote `owned: false`, so a deck whose
+  // every card is owned still named its commander as one to buy, with
+  // no price beside it. No entry is not evidence of no copy: deck
+  // `u8FV7fc98qzNvRfsuJ5q` reads 77 cards, every one owned, and a buy
+  // cost of zero, and the buy list held the commander all the same.
+  const commanderEntries: DeckCard[] = deck.commanderOracleIds
+    .map((id) => deck.cards.find((c) => c.oracleId === id))
+    .filter((c): c is DeckCard => c !== undefined);
   const order: string[] = [];
   const tally = new Map<string, { entry: DeckCard; need: number }>();
   const add = (e: DeckCard, need: number) => {
