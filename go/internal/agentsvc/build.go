@@ -286,6 +286,15 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 				always = append(always, c)
 			}
 		}
+		// A card the reader asked to add is in no base deck and on no
+		// shortlist of its own, so the model can not name it. The engine
+		// then blocks the deck for a card it was never able to write
+		// (F-80). keepable dropped every name this app can not add.
+		for _, name := range rev.Keep {
+			if c, ok := idx.ByName(name); ok {
+				always = append(always, c)
+			}
+		}
 	}
 	// The always cards read their owned count from the collection, so a
 	// precon card the user holds is never charged as a purchase.
@@ -338,7 +347,7 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 	if err != nil {
 		return nil, err
 	}
-	s.markOwnedPrintings(ctx, uid, session, idx, res.Deck)
+	s.markOwnedPrintings(ctx, uid, session, idx, res.Deck, setCodes)
 	// The deck carries what its build cost and how it went (D-602). The
 	// owner reads almost every deck through a repair turn, and no store
 	// held the count.
@@ -352,7 +361,16 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 // markOwnedPrintings sets DeckCard.owned_printing to the priciest printing
 // the collection holds of each owned card (D-299). A missing collection
 // or a printing the snapshot dropped leaves the field empty.
-func (s *Server) markOwnedPrintings(ctx context.Context, uid string, session *mtgv1.Session, idx *cards.Index, deck *mtgv1.Deck) {
+//
+// A reader who limited the deck to sets reads a printing of those sets
+// first (D-614). They asked for a Hobbit and Lord of the Rings deck, so
+// their Sol Ring shows the Lord of the Rings art and not the Secret Lair
+// one, even when the Secret Lair copy is worth more. The priciest
+// printing of the named sets wins, and the priciest of the collection
+// answers when the reader owns no copy from them.
+func (s *Server) markOwnedPrintings(ctx context.Context, uid string, session *mtgv1.Session,
+	idx *cards.Index, deck *mtgv1.Deck, setCodes []string,
+) {
 	if s.collections == nil || session.GetCollectionId() == "" || deck == nil {
 		return
 	}
@@ -361,12 +379,13 @@ func (s *Server) markOwnedPrintings(ctx context.Context, uid string, session *mt
 		s.log.WarnContext(ctx, "owned printings unavailable", "collection", session.GetCollectionId(), "err", err)
 		return
 	}
+	inSet := cards.CodeSet(setCodes)
 	for _, list := range [][]*mtgv1.DeckCard{deck.GetCards(), deck.GetSideboard(), deck.GetCommanders()} {
 		for _, dc := range list {
 			if dc.GetOwnedCount() == 0 {
 				continue
 			}
-			var best *mtgv1.Printing
+			var best, bestInSet *mtgv1.Printing
 			for _, id := range owned[dc.GetOracleId()] {
 				p, ok := idx.Printing(id)
 				if !ok || p.GetImageUris() == nil {
@@ -375,6 +394,13 @@ func (s *Server) markOwnedPrintings(ctx context.Context, uid string, session *mt
 				if best == nil || p.GetPriceUsd() > best.GetPriceUsd() {
 					best = p
 				}
+				if inSet[strings.ToLower(p.GetSetCode())] &&
+					(bestInSet == nil || p.GetPriceUsd() > bestInSet.GetPriceUsd()) {
+					bestInSet = p
+				}
+			}
+			if bestInSet != nil {
+				best = bestInSet
 			}
 			dc.OwnedPrinting = best
 		}
@@ -518,6 +544,84 @@ func deckName(slots *mtgv1.Slots) string {
 		return generate.FormatWord(slots.GetFormat().GetId()) + " deck"
 	}
 	return theme
+}
+
+// keepable splits the cards the reader asked to keep or to add into the
+// ones this app can put in the deck, and a line for each one it refuses
+// (F-80). A card of the base deck always passes: it is already there.
+//
+// A name no card carries is refused, because the engine blocks a deck
+// that lacks a kept card, and the model can not name a card that does
+// not exist. A card the reader does not own is refused under an
+// owned-only pool, because that reader asked for their own cards alone
+// and a forced card breaks the promise (D-63, F-76).
+func (s *Server) keepable(base *mtgv1.Deck, names []string, owned map[string]int32,
+	rule mtgv1.PoolRule,
+) (keep, refused []string) {
+	if len(names) == 0 {
+		return nil, nil
+	}
+	var idx *cards.Index
+	if s.index != nil {
+		idx = s.index.Current()
+	}
+	inDeck := map[string]bool{}
+	for _, dc := range base.GetCards() {
+		inDeck[strings.ToLower(dc.GetName())] = true
+	}
+	for _, name := range names {
+		if inDeck[strings.ToLower(name)] {
+			keep = append(keep, name)
+			continue
+		}
+		if idx == nil {
+			keep = append(keep, name)
+			continue
+		}
+		c, ok := idx.ByName(name)
+		if !ok {
+			refused = append(refused, fmt.Sprintf("I did not add %s: no card I know carries that name.", name))
+			continue
+		}
+		if rule == mtgv1.PoolRule_POOL_RULE_OWNED_ONLY && owned[c.GetOracleId()] == 0 &&
+			!candidates.BasicLandByOracle(idx)(c.GetOracleId()) {
+			refused = append(refused, fmt.Sprintf(
+				"I did not add %s: your collection holds no copy, and this deck uses your own cards alone.", c.GetName()))
+			continue
+		}
+		keep = append(keep, c.GetName())
+	}
+	return keep, refused
+}
+
+// storeTurn records the turn's reply on the session, with no deck. The
+// revision that changes no card takes it: the deck it read stands, and
+// the session gains no second id (F-81).
+func (s *Server) storeTurn(ctx context.Context, uid string, session *mtgv1.Session,
+	snap questions.Snapshot, version int64,
+) {
+	sctx, cancel := detached(ctx, storeLimit)
+	defer cancel()
+	err := s.store.Put(sctx, uid, session, snap, version)
+	// A version conflict means another write landed since the turn was
+	// stored. The reply is written onto the current session instead of
+	// lost, as storeDeck writes the deck id (D-303).
+	for try := 0; errors.Is(err, sessions.ErrConflict) && try < deckIDRetries; try++ {
+		var current *mtgv1.Session
+		current, _, version, err = s.store.GetState(sctx, uid, session.GetId())
+		if err != nil {
+			break
+		}
+		current.UpdatedAt = session.GetUpdatedAt()
+		current.Usage = session.GetUsage()
+		if n := len(current.GetTurns()); n > 0 && n == len(session.GetTurns()) {
+			current.Turns[n-1] = session.GetTurns()[n-1]
+		}
+		err = s.store.Put(sctx, uid, current, snap, version)
+	}
+	if err != nil {
+		s.log.ErrorContext(ctx, "the turn was not recorded", "session", session.GetId(), "err", err)
+	}
 }
 
 // storeDeck keeps the deck and records its id on the session. Both
@@ -665,12 +769,18 @@ func (s *Server) sendRevision(ctx context.Context, uid string, session *mtgv1.Se
 	s.sendOrLog(ctx, stream, session, &mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Status{Status: "revising the deck"}})
 	bctx, cancel := detached(ctx, s.buildDeadline())
 	defer cancel()
+	// A card the reader asked to add must be one this app can put in the
+	// deck. A name no card carries, and a card the reader does not own
+	// under an owned-only pool, are both refused here with a word: the
+	// engine blocks a deck that lacks a kept card, and no repair turn
+	// closes a block the pool can not answer (F-80).
+	keep, refused := s.keepable(base, brief.Keep, owned, slots.GetPoolRule())
 	rev := &generate.Revision{
 		BaseDeckID:   base.GetId(),
 		Base:         base.GetCards(),
 		Instructions: brief.Changes,
 		Remove:       brief.Remove,
-		Keep:         brief.Keep,
+		Keep:         keep,
 		MaxManaValue: brief.MaxManaValue,
 		SwapBasics:   brief.SwapBasics,
 		LandKinds:    brief.LandKinds,
@@ -694,7 +804,26 @@ func (s *Server) sendRevision(ctx context.Context, uid string, session *mtgv1.Se
 	if base.GetName() != "" {
 		res.Deck.Name = base.GetName()
 	}
-	note := revise.Note(brief, revise.DiffDecks(base, res.Deck))
+	diff := revise.DiffDecks(base, res.Deck)
+	note := revise.Note(brief, diff)
+	for _, line := range refused {
+		note = strings.TrimSpace(note + " " + line)
+	}
+	// A revision that changes no card stores no new version. The reader
+	// read "the deck is the same as before" beside a v2 the compare
+	// called identical, and every such turn added one (F-81).
+	if diff.Empty() {
+		s.log.InfoContext(ctx, "the revision changed no card, so the deck keeps its version",
+			"session", session.GetId(), "deck", base.GetId())
+		turn.AgentMessage = note
+		s.storeTurn(ctx, uid, session, snap, version)
+		s.sendOrLog(ctx, stream, session, &mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_TextDelta{TextDelta: note}})
+		for _, n := range res.Notes {
+			s.sendOrLog(ctx, stream, session, &mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_TextDelta{TextDelta: n}})
+		}
+		s.sendOrLog(ctx, stream, session, &mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Deck{Deck: base}})
+		return nil
+	}
 	// A change that lowers the grade says so (PR-14B).
 	if drop := quality.TierDrop(base.GetQuality(), res.Deck.GetQuality()); drop != "" {
 		note = strings.TrimSpace(note + "\n\n" + drop)
