@@ -60,6 +60,9 @@ func (b *Builder) fixMana(req Request, deck *mtgv1.Deck) int {
 		kept++
 	}
 	if kept > 0 {
+		// The owned flag reads the count of an oracle id across the whole
+		// list, so it is set again after the last step (D-37, F-79).
+		markOwned(append(append([]*mtgv1.DeckCard(nil), deck.GetCards()...), deck.GetSideboard()...))
 		b.log.Info("the mana pass moved the deck toward its bands with no model call",
 			"session", req.SessionID, "steps", kept, "off_band", score)
 	}
@@ -112,10 +115,15 @@ func bandDistance(f *mtgv1.ProfileFeature) float64 {
 // manaStep is one change to the deck: a card to add and a card to drop,
 // by Oracle id. Either half may be empty, which makes the step a plain
 // addition or a plain cut.
+//
+// owned is the count the collection holds of the card the step adds.
+// Every entry of a deck carries it, and an entry that lost it read as a
+// card to buy (F-79).
 type manaStep struct {
-	add  *mtgv1.Card
-	drop string
-	role mtgv1.CardRole
+	add   *mtgv1.Card
+	drop  string
+	role  mtgv1.CardRole
+	owned int32
 }
 
 // apply writes the step into the deck.
@@ -124,7 +132,7 @@ func (s manaStep) apply(deck *mtgv1.Deck) {
 		deck.Cards = dropOne(deck.GetCards(), s.drop)
 	}
 	if s.add != nil {
-		deck.Cards = addOne(deck.GetCards(), s.add, s.role)
+		deck.Cards = addOne(deck.GetCards(), s.add, s.role, s.owned)
 	}
 }
 
@@ -165,7 +173,8 @@ func (b *Builder) manaCandidates(req Request, deck *mtgv1.Deck, basics []*mtgv1.
 			if inDeck[add.GetOracleId()] {
 				continue
 			}
-			out = append(out, manaStep{add: add, drop: drop, role: mtgv1.CardRole_CARD_ROLE_LAND})
+			out = append(out, manaStep{add: add, drop: drop, role: mtgv1.CardRole_CARD_ROLE_LAND,
+				owned: req.Pool.OwnedCount(add.GetOracleId())})
 		}
 	}
 	// A basic for another basic. The deck holds more than one of each,
@@ -175,7 +184,8 @@ func (b *Builder) manaCandidates(req Request, deck *mtgv1.Deck, basics []*mtgv1.
 			if add.GetOracleId() == other.GetOracleId() || !inDeck[other.GetOracleId()] {
 				continue
 			}
-			out = append(out, manaStep{add: add, drop: other.GetOracleId(), role: mtgv1.CardRole_CARD_ROLE_LAND})
+			out = append(out, manaStep{add: add, drop: other.GetOracleId(), role: mtgv1.CardRole_CARD_ROLE_LAND,
+				owned: req.Pool.OwnedCount(add.GetOracleId())})
 		}
 	}
 	// A basic land for the costliest spell, and the reverse. The land
@@ -183,11 +193,13 @@ func (b *Builder) manaCandidates(req Request, deck *mtgv1.Deck, basics []*mtgv1.
 	// caller refuses it, so no rule here repeats the band.
 	dear, dearRole, dearMV := costliestSpell(deck, b.cards)
 	if dear != "" {
-		out = append(out, manaStep{add: basics[0], drop: dear, role: mtgv1.CardRole_CARD_ROLE_LAND})
+		out = append(out, manaStep{add: basics[0], drop: dear, role: mtgv1.CardRole_CARD_ROLE_LAND,
+			owned: req.Pool.OwnedCount(basics[0].GetOracleId())})
 	}
 	if cut := b.spareBasic(deck, basics); cut != "" {
 		if add := b.cheapestSpell(req, deck); add != nil {
-			out = append(out, manaStep{add: add, drop: cut, role: mtgv1.CardRole_CARD_ROLE_SYNERGY})
+			out = append(out, manaStep{add: add, drop: cut, role: mtgv1.CardRole_CARD_ROLE_SYNERGY,
+				owned: req.Pool.OwnedCount(add.GetOracleId())})
 		}
 	}
 	// A cheaper card of the same job for the costliest one. This is the
@@ -195,13 +207,15 @@ func (b *Builder) manaCandidates(req Request, deck *mtgv1.Deck, basics []*mtgv1.
 	// low, and no land moves it. The free lane of PR-33 read the first
 	// pass closing 2 of 10 off-band features without this step.
 	for _, add := range b.cheaperOfRole(req, inDeck, dearRole, dearMV) {
-		out = append(out, manaStep{add: add, drop: dear, role: dearRole})
+		out = append(out, manaStep{add: add, drop: dear, role: dearRole,
+			owned: req.Pool.OwnedCount(add.GetOracleId())})
 	}
 	// Ramp of a low mana value for the costliest card. The mana of turn
 	// four reads ramp more than it reads one more land, and a deck at
 	// the top of its land band has no land step left.
 	for _, add := range b.rampOf(req, inDeck) {
-		out = append(out, manaStep{add: add, drop: dear, role: mtgv1.CardRole_CARD_ROLE_RAMP})
+		out = append(out, manaStep{add: add, drop: dear, role: mtgv1.CardRole_CARD_ROLE_RAMP,
+			owned: req.Pool.OwnedCount(add.GetOracleId())})
 	}
 	return out
 }
@@ -382,7 +396,14 @@ func dropOne(list []*mtgv1.DeckCard, id string) []*mtgv1.DeckCard {
 
 // addOne adds one copy of a card, as a new entry or on the entry the
 // deck holds.
-func addOne(list []*mtgv1.DeckCard, c *mtgv1.Card, role mtgv1.CardRole) []*mtgv1.DeckCard {
+//
+// A new entry carries the ownership and the price, as Normalize gives
+// every other entry (F-79). Without them the deck said the reader owns
+// no copy of a card the pass took from their own collection, and the
+// buy list named seven such cards at no price, on a deck of owned cards
+// alone. The Owned flag itself is markOwned's, and fixMana runs it over
+// the whole list after the pass.
+func addOne(list []*mtgv1.DeckCard, c *mtgv1.Card, role mtgv1.CardRole, owned int32) []*mtgv1.DeckCard {
 	out := make([]*mtgv1.DeckCard, 0, len(list)+1)
 	done := false
 	for _, dc := range list {
@@ -400,7 +421,9 @@ func addOne(list []*mtgv1.DeckCard, c *mtgv1.Card, role mtgv1.CardRole) []*mtgv1
 	}
 	return append(out, &mtgv1.DeckCard{
 		OracleId: c.GetOracleId(), Name: c.GetName(), Count: 1, Role: role,
-		Reason: "the mana pass added it to bring the mana base inside the power level",
+		OwnedCount: owned,
+		PriceUsd:   c.GetPriceUsd(),
+		Reason:     "the mana pass added it to bring the mana base inside the power level",
 	})
 }
 

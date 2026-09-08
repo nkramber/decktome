@@ -149,6 +149,7 @@ func run() error {
 	run := evalrun.New("revise", evalrun.RunID(*runOut))
 	run.Header.Only = *only
 	run.Header.Prompts["generate"] = generate.PromptVersion
+	run.Header.Prompts["revise"] = revise.PromptVersion
 	run.LowerIsBetter("blocks", "repaired")
 	quiet := gatekit.Quiet()
 	ctx := context.Background()

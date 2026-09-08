@@ -108,12 +108,45 @@ func Call(ctx context.Context, client *llm.Client, in Input, acc *llm.Accumulato
 		b.SwapBasics = 0
 	}
 	b.Remove = onlyInDeck(b.Remove, in.Deck)
-	b.Keep = onlyInDeck(b.Keep, in.Deck)
+	b.Keep = keepNames(b.Keep, in.Deck)
 	return &b, nil
 }
 
+// keepNames normalizes the cards the user wants in the deck. A name the
+// deck holds takes the deck's own spelling. A name the deck does not
+// hold is a card the user asked to add, and it stays in the reader's
+// words for the build to resolve against the card index (F-80).
+//
+// Before this the same filter served both lists, so "include The
+// Arkenstone" was dropped: the deck did not hold the card, which is the
+// whole reason the reader asked for it.
+func keepNames(names []string, deck *mtgv1.Deck) []string {
+	have := map[string]string{}
+	for _, c := range deck.GetCards() {
+		have[fold(c.GetName())] = c.GetName()
+	}
+	var out []string
+	seen := map[string]bool{}
+	for _, n := range names {
+		n = strings.TrimSpace(n)
+		if n == "" {
+			continue
+		}
+		name, ok := have[fold(n)]
+		if !ok {
+			name = n
+		}
+		if seen[fold(name)] {
+			continue
+		}
+		seen[fold(name)] = true
+		out = append(out, name)
+	}
+	return out
+}
+
 // onlyInDeck drops a name the deck does not hold. The model copies names
-// from the list, and a name it invented has nothing to remove or keep.
+// from the list, and a name it invented has nothing to remove.
 func onlyInDeck(names []string, deck *mtgv1.Deck) []string {
 	have := map[string]string{}
 	for _, c := range deck.GetCards() {
@@ -178,6 +211,12 @@ type Diff struct {
 	Removed []string
 	// Changed names a card whose count moved, as "name: 2 to 4".
 	Changed []string
+}
+
+// Empty reports whether the two decks hold the same cards. A revision
+// that changes nothing stores no new version of the deck (F-81).
+func (d Diff) Empty() bool {
+	return len(d.Added) == 0 && len(d.Removed) == 0 && len(d.Changed) == 0
 }
 
 // DiffDecks compares two card lists by name.

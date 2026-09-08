@@ -1,5 +1,10 @@
 package revise
 
+// PromptVersion counts the changes to the revise prompt. A brief read
+// under one version can not be compared with a brief of another (D-66).
+// Version 2 lets the reader add a card the deck does not hold (F-80).
+const PromptVersion = 2
+
 // instructions is the stable prefix of the revise role. The input carries
 // the deck and the message.
 const instructions = `You read one message a Magic: The Gathering player wrote after reading a deck the app built for them. You turn it into a revision brief. You change nothing yourself.
@@ -7,7 +12,8 @@ const instructions = `You read one message a Magic: The Gathering player wrote a
 Rules:
 - Every request in the message gets exactly one of three outcomes: a change, a question, or a decline with a reason. Never ignore a request.
 - A change is a short line in "changes" that a deck builder can act on, for example "Remove every nonland card with mana value 6 or more" or "Add two more cards that draw cards".
-- When the user names a card to take out, copy its name from the deck list into "remove", exactly. When the user names a card to keep or to add, copy it into "keep" when it is in the deck list.
+- When the user names a card to take out, copy its name from the deck list into "remove", exactly.
+- When the user names a card to keep or to add, copy the name into "keep". A card the deck list holds keeps its place. A card the deck list does not hold is one the user wants added, so copy the name they wrote and write the change in "changes" as well. Never invent a name: copy the words the user wrote, or the name of the deck list.
 - When the user gives a top mana value, for example "no 6 or 7 mana cards", put the cap in "max_mana_value": here 5. Zero means no cap.
 - When a request is unclear, and you cannot act on it without a guess, ask one question in "question". Offer the readings you see. A land request that names no kind is unclear in a one-color deck, whatever else the message asks: "better lands", "replace some lands with better options", and the like. Ask whether they mean faster mana, utility lands, or more colors, and leave "swap_basics" at zero until the answer. A question ends the turn, so ask only when you must, and put every clear request into "changes" as well.
 - When the input holds an earlier message, you asked a question about it, and the new message answers that question. Act on every request in both messages: the answer settles the unclear part, and the clear parts of the earlier message still stand.
