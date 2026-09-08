@@ -217,7 +217,15 @@ type Deck struct {
 	// The owner reads almost every deck through a repair turn, and no
 	// store held the time or the count. The logs held the repair turns
 	// alone, so no reader could count them over many decks.
-	Build         *BuildMetrics `protobuf:"bytes,26,opt,name=build,proto3" json:"build,omitempty"`
+	Build *BuildMetrics `protobuf:"bytes,26,opt,name=build,proto3" json:"build,omitempty"`
+	// commanders holds one entry per commander, in commander_oracle_ids
+	// order, with the ownership and the price of that card (F-76, D-608).
+	// The 99 sit in cards, and the commander sat in no list at all, so no
+	// reader could tell an owned commander from one to buy. The web app
+	// invented the answer, and every deck named its commander as a card to
+	// buy (D-604). Unset on a deck built before this, and the reader then
+	// reads no commander in the buy list, which is the safe failure.
+	Commanders    []*DeckCard `protobuf:"bytes,27,rep,name=commanders,proto3" json:"commanders,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -423,6 +431,13 @@ func (x *Deck) GetShared() bool {
 func (x *Deck) GetBuild() *BuildMetrics {
 	if x != nil {
 		return x.Build
+	}
+	return nil
+}
+
+func (x *Deck) GetCommanders() []*DeckCard {
+	if x != nil {
+		return x.Commanders
 	}
 	return nil
 }
@@ -1603,7 +1618,7 @@ var File_mtg_v1_deck_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\n" +
-	"\x11mtg/v1/deck.proto\x12\x06mtg.v1\x1a\x11mtg/v1/card.proto\x1a\x13mtg/v1/format.proto\x1a\x14mtg/v1/session.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xd9\a\n" +
+	"\x11mtg/v1/deck.proto\x12\x06mtg.v1\x1a\x11mtg/v1/card.proto\x1a\x13mtg/v1/format.proto\x1a\x14mtg/v1/session.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x8b\b\n" +
 	"\x04Deck\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12&\n" +
@@ -1635,7 +1650,10 @@ const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\aprofile\x18\x17 \x01(\v2\x13.mtg.v1.DeckProfileR\aprofile\x12-\n" +
 	"\aquality\x18\x18 \x01(\v2\x13.mtg.v1.DeckQualityR\aquality\x12\x16\n" +
 	"\x06shared\x18\x19 \x01(\bR\x06shared\x12*\n" +
-	"\x05build\x18\x1a \x01(\v2\x14.mtg.v1.BuildMetricsR\x05buildJ\x04\b\n" +
+	"\x05build\x18\x1a \x01(\v2\x14.mtg.v1.BuildMetricsR\x05build\x120\n" +
+	"\n" +
+	"commanders\x18\x1b \x03(\v2\x10.mtg.v1.DeckCardR\n" +
+	"commandersJ\x04\b\n" +
 	"\x10\vR\x04seed\"\xb5\x01\n" +
 	"\vDeckQuality\x12\x12\n" +
 	"\x04tier\x18\x01 \x01(\tR\x04tier\x12\x14\n" +
@@ -1806,29 +1824,30 @@ var file_mtg_v1_deck_proto_depIdxs = []int32{
 	5,  // 7: mtg.v1.Deck.profile:type_name -> mtg.v1.DeckProfile
 	3,  // 8: mtg.v1.Deck.quality:type_name -> mtg.v1.DeckQuality
 	15, // 9: mtg.v1.Deck.build:type_name -> mtg.v1.BuildMetrics
-	4,  // 10: mtg.v1.DeckQuality.probabilities:type_name -> mtg.v1.TierProbability
-	6,  // 11: mtg.v1.DeckProfile.features:type_name -> mtg.v1.ProfileFeature
-	7,  // 12: mtg.v1.DeckProfile.goldfish:type_name -> mtg.v1.Goldfish
-	8,  // 13: mtg.v1.DeckProfile.content:type_name -> mtg.v1.ContentCheck
-	9,  // 14: mtg.v1.ContentCheck.combos:type_name -> mtg.v1.ComboHit
-	16, // 15: mtg.v1.SharedDeck.format:type_name -> mtg.v1.Format
-	17, // 16: mtg.v1.SharedDeck.power:type_name -> mtg.v1.PowerLevel
-	11, // 17: mtg.v1.SharedDeck.cards:type_name -> mtg.v1.SharedCard
-	11, // 18: mtg.v1.SharedDeck.sideboard:type_name -> mtg.v1.SharedCard
-	0,  // 19: mtg.v1.SharedCard.role:type_name -> mtg.v1.CardRole
-	19, // 20: mtg.v1.SharedCard.card:type_name -> mtg.v1.Card
-	0,  // 21: mtg.v1.DeckCard.role:type_name -> mtg.v1.CardRole
-	20, // 22: mtg.v1.DeckCard.owned_printing:type_name -> mtg.v1.Printing
-	14, // 23: mtg.v1.ValidationResult.findings:type_name -> mtg.v1.Finding
-	21, // 24: mtg.v1.ValidationResult.pool_rule:type_name -> mtg.v1.PoolRule
-	22, // 25: mtg.v1.ValidationResult.format:type_name -> mtg.v1.FormatId
-	1,  // 26: mtg.v1.Finding.severity:type_name -> mtg.v1.Severity
-	23, // 27: mtg.v1.BuildMetrics.usage:type_name -> mtg.v1.Usage
-	28, // [28:28] is the sub-list for method output_type
-	28, // [28:28] is the sub-list for method input_type
-	28, // [28:28] is the sub-list for extension type_name
-	28, // [28:28] is the sub-list for extension extendee
-	0,  // [0:28] is the sub-list for field type_name
+	12, // 10: mtg.v1.Deck.commanders:type_name -> mtg.v1.DeckCard
+	4,  // 11: mtg.v1.DeckQuality.probabilities:type_name -> mtg.v1.TierProbability
+	6,  // 12: mtg.v1.DeckProfile.features:type_name -> mtg.v1.ProfileFeature
+	7,  // 13: mtg.v1.DeckProfile.goldfish:type_name -> mtg.v1.Goldfish
+	8,  // 14: mtg.v1.DeckProfile.content:type_name -> mtg.v1.ContentCheck
+	9,  // 15: mtg.v1.ContentCheck.combos:type_name -> mtg.v1.ComboHit
+	16, // 16: mtg.v1.SharedDeck.format:type_name -> mtg.v1.Format
+	17, // 17: mtg.v1.SharedDeck.power:type_name -> mtg.v1.PowerLevel
+	11, // 18: mtg.v1.SharedDeck.cards:type_name -> mtg.v1.SharedCard
+	11, // 19: mtg.v1.SharedDeck.sideboard:type_name -> mtg.v1.SharedCard
+	0,  // 20: mtg.v1.SharedCard.role:type_name -> mtg.v1.CardRole
+	19, // 21: mtg.v1.SharedCard.card:type_name -> mtg.v1.Card
+	0,  // 22: mtg.v1.DeckCard.role:type_name -> mtg.v1.CardRole
+	20, // 23: mtg.v1.DeckCard.owned_printing:type_name -> mtg.v1.Printing
+	14, // 24: mtg.v1.ValidationResult.findings:type_name -> mtg.v1.Finding
+	21, // 25: mtg.v1.ValidationResult.pool_rule:type_name -> mtg.v1.PoolRule
+	22, // 26: mtg.v1.ValidationResult.format:type_name -> mtg.v1.FormatId
+	1,  // 27: mtg.v1.Finding.severity:type_name -> mtg.v1.Severity
+	23, // 28: mtg.v1.BuildMetrics.usage:type_name -> mtg.v1.Usage
+	29, // [29:29] is the sub-list for method output_type
+	29, // [29:29] is the sub-list for method input_type
+	29, // [29:29] is the sub-list for extension type_name
+	29, // [29:29] is the sub-list for extension extendee
+	0,  // [0:29] is the sub-list for field type_name
 }
 
 func init() { file_mtg_v1_deck_proto_init() }

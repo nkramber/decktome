@@ -142,16 +142,20 @@ func CardCount(d *mtgv1.Deck) int32 {
 	return n
 }
 
-// CommanderNames reads the names of the deck's commanders from its card
-// list. A commander the card list omits contributes no name, so a search
-// by commander misses that deck.
+// CommanderNames reads the names of the deck's commanders. The commander
+// list of F-76 answers first, and the card list answers a deck built
+// before that field. A commander neither list names contributes no name,
+// so a search by commander misses that deck.
 func CommanderNames(d *mtgv1.Deck) []string {
 	ids := d.GetCommanderOracleIds()
 	if len(ids) == 0 {
 		return nil
 	}
-	byID := make(map[string]string, len(d.GetCards()))
+	byID := make(map[string]string, len(d.GetCards())+len(d.GetCommanders()))
 	for _, c := range d.GetCards() {
+		byID[c.GetOracleId()] = c.GetName()
+	}
+	for _, c := range d.GetCommanders() {
 		byID[c.GetOracleId()] = c.GetName()
 	}
 	var out []string

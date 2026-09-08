@@ -62,14 +62,20 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
   const nameOf = (id: string) => allEntries.find((c) => c.oracleId === id)?.name ?? byId.get(id)?.name ?? id;
   const commanders = new Set(deck.commanderOracleIds);
   const main = deck.cards.filter((c) => !commanders.has(c.oracleId));
-  // The command zone: one entry per commander id, from cards when the
-  // list holds it and from the card data otherwise (D-289).
+  // The command zone: one entry per commander id. The deck's commander
+  // list answers first, its card list next, and the card data last
+  // (D-289, F-76).
   const commanderEntries: DeckCard[] = deck.commanderOracleIds.map(
     (id) =>
+      deck.commanders.find((c) => c.oracleId === id) ??
       deck.cards.find((c) => c.oracleId === id) ??
       ({ oracleId: id, name: byId.get(id)?.name ?? "Commander", count: 1, role: CardRole.UNSPECIFIED, owned: false, ownedCount: 0, priceUsd: 0, reason: "" } as DeckCard),
   );
   const commanderCount = deck.commanderOracleIds.length;
+  // A deck built before D-608 carries no ownership for its commander,
+  // and an invented mark was F-76. The tile shows the mark only when
+  // every commander carries the fact.
+  const commanderOwnership = commanderCount > 0 && deck.commanders.length === commanderCount;
   // The filters and the sort narrow every zone the same way (PR-20).
   const filterActive = Object.values(filters).some((v) => v !== undefined && v !== "");
   const show = (entries: DeckCard[]) => sortEntries(filterEntries(entries, byId, filters), byId, sort);
@@ -436,7 +442,7 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
       </section>
 
       {commanderEntries.length > 0 && !filterActive && (
-        <CardGroup title="Commander" count={commanderEntries.length} entries={commanderEntries} byId={byId} commanders={commanders} hideOwnership onOpen={setDetail} feedbackDeckId={deck.id} />
+        <CardGroup title="Commander" count={commanderEntries.length} entries={commanderEntries} byId={byId} commanders={commanders} hideOwnership={!commanderOwnership} onOpen={setDetail} feedbackDeckId={deck.id} />
       )}
       {groups.map((g) => (
         <CardGroup

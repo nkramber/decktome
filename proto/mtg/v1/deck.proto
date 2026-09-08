@@ -82,7 +82,14 @@ message Deck {
   // store held the time or the count. The logs held the repair turns
   // alone, so no reader could count them over many decks.
   BuildMetrics build = 26;
-
+  // commanders holds one entry per commander, in commander_oracle_ids
+  // order, with the ownership and the price of that card (F-76, D-608).
+  // The 99 sit in cards, and the commander sat in no list at all, so no
+  // reader could tell an owned commander from one to buy. The web app
+  // invented the answer, and every deck named its commander as a card to
+  // buy (D-604). Unset on a deck built before this, and the reader then
+  // reads no commander in the buy list, which is the safe failure.
+  repeated DeckCard commanders = 27;
 }
 
 // DeckQuality is the grade of the deck quality model (PR-14B). The

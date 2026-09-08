@@ -93,6 +93,17 @@ type State struct {
 	// IllegalCommander is a card the user named as the commander that can
 	// not lead a deck (D-129).
 	IllegalCommander string
+	// UnresolvedCommander is a commander name the card index does not
+	// hold, such as "Aragorn". The commander row asks which card the
+	// reader means, and it clears when the reader answers (F-75, D-606).
+	UnresolvedCommander string
+	// UnresolvedCommanderAsked is the name that row named last. The row
+	// asks again only when the name differs, the D-210 rule of the set
+	// row.
+	UnresolvedCommanderAsked string
+	// CommanderOptions are the card names that row offers, best first.
+	// Empty for a name that matches no commander.
+	CommanderOptions []string
 	// CurrentOffer are the names on the table now. The pick row repeats
 	// with these same names until the user asks for others, so the user
 	// never reads a new list as an ignored answer (D-80).
@@ -305,6 +316,52 @@ func (s *State) SetUnresolved(phrase string, options []string) {
 	}
 	s.UnresolvedSet, s.SetOptions = phrase, options
 	s.Ctx.SetUnresolved = true
+}
+
+// SlotCommanderUnresolved is the state key of the row that asks which
+// card a commander name means. It is its own key, as SlotSetUnresolved
+// is: the name the reader wrote is not the commander until the reader
+// picks one card (F-75, D-606).
+const SlotCommanderUnresolved = "commander_unresolved"
+
+// CommanderResolvedName closes the row that asks which card a commander
+// name means, and it records the card the reader picked.
+func (s *State) CommanderResolvedName(name string) {
+	s.UnresolvedCommander, s.CommanderOptions = "", nil
+	s.Ctx.CommanderUnresolved, s.Ctx.CommanderNoMatch = false, false
+	s.Close(SlotCommanderUnresolved)
+	s.SetCommander(name)
+}
+
+// DropUnresolvedCommander closes that row with no commander. The reader
+// answered "None of these", so the app offers its own three names
+// (D-607).
+func (s *State) DropUnresolvedCommander() {
+	s.UnresolvedCommander, s.CommanderOptions = "", nil
+	s.Ctx.CommanderUnresolved, s.Ctx.CommanderNoMatch = false, false
+	s.Close(SlotCommanderUnresolved)
+}
+
+// CommanderUnresolved records a commander name the card index does not
+// hold. options are the cards the row offers, best first, and an empty
+// list marks a name that matches no commander.
+func (s *State) CommanderUnresolved(name string, options []string) {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return
+	}
+	s.UnresolvedCommander, s.CommanderOptions = name, options
+	s.Ctx.CommanderUnresolved = true
+	s.Ctx.CommanderNoMatch = len(options) == 0
+}
+
+// RecordAskedCommander keeps the name that row just named.
+func (s *State) RecordAskedCommander() { s.UnresolvedCommanderAsked = s.UnresolvedCommander }
+
+// BadCommanderChanged reports whether that row would name another name
+// than it named last (D-210).
+func (s *State) BadCommanderChanged() bool {
+	return !strings.EqualFold(strings.TrimSpace(s.UnresolvedCommander), strings.TrimSpace(s.UnresolvedCommanderAsked))
 }
 
 // RecordAskedSet keeps the set phrase the row just named.

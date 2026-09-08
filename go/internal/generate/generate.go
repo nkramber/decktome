@@ -398,6 +398,7 @@ func (b *Builder) assemble(ctx context.Context, req Request, out *deckOut) pass 
 		Power:              req.Power,
 		Summary:            strings.TrimSpace(out.Summary),
 		CommanderOracleIds: commanders,
+		Commanders:         commanderCards(commanders, b.cards, req.OracleCounts),
 		Cards:              main.Cards,
 		Sideboard:          side.Cards,
 		SessionId:          req.SessionID,
@@ -514,6 +515,36 @@ func (b *Builder) assemble(ctx context.Context, req Request, out *deckOut) pass 
 		deck.Summary = strings.TrimSpace(deck.Summary + "\n\n" + line)
 	}
 	return pass{deck: deck, misses: append(main.Misses, side.Misses...)}
+}
+
+// commanderCards is one entry per commander, with the ownership and the
+// price of that card (F-76, D-608). The commander sits in no card list,
+// so no reader could tell an owned commander from one to buy, and the
+// web app invented the answer (D-604).
+//
+// The buy cost already counts an unowned commander: BuyCostWith reads
+// the commanders from the card source. This carries the same fact to
+// every reader of the deck.
+func commanderCards(ids []string, cards rules.CardSource, owned map[string]int32) []*mtgv1.DeckCard {
+	if len(ids) == 0 || cards == nil {
+		return nil
+	}
+	out := make([]*mtgv1.DeckCard, 0, len(ids))
+	for _, id := range ids {
+		c, ok := cards.ByOracleID(id)
+		if !ok {
+			continue
+		}
+		n := owned[id]
+		out = append(out, &mtgv1.DeckCard{
+			OracleId: id, Name: c.GetName(), Count: 1,
+			Role:       mtgv1.CardRole_CARD_ROLE_THREAT,
+			Owned:      n > 0,
+			OwnedCount: n,
+			PriceUsd:   c.GetPriceUsd(),
+		})
+	}
+	return out
 }
 
 // addFinding appends one finding and keeps Passed true to its meaning: a

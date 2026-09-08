@@ -12,6 +12,7 @@ const byId = new Map<string, Card>([
 const deck = {
   id: "d1",
   commanderOracleIds: ["o-cmd"],
+  commanders: [],
   cards: [
     { oracleId: "o-sw", name: "soul warden", count: 4, owned: false, ownedCount: 3, priceUsd: 0.5 },
     { oracleId: "o-sol", name: "Sol Ring", count: 1, owned: true, ownedCount: 0, priceUsd: 2 },
@@ -34,6 +35,21 @@ describe("buyRows", () => {
   // cost of zero, and the buy list held the commander all the same.
   it("names no commander the deck holds no entry for", () => {
     const { needed } = buyRows(deck, byId);
+    expect(needed.map((r) => r.oracleId)).not.toContain("o-cmd");
+  });
+
+  // D-608: the deck carries the ownership of its commander now, so a
+  // commander the reader does not own reaches the buy list with its
+  // price, and an owned one does not.
+  it("buys a commander the deck marks unowned", () => {
+    const d = { ...deck, commanders: [{ oracleId: "o-cmd", name: "Anikthea, Hand of Erebos", count: 1, owned: false, ownedCount: 0, priceUsd: 3.4 }] } as unknown as Deck;
+    const { needed } = buyRows(d, byId);
+    expect(needed[0]).toEqual({ oracleId: "o-cmd", name: "Anikthea, Hand of Erebos", count: 1, priceUsd: 3.4, scryfallUrl: "https://scryfall.com/card/cmm/8" });
+  });
+
+  it("buys no commander the deck marks owned", () => {
+    const d = { ...deck, commanders: [{ oracleId: "o-cmd", name: "Anikthea, Hand of Erebos", count: 1, owned: true, ownedCount: 1, priceUsd: 3.4 }] } as unknown as Deck;
+    const { needed } = buyRows(d, byId);
     expect(needed.map((r) => r.oracleId)).not.toContain("o-cmd");
   });
 

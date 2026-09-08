@@ -234,6 +234,8 @@ func (a *Agent) readFacts(st *State) {
 	st.Ctx.SetChanged = st.BadSetChanged()
 	// So does the precon row (D-496).
 	st.Ctx.PreconChanged = st.BadPreconChanged()
+	// So does the row that asks which card a commander name means (F-75).
+	st.Ctx.CommanderChanged = st.BadCommanderChanged()
 	// A named card that can lead a deck may fix the deck's color
 	// identity, and nothing has settled its role yet. The color row
 	// waits, or it asks for colors the commander already decides (D-388).
@@ -460,6 +462,11 @@ func (a *Agent) send(ctx context.Context, st *State, message string, chosen []ch
 			if c.Row.StateKey() == SlotSetUnresolved {
 				st.RecordAskedSet()
 			}
+			// The row of F-75 follows it too, so a reader who repeats a
+			// name this app can not settle reads the sentence once.
+			if c.Row.StateKey() == SlotCommanderUnresolved {
+				st.RecordAskedCommander()
+			}
 		}
 		st.MarkAsked(c.Row.ID, c.Row.StateKey(), c.Row.Slot)
 		rec := Ask{
@@ -636,7 +643,16 @@ func (a *Agent) applyOptionAnswers(st *State) {
 			continue
 		}
 		row, ok := a.cat.Row(ask.RowID)
-		if !ok || ans.Index < 0 || ans.Index >= len(row.OptionValues) {
+		if !ok {
+			continue
+		}
+		// The row of F-75 offers card names, and the catalog can not hold
+		// them: they change with the name the reader wrote (D-606).
+		if row.StateKey() == SlotCommanderUnresolved {
+			a.applyCommanderOption(st, ans.Index)
+			continue
+		}
+		if ans.Index < 0 || ans.Index >= len(row.OptionValues) {
 			continue
 		}
 		value := row.OptionValues[ans.Index]
@@ -680,6 +696,26 @@ func (a *Agent) setSlotValue(st *State, row Row, key, value string) bool {
 	}
 	st.Close(key)
 	return true
+}
+
+// applyCommanderOption reads the answer to the row that asks which card
+// a commander name means (F-75). The index names one card of the list
+// that went out, and the index after the last one is "None of these"
+// (D-607).
+func (a *Agent) applyCommanderOption(st *State, index int) {
+	options := st.CommanderOptions
+	switch {
+	case index < 0 || index > len(options) || len(options) == 0:
+		return
+	case index == len(options):
+		a.log.Info("the reader wanted none of the cards of that name, so the app offers its own",
+			"session", st.SessionID, "name", st.UnresolvedCommander)
+		st.DropUnresolvedCommander()
+	default:
+		a.log.Info("the reader picked the card the name meant, with no model in the path",
+			"session", st.SessionID, "name", st.UnresolvedCommander, "card", options[index])
+		st.CommanderResolvedName(options[index])
+	}
 }
 
 // closeByOption closes an advisory key when the user repeats one of the
@@ -1813,10 +1849,43 @@ func (a *Agent) applyNames(st *State, out classifyOut) {
 					"session", st.SessionID, "dropped", name)
 				st.NamedCards = withoutName(st.NamedCards, name)
 				continue
+			case a.askWhichCommander(st, name):
+				// The name is not the commander until the reader picks a
+				// card (F-75, D-606).
+				continue
 			}
 		}
 		st.SetCommander(name)
 	}
+	// A commander the index knows answers the row that asks which card a
+	// name means, whatever words brought it (F-75).
+	if st.Ctx.CommanderSet && st.Ctx.CommanderUnresolved {
+		st.DropUnresolvedCommander()
+	}
+}
+
+// askWhichCommander records a commander name the card index does not
+// hold, so the row asks which card the reader means (F-75, D-606). It
+// reports whether the row took the name.
+//
+// The reader wrote "Aragorn", and no card carries that name alone.
+// applyNames set the name, build.go missed it in the index, and the
+// build took the delegation path of D-232 with no word to the reader.
+//
+// The name leaves the named cards with it. It names no card, so the role
+// row would ask about a card that does not exist.
+func (a *Agent) askWhichCommander(st *State, name string) bool {
+	r, ok := a.hints.(CommanderNameResolver)
+	if !ok {
+		return false
+	}
+	options := r.ResolveCommander(name)
+	a.log.Info("the card index holds no commander of this name, so the row asks which card",
+		"session", st.SessionID, "name", name, "options", len(options))
+	st.NamedCards = withoutName(st.NamedCards, name)
+	st.Ctx.NamedCard = len(st.NamedCards) > 0
+	st.CommanderUnresolved(name, options)
+	return true
 }
 
 // knownCommander reports whether a commander name the index knows is set.
