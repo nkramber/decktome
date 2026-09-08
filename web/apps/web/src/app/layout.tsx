@@ -5,6 +5,7 @@ import { Link, Outlet } from "react-router";
 import { useAuth } from "../features/auth/auth-context";
 import { useInviteState } from "../features/auth/invite-state";
 import { signOutAndClear } from "../features/auth/sign-out";
+import { InstallHint } from "../features/shell/install-hint";
 import { errorMessage } from "../lib/errors";
 import { useAppStore } from "../lib/store";
 import { healthFooterChunk, scheduleWarm, toasterChunk } from "./chunks";
@@ -74,6 +75,7 @@ export function Layout() {
         <Outlet />
       </main>
 
+      <InstallHint />
       <HealthFooter />
       <Toaster />
     </div>

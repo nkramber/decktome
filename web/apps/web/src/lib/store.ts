@@ -23,11 +23,15 @@ export type AppState = {
   // only when it is true, so a reader with no deck never sees a box
   // appear and go (F-67).
   hadDecks: boolean;
+  // installHintDismissed says the reader closed the install hint on this
+  // device. The hint shows once, and never again after that (PR-25).
+  installHintDismissed: boolean;
   setCollection: (collectionId: string) => void;
   clearCollection: () => void;
   setSessionId: (sessionId: string) => void;
   setPoolMode: (poolMode: PoolMode) => void;
   setHadDecks: (hadDecks: boolean) => void;
+  dismissInstallHint: () => void;
   // reset forgets every id. Sign-out calls it.
   reset: () => void;
 };
@@ -39,6 +43,7 @@ export const useAppStore = create<AppState>()(
       sessionId: "",
       poolMode: "any",
       hadDecks: false,
+      installHintDismissed: false,
       // A named collection leads by default, and the database fills a
       // gap. A reader who wants no fill checks "Only cards I own".
       setCollection: (collectionId) => set({ collectionId, poolMode: "owned_first" }),
@@ -46,8 +51,12 @@ export const useAppStore = create<AppState>()(
       setSessionId: (sessionId) => set({ sessionId }),
       setPoolMode: (poolMode) => set({ poolMode }),
       setHadDecks: (hadDecks) => set({ hadDecks }),
+      dismissInstallHint: () => set({ installHintDismissed: true }),
       // Sign-out forgets the deck count with the ids: the next reader is
       // another person.
+      // The install hint is not reset here. It answers a question about
+      // this device's Home Screen, and the next reader of the device
+      // already read it (PR-25).
       reset: () => set({ collectionId: "", sessionId: "", poolMode: "any", hadDecks: false }),
     }),
     {
@@ -60,7 +69,7 @@ export const useAppStore = create<AppState>()(
       // the mark needs no new version.
       version: 1,
       migrate: (persisted) => ({ sessionId: (persisted as { sessionId?: string } | null)?.sessionId ?? "" }) as Partial<AppState>,
-      partialize: (s) => ({ sessionId: s.sessionId, hadDecks: s.hadDecks }),
+      partialize: (s) => ({ sessionId: s.sessionId, hadDecks: s.hadDecks, installHintDismissed: s.installHintDismissed }),
     },
   ),
 );

@@ -778,7 +778,9 @@ describe("the pool of a new chat", () => {
     useAppStore.getState().setCollection("c1");
     await waitFor(() => expect(localStorage.getItem("mtg-deck-builder")).not.toBeNull());
     const stored = JSON.parse(localStorage.getItem("mtg-deck-builder") ?? "{}") as { state: Record<string, unknown> };
-    expect(Object.keys(stored.state).sort()).toEqual(["hadDecks", "sessionId"]);
+    // The install hint of PR-25 joins the stored keys: it answers a
+    // question about this device, and a reload must not ask it again.
+    expect(Object.keys(stored.state).sort()).toEqual(["hadDecks", "installHintDismissed", "sessionId"]);
     expect(stored.state).not.toHaveProperty("collectionId");
     expect(stored.state).not.toHaveProperty("poolMode");
   });

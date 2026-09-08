@@ -6,6 +6,7 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-08 correction pass 121 (PR-25 built, D-621 to D-623): the app installs on a phone. It holds a manifest, a service worker that updates itself, and the icons from the tome mark. It holds an install hint and a paste box for the CSV of a phone. A touch target reaches 44 pixels on a coarse pointer. No response of the API is ever cached. The phone walk is what is left. Changes: PR-25, D-621, D-622, D-623.
 2026-09-08 correction pass 120 (the PR-22 gate, D-620): the build walk of the deploy half passed on the deployed app. The refusal of an email off the invite list passed with it. Three of the four gate items hold. The measured monthly cost at idle is the fourth, and it waits for a quiet week. Changes: PR-22, D-620.
 2026-09-08 correction pass 119 (the second walk, F-82, F-83, D-618, D-619): the owner walked the deployed app again, and item 1 of the PR-22 gate held: upload, build, revise, and export. The walk found two faults. The app asked the reader whether a Legendary Artifact leads the deck. One export that hangs disabled every export button with no word. Changes: F-82, F-83, D-618, D-619.
 2026-09-08 correction pass 118 (deck gate run 18, D-617): the paid measure of PR-33 reads PASS. Repair turns fell from 12 of 25 to 3 of 25. The wall clock fell 27 percent and the cost 28 percent. Run 18 is the decks baseline. The two precon upgrades hold 8 of the 10 off-band findings that are left. Changes: PR-33, D-617.
@@ -964,12 +965,16 @@ Gate:
 One flow on `workflow_dispatch` only. It signs in over the emulator and uploads the fixture export. Then it starts a session from the form with the fake provider, opens the deck, and exports it. The fake provider serves canned answers for the classify, ask, and generate roles, so the flow costs nothing. One run takes about 5 minutes of Actions time, and the owner triggers it before a merge that touches the user path. Gate: the flow passes on the emulators.
 > *In plain English:* a robot that clicks through the whole app once, on demand. A change that breaks the path shows up before it ships.
 
-**PR-25: The installable web app (D-547, answers OQ-66).** 🔧 planned, its own PR outside PR-22, after PR-23 in the phase list. The proposal is `docs/reference/mobile-and-engagement-2026-09-05.md`.
+**PR-25: The installable web app (D-547, answers OQ-66).** 🔧 built 2026-09-08 (D-621 to D-623), its own PR outside PR-22, after PR-23 in the phase list. **The phone walk is what is left**, and it closes the open item of PR-16. The proposal is `docs/reference/mobile-and-engagement-2026-09-05.md`.
 A web manifest with the name, the mark as icons in the required sizes, `display: standalone`, and the dark theme color. A service worker caches the app shell, so a cold open with no network shows the shell and the last deck list. `vite-plugin-pwa` writes both from the Vite build.
 
 An install hint shows once on a phone, after the first deck: on iOS the user taps Share, then Add to Home Screen. The upload dialog accepts `.csv` from the Files picker, and a paste box takes the CSV text. The phone gate becomes explicit. On iOS 26 a Home Screen site opens as a web app by default. A Home Screen web app receives web push since iOS 16.4 (read 2026-09-05).
 
 Gate: every route at 390 pixels wide passes axe in the dark theme. Every touch target is 44 pixels or more, and the chat input stays above the keyboard. Lighthouse reports the app installable. The owner walks the whole path on a phone, which closes the open item of PR-16.
+
+The free half holds. `src/lib/pwa.test.ts` reads every field an install rests on, and it reads the icon files: the manifest can not name a file nobody generated. Every button size carries a coarse-pointer minimum of 44 pixels, and a test reads each one. The install hint has five tests, and the paste box has one. 317 web tests pass, `make smoke` passes in 4.4 seconds, and `make verify` passes.
+
+**The phone walk is the paid half, and it costs no money.** The owner opens `decktome.com` on the phone, adds it to the Home Screen, opens it from there with the network off, and walks the path. Two things need a real phone: the install itself, and the chat input above the keyboard.
 > *In plain English:* the app becomes something you add to your phone's home screen and open like any other app. It starts with no signal, and the collection file from ManaBox goes in with two taps.
 
 **PR-26: The return channels (OQ-67).** ❓ needs owner input on the channels and the events. Stage B of the proposal.

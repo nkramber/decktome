@@ -17,11 +17,14 @@ const buttonVariants = cva(
         destructive: "bg-danger text-danger-foreground hover:brightness-110",
         link: "text-primary tracking-normal normal-case underline underline-offset-4 hover:no-underline",
       },
+      // A finger needs 44 pixels, and a mouse does not. Every size holds
+      // its desktop height and grows on a coarse pointer, so the phone
+      // gate of PR-25 holds without a wider layout anywhere else.
       size: {
-        default: "h-9 px-4 py-2",
-        sm: "h-8 px-3",
-        lg: "h-10 px-6",
-        icon: "size-9",
+        default: "h-9 px-4 py-2 pointer-coarse:min-h-11",
+        sm: "h-8 px-3 pointer-coarse:min-h-11",
+        lg: "h-10 px-6 pointer-coarse:min-h-11",
+        icon: "size-9 pointer-coarse:size-11",
       },
     },
     defaultVariants: { variant: "default", size: "default" },
