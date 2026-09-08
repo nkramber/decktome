@@ -37,6 +37,7 @@ import (
 	"github.com/nkramber/decktome/go/internal/gcpenv"
 	"github.com/nkramber/decktome/go/internal/generate"
 	"github.com/nkramber/decktome/go/internal/health"
+	"github.com/nkramber/decktome/go/internal/invitesvc"
 	"github.com/nkramber/decktome/go/internal/llm"
 	"github.com/nkramber/decktome/go/internal/meta"
 	"github.com/nkramber/decktome/go/internal/precons"
@@ -61,6 +62,22 @@ const defaultReloadSeconds = 600
 // (D-315). Sixty is one a second, far above a person and low enough to
 // bound a scan.
 const sharedReadsPerMinute = 60
+
+// inviteChecksPerMinute caps the invite checks of one client address
+// (D-592). The check answers whether an email is on the list, so an
+// unbounded one reads the list by trying addresses. Ten a minute is far
+// above a person who types one address into a form.
+const inviteChecksPerMinute = 10
+
+// inviteListOrNil answers the list, or a nil interface when there is
+// none. A typed nil pointer in an interface is not nil, and the service
+// would then call Allowed on it.
+func inviteListOrNil(l *allowlist.List) invitesvc.Allowlist {
+	if l == nil {
+		return nil
+	}
+	return l
+}
 
 // maxRequestBytes bounds one request body before it enters memory. The
 // largest expected body is a ManaBox export, under 5 MiB.
@@ -124,8 +141,10 @@ func run(ctx context.Context, logger *slog.Logger) error {
 	// The invite list gates every deployed request (D-314, D-420). Local
 	// mode allows every emulator user, and ALLOWLIST=1 turns the list on
 	// there too, for a test of the refusal.
+	var inviteList *allowlist.List
 	if gcpenv.OnCloudRun() || os.Getenv("ALLOWLIST") == "1" {
-		authOpts.opts = append(authOpts.opts, auth.WithAllowlist(allowlist.FromFirestore(fs)))
+		inviteList = allowlist.FromFirestore(fs)
+		authOpts.opts = append(authOpts.opts, auth.WithAllowlist(inviteList))
 		logger.Info("the invite list gates every request", "document", allowlist.Collection+"/"+allowlist.Doc)
 	}
 	// The interceptor puts the user id in the context.
@@ -174,6 +193,9 @@ func run(ctx context.Context, logger *slog.Logger) error {
 		return fmt.Errorf("agent service: %w", err)
 	}
 	healthServer := health.New(version, cardServer)
+	// The create-account form asks the list before it makes an account
+	// (D-592). A nil list allows every email, which is local mode.
+	inviteServer := invitesvc.New(inviteListOrNil(inviteList))
 
 	// The health RPC answers a probe, which carries no token.
 	probeOpts := []connect.HandlerOption{connect.WithReadMaxBytes(maxRequestBytes)}
@@ -194,6 +216,14 @@ func run(ctx context.Context, logger *slog.Logger) error {
 	mux.Handle(mtgv1connect.NewDeckServiceHandler(deckServer, deckOpts...))
 	mux.Handle(mtgv1connect.NewAgentServiceHandler(agentServer, opts...))
 	mux.Handle(mtgv1connect.NewFeedbackServiceHandler(feedbackServer, opts...))
+	// CheckInvite needs no sign-in: it runs before an account exists
+	// (D-592). It reads a person's input, so the same limiter that
+	// bounds the shared deck reads bounds it, per client address (D-315).
+	inviteLimiter := ratelimit.New(inviteChecksPerMinute, time.Minute)
+	mux.Handle(mtgv1connect.NewInviteServiceHandler(inviteServer,
+		append([]connect.HandlerOption{connect.WithInterceptors(
+			inviteLimiter.Interceptor(mtgv1connect.InviteServiceCheckInviteProcedure),
+		)}, probeOpts...)...))
 	// /healthz is liveness: the process answers. /readyz is readiness:
 	// a card index is loaded, so the RPCs can answer.
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {

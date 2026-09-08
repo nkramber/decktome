@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package mtg.v1;
+
+option go_package = "github.com/nkramber/decktome/go/gen/mtg/v1;mtgv1";
+
+// InviteService answers one question before a person has an account:
+// may this email use the app (D-592)? The create-account form asks it
+// first, so an email off the invite list never becomes an account.
+//
+// It is the one procedure that needs no sign-in and reads a person's
+// input, so a limit per client address bounds it (D-315). It answers a
+// bare yes or no, and it never says whether an account exists.
+service InviteService {
+  rpc CheckInvite(CheckInviteRequest) returns (CheckInviteResponse) {}
+}
+
+message CheckInviteRequest {
+  // email is the address the person typed into the form.
+  string email = 1;
+}
+
+message CheckInviteResponse {
+  // allowed is true when the invite list holds the email. A server with
+  // no list allows every email, which is local mode (guardrail 9).
+  bool allowed = 1;
+}
