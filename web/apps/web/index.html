@@ -2,7 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- The page never zooms and never pans sideways (owner instruction,
+         D-624). This fails the axe meta-viewport rule under WCAG 1.4.4,
+         and the PR-25 gate carries the exception on record. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <!-- iOS reads no SVG for a Home Screen icon, and it reads no
          manifest icon either, so the link names the PNG (PR-25). -->
