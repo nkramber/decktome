@@ -148,12 +148,39 @@ test proves it. A build with profile findings alone makes one model call.
 | A build that ends with no deck | seen twice in two days | none |
 | Decks off band | 26 findings over 40 decks | the gate of Part 3 |
 
-## What this plan does not cover
+## The effort measurement, run 2026-09-08
 
-The generate call itself takes 48 to 91 seconds: `gpt-5.6-terra` at
-medium effort, with a 16,384-token output cap. The owner asked for a
-measurement of low effort against medium on 2026-09-08. Deck gate run 16
-is the medium-effort baseline, so one run measures it.
+The generate call takes 48 to 91 seconds: `gpt-5.6-terra` at medium
+effort, with a 16,384-token output cap. The owner asked for a
+measurement of low effort against medium (D-610), and it ran first
+(D-611). Deck gate run 17 changed one field of run 16,
+`LLM_GENERATE_EFFORT=low`, on the pinned card snapshot of run 16.
 
-The measurement runs after Part 1 to Part 4, or before them. Read the
-question in `docs/owner-questions.md`.
+| | Run 16, medium | Run 17, low |
+|---|---|---|
+| Verdict | PASS | **FAIL** |
+| Wall clock | 3018 s, 120.7 s a prompt | 2823 s, 112.9 s a prompt |
+| Cost | $3.79 | $3.33 |
+| Provider calls | 93 | 93 |
+| Decks through a repair turn | 12 of 25 | 12 of 25 |
+| Warnings | 37 | 31 |
+| Block findings | 0 | 1 |
+
+Low effort saves 7.8 seconds of the 120.7 a prompt takes. It also
+answers prompt 11 with a Commander deck of two copies of Skullport
+Merchant, and the copy limit of the format is one. The repair turn of
+that deck ran for a missed name and left the duplicate in place. The
+block bar is zero tolerance, so the run fails. A shortlist can not make
+a model list one card twice, so the fault is the call. **The generate
+role stays at medium** (D-612).
+
+The measurement also says the latency is not in the call. A build takes
+four minutes because it makes three calls. This plan removes two of
+them.
+
+CAUTION: the epoch moved on two more axes, and the snapshot pin holds neither. The
+plan_rubric prompt moved from version 1 to version 2, and the quality
+model moved from `20260903T210658Z` to `20260907T081149Z`. So the
+`grade` rows and the `plan_score` rows of the two runs do not compare.
+The wall clock, the cost, the call count, the repair count, and the
+block do compare, because no version of either one moves them.
