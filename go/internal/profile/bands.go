@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"math"
 	"sort"
 	"strconv"
 	"strings"
@@ -125,8 +126,14 @@ const DefaultBracket = 3
 
 // Lines writes the bands a generator must build to, one line per
 // feature the prompt can act on. The role counts go out as job targets
-// already, so this names the rest: the curve, the mana base shape, and
-// the tutor and fast-mana caps.
+// already, so this names the rest: the curve, the mana base shape, the
+// tutor and fast-mana caps, and the three numbers the simulation reads.
+//
+// Every feature that can raise an off-band finding reaches the model,
+// here or in the job targets (F-78). Before this the prompt named five
+// of the fifteen features `bands.json` holds, and 12 of the 26 off-band
+// findings of deck gate run 16 and bracket gate run 1 were on two
+// features no prompt ever stated.
 func (b *Bands) Lines(format mtgv1.FormatId, power *mtgv1.PowerLevel) []string {
 	table, _ := b.For(format, power)
 	var out []string
@@ -135,13 +142,31 @@ func (b *Bands) Lines(format mtgv1.FormatId, power *mtgv1.PowerLevel) []string {
 		if !ok {
 			continue
 		}
+		if line := derivedLine(key, band, format); line != "" {
+			out = append(out, line)
+			continue
+		}
 		out = append(out, fmt.Sprintf("- %s: %s", promptWords[key], bandWords(key, band)))
 	}
 	return out
 }
 
+// Words writes one band as the phrase the job block reads, or "" when
+// the format and the power carry no band for the key (F-78, Part 2).
+func (b *Bands) Words(format mtgv1.FormatId, power *mtgv1.PowerLevel, key string) string {
+	table, _ := b.For(format, power)
+	band, ok := table[key]
+	if !ok {
+		return ""
+	}
+	return bandWords(key, band)
+}
+
 // promptKeys are the features the prompt names, in order.
-var promptKeys = []string{KeyAvgManaValue, KeyTappedLand, KeyColorlessLand, KeyTutor, KeyFastMana}
+var promptKeys = []string{
+	KeyAvgManaValue, KeyTappedLand, KeyColorlessLand, KeyTutor, KeyFastMana,
+	KeyColorSources, KeyManaTurnFour, KeyHandsTwoToFourLands, KeyCommanderTurnOverMV,
+}
 
 var promptWords = map[string]string{
 	KeyAvgManaValue:  "average mana value of the nonland cards",
@@ -150,6 +175,44 @@ var promptWords = map[string]string{
 	KeyTutor:         "tutors, cards that search the library for a card",
 	KeyFastMana:      "fast mana, nonland mana producers of mana value one or less",
 }
+
+// derivedLine writes the four features a count can not state. Each one
+// is a measured number, so the line names the number and the cards that
+// move it. It returns "" for a key that reads as a plain band.
+//
+// The source counts come from the Karsten tables of `karsten.go`. Frank
+// Karsten, "How Many Sources Do You Need to Consistently Cast Your
+// Spells? A 2022 Update", TCGplayer, 2022-08-02, read 2026-09-02.
+func derivedLine(key string, band Band, format mtgv1.FormatId) string {
+	switch key {
+	case KeyColorSources:
+		one, two := 13, 18
+		if format == mtgv1.FormatId_FORMAT_ID_COMMANDER {
+			one, two = 19, 26
+		}
+		return fmt.Sprintf("- color sources: every color of the deck needs its own. A card with one colored pip "+
+			"in its cost wants about %d sources of that color, and a card with two pips wants about %d. "+
+			"A land that makes the color counts as one source, and a mana rock or a mana creature as three fourths.", one, two)
+	case KeyManaTurnFour:
+		return fmt.Sprintf("- mana on turn four: the deck must reach %s mana on turn four, as a mean over ten thousand "+
+			"opening hands. More lands raise it, lands that enter untapped raise it, and ramp of mana value two or "+
+			"less raises it.", num(band.Low))
+	case KeyHandsTwoToFourLands:
+		return fmt.Sprintf("- opening hands: at least %s of first seven-card hands must hold two to four lands. "+
+			"The land count alone decides this, so keep the land count inside its band.", percentWords(band.Low))
+	case KeyCommanderTurnOverMV:
+		if band.High == nil {
+			return ""
+		}
+		return fmt.Sprintf("- the commander comes down on time: the mean turn it is castable must be no more than "+
+			"%s of a turn past its mana value. Ramp and lands that enter untapped decide this.", num(*band.High))
+	}
+	return ""
+}
+
+// percentWords writes a share as a percentage, so a prompt line reads
+// "70 percent" and never "0.7".
+func percentWords(v float64) string { return num(math.Round(v*100)) + " percent" }
 
 // bandWords writes a band as a phrase: "2.5 to 3.5", "at most 9", or
 // "4 or more".

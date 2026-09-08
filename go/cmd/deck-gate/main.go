@@ -113,6 +113,13 @@ type result struct {
 	shortlist   int
 	touched     []string
 	productKeys []string
+	// pool, commanderIDs, and power are what the free mana-pass lane of
+	// PR-33 needs. The dry run fills them, and -manapass then runs the
+	// pass over a stored deck with the pool that built it (F-78).
+	pool         *generate.Pool
+	commanderIDs []string
+	power        *mtgv1.PowerLevel
+	format       mtgv1.FormatId
 }
 
 func main() {
@@ -129,6 +136,7 @@ func run() error {
 	noJudge := flag.Bool("no-judge", false, "skip the F-26 judge lane, which costs one judge call a deck")
 	runOut := flag.String("run-out", "", "write the run header and the rows as JSONL here (PR-15)")
 	trim := flag.String("trim", "", "with -dry: write the snapshot trimmed to the cards the prompts reach under this root (D-521)")
+	manaPass := flag.String("manapass", "", "read the decks of a gate document, run the mana pass over each one, and report. Free: no provider call (PR-33)")
 	flag.Parse()
 	if *trim != "" && !*dry {
 		return errors.New("-trim needs -dry: the trimmed snapshot follows the dry run")
@@ -250,6 +258,15 @@ func run() error {
 	}
 	if *dry {
 		fmt.Fprintf(os.Stderr, "\ndry run: %d shortlists built, no provider call ran\n", len(results))
+		if *manaPass != "" {
+			// The lane needs a profiler of its own: the one the build
+			// path wires is built in the paid branch alone.
+			prof, err := gatekit.Profiler(idx, rcfg, quiet)
+			if err != nil {
+				return err
+			}
+			return runManaPass(os.Stdout, *manaPass, results, idx, prof)
+		}
 		if *trim != "" {
 			return writeTrimmed(context.Background(), os.Stderr, *trim, idx, results, binders, preconSet, preconTbl)
 		}
@@ -479,6 +496,8 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 		}
 	}
 	pool := generate.FromList(list, always, buyList)
+	out.pool, out.commanderIDs = pool, commanderIDs
+	out.power, out.format = gatekit.PowerLevel(p.Bracket, p.Power), format
 	out.poolSize = pool.Size()
 	out.shortlist = len(list.Candidates)
 	for _, c := range list.Candidates {

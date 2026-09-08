@@ -11,7 +11,7 @@ GO := go -C go
 BUF := .bin/buf
 PNPM := pnpm --dir web
 
-.PHONY: smoke allow disallow deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check themes-check ste-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
+.PHONY: smoke allow disallow manapass-check deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check themes-check ste-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-14s %s\n", $$1, $$2}'
@@ -215,6 +215,17 @@ TRIM_SNAPSHOT := $(CURDIR)/go/cmd/deck-gate/testdata/snapshot
 deck-gate-dry: ## Build every deck gate shortlist over the trimmed snapshot of the repo, no provider call (D-521)
 	@CARDS_SNAPSHOT_DIR=$(TRIM_SNAPSHOT)/scryfall \
 		$(GO) run ./cmd/deck-gate -dry -collection internal/collections/testdata/manabox_collection.csv
+
+# MANAPASS_IN is the deck gate document the free mana-pass lane reads,
+# and MANAPASS_OUT is where it writes its report (PR-33, F-78).
+MANAPASS_IN ?= docs/reference/pr8-deck-gate-run16.md
+MANAPASS_OUT ?= docs/reference/pr33-manapass-run16.md
+
+manapass-check: ## Run the mana pass over the decks of a gate document and report. Free: no provider call (PR-33)
+	@CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall \
+		$(GO) run ./cmd/deck-gate -dry -collection internal/collections/testdata/manabox_collection.csv \
+		-manapass $(abspath $(MANAPASS_IN)) > $(MANAPASS_OUT)
+	@echo "wrote $(MANAPASS_OUT)"
 
 deck-gate-trim: ## Rewrite the trimmed snapshot from the local store, after a prompt or a fixture changes (D-521)
 	@rm -rf $(TRIM_SNAPSHOT)
