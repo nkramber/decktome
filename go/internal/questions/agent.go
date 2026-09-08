@@ -144,6 +144,10 @@ func (a *Agent) classify(ctx context.Context, st *State, message string, acc *ll
 	a.apply(ctx, st, out, open, words, acc)
 	a.applyWords(st, turnWords{Message: words, Declined: out.DeclinedKeys, Closed: out.ClosedKeys, Open: open})
 	a.closeByOption(st, words)
+	// The reader picked an option, and the engine sets the slot from it
+	// with no model in the path (D-597). It runs after the classifier, so
+	// the reader's own choice is the one that stands.
+	a.applyOptionAnswers(st)
 	a.applyManaPermission(st, words)
 	// The scope question closes when the user answers it with a deck.
 	// The row offers "Yes, a Magic deck", and a user who writes "a Modern
@@ -592,6 +596,80 @@ func (a *Agent) classifyCall(ctx context.Context, st *State, message string, ope
 // minOptionMatch is the shortest option that may close a key by itself.
 // "Yes" and "No" are too common to read as an answer to one question.
 const minOptionMatch = 8
+
+// OptionAnswer is one option the reader picked, by the id of the
+// question and the index of the option. The caller reads them off the
+// structured answers of the request, and they live for one turn.
+type OptionAnswer struct {
+	QuestionID string
+	Index      int
+}
+
+// applyOptionAnswers sets a slot from the option the reader picked
+// (D-597).
+//
+// The client sends the question id and the option index, which name one
+// value exactly. Before this the index became the option text, the text
+// joined the message, and the slot filled only when the classifier wrote
+// a string the slot could read. A model that echoed the option left the
+// slot asked, and the turn then asked nothing and built nothing (F-70).
+// Seventeen of the eighteen rows with options carry a typed slot, so
+// every one of them had that failure in it.
+//
+// A row with no option values is unchanged: the classifier still reads
+// it, and CloseStalled is still the net under it (D-351).
+func (a *Agent) applyOptionAnswers(st *State) {
+	for _, ans := range st.OptionAnswers {
+		ask, ok := st.askOf(ans.QuestionID)
+		if !ok {
+			continue
+		}
+		row, ok := a.cat.Row(ask.RowID)
+		if !ok || ans.Index < 0 || ans.Index >= len(row.OptionValues) {
+			continue
+		}
+		value := row.OptionValues[ans.Index]
+		if value == "" || !a.setSlotValue(st, row, ask.Key, value) {
+			continue
+		}
+		a.log.Info("the reader picked an option, so the slot took its value with no model in the path",
+			"session", st.SessionID, "row", row.ID, "key", ask.Key, "value", value)
+	}
+}
+
+// setSlotValue writes one typed value onto its slot and closes the key.
+// It answers false for a slot it does not type, so the caller leaves
+// that row to the classifier.
+func (a *Agent) setSlotValue(st *State, row Row, key, value string) bool {
+	switch row.Slot {
+	case "power":
+		p := power(value)
+		if p == nil {
+			return false
+		}
+		st.Slots.Power = p
+	case "format":
+		id, ok := formatIDs[slotWord(value)]
+		if !ok {
+			return false
+		}
+		st.Slots.Format = &mtgv1.Format{Id: id}
+	case "pool_rule":
+		rule, ok := poolRules[slotWord(value)]
+		if !ok {
+			return false
+		}
+		// An owned rule needs a collection behind it (D-371).
+		if rule != mtgv1.PoolRule_POOL_RULE_ANY_CARD && !st.Ctx.HasCollection {
+			rule = mtgv1.PoolRule_POOL_RULE_ANY_CARD
+		}
+		st.Slots.PoolRule = rule
+	default:
+		return false
+	}
+	st.Close(key)
+	return true
+}
 
 // closeByOption closes an advisory key when the user repeats one of the
 // options that question offered. It is a net under the classifier, and it

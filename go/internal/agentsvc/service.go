@@ -492,6 +492,10 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 	if err := s.checkSpendCap(ctx, uid); err != nil {
 		return err
 	}
+	// The options the reader picked reach the engine as data (D-597). The
+	// folded message carries them as words too, for the classifier to
+	// read, and the engine no longer depends on that round trip.
+	st.OptionAnswers = optionAnswers(req.Msg.GetAnswers())
 	acc := llm.NewAccumulator(s.prices)
 	// The total before this turn, kept apart. The turn sums the report
 	// onto it twice: once after the question calls, and once more after
@@ -502,6 +506,9 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 	// produced: the session keeps the usage of a failed turn too.
 	defer s.recordSpend(ctx, uid, session, usageBefore)
 	var stalled []string
+	// unread marks a turn that read no answer to the question that is
+	// out, and closed nothing (D-598).
+	var unread bool
 	res, turnErr := agent.Turn(ctx, st, message, acc)
 	// The turn is stored either way. A failed turn keeps the slots the
 	// classify call already filled, so a retry does not start again.
@@ -526,12 +533,22 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 		// ever starts. The reader sees a chat that does nothing. Close
 		// those questions with no value and build (D-351).
 		if !res.Ready && len(res.Questions) == 0 {
-			if closed, _ := st.CloseStalled(); len(closed) > 0 {
+			closed, waiting := st.CloseStalled()
+			if len(closed) > 0 {
 				s.log.WarnContext(ctx, "a turn asked nothing and was not ready, so the open questions were closed",
 					"session", session.GetId(), "keys", closed)
 				res.Ready = st.Ready(s.cat)
 				session.Slots = st.Slots
 				stalled = closed
+			}
+			// A turn that asks nothing, builds nothing, and says nothing
+			// reads as an app that broke (D-598). The net of D-351 holds
+			// the questions for StallGrace turns, so this turn is inside
+			// that wait, and the reader has no way to know it.
+			if len(closed) == 0 && len(waiting) > 0 {
+				s.log.WarnContext(ctx, "a turn asked nothing, was not ready, and closed nothing",
+					"session", session.GetId(), "waiting", waiting)
+				unread = true
 			}
 		}
 		session.Status = mtgv1.SessionStatus_SESSION_STATUS_ASKING
@@ -566,6 +583,16 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 	if len(stalled) > 0 {
 		if err := stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Status{
 			Status: "I did not read an answer to every question, so I am building with what I have"}}); err != nil {
+			return err
+		}
+	}
+	// Never a silent turn (D-598). The reader answered, the answer did
+	// not reach its slot, and this turn asks nothing and builds nothing.
+	// Silence reads as an app that stopped, and the reader waits for a
+	// screen that never changes.
+	if unread {
+		if err := stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Status{
+			Status: "I did not read your last answer. Answer again in your own words, or send another message and I will go on without it"}}); err != nil {
 			return err
 		}
 	}
@@ -888,6 +915,20 @@ func declineNegatives(st *questions.State, answers []*mtgv1.Answer, session *mtg
 		}
 	}
 	return closed
+}
+
+// optionAnswers reads the options the reader picked, for the engine to
+// apply as data (D-597). A reply with text is the reader's own words,
+// and the classifier reads those.
+func optionAnswers(answers []*mtgv1.Answer) []questions.OptionAnswer {
+	var out []questions.OptionAnswer
+	for _, a := range answers {
+		if a.OptionIndex == nil || a.GetDeclined() || strings.TrimSpace(a.GetText()) != "" {
+			continue
+		}
+		out = append(out, questions.OptionAnswer{QuestionID: a.GetQuestionId(), Index: int(a.GetOptionIndex())})
+	}
+	return out
 }
 
 // withAnswers folds the structured replies into the message the
