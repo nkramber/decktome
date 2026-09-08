@@ -17,6 +17,11 @@ import (
 type State struct {
 	Slots *mtgv1.Slots
 	Ctx   Context
+	// OptionAnswers are the options the reader picked this turn, by
+	// question id and index (D-597). The caller sets them before Turn,
+	// and Turn applies them after the classifier, so the reader's own
+	// choice stands. They live for one turn, and no snapshot holds them.
+	OptionAnswers []OptionAnswer
 	// SessionID is the conversation id. It goes out as the provider cache
 	// key, so every call of one session routes together.
 	SessionID string

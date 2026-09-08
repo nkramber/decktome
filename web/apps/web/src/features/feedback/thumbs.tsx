@@ -16,15 +16,20 @@ export type Target =
   | { kind: FeedbackKind.QUESTION; sessionId: string; questionId: string }
   | { kind: FeedbackKind.SUMMARY; deckId: string }
   | { kind: FeedbackKind.CARD; deckId: string; oracleId: string }
-  | { kind: FeedbackKind.DECK; deckId: string };
+  | { kind: FeedbackKind.DECK; deckId: string }
+  | { kind: FeedbackKind.CHAT; sessionId: string };
 
 export function feedbackOf(target: Target, verdict: FeedbackVerdict, reasons: string[] = [], text = ""): MessageInitShape<typeof FeedbackSchema> {
+  // A chat verdict names the session and no question: a chat that stops
+  // between questions belongs to none of them (D-594).
   const ids =
     target.kind === FeedbackKind.QUESTION
       ? { sessionId: target.sessionId, questionId: target.questionId }
-      : target.kind === FeedbackKind.CARD
-        ? { deckId: target.deckId, oracleId: target.oracleId }
-        : { deckId: target.deckId };
+      : target.kind === FeedbackKind.CHAT
+        ? { sessionId: target.sessionId }
+        : target.kind === FeedbackKind.CARD
+          ? { deckId: target.deckId, oracleId: target.oracleId }
+          : { deckId: target.deckId };
   return { kind: target.kind, verdict, reasons, text, ...ids };
 }
 

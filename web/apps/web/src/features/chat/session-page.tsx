@@ -16,6 +16,7 @@ import { cn } from "../../lib/cn";
 import { errorMessage } from "../../lib/errors";
 import { type PoolMode, useAppStore } from "../../lib/store";
 import { DeckView } from "../deck/deck-view";
+import { ReportProblem } from "../feedback/report-problem";
 import { PoolPicker, useCollections } from "./pool-picker";
 import { BuildStepper } from "./build-stepper";
 import { RecentDecks, useRecentDecks } from "./recent-decks";
@@ -513,6 +514,11 @@ export function ChatPanel({
           That message is too long. Shorten it.
         </p>
       )}
+      {/* The verdict on the chat as a whole sits under the box (D-594).
+          The thumbs read one question, and a chat that stops between
+          questions belongs to none of them. A chat with no session has
+          nothing to report yet. */}
+      {state.sessionId !== "" && <ReportProblem sessionId={state.sessionId} />}
     </form>
   );
 

@@ -111,6 +111,18 @@ func (s *State) DeclineKey(key string) {
 }
 
 // keyOfQuestion reads the state key of a question the session sent.
+// askOf reads the newest ask record of one question id. The record
+// carries the row and the key, so a structured answer reaches its slot
+// with no text to match (D-597).
+func (s *State) askOf(questionID string) (Ask, bool) {
+	for i := len(s.Asks) - 1; i >= 0; i-- {
+		if s.Asks[i].QuestionID == questionID {
+			return s.Asks[i], true
+		}
+	}
+	return Ask{}, false
+}
+
 func (s *State) keyOfQuestion(questionID string) string {
 	for i := len(s.Asks) - 1; i >= 0; i-- {
 		if s.Asks[i].QuestionID == questionID {

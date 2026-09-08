@@ -35,6 +35,11 @@ const (
 	FeedbackKind_FEEDBACK_KIND_CARD FeedbackKind = 3
 	// FEEDBACK_KIND_DECK is the deck as a whole.
 	FeedbackKind_FEEDBACK_KIND_DECK FeedbackKind = 4
+	// FEEDBACK_KIND_CHAT is the conversation as a whole (D-594). The
+	// thumbs of a question read one question, and a chat that stops
+	// between questions belongs to none of them. It names the session and
+	// no question.
+	FeedbackKind_FEEDBACK_KIND_CHAT FeedbackKind = 5
 )
 
 // Enum value maps for FeedbackKind.
@@ -45,6 +50,7 @@ var (
 		2: "FEEDBACK_KIND_SUMMARY",
 		3: "FEEDBACK_KIND_CARD",
 		4: "FEEDBACK_KIND_DECK",
+		5: "FEEDBACK_KIND_CHAT",
 	}
 	FeedbackKind_value = map[string]int32{
 		"FEEDBACK_KIND_UNSPECIFIED": 0,
@@ -52,6 +58,7 @@ var (
 		"FEEDBACK_KIND_SUMMARY":     2,
 		"FEEDBACK_KIND_CARD":        3,
 		"FEEDBACK_KIND_DECK":        4,
+		"FEEDBACK_KIND_CHAT":        5,
 	}
 )
 
@@ -140,7 +147,8 @@ type Feedback struct {
 	state   protoimpl.MessageState `protogen:"open.v1"`
 	Kind    FeedbackKind           `protobuf:"varint,1,opt,name=kind,proto3,enum=mtg.v1.FeedbackKind" json:"kind,omitempty"`
 	Verdict FeedbackVerdict        `protobuf:"varint,2,opt,name=verdict,proto3,enum=mtg.v1.FeedbackVerdict" json:"verdict,omitempty"`
-	// session_id and question_id name the question, for kind QUESTION.
+	// session_id names the session, for kinds QUESTION and CHAT.
+	// question_id names the question, for kind QUESTION alone.
 	SessionId  string `protobuf:"bytes,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	QuestionId string `protobuf:"bytes,4,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
 	// deck_id names the deck, for kinds SUMMARY, CARD, and DECK.
@@ -352,13 +360,14 @@ const file_mtg_v1_feedback_service_proto_rawDesc = "" +
 	"\bfeedback\x18\x01 \x01(\v2\x10.mtg.v1.FeedbackR\bfeedback\"9\n" +
 	"\x16SubmitFeedbackResponse\x12\x1f\n" +
 	"\vfeedback_id\x18\x01 \x01(\tR\n" +
-	"feedbackId*\x94\x01\n" +
+	"feedbackId*\xac\x01\n" +
 	"\fFeedbackKind\x12\x1d\n" +
 	"\x19FEEDBACK_KIND_UNSPECIFIED\x10\x00\x12\x1a\n" +
 	"\x16FEEDBACK_KIND_QUESTION\x10\x01\x12\x19\n" +
 	"\x15FEEDBACK_KIND_SUMMARY\x10\x02\x12\x16\n" +
 	"\x12FEEDBACK_KIND_CARD\x10\x03\x12\x16\n" +
-	"\x12FEEDBACK_KIND_DECK\x10\x04*g\n" +
+	"\x12FEEDBACK_KIND_DECK\x10\x04\x12\x16\n" +
+	"\x12FEEDBACK_KIND_CHAT\x10\x05*g\n" +
 	"\x0fFeedbackVerdict\x12 \n" +
 	"\x1cFEEDBACK_VERDICT_UNSPECIFIED\x10\x00\x12\x17\n" +
 	"\x13FEEDBACK_VERDICT_UP\x10\x01\x12\x19\n" +

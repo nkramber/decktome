@@ -110,9 +110,14 @@ func (s *Server) SubmitFeedback(ctx context.Context, req *connect.Request[mtgv1.
 	if err != nil {
 		return nil, invalid(err)
 	}
-	if err := s.checkOwner(ctx, uid, fb); err != nil {
+	sess, err := s.checkOwner(ctx, uid, fb)
+	if err != nil {
 		return nil, err
 	}
+	// The exact wording the reader saw, and what the reader answered
+	// (D-596). A question id alone reads nothing after a prompt changes.
+	// Both come from the stored session, so neither is the client's word.
+	item.QuestionText, item.AnswerText = questionContext(sess, item.QuestionID)
 	item.Prompts = Prompts()
 	item.CreatedAt = s.now()
 	id, err := s.store.Add(ctx, uid, item)
@@ -164,14 +169,17 @@ func itemOf(fb *mtgv1.Feedback) (feedback.Item, error) {
 		return item, errDownNeedsReason
 	}
 	question := kind == mtgv1.FeedbackKind_FEEDBACK_KIND_QUESTION
+	chat := kind == mtgv1.FeedbackKind_FEEDBACK_KIND_CHAT
 	card := kind == mtgv1.FeedbackKind_FEEDBACK_KIND_CARD
-	if err := wantID("session_id", item.SessionID, question); err != nil {
+	// A chat verdict names the session and no question, and it names no
+	// deck: a chat that stops has none (D-594).
+	if err := wantID("session_id", item.SessionID, question || chat); err != nil {
 		return item, err
 	}
 	if err := wantID("question_id", item.QuestionID, question); err != nil {
 		return item, err
 	}
-	if err := wantID("deck_id", item.DeckID, !question); err != nil {
+	if err := wantID("deck_id", item.DeckID, !question && !chat); err != nil {
 		return item, err
 	}
 	if err := wantID("oracle_id", item.OracleID, card); err != nil {
@@ -197,38 +205,97 @@ func wantID(field, id string, used bool) error {
 // checkOwner reads the object the verdict names under the caller. The
 // stores answer per user, so another user's id and an unknown id read
 // the same, and neither is the caller's: PermissionDenied for both.
-func (s *Server) checkOwner(ctx context.Context, uid string, fb *mtgv1.Feedback) error {
-	if fb.GetKind() == mtgv1.FeedbackKind_FEEDBACK_KIND_QUESTION {
+func (s *Server) checkOwner(ctx context.Context, uid string, fb *mtgv1.Feedback) (*mtgv1.Session, error) {
+	kind := fb.GetKind()
+	if kind == mtgv1.FeedbackKind_FEEDBACK_KIND_QUESTION || kind == mtgv1.FeedbackKind_FEEDBACK_KIND_CHAT {
 		sess, err := s.sessions.Get(ctx, uid, strings.TrimSpace(fb.GetSessionId()))
 		if errors.Is(err, sessions.ErrNotFound) {
-			return connect.NewError(connect.CodePermissionDenied, errNotYourSession)
+			return nil, connect.NewError(connect.CodePermissionDenied, errNotYourSession)
 		}
 		if err != nil {
-			return connect.NewError(connect.CodeInternal, err)
+			return nil, connect.NewError(connect.CodeInternal, err)
+		}
+		// A chat verdict reads the whole session, so it names no question.
+		if kind == mtgv1.FeedbackKind_FEEDBACK_KIND_CHAT {
+			return sess, nil
 		}
 		if !hasQuestion(sess, strings.TrimSpace(fb.GetQuestionId())) {
-			return invalid(errNoQuestion)
+			return nil, invalid(errNoQuestion)
 		}
-		return nil
+		return sess, nil
 	}
 	deck, err := s.decks.Get(ctx, uid, strings.TrimSpace(fb.GetDeckId()))
 	if errors.Is(err, decks.ErrNotFound) {
-		return connect.NewError(connect.CodePermissionDenied, errNotYourDeck)
+		return nil, connect.NewError(connect.CodePermissionDenied, errNotYourDeck)
 	}
 	if err != nil {
-		return connect.NewError(connect.CodeInternal, err)
+		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	switch fb.GetKind() {
 	case mtgv1.FeedbackKind_FEEDBACK_KIND_SUMMARY:
 		if strings.TrimSpace(deck.GetSummary()) == "" {
-			return invalid(errNoSummary)
+			return nil, invalid(errNoSummary)
 		}
 	case mtgv1.FeedbackKind_FEEDBACK_KIND_CARD:
 		if !hasCard(deck, strings.TrimSpace(fb.GetOracleId())) {
-			return invalid(errNoCard)
+			return nil, invalid(errNoCard)
 		}
 	}
-	return nil
+	return nil, nil
+}
+
+// questionContext reads the exact wording of one question and the answer
+// the reader gave it, from the stored session (D-596). It answers two
+// empty strings for a verdict that names no question, and for a question
+// the reader has not answered.
+func questionContext(sess *mtgv1.Session, questionID string) (text, answer string) {
+	if sess == nil || questionID == "" {
+		return "", ""
+	}
+	for _, turn := range sess.GetTurns() {
+		for _, q := range turn.GetQuestions() {
+			if q.GetId() == questionID {
+				text = q.GetText()
+			}
+		}
+		for _, a := range turn.GetAnswers() {
+			if a.GetQuestionId() != questionID {
+				continue
+			}
+			switch {
+			case a.GetDeclined():
+				answer = declinedAnswer
+			case strings.TrimSpace(a.GetText()) != "":
+				answer = strings.TrimSpace(a.GetText())
+			default:
+				answer = optionText(sess, questionID, a)
+			}
+		}
+	}
+	return text, answer
+}
+
+// declinedAnswer is what the store holds for a reader who declined. The
+// thread reads "You decide", and the store reads one term.
+const declinedAnswer = "(declined)"
+
+// optionText reads the option an answer named by index, from the
+// question the session holds.
+func optionText(sess *mtgv1.Session, questionID string, a *mtgv1.Answer) string {
+	if a.OptionIndex == nil {
+		return ""
+	}
+	for _, turn := range sess.GetTurns() {
+		for _, q := range turn.GetQuestions() {
+			if q.GetId() != questionID {
+				continue
+			}
+			if i := int(a.GetOptionIndex()); i >= 0 && i < len(q.GetOptions()) {
+				return q.GetOptions()[i]
+			}
+		}
+	}
+	return ""
 }
 
 func hasQuestion(sess *mtgv1.Session, id string) bool {

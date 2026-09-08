@@ -15,6 +15,7 @@ go/coverage.out
 go/api
 go/candidates-review
 go/chat-probe
+go/feedback
 go/allow
 go/deck-gate
 go/eval

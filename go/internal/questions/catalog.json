@@ -62,7 +62,12 @@
         "no_near_format": true
       },
       "fallback": "I do not build that format. Which format should I build instead?",
-      "closed": true
+      "closed": true,
+      "option_values": [
+        "commander",
+        "standard",
+        "modern"
+      ]
     },
     {
       "id": "format_store",
@@ -84,7 +89,12 @@
           "event"
         ]
       },
-      "closed": true
+      "closed": true,
+      "option_values": [
+        "standard",
+        "modern",
+        "commander"
+      ]
     },
     {
       "id": "format",
@@ -96,7 +106,12 @@
         "Standard",
         "Modern"
       ],
-      "closed": true
+      "closed": true,
+      "option_values": [
+        "commander",
+        "standard",
+        "modern"
+      ]
     },
     {
       "id": "theme_competitive",
@@ -286,7 +301,14 @@
       "when": {
         "format": "commander"
       },
-      "closed": true
+      "closed": true,
+      "option_values": [
+        "bracket 1",
+        "bracket 2",
+        "bracket 3",
+        "bracket 4",
+        "bracket 5"
+      ]
     },
     {
       "id": "power_sixty",
@@ -303,7 +325,12 @@
         "power_competitive": false
       },
       "closed": true,
-      "fixed": true
+      "fixed": true,
+      "option_values": [
+        "casual",
+        "fnm",
+        "tournament"
+      ]
     },
     {
       "id": "colors",
@@ -335,7 +362,12 @@
         ]
       },
       "fallback": "Should I build from your precon first, use only cards from it, or ignore it for a fully optimized deck?",
-      "closed": true
+      "closed": true,
+      "option_values": [
+        "owned_first",
+        "owned_only",
+        "any_card"
+      ]
     },
     {
       "id": "pool",
@@ -356,7 +388,12 @@
         ],
         "thin_theme": false
       },
-      "closed": true
+      "closed": true,
+      "option_values": [
+        "owned_first",
+        "owned_only",
+        "any_card"
+      ]
     },
     {
       "id": "pool_thin",
@@ -377,7 +414,11 @@
         ]
       },
       "fallback": "Your library is thin for this theme. Build owned-first with a buy list, or use the whole pool?",
-      "closed": true
+      "closed": true,
+      "option_values": [
+        "owned_first",
+        "any_card"
+      ]
     },
     {
       "id": "budget",
