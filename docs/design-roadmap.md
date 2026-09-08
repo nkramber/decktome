@@ -6,7 +6,7 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
-2026-09-08 correction pass 113 (PR-32 built, D-606 to D-608): the second half of PR-32 is on branch `pr-32-named-commander`. A commander name the card index does not hold asks which card the reader means, and it reaches no build before they answer. The deck carries the ownership of its commander, and the smoke flow builds from a collection. Changes: F-75, F-76, PR-32, D-606, D-607, D-608.
+2026-09-08 correction pass 113 (PR-32 merged as #99, D-606 to D-608): the second half of PR-32 is on `main` at `77a0ae1`, and both deploy triggers passed on it. A commander name the card index does not hold asks which card the reader means, and it reaches no build before they answer. The deck carries the ownership of its commander, and the smoke flow builds from a collection. Changes: F-75, F-76, PR-32, D-606, D-607, D-608.
 2026-09-08 correction pass 112 (PR #98 merged): the first half of PR-32 is on `main` at `4e826d1`. The web app invents no ownership for a commander, and the reader of a session reads a deck too. F-75, the deck field for the ownership of a commander, and the smoke lane of a collection are the rest. Changes: PR-32.
 2026-09-08 correction pass 111 (PR-32 in progress, D-604, D-605): the runtime read of F-76 settled the cause, and it was the web app and not the engine. The web app invents no ownership for a commander now. The index deploy of D-600 failed twice on the merge of #97, and the build account gained two roles. The session stopped inside PR-32, and the hand-off holds the resume point. Changes: F-76, PR-32, D-604, D-605.
 2026-09-08 correction pass 110 (the roadmap audit, PR-32): PR-32 holds the commander the reader named and the pool they chose, right after PR #97. The audit found four stale rows. F-74 read planned, and #97 fixes it. F-76 read "needs owner input", and the owner answered OQ-79. F-31 and F-32 read a gate run due, and revise gate run 9 and deck gate run 16 met both on 2026-09-04. Changes: F-31, F-32, F-74, F-75, F-76, PR-32, sequence item 27.
@@ -1160,7 +1160,7 @@ The colors break starves the color the spells need most. It reads the pips of th
 Gate: the Modern colors axis and the Standard colors axis read 0.95 or better over the five folds, and the copies axis 0.95 or better. No Commander bar falls under its PR-29 read.
 > *In plain English:* to test the grader, the code breaks the mana of a deck on purpose, and today it starves the wrong color. It also counts the copies of a card twice. Both fixes make the test mean what it says.
 
-**PR-32: The commander the reader named, and the pool they chose (F-75, F-76).** ✅ built 2026-09-08. The first half merged as #98, and the second half is on branch `pr-32-named-commander`. The first walks of the deployed app found both faults, and one feedback row names each.
+**PR-32: The commander the reader named, and the pool they chose (F-75, F-76).** ✅ merged 2026-09-08. The first half is #98, and the second half is #99 at `77a0ae1`. The first walks of the deployed app found both faults, and one feedback row names each.
 
 A commander name the index does not know reached the build and left it. The reader wrote "Aragorn as commander", no card carries that name alone, and the build took the delegation path of D-232 and picked its own commander (F-75). The reader delegated nothing.
 
@@ -1237,7 +1237,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 23. Phase 5 stays parked.
 24. PR-25 the installable web app, then PR-26 the return channels, after PR-23 (D-547). Stage C, the stores, waits on request (D-548).
 25. **PR-27** the feedback harvest, then **PR-28** the feedback loop, the immediate items before PR-25 (D-557). PR-25 waits for the deploy in any case (D-555). PR-27 merged as #75 on 2026-09-07 (D-562).
-27. **PR-32** the commander the reader named and the pool they chose, right after PR #97 (F-75, F-76, OQ-79). The runtime read of F-76 comes first, and no fix goes in without it.
+27. **PR-32** the commander the reader named, and the pool they chose (F-75, F-76, OQ-79). ✅ merged 2026-09-08, as #98 and #99. It ran right after PR #97. The runtime read of F-76 came first, and it settled the cause.
 26. **M-7** the axis diagnostic and the honest bars, then **PR-29** the casual corpus. Then **PR-30** the commander reference on OQ-74, and **PR-31** the 60-card axes (D-567). The plan is `docs/reference/weak-axes-2026-09-07.md`, and the work runs now, during the deploy wait (D-568). M-7 is done, and run 14 is on record (D-571, D-572). The bar reads the own copies, and PR-31 parks (D-573).
 
 ## 9. Open questions
