@@ -4,6 +4,32 @@
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. On the owner's machine `~/.nvm/versions/node/v22.23.2/bin` on the PATH fixes it.
 
+## RESUME HERE (2026-09-08, the session stopped mid-slice)
+
+The session before you stopped inside PR-32, with the work half done. Read this whole block first.
+
+**The checkout.** Branch `pr-32-commander-and-pool`, one commit `a188378`, pushed. `main` is `77fa439`, which is PR #97, merged and deployed. **No pull request is open for this branch.** Run `make where` before you touch anything.
+
+**What the branch holds.** The F-76 fix of the web app: `buyRows` invents no ownership for a commander (D-604). `scripts/read-session.sh` reads a deck with `KIND=decks`. `docs/decisions.md` holds D-604 and D-605.
+
+**What PR-32 still needs, in order.**
+
+1. F-75, the commander name the index does not know. This work has no code yet. The owner settled the behavior on 2026-09-07: ask which card the reader means, as the set row asks (D-376). More than three names match. The row then offers the best three by commander quality, at the power the reader picked. A name that matches nothing says so. The evidence is the log line "the named commander left the snapshot" with the card `Aragorn`, and `build.go` then takes the delegation path of D-232.
+2. The second half of F-76. A deck carries `commander_oracle_ids` and no ownership fact for its commander. So a commander the reader truly lacks reaches no buy list now. The deck needs the fact. Read D-604 first.
+3. The smoke gap of #92. The flow uploads a collection and then picks "Any card", because its fixture deck fits an any-card shortlist alone. A fixture deck of an owned-first shortlist closes it.
+
+**What changed on the deployed project this session, outside the repo.**
+
+- `gh-deployer` gained `roles/firebaserules.admin` and `roles/datastore.indexAdmin` (D-605). Both widen it, and the second one went in without a second question.
+- The `deploy-web` trigger reads `firestore.indexes.json` now (D-603).
+- The build deployed the indexes of `firestore.indexes.json`, and `make feedback-list` works.
+- `cedricjimenez9@gmail.com` is on the invite list.
+- `natekramber22@gmail.com` still exists in Firebase Auth, from the walk of 2026-09-07. No command here removes an account.
+
+**What waits on the owner.** OQ-67, the Stage B channels. OQ-77, the blocking function of Identity Platform. It costs nothing to 50,000 monthly active users, so the cost is not the question. The seven-second answer limit on every sign-up is the question. The build walk of the PR-22 gate, which blocks PR-25 and PR-28.
+
+**Two habits this session paid for.** Read the local date and never the UTC date (D-595). Read a gate document before a row says a run is due: F-31 and F-32 read "run due" for five days after the runs passed.
+
 ## Where things stand (2026-09-07)
 
 - **The app is live on `decktome.com`** (2026-09-07, D-574). The deploy of PR-22 ran on the owner's account by `docs/setup-gcp.md`, on project `decktome-prod` in `us-central1`. The API is a Cloud Run service, and both jobs and both schedules run. Firestore holds the rules and the invite list. The bucket holds a 113.9 MB card snapshot and the meta store. The quality model and the precon table load, so a deck grades. The owner signs in, and the invite list refuses every other email. **The deploy half of the PR-22 gate stays open on the build walk alone.** A reader must upload a ManaBox export, then build a deck, revise it, and export it. Nothing else of PR-22 waits.
@@ -36,7 +62,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 - **Every deck carries its build metrics now** (2026-09-07, D-602, answers OQ-80). `Deck.build` holds the wall time and the count of repair turns. It holds the misses and findings of each turn, the shortlist size, the model spend of the build alone, and the commander source. The spend is the accumulator after the build less the accumulator before, because the question calls of the same turn are not this build. **No deck built before this carries it**, so the first read of "almost every deck goes to repair" needs new builds.
 - **The `deploy-web` trigger reads `firestore.indexes.json`** (2026-09-07, D-603). `gcloud builds triggers update github` refuses a trigger of a 2nd-gen repository, and so does a PATCH of `includedFiles` alone. A PATCH of the whole trigger body to the Cloud Build API works.
 - **F-76 needs one more read, and no fix goes in without it** (2026-09-07, OQ-79). The owner chose the hard filter, and it applies once the reader answers the pool question. `CommanderPool` already refuses an unowned commander under `POOL_RULE_OWNED_ONLY`, and `FromListOwned` reads the owned count of a commander from the collection. So the deck of session `23rplEQAMA0mtJ3QFtKO` passed both and still marks its commander unowned. The cause is not yet known.
-- **F-75 waits for its row** (2026-09-07). The owner chose to ask which card the reader means. More than three names match, and the row offers the best three by commander quality at the power the reader picked. Nobody built the row or its wording yet.
+- **F-75 waits for its row** (2026-09-07). The owner chose to ask which card the reader means. More than three names match. The row then offers the best three by commander quality, at the power the reader picked. Nobody built the row or its wording yet.
 - **The first feedback of the deployed app found four faults** (2026-09-07, D-600, D-601, F-73 to F-76). Two are fixed here. A declared Firestore index reached no deployed project. `make feedback-list` failed on `decktome-prod` while every test passed. The web build deploys `hosting,firestore:indexes` now, and the trigger of `deploy-web` needs `firestore.indexes.json` in its included paths (F-73). A set group runs no model, so "LOTR" settled nothing. The row then asked a question the reader answered already. The group path reads the `setmatch` role now, as the name path does (F-74). The sample hand drew a 146 pixel image at about 340 pixels, and it asks for the 488 pixel image now (D-601).
 - **Two faults of the same feedback wait on the owner** (2026-09-07, F-75, F-76, OQ-79). The reader wrote "Aragorn as commander", and no card carries that name alone. The build dropped it, took the delegation path of D-232, and picked Thranduil. No question asked which Aragorn. The set flow asks that question and the commander flow has no row for it (F-75). The same deck ran an owned-only pool and named a commander the reader does not own. The buy list holds that commander, with no price (F-76). D-63 makes the pool a weak signal for the commander. The reader read it as a promise, and OQ-79 asks which rule wins.
 - **No store holds the time of a build or the count of its repair turns** (2026-09-07, OQ-80). The owner reads almost every deck through a repair turn, and every build as slow. `Usage` holds the calls, the tokens, and the cost per session. The repair turns reach the log alone, and nothing holds the time. OQ-80 asks which numbers to store.
