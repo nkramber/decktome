@@ -34,6 +34,16 @@ const byKind: Record<FeedbackKind, Reason[]> = {
     { key: "wrong_power", label: "Too weak or too strong for the bracket." },
     { key: "too_many_to_buy", label: "Too many cards to buy." },
   ],
+  // The conversation as a whole (D-594). A chat that stops between
+  // questions belongs to no question, so the thumbs of a question reach
+  // it from nowhere.
+  [FeedbackKind.CHAT]: [
+    { key: "stuck", label: "The chat stopped and asked nothing more." },
+    { key: "ignored_request", label: "It ignored part of what I asked for." },
+    { key: "wrong_questions", label: "It asked the wrong questions." },
+    { key: "no_deck", label: "It never built a deck." },
+    { key: "error", label: "Something failed or showed an error." },
+  ],
 };
 
 export function reasonsOf(kind: FeedbackKind): Reason[] {

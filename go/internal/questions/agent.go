@@ -2009,6 +2009,17 @@ func power(s string) *mtgv1.PowerLevel {
 	if n, err := strconv.Atoi(strings.TrimPrefix(s, "bracket ")); err == nil && n >= 1 && n <= 5 {
 		return &mtgv1.PowerLevel{Level: &mtgv1.PowerLevel_Bracket{Bracket: int32(n)}}
 	}
+	// The option of the power row leads with its number: "4 optimized"
+	// (D-593). The prompt asks for "bracket 4", and the field is free
+	// text, so a model that echoes the option the reader picked wrote a
+	// string this function could not read. The slot then stayed asked,
+	// the readiness gate waits on it, and the agent never repeats a
+	// question, so session oUZMC0F2vHe7GGl24LIP could not go on.
+	if head, _, ok := strings.Cut(s, " "); ok {
+		if n, err := strconv.Atoi(head); err == nil && n >= 1 && n <= 5 {
+			return &mtgv1.PowerLevel{Level: &mtgv1.PowerLevel_Bracket{Bracket: int32(n)}}
+		}
+	}
 	return nil
 }
 

@@ -20,7 +20,7 @@ import (
 )
 
 // schemaVersion counts the stored shape.
-const schemaVersion = 1
+const schemaVersion = 2
 
 // ErrNotFound reports a feedback id no document answers.
 var ErrNotFound = errors.New("feedback not found")
@@ -37,6 +37,17 @@ type Item struct {
 	OracleID   string
 	Reasons    []string
 	Text       string
+	// UID is the user the verdict came from (D-596). The document sits
+	// under that user, and a query over every user answers documents and
+	// not paths, so the id is a field of its own as well.
+	UID string
+	// QuestionText is the exact wording the reader saw, and AnswerText is
+	// what the reader had answered when the verdict came (D-596). The
+	// question id alone reads nothing after a prompt changes. The server
+	// fills both from the stored session, so neither is the client's
+	// word.
+	QuestionText string
+	AnswerText   string
 	// Prompts holds the prompt versions of the moment by role family,
 	// with the keys of the eval run files: questions and generate.
 	Prompts   map[string]int64
@@ -52,17 +63,20 @@ type Repo struct {
 func NewRepo(client *firestore.Client) *Repo { return &Repo{client: client} }
 
 type stored struct {
-	Schema     int64            `firestore:"schema"`
-	Kind       string           `firestore:"kind"`
-	Verdict    string           `firestore:"verdict"`
-	SessionID  string           `firestore:"session_id"`
-	QuestionID string           `firestore:"question_id"`
-	DeckID     string           `firestore:"deck_id"`
-	OracleID   string           `firestore:"oracle_id"`
-	Reasons    []string         `firestore:"reasons"`
-	Text       string           `firestore:"text"`
-	Prompts    map[string]int64 `firestore:"prompts"`
-	CreatedAt  time.Time        `firestore:"created_at"`
+	Schema       int64            `firestore:"schema"`
+	Kind         string           `firestore:"kind"`
+	Verdict      string           `firestore:"verdict"`
+	UID          string           `firestore:"uid"`
+	SessionID    string           `firestore:"session_id"`
+	QuestionID   string           `firestore:"question_id"`
+	QuestionText string           `firestore:"question_text"`
+	AnswerText   string           `firestore:"answer_text"`
+	DeckID       string           `firestore:"deck_id"`
+	OracleID     string           `firestore:"oracle_id"`
+	Reasons      []string         `firestore:"reasons"`
+	Text         string           `firestore:"text"`
+	Prompts      map[string]int64 `firestore:"prompts"`
+	CreatedAt    time.Time        `firestore:"created_at"`
 }
 
 func (r *Repo) col(uid string) *firestore.CollectionRef {
@@ -73,17 +87,20 @@ func (r *Repo) col(uid string) *firestore.CollectionRef {
 func (r *Repo) Add(ctx context.Context, uid string, item Item) (string, error) {
 	doc := r.col(uid).NewDoc()
 	_, err := doc.Create(ctx, stored{
-		Schema:     schemaVersion,
-		Kind:       item.Kind,
-		Verdict:    item.Verdict,
-		SessionID:  item.SessionID,
-		QuestionID: item.QuestionID,
-		DeckID:     item.DeckID,
-		OracleID:   item.OracleID,
-		Reasons:    item.Reasons,
-		Text:       item.Text,
-		Prompts:    item.Prompts,
-		CreatedAt:  item.CreatedAt.UTC(),
+		Schema:       schemaVersion,
+		Kind:         item.Kind,
+		Verdict:      item.Verdict,
+		UID:          uid,
+		SessionID:    item.SessionID,
+		QuestionID:   item.QuestionID,
+		QuestionText: item.QuestionText,
+		AnswerText:   item.AnswerText,
+		DeckID:       item.DeckID,
+		OracleID:     item.OracleID,
+		Reasons:      item.Reasons,
+		Text:         item.Text,
+		Prompts:      item.Prompts,
+		CreatedAt:    item.CreatedAt.UTC(),
 	})
 	if err != nil {
 		return "", fmt.Errorf("feedback: %w", err)
@@ -104,18 +121,59 @@ func (r *Repo) Get(ctx context.Context, uid, id string) (Item, error) {
 	if err := snap.DataTo(&s); err != nil {
 		return Item{}, fmt.Errorf("feedback %s: %w", id, err)
 	}
+	return itemOf(s), nil
+}
+
+// itemOf reads a stored document as an Item.
+func itemOf(s stored) Item {
 	return Item{
-		Kind:       s.Kind,
-		Verdict:    s.Verdict,
-		SessionID:  s.SessionID,
-		QuestionID: s.QuestionID,
-		DeckID:     s.DeckID,
-		OracleID:   s.OracleID,
-		Reasons:    s.Reasons,
-		Text:       s.Text,
-		Prompts:    s.Prompts,
-		CreatedAt:  s.CreatedAt,
-	}, nil
+		Kind:         s.Kind,
+		Verdict:      s.Verdict,
+		UID:          s.UID,
+		SessionID:    s.SessionID,
+		QuestionID:   s.QuestionID,
+		QuestionText: s.QuestionText,
+		AnswerText:   s.AnswerText,
+		DeckID:       s.DeckID,
+		OracleID:     s.OracleID,
+		Reasons:      s.Reasons,
+		Text:         s.Text,
+		Prompts:      s.Prompts,
+		CreatedAt:    s.CreatedAt,
+	}
+}
+
+// Down reads the newest verdicts of every user, over one collection
+// group query (D-596). The documents sit under each user, and a group
+// query reads them all at once, so no caller walks the user list.
+//
+// A down verdict is what the fixer of PR-28 reads, and `down` alone is
+// the common case. An empty verdict reads both.
+func (r *Repo) Down(ctx context.Context, verdict string, limit int) ([]Item, error) {
+	q := r.client.CollectionGroup("feedback").OrderBy("created_at", firestore.Desc).Limit(limit)
+	if verdict != "" {
+		q = r.client.CollectionGroup("feedback").
+			Where("verdict", "==", verdict).
+			OrderBy("created_at", firestore.Desc).Limit(limit)
+	}
+	snaps, err := q.Documents(ctx).GetAll()
+	if err != nil {
+		return nil, fmt.Errorf("feedback: %w", err)
+	}
+	out := make([]Item, 0, len(snaps))
+	for _, snap := range snaps {
+		var s stored
+		if err := snap.DataTo(&s); err != nil {
+			return nil, fmt.Errorf("feedback %s: %w", snap.Ref.ID, err)
+		}
+		// A document written before the uid field reads its user from the
+		// path: users/<uid>/feedback/<id>.
+		if s.UID == "" {
+			s.UID = snap.Ref.Parent.Parent.ID
+		}
+		out = append(out, itemOf(s))
+	}
+	return out, nil
 }
 
 // kindNames are the short names the store writes. An enum value off the
@@ -125,6 +183,7 @@ var kindNames = map[mtgv1.FeedbackKind]string{
 	mtgv1.FeedbackKind_FEEDBACK_KIND_SUMMARY:  "summary",
 	mtgv1.FeedbackKind_FEEDBACK_KIND_CARD:     "card",
 	mtgv1.FeedbackKind_FEEDBACK_KIND_DECK:     "deck",
+	mtgv1.FeedbackKind_FEEDBACK_KIND_CHAT:     "chat",
 }
 
 var verdictNames = map[mtgv1.FeedbackVerdict]string{
@@ -148,6 +207,9 @@ var reasonKeys = map[mtgv1.FeedbackKind][]string{
 	mtgv1.FeedbackKind_FEEDBACK_KIND_SUMMARY:  {"false_claim", "misses_plan", "too_long_or_vague"},
 	mtgv1.FeedbackKind_FEEDBACK_KIND_CARD:     {"off_theme", "illegal", "unwanted_buy", "wrong_printing", "wrong_power"},
 	mtgv1.FeedbackKind_FEEDBACK_KIND_DECK:     {"off_spec", "bad_mana", "too_little_interaction", "wrong_power", "too_many_to_buy"},
+	// A chat that stops belongs to no question, so it has a kind and a
+	// reason set of its own (D-594).
+	mtgv1.FeedbackKind_FEEDBACK_KIND_CHAT: {"stuck", "ignored_request", "wrong_questions", "no_deck", "error"},
 }
 
 // Reasons lists the reason keys of a kind, in the order the dialog

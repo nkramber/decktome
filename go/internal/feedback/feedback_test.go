@@ -27,6 +27,7 @@ func TestNamesAndReasons(t *testing.T) {
 		mtgv1.FeedbackKind_FEEDBACK_KIND_SUMMARY:  3,
 		mtgv1.FeedbackKind_FEEDBACK_KIND_CARD:     5,
 		mtgv1.FeedbackKind_FEEDBACK_KIND_DECK:     5,
+		mtgv1.FeedbackKind_FEEDBACK_KIND_CHAT:     5,
 	}
 	for k, n := range want {
 		keys := Reasons(k)
@@ -43,6 +44,12 @@ func TestNamesAndReasons(t *testing.T) {
 				t.Errorf("KnownReason(%v, %q) = false", k, key)
 			}
 		}
+	}
+	if got := KindName(mtgv1.FeedbackKind_FEEDBACK_KIND_CHAT); got != "chat" {
+		t.Errorf("KindName(CHAT) = %q", got)
+	}
+	if KnownReason(mtgv1.FeedbackKind_FEEDBACK_KIND_CHAT, "off_spec") {
+		t.Error("a deck reason must not pass as a chat reason")
 	}
 	if KnownReason(mtgv1.FeedbackKind_FEEDBACK_KIND_DECK, "already_answered") {
 		t.Error("a question reason must not pass as a deck reason")
