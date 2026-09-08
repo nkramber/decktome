@@ -109,6 +109,17 @@ func (a *Agent) Turn(ctx context.Context, st *State, message string, acc *llm.Ac
 	st.Ctx.ChoseCommander = false
 	st.setsThisTurn = nil
 	rows, resolved := a.plan(st, UserWords(message))
+	// The planner has nothing to ask and the session is not ready. That
+	// pair proves the turn is stuck: a question is out, the reader
+	// answered it, and no value reached the slot. Ask it once more, in
+	// this turn, rather than end with no question and no deck (D-599).
+	if len(rows) == 0 && !st.Ready(a.cat) {
+		if reasked := st.ReaskStalled(); len(reasked) > 0 {
+			a.log.Info("the answer did not reach its slot, so the question goes out once more",
+				"session", st.SessionID, "keys", reasked)
+			rows, resolved = a.plan(st, UserWords(message))
+		}
+	}
 	if len(rows) == 0 {
 		// The classify call may have closed a key, so the M-4 report
 		// changes even on a turn that asks nothing.

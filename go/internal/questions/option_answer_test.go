@@ -140,3 +140,58 @@ func TestEveryOptionRowIsTypedOrLeftToTheClassifier(t *testing.T) {
 	}
 	t.Logf("rows still left to the classifier: %v", untyped)
 }
+
+// TestReaskStalledAsksOnceThenGivesUp is D-599. A question the reader
+// answered, whose answer never reached the slot, goes out once more. The
+// second stall re-opens nothing, so CloseStalled skips the key and the
+// build takes the default. The reader is never asked the same question
+// a third time, and the chat never stops.
+func TestReaskStalledAsksOnceThenGivesUp(t *testing.T) {
+	st := NewState(false)
+	asked(st, "q1-power_commander", "power_commander", "power", "power")
+	st.Ctx.Asked = map[string]bool{"power_commander": true}
+	st.Ctx.Filled = map[string]bool{"power": true}
+	// The reader replied to this question, and the reply missed the slot.
+	// A question nobody answered is not stalled.
+	st.AnsweredQuestions = []string{"q1-power_commander"}
+
+	// A question with no reply stays where it is.
+	quiet := NewState(false)
+	asked(quiet, "q1-power_commander", "power_commander", "power", "power")
+	if got := quiet.ReaskStalled(); len(got) != 0 {
+		t.Errorf("a question nobody answered re-opened %v, want none", got)
+	}
+
+	first := st.ReaskStalled()
+	if len(first) != 1 || first[0] != "power" {
+		t.Fatalf("the first stall re-opened %v, want [power]", first)
+	}
+	// The slot is open again, and the no-repeat rule no longer holds the
+	// row, so the planner may ask it.
+	if got := st.Slots.GetSlotStates()["power"]; got != mtgv1.SlotState_SLOT_STATE_UNSPECIFIED {
+		t.Errorf("power = %v, want UNSPECIFIED after the re-ask", got)
+	}
+	if st.Ctx.Asked["power_commander"] {
+		t.Error("the row is still marked asked, so the planner will not ask it again")
+	}
+	if st.Ctx.Filled["power"] {
+		t.Error("the key is still marked filled, so the planner will not ask it again")
+	}
+
+	// The reader answers again, and the answer misses again.
+	st.Slots.SlotStates["power"] = mtgv1.SlotState_SLOT_STATE_ASKED
+	st.AnsweredQuestions = []string{"q1-power_commander"}
+	if second := st.ReaskStalled(); len(second) != 0 {
+		t.Errorf("the second stall re-opened %v, want none: the net skips it now", second)
+	}
+	if got := st.Slots.GetSlotStates()["power"]; got != mtgv1.SlotState_SLOT_STATE_ASKED {
+		t.Errorf("power = %v, want it left for CloseStalled", got)
+	}
+
+	// CloseStalled is the way on, and it skips the key.
+	st.Turn += StallGrace
+	closed, _ := st.CloseStalled()
+	if len(closed) != 1 || closed[0] != "power" {
+		t.Errorf("CloseStalled closed %v, want [power]", closed)
+	}
+}

@@ -56,15 +56,21 @@ type Context struct {
 	// picker names a collection and says how strict the deck may be, and
 	// that choice is the answer (D-359). A stored snapshot without this
 	// field reads false, which is the rule before this one.
-	PoolFromReader   bool `json:"pool_from_reader"`
-	ThinTheme        bool `json:"thin_theme"`
-	CommanderSet     bool `json:"commander_set"`
-	NamedCard        bool `json:"named_card"`
-	Suggested        bool `json:"suggested"`
-	PowerCompetitive bool `json:"power_competitive"`
-	BuyList          bool `json:"buy_list"`
-	BudgetAmbiguous  bool `json:"budget_ambiguous"`
-	HouseFormat      bool `json:"house_format"`
+	PoolFromReader bool `json:"pool_from_reader"`
+	// Reasked marks a key the agent asked a second time, because the
+	// reader answered and the answer did not reach the slot (D-599). A
+	// key is asked twice at most: the second stall skips it, and the
+	// build takes the default. A stored snapshot without this reads
+	// empty, so a session in flight gets its one extra ask.
+	Reasked          map[string]bool `json:"reasked"`
+	ThinTheme        bool            `json:"thin_theme"`
+	CommanderSet     bool            `json:"commander_set"`
+	NamedCard        bool            `json:"named_card"`
+	Suggested        bool            `json:"suggested"`
+	PowerCompetitive bool            `json:"power_competitive"`
+	BuyList          bool            `json:"buy_list"`
+	BudgetAmbiguous  bool            `json:"budget_ambiguous"`
+	HouseFormat      bool            `json:"house_format"`
 	// AfterBuild says the session holds a built deck. agentsvc and
 	// cmd/questions-gate set it. No row reads it since PR-9 left the MVP
 	// (D-256), and it stays for the callers that set it.
