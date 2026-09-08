@@ -8,7 +8,7 @@ import type { Card, Printing } from "./card_pb";
 import { file_mtg_v1_card } from "./card_pb";
 import type { Format, FormatId, PowerLevel } from "./format_pb";
 import { file_mtg_v1_format } from "./format_pb";
-import type { PoolRule } from "./session_pb";
+import type { PoolRule, Usage } from "./session_pb";
 import { file_mtg_v1_session } from "./session_pb";
 import type { Timestamp } from "@bufbuild/protobuf/wkt";
 import { file_google_protobuf_timestamp } from "@bufbuild/protobuf/wkt";
@@ -18,7 +18,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file mtg/v1/deck.proto.
  */
 export const file_mtg_v1_deck: GenFile = /*@__PURE__*/
-  fileDesc("ChFtdGcvdjEvZGVjay5wcm90bxIGbXRnLnYxIqUFCgREZWNrEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSHgoGZm9ybWF0GAMgASgLMg4ubXRnLnYxLkZvcm1hdBIhCgVwb3dlchgEIAEoCzISLm10Zy52MS5Qb3dlckxldmVsEg8KB3N1bW1hcnkYBSABKAkSHAoUY29tbWFuZGVyX29yYWNsZV9pZHMYBiADKAkSHwoFY2FyZHMYByADKAsyEC5tdGcudjEuRGVja0NhcmQSLAoKdmFsaWRhdGlvbhgIIAEoCzIYLm10Zy52MS5WYWxpZGF0aW9uUmVzdWx0EhYKDmxlZ2FsaXR5X2FzX29mGAkgASgJEhIKCnNlc3Npb25faWQYCyABKAkSLgoKY3JlYXRlZF9hdBgMIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASDQoFc3RhbGUYDSABKAgSGAoQc3RhbGVfb3JhY2xlX2lkcxgOIAMoCRIjCglzaWRlYm9hcmQYDyADKAsyEC5tdGcudjEuRGVja0NhcmQSGwoTY29tcGFuaW9uX29yYWNsZV9pZBgQIAEoCRIiCgh1cGdyYWRlcxgRIAMoCzIQLm10Zy52MS5EZWNrQ2FyZBIUCgxidXlfY29zdF91c2QYEiABKAESHAoUcmV2aXNlZF9mcm9tX2RlY2tfaWQYEyABKAkSFQoNcmV2aXNpb25fbm90ZRgUIAEoCRIQCghmYXZvcml0ZRgVIAEoCBISCgpjYXJkX2NvdW50GBYgASgFEiQKB3Byb2ZpbGUYFyABKAsyEy5tdGcudjEuRGVja1Byb2ZpbGUSJAoHcXVhbGl0eRgYIAEoCzITLm10Zy52MS5EZWNrUXVhbGl0eRIOCgZzaGFyZWQYGSABKAhKBAgKEAtSBHNlZWQiggEKC0RlY2tRdWFsaXR5EgwKBHRpZXIYASABKAkSDQoFc2NvcmUYAiABKAESDwoHcmVhc29ucxgDIAMoCRIVCg1tb2RlbF92ZXJzaW9uGAQgASgJEi4KDXByb2JhYmlsaXRpZXMYBSADKAsyFy5tdGcudjEuVGllclByb2JhYmlsaXR5IjQKD1RpZXJQcm9iYWJpbGl0eRIMCgR0aWVyGAEgASgJEhMKC3Byb2JhYmlsaXR5GAIgASgBIq4BCgtEZWNrUHJvZmlsZRIPCgdicmFja2V0GAEgASgFEigKCGZlYXR1cmVzGAIgAygLMhYubXRnLnYxLlByb2ZpbGVGZWF0dXJlEiIKCGdvbGRmaXNoGAMgASgLMhAubXRnLnYxLkdvbGRmaXNoEiUKB2NvbnRlbnQYBCABKAsyFC5tdGcudjEuQ29udGVudENoZWNrEhkKEWJhbmRzX3ZlcmlmaWVkX2F0GAUgASgJInkKDlByb2ZpbGVGZWF0dXJlEgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoARILCgNsb3cYAyABKAESDAoEaGlnaBgEIAEoARIQCghoYXNfaGlnaBgFIAEoCBIQCghvZmZfYmFuZBgGIAEoCBIMCgRub3RlGAcgASgJImoKCEdvbGRmaXNoEg0KBWhhbmRzGAEgASgFEhYKDmNvbW1hbmRlcl90dXJuGAIgASgBEhYKDm1hbmFfdHVybl9mb3VyGAMgASgBEh8KF3NoYXJlX3R3b190b19mb3VyX2xhbmRzGAQgASgBIqoBCgxDb250ZW50Q2hlY2sSDwoHY2hlY2tlZBgBIAEoCBINCgVlcnJvchgCIAEoCRISCgpzb3VyY2VfdGFnGAMgASgJEhUKDWdhbWVfY2hhbmdlcnMYBCADKAkSGAoQbWFzc19sYW5kX2RlbmlhbBgFIAMoCRITCgtleHRyYV90dXJucxgGIAMoCRIgCgZjb21ib3MYByADKAsyEC5tdGcudjEuQ29tYm9IaXQidAoIQ29tYm9IaXQSCgoCaWQYASABKAkSDQoFY2FyZHMYAiADKAkSEAoIdHdvX2NhcmQYAyABKAgSDQoFc3BlZWQYBCABKAUSEgoKZXh0cmFfdHVybhgFIAEoCBIYChBtYXNzX2xhbmRfZGVuaWFsGAYgASgIIoICCgpTaGFyZWREZWNrEgwKBG5hbWUYASABKAkSHgoGZm9ybWF0GAIgASgLMg4ubXRnLnYxLkZvcm1hdBIhCgVwb3dlchgDIAEoCzISLm10Zy52MS5Qb3dlckxldmVsEg8KB3N1bW1hcnkYBCABKAkSHAoUY29tbWFuZGVyX29yYWNsZV9pZHMYBSADKAkSIQoFY2FyZHMYBiADKAsyEi5tdGcudjEuU2hhcmVkQ2FyZBIlCglzaWRlYm9hcmQYByADKAsyEi5tdGcudjEuU2hhcmVkQ2FyZBIWCg5sZWdhbGl0eV9hc19vZhgIIAEoCRISCgpjYXJkX2NvdW50GAkgASgFIogBCgpTaGFyZWRDYXJkEhEKCW9yYWNsZV9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEg0KBWNvdW50GAMgASgFEh4KBHJvbGUYBCABKA4yEC5tdGcudjEuQ2FyZFJvbGUSDgoGcmVhc29uGAUgASgJEhoKBGNhcmQYBiABKAsyDC5tdGcudjEuQ2FyZCLrAQoIRGVja0NhcmQSEQoJb3JhY2xlX2lkGAEgASgJEgwKBG5hbWUYAiABKAkSDQoFY291bnQYAyABKAUSHgoEcm9sZRgEIAEoDjIQLm10Zy52MS5DYXJkUm9sZRIOCgZyZWFzb24YBSABKAkSDQoFb3duZWQYBiABKAgSEwoLb3duZWRfY291bnQYByABKAUSEQoJcHJpY2VfdXNkGAggASgBEigKDm93bmVkX3ByaW50aW5nGAkgASgLMhAubXRnLnYxLlByaW50aW5nEh4KFm91dHNpZGVfcmVxdWVzdGVkX3NldHMYCiABKAgipAEKEFZhbGlkYXRpb25SZXN1bHQSIQoIZmluZGluZ3MYASADKAsyDy5tdGcudjEuRmluZGluZxIOCgZwYXNzZWQYAiABKAgSFgoObGVnYWxpdHlfYXNfb2YYAyABKAkSIwoJcG9vbF9ydWxlGAQgASgOMhAubXRnLnYxLlBvb2xSdWxlEiAKBmZvcm1hdBgFIAEoDjIQLm10Zy52MS5Gb3JtYXRJZCJfCgdGaW5kaW5nEgwKBGNvZGUYASABKAkSIgoIc2V2ZXJpdHkYAiABKA4yEC5tdGcudjEuU2V2ZXJpdHkSDwoHbWVzc2FnZRgDIAEoCRIRCglvcmFjbGVfaWQYBCABKAkq/wEKCENhcmRSb2xlEhkKFUNBUkRfUk9MRV9VTlNQRUNJRklFRBAAEhIKDkNBUkRfUk9MRV9MQU5EEAESEgoOQ0FSRF9ST0xFX1JBTVAQAhISCg5DQVJEX1JPTEVfRFJBVxADEhUKEUNBUkRfUk9MRV9SRU1PVkFMEAQSEgoOQ0FSRF9ST0xFX1dJUEUQBRIUChBDQVJEX1JPTEVfVEhSRUFUEAYSGQoVQ0FSRF9ST0xFX0lOVEVSQUNUSU9OEAcSFQoRQ0FSRF9ST0xFX1NZTkVSR1kQCBIUChBDQVJEX1JPTEVfV0lOQ09OEAkSEwoPQ0FSRF9ST0xFX09USEVSEAoqXgoIU2V2ZXJpdHkSGAoUU0VWRVJJVFlfVU5TUEVDSUZJRUQQABISCg5TRVZFUklUWV9CTE9DSxABEhEKDVNFVkVSSVRZX1dBUk4QAhIRCg1TRVZFUklUWV9JTkZPEANCMlowZ2l0aHViLmNvbS9ua3JhbWJlci9kZWNrdG9tZS9nby9nZW4vbXRnL3YxO210Z3YxYgZwcm90bzM", [file_mtg_v1_card, file_mtg_v1_format, file_mtg_v1_session, file_google_protobuf_timestamp]);
+  fileDesc("ChFtdGcvdjEvZGVjay5wcm90bxIGbXRnLnYxIsoFCgREZWNrEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSHgoGZm9ybWF0GAMgASgLMg4ubXRnLnYxLkZvcm1hdBIhCgVwb3dlchgEIAEoCzISLm10Zy52MS5Qb3dlckxldmVsEg8KB3N1bW1hcnkYBSABKAkSHAoUY29tbWFuZGVyX29yYWNsZV9pZHMYBiADKAkSHwoFY2FyZHMYByADKAsyEC5tdGcudjEuRGVja0NhcmQSLAoKdmFsaWRhdGlvbhgIIAEoCzIYLm10Zy52MS5WYWxpZGF0aW9uUmVzdWx0EhYKDmxlZ2FsaXR5X2FzX29mGAkgASgJEhIKCnNlc3Npb25faWQYCyABKAkSLgoKY3JlYXRlZF9hdBgMIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASDQoFc3RhbGUYDSABKAgSGAoQc3RhbGVfb3JhY2xlX2lkcxgOIAMoCRIjCglzaWRlYm9hcmQYDyADKAsyEC5tdGcudjEuRGVja0NhcmQSGwoTY29tcGFuaW9uX29yYWNsZV9pZBgQIAEoCRIiCgh1cGdyYWRlcxgRIAMoCzIQLm10Zy52MS5EZWNrQ2FyZBIUCgxidXlfY29zdF91c2QYEiABKAESHAoUcmV2aXNlZF9mcm9tX2RlY2tfaWQYEyABKAkSFQoNcmV2aXNpb25fbm90ZRgUIAEoCRIQCghmYXZvcml0ZRgVIAEoCBISCgpjYXJkX2NvdW50GBYgASgFEiQKB3Byb2ZpbGUYFyABKAsyEy5tdGcudjEuRGVja1Byb2ZpbGUSJAoHcXVhbGl0eRgYIAEoCzITLm10Zy52MS5EZWNrUXVhbGl0eRIOCgZzaGFyZWQYGSABKAgSIwoFYnVpbGQYGiABKAsyFC5tdGcudjEuQnVpbGRNZXRyaWNzSgQIChALUgRzZWVkIoIBCgtEZWNrUXVhbGl0eRIMCgR0aWVyGAEgASgJEg0KBXNjb3JlGAIgASgBEg8KB3JlYXNvbnMYAyADKAkSFQoNbW9kZWxfdmVyc2lvbhgEIAEoCRIuCg1wcm9iYWJpbGl0aWVzGAUgAygLMhcubXRnLnYxLlRpZXJQcm9iYWJpbGl0eSI0Cg9UaWVyUHJvYmFiaWxpdHkSDAoEdGllchgBIAEoCRITCgtwcm9iYWJpbGl0eRgCIAEoASKuAQoLRGVja1Byb2ZpbGUSDwoHYnJhY2tldBgBIAEoBRIoCghmZWF0dXJlcxgCIAMoCzIWLm10Zy52MS5Qcm9maWxlRmVhdHVyZRIiCghnb2xkZmlzaBgDIAEoCzIQLm10Zy52MS5Hb2xkZmlzaBIlCgdjb250ZW50GAQgASgLMhQubXRnLnYxLkNvbnRlbnRDaGVjaxIZChFiYW5kc192ZXJpZmllZF9hdBgFIAEoCSJ5Cg5Qcm9maWxlRmVhdHVyZRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAESCwoDbG93GAMgASgBEgwKBGhpZ2gYBCABKAESEAoIaGFzX2hpZ2gYBSABKAgSEAoIb2ZmX2JhbmQYBiABKAgSDAoEbm90ZRgHIAEoCSJqCghHb2xkZmlzaBINCgVoYW5kcxgBIAEoBRIWCg5jb21tYW5kZXJfdHVybhgCIAEoARIWCg5tYW5hX3R1cm5fZm91chgDIAEoARIfChdzaGFyZV90d29fdG9fZm91cl9sYW5kcxgEIAEoASKqAQoMQ29udGVudENoZWNrEg8KB2NoZWNrZWQYASABKAgSDQoFZXJyb3IYAiABKAkSEgoKc291cmNlX3RhZxgDIAEoCRIVCg1nYW1lX2NoYW5nZXJzGAQgAygJEhgKEG1hc3NfbGFuZF9kZW5pYWwYBSADKAkSEwoLZXh0cmFfdHVybnMYBiADKAkSIAoGY29tYm9zGAcgAygLMhAubXRnLnYxLkNvbWJvSGl0InQKCENvbWJvSGl0EgoKAmlkGAEgASgJEg0KBWNhcmRzGAIgAygJEhAKCHR3b19jYXJkGAMgASgIEg0KBXNwZWVkGAQgASgFEhIKCmV4dHJhX3R1cm4YBSABKAgSGAoQbWFzc19sYW5kX2RlbmlhbBgGIAEoCCKCAgoKU2hhcmVkRGVjaxIMCgRuYW1lGAEgASgJEh4KBmZvcm1hdBgCIAEoCzIOLm10Zy52MS5Gb3JtYXQSIQoFcG93ZXIYAyABKAsyEi5tdGcudjEuUG93ZXJMZXZlbBIPCgdzdW1tYXJ5GAQgASgJEhwKFGNvbW1hbmRlcl9vcmFjbGVfaWRzGAUgAygJEiEKBWNhcmRzGAYgAygLMhIubXRnLnYxLlNoYXJlZENhcmQSJQoJc2lkZWJvYXJkGAcgAygLMhIubXRnLnYxLlNoYXJlZENhcmQSFgoObGVnYWxpdHlfYXNfb2YYCCABKAkSEgoKY2FyZF9jb3VudBgJIAEoBSKIAQoKU2hhcmVkQ2FyZBIRCglvcmFjbGVfaWQYASABKAkSDAoEbmFtZRgCIAEoCRINCgVjb3VudBgDIAEoBRIeCgRyb2xlGAQgASgOMhAubXRnLnYxLkNhcmRSb2xlEg4KBnJlYXNvbhgFIAEoCRIaCgRjYXJkGAYgASgLMgwubXRnLnYxLkNhcmQi6wEKCERlY2tDYXJkEhEKCW9yYWNsZV9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEg0KBWNvdW50GAMgASgFEh4KBHJvbGUYBCABKA4yEC5tdGcudjEuQ2FyZFJvbGUSDgoGcmVhc29uGAUgASgJEg0KBW93bmVkGAYgASgIEhMKC293bmVkX2NvdW50GAcgASgFEhEKCXByaWNlX3VzZBgIIAEoARIoCg5vd25lZF9wcmludGluZxgJIAEoCzIQLm10Zy52MS5QcmludGluZxIeChZvdXRzaWRlX3JlcXVlc3RlZF9zZXRzGAogASgIIqQBChBWYWxpZGF0aW9uUmVzdWx0EiEKCGZpbmRpbmdzGAEgAygLMg8ubXRnLnYxLkZpbmRpbmcSDgoGcGFzc2VkGAIgASgIEhYKDmxlZ2FsaXR5X2FzX29mGAMgASgJEiMKCXBvb2xfcnVsZRgEIAEoDjIQLm10Zy52MS5Qb29sUnVsZRIgCgZmb3JtYXQYBSABKA4yEC5tdGcudjEuRm9ybWF0SWQiXwoHRmluZGluZxIMCgRjb2RlGAEgASgJEiIKCHNldmVyaXR5GAIgASgOMhAubXRnLnYxLlNldmVyaXR5Eg8KB21lc3NhZ2UYAyABKAkSEQoJb3JhY2xlX2lkGAQgASgJIqYBCgxCdWlsZE1ldHJpY3MSEwoLZHVyYXRpb25fbXMYASABKAMSFAoMcmVwYWlyX3R1cm5zGAIgASgFEg4KBm1pc3NlcxgDIAMoBRIQCghmaW5kaW5ncxgEIAMoBRIRCglzaG9ydGxpc3QYBSABKAUSHAoFdXNhZ2UYBiABKAsyDS5tdGcudjEuVXNhZ2USGAoQY29tbWFuZGVyX3NvdXJjZRgHIAEoCSr/AQoIQ2FyZFJvbGUSGQoVQ0FSRF9ST0xFX1VOU1BFQ0lGSUVEEAASEgoOQ0FSRF9ST0xFX0xBTkQQARISCg5DQVJEX1JPTEVfUkFNUBACEhIKDkNBUkRfUk9MRV9EUkFXEAMSFQoRQ0FSRF9ST0xFX1JFTU9WQUwQBBISCg5DQVJEX1JPTEVfV0lQRRAFEhQKEENBUkRfUk9MRV9USFJFQVQQBhIZChVDQVJEX1JPTEVfSU5URVJBQ1RJT04QBxIVChFDQVJEX1JPTEVfU1lORVJHWRAIEhQKEENBUkRfUk9MRV9XSU5DT04QCRITCg9DQVJEX1JPTEVfT1RIRVIQCipeCghTZXZlcml0eRIYChRTRVZFUklUWV9VTlNQRUNJRklFRBAAEhIKDlNFVkVSSVRZX0JMT0NLEAESEQoNU0VWRVJJVFlfV0FSThACEhEKDVNFVkVSSVRZX0lORk8QA0IyWjBnaXRodWIuY29tL25rcmFtYmVyL2RlY2t0b21lL2dvL2dlbi9tdGcvdjE7bXRndjFiBnByb3RvMw", [file_mtg_v1_card, file_mtg_v1_format, file_mtg_v1_session, file_google_protobuf_timestamp]);
 
 /**
  * Deck is one generated deck.
@@ -197,6 +197,16 @@ export type Deck = Message<"mtg.v1.Deck"> & {
    * @generated from field: bool shared = 25;
    */
   shared: boolean;
+
+  /**
+   * build is what the build of this deck cost and how it went (D-602).
+   * The owner reads almost every deck through a repair turn, and no
+   * store held the time or the count. The logs held the repair turns
+   * alone, so no reader could count them over many decks.
+   *
+   * @generated from field: mtg.v1.BuildMetrics build = 26;
+   */
+  build?: BuildMetrics | undefined;
 };
 
 /**
@@ -816,6 +826,74 @@ export type Finding = Message<"mtg.v1.Finding"> & {
  */
 export const FindingSchema: GenMessage<Finding> = /*@__PURE__*/
   messageDesc(file_mtg_v1_deck, 12);
+
+/**
+ * BuildMetrics is what one build cost and how it went (D-602). Every
+ * number here is an observation of the build that made this deck.
+ *
+ * @generated from message mtg.v1.BuildMetrics
+ */
+export type BuildMetrics = Message<"mtg.v1.BuildMetrics"> & {
+  /**
+   * duration_ms is the wall time of the whole build, the model calls
+   * and the engine together.
+   *
+   * @generated from field: int64 duration_ms = 1;
+   */
+  durationMs: bigint;
+
+  /**
+   * repair_turns counts the repair passes the build ran. Zero means the
+   * first deck passed the engine.
+   *
+   * @generated from field: int32 repair_turns = 2;
+   */
+  repairTurns: number;
+
+  /**
+   * misses and findings are the counts the engine reported before each
+   * repair, oldest first. One entry per repair turn.
+   *
+   * @generated from field: repeated int32 misses = 3;
+   */
+  misses: number[];
+
+  /**
+   * @generated from field: repeated int32 findings = 4;
+   */
+  findings: number[];
+
+  /**
+   * shortlist is how many cards the generator chose from.
+   *
+   * @generated from field: int32 shortlist = 5;
+   */
+  shortlist: number;
+
+  /**
+   * usage is the model spend of this build alone, apart from the
+   * question turns of the session (M-1).
+   *
+   * @generated from field: mtg.v1.Usage usage = 6;
+   */
+  usage?: Usage | undefined;
+
+  /**
+   * commander_source says where the commander came from: "named" when
+   * the reader named it, "delegated" when the reader asked the app to
+   * pick, and "picked" when the app chose with no delegation.
+   *
+   * @generated from field: string commander_source = 7;
+   */
+  commanderSource: string;
+};
+
+/**
+ * Describes the message mtg.v1.BuildMetrics.
+ * Use `create(BuildMetricsSchema)` to create a new message.
+ */
+export const BuildMetricsSchema: GenMessage<BuildMetrics> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_deck, 13);
 
 /**
  * CardRole is the job a card does in the deck (corpus section 6).

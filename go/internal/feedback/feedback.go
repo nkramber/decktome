@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/firestore"
+	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -141,6 +142,42 @@ func itemOf(s stored) Item {
 		Prompts:      s.Prompts,
 		CreatedAt:    s.CreatedAt,
 	}
+}
+
+// Find reads one verdict by its id, over every user (D-600).
+//
+// A collection group query needs a composite index, and an index of a
+// deployed project is a deploy of its own. This walks the users instead,
+// so a reader of one id needs no index at all. The user list is short,
+// and one document read answers each user.
+func (r *Repo) Find(ctx context.Context, id string) (Item, string, error) {
+	// DocumentRefs and not Documents. The app writes
+	// users/<uid>/feedback/<id> and never gives users/<uid> a field of
+	// its own, so that parent is a missing document. Documents leaves a
+	// missing document out, and this read then finds nothing at all.
+	iter := r.client.Collection("users").DocumentRefs(ctx)
+	for {
+		ref, err := iter.Next()
+		if errors.Is(err, iterator.Done) {
+			break
+		}
+		if err != nil {
+			return Item{}, "", fmt.Errorf("feedback: users: %w", err)
+		}
+		uid := ref.ID
+		item, err := r.Get(ctx, uid, id)
+		if errors.Is(err, ErrNotFound) {
+			continue
+		}
+		if err != nil {
+			return Item{}, "", err
+		}
+		if item.UID == "" {
+			item.UID = uid
+		}
+		return item, uid, nil
+	}
+	return Item{}, "", ErrNotFound
 }
 
 // Down reads the newest verdicts of every user, over one collection

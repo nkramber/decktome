@@ -57,7 +57,11 @@ export function FaceImage({ face, size = "normal" }: { face: Face; size?: "norma
   // The normal image is 488 by 680. If the CDN refuses it, the small one
   // (146 by 204) takes its place (ui plan, section 8). The width scales
   // and the aspect ratio stays, so nothing is cropped or skewed (D-6).
-  // The sample hand asks for the small one from the start (PR-20).
+  //
+  // Card art is never drawn larger than the file (D-601). The small
+  // image is 146 pixels wide, and the sample hand drew it at about 340,
+  // so the rules text of every card in the hand read as a blur. A tile
+  // that asks for "small" must stay under 146 pixels wide.
   const small = face.imageUris?.small ?? "";
   const [src, setSrc] = useState(size === "small" ? small : face.imageUris?.normal || small);
   // A second load error leaves the text tile, not a broken image.
