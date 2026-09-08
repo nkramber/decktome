@@ -4,6 +4,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- iOS reads no SVG for a Home Screen icon, and it reads no
+         manifest icon either, so the link names the PNG (PR-25). -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#0a0c16" />
+    <meta name="description" content="An agentic Magic: The Gathering deck builder that reads the cards you own." />
+    <!-- A Home Screen window with no browser chrome. iOS 26 does this
+         by default, and the older name still serves an older phone. -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Deck Tome" />
     <title>Deck Tome</title>
   </head>
   <body>

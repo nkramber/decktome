@@ -406,6 +406,30 @@ describe("a re-upload over an active collection", () => {
 describe("the upload dialog", () => {
   const file = () => new File(["Name,Set code\nBolt,LEA\n"], "export.csv", { type: "text/csv" });
 
+  // PR-25: a phone share sheet often offers Copy and no file, so the
+  // dialog takes the CSV text too. The text becomes a File, and every
+  // step after it reads the upload the same way.
+  it("takes the CSV as pasted text, and says where ManaBox puts the export", async () => {
+    importCollection.mockResolvedValue({
+      collection: { id: "c-new", name: "pasted-collection.csv", cardCount: 1 },
+      report: { unresolved: [], resolvedCount: 1, unresolvedByReason: {} },
+    });
+    const user = userEvent.setup();
+    await renderAt("/collection");
+    await openUpload(user);
+    expect(screen.getByText(/ManaBox writes the export from Settings/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "No file? Paste the CSV text" }));
+    await user.type(screen.getByLabelText("Paste the CSV text"), "Name,Set code{enter}Bolt,LEA");
+    await user.click(screen.getByRole("button", { name: "Use this text" }));
+    // The dialog names the file it made, so the reader reads what goes up.
+    expect(await screen.findByText("pasted-collection.csv")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Upload" }));
+    await screen.findByTestId("card-count");
+    expect(importCollection).toHaveBeenCalled();
+  });
+
   it("shows a progress bar while the upload runs, and takes it away at the end", async () => {
     let release: (v: unknown) => void = () => {};
     importCollection.mockImplementation(

@@ -73,6 +73,12 @@ export function UploadDialog({
 
 function UploadBody({ activeCollectionId, activeCollectionName, askForFile, onImported, onClose }: UploadProps & { onClose: () => void }) {
   const [file, setFile] = useState<File | null>(null);
+  // pasted holds the CSV text of a reader with no file picker worth the
+  // name. A phone share sheet often offers Copy and no file, so the text
+  // becomes a File and every step after this reads it the same way
+  // (PR-25, Stage A).
+  const [pasteOpen, setPasteOpen] = useState(false);
+  const [pasted, setPasted] = useState("");
   const [name, setName] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const [step, setStep] = useState<Step>("pick");
@@ -200,6 +206,40 @@ function UploadBody({ activeCollectionId, activeCollectionName, askForFile, onIm
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
               className="sr-only"
             />
+            <p className="text-xs text-muted-foreground">
+              ManaBox writes the export from Settings, then Export collection. It lands in Files, or in the share sheet.
+            </p>
+            {/* A phone that offers Copy and no file still gets a way in.
+                The text becomes a File, so the diff, the size check, and
+                the upload read it as any other export (PR-25). */}
+            {pasteOpen ? (
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="paste">Paste the CSV text</Label>
+                <textarea
+                  id="paste"
+                  name="paste"
+                  rows={4}
+                  value={pasted}
+                  onChange={(e) => setPasted(e.target.value)}
+                  placeholder="Binder Name,Binder Type,Name,Set code,..."
+                  className="min-h-24 rounded-card border border-border bg-background p-2 font-mono text-xs"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="self-start"
+                  disabled={pasted.trim() === ""}
+                  onClick={() => setFile(new File([pasted], "pasted-collection.csv", { type: "text/csv" }))}
+                >
+                  Use this text
+                </Button>
+              </div>
+            ) : (
+              <Button type="button" variant="ghost" size="sm" className="self-start" onClick={() => setPasteOpen(true)}>
+                No file? Paste the CSV text
+              </Button>
+            )}
           </div>
           {activeCollectionId !== "" && (
             <fieldset className="flex flex-col gap-1.5">
