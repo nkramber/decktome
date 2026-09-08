@@ -235,6 +235,38 @@
       "fallback": "That card can not lead a deck. Shall I suggest a commander instead?"
     },
     {
+      "id": "commander_unresolved",
+      "slot": "commander",
+      "order": 28,
+      "fixed": true,
+      "repeat": true,
+      "repeat_on_change": true,
+      "text": "More than one card holds the name {unknown_commander}. Which one do you want: {commander_options}?",
+      "when": {
+        "format": "commander",
+        "commander_unresolved": true,
+        "commander_no_match": false
+      },
+      "fallback": "Which commander do you want? Give me the full card name.",
+      "key": "commander_unresolved"
+    },
+    {
+      "id": "commander_unknown",
+      "slot": "commander",
+      "order": 29,
+      "fixed": true,
+      "repeat": true,
+      "repeat_on_change": true,
+      "text": "No card I know holds the name {unknown_commander}. Which commander do you want?",
+      "when": {
+        "format": "commander",
+        "commander_unresolved": true,
+        "commander_no_match": true
+      },
+      "fallback": "I do not know that card. Which commander do you want?",
+      "key": "commander_unresolved"
+    },
+    {
       "id": "named_card_role",
       "slot": "commander",
       "order": 30,

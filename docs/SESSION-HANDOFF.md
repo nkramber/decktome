@@ -4,29 +4,29 @@
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. On the owner's machine `~/.nvm/versions/node/v22.23.2/bin` on the PATH fixes it.
 
-## RESUME HERE (2026-09-08, the session stopped mid-slice)
+## RESUME HERE (2026-09-08, PR-32 is built and waits for a merge)
 
-The session before you stopped inside PR-32, with the work half done. Read this whole block first.
+**The checkout.** Branch `pr-32-named-commander`, from `main` at `4e826d1` (PR #98). It holds the second half of PR-32, and no pull request is open for it yet. Run `make where` before you touch anything.
 
-**The checkout.** Branch `pr-32-commander-and-pool`, one commit `a188378`, pushed. `main` is `77fa439`, which is PR #97, merged and deployed. **No pull request is open for this branch.** Run `make where` before you touch anything.
+**What the branch holds.**
 
-**What the branch holds.** The F-76 fix of the web app: `buyRows` invents no ownership for a commander (D-604). `scripts/read-session.sh` reads a deck with `KIND=decks`. `docs/decisions.md` holds D-604 and D-605.
+1. F-75, the commander name the card index does not hold (D-606, D-607). Two catalog rows ask which card the reader means. `commander_unresolved` names the best three cards that hold the name and offers "None of these". `commander_unknown` says a name no card holds matched nothing. The name reaches no build until the reader answers. `CandidateHints.ResolveCommander` reads whole words, so "Aragorn" and "King of Gondor" both find "Aragorn, King of Gondor". A picked option sets the commander with no model in the path (D-597). Ten tests hold it.
+2. The second half of F-76 (D-608). `Deck.commanders` carries one `DeckCard` per commander, with the ownership, the count, and the price. The build fills it, and the deck screen marks it. The two buy lists read it, in the web app and in the export package. An unowned commander counts in `buy_cost_usd`, which `BuyCostWith` did already.
+3. The smoke gap of #92. The fixture deck comes from the owned-first shortlist of the fixture export now, so the flow builds from the collection. Karlov is the one card the export does not hold. So the lane reads the buy mark and the buy list of F-76.
 
-**What PR-32 still needs, in order.**
+**The gate.** `make verify` passes. `make smoke` passes in 4.4 seconds. The Go suite, 303 web tests, and `make ste-check` all pass.
 
-1. F-75, the commander name the index does not know. This work has no code yet. The owner settled the behavior on 2026-09-07: ask which card the reader means, as the set row asks (D-376). More than three names match. The row then offers the best three by commander quality, at the power the reader picked. A name that matches nothing says so. The evidence is the log line "the named commander left the snapshot" with the card `Aragorn`, and `build.go` then takes the delegation path of D-232.
-2. The second half of F-76. A deck carries `commander_oracle_ids` and no ownership fact for its commander. So a commander the reader truly lacks reaches no buy list now. The deck needs the fact. Read D-604 first.
-3. The smoke gap of #92. The flow uploads a collection and then picks "Any card", because its fixture deck fits an any-card shortlist alone. A fixture deck of an owned-first shortlist closes it.
+**What the next session does.** Open the pull request, and the owner merges it. The deploy after the merge touches `go/`, `web/`, and `proto/`, so both triggers run. Read the build before you trust the site.
 
-**What changed on the deployed project this session, outside the repo.**
+**What waits on the owner.** OQ-67, the Stage B channels. OQ-77, the blocking function of Identity Platform. It costs nothing to 50,000 monthly active users, so the cost is not the question. The seven-second answer limit on every sign-up is the question. The build walk of the PR-22 gate, which blocks PR-25 and PR-28.
+
+**What changed on the deployed project on 2026-09-08, outside the repo.**
 
 - `gh-deployer` gained `roles/firebaserules.admin` and `roles/datastore.indexAdmin` (D-605). Both widen it, and the second one went in without a second question.
 - The `deploy-web` trigger reads `firestore.indexes.json` now (D-603).
 - The build deployed the indexes of `firestore.indexes.json`, and `make feedback-list` works.
 - `an invited reader` is on the invite list.
 - `the owner's second account` still exists in Firebase Auth, from the walk of 2026-09-07. No command here removes an account.
-
-**What waits on the owner.** OQ-67, the Stage B channels. OQ-77, the blocking function of Identity Platform. It costs nothing to 50,000 monthly active users, so the cost is not the question. The seven-second answer limit on every sign-up is the question. The build walk of the PR-22 gate, which blocks PR-25 and PR-28.
 
 **Two habits this session paid for.** Read the local date and never the UTC date (D-595). Read a gate document before a row says a run is due: F-31 and F-32 read "run due" for five days after the runs passed.
 

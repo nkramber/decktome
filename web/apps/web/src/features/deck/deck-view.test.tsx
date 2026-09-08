@@ -76,6 +76,7 @@ const deck = {
   legalityAsOf: "2026-08-24",
   buyCostUsd: 0.5,
   commanderOracleIds: [],
+  commanders: [],
   sideboard: [],
   upgrades: [],
   cards: [
@@ -252,6 +253,22 @@ describe("DeckView", () => {
     expect((getCards.mock.calls[0][0] as { oracleIds: string[] }).oracleIds).toContain("o-elf");
     expect(screen.queryByRole("region", { name: /^Ramp/ })).not.toBeInTheDocument();
     expect(screen.getByText("Commander · Bracket 2 · 21 cards")).toBeInTheDocument();
+  });
+
+  // D-608: a deck that carries the ownership of its commander shows it.
+  // The mark stayed off every commander tile under D-604, because the
+  // deck held no fact and an invented one was F-76.
+  it("marks a commander the deck says the reader owns", async () => {
+    getCards.mockResolvedValue({ cards, missingOracleIds: [] });
+    renderDeck({
+      ...deck,
+      format: { id: FormatId.COMMANDER, houseRules: "" },
+      commanderOracleIds: ["o-elf"],
+      commanders: [{ oracleId: "o-elf", name: "Llanowar Elves", count: 1, role: CardRole.THREAT, owned: true, ownedCount: 1, priceUsd: 0.5 }],
+      cards: deck.cards.slice(0, 1),
+    } as unknown as Deck);
+    const commander = await screen.findByRole("region", { name: "Commander (1)" });
+    expect(within(commander).getByTestId("owned-mark")).toBeInTheDocument();
   });
 
   it("counts the main deck without a commander that sits in cards (D-289)", async () => {

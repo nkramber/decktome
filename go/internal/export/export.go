@@ -114,7 +114,7 @@ func BuyList(d *mtgv1.Deck, cards Lookup) (needed, upgrades []Row) {
 		}
 		t.need += need
 	}
-	for _, e := range commanderEntries(d, cards) {
+	for _, e := range commanderBuyEntries(d) {
 		add(e, shortfall(e))
 	}
 	commanders := commanderSet(d)
@@ -227,20 +227,14 @@ func commanderSet(d *mtgv1.Deck) map[string]bool {
 	return set
 }
 
-// commanderEntries gives one entry per commander id: the deck's own
-// entry when the card list holds it, else an entry of one from the card
-// data (D-289). A commander with no entry counts as not owned, because
-// nothing recorded the owned count.
+// commanderEntries gives one entry per commander id, for the deck list.
+// The entry is the one the deck carries, else an entry of one from the
+// card data (D-289). Every commander reaches the list, because the deck
+// list must name the card that leads the deck.
 func commanderEntries(d *mtgv1.Deck, cards Lookup) []*mtgv1.DeckCard {
 	var out []*mtgv1.DeckCard
 	for _, id := range d.GetCommanderOracleIds() {
-		var found *mtgv1.DeckCard
-		for _, e := range d.GetCards() {
-			if e.GetOracleId() == id {
-				found = e
-				break
-			}
-		}
+		found := commanderEntry(d, id)
 		if found == nil {
 			found = &mtgv1.DeckCard{OracleId: id, Count: 1}
 			if c, ok := cards.ByOracleID(id); ok {
@@ -250,4 +244,34 @@ func commanderEntries(d *mtgv1.Deck, cards Lookup) []*mtgv1.DeckCard {
 		out = append(out, found)
 	}
 	return out
+}
+
+// commanderBuyEntries gives the commander entries that carry an
+// ownership fact, for the buy list. A commander neither list names
+// reaches no buy list: nothing recorded whether the reader owns the
+// card, and an invented "not owned" was F-76. Every deck named its
+// commander as a card to buy, at no price, and the reader who asked for
+// their own cards read one to buy (D-604, D-608).
+func commanderBuyEntries(d *mtgv1.Deck) []*mtgv1.DeckCard {
+	var out []*mtgv1.DeckCard
+	for _, id := range d.GetCommanderOracleIds() {
+		if e := commanderEntry(d, id); e != nil {
+			out = append(out, e)
+		}
+	}
+	return out
+}
+
+// commanderEntry is the deck's own entry for one commander. The
+// commander list of F-76 answers first, and the card list answers a deck
+// built before that field.
+func commanderEntry(d *mtgv1.Deck, id string) *mtgv1.DeckCard {
+	for _, list := range [][]*mtgv1.DeckCard{d.GetCommanders(), d.GetCards()} {
+		for _, e := range list {
+			if e.GetOracleId() == id {
+				return e
+			}
+		}
+	}
+	return nil
 }

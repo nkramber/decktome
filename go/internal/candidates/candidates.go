@@ -836,6 +836,15 @@ var foldQuotes = strings.NewReplacer("\u2019", "'", "\u2018", "'", "\u201c", "\"
 // exists (D-221), so a digital default means the card has none (D-306).
 func hasPaperPrinting(c *mtgv1.Card) bool { return !c.GetDefaultPrinting().GetDigital() }
 
+// CommanderLegal reports whether a card can lead a Commander deck this
+// app builds. Three rules hold at once: the card can be a commander, it
+// is legal in the format, and it has a paper printing (D-306).
+func CommanderLegal(c *mtgv1.Card) bool {
+	return c.GetCanBeCommander() &&
+		legalIn(c, legalKeys[mtgv1.FormatId_FORMAT_ID_COMMANDER]) &&
+		hasPaperPrinting(c)
+}
+
 func stapleRole(r mtgv1.CardRole) bool {
 	switch r {
 	case mtgv1.CardRole_CARD_ROLE_LAND, mtgv1.CardRole_CARD_ROLE_RAMP, mtgv1.CardRole_CARD_ROLE_DRAW,
@@ -906,17 +915,14 @@ func (b *Builder) CommanderPool(idx *cards.Index, req Request) ([]Candidate, err
 
 	var out []Candidate
 	for _, c := range idx.All() {
-		if !c.GetCanBeCommander() || !legalIn(c, legalKeys[mtgv1.FormatId_FORMAT_ID_COMMANDER]) {
+		// CommanderLegal holds the paper rule of D-306 too. The unthemed
+		// fill of D-367 always tested it, and the themed half here never
+		// did, so a digital-only legend could lead an offer.
+		if !CommanderLegal(c) {
 			continue
 		}
 		// A commander of an excluded precon can not lead the deck (D-408).
 		if excluded[c.OracleId] {
-			continue
-		}
-		// Every format offers paper cards only (D-306). The unthemed fill
-		// of D-367 always tested this, and the themed half above it never
-		// did, so a digital-only legend could lead an offer.
-		if !hasPaperPrinting(c) {
 			continue
 		}
 		// A commander is the identity of the deck, so it comes from the
@@ -1012,10 +1018,7 @@ func (b *Builder) unthemed(idx *cards.Index, req Request, colorSet map[mtgv1.Col
 		if seen[c.GetOracleId()] {
 			continue
 		}
-		if !c.GetCanBeCommander() || !legalIn(c, legalKeys[mtgv1.FormatId_FORMAT_ID_COMMANDER]) {
-			continue
-		}
-		if !hasPaperPrinting(c) || !cards.InSets(c, setCodes) {
+		if !CommanderLegal(c) || !cards.InSets(c, setCodes) {
 			continue
 		}
 		// The same color rule as the themed half: a commander holds every

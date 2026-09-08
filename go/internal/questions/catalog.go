@@ -118,6 +118,11 @@ type When struct {
 	Precon *bool `json:"precon"`
 	// CommanderIllegal marks a named commander that can not lead (D-129).
 	CommanderIllegal *bool `json:"commander_illegal"`
+	// CommanderUnresolved marks a commander name the card index does not
+	// hold (F-75, D-606).
+	CommanderUnresolved *bool `json:"commander_unresolved"`
+	// CommanderNoMatch narrows that to a name no card holds at all.
+	CommanderNoMatch *bool `json:"commander_no_match"`
 	// SetLimited marks a deck limited to the sets the reader named
 	// (D-376).
 	SetLimited *bool `json:"set_limited"`
