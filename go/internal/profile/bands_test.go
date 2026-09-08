@@ -87,9 +87,18 @@ func TestBandLinesAndMidpoints(t *testing.T) {
 	if _, ok := mid[KeyAvgManaValue]; ok {
 		t.Error("a midpoint is a role count alone")
 	}
-	sixty := b.Lines(mtgv1.FormatId_FORMAT_ID_STANDARD, nil)
-	if len(sixty) != 1 || !strings.Contains(sixty[0], "lands that enter tapped: at most 12") {
-		t.Errorf("sixty lines %v", sixty)
+	// A 60-card deck carries three bands, and every one reaches the
+	// prompt since F-78: the tapped lands, the color sources, and the
+	// opening hands. TestEveryBandReachesTheModel holds the whole rule.
+	sixty := strings.Join(b.Lines(mtgv1.FormatId_FORMAT_ID_STANDARD, nil), "\n")
+	for _, want := range []string{
+		"lands that enter tapped: at most 12",
+		"color sources: every color of the deck needs its own",
+		"opening hands: at least 60 percent",
+	} {
+		if !strings.Contains(sixty, want) {
+			t.Errorf("the 60-card block does not name %q:\n%s", want, sixty)
+		}
 	}
 }
 

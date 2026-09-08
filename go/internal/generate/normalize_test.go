@@ -9,6 +9,8 @@ import (
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 	"github.com/nkramber/decktome/go/internal/candidates"
+	"github.com/nkramber/decktome/go/internal/profile"
+	"github.com/nkramber/decktome/go/internal/rules"
 )
 
 func card(oid, name string) *mtgv1.Card {
@@ -374,6 +376,57 @@ func TestShortPreconBuysTheRepairTurn(t *testing.T) {
 			t.Errorf("the repair input does not carry %q", want)
 		}
 	}
+}
+
+// TestJobTargetsCarryTheirBand is F-78, Part 2. The target is the
+// middle of the band, and the model read the middle alone. A deck of 30
+// lands is one card from a target of 31 and one card outside the band,
+// and nothing in the prompt told the two apart. Six of the 26 off-band
+// findings of deck gate run 16 and bracket gate run 1 were role counts.
+func TestJobTargetsCarryTheirBand(t *testing.T) {
+	cfg, err := rules.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, err := profile.New(cfg, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b := &Builder{profiler: p}
+	req := testRequest()
+	req.Format = mtgv1.FormatId_FORMAT_ID_COMMANDER
+	req.Power = &mtgv1.PowerLevel{Level: &mtgv1.PowerLevel_Bracket{Bracket: 4}}
+	req.Targets = TargetsFor(req.Format, req.Power)
+	got := b.input(req, nil, nil)
+	// Bracket 4 wants 31 to 36 lands, and the target is the middle.
+	if !strings.Contains(got, "- land: 31 to 36, and 33 is the middle") {
+		t.Errorf("the land job carries no band:\n%s", jobBlock(got))
+	}
+	if !strings.Contains(got, "- ramp: 10 to 16, and 13 is the middle") {
+		t.Errorf("the ramp job carries no band:\n%s", jobBlock(got))
+	}
+	// The bands hold no threat count, so that job keeps its plain line.
+	if !strings.Contains(got, "- threat: 12\n") {
+		t.Errorf("a job with no band lost its plain line:\n%s", jobBlock(got))
+	}
+	// A builder with no profiler still writes every job.
+	plain := (&Builder{}).input(req, nil, nil)
+	if !strings.Contains(plain, "- land: 33\n") {
+		t.Errorf("a build with no profiler lost its job targets:\n%s", jobBlock(plain))
+	}
+}
+
+// jobBlock is the job target block of an input, for a failure message.
+func jobBlock(in string) string {
+	i := strings.Index(in, "## Job targets")
+	if i < 0 {
+		return in
+	}
+	rest := in[i:]
+	if j := strings.Index(rest, "\n## "); j > 0 {
+		return rest[:j]
+	}
+	return rest
 }
 
 // TestAnUpgradeGetsNoJobTargets is D-249. The targets prescribe the whole

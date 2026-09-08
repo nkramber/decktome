@@ -267,11 +267,13 @@ func check(w io.Writer, dir string, margin float64, info bool) (int, error) {
 		}
 		newest := newestRun(headers, suite, files)
 		partial := partialRuns(headers, suite, files)
+		experiments := experimentRuns(headers, suite, files)
 		if newest == "" {
 			// Nothing was compared, so the suite reads NOT EVALUATED and never
 			// PASS. The exit code stays green: nothing regressed.
 			p("## Suite `%s`: NOT EVALUATED\n\nThe baseline `%s` stands alone, with no newer whole run.\n\n", suite, base.Header.RunID)
 			writePartial(w, partial)
+			writeExperiments(w, experiments)
 			continue
 		}
 		next, err := evalrun.ReadFile(filepath.Join(dir, newest))
@@ -281,11 +283,28 @@ func check(w io.Writer, dir string, margin float64, info bool) (int, error) {
 		c := evalrun.Compare(base, next, margin)
 		writeComparison(w, c, info)
 		writePartial(w, partial)
+		writeExperiments(w, experiments)
 		if c.Verdict == evalrun.VerdictFail {
 			code = exitFail
 		}
 	}
 	return code, nil
+}
+
+// writeExperiments lists the runs that changed a role field from the
+// shipped defaults. Such a run measures a configuration the app does not
+// ship, so the check compares none of them, and none moves the exit
+// code (PR-33, D-612).
+func writeExperiments(w io.Writer, runs []fileHeader) {
+	if len(runs) == 0 {
+		return
+	}
+	p := func(format string, a ...any) { _, _ = fmt.Fprintf(w, format, a...) }
+	p("Experiment runs since the baseline, not compared:\n\n")
+	for _, fh := range runs {
+		p("- `%s` of %s changed %s\n", fh.header.RunID, fh.header.Date, strings.Join(fh.header.Overrides, ", "))
+	}
+	p("\n")
 }
 
 // writePartial lists the partial runs since the baseline. A partial run

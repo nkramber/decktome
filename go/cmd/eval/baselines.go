@@ -129,7 +129,7 @@ func newestRun(headers []fileHeader, suite string, baseline []string) string {
 	best := ""
 	var bestHeader evalrun.Header
 	for _, fh := range sinceBaseline(headers, suite, baseline) {
-		if fh.header.Partial() {
+		if fh.header.Partial() || fh.header.Experiment() {
 			continue
 		}
 		if best == "" || runLess(bestHeader, fh.header) {
@@ -145,6 +145,20 @@ func partialRuns(headers []fileHeader, suite string, baseline []string) []fileHe
 	var out []fileHeader
 	for _, fh := range sinceBaseline(headers, suite, baseline) {
 		if fh.header.Partial() {
+			out = append(out, fh)
+		}
+	}
+	sort.Slice(out, func(i, j int) bool { return runLess(out[i].header, out[j].header) })
+	return out
+}
+
+// experimentRuns names the runs of a suite that changed a role field
+// from the shipped defaults. They measure a configuration the app does
+// not ship, so the check lists them and compares none (PR-33, D-612).
+func experimentRuns(headers []fileHeader, suite string, baseline []string) []fileHeader {
+	var out []fileHeader
+	for _, fh := range sinceBaseline(headers, suite, baseline) {
+		if !fh.header.Partial() && fh.header.Experiment() {
 			out = append(out, fh)
 		}
 	}

@@ -48,6 +48,25 @@ func entersTapped(c *mtgv1.Card) bool {
 	return !strings.Contains(text, "unless") && !strings.Contains(text, "pay 2 life")
 }
 
+// The readers the mana pass of PR-33 needs. It moves the mana base of a
+// built deck until every mana feature sits in band, and it must read a
+// land the way the profile that grades it does (F-78, Part 3). One
+// definition serves both.
+
+// IsLand reports a land card.
+func IsLand(c *mtgv1.Card) bool { return isLand(c) }
+
+// IsBasic reports a basic land.
+func IsBasic(c *mtgv1.Card) bool { return isBasic(c) }
+
+// EntersTapped reports a land that enters tapped with no choice.
+func EntersTapped(c *mtgv1.Card) bool { return entersTapped(c) }
+
+// ProducesMana reports a nonland card that adds mana. The pass reads it
+// to raise the mana of turn four, which ramp of a low mana value moves
+// more than any land does.
+func ProducesMana(c *mtgv1.Card) bool { return producesMana(c) }
+
 // isColorlessLand reports a nonbasic land whose only mana is colorless.
 // A land that produces nothing, such as a fetch land, is not one.
 func isColorlessLand(c *mtgv1.Card) bool {

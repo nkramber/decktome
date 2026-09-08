@@ -16,9 +16,20 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The deploy of #99 passed.** It changed `go/`, `web/`, and `proto/`, so both triggers ran, and both read SUCCESS at `77a0ae1`. Cloud Run revision `mtg-api-00016-mkm` is the API of that build, ready at 14:21 UTC, and `decktome.com` answers 200. Read a build with `gcloud builds list --project decktome-prod --region us-central1 --limit 4`.
 
-**PR-33 is the next code item** (2026-09-08, F-77, F-78, D-609). Two deployed builds ran four minutes and gave the reader nothing. `docs/reference/on-band-plan-2026-09-08.md` holds the read and the plan, and the roadmap holds the entry and sequence item 28. **The plan waits for the owner's word.**
+**PR-33 holds four parts, and it waits for a merge** (2026-09-08, F-77, F-78, D-609, D-613). Branch `pr-33-on-band`, from `main` at `ea5e7f7`. Two deployed builds ran four minutes and gave the reader nothing, and `docs/reference/on-band-plan-2026-09-08.md` holds the read and the plan.
 
-**Deck gate run 17 is the effort measurement, and it is done** (2026-09-08, D-611, D-612). It ran `LLM_GENERATE_EFFORT=low` against the run 16 baseline, on the pinned card snapshot of run 16, for $3.33 and 47 minutes. Low effort saves 7.8 seconds of the 120.7 a prompt takes. It reads FAIL, because prompt 11 answered a Commander deck of two copies of Skullport Merchant. **The generate role stays at medium**, and run 16 stays the decks baseline. Run 17 is an experiment and never a baseline. **Read the caution in the plan document before you compare the two runs.** The plan_rubric prompt and the quality model both moved between them. So the `grade` and `plan_score` rows do not compare. `make eval-check` reads run 17 as the newest decks run, so it exits 1 until a new whole run at medium replaces it.
+The four parts:
+
+1. Every band the check reads reaches the model. `promptKeys` named five of the fifteen features `bands.json` holds. The four silent ones are lines the model can act on now. `TestEveryBandReachesTheModel` fails when a band reaches no prompt.
+2. The job block carries the band beside the target: "land: 31 to 36, and 33 is the middle".
+3. `Builder.fixMana` moves the mana base with no model call, one step at a time. It keeps a step only when the deck moves closer to its bands. It holds five levers. An untapped land replaces a tapped one. A basic replaces a basic of another color. A land replaces a spell, or the reverse. A cheaper card of the same job replaces the costliest one. Ramp replaces the costliest card. **`make manapass-check` is the free lane**, 9.6 seconds over the 25 decks of run 16.
+4. `MaxRepairs` is 1, and a deck whose findings are profile findings alone reaches the reader with no repair call. A failed repair call leaves the last legal deck standing. A repair turn starts only when the build has time for it. This supersedes the second pass of D-461.
+
+**Read the free lane before you trust the pass.** Its first shape moved the lands alone and closed 2 of 10 off-band features. The curve levers went in after that read, and it closes 3 of the 4 features of the decks it runs on. Six of the ten sit on precon upgrades, which the pass skips by design (D-249).
+
+**Deck gate run 17 is an experiment now** (D-612). A run header names each role field it changed from `roles.json`. `make eval-check` never takes such a run for the newest run of its suite, and it lists it instead. Without that rule run 17 failed every `make verify`.
+
+**Deck gate run 17 is the effort measurement, and it is done** (2026-09-08, D-611, D-612). It ran `LLM_GENERATE_EFFORT=low` against the run 16 baseline, on the pinned card snapshot of run 16, for $3.33 and 47 minutes. Low effort saves 7.8 seconds of the 120.7 a prompt takes. It reads FAIL, because prompt 11 answered a Commander deck of two copies of Skullport Merchant. **The generate role stays at medium**, and run 16 stays the decks baseline. Run 17 is an experiment and never a baseline. **Read the caution in the plan document before you compare the two runs.** The plan_rubric prompt and the quality model both moved between them. So the `grade` and `plan_score` rows do not compare. `make eval-check` skips run 17 as an experiment (D-612), so it never stands for the decks suite.
 
 **What comes next after that.** The build walk of the PR-22 gate comes first, and it blocks PR-25 and PR-28. PR-29, the casual corpus, stands on the weak-axes plan (D-567). The next EDHREC read falls on 2026-09-14.
 

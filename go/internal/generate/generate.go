@@ -215,15 +215,36 @@ func (b *Builder) Build(ctx context.Context, req Request, acc *llm.Accumulator) 
 	// repair on their own. The repair turn reads every one of them, or
 	// it cannot fix what it was not told (D-244, D-248).
 	//
-	// A profile finding alone earns one more pass when the first repair
-	// left the deck off band. That is the bounded second pass of PR-14A,
-	// and the count is MaxRepairs.
+	// A profile finding buys no repair turn since PR-33. D-461 gave it
+	// one, and one more pass after it, and the numbers did not converge.
+	//
+	// The generate call is the clock the repair turns are measured
+	// against. A repair call costs about what it cost (PR-33, F-77).
+	callCost := time.Since(started)
 	for turn := 1; turn <= MaxRepairs; turn++ {
 		findings := repairable(res.deck.GetValidation())
 		if len(res.misses) == 0 && len(findings) == 0 {
 			break
 		}
-		if turn > 1 && (len(res.misses) > 0 || !profileOnly(findings)) {
+		// A deck whose findings are profile findings alone is a legal
+		// deck, and the mana pass has already moved what it can with no
+		// model call. A band the pass could not close is a band this
+		// pool can not reach, and a 60 to 90 second call for it costs
+		// the reader more than it returns (PR-33, D-609).
+		if len(res.misses) == 0 && profileOnly(findings) {
+			b.log.Info("the deck is legal and its bands are what the pool allows, so no repair turn runs",
+				"session", req.SessionID, "findings", len(findings))
+			break
+		}
+		// A repair turn that can not finish inside the build's own
+		// deadline buys nothing, and it loses the deck that stands.
+		// Session 833r7UccvAqFsyYJzHfz spent its last 88 seconds on one
+		// and the reader read an error (F-77).
+		if !b.timeForAnotherCall(ctx, callCost) {
+			b.log.Warn("the build has no time for a repair turn, so the deck that stands goes out",
+				"session", req.SessionID, "turn", turn, "call", callCost.Round(time.Second).String())
+			addFinding(res.deck, CodeRepairKept, mtgv1.Severity_SEVERITY_INFO,
+				"the build ran out of time for a repair turn, so this deck stands with its warnings")
 			break
 		}
 		b.log.Info("the deck was refused, so a repair turn runs",
@@ -232,11 +253,25 @@ func (b *Builder) Build(ctx context.Context, req Request, acc *llm.Accumulator) 
 		metrics.Misses = append(metrics.Misses, int32(len(res.misses)))
 		metrics.Findings = append(metrics.Findings, int32(len(findings)))
 		req.phase(mtgv1.BuildPhase_BUILD_PHASE_REPAIRING)
+		callStarted := time.Now()
 		out2, err := b.call(ctx, llm.RoleRepair, repairInstructions,
 			b.input(req, res.misses, findings), req.SessionID, acc)
 		if err != nil {
+			// The deck before the repair stands, as it stands when a
+			// repair answers a worse deck (D-235, F-77). A failed call
+			// is not a reason to give the reader nothing: session
+			// 833r7UccvAqFsyYJzHfz held a legal deck and returned an
+			// error after 3 minutes 59 seconds.
+			if res.deck.GetValidation().GetPassed() {
+				b.log.Warn("the repair turn failed, so the deck before it stands",
+					"session", req.SessionID, "turn", turn, "err", err)
+				addFinding(res.deck, CodeRepairKept, mtgv1.Severity_SEVERITY_INFO,
+					"the repair turn did not finish, so this deck stands with its warnings")
+				break
+			}
 			return nil, err
 		}
+		callCost = time.Since(callStarted)
 		reason := repairReason(res.misses, findings)
 		req.phase(mtgv1.BuildPhase_BUILD_PHASE_CHECKING)
 		next := b.assemble(ctx, req, out2)
@@ -354,10 +389,17 @@ func worseRepair(prev, next pass) bool {
 	return prevClean && !nextClean
 }
 
-// MaxRepairs is the most repair turns one build runs. The first covers
-// every refusal, and the second runs only for a profile finding the
-// first left behind (PR-14A).
-const MaxRepairs = 2
+// MaxRepairs is the most repair turns one build runs. It covers the
+// refusals a model can fix: a name the shortlist does not hold, a block
+// finding of the rules engine, and the warnings that buy a repair by
+// decision (D-244, D-248).
+//
+// It was 2 under D-461, where a profile finding alone earned one more
+// pass. PR-33 ends that pass: the mana pass moves those bands with no
+// model call, and two calls of 60 to 90 seconds never converged. Session
+// 833r7UccvAqFsyYJzHfz read two findings before its repairs and two
+// after, and the build then met its deadline with no deck (F-77, F-78).
+const MaxRepairs = 1
 
 // profileOnly reports whether every finding is one of the profile's.
 func profileOnly(findings []*mtgv1.Finding) bool {
@@ -444,6 +486,11 @@ func (b *Builder) assemble(ctx context.Context, req Request, out *deckOut) pass 
 	if req.Precon != "" {
 		checkPreconShare(deck, req, b.cards)
 	}
+	// The mana pass moves the mana base inside its bands, with no model
+	// call (PR-33, F-78). It runs before the profile is read, so the
+	// stored profile and every finding describe the deck the reader
+	// gets, and a band the pass closed buys no repair turn.
+	manaSteps := b.fixMana(req, deck)
 	// The bracket profile reads the finished deck. Its findings are
 	// warnings, and they buy the repair turn (PR-14A).
 	if b.profiler != nil {
@@ -458,6 +505,11 @@ func (b *Builder) assemble(ctx context.Context, req Request, out *deckOut) pass 
 		if b.scorer != nil {
 			deck.Quality = b.scorer.Score(quality.Input{Deck: deck, Profile: prof, Cards: b.cards})
 		}
+	}
+	if manaSteps > 0 {
+		addFinding(deck, CodeManaPass, mtgv1.Severity_SEVERITY_INFO,
+			fmt.Sprintf("the builder moved %s of the mana base to bring the deck inside its power level",
+				plural(manaSteps, "card")))
 	}
 	if padded > 0 {
 		addFinding(deck, CodeBasicsAdded, mtgv1.Severity_SEVERITY_INFO,
@@ -546,6 +598,33 @@ func commanderCards(ids []string, cards rules.CardSource, owned map[string]int32
 	}
 	return out
 }
+
+// timeForAnotherCall reports whether the build's deadline leaves room
+// for one more model call of the size the last one took (PR-33, F-77).
+//
+// The build carries a deadline of its own: agentsvc caps one build at
+// four minutes, and the llm client caps one call at three. A call that
+// starts with less time left than it needs ends at the wall, and the
+// deck that stands is lost with it.
+//
+// A context with no deadline never refuses a call. The gate runners and
+// the tests build under one, and this rule is for the deployed app.
+func (b *Builder) timeForAnotherCall(ctx context.Context, cost time.Duration) bool {
+	deadline, ok := ctx.Deadline()
+	if !ok {
+		return true
+	}
+	if cost <= 0 {
+		cost = time.Minute
+	}
+	// The margin covers a call that runs longer than the last one, and
+	// the work after it: the assemble, the engine, and the profile.
+	return time.Until(deadline) > cost+callMargin
+}
+
+// callMargin is the time a repair turn needs beyond the call itself.
+// The assemble, the rules engine, and the profile run after it.
+const callMargin = 15 * time.Second
 
 // addFinding appends one finding and keeps Passed true to its meaning: a
 // BLOCK added after the engine ran clears it.

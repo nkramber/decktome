@@ -6,6 +6,7 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-08 correction pass 116 (PR-33 built, D-613): the four parts are on branch `pr-33-on-band`. Every band the check reads reaches the model now, and the job block carries its band. A deterministic pass moves the mana base with no model call, and no repair call chases a band. The free lane refused the first shape of the pass, and the curve levers went in after it. Changes: F-77, F-78, PR-33, D-613, `MaxRepairs`, D-461 superseded.
 2026-09-08 correction pass 115 (deck gate run 17, D-611, D-612): the low-effort measurement of the generate role ran before PR-33, against the run 16 baseline. It saves 7.8 seconds of the 120.7 a prompt takes. It reads FAIL, because prompt 11 answered a Commander deck of two copies of one card. The generate role stays at medium. Changes: D-611, D-612, OQ-81, PR-33.
 2026-09-08 correction pass 114 (F-77, F-78, PR-33, OQ-81): two deployed builds ran four minutes and gave the reader nothing. The read found 26 off-band findings over 40 gate decks, and four causes. The prompt names five of the fifteen features the check reads. PR-33 holds the plan, and `docs/reference/on-band-plan-2026-09-08.md` holds the read. Changes: F-77, F-78, PR-33, OQ-81, sequence item 28.
 2026-09-08 correction pass 113 (PR-32 merged as #99, D-606 to D-608): the second half of PR-32 is on `main` at `77a0ae1`, and both deploy triggers passed on it. A commander name the card index does not hold asks which card the reader means, and it reaches no build before they answer. The deck carries the ownership of its commander, and the smoke flow builds from a collection. Changes: F-75, F-76, PR-32, D-606, D-607, D-608.
@@ -1186,7 +1187,7 @@ The gate holds. Ten tests hold F-75 and four hold F-76. The smoke flow passes in
 > *In plain English:* you asked for Aragorn and got a different card with no question. You asked for your own cards and got one to buy. This slice fixes the first, finds the cause of the second, and adds the test that meets both.
 
 
-**PR-33: One model call that lands in band (F-77, F-78).** 🔧 planned 2026-09-08. `docs/reference/on-band-plan-2026-09-08.md` holds the read, the four causes, and the plan. Every part is free.
+**PR-33: One model call that lands in band (F-77, F-78).** 🔧 built 2026-09-08. `docs/reference/on-band-plan-2026-09-08.md` holds the read, the four causes, and the plan. Every part is free.
 
 A build makes up to three model calls of 60 to 90 seconds. Two of them move a number this app computes in 10 milliseconds. Twice in two days the third call met the 4-minute build cap, and the reader read an error over a legal deck (F-77).
 
@@ -1198,7 +1199,14 @@ Part 4 keeps the last legal deck when a repair call fails. It also starts a repa
 
 Deck gate run 17 measured the generate role at low effort first (D-611). It saves 7.8 seconds of the 120.7 a prompt takes, and it reads FAIL on the block bar, so the role stays at medium (D-612). The latency is not in the call. A build takes four minutes because it makes three calls, and this slice removes two.
 
-Gate: a build makes one model call when its findings are profile findings alone. The mana pass reads the decks of deck gate run 16 and bracket gate run 1. It puts every `mana_turn_four` and `color_sources` finding in band, or it names the deck it can not fix. A build that loses its deadline returns the last legal deck. No feature with a band reaches no prompt line. `make verify` passes.
+The free lane read the first shape of the pass and refused it. That shape moved the lands alone, and it closed 2 of the 10 off-band features of run 16. Two curve levers went in after the read: a cheaper card of the same job, and ramp of mana value three or less. The pass now closes 3 of the 4 features of the decks it runs on (D-613). Six of the ten sit on the two precon upgrades, which the pass skips by design (D-249). What is left is `mana_turn_four` on an artifacts deck at bracket 4, and that band asks 4.8 mana of 31 to 36 lands.
+
+Deck gate run 17 is an experiment, so `make eval-check` never takes it for the newest decks run (D-612). A run header names each role field it changed from `roles.json`, and the check lists such a run and compares none.
+
+Gate: a build makes one model call when its findings are profile findings alone. The mana pass reads the decks of deck gate run 16 and bracket gate run 1. It puts every `mana_turn_four` and `color_sources` finding in band, or it names the deck it can not fix. 
+
+A build that loses its deadline returns the last legal deck. No feature with a band reaches no prompt line. `make verify` passes.
+`make verify` passes, `make smoke` passes in 5.8 seconds, and `make manapass-check` runs the free lane in 9.6 seconds. Fourteen tests hold the four parts. The whole slice is free.
 > *In plain English:* the app builds a deck and reads it as a little off the power level you asked for. It then pays a minute to ask the model to fix it. Twice it ran out of time and gave you nothing. The app can fix the mana itself, in less than a second.
 
 **I-1: Ban-list watch, stale-deck banner, and scoped rerun (D-29).**
