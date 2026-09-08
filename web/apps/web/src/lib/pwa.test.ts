@@ -56,6 +56,18 @@ describe("the web manifest", () => {
     }
   });
 
+  // D-624: the owner asked for a page that never zooms and never pans
+  // sideways. The rule costs the axe meta-viewport check, and the PR-25
+  // gate carries the exception. This test makes the choice deliberate:
+  // nobody restores the zoom by accident, and nobody removes it either.
+  it("forbids the pinch zoom the owner asked to stop", () => {
+    const html = readFileSync(path.join(import.meta.dirname, "..", "..", "index.html"), "utf8");
+    const viewport = /<meta name="viewport" content="([^"]+)"/.exec(html)?.[1] ?? "";
+    expect(viewport).toContain("width=device-width");
+    expect(viewport).toContain("user-scalable=no");
+    expect(viewport).toContain("maximum-scale=1");
+  });
+
   it("holds the 180 pixel icon iOS reads for a Home Screen", () => {
     // iOS reads no manifest icon and no SVG, so index.html links this
     // one by name. A missing file gives the Home Screen a screenshot.
