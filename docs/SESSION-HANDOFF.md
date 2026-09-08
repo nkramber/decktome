@@ -16,6 +16,10 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The deploy of #99 passed.** It changed `go/`, `web/`, and `proto/`, so both triggers ran, and both read SUCCESS at `77a0ae1`. Cloud Run revision `mtg-api-00016-mkm` is the API of that build, ready at 14:21 UTC, and `decktome.com` answers 200. Read a build with `gcloud builds list --project decktome-prod --region us-central1 --limit 4`.
 
+**Three of the four PR-22 gate items hold** (2026-09-08, D-620). The build walk passed on `decktome.com`, session `72b2IAMZqaC6myfuKAg4`: upload, build, revise, and export. The refusal of an email off the invite list passed the same day, and guardrail 9 passed on 2026-09-06. **The measured monthly cost at idle is the fourth**, and it waits for a quiet week. The week of the deploy held the walks and the deploys of PR-32 and PR-33. `docs/reference/pr22-gate-2026-09-06.md` holds the table.
+
+**The owner decides what the open cost figure blocks.** PR-25 and PR-28 wait on the PR-22 gate (D-547, D-555, D-557), and hard rule 1 holds an item until the gate of the item before it holds. The three items that test behavior all pass, and the fourth is a number to write down.
+
 **Deck gate run 18 is the decks baseline, and it measures PR-33** (2026-09-08, D-617). It ran at the shipped configuration on the pinned snapshot of run 16, so the code of PR-33 is the one variable the pin holds. It reads PASS. **Repair turns fell from 12 of 25 to 3 of 25**, and a block bought each of the three. The wall clock fell 27 percent and the cost 28 percent, and the calls fell from 93 to 78. On the decks the mana pass runs on, the off-band findings fell from 4 to 2. **The two precon upgrades hold 8 of the 10 that are left**, and the pass skips an upgrade by design (D-249). So the next question goes to the owner. Does the mana pass move the mana base of an upgrade?
 
 `make eval-check` reads run 18 as the baseline now, and it lists run 17 as an experiment it never compares.
