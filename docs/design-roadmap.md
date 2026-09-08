@@ -6,6 +6,7 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-08 correction pass 122 (the phone read, D-624): the owner read the deployed app on a phone. No screen overflows at 390 pixels, and `e2e/phone.spec.ts` proves it for nothing. The sideways scroll was a pan after a pinch, and the viewport forbids the pinch now. That costs the axe meta-viewport rule, and the PR-25 gate carries the exception. Changes: PR-25, D-624.
 2026-09-08 correction pass 121 (PR-25 built, D-621 to D-623): the app installs on a phone. It holds a manifest, a service worker that updates itself, and the icons from the tome mark. It holds an install hint and a paste box for the CSV of a phone. A touch target reaches 44 pixels on a coarse pointer. No response of the API is ever cached. The phone walk is what is left. Changes: PR-25, D-621, D-622, D-623.
 2026-09-08 correction pass 120 (the PR-22 gate, D-620): the build walk of the deploy half passed on the deployed app. The refusal of an email off the invite list passed with it. Three of the four gate items hold. The measured monthly cost at idle is the fourth, and it waits for a quiet week. Changes: PR-22, D-620.
 2026-09-08 correction pass 119 (the second walk, F-82, F-83, D-618, D-619): the owner walked the deployed app again, and item 1 of the PR-22 gate held: upload, build, revise, and export. The walk found two faults. The app asked the reader whether a Legendary Artifact leads the deck. One export that hangs disabled every export button with no word. Changes: F-82, F-83, D-618, D-619.
@@ -970,7 +971,11 @@ A web manifest with the name, the mark as icons in the required sizes, `display:
 
 An install hint shows once on a phone, after the first deck: on iOS the user taps Share, then Add to Home Screen. The upload dialog accepts `.csv` from the Files picker, and a paste box takes the CSV text. The phone gate becomes explicit. On iOS 26 a Home Screen site opens as a web app by default. A Home Screen web app receives web push since iOS 16.4 (read 2026-09-05).
 
-Gate: every route at 390 pixels wide passes axe in the dark theme. Every touch target is 44 pixels or more, and the chat input stays above the keyboard. Lighthouse reports the app installable. The owner walks the whole path on a phone, which closes the open item of PR-16.
+Gate: every route at 390 pixels wide passes axe in the dark theme, with one exception on record. Every touch target is 44 pixels or more, and the chat input stays above the keyboard. Lighthouse reports the app installable. The owner walks the whole path on a phone, which closes the open item of PR-16.
+
+**The exception is the viewport (D-624).** The owner asked for a page that never zooms, and the meta carries `user-scalable=no`. The axe meta-viewport rule refuses that, and it reads WCAG 1.4.4, resize text. The session named the cost, and the owner chose the rule. Every other axe finding stands as a fault.
+
+`e2e/phone.spec.ts` is the sideways half of the same gate, and it is free. It reads every screen at 390 by 844 with a coarse pointer, and it names the widest elements when a document passes its viewport. No screen of the app does.
 
 The free half holds. `src/lib/pwa.test.ts` reads every field an install rests on, and it reads the icon files: the manifest can not name a file nobody generated. Every button size carries a coarse-pointer minimum of 44 pixels, and a test reads each one. The install hint has five tests, and the paste box has one. 317 web tests pass, `make smoke` passes in 4.4 seconds, and `make verify` passes.
 
