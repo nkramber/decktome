@@ -1658,8 +1658,19 @@ func (a *Agent) applySets(ctx context.Context, st *State, out classifyOut, acc *
 		}
 		gotCodes, gotNames, done := r.ResolveSetGroup(phrase)
 		if !done {
+			// The group table matches a set name word by word, and it
+			// settles no abbreviation. The model reads the phrase as it
+			// does for a name (D-581, F-74). A reader who wrote "LOTR"
+			// answered the set question already, and the row asked it
+			// again with no option to pick.
+			matchCodes, matchNames, matchOptions := a.matchSets(ctx, phrase, acc)
+			if len(matchCodes) > 0 {
+				codes = append(codes, matchCodes...)
+				names = append(names, matchNames...)
+				continue
+			}
 			if unresolved == "" {
-				unresolved, options = phrase, nil
+				unresolved, options = phrase, matchOptions
 			}
 			continue
 		}

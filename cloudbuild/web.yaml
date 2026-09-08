@@ -32,7 +32,11 @@ steps:
       - -c
       - |
         set -euo pipefail
-        npx --yes firebase-tools@14.14.0 deploy --only hosting \
+        # The indexes deploy with the app (D-600). firestore.indexes.json
+        # named the collection group index of the feedback read, and no
+        # step deployed it, so the read failed on the deployed project
+        # while every test passed.
+        npx --yes firebase-tools@14.14.0 deploy --only hosting,firestore:indexes \
           --project "$PROJECT_ID" --non-interactive
 
   - id: check
