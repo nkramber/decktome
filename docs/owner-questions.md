@@ -28,6 +28,7 @@ No owner question blocks it. The owner answered OQ-24 to OQ-27 on 2026-08-26 (D-
 
 | # | Question | Why only you | What it blocks |
 |---|---|---|---|
+| OQ-81 | Does the low-effort measurement of the generate role run before the on-band plan, or after it? Deck gate run 16 is the medium-effort baseline of the prompt as it stands, so one run of about $3.80 answers it now. The on-band plan changes the prompt and the input block, so it re-baselines the deck gate (D-66). A run after the plan needs a new medium baseline first, so it costs two runs, about $7.60. | It spends money, and the order decides how much. | Nothing. The on-band plan runs either way. |
 
 ## How to answer
 

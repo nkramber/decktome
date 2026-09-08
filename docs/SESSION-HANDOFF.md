@@ -16,7 +16,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The deploy of #99 passed.** It changed `go/`, `web/`, and `proto/`, so both triggers ran, and both read SUCCESS at `77a0ae1`. Cloud Run revision `mtg-api-00016-mkm` is the API of that build, ready at 14:21 UTC, and `decktome.com` answers 200. Read a build with `gcloud builds list --project decktome-prod --region us-central1 --limit 4`.
 
-**What comes next.** No code item is open. The build walk of the PR-22 gate comes first, and it blocks PR-25 and PR-28. PR-29, the casual corpus, stands on the weak-axes plan (D-567). The next EDHREC read falls on 2026-09-14.
+**PR-33 is the next code item** (2026-09-08, F-77, F-78, D-609). Two deployed builds ran four minutes and gave the reader nothing. `docs/reference/on-band-plan-2026-09-08.md` holds the read and the plan, and the roadmap holds the entry and sequence item 28. The plan waits for the owner's word. OQ-81 asks when the paid effort measurement of D-610 runs.
+
+**What comes next after that.** The build walk of the PR-22 gate comes first, and it blocks PR-25 and PR-28. PR-29, the casual corpus, stands on the weak-axes plan (D-567). The next EDHREC read falls on 2026-09-14.
 
 **A walk to make after the deploy.** Write "Aragorn as commander" to the deployed app, and read the row that asks which card. Then build a deck of an owned-first pool, and read the commander mark on the deck screen.
 
