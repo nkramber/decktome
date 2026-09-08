@@ -16,6 +16,10 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The deploy of #99 passed.** It changed `go/`, `web/`, and `proto/`, so both triggers ran, and both read SUCCESS at `77a0ae1`. Cloud Run revision `mtg-api-00016-mkm` is the API of that build, ready at 14:21 UTC, and `decktome.com` answers 200. Read a build with `gcloud builds list --project decktome-prod --region us-central1 --limit 4`.
 
+**Deck gate run 18 is the decks baseline, and it measures PR-33** (2026-09-08, D-617). It ran at the shipped configuration on the pinned snapshot of run 16, so the code of PR-33 is the one variable the pin holds. It reads PASS. **Repair turns fell from 12 of 25 to 3 of 25**, and a block bought each of the three. The wall clock fell 27 percent and the cost 28 percent, and the calls fell from 93 to 78. On the decks the mana pass runs on, the off-band findings fell from 4 to 2. **The two precon upgrades hold 8 of the 10 that are left**, and the pass skips an upgrade by design (D-249). So the next question goes to the owner. Does the mana pass move the mana base of an upgrade?
+
+`make eval-check` reads run 18 as the baseline now, and it lists run 17 as an experiment it never compares.
+
 **PR-33 merged as #102, and the owner walked the deployed app** (2026-09-08). The same request that read 3 minutes 59 seconds and an error read **37 seconds and one model call**. The log line "the deck is legal and its bands are what the pool allows, so no repair turn runs" is the new path, and the mana pass made 10 steps and left `off_band` at 0.01. **The walk found three faults, and branch `f79-manapass-ownership` fixes them** (F-79, F-80, F-81, D-614 to D-616).
 
 - F-79: the mana pass named seven cards the reader owns as cards to buy. `addOne` wrote no owned count and no price.
