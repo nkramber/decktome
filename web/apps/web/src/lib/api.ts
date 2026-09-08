@@ -6,6 +6,7 @@ import { CollectionService } from "@mtg/api-client/mtg/v1/collection_service_pb"
 import { DeckService } from "@mtg/api-client/mtg/v1/deck_service_pb";
 import { FeedbackService } from "@mtg/api-client/mtg/v1/feedback_service_pb";
 import { HealthService } from "@mtg/api-client/mtg/v1/health_pb";
+import { InviteService } from "@mtg/api-client/mtg/v1/invite_service_pb";
 
 import { currentIdToken } from "./firebase";
 
@@ -32,3 +33,6 @@ export const deckClient = createClient(DeckService, transport);
 export const agentClient = createClient(AgentService, transport);
 export const cardClient = createClient(CardService, transport);
 export const feedbackClient = createClient(FeedbackService, transport);
+// The invite check runs before an account exists, so it carries no token
+// (D-592). The bearer interceptor adds none when nobody is signed in.
+export const inviteClient = createClient(InviteService, transport);

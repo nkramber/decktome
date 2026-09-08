@@ -6,8 +6,26 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/ca
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { signInErrorMessage } from "../../lib/errors";
+import { inviteClient } from "../../lib/api";
 import { createAccount, signIn } from "../../lib/firebase";
 import { useAuth } from "./auth-context";
+
+// notAuthorized is what a person off the invite list reads, and the form
+// stays where it is (D-592).
+export const notAuthorized = "Your email has not been authorized for beta access at this time.";
+
+// inviteAllows asks the API whether the email may make an account. A
+// check that fails to answer allows the attempt: the API refuses the
+// call after it in any case, so a person on the list is never stopped
+// by a check that could not run.
+async function inviteAllows(email: string): Promise<boolean> {
+  try {
+    const res = await inviteClient.checkInvite({ email });
+    return res.allowed;
+  } catch {
+    return true;
+  }
+}
 
 // One form for sign-in and sign-up (D-275). The emulator accepts any email
 // and any password of six or more characters. A visit the route guard
@@ -33,6 +51,13 @@ export function SignInPage() {
     setError("");
     try {
       if (mode === "sign-up") {
+        // The list answers before the account exists (D-592). Without
+        // this the browser makes the account, the API refuses every
+        // call, and the person holds one the project never invited.
+        if (!(await inviteAllows(email))) {
+          setError(notAuthorized);
+          return;
+        }
         await createAccount(email, password);
       } else {
         await signIn(email, password);
