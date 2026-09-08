@@ -1285,18 +1285,31 @@ func (a *Agent) apply(ctx context.Context, st *State, out classifyOut, open []st
 	a.applySets(ctx, st, out, acc)
 	a.applyPrecons(st, out)
 	if rule, ok := poolRules[slotWord(out.PoolRule)]; ok {
-		// An owned rule needs a collection. A reader with none who says
-		// "build only from the Hobbit set" names a set, not their
-		// library, and the classifier reads the word "only" as ownership.
-		// The rule then empties the card pool and the commander pool, and
-		// the deck can not be built at all (D-371).
-		if rule != mtgv1.PoolRule_POOL_RULE_ANY_CARD && !st.Ctx.HasCollection {
-			a.log.Info("an owned pool rule needs a collection, and this session has none",
-				"session", st.SessionID, "rule", rule)
-			rule = mtgv1.PoolRule_POOL_RULE_ANY_CARD
+		// The reader's choice on the chat screen wins, always (D-591).
+		// A reader who picked a collection and "Only cards I own" and
+		// then named a set read "Pool: any card", because the classifier
+		// took the set phrase for a pool answer and wrote over the
+		// choice. The flip also turned the buy list on, so the deck
+		// named cards the reader does not own. It is the D-371 collision
+		// from the other side.
+		if st.Ctx.PoolFromReader {
+			a.log.Info("the reader chose the card pool, so the classifier does not write over it",
+				"session", st.SessionID, "reader", st.Slots.GetPoolRule(), "classifier", rule)
+		} else {
+			// An owned rule needs a collection. A reader with none who
+			// says "build only from the Hobbit set" names a set, not
+			// their library, and the classifier reads the word "only" as
+			// ownership. The rule then empties the card pool and the
+			// commander pool, and the deck can not be built at all
+			// (D-371).
+			if rule != mtgv1.PoolRule_POOL_RULE_ANY_CARD && !st.Ctx.HasCollection {
+				a.log.Info("an owned pool rule needs a collection, and this session has none",
+					"session", st.SessionID, "rule", rule)
+				rule = mtgv1.PoolRule_POOL_RULE_ANY_CARD
+			}
+			st.Slots.PoolRule = rule
+			st.Close("pool_rule")
 		}
-		st.Slots.PoolRule = rule
-		st.Close("pool_rule")
 	}
 	a.applyPower(st, out, message)
 	// A budget applies only when the message names it (D-537, the D-125

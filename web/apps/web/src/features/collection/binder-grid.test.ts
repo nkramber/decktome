@@ -1,8 +1,9 @@
+import type { Card } from "@mtg/api-client/mtg/v1/card_pb";
 import { Color } from "@mtg/api-client/mtg/v1/card_pb";
 import { BinderSort, type SetCount } from "@mtg/api-client/mtg/v1/collection_pb";
 import { describe, expect, it } from "vitest";
 
-import { setOptions, typeOptions } from "./binder-grid";
+import { binderArt, setOptions, typeOptions } from "./binder-grid";
 import { binderFilter, binderSort, noChoice } from "./use-collection";
 
 // The binder controls become one request the server filters on (D-398).
@@ -66,5 +67,30 @@ describe("the binder type list", () => {
 
   it("offers only the way out for a summary with no types", () => {
     expect(typeOptions({})).toHaveLength(1);
+  });
+});
+
+// F-60: a collection holds a set code and a collector number per copy,
+// and the binder drew the default printing. A card the reader owns in
+// one set showed the art of another.
+describe("binderArt", () => {
+  const entry = (imageUris?: { normal: string }) => ({ name: "Lightning Bolt", imageUris }) as never;
+  const card = { faces: [], defaultPrinting: { imageUris: { normal: "https://img/default.jpg" } } } as unknown as Card;
+
+  it("draws the printing the reader owns", () => {
+    expect(binderArt(entry({ normal: "https://img/lea-161.jpg" }), card)).toBe("https://img/lea-161.jpg");
+  });
+
+  it("falls back to the face when the entry holds no art", () => {
+    const faced = { faces: [{ imageUris: { normal: "https://img/face.jpg" } }], defaultPrinting: { imageUris: { normal: "https://img/default.jpg" } } } as unknown as Card;
+    expect(binderArt(entry(), faced)).toBe("https://img/face.jpg");
+  });
+
+  it("falls back to the default printing when there is no face", () => {
+    expect(binderArt(entry(), card)).toBe("https://img/default.jpg");
+  });
+
+  it("reads an empty string when nothing holds art", () => {
+    expect(binderArt(entry(), undefined)).toBe("");
   });
 });

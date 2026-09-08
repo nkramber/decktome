@@ -88,6 +88,13 @@ message CollectionEntry {
   repeated Color colors = 12;
   repeated string card_types = 13;
   double price_usd = 14;
+  // image_uris is the art of the printing the reader owns (F-60). The
+  // binder drew the default printing before this, so a card the reader
+  // owns in one set showed the art of another. It is a display field of
+  // the same kind as the three above, and no document holds it. Empty
+  // for a printing the index does not know, and for a two-faced card
+  // that carries its art on the faces.
+  ImageUris image_uris = 15;
 }
 
 // BinderFilter is what the binder grid asks for (D-398). Every field

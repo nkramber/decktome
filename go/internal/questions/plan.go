@@ -49,8 +49,14 @@ type Context struct {
 
 	// OutOfScope marks a request for something other than a Magic deck.
 	// Nothing else is worth asking until it is settled (D-99).
-	OutOfScope       bool `json:"out_of_scope"`
-	HasCollection    bool `json:"has_collection"`
+	OutOfScope    bool `json:"out_of_scope"`
+	HasCollection bool `json:"has_collection"`
+	// PoolFromReader says the reader chose the card pool on the chat
+	// screen, so the classifier never writes over it (D-591). The pool
+	// picker names a collection and says how strict the deck may be, and
+	// that choice is the answer (D-359). A stored snapshot without this
+	// field reads false, which is the rule before this one.
+	PoolFromReader   bool `json:"pool_from_reader"`
 	ThinTheme        bool `json:"thin_theme"`
 	CommanderSet     bool `json:"commander_set"`
 	NamedCard        bool `json:"named_card"`
