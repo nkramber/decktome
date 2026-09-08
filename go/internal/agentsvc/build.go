@@ -129,6 +129,11 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 
 	var commanders []*mtgv1.Card
 	var commanderIDs []string
+	// Where the commander came from, for the build metrics (D-602).
+	commanderSource := "picked"
+	if len(st.CommanderNames) > 0 {
+		commanderSource = "named"
+	}
 	for _, name := range st.CommanderNames {
 		c, ok := idx.ByName(name)
 		if !ok {
@@ -169,6 +174,13 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 			return nil, ErrThinCommanderPool
 		default:
 			c := pool[0]
+			if commanderSource == "named" {
+				// The reader named one, and no name resolved, so the app
+				// chose. That is not a delegation (F-75).
+				commanderSource = "named_unresolved"
+			} else {
+				commanderSource = "delegated"
+			}
 			commanders = append(commanders, c.Card)
 			commanderIDs = append(commanderIDs, c.Card.GetOracleId())
 			if c.Partner != nil {
@@ -327,6 +339,13 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 		return nil, err
 	}
 	s.markOwnedPrintings(ctx, uid, session, idx, res.Deck)
+	// The deck carries what its build cost and how it went (D-602). The
+	// owner reads almost every deck through a repair turn, and no store
+	// held the count.
+	if res.Metrics != nil {
+		res.Metrics.CommanderSource = commanderSource
+		res.Deck.Build = res.Metrics
+	}
 	return res, nil
 }
 

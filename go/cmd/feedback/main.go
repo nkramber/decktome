@@ -40,6 +40,7 @@ func run() error {
 	verdict := flag.String("verdict", "down", `the verdict to read: "down", "up", or "" for both`)
 	limit := flag.Int("limit", 50, "how many verdicts to read, newest first")
 	asJSON := flag.Bool("json", false, "print the verdicts as JSON")
+	id := flag.String("id", "", "read one verdict by its id, over every user")
 	flag.Parse()
 
 	ctx := context.Background()
@@ -53,9 +54,23 @@ func run() error {
 	}
 	defer func() { _ = client.Close() }()
 
-	items, err := feedback.NewRepo(client).Down(ctx, *verdict, *limit)
-	if err != nil {
-		return err
+	repo := feedback.NewRepo(client)
+	var items []feedback.Item
+	if *id != "" {
+		// One id needs no index, so this reads without the collection
+		// group query (D-600).
+		item, uid, err := repo.Find(ctx, *id)
+		if err != nil {
+			return fmt.Errorf("feedback %s: %w", *id, err)
+		}
+		fmt.Printf("feedback     %s\nuser         %s\n", *id, uid)
+		items = []feedback.Item{item}
+	} else {
+		var err error
+		items, err = repo.Down(ctx, *verdict, *limit)
+		if err != nil {
+			return err
+		}
 	}
 	if *asJSON {
 		enc := json.NewEncoder(os.Stdout)

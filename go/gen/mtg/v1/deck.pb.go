@@ -212,7 +212,12 @@ type Deck struct {
 	Quality *DeckQuality `protobuf:"bytes,24,opt,name=quality,proto3" json:"quality,omitempty"`
 	// shared says a share link exists for this deck (D-315). The token
 	// itself is never stored, so a new link replaces the old one.
-	Shared        bool `protobuf:"varint,25,opt,name=shared,proto3" json:"shared,omitempty"`
+	Shared bool `protobuf:"varint,25,opt,name=shared,proto3" json:"shared,omitempty"`
+	// build is what the build of this deck cost and how it went (D-602).
+	// The owner reads almost every deck through a repair turn, and no
+	// store held the time or the count. The logs held the repair turns
+	// alone, so no reader could count them over many decks.
+	Build         *BuildMetrics `protobuf:"bytes,26,opt,name=build,proto3" json:"build,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -413,6 +418,13 @@ func (x *Deck) GetShared() bool {
 		return x.Shared
 	}
 	return false
+}
+
+func (x *Deck) GetBuild() *BuildMetrics {
+	if x != nil {
+		return x.Build
+	}
+	return nil
 }
 
 // DeckQuality is the grade of the deck quality model (PR-14B). The
@@ -1481,11 +1493,117 @@ func (x *Finding) GetOracleId() string {
 	return ""
 }
 
+// BuildMetrics is what one build cost and how it went (D-602). Every
+// number here is an observation of the build that made this deck.
+type BuildMetrics struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// duration_ms is the wall time of the whole build, the model calls
+	// and the engine together.
+	DurationMs int64 `protobuf:"varint,1,opt,name=duration_ms,json=durationMs,proto3" json:"duration_ms,omitempty"`
+	// repair_turns counts the repair passes the build ran. Zero means the
+	// first deck passed the engine.
+	RepairTurns int32 `protobuf:"varint,2,opt,name=repair_turns,json=repairTurns,proto3" json:"repair_turns,omitempty"`
+	// misses and findings are the counts the engine reported before each
+	// repair, oldest first. One entry per repair turn.
+	Misses   []int32 `protobuf:"varint,3,rep,packed,name=misses,proto3" json:"misses,omitempty"`
+	Findings []int32 `protobuf:"varint,4,rep,packed,name=findings,proto3" json:"findings,omitempty"`
+	// shortlist is how many cards the generator chose from.
+	Shortlist int32 `protobuf:"varint,5,opt,name=shortlist,proto3" json:"shortlist,omitempty"`
+	// usage is the model spend of this build alone, apart from the
+	// question turns of the session (M-1).
+	Usage *Usage `protobuf:"bytes,6,opt,name=usage,proto3" json:"usage,omitempty"`
+	// commander_source says where the commander came from: "named" when
+	// the reader named it, "delegated" when the reader asked the app to
+	// pick, and "picked" when the app chose with no delegation.
+	CommanderSource string `protobuf:"bytes,7,opt,name=commander_source,json=commanderSource,proto3" json:"commander_source,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *BuildMetrics) Reset() {
+	*x = BuildMetrics{}
+	mi := &file_mtg_v1_deck_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BuildMetrics) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BuildMetrics) ProtoMessage() {}
+
+func (x *BuildMetrics) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_deck_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BuildMetrics.ProtoReflect.Descriptor instead.
+func (*BuildMetrics) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_deck_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *BuildMetrics) GetDurationMs() int64 {
+	if x != nil {
+		return x.DurationMs
+	}
+	return 0
+}
+
+func (x *BuildMetrics) GetRepairTurns() int32 {
+	if x != nil {
+		return x.RepairTurns
+	}
+	return 0
+}
+
+func (x *BuildMetrics) GetMisses() []int32 {
+	if x != nil {
+		return x.Misses
+	}
+	return nil
+}
+
+func (x *BuildMetrics) GetFindings() []int32 {
+	if x != nil {
+		return x.Findings
+	}
+	return nil
+}
+
+func (x *BuildMetrics) GetShortlist() int32 {
+	if x != nil {
+		return x.Shortlist
+	}
+	return 0
+}
+
+func (x *BuildMetrics) GetUsage() *Usage {
+	if x != nil {
+		return x.Usage
+	}
+	return nil
+}
+
+func (x *BuildMetrics) GetCommanderSource() string {
+	if x != nil {
+		return x.CommanderSource
+	}
+	return ""
+}
+
 var File_mtg_v1_deck_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\n" +
-	"\x11mtg/v1/deck.proto\x12\x06mtg.v1\x1a\x11mtg/v1/card.proto\x1a\x13mtg/v1/format.proto\x1a\x14mtg/v1/session.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xad\a\n" +
+	"\x11mtg/v1/deck.proto\x12\x06mtg.v1\x1a\x11mtg/v1/card.proto\x1a\x13mtg/v1/format.proto\x1a\x14mtg/v1/session.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xd9\a\n" +
 	"\x04Deck\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12&\n" +
@@ -1516,7 +1634,8 @@ const file_mtg_v1_deck_proto_rawDesc = "" +
 	"card_count\x18\x16 \x01(\x05R\tcardCount\x12-\n" +
 	"\aprofile\x18\x17 \x01(\v2\x13.mtg.v1.DeckProfileR\aprofile\x12-\n" +
 	"\aquality\x18\x18 \x01(\v2\x13.mtg.v1.DeckQualityR\aquality\x12\x16\n" +
-	"\x06shared\x18\x19 \x01(\bR\x06sharedJ\x04\b\n" +
+	"\x06shared\x18\x19 \x01(\bR\x06shared\x12*\n" +
+	"\x05build\x18\x1a \x01(\v2\x14.mtg.v1.BuildMetricsR\x05buildJ\x04\b\n" +
 	"\x10\vR\x04seed\"\xb5\x01\n" +
 	"\vDeckQuality\x12\x12\n" +
 	"\x04tier\x18\x01 \x01(\tR\x04tier\x12\x14\n" +
@@ -1607,7 +1726,16 @@ const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12,\n" +
 	"\bseverity\x18\x02 \x01(\x0e2\x10.mtg.v1.SeverityR\bseverity\x12\x18\n" +
 	"\amessage\x18\x03 \x01(\tR\amessage\x12\x1b\n" +
-	"\toracle_id\x18\x04 \x01(\tR\boracleId*\xff\x01\n" +
+	"\toracle_id\x18\x04 \x01(\tR\boracleId\"\xf4\x01\n" +
+	"\fBuildMetrics\x12\x1f\n" +
+	"\vduration_ms\x18\x01 \x01(\x03R\n" +
+	"durationMs\x12!\n" +
+	"\frepair_turns\x18\x02 \x01(\x05R\vrepairTurns\x12\x16\n" +
+	"\x06misses\x18\x03 \x03(\x05R\x06misses\x12\x1a\n" +
+	"\bfindings\x18\x04 \x03(\x05R\bfindings\x12\x1c\n" +
+	"\tshortlist\x18\x05 \x01(\x05R\tshortlist\x12#\n" +
+	"\x05usage\x18\x06 \x01(\v2\r.mtg.v1.UsageR\x05usage\x12)\n" +
+	"\x10commander_source\x18\a \x01(\tR\x0fcommanderSource*\xff\x01\n" +
 	"\bCardRole\x12\x19\n" +
 	"\x15CARD_ROLE_UNSPECIFIED\x10\x00\x12\x12\n" +
 	"\x0eCARD_ROLE_LAND\x10\x01\x12\x12\n" +
@@ -1640,7 +1768,7 @@ func file_mtg_v1_deck_proto_rawDescGZIP() []byte {
 }
 
 var file_mtg_v1_deck_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_mtg_v1_deck_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_mtg_v1_deck_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_mtg_v1_deck_proto_goTypes = []any{
 	(CardRole)(0),                 // 0: mtg.v1.CardRole
 	(Severity)(0),                 // 1: mtg.v1.Severity
@@ -1657,46 +1785,50 @@ var file_mtg_v1_deck_proto_goTypes = []any{
 	(*DeckCard)(nil),              // 12: mtg.v1.DeckCard
 	(*ValidationResult)(nil),      // 13: mtg.v1.ValidationResult
 	(*Finding)(nil),               // 14: mtg.v1.Finding
-	(*Format)(nil),                // 15: mtg.v1.Format
-	(*PowerLevel)(nil),            // 16: mtg.v1.PowerLevel
-	(*timestamppb.Timestamp)(nil), // 17: google.protobuf.Timestamp
-	(*Card)(nil),                  // 18: mtg.v1.Card
-	(*Printing)(nil),              // 19: mtg.v1.Printing
-	(PoolRule)(0),                 // 20: mtg.v1.PoolRule
-	(FormatId)(0),                 // 21: mtg.v1.FormatId
+	(*BuildMetrics)(nil),          // 15: mtg.v1.BuildMetrics
+	(*Format)(nil),                // 16: mtg.v1.Format
+	(*PowerLevel)(nil),            // 17: mtg.v1.PowerLevel
+	(*timestamppb.Timestamp)(nil), // 18: google.protobuf.Timestamp
+	(*Card)(nil),                  // 19: mtg.v1.Card
+	(*Printing)(nil),              // 20: mtg.v1.Printing
+	(PoolRule)(0),                 // 21: mtg.v1.PoolRule
+	(FormatId)(0),                 // 22: mtg.v1.FormatId
+	(*Usage)(nil),                 // 23: mtg.v1.Usage
 }
 var file_mtg_v1_deck_proto_depIdxs = []int32{
-	15, // 0: mtg.v1.Deck.format:type_name -> mtg.v1.Format
-	16, // 1: mtg.v1.Deck.power:type_name -> mtg.v1.PowerLevel
+	16, // 0: mtg.v1.Deck.format:type_name -> mtg.v1.Format
+	17, // 1: mtg.v1.Deck.power:type_name -> mtg.v1.PowerLevel
 	12, // 2: mtg.v1.Deck.cards:type_name -> mtg.v1.DeckCard
 	13, // 3: mtg.v1.Deck.validation:type_name -> mtg.v1.ValidationResult
-	17, // 4: mtg.v1.Deck.created_at:type_name -> google.protobuf.Timestamp
+	18, // 4: mtg.v1.Deck.created_at:type_name -> google.protobuf.Timestamp
 	12, // 5: mtg.v1.Deck.sideboard:type_name -> mtg.v1.DeckCard
 	12, // 6: mtg.v1.Deck.upgrades:type_name -> mtg.v1.DeckCard
 	5,  // 7: mtg.v1.Deck.profile:type_name -> mtg.v1.DeckProfile
 	3,  // 8: mtg.v1.Deck.quality:type_name -> mtg.v1.DeckQuality
-	4,  // 9: mtg.v1.DeckQuality.probabilities:type_name -> mtg.v1.TierProbability
-	6,  // 10: mtg.v1.DeckProfile.features:type_name -> mtg.v1.ProfileFeature
-	7,  // 11: mtg.v1.DeckProfile.goldfish:type_name -> mtg.v1.Goldfish
-	8,  // 12: mtg.v1.DeckProfile.content:type_name -> mtg.v1.ContentCheck
-	9,  // 13: mtg.v1.ContentCheck.combos:type_name -> mtg.v1.ComboHit
-	15, // 14: mtg.v1.SharedDeck.format:type_name -> mtg.v1.Format
-	16, // 15: mtg.v1.SharedDeck.power:type_name -> mtg.v1.PowerLevel
-	11, // 16: mtg.v1.SharedDeck.cards:type_name -> mtg.v1.SharedCard
-	11, // 17: mtg.v1.SharedDeck.sideboard:type_name -> mtg.v1.SharedCard
-	0,  // 18: mtg.v1.SharedCard.role:type_name -> mtg.v1.CardRole
-	18, // 19: mtg.v1.SharedCard.card:type_name -> mtg.v1.Card
-	0,  // 20: mtg.v1.DeckCard.role:type_name -> mtg.v1.CardRole
-	19, // 21: mtg.v1.DeckCard.owned_printing:type_name -> mtg.v1.Printing
-	14, // 22: mtg.v1.ValidationResult.findings:type_name -> mtg.v1.Finding
-	20, // 23: mtg.v1.ValidationResult.pool_rule:type_name -> mtg.v1.PoolRule
-	21, // 24: mtg.v1.ValidationResult.format:type_name -> mtg.v1.FormatId
-	1,  // 25: mtg.v1.Finding.severity:type_name -> mtg.v1.Severity
-	26, // [26:26] is the sub-list for method output_type
-	26, // [26:26] is the sub-list for method input_type
-	26, // [26:26] is the sub-list for extension type_name
-	26, // [26:26] is the sub-list for extension extendee
-	0,  // [0:26] is the sub-list for field type_name
+	15, // 9: mtg.v1.Deck.build:type_name -> mtg.v1.BuildMetrics
+	4,  // 10: mtg.v1.DeckQuality.probabilities:type_name -> mtg.v1.TierProbability
+	6,  // 11: mtg.v1.DeckProfile.features:type_name -> mtg.v1.ProfileFeature
+	7,  // 12: mtg.v1.DeckProfile.goldfish:type_name -> mtg.v1.Goldfish
+	8,  // 13: mtg.v1.DeckProfile.content:type_name -> mtg.v1.ContentCheck
+	9,  // 14: mtg.v1.ContentCheck.combos:type_name -> mtg.v1.ComboHit
+	16, // 15: mtg.v1.SharedDeck.format:type_name -> mtg.v1.Format
+	17, // 16: mtg.v1.SharedDeck.power:type_name -> mtg.v1.PowerLevel
+	11, // 17: mtg.v1.SharedDeck.cards:type_name -> mtg.v1.SharedCard
+	11, // 18: mtg.v1.SharedDeck.sideboard:type_name -> mtg.v1.SharedCard
+	0,  // 19: mtg.v1.SharedCard.role:type_name -> mtg.v1.CardRole
+	19, // 20: mtg.v1.SharedCard.card:type_name -> mtg.v1.Card
+	0,  // 21: mtg.v1.DeckCard.role:type_name -> mtg.v1.CardRole
+	20, // 22: mtg.v1.DeckCard.owned_printing:type_name -> mtg.v1.Printing
+	14, // 23: mtg.v1.ValidationResult.findings:type_name -> mtg.v1.Finding
+	21, // 24: mtg.v1.ValidationResult.pool_rule:type_name -> mtg.v1.PoolRule
+	22, // 25: mtg.v1.ValidationResult.format:type_name -> mtg.v1.FormatId
+	1,  // 26: mtg.v1.Finding.severity:type_name -> mtg.v1.Severity
+	23, // 27: mtg.v1.BuildMetrics.usage:type_name -> mtg.v1.Usage
+	28, // [28:28] is the sub-list for method output_type
+	28, // [28:28] is the sub-list for method input_type
+	28, // [28:28] is the sub-list for extension type_name
+	28, // [28:28] is the sub-list for extension extendee
+	0,  // [0:28] is the sub-list for field type_name
 }
 
 func init() { file_mtg_v1_deck_proto_init() }
@@ -1713,7 +1845,7 @@ func file_mtg_v1_deck_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_mtg_v1_deck_proto_rawDesc), len(file_mtg_v1_deck_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   13,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

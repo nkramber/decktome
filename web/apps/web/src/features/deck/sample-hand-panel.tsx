@@ -57,7 +57,7 @@ export function SampleHand({ deck, byId, seed }: { deck: Deck; byId: Map<string,
         <ul aria-label="Hand" className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-7">
           {state.hand.map((c, i) => {
             const face = facesOf(byId.get(c.oracleId))[0];
-            const picture = face ? <FaceImage face={face} size="small" /> : <span className="block aspect-[146/204] rounded-card border border-border bg-muted p-1 text-center text-xs">{c.name}</span>;
+            const picture = face ? <FaceImage face={face} size="normal" /> : <span className="block aspect-[146/204] rounded-card border border-border bg-muted p-1 text-center text-xs">{c.name}</span>;
             return (
               <li key={`${c.oracleId}-${i}`} className="flex flex-col gap-1 text-xs" data-testid="hand-card">
                 {state.toBottom > 0 ? (

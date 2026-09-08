@@ -142,6 +142,10 @@ type Result struct {
 	// line the gate document prints: the miss count and the finding codes.
 	Repaired     bool
 	RepairReason string
+	// Metrics is what this build cost and how it went (D-602). The
+	// caller stores it on the deck, so a reader counts the repair turns
+	// over many decks and not one log line at a time.
+	Metrics *mtgv1.BuildMetrics
 }
 
 // Builder runs the generate and repair calls.
@@ -193,6 +197,11 @@ func (b *Builder) Build(ctx context.Context, req Request, acc *llm.Accumulator) 
 	if req.Pool == nil || req.Pool.Size() == 0 {
 		return nil, fmt.Errorf("generate: the shortlist is empty")
 	}
+	started := time.Now()
+	// The spend of this build alone. The accumulator carries the whole
+	// turn, and the question calls ran before this (D-602).
+	before := acc.Report()
+	metrics := &mtgv1.BuildMetrics{Shortlist: int32(req.Pool.Size())}
 	req.phase(mtgv1.BuildPhase_BUILD_PHASE_BUILDING)
 	cut := b.cutShortlist(ctx, &req)
 	out, err := b.call(ctx, llm.RoleGenerate, generateInstructions, b.input(req, nil, nil), req.SessionID, acc)
@@ -219,6 +228,9 @@ func (b *Builder) Build(ctx context.Context, req Request, acc *llm.Accumulator) 
 		}
 		b.log.Info("the deck was refused, so a repair turn runs",
 			"session", req.SessionID, "turn", turn, "misses", len(res.misses), "findings", len(findings))
+		metrics.RepairTurns = int32(turn)
+		metrics.Misses = append(metrics.Misses, int32(len(res.misses)))
+		metrics.Findings = append(metrics.Findings, int32(len(findings)))
 		req.phase(mtgv1.BuildPhase_BUILD_PHASE_REPAIRING)
 		out2, err := b.call(ctx, llm.RoleRepair, repairInstructions,
 			b.input(req, res.misses, findings), req.SessionID, acc)
@@ -253,7 +265,9 @@ func (b *Builder) Build(ctx context.Context, req Request, acc *llm.Accumulator) 
 			fmt.Sprintf("bracket %d does not allow %s, so the shortlist left %s out: %s",
 				req.Power.GetBracket(), these(len(cut)), these(len(cut)), strings.Join(cut, ", ")))
 	}
-	final := &Result{Deck: res.deck, Repaired: res.repaired, RepairReason: res.repairReason}
+	metrics.DurationMs = time.Since(started).Milliseconds()
+	metrics.Usage = spendBetween(before, acc.Report())
+	final := &Result{Deck: res.deck, Repaired: res.repaired, RepairReason: res.repairReason, Metrics: metrics}
 	// A name that missed twice never reaches the deck, and the user reads
 	// why it is absent.
 	for _, m := range res.misses {
@@ -575,4 +589,33 @@ func (r Request) phase(p mtgv1.BuildPhase) {
 	if r.OnPhase != nil {
 		r.OnPhase(p)
 	}
+}
+
+// spendBetween is the model spend of one build: the accumulator after it
+// less the accumulator before it (D-602). The accumulator carries the
+// whole turn, and the question calls of that turn are not this build.
+func spendBetween(before, after llm.Report) *mtgv1.Usage {
+	u := &mtgv1.Usage{Calls: int32(after.Calls - before.Calls), Priced: true}
+	if after.Tokens != nil {
+		u.InputTokens = after.Tokens.InputTokens
+		u.CachedInputTokens = after.Tokens.CachedInputTokens
+		u.OutputTokens = after.Tokens.OutputTokens
+		u.ReasoningTokens = after.Tokens.ReasoningTokens
+	}
+	if before.Tokens != nil {
+		u.InputTokens -= before.Tokens.InputTokens
+		u.CachedInputTokens -= before.Tokens.CachedInputTokens
+		u.OutputTokens -= before.Tokens.OutputTokens
+		u.ReasoningTokens -= before.Tokens.ReasoningTokens
+	}
+	switch {
+	case after.CostUSD != nil && before.CostUSD != nil:
+		u.CostUsd = *after.CostUSD - *before.CostUSD
+	case after.CostUSD != nil:
+		u.CostUsd = *after.CostUSD
+	default:
+		// A run with no price says so, and a zero cost is not a fact.
+		u.Priced = false
+	}
+	return u
 }

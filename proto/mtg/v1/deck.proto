@@ -77,6 +77,12 @@ message Deck {
   // shared says a share link exists for this deck (D-315). The token
   // itself is never stored, so a new link replaces the old one.
   bool shared = 25;
+  // build is what the build of this deck cost and how it went (D-602).
+  // The owner reads almost every deck through a repair turn, and no
+  // store held the time or the count. The logs held the repair turns
+  // alone, so no reader could count them over many decks.
+  BuildMetrics build = 26;
+
 }
 
 // DeckQuality is the grade of the deck quality model (PR-14B). The
@@ -281,4 +287,28 @@ enum Severity {
   SEVERITY_BLOCK = 1;
   SEVERITY_WARN = 2;
   SEVERITY_INFO = 3;
+}
+
+// BuildMetrics is what one build cost and how it went (D-602). Every
+// number here is an observation of the build that made this deck.
+message BuildMetrics {
+  // duration_ms is the wall time of the whole build, the model calls
+  // and the engine together.
+  int64 duration_ms = 1;
+  // repair_turns counts the repair passes the build ran. Zero means the
+  // first deck passed the engine.
+  int32 repair_turns = 2;
+  // misses and findings are the counts the engine reported before each
+  // repair, oldest first. One entry per repair turn.
+  repeated int32 misses = 3;
+  repeated int32 findings = 4;
+  // shortlist is how many cards the generator chose from.
+  int32 shortlist = 5;
+  // usage is the model spend of this build alone, apart from the
+  // question turns of the session (M-1).
+  Usage usage = 6;
+  // commander_source says where the commander came from: "named" when
+  // the reader named it, "delegated" when the reader asked the app to
+  // pick, and "picked" when the app chose with no delegation.
+  string commander_source = 7;
 }
