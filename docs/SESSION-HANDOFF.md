@@ -4,21 +4,23 @@
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. On the owner's machine `~/.nvm/versions/node/v22.23.2/bin` on the PATH fixes it.
 
-## RESUME HERE (2026-09-08, PR-32 is built and waits for a merge)
+## RESUME HERE (2026-09-08, PR-32 is merged)
 
-**The checkout.** Branch `pr-32-named-commander`, from `main` at `4e826d1` (PR #98). It holds the second half of PR-32, and no pull request is open for it yet. Run `make where` before you touch anything.
+**The checkout.** `main` is `77a0ae1`, which is PR #99, merged on 2026-09-08. Branch `pr-32-named-commander` is merged and gone. Run `make where` before you touch anything.
 
-**What the branch holds.**
+**What #99 holds.** The second half of PR-32, and it closes F-75 and F-76.
 
-1. F-75, the commander name the card index does not hold (D-606, D-607). Two catalog rows ask which card the reader means. `commander_unresolved` names the best three cards that hold the name and offers "None of these". `commander_unknown` says a name no card holds matched nothing. The name reaches no build until the reader answers. `CandidateHints.ResolveCommander` reads whole words, so "Aragorn" and "King of Gondor" both find "Aragorn, King of Gondor". A picked option sets the commander with no model in the path (D-597). Ten tests hold it.
-2. The second half of F-76 (D-608). `Deck.commanders` carries one `DeckCard` per commander, with the ownership, the count, and the price. The build fills it, and the deck screen marks it. The two buy lists read it, in the web app and in the export package. An unowned commander counts in `buy_cost_usd`, which `BuyCostWith` did already.
+1. F-75, the commander name the card index does not hold (D-606, D-607). Two catalog rows ask which card the reader means. `commander_unresolved` names the best three cards that hold the name and offers "None of these". `commander_unknown` says a name no card holds matched nothing. The name reaches no build until the reader answers. `CandidateHints.ResolveCommander` reads whole words, so "Aragorn" and "King of Gondor" both find "Aragorn, King of Gondor". A picked option sets the commander with no model in the path (D-597).
+2. The second half of F-76 (D-608). `Deck.commanders` carries one `DeckCard` per commander, with the ownership, the count, and the price. The build fills it, and the deck screen marks it. The two buy lists read it, in the web app and in the export package. An unowned commander counts in `buy_cost_usd`, which `BuyCostWith` did already. **A deck built before #99 carries no entry**, so its commander shows no mark and reaches no buy list.
 3. The smoke gap of #92. The fixture deck comes from the owned-first shortlist of the fixture export now, so the flow builds from the collection. Karlov is the one card the export does not hold. So the lane reads the buy mark and the buy list of F-76.
 
-**The gate.** `make verify` passes. `make smoke` passes in 4.4 seconds. The Go suite, 303 web tests, and `make ste-check` all pass.
+**The deploy of #99 passed.** It changed `go/`, `web/`, and `proto/`, so both triggers ran, and both read SUCCESS at `77a0ae1`. Cloud Run revision `mtg-api-00016-mkm` is the API of that build, ready at 14:21 UTC, and `decktome.com` answers 200. Read a build with `gcloud builds list --project decktome-prod --region us-central1 --limit 4`.
 
-**What the next session does.** Open the pull request, and the owner merges it. The deploy after the merge touches `go/`, `web/`, and `proto/`, so both triggers run. Read the build before you trust the site.
+**What comes next.** No code item is open. The build walk of the PR-22 gate comes first, and it blocks PR-25 and PR-28. PR-29, the casual corpus, stands on the weak-axes plan (D-567). The next EDHREC read falls on 2026-09-14.
 
-**What waits on the owner.** OQ-67, the Stage B channels. OQ-77, the blocking function of Identity Platform. It costs nothing to 50,000 monthly active users, so the cost is not the question. The seven-second answer limit on every sign-up is the question. The build walk of the PR-22 gate, which blocks PR-25 and PR-28.
+**A walk to make after the deploy.** Write "Aragorn as commander" to the deployed app, and read the row that asks which card. Then build a deck of an owned-first pool, and read the commander mark on the deck screen.
+
+**What waits on the owner.** OQ-67, the Stage B channels. OQ-77, the blocking function of Identity Platform. It costs nothing to 50,000 monthly active users, so the cost is not the question. The seven-second answer limit on every sign-up is the question. The build walk of the PR-22 gate.
 
 **What changed on the deployed project on 2026-09-08, outside the repo.**
 
@@ -28,7 +30,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 - `cedricjimenez9@gmail.com` is on the invite list.
 - `natekramber22@gmail.com` still exists in Firebase Auth, from the walk of 2026-09-07. No command here removes an account.
 
-**Two habits this session paid for.** Read the local date and never the UTC date (D-595). Read a gate document before a row says a run is due: F-31 and F-32 read "run due" for five days after the runs passed.
+**Three habits this session paid for.** Read the local date and never the UTC date (D-595). Read a gate document before a row says a run is due. Put Node 22.23.2 on the PATH before `make verify`, or every web test file fails at start.
 
 ## Where things stand (2026-09-07)
 
