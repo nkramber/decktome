@@ -616,7 +616,7 @@ export function ChatPanel({
   // and the box that builds the next one. Stretching that to the
   // viewport put a void between them (D-358).
   return (
-    <div className={cn("mx-auto flex w-full max-w-4xl flex-col p-4 pt-8 md:p-6 md:pt-14", !beforeFirstMessage && "min-h-[calc(100vh-9rem)]")}>
+    <div className={cn("mx-auto flex w-full max-w-4xl flex-col p-4 pt-8 md:p-6 md:pt-14", !beforeFirstMessage && "min-h-[calc(100dvh-9rem)]")}>
       <section aria-labelledby="chat-title" className={cn("flex min-w-0 flex-col", beforeFirstMessage ? "gap-4" : "grow gap-4")}>
         {/* The identifiers are for support, not for reading. They sit in
             one quiet row under the title, and never in the thread. */}

@@ -31,7 +31,7 @@ export function HealthFooter({ className }: { className?: string }) {
   }
 
   return (
-    <footer className={cn("border-t border-border px-4 py-2 text-sm text-muted-foreground md:px-6", className)}>
+    <footer className={cn("shrink-0 border-t border-border px-4 py-2 text-sm text-muted-foreground md:px-6", className)}>
       <span data-testid="health">{api}</span>
       {" · "}
       <span data-testid="freshness">{cards}</span>
