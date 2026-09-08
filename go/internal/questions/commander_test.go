@@ -527,6 +527,56 @@ func TestCommanderSwapReopensTheChoice(t *testing.T) {
 	}
 }
 
+// TestALegendaryArtifactCanNotLead is F-82, found on the deployed app on
+// 2026-09-08. The reader asked to add The Arkenstone, a Legendary
+// Artifact, and the app asked "Should The Arkenstone be your commander,
+// or one card in the 99?".
+//
+// The card index derives the answer from the front face against CR
+// 903.3, and CanLead threw it away: it read the type line again, saw the
+// word "legendary", and said nothing. The role question then went out
+// for a card that can not lead any deck.
+func TestALegendaryArtifactCanNotLead(t *testing.T) {
+	idx := cards.NewIndex([]*mtgv1.Card{
+		{Name: "The Arkenstone // Seek the Heart", TypeLine: "Legendary Artifact // Sorcery — Adventure",
+			Faces: []*mtgv1.CardFace{
+				{Name: "The Arkenstone", TypeLine: "Legendary Artifact"},
+				{Name: "Seek the Heart", TypeLine: "Sorcery — Adventure"},
+			}},
+		{Name: "Sigil of the Empty Throne", TypeLine: "Legendary Enchantment"},
+		{Name: "Karlov of the Ghost Council", TypeLine: "Legendary Creature — Spirit Advisor", CanBeCommander: true},
+	}, nil, nil, time.Time{})
+	h := &CandidateHints{Index: idx}
+
+	for _, tc := range []struct {
+		name             string
+		wantLead, wantOK bool
+	}{
+		{"The Arkenstone // Seek the Heart", false, true},
+		{"Sigil of the Empty Throne", false, true},
+		{"Karlov of the Ghost Council", true, true},
+	} {
+		lead, known := h.CanLead(tc.name)
+		if lead != tc.wantLead || known != tc.wantOK {
+			t.Errorf("CanLead(%q) = %v/%v, want %v/%v", tc.name, lead, known, tc.wantLead, tc.wantOK)
+		}
+	}
+}
+
+// TestALegendaryPlaneswalkerStaysUnknown keeps D-269. A characteristic
+// -defining ability can make a planeswalker a creature card everywhere
+// except the battlefield, and Grist is the card that proved it. The
+// engine says nothing about that class.
+func TestALegendaryPlaneswalkerStaysUnknown(t *testing.T) {
+	idx := cards.NewIndex([]*mtgv1.Card{
+		{Name: "Some Walker", TypeLine: "Legendary Planeswalker — Test"},
+	}, nil, nil, time.Time{})
+	h := &CandidateHints{Index: idx}
+	if lead, known := h.CanLead("Some Walker"); lead || known {
+		t.Errorf("CanLead(planeswalker) = %v/%v, want false/false", lead, known)
+	}
+}
+
 // TestCanLeadStaysSilentOnALegendaryCard is D-140. Grist, the Hunger
 // Tide is a legendary planeswalker, and it is a legal commander: a
 // characteristic-defining ability makes it a creature card everywhere

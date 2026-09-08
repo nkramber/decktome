@@ -23,18 +23,29 @@ const formatLabel: Record<ExportFormat, string> = {
 // (D-15, D-307), the buy list as text for a shop (D-309), and the buy
 // list on screen with a Scryfall link per card (D-308). The text comes
 // from DeckService.ExportDeck, so the browser and the API agree on it.
+// exportTimeoutMs bounds one export call. The API renders a deck list
+// from stored data, so a call that runs past this is one that will not
+// answer (F-83).
+const exportTimeoutMs = 20_000;
+
 export function ExportPanel({ deck, byId }: { deck: Deck; byId: Map<string, Card> }) {
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
+  // running names the one export in flight, so a call that hangs blocks
+  // that button alone. It blocked all four before, and a call that never
+  // answered left the reader with no export at all and no word (F-83).
+  const [running, setRunning] = useState<string>("");
   const { needed, upgrades } = buyRows(deck, byId);
 
   async function run(format: ExportFormat, action: Action) {
-    setBusy(true);
+    const key = `${format}-${action}`;
+    setRunning(key);
     setError("");
     setStatus("");
     try {
-      const res = await deckClient.exportDeck({ deckId: deck.id, format });
+      // The wait is bounded. An export that never answers releases the
+      // panel and says so, rather than leave every button dead (F-83).
+      const res = await deckClient.exportDeck({ deckId: deck.id, format }, { timeoutMs: exportTimeoutMs });
       const lines = res.text.split("\n").filter((l) => l.trim() !== "").length;
       if (action === "copy") {
         await navigator.clipboard.writeText(res.text);
@@ -44,29 +55,30 @@ export function ExportPanel({ deck, byId }: { deck: Deck; byId: Map<string, Card
         setStatus(`Saved ${res.fileName}: ${lines} lines.`);
       }
     } catch (e) {
-      setError(`Export failed: ${errorMessage(e)}`);
+      setError(`Export failed: ${errorMessage(e)}. Try it again.`);
     } finally {
-      setBusy(false);
+      setRunning("");
     }
   }
 
-  const canExport = deck.id !== "" && !busy;
+  const canExport = deck.id !== "";
+  const isRunning = (format: ExportFormat, action: Action) => running === `${format}-${action}`;
   return (
     <section aria-labelledby={`export-title-${deck.id}`} className="flex flex-col gap-3 rounded-card border border-border bg-card p-4 text-sm shadow-card">
       <h3 id={`export-title-${deck.id}`} className="font-medium">
         Export
       </h3>
       <div className="flex flex-wrap gap-2">
-        <Button type="button" variant="outline" size="sm" disabled={!canExport} onClick={() => run(ExportFormat.ARENA_TEXT, "copy")}>
+        <Button type="button" variant="outline" size="sm" disabled={!canExport || isRunning(ExportFormat.ARENA_TEXT, "copy")} onClick={() => run(ExportFormat.ARENA_TEXT, "copy")}>
           Copy deck list
         </Button>
-        <Button type="button" variant="outline" size="sm" disabled={!canExport} onClick={() => run(ExportFormat.ARENA_TEXT, "download")}>
+        <Button type="button" variant="outline" size="sm" disabled={!canExport || isRunning(ExportFormat.ARENA_TEXT, "download")} onClick={() => run(ExportFormat.ARENA_TEXT, "download")}>
           Download deck list
         </Button>
-        <Button type="button" variant="outline" size="sm" disabled={!canExport} onClick={() => run(ExportFormat.BUY_LIST_TEXT, "copy")}>
+        <Button type="button" variant="outline" size="sm" disabled={!canExport || isRunning(ExportFormat.BUY_LIST_TEXT, "copy")} onClick={() => run(ExportFormat.BUY_LIST_TEXT, "copy")}>
           Copy buy list
         </Button>
-        <Button type="button" variant="outline" size="sm" disabled={!canExport} onClick={() => run(ExportFormat.BUY_LIST_TEXT, "download")}>
+        <Button type="button" variant="outline" size="sm" disabled={!canExport || isRunning(ExportFormat.BUY_LIST_TEXT, "download")} onClick={() => run(ExportFormat.BUY_LIST_TEXT, "download")}>
           Download buy list
         </Button>
       </div>

@@ -181,6 +181,19 @@ func partnerWithName(c *mtgv1.Card) string {
 // the ability and never a card name.
 var creatureOutsideBattlefieldRe = regexp.MustCompile(`isn't on the battlefield, it's an? [^.]*\bcreature\b`)
 
+// FrontFace is the type line, the power, and the Oracle text of the face
+// that decides what a card is. Commander eligibility reads the front
+// face of a two-faced card (CR 712.8a), so one reader serves the
+// derivation and every caller that asks whether a card can lead a deck
+// (F-82).
+func FrontFace(c *mtgv1.Card) (typeLine, power, text string) {
+	if len(c.GetFaces()) > 0 {
+		f := c.GetFaces()[0]
+		return f.GetTypeLine(), f.GetPower(), f.GetOracleText()
+	}
+	return c.GetTypeLine(), c.GetPower(), c.GetOracleText()
+}
+
 // canBeCommander applies CR 903.3 (text of 2026-08-07): a legendary
 // creature, a legendary Vehicle or Spacecraft with a power/toughness box,
 // a legendary card that a characteristic-defining ability makes a
@@ -188,10 +201,7 @@ var creatureOutsideBattlefieldRe = regexp.MustCompile(`isn't on the battlefield,
 // the front face counts (CR 712.8a), so a card such as Bloodline Keeper
 // does not qualify.
 func canBeCommander(c *mtgv1.Card) bool {
-	line, power, text := c.TypeLine, c.Power, c.OracleText
-	if len(c.Faces) > 0 {
-		line, power, text = c.Faces[0].TypeLine, c.Faces[0].Power, c.Faces[0].OracleText
-	}
+	line, power, text := FrontFace(c)
 	if strings.Contains(text, "can be your commander") &&
 		!strings.Contains(text, "can't be your commander") {
 		return true
