@@ -101,10 +101,22 @@ func (h *CandidateHints) CanLead(name string) (canLead, known bool) {
 	if card.GetIsBackground() {
 		return false, true
 	}
-	if strings.Contains(strings.ToLower(card.GetTypeLine()), "legendary") {
-		// A legendary card the engine can not confirm. Say nothing.
+	// A legendary planeswalker stays unknown. A characteristic-defining
+	// ability can make it a creature card everywhere except the
+	// battlefield, and Grist, the Hunger Tide is the card that proved it
+	// (D-269). `canBeCommander` reads that ability, and this is the class
+	// where a miss would refuse a legal commander.
+	front, _, _ := cards.FrontFace(card)
+	if strings.Contains(strings.ToLower(front), "planeswalker") {
 		return false, false
 	}
+	// Every other card answers. `canBeCommander` derives the flag from
+	// the front face against CR 903.3, so a legendary artifact, a
+	// legendary enchantment, and a legendary land all answer a plain no
+	// (F-82). Before this the engine read the type line again, saw the
+	// word "legendary", and said nothing. The reader then read "Should
+	// The Arkenstone be your commander, or one card in the 99?" about a
+	// Legendary Artifact.
 	return false, true
 }
 

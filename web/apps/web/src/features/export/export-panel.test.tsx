@@ -54,7 +54,7 @@ describe("ExportPanel", () => {
   it("copies the whole deck list from ExportDeck (D-15)", async () => {
     render(<ExportPanel deck={deck} byId={byId} />);
     await userEvent.click(screen.getByRole("button", { name: "Copy deck list" }));
-    expect(exportDeck).toHaveBeenCalledWith({ deckId: "d1", format: ExportFormat.ARENA_TEXT });
+    expect(exportDeck).toHaveBeenCalledWith({ deckId: "d1", format: ExportFormat.ARENA_TEXT }, expect.objectContaining({ timeoutMs: expect.any(Number) }));
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith("Deck\n3 Soul Warden (MM3) 24\n");
     expect(await screen.findByRole("status")).toHaveTextContent("Copied the deck list: 2 lines.");
   });
@@ -66,7 +66,7 @@ describe("ExportPanel", () => {
     const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
     render(<ExportPanel deck={deck} byId={byId} />);
     await userEvent.click(screen.getByRole("button", { name: "Download buy list" }));
-    expect(exportDeck).toHaveBeenCalledWith({ deckId: "d1", format: ExportFormat.BUY_LIST_TEXT });
+    expect(exportDeck).toHaveBeenCalledWith({ deckId: "d1", format: ExportFormat.BUY_LIST_TEXT }, expect.objectContaining({ timeoutMs: expect.any(Number) }));
     expect(await screen.findByRole("status")).toHaveTextContent("Saved deck-buy-list.txt: 1 lines.");
     expect(click).toHaveBeenCalledTimes(1);
     vi.unstubAllGlobals();
@@ -85,5 +85,23 @@ describe("ExportPanel", () => {
   it("disables the buttons for a deck with no id", () => {
     render(<ExportPanel deck={{ ...deck, id: "" } as Deck} byId={byId} />);
     expect(screen.getByRole("button", { name: "Copy deck list" })).toBeDisabled();
+  });
+
+  // F-83: one export that never answers left every button dead and no
+  // word on the screen, because run() clears the status first and one
+  // busy flag disabled all four. The owner met it on the deployed app
+  // after two exports that worked, session 72b2IAMZqaC6myfuKAg4.
+  it("a hanging export blocks its own button alone", async () => {
+    let release: (v: unknown) => void = () => {};
+    exportDeck.mockImplementation(() => new Promise((res) => (release = res)));
+    render(<ExportPanel deck={deck} byId={byId} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Download buy list" }));
+    expect(screen.getByRole("button", { name: "Download buy list" })).toBeDisabled();
+    // Every other export stays open, so the reader is never stranded.
+    for (const name of ["Copy deck list", "Download deck list", "Copy buy list"]) {
+      expect(screen.getByRole("button", { name })).toBeEnabled();
+    }
+    release({ text: "x\n", fileName: "buy.txt" });
   });
 });
