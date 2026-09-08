@@ -607,9 +607,16 @@ type CollectionEntry struct {
 	// stores them. GetCollection fills them from the card index of the
 	// day, so the price is never stale and an older collection needs no
 	// rewrite (D-396). The binder filters and sorts on them.
-	Colors        []Color  `protobuf:"varint,12,rep,packed,name=colors,proto3,enum=mtg.v1.Color" json:"colors,omitempty"`
-	CardTypes     []string `protobuf:"bytes,13,rep,name=card_types,json=cardTypes,proto3" json:"card_types,omitempty"`
-	PriceUsd      float64  `protobuf:"fixed64,14,opt,name=price_usd,json=priceUsd,proto3" json:"price_usd,omitempty"`
+	Colors    []Color  `protobuf:"varint,12,rep,packed,name=colors,proto3,enum=mtg.v1.Color" json:"colors,omitempty"`
+	CardTypes []string `protobuf:"bytes,13,rep,name=card_types,json=cardTypes,proto3" json:"card_types,omitempty"`
+	PriceUsd  float64  `protobuf:"fixed64,14,opt,name=price_usd,json=priceUsd,proto3" json:"price_usd,omitempty"`
+	// image_uris is the art of the printing the reader owns (F-60). The
+	// binder drew the default printing before this, so a card the reader
+	// owns in one set showed the art of another. It is a display field of
+	// the same kind as the three above, and no document holds it. Empty
+	// for a printing the index does not know, and for a two-faced card
+	// that carries its art on the faces.
+	ImageUris     *ImageUris `protobuf:"bytes,15,opt,name=image_uris,json=imageUris,proto3" json:"image_uris,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -740,6 +747,13 @@ func (x *CollectionEntry) GetPriceUsd() float64 {
 		return x.PriceUsd
 	}
 	return 0
+}
+
+func (x *CollectionEntry) GetImageUris() *ImageUris {
+	if x != nil {
+		return x.ImageUris
+	}
+	return nil
 }
 
 // BinderFilter is what the binder grid asks for (D-398). Every field
@@ -1177,7 +1191,7 @@ const file_mtg_v1_collection_proto_rawDesc = "" +
 	"\bSetCount\x12\x19\n" +
 	"\bset_code\x18\x01 \x01(\tR\asetCode\x12\x19\n" +
 	"\bset_name\x18\x02 \x01(\tR\asetName\x12\x14\n" +
-	"\x05count\x18\x03 \x01(\x05R\x05count\"\xd0\x03\n" +
+	"\x05count\x18\x03 \x01(\x05R\x05count\"\x82\x04\n" +
 	"\x0fCollectionEntry\x12\x1f\n" +
 	"\vscryfall_id\x18\x01 \x01(\tR\n" +
 	"scryfallId\x12\x1b\n" +
@@ -1195,7 +1209,9 @@ const file_mtg_v1_collection_proto_rawDesc = "" +
 	"\x06colors\x18\f \x03(\x0e2\r.mtg.v1.ColorR\x06colors\x12\x1d\n" +
 	"\n" +
 	"card_types\x18\r \x03(\tR\tcardTypes\x12\x1b\n" +
-	"\tprice_usd\x18\x0e \x01(\x01R\bpriceUsd\"\xe5\x01\n" +
+	"\tprice_usd\x18\x0e \x01(\x01R\bpriceUsd\x120\n" +
+	"\n" +
+	"image_uris\x18\x0f \x01(\v2\x11.mtg.v1.ImageUrisR\timageUris\"\xe5\x01\n" +
 	"\fBinderFilter\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x19\n" +
 	"\bset_code\x18\x02 \x01(\tR\asetCode\x12#\n" +
@@ -1297,6 +1313,7 @@ var file_mtg_v1_collection_proto_goTypes = []any{
 	nil,                           // 16: mtg.v1.ImportReport.UnresolvedByReasonEntry
 	(*timestamppb.Timestamp)(nil), // 17: google.protobuf.Timestamp
 	(Color)(0),                    // 18: mtg.v1.Color
+	(*ImageUris)(nil),             // 19: mtg.v1.ImageUris
 }
 var file_mtg_v1_collection_proto_depIdxs = []int32{
 	1,  // 0: mtg.v1.Collection.source:type_name -> mtg.v1.ImportSource
@@ -1309,19 +1326,20 @@ var file_mtg_v1_collection_proto_depIdxs = []int32{
 	2,  // 7: mtg.v1.CollectionEntry.finish:type_name -> mtg.v1.Finish
 	3,  // 8: mtg.v1.CollectionEntry.condition:type_name -> mtg.v1.Condition
 	18, // 9: mtg.v1.CollectionEntry.colors:type_name -> mtg.v1.Color
-	18, // 10: mtg.v1.BinderFilter.color:type_name -> mtg.v1.Color
-	8,  // 11: mtg.v1.CollectionDiff.added:type_name -> mtg.v1.CollectionEntry
-	8,  // 12: mtg.v1.CollectionDiff.removed:type_name -> mtg.v1.CollectionEntry
-	11, // 13: mtg.v1.CollectionDiff.changed:type_name -> mtg.v1.QuantityChange
-	8,  // 14: mtg.v1.QuantityChange.entry:type_name -> mtg.v1.CollectionEntry
-	13, // 15: mtg.v1.ImportReport.unresolved:type_name -> mtg.v1.UnresolvedRow
-	16, // 16: mtg.v1.ImportReport.unresolved_by_reason:type_name -> mtg.v1.ImportReport.UnresolvedByReasonEntry
-	4,  // 17: mtg.v1.UnresolvedRow.reason:type_name -> mtg.v1.UnresolvedReason
-	18, // [18:18] is the sub-list for method output_type
-	18, // [18:18] is the sub-list for method input_type
-	18, // [18:18] is the sub-list for extension type_name
-	18, // [18:18] is the sub-list for extension extendee
-	0,  // [0:18] is the sub-list for field type_name
+	19, // 10: mtg.v1.CollectionEntry.image_uris:type_name -> mtg.v1.ImageUris
+	18, // 11: mtg.v1.BinderFilter.color:type_name -> mtg.v1.Color
+	8,  // 12: mtg.v1.CollectionDiff.added:type_name -> mtg.v1.CollectionEntry
+	8,  // 13: mtg.v1.CollectionDiff.removed:type_name -> mtg.v1.CollectionEntry
+	11, // 14: mtg.v1.CollectionDiff.changed:type_name -> mtg.v1.QuantityChange
+	8,  // 15: mtg.v1.QuantityChange.entry:type_name -> mtg.v1.CollectionEntry
+	13, // 16: mtg.v1.ImportReport.unresolved:type_name -> mtg.v1.UnresolvedRow
+	16, // 17: mtg.v1.ImportReport.unresolved_by_reason:type_name -> mtg.v1.ImportReport.UnresolvedByReasonEntry
+	4,  // 18: mtg.v1.UnresolvedRow.reason:type_name -> mtg.v1.UnresolvedReason
+	19, // [19:19] is the sub-list for method output_type
+	19, // [19:19] is the sub-list for method input_type
+	19, // [19:19] is the sub-list for extension type_name
+	19, // [19:19] is the sub-list for extension extendee
+	0,  // [0:19] is the sub-list for field type_name
 }
 
 func init() { file_mtg_v1_collection_proto_init() }

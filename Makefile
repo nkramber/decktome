@@ -370,6 +370,10 @@ disallow: ## Take one email off the invite list: make disallow EMAIL=... PROJECT
 	@[ -n "$(PROJECT_ID)" ] || { echo "disallow: set PROJECT_ID=... to the deployed project"; exit 1; }
 	@PROJECT_ID=$(PROJECT_ID) $(GO) run ./cmd/allow -email "$(EMAIL)" -remove
 
+read-session: ## Read one chat session of the deployed project for debugging: make read-session SESSION=<id> [UID=<uid>]
+	@[ -n "$(SESSION)" ] || { echo "read-session: set SESSION=... to the session id"; exit 1; }
+	@scripts/read-session.sh "$(SESSION)" $(UID)
+
 store-check: ## Run the session, deck, collection, usage, allowlist, and feedback stores against the local Firestore emulator (needs `firebase emulators:start --only firestore`)
 	@nc -z 127.0.0.1 8281 2>/dev/null || \
 		{ echo "no Firestore emulator on :8281. Start one: firebase emulators:start --only firestore --project mtg-local"; exit 1; }

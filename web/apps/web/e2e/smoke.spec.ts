@@ -48,6 +48,15 @@ test("a reader signs in, uploads a collection, builds a deck, and exports it", a
   await expect(page).toHaveURL(/\/session\/new$/);
   await expect(page.getByTestId("pool-source")).not.toHaveValue("");
 
+  // The reader builds from any card, and the picker is where they say so
+  // (D-591). The fixtures of the fake answer an any-card build, and the
+  // classifier used to force that rule over the reader's choice. It no
+  // longer does, so the flow makes the choice the reader would make. A
+  // build from the collection needs a fixture deck of its own shortlist,
+  // and that is a gate of its own.
+  await page.getByTestId("pool-source").selectOption("");
+  await expect(page.getByTestId("pool-source")).toHaveValue("");
+
   // Ask for the deck. The turn fills every slot, asks nothing, and
   // builds. The build ends on the deck's own address (D-335), and a
   // question or a failure on the way is the finding.
