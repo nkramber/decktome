@@ -178,7 +178,7 @@ func publicDeck(d *mtgv1.Deck) *mtgv1.Deck {
 	out.Favorite = false
 	out.RevisedFromDeckId = ""
 	out.Validation = nil
-	for _, list := range [][]*mtgv1.DeckCard{out.Cards, out.Sideboard, out.Upgrades} {
+	for _, list := range [][]*mtgv1.DeckCard{out.Cards, out.Sideboard, out.Upgrades, out.Commanders} {
 		for _, dc := range list {
 			dc.Owned = false
 			dc.OwnedCount = 0

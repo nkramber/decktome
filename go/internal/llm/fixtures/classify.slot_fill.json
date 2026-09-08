@@ -9,7 +9,7 @@
   "set_groups": [],
   "precon_names": [],
   "power": "bracket 3",
-  "pool_rule": "any_card",
+  "pool_rule": "owned_first",
   "budget_usd": 0,
   "budget_scope": "unknown",
   "house_rules": "",

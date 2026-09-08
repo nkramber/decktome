@@ -539,6 +539,43 @@ func conversations() []conversation {
 	}
 	cs = append(cs, c35)
 
+	// F-75, D-606: the reader names a commander the card index does not
+	// hold. Four cards hold the name "Aragorn", so the row asks which.
+	cAragorn := conversation{name: "a commander name that four cards hold"}
+	cAragorn.ctx = newCtx("build me an aragorn deck")
+	cAragorn.ctx.Format, cAragorn.ctx.Theme = mtgv1.FormatId_FORMAT_ID_COMMANDER, "humans"
+	cAragorn.ctx.CommanderUnresolved = true
+	for _, k := range []string{"format", "theme"} {
+		cAragorn.ctx.Filled[k] = true
+	}
+	cAragorn.steps = []step{
+		{want: []string{"commander_unresolved", "power_commander", "colors"},
+			fill: []string{"commander_unresolved", "commander", "power", "colors"},
+			set: func(c *Context) {
+				c.CommanderUnresolved, c.CommanderSet = false, true
+			}},
+	}
+	cs = append(cs, cAragorn)
+
+	// F-75, D-606: the same row, for a name no card holds at all. It
+	// says so, and it offers no card to pick.
+	cNoCard := conversation{name: "a commander name no card holds"}
+	cNoCard.ctx = newCtx("build me a gandolf deck")
+	cNoCard.ctx.Format, cNoCard.ctx.Theme = mtgv1.FormatId_FORMAT_ID_COMMANDER, "wizards"
+	cNoCard.ctx.CommanderUnresolved, cNoCard.ctx.CommanderNoMatch = true, true
+	for _, k := range []string{"format", "theme"} {
+		cNoCard.ctx.Filled[k] = true
+	}
+	cNoCard.steps = []step{
+		{want: []string{"commander_unknown", "power_commander", "colors"},
+			fill: []string{"commander_unresolved", "commander", "power", "colors"},
+			set: func(c *Context) {
+				c.CommanderUnresolved, c.CommanderNoMatch = false, false
+				c.CommanderSet = true
+			}},
+	}
+	cs = append(cs, cNoCard)
+
 	// D-496: the reader names a precon the table can not settle. "Deck A"
 	// names two products with different cards, so the row asks which.
 	cPrecon := conversation{name: "a precon name that names two products"}

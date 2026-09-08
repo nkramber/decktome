@@ -139,6 +139,19 @@ type CommanderChecker interface {
 	CanLead(name string) (canLead, known bool)
 }
 
+// CommanderNameResolver maps a commander name the card index does not
+// hold onto the cards the reader may have meant (F-75, D-606). A hint
+// source that holds the card index implements it.
+//
+// "Aragorn" is the name that found this: no card carries it alone, and
+// every match reads "Aragorn, King of Gondor" or another full name.
+type CommanderNameResolver interface {
+	// ResolveCommander returns up to three card names that hold the
+	// name, best first by commander quality at the power the reader
+	// picked. An empty list marks a name no commander holds.
+	ResolveCommander(name string) []string
+}
+
 // FormatChecker reports whether a named card can only be played in
 // Commander. A hint source that holds the card index implements it.
 //
@@ -196,6 +209,11 @@ func rowOptions(row Row, st *State, offered []string) []string {
 	if row.StateKey() == SlotSetUnresolved && len(st.SetOptions) > 0 {
 		return append(append([]string(nil), st.SetOptions...), everySetOption)
 	}
+	// The commander row offers the cards that hold the name, and an
+	// escape for a reader who meant none of them (F-75, D-607).
+	if row.StateKey() == SlotCommanderUnresolved && len(st.CommanderOptions) > 0 {
+		return append(append([]string(nil), st.CommanderOptions...), NoneOfTheseOption)
+	}
 	// A reader who asked for a 60-card deck can not mean Commander, and
 	// Commander is a 100-card format. The row offered it anyway, and
 	// eval run 31 called the question inaccurate (D-388).
@@ -224,6 +242,11 @@ func withoutCommander(options []string) []string {
 // everySetOption drops the set limit. A reader who meant no set at all
 // needs a way to say so, and the row is closed to free text.
 const everySetOption = "Use every set"
+
+// NoneOfTheseOption drops a commander name the card index does not hold.
+// The reader meant none of the cards the row offers, so the app offers
+// its own three names next (F-75, D-607).
+const NoneOfTheseOption = "None of these"
 
 // noneOption is the answer that asks for three other commanders (D-73).
 const noneOption = "None, name three more"
@@ -266,6 +289,16 @@ func substitute(text string, st *State, h Hints) (string, []string) {
 	// The precon row names the deck the user wants to upgrade (D-113).
 	if s := strings.TrimSpace(st.PreconName); s != "" {
 		rep["{precon}"] = s
+	}
+	// The commander row names the name the card index does not hold, and
+	// the cards it may have meant (F-75, D-606). It is not {bad_commander}:
+	// one message can name an illegal card and a partial name, and one
+	// placeholder for both would carry the wrong card into a question.
+	if v := strings.TrimSpace(st.UnresolvedCommander); v != "" {
+		rep["{unknown_commander}"] = v
+	}
+	if s := orList(st.CommanderOptions); s != "" {
+		rep["{commander_options}"] = s
 	}
 	// The set row names the phrase this app could not settle, and the
 	// sets it may have meant (D-376).

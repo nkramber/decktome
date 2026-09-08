@@ -95,6 +95,16 @@ type Context struct {
 	// CommanderIllegal marks a named commander that can not lead a deck,
 	// such as Lightning Bolt (D-129).
 	CommanderIllegal bool `json:"commander_illegal"`
+	// CommanderUnresolved marks a commander name the card index does not
+	// hold, such as "Aragorn". The commander row asks which card the
+	// reader means (F-75, D-606).
+	CommanderUnresolved bool `json:"commander_unresolved"`
+	// CommanderNoMatch narrows that to a name no card holds at all. The
+	// row says so, and it offers no card to pick.
+	CommanderNoMatch bool `json:"commander_no_match"`
+	// CommanderChanged says the name that row would name differs from the
+	// one it named last, the D-210 rule for that row.
+	CommanderChanged bool `json:"commander_changed"`
 	// Theme is the theme slot in the user's words.
 	Theme string `json:"theme"`
 	// SetLimited says the deck is limited to the sets the reader named
@@ -195,7 +205,7 @@ func (r Row) asksAgain(ctx Context) bool {
 	case !r.Repeat:
 		return false
 	case r.RepeatOnChange:
-		return ctx.contentChanged(r.Slot)
+		return ctx.contentChanged(r.StateKey(), r.Slot)
 	}
 	return true
 }
@@ -205,7 +215,14 @@ func (r Row) asksAgain(ctx Context) bool {
 // commanders, and the two decline rows name one format. A slot with no
 // signal never repeats, which is the safe answer: silence beats the same
 // sentence twice (D-163, D-210).
-func (c Context) contentChanged(slot string) bool {
+//
+// The key comes first, because two rows of the commander slot repeat on
+// two different signals: the pick row on the names it offers, and the
+// row of F-75 on the name the card index does not hold.
+func (c Context) contentChanged(key, slot string) bool {
+	if key == SlotCommanderUnresolved {
+		return c.CommanderChanged
+	}
 	switch slot {
 	case "commander":
 		return c.OfferChanged
@@ -271,6 +288,8 @@ func (w When) matches(ctx Context) bool {
 		{w.NoNearFormat, ctx.NoNearFormat},
 		{w.Precon, ctx.Precon},
 		{w.CommanderIllegal, ctx.CommanderIllegal},
+		{w.CommanderUnresolved, ctx.CommanderUnresolved},
+		{w.CommanderNoMatch, ctx.CommanderNoMatch},
 		{w.SetLimited, ctx.SetLimited},
 		{w.SetUnresolved, ctx.SetUnresolved},
 		{w.ThinSetMana, ctx.ThinSetMana},

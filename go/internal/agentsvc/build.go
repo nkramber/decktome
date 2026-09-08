@@ -361,7 +361,7 @@ func (s *Server) markOwnedPrintings(ctx context.Context, uid string, session *mt
 		s.log.WarnContext(ctx, "owned printings unavailable", "collection", session.GetCollectionId(), "err", err)
 		return
 	}
-	for _, list := range [][]*mtgv1.DeckCard{deck.GetCards(), deck.GetSideboard()} {
+	for _, list := range [][]*mtgv1.DeckCard{deck.GetCards(), deck.GetSideboard(), deck.GetCommanders()} {
 		for _, dc := range list {
 			if dc.GetOwnedCount() == 0 {
 				continue

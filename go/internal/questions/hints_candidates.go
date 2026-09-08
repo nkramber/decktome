@@ -3,7 +3,10 @@ package questions
 import (
 	"context"
 	"log/slog"
+	"slices"
+	"sort"
 	"strings"
+	"unicode"
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 	"github.com/nkramber/decktome/go/internal/candidates"
@@ -103,6 +106,79 @@ func (h *CandidateHints) CanLead(name string) (canLead, known bool) {
 		return false, false
 	}
 	return false, true
+}
+
+// ResolveCommander names up to three cards that hold a commander name
+// the card index does not know (F-75, D-606). The reader wrote
+// "Aragorn", and no card carries that name alone.
+//
+// The order is the order of the commander offer: the cEDH signal of the
+// quality model leads at bracket 4 and 5, and popularity leads under it
+// (OQ-48, PR-14B). A game changer leaves a bracket 1 or 2 list, which is
+// the rule CommanderPool applies.
+//
+// It reads no color and no pool rule. The reader named this card, and a
+// named commander fixes the colors of the deck itself (D-67).
+func (h *CandidateHints) ResolveCommander(name string) []string {
+	if h == nil || h.Index == nil {
+		return nil
+	}
+	phrase := normName(name)
+	if phrase == "" {
+		return nil
+	}
+	var found []*mtgv1.Card
+	for _, c := range h.Index.All() {
+		if !candidates.CommanderLegal(c) || !holdsName(c.GetName(), phrase) {
+			continue
+		}
+		if c.GetGameChanger() && h.Bracket > 0 && h.Bracket <= 2 {
+			continue
+		}
+		found = append(found, c)
+	}
+	if h.Bracket >= 4 && h.CommanderSignal != nil {
+		sort.SliceStable(found, func(i, j int) bool {
+			return h.CommanderSignal(found[i].GetOracleId()) > h.CommanderSignal(found[j].GetOracleId())
+		})
+	}
+	if len(found) > commanderMatches {
+		found = found[:commanderMatches]
+	}
+	names := make([]string, 0, len(found))
+	for _, c := range found {
+		names = append(names, c.GetName())
+	}
+	return names
+}
+
+// commanderMatches bounds the cards the row offers. The owner asked for
+// the best three, the count the pick row holds (D-606).
+const commanderMatches = 3
+
+// holdsName reports whether a card name holds a name the reader wrote.
+// The test reads whole words, so "Aragorn" finds "Aragorn, King of
+// Gondor", "King of Gondor" finds it too, and "Ara" finds nothing.
+func holdsName(cardName, phrase string) bool {
+	full, want := nameWords(cardName), nameWords(phrase)
+	if len(want) == 0 || len(want) > len(full) {
+		return false
+	}
+	for i := 0; i+len(want) <= len(full); i++ {
+		if slices.Equal(full[i:i+len(want)], want) {
+			return true
+		}
+	}
+	return false
+}
+
+// nameWords splits a card name into its lowercase words. A comma, an
+// apostrophe, and a hyphen are separators, so "Krark, the Thumbless"
+// reads as three words.
+func nameWords(s string) []string {
+	return strings.FieldsFunc(normName(s), func(r rune) bool {
+		return !unicode.IsLetter(r) && !unicode.IsDigit(r)
+	})
 }
 
 // FitsColors reports whether the named card holds every color named and

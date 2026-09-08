@@ -20,8 +20,8 @@ const collectionCsv = path.resolve(import.meta.dirname, "../../../../go/internal
 // The message the reader types. The fake reads none of it, and the word
 // rules of the questions agent do: it names no store and no set, or a
 // catalog row fires and the turn asks a question. It refuses a spending
-// limit on purpose, because the budget row fires on an any-card pool
-// and the word rule of D-168 is what closes it without a number.
+// limit on purpose, because the budget row fires on a pool that buys
+// cards, and the word rule of D-168 is what closes it without a number.
 const request = "Build a lifegain Commander deck led by Karlov of the Ghost Council at bracket 3, with no spending limit.";
 
 test("a reader signs in, uploads a collection, builds a deck, and exports it", async ({ page }) => {
@@ -48,14 +48,11 @@ test("a reader signs in, uploads a collection, builds a deck, and exports it", a
   await expect(page).toHaveURL(/\/session\/new$/);
   await expect(page.getByTestId("pool-source")).not.toHaveValue("");
 
-  // The reader builds from any card, and the picker is where they say so
-  // (D-591). The fixtures of the fake answer an any-card build, and the
-  // classifier used to force that rule over the reader's choice. It no
-  // longer does, so the flow makes the choice the reader would make. A
-  // build from the collection needs a fixture deck of its own shortlist,
-  // and that is a gate of its own.
-  await page.getByTestId("pool-source").selectOption("");
-  await expect(page.getByTestId("pool-source")).toHaveValue("");
+  // The reader keeps the collection they uploaded, and the build reads
+  // its own shortlist (#92). The flow picked "Any card" before, because
+  // the fixture deck fitted an any-card shortlist alone, so no smoke
+  // lane ever built from a collection. The fixture deck comes from the
+  // owned-first shortlist of this export now.
 
   // Ask for the deck. The turn fills every slot, asks nothing, and
   // builds. The build ends on the deck's own address (D-335), and a
@@ -87,6 +84,15 @@ test("a reader signs in, uploads a collection, builds a deck, and exports it", a
   // thanks them (PR-27, D-557).
   await page.getByRole("group", { name: "Rate this deck" }).getByRole("button", { name: "This helped" }).click();
   await expect(page.getByText("Thank you for your feedback!")).toBeVisible();
+
+  // F-76: the deck carries the ownership of its commander (D-608). The
+  // 99 are the reader's own cards, and Karlov is the one card they do
+  // not own, so the buy list names it and the deck screen marks it. The
+  // web app invented that mark before, and every deck named its
+  // commander as a card to buy, at no price (D-604).
+  const commanderZone = page.getByRole("region", { name: "Commander (1)" });
+  await expect(commanderZone.getByTestId("buy-mark")).toBeVisible();
+  await expect(page.getByRole("region", { name: /^Buy list/ })).toContainText("Karlov of the Ghost Council");
 
   // Export. The download carries the commander and the deck.
   const downloading = page.waitForEvent("download");

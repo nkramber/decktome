@@ -41,6 +41,9 @@ func fullState() *State {
 	st.UnresolvedPrecon, st.UnresolvedPreconAsked = "Fluffy", "Fluffy"
 	st.PreconOptions = []string{"Turtle Power!"}
 	st.Ctx.PreconsExcluded, st.Ctx.PreconUnresolved, st.Ctx.PreconChanged = true, true, true
+	st.UnresolvedCommander, st.UnresolvedCommanderAsked = "Aragorn", "Aragorn"
+	st.CommanderOptions = []string{"Aragorn, King of Gondor"}
+	st.Ctx.CommanderUnresolved, st.Ctx.CommanderNoMatch, st.Ctx.CommanderChanged = true, true, true
 	st.Ctx.Reasked = map[string]bool{"power": true}
 	st.AskCount, st.Turn = 2, 2
 	st.Messages = []string{"karlov lifegain", "keep sanguine bond"}

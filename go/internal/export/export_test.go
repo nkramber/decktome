@@ -160,17 +160,18 @@ func TestBuyListSumsTheShortfall(t *testing.T) {
 		Upgrades:           []*mtgv1.DeckCard{entry(sol, 1)},
 	}
 	needed, upgrades := BuyList(d, idx)
-	if len(needed) != 2 {
+	// F-76: a deck that carries no entry for its commander carries no
+	// ownership fact either, so the commander reaches no buy list. The
+	// invented entry read "not owned", and every deck named its
+	// commander as a card to buy (D-604).
+	if len(needed) != 1 {
 		t.Fatalf("needed %+v", needed)
 	}
-	if needed[0].Name != cmd.Name || needed[0].Count != 1 {
-		t.Errorf("the commander with no entry is a row of one: %+v", needed[0])
+	if needed[0].Name != "Soul Warden" || needed[0].Count != 3 {
+		t.Errorf("Soul Warden shortfall 1 main + 2 side = 3: %+v", needed[0])
 	}
-	if needed[1].Name != "Soul Warden" || needed[1].Count != 3 {
-		t.Errorf("Soul Warden shortfall 1 main + 2 side = 3: %+v", needed[1])
-	}
-	if needed[1].SetCode == "" || needed[1].CollectorNumber == "" {
-		t.Errorf("a row carries the default printing for its link: %+v", needed[1])
+	if needed[0].SetCode == "" || needed[0].CollectorNumber == "" {
+		t.Errorf("a row carries the default printing for its link: %+v", needed[0])
 	}
 	if len(upgrades) != 1 || upgrades[0].Name != "Sol Ring" {
 		t.Errorf("upgrades %+v", upgrades)
@@ -178,6 +179,21 @@ func TestBuyListSumsTheShortfall(t *testing.T) {
 	text := BuyListText(d, idx)
 	if !strings.HasSuffix(text, "3 Soul Warden\n\nUpgrades\n1 Sol Ring\n") {
 		t.Fatalf("text %q", text)
+	}
+	// The deck carries the fact now (D-608). An unowned commander is a
+	// row, and an owned one is not.
+	unowned := entry(cmd, 1)
+	d.Commanders = []*mtgv1.DeckCard{unowned}
+	needed, _ = BuyList(d, idx)
+	if len(needed) != 2 || needed[0].Name != cmd.Name || needed[0].Count != 1 {
+		t.Errorf("an unowned commander is a buy row of one: %+v", needed)
+	}
+	owned := entry(cmd, 1)
+	owned.Owned, owned.OwnedCount = true, 1
+	d.Commanders = []*mtgv1.DeckCard{owned}
+	needed, _ = BuyList(d, idx)
+	if len(needed) != 1 || needed[0].Name != "Soul Warden" {
+		t.Errorf("an owned commander reached the buy list: %+v", needed)
 	}
 }
 

@@ -1,5 +1,5 @@
 {
-  "summary": "Karlov leads a white-black lifegain deck that develops a resilient creature board, turns repeated life gain into larger threats and pressure, and uses efficient protection and removal to keep its key pieces in play. It wins by snowballing its lifegain synergies into a commanding battlefield, while retaining several board resets for games that get away from it. The deck gives up some speed for a fuller land base and a more creature-focused midgame plan.",
+  "summary": "Karlov of the Ghost Council leads a white-black lifegain deck from the reader's own collection. It gains life every turn, grows Karlov on each gain, and answers the board with cheap removal and a few wipes.",
   "cards": [
     {
       "name": "Plains",
@@ -14,454 +14,454 @@
       "reason": "Basic black source for the mana base."
     },
     {
-      "name": "Godless Shrine",
+      "name": "Riveteers Overlook",
       "count": 1,
       "role": "land",
-      "reason": "Dual-color land for reliable white and black access."
+      "reason": "Mana for the two colors."
     },
     {
-      "name": "Caves of Koilos",
+      "name": "Adventurer's Inn",
       "count": 1,
       "role": "land",
-      "reason": "Untapped dual-color land."
+      "reason": "Mana for the two colors."
+    },
+    {
+      "name": "Hidden Hideout",
+      "count": 1,
+      "role": "land",
+      "reason": "Mana for the two colors."
+    },
+    {
+      "name": "Fisk Tower",
+      "count": 1,
+      "role": "land",
+      "reason": "Mana for the two colors."
+    },
+    {
+      "name": "Sidequest: Catch a Fish // Cooking Campsite",
+      "count": 1,
+      "role": "land",
+      "reason": "Mana for the two colors."
     },
     {
       "name": "Command Tower",
       "count": 1,
       "role": "land",
-      "reason": "Reliable land for the commander’s colors."
+      "reason": "Mana for the two colors."
     },
     {
-      "name": "Vault of Champions",
+      "name": "Exotic Orchard",
       "count": 1,
       "role": "land",
-      "reason": "Dual-color land for multiplayer games."
+      "reason": "Mana for the two colors."
     },
     {
-      "name": "Shattered Sanctum",
+      "name": "Path of Ancestry",
       "count": 1,
       "role": "land",
-      "reason": "Dual-color land that supports the early curve."
+      "reason": "Mana for the two colors."
     },
     {
-      "name": "Isolated Chapel",
+      "name": "City of Brass",
       "count": 1,
       "role": "land",
-      "reason": "Dual-color land for the white-black mana base."
+      "reason": "Mana for the two colors."
     },
     {
-      "name": "Mana Confluence",
+      "name": "Secluded Courtyard",
       "count": 1,
       "role": "land",
-      "reason": "Flexible source for either deck color."
+      "reason": "Mana for the two colors."
     },
     {
-      "name": "Reflecting Pool",
+      "name": "Takenuma, Abandoned Mire",
       "count": 1,
       "role": "land",
-      "reason": "Flexible dual-color land alongside the rest of the mana base."
+      "reason": "Mana for the two colors."
     },
     {
-      "name": "Radiant Fountain",
+      "name": "Unclaimed Territory",
       "count": 1,
       "role": "land",
-      "reason": "Land slot that supports the lifegain plan."
+      "reason": "Mana for the two colors."
     },
     {
-      "name": "Seraph Sanctuary",
-      "count": 1,
-      "role": "land",
-      "reason": "Land slot that supports the Angel portion of the deck."
-    },
-    {
-      "name": "Restless Fortress",
-      "count": 1,
-      "role": "land",
-      "reason": "Dual-color utility land."
-    },
-    {
-      "name": "High Market",
-      "count": 1,
-      "role": "land",
-      "reason": "Utility land that supplies a sacrifice outlet."
-    },
-    {
-      "name": "Altar of the Pantheon",
+      "name": "Hot Dog Cart",
       "count": 1,
       "role": "ramp",
-      "reason": "Early mana acceleration for the deck’s colored spells."
+      "reason": "Speeds the mana out."
     },
     {
-      "name": "Battle Angels of Tyr",
+      "name": "Potioner's Trove",
       "count": 1,
       "role": "ramp",
-      "reason": "Threat-based acceleration that advances the board."
+      "reason": "Speeds the mana out."
     },
     {
-      "name": "Carmen, Cruel Skymarcher",
+      "name": "Brass Infiniscope",
       "count": 1,
       "role": "ramp",
-      "reason": "Creature-based mana acceleration for the midgame."
+      "reason": "Speeds the mana out."
     },
     {
-      "name": "Crypt Ghast",
+      "name": "Oath of the Grey Host",
       "count": 1,
       "role": "ramp",
-      "reason": "High-impact black mana acceleration."
+      "reason": "Speeds the mana out."
     },
     {
-      "name": "Nuka-Cola Vending Machine",
+      "name": "Sol Ring",
       "count": 1,
       "role": "ramp",
-      "reason": "Artifact ramp that helps develop resources."
+      "reason": "Speeds the mana out."
     },
     {
-      "name": "Orazca Relic",
+      "name": "Arcane Signet",
       "count": 1,
       "role": "ramp",
-      "reason": "Mana rock for consistent development."
+      "reason": "Speeds the mana out."
     },
     {
-      "name": "Pristine Talisman",
+      "name": "Path to Exile",
       "count": 1,
       "role": "ramp",
-      "reason": "Mana acceleration that fits the lifegain theme."
+      "reason": "Speeds the mana out."
     },
     {
-      "name": "Phial of Galadriel",
+      "name": "Fellwar Stone",
       "count": 1,
       "role": "ramp",
-      "reason": "Artifact ramp for the deck’s midgame."
+      "reason": "Speeds the mana out."
     },
     {
-      "name": "The Celestus",
+      "name": "Thought Vessel",
       "count": 1,
       "role": "ramp",
-      "reason": "Versatile artifact mana source."
+      "reason": "Speeds the mana out."
     },
     {
-      "name": "Spoils of Evil",
+      "name": "Commander's Sphere",
       "count": 1,
       "role": "ramp",
-      "reason": "Efficient burst mana acceleration."
+      "reason": "Speeds the mana out."
     },
     {
-      "name": "Archivist of Oghma",
+      "name": "Exemplar of Light",
       "count": 1,
       "role": "draw",
-      "reason": "Efficient creature-based card advantage."
+      "reason": "Refills the hand."
     },
     {
-      "name": "Ayara, First of Locthwain",
+      "name": "Inspiring Overseer",
       "count": 1,
       "role": "draw",
-      "reason": "Repeatable card advantage on a relevant creature."
+      "reason": "Refills the hand."
     },
     {
-      "name": "Dawn of Hope",
+      "name": "Lembas",
       "count": 1,
       "role": "draw",
-      "reason": "Lifegain-focused source of card advantage."
+      "reason": "Refills the hand."
     },
     {
-      "name": "Enduring Innocence",
+      "name": "Stiltzkin, Moogle Merchant",
       "count": 1,
       "role": "draw",
-      "reason": "Creature-based draw engine."
+      "reason": "Refills the hand."
     },
     {
-      "name": "Mangara, the Diplomat",
+      "name": "Grave Venerations",
       "count": 1,
       "role": "draw",
-      "reason": "Reliable multiplayer card advantage."
+      "reason": "Refills the hand."
     },
     {
-      "name": "Markov Purifier",
+      "name": "South Pole Voyager",
       "count": 1,
       "role": "draw",
-      "reason": "Vampire-themed card advantage."
+      "reason": "Refills the hand."
     },
     {
-      "name": "Sigarda's Splendor",
+      "name": "Instant Ramen",
       "count": 1,
       "role": "draw",
-      "reason": "Lifegain-aligned card advantage."
+      "reason": "Refills the hand."
     },
     {
-      "name": "The Gaffer",
+      "name": "Sunset Revelry",
       "count": 1,
       "role": "draw",
-      "reason": "Creature-based draw that fits the life-total plan."
+      "reason": "Refills the hand."
     },
     {
-      "name": "Vampiric Rites",
+      "name": "Circle of Power",
       "count": 1,
       "role": "draw",
-      "reason": "Low-cost draw outlet with sacrifice utility."
+      "reason": "Refills the hand."
     },
     {
-      "name": "Well of Lost Dreams",
+      "name": "Cirith Ungol Patrol",
       "count": 1,
       "role": "draw",
-      "reason": "Dedicated lifegain card-advantage engine."
+      "reason": "Refills the hand."
     },
     {
-      "name": "Survival Cache",
+      "name": "Obsessive Pursuit",
       "count": 1,
       "role": "draw",
-      "reason": "Lifegain-oriented card advantage."
+      "reason": "Refills the hand."
     },
     {
-      "name": "Alseid of Life's Bounty",
-      "count": 1,
-      "role": "interaction",
-      "reason": "Low-cost protection for Karlov or a key permanent."
-    },
-    {
-      "name": "Convalescent Care",
-      "count": 1,
-      "role": "synergy",
-      "reason": "Enchantment that supports the lifegain plan."
-    },
-    {
-      "name": "Courageous Resolve",
-      "count": 1,
-      "role": "interaction",
-      "reason": "Protection spell for the board’s key pieces."
-    },
-    {
-      "name": "Metropolis Reformer",
-      "count": 1,
-      "role": "interaction",
-      "reason": "Creature-based defensive interaction."
-    },
-    {
-      "name": "Restoration Magic",
-      "count": 1,
-      "role": "interaction",
-      "reason": "Flexible protective interaction."
-    },
-    {
-      "name": "Rune-Tail, Kitsune Ascendant // Rune-Tail's Essence",
-      "count": 1,
-      "role": "interaction",
-      "reason": "Defensive piece for protecting the creature board."
-    },
-    {
-      "name": "Sword of Light and Shadow",
-      "count": 1,
-      "role": "interaction",
-      "reason": "Equipment-based protection and utility."
-    },
-    {
-      "name": "Werefox Bodyguard",
-      "count": 1,
-      "role": "interaction",
-      "reason": "Creature interaction that supports the board plan."
-    },
-    {
-      "name": "Ayli, Eternal Pilgrim",
+      "name": "Poisoner's Apprentice",
       "count": 1,
       "role": "removal",
-      "reason": "Low-cost repeatable removal on a lifegain creature."
+      "reason": "Answers one problem card."
     },
     {
-      "name": "Gumdrop Poisoner // Tempt with Treats",
+      "name": "Sephiroth's Intervention",
       "count": 1,
       "role": "removal",
-      "reason": "Flexible removal with an additional spell option."
+      "reason": "Answers one problem card."
     },
     {
-      "name": "Henrika Domnathi // Henrika, Infernal Seer",
+      "name": "Voracious Fell Beast",
       "count": 1,
       "role": "removal",
-      "reason": "Versatile creature-based removal."
+      "reason": "Answers one problem card."
     },
     {
-      "name": "Murderous Rider // Swift End",
+      "name": "Battle Menu",
       "count": 1,
       "role": "removal",
-      "reason": "Flexible targeted removal."
+      "reason": "Answers one problem card."
     },
     {
-      "name": "Nightmare's Thirst",
+      "name": "Curious Farm Animals",
       "count": 1,
       "role": "removal",
-      "reason": "Cheap targeted creature removal."
+      "reason": "Answers one problem card."
     },
     {
-      "name": "Solitude",
+      "name": "Nightmare Sower",
       "count": 1,
       "role": "removal",
-      "reason": "Flexible creature removal."
+      "reason": "Answers one problem card."
     },
     {
-      "name": "Umezawa's Jitte",
+      "name": "Dimension X Pizzasaur",
       "count": 1,
       "role": "removal",
-      "reason": "Reusable equipment-based removal."
+      "reason": "Answers one problem card."
     },
     {
-      "name": "Vona, Butcher of Magan",
+      "name": "Swords to Plowshares",
       "count": 1,
       "role": "removal",
-      "reason": "Lifegain-compatible repeatable removal."
+      "reason": "Answers one problem card."
     },
     {
-      "name": "Cavalier of Night",
+      "name": "Cat-Gator",
       "count": 1,
       "role": "removal",
-      "reason": "Creature-based removal for the top end."
+      "reason": "Answers one problem card."
+    },
+    {
+      "name": "Withering Curse",
+      "count": 1,
+      "role": "wipe",
+      "reason": "Clears a board that got ahead."
     },
     {
       "name": "Fumigate",
       "count": 1,
       "role": "wipe",
-      "reason": "Board wipe that aligns with the life-total plan."
-    },
-    {
-      "name": "Kaya's Wrath",
-      "count": 1,
-      "role": "wipe",
-      "reason": "Reliable white-black board wipe."
+      "reason": "Clears a board that got ahead."
     },
     {
       "name": "The Battle of Bywater",
       "count": 1,
       "role": "wipe",
-      "reason": "Additional reset button for opposing boards."
+      "reason": "Clears a board that got ahead."
     },
     {
-      "name": "Ajani's Pridemate",
+      "name": "Cecil, Dark Knight // Cecil, Redeemed Paladin",
+      "count": 1,
+      "role": "interaction",
+      "reason": "Protects the plan."
+    },
+    {
+      "name": "Enduring Angel // Angelic Enforcer",
+      "count": 1,
+      "role": "interaction",
+      "reason": "Protects the plan."
+    },
+    {
+      "name": "Bofur, Reliable Guardian // Concerted Care",
+      "count": 1,
+      "role": "interaction",
+      "reason": "Protects the plan."
+    },
+    {
+      "name": "Sheltered by Ghosts",
+      "count": 1,
+      "role": "interaction",
+      "reason": "Protects the plan."
+    },
+    {
+      "name": "Take Up the Shield",
+      "count": 1,
+      "role": "interaction",
+      "reason": "Protects the plan."
+    },
+    {
+      "name": "Enter the Avatar State",
+      "count": 1,
+      "role": "interaction",
+      "reason": "Protects the plan."
+    },
+    {
+      "name": "Moogles' Valor",
+      "count": 1,
+      "role": "interaction",
+      "reason": "Protects the plan."
+    },
+    {
+      "name": "Minwu, White Mage",
+      "count": 1,
+      "role": "threat",
+      "reason": "A threat the deck can rely on."
+    },
+    {
+      "name": "Lyra Dawnbringer",
+      "count": 1,
+      "role": "threat",
+      "reason": "A threat the deck can rely on."
+    },
+    {
+      "name": "Angel of Invention",
+      "count": 1,
+      "role": "threat",
+      "reason": "A threat the deck can rely on."
+    },
+    {
+      "name": "Bill the Pony",
+      "count": 1,
+      "role": "threat",
+      "reason": "A threat the deck can rely on."
+    },
+    {
+      "name": "Invisible Woman, Sue Storm",
+      "count": 1,
+      "role": "threat",
+      "reason": "A threat the deck can rely on."
+    },
+    {
+      "name": "Reaping Willow",
+      "count": 1,
+      "role": "threat",
+      "reason": "A threat the deck can rely on."
+    },
+    {
+      "name": "Dawnhand Eulogist",
+      "count": 1,
+      "role": "threat",
+      "reason": "A threat the deck can rely on."
+    },
+    {
+      "name": "Canyon Crawler",
+      "count": 1,
+      "role": "threat",
+      "reason": "A threat the deck can rely on."
+    },
+    {
+      "name": "Rooftop Percher",
+      "count": 1,
+      "role": "threat",
+      "reason": "A threat the deck can rely on."
+    },
+    {
+      "name": "Rabaroo Troop",
+      "count": 1,
+      "role": "threat",
+      "reason": "A threat the deck can rely on."
+    },
+    {
+      "name": "Shattered Angel",
+      "count": 1,
+      "role": "threat",
+      "reason": "A threat the deck can rely on."
+    },
+    {
+      "name": "Sneering Shadewriter",
+      "count": 1,
+      "role": "threat",
+      "reason": "A threat the deck can rely on."
+    },
+    {
+      "name": "Aerith Gainsborough",
       "count": 1,
       "role": "synergy",
-      "reason": "Low-cost lifegain payoff."
+      "reason": "Works with the lifegain plan."
+    },
+    {
+      "name": "Light of Promise",
+      "count": 1,
+      "role": "synergy",
+      "reason": "Works with the lifegain plan."
+    },
+    {
+      "name": "Excalibur II",
+      "count": 1,
+      "role": "synergy",
+      "reason": "Works with the lifegain plan."
     },
     {
       "name": "Angel of Vitality",
       "count": 1,
       "role": "synergy",
-      "reason": "Lifegain-focused creature synergy."
+      "reason": "Works with the lifegain plan."
     },
     {
-      "name": "Cleric Class",
+      "name": "Aettir and Priwen",
       "count": 1,
       "role": "synergy",
-      "reason": "Early enchantment that supports repeated lifegain."
+      "reason": "Works with the lifegain plan."
     },
     {
-      "name": "Heliod, Sun-Crowned",
+      "name": "The Darkness Crystal",
       "count": 1,
       "role": "synergy",
-      "reason": "Central lifegain payoff and support piece."
+      "reason": "Works with the lifegain plan."
     },
     {
-      "name": "Indulging Patrician",
+      "name": "Aang's Journey",
       "count": 1,
       "role": "synergy",
-      "reason": "Creature payoff for the lifegain strategy."
+      "reason": "Works with the lifegain plan."
     },
     {
-      "name": "Ocelot Pride",
+      "name": "Al Bhed Salvagers",
       "count": 1,
       "role": "synergy",
-      "reason": "Low-cost creature that rewards the lifegain plan."
+      "reason": "Works with the lifegain plan."
     },
     {
-      "name": "Resplendent Angel",
+      "name": "Morlun, Devourer of Spiders",
       "count": 1,
       "role": "synergy",
-      "reason": "Powerful lifegain payoff threat."
+      "reason": "Works with the lifegain plan."
     },
     {
-      "name": "Righteous Valkyrie",
+      "name": "Denethor, Ruling Steward",
       "count": 1,
       "role": "synergy",
-      "reason": "Angel-focused lifegain synergy."
+      "reason": "Works with the lifegain plan."
     },
     {
-      "name": "Vito, Thorn of the Dusk Rose",
+      "name": "Northern Air Temple",
       "count": 1,
       "role": "synergy",
-      "reason": "Lifegain payoff that pressures opponents."
-    },
-    {
-      "name": "Voice of the Blessed",
-      "count": 1,
-      "role": "synergy",
-      "reason": "Efficient scalable lifegain payoff."
-    },
-    {
-      "name": "Archangel of Thune",
-      "count": 1,
-      "role": "threat",
-      "reason": "High-impact creature threat for a lifegain board."
-    },
-    {
-      "name": "Astarion, the Decadent",
-      "count": 1,
-      "role": "threat",
-      "reason": "Large lifegain-themed finisher."
-    },
-    {
-      "name": "Attended Healer",
-      "count": 1,
-      "role": "threat",
-      "reason": "Board-building creature threat."
-    },
-    {
-      "name": "Celestine, the Living Saint",
-      "count": 1,
-      "role": "threat",
-      "reason": "Recurring value threat for longer games."
-    },
-    {
-      "name": "Cliffhaven Vampire",
-      "count": 1,
-      "role": "threat",
-      "reason": "Lifegain-themed source of pressure."
-    },
-    {
-      "name": "Defiant Bloodlord",
-      "count": 1,
-      "role": "threat",
-      "reason": "High-impact lifegain payoff threat."
-    },
-    {
-      "name": "Divinity of Pride",
-      "count": 1,
-      "role": "threat",
-      "reason": "Efficient large threat for high life totals."
-    },
-    {
-      "name": "Enduring Tenacity",
-      "count": 1,
-      "role": "threat",
-      "reason": "Lifegain-themed creature threat."
-    },
-    {
-      "name": "Nykthos Paragon",
-      "count": 1,
-      "role": "threat",
-      "reason": "Powerful lifegain payoff at the top of the curve."
-    },
-    {
-      "name": "Rhox Faithmender",
-      "count": 1,
-      "role": "threat",
-      "reason": "Lifegain multiplier that becomes a substantial board presence."
-    },
-    {
-      "name": "Valkyrie Harbinger",
-      "count": 1,
-      "role": "threat",
-      "reason": "Large lifegain-themed Angel threat."
-    },
-    {
-      "name": "Wurmcoil Engine",
-      "count": 1,
-      "role": "threat",
-      "reason": "Resilient artifact creature threat."
+      "reason": "Works with the lifegain plan."
     }
   ],
   "sideboard": []

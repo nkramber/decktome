@@ -11,9 +11,11 @@ import mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 // records. Version 2 adds the format decline facts, the precon name, the
 // illegal commander, and the user's messages. Version 3 adds the set
 // facts of PR-17B (D-376). Version 4 adds the precon exclusion of PR-24
-// (D-496). Production restores from the snapshot on every turn, so a
-// fact that stays in memory only works in the gate harness (D-74).
-const SnapshotVersion = 4
+// (D-496). Version 5 adds the commander name the card index does not
+// hold (F-75, D-606). Production restores from the snapshot on every
+// turn, so a fact that stays in memory only works in the gate harness
+// (D-74).
+const SnapshotVersion = 5
 
 // Snapshot is the private state of one session, as data (D-74). The proto
 // Session carries the slots, the turns, and the usage. It carries none of
@@ -61,6 +63,12 @@ type Snapshot struct {
 	UnresolvedPrecon      string   `json:"unresolved_precon,omitempty"`
 	UnresolvedPreconAsked string   `json:"unresolved_precon_asked,omitempty"`
 	PreconOptions         []string `json:"precon_options,omitempty"`
+	// The commander name the card index does not hold (F-75, D-606).
+	// Version 5. An older snapshot holds none, and the reader names the
+	// commander again, which is the safe failure.
+	UnresolvedCommander      string   `json:"unresolved_commander,omitempty"`
+	UnresolvedCommanderAsked string   `json:"unresolved_commander_asked,omitempty"`
+	CommanderOptions         []string `json:"commander_options,omitempty"`
 	// Messages are the user's messages, oldest first. The classify call
 	// reads the last few as prior_messages. Version 2.
 	Messages []string `json:"messages,omitempty"`
@@ -73,33 +81,36 @@ type Snapshot struct {
 // Snapshot reads the private state out of a session.
 func (s *State) Snapshot() Snapshot {
 	return Snapshot{
-		Version:                SnapshotVersion,
-		Ctx:                    s.Ctx,
-		NamedCards:             s.NamedCards,
-		CommanderNames:         s.CommanderNames,
-		LockedNames:            s.LockedNames,
-		OfferedCommanders:      s.OfferedCommanders,
-		CurrentOffer:           s.CurrentOffer,
-		OfferAsked:             s.OfferAsked,
-		UnsupportedFormatName:  s.UnsupportedFormatName,
-		NearestFormat:          s.NearestFormat,
-		UnsupportedFormatAsked: s.UnsupportedFormatAsked,
-		PreconName:             s.PreconName,
-		IllegalCommander:       s.IllegalCommander,
-		SetPhrase:              s.SetPhrase,
-		UnresolvedSet:          s.UnresolvedSet,
-		UnresolvedSetAsked:     s.UnresolvedSetAsked,
-		SetOptions:             s.SetOptions,
-		SetNames:               s.SetNames,
-		PreconPhrase:           s.PreconPhrase,
-		ExcludedPreconNames:    s.ExcludedPreconNames,
-		UnresolvedPrecon:       s.UnresolvedPrecon,
-		UnresolvedPreconAsked:  s.UnresolvedPreconAsked,
-		PreconOptions:          s.PreconOptions,
-		Messages:               s.Messages,
-		AskCount:               s.AskCount,
-		Turn:                   s.Turn,
-		Asks:                   s.Asks,
+		Version:                  SnapshotVersion,
+		Ctx:                      s.Ctx,
+		NamedCards:               s.NamedCards,
+		CommanderNames:           s.CommanderNames,
+		LockedNames:              s.LockedNames,
+		OfferedCommanders:        s.OfferedCommanders,
+		CurrentOffer:             s.CurrentOffer,
+		OfferAsked:               s.OfferAsked,
+		UnsupportedFormatName:    s.UnsupportedFormatName,
+		NearestFormat:            s.NearestFormat,
+		UnsupportedFormatAsked:   s.UnsupportedFormatAsked,
+		PreconName:               s.PreconName,
+		IllegalCommander:         s.IllegalCommander,
+		SetPhrase:                s.SetPhrase,
+		UnresolvedSet:            s.UnresolvedSet,
+		UnresolvedSetAsked:       s.UnresolvedSetAsked,
+		SetOptions:               s.SetOptions,
+		SetNames:                 s.SetNames,
+		PreconPhrase:             s.PreconPhrase,
+		ExcludedPreconNames:      s.ExcludedPreconNames,
+		UnresolvedPrecon:         s.UnresolvedPrecon,
+		UnresolvedPreconAsked:    s.UnresolvedPreconAsked,
+		PreconOptions:            s.PreconOptions,
+		UnresolvedCommander:      s.UnresolvedCommander,
+		UnresolvedCommanderAsked: s.UnresolvedCommanderAsked,
+		CommanderOptions:         s.CommanderOptions,
+		Messages:                 s.Messages,
+		AskCount:                 s.AskCount,
+		Turn:                     s.Turn,
+		Asks:                     s.Asks,
 	}
 }
 
@@ -153,6 +164,9 @@ func Restore(id string, slots *mtgv1.Slots, snap Snapshot) *State {
 	st.UnresolvedPrecon = snap.UnresolvedPrecon
 	st.UnresolvedPreconAsked = snap.UnresolvedPreconAsked
 	st.PreconOptions = snap.PreconOptions
+	st.UnresolvedCommander = snap.UnresolvedCommander
+	st.UnresolvedCommanderAsked = snap.UnresolvedCommanderAsked
+	st.CommanderOptions = snap.CommanderOptions
 	st.Messages = snap.Messages
 	st.AskCount = snap.AskCount
 	st.Turn = snap.Turn
