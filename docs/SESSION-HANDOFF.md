@@ -16,7 +16,14 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The deploy of #99 passed.** It changed `go/`, `web/`, and `proto/`, so both triggers ran, and both read SUCCESS at `77a0ae1`. Cloud Run revision `mtg-api-00016-mkm` is the API of that build, ready at 14:21 UTC, and `decktome.com` answers 200. Read a build with `gcloud builds list --project decktome-prod --region us-central1 --limit 4`.
 
-**PR-33 holds four parts, and it waits for a merge** (2026-09-08, F-77, F-78, D-609, D-613). Branch `pr-33-on-band`, from `main` at `ea5e7f7`. Two deployed builds ran four minutes and gave the reader nothing, and `docs/reference/on-band-plan-2026-09-08.md` holds the read and the plan.
+**PR-33 merged as #102, and the owner walked the deployed app** (2026-09-08). The same request that read 3 minutes 59 seconds and an error read **37 seconds and one model call**. The log line "the deck is legal and its bands are what the pool allows, so no repair turn runs" is the new path, and the mana pass made 10 steps and left `off_band` at 0.01. **The walk found three faults, and branch `f79-manapass-ownership` fixes them** (F-79, F-80, F-81, D-614 to D-616).
+
+- F-79: the mana pass named seven cards the reader owns as cards to buy. `addOne` wrote no owned count and no price.
+- F-80: a revision added no card the deck does not hold. "Include The Arkenstone from my collection" changed nothing.
+- F-81: a revision that changed nothing stored a new version of the deck.
+- D-614: a set-limited deck shows a printing of the sets the reader named.
+
+**The old PR-33 entry follows.** PR-33 held four parts, and it waits for a merge (2026-09-08, F-77, F-78, D-609, D-613). Branch `pr-33-on-band`, from `main` at `ea5e7f7`. Two deployed builds ran four minutes and gave the reader nothing, and `docs/reference/on-band-plan-2026-09-08.md` holds the read and the plan.
 
 The four parts:
 
