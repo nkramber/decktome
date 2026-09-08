@@ -41,7 +41,11 @@ export function Layout() {
   }
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-background text-foreground print:h-auto print:overflow-visible">
+    // h-dvh and never h-screen. 100vh on a phone is the height with the
+    // browser bar collapsed, so a shell of that height puts its own foot
+    // below the fold, and an overflow-hidden shell can not scroll to it.
+    // The reader then reaches no bottom bar and no end of a page (D-625).
+    <div className="flex h-dvh flex-col overflow-hidden bg-background text-foreground print:h-auto print:overflow-visible">
       <header className="flex shrink-0 items-center justify-between gap-4 border-b border-border bg-muted px-4 py-3 md:px-6 print:hidden">
         <Link to="/" className="flex items-center gap-3 transition-opacity hover:opacity-80">
           <span aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-card bg-accent text-accent-foreground">
@@ -71,6 +75,10 @@ export function Layout() {
       {/* The header and the card-data line hold their place, and the
           page scrolls between them (D-364). A docked chat can then fill
           the frame and never run past it. */}
+      {/* The main region is the one that scrolls. min-height auto does
+          not apply to it, because overflow-y auto makes it a scroll
+          container, so no min-h-0 is needed here. e2e/phone.spec.ts
+          reads that rule at 390 pixels. */}
       <main className="grow overflow-y-auto print:overflow-visible">
         <Outlet />
       </main>

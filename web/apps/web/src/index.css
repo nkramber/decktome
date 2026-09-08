@@ -13,7 +13,9 @@
     background-color: var(--background);
     color: var(--foreground);
     font-family: var(--font-sans);
-    min-height: 100vh;
+    /* The dynamic viewport height, so a phone with a browser bar reads
+       the real height and not the collapsed one (D-625). */
+    min-height: 100dvh;
   }
   /* A heading is engraved: the display face, wide letters, small caps. */
   h1,
