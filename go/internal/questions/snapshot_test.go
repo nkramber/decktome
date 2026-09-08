@@ -41,6 +41,7 @@ func fullState() *State {
 	st.UnresolvedPrecon, st.UnresolvedPreconAsked = "Fluffy", "Fluffy"
 	st.PreconOptions = []string{"Turtle Power!"}
 	st.Ctx.PreconsExcluded, st.Ctx.PreconUnresolved, st.Ctx.PreconChanged = true, true, true
+	st.Ctx.Reasked = map[string]bool{"power": true}
 	st.AskCount, st.Turn = 2, 2
 	st.Messages = []string{"karlov lifegain", "keep sanguine bond"}
 	st.Asks = []Ask{{QuestionID: "q1-theme", RowID: "theme", Slot: "theme", Key: "theme", Fit: 0.9, Threshold: 0.35, Turn: 1}}
@@ -62,7 +63,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		// OptionAnswers is the input of one turn, not state (D-597). The
 		// caller sets it before Turn and the engine reads it inside that
 		// turn, so no snapshot carries it and a restore starts it empty.
-		if !f.IsExported() || f.Name == "Slots" || f.Name == "SessionID" || f.Name == "OptionAnswers" {
+		if !f.IsExported() || f.Name == "Slots" || f.Name == "SessionID" || f.Name == "OptionAnswers" || f.Name == "AnsweredQuestions" {
 			continue
 		}
 		if v.Field(i).IsZero() {

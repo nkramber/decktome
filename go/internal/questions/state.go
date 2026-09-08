@@ -22,6 +22,12 @@ type State struct {
 	// and Turn applies them after the classifier, so the reader's own
 	// choice stands. They live for one turn, and no snapshot holds them.
 	OptionAnswers []OptionAnswer
+	// AnsweredQuestions are the ids of the questions the reader replied
+	// to this turn, whatever the shape of the reply (D-599). A key
+	// re-opens only when its question got a reply that did not reach the
+	// slot. A question nobody answered is not stalled, and the grace of
+	// CloseStalled holds it.
+	AnsweredQuestions []string
 	// SessionID is the conversation id. It goes out as the provider cache
 	// key, so every call of one session routes together.
 	SessionID string
@@ -671,6 +677,50 @@ func (s *State) CloseStalled() (closed, waiting []string) {
 	sort.Strings(closed)
 	sort.Strings(waiting)
 	return closed, waiting
+}
+
+// ReaskStalled asks one more time for a key the reader answered and the
+// classifier could not read (D-599).
+//
+// The caller runs it only when the planner has nothing to ask and the
+// session is not ready. That pair proves the turn is stuck: the question
+// is out, the no-repeat rule holds it out, and no build can start.
+//
+// The key re-opens once. A second stall on the same key falls to
+// CloseStalled, which skips it and lets the build take the default. So
+// the reader answers, hears the question once more in the same turn, and
+// never waits on a chat that says nothing.
+//
+// It returns the keys it re-opened, for the log and the gate.
+func (s *State) ReaskStalled() (reasked []string) {
+	if s.Ctx.Reasked == nil {
+		s.Ctx.Reasked = map[string]bool{}
+	}
+	answered := map[string]bool{}
+	for _, id := range s.AnsweredQuestions {
+		if key := s.keyOfQuestion(id); key != "" {
+			answered[key] = true
+		}
+	}
+	for key, state := range s.Slots.GetSlotStates() {
+		if state != mtgv1.SlotState_SLOT_STATE_ASKED || s.Ctx.Reasked[key] || !answered[key] {
+			continue
+		}
+		s.Ctx.Reasked[key] = true
+		s.Slots.SlotStates[key] = mtgv1.SlotState_SLOT_STATE_UNSPECIFIED
+		delete(s.Ctx.Filled, key)
+		delete(s.Ctx.Outstanding, key)
+		// The no-repeat rule reads the row ids, so every row that asked
+		// this key may ask it again.
+		for _, a := range s.Asks {
+			if a.Key == key {
+				delete(s.Ctx.Asked, a.RowID)
+			}
+		}
+		reasked = append(reasked, key)
+	}
+	sort.Strings(reasked)
+	return reasked
 }
 
 // askAge is how many turns the reader has had to answer the newest open

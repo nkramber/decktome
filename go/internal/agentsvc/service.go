@@ -496,6 +496,12 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 	// folded message carries them as words too, for the classifier to
 	// read, and the engine no longer depends on that round trip.
 	st.OptionAnswers = optionAnswers(req.Msg.GetAnswers())
+	// The questions the reader replied to, whatever the shape of the
+	// reply. A key re-opens only when its own question got a reply that
+	// did not reach the slot (D-599).
+	for _, a := range req.Msg.GetAnswers() {
+		st.AnsweredQuestions = append(st.AnsweredQuestions, a.GetQuestionId())
+	}
 	acc := llm.NewAccumulator(s.prices)
 	// The total before this turn, kept apart. The turn sums the report
 	// onto it twice: once after the question calls, and once more after
