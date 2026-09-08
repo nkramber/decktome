@@ -21,13 +21,20 @@ const deck = {
 } as unknown as Deck;
 
 describe("buyRows", () => {
-  it("sums the shortfall per card, commander first, and links to the printing (D-308)", () => {
+  it("sums the shortfall per card and links to the printing (D-308)", () => {
     const { needed, upgrades } = buyRows(deck, byId);
-    expect(needed).toEqual([
-      { oracleId: "o-cmd", name: "Anikthea, Hand of Erebos", count: 1, priceUsd: 0, scryfallUrl: "https://scryfall.com/card/cmm/8" },
-      { oracleId: "o-sw", name: "Soul Warden", count: 3, priceUsd: 1.5, scryfallUrl: "https://scryfall.com/card/mm3/24" },
-    ]);
+    expect(needed).toEqual([{ oracleId: "o-sw", name: "Soul Warden", count: 3, priceUsd: 1.5, scryfallUrl: "https://scryfall.com/card/mm3/24" }]);
     expect(upgrades).toEqual([{ oracleId: "o-up", name: "Rhystic Study", count: 1, priceUsd: 40, scryfallUrl: undefined }]);
+  });
+
+  // F-76: a deck carries `commanderOracleIds` and no ownership fact for
+  // the commander. The old code wrote one, `owned: false`, so every deck
+  // named its commander as a card to buy, at no price. Deck
+  // `u8FV7fc98qzNvRfsuJ5q` reads 77 cards, every one owned, and a buy
+  // cost of zero, and the buy list held the commander all the same.
+  it("names no commander the deck holds no entry for", () => {
+    const { needed } = buyRows(deck, byId);
+    expect(needed.map((r) => r.oracleId)).not.toContain("o-cmd");
   });
 
   it("gives an owned entry no row, whatever its owned count says", () => {

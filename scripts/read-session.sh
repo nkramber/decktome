@@ -19,6 +19,13 @@
 # page, and put no part of it in an issue or a pull request.
 set -uo pipefail
 
+# KIND reads "sessions" or "decks". A deck stores the same way: the
+# index fields on the document and the message in a gzip protojson blob
+# (D-604). One reader serves both.
+kind="${KIND:-sessions}"
+gzfield="session_gz"
+[ "$kind" = "decks" ] && gzfield="deck_gz"
+
 session="${1:-}"
 uid="${2:-}"
 # The project comes from SESSION_PROJECT, then from the active gcloud
@@ -120,7 +127,7 @@ f = {k: val(v) for k, v in doc["fields"].items()}
 # version of this script read camelCase names off the document and
 # reported an empty session that was not empty.
 inner = {}
-gz = f.get("session_gz")
+gz = f.get(sys.argv[2])
 if isinstance(gz, str):
     import base64, gzip
     try:
@@ -176,16 +183,16 @@ for i, t in enumerate(turns, 1):
         print("      asked  {}".format(clip(q.get("prompt") or q.get("text") or q.get("key"), 160)))
     for a in t.get("answers") or []:
         print("      answer {}".format(clip(json.dumps(a, default=str), 160)))
-' "${RAW:-0}"
+' "${RAW:-0}" "${gzfield}"
 }
 
 try_one() {
-  get "${base}/users/${1}/sessions/${session}" | show
+  get "${base}/users/${1}/${kind}/${session}" | show
 }
 
 if [ -n "$uid" ]; then
   if try_one "$uid"; then exit 0; fi
-  echo "no session ${session} under user ${uid} in ${project}" >&2
+  echo "no ${kind} ${session} under user ${uid} in ${project}" >&2
   exit 1
 fi
 
@@ -203,7 +210,7 @@ done < <(users)
 if [ "$found" -ne 0 ]; then
   # The count separates a session that is not there from a user list that
   # came back empty. The two failures read the same without it.
-  echo "no session ${session} in ${project}, over ${scanned} user(s)" >&2
+  echo "no ${kind} ${session} in ${project}, over ${scanned} user(s)" >&2
   if [ "$scanned" -eq 0 ]; then
     echo "the user list is empty. Check the account: gcloud config get-value account" >&2
   fi
