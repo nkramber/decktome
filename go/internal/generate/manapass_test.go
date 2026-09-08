@@ -124,6 +124,74 @@ func TestTheManaPassTradesATappedLandForAnUntappedOne(t *testing.T) {
 	}
 }
 
+// TestTheManaPassCarriesOwnershipAndPrice is F-79, found on the
+// deployed app on 2026-09-08. The pass added seven cards of the reader's
+// own collection, and every one read "to buy" at no price, on a deck
+// built from owned cards alone. Session IDS5oQE3D0XDWs6o1FnR.
+func TestTheManaPassCarriesOwnershipAndPrice(t *testing.T) {
+	src := source{}
+	var deckCards []*mtgv1.DeckCard
+	add := func(c *mtgv1.Card, n int32, role mtgv1.CardRole, owned int32) {
+		src[c.GetOracleId()] = c
+		deckCards = append(deckCards, &mtgv1.DeckCard{
+			OracleId: c.GetOracleId(), Name: c.GetName(), Count: n, Role: role,
+			OwnedCount: owned, Owned: owned >= n,
+		})
+	}
+	plains := manaCard("o-plains", "Plains", 0, []string{"Land"}, "", mtgv1.Color_COLOR_W)
+	plains.Supertypes = []string{"Basic"}
+	tapped := manaCard("o-tap", "Tapped Hold", 0, []string{"Land"}, "This land enters tapped.", mtgv1.Color_COLOR_W)
+	untapped := manaCard("o-untap", "Open Hold", 0, []string{"Land"}, "", mtgv1.Color_COLOR_W)
+	untapped.PriceUsd = 2.5
+	spell := manaCard("o-spell", "White Spell", 2, []string{"Creature"}, "")
+	add(plains, 25, mtgv1.CardRole_CARD_ROLE_LAND, 40)
+	add(tapped, 10, mtgv1.CardRole_CARD_ROLE_LAND, 10)
+	add(spell, 64, mtgv1.CardRole_CARD_ROLE_THREAT, 64)
+	src[untapped.GetOracleId()] = untapped
+
+	b := manaBuilder(t, src)
+	deck := &mtgv1.Deck{
+		Format: &mtgv1.Format{Id: mtgv1.FormatId_FORMAT_ID_COMMANDER},
+		Power:  &mtgv1.PowerLevel{Level: &mtgv1.PowerLevel_Bracket{Bracket: 4}},
+		Cards:  deckCards,
+	}
+	// The reader owns three copies of the untapped land, so the pass
+	// takes one of their own cards.
+	req := Request{
+		Format: mtgv1.FormatId_FORMAT_ID_COMMANDER,
+		Power:  deck.GetPower(),
+		Pool: NewPool([]*mtgv1.Card{plains, tapped, untapped, spell},
+			map[string]int32{"o-untap": 3, "o-plains": 40, "o-tap": 10, "o-spell": 64}),
+	}
+	if steps := b.fixMana(req, deck); steps == 0 {
+		t.Fatal("the pass made no step")
+	}
+	var added *mtgv1.DeckCard
+	for _, dc := range deck.GetCards() {
+		if dc.GetOracleId() == "o-untap" {
+			added = dc
+		}
+	}
+	if added == nil {
+		t.Fatal("the pass took no untapped land")
+	}
+	if added.GetOwnedCount() != 3 {
+		t.Errorf("the added card reads %d copies owned, and the collection holds 3", added.GetOwnedCount())
+	}
+	if !added.GetOwned() {
+		t.Error("the added card reads as one to buy, and the reader owns it")
+	}
+	if added.GetPriceUsd() != 2.5 {
+		t.Errorf("the added card reads price %v, want the card's own price", added.GetPriceUsd())
+	}
+	// Nothing of this deck reaches a buy list: every card is owned.
+	for _, dc := range deck.GetCards() {
+		if !dc.GetOwned() {
+			t.Errorf("a deck of owned cards names %q as one to buy", dc.GetName())
+		}
+	}
+}
+
 // A deck already inside its bands is a deck the pass leaves alone. The
 // pass must never move a deck for its own sake.
 func TestTheManaPassLeavesADeckInBandAlone(t *testing.T) {
