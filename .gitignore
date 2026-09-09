@@ -35,6 +35,7 @@ coverage/
 /go/chat-probe
 /go/allow
 /go/feedback
+/go/feedback-harvest
 /go/deck-gate
 /go/eval
 /go/bracket-gate

@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"cloud.google.com/go/firestore"
+
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 )
 
 // The store talks to Firestore, and the write and the read back can not
@@ -127,5 +129,96 @@ func TestDownReadsEveryUser(t *testing.T) {
 	}
 	if seen[upUser] {
 		t.Error("an up verdict came back from the down query")
+	}
+}
+
+// TestSinceReadsTenSeededItems is the emulator gate item of PR-28a. Ten
+// verdicts go in, both up and down, and the harvest reads the ones after
+// a watermark, oldest first. The snapshot of D-635 must survive the
+// round trip, or the triage of PR-28b has no deck list to read.
+func TestSinceReadsTenSeededItems(t *testing.T) {
+	r := emulatorRepo(t)
+	ctx := context.Background()
+	uid := "u-" + time.Now().UTC().Format("150405.000000")
+	base := time.Date(2026, 9, 9, 12, 0, 0, 0, time.UTC)
+
+	for i := range 10 {
+		item := Item{
+			Kind:      "card",
+			Verdict:   "down",
+			UID:       uid,
+			DeckID:    "d1",
+			OracleID:  "o-sol",
+			Reasons:   []string{"off_theme"},
+			CreatedAt: base.Add(time.Duration(i) * time.Minute),
+		}
+		if i%2 == 0 {
+			item.Verdict = "up"
+		}
+		// Half carry the snapshot, and half read as a verdict from before
+		// D-635. Both must harvest.
+		if i >= 5 {
+			item.Deck = &mtgv1.Deck{Id: "d1", Cards: []*mtgv1.DeckCard{{OracleId: "o-sol"}}}
+		}
+		if _, err := r.Add(ctx, uid, item); err != nil {
+			t.Fatalf("add %d: %v", i, err)
+		}
+	}
+
+	all, err := r.Since(ctx, time.Time{}, 0)
+	if err != nil {
+		t.Fatalf("Since: %v", err)
+	}
+	mine := make([]Item, 0, 10)
+	for _, it := range all {
+		if it.UID == uid {
+			mine = append(mine, it)
+		}
+	}
+	if len(mine) != 10 {
+		t.Fatalf("read %d verdicts, want the 10 seeded", len(mine))
+	}
+	// Oldest first, so a document tells the story in order.
+	for i := 1; i < len(mine); i++ {
+		if mine[i].CreatedAt.Before(mine[i-1].CreatedAt) {
+			t.Fatalf("verdict %d came before %d", i, i-1)
+		}
+	}
+	ups := 0
+	snaps := 0
+	for _, it := range mine {
+		if it.Verdict == "up" {
+			ups++
+		}
+		if it.Deck != nil {
+			snaps++
+			if len(it.Deck.GetCards()) != 1 {
+				t.Error("the snapshot lost the deck list")
+			}
+		}
+		if it.ID == "" {
+			t.Error("a verdict read back with no id, so no harvest can name it")
+		}
+	}
+	if ups != 5 {
+		t.Errorf("read %d thumbs up, want 5: the harvest reads both verdicts", ups)
+	}
+	if snaps != 5 {
+		t.Errorf("read %d snapshots, want 5", snaps)
+	}
+
+	// A watermark inside the run reads the newer verdicts alone.
+	after, err := r.Since(ctx, base.Add(4*time.Minute), 0)
+	if err != nil {
+		t.Fatalf("Since after: %v", err)
+	}
+	n := 0
+	for _, it := range after {
+		if it.UID == uid {
+			n++
+		}
+	}
+	if n != 5 {
+		t.Errorf("a watermark at the 5th verdict read %d, want 5", n)
 	}
 }

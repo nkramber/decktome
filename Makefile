@@ -382,7 +382,10 @@ disallow: ## Take one email off the invite list: make disallow EMAIL=... PROJECT
 	@PROJECT_ID=$(PROJECT_ID) $(GO) run ./cmd/allow -email "$(EMAIL)" -remove
 
 feedback-list: ## Read the newest verdicts of every user: make feedback-list [VERDICT=down] [LIMIT=50]
-	@PROJECT_ID=$${FEEDBACK_PROJECT:-decktome-prod} $(GO) run ./cmd/feedback -verdict "$${VERDICT:-down}" -limit $${LIMIT:-50}
+	@PROJECT_ID=$${FEEDBACK_PROJECT:-decktome-prod} $(GO) run ./cmd/feedback -verdict "$${VERDICT-down}" -limit $${LIMIT:-50}
+
+feedback-harvest: ## Write every verdict since the last harvest to docs/reference/feedback/: make feedback-harvest [SINCE=2026-09-01] [HARVEST_ARGS=-dry]
+	@PROJECT_ID=$${FEEDBACK_PROJECT:-decktome-prod} $(GO) run ./cmd/feedback-harvest -root $(CURDIR) $(if $(SINCE),-since $(SINCE),) $(HARVEST_ARGS)
 
 read-session: ## Read one chat session of the deployed project for debugging: make read-session SESSION=<id> [UID=<uid>]
 	@[ -n "$(SESSION)" ] || { echo "read-session: set SESSION=... to the session id"; exit 1; }
