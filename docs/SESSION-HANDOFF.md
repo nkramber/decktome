@@ -8,27 +8,29 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-09)
 
-**The checkout.** `main` is `97fbdee`, which is pull request #119. Branch `pr-28b` holds this session's work, and it waits for a review and a merge. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
+**The checkout.** `main` is `dfb0170`, which is pull request #121. Branch `pr-28c` holds this session's work, and it waits for a review and a merge. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
 
-**The app is live on `decktome.com`.** The deploy of `97fbdee` passed, and Cloud Run revision `mtg-api-00026-srg` serves the API. A merge to `main` deploys itself on Cloud Build (D-584, D-586).
+**The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586).
 
-**PR-28b waits for a merge** (D-642 to D-644, F-90). The triage names one of 22 classes for each thumbs down, and the reason keys answer 20 of them for nothing. The judge reads three cases alone. They are free text with no reason, reasons that cross two classes, and a reader who argues with a rule the owner set. `docs/reference/pr28b-triage-gate-2026-09-09.md` is the gate, and it reads PASS for nothing.
+**The whole feedback loop stands.** PR-27 harvests the verdicts, PR-28a writes the harvest files, PR-28b writes the cases, and PR-28c fixes them. PR-28a merged as #117 and PR-28b as #121.
 
-**A committed file takes a reader's own words** (D-642, supersedes D-640). The owner set that rule on 2026-09-09: a reader's exact words fit anywhere, and no file holds an email. So `.gitignore` no longer holds `docs/reference/feedback/`, and a triage case goes straight into the gate file that owns it. The pull request diff is the accept step, because the owner merges every pull request.
+**PR-28c waits for a merge** (D-645). `scripts/feedback-loop.sh` reads a harvest and writes one case per thumbs down. It proves each case fails, hands the failures to a fixer agent, and proves each case passes. **The case and its fix ride in one pull request.** A case is a failing test, and a case merged alone turns the gate red on `main`. The cycle pushes, opens the pull request, and answers the review of `gitar-bot` over three rounds. `docs/reference/pr28c-fix-cycle-gate-2026-09-09.md` is the gate.
 
-**A verdict about a deck now keeps the session that built it** (D-643). The theme, the pool rule, and the budget live on the session and never on the deck, and a deck gate prompt needs all three. The feedback schema is version 3.
+**CAUTION: no live cycle ran yet.** The free half holds and `make feedback-loop-dry` plans one for nothing. A live cycle spends money, edits code with nobody watching, and writes to a public pull request. It needs three things: the owner's word, `AUTOTUNE_FIXER_CMD` set to an agent, and a harvest whose verdicts carry a snapshot.
 
-**PR-28c is next.** It is the fix cycle on `scripts/autotune-fix.sh`, under the $2 cap of D-559.
+**PR-34, more collection platforms, is the next item** (D-646, F-91). The app reads a ManaBox CSV and an Arena deck list, and a reader on any other platform can not upload at all. The owner named "Manapool" on 2026-09-09, and no file of this repo holds that name. The session read it as ManaBox. **Two questions wait for the owner**: which platforms come first, and whether the app detects the format or the reader names it.
 
-**Every user has a record** at `users/<uid>` (D-638). It holds the verified email, the creation date, and the last active time. It holds six counters: decks, deck revisions, collections, chats, and the verdicts up and down. Every counter counts a creation, so a deleted deck does not lower one. The owner ran `make users-backfill` on 2026-09-09.
+**A committed file takes a reader's own words** (D-642, supersedes D-640). No file holds an email. `.gitignore` no longer covers `docs/reference/feedback/`.
+
+**Every user has a record** at `users/<uid>` (D-638), with the verified email, the dates, and six counters. Every counter counts a creation, so a deleted deck does not lower one.
 
 **The whole PR-22 gate holds** (D-633). The measured cost at idle reads $9.54 a month gross, and the hourly snapshot tick of D-634 leaves $3.81.
 
 **What waits on the owner.** OQ-67, the Stage B channels. OQ-77, the blocking function of Identity Platform. OQ-79, the commander of an owned-only pool.
 
-**CAUTION: the evidence OQ-79 waits for is not on the deployed project.** `make read-session SESSION=23rplEQAMA0mtJ3QFtKO` answers `no sessions ... over 1 user(s)`, and the deck it names is gone as well. The script reads every user of the project. So a fresh owned-only build on the deployed app is the way to the evidence.
+**CAUTION: the evidence OQ-79 waits for is not on the deployed project.** `make read-session SESSION=23rplEQAMA0mtJ3QFtKO` answers `no sessions ... over 1 user(s)`, and the deck it names is gone as well. So a fresh owned-only build on the deployed app is the way to the evidence.
 
-**CAUTION: a local `make verify` is not the whole story.** It read green for weeks while shellcheck failed, because the recipe took the `||` branch on a finding (F-89, D-641). Every pull request runs the workflow now, and the two answer the same question.
+**CAUTION: a local `make verify` is not the whole story.** It read green for weeks while shellcheck failed, because the recipe took the `||` branch on a finding (F-89, D-641). Every pull request runs the workflow now.
 
 ## How to resume
 
@@ -45,7 +47,7 @@ A second Mac: `docs/setup-second-mac.md` holds what to carry, what to install, a
 
 Seven things a fresh session gets wrong without this file.
 
-- Twelve targets and the loop script spend money: `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, and `scripts/autotune.sh`. Ask the owner before each run. `make autotune`, `make feedback-triage-dry`, and `eval sweep -dry` are free.
+- Twelve targets and two loop scripts spend money: `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `scripts/autotune.sh`, and `scripts/feedback-loop.sh`. Ask the owner before each run. `make autotune`, `make feedback-loop`, `make feedback-loop-dry`, `make feedback-triage-dry`, and `eval sweep -dry` are free.
 - A rerun writes to a new file. Every `*_OUT` variable refuses a document that holds a result (D-65).
 - A gate run takes about 20 minutes and an eval about 13. A foreground command stops at 10 minutes, so run both in the background.
 - `docker compose up` needs provider keys in `.env` now, and fails fast without them (D-267). `make dev` still starts with no keys, and the fake builds the fixture deck of PR-23 for any first message (D-552).
@@ -71,8 +73,8 @@ Seven things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **PR-28c, the fix cycle** (D-557 to D-559, D-636). This is next in the sequence, and PR-28b comes before it. The fixer agent of the tuning loop runs on a branch of its own with the new cases. `scripts/autotune-fix.sh` takes them the way it takes an eval report today. One cycle stops at $2 of gate runs (D-559), and every guard of `docs/reference/autotune-design.md` holds.
-2. **The live judge lane of PR-28b has no run yet.** The three verdicts on record predate the snapshot of D-635, so they carry no context. The fixture proves the dry lane alone. The first live run belongs with the first real harvest that carries a snapshot. `make feedback-triage TRIAGE_OUT=<document>` runs it, and it costs a few cents a verdict.
+1. **PR-34, more collection platforms** (D-646, F-91). The owner named this as the next item after the feedback loop. Ask the two open questions first. They are the order of the platforms, and the way the app reads a format. A real export is the fixture of every format. A column list from a help page is not the file the app receives.
+2. **The live half of the feedback loop has no run yet.** Three things want a measurement: the judge lane of the triage, one live fix cycle, and one review round. All three need the owner's word, and the cycle also needs `AUTOTUNE_FIXER_CMD` and a harvest whose verdicts carry a snapshot. The three verdicts on record predate D-635.
 3. **The next whole deck gate run is still run 19, and it is still outstanding.** It makes the next decks baseline, and no deck-build change waits on one now. The upgrade probe of 2026-09-09 already measured D-628 (D-632).
 4. **OQ-79 needs runtime evidence.** No fix goes in without it, and neither the session nor the deck it names is readable. A fresh owned-only build on the deployed app is the way to it.
 5. **PR-29, the casual corpus**, stands on the weak-axes plan (D-567, D-568). Read `docs/reference/weak-axes-2026-09-07.md` first. No bar moves (D-486), and no weight changes by hand. PR-30 follows, and PR-31 parks (D-573).
@@ -87,6 +89,24 @@ CAUTION: the CI step "fake gcs tests" filters on `LiveStore`, and the only live 
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 
 ## The ten most recent sessions
+
+### 2026-09-09c: PR-28c, the fix cycle
+
+Branch `pr-28c`, open for review. The feedback loop is complete: PR-27 harvests, PR-28a writes the files, PR-28b writes the cases, and PR-28c fixes them.
+
+**The cycle.** `scripts/feedback-loop.sh` reads a harvest and writes one case per thumbs down. It proves each case fails, hands the failures to a fixer agent, and proves each case passes (D-645).
+
+**The case and its fix ride in one pull request.** A case is a failing test by design. A case merged on its own turns the gate red on `main` until a fix lands, and the owner chose one pull request over two.
+
+**The cycle confirms before it fixes.** A case that already passes never measured the reader's fault. It stays as a case a change must not flip, and the fixer never sees it. That is D-234 applied to a case.
+
+**The accept rule is sharper than the tuning loop's.** No noise margin and no ratio: every case goes from fail to pass, `make eval-check` shows no flip, and the tree builds. `cmd/case-check` reads the same bars the gate's own verdict reads.
+
+**The cycle answers the review.** `scripts/feedback-review.sh` hands every open finding of `gitar-bot` to the fixer, pushes, and replies on each thread, over three rounds (D-637).
+
+**The frozen list drifted, and a test caught it.** `TestTheFixerPromptAndTheCycleAgreeOnTheFrozenList` found nine paths the cycle enforces that the prompt never named.
+
+**PR-34 joined the roadmap** (D-646, F-91): the app reads two collection formats, and a reader on any other platform can not upload at all.
 
 ### 2026-09-09b: PR-28b, the triage and the cases
 
@@ -146,10 +166,6 @@ PR-14B landed the deck quality model (#58). PR-24 landed the precon exclusion (#
 
 PR-19 landed the chat and build experience, the counted land swap, and the split land bucket (#55). Its follow-up made a deck count its commander (#56). PR-14A landed the bracket profile (#57). Bracket gate run 1 and deck gate run 12 ran against them.
 
-### 2026-09-01: PR-17B and PR-18
-
-PR-17B landed the set filter and the fixes three gate runs found (#50). PR-18 landed collection management (#53), and its review fixes made the chat refuse a turn with no card index (#54). The question-quality pass ran the same day (D-387 to D-389).
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file carried before 2026-09-09. It holds the resume section of 2026-09-08, the record of 2026-08-31, and 42 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file carried before 2026-09-09. It holds the resume section of 2026-09-08, the records of 2026-08-31 and 2026-09-01, and 42 more sections, word for word. Read it for the detail behind a decision.

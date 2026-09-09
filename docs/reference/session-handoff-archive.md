@@ -11,6 +11,10 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## 2026-09-01: PR-17B and PR-18
+
+PR-17B landed the set filter and the fixes three gate runs found (#50). PR-18 landed collection management (#53), and its review fixes made the chat refuse a turn with no card index (#54). The question-quality pass ran the same day (D-387 to D-389).
+
 ## 2026-08-31: PR-17, the deck library
 
 PR-17 landed the deck library, the one deck screen, and the reference design (#49). The paid runs of the day and the dead conversation of D-351 to D-354 sit below.

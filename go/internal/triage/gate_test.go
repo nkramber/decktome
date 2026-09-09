@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -369,5 +370,111 @@ func TestAVerdictWithNothingToTriageIsCountedApart(t *testing.T) {
 	}
 	if !strings.Contains(doc, "| Nothing to triage | 1 |") {
 		t.Errorf("the summary table does not count it:\n%s", doc)
+	}
+}
+
+// TestTheManifestHandsTheCasesToTheCycle reads the hand-off of D-645.
+// The fix cycle of PR-28c has to know which ids the triage just added,
+// on which gate, and what the reader was unhappy about.
+func TestTheManifestHandsTheCasesToTheCycle(t *testing.T) {
+	recs, err := ReadHarvest("testdata/fixture.jsonl")
+	if err != nil {
+		t.Fatal(err)
+	}
+	results := Run(context.Background(), recs, nil, testNamer, testNextID)
+	m := ManifestOf("testdata/fixture.jsonl", time.Now(), results)
+
+	// The fixture holds ten verdicts. Two want the judge, and two write a
+	// defect row, so no gate measures those four.
+	if len(m.Cases) != 6 {
+		t.Fatalf("%d cases in the manifest, want 6\n%+v", len(m.Cases), m.Cases)
+	}
+	byGate := map[string]int{}
+	for _, c := range m.Cases {
+		byGate[c.Gate]++
+		if c.From == "" || c.ID == 0 || c.Target == "" {
+			t.Errorf("case %+v names no verdict, no id, or no file", c)
+		}
+	}
+	// Q1 and Q3 are conversations. S1, C1 and the keep case are deck
+	// prompts, and D3 is a bracket prompt.
+	for gate, want := range map[string]int{GateQuestions: 2, GateDecks: 3, GateBrackets: 1} {
+		if byGate[gate] != want {
+			t.Errorf("gate %s holds %d cases, want %d", gate, byGate[gate], want)
+		}
+	}
+	if got := m.IDs(GateQuestions); len(got) != 2 || got[0] >= got[1] {
+		t.Errorf("question ids = %v, want two in order", got)
+	}
+	if got := m.Gates(); len(got) != 3 {
+		t.Errorf("gates = %v, want all three", got)
+	}
+	// The reader's own words reach the fixer through the manifest, so it
+	// reads the complaint and not the class alone.
+	var q1 Entry
+	for _, c := range m.Cases {
+		if c.Class == "Q1" {
+			q1 = c
+		}
+	}
+	if !strings.Contains(q1.Said, "already told you the bracket") {
+		t.Errorf("the Q1 case carries no words of the reader: %q", q1.Said)
+	}
+	if q1.Where == "" {
+		t.Error("the Q1 case does not say where the fix lives")
+	}
+}
+
+// TestTheManifestSurvivesAWrite reads back what it wrote, because the
+// cycle reads the file and never the value in memory.
+func TestTheManifestSurvivesAWrite(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "cases.json")
+	want := Manifest{WrittenAt: time.Now().UTC().Truncate(time.Second), Harvest: "h.jsonl",
+		Cases: []Entry{{Class: "Q1", From: "f01", Gate: GateQuestions, Target: TargetConversations, ID: 110}}}
+	if err := WriteManifest(path, want); err != nil {
+		t.Fatal(err)
+	}
+	got, err := ReadManifest(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Cases) != 1 || got.Harvest != want.Harvest {
+		t.Fatalf("read back %+v, want %+v", got, want)
+	}
+	if g, w := got.Cases[0], want.Cases[0]; g.Class != w.Class || g.From != w.From ||
+		g.Gate != w.Gate || g.Target != w.Target || g.ID != w.ID {
+		t.Errorf("case read back %+v, want %+v", g, w)
+	}
+	if !got.WrittenAt.Equal(want.WrittenAt) {
+		t.Errorf("written at %v, want %v", got.WrittenAt, want.WrittenAt)
+	}
+}
+
+// TestGateOfNamesTheSuiteOfEveryTarget keeps the manifest and the run
+// files on one vocabulary. A target with no gate would drop its case out
+// of the cycle in silence.
+func TestGateOfNamesTheSuiteOfEveryTarget(t *testing.T) {
+	for target, want := range map[string]string{
+		TargetConversations:  GateQuestions,
+		TargetDeckPrompts:    GateDecks,
+		TargetBracketPrompts: GateBrackets,
+		"":                   "",
+	} {
+		if got := GateOf(target); got != want {
+			t.Errorf("GateOf(%q) = %q, want %q", target, got, want)
+		}
+	}
+	// Every artifact a class writes reaches a gate, or it writes no file
+	// at all.
+	for _, c := range classes {
+		switch c.Artifact {
+		case AConversation, ADeckPrompt, ASummaryCase, ABracketPrompt:
+			// The writers name one of the three targets, and the manifest
+			// test above reads each one.
+		case ADefect:
+			// A defect writes no file, so no gate measures it.
+		default:
+			t.Errorf("class %s writes artifact %q, and no gate owns it", c.ID, c.Artifact)
+		}
 	}
 }

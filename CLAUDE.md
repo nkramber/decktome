@@ -10,7 +10,7 @@ Stage (2026-09-09): **the app is live on `decktome.com`**, and pull request #119
 
 **The whole PR-22 gate holds** (D-633), so PR-28 is free to run. Every PR through #119 is merged: PR-0a to PR-8, PR-7B, PR-10 to PR-25, PR-27, PR-32, PR-33, and PR-28a. PR-9 is out of the MVP (D-256). **PR-28 split into three** (D-636). PR-28a is the harvest, and it is merged. PR-28b is the triage and the new "must not ask" expectation, and PR-28c is the fix cycle. PR-26 waits on OQ-67, and PR-29 to PR-31 stand on the weak-axes plan.
 
-**PR-28b waits for a merge.** The triage names one of 22 classes for each thumbs down, and the reason keys answer 20 of them for nothing (D-643). A case joins the gate file that owns it, and the pull request diff is the accept step (D-642).
+**PR-28b is merged as #121, and PR-28c waits for a merge.** The triage names one of 22 classes for each thumbs down, and the reason keys answer 20 of them for nothing (D-643). A case joins the gate file that owns it, and the pull request diff is the accept step (D-642). The fix cycle carries the case and its fix in one pull request, and it answers the review of `gitar-bot` (D-645). **PR-34, more collection platforms, is next** (D-646).
 
 Two rules of the deployed app come from 2026-09-09. **A verdict keeps the object it names** (D-635), because a reader deletes the deck or the chat they complained about, and the verdict outlives it. **Every user has a record** at `users/<uid>` (D-638): the verified email, the dates, and six counters of what they made. No harvest reads that record, and a test refuses the import that joins them.
 
@@ -104,6 +104,8 @@ Each other target is free. `make meta-refresh` reads the deck list sources over 
 `make feedback-harvest` writes every verdict since the last harvest to `docs/reference/feedback/`, as a dated document and a JSONL file (PR-28a). `SINCE=2026-09-01` sets the floor by hand, and `HARVEST_ARGS=-dry` counts and writes nothing. The watermark comes from the JSONL files, so the documents are the only record. It calls no model and costs nothing. Those files commit with the repository now (D-642).
 
 `make feedback-triage-dry` routes every verdict of the newest harvest into a class (PR-28b). It calls no model and costs nothing. `make feedback-triage TRIAGE_OUT=<document>` asks the judge for the verdicts the reason keys can not place, at a few cents each. `TRIAGE_ARGS=-apply` writes each case into the gate file that owns it. Ask the owner before every live run.
+
+`make feedback-loop` prints the commands of the fix cycle and starts nothing (PR-28c). `make feedback-loop-dry` plans a cycle for nothing. `scripts/feedback-loop.sh` is the paid cycle, and it refuses to start without `FEEDBACK_LOOP_ALLOW=1` and `AUTOTUNE_FIXER_CMD`. One cycle stops at $2 of gate runs (D-559). It edits code, commits, pushes, opens a pull request, and answers the review, with nobody watching. Ask the owner before every run.
 
 `make users-backfill` seeds the user record of D-638 from what each user already holds, and `BACKFILL_ARGS=-dry` counts and writes nothing. It never lowers a count. It calls no model and costs nothing.
 

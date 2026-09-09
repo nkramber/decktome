@@ -33,6 +33,10 @@ type Case struct {
 	Artifact Artifact `json:"artifact"`
 	// Target is the file the body joins, or empty for a defect.
 	Target string `json:"target,omitempty"`
+	// ID is the number the case takes in that file. The fix cycle of
+	// PR-28c runs the gate on this id alone, so the id is a field of its
+	// own and not a value the caller reads out of the body.
+	ID int `json:"id,omitempty"`
 	// Body is the case in the shape of that file.
 	Body json.RawMessage `json:"body,omitempty"`
 	// Gaps name what the verdict could not fill. A person reads them on
@@ -182,7 +186,7 @@ func conversationOf(r Route, id int, name Namer) (Case, error) {
 	if err != nil {
 		return Case{}, fmt.Errorf("triage %s: %w", rec.ID, err)
 	}
-	return Case{Class: classID(r), Artifact: AConversation, Target: TargetConversations, Body: body, Gaps: gaps}, nil
+	return Case{Class: classID(r), Artifact: AConversation, Target: TargetConversations, ID: id, Body: body, Gaps: gaps}, nil
 }
 
 // deckPromptOf writes a deck gate prompt from the deck the reader judged
@@ -257,7 +261,7 @@ func deckPromptOf(r Route, id int, name Namer) (Case, error) {
 	if r.Keep {
 		art = ADeckPrompt
 	}
-	return Case{Class: classID(r), Artifact: art, Target: TargetDeckPrompts, Body: body, Gaps: gaps}, nil
+	return Case{Class: classID(r), Artifact: art, Target: TargetDeckPrompts, ID: id, Body: body, Gaps: gaps}, nil
 }
 
 // bracketPromptOf writes a bracket gate prompt. The judge of that gate
@@ -300,7 +304,7 @@ func bracketPromptOf(r Route, id int, name Namer) (Case, error) {
 	if err != nil {
 		return Case{}, fmt.Errorf("triage %s: %w", rec.ID, err)
 	}
-	return Case{Class: classID(r), Artifact: ABracketPrompt, Target: TargetBracketPrompts, Body: body, Gaps: gaps}, nil
+	return Case{Class: classID(r), Artifact: ABracketPrompt, Target: TargetBracketPrompts, ID: id, Body: body, Gaps: gaps}, nil
 }
 
 // defectOf writes the row of a class that no gate measures. The fix is a
