@@ -36,6 +36,7 @@ coverage/
 /go/allow
 /go/feedback
 /go/feedback-harvest
+/go/case-check
 /go/feedback-triage
 /go/users-backfill
 /go/deck-gate

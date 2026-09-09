@@ -267,3 +267,44 @@ The loop can not tell a change from the judge's noise when the change moves fewe
 
 Nothing reaches `main` or the container. The loop commits to `auto-tune/<stamp>`
 and it pushes only with `--push`.
+
+## The feedback fix cycle (PR-28c)
+
+The tuning loop above reads an eval report. The feedback fix cycle reads
+a reader's complaint. Both call the same fixer script, and both hold the
+same guards, but they measure different things.
+
+| | The tuning loop | The feedback fix cycle |
+|---|---|---|
+| Input | An eval report of the question gate | A harvest of the deployed app |
+| The bar | A ratio against the best run of the night, over a noise margin of 9 | Every new case goes from fail to pass |
+| The cost | `--budget`, $3.00 by default | `--cap`, $2.00 by default (D-559) |
+| The end | A branch, and no push without `--push` | A pull request, and an answered review (D-645) |
+| The script | `scripts/autotune.sh` | `scripts/feedback-loop.sh` |
+
+The commands.
+
+```
+make feedback-loop                      free: it prints these commands and starts nothing
+make feedback-loop-dry                  free: it plans a cycle, calls no model, and commits nothing
+FEEDBACK_LOOP_ALLOW=1 AUTOTUNE_FIXER_CMD=... scripts/feedback-loop.sh --cap 2.00
+```
+
+The flags. `--in <file>` reads one harvest, and an empty flag reads the
+newest. `--base <branch>` cuts the cycle's branch off that branch.
+`--rounds <n>` sets how many times the cycle answers the review, and 3
+is the default. `--no-pr` stops at the local branch and pushes nothing.
+
+The eight steps of one cycle:
+
+1. The triage writes one case per thumbs down into the gate file that owns it, and it commits them.
+2. Each gate runs over its case ids alone. **Every case must fail.** A case that already passes stays as a case a change must not flip, and the fixer never sees it.
+3. The fixer reads the failing cases, the reader's own words, and `docs/reference/feedback-fixer-prompt.md`.
+4. A frozen path, a removed line of `docs/decisions.md`, or a red tree reverts the fixer and keeps the cases.
+5. The same gates run over the same ids. **Every case must pass.**
+6. `make eval-check` must show no flip on the baselines.
+7. The cycle commits its evidence, pushes, and opens the pull request.
+8. `scripts/feedback-review.sh` answers the review of `gitar-bot`, up to `--rounds` times.
+
+The cases are frozen. A fixer that edits one makes the gate agree with
+the code instead of with the reader.

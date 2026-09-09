@@ -11,7 +11,7 @@ GO := go -C go
 BUF := .bin/buf
 PNPM := pnpm --dir web
 
-.PHONY: feedback-triage feedback-triage-dry smoke allow disallow manapass-check deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check themes-check ste-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
+.PHONY: feedback-loop feedback-loop-dry feedback-triage feedback-triage-dry smoke allow disallow manapass-check deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check themes-check ste-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-14s %s\n", $$1, $$2}'
@@ -396,6 +396,17 @@ feedback-harvest: ## Write every verdict since the last harvest to docs/referenc
 # document: it prints to the terminal and calls no model.
 TRIAGE_OUT ?=
 TRIAGE_ARGS ?=
+
+feedback-loop: ## Print how to start the feedback fix cycle. It never starts one
+	@echo "The cycle writes the cases, fixes them, opens a pull request, and answers the review, with nobody watching."
+	@echo "One pull request holds the case AND the fix, so the gate on main is never red (D-645)."
+	@echo "docs/reference/autotune-design.md holds the guards. docs/reference/feedback-fixer-prompt.md holds what the fixer reads."
+	@echo
+	@echo "  make feedback-loop-dry                            free: the plan, no model and no commit"
+	@echo "  FEEDBACK_LOOP_ALLOW=1 AUTOTUNE_FIXER_CMD=... scripts/feedback-loop.sh --cap 2.00"
+
+feedback-loop-dry: ## Plan a feedback fix cycle over the newest harvest, call no model and commit nothing (free)
+	@scripts/feedback-loop.sh --dry $(LOOP_ARGS)
 
 feedback-triage-dry: ## Route every verdict of the newest harvest, call no model, and write no case (free)
 	@$(GO) run ./cmd/feedback-triage -root $(CURDIR) -dry $(TRIAGE_ARGS)

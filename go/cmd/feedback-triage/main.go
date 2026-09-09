@@ -11,6 +11,11 @@
 // question into docs/owner-questions.md. The owner reads the change on
 // the pull request, which is the accept step (D-642).
 //
+// -manifest names the file that hands those cases to the fix cycle of
+// PR-28c: the gate that owns each one, its id, and the reader's own
+// words (D-645). It needs no -apply, so a plan reads the same list the
+// live cycle acts on.
+//
 // CAUTION: a live run calls a real provider and it costs money.
 // FEEDBACK_TRIAGE=1 is required, so it can not run by accident. A -dry
 // run calls no provider and needs no guard.
@@ -53,6 +58,7 @@ func run() error {
 	out := flag.String("out", "", "write the triage document here")
 	dry := flag.Bool("dry", false, "call no model. A verdict the reason keys can not place keeps its need and writes no case")
 	apply := flag.Bool("apply", false, "write each case into the file that owns it")
+	manifest := flag.String("manifest", "", "write the case manifest here, for the fix cycle of PR-28c")
 	flag.Parse()
 
 	if !*dry {
@@ -121,6 +127,16 @@ func run() error {
 		if err := applyCases(*root, results); err != nil {
 			return err
 		}
+	}
+	// The manifest names the cases a gate measures, whether or not this
+	// run wrote them into a gate file. So the plan of a dry cycle reads
+	// the same list the live one acts on.
+	if *manifest != "" {
+		m := triage.ManifestOf(path, time.Now().UTC(), results)
+		if err := triage.WriteManifest(*manifest, m); err != nil {
+			return err
+		}
+		fmt.Fprintf(os.Stderr, "manifest     %s, %d case(s) a gate measures\n", *manifest, len(m.Cases))
 	}
 
 	cost := "nothing, no model ran"

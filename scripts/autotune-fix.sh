@@ -10,6 +10,9 @@
 #   AUTOTUNE_FIXER_JSON the eval summary with the holdout verdicts removed
 #                       (optional, T-8)
 #   AUTOTUNE_DRY_RUN    "1" writes the prompt and runs no agent (T-13)
+#   AUTOTUNE_FIXER_PROMPT the instructions file. It defaults to the
+#                       tuning loop's own. The feedback fix cycle of
+#                       PR-28c passes its own file (D-645).
 #
 # AUTOTUNE_FIXER_CMD names the agent. This script ships no default on
 # purpose. An unattended agent that edits a repository is the owner's
@@ -30,7 +33,9 @@ LESSONS="${AUTOTUNE_LESSONS:-$ROOT/docs/reference/autotune-lessons.md}"
 LAST_GOOD="${AUTOTUNE_LAST_GOOD:-$(git rev-parse HEAD)}"
 FIXER_JSON="${AUTOTUNE_FIXER_JSON:-}"
 DRY_RUN="${AUTOTUNE_DRY_RUN:-0}"
+INSTRUCTIONS="${AUTOTUNE_FIXER_PROMPT:-$ROOT/docs/reference/autotune-fixer-prompt.md}"
 [ -f "$DOC" ] || { echo "autotune-fix: no eval report at $DOC" >&2; exit 1; }
+[ -f "$INSTRUCTIONS" ] || { echo "autotune-fix: no instructions at $INSTRUCTIONS" >&2; exit 1; }
 
 if [ -z "${AUTOTUNE_FIXER_CMD:-}" ] && [ "$DRY_RUN" != "1" ]; then
   echo "autotune-fix: set AUTOTUNE_FIXER_CMD to the agent that applies fixes." >&2
@@ -42,11 +47,11 @@ PROMPT="$(mktemp)"
 trap 'rm -f "$PROMPT"' EXIT
 
 {
-  cat "$ROOT/docs/reference/autotune-fixer-prompt.md"
+  cat "$INSTRUCTIONS"
   echo
   echo "## This iteration"
   echo
-  echo "Label: $LABEL. Start commit: $LAST_GOOD. Commit each change on its own, with the two trailers."
+  echo "Label: $LABEL. Start commit: $LAST_GOOD. Commit each change on its own, with the trailers these instructions name."
   if [ -n "$FIXER_JSON" ]; then
     echo
     echo "The machine summary of this report is $FIXER_JSON. It holds no holdout verdict. Read no other summary."
@@ -66,7 +71,7 @@ trap 'rm -f "$PROMPT"' EXIT
     cat "$LESSONS"
     echo
   fi
-  echo "## The eval report for $LABEL"
+  echo "## The report for $LABEL"
   echo
   cat "$DOC"
 } > "$PROMPT"
