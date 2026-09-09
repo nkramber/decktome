@@ -15,6 +15,7 @@ import (
 	"github.com/nkramber/decktome/go/internal/decks"
 	"github.com/nkramber/decktome/go/internal/feedback"
 	"github.com/nkramber/decktome/go/internal/sessions"
+	"github.com/nkramber/decktome/go/internal/users"
 )
 
 type fakeStore struct {
@@ -294,5 +295,76 @@ func TestTheSnapshotIsNotTheClientsWord(t *testing.T) {
 	}
 	if len(got.GetCards()) != 1 || got.GetCards()[0].GetOracleId() != "o-sol" {
 		t.Errorf("the snapshot does not hold the deck list, so no card class can write its case")
+	}
+}
+
+// fakeNoter records what a service counted on the user record (D-638).
+type fakeNoter struct {
+	uid    string
+	email  string
+	counts []users.Counter
+}
+
+func (f *fakeNoter) Note(_ context.Context, uid, email string, c users.Counter, _ time.Time) error {
+	f.uid, f.email = uid, email
+	f.counts = append(f.counts, c)
+	return nil
+}
+
+// TestTheVerdictCountsOnTheUserRecord locks the up and down split of
+// D-638. The emulator lane proves the store, and CI never runs it, so
+// this proves the branch.
+func TestTheVerdictCountsOnTheUserRecord(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		fb   *mtgv1.Feedback
+		want users.Counter
+	}{
+		{
+			name: "a thumbs down counts down",
+			fb:   &mtgv1.Feedback{Kind: mtgv1.FeedbackKind_FEEDBACK_KIND_DECK, Verdict: mtgv1.FeedbackVerdict_FEEDBACK_VERDICT_DOWN, DeckId: "d1", Reasons: []string{"off_spec"}},
+			want: users.FeedbackDown,
+		},
+		{
+			name: "a thumbs up counts up",
+			fb:   &mtgv1.Feedback{Kind: mtgv1.FeedbackKind_FEEDBACK_KIND_DECK, Verdict: mtgv1.FeedbackVerdict_FEEDBACK_VERDICT_UP, DeckId: "d1"},
+			want: users.FeedbackUp,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			store := &fakeStore{}
+			sess := fakeSessions{"u1": {"s1": &mtgv1.Session{Id: "s1"}}}
+			deckList := fakeDecks{"u1": {"d1": &mtgv1.Deck{Id: "d1", Summary: "A deck."}}}
+			noter := &fakeNoter{}
+			s := New(store, sess, deckList, auth.UserID, WithClock(func() time.Time { return at }), WithUsers(noter))
+			if _, err := submit(s, "u1", tc.fb); err != nil {
+				t.Fatalf("submit: %v", err)
+			}
+			if len(noter.counts) != 1 || noter.counts[0] != tc.want {
+				t.Fatalf("counted %v, want one %s", noter.counts, tc.want)
+			}
+			if noter.uid != "u1" {
+				t.Errorf("uid = %q, want u1", noter.uid)
+			}
+		})
+	}
+}
+
+// TestAStoreFailureCountsNothing keeps the record honest: a verdict the
+// store refused never raises a counter.
+func TestAStoreFailureCountsNothing(t *testing.T) {
+	store := &fakeStore{err: errors.New("no")}
+	sess := fakeSessions{"u1": {"s1": &mtgv1.Session{Id: "s1"}}}
+	deckList := fakeDecks{"u1": {"d1": &mtgv1.Deck{Id: "d1"}}}
+	noter := &fakeNoter{}
+	s := New(store, sess, deckList, auth.UserID, WithUsers(noter))
+	_, err := submit(s, "u1", &mtgv1.Feedback{
+		Kind: mtgv1.FeedbackKind_FEEDBACK_KIND_DECK, Verdict: mtgv1.FeedbackVerdict_FEEDBACK_VERDICT_UP, DeckId: "d1",
+	})
+	if err == nil {
+		t.Fatal("a store failure answered no error")
+	}
+	if len(noter.counts) != 0 {
+		t.Errorf("counted %v after a store failure", noter.counts)
 	}
 }

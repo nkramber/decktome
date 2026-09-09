@@ -49,6 +49,7 @@ import (
 	"github.com/nkramber/decktome/go/internal/sessions"
 	"github.com/nkramber/decktome/go/internal/spellbook"
 	"github.com/nkramber/decktome/go/internal/usage"
+	"github.com/nkramber/decktome/go/internal/users"
 )
 
 // version is set at build time with -ldflags "-X main.version=...".
@@ -152,7 +153,11 @@ func run(ctx context.Context, logger *slog.Logger) error {
 	// The repo reads the index for the summary of a collection stored
 	// before the summary existed (D-398).
 	collectionRepo := collections.NewRepo(fs).WithIndex(cardServer.Current)
-	collectionServer := collectionsvc.New(collectionRepo, cardServer, userFn)
+	// One record per user, at users/<uid> (D-638). Every service that
+	// makes something for a reader counts it here.
+	userRepo := users.NewRepo(fs)
+	collectionServer := collectionsvc.New(collectionRepo, cardServer, userFn,
+		collectionsvc.WithUsers(userRepo))
 	rulesCfg, err := rules.Load()
 	if err != nil {
 		return fmt.Errorf("rules data: %w", err)
@@ -168,7 +173,8 @@ func run(ctx context.Context, logger *slog.Logger) error {
 		decksvc.WithUser(userFn))
 	// The feedback store takes a verdict on a question, a summary, a
 	// card, or a deck of the caller (PR-27, D-558).
-	feedbackServer := feedbacksvc.New(feedback.NewRepo(fs), sessionRepo, deckRepo, userFn)
+	feedbackServer := feedbacksvc.New(feedback.NewRepo(fs), sessionRepo, deckRepo, userFn,
+		feedbacksvc.WithUsers(userRepo))
 	// The LLM role layer. Building it here proves the config and the
 	// keys at startup, not on the first user turn.
 	llmClient, err := llm.NewFromEnv(os.Getenv, logger)
@@ -519,6 +525,7 @@ func agentService(client *llm.Client, fs *firestore.Client, index *cardsvc.Serve
 	}
 	opts := []agentsvc.Option{
 		agentsvc.WithLogger(logger),
+		agentsvc.WithUsers(users.NewRepo(fs)),
 		agentsvc.WithCandidates(index, builder),
 		agentsvc.WithCollections(cols),
 		agentsvc.WithDecks(generate.NewBuilder(client, rulesCfg, liveCards{index}, logger, generate.WithProfiler(prof), generate.WithScorer(scorer))),

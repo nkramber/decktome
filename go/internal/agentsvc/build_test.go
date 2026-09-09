@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -23,6 +24,7 @@ import (
 	"github.com/nkramber/decktome/go/internal/llm"
 	"github.com/nkramber/decktome/go/internal/precons"
 	"github.com/nkramber/decktome/go/internal/questions"
+	"github.com/nkramber/decktome/go/internal/users"
 )
 
 // fixedIndex is an IndexSource over a hand-built snapshot.
@@ -916,5 +918,90 @@ func TestSessionSpendHoldsTheBuild(t *testing.T) {
 	if stored.GetUsage().GetCalls() != second.usage.GetCalls() || stored.GetUsage().GetInputTokens() != second.usage.GetInputTokens() {
 		t.Errorf("the stored total (%d calls, %d in) differs from the streamed one (%d calls, %d in)",
 			stored.GetUsage().GetCalls(), stored.GetUsage().GetInputTokens(), second.usage.GetCalls(), second.usage.GetInputTokens())
+	}
+}
+
+// fakeNoter records what the build counted on the user record (D-638).
+type fakeNoter struct{ counts []users.Counter }
+
+func (f *fakeNoter) Note(_ context.Context, _, _ string, c users.Counter, _ time.Time) error {
+	f.counts = append(f.counts, c)
+	return nil
+}
+
+// decksOnly keeps the deck counters. A chat starts a session, and that
+// counter rises beside them.
+func (f *fakeNoter) decksOnly() []users.Counter {
+	var out []users.Counter
+	for _, c := range f.counts {
+		if c == users.DecksCreated || c == users.DeckRevisions {
+			out = append(out, c)
+		}
+	}
+	return out
+}
+
+// TestAFirstBuildAndARevisionCountApart locks the split of D-638.
+// decks.Put is an upsert that a revision calls, so a count on the write
+// alone would read a revision as a new deck. A reader who revises one
+// deck five times made one deck.
+//
+// The emulator lane proves the store, and CI never runs it, so this
+// proves the branch.
+func TestAFirstBuildAndARevisionCountApart(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		deck *mtgv1.Deck
+		want users.Counter
+	}{
+		{
+			name: "a first build counts a deck",
+			deck: &mtgv1.Deck{Summary: "a deck", Validation: &mtgv1.ValidationResult{}},
+			want: users.DecksCreated,
+		},
+		{
+			name: "a deck that names the one it came from counts a revision",
+			deck: &mtgv1.Deck{Summary: "a deck", Validation: &mtgv1.ValidationResult{}, RevisedFromDeckId: "d-base"},
+			want: users.DeckRevisions,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			store := newFakeStore()
+			ds := &fakeDeckStore{}
+			noter := &fakeNoter{}
+			fd := &fakeDecks{res: &generate.Result{Deck: tc.deck}}
+			opts := append(buildOpts(t, fd), WithDeckStore(ds), WithUsers(noter))
+			client, _ := testServerOpts(t, store, opts, readySteps(t)...)
+
+			first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"})
+			chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
+
+			got := noter.decksOnly()
+			if len(got) != 1 || got[0] != tc.want {
+				t.Fatalf("counted %v, want one %s (all: %v)", got, tc.want, noter.counts)
+			}
+			// A chat starts a session, and the record counts that too.
+			if !slices.Contains(noter.counts, users.SessionsStarted) {
+				t.Error("the chat started a session and the record did not count it")
+			}
+		})
+	}
+}
+
+// TestADeckTheStoreRefusedCountsNothing keeps the record honest.
+func TestADeckTheStoreRefusedCountsNothing(t *testing.T) {
+	store := newFakeStore()
+	ds := &fakeDeckStore{fail: context.DeadlineExceeded}
+	noter := &fakeNoter{}
+	deck := &mtgv1.Deck{Summary: "a deck", Validation: &mtgv1.ValidationResult{}}
+	fd := &fakeDecks{res: &generate.Result{Deck: deck}}
+	opts := append(buildOpts(t, fd), WithDeckStore(ds), WithUsers(noter))
+	client, _ := testServerOpts(t, store, opts, readySteps(t)...)
+
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"})
+	chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
+
+	if got := noter.decksOnly(); len(got) != 0 {
+		t.Errorf("counted %v for a deck the store refused", got)
 	}
 }

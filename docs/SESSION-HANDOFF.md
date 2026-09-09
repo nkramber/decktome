@@ -22,6 +22,8 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The PR-22 gate holds in full, and PR-28 is free to start** (2026-09-09, D-633). The fourth item was the measured monthly cost at idle. No billing export exists on the project. So the session measured each component against its published rate. That reads **$9.54 a month gross, and $5.58 after the Cloud Run free tier**. The snapshot cron held 80 percent of it, so the tick runs hourly now and the cost falls to $3.81 (D-634, F-86).
 
+**Every user has a record now** (2026-09-09, D-638). `users/<uid>` holds the verified email, the creation date, and the last active time. It holds six counters: decks, deck revisions, collections, chats, and the verdicts up and down. Every counter counts a creation, so a deleted deck does not lower one. `make users-backfill` seeds it from what a user holds, and `-dry` counts alone. **No harvest reads this record**, and a test refuses the import that joins them (D-559).
+
 **What waits on the owner.** OQ-67, the Stage B channels. OQ-77, the blocking function of Identity Platform. OQ-79, the commander of an owned-only pool. The measured monthly cost at idle, which is the fourth PR-22 gate item.
 
 **CAUTION: the evidence OQ-79 waits for is not on the deployed project.** `make read-session SESSION=23rplEQAMA0mtJ3QFtKO` answers `no sessions ... over 1 user(s)`. The script reads every user of the project. So a fresh owned-only build on the deployed app is the way to the evidence.
@@ -59,6 +61,7 @@ Seven things a fresh session gets wrong without this file.
 - LLM model ids and prices: `roles.json` and `prices.json`, verified 2026-08-24. The max output per provider in `llm/client.go`, verified 2026-08-29. The OpenAI rows are unverified by anyone but the owner. The judge role runs on Opus 5 (D-430).
 - The deck gate upgrade probe cost $0.32 for 2 prompts, 7 calls, and 266 seconds. A partial run reads its own item bars and never stands as the gate (D-526).
 - Run cost, read from the run files on 2026-09-09. The question gate cost $0.190 on run 42, $0.193 on run 43, and $0.194 on run 44, over 18 to 21 minutes. The eval cost $0.092 on run 34 and $0.096 on run 35, over 12 to 14 minutes. The deck gate cost $2.71 on run 18, over 37 minutes. The revise gate cost $1.07 on run 9. The bracket gate judge lane cost $0.28.
+- The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
 - The feedback store holds 3 verdicts on 2026-09-09, and every one predates the snapshot of D-635. A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
 - Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 18, revise is run 9. Run 44 is the newest whole questions run, and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline.

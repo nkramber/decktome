@@ -35,6 +35,7 @@ import (
 	"github.com/nkramber/decktome/go/internal/questions"
 	"github.com/nkramber/decktome/go/internal/sessions"
 	"github.com/nkramber/decktome/go/internal/usage"
+	"github.com/nkramber/decktome/go/internal/users"
 )
 
 // Store holds the conversations (D-74).
@@ -138,7 +139,10 @@ type Server struct {
 	// cap off for that caller (D-576).
 	capOverrides map[string]float64
 	now          func() time.Time
-	log          *slog.Logger
+	// users counts what a reader makes, on the user record (D-638). A
+	// nil one records nothing, which is what every test wires.
+	users users.Noter
+	log   *slog.Logger
 }
 
 // Option configures the server.
@@ -274,6 +278,10 @@ func WithLogger(l *slog.Logger) Option { return func(s *Server) { s.log = l } }
 
 // WithClock replaces time.Now (tests).
 func WithClock(f func() time.Time) Option { return func(s *Server) { s.now = f } }
+
+// WithUsers counts the decks, the revisions, and the chats of a reader
+// on the user record (D-638).
+func WithUsers(n users.Noter) Option { return func(s *Server) { s.users = n } }
 
 // New wires the service.
 func New(cat *questions.Catalog, client *llm.Client, store Store, userFn auth.UserFunc, opts ...Option) (*Server, error) {
@@ -773,6 +781,7 @@ func (s *Server) load(ctx context.Context, uid string, msg *mtgv1.ChatRequest) (
 		return nil, questions.Snapshot{}, 0, nil, false, connect.NewError(connect.CodeInternal, err)
 	}
 	id := s.store.NewID(uid)
+	users.NoteQuietly(ctx, s.users, uid, auth.Email(ctx), users.SessionsStarted, s.now())
 	snapPoolFromReader := false
 	session := &mtgv1.Session{
 		Id:           id,

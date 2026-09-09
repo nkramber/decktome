@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"connectrpc.com/connect"
 	"google.golang.org/grpc/codes"
@@ -22,6 +23,7 @@ import (
 	"github.com/nkramber/decktome/go/internal/cardsvc"
 	"github.com/nkramber/decktome/go/internal/collections"
 	"github.com/nkramber/decktome/go/internal/gzstore"
+	"github.com/nkramber/decktome/go/internal/users"
 )
 
 // maxUpload bounds an uploaded file. A 2,500-row ManaBox export is
@@ -56,11 +58,28 @@ type Server struct {
 	repo  Repo
 	index cardsvc.IndexSource
 	user  auth.UserFunc
+	// users counts the collections a reader makes (D-638). A nil one
+	// records nothing, which is what every test wires.
+	users users.Noter
+	now   func() time.Time
 }
 
+// Option changes the service.
+type Option func(*Server)
+
+// WithUsers counts every new collection on the user record (D-638).
+func WithUsers(n users.Noter) Option { return func(s *Server) { s.users = n } }
+
+// WithClock sets the clock the record reads.
+func WithClock(now func() time.Time) Option { return func(s *Server) { s.now = now } }
+
 // New wires the service.
-func New(repo Repo, index cardsvc.IndexSource, user auth.UserFunc) *Server {
-	return &Server{repo: repo, index: index, user: user}
+func New(repo Repo, index cardsvc.IndexSource, user auth.UserFunc, opts ...Option) *Server {
+	s := &Server{repo: repo, index: index, user: user, now: time.Now}
+	for _, o := range opts {
+		o(s)
+	}
+	return s
 }
 
 var (
@@ -143,6 +162,9 @@ func (s *Server) ImportCollection(ctx context.Context, req *connect.Request[mtgv
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
+	// A repeat upload of the same content answers the collection that
+	// holds it, so this counts a new collection and not a call (D-638).
+	fresh := existing == ""
 	col.Id = existing
 	id, err := s.repo.Put(ctx, uid, col)
 	if err != nil {
@@ -152,6 +174,9 @@ func (s *Server) ImportCollection(ctx context.Context, req *connect.Request[mtgv
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	col.Id = id
+	if fresh {
+		users.NoteQuietly(ctx, s.users, uid, auth.Email(ctx), users.CollectionsUpload, s.now())
+	}
 	return connect.NewResponse(&mtgv1.ImportCollectionResponse{Collection: col, Report: report}), nil
 }
 

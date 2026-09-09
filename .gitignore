@@ -36,6 +36,7 @@ coverage/
 /go/allow
 /go/feedback
 /go/feedback-harvest
+/go/users-backfill
 /go/deck-gate
 /go/eval
 /go/bracket-gate
