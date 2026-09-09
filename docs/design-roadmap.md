@@ -6,6 +6,7 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-08 correction pass 126 (the upgrades, D-628, D-629): an upgrade read no band at all. The deck shape block sat inside the job target block, and D-249 takes the targets off an upgrade, so the block went with them. An upgrade reads the bands now, and the mana pass moves its lands. The pass answers 1 of the 8 upgrade findings of run 18, and the bands answer the rest. Changes: PR-33, D-628, D-629.
 2026-09-08 correction pass 125 (the PR-25 gate holds, D-627): the owner installed the app on a phone and walked it. The chat input stays above the keyboard, which is the item no test here reaches. The walk closes the open item of PR-16. Changes: PR-25, PR-16, D-627.
 2026-09-08 correction pass 124 (the bottom bar, D-626): the owner dragged the bottom bar of a phone, and the document scrolled under the app. `html` and `body` hold a fixed height and refuse the bounce now. The bar itself is gone: no decision asked for it, and every deck prints the card data it rests on. Changes: PR-25, D-626.
 2026-09-08 correction pass 123 (the bottom bar, D-625): the owner read a phone that sometimes refused to scroll down. The shell held `h-screen`, which is the viewport height with the browser bar collapsed, so its foot sat below the fold. The shell reads `h-dvh` now, and a test walks every source file for the static unit. Changes: PR-25, D-625.
@@ -1222,6 +1223,8 @@ Part 3 adds a deterministic mana pass after the assemble, and before any repair 
 Part 4 keeps the last legal deck when a repair call fails. It also starts a repair turn only when the build has more time left than the last call took.
 
 Deck gate run 17 measured the generate role at low effort first (D-611). It saves 7.8 seconds of the 120.7 a prompt takes, and it reads FAIL on the block bar, so the role stays at medium (D-612). The latency is not in the call. A build takes four minutes because it makes three calls, and this slice removes two.
+
+An upgrade reads the bands since D-628, and the pass moves its lands. `docs/reference/pr33-manapass-run18.md` is the free read of that change. The pass answers 1 of the 8 upgrade findings of run 18, the `colorless_land` count. The other seven are role counts and the curve, and a land trade moves neither. Those seven rest on the bands reaching the model, and the next whole deck gate run is the measure (D-629).
 
 The free lane read the first shape of the pass and refused it. That shape moved the lands alone, and it closed 2 of the 10 off-band features of run 16. Two curve levers went in after the read: a cheaper card of the same job, and ramp of mana value three or less. The pass now closes 3 of the 4 features of the decks it runs on (D-613). Six of the ten sit on the two precon upgrades, which the pass skips by design (D-249). What is left is `mana_turn_four` on an artifacts deck at bracket 4, and that band asks 4.8 mana of 31 to 36 lands.
 
