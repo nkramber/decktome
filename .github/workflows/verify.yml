@@ -1,21 +1,26 @@
 name: verify
 
-# The workflow runs when the owner asks for it, and on one weekly
-# schedule whose only job is the govulncheck scan (D-578). No pull
-# request starts it: `make verify` runs the same checks on the owner's
-# machine for nothing. A new dispatch cancels the run in progress.
+# The workflow runs on every pull request and on every push to one
+# (D-639). The repository is public, so the Actions minutes are free and
+# no job waits on a diff. `make verify` still runs the same checks on the
+# owner's machine, and the two answer the same question.
 #
-# `all` runs every job. Without it the changes job reads the diff of this
-# ref against main, and each job waits on that answer.
+# It also runs when the owner asks for it, and on one weekly schedule.
+# A dispatch reads the diff of this ref against main and skips a job that
+# ref does not touch, unless `all` says otherwise (D-286, now for the
+# dispatch alone).
+#
+# A new run on one branch cancels the run in progress.
 on:
+  pull_request:
   workflow_dispatch:
     inputs:
       all:
         description: "Run every job, and skip the changed-paths gate"
         type: boolean
         default: false
-  # Monday 06:00 UTC. The vuln job is the only job that runs on the
-  # schedule, at about 2 billed minutes a week (D-305).
+  # Monday 06:00 UTC. The vuln job is the one job the schedule starts,
+  # and a pull request runs it too (D-639).
   schedule:
     - cron: "0 6 * * 1"
 
@@ -34,10 +39,10 @@ permissions:
 # Every job has a timeout. A hung test or install runs to the 6-hour
 # default otherwise.
 #
-# Each job is billed by the minute, rounded up, so a job that need not
-# run is skipped. The changes job reads the diff against the base branch
-# and every other pull-request job waits on its answer (D-286). The
-# scheduled run starts the vuln job only (D-305).
+# A pull request runs every job, because the repository is public and the
+# minutes cost nothing (D-639). A dispatch still reads the diff and skips
+# a job the ref does not touch, which keeps a hand run short. The
+# scheduled run starts the vuln job alone.
 jobs:
   changes:
     name: "verify:changes"
@@ -86,7 +91,7 @@ jobs:
   go:
     name: "verify:go"
     needs: [changes]
-    if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && (inputs.all || needs.changes.outputs.go == 'true') }}
+    if: ${{ !cancelled() && (github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && (inputs.all || needs.changes.outputs.go == 'true'))) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -114,7 +119,7 @@ jobs:
       # can change. The weekly vuln job covers a new advisory against an
       # unchanged graph (D-305).
       - name: govulncheck
-        if: needs.changes.outputs.gosum == 'true'
+        if: ${{ github.event_name == 'pull_request' || needs.changes.outputs.gosum == 'true' }}
         run: go -C go run golang.org/x/vuln/cmd/govulncheck@v1.7.0 ./...
       # Guardrail 3: a model or price default change is a warning, never a failure.
       - name: llm defaults
@@ -124,7 +129,7 @@ jobs:
   # stays the same, and no pull request would run the scan (D-305).
   vuln:
     name: "verify:vuln"
-    if: github.event_name == 'schedule'
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -142,7 +147,7 @@ jobs:
   emulator:
     name: "verify:emulator"
     needs: [changes]
-    if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && (inputs.all || needs.changes.outputs.emulator == 'true') }}
+    if: ${{ !cancelled() && (github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && (inputs.all || needs.changes.outputs.emulator == 'true'))) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -173,7 +178,7 @@ jobs:
   web:
     name: "verify:web"
     needs: [changes]
-    if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && (inputs.all || needs.changes.outputs.web == 'true') }}
+    if: ${{ !cancelled() && (github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && (inputs.all || needs.changes.outputs.web == 'true'))) }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -197,7 +202,7 @@ jobs:
   proto:
     name: "verify:proto"
     needs: [changes]
-    if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && (inputs.all || needs.changes.outputs.proto == 'true') }}
+    if: ${{ !cancelled() && (github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && (inputs.all || needs.changes.outputs.proto == 'true'))) }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -239,7 +244,7 @@ jobs:
   shell:
     name: "verify:shell"
     needs: [changes]
-    if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && (inputs.all || needs.changes.outputs.shell == 'true') }}
+    if: ${{ !cancelled() && (github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && (inputs.all || needs.changes.outputs.shell == 'true'))) }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -262,7 +267,7 @@ jobs:
   eval:
     name: "verify:eval"
     needs: [changes]
-    if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && (inputs.all || needs.changes.outputs.eval == 'true') }}
+    if: ${{ !cancelled() && (github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && (inputs.all || needs.changes.outputs.eval == 'true'))) }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -280,7 +285,7 @@ jobs:
   docker:
     name: "verify:docker"
     needs: [changes]
-    if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && (inputs.all || needs.changes.outputs.docker == 'true') }}
+    if: ${{ !cancelled() && (github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && (inputs.all || needs.changes.outputs.docker == 'true'))) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
