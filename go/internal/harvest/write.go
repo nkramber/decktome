@@ -62,13 +62,13 @@ func Write(root string, day time.Time, recs []Record) (doc, jsonl string, err er
 	return doc, jsonl, nil
 }
 
-// Document writes what a person reads. The STE check skips a dated
-// record, and this file holds the words of readers, which no rule of
-// ours governs.
+// Document writes what a person reads. The STE check skips this
+// directory: the file holds the words of readers, which no rule of ours
+// governs.
 func Document(day time.Time, recs []Record) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "# Feedback harvest %s\n\n", day.UTC().Format("2006-01-02"))
-	b.WriteString("CAUTION: this file holds what a reader wrote. Keep it off any shared page, and put no part of it in an issue or a pull request.\n\n")
+	b.WriteString("This file holds what a reader wrote, in their own words. It holds no email (D-559, D-642).\n\n")
 
 	down, up, absent := 0, 0, 0
 	byKind := map[string]int{}

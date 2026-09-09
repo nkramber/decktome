@@ -11,6 +11,10 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## 2026-08-31: PR-17, the deck library
+
+PR-17 landed the deck library, the one deck screen, and the reference design (#49). The paid runs of the day and the dead conversation of D-351 to D-354 sit below.
+
 ## The resume section of 2026-09-08
 
 **The checkout.** `main` is `77a0ae1`, which is PR #99, merged on 2026-09-08. Branch `pr-32-named-commander` is merged and gone. Run `make where` before you touch anything.

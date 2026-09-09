@@ -12,8 +12,8 @@
 //	PROJECT_ID=decktome-prod go run ./cmd/feedback-harvest -since 2026-09-01
 //	PROJECT_ID=decktome-prod go run ./cmd/feedback-harvest -dry
 //
-// CAUTION: the files hold what a reader wrote. Keep them off any shared
-// page, and put no part of them in an issue or a pull request.
+// The files hold what a reader wrote, and they commit with the
+// repository (D-642). They hold no email (D-559).
 package main
 
 import (

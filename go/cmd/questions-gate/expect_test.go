@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 
@@ -98,5 +99,69 @@ func TestCheckExpectNamesTheMiss(t *testing.T) {
 	}
 	if m := checkExpect(map[string]string{"colors": "none"}, values); len(m) != 1 || m[0] != "colors: want none, got WB" {
 		t.Errorf("none misses a filled slot: %v", m)
+	}
+}
+
+// TestAForbiddenRowThatFiresIsAMiss reads the "must not ask" expectation
+// of PR-28b. A row the conversation forbids fails the gate when it
+// fires, and one that never fires reads clean.
+func TestAForbiddenRowThatFiresIsAMiss(t *testing.T) {
+	asks := []asked{
+		{Turn: 1, Row: "format"},
+		{Turn: 2, Row: "power_commander"},
+		{Turn: 3, Row: "power_commander"},
+	}
+	got := checkNotAsked([]string{"power_commander"}, asks)
+	if len(got) != 1 {
+		t.Fatalf("misses = %v, want one", got)
+	}
+	// The first firing is the miss, and a row that fires twice is still
+	// one miss: the report names the row and not the count.
+	if !strings.Contains(got[0], "power_commander") || !strings.Contains(got[0], "turn 2") {
+		t.Errorf("miss = %q, want the row and turn 2", got[0])
+	}
+	if got := checkNotAsked([]string{"budget"}, asks); len(got) != 0 {
+		t.Errorf("a row that never fired gave %v, want none", got)
+	}
+	if got := checkNotAsked(nil, asks); len(got) != 0 {
+		t.Errorf("no expectation gave %v, want none", got)
+	}
+}
+
+// TestAForbiddenRowMustExist refuses a row id the catalog does not hold.
+// A typo would make an expectation that can never fail, and the gate
+// would spend a run to learn nothing.
+func TestAForbiddenRowMustExist(t *testing.T) {
+	cat, err := questions.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	good := []conversation{{ID: 1, MustNotAsk: []string{"power_commander", "budget"}}}
+	if err := checkRowIDs(good, cat); err != nil {
+		t.Errorf("real rows were refused: %v", err)
+	}
+	bad := []conversation{{ID: 7, MustNotAsk: []string{"no_such_row"}}}
+	err = checkRowIDs(bad, cat)
+	if err == nil {
+		t.Fatal("a row the catalog does not hold was accepted")
+	}
+	if !strings.Contains(err.Error(), "no_such_row") || !strings.Contains(err.Error(), "7") {
+		t.Errorf("error = %v, want the row and the conversation", err)
+	}
+}
+
+// TestEveryForbiddenRowOfTheGateFileExists reads the shipped file, so a
+// bad row id fails a free test and never a paid run.
+func TestEveryForbiddenRowOfTheGateFileExists(t *testing.T) {
+	cat, err := questions.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var file gateFile
+	if err := json.Unmarshal(conversationsJSON, &file); err != nil {
+		t.Fatal(err)
+	}
+	if err := checkRowIDs(file.Conversations, cat); err != nil {
+		t.Error(err)
 	}
 }

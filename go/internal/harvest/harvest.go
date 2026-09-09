@@ -7,8 +7,9 @@
 // only record and a rerun never repeats an item (D-65). A deleted file
 // moves the floor back, and the next harvest writes the items again.
 //
-// CAUTION: every file here holds what a reader wrote. Keep it off any
-// shared page, and put no part of it in an issue or a pull request.
+// Every file here holds what a reader wrote, and it commits with the
+// repository (D-642). No file holds an email, and the guard tests refuse
+// the join that would write one (D-559, D-638).
 package harvest
 
 import (
@@ -35,19 +36,23 @@ const Dir = "docs/reference/feedback"
 // carries an email but the invite service, so the snapshot can hold
 // none.
 type Record struct {
-	ID        string           `json:"id"`
-	CreatedAt time.Time        `json:"created_at"`
-	UID       string           `json:"uid"`
-	Kind      string           `json:"kind"`
-	Verdict   string           `json:"verdict"`
-	Reasons   []string         `json:"reasons,omitempty"`
-	Text      string           `json:"text,omitempty"`
-	SessionID string           `json:"session_id,omitempty"`
-	Question  string           `json:"question_text,omitempty"`
-	Answer    string           `json:"answer_text,omitempty"`
-	DeckID    string           `json:"deck_id,omitempty"`
-	OracleID  string           `json:"oracle_id,omitempty"`
-	Prompts   map[string]int64 `json:"prompts,omitempty"`
+	ID        string    `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UID       string    `json:"uid"`
+	Kind      string    `json:"kind"`
+	Verdict   string    `json:"verdict"`
+	Reasons   []string  `json:"reasons,omitempty"`
+	Text      string    `json:"text,omitempty"`
+	SessionID string    `json:"session_id,omitempty"`
+	// QuestionID is the id the session gave the question, and it reads
+	// "q<n>-<row>", so the triage of PR-28b names the catalog row a
+	// verdict is about with no model call (agent.go).
+	QuestionID string           `json:"question_id,omitempty"`
+	Question   string           `json:"question_text,omitempty"`
+	Answer     string           `json:"answer_text,omitempty"`
+	DeckID     string           `json:"deck_id,omitempty"`
+	OracleID   string           `json:"oracle_id,omitempty"`
+	Prompts    map[string]int64 `json:"prompts,omitempty"`
 	// Context reads "snapshot" when the verdict carries the object it
 	// names, and "absent" when it does not. A verdict written before
 	// D-635 reads absent, and so does one whose kind names no object.
@@ -61,20 +66,21 @@ type Record struct {
 // RecordOf reads one stored verdict as a record.
 func RecordOf(item feedback.Item) (Record, error) {
 	r := Record{
-		ID:        item.ID,
-		CreatedAt: item.CreatedAt.UTC(),
-		UID:       item.UID,
-		Kind:      item.Kind,
-		Verdict:   item.Verdict,
-		Reasons:   item.Reasons,
-		Text:      item.Text,
-		SessionID: item.SessionID,
-		Question:  item.QuestionText,
-		Answer:    item.AnswerText,
-		DeckID:    item.DeckID,
-		OracleID:  item.OracleID,
-		Prompts:   item.Prompts,
-		Context:   "absent",
+		ID:         item.ID,
+		CreatedAt:  item.CreatedAt.UTC(),
+		UID:        item.UID,
+		Kind:       item.Kind,
+		Verdict:    item.Verdict,
+		Reasons:    item.Reasons,
+		Text:       item.Text,
+		SessionID:  item.SessionID,
+		QuestionID: item.QuestionID,
+		Question:   item.QuestionText,
+		Answer:     item.AnswerText,
+		DeckID:     item.DeckID,
+		OracleID:   item.OracleID,
+		Prompts:    item.Prompts,
+		Context:    "absent",
 	}
 	m := protojson.MarshalOptions{}
 	if item.Session != nil {

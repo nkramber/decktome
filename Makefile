@@ -11,7 +11,7 @@ GO := go -C go
 BUF := .bin/buf
 PNPM := pnpm --dir web
 
-.PHONY: smoke allow disallow manapass-check deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check themes-check ste-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
+.PHONY: feedback-triage feedback-triage-dry smoke allow disallow manapass-check deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check themes-check ste-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-14s %s\n", $$1, $$2}'
@@ -67,7 +67,7 @@ lint-web: ## Lint and typecheck TypeScript
 # record of one day, and the connector-syncer and wallabee notes are
 # frozen copies of another repo. The audits (docs/audit-*) are a record of
 # one day, so they are exempt too. Test fixtures under testdata are data.
-STE_FILES := $(shell (git ls-files '*.md'; git ls-files --others --exclude-standard '*.md') | sort -u | grep -vE '^docs/reference/(pr[0-9]|session-log|connector-syncer|wallabee)|^docs/audit-|/testdata/')
+STE_FILES := $(shell (git ls-files '*.md'; git ls-files --others --exclude-standard '*.md') | sort -u | grep -vE '^docs/reference/(pr[0-9]|session-log|connector-syncer|wallabee|feedback/)|^docs/audit-|/testdata/')
 
 ste-check: ## Check every hand-written .md file against the STE rules (no cost)
 	@echo "==> ste-check"
@@ -390,6 +390,19 @@ feedback-list: ## Read the newest verdicts of every user: make feedback-list [VE
 
 feedback-harvest: ## Write every verdict since the last harvest to docs/reference/feedback/: make feedback-harvest [SINCE=2026-09-01] [HARVEST_ARGS=-dry]
 	@PROJECT_ID=$${FEEDBACK_PROJECT:-decktome-prod} $(GO) run ./cmd/feedback-harvest -root $(CURDIR) $(if $(SINCE),-since $(SINCE),) $(HARVEST_ARGS)
+
+# TRIAGE_OUT names the triage document. A rerun must never overwrite a
+# document that already holds a verdict (D-65). A dry run needs no
+# document: it prints to the terminal and calls no model.
+TRIAGE_OUT ?=
+TRIAGE_ARGS ?=
+
+feedback-triage-dry: ## Route every verdict of the newest harvest, call no model, and write no case (free)
+	@$(GO) run ./cmd/feedback-triage -root $(CURDIR) -dry $(TRIAGE_ARGS)
+
+feedback-triage: ## Triage the newest harvest into test cases. Costs a few cents a verdict the reason keys can not place
+	@[ -n "$(TRIAGE_OUT)" ] || { echo "feedback-triage: set TRIAGE_OUT to a new document, for example docs/reference/pr28b-triage-2026-09-09.md"; exit 1; }
+	@FEEDBACK_TRIAGE=1 $(GO) run ./cmd/feedback-triage -root $(CURDIR) -out $(abspath $(TRIAGE_OUT)) $(TRIAGE_ARGS)
 
 users-backfill: ## Seed the user record from what each user already holds: make users-backfill [BACKFILL_ARGS=-dry]
 	@PROJECT_ID=$${FEEDBACK_PROJECT:-decktome-prod} $(GO) run ./cmd/users-backfill $(BACKFILL_ARGS)

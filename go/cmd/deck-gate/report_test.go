@@ -356,3 +356,59 @@ func TestPlanJudgeRowsAreInformation(t *testing.T) {
 		t.Errorf("plan_judge_error row = %+v", r)
 	}
 }
+
+// TestACaseAssertionFailsTheRun fires the assertion bar of PR-28b. A
+// prompt written from a reader's verdict names the card the build must
+// not pick again, and the deck that holds it fails.
+func TestACaseAssertionFailsTheRun(t *testing.T) {
+	r := goodResult()
+	r.prompt.MustNotInclude = []string{"ajani's welcome"}
+	verdict, doc := render(t, []result{r})
+	if verdict != "FAIL" {
+		t.Errorf("verdict = %s, want FAIL on a card the case forbids", verdict)
+	}
+	if !strings.Contains(doc, "The case assertions") || !strings.Contains(doc, "holds ajani's welcome") {
+		t.Errorf("the document names no assertion miss: %s", doc)
+	}
+	// The name match ignores case, and a card the deck does not hold is
+	// no miss.
+	clean := goodResult()
+	clean.prompt.MustNotInclude = []string{"Sol Ring"}
+	if got := verdictOf(t, []result{clean}); got != "PASS" {
+		t.Errorf("verdict = %s, want PASS when the forbidden card is absent", got)
+	}
+}
+
+// TestTheOwnershipAssertionFailsTheRun fires the other half of the bar.
+// A reader who says "I did not want to buy" becomes a prompt that asks
+// for a deck they own whole.
+func TestTheOwnershipAssertionFailsTheRun(t *testing.T) {
+	r := goodResult()
+	r.prompt.MustOwnAll = true
+	verdict, doc := render(t, []result{r})
+	if verdict != "FAIL" {
+		t.Errorf("verdict = %s, want FAIL on a card the reader does not own", verdict)
+	}
+	if !strings.Contains(doc, "does not own Ajani's Welcome") {
+		t.Errorf("the document names no unowned card: %s", doc)
+	}
+	owned := goodResult()
+	owned.prompt.MustOwnAll = true
+	owned.deck.Cards[0].Owned = true
+	if got := verdictOf(t, []result{owned}); got != "PASS" {
+		t.Errorf("verdict = %s, want PASS when the reader owns every card", got)
+	}
+}
+
+// TestAPromptWithNoAssertionReadsNone keeps the bar off every prompt
+// that names no assertion, so the 25 golden prompts are untouched.
+func TestAPromptWithNoAssertionReadsNone(t *testing.T) {
+	idx := cards.NewIndex(nil, nil, nil, time.Time{})
+	if got := checkAsserts(goodResult(), idx); got != nil {
+		t.Errorf("a prompt with no assertion gave %v, want none", got)
+	}
+	_, doc := render(t, []result{goodResult()})
+	if strings.Contains(doc, "The case assertions") {
+		t.Error("the document holds the assertion section with no case prompt")
+	}
+}

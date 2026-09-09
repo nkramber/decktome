@@ -8,13 +8,17 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-09)
 
-**The checkout.** `main` is `97fbdee`, which is pull request #119. Run `make where` before you touch anything. Never commit on `main` (D-583). Open a pull request, and answer the review of `gitar-bot` before you ask for a merge (D-637).
+**The checkout.** `main` is `97fbdee`, which is pull request #119. Branch `pr-28b` holds this session's work, and it waits for a review and a merge. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
 
 **The app is live on `decktome.com`.** The deploy of `97fbdee` passed, and Cloud Run revision `mtg-api-00026-srg` serves the API. A merge to `main` deploys itself on Cloud Build (D-584, D-586).
 
-**The repository is public** (D-639, D-640). Write no reader's words, no email, and no personal address into a file, an issue, or a pull request. Every pull request runs the whole verify workflow, because the Actions minutes cost nothing. `.gitignore` holds `docs/reference/feedback/`, so no harvest file ever enters the repository.
+**PR-28b waits for a merge** (D-642 to D-644, F-90). The triage names one of 22 classes for each thumbs down, and the reason keys answer 20 of them for nothing. The judge reads three cases alone. They are free text with no reason, reasons that cross two classes, and a reader who argues with a rule the owner set. `docs/reference/pr28b-triage-gate-2026-09-09.md` is the gate, and it reads PASS for nothing.
 
-**PR-28a is merged, and PR-28b is next** (D-635, D-636). PR-28 split into three, one concern each. The harvest reads every verdict since the last watermark and writes a dated document and a JSONL file. **A verdict keeps the object it names**, because a reader deletes the deck or the chat they complained about. PR-28b is the triage, the ten classes, the artifact writers, and the new "must not ask" expectation of the question gate.
+**A committed file takes a reader's own words** (D-642, supersedes D-640). The owner set that rule on 2026-09-09: a reader's exact words fit anywhere, and no file holds an email. So `.gitignore` no longer holds `docs/reference/feedback/`, and a triage case goes straight into the gate file that owns it. The pull request diff is the accept step, because the owner merges every pull request.
+
+**A verdict about a deck now keeps the session that built it** (D-643). The theme, the pool rule, and the budget live on the session and never on the deck, and a deck gate prompt needs all three. The feedback schema is version 3.
+
+**PR-28c is next.** It is the fix cycle on `scripts/autotune-fix.sh`, under the $2 cap of D-559.
 
 **Every user has a record** at `users/<uid>` (D-638). It holds the verified email, the creation date, and the last active time. It holds six counters: decks, deck revisions, collections, chats, and the verdicts up and down. Every counter counts a creation, so a deleted deck does not lower one. The owner ran `make users-backfill` on 2026-09-09.
 
@@ -41,7 +45,7 @@ A second Mac: `docs/setup-second-mac.md` holds what to carry, what to install, a
 
 Seven things a fresh session gets wrong without this file.
 
-- Eleven targets and the loop script spend money: `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, and `scripts/autotune.sh`. Ask the owner before each run. `make autotune` and `eval sweep -dry` are free.
+- Twelve targets and the loop script spend money: `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, and `scripts/autotune.sh`. Ask the owner before each run. `make autotune`, `make feedback-triage-dry`, and `eval sweep -dry` are free.
 - A rerun writes to a new file. Every `*_OUT` variable refuses a document that holds a result (D-65).
 - A gate run takes about 20 minutes and an eval about 13. A foreground command stops at 10 minutes, so run both in the background.
 - `docker compose up` needs provider keys in `.env` now, and fails fast without them (D-267). `make dev` still starts with no keys, and the fake builds the fixture deck of PR-23 for any first message (D-552).
@@ -67,8 +71,8 @@ Seven things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **PR-28b, the triage and the cases** (D-557 to D-559, D-636). PR-28a is merged, so this is next in the sequence. The judge role names one of ten classes for each thumbs down, and each class writes one artifact. **The "must not ask" expectation is new code.** `Expect` today is one map of strings, and it names the value a slot must end with. The new one names a row that must not fire. A class that meets an owner decision writes a row to `docs/owner-questions.md` and makes no fix. The gate is a dry triage over ten fixture items.
-2. **Let real feedback arrive first, if you want it.** The three verdicts on record predate the snapshot of D-635, so they carry no context. PR-28b built against them alone works from fixtures. Nothing forces the wait, and it is a quality call about the triage.
+1. **PR-28c, the fix cycle** (D-557 to D-559, D-636). This is next in the sequence, and PR-28b comes before it. The fixer agent of the tuning loop runs on a branch of its own with the new cases. `scripts/autotune-fix.sh` takes them the way it takes an eval report today. One cycle stops at $2 of gate runs (D-559), and every guard of `docs/reference/autotune-design.md` holds.
+2. **The live judge lane of PR-28b has no run yet.** The three verdicts on record predate the snapshot of D-635, so they carry no context. The fixture proves the dry lane alone. The first live run belongs with the first real harvest that carries a snapshot. `make feedback-triage TRIAGE_OUT=<document>` runs it, and it costs a few cents a verdict.
 3. **The next whole deck gate run is still run 19, and it is still outstanding.** It makes the next decks baseline, and no deck-build change waits on one now. The upgrade probe of 2026-09-09 already measured D-628 (D-632).
 4. **OQ-79 needs runtime evidence.** No fix goes in without it, and neither the session nor the deck it names is readable. A fresh owned-only build on the deployed app is the way to it.
 5. **PR-29, the casual corpus**, stands on the weak-axes plan (D-567, D-568). Read `docs/reference/weak-axes-2026-09-07.md` first. No bar moves (D-486), and no weight changes by hand. PR-30 follows, and PR-31 parks (D-573).
@@ -83,6 +87,20 @@ CAUTION: the CI step "fake gcs tests" filters on `LiveStore`, and the only live 
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 
 ## The ten most recent sessions
+
+### 2026-09-09b: PR-28b, the triage and the cases
+
+Branch `pr-28b`, open for review.
+
+**The triage.** The reason keys of the dialog name the class with no model call (D-643). PR-27 already asks the reader to name the fault, and the keys map onto the classes one to one. The judge reads three cases alone. They are free text with no reason, reasons that cross two classes, and a reader who argues with a rule the owner set. Eight of the ten fixture items cost nothing.
+
+**The classes grew from ten to 22** (F-90). The design note of 2026-09-06 held ten, and the store offers 22 reason keys. Twelve of them named no class, and a verdict of any of the twelve fell through in silence. The chat kind of D-594 alone added five, a day after the note.
+
+**The expectations.** A "must not ask" expectation names a catalog row that must not fire, and the question gate reads it as one more miss (D-644). The row comes from the question id, which reads `q<n>-<row>`. The deck gate reads two case assertions: a card the build must not pick again, and a deck the reader owns whole.
+
+**The store.** A verdict about a deck keeps the session that built it (D-643), because the theme, the pool rule, and the budget live on the session. Two snapshots that pass the room of one Firestore document drop the session and keep the deck.
+
+**The repository.** D-640 is gone (D-642). The owner permits a reader's exact words in a committed file, so the harvest commits and a case joins the gate file that owns it. The pull request diff is the accept step.
 
 ### 2026-09-09: the review process, the user record, and a public repository
 
@@ -132,10 +150,6 @@ PR-19 landed the chat and build experience, the counted land swap, and the split
 
 PR-17B landed the set filter and the fixes three gate runs found (#50). PR-18 landed collection management (#53), and its review fixes made the chat refuse a turn with no card index (#54). The question-quality pass ran the same day (D-387 to D-389).
 
-### 2026-08-31: PR-17, the deck library
-
-PR-17 landed the deck library, the one deck screen, and the reference design (#49). The paid runs of the day and the dead conversation of D-351 to D-354 sit in the archive.
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file carried before 2026-09-09. It holds the resume section of 2026-09-08 and 42 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file carried before 2026-09-09. It holds the resume section of 2026-09-08, the record of 2026-08-31, and 42 more sections, word for word. Read it for the detail behind a decision.
