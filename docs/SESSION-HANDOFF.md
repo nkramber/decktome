@@ -20,6 +20,8 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The upgrade probe measured D-628, and it refuted the estimate of D-629** (2026-09-09, D-632, F-85). The bands answered 1 of the 8 upgrade findings, and D-629 estimated 7. The Turtle Power precon leaves 18 free slots under the share rule of D-218, and the role minimums need 17 cards. So an upgrade that meets every band adds no card of the theme. **The owner parked it**: one precon is not enough to change a product rule. `docs/reference/pr8-deck-gate-upgrade-probe-1.md` holds the run.
 
+**The PR-22 gate holds in full, and PR-28 is free to start** (2026-09-09, D-633). The fourth item was the measured monthly cost at idle. No billing export exists on the project. So the session measured each component against its published rate. That reads **$9.54 a month gross, and $5.58 after the Cloud Run free tier**. The snapshot cron held 80 percent of it, so the tick runs hourly now and the cost falls to $3.81 (D-634, F-86).
+
 **What waits on the owner.** OQ-67, the Stage B channels. OQ-77, the blocking function of Identity Platform. OQ-79, the commander of an owned-only pool. The measured monthly cost at idle, which is the fourth PR-22 gate item.
 
 **CAUTION: the evidence OQ-79 waits for is not on the deployed project.** `make read-session SESSION=23rplEQAMA0mtJ3QFtKO` answers `no sessions ... over 1 user(s)`. The script reads every user of the project. So a fresh owned-only build on the deployed app is the way to the evidence.
@@ -56,17 +58,18 @@ Seven things a fresh session gets wrong without this file.
 - LLM model ids and prices: `roles.json` and `prices.json`, verified 2026-08-24. The max output per provider in `llm/client.go`, verified 2026-08-29. The OpenAI rows are unverified by anyone but the owner. The judge role runs on Opus 5 (D-430).
 - The deck gate upgrade probe cost $0.32 for 2 prompts, 7 calls, and 266 seconds. A partial run reads its own item bars and never stands as the gate (D-526).
 - Run cost, read from the run files on 2026-09-09. The question gate cost $0.190 on run 42, $0.193 on run 43, and $0.194 on run 44, over 18 to 21 minutes. The eval cost $0.092 on run 34 and $0.096 on run 35, over 12 to 14 minutes. The deck gate cost $2.71 on run 18, over 37 minutes. The revise gate cost $1.07 on run 9. The bracket gate judge lane cost $0.28.
+- The deployed schedules, read 2026-09-09: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
 - Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 18, revise is run 9. Run 44 is the newest whole questions run, and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline.
 - Toolchain: Go 1.27.0, Node 22.23.2, pnpm 9.2.0, firebase-tools 14.14.0, Java 17, Playwright 1.62.1 with its Chromium headless shell (`playwright install chromium`). The first three were verified 2026-09-09.
 
 ## Next steps, in order
 
-1. **The fourth PR-22 gate item.** Three hold (D-620). The fourth is the measured monthly cost at idle, and it waits for a quiet week. The week of the deploy held the walks and the deploys of PR-32, PR-33, and PR-25. PR-28 waits behind this item (D-557).
+1. **PR-28, the feedback loop** (D-557 to D-559). The PR-22 gate holds in full now (D-633), so nothing blocks it. `docs/reference/feedback-2026-09-06.md` holds the plan, and D-559 answers OQ-70 to OQ-72.
 2. **The next whole deck gate run is still run 19, and it is still outstanding.** It makes the next decks baseline, and no deck-build change waits on one now. The upgrade probe of 2026-09-09 already measured D-628, so the band question needs no whole run (D-632). Watch F-85 on every later upgrade: a second precon of the same shape reopens it.
 3. **OQ-79 needs runtime evidence.** No fix goes in without it, and the session it names is not readable. A fresh owned-only build on the deployed app is the way to it.
 4. **PR-29, the casual corpus**, stands on the weak-axes plan (D-567, D-568). Read `docs/reference/weak-axes-2026-09-07.md` first. No bar moves (D-486), and no weight changes by hand. PR-30 follows, and PR-31 parks (D-573).
 5. **The weekly EDHREC read** falls on 2026-09-14 (D-499, D-565). Run `make meta-refresh`, then `make quality-gate` to a new `QUALITY_GATE_OUT`.
-6. **Deploy the meta job** (D-492). It is one Cloud Run job on `worker -meta`, with a Scheduler cron at 06:00 UTC daily. `TOPDECK_API_KEY` goes to Secret Manager. No infra file in this repo holds the worker's schedule, so the deployment is by hand.
+6. **The meta job runs already.** The `mtg-meta` job and the `mtg-meta-schedule` cron at 06:00 UTC both run, and the schedule reads ENABLED. A run takes about 1170 seconds and costs $1.83 a month (2026-09-09). No infra file in this repo holds either schedule (D-492).
 7. **PR-26, the return channels**, waits on OQ-67.
 
 CAUTION: `make revise-gate | tee` hides the exit code. Read the verdict line of the document, never the exit code of a pipe.
@@ -81,7 +84,7 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 Pull request #113 merged, and its deploy passed as revision `mtg-api-00021-22m`. Question gate run 43 read FAIL on the premature check, and the catalog measure rose to 74 of 74. The cause was D-630: `Skip` fills a key and `CloseStalled` does not, so the commander offer waited for a power the net had closed. A `Requires` slot reads the skipped keys now (D-631). Run 44 reads PASS at 73 of 74, and the premature check is clean.
 
-The upgrade probe measured D-628 for $0.32, and it refuted the estimate of D-629. The owner parked F-85 for want of a second precon (D-632). This file moved its older records to `docs/reference/session-handoff-archive.md`.
+The PR-22 gate closed on a measured cost at idle of $9.54 a month, and the snapshot cron held 80 percent of it (D-633, D-634, F-86). The tick runs hourly now, and PR-28 is free to start. The upgrade probe measured D-628 for $0.32, and it refuted the estimate of D-629. The owner parked F-85 for want of a second precon (D-632). This file moved its older records to `docs/reference/session-handoff-archive.md`.
 
 ### 2026-09-08: PR-32, PR-33, PR-25, and four walks
 

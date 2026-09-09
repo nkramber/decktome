@@ -15,7 +15,7 @@ The roadmap (PR-22, D-310, D-314) fixes the shape. One table names each part.
 | Part | Google Cloud product | What it does |
 |---|---|---|
 | The API | Cloud Run service, `docker/api.Dockerfile` | Serves the Connect RPCs, verifies the Firebase ID token, reads the allowlist, calls the model providers |
-| The snapshot job | Cloud Run job, `docker/worker.Dockerfile`, `-once` | Refreshes the Scryfall card snapshot in the bucket every 15 minutes (D-61) |
+| The snapshot job | Cloud Run job, `docker/worker.Dockerfile`, `-once` | Refreshes the Scryfall card snapshot in the bucket every hour (D-634) |
 | The meta job | Cloud Run job, `docker/worker.Dockerfile`, `-meta` | Reads the deck list sources and fits the quality model daily at 06:00 UTC (D-492) |
 | The database | Firestore, Native mode, Standard edition | Sessions, decks, collections, usage, and the allowlist document `config/allowlist` (D-420) |
 | The bucket | Cloud Storage, `PROJECT_ID-cards` | The card snapshots, three versions kept (`cards.KeepVersions`), and the meta store |
@@ -276,11 +276,11 @@ gcloud run jobs add-iam-policy-binding mtg-snapshot --region REGION --member=ser
 gcloud run jobs add-iam-policy-binding mtg-meta --region REGION --member=serviceAccount:SA_SCHEDULER --role=roles/run.invoker
 ```
 
-Create the two schedules. D-61 sets the snapshot tick at 15 minutes, and D-492 sets the meta run at 06:00 UTC.
+Create the two schedules. D-634 sets the snapshot tick at one hour, and D-492 sets the meta run at 06:00 UTC.
 
 ```
 gcloud scheduler jobs create http mtg-snapshot-schedule --location REGION \
-  --schedule="*/15 * * * *" --time-zone="Etc/UTC" --http-method POST \
+  --schedule="0 * * * *" --time-zone="Etc/UTC" --http-method POST \
   --uri="https://run.googleapis.com/v2/projects/PROJECT_ID/locations/REGION/jobs/mtg-snapshot:run" \
   --oauth-service-account-email SA_SCHEDULER
 gcloud scheduler jobs create http mtg-meta-schedule --location REGION \
@@ -385,9 +385,24 @@ Every line reads the free tier of the Google Cloud free program document, 2026-0
 | Line | A month |
 |---|---|
 | Model calls, 65 decks | $8 to $20 |
-| Google Cloud, inside the free tiers | $0 |
+| Google Cloud at idle, measured 2026-09-09 | $3.81 gross, and $1.62 after the free tier |
 | The domain | $1 to $2 |
-| Total | $9 to $22 |
+| Total | $13 to $24 |
+
+**The measured cost at idle (2026-09-09, D-633).** The first read was $9.54 a month gross, and $5.58 after the Cloud Run free tier. The snapshot cron held $7.65 of it, and 3 of its 4 ticks each hour did nothing but start a container and exit. D-634 takes the tick to one hour, which leaves $3.81 gross. The meta job holds $1.83 of that, the two stores hold $0.07, and the API service holds nothing because it scales to zero.
+
+| Component at idle | Measured | A month, after D-634 |
+|---|---|---|
+| Snapshot cron | 720 runs of 133 seconds, 1 vCPU and 1 GiB | $1.91 |
+| Meta job | 30 runs of 1170 seconds, 2 vCPU and 8 GiB | $1.83 |
+| Artifact Registry | 1.11 GiB, and the first 0.5 GiB costs nothing | $0.06 |
+| Cards bucket | 461.7 MiB | $0.01 |
+| API service | minScale 0, so it scales to zero | $0.00 |
+| Firestore, secrets, and schedulers | inside the free tiers | $0.00 |
+
+CAUTION: no billing export exists on the project. This table multiplies the usage of each component by its published rate. It is not a reading of the billing report. Read that report in the console to confirm the number.
+
+**REFUTED 2026-09-09:** the line above once read "Google Cloud, inside the free tiers, $0", and the text said an idle month costs the domain alone. Both were wrong. Two Cloud Run jobs run on a schedule, and they cost money whether or not a reader opens the app.
 
 An idle month costs the domain alone. Three things move the number. A user who revises a deck five times spends five revision turns, which the $5 cap of D-421 stops. The Always Free tier is per billing account, so a second project on the same account shares it. The free trial credit does not change the estimate: the credit pays the first $300 of whatever the meter reads.
 
