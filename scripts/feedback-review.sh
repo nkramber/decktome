@@ -100,7 +100,9 @@ while [ "$round" -le "$ROUNDS" ]; do
   fi
   threads="$STATE_DIR/threads-$round.jsonl"
   open_threads > "$threads"
-  count="$(grep -c . "$threads" 2>/dev/null || echo 0)"
+  # grep -c prints 0 and exits 1 on an empty file, so an "|| echo 0"
+  # here would write a second line and the count would never read 0.
+  count="$(awk 'NF' "$threads" 2>/dev/null | wc -l | tr -d ' ')"
   if [ "$count" = "0" ]; then
     say "the review holds nothing open"
     exit 0
@@ -196,7 +198,7 @@ print((m.group(1).strip() if m else "")[:3500])
         addPullRequestReviewThreadReply(input:{pullRequestReviewThreadId:$tid, body:$body}){
           comment{ id }
         }
-      }' -F tid="$tid" -F body="$reply" >/dev/null 2>&1 \
+      }' -F tid="$tid" -F body="$reply" >/dev/null 2>&1 </dev/null \
       || say "could not reply on thread $tid"
   done < "$threads"
   say "replied to $count thread(s)"

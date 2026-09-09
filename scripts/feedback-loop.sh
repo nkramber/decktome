@@ -286,8 +286,16 @@ print(",".join(str(c["id"]) for c in m["cases"] if c["gate"] == sys.argv[2]))' "
   exit 0
 fi
 
+# A gate the cap stopped leaves cases nobody measured. Those cases are in
+# the gate files already, so the cycle must not go on to a pull request
+# that carries a case no run ever read.
+capped=0
 for gate in $GATES; do
-  under_cap || { say "the cap of \$$CAP is spent before the $gate gate. The cycle stops."; break; }
+  if ! under_cap; then
+    say "the cap of \$$CAP is spent before the $gate gate"
+    capped=1
+    break
+  fi
   ids="$(python3 -c 'import json,sys
 m = json.load(open(sys.argv[1]))
 print(",".join(str(c["id"]) for c in m["cases"] if c["gate"] == sys.argv[2]))' "$MANIFEST" "$gate")"
@@ -302,6 +310,11 @@ print(",".join(str(c["id"]) for c in m["cases"] if c["gate"] == sys.argv[2]))' "
   esac
 done
 say "spent \$$(spent) of \$$CAP"
+if [ "$capped" != "0" ]; then
+  say "some cases reached no gate, so the cycle stops before the fixer."
+  say "the branch $BRANCH holds the cases alone. Raise --cap and run again, or drop the branch."
+  exit 1
+fi
 
 # --- Step 3: the fixer -------------------------------------------------
 

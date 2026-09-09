@@ -119,3 +119,46 @@ func TestTheCycleNeedsItsOwnPermission(t *testing.T) {
 		t.Error("the cycle asks for its permission on a dry run too")
 	}
 }
+
+// TestTheCycleStopsWhenTheCapLeavesACaseUnmeasured holds the rule under
+// the ledger. A gate the cap stopped leaves cases nobody read, and those
+// cases are in the gate files already. A cycle that went on would open a
+// pull request carrying a case no run ever measured.
+func TestTheCycleStopsWhenTheCapLeavesACaseUnmeasured(t *testing.T) {
+	s := loopScript(t)
+	if !strings.Contains(s, "capped=1") {
+		t.Error("the confirm loop does not record a gate the cap stopped")
+	}
+	if !strings.Contains(s, `if [ "$capped" != "0" ]; then`) {
+		t.Error("the cycle does not stop before the fixer on a capped confirm run")
+	}
+	// The stop comes before the fixer, so the cases stay and the fixer
+	// never reads a part of them.
+	capIdx := strings.Index(s, `if [ "$capped" != "0" ]; then`)
+	fixIdx := strings.Index(s, "step 3: the fixer")
+	if capIdx < 0 || fixIdx < 0 || capIdx > fixIdx {
+		t.Error("the capped check does not sit before the fixer")
+	}
+}
+
+// TestTheReviewCountsAnEmptyThreadListAsNone reads the fault that made
+// this test: grep -c prints 0 and exits 1 on an empty file, so an
+// "|| echo 0" wrote a second line and the count never read 0. The review
+// then handed the fixer a findings file with no finding in it.
+func TestTheReviewCountsAnEmptyThreadListAsNone(t *testing.T) {
+	raw, err := os.ReadFile(filepath.Join("..", "..", "..", "scripts", "feedback-review.sh"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(raw)
+	if strings.Contains(s, `grep -c . "$threads"`) {
+		t.Error("the review counts threads with grep -c, which prints a second line on an empty file")
+	}
+	if !strings.Contains(s, `awk 'NF' "$threads"`) {
+		t.Error("the review does not count the thread lines")
+	}
+	// A command inside the reply loop must not read the thread list.
+	if !strings.Contains(s, `-F body="$reply" >/dev/null 2>&1 </dev/null`) {
+		t.Error("the reply call may eat the thread list on its standard input")
+	}
+}
