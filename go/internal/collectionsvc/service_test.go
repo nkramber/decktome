@@ -15,6 +15,7 @@ import (
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 	"github.com/nkramber/decktome/go/internal/cards"
 	"github.com/nkramber/decktome/go/internal/collections"
+	"github.com/nkramber/decktome/go/internal/users"
 )
 
 // fakeRepo is an in-memory Repo. It records what the service stored.
@@ -399,4 +400,41 @@ func TestDeleteCollection(t *testing.T) {
 			t.Errorf("code = %v", connect.CodeOf(err))
 		}
 	})
+}
+
+// fakeNoter records what the service counted on the user record (D-638).
+type fakeNoter struct{ counts []users.Counter }
+
+func (f *fakeNoter) Note(_ context.Context, _, _ string, c users.Counter, _ time.Time) error {
+	f.counts = append(f.counts, c)
+	return nil
+}
+
+// TestOnlyANewCollectionCounts locks the dedupe rule of D-638. A repeat
+// upload of the same content answers the collection that holds it, so
+// it makes no new collection and raises no counter. The emulator lane
+// proves the store, and CI never runs it, so this proves the branch.
+func TestOnlyANewCollectionCounts(t *testing.T) {
+	repo := newFakeRepo()
+	noter := &fakeNoter{}
+	s := New(repo, staticIndex{testIndex()}, func(context.Context) string { return "user1" },
+		WithUsers(noter))
+
+	if _, err := s.ImportCollection(context.Background(),
+		importReq("Binder", mtgv1.ImportSource_IMPORT_SOURCE_MANABOX_CSV, goodCSV)); err != nil {
+		t.Fatalf("first import: %v", err)
+	}
+	if len(noter.counts) != 1 || noter.counts[0] != users.CollectionsUpload {
+		t.Fatalf("the first upload counted %v, want one collection", noter.counts)
+	}
+
+	// The same bytes again. The repo answers the collection that already
+	// holds the hash, so no collection is made.
+	if _, err := s.ImportCollection(context.Background(),
+		importReq("Binder again", mtgv1.ImportSource_IMPORT_SOURCE_MANABOX_CSV, goodCSV)); err != nil {
+		t.Fatalf("second import: %v", err)
+	}
+	if len(noter.counts) != 1 {
+		t.Errorf("a repeat upload counted %v, and it made no collection", noter.counts)
+	}
 }
