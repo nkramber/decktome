@@ -67,6 +67,11 @@ func EntersTapped(c *mtgv1.Card) bool { return entersTapped(c) }
 // more than any land does.
 func ProducesMana(c *mtgv1.Card) bool { return producesMana(c) }
 
+// IsColorlessLand reports a nonbasic land whose only mana is colorless.
+// Every bracket caps them, and the pass trades one for a land that makes
+// a color the deck needs.
+func IsColorlessLand(c *mtgv1.Card) bool { return isColorlessLand(c) }
+
 // isColorlessLand reports a nonbasic land whose only mana is colorless.
 // A land that produces nothing, such as a fetch land, is not one.
 func isColorlessLand(c *mtgv1.Card) bool {

@@ -218,20 +218,91 @@ func TestTheManaPassLeavesADeckInBandAlone(t *testing.T) {
 	}
 }
 
-// A revision and an upgrade keep the deck they were given. The reader
-// asked for a change, and a precon is a working deck (D-249, PR-12B).
-func TestTheManaPassSkipsARevisionAndAnUpgrade(t *testing.T) {
+// A revision keeps the deck it was given. The reader asked for a change,
+// and a pass over it is a second author (PR-12B, D-283).
+func TestTheManaPassSkipsARevision(t *testing.T) {
 	src := source{}
+	plains := manaCard("o-plains", "Plains", 0, []string{"Land"}, "", mtgv1.Color_COLOR_W)
+	plains.Supertypes = []string{"Basic"}
+	tapped := manaCard("o-tap", "Tapped Hold", 0, []string{"Land"}, "This land enters tapped.", mtgv1.Color_COLOR_W)
+	untapped := manaCard("o-untap", "Open Hold", 0, []string{"Land"}, "", mtgv1.Color_COLOR_W)
+	spell := manaCard("o-spell", "White Spell", 2, []string{"Creature"}, "")
+	for _, c := range []*mtgv1.Card{plains, tapped, untapped, spell} {
+		src[c.GetOracleId()] = c
+	}
 	b := manaBuilder(t, src)
-	deck := &mtgv1.Deck{Format: &mtgv1.Format{Id: mtgv1.FormatId_FORMAT_ID_COMMANDER}}
-	req := Request{Format: mtgv1.FormatId_FORMAT_ID_COMMANDER, Pool: NewPool(nil, nil)}
-	req.Revision = &Revision{}
+	deck := &mtgv1.Deck{
+		Format: &mtgv1.Format{Id: mtgv1.FormatId_FORMAT_ID_COMMANDER},
+		Power:  &mtgv1.PowerLevel{Level: &mtgv1.PowerLevel_Bracket{Bracket: 4}},
+		Cards: []*mtgv1.DeckCard{
+			{OracleId: "o-plains", Name: "Plains", Count: 25, Role: mtgv1.CardRole_CARD_ROLE_LAND},
+			{OracleId: "o-tap", Name: "Tapped Hold", Count: 10, Role: mtgv1.CardRole_CARD_ROLE_LAND},
+			{OracleId: "o-spell", Name: "White Spell", Count: 64, Role: mtgv1.CardRole_CARD_ROLE_THREAT},
+		},
+	}
+	req := Request{Format: mtgv1.FormatId_FORMAT_ID_COMMANDER, Power: deck.GetPower(),
+		Pool: NewPool([]*mtgv1.Card{plains, tapped, untapped, spell}, nil), Revision: &Revision{}}
 	if steps := b.fixMana(req, deck); steps != 0 {
 		t.Errorf("the pass moved a revision: %d steps", steps)
 	}
-	req.Revision, req.Precon = nil, "Goblin Storm"
-	if steps := b.fixMana(req, deck); steps != 0 {
-		t.Errorf("the pass moved an upgrade: %d steps", steps)
+}
+
+// TestTheManaPassMovesAnUpgradesLandsAlone is D-628. An upgrade takes
+// the pass on its mana base, and never on its spells. D-249 keeps the
+// precon's own composition, so no step drops a card of the precon and
+// no step trades a spell.
+func TestTheManaPassMovesAnUpgradesLandsAlone(t *testing.T) {
+	src := source{}
+	plains := manaCard("o-plains", "Plains", 0, []string{"Land"}, "", mtgv1.Color_COLOR_W)
+	plains.Supertypes = []string{"Basic"}
+	// The precon owns this tapped land, so no step may drop it.
+	preconLand := manaCard("o-preconland", "Precon Hold", 0, []string{"Land"}, "This land enters tapped.", mtgv1.Color_COLOR_W)
+	// This tapped land is not the precon's, so a step may trade it.
+	spare := manaCard("o-spare", "Spare Hold", 0, []string{"Land"}, "This land enters tapped.", mtgv1.Color_COLOR_W)
+	untapped := manaCard("o-untap", "Open Hold", 0, []string{"Land"}, "", mtgv1.Color_COLOR_W)
+	spell := manaCard("o-spell", "Precon Spell", 5, []string{"Creature"}, "")
+	for _, c := range []*mtgv1.Card{plains, preconLand, spare, untapped, spell} {
+		src[c.GetOracleId()] = c
+	}
+	b := manaBuilder(t, src)
+	deck := &mtgv1.Deck{
+		Format: &mtgv1.Format{Id: mtgv1.FormatId_FORMAT_ID_COMMANDER},
+		Power:  &mtgv1.PowerLevel{Level: &mtgv1.PowerLevel_Bracket{Bracket: 4}},
+		Cards: []*mtgv1.DeckCard{
+			{OracleId: "o-plains", Name: "Plains", Count: 25, Role: mtgv1.CardRole_CARD_ROLE_LAND},
+			{OracleId: "o-preconland", Name: "Precon Hold", Count: 5, Role: mtgv1.CardRole_CARD_ROLE_LAND},
+			{OracleId: "o-spare", Name: "Spare Hold", Count: 5, Role: mtgv1.CardRole_CARD_ROLE_LAND},
+			{OracleId: "o-spell", Name: "Precon Spell", Count: 64, Role: mtgv1.CardRole_CARD_ROLE_THREAT},
+		},
+	}
+	req := Request{
+		Format: mtgv1.FormatId_FORMAT_ID_COMMANDER, Power: deck.GetPower(),
+		Pool:            NewPool([]*mtgv1.Card{plains, preconLand, spare, untapped, spell}, nil),
+		Precon:          "Goblin Storm",
+		PreconOracleIDs: []string{"o-preconland", "o-spell"},
+	}
+	before := b.manaScore(deck)
+	steps := b.fixMana(req, deck)
+	if steps == 0 {
+		t.Fatal("the pass made no step on an upgrade of ten tapped lands")
+	}
+	if b.manaScore(deck) >= before {
+		t.Error("the pass did not move the upgrade toward its bands")
+	}
+	// The precon keeps every card it owns, so the share of D-218 can not
+	// move under the pass.
+	if countOf(deck, "o-preconland") != 5 {
+		t.Errorf("the pass dropped a precon land: %d copies left", countOf(deck, "o-preconland"))
+	}
+	if countOf(deck, "o-spell") != 64 {
+		t.Errorf("the pass moved a precon spell: %d copies left", countOf(deck, "o-spell"))
+	}
+	// The spare tapped land is the one it may trade.
+	if countOf(deck, "o-spare") == 5 {
+		t.Error("the pass traded no tapped land of its own")
+	}
+	if n := deckCount(deck); n != 99 {
+		t.Errorf("the upgrade holds %d cards after the pass, want 99", n)
 	}
 }
 
