@@ -47,8 +47,14 @@ type Case struct {
 type Namer func(oracleID string) (string, bool)
 
 // conversationCase mirrors one conversation of the question gate. The
-// gate owns the shape, and TestTheCaseShapesMatchTheGateFiles pins that
-// this mirror and the file agree.
+// gate owns the shape, and this package can not import a command, so it
+// holds a mirror.
+//
+// Each gate package pins its own mirror. TestTheCaseShapeMatchesTheGateFile
+// in cmd/questions-gate, and TestTheCaseShapeMatchesThePromptFile in
+// cmd/deck-gate and cmd/bracket-gate, decode a case of this writer into
+// the real struct with an unknown field refused. So a renamed tag fails
+// a free test, and never in a paid run.
 type conversationCase struct {
 	ID         int               `json:"id"`
 	Name       string            `json:"name"`

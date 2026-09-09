@@ -18,9 +18,10 @@ import (
 // holds 108 conversations, and a whole re-encode would put every one of
 // them into the diff, which would hide the one line that matters.
 
-// tailRe matches the close of the array and the close of the document,
-// which is where a new case goes.
-var tailRe = regexp.MustCompile(`(?s)\n\s*\]\s*\n\s*\}\s*$`)
+// tailRe matches the whitespace that runs to the close of the array and
+// the close of the document. A new case goes at the start of that run,
+// so the tail of the file comes through the write unchanged.
+var tailRe = regexp.MustCompile(`\s*\]\s*\}\s*$`)
 
 // idRe reads every "id": <n> of a gate file.
 var idRe = regexp.MustCompile(`"id"\s*:\s*(\d+)`)
@@ -60,9 +61,22 @@ func Append(path string, body json.RawMessage) error {
 	if err := json.Indent(&buf, body, "    ", "  "); err != nil {
 		return fmt.Errorf("triage: %s: %w", path, err)
 	}
-	out := append([]byte{}, raw[:loc[0]]...)
-	out = append(out, []byte(",\n    "+buf.String())...)
+	head := raw[:loc[0]]
+	// An empty array takes no comma. Every gate file holds cases today,
+	// so this is the shape of a file somebody makes later.
+	sep := ",\n    "
+	if len(head) == 0 || head[len(head)-1] == '[' {
+		sep = "\n    "
+	}
+	out := append([]byte{}, head...)
+	out = append(out, []byte(sep+buf.String())...)
 	out = append(out, raw[loc[0]:]...)
+	// The writer edits text and never re-encodes, so it can not lean on
+	// the encoder to keep the file valid. A file that no longer parses
+	// never reaches the disk.
+	if !json.Valid(out) {
+		return fmt.Errorf("triage: the case would leave %s unparseable, so nothing was written", path)
+	}
 	// The file is a source file of this repo and not a secret.
 	if err := os.WriteFile(path, out, 0o644); err != nil { // #nosec G306
 		return fmt.Errorf("triage: %s: %w", path, err)

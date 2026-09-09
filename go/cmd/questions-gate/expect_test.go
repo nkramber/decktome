@@ -1,12 +1,15 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"strings"
 	"testing"
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/internal/harvest"
 	"github.com/nkramber/decktome/go/internal/questions"
+	"github.com/nkramber/decktome/go/internal/triage"
 )
 
 // TestSlotValuesWriteTheVocabulary pins the words an expectation uses.
@@ -163,5 +166,52 @@ func TestEveryForbiddenRowOfTheGateFileExists(t *testing.T) {
 	}
 	if err := checkRowIDs(file.Conversations, cat); err != nil {
 		t.Error(err)
+	}
+}
+
+// TestTheCaseShapeMatchesTheGateFile pins the mirror struct of the
+// triage against this file's own struct (PR-28b). The triage writes a
+// conversation from a reader's verdict, and it can not import this
+// package, so it holds a mirror of the shape. A field renamed here and
+// not there would write the old name, and the case would lose that
+// field with nothing to say so.
+//
+// The decoder refuses an unknown field, so the mirror may name no field
+// this struct does not read.
+func TestTheCaseShapeMatchesTheGateFile(t *testing.T) {
+	rec := harvest.Record{
+		ID: "f1", Kind: "question", Verdict: "down",
+		Reasons: []string{"already_answered"}, Text: "You asked me that already.",
+		QuestionID: "q3-power_commander",
+		Session: json.RawMessage(`{"id":"s1","collectionId":"c1",` +
+			`"slots":{"format":{"id":"FORMAT_ID_COMMANDER"},"theme":"lifegain"},` +
+			`"turns":[{"userMessage":"Build me a lifegain deck."}]}`),
+	}
+	c, err := triage.CaseOf(triage.RouteOf(rec), 999, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.Target != "go/cmd/questions-gate/conversations.json" {
+		t.Fatalf("the case joins %q, and this test guards another file", c.Target)
+	}
+	dec := json.NewDecoder(bytes.NewReader(c.Body))
+	dec.DisallowUnknownFields()
+	var got conversation
+	if err := dec.Decode(&got); err != nil {
+		t.Fatalf("the triage wrote a field this gate does not read: %v\n%s", err, c.Body)
+	}
+	// Every field the mirror fills must land, so a renamed tag fails here
+	// and not in a paid run.
+	if got.ID != 999 || got.Name == "" || got.Note == "" || !got.Collection {
+		t.Errorf("the case lost a field: %+v", got)
+	}
+	if len(got.Messages) != 1 || got.Messages[0] != "Build me a lifegain deck." {
+		t.Errorf("messages = %v", got.Messages)
+	}
+	if got.Expect["theme"] != "lifegain" || got.Expect["format"] != "commander" {
+		t.Errorf("expect = %v", got.Expect)
+	}
+	if len(got.MustNotAsk) != 1 || got.MustNotAsk[0] != "power_commander" {
+		t.Errorf("must_not_ask = %v", got.MustNotAsk)
 	}
 }

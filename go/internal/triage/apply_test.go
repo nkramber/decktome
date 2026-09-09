@@ -162,3 +162,74 @@ func TestTheOwnerRowJoinsTheDecisionQueue(t *testing.T) {
 		t.Error("the new row sits under the old ones")
 	}
 }
+
+// TestAppendJoinsAnEmptyArray covers the file somebody makes later. An
+// empty array takes no leading comma, and a comma would leave the file
+// unparseable.
+func TestAppendJoinsAnEmptyArray(t *testing.T) {
+	for name, before := range map[string]string{
+		"an array on two lines": "{\n  \"prompts\": [\n  ]\n}\n",
+		"an array on one line":  "{\n  \"prompts\": []\n}\n",
+	} {
+		t.Run(name, func(t *testing.T) {
+			path := filepath.Join(t.TempDir(), "prompts.json")
+			if err := os.WriteFile(path, []byte(before), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			next, err := NextID(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if next != 1 {
+				t.Errorf("next id = %d, want 1 on an empty file", next)
+			}
+			body, err := json.Marshal(map[string]any{"id": next, "name": "the first case"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := Append(path, body); err != nil {
+				t.Fatal(err)
+			}
+			raw, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var file struct {
+				Prompts []struct {
+					ID   int    `json:"id"`
+					Name string `json:"name"`
+				} `json:"prompts"`
+			}
+			if err := json.Unmarshal(raw, &file); err != nil {
+				t.Fatalf("the file no longer parses: %v\n%s", err, raw)
+			}
+			if len(file.Prompts) != 1 || file.Prompts[0].ID != 1 || file.Prompts[0].Name != "the first case" {
+				t.Errorf("prompts = %+v, want the one case", file.Prompts)
+			}
+		})
+	}
+}
+
+// TestAppendNeverWritesAFileThatStoppedParsing is the last guard of the
+// text insert. The writer edits text and never re-encodes, so it can not
+// lean on the encoder to keep the file valid.
+func TestAppendNeverWritesAFileThatStoppedParsing(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "prompts.json")
+	// The tail reads like a gate file and the head does not close, so the
+	// insert lands and the result can not parse.
+	before := "{\n  \"prompts\": [\n    {\"id\": 1\n  ]\n}\n"
+	if err := os.WriteFile(path, []byte(before), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	err := Append(path, json.RawMessage(`{"id":2}`))
+	if err == nil {
+		t.Fatal("a case that breaks the file was written anyway")
+	}
+	if !strings.Contains(err.Error(), "unparseable") {
+		t.Errorf("error = %v, want the parse refusal", err)
+	}
+	raw, _ := os.ReadFile(path)
+	if string(raw) != before {
+		t.Errorf("the refused file changed:\n%s", raw)
+	}
+}

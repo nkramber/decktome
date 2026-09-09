@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -13,8 +14,10 @@ import (
 	"github.com/nkramber/decktome/go/internal/cards"
 	"github.com/nkramber/decktome/go/internal/evalrun"
 	"github.com/nkramber/decktome/go/internal/generate"
+	"github.com/nkramber/decktome/go/internal/harvest"
 	"github.com/nkramber/decktome/go/internal/llm"
 	"github.com/nkramber/decktome/go/internal/rules"
+	"github.com/nkramber/decktome/go/internal/triage"
 )
 
 // A bar that has never failed may not be a bar at all, so every bar is
@@ -410,5 +413,49 @@ func TestAPromptWithNoAssertionReadsNone(t *testing.T) {
 	_, doc := render(t, []result{goodResult()})
 	if strings.Contains(doc, "The case assertions") {
 		t.Error("the document holds the assertion section with no case prompt")
+	}
+}
+
+// TestTheCaseShapeMatchesThePromptFile pins the mirror struct of the
+// triage against this file's own struct (PR-28b). The triage writes a
+// prompt from a reader's verdict, and it can not import this package,
+// so it holds a mirror of the shape. The decoder refuses an unknown
+// field, so the mirror may name no field this struct does not read.
+func TestTheCaseShapeMatchesThePromptFile(t *testing.T) {
+	rec := harvest.Record{
+		ID: "f1", Kind: "card", Verdict: "down",
+		Reasons: []string{"off_theme"}, Text: "This card is off plan.",
+		OracleID: "o-c0",
+		Deck: json.RawMessage(`{"id":"d1","sessionId":"s1",` +
+			`"format":{"id":"FORMAT_ID_COMMANDER"},"power":{"bracket":3},` +
+			`"cards":[{"oracleId":"o-c0","name":"Blood Artist","count":1}]}`),
+		Session: json.RawMessage(`{"id":"s1","collectionId":"c1",` +
+			`"slots":{"theme":"lifegain","poolRule":"POOL_RULE_OWNED_FIRST","budgetUsd":50,"setCodes":["hob"]}}`),
+	}
+	c, err := triage.CaseOf(triage.RouteOf(rec), 999, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.Target != "go/cmd/deck-gate/prompts.json" {
+		t.Fatalf("the case joins %q, and this test guards another file", c.Target)
+	}
+	dec := json.NewDecoder(bytes.NewReader(c.Body))
+	dec.DisallowUnknownFields()
+	var got prompt
+	if err := dec.Decode(&got); err != nil {
+		t.Fatalf("the triage wrote a field this gate does not read: %v\n%s", err, c.Body)
+	}
+	if got.ID != 999 || got.Name == "" || got.Plan == "" {
+		t.Errorf("the case lost a field: %+v", got)
+	}
+	if got.Format != "commander" || got.Theme != "lifegain" || got.Pool != "owned_first" {
+		t.Errorf("prompt = %+v, want the slots of the session", got)
+	}
+	if got.Bracket != 3 || got.Budget != 50 || len(got.Sets) != 1 || !got.Collection {
+		t.Errorf("prompt = %+v, want the bracket, the budget, and the sets", got)
+	}
+	// The card name comes from the deck when no card index names it.
+	if len(got.MustNotInclude) != 1 || got.MustNotInclude[0] != "Blood Artist" {
+		t.Errorf("must_not_include = %v", got.MustNotInclude)
 	}
 }
