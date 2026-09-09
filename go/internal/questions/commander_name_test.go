@@ -279,3 +279,45 @@ func TestTheOfferWaitsForThePower(t *testing.T) {
 		}
 	}
 }
+
+// TestTheNetReleasesTheOffer locks D-631. The offer waits for the power
+// (D-630), and the net of D-351 closes a question the reader never
+// answers. Close and Skip both fill a key, and CloseStalled does not.
+// So without this rule the offer waits for a power that never arrives,
+// and the deck reaches the reader with no commander asked. Gate run 43
+// found it on the conversation "terse: the user answers with a number".
+func TestTheNetReleasesTheOffer(t *testing.T) {
+	st := NewState(false)
+	st.Turn = 1
+	st.MarkAsked("power_commander", "power", "power")
+
+	offer := When{Requires: []string{"power"}}
+	if offer.matches(st.Ctx) {
+		t.Fatal("the offer went out while the power question was still open")
+	}
+
+	st.Turn = 1 + StallGrace
+	closed, _ := st.CloseStalled()
+	if !slices.Contains(closed, "power") {
+		t.Fatalf("the net closed %v, and the power question is not among them", closed)
+	}
+	if !st.Ctx.Skipped["power"] {
+		t.Error("the net closed the power question and did not record it")
+	}
+	if !offer.matches(st.Ctx) {
+		t.Error("the offer still waits for a power the reader never gives")
+	}
+
+	// A re-ask reopens the key, so the offer waits again.
+	st2 := NewState(false)
+	st2.Turn = 1
+	st2.MarkAsked("power_commander", "power", "power")
+	st2.Skip("power")
+	if !offer.matches(st2.Ctx) {
+		t.Error("a declined power holds the offer back")
+	}
+	st2.Reopen("power")
+	if offer.matches(st2.Ctx) {
+		t.Error("the offer goes out after the power reopened")
+	}
+}

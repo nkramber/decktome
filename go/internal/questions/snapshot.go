@@ -134,6 +134,9 @@ func Restore(id string, slots *mtgv1.Slots, snap Snapshot) *State {
 	if st.Ctx.Filled == nil {
 		st.Ctx.Filled = map[string]bool{}
 	}
+	if st.Ctx.Skipped == nil {
+		st.Ctx.Skipped = map[string]bool{}
+	}
 	if st.Ctx.Asked == nil {
 		st.Ctx.Asked = map[string]bool{}
 	}

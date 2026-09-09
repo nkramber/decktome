@@ -435,6 +435,7 @@ func (s *State) SetCommander(name string) {
 // goes back to unspecified, which is what the planner reads.
 func (s *State) Reopen(key string) {
 	delete(s.Ctx.Filled, key)
+	delete(s.Ctx.Skipped, key)
 	delete(s.Ctx.Outstanding, key)
 	delete(s.Slots.SlotStates, key)
 }
@@ -610,6 +611,7 @@ func NewState(hasCollection bool) *State {
 		Slots: &mtgv1.Slots{SlotStates: map[string]mtgv1.SlotState{}},
 		Ctx: Context{
 			Filled:      map[string]bool{},
+			Skipped:     map[string]bool{},
 			Asked:       map[string]bool{},
 			Outstanding: map[string]string{},
 			// A user with no collection never gets the pool question. The
@@ -634,9 +636,19 @@ func (s *State) Close(key string) {
 // question did its work, and the slot is closed.
 func (s *State) Skip(key string) {
 	s.Ctx.Filled[key] = true
+	s.markSkipped(key)
 	delete(s.Ctx.Outstanding, key)
 	s.Slots.SlotStates[key] = mtgv1.SlotState_SLOT_STATE_SKIPPED
 	s.fillAsk(key)
+}
+
+// markSkipped records a key that closed with no value from the reader.
+// A stored snapshot from before D-631 holds no map, so it makes one.
+func (s *State) markSkipped(key string) {
+	if s.Ctx.Skipped == nil {
+		s.Ctx.Skipped = map[string]bool{}
+	}
+	s.Ctx.Skipped[key] = true
 }
 
 // fillAsk closes the newest open M-4 record for one key.
@@ -728,6 +740,7 @@ func (s *State) CloseStalled() (closed, waiting []string) {
 			continue
 		}
 		s.Slots.SlotStates[key] = mtgv1.SlotState_SLOT_STATE_SKIPPED
+		s.markSkipped(key)
 		closed = append(closed, key)
 		delete(s.Ctx.Outstanding, key)
 	}
@@ -766,6 +779,7 @@ func (s *State) ReaskStalled() (reasked []string) {
 		s.Ctx.Reasked[key] = true
 		s.Slots.SlotStates[key] = mtgv1.SlotState_SLOT_STATE_UNSPECIFIED
 		delete(s.Ctx.Filled, key)
+		delete(s.Ctx.Skipped, key)
 		delete(s.Ctx.Outstanding, key)
 		// The no-repeat rule reads the row ids, so every row that asked
 		// this key may ask it again.
