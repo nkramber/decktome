@@ -17,7 +17,9 @@ else
   printf 'vs upstream     none, this branch is not pushed\n'
 fi
 
-read -r mahead mbehind < <(git rev-list --left-right --count "main...origin/main" | awk '{print $1, $2}')
+# Only the behind count is read. The ahead count goes to a name the
+# shell discards, so shellcheck reads no unused variable.
+read -r _ mbehind < <(git rev-list --left-right --count "main...origin/main" | awk '{print $1, $2}')
 printf 'main            %s\n' "$([ "$mbehind" = 0 ] && echo "current with origin" || echo "BEHIND origin by $mbehind")"
 
 if [ "$branch" != "main" ]; then

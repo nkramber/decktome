@@ -19,14 +19,24 @@ RUN apt-get update \
     && npm install -g firebase-tools@14.14.0
 WORKDIR /app
 COPY firebase.json firestore.rules firestore.indexes.json ./
-# The host copy binds 127.0.0.1 for laptop use. Containers must bind 0.0.0.0
-# so the published ports and other services can reach the emulators.
-# The ui block has no host key, so the sed adds one. Without it the UI
-# binds localhost and the published port 4100 gets no answer.
-RUN sed -i 's/"host": "127.0.0.1"/"host": "0.0.0.0"/g' firebase.json \
-    && sed -i 's/"ui": { "enabled": true,/"ui": { "enabled": true, "host": "0.0.0.0",/' firebase.json \
+# The host copy binds 127.0.0.1 for laptop use. Containers must bind
+# 0.0.0.0 so the published ports and other services can reach the
+# emulators. The ui block carries no host key, so this adds one. Without
+# it the UI binds localhost and the published port 4100 gets no answer.
+#
+# Node reads the file as JSON and writes it back. A sed read the shape of
+# the text instead, and it broke the moment the file took one key per
+# line: the ui edit matched nothing and the build failed on its own
+# check (D-641).
+RUN node -e "const f='firebase.json',fs=require('fs'); \
+    const j=JSON.parse(fs.readFileSync(f,'utf8')); \
+    for (const e of Object.values(j.emulators||{})) if (e && typeof e==='object') e.host='0.0.0.0'; \
+    fs.writeFileSync(f, JSON.stringify(j,null,2));" \
     && ! grep -q '127.0.0.1' firebase.json \
-    && grep -q '"ui": { "enabled": true, "host": "0.0.0.0"' firebase.json
+    && node -e "const j=require('./firebase.json'); \
+    for (const [k,e] of Object.entries(j.emulators||{})) { \
+      if (e && typeof e==='object' && e.host!=='0.0.0.0') { \
+        console.error('emulator '+k+' binds '+e.host); process.exit(1); } }"
 # /data/firestore is a Compose volume. The emulator imports it at start and
 # exports to it at exit, the same as scripts/dev.sh does with .local/firestore.
 # An empty directory is fine: the CLI warns and skips the import.
