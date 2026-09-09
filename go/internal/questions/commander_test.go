@@ -207,6 +207,8 @@ func TestNoneRepeatsThePickRowWithNewNames(t *testing.T) {
 	base := commanderClassify()
 	wants := commanderClassify()
 	wants.Facts.WantsSuggestion = true
+	// The offer waits for the power (D-630), and the turn text names it.
+	wants.Power = "bracket 3"
 	// Turn 3 refuses, and the classifier tries to close the row by name.
 	refuse := commanderClassify()
 	// The classifier can report the refusal through both channels.
@@ -259,6 +261,8 @@ func TestCommanderChosenByPlace(t *testing.T) {
 	base := commanderClassify()
 	wants := commanderClassify()
 	wants.Facts.WantsSuggestion = true
+	// The offer waits for the power (D-630).
+	wants.Power = "bracket 3"
 	pick := commanderClassify()
 	h := &fakeHints{
 		commanders: []string{"Vito, Thorn of the Dusk Rose", "Heliod, Sun-Crowned", "Haliya, Guided by Light"},
@@ -295,10 +299,13 @@ func TestCommanderChosenByPlace(t *testing.T) {
 // pick row instead of repeating it. D-123 is about the names on the
 // table, and this test still measures only that.
 func TestSuggestionDoesNotSwapTheNames(t *testing.T) {
+	// The offer waits for the power (D-630), so both turns name it.
 	wants := commanderClassify()
 	wants.Facts.WantsSuggestion = true
+	wants.Power = "bracket 3"
 	again := commanderClassify()
 	again.Facts.WantsSuggestion = true
+	again.Power = "bracket 3"
 	h := &fakeHints{
 		commanders: []string{"Vito, Thorn of the Dusk Rose", "Heliod, Sun-Crowned", "Haliya, Guided by Light"},
 		second:     []string{"Karlov of the Ghost Council", "Oloro, Ageless Ascetic", "Ayli, Eternal Pilgrim"},
@@ -370,13 +377,16 @@ func TestDelegationClosesTheCommanderPick(t *testing.T) {
 // must not go out again. D-148 can not catch it: it filters the pool,
 // and these names are already on the table.
 func TestOffColorOfferLeavesTheTable(t *testing.T) {
+	// The offer waits for the power (D-630), and turn 1 makes the offer.
 	first := commanderClassify()
 	first.Facts.WantsSuggestion = true
 	first.Colors = nil
 	first.BudgetUSD = 50
+	first.Power = "bracket 3"
 	second := commanderClassify()
 	second.Facts.WantsSuggestion = true
 	second.Colors = []string{"R", "W"}
+	second.Power = "bracket 3"
 	// Two of the three offered names are red-white, so they survive the
 	// colors. Jaheira is mono-green and must leave. A mono-red name would
 	// leave as well, because D-148 asks a commander to hold every color
@@ -466,6 +476,8 @@ func TestPickRowWithNoNamesAsksNothing(t *testing.T) {
 	out.Theme = ""
 	out.Facts.WantsSuggestion = true
 	out.BudgetUSD = 50
+	// The offer waits for the power (D-630), so the reader names it.
+	out.Power = "bracket 3"
 	// The hint source names no commander, which is what an empty theme
 	// gives.
 	a, _ := testAgentHints(t, &fakeHints{}, classifyStep(t, out), fits(t, "power_commander"), askStep(t))
@@ -494,8 +506,11 @@ func TestPickRowWithNoNamesAsksNothing(t *testing.T) {
 func TestCommanderSwapReopensTheChoice(t *testing.T) {
 	named := commanderClassify()
 	named.CommanderNames = []string{"Karlov of the Ghost Council"}
+	named.Power = "bracket 3"
 	swap := commanderClassify()
 	swap.Facts.WantsSuggestion = true
+	// The offer waits for the power (D-630).
+	swap.Power = "bracket 3"
 	h := &fakeHints{
 		commanders: []string{"Vito, Thorn of the Dusk Rose", "Heliod, Sun-Crowned", "Haliya, Guided by Light"},
 		second:     []string{"Oloro, Ageless Ascetic", "Ayli, Eternal Pilgrim", "Liesa, Shroud of Dusk"},
@@ -776,6 +791,10 @@ func TestDeclinedPickClosesTheCommanderSlot(t *testing.T) {
 	var delegate classifyOut
 	delegate.DeclinedKeys = []string{"format", "colors"}
 	delegate.Facts.WantsSuggestion = true
+	// The offer waits for the power (D-630), and the reader names it
+	// with the delegation. The turn then plans the pick row alone, which
+	// is fixed, so it makes no score call and no ask call (D-131).
+	delegate.Power = "bracket 3"
 	var decline classifyOut
 	decline.DeclinedKeys = []string{"commander_pick", "power", "pool_rule"}
 	h := &fakeHints{
@@ -784,7 +803,7 @@ func TestDeclinedPickClosesTheCommanderSlot(t *testing.T) {
 	}
 	a, _ := testAgentHints(t, h,
 		classifyStep(t, vague), fits(t), askStep(t),
-		classifyStep(t, delegate), fits(t), askStep(t),
+		classifyStep(t, delegate),
 		classifyStep(t, decline))
 	st := NewState(true)
 	if _, err := a.Turn(context.Background(), st, "Make me a good deck.", nil); err != nil {
@@ -917,6 +936,9 @@ func TestBareOrdinalPicksNoCommander(t *testing.T) {
 	h := &fakeHints{commanders: []string{"Karlov of the Ghost Council", "Oloro, Ageless Ascetic", "Trelasarra, Moon Dancer"}}
 	first := commanderClassify()
 	first.Facts.WantsSuggestion = true
+	// The offer ranks on the bracket, so the pick row waits for the
+	// power (D-630). The reader names it with the request.
+	first.Power = "bracket 3"
 	p := play(t, false, h, []turnScript{
 		{"A Commander lifegain deck, white and black. Suggest a commander.", first},
 		{"First, make it budget. 50 dollars.", classifyOut{Format: "unknown", PoolRule: "unknown", BudgetUSD: 50}},
@@ -943,6 +965,9 @@ func TestRefusalByOptionAloneRepeatsThePickRow(t *testing.T) {
 	base := commanderClassify()
 	wants := commanderClassify()
 	wants.Facts.WantsSuggestion = true
+	// The reader names the bracket in the same message, and the offer
+	// ranks on it (D-630). The turn text says so already.
+	wants.Power = "bracket 3"
 	// The classifier says nothing about the key. The words are all there is.
 	silent := commanderClassify()
 	h := &fakeHints{
