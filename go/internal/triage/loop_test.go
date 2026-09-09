@@ -1,10 +1,14 @@
 package triage
 
 import (
+	"context"
+	"encoding/json"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 // The fix cycle of PR-28c is a shell script, and shellcheck reads its
@@ -160,5 +164,70 @@ func TestTheReviewCountsAnEmptyThreadListAsNone(t *testing.T) {
 	// A command inside the reply loop must not read the thread list.
 	if !strings.Contains(s, `-F body="$reply" >/dev/null 2>&1 </dev/null`) {
 		t.Error("the reply call may eat the thread list on its standard input")
+	}
+}
+
+// TestAnEmptyManifestMarshalsAsAList holds the fault gitar found on
+// pull request #122. A nil slice marshals as null, and the cycle reads
+// the length of that list to decide whether there is anything to fix.
+// A null raised instead of reading zero, so the cycle went on to a fixer
+// with no case at all.
+func TestAnEmptyManifestMarshalsAsAList(t *testing.T) {
+	// Every verdict of this run writes a defect or wants the judge, so no
+	// gate measures one. The gate document names it: four of the ten
+	// fixture verdicts reach no gate.
+	m := ManifestOf("h.jsonl", time.Now(), nil)
+	if m.Cases == nil {
+		t.Fatal("the case list is nil, and it marshals as null")
+	}
+	raw, err := json.Marshal(m)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(raw), `"cases":[]`) {
+		t.Errorf("an empty manifest reads %s, want an empty list", raw)
+	}
+	// The cycle reads the file, so the round trip has to answer zero.
+	path := filepath.Join(t.TempDir(), "cases.json")
+	if err := WriteManifest(path, m); err != nil {
+		t.Fatal(err)
+	}
+	got, err := ReadManifest(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Cases) != 0 {
+		t.Errorf("%d cases read back, want none", len(got.Cases))
+	}
+	if got.IDs(GateQuestions) != nil || len(got.Gates()) != 0 {
+		t.Error("an empty manifest names an id or a gate")
+	}
+}
+
+// TestAValueFlagWithNoValueStopsTheCycle holds the other fault of #122.
+// "shift 2" fails with one argument left, nothing shifts, and the parse
+// loop spins forever. The cycle must refuse the flag and stop.
+func TestAValueFlagWithNoValueStopsTheCycle(t *testing.T) {
+	script, err := filepath.Abs(filepath.Join("..", "..", "..", "scripts", "feedback-loop.sh"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, flag := range []string{"--cap", "--in", "--base", "--rounds"} {
+		t.Run(flag, func(t *testing.T) {
+			// The deadline is the test: the old code never returned.
+			ctx, cancel := context.WithTimeout(t.Context(), 15*time.Second)
+			defer cancel()
+			cmd := exec.CommandContext(ctx, "bash", script, flag)
+			out, err := cmd.CombinedOutput()
+			if ctx.Err() != nil {
+				t.Fatalf("%s with no value never returned, so the parser spins: %s", flag, out)
+			}
+			if err == nil {
+				t.Errorf("%s with no value was accepted: %s", flag, out)
+			}
+			if !strings.Contains(string(out), "needs a value") {
+				t.Errorf("%s: output = %s, want the refusal", flag, out)
+			}
+		})
 	}
 }

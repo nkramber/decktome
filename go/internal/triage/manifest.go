@@ -70,8 +70,12 @@ type Manifest struct {
 // ManifestOf reads the cases of a finished run. A result with no case,
 // or one no gate measures, is left out: the manifest is what the cycle
 // can run a gate on.
+// The case list starts empty and never nil. A nil slice marshals as
+// null, and the cycle reads the length of that list to decide whether
+// there is anything to fix. A null would raise instead of reading zero,
+// and the cycle would go on to a fixer with no case (D-645).
 func ManifestOf(harvest string, day time.Time, rs []Result) Manifest {
-	m := Manifest{WrittenAt: day.UTC(), Harvest: harvest}
+	m := Manifest{WrittenAt: day.UTC(), Harvest: harvest, Cases: []Entry{}}
 	for _, r := range rs {
 		gate := GateOf(r.Case.Target)
 		if r.Err != nil || gate == "" || r.Case.ID == 0 {

@@ -67,12 +67,19 @@ usage() {
   exit "${1:-0}"
 }
 
+# needs_value refuses a value flag that ends the command line. Without
+# it "shift 2" fails with one argument left, nothing shifts, and the
+# loop spins forever.
+needs_value() {
+  [ "$2" -ge 2 ] || { echo "feedback-loop: $1 needs a value" >&2; exit 1; }
+}
+
 while [ $# -gt 0 ]; do
   case "$1" in
-    --cap) CAP="${2:-}"; shift 2 ;;
-    --in) HARVEST="${2:-}"; shift 2 ;;
-    --base) BASE_REF="${2:-}"; shift 2 ;;
-    --rounds) ROUNDS="${2:-}"; shift 2 ;;
+    --cap) needs_value "$1" "$#"; CAP="$2"; shift 2 ;;
+    --in) needs_value "$1" "$#"; HARVEST="$2"; shift 2 ;;
+    --base) needs_value "$1" "$#"; BASE_REF="$2"; shift 2 ;;
+    --rounds) needs_value "$1" "$#"; ROUNDS="$2"; shift 2 ;;
     --dry) DRY_RUN="1"; shift ;;
     --no-pr) OPEN_PR="0"; shift ;;
     -h|--help) usage 0 ;;
@@ -236,7 +243,11 @@ if [ "$triage_code" -ne 0 ]; then
   say "WARNING: the triage exited $triage_code. Read $TRIAGE_DOC"
 fi
 
-CASE_COUNT="$(python3 -c 'import json,sys; print(len(json.load(open(sys.argv[1]))["cases"]))' "$MANIFEST")"
+CASE_COUNT="$(python3 -c 'import json,sys
+m = json.load(open(sys.argv[1]))
+cases = m.get("cases") or []
+print(len(cases))' "$MANIFEST")"
+[ -n "$CASE_COUNT" ] || die "the manifest at $MANIFEST does not read. Read $LOG"
 say "the triage wrote $CASE_COUNT case(s) a gate measures"
 if [ "$CASE_COUNT" = "0" ]; then
   say "no case, so there is nothing to fix. The cycle stops."
@@ -245,7 +256,7 @@ fi
 GATES="$(python3 -c 'import json,sys
 m = json.load(open(sys.argv[1]))
 seen = []
-for c in m["cases"]:
+for c in m.get("cases") or []:
     if c["gate"] not in seen:
         seen.append(c["gate"])
 print(" ".join(seen))' "$MANIFEST")"
@@ -278,7 +289,7 @@ if [ "$DRY_RUN" = "1" ]; then
   for gate in $GATES; do
     ids="$(python3 -c 'import json,sys
 m = json.load(open(sys.argv[1]))
-print(",".join(str(c["id"]) for c in m["cases"] if c["gate"] == sys.argv[2]))' "$MANIFEST" "$gate")"
+print(",".join(str(c["id"]) for c in (m.get("cases") or []) if c["gate"] == sys.argv[2]))' "$MANIFEST" "$gate")"
     say "  $gate gate, -only $ids"
     echo "- The $gate gate would run over \`-only $ids\`." >> "$REPORT"
   done
@@ -298,7 +309,7 @@ for gate in $GATES; do
   fi
   ids="$(python3 -c 'import json,sys
 m = json.load(open(sys.argv[1]))
-print(",".join(str(c["id"]) for c in m["cases"] if c["gate"] == sys.argv[2]))' "$MANIFEST" "$gate")"
+print(",".join(str(c["id"]) for c in (m.get("cases") or []) if c["gate"] == sys.argv[2]))' "$MANIFEST" "$gate")"
   say "  the $gate gate over -only $ids"
   echo "### The $gate gate, before the fix" >> "$REPORT"
   run="$(run_gate "$gate" "$ids" confirm)" || die "the $gate gate faulted. Read $LOG"
@@ -366,7 +377,7 @@ for gate in $TO_FIX; do
   under_cap || { say "the cap of \$$CAP is spent before the $gate gate can be measured."; failed=1; break; }
   ids="$(python3 -c 'import json,sys
 m = json.load(open(sys.argv[1]))
-print(",".join(str(c["id"]) for c in m["cases"] if c["gate"] == sys.argv[2]))' "$MANIFEST" "$gate")"
+print(",".join(str(c["id"]) for c in (m.get("cases") or []) if c["gate"] == sys.argv[2]))' "$MANIFEST" "$gate")"
   echo "### The $gate gate, after the fix" >> "$REPORT"
   run="$(run_gate "$gate" "$ids" measure)" || die "the $gate gate faulted. Read $LOG"
   check_cases "$gate" "$run" pass
