@@ -91,7 +91,9 @@ func TestSuggestionFiresThePickRow(t *testing.T) {
 		"Karlov of the Ghost Council", "Oloro, Ageless Ascetic", "Trelasarra, Moon Dancer",
 		"Liesa, Shroud of Dusk", "Ayli, Eternal Pilgrim", "Vito, Thorn of the Dusk Rose",
 	}}
-	wants := classifyOut{Format: "unknown", PoolRule: "unknown"}
+	// The power comes with the request. The offer ranks on the bracket
+	// (PR-14B, OQ-48), so the pick row waits for it (D-630).
+	wants := classifyOut{Format: "unknown", PoolRule: "unknown", Power: "bracket 3"}
 	wants.Facts.WantsSuggestion = true
 	// "None of those" asks for other names. An unrelated message does not.
 	none := wants

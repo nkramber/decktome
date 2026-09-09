@@ -245,7 +245,10 @@
       "when": {
         "format": "commander",
         "commander_unresolved": true,
-        "commander_no_match": false
+        "commander_no_match": false,
+        "requires": [
+          "power"
+        ]
       },
       "fallback": "Which commander do you want? Give me the full card name.",
       "key": "commander_unresolved"
@@ -299,7 +302,8 @@
         "not_outstanding": [
           "named_card_role"
         ],
-        "suggested": false
+        "suggested": false,
+        "commander_unresolved": false
       },
       "fixed": true
     },
@@ -311,7 +315,10 @@
       "text": "Which commander do you want: {a}, {b}, or {c}? Say \"none\" and I name three more.",
       "when": {
         "format": "commander",
-        "suggested": true
+        "suggested": true,
+        "requires": [
+          "power"
+        ]
       },
       "key": "commander_pick",
       "repeat": true,

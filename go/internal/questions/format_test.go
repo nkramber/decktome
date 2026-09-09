@@ -318,6 +318,9 @@ func TestCEDHNamesBracketFive(t *testing.T) {
 func TestRetiredQuestionLeavesTheAskedState(t *testing.T) {
 	first := commanderClassify()
 	first.Facts.WantsSuggestion = true
+	// The offer ranks on the bracket, so the pick row waits for the
+	// power (D-630). The reader names it with the request.
+	first.Power = "bracket 3"
 	change := classifyOut{Format: "modern", Theme: "lifegain", PoolRule: "unknown"}
 	last := classifyOut{Format: "unknown", PoolRule: "unknown", BudgetUSD: 100}
 	last.Power = "casual"
