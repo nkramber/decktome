@@ -6,6 +6,7 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-08 correction pass 125 (the PR-25 gate holds, D-627): the owner installed the app on a phone and walked it. The chat input stays above the keyboard, which is the item no test here reaches. The walk closes the open item of PR-16. Changes: PR-25, PR-16, D-627.
 2026-09-08 correction pass 124 (the bottom bar, D-626): the owner dragged the bottom bar of a phone, and the document scrolled under the app. `html` and `body` hold a fixed height and refuse the bounce now. The bar itself is gone: no decision asked for it, and every deck prints the card data it rests on. Changes: PR-25, D-626.
 2026-09-08 correction pass 123 (the bottom bar, D-625): the owner read a phone that sometimes refused to scroll down. The shell held `h-screen`, which is the viewport height with the browser bar collapsed, so its foot sat below the fold. The shell reads `h-dvh` now, and a test walks every source file for the static unit. Changes: PR-25, D-625.
 2026-09-08 correction pass 122 (the phone read, D-624): the owner read the deployed app on a phone. No screen overflows at 390 pixels, and `e2e/phone.spec.ts` proves it for nothing. The sideways scroll was a pan after a pinch, and the viewport forbids the pinch now. That costs the axe meta-viewport rule, and the PR-25 gate carries the exception. Changes: PR-25, D-624.
@@ -775,7 +776,7 @@ Gate:
 - axe passes on every route in both themes. ✅ four routes, two themes.
 - The 118 web tests hold. ✅ 135 tests pass in 17 files, and the 118 hold.
 - The first paint holds under 130 kB of gzipped JavaScript (D-323). ✅ one file of 116.31 kB gzipped, 363.25 kB raw.
-- The owner walks the whole path on a desktop and on a phone. ⏳ waits for the owner.
+- The owner walks the whole path on a desktop and on a phone. ✅ 2026-09-08. The phone walk ran on the installed app (D-627), and the deploy walks of 2026-09-07 and 2026-09-08 are the desktop ones.
 
 CAUTION: D-320 set this bar at 200 kB of raw JavaScript, and a measurement showed that no build can reach it. React, the router, and TanStack Query are 101.51 kB gzipped and 319.51 kB raw together. D-323 amends the bar to 130 kB gzipped.
 
@@ -968,7 +969,7 @@ Gate:
 One flow on `workflow_dispatch` only. It signs in over the emulator and uploads the fixture export. Then it starts a session from the form with the fake provider, opens the deck, and exports it. The fake provider serves canned answers for the classify, ask, and generate roles, so the flow costs nothing. One run takes about 5 minutes of Actions time, and the owner triggers it before a merge that touches the user path. Gate: the flow passes on the emulators.
 > *In plain English:* a robot that clicks through the whole app once, on demand. A change that breaks the path shows up before it ships.
 
-**PR-25: The installable web app (D-547, answers OQ-66).** 🔧 built 2026-09-08 (D-621 to D-623), its own PR outside PR-22, after PR-23 in the phase list. **The phone walk is what is left**, and it closes the open item of PR-16. The proposal is `docs/reference/mobile-and-engagement-2026-09-05.md`.
+**PR-25: The installable web app (D-547, answers OQ-66).** ✅ merged 2026-09-08 (D-621 to D-623), and its gate holds (D-627). The owner installed the app on a phone and walked it, which closes the open item of PR-16. The proposal is `docs/reference/mobile-and-engagement-2026-09-05.md`.
 A web manifest with the name, the mark as icons in the required sizes, `display: standalone`, and the dark theme color. A service worker caches the app shell, so a cold open with no network shows the shell and the last deck list. `vite-plugin-pwa` writes both from the Vite build.
 
 An install hint shows once on a phone, after the first deck: on iOS the user taps Share, then Add to Home Screen. The upload dialog accepts `.csv` from the Files picker, and a paste box takes the CSV text. The phone gate becomes explicit. On iOS 26 a Home Screen site opens as a web app by default. A Home Screen web app receives web push since iOS 16.4 (read 2026-09-05).
@@ -983,7 +984,7 @@ The shell reads `h-dvh` and never `h-screen` (D-625). `100vh` on a phone is the 
 
 The free half holds. `src/lib/pwa.test.ts` reads every field an install rests on, and it reads the icon files: the manifest can not name a file nobody generated. Every button size carries a coarse-pointer minimum of 44 pixels, and a test reads each one. The install hint has five tests, and the paste box has one. 317 web tests pass, `make smoke` passes in 4.4 seconds, and `make verify` passes.
 
-**The phone walk is the paid half, and it costs no money.** The owner opens `decktome.com` on the phone, adds it to the Home Screen, opens it from there with the network off, and walks the path. Two things need a real phone: the install itself, and the chat input above the keyboard.
+**The phone walk passed on 2026-09-08** (D-627). The install works, the app opens with no browser chrome, the page reads up and down alone, and the chat input stays above the keyboard. The walk found four faults on the way, and every one is fixed and deployed: F-82, F-83, D-625, and D-626.
 > *In plain English:* the app becomes something you add to your phone's home screen and open like any other app. It starts with no signal, and the collection file from ManaBox goes in with two taps.
 
 **PR-26: The return channels (OQ-67).** ❓ needs owner input on the channels and the events. Stage B of the proposal.
