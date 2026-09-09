@@ -548,9 +548,15 @@ func conversations() []conversation {
 	for _, k := range []string{"format", "theme"} {
 		cAragorn.ctx.Filled[k] = true
 	}
+	// The row waits for the power: it offers the best three at the power
+	// the reader picked, and an offer made before that answer ranks for
+	// nothing (D-630). So the power goes out first, and the commander
+	// row follows in the turn after it.
 	cAragorn.steps = []step{
-		{want: []string{"commander_unresolved", "power_commander", "colors"},
-			fill: []string{"commander_unresolved", "commander", "power", "colors"},
+		{want: []string{"power_commander", "colors"},
+			fill: []string{"power", "colors"}},
+		{want: []string{"commander_unresolved"},
+			fill: []string{"commander_unresolved", "commander"},
 			set: func(c *Context) {
 				c.CommanderUnresolved, c.CommanderSet = false, true
 			}},

@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"log/slog"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -102,8 +103,10 @@ func TestResolveCommanderRanksOnTheSignalAtBracketFive(t *testing.T) {
 // no build until the reader picks a card.
 func TestAPartialCommanderNameAsksWhichCard(t *testing.T) {
 	h := &CandidateHints{Index: aragornIndex()}
+	// The row offers the best three at the power the reader picked, so it
+	// waits for the power (D-606, D-630). The reader names it here.
 	out := classifyOut{Format: "commander", Theme: "humans", PoolRule: "unknown",
-		CommanderNames: []string{"Aragorn"}}
+		Power: "bracket 4", CommanderNames: []string{"Aragorn"}}
 	a, _ := testAgentHints(t, h, classifyStep(t, out),
 		fits(t, "commander_unresolved", "power_commander"), askStep(t))
 	st := NewState(false)
@@ -232,4 +235,47 @@ func commanderRowAsked(t *testing.T) (*Agent, *State) {
 		"Aragorn, King of Gondor", "Aragorn, Company Leader", "Aragorn, the Uniter"})
 	asked(st, "q1-commander_unresolved", "commander_unresolved", "commander", SlotCommanderUnresolved)
 	return a, st
+}
+
+// TestTheOfferWaitsForThePower is D-630. The owner read session
+// XnY2uVuQkAL0VN9AeNCj, where one turn asked the power bracket and
+// offered three commanders at once. The offer ranks on the bracket: a
+// game changer leaves a bracket 1 or 2 list, and a bracket 4 or 5 list
+// ranks on the cEDH signal (PR-14B, OQ-48). So an offer made before the
+// power answer ranks for no power at all.
+func TestTheOfferWaitsForThePower(t *testing.T) {
+	cat := load(t)
+	for _, id := range []string{"commander_pick", "commander_unresolved"} {
+		row, ok := cat.Row(id)
+		if !ok {
+			t.Fatalf("no row %q", id)
+		}
+		if !slices.Contains(row.When.Requires, "power") {
+			t.Errorf("row %q does not wait for the power, so its offer ranks for none", id)
+		}
+	}
+
+	// The row that says a name matched nothing offers no card, so it
+	// needs no power and it asks at once.
+	unknown, _ := cat.Row("commander_unknown")
+	if slices.Contains(unknown.When.Requires, "power") {
+		t.Error("the row that offers no card waits for the power")
+	}
+
+	// A reader who named a commander this app can not settle must not be
+	// asked "which commander do you want" while that name waits. The
+	// plain row stands down until the name resolves.
+	plain, _ := cat.Row("commander")
+	if plain.When.CommanderUnresolved == nil || *plain.When.CommanderUnresolved {
+		t.Error("the plain commander row asks while an unresolved name waits")
+	}
+
+	// The power row waits for nothing of the commander, or the two rows
+	// wait for each other and neither goes out.
+	power, _ := cat.Row("power_commander")
+	for _, k := range power.When.Requires {
+		if strings.HasPrefix(k, "commander") {
+			t.Errorf("the power row waits for %q, and the commander offer waits for the power", k)
+		}
+	}
 }
