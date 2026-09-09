@@ -34,7 +34,7 @@ Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
 10. **Answer the review before you ask for a merge.** `gitar-bot` reviews every pull request (D-637). Wait for that review. Read each finding on its merit, and never on its tone.
    - A finding with merit takes a change. Make it, commit, push, and reply to the comment with what you changed.
    - A finding with no merit takes a reply that says why, and you resolve it.
-   - When no finding has merit, tell the owner the pull request is ready for the other harness to read.
+   - When no finding has merit, tell the owner the pull request is ready to merge. **Gitar is the only review this repo asks for.** No second harness reads it.
    - Repeat the cycle until the review holds nothing open. The owner merges.
 11. **Never hesitate to ask or to push back.** Ask a question the moment you have one. When the owner's two statements conflict, say so and quote both. When a request rests on a wrong premise, say so with the evidence. The owner sees this as the key to good LLM-user interaction. Silence is the mistake, not the question.
 
