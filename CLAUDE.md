@@ -6,13 +6,11 @@ Read this file first. Then read `docs/SESSION-HANDOFF.md`. It tells you where th
 
 This repo is a Go + Protobuf + TypeScript monorepo for an agentic MtG deck builder. The app reads a user's ManaBox collection export. The user gives a prompt. The agent asks questions, then builds a legal, useful deck.
 
-Stage (2026-09-07): **the app is live on `decktome.com`**, and PR #95 is the newest merge. A merge to `main` deploys itself on Cloud Build, and `make verify` runs every check on the Mac (D-584, D-586, D-588). Phase 3B, the product UI, is the current phase.
+Stage (2026-09-09): **the app is live on `decktome.com`**, and pull request #119 is the newest merge. A merge to `main` deploys itself on Cloud Build (D-584, D-586, D-588). Phase 3B, the product UI, is the current phase.
 
-Every PR through #95 is merged: PR-0a to PR-8, PR-7B, PR-10 to PR-24, and PR-27. PR-9 is out of the MVP (D-256). PR-25 and PR-28 wait for the build walk of the PR-22 gate. `docs/SESSION-HANDOFF.md` holds the moving parts of each one, and `docs/decisions.md` holds every decision behind them. This file names the stage, and it does not repeat them.
+**The whole PR-22 gate holds** (D-633), so PR-28 is free to run. Every PR through #119 is merged: PR-0a to PR-8, PR-7B, PR-10 to PR-25, PR-27, PR-32, PR-33, and PR-28a. PR-9 is out of the MVP (D-256). **PR-28 split into three** (D-636). PR-28a is the harvest, and it is merged. PR-28b is the triage and the new "must not ask" expectation, and PR-28c is the fix cycle. PR-26 waits on OQ-67, and PR-29 to PR-31 stand on the weak-axes plan.
 
-The deploy of 2026-09-07 and the first walks found F-57 to F-72. Every one is fixed. The four that shaped the code most follow. An uninvited reader read the whole app. An invite gate holds every page now, and the create-account form asks the list first (D-590, D-592). The classifier wrote over the card pool the reader chose, so the reader's choice wins now (D-591).
-
-A picked option reached its slot through the model as English. An option sets its slot as data now (D-597). A turn that asked nothing said nothing, so no turn is silent (D-598, D-599).
+Two rules of the deployed app come from 2026-09-09. **A verdict keeps the object it names** (D-635), because a reader deletes the deck or the chat they complained about, and the verdict outlives it. **Every user has a record** at `users/<uid>` (D-638): the verified email, the dates, and six counters of what they made. No harvest reads that record, and a test refuses the import that joins them.
 
 The look follows a reference design the owner gave on 2026-08-30 (D-328 to D-335). `docs/reference/autotune-readme.md` holds the loop commands.
 

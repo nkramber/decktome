@@ -8,27 +8,23 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-09)
 
-**The checkout.** `main` is `0a7517e`, which is pull request #113, merged on 2026-09-09. Run `make where` before you touch anything. Never commit on `main` (D-583).
+**The checkout.** `main` is `97fbdee`, which is pull request #119. Run `make where` before you touch anything. Never commit on `main` (D-583). Open a pull request, and answer the review of `gitar-bot` before you ask for a merge (D-637).
 
-**The app is live on `decktome.com`.** The deploy of `0a7517e` passed, and Cloud Run revision `mtg-api-00021-22m` serves the API. A merge to `main` deploys itself on Cloud Build (D-584, D-586).
+**The app is live on `decktome.com`.** The deploy of `97fbdee` passed, and Cloud Run revision `mtg-api-00026-srg` serves the API. A merge to `main` deploys itself on Cloud Build (D-584, D-586).
 
-**Question gate run 43 read FAIL, and it found a regression of D-630.** The offer waits for the power now (D-630). The net of D-351 closes a question the reader never answers, and `CloseStalled` did not fill the key. So the offer waited for a power that never arrived, and one conversation built a deck with no commander asked. A `Requires` slot reads the skipped keys beside the filled ones now (D-631).
+**The repository is public** (D-639, D-640). Write no reader's words, no email, and no personal address into a file, an issue, or a pull request. Every pull request runs the whole verify workflow, because the Actions minutes cost nothing. `.gitignore` holds `docs/reference/feedback/`, so no harvest file ever enters the repository.
 
-**Run 43 also read 74 of 74 catalog-only**, against a bar of 64. Run 42 read 73 of 74. So the catalog measure improved, and the failure sat on the premature check alone.
+**PR-28a is merged, and PR-28b is next** (D-635, D-636). PR-28 split into three, one concern each. The harvest reads every verdict since the last watermark and writes a dated document and a JSONL file. **A verdict keeps the object it names**, because a reader deletes the deck or the chat they complained about. PR-28b is the triage, the ten classes, the artifact writers, and the new "must not ask" expectation of the question gate.
 
-**Question gate run 44 reads PASS**, at 73 of 74 and $0.194. No conversation calls itself complete with a slot unanswered. `make eval-check` reads PASS for the questions suite, and run 44 is the newest whole run. CAUTION: run 44 does not prove the stall path. The classifier read the bracket that time, so the net never closed the power question. `TestTheNetReleasesTheOffer` is the deterministic proof.
+**Every user has a record** at `users/<uid>` (D-638). It holds the verified email, the creation date, and the last active time. It holds six counters: decks, deck revisions, collections, chats, and the verdicts up and down. Every counter counts a creation, so a deleted deck does not lower one. The owner ran `make users-backfill` on 2026-09-09.
 
-**The upgrade probe measured D-628, and it refuted the estimate of D-629** (2026-09-09, D-632, F-85). The bands answered 1 of the 8 upgrade findings, and D-629 estimated 7. The Turtle Power precon leaves 18 free slots under the share rule of D-218, and the role minimums need 17 cards. So an upgrade that meets every band adds no card of the theme. **The owner parked it**: one precon is not enough to change a product rule. `docs/reference/pr8-deck-gate-upgrade-probe-1.md` holds the run.
+**The whole PR-22 gate holds** (D-633). The measured cost at idle reads $9.54 a month gross, and the hourly snapshot tick of D-634 leaves $3.81.
 
-**The PR-22 gate holds in full, and PR-28 is free to start** (2026-09-09, D-633). The fourth item was the measured monthly cost at idle. No billing export exists on the project. So the session measured each component against its published rate. That reads **$9.54 a month gross, and $5.58 after the Cloud Run free tier**. The snapshot cron held 80 percent of it, so the tick runs hourly now and the cost falls to $3.81 (D-634, F-86).
+**What waits on the owner.** OQ-67, the Stage B channels. OQ-77, the blocking function of Identity Platform. OQ-79, the commander of an owned-only pool.
 
-**Every user has a record now** (2026-09-09, D-638). `users/<uid>` holds the verified email, the creation date, and the last active time. It holds six counters: decks, deck revisions, collections, chats, and the verdicts up and down. Every counter counts a creation, so a deleted deck does not lower one. `make users-backfill` seeds it from what a user holds, and `-dry` counts alone. **No harvest reads this record**, and a test refuses the import that joins them (D-559).
+**CAUTION: the evidence OQ-79 waits for is not on the deployed project.** `make read-session SESSION=23rplEQAMA0mtJ3QFtKO` answers `no sessions ... over 1 user(s)`, and the deck it names is gone as well. The script reads every user of the project. So a fresh owned-only build on the deployed app is the way to the evidence.
 
-**The repository is public now** (2026-09-09, D-639, D-640). Every pull request runs the whole verify workflow, because the minutes cost nothing. **No harvest file enters the repository**: `.gitignore` holds `docs/reference/feedback/`, because a harvest carries what a reader wrote. Two personal addresses left the history on 2026-09-09, through `git-filter-repo` and a force push.
-
-**What waits on the owner.** OQ-67, the Stage B channels. OQ-77, the blocking function of Identity Platform. OQ-79, the commander of an owned-only pool. The measured monthly cost at idle, which is the fourth PR-22 gate item.
-
-**CAUTION: the evidence OQ-79 waits for is not on the deployed project.** `make read-session SESSION=23rplEQAMA0mtJ3QFtKO` answers `no sessions ... over 1 user(s)`. The script reads every user of the project. So a fresh owned-only build on the deployed app is the way to the evidence.
+**CAUTION: a local `make verify` is not the whole story.** It read green for weeks while shellcheck failed, because the recipe took the `||` branch on a finding (F-89, D-641). Every pull request runs the workflow now, and the two answer the same question.
 
 ## How to resume
 
@@ -62,22 +58,23 @@ Seven things a fresh session gets wrong without this file.
 - Card snapshot on disk: `.local/gcs/mtg-local-cards/scryfall/20260904T210157`, the newest of 13. Read 2026-09-09. Check every card fact against it.
 - LLM model ids and prices: `roles.json` and `prices.json`, verified 2026-08-24. The max output per provider in `llm/client.go`, verified 2026-08-29. The OpenAI rows are unverified by anyone but the owner. The judge role runs on Opus 5 (D-430).
 - The deck gate upgrade probe cost $0.32 for 2 prompts, 7 calls, and 266 seconds. A partial run reads its own item bars and never stands as the gate (D-526).
-- Run cost, read from the run files on 2026-09-09. The question gate cost $0.190 on run 42, $0.193 on run 43, and $0.194 on run 44, over 18 to 21 minutes. The eval cost $0.092 on run 34 and $0.096 on run 35, over 12 to 14 minutes. The deck gate cost $2.71 on run 18, over 37 minutes. The revise gate cost $1.07 on run 9. The bracket gate judge lane cost $0.28.
+- Run cost, read from the run files on 2026-09-09. The question gate cost $0.190 on run 42, $0.193 on run 43, and $0.194 on run 44, over 18 to 21 minutes. The deck gate upgrade probe cost $0.32 for 2 prompts. The eval cost $0.092 on run 34 and $0.096 on run 35, over 12 to 14 minutes. The deck gate cost $2.71 on run 18, over 37 minutes. The revise gate cost $1.07 on run 9. The bracket gate judge lane cost $0.28.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
-- The feedback store holds 3 verdicts on 2026-09-09, and every one predates the snapshot of D-635. A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
+- The feedback store holds 3 verdicts on 2026-09-09, and every one predates the snapshot of D-635. `make feedback-list VERDICT=` reads both verdicts now (F-87). A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
 - Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 18, revise is run 9. Run 44 is the newest whole questions run, and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline.
 - Toolchain: Go 1.27.0, Node 22.23.2, pnpm 9.2.0, firebase-tools 14.14.0, Java 17, Playwright 1.62.1 with its Chromium headless shell (`playwright install chromium`). The first three were verified 2026-09-09.
 
 ## Next steps, in order
 
-1. **PR-28a, the feedback harvest** (D-557 to D-559, D-635, D-636). PR-28 splits into three, one concern each (D-636). The PR-22 gate holds in full now (D-633), so nothing blocks it. D-635 holds the snapshot, and its tests pass. PR-28a holds the harvest command, the watermark, the document writer, and the emulator gate. `make feedback-harvest` reads the deployed project and writes a dated document and a JSONL file. PR-28b is the triage and the new "must not ask" expectation. PR-28c is the fix cycle.
-2. **The next whole deck gate run is still run 19, and it is still outstanding.** It makes the next decks baseline, and no deck-build change waits on one now. The upgrade probe of 2026-09-09 already measured D-628, so the band question needs no whole run (D-632). Watch F-85 on every later upgrade: a second precon of the same shape reopens it.
-3. **OQ-79 needs runtime evidence.** No fix goes in without it, and the session it names is not readable. A fresh owned-only build on the deployed app is the way to it.
-4. **PR-29, the casual corpus**, stands on the weak-axes plan (D-567, D-568). Read `docs/reference/weak-axes-2026-09-07.md` first. No bar moves (D-486), and no weight changes by hand. PR-30 follows, and PR-31 parks (D-573).
-5. **The weekly EDHREC read** falls on 2026-09-14 (D-499, D-565). Run `make meta-refresh`, then `make quality-gate` to a new `QUALITY_GATE_OUT`.
-6. **The meta job runs already.** The `mtg-meta` job and the `mtg-meta-schedule` cron at 06:00 UTC both run, and the schedule reads ENABLED. A run takes about 1170 seconds and costs $1.83 a month (2026-09-09). No infra file in this repo holds either schedule (D-492).
-7. **PR-26, the return channels**, waits on OQ-67.
+1. **PR-28b, the triage and the cases** (D-557 to D-559, D-636). PR-28a is merged, so this is next in the sequence. The judge role names one of ten classes for each thumbs down, and each class writes one artifact. **The "must not ask" expectation is new code.** `Expect` today is one map of strings, and it names the value a slot must end with. The new one names a row that must not fire. A class that meets an owner decision writes a row to `docs/owner-questions.md` and makes no fix. The gate is a dry triage over ten fixture items.
+2. **Let real feedback arrive first, if you want it.** The three verdicts on record predate the snapshot of D-635, so they carry no context. PR-28b built against them alone works from fixtures. Nothing forces the wait, and it is a quality call about the triage.
+3. **The next whole deck gate run is still run 19, and it is still outstanding.** It makes the next decks baseline, and no deck-build change waits on one now. The upgrade probe of 2026-09-09 already measured D-628 (D-632).
+4. **OQ-79 needs runtime evidence.** No fix goes in without it, and neither the session nor the deck it names is readable. A fresh owned-only build on the deployed app is the way to it.
+5. **PR-29, the casual corpus**, stands on the weak-axes plan (D-567, D-568). Read `docs/reference/weak-axes-2026-09-07.md` first. No bar moves (D-486), and no weight changes by hand. PR-30 follows, and PR-31 parks (D-573).
+6. **The weekly EDHREC read** falls on 2026-09-14 (D-499, D-565). Run `make meta-refresh`, then `make quality-gate` to a new `QUALITY_GATE_OUT`.
+7. **The meta job runs already.** The `mtg-meta` job and the `mtg-meta-schedule` cron at 06:00 UTC both run, and the schedule reads ENABLED. A run takes about 1170 seconds and costs $1.83 a month (2026-09-09). No infra file in this repo holds either schedule (D-492).
+8. **PR-26, the return channels**, waits on OQ-67.
 
 CAUTION: `make revise-gate | tee` hides the exit code. Read the verdict line of the document, never the exit code of a pipe.
 
@@ -87,13 +84,21 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 ## The ten most recent sessions
 
-### 2026-09-09: the regression of D-630, and this restructure
+### 2026-09-09: the review process, the user record, and a public repository
 
-Pull request #113 merged, and its deploy passed as revision `mtg-api-00021-22m`. Question gate run 43 read FAIL on the premature check, and the catalog measure rose to 74 of 74. The cause was D-630: `Skip` fills a key and `CloseStalled` does not, so the commander offer waited for a power the net had closed. A `Requires` slot reads the skipped keys now (D-631). Run 44 reads PASS at 73 of 74, and the premature check is clean.
+Seven pull requests merged, #113 to #119.
 
-PR-28 split into three (D-636), and PR-28a began. A verdict keeps the object it names now, because a reader deletes it and the verdict outlives it (D-635).
+**The question workflow.** Gate run 43 read FAIL and found a regression of D-630. `Skip` fills a key and `CloseStalled` does not. So the commander offer waited for a power the net closed. A `Requires` slot reads the skipped keys now (D-631). Run 44 reads PASS.
 
-The PR-22 gate closed on a measured cost at idle of $9.54 a month, and the snapshot cron held 80 percent of it (D-633, D-634, F-86). The tick runs hourly now, and PR-28 is free to start. The upgrade probe measured D-628 for $0.32, and it refuted the estimate of D-629. The owner parked F-85 for want of a second precon (D-632). This file moved its older records to `docs/reference/session-handoff-archive.md`.
+**The decks.** The upgrade probe measured D-628 for $0.32 and refuted the estimate of D-629: the bands answered 1 of the 8 upgrade findings, not 7. The Turtle Power precon leaves 18 free slots and the role minimums need 17, so an in-band upgrade adds no card of the theme. The owner parked F-85 for want of a second precon (D-632).
+
+**The money.** The PR-22 gate closed on a measured cost at idle of $9.54 a month gross (D-633). The snapshot cron held 80 percent of it, and every tick paid a container start to learn there was nothing to do (F-86). The tick runs hourly now, which leaves $3.81 (D-634).
+
+**PR-28a.** PR-28 split into three (D-636). A verdict keeps the object it names, because a reader deletes the deck or the chat they complained about (D-635). `make feedback-harvest` writes a dated document and a JSONL file, and the watermark comes from those files.
+
+**The user record.** `users/<uid>` holds the email, the dates, and six counters (D-638). The owner ran the backfill.
+
+**The process and the repository.** `gitar-bot` reviews every pull request, and the session answers each finding before it asks for a merge (D-637). The repository went public: every pull request runs the whole workflow (D-639), and no harvest file enters the repository (D-640). The first pull request on Actions found two broken checks. No pull request ran either one before that day (D-641, F-89).
 
 ### 2026-09-08: PR-32, PR-33, PR-25, and four walks
 
