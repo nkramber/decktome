@@ -21,6 +21,7 @@ import (
 	"github.com/nkramber/decktome/go/internal/gzstore"
 	"github.com/nkramber/decktome/go/internal/questions"
 	"github.com/nkramber/decktome/go/internal/sessions"
+	"github.com/nkramber/decktome/go/internal/users"
 )
 
 // MaxTextBytes caps the "Other" text. It is the message cap of the chat,
@@ -46,6 +47,10 @@ type DeckSource interface {
 // Option tunes the server.
 type Option func(*Server)
 
+// WithUsers counts the verdicts a reader gives on the user record
+// (D-638).
+func WithUsers(n users.Noter) Option { return func(s *Server) { s.users = n } }
+
 // WithClock replaces time.Now (tests).
 func WithClock(now func() time.Time) Option {
 	return func(s *Server) { s.now = now }
@@ -59,6 +64,9 @@ type Server struct {
 	decks    DeckSource
 	userFn   auth.UserFunc
 	now      func() time.Time
+	// users counts the verdicts a reader gives (D-638). A nil one
+	// records nothing, which is what every test wires.
+	users users.Noter
 }
 
 // New wires the service. Every source is needed: a question verdict
@@ -127,6 +135,11 @@ func (s *Server) SubmitFeedback(ctx context.Context, req *connect.Request[mtgv1.
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
+	counter := users.FeedbackUp
+	if item.Verdict == "down" {
+		counter = users.FeedbackDown
+	}
+	users.NoteQuietly(ctx, s.users, uid, auth.Email(ctx), counter, s.now())
 	return connect.NewResponse(&mtgv1.SubmitFeedbackResponse{FeedbackId: id}), nil
 }
 

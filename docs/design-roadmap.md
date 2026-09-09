@@ -208,6 +208,7 @@ We sequence the program so that each layer is testable before the next one exist
 |---|---|---|---|---|---|
 | `cards` service (card database) | Go | Scryfall snapshot, legalities, Oracle tags, images URIs | Scryfall bulk daily | Firestore `cards/`, GCS snapshot | High - every legality answer comes from here |
 | `collections` service | Go | ManaBox import, ownership counts per Oracle ID | User CSV upload | Firestore `users/{uid}/collections/` | High - PII-adjacent, user data |
+| `users` record | Go | One document per user: the counters of what they made, the creation date, the last active time, and the verified email (D-638) | `auth` for the email, and every service that makes something | Firestore `users/{uid}` | High - it holds an address. **No harvest reads it** (D-559, D-638) |
 | `rules` engine (library) | Go | Format rules, deck validation, bracket rules, color identity | `cards` | none | Total - the last gate before the user |
 | `profile` (bracket profile, library) | Go | The bands per bracket, the feature vector, the goldfish simulation, the content check (PR-14A) | `cards`, `rules`, Commander Spellbook | none | High - it says what a bracket means |
 | `agent` service | Go | Turn-based chat, question workflow, deck generation, LLM role layer | `cards`, `collections`, `rules`, `meta` | Firestore `users/{uid}/sessions/`, `decks/` | High - the product |

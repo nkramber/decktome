@@ -387,14 +387,17 @@ feedback-list: ## Read the newest verdicts of every user: make feedback-list [VE
 feedback-harvest: ## Write every verdict since the last harvest to docs/reference/feedback/: make feedback-harvest [SINCE=2026-09-01] [HARVEST_ARGS=-dry]
 	@PROJECT_ID=$${FEEDBACK_PROJECT:-decktome-prod} $(GO) run ./cmd/feedback-harvest -root $(CURDIR) $(if $(SINCE),-since $(SINCE),) $(HARVEST_ARGS)
 
+users-backfill: ## Seed the user record from what each user already holds: make users-backfill [BACKFILL_ARGS=-dry]
+	@PROJECT_ID=$${FEEDBACK_PROJECT:-decktome-prod} $(GO) run ./cmd/users-backfill $(BACKFILL_ARGS)
+
 read-session: ## Read one chat session of the deployed project for debugging: make read-session SESSION=<id> [UID=<uid>]
 	@[ -n "$(SESSION)" ] || { echo "read-session: set SESSION=... to the session id"; exit 1; }
 	@scripts/read-session.sh "$(SESSION)" $(UID)
 
-store-check: ## Run the session, deck, collection, usage, allowlist, and feedback stores against the local Firestore emulator (needs `firebase emulators:start --only firestore`)
+store-check: ## Run the session, deck, collection, usage, allowlist, feedback, and user stores against the local Firestore emulator (needs `firebase emulators:start --only firestore`)
 	@nc -z 127.0.0.1 8281 2>/dev/null || \
 		{ echo "no Firestore emulator on :8281. Start one: firebase emulators:start --only firestore --project mtg-local"; exit 1; }
-	@FIRESTORE_EMULATOR_HOST=127.0.0.1:8281 $(GO) test ./internal/sessions ./internal/usage ./internal/allowlist ./internal/feedback ./internal/decks ./internal/collections -count=1
+	@FIRESTORE_EMULATOR_HOST=127.0.0.1:8281 $(GO) test ./internal/sessions ./internal/usage ./internal/allowlist ./internal/feedback ./internal/users ./internal/decks ./internal/collections -count=1
 
 # --- The eval harness of PR-15 (free) -----------------------------------
 # EVAL_DIR holds the run files the gates write and baselines.json. The

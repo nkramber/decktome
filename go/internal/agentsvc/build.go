@@ -10,6 +10,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/internal/auth"
 	"github.com/nkramber/decktome/go/internal/candidates"
 	"github.com/nkramber/decktome/go/internal/cards"
 	"github.com/nkramber/decktome/go/internal/generate"
@@ -19,6 +20,7 @@ import (
 	"github.com/nkramber/decktome/go/internal/questions"
 	"github.com/nkramber/decktome/go/internal/revise"
 	"github.com/nkramber/decktome/go/internal/sessions"
+	"github.com/nkramber/decktome/go/internal/users"
 )
 
 // The build runs when every slot is answered. The question workflow
@@ -639,6 +641,14 @@ func (s *Server) storeDeck(ctx context.Context, uid string, session *mtgv1.Sessi
 		s.log.ErrorContext(ctx, "the deck was not stored", "session", session.GetId(), "deck", d.GetId(), "err", err)
 		return
 	}
+	// A revision writes a deck of its own, and it names the deck it came
+	// from. So the record counts a first build and a revision apart, and
+	// a reader who revises one deck five times made one deck (D-638).
+	counter := users.DecksCreated
+	if d.GetRevisedFromDeckId() != "" {
+		counter = users.DeckRevisions
+	}
+	users.NoteQuietly(sctx, s.users, uid, auth.Email(ctx), counter, s.now())
 	// The session was written before the build, so the deck id needs its
 	// own write. Without it AfterBuild stays false for the next turn
 	// (D-245).
