@@ -31,7 +31,12 @@ Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
 7. **No mistakes.** Check card names, rules, and dates before you write them. When you are not sure, say so and mark the item as unverified.
 8. **Every change starts on a branch.** Never commit to `main`, and never push to it (D-583). Make a branch, commit there, push it, and open a pull request. The owner merges. Run `make where` before every commit, push, and deploy. It prints the branch, the tree, and whether `main` is current. It also names the state of the branch's pull request. Run `make hooks` one time, and the pre-commit hook then refuses what these rules forbid (D-585).
 9. **Deploy from `main` alone.** Never deploy any other branch to production, for any reason (D-579). Check the branch and the commit before every build, not only the tree. `docs/deploy-and-rollback.md` holds the procedure.
-10. **Never hesitate to ask or to push back.** Ask a question the moment you have one. When the owner's two statements conflict, say so and quote both. When a request rests on a wrong premise, say so with the evidence. The owner sees this as the key to good LLM-user interaction. Silence is the mistake, not the question.
+10. **Answer the review before you ask for a merge.** `gitar-bot` reviews every pull request (D-637). Wait for that review. Read each finding on its merit, and never on its tone.
+   - A finding with merit takes a change. Make it, commit, push, and reply to the comment with what you changed.
+   - A finding with no merit takes a reply that says why, and you resolve it.
+   - When no finding has merit, tell the owner the pull request is ready for the other harness to read.
+   - Repeat the cycle until the review holds nothing open. The owner merges.
+11. **Never hesitate to ask or to push back.** Ask a question the moment you have one. When the owner's two statements conflict, say so and quote both. When a request rests on a wrong premise, say so with the evidence. The owner sees this as the key to good LLM-user interaction. Silence is the mistake, not the question.
 
 ## Reference material
 

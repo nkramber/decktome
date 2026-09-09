@@ -34,7 +34,8 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 4. Load the skills. Load `ste-writing` before you write any `.md`. Load `design-doc-style` before you edit the roadmap. Load `mtg-corpus` before you reason about a format, a legality, or a card term.
 5. Run `make verify`. It runs every check the verify workflow runs, on this machine, for nothing (D-578). Put Node 22.23.2 on the PATH first.
 6. Do "Next steps, in order" below. Ask questions as they come up. Record each owner answer in `docs/decisions.md`, and delete the row from `docs/owner-questions.md`.
-7. Before you end, update this file. Move the oldest session to the archive when the count passes ten.
+7. Open the pull request, then wait for the review of `gitar-bot` and answer it (D-637). A finding with merit takes a change, a commit, a push, and a reply. A finding with no merit takes a reply that says why, and you resolve it. Tell the owner when the pull request is ready for the other harness.
+8. Before you end, update this file. Move the oldest session to the archive when the count passes ten.
 
 A second Mac: `docs/setup-second-mac.md` holds what to carry, what to install, and how to prove the machine.
 

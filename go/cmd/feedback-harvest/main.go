@@ -40,7 +40,7 @@ func main() {
 func run() error {
 	root := flag.String("root", "..", "the repo root the harvest writes under")
 	since := flag.String("since", "", `read every verdict after this day, as 2006-01-02. Empty reads the watermark`)
-	limit := flag.Int("limit", 0, "read at most this many verdicts, oldest first. 0 reads every one")
+	limit := flag.Int("limit", 0, "write at most this many verdicts, the oldest after the watermark. 0 writes every one")
 	dry := flag.Bool("dry", false, "read and count, and write no file")
 	flag.Parse()
 

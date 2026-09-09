@@ -222,3 +222,81 @@ func TestSinceReadsTenSeededItems(t *testing.T) {
 		t.Errorf("a watermark at the 5th verdict read %d, want 5", n)
 	}
 }
+
+// TestALimitedHarvestLeavesNoGap locks F-88. The watermark of a harvest
+// is the newest time it wrote. So a chunk must hold the oldest rows
+// after the floor: a chunk of the newest rows moves the floor past every
+// row under it, and no later harvest reads those again.
+//
+// It walks chunks the way a harvest does, and it asks one thing of the
+// walk: every verdict of this run reaches it. The store holds the rows
+// of every other test as well, so a chunk carries what it carries. The
+// invariant holds either way, and it fails on the code F-88 names.
+func TestALimitedHarvestLeavesNoGap(t *testing.T) {
+	r := emulatorRepo(t)
+	ctx := context.Background()
+	uid := "u-" + time.Now().UTC().Format("150405.000000")
+	base := time.Date(2026, 9, 9, 18, 0, 0, 0, time.UTC)
+	// The rows go away with the test. Two runs seed the same instants
+	// under two users, and a floor that lands on one of them skips the
+	// other, because the read takes what is after it and not what is on
+	// it. A store that keeps the rows of the last run fails the next one.
+	t.Cleanup(func() {
+		docs, err := r.col(uid).Documents(context.Background()).GetAll()
+		if err != nil {
+			t.Logf("cleanup: %v", err)
+			return
+		}
+		for _, d := range docs {
+			if _, err := d.Ref.Delete(context.Background()); err != nil {
+				t.Logf("cleanup %s: %v", d.Ref.ID, err)
+			}
+		}
+	})
+
+	const seeded = 10
+	for i := range seeded {
+		item := Item{
+			Kind: "deck", Verdict: "down", UID: uid, DeckID: "d1",
+			Reasons:   []string{"off_spec"},
+			CreatedAt: base.Add(time.Duration(i) * time.Minute),
+		}
+		if _, err := r.Add(ctx, uid, item); err != nil {
+			t.Fatalf("add %d: %v", i, err)
+		}
+	}
+
+	// The floor starts under the first verdict, the way a watermark from
+	// an earlier harvest would.
+	floor := base.Add(-time.Second)
+	seen := map[string]bool{}
+	// Every chunk moves the floor forward, so the walk ends. The bound
+	// keeps a fault from running it for ever.
+	for chunk := 0; chunk < 50; chunk++ {
+		got, err := r.Since(ctx, floor, 5)
+		if err != nil {
+			t.Fatalf("chunk %d: %v", chunk, err)
+		}
+		if len(got) == 0 {
+			break
+		}
+		for i := 1; i < len(got); i++ {
+			if got[i].CreatedAt.Before(got[i-1].CreatedAt) {
+				t.Fatalf("chunk %d is not oldest first", chunk)
+			}
+		}
+		for _, it := range got {
+			if it.UID == uid {
+				seen[it.ID] = true
+			}
+		}
+		next := got[len(got)-1].CreatedAt
+		if !next.After(floor) {
+			t.Fatalf("chunk %d did not move the floor", chunk)
+		}
+		floor = next
+	}
+	if len(seen) != seeded {
+		t.Errorf("the walk read %d of the %d verdicts, and the rest fall under the watermark for good", len(seen), seeded)
+	}
+}

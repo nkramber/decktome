@@ -293,7 +293,10 @@ func (r *Repo) Down(ctx context.Context, verdict string, limit int) ([]Item, err
 // on the deployed project, and one unindexed query costs an index
 // deploy. Find carries the note on why that matters.
 //
-// A zero t reads every verdict the store holds.
+// A zero t reads every verdict the store holds. A limit bounds what the
+// caller writes and never what this reads, and it keeps the oldest rows
+// after t, so a harvest advances its watermark one chunk at a time and
+// leaves no gap under it.
 func (r *Repo) Since(ctx context.Context, t time.Time, limit int) ([]Item, error) {
 	var out []Item
 	for _, verdict := range []string{"down", "up"} {
@@ -305,9 +308,6 @@ func (r *Repo) Since(ctx context.Context, t time.Time, limit int) ([]Item, error
 				Where("verdict", "==", verdict).
 				Where("created_at", ">", t.UTC()).
 				OrderBy("created_at", firestore.Desc)
-		}
-		if limit > 0 {
-			q = q.Limit(limit)
 		}
 		snaps, err := q.Documents(ctx).GetAll()
 		if err != nil {
@@ -335,8 +335,16 @@ func (r *Repo) Since(ctx context.Context, t time.Time, limit int) ([]Item, error
 		}
 		return strings.Compare(a.ID, b.ID)
 	})
+	// The oldest, and never the newest. The watermark of a harvest is the
+	// newest time it wrote, so a chunk must be the oldest rows after the
+	// floor. A chunk of the newest rows moves the floor past every row
+	// under it, and no later harvest ever reads those (PR-28a, F-88).
+	//
+	// The read itself takes no limit for the same reason: a descending
+	// read of n answers the newest n, and the oldest rows after the floor
+	// are the ones this must not miss.
 	if limit > 0 && len(out) > limit {
-		out = out[len(out)-limit:]
+		out = out[:limit]
 	}
 	return out, nil
 }
