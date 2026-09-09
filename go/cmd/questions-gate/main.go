@@ -93,6 +93,11 @@ type conversation struct {
 	// slotValues (PR-15). A counted conversation with a miss fails the
 	// gate, and every miss is a row of the run.
 	Expect map[string]string `json:"expect,omitempty"`
+	// MustNotAsk names the catalog rows this conversation must never send
+	// (PR-28b, D-643). Expect names a value a slot must end with, and this
+	// names a row that must not fire. A fired row is a miss beside the
+	// others, so it fails the gate the same way.
+	MustNotAsk []string `json:"must_not_ask,omitempty"`
 }
 
 // builtSlots are the slots a finished build must have settled. A stored
@@ -222,6 +227,11 @@ func run(collectionPath string, limit int, only string, runOut string, w io.Writ
 	cat, err := questions.Load()
 	if err != nil {
 		return err
+	}
+	// A forbidden row the catalog does not hold is an expectation that can
+	// never fail, so the file is refused before the first paid call.
+	if err := checkRowIDs(file.Conversations, cat); err != nil {
+		return fmt.Errorf("conversations.json: %w", err)
 	}
 	quiet := gatekit.Quiet()
 	client, err := llm.NewFromEnv(gatekit.Env, quiet)
@@ -447,6 +457,7 @@ func runOne(cat *questions.Catalog, client *llm.Client, idx *cards.Index, builde
 	}
 	res.Values = slotValues(st)
 	res.Misses = checkExpect(conv.Expect, res.Values)
+	res.Misses = append(res.Misses, checkNotAsked(conv.MustNotAsk, res.Questions)...)
 	for _, keys := range required(st, conv.Collection) {
 		answered := false
 		for _, key := range keys {
@@ -601,14 +612,15 @@ func write(w io.Writer, file gateFile, results []result, cov coverages,
 		}
 	}
 	// The golden expectations are the fourth bar (PR-15): a counted
-	// conversation whose slots ended on other values than it names.
+	// conversation whose slots ended on other values than it names, or
+	// that asked a row it must never ask (PR-28b).
 	var missLines []string
 	expected := 0
 	for _, r := range results {
 		if r.Probe || r.HasDeck {
 			continue
 		}
-		if len(r.Expect) > 0 {
+		if len(r.Expect) > 0 || len(r.MustNotAsk) > 0 {
 			expected++
 		}
 		for _, m := range r.Misses {
@@ -772,12 +784,15 @@ func write(w io.Writer, file gateFile, results []result, cov coverages,
 			_, _ = fmt.Fprintf(w, "The slots were full after turn %d. The last %d messages never went out.\n\n",
 				r.Turns, len(r.Messages)-r.Turns)
 		}
-		if len(r.Expect) > 0 {
+		if len(r.Expect) > 0 || len(r.MustNotAsk) > 0 {
 			if len(r.Misses) > 0 {
 				_, _ = fmt.Fprintf(w, "Expected slots: %d misses. %s.\n\n", len(r.Misses), strings.Join(r.Misses, "; "))
 			} else {
 				_, _ = fmt.Fprintf(w, "Expected slots: every one met.\n\n")
 			}
+		}
+		if len(r.MustNotAsk) > 0 {
+			_, _ = fmt.Fprintf(w, "Rows it must never ask: %s.\n\n", strings.Join(r.MustNotAsk, ", "))
 		}
 		if len(r.Unanswered) > 0 {
 			label := "Slots the deck needs and nobody answered"
@@ -876,6 +891,21 @@ func recordRows(rec *evalrun.Run, results []result) {
 				rec.Gate(item, "slot_"+key, met, detail)
 			} else {
 				rec.Info(item, "slot_"+key, met, detail)
+			}
+		}
+		// One bar per forbidden row, so a compare names the row that
+		// started to fire and never a count (PR-28b).
+		for _, row := range r.MustNotAsk {
+			met, detail := 1.0, "the row never fired"
+			for _, m := range r.Misses {
+				if strings.HasPrefix(m, "must_not_ask: "+row+" ") {
+					met, detail = 0, m
+				}
+			}
+			if counted {
+				rec.Gate(item, "never_asked_"+row, met, detail)
+			} else {
+				rec.Info(item, "never_asked_"+row, met, detail)
 			}
 		}
 		rec.Info(item, "catalog_only", float64(r.Coverage.CatalogOnly), r.kind())

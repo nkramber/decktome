@@ -1,11 +1,15 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"strings"
 	"testing"
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/internal/harvest"
 	"github.com/nkramber/decktome/go/internal/questions"
+	"github.com/nkramber/decktome/go/internal/triage"
 )
 
 // TestSlotValuesWriteTheVocabulary pins the words an expectation uses.
@@ -98,5 +102,116 @@ func TestCheckExpectNamesTheMiss(t *testing.T) {
 	}
 	if m := checkExpect(map[string]string{"colors": "none"}, values); len(m) != 1 || m[0] != "colors: want none, got WB" {
 		t.Errorf("none misses a filled slot: %v", m)
+	}
+}
+
+// TestAForbiddenRowThatFiresIsAMiss reads the "must not ask" expectation
+// of PR-28b. A row the conversation forbids fails the gate when it
+// fires, and one that never fires reads clean.
+func TestAForbiddenRowThatFiresIsAMiss(t *testing.T) {
+	asks := []asked{
+		{Turn: 1, Row: "format"},
+		{Turn: 2, Row: "power_commander"},
+		{Turn: 3, Row: "power_commander"},
+	}
+	got := checkNotAsked([]string{"power_commander"}, asks)
+	if len(got) != 1 {
+		t.Fatalf("misses = %v, want one", got)
+	}
+	// The first firing is the miss, and a row that fires twice is still
+	// one miss: the report names the row and not the count.
+	if !strings.Contains(got[0], "power_commander") || !strings.Contains(got[0], "turn 2") {
+		t.Errorf("miss = %q, want the row and turn 2", got[0])
+	}
+	if got := checkNotAsked([]string{"budget"}, asks); len(got) != 0 {
+		t.Errorf("a row that never fired gave %v, want none", got)
+	}
+	if got := checkNotAsked(nil, asks); len(got) != 0 {
+		t.Errorf("no expectation gave %v, want none", got)
+	}
+}
+
+// TestAForbiddenRowMustExist refuses a row id the catalog does not hold.
+// A typo would make an expectation that can never fail, and the gate
+// would spend a run to learn nothing.
+func TestAForbiddenRowMustExist(t *testing.T) {
+	cat, err := questions.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	good := []conversation{{ID: 1, MustNotAsk: []string{"power_commander", "budget"}}}
+	if err := checkRowIDs(good, cat); err != nil {
+		t.Errorf("real rows were refused: %v", err)
+	}
+	bad := []conversation{{ID: 7, MustNotAsk: []string{"no_such_row"}}}
+	err = checkRowIDs(bad, cat)
+	if err == nil {
+		t.Fatal("a row the catalog does not hold was accepted")
+	}
+	if !strings.Contains(err.Error(), "no_such_row") || !strings.Contains(err.Error(), "7") {
+		t.Errorf("error = %v, want the row and the conversation", err)
+	}
+}
+
+// TestEveryForbiddenRowOfTheGateFileExists reads the shipped file, so a
+// bad row id fails a free test and never a paid run.
+func TestEveryForbiddenRowOfTheGateFileExists(t *testing.T) {
+	cat, err := questions.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var file gateFile
+	if err := json.Unmarshal(conversationsJSON, &file); err != nil {
+		t.Fatal(err)
+	}
+	if err := checkRowIDs(file.Conversations, cat); err != nil {
+		t.Error(err)
+	}
+}
+
+// TestTheCaseShapeMatchesTheGateFile pins the mirror struct of the
+// triage against this file's own struct (PR-28b). The triage writes a
+// conversation from a reader's verdict, and it can not import this
+// package, so it holds a mirror of the shape. A field renamed here and
+// not there would write the old name, and the case would lose that
+// field with nothing to say so.
+//
+// The decoder refuses an unknown field, so the mirror may name no field
+// this struct does not read.
+func TestTheCaseShapeMatchesTheGateFile(t *testing.T) {
+	rec := harvest.Record{
+		ID: "f1", Kind: "question", Verdict: "down",
+		Reasons: []string{"already_answered"}, Text: "You asked me that already.",
+		QuestionID: "q3-power_commander",
+		Session: json.RawMessage(`{"id":"s1","collectionId":"c1",` +
+			`"slots":{"format":{"id":"FORMAT_ID_COMMANDER"},"theme":"lifegain"},` +
+			`"turns":[{"userMessage":"Build me a lifegain deck."}]}`),
+	}
+	c, err := triage.CaseOf(triage.RouteOf(rec), 999, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.Target != "go/cmd/questions-gate/conversations.json" {
+		t.Fatalf("the case joins %q, and this test guards another file", c.Target)
+	}
+	dec := json.NewDecoder(bytes.NewReader(c.Body))
+	dec.DisallowUnknownFields()
+	var got conversation
+	if err := dec.Decode(&got); err != nil {
+		t.Fatalf("the triage wrote a field this gate does not read: %v\n%s", err, c.Body)
+	}
+	// Every field the mirror fills must land, so a renamed tag fails here
+	// and not in a paid run.
+	if got.ID != 999 || got.Name == "" || got.Note == "" || !got.Collection {
+		t.Errorf("the case lost a field: %+v", got)
+	}
+	if len(got.Messages) != 1 || got.Messages[0] != "Build me a lifegain deck." {
+		t.Errorf("messages = %v", got.Messages)
+	}
+	if got.Expect["theme"] != "lifegain" || got.Expect["format"] != "commander" {
+		t.Errorf("expect = %v", got.Expect)
+	}
+	if len(got.MustNotAsk) != 1 || got.MustNotAsk[0] != "power_commander" {
+		t.Errorf("must_not_ask = %v", got.MustNotAsk)
 	}
 }

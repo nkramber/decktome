@@ -63,6 +63,13 @@ type prompt struct {
 	// (D-408). The binder must hold each one whole, or the prompt fails.
 	ExcludePrecons []string `json:"exclude_precons"`
 	Locked         []string `json:"locked"`
+	// MustNotInclude names the cards this deck must never hold, and
+	// MustOwnAll asks that the reader owns every card of it (PR-28b,
+	// D-643). A prompt written from a reader's verdict carries the fault
+	// the reader met, so a failed assertion is a block and never a note.
+	// A basic land never counts against MustOwnAll (D-37).
+	MustNotInclude []string `json:"must_not_include,omitempty"`
+	MustOwnAll     bool     `json:"must_own_all,omitempty"`
 	// Precon names a preconstructed deck the build must keep a share of
 	// (D-218, D-247).
 	Precon string  `json:"precon"`
@@ -169,7 +176,7 @@ func run() error {
 	run.Header.Only = *only
 	run.Header.Prompts["generate"] = generate.PromptVersion
 	run.Header.Prompts["plan_rubric"] = generate.PlanRubricVersion
-	run.LowerIsBetter("blocks", "invented_names", "false_rules", "judge_error", "excluded_in_deck", "warnings", "repaired", "buy_cost", "deck_cost")
+	run.LowerIsBetter("blocks", "invented_names", "false_rules", "judge_error", "excluded_in_deck", "warnings", "repaired", "buy_cost", "deck_cost", "case_assertions")
 	quiet := gatekit.Quiet()
 	idx, err := gatekit.LoadSnapshot(context.Background(), quiet)
 	if err != nil {

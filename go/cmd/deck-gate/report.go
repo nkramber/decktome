@@ -13,6 +13,7 @@ import (
 	"github.com/nkramber/decktome/go/internal/gatekit"
 	"github.com/nkramber/decktome/go/internal/generate"
 	"github.com/nkramber/decktome/go/internal/llm"
+	"github.com/nkramber/decktome/go/internal/profile"
 	"github.com/nkramber/decktome/go/internal/rules"
 )
 
@@ -50,16 +51,22 @@ func report(w io.Writer, rs []result, acc *llm.Accumulator, idx *cards.Index, to
 			}
 		}
 	}
+	// A case prompt from the feedback triage carries the fault the reader
+	// met, so a failed assertion is a bar of its own (PR-28b).
+	assertMisses := 0
+	for _, r := range rs {
+		assertMisses += len(checkAsserts(r, idx))
+	}
 	// F-26 is a bar and not a footnote: the deterministic linter can not
 	// read the truth of a rules claim (D-229). A deck the judge could not
 	// read has no verdict on that bar, so it can not pass it (T-17).
-	pass := len(rs) > 0 && errs == 0 && built == len(rs) && clean == built && notes == 0 && falseRules == 0 && judgeErrs == 0
+	pass := len(rs) > 0 && errs == 0 && built == len(rs) && clean == built && notes == 0 && falseRules == 0 && judgeErrs == 0 && assertMisses == 0
 	verdict := "FAIL"
 	if pass {
 		verdict = "PASS"
 	}
 	rep := acc.Report()
-	recordRows(run, rs)
+	recordRows(run, rs, idx)
 	run.Finish(rep, took, verdict)
 	_, _ = fmt.Fprintf(w, "# PR-8 deck gate\n\n")
 	_, _ = fmt.Fprintf(w, "Run date: %s. Card snapshot: %s.\n\n", time.Now().UTC().Format("2006-01-02"), idx.AsOf.Format("2006-01-02"))
@@ -85,6 +92,7 @@ func report(w io.Writer, rs []result, acc *llm.Accumulator, idx *cards.Index, to
 	_, _ = fmt.Fprintf(w, "| Summaries that state a rule of the game | %d |\n", statesRule)
 	_, _ = fmt.Fprintf(w, "| Summaries that state a FALSE rule | %d |\n", falseRules)
 	_, _ = fmt.Fprintf(w, "| Judge errors | %d |\n", judgeErrs)
+	_, _ = fmt.Fprintf(w, "| Case assertions missed (PR-28b) | %d |\n", assertMisses)
 	planJudged, planScore, planEmpty := planTotals(rs)
 	_, _ = fmt.Fprintf(w, "| Decks the plan judge read (PR-15, information) | %d |\n", planJudged)
 	if planJudged > 0 {
@@ -124,6 +132,7 @@ func report(w io.Writer, rs []result, acc *llm.Accumulator, idx *cards.Index, to
 	_, _ = fmt.Fprintf(w, "\n\n")
 	setReport(w, rs)
 	exclusionReport(w, rs)
+	assertReport(w, rs, idx)
 	_, _ = fmt.Fprintf(w, "## Decks\n\n")
 	for _, r := range rs {
 		writeDeck(w, r, idx)
@@ -279,7 +288,7 @@ func exclusionReport(w io.Writer, rs []result) {
 // recordRows writes one row per bar per deck into the run, and the
 // information rows beside them (PR-15). A gate row carries a bar of the
 // verdict, so a compare names the deck that flipped and never a count.
-func recordRows(run *evalrun.Run, rs []result) {
+func recordRows(run *evalrun.Run, rs []result, idx *cards.Index) {
 	for _, r := range rs {
 		item := fmt.Sprintf("%d", r.prompt.ID)
 		if r.err != nil {
@@ -297,6 +306,12 @@ func recordRows(run *evalrun.Run, rs []result) {
 		}
 		run.Gate(item, "blocks", float64(len(codes)), strings.Join(codes, ", "))
 		run.Gate(item, "invented_names", float64(len(r.notes)), strings.Join(r.notes, " | "))
+		// A case prompt of the feedback triage carries an assertion, and
+		// a prompt with none records no row (PR-28b).
+		if len(r.prompt.MustNotInclude) > 0 || r.prompt.MustOwnAll {
+			misses := checkAsserts(r, idx)
+			run.Gate(item, "case_assertions", float64(len(misses)), strings.Join(misses, "; "))
+		}
 		switch {
 		case r.judgeErr != nil:
 			run.Gate(item, "judge_error", 1, r.judgeErr.Error())
@@ -387,4 +402,88 @@ func planTotals(rs []result) (judged int, mean float64, empty int) {
 		mean = sum / float64(judged)
 	}
 	return judged, mean, empty
+}
+
+// checkAsserts reads the assertions of a case prompt (PR-28b, D-643).
+// The triage of the feedback loop writes a prompt from a reader's
+// verdict, and the assertion is the fault the reader met: the card the
+// build must not pick again, or a deck the reader owns whole. A prompt
+// that names neither reads no assertion at all.
+//
+// A basic land never counts against the ownership assertion, because a
+// basic is always available (D-37). A miss reads "holds X" or "does not
+// own X", and the report and the verdict take it as a block: a case that
+// reports its own fault and passes measures nothing.
+func checkAsserts(r result, idx *cards.Index) []string {
+	if r.deck == nil || (len(r.prompt.MustNotInclude) == 0 && !r.prompt.MustOwnAll) {
+		return nil
+	}
+	all := append(append([]*mtgv1.DeckCard{}, r.deck.GetCards()...), r.deck.GetSideboard()...)
+	held := map[string]bool{}
+	for _, dc := range all {
+		held[strings.ToLower(strings.TrimSpace(dc.GetName()))] = true
+	}
+	for _, id := range r.deck.GetCommanderOracleIds() {
+		if c, ok := idx.ByOracleID(id); ok {
+			held[strings.ToLower(c.GetName())] = true
+		}
+	}
+	var out []string
+	for _, name := range r.prompt.MustNotInclude {
+		if held[strings.ToLower(strings.TrimSpace(name))] {
+			out = append(out, "holds "+name)
+		}
+	}
+	if r.prompt.MustOwnAll {
+		seen := map[string]bool{}
+		for _, dc := range all {
+			if dc.GetOwned() || seen[dc.GetOracleId()] {
+				continue
+			}
+			if c, ok := idx.ByOracleID(dc.GetOracleId()); ok && profile.IsBasic(c) {
+				continue
+			}
+			seen[dc.GetOracleId()] = true
+			out = append(out, "does not own "+dc.GetName())
+		}
+	}
+	return out
+}
+
+// assertReport names every prompt that carries an assertion and what it
+// found. A run with no case prompt writes nothing.
+func assertReport(w io.Writer, rs []result, idx *cards.Index) {
+	var asserting []result
+	for _, r := range rs {
+		if len(r.prompt.MustNotInclude) > 0 || r.prompt.MustOwnAll {
+			asserting = append(asserting, r)
+		}
+	}
+	if len(asserting) == 0 {
+		return
+	}
+	_, _ = fmt.Fprintf(w, "## The case assertions (PR-28b)\n\n")
+	_, _ = fmt.Fprintf(w, "A prompt written from a reader's verdict names the fault the reader met. The deck must hold none of the named cards, and an ownership assertion asks for a deck the reader owns whole. A basic land never counts (D-37). A miss is a block.\n\n")
+	_, _ = fmt.Fprintf(w, "| # | Prompt | Must not hold | Owns it whole | Misses |\n|---|---|---|---|---|\n")
+	for _, r := range asserting {
+		misses := checkAsserts(r, idx)
+		word := "no"
+		if r.prompt.MustOwnAll {
+			word = "yes"
+		}
+		detail := "none"
+		if len(misses) > 0 {
+			detail = strings.Join(misses, "; ")
+		}
+		_, _ = fmt.Fprintf(w, "| %d | %s | %s | %s | %s |\n",
+			r.prompt.ID, r.prompt.Name, orDash(strings.Join(r.prompt.MustNotInclude, ", ")), word, detail)
+	}
+	_, _ = fmt.Fprintf(w, "\n")
+}
+
+func orDash(s string) string {
+	if s == "" {
+		return "-"
+	}
+	return s
 }

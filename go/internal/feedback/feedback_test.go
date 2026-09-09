@@ -1,9 +1,12 @@
 package feedback
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"testing"
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/internal/gzstore"
 )
 
 // TestNamesAndReasons pins the short names and the reason keys of
@@ -118,5 +121,49 @@ func TestTheSnapshotSurvivesTheStore(t *testing.T) {
 	}
 	if bad.Verdict != "down" {
 		t.Error("a bad blob hid the verdict")
+	}
+}
+
+// TestTwoSnapshotsStayInsideOneDocument locks the guard D-643 needed. A
+// verdict about a deck carries both objects now, and Firestore caps one
+// document at 1 MiB. The deck is what the verdict names, so the session
+// is the one that drops.
+func TestTwoSnapshotsStayInsideOneDocument(t *testing.T) {
+	// A summary of half the room compresses to nothing, so the bulk has
+	// to be text that gzip can not fold: random bytes as a hex string.
+	filler := func(n int) string {
+		raw := make([]byte, n)
+		if _, err := rand.Read(raw); err != nil {
+			t.Fatal(err)
+		}
+		return hex.EncodeToString(raw)
+	}
+	big := Item{
+		Kind:    "deck",
+		Verdict: "down",
+		Session: &mtgv1.Session{Id: "s1", Name: filler(600 << 10)},
+		Deck:    &mtgv1.Deck{Id: "d1", Summary: filler(600 << 10)},
+	}
+	sessionGz, deckGz, err := snapshotOf(big)
+	if err != nil {
+		t.Fatalf("snapshotOf: %v", err)
+	}
+	if len(deckGz) == 0 {
+		t.Fatal("the deck dropped, and it is the object the verdict names")
+	}
+	if len(sessionGz) != 0 {
+		t.Errorf("both blobs stayed, %d bytes together, and the document caps at %d",
+			len(sessionGz)+len(deckGz), gzstore.MaxStoredBytes)
+	}
+	// Two small blobs both stay: the guard fires on the room and never on
+	// the count.
+	small := Item{Kind: "deck", Verdict: "down",
+		Session: &mtgv1.Session{Id: "s1"}, Deck: &mtgv1.Deck{Id: "d1"}}
+	sessionGz, deckGz, err = snapshotOf(small)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(sessionGz) == 0 || len(deckGz) == 0 {
+		t.Error("a small pair of snapshots dropped one")
 	}
 }

@@ -23,8 +23,10 @@ import (
 	"github.com/nkramber/decktome/go/internal/gzstore"
 )
 
-// schemaVersion counts the stored shape.
-const schemaVersion = 2
+// schemaVersion counts the stored shape. Version 3 fills session_gz on
+// a verdict about a deck as well, because the slots that made the deck
+// live on the session (D-643).
+const schemaVersion = 3
 
 // ErrNotFound reports a feedback id no document answers.
 var ErrNotFound = errors.New("feedback not found")
@@ -171,6 +173,13 @@ func snapshotOf(item Item) (sessionGz, deckGz []byte, err error) {
 		if len(deckGz) > gzstore.MaxStoredBytes {
 			deckGz = nil
 		}
+	}
+	// A verdict on a deck carries both snapshots since D-643, and
+	// Firestore caps one document at 1 MiB. The deck is the object the
+	// verdict names, so the session is the one that drops when the two
+	// together pass the room of one document.
+	if len(sessionGz)+len(deckGz) > gzstore.MaxStoredBytes {
+		sessionGz = nil
 	}
 	return sessionGz, deckGz, nil
 }

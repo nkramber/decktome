@@ -10,14 +10,18 @@ import (
 )
 
 // TestTheHarvestNeverReadsTheUserRecord holds the guard of D-638. The
-// user record carries the reader's email, and no harvest file may hold
-// one (D-559). The written-bytes test catches a leak after something
-// writes it. This one refuses the join that would write it.
+// user record carries the reader's email, and no harvest file and no
+// case may hold one (D-559, D-642). The written-bytes test catches a
+// leak after something writes it. This one refuses the join that would
+// write it.
+//
+// The triage of PR-28b joins the guard, because it reads the harvest and
+// writes into files the repository commits.
 //
 // A later session that wants a name or an address on a harvest reads
 // this test first, and takes the question to the owner.
 func TestTheHarvestNeverReadsTheUserRecord(t *testing.T) {
-	for _, name := range []string{"internal/harvest", "cmd/feedback-harvest"} {
+	for _, name := range []string{"internal/harvest", "cmd/feedback-harvest", "internal/triage", "cmd/feedback-triage"} {
 		dir := filepath.Join("..", "..", name)
 		if _, err := os.Stat(dir); err != nil {
 			t.Fatalf("%s: %v", name, err)
@@ -38,7 +42,7 @@ func TestTheHarvestNeverReadsTheUserRecord(t *testing.T) {
 			}
 			for _, imp := range file.Imports {
 				if strings.Contains(imp.Path.Value, "internal/users") {
-					t.Errorf("%s imports the user record. A harvest file must hold no email (D-559, D-638). "+
+					t.Errorf("%s imports the user record. No harvest file and no case may hold an email (D-559, D-638). "+
 						"Take the question to the owner before you join them.", path)
 				}
 			}

@@ -378,3 +378,75 @@ func TestEveryCountedConversationNamesItsExpectations(t *testing.T) {
 		}
 	}
 }
+
+// TestAForbiddenRowFailsTheGate reads the "must not ask" expectation
+// end to end (PR-28b, D-644). A reader who says "you already had this
+// answer" becomes a conversation with the row they saw twice. The row
+// that fires is a miss beside every other miss, so it fails the gate,
+// the document names it, and the run records one bar for the row.
+func TestAForbiddenRowFailsTheGate(t *testing.T) {
+	cfg, err := llm.LoadConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+	build := func(fired bool) result {
+		r := result{
+			conversation: conversation{ID: 109, Name: "Q1: asked again", Collection: true,
+				Messages:   []string{"Bracket 3, lifegain, from my library."},
+				MustNotAsk: []string{"power_commander"}},
+			Turns: 1, Ready: true, Values: map[string]string{"format": "commander"},
+		}
+		r.Questions = []asked{{Turn: 1, Row: "theme"}}
+		if fired {
+			r.Questions = append(r.Questions, asked{Turn: 1, Row: "power_commander"})
+		}
+		r.Misses = checkNotAsked(r.MustNotAsk, r.Questions)
+		return r
+	}
+	// The run is partial, so the catalog-only bar and the size bar read
+	// nothing and the item bars stand alone (D-526).
+	render := func(rs []result) (string, *evalrun.Run) {
+		var cov coverages
+		for _, r := range rs {
+			cov.add(r)
+		}
+		rec := evalrun.New("questions", "test")
+		rec.Header.Only = "109"
+		var buf bytes.Buffer
+		file := gateFile{VerifiedAt: "2026-09-09", Conversations: make([]conversation, 109)}
+		_ = write(&buf, file, rs, cov, llm.Report{Calls: 1}, cfg, "no snapshot", time.Second, rec)
+		return buf.String(), rec
+	}
+
+	doc, rec := render([]result{build(true)})
+	if !strings.Contains(doc, "Verdict: FAIL") {
+		t.Errorf("a forbidden row that fired must fail the gate:\n%s", doc)
+	}
+	if !strings.Contains(doc, "Q1: asked again: must_not_ask: power_commander fired at turn 1") {
+		t.Errorf("the document must name the row that fired:\n%s", doc)
+	}
+	if !strings.Contains(doc, "Rows it must never ask: power_commander.") {
+		t.Errorf("the conversation section must name the expectation:\n%s", doc)
+	}
+	rows := map[string]evalrun.Row{}
+	for _, r := range rec.Rows {
+		rows[r.Item+"/"+r.Metric] = r
+	}
+	if r := rows["109/never_asked_power_commander"]; r.Value != 0 || r.Kind != evalrun.KindGate {
+		t.Errorf("the fired row = %+v, want a gate bar at zero", r)
+	}
+
+	// The control. Without it a bar that always fails would look like a
+	// working bar (D-234).
+	doc, rec = render([]result{build(false)})
+	if !strings.Contains(doc, "Verdict: PASS") {
+		t.Errorf("a row that never fired must pass:\n%s", doc)
+	}
+	rows = map[string]evalrun.Row{}
+	for _, r := range rec.Rows {
+		rows[r.Item+"/"+r.Metric] = r
+	}
+	if r := rows["109/never_asked_power_commander"]; r.Value != 1 || r.Detail != "the row never fired" {
+		t.Errorf("the clean row = %+v, want a gate bar at one", r)
+	}
+}

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"strings"
 	"testing"
@@ -11,8 +12,10 @@ import (
 	"github.com/nkramber/decktome/go/internal/cards"
 	"github.com/nkramber/decktome/go/internal/evalrun"
 	"github.com/nkramber/decktome/go/internal/generate"
+	"github.com/nkramber/decktome/go/internal/harvest"
 	"github.com/nkramber/decktome/go/internal/llm"
 	"github.com/nkramber/decktome/go/internal/profile"
+	"github.com/nkramber/decktome/go/internal/triage"
 )
 
 func deck(off bool, content bool, checked bool) *mtgv1.Deck {
@@ -195,5 +198,41 @@ func TestReportJudge(t *testing.T) {
 	buf.Reset()
 	if reportJudge(&buf, "run1.md", rs, llm.NewAccumulator(nil), idx, time.Second, evalrun.New("bracket-judge", "test")) {
 		t.Error("a judge error must fail")
+	}
+}
+
+// TestTheCaseShapeMatchesThePromptFile pins the mirror struct of the
+// triage against this file's own struct (PR-28b). The triage writes a
+// prompt from a reader's power complaint, and it can not import this
+// package, so it holds a mirror of the shape. The decoder refuses an
+// unknown field, so the mirror may name no field this struct does not
+// read.
+func TestTheCaseShapeMatchesThePromptFile(t *testing.T) {
+	rec := harvest.Record{
+		ID: "f1", Kind: "deck", Verdict: "down", Reasons: []string{"wrong_power"},
+		Deck: json.RawMessage(`{"id":"d1","sessionId":"s1",` +
+			`"format":{"id":"FORMAT_ID_COMMANDER"},"power":{"bracket":3},` +
+			`"commanderOracleIds":["o-karlov"]}`),
+		Session: json.RawMessage(`{"id":"s1","slots":{"theme":"lifegain"}}`),
+	}
+	namer := func(id string) (string, bool) { return "Karlov of the Ghost Council", id == "o-karlov" }
+	c, err := triage.CaseOf(triage.RouteOf(rec), 999, namer)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.Target != "go/cmd/bracket-gate/prompts.json" {
+		t.Fatalf("the case joins %q, and this test guards another file", c.Target)
+	}
+	dec := json.NewDecoder(bytes.NewReader(c.Body))
+	dec.DisallowUnknownFields()
+	var got prompt
+	if err := dec.Decode(&got); err != nil {
+		t.Fatalf("the triage wrote a field this gate does not read: %v\n%s", err, c.Body)
+	}
+	if got.ID != 999 || got.Bracket != 3 || got.Theme != "lifegain" || got.Plan == "" {
+		t.Errorf("the case lost a field: %+v", got)
+	}
+	if got.Commander != "Karlov of the Ghost Council" {
+		t.Errorf("commander = %q", got.Commander)
 	}
 }

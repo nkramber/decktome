@@ -368,3 +368,46 @@ func TestAStoreFailureCountsNothing(t *testing.T) {
 		t.Errorf("counted %v after a store failure", noter.counts)
 	}
 }
+
+// TestADeckVerdictKeepsTheSessionThatBuiltIt locks D-643. The slots that
+// made a deck live on the session and never on the deck, and the triage
+// of PR-28b writes its deck gate prompt from those slots. So a verdict
+// about a deck keeps both objects.
+func TestADeckVerdictKeepsTheSessionThatBuiltIt(t *testing.T) {
+	store := &fakeStore{}
+	sess := fakeSessions{"u1": {"s1": &mtgv1.Session{Id: "s1",
+		Slots: &mtgv1.Slots{Theme: "lifegain", PoolRule: mtgv1.PoolRule_POOL_RULE_OWNED_FIRST}}}}
+	deckList := fakeDecks{"u1": {
+		"d1": &mtgv1.Deck{Id: "d1", SessionId: "s1", Summary: "A lifegain deck.", Cards: []*mtgv1.DeckCard{{OracleId: "o-sol"}}},
+		// d3 names a session the store no longer holds. The reader
+		// deleted the chat and kept the deck, and the verdict must still
+		// go through (D-635).
+		"d3": &mtgv1.Deck{Id: "d3", SessionId: "gone", Summary: "Another deck.", Cards: []*mtgv1.DeckCard{{OracleId: "o-sol"}}},
+	}}
+	s := New(store, sess, deckList, auth.UserID, WithClock(func() time.Time { return at }))
+
+	fb := &mtgv1.Feedback{Kind: kindDeck, Verdict: down, DeckId: "d1", Reasons: []string{"bad_mana"}}
+	if _, err := submit(s, "u1", fb); err != nil {
+		t.Fatalf("submit: %v", err)
+	}
+	got := store.items[0]
+	if got.Deck.GetId() != "d1" {
+		t.Fatalf("the verdict kept no deck")
+	}
+	if got.Session.GetSlots().GetTheme() != "lifegain" {
+		t.Errorf("the verdict kept no session, so the triage can not name the theme")
+	}
+
+	// A session that is gone costs the verdict nothing.
+	store.items = nil
+	fb = &mtgv1.Feedback{Kind: kindDeck, Verdict: down, DeckId: "d3", Reasons: []string{"bad_mana"}}
+	if _, err := submit(s, "u1", fb); err != nil {
+		t.Fatalf("submit with a deleted session: %v", err)
+	}
+	if len(store.items) != 1 || store.items[0].Deck.GetId() != "d3" {
+		t.Fatalf("a deleted session lost the verdict")
+	}
+	if store.items[0].Session != nil {
+		t.Error("the verdict kept a session the store does not hold")
+	}
+}

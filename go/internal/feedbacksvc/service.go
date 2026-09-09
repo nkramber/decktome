@@ -261,7 +261,19 @@ func (s *Server) checkOwner(ctx context.Context, uid string, fb *mtgv1.Feedback)
 			return nil, nil, invalid(errNoCard)
 		}
 	}
-	return nil, deck, nil
+	// A deck names the session that built it, and the slots that made the
+	// deck live on the session and never on the deck (D-643). The triage
+	// of PR-28b writes a deck gate prompt from those slots, so a verdict
+	// on a deck keeps both objects. A session that is gone, or that fails
+	// to read, costs the verdict nothing: the reader's words are worth
+	// more than the context (D-635).
+	var sess *mtgv1.Session
+	if id := strings.TrimSpace(deck.GetSessionId()); id != "" {
+		if got, err := s.sessions.Get(ctx, uid, id); err == nil {
+			sess = got
+		}
+	}
+	return sess, deck, nil
 }
 
 // questionContext reads the exact wording of one question and the answer

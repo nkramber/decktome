@@ -5,7 +5,6 @@ import (
 	"sort"
 	"strings"
 
-	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 	"github.com/nkramber/decktome/go/internal/questions"
 )
 
@@ -27,82 +26,13 @@ import (
 var expectKeys = []string{"format", "colors", "power", "pool_rule", "commander", "budget", "theme", "locked", "sets"}
 
 // slotValues renders the settled slots of a conversation as words. The
-// commander and the locked cards are names on the state: the classifier
-// records names, and the build resolves them to cards. A reader with no
-// collection never gets the pool question, and the build reads any-card
-// for them (D-37), so the renderer writes that word.
+// vocabulary lives in questions.SlotWords, so the gate and the triage of
+// PR-28b read one renderer (D-643).
 func slotValues(st *questions.State) map[string]string {
-	out := map[string]string{}
-	s := st.Slots
-	if s == nil {
-		return out
+	if st == nil {
+		return map[string]string{}
 	}
-	switch s.GetFormat().GetId() {
-	case mtgv1.FormatId_FORMAT_ID_COMMANDER:
-		out["format"] = "commander"
-	case mtgv1.FormatId_FORMAT_ID_STANDARD:
-		out["format"] = "standard"
-	case mtgv1.FormatId_FORMAT_ID_MODERN:
-		out["format"] = "modern"
-	case mtgv1.FormatId_FORMAT_ID_HOUSE:
-		out["format"] = "house"
-	}
-	out["colors"] = colorLetters(s.GetColors())
-	switch p := s.GetPower().GetLevel().(type) {
-	case *mtgv1.PowerLevel_Bracket:
-		out["power"] = fmt.Sprintf("bracket %d", p.Bracket)
-	case *mtgv1.PowerLevel_SixtyStep:
-		out["power"] = strings.ToLower(strings.TrimPrefix(p.SixtyStep.String(), "SIXTY_STEP_"))
-		if out["power"] == "unspecified" {
-			out["power"] = ""
-		}
-	}
-	switch s.GetPoolRule() {
-	case mtgv1.PoolRule_POOL_RULE_OWNED_FIRST:
-		out["pool_rule"] = "owned_first"
-	case mtgv1.PoolRule_POOL_RULE_OWNED_ONLY:
-		out["pool_rule"] = "owned_only"
-	case mtgv1.PoolRule_POOL_RULE_ANY_CARD:
-		out["pool_rule"] = "any_card"
-	default:
-		if !st.Ctx.HasCollection {
-			out["pool_rule"] = "any_card"
-		}
-	}
-	out["commander"] = strings.Join(st.CommanderNames, " + ")
-	if out["commander"] == "" && s.GetSlotStates()["commander"] == mtgv1.SlotState_SLOT_STATE_SKIPPED {
-		out["commander"] = "delegated"
-	}
-	if b := s.GetBudgetUsd(); b > 0 {
-		out["budget"] = fmt.Sprintf("%g", b)
-		switch s.GetBudgetScope() {
-		case mtgv1.BudgetScope_BUDGET_SCOPE_CARDS_TO_BUY:
-			out["budget"] += " to buy"
-		case mtgv1.BudgetScope_BUDGET_SCOPE_WHOLE_DECK:
-			out["budget"] += " whole deck"
-		}
-	}
-	out["theme"] = strings.TrimSpace(s.GetTheme())
-	out["locked"] = strings.Join(st.LockedCards(), ", ")
-	out["sets"] = strings.Join(s.GetSetCodes(), ",")
-	return out
-}
-
-// colorLetters writes colors in WUBRG order, and C for colorless.
-func colorLetters(colors []mtgv1.Color) string {
-	order := []mtgv1.Color{mtgv1.Color_COLOR_W, mtgv1.Color_COLOR_U, mtgv1.Color_COLOR_B, mtgv1.Color_COLOR_R, mtgv1.Color_COLOR_G, mtgv1.Color_COLOR_C}
-	letters := map[mtgv1.Color]string{mtgv1.Color_COLOR_W: "W", mtgv1.Color_COLOR_U: "U", mtgv1.Color_COLOR_B: "B", mtgv1.Color_COLOR_R: "R", mtgv1.Color_COLOR_G: "G", mtgv1.Color_COLOR_C: "C"}
-	have := map[mtgv1.Color]bool{}
-	for _, c := range colors {
-		have[c] = true
-	}
-	var s strings.Builder
-	for _, c := range order {
-		if have[c] {
-			s.WriteString(letters[c])
-		}
-	}
-	return s.String()
+	return questions.SlotWords(st.Slots, st.CommanderNames, st.LockedCards(), st.Ctx.HasCollection)
 }
 
 // checkExpect reads the values against the expectation and names every
@@ -147,4 +77,53 @@ func orNone(s string) string {
 		return "none"
 	}
 	return s
+}
+
+// A "must not ask" expectation names a catalog row the conversation must
+// never send (PR-28b, D-643). Expect names the value a slot must end
+// with, and this names a row that must not fire. A reader who says "you
+// already had this answer" becomes a conversation with the row they saw
+// twice, and the gate fails when that row fires again.
+//
+// The row id is the key and not the question text, because the ask role
+// rephrases the text on every run. An invented question keeps the id of
+// the row it replaced (agent.go, the M-4 record), so a replacement fires
+// the expectation the same way the catalog wording does.
+
+// checkNotAsked names every named row that fired, in ask order. A miss
+// reads like an expectation miss, so the two join one list.
+func checkNotAsked(rows []string, asks []asked) []string {
+	want := map[string]bool{}
+	for _, r := range rows {
+		want[strings.TrimSpace(r)] = true
+	}
+	var misses []string
+	seen := map[string]bool{}
+	for _, a := range asks {
+		if !want[a.Row] || seen[a.Row] {
+			continue
+		}
+		seen[a.Row] = true
+		misses = append(misses, fmt.Sprintf("must_not_ask: %s fired at turn %d", a.Row, a.Turn))
+	}
+	return misses
+}
+
+// checkRowIDs names every row a conversation forbids that the catalog
+// does not hold. A typo would make an expectation that can never fail,
+// so the gate refuses the file before it spends anything, and a free
+// test reads the same check.
+func checkRowIDs(convs []conversation, cat *questions.Catalog) error {
+	var bad []string
+	for _, c := range convs {
+		for _, id := range c.MustNotAsk {
+			if _, ok := cat.Row(strings.TrimSpace(id)); !ok {
+				bad = append(bad, fmt.Sprintf("conversation %d names row %q", c.ID, id))
+			}
+		}
+	}
+	if len(bad) > 0 {
+		return fmt.Errorf("must_not_ask names %d row(s) the catalog does not hold: %s", len(bad), strings.Join(bad, "; "))
+	}
+	return nil
 }
