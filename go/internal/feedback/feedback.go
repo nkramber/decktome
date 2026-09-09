@@ -10,6 +10,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/firestore"
@@ -18,6 +20,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/internal/gzstore"
 )
 
 // schemaVersion counts the stored shape.
@@ -30,6 +33,10 @@ var ErrNotFound = errors.New("feedback not found")
 // short names of the proto enums, so the harvest reads them without the
 // proto: question, summary, card, deck, and up, down.
 type Item struct {
+	// ID is the document id of the verdict. Add answers it, and every
+	// read fills it, so a harvest names the row it wrote. Add itself
+	// ignores this field: the store owns the id.
+	ID         string
 	Kind       string
 	Verdict    string
 	SessionID  string
@@ -53,6 +60,15 @@ type Item struct {
 	// with the keys of the eval run files: questions and generate.
 	Prompts   map[string]int64
 	CreatedAt time.Time
+	// Session and Deck hold the object the verdict names, as it stood
+	// when the reader gave the verdict (D-635). A reader deletes a
+	// session or a deck, and the verdict outlives it, so a harvest that
+	// reads the store finds nothing. The server fills these from the
+	// object it already loaded to check the owner, so neither is the
+	// client's word. Either one is nil when the verdict names no such
+	// object, and both are nil on a document written before D-635.
+	Session *mtgv1.Session
+	Deck    *mtgv1.Deck
 }
 
 // Repo stores feedback in Firestore. The caller owns the client.
@@ -78,6 +94,10 @@ type stored struct {
 	Text         string           `firestore:"text"`
 	Prompts      map[string]int64 `firestore:"prompts"`
 	CreatedAt    time.Time        `firestore:"created_at"`
+	// SessionGz and DeckGz hold the snapshot of D-635, as gzip protojson,
+	// the way the session and the deck stores hold their own (D-604).
+	SessionGz []byte `firestore:"session_gz"`
+	DeckGz    []byte `firestore:"deck_gz"`
 }
 
 func (r *Repo) col(uid string) *firestore.CollectionRef {
@@ -86,8 +106,12 @@ func (r *Repo) col(uid string) *firestore.CollectionRef {
 
 // Add writes one verdict under the user and answers its id.
 func (r *Repo) Add(ctx context.Context, uid string, item Item) (string, error) {
+	sessionGz, deckGz, err := snapshotOf(item)
+	if err != nil {
+		return "", err
+	}
 	doc := r.col(uid).NewDoc()
-	_, err := doc.Create(ctx, stored{
+	_, err = doc.Create(ctx, stored{
 		Schema:       schemaVersion,
 		Kind:         item.Kind,
 		Verdict:      item.Verdict,
@@ -102,6 +126,8 @@ func (r *Repo) Add(ctx context.Context, uid string, item Item) (string, error) {
 		Text:         item.Text,
 		Prompts:      item.Prompts,
 		CreatedAt:    item.CreatedAt.UTC(),
+		SessionGz:    sessionGz,
+		DeckGz:       deckGz,
 	})
 	if err != nil {
 		return "", fmt.Errorf("feedback: %w", err)
@@ -122,12 +148,54 @@ func (r *Repo) Get(ctx context.Context, uid, id string) (Item, error) {
 	if err := snap.DataTo(&s); err != nil {
 		return Item{}, fmt.Errorf("feedback %s: %w", id, err)
 	}
-	return itemOf(s), nil
+	return itemOf(id, s), nil
 }
 
-// itemOf reads a stored document as an Item.
-func itemOf(s stored) Item {
+// snapshotOf encodes the objects the verdict names (D-635). A snapshot
+// that passes the Firestore room of one document drops, because a
+// verdict the store refuses helps nobody: the words of the reader are
+// worth more than the context.
+func snapshotOf(item Item) (sessionGz, deckGz []byte, err error) {
+	if item.Session != nil {
+		if sessionGz, err = gzstore.MarshalProto(item.Session); err != nil {
+			return nil, nil, fmt.Errorf("feedback: %w", err)
+		}
+		if len(sessionGz) > gzstore.MaxStoredBytes {
+			sessionGz = nil
+		}
+	}
+	if item.Deck != nil {
+		if deckGz, err = gzstore.MarshalProto(item.Deck); err != nil {
+			return nil, nil, fmt.Errorf("feedback: %w", err)
+		}
+		if len(deckGz) > gzstore.MaxStoredBytes {
+			deckGz = nil
+		}
+	}
+	return sessionGz, deckGz, nil
+}
+
+// itemOf reads a stored document as an Item. A snapshot that does not
+// open leaves its field nil, so one bad blob never hides a verdict.
+func itemOf(id string, s stored) Item {
+	var sess *mtgv1.Session
+	if len(s.SessionGz) > 0 {
+		var m mtgv1.Session
+		if err := gzstore.UnmarshalProto(s.SessionGz, &m); err == nil {
+			sess = &m
+		}
+	}
+	var deck *mtgv1.Deck
+	if len(s.DeckGz) > 0 {
+		var m mtgv1.Deck
+		if err := gzstore.UnmarshalProto(s.DeckGz, &m); err == nil {
+			deck = &m
+		}
+	}
 	return Item{
+		ID:           id,
+		Session:      sess,
+		Deck:         deck,
 		Kind:         s.Kind,
 		Verdict:      s.Verdict,
 		UID:          s.UID,
@@ -208,7 +276,75 @@ func (r *Repo) Down(ctx context.Context, verdict string, limit int) ([]Item, err
 		if s.UID == "" {
 			s.UID = snap.Ref.Parent.Parent.ID
 		}
-		out = append(out, itemOf(s))
+		out = append(out, itemOf(snap.Ref.ID, s))
+	}
+	return out, nil
+}
+
+// Since reads every verdict the store holds after t, oldest first, both
+// verdicts together (PR-28a).
+//
+// It runs one query per verdict and merges them. A collection group
+// query needs an index for its shape, and a single-field index of that
+// scope is not automatic: the store holds no index for created_at
+// alone, in either direction. It does hold "verdict ascending,
+// created_at descending", which serves an equality on the verdict with
+// a range and an order on the time. So two indexed queries cost nothing
+// on the deployed project, and one unindexed query costs an index
+// deploy. Find carries the note on why that matters.
+//
+// A zero t reads every verdict the store holds. A limit bounds what the
+// caller writes and never what this reads, and it keeps the oldest rows
+// after t, so a harvest advances its watermark one chunk at a time and
+// leaves no gap under it.
+func (r *Repo) Since(ctx context.Context, t time.Time, limit int) ([]Item, error) {
+	var out []Item
+	for _, verdict := range []string{"down", "up"} {
+		q := r.client.CollectionGroup("feedback").
+			Where("verdict", "==", verdict).
+			OrderBy("created_at", firestore.Desc)
+		if !t.IsZero() {
+			q = r.client.CollectionGroup("feedback").
+				Where("verdict", "==", verdict).
+				Where("created_at", ">", t.UTC()).
+				OrderBy("created_at", firestore.Desc)
+		}
+		snaps, err := q.Documents(ctx).GetAll()
+		if err != nil {
+			return nil, fmt.Errorf("feedback: %w", err)
+		}
+		for _, snap := range snaps {
+			var st stored
+			if err := snap.DataTo(&st); err != nil {
+				return nil, fmt.Errorf("feedback %s: %w", snap.Ref.ID, err)
+			}
+			// A document written before the uid field reads its user from
+			// the path: users/<uid>/feedback/<id>.
+			if st.UID == "" {
+				st.UID = snap.Ref.Parent.Parent.ID
+			}
+			out = append(out, itemOf(snap.Ref.ID, st))
+		}
+	}
+	// Oldest first, so a harvest document tells the story in order. The
+	// id breaks a tie, so two verdicts of one instant read the same way
+	// on every run.
+	slices.SortStableFunc(out, func(a, b Item) int {
+		if !a.CreatedAt.Equal(b.CreatedAt) {
+			return a.CreatedAt.Compare(b.CreatedAt)
+		}
+		return strings.Compare(a.ID, b.ID)
+	})
+	// The oldest, and never the newest. The watermark of a harvest is the
+	// newest time it wrote, so a chunk must be the oldest rows after the
+	// floor. A chunk of the newest rows moves the floor past every row
+	// under it, and no later harvest ever reads those (PR-28a, F-88).
+	//
+	// The read itself takes no limit for the same reason: a descending
+	// read of n answers the newest n, and the oldest rows after the floor
+	// are the ones this must not miss.
+	if limit > 0 && len(out) > limit {
+		out = out[:limit]
 	}
 	return out, nil
 }

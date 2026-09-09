@@ -34,7 +34,8 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 4. Load the skills. Load `ste-writing` before you write any `.md`. Load `design-doc-style` before you edit the roadmap. Load `mtg-corpus` before you reason about a format, a legality, or a card term.
 5. Run `make verify`. It runs every check the verify workflow runs, on this machine, for nothing (D-578). Put Node 22.23.2 on the PATH first.
 6. Do "Next steps, in order" below. Ask questions as they come up. Record each owner answer in `docs/decisions.md`, and delete the row from `docs/owner-questions.md`.
-7. Before you end, update this file. Move the oldest session to the archive when the count passes ten.
+7. Open the pull request, then wait for the review of `gitar-bot` and answer it (D-637). A finding with merit takes a change, a commit, a push, and a reply. A finding with no merit takes a reply that says why, and you resolve it. Tell the owner when the pull request is ready to merge. Gitar is the only review this repo asks for.
+8. Before you end, update this file. Move the oldest session to the archive when the count passes ten.
 
 A second Mac: `docs/setup-second-mac.md` holds what to carry, what to install, and how to prove the machine.
 
@@ -58,13 +59,14 @@ Seven things a fresh session gets wrong without this file.
 - LLM model ids and prices: `roles.json` and `prices.json`, verified 2026-08-24. The max output per provider in `llm/client.go`, verified 2026-08-29. The OpenAI rows are unverified by anyone but the owner. The judge role runs on Opus 5 (D-430).
 - The deck gate upgrade probe cost $0.32 for 2 prompts, 7 calls, and 266 seconds. A partial run reads its own item bars and never stands as the gate (D-526).
 - Run cost, read from the run files on 2026-09-09. The question gate cost $0.190 on run 42, $0.193 on run 43, and $0.194 on run 44, over 18 to 21 minutes. The eval cost $0.092 on run 34 and $0.096 on run 35, over 12 to 14 minutes. The deck gate cost $2.71 on run 18, over 37 minutes. The revise gate cost $1.07 on run 9. The bracket gate judge lane cost $0.28.
+- The feedback store holds 3 verdicts on 2026-09-09, and every one predates the snapshot of D-635. A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
 - Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 18, revise is run 9. Run 44 is the newest whole questions run, and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline.
 - Toolchain: Go 1.27.0, Node 22.23.2, pnpm 9.2.0, firebase-tools 14.14.0, Java 17, Playwright 1.62.1 with its Chromium headless shell (`playwright install chromium`). The first three were verified 2026-09-09.
 
 ## Next steps, in order
 
-1. **PR-28, the feedback loop** (D-557 to D-559). The PR-22 gate holds in full now (D-633), so nothing blocks it. `docs/reference/feedback-2026-09-06.md` holds the plan, and D-559 answers OQ-70 to OQ-72.
+1. **PR-28a, the feedback harvest** (D-557 to D-559, D-635, D-636). PR-28 splits into three, one concern each (D-636). The PR-22 gate holds in full now (D-633), so nothing blocks it. D-635 holds the snapshot, and its tests pass. PR-28a holds the harvest command, the watermark, the document writer, and the emulator gate. `make feedback-harvest` reads the deployed project and writes a dated document and a JSONL file. PR-28b is the triage and the new "must not ask" expectation. PR-28c is the fix cycle.
 2. **The next whole deck gate run is still run 19, and it is still outstanding.** It makes the next decks baseline, and no deck-build change waits on one now. The upgrade probe of 2026-09-09 already measured D-628, so the band question needs no whole run (D-632). Watch F-85 on every later upgrade: a second precon of the same shape reopens it.
 3. **OQ-79 needs runtime evidence.** No fix goes in without it, and the session it names is not readable. A fresh owned-only build on the deployed app is the way to it.
 4. **PR-29, the casual corpus**, stands on the weak-axes plan (D-567, D-568). Read `docs/reference/weak-axes-2026-09-07.md` first. No bar moves (D-486), and no weight changes by hand. PR-30 follows, and PR-31 parks (D-573).
@@ -83,6 +85,8 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 ### 2026-09-09: the regression of D-630, and this restructure
 
 Pull request #113 merged, and its deploy passed as revision `mtg-api-00021-22m`. Question gate run 43 read FAIL on the premature check, and the catalog measure rose to 74 of 74. The cause was D-630: `Skip` fills a key and `CloseStalled` does not, so the commander offer waited for a power the net had closed. A `Requires` slot reads the skipped keys now (D-631). Run 44 reads PASS at 73 of 74, and the premature check is clean.
+
+PR-28 split into three (D-636), and PR-28a began. A verdict keeps the object it names now, because a reader deletes it and the verdict outlives it (D-635).
 
 The PR-22 gate closed on a measured cost at idle of $9.54 a month, and the snapshot cron held 80 percent of it (D-633, D-634, F-86). The tick runs hourly now, and PR-28 is free to start. The upgrade probe measured D-628 for $0.32, and it refuted the estimate of D-629. The owner parked F-85 for want of a second precon (D-632). This file moved its older records to `docs/reference/session-handoff-archive.md`.
 

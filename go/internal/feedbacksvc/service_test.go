@@ -209,3 +209,90 @@ func TestTextCapIsTheMessageCap(t *testing.T) {
 		t.Errorf("MaxTextBytes = %d, agentsvc.MaxMessageBytes = %d", MaxTextBytes, agentsvc.MaxMessageBytes)
 	}
 }
+
+// TestTheVerdictKeepsTheObjectItNames locks D-635. A reader deletes a
+// session or a deck, and the verdict outlives it: both real items of
+// 2026-09-09 named a target the store no longer held. So the server
+// stores the object beside the verdict, and it never asks the client
+// for it.
+func TestTheVerdictKeepsTheObjectItNames(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		fb      *mtgv1.Feedback
+		session bool
+		deck    bool
+	}{
+		{
+			name:    "a question keeps its session",
+			fb:      &mtgv1.Feedback{Kind: mtgv1.FeedbackKind_FEEDBACK_KIND_QUESTION, Verdict: mtgv1.FeedbackVerdict_FEEDBACK_VERDICT_DOWN, SessionId: "s1", QuestionId: "q1", Reasons: []string{"already_answered"}},
+			session: true,
+		},
+		{
+			name:    "a chat keeps its session",
+			fb:      &mtgv1.Feedback{Kind: mtgv1.FeedbackKind_FEEDBACK_KIND_CHAT, Verdict: mtgv1.FeedbackVerdict_FEEDBACK_VERDICT_DOWN, SessionId: "s1", Reasons: []string{"stuck"}},
+			session: true,
+		},
+		{
+			name: "a card keeps its deck",
+			fb:   &mtgv1.Feedback{Kind: mtgv1.FeedbackKind_FEEDBACK_KIND_CARD, Verdict: mtgv1.FeedbackVerdict_FEEDBACK_VERDICT_DOWN, DeckId: "d1", OracleId: "o-sol", Reasons: []string{"off_theme"}},
+			deck: true,
+		},
+		{
+			name: "a summary keeps its deck",
+			fb:   &mtgv1.Feedback{Kind: mtgv1.FeedbackKind_FEEDBACK_KIND_SUMMARY, Verdict: mtgv1.FeedbackVerdict_FEEDBACK_VERDICT_DOWN, DeckId: "d1", Reasons: []string{"false_claim"}},
+			deck: true,
+		},
+		{
+			name: "a deck keeps its deck",
+			fb:   &mtgv1.Feedback{Kind: mtgv1.FeedbackKind_FEEDBACK_KIND_DECK, Verdict: mtgv1.FeedbackVerdict_FEEDBACK_VERDICT_UP, DeckId: "d1"},
+			deck: true,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			store, s := fixture()
+			if _, err := submit(s, "u1", tc.fb); err != nil {
+				t.Fatalf("submit: %v", err)
+			}
+			if len(store.items) != 1 {
+				t.Fatalf("stored %d items, want 1", len(store.items))
+			}
+			got := store.items[0]
+			if tc.session && got.Session.GetId() != "s1" {
+				t.Errorf("the verdict kept no session, so a harvest after a delete reads nothing")
+			}
+			if !tc.session && got.Session != nil {
+				t.Errorf("the verdict kept a session it does not name")
+			}
+			if tc.deck && got.Deck.GetId() != "d1" {
+				t.Errorf("the verdict kept no deck, so a harvest after a delete reads nothing")
+			}
+			if !tc.deck && got.Deck != nil {
+				t.Errorf("the verdict kept a deck it does not name")
+			}
+		})
+	}
+}
+
+// TestTheSnapshotIsNotTheClientsWord holds the rule of D-596 for the
+// snapshot: the server reads the object it already loaded to check the
+// owner, so a client that names another deck changes nothing.
+func TestTheSnapshotIsNotTheClientsWord(t *testing.T) {
+	store, s := fixture()
+	fb := &mtgv1.Feedback{
+		Kind:    mtgv1.FeedbackKind_FEEDBACK_KIND_SUMMARY,
+		Verdict: mtgv1.FeedbackVerdict_FEEDBACK_VERDICT_DOWN,
+		DeckId:  "d1",
+		Reasons: []string{"false_claim"},
+		Text:    "the summary claims lifegain",
+	}
+	if _, err := submit(s, "u1", fb); err != nil {
+		t.Fatalf("submit: %v", err)
+	}
+	got := store.items[0].Deck
+	if got.GetSummary() != "A lifegain deck." {
+		t.Errorf("summary = %q, want the stored one", got.GetSummary())
+	}
+	if len(got.GetCards()) != 1 || got.GetCards()[0].GetOracleId() != "o-sol" {
+		t.Errorf("the snapshot does not hold the deck list, so no card class can write its case")
+	}
+}
