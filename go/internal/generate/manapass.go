@@ -35,10 +35,15 @@ const maxManaSteps = 12
 // It runs before the profile is read, so the stored profile and every
 // finding describe the deck after the pass.
 func (b *Builder) fixMana(req Request, deck *mtgv1.Deck) int {
-	// A revision and an upgrade keep the deck they were given. The
-	// reader asked for a change, or the precon is a working deck, and a
-	// mana pass over either one is a second author (D-249, PR-12B).
-	if b.profiler == nil || req.Revision != nil || req.Precon != "" {
+	// A revision keeps the deck it was given: the reader asked for a
+	// change, and a pass over it is a second author (PR-12B, D-283).
+	//
+	// An upgrade takes the pass on its mana base alone (D-628). D-249
+	// keeps a precon's own composition, so no step of an upgrade touches
+	// a spell, and no step drops a card of the precon. The share of
+	// D-218 can not move under a pass that only trades lands the precon
+	// does not own.
+	if b.profiler == nil || req.Revision != nil {
 		return 0
 	}
 	basics := b.basicsOf(deck)
@@ -167,13 +172,37 @@ func (b *Builder) manaCandidates(req Request, deck *mtgv1.Deck, basics []*mtgv1.
 	for _, dc := range deck.GetCards() {
 		inDeck[dc.GetOracleId()] = true
 	}
+	// An upgrade keeps the precon's own cards and its own spells, so its
+	// steps are the land trades alone (D-628, D-249).
+	upgrade := req.Precon != ""
+	keep := map[string]bool{}
+	for _, id := range req.PreconOracleIDs {
+		keep[id] = true
+	}
 	tapped, untapped := b.landsOf(deck, req)
 	for _, drop := range tapped {
+		if keep[drop] {
+			continue
+		}
 		for _, add := range untapped {
 			if inDeck[add.GetOracleId()] {
 				continue
 			}
 			out = append(out, manaStep{add: add, drop: drop, role: mtgv1.CardRole_CARD_ROLE_LAND,
+				owned: req.Pool.OwnedCount(add.GetOracleId())})
+		}
+	}
+	// A colorless land for a basic. Every bracket caps the nonbasic
+	// lands that make only colorless mana, and no other step of an
+	// upgrade can move that count. It also answers a color the sources
+	// do not cover (D-628).
+	for _, dc := range deck.GetCards() {
+		c, ok := b.cards.ByOracleID(dc.GetOracleId())
+		if !ok || !profile.IsColorlessLand(c) || keep[dc.GetOracleId()] {
+			continue
+		}
+		for _, add := range basics {
+			out = append(out, manaStep{add: add, drop: dc.GetOracleId(), role: mtgv1.CardRole_CARD_ROLE_LAND,
 				owned: req.Pool.OwnedCount(add.GetOracleId())})
 		}
 	}
@@ -187,6 +216,12 @@ func (b *Builder) manaCandidates(req Request, deck *mtgv1.Deck, basics []*mtgv1.
 			out = append(out, manaStep{add: add, drop: other.GetOracleId(), role: mtgv1.CardRole_CARD_ROLE_LAND,
 				owned: req.Pool.OwnedCount(add.GetOracleId())})
 		}
+	}
+	if upgrade {
+		// Every step past this one moves a spell, and an upgrade keeps
+		// the precon's own (D-249). The basic trade above is free: a
+		// basic land is not a precon name and the share never counts it.
+		return out
 	}
 	// A basic land for the costliest spell, and the reverse. The land
 	// band bounds both: a step that leaves the band scores worse and the

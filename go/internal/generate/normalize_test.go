@@ -429,6 +429,56 @@ func jobBlock(in string) string {
 	return rest
 }
 
+// TestAnUpgradeReadsTheBands is D-628. D-249 keeps the job targets off
+// an upgrade, because a target is a quota against the precon share. A
+// band is not a quota: it is what the check reads after the build, and
+// the profile graded an upgrade against bands no prompt ever stated.
+// Six of the seven off-band findings of prompt 18 of deck gate run 18
+// were the counts and the curve the deck shape block names.
+func TestAnUpgradeReadsTheBands(t *testing.T) {
+	cfg, err := rules.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, err := profile.New(cfg, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b := &Builder{profiler: p}
+	req := testRequest()
+	req.Format = mtgv1.FormatId_FORMAT_ID_COMMANDER
+	req.Power = &mtgv1.PowerLevel{Level: &mtgv1.PowerLevel_Bracket{Bracket: 4}}
+	req.Targets = TargetsFor(req.Format, req.Power)
+	req.Precon = "Goblin Storm"
+	req.PreconOracleIDs = []string{"o-welcome"}
+	req.PreconLands = 34
+
+	got := b.input(req, nil, nil)
+	if strings.Contains(got, "Job targets") {
+		t.Error("an upgrade was given job targets, which fight the share (D-249)")
+	}
+	if !strings.Contains(got, "## Deck shape") {
+		t.Errorf("an upgrade reads no deck shape block:\n%s", got)
+	}
+	if !strings.Contains(got, "mana on turn four") {
+		t.Error("the deck shape block of an upgrade names no simulated band")
+	}
+	// The block says what an upgrade may do about a band it can not meet.
+	if !strings.Contains(got, "never rebuild the deck to reach one") {
+		t.Error("the upgrade block does not bound what a band may ask")
+	}
+
+	// A revision reads none of it. It keeps every card the change does
+	// not touch (D-283), and a band would ask it to rebuild.
+	rev := testRequest()
+	rev.Format, rev.Power = req.Format, req.Power
+	rev.Targets = req.Targets
+	rev.Revision = &Revision{BaseDeckID: "d1"}
+	if strings.Contains(b.input(rev, nil, nil), "## Deck shape") {
+		t.Error("a revision reads the deck shape block, and it must keep the deck it was given")
+	}
+}
+
 // TestAnUpgradeGetsNoJobTargets is D-249. The targets prescribe the whole
 // deck and the share demands most of its slots, so the two fought.
 func TestAnUpgradeGetsNoJobTargets(t *testing.T) {

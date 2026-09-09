@@ -155,18 +155,6 @@ func (b *Builder) input(req Request, misses []Miss, findings []*mtgv1.Finding) s
 			}
 			fmt.Fprintf(&s, "- %s: %d\n", k, targets[k])
 		}
-		// The deck shape is the rest of the bracket's band: the curve,
-		// the mana base, and the power signals the profile checks after
-		// the build (PR-14A). It goes out with the targets, and not to
-		// an upgrade or a revision.
-		if b.profiler != nil {
-			if lines := b.profiler.Bands().Lines(req.Format, req.Power); len(lines) > 0 {
-				s.WriteString("\n## Deck shape\n\nBuild inside these limits. A check reads them after the build.\n\n")
-				for _, line := range lines {
-					s.WriteString(line + "\n")
-				}
-			}
-		}
 		// The format shape is what the top lists of the format look
 		// like: their land count, their curve, and the cards they hold
 		// most (PR-14B). It is a description, and the bands above are
@@ -177,6 +165,30 @@ func (b *Builder) input(req Request, misses []Miss, findings []*mtgv1.Finding) s
 				for _, line := range lines {
 					s.WriteString(line + "\n")
 				}
+			}
+		}
+	}
+	// The deck shape is the rest of the bracket's band: the curve, the
+	// mana base, and the power signals the profile checks after the
+	// build (PR-14A).
+	//
+	// **An upgrade reads it too** (D-628). D-249 keeps the job targets
+	// off an upgrade, because a target is a quota against the precon
+	// share. A band is not a quota: it is what the check reads, and the
+	// profile graded an upgrade against bands no prompt ever stated. Six
+	// of the seven off-band findings of prompt 18 of deck gate run 18
+	// were the counts and the curve this block names.
+	//
+	// A revision reads none of it. It keeps every card the change does
+	// not touch (D-283), and a band would ask it to rebuild.
+	if b.profiler != nil && req.Revision == nil {
+		if lines := b.profiler.Bands().Lines(req.Format, req.Power); len(lines) > 0 {
+			s.WriteString("\n## Deck shape\n\nBuild inside these limits. A check reads them after the build.\n\n")
+			for _, line := range lines {
+				s.WriteString(line + "\n")
+			}
+			if req.Precon != "" {
+				s.WriteString("\nThe precon decides the cards. Come as close to these limits as the swaps allow, and never rebuild the deck to reach one.\n")
 			}
 		}
 	}
