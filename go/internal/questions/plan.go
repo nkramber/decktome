@@ -15,10 +15,17 @@ const MaxPerTurn = 3
 type Context struct {
 	// Format is the format slot, when it is filled.
 	Format mtgv1.FormatId `json:"format"`
-	// Filled is keyed by Row.StateKey, not by the proto slot name. A
-	// skipped key counts as filled: the user declined and a default
-	// applies.
+	// Filled is keyed by Row.StateKey, not by the proto slot name. A key
+	// the reader declines counts as filled: Skip sets it, and a default
+	// applies. A key the net closes does not, and Skipped holds it.
 	Filled map[string]bool `json:"filled"`
+	// Skipped names a key the net closed with no answer (D-351). Close
+	// and Skip both fill a key, and CloseStalled does not: the reader
+	// gave no value. A Requires slot reads this map beside Filled, so a
+	// row that waits for a slot still fires after the net closes it.
+	// Without this map the commander offer waits for a power the reader
+	// never gives (D-631).
+	Skipped map[string]bool `json:"skipped"`
 	// Asked marks a row id the agent already used. The gate forbids a
 	// repeat.
 	Asked map[string]bool `json:"asked"`
@@ -239,7 +246,7 @@ func (c Context) contentChanged(key, slot string) bool {
 // matches reports whether every trigger of a row holds.
 func (w When) matches(ctx Context) bool {
 	for _, slot := range w.Requires {
-		if !ctx.Filled[slot] {
+		if !ctx.Filled[slot] && !ctx.Skipped[slot] {
 			return false
 		}
 	}
