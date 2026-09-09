@@ -341,3 +341,33 @@ func testNextID(target string) (int, error) {
 	}
 	return 1, nil
 }
+
+// TestAVerdictWithNothingToTriageIsCountedApart keeps a verdict that
+// holds neither a reason this build knows nor words out of the classed
+// count. PR-27 asks for one or the other on every thumbs down, so this
+// is rare, and a count that hides it inside the classed ones would read
+// as work the triage did.
+func TestAVerdictWithNothingToTriageIsCountedApart(t *testing.T) {
+	rec := harvest.Record{ID: "x1", Kind: "deck", Verdict: "down",
+		Reasons: []string{"a_key_this_build_renamed"}}
+	r := RouteOf(rec)
+	if r.Need != NeedNothing || r.Class.ID != "" || r.Keep || r.Owner {
+		t.Fatalf("route = %+v, want nothing to triage", r)
+	}
+	results := Run(context.Background(), []harvest.Record{rec}, nil, testNamer, testNextID)
+	if len(results) != 1 || len(results[0].Case.Body) != 0 {
+		t.Fatalf("a verdict with nothing to triage wrote a case")
+	}
+	var b bytes.Buffer
+	Report(&b, results, time.Now(), true, "nothing")
+	doc := b.String()
+	if !strings.Contains(doc, "0 reached a class") {
+		t.Errorf("it counted as a classed verdict:\n%s", doc)
+	}
+	if !strings.Contains(doc, "1 verdicts held nothing to triage") {
+		t.Errorf("the document does not name it:\n%s", doc)
+	}
+	if !strings.Contains(doc, "| Nothing to triage | 1 |") {
+		t.Errorf("the summary table does not count it:\n%s", doc)
+	}
+}

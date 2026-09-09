@@ -27,7 +27,11 @@ type Result struct {
 // read and stops.
 func Report(w io.Writer, rs []Result, day time.Time, dry bool, cost string) bool {
 	byClass := map[string]int{}
-	needJudge, keeps, owners, errs := 0, 0, 0, 0
+	// Every verdict falls in exactly one bucket, and the count of the
+	// classed ones is read and never subtracted: a verdict that reaches
+	// no bucket at all is rare, and a subtraction would hide it inside
+	// the classed count.
+	classed, needJudge, keeps, owners, errs, none := 0, 0, 0, 0, 0, 0
 	for _, r := range rs {
 		switch {
 		case r.Err != nil:
@@ -38,6 +42,10 @@ func Report(w io.Writer, rs []Result, day time.Time, dry bool, cost string) bool
 			owners++
 		case r.Route.Need == NeedJudge:
 			needJudge++
+		case r.Route.Class.ID != "":
+			classed++
+		default:
+			none++
 		}
 		if r.Route.Class.ID != "" {
 			byClass[r.Route.Class.ID]++
@@ -56,7 +64,10 @@ func Report(w io.Writer, rs []Result, day time.Time, dry bool, cost string) bool
 		lane = "dry, so it called no model and wrote no case"
 	}
 	_, _ = fmt.Fprintf(w, "Verdict: %s. %d verdicts, %s. %d reached a class, %d are keep cases, %d go to the owner, %d still want the judge, and %d failed.\n\n",
-		verdict, len(rs), lane, len(rs)-keeps-owners-needJudge-errs, keeps, owners, needJudge, errs)
+		verdict, len(rs), lane, classed, keeps, owners, needJudge, errs)
+	if none > 0 {
+		_, _ = fmt.Fprintf(w, "%d verdicts held nothing to triage: no reason this build knows and no words.\n\n", none)
+	}
 	if len(rs) == 0 {
 		_, _ = fmt.Fprintf(w, "The harvest held no verdict. A triage can not pass with nothing to read.\n\n")
 	}
@@ -67,6 +78,7 @@ func Report(w io.Writer, rs []Result, day time.Time, dry bool, cost string) bool
 	_, _ = fmt.Fprintf(w, "| Keep cases, from a thumbs up | %d |\n", keeps)
 	_, _ = fmt.Fprintf(w, "| Owner questions | %d |\n", owners)
 	_, _ = fmt.Fprintf(w, "| Still want the judge | %d |\n", needJudge)
+	_, _ = fmt.Fprintf(w, "| Nothing to triage | %d |\n", none)
 	_, _ = fmt.Fprintf(w, "| Failed | %d |\n", errs)
 	_, _ = fmt.Fprintf(w, "| Cost | %s |\n\n", cost)
 
