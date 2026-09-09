@@ -1,0 +1,35 @@
+{"suite": "decks", "run_id": "pr8-deck-gate-upgrade-probe-1", "date": "2026-09-09", "commit": "b361ce4", "roles": {"generate": {"provider": "openai", "model": "gpt-5.6-terra", "effort": "medium"}, "judge": {"provider": "anthropic", "model": "claude-opus-5", "effort": "medium"}, "repair": {"provider": "openai", "model": "gpt-5.6-terra", "effort": "medium"}}, "snapshot": "2026-09-03", "prompts": {"generate": 12, "plan_rubric": 2}, "calls": 7, "cost_usd": 0.32092275000000003, "seconds": 266.677260958, "verdict": "PASS", "only": "17,18", "lower": ["blocks", "invented_names", "false_rules", "judge_error", "excluded_in_deck", "warnings", "repaired", "buy_cost", "deck_cost"]}
+{"item":"17","metric":"built","value":1,"kind":"gate"}
+{"item":"17","metric":"blocks","value":0,"kind":"gate"}
+{"item":"17","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"17","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"17","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"17","metric":"repaired","value":1,"kind":"info","detail":"deck_size, precon_share, profile_off_band, profile_off_band, profile_off_band, profile_off_band, profile_off_band, profile_off_band, profile_off_band"}
+{"item":"17","metric":"cards","value":99,"kind":"info"}
+{"item":"17","metric":"pool","value":196,"kind":"info"}
+{"item":"17","metric":"warnings","value":2,"kind":"info"}
+{"item":"17","metric":"buy_cost","value":84.57999999999998,"kind":"info"}
+{"item":"17","metric":"deck_cost","value":288.25,"kind":"info"}
+{"item":"17","metric":"plan_plan_coherent","value":0.5,"kind":"info","detail":"partly: The go-wide goblin core, Zada mass-targeting cantrips, and ritual/Grapeshot storm elements mostly interlock (tokens as Zada targets, Skirk Prospector and Storm-Kiln Artist fueling spells), but the storm payoff count is thin and Blasphemous Act actively sweeps the deck's own swarm, so the pieces pull slightly apart."}
+{"item":"17","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: It is a mono-red goblin deck with a genuine storm subtheme (rituals, Mana Geyser, Past in Flames, Grapeshot, Empty the Warrens) at a reasonable bracket-3 power level, matching the precon upgrade request even though it leans on Zada as the helm."}
+{"item":"17","metric":"plan_useful_as_built","value":1,"kind":"info","detail":"yes: 37 lands plus heavy cheap ramp support a very low curve, and there are multiple real win routes (Impact Tremors/Bombardment drain, Grapeshot, pumped alpha strikes with Fists of Flame/Haze of Rage)."}
+{"item":"17","metric":"plan_summary_honest","value":1,"kind":"info","detail":"yes: Every claim — token makers, sacrifice damage (Goblin Bombardment, Siege-Gang, Boggart Shenanigans), haste enablers, tribal lords, mass-targeting tricks, and spell-into-mana/cards effects — is backed by actual cards in the list."}
+{"item":"17","metric":"plan_score","value":0.875,"kind":"info"}
+{"item":"17","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"18","metric":"built","value":1,"kind":"gate"}
+{"item":"18","metric":"blocks","value":0,"kind":"gate"}
+{"item":"18","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"18","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"18","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"18","metric":"repaired","value":0,"kind":"info"}
+{"item":"18","metric":"cards","value":99,"kind":"info"}
+{"item":"18","metric":"pool","value":300,"kind":"info"}
+{"item":"18","metric":"warnings","value":6,"kind":"info"}
+{"item":"18","metric":"buy_cost","value":250.37000000000006,"kind":"info"}
+{"item":"18","metric":"deck_cost","value":250.37000000000006,"kind":"info"}
+{"item":"18","metric":"plan_plan_coherent","value":1,"kind":"info","detail":"yes: The list keeps a single coherent precon plan — deploy the TMNT character creatures and support pieces, back them with ramp, interaction and sweepers — and the additions (Corpsejack Menace, Vigor, hydras, Biogenic Ooze) all point the same direction rather than splitting into a second strategy."}
+{"item":"18","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: It is a Heroes in a Half Shell Turtle Power precon upgrade that retains the themed cards while adding modest staples, matching the bracket 3 ask with no tutors, fast mana beyond Sol Ring, or two-card combos."}
+{"item":"18","metric":"plan_useful_as_built","value":1,"kind":"info","detail":"yes: 39 lands with Command Tower, Cavern of Souls, City of Brass, Mana Confluence, two shocklands, fetches and Chromatic Lantern give a workable if pain-heavy five-color base, and the deck has plenty of creature-based ways to close a game."}
+{"item":"18","metric":"plan_summary_honest","value":1,"kind":"info","detail":"yes: Everything claimed is present: added ramp (Sol Ring, Arcane Signet, Chromatic Lantern, Cultivate, Nature's Lore), card flow (Rhystic Study, Harmonize, April O'Neil), removal/sweepers (Assassin's Trophy, Blasphemous Act, Vanquish the Horde, Swift Demise), swapped tap-lands for painlands/shocklands, and no combo finish is claimed."}
+{"item":"18","metric":"plan_score","value":1,"kind":"info"}
+{"item":"18","metric":"plan_reasons_empty","value":0,"kind":"info"}
