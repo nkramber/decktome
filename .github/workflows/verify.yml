@@ -125,8 +125,9 @@ jobs:
       - name: llm defaults
         run: make llm-defaults-check
 
-  # The weekly scan. A new advisory can hit a pinned module while go.sum
-  # stays the same, and no pull request would run the scan (D-305).
+  # The scan runs on every pull request and once a week (D-639). The
+  # weekly run is what catches a new advisory against a pinned module
+  # while go.sum stays the same, and no pull request touches it (D-305).
   vuln:
     name: "verify:vuln"
     if: ${{ github.event_name == 'schedule' || github.event_name == 'pull_request' }}
