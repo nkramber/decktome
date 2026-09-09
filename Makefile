@@ -99,7 +99,11 @@ verify: ## Run every check the verify workflow runs, on this machine, for nothin
 	@$(PNPM) build
 	@$(MAKE) --no-print-directory eval-check
 	@echo "==> shellcheck"
-	@command -v shellcheck >/dev/null && shellcheck scripts/*.sh || echo "shellcheck is not installed, and the workflow covers it"
+	@# The test comes first. With `cmd && shellcheck || echo`, a finding
+	@# takes the echo branch and the target passes: verify read green
+	@# while shellcheck failed (D-641).
+	@if command -v shellcheck >/dev/null; then shellcheck scripts/*.sh; \
+	else echo "shellcheck is not installed, and the workflow covers it"; fi
 	@echo "==> docker"
 	@docker build --platform linux/amd64 -f docker/api.Dockerfile -t decktome-api:verify . >/dev/null
 	@docker build --platform linux/amd64 -f docker/worker.Dockerfile -t decktome-worker:verify . >/dev/null

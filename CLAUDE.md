@@ -16,6 +16,8 @@ A picked option reached its slot through the model as English. An option sets it
 
 The look follows a reference design the owner gave on 2026-08-30 (D-328 to D-335). `docs/reference/autotune-readme.md` holds the loop commands.
 
+**The repository is public** (D-639). Write no reader's words, no email, and no personal address into a file, an issue, or a pull request. Every pull request runs the whole verify workflow.
+
 Run `make where` before you change anything. It prints the branch, the tree, and the state of the branch's pull request. The session commits on a branch, pushes it, and opens a pull request. The owner merges (hard rule 8, D-583, D-585). Never commit on `main`, and run `make hooks` once in a fresh checkout.
 
 Read `docs/SESSION-HANDOFF.md` next. It is the resume point.

@@ -50,3 +50,8 @@ coverage/
 /go/summary-judge
 /go/tune-check
 /go/worker
+
+# The feedback harvest holds what a reader wrote (D-559, D-640). The
+# repository is public, so no harvest file belongs in it. The tuning loop
+# reads these files where they are written, and git never sees them.
+docs/reference/feedback/

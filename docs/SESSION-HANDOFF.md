@@ -24,6 +24,8 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **Every user has a record now** (2026-09-09, D-638). `users/<uid>` holds the verified email, the creation date, and the last active time. It holds six counters: decks, deck revisions, collections, chats, and the verdicts up and down. Every counter counts a creation, so a deleted deck does not lower one. `make users-backfill` seeds it from what a user holds, and `-dry` counts alone. **No harvest reads this record**, and a test refuses the import that joins them (D-559).
 
+**The repository is public now** (2026-09-09, D-639, D-640). Every pull request runs the whole verify workflow, because the minutes cost nothing. **No harvest file enters the repository**: `.gitignore` holds `docs/reference/feedback/`, because a harvest carries what a reader wrote. Two personal addresses left the history on 2026-09-09, through `git-filter-repo` and a force push.
+
 **What waits on the owner.** OQ-67, the Stage B channels. OQ-77, the blocking function of Identity Platform. OQ-79, the commander of an owned-only pool. The measured monthly cost at idle, which is the fourth PR-22 gate item.
 
 **CAUTION: the evidence OQ-79 waits for is not on the deployed project.** `make read-session SESSION=23rplEQAMA0mtJ3QFtKO` answers `no sessions ... over 1 user(s)`. The script reads every user of the project. So a fresh owned-only build on the deployed app is the way to the evidence.
@@ -34,7 +36,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 2. Run `ps aux | grep autotune` before any write. The loop resets the tree when it rejects an iteration.
 3. Make a branch from `main`. Never commit on `main`, and never push to it (D-583). The owner merges (D-585). Run `make hooks` one time in a fresh checkout.
 4. Load the skills. Load `ste-writing` before you write any `.md`. Load `design-doc-style` before you edit the roadmap. Load `mtg-corpus` before you reason about a format, a legality, or a card term.
-5. Run `make verify`. It runs every check the verify workflow runs, on this machine, for nothing (D-578). Put Node 22.23.2 on the PATH first.
+5. Run `make verify`. It runs every check the verify workflow runs, on this machine, for nothing. Put Node 22.23.2 on the PATH first. The pull request runs the same jobs on Actions (D-639).
 6. Do "Next steps, in order" below. Ask questions as they come up. Record each owner answer in `docs/decisions.md`, and delete the row from `docs/owner-questions.md`.
 7. Open the pull request, then wait for the review of `gitar-bot` and answer it (D-637). A finding with merit takes a change, a commit, a push, and a reply. A finding with no merit takes a reply that says why, and you resolve it. Tell the owner when the pull request is ready to merge. Gitar is the only review this repo asks for.
 8. Before you end, update this file. Move the oldest session to the archive when the count passes ten.
