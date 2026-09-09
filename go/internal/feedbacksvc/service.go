@@ -110,7 +110,7 @@ func (s *Server) SubmitFeedback(ctx context.Context, req *connect.Request[mtgv1.
 	if err != nil {
 		return nil, invalid(err)
 	}
-	sess, err := s.checkOwner(ctx, uid, fb)
+	sess, deck, err := s.checkOwner(ctx, uid, fb)
 	if err != nil {
 		return nil, err
 	}
@@ -118,6 +118,9 @@ func (s *Server) SubmitFeedback(ctx context.Context, req *connect.Request[mtgv1.
 	// (D-596). A question id alone reads nothing after a prompt changes.
 	// Both come from the stored session, so neither is the client's word.
 	item.QuestionText, item.AnswerText = questionContext(sess, item.QuestionID)
+	// The object the verdict names, as it stood at this moment (D-635).
+	// A reader deletes a session or a deck, and the verdict outlives it.
+	item.Session, item.Deck = sess, deck
 	item.Prompts = Prompts()
 	item.CreatedAt = s.now()
 	id, err := s.store.Add(ctx, uid, item)
@@ -205,43 +208,47 @@ func wantID(field, id string, used bool) error {
 // checkOwner reads the object the verdict names under the caller. The
 // stores answer per user, so another user's id and an unknown id read
 // the same, and neither is the caller's: PermissionDenied for both.
-func (s *Server) checkOwner(ctx context.Context, uid string, fb *mtgv1.Feedback) (*mtgv1.Session, error) {
+//
+// It answers the object it read, because the verdict stores a snapshot
+// of it (D-635). The read happens either way, so the snapshot costs no
+// call.
+func (s *Server) checkOwner(ctx context.Context, uid string, fb *mtgv1.Feedback) (*mtgv1.Session, *mtgv1.Deck, error) {
 	kind := fb.GetKind()
 	if kind == mtgv1.FeedbackKind_FEEDBACK_KIND_QUESTION || kind == mtgv1.FeedbackKind_FEEDBACK_KIND_CHAT {
 		sess, err := s.sessions.Get(ctx, uid, strings.TrimSpace(fb.GetSessionId()))
 		if errors.Is(err, sessions.ErrNotFound) {
-			return nil, connect.NewError(connect.CodePermissionDenied, errNotYourSession)
+			return nil, nil, connect.NewError(connect.CodePermissionDenied, errNotYourSession)
 		}
 		if err != nil {
-			return nil, connect.NewError(connect.CodeInternal, err)
+			return nil, nil, connect.NewError(connect.CodeInternal, err)
 		}
 		// A chat verdict reads the whole session, so it names no question.
 		if kind == mtgv1.FeedbackKind_FEEDBACK_KIND_CHAT {
-			return sess, nil
+			return sess, nil, nil
 		}
 		if !hasQuestion(sess, strings.TrimSpace(fb.GetQuestionId())) {
-			return nil, invalid(errNoQuestion)
+			return nil, nil, invalid(errNoQuestion)
 		}
-		return sess, nil
+		return sess, nil, nil
 	}
 	deck, err := s.decks.Get(ctx, uid, strings.TrimSpace(fb.GetDeckId()))
 	if errors.Is(err, decks.ErrNotFound) {
-		return nil, connect.NewError(connect.CodePermissionDenied, errNotYourDeck)
+		return nil, nil, connect.NewError(connect.CodePermissionDenied, errNotYourDeck)
 	}
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, nil, connect.NewError(connect.CodeInternal, err)
 	}
 	switch fb.GetKind() {
 	case mtgv1.FeedbackKind_FEEDBACK_KIND_SUMMARY:
 		if strings.TrimSpace(deck.GetSummary()) == "" {
-			return nil, invalid(errNoSummary)
+			return nil, nil, invalid(errNoSummary)
 		}
 	case mtgv1.FeedbackKind_FEEDBACK_KIND_CARD:
 		if !hasCard(deck, strings.TrimSpace(fb.GetOracleId())) {
-			return nil, invalid(errNoCard)
+			return nil, nil, invalid(errNoCard)
 		}
 	}
-	return nil, nil
+	return nil, deck, nil
 }
 
 // questionContext reads the exact wording of one question and the answer
