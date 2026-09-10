@@ -137,13 +137,25 @@ func (w *world) corpus() []meta.List {
 	return out
 }
 
+// fitWorld fits the test world with the synergy check on at the default
+// floor. The world is a Standard world, and the check reads Commander
+// alone unless a fit names another format (D-653).
 func fitWorld(t *testing.T) (*world, *Model, *FitReport) {
+	t.Helper()
+	return fitWorldAt(t, 0, mtgv1.FormatId_FORMAT_ID_STANDARD)
+}
+
+// fitWorldAt fits the test world at a synergy floor, the default at zero,
+// with the check on in the named formats.
+func fitWorldAt(t *testing.T, floor float64, checked ...mtgv1.FormatId) (*world, *Model, *FitReport) {
 	t.Helper()
 	w := newWorld(t)
 	model, rep, err := Fit(context.Background(), FitInput{
 		Index: w.idx, Profiler: w.profiler, Lists: w.corpus(),
-		Now:     time.Date(2026, 9, 2, 15, 0, 0, 0, time.UTC),
-		Formats: []mtgv1.FormatId{mtgv1.FormatId_FORMAT_ID_STANDARD},
+		Now:            time.Date(2026, 9, 2, 15, 0, 0, 0, time.UTC),
+		Formats:        []mtgv1.FormatId{mtgv1.FormatId_FORMAT_ID_STANDARD},
+		SynergyFloor:   floor,
+		SynergyFormats: checked,
 	})
 	if err != nil {
 		t.Fatalf("fit: %v (%+v)", err, rep)
@@ -158,9 +170,13 @@ func TestFitSeparatesTheLadder(t *testing.T) {
 		t.Fatalf("no standard model: %+v", rep.Formats)
 	}
 	fr := rep.Formats[meta.FormatStandard]
-	// Thirty precons break on five axes each (D-484).
-	if fr.Used != 100 || fr.Synthetic != 150 || fr.Unusable != 0 || fr.OutOfPool != 1 {
+	// Thirty precons break on five axes each (D-484). A precon of basics
+	// breaks on synergy for the colors axis too, so 60 copies read synergy.
+	if fr.Used != 100 || fr.Synthetic != 150 || fr.SynergyCopies != 60 || fr.Unusable != 0 || fr.OutOfPool != 1 {
 		t.Errorf("report = %+v", fr)
+	}
+	if fr.SynergyFloor != DefaultSynergyFloor {
+		t.Errorf("synergy floor = %.2f, want the default %.2f", fr.SynergyFloor, DefaultSynergyFloor)
 	}
 	want := []string{meta.TierBad, meta.TierBaseline, meta.TierGood, meta.TierGreat}
 	if strings.Join(fm.Tiers, ",") != strings.Join(want, ",") {
@@ -528,11 +544,14 @@ func TestFoldsReadEveryList(t *testing.T) {
 	if fr.FoldCount != FoldCount {
 		t.Fatalf("folds = %d", fr.FoldCount)
 	}
-	if fr.Folds.Lists != fr.Used+fr.Synthetic {
-		t.Errorf("the folds read %d rows, want %d", fr.Folds.Lists, fr.Used+fr.Synthetic)
+	// The folds count each copy the synergy check drops once, in the fold
+	// that holds it out (D-652).
+	kept := fr.Synthetic - fr.ImmaterialCount()
+	if fr.Folds.Lists != fr.Used+kept {
+		t.Errorf("the folds read %d rows, want %d", fr.Folds.Lists, fr.Used+kept)
 	}
-	if fr.Holdout.BaselineOverOwn.Pairs != 150 {
-		t.Errorf("baseline over own read %d pairs, want the 150 copies", fr.Holdout.BaselineOverOwn.Pairs)
+	if fr.Holdout.BaselineOverOwn.Pairs != kept {
+		t.Errorf("baseline over own read %d pairs, want the %d copies the check kept", fr.Holdout.BaselineOverOwn.Pairs, kept)
 	}
 	ownSum := 0
 	for _, ps := range fr.Holdout.OwnByDefect {
@@ -566,5 +585,31 @@ func TestFoldsReadEveryList(t *testing.T) {
 		if pr.Pairs == 0 || pr.Name == "" || pr.Grade == "" {
 			t.Errorf("precon row = %+v", pr)
 		}
+	}
+}
+
+// TestSynergyCheckShapesTheBadRung: the check reads Commander alone by
+// default, so a Standard fit keeps every copy (D-653). At a floor no break
+// reaches, every synergy copy leaves the fit, so a request that passes no
+// check makes no copy at all (D-652).
+func TestSynergyCheckShapesTheBadRung(t *testing.T) {
+	_, _, unchecked := fitWorldAt(t, 0)
+	fr := unchecked.Formats[meta.FormatStandard]
+	if fr.SynergyFloor >= 0 || fr.ImmaterialCount() != 0 || fr.SynergyUnit != 0 || fr.Holdout.BaselineOverOwn.Pairs != 150 {
+		t.Errorf("a Standard fit read the floor %.2f and dropped %d copies at a unit of %.4f over %d own pairs, want no check and 150 pairs", fr.SynergyFloor, fr.ImmaterialCount(), fr.SynergyUnit, fr.Holdout.BaselineOverOwn.Pairs)
+	}
+	_, _, all := fitWorldAt(t, 1000, mtgv1.FormatId_FORMAT_ID_STANDARD)
+	fr = all.Formats[meta.FormatStandard]
+	if fr.SynergyCopies == 0 {
+		t.Fatal("the test world made no synergy copy, so the check reads nothing")
+	}
+	if fr.ImmaterialCount() != fr.SynergyCopies || fr.SynergyUnit <= 0 {
+		t.Errorf("a floor of 1000 dropped %d of %d synergy copies at a unit of %.4f, want every one", fr.ImmaterialCount(), fr.SynergyCopies, fr.SynergyUnit)
+	}
+	if _, ok := fr.Holdout.OwnByDefect[DefectSynergy]; ok {
+		t.Errorf("the synergy axis still reads own pairs: %+v", fr.Holdout.OwnByDefect)
+	}
+	if fr.Holdout.BaselineOverOwn.Pairs != fr.Synthetic-fr.SynergyCopies {
+		t.Errorf("own pairs = %d, want the %d copies of the other axes", fr.Holdout.BaselineOverOwn.Pairs, fr.Synthetic-fr.SynergyCopies)
 	}
 }

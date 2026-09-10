@@ -242,9 +242,7 @@ func runJudge(path, promptsPath, runOut string) error {
 	return nil
 }
 
-// regrade grades every deck with the stored model: the profile with no
-// content check, then the scorer. The roles come from the candidate
-// builder, as the fit reads them.
+// regrade grades every deck with the stored model.
 func regrade(decks []judged, idx *cards.Index) (modelVersion string, err error) {
 	scorer, err := gatekit.Scorer(context.Background())
 	if err != nil {
@@ -253,17 +251,28 @@ func regrade(decks []judged, idx *cards.Index) (modelVersion string, err error) 
 	if scorer.Version() == "" {
 		return "", errors.New("no stored quality model, so the judge lane has no grade to check")
 	}
+	if err := gradeDecks(decks, idx, scorer); err != nil {
+		return "", err
+	}
+	return scorer.Version(), nil
+}
+
+// gradeDecks grades every deck with a scorer: the profile with no content
+// check, then the grade. The roles come from the candidate builder, as the
+// fit reads them. The judge lane passes the stored model, and the gate
+// passes the model it fitted (D-648).
+func gradeDecks(decks []judged, idx *cards.Index, scorer *quality.Scorer) error {
 	cfg, err := rules.Load()
 	if err != nil {
-		return "", err
+		return err
 	}
 	prof, err := profile.New(cfg, func() *cards.TagIndex { return idx.Tags() }, nil)
 	if err != nil {
-		return "", err
+		return err
 	}
 	builder, err := candidates.New()
 	if err != nil {
-		return "", err
+		return err
 	}
 	roles := builder.Roles(idx)
 	for i := range decks {
@@ -275,11 +284,11 @@ func regrade(decks []judged, idx *cards.Index) (modelVersion string, err error) 
 		}
 		q := scorer.Score(quality.Input{Deck: d.deck, Profile: prof.Measure(d.deck, idx), Cards: idx})
 		if q == nil {
-			return "", fmt.Errorf("deck %d: the model covers no %s", d.id, generate.FormatWord(d.format))
+			return fmt.Errorf("deck %d: the model covers no %s", d.id, generate.FormatWord(d.format))
 		}
 		d.modelGrade = q.GetTier()
 	}
-	return scorer.Version(), nil
+	return nil
 }
 
 // reportJudge writes the judge document and answers the verdict.

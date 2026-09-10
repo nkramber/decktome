@@ -441,6 +441,12 @@ eval-check: ## Compare every baseline of the eval harness with its newest run (P
 # fits the model over the stored lists and calls no provider.
 QUALITY_GATE_OUT ?= docs/reference/pr14b-quality-gate.md
 QUALITY_GATE_ARGS ?=
+# QUALITY_GATE_DECKS and QUALITY_GATE_JUDGED give the two reader-facing
+# numbers of D-648: the built decks the fitted model grades bad, and its
+# agreement with one judge run over the same decks. Both are free, and an
+# empty value leaves the section out.
+QUALITY_GATE_DECKS ?= docs/reference/pr8-deck-gate-run16.md
+QUALITY_GATE_JUDGED ?= docs/reference/pr14b-quality-judge-run5.md
 # QUALITY_GATE_RUN is the run file of PR-15, named after the document.
 QUALITY_GATE_RUN ?= docs/reference/eval/$(notdir $(basename $(QUALITY_GATE_OUT))).jsonl
 
@@ -449,7 +455,10 @@ quality-gate: ## Write the PR-14B quality gate document from the local meta stor
 		{ echo "$(QUALITY_GATE_OUT) holds a verdict. Set QUALITY_GATE_OUT to a new file."; exit 1; }
 	@test ! -f $(QUALITY_GATE_RUN) || { echo "$(QUALITY_GATE_RUN) exists. Set QUALITY_GATE_RUN to a new file."; exit 1; }
 	@CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall \
-		$(GO) run ./cmd/quality-gate -run-out $(abspath $(QUALITY_GATE_RUN)) $(QUALITY_GATE_ARGS) > $(QUALITY_GATE_OUT)
+		$(GO) run ./cmd/quality-gate -run-out $(abspath $(QUALITY_GATE_RUN)) \
+			$(if $(QUALITY_GATE_DECKS),-decks $(abspath $(QUALITY_GATE_DECKS))) \
+			$(if $(QUALITY_GATE_JUDGED),-judged $(abspath $(QUALITY_GATE_JUDGED))) \
+			$(QUALITY_GATE_ARGS) > $(QUALITY_GATE_OUT)
 	@echo "wrote $(QUALITY_GATE_OUT) and $(QUALITY_GATE_RUN)"
 
 # QUALITY_JUDGE_IN is the deck gate document the tier judge lane reads,

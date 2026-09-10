@@ -15,6 +15,13 @@
 // model behind. The exit code is 1 on a FAIL verdict, and the document
 // is written first.
 //
+// -decks and -judged add the reader-facing numbers of D-648: the built
+// decks of a deck gate document the fitted model grades bad, and its
+// agreement with a judge lane document that already ran. -synergy-floor
+// sets the floor of the synergy check, which reads Commander alone (D-652,
+// D-653). -write refuses any floor but the default, because the worker
+// fits at the default.
+//
 // The judge lane is the one paid mode: -judge <deck gate document> asks
 // the judge role for the tier of every graded deck of the document, and
 // it needs QUALITY_JUDGE=1 (`make quality-judge`).
@@ -66,6 +73,9 @@ func run() error {
 	prompts := flag.String("prompts", "cmd/deck-gate/prompts.json", "the deck gate prompts, for the commander of a deck the document names none for")
 	explain := flag.String("explain", "", "print how the stored model grades every deck of this deck gate document (free)")
 	auditOut := flag.String("audit-out", "", "write every own-copy pair of the precon bar here as JSON, for the audit of M-8 (free)")
+	floor := flag.Float64("synergy-floor", quality.DefaultSynergyFloor, "the fall of the synergy feature, in standard deviations of the real training lists, a synergy break needs before its copy joins a Commander fit (D-652, D-653). 0 reads the default, and a negative floor keeps every copy")
+	decksDoc := flag.String("decks", "", "grade every deck of this deck gate document with the fitted model, for the reader-facing numbers of D-648 (free)")
+	judgedDoc := flag.String("judged", "", "compare those grades with the judge's tiers of this judge lane document, which judged the same deck gate document (free)")
 	runOut := flag.String("run-out", "", "write the run header and the rows as JSONL here (PR-15)")
 	flag.Parse()
 	if *judge != "" {
@@ -73,6 +83,12 @@ func run() error {
 	}
 	if *explain != "" {
 		return runExplain(*explain, *prompts)
+	}
+	if *write && *floor != 0 && *floor != quality.DefaultSynergyFloor {
+		return fmt.Errorf("quality gate: -write stores the model the worker fits, and the worker reads the synergy floor %.2f", quality.DefaultSynergyFloor)
+	}
+	if *judgedDoc != "" && *decksDoc == "" {
+		return fmt.Errorf("quality gate: -judged compares the grades of -decks, so it needs -decks")
 	}
 	// The run file is never overwritten (D-65).
 	if err := gatekit.RefuseExisting(*runOut); err != nil {
@@ -96,7 +112,7 @@ func run() error {
 	if *write {
 		model, rep, err = quality.Refit(ctx, store, idx, start.UTC(), log)
 	} else {
-		model, rep, err = quality.FitStore(ctx, store, idx, start.UTC(), log)
+		model, rep, err = quality.FitStore(ctx, store, idx, start.UTC(), log, *floor)
 	}
 	if err != nil && model == nil {
 		return fmt.Errorf("quality gate: %w", err)
@@ -112,11 +128,17 @@ func run() error {
 		}
 	}
 	offer, offerErr := offerAtBracketFive(idx, model)
+	var reader *readerRead
+	if *decksDoc != "" && model != nil {
+		if reader, err = gradeReader(idx, model, *decksDoc, *judgedDoc, *prompts); err != nil {
+			return err
+		}
+	}
 	if model != nil {
 		run.Header.Versions["quality_model"] = model.Version
 	}
 	run.Header.Versions["commanders_day"] = gatekit.OrNone(day)
-	pass := report(os.Stdout, idx, model, rep, reads, day, offer, offerErr, time.Since(start), run)
+	pass := report(os.Stdout, idx, model, rep, reads, day, offer, offerErr, reader, time.Since(start), run)
 	if err := evalrun.WriteFile(*runOut, run); err != nil {
 		return err
 	}
@@ -176,7 +198,7 @@ func offerAtBracketFive(idx *cards.Index, model *quality.Model) ([]offered, erro
 }
 
 // report writes the document and answers the verdict.
-func report(w io.Writer, idx *cards.Index, model *quality.Model, rep *quality.FitReport, reads []meta.Commander, day string, offer []offered, offerErr error, took time.Duration, run *evalrun.Run) bool {
+func report(w io.Writer, idx *cards.Index, model *quality.Model, rep *quality.FitReport, reads []meta.Commander, day string, offer []offered, offerErr error, reader *readerRead, took time.Duration, run *evalrun.Run) bool {
 	// The document goes to stdout, and a write error there ends the run
 	// with a short document, which the verdict check refuses.
 	p := func(format string, a ...any) { _, _ = fmt.Fprintf(w, format, a...) }
@@ -203,12 +225,13 @@ func report(w io.Writer, idx *cards.Index, model *quality.Model, rep *quality.Fi
 	if folds > 1 {
 		p("The bars read %d folds, every list holdout once, and the pairs of a bar sample evenly under the cap of %d (M-7). The precon bar reads each precon against its own broken copies (D-573). The cross pairs, every precon against every copy, stand as information.\n\n", folds, quality.MaxPairChecks)
 	}
-	p("| Format | Lists | Used | Synthetic | Holdout | Great over precon | Precon over own copy | Precon over bad, cross | Accuracy |" + "\n")
-	p("|---|---|---|---|---|---|---|---|---|" + "\n")
+	checkSentence(p, rep)
+	p("| Format | Lists | Used | Synthetic | Immaterial | Holdout | Great over precon | Precon over own copy | Precon over bad, cross | Accuracy |" + "\n")
+	p("|---|---|---|---|---|---|---|---|---|---|" + "\n")
 	for _, word := range words {
 		fr := rep.Formats[word]
 		if fr == nil {
-			p("| %s | 0 | 0 | 0 | 0 | no fit | no fit | no fit | no fit |\n", word)
+			p("| %s | 0 | 0 | 0 | 0 | 0 | no fit | no fit | no fit | no fit |\n", word)
 			fails = append(fails, word+": no lists")
 			pass = false
 			run.Gate(word, "fit", 0, "no lists")
@@ -219,7 +242,7 @@ func report(w io.Writer, idx *cards.Index, model *quality.Model, rep *quality.Fi
 			fm = model.Formats[word]
 		}
 		if fm == nil {
-			p("| %s | %d | %d | %d | 0 | no fit | no fit | no fit | no fit |\n", word, fr.Read, fr.Used, fr.Synthetic)
+			p("| %s | %d | %d | %d | %d | 0 | no fit | no fit | no fit | no fit |\n", word, fr.Read, fr.Used, fr.Synthetic, fr.ImmaterialCount())
 			fails = append(fails, word+": no fit")
 			pass = false
 			run.Gate(word, "fit", 0, "no fit")
@@ -232,9 +255,10 @@ func report(w io.Writer, idx *cards.Index, model *quality.Model, rep *quality.Fi
 		run.Gate(word, "precon_over_own", bb.Share(), fmt.Sprintf("%d pairs, the bar is %.2f", bb.Pairs, barBaselineOverBad))
 		run.Info(word, "precon_over_bad", cross.Share(), fmt.Sprintf("%d cross pairs, information", cross.Pairs))
 		run.Info(word, "accuracy", h.Accuracy, "")
-		run.Info(word, "lists", float64(fr.Read), fmt.Sprintf("%d used, %d synthetic, %d holdout", fr.Used, fr.Synthetic, h.Lists))
+		run.Info(word, "lists", float64(fr.Read), fmt.Sprintf("%d used, %d synthetic, %d immaterial, %d holdout", fr.Used, fr.Synthetic, fr.ImmaterialCount(), h.Lists))
+		run.Info(word, "immaterial", float64(fr.ImmaterialCount()), fmt.Sprintf("%d of %d synergy copies, floor %.2f, unit %.4f", fr.ImmaterialCount(), fr.SynergyCopies, fr.SynergyFloor, fr.SynergyUnit))
 		run.Info(word, "folds", float64(fr.FoldCount), "")
-		p("| %s | %d | %d | %d | %d | %s | %s | %.2f of %d | %.2f |\n", word, fr.Read, fr.Used, fr.Synthetic, h.Lists,
+		p("| %s | %d | %d | %d | %d | %d | %s | %s | %.2f of %d | %.2f |\n", word, fr.Read, fr.Used, fr.Synthetic, fr.ImmaterialCount(), h.Lists,
 			pairWord(gb, barGreatOverBaseline), pairWord(bb, barBaselineOverBad), cross.Share(), cross.Pairs, h.Accuracy)
 		if gb.Pairs == 0 || gb.Share() < barGreatOverBaseline {
 			fails = append(fails, fmt.Sprintf("%s: great over precon %s", word, pairWord(gb, barGreatOverBaseline)))
@@ -246,6 +270,9 @@ func report(w io.Writer, idx *cards.Index, model *quality.Model, rep *quality.Fi
 		}
 	}
 	p("\n")
+	if reader != nil {
+		readerSection(p, rep, reader, run)
+	}
 
 	// The commander offer.
 	p("## The bracket 5 offer" + "\n")
@@ -326,6 +353,10 @@ func report(w io.Writer, idx *cards.Index, model *quality.Model, rep *quality.Fi
 				}
 				p("\n")
 			}
+			if fr.SynergyFloor >= 0 {
+				p("The synergy check dropped %d of %d synergy copies over the folds, at a floor of %.2f and a unit of %.4f (D-652). By the axis the fit asked for: %s.\n\n",
+					fr.ImmaterialCount(), fr.SynergyCopies, fr.SynergyFloor, fr.SynergyUnit, countWords(fr.Immaterial))
+			}
 			misses(p, fr.Diagnostic)
 			if fr.Diagnostic != nil {
 				for _, axis := range quality.Defects {
@@ -373,6 +404,24 @@ func report(w io.Writer, idx *cards.Index, model *quality.Model, rep *quality.Fi
 	}
 	p("\n")
 	return pass
+}
+
+// checkSentence names the floor of the synergy check and the formats it
+// reads, above the table that counts its drops (D-652, D-653).
+func checkSentence(p func(string, ...any), rep *quality.FitReport) {
+	var checked []string
+	floor := -1.0
+	for _, word := range []string{meta.FormatCommander, meta.FormatStandard, meta.FormatModern} {
+		if fr := rep.Formats[word]; fr != nil && fr.SynergyFloor >= 0 {
+			checked = append(checked, word)
+			floor = fr.SynergyFloor
+		}
+	}
+	if len(checked) == 0 {
+		p("The synergy check is off, so every synthetic copy stays (D-652).\n\n")
+		return
+	}
+	p("The synergy check drops a copy whose break lowered the `synergy` feature by less than %.2f standard deviations of the real training lists (D-652). It reads %s, and every other format keeps each copy (D-653). Synthetic counts the copies the engine made, and Immaterial the ones the check dropped, each copy once over the folds.\n\n", floor, strings.Join(checked, ", "))
 }
 
 // misses prints the diagnostic of the precon bar: the misses per

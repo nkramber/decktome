@@ -83,7 +83,7 @@ func runMeta(ctx context.Context, opts metaOptions, logger *slog.Logger) error {
 	}
 	for word, fr := range fit.Formats {
 		logger.Info("quality fit", "format", word, "read", fr.Read, "used", fr.Used, "unusable", fr.Unusable, "out_of_pool", fr.OutOfPool,
-			"synthetic", fr.Synthetic, "holdout", fr.Holdout.Lists,
+			"synthetic", fr.Synthetic, "immaterial", fr.ImmaterialCount(), "holdout", fr.Holdout.Lists,
 			"great_over_baseline", fr.Holdout.GreatOverBaseline.Share(),
 			"baseline_over_bad", fr.Holdout.BaselineOverBad.Share(), "accuracy", fr.Holdout.Accuracy)
 	}
