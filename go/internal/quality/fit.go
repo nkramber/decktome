@@ -272,6 +272,36 @@ type AxisRead struct {
 	LeastMoved, MostMoved []string
 	moved                 map[string]float64
 	movedN                int
+	// Audit reads every own-copy pair of this axis, and it answers
+	// whether the bar asks for a true ordering (M-8, D-649).
+	Audit []PairAudit
+}
+
+// PairAudit is one precon against its own broken copy, with what the
+// break did to it (M-8, D-649).
+//
+// The bar asks the ladder to score a precon above its copy. The break
+// replaces half the spells with cards the real lists play (D-488), and
+// for a weak precon that is arguably the better pile of cards. This row
+// carries what a reader needs to judge that: the two scores, the two
+// grades, and the signed move of the corpus features. A positive move
+// means the copy reads higher than the precon on that feature.
+type PairAudit struct {
+	Precon string  `json:"precon"`
+	Axis   string  `json:"axis"`
+	Won    bool    `json:"won"`
+	Score  float64 `json:"precon_score"`
+	Copy   float64 `json:"copy_score"`
+	// Grade and CopyGrade are the tier each one graded, as words.
+	Grade     string `json:"precon_grade"`
+	CopyGrade string `json:"copy_grade"`
+	// Rank is the precon's place among the holdout precons by score,
+	// 0 the weakest. It answers whether the failures are the weak ones.
+	Rank int `json:"rank"`
+	// Moves are the signed standardized deltas, copy minus precon, of
+	// the corpus features. A positive card_rate means the copy holds
+	// cards the top lists play more than the precon does.
+	Moves map[string]float64 `json:"moves"`
 }
 
 // PreconRead is one holdout precon over the sampled pairs of the
@@ -326,6 +356,7 @@ func (d *Diagnostic) add(o *Diagnostic) {
 		for k, v := range oa.moved {
 			ar.moved[k] += v
 		}
+		ar.Audit = append(ar.Audit, oa.Audit...)
 	}
 	for key, pr := range o.precons {
 		have := d.precons[key]
@@ -1080,6 +1111,17 @@ func evaluate(fm *FormatModel, rows []holdRow, level map[string]int, limit int) 
 		return h, diag
 	}
 	precons := byLevel(u, "")
+	// The rank of each precon among the holdout precons by score, 0 the
+	// weakest. M-8 asks whether the pairs that fail are the weak precons
+	// (D-649).
+	rankOf := map[int]int{}
+	{
+		byScore := append([]int(nil), precons...)
+		sort.Slice(byScore, func(i, j int) bool { return scores[byScore[i]] < scores[byScore[j]] })
+		for r, idx := range byScore {
+			rankOf[idx] = r
+		}
+	}
 	for _, a := range precons {
 		diag.precons[rows[a].key] = &PreconRead{Name: rows[a].name, Date: rows[a].date, Grade: fm.Tiers[grades[a]], Defect: round4(fm.defect(rows[a].z))}
 	}
@@ -1144,6 +1186,23 @@ func evaluate(fm *FormatModel, rows []holdRow, level map[string]int, limit int) 
 					ar.moved[k] += math.Abs(rows[b].z[i] - rows[a].z[i])
 				}
 				ar.movedN++
+				// The audit of M-8: every own-copy pair, with the signed
+				// move of the corpus features. The bar asks the ladder to
+				// score the precon above the copy, and this row says
+				// whether that ordering is the true one (D-649).
+				au := PairAudit{
+					Precon: rows[a].key, Axis: axis, Won: scores[a] > scores[b], Rank: rankOf[a],
+					Score: round4(scores[a]), Copy: round4(scores[b]),
+					Grade: fm.Tiers[grades[a]], CopyGrade: fm.Tiers[grades[b]],
+					Moves: map[string]float64{},
+				}
+				for i, k := range fm.Keys {
+					switch k {
+					case KeyCardRate, KeyUnseenShare, KeySynergy:
+						au.Moves[k] = round4(rows[b].z[i] - rows[a].z[i])
+					}
+				}
+				ar.Audit = append(ar.Audit, au)
 			}
 		}
 		if ar.OwnPairs > 0 {

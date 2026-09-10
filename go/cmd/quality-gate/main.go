@@ -26,6 +26,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -64,6 +65,7 @@ func run() error {
 	judge := flag.String("judge", "", "run the tier judge lane over this deck gate document (CAUTION: costs money, needs QUALITY_JUDGE=1)")
 	prompts := flag.String("prompts", "cmd/deck-gate/prompts.json", "the deck gate prompts, for the commander of a deck the document names none for")
 	explain := flag.String("explain", "", "print how the stored model grades every deck of this deck gate document (free)")
+	auditOut := flag.String("audit-out", "", "write every own-copy pair of the precon bar here as JSON, for the audit of M-8 (free)")
 	runOut := flag.String("run-out", "", "write the run header and the rows as JSONL here (PR-15)")
 	flag.Parse()
 	if *judge != "" {
@@ -117,6 +119,19 @@ func run() error {
 	pass := report(os.Stdout, idx, model, rep, reads, day, offer, offerErr, time.Since(start), run)
 	if err := evalrun.WriteFile(*runOut, run); err != nil {
 		return err
+	}
+	// The audit is written before the verdict. A gate that reads FAIL is
+	// exactly when a person wants the pairs that failed (M-8).
+	if *auditOut != "" {
+		raw, err := json.MarshalIndent(auditRows, "", "  ")
+		if err != nil {
+			return err
+		}
+		// The file is a measurement of this repo and not a secret.
+		if err := os.WriteFile(*auditOut, append(raw, '\n'), 0o644); err != nil { // #nosec G306
+			return err
+		}
+		fmt.Fprintf(os.Stderr, "wrote %s, %d own-copy pairs\n", *auditOut, len(auditRows))
 	}
 	if !pass {
 		return fmt.Errorf("quality gate: FAIL")
@@ -312,6 +327,17 @@ func report(w io.Writer, idx *cards.Index, model *quality.Model, rep *quality.Fi
 				p("\n")
 			}
 			misses(p, fr.Diagnostic)
+			if fr.Diagnostic != nil {
+				for _, axis := range quality.Defects {
+					ar := fr.Diagnostic.Axes[axis]
+					if ar == nil {
+						continue
+					}
+					for _, a := range ar.Audit {
+						auditRows = append(auditRows, auditRow{Format: word, PairAudit: a})
+					}
+				}
+			}
 			p("Confusion on the holdout over the folds, rows are the label and columns the grade, worst first:" + "\n")
 			p("\n")
 			for i, row := range fr.Holdout.Confusion {
@@ -380,6 +406,88 @@ func misses(p func(string, ...any), d *quality.Diagnostic) {
 	p("|---|---|---|---|" + "\n")
 	for _, pr := range d.Precons {
 		p("| %s (%s) | %s | %.2f | %d of %d |\n", pr.Name, pr.Date, pr.Grade, pr.Defect, pr.Misses, pr.Pairs)
+	}
+	p("\n")
+	auditSection(p, d)
+}
+
+// auditRow is one own-copy pair with the format it came from, for the
+// JSON the -audit-out flag writes (M-8).
+type auditRow struct {
+	Format string `json:"format"`
+	quality.PairAudit
+}
+
+// auditRows collects every own-copy pair the report walked. The
+// -audit-out flag writes them, and the slice costs a few hundred rows
+// either way.
+var auditRows []auditRow
+
+// auditProseWritten keeps the explanation of the audit to one printing.
+// The section runs once per format, and the prose reads the same each
+// time.
+var auditProseWritten bool
+
+// auditSection answers the three questions of M-8 (D-649). The bar asks
+// the ladder to score a precon above its broken copy. The break replaces
+// half the spells with cards the real lists play (D-488), and for a weak
+// precon that is arguably the better pile of cards.
+//
+// So for every axis it reads two things over the own-copy pairs. Are the
+// pairs that fail the weak precons? And does the copy hold the better
+// cards, by the corpus features?
+func auditSection(p func(string, ...any), d *quality.Diagnostic) {
+	rows := 0
+	for _, ar := range d.Axes {
+		rows += len(ar.Audit)
+	}
+	if rows == 0 {
+		return
+	}
+	if !auditProseWritten {
+		auditProseWritten = true
+		p("The audit of the bar (M-8). The bar asks the ladder to score a precon above its own broken copy. ")
+		p("Rank is the precon's place among the holdout precons by score, 0 the weakest, and the column reads the mean rank of the pairs that win and of the pairs that lose. ")
+		p("A break that hurts every precon alike moves the two means together. A lower mean rank among the losers says the bar fails on the weak precons, which is where a broken copy is most likely the better deck. ")
+		p("Card rate and synergy read the signed move, the copy less the precon, over the pairs that lose. A positive card rate says the copy holds cards the top lists play more than the precon does.\n\n")
+	}
+	p("| Axis | Own pairs | Lost | Mean rank, won | Mean rank, lost | `card_rate` move | `synergy` move | Copy graded above |" + "\n")
+	p("|---|---|---|---|---|---|---|---|" + "\n")
+	for _, axis := range quality.Defects {
+		ar := d.Axes[axis]
+		if ar == nil || len(ar.Audit) == 0 {
+			continue
+		}
+		var wonRank, lostRank, cardMove, synMove float64
+		won, lost, copyAbove := 0, 0, 0
+		// The ladder, worst first, as meta names it.
+		order := map[string]int{}
+		for i, t := range meta.Tiers {
+			order[t] = i
+		}
+		for _, a := range ar.Audit {
+			if a.Won {
+				won++
+				wonRank += float64(a.Rank)
+				continue
+			}
+			lost++
+			lostRank += float64(a.Rank)
+			cardMove += a.Moves[quality.KeyCardRate]
+			synMove += a.Moves[quality.KeySynergy]
+			if order[a.CopyGrade] > order[a.Grade] {
+				copyAbove++
+			}
+		}
+		mean := func(sum float64, n int) string {
+			if n == 0 {
+				return "-"
+			}
+			return fmt.Sprintf("%.2f", sum/float64(n))
+		}
+		p("| %s | %d | %d | %s | %s | %s | %s | %d of %d |\n", axis, len(ar.Audit), lost,
+			mean(wonRank, won), mean(lostRank, lost),
+			mean(cardMove, lost), mean(synMove, lost), copyAbove, lost)
 	}
 	p("\n")
 }
