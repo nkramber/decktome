@@ -24,7 +24,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The gate reports the three numbers of D-648 for free.** `make quality-gate` grades the decks of deck gate run 16 with the model it fits, and it reads the judge's tiers from judge lane run 5. It stores no model.
 
-**M-10 is next: a scorer with one weight set per tier** (D-656). Three items aimed at the reader gap failed: PR-29, M-9, and PR-30 (F-94, F-98, F-99). The owner parked PR-35 and dropped PR-30. Each item added a feature to one ordinal ladder, and that ladder gives every feature one direction. `docs/reference/m9-casual-corpus-size-2026-09-10.md` and `docs/reference/pr30-commander-reference-2026-09-10.md` hold the fits.
+**The owner grades ten disputed decks by hand next** (D-657, F-100). M-10's softmax scorer grades real lists far better, and the judge agreement moved from 8 to 9 only. The defect detector holds eight of those ten decks at bad. The review sheet is `.local/review/disputed-decks-2026-09-10.md`, beside a CSV, and it stays out of git. `docs/reference/m10-softmax-scorer-2026-09-10.md` holds the fits.
+
+**Three items aimed at the reader gap failed first**: PR-29, M-9, and PR-30 (F-94, F-98, F-99). The owner parked PR-35 and dropped PR-30.
 
 **CAUTION: two features never get built again** (F-94). `casual_unseen_share` moved the target axis by nothing and cost three other bars. `casual_pair_share` won one pair of 389, because the fit split it against `casual_synergy` with opposite signs. `docs/reference/pr29-casual-corpus-2026-09-10.md` says why for each, and PR-35 builds neither one.
 
@@ -84,7 +86,7 @@ Seven things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 1. **Read the log of the next meta job.** Its quality fit line for Commander names `immaterial`. Check that the count reads above zero.
-2. **M-10, a scorer with one weight set per tier** (D-656). Fit a softmax scorer over the same features on a throwaway copy of `main`. Read the three numbers of D-648 beside gate run 18. PR-38 builds it only when graded-bad falls or the judge agreement rises.
+2. **Read the owner's grades of the ten disputed decks** (D-657, F-100). They decide the next fix. A grade on the side of the detector means the judge bar is the wrong target. A grade on the side of the judge means the detector reads built decks wrong.
 3. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
 4. **The live half of the feedback loop has no run yet.** Three things want a measurement: the judge lane of the triage, one live fix cycle, and one review round. All three need the owner's word, and the cycle also needs `AUTOTUNE_FIXER_CMD` and a harvest whose verdicts carry a snapshot.
 5. **The next whole deck gate run is still run 19, and it is still outstanding.** It makes the next decks baseline.
@@ -113,6 +115,8 @@ Merged as #127.
 **M-9 refuted the premise of D-650** (F-98). With the casual features of PR-29, a larger casual corpus read worse on both reader-facing numbers. The owner parked PR-35 and chose PR-30 next (D-655).
 
 **PR-30 failed in both forms** (F-99). With no self-match no built deck moved, and with it graded bad rose from 15 to 20. The owner dropped PR-30 and chose a structural change to the model, which M-10 measures first (D-656).
+
+**M-10 measured a softmax scorer, and the detector held the built decks** (F-100). The owner asked for the ten disputed decks as a review sheet, to grade them by hand (D-657).
 
 **The check measures the move after the break** (D-652). In each fold the fit reads the synergy feature of every synergy copy, and it drops a copy whose fall sits under the floor. A request that passes no check makes no copy.
 

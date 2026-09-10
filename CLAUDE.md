@@ -14,7 +14,7 @@ Stage (2026-09-10): **the app is live on `decktome.com`**, and pull request #127
 
 **PR-29 closed, and it never merged** (D-652). M-8 read the precon bar and found its target of 0.95 was never reachable. 54 of 389 pairs carry no signal, because a weak precon's cards do not pair in the corpus (F-95). **Every quality item reports three numbers now**, and the owner drops an item that moves none (D-648). **PR-37 is merged as #127.** It adds the materiality check the synergy break never had, in Commander alone at a floor of 0.10 (D-653). Gate run 18 reads PASS, and no reader-facing number moved: the bar reads a new population, and the model is the same model.
 
-**M-10 is next** (D-656). PR-29, M-9, and PR-30 moved no reader-facing number the right way. So the owner chose a structural change to the model: a scorer with one weight set per tier.
+**The owner grades ten disputed decks next** (D-657, F-100). M-10's softmax scorer grades real lists far better, and it moved the judge agreement from 8 to 9 only. The defect detector holds eight of those ten decks at bad.
 
 Two rules of the deployed app come from 2026-09-09. **A verdict keeps the object it names** (D-635), because a reader deletes the deck or the chat they complained about, and the verdict outlives it. **Every user has a record** at `users/<uid>` (D-638): the verified email, the dates, and six counters of what they made. No harvest reads that record, and a test refuses the import that joins them.
 
