@@ -6,6 +6,7 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-10 correction pass 146 (PR-39): PR-39 merged as #135, and the documents read that state. Dependabot's #131 to #133 landed the same day, and #133 took a fix for vitest 5 and protoc-gen-es 2.14.1 first. Changes: PR-39.
 2026-09-10 correction pass 145 (F-104, D-662): the commander offer read the bracket of the turn before. So the bracket 5 signal of OQ-48 never ordered a deployed offer. The hints take the bracket after the answers apply, as they take the sets, and a test holds it. Merged as #134. Changes: F-104, D-662.
 2026-09-10 correction pass 144 (PR-39, F-102, F-103, D-659 to D-661): the owner graded the ten disputed decks, and the builder did not size the basic lands to the pips. The mana pass balances the basics by the need of each color after the bands hold. The source count credits only mana a deck can rely on. Over run 18 four decks rise and none falls. Changes: PR-39, F-102, F-103, D-659 to D-661.
 2026-09-10 correction pass 143 (F-101, D-658): the CI step "fake gcs tests" ran no test, because its filter matched no test name, and it passed. A shared script now seeds the fake GCS from the trimmed snapshot, runs `TestLiveFakeGCS` by its name, and fails unless the test passes. Changes: F-101, D-658.
@@ -1192,7 +1193,7 @@ The code of M-10, built for the stored model: the model file, the reasons, and t
 Gate: the gate of M-10 holds on the stored model, and `make verify` passes.
 > *In plain English:* if the test works, this makes it the real grader.
 
-**PR-39: The basic lands follow the need of each color (F-102, F-103, D-659 to D-661).** 🔧 built 2026-09-10, on branch `builder-basics-by-pips`.
+**PR-39: The basic lands follow the need of each color (F-102, F-103, D-659 to D-661).** ✅ merged 2026-09-10 (#135).
 The model writes the basic counts, and the mana pass moved them only while a band was off (F-102). Run 18 ran four of 16 multicolor decks opposite to their pips, inside their bands. The owner chose the basics before the detector (D-660), because a reader feels a mana base in every game.
 
 **The pass balances the basics after the bands hold.** It trades one basic land for another while each color's sources over its need rise, the worst color first. The pass caps each ratio at one, so a deck whose colors all meet their need keeps the split the model chose. The pass keeps a trade only when the band score does not rise. The trade keeps the land count, every nonbasic land, and every spell. A color never gives up its last basic, and twelve trades bound the phase.
@@ -1503,7 +1504,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 28. **PR-33** one model call that lands in band (F-77, F-78). ✅ merged 2026-09-08 (#102). Deck gate run 18 is the paid measure and the decks baseline (D-617). An upgrade reads the bands after D-628, and the next whole run measures that (D-629).
 29. **PR-34** more collection platforms (F-91, F-92, F-93). ✅ merged 2026-09-10 (#123): Moxfield reads, and the app names the format itself (D-647). The other platforms wait for the owner's word and a real export each.
 30. **M-8** the audit of the precon bar ✅ merged 2026-09-10 (#126, F-94, F-95). **PR-29** ⏸ closed the same day on its own evidence (D-652). **PR-37** the materiality check on the synergy break ✅ merged 2026-09-10 (#127, F-95, F-96, D-653). **M-9** the casual corpus at three sizes ✅ measured 2026-09-10 (F-97, F-98). **PR-35** more casual lists 🅿 parked (D-655). **PR-30** the commander reference ⏸ closed on its evidence (D-656). **M-10** a scorer with one weight set per tier ✅ measured 2026-09-10, gate not met (F-100). **PR-38** its build waits on the owner's grades of ten decks (D-657). **PR-36** the reader's verdict waits for verdicts (D-651).
-31. **PR-39** the basic lands by the need of each color 🔧 built 2026-09-10, waits for review (F-102, F-103, D-659 to D-661). The fix of F-104, the commander offer and the bracket of its turn, ✅ merged 2026-09-10 (#134, D-662).
+31. **PR-39** the basic lands by the need of each color ✅ merged 2026-09-10 (#135, F-102, F-103, D-659 to D-661). The fix of F-104, the commander offer and the bracket of its turn, ✅ merged 2026-09-10 (#134, D-662).
 
 ## 9. Open questions
 
