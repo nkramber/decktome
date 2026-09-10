@@ -174,6 +174,8 @@ var phrases = map[string]phrase{
 	KeyCardRate:       {"the cards are ones the top lists of the format play", "few of the cards are ones the top lists of the format play"},
 	KeyUnseenShare:    {"many of the cards appear in no top list", "nearly every card appears in a top list"},
 	KeySynergy:        {"the cards pair the way the top lists pair them", "the cards pair in ways the top lists do not"},
+	KeyCasualRate:     {"the cards are ones people play in this format", "few of the cards are ones people play in this format"},
+	KeyCasualSynergy:  {"the cards pair the way people build them", "the cards pair in ways people do not build them"},
 	KeyLand:           {"the land count sits above the norm of the format", "the land count sits below the norm of the format"},
 	KeyAvgManaValue:   {"the curve sits high for the format", "the curve sits low for the format"},
 	KeyColorSources:   {"the color sources cover the pips", "the color sources fall short of the pips"},

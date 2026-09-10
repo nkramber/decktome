@@ -71,14 +71,21 @@ func Features(in Input, fm *FormatModel) map[string]float64 {
 		}
 	}
 
-	// The corpus features. A card the top lists never held reads the
-	// prior, and a pair they never held together lifts nothing.
+	// The corpus features. A card the lists never held reads the prior,
+	// and a pair they never held together lifts nothing.
+	//
+	// Two groups answer two questions (PR-29). The top group asks how
+	// close the deck is to a tournament list, and the casual group how
+	// close it is to a deck people build. A precon reads low on the
+	// first and high on the second, and its synergy-broken copy reads
+	// low on both.
 	var rateSum, unseen, pairSum float64
+	var casualRateSum, casualPairSum float64
 	var pairs int
 	if fm != nil {
 		for _, s := range spells {
-			r := fm.Rate(s.id)
-			rateSum += r * s.count
+			rateSum += fm.Rate(s.id) * s.count
+			casualRateSum += fm.CasualRate(s.id) * s.count
 			if _, ok := fm.CardRates[s.id]; !ok {
 				unseen += s.count
 			}
@@ -86,12 +93,15 @@ func Features(in Input, fm *FormatModel) map[string]float64 {
 		for i := 0; i < len(spells); i++ {
 			for j := i + 1; j < len(spells); j++ {
 				pairs++
-				pairSum += fm.Pairs[PairKey(spells[i].id, spells[j].id)]
+				key := PairKey(spells[i].id, spells[j].id)
+				pairSum += fm.Pairs[key]
+				casualPairSum += fm.CasualPairs[key]
 			}
 		}
 	}
 	if copies > 0 {
 		out[KeyCardRate] = rateSum / copies
+		out[KeyCasualRate] = casualRateSum / copies
 		out[KeyUnseenShare] = unseen / copies
 		out[KeyCurveLow] = low / copies
 		out[KeyCurveHigh] = high / copies
@@ -102,6 +112,7 @@ func Features(in Input, fm *FormatModel) map[string]float64 {
 	}
 	if pairs > 0 {
 		out[KeySynergy] = pairSum / float64(pairs)
+		out[KeyCasualSynergy] = casualPairSum / float64(pairs)
 	}
 	if commander {
 		out[KeyPlaysetShare] = 0

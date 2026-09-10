@@ -30,6 +30,8 @@ const (
 	KeyCardRate       = "card_rate"
 	KeyUnseenShare    = "unseen_share"
 	KeySynergy        = "synergy"
+	KeyCasualRate     = "casual_rate"
+	KeyCasualSynergy  = "casual_synergy"
 	KeyLand           = "land"
 	KeyAvgManaValue   = "avg_mana_value"
 	KeyColorSources   = "color_sources"
@@ -58,6 +60,7 @@ const (
 // in a format's lists leaves the format's model.
 var Keys = []string{
 	KeyCardRate, KeyUnseenShare, KeySynergy,
+	KeyCasualRate, KeyCasualSynergy,
 	KeyLand, KeyAvgManaValue, KeyColorSources, KeyTappedShare, KeyManaTurnFour, KeyHandsTwoToFour,
 	KeyCurveLow, KeyCurveHigh,
 	KeyRamp, KeyDraw, KeyRemoval, KeyWipe, KeyInteraction, KeyEmptyRoles,
@@ -113,6 +116,21 @@ type FormatModel struct {
 	// of them held. RatePrior is the rate of a card none held.
 	CardRates map[string]float64 `json:"card_rates"`
 	RatePrior float64            `json:"rate_prior"`
+	// CasualRates and CasualPairs are the same two tables over the
+	// casual group: the typical and the baseline lists (PR-29, F-53).
+	//
+	// The top group answers "how close is this deck to a tournament
+	// list". A precon is far from one, and so is a broken copy of that
+	// precon, so the two barely separate. The casual group answers "how
+	// close is it to a deck people actually build", and there the precon
+	// and its broken copy do separate.
+	//
+	// A model fitted before PR-29 holds neither table. Every casual
+	// feature then reads zero, the fit drops a feature with no spread,
+	// and the model scores as it did before.
+	CasualRates     map[string]float64 `json:"casual_rates,omitempty"`
+	CasualRatePrior float64            `json:"casual_rate_prior,omitempty"`
+	CasualPairs     map[string]float64 `json:"casual_pairs,omitempty"`
 	// Pairs holds the log lift of a card pair over chance, keyed by the
 	// two Oracle ids in order with a bar between, for the pairs that
 	// lift. A pair not here lifts nothing.
@@ -236,6 +254,16 @@ func (fm *FormatModel) Rate(oracleID string) float64 {
 		return r
 	}
 	return fm.RatePrior
+}
+
+// CasualRate is the inclusion rate of a card in the casual group. A
+// model fitted before PR-29 holds no casual table, and every card then
+// reads the prior of zero.
+func (fm *FormatModel) CasualRate(oracleID string) float64 {
+	if r, ok := fm.CasualRates[oracleID]; ok {
+		return r
+	}
+	return fm.CasualRatePrior
 }
 
 // PairKey is the key of two Oracle ids in Pairs.

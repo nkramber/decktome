@@ -11,6 +11,10 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## 2026-09-03: four product pull requests
+
+PR-14B landed the deck quality model (#58). PR-24 landed the precon exclusion (#59). PR-14C landed MTGTop8 and the casual 60-card decks (#60). PR-20 landed the deck view and the card detail (#61), and PR-21 landed the share link and the print view (#62). Two deck gate fixes followed: the precon share reads the pool, and a failed repair keeps the deck.
+
 ## 2026-09-02: PR-19 and PR-14A
 
 PR-19 landed the chat and build experience, the counted land swap, and the split land bucket (#55). Its follow-up made a deck count its commander (#56). PR-14A landed the bracket profile (#57). Bracket gate run 1 and deck gate run 12 ran against them.
