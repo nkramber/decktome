@@ -421,7 +421,12 @@ type auditRow struct {
 // auditRows collects every own-copy pair the report walked. The
 // -audit-out flag writes them, and the slice costs a few hundred rows
 // either way.
-var auditRows []auditRow
+//
+// It starts empty and never nil. A nil slice marshals as null, and a
+// run that walks no pair would then write the word null where a reader
+// expects a list. The same fault reached triage.ManifestOf on 2026-09-10
+// (D-645), and it is the same fix.
+var auditRows = []auditRow{}
 
 // auditProseWritten keeps the explanation of the audit to one printing.
 // The section runs once per format, and the prose reads the same each
