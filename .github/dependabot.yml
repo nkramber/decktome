@@ -68,5 +68,5 @@ updates:
 # - firebase-tools 14.14.0: .github/workflows/verify.yml,
 #   docker/emulators.Dockerfile, scripts/doctor.sh.
 # - govulncheck v1.7.0: .github/workflows/verify.yml.
-# - fake-gcs-server v1.56.1: .github/workflows/verify.yml, scripts/dev.sh.
+# - fake-gcs-server v1.56.1: scripts/gcs-check.sh, scripts/dev.sh.
 # - GOLANGCI_LINT_VERSION: Makefile.
