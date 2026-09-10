@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"math"
 	"math/rand/v2"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -32,6 +33,13 @@ type FitInput struct {
 	Formats []mtgv1.FormatId
 	// Folds is how many folds the bars read, FoldCount when zero.
 	Folds int
+	// SynergyFloor is the fall a synergy break needs, in standard
+	// deviations, DefaultSynergyFloor when zero. A negative floor keeps
+	// every copy, which is the fit before the check (D-652).
+	SynergyFloor float64
+	// SynergyFormats names the formats the synergy check reads,
+	// DefaultSynergyFormats when empty (D-653).
+	SynergyFormats []mtgv1.FormatId
 }
 
 // FitReport is what the gate document reads.
@@ -44,8 +52,17 @@ type FormatReport struct {
 	// Read, Unusable, and Used count the lists. OutOfPool counts the
 	// 60-card products older than the format's pool (D-478).
 	Read, Unusable, Used, OutOfPool int
-	// Synthetic counts the bad lists the engine made.
-	Synthetic int
+	// Synthetic counts the bad lists the engine made, and SynergyCopies
+	// the ones among them that broke on synergy.
+	Synthetic, SynergyCopies int
+	// Immaterial counts the synergy copies the check dropped over the
+	// folds, each copy once, by the axis the fit asked for. SynergyFloor
+	// is the floor the check read, negative in a format the check does not
+	// read (D-653), and SynergyUnit its standard deviation on fold 0
+	// (D-652).
+	Immaterial   map[string]int
+	SynergyFloor float64
+	SynergyUnit  float64
 	// Dropped names the features with no spread.
 	Dropped []string
 	Holdout Holdout
@@ -95,6 +112,12 @@ func Fit(ctx context.Context, in FitInput) (*Model, *FitReport, error) {
 	}
 	if in.Now.IsZero() {
 		in.Now = time.Now()
+	}
+	if in.SynergyFloor == 0 {
+		in.SynergyFloor = DefaultSynergyFloor
+	}
+	if len(in.SynergyFormats) == 0 {
+		in.SynergyFormats = DefaultSynergyFormats
 	}
 	formats := in.Formats
 	if len(formats) == 0 {
@@ -476,7 +499,10 @@ func (h *Holdout) add(o Holdout) {
 // each tier, breaks the baseline and the typical lists, and profiles
 // every row once.
 func prepareFormat(ctx context.Context, in FitInput, f mtgv1.FormatId) (*prepared, *FormatReport, error) {
-	fr := &FormatReport{}
+	fr := &FormatReport{Immaterial: map[string]int{}, SynergyFloor: -1}
+	if slices.Contains(in.SynergyFormats, f) {
+		fr.SynergyFloor = in.SynergyFloor
+	}
 	pl := newPool(in.Index, f)
 	var reals []*Resolved
 	floor := PoolFloor(f, in.Now)
@@ -516,8 +542,12 @@ func prepareFormat(ctx context.Context, in FitInput, f mtgv1.FormatId) (*prepare
 			continue
 		}
 		for _, axis := range Defects {
-			all = append(all, Synthesize(r, axis, pl, in.Roles))
+			c := Synthesize(r, axis, pl, in.Roles)
+			all = append(all, c)
 			fr.Synthetic++
+			if c.List.Defect == DefectSynergy {
+				fr.SynergyCopies++
+			}
 		}
 	}
 	// The tiers the lists hold, worst first.
@@ -575,6 +605,15 @@ func fitFold(ctx context.Context, in FitInput, prep *prepared, fr *FormatReport,
 			r: r, level: prep.level[r.List.Tier], hold: holdoutFold(baseKey(r.List), fold),
 			features: Features(Input{Deck: r.Deck, Profile: prep.profiles[r.List.Key()], Cards: src}, fm),
 		})
+	}
+	// The synergy check reads the corpus of this fold, and it drops a copy
+	// before the scaler, the ladder, and the detector see it (D-652).
+	samples, immaterial, unit := dropImmaterial(samples, fr.SynergyFloor)
+	for axis, n := range immaterial {
+		fr.Immaterial[axis] += n
+	}
+	if fold == 0 {
+		fr.SynergyUnit = round4(unit)
 	}
 	// The scaler, from the training split, and the keys with spread.
 	var trainX [][]float64

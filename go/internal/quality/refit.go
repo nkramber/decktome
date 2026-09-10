@@ -16,12 +16,12 @@ import (
 // Refit reads every stored list and the newest commander reads, fits
 // the model against the index, and stores it as a new version. The
 // worker runs it after each meta refresh. It answers the model and the
-// report.
+// report. A stored model reads the default synergy floor (D-652).
 func Refit(ctx context.Context, store meta.ObjectStore, idx *cards.Index, now time.Time, logger *slog.Logger) (*Model, *FitReport, error) {
 	if logger == nil {
 		logger = slog.Default()
 	}
-	model, rep, err := FitStore(ctx, store, idx, now, logger)
+	model, rep, err := FitStore(ctx, store, idx, now, logger, 0)
 	if err != nil {
 		return nil, rep, err
 	}
@@ -37,8 +37,9 @@ func Refit(ctx context.Context, store meta.ObjectStore, idx *cards.Index, now ti
 }
 
 // FitStore fits the model over the store's lists and stores nothing.
-// The gate reads it, so a gate run leaves no model behind.
-func FitStore(ctx context.Context, store meta.ObjectStore, idx *cards.Index, now time.Time, logger *slog.Logger) (*Model, *FitReport, error) {
+// The gate reads it, so a gate run leaves no model behind. The floor is
+// the synergy check's, and zero reads DefaultSynergyFloor (D-652).
+func FitStore(ctx context.Context, store meta.ObjectStore, idx *cards.Index, now time.Time, logger *slog.Logger, synergyFloor float64) (*Model, *FitReport, error) {
 	if logger == nil {
 		logger = slog.Default()
 	}
@@ -74,7 +75,7 @@ func FitStore(ctx context.Context, store meta.ObjectStore, idx *cards.Index, now
 	}
 	model, rep, err := Fit(ctx, FitInput{
 		Index: idx, Profiler: prof, Roles: builder.Roles(idx),
-		Lists: lists, Commanders: reads, Now: now, Logger: logger,
+		Lists: lists, Commanders: reads, Now: now, Logger: logger, SynergyFloor: synergyFloor,
 	})
 	if err != nil {
 		return nil, rep, err

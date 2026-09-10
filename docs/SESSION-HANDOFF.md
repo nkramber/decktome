@@ -8,19 +8,23 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-10)
 
-**The checkout.** `main` is `d7f7621`, which is pull request #124. Branch `m8-precon-bar-audit` holds this session's work, and it waits for a review and a merge. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
+**The checkout.** `main` is `223a28f`, which is pull request #126. Branch `pr37-synergy-materiality` holds this session's work, and it waits for a review and a merge. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
 
 **The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586).
 
-**PR-29 closed, and it never merged** (D-652). The casual corpus lifted the Commander synergy axis from 0.70 to 0.81, and it cost two decks of judge agreement and two decks graded bad. M-8 then found the target of 0.95 was never reachable, so the owner refused the trade. `docs/reference/pr29-casual-corpus-2026-09-10.md` stays in the repository, because F-94 rests on it.
+**PR-37 waits for a merge, and gate run 18 reads PASS** (D-653). The synergy check drops a Commander copy whose break lowered the synergy feature by less than 0.10 standard deviations. The Commander synergy axis reads 0.84 of 232, and the precon bar 0.95 of 788. No earlier run of the quality gate in the repository reads PASS.
 
-**CAUTION: two features never get built again** (F-94). `casual_unseen_share` moved the target axis by nothing and cost three other bars. `casual_pair_share` won one pair of 389, because the fit split it against `casual_synergy` with opposite signs. The gate document says why for each.
+**CAUTION: the PASS comes from the population of the bar, and not from a better model.** The built decks graded bad stay at 15 of 25, and the judge agreement stays at 8 of 25. 37 of the 232 synergy pairs still lose, and those are the true gap of the axis.
 
-**M-8 answered its question** (F-95, D-649). The label holds. The broken copy is not the better deck, and the break moves the feature the right way in 84 percent of the losses. **The break reads as nothing at the floor.** A weak precon's cards do not pair in the corpus, so a break that removes half its pairs removes half of nothing. Those 54 of 389 Commander pairs read 0.43, under a coin flip.
+**CAUTION: the check reads Commander alone** (D-653, F-96). In Modern the synergy break does not lower the synergy feature in 825 of 845 pairs. A check there dropped 78 percent of the Modern synergy copies, and three decks the judge reads as bad graded higher.
 
-**So 0.95 was never reachable.** A model that wins every other pair and splits those by chance reads 0.93. `docs/reference/m8-precon-bar-audit-2026-09-10.md` holds every read.
+**CAUTION: the merge changes the production model.** The meta job refits the model after each read (`go/cmd/worker/meta.go`). So the first job after the worker deploys stores a model with the check.
 
-**PR-37 is next, and the owner answered its three questions** (D-652). The synergy break is the fallback of the synthetic set and the one break with no materiality check, against the rule of D-485. The check **measures the move after the break** and not a count before it. A deck that passes no check **makes no broken copy at all**. The bar of 0.95 **stands**, and the population under it changes.
+**The premise of D-652 was half right.** The check drops 157 of 389 Commander pairs from every band of precon strength, and not only the 54 weak pairs M-8 named. `docs/reference/pr37-synergy-materiality-2026-09-10.md` holds all six floors.
+
+**The gate reports the three numbers of D-648 for free.** `make quality-gate` grades the decks of deck gate run 16 with the model it fits, and it reads the judge's tiers from judge lane run 5. It stores no model.
+
+**CAUTION: two features never get built again** (F-94). `casual_unseen_share` moved the target axis by nothing and cost three other bars. `casual_pair_share` won one pair of 389, because the fit split it against `casual_synergy` with opposite signs. `docs/reference/pr29-casual-corpus-2026-09-10.md` says why for each, and PR-35 builds neither one.
 
 **Every quality item reports three numbers** (D-648): the precon bar, the count of built decks graded bad, and the tier judge agreement. **The owner drops an item that moves none of the three.** PR-29 moved the first up and the other two down, and that is why it closed.
 
@@ -72,13 +76,13 @@ Seven things a fresh session gets wrong without this file.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
 - The feedback store holds 3 verdicts on 2026-09-09, and every one predates the snapshot of D-635. `make feedback-list VERDICT=` reads both verdicts now (F-87). A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 18, revise is run 9. Run 44 is the newest whole questions run, and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline.
+- Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 18, revise is run 9. Run 44 is the newest whole questions run, and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 18 is its newest run.
 - Toolchain: Go 1.27.0, Node 22.23.2, pnpm 9.2.0, firebase-tools 14.14.0, Java 17, Playwright 1.62.1 with its Chromium headless shell (`playwright install chromium`). The first three were verified 2026-09-09.
 
 ## Next steps, in order
 
-1. **PR-37, the materiality check on the synergy break** (F-95, D-652). The owner answered all three questions. Measure the move after the break. Drop the pair under a floor. Make no copy for a deck that passes no check. Keep the bar at 0.95. The floor is one number in standard deviations, and no decision names it. Measure a few, and report what each one drops.
-2. **PR-35, more casual lists** (D-650), after PR-37. The casual corpus of Commander reads 1043 lists against 6383 tournament lists. A bar that can not judge a change is no way to argue for one, so the check lands first.
+1. **Answer the review of PR-37**, then tell the owner it is ready to merge (D-637). After the merge, read the log of the first meta job: its quality fit line for Commander names `immaterial`.
+2. **PR-35, more casual lists** (D-650). The casual corpus of Commander reads 1043 lists against 6383 tournament lists. Measure it against gate run 18, and read all three numbers of D-648 in the gate document.
 3. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
 4. **The live half of the feedback loop has no run yet.** Three things want a measurement: the judge lane of the triage, one live fix cycle, and one review round. All three need the owner's word, and the cycle also needs `AUTOTUNE_FIXER_CMD` and a harvest whose verdicts carry a snapshot.
 5. **The next whole deck gate run is still run 19, and it is still outstanding.** It makes the next decks baseline.
@@ -96,9 +100,21 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 ## The ten most recent sessions
 
+### 2026-09-10c: PR-37, the synergy check
+
+Branch `pr37-synergy-materiality`, open for review.
+
+**The check measures the move after the break** (D-652). In each fold the fit reads the synergy feature of every synergy copy, and it drops a copy whose fall sits under the floor. A request that passes no check makes no copy.
+
+**The owner chose the floor on six measured runs** (D-653). At 0.10 the model won the dropped pairs 47 percent of the time before the check, a coin flip. Each higher step drops pairs it won 72 to 90 percent of the time.
+
+**The premise was half right.** The check drops 157 of 389 Commander pairs from every band, and not the 54 weak pairs alone. **In Modern the break does not move the synergy feature in most pairs** (F-96), so the check reads Commander alone.
+
+**Gate run 18 reads PASS, and no reader-facing number moved.** The bar reads a new population, and the model is the same model. The gate now reports the three numbers of D-648 for free, and judge lane run 5 joined `main` for them.
+
 ### 2026-09-10b: PR-29 closed, and M-8 read the bar
 
-Branch `m8-precon-bar-audit`, open for review.
+Merged as #126.
 
 **The casual corpus worked and the trade did not.** A control fitted the same day over the same data reads the numbers apart. The Commander synergy axis read 0.70 and 0.81. The built decks graded bad read 15 of 25 and 17, and the judge agreement 8 of 25 and 6. The judge comparison holds no judge noise: one run answered every deck once, and both models read those same answers.
 
@@ -192,10 +208,6 @@ PR-22 landed the invite list, the spend cap, and the hosting block (D-550). PR-2
 
 The 47 terse conversations joined the bar, with four classifier rules and the GCP deploy guide (D-522, D-534 to D-539). The precon check ignores basic lands, and the M-5 sheet is complete (F-35, D-523, D-529 to D-532). A trimmed card snapshot of at most 10 MB serves the free dry lane of the deck gate (D-521, D-542).
 
-### 2026-09-04: PR-15, the eval harness
-
-PR-15 landed the eval harness (#65). The paid gate ran with it (D-514, D-515). The corpus took the MTGJSON skip and the precon exclusion prompt. Three set fixes closed F-40 to F-42: the Marvel set question, the group set request, and the partial run.
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file carried before 2026-09-09. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-03, and 42 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file carried before 2026-09-09. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-04, and 42 more sections, word for word. Read it for the detail behind a decision.
