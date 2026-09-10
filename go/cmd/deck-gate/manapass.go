@@ -84,9 +84,10 @@ func runManaPass(w io.Writer, path string, results []result, idx *cards.Index, p
 	}
 	out("# The mana pass over %s\n\n", path)
 	out("Every deck of the document, rebuilt from its own shortlist. No provider call ran.\n\n")
-	out("| # | Prompt | Off band before | Off band after | Steps | What is left |\n")
-	out("|---|---|---|---|---|---|\n")
-	var before, after, fixed, moved int
+	out("| # | Prompt | Off band before | Off band after | Worst color, before to after | Basics, before to after | Steps | What is left |\n")
+	out("|---|---|---|---|---|---|---|---|\n")
+	var before, after, fixed, moved, rose, fell int
+	var details []string
 	for _, r := range results {
 		entries, ok := stored[r.prompt.ID]
 		if !ok || r.pool == nil {
@@ -100,6 +101,9 @@ func runManaPass(w io.Writer, path string, results []result, idx *cards.Index, p
 			Cards:              norm.Cards,
 		}
 		was := offBand(prof, deck, idx)
+		worstWas, colorWas := worstColor(prof, deck, idx)
+		basicsWas := basicsWords(deck, idx)
+		noteWas := sourceNote(prof, deck, idx)
 		// The request carries the precon, so the lane skips an upgrade
 		// exactly as the build does. A precon is a working deck, and a
 		// pass over it is a second author (D-249).
@@ -108,6 +112,17 @@ func runManaPass(w io.Writer, path string, results []result, idx *cards.Index, p
 			SessionID: fmt.Sprintf("manapass-%d", r.prompt.ID),
 		}, deck)
 		now := offBand(prof, deck, idx)
+		worstNow, colorNow := worstColor(prof, deck, idx)
+		switch {
+		case colorWas && colorNow && worstNow > worstWas:
+			rose++
+		case colorWas && colorNow && worstNow < worstWas:
+			fell++
+		}
+		if basicsWords(deck, idx) != basicsWas || (colorWas && worstWas < 1) || (colorNow && worstNow < 1) {
+			details = append(details, fmt.Sprintf("- %d. %s: before, %s. After, %s.",
+				r.prompt.ID, r.prompt.Name, noteWas, sourceNote(prof, deck, idx)))
+		}
 		before += len(was)
 		after += len(now)
 		if len(now) < len(was) {
@@ -116,11 +131,16 @@ func runManaPass(w io.Writer, path string, results []result, idx *cards.Index, p
 		if steps > 0 {
 			moved++
 		}
-		out("| %d | %s | %d | %d | %d | %s |\n",
-			r.prompt.ID, r.prompt.Name, len(was), len(now), steps, orNone(strings.Join(now, ", ")))
+		out("| %d | %s | %d | %d | %s to %s | %s to %s | %d | %s |\n",
+			r.prompt.ID, r.prompt.Name, len(was), len(now), ratioWords(worstWas, colorWas), ratioWords(worstNow, colorNow),
+			basicsWas, basicsWords(deck, idx), steps, orNone(strings.Join(now, ", ")))
 	}
 	out("\n%d off-band features before the pass, %d after. It moved %d decks and improved %d.\n",
 		before, after, moved, fixed)
+	out("\nThe worst color's share of the sources it needs rose on %d decks and fell on %d.\n", rose, fell)
+	if len(details) > 0 {
+		out("\nThe sources of requirement of every deck under its need, or whose basics moved:\n\n%s\n", strings.Join(details, "\n"))
+	}
 	out("\nAn upgrade keeps its own mana base, so the pass makes no step on one (D-249).\n")
 	return nil
 }
@@ -141,4 +161,55 @@ func orNone(s string) string {
 		return "nothing"
 	}
 	return s
+}
+
+// worstColor reads the color_sources feature of a deck: the worst color's
+// share of the sources it needs. ok is false for a deck with no color.
+func worstColor(prof *profile.Profiler, deck *mtgv1.Deck, idx *cards.Index) (float64, bool) {
+	for _, f := range prof.Measure(deck, idx).GetFeatures() {
+		if f.GetKey() == profile.KeyColorSources {
+			return f.GetValue(), true
+		}
+	}
+	return 0, false
+}
+
+// ratioWords writes a worst-color share, or a dash for a deck with none.
+func ratioWords(v float64, ok bool) string {
+	if !ok {
+		return "-"
+	}
+	return strconv.FormatFloat(v, 'f', 2, 64)
+}
+
+// basicsWords writes the basic lands of a deck by color, "W 14, B 12".
+func basicsWords(deck *mtgv1.Deck, idx *cards.Index) string {
+	counts := map[mtgv1.Color]int32{}
+	for _, dc := range deck.GetCards() {
+		c, ok := idx.ByOracleID(dc.GetOracleId())
+		if !ok || !profile.IsBasic(c) {
+			continue
+		}
+		for _, col := range c.GetProducedMana() {
+			counts[col] += dc.GetCount()
+		}
+	}
+	var parts []string
+	for _, col := range []mtgv1.Color{mtgv1.Color_COLOR_W, mtgv1.Color_COLOR_U, mtgv1.Color_COLOR_B, mtgv1.Color_COLOR_R, mtgv1.Color_COLOR_G} {
+		if n := counts[col]; n > 0 {
+			parts = append(parts, fmt.Sprintf("%s %d", strings.TrimPrefix(col.String(), "COLOR_"), n))
+		}
+	}
+	return orNone(strings.Join(parts, ", "))
+}
+
+// sourceNote is the note of the color_sources feature: every color's
+// sources against its requirement.
+func sourceNote(prof *profile.Profiler, deck *mtgv1.Deck, idx *cards.Index) string {
+	for _, f := range prof.Measure(deck, idx).GetFeatures() {
+		if f.GetKey() == profile.KeyColorSources {
+			return f.GetNote()
+		}
+	}
+	return "no color"
 }

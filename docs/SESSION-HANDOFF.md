@@ -8,13 +8,13 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-10)
 
-**The checkout.** `main` is `6f89e2f`, which is pull request #130. Two branches hold work. `offer-reads-the-bracket-of-the-turn` holds the fix of F-104, and it waits for a review and a merge. `builder-basics-by-pips` holds PR-39 as one local commit, `c38e5b6`, and nobody pushed it. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
+**The checkout.** `main` is `52ec433`, which is pull request #134. Branch `builder-basics-by-pips` holds PR-39 as pull request #135, rebased onto that `main`, and it waits for a review and a merge. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
 
 **The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586).
 
-**The commander offer ignored the bracket of its own turn** (F-104, D-662). The turn built the hints from the restored slots, and the picked power option landed after that. The pick row fires on the turn the power answer arrives (D-631), so the bracket 5 signal ordered almost no deployed offer. Session `vDzEKDPnRZntlyhz8Lqg` read Lotho, Ghalta, and Peregrin Took. The hints take the bracket after the answers now, and a test holds it.
+**The commander offer ignored the bracket of its own turn, and #134 fixed it** (F-104, D-662). The turn built the hints from the restored slots, and the picked power option landed after that. The pick row fires on the turn the power answer arrives (D-631), so the bracket 5 signal ordered almost no deployed offer. Session `vDzEKDPnRZntlyhz8Lqg` read Lotho, Ghalta, and Peregrin Took. The hints take the bracket after the answers now, and a test holds it.
 
-**PR-39 is one local commit on `builder-basics-by-pips`** (D-659 to D-661, F-102, F-103). The source count reads a reliable tap ability alone, and the balance phase trades basics toward the color that falls short. The measurement of D-661 is not done. Rerun the mana pass lane over run 18 with the fixed count, and read whether deck 22 keeps its Forests.
+**PR-39 is pull request #135, on `builder-basics-by-pips`** (D-659 to D-661, F-102, F-103). The source count reads a reliable tap ability alone, and the balance phase trades basics toward the color that falls short. The measurement of D-661 is done. Over run 18 the pass moves four decks. The worst color rises on all four and falls on none, and deck 22 gains two Forests. `docs/reference/pr39-manapass-run18.md` holds the lane.
 
 CAUTION: the `decktome` gcloud configuration named the Wallabee account and project on 2026-09-10, so `use_decktome` put the shell on the wrong project. `scripts/read-session.sh` reads `SESSION_PROJECT` and the account of `CLOUDSDK_CORE_ACCOUNT`, so an environment override reads `decktome-prod` with no change to the configuration. The owner has the commands to repair the configuration.
 
@@ -91,8 +91,8 @@ Seven things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **Merge the fix of F-104** after the review of `gitar-bot`.
-2. **PR-39 waits on `builder-basics-by-pips`.** Rerun the mana pass lane over run 18 with the fixed source count (D-661). Read whether deck 22 keeps its Forests, and whether any deck moves the wrong way. Then push the branch and open the pull request.
+1. **Merge PR-39 (#135)** after the review of `gitar-bot`. The branch sits on the `main` that holds #134.
+2. **Read a bracket 4 or 5 offer on the deployed app** after the deploy of #134. It shows the fix of F-104 on a real turn.
 3. **The detector reads built decks wrong** (D-659). Seven of its eight flags on the disputed decks are wrong, and the one real defect moves no weight. It comes after the basic lands (D-660).
 4. **Read the log of the next meta job.** Its quality fit line for Commander names `immaterial`. Check that the count reads above zero.
 5. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
@@ -114,7 +114,7 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 ### 2026-09-10d: F-104, the offer reads the bracket of its own turn
 
-On branch `offer-reads-the-bracket-of-the-turn`, and it waits for the review.
+Merged as #134. PR-39 followed as #135.
 
 **The owner asked whether the commander options were the expected quality.** Session `vDzEKDPnRZntlyhz8Lqg` asked for the best possible deck at bracket 5 from an owned-only pool. It read Lotho, Corrupt Shirriff, Ghalta, Primal Hunger, and Peregrin Took. They were not. The bracket 5 signal of OQ-48 exists since PR-14B, and the turn never handed it the bracket.
 
@@ -124,7 +124,7 @@ On branch `offer-reads-the-bracket-of-the-turn`, and it waits for the review.
 
 **The fix is one interface.** `BracketAware` joins `SlotAware`, `SetAware`, and `PairAware`, and `readFacts` hands the bracket over. The turn test fails without the call and passes with it.
 
-**The session before this one ended without a hand-off.** Its work is one local commit on `builder-basics-by-pips`: the source count of F-103, the balance phase of F-102, and D-659 to D-661. The measurement of D-661 is next on that branch.
+**The session before this one ended without a hand-off.** Its work sits on `builder-basics-by-pips`: the source count of F-103, the balance phase of F-102, and D-659 to D-661. The measurement of D-661 ran in this session, for nothing. With the fixed count the pass moves four decks of run 18, and the worst color rises on all four. Deck 22 gains two Forests, where the old count cut two. PR-39 is open.
 
 **The `decktome` gcloud configuration pointed at the Wallabee account and project.** The session read the deployed project through an environment override and changed no configuration.
 

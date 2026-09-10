@@ -29,7 +29,8 @@ import (
 const maxManaSteps = 12
 
 // fixMana moves the mana base of a built deck until every mana feature
-// sits in band. It calls no model. It returns the count of steps it
+// sits in band, then balances the basic lands against the colors that
+// need them (F-102). It calls no model. It returns the count of steps it
 // kept, and the deck it changed is the one the caller holds.
 //
 // It runs before the profile is read, so the stored profile and every
@@ -64,6 +65,9 @@ func (b *Builder) fixMana(req Request, deck *mtgv1.Deck) int {
 		score = b.manaScore(deck)
 		kept++
 	}
+	// A deck inside its bands can still hold its basics against its
+	// colors, so the pass balances them after the bands (F-102, D-660).
+	kept += b.balanceBasics(req, deck, basics, score)
 	if kept > 0 {
 		// The owned flag reads the count of an oracle id across the whole
 		// list, so it is set again after the last step (D-37, F-79).
@@ -80,6 +84,132 @@ func (b *Builder) fixMana(req Request, deck *mtgv1.Deck) int {
 // provider (F-78, Part 3).
 func (b *Builder) FixManaForCheck(req Request, deck *mtgv1.Deck) int {
 	return b.fixMana(req, deck)
+}
+
+// maxBalanceSteps bounds the balance phase. It trades one basic land a
+// step, and twelve steps move a third of a Commander deck's basics.
+const maxBalanceSteps = 12
+
+// balanceBasics trades one basic land for another while the colors that
+// fall short of their need gain sources (F-102, D-660).
+//
+// The bands can hold while a color sits far under its need: the band
+// reads the worst color against one floor, and an even split of the
+// basics can pass it. Each color reads its sources over its need, capped
+// at one, and a trade is kept only when those ratios rise, the worst color
+// first. So a deck whose colors all meet their need keeps the split the
+// model chose. A trade is kept only when the band score does not rise, so
+// no band gets worse, and the trade keeps the land count, every nonbasic
+// land, and every spell. A color never gives up its last basic.
+func (b *Builder) balanceBasics(req Request, deck *mtgv1.Deck, held []*mtgv1.Card, score float64) int {
+	basics := poolBasics(req, held)
+	if len(basics) < 2 {
+		return 0
+	}
+	current := cappedRatios(profile.ColorSources(deck, b.cards))
+	kept := 0
+	for range maxBalanceSteps {
+		var options []balanceOption
+		for _, add := range basics {
+			for _, drop := range basics {
+				if add.GetOracleId() == drop.GetOracleId() || copiesOf(deck, drop.GetOracleId()) < 2 {
+					continue
+				}
+				step := manaStep{add: add, drop: drop.GetOracleId(), role: mtgv1.CardRole_CARD_ROLE_LAND}
+				if req.Pool != nil {
+					step.owned = req.Pool.OwnedCount(add.GetOracleId())
+				}
+				undo := snapshot(deck)
+				step.apply(deck)
+				ratios := cappedRatios(profile.ColorSources(deck, b.cards))
+				restore(deck, undo)
+				if ratiosRise(ratios, current) {
+					options = append(options, balanceOption{step: step, ratios: ratios})
+				}
+			}
+		}
+		// The best balance goes first, and the band score, which runs the
+		// simulation, is read only until one option keeps every band.
+		sort.SliceStable(options, func(i, j int) bool { return ratiosRise(options[i].ratios, options[j].ratios) })
+		taken := false
+		for _, o := range options {
+			undo := snapshot(deck)
+			o.step.apply(deck)
+			if got := b.manaScore(deck); got <= score {
+				current, score, taken = o.ratios, got, true
+				break
+			}
+			restore(deck, undo)
+		}
+		if !taken {
+			break
+		}
+		kept++
+	}
+	return kept
+}
+
+// balanceOption is one basic trade the balance phase may keep, with the
+// capped ratios the deck reads after it.
+type balanceOption struct {
+	step   manaStep
+	ratios []float64
+}
+
+// poolBasics is every basic land the pool offers, so a deck color the
+// model gave no basic can still take one. With no pool, or a pool of no
+// basic, it is the basics the deck holds.
+func poolBasics(req Request, held []*mtgv1.Card) []*mtgv1.Card {
+	if req.Pool == nil {
+		return held
+	}
+	var out []*mtgv1.Card
+	for _, name := range req.Pool.Names() {
+		if c, ok := req.Pool.Card(name); ok && profile.IsBasic(c) {
+			out = append(out, c)
+		}
+	}
+	if len(out) == 0 {
+		return held
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].GetName() < out[j].GetName() })
+	return out
+}
+
+// copiesOf is how many copies of a card the deck holds.
+func copiesOf(deck *mtgv1.Deck, id string) int32 {
+	var n int32
+	for _, dc := range deck.GetCards() {
+		if dc.GetOracleId() == id {
+			n += dc.GetCount()
+		}
+	}
+	return n
+}
+
+// cappedRatios lists each color's sources over its need, capped at one,
+// in ascending order, so the worst color reads first.
+func cappedRatios(rows []profile.ColorSource) []float64 {
+	out := make([]float64, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, math.Min(r.Ratio(), 1))
+	}
+	sort.Float64s(out)
+	return out
+}
+
+// ratiosRise says whether one list of capped ratios beats another, read
+// from the worst color up.
+func ratiosRise(next, now []float64) bool {
+	for i := range next {
+		if i >= len(now) {
+			return false
+		}
+		if d := next[i] - now[i]; math.Abs(d) > 1e-9 {
+			return d > 0
+		}
+	}
+	return false
 }
 
 // manaScore is how far the deck sits outside its bands, summed over
