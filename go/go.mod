@@ -4,14 +4,14 @@ go 1.27.0
 
 require (
 	cloud.google.com/go/firestore v1.25.0
-	cloud.google.com/go/storage v1.66.0
+	cloud.google.com/go/storage v1.67.0
 	connectrpc.com/connect v1.20.0
 	firebase.google.com/go/v4 v4.21.0
-	github.com/anthropics/anthropic-sdk-go v1.68.0
-	github.com/openai/openai-go/v3 v3.54.0
+	github.com/anthropics/anthropic-sdk-go v1.71.0
+	github.com/openai/openai-go/v3 v3.56.0
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.3
 	golang.org/x/text v0.41.0
-	google.golang.org/api v0.295.0
+	google.golang.org/api v0.297.0
 	google.golang.org/grpc v1.83.2
 	google.golang.org/protobuf v1.36.12
 )
