@@ -6,13 +6,15 @@ Read this file first. Then read `docs/SESSION-HANDOFF.md`. It tells you where th
 
 This repo is a Go + Protobuf + TypeScript monorepo for an agentic MtG deck builder. The app reads a user's ManaBox collection export. The user gives a prompt. The agent asks questions, then builds a legal, useful deck.
 
-Stage (2026-09-10): **the app is live on `decktome.com`**, and pull request #126 is the newest merge. A merge to `main` deploys itself on Cloud Build (D-584, D-586, D-588). Phase 3B, the product UI, is the current phase.
+Stage (2026-09-10): **the app is live on `decktome.com`**, and pull request #127 is the newest merge. A merge to `main` deploys itself on Cloud Build (D-584, D-586, D-588). Phase 3B, the product UI, is the current phase.
 
 **The whole PR-22 gate holds** (D-633), so PR-28 is free to run. Every PR through #119 is merged: PR-0a to PR-8, PR-7B, PR-10 to PR-25, PR-27, PR-32, PR-33, and PR-28a. PR-9 is out of the MVP (D-256). **PR-28 split into three** (D-636). PR-28a is the harvest, and it is merged. PR-28b is the triage and the new "must not ask" expectation, and PR-28c is the fix cycle. PR-26 waits on OQ-67, and PR-29 to PR-31 stand on the weak-axes plan.
 
 **The whole feedback loop is on `main`**, as pull requests #117, #121, and #122. The triage names one of 22 classes for each thumbs down, and the reason keys answer 20 of them for nothing (D-643). A case joins the gate file that owns it, and the pull request diff is the accept step (D-642). The fix cycle carries the case and its fix in one pull request, and it answers the review of `gitar-bot` (D-645). **No live cycle ran yet.** **PR-34 is merged as #123**: the app reads the format of an upload out of the file, and Moxfield reads (D-647, F-91 to F-93).
 
-**PR-29 closed, and it never merged** (D-652). M-8 read the precon bar and found its target of 0.95 was never reachable. 54 of 389 pairs carry no signal, because a weak precon's cards do not pair in the corpus (F-95). **Every quality item reports three numbers now**, and the owner drops an item that moves none (D-648). **PR-37 adds the materiality check the synergy break never had**, in Commander alone at a floor of 0.10 (D-653). Gate run 18 reads PASS, and no reader-facing number moved: the bar reads a new population, and the model is the same model.
+**PR-29 closed, and it never merged** (D-652). M-8 read the precon bar and found its target of 0.95 was never reachable. 54 of 389 pairs carry no signal, because a weak precon's cards do not pair in the corpus (F-95). **Every quality item reports three numbers now**, and the owner drops an item that moves none (D-648). **PR-37 is merged as #127.** It adds the materiality check the synergy break never had, in Commander alone at a floor of 0.10 (D-653). Gate run 18 reads PASS, and no reader-facing number moved: the bar reads a new population, and the model is the same model.
+
+**PR-30 is next, and the owner parked PR-35** (D-655). M-9 found that more casual lists make the reader numbers worse with the casual features of PR-29, and move nothing without them (F-97, F-98).
 
 Two rules of the deployed app come from 2026-09-09. **A verdict keeps the object it names** (D-635), because a reader deletes the deck or the chat they complained about, and the verdict outlives it. **Every user has a record** at `users/<uid>` (D-638): the verified email, the dates, and six counters of what they made. No harvest reads that record, and a test refuses the import that joins them.
 

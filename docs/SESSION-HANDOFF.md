@@ -8,21 +8,23 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-10)
 
-**The checkout.** `main` is `223a28f`, which is pull request #126. Branch `pr37-synergy-materiality` holds this session's work, and it waits for a review and a merge. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
+**The checkout.** `main` is `302858a`, which is pull request #127. Branch `docs-pr37-merged` holds the merged state of the documents, and it waits for a review and a merge. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
 
 **The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586).
 
-**PR-37 waits for a merge, and gate run 18 reads PASS** (D-653). The synergy check drops a Commander copy whose break lowered the synergy feature by less than 0.10 standard deviations. The Commander synergy axis reads 0.84 of 232, and the precon bar 0.95 of 788. No earlier run of the quality gate in the repository reads PASS.
+**PR-37 is merged as #127, and gate run 18 reads PASS** (D-653). The synergy check drops a Commander copy whose break lowered the synergy feature by less than 0.10 standard deviations. The Commander synergy axis reads 0.84 of 232, and the precon bar 0.95 of 788. No earlier run of the quality gate in the repository reads PASS.
 
 **CAUTION: the PASS comes from the population of the bar, and not from a better model.** The built decks graded bad stay at 15 of 25, and the judge agreement stays at 8 of 25. 37 of the 232 synergy pairs still lose, and those are the true gap of the axis.
 
 **CAUTION: the check reads Commander alone** (D-653, F-96). In Modern the synergy break does not lower the synergy feature in 825 of 845 pairs. A check there dropped 78 percent of the Modern synergy copies, and three decks the judge reads as bad graded higher.
 
-**CAUTION: the merge changes the production model.** The meta job refits the model after each read (`go/cmd/worker/meta.go`). So the first job after the worker deploys stores a model with the check.
+**CAUTION: the merge changed the production model.** The deploy of `302858a` succeeded on 2026-09-10 and pointed the meta job at the new image. The meta job refits the model on every run (`go/cmd/worker/meta.go`), so its next run stores a model with the check.
 
 **The premise of D-652 was half right.** The check drops 157 of 389 Commander pairs from every band of precon strength, and not only the 54 weak pairs M-8 named. `docs/reference/pr37-synergy-materiality-2026-09-10.md` holds all six floors.
 
 **The gate reports the three numbers of D-648 for free.** `make quality-gate` grades the decks of deck gate run 16 with the model it fits, and it reads the judge's tiers from judge lane run 5. It stores no model.
+
+**PR-30 is next, and the owner parked PR-35** (D-655). M-9 fitted the casual features of PR-29 at three corpus sizes (F-98). A larger corpus read worse: 16 graded bad and 7 agreement at a quarter, and 17 and 6 at all lists. On `main` alone the size barely moves either number (F-97). `docs/reference/m9-casual-corpus-size-2026-09-10.md` holds all six fits.
 
 **CAUTION: two features never get built again** (F-94). `casual_unseen_share` moved the target axis by nothing and cost three other bars. `casual_pair_share` won one pair of 389, because the fit split it against `casual_synergy` with opposite signs. `docs/reference/pr29-casual-corpus-2026-09-10.md` says why for each, and PR-35 builds neither one.
 
@@ -81,13 +83,13 @@ Seven things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **Answer the review of PR-37**, then tell the owner it is ready to merge (D-637). After the merge, read the log of the first meta job: its quality fit line for Commander names `immaterial`.
-2. **PR-35, more casual lists** (D-650). The casual corpus of Commander reads 1043 lists against 6383 tournament lists. Measure it against gate run 18, and read all three numbers of D-648 in the gate document.
+1. **Read the log of the next meta job.** Its quality fit line for Commander names `immaterial`. Check that the count reads above zero.
+2. **PR-30, the commander reference** (D-568, D-655). It adds `commander_rate`, the share of a deck's nonland cards that the EDHREC average deck of its own commander holds. The judge reads 10 of the 15 decks graded bad as typical, and its reasons name the average community build. CAUTION: an average deck matches itself. Do not compare a list with its own average deck. The gate reads the three numbers of D-648 for free.
 3. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
 4. **The live half of the feedback loop has no run yet.** Three things want a measurement: the judge lane of the triage, one live fix cycle, and one review round. All three need the owner's word, and the cycle also needs `AUTOTUNE_FIXER_CMD` and a harvest whose verdicts carry a snapshot.
 5. **The next whole deck gate run is still run 19, and it is still outstanding.** It makes the next decks baseline.
 6. **OQ-79 needs runtime evidence.** A fresh owned-only build on the deployed app is the way to it.
-7. **PR-30, the commander reference**, stands on the weak-axes plan (D-567, D-568). Read the PR-29 gate document beside it: the measurement refutes two of that plan's predictions.
+7. **The owner parked PR-35, more casual lists** (D-655). M-9 and F-97 found no case for it, with the casual features of PR-29 or without them.
 8. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
 9. **The weekly EDHREC read** falls on 2026-09-14 (D-499, D-565). Run `make meta-refresh`, then `make quality-gate` to a new `QUALITY_GATE_OUT`.
 10. **PR-26, the return channels**, waits on OQ-67.
@@ -102,7 +104,13 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 ### 2026-09-10c: PR-37, the synergy check
 
-Branch `pr37-synergy-materiality`, open for review.
+Merged as #127.
+
+**The owner asked what the merit is, when no reader-facing number moved.** The answer: the bar can now judge a change, and the gate prints the three numbers for free. The model grades the built decks as before, and the judge agreement of 8 of 25 is still the gap a reader feels.
+
+**A free test then cut the Commander casual lists to a half and a quarter** (F-97). The built decks graded bad read 15, 15, and 16, and the judge agreement 8, 8, and 7. The owner chose M-9 before PR-35 (D-654).
+
+**M-9 refuted the premise of D-650** (F-98). With the casual features of PR-29, a larger casual corpus read worse on both reader-facing numbers. The owner parked PR-35 and chose PR-30 next (D-655).
 
 **The check measures the move after the break** (D-652). In each fold the fit reads the synergy feature of every synergy copy, and it drops a copy whose fall sits under the floor. A request that passes no check makes no copy.
 
