@@ -6,6 +6,7 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-10 correction pass 137 (PR-29 closed, M-8, D-648 to D-652, F-94, F-95): the casual corpus lifted the Commander synergy axis from 0.70 to 0.81. It cost two decks of judge agreement and two decks graded bad, so the owner closed it. M-8 then read the bar and found the target was never reachable. A weak precon's cards do not pair in the corpus. The synergy break removes half of nothing, and 54 of 389 pairs carry no signal. The synergy break is the fallback of the synthetic set and the one break with no materiality check, against the rule of D-485. PR-37 adds the check. Changes: PR-29, M-8, PR-35, PR-36, PR-37, D-648 to D-652, F-53, F-94, F-95.
 2026-09-10 correction pass 136 (PR-34, D-647): the app reads the format of an upload out of the file. The reader never names the app their file came from. That fixed a live fault: the web sent ManaBox for every upload, so an Arena list failed every row. Moxfield joined, on a real export the owner wrote. The documentation of that format disagreed with itself on two points, and the file settled both. Changes: PR-34, D-647, F-91, F-92, F-93.
 2026-09-09 correction pass 135 (the fix cycle of PR-28c, D-645, D-646): the cycle writes the cases, proves each one fails, hands the failures to a fixer, and proves each one passes. The case and its fix ride in one pull request, so the gate on `main` is never red. The cycle pushes, opens the pull request, and answers the review of `gitar-bot`. Other collection platforms are the next item after the feedback loop. Changes: PR-28c, PR-34, D-645, D-646, F-49, F-91.
 2026-09-09 correction pass 134 (the triage of PR-28b, D-642 to D-644): the triage names one of 22 classes for each thumbs down. The reason keys answer 20 of them with no model call. The owner permits a reader's exact words in a committed file, so D-640 drops. A case goes straight into the gate file that owns it. The question gate reads a "must not ask" expectation, and the deck gate reads a case assertion. Changes: PR-28b, PR-28c, D-642 to D-644, F-49, F-90.
@@ -318,6 +319,8 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-91 | **The app reads two collection formats, and a reader on any other platform can not upload at all.** `ParseManaBoxCSV` reads a ManaBox export, and `ParseArenaText` reads an Arena deck list (`go/internal/collections/parse.go`). A reader who keeps their collection in Moxfield, Archidekt, Deckbox, Delver Lens, TCGplayer, or Helvault has no path in. The upload is the first step of the whole product: a reader with no collection gets no owned-first build, and D-37 then reads any-card for them. The owner named this on 2026-09-09 as the next item after the feedback loop, and confirmed ManaBox and not a marketplace (D-647). Binds PR-34. | ✅ fixed in part 2026-09-10. Moxfield reads, on a real export, and the app names the format itself. The other platforms wait for the owner's word and a real export each. |
 | F-92 | **Every upload was read as a ManaBox CSV, so an Arena list failed every row of itself.** `upload-dialog.tsx` sent `IMPORT_SOURCE_MANABOX_CSV` on every call, hardcoded, and the reader never chose. The app has read an Arena list since D-15, and no reader could ever upload one: the ManaBox parser read the header, found no key column, and refused the whole file. A reader with an Arena list read "the file matches no format" at best. Found 2026-09-09 while PR-34 read the upload path. Binds PR-34. | ✅ fixed 2026-09-10. The upload names no format, and the server reads it out of the file (D-647). The file picker takes a text file as well as a CSV. `TestImportDetectsTheFormat` uploads an Arena list with no source named and reads a collection back. |
 | F-93 | **Every entry of a collection read by set and number carried no printing id, so the binder lost the art, the price, and its keys.** Moxfield writes no Scryfall id column, so a row of it resolves on the set code and the collector number, and `buildEntry` filled the entry's id from the row alone. Three readers then did nothing in silence: the binder fell back to the default printing for all 3035 entries of the real export (D-299, F-60), `OwnedPrintings` covered 0 oracle ids of it, and every normal near-mint tile shared one React key. **A resolution count hid it**: 3192 of 3193 rows resolved, and the entries they made were short a field. Found 2026-09-10 by a self-review of PR-34, after the resolution count read clean. Binds PR-34. | ✅ fixed 2026-09-10. `Index.PrintingBySetCollector` answers the printing the pair names, and the entry takes it. The measured counts go from 0 to 3035 entries with an id, 3009 with art, and 2232 oracle ids covered. The ManaBox path never fires the branch: its rows carry an id. |
+| F-94 | **One fit serves two jobs, so the feature that best separates a precon from its broken copy carries a low weight.** The ladder orders the five tiers, and the same weights decide the precon bar. `casual_synergy` is the feature the synergy break moves most cleanly, and the fit gave it +0.074 in Commander, because it is mediocre at ordering the whole ladder. Two attempts to add a sharper feature failed on 2026-09-10. `casual_unseen_share` moved the target axis by nothing and cost the cross pairs 0.91 to 0.76. `casual_pair_share` won one pair of 389 and read a weight of -0.262 against `casual_synergy` at +0.284, because the two are collinear and the fit split them. So the gap is not a missing feature. Found 2026-09-10 by PR-29, which closed. `docs/reference/pr29-casual-corpus-2026-09-10.md` holds the evidence, and **neither feature may be built again**. Binds PR-35, PR-37. | 🔧 planned |
+| F-95 | **The synergy break is the fallback of the synthetic set, and it is the one break with no materiality check.** D-485 says a break must be material, "or it is no defect and the label lies", and it gives two checks: a copies break needs 12 copies in playsets, and a colors break four fixing lands. A list that fails either one breaks on synergy instead. Synergy itself checks nothing. A weak precon's cards hold few lifting pairs, so a break that removes half of them removes half of nothing. The mean signed move of `synergy` reads -1.643 over the precons scoring above 0.30 and **-0.072** over those at or under 0.05. Those 54 of 389 Commander pairs read 0.43, under a coin flip, and the precon and its copy grade the same tier in every one. **A bar of 0.95 is out of reach while they sit in it**: a model that wins every other pair and splits those by chance reads 0.93. Found 2026-09-10 by the audit of M-8. Binds PR-37. | 🔧 planned |
 | F-30 | **No signal of deck quality exists.** The pool ranks on theme fit and EDHREC popularity, and the bracket drops Game Changers under bracket 3 and nothing else. A bracket 5 request got the three most popular legends whose text held "you" and "can" (session t8o1nGGquK6UdTQkfY3V, D-411, 2026-09-01). | 🔧 PR-14B built the scorer on 2026-09-02 (D-470 to D-478). Its gate waits on the first meta read and the Topdeck.gg key (OQ-54). |
 | F-6 | **No Cloud Tasks emulator.** Local mode can not run real Cloud Tasks. | ✅ PR-0c (#3): a `Dispatcher` interface with a local in-process implementation. |
 | F-7 | **Docker absent on the dev machine.** | ✅ PR-0b (#2): Docker 29.7.2 installed. Native `make dev` does not need it. |
@@ -1102,6 +1105,52 @@ One CSV walker serves every format. A new platform is one entry in the signature
 Gate: the real export parses whole. 3193 rows, no row unread, and 125 distinct sets. The card snapshot of 2026-09-04 resolves it into 3035 entries and 5884 cards. One row stays unresolved, a Japanese printing, and D-23 refuses that one by design. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the measurement.
 > *In plain English:* you can load your cards from Moxfield now, as well as ManaBox. You no longer tell the app which app the file came from, because it reads that from the file. A file it does not know says so, and it no longer fails every card in silence.
 
+**M-8: Is the precon bar true (F-94, F-95, D-649).** ✅ built 2026-09-10, and it answers the question.
+**The label holds, and no model meets the bar.** The broken copy is not the better deck. Over the 118 Commander synergy pairs the bar loses, the copy holds better cards in exactly half and pairs them better in 16 percent. So the break moves the feature the right way in 84 percent of the losses.
+
+**The break reads as nothing at the floor.** The mean signed move of `synergy` is the copy less the precon. It reads -1.643 over the precons that score above 0.30, and -0.072 over those at or under 0.05. A weak precon's cards do not pair in the corpus, so a break that removes half its pairs removes half of nothing. Those 54 of 389 pairs read 0.43, under a coin flip, and the precon and its copy grade the same tier in every one.
+
+**So 0.95 is out of reach while those pairs sit in the bar.** A model that wins every other pair and splits those by chance reads 0.93. That is no reason to move the bar (D-486), and it is a reason to look at the break. PR-37 does that.
+
+The audit is free and it runs inside the fit. `-audit-out` writes every own-copy pair as JSON. It writes before the verdict, because a gate that reads FAIL is when a person wants the pairs that failed. The gate document gains one table per format.
+
+Gate: met. `docs/reference/m8-precon-bar-audit-2026-09-10.md` holds every read, and quality gate run 17 holds the tables.
+> *In plain English:* the test breaks a boxed deck on purpose and asks the grader to notice. The break is real, and on the weakest boxed decks it changes almost nothing, because those decks had no card combinations to ruin. A seventh of the test asks the grader to spot a difference that is not there.
+
+**PR-37: A materiality check on the synergy break (F-95, D-652).** 🔧 planned, and it is next.
+D-485 says a break must be material, "or it is no defect and the label lies". It gives a check for the copies axis and one for the colors axis, and a list that fails either one breaks on synergy. Synergy is the fallback, and it checks nothing.
+
+**The check measures the move after the break** (D-652). The other two checks predict materiality from the deck, because their breaks are simple to reason about: count the playset copies, count the fixing lands. A pairing break is not. So the cycle makes the copy, reads how far the `synergy` feature moved, and drops the pair when the move sits under a floor.
+
+**A deck that passes no materiality check makes no broken copy at all.** The synthetic set shrinks, the `bad` tier of the ladder loses those rows, and every pair the bar reads carries a real defect.
+
+**The bar of 0.95 stands** (D-486, D-652), and the population under it changes. The first run after the check says how far the model really is. Today the bar reads 0.70 over every pair, 0.74 over the pairs above the floor, and 0.85 over the precons with real room.
+
+The floor is one number, in standard deviations, and no owner decision names it yet. The item measures a few and reports what each one drops.
+
+Gate: the three numbers of D-648. The Commander synergy axis over the pairs that remain, the count of built decks graded bad, and the judge agreement. The document names how many pairs the check dropped, per format, and the `bad` tier count before and after.
+> *In plain English:* the test throws away the cases where its own sabotage did nothing. What is left is a fair question, and the grader's score against it means something.
+
+**PR-35: More casual lists (F-53, F-94, D-650).** 🔧 planned, after PR-37.
+The casual corpus of Commander reads 854 average decks and 189 precons, against 6383 tournament lists. It is thin by a factor of six, and the pair table shows it. Commander holds 103183 casual pairs against 200000 top pairs, and Modern holds 806 against 6786.
+
+The work is data and not code. EDHREC gives an average deck per commander and the store reads 1562 of them. MTGGoldfish gives the casual 60-card lists. Both sources already have a reader (D-499, D-565), so the item widens what those readers take and re-measures.
+
+**PR-29 closed on the evidence** (D-652), and the casual corpus went with it. The idea still stands on its own. PR-37 lands first, because a bar that can not judge a change is no way to argue for one.
+
+Gate: the three numbers of D-648, against the reads of PR-37. The casual pair count per format, before and after. No bar falls.
+> *In plain English:* the grader knows what home decks look like from about a thousand of them. This shows it several times more, so it knows better.
+
+**PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
+The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
+
+The app collects exactly that. A reader gives a thumbs up or a thumbs down on a whole deck (PR-27), and the verdict keeps the deck beside it (D-635). **Those are human labels on the decks the model grades worst.** The meta lists cover that population least: a themed deck built from one reader's collection.
+
+Three open questions come before the code. How many verdicts are enough for a fit, and what does the model do until then? Does a verdict join the ladder as a tier, or does it become a second signal beside it? A reader who dislikes a deck dislikes the cards, the plan, or the price. The thumbs alone says which of the three through the reason keys of PR-27.
+
+Gate: unwritten. The item takes its shape from the first real verdicts, and the owner reads the plan before any code.
+> *In plain English:* when you tell the app a deck is bad, it learns nothing from that today. It learns from decks other people published. This is the plan to use your own word, once enough of it exists.
+
 ### Phase 4 - Meta and quality (gated on Phase 3B, D-316)
 
 **PR-14A: The bracket profile (D-451 to D-453, D-459 to D-469).** ✅ merged 2026-09-02 (#57). Bracket gate run 1 reads FAIL on two bars, and the owner merged with that on record. Deck gate runs 12 and 12b together pass all 24 prompts with no regression.
@@ -1253,13 +1302,17 @@ Gate: quality gate run 14, free, about five minutes. The bars can move in either
 2026-09-07: run 14 reads the cross pairs at 0.86, 0.87, and 0.85 (D-572). Each precon over its own copies reads 0.88, 0.97, and 0.99. The diagnostic names the mechanisms, F-53 measured and F-56 new. The owner chose the own copies as the bar (D-573), so run 14 reads FAIL on Commander synergy alone.
 > *In plain English:* the test that grades the grader looked at a slice of the decks, and one format had one deck to test. This makes the test look at every deck fairly, and it prints why each miss happened. Nothing about the grader changes yet.
 
-**PR-29: The casual corpus (F-53).** 🔧 planned, after M-7.
-The corpus keeps two groups. The top group is the great and the good lists, as today, and it gives `card_rate`, `unseen_share`, and `synergy`. The casual group is the typical and the baseline lists, and it gives `casual_rate` and `casual_synergy` the same way. In Commander the casual group is the average decks and the precons, and in Modern and Standard the MTGGoldfish decks and the precons. The features read the training split alone (D-473).
+**PR-29: The casual corpus (F-53, F-94, D-648, D-652).** ⏸ closed 2026-09-10 on its own evidence, and it never merged.
+The corpus reads the great and the good lists alone. A precon and its synergy-broken copy both sit far from a tournament list, and the two barely separate. PR-29 added a second group over the typical and the baseline lists, and it gave `casual_rate` and `casual_synergy`.
 
-A precon and its synergy-broken copy then separate on `casual_synergy`, because the precon's pairs sit in the casual lists and the copy's do not. The ladder gains a casual reference, so a deck reads its distance to the casual lists and to the tournament lists both. The four weights against sense have a reason to move, and no weight changes by hand (D-486).
+**The mechanism worked, and the trade did not.** A control fitted the same day over the same data reads the numbers apart. The Commander synergy axis read 0.70 and 0.81, and the precon bar 0.88 and 0.92. The built decks graded bad read 15 of 25 and 17. The judge agreement read 8 of 25 and 6. So it bought a proxy and paid in the two numbers a reader feels.
 
-Gate: the Commander synergy axis reads 0.95 or better, and no axis falls under its run 14 read. The tier judge lane over deck gate run 16 reads the built decks, $0.36. The count graded bad in the explain mode falls under 19 of 24. The judge bar of 80 percent stays the bar. `MetaBoost` and the bracket 5 offer read `card_rate` and the signal as today, so no deck gate runs (D-474).
-> *In plain English:* the grader learned what a good deck looks like from tournament decks alone, so every home deck looked bad to it. This teaches it what home decks and the boxed decks look like too. The tournament view stays, and a second view joins it.
+M-8 then found the target of 0.95 was never reachable (F-95). The owner refused a reader-facing cost for movement on a broken measurement, and closed it (D-652).
+
+`docs/reference/pr29-casual-corpus-2026-09-10.md` stays in the repository, because two findings rest on it. F-94: one fit serves two jobs, so the feature that best separates a precon from its copy carries a low weight. It also names **two features nobody builds again**. `casual_unseen_share` moved the target axis by nothing and cost three other bars. `casual_pair_share` won one pair of 389, because the fit split it against `casual_synergy` with opposite signs.
+
+The idea returns after PR-37, if the owner wants it. A bar that can not judge a change is no way to argue for one.
+> *In plain English:* the grader learned what a good deck looks like from tournament decks alone, so every home deck looked bad to it. The lesson about home decks worked on the test and read the real decks slightly worse, so the change went back. The test itself turned out to be broken, and that gets fixed first.
 
 **PR-30: The commander reference (F-53, OQ-74).** 🔧 planned, after PR-29. The owner answered OQ-74 on 2026-09-07 (D-568): one feature, and the fit decides its weight.
 EDHREC gives the average deck of each commander, and the store holds it as a typical list under the commander's slug. `commander_rate` is the share of a deck's nonland cards the average deck of its own commander holds. A deck with no average deck reads the mean, as an absent value does. The reason sentence names it: "few of the cards people play with this commander".
@@ -1380,6 +1433,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 27. **PR-32** the commander the reader named, and the pool they chose (F-75, F-76, OQ-79). ✅ merged 2026-09-08, as #98 and #99. It ran right after PR #97. The runtime read of F-76 came first, and it settled the cause.
 28. **PR-33** one model call that lands in band (F-77, F-78). ✅ merged 2026-09-08 (#102). Deck gate run 18 is the paid measure and the decks baseline (D-617). An upgrade reads the bands after D-628, and the next whole run measures that (D-629).
 29. **PR-34** more collection platforms (F-91, F-92, F-93). ✅ merged 2026-09-10 (#123): Moxfield reads, and the app names the format itself (D-647). The other platforms wait for the owner's word and a real export each.
+30. **M-8** the audit of the precon bar ✅ built 2026-09-10 (F-94, F-95). **PR-29** ⏸ closed the same day on its own evidence (D-652). Then **PR-37** the materiality check on the synergy break, then **PR-35** more casual lists (D-650), then **PR-30** the commander reference. **PR-36** the reader's verdict waits for verdicts (D-651).
 
 ## 9. Open questions
 
