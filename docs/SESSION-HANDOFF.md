@@ -8,33 +8,33 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-10)
 
-**The checkout.** `main` is `fba7a34`, which is pull request #123. Every pull request of 2026-09-09 and 2026-09-10 is merged: #117, #121, #122, and #123. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
+**The checkout.** `main` is `d7f7621`, which is pull request #124. Branch `m8-precon-bar-audit` holds this session's work, and it waits for a review and a merge. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
 
 **The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586).
 
-**The whole feedback loop stands.** PR-27 harvests the verdicts, PR-28a writes the harvest files, PR-28b writes the cases, and PR-28c fixes them. All four are merged.
+**PR-29 closed, and it never merged** (D-652). The casual corpus lifted the Commander synergy axis from 0.70 to 0.81, and it cost two decks of judge agreement and two decks graded bad. M-8 then found the target of 0.95 was never reachable, so the owner refused the trade. `docs/reference/pr29-casual-corpus-2026-09-10.md` stays in the repository, because F-94 rests on it.
 
-**PR-34 is merged as #123** (D-647, F-91 to F-93). The app reads the format of an upload out of the file, and the reader never names the app their file came from. Moxfield is the first new platform, on a real export the owner wrote. `docs/reference/pr34-collection-formats-2026-09-10.md` is the gate, and it reads PASS.
+**CAUTION: two features never get built again** (F-94). `casual_unseen_share` moved the target axis by nothing and cost three other bars. `casual_pair_share` won one pair of 389, because the fit split it against `casual_synergy` with opposite signs. The gate document says why for each.
 
-**F-92 was live.** The web sent `MANABOX_CSV` on every upload, hardcoded. The app has read an Arena list since D-15, and no reader ever uploaded one: every row failed. The upload names no format now.
+**M-8 answered its question** (F-95, D-649). The label holds. The broken copy is not the better deck, and the break moves the feature the right way in 84 percent of the losses. **The break reads as nothing at the floor.** A weak precon's cards do not pair in the corpus, so a break that removes half its pairs removes half of nothing. Those 54 of 389 Commander pairs read 0.43, under a coin flip.
 
-**A real export is the fixture of a format** (F-91). The Moxfield documentation disagreed with itself on two points, and both decided whether a row resolves. `Edition` is a set code and not a set name, and `Condition` is the long name. **The language column is the trap.** `Resolve` refuses a row that is not `en` (D-23), and Moxfield writes `English`. A pass-through loses all 3192 English cards of the export.
+**So 0.95 was never reachable.** A model that wins every other pair and splits those by chance reads 0.93. `docs/reference/m8-precon-bar-audit-2026-09-10.md` holds every read.
 
-**Five platforms are left**, and each one waits for the owner's word and a real export: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault.
+**PR-37 is next, and the owner answered its three questions** (D-652). The synergy break is the fallback of the synthetic set and the one break with no materiality check, against the rule of D-485. The check **measures the move after the break** and not a count before it. A deck that passes no check **makes no broken copy at all**. The bar of 0.95 **stands**, and the population under it changes.
 
-**CAUTION: no live feedback cycle ran yet.** The free half of PR-28c holds, and `make feedback-loop-dry` plans one for nothing. A live cycle spends money, edits code with nobody watching, and writes to a public pull request. It needs the owner's word, `AUTOTUNE_FIXER_CMD`, and a harvest whose verdicts carry a snapshot. The three verdicts on record predate D-635.
+**Every quality item reports three numbers** (D-648): the precon bar, the count of built decks graded bad, and the tier judge agreement. **The owner drops an item that moves none of the three.** PR-29 moved the first up and the other two down, and that is why it closed.
 
-**Every user has a record** at `users/<uid>` (D-638), with the verified email, the dates, and six counters. Every counter counts a creation, so a deleted deck does not lower one.
+**The whole feedback loop stands**, as #117, #121, and #122. **No live cycle ran yet.** It needs the owner's word, `AUTOTUNE_FIXER_CMD`, and a harvest whose verdicts carry a snapshot.
 
-**A committed file takes a reader's own words** (D-642, supersedes D-640). No file holds an email.
+**PR-34 is merged as #123.** The app reads the format of an upload out of the file, and Moxfield reads. OQ-80 asks whether a proxy counts as a card the reader owns.
 
 **The whole PR-22 gate holds** (D-633). The measured cost at idle reads $9.54 a month gross, and the hourly snapshot tick of D-634 leaves $3.81.
 
 **What waits on the owner.** OQ-67, the Stage B channels. OQ-77, the blocking function of Identity Platform. OQ-79, the commander of an owned-only pool. OQ-80, a proxy and the pool.
 
-**CAUTION: the evidence OQ-79 waits for is not on the deployed project.** `make read-session SESSION=23rplEQAMA0mtJ3QFtKO` answers `no sessions ... over 1 user(s)`, and the deck it names is gone as well. So a fresh owned-only build on the deployed app is the way to the evidence.
+**CAUTION: the evidence OQ-79 waits for is not on the deployed project.** A fresh owned-only build on the deployed app is the way to it.
 
-**CAUTION: a local `make verify` is not the whole story.** It read green for weeks while shellcheck failed, because the recipe took the `||` branch on a finding (F-89, D-641). Every pull request runs the workflow now.
+**CAUTION: a local `make verify` is not the whole story.** It read green for weeks while shellcheck failed (F-89, D-641). Every pull request runs the workflow now.
 
 ## How to resume
 
@@ -77,14 +77,16 @@ Seven things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. Each one is one signature entry plus one row builder. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
-2. **The live half of the feedback loop has no run yet.** Three things want a measurement: the judge lane of the triage, one live fix cycle, and one review round. All three need the owner's word, and the cycle also needs `AUTOTUNE_FIXER_CMD` and a harvest whose verdicts carry a snapshot. The three verdicts on record predate D-635.
-3. **The next whole deck gate run is still run 19, and it is still outstanding.** It makes the next decks baseline, and no deck-build change waits on one now. The upgrade probe of 2026-09-09 already measured D-628 (D-632).
-4. **OQ-79 needs runtime evidence.** No fix goes in without it, and neither the session nor the deck it names is readable. A fresh owned-only build on the deployed app is the way to it.
-5. **PR-29, the casual corpus**, stands on the weak-axes plan (D-567, D-568). Read `docs/reference/weak-axes-2026-09-07.md` first. No bar moves (D-486), and no weight changes by hand. PR-30 follows, and PR-31 parks (D-573).
-6. **The weekly EDHREC read** falls on 2026-09-14 (D-499, D-565). Run `make meta-refresh`, then `make quality-gate` to a new `QUALITY_GATE_OUT`.
-7. **The meta job runs already.** The `mtg-meta` job and the `mtg-meta-schedule` cron at 06:00 UTC both run, and the schedule reads ENABLED. A run takes about 1170 seconds and costs $1.83 a month (2026-09-09). No infra file in this repo holds either schedule (D-492).
-8. **PR-26, the return channels**, waits on OQ-67.
+1. **PR-37, the materiality check on the synergy break** (F-95, D-652). The owner answered all three questions. Measure the move after the break. Drop the pair under a floor. Make no copy for a deck that passes no check. Keep the bar at 0.95. The floor is one number in standard deviations, and no decision names it. Measure a few, and report what each one drops.
+2. **PR-35, more casual lists** (D-650), after PR-37. The casual corpus of Commander reads 1043 lists against 6383 tournament lists. A bar that can not judge a change is no way to argue for one, so the check lands first.
+3. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
+4. **The live half of the feedback loop has no run yet.** Three things want a measurement: the judge lane of the triage, one live fix cycle, and one review round. All three need the owner's word, and the cycle also needs `AUTOTUNE_FIXER_CMD` and a harvest whose verdicts carry a snapshot.
+5. **The next whole deck gate run is still run 19, and it is still outstanding.** It makes the next decks baseline.
+6. **OQ-79 needs runtime evidence.** A fresh owned-only build on the deployed app is the way to it.
+7. **PR-30, the commander reference**, stands on the weak-axes plan (D-567, D-568). Read the PR-29 gate document beside it: the measurement refutes two of that plan's predictions.
+8. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
+9. **The weekly EDHREC read** falls on 2026-09-14 (D-499, D-565). Run `make meta-refresh`, then `make quality-gate` to a new `QUALITY_GATE_OUT`.
+10. **PR-26, the return channels**, waits on OQ-67.
 
 CAUTION: `make revise-gate | tee` hides the exit code. Read the verdict line of the document, never the exit code of a pipe.
 
@@ -93,6 +95,20 @@ CAUTION: the CI step "fake gcs tests" filters on `LiveStore`, and the only live 
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 
 ## The ten most recent sessions
+
+### 2026-09-10b: PR-29 closed, and M-8 read the bar
+
+Branch `m8-precon-bar-audit`, open for review.
+
+**The casual corpus worked and the trade did not.** A control fitted the same day over the same data reads the numbers apart. The Commander synergy axis read 0.70 and 0.81. The built decks graded bad read 15 of 25 and 17, and the judge agreement 8 of 25 and 6. The judge comparison holds no judge noise: one run answered every deck once, and both models read those same answers.
+
+**Two further features failed and went back.** `casual_unseen_share` moved the target axis by nothing and cost three other bars. `casual_pair_share` won one pair of 389, because the fit split it against `casual_synergy` with opposite signs.
+
+**M-8 found the target was never reachable.** A weak precon's cards do not pair in the corpus, so the synergy break removes half of nothing. 54 of 389 Commander pairs carry no signal and read 0.43, so a perfect model reads 0.93.
+
+**The repository already held the rule.** D-485 says a break must be material, and it checks the copies axis and the colors axis. Synergy is the fallback, and it checks nothing (F-95).
+
+**The owner closed PR-29 and answered the three questions of PR-37.** The evidence document stays, because two findings rest on it.
 
 ### 2026-09-10: PR-34, the collection formats
 
@@ -180,10 +196,6 @@ The 47 terse conversations joined the bar, with four classifier rules and the GC
 
 PR-15 landed the eval harness (#65). The paid gate ran with it (D-514, D-515). The corpus took the MTGJSON skip and the precon exclusion prompt. Three set fixes closed F-40 to F-42: the Marvel set question, the group set request, and the partial run.
 
-### 2026-09-03: four product pull requests
-
-PR-14B landed the deck quality model (#58). PR-24 landed the precon exclusion (#59). PR-14C landed MTGTop8 and the casual 60-card decks (#60). PR-20 landed the deck view and the card detail (#61), and PR-21 landed the share link and the print view (#62). Two deck gate fixes followed: the precon share reads the pool, and a failed repair keeps the deck.
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file carried before 2026-09-09. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-02, and 42 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file carried before 2026-09-09. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-03, and 42 more sections, word for word. Read it for the detail behind a decision.

@@ -12,6 +12,8 @@ Stage (2026-09-09): **the app is live on `decktome.com`**, and pull request #119
 
 **The whole feedback loop is on `main`**, as pull requests #117, #121, and #122. The triage names one of 22 classes for each thumbs down, and the reason keys answer 20 of them for nothing (D-643). A case joins the gate file that owns it, and the pull request diff is the accept step (D-642). The fix cycle carries the case and its fix in one pull request, and it answers the review of `gitar-bot` (D-645). **No live cycle ran yet.** **PR-34 is merged as #123**: the app reads the format of an upload out of the file, and Moxfield reads (D-647, F-91 to F-93).
 
+**PR-29 closed, and it never merged** (D-652). M-8 read the precon bar and found its target of 0.95 was never reachable. 54 of 389 pairs carry no signal, because a weak precon's cards do not pair in the corpus (F-95). **Every quality item reports three numbers now**, and the owner drops an item that moves none (D-648). PR-37 adds the materiality check the synergy break never had.
+
 Two rules of the deployed app come from 2026-09-09. **A verdict keeps the object it names** (D-635), because a reader deletes the deck or the chat they complained about, and the verdict outlives it. **Every user has a record** at `users/<uid>` (D-638): the verified email, the dates, and six counters of what they made. No harvest reads that record, and a test refuses the import that joins them.
 
 The look follows a reference design the owner gave on 2026-08-30 (D-328 to D-335). `docs/reference/autotune-readme.md` holds the loop commands.
