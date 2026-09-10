@@ -246,3 +246,69 @@ func TestTheRealExportDetectsAsMoxfield(t *testing.T) {
 		t.Errorf("the ManaBox export detects as %s (%v), want ManaBox", got, err)
 	}
 }
+
+// TestAFormatWithNoScryfallIdStillCarriesItsPrinting holds the gap PR-34
+// opened and closed. Moxfield writes no Scryfall id column, so a row of
+// it resolves on the set code and the collector number alone.
+//
+// The entry then carried no printing at all. The binder reads that field
+// for the art and the price of what the reader owns (D-299),
+// OwnedPrintings drops an entry without one, and the binder tile keys
+// itself on it, so every tile of a Moxfield collection shared one key.
+func TestAFormatWithNoScryfallIdStillCarriesItsPrinting(t *testing.T) {
+	idx := fixtureIndex(t)
+	// One printing of the fixture, named the way Moxfield names it: a
+	// set code and a collector number, and no id.
+	var set, num, wantID string
+	for _, p := range printingsForTest(t) {
+		if p.SetCode != "" && p.CollectorNumber != "" && p.ScryfallID != "" {
+			set, num, wantID = p.SetCode, p.CollectorNumber, p.ScryfallID
+			break
+		}
+	}
+	if wantID == "" {
+		t.Fatal("the printing fixture holds no printing with a set and a number")
+	}
+	rows := []Row{{Line: 2, Raw: "row", Name: "", SetCode: set, Collector: num,
+		Quantity: 1, Finish: mtgv1.Finish_FINISH_NORMAL,
+		Condition: mtgv1.Condition_CONDITION_NEAR_MINT, Language: "en"}}
+	entries, bad := Resolve(rows, idx)
+	if len(bad) != 0 {
+		t.Fatalf("the row did not resolve: %v", bad[0])
+	}
+	if len(entries) != 1 {
+		t.Fatalf("%d entries, want 1", len(entries))
+	}
+	if got := entries[0].GetScryfallId(); got != wantID {
+		t.Errorf("scryfall id = %q, want %q from the printing the pair named", got, wantID)
+	}
+	// The two readers that a missing id silently disabled.
+	if _, ok := idx.Printing(entries[0].GetScryfallId()); !ok {
+		t.Error("the entry names no printing the index holds, so the binder shows no art")
+	}
+	if n := len(OwnedPrintings(entries)); n != 1 {
+		t.Errorf("OwnedPrintings covers %d oracle ids, want 1", n)
+	}
+}
+
+// TestAScryfallIdOnTheRowIsKept: a format that writes the id keeps it,
+// and the set-and-number path never rewrites it.
+func TestAScryfallIdOnTheRowIsKept(t *testing.T) {
+	idx := fixtureIndex(t)
+	var set, num, id string
+	for _, p := range printingsForTest(t) {
+		if p.SetCode != "" && p.CollectorNumber != "" && p.ScryfallID != "" {
+			set, num, id = p.SetCode, p.CollectorNumber, p.ScryfallID
+			break
+		}
+	}
+	rows := []Row{{Line: 2, Raw: "row", ScryfallID: id, SetCode: set, Collector: num,
+		Quantity: 1, Language: "en"}}
+	entries, bad := Resolve(rows, idx)
+	if len(bad) != 0 || len(entries) != 1 {
+		t.Fatalf("the row did not resolve: %v", bad)
+	}
+	if got := entries[0].GetScryfallId(); got != id {
+		t.Errorf("scryfall id = %q, want the row's own %q", got, id)
+	}
+}

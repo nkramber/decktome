@@ -37,7 +37,7 @@ func Resolve(rows []Row, idx *cards.Index) ([]*mtgv1.CollectionEntry, []*mtgv1.U
 			bad = append(bad, unresolved(row.Line, row.Raw, reason))
 			continue
 		}
-		e := buildEntry(row, card, byName)
+		e := buildEntry(row, card, byName, idx)
 		key := strings.Join([]string{e.ScryfallId, e.SetCode, e.CollectorNumber, e.Finish.String(), e.Condition.String()}, "|")
 		if prev, dup := merged[key]; dup {
 			if int(prev.Quantity)+int(e.Quantity) > maxQuantity {
@@ -60,7 +60,7 @@ func Resolve(rows []Row, idx *cards.Index) ([]*mtgv1.CollectionEntry, []*mtgv1.U
 // they match that printing. The proto has no field for this fact. A
 // caller can detect it: the entry's scryfall_id differs from the input
 // row's Scryfall ID.
-func buildEntry(row Row, card *mtgv1.Card, byName bool) *mtgv1.CollectionEntry {
+func buildEntry(row Row, card *mtgv1.Card, byName bool, idx *cards.Index) *mtgv1.CollectionEntry {
 	e := &mtgv1.CollectionEntry{
 		ScryfallId:      row.ScryfallID,
 		OracleId:        card.OracleId,
@@ -81,6 +81,23 @@ func buildEntry(row Row, card *mtgv1.Card, byName bool) *mtgv1.CollectionEntry {
 			e.SetCode = dp.GetSetCode()
 			e.SetName = dp.GetSetName()
 			e.CollectorNumber = dp.GetCollectorNumber()
+		}
+	}
+	// A format with no Scryfall id column resolves on the set and the
+	// number, and the entry would carry no printing at all (PR-34). The
+	// binder reads that field for the art and the price of what the
+	// reader owns (D-299), OwnedPrintings drops an entry without one,
+	// and the binder tile keys itself on it. So the entry takes the
+	// printing the pair named.
+	if e.ScryfallId == "" && e.SetCode != "" && e.CollectorNumber != "" {
+		if p, ok := idx.PrintingBySetCollector(e.SetCode, e.CollectorNumber); ok {
+			e.ScryfallId = p.GetScryfallId()
+			if e.SetName == "" {
+				e.SetName = p.GetSetName()
+			}
+			if e.Rarity == "" {
+				e.Rarity = p.GetRarity()
+			}
 		}
 	}
 	return e

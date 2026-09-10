@@ -60,6 +60,33 @@ The one unresolved row is a Japanese printing of Helpful Hunter, reported as `UN
 
 Rows fall from 3193 to 3035 entries because the resolver merges rows that name one printing. A reader who holds the same card in two binders writes two rows.
 
+## F-93, the gap a resolution count hid
+
+3192 of 3193 rows resolve, and that number hides a fault.
+
+Moxfield writes no Scryfall id column, so a row of it resolves on the set code and the collector number. `buildEntry` filled the entry's id from the row, and the row had none. **Every entry of a Moxfield collection carried an empty printing id.**
+
+Three readers of that field then did nothing, in silence.
+
+- The binder reads the printing for the art and the price of what the reader owns (D-299, F-60). It fell back to the default printing for all 3035 entries.
+- `OwnedPrintings` drops an entry with no id. It covered 0 oracle ids of the collection.
+- The binder tile keys itself on `scryfallId-finish-condition`. Every normal near-mint tile of the collection shared one key.
+
+`Index.PrintingBySetCollector` answers the printing the pair names, and the entry takes it. It holds no index of its own: it walks the printings of the one card, and a card holds 225 at the most.
+
+Measured over the real export, after the fix:
+
+| Measure | Before | After |
+|---|---|---|
+| Entries with a printing id | 0 | 3035 |
+| Printings with art | 0 | 3009 |
+| Printings with a price | 0 | 3035 |
+| Oracle ids `OwnedPrintings` covers | 0 | 2232 |
+
+The 26 entries whose printing carries no art are two-faced cards, which hold their art on the faces. `collectionsvc` already falls back for those (F-60).
+
+The ManaBox path is untouched: its rows carry a Scryfall id, so the new branch never fires for them.
+
 ## The detection
 
 `collections.Detect` reads the header row and names the format. The reader drops a file and never says which app wrote it (D-647).
