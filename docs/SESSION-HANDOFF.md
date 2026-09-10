@@ -14,6 +14,8 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **PR-29 waits for a merge, and its gate is unmet** (F-53, F-94, D-648). The casual corpus lifted the Commander synergy axis from 0.70 to 0.81, against a bar of 0.95. The mechanism holds: `casual_rate` is the feature the synergy break moves most. `docs/reference/pr29-casual-corpus-2026-09-10.md` holds every number, a control run, and two refuted predictions of the plan.
 
+**CAUTION: the newest model in the local store holds the casual features.** `make quality-gate -write` stored `20260910T012734Z` on 2026-09-10, from the PR-29 branch. A checkout of `main` reads that model as the newest one, and its key list names two features the code of `main` does not compute. A missing feature reads zero, so a deck scores wrong and nothing says so. Fit a new model after a switch, or delete that version. The store is under `.local`, so git never saw it, and the deployed app reads its own model from GCS.
+
 **CAUTION: the gate of PR-29 is out of reach by corpus work** (F-94). The session built two further features, measured both, and reverted both the same day. `casual_unseen_share` moved the target axis by nothing and cost three other bars. `casual_pair_share` won one pair of 389, because it is collinear with `casual_synergy`. **Do not build either again.** The gate document says why.
 
 **The next three items come from that finding.** M-8 audits whether the precon bar asks for a true ordering (D-649). The synergy break sometimes leaves a weak precon's copy as the better deck. PR-35 widens the casual corpus, which is thin by a factor of six (D-650). PR-36 plans the reader's own verdict as a quality signal, and it waits for verdicts (D-651).
