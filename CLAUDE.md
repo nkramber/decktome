@@ -14,7 +14,7 @@ Stage (2026-09-10): **the app is live on `decktome.com`**, and pull request #127
 
 **PR-29 closed, and it never merged** (D-652). M-8 read the precon bar and found its target of 0.95 was never reachable. 54 of 389 pairs carry no signal, because a weak precon's cards do not pair in the corpus (F-95). **Every quality item reports three numbers now**, and the owner drops an item that moves none (D-648). **PR-37 is merged as #127.** It adds the materiality check the synergy break never had, in Commander alone at a floor of 0.10 (D-653). Gate run 18 reads PASS, and no reader-facing number moved: the bar reads a new population, and the model is the same model.
 
-**M-9 is next, and PR-35 waits on it** (D-654, F-97). On `main` the count of casual lists barely moves a reader-facing number, so M-9 tests the casual features of PR-29 at three corpus sizes first.
+**PR-30 is next, and the owner parked PR-35** (D-655). M-9 found that more casual lists make the reader numbers worse with the casual features of PR-29, and move nothing without them (F-97, F-98).
 
 Two rules of the deployed app come from 2026-09-09. **A verdict keeps the object it names** (D-635), because a reader deletes the deck or the chat they complained about, and the verdict outlives it. **Every user has a record** at `users/<uid>` (D-638): the verified email, the dates, and six counters of what they made. No harvest reads that record, and a test refuses the import that joins them.
 
