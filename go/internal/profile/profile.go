@@ -139,20 +139,7 @@ func (p *Profiler) measure(deck *mtgv1.Deck, src rules.CardSource) (*mtgv1.DeckP
 	table, bracket := p.bands.For(format, deck.GetPower())
 	out := &mtgv1.DeckProfile{Bracket: bracket, BandsVerifiedAt: p.bands.VerifiedAt}
 
-	var entries []entry
-	var commanders []*mtgv1.Card
-	for _, dc := range deck.GetCards() {
-		c, ok := src.ByOracleID(dc.GetOracleId())
-		if !ok || dc.GetCount() <= 0 {
-			continue
-		}
-		entries = append(entries, entry{card: c, count: int(dc.GetCount()), role: dc.GetRole()})
-	}
-	for _, id := range deck.GetCommanderOracleIds() {
-		if c, ok := src.ByOracleID(id); ok {
-			commanders = append(commanders, c)
-		}
-	}
+	entries, commanders := resolveDeck(deck, src)
 	colors := deckColors(entries, commanders, commander)
 
 	var tags *cards.TagIndex
@@ -319,12 +306,11 @@ func (f *features) tutors(entries []entry, tags *cards.TagIndex) {
 	f.set(KeyTutor, float64(n), names(found))
 }
 
-// sources measures the color sources against the pips by the Karsten
-// tables. The value is the worst color's ratio of sources to
-// requirement, and the note lists every color.
-func (f *features) sources(entries []entry, colors []mtgv1.Color, size int) {
+// colorSources measures each deck color's sources against the need of its
+// pips by the Karsten tables, in color order.
+func colorSources(entries []entry, colors []mtgv1.Color, size int) []ColorSource {
 	if len(colors) == 0 {
-		return
+		return nil
 	}
 	have := map[mtgv1.Color]float64{}
 	needs := map[mtgv1.Color][]int{}
@@ -342,10 +328,8 @@ func (f *features) sources(entries []entry, colors []mtgv1.Color, size int) {
 			}
 			continue
 		}
-		if producesMana(c) {
-			for _, col := range c.GetProducedMana() {
-				have[col] += RockSource * float64(e.count)
-			}
+		for _, col := range sourceColorsOf(c) {
+			have[col] += RockSource * float64(e.count)
 		}
 		pips := colorPips(c.GetManaCost())
 		total := 0
@@ -360,26 +344,84 @@ func (f *features) sources(entries []entry, colors []mtgv1.Color, size int) {
 			}
 		}
 	}
-	worst := math.Inf(1)
-	var parts []string
+	var out []ColorSource
 	for _, col := range colorOrder {
 		if !hasColor(colors, col) {
 			continue
 		}
-		req := requirement(needs[col])
-		ratio := 1.0
-		if req > 0 {
-			ratio = have[col] / float64(req)
-		}
-		if ratio < worst {
-			worst = ratio
-		}
-		parts = append(parts, fmt.Sprintf("%s %s of %d", colorLetters[col], num(have[col]), req))
+		out = append(out, ColorSource{Color: col, Have: have[col], Need: requirement(needs[col])})
 	}
-	if math.IsInf(worst, 1) {
+	return out
+}
+
+// sources measures the color sources against the pips by the Karsten
+// tables. The value is the worst color's ratio of sources to
+// requirement, and the note lists every color.
+func (f *features) sources(entries []entry, colors []mtgv1.Color, size int) {
+	rows := colorSources(entries, colors, size)
+	if len(rows) == 0 {
 		return
 	}
+	worst := math.Inf(1)
+	parts := make([]string, 0, len(rows))
+	for _, r := range rows {
+		if ratio := r.Ratio(); ratio < worst {
+			worst = ratio
+		}
+		parts = append(parts, fmt.Sprintf("%s %s of %d", colorLetters[r.Color], num(r.Have), r.Need))
+	}
 	f.set(KeyColorSources, math.Round(worst*100)/100, "sources of requirement: "+strings.Join(parts, ", "))
+}
+
+// ColorSource is one deck color's sources against the count its spells
+// need, by the Karsten tables. A land counts as one source of each color
+// it makes, and a fetch land as one of every deck color. A nonland card
+// with a tap mana ability counts as RockSource of each color it makes that
+// its own cost does not need (F-103).
+type ColorSource struct {
+	Color mtgv1.Color
+	Have  float64
+	Need  int
+}
+
+// Ratio is the sources over the need. A color no spell asks for reads 1.
+func (s ColorSource) Ratio() float64 {
+	if s.Need <= 0 {
+		return 1
+	}
+	return s.Have / float64(s.Need)
+}
+
+// ColorSources measures every deck color's sources against its need, in
+// color order, and no other feature. The color_sources feature reads the
+// worst ratio of these, and the mana pass balances the basic lands by
+// them (F-102).
+func ColorSources(deck *mtgv1.Deck, src rules.CardSource) []ColorSource {
+	entries, commanders := resolveDeck(deck, src)
+	format := deck.GetFormat().GetId()
+	colors := deckColors(entries, commanders, format == mtgv1.FormatId_FORMAT_ID_COMMANDER)
+	return colorSources(entries, colors, deckSize(format))
+}
+
+// resolveDeck reads the deck's cards and commanders against the card
+// source. A card the source does not know is skipped, and the rules
+// engine has already reported it.
+func resolveDeck(deck *mtgv1.Deck, src rules.CardSource) ([]entry, []*mtgv1.Card) {
+	var entries []entry
+	var commanders []*mtgv1.Card
+	for _, dc := range deck.GetCards() {
+		c, ok := src.ByOracleID(dc.GetOracleId())
+		if !ok || dc.GetCount() <= 0 {
+			continue
+		}
+		entries = append(entries, entry{card: c, count: int(dc.GetCount()), role: dc.GetRole()})
+	}
+	for _, id := range deck.GetCommanderOracleIds() {
+		if c, ok := src.ByOracleID(id); ok {
+			commanders = append(commanders, c)
+		}
+	}
+	return entries, commanders
 }
 
 // goldfish runs the simulation and records its three numbers.

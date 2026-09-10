@@ -28,6 +28,52 @@ func producesMana(c *mtgv1.Card) bool {
 	return strings.Contains(strings.ToLower(c.GetOracleText()), "add {")
 }
 
+// sourceColorsOf answers the colors a nonland card counts as a source of
+// (F-103). It counts only through a tap mana ability whose cost
+// sacrifices nothing, so a ritual, a Treasure maker, and a sacrifice altar
+// count as no source. It counts as no source of a color its own cost
+// needs, because the card is not in play before that color is.
+func sourceColorsOf(c *mtgv1.Card) []mtgv1.Color {
+	types := c.GetCardTypes()
+	if slices.Contains(types, "Instant") || slices.Contains(types, "Sorcery") || !tapManaAbility(c.GetOracleText()) {
+		return nil
+	}
+	own := colorPips(c.GetManaCost())
+	var out []mtgv1.Color
+	for _, col := range c.GetProducedMana() {
+		if col == mtgv1.Color_COLOR_C || own[col] > 0 {
+			continue
+		}
+		out = append(out, col)
+	}
+	return out
+}
+
+// tapManaAbility reports text that holds a mana ability with {T} in its
+// cost and no sacrifice. A cost reads back from ": Add" to the last quote,
+// period, or parenthesis, so the reminder text of a Treasure token,
+// "{T}, Sacrifice this token: Add", reads as a sacrifice.
+func tapManaAbility(text string) bool {
+	for _, line := range strings.Split(text, "\n") {
+		rest := line
+		for {
+			i := strings.Index(rest, ": Add")
+			if i < 0 {
+				break
+			}
+			cost := rest[:i]
+			if j := strings.LastIndexAny(cost, "\".("); j >= 0 {
+				cost = cost[j+1:]
+			}
+			if strings.Contains(cost, "{T}") && !strings.Contains(strings.ToLower(cost), "sacrifice") {
+				return true
+			}
+			rest = rest[i+len(": Add"):]
+		}
+	}
+	return false
+}
+
 // manaMade is how much mana one activation of a rock or a dork adds:
 // two for a card that adds {C}{C}, as Sol Ring does, and one otherwise.
 func manaMade(c *mtgv1.Card) int {
