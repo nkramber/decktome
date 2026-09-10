@@ -44,7 +44,7 @@ The Commander weights of the two features, with `card_rate` beside them:
 
 **The fit leans on `casual_synergy` as the corpus grows.** Its weight goes from -0.028 to +0.070. That is the change the premise of D-650 expected, and it moves the reader-facing numbers the wrong way.
 
-**The bar reads the other way, as it did for PR-29.** The features lift the synergy axis by 0.05 to 0.07 at every size, and the precon bar by 0.01 to 0.02. The proxy and the reader disagree about the casual features at every size (D-648).
+**The bar reads the other way, as it did for PR-29.** The features lift the synergy axis by 0.05 to 0.06 at every size, and the precon bar by 0.02. The proxy and the reader disagree about the casual features at every size (D-648).
 
 ## The decks that move
 
