@@ -406,6 +406,27 @@ func (x *Index) BySetCollector(set, num string) (*mtgv1.Card, bool) {
 	return c, ok
 }
 
+// PrintingBySetCollector finds the printing of a set code and collector
+// number. A collection format that carries no Scryfall id column
+// resolves on these two, and the entry then needs the printing to show
+// the art and the price of what the reader owns (D-299, PR-34).
+//
+// It walks the printings of the one card the pair names, so it holds no
+// index of its own. A card holds a few printings, and 225 at the most.
+func (x *Index) PrintingBySetCollector(set, num string) (*mtgv1.Printing, bool) {
+	c, ok := x.bySetNo[setNoKey(set, num)]
+	if !ok {
+		return nil, false
+	}
+	want := setNoKey(set, num)
+	for _, id := range x.printingsOf[c.OracleId] {
+		if p, ok := x.printings[id]; ok && setNoKey(p.SetCode, p.CollectorNumber) == want {
+			return p, true
+		}
+	}
+	return nil, false
+}
+
 // Len returns the card count.
 func (x *Index) Len() int { return len(x.cards) }
 

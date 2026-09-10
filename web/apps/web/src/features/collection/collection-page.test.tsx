@@ -41,7 +41,7 @@ const earlier = [
 // gives back the file input inside it.
 async function openUpload(user: ReturnType<typeof userEvent.setup>) {
   await user.click(await screen.findByRole("button", { name: "Upload a collection" }));
-  return await screen.findByLabelText("ManaBox CSV file");
+  return await screen.findByLabelText("Collection file");
 }
 
 beforeEach(() => {
@@ -173,7 +173,9 @@ describe("CollectionPage", () => {
     );
     const req = importCollection.mock.calls[0][0] as { name: string; source: ImportSource; content: Uint8Array };
     expect(req.name).toBe("export.csv");
-    expect(req.source).toBe(ImportSource.MANABOX_CSV);
+    // The upload names no format. The server reads it out of the file
+    // (D-647), so an Arena list uploaded here works too.
+    expect(req.source).toBeUndefined();
     expect(new TextDecoder().decode(req.content)).toContain("Lightning Bolt");
 
     const table = screen.getByRole("table", { name: /open your file at this line/ });
@@ -231,14 +233,14 @@ describe("CollectionPage", () => {
     // Cancel closes the dialog. A second open starts clean, so no file
     // of an abandoned upload reaches the server.
     await user.click(screen.getByRole("button", { name: "Cancel" }));
-    await waitFor(() => expect(screen.queryByLabelText("ManaBox CSV file")).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByLabelText("Collection file")).not.toBeInTheDocument());
     const again = await openUpload(user);
     expect((again as HTMLInputElement).files).toHaveLength(0);
     expect(screen.getByRole("button", { name: "Upload" })).toBeDisabled();
     expect(importCollection).not.toHaveBeenCalled();
 
     await user.keyboard("{Escape}");
-    await waitFor(() => expect(screen.queryByLabelText("ManaBox CSV file")).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByLabelText("Collection file")).not.toBeInTheDocument());
     await user.click(screen.getByRole("button", { name: "Skip, build from any card" }));
     expect(router.state.location.pathname).toBe("/session/new");
   });
@@ -417,7 +419,8 @@ describe("the upload dialog", () => {
     const user = userEvent.setup();
     await renderAt("/collection");
     await openUpload(user);
-    expect(screen.getByText(/ManaBox writes the export from Settings/)).toBeInTheDocument();
+    expect(screen.getByText(/The app reads the file and names its format itself/)).toBeInTheDocument();
+    expect(screen.getByText(/ManaBox writes its export from Settings/)).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "No file? Paste the CSV text" }));
     await user.type(screen.getByLabelText("Paste the CSV text"), "Name,Set code{enter}Bolt,LEA");

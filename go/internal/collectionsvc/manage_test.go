@@ -291,7 +291,9 @@ func TestDiffCodes(t *testing.T) {
 		{"empty id", "", oneRowCSV("1"), mtgv1.ImportSource_IMPORT_SOURCE_MANABOX_CSV, connect.CodeInvalidArgument},
 		{"path id", "../other", oneRowCSV("1"), mtgv1.ImportSource_IMPORT_SOURCE_MANABOX_CSV, connect.CodeInvalidArgument},
 		{"empty body", id, "", mtgv1.ImportSource_IMPORT_SOURCE_MANABOX_CSV, connect.CodeInvalidArgument},
-		{"no source", id, oneRowCSV("1"), mtgv1.ImportSource_IMPORT_SOURCE_UNSPECIFIED, connect.CodeInvalidArgument},
+		// No source reads the format out of the file now (D-647), so the
+		// refusal is a file no format claims.
+		{"a file no format claims", id, "First,Last\nAnn,Lee\n", mtgv1.ImportSource_IMPORT_SOURCE_UNSPECIFIED, connect.CodeInvalidArgument},
 		{"missing collection", "missing", oneRowCSV("1"), mtgv1.ImportSource_IMPORT_SOURCE_MANABOX_CSV, connect.CodeNotFound},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
