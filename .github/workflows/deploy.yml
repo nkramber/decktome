@@ -59,7 +59,7 @@ jobs:
           project_id: ${{ env.PROJECT_ID }}
           workload_identity_provider: projects/${{ env.PROJECT_NUMBER }}/locations/global/workloadIdentityPools/github/providers/github
           service_account: gh-deployer@decktome-prod.iam.gserviceaccount.com
-      - uses: google-github-actions/setup-gcloud@26f734c2779b00b7dda794207734c511110a4368 # v3.0.0
+      - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
       - name: docker auth
         run: gcloud auth configure-docker "$REGION-docker.pkg.dev" --quiet
       # The runner is linux/amd64, which is what Cloud Run runs, so no
@@ -114,7 +114,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # The packageManager field lives in web/package.json, not in the
       # root, so the action reads its pnpm version from there.
-      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
         with:
           package_json_file: web/package.json
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
