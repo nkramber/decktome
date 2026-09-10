@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-10)
 
-**The checkout.** `main` is `302858a`, which is pull request #127. Pull request #128 holds the merged state of the documents and M-9, and it waits for a merge. Branch `docs-pr30-dropped` holds the record of PR-30 on top of it. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
+**The checkout.** `main` is `479a56a`, which is pull request #128. Branch `docs-pr30-dropped` holds the records of PR-30 and M-10, and it waits for a review and a merge. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
 
 **The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586).
 
