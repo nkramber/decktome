@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-10)
 
-**The checkout.** `main` is `62b9aaa`, which is pull request #135, or a later merge. No branch holds open work. Dependabot's #131 and #132 merged the same day. #133, the web bumps, took a fix on its own branch. It holds the regenerated TypeScript of protoc-gen-es 2.14.1, and a type augmentation that puts the axe matcher on vitest 5's assertion. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
+**The checkout.** `main` is `62b9aaa`, which is pull request #135, or a later merge. No branch holds open work of this repository. Dependabot's #131 and #132 merged the same day, and #133, the web bumps, waits on the owner with green checks. It took a fix on its own branch. The fix holds the regenerated TypeScript of protoc-gen-es 2.14.1, and a type augmentation for the axe matcher on vitest 5's assertion. The manifests on `main` read the versions before #133 until it merges. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
 
 **The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586).
 
@@ -87,7 +87,7 @@ Seven things a fresh session gets wrong without this file.
 - The feedback store holds 3 verdicts on 2026-09-09, and every one predates the snapshot of D-635. `make feedback-list VERDICT=` reads both verdicts now (F-87). A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
 - Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 18, revise is run 9. Run 44 is the newest whole questions run, and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 18 is its newest run.
-- Toolchain: Go 1.27.0, Node 22.23.2, pnpm 9.2.0, firebase-tools 14.14.0, Java 17, Playwright 1.63.0 with its Chromium headless shell (`playwright install chromium`). vitest is 5.0.0 since #133. The first three were verified 2026-09-09.
+- Toolchain: Go 1.27.0, Node 22.23.2, pnpm 9.2.0, firebase-tools 14.14.0, Java 17, Playwright 1.62.1 with its Chromium headless shell (`playwright install chromium`). #133 lifts Playwright to 1.63.0 and vitest to 5.0.0 when it merges. The first three were verified 2026-09-09.
 
 ## Next steps, in order
 
@@ -113,7 +113,7 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 ### 2026-09-10d: F-104, the offer reads the bracket of its own turn
 
-Merged as #134. PR-39 followed and merged as #135. Dependabot's #131 to #133 carried the day's dependency bumps, and #133 took a fix for vitest 5 and protoc-gen-es 2.14.1.
+Merged as #134. PR-39 followed and merged as #135. Dependabot's #131 and #132 merged, and #133 took a fix for vitest 5 and protoc-gen-es 2.14.1 and waits with green checks.
 
 **The owner asked whether the commander options were the expected quality.** Session `vDzEKDPnRZntlyhz8Lqg` asked for the best possible deck at bracket 5 from an owned-only pool. It read Lotho, Corrupt Shirriff, Ghalta, Primal Hunger, and Peregrin Took. They were not. The bracket 5 signal of OQ-48 exists since PR-14B, and the turn never handed it the bracket.
 
