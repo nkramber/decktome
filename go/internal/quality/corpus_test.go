@@ -176,8 +176,11 @@ func TestTheCasualKeysJoinTheFit(t *testing.T) {
 	}
 }
 
-// deckOf builds a Commander-shaped deck of the named spells plus lands,
-// so Features has copies to read.
+// deckOf builds a Standard deck of the named spells plus lands, so
+// Features has copies to read. The fixture world resolves its lists as
+// Standard, and the two must agree: the playset and singleton features
+// fire for a 60-card format alone, and a Commander deck reads zero on
+// both.
 func deckOf(t *testing.T, w *world, spells []*mtgv1.Card) *mtgv1.Deck {
 	t.Helper()
 	d := &mtgv1.Deck{Format: &mtgv1.Format{Id: mtgv1.FormatId_FORMAT_ID_STANDARD}}
