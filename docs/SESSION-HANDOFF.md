@@ -8,9 +8,15 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-10)
 
-**The checkout.** `main` is `e83720c`, which is pull request #129. Branch `ci-fake-gcs-tests` holds the fix of the CI no-op step, and it waits for a review and a merge. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
+**The checkout.** `main` is `6f89e2f`, which is pull request #130. Two branches hold work. `offer-reads-the-bracket-of-the-turn` holds the fix of F-104, and it waits for a review and a merge. `builder-basics-by-pips` holds PR-39 as one local commit, `c38e5b6`, and nobody pushed it. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
 
 **The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586).
+
+**The commander offer ignored the bracket of its own turn** (F-104, D-662). The turn built the hints from the restored slots, and the picked power option landed after that. The pick row fires on the turn the power answer arrives (D-631), so the bracket 5 signal ordered almost no deployed offer. Session `vDzEKDPnRZntlyhz8Lqg` read Lotho, Ghalta, and Peregrin Took. The hints take the bracket after the answers now, and a test holds it.
+
+**PR-39 is one local commit on `builder-basics-by-pips`** (D-659 to D-661, F-102, F-103). The source count reads a reliable tap ability alone, and the balance phase trades basics toward the color that falls short. The measurement of D-661 is not done. Rerun the mana pass lane over run 18 with the fixed count, and read whether deck 22 keeps its Forests.
+
+CAUTION: the `decktome` gcloud configuration named the Wallabee account and project on 2026-09-10, so `use_decktome` put the shell on the wrong project. `scripts/read-session.sh` reads `SESSION_PROJECT` and the account of `CLOUDSDK_CORE_ACCOUNT`, so an environment override reads `decktome-prod` with no change to the configuration. The owner has the commands to repair the configuration.
 
 **PR-37 is merged as #127, and gate run 18 reads PASS** (D-653). The synergy check drops a Commander copy whose break lowered the synergy feature by less than 0.10 standard deviations. The Commander synergy axis reads 0.84 of 232, and the precon bar 0.95 of 788. No earlier run of the quality gate in the repository reads PASS.
 
@@ -85,16 +91,18 @@ Seven things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **Read the log of the next meta job.** Its quality fit line for Commander names `immaterial`. Check that the count reads above zero.
-2. **Read the owner's grades of the ten disputed decks** (D-657, F-100). They decide the next fix. A grade on the side of the detector means the judge bar is the wrong target. A grade on the side of the judge means the detector reads built decks wrong.
-3. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
-4. **The live half of the feedback loop has no run yet.** Three things want a measurement: the judge lane of the triage, one live fix cycle, and one review round. All three need the owner's word, and the cycle also needs `AUTOTUNE_FIXER_CMD` and a harvest whose verdicts carry a snapshot.
-5. **The next whole deck gate run is still run 19, and it is still outstanding.** It makes the next decks baseline.
-6. **OQ-79 needs runtime evidence.** A fresh owned-only build on the deployed app is the way to it.
-7. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
-8. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
-9. **The weekly EDHREC read** falls on 2026-09-14 (D-499, D-565). Run `make meta-refresh`, then `make quality-gate` to a new `QUALITY_GATE_OUT`.
-10. **PR-26, the return channels**, waits on OQ-67.
+1. **Merge the fix of F-104** after the review of `gitar-bot`.
+2. **PR-39 waits on `builder-basics-by-pips`.** Rerun the mana pass lane over run 18 with the fixed source count (D-661). Read whether deck 22 keeps its Forests, and whether any deck moves the wrong way. Then push the branch and open the pull request.
+3. **The detector reads built decks wrong** (D-659). Seven of its eight flags on the disputed decks are wrong, and the one real defect moves no weight. It comes after the basic lands (D-660).
+4. **Read the log of the next meta job.** Its quality fit line for Commander names `immaterial`. Check that the count reads above zero.
+5. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
+6. **The live half of the feedback loop has no run yet.** Three things want a measurement: the judge lane of the triage, one live fix cycle, and one review round. All three need the owner's word, and the cycle also needs `AUTOTUNE_FIXER_CMD` and a harvest whose verdicts carry a snapshot.
+7. **The next whole deck gate run is still run 19, and it is still outstanding.** It makes the next decks baseline.
+8. **OQ-79 needs runtime evidence.** A fresh owned-only build on the deployed app is the way to it.
+9. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
+10. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
+11. **The weekly EDHREC read** falls on 2026-09-14 (D-499, D-565). Run `make meta-refresh`, then `make quality-gate` to a new `QUALITY_GATE_OUT`.
+12. **PR-26, the return channels**, waits on OQ-67.
 
 CAUTION: `make revise-gate | tee` hides the exit code. Read the verdict line of the document, never the exit code of a pipe.
 
@@ -103,6 +111,22 @@ The CI step "fake gcs tests" ran no test until 2026-09-10 (D-658). Its filter ma
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 
 ## The ten most recent sessions
+
+### 2026-09-10d: F-104, the offer reads the bracket of its own turn
+
+On branch `offer-reads-the-bracket-of-the-turn`, and it waits for the review.
+
+**The owner asked whether the commander options were the expected quality.** Session `vDzEKDPnRZntlyhz8Lqg` asked for the best possible deck at bracket 5 from an owned-only pool. It read Lotho, Corrupt Shirriff, Ghalta, Primal Hunger, and Peregrin Took. They were not. The bracket 5 signal of OQ-48 exists since PR-14B, and the turn never handed it the bracket.
+
+**The cause is the turn order.** The turn builds the hints from the slots as restored, and the picked power option lands inside the turn. `readFacts` refreshed the colors, the pool, the sets, and the pair flag, and never the bracket. The pick row fires on the turn the power answer arrives (D-631), so the reorder ran on almost no deployed session.
+
+**The proof cost nothing.** A local run of the pool over both fixture exports reads the same three names with no bracket. With bracket 5 it reads Vivi Ornitier, Aang, at the Crossroads, and Hapatra. The deployed model of that morning holds a signal for 964 commanders. The log of the session shows the power pick and the offer 84 milliseconds apart on turn 2.
+
+**The fix is one interface.** `BracketAware` joins `SlotAware`, `SetAware`, and `PairAware`, and `readFacts` hands the bracket over. The turn test fails without the call and passes with it.
+
+**The session before this one ended without a hand-off.** Its work is one local commit on `builder-basics-by-pips`: the source count of F-103, the balance phase of F-102, and D-659 to D-661. The measurement of D-661 is next on that branch.
+
+**The `decktome` gcloud configuration pointed at the Wallabee account and project.** The session read the deployed project through an environment override and changed no configuration.
 
 ### 2026-09-10c: PR-37, the synergy check
 
@@ -220,10 +244,6 @@ The app went live on `decktome.com` (D-574). A merge to `main` deploys itself on
 
 PR-22 landed the invite list, the spend cap, and the hosting block (D-550). PR-23 landed the Playwright smoke flow, where the fake serves a build (D-551 to D-553). PR-27 landed the feedback harvest: the thumbs, the dialog, the store, and the service (D-561). The mobile and engagement proposal set Stage A as PR-25 (D-546 to D-548).
 
-### 2026-09-05: the terse conversations and the trimmed snapshot
-
-The 47 terse conversations joined the bar, with four classifier rules and the GCP deploy guide (D-522, D-534 to D-539). The precon check ignores basic lands, and the M-5 sheet is complete (F-35, D-523, D-529 to D-532). A trimmed card snapshot of at most 10 MB serves the free dry lane of the deck gate (D-521, D-542).
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file carried before 2026-09-09. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-04, and 42 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file carried before 2026-09-09. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-05, and 42 more sections, word for word. Read it for the detail behind a decision.

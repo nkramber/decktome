@@ -46,6 +46,14 @@ type PairAware interface {
 	UseWantPair(want, background bool)
 }
 
+// BracketAware lets a hint source read the bracket as it stands inside
+// the turn. The pick row fires on the turn the power answer arrives
+// (D-631), and the offer of that turn read the bracket of the turn
+// before, so the bracket 5 signal never ordered it (F-104).
+type BracketAware interface {
+	UseBracket(bracket int32)
+}
+
 // FactSource answers the planner facts that come from the card index and
 // the collection. The classifier can not answer them, and each one gates
 // a catalog row.

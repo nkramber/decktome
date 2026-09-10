@@ -220,6 +220,9 @@ func (a *Agent) readFacts(st *State) {
 	if ss, ok := a.hints.(SetAware); ok {
 		ss.UseSets(st.Slots.GetSetCodes())
 	}
+	if ba, ok := a.hints.(BracketAware); ok {
+		ba.UseBracket(st.Slots.GetPower().GetBracket())
+	}
 	if fs, ok := a.hints.(FactSource); ok {
 		RefreshFacts(st, fs)
 	}
