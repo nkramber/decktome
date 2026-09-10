@@ -38,6 +38,11 @@ var moxfieldColumns = [][]string{
 
 // moxfieldFinish maps the Foil cell. The export writes an empty cell,
 // "foil", or "etched", and the fixture holds 2526, 663, and 4 of them.
+//
+// An empty cell means normal, and that is the meaning of the column:
+// Moxfield writes the word for a foil and nothing at all for a card
+// that is not one. The ManaBox lane reads an empty cell the same way,
+// and one term per concept asks for no second reading.
 var moxfieldFinish = map[string]mtgv1.Finish{
 	"":       mtgv1.Finish_FINISH_NORMAL,
 	"normal": mtgv1.Finish_FINISH_NORMAL,
@@ -48,8 +53,15 @@ var moxfieldFinish = map[string]mtgv1.Finish{
 // moxfieldCondition maps the Condition cell. "Near Mint" and "Played"
 // are verified against the export. The rest are the other rungs of the
 // Moxfield condition list, and no export of this repo has shown one, so
-// they are unverified. An unknown value is reported and never defaulted
-// in silence.
+// they are unverified.
+//
+// Two cells read differently on purpose. **An empty cell means near
+// mint**, which is the default of the ManaBox lane as well, because a
+// column that says nothing about a card says the card is as it came.
+// **A cell this build can not read is reported** and never defaulted:
+// "Chewed" rejects the row, because a wrong condition misstates what
+// the reader owns. Every export of this repo writes a condition, so the
+// empty cell is the shape of a file somebody hand-edits.
 var moxfieldCondition = map[string]mtgv1.Condition{
 	"":                      mtgv1.Condition_CONDITION_NEAR_MINT,
 	"mint":                  mtgv1.Condition_CONDITION_MINT,

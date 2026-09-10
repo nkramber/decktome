@@ -312,3 +312,45 @@ func TestAScryfallIdOnTheRowIsKept(t *testing.T) {
 		t.Errorf("scryfall id = %q, want the row's own %q", got, id)
 	}
 }
+
+// TestAnEmptyMoxfieldCellTakesTheDefault holds the difference between a
+// cell that says nothing and a cell this build can not read. An empty
+// Foil or Condition cell takes the default of the ManaBox lane, and an
+// unreadable one rejects the row.
+//
+// The real export writes both columns on every row, so this is the shape
+// of a file somebody hand-edits.
+func TestAnEmptyMoxfieldCellTakesTheDefault(t *testing.T) {
+	const header = `"Count","Name","Edition","Condition","Language","Foil","Collector Number"` + "\n"
+	rows, bad, err := ParseMoxfieldCSV(strings.NewReader(header +
+		`"1","Sol Ring","c21","","","","263"` + "\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(bad) != 0 {
+		t.Fatalf("an empty cell rejected the row: %v", bad[0])
+	}
+	if len(rows) != 1 {
+		t.Fatalf("%d rows, want 1", len(rows))
+	}
+	// The same defaults the ManaBox lane takes for an empty cell.
+	if rows[0].Condition != mtgv1.Condition_CONDITION_NEAR_MINT {
+		t.Errorf("condition = %s, want near mint", rows[0].Condition)
+	}
+	if rows[0].Finish != mtgv1.Finish_FINISH_NORMAL {
+		t.Errorf("finish = %s, want normal", rows[0].Finish)
+	}
+	if rows[0].Language != "en" {
+		t.Errorf("language = %q, want en", rows[0].Language)
+	}
+	// And a cell this build can not read still rejects the row, so the
+	// default is the empty cell alone and never a fallback.
+	_, bad, err = ParseMoxfieldCSV(strings.NewReader(header +
+		`"1","Sol Ring","c21","Chewed","English","","263"` + "\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(bad) != 1 || bad[0].GetReason() != mtgv1.UnresolvedReason_UNRESOLVED_REASON_UNKNOWN_VALUE {
+		t.Errorf("an unreadable condition gave %v, want one unknown-value report", bad)
+	}
+}
