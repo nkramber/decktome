@@ -253,6 +253,17 @@ func (h *CandidateHints) UseWantPair(want, background bool) {
 	}
 }
 
+// UseBracket takes the bracket as it stands inside the turn (F-104). The
+// power answer and the pick row share a turn, so the offer must read the
+// bracket the reader just picked. Zero is no bracket, and the one on the
+// hints stands.
+func (h *CandidateHints) UseBracket(bracket int32) {
+	if h == nil || bracket <= 0 {
+		return
+	}
+	h.Bracket = bracket
+}
+
 // Commanders names up to three commanders for the theme. It never names
 // one the agent already offered, so a user who answers "none" sees three
 // others (D-73).
