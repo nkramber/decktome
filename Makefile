@@ -11,7 +11,7 @@ GO := go -C go
 BUF := .bin/buf
 PNPM := pnpm --dir web
 
-.PHONY: feedback-loop feedback-loop-dry feedback-triage feedback-triage-dry smoke allow disallow manapass-check deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check themes-check ste-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
+.PHONY: feedback-loop feedback-loop-dry feedback-triage feedback-triage-dry smoke allow disallow manapass-check deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check gcs-check themes-check ste-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-14s %s\n", $$1, $$2}'
@@ -107,7 +107,7 @@ verify: ## Run every check the verify workflow runs, on this machine, for nothin
 	@echo "==> docker"
 	@docker build --platform linux/amd64 -f docker/api.Dockerfile -t decktome-api:verify . >/dev/null
 	@docker build --platform linux/amd64 -f docker/worker.Dockerfile -t decktome-worker:verify . >/dev/null
-	@echo "verify: every check passed. The emulator lane needs 'make store-check', and govulncheck runs weekly."
+	@echo "verify: every check passed. The emulator lane needs 'make store-check' and 'make gcs-check', and govulncheck runs weekly."
 
 test: ## Run Go and web unit tests
 	@$(GO) test -race ./...
@@ -426,6 +426,9 @@ store-check: ## Run the session, deck, collection, usage, allowlist, feedback, a
 	@nc -z 127.0.0.1 8281 2>/dev/null || \
 		{ echo "no Firestore emulator on :8281. Start one: firebase emulators:start --only firestore --project mtg-local"; exit 1; }
 	@FIRESTORE_EMULATOR_HOST=127.0.0.1:8281 $(GO) test ./internal/sessions ./internal/usage ./internal/allowlist ./internal/feedback ./internal/users ./internal/decks ./internal/collections -count=1
+
+gcs-check: ## Run TestLiveFakeGCS against a fake-gcs-server seeded from the trimmed snapshot, as the CI step does (free, D-658)
+	@scripts/gcs-check.sh
 
 # --- The eval harness of PR-15 (free) -----------------------------------
 # EVAL_DIR holds the run files the gates write and baselines.json. The
