@@ -12,7 +12,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586).
 
-**PR-29 waits for a merge, and its gate is unmet** (F-53, F-94, D-648). The casual corpus lifted the Commander synergy axis from 0.70 to 0.81, against a bar of 0.95. The mechanism holds: `casual_rate` is the feature the synergy break moves most. `docs/reference/pr29-casual-corpus-2026-09-10.md` holds every number, a control run, and two refuted predictions of the plan.
+**PR-29 waits for a merge, its gate is unmet, and the three numbers disagree** (F-53, F-94, D-648). The casual corpus lifted the Commander synergy axis from 0.70 to 0.81, against a bar of 0.95. **Both reader-facing numbers fell.** The built decks graded bad went from 15 of 25 to 17, and the judge agreement from 8 of 25 to 6. So the item buys a proxy and pays in what a reader feels.
+
+**CAUTION: read the judge comparison before you doubt it.** One judge run answered every deck once, and both models read those same answers, so the two decks of difference hold no judge noise. The graded-bad count is deterministic too. Both numbers moved together and both the wrong way. `docs/reference/pr29-casual-corpus-2026-09-10.md` holds every number, the control runs, and two refuted predictions of the plan.
 
 **CAUTION: the newest model in the local store holds the casual features.** `make quality-gate -write` stored `20260910T012734Z` on 2026-09-10, from the PR-29 branch. A checkout of `main` reads that model as the newest one, and its key list names two features the code of `main` does not compute. A missing feature reads zero, so a deck scores wrong and nothing says so. Fit a new model after a switch, or delete that version. The store is under `.local`, so git never saw it, and the deployed app reads its own model from GCS.
 
@@ -20,7 +22,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The next three items come from that finding.** M-8 audits whether the precon bar asks for a true ordering (D-649). The synergy break sometimes leaves a weak precon's copy as the better deck. PR-35 widens the casual corpus, which is thin by a factor of six (D-650). PR-36 plans the reader's own verdict as a quality signal, and it waits for verdicts (D-651).
 
-**Every quality item now reports three numbers** (D-648): the precon bar, the count of built decks graded bad, and the tier judge agreement. **The owner drops an item that moves none of the three.** PR-29 moves the first alone, because the other two need the paid judge lane.
+**Every quality item now reports three numbers** (D-648): the precon bar, the count of built decks graded bad, and the tier judge agreement. **The owner drops an item that moves none of the three.** PR-29 moves the first up and the other two down, which is the case D-648 did not name.
 
 **The whole feedback loop stands**, as #117, #121, and #122. **No live cycle ran yet.** It needs the owner's word, `AUTOTUNE_FIXER_CMD`, and a harvest whose verdicts carry a snapshot.
 

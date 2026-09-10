@@ -4,9 +4,18 @@ The roadmap gate of PR-29 reads:
 
 > The Commander synergy axis reads 0.95 or better, and no axis falls under its run 14 read. The tier judge lane over deck gate run 16 reads the built decks, $0.36. The count graded bad in the explain mode falls under 19 of 24.
 
-**Verdict: UNMET.** The Commander synergy axis reads **0.81** against a bar of 0.95. No axis fell. The two reader-facing numbers need the paid judge lane, and the owner held it (D-648).
+**Verdict: UNMET, and worse than that.** The Commander synergy axis reads **0.81** against a bar of 0.95. **Both reader-facing numbers moved the wrong way.**
 
-The owner merged the item at 0.81 on this evidence, and M-8 audits the bar before anybody fits again (D-649).
+The three numbers of D-648, each against a control fitted on the same day over the same data:
+
+| Number | Control | PR-29 | Direction |
+|---|---|---|---|
+| Commander synergy axis | 0.70 | 0.81 | better |
+| Commander precon over own copy | 0.88 | 0.92 | better |
+| Built decks graded bad | 15 of 25 | **17 of 25** | worse |
+| Judge agreement | 8 of 25 | **6 of 25** | worse |
+
+So the item buys a proxy and pays in the two numbers a reader feels. M-8 audits the bar before anybody fits again (D-649), and that audit matters more now: the proxy and the reader disagree about this change.
 
 ## The measurement needs a control
 
@@ -88,8 +97,20 @@ The ladder orders the five tiers, and the same weights decide this bar: the bar 
 
 The break replaces half a precon's spells with cards drawn from lists people play (D-488). For a weak precon that is arguably the better pile of cards, and only the pairing tells the two apart. M-8 asks whether the bar is true before anybody fits again (D-649).
 
+## The two reader-facing numbers, measured
+
+The owner released the spend on 2026-09-10 and the lane ran: `docs/reference/pr14b-quality-judge-run5.md`, 25 decks of deck gate run 16, $0.3407 over 182 seconds.
+
+**The judge agreement fell, 8 of 25 to 6 of 25.** The comparison carries no judge noise at all. One judge run answered every deck once, and the two models read those same answers, so the two decks of difference are the model's own.
+
+**The count of built decks graded bad rose, 15 of 25 to 17 of 25.** The control here is a model fitted from the code of `main` on the same day, over the same meta store, and read over the same deck gate document. The reference of 19 of 24 in the plan comes from run 13 and another model, and it compares with neither.
+
+The two numbers moved together and both the wrong way, so this is not one noisy read.
+
+**A reading, untested.** `casual_rate` is the largest contributor against every built deck in the explain output. A deck built from one reader's collection holds few cards the casual lists hold, the same way it holds few cards the tournament lists hold. The casual corpus reads EDHREC average decks and precons, and neither is a themed deck from a binder. So the new feature may measure the same distance the old one did, and charge the deck twice for it.
+
 ## What this gate does not measure
 
-**The two reader-facing numbers of D-648.** The explain mode count of built decks graded bad, 19 of 24 at run 13, and the tier judge agreement, 7 of 25 at run 4. Both need the judge lane at $0.36, and the owner held the spend until the code settles. Every quality item reports all three numbers from now on, and an item that moves none is dropped.
-
 **Whether the bar is true.** M-8.
+
+**Whether a third corpus group would help**, one built from decks like the ones this app makes. Nothing of that kind exists to read.

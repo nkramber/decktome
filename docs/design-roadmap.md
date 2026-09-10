@@ -1285,7 +1285,7 @@ Gate: quality gate run 14, free, about five minutes. The bars can move in either
 2026-09-07: run 14 reads the cross pairs at 0.86, 0.87, and 0.85 (D-572). Each precon over its own copies reads 0.88, 0.97, and 0.99. The diagnostic names the mechanisms, F-53 measured and F-56 new. The owner chose the own copies as the bar (D-573), so run 14 reads FAIL on Commander synergy alone.
 > *In plain English:* the test that grades the grader looked at a slice of the decks, and one format had one deck to test. This makes the test look at every deck fairly, and it prints why each miss happened. Nothing about the grader changes yet.
 
-**PR-29: The casual corpus (F-53, F-94, D-648).** ✅ built 2026-09-10, **and its gate is unmet**. The Commander synergy axis reads 0.81 against a bar of 0.95.
+**PR-29: The casual corpus (F-53, F-94, D-648).** 🔧 built 2026-09-10, **and its gate is unmet**. The Commander synergy axis reads 0.81 against a bar of 0.95, and both reader-facing numbers fell.
 The corpus keeps two groups. The top group is the great and the good lists, as before, and it gives `card_rate`, `unseen_share`, and `synergy`. The casual group is the typical and the baseline lists, and it gives `casual_rate` and `casual_synergy`. One reader builds both, so the two can not drift apart. The features read the training split alone (D-473), and the fit reads the new ones as it reads the rest.
 
 **The mechanism holds.** `casual_rate` is the feature the synergy break moves most, at 1.03 standard deviations, ahead of `synergy` itself. The Commander weights are positive, and the Standard and Modern weights negative. That is right: in a 60-card format, a deck that reads like a precon is the worse deck.
@@ -1303,8 +1303,19 @@ The corpus keeps two groups. The top group is the great and the good lists, as b
 
 The model grew from 4.85 MB to 7.23 MB, gzipped and measured.
 
-Gate: **unmet.** The Commander synergy axis reads 0.81 and the bar is 0.95. No axis fell, and the three other own-copy axes read 1.00. The two reader-facing numbers of D-648 need the paid judge lane, and the owner held it. `docs/reference/pr29-casual-corpus-2026-09-10.md` holds every number and both refutations. The owner merged it at 0.81 on the evidence, and M-8 audits the bar before anybody fits again (D-649).
-> *In plain English:* the grader learned what a good deck looks like from tournament decks alone, so every home deck looked bad to it. This teaches it what home decks and boxed decks look like too. It works: the grader now tells a boxed deck from a broken copy far better than before. It still falls short of the target, and the next item asks whether that target was fair.
+**The three numbers of D-648 disagree with each other.** The judge lane ran on 2026-09-10 for $0.3407, and both reader-facing numbers moved the wrong way.
+
+| Number | Control | PR-29 |
+|---|---|---|
+| Commander synergy axis | 0.70 | 0.81 |
+| Commander precon over own copy | 0.88 | 0.92 |
+| Built decks graded bad | 15 of 25 | 17 of 25 |
+| Judge agreement | 8 of 25 | 6 of 25 |
+
+The judge comparison carries no judge noise: one run answered every deck once, and the two models read the same answers. So the item buys a proxy and pays in the two numbers a reader feels.
+
+Gate: **unmet.** The Commander synergy axis reads 0.81 and the bar is 0.95. No axis fell, and the three other own-copy axes read 1.00. `docs/reference/pr29-casual-corpus-2026-09-10.md` holds every number and both refutations. M-8 audits the bar before anybody fits again (D-649), and that audit matters more now: the proxy and the reader disagree about this change.
+> *In plain English:* the grader learned what a good deck looks like from tournament decks alone, so every home deck looked bad to it. This teaches it what home decks and boxed decks look like too. It works on the test: the grader now tells a boxed deck from a broken copy far better than before. It reads the decks this app builds slightly worse, though, and a strong reader agrees with it on two fewer of them. The next items ask whether the test was fair, and whether more data settles it.
 
 **PR-30: The commander reference (F-53, OQ-74).** 🔧 planned, after PR-29. The owner answered OQ-74 on 2026-09-07 (D-568): one feature, and the fit decides its weight.
 EDHREC gives the average deck of each commander, and the store holds it as a typical list under the commander's slug. `commander_rate` is the share of a deck's nonland cards the average deck of its own commander holds. A deck with no average deck reads the mean, as an absent value does. The reason sentence names it: "few of the cards people play with this commander".
