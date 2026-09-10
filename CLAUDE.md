@@ -6,13 +6,13 @@ Read this file first. Then read `docs/SESSION-HANDOFF.md`. It tells you where th
 
 This repo is a Go + Protobuf + TypeScript monorepo for an agentic MtG deck builder. The app reads a user's ManaBox collection export. The user gives a prompt. The agent asks questions, then builds a legal, useful deck.
 
-Stage (2026-09-09): **the app is live on `decktome.com`**, and pull request #119 is the newest merge. A merge to `main` deploys itself on Cloud Build (D-584, D-586, D-588). Phase 3B, the product UI, is the current phase.
+Stage (2026-09-10): **the app is live on `decktome.com`**, and pull request #126 is the newest merge. A merge to `main` deploys itself on Cloud Build (D-584, D-586, D-588). Phase 3B, the product UI, is the current phase.
 
 **The whole PR-22 gate holds** (D-633), so PR-28 is free to run. Every PR through #119 is merged: PR-0a to PR-8, PR-7B, PR-10 to PR-25, PR-27, PR-32, PR-33, and PR-28a. PR-9 is out of the MVP (D-256). **PR-28 split into three** (D-636). PR-28a is the harvest, and it is merged. PR-28b is the triage and the new "must not ask" expectation, and PR-28c is the fix cycle. PR-26 waits on OQ-67, and PR-29 to PR-31 stand on the weak-axes plan.
 
 **The whole feedback loop is on `main`**, as pull requests #117, #121, and #122. The triage names one of 22 classes for each thumbs down, and the reason keys answer 20 of them for nothing (D-643). A case joins the gate file that owns it, and the pull request diff is the accept step (D-642). The fix cycle carries the case and its fix in one pull request, and it answers the review of `gitar-bot` (D-645). **No live cycle ran yet.** **PR-34 is merged as #123**: the app reads the format of an upload out of the file, and Moxfield reads (D-647, F-91 to F-93).
 
-**PR-29 closed, and it never merged** (D-652). M-8 read the precon bar and found its target of 0.95 was never reachable. 54 of 389 pairs carry no signal, because a weak precon's cards do not pair in the corpus (F-95). **Every quality item reports three numbers now**, and the owner drops an item that moves none (D-648). PR-37 adds the materiality check the synergy break never had.
+**PR-29 closed, and it never merged** (D-652). M-8 read the precon bar and found its target of 0.95 was never reachable. 54 of 389 pairs carry no signal, because a weak precon's cards do not pair in the corpus (F-95). **Every quality item reports three numbers now**, and the owner drops an item that moves none (D-648). **PR-37 adds the materiality check the synergy break never had**, in Commander alone at a floor of 0.10 (D-653). Gate run 18 reads PASS, and no reader-facing number moved: the bar reads a new population, and the model is the same model.
 
 Two rules of the deployed app come from 2026-09-09. **A verdict keeps the object it names** (D-635), because a reader deletes the deck or the chat they complained about, and the verdict outlives it. **Every user has a record** at `users/<uid>` (D-638): the verified email, the dates, and six counters of what they made. No harvest reads that record, and a test refuses the import that joins them.
 
@@ -97,7 +97,9 @@ Five more targets spend money, and each has an overwrite guard and an env guard.
 
 `make test-smoke` runs the live LLM smoke test and reads the keys from `.env`. It spends a few cents. The paid targets are these eleven plus the script: questions-gate, questions-eval, eval-calibrate, deck-gate, bracket-gate, revise-gate, chat-probe, generate-probe, summary-judge, quality-judge, and test-smoke. `go run ./cmd/eval sweep -cap <USD>` drives five of them in the order of the eval list under a cap, and it needs `EVAL_SWEEP=1` (PR-15). `-dry` prints the plan for nothing, and the estimate of a step reads its last run file. Since PR-15 the deck gate spends one more judge call a deck, and run 16 cost $3.79 for 25 prompts.
 
-Each other target is free. `make meta-refresh` reads the deck list sources over the network, about 40 minutes on the first run, and calls no model. `make quality-gate` fits the quality model over the local meta store and writes the PR-14B gate document. `make ste-check` checks every hand-written `.md` file against the STE rules, and `make lint` runs it. `make m5-sheet` builds the scoring sheet, and `make m5-report` reads it. `make themes-check` checks the theme slugs and the commander ranking.
+Each other target is free. `make meta-refresh` reads the deck list sources over the network, about 40 minutes on the first run, and calls no model. `make quality-gate` fits the quality model over the local meta store and writes the PR-14B gate document. It also reports the three numbers of D-648: the fitted model grades the decks `QUALITY_GATE_DECKS` names, against the judge's tiers in `QUALITY_GATE_JUDGED`.
+
+`make ste-check` checks every hand-written `.md` file against the STE rules, and `make lint` runs it. `make m5-sheet` builds the scoring sheet, and `make m5-report` reads it. `make themes-check` checks the theme slugs and the commander ranking.
 
 `make eval-check` compares every baseline of the eval harness with its newest run and names the flips (PR-15). It is free.
 
