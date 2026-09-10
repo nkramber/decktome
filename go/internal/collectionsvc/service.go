@@ -2,7 +2,6 @@
 package collectionsvc
 
 import (
-	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
@@ -85,7 +84,6 @@ func New(repo Repo, index cardsvc.IndexSource, user auth.UserFunc, opts ...Optio
 var (
 	errTooLarge  = errors.New("upload larger than 5 MiB")
 	errNoIndex   = errors.New("card database not loaded yet")
-	errBadSource = errors.New("source must be MANABOX_CSV or ARENA_TEXT")
 	errEmptyBody = errors.New("content is empty")
 	errNoID      = errors.New("collection_id is required")
 	errBadID     = fmt.Errorf("collection_id: %w", gzstore.ErrBadID)
@@ -456,17 +454,18 @@ func (s *Server) parseUpload(source mtgv1.ImportSource, content []byte) ([]*mtgv
 	if idx == nil {
 		return nil, nil, connect.NewError(connect.CodeUnavailable, errNoIndex)
 	}
-	var rows []collections.Row
-	var badParse []*mtgv1.UnresolvedRow
-	var err error
-	switch source {
-	case mtgv1.ImportSource_IMPORT_SOURCE_MANABOX_CSV:
-		rows, badParse, err = collections.ParseManaBoxCSV(bytes.NewReader(content))
-	case mtgv1.ImportSource_IMPORT_SOURCE_ARENA_TEXT:
-		rows, badParse, err = collections.ParseArenaText(bytes.NewReader(content))
-	default:
-		return nil, nil, connect.NewError(connect.CodeInvalidArgument, errBadSource)
+	// The reader drops a file and never names the app it came from, so an
+	// unnamed source reads the format out of the file (D-647). A caller
+	// that names one still wins: the reader's own word beats a guess
+	// (D-591).
+	if source == mtgv1.ImportSource_IMPORT_SOURCE_UNSPECIFIED {
+		detected, err := collections.Detect(content)
+		if err != nil {
+			return nil, nil, connect.NewError(connect.CodeInvalidArgument, err)
+		}
+		source = detected
 	}
+	rows, badParse, err := collections.Parse(source, content)
 	if err != nil {
 		return nil, nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}

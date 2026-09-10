@@ -173,9 +173,13 @@ message QuantityChange {
 
 // ImportSource names the file format of an import.
 enum ImportSource {
+  // IMPORT_SOURCE_UNSPECIFIED asks the server to read the format out of
+  // the file itself (D-647). It is what the upload screen sends: a
+  // reader drops a file and never names the app it came from.
   IMPORT_SOURCE_UNSPECIFIED = 0;
   IMPORT_SOURCE_MANABOX_CSV = 1;
   IMPORT_SOURCE_ARENA_TEXT = 2;
+  IMPORT_SOURCE_MOXFIELD_CSV = 3;
 }
 
 // Finish mirrors the ManaBox Foil column values.

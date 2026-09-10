@@ -1,4 +1,4 @@
-import { type CollectionDiff, ImportSource } from "@mtg/api-client/mtg/v1/collection_pb";
+import { type CollectionDiff } from "@mtg/api-client/mtg/v1/collection_pb";
 import type { ImportCollectionResponse } from "@mtg/api-client/mtg/v1/collection_service_pb";
 import { useMutation } from "@tanstack/react-query";
 import { PackageIcon } from "lucide-react";
@@ -98,7 +98,8 @@ function UploadBody({ activeCollectionId, activeCollectionName, askForFile, onIm
   const diff = useMutation({
     mutationFn: async (f: File) => {
       const content = new Uint8Array(await f.arrayBuffer());
-      return collectionClient.diffCollections({ collectionId: activeCollectionId, source: ImportSource.MANABOX_CSV, content });
+      // No source: the server reads the format out of the file (D-647).
+      return collectionClient.diffCollections({ collectionId: activeCollectionId, content });
     },
     onSuccess: (res) => {
       setDiffResult(res.diff ?? null);
@@ -111,7 +112,6 @@ function UploadBody({ activeCollectionId, activeCollectionName, askForFile, onIm
       const content = new Uint8Array(await f.arrayBuffer());
       return collectionClient.importCollection({
         name: name.trim() || f.name,
-        source: ImportSource.MANABOX_CSV,
         content,
         // A replacement keeps the collection id, so every deck and chat
         // that names it still works (D-393).
@@ -142,14 +142,14 @@ function UploadBody({ activeCollectionId, activeCollectionName, askForFile, onIm
   const identical = step === "diff" && diffResult?.identical === true;
   // The head of the dialog names the step, so the reader always reads
   // where the upload stands.
-  const title = identical ? "Nothing changed" : step === "done" ? "Import result" : step === "diff" ? "What changes" : "Upload a ManaBox export";
+  const title = identical ? "Nothing changed" : step === "done" ? "Import result" : step === "diff" ? "What changes" : "Upload your collection";
   const note = identical
     ? `This file holds the same cards as ${collectionName}, in the same numbers.`
     : step === "done"
       ? "Every row the import could not read is listed below."
       : step === "diff"
         ? `Read what a replacement of ${collectionName} changes.`
-        : "A ManaBox CSV export of your collection. Nothing is stored until you upload.";
+        : "A collection export from ManaBox or Moxfield, or an Arena list. Nothing is stored until you upload.";
 
   return (
     <DialogContent className="max-w-xl" aria-describedby="upload-dialog-note">
@@ -164,7 +164,7 @@ function UploadBody({ activeCollectionId, activeCollectionName, askForFile, onIm
         <form onSubmit={onSubmit} className="flex flex-col gap-3">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="file" className="sr-only">
-              ManaBox CSV file
+              Collection file
             </Label>
             {/* The drop zone is the label of the file input, so a click
                 and a drop both reach the one control. */}
@@ -186,8 +186,8 @@ function UploadBody({ activeCollectionId, activeCollectionName, askForFile, onIm
               )}
             >
               <PackageIcon className="size-7 text-primary" aria-hidden="true" />
-              <span className="font-display text-[15px]">{file ? file.name : "Drop your ManaBox export here"}</span>
-              <span className="font-mono text-[11px] text-muted-foreground">.csv — or click to browse</span>
+              <span className="font-display text-[15px]">{file ? file.name : "Drop your collection export here"}</span>
+              <span className="font-mono text-[11px] text-muted-foreground">.csv or .txt — or click to browse</span>
             </label>
             <Input
               // "Add a collection" sends the reader here to pick a file,
@@ -202,12 +202,13 @@ function UploadBody({ activeCollectionId, activeCollectionName, askForFile, onIm
               id="file"
               type="file"
               name="file"
-              accept=".csv,text/csv"
+              // An Arena list is a text file, so the picker takes both.
+              accept=".csv,text/csv,.txt,text/plain"
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
               className="sr-only"
             />
             <p className="text-xs text-muted-foreground">
-              ManaBox writes the export from Settings, then Export collection. It lands in Files, or in the share sheet.
+              The app reads the file and names its format itself. ManaBox writes its export from Settings, then Export collection. Moxfield writes one from Collection, then Export. It lands in Files, or in the share sheet.
             </p>
             {/* A phone that offers Copy and no file still gets a way in.
                 The text becomes a File, so the diff, the size check, and

@@ -87,9 +87,13 @@ func (BinderSort) EnumDescriptor() ([]byte, []int) {
 type ImportSource int32
 
 const (
-	ImportSource_IMPORT_SOURCE_UNSPECIFIED ImportSource = 0
-	ImportSource_IMPORT_SOURCE_MANABOX_CSV ImportSource = 1
-	ImportSource_IMPORT_SOURCE_ARENA_TEXT  ImportSource = 2
+	// IMPORT_SOURCE_UNSPECIFIED asks the server to read the format out of
+	// the file itself (D-647). It is what the upload screen sends: a
+	// reader drops a file and never names the app it came from.
+	ImportSource_IMPORT_SOURCE_UNSPECIFIED  ImportSource = 0
+	ImportSource_IMPORT_SOURCE_MANABOX_CSV  ImportSource = 1
+	ImportSource_IMPORT_SOURCE_ARENA_TEXT   ImportSource = 2
+	ImportSource_IMPORT_SOURCE_MOXFIELD_CSV ImportSource = 3
 )
 
 // Enum value maps for ImportSource.
@@ -98,11 +102,13 @@ var (
 		0: "IMPORT_SOURCE_UNSPECIFIED",
 		1: "IMPORT_SOURCE_MANABOX_CSV",
 		2: "IMPORT_SOURCE_ARENA_TEXT",
+		3: "IMPORT_SOURCE_MOXFIELD_CSV",
 	}
 	ImportSource_value = map[string]int32{
-		"IMPORT_SOURCE_UNSPECIFIED": 0,
-		"IMPORT_SOURCE_MANABOX_CSV": 1,
-		"IMPORT_SOURCE_ARENA_TEXT":  2,
+		"IMPORT_SOURCE_UNSPECIFIED":  0,
+		"IMPORT_SOURCE_MANABOX_CSV":  1,
+		"IMPORT_SOURCE_ARENA_TEXT":   2,
+		"IMPORT_SOURCE_MOXFIELD_CSV": 3,
 	}
 )
 
@@ -1252,11 +1258,12 @@ const file_mtg_v1_collection_proto_rawDesc = "" +
 	"\x10BINDER_SORT_NAME\x10\x01\x12\x15\n" +
 	"\x11BINDER_SORT_COUNT\x10\x02\x12\x13\n" +
 	"\x0fBINDER_SORT_SET\x10\x03\x12\x15\n" +
-	"\x11BINDER_SORT_PRICE\x10\x04*j\n" +
+	"\x11BINDER_SORT_PRICE\x10\x04*\x8a\x01\n" +
 	"\fImportSource\x12\x1d\n" +
 	"\x19IMPORT_SOURCE_UNSPECIFIED\x10\x00\x12\x1d\n" +
 	"\x19IMPORT_SOURCE_MANABOX_CSV\x10\x01\x12\x1c\n" +
-	"\x18IMPORT_SOURCE_ARENA_TEXT\x10\x02*W\n" +
+	"\x18IMPORT_SOURCE_ARENA_TEXT\x10\x02\x12\x1e\n" +
+	"\x1aIMPORT_SOURCE_MOXFIELD_CSV\x10\x03*W\n" +
 	"\x06Finish\x12\x16\n" +
 	"\x12FINISH_UNSPECIFIED\x10\x00\x12\x11\n" +
 	"\rFINISH_NORMAL\x10\x01\x12\x0f\n" +

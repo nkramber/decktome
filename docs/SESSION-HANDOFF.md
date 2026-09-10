@@ -6,23 +6,27 @@ This file holds the ten most recent sessions. Every older record sits in `docs/r
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-09)
+## RESUME HERE (2026-09-10)
 
-**The checkout.** `main` is `dfb0170`, which is pull request #121. Branch `pr-28c` holds this session's work, and it waits for a review and a merge. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
+**The checkout.** `main` is `064dbab`, which is pull request #122. Branch `pr-34` holds this session's work, and it waits for a review and a merge. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
 
 **The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586).
 
-**The whole feedback loop stands.** PR-27 harvests the verdicts, PR-28a writes the harvest files, PR-28b writes the cases, and PR-28c fixes them. PR-28a merged as #117 and PR-28b as #121.
+**The whole feedback loop stands.** PR-27 harvests the verdicts, PR-28a writes the harvest files, PR-28b writes the cases, and PR-28c fixes them. All four are merged.
 
-**PR-28c waits for a merge** (D-645). `scripts/feedback-loop.sh` reads a harvest and writes one case per thumbs down. It proves each case fails, hands the failures to a fixer agent, and proves each case passes. **The case and its fix ride in one pull request.** A case is a failing test, and a case merged alone turns the gate red on `main`. The cycle pushes, opens the pull request, and answers the review of `gitar-bot` over three rounds. `docs/reference/pr28c-fix-cycle-gate-2026-09-09.md` is the gate.
+**PR-34 waits for a merge** (D-647, F-91, F-92). The app reads the format of an upload out of the file, and the reader never names the app their file came from. Moxfield is the first new platform, on a real export the owner wrote. `docs/reference/pr34-collection-formats-2026-09-10.md` is the gate, and it reads PASS.
 
-**CAUTION: no live cycle ran yet.** The free half holds and `make feedback-loop-dry` plans one for nothing. A live cycle spends money, edits code with nobody watching, and writes to a public pull request. It needs three things: the owner's word, `AUTOTUNE_FIXER_CMD` set to an agent, and a harvest whose verdicts carry a snapshot.
+**F-92 was live.** The web sent `MANABOX_CSV` on every upload, hardcoded. The app has read an Arena list since D-15, and no reader ever uploaded one: every row failed. The upload names no format now.
 
-**PR-34, more collection platforms, is the next item** (D-646, F-91). The app reads a ManaBox CSV and an Arena deck list, and a reader on any other platform can not upload at all. The owner named "Manapool" on 2026-09-09, and no file of this repo holds that name. The session read it as ManaBox. **Two questions wait for the owner**: which platforms come first, and whether the app detects the format or the reader names it.
+**A real export is the fixture of a format** (F-91). The Moxfield documentation disagreed with itself on two points, and both decided whether a row resolves. `Edition` is a set code and not a set name, and `Condition` is the long name. **The language column is the trap.** `Resolve` refuses a row that is not `en` (D-23), and Moxfield writes `English`. A pass-through loses all 3192 English cards of the export.
 
-**A committed file takes a reader's own words** (D-642, supersedes D-640). No file holds an email. `.gitignore` no longer covers `docs/reference/feedback/`.
+**Five platforms are left**, and each one waits for the owner's word and a real export: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault.
+
+**CAUTION: no live feedback cycle ran yet.** The free half of PR-28c holds, and `make feedback-loop-dry` plans one for nothing. A live cycle spends money, edits code with nobody watching, and writes to a public pull request. It needs the owner's word, `AUTOTUNE_FIXER_CMD`, and a harvest whose verdicts carry a snapshot. The three verdicts on record predate D-635.
 
 **Every user has a record** at `users/<uid>` (D-638), with the verified email, the dates, and six counters. Every counter counts a creation, so a deleted deck does not lower one.
+
+**A committed file takes a reader's own words** (D-642, supersedes D-640). No file holds an email.
 
 **The whole PR-22 gate holds** (D-633). The measured cost at idle reads $9.54 a month gross, and the hourly snapshot tick of D-634 leaves $3.81.
 
@@ -73,7 +77,7 @@ Seven things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **PR-34, more collection platforms** (D-646, F-91). The owner named this as the next item after the feedback loop. Ask the two open questions first. They are the order of the platforms, and the way the app reads a format. A real export is the fixture of every format. A column list from a help page is not the file the app receives.
+1. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. Each one is one signature entry plus one row builder. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
 2. **The live half of the feedback loop has no run yet.** Three things want a measurement: the judge lane of the triage, one live fix cycle, and one review round. All three need the owner's word, and the cycle also needs `AUTOTUNE_FIXER_CMD` and a harvest whose verdicts carry a snapshot. The three verdicts on record predate D-635.
 3. **The next whole deck gate run is still run 19, and it is still outstanding.** It makes the next decks baseline, and no deck-build change waits on one now. The upgrade probe of 2026-09-09 already measured D-628 (D-632).
 4. **OQ-79 needs runtime evidence.** No fix goes in without it, and neither the session nor the deck it names is readable. A fresh owned-only build on the deployed app is the way to it.
@@ -89,6 +93,22 @@ CAUTION: the CI step "fake gcs tests" filters on `LiveStore`, and the only live 
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 
 ## The ten most recent sessions
+
+### 2026-09-10: PR-34, the collection formats
+
+Branch `pr-34`, open for review.
+
+**The app reads the format out of the file** (D-647). `collections.Detect` reads the header row, and the reader never names the app their file came from. The app refuses a tie between two formats and names both. It refuses a file no format claims with the list it does read.
+
+**F-92 was live, and nobody met it.** The web sent `MANABOX_CSV` on every upload, hardcoded. The app has read an Arena list since D-15, and every one of them failed every row of itself.
+
+**Moxfield reads, on a real export.** The owner exported their own collection, 3193 rows. The documentation of that format disagreed with itself on `Edition` and on `Condition`, and the file settled both.
+
+**The language column was the trap.** `Resolve` refuses a row that is not `en` (D-23), and Moxfield writes `English`. A pass-through reports all 3192 English cards of the export as non-English. The reader then reads that their whole collection failed.
+
+**The measurement.** 3193 rows parsed, none unread, 125 sets. The snapshot of 2026-09-04 resolves it into 3035 entries and 5884 cards. One row stays unresolved, a Japanese printing, and D-23 refuses that one by design.
+
+**One CSV walker serves every format now.** A platform is one signature entry and one row builder.
 
 ### 2026-09-09c: PR-28c, the fix cycle
 
@@ -162,10 +182,6 @@ PR-15 landed the eval harness (#65). The paid gate ran with it (D-514, D-515). T
 
 PR-14B landed the deck quality model (#58). PR-24 landed the precon exclusion (#59). PR-14C landed MTGTop8 and the casual 60-card decks (#60). PR-20 landed the deck view and the card detail (#61), and PR-21 landed the share link and the print view (#62). Two deck gate fixes followed: the precon share reads the pool, and a failed repair keeps the deck.
 
-### 2026-09-02: PR-19 and PR-14A
-
-PR-19 landed the chat and build experience, the counted land swap, and the split land bucket (#55). Its follow-up made a deck count its commander (#56). PR-14A landed the bracket profile (#57). Bracket gate run 1 and deck gate run 12 ran against them.
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file carried before 2026-09-09. It holds the resume section of 2026-09-08, the records of 2026-08-31 and 2026-09-01, and 42 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file carried before 2026-09-09. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-02, and 42 more sections, word for word. Read it for the detail behind a decision.

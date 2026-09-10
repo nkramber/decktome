@@ -218,7 +218,10 @@ func TestImportCollectionRejects(t *testing.T) {
 	}{
 		{"empty body", importReq("n", mtgv1.ImportSource_IMPORT_SOURCE_MANABOX_CSV, ""), connect.CodeInvalidArgument},
 		{"too large", importReq("n", mtgv1.ImportSource_IMPORT_SOURCE_MANABOX_CSV, strings.Repeat("a", maxUpload+1)), connect.CodeInvalidArgument},
-		{"bad source", importReq("n", mtgv1.ImportSource_IMPORT_SOURCE_UNSPECIFIED, goodCSV), connect.CodeInvalidArgument},
+		// An unnamed source reads the format out of the file now (D-647),
+		// so a file no format claims is the refusal and not the unnamed
+		// source.
+		{"a file no format claims", importReq("n", mtgv1.ImportSource_IMPORT_SOURCE_UNSPECIFIED, "First,Last\nAnn,Lee\n"), connect.CodeInvalidArgument},
 		{"bad header", importReq("n", mtgv1.ImportSource_IMPORT_SOURCE_MANABOX_CSV, "Foo,Bar\n1,2\n"), connect.CodeInvalidArgument},
 	}
 	for _, tt := range tests {
@@ -436,5 +439,42 @@ func TestOnlyANewCollectionCounts(t *testing.T) {
 	}
 	if len(noter.counts) != 1 {
 		t.Errorf("a repeat upload counted %v, and it made no collection", noter.counts)
+	}
+}
+
+// TestImportDetectsTheFormat holds D-647: the reader drops a file and
+// never names the app it came from. The web app sent MANABOX_CSV for
+// every upload before this, so an Arena list uploaded there failed
+// every row.
+func TestImportDetectsTheFormat(t *testing.T) {
+	for name, content := range map[string]string{
+		"a ManaBox export": goodCSV,
+		"an Arena list":    "4 Sol Ring (C21) 263\n",
+	} {
+		t.Run(name, func(t *testing.T) {
+			s := newServer(newFakeRepo(), testIndex())
+			resp, err := s.ImportCollection(context.Background(),
+				importReq("n", mtgv1.ImportSource_IMPORT_SOURCE_UNSPECIFIED, content))
+			if err != nil {
+				t.Fatalf("an unnamed source did not detect: %v", err)
+			}
+			if resp.Msg.GetCollection() == nil {
+				t.Fatal("no collection came back")
+			}
+		})
+	}
+}
+
+// TestANamedSourceBeatsTheDetector holds the other half. A caller that
+// names a format means it, and the reader's own word beats a guess
+// (D-591).
+func TestANamedSourceBeatsTheDetector(t *testing.T) {
+	s := newServer(newFakeRepo(), testIndex())
+	// An Arena list named as a ManaBox CSV fails on the header, and it
+	// never falls back to the detector.
+	_, err := s.ImportCollection(context.Background(),
+		importReq("n", mtgv1.ImportSource_IMPORT_SOURCE_MANABOX_CSV, "4 Sol Ring (C21) 263\n"))
+	if connect.CodeOf(err) != connect.CodeInvalidArgument {
+		t.Errorf("err = %v, want the named parser to refuse it", err)
 	}
 }

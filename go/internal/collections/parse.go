@@ -67,23 +67,24 @@ var conditionByValue = map[string]mtgv1.Condition{
 	"poor":         mtgv1.Condition_CONDITION_POOR,
 }
 
-// manaboxColumns maps the header names this parser reads. Unknown
-// columns are ignored. The minimum viable sets mirror the ManaBox rules:
-// a Scryfall ID alone, or a name plus set code or set name.
-var requiredAlternatives = [][]string{
-	{"Scryfall ID"},
-	{"Name", "Set code"},
-	{"Name", "Set name"},
-}
-
-// ParseManaBoxCSV reads a ManaBox export. It returns the parsed rows and
-// the rows it could not parse. It fails only on a broken header.
-func ParseManaBoxCSV(r io.Reader) ([]Row, []*mtgv1.UnresolvedRow, error) {
+// csvRows walks a CSV that names its columns in a header row. It reads
+// every record, calls build for each one, and reports the records it
+// could not read. Nothing is dropped in silence (D-23).
+//
+// One walker serves every CSV format (PR-34). A format brings its key
+// columns and a row builder, and never a copy of this loop.
+//
+// format names the file in an error, alts are the key column sets, and
+// build reads one record. build answers a reason other than UNSPECIFIED
+// to reject the row.
+func csvRows(r io.Reader, format string, alts [][]string,
+	build func(get func(string) string) (Row, mtgv1.UnresolvedReason),
+) ([]Row, []*mtgv1.UnresolvedRow, error) {
 	cr := csv.NewReader(r)
 	cr.FieldsPerRecord = -1
 	header, err := cr.Read()
 	if err != nil {
-		return nil, nil, fmt.Errorf("manabox csv: no header: %w", err)
+		return nil, nil, fmt.Errorf("%s csv: no header: %w", format, err)
 	}
 	// A UTF-8 BOM before the first header cell is part of the cell
 	// for encoding/csv. Strip it.
@@ -95,7 +96,7 @@ func ParseManaBoxCSV(r io.Reader) ([]Row, []*mtgv1.UnresolvedRow, error) {
 		col[strings.TrimSpace(h)] = i
 	}
 	ok := false
-	for _, alt := range requiredAlternatives {
+	for _, alt := range alts {
 		found := true
 		for _, c := range alt {
 			if _, has := col[c]; !has {
@@ -109,15 +110,9 @@ func ParseManaBoxCSV(r io.Reader) ([]Row, []*mtgv1.UnresolvedRow, error) {
 		}
 	}
 	if !ok {
-		return nil, nil, fmt.Errorf("manabox csv: header %v has no usable key columns", header)
+		return nil, nil, fmt.Errorf("%s csv: header %v has no usable key columns", format, header)
 	}
-	get := func(rec []string, name string) string {
-		i, has := col[name]
-		if !has || i >= len(rec) {
-			return ""
-		}
-		return strings.TrimSpace(rec[i])
-	}
+
 	var rows []Row
 	var bad []*mtgv1.UnresolvedRow
 	for {
@@ -140,40 +135,68 @@ func ParseManaBoxCSV(r io.Reader) ([]Row, []*mtgv1.UnresolvedRow, error) {
 		// field can span lines, so a record counter is not enough.
 		line, _ := cr.FieldPos(0)
 		raw := strings.Join(rec, ",")
-		qty := 1
-		if q := get(rec, "Quantity"); q != "" {
-			qty, err = strconv.Atoi(q)
-			if err != nil || qty < 1 || qty > maxQuantity {
-				bad = append(bad, unresolved(line, raw, mtgv1.UnresolvedReason_UNRESOLVED_REASON_BAD_ROW))
-				continue
+		get := func(name string) string {
+			i, has := col[name]
+			if !has || i >= len(rec) {
+				return ""
 			}
+			return strings.TrimSpace(rec[i])
 		}
-		finish, ok := parseFinish(get(rec, "Foil"))
-		if !ok {
-			bad = append(bad, unresolved(line, raw, mtgv1.UnresolvedReason_UNRESOLVED_REASON_UNKNOWN_VALUE))
+		row, reason := build(get)
+		if reason != mtgv1.UnresolvedReason_UNRESOLVED_REASON_UNSPECIFIED {
+			bad = append(bad, unresolved(line, raw, reason))
 			continue
 		}
-		condition, ok := parseCondition(get(rec, "Condition"))
+		row.Line, row.Raw = line, raw
+		rows = append(rows, row)
+	}
+	return rows, bad, nil
+}
+
+// parseQuantity reads a count cell. An empty cell means one.
+func parseQuantity(v string) (int, bool) {
+	if v == "" {
+		return 1, true
+	}
+	q, err := strconv.Atoi(v)
+	if err != nil || q < 1 || q > maxQuantity {
+		return 0, false
+	}
+	return q, true
+}
+
+// ParseManaBoxCSV reads a ManaBox export. It returns the parsed rows and
+// the rows it could not parse. It fails only on a broken header.
+func ParseManaBoxCSV(r io.Reader) ([]Row, []*mtgv1.UnresolvedRow, error) {
+	// The key columns come from the signature table of detect.go, so the
+	// parser and the detector can not disagree about what a ManaBox file
+	// looks like (D-647).
+	return csvRows(r, "manabox", requiredAlternatives(), func(get func(string) string) (Row, mtgv1.UnresolvedReason) {
+		qty, ok := parseQuantity(get("Quantity"))
 		if !ok {
-			bad = append(bad, unresolved(line, raw, mtgv1.UnresolvedReason_UNRESOLVED_REASON_UNKNOWN_VALUE))
-			continue
+			return Row{}, mtgv1.UnresolvedReason_UNRESOLVED_REASON_BAD_ROW
 		}
-		rows = append(rows, Row{
-			Line:       line,
-			Raw:        raw,
-			Name:       get(rec, "Name"),
-			SetCode:    get(rec, "Set code"),
-			SetName:    get(rec, "Set name"),
-			Collector:  get(rec, "Collector number"),
+		finish, ok := parseFinish(get("Foil"))
+		if !ok {
+			return Row{}, mtgv1.UnresolvedReason_UNRESOLVED_REASON_UNKNOWN_VALUE
+		}
+		condition, ok := parseCondition(get("Condition"))
+		if !ok {
+			return Row{}, mtgv1.UnresolvedReason_UNRESOLVED_REASON_UNKNOWN_VALUE
+		}
+		return Row{
+			Name:       get("Name"),
+			SetCode:    get("Set code"),
+			SetName:    get("Set name"),
+			Collector:  get("Collector number"),
 			Quantity:   qty,
 			Finish:     finish,
 			Condition:  condition,
-			Language:   get(rec, "Language"),
-			Rarity:     strings.ToLower(get(rec, "Rarity")),
-			ScryfallID: strings.ToLower(get(rec, "Scryfall ID")),
-		})
-	}
-	return rows, bad, nil
+			Language:   get("Language"),
+			Rarity:     strings.ToLower(get("Rarity")),
+			ScryfallID: strings.ToLower(get("Scryfall ID")),
+		}, mtgv1.UnresolvedReason_UNRESOLVED_REASON_UNSPECIFIED
+	})
 }
 
 // parseFinish maps a Foil cell. An empty cell means normal.
