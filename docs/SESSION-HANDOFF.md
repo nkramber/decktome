@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-10)
 
-**The checkout.** `main` is `302858a`, which is pull request #127. Branch `docs-pr37-merged` holds the merged state of the documents, and it waits for a review and a merge. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
+**The checkout.** `main` is `302858a`, which is pull request #127. Pull request #128 holds the merged state of the documents and M-9, and it waits for a merge. Branch `docs-pr30-dropped` holds the record of PR-30 on top of it. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
 
 **The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586).
 
@@ -24,7 +24,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The gate reports the three numbers of D-648 for free.** `make quality-gate` grades the decks of deck gate run 16 with the model it fits, and it reads the judge's tiers from judge lane run 5. It stores no model.
 
-**PR-30 is next, and the owner parked PR-35** (D-655). M-9 fitted the casual features of PR-29 at three corpus sizes (F-98). A larger corpus read worse: 16 graded bad and 7 agreement at a quarter, and 17 and 6 at all lists. On `main` alone the size barely moves either number (F-97). `docs/reference/m9-casual-corpus-size-2026-09-10.md` holds all six fits.
+**M-10 is next: a scorer with one weight set per tier** (D-656). Three items aimed at the reader gap failed: PR-29, M-9, and PR-30 (F-94, F-98, F-99). The owner parked PR-35 and dropped PR-30. Each item added a feature to one ordinal ladder, and that ladder gives every feature one direction. `docs/reference/m9-casual-corpus-size-2026-09-10.md` and `docs/reference/pr30-commander-reference-2026-09-10.md` hold the fits.
 
 **CAUTION: two features never get built again** (F-94). `casual_unseen_share` moved the target axis by nothing and cost three other bars. `casual_pair_share` won one pair of 389, because the fit split it against `casual_synergy` with opposite signs. `docs/reference/pr29-casual-corpus-2026-09-10.md` says why for each, and PR-35 builds neither one.
 
@@ -84,12 +84,12 @@ Seven things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 1. **Read the log of the next meta job.** Its quality fit line for Commander names `immaterial`. Check that the count reads above zero.
-2. **PR-30, the commander reference** (D-568, D-655). It adds `commander_rate`, the share of a deck's nonland cards that the EDHREC average deck of its own commander holds. The judge reads 10 of the 15 decks graded bad as typical, and its reasons name the average community build. CAUTION: an average deck matches itself. Do not compare a list with its own average deck. The gate reads the three numbers of D-648 for free.
+2. **M-10, a scorer with one weight set per tier** (D-656). Fit a softmax scorer over the same features on a throwaway copy of `main`. Read the three numbers of D-648 beside gate run 18. PR-38 builds it only when graded-bad falls or the judge agreement rises.
 3. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
 4. **The live half of the feedback loop has no run yet.** Three things want a measurement: the judge lane of the triage, one live fix cycle, and one review round. All three need the owner's word, and the cycle also needs `AUTOTUNE_FIXER_CMD` and a harvest whose verdicts carry a snapshot.
 5. **The next whole deck gate run is still run 19, and it is still outstanding.** It makes the next decks baseline.
 6. **OQ-79 needs runtime evidence.** A fresh owned-only build on the deployed app is the way to it.
-7. **The owner parked PR-35, more casual lists** (D-655). M-9 and F-97 found no case for it, with the casual features of PR-29 or without them.
+7. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
 8. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
 9. **The weekly EDHREC read** falls on 2026-09-14 (D-499, D-565). Run `make meta-refresh`, then `make quality-gate` to a new `QUALITY_GATE_OUT`.
 10. **PR-26, the return channels**, waits on OQ-67.
@@ -111,6 +111,8 @@ Merged as #127.
 **A free test then cut the Commander casual lists to a half and a quarter** (F-97). The built decks graded bad read 15, 15, and 16, and the judge agreement 8, 8, and 7. The owner chose M-9 before PR-35 (D-654).
 
 **M-9 refuted the premise of D-650** (F-98). With the casual features of PR-29, a larger casual corpus read worse on both reader-facing numbers. The owner parked PR-35 and chose PR-30 next (D-655).
+
+**PR-30 failed in both forms** (F-99). With no self-match no built deck moved, and with it graded bad rose from 15 to 20. The owner dropped PR-30 and chose a structural change to the model, which M-10 measures first (D-656).
 
 **The check measures the move after the break** (D-652). In each fold the fit reads the synergy feature of every synergy copy, and it drops a copy whose fall sits under the floor. A request that passes no check makes no copy.
 
