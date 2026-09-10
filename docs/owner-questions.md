@@ -28,6 +28,7 @@ No owner question blocks it. The owner answered OQ-24 to OQ-27 on 2026-08-26 (D-
 
 | # | Question | Why only you | What it blocks |
 |---|---|---|---|
+| OQ-80 | **Does a card the reader marks as a proxy count as a card they own?** A Moxfield export carries a `Proxy` column, and no other format this app reads carries one. A proxy sits in the binder and plays at a table that allows one, and the reader never bought the card. So owned-only either builds with it or refuses it, and owned-first either leaves it off the buy list or prices it. The same card is owned for play and unowned for money, and the app holds one meaning of owned for both. Three answers: a proxy counts as owned, a proxy never counts, or the reader decides on the build. | It sets what "only cards I own" promises, the way OQ-79 does, and it changes what a buy list costs. | Nothing today. The parser drops the column, and every row of the one export on record reads False. A later answer needs the flag on the entry, and no reader has uploaded one. |
 
 ## How to answer
 

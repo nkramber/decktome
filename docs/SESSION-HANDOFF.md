@@ -8,13 +8,13 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-10)
 
-**The checkout.** `main` is `064dbab`, which is pull request #122. Branch `pr-34` holds this session's work, and it waits for a review and a merge. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
+**The checkout.** `main` is `fba7a34`, which is pull request #123. Every pull request of 2026-09-09 and 2026-09-10 is merged: #117, #121, #122, and #123. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
 
 **The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586).
 
 **The whole feedback loop stands.** PR-27 harvests the verdicts, PR-28a writes the harvest files, PR-28b writes the cases, and PR-28c fixes them. All four are merged.
 
-**PR-34 waits for a merge** (D-647, F-91, F-92). The app reads the format of an upload out of the file, and the reader never names the app their file came from. Moxfield is the first new platform, on a real export the owner wrote. `docs/reference/pr34-collection-formats-2026-09-10.md` is the gate, and it reads PASS.
+**PR-34 is merged as #123** (D-647, F-91 to F-93). The app reads the format of an upload out of the file, and the reader never names the app their file came from. Moxfield is the first new platform, on a real export the owner wrote. `docs/reference/pr34-collection-formats-2026-09-10.md` is the gate, and it reads PASS.
 
 **F-92 was live.** The web sent `MANABOX_CSV` on every upload, hardcoded. The app has read an Arena list since D-15, and no reader ever uploaded one: every row failed. The upload names no format now.
 
@@ -30,7 +30,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The whole PR-22 gate holds** (D-633). The measured cost at idle reads $9.54 a month gross, and the hourly snapshot tick of D-634 leaves $3.81.
 
-**What waits on the owner.** OQ-67, the Stage B channels. OQ-77, the blocking function of Identity Platform. OQ-79, the commander of an owned-only pool.
+**What waits on the owner.** OQ-67, the Stage B channels. OQ-77, the blocking function of Identity Platform. OQ-79, the commander of an owned-only pool. OQ-80, a proxy and the pool.
 
 **CAUTION: the evidence OQ-79 waits for is not on the deployed project.** `make read-session SESSION=23rplEQAMA0mtJ3QFtKO` answers `no sessions ... over 1 user(s)`, and the deck it names is gone as well. So a fresh owned-only build on the deployed app is the way to the evidence.
 
@@ -96,7 +96,7 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 ### 2026-09-10: PR-34, the collection formats
 
-Branch `pr-34`, open for review.
+Merged as #123.
 
 **The app reads the format out of the file** (D-647). `collections.Detect` reads the header row, and the reader never names the app their file came from. The app refuses a tie between two formats and names both. It refuses a file no format claims with the list it does read.
 
@@ -110,9 +110,11 @@ Branch `pr-34`, open for review.
 
 **One CSV walker serves every format now.** A platform is one signature entry and one row builder.
 
+**OQ-80 is open.** A Moxfield export carries a `Proxy` column, and no other format this app reads carries one. The owner parked the question rather than decide it on no evidence: every row of the one export on record reads False.
+
 ### 2026-09-09c: PR-28c, the fix cycle
 
-Branch `pr-28c`, open for review. The feedback loop is complete: PR-27 harvests, PR-28a writes the files, PR-28b writes the cases, and PR-28c fixes them.
+Merged as #122. The feedback loop is complete: PR-27 harvests, PR-28a writes the files, PR-28b writes the cases, and PR-28c fixes them.
 
 **The cycle.** `scripts/feedback-loop.sh` reads a harvest and writes one case per thumbs down. It proves each case fails, hands the failures to a fixer agent, and proves each case passes (D-645).
 
@@ -130,7 +132,7 @@ Branch `pr-28c`, open for review. The feedback loop is complete: PR-27 harvests,
 
 ### 2026-09-09b: PR-28b, the triage and the cases
 
-Branch `pr-28b`, open for review.
+Merged as #121.
 
 **The triage.** The reason keys of the dialog name the class with no model call (D-643). PR-27 already asks the reader to name the fault, and the keys map onto the classes one to one. The judge reads three cases alone. They are free text with no reason, reasons that cross two classes, and a reader who argues with a rule the owner set. Eight of the ten fixture items cost nothing.
 

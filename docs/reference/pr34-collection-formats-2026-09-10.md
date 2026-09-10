@@ -120,4 +120,10 @@ The Moxfield reader is 134 lines, and most of them are the three value vocabular
 
 **The unverified condition rungs.** The export holds `Near Mint` and `Played`. The other rungs of the Moxfield condition list are mapped from its documentation and no export of this repo has shown one. `moxfield.go` marks them as unverified, and an unknown value is reported and never defaulted in silence.
 
-**`Alter` and `Proxy`.** Both read `False` on every row of the export, so no file of this repo has shown what a `True` does. The parser ignores both columns. A reader who marks a card as a proxy still reads it as a card they own, and whether that is right is a question for the owner.
+**`Alter` and `Proxy`.** Both read `False` on every row of the export, so no file of this repo has shown what a `True` does. The parser ignores both columns.
+
+`Proxy` is the one that matters, and it is **OQ-80** now. No other format this app reads carries such a column, so a proxy is information the app has never held. A proxy sits in the binder and plays at a table that allows one, and the reader never bought the card. So owned-only either builds with it or refuses it, and owned-first either leaves it off the buy list or prices it. The same card is owned for play and unowned for money, and the app holds one meaning of owned for both.
+
+The owner parked it on 2026-09-10 rather than decide it on no evidence. The parser keeps dropping the column, so a later answer needs a re-upload from any reader who holds a proxy.
+
+`Alter` is a smaller thing: an altered card is the card, with other art. The ManaBox format carries an `Altered` column and this app has always ignored it.
