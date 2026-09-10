@@ -1068,7 +1068,7 @@ A class that meets an owner decision writes a row to `docs/owner-questions.md` i
 Gate: a dry triage over a fixture of ten items, the owner's own past complaints, names the expected class of each. It reads PASS. The question gate reads a "must not ask" expectation and fails a conversation that fires the row.
 > *In plain English:* an assistant reads each complaint and turns it into a test the product must pass. Most complaints need no assistant at all, because the reader already ticked the box that says what went wrong. A complaint that argues with a decision you already made becomes a question for you, not a change.
 
-**PR-28c: The fix cycle (F-49, D-557 to D-559, D-645).** ✅ built 2026-09-09. The free lane holds, and the live cycle waits for the owner's word.
+**PR-28c: The fix cycle (F-49, D-557 to D-559, D-645).** ✅ merged 2026-09-09 (#122). The free lane holds, and the live cycle waits for the owner's word.
 `scripts/feedback-loop.sh` is the cycle. It reads a harvest and writes one case per thumbs down. It proves each case fails, hands the failures to a fixer agent, and proves each case passes. `scripts/autotune-fix.sh` runs the agent the way the tuning loop does, and `docs/reference/feedback-fixer-prompt.md` holds what it reads. The owner names the agent in `AUTOTUNE_FIXER_CMD`.
 
 **The case and its fix ride in one pull request** (D-645). A case is a failing test by design. A case merged on its own turns the gate red on `main` until a fix lands.
@@ -1084,7 +1084,7 @@ Every guard of `docs/reference/autotune-design.md` holds. They are the branch of
 Gate: one live cycle on the owner's word ends with a pull request and a passing gate on its new cases. `make eval-check` shows no flip on the baselines. The free half holds. `make feedback-loop-dry` plans a cycle over the fixture for nothing, and it names the three gates and the case ids of each one.
 > *In plain English:* an assistant tries to fix what the complaints show. It proves the complaint is real first, then fixes it, then proves the fix worked. It opens the change for you to approve and answers the automatic reviewer. Nothing ships without you.
 
-**PR-34: More collection platforms (F-91, F-92, F-93, D-647).** ✅ built 2026-09-10. Moxfield reads, and the app names the format itself.
+**PR-34: More collection platforms (F-91, F-92, F-93, D-647).** ✅ merged 2026-09-10 (#123). Moxfield reads, and the app names the format itself.
 The app read two formats: a ManaBox CSV and an Arena deck list. A reader who keeps their collection anywhere else had no way in, and the upload is the first step of the whole product.
 
 **The app reads the format out of the file** (D-647). `collections.Detect` reads the header row and names the format, and the reader never says which app wrote it. The signature table of `detect.go` describes every format, in one place. The ManaBox parser reads its key columns from that table, so the detector and the parser can not disagree.
@@ -1375,11 +1375,11 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 22. PR-24 precon exclusion (D-409, D-460) ✅ merged 2026-09-03 (#59). PR-14C (D-482) ✅ merged 2026-09-03 (#60). Then I-1, I-2, I-3 on evidence. PR-14B moved into step 19 (D-460).
 23. Phase 5 stays parked.
 24. PR-25 the installable web app ✅ merged 2026-09-08, as #107 to #111, and its gate holds (D-621 to D-627). Then PR-26 the return channels, which waits on OQ-67. Stage C, the stores, waits on request (D-548).
-25. **PR-27** the feedback harvest ✅ merged 2026-09-07 (#75). **PR-28a** ✅ merged 2026-09-09 (#117). **PR-28b** ✅ merged 2026-09-09 (#121). **PR-28c** ✅ built 2026-09-09 (D-636, D-645). Then **PR-34** (D-646). PR-25 waits for the deploy in any case (D-555). PR-27 merged as #75 on 2026-09-07 (D-562).
+25. **PR-27** the feedback harvest ✅ merged 2026-09-07 (#75). **PR-28a** ✅ merged 2026-09-09 (#117). **PR-28b** ✅ merged 2026-09-09 (#121). **PR-28c** ✅ merged 2026-09-09 (#122). The whole feedback loop is on `main` (D-636, D-645). PR-25 waits for the deploy in any case (D-555). PR-27 merged as #75 on 2026-09-07 (D-562).
 26. **M-7** the axis diagnostic and the honest bars, then **PR-29** the casual corpus. Then **PR-30** the commander reference on OQ-74, and **PR-31** the 60-card axes (D-567). The plan is `docs/reference/weak-axes-2026-09-07.md`, and the work runs now, during the deploy wait (D-568). M-7 is done, and run 14 is on record (D-571, D-572). The bar reads the own copies, and PR-31 parks (D-573).
 27. **PR-32** the commander the reader named, and the pool they chose (F-75, F-76, OQ-79). ✅ merged 2026-09-08, as #98 and #99. It ran right after PR #97. The runtime read of F-76 came first, and it settled the cause.
 28. **PR-33** one model call that lands in band (F-77, F-78). ✅ merged 2026-09-08 (#102). Deck gate run 18 is the paid measure and the decks baseline (D-617). An upgrade reads the bands after D-628, and the next whole run measures that (D-629).
-29. **PR-34** more collection platforms (F-91, F-92, F-93). ✅ built 2026-09-10: Moxfield reads, and the app names the format itself (D-647). The other platforms wait for the owner's word and a real export each.
+29. **PR-34** more collection platforms (F-91, F-92, F-93). ✅ merged 2026-09-10 (#123): Moxfield reads, and the app names the format itself (D-647). The other platforms wait for the owner's word and a real export each.
 
 ## 9. Open questions
 
@@ -1398,3 +1398,4 @@ See `docs/open-questions.md` for the full list with "ask when" dates. The ones t
 11. **OQ-74 the commander reference** answered 2026-09-07 (D-568): yes, as one feature. PR-30 reads a Commander deck against the average deck of its own commander. A collection-built deck holds few of those cards, and its tier says so.
 12. **OQ-75 the place of the weak-axes work** answered 2026-09-07 (D-568): now. The four items fill the wait for the deploy of PR-22, and PR-25 and PR-28 keep their place behind it.
 13. **OQ-76 the pairs of the precon bar** answered 2026-09-07 (D-573): the own copies. Run 14 reads each precon over its own copies at 0.88, 0.97, and 0.99 (F-56). The cross pairs read 0.86, 0.87, and 0.85. The own copy asks what D-414 says: a broken copy of a list is worse than the list. The cross pairs stand as information.
+14. **OQ-80 a proxy and the pool** open 2026-09-10, from PR-34. A Moxfield export carries a `Proxy` column, and no other format this app reads carries one. A proxy sits in the binder and plays at a table that allows one. The reader never bought the card. So owned-only either builds with it or refuses it. Owned-first either leaves it off the buy list or prices it. The parser drops the column today, and every row of the one export on record reads False. `docs/owner-questions.md` holds it.
