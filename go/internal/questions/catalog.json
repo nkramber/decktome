@@ -317,7 +317,9 @@
         "format": "commander",
         "suggested": true,
         "requires": [
-          "power"
+          "power",
+          "theme",
+          "colors"
         ]
       },
       "key": "commander_pick",

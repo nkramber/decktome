@@ -372,17 +372,22 @@ func TestDelegationClosesTheCommanderPick(t *testing.T) {
 // on the table until the user refuses them (D-80, D-123). Nothing checked
 // them again when the colors arrived later.
 //
-// Turn 1 names no colors, and the row offers a mono-green commander.
-// The user answers "Red and white" on turn 2, and the same three names
+// Turn 1 asks the colors, and turn 2 declines them, so the row offers a
+// mono-green commander (D-669). The user answers "Red and white" on
+// turn 3, and the same three names
 // must not go out again. D-148 can not catch it: it filters the pool,
 // and these names are already on the table.
 func TestOffColorOfferLeavesTheTable(t *testing.T) {
-	// The offer waits for the power (D-630), and turn 1 makes the offer.
+	// The offer waits for the power (D-630) and the colors (D-669). Turn 1
+	// asks the colors, turn 2 declines them, and turn 2 makes the offer.
+	// A decline needs the question out first (D-93).
 	first := commanderClassify()
 	first.Facts.WantsSuggestion = true
 	first.Colors = nil
 	first.BudgetUSD = 50
 	first.Power = "bracket 3"
+	decline := first
+	decline.DeclinedKeys = []string{"colors"}
 	second := commanderClassify()
 	second.Facts.WantsSuggestion = true
 	second.Colors = []string{"R", "W"}
@@ -403,22 +408,31 @@ func TestOffColorOfferLeavesTheTable(t *testing.T) {
 			"Tajic, Blade of the Legion":    {mtgv1.Color_COLOR_R, mtgv1.Color_COLOR_W},
 		},
 	}
+	// Turn 2 plans the pick row alone, which is fixed, so it makes no score
+	// call and no ask call (D-131).
 	a, _ := testAgentHints(t, h,
-		classifyStep(t, first), fits(t, "commander_pick", "power_commander"), askStep(t),
+		classifyStep(t, first), fits(t, "colors"), askStep(t),
+		classifyStep(t, decline),
 		classifyStep(t, second), fits(t, "commander_pick"), askStep(t))
 	st := NewState(false)
 	if _, err := a.Turn(context.Background(), st, "A Commander deck with a Background commander pair, 50 dollars.", nil); err != nil {
 		t.Fatalf("turn 1: %v", err)
 	}
+	if len(st.CurrentOffer) != 0 {
+		t.Fatalf("turn 1 offered %v beside the color question", st.CurrentOffer)
+	}
+	if _, err := a.Turn(context.Background(), st, "Any colors are fine.", nil); err != nil {
+		t.Fatalf("turn 2: %v", err)
+	}
 	if !contains(st.CurrentOffer, "Jaheira, Friend of the Forest") {
-		t.Fatalf("turn 1 did not offer the green commander: %v", st.CurrentOffer)
+		t.Fatalf("turn 2 did not offer the green commander: %v", st.CurrentOffer)
 	}
 	if len(st.CurrentOffer) != 3 {
-		t.Fatalf("turn 1 offered %d names, want 3: %v", len(st.CurrentOffer), st.CurrentOffer)
+		t.Fatalf("turn 2 offered %d names, want 3: %v", len(st.CurrentOffer), st.CurrentOffer)
 	}
 	res, err := a.Turn(context.Background(), st, "Red and white, aggressive.", nil)
 	if err != nil {
-		t.Fatalf("turn 2: %v", err)
+		t.Fatalf("turn 3: %v", err)
 	}
 	if contains(st.CurrentOffer, "Jaheira, Friend of the Forest") {
 		t.Errorf("the mono-green commander stayed on the table after the user named red and white: %v",
@@ -476,15 +490,24 @@ func TestPickRowWithNoNamesAsksNothing(t *testing.T) {
 	out.Theme = ""
 	out.Facts.WantsSuggestion = true
 	out.BudgetUSD = 50
-	// The offer waits for the power (D-630), so the reader names it.
+	// The offer waits for the power (D-630), so the reader names it. It
+	// waits for the theme too (D-669), so turn 1 asks the theme, and turn
+	// 2 declines it. A decline needs the question out first (D-93).
 	out.Power = "bracket 3"
+	decline := out
+	decline.DeclinedKeys = []string{"theme"}
 	// The hint source names no commander, which is what an empty theme
 	// gives.
-	a, _ := testAgentHints(t, &fakeHints{}, classifyStep(t, out), fits(t, "power_commander"), askStep(t))
+	a, _ := testAgentHints(t, &fakeHints{},
+		classifyStep(t, out), fits(t, "theme"), askStep(t),
+		classifyStep(t, decline))
 	st := NewState(false)
-	res, err := a.Turn(context.Background(), st, "Make me a good deck for 50 dollars. I dunno, you pick.", nil)
+	if _, err := a.Turn(context.Background(), st, "Make me a good deck for 50 dollars.", nil); err != nil {
+		t.Fatalf("turn 1: %v", err)
+	}
+	res, err := a.Turn(context.Background(), st, "I dunno, you pick.", nil)
 	if err != nil {
-		t.Fatalf("turn: %v", err)
+		t.Fatalf("turn 2: %v", err)
 	}
 	for _, q := range res.Questions {
 		if strings.Contains(strings.ToLower(q.GetText()), "commander") {
@@ -789,11 +812,13 @@ func TestNotOwnedRowIsRetired(t *testing.T) {
 func TestDeclinedPickClosesTheCommanderSlot(t *testing.T) {
 	var vague classifyOut
 	var delegate classifyOut
-	delegate.DeclinedKeys = []string{"format", "colors"}
+	delegate.DeclinedKeys = []string{"format", "theme", "colors"}
 	delegate.Facts.WantsSuggestion = true
 	// The offer waits for the power (D-630), and the reader names it
-	// with the delegation. The turn then plans the pick row alone, which
-	// is fixed, so it makes no score call and no ask call (D-131).
+	// with the delegation. It waits for the theme and the colors too
+	// (D-669), and the delegation declines both. The pool row waits for the
+	// same slots (D-67), so the turn plans it beside the pick row, and the
+	// pool row takes one score call and one ask call.
 	delegate.Power = "bracket 3"
 	var decline classifyOut
 	decline.DeclinedKeys = []string{"commander_pick", "power", "pool_rule"}
@@ -803,7 +828,7 @@ func TestDeclinedPickClosesTheCommanderSlot(t *testing.T) {
 	}
 	a, _ := testAgentHints(t, h,
 		classifyStep(t, vague), fits(t), askStep(t),
-		classifyStep(t, delegate),
+		classifyStep(t, delegate), fits(t, "pool"), askStep(t),
 		classifyStep(t, decline))
 	st := NewState(true)
 	if _, err := a.Turn(context.Background(), st, "Make me a good deck.", nil); err != nil {

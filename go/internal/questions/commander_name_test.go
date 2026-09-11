@@ -321,3 +321,83 @@ func TestTheNetReleasesTheOffer(t *testing.T) {
 		t.Error("the offer goes out after the power reopened")
 	}
 }
+
+// TestTheOfferWaitsForThePreferences locks D-669. The offer ranks on the
+// theme and the colors: the pool ranks on theme fit, and the color check
+// drops a name the colors exclude (D-153). An offer beside a question
+// about either one ignores the answer that question asks for.
+func TestTheOfferWaitsForThePreferences(t *testing.T) {
+	cat := load(t)
+	pick, ok := cat.Row("commander_pick")
+	if !ok {
+		t.Fatal("no row commander_pick")
+	}
+	for _, slot := range []string{"power", "theme", "colors"} {
+		if !slices.Contains(pick.When.Requires, slot) {
+			t.Errorf("the pick row does not wait for %q, so its offer ignores that answer", slot)
+		}
+	}
+	// The preference rows wait for nothing of the commander, or the rows
+	// wait for each other and none of them goes out.
+	for _, id := range []string{"theme", "colors"} {
+		row, ok := cat.Row(id)
+		if !ok {
+			t.Fatalf("no row %q", id)
+		}
+		for _, k := range append(slices.Clone(row.When.Requires), row.When.NotOutstanding...) {
+			if strings.HasPrefix(k, "commander") {
+				t.Errorf("row %q waits for %q, and the commander offer waits for row %q", id, k, id)
+			}
+		}
+	}
+}
+
+// TestNoOfferBesideAPreferenceQuestion walks D-669 through the agent. The
+// reader names the format and the bracket and no theme, builds from an
+// owned-only pool, and the classifier reads a request for a suggestion.
+// The first turn asks the theme and the colors and offers nothing. The
+// next turn answers both, and the offer goes out alone.
+//
+// The pool is owned-only on purpose. An any-card pool asks the budget,
+// which takes the third place of the turn (MaxPerTurn) and holds the
+// offer back with no rule at all.
+func TestNoOfferBesideAPreferenceQuestion(t *testing.T) {
+	var first classifyOut
+	first.Format, first.Power, first.PoolRule = "commander", "bracket 5", "owned_only"
+	first.Facts.WantsSuggestion = true
+	second := commanderClassify()
+	second.Power, second.PoolRule = "bracket 5", "owned_only"
+	h := &fakeHints{commanders: []string{"Vivi Ornitier", "Hapatra, Vizier of Poisons", "Ghalta, Primal Hunger"}}
+	a, _ := testAgentHints(t, h,
+		classifyStep(t, first), fits(t, "theme", "colors"), askStep(t),
+		classifyStep(t, second))
+	st := NewState(true)
+	res, err := a.Turn(context.Background(), st, "Build a bracket-5 commander deck", nil)
+	if err != nil {
+		t.Fatalf("turn 1: %v", err)
+	}
+	if question(res.Questions, "theme") == nil || question(res.Questions, "colors") == nil {
+		t.Fatalf("turn 1 did not ask the theme and the colors, it asked %d questions", len(res.Questions))
+	}
+	if q := question(res.Questions, "commander"); q != nil {
+		t.Fatalf("turn 1 offered commanders beside the preference questions: %q", q.GetText())
+	}
+	res, err = a.Turn(context.Background(), st, "Lifegain, in white and black.", nil)
+	if err != nil {
+		t.Fatalf("turn 2: %v", err)
+	}
+	q := question(res.Questions, "commander")
+	if q == nil {
+		t.Fatal("turn 2 did not offer a commander after both answers")
+	}
+	for _, name := range h.commanders {
+		if !strings.Contains(q.GetText(), name) {
+			t.Errorf("the offer does not name %q: %q", name, q.GetText())
+		}
+	}
+	for _, slot := range []string{"theme", "colors"} {
+		if question(res.Questions, slot) != nil {
+			t.Errorf("turn 2 asked the %s again beside the offer", slot)
+		}
+	}
+}
