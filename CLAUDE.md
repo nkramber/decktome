@@ -6,7 +6,7 @@ Read this file first. Then read `docs/SESSION-HANDOFF.md`. It tells you where th
 
 This repo is a Go + Protobuf + TypeScript monorepo for an agentic MtG deck builder. The app reads a user's ManaBox collection export. The user gives a prompt. The agent asks questions, then builds a legal, useful deck.
 
-Stage (2026-09-10): **the app is live on `decktome.com`**, and pull request #136 is the newest merge. A merge to `main` deploys itself on Cloud Build (D-584, D-586, D-588). Phase 3B, the product UI, is the current phase.
+Stage (2026-09-10): **the app is live on `decktome.com`**, and pull request #137 is the newest merge. A merge to `main` deploys itself on Cloud Build (D-584, D-586, D-588). Phase 3B, the product UI, is the current phase.
 
 **The whole PR-22 gate holds** (D-633), so PR-28 is free to run. Every PR through #119 is merged: PR-0a to PR-8, PR-7B, PR-10 to PR-25, PR-27, PR-32, PR-33, and PR-28a. PR-9 is out of the MVP (D-256). **PR-28 split into three** (D-636). PR-28a is the harvest, and it is merged. PR-28b is the triage and the new "must not ask" expectation, and PR-28c is the fix cycle. PR-26 waits on OQ-67, and PR-29 to PR-31 stand on the weak-axes plan.
 
@@ -14,7 +14,7 @@ Stage (2026-09-10): **the app is live on `decktome.com`**, and pull request #136
 
 **PR-29 closed, and it never merged** (D-652). M-8 read the precon bar and found its target of 0.95 was never reachable. 54 of 389 pairs carry no signal, because a weak precon's cards do not pair in the corpus (F-95). **Every quality item reports three numbers now**, and the owner drops an item that moves none (D-648). **PR-37 is merged as #127.** It adds the materiality check the synergy break never had, in Commander alone at a floor of 0.10 (D-653). Gate run 18 reads PASS, and no reader-facing number moved: the bar reads a new population, and the model is the same model.
 
-**The owner graded the ten disputed decks** (D-659). The judge bar is the right target, and the defect detector reads built decks wrong. PR-39 merged first, as #135: the basic lands follow the need of each color (D-660, D-661). **The detector fix is next**, and PR-38 waits on it (D-665). Gate run 19 measured the new source count on the quality model: every bar holds, and the judge agreement rose from 8 to 9 (D-663). Every item that changes a feature of the model reports the three numbers now (D-664).
+**The owner graded the ten disputed decks** (D-659). The judge bar is the right target, and the defect detector reads built decks wrong. PR-39 merged first, as #135: the basic lands follow the need of each color (D-660, D-661). **M-11 measures the detector fix next** (D-666, D-667), and PR-38 waits on it (D-665). Gate run 19 measured the new source count on the quality model: every bar holds, and the judge agreement rose from 8 to 9 (D-663). Every item that changes a feature of the model reports the three numbers now (D-664).
 
 Two rules of the deployed app come from 2026-09-09. **A verdict keeps the object it names** (D-635), because a reader deletes the deck or the chat they complained about, and the verdict outlives it. **Every user has a record** at `users/<uid>` (D-638): the verified email, the dates, and six counters of what they made. No harvest reads that record, and a test refuses the import that joins them.
 
