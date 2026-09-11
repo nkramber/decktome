@@ -1479,6 +1479,14 @@ func (a *Agent) applyTheme(st *State, out classifyOut) {
 	if s == "" {
 		return
 	}
+	// An occasion is not a theme. "A Modern deck for a team event" names a
+	// happening, and a theme written from it stops the theme row, so the
+	// reader never names the plan (D-670, extends D-219).
+	if occasionTheme(s) {
+		a.log.Info("an occasion is not a theme, so the classifier theme is dropped",
+			"session", st.SessionID, "theme", s)
+		return
+	}
 	if st.Slots.GetTheme() != "" && anyPhrase(strings.ToLower(s), bestSigns) {
 		a.log.Info("a superlative phrase does not replace the theme the user named",
 			"session", st.SessionID, "theme", st.Slots.GetTheme(), "phrase", s)
@@ -1989,9 +1997,18 @@ func (a *Agent) applyKeys(st *State, out classifyOut, open []string, message str
 	// purpose: the user handed the choice back, and the generator applies
 	// the default the corpus names. The question must still be out,
 	// because nobody can decline a question they never saw (D-93).
+	// A delegation that names its slot hands over that slot alone. "You pick
+	// the commander" declines the commander, and the classifier can decline
+	// every open key for it, so the bracket and the budget take defaults the
+	// reader never chose (D-670).
+	delegated, bare, delegates := delegationObjects(message)
 	for _, k := range out.DeclinedKeys {
 		k = strings.TrimSpace(k)
 		if k == "" {
+			continue
+		}
+		if delegates && !bare && len(delegated) > 0 && !delegated[k] && slotHasNouns(k) {
+			a.log.Warn("a delegation that names its slot declines no other key", "key", k)
 			continue
 		}
 		// One shape must not reach it: "None of those" refuses the names

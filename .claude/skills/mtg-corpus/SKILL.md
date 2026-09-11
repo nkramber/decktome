@@ -319,7 +319,7 @@ Ask order (from the PR-7 dogfood runs, 2026-08-24): format, theme, set, house ru
 
 Word routing: "anything goes", "kitchen table", and "no ban list" route to House rules (D-3). "Casual" alone routes to Power, not to House rules. The gate run of 2026-08-25 asked a parent about house rules for a child's deck, and the parent answered "casual means low power, not a house format" (D-78). "Strongest", "competitive", "best", and "serious" route to Power.
 
-An occasion routes nowhere. "For an event" and "at my store" name a place or a happening, and they name no power step (D-219). "Janky", "fun", "silly", and "meme" route to Power, because the jank row retired (A-6). Do not route a jank word to House rules. House rules cover legality.
+An occasion routes nowhere. "For an event" and "at my store" name a place or a happening, and they name no power step and no theme (D-219, D-670). "Janky", "fun", "silly", and "meme" route to Power, because the jank row retired (A-6). Do not route a jank word to House rules. House rules cover legality.
 
 "Proxy" routes to Budget, and not to House rules (D-111). A user who proxies every card has no budget, so the agent asks no budget question. The word says nothing about which cards are legal. "Whatever" routes nowhere. Gate runs 11 to 13 read "whatever is winning" and "whatever you think is best" as house rules, six times.
 
@@ -341,7 +341,7 @@ Locked-card rule: a card that becomes the commander is not a locked card (D-70).
 
 Question source rule (D-25): use a catalog question when one fits the empty slot. Compute a gap score: how well the best catalog question matches the slot and the user's words. When the score is below the threshold, invent a question and log it with the score. The owner scores each invented question on the six-field rubric (D-66). Invented questions that repeat become catalog candidates.
 
-Decline rule (D-93): a user can hand any slot back. "Any colors are fine", "you decide", and "surprise me" are declines. A decline names no value, and the slot goes to the skipped state. The agent does not ask again, and the generator applies the default below. The agent must ask the question before the user can decline it.
+Decline rule (D-93): a user can hand any slot back. "Any colors are fine", "you decide", and "surprise me" are declines. A decline names no value, and the slot goes to the skipped state. The agent does not ask again, and the generator applies the default below. The agent must ask the question before the user can decline it. A delegation that names its slot hands back that slot alone: "you pick the commander" declines no bracket and no budget (D-670).
 
 Default answers when the user says "you decide": format Commander (the most played format in 2026), bracket 2 to 3, colors from the collection's strongest overlap with the theme. Pool mode: owned-first when the session has a collection, any-card when it has none (D-37). A user without a collection never gets the card-pool question.
 
