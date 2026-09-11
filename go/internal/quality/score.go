@@ -319,8 +319,9 @@ type Contribution struct {
 }
 
 // Explanation is the read of one deck for a gate document: the grade,
-// the detector's probability and cut, the rules read, and every
-// contribution.
+// the detector's probability and cut, the rules read, the ladder's own
+// probability of each tier before the detector and the rules move the
+// grade, and every contribution.
 type Explanation struct {
 	Tier          string
 	Score         float64
@@ -345,7 +346,7 @@ func (s *Scorer) Explain(in Input) *Explanation {
 	graded, score := fm.grade(z)
 	rr := ruleChecks(in)
 	p := fm.tierProbabilities(z, graded, rr)
-	out := &Explanation{Tier: fm.Tiers[argmax(p)], Score: round4(score), Defect: round4(fm.defect(z)), Threshold: fm.DefectThreshold, Flagged: fm.flagged(z), Rules: rr, Ladder: p}
+	out := &Explanation{Tier: fm.Tiers[argmax(p)], Score: round4(score), Defect: round4(fm.defect(z)), Threshold: fm.DefectThreshold, Flagged: fm.flagged(z), Rules: rr, Ladder: levelProbabilities(fm.Weights, fm.Thresholds, z)}
 	for i, k := range fm.Keys {
 		c := Contribution{Key: k, Value: round4(features[k]), Z: round4(z[i]), Ladder: round4(fm.Weights[i] * z[i])}
 		if len(fm.DefectWeights) == len(z) {

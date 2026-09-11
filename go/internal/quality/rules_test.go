@@ -257,6 +257,10 @@ func TestCommanderTierReadsTheRules(t *testing.T) {
 	if !strings.Contains(Summary(short), "below the precon baseline") {
 		t.Errorf("summary = %q", Summary(short))
 	}
+	flagged := s.Explain(w.input(w.short()))
+	if flagged.Tier != meta.TierBad || !flagged.Rules.Flagged() || argmax(flagged.Ladder) != 2 {
+		t.Errorf("explain of a flagged deck: tier %s, ladder %v, want bad over a typical ladder", flagged.Tier, flagged.Ladder)
+	}
 
 	standard := s.Score(w.input(w.deck(mtgv1.FormatId_FORMAT_ID_STANDARD, nil, w.threes[:36],
 		map[*mtgv1.Card]int32{w.plains: 12, w.island: 12})))
