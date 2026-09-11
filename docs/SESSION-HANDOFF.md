@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-11)
 
-**The checkout.** `main` is `afc2492`, which is pull request #141, or a later merge. The branch `plan-m12-rules-detector` holds this hand-off, the plan of M-12, F-116, D-676, and D-677, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
+**The checkout.** `main` is `4b56949`, which is pull request #142, or a later merge. The branch `m12-rules-fits` holds this hand-off, the fits of M-12, F-117, and D-678, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
 
 **The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586). #139 deployed on 2026-09-11 at 04:01 UTC, and `/readyz` answered OK.
 
@@ -24,7 +24,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **M-11 is done, and no detector variant meets its gate** (F-115, D-675). Every disputed deck grades bad in all fifteen fits. The grade adds the detector probability to the bad rung of every deck, so the flag never decides the tier (F-115). Four free tier fits keep every bar: `tier` grades 14 decks bad, and `notier` 8 with deck 22 at baseline. **The owner chose the rules detector first, as M-12, with no change of the tier** (D-675). `docs/reference/m11-detector-variants-2026-09-11.md` holds every fit, and `.local/m11/` holds the patches.
 
-**The plan of M-12 is on this branch** (F-116, D-676, D-677). A free dump read the rule quantities of every Commander list and every built deck. Every candidate rules set flags decks 19 and 22 alone, so the seven wrong flags of D-659 clear. The rules flag a tenth of the top lists at the cuts that catch the copies, so as the score they likely fail both bars. **The owner chose to fit two designs over a grid**: A lets the rules set the tier, and B lets them replace the detector. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the dump, and `.local/m12/` holds the patches.
+**M-12 is done, and PR-40 builds design A** (F-116, F-117, D-676 to D-678). Design A passes in all eight fits, and every bar reads as gate run 19. It grades 9 built decks bad against 16, and the judge agreement rises from 9 to 10. Design B fails in all eight, because its synergy detector flags the precons (F-117). **The owner chose a shortfall of 10, curve 4.4, and colors 0.75** (D-678). `docs/reference/m12-rules-detector-fits-2026-09-11.md` holds the fits, and `.local/m12/` holds the patches.
 
 CAUTION: the `decktome` gcloud configuration named the Wallabee account and project on 2026-09-10, so `use_decktome` put the shell on the wrong project. `scripts/read-session.sh` reads `SESSION_PROJECT` and the account of `CLOUDSDK_CORE_ACCOUNT`, so an environment override reads `decktome-prod` with no change to the configuration. The owner has the commands to repair the configuration.
 
@@ -40,7 +40,7 @@ CAUTION: the `decktome` gcloud configuration named the Wallabee account and proj
 
 **The gate reports the three numbers of D-648 for free.** `make quality-gate` grades the decks of deck gate run 16 with the model it fits, and it reads the judge's tiers from judge lane run 5. It stores no model.
 
-**The owner graded the ten disputed decks** (D-659). The judge bar is the right target, and the detector reads built decks wrong. M-12 measures the rules detector next (D-675), and PR-38 waits on the detector fix (D-665). The review sheet is `.local/review/disputed-decks-2026-09-10.md`, beside a CSV, and it stays out of git. Its notes on decks 11 and 15 read the fit of 2026-09-07, and the ladder of gate run 19 reads both decks baseline. `docs/reference/m10-softmax-scorer-2026-09-10.md` holds the fits.
+**The owner graded the ten disputed decks** (D-659). The judge bar is the right target, and the detector reads built decks wrong. PR-40 builds the rules detector of M-12 next (D-678), and PR-38 waits on the detector fix (D-665). The review sheet is `.local/review/disputed-decks-2026-09-10.md`, beside a CSV, and it stays out of git. Its notes on decks 11 and 15 read the fit of 2026-09-07, and the ladder of gate run 19 reads both decks baseline. `docs/reference/m10-softmax-scorer-2026-09-10.md` holds the fits.
 
 **Three items aimed at the reader gap failed first**: PR-29, M-9, and PR-30 (F-94, F-98, F-99). The owner parked PR-35 and dropped PR-30.
 
@@ -104,7 +104,7 @@ Seven things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **Run M-12, the rules detector** (D-676, D-677). Build a throwaway patch from `.local/m12/m12_dump_patch.py`, which holds Karsten's cheap counter. Design A sets the tier from the checks and keeps the score. Design B replaces the detector in both, beside the synergy detector of `.local/m11/m11_patch.py`. Fit the eight combinations of the grid for each design. Report the three numbers, the broken copies graded bad, and every bar. Ask the owner to pick.
+1. **Build PR-40, design A of M-12** (D-678). The checks read Commander alone, at a shortfall of 10, a curve over 4.4, and colors under 0.75. Port Karsten's cheap counter and its test from `.local/m12/`. Set the tier from the checks. Keep the fitted detector in the score. Make the reasons of a flagged deck name the check. Report the three numbers and the broken copies graded bad against a control fit of the parent.
 2. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
 3. **The live half of the feedback loop has no run yet.** Three things want a measurement: the judge lane of the triage, one live fix cycle, and one review round. All three need the owner's word, and the cycle also needs `AUTOTUNE_FIXER_CMD` and a harvest whose verdicts carry a snapshot.
 4. **The next whole deck gate run is still deck gate run 19, and it is still outstanding.** It makes the next decks baseline. It also measures PR-39 on real builds, where quality gate run 19 read the model alone.
@@ -124,6 +124,16 @@ The CI step "fake gcs tests" ran no test until 2026-09-10 (D-658). Its filter ma
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 
 ## The ten most recent sessions
+
+### 2026-09-11d: the fits of M-12, and design A for PR-40
+
+**The owner merged #142.** The session ran M-12 for free: a control and eight fits of each design. The control reproduces gate run 19 in every number.
+
+**Design A passes in all eight fits.** Every bar reads as gate run 19. Every A fit grades 9 built decks bad, 10 in agreement, and 5 owner matches. The thresholds differ in the real lists they grade bad: a shortfall of 8 grades about three times as many top lists bad.
+
+**Design B fails in all eight fits** (F-117). Its synergy detector flags more than half of the precons and seven built decks. The precon bar reads 659 to 662 of 788, and the built decks grade as gate run 19.
+
+**The owner picked design A at a shortfall of 10, curve 4.4, and colors 0.75** (D-678). It grades the fewest real lists bad, 615 against 1,003. It grades 4,141 of 5,905 broken copies bad, against 5,730.
 
 ### 2026-09-11c: the plan of M-12, the rules detector
 
@@ -261,24 +271,6 @@ Merged as #126.
 
 **The owner closed PR-29 and answered the three questions of PR-37.** The evidence document stays, because two findings rest on it.
 
-### 2026-09-10: PR-34, the collection formats
-
-Merged as #123.
-
-**The app reads the format out of the file** (D-647). `collections.Detect` reads the header row, and the reader never names the app their file came from. The app refuses a tie between two formats and names both. It refuses a file no format claims with the list it does read.
-
-**F-92 was live, and nobody met it.** The web sent `MANABOX_CSV` on every upload, hardcoded. The app has read an Arena list since D-15, and every one of them failed every row of itself.
-
-**Moxfield reads, on a real export.** The owner exported their own collection, 3193 rows. The documentation of that format disagreed with itself on `Edition` and on `Condition`, and the file settled both.
-
-**The language column was the trap.** `Resolve` refuses a row that is not `en` (D-23), and Moxfield writes `English`. A pass-through reports all 3192 English cards of the export as non-English. The reader then reads that their whole collection failed.
-
-**The measurement.** 3193 rows parsed, none unread, 125 sets. The snapshot of 2026-09-04 resolves it into 3035 entries and 5884 cards. One row stays unresolved, a Japanese printing, and D-23 refuses that one by design.
-
-**One CSV walker serves every format now.** A platform is one signature entry and one row builder.
-
-**OQ-80 is open.** A Moxfield export carries a `Proxy` column, and no other format this app reads carries one. The owner parked the question rather than decide it on no evidence: every row of the one export on record reads False.
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-09c, and 42 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-10, and 42 more sections, word for word. Read it for the detail behind a decision.
