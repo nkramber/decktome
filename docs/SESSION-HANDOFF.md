@@ -6,23 +6,23 @@ This file holds the ten most recent sessions. Every older record sits in `docs/r
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-10)
+## RESUME HERE (2026-09-11)
 
-**The checkout.** `main` is `467dd8c`, which is pull request #138, or a later merge. The branch `fix-pick-waits-for-preferences` holds F-111, F-113, F-114, and D-669 to D-672, as pull request #139. Dependabot's #131, #132, and #133 merged on 2026-09-10. #133, the web bumps, took a fix on its own branch first. The fix holds the regenerated TypeScript of protoc-gen-es 2.14.1, and a type augmentation for the axe matcher on vitest 5's assertion. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
+**The checkout.** `main` is `33d6691`, which is pull request #139, or a later merge. The branch `handoff-bracket5-m11` holds this hand-off, D-673, and the OQ-79 evidence, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
 
-**The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586).
+**The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586). #139 deployed on 2026-09-11 at 04:01 UTC, and `/readyz` answered OK.
 
-**The commander offer never shares a turn with a theme or colors question** (F-111, D-669). One turn asked both and offered three commanders, so the offer ignored the answers it ranks on. A wait for the answers failed question gate run 45, because a reader who skips a question got no offer. **The owner's order is this fix, then a bracket 5 build on the deployed app, then M-11.**
+**The commander offer never shares a turn with a theme or colors question** (F-111, D-669). One turn asked both and offered three commanders, so the offer ignored the answers it ranks on. A wait for the answers failed question gate run 45, because a reader who skips a question got no offer. #139 merged it, and session `ze0Im17gZlFIBRyn7k7Z` on the deployed app asked the theme and the colors alone on turn 1.
 
 **Gate runs 46 and 47 tripped two latent gaps, and #139 closes both** (F-112 to F-114, D-670). A delegation that names its slot declines no other key, and an occasion does not fill the theme. The gate keeps a bar of zero misses, and PR-42 will rerun a missed conversation to report its miss rate (D-671). Gate run 48 reads PASS with both guards.
 
-**The commander offer ignored the bracket of its own turn, and #134 fixed it** (F-104, D-662). The turn built the hints from the restored slots, and the picked power option landed after that. The pick row fires on the turn the power answer arrives (D-631), so the bracket 5 signal ordered almost no deployed offer. Session `vDzEKDPnRZntlyhz8Lqg` read Lotho, Ghalta, and Peregrin Took. The hints take the bracket after the answers now, and a test holds it.
+**The commander offer ignored the bracket of its own turn, and #134 fixed it** (F-104, D-662). The turn built the hints from the restored slots, and the picked power option landed after that. The pick row fires on the turn the power answer arrives (D-631), so the bracket 5 signal ordered almost no deployed offer. Session `vDzEKDPnRZntlyhz8Lqg` read Lotho, Ghalta, and Peregrin Took. The hints take the bracket after the answers now, and a test holds it. Session `ze0Im17gZlFIBRyn7k7Z` of 2026-09-11 confirms it: the offer named Vivi Ornitier, Aang, and Hapatra.
 
 **PR-39 is merged as #135** (D-659 to D-661, F-102, F-103). The source count reads a reliable tap ability alone, and the balance phase trades basics toward the color that falls short. The measurement of D-661 is done. Over run 18 the pass moves four decks. The worst color rises on all four and falls on none, and deck 22 gains two Forests. `docs/reference/pr39-manapass-run18.md` holds the lane.
 
 **Gate run 19 measured PR-39 on the quality model, for nothing** (D-663, F-105). The feature `color_sources` reads the count PR-39 changed, and no gate read the model before. Every bar holds, and the judge agreement rises from 8 to 9 of 25. A control fit on the parent commit matches run 18 in every number. **An item that changes a feature of the quality model reports the three numbers now** (guardrail 14, D-664).
 
-**M-11 has a plan, and it costs nothing** (D-666 to D-668). A print of the weights found the cause of D-659. The detector learns the gap between the top lists and the precons (F-106), and it reads the colors break by its signature (F-107). M-11 fits six variants of the Commander detector, and PR-40 builds the best one. `docs/reference/detector-weights-2026-09-10.md` holds the weights before the change.
+**M-11 runs, and it costs nothing** (D-666 to D-668). The detector learns the gap between the top lists and the precons (F-106), and it reads the colors break by its signature (F-107). A throwaway patch adds the flags `moved`, `base`, `colors`, `nounseen`, and `axis` through the variable `M11`, for Commander alone. **The control reproduces gate run 19 in every number.** At 05:50 UTC four of the fifteen fits had finished, and none meets the gate yet. `.local/m11/README.txt` says where everything is and how to finish.
 
 CAUTION: the `decktome` gcloud configuration named the Wallabee account and project on 2026-09-10, so `use_decktome` put the shell on the wrong project. `scripts/read-session.sh` reads `SESSION_PROJECT` and the account of `CLOUDSDK_CORE_ACCOUNT`, so an environment override reads `decktome-prod` with no change to the configuration. The owner has the commands to repair the configuration.
 
@@ -52,9 +52,9 @@ CAUTION: the `decktome` gcloud configuration named the Wallabee account and proj
 
 **The whole PR-22 gate holds** (D-633). The measured cost at idle reads $9.54 a month gross, and the hourly snapshot tick of D-634 leaves $3.81.
 
-**What waits on the owner.** OQ-67, the Stage B channels. OQ-77, the blocking function of Identity Platform. OQ-79, the commander of an owned-only pool. OQ-80, a proxy and the pool. OQ-82, the power of a bracket (F-110).
+**What waits on the owner.** OQ-67, the Stage B channels. OQ-77, the blocking function of Identity Platform. OQ-79, the commander of an owned-only pool, open for a harder case (D-673). OQ-80, a proxy and the pool. OQ-82, the power of a bracket (F-110).
 
-**CAUTION: the evidence OQ-79 waits for is not on the deployed project.** A fresh owned-only build on the deployed app is the way to it.
+**OQ-79 holds one owned-only session that reads right** (D-673). The harder case, a pool whose best commander the reader does not own, has no session yet.
 
 **CAUTION: a local `make verify` is not the whole story.** It read green for weeks while shellcheck failed (F-89, D-641). Every pull request runs the workflow now.
 
@@ -94,18 +94,19 @@ Seven things a fresh session gets wrong without this file.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
 - The feedback store holds 3 verdicts on 2026-09-09, and every one predates the snapshot of D-635. `make feedback-list VERDICT=` reads both verdicts now (F-87). A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
+- The deployed API, read 2026-09-11: revision `mtg-api-00035-djl` on image `api:33d6691`, from #139. `/readyz` read the card snapshot of 2026-09-10 at 21:02 UTC.
 - Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 18, revise is run 9. Run 48 is the newest whole questions run, and it reads PASS. Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 19 is its newest run.
 - Toolchain: Go 1.27.0, Node 22.23.2, pnpm 9.2.0, firebase-tools 14.14.0, Java 17, Playwright 1.63.0 with its Chromium headless shell (`playwright install chromium`). vitest is 5.0.0 since #133. The first three were verified 2026-09-09.
 
 ## Next steps, in order
 
-1. **Merge the fix of F-111, then the owner builds at bracket 5 on the deployed app.** The owner chose this order (D-669). Read the session with `make read-session`. No turn offers a commander beside the theme or the colors question. The offer ranks on the bracket, which #134 fixed (F-104). An owned-only build also serves step 7.
-2. **Run M-11 after that build. It costs nothing** (D-666, D-667). The roadmap entry names the six variants and the gate. Each fit takes about two minutes over the meta store of gate run 19. The Commander precon bar has three pairs of room, 752 of 788 against 749. PR-40 builds the best variant, and PR-41 fixes the new-set features after it (D-668).
-3. **Read the log of the meta job of 2026-09-11**, after 06:20 UTC. Its quality fit line for Commander names `immaterial`. Check that the count reads above zero. The run also carries the source count of PR-39, and run 19 measured it (D-663).
+1. **Finish M-11** (D-666, D-667). `.local/m11/README.txt` names the files. Copy each finished run from the scratchpad path it names into `.local/m11/runs/`. Then run `bash .local/m11/run_variants.sh` for the rest, about two minutes a fit. Parse with `python3 .local/m11/m11_parse.py .local/m11/runs`. Apply the gate of the roadmap entry, and write `docs/reference/m11-detector-variants-2026-09-11.md`. Ask the owner before PR-40, or before a rules detector when no variant passes.
+2. **Remove the scratch worktrees of M-11.** `git worktree list` names each one. Run `rm <path>/.local`, then `git worktree remove --force <path>`.
+3. **Read the log of the meta job of 2026-09-11**, after 06:20 UTC. Read it with `gcloud logging read` on `resource.type="cloud_run_job"` and the job `mtg-meta`, with `CLOUDSDK_CORE_ACCOUNT` set. Its quality fit line for Commander names `immaterial`. Check that the count reads above zero. The run also carries the source count of PR-39, and run 19 measured it (D-663).
 4. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
 5. **The live half of the feedback loop has no run yet.** Three things want a measurement: the judge lane of the triage, one live fix cycle, and one review round. All three need the owner's word, and the cycle also needs `AUTOTUNE_FIXER_CMD` and a harvest whose verdicts carry a snapshot.
 6. **The next whole deck gate run is still deck gate run 19, and it is still outstanding.** It makes the next decks baseline. It also measures PR-39 on real builds, where quality gate run 19 read the model alone.
-7. **OQ-79 needs runtime evidence.** A fresh owned-only build on the deployed app is the way to it.
+7. **OQ-79 waits for a harder case** (D-673). Session `ze0Im17gZlFIBRyn7k7Z` read right. The next evidence is an owned-only build whose best pool commander the reader does not own.
 8. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
 9. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
 10. **The weekly EDHREC read** falls on 2026-09-14 (D-499, D-565). Run `make meta-refresh`, then `make quality-gate` to a new `QUALITY_GATE_OUT`.
@@ -122,7 +123,21 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 ## The ten most recent sessions
 
+### 2026-09-11: the deployed fix, the bracket 5 session, and M-11 underway
+
+**#139 merged and deployed.** Cloud Build finished at 04:01 UTC, and revision `mtg-api-00035-djl` serves image `api:33d6691`. `/readyz` answered OK.
+
+**The owner built at bracket 5 on the deployed app**, as session `ze0Im17gZlFIBRyn7k7Z`. Turn 1 asked the theme and the colors alone (F-111). The reader declined both, and turn 2 offered Vivi Ornitier, Aang, and Hapatra, the bracket 5 order (F-104). The reader picked Vivi Ornitier from an owned-only pool. The deck marks it and all 74 entries owned, with $0 to buy.
+
+**OQ-79 stays open** (D-673). The session of the old fault no longer exists, and one session proves this case only. The harder case is a pool whose best commander the reader does not own.
+
+**M-11 started, and it costs nothing.** A throwaway patch fits fifteen combinations of the Commander detector in a scratch worktree. The control reproduces gate run 19 in every number. At 05:50 UTC four fits had finished, and none meets the gate. `moved` grades 17 decks bad, and `base` fails the great-over-precon bar at 0.88. `.local/m11/` holds everything a fresh session needs to finish.
+
+**The owner asked for a complete hand-off before a context reset.** This record, the roadmap, and `CLAUDE.md` read the state at 05:50 UTC.
+
 ### 2026-09-10g: F-111, the offer waits for the theme and the colors
+
+Merged as #139.
 
 **The owner reported a turn that makes no sense.** Session `zJPjCkVR44jcSqxrlkmb` asked "Build a bracket-5 commander deck". One turn asked the theme and the colors and offered Vivi Ornitier, Aang, and Hapatra.
 
@@ -272,22 +287,6 @@ Merged as #121.
 
 **The repository.** D-640 is gone (D-642). The owner permits a reader's exact words in a committed file, so the harvest commits and a case joins the gate file that owns it. The pull request diff is the accept step.
 
-### 2026-09-09: the review process, the user record, and a public repository
-
-Seven pull requests merged, #113 to #119.
-
-**The question workflow.** Gate run 43 read FAIL and found a regression of D-630. `Skip` fills a key and `CloseStalled` does not. So the commander offer waited for a power the net closed. A `Requires` slot reads the skipped keys now (D-631). Run 44 reads PASS.
-
-**The decks.** The upgrade probe measured D-628 for $0.32 and refuted the estimate of D-629: the bands answered 1 of the 8 upgrade findings, not 7. The Turtle Power precon leaves 18 free slots and the role minimums need 17, so an in-band upgrade adds no card of the theme. The owner parked F-85 for want of a second precon (D-632).
-
-**The money.** The PR-22 gate closed on a measured cost at idle of $9.54 a month gross (D-633). The snapshot cron held 80 percent of it, and every tick paid a container start to learn there was nothing to do (F-86). The tick runs hourly now, which leaves $3.81 (D-634).
-
-**PR-28a.** PR-28 split into three (D-636). A verdict keeps the object it names, because a reader deletes the deck or the chat they complained about (D-635). `make feedback-harvest` writes a dated document and a JSONL file, and the watermark comes from those files.
-
-**The user record.** `users/<uid>` holds the email, the dates, and six counters (D-638). The owner ran the backfill.
-
-**The process and the repository.** `gitar-bot` reviews every pull request, and the session answers each finding before it asks for a merge (D-637). The repository went public: every pull request runs the whole workflow (D-639), and no harvest file enters the repository (D-640). The first pull request on Actions found two broken checks. No pull request ran either one before that day (D-641, F-89).
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-08, and 42 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-08, the first record of 2026-09-09, and 42 more sections, word for word. Read it for the detail behind a decision.
