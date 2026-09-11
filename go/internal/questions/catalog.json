@@ -318,6 +318,10 @@
         "suggested": true,
         "requires": [
           "power"
+        ],
+        "not_beside": [
+          "theme",
+          "colors"
         ]
       },
       "key": "commander_pick",

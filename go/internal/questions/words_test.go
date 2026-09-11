@@ -351,6 +351,60 @@ func TestOccasionIsNotAPowerStep(t *testing.T) {
 	}
 }
 
+// TestOccasionIsNotATheme is D-670. The classifier can write "team event"
+// as the theme, and the theme row then never asks for the plan.
+func TestOccasionIsNotATheme(t *testing.T) {
+	for _, s := range []string{"team event", "a store event", "game night", "LGS"} {
+		if !occasionTheme(s) {
+			t.Errorf("%q: an occasion was kept as a theme", s)
+		}
+	}
+	for _, s := range []string{"control", "lifegain", "artifacts and lifegain", "storm", "eventide"} {
+		if occasionTheme(s) {
+			t.Errorf("%q: a theme was dropped as an occasion", s)
+		}
+	}
+}
+
+// TestDelegationNamesItsSlot is D-670. A delegation that names its slot
+// hands over that slot alone, and a bare delegation hands over every open
+// key (D-93).
+func TestDelegationNamesItsSlot(t *testing.T) {
+	cases := []struct {
+		msg         string
+		named       []string
+		bare, found bool
+	}{
+		{"White and blue. You pick the commander.", []string{"commander", "commander_pick"}, false, true},
+		{"Your call on the colors and the budget.", []string{"colors", "budget", "budget_scope"}, false, true},
+		{"You pick the commander and the rest.", []string{"commander", "commander_pick"}, true, true},
+		{"I dunno, you pick.", nil, true, true},
+		{"Whatever you think is best.", nil, true, true},
+		{"Bracket 3. You decide the rest.", nil, true, true},
+		{"No preference on the colors.", nil, false, false},
+		{"For the commander, you pick.", []string{"commander", "commander_pick"}, false, true},
+		{"As for colors, you decide.", []string{"colors"}, false, true},
+		{"The commander is up to you.", []string{"commander", "commander_pick"}, false, true},
+		{"The rest is up to you.", nil, true, true},
+		{"The budget is tight, you pick the commander.", []string{"commander", "commander_pick"}, false, true},
+	}
+	for _, c := range cases {
+		named, bare, found := delegationObjects(c.msg)
+		if bare != c.bare || found != c.found {
+			t.Errorf("%q: bare %v found %v, want bare %v found %v", c.msg, bare, found, c.bare, c.found)
+		}
+		if len(named) != len(c.named) {
+			t.Errorf("%q: named %v, want %v", c.msg, named, c.named)
+			continue
+		}
+		for _, k := range c.named {
+			if !named[k] {
+				t.Errorf("%q: %s is not named, want %v", c.msg, k, c.named)
+			}
+		}
+	}
+}
+
 // TestUserWordsDropsTheQuotedQuestion is D-280. The format question
 // names three formats, and the word rules must not read the echo as a
 // request for three decks.

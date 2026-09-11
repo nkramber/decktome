@@ -1,0 +1,1487 @@
+{"suite":"questions","run_id":"pr7-question-gate-run46","date":"2026-09-11","commit":"92f270d","roles":{"ask":{"provider":"openai","model":"gpt-5.6-luna","effort":"low"},"classify":{"provider":"openai","model":"gpt-5.6-luna","effort":"none"}},"snapshot":"2026-09-04","prompts":{"questions":18},"versions":{"conversations":"2026-09-05","slots_snapshot":"5"},"calls":665,"cost_usd":0.19197514000000016,"seconds":1310.581178166,"verdict":"FAIL","lower":["error","premature","dead_end","lint_findings","invented","refused_rewords","stalls","closed_by_net"]}
+{"item":"1","metric":"error","value":0,"kind":"gate"}
+{"item":"1","metric":"premature","value":0,"kind":"gate"}
+{"item":"1","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"1","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"1","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"1","metric":"slot_colors","value":1,"kind":"gate","detail":"want WB, got WB"}
+{"item":"1","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 3, got bracket 3"}
+{"item":"1","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want owned_first, got owned_first"}
+{"item":"1","metric":"slot_commander","value":1,"kind":"gate","detail":"want Karlov of the Ghost Council, got Karlov of the Ghost Council"}
+{"item":"1","metric":"slot_budget","value":1,"kind":"gate","detail":"want 50 to buy, got 50 to buy"}
+{"item":"1","metric":"slot_theme","value":1,"kind":"gate","detail":"want lifegain, got lifegain"}
+{"item":"1","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"1","metric":"asked","value":6,"kind":"info"}
+{"item":"1","metric":"invented","value":0,"kind":"info"}
+{"item":"1","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"1","metric":"stalls","value":0,"kind":"info"}
+{"item":"1","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"2","metric":"error","value":0,"kind":"gate"}
+{"item":"2","metric":"premature","value":0,"kind":"gate"}
+{"item":"2","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"2","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"2","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"2","metric":"slot_colors","value":1,"kind":"gate","detail":"want WU, got WU"}
+{"item":"2","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 3, got bracket 3"}
+{"item":"2","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want owned_first, got owned_first"}
+{"item":"2","metric":"slot_commander","value":1,"kind":"gate","detail":"want Brago, King Eternal, got Brago, King Eternal"}
+{"item":"2","metric":"slot_theme","value":1,"kind":"gate","detail":"want blink, got blink"}
+{"item":"2","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"2","metric":"asked","value":5,"kind":"info"}
+{"item":"2","metric":"invented","value":0,"kind":"info"}
+{"item":"2","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"2","metric":"stalls","value":0,"kind":"info"}
+{"item":"2","metric":"closed_by_net","value":1,"kind":"info"}
+{"item":"3","metric":"error","value":0,"kind":"gate"}
+{"item":"3","metric":"premature","value":0,"kind":"gate","detail":"theme (asked, no answer)"}
+{"item":"3","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"3","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"3","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"3","metric":"slot_colors","value":1,"kind":"gate","detail":"want BG, got BG"}
+{"item":"3","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 3, got bracket 3"}
+{"item":"3","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want owned_first, got owned_first"}
+{"item":"3","metric":"slot_commander","value":1,"kind":"gate","detail":"want Grist, the Hunger Tide, got Grist, the Hunger Tide"}
+{"item":"3","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"3","metric":"asked","value":5,"kind":"info"}
+{"item":"3","metric":"invented","value":0,"kind":"info"}
+{"item":"3","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"3","metric":"stalls","value":0,"kind":"info"}
+{"item":"3","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"4","metric":"error","value":0,"kind":"gate"}
+{"item":"4","metric":"premature","value":0,"kind":"gate"}
+{"item":"4","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"4","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"4","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"4","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 2, got bracket 2"}
+{"item":"4","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want owned_first, got owned_first"}
+{"item":"4","metric":"slot_commander","value":1,"kind":"gate","detail":"want delegated, got delegated"}
+{"item":"4","metric":"slot_theme","value":1,"kind":"gate","detail":"want sacrifice, got A sacrifice deck"}
+{"item":"4","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"4","metric":"asked","value":5,"kind":"info"}
+{"item":"4","metric":"invented","value":0,"kind":"info"}
+{"item":"4","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"4","metric":"stalls","value":0,"kind":"info"}
+{"item":"4","metric":"closed_by_net","value":1,"kind":"info"}
+{"item":"5","metric":"error","value":0,"kind":"gate"}
+{"item":"5","metric":"premature","value":0,"kind":"gate"}
+{"item":"5","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"5","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"5","metric":"slot_colors","value":1,"kind":"gate","detail":"want RG, got RG"}
+{"item":"5","metric":"slot_power","value":1,"kind":"gate","detail":"want casual, got casual"}
+{"item":"5","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"5","metric":"slot_theme","value":1,"kind":"gate","detail":"want dragon, got dragon"}
+{"item":"5","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"5","metric":"asked","value":6,"kind":"info"}
+{"item":"5","metric":"invented","value":0,"kind":"info"}
+{"item":"5","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"5","metric":"stalls","value":0,"kind":"info"}
+{"item":"5","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"6","metric":"error","value":0,"kind":"gate"}
+{"item":"6","metric":"premature","value":0,"kind":"gate"}
+{"item":"6","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"6","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"6","metric":"slot_format","value":1,"kind":"gate","detail":"want modern, got modern"}
+{"item":"6","metric":"slot_power","value":1,"kind":"gate","detail":"want tournament, got tournament"}
+{"item":"6","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"6","metric":"slot_budget","value":1,"kind":"gate","detail":"want 300, got 300 to buy"}
+{"item":"6","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"6","metric":"asked","value":3,"kind":"info"}
+{"item":"6","metric":"invented","value":0,"kind":"info"}
+{"item":"6","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"6","metric":"stalls","value":0,"kind":"info"}
+{"item":"6","metric":"closed_by_net","value":1,"kind":"info"}
+{"item":"7","metric":"error","value":0,"kind":"info"}
+{"item":"7","metric":"premature","value":0,"kind":"info","detail":"format (asked, no answer), colors (asked, no answer)"}
+{"item":"7","metric":"dead_end","value":0,"kind":"info"}
+{"item":"7","metric":"lint_findings","value":0,"kind":"info"}
+{"item":"7","metric":"catalog_only","value":1,"kind":"info","detail":" (probe)"}
+{"item":"7","metric":"asked","value":6,"kind":"info"}
+{"item":"7","metric":"invented","value":0,"kind":"info"}
+{"item":"7","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"7","metric":"stalls","value":0,"kind":"info"}
+{"item":"7","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"8","metric":"error","value":0,"kind":"gate"}
+{"item":"8","metric":"premature","value":0,"kind":"gate"}
+{"item":"8","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"8","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"8","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"8","metric":"slot_colors","value":1,"kind":"gate","detail":"want UB, got UB"}
+{"item":"8","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 3, got bracket 3"}
+{"item":"8","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want owned_first, got owned_first"}
+{"item":"8","metric":"slot_commander","value":1,"kind":"gate","detail":"want Bruvac the Grandiloquent, got Bruvac the Grandiloquent"}
+{"item":"8","metric":"slot_budget","value":1,"kind":"gate","detail":"want 100, got 100"}
+{"item":"8","metric":"slot_theme","value":1,"kind":"gate","detail":"want mill, got mill"}
+{"item":"8","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"8","metric":"asked","value":6,"kind":"info"}
+{"item":"8","metric":"invented","value":0,"kind":"info"}
+{"item":"8","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"8","metric":"stalls","value":0,"kind":"info"}
+{"item":"8","metric":"closed_by_net","value":1,"kind":"info"}
+{"item":"9","metric":"error","value":0,"kind":"gate"}
+{"item":"9","metric":"premature","value":0,"kind":"gate"}
+{"item":"9","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"9","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"9","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"9","metric":"slot_colors","value":1,"kind":"gate","detail":"want WU, got WU"}
+{"item":"9","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 3, got bracket 3"}
+{"item":"9","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want owned_first, got owned_first"}
+{"item":"9","metric":"slot_commander","value":1,"kind":"gate","detail":"want Brago, King Eternal, got Brago, King Eternal"}
+{"item":"9","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"9","metric":"asked","value":3,"kind":"info"}
+{"item":"9","metric":"invented","value":0,"kind":"info"}
+{"item":"9","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"9","metric":"stalls","value":0,"kind":"info"}
+{"item":"9","metric":"closed_by_net","value":1,"kind":"info"}
+{"item":"10","metric":"error","value":0,"kind":"gate"}
+{"item":"10","metric":"premature","value":0,"kind":"gate"}
+{"item":"10","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"10","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"10","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"10","metric":"slot_colors","value":1,"kind":"gate","detail":"want WB, got WB"}
+{"item":"10","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 3, got bracket 3"}
+{"item":"10","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want owned_first, got owned_first"}
+{"item":"10","metric":"slot_budget","value":1,"kind":"gate","detail":"want 60, got 60 to buy"}
+{"item":"10","metric":"slot_theme","value":1,"kind":"gate","detail":"want lifegain, got lifegain"}
+{"item":"10","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"10","metric":"asked","value":5,"kind":"info"}
+{"item":"10","metric":"invented","value":0,"kind":"info"}
+{"item":"10","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"10","metric":"stalls","value":0,"kind":"info"}
+{"item":"10","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"11","metric":"error","value":0,"kind":"info"}
+{"item":"11","metric":"premature","value":0,"kind":"info"}
+{"item":"11","metric":"dead_end","value":0,"kind":"info"}
+{"item":"11","metric":"lint_findings","value":0,"kind":"info"}
+{"item":"11","metric":"catalog_only","value":1,"kind":"info","detail":" (after a build)"}
+{"item":"11","metric":"asked","value":0,"kind":"info"}
+{"item":"11","metric":"invented","value":0,"kind":"info"}
+{"item":"11","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"11","metric":"stalls","value":0,"kind":"info"}
+{"item":"11","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"12","metric":"error","value":0,"kind":"info"}
+{"item":"12","metric":"premature","value":0,"kind":"info"}
+{"item":"12","metric":"dead_end","value":0,"kind":"info"}
+{"item":"12","metric":"lint_findings","value":0,"kind":"info"}
+{"item":"12","metric":"catalog_only","value":1,"kind":"info","detail":" (after a build)"}
+{"item":"12","metric":"asked","value":0,"kind":"info"}
+{"item":"12","metric":"invented","value":0,"kind":"info"}
+{"item":"12","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"12","metric":"stalls","value":0,"kind":"info"}
+{"item":"12","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"13","metric":"error","value":0,"kind":"gate"}
+{"item":"13","metric":"premature","value":0,"kind":"gate"}
+{"item":"13","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"13","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"13","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"13","metric":"slot_colors","value":1,"kind":"gate","detail":"want WB, got WB"}
+{"item":"13","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 3, got bracket 3"}
+{"item":"13","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want owned_first, got owned_first"}
+{"item":"13","metric":"slot_commander","value":1,"kind":"gate","detail":"want Karlov of the Ghost Council, got Karlov of the Ghost Council"}
+{"item":"13","metric":"slot_theme","value":1,"kind":"gate","detail":"want lifegain, got lifegain"}
+{"item":"13","metric":"slot_locked","value":1,"kind":"gate","detail":"want Sanguine Bond, got Sanguine Bond"}
+{"item":"13","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"13","metric":"asked","value":3,"kind":"info"}
+{"item":"13","metric":"invented","value":0,"kind":"info"}
+{"item":"13","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"13","metric":"stalls","value":0,"kind":"info"}
+{"item":"13","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"14","metric":"error","value":0,"kind":"gate"}
+{"item":"14","metric":"premature","value":0,"kind":"gate"}
+{"item":"14","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"14","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"14","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"14","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 3, got bracket 3"}
+{"item":"14","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"14","metric":"slot_commander","value":1,"kind":"gate","detail":"want *, got Aerith Gainsborough"}
+{"item":"14","metric":"slot_theme","value":1,"kind":"gate","detail":"want lifegain, got lifegain"}
+{"item":"14","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"14","metric":"asked","value":5,"kind":"info"}
+{"item":"14","metric":"invented","value":0,"kind":"info"}
+{"item":"14","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"14","metric":"stalls","value":0,"kind":"info"}
+{"item":"14","metric":"closed_by_net","value":1,"kind":"info"}
+{"item":"15","metric":"error","value":0,"kind":"gate"}
+{"item":"15","metric":"premature","value":0,"kind":"gate"}
+{"item":"15","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"15","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"15","metric":"slot_format","value":1,"kind":"gate","detail":"want standard, got standard"}
+{"item":"15","metric":"slot_colors","value":1,"kind":"gate","detail":"want WR, got WR"}
+{"item":"15","metric":"slot_power","value":1,"kind":"gate","detail":"want fnm, got fnm"}
+{"item":"15","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"15","metric":"slot_theme","value":1,"kind":"gate","detail":"want aggro, got aggro"}
+{"item":"15","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"15","metric":"asked","value":4,"kind":"info"}
+{"item":"15","metric":"invented","value":0,"kind":"info"}
+{"item":"15","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"15","metric":"stalls","value":0,"kind":"info"}
+{"item":"15","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"16","metric":"error","value":0,"kind":"gate"}
+{"item":"16","metric":"premature","value":0,"kind":"gate"}
+{"item":"16","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"16","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"16","metric":"slot_format","value":1,"kind":"gate","detail":"want modern, got modern"}
+{"item":"16","metric":"slot_power","value":1,"kind":"gate","detail":"want tournament, got tournament"}
+{"item":"16","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"16","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"16","metric":"asked","value":1,"kind":"info"}
+{"item":"16","metric":"invented","value":0,"kind":"info"}
+{"item":"16","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"16","metric":"stalls","value":0,"kind":"info"}
+{"item":"16","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"17","metric":"error","value":0,"kind":"gate"}
+{"item":"17","metric":"premature","value":0,"kind":"gate"}
+{"item":"17","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"17","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"17","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"17","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 2, got bracket 2"}
+{"item":"17","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want owned_first, got owned_first"}
+{"item":"17","metric":"slot_theme","value":1,"kind":"gate","detail":"want superfriends, got superfriends"}
+{"item":"17","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"17","metric":"asked","value":2,"kind":"info"}
+{"item":"17","metric":"invented","value":0,"kind":"info"}
+{"item":"17","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"17","metric":"stalls","value":0,"kind":"info"}
+{"item":"17","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"18","metric":"error","value":0,"kind":"info"}
+{"item":"18","metric":"premature","value":0,"kind":"info"}
+{"item":"18","metric":"dead_end","value":0,"kind":"info"}
+{"item":"18","metric":"lint_findings","value":0,"kind":"info"}
+{"item":"18","metric":"catalog_only","value":1,"kind":"info","detail":" (probe)"}
+{"item":"18","metric":"asked","value":3,"kind":"info"}
+{"item":"18","metric":"invented","value":0,"kind":"info"}
+{"item":"18","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"18","metric":"stalls","value":0,"kind":"info"}
+{"item":"18","metric":"closed_by_net","value":1,"kind":"info"}
+{"item":"19","metric":"error","value":0,"kind":"gate"}
+{"item":"19","metric":"premature","value":0,"kind":"gate"}
+{"item":"19","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"19","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"19","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"19","metric":"slot_colors","value":1,"kind":"gate","detail":"want WG, got WG"}
+{"item":"19","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 3, got bracket 3"}
+{"item":"19","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want owned_first, got owned_first"}
+{"item":"19","metric":"slot_commander","value":1,"kind":"gate","detail":"want delegated, got delegated"}
+{"item":"19","metric":"slot_theme","value":1,"kind":"gate","detail":"want token, got token deck"}
+{"item":"19","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"19","metric":"asked","value":4,"kind":"info"}
+{"item":"19","metric":"invented","value":0,"kind":"info"}
+{"item":"19","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"19","metric":"stalls","value":0,"kind":"info"}
+{"item":"19","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"20","metric":"error","value":0,"kind":"gate"}
+{"item":"20","metric":"premature","value":0,"kind":"gate"}
+{"item":"20","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"20","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"20","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"20","metric":"slot_colors","value":1,"kind":"gate","detail":"want WRG, got WRG"}
+{"item":"20","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 2, got bracket 2"}
+{"item":"20","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want owned_first, got owned_first"}
+{"item":"20","metric":"slot_commander","value":1,"kind":"gate","detail":"want Gishath, Sun's Avatar, got Gishath, Sun's Avatar"}
+{"item":"20","metric":"slot_theme","value":1,"kind":"gate","detail":"want dinosaur, got Dinosaurs"}
+{"item":"20","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"20","metric":"asked","value":5,"kind":"info"}
+{"item":"20","metric":"invented","value":0,"kind":"info"}
+{"item":"20","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"20","metric":"stalls","value":0,"kind":"info"}
+{"item":"20","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"21","metric":"error","value":0,"kind":"info"}
+{"item":"21","metric":"premature","value":0,"kind":"info","detail":"format (asked, no answer)"}
+{"item":"21","metric":"dead_end","value":0,"kind":"info"}
+{"item":"21","metric":"lint_findings","value":0,"kind":"info"}
+{"item":"21","metric":"catalog_only","value":1,"kind":"info","detail":" (probe)"}
+{"item":"21","metric":"asked","value":6,"kind":"info"}
+{"item":"21","metric":"invented","value":0,"kind":"info"}
+{"item":"21","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"21","metric":"stalls","value":0,"kind":"info"}
+{"item":"21","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"22","metric":"error","value":0,"kind":"gate"}
+{"item":"22","metric":"premature","value":0,"kind":"gate"}
+{"item":"22","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"22","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"22","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"22","metric":"slot_colors","value":1,"kind":"gate","detail":"want UR, got UR"}
+{"item":"22","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 3, got bracket 3"}
+{"item":"22","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want owned_first, got owned_first"}
+{"item":"22","metric":"slot_commander","value":1,"kind":"gate","detail":"want delegated, got delegated"}
+{"item":"22","metric":"slot_theme","value":1,"kind":"gate","detail":"want extra turn, got extra turns"}
+{"item":"22","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"22","metric":"asked","value":6,"kind":"info"}
+{"item":"22","metric":"invented","value":0,"kind":"info"}
+{"item":"22","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"22","metric":"stalls","value":0,"kind":"info"}
+{"item":"22","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"23","metric":"error","value":0,"kind":"gate"}
+{"item":"23","metric":"premature","value":0,"kind":"gate"}
+{"item":"23","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"23","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"23","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"23","metric":"slot_colors","value":1,"kind":"gate","detail":"want RG, got RG"}
+{"item":"23","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 3, got bracket 3"}
+{"item":"23","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want owned_first, got owned_first"}
+{"item":"23","metric":"slot_commander","value":1,"kind":"gate","detail":"want delegated, got delegated"}
+{"item":"23","metric":"slot_theme","value":1,"kind":"gate","detail":"want land destruction, got land destruction"}
+{"item":"23","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"23","metric":"asked","value":5,"kind":"info"}
+{"item":"23","metric":"invented","value":0,"kind":"info"}
+{"item":"23","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"23","metric":"stalls","value":1,"kind":"info"}
+{"item":"23","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"24","metric":"error","value":0,"kind":"gate"}
+{"item":"24","metric":"premature","value":0,"kind":"gate"}
+{"item":"24","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"24","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"24","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"24","metric":"slot_colors","value":1,"kind":"gate","detail":"want WU, got WU"}
+{"item":"24","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 4, got bracket 4"}
+{"item":"24","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want owned_only, got owned_only"}
+{"item":"24","metric":"slot_commander","value":1,"kind":"gate","detail":"want delegated, got delegated"}
+{"item":"24","metric":"slot_theme","value":1,"kind":"gate","detail":"want stax, got stax"}
+{"item":"24","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"24","metric":"asked","value":4,"kind":"info"}
+{"item":"24","metric":"invented","value":0,"kind":"info"}
+{"item":"24","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"24","metric":"stalls","value":0,"kind":"info"}
+{"item":"24","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"25","metric":"error","value":0,"kind":"gate"}
+{"item":"25","metric":"premature","value":0,"kind":"gate"}
+{"item":"25","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"25","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"25","metric":"slot_format","value":1,"kind":"gate","detail":"want modern, got modern"}
+{"item":"25","metric":"slot_power","value":1,"kind":"gate","detail":"want tournament, got tournament"}
+{"item":"25","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"25","metric":"slot_budget","value":1,"kind":"gate","detail":"want 400, got 400 to buy"}
+{"item":"25","metric":"slot_theme","value":1,"kind":"gate","detail":"want infect, got infect"}
+{"item":"25","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"25","metric":"asked","value":2,"kind":"info"}
+{"item":"25","metric":"invented","value":0,"kind":"info"}
+{"item":"25","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"25","metric":"stalls","value":1,"kind":"info"}
+{"item":"25","metric":"closed_by_net","value":1,"kind":"info"}
+{"item":"26","metric":"error","value":0,"kind":"info"}
+{"item":"26","metric":"premature","value":0,"kind":"info"}
+{"item":"26","metric":"dead_end","value":0,"kind":"info"}
+{"item":"26","metric":"lint_findings","value":0,"kind":"info"}
+{"item":"26","metric":"catalog_only","value":1,"kind":"info","detail":" (probe)"}
+{"item":"26","metric":"asked","value":3,"kind":"info"}
+{"item":"26","metric":"invented","value":0,"kind":"info"}
+{"item":"26","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"26","metric":"stalls","value":0,"kind":"info"}
+{"item":"26","metric":"closed_by_net","value":1,"kind":"info"}
+{"item":"27","metric":"error","value":0,"kind":"gate"}
+{"item":"27","metric":"premature","value":0,"kind":"gate"}
+{"item":"27","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"27","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"27","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"27","metric":"slot_colors","value":1,"kind":"gate","detail":"want BG, got BG"}
+{"item":"27","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 3, got bracket 3"}
+{"item":"27","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want owned_first, got owned_first"}
+{"item":"27","metric":"slot_commander","value":1,"kind":"gate","detail":"want delegated, got delegated"}
+{"item":"27","metric":"slot_theme","value":1,"kind":"gate","detail":"want sacrifice, got sacrifice"}
+{"item":"27","metric":"slot_locked","value":1,"kind":"gate","detail":"want Grist, the Hunger Tide, got Grist, the Hunger Tide"}
+{"item":"27","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"27","metric":"asked","value":6,"kind":"info"}
+{"item":"27","metric":"invented","value":0,"kind":"info"}
+{"item":"27","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"27","metric":"stalls","value":0,"kind":"info"}
+{"item":"27","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"28","metric":"error","value":0,"kind":"gate"}
+{"item":"28","metric":"premature","value":0,"kind":"gate"}
+{"item":"28","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"28","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"28","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"28","metric":"slot_colors","value":1,"kind":"gate","detail":"want BG, got BG"}
+{"item":"28","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 3, got bracket 3"}
+{"item":"28","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want owned_first, got owned_first"}
+{"item":"28","metric":"slot_commander","value":1,"kind":"gate","detail":"want Meren of Clan Nel Toth, got Meren of Clan Nel Toth"}
+{"item":"28","metric":"slot_theme","value":1,"kind":"gate","detail":"want reanimat, got Reanimate one big creature, not a value loop"}
+{"item":"28","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"28","metric":"asked","value":5,"kind":"info"}
+{"item":"28","metric":"invented","value":0,"kind":"info"}
+{"item":"28","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"28","metric":"stalls","value":0,"kind":"info"}
+{"item":"28","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"29","metric":"error","value":0,"kind":"gate"}
+{"item":"29","metric":"premature","value":0,"kind":"gate"}
+{"item":"29","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"29","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"29","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"29","metric":"slot_colors","value":1,"kind":"gate","detail":"want UR, got UR"}
+{"item":"29","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 3, got bracket 3"}
+{"item":"29","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want owned_first, got owned_first"}
+{"item":"29","metric":"slot_commander","value":1,"kind":"gate","detail":"want delegated, got delegated"}
+{"item":"29","metric":"slot_budget","value":1,"kind":"gate","detail":"want 200 to buy, got 200 to buy"}
+{"item":"29","metric":"slot_theme","value":1,"kind":"gate","detail":"want artifact, got artifact"}
+{"item":"29","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"29","metric":"asked","value":5,"kind":"info"}
+{"item":"29","metric":"invented","value":0,"kind":"info"}
+{"item":"29","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"29","metric":"stalls","value":0,"kind":"info"}
+{"item":"29","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"30","metric":"error","value":0,"kind":"info"}
+{"item":"30","metric":"premature","value":0,"kind":"info"}
+{"item":"30","metric":"dead_end","value":0,"kind":"info"}
+{"item":"30","metric":"lint_findings","value":0,"kind":"info"}
+{"item":"30","metric":"catalog_only","value":1,"kind":"info","detail":" (after a build)"}
+{"item":"30","metric":"asked","value":0,"kind":"info"}
+{"item":"30","metric":"invented","value":0,"kind":"info"}
+{"item":"30","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"30","metric":"stalls","value":0,"kind":"info"}
+{"item":"30","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"31","metric":"error","value":0,"kind":"gate"}
+{"item":"31","metric":"premature","value":0,"kind":"gate"}
+{"item":"31","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"31","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"31","metric":"slot_format","value":1,"kind":"gate","detail":"want modern, got modern"}
+{"item":"31","metric":"slot_power","value":1,"kind":"gate","detail":"want tournament, got tournament"}
+{"item":"31","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"31","metric":"slot_budget","value":1,"kind":"gate","detail":"want 200, got 200 to buy"}
+{"item":"31","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"31","metric":"asked","value":3,"kind":"info"}
+{"item":"31","metric":"invented","value":0,"kind":"info"}
+{"item":"31","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"31","metric":"stalls","value":0,"kind":"info"}
+{"item":"31","metric":"closed_by_net","value":1,"kind":"info"}
+{"item":"32","metric":"error","value":0,"kind":"gate"}
+{"item":"32","metric":"premature","value":0,"kind":"gate"}
+{"item":"32","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"32","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"32","metric":"slot_format","value":1,"kind":"gate","detail":"want standard, got standard"}
+{"item":"32","metric":"slot_colors","value":1,"kind":"gate","detail":"want R, got R"}
+{"item":"32","metric":"slot_power","value":1,"kind":"gate","detail":"want casual, got casual"}
+{"item":"32","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"32","metric":"slot_budget","value":1,"kind":"gate","detail":"want 25, got 25 to buy"}
+{"item":"32","metric":"slot_theme","value":1,"kind":"gate","detail":"want burn, got Burn"}
+{"item":"32","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"32","metric":"asked","value":3,"kind":"info"}
+{"item":"32","metric":"invented","value":0,"kind":"info"}
+{"item":"32","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"32","metric":"stalls","value":0,"kind":"info"}
+{"item":"32","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"33","metric":"error","value":0,"kind":"gate"}
+{"item":"33","metric":"premature","value":0,"kind":"gate"}
+{"item":"33","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"33","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"33","metric":"slot_format","value":1,"kind":"gate","detail":"want modern, got modern"}
+{"item":"33","metric":"slot_colors","value":1,"kind":"gate","detail":"want UR, got UR"}
+{"item":"33","metric":"slot_power","value":1,"kind":"gate","detail":"want fnm, got fnm"}
+{"item":"33","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"33","metric":"slot_budget","value":1,"kind":"gate","detail":"want 600, got 600 to buy"}
+{"item":"33","metric":"slot_theme","value":1,"kind":"gate","detail":"want tempo, got tempo"}
+{"item":"33","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"33","metric":"asked","value":4,"kind":"info"}
+{"item":"33","metric":"invented","value":0,"kind":"info"}
+{"item":"33","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"33","metric":"stalls","value":0,"kind":"info"}
+{"item":"33","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"34","metric":"error","value":0,"kind":"gate"}
+{"item":"34","metric":"premature","value":0,"kind":"gate"}
+{"item":"34","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"34","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"34","metric":"slot_power","value":1,"kind":"gate","detail":"want casual, got casual"}
+{"item":"34","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"34","metric":"slot_theme","value":1,"kind":"gate","detail":"want prison, got artifact prison"}
+{"item":"34","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"34","metric":"asked","value":5,"kind":"info"}
+{"item":"34","metric":"invented","value":0,"kind":"info"}
+{"item":"34","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"34","metric":"stalls","value":0,"kind":"info"}
+{"item":"34","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"35","metric":"error","value":0,"kind":"info"}
+{"item":"35","metric":"premature","value":0,"kind":"info"}
+{"item":"35","metric":"dead_end","value":0,"kind":"info"}
+{"item":"35","metric":"lint_findings","value":0,"kind":"info"}
+{"item":"35","metric":"catalog_only","value":1,"kind":"info","detail":" (probe)"}
+{"item":"35","metric":"asked","value":7,"kind":"info"}
+{"item":"35","metric":"invented","value":0,"kind":"info"}
+{"item":"35","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"35","metric":"stalls","value":0,"kind":"info"}
+{"item":"35","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"36","metric":"error","value":0,"kind":"info"}
+{"item":"36","metric":"premature","value":0,"kind":"info"}
+{"item":"36","metric":"dead_end","value":0,"kind":"info"}
+{"item":"36","metric":"lint_findings","value":0,"kind":"info"}
+{"item":"36","metric":"catalog_only","value":1,"kind":"info","detail":" (probe)"}
+{"item":"36","metric":"asked","value":4,"kind":"info"}
+{"item":"36","metric":"invented","value":0,"kind":"info"}
+{"item":"36","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"36","metric":"stalls","value":0,"kind":"info"}
+{"item":"36","metric":"closed_by_net","value":1,"kind":"info"}
+{"item":"37","metric":"error","value":0,"kind":"info"}
+{"item":"37","metric":"premature","value":0,"kind":"info"}
+{"item":"37","metric":"dead_end","value":0,"kind":"info"}
+{"item":"37","metric":"lint_findings","value":0,"kind":"info"}
+{"item":"37","metric":"catalog_only","value":1,"kind":"info","detail":" (probe)"}
+{"item":"37","metric":"asked","value":1,"kind":"info"}
+{"item":"37","metric":"invented","value":0,"kind":"info"}
+{"item":"37","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"37","metric":"stalls","value":1,"kind":"info"}
+{"item":"37","metric":"closed_by_net","value":1,"kind":"info"}
+{"item":"38","metric":"error","value":0,"kind":"info"}
+{"item":"38","metric":"premature","value":0,"kind":"info"}
+{"item":"38","metric":"dead_end","value":0,"kind":"info"}
+{"item":"38","metric":"lint_findings","value":0,"kind":"info"}
+{"item":"38","metric":"catalog_only","value":1,"kind":"info","detail":" (probe)"}
+{"item":"38","metric":"asked","value":0,"kind":"info"}
+{"item":"38","metric":"invented","value":0,"kind":"info"}
+{"item":"38","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"38","metric":"stalls","value":0,"kind":"info"}
+{"item":"38","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"39","metric":"error","value":0,"kind":"info"}
+{"item":"39","metric":"premature","value":0,"kind":"info"}
+{"item":"39","metric":"dead_end","value":0,"kind":"info"}
+{"item":"39","metric":"lint_findings","value":0,"kind":"info"}
+{"item":"39","metric":"catalog_only","value":1,"kind":"info","detail":" (probe)"}
+{"item":"39","metric":"asked","value":5,"kind":"info"}
+{"item":"39","metric":"invented","value":0,"kind":"info"}
+{"item":"39","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"39","metric":"stalls","value":0,"kind":"info"}
+{"item":"39","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"40","metric":"error","value":0,"kind":"info"}
+{"item":"40","metric":"premature","value":0,"kind":"info","detail":"commander (asked, no answer)"}
+{"item":"40","metric":"dead_end","value":0,"kind":"info"}
+{"item":"40","metric":"lint_findings","value":0,"kind":"info"}
+{"item":"40","metric":"catalog_only","value":1,"kind":"info","detail":" (probe)"}
+{"item":"40","metric":"asked","value":5,"kind":"info"}
+{"item":"40","metric":"invented","value":0,"kind":"info"}
+{"item":"40","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"40","metric":"stalls","value":0,"kind":"info"}
+{"item":"40","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"41","metric":"error","value":0,"kind":"info"}
+{"item":"41","metric":"premature","value":0,"kind":"info","detail":"commander (asked, no answer)"}
+{"item":"41","metric":"dead_end","value":0,"kind":"info"}
+{"item":"41","metric":"lint_findings","value":0,"kind":"info"}
+{"item":"41","metric":"catalog_only","value":1,"kind":"info","detail":" (probe)"}
+{"item":"41","metric":"asked","value":5,"kind":"info"}
+{"item":"41","metric":"invented","value":0,"kind":"info"}
+{"item":"41","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"41","metric":"stalls","value":0,"kind":"info"}
+{"item":"41","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"42","metric":"error","value":0,"kind":"info"}
+{"item":"42","metric":"premature","value":0,"kind":"info","detail":"commander (never asked)"}
+{"item":"42","metric":"dead_end","value":0,"kind":"info"}
+{"item":"42","metric":"lint_findings","value":0,"kind":"info"}
+{"item":"42","metric":"catalog_only","value":1,"kind":"info","detail":" (probe)"}
+{"item":"42","metric":"asked","value":4,"kind":"info"}
+{"item":"42","metric":"invented","value":0,"kind":"info"}
+{"item":"42","metric":"refused_rewords","value":1,"kind":"info"}
+{"item":"42","metric":"stalls","value":0,"kind":"info"}
+{"item":"42","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"43","metric":"error","value":0,"kind":"info"}
+{"item":"43","metric":"premature","value":0,"kind":"info","detail":"commander (never asked)"}
+{"item":"43","metric":"dead_end","value":0,"kind":"info"}
+{"item":"43","metric":"lint_findings","value":0,"kind":"info"}
+{"item":"43","metric":"catalog_only","value":1,"kind":"info","detail":" (probe)"}
+{"item":"43","metric":"asked","value":7,"kind":"info"}
+{"item":"43","metric":"invented","value":0,"kind":"info"}
+{"item":"43","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"43","metric":"stalls","value":0,"kind":"info"}
+{"item":"43","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"44","metric":"error","value":0,"kind":"info"}
+{"item":"44","metric":"premature","value":0,"kind":"info"}
+{"item":"44","metric":"dead_end","value":0,"kind":"info"}
+{"item":"44","metric":"lint_findings","value":0,"kind":"info"}
+{"item":"44","metric":"catalog_only","value":1,"kind":"info","detail":" (probe)"}
+{"item":"44","metric":"asked","value":3,"kind":"info"}
+{"item":"44","metric":"invented","value":0,"kind":"info"}
+{"item":"44","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"44","metric":"stalls","value":0,"kind":"info"}
+{"item":"44","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"45","metric":"error","value":0,"kind":"info"}
+{"item":"45","metric":"premature","value":0,"kind":"info"}
+{"item":"45","metric":"dead_end","value":0,"kind":"info"}
+{"item":"45","metric":"lint_findings","value":0,"kind":"info"}
+{"item":"45","metric":"catalog_only","value":1,"kind":"info","detail":" (probe)"}
+{"item":"45","metric":"asked","value":5,"kind":"info"}
+{"item":"45","metric":"invented","value":0,"kind":"info"}
+{"item":"45","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"45","metric":"stalls","value":0,"kind":"info"}
+{"item":"45","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"46","metric":"error","value":0,"kind":"info"}
+{"item":"46","metric":"premature","value":0,"kind":"info"}
+{"item":"46","metric":"dead_end","value":0,"kind":"info"}
+{"item":"46","metric":"lint_findings","value":0,"kind":"info"}
+{"item":"46","metric":"catalog_only","value":1,"kind":"info","detail":" (probe)"}
+{"item":"46","metric":"asked","value":3,"kind":"info"}
+{"item":"46","metric":"invented","value":0,"kind":"info"}
+{"item":"46","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"46","metric":"stalls","value":0,"kind":"info"}
+{"item":"46","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"47","metric":"error","value":0,"kind":"info"}
+{"item":"47","metric":"premature","value":0,"kind":"info","detail":"commander (asked, no answer)"}
+{"item":"47","metric":"dead_end","value":0,"kind":"info"}
+{"item":"47","metric":"lint_findings","value":0,"kind":"info"}
+{"item":"47","metric":"catalog_only","value":1,"kind":"info","detail":" (probe)"}
+{"item":"47","metric":"asked","value":5,"kind":"info"}
+{"item":"47","metric":"invented","value":0,"kind":"info"}
+{"item":"47","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"47","metric":"stalls","value":0,"kind":"info"}
+{"item":"47","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"48","metric":"error","value":0,"kind":"info"}
+{"item":"48","metric":"premature","value":0,"kind":"info"}
+{"item":"48","metric":"dead_end","value":0,"kind":"info"}
+{"item":"48","metric":"lint_findings","value":0,"kind":"info"}
+{"item":"48","metric":"catalog_only","value":0,"kind":"info","detail":" (probe)"}
+{"item":"48","metric":"asked","value":3,"kind":"info"}
+{"item":"48","metric":"invented","value":1,"kind":"info"}
+{"item":"48","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"48","metric":"stalls","value":1,"kind":"info"}
+{"item":"48","metric":"closed_by_net","value":1,"kind":"info"}
+{"item":"49","metric":"error","value":0,"kind":"info"}
+{"item":"49","metric":"premature","value":0,"kind":"info"}
+{"item":"49","metric":"dead_end","value":0,"kind":"info"}
+{"item":"49","metric":"lint_findings","value":0,"kind":"info"}
+{"item":"49","metric":"catalog_only","value":1,"kind":"info","detail":" (probe)"}
+{"item":"49","metric":"asked","value":2,"kind":"info"}
+{"item":"49","metric":"invented","value":0,"kind":"info"}
+{"item":"49","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"49","metric":"stalls","value":1,"kind":"info"}
+{"item":"49","metric":"closed_by_net","value":1,"kind":"info"}
+{"item":"50","metric":"error","value":0,"kind":"info"}
+{"item":"50","metric":"premature","value":0,"kind":"info","detail":"commander (asked, no answer)"}
+{"item":"50","metric":"dead_end","value":0,"kind":"info"}
+{"item":"50","metric":"lint_findings","value":0,"kind":"info"}
+{"item":"50","metric":"catalog_only","value":1,"kind":"info","detail":" (probe)"}
+{"item":"50","metric":"asked","value":6,"kind":"info"}
+{"item":"50","metric":"invented","value":0,"kind":"info"}
+{"item":"50","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"50","metric":"stalls","value":0,"kind":"info"}
+{"item":"50","metric":"closed_by_net","value":1,"kind":"info"}
+{"item":"51","metric":"error","value":0,"kind":"info"}
+{"item":"51","metric":"premature","value":0,"kind":"info"}
+{"item":"51","metric":"dead_end","value":0,"kind":"info"}
+{"item":"51","metric":"lint_findings","value":0,"kind":"info"}
+{"item":"51","metric":"catalog_only","value":1,"kind":"info","detail":" (probe)"}
+{"item":"51","metric":"asked","value":5,"kind":"info"}
+{"item":"51","metric":"invented","value":0,"kind":"info"}
+{"item":"51","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"51","metric":"stalls","value":0,"kind":"info"}
+{"item":"51","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"52","metric":"error","value":0,"kind":"info"}
+{"item":"52","metric":"premature","value":0,"kind":"info"}
+{"item":"52","metric":"dead_end","value":0,"kind":"info"}
+{"item":"52","metric":"lint_findings","value":0,"kind":"info"}
+{"item":"52","metric":"catalog_only","value":1,"kind":"info","detail":" (probe)"}
+{"item":"52","metric":"asked","value":3,"kind":"info"}
+{"item":"52","metric":"invented","value":0,"kind":"info"}
+{"item":"52","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"52","metric":"stalls","value":0,"kind":"info"}
+{"item":"52","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"53","metric":"error","value":0,"kind":"info"}
+{"item":"53","metric":"premature","value":0,"kind":"info"}
+{"item":"53","metric":"dead_end","value":0,"kind":"info"}
+{"item":"53","metric":"lint_findings","value":0,"kind":"info"}
+{"item":"53","metric":"catalog_only","value":1,"kind":"info","detail":" (probe)"}
+{"item":"53","metric":"asked","value":4,"kind":"info"}
+{"item":"53","metric":"invented","value":0,"kind":"info"}
+{"item":"53","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"53","metric":"stalls","value":0,"kind":"info"}
+{"item":"53","metric":"closed_by_net","value":1,"kind":"info"}
+{"item":"54","metric":"error","value":0,"kind":"info"}
+{"item":"54","metric":"premature","value":0,"kind":"info","detail":"commander (asked, no answer)"}
+{"item":"54","metric":"dead_end","value":0,"kind":"info"}
+{"item":"54","metric":"lint_findings","value":0,"kind":"info"}
+{"item":"54","metric":"catalog_only","value":1,"kind":"info","detail":" (probe)"}
+{"item":"54","metric":"asked","value":4,"kind":"info"}
+{"item":"54","metric":"invented","value":0,"kind":"info"}
+{"item":"54","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"54","metric":"stalls","value":0,"kind":"info"}
+{"item":"54","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"55","metric":"error","value":0,"kind":"info"}
+{"item":"55","metric":"premature","value":0,"kind":"info","detail":"commander (asked, no answer)"}
+{"item":"55","metric":"dead_end","value":0,"kind":"info"}
+{"item":"55","metric":"lint_findings","value":0,"kind":"info"}
+{"item":"55","metric":"catalog_only","value":1,"kind":"info","detail":" (probe)"}
+{"item":"55","metric":"asked","value":6,"kind":"info"}
+{"item":"55","metric":"invented","value":0,"kind":"info"}
+{"item":"55","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"55","metric":"stalls","value":0,"kind":"info"}
+{"item":"55","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"56","metric":"error","value":0,"kind":"info"}
+{"item":"56","metric":"premature","value":0,"kind":"info","detail":"commander (asked, no answer)"}
+{"item":"56","metric":"dead_end","value":0,"kind":"info"}
+{"item":"56","metric":"lint_findings","value":0,"kind":"info"}
+{"item":"56","metric":"catalog_only","value":1,"kind":"info","detail":" (probe)"}
+{"item":"56","metric":"asked","value":4,"kind":"info"}
+{"item":"56","metric":"invented","value":0,"kind":"info"}
+{"item":"56","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"56","metric":"stalls","value":2,"kind":"info"}
+{"item":"56","metric":"closed_by_net","value":1,"kind":"info"}
+{"item":"57","metric":"error","value":0,"kind":"gate"}
+{"item":"57","metric":"premature","value":0,"kind":"gate"}
+{"item":"57","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"57","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"57","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"57","metric":"slot_colors","value":1,"kind":"gate","detail":"want RG, got RG"}
+{"item":"57","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 3, got bracket 3"}
+{"item":"57","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want owned_first, got owned_first"}
+{"item":"57","metric":"slot_commander","value":1,"kind":"gate","detail":"want delegated, got delegated"}
+{"item":"57","metric":"slot_theme","value":1,"kind":"gate","detail":"want land destruction, got land destruction"}
+{"item":"57","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"57","metric":"asked","value":5,"kind":"info"}
+{"item":"57","metric":"invented","value":0,"kind":"info"}
+{"item":"57","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"57","metric":"stalls","value":0,"kind":"info"}
+{"item":"57","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"58","metric":"error","value":0,"kind":"gate"}
+{"item":"58","metric":"premature","value":0,"kind":"gate"}
+{"item":"58","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"58","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"58","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"58","metric":"slot_colors","value":1,"kind":"gate","detail":"want BG, got BG"}
+{"item":"58","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 3, got bracket 3"}
+{"item":"58","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want owned_first, got owned_first"}
+{"item":"58","metric":"slot_commander","value":1,"kind":"gate","detail":"want delegated, got delegated"}
+{"item":"58","metric":"slot_theme","value":1,"kind":"gate","detail":"want sacrifice, got sacrifice"}
+{"item":"58","metric":"slot_locked","value":1,"kind":"gate","detail":"want Grist, the Hunger Tide, got Grist, the Hunger Tide"}
+{"item":"58","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"58","metric":"asked","value":6,"kind":"info"}
+{"item":"58","metric":"invented","value":0,"kind":"info"}
+{"item":"58","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"58","metric":"stalls","value":0,"kind":"info"}
+{"item":"58","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"59","metric":"error","value":0,"kind":"gate"}
+{"item":"59","metric":"premature","value":0,"kind":"gate","detail":"commander (asked, no answer)"}
+{"item":"59","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"59","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"59","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"59","metric":"slot_colors","value":1,"kind":"gate","detail":"want RG, got RG"}
+{"item":"59","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 3, got bracket 3"}
+{"item":"59","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"59","metric":"slot_budget","value":1,"kind":"gate","detail":"want 150, got 150 to buy"}
+{"item":"59","metric":"slot_theme","value":1,"kind":"gate","detail":"want dragon, got dragon"}
+{"item":"59","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"59","metric":"asked","value":4,"kind":"info"}
+{"item":"59","metric":"invented","value":0,"kind":"info"}
+{"item":"59","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"59","metric":"stalls","value":0,"kind":"info"}
+{"item":"59","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"60","metric":"error","value":0,"kind":"gate"}
+{"item":"60","metric":"premature","value":0,"kind":"gate","detail":"commander (asked, no answer)"}
+{"item":"60","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"60","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"60","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"60","metric":"slot_colors","value":1,"kind":"gate","detail":"want R, got R"}
+{"item":"60","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 2, got bracket 2"}
+{"item":"60","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"60","metric":"slot_theme","value":1,"kind":"gate","detail":"want dragon, got dragon"}
+{"item":"60","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"60","metric":"asked","value":6,"kind":"info"}
+{"item":"60","metric":"invented","value":0,"kind":"info"}
+{"item":"60","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"60","metric":"stalls","value":0,"kind":"info"}
+{"item":"60","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"61","metric":"error","value":0,"kind":"gate"}
+{"item":"61","metric":"premature","value":0,"kind":"gate"}
+{"item":"61","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"61","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"61","metric":"slot_power","value":1,"kind":"gate","detail":"want casual, got casual"}
+{"item":"61","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"61","metric":"slot_theme","value":1,"kind":"gate","detail":"want prison, got artifact prison"}
+{"item":"61","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"61","metric":"asked","value":3,"kind":"info"}
+{"item":"61","metric":"invented","value":0,"kind":"info"}
+{"item":"61","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"61","metric":"stalls","value":0,"kind":"info"}
+{"item":"61","metric":"closed_by_net","value":1,"kind":"info"}
+{"item":"62","metric":"error","value":0,"kind":"gate"}
+{"item":"62","metric":"premature","value":0,"kind":"gate"}
+{"item":"62","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"62","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"62","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"62","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 2, got bracket 2"}
+{"item":"62","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want owned_first, got owned_first"}
+{"item":"62","metric":"slot_theme","value":1,"kind":"gate","detail":"want superfriends, got superfriends"}
+{"item":"62","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"62","metric":"asked","value":3,"kind":"info"}
+{"item":"62","metric":"invented","value":0,"kind":"info"}
+{"item":"62","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"62","metric":"stalls","value":0,"kind":"info"}
+{"item":"62","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"63","metric":"error","value":0,"kind":"gate"}
+{"item":"63","metric":"premature","value":0,"kind":"gate"}
+{"item":"63","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"63","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"63","metric":"slot_format","value":1,"kind":"gate","detail":"want modern, got modern"}
+{"item":"63","metric":"slot_power","value":1,"kind":"gate","detail":"want tournament, got tournament"}
+{"item":"63","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"63","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"63","metric":"asked","value":1,"kind":"info"}
+{"item":"63","metric":"invented","value":0,"kind":"info"}
+{"item":"63","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"63","metric":"stalls","value":2,"kind":"info"}
+{"item":"63","metric":"closed_by_net","value":1,"kind":"info"}
+{"item":"64","metric":"error","value":0,"kind":"gate"}
+{"item":"64","metric":"premature","value":0,"kind":"gate","detail":"commander (never asked)"}
+{"item":"64","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"64","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"64","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"64","metric":"slot_colors","value":1,"kind":"gate","detail":"want B, got B"}
+{"item":"64","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 2, got bracket 2"}
+{"item":"64","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"64","metric":"slot_budget","value":1,"kind":"gate","detail":"want 80, got 80 to buy"}
+{"item":"64","metric":"slot_theme","value":1,"kind":"gate","detail":"want zombie, got zombies"}
+{"item":"64","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"64","metric":"asked","value":4,"kind":"info"}
+{"item":"64","metric":"invented","value":0,"kind":"info"}
+{"item":"64","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"64","metric":"stalls","value":0,"kind":"info"}
+{"item":"64","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"65","metric":"error","value":0,"kind":"gate"}
+{"item":"65","metric":"premature","value":0,"kind":"gate"}
+{"item":"65","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"65","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"65","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"65","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 3, got bracket 3"}
+{"item":"65","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want owned_first, got owned_first"}
+{"item":"65","metric":"slot_commander","value":1,"kind":"gate","detail":"want Karlov of the Ghost Council, got Karlov of the Ghost Council"}
+{"item":"65","metric":"slot_theme","value":1,"kind":"gate","detail":"want lifegain, got lifegain"}
+{"item":"65","metric":"slot_locked","value":1,"kind":"gate","detail":"want Sanguine Bond, got Sanguine Bond"}
+{"item":"65","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"65","metric":"asked","value":3,"kind":"info"}
+{"item":"65","metric":"invented","value":0,"kind":"info"}
+{"item":"65","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"65","metric":"stalls","value":0,"kind":"info"}
+{"item":"65","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"66","metric":"error","value":0,"kind":"gate"}
+{"item":"66","metric":"premature","value":0,"kind":"gate"}
+{"item":"66","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"66","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"66","metric":"slot_format","value":1,"kind":"gate","detail":"want modern, got modern"}
+{"item":"66","metric":"slot_colors","value":1,"kind":"gate","detail":"want R, got R"}
+{"item":"66","metric":"slot_power","value":1,"kind":"gate","detail":"want tournament, got tournament"}
+{"item":"66","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"66","metric":"slot_theme","value":1,"kind":"gate","detail":"want burn, got burn"}
+{"item":"66","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"66","metric":"asked","value":2,"kind":"info"}
+{"item":"66","metric":"invented","value":0,"kind":"info"}
+{"item":"66","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"66","metric":"stalls","value":1,"kind":"info"}
+{"item":"66","metric":"closed_by_net","value":1,"kind":"info"}
+{"item":"68","metric":"error","value":0,"kind":"gate"}
+{"item":"68","metric":"premature","value":0,"kind":"gate"}
+{"item":"68","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"68","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"68","metric":"slot_format","value":1,"kind":"gate","detail":"want modern, got modern"}
+{"item":"68","metric":"slot_colors","value":1,"kind":"gate","detail":"want R, got R"}
+{"item":"68","metric":"slot_power","value":1,"kind":"gate","detail":"want tournament, got tournament"}
+{"item":"68","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"68","metric":"slot_budget","value":1,"kind":"gate","detail":"want 300, got 300 to buy"}
+{"item":"68","metric":"slot_theme","value":1,"kind":"gate","detail":"want burn, got burn"}
+{"item":"68","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"68","metric":"asked","value":2,"kind":"info"}
+{"item":"68","metric":"invented","value":0,"kind":"info"}
+{"item":"68","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"68","metric":"stalls","value":0,"kind":"info"}
+{"item":"68","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"69","metric":"error","value":0,"kind":"gate"}
+{"item":"69","metric":"premature","value":0,"kind":"gate","detail":"format (asked, no answer)"}
+{"item":"69","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"69","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"69","metric":"slot_colors","value":1,"kind":"gate","detail":"want R, got R"}
+{"item":"69","metric":"slot_power","value":1,"kind":"gate","detail":"want casual, got casual"}
+{"item":"69","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"69","metric":"slot_budget","value":1,"kind":"gate","detail":"want 25, got 25 to buy"}
+{"item":"69","metric":"slot_theme","value":1,"kind":"gate","detail":"want burn, got burn"}
+{"item":"69","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"69","metric":"asked","value":2,"kind":"info"}
+{"item":"69","metric":"invented","value":0,"kind":"info"}
+{"item":"69","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"69","metric":"stalls","value":0,"kind":"info"}
+{"item":"69","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"70","metric":"error","value":0,"kind":"gate"}
+{"item":"70","metric":"premature","value":0,"kind":"gate"}
+{"item":"70","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"70","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"70","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"70","metric":"slot_colors","value":1,"kind":"gate","detail":"want UB, got UB"}
+{"item":"70","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 3, got bracket 3"}
+{"item":"70","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want owned_first, got owned_first"}
+{"item":"70","metric":"slot_commander","value":1,"kind":"gate","detail":"want Bruvac the Grandiloquent, got Bruvac the Grandiloquent"}
+{"item":"70","metric":"slot_budget","value":1,"kind":"gate","detail":"want 100 to buy, got 100 to buy"}
+{"item":"70","metric":"slot_theme","value":1,"kind":"gate","detail":"want mill, got mill"}
+{"item":"70","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"70","metric":"asked","value":4,"kind":"info"}
+{"item":"70","metric":"invented","value":0,"kind":"info"}
+{"item":"70","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"70","metric":"stalls","value":0,"kind":"info"}
+{"item":"70","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"71","metric":"error","value":0,"kind":"gate"}
+{"item":"71","metric":"premature","value":0,"kind":"gate"}
+{"item":"71","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"71","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"71","metric":"slot_format","value":1,"kind":"gate","detail":"want modern, got modern"}
+{"item":"71","metric":"slot_colors","value":1,"kind":"gate","detail":"want W, got W"}
+{"item":"71","metric":"slot_power","value":1,"kind":"gate","detail":"want fnm, got fnm"}
+{"item":"71","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"71","metric":"slot_theme","value":1,"kind":"gate","detail":"want weenie, got weenie"}
+{"item":"71","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"71","metric":"asked","value":3,"kind":"info"}
+{"item":"71","metric":"invented","value":0,"kind":"info"}
+{"item":"71","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"71","metric":"stalls","value":0,"kind":"info"}
+{"item":"71","metric":"closed_by_net","value":1,"kind":"info"}
+{"item":"72","metric":"error","value":0,"kind":"gate"}
+{"item":"72","metric":"premature","value":0,"kind":"gate"}
+{"item":"72","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"72","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"72","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"72","metric":"slot_colors","value":1,"kind":"gate","detail":"want WUBRG, got WUBRG"}
+{"item":"72","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 4, got bracket 4"}
+{"item":"72","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"72","metric":"slot_commander","value":1,"kind":"gate","detail":"want Kenrith, the Returned King, got Kenrith, the Returned King"}
+{"item":"72","metric":"slot_budget","value":1,"kind":"gate","detail":"want 400, got 400"}
+{"item":"72","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"72","metric":"asked","value":3,"kind":"info"}
+{"item":"72","metric":"invented","value":0,"kind":"info"}
+{"item":"72","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"72","metric":"stalls","value":0,"kind":"info"}
+{"item":"72","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"73","metric":"error","value":0,"kind":"gate"}
+{"item":"73","metric":"premature","value":0,"kind":"gate"}
+{"item":"73","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"73","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"73","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"73","metric":"slot_colors","value":1,"kind":"gate","detail":"want none, got none"}
+{"item":"73","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 3, got bracket 3"}
+{"item":"73","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"73","metric":"slot_commander","value":1,"kind":"gate","detail":"want Kozilek, Butcher of Truth, got Kozilek, Butcher of Truth"}
+{"item":"73","metric":"slot_budget","value":1,"kind":"gate","detail":"want 250, got 250 to buy"}
+{"item":"73","metric":"slot_theme","value":1,"kind":"gate","detail":"want artifact, got big artifacts"}
+{"item":"73","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"73","metric":"asked","value":3,"kind":"info"}
+{"item":"73","metric":"invented","value":0,"kind":"info"}
+{"item":"73","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"73","metric":"stalls","value":0,"kind":"info"}
+{"item":"73","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"74","metric":"error","value":0,"kind":"gate"}
+{"item":"74","metric":"premature","value":0,"kind":"gate"}
+{"item":"74","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"74","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"74","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"74","metric":"slot_colors","value":1,"kind":"gate","detail":"want none, got none"}
+{"item":"74","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 3, got bracket 3"}
+{"item":"74","metric":"slot_theme","value":1,"kind":"gate","detail":"want artifact, got artifact"}
+{"item":"74","metric":"slot_locked","value":1,"kind":"gate","detail":"want Sol Ring, got Sol Ring"}
+{"item":"74","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"74","metric":"asked","value":4,"kind":"info"}
+{"item":"74","metric":"invented","value":0,"kind":"info"}
+{"item":"74","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"74","metric":"stalls","value":1,"kind":"info"}
+{"item":"74","metric":"closed_by_net","value":1,"kind":"info"}
+{"item":"75","metric":"error","value":0,"kind":"gate"}
+{"item":"75","metric":"premature","value":0,"kind":"gate"}
+{"item":"75","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"75","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"75","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"75","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 5, got bracket 5"}
+{"item":"75","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"75","metric":"slot_commander","value":1,"kind":"gate","detail":"want Najeela, the Blade-Blossom, got Najeela, the Blade-Blossom"}
+{"item":"75","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"75","metric":"asked","value":2,"kind":"info"}
+{"item":"75","metric":"invented","value":0,"kind":"info"}
+{"item":"75","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"75","metric":"stalls","value":1,"kind":"info"}
+{"item":"75","metric":"closed_by_net","value":1,"kind":"info"}
+{"item":"76","metric":"error","value":0,"kind":"gate"}
+{"item":"76","metric":"premature","value":0,"kind":"gate"}
+{"item":"76","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"76","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"76","metric":"slot_format","value":1,"kind":"gate","detail":"want modern, got modern"}
+{"item":"76","metric":"slot_colors","value":1,"kind":"gate","detail":"want B, got B"}
+{"item":"76","metric":"slot_power","value":1,"kind":"gate","detail":"want tournament, got tournament"}
+{"item":"76","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"76","metric":"slot_budget","value":1,"kind":"gate","detail":"want 300, got 300 to buy"}
+{"item":"76","metric":"slot_theme","value":1,"kind":"gate","detail":"want aggro, got aggro"}
+{"item":"76","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"76","metric":"asked","value":3,"kind":"info"}
+{"item":"76","metric":"invented","value":0,"kind":"info"}
+{"item":"76","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"76","metric":"stalls","value":0,"kind":"info"}
+{"item":"76","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"77","metric":"error","value":0,"kind":"gate"}
+{"item":"77","metric":"premature","value":0,"kind":"gate","detail":"commander (never asked)"}
+{"item":"77","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"77","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"77","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"77","metric":"slot_colors","value":1,"kind":"gate","detail":"want WR, got WR"}
+{"item":"77","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 3, got bracket 3"}
+{"item":"77","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"77","metric":"slot_budget","value":1,"kind":"gate","detail":"want 150, got 150 to buy"}
+{"item":"77","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"77","metric":"asked","value":4,"kind":"info"}
+{"item":"77","metric":"invented","value":0,"kind":"info"}
+{"item":"77","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"77","metric":"stalls","value":0,"kind":"info"}
+{"item":"77","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"78","metric":"error","value":0,"kind":"gate"}
+{"item":"78","metric":"premature","value":0,"kind":"gate"}
+{"item":"78","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"78","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"78","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"78","metric":"slot_colors","value":1,"kind":"gate","detail":"want UR, got UR"}
+{"item":"78","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 4, got bracket 4"}
+{"item":"78","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"78","metric":"slot_commander","value":1,"kind":"gate","detail":"want Krark, the Thumbless + Sakashima of a Thousand Faces, got Krark, the Thumbless + Sakashima of a Thousand Faces"}
+{"item":"78","metric":"slot_budget","value":1,"kind":"gate","detail":"want 500, got 500 to buy"}
+{"item":"78","metric":"slot_theme","value":1,"kind":"gate","detail":"want spellslinger, got spellslinger"}
+{"item":"78","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"78","metric":"asked","value":3,"kind":"info"}
+{"item":"78","metric":"invented","value":0,"kind":"info"}
+{"item":"78","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"78","metric":"stalls","value":0,"kind":"info"}
+{"item":"78","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"79","metric":"error","value":0,"kind":"gate"}
+{"item":"79","metric":"premature","value":0,"kind":"gate","detail":"power (asked, no answer), commander (never asked)"}
+{"item":"79","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"79","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"79","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"79","metric":"slot_colors","value":1,"kind":"gate","detail":"want BG, got BG"}
+{"item":"79","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want owned_first, got owned_first"}
+{"item":"79","metric":"slot_theme","value":1,"kind":"gate","detail":"want sacrifice, got sacrifices creatures for value"}
+{"item":"79","metric":"catalog_only","value":0,"kind":"info"}
+{"item":"79","metric":"asked","value":2,"kind":"info"}
+{"item":"79","metric":"invented","value":1,"kind":"info"}
+{"item":"79","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"79","metric":"stalls","value":0,"kind":"info"}
+{"item":"79","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"80","metric":"error","value":0,"kind":"gate"}
+{"item":"80","metric":"premature","value":0,"kind":"gate"}
+{"item":"80","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"80","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"80","metric":"slot_format","value":1,"kind":"gate","detail":"want modern, got modern"}
+{"item":"80","metric":"slot_colors","value":1,"kind":"gate","detail":"want R, got R"}
+{"item":"80","metric":"slot_power","value":1,"kind":"gate","detail":"want tournament, got tournament"}
+{"item":"80","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"80","metric":"slot_theme","value":1,"kind":"gate","detail":"want burn, got burn"}
+{"item":"80","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"80","metric":"asked","value":2,"kind":"info"}
+{"item":"80","metric":"invented","value":0,"kind":"info"}
+{"item":"80","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"80","metric":"stalls","value":1,"kind":"info"}
+{"item":"80","metric":"closed_by_net","value":1,"kind":"info"}
+{"item":"81","metric":"error","value":0,"kind":"gate"}
+{"item":"81","metric":"premature","value":0,"kind":"gate"}
+{"item":"81","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"81","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"81","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"81","metric":"slot_colors","value":1,"kind":"gate","detail":"want WG, got WG"}
+{"item":"81","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 3, got bracket 3"}
+{"item":"81","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"81","metric":"slot_commander","value":1,"kind":"gate","detail":"want delegated, got delegated"}
+{"item":"81","metric":"slot_theme","value":1,"kind":"gate","detail":"want lifegain, got lifegain"}
+{"item":"81","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"81","metric":"asked","value":2,"kind":"info"}
+{"item":"81","metric":"invented","value":0,"kind":"info"}
+{"item":"81","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"81","metric":"stalls","value":0,"kind":"info"}
+{"item":"81","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"82","metric":"error","value":0,"kind":"gate"}
+{"item":"82","metric":"premature","value":0,"kind":"gate"}
+{"item":"82","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"82","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"82","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"82","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 3, got bracket 3"}
+{"item":"82","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"82","metric":"slot_commander","value":1,"kind":"gate","detail":"want Atraxa, Praetors' Voice, got Atraxa, Praetors' Voice"}
+{"item":"82","metric":"slot_budget","value":1,"kind":"gate","detail":"want 300, got 300 to buy"}
+{"item":"82","metric":"slot_theme","value":1,"kind":"gate","detail":"want superfriends, got superfriends"}
+{"item":"82","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"82","metric":"asked","value":5,"kind":"info"}
+{"item":"82","metric":"invented","value":0,"kind":"info"}
+{"item":"82","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"82","metric":"stalls","value":0,"kind":"info"}
+{"item":"82","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"83","metric":"error","value":0,"kind":"gate"}
+{"item":"83","metric":"premature","value":0,"kind":"gate"}
+{"item":"83","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"83","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"83","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"83","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 2, got bracket 2"}
+{"item":"83","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"83","metric":"slot_commander","value":1,"kind":"gate","detail":"want Phelddagrif, got Phelddagrif"}
+{"item":"83","metric":"slot_budget","value":1,"kind":"gate","detail":"want 100, got 100 to buy"}
+{"item":"83","metric":"slot_theme","value":1,"kind":"gate","detail":"want group hug, got group hug"}
+{"item":"83","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"83","metric":"asked","value":2,"kind":"info"}
+{"item":"83","metric":"invented","value":0,"kind":"info"}
+{"item":"83","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"83","metric":"stalls","value":0,"kind":"info"}
+{"item":"83","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"84","metric":"error","value":0,"kind":"gate"}
+{"item":"84","metric":"premature","value":0,"kind":"gate"}
+{"item":"84","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"84","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"84","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"84","metric":"slot_colors","value":1,"kind":"gate","detail":"want WG, got WG"}
+{"item":"84","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 3, got bracket 3"}
+{"item":"84","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"84","metric":"slot_commander","value":1,"kind":"gate","detail":"want delegated, got delegated"}
+{"item":"84","metric":"slot_budget","value":1,"kind":"gate","detail":"want 200, got 200 to buy"}
+{"item":"84","metric":"slot_theme","value":1,"kind":"gate","detail":"want voltron, got voltron"}
+{"item":"84","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"84","metric":"asked","value":3,"kind":"info"}
+{"item":"84","metric":"invented","value":0,"kind":"info"}
+{"item":"84","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"84","metric":"stalls","value":0,"kind":"info"}
+{"item":"84","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"85","metric":"error","value":0,"kind":"gate"}
+{"item":"85","metric":"premature","value":0,"kind":"gate"}
+{"item":"85","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"85","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"85","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"85","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 3, got bracket 3"}
+{"item":"85","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"85","metric":"slot_commander","value":1,"kind":"gate","detail":"want Yidris, Maelstrom Wielder, got Yidris, Maelstrom Wielder"}
+{"item":"85","metric":"slot_budget","value":1,"kind":"gate","detail":"want 150, got 150 to buy"}
+{"item":"85","metric":"slot_theme","value":1,"kind":"gate","detail":"want chaos, got chaos"}
+{"item":"85","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"85","metric":"asked","value":3,"kind":"info"}
+{"item":"85","metric":"invented","value":0,"kind":"info"}
+{"item":"85","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"85","metric":"stalls","value":0,"kind":"info"}
+{"item":"85","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"86","metric":"error","value":0,"kind":"gate"}
+{"item":"86","metric":"premature","value":0,"kind":"gate"}
+{"item":"86","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"86","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"86","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"86","metric":"slot_colors","value":1,"kind":"gate","detail":"want WG, got WG"}
+{"item":"86","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 3, got bracket 3"}
+{"item":"86","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want owned_first, got owned_first"}
+{"item":"86","metric":"slot_commander","value":1,"kind":"gate","detail":"want Sythis, Harvest's Hand, got Sythis, Harvest's Hand"}
+{"item":"86","metric":"slot_theme","value":1,"kind":"gate","detail":"want enchant, got enchantress"}
+{"item":"86","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"86","metric":"asked","value":4,"kind":"info"}
+{"item":"86","metric":"invented","value":0,"kind":"info"}
+{"item":"86","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"86","metric":"stalls","value":0,"kind":"info"}
+{"item":"86","metric":"closed_by_net","value":1,"kind":"info"}
+{"item":"87","metric":"error","value":0,"kind":"gate"}
+{"item":"87","metric":"premature","value":0,"kind":"gate"}
+{"item":"87","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"87","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"87","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"87","metric":"slot_colors","value":1,"kind":"gate","detail":"want G, got G"}
+{"item":"87","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 3, got bracket 3"}
+{"item":"87","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want owned_first, got owned_first"}
+{"item":"87","metric":"slot_commander","value":1,"kind":"gate","detail":"want delegated, got delegated"}
+{"item":"87","metric":"slot_theme","value":1,"kind":"gate","detail":"want landfall, got landfall"}
+{"item":"87","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"87","metric":"asked","value":3,"kind":"info"}
+{"item":"87","metric":"invented","value":0,"kind":"info"}
+{"item":"87","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"87","metric":"stalls","value":0,"kind":"info"}
+{"item":"87","metric":"closed_by_net","value":1,"kind":"info"}
+{"item":"88","metric":"error","value":0,"kind":"gate"}
+{"item":"88","metric":"premature","value":0,"kind":"gate"}
+{"item":"88","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"88","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"88","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"88","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"88","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"88","metric":"asked","value":3,"kind":"info"}
+{"item":"88","metric":"invented","value":0,"kind":"info"}
+{"item":"88","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"88","metric":"stalls","value":0,"kind":"info"}
+{"item":"88","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"89","metric":"error","value":0,"kind":"gate"}
+{"item":"89","metric":"premature","value":0,"kind":"gate","detail":"commander (never asked)"}
+{"item":"89","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"89","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"89","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"89","metric":"slot_colors","value":1,"kind":"gate","detail":"want G, got G"}
+{"item":"89","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 1, got bracket 1"}
+{"item":"89","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"89","metric":"slot_budget","value":1,"kind":"gate","detail":"want 50, got 50 to buy"}
+{"item":"89","metric":"slot_theme","value":1,"kind":"gate","detail":"want big creature, got big creatures"}
+{"item":"89","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"89","metric":"asked","value":4,"kind":"info"}
+{"item":"89","metric":"invented","value":0,"kind":"info"}
+{"item":"89","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"89","metric":"stalls","value":0,"kind":"info"}
+{"item":"89","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"90","metric":"error","value":0,"kind":"gate"}
+{"item":"90","metric":"premature","value":0,"kind":"gate","detail":"commander (never asked)"}
+{"item":"90","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"90","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"90","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"90","metric":"slot_colors","value":1,"kind":"gate","detail":"want WG, got WG"}
+{"item":"90","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 2, got bracket 2"}
+{"item":"90","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"90","metric":"slot_budget","value":1,"kind":"gate","detail":"want 60, got 60 to buy"}
+{"item":"90","metric":"slot_theme","value":1,"kind":"gate","detail":"want cat, got cats"}
+{"item":"90","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"90","metric":"asked","value":4,"kind":"info"}
+{"item":"90","metric":"invented","value":0,"kind":"info"}
+{"item":"90","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"90","metric":"stalls","value":0,"kind":"info"}
+{"item":"90","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"91","metric":"error","value":0,"kind":"gate"}
+{"item":"91","metric":"premature","value":0,"kind":"gate","detail":"commander (asked, no answer), pool_rule (asked, no answer)"}
+{"item":"91","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"91","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"91","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"91","metric":"slot_colors","value":1,"kind":"gate","detail":"want BG, got BG"}
+{"item":"91","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 2, got bracket 2"}
+{"item":"91","metric":"slot_theme","value":1,"kind":"gate","detail":"want sacrifice, got sacrifice"}
+{"item":"91","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"91","metric":"asked","value":5,"kind":"info"}
+{"item":"91","metric":"invented","value":0,"kind":"info"}
+{"item":"91","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"91","metric":"stalls","value":0,"kind":"info"}
+{"item":"91","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"92","metric":"error","value":0,"kind":"gate"}
+{"item":"92","metric":"premature","value":0,"kind":"gate","detail":"commander (never asked)"}
+{"item":"92","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"92","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"92","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"92","metric":"slot_colors","value":1,"kind":"gate","detail":"want UB, got UB"}
+{"item":"92","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 3, got bracket 3"}
+{"item":"92","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want owned_first, got owned_first"}
+{"item":"92","metric":"slot_theme","value":1,"kind":"gate","detail":"want mill, got mill"}
+{"item":"92","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"92","metric":"asked","value":5,"kind":"info"}
+{"item":"92","metric":"invented","value":0,"kind":"info"}
+{"item":"92","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"92","metric":"stalls","value":0,"kind":"info"}
+{"item":"92","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"93","metric":"error","value":0,"kind":"gate"}
+{"item":"93","metric":"premature","value":0,"kind":"gate"}
+{"item":"93","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"93","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"93","metric":"slot_format","value":1,"kind":"gate","detail":"want modern, got modern"}
+{"item":"93","metric":"slot_colors","value":1,"kind":"gate","detail":"want R, got R"}
+{"item":"93","metric":"slot_power","value":1,"kind":"gate","detail":"want fnm, got fnm"}
+{"item":"93","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"93","metric":"slot_budget","value":1,"kind":"gate","detail":"want 120, got 120 whole deck"}
+{"item":"93","metric":"slot_theme","value":1,"kind":"gate","detail":"want burn, got burn"}
+{"item":"93","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"93","metric":"asked","value":3,"kind":"info"}
+{"item":"93","metric":"invented","value":0,"kind":"info"}
+{"item":"93","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"93","metric":"stalls","value":0,"kind":"info"}
+{"item":"93","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"94","metric":"error","value":0,"kind":"gate"}
+{"item":"94","metric":"premature","value":0,"kind":"gate","detail":"commander (never asked)"}
+{"item":"94","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"94","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"94","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"94","metric":"slot_colors","value":1,"kind":"gate","detail":"want RG, got RG"}
+{"item":"94","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 3, got bracket 3"}
+{"item":"94","metric":"slot_budget","value":1,"kind":"gate","detail":"want 200, got 200 to buy"}
+{"item":"94","metric":"slot_theme","value":1,"kind":"gate","detail":"want dinosaur, got dinosaur"}
+{"item":"94","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"94","metric":"asked","value":5,"kind":"info"}
+{"item":"94","metric":"invented","value":0,"kind":"info"}
+{"item":"94","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"94","metric":"stalls","value":0,"kind":"info"}
+{"item":"94","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"95","metric":"error","value":0,"kind":"gate"}
+{"item":"95","metric":"premature","value":0,"kind":"gate","detail":"commander (asked, no answer)"}
+{"item":"95","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"95","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"95","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"95","metric":"slot_colors","value":1,"kind":"gate","detail":"want WU, got WU"}
+{"item":"95","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 3, got bracket 3"}
+{"item":"95","metric":"slot_theme","value":1,"kind":"gate","detail":"want blink, got blink"}
+{"item":"95","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"95","metric":"asked","value":5,"kind":"info"}
+{"item":"95","metric":"invented","value":0,"kind":"info"}
+{"item":"95","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"95","metric":"stalls","value":0,"kind":"info"}
+{"item":"95","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"96","metric":"error","value":0,"kind":"gate"}
+{"item":"96","metric":"premature","value":0,"kind":"gate"}
+{"item":"96","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"96","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"96","metric":"slot_format","value":1,"kind":"gate","detail":"want modern, got modern"}
+{"item":"96","metric":"slot_colors","value":1,"kind":"gate","detail":"want U, got U"}
+{"item":"96","metric":"slot_power","value":1,"kind":"gate","detail":"want fnm, got fnm"}
+{"item":"96","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"96","metric":"slot_budget","value":1,"kind":"gate","detail":"want 150, got 150 to buy"}
+{"item":"96","metric":"slot_theme","value":1,"kind":"gate","detail":"want artifact, got artifacts"}
+{"item":"96","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"96","metric":"asked","value":4,"kind":"info"}
+{"item":"96","metric":"invented","value":0,"kind":"info"}
+{"item":"96","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"96","metric":"stalls","value":0,"kind":"info"}
+{"item":"96","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"97","metric":"error","value":0,"kind":"gate"}
+{"item":"97","metric":"premature","value":0,"kind":"gate"}
+{"item":"97","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"97","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"97","metric":"slot_colors","value":1,"kind":"gate","detail":"want B, got B"}
+{"item":"97","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"97","metric":"slot_budget","value":1,"kind":"gate","detail":"want 40, got 40 to buy"}
+{"item":"97","metric":"slot_theme","value":1,"kind":"gate","detail":"want sacrifice, got sacrifice"}
+{"item":"97","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"97","metric":"asked","value":4,"kind":"info"}
+{"item":"97","metric":"invented","value":0,"kind":"info"}
+{"item":"97","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"97","metric":"stalls","value":0,"kind":"info"}
+{"item":"97","metric":"closed_by_net","value":1,"kind":"info"}
+{"item":"98","metric":"error","value":0,"kind":"gate"}
+{"item":"98","metric":"premature","value":0,"kind":"gate","detail":"commander (asked, no answer)"}
+{"item":"98","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"98","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"98","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"98","metric":"slot_colors","value":1,"kind":"gate","detail":"want UR, got UR"}
+{"item":"98","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 3, got bracket 3"}
+{"item":"98","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"98","metric":"slot_budget","value":1,"kind":"gate","detail":"want 150, got 150 to buy"}
+{"item":"98","metric":"slot_theme","value":1,"kind":"gate","detail":"want spellslinger, got spellslinger"}
+{"item":"98","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"98","metric":"asked","value":6,"kind":"info"}
+{"item":"98","metric":"invented","value":0,"kind":"info"}
+{"item":"98","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"98","metric":"stalls","value":0,"kind":"info"}
+{"item":"98","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"99","metric":"error","value":0,"kind":"gate"}
+{"item":"99","metric":"premature","value":0,"kind":"gate"}
+{"item":"99","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"99","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"99","metric":"slot_format","value":1,"kind":"gate","detail":"want modern, got modern"}
+{"item":"99","metric":"slot_colors","value":1,"kind":"gate","detail":"want B, got B"}
+{"item":"99","metric":"slot_power","value":1,"kind":"gate","detail":"want tournament, got tournament"}
+{"item":"99","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"99","metric":"slot_budget","value":1,"kind":"gate","detail":"want 200, got 200 to buy"}
+{"item":"99","metric":"slot_theme","value":1,"kind":"gate","detail":"want aggro, got aggro"}
+{"item":"99","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"99","metric":"asked","value":5,"kind":"info"}
+{"item":"99","metric":"invented","value":0,"kind":"info"}
+{"item":"99","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"99","metric":"stalls","value":0,"kind":"info"}
+{"item":"99","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"100","metric":"error","value":0,"kind":"gate"}
+{"item":"100","metric":"premature","value":0,"kind":"gate"}
+{"item":"100","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"100","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"100","metric":"slot_format","value":1,"kind":"gate","detail":"want modern, got modern"}
+{"item":"100","metric":"slot_colors","value":1,"kind":"gate","detail":"want WU, got WU"}
+{"item":"100","metric":"slot_power","value":1,"kind":"gate","detail":"want tournament, got tournament"}
+{"item":"100","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"100","metric":"slot_budget","value":1,"kind":"gate","detail":"want 600, got 600 to buy"}
+{"item":"100","metric":"slot_theme","value":0,"kind":"gate","detail":"want control, got team event"}
+{"item":"100","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"100","metric":"asked","value":3,"kind":"info"}
+{"item":"100","metric":"invented","value":0,"kind":"info"}
+{"item":"100","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"100","metric":"stalls","value":1,"kind":"info"}
+{"item":"100","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"101","metric":"error","value":0,"kind":"gate"}
+{"item":"101","metric":"premature","value":0,"kind":"gate"}
+{"item":"101","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"101","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"101","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"101","metric":"slot_colors","value":1,"kind":"gate","detail":"want UB, got UB"}
+{"item":"101","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 3, got bracket 3"}
+{"item":"101","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"101","metric":"slot_commander","value":1,"kind":"gate","detail":"want delegated, got delegated"}
+{"item":"101","metric":"slot_budget","value":1,"kind":"gate","detail":"want 100, got 100 to buy"}
+{"item":"101","metric":"slot_theme","value":1,"kind":"gate","detail":"want mill, got mill"}
+{"item":"101","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"101","metric":"asked","value":3,"kind":"info"}
+{"item":"101","metric":"invented","value":0,"kind":"info"}
+{"item":"101","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"101","metric":"stalls","value":0,"kind":"info"}
+{"item":"101","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"102","metric":"error","value":0,"kind":"gate"}
+{"item":"102","metric":"premature","value":0,"kind":"gate"}
+{"item":"102","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"102","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"102","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"102","metric":"slot_colors","value":1,"kind":"gate","detail":"want WU, got WU"}
+{"item":"102","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"102","metric":"slot_commander","value":1,"kind":"gate","detail":"want delegated, got delegated"}
+{"item":"102","metric":"slot_theme","value":1,"kind":"gate","detail":"want stax, got stax"}
+{"item":"102","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"102","metric":"asked","value":3,"kind":"info"}
+{"item":"102","metric":"invented","value":0,"kind":"info"}
+{"item":"102","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"102","metric":"stalls","value":1,"kind":"info"}
+{"item":"102","metric":"closed_by_net","value":1,"kind":"info"}
+{"item":"103","metric":"error","value":0,"kind":"gate"}
+{"item":"103","metric":"premature","value":0,"kind":"gate"}
+{"item":"103","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"103","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"103","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"103","metric":"slot_colors","value":1,"kind":"gate","detail":"want WU, got WU"}
+{"item":"103","metric":"slot_power","value":1,"kind":"gate","detail":"want bracket 3, got bracket 3"}
+{"item":"103","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want any_card, got any_card"}
+{"item":"103","metric":"slot_commander","value":1,"kind":"gate","detail":"want delegated, got delegated"}
+{"item":"103","metric":"slot_budget","value":1,"kind":"gate","detail":"want 200, got 200 to buy"}
+{"item":"103","metric":"slot_theme","value":1,"kind":"gate","detail":"want artifact, got artifacts and lifegain"}
+{"item":"103","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"103","metric":"asked","value":3,"kind":"info"}
+{"item":"103","metric":"invented","value":0,"kind":"info"}
+{"item":"103","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"103","metric":"stalls","value":0,"kind":"info"}
+{"item":"103","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"104","metric":"error","value":0,"kind":"gate"}
+{"item":"104","metric":"premature","value":0,"kind":"gate","detail":"commander (asked, no answer)"}
+{"item":"104","metric":"dead_end","value":0,"kind":"gate"}
+{"item":"104","metric":"lint_findings","value":0,"kind":"gate"}
+{"item":"104","metric":"slot_format","value":1,"kind":"gate","detail":"want commander, got commander"}
+{"item":"104","metric":"slot_colors","value":1,"kind":"gate","detail":"want BG, got BG"}
+{"item":"104","metric":"slot_pool_rule","value":1,"kind":"gate","detail":"want owned_first, got owned_first"}
+{"item":"104","metric":"slot_theme","value":1,"kind":"gate","detail":"want sacrifice, got sacrifice"}
+{"item":"104","metric":"catalog_only","value":1,"kind":"info"}
+{"item":"104","metric":"asked","value":5,"kind":"info"}
+{"item":"104","metric":"invented","value":0,"kind":"info"}
+{"item":"104","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"104","metric":"stalls","value":0,"kind":"info"}
+{"item":"104","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"105","metric":"error","value":0,"kind":"info"}
+{"item":"105","metric":"premature","value":0,"kind":"info"}
+{"item":"105","metric":"dead_end","value":0,"kind":"info"}
+{"item":"105","metric":"lint_findings","value":0,"kind":"info"}
+{"item":"105","metric":"catalog_only","value":1,"kind":"info","detail":" (probe)"}
+{"item":"105","metric":"asked","value":3,"kind":"info"}
+{"item":"105","metric":"invented","value":0,"kind":"info"}
+{"item":"105","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"105","metric":"stalls","value":0,"kind":"info"}
+{"item":"105","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"106","metric":"error","value":0,"kind":"info"}
+{"item":"106","metric":"premature","value":0,"kind":"info"}
+{"item":"106","metric":"dead_end","value":0,"kind":"info"}
+{"item":"106","metric":"lint_findings","value":0,"kind":"info"}
+{"item":"106","metric":"catalog_only","value":1,"kind":"info","detail":" (probe)"}
+{"item":"106","metric":"asked","value":4,"kind":"info"}
+{"item":"106","metric":"invented","value":0,"kind":"info"}
+{"item":"106","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"106","metric":"stalls","value":1,"kind":"info"}
+{"item":"106","metric":"closed_by_net","value":1,"kind":"info"}
+{"item":"107","metric":"error","value":0,"kind":"info"}
+{"item":"107","metric":"premature","value":0,"kind":"info"}
+{"item":"107","metric":"dead_end","value":0,"kind":"info"}
+{"item":"107","metric":"lint_findings","value":0,"kind":"info"}
+{"item":"107","metric":"catalog_only","value":1,"kind":"info","detail":" (probe)"}
+{"item":"107","metric":"asked","value":5,"kind":"info"}
+{"item":"107","metric":"invented","value":0,"kind":"info"}
+{"item":"107","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"107","metric":"stalls","value":2,"kind":"info"}
+{"item":"107","metric":"closed_by_net","value":2,"kind":"info"}
+{"item":"108","metric":"error","value":0,"kind":"info"}
+{"item":"108","metric":"premature","value":0,"kind":"info"}
+{"item":"108","metric":"dead_end","value":0,"kind":"info"}
+{"item":"108","metric":"lint_findings","value":0,"kind":"info"}
+{"item":"108","metric":"catalog_only","value":1,"kind":"info","detail":" (probe)"}
+{"item":"108","metric":"asked","value":4,"kind":"info"}
+{"item":"108","metric":"invented","value":0,"kind":"info"}
+{"item":"108","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"108","metric":"stalls","value":0,"kind":"info"}
+{"item":"108","metric":"closed_by_net","value":1,"kind":"info"}
+{"item":"109","metric":"error","value":0,"kind":"info"}
+{"item":"109","metric":"premature","value":0,"kind":"info"}
+{"item":"109","metric":"dead_end","value":0,"kind":"info"}
+{"item":"109","metric":"lint_findings","value":0,"kind":"info"}
+{"item":"109","metric":"slot_sets","value":1,"kind":"info","detail":"want msc,msh,pspm,spe,spm, got msc,msh,pspm,spe,spm"}
+{"item":"109","metric":"catalog_only","value":1,"kind":"info","detail":" (probe)"}
+{"item":"109","metric":"asked","value":3,"kind":"info"}
+{"item":"109","metric":"invented","value":0,"kind":"info"}
+{"item":"109","metric":"refused_rewords","value":0,"kind":"info"}
+{"item":"109","metric":"stalls","value":0,"kind":"info"}
+{"item":"109","metric":"closed_by_net","value":0,"kind":"info"}
+{"item":"suite","metric":"catalog_only","value":73,"kind":"gate","detail":"73 of 74, the bar is 64"}
+{"item":"suite","metric":"gate_size","value":77,"kind":"gate","detail":"the gate needs 77"}
+{"item":"suite","metric":"expectation_misses","value":1,"kind":"gate","detail":"74 counted conversations name expectations"}

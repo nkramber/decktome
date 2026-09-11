@@ -96,6 +96,10 @@ type When struct {
 	// NotOutstanding names the state keys this row waits for. The row
 	// does not fire while one of them holds an unanswered question.
 	NotOutstanding []string `json:"not_outstanding"`
+	// NotBeside names the slots this row never shares a turn with. The row
+	// stays out of a turn that asks a question of one of them, and it
+	// waits for no answer: a later turn may ask it (D-669).
+	NotBeside []string `json:"not_beside"`
 	// Format is "commander", "sixty", or empty. Load refuses another word.
 	Format           string `json:"format"`
 	PowerCompetitive *bool  `json:"power_competitive"`
@@ -231,6 +235,11 @@ func parse(data []byte) (*Catalog, error) {
 				return nil, fmt.Errorf("questions: row %q requires slot %q, which the proto does not have", r.ID, need)
 			}
 		}
+		for _, s := range r.When.NotBeside {
+			if !slots[s] {
+				return nil, fmt.Errorf("questions: row %q keeps slot %q out of its turn, which the proto does not have", r.ID, s)
+			}
+		}
 	}
 	// A row may wait on a key only when some row owns that key.
 	keys := map[string]bool{}
@@ -245,6 +254,18 @@ func parse(data []byte) (*Catalog, error) {
 		}
 	}
 	sort.SliceStable(c.Rows, func(i, j int) bool { return c.Rows[i].Order < c.Rows[j].Order })
+	// The planner reads the rows in order, so a row sees only the slots of
+	// the rows before it. A slot a row keeps out of its turn must ask
+	// first, or the row shares the turn anyway.
+	for _, r := range c.Rows {
+		for _, s := range r.When.NotBeside {
+			for _, other := range c.Rows {
+				if other.Slot == s && other.Order > r.Order {
+					return nil, fmt.Errorf("questions: row %q keeps slot %q out of its turn, and row %q of that slot asks after it", r.ID, s, other.ID)
+				}
+			}
+		}
+	}
 	return &c, nil
 }
 

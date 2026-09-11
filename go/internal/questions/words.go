@@ -516,6 +516,98 @@ func delegatesChoice(message string) bool {
 	return false
 }
 
+// slotNouns name the slot a delegation hands over, by the key the
+// classifier declines. A key with no nouns here keeps every decline.
+var slotNouns = map[string][]string{
+	"commander":      {"commander", "commanders"},
+	"commander_pick": {"commander", "commanders"},
+	"colors":         {"color", "colors", "colour", "colours"},
+	"power":          {"power", "bracket", "level"},
+	"budget":         {"budget", "price", "money", "spend", "spending", "cost"},
+	"budget_scope":   {"budget", "price", "money", "spend", "spending", "cost"},
+	"theme":          {"theme", "plan", "strategy", "archetype"},
+	"format":         {"format"},
+	"pool_rule":      {"pool", "library", "collection"},
+}
+
+// restWords hand over everything that is left, so a delegation that
+// names one of them hands over every open key.
+var restWords = map[string]bool{
+	"rest": true, "everything": true, "anything": true, "all": true, "others": true, "remaining": true,
+}
+
+// objectWindow is how many words after a delegation phrase may name what
+// it hands over.
+const objectWindow = 8
+
+// clauseBreak splits a message into clauses. "White and blue. You pick
+// the commander." holds two, and the colors do not belong to the
+// delegation.
+var clauseBreak = regexp.MustCompile(`[.!?;:\n]+`)
+
+// preObjectWindow is how many words before a delegation phrase may name
+// what it hands over, when nothing after the phrase names it.
+const preObjectWindow = 4
+
+// delegationObjects reads what each delegation of a message hands over.
+// It answers the keys a delegation names in its clause, whether some
+// delegation hands over every open key, and whether the message delegates
+// at all (D-670).
+//
+// The object follows the phrase first: "you pick the commander". Only a
+// phrase with nothing after it reads the words before it: "for the
+// commander, you pick". So "the budget is tight, you pick the commander"
+// hands over the commander alone.
+func delegationObjects(message string) (named map[string]bool, bare, found bool) {
+	named = map[string]bool{}
+	for _, clause := range clauseBreak.Split(message, -1) {
+		toks := tokens(clause)
+		for _, p := range delegateSigns {
+			want := tokens(p)
+			for i := range toks {
+				if !matchAt(toks, want, i) {
+					continue
+				}
+				found = true
+				after := i + len(want)
+				hit, rest := objectsIn(toks, after, min(len(toks), after+objectWindow), named)
+				if !hit && !rest {
+					hit, rest = objectsIn(toks, max(0, i-preObjectWindow), i, named)
+				}
+				if rest || !hit {
+					bare = true
+				}
+			}
+		}
+	}
+	return named, bare, found
+}
+
+// objectsIn marks the keys whose slot nouns stand in toks[from:to]. It
+// answers whether it found one, and whether a rest word hands over every
+// open key.
+func objectsIn(toks []string, from, to int, named map[string]bool) (hit, rest bool) {
+	for j := from; j < to; j++ {
+		if restWords[toks[j]] {
+			return hit, true
+		}
+		for key, nouns := range slotNouns {
+			for _, n := range nouns {
+				if toks[j] == n {
+					named[key], hit = true, true
+				}
+			}
+		}
+	}
+	return hit, false
+}
+
+// slotHasNouns reports whether a delegation can name the slot of a key.
+func slotHasNouns(key string) bool {
+	_, ok := slotNouns[key]
+	return ok
+}
+
 // namesCommander reports whether the message uses the word at all. It
 // scopes a delegation that would otherwise read as an answer to any open
 // question (D-147).
@@ -605,6 +697,11 @@ func occasionOnly(message string) bool {
 	return anyPhrase(message, occasionSigns) &&
 		!anyPhrase(message, stepSigns) && !competitiveRequest(message)
 }
+
+// occasionTheme reports whether a theme the classifier wrote names an
+// occasion. "Team event" names a happening, and a deck for it still has
+// no plan (D-670, extends D-219).
+func occasionTheme(theme string) bool { return anyPhrase(theme, occasionSigns) }
 
 // cedhSigns name competitive Commander. cEDH is bracket 5 by definition,
 // and it is a Commander deck (corpus sections 2.3 and 15).
