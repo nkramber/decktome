@@ -17,8 +17,9 @@ import (
 
 // runExplain reads the decks of a deck gate document and prints how the
 // stored model grades each one: the detector's probability against its
-// cut, the ladder, and the six largest contributions. It is free, and
-// it is how a session reads a grade it does not believe.
+// cut, the rules read of a Commander deck, the ladder, and the six
+// largest contributions. It is free, and it is how a session reads a
+// grade it does not believe.
 func runExplain(path, promptsPath string) error {
 	ctx := context.Background()
 	quiet := gatekit.Quiet()
@@ -68,6 +69,10 @@ func runExplain(path, promptsPath string) error {
 			continue
 		}
 		fmt.Printf("%d. %s: %s, score %.2f, defect %.2f (cut %.2f, flagged %v), ladder %v\n", d.id, d.title, e.Tier, e.Score, e.Defect, e.Threshold, e.Flagged, rounded(e.Ladder))
+		if r := e.Rules; r.Checked {
+			fmt.Printf("   rules: lands %.0f of a need of %.1f (short %.1f, cut %.0f, cheap %d), curve %.2f (cut %.1f), colors %.2f (cut %.2f), flagged %v\n",
+				r.LandCount, r.Need, r.Shortfall(), quality.RuleLandShortfall, r.Cheap, r.AvgManaValue, quality.RuleCurveCeiling, r.ColorSources, quality.RuleColorFloor, r.Flagged())
+		}
 		cs := e.Contributions
 		sort.Slice(cs, func(i, j int) bool {
 			return math.Abs(cs[i].Defect)+math.Abs(cs[i].Ladder) > math.Abs(cs[j].Defect)+math.Abs(cs[j].Ladder)

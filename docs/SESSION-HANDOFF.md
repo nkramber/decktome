@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-11)
 
-**The checkout.** `main` is `4b56949`, which is pull request #142, or a later merge. The branch `m12-rules-fits` holds this hand-off, the fits of M-12, F-117, and D-678, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
+**The checkout.** `main` is `edbe1d3`, which is pull request #143, or a later merge. The branch `pr-40-rules-detector` holds this hand-off, PR-40, gate run 20, and D-679, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
 
 **The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586). #139 deployed on 2026-09-11 at 04:01 UTC, and `/readyz` answered OK.
 
@@ -24,7 +24,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **M-11 is done, and no detector variant meets its gate** (F-115, D-675). Every disputed deck grades bad in all fifteen fits. The grade adds the detector probability to the bad rung of every deck, so the flag never decides the tier (F-115). Four free tier fits keep every bar: `tier` grades 14 decks bad, and `notier` 8 with deck 22 at baseline. **The owner chose the rules detector first, as M-12, with no change of the tier** (D-675). `docs/reference/m11-detector-variants-2026-09-11.md` holds every fit, and `.local/m11/` holds the patches.
 
-**M-12 is done, and PR-40 builds design A** (F-116, F-117, D-676 to D-678). Design A passes in all eight fits, and every bar reads as gate run 19. It grades 9 built decks bad against 16, and the judge agreement rises from 9 to 10. Design B fails in all eight, because its synergy detector flags the precons (F-117). **The owner chose a shortfall of 10, curve 4.4, and colors 0.75** (D-678). `docs/reference/m12-rules-detector-fits-2026-09-11.md` holds the fits, and `.local/m12/` holds the patches.
+**This branch builds PR-40, and gate run 20 reproduces the pick of M-12** (D-678). The checks set the Commander tier, and the fitted detector keeps the score. Every bar reads as a control fit of the parent. The built decks graded bad fall from 16 to 9, and the judge agreement rises from 9 to 10. The broken copies graded bad fall from 5,730 to 4,141 of 5,905. `docs/reference/pr14b-quality-gate-run20.md` holds the run.
+
+CAUTION: the merge of PR-40 changes the grade of every new Commander build on `decktome.com`. The checks are code, and the stored model holds none of them, so the grade moves on the deploy and not on the meta job. A grade stored on an older deck keeps its tier until a rebuild or a revision.
 
 CAUTION: the `decktome` gcloud configuration named the Wallabee account and project on 2026-09-10, so `use_decktome` put the shell on the wrong project. `scripts/read-session.sh` reads `SESSION_PROJECT` and the account of `CLOUDSDK_CORE_ACCOUNT`, so an environment override reads `decktome-prod` with no change to the configuration. The owner has the commands to repair the configuration.
 
@@ -40,7 +42,7 @@ CAUTION: the `decktome` gcloud configuration named the Wallabee account and proj
 
 **The gate reports the three numbers of D-648 for free.** `make quality-gate` grades the decks of deck gate run 16 with the model it fits, and it reads the judge's tiers from judge lane run 5. It stores no model.
 
-**The owner graded the ten disputed decks** (D-659). The judge bar is the right target, and the detector reads built decks wrong. PR-40 builds the rules detector of M-12 next (D-678), and PR-38 waits on the detector fix (D-665). The review sheet is `.local/review/disputed-decks-2026-09-10.md`, beside a CSV, and it stays out of git. Its notes on decks 11 and 15 read the fit of 2026-09-07, and the ladder of gate run 19 reads both decks baseline. `docs/reference/m10-softmax-scorer-2026-09-10.md` holds the fits.
+**The owner graded the ten disputed decks** (D-659). The judge bar is the right target, and the detector reads built decks wrong. PR-40 builds the rules detector of M-12 on this branch (D-678), and PR-38 waits on it (D-665). The review sheet is `.local/review/disputed-decks-2026-09-10.md`, beside a CSV, and it stays out of git. Its notes on decks 11 and 15 read the fit of 2026-09-07, and the ladder of gate run 19 reads both decks baseline. `docs/reference/m10-softmax-scorer-2026-09-10.md` holds the fits.
 
 **Three items aimed at the reader gap failed first**: PR-29, M-9, and PR-30 (F-94, F-98, F-99). The owner parked PR-35 and dropped PR-30.
 
@@ -99,12 +101,12 @@ Seven things a fresh session gets wrong without this file.
 - The deployed API, read 2026-09-11: revision `mtg-api-00035-djl` on image `api:33d6691`, from #139. `/readyz` read the card snapshot of 2026-09-10 at 21:02 UTC.
 - The deployed quality model, read 2026-09-11: `20260911T063437Z`, from the meta job of 06:00 UTC. It fits 38,124 lists and 966 commanders, and its Commander fit reads `immaterial` 245 and accuracy 0.644. The job ran 41 minutes, and the run of 2026-09-10 ran 20.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
-- Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 18, revise is run 9. Run 48 is the newest whole questions run, and it reads PASS. Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 19 is its newest run.
+- Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 18, revise is run 9. Run 48 is the newest whole questions run, and it reads PASS. Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 20 is its newest run.
 - Toolchain: Go 1.27.0, Node 22.23.2, pnpm 9.2.0, firebase-tools 14.14.0, Java 17, Playwright 1.63.0 with its Chromium headless shell (`playwright install chromium`). vitest is 5.0.0 since #133. The first three were verified 2026-09-09.
 
 ## Next steps, in order
 
-1. **Build PR-40, design A of M-12** (D-678). The checks read Commander alone, at a shortfall of 10, a curve over 4.4, and colors under 0.75. Port Karsten's cheap counter and its test from `.local/m12/`. Set the tier from the checks. Keep the fitted detector in the score. Make the reasons of a flagged deck name the check. Report the three numbers and the broken copies graded bad against a control fit of the parent.
+1. **After the owner merges PR-40, read the grade on the deployed app** (D-678). Wait for the deploy of Cloud Build after the merge. Ask the owner to build one Commander deck, then read the session with `make read-session`. Check that a flagged deck names its check, and that any other deck names the ladder. Then run M-10 again on the three numbers, as D-665 asks before PR-38.
 2. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
 3. **The live half of the feedback loop has no run yet.** Three things want a measurement: the judge lane of the triage, one live fix cycle, and one review round. All three need the owner's word, and the cycle also needs `AUTOTUNE_FIXER_CMD` and a harvest whose verdicts carry a snapshot.
 4. **The next whole deck gate run is still deck gate run 19, and it is still outstanding.** It makes the next decks baseline. It also measures PR-39 on real builds, where quality gate run 19 read the model alone.
@@ -124,6 +126,16 @@ The CI step "fake gcs tests" ran no test until 2026-09-10 (D-658). Its filter ma
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 
 ## The ten most recent sessions
+
+### 2026-09-11e: PR-40, the rules detector
+
+**The owner merged #143, and the session built PR-40** (D-678). A new `rules.go` holds the three checks, Karsten's cheap count, and the tier of a Commander deck. `Score`, `Explain`, and the holdout grades read it, and the score and the bars stay as they were.
+
+**The tests read Karsten's own examples.** The cheap rule matches all 33 cards the article names. Two more tests read the checks on built Commander decks and the tier on a hand-built model.
+
+**Gate run 20 reproduces the fit of M-12 in every number.** A control fit of the parent reproduces gate run 19. The built decks graded bad fall from 16 to 9, and the judge agreement rises from 9 to 10. The broken copies graded bad fall from 5,730 to 4,141.
+
+**The owner set a rule for every pull request** (D-679): wait for gitar and answer every finding, a docs-only pull request included. #143 merged while `verify:go` still ran, and that check passed at 17:47 UTC.
 
 ### 2026-09-11d: the fits of M-12, and design A for PR-40
 
@@ -257,20 +269,6 @@ Merged as #127.
 
 **The CI step "fake gcs tests" runs its test now** (F-101, D-658). Its filter matched no test, so it passed as a no-op. `scripts/gcs-check.sh` seeds the fake GCS from the trimmed snapshot and fails unless `TestLiveFakeGCS` passes by name.
 
-### 2026-09-10b: PR-29 closed, and M-8 read the bar
-
-Merged as #126.
-
-**The casual corpus worked and the trade did not.** A control fitted the same day over the same data reads the numbers apart. The Commander synergy axis read 0.70 and 0.81. The built decks graded bad read 15 of 25 and 17, and the judge agreement 8 of 25 and 6. The judge comparison holds no judge noise: one run answered every deck once, and both models read those same answers.
-
-**Two further features failed and went back.** `casual_unseen_share` moved the target axis by nothing and cost three other bars. `casual_pair_share` won one pair of 389, because the fit split it against `casual_synergy` with opposite signs.
-
-**M-8 found the target was never reachable.** A weak precon's cards do not pair in the corpus, so the synergy break removes half of nothing. 54 of 389 Commander pairs carry no signal and read 0.43, so a perfect model reads 0.93.
-
-**The repository already held the rule.** D-485 says a break must be material, and it checks the copies axis and the colors axis. Synergy is the fallback, and it checks nothing (F-95).
-
-**The owner closed PR-29 and answered the three questions of PR-37.** The evidence document stays, because two findings rest on it.
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-10, and 42 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-10b, and 42 more sections, word for word. Read it for the detail behind a decision.

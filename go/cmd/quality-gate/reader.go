@@ -162,7 +162,7 @@ func readerSection(p func(string, ...any), rep *quality.FitReport, r *readerRead
 	if r.answers != nil {
 		p(" The judge's tiers come from `%s`. One judge run serves every model, so the agreement holds no judge noise.", filepath.Base(r.judgedPath))
 	}
-	p(" No bar reads the last two, and an item that moves none of the three is dropped.\n\n")
+	p(" No bar reads the last two, and an item that moves none of the three is dropped. A change that moves a tier also reads the broken copies graded bad (D-674).\n\n")
 	p("| Number | Read |\n|---|---|\n")
 	if fr := rep.Formats[meta.FormatCommander]; fr != nil {
 		own := fr.Holdout.OwnByDefect[quality.DefectSynergy]
@@ -171,6 +171,10 @@ func readerSection(p func(string, ...any), rep *quality.FitReport, r *readerRead
 			word = fmt.Sprintf("%.2f of %d", own.Share(), own.Pairs)
 		}
 		p("| Commander synergy axis, precon over own copy | %s |\n", word)
+		if graded, copies := brokenCopiesGradedBad(fr.Holdout); copies > 0 {
+			p("| Commander broken copies graded bad (D-674) | %d of %d |\n", graded, copies)
+			run.Info("suite", "broken_copies_graded_bad", float64(graded), fmt.Sprintf("%d of %d Commander broken copies of the holdout", graded, copies))
+		}
 	}
 	p("| Built decks graded bad | %d of %d |\n", bad, len(r.decks))
 	run.Info("suite", "decks_graded_bad", float64(bad), fmt.Sprintf("%d of %d built decks of %s", bad, len(r.decks), filepath.Base(r.decksPath)))
@@ -190,4 +194,17 @@ func readerSection(p func(string, ...any), rep *quality.FitReport, r *readerRead
 		p("| %d | %s | %s | %s | %s | %s |\n", d.id, d.title, generate.FormatWord(d.format), d.modelGrade, judge, agree)
 	}
 	p("\n")
+}
+
+// brokenCopiesGradedBad answers the broken copies of a holdout the model
+// grades bad, and the copies it read: the bad row of the confusion table,
+// the worst rung first (D-674).
+func brokenCopiesGradedBad(h quality.Holdout) (graded, copies int) {
+	if len(h.Confusion) == 0 || len(h.Confusion[0]) == 0 {
+		return 0, 0
+	}
+	for _, n := range h.Confusion[0] {
+		copies += n
+	}
+	return h.Confusion[0][0], copies
 }

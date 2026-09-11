@@ -11,6 +11,20 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## 2026-09-10b: PR-29 closed, and M-8 read the bar
+
+Merged as #126.
+
+**The casual corpus worked and the trade did not.** A control fitted the same day over the same data reads the numbers apart. The Commander synergy axis read 0.70 and 0.81. The built decks graded bad read 15 of 25 and 17, and the judge agreement 8 of 25 and 6. The judge comparison holds no judge noise: one run answered every deck once, and both models read those same answers.
+
+**Two further features failed and went back.** `casual_unseen_share` moved the target axis by nothing and cost three other bars. `casual_pair_share` won one pair of 389, because the fit split it against `casual_synergy` with opposite signs.
+
+**M-8 found the target was never reachable.** A weak precon's cards do not pair in the corpus, so the synergy break removes half of nothing. 54 of 389 Commander pairs carry no signal and read 0.43, so a perfect model reads 0.93.
+
+**The repository already held the rule.** D-485 says a break must be material, and it checks the copies axis and the colors axis. Synergy is the fallback, and it checks nothing (F-95).
+
+**The owner closed PR-29 and answered the three questions of PR-37.** The evidence document stays, because two findings rest on it.
+
 ## 2026-09-10: PR-34, the collection formats
 
 Merged as #123.
