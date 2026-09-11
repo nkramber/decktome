@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/nkramber/decktome/go/internal/meta"
+	"github.com/nkramber/decktome/go/internal/quality"
 )
 
 const judgedDoc = `# PR-14B quality judge lane
@@ -67,5 +68,17 @@ func TestReaderCounts(t *testing.T) {
 	bad, judgedCount, agreed := r.counts()
 	if bad != 2 || judgedCount != 2 || agreed != 1 {
 		t.Errorf("counts = %d bad, %d judged, %d agreed, want 2, 2, 1", bad, judgedCount, agreed)
+	}
+}
+
+// TestBrokenCopiesGradedBad: the count of D-674 reads the bad row of the
+// confusion table.
+func TestBrokenCopiesGradedBad(t *testing.T) {
+	h := quality.Holdout{Confusion: [][]int{{40, 5, 3, 2, 0}, {1, 9, 0, 0, 0}}}
+	if graded, copies := brokenCopiesGradedBad(h); graded != 40 || copies != 50 {
+		t.Errorf("broken copies graded bad = %d of %d, want 40 of 50", graded, copies)
+	}
+	if graded, copies := brokenCopiesGradedBad(quality.Holdout{}); graded != 0 || copies != 0 {
+		t.Errorf("an empty holdout = %d of %d, want 0 of 0", graded, copies)
 	}
 }

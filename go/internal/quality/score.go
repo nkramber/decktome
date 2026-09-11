@@ -57,17 +57,15 @@ func (s *Scorer) Score(in Input) *mtgv1.DeckQuality {
 	}
 	features := Features(in, fm)
 	z := fm.vector(features)
-	p, score := fm.grade(z)
+	graded, score := fm.grade(z)
+	rr := ruleChecks(in)
+	p := fm.tierProbabilities(z, graded, rr)
 	out := &mtgv1.DeckQuality{ModelVersion: m.Version, Score: round4(score)}
-	best := 0
 	for k, v := range p {
-		if v > p[best] {
-			best = k
-		}
 		out.Probabilities = append(out.Probabilities, &mtgv1.TierProbability{Tier: fm.Tiers[k], Probability: round4(v)})
 	}
-	out.Tier = fm.Tiers[best]
-	out.Reasons = reasons(fm, z)
+	out.Tier = fm.Tiers[argmax(p)]
+	out.Reasons = reasons(fm, z, rr)
 	return out
 }
 
@@ -202,19 +200,28 @@ var phrases = map[string]phrase{
 // The strength is the weight times the standardized value, and the
 // words follow the value's side of the norm and say which way the
 // signal moved the grade.
-func reasons(fm *FormatModel, z []float64) []string {
+func reasons(fm *FormatModel, z []float64, r RuleRead) []string {
+	// A deck the rules flag names the checks, and a deck the rules check
+	// and pass names the ladder, because the ladder set its tier (D-678).
+	if r.Flagged() {
+		out := r.reasons()
+		if len(out) > ReasonCount {
+			out = out[:ReasonCount]
+		}
+		return out
+	}
 	type contribution struct {
 		key string
 		c   float64
 		z   float64
 	}
 	var all []contribution
-	// A deck the detector reads as broken names the detector's signals,
-	// because they are what lowered the grade (D-485). The detector's
-	// weight raises the defect, so its sign turns.
+	// A deck of another format that the detector reads as broken names
+	// the detector's signals, because they are what lowered the grade
+	// (D-485). The detector's weight raises the defect, so its sign turns.
 	weights := fm.Weights
 	sign := 1.0
-	if fm.flagged(z) {
+	if !r.Checked && fm.flagged(z) {
 		weights = fm.DefectWeights
 		sign = -1
 	}
@@ -312,13 +319,16 @@ type Contribution struct {
 }
 
 // Explanation is the read of one deck for a gate document: the grade,
-// the detector's probability and cut, and every contribution.
+// the detector's probability and cut, the rules read, the ladder's own
+// probability of each tier before the detector and the rules move the
+// grade, and every contribution.
 type Explanation struct {
 	Tier          string
 	Score         float64
 	Defect        float64
 	Threshold     float64
 	Flagged       bool
+	Rules         RuleRead
 	Ladder        []float64
 	Contributions []Contribution
 }
@@ -333,14 +343,10 @@ func (s *Scorer) Explain(in Input) *Explanation {
 	}
 	features := Features(in, fm)
 	z := fm.vector(features)
-	p, score := fm.grade(z)
-	best := 0
-	for k, v := range p {
-		if v > p[best] {
-			best = k
-		}
-	}
-	out := &Explanation{Tier: fm.Tiers[best], Score: round4(score), Defect: round4(fm.defect(z)), Threshold: fm.DefectThreshold, Flagged: fm.flagged(z), Ladder: p}
+	graded, score := fm.grade(z)
+	rr := ruleChecks(in)
+	p := fm.tierProbabilities(z, graded, rr)
+	out := &Explanation{Tier: fm.Tiers[argmax(p)], Score: round4(score), Defect: round4(fm.defect(z)), Threshold: fm.DefectThreshold, Flagged: fm.flagged(z), Rules: rr, Ladder: levelProbabilities(fm.Weights, fm.Thresholds, z)}
 	for i, k := range fm.Keys {
 		c := Contribution{Key: k, Value: round4(features[k]), Z: round4(z[i]), Ladder: round4(fm.Weights[i] * z[i])}
 		if len(fm.DefectWeights) == len(z) {

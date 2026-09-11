@@ -264,6 +264,7 @@ type holdRow struct {
 	base   string
 	name   string
 	date   string
+	rules  RuleRead
 }
 
 // prepared is one format's rows, resolved, capped, broken, and
@@ -275,6 +276,8 @@ type prepared struct {
 	tiers    []string
 	level    map[string]int
 	profiles map[string]*mtgv1.DeckProfile
+	// rules is the rules read of every row, once (D-678).
+	rules map[string]RuleRead
 }
 
 // AxisRead reads the precon bar of one axis over every fold (M-7).
@@ -575,6 +578,10 @@ func prepareFormat(ctx context.Context, in FitInput, f mtgv1.FormatId) (*prepare
 		}
 		prep.profiles[r.List.Key()] = in.Profiler.Measure(r.Deck, in.Index)
 	}
+	prep.rules = map[string]RuleRead{}
+	for _, r := range all {
+		prep.rules[r.List.Key()] = ruleChecks(Input{Deck: r.Deck, Profile: prep.profiles[r.List.Key()], Cards: in.Index})
+	}
 	return prep, fr, nil
 }
 
@@ -669,7 +676,7 @@ func fitFold(ctx context.Context, in FitInput, prep *prepared, fr *FormatReport,
 	for _, s := range samples {
 		z := fm.vector(s.features)
 		if s.hold {
-			rows = append(rows, holdRow{z: z, level: s.level, defect: s.r.List.Defect, key: s.r.List.Key(), base: baseKey(s.r.List), name: listName(s.r.List), date: s.r.List.Date})
+			rows = append(rows, holdRow{z: z, level: s.level, defect: s.r.List.Defect, key: s.r.List.Key(), base: baseKey(s.r.List), name: listName(s.r.List), date: s.r.List.Date, rules: prep.rules[s.r.List.Key()]})
 			fm.HoldoutCounts[s.r.List.Tier]++
 		} else {
 			trainX, trainY = append(trainX, z), append(trainY, s.level)
@@ -1078,13 +1085,8 @@ func evaluate(fm *FormatModel, rows []holdRow, level map[string]int, limit int) 
 	flagged := make([]bool, len(rows))
 	right := 0
 	for i, r := range rows {
-		p, score := fm.grade(r.z)
-		best := 0
-		for k, v := range p {
-			if v > p[best] {
-				best = k
-			}
-		}
+		graded, score := fm.grade(r.z)
+		best := argmax(fm.tierProbabilities(r.z, graded, r.rules))
 		scores[i], grades[i], flagged[i] = score, best, fm.flagged(r.z)
 		h.Confusion[r.level][best]++
 		if best == r.level {
