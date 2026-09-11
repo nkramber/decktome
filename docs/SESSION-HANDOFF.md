@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-10)
 
-**The checkout.** `main` is `62b9aaa`, which is pull request #135, or a later merge. No branch holds open work. Dependabot's #131, #132, and #133 merged the same day. #133, the web bumps, took a fix on its own branch first. The fix holds the regenerated TypeScript of protoc-gen-es 2.14.1, and a type augmentation for the axe matcher on vitest 5's assertion. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
+**The checkout.** `main` is `d692861`, which is pull request #136, or a later merge. The branch `measure-pr39-color-sources` holds gate run 19 and D-663 to D-665, as an open pull request. Dependabot's #131, #132, and #133 merged on 2026-09-10. #133, the web bumps, took a fix on its own branch first. The fix holds the regenerated TypeScript of protoc-gen-es 2.14.1, and a type augmentation for the axe matcher on vitest 5's assertion. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
 
 **The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586).
 
@@ -16,21 +16,23 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **PR-39 is merged as #135** (D-659 to D-661, F-102, F-103). The source count reads a reliable tap ability alone, and the balance phase trades basics toward the color that falls short. The measurement of D-661 is done. Over run 18 the pass moves four decks. The worst color rises on all four and falls on none, and deck 22 gains two Forests. `docs/reference/pr39-manapass-run18.md` holds the lane.
 
+**Gate run 19 measured PR-39 on the quality model, for nothing** (D-663, F-105). The feature `color_sources` reads the count PR-39 changed, and no gate read the model before. Every bar holds, and the judge agreement rises from 8 to 9 of 25. A control fit on the parent commit matches run 18 in every number. **An item that changes a feature of the quality model reports the three numbers now** (guardrail 14, D-664).
+
 CAUTION: the `decktome` gcloud configuration named the Wallabee account and project on 2026-09-10, so `use_decktome` put the shell on the wrong project. `scripts/read-session.sh` reads `SESSION_PROJECT` and the account of `CLOUDSDK_CORE_ACCOUNT`, so an environment override reads `decktome-prod` with no change to the configuration. The owner has the commands to repair the configuration.
 
 **PR-37 is merged as #127, and gate run 18 reads PASS** (D-653). The synergy check drops a Commander copy whose break lowered the synergy feature by less than 0.10 standard deviations. The Commander synergy axis reads 0.84 of 232, and the precon bar 0.95 of 788. No earlier run of the quality gate in the repository reads PASS.
 
-**CAUTION: the PASS comes from the population of the bar, and not from a better model.** The built decks graded bad stay at 15 of 25, and the judge agreement stays at 8 of 25. 37 of the 232 synergy pairs still lose, and those are the true gap of the axis.
+**CAUTION: the PASS of run 18 came from the population of the bar, and not from a better model.** Over run 18 the built decks graded bad stayed at 15 of 25, and the judge agreement at 8 of 25. Run 19 reads 16 and 9, from the source count of PR-39 (D-663). 36 of the 232 synergy pairs still lose on run 19, and those are the true gap of the axis.
 
 **CAUTION: the check reads Commander alone** (D-653, F-96). In Modern the synergy break does not lower the synergy feature in 825 of 845 pairs. A check there dropped 78 percent of the Modern synergy copies, and three decks the judge reads as bad graded higher.
 
-**CAUTION: the merge changed the production model.** The deploy of `302858a` succeeded on 2026-09-10 and pointed the meta job at the new image. The meta job refits the model on every run (`go/cmd/worker/meta.go`), so its next run stores a model with the check.
+**CAUTION: the merge changed the production model.** The deploy of `302858a` succeeded on 2026-09-10 and pointed the meta job at the new image. The meta job refits the model on every run (`go/cmd/worker/meta.go`), so its next run stores a model with the check. The job image is `worker:62b9aaa` now, so that run of 2026-09-11 at 06:00 UTC also carries the source count of PR-39. Run 19 measured both on the local store (D-663).
 
 **The premise of D-652 was half right.** The check drops 157 of 389 Commander pairs from every band of precon strength, and not only the 54 weak pairs M-8 named. `docs/reference/pr37-synergy-materiality-2026-09-10.md` holds all six floors.
 
 **The gate reports the three numbers of D-648 for free.** `make quality-gate` grades the decks of deck gate run 16 with the model it fits, and it reads the judge's tiers from judge lane run 5. It stores no model.
 
-**The owner grades ten disputed decks by hand next** (D-657, F-100). M-10's softmax scorer grades real lists far better, and the judge agreement moved from 8 to 9 only. The defect detector holds eight of those ten decks at bad. The review sheet is `.local/review/disputed-decks-2026-09-10.md`, beside a CSV, and it stays out of git. `docs/reference/m10-softmax-scorer-2026-09-10.md` holds the fits.
+**The owner graded the ten disputed decks** (D-659). The judge bar is the right target, and the detector reads built decks wrong. The detector fix is next, and PR-38 waits on it (D-665). The review sheet is `.local/review/disputed-decks-2026-09-10.md`, beside a CSV, and it stays out of git. `docs/reference/m10-softmax-scorer-2026-09-10.md` holds the fits.
 
 **Three items aimed at the reader gap failed first**: PR-29, M-9, and PR-30 (F-94, F-98, F-99). The owner parked PR-35 and dropped PR-30.
 
@@ -86,17 +88,17 @@ Seven things a fresh session gets wrong without this file.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
 - The feedback store holds 3 verdicts on 2026-09-09, and every one predates the snapshot of D-635. `make feedback-list VERDICT=` reads both verdicts now (F-87). A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 18, revise is run 9. Run 44 is the newest whole questions run, and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 18 is its newest run.
+- Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 18, revise is run 9. Run 44 is the newest whole questions run, and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 19 is its newest run.
 - Toolchain: Go 1.27.0, Node 22.23.2, pnpm 9.2.0, firebase-tools 14.14.0, Java 17, Playwright 1.63.0 with its Chromium headless shell (`playwright install chromium`). vitest is 5.0.0 since #133. The first three were verified 2026-09-09.
 
 ## Next steps, in order
 
-1. **Read a bracket 4 or 5 offer on the deployed app** after the deploy of #134. It shows the fix of F-104 on a real turn.
-2. **The detector reads built decks wrong** (D-659). Seven of its eight flags on the disputed decks are wrong, and the one real defect moves no weight. It comes after the basic lands (D-660).
-3. **Read the log of the next meta job.** Its quality fit line for Commander names `immaterial`. Check that the count reads above zero.
+1. **Read a bracket 4 or 5 offer on the deployed app** after the deploy of #134. It shows the fix of F-104 on a real turn. No reader session reached the API from that deploy to 23:00 UTC on 2026-09-10. One owned-only build at bracket 5 serves this step and step 7.
+2. **The detector fix is next** (D-659, D-660). Seven of its eight flags on the disputed decks are wrong, and the one real defect moves no weight. The basic lands are done (PR-39), and PR-38 waits on this fix (D-665). The item needs a plan, and its gate reads the three numbers (guardrail 14).
+3. **Read the log of the meta job of 2026-09-11**, after 06:20 UTC. Its quality fit line for Commander names `immaterial`. Check that the count reads above zero. The run also carries the source count of PR-39, and run 19 measured it (D-663).
 4. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
 5. **The live half of the feedback loop has no run yet.** Three things want a measurement: the judge lane of the triage, one live fix cycle, and one review round. All three need the owner's word, and the cycle also needs `AUTOTUNE_FIXER_CMD` and a harvest whose verdicts carry a snapshot.
-6. **The next whole deck gate run is still run 19, and it is still outstanding.** It makes the next decks baseline.
+6. **The next whole deck gate run is still deck gate run 19, and it is still outstanding.** It makes the next decks baseline. It also measures PR-39 on real builds, where quality gate run 19 read the model alone.
 7. **OQ-79 needs runtime evidence.** A fresh owned-only build on the deployed app is the way to it.
 8. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
 9. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
@@ -110,6 +112,16 @@ The CI step "fake gcs tests" ran no test until 2026-09-10 (D-658). Its filter ma
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 
 ## The ten most recent sessions
+
+### 2026-09-10e: gate run 19, PR-39 on the quality model
+
+**The owner asked what comes next.** The hand-off named the bracket walk, the detector, and the meta log. A read of the code found one more gap (F-105). The quality feature `color_sources` reads the source count PR-39 changed, and no gate read the model. The meta job of 2026-09-11 refits the stored model on the new count.
+
+**Gate run 19 cost nothing and reads PASS** (D-663). A control fit on `4d8635c`, the parent of PR-39, matches run 18 in every number. So the fit repeats, and the count alone moves run 19. Every bar holds. One built deck moves: deck 7, which the judge reads as bad, grades bad now. So graded bad rises from 15 to 16 of 25, and the judge agreement from 8 to 9.
+
+**Two owner answers.** An item that changes a feature of the quality model reports the three numbers now, as guardrail 14 (D-664). PR-38 waits on the detector fix (D-665).
+
+**The deployed app.** The deploys of #134 and #135 succeeded. No reader session reached the API after the deploy of #134. The ERROR lines of the API log are `/readyz` answers of 503 in a cold start, before the card index loads. They go back to 2026-09-08 at least. One `GetCards` call read the same 503 at 19:02 UTC.
 
 ### 2026-09-10d: F-104, the offer reads the bracket of its own turn
 
@@ -239,10 +251,6 @@ Sixteen pull requests merged, #97 to #112. PR-32 closed F-75 and F-76, the comma
 
 The app went live on `decktome.com` (D-574). A merge to `main` deploys itself on Cloud Build, through two triggers that read the diff (D-584, D-586, D-588). An uninvited reader had read the whole app, and an invite gate holds every page now (D-589, D-590, D-592). The classifier wrote over the card pool the reader chose, and the reader's choice wins now (D-591). A picked option sets its slot as data, and no turn is silent (D-597 to D-599). M-7 landed the honest bars and the axis diagnostic (D-570 to D-573).
 
-### 2026-09-06: PR-22, PR-23, and PR-27
-
-PR-22 landed the invite list, the spend cap, and the hosting block (D-550). PR-23 landed the Playwright smoke flow, where the fake serves a build (D-551 to D-553). PR-27 landed the feedback harvest: the thumbs, the dialog, the store, and the service (D-561). The mobile and engagement proposal set Stage A as PR-25 (D-546 to D-548).
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file carried before 2026-09-09. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-05, and 42 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-06, and 42 more sections, word for word. Read it for the detail behind a decision.

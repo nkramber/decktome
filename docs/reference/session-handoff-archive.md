@@ -1,7 +1,7 @@
 # Session hand-off archive
 
-This file holds every session record that `docs/SESSION-HANDOFF.md` carried
-before 2026-09-09. The hand-off keeps the ten most recent sessions. Each
+This file holds every session record that `docs/SESSION-HANDOFF.md` no
+longer carries. The hand-off keeps the ten most recent sessions. Each
 older record moves here, word for word.
 
 Read this file for the detail behind a decision. Read `docs/decisions.md`
@@ -10,6 +10,10 @@ for the decision itself. Read `docs/SESSION-HANDOFF.md` to resume the work.
 The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
+
+## 2026-09-06: PR-22, PR-23, and PR-27
+
+PR-22 landed the invite list, the spend cap, and the hosting block (D-550). PR-23 landed the Playwright smoke flow, where the fake serves a build (D-551 to D-553). PR-27 landed the feedback harvest: the thumbs, the dialog, the store, and the service (D-561). The mobile and engagement proposal set Stage A as PR-25 (D-546 to D-548).
 
 ## 2026-09-05: the terse conversations and the trimmed snapshot
 
