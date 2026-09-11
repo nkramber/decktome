@@ -14,6 +14,8 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The commander offer never shares a turn with a theme or colors question** (F-111, D-669). One turn asked both and offered three commanders, so the offer ignored the answers it ranks on. A wait for the answers failed question gate run 45, because a reader who skips a question got no offer. **The owner's order is this fix, then a bracket 5 build on the deployed app, then M-11.**
 
+**Gate runs 46 and 47 tripped two latent gaps, and #139 closes both** (F-112 to F-114, D-670). A delegation that names its slot declines no other key, and an occasion does not fill the theme. The gate keeps a bar of zero misses, and PR-42 will rerun a missed conversation to report its miss rate (D-671). Gate run 48 reads PASS with both guards.
+
 **The commander offer ignored the bracket of its own turn, and #134 fixed it** (F-104, D-662). The turn built the hints from the restored slots, and the picked power option landed after that. The pick row fires on the turn the power answer arrives (D-631), so the bracket 5 signal ordered almost no deployed offer. Session `vDzEKDPnRZntlyhz8Lqg` read Lotho, Ghalta, and Peregrin Took. The hints take the bracket after the answers now, and a test holds it.
 
 **PR-39 is merged as #135** (D-659 to D-661, F-102, F-103). The source count reads a reliable tap ability alone, and the balance phase trades basics toward the color that falls short. The measurement of D-661 is done. Over run 18 the pass moves four decks. The worst color rises on all four and falls on none, and deck 22 gains two Forests. `docs/reference/pr39-manapass-run18.md` holds the lane.
@@ -88,11 +90,11 @@ Seven things a fresh session gets wrong without this file.
 - Card snapshot on disk: `.local/gcs/mtg-local-cards/scryfall/20260904T210157`, the newest of 13. Read 2026-09-09. Check every card fact against it.
 - LLM model ids and prices: `roles.json` and `prices.json`, verified 2026-08-24. The max output per provider in `llm/client.go`, verified 2026-08-29. The OpenAI rows are unverified by anyone but the owner. The judge role runs on Opus 5 (D-430).
 - The deck gate upgrade probe cost $0.32 for 2 prompts, 7 calls, and 266 seconds. A partial run reads its own item bars and never stands as the gate (D-526).
-- Run cost, read from the run files on 2026-09-09. The question gate cost $0.190 on run 42, $0.193 on run 43, and $0.194 on run 44, over 18 to 21 minutes. Runs 45, 46, and 47 of 2026-09-11 cost $0.1925, $0.1920, and $0.1380, over 20, 22, and 19 minutes. The deck gate upgrade probe cost $0.32 for 2 prompts. The eval cost $0.092 on run 34 and $0.096 on run 35, over 12 to 14 minutes. The deck gate cost $2.71 on run 18, over 37 minutes. The revise gate cost $1.07 on run 9. The bracket gate judge lane cost $0.28.
+- Run cost, read from the run files on 2026-09-09. The question gate cost $0.190 on run 42, $0.193 on run 43, and $0.194 on run 44, over 18 to 21 minutes. Runs 45 to 48 of 2026-09-11 cost $0.1925, $0.1920, $0.1380, and $0.1923, over 20, 22, 19, and 21 minutes. The deck gate upgrade probe cost $0.32 for 2 prompts. The eval cost $0.092 on run 34 and $0.096 on run 35, over 12 to 14 minutes. The deck gate cost $2.71 on run 18, over 37 minutes. The revise gate cost $1.07 on run 9. The bracket gate judge lane cost $0.28.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
 - The feedback store holds 3 verdicts on 2026-09-09, and every one predates the snapshot of D-635. `make feedback-list VERDICT=` reads both verdicts now (F-87). A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 18, revise is run 9. Run 47 is the newest whole questions run. Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 19 is its newest run.
+- Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 18, revise is run 9. Run 48 is the newest whole questions run, and it reads PASS. Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 19 is its newest run.
 - Toolchain: Go 1.27.0, Node 22.23.2, pnpm 9.2.0, firebase-tools 14.14.0, Java 17, Playwright 1.63.0 with its Chromium headless shell (`playwright install chromium`). vitest is 5.0.0 since #133. The first three were verified 2026-09-09.
 
 ## Next steps, in order
@@ -108,6 +110,7 @@ Seven things a fresh session gets wrong without this file.
 9. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
 10. **The weekly EDHREC read** falls on 2026-09-14 (D-499, D-565). Run `make meta-refresh`, then `make quality-gate` to a new `QUALITY_GATE_OUT`.
 11. **PR-26, the return channels**, waits on OQ-67.
+12. **PR-42, the gate reruns a missed conversation** (D-671). Any miss still fails the run, and each miss joins the finding register.
 
 CAUTION: `make revise-gate | tee` hides the exit code. Read the verdict line of the document, never the exit code of a pipe.
 
@@ -132,6 +135,12 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 **Question gate run 46 read FAIL on one classifier read** ($0.19). Conversation 14 passes, and no run offered a commander beside a theme or colors question. The miss is conversation 100, a Modern deck with no commander row, where the classifier kept the theme "team event". Runs 45 and 46 asked the same questions on every turn of it. The owner chose run 47.
 
 **Run 47 read FAIL on another single conversation** ($0.14). Conversation 103 built after turn 2, before the reader named the bracket and the budget. Runs 44 to 46 asked the same questions on its first two turns and reached turn 3. Conversations 14 and 100 pass, and 16 conversations got an offer (F-112).
+
+**The owner asked how to fix the check properly.** Each miss traced to a real gap the classifier trips on some runs. "You pick the commander" let the classifier decline the bracket and the budget (F-113). "Team event" filled the theme, so the theme question never went out (F-114). Both guards joined #139 with turn tests that fail without them (D-670). The gate keeps a bar of zero misses, and PR-42 reruns a missed conversation (D-671).
+
+**The effort measurement found no miss at either effort** (D-672, $0.04). Each conversation ran 8 times at `none` and 8 times at `low`. `low` cost 1.5 times as much per run, so the classify role keeps `none`.
+
+**Question gate run 48 reads PASS on the code with both guards** ($0.19). Every expectation holds, conversations 14, 100, and 103 pass, and no run offered a commander beside a preference question. `make eval-check` reads PASS again.
 
 **The first turn test passed without the fix.** An any-card pool asked the budget, and three rows filled the turn. The test copies the owned-only pool of the session now, and it fails with the old catalog. A second test walks the skip of conversation 14.
 
