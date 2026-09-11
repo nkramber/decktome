@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-10)
 
-**The checkout.** `main` is `d692861`, which is pull request #136, or a later merge. The branch `measure-pr39-color-sources` holds gate run 19 and D-663 to D-665, as an open pull request. Dependabot's #131, #132, and #133 merged on 2026-09-10. #133, the web bumps, took a fix on its own branch first. The fix holds the regenerated TypeScript of protoc-gen-es 2.14.1, and a type augmentation for the axe matcher on vitest 5's assertion. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
+**The checkout.** `main` is `b8582ef`, which is pull request #137, or a later merge. The branch `plan-detector-m11` holds the plan of M-11 and D-666 to D-668, as an open pull request. Dependabot's #131, #132, and #133 merged on 2026-09-10. #133, the web bumps, took a fix on its own branch first. The fix holds the regenerated TypeScript of protoc-gen-es 2.14.1, and a type augmentation for the axe matcher on vitest 5's assertion. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
 
 **The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586).
 
@@ -17,6 +17,8 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 **PR-39 is merged as #135** (D-659 to D-661, F-102, F-103). The source count reads a reliable tap ability alone, and the balance phase trades basics toward the color that falls short. The measurement of D-661 is done. Over run 18 the pass moves four decks. The worst color rises on all four and falls on none, and deck 22 gains two Forests. `docs/reference/pr39-manapass-run18.md` holds the lane.
 
 **Gate run 19 measured PR-39 on the quality model, for nothing** (D-663, F-105). The feature `color_sources` reads the count PR-39 changed, and no gate read the model before. Every bar holds, and the judge agreement rises from 8 to 9 of 25. A control fit on the parent commit matches run 18 in every number. **An item that changes a feature of the quality model reports the three numbers now** (guardrail 14, D-664).
+
+**M-11 has a plan, and it costs nothing** (D-666 to D-668). A print of the weights found the cause of D-659. The detector learns the gap between the top lists and the precons (F-106), and it reads the colors break by its signature (F-107). M-11 fits six variants of the Commander detector, and PR-40 builds the best one. `docs/reference/detector-weights-2026-09-10.md` holds the weights before the change.
 
 CAUTION: the `decktome` gcloud configuration named the Wallabee account and project on 2026-09-10, so `use_decktome` put the shell on the wrong project. `scripts/read-session.sh` reads `SESSION_PROJECT` and the account of `CLOUDSDK_CORE_ACCOUNT`, so an environment override reads `decktome-prod` with no change to the configuration. The owner has the commands to repair the configuration.
 
@@ -32,7 +34,7 @@ CAUTION: the `decktome` gcloud configuration named the Wallabee account and proj
 
 **The gate reports the three numbers of D-648 for free.** `make quality-gate` grades the decks of deck gate run 16 with the model it fits, and it reads the judge's tiers from judge lane run 5. It stores no model.
 
-**The owner graded the ten disputed decks** (D-659). The judge bar is the right target, and the detector reads built decks wrong. The detector fix is next, and PR-38 waits on it (D-665). The review sheet is `.local/review/disputed-decks-2026-09-10.md`, beside a CSV, and it stays out of git. `docs/reference/m10-softmax-scorer-2026-09-10.md` holds the fits.
+**The owner graded the ten disputed decks** (D-659). The judge bar is the right target, and the detector reads built decks wrong. M-11 measures the detector fix next (D-666), and PR-38 waits on it (D-665). The review sheet is `.local/review/disputed-decks-2026-09-10.md`, beside a CSV, and it stays out of git. `docs/reference/m10-softmax-scorer-2026-09-10.md` holds the fits.
 
 **Three items aimed at the reader gap failed first**: PR-29, M-9, and PR-30 (F-94, F-98, F-99). The owner parked PR-35 and dropped PR-30.
 
@@ -46,7 +48,7 @@ CAUTION: the `decktome` gcloud configuration named the Wallabee account and proj
 
 **The whole PR-22 gate holds** (D-633). The measured cost at idle reads $9.54 a month gross, and the hourly snapshot tick of D-634 leaves $3.81.
 
-**What waits on the owner.** OQ-67, the Stage B channels. OQ-77, the blocking function of Identity Platform. OQ-79, the commander of an owned-only pool. OQ-80, a proxy and the pool.
+**What waits on the owner.** OQ-67, the Stage B channels. OQ-77, the blocking function of Identity Platform. OQ-79, the commander of an owned-only pool. OQ-80, a proxy and the pool. OQ-82, the power of a bracket (F-110).
 
 **CAUTION: the evidence OQ-79 waits for is not on the deployed project.** A fresh owned-only build on the deployed app is the way to it.
 
@@ -94,7 +96,7 @@ Seven things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 1. **Read a bracket 4 or 5 offer on the deployed app** after the deploy of #134. It shows the fix of F-104 on a real turn. No reader session reached the API from that deploy to 23:00 UTC on 2026-09-10. One owned-only build at bracket 5 serves this step and step 7.
-2. **The detector fix is next** (D-659, D-660). Seven of its eight flags on the disputed decks are wrong, and the one real defect moves no weight. The basic lands are done (PR-39), and PR-38 waits on this fix (D-665). The item needs a plan, and its gate reads the three numbers (guardrail 14).
+2. **Run M-11. It is next, and it costs nothing** (D-666, D-667). The roadmap entry names the six variants and the gate. Each fit takes about two minutes over the meta store of gate run 19. The Commander precon bar has three pairs of room, 752 of 788 against 749. PR-40 builds the best variant, and PR-41 fixes the new-set features after it (D-668).
 3. **Read the log of the meta job of 2026-09-11**, after 06:20 UTC. Its quality fit line for Commander names `immaterial`. Check that the count reads above zero. The run also carries the source count of PR-39, and run 19 measured it (D-663).
 4. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
 5. **The live half of the feedback loop has no run yet.** Three things want a measurement: the judge lane of the triage, one live fix cycle, and one review round. All three need the owner's word, and the cycle also needs `AUTOTUNE_FIXER_CMD` and a harvest whose verdicts carry a snapshot.
@@ -113,7 +115,19 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 ## The ten most recent sessions
 
+### 2026-09-10f: the plan of M-11, the detector
+
+**The owner asked for a plan of the detector fix.** The fit prints no weights, so a throwaway patch printed them. The cause of D-659 is the population of the fit. The fit breaks the precons and the average decks alone, and the top lists stand among the negatives. So `card_rate` weighs -1.08 in Commander, and no break moves it by more than 0.18 standard deviations (F-106).
+
+**The colors break reads by its signature.** `source_spread` weighs +0.81 and `tapped_share` -0.79, and `color_sources` weighs -0.04 (F-107). So a splash and a mana base of basics read broken, and the real shortfall of deck 22 reads sound.
+
+**Three owner answers.** M-11 measures fitted variants first (D-666). The change reads Commander alone (D-667). The new-set features change in their own item, PR-41 (D-668).
+
+**Two more findings from the review.** The ladder reads the power norms of the top lists as faults (F-109). A bracket 4 request built a baseline deck, and OQ-82 asks what a bracket promises (F-110).
+
 ### 2026-09-10e: gate run 19, PR-39 on the quality model
+
+Merged as #137.
 
 **The owner asked what comes next.** The hand-off named the bracket walk, the detector, and the meta log. A read of the code found one more gap (F-105). The quality feature `color_sources` reads the source count PR-39 changed, and no gate read the model. The meta job of 2026-09-11 refits the stored model on the new count.
 
@@ -247,10 +261,6 @@ Seven pull requests merged, #113 to #119.
 
 Sixteen pull requests merged, #97 to #112. PR-32 closed F-75 and F-76, the commander a reader names and the ownership of a commander (D-606 to D-608). PR-33 landed a build in band with one model call, where the same request had read 3 minutes 59 seconds and an error (F-77, F-78, D-613). Deck gate run 18 measured it and became the decks baseline: repair turns fell from 12 of 25 to 3 of 25 (D-617). PR-25 made the app installable on a phone, and the owner walked it from the Home Screen (D-621 to D-627). The walks found F-79 to F-83, and every one is fixed.
 
-### 2026-09-07: the deploy, the invite gate, and the dead conversation
-
-The app went live on `decktome.com` (D-574). A merge to `main` deploys itself on Cloud Build, through two triggers that read the diff (D-584, D-586, D-588). An uninvited reader had read the whole app, and an invite gate holds every page now (D-589, D-590, D-592). The classifier wrote over the card pool the reader chose, and the reader's choice wins now (D-591). A picked option sets its slot as data, and no turn is silent (D-597 to D-599). M-7 landed the honest bars and the axis diagnostic (D-570 to D-573).
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-06, and 42 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-07, and 42 more sections, word for word. Read it for the detail behind a decision.
