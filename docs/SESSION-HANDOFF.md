@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-11)
 
-**The checkout.** `main` is `e246763`, which is pull request #140, or a later merge. The branch `m11-detector-variants` holds this hand-off, the result of M-11, F-115, D-674, and D-675, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
+**The checkout.** `main` is `afc2492`, which is pull request #141, or a later merge. The branch `plan-m12-rules-detector` holds this hand-off, the plan of M-12, F-116, D-676, and D-677, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
 
 **The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586). #139 deployed on 2026-09-11 at 04:01 UTC, and `/readyz` answered OK.
 
@@ -23,6 +23,8 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 **Gate run 19 measured PR-39 on the quality model, for nothing** (D-663, F-105). The feature `color_sources` reads the count PR-39 changed, and no gate read the model before. Every bar holds, and the judge agreement rises from 8 to 9 of 25. A control fit on the parent commit matches run 18 in every number. **An item that changes a feature of the quality model reports the three numbers now** (guardrail 14, D-664).
 
 **M-11 is done, and no detector variant meets its gate** (F-115, D-675). Every disputed deck grades bad in all fifteen fits. The grade adds the detector probability to the bad rung of every deck, so the flag never decides the tier (F-115). Four free tier fits keep every bar: `tier` grades 14 decks bad, and `notier` 8 with deck 22 at baseline. **The owner chose the rules detector first, as M-12, with no change of the tier** (D-675). `docs/reference/m11-detector-variants-2026-09-11.md` holds every fit, and `.local/m11/` holds the patches.
+
+**The plan of M-12 is on this branch** (F-116, D-676, D-677). A free dump read the rule quantities of every Commander list and every built deck. Every candidate rules set flags decks 19 and 22 alone, so the seven wrong flags of D-659 clear. The rules flag a tenth of the top lists at the cuts that catch the copies, so as the score they likely fail both bars. **The owner chose to fit two designs over a grid**: A lets the rules set the tier, and B lets them replace the detector. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the dump, and `.local/m12/` holds the patches.
 
 CAUTION: the `decktome` gcloud configuration named the Wallabee account and project on 2026-09-10, so `use_decktome` put the shell on the wrong project. `scripts/read-session.sh` reads `SESSION_PROJECT` and the account of `CLOUDSDK_CORE_ACCOUNT`, so an environment override reads `decktome-prod` with no change to the configuration. The owner has the commands to repair the configuration.
 
@@ -96,12 +98,13 @@ Seven things a fresh session gets wrong without this file.
 - The deployed schedules, read 2026-09-09: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
 - The deployed API, read 2026-09-11: revision `mtg-api-00035-djl` on image `api:33d6691`, from #139. `/readyz` read the card snapshot of 2026-09-10 at 21:02 UTC.
 - The deployed quality model, read 2026-09-11: `20260911T063437Z`, from the meta job of 06:00 UTC. It fits 38,124 lists and 966 commanders, and its Commander fit reads `immaterial` 245 and accuracy 0.644. The job ran 41 minutes, and the run of 2026-09-10 ran 20.
+- The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
 - Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 18, revise is run 9. Run 48 is the newest whole questions run, and it reads PASS. Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 19 is its newest run.
 - Toolchain: Go 1.27.0, Node 22.23.2, pnpm 9.2.0, firebase-tools 14.14.0, Java 17, Playwright 1.63.0 with its Chromium headless shell (`playwright install chromium`). vitest is 5.0.0 since #133. The first three were verified 2026-09-09.
 
 ## Next steps, in order
 
-1. **Plan M-12, the rules detector** (D-666, D-675). The roadmap entry names Karsten checks for the lands, the curve, and the colors, beside the fitted synergy check. Read `docs/reference/bracket-profile-2026-09-02.md` for the Karsten tables. Name each threshold with its source and date. Ask the owner for each threshold that the sources do not settle. The fits read with and without the tier rule, and `.local/m11/m11_tier_patch.py` holds that flag. Each fit reports the broken copies graded bad (D-674).
+1. **Run M-12, the rules detector** (D-676, D-677). Build a throwaway patch from `.local/m12/m12_dump_patch.py`, which holds Karsten's cheap counter. Design A sets the tier from the checks and keeps the score. Design B replaces the detector in both, beside the synergy detector of `.local/m11/m11_patch.py`. Fit the eight combinations of the grid for each design. Report the three numbers, the broken copies graded bad, and every bar. Ask the owner to pick.
 2. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
 3. **The live half of the feedback loop has no run yet.** Three things want a measurement: the judge lane of the triage, one live fix cycle, and one review round. All three need the owner's word, and the cycle also needs `AUTOTUNE_FIXER_CMD` and a harvest whose verdicts carry a snapshot.
 4. **The next whole deck gate run is still deck gate run 19, and it is still outstanding.** It makes the next decks baseline. It also measures PR-39 on real builds, where quality gate run 19 read the model alone.
@@ -121,6 +124,16 @@ The CI step "fake gcs tests" ran no test until 2026-09-10 (D-658). Its filter ma
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 
 ## The ten most recent sessions
+
+### 2026-09-11c: the plan of M-12, the rules detector
+
+**The owner merged #141 and asked for the next step.** The hand-off named the plan of M-12. A free dump read the rule quantities of every Commander list of gate run 19 and the 25 built decks.
+
+**The source.** Karsten's land article of 2022-07-29 draws its text in the browser, so the session read it through `infinite-api.tcgplayer.com`. It defines the cheap draw and ramp by text rules, and a counter matches all 33 cards it names. It gives no cut for a broken deck.
+
+**The dump.** Every candidate set flags decks 19 and 22 alone among the built decks. But the land formula reads the cEDH top lists as short of lands (F-116), and the curve break overlaps the precons. The best set loses 14 own-copy pairs where the bar allows 3.
+
+**Two owner answers.** M-12 fits two designs: the rules set the tier, or the rules replace the detector (D-676). The thresholds come from a grid of eight combinations for each design (D-677).
 
 ### 2026-09-11b: the result of M-11, the tier rule, and the rules detector next
 
@@ -266,24 +279,6 @@ Merged as #123.
 
 **OQ-80 is open.** A Moxfield export carries a `Proxy` column, and no other format this app reads carries one. The owner parked the question rather than decide it on no evidence: every row of the one export on record reads False.
 
-### 2026-09-09c: PR-28c, the fix cycle
-
-Merged as #122. The feedback loop is complete: PR-27 harvests, PR-28a writes the files, PR-28b writes the cases, and PR-28c fixes them.
-
-**The cycle.** `scripts/feedback-loop.sh` reads a harvest and writes one case per thumbs down. It proves each case fails, hands the failures to a fixer agent, and proves each case passes (D-645).
-
-**The case and its fix ride in one pull request.** A case is a failing test by design. A case merged on its own turns the gate red on `main` until a fix lands, and the owner chose one pull request over two.
-
-**The cycle confirms before it fixes.** A case that already passes never measured the reader's fault. It stays as a case a change must not flip, and the fixer never sees it. That is D-234 applied to a case.
-
-**The accept rule is sharper than the tuning loop's.** No noise margin and no ratio: every case goes from fail to pass, `make eval-check` shows no flip, and the tree builds. `cmd/case-check` reads the same bars the gate's own verdict reads.
-
-**The cycle answers the review.** `scripts/feedback-review.sh` hands every open finding of `gitar-bot` to the fixer, pushes, and replies on each thread, over three rounds (D-637).
-
-**The frozen list drifted, and a test caught it.** `TestTheFixerPromptAndTheCycleAgreeOnTheFrozenList` found nine paths the cycle enforces that the prompt never named.
-
-**PR-34 joined the roadmap** (D-646, F-91): the app reads two collection formats, and a reader on any other platform can not upload at all.
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-09b, and 42 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-09c, and 42 more sections, word for word. Read it for the detail behind a decision.

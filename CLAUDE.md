@@ -16,7 +16,7 @@ Stage (2026-09-11): **the app is live on `decktome.com`**, and pull request #140
 
 **The owner graded the ten disputed decks** (D-659). The judge bar is the right target, and the defect detector reads built decks wrong. PR-39 merged first, as #135: the basic lands follow the need of each color (D-660, D-661). Gate run 19 measured the new source count on the quality model: every bar holds, and the judge agreement rose from 8 to 9 (D-663).
 
-**M-11 measured fifteen fitted detectors, and none meets its gate** (F-115). The tier reads the detector probability of every deck, so no variant moved a disputed deck. **The owner chose the rules detector first, as M-12, with no change of the tier** (D-675). PR-40 builds what M-12 picks, and PR-38 waits on it (D-665). Every item that changes a feature of the model reports the three numbers (D-664). A change that moves a tier also reports the broken copies graded bad (D-674).
+**M-11 measured fifteen fitted detectors, and none meets its gate** (F-115). The tier reads the detector probability of every deck, so no variant moved a disputed deck. **The owner chose the rules detector first, and M-12 fits two designs of it over a grid of thresholds** (D-675 to D-677). PR-40 builds what M-12 picks, and PR-38 waits on it (D-665). Every item that changes a feature of the model reports the three numbers (D-664). A change that moves a tier also reports the broken copies graded bad (D-674).
 
 **The commander offer never shares a turn with a theme or colors question** (F-111, D-669). #139 merged it with two question-flow guards (F-113, F-114, D-670), and it deployed on 2026-09-11. The owner's owned-only bracket 5 session reads right on every check, and OQ-79 stays open for a harder case (D-673).
 
