@@ -8,9 +8,33 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-11)
 
-**The checkout.** `main` is `38ddde6`, which is pull request #144, or a later merge. The branch `post-pr40-deploy-m10` holds this hand-off, the deploy of PR-40, M-10 again, D-680, and D-681, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
+**The checkout.** `main` is `40eb2d1`, which is pull request #145, or a later merge. The branch `handoff-context-reset` holds this hand-off and the refresh of the documents before a context reset, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
 
-**The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586). #139 deployed on 2026-09-11 at 04:01 UTC, and `/readyz` answered OK.
+**The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586). #144 is the newest deploy, at 18:44 UTC on 2026-09-11. #145 changed documents alone, and a read at 23:11 UTC found the same revision and the same images.
+
+**The first next step waits on the owner.** The owner builds one Commander deck on the deployed app and names its session. The session then reads its grade (next step 1).
+
+**#144 merged PR-40, and Cloud Build deployed it** (D-678). The build finished at 18:44 UTC on 2026-09-11. Revision `mtg-api-00036-bkn` serves `api:38ddde6`, and both jobs run `worker:38ddde6`. `/readyz` answered OK. Gate run 20 reproduces the pick of M-12: 9 built decks graded bad against 16, and the judge agreement at 10 against 9.
+
+**PR-40 grades a Commander deck by three rules checks** (M-12, D-676 to D-678). A deck grades bad when one check fails:
+
+- The lands fall 10 or more short of the need of Karsten's formula.
+- The spells average over 4.4 mana.
+- The sources of the worst color sit under 0.75 of their need.
+
+Any other deck takes the tier of the fitted ladder. The score keeps the fitted model, so every bar reads as gate run 19. `go/internal/quality/rules.go` holds the checks, and `docs/reference/m12-rules-detector-fits-2026-09-11.md` holds the fits.
+
+CAUTION: a grade stored on a deck built before the deploy keeps its old tier until a rebuild or a revision. The rules checks are code, and the stored model holds none of them.
+
+**M-10 measured the softmax scorer again, and the owner closed PR-38** (D-680). The scorer drops the Commander precon bar to 748 of 788, one pair short. It grades 14 built decks bad against 9, and the owner's grades match on 2 decks against 5. **A quality item now passes only when neither reader number gets worse** (D-681, guardrail 15).
+
+**PR-41 comes next in the quality line** (F-108, D-668). The corpus features read a card of a new set as weak, because the top lists hold few copies of it. The item reads such a card as unknown. Its first design question is how the fit tells a new card from an unplayed one, and the item answers it before any code.
+
+**The deployed model.** The meta job refits the model on every run (`go/cmd/worker/meta.go`). Its run of 2026-09-11 at 06:00 UTC finished at 06:41 UTC, before the deploy of PR-40, and stored `20260911T063437Z`. The run of 2026-09-12 at 06:00 UTC is the first on `worker:38ddde6`. The holdout accuracy reads the tier, and the tier reads the rules checks now. So the stored Commander accuracy will likely fall: gate run 20 read 0.55, against 0.65 on run 19.
+
+**M-11 is done, and no detector variant meets its gate** (F-115, D-675). Every disputed deck grades bad in all fifteen fits. The grade adds the detector probability to the bad rung of every deck, so the flag never decides the tier. The owner chose the rules detector first, and M-12 fitted it. `docs/reference/m11-detector-variants-2026-09-11.md` holds every fit, and `.local/m11/` holds the patches.
+
+CAUTION: the `decktome` gcloud configuration named the Wallabee account and project on 2026-09-10, so `use_decktome` put the shell on the wrong project. `scripts/read-session.sh` reads `SESSION_PROJECT` and the account of `CLOUDSDK_CORE_ACCOUNT`, so an environment override reads `decktome-prod` with no change to the configuration. The owner has the commands to repair the configuration.
 
 **The commander offer never shares a turn with a theme or colors question** (F-111, D-669). One turn asked both and offered three commanders, so the offer ignored the answers it ranks on. A wait for the answers failed question gate run 45, because a reader who skips a question got no offer. #139 merged it, and session `ze0Im17gZlFIBRyn7k7Z` on the deployed app asked the theme and the colors alone on turn 1.
 
@@ -22,23 +46,11 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **Gate run 19 measured PR-39 on the quality model, for nothing** (D-663, F-105). The feature `color_sources` reads the count PR-39 changed, and no gate read the model before. Every bar holds, and the judge agreement rises from 8 to 9 of 25. A control fit on the parent commit matches run 18 in every number. **An item that changes a feature of the quality model reports the three numbers now** (guardrail 14, D-664).
 
-**M-11 is done, and no detector variant meets its gate** (F-115, D-675). Every disputed deck grades bad in all fifteen fits. The grade adds the detector probability to the bad rung of every deck, so the flag never decides the tier (F-115). Four free tier fits keep every bar: `tier` grades 14 decks bad, and `notier` 8 with deck 22 at baseline. **The owner chose the rules detector first, as M-12, with no change of the tier** (D-675). `docs/reference/m11-detector-variants-2026-09-11.md` holds every fit, and `.local/m11/` holds the patches.
-
-**#144 merged PR-40, and Cloud Build deployed it** (D-678). The build finished at 18:44 UTC on 2026-09-11. Revision `mtg-api-00036-bkn` serves `api:38ddde6`, and both jobs run `worker:38ddde6`. `/readyz` answered OK. Gate run 20 reproduces the pick of M-12: 9 built decks graded bad against 16, and the judge agreement at 10 against 9.
-
-CAUTION: a grade stored on a deck built before the deploy keeps its old tier until a rebuild or a revision. The rules checks are code, and the stored model holds none of them.
-
-**M-10 measured the softmax scorer again, and the owner closed PR-38** (D-680). The scorer drops the Commander precon bar to 748 of 788, one pair short. It grades 14 built decks bad against 9, and the owner's grades match on 2 decks against 5. **A quality item now passes only when neither reader number gets worse** (D-681, guardrail 15).
-
-CAUTION: the `decktome` gcloud configuration named the Wallabee account and project on 2026-09-10, so `use_decktome` put the shell on the wrong project. `scripts/read-session.sh` reads `SESSION_PROJECT` and the account of `CLOUDSDK_CORE_ACCOUNT`, so an environment override reads `decktome-prod` with no change to the configuration. The owner has the commands to repair the configuration.
-
 **PR-37 is merged as #127, and gate run 18 reads PASS** (D-653). The synergy check drops a Commander copy whose break lowered the synergy feature by less than 0.10 standard deviations. The Commander synergy axis reads 0.84 of 232, and the precon bar 0.95 of 788. No earlier run of the quality gate in the repository reads PASS.
 
-**CAUTION: the PASS of run 18 came from the population of the bar, and not from a better model.** Over run 18 the built decks graded bad stayed at 15 of 25, and the judge agreement at 8 of 25. Run 19 reads 16 and 9, from the source count of PR-39 (D-663). 36 of the 232 synergy pairs still lose on run 19, and those are the true gap of the axis.
+**CAUTION: the PASS of run 18 came from the population of the bar, and not from a better model.** Over run 18 the built decks graded bad stayed at 15 of 25, and the judge agreement at 8 of 25. Run 19 reads 16 and 9, from the source count of PR-39 (D-663). Run 20 reads 9 and 10, from the rules checks of PR-40 (D-678). 36 of the 232 synergy pairs still lose on run 19, and those are the true gap of the axis.
 
 **CAUTION: the check reads Commander alone** (D-653, F-96). In Modern the synergy break does not lower the synergy feature in 825 of 845 pairs. A check there dropped 78 percent of the Modern synergy copies, and three decks the judge reads as bad graded higher.
-
-**CAUTION: the merge changed the production model.** The deploy of `302858a` succeeded on 2026-09-10 and pointed the meta job at the new image. The meta job refits the model on every run (`go/cmd/worker/meta.go`), so its next run stores a model with the check. The job image is `worker:62b9aaa` now, so that run of 2026-09-11 at 06:00 UTC also carries the source count of PR-39. Run 19 measured both on the local store (D-663).
 
 **The premise of D-652 was half right.** The check drops 157 of 389 Commander pairs from every band of precon strength, and not only the 54 weak pairs M-8 named. `docs/reference/pr37-synergy-materiality-2026-09-10.md` holds all six floors.
 
@@ -58,7 +70,15 @@ CAUTION: the `decktome` gcloud configuration named the Wallabee account and proj
 
 **The whole PR-22 gate holds** (D-633). The measured cost at idle reads $9.54 a month gross, and the hourly snapshot tick of D-634 leaves $3.81.
 
-**What waits on the owner.** OQ-67, the Stage B channels. OQ-77, the blocking function of Identity Platform. OQ-79, the commander of an owned-only pool, open for a harder case (D-673). OQ-80, a proxy and the pool. OQ-82, the power of a bracket (F-110).
+**What waits on the owner.**
+
+- A Commander build on the deployed app, and its session id (next step 1).
+- The word for deck gate run 19, which costs money (next step 6).
+- OQ-67, the Stage B channels.
+- OQ-77, the blocking function of Identity Platform.
+- OQ-79, the commander of an owned-only pool, open for a harder case (D-673).
+- OQ-80, a proxy and the pool.
+- OQ-82, the power of a bracket (F-110).
 
 **OQ-79 holds one owned-only session that reads right** (D-673). The harder case, a pool whose best commander the reader does not own, has no session yet.
 
@@ -72,12 +92,12 @@ CAUTION: the `decktome` gcloud configuration named the Wallabee account and proj
 4. Load the skills. Load `ste-writing` before you write any `.md`. Load `design-doc-style` before you edit the roadmap. Load `mtg-corpus` before you reason about a format, a legality, or a card term.
 5. Run `make verify`. It runs every check the verify workflow runs, on this machine, for nothing. Put Node 22.23.2 on the PATH first. The pull request runs the same jobs on Actions (D-639).
 6. Do "Next steps, in order" below. Ask questions as they come up. Record each owner answer in `docs/decisions.md`, and delete the row from `docs/owner-questions.md`.
-7. Open the pull request, then wait for the review of `gitar-bot` and answer it (D-637). A finding with merit takes a change, a commit, a push, and a reply. A finding with no merit takes a reply that says why, and you resolve it. Tell the owner when the pull request is ready to merge. Gitar is the only review this repo asks for.
+7. Open the pull request, then wait for the review of `gitar-bot` and answer it (D-637). A finding with merit takes a change, a commit, a push, and a reply. A finding with no merit takes a reply that says why, and you resolve it. Tell the owner when the pull request is ready to merge. Gitar is the only review this repo asks for. A pull request of documents alone waits for the review too (D-679).
 8. Before you end, update this file. Move the oldest session to the archive when the count passes ten.
 
 A second Mac: `docs/setup-second-mac.md` holds what to carry, what to install, and how to prove the machine.
 
-Seven things a fresh session gets wrong without this file.
+Nine things a fresh session gets wrong without this file.
 
 - Twelve targets and two loop scripts spend money: `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `scripts/autotune.sh`, and `scripts/feedback-loop.sh`. Ask the owner before each run. `make autotune`, `make feedback-loop`, `make feedback-loop-dry`, `make feedback-triage-dry`, and `eval sweep -dry` are free.
 - A rerun writes to a new file. Every `*_OUT` variable refuses a document that holds a result (D-65).
@@ -86,6 +106,8 @@ Seven things a fresh session gets wrong without this file.
 - The eval and the agent share a model. Every ratio it reports is a floor, not a measurement (D-136).
 - The judge is noisy: two runs of identical code move up to nine bad questions (D-230). One run proves nothing on its own.
 - The sweep's estimate of a step is the cost of its last run file. The deck gate estimate read $2.54 from run 14, and run 16 cost $3.79 with the plan judge and 12 repair turns. A cap set from the estimate stops the sweep before its last step.
+- Many local fits and verify runs fill the disk. On 2026-09-11 `make verify` failed at link time with 258 MiB free, when the Go and Docker build caches held about 50 GB. Run `df -h /System/Volumes/Data` before a long run, and ask the owner before you clear a cache.
+- Gitar sometimes deletes its summary comment and posts a new one with a new id. Find its newest summary by author, and read the review threads. A green Gitar check does not prove that no finding is open.
 
 ## Facts that expire
 
@@ -93,31 +115,33 @@ Seven things a fresh session gets wrong without this file.
 - Ban-list snapshot: 2026-08-24. Next announcement 2026-10-12, in `internal/cards/announcement_dates.json`. A test fails when that file holds no future date. This is by design.
 - Commander brackets: the 2025-10-21 revision. Game Changers: 53 cards, list of 2026-02-09. Lutri is banned as a companion only, per the 2026-02-09 announcement (`companion_bans.json` holds the link). The content rules per bracket in `brackets.json` and the Spellbook thresholds were read 2026-09-02, and the Karsten tables are the 2022 articles, read 2026-09-02 (`docs/reference/bracket-profile-2026-09-02.md`).
 - Standard: 18 sets, Wilds of Eldraine to The Hobbit. Six sets leave at the first 2027 set. Verified 2026-08-24.
-- Card snapshot on disk: `.local/gcs/mtg-local-cards/scryfall/20260904T210157`, the newest of 13. Read 2026-09-09. Check every card fact against it.
+- Card snapshot on disk: `.local/gcs/mtg-local-cards/scryfall/20260904T210157`, the newest of 13. Read 2026-09-11. Check every card fact against it.
 - LLM model ids and prices: `roles.json` and `prices.json`, verified 2026-08-24. The max output per provider in `llm/client.go`, verified 2026-08-29. The OpenAI rows are unverified by anyone but the owner. The judge role runs on Opus 5 (D-430).
 - The deck gate upgrade probe cost $0.32 for 2 prompts, 7 calls, and 266 seconds. A partial run reads its own item bars and never stands as the gate (D-526).
 - Run cost, read from the run files on 2026-09-09. The question gate cost $0.190 on run 42, $0.193 on run 43, and $0.194 on run 44, over 18 to 21 minutes. Runs 45 to 48 of 2026-09-11 cost $0.1925, $0.1920, $0.1380, and $0.1923, over 20, 22, 19, and 21 minutes. The deck gate upgrade probe cost $0.32 for 2 prompts. The eval cost $0.092 on run 34 and $0.096 on run 35, over 12 to 14 minutes. The deck gate cost $2.71 on run 18, over 37 minutes. The revise gate cost $1.07 on run 9. The bracket gate judge lane cost $0.28.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
 - The feedback store holds 3 verdicts on 2026-09-09, and every one predates the snapshot of D-635. `make feedback-list VERDICT=` reads both verdicts now (F-87). A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
-- The deployed schedules, read 2026-09-09: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- The deployed API, read 2026-09-11 at 18:44 UTC: revision `mtg-api-00036-bkn` on image `api:38ddde6`, from #144. Both jobs run `worker:38ddde6`. `/readyz` read the card snapshot of 2026-09-11 at 09:01 UTC.
+- The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
+- The deployed API, read 2026-09-11 at 18:44 UTC and again at 23:11 UTC: revision `mtg-api-00036-bkn` on image `api:38ddde6`, from #144. Both jobs run `worker:38ddde6`. At 18:44 UTC `/readyz` read the card snapshot of 2026-09-11 at 09:01 UTC.
 - The deployed quality model, read 2026-09-11: `20260911T063437Z`, from the meta job of 06:00 UTC. It fits 38,124 lists and 966 commanders, and its Commander fit reads `immaterial` 245 and accuracy 0.644. The job ran 41 minutes, and the run of 2026-09-10 ran 20.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
 - Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 18, revise is run 9. Run 48 is the newest whole questions run, and it reads PASS. Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 20 is its newest run.
-- Toolchain: Go 1.27.0, Node 22.23.2, pnpm 9.2.0, firebase-tools 14.14.0, Java 17, Playwright 1.63.0 with its Chromium headless shell (`playwright install chromium`). vitest is 5.0.0 since #133. The first three were verified 2026-09-09.
+- Toolchain on this Mac, read 2026-09-11: Go 1.27.1, Node 22.23.2, pnpm 9.2.0, firebase-tools 14.14.0, and Java 17.0.20.1. Playwright is 1.63.0 with its Chromium headless shell (`playwright install chromium`). `go.mod` asks Go 1.27.0 or newer, and vitest is 5.0.0 since #133.
 
 ## Next steps, in order
 
 1. **Read the grade of a Commander build on the deployed app** (D-678). The owner builds one Commander deck and names its session. Read it with `make read-session`, with the environment overrides of the deployed project. Check that a flagged deck names its check, and that any other deck names the ladder.
-2. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
-3. **The live half of the feedback loop has no run yet.** Three things want a measurement: the judge lane of the triage, one live fix cycle, and one review round. All three need the owner's word, and the cycle also needs `AUTOTUNE_FIXER_CMD` and a harvest whose verdicts carry a snapshot.
-4. **The next whole deck gate run is still deck gate run 19, and it is still outstanding.** It makes the next decks baseline. It also measures PR-39 on real builds, where quality gate run 19 read the model alone.
-5. **OQ-79 waits for a harder case** (D-673). Session `ze0Im17gZlFIBRyn7k7Z` read right. The next evidence is an owned-only build whose best pool commander the reader does not own.
-6. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
-7. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
-8. **The weekly EDHREC read** falls on 2026-09-14 (D-499, D-565). Run `make meta-refresh`, then `make quality-gate` to a new `QUALITY_GATE_OUT`.
-9. **PR-26, the return channels**, waits on OQ-67.
-10. **PR-42, the gate reruns a missed conversation** (D-671). Any miss still fails the run, and each miss joins the finding register.
+2. **Read the meta job run of 2026-09-12 at 06:00 UTC**, the first on `worker:38ddde6`. Read its log with the environment overrides of the deployed project. Check that it succeeded and stored a model. Expect a lower Commander accuracy, for the reason in "The deployed model" above.
+3. **PR-41, the new-set features** (F-108, D-668). PR-40 merged, so its gate holds and PR-41 is free to start. Answer the design question of its roadmap entry before any code. Its gate reads gate run 20 under guardrails 14 and 15.
+4. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
+5. **The live half of the feedback loop has no run yet.** Three things want a measurement: the judge lane of the triage, one live fix cycle, and one review round. All three need the owner's word, and the cycle also needs `AUTOTUNE_FIXER_CMD` and a harvest whose verdicts carry a snapshot.
+6. **The next whole deck gate run is still deck gate run 19, and it is still outstanding.** It makes the next decks baseline. It also measures PR-39 and PR-40 on real builds, where quality gate runs 19 and 20 read the model alone. It costs money, and run 18 cost $2.71, so ask the owner first.
+7. **OQ-79 waits for a harder case** (D-673). Session `ze0Im17gZlFIBRyn7k7Z` read right. The next evidence is an owned-only build whose best pool commander the reader does not own.
+8. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
+9. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
+10. **The weekly EDHREC read** falls on 2026-09-14 (D-499, D-565). Run `make meta-refresh`, then `make quality-gate` to a new `QUALITY_GATE_OUT`.
+11. **PR-26, the return channels**, waits on OQ-67.
+12. **PR-42, the gate reruns a missed conversation** (D-671). Any miss still fails the run, and each miss joins the finding register.
 
 CAUTION: `make revise-gate | tee` hides the exit code. Read the verdict line of the document, never the exit code of a pipe.
 
@@ -129,7 +153,17 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 ## The ten most recent sessions
 
+### 2026-09-11g: the documents read the state before a context reset
+
+**The owner merged #145 and asked for every document to read the current state** before a context reset. The session changed no code, and it ran no paid target.
+
+**The deploy did not change.** #145 changed documents alone. At 23:11 UTC revision `mtg-api-00036-bkn` served `api:38ddde6`, and both jobs ran `worker:38ddde6`. Both schedules read ENABLED. The meta job ran last at 06:00 UTC, before the deploy of PR-40.
+
+**The refresh.** The resume section reads the newest work first, and the next steps name the meta run of 2026-09-12 and PR-41. Four roadmap lines read "built on branch" for work merged long ago, and they read #54, #73, and #79 now. F-109 and the gate of PR-41 read the result of M-10 and D-681. The toolchain line reads Go 1.27.1, and `.local/m10/` holds a README now.
+
 ### 2026-09-11f: PR-40 deployed, M-10 again, and PR-38 closed
+
+Merged as #145.
 
 **The owner merged #144, and Cloud Build deployed it** at 18:44 UTC. Revision `mtg-api-00036-bkn` serves `api:38ddde6`, both jobs run the new worker image, and `/readyz` answered OK. The read of a deployed Commander grade waits for a build of the owner.
 
@@ -141,6 +175,8 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 ### 2026-09-11e: PR-40, the rules detector
 
+Merged as #144.
+
 **The owner merged #143, and the session built PR-40** (D-678). A new `rules.go` holds the three checks, Karsten's cheap count, and the tier of a Commander deck. `Score`, `Explain`, and the holdout grades read it, and the score and the bars stay as they were.
 
 **The tests read Karsten's own examples.** The cheap rule matches all 33 cards the article names. Two more tests read the checks on built Commander decks and the tier on a hand-built model.
@@ -150,6 +186,8 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 **The owner set a rule for every pull request** (D-679): wait for gitar and answer every finding, a docs-only pull request included. #143 merged while `verify:go` still ran, and that check passed at 17:47 UTC.
 
 ### 2026-09-11d: the fits of M-12, and design A for PR-40
+
+Merged as #143.
 
 **The owner merged #142.** The session ran M-12 for free: a control and eight fits of each design. The control reproduces gate run 19 in every number.
 
@@ -161,6 +199,8 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 ### 2026-09-11c: the plan of M-12, the rules detector
 
+Merged as #142.
+
 **The owner merged #141 and asked for the next step.** The hand-off named the plan of M-12. A free dump read the rule quantities of every Commander list of gate run 19 and the 25 built decks.
 
 **The source.** Karsten's land article of 2022-07-29 draws its text in the browser, so the session read it through `infinite-api.tcgplayer.com`. It defines the cheap draw and ramp by text rules, and a counter matches all 33 cards it names. It gives no cut for a broken deck.
@@ -170,6 +210,8 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 **Two owner answers.** M-12 fits two designs: the rules set the tier, or the rules replace the detector (D-676). The thresholds come from a grid of eight combinations for each design (D-677).
 
 ### 2026-09-11b: the result of M-11, the tier rule, and the rules detector next
+
+Merged as #141.
 
 **The owner asked what comes next after #140.** The fifteen fits of M-11 finished at 06:12 UTC, and no detector variant meets the gate. `moved` passes every bar and grades 17 decks bad. Every fit with `base` fails the great-over-precon bar.
 
@@ -182,6 +224,8 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 **The meta job of 2026-09-11 succeeded.** It stored model `20260911T063437Z`, and its Commander fit reads `immaterial` 245. It ran 41 minutes, because mtgo read 3,343 lists after none the day before.
 
 ### 2026-09-11: the deployed fix, the bracket 5 session, and M-11 underway
+
+Merged as #140.
 
 **#139 merged and deployed.** Cloud Build finished at 04:01 UTC, and revision `mtg-api-00035-djl` serves image `api:33d6691`. `/readyz` answered OK.
 
@@ -241,22 +285,6 @@ Merged as #137.
 
 **The deployed app.** The deploys of #134 and #135 succeeded. No reader session reached the API after the deploy of #134. The ERROR lines of the API log are `/readyz` answers of 503 in a cold start, before the card index loads. They go back to 2026-09-08 at least. One `GetCards` call read the same 503 at 19:02 UTC.
 
-### 2026-09-10d: F-104, the offer reads the bracket of its own turn
-
-Merged as #134. PR-39 followed and merged as #135. Dependabot's #131 to #133 merged, and #133 took a fix for vitest 5 and protoc-gen-es 2.14.1 first.
-
-**The owner asked whether the commander options were the expected quality.** Session `vDzEKDPnRZntlyhz8Lqg` asked for the best possible deck at bracket 5 from an owned-only pool. It read Lotho, Corrupt Shirriff, Ghalta, Primal Hunger, and Peregrin Took. They were not. The bracket 5 signal of OQ-48 exists since PR-14B, and the turn never handed it the bracket.
-
-**The cause is the turn order.** The turn builds the hints from the slots as restored, and the picked power option lands inside the turn. `readFacts` refreshed the colors, the pool, the sets, and the pair flag, and never the bracket. The pick row fires on the turn the power answer arrives (D-631), so the reorder ran on almost no deployed session.
-
-**The proof cost nothing.** A local run of the pool over both fixture exports reads the same three names with no bracket. With bracket 5 it reads Vivi Ornitier, Aang, at the Crossroads, and Hapatra. The deployed model of that morning holds a signal for 964 commanders. The log of the session shows the power pick and the offer 84 milliseconds apart on turn 2.
-
-**The fix is one interface.** `BracketAware` joins `SlotAware`, `SetAware`, and `PairAware`, and `readFacts` hands the bracket over. The turn test fails without the call and passes with it.
-
-**The session before this one ended without a hand-off.** Its work sits on `builder-basics-by-pips`: the source count of F-103, the balance phase of F-102, and D-659 to D-661. The measurement of D-661 ran in this session, for nothing. With the fixed count the pass moves four decks of run 18, and the worst color rises on all four. Deck 22 gains two Forests, where the old count cut two. PR-39 is open.
-
-**The `decktome` gcloud configuration pointed at the Wallabee account and project.** The session read the deployed project through an environment override and changed no configuration.
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-10c, and 42 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-10d, and 42 more sections, word for word. Read it for the detail behind a decision.
