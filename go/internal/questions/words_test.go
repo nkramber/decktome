@@ -382,6 +382,11 @@ func TestDelegationNamesItsSlot(t *testing.T) {
 		{"Whatever you think is best.", nil, true, true},
 		{"Bracket 3. You decide the rest.", nil, true, true},
 		{"No preference on the colors.", nil, false, false},
+		{"For the commander, you pick.", []string{"commander", "commander_pick"}, false, true},
+		{"As for colors, you decide.", []string{"colors"}, false, true},
+		{"The commander is up to you.", []string{"commander", "commander_pick"}, false, true},
+		{"The rest is up to you.", nil, true, true},
+		{"The budget is tight, you pick the commander.", []string{"commander", "commander_pick"}, false, true},
 	}
 	for _, c := range cases {
 		named, bare, found := delegationObjects(c.msg)

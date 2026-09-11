@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-10)
 
-**The checkout.** `main` is `467dd8c`, which is pull request #138, or a later merge. The branch `fix-pick-waits-for-preferences` holds F-111 and D-669, as an open pull request. Dependabot's #131, #132, and #133 merged on 2026-09-10. #133, the web bumps, took a fix on its own branch first. The fix holds the regenerated TypeScript of protoc-gen-es 2.14.1, and a type augmentation for the axe matcher on vitest 5's assertion. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
+**The checkout.** `main` is `467dd8c`, which is pull request #138, or a later merge. The branch `fix-pick-waits-for-preferences` holds F-111, F-113, F-114, and D-669 to D-672, as pull request #139. Dependabot's #131, #132, and #133 merged on 2026-09-10. #133, the web bumps, took a fix on its own branch first. The fix holds the regenerated TypeScript of protoc-gen-es 2.14.1, and a type augmentation for the axe matcher on vitest 5's assertion. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge (D-637).
 
 **The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586).
 

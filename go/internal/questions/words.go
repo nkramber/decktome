@@ -545,10 +545,19 @@ const objectWindow = 8
 // delegation.
 var clauseBreak = regexp.MustCompile(`[.!?;:\n]+`)
 
+// preObjectWindow is how many words before a delegation phrase may name
+// what it hands over, when nothing after the phrase names it.
+const preObjectWindow = 4
+
 // delegationObjects reads what each delegation of a message hands over.
-// It answers the keys whose slot nouns follow a delegation phrase in its
-// clause, whether some delegation hands over every open key, and whether
-// the message delegates at all (D-670).
+// It answers the keys a delegation names in its clause, whether some
+// delegation hands over every open key, and whether the message delegates
+// at all (D-670).
+//
+// The object follows the phrase first: "you pick the commander". Only a
+// phrase with nothing after it reads the words before it: "for the
+// commander, you pick". So "the budget is tight, you pick the commander"
+// hands over the commander alone.
 func delegationObjects(message string) (named map[string]bool, bare, found bool) {
 	named = map[string]bool{}
 	for _, clause := range clauseBreak.Split(message, -1) {
@@ -560,27 +569,37 @@ func delegationObjects(message string) (named map[string]bool, bare, found bool)
 					continue
 				}
 				found = true
-				hit := false
-				for j := i + len(want); j < len(toks) && j < i+len(want)+objectWindow; j++ {
-					if restWords[toks[j]] {
-						bare = true
-						break
-					}
-					for key, nouns := range slotNouns {
-						for _, n := range nouns {
-							if toks[j] == n {
-								named[key], hit = true, true
-							}
-						}
-					}
+				after := i + len(want)
+				hit, rest := objectsIn(toks, after, min(len(toks), after+objectWindow), named)
+				if !hit && !rest {
+					hit, rest = objectsIn(toks, max(0, i-preObjectWindow), i, named)
 				}
-				if !hit {
+				if rest || !hit {
 					bare = true
 				}
 			}
 		}
 	}
 	return named, bare, found
+}
+
+// objectsIn marks the keys whose slot nouns stand in toks[from:to]. It
+// answers whether it found one, and whether a rest word hands over every
+// open key.
+func objectsIn(toks []string, from, to int, named map[string]bool) (hit, rest bool) {
+	for j := from; j < to; j++ {
+		if restWords[toks[j]] {
+			return hit, true
+		}
+		for key, nouns := range slotNouns {
+			for _, n := range nouns {
+				if toks[j] == n {
+					named[key], hit = true, true
+				}
+			}
+		}
+	}
+	return hit, false
 }
 
 // slotHasNouns reports whether a delegation can name the slot of a key.
