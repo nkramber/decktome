@@ -378,9 +378,9 @@ func TestDelegationClosesTheCommanderPick(t *testing.T) {
 // must not go out again. D-148 can not catch it: it filters the pool,
 // and these names are already on the table.
 func TestOffColorOfferLeavesTheTable(t *testing.T) {
-	// The offer waits for the power (D-630) and the colors (D-669). Turn 1
-	// asks the colors, turn 2 declines them, and turn 2 makes the offer.
-	// A decline needs the question out first (D-93).
+	// The offer waits for the power (D-630), and it never shares a turn
+	// with the color question (D-669). Turn 1 asks the colors, turn 2
+	// declines them, and turn 2 makes the offer.
 	first := commanderClassify()
 	first.Facts.WantsSuggestion = true
 	first.Colors = nil
@@ -491,8 +491,8 @@ func TestPickRowWithNoNamesAsksNothing(t *testing.T) {
 	out.Facts.WantsSuggestion = true
 	out.BudgetUSD = 50
 	// The offer waits for the power (D-630), so the reader names it. It
-	// waits for the theme too (D-669), so turn 1 asks the theme, and turn
-	// 2 declines it. A decline needs the question out first (D-93).
+	// never shares a turn with the theme question (D-669), so turn 1 asks
+	// the theme, and turn 2 declines it.
 	out.Power = "bracket 3"
 	decline := out
 	decline.DeclinedKeys = []string{"theme"}
@@ -812,13 +812,11 @@ func TestNotOwnedRowIsRetired(t *testing.T) {
 func TestDeclinedPickClosesTheCommanderSlot(t *testing.T) {
 	var vague classifyOut
 	var delegate classifyOut
-	delegate.DeclinedKeys = []string{"format", "theme", "colors"}
+	delegate.DeclinedKeys = []string{"format", "colors"}
 	delegate.Facts.WantsSuggestion = true
 	// The offer waits for the power (D-630), and the reader names it
-	// with the delegation. It waits for the theme and the colors too
-	// (D-669), and the delegation declines both. The pool row waits for the
-	// same slots (D-67), so the turn plans it beside the pick row, and the
-	// pool row takes one score call and one ask call.
+	// with the delegation. The turn then plans the pick row alone, which
+	// is fixed, so it makes no score call and no ask call (D-131).
 	delegate.Power = "bracket 3"
 	var decline classifyOut
 	decline.DeclinedKeys = []string{"commander_pick", "power", "pool_rule"}
@@ -828,7 +826,7 @@ func TestDeclinedPickClosesTheCommanderSlot(t *testing.T) {
 	}
 	a, _ := testAgentHints(t, h,
 		classifyStep(t, vague), fits(t), askStep(t),
-		classifyStep(t, delegate), fits(t, "pool"), askStep(t),
+		classifyStep(t, delegate),
 		classifyStep(t, decline))
 	st := NewState(true)
 	if _, err := a.Turn(context.Background(), st, "Make me a good deck.", nil); err != nil {

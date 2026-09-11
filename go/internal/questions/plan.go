@@ -190,6 +190,12 @@ func (c *Catalog) Plan(ctx Context) []Row {
 		if !r.When.matches(ctx) {
 			continue
 		}
+		// A row keeps some slots out of its turn. The commander offer ranks
+		// on the theme and the colors, so an offer beside either question
+		// ignores the answer that question asks for (D-669).
+		if r.When.beside(usedSlot) {
+			continue
+		}
 		out = append(out, r)
 		usedKey[key], usedSlot[r.Slot] = true, true
 	}
@@ -310,6 +316,17 @@ func (w When) matches(ctx Context) bool {
 		}
 	}
 	return true
+}
+
+// beside reports whether this turn already asks a slot the row keeps out
+// of its turn.
+func (w When) beside(used map[string]bool) bool {
+	for _, s := range w.NotBeside {
+		if used[s] {
+			return true
+		}
+	}
+	return false
 }
 
 // sixtyCard reports whether a format builds a 60-card deck. Commander and

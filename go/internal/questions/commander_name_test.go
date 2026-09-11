@@ -322,20 +322,49 @@ func TestTheNetReleasesTheOffer(t *testing.T) {
 	}
 }
 
-// TestTheOfferWaitsForThePreferences locks D-669. The offer ranks on the
-// theme and the colors: the pool ranks on theme fit, and the color check
-// drops a name the colors exclude (D-153). An offer beside a question
-// about either one ignores the answer that question asks for.
-func TestTheOfferWaitsForThePreferences(t *testing.T) {
+// TestTheOfferNeverSharesATurnWithAPreference locks D-669. The offer ranks
+// on the theme and the colors: the pool ranks on theme fit, and the color
+// check drops a name the colors exclude (D-153). An offer beside a
+// question about either one ignores the answer that question asks for.
+// The offer waits for no answer: a reader who skips the question gets the
+// offer on the next turn.
+func TestTheOfferNeverSharesATurnWithAPreference(t *testing.T) {
 	cat := load(t)
 	pick, ok := cat.Row("commander_pick")
 	if !ok {
 		t.Fatal("no row commander_pick")
 	}
-	for _, slot := range []string{"power", "theme", "colors"} {
-		if !slices.Contains(pick.When.Requires, slot) {
-			t.Errorf("the pick row does not wait for %q, so its offer ignores that answer", slot)
+	for _, slot := range []string{"theme", "colors"} {
+		if !slices.Contains(pick.When.NotBeside, slot) {
+			t.Errorf("the pick row may share a turn with the %s question", slot)
 		}
+		if slices.Contains(pick.When.Requires, slot) {
+			t.Errorf("the pick row waits for the %s answer, so a reader who skips that question gets no offer", slot)
+		}
+	}
+
+	// The planner reads the rule. The theme and the colors questions keep
+	// the offer out of their turn, and once both are out with no answer,
+	// the offer goes out alone.
+	ctx := Context{
+		Format: mtgv1.FormatId_FORMAT_ID_COMMANDER, Suggested: true,
+		Filled:  map[string]bool{"format": true, "power": true, "pool_rule": true, "budget": true},
+		Skipped: map[string]bool{}, Asked: map[string]bool{}, Outstanding: map[string]string{},
+	}
+	ids := func(rows []Row) []string {
+		out := make([]string, 0, len(rows))
+		for _, r := range rows {
+			out = append(out, r.ID)
+		}
+		return out
+	}
+	if got := ids(cat.Plan(ctx)); slices.Contains(got, "commander_pick") {
+		t.Errorf("the plan offers commanders beside the preference questions: %v", got)
+	}
+	ctx.Asked["theme"], ctx.Asked["colors"] = true, true
+	ctx.Outstanding["theme"], ctx.Outstanding["colors"] = "theme", "colors"
+	if got := ids(cat.Plan(ctx)); !slices.Contains(got, "commander_pick") {
+		t.Errorf("the plan holds the offer back after both questions went out: %v", got)
 	}
 	// The preference rows wait for nothing of the commander, or the rows
 	// wait for each other and none of them goes out.
@@ -399,5 +428,31 @@ func TestNoOfferBesideAPreferenceQuestion(t *testing.T) {
 		if question(res.Questions, slot) != nil {
 			t.Errorf("turn 2 asked the %s again beside the offer", slot)
 		}
+	}
+}
+
+// TestASkippedPreferenceStillGetsTheOffer is the other half of D-669. The
+// reader skips the theme and the colors questions and asks for a
+// suggestion, so the offer goes out on the next turn. A wait for both
+// answers gave that turn no question at all.
+func TestASkippedPreferenceStillGetsTheOffer(t *testing.T) {
+	var first classifyOut
+	first.Format, first.Power, first.PoolRule = "commander", "bracket 5", "owned_only"
+	first.Facts.WantsSuggestion = true
+	second := first
+	h := &fakeHints{commanders: []string{"Vivi Ornitier", "Hapatra, Vizier of Poisons", "Ghalta, Primal Hunger"}}
+	a, _ := testAgentHints(t, h,
+		classifyStep(t, first), fits(t, "theme", "colors"), askStep(t),
+		classifyStep(t, second))
+	st := NewState(true)
+	if _, err := a.Turn(context.Background(), st, "Build a bracket-5 commander deck", nil); err != nil {
+		t.Fatalf("turn 1: %v", err)
+	}
+	res, err := a.Turn(context.Background(), st, "I have no commander in mind, so suggest one.", nil)
+	if err != nil {
+		t.Fatalf("turn 2: %v", err)
+	}
+	if question(res.Questions, "commander") == nil {
+		t.Fatal("the offer waited for answers the reader skipped")
 	}
 }

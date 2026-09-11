@@ -317,7 +317,9 @@
         "format": "commander",
         "suggested": true,
         "requires": [
-          "power",
+          "power"
+        ],
+        "not_beside": [
           "theme",
           "colors"
         ]
