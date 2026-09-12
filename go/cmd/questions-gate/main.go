@@ -62,6 +62,11 @@ const CatalogOnlyBar = 64
 // half of TestConversations keeps its own count, questions.MinGateSize.
 const GateSize = 77
 
+// MissReruns is how many more times a counted conversation with a miss
+// plays inside the run. The document and the run file carry its miss
+// rate, and the first play still sets the verdict (D-671).
+const MissReruns = 2
+
 type gateFile struct {
 	VerifiedAt    string         `json:"verified_at"`
 	Note          string         `json:"note"`
@@ -159,6 +164,9 @@ type result struct {
 	// they did not meet (PR-15).
 	Values map[string]string
 	Misses []string
+	// Reruns holds the misses of each play after the first, when the
+	// first play missed (D-671). An empty entry met every expectation.
+	Reruns [][]string
 	// Unanswered are the slots the deck needs that no answer filled.
 	Unanswered []string
 	// Premature marks a session that called itself complete with a slot
@@ -218,7 +226,7 @@ func run(collectionPath string, limit int, only string, runOut string, w io.Writ
 	}
 	rec := evalrun.New("questions", evalrun.RunID(runOut))
 	rec.Header.Prompts["questions"] = questions.PromptVersion
-	rec.LowerIsBetter("error", "premature", "dead_end", "lint_findings", "invented", "refused_rewords", "stalls", "closed_by_net")
+	rec.LowerIsBetter("error", "premature", "dead_end", "lint_findings", "invented", "refused_rewords", "stalls", "closed_by_net", "miss_rate")
 	rec.Header.Versions["conversations"] = file.VerifiedAt
 	rec.Header.Versions["slots_snapshot"] = fmt.Sprintf("%d", questions.SnapshotVersion)
 	if n := gateCount(file.Conversations); n < GateSize {
@@ -292,6 +300,14 @@ func run(collectionPath string, limit int, only string, runOut string, w io.Writ
 		fmt.Fprintf(os.Stderr, "%2d/%d %-40s catalog=%d invented=%d%s\n",
 			conv.ID, len(list), conv.Name, res.Coverage.Catalog, res.Coverage.Invented, res.kind())
 	}
+	// A counted miss plays again inside the run, so the document can tell a
+	// regression from a latent gap the classifier trips on some reads. The
+	// reruns move no count and no verdict (D-671).
+	rerunMisses(results, func(c conversation) result {
+		again := runOne(cat, client, idx, builder, owned, c, acc)
+		fmt.Fprintf(os.Stderr, "%2d rerun %-40s misses=%d\n", c.ID, c.Name, len(again.Misses))
+		return again
+	})
 	werr := write(w, file, results, cov, acc.Report(), client.Config(), ownedNote, time.Since(started), rec)
 	return writeRunThen(runOut, rec, werr)
 }
@@ -304,6 +320,42 @@ func writeRunThen(runOut string, rec *evalrun.Run, werr error) error {
 		return err
 	}
 	return werr
+}
+
+// rerunMisses plays each counted conversation with a miss MissReruns more
+// times, and keeps the misses of each play beside the first. A failed play
+// reads its error as a miss. A probe and a conversation after a build move
+// no verdict, so they play once (D-671).
+func rerunMisses(results []result, play func(conversation) result) {
+	for i := range results {
+		r := &results[i]
+		if r.Probe || r.HasDeck || len(r.Misses) == 0 {
+			continue
+		}
+		for k := 0; k < MissReruns; k++ {
+			again := play(r.conversation)
+			misses := append([]string(nil), again.Misses...)
+			if again.Err != nil {
+				misses = append(misses, "error: "+again.Err.Error())
+			}
+			r.Reruns = append(r.Reruns, misses)
+		}
+	}
+}
+
+// missRate counts the plays of a conversation that missed, the first play
+// among them, and every play.
+func (r result) missRate() (missed, plays int) {
+	plays = 1 + len(r.Reruns)
+	if len(r.Misses) > 0 {
+		missed = 1
+	}
+	for _, m := range r.Reruns {
+		if len(m) > 0 {
+			missed++
+		}
+	}
+	return missed, plays
 }
 
 // coverages splits the M-4 counts three ways: the counted gate
@@ -614,7 +666,7 @@ func write(w io.Writer, file gateFile, results []result, cov coverages,
 	// The golden expectations are the fourth bar (PR-15): a counted
 	// conversation whose slots ended on other values than it names, or
 	// that asked a row it must never ask (PR-28b).
-	var missLines []string
+	var missLines, rateLines []string
 	expected := 0
 	for _, r := range results {
 		if r.Probe || r.HasDeck {
@@ -625,6 +677,10 @@ func write(w io.Writer, file gateFile, results []result, cov coverages,
 		}
 		for _, m := range r.Misses {
 			missLines = append(missLines, r.Name+": "+m)
+		}
+		if len(r.Reruns) > 0 {
+			missed, plays := r.missRate()
+			rateLines = append(rateLines, fmt.Sprintf("%s missed in %d of %d plays", r.Name, missed, plays))
 		}
 	}
 	// A partial run, under -only or -n, covers a part of the set. The
@@ -703,6 +759,9 @@ func write(w io.Writer, file gateFile, results []result, cov coverages,
 	switch {
 	case len(missLines) > 0:
 		_, _ = fmt.Fprintf(w, "%d slots ended on a value other than the one the conversation expects, which fails the gate (PR-15). A miss is a wrong slot or a wrong expectation, and the session decides which: %s.\n\n", len(missLines), strings.Join(missLines, "; "))
+		if len(rateLines) > 0 {
+			_, _ = fmt.Fprintf(w, "Each counted conversation with a miss played %d more times inside the run, and the first play stands (D-671): %s.\n\n", MissReruns, strings.Join(rateLines, "; "))
+		}
 	case expected > 0:
 		_, _ = fmt.Fprintf(w, "Every slot of the %d counted conversations that name expectations ended on the expected value (PR-15).\n\n", expected)
 	}
@@ -790,6 +849,18 @@ func write(w io.Writer, file gateFile, results []result, cov coverages,
 			} else {
 				_, _ = fmt.Fprintf(w, "Expected slots: every one met.\n\n")
 			}
+			if len(r.Reruns) > 0 {
+				missed, plays := r.missRate()
+				parts := make([]string, 0, len(r.Reruns))
+				for k, m := range r.Reruns {
+					if len(m) == 0 {
+						parts = append(parts, fmt.Sprintf("Play %d: every one met", k+2))
+					} else {
+						parts = append(parts, fmt.Sprintf("Play %d: %s", k+2, strings.Join(m, "; ")))
+					}
+				}
+				_, _ = fmt.Fprintf(w, "Reruns (D-671): missed in %d of %d plays. %s.\n\n", missed, plays, strings.Join(parts, ". "))
+			}
 		}
 		if len(r.MustNotAsk) > 0 {
 			_, _ = fmt.Fprintf(w, "Rows it must never ask: %s.\n\n", strings.Join(r.MustNotAsk, ", "))
@@ -833,8 +904,8 @@ func write(w io.Writer, file gateFile, results []result, cov coverages,
 			return fmt.Errorf("partial gate failed: %d premature, %d dead ends, %d lint findings, %d expectation misses",
 				len(premature), len(deadEnds), findings, len(missLines))
 		}
-		return fmt.Errorf("gate failed: %d of %d counted catalog-only (bar %d), %d premature, %d lint findings",
-			total.CatalogOnly, counted, CatalogOnlyBar, len(premature), findings)
+		return fmt.Errorf("gate failed: %d of %d counted catalog-only (bar %d), %d premature, %d dead ends, %d lint findings, %d expectation misses",
+			total.CatalogOnly, counted, CatalogOnlyBar, len(premature), len(deadEnds), findings, len(missLines))
 	}
 	return nil
 }
@@ -907,6 +978,12 @@ func recordRows(rec *evalrun.Run, results []result) {
 			} else {
 				rec.Info(item, "never_asked_"+row, met, detail)
 			}
+		}
+		// The miss rate is information: the slot bars above read the first
+		// play, and the rate says how often the miss repeats (D-671).
+		if len(r.Reruns) > 0 {
+			missed, plays := r.missRate()
+			rec.Info(item, "miss_rate", float64(missed)/float64(plays), fmt.Sprintf("missed in %d of %d plays", missed, plays))
 		}
 		rec.Info(item, "catalog_only", float64(r.Coverage.CatalogOnly), r.kind())
 		rec.Info(item, "asked", float64(r.Coverage.Asked), "")

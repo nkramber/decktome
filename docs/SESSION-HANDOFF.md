@@ -8,11 +8,13 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-11)
 
-**The checkout.** `main` is `3bb9cd1`, which is pull request #146, or a later merge. The branch `m13-new-set-cut` holds M-13, the close of PR-41, and this hand-off, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
+**The checkout.** `main` is `758bcd4`, which is pull request #147, or a later merge. The branch `pr42-rerun-missed` holds PR-42 and this hand-off, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
 
-**The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586). #144 is the newest deploy, at 18:44 UTC on 2026-09-11. #145 and #146 changed documents alone. The deploy triggers read `go/**`, `docker/**`, and `web/**` alone, so neither merge started a build.
+**The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586). #144 is the newest deploy, at 18:44 UTC on 2026-09-11. #145 to #147 changed documents alone. The deploy triggers read `go/**`, `docker/**`, and `web/**` alone, so none of those merges started a build.
 
 **The first next step waits on the owner.** The owner builds one Commander deck on the deployed app and names its session. The session then reads its grade (next step 1).
+
+**The session built PR-42 on its branch** (F-112, D-671). A counted conversation with a miss plays two more times inside the question gate run. The document and the run file carry its miss rate. The first play still sets the verdict, and a test proves it with a fake player. The merge starts a Cloud Build of the API and the worker, because the trigger reads `go/**`. Neither image runs the gate command, so their behavior does not change.
 
 **M-13 measured the date cut of PR-41, and the owner closed PR-41** (F-118, D-682, D-683). A free count found that the top lists hold Hobbit cards at the rate of older sets. No cut of 30 or 90 days moves a built deck to another tier, and each cut makes one number a little worse. `docs/reference/m13-date-cut-fits-2026-09-11.md` holds the count and the fits.
 
@@ -122,7 +124,7 @@ Nine things a fresh session gets wrong without this file.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
 - The feedback store holds 3 verdicts on 2026-09-09, and every one predates the snapshot of D-635. `make feedback-list VERDICT=` reads both verdicts now (F-87). A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- The deployed API, read 2026-09-11 at 18:44 UTC and again at 23:11 UTC: revision `mtg-api-00036-bkn` on image `api:38ddde6`, from #144. Both jobs run `worker:38ddde6`. At 18:44 UTC `/readyz` read the card snapshot of 2026-09-11 at 09:01 UTC. After #146 merged, the build list held no new build.
+- The deployed API, read 2026-09-11 at 18:44 UTC and again at 23:11 UTC: revision `mtg-api-00036-bkn` on image `api:38ddde6`, from #144. Both jobs run `worker:38ddde6`. At 18:44 UTC `/readyz` read the card snapshot of 2026-09-11 at 09:01 UTC. After #146 and #147 merged, the build list held no new build.
 - The deployed quality model, read 2026-09-11: `20260911T063437Z`, from the meta job of 06:00 UTC. It fits 38,124 lists and 966 commanders, and its Commander fit reads `immaterial` 245 and accuracy 0.644. The job ran 41 minutes, and the run of 2026-09-10 ran 20.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
 - Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 18, revise is run 9. Run 48 is the newest whole questions run, and it reads PASS. Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 20 is its newest run.
@@ -140,7 +142,7 @@ Nine things a fresh session gets wrong without this file.
 8. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
 9. **The weekly EDHREC read** falls on 2026-09-14 (D-499, D-565). Run `make meta-refresh`, then `make quality-gate` to a new `QUALITY_GATE_OUT`.
 10. **PR-26, the return channels**, waits on OQ-67.
-11. **PR-42, the gate reruns a missed conversation** (D-671). Any miss still fails the run, and each miss joins the finding register.
+11. **PR-42 waits as an open pull request** (D-671). After the merge, read the Cloud Build it starts. The next whole question gate run is the first to show a rerun, and it costs about $0.19. Any miss still fails the run, and each miss joins the finding register.
 
 CAUTION: `make revise-gate | tee` hides the exit code. Read the verdict line of the document, never the exit code of a pipe.
 
@@ -151,6 +153,14 @@ The CI step "fake gcs tests" ran no test until 2026-09-10 (D-658). Its filter ma
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 
 ## The ten most recent sessions
+
+### 2026-09-11i: PR-42, the gate reruns a missed conversation
+
+**The owner merged #147.** No Cloud Build followed, because #147 changed documents alone. Next steps 1 and 2 still waited on the owner and on 06:00 UTC. Steps 3 to 10 waited on the owner, on data, or on a date. So the session built PR-42, the first free item.
+
+**The build** (D-671). A counted conversation with an expectation or must-not-ask miss plays two more times inside the run. Each rerun keeps its own misses, and a failed rerun reads its error as a miss. The first play still sets every count and the verdict. The document writes the rate beside the miss, and the run file carries `miss_rate` as an information row, so `eval-check` never flips on it.
+
+**The proof is free.** A test plays a missed conversation through a fake player. No paid run went out, so no whole run shows a rerun yet.
 
 ### 2026-09-11h: M-13, the date cut of PR-41, and PR-41 closed
 
@@ -270,18 +280,6 @@ Merged as #139.
 
 **The first turn test passed without the fix.** An any-card pool asked the budget, and three rows filled the turn. The test copies the owned-only pool of the session now, and it fails with the old catalog. A second test walks the skip of conversation 14.
 
-### 2026-09-10f: the plan of M-11, the detector
-
-Merged as #138.
-
-**The owner asked for a plan of the detector fix.** The fit prints no weights, so a throwaway patch printed them. The cause of D-659 is the population of the fit. The fit breaks the precons and the average decks alone, and the top lists stand among the negatives. So `card_rate` weighs -1.08 in Commander, and no break moves it by more than 0.18 standard deviations (F-106).
-
-**The colors break reads by its signature.** `source_spread` weighs +0.81 and `tapped_share` -0.79, and `color_sources` weighs -0.04 (F-107). So a splash and a mana base of basics read broken, and the real shortfall of deck 22 reads sound.
-
-**Three owner answers.** M-11 measures fitted variants first (D-666). The change reads Commander alone (D-667). The new-set features change in their own item, PR-41 (D-668).
-
-**Two more findings from the review.** The ladder reads the power norms of the top lists as faults (F-109). A bracket 4 request built a baseline deck, and OQ-82 asks what a bracket promises (F-110).
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-10e, and 42 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-10f, and 42 more sections, word for word. Read it for the detail behind a decision.

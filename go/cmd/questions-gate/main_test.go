@@ -450,3 +450,104 @@ func TestAForbiddenRowFailsTheGate(t *testing.T) {
 		t.Errorf("the clean row = %+v, want a gate bar at one", r)
 	}
 }
+
+// TestAMissedConversationPlaysAgain reads the reruns of D-671. A counted
+// conversation with a miss plays MissReruns more times inside the run, and
+// the document and the run file carry its miss rate. The first play stands,
+// so the miss still fails the run and no rerun adds to the miss count. A
+// clean conversation and a probe play once.
+func TestAMissedConversationPlaysAgain(t *testing.T) {
+	cfg, err := llm.LoadConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+	build := func(id int, name string, probe bool, got string) result {
+		r := result{
+			conversation: conversation{ID: id, Name: name, Probe: probe,
+				Messages: []string{"A blink deck."}, Expect: map[string]string{"power": "bracket 3"}},
+			Turns: 1, Ready: true, Values: map[string]string{"power": got},
+		}
+		r.Misses = checkExpect(r.Expect, r.Values)
+		return r
+	}
+	plays := map[int]int{}
+	// The first rerun misses on another value, and the second meets it.
+	replay := func(c conversation) result {
+		plays[c.ID]++
+		again := result{conversation: c, Turns: 1, Ready: true, Values: map[string]string{"power": "bracket 3"}}
+		if plays[c.ID] == 1 {
+			again.Values["power"] = ""
+		}
+		again.Misses = checkExpect(c.Expect, again.Values)
+		return again
+	}
+	results := []result{
+		build(1, "lifegain with a collection", false, "bracket 3"),
+		build(2, "blink with a thin library", false, "bracket 2"),
+		build(60, "terse: a probe that misses", true, "bracket 2"),
+	}
+	rerunMisses(results, replay)
+	if plays[1] != 0 || plays[60] != 0 {
+		t.Errorf("a clean conversation and a probe play once: %v", plays)
+	}
+	if plays[2] != MissReruns || len(results[1].Reruns) != MissReruns {
+		t.Fatalf("the missed conversation played %d more times, want %d: %q", plays[2], MissReruns, results[1].Reruns)
+	}
+	if got := results[1].Reruns[0]; len(got) != 1 || got[0] != "power: want bracket 3, got none" {
+		t.Errorf("play 2 keeps its own miss: %q", got)
+	}
+	if got := results[1].Reruns[1]; len(got) != 0 {
+		t.Errorf("play 3 met every expectation: %q", got)
+	}
+	if missed, n := results[1].missRate(); missed != 2 || n != 3 {
+		t.Errorf("miss rate = %d of %d, want 2 of 3", missed, n)
+	}
+
+	var cov coverages
+	for _, r := range results {
+		cov.add(r)
+	}
+	rec := evalrun.New("questions", "test")
+	rec.Header.Only = "1,2,60"
+	var buf bytes.Buffer
+	file := gateFile{VerifiedAt: "2026-09-11", Conversations: make([]conversation, 108)}
+	err = write(&buf, file, results, cov, llm.Report{Calls: 1}, cfg, "no snapshot", time.Second, rec)
+	doc := buf.String()
+	if err == nil || !strings.Contains(doc, "Verdict: FAIL") {
+		t.Errorf("the first play stands, so the miss still fails the run: %v\n%s", err, doc)
+	}
+	if !strings.Contains(doc, "1 slots ended on a value other than the one the conversation expects") {
+		t.Errorf("a rerun adds no miss to the count:\n%s", doc)
+	}
+	if !strings.Contains(doc, "played 2 more times inside the run, and the first play stands (D-671): blink with a thin library missed in 2 of 3 plays.") {
+		t.Errorf("the document must carry the miss rate beside the miss:\n%s", doc)
+	}
+	if !strings.Contains(doc, "Reruns (D-671): missed in 2 of 3 plays. Play 2: power: want bracket 3, got none. Play 3: every one met.") {
+		t.Errorf("the conversation section must name each rerun:\n%s", doc)
+	}
+	rows := map[string]evalrun.Row{}
+	for _, r := range rec.Rows {
+		rows[r.Item+"/"+r.Metric] = r
+	}
+	if r, ok := rows["2/miss_rate"]; !ok || r.Kind != evalrun.KindInfo || r.Value < 0.666 || r.Value > 0.667 || r.Detail != "missed in 2 of 3 plays" {
+		t.Errorf("the run file carries the miss rate as information: %+v", r)
+	}
+	if _, ok := rows["1/miss_rate"]; ok {
+		t.Error("a clean conversation writes no miss rate")
+	}
+	if r := rows["suite/expectation_misses"]; r.Value != 1 {
+		t.Errorf("the suite bar reads the first play alone: %+v", r)
+	}
+
+	// A play that fails reads its error as a miss of that play.
+	failing := []result{build(2, "blink with a thin library", false, "bracket 2")}
+	rerunMisses(failing, func(c conversation) result {
+		return result{conversation: c, Err: fmt.Errorf("turn 1: provider down")}
+	})
+	if got := failing[0].Reruns[0]; len(got) != 1 || got[0] != "error: turn 1: provider down" {
+		t.Errorf("a failed play = %q, want its error as a miss", got)
+	}
+	if missed, n := failing[0].missRate(); missed != 3 || n != 3 {
+		t.Errorf("miss rate = %d of %d, want 3 of 3", missed, n)
+	}
+}
