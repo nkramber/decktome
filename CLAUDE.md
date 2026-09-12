@@ -6,7 +6,7 @@ Read this file first. Then read `docs/SESSION-HANDOFF.md`. It tells you where th
 
 This repo is a Go + Protobuf + TypeScript monorepo for an agentic MtG deck builder. The app reads a user's ManaBox collection export. The user gives a prompt. The agent asks questions, then builds a legal, useful deck.
 
-Stage (2026-09-11): **the app is live on `decktome.com`**, and pull request #149 is the newest merge. A merge to `main` deploys itself on Cloud Build (D-584, D-586, D-588). Phase 3B, the product UI, is the current phase.
+Stage (2026-09-11): **the app is live on `decktome.com`**, and pull request #150 is the newest merge. A merge to `main` deploys itself on Cloud Build (D-584, D-586, D-588). Phase 3B, the product UI, is the current phase.
 
 **The whole PR-22 gate holds** (D-633), so PR-28 is free to run. Every PR through #119 is merged: PR-0a to PR-8, PR-7B, PR-10 to PR-25, PR-27, PR-32, PR-33, and PR-28a. PR-9 is out of the MVP (D-256). **PR-28 split into three** (D-636). PR-28a is the harvest, and it is merged. PR-28b is the triage and the new "must not ask" expectation, and PR-28c is the fix cycle. PR-26 waits on OQ-67. Of the weak-axes plan, PR-29 and PR-30 closed on their evidence, and PR-31 parks (D-652, D-656, D-573).
 
@@ -47,7 +47,7 @@ Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
    - When no finding has merit, tell the owner the pull request is ready to merge. **Gitar is the only review this repo asks for.** No second harness reads it.
    - Repeat the cycle until the review holds nothing open. The owner merges.
    - A pull request of documents alone waits for the review too (D-679).
-   - When Gitar posts that it paused automatic reviews, comment `Gitar review` on the pull request. Wait for the manual review. Answer it the same way (D-685).
+   - When Gitar posts that it paused automatic reviews and its comment holds no review, comment `Gitar review` on the pull request. Wait for the manual review. Answer it the same way (D-685).
 11. **Never hesitate to ask or to push back.** Ask a question the moment you have one. When the owner's two statements conflict, say so and quote both. When a request rests on a wrong premise, say so with the evidence. The owner sees this as the key to good LLM-user interaction. Silence is the mistake, not the question.
 
 ## Reference material

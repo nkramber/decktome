@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-11)
 
-**The checkout.** `main` is `e8c1b4a`, which is pull request #149, or a later merge. The branch `handoff-deploy-and-meta-read` holds this hand-off, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
+**The checkout.** `main` is `94e47c3`, which is pull request #150, or a later merge. The branch `docs-d685-correction` holds a correction of D-685 and this hand-off, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
 
 **The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586). #149 is the newest deploy, at 06:25 UTC on 2026-09-12: revision `mtg-api-00038-h57` serves `api:e8c1b4a`, both jobs run `worker:e8c1b4a`, and `/readyz` answered 200. The deploy triggers read `go/**`, `docker/**`, and `web/**` alone, so a merge of documents alone starts no build.
 
@@ -113,7 +113,7 @@ Ten things a fresh session gets wrong without this file.
 - The sweep's estimate of a step is the cost of its last run file. The deck gate estimate read $2.54 from run 14, and run 16 cost $3.79 with the plan judge and 12 repair turns. A cap set from the estimate stops the sweep before its last step.
 - Many local fits and verify runs fill the disk. On 2026-09-11 `make verify` failed at link time with 258 MiB free, when the Go and Docker build caches held about 50 GB. Run `df -h /System/Volumes/Data` before a long run, and ask the owner before you clear a cache.
 - Gitar sometimes deletes its summary comment and posts a new one with a new id. Find its newest summary by author, and read the review threads. A green Gitar check does not prove that no finding is open.
-- Gitar can post that it paused automatic reviews, because the trial's processing ran out for the period. Then comment `Gitar review` on the pull request, and answer the manual review as usual (D-685).
+- Gitar can post that it paused automatic reviews, because the trial's processing ran out for the period. On #150 and #151 the note came beside a full review, and no trigger ran. When the note comes with no review, comment `Gitar review` on the pull request. Answer the manual review as usual (D-685).
 
 ## Facts that expire
 
@@ -157,6 +157,12 @@ The CI step "fake gcs tests" ran no test until 2026-09-10 (D-658). Its filter ma
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 
 ## The ten most recent sessions
+
+### 2026-09-12c: the Gitar pause note (D-685)
+
+**Gitar posted on #150 that it paused automatic reviews**, because the trial's processing ran out for the period. The owner chose a `Gitar review` comment when that note appears (D-685), and #151 recorded the rule.
+
+**The note stopped no review yet.** #150 and #151 each got a full automatic review beside the note, so no trigger ran. #151 merged while `verify:go` still ran, and the job passed at 07:00 UTC. A correction reads the rule as a trigger when the note comes with no review.
 
 ### 2026-09-12b: PR-43 deployed, and the meta run of 2026-09-12
 
@@ -246,20 +252,6 @@ Merged as #142.
 
 **Two owner answers.** M-12 fits two designs: the rules set the tier, or the rules replace the detector (D-676). The thresholds come from a grid of eight combinations for each design (D-677).
 
-### 2026-09-11b: the result of M-11, the tier rule, and the rules detector next
-
-Merged as #141.
-
-**The owner asked what comes next after #140.** The fifteen fits of M-11 finished at 06:12 UTC, and no detector variant meets the gate. `moved` passes every bar and grades 17 decks bad. Every fit with `base` fails the great-over-precon bar.
-
-**The flag was not the cause** (F-115). Every disputed deck grades bad in all fifteen fits, even where the detector passes it. The grade adds the detector probability to the bad rung of every deck. In `base, colors`, deck 15 grades bad at 0.27 under a cut of 0.52. The mix came with PR-14B, and no decision records it.
-
-**Four free fits changed the tier alone, and no bar moved**, because every bar reads the score. `tier` grades 14 decks bad at an agreement of 9. `notier` grades 8 bad at 10, and deck 22 rises to baseline. The cost sits in the holdout: `tier` lifts 595 broken copies above bad, and `notier` lifts 2,061.
-
-**Two owner answers.** A change that moves a tier reports the broken copies graded bad, as information (D-674). The owner asked for the pros and cons of each option, then chose the rules detector first, with no change of the tier (D-675). M-12 plans it, and PR-40 builds what M-12 picks.
-
-**The meta job of 2026-09-11 succeeded.** It stored model `20260911T063437Z`, and its Commander fit reads `immaterial` 245. It ran 41 minutes, because mtgo read 3,343 lists after none the day before.
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-11, and 42 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-11b, and 42 more sections, word for word. Read it for the detail behind a decision.
