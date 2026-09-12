@@ -8,13 +8,13 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-11)
 
-**The checkout.** `main` is `6d9dacf`, which is pull request #148, or a later merge. The branch `pr43-validate-after-mana-pass` holds PR-43 and this hand-off, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
+**The checkout.** `main` is `e8c1b4a`, which is pull request #149, or a later merge. The branch `handoff-deploy-and-meta-read` holds this hand-off, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
 
-**The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586). #148 is the newest deploy, at 03:42 UTC on 2026-09-12: revision `mtg-api-00037-5np` serves `api:6d9dacf`, both jobs run `worker:6d9dacf`, and `/readyz` answered 200. #145 to #147 changed documents alone, and the deploy triggers read `go/**`, `docker/**`, and `web/**` alone.
+**The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586). #149 is the newest deploy, at 06:25 UTC on 2026-09-12: revision `mtg-api-00038-h57` serves `api:e8c1b4a`, both jobs run `worker:e8c1b4a`, and `/readyz` answered 200. The deploy triggers read `go/**`, `docker/**`, and `web/**` alone, so a merge of documents alone starts no build.
 
 **The owner's Commander build reads right** (D-678). Session `OFMnk7Tv2zkK8xfAwXxB` built a bracket 5 treasure deck led by Smaug the Magnificent, from an owned-only pool. The grade reads typical, and its three reasons name the ladder. No rules check flags the deck: 33 lands, an average mana value of 2.29, and red sources at 1.72 of their need. The reader owns the commander, so OQ-79 stays open for its harder case.
 
-**The read found F-119, and PR-43 fixes it** (D-684). The curve line of that deck reads 2.79 over 68 nonland cards, and the stored list reads 2.29 over 66. `generate.go` ran the rules engine before the mana pass of PR-33, so every rules finding read the list before the pass. PR-43 runs the pass first, and a whole build through a fake model proves it. The pass adds only shortlist cards, so the fault is stale text alone.
+**The read found F-119, and #149 fixed it** (D-684). The curve line of that deck reads 2.79 over 68 nonland cards, and the stored list reads 2.29 over 66. `generate.go` ran the rules engine before the mana pass of PR-33, so every rules finding read the list before the pass. #149 merged PR-43, which runs the pass first, and Cloud Build deployed it at 06:25 UTC. The pass adds only shortlist cards, so the fault is stale text alone.
 
 **#148 merged PR-42, and Cloud Build deployed it** (F-112, D-671). A counted conversation with a miss plays two more times inside the question gate run. The document and the run file carry its miss rate. The first play still sets the verdict. No whole run shows a rerun yet.
 
@@ -34,7 +34,9 @@ CAUTION: a grade stored on a deck built before the deploy keeps its old tier unt
 
 **M-10 measured the softmax scorer again, and the owner closed PR-38** (D-680). The scorer drops the Commander precon bar to 748 of 788, one pair short. It grades 14 built decks bad against 9, and the owner's grades match on 2 decks against 5. **A quality item now passes only when neither reader number gets worse** (D-681, guardrail 15).
 
-**The deployed model.** The meta job refits the model on every run (`go/cmd/worker/meta.go`). Its run of 2026-09-11 at 06:00 UTC finished at 06:41 UTC, before the deploy of PR-40, and stored `20260911T063437Z`. The run of 2026-09-12 at 06:00 UTC is the first on a worker image with PR-40, `worker:6d9dacf`. The holdout accuracy reads the tier, and the tier reads the rules checks now. So the stored Commander accuracy will likely fall: gate run 20 read 0.55, against 0.65 on run 19.
+**The deployed model.** The meta job refits the model on every run (`go/cmd/worker/meta.go`). Its run of 2026-09-11 at 06:00 UTC finished at 06:41 UTC, before the deploy of PR-40, and stored `20260911T063437Z`. The run of 2026-09-12 at 06:00 UTC ran on `worker:6d9dacf`, the first run after the deploy of PR-40. It succeeded at 06:22 UTC and stored `20260912T061545Z`, fitted on 38,395 lists and 909 commanders. The Commander accuracy fell from 0.644 to 0.542, as gate run 20 predicted. The holdout accuracy reads the tier, and the tier reads the rules checks now.
+
+CAUTION: the deployed Standard fit reads its cross share of baseline over bad at 0.690, against 0.750 on 2026-09-11 and 0.737 on 2026-09-10. Local gate run 20 reads 0.92. The share is information and no bar, and the rules checks of PR-40 read Commander alone. The deployed store holds 1,935 synthetic Standard copies, against 370 in the local store.
 
 **M-11 is done, and no detector variant meets its gate** (F-115, D-675). Every disputed deck grades bad in all fifteen fits. The grade adds the detector probability to the bad rung of every deck, so the flag never decides the tier. The owner chose the rules detector first, and M-12 fitted it. `docs/reference/m11-detector-variants-2026-09-11.md` holds every fit, and `.local/m11/` holds the patches.
 
@@ -125,16 +127,16 @@ Nine things a fresh session gets wrong without this file.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
 - The feedback store holds 3 verdicts on 2026-09-09, and every one predates the snapshot of D-635. `make feedback-list VERDICT=` reads both verdicts now (F-87). A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- The deployed API, read 2026-09-12 at 05:46 UTC: revision `mtg-api-00037-5np` on image `api:6d9dacf`, from #148. Both jobs run `worker:6d9dacf`, and `/readyz` answered 200. The build of #148 finished at 03:42 UTC, and #145 to #147 started no build.
-- The deployed quality model, read 2026-09-11: `20260911T063437Z`, from the meta job of 06:00 UTC. It fits 38,124 lists and 966 commanders, and its Commander fit reads `immaterial` 245 and accuracy 0.644. The job ran 41 minutes, and the run of 2026-09-10 ran 20.
+- The deployed API, read 2026-09-12 at 06:26 UTC: revision `mtg-api-00038-h57` on image `api:e8c1b4a`, from #149. Both jobs run `worker:e8c1b4a`, and `/readyz` answered 200. The build of #149 finished at 06:25 UTC.
+- The deployed quality model, read 2026-09-12: `20260912T061545Z`, from the meta job of 06:00 UTC. It fits 38,395 lists and 909 commanders. Its Commander fit reads `immaterial` 243 and accuracy 0.542, and its Standard fit reads a cross share of 0.690. The job ran 21 minutes, and the run of 2026-09-11 ran 41.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
 - Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 18, revise is run 9. Run 48 is the newest whole questions run, and it reads PASS. Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 20 is its newest run.
 - Toolchain on this Mac, read 2026-09-11: Go 1.27.1, Node 22.23.2, pnpm 9.2.0, firebase-tools 14.14.0, and Java 17.0.20.1. Playwright is 1.63.0 with its Chromium headless shell (`playwright install chromium`). `go.mod` asks Go 1.27.0 or newer, and vitest is 5.0.0 since #133.
 
 ## Next steps, in order
 
-1. **PR-43 waits as an open pull request** (F-119, D-684). After the merge, read the Cloud Build it starts. Then read the curve line of the next deployed build against its stored list.
-2. **Read the meta job run of 2026-09-12 at 06:00 UTC**, the first on `worker:6d9dacf`. Read its log with the environment overrides of the deployed project. Check that it succeeded and stored a model. Expect a lower Commander accuracy, for the reason in "The deployed model" above.
+1. **Read the curve line of the next deployed build** (F-119, D-684). Cloud Build deployed PR-43, so the curve line must match the stored list. Read the deck with `KIND=decks` and `RAW=1` of `scripts/read-session.sh`, and decode `deck_gz`.
+2. **Read the meta job run of 2026-09-13 at 06:00 UTC**, the first on `worker:e8c1b4a`. Check that it succeeded and stored a model. Read the Standard cross share beside 0.690, and the Commander accuracy beside 0.542.
 3. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
 4. **The live half of the feedback loop has no run yet.** Three things want a measurement: the judge lane of the triage, one live fix cycle, and one review round. All three need the owner's word, and the cycle also needs `AUTOTUNE_FIXER_CMD` and a harvest whose verdicts carry a snapshot.
 5. **The next whole deck gate run is still deck gate run 19, and it is still outstanding.** It makes the next decks baseline. It also measures PR-39 and PR-40 on real builds, where quality gate runs 19 and 20 read the model alone. It costs money, and run 18 cost $2.71, so ask the owner first.
@@ -154,6 +156,12 @@ The CI step "fake gcs tests" ran no test until 2026-09-10 (D-658). Its filter ma
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 
 ## The ten most recent sessions
+
+### 2026-09-12b: PR-43 deployed, and the meta run of 2026-09-12
+
+**The owner merged #149, and Cloud Build deployed it at 06:25 UTC.** Revision `mtg-api-00038-h57` serves `api:e8c1b4a`, both jobs run `worker:e8c1b4a`, and `/readyz` answered 200.
+
+**The meta run of 06:00 UTC succeeded at 06:22 UTC**, on `worker:6d9dacf`. It stored `20260912T061545Z`, fitted on 38,395 lists and 909 commanders. The Commander accuracy fell from 0.644 to 0.542, as gate run 20 predicted. The deployed Standard fit reads its cross share at 0.690, against 0.750 the day before, and that share is no bar.
 
 ### 2026-09-12: the deployed grade, F-119, and PR-43
 
@@ -251,20 +259,6 @@ Merged as #141.
 
 **The meta job of 2026-09-11 succeeded.** It stored model `20260911T063437Z`, and its Commander fit reads `immaterial` 245. It ran 41 minutes, because mtgo read 3,343 lists after none the day before.
 
-### 2026-09-11: the deployed fix, the bracket 5 session, and M-11 underway
-
-Merged as #140.
-
-**#139 merged and deployed.** Cloud Build finished at 04:01 UTC, and revision `mtg-api-00035-djl` serves image `api:33d6691`. `/readyz` answered OK.
-
-**The owner built at bracket 5 on the deployed app**, as session `ze0Im17gZlFIBRyn7k7Z`. Turn 1 asked the theme and the colors alone (F-111). The reader declined both, and turn 2 offered Vivi Ornitier, Aang, and Hapatra, the bracket 5 order (F-104). The reader picked Vivi Ornitier from an owned-only pool. The deck marks it and all 74 entries owned, with $0 to buy.
-
-**OQ-79 stays open** (D-673). The session of the old fault no longer exists, and one session proves this case only. The harder case is a pool whose best commander the reader does not own.
-
-**M-11 started, and it costs nothing.** A throwaway patch fits fifteen combinations of the Commander detector in a scratch worktree. The control reproduces gate run 19 in every number. At 05:50 UTC four fits had finished, and none meets the gate. `moved` grades 17 decks bad, and `base` fails the great-over-precon bar at 0.88. `.local/m11/` holds everything a fresh session needs to finish.
-
-**The owner asked for a complete hand-off before a context reset.** This record, the roadmap, and `CLAUDE.md` read the state at 05:50 UTC.
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-10g, and 42 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-11, and 42 more sections, word for word. Read it for the detail behind a decision.
