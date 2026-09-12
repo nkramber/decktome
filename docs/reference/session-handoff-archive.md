@@ -11,6 +11,20 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## 2026-09-11b: the result of M-11, the tier rule, and the rules detector next
+
+Merged as #141.
+
+**The owner asked what comes next after #140.** The fifteen fits of M-11 finished at 06:12 UTC, and no detector variant meets the gate. `moved` passes every bar and grades 17 decks bad. Every fit with `base` fails the great-over-precon bar.
+
+**The flag was not the cause** (F-115). Every disputed deck grades bad in all fifteen fits, even where the detector passes it. The grade adds the detector probability to the bad rung of every deck. In `base, colors`, deck 15 grades bad at 0.27 under a cut of 0.52. The mix came with PR-14B, and no decision records it.
+
+**Four free fits changed the tier alone, and no bar moved**, because every bar reads the score. `tier` grades 14 decks bad at an agreement of 9. `notier` grades 8 bad at 10, and deck 22 rises to baseline. The cost sits in the holdout: `tier` lifts 595 broken copies above bad, and `notier` lifts 2,061.
+
+**Two owner answers.** A change that moves a tier reports the broken copies graded bad, as information (D-674). The owner asked for the pros and cons of each option, then chose the rules detector first, with no change of the tier (D-675). M-12 plans it, and PR-40 builds what M-12 picks.
+
+**The meta job of 2026-09-11 succeeded.** It stored model `20260911T063437Z`, and its Commander fit reads `immaterial` 245. It ran 41 minutes, because mtgo read 3,343 lists after none the day before.
+
 ## 2026-09-11: the deployed fix, the bracket 5 session, and M-11 underway
 
 Merged as #140.
