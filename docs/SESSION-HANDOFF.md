@@ -8,13 +8,15 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-11)
 
-**The checkout.** `main` is `758bcd4`, which is pull request #147, or a later merge. The branch `pr42-rerun-missed` holds PR-42 and this hand-off, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
+**The checkout.** `main` is `6d9dacf`, which is pull request #148, or a later merge. The branch `pr43-validate-after-mana-pass` holds PR-43 and this hand-off, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
 
-**The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586). #144 is the newest deploy, at 18:44 UTC on 2026-09-11. #145 to #147 changed documents alone. The deploy triggers read `go/**`, `docker/**`, and `web/**` alone, so none of those merges started a build.
+**The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586). #148 is the newest deploy, at 03:42 UTC on 2026-09-12: revision `mtg-api-00037-5np` serves `api:6d9dacf`, both jobs run `worker:6d9dacf`, and `/readyz` answered 200. #145 to #147 changed documents alone, and the deploy triggers read `go/**`, `docker/**`, and `web/**` alone.
 
-**The first next step waits on the owner.** The owner builds one Commander deck on the deployed app and names its session. The session then reads its grade (next step 1).
+**The owner's Commander build reads right** (D-678). Session `OFMnk7Tv2zkK8xfAwXxB` built a bracket 5 treasure deck led by Smaug the Magnificent, from an owned-only pool. The grade reads typical, and its three reasons name the ladder. No rules check flags the deck: 33 lands, an average mana value of 2.29, and red sources at 1.72 of their need. The reader owns the commander, so OQ-79 stays open for its harder case.
 
-**The session built PR-42 on its branch** (F-112, D-671). A counted conversation with a miss plays two more times inside the question gate run. The document and the run file carry its miss rate. The first play still sets the verdict, and a test proves it with a fake player. The merge starts a Cloud Build of the API and the worker, because the trigger reads `go/**`. Neither image runs the gate command, so their behavior does not change.
+**The read found F-119, and PR-43 fixes it** (D-684). The curve line of that deck reads 2.79 over 68 nonland cards, and the stored list reads 2.29 over 66. `generate.go` ran the rules engine before the mana pass of PR-33, so every rules finding read the list before the pass. PR-43 runs the pass first, and a whole build through a fake model proves it. The pass adds only shortlist cards, so the fault is stale text alone.
+
+**#148 merged PR-42, and Cloud Build deployed it** (F-112, D-671). A counted conversation with a miss plays two more times inside the question gate run. The document and the run file carry its miss rate. The first play still sets the verdict. No whole run shows a rerun yet.
 
 **M-13 measured the date cut of PR-41, and the owner closed PR-41** (F-118, D-682, D-683). A free count found that the top lists hold Hobbit cards at the rate of older sets. No cut of 30 or 90 days moves a built deck to another tier, and each cut makes one number a little worse. `docs/reference/m13-date-cut-fits-2026-09-11.md` holds the count and the fits.
 
@@ -32,7 +34,7 @@ CAUTION: a grade stored on a deck built before the deploy keeps its old tier unt
 
 **M-10 measured the softmax scorer again, and the owner closed PR-38** (D-680). The scorer drops the Commander precon bar to 748 of 788, one pair short. It grades 14 built decks bad against 9, and the owner's grades match on 2 decks against 5. **A quality item now passes only when neither reader number gets worse** (D-681, guardrail 15).
 
-**The deployed model.** The meta job refits the model on every run (`go/cmd/worker/meta.go`). Its run of 2026-09-11 at 06:00 UTC finished at 06:41 UTC, before the deploy of PR-40, and stored `20260911T063437Z`. The run of 2026-09-12 at 06:00 UTC is the first on `worker:38ddde6`. The holdout accuracy reads the tier, and the tier reads the rules checks now. So the stored Commander accuracy will likely fall: gate run 20 read 0.55, against 0.65 on run 19.
+**The deployed model.** The meta job refits the model on every run (`go/cmd/worker/meta.go`). Its run of 2026-09-11 at 06:00 UTC finished at 06:41 UTC, before the deploy of PR-40, and stored `20260911T063437Z`. The run of 2026-09-12 at 06:00 UTC is the first on a worker image with PR-40, `worker:6d9dacf`. The holdout accuracy reads the tier, and the tier reads the rules checks now. So the stored Commander accuracy will likely fall: gate run 20 read 0.55, against 0.65 on run 19.
 
 **M-11 is done, and no detector variant meets its gate** (F-115, D-675). Every disputed deck grades bad in all fifteen fits. The grade adds the detector probability to the bad rung of every deck, so the flag never decides the tier. The owner chose the rules detector first, and M-12 fitted it. `docs/reference/m11-detector-variants-2026-09-11.md` holds every fit, and `.local/m11/` holds the patches.
 
@@ -74,7 +76,6 @@ CAUTION: the `decktome` gcloud configuration named the Wallabee account and proj
 
 **What waits on the owner.**
 
-- A Commander build on the deployed app, and its session id (next step 1).
 - The word for deck gate run 19, which costs money (next step 5).
 - OQ-67, the Stage B channels.
 - OQ-77, the blocking function of Identity Platform.
@@ -124,7 +125,7 @@ Nine things a fresh session gets wrong without this file.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
 - The feedback store holds 3 verdicts on 2026-09-09, and every one predates the snapshot of D-635. `make feedback-list VERDICT=` reads both verdicts now (F-87). A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- The deployed API, read 2026-09-11 at 18:44 UTC and again at 23:11 UTC: revision `mtg-api-00036-bkn` on image `api:38ddde6`, from #144. Both jobs run `worker:38ddde6`. At 18:44 UTC `/readyz` read the card snapshot of 2026-09-11 at 09:01 UTC. After #146 and #147 merged, the build list held no new build.
+- The deployed API, read 2026-09-12 at 05:46 UTC: revision `mtg-api-00037-5np` on image `api:6d9dacf`, from #148. Both jobs run `worker:6d9dacf`, and `/readyz` answered 200. The build of #148 finished at 03:42 UTC, and #145 to #147 started no build.
 - The deployed quality model, read 2026-09-11: `20260911T063437Z`, from the meta job of 06:00 UTC. It fits 38,124 lists and 966 commanders, and its Commander fit reads `immaterial` 245 and accuracy 0.644. The job ran 41 minutes, and the run of 2026-09-10 ran 20.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
 - Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 18, revise is run 9. Run 48 is the newest whole questions run, and it reads PASS. Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 20 is its newest run.
@@ -132,8 +133,8 @@ Nine things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **Read the grade of a Commander build on the deployed app** (D-678). The owner builds one Commander deck and names its session. Read it with `make read-session`, with the environment overrides of the deployed project. Check that a flagged deck names its check, and that any other deck names the ladder.
-2. **Read the meta job run of 2026-09-12 at 06:00 UTC**, the first on `worker:38ddde6`. Read its log with the environment overrides of the deployed project. Check that it succeeded and stored a model. Expect a lower Commander accuracy, for the reason in "The deployed model" above.
+1. **PR-43 waits as an open pull request** (F-119, D-684). After the merge, read the Cloud Build it starts. Then read the curve line of the next deployed build against its stored list.
+2. **Read the meta job run of 2026-09-12 at 06:00 UTC**, the first on `worker:6d9dacf`. Read its log with the environment overrides of the deployed project. Check that it succeeded and stored a model. Expect a lower Commander accuracy, for the reason in "The deployed model" above.
 3. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
 4. **The live half of the feedback loop has no run yet.** Three things want a measurement: the judge lane of the triage, one live fix cycle, and one review round. All three need the owner's word, and the cycle also needs `AUTOTUNE_FIXER_CMD` and a harvest whose verdicts carry a snapshot.
 5. **The next whole deck gate run is still deck gate run 19, and it is still outstanding.** It makes the next decks baseline. It also measures PR-39 and PR-40 on real builds, where quality gate runs 19 and 20 read the model alone. It costs money, and run 18 cost $2.71, so ask the owner first.
@@ -142,7 +143,7 @@ Nine things a fresh session gets wrong without this file.
 8. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
 9. **The weekly EDHREC read** falls on 2026-09-14 (D-499, D-565). Run `make meta-refresh`, then `make quality-gate` to a new `QUALITY_GATE_OUT`.
 10. **PR-26, the return channels**, waits on OQ-67.
-11. **PR-42 waits as an open pull request** (D-671). After the merge, read the Cloud Build it starts. The next whole question gate run is the first to show a rerun, and it costs about $0.19. Any miss still fails the run, and each miss joins the finding register.
+11. **PR-42 is merged as #148** (D-671). The next whole question gate run is the first to show a rerun, and it costs about $0.19. Any miss still fails the run, and each miss joins the finding register.
 
 CAUTION: `make revise-gate | tee` hides the exit code. Read the verdict line of the document, never the exit code of a pipe.
 
@@ -153,6 +154,14 @@ The CI step "fake gcs tests" ran no test until 2026-09-10 (D-658). Its filter ma
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 
 ## The ten most recent sessions
+
+### 2026-09-12: the deployed grade, F-119, and PR-43
+
+**The owner merged #148, and Cloud Build deployed it.** Revision `mtg-api-00037-5np` serves `api:6d9dacf`, both jobs run `worker:6d9dacf`, and `/readyz` answered 200.
+
+**The owner built a Commander deck and named its session.** Session `OFMnk7Tv2zkK8xfAwXxB` asked for a treasure deck, named Smaug the Magnificent, and chose bracket 5 from an owned-only pool. The grade reads typical, and its reasons name the ladder, as D-678 asks. No rules check flags the deck. The reader owns the commander, so OQ-79 keeps its harder case open.
+
+**The read found F-119.** The curve line reads 2.79 over 68 nonland cards, and the stored list reads 2.29 over 66. The engine ran before the mana pass, so every rules finding read the list before the pass. The owner chose PR-43, which runs the pass first (D-684). A whole build through a fake model fails on the old order and passes on the new one.
 
 ### 2026-09-11i: PR-42, the gate reruns a missed conversation
 
@@ -256,30 +265,6 @@ Merged as #140.
 
 **The owner asked for a complete hand-off before a context reset.** This record, the roadmap, and `CLAUDE.md` read the state at 05:50 UTC.
 
-### 2026-09-10g: F-111, the offer waits for the theme and the colors
-
-Merged as #139.
-
-**The owner reported a turn that makes no sense.** Session `zJPjCkVR44jcSqxrlkmb` asked "Build a bracket-5 commander deck". One turn asked the theme and the colors and offered Vivi Ornitier, Aang, and Hapatra.
-
-**The cause is the wait of the pick row.** D-630 made the offer wait for the power alone. The first message filled the power, and the classifier read a request for a suggestion. So the offer took the third place of the turn beside two questions it ranks on.
-
-**The first shape made the offer wait for both answers, and question gate run 45 read FAIL** ($0.19). Conversation 14 skipped the color question and asked for a suggestion, and its first offer came on turn 4, too late to pick. Six conversations that got an offer in run 44 got none. No scripted conversation had the shape of the owner's session, so neither run ever offered beside a preference question.
-
-**The owner chose the rule of the turn** (D-669). A new catalog field, `not_beside`, keeps the offer out of a turn that asks the theme or the colors. The offer waits for no answer. The owner chose to leave the plain commander row as it is.
-
-**Question gate run 46 read FAIL on one classifier read** ($0.19). Conversation 14 passes, and no run offered a commander beside a theme or colors question. The miss is conversation 100, a Modern deck with no commander row, where the classifier kept the theme "team event". Runs 45 and 46 asked the same questions on every turn of it. The owner chose run 47.
-
-**Run 47 read FAIL on another single conversation** ($0.14). Conversation 103 built after turn 2, before the reader named the bracket and the budget. Runs 44 to 46 asked the same questions on its first two turns and reached turn 3. Conversations 14 and 100 pass, and 16 conversations got an offer (F-112).
-
-**The owner asked how to fix the check properly.** Each miss traced to a real gap the classifier trips on some runs. "You pick the commander" let the classifier decline the bracket and the budget (F-113). "Team event" filled the theme, so the theme question never went out (F-114). Both guards joined #139 with turn tests that fail without them (D-670). The gate keeps a bar of zero misses, and PR-42 reruns a missed conversation (D-671).
-
-**The effort measurement found no miss at either effort** (D-672, $0.04). Each conversation ran 8 times at `none` and 8 times at `low`. `low` cost 1.5 times as much per run, so the classify role keeps `none`.
-
-**Question gate run 48 reads PASS on the code with both guards** ($0.19). Every expectation holds, conversations 14, 100, and 103 pass, and no run offered a commander beside a preference question. `make eval-check` reads PASS again.
-
-**The first turn test passed without the fix.** An any-card pool asked the budget, and three rows filled the turn. The test copies the owned-only pool of the session now, and it fails with the old catalog. A second test walks the skip of conversation 14.
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-10f, and 42 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-10g, and 42 more sections, word for word. Read it for the detail behind a decision.
