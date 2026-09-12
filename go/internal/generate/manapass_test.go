@@ -2,8 +2,10 @@ package generate
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log/slog"
+	"slices"
 	"testing"
 	"time"
 
@@ -395,6 +397,89 @@ func TestATimedOutRepairKeepsTheLegalDeck(t *testing.T) {
 	b2 := NewBuilder(c2, cfg, src, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	if _, err := b2.Build(context.Background(), req, nil); err == nil {
 		t.Error("a build whose only deck is illegal returned no error")
+	}
+}
+
+// TestFindingsDescribeTheDeckAfterTheManaPass is F-119. The engine ran
+// before the mana pass, so the curve line of a built deck read the list
+// the pass then changed. Session OFMnk7Tv2zkK8xfAwXxB read 2.79 over 68
+// nonland cards on a deck of 2.29 over 66. The engine reads the finished
+// list (D-684).
+func TestFindingsDescribeTheDeckAfterTheManaPass(t *testing.T) {
+	src := source{}
+	commander := manaCard("o-cmd", "White Legend", 3, []string{"Creature"}, "")
+	commander.Supertypes = []string{"Legendary"}
+	commander.CanBeCommander = true
+	commander.ColorIdentity = []mtgv1.Color{mtgv1.Color_COLOR_W}
+	plains := manaCard("o-plains", "Plains", 0, []string{"Land"}, "", mtgv1.Color_COLOR_W)
+	plains.Supertypes = []string{"Basic"}
+	plains.ColorIdentity = []mtgv1.Color{mtgv1.Color_COLOR_W}
+	pool := []*mtgv1.Card{commander, plains}
+	// Thirty lands sit under the bracket 3 floor of 34, so the pass trades
+	// the costliest spells for basic lands.
+	entries := []Entry{{Name: "Plains", Count: 30, Role: "land", Reason: "a white source"}}
+	for i := range 69 {
+		c := manaCard(fmt.Sprintf("o-spell%02d", i), fmt.Sprintf("Spell %02d", i), float64(1+i%6), []string{"Creature"}, "")
+		pool = append(pool, c)
+		entries = append(entries, Entry{Name: c.GetName(), Count: 1, Role: "threat", Reason: "a body"})
+	}
+	for _, c := range pool {
+		src[c.GetOracleId()] = c
+	}
+	out := step(t, deckOut{Summary: "a white deck", Cards: entries})
+	sc := llm.NewScript(out, out)
+	client, err := llm.New(fakeConfig(), []llm.Provider{sc}, llm.WithoutJitter())
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := rules.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	prof, err := profile.New(cfg, nil, &cutClassifier{flag: "No Such Card"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	prof.SetHands(200)
+	b := NewBuilder(client, cfg, src, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	b.profiler = prof
+	req := testRequest()
+	req.Format = mtgv1.FormatId_FORMAT_ID_COMMANDER
+	req.Power = &mtgv1.PowerLevel{Level: &mtgv1.PowerLevel_Bracket{Bracket: 3}}
+	req.Limits = "Exactly 100 cards."
+	req.Commanders = []string{"o-cmd"}
+	req.Pool = NewPool(pool, nil)
+
+	got, err := b.Build(context.Background(), req, nil)
+	if err != nil {
+		t.Fatalf("build: %v", err)
+	}
+	deck := got.Deck
+	if countOf(deck, "o-plains") <= 30 {
+		t.Fatalf("the pass added no basic land, so the test reads nothing: %d Plains", countOf(deck, "o-plains"))
+	}
+	var nonland int32
+	var mvSum float64
+	for _, dc := range deck.GetCards() {
+		card := src[dc.GetOracleId()]
+		if slices.Contains(card.GetCardTypes(), "Land") {
+			continue
+		}
+		nonland += dc.GetCount()
+		mvSum += card.GetManaValue() * float64(dc.GetCount())
+	}
+	want := fmt.Sprintf("average mana value %.2f over %d nonland cards", mvSum/float64(nonland), nonland)
+	var curve string
+	for _, f := range deck.GetValidation().GetFindings() {
+		if f.GetCode() == rules.CodeCurve {
+			curve = f.GetMessage()
+		}
+	}
+	if curve != want {
+		t.Errorf("the curve line reads %q, want %q from the list the reader gets", curve, want)
+	}
+	if !deck.GetValidation().GetPassed() {
+		t.Errorf("the finished deck must pass the engine: %v", deck.GetValidation().GetFindings())
 	}
 }
 

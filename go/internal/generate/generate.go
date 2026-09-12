@@ -469,6 +469,11 @@ func (b *Builder) assemble(ctx context.Context, req Request, out *deckOut) pass 
 			excluded[id] = true
 		}
 	}
+	// The mana pass moves the mana base inside its bands, with no model
+	// call (PR-33, F-78). It runs before the engine and the profile, so
+	// every finding and the stored profile describe the deck the reader
+	// gets, and a band the pass closed buys no repair turn (F-119, D-684).
+	manaSteps := b.fixMana(req, deck)
 	deck.Validation = b.rules.Validate(rules.Input{
 		Deck:              deck,
 		PoolRule:          req.PoolRule,
@@ -486,11 +491,6 @@ func (b *Builder) assemble(ctx context.Context, req Request, out *deckOut) pass 
 	if req.Precon != "" {
 		checkPreconShare(deck, req, b.cards)
 	}
-	// The mana pass moves the mana base inside its bands, with no model
-	// call (PR-33, F-78). It runs before the profile is read, so the
-	// stored profile and every finding describe the deck the reader
-	// gets, and a band the pass closed buys no repair turn.
-	manaSteps := b.fixMana(req, deck)
 	// The bracket profile reads the finished deck. Its findings are
 	// warnings, and they buy the repair turn (PR-14A).
 	if b.profiler != nil {

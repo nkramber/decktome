@@ -11,6 +11,30 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## 2026-09-10g: F-111, the offer waits for the theme and the colors
+
+Merged as #139.
+
+**The owner reported a turn that makes no sense.** Session `zJPjCkVR44jcSqxrlkmb` asked "Build a bracket-5 commander deck". One turn asked the theme and the colors and offered Vivi Ornitier, Aang, and Hapatra.
+
+**The cause is the wait of the pick row.** D-630 made the offer wait for the power alone. The first message filled the power, and the classifier read a request for a suggestion. So the offer took the third place of the turn beside two questions it ranks on.
+
+**The first shape made the offer wait for both answers, and question gate run 45 read FAIL** ($0.19). Conversation 14 skipped the color question and asked for a suggestion, and its first offer came on turn 4, too late to pick. Six conversations that got an offer in run 44 got none. No scripted conversation had the shape of the owner's session, so neither run ever offered beside a preference question.
+
+**The owner chose the rule of the turn** (D-669). A new catalog field, `not_beside`, keeps the offer out of a turn that asks the theme or the colors. The offer waits for no answer. The owner chose to leave the plain commander row as it is.
+
+**Question gate run 46 read FAIL on one classifier read** ($0.19). Conversation 14 passes, and no run offered a commander beside a theme or colors question. The miss is conversation 100, a Modern deck with no commander row, where the classifier kept the theme "team event". Runs 45 and 46 asked the same questions on every turn of it. The owner chose run 47.
+
+**Run 47 read FAIL on another single conversation** ($0.14). Conversation 103 built after turn 2, before the reader named the bracket and the budget. Runs 44 to 46 asked the same questions on its first two turns and reached turn 3. Conversations 14 and 100 pass, and 16 conversations got an offer (F-112).
+
+**The owner asked how to fix the check properly.** Each miss traced to a real gap the classifier trips on some runs. "You pick the commander" let the classifier decline the bracket and the budget (F-113). "Team event" filled the theme, so the theme question never went out (F-114). Both guards joined #139 with turn tests that fail without them (D-670). The gate keeps a bar of zero misses, and PR-42 reruns a missed conversation (D-671).
+
+**The effort measurement found no miss at either effort** (D-672, $0.04). Each conversation ran 8 times at `none` and 8 times at `low`. `low` cost 1.5 times as much per run, so the classify role keeps `none`.
+
+**Question gate run 48 reads PASS on the code with both guards** ($0.19). Every expectation holds, conversations 14, 100, and 103 pass, and no run offered a commander beside a preference question. `make eval-check` reads PASS again.
+
+**The first turn test passed without the fix.** An any-card pool asked the budget, and three rows filled the turn. The test copies the owned-only pool of the session now, and it fails with the old catalog. A second test walks the skip of conversation 14.
+
 ## 2026-09-10f: the plan of M-11, the detector
 
 Merged as #138.
