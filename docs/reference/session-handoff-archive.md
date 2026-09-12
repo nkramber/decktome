@@ -11,6 +11,18 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## 2026-09-11c: the plan of M-12, the rules detector
+
+Merged as #142.
+
+**The owner merged #141 and asked for the next step.** The hand-off named the plan of M-12. A free dump read the rule quantities of every Commander list of gate run 19 and the 25 built decks.
+
+**The source.** Karsten's land article of 2022-07-29 draws its text in the browser, so the session read it through `infinite-api.tcgplayer.com`. It defines the cheap draw and ramp by text rules, and a counter matches all 33 cards it names. It gives no cut for a broken deck.
+
+**The dump.** Every candidate set flags decks 19 and 22 alone among the built decks. But the land formula reads the cEDH top lists as short of lands (F-116), and the curve break overlaps the precons. The best set loses 14 own-copy pairs where the bar allows 3.
+
+**Two owner answers.** M-12 fits two designs: the rules set the tier, or the rules replace the detector (D-676). The thresholds come from a grid of eight combinations for each design (D-677).
+
 ## 2026-09-11b: the result of M-11, the tier rule, and the rules detector next
 
 Merged as #141.

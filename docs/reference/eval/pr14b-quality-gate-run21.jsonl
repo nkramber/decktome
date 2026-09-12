@@ -1,0 +1,57 @@
+{"suite":"quality","run_id":"pr14b-quality-gate-run21","date":"2026-09-12","commit":"5ef19ec","snapshot":"2026-09-04","versions":{"commanders_day":"2026-09-07","quality_model":"20260912T153537Z"},"calls":0,"seconds":105.119765791,"verdict":"PASS"}
+{"item":"commander","metric":"fit","value":1,"kind":"gate"}
+{"item":"commander","metric":"great_over_precon","value":0.9615392508978964,"kind":"gate","detail":"97450 pairs, the bar is 0.90"}
+{"item":"commander","metric":"precon_over_own","value":0.9518987341772152,"kind":"gate","detail":"790 pairs, the bar is 0.95"}
+{"item":"commander","metric":"precon_over_bad","value":0.871463880800136,"kind":"info","detail":"99933 cross pairs, information"}
+{"item":"commander","metric":"accuracy","value":0.5448,"kind":"info"}
+{"item":"commander","metric":"lists","value":23628,"kind":"info","detail":"9229 used, 6145 synthetic, 249 immaterial, 15125 holdout"}
+{"item":"commander","metric":"immaterial","value":249,"kind":"info","detail":"249 of 2958 synergy copies, floor 0.10, unit 0.5838"}
+{"item":"commander","metric":"folds","value":5,"kind":"info"}
+{"item":"standard","metric":"fit","value":1,"kind":"gate"}
+{"item":"standard","metric":"great_over_precon","value":0.9163636363636364,"kind":"gate","detail":"2750 pairs, the bar is 0.90"}
+{"item":"standard","metric":"precon_over_own","value":1,"kind":"gate","detail":"40 pairs, the bar is 0.95"}
+{"item":"standard","metric":"precon_over_bad","value":0.9095890410958904,"kind":"info","detail":"730 cross pairs, information"}
+{"item":"standard","metric":"accuracy","value":0.4529,"kind":"info"}
+{"item":"standard","metric":"lists","value":8228,"kind":"info","detail":"5768 used, 370 synthetic, 0 immaterial, 6138 holdout"}
+{"item":"standard","metric":"immaterial","value":0,"kind":"info","detail":"0 of 106 synergy copies, floor -1.00, unit 0.0000"}
+{"item":"standard","metric":"folds","value":5,"kind":"info"}
+{"item":"modern","metric":"fit","value":1,"kind":"gate"}
+{"item":"modern","metric":"great_over_precon","value":0.985804176672645,"kind":"gate","detail":"98691 pairs, the bar is 0.90"}
+{"item":"modern","metric":"precon_over_own","value":0.9908256880733946,"kind":"gate","detail":"1635 pairs, the bar is 0.95"}
+{"item":"modern","metric":"precon_over_bad","value":0.8549231108526977,"kind":"info","detail":"99754 cross pairs, information"}
+{"item":"modern","metric":"accuracy","value":0.5554,"kind":"info"}
+{"item":"modern","metric":"lists","value":20292,"kind":"info","detail":"7099 used, 2745 synthetic, 0 immaterial, 9844 holdout"}
+{"item":"modern","metric":"immaterial","value":0,"kind":"info","detail":"0 of 1109 synergy copies, floor -1.00, unit 0.0000"}
+{"item":"modern","metric":"folds","value":5,"kind":"info"}
+{"item":"suite","metric":"broken_copies_graded_bad","value":4130,"kind":"info","detail":"4130 of 5896 Commander broken copies of the holdout"}
+{"item":"suite","metric":"decks_graded_bad","value":8,"kind":"info","detail":"8 of 25 built decks of pr8-deck-gate-run16.md"}
+{"item":"suite","metric":"judge_agreement","value":9,"kind":"info","detail":"9 of 25 decks of pr14b-quality-judge-run5.md"}
+{"item":"commander","metric":"precon_over_own_lands","value":1,"kind":"info","detail":"189 pairs"}
+{"item":"commander","metric":"precon_over_bad_lands","value":0.9664394789060478,"kind":"info","detail":"46364 cross pairs"}
+{"item":"commander","metric":"precon_over_own_curve","value":1,"kind":"info","detail":"189 pairs"}
+{"item":"commander","metric":"precon_over_bad_curve","value":0.9543395738072643,"kind":"info","detail":"46364 cross pairs"}
+{"item":"commander","metric":"precon_over_own_colors","value":1,"kind":"info","detail":"178 pairs"}
+{"item":"commander","metric":"precon_over_bad_colors","value":0.9205812897366031,"kind":"info","detail":"27525 cross pairs"}
+{"item":"commander","metric":"precon_over_own_synergy","value":0.8376068376068376,"kind":"info","detail":"234 pairs"}
+{"item":"commander","metric":"precon_over_bad_synergy","value":0.7765442378265026,"kind":"info","detail":"97281 cross pairs"}
+{"item":"standard","metric":"precon_over_own_lands","value":1,"kind":"info","detail":"8 pairs"}
+{"item":"standard","metric":"precon_over_bad_lands","value":0.952054794520548,"kind":"info","detail":"146 cross pairs"}
+{"item":"standard","metric":"precon_over_own_curve","value":1,"kind":"info","detail":"8 pairs"}
+{"item":"standard","metric":"precon_over_bad_curve","value":1,"kind":"info","detail":"146 cross pairs"}
+{"item":"standard","metric":"precon_over_own_colors","value":1,"kind":"info","detail":"4 pairs"}
+{"item":"standard","metric":"precon_over_bad_colors","value":0.7428571428571429,"kind":"info","detail":"105 cross pairs"}
+{"item":"standard","metric":"precon_over_own_copies","value":1,"kind":"info","detail":"3 pairs"}
+{"item":"standard","metric":"precon_over_bad_copies","value":0.990990990990991,"kind":"info","detail":"111 cross pairs"}
+{"item":"standard","metric":"precon_over_own_synergy","value":1,"kind":"info","detail":"17 pairs"}
+{"item":"standard","metric":"precon_over_bad_synergy","value":0.8603603603603603,"kind":"info","detail":"222 cross pairs"}
+{"item":"modern","metric":"precon_over_own_lands","value":1,"kind":"info","detail":"327 pairs"}
+{"item":"modern","metric":"precon_over_bad_lands","value":0.9363965347077531,"kind":"info","detail":"36476 cross pairs"}
+{"item":"modern","metric":"precon_over_own_curve","value":1,"kind":"info","detail":"327 pairs"}
+{"item":"modern","metric":"precon_over_bad_curve","value":0.9778484482947691,"kind":"info","detail":"36476 cross pairs"}
+{"item":"modern","metric":"precon_over_own_colors","value":0.9866666666666667,"kind":"info","detail":"75 pairs"}
+{"item":"modern","metric":"precon_over_bad_colors","value":0.4667760459392945,"kind":"info","detail":"17066 cross pairs"}
+{"item":"modern","metric":"precon_over_own_copies","value":1,"kind":"info","detail":"61 pairs"}
+{"item":"modern","metric":"precon_over_bad_copies","value":0.8258396533044421,"kind":"info","detail":"18460 cross pairs"}
+{"item":"modern","metric":"precon_over_own_synergy","value":0.9834319526627219,"kind":"info","detail":"845 pairs"}
+{"item":"modern","metric":"precon_over_bad_synergy","value":0.8492030767918332,"kind":"info","detail":"70333 cross pairs"}
+{"item":"suite","metric":"offer","value":1,"kind":"gate","detail":"3 commanders, the bar is 3"}
