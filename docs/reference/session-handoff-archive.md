@@ -11,6 +11,18 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## 2026-09-11d: the fits of M-12, and design A for PR-40
+
+Merged as #143.
+
+**The owner merged #142.** The session ran M-12 for free: a control and eight fits of each design. The control reproduces gate run 19 in every number.
+
+**Design A passes in all eight fits.** Every bar reads as gate run 19. Every A fit grades 9 built decks bad, 10 in agreement, and 5 owner matches. The thresholds differ in the real lists they grade bad: a shortfall of 8 grades about three times as many top lists bad.
+
+**Design B fails in all eight fits** (F-117). Its synergy detector flags more than half of the precons and seven built decks. The precon bar reads 659 to 662 of 788, and the built decks grade as gate run 19.
+
+**The owner picked design A at a shortfall of 10, curve 4.4, and colors 0.75** (D-678). It grades the fewest real lists bad, 615 against 1,003. It grades 4,141 of 5,905 broken copies bad, against 5,730.
+
 ## 2026-09-11c: the plan of M-12, the rules detector
 
 Merged as #142.
