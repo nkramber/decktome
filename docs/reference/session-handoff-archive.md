@@ -11,6 +11,18 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## 2026-09-11e: PR-40, the rules detector
+
+Merged as #144.
+
+**The owner merged #143, and the session built PR-40** (D-678). A new `rules.go` holds the three checks, Karsten's cheap count, and the tier of a Commander deck. `Score`, `Explain`, and the holdout grades read it, and the score and the bars stay as they were.
+
+**The tests read Karsten's own examples.** The cheap rule matches all 33 cards the article names. Two more tests read the checks on built Commander decks and the tier on a hand-built model.
+
+**Gate run 20 reproduces the fit of M-12 in every number.** A control fit of the parent reproduces gate run 19. The built decks graded bad fall from 16 to 9, and the judge agreement rises from 9 to 10. The broken copies graded bad fall from 5,730 to 4,141.
+
+**The owner set a rule for every pull request** (D-679): wait for gitar and answer every finding, a docs-only pull request included. #143 merged while `verify:go` still ran, and that check passed at 17:47 UTC.
+
 ## 2026-09-11d: the fits of M-12, and design A for PR-40
 
 Merged as #143.
