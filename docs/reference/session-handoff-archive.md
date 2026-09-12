@@ -11,6 +11,20 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## 2026-09-11: the deployed fix, the bracket 5 session, and M-11 underway
+
+Merged as #140.
+
+**#139 merged and deployed.** Cloud Build finished at 04:01 UTC, and revision `mtg-api-00035-djl` serves image `api:33d6691`. `/readyz` answered OK.
+
+**The owner built at bracket 5 on the deployed app**, as session `ze0Im17gZlFIBRyn7k7Z`. Turn 1 asked the theme and the colors alone (F-111). The reader declined both, and turn 2 offered Vivi Ornitier, Aang, and Hapatra, the bracket 5 order (F-104). The reader picked Vivi Ornitier from an owned-only pool. The deck marks it and all 74 entries owned, with $0 to buy.
+
+**OQ-79 stays open** (D-673). The session of the old fault no longer exists, and one session proves this case only. The harder case is a pool whose best commander the reader does not own.
+
+**M-11 started, and it costs nothing.** A throwaway patch fits fifteen combinations of the Commander detector in a scratch worktree. The control reproduces gate run 19 in every number. At 05:50 UTC four fits had finished, and none meets the gate. `moved` grades 17 decks bad, and `base` fails the great-over-precon bar at 0.88. `.local/m11/` holds everything a fresh session needs to finish.
+
+**The owner asked for a complete hand-off before a context reset.** This record, the roadmap, and `CLAUDE.md` read the state at 05:50 UTC.
+
 ## 2026-09-10g: F-111, the offer waits for the theme and the colors
 
 Merged as #139.
