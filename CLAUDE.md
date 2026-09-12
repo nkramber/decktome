@@ -6,7 +6,7 @@ Read this file first. Then read `docs/SESSION-HANDOFF.md`. It tells you where th
 
 This repo is a Go + Protobuf + TypeScript monorepo for an agentic MtG deck builder. The app reads a user's ManaBox collection export. The user gives a prompt. The agent asks questions, then builds a legal, useful deck.
 
-Stage (2026-09-11): **the app is live on `decktome.com`**, and pull request #145 is the newest merge. A merge to `main` deploys itself on Cloud Build (D-584, D-586, D-588). Phase 3B, the product UI, is the current phase.
+Stage (2026-09-11): **the app is live on `decktome.com`**, and pull request #146 is the newest merge. A merge to `main` deploys itself on Cloud Build (D-584, D-586, D-588). Phase 3B, the product UI, is the current phase.
 
 **The whole PR-22 gate holds** (D-633), so PR-28 is free to run. Every PR through #119 is merged: PR-0a to PR-8, PR-7B, PR-10 to PR-25, PR-27, PR-32, PR-33, and PR-28a. PR-9 is out of the MVP (D-256). **PR-28 split into three** (D-636). PR-28a is the harvest, and it is merged. PR-28b is the triage and the new "must not ask" expectation, and PR-28c is the fix cycle. PR-26 waits on OQ-67. Of the weak-axes plan, PR-29 and PR-30 closed on their evidence, and PR-31 parks (D-652, D-656, D-573).
 
@@ -16,7 +16,7 @@ Stage (2026-09-11): **the app is live on `decktome.com`**, and pull request #145
 
 **The owner graded the ten disputed decks** (D-659). The judge bar is the right target, and the defect detector reads built decks wrong. PR-39 merged first, as #135: the basic lands follow the need of each color (D-660, D-661). Gate run 19 measured the new source count on the quality model: every bar holds, and the judge agreement rose from 8 to 9 (D-663).
 
-**M-11 measured fifteen fitted detectors, and none meets its gate** (F-115). The tier reads the detector probability of every deck, so no variant moved a disputed deck. **#144 merged PR-40, and the deployed app grades Commander decks by the rules checks of M-12** (D-675 to D-678). M-10 ran again, and the owner closed PR-38 (D-680). Every item that changes a feature of the model reports the three numbers (D-664). A tier change also reports the broken copies graded bad (D-674), and an item passes only when neither reader number worsens (D-681).
+**M-11 measured fifteen fitted detectors, and none meets its gate** (F-115). The tier reads the detector probability of every deck, so no variant moved a disputed deck. **#144 merged PR-40, and the deployed app grades Commander decks by the rules checks of M-12** (D-675 to D-678). M-10 ran again and M-13 fitted the date cut, and the owner closed PR-38 and PR-41 (D-680, F-118, D-683). Every item that changes a feature of the model reports the three numbers (D-664). A tier change also reports the broken copies graded bad (D-674), and an item passes only when neither reader number worsens (D-681).
 
 **The commander offer never shares a turn with a theme or colors question** (F-111, D-669). #139 merged it with two question-flow guards (F-113, F-114, D-670), and it deployed on 2026-09-11. The owner's owned-only bracket 5 session reads right on every check, and OQ-79 stays open for a harder case (D-673).
 
