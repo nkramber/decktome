@@ -8,9 +8,13 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-11)
 
-**The checkout.** `main` is `94e47c3`, which is pull request #150, or a later merge. The branch `docs-d685-correction` holds a correction of D-685 and this hand-off, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
+**The checkout.** `main` is `5ef19ec`, which is pull request #152, or a later merge. The branch `gate-runs-2026-09-12` holds deck gate run 19, question gate run 49, PR-44, and this hand-off, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
 
 **The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586). #149 is the newest deploy, at 06:25 UTC on 2026-09-12: revision `mtg-api-00038-h57` serves `api:e8c1b4a`, both jobs run `worker:e8c1b4a`, and `/readyz` answered 200. The deploy triggers read `go/**`, `docker/**`, and `web/**` alone, so a merge of documents alone starts no build.
+
+**Deck gate run 19 and question gate run 49 read PASS** (D-686). Run 19 passes all 25 decks with one repair turn, and it is the decks baseline now. Its grade rows fell on most decks, because the local stored model `20260910T012734Z` graded them. Every curve line matches its list, so PR-43 holds on real builds. Run 49 met every expectation, and no conversation missed, so PR-42 ran no rerun.
+
+**PR-44 derives a card's types by the rules of its layout** (F-120, D-687 to D-689). The index merged the types of every face, so Legion's Landing counted as a land. A card with more than one face takes its front face now, and split and modal double-faced cards keep every face. Quality gate run 21 reads PASS: 8 built decks grade bad against 9, and the judge agreement reads 9 against 10. The owner reads guardrail 15 as a rule for quality tuning items, so this correctness fix reports the numbers as information (D-689).
 
 **The owner's Commander build reads right** (D-678). Session `OFMnk7Tv2zkK8xfAwXxB` built a bracket 5 treasure deck led by Smaug the Magnificent, from an owned-only pool. The grade reads typical, and its three reasons name the ladder. No rules check flags the deck: 33 lands, an average mana value of 2.29, and red sources at 1.72 of their need. The reader owns the commander, so OQ-79 stays open for its harder case.
 
@@ -78,7 +82,6 @@ CAUTION: the `decktome` gcloud configuration named the Wallabee account and proj
 
 **What waits on the owner.**
 
-- The word for deck gate run 19, which costs money (next step 5).
 - OQ-67, the Stage B channels.
 - OQ-77, the blocking function of Identity Platform.
 - OQ-79, the commander of an owned-only pool, open for a harder case (D-673).
@@ -124,29 +127,29 @@ Ten things a fresh session gets wrong without this file.
 - Card snapshot on disk: `.local/gcs/mtg-local-cards/scryfall/20260904T210157`, the newest of 13. Read 2026-09-11. Check every card fact against it.
 - LLM model ids and prices: `roles.json` and `prices.json`, verified 2026-08-24. The max output per provider in `llm/client.go`, verified 2026-08-29. The OpenAI rows are unverified by anyone but the owner. The judge role runs on Opus 5 (D-430).
 - The deck gate upgrade probe cost $0.32 for 2 prompts, 7 calls, and 266 seconds. A partial run reads its own item bars and never stands as the gate (D-526).
-- Run cost, read from the run files on 2026-09-09. The question gate cost $0.190 on run 42, $0.193 on run 43, and $0.194 on run 44, over 18 to 21 minutes. Runs 45 to 48 of 2026-09-11 cost $0.1925, $0.1920, $0.1380, and $0.1923, over 20, 22, 19, and 21 minutes. The deck gate upgrade probe cost $0.32 for 2 prompts. The eval cost $0.092 on run 34 and $0.096 on run 35, over 12 to 14 minutes. The deck gate cost $2.71 on run 18, over 37 minutes. The revise gate cost $1.07 on run 9. The bracket gate judge lane cost $0.28.
+- Run cost, read from the run files on 2026-09-09. The question gate cost $0.190 on run 42, $0.193 on run 43, and $0.194 on run 44, over 18 to 21 minutes. Runs 45 to 48 of 2026-09-11 cost $0.1925, $0.1920, $0.1380, and $0.1923, over 20, 22, 19, and 21 minutes. Run 49 of 2026-09-12 cost $0.1935, over 18 minutes. The deck gate upgrade probe cost $0.32 for 2 prompts. The eval cost $0.092 on run 34 and $0.096 on run 35, over 12 to 14 minutes. The deck gate cost $2.71 on run 18, over 37 minutes, and $2.75 on run 19 of 2026-09-12, over 36 minutes. The revise gate cost $1.07 on run 9. The bracket gate judge lane cost $0.28.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
 - The feedback store holds 3 verdicts on 2026-09-09, and every one predates the snapshot of D-635. `make feedback-list VERDICT=` reads both verdicts now (F-87). A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
 - The deployed API, read 2026-09-12 at 06:26 UTC: revision `mtg-api-00038-h57` on image `api:e8c1b4a`, from #149. Both jobs run `worker:e8c1b4a`, and `/readyz` answered 200. The build of #149 finished at 06:25 UTC.
 - The deployed quality model, read 2026-09-12: `20260912T061545Z`, from the meta job of 06:00 UTC. It fits 38,395 lists and 909 commanders. Its Commander fit reads `immaterial` 243 and accuracy 0.542, and its Standard fit reads a cross share of 0.690. The job ran 21 minutes, and the run of 2026-09-11 ran 41.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
-- Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 18, revise is run 9. Run 48 is the newest whole questions run, and it reads PASS. Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 20 is its newest run.
+- Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 19, revise is run 9. Run 49 is the newest whole questions run, and it reads PASS. Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 21 is its newest run.
 - Toolchain on this Mac, read 2026-09-11: Go 1.27.1, Node 22.23.2, pnpm 9.2.0, firebase-tools 14.14.0, and Java 17.0.20.1. Playwright is 1.63.0 with its Chromium headless shell (`playwright install chromium`). `go.mod` asks Go 1.27.0 or newer, and vitest is 5.0.0 since #133.
 
 ## Next steps, in order
 
-1. **Read the curve line of the next deployed build** (F-119, D-684). Cloud Build deployed PR-43, so the curve line must match the stored list. Read the deck with `KIND=decks` and `RAW=1` of `scripts/read-session.sh`, and decode `deck_gz`.
+1. **Read the curve line of the next deployed build** (F-119, D-684). Cloud Build deployed PR-43, so the curve line must match the stored list. Read the deck with `KIND=decks` and `RAW=1` of `scripts/read-session.sh`, and decode `deck_gz`. After the merge of PR-44, read the Cloud Build it starts.
 2. **Read the meta job run of 2026-09-13 at 06:00 UTC**, the first on `worker:e8c1b4a`. Check that it succeeded and stored a model. Read the Standard cross share beside 0.690, and the Commander accuracy beside 0.542.
 3. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
 4. **The live half of the feedback loop has no run yet.** Three things want a measurement: the judge lane of the triage, one live fix cycle, and one review round. All three need the owner's word, and the cycle also needs `AUTOTUNE_FIXER_CMD` and a harvest whose verdicts carry a snapshot.
-5. **The next whole deck gate run is still deck gate run 19, and it is still outstanding.** It makes the next decks baseline. It also measures PR-39 and PR-40 on real builds, where quality gate runs 19 and 20 read the model alone. It costs money, and run 18 cost $2.71, so ask the owner first.
+5. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. The next whole run compares against run 19, and it costs about $2.75, so ask the owner first.
 6. **OQ-79 waits for a harder case** (D-673). Session `ze0Im17gZlFIBRyn7k7Z` read right. The next evidence is an owned-only build whose best pool commander the reader does not own.
 7. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
 8. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
 9. **The weekly EDHREC read** falls on 2026-09-14 (D-499, D-565). Run `make meta-refresh`, then `make quality-gate` to a new `QUALITY_GATE_OUT`.
 10. **PR-26, the return channels**, waits on OQ-67.
-11. **PR-42 is merged as #148** (D-671). The next whole question gate run is the first to show a rerun, and it costs about $0.19. Any miss still fails the run, and each miss joins the finding register.
+11. **PR-42 is merged as #148** (D-671). Question gate run 49 missed no conversation, so it ran no rerun. Any miss still fails the run, and each miss joins the finding register.
 
 CAUTION: `make revise-gate | tee` hides the exit code. Read the verdict line of the document, never the exit code of a pipe.
 
@@ -157,6 +160,14 @@ The CI step "fake gcs tests" ran no test until 2026-09-10 (D-658). Its filter ma
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 
 ## The ten most recent sessions
+
+### 2026-09-12e: the gate runs, F-120, and PR-44
+
+**The owner approved deck gate run 19 and question gate run 49, and both read PASS.** Run 49 cost $0.1935 over 18 minutes and met every expectation. Run 19 cost $2.7504 over 36 minutes and passes all 25 decks with one repair turn. The owner made run 19 the decks baseline (D-686).
+
+**The check of PR-43 on run 19 found F-120.** Every curve line matches its list. Deck 12 differs from a front-face count by one card, Legion's Landing, which the index typed as a land. The index merged the types of every face, against CR 712.8a.
+
+**The owner chose the rules of each layout** (D-687, D-688). PR-44 gives a card with more than one face its front face, and split and modal double-faced cards keep every face. A test of eight real cards fails on the old types. One shortlist of 25 lost two cards. Quality gate run 21 moves deck 7 from bad to baseline, so graded bad reads 8 and agreement 9. The owner reads guardrail 15 as a rule for tuning items (D-689).
 
 ### 2026-09-12c: the Gitar pause note (D-685)
 
@@ -240,18 +251,6 @@ Merged as #143.
 
 **The owner picked design A at a shortfall of 10, curve 4.4, and colors 0.75** (D-678). It grades the fewest real lists bad, 615 against 1,003. It grades 4,141 of 5,905 broken copies bad, against 5,730.
 
-### 2026-09-11c: the plan of M-12, the rules detector
-
-Merged as #142.
-
-**The owner merged #141 and asked for the next step.** The hand-off named the plan of M-12. A free dump read the rule quantities of every Commander list of gate run 19 and the 25 built decks.
-
-**The source.** Karsten's land article of 2022-07-29 draws its text in the browser, so the session read it through `infinite-api.tcgplayer.com`. It defines the cheap draw and ramp by text rules, and a counter matches all 33 cards it names. It gives no cut for a broken deck.
-
-**The dump.** Every candidate set flags decks 19 and 22 alone among the built decks. But the land formula reads the cEDH top lists as short of lands (F-116), and the curve break overlaps the precons. The best set loses 14 own-copy pairs where the bar allows 3.
-
-**Two owner answers.** M-12 fits two designs: the rules set the tier, or the rules replace the detector (D-676). The thresholds come from a grid of eight combinations for each design (D-677).
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-11b, and 42 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-11c, and 42 more sections, word for word. Read it for the detail behind a decision.

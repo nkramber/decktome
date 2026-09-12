@@ -13,7 +13,7 @@ import (
 // and commander eligibility. The rules engine (PR-5) reads these fields,
 // never the raw strings.
 func derive(c *mtgv1.Card) {
-	c.Supertypes, c.CardTypes, c.Subtypes = parseTypeLine(c.TypeLine)
+	c.Supertypes, c.CardTypes, c.Subtypes = parseTypeLine(deckTypeLine(c))
 	// The sentence is anchored (CR 113.6n). A card that only talks about
 	// "any number of cards named" in another context must not match.
 	c.AnyCountInDeck = strings.Contains(c.OracleText, "A deck can have any number of cards named")
@@ -77,6 +77,24 @@ func partnerText(text string) string {
 var knownSupertypes = map[string]bool{
 	"Basic": true, "Legendary": true, "Snow": true, "World": true,
 	"Elite": true, "Ongoing": true, "Token": true,
+}
+
+// allFaceLayouts keep the types of every face. A split card has the card
+// types of both halves (CR 709.4c), and a player can play a modal
+// double-faced card as its land face (CR 712.12, D-687).
+var allFaceLayouts = map[string]bool{"split": true, "modal_dfc": true}
+
+// deckTypeLine is the type line a card has in the library and the hand.
+// A card with more than one face has only its front face there: a
+// double-faced card (CR 712.8a), a flip card (CR 710.2), and an adventurer
+// or preparation card, whose spell characteristics apply only on the stack
+// (CR 715.2, 722.2a). The layouts of allFaceLayouts keep every face
+// (F-120, D-688).
+func deckTypeLine(c *mtgv1.Card) string {
+	if len(c.GetFaces()) > 1 && !allFaceLayouts[c.GetLayout()] {
+		return c.GetFaces()[0].GetTypeLine()
+	}
+	return c.GetTypeLine()
 }
 
 // parseTypeLine splits "Legendary Creature - Elk // Land" style lines.
