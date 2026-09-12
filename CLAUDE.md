@@ -47,6 +47,7 @@ Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
    - When no finding has merit, tell the owner the pull request is ready to merge. **Gitar is the only review this repo asks for.** No second harness reads it.
    - Repeat the cycle until the review holds nothing open. The owner merges.
    - A pull request of documents alone waits for the review too (D-679).
+   - When Gitar posts that it paused automatic reviews, comment `Gitar review` on the pull request. Wait for the manual review. Answer it the same way (D-685).
 11. **Never hesitate to ask or to push back.** Ask a question the moment you have one. When the owner's two statements conflict, say so and quote both. When a request rests on a wrong premise, say so with the evidence. The owner sees this as the key to good LLM-user interaction. Silence is the mistake, not the question.
 
 ## Reference material
