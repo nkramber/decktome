@@ -11,6 +11,16 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## 2026-09-11i: PR-42, the gate reruns a missed conversation
+
+Merged as #148.
+
+**The owner merged #147.** No Cloud Build followed, because #147 changed documents alone. Next steps 1 and 2 still waited on the owner and on 06:00 UTC. Steps 3 to 10 waited on the owner, on data, or on a date. So the session built PR-42, the first free item.
+
+**The build** (D-671). A counted conversation with an expectation or must-not-ask miss plays two more times inside the run. Each rerun keeps its own misses, and a failed rerun reads its error as a miss. The first play still sets every count and the verdict. The document writes the rate beside the miss, and the run file carries `miss_rate` as an information row, so `eval-check` never flips on it.
+
+**The proof is free.** A test plays a missed conversation through a fake player. No paid run went out, so no whole run shows a rerun yet.
+
 ## 2026-09-11h: M-13, the date cut of PR-41, and PR-41 closed
 
 Merged as #147.
