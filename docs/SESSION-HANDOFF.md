@@ -8,15 +8,23 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-12)
 
-**The checkout.** `main` is `c1c40fa`, which is pull request #155, or a later merge. The branch `handoff-context-wipe` holds this hand-off, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
+**The checkout.** `main` is `1d92a6d`, which is pull request #156, or a later merge. The branch `commander-row-no-decline` holds the fix of F-121 and this hand-off, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
 
-**The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586). #153 is the newest deploy, at 19:00 UTC on 2026-09-12: revision `mtg-api-00039-xqg` serves `api:b53fbb6`, both jobs run `worker:b53fbb6`, and `/readyz` answered 200. #154 and #155 changed documents alone. The deploy triggers read `go/**`, `docker/**`, and `web/**` alone, so a merge of documents alone starts no build.
+**The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586). #153 is the newest deploy, at 19:00 UTC on 2026-09-12: revision `mtg-api-00039-xqg` serves `api:b53fbb6`, both jobs run `worker:b53fbb6`, and `/readyz` answered 200. #154, #155, and #156 changed documents alone. The deploy triggers read `go/**`, `docker/**`, and `web/**` alone, so a merge of documents alone starts no build. The fix of F-121 changes `go/**` and `web/**`, so its merge starts a build.
+
+**Session `X4JfbXzMw4U5A4gEeOaE` reads right on every check, and the owner closed OQ-79** (D-691). The owner built an owned-only lifegain Commander deck at bracket 3 on 2026-09-13 at 04:16 UTC. The first message named Sidequest: Catch a Fish. The offer named Aerith Gainsborough, Hope Estheim, and Aerith, Last Ancient, as a free local run of the offer code predicted. The reader owns one copy of each. The reader owns none of the three commanders that an offer with any card allowed names first. The deck marks the commander and every card owned.
+
+**The same deck proves PR-43 and PR-44 on the deployed app.** The curve line reads 3.03 over 63 nonland cards, and the stored list gives 3.0317 over 63, with 36 lands. Sidequest: Catch a Fish is the one card with more than one face, and it counts as a nonland card. The deck grades baseline on model `20260912T061545Z`. The session cost $0.056 over 6 calls, and the build took 35 seconds in one call.
+
+**F-121: the commander row showed "Suggest one" beside "You decide"** (D-690). The two controls do different things. "Suggest one" asks for three names, and "You decide" lets the build pick with no offer. The owner wants "Suggest one" alone on that row. The catalog row carries `no_decline: true`, `Question.no_decline` carries it to the UI, and the question card shows no decline control. The pick row keeps "You decide". Old sessions keep the control, and no catalog text changed, so no question gate run is due.
+
+CAUTION: the application default credentials of this Mac failed on 2026-09-13 with `invalid_rapt`. `make feedback-list` fails, and so do the harvest and the backfill, which read the same credentials. `scripts/read-session.sh` and `gcloud logging read` still work with `CLOUDSDK_CORE_ACCOUNT`. The owner runs `gcloud auth application-default login` to repair them.
 
 **Deck gate run 19 and question gate run 49 read PASS** (D-686). Run 19 passes all 25 decks with one repair turn, and it is the decks baseline now. Its grade rows fell on most decks, because the local stored model `20260910T012734Z` graded them. Every curve line matches its list, so PR-43 holds on real builds. Run 49 met every expectation, and no conversation missed, so PR-42 ran no rerun.
 
 **#153 merged PR-44, and Cloud Build deployed it: a card's types follow the rules of its layout** (F-120, D-687 to D-689). The index merged the types of every face, so Legion's Landing counted as a land. A card with more than one face takes its front face now, and split and modal double-faced cards keep every face. Quality gate run 21 reads PASS: 8 built decks grade bad against 9, and the judge agreement reads 9 against 10. The owner reads guardrail 15 as a rule for quality tuning items, so this correctness fix reports the numbers as information (D-689).
 
-**The owner's Commander build reads right** (D-678). Session `OFMnk7Tv2zkK8xfAwXxB` built a bracket 5 treasure deck led by Smaug the Magnificent, from an owned-only pool. The grade reads typical, and its three reasons name the ladder. No rules check flags the deck: 33 lands, an average mana value of 2.29, and red sources at 1.72 of their need. The reader owns the commander, so OQ-79 stays open for its harder case.
+**The owner's Commander build reads right** (D-678). Session `OFMnk7Tv2zkK8xfAwXxB` built a bracket 5 treasure deck led by Smaug the Magnificent, from an owned-only pool. The grade reads typical, and its three reasons name the ladder. No rules check flags the deck: 33 lands, an average mana value of 2.29, and red sources at 1.72 of their need. The reader owns the commander. Session `X4JfbXzMw4U5A4gEeOaE` later gave OQ-79 its harder case, and the owner closed it (D-691).
 
 **The read found F-119, and #149 fixed it** (D-684). The curve line of that deck reads 2.79 over 68 nonland cards, and the stored list reads 2.29 over 66. `generate.go` ran the rules engine before the mana pass of PR-33, so every rules finding read the list before the pass. #149 merged PR-43, which runs the pass first, and Cloud Build deployed it at 06:25 UTC. The pass adds only shortlist cards, so the fault is stale text alone.
 
@@ -82,14 +90,11 @@ CAUTION: the `decktome` gcloud configuration named the Wallabee account and proj
 
 **What waits on the owner.**
 
-- A Commander build on the deployed app, and its session id (next step 1).
+- The merge of the F-121 pull request, after the review of `gitar-bot`.
 - OQ-67, the Stage B channels.
 - OQ-77, the blocking function of Identity Platform.
-- OQ-79, the commander of an owned-only pool, open for a harder case (D-673).
 - OQ-80, a proxy and the pool.
 - OQ-82, the power of a bracket (F-110).
-
-**OQ-79 holds one owned-only session that reads right** (D-673). The harder case, a pool whose best commander the reader does not own, has no session yet.
 
 **CAUTION: a local `make verify` is not the whole story.** It read green for weeks while shellcheck failed (F-89, D-641). Every pull request runs the workflow now.
 
@@ -142,17 +147,16 @@ Twelve things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **Read the curve line of the next deployed build** (F-119, D-684). It waits for a build of the owner. Cloud Build deployed PR-43, so the curve line must match the stored list. Read the deck with `KIND=decks` and `RAW=1` of `scripts/read-session.sh`, and decode `deck_gz`. Cloud Build deployed PR-44 too, so a card such as Legion's Landing must count as a spell.
+1. **Check the fix of F-121 on the deployed app** (D-690). It waits for the review of `gitar-bot`, the owner's merge, and the build. Open a Commander chat, and read the first commander question. It must show "Suggest one" and no "You decide". The pick row must still show "You decide".
 2. **Read the meta job run of 2026-09-13 at 06:00 UTC**, the first on `worker:b53fbb6`. It is the first fit on the types of PR-44. Check that it succeeded and stored a model. Read the Standard cross share beside 0.690, and the Commander accuracy beside 0.542.
 3. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
 4. **The live half of the feedback loop has no run yet.** Three things want a measurement: the judge lane of the triage, one live fix cycle, and one review round. All three need the owner's word, and the cycle also needs `AUTOTUNE_FIXER_CMD` and a harvest whose verdicts carry a snapshot.
 5. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. The next whole run compares against run 19, and it costs about $2.75, so ask the owner first.
-6. **OQ-79 waits for a harder case** (D-673). Session `ze0Im17gZlFIBRyn7k7Z` read right. The next evidence is an owned-only build whose best pool commander the reader does not own.
-7. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
-8. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
-9. **The weekly EDHREC read** falls on 2026-09-14 (D-499, D-565). Run `make meta-refresh`, then `make quality-gate` to a new `QUALITY_GATE_OUT`. The refresh also stores a new local model, and the deck gate grades read that model.
-10. **PR-26, the return channels**, waits on OQ-67.
-11. **PR-42 is merged as #148** (D-671). Question gate run 49 missed no conversation, so it ran no rerun. Any miss still fails the run, and each miss joins the finding register.
+6. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
+7. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
+8. **The weekly EDHREC read** falls on 2026-09-14 (D-499, D-565). Run `make meta-refresh`, then `make quality-gate` to a new `QUALITY_GATE_OUT`. The refresh also stores a new local model, and the deck gate grades read that model.
+9. **PR-26, the return channels**, waits on OQ-67.
+10. **PR-42 is merged as #148** (D-671). Question gate run 49 missed no conversation, so it ran no rerun. Any miss still fails the run, and each miss joins the finding register.
 
 CAUTION: `make revise-gate | tee` hides the exit code. Read the verdict line of the document, never the exit code of a pipe.
 
@@ -163,6 +167,16 @@ The CI step "fake gcs tests" ran no test until 2026-09-10 (D-658). Its filter ma
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 
 ## The ten most recent sessions
+
+### 2026-09-13: the owned-only lifegain build, F-121, and OQ-79 closed
+
+**The owner merged #156 and asked what comes next.** Every next step waited on the owner, a date, or money. The API logs showed no build since the deploy of #153, and one `SubmitFeedback` call since 2026-09-09. The owner chose a build that tests three things at once.
+
+**A free local run picked the build.** The session read the owner's collection and ran `Builder.Commanders` in a scratch worktree over the local snapshot of 2026-09-04. For 45 of 58 theme words, the offer with any card allowed names three commanders the owner does not own. In 7 theme words, the owned-only offer holds a commander with no theme signal, by the fill of D-367. The owner owns one card that PR-44 changes, Sidequest: Catch a Fish. So the session proposed a lifegain deck at bracket 3 that names that card.
+
+**Session `X4JfbXzMw4U5A4gEeOaE` reads right on every check.** The offer matched the prediction, and every card reads owned. The curve line matches the list, and the Sidequest counts as a nonland card. The owner closed OQ-79 (D-691).
+
+**The owner found F-121 on the same session.** The commander row showed "Suggest one" beside "You decide". The owner chose to hide "You decide" on that row alone (D-690). The fix adds `no_decline` to the catalog row and `Question.no_decline` to the proto.
 
 ### 2026-09-12g: the documents read the state before a context wipe
 
@@ -246,18 +260,6 @@ Merged as #146.
 
 **The refresh.** The resume section reads the newest work first, and the next steps name the meta run of 2026-09-12 and PR-41. Four roadmap lines read "built on branch" for work merged long ago, and they read #54, #73, and #79 now. F-109 and the gate of PR-41 read the result of M-10 and D-681. The toolchain line reads Go 1.27.1, and `.local/m10/` holds a README now.
 
-### 2026-09-11f: PR-40 deployed, M-10 again, and PR-38 closed
-
-Merged as #145.
-
-**The owner merged #144, and Cloud Build deployed it** at 18:44 UTC. Revision `mtg-api-00036-bkn` serves `api:38ddde6`, both jobs run the new worker image, and `/readyz` answered OK. The read of a deployed Commander grade waits for a build of the owner.
-
-**The session answered the review of #144 first.** Gitar found that the explain ladder showed a flagged deck's tier and not the ladder. The fix showed the ladder's own probabilities, and Gitar approved with one finding resolved.
-
-**M-10 ran again for free, as D-665 asks** (D-680). No file kept the patch of 2026-09-10, so the session rebuilt the softmax ladder. The control reproduces gate run 20. The scorer drops the Commander precon bar to 748 of 788, one pair short, and it grades 14 built decks bad against 9. The judge agreement rises from 10 to 12, and the owner's grades match on 2 decks against 5.
-
-**Two owner answers.** PR-38 closes on its evidence (D-680). A quality item passes only when neither reader number gets worse (D-681).
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-11e, and 42 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-11f, and 42 more sections, word for word. Read it for the detail behind a decision.

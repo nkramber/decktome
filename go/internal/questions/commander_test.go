@@ -254,6 +254,42 @@ func TestNoneRepeatsThePickRowWithNewNames(t *testing.T) {
 	}
 }
 
+// TestCommanderRowShowsNoDecline is D-690. The commander row offers
+// "Suggest one", so its question tells the UI to show no "You decide"
+// control. The pick row keeps the control.
+func TestCommanderRowShowsNoDecline(t *testing.T) {
+	wants := commanderClassify()
+	wants.Facts.WantsSuggestion = true
+	wants.Power = "bracket 3"
+	h := &fakeHints{commanders: []string{"Vito, Thorn of the Dusk Rose", "Heliod, Sun-Crowned", "Haliya, Guided by Light"}}
+	a, _ := testAgentHints(t, h,
+		classifyStep(t, commanderClassify()), fits(t, "commander", "power_commander"), askStep(t),
+		classifyStep(t, wants))
+	st := NewState(false)
+	res, err := a.Turn(context.Background(), st, "a lifegain commander deck", nil)
+	if err != nil {
+		t.Fatalf("turn 1: %v", err)
+	}
+	row := question(res.Questions, "commander")
+	if row == nil || !strings.HasSuffix(row.GetId(), "-commander") {
+		t.Fatalf("turn 1 asked no commander row: %v", res.Questions)
+	}
+	if !row.GetNoDecline() {
+		t.Error("the commander row question shows the decline control beside its own option")
+	}
+	res, err = a.Turn(context.Background(), st, "Bracket 3. I have no commander in mind, so suggest one.", nil)
+	if err != nil {
+		t.Fatalf("turn 2: %v", err)
+	}
+	pick := question(res.Questions, "commander")
+	if pick == nil || !strings.HasSuffix(pick.GetId(), "-commander_pick") {
+		t.Fatalf("turn 2 asked no pick row: %v", res.Questions)
+	}
+	if pick.GetNoDecline() {
+		t.Error("the pick row question hides the decline control")
+	}
+}
+
 // TestCommanderChosenByPlace is D-121. "The first of the new three is
 // good" names a place, and the classifier can not map that onto a name,
 // because it never sees the names.

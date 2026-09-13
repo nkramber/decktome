@@ -6,7 +6,7 @@ Read this file first. Then read `docs/SESSION-HANDOFF.md`. It tells you where th
 
 This repo is a Go + Protobuf + TypeScript monorepo for an agentic MtG deck builder. The app reads a user's ManaBox collection export. The user gives a prompt. The agent asks questions, then builds a legal, useful deck.
 
-Stage (2026-09-12): **the app is live on `decktome.com`**, and pull request #155 is the newest merge. A merge to `main` deploys itself on Cloud Build (D-584, D-586, D-588). Phase 3B, the product UI, is the current phase.
+Stage (2026-09-13): **the app is live on `decktome.com`**, and pull request #156 is the newest merge. A merge to `main` deploys itself on Cloud Build (D-584, D-586, D-588). Phase 3B, the product UI, is the current phase.
 
 **The whole PR-22 gate holds** (D-633), so PR-28 is free to run. Every PR through #119 is merged: PR-0a to PR-8, PR-7B, PR-10 to PR-25, PR-27, PR-32, PR-33, and PR-28a. PR-9 is out of the MVP (D-256). **PR-28 split into three** (D-636). PR-28a is the harvest, and it is merged. PR-28b is the triage and the new "must not ask" expectation, and PR-28c is the fix cycle. PR-26 waits on OQ-67. Of the weak-axes plan, PR-29 and PR-30 closed on their evidence, and PR-31 parks (D-652, D-656, D-573).
 
@@ -20,7 +20,7 @@ Stage (2026-09-12): **the app is live on `decktome.com`**, and pull request #155
 
 **#148, #149, and #153 merged PR-42, PR-43, and PR-44** (D-671, D-684, D-688). The question gate reruns a missed conversation, and the engine reads the deck after the mana pass. A card's types follow the rules of its layout, so a transform card with a land back face counts as a spell. Deck gate run 19 is the decks baseline (D-686), and guardrail 15 governs quality tuning items alone (D-689).
 
-**The commander offer never shares a turn with a theme or colors question** (F-111, D-669). #139 merged it with two question-flow guards (F-113, F-114, D-670), and it deployed on 2026-09-11. The owner's owned-only bracket 5 session reads right on every check, and OQ-79 stays open for a harder case (D-673).
+**The commander offer never shares a turn with a theme or colors question** (F-111, D-669). #139 merged it with two question-flow guards (F-113, F-114, D-670), and it deployed on 2026-09-11. An owned-only session reads right on the harder case too, and the owner closed OQ-79 (D-691). A fix on a pull request hides "You decide" beside the "Suggest one" option of the first commander question (F-121, D-690).
 
 Two rules of the deployed app come from 2026-09-09. **A verdict keeps the object it names** (D-635), because a reader deletes the deck or the chat they complained about, and the verdict outlives it. **Every user has a record** at `users/<uid>` (D-638): the verified email, the dates, and six counters of what they made. No harvest reads that record, and a test refuses the import that joins them.
 

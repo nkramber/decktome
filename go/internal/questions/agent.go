@@ -418,13 +418,14 @@ func (a *Agent) send(ctx context.Context, st *State, message string, chosen []ch
 	for _, c := range chosen {
 		st.AskCount++
 		q := &mtgv1.Question{
-			Id:       fmt.Sprintf("q%d-%s", st.AskCount, c.Row.ID),
-			Slot:     c.Row.Slot,
-			Text:     c.Text,
-			Options:  resolved.options[c.Row.ID],
-			Invented: c.Invented,
-			GapScore: c.Fit,
-			Closed:   c.Row.Closed && !c.Invented,
+			Id:        fmt.Sprintf("q%d-%s", st.AskCount, c.Row.ID),
+			Slot:      c.Row.Slot,
+			Text:      c.Text,
+			Options:   resolved.options[c.Row.ID],
+			Invented:  c.Invented,
+			GapScore:  c.Fit,
+			Closed:    c.Row.Closed && !c.Invented,
+			NoDecline: c.Row.NoDecline && !c.Invented,
 		}
 		if p, ok := phrased[c.Row.ID]; ok && !c.Row.Fixed {
 			// The guard keeps a bad phrasing off the wire. It falls back
