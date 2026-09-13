@@ -73,7 +73,7 @@ func runCalibrate(out string) error {
 	if err != nil {
 		return err
 	}
-	decks, err := calibrationDecks(idx, lists, all)
+	decks, err := calibrationDecks(idx, lists, all, calibrationLists)
 	if err != nil {
 		return err
 	}
@@ -96,8 +96,12 @@ func runCalibrate(out string) error {
 // calibrationDecks resolves the precons and picks the cEDH lists. A
 // precon that does not resolve whole is an error, because the set is
 // small and fixed. A cEDH list with a name the index does not know is
-// skipped, and the next list takes its place.
-func calibrationDecks(idx *cards.Index, lists []precons.Decklist, all []meta.List) ([]calibrationDeck, error) {
+// skipped, and the next list takes its place. Fewer qualifying lists
+// than the lane wants is an error, so a thin set never writes.
+func calibrationDecks(idx *cards.Index, lists []precons.Decklist, all []meta.List, wantCEDH int) ([]calibrationDeck, error) {
+	if len(lists) == 0 {
+		return nil, fmt.Errorf("calibrate: no precon decklist")
+	}
 	var out []calibrationDeck
 	for _, d := range lists {
 		commander, ok := idx.ByName(d.Commander)
@@ -118,13 +122,17 @@ func calibrationDecks(idx *cards.Index, lists []precons.Decklist, all []meta.Lis
 		}
 		out = append(out, deck)
 	}
-	return append(out, pickCEDH(idx, all)...), nil
+	cedh := pickCEDH(idx, all, wantCEDH)
+	if len(cedh) < wantCEDH {
+		return nil, fmt.Errorf("calibrate: %d cEDH lists qualify, and the lane wants %d", len(cedh), wantCEDH)
+	}
+	return append(out, cedh...), nil
 }
 
 // pickCEDH takes the newest top-finish cEDH list of each commander: tier
 // great, placed calibrationMaxPlace or better in a field of
 // calibrationMinPlayers or more, one commander, and 99 cards.
-func pickCEDH(idx *cards.Index, all []meta.List) []calibrationDeck {
+func pickCEDH(idx *cards.Index, all []meta.List, want int) []calibrationDeck {
 	var pool []meta.List
 	for _, l := range all {
 		if l.Source == meta.SourceTopdeck && l.Tier == "great" &&
@@ -145,7 +153,7 @@ func pickCEDH(idx *cards.Index, all []meta.List) []calibrationDeck {
 	seen := map[string]bool{}
 	var out []calibrationDeck
 	for _, l := range pool {
-		if len(out) == calibrationLists {
+		if len(out) == want {
 			break
 		}
 		commander, ok := idx.ByName(l.Commanders[0])

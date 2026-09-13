@@ -44,7 +44,7 @@ func TestCalibrationReadsBack(t *testing.T) {
 			Placement: 1, Players: 64, Commanders: []string{"Tymna the Weaver"},
 			Cards: []meta.Card{{Name: "No Such Card", Count: 1}, {Name: "Island", Count: 98}}},
 	}
-	decks, err := calibrationDecks(idx, decklists, lists)
+	decks, err := calibrationDecks(idx, decklists, lists, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,5 +82,14 @@ func TestCalibrationReadsBack(t *testing.T) {
 	}
 	if strings.Contains(b.String(), "older") || strings.Contains(b.String(), "unknown card") {
 		t.Errorf("the document names a list id:\n%s", b.String())
+	}
+
+	// A thin set is an error: fewer qualifying cEDH lists than the lane
+	// wants, or no precon at all.
+	if _, err := calibrationDecks(idx, decklists, lists, 2); err == nil || !strings.Contains(err.Error(), "1 cEDH lists qualify, and the lane wants 2") {
+		t.Errorf("a short cEDH set: err = %v, want an error", err)
+	}
+	if _, err := calibrationDecks(idx, nil, lists, 1); err == nil {
+		t.Error("an empty precon set: no error")
 	}
 }
