@@ -113,6 +113,80 @@ func Load(idx *cards.Index) (*Set, error) {
 	return s, nil
 }
 
+// Decklist is one precon as its file reads, before the card index: the
+// commander name and the rows of the deck. The judge calibration of M-15
+// reads it (D-698).
+type Decklist struct {
+	Slug      string
+	Name      string
+	Commander string
+	// Rows are the cards of the deck with the commander row left out and
+	// the sideboard cut off, so a deck of one commander sums to 99.
+	Rows []collections.Row
+}
+
+// Decklists reads every precon file in slug order.
+func Decklists() ([]Decklist, error) {
+	entries, err := fs.ReadDir(files, "decks")
+	if err != nil {
+		return nil, err
+	}
+	var out []Decklist
+	for _, e := range entries {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".txt") {
+			continue
+		}
+		raw, err := files.ReadFile(path.Join("decks", e.Name()))
+		if err != nil {
+			return nil, err
+		}
+		main, _ := splitSideboard(string(raw))
+		commander, err := commanderRow(main)
+		if err != nil {
+			return nil, fmt.Errorf("precons: %s: %w", e.Name(), err)
+		}
+		rows, _, err := collections.ParseArenaText(strings.NewReader(main))
+		if err != nil {
+			return nil, fmt.Errorf("precons: %s: %w", e.Name(), err)
+		}
+		d := Decklist{Slug: strings.TrimSuffix(e.Name(), ".txt"), Commander: commander.Name}
+		d.Name = titleOf(d.Slug)
+		dropped := false
+		for _, r := range rows {
+			if !dropped && r.Name == commander.Name {
+				dropped = true
+				continue
+			}
+			d.Rows = append(d.Rows, r)
+		}
+		out = append(out, d)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Slug < out[j].Slug })
+	return out, nil
+}
+
+// commanderRow reads the first card row under the commander header.
+func commanderRow(text string) (collections.Row, error) {
+	in := false
+	for _, l := range strings.Split(text, "\n") {
+		if h := sectionHeader(l); h != "" {
+			in = h == "commander"
+			continue
+		}
+		if !in || strings.TrimSpace(l) == "" {
+			continue
+		}
+		rows, _, err := collections.ParseArenaText(strings.NewReader(l))
+		if err != nil {
+			return collections.Row{}, err
+		}
+		if len(rows) == 1 {
+			return rows[0], nil
+		}
+	}
+	return collections.Row{}, fmt.Errorf("no commander row")
+}
+
 // All lists every precon, by slug.
 func (s *Set) All() []*Precon {
 	if s == nil {

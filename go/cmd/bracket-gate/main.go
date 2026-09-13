@@ -74,7 +74,11 @@ func run() error {
 	noJudge := flag.Bool("no-judge", false, "skip the judge lane, which costs one judge call a deck")
 	rejudge := flag.String("rejudge", "", "judge the decks of this gate document, and build nothing")
 	runOut := flag.String("run-out", "", "write the run header and the rows as JSONL here (PR-15)")
+	calibrate := flag.String("calibrate", "", "write the M-15 calibration decks to this new document, and call no model")
 	flag.Parse()
+	if *calibrate != "" {
+		return runCalibrate(*calibrate)
+	}
 	if *rejudge != "" {
 		return runRejudge(*rejudge, *runOut)
 	}
