@@ -164,6 +164,35 @@ func monoW(commanders []string, extra map[string]int32, bracket int32) deckSpec 
 		commanders: commanders, cards: cardsMap, fill: "Plains", fillTo: 100}
 }
 
+// TestCopyLimitNamesACommanderCopy is F-124: a commander that also sits
+// in the list, or twice in the command zone, is a second copy, and the
+// finding names the card.
+func TestCopyLimitNamesACommanderCopy(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		ds   deckSpec
+		want string
+	}{
+		{"commander in the list", monoW([]string{"Heliod, Sun-Crowned"},
+			map[string]int32{"Heliod, Sun-Crowned": 1}, 2), "Heliod, Sun-Crowned: 2 copies"},
+		{"two backgrounds", deckSpec{format: mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket: 2,
+			commanders: []string{"Raised by Giants", "Raised by Giants"},
+			fill:       "Forest", fillTo: 100}, "Raised by Giants: 2 copies"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var got []string
+			for _, f := range validate(t, tc.ds).Findings {
+				if f.Code == CodeCopyLimit {
+					got = append(got, f.Message)
+				}
+			}
+			if len(got) != 1 || !strings.HasPrefix(got[0], tc.want) {
+				t.Errorf("copy findings = %q, want one that starts %q", got, tc.want)
+			}
+		})
+	}
+}
+
 // TestGoldenDecks is the PR-5 gate: 30 known-good and 30 known-bad decks.
 func TestGoldenDecks(t *testing.T) {
 	// ---- 30 good decks ----
