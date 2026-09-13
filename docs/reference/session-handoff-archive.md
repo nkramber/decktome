@@ -11,6 +11,18 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## 2026-09-11h: M-13, the date cut of PR-41, and PR-41 closed
+
+Merged as #147.
+
+**The owner merged #146 and asked what comes next.** Next step 1 waited on a build of the owner, and step 2 on the meta job of 06:00 UTC. So the session took PR-41, and its first design question.
+
+**A free count refutes the cause of F-108** (F-118). The fit keeps the newest 4,000 great and 4,000 good Commander lists. Those lists hold 54 percent of the nonland cards first printed in The Hobbit. Marvel Super Heroes reads 50 percent. The colors check already grades decks 19 and 22 bad, so deck 21 alone had room to gain. The owner chose to measure the planned cut first (D-682).
+
+**M-13 fitted the cut for free, and no cut meets the gate.** The control reproduces gate run 20 in every number. The cuts of 30 and 90 days in Commander, and of 30 days in every format, move no built deck to another tier. Each cut makes one number a little worse. `.local/m13/` holds the patch, the count scripts, and the runs.
+
+**The owner closed PR-41 on the evidence** (D-683). The fits do not measure the first days after a release, and the owner chose a close over a park.
+
 ## 2026-09-11g: the documents read the state before a context reset
 
 Merged as #146.

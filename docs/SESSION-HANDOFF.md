@@ -8,9 +8,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-13)
 
-**The checkout.** `main` is `42003ce`, which is pull request #157, or a later merge. The branch `pwa-reload-on-update` holds the fix of F-122 and this hand-off, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
+**The checkout.** `main` is `f75f806`, which is pull request #158, or a later merge. The branch `docs-f122-merged` holds this hand-off, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
 
-**The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586). #157 is the newest deploy, on 2026-09-13. `deploy-web` released the web app at 07:49 UTC, and `deploy-api` finished at 07:53 UTC. Revision `mtg-api-00040-wd9` serves `api:42003ce`, both jobs run `worker:42003ce`, and `/readyz` answered 200. The deploy triggers read `go/**`, `docker/**`, and `web/**` alone, so a merge of documents alone starts no build. The fix of F-122 changes `web/**` alone, so its merge starts `deploy-web` alone.
+**The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586). #158 is the newest web deploy, and `deploy-web` released it at 18:52 UTC on 2026-09-13. #157 is the newest API deploy: `deploy-api` finished at 07:53 UTC, and revision `mtg-api-00040-wd9` serves `api:42003ce`. Both jobs run `worker:42003ce`, and `/readyz` answered 200. The deploy triggers read `go/**`, `docker/**`, and `web/**` alone, so a merge of documents alone starts no build.
 
 **Session `X4JfbXzMw4U5A4gEeOaE` reads right on every check, and the owner closed OQ-79** (D-691). The owner built an owned-only lifegain Commander deck at bracket 3 on 2026-09-13 at 04:16 UTC. The first message named Sidequest: Catch a Fish. The offer named Aerith Gainsborough, Hope Estheim, and Aerith, Last Ancient, as a free local run of the offer code predicted. The reader owns one copy of each. The reader owns none of the three commanders that an offer with any card allowed names first. The deck marks the commander and every card owned.
 
@@ -19,6 +19,8 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 **F-121: the commander row showed "Suggest one" beside "You decide"** (D-690). The two controls do different things. "Suggest one" asks for three names, and "You decide" lets the build pick with no offer. The owner wants "Suggest one" alone on that row. The catalog row carries `no_decline: true`, `Question.no_decline` carries it to the UI, and the question card shows no decline control. The pick row keeps "You decide". Old sessions keep the control, and no catalog text changed, so no question gate run is due. #157 merged it. Deployed session `vY1lCRtl64uwFObznCZ9` stores the commander question with `noDecline: true`, and the pick row without it.
 
 **F-122: the installed app ran the old shell for one load after the deploy of #157** (D-692). The owner's first load still showed "You decide" beside "Suggest one", while the API stored the flag. `registerType: "autoUpdate"` makes the new service worker skip waiting and claim the page. The injected `registerSW.js` registers the worker and never reloads, so the old shell ran that load. The owner chose a reload. `src/lib/pwa-register.ts` imports the plugin's register module, which reloads the page when an updated worker activates. An unsent draft lives in memory, so the reload drops it.
+
+**#158 merged the fix of F-122, and `deploy-web` released it at 18:52 UTC.** The live `index.html` loads no `registerSW.js`, and `sw.js` precaches the `workbox-window` chunk. The main chunk holds the reload.
 
 CAUTION: the fix of F-122 reloads only a page that already runs it. The first load after its own deploy still runs the old shell. The next deploy after that is the first one that reloads the page by itself.
 
@@ -97,7 +99,6 @@ CAUTION: the `decktome` gcloud configuration named the Wallabee account and proj
 **What waits on the owner.**
 
 - A look at the first commander question after one more load of the app (next step 1).
-- The merge of the F-122 pull request, after the review of `gitar-bot`.
 - OQ-67, the Stage B channels.
 - OQ-77, the blocking function of Identity Platform.
 - OQ-80, a proxy and the pool.
@@ -147,7 +148,8 @@ Thirteen things a fresh session gets wrong without this file.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
 - The feedback store holds 3 verdicts on 2026-09-09, and every one predates the snapshot of D-635. `make feedback-list VERDICT=` reads both verdicts now (F-87). A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- The deployed API, read 2026-09-13 at 07:54 UTC: revision `mtg-api-00040-wd9` on image `api:42003ce`, from #157. Both jobs run `worker:42003ce`, and `/readyz` answered 200. `deploy-api` finished at 07:53 UTC, and `deploy-web` at 07:49 UTC.
+- The deployed API, read 2026-09-13 at 07:54 UTC: revision `mtg-api-00040-wd9` on image `api:42003ce`, from #157. Both jobs run `worker:42003ce`, and `/readyz` answered 200. `deploy-api` finished at 07:53 UTC.
+- The deployed web app, read 2026-09-13 at 18:54 UTC: the release of #158, from `deploy-web` at 18:52 UTC. `index.html` loads `assets/index-DYfo4m8I.js` and no `registerSW.js`, and `sw.js` precaches the `workbox-window` chunk.
 - The deployed quality model, read 2026-09-13: `20260913T061119Z`, from the meta job of 06:00 UTC on `worker:b53fbb6`. It fits 39,209 lists and 915 commanders. Its Commander fit reads `immaterial` 225 and accuracy 0.547, and its Standard fit reads a cross share of 0.685. The job ran 17 minutes, and the run of 2026-09-12 ran 21.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
 - Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 19, revise is run 9. Run 49 is the newest whole questions run, and it reads PASS. Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 21 is its newest run.
@@ -156,7 +158,7 @@ Thirteen things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 1. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide".
-2. **Check the fix of F-122 after its deploy** (D-692). It waits for the review of `gitar-bot`, the owner's merge, and `deploy-web`. The live `index.html` must hold no `registerSW` script, and the precache list of `sw.js` must name a `workbox-window` chunk. The Hosting rewrite answers a missing file with `index.html`, so a request for `registerSW.js` proves nothing. The deploy after that one is the first that reloads an open app by itself.
+2. **Watch the first self-reload on the next web deploy** (D-692). The live release of #158 passed its check on 2026-09-13 at 18:54 UTC. An installed app that loaded that release must reload by itself when the next release activates. Read it on the next merge that changes `web/**`.
 3. **Read the source lines of the meta run of 2026-09-14.** The mtggoldfish source failed on 2026-09-13 with a connection reset on a storage write. A second failure makes a finding.
 4. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
 5. **The live half of the feedback loop has no run yet.** Three things want a measurement: the judge lane of the triage, one live fix cycle, and one review round. All three need the owner's word, and the cycle also needs `AUTOTUNE_FIXER_CMD` and a harvest whose verdicts carry a snapshot.
@@ -177,7 +179,17 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 ## The ten most recent sessions
 
+### 2026-09-13c: #158 deployed, and the documents read the merge
+
+**The owner merged #158 and asked whether every document reads the current state.** They did not. Several lines still named #158 as an open pull request, and next step 2 still waited on the merge. The resume section, the next steps, `CLAUDE.md`, the roadmap, and the deploy guide read the merge now.
+
+**`deploy-web` released #158 at 18:52 UTC.** The live `index.html` loads no `registerSW.js`, and `sw.js` precaches the `workbox-window` chunk. The main chunk holds the reload. So the old next step 2 passed, and the next web deploy is the first that reloads an open app by itself.
+
+**PR-25 carries a dated correction.** Its entry names the service worker, and F-122 refutes the promise of D-621 that the worker updates the app. The deploy guide notes the reload and the Hosting rewrite.
+
 ### 2026-09-13b: #157 deployed, the meta run, and F-122
+
+Merged as #158.
 
 **The owner merged #157, and Cloud Build deployed it.** `deploy-web` released the web app at 07:49 UTC, and `deploy-api` finished at 07:53 UTC. Revision `mtg-api-00040-wd9` serves `api:42003ce`, and both jobs run `worker:42003ce`.
 
@@ -257,18 +269,6 @@ Merged as #148.
 
 **The proof is free.** A test plays a missed conversation through a fake player. No paid run went out, so no whole run shows a rerun yet.
 
-### 2026-09-11h: M-13, the date cut of PR-41, and PR-41 closed
-
-Merged as #147.
-
-**The owner merged #146 and asked what comes next.** Next step 1 waited on a build of the owner, and step 2 on the meta job of 06:00 UTC. So the session took PR-41, and its first design question.
-
-**A free count refutes the cause of F-108** (F-118). The fit keeps the newest 4,000 great and 4,000 good Commander lists. Those lists hold 54 percent of the nonland cards first printed in The Hobbit. Marvel Super Heroes reads 50 percent. The colors check already grades decks 19 and 22 bad, so deck 21 alone had room to gain. The owner chose to measure the planned cut first (D-682).
-
-**M-13 fitted the cut for free, and no cut meets the gate.** The control reproduces gate run 20 in every number. The cuts of 30 and 90 days in Commander, and of 30 days in every format, move no built deck to another tier. Each cut makes one number a little worse. `.local/m13/` holds the patch, the count scripts, and the runs.
-
-**The owner closed PR-41 on the evidence** (D-683). The fits do not measure the first days after a release, and the owner chose a close over a park.
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-11g, and 42 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-11h, and 42 more sections, word for word. Read it for the detail behind a decision.

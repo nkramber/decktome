@@ -164,6 +164,8 @@ The four `VITE_FIREBASE_` values never change. `docs/setup-gcp.md` section 13 ho
 
 The site is live on `https://decktome.com` and on `https://decktome-prod.web.app`. Firebase Hosting keeps every earlier version, and section 8 returns to one.
 
+Note: an installed app takes a new release on its next load, and the page reloads when the new service worker activates (D-692). Before #158, the page kept the old shell for that load (F-122). The Hosting rewrite answers a missing file with `index.html`. So a check for a removed file reads the `index.html` of the release and the precache list of `sw.js`.
+
 ## 6. Deploy the Firestore rules and indexes
 
 1. Run `firebase deploy --only firestore` from the repo root.
