@@ -18,7 +18,10 @@ export default defineConfig({
     VitePWA({
       // The app updates itself. A reader who added it to the Home
       // Screen must never hold an old shell against a new API, and
-      // F-57 is what a stale cache costs.
+      // F-57 is what a stale cache costs. `src/lib/pwa-register.ts`
+      // imports the register module, so `injectRegister: "auto"` injects
+      // no `registerSW.js`, and the page reloads when a new worker takes
+      // over (F-122, D-692).
       registerType: "autoUpdate",
       includeAssets: ["favicon.svg", "apple-touch-icon.png"],
       manifest: { ...webManifest, icons: [...webManifest.icons] },

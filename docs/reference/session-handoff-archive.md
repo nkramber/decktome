@@ -11,6 +11,16 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## 2026-09-11g: the documents read the state before a context reset
+
+Merged as #146.
+
+**The owner merged #145 and asked for every document to read the current state** before a context reset. The session changed no code, and it ran no paid target.
+
+**The deploy did not change.** #145 changed documents alone. At 23:11 UTC revision `mtg-api-00036-bkn` served `api:38ddde6`, and both jobs ran `worker:38ddde6`. Both schedules read ENABLED. The meta job ran last at 06:00 UTC, before the deploy of PR-40.
+
+**The refresh.** The resume section reads the newest work first, and the next steps name the meta run of 2026-09-12 and PR-41. Four roadmap lines read "built on branch" for work merged long ago, and they read #54, #73, and #79 now. F-109 and the gate of PR-41 read the result of M-10 and D-681. The toolchain line reads Go 1.27.1, and `.local/m10/` holds a README now.
+
 ## 2026-09-11f: PR-40 deployed, M-10 again, and PR-38 closed
 
 Merged as #145.

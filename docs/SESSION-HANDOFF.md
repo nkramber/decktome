@@ -6,17 +6,21 @@ This file holds the ten most recent sessions. Every older record sits in `docs/r
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-12)
+## RESUME HERE (2026-09-13)
 
-**The checkout.** `main` is `1d92a6d`, which is pull request #156, or a later merge. The branch `commander-row-no-decline` holds the fix of F-121 and this hand-off, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
+**The checkout.** `main` is `42003ce`, which is pull request #157, or a later merge. The branch `pwa-reload-on-update` holds the fix of F-122 and this hand-off, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
 
-**The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586). #153 is the newest deploy, at 19:00 UTC on 2026-09-12: revision `mtg-api-00039-xqg` serves `api:b53fbb6`, both jobs run `worker:b53fbb6`, and `/readyz` answered 200. #154, #155, and #156 changed documents alone. The deploy triggers read `go/**`, `docker/**`, and `web/**` alone, so a merge of documents alone starts no build. The fix of F-121 changes `go/**` and `web/**`, so its merge starts a build.
+**The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586). #157 is the newest deploy, on 2026-09-13. `deploy-web` released the web app at 07:49 UTC, and `deploy-api` finished at 07:53 UTC. Revision `mtg-api-00040-wd9` serves `api:42003ce`, both jobs run `worker:42003ce`, and `/readyz` answered 200. The deploy triggers read `go/**`, `docker/**`, and `web/**` alone, so a merge of documents alone starts no build. The fix of F-122 changes `web/**` alone, so its merge starts `deploy-web` alone.
 
 **Session `X4JfbXzMw4U5A4gEeOaE` reads right on every check, and the owner closed OQ-79** (D-691). The owner built an owned-only lifegain Commander deck at bracket 3 on 2026-09-13 at 04:16 UTC. The first message named Sidequest: Catch a Fish. The offer named Aerith Gainsborough, Hope Estheim, and Aerith, Last Ancient, as a free local run of the offer code predicted. The reader owns one copy of each. The reader owns none of the three commanders that an offer with any card allowed names first. The deck marks the commander and every card owned.
 
 **The same deck proves PR-43 and PR-44 on the deployed app.** The curve line reads 3.03 over 63 nonland cards, and the stored list gives 3.0317 over 63, with 36 lands. Sidequest: Catch a Fish is the one card with more than one face, and it counts as a nonland card. The deck grades baseline on model `20260912T061545Z`. The session cost $0.056 over 6 calls, and the build took 35 seconds in one call.
 
-**F-121: the commander row showed "Suggest one" beside "You decide"** (D-690). The two controls do different things. "Suggest one" asks for three names, and "You decide" lets the build pick with no offer. The owner wants "Suggest one" alone on that row. The catalog row carries `no_decline: true`, `Question.no_decline` carries it to the UI, and the question card shows no decline control. The pick row keeps "You decide". Old sessions keep the control, and no catalog text changed, so no question gate run is due.
+**F-121: the commander row showed "Suggest one" beside "You decide"** (D-690). The two controls do different things. "Suggest one" asks for three names, and "You decide" lets the build pick with no offer. The owner wants "Suggest one" alone on that row. The catalog row carries `no_decline: true`, `Question.no_decline` carries it to the UI, and the question card shows no decline control. The pick row keeps "You decide". Old sessions keep the control, and no catalog text changed, so no question gate run is due. #157 merged it. Deployed session `vY1lCRtl64uwFObznCZ9` stores the commander question with `noDecline: true`, and the pick row without it.
+
+**F-122: the installed app ran the old shell for one load after the deploy of #157** (D-692). The owner's first load still showed "You decide" beside "Suggest one", while the API stored the flag. `registerType: "autoUpdate"` makes the new service worker skip waiting and claim the page. The injected `registerSW.js` registers the worker and never reloads, so the old shell ran that load. The owner chose a reload. `src/lib/pwa-register.ts` imports the plugin's register module, which reloads the page when an updated worker activates. An unsent draft lives in memory, so the reload drops it.
+
+CAUTION: the fix of F-122 reloads only a page that already runs it. The first load after its own deploy still runs the old shell. The next deploy after that is the first one that reloads the page by itself.
 
 CAUTION: the application default credentials of this Mac failed on 2026-09-13 with `invalid_rapt`. `make feedback-list` fails, and so do the harvest and the backfill, which read the same credentials. `scripts/read-session.sh` and `gcloud logging read` still work with `CLOUDSDK_CORE_ACCOUNT`. The owner runs `gcloud auth application-default login` to repair them.
 
@@ -48,7 +52,9 @@ CAUTION: a grade stored on a deck built before the deploy keeps its old tier unt
 
 **The deployed model.** The meta job refits the model on every run (`go/cmd/worker/meta.go`). Its run of 2026-09-11 at 06:00 UTC finished at 06:41 UTC, before the deploy of PR-40, and stored `20260911T063437Z`. The run of 2026-09-12 at 06:00 UTC ran on `worker:6d9dacf`, the first run after the deploy of PR-40. It succeeded at 06:22 UTC and stored `20260912T061545Z`, fitted on 38,395 lists and 909 commanders. The Commander accuracy fell from 0.644 to 0.542, as gate run 20 predicted. The holdout accuracy reads the tier, and the tier reads the rules checks now.
 
-CAUTION: the deployed Standard fit reads its cross share of baseline over bad at 0.690, against 0.750 on 2026-09-11 and 0.737 on 2026-09-10. Local gate run 20 reads 0.92. The share is information and no bar, and the rules checks of PR-40 read Commander alone. The deployed store holds 1,935 synthetic Standard copies, against 370 in the local store.
+**The meta run of 2026-09-13 is the first fit on the types of PR-44.** It ran on `worker:b53fbb6`, succeeded at 06:17 UTC, and stored `20260913T061119Z`. It fits 39,209 lists and 915 commanders. The Commander accuracy reads 0.547, against 0.542 the day before. The mtggoldfish source failed on a storage write with a connection reset. It read 56 lists, against 128 to 148 on the three runs before. The job still fitted and stored the model.
+
+CAUTION: the deployed Standard fit reads its cross share of baseline over bad at 0.685 on 2026-09-13. The three days before read 0.690, 0.750, and 0.737. Local gate run 20 reads 0.92. The share is information and no bar, and the rules checks of PR-40 read Commander alone. The deployed store holds 1,935 synthetic Standard copies, against 370 in the local store.
 
 **M-11 is done, and no detector variant meets its gate** (F-115, D-675). Every disputed deck grades bad in all fifteen fits. The grade adds the detector probability to the bad rung of every deck, so the flag never decides the tier. The owner chose the rules detector first, and M-12 fitted it. `docs/reference/m11-detector-variants-2026-09-11.md` holds every fit, and `.local/m11/` holds the patches.
 
@@ -90,7 +96,8 @@ CAUTION: the `decktome` gcloud configuration named the Wallabee account and proj
 
 **What waits on the owner.**
 
-- The merge of the F-121 pull request, after the review of `gitar-bot`.
+- A look at the first commander question after one more load of the app (next step 1).
+- The merge of the F-122 pull request, after the review of `gitar-bot`.
 - OQ-67, the Stage B channels.
 - OQ-77, the blocking function of Identity Platform.
 - OQ-80, a proxy and the pool.
@@ -111,7 +118,7 @@ CAUTION: the `decktome` gcloud configuration named the Wallabee account and proj
 
 A second Mac: `docs/setup-second-mac.md` holds what to carry, what to install, and how to prove the machine.
 
-Twelve things a fresh session gets wrong without this file.
+Thirteen things a fresh session gets wrong without this file.
 
 - Twelve targets and two loop scripts spend money: `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `scripts/autotune.sh`, and `scripts/feedback-loop.sh`. Ask the owner before each run. `make autotune`, `make feedback-loop`, `make feedback-loop-dry`, `make feedback-triage-dry`, and `eval sweep -dry` are free.
 - A rerun writes to a new file. Every `*_OUT` variable refuses a document that holds a result (D-65).
@@ -125,6 +132,7 @@ Twelve things a fresh session gets wrong without this file.
 - Gitar can post that it paused automatic reviews, because the trial's processing ran out for the period. On #150 to #155 the note came beside a full review each time, and no trigger ran. When the note comes with no review, comment `Gitar review` on the pull request. Answer the manual review as usual (D-685).
 - The owner can merge a pull request before its Gitar finding gets an answer (#154). The pre-commit hook then refuses a commit on that branch. Carry the fix to a new branch from `main`, and reply on the old thread with the new pull request.
 - A background shell command starts in the directory the session left. On 2026-09-12 a `make` target ran in `go/` and found no rule, so head every command with an absolute `cd`.
+- A live check of a web change reads the stored session and the deployed chunk, and not the screen alone. The service worker served the old shell for one load after a deploy (F-122). The protobuf-es code holds each field name in base64, so search a chunk for a property name such as `noDecline`.
 
 ## Facts that expire
 
@@ -139,24 +147,25 @@ Twelve things a fresh session gets wrong without this file.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
 - The feedback store holds 3 verdicts on 2026-09-09, and every one predates the snapshot of D-635. `make feedback-list VERDICT=` reads both verdicts now (F-87). A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- The deployed API, read 2026-09-12 at 19:00 UTC: revision `mtg-api-00039-xqg` on image `api:b53fbb6`, from #153. Both jobs run `worker:b53fbb6`, and `/readyz` answered 200. The build of #153 finished at 19:00 UTC, and #154 and #155 changed documents alone.
-- The deployed quality model, read 2026-09-12: `20260912T061545Z`, from the meta job of 06:00 UTC. It fits 38,395 lists and 909 commanders. Its Commander fit reads `immaterial` 243 and accuracy 0.542, and its Standard fit reads a cross share of 0.690. The job ran 21 minutes, and the run of 2026-09-11 ran 41.
+- The deployed API, read 2026-09-13 at 07:54 UTC: revision `mtg-api-00040-wd9` on image `api:42003ce`, from #157. Both jobs run `worker:42003ce`, and `/readyz` answered 200. `deploy-api` finished at 07:53 UTC, and `deploy-web` at 07:49 UTC.
+- The deployed quality model, read 2026-09-13: `20260913T061119Z`, from the meta job of 06:00 UTC on `worker:b53fbb6`. It fits 39,209 lists and 915 commanders. Its Commander fit reads `immaterial` 225 and accuracy 0.547, and its Standard fit reads a cross share of 0.685. The job ran 17 minutes, and the run of 2026-09-12 ran 21.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
 - Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 19, revise is run 9. Run 49 is the newest whole questions run, and it reads PASS. Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 21 is its newest run.
 - Toolchain on this Mac, read 2026-09-11: Go 1.27.1, Node 22.23.2, pnpm 9.2.0, firebase-tools 14.14.0, and Java 17.0.20.1. Playwright is 1.63.0 with its Chromium headless shell (`playwright install chromium`). `go.mod` asks Go 1.27.0 or newer, and vitest is 5.0.0 since #133.
 
 ## Next steps, in order
 
-1. **Check the fix of F-121 on the deployed app** (D-690). It waits for the review of `gitar-bot`, the owner's merge, and the build. Open a Commander chat, and read the first commander question. It must show "Suggest one" and no "You decide". The pick row must still show "You decide".
-2. **Read the meta job run of 2026-09-13 at 06:00 UTC**, the first on `worker:b53fbb6`. It is the first fit on the types of PR-44. Check that it succeeded and stored a model. Read the Standard cross share beside 0.690, and the Commander accuracy beside 0.542.
-3. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
-4. **The live half of the feedback loop has no run yet.** Three things want a measurement: the judge lane of the triage, one live fix cycle, and one review round. All three need the owner's word, and the cycle also needs `AUTOTUNE_FIXER_CMD` and a harvest whose verdicts carry a snapshot.
-5. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. The next whole run compares against run 19, and it costs about $2.75, so ask the owner first.
-6. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
-7. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
-8. **The weekly EDHREC read** falls on 2026-09-14 (D-499, D-565). Run `make meta-refresh`, then `make quality-gate` to a new `QUALITY_GATE_OUT`. The refresh also stores a new local model, and the deck gate grades read that model.
-9. **PR-26, the return channels**, waits on OQ-67.
-10. **PR-42 is merged as #148** (D-671). Question gate run 49 missed no conversation, so it ran no rerun. Any miss still fails the run, and each miss joins the finding register.
+1. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide".
+2. **Check the fix of F-122 after its deploy** (D-692). It waits for the review of `gitar-bot`, the owner's merge, and `deploy-web`. The live `index.html` must hold no `registerSW` script, and the precache list of `sw.js` must name a `workbox-window` chunk. The Hosting rewrite answers a missing file with `index.html`, so a request for `registerSW.js` proves nothing. The deploy after that one is the first that reloads an open app by itself.
+3. **Read the source lines of the meta run of 2026-09-14.** The mtggoldfish source failed on 2026-09-13 with a connection reset on a storage write. A second failure makes a finding.
+4. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
+5. **The live half of the feedback loop has no run yet.** Three things want a measurement: the judge lane of the triage, one live fix cycle, and one review round. All three need the owner's word, and the cycle also needs `AUTOTUNE_FIXER_CMD` and a harvest whose verdicts carry a snapshot.
+6. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. The next whole run compares against run 19, and it costs about $2.75, so ask the owner first.
+7. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
+8. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
+9. **The weekly EDHREC read** falls on 2026-09-14 (D-499, D-565). Run `make meta-refresh`, then `make quality-gate` to a new `QUALITY_GATE_OUT`. The refresh also stores a new local model, and the deck gate grades read that model.
+10. **PR-26, the return channels**, waits on OQ-67.
+11. **PR-42 is merged as #148** (D-671). Question gate run 49 missed no conversation, so it ran no rerun. Any miss still fails the run, and each miss joins the finding register.
 
 CAUTION: `make revise-gate | tee` hides the exit code. Read the verdict line of the document, never the exit code of a pipe.
 
@@ -168,7 +177,17 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 ## The ten most recent sessions
 
+### 2026-09-13b: #157 deployed, the meta run, and F-122
+
+**The owner merged #157, and Cloud Build deployed it.** `deploy-web` released the web app at 07:49 UTC, and `deploy-api` finished at 07:53 UTC. Revision `mtg-api-00040-wd9` serves `api:42003ce`, and both jobs run `worker:42003ce`.
+
+**The meta run of 06:00 UTC is the first fit on the types of PR-44.** It ran on `worker:b53fbb6` and stored `20260913T061119Z`. The Commander accuracy reads 0.547, and the Standard cross share reads 0.685. The mtggoldfish source failed once on a storage write.
+
+**The owner's live check found F-122.** Session `vY1lCRtl64uwFObznCZ9` stores the commander question with `noDecline: true`, and the live session page checks the flag. The owner's first load still showed both controls, because the service worker served the old shell and never reloaded. The owner chose a reload on a new worker (D-692).
+
 ### 2026-09-13: the owned-only lifegain build, F-121, and OQ-79 closed
+
+Merged as #157.
 
 **The owner merged #156 and asked what comes next.** Every next step waited on the owner, a date, or money. The API logs showed no build since the deploy of #153, and one `SubmitFeedback` call since 2026-09-09. The owner chose a build that tests three things at once.
 
@@ -250,16 +269,6 @@ Merged as #147.
 
 **The owner closed PR-41 on the evidence** (D-683). The fits do not measure the first days after a release, and the owner chose a close over a park.
 
-### 2026-09-11g: the documents read the state before a context reset
-
-Merged as #146.
-
-**The owner merged #145 and asked for every document to read the current state** before a context reset. The session changed no code, and it ran no paid target.
-
-**The deploy did not change.** #145 changed documents alone. At 23:11 UTC revision `mtg-api-00036-bkn` served `api:38ddde6`, and both jobs ran `worker:38ddde6`. Both schedules read ENABLED. The meta job ran last at 06:00 UTC, before the deploy of PR-40.
-
-**The refresh.** The resume section reads the newest work first, and the next steps name the meta run of 2026-09-12 and PR-41. Four roadmap lines read "built on branch" for work merged long ago, and they read #54, #73, and #79 now. F-109 and the gate of PR-41 read the result of M-10 and D-681. The toolchain line reads Go 1.27.1, and `.local/m10/` holds a README now.
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-11f, and 42 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-11g, and 42 more sections, word for word. Read it for the detail behind a decision.

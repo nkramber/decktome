@@ -6,6 +6,7 @@ import { RouterProvider } from "react-router";
 
 import { Providers } from "./app/providers";
 import { createAppRouter } from "./app/router";
+import { startServiceWorker } from "./lib/pwa-register";
 
 const root = document.getElementById("root");
 if (!root) {
@@ -18,3 +19,4 @@ createRoot(root).render(
     </Providers>
   </StrictMode>,
 );
+startServiceWorker();
