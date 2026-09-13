@@ -837,8 +837,12 @@ type Question struct {
 	// two cards (D-361). The first card goes in option_oracle_ids, and the
 	// second one here. Every other option carries an empty string.
 	OptionPartnerOracleIds []string `protobuf:"bytes,10,rep,name=option_partner_oracle_ids,json=optionPartnerOracleIds,proto3" json:"option_partner_oracle_ids,omitempty"`
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	// no_decline says the UI shows no "You decide" control. The commander
+	// row carries it, because its own option already asks for a
+	// suggestion (D-690).
+	NoDecline     bool `protobuf:"varint,11,opt,name=no_decline,json=noDecline,proto3" json:"no_decline,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Question) Reset() {
@@ -941,6 +945,13 @@ func (x *Question) GetOptionPartnerOracleIds() []string {
 	return nil
 }
 
+func (x *Question) GetNoDecline() bool {
+	if x != nil {
+		return x.NoDecline
+	}
+	return false
+}
+
 var File_mtg_v1_session_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_session_proto_rawDesc = "" +
@@ -1003,7 +1014,7 @@ const file_mtg_v1_session_proto_rawDesc = "" +
 	"\foption_index\x18\x02 \x01(\x05H\x00R\voptionIndex\x88\x01\x01\x12\x12\n" +
 	"\x04text\x18\x03 \x01(\tR\x04text\x12\x1a\n" +
 	"\bdeclined\x18\x04 \x01(\bR\bdeclinedB\x0f\n" +
-	"\r_option_index\"\xb7\x02\n" +
+	"\r_option_index\"\xd6\x02\n" +
 	"\bQuestion\x12\x0e\n" +
 	"\x02id\x18\x06 \x01(\tR\x02id\x12\x12\n" +
 	"\x04slot\x18\x01 \x01(\tR\x04slot\x12\x12\n" +
@@ -1015,7 +1026,9 @@ const file_mtg_v1_session_proto_rawDesc = "" +
 	"\x11option_oracle_ids\x18\b \x03(\tR\x0foptionOracleIds\x12\x16\n" +
 	"\x06closed\x18\t \x01(\bR\x06closed\x129\n" +
 	"\x19option_partner_oracle_ids\x18\n" +
-	" \x03(\tR\x16optionPartnerOracleIds*~\n" +
+	" \x03(\tR\x16optionPartnerOracleIds\x12\x1d\n" +
+	"\n" +
+	"no_decline\x18\v \x01(\bR\tnoDecline*~\n" +
 	"\rSessionStatus\x12\x1e\n" +
 	"\x1aSESSION_STATUS_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15SESSION_STATUS_ASKING\x10\x01\x12\x18\n" +

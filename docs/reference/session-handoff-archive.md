@@ -11,6 +11,18 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## 2026-09-11f: PR-40 deployed, M-10 again, and PR-38 closed
+
+Merged as #145.
+
+**The owner merged #144, and Cloud Build deployed it** at 18:44 UTC. Revision `mtg-api-00036-bkn` serves `api:38ddde6`, both jobs run the new worker image, and `/readyz` answered OK. The read of a deployed Commander grade waits for a build of the owner.
+
+**The session answered the review of #144 first.** Gitar found that the explain ladder showed a flagged deck's tier and not the ladder. The fix showed the ladder's own probabilities, and Gitar approved with one finding resolved.
+
+**M-10 ran again for free, as D-665 asks** (D-680). No file kept the patch of 2026-09-10, so the session rebuilt the softmax ladder. The control reproduces gate run 20. The scorer drops the Commander precon bar to 748 of 788, one pair short, and it grades 14 built decks bad against 9. The judge agreement rises from 10 to 12, and the owner's grades match on 2 decks against 5.
+
+**Two owner answers.** PR-38 closes on its evidence (D-680). A quality item passes only when neither reader number gets worse (D-681).
+
 ## 2026-09-11e: PR-40, the rules detector
 
 Merged as #144.

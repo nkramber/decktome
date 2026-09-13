@@ -597,6 +597,24 @@ func TestClosedRowsHaveOptions(t *testing.T) {
 	}
 }
 
+// TestNoDeclineRows is D-690. The commander row offers "Suggest one", so
+// the UI shows no "You decide" control beside it. The pick row keeps the
+// control, and a row with no option of its own must keep it too.
+func TestNoDeclineRows(t *testing.T) {
+	c := load(t)
+	for _, r := range c.Rows {
+		if r.NoDecline && len(r.Options) == 0 {
+			t.Errorf("row %q hides the decline control and offers no option", r.ID)
+		}
+	}
+	if row, ok := c.Row("commander"); !ok || !row.NoDecline {
+		t.Error("the commander row shows the decline control beside its own option")
+	}
+	if row, ok := c.Row("commander_pick"); !ok || row.NoDecline {
+		t.Error("the commander pick row hides the decline control")
+	}
+}
+
 // TestColorlessOverridesTheClassifierColors is D-535: the classifier can
 // answer the open color question with all five colors for "colorless",
 // and the slot must close with none instead.

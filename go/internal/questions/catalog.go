@@ -75,6 +75,10 @@ type Row struct {
 	// Closed says the options are the whole answer space, so the UI
 	// offers no free-text field (D-295).
 	Closed bool `json:"closed"`
+	// NoDecline says the UI shows no "You decide" control for the row.
+	// The commander row carries it, because its own option already asks
+	// for a suggestion (D-690).
+	NoDecline bool `json:"no_decline"`
 	// Repeat exempts a row from the no-repeat rule. Only the commander
 	// pick row uses it: a user who answers "none" gets three new names
 	// until one fits (D-73). The row still closes when its key closes.
