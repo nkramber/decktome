@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+/// <reference types="vite-plugin-pwa/client" />
 
 // VITE_API_BASE_URL overrides the same-origin default of src/lib/api.ts.
 // Empty means same origin: the Vite proxy in dev, one host in prod.
