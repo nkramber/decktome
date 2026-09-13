@@ -114,6 +114,8 @@ The Commander brackets, from the Commander Format Panel (2025-02-11, revised 202
 - Bracket 4, Optimized: the strongest cards and decks, games can end from turn four. Only the ban list applies.
 - Bracket 5, cEDH: competitive and metagame-focused, a game can end on any turn. Only the ban list applies. The deck plays the best strategy and not a theme.
 
+The card list marks each Game Changer from the card data, the commander included. Count only the marked cards as Game Changers, and never a card you recall from another list.
+
 Read the card list for its speed, its mana base, its fast mana and tutors, its interaction, its combos, and its Game Changers. Name one bracket, 1 to 5, and say why in two or three sentences. Judge the deck as it is, and not the bracket the builder may have aimed at.`
 
 // The bracket is a string enum and not a bounded integer: the Anthropic
@@ -147,7 +149,7 @@ type bracketOut struct {
 func JudgeBracket(ctx context.Context, c *llm.Client, deck *mtgv1.Deck, cards rules.CardSource, acc *llm.Accumulator) (*BracketJudgement, error) {
 	res, err := c.Complete(ctx, llm.RoleJudge, llm.Request{
 		Instructions: bracketJudgeInstructions,
-		Input:        DeckText(deck, cards),
+		Input:        bracketDeckText(deck, cards),
 		SchemaName:   "bracket_check",
 		Schema:       json.RawMessage(bracketJudgeSchema),
 	}, acc)
@@ -169,19 +171,51 @@ func JudgeBracket(ctx context.Context, c *llm.Client, deck *mtgv1.Deck, cards ru
 // line per card with its count and its job, when the deck names one. No
 // bracket, no summary, and no finding.
 func DeckText(deck *mtgv1.Deck, cards rules.CardSource) string {
+	return deckText(deck, cards, false)
+}
+
+// bracketDeckText is DeckText with a mark on each Game Changer that the
+// card data flags, the commander included. The bracket judge counts those
+// marks and not a list it recalls (F-123, D-696). The tier and plan
+// judges read DeckText unmarked.
+func bracketDeckText(deck *mtgv1.Deck, cards rules.CardSource) string {
+	return deckText(deck, cards, true)
+}
+
+func deckText(deck *mtgv1.Deck, cards rules.CardSource, markGameChangers bool) string {
+	flagged := func(id string) bool {
+		if !markGameChangers {
+			return false
+		}
+		c, ok := cards.ByOracleID(id)
+		return ok && c.GetGameChanger()
+	}
 	var s strings.Builder
 	for _, id := range deck.GetCommanderOracleIds() {
-		if c, ok := cards.ByOracleID(id); ok {
-			fmt.Fprintf(&s, "Commander: %s\n", c.GetName())
+		c, ok := cards.ByOracleID(id)
+		if !ok {
+			continue
 		}
+		if flagged(id) {
+			fmt.Fprintf(&s, "Commander: %s (Game Changer)\n", c.GetName())
+			continue
+		}
+		fmt.Fprintf(&s, "Commander: %s\n", c.GetName())
 	}
 	s.WriteString("\nCards:\n")
 	for _, dc := range deck.GetCards() {
-		if dc.GetRole() == mtgv1.CardRole_CARD_ROLE_UNSPECIFIED {
+		var notes []string
+		if dc.GetRole() != mtgv1.CardRole_CARD_ROLE_UNSPECIFIED {
+			notes = append(notes, roleWord(dc.GetRole()))
+		}
+		if flagged(dc.GetOracleId()) {
+			notes = append(notes, "Game Changer")
+		}
+		if len(notes) == 0 {
 			fmt.Fprintf(&s, "%d %s\n", dc.GetCount(), dc.GetName())
 			continue
 		}
-		fmt.Fprintf(&s, "%d %s (%s)\n", dc.GetCount(), dc.GetName(), roleWord(dc.GetRole()))
+		fmt.Fprintf(&s, "%d %s (%s)\n", dc.GetCount(), dc.GetName(), strings.Join(notes, ", "))
 	}
 	return s.String()
 }
