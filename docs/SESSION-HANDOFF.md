@@ -8,7 +8,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-13)
 
-**The checkout.** `main` is `f75f806`, which is pull request #158, or a later merge. The branch `docs-f122-merged` holds this hand-off, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
+**The checkout.** `main` is `320fcbb`, which is pull request #159, or a later merge. The branch `oq82-bracket-power` holds this hand-off, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
+
+**The owner answered OQ-82: a bracket promises its power in both directions** (D-693 to D-695). M-14 ran bracket gate run 2 on `320fcbb` for $1.37 (D-694). The judge agrees on 6 of 15 decks, and all six decks at brackets 1 and 2 read as bracket 3. The judge reads Game Changers from memory (F-123), so that half of the read waits for PR-47 and a second judge lane. Five of the six decks at brackets 4 and 5 miss the floor of the mana on turn four. PR-46 fixes F-124 first, and PR-45 builds the promise after the second read (D-696, D-697).
 
 **The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586). #158 is the newest web deploy, and `deploy-web` released it at 18:52 UTC on 2026-09-13. #157 is the newest API deploy: `deploy-api` finished at 07:53 UTC, and revision `mtg-api-00040-wd9` serves `api:42003ce`. Both jobs run `worker:42003ce`, and `/readyz` answered 200. The deploy triggers read `go/**`, `docker/**`, and `web/**` alone, so a merge of documents alone starts no build.
 
@@ -98,11 +100,10 @@ CAUTION: the `decktome` gcloud configuration named the Wallabee account and proj
 
 **What waits on the owner.**
 
-- A look at the first commander question after one more load of the app (next step 1).
+- A look at the first commander question after one more load of the app (next step 4).
 - OQ-67, the Stage B channels.
 - OQ-77, the blocking function of Identity Platform.
 - OQ-80, a proxy and the pool.
-- OQ-82, the power of a bracket (F-110).
 
 **CAUTION: a local `make verify` is not the whole story.** It read green for weeks while shellcheck failed (F-89, D-641). Every pull request runs the workflow now.
 
@@ -141,10 +142,10 @@ Thirteen things a fresh session gets wrong without this file.
 - Ban-list snapshot: 2026-08-24. Next announcement 2026-10-12, in `internal/cards/announcement_dates.json`. A test fails when that file holds no future date. This is by design.
 - Commander brackets: the 2025-10-21 revision. Game Changers: 53 cards, list of 2026-02-09. Lutri is banned as a companion only, per the 2026-02-09 announcement (`companion_bans.json` holds the link). The content rules per bracket in `brackets.json` and the Spellbook thresholds were read 2026-09-02, and the Karsten tables are the 2022 articles, read 2026-09-02 (`docs/reference/bracket-profile-2026-09-02.md`).
 - Standard: 18 sets, Wilds of Eldraine to The Hobbit. Six sets leave at the first 2027 set. Verified 2026-08-24.
-- Card snapshot on disk: `.local/gcs/mtg-local-cards/scryfall/20260904T210157`, the newest of 13. Read 2026-09-12. Check every card fact against it.
+- Card snapshot on disk: `.local/gcs/mtg-local-cards/scryfall/20260904T210157`, the newest of 13. Read 2026-09-13, when it flagged 53 Game Changers. Check every card fact against it.
 - LLM model ids and prices: `roles.json` and `prices.json`, verified 2026-08-24. The max output per provider in `llm/client.go`, verified 2026-08-29. The OpenAI rows are unverified by anyone but the owner. The judge role runs on Opus 5 (D-430).
 - The deck gate upgrade probe cost $0.32 for 2 prompts, 7 calls, and 266 seconds. A partial run reads its own item bars and never stands as the gate (D-526).
-- Run cost, read from the run files on 2026-09-09. The question gate cost $0.190 on run 42, $0.193 on run 43, and $0.194 on run 44, over 18 to 21 minutes. Runs 45 to 48 of 2026-09-11 cost $0.1925, $0.1920, $0.1380, and $0.1923, over 20, 22, 19, and 21 minutes. Run 49 of 2026-09-12 cost $0.1935, over 18 minutes. The deck gate upgrade probe cost $0.32 for 2 prompts. The eval cost $0.092 on run 34 and $0.096 on run 35, over 12 to 14 minutes. The deck gate cost $2.71 on run 18, over 37 minutes, and $2.75 on run 19 of 2026-09-12, over 36 minutes. The revise gate cost $1.07 on run 9. The bracket gate judge lane cost $0.28.
+- Run cost, read from the run files on 2026-09-09. The question gate cost $0.190 on run 42, $0.193 on run 43, and $0.194 on run 44, over 18 to 21 minutes. Runs 45 to 48 of 2026-09-11 cost $0.1925, $0.1920, $0.1380, and $0.1923, over 20, 22, 19, and 21 minutes. Run 49 of 2026-09-12 cost $0.1935, over 18 minutes. The deck gate upgrade probe cost $0.32 for 2 prompts. The eval cost $0.092 on run 34 and $0.096 on run 35, over 12 to 14 minutes. The deck gate cost $2.71 on run 18, over 37 minutes, and $2.75 on run 19 of 2026-09-12, over 36 minutes. The revise gate cost $1.07 on run 9. The bracket gate judge lane cost $0.28. Bracket gate run 2 of 2026-09-13 cost $1.3720 over 925 seconds, for 15 builds and the judge.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
 - The feedback store holds 3 verdicts on 2026-09-09, and every one predates the snapshot of D-635. `make feedback-list VERDICT=` reads both verdicts now (F-87). A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
@@ -157,17 +158,20 @@ Thirteen things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide".
-2. **Watch the first self-reload on the next web deploy** (D-692). The live release of #158 passed its check on 2026-09-13 at 18:54 UTC. An installed app that loaded that release must reload by itself when the next release activates. Read it on the next merge that changes `web/**`.
-3. **Read the source lines of the meta run of 2026-09-14.** The mtggoldfish source failed on 2026-09-13 with a connection reset on a storage write. A second failure makes a finding.
-4. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
-5. **The live half of the feedback loop has no run yet.** Three things want a measurement: the judge lane of the triage, one live fix cycle, and one review round. All three need the owner's word, and the cycle also needs `AUTOTUNE_FIXER_CMD` and a harvest whose verdicts carry a snapshot.
-6. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. The next whole run compares against run 19, and it costs about $2.75, so ask the owner first.
-7. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
-8. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
-9. **The weekly EDHREC read** falls on 2026-09-14 (D-499, D-565). Run `make meta-refresh`, then `make quality-gate` to a new `QUALITY_GATE_OUT`. The refresh also stores a new local model, and the deck gate grades read that model.
-10. **PR-26, the return channels**, waits on OQ-67.
-11. **PR-42 is merged as #148** (D-671). Question gate run 49 missed no conversation, so it ran no rerun. Any miss still fails the run, and each miss joins the finding register.
+1. **PR-46: the builder drops a listed commander from the 99, and the copy finding names its card** (F-124, D-697). It goes first, as its own pull request. A unit test builds a deck with the commander in the list, and the old code must fail it. `assemble` in `generate.go` builds the list, and `checkCopies` in `rules/checks.go` writes the finding.
+2. **PR-47: the bracket judge reads the Game Changer flag of each card** (F-123, D-696). `DeckText` in `generate/judge.go` writes the judge input. Then `make bracket-gate BRACKET_GATE_ARGS="-rejudge docs/reference/pr14a-bracket-gate-run2.md"` reads the 15 decks again, to a new `BRACKET_GATE_OUT`. The owner approved that lane at about $0.28.
+3. **PR-45: the build reaches the power of its bracket, in both directions** (F-110, F-125, D-693, D-695). Its design follows the second read of M-14, and the owner reads the plan before any code.
+4. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide".
+5. **Watch the first self-reload on the next web deploy** (D-692). The live release of #158 passed its check on 2026-09-13 at 18:54 UTC. An installed app that loaded that release must reload by itself when the next release activates. Read it on the next merge that changes `web/**`.
+6. **Read the source lines of the meta run of 2026-09-14.** The mtggoldfish source failed on 2026-09-13 with a connection reset on a storage write. A second failure makes a finding.
+7. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
+8. **The live half of the feedback loop has no run yet.** Three things want a measurement: the judge lane of the triage, one live fix cycle, and one review round. All three need the owner's word, and the cycle also needs `AUTOTUNE_FIXER_CMD` and a harvest whose verdicts carry a snapshot.
+9. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. The next whole run compares against run 19, and it costs about $2.75, so ask the owner first.
+10. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
+11. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
+12. **The weekly EDHREC read** falls on 2026-09-14 (D-499, D-565). Run `make meta-refresh`, then `make quality-gate` to a new `QUALITY_GATE_OUT`. The refresh also stores a new local model, and the deck gate grades read that model.
+13. **PR-26, the return channels**, waits on OQ-67.
+14. **PR-42 is merged as #148** (D-671). Question gate run 49 missed no conversation, so it ran no rerun. Any miss still fails the run, and each miss joins the finding register.
 
 CAUTION: `make revise-gate | tee` hides the exit code. Read the verdict line of the document, never the exit code of a pipe.
 
@@ -178,6 +182,16 @@ The CI step "fake gcs tests" ran no test until 2026-09-10 (D-658). Its filter ma
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 
 ## The ten most recent sessions
+
+### 2026-09-13d: OQ-82, M-14, and the findings F-123 to F-125
+
+**The owner merged #159 and asked what comes next.** Every next step waited on the owner, a date, or money. The session gave the choices, and the owner chose OQ-82, the power of a bracket.
+
+**The evidence.** Deck 3 of the deck gate, a high-power Urza deck at bracket 4, read short of its power on runs 16, 18, and 19. No band of bracket 4 or 5 holds a floor for tutors or fast mana. The shortlist ranks cards by theme fit and EDHREC rank. The owner chose a promise in both directions (D-693) and a measurement first (D-694). A precon upgrade cuts a kept card that the bracket forbids, outside the 85 percent (D-695).
+
+**M-14 ran bracket gate run 2 on `320fcbb`.** It read FAIL for $1.37 over 925 seconds, and the judge agrees on 6 of 15 decks. All six decks at brackets 1 and 2 read as bracket 3. Five of the six decks at brackets 4 and 5 miss the floor of the mana on turn four.
+
+**The read found three defects.** The judge reads Game Changers from memory, and at least 12 of 15 reasons name a card that the data does not flag (F-123). A commander in the 99 left a block that names no card (F-124). A content violation alone goes to the reader with no repair turn (F-125). The owner chose the flags for the judge, a second judge lane, and F-124 first (D-696, D-697).
 
 ### 2026-09-13c: #158 deployed, and the documents read the merge
 
@@ -258,16 +272,6 @@ Merged as #149.
 **The owner built a Commander deck and named its session.** Session `OFMnk7Tv2zkK8xfAwXxB` asked for a treasure deck, named Smaug the Magnificent, and chose bracket 5 from an owned-only pool. The grade reads typical, and its reasons name the ladder, as D-678 asks. No rules check flags the deck. The reader owns the commander, so OQ-79 keeps its harder case open.
 
 **The read found F-119.** The curve line reads 2.79 over 68 nonland cards, and the stored list reads 2.29 over 66. The engine ran before the mana pass, so every rules finding read the list before the pass. The owner chose PR-43, which runs the pass first (D-684). A whole build through a fake model fails on the old order and passes on the new one.
-
-### 2026-09-11i: PR-42, the gate reruns a missed conversation
-
-Merged as #148.
-
-**The owner merged #147.** No Cloud Build followed, because #147 changed documents alone. Next steps 1 and 2 still waited on the owner and on 06:00 UTC. Steps 3 to 10 waited on the owner, on data, or on a date. So the session built PR-42, the first free item.
-
-**The build** (D-671). A counted conversation with an expectation or must-not-ask miss plays two more times inside the run. Each rerun keeps its own misses, and a failed rerun reads its error as a miss. The first play still sets every count and the verdict. The document writes the rate beside the miss, and the run file carries `miss_rate` as an information row, so `eval-check` never flips on it.
-
-**The proof is free.** A test plays a missed conversation through a fake player. No paid run went out, so no whole run shows a rerun yet.
 
 ## The archive
 
