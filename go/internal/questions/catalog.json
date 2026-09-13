@@ -305,7 +305,8 @@
         "suggested": false,
         "commander_unresolved": false
       },
-      "fixed": true
+      "fixed": true,
+      "no_decline": true
     },
     {
       "id": "commander_pick",

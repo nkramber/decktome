@@ -202,4 +202,8 @@ message Question {
   // two cards (D-361). The first card goes in option_oracle_ids, and the
   // second one here. Every other option carries an empty string.
   repeated string option_partner_oracle_ids = 10;
+  // no_decline says the UI shows no "You decide" control. The commander
+  // row carries it, because its own option already asks for a
+  // suggestion (D-690).
+  bool no_decline = 11;
 }

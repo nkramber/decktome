@@ -120,19 +120,22 @@ export function QuestionCard({
       {/* A decline hands the choice back with no value (D-353). The
           agent applies the default its corpus names, and the question
           closes for good. A declined budget stores no cap, so its
-          control says what the decline does (D-404). */}
-      <div>
-        <Button
-          variant={draft.declined ? "default" : "outline"}
-          size="sm"
-          disabled={disabled}
-          aria-pressed={draft.declined === true}
-          onClick={() => onChange(draft.declined ? { text: "" } : { text: "", declined: true })}
-        >
-          {draft.declined && <span aria-hidden="true">✓ </span>}
-          {declineLabel(question.slot)}
-        </Button>
-      </div>
+          control says what the decline does (D-404). A question whose own
+          option asks for a suggestion shows no decline control (D-690). */}
+      {!question.noDecline && (
+        <div>
+          <Button
+            variant={draft.declined ? "default" : "outline"}
+            size="sm"
+            disabled={disabled}
+            aria-pressed={draft.declined === true}
+            onClick={() => onChange(draft.declined ? { text: "" } : { text: "", declined: true })}
+          >
+            {draft.declined && <span aria-hidden="true">✓ </span>}
+            {declineLabel(question.slot)}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

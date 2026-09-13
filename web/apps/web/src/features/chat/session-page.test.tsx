@@ -851,6 +851,20 @@ describe("declining a question", () => {
     await user.click(within(card).getByRole("button", { name: "Commander" }));
     expect(within(card).getByRole("button", { name: "You decide" })).toHaveAttribute("aria-pressed", "false");
   });
+
+  // The commander row asks for a suggestion with its own option (D-690).
+  it("shows no decline control on a question that carries noDecline", async () => {
+    const commanderQuestion = { id: "q3-commander", slot: "commander", text: "Which commander?", options: ["Suggest one"], optionOracleIds: [], noDecline: true };
+    getSession.mockResolvedValue({
+      session: { id: "s1", collectionId: "", deckIds: [], turns: [{ userMessage: "elves", questions: [commanderQuestion, formatQuestion], answers: [] }] },
+    });
+    await renderAt("/session/s1");
+    const card = await screen.findByRole("group", { name: "Question: Which commander?" });
+    expect(within(card).getByRole("button", { name: "Suggest one" })).toBeInTheDocument();
+    expect(within(card).queryByRole("button", { name: /You decide/ })).not.toBeInTheDocument();
+    const other = screen.getByRole("group", { name: "Question: Which format?" });
+    expect(within(other).getByRole("button", { name: "You decide" })).toBeInTheDocument();
+  });
 });
 
 // The collection leads, and the database fills a gap (D-359).
