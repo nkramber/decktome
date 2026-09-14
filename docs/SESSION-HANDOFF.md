@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-14)
 
-**The checkout.** `main` is `7d997f1`, which is pull request #169, or a later merge. The branch `docs-pr45b-merged` holds this hand-off, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
+**The checkout.** `main` is `b7aa42d`, which is pull request #170, or a later merge. The branch `quality-gate-run22` holds this hand-off, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
 
 **The owner answered OQ-82: a bracket promises its power in both directions** (D-693 to D-695). M-14 ran bracket gate run 2 on `320fcbb` for $1.37 (D-694). Five of the six decks at brackets 4 and 5 miss the floor of the mana on turn four. With the Game Changer flags of PR-47, the judge agrees on 3 of 15 decks, and it still names combos from memory (F-126). #161 merged PR-46, #162 merged PR-47, and #163 merged M-15 (D-697 to D-699). PR-45 splits into PR-45a and PR-45b, and #164 merged the plan (D-701 to D-704).
 
@@ -25,6 +25,10 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 **The session found three defects on the way, and PR-45b fixes each.** The role caps blocked the power cards (F-131). The first pin took places under the total, and 52 fixing lands left the lists (F-132). The mana pass step of a cheaper card read no job (F-133). The review of `gitar-bot` found a fourth: the land cap read no pin, and `2ed2b06` sets the pinned lands aside.
 
 **The paid runs of PR-45b cost $2.04, and the judge moved from 0 of 6 to between 4 and 6 of 6.** Bracket gate run 6 on the final code reads 4 of 6, and its second judge lane reads the same decks at 6 of 6. Neither miss of run 6 held on the second read, so the owner closed F-134 as judge noise (D-715). Deck gate runs 20 to 22 read PASS on prompt 3.
+
+**Quality gate run 22 reads PASS on the local meta store of 2026-09-14** (D-499, D-565). The fit took 124 seconds and called no provider. The Commander precon bar reads 0.96 of 784, and the synergy axis reads 0.85 of 228. Built decks graded bad rise from 8 to 9 of 25, and the judge agreement stays at 9 of 25. Deck 21, the Hobbit family, moves from baseline to bad. Deck 7, Modern burn, moves from baseline to typical.
+
+**The run is no quality tuning item, so its numbers stand as information** (D-689). The low EDHREC count needs no finding. `MergeLists` answers the count of new keys, and a re-read replaces a list already stored under its key. So the weekly read counted 3 new lists on 2026-09-07 (D-566) and 4 new lists on 2026-09-14.
 
 **The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586). #158 is the newest web deploy, and `deploy-web` released it at 18:52 UTC on 2026-09-13. #169 is the newest API deploy: `deploy-api` finished at 17:50 UTC on 2026-09-14, and revision `mtg-api-00047-76c` serves `api:7d997f1`. Both jobs run `worker:7d997f1`, and `/readyz` answered ok. The deploy triggers read `go/**`, `docker/**`, and `web/**` alone, so a merge of documents alone starts no build.
 
@@ -115,7 +119,7 @@ CAUTION: the `decktome` gcloud configuration named the Wallabee account and proj
 **What waits on the owner.**
 
 - The merge of this documents pull request, after the review of `gitar-bot`.
-- A look at the first commander question after one more load of the app (next step 2).
+- A bracket 4 or 5 Commander build on the app, and a look at the first commander question on the same load (next steps 1 and 2).
 - OQ-67, the Stage B channels.
 - OQ-77, the blocking function of Identity Platform.
 - OQ-80, a proxy and the pool.
@@ -170,7 +174,7 @@ Fifteen things a fresh session gets wrong without this file.
 - The deployed web app, read 2026-09-13 at 18:54 UTC: the release of #158, from `deploy-web` at 18:52 UTC. `index.html` loads `assets/index-DYfo4m8I.js` and no `registerSW.js`, and `sw.js` precaches the `workbox-window` chunk.
 - The deployed quality model, read 2026-09-14: `20260914T070904Z`, from the meta job that started at 06:02 UTC and ended at 07:13 UTC. It fits 43,182 lists and 1,517 commanders. Its Commander fit reads `immaterial` 239 and accuracy 0.554, and its Standard fit reads a cross share of 0.667. The job read the weekly EDHREC pass, 2,077 pages and 4 lists. The mtgo source read 3,094 lists with 58 fetch errors. The mtggoldfish source read 155 lists with no failure. The mtgjson source read no list, because its deck list version differs from the stored table, as on 2026-09-12 and 2026-09-13.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
-- Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 19, revise is run 9. The generate prompt reads version 13 since PR-45b, and run 19 read version 12. So the next whole deck gate run reads a new prompt against run 19. Run 49 is the newest whole questions run, and it reads PASS. Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 21 is its newest run.
+- Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 19, revise is run 9. The generate prompt reads version 13 since PR-45b, and run 19 read version 12. So the next whole deck gate run reads a new prompt against run 19. Run 49 is the newest whole questions run, and it reads PASS. Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 22 is its newest run.
 - Toolchain on this Mac, read 2026-09-11: Go 1.27.1, Node 22.23.2, pnpm 9.2.0, firebase-tools 14.14.0, and Java 17.0.20.1. Playwright is 1.63.0 with its Chromium headless shell (`playwright install chromium`). `go.mod` asks Go 1.27.0 or newer, and vitest is 5.0.0 since #133.
 
 ## Next steps, in order
@@ -183,9 +187,8 @@ Fifteen things a fresh session gets wrong without this file.
 6. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. The next whole run compares against run 19, and it costs about $2.75, so ask the owner first.
 7. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
 8. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
-9. **The quality gate on the local model of 2026-09-14** (D-499, D-565). The local `make meta-refresh` finished at 15:44 UTC and stored `20260914T154223Z`, fitted on 60,237 lists. It read 4 EDHREC lists from 2,083 pages, the same count as the deployed job. Run `make quality-gate` to a new `QUALITY_GATE_OUT`.
-10. **PR-26, the return channels**, waits on OQ-67.
-11. **PR-42 is merged as #148** (D-671). Question gate run 49 missed no conversation, so it ran no rerun. Any miss still fails the run, and each miss joins the finding register.
+9. **PR-26, the return channels**, waits on OQ-67.
+10. **PR-42 is merged as #148** (D-671). Question gate run 49 missed no conversation, so it ran no rerun. Any miss still fails the run, and each miss joins the finding register.
 
 CAUTION: `make revise-gate | tee` hides the exit code. Read the verdict line of the document, never the exit code of a pipe.
 
@@ -196,6 +199,14 @@ The CI step "fake gcs tests" ran no test until 2026-09-10 (D-658). Its filter ma
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 
 ## The ten most recent sessions
+
+### 2026-09-14g: #170 merged, quality gate run 22, and the app check of PR-45b
+
+**The owner merged #170.** It changed documents alone, so no build ran. Gitar approved it beside the note that it paused automatic reviews, and it named no finding.
+
+**Quality gate run 22 read PASS on the local refresh of 2026-09-14, for no cost.** Built decks graded bad rose from 8 to 9 of 25, and the judge agreement stayed at 9. The EDHREC count of 4 lists looked low, and `MergeLists` shows that it counts new keys alone.
+
+**The owner chose the app check of PR-45b.** The other choices were a whole deck gate run, a plan of the power pass, and a queued question. The owner builds a bracket 4 or 5 Commander deck, and the session reads the stored session and the deck.
 
 ### 2026-09-14f: #169 merged, and the documents read the state before a context wipe
 
@@ -290,16 +301,6 @@ Merged as #169.
 **`deploy-web` released #158 at 18:52 UTC.** The live `index.html` loads no `registerSW.js`, and `sw.js` precaches the `workbox-window` chunk. The main chunk holds the reload. So the old next step 2 passed, and the next web deploy is the first that reloads an open app by itself.
 
 **PR-25 carries a dated correction.** Its entry names the service worker, and F-122 refutes the promise of D-621 that the worker updates the app. The deploy guide notes the reload and the Hosting rewrite.
-
-### 2026-09-13b: #157 deployed, the meta run, and F-122
-
-Merged as #158.
-
-**The owner merged #157, and Cloud Build deployed it.** `deploy-web` released the web app at 07:49 UTC, and `deploy-api` finished at 07:53 UTC. Revision `mtg-api-00040-wd9` serves `api:42003ce`, and both jobs run `worker:42003ce`.
-
-**The meta run of 06:00 UTC is the first fit on the types of PR-44.** It ran on `worker:b53fbb6` and stored `20260913T061119Z`. The Commander accuracy reads 0.547, and the Standard cross share reads 0.685. The mtggoldfish source failed once on a storage write.
-
-**The owner's live check found F-122.** Session `vY1lCRtl64uwFObznCZ9` stores the commander question with `noDecline: true`, and the live session page checks the flag. The owner's first load still showed both controls, because the service worker served the old shell and never reloaded. The owner chose a reload on a new worker (D-692).
 
 ## The archive
 

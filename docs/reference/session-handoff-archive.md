@@ -11,6 +11,16 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## 2026-09-13b: #157 deployed, the meta run, and F-122
+
+Merged as #158.
+
+**The owner merged #157, and Cloud Build deployed it.** `deploy-web` released the web app at 07:49 UTC, and `deploy-api` finished at 07:53 UTC. Revision `mtg-api-00040-wd9` serves `api:42003ce`, and both jobs run `worker:42003ce`.
+
+**The meta run of 06:00 UTC is the first fit on the types of PR-44.** It ran on `worker:b53fbb6` and stored `20260913T061119Z`. The Commander accuracy reads 0.547, and the Standard cross share reads 0.685. The mtggoldfish source failed once on a storage write.
+
+**The owner's live check found F-122.** Session `vY1lCRtl64uwFObznCZ9` stores the commander question with `noDecline: true`, and the live session page checks the flag. The owner's first load still showed both controls, because the service worker served the old shell and never reloaded. The owner chose a reload on a new worker (D-692).
+
 ## 2026-09-13: the owned-only lifegain build, F-121, and OQ-79 closed
 
 Merged as #157.
