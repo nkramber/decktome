@@ -70,6 +70,15 @@ A card name that holds a comma sits in quotation marks, so each card reads once 
 - PR-52 ranks lands by quality, and the mana pass swaps a basic land for a better land of the pool (D-720).
 - PR-53 adds finisher roles from tags, a target per bracket, and finisher pins (D-719). It also stores a count with a floor finding, and it adds a line to the gap note.
 
+## After M-17
+
+M-17 measured on 2026-09-14, and `docs/reference/m17-finishers-lands-2026-09-14.md` holds every count.
+
+- The theme word "milling" matched no card, so the shortlist held staple roles alone (F-142). The shortlist dropped the mill cards, and not the model.
+- PR-54 comes first: aliases, a word-form rule, and a question when no card matches (D-723 to D-725).
+- PR-53 sets a finisher target of 3 and a floor of 2 at brackets 1 to 4 (D-726). Bracket 5 takes a target of 1 and a floor of 1.
+- Kindred Discovery and Idol of Oblivion work in this deck, and Skullclamp and Springleaf Drum fail. F-140 stays a record until a replay after PR-54 (D-727).
+
 ## The suggestions of the review
 
 The review names seven suggestions. The table shows where each one sits now. `docs/reference/owner-review-grima-2026-09-14.md` holds the review word for word.

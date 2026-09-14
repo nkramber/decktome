@@ -11,6 +11,16 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## 2026-09-14: PR-45a, the bracket cut, and bracket gate run 3
+
+**The owner merged #164, and the session built PR-45a** (D-702). The content check names each card that the bracket forbids. The build cuts one card of each forbidden combo and each other forbidden card, and basic lands fill the slots. The finding `bracket_cut` names each cut card and the content it held.
+
+**The build refuted one sentence of the plan.** The plan said that the pool keeps the rank order of the shortlist. `NewPool` sorts the pool names by the alphabet, and the shortlist groups its cards by role. So the pool records the shortlist score, and the roadmap carries a dated correction.
+
+**The owner approved bracket gate run 3 over prompts 1 to 9.** It cost $0.7355 over 538 seconds, and 9 of 9 decks hold no content violation. The cut removed Polyraptor from deck 4, beside Marauding Raptor, and Akki Battle Squad from deck 9, beside Kiki-Jiki, Mirror Breaker. The judge agrees on 3 of 9. The first finding text said that the bracket forbids the card itself, so the finding now names the combo.
+
+**Gitar found one defect in #165, and the session fixed it.** A cut of more than five cards left the deck short, because `MaxPad` caps the pad of basic lands at five. The cut now fills each slot it opens, and a gap that the model left stays a block finding. The test of the fix found F-128: the mana pass can add the commander to the 99. The owner chose its own pull request, PR-48, after #165 (D-705).
+
 ## 2026-09-13e: the stack merged, M-16, and the PR-45 plan
 
 **The owner merged #160 to #163 in order** (D-700). After each squash merge, the session rebased the next branch onto `main` and checked that its content did not change. CI ran green on each new head before the next merge.
