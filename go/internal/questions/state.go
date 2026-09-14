@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/internal/cardname"
 )
 
 // State is one session's question state. Slots hold the values the deck
@@ -528,8 +529,9 @@ func hasName(list []string, name string) bool {
 	return false
 }
 
-// normName reads a card name for comparison, without case or edge space.
-func normName(s string) string { return strings.ToLower(strings.TrimSpace(s)) }
+// normName reads a card name for comparison, without case, edge space,
+// or accent (D-716).
+func normName(s string) string { return cardname.Fold(s) }
 
 // baseName is the part of a card name before the first comma. For
 // "Grist, the Hunger Tide" it is "grist".

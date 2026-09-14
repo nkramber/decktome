@@ -29,6 +29,7 @@ import (
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 	"github.com/nkramber/decktome/go/internal/candidates"
+	"github.com/nkramber/decktome/go/internal/cardname"
 	"github.com/nkramber/decktome/go/internal/cards"
 	"github.com/nkramber/decktome/go/internal/evalrun"
 	"github.com/nkramber/decktome/go/internal/gatekit"
@@ -595,7 +596,7 @@ func keptShare(baseDeck, revised *mtgv1.Deck, rev *generate.Revision, idx *cards
 
 func hasName(d *mtgv1.Deck, name string) bool {
 	for _, c := range d.GetCards() {
-		if strings.EqualFold(c.GetName(), name) {
+		if cardname.Fold(c.GetName()) == cardname.Fold(name) {
 			return true
 		}
 	}
@@ -604,7 +605,7 @@ func hasName(d *mtgv1.Deck, name string) bool {
 
 func contains(list []string, name string) bool {
 	for _, n := range list {
-		if strings.EqualFold(n, name) {
+		if cardname.Fold(n) == cardname.Fold(name) {
 			return true
 		}
 	}

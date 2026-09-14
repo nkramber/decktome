@@ -16,6 +16,7 @@ import (
 	"strings"
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/internal/cardname"
 	"github.com/nkramber/decktome/go/internal/cards"
 	"github.com/nkramber/decktome/go/internal/rules"
 )
@@ -884,14 +885,12 @@ func BasicLandByOracle(idx *cards.Index) func(oracleID string) bool {
 	}
 }
 
-// FoldName is the name match key: lower case, with the outer spaces
-// removed. Nothing else is folded, because a punctuation change makes a
-// different card name (F-13).
-func FoldName(s string) string { return strings.ToLower(strings.TrimSpace(foldQuotes.Replace(s))) }
-
-// foldQuotes reads a curly apostrophe as the straight one a card name
-// holds. Deck gate run 13 lost six cards to "Commander’s Sphere".
-var foldQuotes = strings.NewReplacer("\u2019", "'", "\u2018", "'", "\u201c", "\"", "\u201d", "\"")
+// FoldName is the name match key: the folded key of D-716, so "Grima"
+// names "Gríma Wormtongue" and a curly apostrophe names the card with the
+// straight one. A punctuation change still makes a different card name
+// (F-13), and the card index refuses a folded key that two card names
+// share.
+func FoldName(s string) string { return cardname.Fold(s) }
 
 // hasPaperPrinting reports whether the card's shown printing is a paper
 // one. The index swaps a digital default for a paper printing when one

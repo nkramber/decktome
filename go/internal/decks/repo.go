@@ -21,6 +21,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/internal/cardname"
 	"github.com/nkramber/decktome/go/internal/gzstore"
 )
 
@@ -228,12 +229,13 @@ func (f Filter) keep(sd storedDeck) bool {
 	if f.Query == "" {
 		return true
 	}
-	q := strings.ToLower(f.Query)
-	if strings.Contains(strings.ToLower(sd.Name), q) {
+	// The search reads a name whatever the case or the accent (D-716).
+	q := cardname.Fold(f.Query)
+	if strings.Contains(cardname.Fold(sd.Name), q) {
 		return true
 	}
 	for _, name := range sd.CommanderNames {
-		if strings.Contains(strings.ToLower(name), q) {
+		if strings.Contains(cardname.Fold(name), q) {
 			return true
 		}
 	}

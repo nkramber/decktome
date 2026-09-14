@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/internal/cardname"
 	"github.com/nkramber/decktome/go/internal/llm"
 )
 
@@ -203,7 +204,9 @@ func isLand(c *mtgv1.Card) bool {
 	return false
 }
 
-func fold(s string) string { return strings.ToLower(strings.TrimSpace(s)) }
+// fold is the name match key of D-716: a card the deck holds matches the
+// reader's words whatever the case or the accent.
+func fold(s string) string { return cardname.Fold(s) }
 
 // Diff is what changed between the base deck and the revised one.
 type Diff struct {

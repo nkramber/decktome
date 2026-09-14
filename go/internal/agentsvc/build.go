@@ -12,6 +12,7 @@ import (
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 	"github.com/nkramber/decktome/go/internal/auth"
 	"github.com/nkramber/decktome/go/internal/candidates"
+	"github.com/nkramber/decktome/go/internal/cardname"
 	"github.com/nkramber/decktome/go/internal/cards"
 	"github.com/nkramber/decktome/go/internal/generate"
 	"github.com/nkramber/decktome/go/internal/llm"
@@ -569,10 +570,10 @@ func (s *Server) keepable(base *mtgv1.Deck, names []string, owned map[string]int
 	}
 	inDeck := map[string]bool{}
 	for _, dc := range base.GetCards() {
-		inDeck[strings.ToLower(dc.GetName())] = true
+		inDeck[cardname.Fold(dc.GetName())] = true
 	}
 	for _, name := range names {
-		if inDeck[strings.ToLower(name)] {
+		if inDeck[cardname.Fold(name)] {
 			keep = append(keep, name)
 			continue
 		}

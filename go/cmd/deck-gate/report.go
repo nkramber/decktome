@@ -8,6 +8,7 @@ import (
 	"time"
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/internal/cardname"
 	"github.com/nkramber/decktome/go/internal/cards"
 	"github.com/nkramber/decktome/go/internal/evalrun"
 	"github.com/nkramber/decktome/go/internal/gatekit"
@@ -421,16 +422,16 @@ func checkAsserts(r result, idx *cards.Index) []string {
 	all := append(append([]*mtgv1.DeckCard{}, r.deck.GetCards()...), r.deck.GetSideboard()...)
 	held := map[string]bool{}
 	for _, dc := range all {
-		held[strings.ToLower(strings.TrimSpace(dc.GetName()))] = true
+		held[cardname.Fold(dc.GetName())] = true
 	}
 	for _, id := range r.deck.GetCommanderOracleIds() {
 		if c, ok := idx.ByOracleID(id); ok {
-			held[strings.ToLower(c.GetName())] = true
+			held[cardname.Fold(c.GetName())] = true
 		}
 	}
 	var out []string
 	for _, name := range r.prompt.MustNotInclude {
-		if held[strings.ToLower(strings.TrimSpace(name))] {
+		if held[cardname.Fold(name)] {
 			out = append(out, "holds "+name)
 		}
 	}

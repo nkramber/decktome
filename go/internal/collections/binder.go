@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/internal/cardname"
 )
 
 // Filter is what the binder grid asks for (D-398). Every field runs on
@@ -15,7 +16,7 @@ import (
 // filters (D-396).
 type Filter struct {
 	// Query keeps a row whose card name holds this text, without regard
-	// to case. Empty keeps them all.
+	// to case or accent (D-716). Empty keeps them all.
 	Query string
 	// SetCode keeps one set. Empty keeps them all.
 	SetCode string
@@ -33,11 +34,11 @@ type Filter struct {
 	QuantityOrMore bool
 }
 
-// FilterOf reads the proto shape. It trims and lowers the query once,
-// so Keep reads no text twice.
+// FilterOf reads the proto shape. It folds the query once (D-716), so
+// Keep reads no query text twice.
 func FilterOf(f *mtgv1.BinderFilter) Filter {
 	return Filter{
-		Query:          strings.ToLower(strings.TrimSpace(f.GetQuery())),
+		Query:          cardname.Fold(f.GetQuery()),
 		SetCode:        strings.ToLower(strings.TrimSpace(f.GetSetCode())),
 		Color:          f.GetColor(),
 		Colorless:      f.GetColorless(),
@@ -76,7 +77,7 @@ func (f Filter) Keep(e *mtgv1.CollectionEntry) bool {
 			return false
 		}
 	}
-	if f.Query != "" && !strings.Contains(strings.ToLower(e.GetName()), f.Query) {
+	if f.Query != "" && !strings.Contains(cardname.Fold(e.GetName()), f.Query) {
 		return false
 	}
 	return true

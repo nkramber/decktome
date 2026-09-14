@@ -399,6 +399,7 @@ func LoadIndex(ctx context.Context, store Store, logger *slog.Logger) (*Index, e
 	logger.Info("cards index loaded", "version", version, "cards", idx.Len(),
 		"printings", len(printings), "tags", tags.Len(),
 		"name_collisions", col.FullNames, "face_name_collisions", col.FaceNames,
+		"fold_name_collisions", col.FoldNames,
 		"paper_swaps", idx.PaperSwaps(),
 		"sets", idx.Sets().Len(), "sets_derived", idx.Sets().Derived(),
 		"rulings", len(rulings),
