@@ -171,10 +171,29 @@ func deckCard(pool *Pool, c *mtgv1.Card, count int32, role mtgv1.CardRole, reaso
 // padWithBasics fills a small shortfall with basic lands and returns how
 // many it added. It reads the pool, so a basic the pool does not hold is
 // never added, and a colorless deck is never padded.
-//
-// The cards spread across the colors in turn, so a two-color deck gets
-// one of each rather than two of one.
 func padWithBasics(deck *mtgv1.Deck, req Request) int {
+	short := shortfall(deck, req)
+	if short <= 0 || short > MaxPad {
+		return 0
+	}
+	return addBasics(deck, req, short)
+}
+
+// refillCut fills the slots of the cards the bracket cut, and returns how
+// many basic lands it added. The cut is the builder's own act, so MaxPad
+// does not stop it, and a gap the model left stays a block finding
+// (D-225, D-702).
+func refillCut(deck *mtgv1.Deck, req Request, cut int) int {
+	n := min(cut, shortfall(deck, req))
+	if n <= 0 {
+		return 0
+	}
+	return addBasics(deck, req, n)
+}
+
+// shortfall is how many cards the deck lacks of its format size. A format
+// with no fixed size lacks none.
+func shortfall(deck *mtgv1.Deck, req Request) int {
 	size := DeckSize(req.Format)
 	if size == 0 {
 		return 0
@@ -183,10 +202,15 @@ func padWithBasics(deck *mtgv1.Deck, req Request) int {
 	for _, c := range deck.GetCards() {
 		have += int(c.GetCount())
 	}
-	short := size - have
-	if short <= 0 || short > MaxPad {
-		return 0
-	}
+	return size - have
+}
+
+// addBasics adds n basic lands from the pool and returns n, or 0 when the
+// pool holds no basic land.
+//
+// The cards spread across the colors in turn, so a two-color deck gets
+// one of each rather than two of one.
+func addBasics(deck *mtgv1.Deck, req Request, n int) int {
 	var basics []*mtgv1.Card
 	for _, name := range req.Pool.Names() {
 		c, ok := req.Pool.Card(name)
@@ -203,7 +227,7 @@ func padWithBasics(deck *mtgv1.Deck, req Request) int {
 	for _, c := range deck.Cards {
 		byOracle[c.GetOracleId()] = c
 	}
-	for i := 0; i < short; i++ {
+	for i := 0; i < n; i++ {
 		b := basics[i%len(basics)]
 		if dc, ok := byOracle[b.GetOracleId()]; ok {
 			dc.Count++
@@ -215,7 +239,7 @@ func padWithBasics(deck *mtgv1.Deck, req Request) int {
 		deck.Cards = append(deck.Cards, dc)
 		byOracle[b.GetOracleId()] = dc
 	}
-	return short
+	return n
 }
 
 // missingLocked names the cards the user said to keep that the deck does

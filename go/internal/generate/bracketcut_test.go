@@ -2,6 +2,7 @@ package generate
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -83,10 +84,10 @@ func TestCutForbiddenPicksTheCard(t *testing.T) {
 	}
 }
 
-// comboClassifier reads a two-card combo whenever both of its cards are in
-// the list it gets, the way the endpoint would.
+// comboClassifier reads each pair as a two-card combo whenever both of
+// its cards are in the list it gets, the way the endpoint would.
 type comboClassifier struct {
-	pair  [2]string
+	pairs [][2]string
 	speed int
 }
 
@@ -96,12 +97,14 @@ func (c *comboClassifier) EstimateBracket(_ context.Context, _ []string, main []
 		has[n] = true
 	}
 	res := &spellbook.Result{}
-	if has[c.pair[0]] && has[c.pair[1]] {
-		res.Combos = []spellbook.ClassifiedCombo{{
-			Combo: spellbook.ComboRef{ID: "1", Uses: []spellbook.ComboUse{
-				{Card: spellbook.CardRef{Name: c.pair[0]}}, {Card: spellbook.CardRef{Name: c.pair[1]}}}},
-			Relevant: true, DefinitelyTwoCard: true, Speed: c.speed,
-		}}
+	for i, p := range c.pairs {
+		if has[p[0]] && has[p[1]] {
+			res.Combos = append(res.Combos, spellbook.ClassifiedCombo{
+				Combo: spellbook.ComboRef{ID: fmt.Sprint(i + 1), Uses: []spellbook.ComboUse{
+					{Card: spellbook.CardRef{Name: p[0]}}, {Card: spellbook.CardRef{Name: p[1]}}}},
+				Relevant: true, DefinitelyTwoCard: true, Speed: c.speed,
+			})
+		}
 	}
 	return res, nil
 }
@@ -126,7 +129,7 @@ func TestBuildCutsAForbiddenCombo(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		prof, err := profile.New(cfg, nil, &comboClassifier{pair: [2]string{"Ajani's Welcome", "Ajani's Pridemate"}, speed: 5})
+		prof, err := profile.New(cfg, nil, &comboClassifier{pairs: [][2]string{{"Ajani's Welcome", "Ajani's Pridemate"}}, speed: 5})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -221,5 +224,107 @@ func TestPoolScoreFollowsTheShortlist(t *testing.T) {
 	}
 	if _, ok := filtered.Score("Card A"); ok {
 		t.Error("a card the filter dropped keeps a score")
+	}
+}
+
+// TestBuildRefillsEveryCutSlot is the review of PR-45a: six forbidden
+// combos take six cuts, which passes MaxPad, and the deck still holds 100
+// cards with no size finding. Combos reach the cut, because the shortlist
+// check of D-468 removes mass land denial and extra turns before the build.
+func TestBuildRefillsEveryCutSlot(t *testing.T) {
+	karlov, _ := testPool().Card("Karlov of the Ghost Council")
+	plains := basic("o-plains", "Plains")
+	entries := []Entry{{Name: "Plains", Count: 87, Role: "land", Reason: "mana"}}
+	var pairs [][2]string
+	var cs []scoredCard
+	for i := 1; i <= 6; i++ {
+		pair := [2]string{fmt.Sprintf("Engine %d", i), fmt.Sprintf("Payoff %d", i)}
+		pairs = append(pairs, pair)
+		for j, name := range pair {
+			cs = append(cs, scoredCard{card(fmt.Sprintf("o-combo-%d-%d", i, j), name), float64(10*i+j) / 100})
+			entries = append(entries, Entry{Name: name, Count: 1, Role: "synergy", Reason: "a combo piece"})
+		}
+	}
+	out := step(t, deckOut{Summary: "a deck", Cards: entries})
+	b, src, _ := testBuilder(t, out, out, out)
+	// The card source must know each card, as the index does in the app.
+	src[plains.GetOracleId()] = plains
+	for _, c := range cs {
+		src[c.card.GetOracleId()] = c.card
+	}
+	cfg, err := rules.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	prof, err := profile.New(cfg, nil, &comboClassifier{pairs: pairs, speed: 5})
+	if err != nil {
+		t.Fatal(err)
+	}
+	prof.SetHands(50)
+	b.profiler = prof
+	req := testRequest()
+	req.Pool = scoredPool([]*mtgv1.Card{karlov, plains}, cs...)
+	req.Format = mtgv1.FormatId_FORMAT_ID_COMMANDER
+	req.Power = &mtgv1.PowerLevel{Level: &mtgv1.PowerLevel_Bracket{Bracket: 3}}
+	req.Limits = "Exactly 100 cards."
+	req.Commanders = []string{"o-karlov"}
+	got, err := b.Build(context.Background(), req, nil)
+	if err != nil {
+		t.Fatalf("build: %v", err)
+	}
+	total := len(got.Deck.GetCommanderOracleIds())
+	held := map[string]bool{}
+	for _, c := range got.Deck.GetCards() {
+		total += int(c.GetCount())
+		held[c.GetName()] = true
+	}
+	for _, p := range pairs {
+		if held[p[0]] && held[p[1]] {
+			t.Errorf("the deck still holds the combo %s + %s", p[0], p[1])
+		}
+	}
+	if total != 100 {
+		t.Errorf("the deck holds %d cards, want 100", total)
+		for _, c := range got.Deck.GetCards() {
+			t.Logf("card %d %s", c.GetCount(), c.GetName())
+		}
+		for _, f := range got.Deck.GetValidation().GetFindings() {
+			t.Logf("finding %s %s: %s", f.GetSeverity(), f.GetCode(), f.GetMessage())
+		}
+	}
+	var cutMsg string
+	for _, f := range got.Deck.GetValidation().GetFindings() {
+		switch f.GetCode() {
+		case rules.CodeDeckSize:
+			t.Errorf("size finding after the cut: %s", f.GetMessage())
+		case CodeBracketCut:
+			cutMsg = f.GetMessage()
+		}
+	}
+	if !strings.Contains(cutMsg, "the builder cut 6 cards") || !strings.Contains(cutMsg, "and added 6 basic lands") {
+		t.Errorf("cut finding %q", cutMsg)
+	}
+}
+
+// TestRefillCutFillsOnlyItsOwnSlots holds the limits of the refill: it
+// passes MaxPad for the cut, it never passes the deck size, and it leaves
+// a gap the model left (D-225).
+func TestRefillCutFillsOnlyItsOwnSlots(t *testing.T) {
+	req := Request{Format: mtgv1.FormatId_FORMAT_ID_COMMANDER, Pool: NewPool([]*mtgv1.Card{basic("o-plains", "Plains")}, nil)}
+	cases := []struct {
+		name   string
+		plains int32
+		cut    int
+		want   int
+	}{
+		{"six slots past MaxPad", 93, 6, 6},
+		{"a deck at size", 99, 3, 0},
+		{"a gap the model left stays", 91, 2, 2},
+	}
+	for _, tc := range cases {
+		d := &mtgv1.Deck{CommanderOracleIds: []string{"o-cmd"}, Cards: []*mtgv1.DeckCard{{OracleId: "o-plains", Name: "Plains", Count: tc.plains}}}
+		if got := refillCut(d, req, tc.cut); got != tc.want {
+			t.Errorf("%s: added %d, want %d", tc.name, got, tc.want)
+		}
 	}
 }

@@ -495,13 +495,15 @@ func (b *Builder) assemble(ctx context.Context, req Request, out *deckOut) pass 
 	// call (PR-45a, D-702). Basic lands fill the slots (D-225), and the
 	// engine and the profile read the deck again.
 	if cut := cutForbidden(deck, req, forbidden); len(cut) > 0 {
-		refilled := padWithBasics(deck, req)
 		ids := make(map[string]bool, len(cut))
 		names := make([]string, 0, len(cut))
+		copies := 0
 		for _, c := range cut {
 			ids[c.card.GetOracleId()] = true
 			names = append(names, fmt.Sprintf("%s (%s)", c.card.GetName(), c.why))
+			copies += int(c.card.GetCount())
 		}
+		refilled := refillCut(deck, req, copies)
 		b.check(ctx, req, deck, excluded, swapped, ids)
 		// The bracket forbids the content, and not the card alone, so each
 		// cut names the content it held.
