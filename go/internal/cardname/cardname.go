@@ -7,6 +7,7 @@ package cardname
 import (
 	"strings"
 	"unicode"
+	"unicode/utf8"
 
 	"golang.org/x/text/unicode/norm"
 )
@@ -22,7 +23,20 @@ func Exact(s string) string {
 // form, such as a full-width letter, reads as its plain letter. A lookup
 // reads the folded key only when the exact key misses, and only when no
 // two card names share the folded key (guardrail 4, D-716).
+//
+// A name of ASCII bytes alone skips the decomposition. Every mark the
+// fold reads lies past ASCII, and NFKD leaves ASCII as it is, so its
+// folded key is its lower-case, trimmed form. The binder search folds
+// the name of every row, and nearly every card name is ASCII.
 func Fold(s string) string {
+	if isASCII(s) {
+		return strings.ToLower(strings.TrimSpace(s))
+	}
+	return foldFull(s)
+}
+
+// foldFull is the fold of a name that holds a byte past ASCII.
+func foldFull(s string) string {
 	var b strings.Builder
 	for _, r := range norm.NFKD.String(marks.Replace(s)) {
 		if unicode.Is(unicode.Mn, r) {
@@ -31,6 +45,16 @@ func Fold(s string) string {
 		b.WriteRune(r)
 	}
 	return Exact(b.String())
+}
+
+// isASCII reports whether every byte of s is ASCII.
+func isASCII(s string) bool {
+	for i := 0; i < len(s); i++ {
+		if s[i] >= utf8.RuneSelf {
+			return false
+		}
+	}
+	return true
 }
 
 // quotes reads a curly quote as the straight one.
@@ -45,6 +69,6 @@ var marks = strings.NewReplacer(
 	"–", "-", // en dash
 	"꞉", ":", // modifier letter colon
 	"®", "", // registered sign
-	"Æ", "Ae", // Æ
-	"æ", "ae", // æ
+	"Æ", "Ae", // capital ae
+	"æ", "ae", // small ae
 )

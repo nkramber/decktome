@@ -1,6 +1,9 @@
 package cardname
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 // TestExactKeepsTheAccent: the exact key folds the case, the outer
 // spaces, and a curly quote, and nothing else.
@@ -44,5 +47,40 @@ func TestFoldKeepsTwoCardsApart(t *testing.T) {
 	}
 	if Fold("Fire // Ice") != "fire // ice" {
 		t.Errorf("Fold(Fire // Ice) = %q, want the name with its slashes", Fold("Fire // Ice"))
+	}
+}
+
+// TestFoldFastPathMatchesTheFullFold: an ASCII name skips the
+// decomposition, and its key is the key the full fold gives.
+func TestFoldFastPathMatchesTheFullFold(t *testing.T) {
+	for _, name := range []string{
+		"Jace, the Mind Sculptor", "  BARAD-DUR ", "Fire // Ice", "Ajani's Pridemate",
+		"Circle of Protection: Red", "\tSol Ring\n", "",
+	} {
+		if Fold(name) != foldFull(name) {
+			t.Errorf("Fold(%q) = %q, and the full fold gives %q", name, Fold(name), foldFull(name))
+		}
+	}
+}
+
+// BenchmarkFold reads the cost of the folded key on a plain name and on
+// an accented one, beside the lower-case key it replaced. The binder
+// search folds the name of every row of a collection.
+func BenchmarkFold(b *testing.B) {
+	for _, tc := range []struct {
+		label string
+		key   func(string) string
+		name  string
+	}{
+		{"fold plain", Fold, "Jace, the Mind Sculptor"},
+		{"fold accent", Fold, "Gríma, Saruman's Footman"},
+		{"lower plain", strings.ToLower, "Jace, the Mind Sculptor"},
+	} {
+		b.Run(tc.label, func(b *testing.B) {
+			b.ReportAllocs()
+			for b.Loop() {
+				_ = tc.key(tc.name)
+			}
+		})
 	}
 }
