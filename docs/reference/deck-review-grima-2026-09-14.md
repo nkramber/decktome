@@ -67,3 +67,27 @@ The owner gave a written review of deck `sFLbEUuKzI0QyLPft0zI` of session `z1hsh
 - M-17 measures first, for no cost (D-721, D-722). It counts the finisher tags and the land classes of real lists by bracket, and it sets the floors. It replays the request of this session with the collection of the owner. It also counts the deck cards whose conditions the deck does not meet.
 - PR-52 ranks lands by quality, and the mana pass swaps a basic land for a better land of the pool (D-720).
 - PR-53 adds finisher roles from tags, a target per bracket, and finisher pins (D-719). It also stores a count with a floor finding, and it adds a line to the gap note.
+
+## The suggestions of the review
+
+The review names seven suggestions. The table shows where each one sits now. `docs/reference/owner-review-grima-2026-09-14.md` holds the review word for word.
+
+| Suggestion of the review | Where it sits |
+|---|---|
+| 1. Classify the payoff shape of the commander before the selection. | OQ-83 |
+| 2. Discount a card that grants evasion that the commander already has. | OQ-84 |
+| 3. A precondition solver that cuts a card whose condition fails, lands included. | F-140. M-17 counts the cards first (D-722). |
+| 4. A mana check per spell against Karsten, and dual lands before generic filler. | PR-52 ranks lands (D-720). The owner chose no castability check now (D-720). |
+| 5. Require a win condition, and estimate a clock. | PR-53 adds the target (D-719). The owner chose no clock estimate now (D-719). |
+| 6. Caps per effect class, weighted by what the commander cares about. | OQ-85 |
+| 7. Report the rules bracket beside a power estimate. | OQ-86 |
+
+The review also names cards. The table shows each group and the cards of it that the owner owns.
+
+| Group | Cards the review names | Owned |
+|---|---|---|
+| Trigger copiers and double strike | Strionic Resonator, Fireshrieker, Grappling Hook, Sword of Feast and Famine, Sword of Fire and Ice | Sword of Fire and Ice, in the deck |
+| Finishers | Torment of Hailfire, Exsanguinate, Blue Sun's Zenith | None |
+| Dual lands and utility lands | Watery Grave, Darkslick Shores, Drowned Catacomb, Choked Estuary, Undercity Sewers, Morphic Pool, River of Tears, Underground River, Bojuka Bog, Otawara, Soaring City, Takenuma, Abandoned Mire | Takenuma, Abandoned Mire, not in the deck |
+| Mana rocks | Dimir Signet, Talisman of Dominance | None |
+| Staples | Counterspell, Swan Song, An Offer You Can't Refuse, Rhystic Study, Mystic Remora, Toxic Deluge, Reliquary Tower | Reliquary Tower, not in the deck |
