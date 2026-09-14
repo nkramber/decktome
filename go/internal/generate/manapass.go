@@ -287,6 +287,20 @@ func (b *Builder) bestManaStep(req Request, deck *mtgv1.Deck, basics []*mtgv1.Ca
 	return best, found
 }
 
+// heldIDs is every oracle id the deck holds, the command zone included.
+// The pool holds each commander, so a step that reads the 99 alone can
+// add the commander as a second copy (F-128, D-705).
+func heldIDs(deck *mtgv1.Deck) map[string]bool {
+	held := make(map[string]bool, len(deck.GetCards())+len(deck.GetCommanderOracleIds()))
+	for _, dc := range deck.GetCards() {
+		held[dc.GetOracleId()] = true
+	}
+	for _, id := range deck.GetCommanderOracleIds() {
+		held[id] = true
+	}
+	return held
+}
+
 // manaCandidates lists the steps the pass may take, in the order it
 // prefers them. Each one keeps the deck size, so no step can make a deck
 // the engine refuses.
@@ -298,10 +312,7 @@ func (b *Builder) bestManaStep(req Request, deck *mtgv1.Deck, basics []*mtgv1.Ca
 // is how it moves the land count inside its band.
 func (b *Builder) manaCandidates(req Request, deck *mtgv1.Deck, basics []*mtgv1.Card) []manaStep {
 	var out []manaStep
-	inDeck := map[string]bool{}
-	for _, dc := range deck.GetCards() {
-		inDeck[dc.GetOracleId()] = true
-	}
+	inDeck := heldIDs(deck)
 	// An upgrade keeps the precon's own cards and its own spells, so its
 	// steps are the land trades alone (D-628, D-249).
 	upgrade := req.Precon != ""
@@ -510,10 +521,7 @@ func costliestSpell(deck *mtgv1.Deck, src cardSource) (id string, role mtgv1.Car
 // cheapestSpell is the pool's cheapest card the deck does not hold. A
 // step adds it when the land count sits above its band.
 func (b *Builder) cheapestSpell(req Request, deck *mtgv1.Deck) *mtgv1.Card {
-	inDeck := map[string]bool{}
-	for _, dc := range deck.GetCards() {
-		inDeck[dc.GetOracleId()] = true
-	}
+	inDeck := heldIDs(deck)
 	var best *mtgv1.Card
 	for _, name := range req.Pool.Names() {
 		c, ok := req.Pool.Card(name)
