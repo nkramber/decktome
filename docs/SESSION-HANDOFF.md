@@ -8,7 +8,11 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-14)
 
-**The checkout.** `main` is `5ea096f`, which is pull request #175, or a later merge. The branch `docs-review-suggestions` holds this hand-off, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
+**The checkout.** `main` is `ea7bfa6`, which is pull request #176, or a later merge. The branch `m17-finishers-lands` holds M-17 and this hand-off, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
+
+**M-17 measured for free, and the owner chose PR-54 first** (D-723 to D-727). The replay of the Gríma request found that the theme "opponent milling cards" matched no card. `themes.json` holds a row for "mill" and none for "milling", so the owned-only shortlist held staple roles alone (F-142). The shortlist dropped the mill cards, and not the model. No reader and no model learns of such a miss (F-143). `docs/reference/m17-finishers-lands-2026-09-14.md` holds every count.
+
+**The owner chose the plan after M-17.** PR-54 adds aliases and a word-form rule to the theme match, and a question when no card matches (D-724, D-725). PR-52 and PR-53 follow. PR-53 takes a finisher target of 3 and a floor of 2 at brackets 1 to 4, and 1 and 1 at bracket 5 (D-726). F-140 stays a record until a replay after PR-54 (D-727).
 
 **The owner answered OQ-82: a bracket promises its power in both directions** (D-693 to D-695). M-14 ran bracket gate run 2 on `320fcbb` for $1.37 (D-694). Five of the six decks at brackets 4 and 5 miss the floor of the mana on turn four. With the Game Changer flags of PR-47, the judge agrees on 3 of 15 decks, and it still names combos from memory (F-126). #161 merged PR-46, #162 merged PR-47, and #163 merged M-15 (D-697 to D-699). PR-45 splits into PR-45a and PR-45b, and #164 merged the plan (D-701 to D-704).
 
@@ -191,10 +195,11 @@ Fifteen things a fresh session gets wrong without this file.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
 - Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 19, revise is run 9. The generate prompt reads version 13 since PR-45b, and run 19 read version 12. So the next whole deck gate run reads a new prompt against run 19. Run 50 is the newest whole questions run, and it reads PASS. Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 23 is its newest run.
 - Toolchain on this Mac, read 2026-09-11: Go 1.27.1, Node 22.23.2, pnpm 9.2.0, firebase-tools 14.14.0, and Java 17.0.20.1. Playwright is 1.63.0 with its Chromium headless shell (`playwright install chromium`). `go.mod` asks Go 1.27.0 or newer, and vitest is 5.0.0 since #133.
+- The local meta store, read 2026-09-14: 17,686 TopDeck good and 6,431 top-cut Commander lists from 2026-06-04 to 2026-09-14. It also holds 1,045 EDHREC average decks and 192 MTGJSON precons. M-17 read the TopDeck lists from 2026-08-01 alone.
 
 ## Next steps, in order
 
-1. **Run M-17, then build PR-52, then PR-53** (D-719 to D-722). M-17 costs nothing, and it sets the floors of both items. It counts finisher tags and land classes in real lists. It also replays the Gríma request with the collection of the owner. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints both ids. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git. PR-52 ranks lands by quality, and PR-53 adds a win-condition target. The power pass after the build still waits (D-704), and F-137 stays a record (D-718).
+1. **Build PR-54, then PR-52, then PR-53** (D-723 to D-727). PR-54 adds aliases and a word-form rule to the theme match. It also adds a question when no card matches the theme. Its gate needs a question gate run of about $0.19, so ask the owner first. The replay test of M-17 sits in `.local/m17/zz_scratch_m17_test.go`. Copy it into `go/cmd/deck-gate` for a replay, and delete it before a commit. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git. A replay after PR-54 also reads the conditions of F-140 again (D-727). The power pass after the build still waits (D-704), and F-137 stays a record (D-718).
 2. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide". Session `z1hshyY6Npig1FN2NuV7` named its commander, so it showed no such row.
 3. **Watch the first self-reload on the next web deploy** (D-692). The live release of #158 passed its check on 2026-09-13 at 18:54 UTC. An installed app that loaded that release must reload by itself when the next release activates. Read it on the next merge that changes `web/**`.
 4. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
@@ -214,6 +219,16 @@ The CI step "fake gcs tests" ran no test until 2026-09-10 (D-658). Its filter ma
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 
 ## The ten most recent sessions
+
+### 2026-09-14k: #176 merged, M-17 measured, and the owner chose PR-54 first
+
+**The owner merged #176 and asked what comes next.** Next step 1 named M-17, so the session measured it on the branch `m17-finishers-lands`. It called no provider, and it changed no code. A scratch test in `go/cmd/deck-gate` made every count, and its copy sits in `.local/m17/`.
+
+**The replay found the cause of F-141.** The theme "opponent milling cards" matched no card, because `themes.json` holds no row for "milling" (F-142). So the owned-only shortlist held staple roles alone, and the shortlist dropped the mill cards, and not the model. Nothing tells the reader of such a miss (F-143).
+
+**The owner chose five answers** (D-723 to D-727). PR-54 fixes the theme words first, with aliases, a word-form rule, and a question when no card matches. PR-53 takes a finisher target of 3 and a floor of 2 at brackets 1 to 4, and 1 and 1 at bracket 5. F-140 stays a record until a replay after PR-54.
+
+**The session made one mistake in a question, and it corrected it.** The first floors question said that a floor of 2 flags the Gríma deck. The deck is bracket 5, where the chosen floor is 1. The owner read the correction and kept the choice.
 
 ### 2026-09-14j: #174 and #175 merged, the review of the Gríma deck, and the plan of M-17
 
@@ -297,15 +312,6 @@ Merged as #169.
 
 **Cloud Build deployed #165.** `deploy-api` finished at 13:41 UTC, and revision `mtg-api-00044-gs5` serves `api:05ef44e`. Both jobs run `worker:05ef44e`, and `/readyz` answered 200. A read at 13:39 UTC, while the build ran, answered 503, and its cause is unverified.
 
-### 2026-09-14: PR-45a, the bracket cut, and bracket gate run 3
-
-**The owner merged #164, and the session built PR-45a** (D-702). The content check names each card that the bracket forbids. The build cuts one card of each forbidden combo and each other forbidden card, and basic lands fill the slots. The finding `bracket_cut` names each cut card and the content it held.
-
-**The build refuted one sentence of the plan.** The plan said that the pool keeps the rank order of the shortlist. `NewPool` sorts the pool names by the alphabet, and the shortlist groups its cards by role. So the pool records the shortlist score, and the roadmap carries a dated correction.
-
-**The owner approved bracket gate run 3 over prompts 1 to 9.** It cost $0.7355 over 538 seconds, and 9 of 9 decks hold no content violation. The cut removed Polyraptor from deck 4, beside Marauding Raptor, and Akki Battle Squad from deck 9, beside Kiki-Jiki, Mirror Breaker. The judge agrees on 3 of 9. The first finding text said that the bracket forbids the card itself, so the finding now names the combo.
-
-**Gitar found one defect in #165, and the session fixed it.** A cut of more than five cards left the deck short, because `MaxPad` caps the pad of basic lands at five. The cut now fills each slot it opens, and a gap that the model left stays a block finding. The test of the fix found F-128: the mana pass can add the commander to the 99. The owner chose its own pull request, PR-48, after #165 (D-705).
 
 ## The archive
 
