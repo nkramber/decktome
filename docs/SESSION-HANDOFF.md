@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-14)
 
-**The checkout.** `main` is `bce26d5`, which is pull request #174, or a later merge. The branch `plan-m17-mana-wincon` holds this hand-off and the plan of M-17, PR-52, and PR-53, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
+**The checkout.** `main` is `5ea096f`, which is pull request #175, or a later merge. The branch `docs-review-suggestions` holds this hand-off, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
 
 **The owner answered OQ-82: a bracket promises its power in both directions** (D-693 to D-695). M-14 ran bracket gate run 2 on `320fcbb` for $1.37 (D-694). Five of the six decks at brackets 4 and 5 miss the floor of the mana on turn four. With the Game Changer flags of PR-47, the judge agrees on 3 of 15 decks, and it still names combos from memory (F-126). #161 merged PR-46, #162 merged PR-47, and #163 merged M-15 (D-697 to D-699). PR-45 splits into PR-45a and PR-45b, and #164 merged the plan (D-701 to D-704).
 
@@ -41,6 +41,8 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 **#173 merged PR-51, and deployed session `l9x5bFTcFgpZ4DOcQpxU` proves it** (F-136, D-717). The role row reads `"commander_unresolved": false`, so it waits while the which-card row holds a name. Question gate run 50 read PASS at 73 of 74, as run 49 did, for $0.1938. The owner wrote "Grima as commander" on revision `mtg-api-00049-4lj`. Turn 1 asked the power and the colors, and no role question. Turn 2 offered both Gríma cards.
 
 **The owner gave a written review of the Gríma deck, and the session checked each claim** (D-719 to D-722). The deck holds no win condition, a weak mana base, and cards whose conditions it does not meet (F-138 to F-140). The claim of a pump shelf is mostly wrong, and the missing staples come from the owned pool. The deck also holds none of the 14 owned cards tagged mill-opponent on a theme of opponent mill (F-141). The owner chose M-17 first, then PR-52 for mana, then PR-53 for win conditions. `docs/reference/deck-review-grima-2026-09-14.md` holds every claim and its evidence.
+
+**#175 merged the plan, and every document keeps the review.** `docs/reference/owner-review-grima-2026-09-14.md` holds the review word for word. OQ-83 to OQ-86 hold its four suggestions that no decision took. They cover the payoff shape of a commander, evasion that the commander has, caps per effect class, and a power estimate.
 
 **The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586). #158 is the newest web deploy, and `deploy-web` released it at 18:52 UTC on 2026-09-13. #173 is the newest API deploy: `deploy-api` finished at 20:50 UTC on 2026-09-14, and revision `mtg-api-00049-4lj` serves `api:54b07dd`. Both jobs run `worker:54b07dd`, and `/readyz` answered ok. The deploy triggers read `go/**`, `docker/**`, and `web/**` alone, so a merge of documents alone starts no build.
 
@@ -135,6 +137,7 @@ CAUTION: the `decktome` gcloud configuration named the Wallabee account and proj
 - OQ-67, the Stage B channels.
 - OQ-77, the blocking function of Identity Platform.
 - OQ-80, a proxy and the pool.
+- OQ-83 to OQ-86, four suggestions of the review of the Gríma deck.
 
 **CAUTION: a local `make verify` is not the whole story.** It read green for weeks while shellcheck failed (F-89, D-641). Every pull request runs the workflow now.
 
@@ -191,7 +194,7 @@ Fifteen things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **Run M-17, then build PR-52, then PR-53** (D-719 to D-722). M-17 costs nothing, and it sets the floors of both items. It counts finisher tags and land classes in real lists. It also replays the Gríma request with the collection of the owner. Keep the exported collection out of git. PR-52 ranks lands by quality, and PR-53 adds a win-condition target. The power pass after the build still waits (D-704), and F-137 stays a record (D-718).
+1. **Run M-17, then build PR-52, then PR-53** (D-719 to D-722). M-17 costs nothing, and it sets the floors of both items. It counts finisher tags and land classes in real lists. It also replays the Gríma request with the collection of the owner. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints both ids. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git. PR-52 ranks lands by quality, and PR-53 adds a win-condition target. The power pass after the build still waits (D-704), and F-137 stays a record (D-718).
 2. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide". Session `z1hshyY6Npig1FN2NuV7` named its commander, so it showed no such row.
 3. **Watch the first self-reload on the next web deploy** (D-692). The live release of #158 passed its check on 2026-09-13 at 18:54 UTC. An installed app that loaded that release must reload by itself when the next release activates. Read it on the next merge that changes `web/**`.
 4. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
@@ -212,13 +215,15 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 ## The ten most recent sessions
 
-### 2026-09-14j: #174 merged, the review of the Gríma deck, and the plan of M-17
+### 2026-09-14j: #174 and #175 merged, the review of the Gríma deck, and the plan of M-17
 
 **The owner merged #174.** It changed documents alone, so no build ran.
 
 **The owner gave a written review of the Gríma deck, and the session checked each claim.** The session read the stored deck, the card snapshot, the stored collection of the owner, and two research passes over the code. The review holds on the win condition, the mana base, and the unmet conditions. It fails on the pump shelf, and the missing staples come from the owned pool. The check also found F-141: the deck holds none of the 14 owned mill cards.
 
 **The owner chose the plan** (D-719 to D-722). M-17 measures first, then PR-52 improves the mana, and then PR-53 adds a win-condition target. The session changed no code, and it ran no paid target after #173.
+
+**The owner merged #175 and asked every document to keep what the session learned.** `docs/reference/owner-review-grima-2026-09-14.md` holds the review word for word. The review document maps each of the seven suggestions, and OQ-83 to OQ-86 hold the four that no decision took. Next step 1 names where the stored collection sits for the replay of M-17.
 
 ### 2026-09-14i: #173 merged, and the deployed app asks no role question
 

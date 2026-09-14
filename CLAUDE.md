@@ -6,7 +6,7 @@ Read this file first. Then read `docs/SESSION-HANDOFF.md`. It tells you where th
 
 This repo is a Go + Protobuf + TypeScript monorepo for an agentic MtG deck builder. The app reads a user's ManaBox collection export. The user gives a prompt. The agent asks questions, then builds a legal, useful deck.
 
-Stage (2026-09-14): **the app is live on `decktome.com`**, and pull request #174 is the newest merge. A merge to `main` deploys itself on Cloud Build (D-584, D-586, D-588). Phase 3B, the product UI, is the current phase.
+Stage (2026-09-14): **the app is live on `decktome.com`**, and pull request #175 is the newest merge. A merge to `main` deploys itself on Cloud Build (D-584, D-586, D-588). Phase 3B, the product UI, is the current phase.
 
 **The whole PR-22 gate holds** (D-633), so PR-28 is free to run. Every PR through #119 is merged: PR-0a to PR-8, PR-7B, PR-10 to PR-25, PR-27, PR-32, PR-33, and PR-28a. PR-9 is out of the MVP (D-256). **PR-28 split into three** (D-636). PR-28a is the harvest, and it is merged. PR-28b is the triage and the new "must not ask" expectation, and PR-28c is the fix cycle. PR-26 waits on OQ-67. Of the weak-axes plan, PR-29 and PR-30 closed on their evidence, and PR-31 parks (D-652, D-656, D-573).
 
@@ -31,6 +31,8 @@ Stage (2026-09-14): **the app is live on `decktome.com`**, and pull request #174
 **#172 merged PR-50: a card name matches without its accent** (F-135, D-716). The lookup reads the exact name first, and the folded name only when it fits one card. Guardrail 4 reads the fold as exact now. Deployed session `z1hshyY6Npig1FN2NuV7` read "Grima" and offered both Gríma cards. The same session found F-136, a role question about a name the which-card row held. #173 merged PR-51, its fix, and deployed session `l9x5bFTcFgpZ4DOcQpxU` asked no role question (D-717). F-137 records a summary that called Gríma a mill commander (D-718).
 
 **The owner gave a written review of the Gríma deck on 2026-09-14** (D-719 to D-722). The check confirms no win condition, a weak mana base, and cards whose conditions the deck does not meet (F-138 to F-140). It refutes the claim of a pump shelf. The deck holds none of the 14 owned mill cards on a theme of opponent mill (F-141). M-17 measures first, for no cost. PR-52 then improves the mana at brackets 4 and 5, and PR-53 adds a win-condition target.
+
+**#175 merged that plan, and the review sits word for word in `docs/reference/owner-review-grima-2026-09-14.md`.** OQ-83 to OQ-86 hold its four suggestions that no decision took. They cover the payoff shape of a commander, evasion that the commander has, caps per effect class, and a power estimate.
 
 Two rules of the deployed app come from 2026-09-09. **A verdict keeps the object it names** (D-635), because a reader deletes the deck or the chat they complained about, and the verdict outlives it. **Every user has a record** at `users/<uid>` (D-638): the verified email, the dates, and six counters of what they made. No harvest reads that record, and a test refuses the import that joins them.
 
