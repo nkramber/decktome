@@ -499,12 +499,14 @@ func (b *Builder) assemble(ctx context.Context, req Request, out *deckOut) pass 
 		ids := make(map[string]bool, len(cut))
 		names := make([]string, 0, len(cut))
 		for _, c := range cut {
-			ids[c.GetOracleId()] = true
-			names = append(names, c.GetName())
+			ids[c.card.GetOracleId()] = true
+			names = append(names, fmt.Sprintf("%s (%s)", c.card.GetName(), c.why))
 		}
 		b.check(ctx, req, deck, excluded, swapped, ids)
-		msg := fmt.Sprintf("bracket %d does not allow %s, so the builder cut %s: %s",
-			req.Power.GetBracket(), these(len(cut)), these(len(cut)), strings.Join(names, ", "))
+		// The bracket forbids the content, and not the card alone, so each
+		// cut names the content it held.
+		msg := fmt.Sprintf("to hold bracket %d, the builder cut %s: %s",
+			req.Power.GetBracket(), plural(len(cut), "card"), strings.Join(names, ", "))
 		if refilled > 0 {
 			msg += fmt.Sprintf(", and added %s", plural(refilled, "basic land"))
 		}

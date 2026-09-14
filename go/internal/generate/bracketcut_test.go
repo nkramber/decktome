@@ -31,7 +31,8 @@ func scoredPool(always []*mtgv1.Card, cs ...scoredCard) *Pool {
 // TestCutForbiddenPicksTheCard is PR-45a: one cut breaks each forbidden
 // combo, the card in the most combos first, then a card outside the
 // precon, then the card with the lowest shortlist score. A commander, a
-// locked card, and a card a revision keeps never leave.
+// locked card, and a card a revision keeps never leave. Each cut names the
+// content it held.
 func TestCutForbiddenPicksTheCard(t *testing.T) {
 	a, b, c, d, e := card("o-a", "Card A"), card("o-b", "Card B"), card("o-c", "Card C"), card("o-d", "Card D"), card("o-e", "Card E")
 	// The scores disagree with the alphabet, so a rule by name or by
@@ -47,15 +48,16 @@ func TestCutForbiddenPicksTheCard(t *testing.T) {
 		f    profile.Forbidden
 		want string
 	}{
-		{"the card in two combos", pool, Request{}, profile.Forbidden{Combos: [][]string{{"Card A", "Card B"}, {"Card B", "Card C"}}}, "Card B"},
-		{"the lower shortlist score", pool, Request{}, profile.Forbidden{Combos: pair}, "Card A"},
-		{"a card with no score stays", given, Request{}, profile.Forbidden{Combos: pair}, "Card B"},
-		{"a card outside the precon", pool, Request{PreconOracleIDs: []string{"o-a"}}, profile.Forbidden{Combos: pair}, "Card B"},
-		{"a locked card stays", pool, Request{Locked: []string{"o-a"}}, profile.Forbidden{Combos: pair}, "Card B"},
+		{"the card in two combos", pool, Request{}, profile.Forbidden{Combos: [][]string{{"Card A", "Card B"}, {"Card B", "Card C"}}}, "Card B (the combo Card A + Card B)"},
+		{"the lower shortlist score", pool, Request{}, profile.Forbidden{Combos: pair}, "Card A (the combo Card A + Card B)"},
+		{"a card with no score stays", given, Request{}, profile.Forbidden{Combos: pair}, "Card B (the combo Card A + Card B)"},
+		{"a card outside the precon", pool, Request{PreconOracleIDs: []string{"o-a"}}, profile.Forbidden{Combos: pair}, "Card B (the combo Card A + Card B)"},
+		{"a locked card stays", pool, Request{Locked: []string{"o-a"}}, profile.Forbidden{Combos: pair}, "Card B (the combo Card A + Card B)"},
 		{"a locked pair stays", pool, Request{Locked: []string{"o-a", "o-b"}}, profile.Forbidden{Combos: pair}, ""},
-		{"a revision keep stays", pool, Request{Revision: &Revision{Keep: []string{"Card A"}}}, profile.Forbidden{Combos: pair}, "Card B"},
-		{"mass land denial", pool, Request{}, profile.Forbidden{MassLandDenial: []string{"Card C"}}, "Card C"},
-		{"extra turns over the cap", pool, Request{}, profile.Forbidden{ExtraTurns: []string{"Card D", "Card E"}, ExtraTurnCap: 1}, "Card D"},
+		{"a revision keep stays", pool, Request{Revision: &Revision{Keep: []string{"Card A"}}}, profile.Forbidden{Combos: pair}, "Card B (the combo Card A + Card B)"},
+		{"mass land denial", pool, Request{}, profile.Forbidden{MassLandDenial: []string{"Card C"}}, "Card C (mass land denial)"},
+		{"extra turns over the cap", pool, Request{}, profile.Forbidden{ExtraTurns: []string{"Card D", "Card E"}, ExtraTurnCap: 1}, "Card D (an extra-turn card past the limit of 1)"},
+		{"extra turns with no cap", pool, Request{}, profile.Forbidden{ExtraTurns: []string{"Card D", "Card E"}}, "Card E (an extra-turn card),Card D (an extra-turn card)"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -68,8 +70,8 @@ func TestCutForbiddenPicksTheCard(t *testing.T) {
 			tc.req.Pool = tc.pool
 			cut := cutForbidden(d, tc.req, tc.f)
 			var got []string
-			for _, dc := range cut {
-				got = append(got, dc.GetName())
+			for _, c := range cut {
+				got = append(got, c.card.GetName()+" ("+c.why+")")
 			}
 			if strings.Join(got, ",") != tc.want {
 				t.Fatalf("cut %v, want %q", got, tc.want)
@@ -168,7 +170,7 @@ func TestBuildCutsAForbiddenCombo(t *testing.T) {
 		if held["Ajani's Pridemate"] || !held["Ajani's Welcome"] {
 			t.Errorf("held %v, want Ajani's Pridemate cut and Ajani's Welcome kept", held)
 		}
-		if !strings.Contains(cutMsg, "Ajani's Pridemate") || !strings.Contains(cutMsg, "bracket 3") {
+		if !strings.Contains(cutMsg, "to hold bracket 3, the builder cut 1 card: Ajani's Pridemate (the combo Ajani's Welcome + Ajani's Pridemate)") {
 			t.Errorf("cut finding %q", cutMsg)
 		}
 		if comboWarn {

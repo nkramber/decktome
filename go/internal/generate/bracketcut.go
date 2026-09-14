@@ -1,6 +1,7 @@
 package generate
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 
@@ -14,13 +15,19 @@ import (
 // deck the reader gets no longer holds them.
 const CodeBracketCut = "bracket_cut"
 
+// bracketCut is one card the bracket cut, and the content it held.
+type bracketCut struct {
+	card *mtgv1.DeckCard
+	why  string
+}
+
 // cutForbidden removes the cards a deck's bracket forbids, and returns
-// them in cut order (PR-45a, D-702). A commander, a locked card, and a
+// each one with the content it held, in cut order (PR-45a, D-702). A commander, a locked card, and a
 // card a revision keeps never leave. One cut breaks each combo: the card
 // in the most forbidden combos first, then a card outside the precon, and
 // then the card with the lowest shortlist score. A combo whose every card
 // stays keeps its warning.
-func cutForbidden(deck *mtgv1.Deck, req Request, f profile.Forbidden) []*mtgv1.DeckCard {
+func cutForbidden(deck *mtgv1.Deck, req Request, f profile.Forbidden) []bracketCut {
 	if f.Empty() {
 		return nil
 	}
@@ -52,12 +59,12 @@ func cutForbidden(deck *mtgv1.Deck, req Request, f profile.Forbidden) []*mtgv1.D
 		}
 		return dc, true
 	}
-	var out []*mtgv1.DeckCard
+	var out []bracketCut
 	gone := map[string]bool{}
-	remove := func(dc *mtgv1.DeckCard) {
+	remove := func(dc *mtgv1.DeckCard, why string) {
 		if !gone[dc.GetOracleId()] {
 			gone[dc.GetOracleId()] = true
-			out = append(out, dc)
+			out = append(out, bracketCut{card: dc, why: why})
 		}
 	}
 
@@ -84,12 +91,12 @@ func cutForbidden(deck *mtgv1.Deck, req Request, f profile.Forbidden) []*mtgv1.D
 			}
 		}
 		if !broken && best != nil {
-			remove(best)
+			remove(best, "the combo "+strings.Join(c, " + "))
 		}
 	}
 	for _, n := range f.MassLandDenial {
 		if dc, ok := cuttable(n); ok {
-			remove(dc)
+			remove(dc, "mass land denial")
 		}
 	}
 	if len(f.ExtraTurns) > 0 {
@@ -109,12 +116,16 @@ func cutForbidden(deck *mtgv1.Deck, req Request, f profile.Forbidden) []*mtgv1.D
 			}
 			return scoresAbove(req.Pool, turns[i], turns[j])
 		})
+		why := "an extra-turn card"
+		if f.ExtraTurnCap > 0 {
+			why = fmt.Sprintf("an extra-turn card past the limit of %d", f.ExtraTurnCap)
+		}
 		for i, dc := range turns {
 			if i < f.ExtraTurnCap {
 				continue
 			}
 			if _, ok := cuttable(dc.GetName()); ok {
-				remove(dc)
+				remove(dc, why)
 			}
 		}
 	}
