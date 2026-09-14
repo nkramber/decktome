@@ -8,9 +8,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-13)
 
-**The checkout.** `main` is `320fcbb`, which is pull request #159, or a later merge. The branch `oq82-bracket-power` holds this hand-off, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
+**The checkout.** `main` is `320fcbb`, which is pull request #159, or a later merge. Three stacked pull requests hold this work: #160 on `oq82-bracket-power`, #161 on `pr46-commander-in-99`, and PR-47 on `pr47-judge-game-changers`. The owner merges them in that order. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
 
-**The owner answered OQ-82: a bracket promises its power in both directions** (D-693 to D-695). M-14 ran bracket gate run 2 on `320fcbb` for $1.37 (D-694). The judge agrees on 6 of 15 decks, and all six decks at brackets 1 and 2 read as bracket 3. The judge reads Game Changers from memory (F-123), so that half of the read waits for PR-47 and a second judge lane. Five of the six decks at brackets 4 and 5 miss the floor of the mana on turn four. PR-46 fixes F-124 first, and PR-45 builds the promise after the second read (D-696, D-697).
+**The owner answered OQ-82: a bracket promises its power in both directions** (D-693 to D-695). M-14 ran bracket gate run 2 on `320fcbb` for $1.37 (D-694). Five of the six decks at brackets 4 and 5 miss the floor of the mana on turn four. With the Game Changer flags of PR-47, the judge agrees on 3 of 15 decks, and it still names combos from memory (F-126). PR-46 fixes F-124, and M-15 calibrates the judge before PR-45 (D-697, D-698).
 
 **The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586). #158 is the newest web deploy, and `deploy-web` released it at 18:52 UTC on 2026-09-13. #157 is the newest API deploy: `deploy-api` finished at 07:53 UTC, and revision `mtg-api-00040-wd9` serves `api:42003ce`. Both jobs run `worker:42003ce`, and `/readyz` answered 200. The deploy triggers read `go/**`, `docker/**`, and `web/**` alone, so a merge of documents alone starts no build.
 
@@ -120,8 +120,9 @@ CAUTION: the `decktome` gcloud configuration named the Wallabee account and proj
 
 A second Mac: `docs/setup-second-mac.md` holds what to carry, what to install, and how to prove the machine.
 
-Thirteen things a fresh session gets wrong without this file.
+Fourteen things a fresh session gets wrong without this file.
 
+- `make bracket-gate` runs its tool in `go/`, through `go -C go`. A relative `-rejudge` path then points inside `go/`, so pass an absolute path.
 - Twelve targets and two loop scripts spend money: `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `scripts/autotune.sh`, and `scripts/feedback-loop.sh`. Ask the owner before each run. `make autotune`, `make feedback-loop`, `make feedback-loop-dry`, `make feedback-triage-dry`, and `eval sweep -dry` are free.
 - A rerun writes to a new file. Every `*_OUT` variable refuses a document that holds a result (D-65).
 - A gate run takes about 20 minutes and an eval about 13. A foreground command stops at 10 minutes, so run both in the background.
@@ -145,7 +146,7 @@ Thirteen things a fresh session gets wrong without this file.
 - Card snapshot on disk: `.local/gcs/mtg-local-cards/scryfall/20260904T210157`, the newest of 13. Read 2026-09-13, when it flagged 53 Game Changers. Check every card fact against it.
 - LLM model ids and prices: `roles.json` and `prices.json`, verified 2026-08-24. The max output per provider in `llm/client.go`, verified 2026-08-29. The OpenAI rows are unverified by anyone but the owner. The judge role runs on Opus 5 (D-430).
 - The deck gate upgrade probe cost $0.32 for 2 prompts, 7 calls, and 266 seconds. A partial run reads its own item bars and never stands as the gate (D-526).
-- Run cost, read from the run files on 2026-09-09. The question gate cost $0.190 on run 42, $0.193 on run 43, and $0.194 on run 44, over 18 to 21 minutes. Runs 45 to 48 of 2026-09-11 cost $0.1925, $0.1920, $0.1380, and $0.1923, over 20, 22, 19, and 21 minutes. Run 49 of 2026-09-12 cost $0.1935, over 18 minutes. The deck gate upgrade probe cost $0.32 for 2 prompts. The eval cost $0.092 on run 34 and $0.096 on run 35, over 12 to 14 minutes. The deck gate cost $2.71 on run 18, over 37 minutes, and $2.75 on run 19 of 2026-09-12, over 36 minutes. The revise gate cost $1.07 on run 9. The bracket gate judge lane cost $0.28. Bracket gate run 2 of 2026-09-13 cost $1.3720 over 925 seconds, for 15 builds and the judge.
+- Run cost, read from the run files on 2026-09-09. The question gate cost $0.190 on run 42, $0.193 on run 43, and $0.194 on run 44, over 18 to 21 minutes. Runs 45 to 48 of 2026-09-11 cost $0.1925, $0.1920, $0.1380, and $0.1923, over 20, 22, 19, and 21 minutes. Run 49 of 2026-09-12 cost $0.1935, over 18 minutes. The deck gate upgrade probe cost $0.32 for 2 prompts. The eval cost $0.092 on run 34 and $0.096 on run 35, over 12 to 14 minutes. The deck gate cost $2.71 on run 18, over 37 minutes, and $2.75 on run 19 of 2026-09-12, over 36 minutes. The revise gate cost $1.07 on run 9. The bracket gate judge lane cost $0.28. Bracket gate run 2 of 2026-09-13 cost $1.3720 over 925 seconds, for 15 builds and the judge. Its second judge lane cost $0.2634 over 128 seconds.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
 - The feedback store holds 3 verdicts on 2026-09-09, and every one predates the snapshot of D-635. `make feedback-list VERDICT=` reads both verdicts now (F-87). A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
@@ -159,8 +160,8 @@ Thirteen things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 1. **PR-46: the builder drops a listed commander from the 99, and the copy finding names its card** (F-124, D-697). The branch `pr46-commander-in-99` holds it, as a pull request stacked on #160. Its two new tests fail on the old code and pass on the fix. After #160 merges, rebase the branch onto `main`. Then retarget the pull request to `main`.
-2. **PR-47: the bracket judge reads the Game Changer flag of each card** (F-123, D-696). `DeckText` in `generate/judge.go` writes the judge input. Then `make bracket-gate BRACKET_GATE_ARGS="-rejudge docs/reference/pr14a-bracket-gate-run2.md"` reads the 15 decks again, to a new `BRACKET_GATE_OUT`. The owner approved that lane at about $0.28.
-3. **PR-45: the build reaches the power of its bracket, in both directions** (F-110, F-125, D-693, D-695). Its design follows the second read of M-14, and the owner reads the plan before any code.
+2. **PR-47: the bracket judge reads the Game Changer flag of each card** (F-123, D-696). The branch `pr47-judge-game-changers` holds it, stacked on PR-46. The second judge lane read the 15 decks of run 2 for $0.26. The judge agrees on 3 of 15. `docs/reference/pr14a-bracket-gate-run2-judge2.md` holds the lane.
+3. **M-15: calibrate the bracket judge, then PR-45** (F-126, D-698). M-15 judges the precons of the repository and about a dozen cEDH lists from the Topdeck data, at about $0.40. PR-45 builds the power of each bracket in both directions (D-693, D-695). Its design follows the read of M-15, and the owner reads the plan before any code.
 4. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide".
 5. **Watch the first self-reload on the next web deploy** (D-692). The live release of #158 passed its check on 2026-09-13 at 18:54 UTC. An installed app that loaded that release must reload by itself when the next release activates. Read it on the next merge that changes `web/**`.
 6. **Read the source lines of the meta run of 2026-09-14.** The mtggoldfish source failed on 2026-09-13 with a connection reset on a storage write. A second failure makes a finding.
@@ -194,6 +195,10 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 **The read found three defects.** The judge reads Game Changers from memory, and at least 12 of 15 reasons name a card that the data does not flag (F-123). A commander in the 99 left a block that names no card (F-124). A content violation alone goes to the reader with no repair turn (F-125). The owner chose the flags for the judge, a second judge lane, and F-124 first (D-696, D-697).
 
 **The branch `pr46-commander-in-99` holds PR-46, stacked on #160** (F-124, D-697). `assemble` drops a list entry for a commander, and `checkCopies` names a card with no written name. Both new tests fail on the old code and pass on the fix.
+
+**The branch `pr47-judge-game-changers` holds PR-47, stacked on PR-46** (F-123, D-696). The second judge lane read run 2 for $0.26, and the judge agrees on 3 of 15. No reason names an unflagged Game Changer now. All six decks at brackets 4 and 5 read lower, and five of six at brackets 1 and 2 read as bracket 3. The judge also names a Heliod combo that Commander Spellbook does not list (F-126).
+
+**The disk.** Free disk fell to 12 GiB during the verify runs. The owner chose to clear the Docker build cache and the Go build cache, and free disk rose to 34 GiB.
 
 ### 2026-09-13c: #158 deployed, and the documents read the merge
 
