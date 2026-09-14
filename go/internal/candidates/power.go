@@ -102,6 +102,30 @@ func capRole(cs []Candidate, n int) []Candidate {
 	return out
 }
 
+// capPinnedLands is capLands with the pinned lands set aside. A Game
+// Changer land counts toward a power floor, so a pinned land skips the
+// land cap and does not count against it, as a pinned card of every other
+// role does (F-131, D-710). The result keeps the order of the bucket.
+func capPinnedLands(cs []Candidate, n int) []Candidate {
+	rest := make([]Candidate, 0, len(cs))
+	for _, c := range cs {
+		if !c.Pinned {
+			rest = append(rest, c)
+		}
+	}
+	keep := make(map[*mtgv1.Card]bool, n)
+	for _, c := range capLands(rest, n) {
+		keep[c.Card] = true
+	}
+	out := make([]Candidate, 0, n)
+	for _, c := range cs {
+		if c.Pinned || keep[c.Card] {
+			out = append(out, c)
+		}
+	}
+	return out
+}
+
 // reservePerFloor is how many reserve cards each power floor keeps. The
 // highest floor is 8 Game Changers, so a deck that holds none still
 // reads a full answer (D-709).

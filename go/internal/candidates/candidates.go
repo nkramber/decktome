@@ -464,7 +464,7 @@ func capByRole(in []Candidate, lim Limits) []Candidate {
 		cs := byRole[r]
 		if n := lim.PerRole[r]; n > 0 && len(cs) > n {
 			if r == mtgv1.CardRole_CARD_ROLE_LAND {
-				cs = capLands(cs, n)
+				cs = capPinnedLands(cs, n)
 			} else {
 				cs = capRole(cs, n)
 			}

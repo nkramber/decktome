@@ -1454,7 +1454,7 @@ A power pass after the build waits. It returns only if the gate still misses wit
 
 - `bands.json` holds the floors, with a `game_changer` row at brackets 4 and 5. A missed Game Changer floor warns where `brackets.json` sets no limit. `profile.PowerOf` reads the floors that a card counts toward.
 - The generate prompt is version 13. The deck shape block names each floor, and a shortlist line marks each card that counts toward one: "tutor", "fast mana", or "Game Changer". A revision reads no deck shape, so its shortlist marks no card.
-- At brackets 4 and 5 the shortlist pins a power card whose rate reaches 0.3. The card stays with no theme signal, keeps its full score, skips the cap of its role, and adds to the total. A list below bracket 4 scores and caps as before, and a test holds the score.
+- At brackets 4 and 5 the shortlist pins a power card whose rate reaches 0.3. The card stays with no theme signal, keeps its full score, skips the cap of its role, and adds to the total. A pinned Game Changer land skips the land cap as well. A list below bracket 4 scores and caps as before, and a test holds the score.
 - The list carries a reserve of the 12 highest-rate cards of each floor in the colors and the sets. The theme, the caps, and the collection do not limit it. The pool holds the reserve cards that it lacks, and the model can not name one.
 - The gap note goes into the summary after the grade sentence, with one sentence for each missed floor.
 - The mana pass step of a cheaper card offers a card of the job it replaces (F-133, D-713). The pass sums the distance over every band, so at brackets 4 and 5 a step that adds a power card lowers its score.
