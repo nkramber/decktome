@@ -5,7 +5,7 @@ The owner gave a written review of deck `sFLbEUuKzI0QyLPft0zI` of session `z1hsh
 ## The deck
 
 - The commander is Gríma, Saruman's Footman, at bracket 5, from an owned-only pool, on the theme "opponent milling cards".
-- The 99 cards sit in 75 rows: 33 lands, 31 artifacts, 23 instants, 7 sorceries, 3 enchantments, and 3 nonland creatures.
+- The 99 cards sit in 75 rows: 33 lands, 30 noncreature artifacts, 23 instants, 7 sorceries, 3 enchantments, and 3 nonland creatures. One of the creatures, Iron Spider, Stark Upgrade, is also an artifact.
 - The model wrote a role on each row: ramp on 19 rows and interaction on 19. Draw sits on 18 rows, removal and land on 9 each, and wipe on 1. No row carries the role wincon or threat.
 - The deck holds 0 of 4 tutors, 3 of 6 fast mana, and 1 of 8 Game Changers against the floors of bracket 5.
 - The lands are 13 Island, 13 Swamp, Command Tower, City of Brass, Exotic Orchard, Plaza of Heroes, Spire of Industry, Thriving Isle, and Thriving Moor.
