@@ -11,6 +11,16 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## 2026-09-12: the deployed grade, F-119, and PR-43
+
+Merged as #149.
+
+**The owner merged #148, and Cloud Build deployed it.** Revision `mtg-api-00037-5np` serves `api:6d9dacf`, both jobs run `worker:6d9dacf`, and `/readyz` answered 200.
+
+**The owner built a Commander deck and named its session.** Session `OFMnk7Tv2zkK8xfAwXxB` asked for a treasure deck, named Smaug the Magnificent, and chose bracket 5 from an owned-only pool. The grade reads typical, and its reasons name the ladder, as D-678 asks. No rules check flags the deck. The reader owns the commander, so OQ-79 keeps its harder case open.
+
+**The read found F-119.** The curve line reads 2.79 over 68 nonland cards, and the stored list reads 2.29 over 66. The engine ran before the mana pass, so every rules finding read the list before the pass. The owner chose PR-43, which runs the pass first (D-684). A whole build through a fake model fails on the old order and passes on the new one.
+
 ## 2026-09-11i: PR-42, the gate reruns a missed conversation
 
 Merged as #148.

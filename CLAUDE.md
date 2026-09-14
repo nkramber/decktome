@@ -6,7 +6,7 @@ Read this file first. Then read `docs/SESSION-HANDOFF.md`. It tells you where th
 
 This repo is a Go + Protobuf + TypeScript monorepo for an agentic MtG deck builder. The app reads a user's ManaBox collection export. The user gives a prompt. The agent asks questions, then builds a legal, useful deck.
 
-Stage (2026-09-13): **the app is live on `decktome.com`**, and pull request #159 is the newest merge. A merge to `main` deploys itself on Cloud Build (D-584, D-586, D-588). Phase 3B, the product UI, is the current phase.
+Stage (2026-09-13): **the app is live on `decktome.com`**, and pull request #163 is the newest merge. A merge to `main` deploys itself on Cloud Build (D-584, D-586, D-588). Phase 3B, the product UI, is the current phase.
 
 **The whole PR-22 gate holds** (D-633), so PR-28 is free to run. Every PR through #119 is merged: PR-0a to PR-8, PR-7B, PR-10 to PR-25, PR-27, PR-32, PR-33, and PR-28a. PR-9 is out of the MVP (D-256). **PR-28 split into three** (D-636). PR-28a is the harvest, and it is merged. PR-28b is the triage and the new "must not ask" expectation, and PR-28c is the fix cycle. PR-26 waits on OQ-67. Of the weak-axes plan, PR-29 and PR-30 closed on their evidence, and PR-31 parks (D-652, D-656, D-573).
 
@@ -22,7 +22,7 @@ Stage (2026-09-13): **the app is live on `decktome.com`**, and pull request #159
 
 **The commander offer never shares a turn with a theme or colors question** (F-111, D-669). #139 merged it with two question-flow guards (F-113, F-114, D-670), and it deployed on 2026-09-11. An owned-only session reads right on the harder case too, and the owner closed OQ-79 (D-691). #157 hides "You decide" beside the "Suggest one" option of the first commander question, and it deployed on 2026-09-13 (F-121, D-690). The installed app ran the old shell for one load after that deploy (F-122). #158 reloads the page on a new service worker, and it deployed on 2026-09-13 (D-692).
 
-**OQ-82 has an answer** (D-693 to D-699). A bracket promises its power in both directions, and a precon upgrade cuts a kept card that the bracket forbids. M-14 ran bracket gate run 2 on `main` for $1.37, and a commander in the 99 left a block (F-124). PR-46 fixes F-124, and PR-47 gives the judge the Game Changer flags of the card data (F-123). With the flags the judge agrees on 3 of 15 decks, and it still names combos from memory (F-126). M-15 found the judge reliable at bracket 5 and soft between brackets 2 and 3, so PR-45 uses it at brackets 3 to 5 (D-699).
+**OQ-82 has an answer** (D-693 to D-704). A bracket promises its power in both directions, and a precon upgrade cuts a kept card that the bracket forbids. #160 to #163 merged M-14, PR-46, PR-47, and M-15 on 2026-09-13, and PR-45 splits into PR-45a and PR-45b (D-701). PR-46 fixes F-124, and PR-47 gives the judge the Game Changer flags of the card data (F-123). With the flags the judge agrees on 3 of 15 decks, and it still names combos from memory (F-126). M-15 found the judge reliable at bracket 5 and soft between brackets 2 and 3, so PR-45 uses it at brackets 3 to 5 (D-699).
 
 Two rules of the deployed app come from 2026-09-09. **A verdict keeps the object it names** (D-635), because a reader deletes the deck or the chat they complained about, and the verdict outlives it. **Every user has a record** at `users/<uid>` (D-638): the verified email, the dates, and six counters of what they made. No harvest reads that record, and a test refuses the import that joins them.
 
