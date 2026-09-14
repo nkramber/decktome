@@ -11,6 +11,24 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## 2026-09-13d: OQ-82, M-14, and the findings F-123 to F-125
+
+**The owner merged #159 and asked what comes next.** Every next step waited on the owner, a date, or money. The session gave the choices, and the owner chose OQ-82, the power of a bracket.
+
+**The evidence.** Deck 3 of the deck gate, a high-power Urza deck at bracket 4, read short of its power on runs 16, 18, and 19. No band of bracket 4 or 5 holds a floor for tutors or fast mana. The shortlist ranks cards by theme fit and EDHREC rank. The owner chose a promise in both directions (D-693) and a measurement first (D-694). A precon upgrade cuts a kept card that the bracket forbids, outside the 85 percent (D-695).
+
+**M-14 ran bracket gate run 2 on `320fcbb`.** It read FAIL for $1.37 over 925 seconds, and the judge agrees on 6 of 15 decks. All six decks at brackets 1 and 2 read as bracket 3. Five of the six decks at brackets 4 and 5 miss the floor of the mana on turn four.
+
+**The read found three defects.** The judge reads Game Changers from memory, and at least 12 of 15 reasons name a card that the data does not flag (F-123). A commander in the 99 left a block that names no card (F-124). A content violation alone goes to the reader with no repair turn (F-125). The owner chose the flags for the judge, a second judge lane, and F-124 first (D-696, D-697).
+
+**The branch `pr46-commander-in-99` holds PR-46, stacked on #160** (F-124, D-697). `assemble` drops a list entry for a commander, and `checkCopies` names a card with no written name. Both new tests fail on the old code and pass on the fix.
+
+**The branch `pr47-judge-game-changers` holds PR-47, stacked on PR-46** (F-123, D-696). The second judge lane read run 2 for $0.26, and the judge agrees on 3 of 15. No reason names an unflagged Game Changer now. All six decks at brackets 4 and 5 read lower, and five of six at brackets 1 and 2 read as bracket 3. The judge also names a Heliod combo that Commander Spellbook does not list (F-126).
+
+**The disk.** Free disk fell to 12 GiB during the verify runs. The owner chose to clear the Docker build cache and the Go build cache, and free disk rose to 34 GiB.
+
+**M-15 calibrated the judge** (F-126, D-698). `make bracket-calibrate` wrote the nine precons as bracket 2 and 12 top-finish cEDH lists as bracket 5. The lane cost $0.33. The judge reads 11 of 12 cEDH lists as bracket 5, and the miss holds one Game Changer. It reads 4 of 9 precons as bracket 3, and each of those holds no Game Changer. The owner chose the judge as the target of PR-45 at brackets 3 to 5 alone (D-699).
+
 ## 2026-09-13c: #158 deployed, and the documents read the merge
 
 **The owner merged #158 and asked whether every document reads the current state.** They did not. Several lines still named #158 as an open pull request, and next step 2 still waited on the merge. The resume section, the next steps, `CLAUDE.md`, the roadmap, and the deploy guide read the merge now.
