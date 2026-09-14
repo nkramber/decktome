@@ -6,6 +6,7 @@ import (
 	"time"
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/internal/cardname"
 )
 
 // Index is the immutable in-memory card database. Build it once per
@@ -14,6 +15,9 @@ type Index struct {
 	cards      []*mtgv1.Card
 	byOracleID map[string]*mtgv1.Card
 	byName     map[string]*mtgv1.Card // key: normalized full or face name
+	// byFold keys each name of byName by its folded key. A folded key that
+	// two names share is not in it (D-716).
+	byFold     map[string]*mtgv1.Card
 	byPrinting map[string]*mtgv1.Card // key: scryfall printing id
 	// printings keeps the display fields of every playable printing, so
 	// the deck view can show the printing the user owns (D-299).
@@ -53,6 +57,10 @@ type Collisions struct {
 	// FaceNames counts a face name that another card's full or face
 	// name already held.
 	FaceNames int
+	// FoldNames counts a name key whose folded key another name key
+	// already folds to. Neither name finds a card by its folded key, and
+	// each keeps its exact name (D-716).
+	FoldNames int
 }
 
 // legalSomewhere reports whether a card is legal or restricted in at
@@ -68,16 +76,6 @@ func legalSomewhere(c *mtgv1.Card) bool {
 
 // Collisions returns the name collision counts of the build.
 func (x *Index) Collisions() Collisions { return x.collisions }
-
-// normName is the lookup key: lowercase, trimmed. Exact otherwise
-// (guardrail 4: no fuzzy match).
-func normName(name string) string {
-	return strings.ToLower(strings.TrimSpace(foldQuotes.Replace(name)))
-}
-
-// foldQuotes reads a curly apostrophe as the straight one a card name
-// holds, so a lookup of "Commander’s Sphere" finds the card.
-var foldQuotes = strings.NewReplacer("\u2019", "'", "\u2018", "'", "\u201c", "\"", "\u201d", "\"")
 
 // IndexOption changes one build input of NewIndex. The option shape
 // keeps the 20 call sites of NewIndex free of a fourth argument they do
@@ -131,7 +129,7 @@ func NewIndex(cardList []*mtgv1.Card, printings []Printing, tags *TagIndex, asOf
 			c.PriceAsOf = priceDate
 		}
 		idx.byOracleID[c.OracleId] = c
-		k := normName(c.Name)
+		k := cardname.Exact(c.Name)
 		if taken, ok := idx.byName[k]; ok {
 			idx.collisions.FullNames++
 			// A playable card beats one that is legal nowhere. Two cards
@@ -158,7 +156,7 @@ func NewIndex(cardList []*mtgv1.Card, printings []Printing, tags *TagIndex, asOf
 	ambiguous := map[string]bool{}
 	for _, c := range cardList {
 		for _, f := range c.Faces {
-			k := normName(f.Name)
+			k := cardname.Exact(f.Name)
 			if taken, ok := idx.byName[k]; ok {
 				if taken != c {
 					idx.collisions.FaceNames++
@@ -182,6 +180,25 @@ func NewIndex(cardList []*mtgv1.Card, printings []Printing, tags *TagIndex, asOf
 	}
 	for k := range fullAmbiguous {
 		delete(idx.byName, k)
+	}
+	// A folded name finds its card only when no other card's name key
+	// folds to it (D-716). A shared folded key finds nothing, and each
+	// name keeps its exact key.
+	idx.byFold = make(map[string]*mtgv1.Card, len(idx.byName))
+	foldTwins := map[string]bool{}
+	for k, c := range idx.byName {
+		f := cardname.Fold(k)
+		if taken, ok := idx.byFold[f]; ok {
+			if taken != c {
+				foldTwins[f] = true
+				idx.collisions.FoldNames++
+			}
+			continue
+		}
+		idx.byFold[f] = c
+	}
+	for f := range foldTwins {
+		delete(idx.byFold, f)
 	}
 	// paper collects a replacement for every card whose default printing
 	// is digital and whose paper printing the file also holds (D-221).
@@ -370,9 +387,14 @@ func (x *Index) NonPlayablePrinting(scryfallID, setCode, collector string) (layo
 }
 
 // ByName finds a card by exact full name or exact face name. A face
-// name that two cards share finds nothing.
+// name that two cards share finds nothing. When the exact name misses,
+// the folded name finds the card, and a folded name that two card names
+// share finds nothing (D-716).
 func (x *Index) ByName(name string) (*mtgv1.Card, bool) {
-	c, ok := x.byName[normName(name)]
+	if c, ok := x.byName[cardname.Exact(name)]; ok {
+		return c, true
+	}
+	c, ok := x.byFold[cardname.Fold(name)]
 	return c, ok
 }
 

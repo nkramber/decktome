@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/nkramber/decktome/go/internal/cardname"
 	"github.com/nkramber/decktome/go/internal/cards"
 	"github.com/nkramber/decktome/go/internal/gatekit"
 	"github.com/nkramber/decktome/go/internal/tune"
@@ -176,14 +177,14 @@ func (c cardChecker) facts(conv tune.Conversation) []cardFact {
 	for _, q := range conv.Questions {
 		for _, opt := range q.Options {
 			name := strings.TrimSpace(opt)
-			if name == "" || seen[strings.ToLower(name)] {
+			if name == "" || seen[cardname.Fold(name)] {
 				continue
 			}
 			card, ok := c.idx.ByName(name)
 			if !ok {
 				continue
 			}
-			seen[strings.ToLower(name)] = true
+			seen[cardname.Fold(name)] = true
 			out = append(out, cardFact{
 				Name:          card.GetName(),
 				TypeLine:      card.GetTypeLine(),
