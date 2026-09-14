@@ -11,6 +11,12 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## 2026-09-12f: PR-44 deployed
+
+Merged as #154. #155 carried the stage date of `CLAUDE.md` that Gitar asked for.
+
+**The owner merged #153, and Cloud Build deployed it at 19:00 UTC.** Revision `mtg-api-00039-xqg` serves `api:b53fbb6`, both jobs run `worker:b53fbb6`, and `/readyz` answered 200. The meta job of 2026-09-13 refits the deployed model on the types of PR-44.
+
 ## 2026-09-12e: the gate runs, F-120, and PR-44
 
 Merged as #153.
