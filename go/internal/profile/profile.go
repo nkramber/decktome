@@ -117,11 +117,35 @@ type entry struct {
 // is read as it is, the sideboard left out. A card the source does not
 // know is skipped, and the rules engine has already reported it.
 func (p *Profiler) Read(ctx context.Context, deck *mtgv1.Deck, src rules.CardSource) (*mtgv1.DeckProfile, []*mtgv1.Finding) {
-	out, findings, entries, commanders := p.measure(deck, src)
-	if deck.GetFormat().GetId() == mtgv1.FormatId_FORMAT_ID_COMMANDER {
-		out.Content, findings = p.content(ctx, entries, commanders, out.GetBracket(), findings)
-	}
+	out, findings, _ := p.ReadForbidden(ctx, deck, src)
 	return out, findings
+}
+
+// Forbidden names what a deck's bracket forbids, as the content check
+// read it (PR-45a, D-702). Each combo lists its card names. MassLandDenial
+// holds the cards when the bracket allows none, and ExtraTurns holds the
+// extra-turn cards when they pass ExtraTurnCap.
+type Forbidden struct {
+	Combos         [][]string
+	MassLandDenial []string
+	ExtraTurns     []string
+	ExtraTurnCap   int
+}
+
+// Empty reports whether the bracket forbids nothing in the deck.
+func (f Forbidden) Empty() bool {
+	return len(f.Combos) == 0 && len(f.MassLandDenial) == 0 && len(f.ExtraTurns) == 0
+}
+
+// ReadForbidden is Read, and it also names what the bracket forbids, so
+// the build can cut it (PR-45a, D-702).
+func (p *Profiler) ReadForbidden(ctx context.Context, deck *mtgv1.Deck, src rules.CardSource) (*mtgv1.DeckProfile, []*mtgv1.Finding, Forbidden) {
+	out, findings, entries, commanders := p.measure(deck, src)
+	var forbidden Forbidden
+	if deck.GetFormat().GetId() == mtgv1.FormatId_FORMAT_ID_COMMANDER {
+		out.Content, findings, forbidden = p.content(ctx, entries, commanders, out.GetBracket(), findings)
+	}
+	return out, findings, forbidden
 }
 
 // Measure builds the profile with no content check and no finding. The
@@ -461,15 +485,15 @@ func round2(v float64) float64 { return math.Round(v*100) / 100 }
 
 // content runs the content check and adds its findings.
 func (p *Profiler) content(ctx context.Context, entries []entry, commanders []*mtgv1.Card,
-	bracket int32, findings []*mtgv1.Finding) (*mtgv1.ContentCheck, []*mtgv1.Finding) {
+	bracket int32, findings []*mtgv1.Finding) (*mtgv1.ContentCheck, []*mtgv1.Finding, Forbidden) {
 	check := &mtgv1.ContentCheck{}
-	unchecked := func(why string) (*mtgv1.ContentCheck, []*mtgv1.Finding) {
+	unchecked := func(why string) (*mtgv1.ContentCheck, []*mtgv1.Finding, Forbidden) {
 		check.Checked = false
 		check.Error = why
 		return check, append(findings, &mtgv1.Finding{
 			Code: CodeContentUnchecked, Severity: mtgv1.Severity_SEVERITY_INFO,
 			Message: "the content rules of the bracket were not checked: " + why,
-		})
+		}), Forbidden{}
 	}
 	if p.classify == nil {
 		return unchecked("no classifier is wired")
@@ -504,6 +528,7 @@ func (p *Profiler) content(ctx context.Context, entries []entry, commanders []*m
 	}
 	var extraCombos, mldCombos []string
 	var fastCombos []string
+	var extraComboCards, mldComboCards, fastComboCards [][]string
 	br, known := p.rules.Brackets[bracket]
 	for _, v := range res.Combos {
 		// A near two-card combo, one that needs a common third piece
@@ -527,16 +552,47 @@ func (p *Profiler) content(ctx context.Context, entries []entry, commanders []*m
 		line := strings.Join(hit.Cards, " + ")
 		if v.ExtraTurn {
 			extraCombos = append(extraCombos, line)
+			extraComboCards = append(extraComboCards, hit.Cards)
 		}
 		if v.MassLandDenial {
 			mldCombos = append(mldCombos, line)
+			mldComboCards = append(mldComboCards, hit.Cards)
 		}
 		if known && two && br.MaxComboSpeed >= 0 && speed > br.MaxComboSpeed {
 			fastCombos = append(fastCombos, fmt.Sprintf("%s (speed %d%s)", line, v.Speed, near))
+			fastComboCards = append(fastComboCards, hit.Cards)
 		}
 	}
 	if !known {
-		return check, findings
+		return check, findings, Forbidden{}
+	}
+	// The forbidden set follows the same rules as the warnings below, so
+	// the cut of PR-45a removes exactly what they name.
+	var forbidden Forbidden
+	seen := map[string]bool{}
+	addCombo := func(cards []string) {
+		if key := strings.Join(cards, " + "); !seen[key] {
+			seen[key] = true
+			forbidden.Combos = append(forbidden.Combos, cards)
+		}
+	}
+	if !br.MassLandDenial {
+		forbidden.MassLandDenial = append(forbidden.MassLandDenial, check.MassLandDenial...)
+		for _, c := range mldComboCards {
+			addCombo(c)
+		}
+	}
+	if br.MaxExtraTurnCards >= 0 {
+		if extraCards > br.MaxExtraTurnCards {
+			forbidden.ExtraTurns = append(forbidden.ExtraTurns, check.ExtraTurns...)
+			forbidden.ExtraTurnCap = br.MaxExtraTurnCards
+		}
+		for _, c := range extraComboCards {
+			addCombo(c)
+		}
+	}
+	for _, c := range fastComboCards {
+		addCombo(c)
 	}
 	warn := func(code, msg string) {
 		findings = append(findings, &mtgv1.Finding{Code: code, Severity: mtgv1.Severity_SEVERITY_WARN, Message: msg})
@@ -565,7 +621,7 @@ func (p *Profiler) content(ctx context.Context, entries []entry, commanders []*m
 		warn(CodeTwoCardCombo, fmt.Sprintf("bracket %d allows %s, and the deck holds %s",
 			bracket, what, strings.Join(fastCombos, "; ")))
 	}
-	return check, findings
+	return check, findings, forbidden
 }
 
 // speedWords names the mana a combo of each speed needs, from the

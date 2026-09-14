@@ -263,7 +263,17 @@ func (b *Builder) shortlist(req Request) string {
 // asked for an upgrade, and a refusal to return a deck serves nobody. It
 // reports whether the finding was added.
 func checkPreconShare(deck *mtgv1.Deck, req Request, cards rules.CardSource) bool {
+	return checkPreconShareExcept(deck, req, cards, nil)
+}
+
+// checkPreconShareExcept is checkPreconShare with the cards the bracket
+// cut taken out of the base, so a cut never counts against the share
+// (D-695).
+func checkPreconShareExcept(deck *mtgv1.Deck, req Request, cards rules.CardSource, cut map[string]bool) bool {
 	in := preconNonbasics(req, cards)
+	for id := range cut {
+		delete(in, id)
+	}
 	want := len(in)
 	if want == 0 {
 		return false

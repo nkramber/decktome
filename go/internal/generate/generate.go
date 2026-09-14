@@ -490,37 +490,25 @@ func (b *Builder) assemble(ctx context.Context, req Request, out *deckOut) pass 
 	// every finding and the stored profile describe the deck the reader
 	// gets, and a band the pass closed buys no repair turn (F-119, D-684).
 	manaSteps := b.fixMana(req, deck)
-	deck.Validation = b.rules.Validate(rules.Input{
-		Deck:              deck,
-		PoolRule:          req.PoolRule,
-		OracleCounts:      req.OracleCounts,
-		ExcludedOracleIDs: excluded,
-		Cards:             b.cards,
-	})
-	if swapped > 0 {
-		addFinding(deck, CodePreconCardsRestored, mtgv1.Severity_SEVERITY_INFO,
-			fmt.Sprintf("the deck was %s short of the %s precon share, so the builder put %s back",
-				plural(swapped, "card"), req.Precon, plural(swapped, "card")))
-	}
-	// The precon share is a build rule and not a rules-engine rule, so
-	// it is added here (D-218).
-	if req.Precon != "" {
-		checkPreconShare(deck, req, b.cards)
-	}
-	// The bracket profile reads the finished deck. Its findings are
-	// warnings, and they buy the repair turn (PR-14A).
-	if b.profiler != nil {
-		prof, findings := b.profiler.Read(ctx, deck, b.cards)
-		deck.Profile = prof
-		for _, f := range findings {
-			addFinding(deck, f.GetCode(), f.GetSeverity(), f.GetMessage())
+	forbidden := b.check(ctx, req, deck, excluded, swapped, nil)
+	// A card the bracket forbids leaves the deck, with code and no model
+	// call (PR-45a, D-702). Basic lands fill the slots (D-225), and the
+	// engine and the profile read the deck again.
+	if cut := cutForbidden(deck, req, forbidden); len(cut) > 0 {
+		refilled := padWithBasics(deck, req)
+		ids := make(map[string]bool, len(cut))
+		names := make([]string, 0, len(cut))
+		for _, c := range cut {
+			ids[c.GetOracleId()] = true
+			names = append(names, c.GetName())
 		}
-		// The quality model grades the deck from its profile (PR-14B).
-		// The grade is information: it blocks nothing and buys no repair
-		// turn.
-		if b.scorer != nil {
-			deck.Quality = b.scorer.Score(quality.Input{Deck: deck, Profile: prof, Cards: b.cards})
+		b.check(ctx, req, deck, excluded, swapped, ids)
+		msg := fmt.Sprintf("bracket %d does not allow %s, so the builder cut %s: %s",
+			req.Power.GetBracket(), these(len(cut)), these(len(cut)), strings.Join(names, ", "))
+		if refilled > 0 {
+			msg += fmt.Sprintf(", and added %s", plural(refilled, "basic land"))
 		}
+		addFinding(deck, CodeBracketCut, mtgv1.Severity_SEVERITY_INFO, msg)
 	}
 	if manaSteps > 0 {
 		addFinding(deck, CodeManaPass, mtgv1.Severity_SEVERITY_INFO,
@@ -583,6 +571,48 @@ func (b *Builder) assemble(ctx context.Context, req Request, out *deckOut) pass 
 		deck.Summary = strings.TrimSpace(deck.Summary + "\n\n" + line)
 	}
 	return pass{deck: deck, misses: append(main.Misses, side.Misses...)}
+}
+
+// check validates a deck, adds the precon findings, and reads the bracket
+// profile and the grade. It returns what the bracket forbids. The cut of
+// PR-45a runs it a second time, and each cut card then leaves the base of
+// the precon share (D-695).
+func (b *Builder) check(ctx context.Context, req Request, deck *mtgv1.Deck, excluded map[string]bool, swapped int, cut map[string]bool) profile.Forbidden {
+	deck.Validation = b.rules.Validate(rules.Input{
+		Deck:              deck,
+		PoolRule:          req.PoolRule,
+		OracleCounts:      req.OracleCounts,
+		ExcludedOracleIDs: excluded,
+		Cards:             b.cards,
+	})
+	if swapped > 0 {
+		addFinding(deck, CodePreconCardsRestored, mtgv1.Severity_SEVERITY_INFO,
+			fmt.Sprintf("the deck was %s short of the %s precon share, so the builder put %s back",
+				plural(swapped, "card"), req.Precon, plural(swapped, "card")))
+	}
+	// The precon share is a build rule and not a rules-engine rule, so
+	// it is added here (D-218).
+	if req.Precon != "" {
+		checkPreconShareExcept(deck, req, b.cards, cut)
+	}
+	// The bracket profile reads the finished deck. Its findings are
+	// warnings, and they buy the repair turn (PR-14A).
+	var forbidden profile.Forbidden
+	if b.profiler != nil {
+		prof, findings, f := b.profiler.ReadForbidden(ctx, deck, b.cards)
+		forbidden = f
+		deck.Profile = prof
+		for _, finding := range findings {
+			addFinding(deck, finding.GetCode(), finding.GetSeverity(), finding.GetMessage())
+		}
+		// The quality model grades the deck from its profile (PR-14B).
+		// The grade is information: it blocks nothing and buys no repair
+		// turn.
+		if b.scorer != nil {
+			deck.Quality = b.scorer.Score(quality.Input{Deck: deck, Profile: prof, Cards: b.cards})
+		}
+	}
+	return forbidden
 }
 
 // commanderCards is one entry per commander, with the ownership and the

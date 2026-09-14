@@ -49,6 +49,10 @@ type Pool struct {
 	byOracle map[string]*mtgv1.Card
 	owned    map[string]int32
 	names    []string
+	// score is the shortlist score of each folded name. The shortlist
+	// groups its cards by role, and Names sorts by the alphabet, so the
+	// bracket cut of PR-45a reads this score (D-702).
+	score map[string]float64
 }
 
 // NewPool indexes the cards the model may name. A later card with the
@@ -59,6 +63,7 @@ func NewPool(cards []*mtgv1.Card, owned map[string]int32) *Pool {
 		byName:   make(map[string]*mtgv1.Card, len(cards)),
 		byOracle: make(map[string]*mtgv1.Card, len(cards)),
 		owned:    owned,
+		score:    map[string]float64{},
 	}
 	for _, c := range cards {
 		if c.GetName() == "" {
@@ -91,12 +96,26 @@ func (p *Pool) Filter(keep func(*mtgv1.Card) bool) *Pool {
 			cards = append(cards, c)
 		}
 	}
-	return NewPool(cards, p.owned)
+	np := NewPool(cards, p.owned)
+	for key, s := range p.score {
+		if _, ok := np.byName[key]; ok {
+			np.score[key] = s
+		}
+	}
+	return np
 }
 
 // Names lists the pool names in sort order. The prompt writes this list,
 // and the repair turn reads it again.
 func (p *Pool) Names() []string { return append([]string(nil), p.names...) }
+
+// Score is the shortlist score of a card, and false for a card that came
+// with no score: a commander, a kept card, or a pool that NewPool built
+// alone. The bracket cut of PR-45a reads it (D-702).
+func (p *Pool) Score(name string) (float64, bool) {
+	s, ok := p.score[candidates.FoldName(name)]
+	return s, ok
+}
 
 // Card returns the pool card of an exact name.
 func (p *Pool) Card(name string) (*mtgv1.Card, bool) {

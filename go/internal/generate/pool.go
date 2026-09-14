@@ -40,12 +40,14 @@ func FromListOwned(l *candidates.List, always []*mtgv1.Card, ownedCounts map[str
 			owned[c.GetOracleId()] = n
 		}
 	}
+	scores := map[string]float64{}
 	add := func(cs []candidates.Candidate) {
 		for _, c := range cs {
 			if c.Card == nil {
 				continue
 			}
 			cards = append(cards, c.Card)
+			scores[candidates.FoldName(c.Card.GetName())] = c.Score
 			if c.Owned > 0 {
 				owned[c.Card.GetOracleId()] = c.Owned
 			}
@@ -63,7 +65,15 @@ func FromListOwned(l *candidates.List, always []*mtgv1.Card, ownedCounts map[str
 	if buyList {
 		add(l.Upgrades)
 	}
-	return NewPool(cards, owned)
+	p := NewPool(cards, owned)
+	// The cut of PR-45a ranks by the shortlist score: the list groups its
+	// cards by role, so no place in it is a score order (D-702).
+	for key, s := range scores {
+		if _, ok := p.byName[key]; ok {
+			p.score[key] = s
+		}
+	}
+	return p
 }
 
 // Roles is the job word per card, for the shortlist block. The prompt
