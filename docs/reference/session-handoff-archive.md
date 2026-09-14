@@ -11,6 +11,14 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## 2026-09-12b: PR-43 deployed, and the meta run of 2026-09-12
+
+Merged as #150.
+
+**The owner merged #149, and Cloud Build deployed it at 06:25 UTC.** Revision `mtg-api-00038-h57` serves `api:e8c1b4a`, both jobs run `worker:e8c1b4a`, and `/readyz` answered 200.
+
+**The meta run of 06:00 UTC succeeded at 06:22 UTC**, on `worker:6d9dacf`. It stored `20260912T061545Z`, fitted on 38,395 lists and 909 commanders. The Commander accuracy fell from 0.644 to 0.542, as gate run 20 predicted. The deployed Standard fit reads its cross share at 0.690, against 0.750 the day before, and that share is no bar.
+
 ## 2026-09-12: the deployed grade, F-119, and PR-43
 
 Merged as #149.

@@ -1411,6 +1411,8 @@ The content check of Commander Spellbook runs inside `assemble`, after the valid
 - **After the cut.** Basic lands fill each slot (D-225). The engine and the profile read the deck again, which is one more Spellbook call under the limit of D-459. An info finding names each cut card.
 - **A precon upgrade.** A card the cut removes leaves the base of the share rule, so it does not count against the 85 percent (D-695).
 
+**Correction, 2026-09-14: the pool keeps no rank order (D-702).** The build of PR-45a found two facts. `NewPool` sorts the pool names by the alphabet, and the shortlist groups its cards by role. So the pool records the shortlist score of each card now, and the cut removes the card with the lower score. A card from outside the shortlist has no score, such as a commander, a locked card, or a precon card. The cut removes a scored card before a card with no score.
+
 Gate: free tests with a fake classifier. A deck with a forbidden combo loses one card of it, and never its commander or a locked card. A basic land fills the slot, and the finding names the cut. A precon upgrade keeps its share, and a deck with no forbidden content does not change. Then a paid bracket gate run over prompts 1 to 9, brackets 1 to 3, reads no content violation, on the owner's word.
 > *In plain English:* sometimes a low-bracket deck held a combo that its bracket does not allow, and the app only warned. This cuts one card of the combo and puts a basic land in its place.
 
