@@ -574,6 +574,11 @@ func (b *Builder) assemble(ctx context.Context, req Request, out *deckOut) pass 
 	if line := quality.Summary(deck.GetQuality()); line != "" {
 		deck.Summary = strings.TrimSpace(deck.Summary + "\n\n" + line)
 	}
+	// The gap note goes on after the lint as well. The code writes it, and
+	// it names each power floor the deck misses (D-704, D-709).
+	if note := b.gapNote(req, deck); note != "" {
+		deck.Summary = strings.TrimSpace(deck.Summary + "\n\n" + note)
+	}
 	return pass{deck: deck, misses: append(main.Misses, side.Misses...)}
 }
 

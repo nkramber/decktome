@@ -11,6 +11,14 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## 2026-09-12g: the documents read the state before a context wipe
+
+**The owner merged #155 and asked for every document to read the current state** before a context wipe. The session changed no code, and it ran no paid target.
+
+**The deploy did not change.** #154 and #155 changed documents alone, so revision `mtg-api-00039-xqg` still serves `api:b53fbb6`. The meta job of 2026-09-13 at 06:00 UTC is the next deployed event.
+
+**The refresh.** The resume section, the next steps, and `CLAUDE.md` read the state after #155. Each record of 2026-09-11g onward names the pull request that carried it. OQ-79 and OQ-82 carry the evidence of the Smaug session.
+
 ## 2026-09-12f: PR-44 deployed
 
 Merged as #154. #155 carried the stage date of `CLAUDE.md` that Gitar asked for.

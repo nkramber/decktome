@@ -59,6 +59,10 @@ type Request struct {
 	// Oracle id: the inclusion rate in the top lists of the format
 	// against the best rate (PR-14B). Nil with no model.
 	MetaBoost func(oracleID string) float64
+	// PowerRate overrides how a bracket 4 or 5 request reads MetaBoost.
+	// The sweep of PR-45b sets it, and every other caller leaves it zero
+	// (D-707).
+	PowerRate PowerRate
 	// CommanderSignal gives the bracket 5 power signal of a commander or
 	// a pair, in [0,1] (PR-14B, OQ-48). A bracket 4 or 5 request ranks
 	// its commanders on it first, and theme breaks the tie. Nil with no
@@ -125,6 +129,13 @@ type Candidate struct {
 	// card of the snapshot and 0 for a card with no rank. The land cap
 	// reads it apart from the score (D-450).
 	Pop float64
+	// Rate is the top-list rate of the card from MetaBoost, 0 with no
+	// model. The gap note ranks the cards it names by it (D-709).
+	Rate float64
+	// Pinned marks a power card of a bracket 4 or 5 list whose rate
+	// reaches the keep rate, when the request pins. It skips the cap of
+	// its role (F-131, D-710).
+	Pinned bool
 	// Fix counts the deck colors a land produces, so a dual in the
 	// colors outranks a fetch land that produces nothing. Zero for a
 	// nonland (D-450).
@@ -152,6 +163,12 @@ type List struct {
 	Candidates []Candidate
 	// Upgrades lists unowned cards worth a purchase (owned-first only).
 	Upgrades []Candidate
+	// Reserve lists the power cards a bracket 4 or 5 deck can reach, by
+	// rate: legal cards in the colors and the sets, whatever the theme,
+	// the caps, and the collection. The gap note names the ones outside
+	// the pool, and the model never sees them (D-709). Nil at every other
+	// bracket.
+	Reserve []Candidate
 	// Theme is the resolved theme: which words matched which signals.
 	Theme ThemeMatch
 	// Stats counts the funnel.
@@ -265,9 +282,12 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 		excluded[id] = true
 	}
 	maxRank := maxRankOf(idx)
+	// A bracket 4 or 5 request reads the top-list rate as a power signal,
+	// and it builds the reserve the gap note reads (D-704, D-707, D-709).
+	pw := powerScanOf(idx, req)
 
 	var stats Stats
-	var scored []Candidate
+	var scored, reserve []Candidate
 	fired := firedSignals{}
 	for _, c := range idx.All() {
 		if excluded[c.OracleId] || IsBasicLand(c) {
@@ -319,6 +339,18 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 		} else if setCodes != nil {
 			stats.InSet++
 		}
+		pop := popularity(c, maxRank)
+		rate := 0.0
+		if req.MetaBoost != nil {
+			rate = req.MetaBoost(c.OracleId)
+		}
+		owned := req.Owned[c.OracleId]
+		// The reserve reads each legal power card in the colors and the
+		// sets before the theme cut, so the gap note can name a card that
+		// the theme, the caps, or the collection kept off the list (D-709).
+		if pw.on && !outside && len(pw.of(c)) > 0 {
+			reserve = append(reserve, Candidate{Card: c, Role: role, Pop: pop, Rate: rate, Owned: owned})
+		}
 		// A card with no theme signal stays only when it fills a staple
 		// role (lands, ramp, draw, removal, wipes, interaction). Threats
 		// and synergy pieces need a theme signal.
@@ -328,29 +360,35 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 		// can not fill 99. Inside a set the theme ranks the list and does
 		// not cut it: the staple penalty below still puts every on-theme
 		// card first.
-		if themeScore == 0 && !stapleRole(role) && setCodes == nil {
+		//
+		// At brackets 4 and 5 a card whose top-list rate reaches the keep
+		// rate stays too, and keeps its full score. No role reads a tutor,
+		// so an off-theme tutor never reached the list before (F-130,
+		// D-707).
+		kept := pw.on && rate >= pw.rate.Keep
+		if themeScore == 0 && !stapleRole(role) && setCodes == nil && !kept {
 			continue
 		}
-		pop := popularity(c, maxRank)
-		score := themeScore*0.7 + pop*0.3
-		if req.MetaBoost != nil {
-			score += req.MetaBoost(c.OracleId) * 0.1
-		}
+		score := themeScore*0.7 + pop*0.3 + rate*pw.weight
 		// A staple with no theme signal ranks below every on-theme card of
 		// its score band. Theme leads, popularity breaks ties (F-5).
-		if themeScore == 0 {
+		if themeScore == 0 && !kept {
 			score *= staplePenalty
 		}
-		owned := req.Owned[c.OracleId]
+		if kept {
+			signals = append(signals, "top-list rate")
+		}
 		if owned > 0 {
 			stats.Owned++
 			if themeScore > 0 {
 				stats.OnThemeOwned++
 			}
 		}
-		scored = append(scored, Candidate{Card: c, Role: role, Score: score, Pop: pop, Fix: fixCount(c, colorSet), Themed: themeScore > 0, Owned: owned, Outside: outside, Signals: signals})
+		scored = append(scored, Candidate{Card: c, Role: role, Score: score, Pop: pop, Rate: rate, Fix: fixCount(c, colorSet), Themed: themeScore > 0, Owned: owned, Outside: outside, Signals: signals})
 	}
 	sortCandidates(scored)
+	// A pinned power card skips the cap of its role (F-131, D-710).
+	pinPower(scored, pw)
 	theme.Unmatched = theme.unmatchedWords(fired)
 
 	// The cards the sets hold rank on their own. The outside cards are a
@@ -377,7 +415,7 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 	stats.Returned = len(main)
 	stats.UpgradeSize = len(upgrades)
 	stats.ThinTheme = mode != mtgv1.PoolRule_POOL_RULE_ANY_CARD && stats.OnThemeOwned < ThinThemeFloor
-	return &List{Candidates: main, Upgrades: upgrades, Theme: theme, Stats: stats}, nil
+	return &List{Candidates: main, Upgrades: upgrades, Reserve: topReserve(reserve, pw.of), Theme: theme, Stats: stats}, nil
 }
 
 func (l Limits) withDefaults() Limits {
@@ -412,6 +450,10 @@ var roleOrder = []mtgv1.CardRole{
 // When the role caps together exceed the total, the lowest-scored cards
 // go across every role. A plain cut at Total dropped the whole tail of
 // the last roles, which is where the synergy pieces sit.
+//
+// A pinned power card skips the cap of its role and adds to the total, so
+// the caps can not block a bracket 4 or 5 list from its power floors, and
+// a pin never drops another card (F-131, F-132, D-710, D-712).
 func capByRole(in []Candidate, lim Limits) []Candidate {
 	byRole := map[mtgv1.CardRole][]Candidate{}
 	for _, c := range in {
@@ -422,21 +464,41 @@ func capByRole(in []Candidate, lim Limits) []Candidate {
 		cs := byRole[r]
 		if n := lim.PerRole[r]; n > 0 && len(cs) > n {
 			if r == mtgv1.CardRole_CARD_ROLE_LAND {
-				cs = capLands(cs, n)
+				cs = capPinnedLands(cs, n)
 			} else {
-				cs = cs[:n]
+				cs = capRole(cs, n)
 			}
 		}
 		out = append(out, cs...)
 	}
-	if len(out) <= lim.Total {
+	// A pinned card adds to the total and takes no place from another
+	// card, so a pin never drops a land or an on-theme card (F-132).
+	pinned := 0
+	for _, c := range out {
+		if c.Pinned {
+			pinned++
+		}
+	}
+	if len(out)-pinned <= lim.Total {
 		return out
 	}
 	ranked := slices.Clone(out)
 	sortCandidates(ranked)
-	keep := make(map[*mtgv1.Card]bool, lim.Total)
-	for _, c := range ranked[:lim.Total] {
-		keep[c.Card] = true
+	keep := make(map[*mtgv1.Card]bool, lim.Total+pinned)
+	room := lim.Total
+	for _, c := range out {
+		if c.Pinned {
+			keep[c.Card] = true
+		}
+	}
+	for _, c := range ranked {
+		if room <= 0 {
+			break
+		}
+		if !c.Pinned {
+			keep[c.Card] = true
+			room--
+		}
 	}
 	kept := make([]Candidate, 0, lim.Total)
 	for _, c := range out {

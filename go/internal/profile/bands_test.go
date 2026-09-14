@@ -76,9 +76,20 @@ func TestBandLinesAndMidpoints(t *testing.T) {
 			t.Errorf("lines lack %q:\n%s", want, lines)
 		}
 	}
+	if strings.Contains(lines, "shortlist marks") {
+		t.Errorf("bracket 3 holds no power floor, and a line names a mark:\n%s", lines)
+	}
+	// Bracket 4 holds the power floors of D-704, and each line names the
+	// mark its cards carry on the shortlist.
 	four := strings.Join(b.Lines(mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket(4)), "\n")
-	if !strings.Contains(four, "tutors, cards that search the library for a card: no limit") {
-		t.Errorf("bracket 4 tutors:\n%s", four)
+	for _, want := range []string{
+		`tutors, cards that search the library for a card: 2 or more, and the shortlist marks each one "tutor"`,
+		`fast mana, nonland mana producers of mana value one or less: 3 or more, and the shortlist marks each one "fast mana"`,
+		`Game Changers, cards on the official Game Changers list: 4 or more, and the shortlist marks each one "Game Changer"`,
+	} {
+		if !strings.Contains(four, want) {
+			t.Errorf("bracket 4 lacks %q:\n%s", want, four)
+		}
 	}
 	mid := b.Midpoints(mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket(3))
 	if mid[KeyLand] != 36 || mid[KeyRamp] != 10 || mid[KeyWipe] != 3 {

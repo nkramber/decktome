@@ -146,7 +146,14 @@ func (b *Bands) Lines(format mtgv1.FormatId, power *mtgv1.PowerLevel) []string {
 			out = append(out, line)
 			continue
 		}
-		out = append(out, fmt.Sprintf("- %s: %s", promptWords[key], bandWords(key, band)))
+		line := fmt.Sprintf("- %s: %s", promptWords[key], bandWords(key, band))
+		// A power floor names the mark the shortlist gives each card that
+		// counts toward it, so the model counts what the check counts
+		// (D-704).
+		if mark := powerMarks[key]; mark != "" && band.Low > 0 {
+			line += fmt.Sprintf(", and the shortlist marks each one %q", mark)
+		}
+		out = append(out, line)
 	}
 	return out
 }
@@ -162,9 +169,33 @@ func (b *Bands) Words(format mtgv1.FormatId, power *mtgv1.PowerLevel, key string
 	return bandWords(key, band)
 }
 
+// PowerFloors answers each power feature whose band holds a floor above
+// zero, with the floor: the tutors, the fast mana, and the Game Changers
+// of brackets 4 and 5 (D-704). Every other deck reads none.
+func (b *Bands) PowerFloors(format mtgv1.FormatId, power *mtgv1.PowerLevel) map[string]float64 {
+	table, _ := b.For(format, power)
+	out := map[string]float64{}
+	for _, key := range PowerKeys {
+		if band, ok := table[key]; ok && band.Low > 0 {
+			out[key] = band.Low
+		}
+	}
+	return out
+}
+
+// Mark is the word the shortlist writes beside a card that counts toward
+// a power floor, and "" for every other feature (D-704).
+func Mark(key string) string { return powerMarks[key] }
+
+var powerMarks = map[string]string{
+	KeyTutor:       "tutor",
+	KeyFastMana:    "fast mana",
+	KeyGameChanger: "Game Changer",
+}
+
 // promptKeys are the features the prompt names, in order.
 var promptKeys = []string{
-	KeyAvgManaValue, KeyTappedLand, KeyColorlessLand, KeyTutor, KeyFastMana,
+	KeyAvgManaValue, KeyTappedLand, KeyColorlessLand, KeyTutor, KeyFastMana, KeyGameChanger,
 	KeyColorSources, KeyManaTurnFour, KeyHandsTwoToFourLands, KeyCommanderTurnOverMV,
 }
 
@@ -174,6 +205,7 @@ var promptWords = map[string]string{
 	KeyColorlessLand: "nonbasic lands that make only colorless mana",
 	KeyTutor:         "tutors, cards that search the library for a card",
 	KeyFastMana:      "fast mana, nonland mana producers of mana value one or less",
+	KeyGameChanger:   "Game Changers, cards on the official Game Changers list",
 }
 
 // derivedLine writes the four features a count can not state. Each one

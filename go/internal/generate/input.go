@@ -228,6 +228,7 @@ func (b *Builder) shortlist(req Request) string {
 			omit[id] = true
 		}
 	}
+	marks := b.powerMarks(req)
 	var s strings.Builder
 	for _, name := range req.Pool.Names() {
 		c, ok := req.Pool.Card(name)
@@ -240,6 +241,11 @@ func (b *Builder) shortlist(req Request) string {
 		}
 		if job := req.Roles[c.GetOracleId()]; job != "" {
 			fmt.Fprintf(&s, " | %s", job)
+		}
+		// A card that counts toward a power floor carries its mark, so the
+		// model counts what the check counts (D-704).
+		for _, mark := range marks(c) {
+			fmt.Fprintf(&s, " | %s", mark)
 		}
 		if req.OracleCounts != nil {
 			fmt.Fprintf(&s, " | owned %d", req.OracleCounts[c.GetOracleId()])

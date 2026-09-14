@@ -1,5 +1,5 @@
 {
-  "_comment": "The deck bands of the bracket profile (PR-14A, D-451). A band is the low and high a feature must sit in for one bracket, and a missing high means no ceiling. The keys are the feature keys of profile.go. Sources: the role counts start from the corpus role guide (mtg-corpus section 6, D-60) and narrow by bracket. The land counts start from Frank Karsten's 99-card formula, 31.42 + 3.13 * average mana value - 0.28 * cheap draw or ramp spells (TCGplayer, 2022-07-29, read 2026-09-02), at the average mana value of each bracket. The color_sources floor is a share of the Karsten 2022 source table (TCGplayer, 2022-08-02, read 2026-09-02). The Game Changer limit is not here: brackets.json holds it. CAUTION: the average mana value, the tapped and colorless land caps, the tutor and fast mana caps, and the goldfish floors are this session's starting values, not a published table. No source states them. The bracket gate tunes them, and each change needs a decision id.",
+  "_comment": "The deck bands of the bracket profile (PR-14A, D-451). A band is the low and high a feature must sit in for one bracket, and a missing high means no ceiling. The keys are the feature keys of profile.go. Sources: the role counts start from the corpus role guide (mtg-corpus section 6, D-60) and narrow by bracket. The land counts start from Frank Karsten's 99-card formula, 31.42 + 3.13 * average mana value - 0.28 * cheap draw or ramp spells (TCGplayer, 2022-07-29, read 2026-09-02), at the average mana value of each bracket. The color_sources floor is a share of the Karsten 2022 source table (TCGplayer, 2022-08-02, read 2026-09-02). The Game Changer limit is not here: brackets.json holds it. At brackets 4 and 5, where brackets.json sets no limit, a game_changer row holds a floor. The floors of tutor, fast_mana, game_changer, and mana_turn_four at brackets 4 and 5 come from M-16, read 2026-09-13: bracket 5 takes the low quarter of 1,491 TopDeck top-cut Commander lists, and bracket 4 sits between brackets 3 and 5 (D-703, D-704). CAUTION: the average mana value, the tapped and colorless land caps, the tutor and fast mana caps of brackets 1 to 3, and every other goldfish floor are this session's starting values, not a published table. No source states them. The bracket gate tunes them, and each change needs a decision id.",
   "verified_at": "2026-09-02",
   "commander": {
     "1": {
@@ -61,12 +61,13 @@
       "wipe": {"low": 0, "high": 5},
       "interaction": {"low": 6, "high": 16},
       "avg_mana_value": {"low": 1.6, "high": 3.0},
-      "tutor": {"low": 0},
-      "fast_mana": {"low": 0},
+      "tutor": {"low": 2},
+      "fast_mana": {"low": 3},
+      "game_changer": {"low": 4},
       "tapped_land": {"low": 0, "high": 5},
       "colorless_land": {"low": 0, "high": 5},
       "color_sources": {"low": 0.9},
-      "mana_turn_four": {"low": 4.8},
+      "mana_turn_four": {"low": 4.4},
       "hands_two_to_four_lands": {"low": 0.7},
       "commander_turn_over_mv": {"low": -9, "high": 0.5}
     },
@@ -78,12 +79,13 @@
       "wipe": {"low": 0, "high": 3},
       "interaction": {"low": 8, "high": 22},
       "avg_mana_value": {"low": 1.2, "high": 2.4},
-      "tutor": {"low": 0},
-      "fast_mana": {"low": 0},
+      "tutor": {"low": 4},
+      "fast_mana": {"low": 6},
+      "game_changer": {"low": 8},
       "tapped_land": {"low": 0, "high": 2},
       "colorless_land": {"low": 0, "high": 6},
       "color_sources": {"low": 0.9},
-      "mana_turn_four": {"low": 5.5},
+      "mana_turn_four": {"low": 4.6},
       "hands_two_to_four_lands": {"low": 0.65},
       "commander_turn_over_mv": {"low": -9, "high": 0.3}
     }

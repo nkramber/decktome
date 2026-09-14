@@ -98,6 +98,10 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	// The sweep builds shortlists alone and calls no provider (D-707).
+	if *sweepFlag {
+		return runSweep(context.Background(), prompts, os.Stdout)
+	}
 	if !*dry {
 		if err := gatekit.SpendGuard("BRACKET_GATE"); err != nil {
 			return err
