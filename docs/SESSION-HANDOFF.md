@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-14)
 
-**The checkout.** `main` is `54b07dd`, which is pull request #173, or a later merge. The branch `docs-pr51-merged` holds this hand-off, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
+**The checkout.** `main` is `bce26d5`, which is pull request #174, or a later merge. The branch `plan-m17-mana-wincon` holds this hand-off and the plan of M-17, PR-52, and PR-53, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
 
 **The owner answered OQ-82: a bracket promises its power in both directions** (D-693 to D-695). M-14 ran bracket gate run 2 on `320fcbb` for $1.37 (D-694). Five of the six decks at brackets 4 and 5 miss the floor of the mana on turn four. With the Game Changer flags of PR-47, the judge agrees on 3 of 15 decks, and it still names combos from memory (F-126). #161 merged PR-46, #162 merged PR-47, and #163 merged M-15 (D-697 to D-699). PR-45 splits into PR-45a and PR-45b, and #164 merged the plan (D-701 to D-704).
 
@@ -39,6 +39,8 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 **The same session found F-136 and F-137.** Turn 1 asked whether "that card" leads the deck or sits in the 99, and the first message already named it as commander. `applyFacts` set the named-card fact again after the which-card row took the name (F-136). The owner chose PR-51, a catalog condition, with a question gate run (D-717). The summary also names "Gríma's opponent-milling plan", and no card of the deck makes an opponent mill (F-137). The owner chose a record (D-718).
 
 **#173 merged PR-51, and deployed session `l9x5bFTcFgpZ4DOcQpxU` proves it** (F-136, D-717). The role row reads `"commander_unresolved": false`, so it waits while the which-card row holds a name. Question gate run 50 read PASS at 73 of 74, as run 49 did, for $0.1938. The owner wrote "Grima as commander" on revision `mtg-api-00049-4lj`. Turn 1 asked the power and the colors, and no role question. Turn 2 offered both Gríma cards.
+
+**The owner gave a written review of the Gríma deck, and the session checked each claim** (D-719 to D-722). The deck holds no win condition, a weak mana base, and cards whose conditions it does not meet (F-138 to F-140). The claim of a pump shelf is mostly wrong, and the missing staples come from the owned pool. The deck also holds none of the 14 owned cards tagged mill-opponent on a theme of opponent mill (F-141). The owner chose M-17 first, then PR-52 for mana, then PR-53 for win conditions. `docs/reference/deck-review-grima-2026-09-14.md` holds every claim and its evidence.
 
 **The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586). #158 is the newest web deploy, and `deploy-web` released it at 18:52 UTC on 2026-09-13. #173 is the newest API deploy: `deploy-api` finished at 20:50 UTC on 2026-09-14, and revision `mtg-api-00049-4lj` serves `api:54b07dd`. Both jobs run `worker:54b07dd`, and `/readyz` answered ok. The deploy triggers read `go/**`, `docker/**`, and `web/**` alone, so a merge of documents alone starts no build.
 
@@ -189,7 +191,7 @@ Fifteen things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **The power pass after the build still waits** (D-704). Session `z1hshyY6Npig1FN2NuV7` built a bracket 5 deck from an owned-only pool. It holds 0 of 4 tutors, 3 of 6 fast mana, and 1 of 8 Game Changers. The gap note names the cards to buy, and F-137 stays a record (D-718).
+1. **Run M-17, then build PR-52, then PR-53** (D-719 to D-722). M-17 costs nothing, and it sets the floors of both items. It counts finisher tags and land classes in real lists. It also replays the Gríma request with the collection of the owner. Keep the exported collection out of git. PR-52 ranks lands by quality, and PR-53 adds a win-condition target. The power pass after the build still waits (D-704), and F-137 stays a record (D-718).
 2. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide". Session `z1hshyY6Npig1FN2NuV7` named its commander, so it showed no such row.
 3. **Watch the first self-reload on the next web deploy** (D-692). The live release of #158 passed its check on 2026-09-13 at 18:54 UTC. An installed app that loaded that release must reload by itself when the next release activates. Read it on the next merge that changes `web/**`.
 4. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
@@ -209,6 +211,14 @@ The CI step "fake gcs tests" ran no test until 2026-09-10 (D-658). Its filter ma
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 
 ## The ten most recent sessions
+
+### 2026-09-14j: #174 merged, the review of the Gríma deck, and the plan of M-17
+
+**The owner merged #174.** It changed documents alone, so no build ran.
+
+**The owner gave a written review of the Gríma deck, and the session checked each claim.** The session read the stored deck, the card snapshot, the stored collection of the owner, and two research passes over the code. The review holds on the win condition, the mana base, and the unmet conditions. It fails on the pump shelf, and the missing staples come from the owned pool. The check also found F-141: the deck holds none of the 14 owned mill cards.
+
+**The owner chose the plan** (D-719 to D-722). M-17 measures first, then PR-52 improves the mana, and then PR-53 adds a win-condition target. The session changed no code, and it ran no paid target after #173.
 
 ### 2026-09-14i: #173 merged, and the deployed app asks no role question
 
@@ -291,14 +301,6 @@ Merged as #169.
 **The owner approved bracket gate run 3 over prompts 1 to 9.** It cost $0.7355 over 538 seconds, and 9 of 9 decks hold no content violation. The cut removed Polyraptor from deck 4, beside Marauding Raptor, and Akki Battle Squad from deck 9, beside Kiki-Jiki, Mirror Breaker. The judge agrees on 3 of 9. The first finding text said that the bracket forbids the card itself, so the finding now names the combo.
 
 **Gitar found one defect in #165, and the session fixed it.** A cut of more than five cards left the deck short, because `MaxPad` caps the pad of basic lands at five. The cut now fills each slot it opens, and a gap that the model left stays a block finding. The test of the fix found F-128: the mana pass can add the commander to the 99. The owner chose its own pull request, PR-48, after #165 (D-705).
-
-### 2026-09-13e: the stack merged, M-16, and the PR-45 plan
-
-**The owner merged #160 to #163 in order** (D-700). After each squash merge, the session rebased the next branch onto `main` and checked that its content did not change. CI ran green on each new head before the next merge.
-
-**M-16 counted the power of real lists for no cost.** `Profiler.Measure` read 1,491 TopDeck top-cut lists, 1,040 EDHREC average decks, and the 21 calibration decks. Three in four top-cut lists hold 6 or more fast mana, and five of six bracket 4 and 5 builds hold 2 or fewer. The bracket 5 floor of mana on turn four sat above the median real cEDH list (F-127), and the owner moved it to 4.6 (D-703).
-
-**The owner shaped the PR-45 plan.** PR-45 splits into PR-45a and PR-45b (D-701). PR-45a cuts a card its bracket forbids after the build, with code (D-702). PR-45b pulls floors, a shortlist that reads the bracket, and a gap note (D-704).
 
 ## The archive
 
