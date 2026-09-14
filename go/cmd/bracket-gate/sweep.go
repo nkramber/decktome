@@ -62,7 +62,8 @@ var staples = map[mtgv1.CardRole]bool{
 	mtgv1.CardRole_CARD_ROLE_REMOVAL: true, mtgv1.CardRole_CARD_ROLE_WIPE: true, mtgv1.CardRole_CARD_ROLE_INTERACTION: true,
 }
 
-// sweepPoint is what one point of the grid builds for one prompt.
+// sweepPoint is what one point of the grid builds for one prompt. A fixing
+// land makes two or more colors of the deck.
 type sweepPoint struct {
 	cards    int
 	in       int
@@ -70,12 +71,14 @@ type sweepPoint struct {
 	kept     int
 	pinned   int
 	other    int
+	lands    int
+	fixing   int
 	power    map[string]int
 }
 
 // sweepTotal sums one point of the grid over the prompts.
 type sweepTotal struct {
-	prompts, of, met, want, in, themeOut int
+	prompts, of, met, want, in, themeOut, fixingOut int
 }
 
 // runSweep builds the shortlist of each prompt at each point of the grid,
@@ -140,13 +143,14 @@ func runSweep(ctx context.Context, prompts []prompt, w io.Writer) error {
 			return err
 		}
 		reach, rates := reachOf(wide, of)
+		basePt := measurePoint(base, base, of)
 		_, _ = fmt.Fprintf(w, "Floors: %s. Reach with a rate: %s.\n\n", floorWords(floors), countWords(reach))
 		_, _ = fmt.Fprintf(w, "Rates of the power cards with a rate: %s.\n\n", quantileWords(rates))
 		if err := writeTopPower(w, cb, idx, req, wide, base, of); err != nil {
 			return err
 		}
-		_, _ = fmt.Fprintln(w, "| Weight | Keep | Pin | Cards | In | Theme out | Kept | Pinned | Other | Tutors | Fast mana | Game Changers | Floors met |")
-		_, _ = fmt.Fprintln(w, "|---|---|---|---|---|---|---|---|---|---|---|---|---|")
+		_, _ = fmt.Fprintln(w, "| Weight | Keep | Pin | Cards | Lands | Fixing | In | Theme out | Kept | Pinned | Other | Tutors | Fast mana | Game Changers | Floors met |")
+		_, _ = fmt.Fprintln(w, "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
 		for _, rate := range points {
 			l, err := buildAt(cb, idx, req, rate, candidates.Limits{})
 			if err != nil {
@@ -154,8 +158,8 @@ func runSweep(ctx context.Context, prompts []prompt, w io.Writer) error {
 			}
 			pt := measurePoint(l, base, of)
 			met, want := floorsMet(pt.power, floors, reach)
-			_, _ = fmt.Fprintf(w, "| %g | %s | %s | %d | %d | %d | %d | %d | %d | %d | %d | %d | %d of %d |\n",
-				rate.Weight, keepWords(rate.Keep), yes(rate.Pin), pt.cards, pt.in, pt.themeOut, pt.kept, pt.pinned, pt.other,
+			_, _ = fmt.Fprintf(w, "| %g | %s | %s | %d | %d | %d | %d | %d | %d | %d | %d | %d | %d | %d | %d of %d |\n",
+				rate.Weight, keepWords(rate.Keep), yes(rate.Pin), pt.cards, pt.lands, pt.fixing, pt.in, pt.themeOut, pt.kept, pt.pinned, pt.other,
 				pt.power[profile.KeyTutor], pt.power[profile.KeyFastMana], pt.power[profile.KeyGameChanger], met, want)
 			t := totals[rate]
 			if t == nil {
@@ -167,6 +171,7 @@ func runSweep(ctx context.Context, prompts []prompt, w io.Writer) error {
 			t.want += want
 			t.in += pt.in
 			t.themeOut += pt.themeOut
+			t.fixingOut += max(basePt.fixing-pt.fixing, 0)
 			if met == want {
 				t.prompts++
 			}
@@ -176,12 +181,12 @@ func runSweep(ctx context.Context, prompts []prompt, w io.Writer) error {
 		return nil
 	}
 	_, _ = fmt.Fprintln(w, "\n## Summary")
-	_, _ = fmt.Fprintln(w, "\n| Weight | Keep | Pin | Prompts at every floor | Floors met | Cards in | Theme out |")
-	_, _ = fmt.Fprintln(w, "|---|---|---|---|---|---|---|")
+	_, _ = fmt.Fprintln(w, "\n| Weight | Keep | Pin | Prompts at every floor | Floors met | Cards in | Theme out | Fixing lands out |")
+	_, _ = fmt.Fprintln(w, "|---|---|---|---|---|---|---|---|")
 	for _, r := range points {
 		t := totals[r]
-		_, _ = fmt.Fprintf(w, "| %g | %s | %s | %d of %d | %d of %d | %d | %d |\n",
-			r.Weight, keepWords(r.Keep), yes(r.Pin), t.prompts, t.of, t.met, t.want, t.in, t.themeOut)
+		_, _ = fmt.Fprintf(w, "| %g | %s | %s | %d of %d | %d of %d | %d | %d | %d |\n",
+			r.Weight, keepWords(r.Keep), yes(r.Pin), t.prompts, t.of, t.met, t.want, t.in, t.themeOut, t.fixingOut)
 	}
 	return nil
 }
@@ -283,8 +288,14 @@ func measurePoint(l, base *candidates.List, of func(*mtgv1.Card) []string) sweep
 		if c.Pinned {
 			pt.pinned++
 		}
-		if c.Role == mtgv1.CardRole_CARD_ROLE_OTHER {
+		switch c.Role {
+		case mtgv1.CardRole_CARD_ROLE_OTHER:
 			pt.other++
+		case mtgv1.CardRole_CARD_ROLE_LAND:
+			pt.lands++
+			if c.Fix >= 2 {
+				pt.fixing++
+			}
 		}
 		for _, key := range of(c.Card) {
 			pt.power[key]++

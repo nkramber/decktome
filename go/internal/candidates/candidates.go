@@ -451,9 +451,9 @@ var roleOrder = []mtgv1.CardRole{
 // go across every role. A plain cut at Total dropped the whole tail of
 // the last roles, which is where the synergy pieces sit.
 //
-// A pinned power card skips the cap of its role and holds its place under
-// the total, so the caps can not block a bracket 4 or 5 list from its
-// power floors (F-131, D-710).
+// A pinned power card skips the cap of its role and adds to the total, so
+// the caps can not block a bracket 4 or 5 list from its power floors, and
+// a pin never drops another card (F-131, F-132, D-710, D-712).
 func capByRole(in []Candidate, lim Limits) []Candidate {
 	byRole := map[mtgv1.CardRole][]Candidate{}
 	for _, c := range in {
@@ -471,17 +471,24 @@ func capByRole(in []Candidate, lim Limits) []Candidate {
 		}
 		out = append(out, cs...)
 	}
-	if len(out) <= lim.Total {
+	// A pinned card adds to the total and takes no place from another
+	// card, so a pin never drops a land or an on-theme card (F-132).
+	pinned := 0
+	for _, c := range out {
+		if c.Pinned {
+			pinned++
+		}
+	}
+	if len(out)-pinned <= lim.Total {
 		return out
 	}
 	ranked := slices.Clone(out)
 	sortCandidates(ranked)
-	keep := make(map[*mtgv1.Card]bool, lim.Total)
+	keep := make(map[*mtgv1.Card]bool, lim.Total+pinned)
 	room := lim.Total
 	for _, c := range out {
 		if c.Pinned {
 			keep[c.Card] = true
-			room--
 		}
 	}
 	for _, c := range ranked {

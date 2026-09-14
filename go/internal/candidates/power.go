@@ -9,11 +9,12 @@ import (
 )
 
 // PowerRate is how a bracket 4 or 5 shortlist reads the top-list rate
-// (D-704, D-707, D-710). Weight is the weight of the rate in the score.
-// Keep is the rate at which a card with no theme signal stays on the list
-// and keeps its full score. Pin lets a power card at the keep rate skip the
-// cap of its role. The zero value keeps the default, and any other value
-// reads as given, with a weight or a keep rate of zero read as none.
+// (D-704, D-707, D-710, D-712). Weight is the weight of the rate in the
+// score. Keep is the rate at which a card with no theme signal stays on
+// the list and keeps its full score. Pin lets a power card at the keep
+// rate skip the cap of its role and add to the total. The zero value keeps
+// the default, and any other value reads as given, with a weight or a keep
+// rate of zero read as none.
 type PowerRate struct {
 	Weight float64
 	Keep   float64
