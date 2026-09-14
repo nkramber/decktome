@@ -405,10 +405,16 @@ func (b *Builder) cheaperOfRole(req Request, inDeck map[string]bool,
 	if role == mtgv1.CardRole_CARD_ROLE_UNSPECIFIED || mv <= 1 {
 		return nil
 	}
+	want := roleWord(role)
 	var out []*mtgv1.Card
 	for _, name := range req.Pool.Names() {
 		c, ok := req.Pool.Card(name)
 		if !ok || profile.IsLand(c) || inDeck[c.GetOracleId()] || c.GetManaValue() >= mv {
+			continue
+		}
+		// The added card must do the job of the card it replaces, so the
+		// deck keeps its shape and the job it names tells the truth (F-133).
+		if req.Roles[c.GetOracleId()] != want {
 			continue
 		}
 		out = append(out, c)
