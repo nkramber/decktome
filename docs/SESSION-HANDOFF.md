@@ -14,7 +14,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **PR-45a cuts a card its bracket forbids** (F-125, D-702). The content check names each forbidden combo, mass land denial card, and extra-turn card past the limit. The build cuts one card of each forbidden combo and each other forbidden card, and a basic land fills each slot. A commander, a locked card, and a card that a revision keeps never leave. For a combo, the cut prefers the card in the most combos, then a card outside the precon, then the lower shortlist score.
 
-**Bracket gate run 3 reads no content violation on 9 of 9 decks.** It ran prompts 1 to 9 on `6d61700` for $0.7355 over 538 seconds. The cut removed Polyraptor from deck 4 and Akki Battle Squad from deck 9. The verdict reads FAIL on the judge bar alone, at 3 of 9 and 2 of 3 at bracket 3. The first finding text said that the bracket forbids the card itself, so the finding now names the combo.
+**Bracket gate run 3 reads no content violation on 9 of 9 decks.** It ran prompts 1 to 9 on `6d61700` for $0.7355 over 538 seconds. The cut removed Polyraptor from deck 4 and Akki Battle Squad from deck 9. The verdict reads FAIL on the judge bar alone, at 3 of 9 and 2 of 3 at bracket 3. The first finding text said that the bracket forbids the card itself, so the finding now names the combo. The review found F-128, and PR-48 follows #165 (D-705).
 
 **The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586). #158 is the newest web deploy, and `deploy-web` released it at 18:52 UTC on 2026-09-13. #157 is the newest API deploy: `deploy-api` finished at 07:53 UTC, and revision `mtg-api-00040-wd9` serves `api:42003ce`. Both jobs run `worker:42003ce`, and `/readyz` answered 200. The deploy triggers read `go/**`, `docker/**`, and `web/**` alone, so a merge of documents alone starts no build.
 
@@ -105,7 +105,7 @@ CAUTION: the `decktome` gcloud configuration named the Wallabee account and proj
 **What waits on the owner.**
 
 - The merge of PR-45a, after the review of `gitar-bot` (next step 1).
-- A look at the first commander question after one more load of the app (next step 3).
+- A look at the first commander question after one more load of the app (next step 4).
 - OQ-67, the Stage B channels.
 - OQ-77, the blocking function of Identity Platform.
 - OQ-80, a proxy and the pool.
@@ -166,18 +166,19 @@ Fifteen things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 1. **PR-45a waits for the review of `gitar-bot` and the merge** (F-125, D-702). Bracket gate run 3 reads no content violation on 9 of 9 decks. Answer each finding before you ask for the merge.
-2. **PR-45b: the floor at brackets 4 and 5** (F-110, F-127, D-703, D-704). A free sweep over the dry-run shortlists sets the shortlist weight. A paid bracket gate run over prompts 10 to 15 needs the owner's word.
-3. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide".
-4. **Watch the first self-reload on the next web deploy** (D-692). The live release of #158 passed its check on 2026-09-13 at 18:54 UTC. An installed app that loaded that release must reload by itself when the next release activates. Read it on the next merge that changes `web/**`.
-5. **Read the source lines of the meta run of 2026-09-14.** The mtggoldfish source failed on 2026-09-13 with a connection reset on a storage write. A second failure makes a finding.
-6. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
-7. **The live half of the feedback loop has no run yet.** Three things want a measurement: the judge lane of the triage, one live fix cycle, and one review round. All three need the owner's word, and the cycle also needs `AUTOTUNE_FIXER_CMD` and a harvest whose verdicts carry a snapshot.
-8. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. The next whole run compares against run 19, and it costs about $2.75, so ask the owner first.
-9. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
-10. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
-11. **The weekly EDHREC read** falls on 2026-09-14 (D-499, D-565). Run `make meta-refresh`, then `make quality-gate` to a new `QUALITY_GATE_OUT`. The refresh also stores a new local model, and the deck gate grades read that model.
-12. **PR-26, the return channels**, waits on OQ-67.
-13. **PR-42 is merged as #148** (D-671). Question gate run 49 missed no conversation, so it ran no rerun. Any miss still fails the run, and each miss joins the finding register.
+2. **PR-48: the mana pass skips the commander** (F-128, D-705). Start it on a fresh branch from `main` after #165 merges. A fake build test fails on the old pass.
+3. **PR-45b: the floor at brackets 4 and 5** (F-110, F-127, D-703, D-704). A free sweep over the dry-run shortlists sets the shortlist weight. A paid bracket gate run over prompts 10 to 15 needs the owner's word.
+4. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide".
+5. **Watch the first self-reload on the next web deploy** (D-692). The live release of #158 passed its check on 2026-09-13 at 18:54 UTC. An installed app that loaded that release must reload by itself when the next release activates. Read it on the next merge that changes `web/**`.
+6. **Read the source lines of the meta run of 2026-09-14.** The mtggoldfish source failed on 2026-09-13 with a connection reset on a storage write. A second failure makes a finding.
+7. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
+8. **The live half of the feedback loop has no run yet.** Three things want a measurement: the judge lane of the triage, one live fix cycle, and one review round. All three need the owner's word, and the cycle also needs `AUTOTUNE_FIXER_CMD` and a harvest whose verdicts carry a snapshot.
+9. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. The next whole run compares against run 19, and it costs about $2.75, so ask the owner first.
+10. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
+11. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
+12. **The weekly EDHREC read** falls on 2026-09-14 (D-499, D-565). Run `make meta-refresh`, then `make quality-gate` to a new `QUALITY_GATE_OUT`. The refresh also stores a new local model, and the deck gate grades read that model.
+13. **PR-26, the return channels**, waits on OQ-67.
+14. **PR-42 is merged as #148** (D-671). Question gate run 49 missed no conversation, so it ran no rerun. Any miss still fails the run, and each miss joins the finding register.
 
 CAUTION: `make revise-gate | tee` hides the exit code. Read the verdict line of the document, never the exit code of a pipe.
 
@@ -197,7 +198,7 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 **The owner approved bracket gate run 3 over prompts 1 to 9.** It cost $0.7355 over 538 seconds, and 9 of 9 decks hold no content violation. The cut removed Polyraptor from deck 4, beside Marauding Raptor, and Akki Battle Squad from deck 9, beside Kiki-Jiki, Mirror Breaker. The judge agrees on 3 of 9. The first finding text said that the bracket forbids the card itself, so the finding now names the combo.
 
-**Gitar found one defect in #165, and the session fixed it.** A cut of more than five cards left the deck short, because `MaxPad` caps the pad of basic lands at five. The cut now fills each slot it opens, and a gap that the model left stays a block finding.
+**Gitar found one defect in #165, and the session fixed it.** A cut of more than five cards left the deck short, because `MaxPad` caps the pad of basic lands at five. The cut now fills each slot it opens, and a gap that the model left stays a block finding. The test of the fix found F-128: the mana pass can add the commander to the 99. The owner chose its own pull request, PR-48, after #165 (D-705).
 
 ### 2026-09-13e: the stack merged, M-16, and the PR-45 plan
 
