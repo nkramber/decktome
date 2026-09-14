@@ -28,10 +28,6 @@ func TestEveryBandReachesTheModel(t *testing.T) {
 		KeyLand: true, KeyRamp: true, KeyDraw: true,
 		KeyRemoval: true, KeyWipe: true, KeyInteraction: true,
 	}
-	// The rules engine reports the Game Changer limit as a block, so the
-	// profile marks the band and raises no off-band finding for it.
-	skip := map[string]bool{KeyGameChanger: true}
-
 	for _, tc := range []struct {
 		name   string
 		format mtgv1.FormatId
@@ -48,10 +44,7 @@ func TestEveryBandReachesTheModel(t *testing.T) {
 			table, _ := b.For(tc.format, tc.power)
 			lines := strings.Join(b.Lines(tc.format, tc.power), "\n")
 			for key := range table {
-				switch {
-				case skip[key]:
-					continue
-				case jobKeys[key]:
+				if jobKeys[key] {
 					if b.Words(tc.format, tc.power, key) == "" {
 						t.Errorf("the job block can not state the band of %q", key)
 					}
@@ -74,7 +67,7 @@ func TestDerivedLinesNameTheirNumber(t *testing.T) {
 	}
 	lines := strings.Join(b.Lines(mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket(4)), "\n")
 	for _, want := range []string{
-		"4.8 mana on turn four", // mana_turn_four, bracket 4
+		"4.4 mana on turn four", // mana_turn_four, bracket 4 (D-703)
 		"70 percent",            // hands_two_to_four_lands
 		"0.5 of a turn",         // commander_turn_over_mv
 		"about 19 sources",      // color_sources, the 99-card table

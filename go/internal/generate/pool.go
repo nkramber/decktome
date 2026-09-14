@@ -41,6 +41,7 @@ func FromListOwned(l *candidates.List, always []*mtgv1.Card, ownedCounts map[str
 		}
 	}
 	scores := map[string]float64{}
+	rates := map[string]float64{}
 	add := func(cs []candidates.Candidate) {
 		for _, c := range cs {
 			if c.Card == nil {
@@ -48,6 +49,7 @@ func FromListOwned(l *candidates.List, always []*mtgv1.Card, ownedCounts map[str
 			}
 			cards = append(cards, c.Card)
 			scores[candidates.FoldName(c.Card.GetName())] = c.Score
+			rates[c.Card.GetOracleId()] = c.Rate
 			if c.Owned > 0 {
 				owned[c.Card.GetOracleId()] = c.Owned
 			}
@@ -71,6 +73,25 @@ func FromListOwned(l *candidates.List, always []*mtgv1.Card, ownedCounts map[str
 	for key, s := range scores {
 		if _, ok := p.byName[key]; ok {
 			p.score[key] = s
+		}
+	}
+	// The reserve holds the power cards the pool lacks, by rate, with the
+	// owned count of each, so the gap note can say which to buy (D-709).
+	for id, r := range rates {
+		p.rate[id] = r
+	}
+	for _, c := range l.Reserve {
+		if c.Card == nil {
+			continue
+		}
+		id := c.Card.GetOracleId()
+		if _, in := p.byOracle[id]; in {
+			continue
+		}
+		p.reserve = append(p.reserve, c.Card)
+		p.rate[id] = c.Rate
+		if c.Owned > 0 {
+			p.owned[id] = c.Owned
 		}
 	}
 	return p

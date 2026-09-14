@@ -194,13 +194,12 @@ func (p *Profiler) measure(deck *mtgv1.Deck, src rules.CardSource) (*mtgv1.DeckP
 			}
 			row.OffBand = !band.Holds(m.value)
 		}
-		if key == KeyGameChanger && commander {
-			// The rules engine reports the Game Changer limit as a block,
-			// so the profile marks the band and adds no second finding.
-			if br, ok := p.rules.Brackets[bracket]; ok && br.MaxGameChangers >= 0 {
-				row.Low, row.High, row.HasHigh = 0, float64(br.MaxGameChangers), true
-				row.OffBand = m.value > float64(br.MaxGameChangers)
-			}
+		// The rules engine reports the Game Changer limit as a block, so the
+		// profile marks the band and adds no second finding. A bracket with
+		// no limit reads the floor of its band, and a miss warns (D-704).
+		if br, ok := p.rules.Brackets[bracket]; ok && key == KeyGameChanger && commander && br.MaxGameChangers >= 0 {
+			row.Low, row.High, row.HasHigh = 0, float64(br.MaxGameChangers), true
+			row.OffBand = m.value > float64(br.MaxGameChangers)
 		} else if row.OffBand {
 			findings = append(findings, &mtgv1.Finding{
 				Code: CodeOffBand, Severity: mtgv1.Severity_SEVERITY_WARN,
@@ -342,22 +341,56 @@ func tutorSet(tags *cards.TagIndex) map[string]bool {
 // (D-704). A nil tag index counts no tutor. The dry run of a gate reads
 // it to show what the top-list rate moves (D-706).
 func PowerCards(list []*mtgv1.Card, tags *cards.TagIndex) (tutors, fastMana, gameChangers int) {
+	of := PowerOf(tags)
+	for _, c := range list {
+		for _, key := range of(c) {
+			switch key {
+			case KeyTutor:
+				tutors++
+			case KeyFastMana:
+				fastMana++
+			case KeyGameChanger:
+				gameChangers++
+			}
+		}
+	}
+	return tutors, fastMana, gameChangers
+}
+
+// PowerKeys are the features a high bracket holds a floor for, in the
+// order a reader names them (D-704).
+var PowerKeys = []string{KeyTutor, KeyFastMana, KeyGameChanger}
+
+// PowerOf answers the power features a card counts toward, by the rules
+// of the profile (D-704). A nil tag index reads no tutor. The shortlist
+// marks each card by it, and the gap note reads it.
+func PowerOf(tags *cards.TagIndex) func(c *mtgv1.Card) []string {
 	var set map[string]bool
 	if tags != nil {
 		set = tutorSet(tags)
 	}
-	for _, c := range list {
+	return func(c *mtgv1.Card) []string {
+		var keys []string
 		if set[c.GetOracleId()] && !isLand(c) {
-			tutors++
+			keys = append(keys, KeyTutor)
 		}
 		if isFastMana(c) {
-			fastMana++
+			keys = append(keys, KeyFastMana)
 		}
 		if c.GetGameChanger() {
-			gameChangers++
+			keys = append(keys, KeyGameChanger)
 		}
+		return keys
 	}
-	return tutors, fastMana, gameChangers
+}
+
+// Power is PowerOf over the tags of the current snapshot.
+func (p *Profiler) Power() func(c *mtgv1.Card) []string {
+	var tags *cards.TagIndex
+	if p.tags != nil {
+		tags = p.tags()
+	}
+	return PowerOf(tags)
 }
 
 // colorSources measures each deck color's sources against the need of its

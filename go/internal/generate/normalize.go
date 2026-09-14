@@ -53,6 +53,12 @@ type Pool struct {
 	// groups its cards by role, and Names sorts by the alphabet, so the
 	// bracket cut of PR-45a reads this score (D-702).
 	score map[string]float64
+	// rate is the top-list rate of each shortlist and reserve card, by
+	// oracle id. reserve holds the power cards outside the pool that a
+	// bracket 4 or 5 deck can reach, by rate. The model can not name a
+	// reserve card, and the gap note reads both (D-709).
+	rate    map[string]float64
+	reserve []*mtgv1.Card
 }
 
 // NewPool indexes the cards the model may name. A later card with the
@@ -64,6 +70,7 @@ func NewPool(cards []*mtgv1.Card, owned map[string]int32) *Pool {
 		byOracle: make(map[string]*mtgv1.Card, len(cards)),
 		owned:    owned,
 		score:    map[string]float64{},
+		rate:     map[string]float64{},
 	}
 	for _, c := range cards {
 		if c.GetName() == "" {
@@ -102,8 +109,24 @@ func (p *Pool) Filter(keep func(*mtgv1.Card) bool) *Pool {
 			np.score[key] = s
 		}
 	}
+	// The reserve drops a refused card too, so the gap note never names a
+	// card the reader asked to remove (D-709).
+	np.rate = p.rate
+	for _, c := range p.reserve {
+		if keep(c) {
+			np.reserve = append(np.reserve, c)
+		}
+	}
 	return np
 }
+
+// Rate is the top-list rate of a pool or reserve card, and 0 for a card
+// with no rate (D-709).
+func (p *Pool) Rate(id string) float64 { return p.rate[id] }
+
+// Reserve lists the power cards outside the pool, by rate. The model can
+// not name them, and the gap note reads them (D-709).
+func (p *Pool) Reserve() []*mtgv1.Card { return append([]*mtgv1.Card(nil), p.reserve...) }
 
 // Names lists the pool names in sort order. The prompt writes this list,
 // and the repair turn reads it again.

@@ -48,7 +48,11 @@ package generate
 // Version 12: the input carries a deck shape block with the bands of the
 // bracket, and the repair turn reads a profile finding: a feature off
 // its band, or a card or combo the bracket forbids (PR-14A).
-const PromptVersion = 12
+//
+// Version 13: at brackets 4 and 5 the deck shape block names the power
+// floors, and each shortlist line marks a card that counts toward one: a
+// tutor, fast mana, or a Game Changer (D-704).
+const PromptVersion = 13
 
 // generateInstructions is the stable prefix. It names no card, no format,
 // and no session value, so every call of a session shares it.
