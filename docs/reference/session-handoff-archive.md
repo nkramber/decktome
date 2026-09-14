@@ -11,6 +11,14 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## 2026-09-13c: #158 deployed, and the documents read the merge
+
+**The owner merged #158 and asked whether every document reads the current state.** They did not. Several lines still named #158 as an open pull request, and next step 2 still waited on the merge. The resume section, the next steps, `CLAUDE.md`, the roadmap, and the deploy guide read the merge now.
+
+**`deploy-web` released #158 at 18:52 UTC.** The live `index.html` loads no `registerSW.js`, and `sw.js` precaches the `workbox-window` chunk. The main chunk holds the reload. So the old next step 2 passed, and the next web deploy is the first that reloads an open app by itself.
+
+**PR-25 carries a dated correction.** Its entry names the service worker, and F-122 refutes the promise of D-621 that the worker updates the app. The deploy guide notes the reload and the Hosting rewrite.
+
 ## 2026-09-13b: #157 deployed, the meta run, and F-122
 
 Merged as #158.

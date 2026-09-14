@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-14)
 
-**The checkout.** `main` is `b7aa42d`, which is pull request #170, or a later merge. The branch `quality-gate-run22` holds this hand-off, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
+**The checkout.** `main` is `284b324`, which is pull request #172, or a later merge. The branch `fix-role-row-unresolved` holds this hand-off and PR-51, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
 
 **The owner answered OQ-82: a bracket promises its power in both directions** (D-693 to D-695). M-14 ran bracket gate run 2 on `320fcbb` for $1.37 (D-694). Five of the six decks at brackets 4 and 5 miss the floor of the mana on turn four. With the Game Changer flags of PR-47, the judge agrees on 3 of 15 decks, and it still names combos from memory (F-126). #161 merged PR-46, #162 merged PR-47, and #163 merged M-15 (D-697 to D-699). PR-45 splits into PR-45a and PR-45b, and #164 merged the plan (D-701 to D-704).
 
@@ -30,7 +30,15 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The run is no quality tuning item, so its numbers stand as information** (D-689). The low EDHREC count needs no finding. `MergeLists` answers the count of new keys, and a re-read replaces a list already stored under its key. So the weekly read counted 3 new lists on 2026-09-07 (D-566) and 4 new lists on 2026-09-14.
 
-**The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586). #158 is the newest web deploy, and `deploy-web` released it at 18:52 UTC on 2026-09-13. #169 is the newest API deploy: `deploy-api` finished at 17:50 UTC on 2026-09-14, and revision `mtg-api-00047-76c` serves `api:7d997f1`. Both jobs run `worker:7d997f1`, and `/readyz` answered ok. The deploy triggers read `go/**`, `docker/**`, and `web/**` alone, so a merge of documents alone starts no build.
+**#172 merged PR-50: a card name matches without its accent** (F-135, D-716). The owner typed "Grima" as a commander, and no card matched, because the card is Gríma, Saruman's Footman. The package `cardname` holds an exact key and a folded key, and every name match reads the exact key first. A folded key that two card names share finds nothing, and none of the 39,967 names of the snapshot share one. Guardrail 4 reads the folded key as exact now. Quality gate run 23 matches run 22 in the three numbers and in every deck grade.
+
+**Gitar found one performance defect in #172, and `6394d16` fixed it.** The fold ran NFKD on every row of a binder search, at about 270 ns against 39 ns for the old key. A name of ASCII bytes alone now skips the decomposition, at 50 to 88 ns, and a test holds the equality.
+
+**Deployed session `z1hshyY6Npig1FN2NuV7` proves PR-50 and PR-45b.** The owner wrote "Grima as commander", and the which-card row offered Gríma, Saruman's Footman and Gríma Wormtongue. The deck `sFLbEUuKzI0QyLPft0zI` stores the bracket 5 floors: 4 tutors, 6 fast mana, and 8 Game Changers. It holds 0, 3, and 1, and the summary names the cards that close each gap, each one to buy. The curve line reads 2.39 over 66 nonland cards, as the list does, with 33 lands. The session cost $0.057 over 6 calls.
+
+**The same session found F-136 and F-137.** Turn 1 asked whether "that card" leads the deck or sits in the 99, and the first message already named it as commander. `applyFacts` set the named-card fact again after the which-card row took the name (F-136). The owner chose PR-51, a catalog condition, with a question gate run (D-717). The summary also names "Gríma's opponent-milling plan", and no card of the deck makes an opponent mill (F-137). The owner chose a record (D-718).
+
+**The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586). #158 is the newest web deploy, and `deploy-web` released it at 18:52 UTC on 2026-09-13. #172 is the newest API deploy: `deploy-api` finished at 19:19 UTC on 2026-09-14, and revision `mtg-api-00048-5zm` serves `api:284b324`. Both jobs run `worker:284b324`, and `/readyz` answered ok. The deploy triggers read `go/**`, `docker/**`, and `web/**` alone, so a merge of documents alone starts no build.
 
 **Session `X4JfbXzMw4U5A4gEeOaE` reads right on every check, and the owner closed OQ-79** (D-691). The owner built an owned-only lifegain Commander deck at bracket 3 on 2026-09-13 at 04:16 UTC. The first message named Sidequest: Catch a Fish. The offer named Aerith Gainsborough, Hope Estheim, and Aerith, Last Ancient, as a free local run of the offer code predicted. The reader owns one copy of each. The reader owns none of the three commanders that an offer with any card allowed names first. The deck marks the commander and every card owned.
 
@@ -118,8 +126,8 @@ CAUTION: the `decktome` gcloud configuration named the Wallabee account and proj
 
 **What waits on the owner.**
 
-- The merge of this documents pull request, after the review of `gitar-bot`.
-- A bracket 4 or 5 Commander build on the app, and a look at the first commander question on the same load (next steps 1 and 2).
+- The merge of PR-51, after question gate run 50 and the review of `gitar-bot`.
+- A look at the first commander question after a load of the app, in a session that names no commander (next step 2).
 - OQ-67, the Stage B channels.
 - OQ-77, the blocking function of Identity Platform.
 - OQ-80, a proxy and the pool.
@@ -166,21 +174,21 @@ Fifteen things a fresh session gets wrong without this file.
 - Card snapshot on disk: `.local/gcs/mtg-local-cards/scryfall/20260904T210157`, the newest of 13. Read 2026-09-13, when it flagged 53 Game Changers. Check every card fact against it.
 - LLM model ids and prices: `roles.json` and `prices.json`, verified 2026-08-24. The max output per provider in `llm/client.go`, verified 2026-08-29. The OpenAI rows are unverified by anyone but the owner. The judge role runs on Opus 5 (D-430).
 - The deck gate upgrade probe cost $0.32 for 2 prompts, 7 calls, and 266 seconds. A partial run reads its own item bars and never stands as the gate (D-526).
-- Run cost, read from the run files on 2026-09-09. The question gate cost $0.190 on run 42, $0.193 on run 43, and $0.194 on run 44, over 18 to 21 minutes. Runs 45 to 48 of 2026-09-11 cost $0.1925, $0.1920, $0.1380, and $0.1923, over 20, 22, 19, and 21 minutes. Run 49 of 2026-09-12 cost $0.1935, over 18 minutes. The deck gate upgrade probe cost $0.32 for 2 prompts. The eval cost $0.092 on run 34 and $0.096 on run 35, over 12 to 14 minutes. The deck gate cost $2.71 on run 18, over 37 minutes, and $2.75 on run 19 of 2026-09-12, over 36 minutes. The revise gate cost $1.07 on run 9. The bracket gate judge lane cost $0.28. Bracket gate run 2 of 2026-09-13 cost $1.3720 over 925 seconds, for 15 builds and the judge. Its second judge lane cost $0.2634 over 128 seconds. The M-15 calibration lane cost $0.3283 over 149 seconds, for 21 decks. Bracket gate run 3 of 2026-09-14 cost $0.7355 over 538 seconds, for 9 builds and the judge. Bracket gate runs 4, 5, and 6 over prompts 10 to 15 cost $0.4979, $0.5247, and $0.5619, over 424, 442, and 564 seconds. The second judge lane of run 6 cost $0.0856 over 35 seconds. Deck gate runs 20, 21, and 22 over prompt 3 cost $0.1321, $0.1174, and $0.1159, over 94, 97, and 106 seconds.
+- Run cost, read from the run files on 2026-09-09. The question gate cost $0.190 on run 42, $0.193 on run 43, and $0.194 on run 44, over 18 to 21 minutes. Runs 45 to 48 of 2026-09-11 cost $0.1925, $0.1920, $0.1380, and $0.1923, over 20, 22, 19, and 21 minutes. Run 49 of 2026-09-12 cost $0.1935, over 18 minutes. Run 50 of 2026-09-14 cost $0.1938, over 22 minutes. The deck gate upgrade probe cost $0.32 for 2 prompts. The eval cost $0.092 on run 34 and $0.096 on run 35, over 12 to 14 minutes. The deck gate cost $2.71 on run 18, over 37 minutes, and $2.75 on run 19 of 2026-09-12, over 36 minutes. The revise gate cost $1.07 on run 9. The bracket gate judge lane cost $0.28. Bracket gate run 2 of 2026-09-13 cost $1.3720 over 925 seconds, for 15 builds and the judge. Its second judge lane cost $0.2634 over 128 seconds. The M-15 calibration lane cost $0.3283 over 149 seconds, for 21 decks. Bracket gate run 3 of 2026-09-14 cost $0.7355 over 538 seconds, for 9 builds and the judge. Bracket gate runs 4, 5, and 6 over prompts 10 to 15 cost $0.4979, $0.5247, and $0.5619, over 424, 442, and 564 seconds. The second judge lane of run 6 cost $0.0856 over 35 seconds. Deck gate runs 20, 21, and 22 over prompt 3 cost $0.1321, $0.1174, and $0.1159, over 94, 97, and 106 seconds.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
 - The feedback store holds 3 verdicts on 2026-09-09, and every one predates the snapshot of D-635. `make feedback-list VERDICT=` reads both verdicts now (F-87). A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- The deployed API, read 2026-09-14 at 17:51 UTC: revision `mtg-api-00047-76c` on image `api:7d997f1`, from #169. Both jobs run `worker:7d997f1`, and `/readyz` answered ok with a card snapshot of 2026-09-14 09:01 UTC. `deploy-api` finished at 17:50 UTC.
+- The deployed API, read 2026-09-14 at 19:20 UTC: revision `mtg-api-00048-5zm` on image `api:284b324`, from #172. Both jobs run `worker:284b324`, and `/readyz` answered ok with a card snapshot of 2026-09-14 09:01 UTC. `deploy-api` ran from 19:14 to 19:19 UTC.
 - The deployed web app, read 2026-09-13 at 18:54 UTC: the release of #158, from `deploy-web` at 18:52 UTC. `index.html` loads `assets/index-DYfo4m8I.js` and no `registerSW.js`, and `sw.js` precaches the `workbox-window` chunk.
 - The deployed quality model, read 2026-09-14: `20260914T070904Z`, from the meta job that started at 06:02 UTC and ended at 07:13 UTC. It fits 43,182 lists and 1,517 commanders. Its Commander fit reads `immaterial` 239 and accuracy 0.554, and its Standard fit reads a cross share of 0.667. The job read the weekly EDHREC pass, 2,077 pages and 4 lists. The mtgo source read 3,094 lists with 58 fetch errors. The mtggoldfish source read 155 lists with no failure. The mtgjson source read no list, because its deck list version differs from the stored table, as on 2026-09-12 and 2026-09-13.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
-- Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 19, revise is run 9. The generate prompt reads version 13 since PR-45b, and run 19 read version 12. So the next whole deck gate run reads a new prompt against run 19. Run 49 is the newest whole questions run, and it reads PASS. Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 22 is its newest run.
+- Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 19, revise is run 9. The generate prompt reads version 13 since PR-45b, and run 19 read version 12. So the next whole deck gate run reads a new prompt against run 19. Run 50 is the newest whole questions run, and it reads PASS. Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 23 is its newest run.
 - Toolchain on this Mac, read 2026-09-11: Go 1.27.1, Node 22.23.2, pnpm 9.2.0, firebase-tools 14.14.0, and Java 17.0.20.1. Playwright is 1.63.0 with its Chromium headless shell (`playwright install chromium`). `go.mod` asks Go 1.27.0 or newer, and vitest is 5.0.0 since #133.
 
 ## Next steps, in order
 
-1. **Read PR-45b on the deployed app** (D-709 to D-715). Build a bracket 4 or 5 Commander deck on the app. Its stored profile carries the power floors. A missed floor names its cards in the summary. Read the stored session and the deck, and not the screen alone. Najeela at bracket 5 still builds a mana base of basics. The power pass after the build still waits (D-704).
-2. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide".
+1. **Merge PR-51, then read it on the deployed app** (F-136, D-717). A session that names a commander with more than one match must ask no role question. Read the stored session and the API log, and not the screen alone. PR-45b holds on session `z1hshyY6Npig1FN2NuV7`, and the power pass after the build still waits (D-704).
+2. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide". Session `z1hshyY6Npig1FN2NuV7` named its commander, so it showed no such row.
 3. **Watch the first self-reload on the next web deploy** (D-692). The live release of #158 passed its check on 2026-09-13 at 18:54 UTC. An installed app that loaded that release must reload by itself when the next release activates. Read it on the next merge that changes `web/**`.
 4. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
 5. **The live half of the feedback loop has no run yet.** Three things want a measurement: the judge lane of the triage, one live fix cycle, and one review round. All three need the owner's word, and the cycle also needs `AUTOTUNE_FIXER_CMD` and a harvest whose verdicts carry a snapshot.
@@ -199,6 +207,14 @@ The CI step "fake gcs tests" ran no test until 2026-09-10 (D-658). Its filter ma
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 
 ## The ten most recent sessions
+
+### 2026-09-14h: #171 and #172 merged, the live Grima check, and PR-51
+
+**The owner typed "Grima" as a commander, and no card matched.** The card is Gríma, Saruman's Footman. The owner chose a fold in every name match, with the exact key first (D-716). The session built PR-50 on the branch `fix-name-accent-fold`, and #172 merged it. Gitar found one performance defect, and `6394d16` added a fast path for ASCII names.
+
+**The owner merged #171 and #172, and Cloud Build deployed #172.** `deploy-api` finished at 19:19 UTC, and revision `mtg-api-00048-5zm` serves `api:284b324`. Both jobs run `worker:284b324`, and `/readyz` answered ok. #171 changed documents alone.
+
+**Deployed session `z1hshyY6Npig1FN2NuV7` read "Grima" right, and it proves PR-45b.** The which-card row offered both Gríma cards. The deck at bracket 5 misses all three power floors, and its summary names the cards that close each gap. The read found F-136 and F-137. The owner chose PR-51 with question gate run 50 (D-717), and a record of F-137 (D-718).
 
 ### 2026-09-14g: #170 merged, quality gate run 22, and the app check of PR-45b
 
@@ -293,14 +309,6 @@ Merged as #169.
 **The disk.** Free disk fell to 12 GiB during the verify runs. The owner chose to clear the Docker build cache and the Go build cache, and free disk rose to 34 GiB.
 
 **M-15 calibrated the judge** (F-126, D-698). `make bracket-calibrate` wrote the nine precons as bracket 2 and 12 top-finish cEDH lists as bracket 5. The lane cost $0.33. The judge reads 11 of 12 cEDH lists as bracket 5, and the miss holds one Game Changer. It reads 4 of 9 precons as bracket 3, and each of those holds no Game Changer. The owner chose the judge as the target of PR-45 at brackets 3 to 5 alone (D-699).
-
-### 2026-09-13c: #158 deployed, and the documents read the merge
-
-**The owner merged #158 and asked whether every document reads the current state.** They did not. Several lines still named #158 as an open pull request, and next step 2 still waited on the merge. The resume section, the next steps, `CLAUDE.md`, the roadmap, and the deploy guide read the merge now.
-
-**`deploy-web` released #158 at 18:52 UTC.** The live `index.html` loads no `registerSW.js`, and `sw.js` precaches the `workbox-window` chunk. The main chunk holds the reload. So the old next step 2 passed, and the next web deploy is the first that reloads an open app by itself.
-
-**PR-25 carries a dated correction.** Its entry names the service worker, and F-122 refutes the promise of D-621 that the worker updates the app. The deploy guide notes the reload and the Hosting rewrite.
 
 ## The archive
 

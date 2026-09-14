@@ -280,7 +280,8 @@
       ],
       "when": {
         "named_card": true,
-        "format": "commander"
+        "format": "commander",
+        "commander_unresolved": false
       },
       "key": "named_card_role",
       "fallback": "Do you want that card as your commander, or as one card in the 99?",
