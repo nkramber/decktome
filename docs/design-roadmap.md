@@ -6,6 +6,7 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-14 correction pass 187 (M-17): #177 merged M-17, and the documents read the state before a context reset. Changes: M-17, sequencing step 38.
 2026-09-14 correction pass 186 (F-138 to F-143, M-17, PR-52 to PR-54, D-723 to D-727): M-17 measured for free. The theme word "milling" matched no card, so the shortlist of the Gríma request held staple roles alone. The owner chose PR-54, a fix of the theme words, before PR-52 and PR-53. Changes: F-138 to F-143, M-17, PR-52, PR-53, PR-54, sequencing step 38.
 2026-09-14 correction pass 185 (F-138, OQ-83 to OQ-86): #175 merged the plan of M-17. The review of the owner sits word for word in `docs/reference/owner-review-grima-2026-09-14.md`. OQ-83 to OQ-86 hold its four suggestions that no decision took. Changes: F-138.
 2026-09-14 correction pass 184 (F-138 to F-141, M-17, PR-52, PR-53, D-719 to D-722): the owner gave a written review of the Gríma deck, and the session checked each claim. The owner chose a free measurement, then better mana at brackets 4 and 5, then a win-condition target. Changes: F-138 to F-141, M-17, PR-52, PR-53, sequencing step 37.
@@ -1598,7 +1599,7 @@ A reader wrote "Grima as commander", and two cards carry the name. The which-car
 Gate: the test fails on the old catalog and passes on the new, and every test of the package passes. Question gate run 50 reads PASS at 73 of 74 conversations, as run 49 does, for $0.1938 (D-717). The role row still asks in the same four conversations of the gate. `make verify` passes. Deployed session `l9x5bFTcFgpZ4DOcQpxU` asked the power and the colors on turn 1, and no role question.
 > *In plain English:* a reader who named a commander with more than one match got an extra question about the role of the card. The app now waits until the reader picks the card, and the pick answers that question too.
 
-**M-17: Finishers, lands, conditions, and the theme miss, in real and built decks (F-138 to F-143, D-719 to D-727).** ✅ measured 2026-09-14, for no cost.
+**M-17: Finishers, lands, conditions, and the theme miss, in real and built decks (F-138 to F-143, D-719 to D-727).** ✅ measured 2026-09-14, for no cost, and merged as #177.
 PR-52 and PR-53 need floors, and no count of finishers or land classes existed for real lists. The review of the Gríma deck also found a theme miss and cards whose conditions the deck does not meet. `docs/reference/m17-finishers-lands-2026-09-14.md` holds every count.
 
 - **The replay.** The theme "opponent milling cards" matched no card, because `themes.json` holds no row for "milling" (F-142). So the owned-only shortlist held staple roles alone, and the shortlist dropped the mill cards, and not the model. No fetch land reached the shortlist, and Sunken Hollow reached it and the model left it out.
@@ -1947,7 +1948,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 35. **F-135** a card name without its accent finds no card. The owner chose a fold in every name match, with the exact key first (D-716). **PR-50** amends guardrail 4 and folds each match. #172 merged **PR-50**, and it deployed on 2026-09-14.
 36. **F-136** the role row asked about a name that the which-card row held. **PR-51** makes the role row wait, and question gate run 50 measures it (D-717). **F-137** a summary called Gríma a mill commander, and it stays a record (D-718). #173 merged **PR-51**, and it deployed on 2026-09-14.
 37. **F-138** to **F-141** come from the review of the Gríma deck by the owner (D-719 to D-722). **M-17** measures first, for no cost. **PR-52** then ranks lands by quality, and **PR-53** adds a win-condition target. **M-17** ✅ measured 2026-09-14.
-38. **F-142** and **F-143** come from M-17 (D-723 to D-725). **PR-54** fixes the theme words first: aliases, a word-form rule, and a question when no card matches. **PR-52** and **PR-53** follow, and PR-53 reads the target and the floor of D-726. **F-140** stays a record until a replay after PR-54 (D-727).
+38. **F-142** and **F-143** come from M-17 (D-723 to D-725). **PR-54** fixes the theme words first: aliases, a word-form rule, and a question when no card matches. **PR-52** and **PR-53** follow, and PR-53 reads the target and the floor of D-726. **F-140** stays a record until a replay after PR-54 (D-727). #177 merged **M-17**.
 
 ## 9. Open questions
 
