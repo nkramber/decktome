@@ -1,0 +1,83 @@
+{"suite":"bracket","run_id":"pr14a-bracket-gate-run3","date":"2026-09-14","commit":"6d61700","roles":{"generate":{"provider":"openai","model":"gpt-5.6-terra","effort":"medium"},"judge":{"provider":"anthropic","model":"claude-opus-5","effort":"medium"},"repair":{"provider":"openai","model":"gpt-5.6-terra","effort":"medium"}},"snapshot":"2026-09-04","prompts":{"generate":12},"calls":18,"cost_usd":0.7354962500000001,"seconds":537.960688458,"verdict":"FAIL","only":"1,2,3,4,5,6,7,8,9","lower":["blocks","off_band","content_violations","judge_error","repaired"]}
+{"item":"1","metric":"built","value":1,"kind":"gate"}
+{"item":"1","metric":"blocks","value":0,"kind":"gate"}
+{"item":"1","metric":"profile","value":1,"kind":"gate"}
+{"item":"1","metric":"off_band","value":0,"kind":"gate"}
+{"item":"1","metric":"content_violations","value":0,"kind":"gate"}
+{"item":"1","metric":"content_checked","value":1,"kind":"gate"}
+{"item":"1","metric":"judge_agrees","value":0,"kind":"info","detail":"built for 1, judged 3"}
+{"item":"1","metric":"repaired","value":0,"kind":"info"}
+{"item":"1","metric":"pool","value":267,"kind":"info"}
+{"item":"2","metric":"built","value":1,"kind":"gate"}
+{"item":"2","metric":"blocks","value":0,"kind":"gate"}
+{"item":"2","metric":"profile","value":1,"kind":"gate"}
+{"item":"2","metric":"off_band","value":0,"kind":"gate"}
+{"item":"2","metric":"content_violations","value":0,"kind":"gate"}
+{"item":"2","metric":"content_checked","value":1,"kind":"gate"}
+{"item":"2","metric":"judge_agrees","value":0,"kind":"info","detail":"built for 1, judged 2"}
+{"item":"2","metric":"repaired","value":0,"kind":"info"}
+{"item":"2","metric":"pool","value":303,"kind":"info"}
+{"item":"3","metric":"built","value":1,"kind":"gate"}
+{"item":"3","metric":"blocks","value":0,"kind":"gate"}
+{"item":"3","metric":"profile","value":1,"kind":"gate"}
+{"item":"3","metric":"off_band","value":0,"kind":"gate"}
+{"item":"3","metric":"content_violations","value":0,"kind":"gate"}
+{"item":"3","metric":"content_checked","value":1,"kind":"gate"}
+{"item":"3","metric":"judge_agrees","value":0,"kind":"info","detail":"built for 1, judged 3"}
+{"item":"3","metric":"repaired","value":0,"kind":"info"}
+{"item":"3","metric":"pool","value":296,"kind":"info"}
+{"item":"4","metric":"built","value":1,"kind":"gate"}
+{"item":"4","metric":"blocks","value":0,"kind":"gate"}
+{"item":"4","metric":"profile","value":1,"kind":"gate"}
+{"item":"4","metric":"off_band","value":0,"kind":"gate"}
+{"item":"4","metric":"content_violations","value":0,"kind":"gate"}
+{"item":"4","metric":"content_checked","value":1,"kind":"gate"}
+{"item":"4","metric":"judge_agrees","value":0,"kind":"info","detail":"built for 2, judged 3"}
+{"item":"4","metric":"repaired","value":0,"kind":"info"}
+{"item":"4","metric":"pool","value":267,"kind":"info"}
+{"item":"5","metric":"built","value":1,"kind":"gate"}
+{"item":"5","metric":"blocks","value":0,"kind":"gate"}
+{"item":"5","metric":"profile","value":1,"kind":"gate"}
+{"item":"5","metric":"off_band","value":0,"kind":"gate"}
+{"item":"5","metric":"content_violations","value":0,"kind":"gate"}
+{"item":"5","metric":"content_checked","value":1,"kind":"gate"}
+{"item":"5","metric":"judge_agrees","value":0,"kind":"info","detail":"built for 2, judged 3"}
+{"item":"5","metric":"repaired","value":0,"kind":"info"}
+{"item":"5","metric":"pool","value":303,"kind":"info"}
+{"item":"6","metric":"built","value":1,"kind":"gate"}
+{"item":"6","metric":"blocks","value":0,"kind":"gate"}
+{"item":"6","metric":"profile","value":1,"kind":"gate"}
+{"item":"6","metric":"off_band","value":0,"kind":"gate"}
+{"item":"6","metric":"content_violations","value":0,"kind":"gate"}
+{"item":"6","metric":"content_checked","value":1,"kind":"gate"}
+{"item":"6","metric":"judge_agrees","value":1,"kind":"info","detail":"built for 2, judged 2"}
+{"item":"6","metric":"repaired","value":0,"kind":"info"}
+{"item":"6","metric":"pool","value":296,"kind":"info"}
+{"item":"7","metric":"built","value":1,"kind":"gate"}
+{"item":"7","metric":"blocks","value":0,"kind":"gate"}
+{"item":"7","metric":"profile","value":1,"kind":"gate"}
+{"item":"7","metric":"off_band","value":0,"kind":"gate"}
+{"item":"7","metric":"content_violations","value":0,"kind":"gate"}
+{"item":"7","metric":"content_checked","value":1,"kind":"gate"}
+{"item":"7","metric":"judge_agrees","value":1,"kind":"info","detail":"built for 3, judged 3"}
+{"item":"7","metric":"repaired","value":0,"kind":"info"}
+{"item":"7","metric":"pool","value":303,"kind":"info"}
+{"item":"8","metric":"built","value":1,"kind":"gate"}
+{"item":"8","metric":"blocks","value":0,"kind":"gate"}
+{"item":"8","metric":"profile","value":1,"kind":"gate"}
+{"item":"8","metric":"off_band","value":0,"kind":"gate"}
+{"item":"8","metric":"content_violations","value":0,"kind":"gate"}
+{"item":"8","metric":"content_checked","value":1,"kind":"gate"}
+{"item":"8","metric":"judge_agrees","value":0,"kind":"info","detail":"built for 3, judged 4"}
+{"item":"8","metric":"repaired","value":0,"kind":"info"}
+{"item":"8","metric":"pool","value":295,"kind":"info"}
+{"item":"9","metric":"built","value":1,"kind":"gate"}
+{"item":"9","metric":"blocks","value":0,"kind":"gate"}
+{"item":"9","metric":"profile","value":1,"kind":"gate"}
+{"item":"9","metric":"off_band","value":0,"kind":"gate"}
+{"item":"9","metric":"content_violations","value":0,"kind":"gate"}
+{"item":"9","metric":"content_checked","value":1,"kind":"gate"}
+{"item":"9","metric":"judge_agrees","value":1,"kind":"info","detail":"built for 3, judged 3"}
+{"item":"9","metric":"repaired","value":0,"kind":"info"}
+{"item":"9","metric":"pool","value":294,"kind":"info"}
+{"item":"suite","metric":"judge_agreement","value":33,"kind":"gate","detail":"3 of 9, the bar is 80"}
