@@ -1,0 +1,2050 @@
+# M-15 judge calibration decks
+
+Card snapshot: 2026-09-04. 9 precons of the repository stand for bracket 2, and 12 cEDH lists of the local meta store stand for bracket 5 (D-698).
+
+A cEDH list is a Topdeck.gg list of tier great, with one commander and 99 cards. It placed 4 or better in a field of 32 or more. The newest list of each commander stands. The pick skips a list with a name that the card index does not know.
+
+The re-judge mode of `bracket-gate` reads this document. No model call wrote it.
+
+### 1. Bracket 2, Captain America, Team Leader, precon Avengers Assemble
+
+Cards:
+
+- 1 Ant-Man, Elusive Avenger
+- 1 Arcane Denial
+- 1 Arcane Signet
+- 1 Austere Command
+- 1 Avenge
+- 1 Avengers Quinjet
+- 1 Avengers Tower
+- 1 Bastion Protector
+- 1 Black Widow, Agile Avenger
+- 1 Captain America, Living Legend
+- 1 Captain Mar-Vell, Space-Born
+- 1 Captain Marvel, Apex Avenger
+- 1 Clifftop Retreat
+- 1 Coastal Peak
+- 1 Command Tower
+- 1 Destroy Evil
+- 1 Director Nick Fury
+- 1 Dismantling Wave
+- 1 Door of Destinies
+- 1 Exotic Orchard
+- 1 Falcon and Redwing
+- 1 Fellwar Stone
+- 1 Firebird, Blazing Ranger
+- 1 Folk Hero
+- 1 Frostboil Snarl
+- 1 Furycalm Snarl
+- 1 Gift of Immortality
+- 1 Glacial Fortress
+- 1 Glittering Massif
+- 1 Hawkeye, Avenging Archer
+- 1 Herald's Horn
+- 1 Hercules, Olympian Hero
+- 1 Hero's Blade
+- 1 Heroic Return
+- 1 Heroic Sacrifice
+- 1 Hulkbuster Armor
+- 1 Iron Man, Armored Avenger
+- 1 Irrigated Farmland
+- 5 Island
+- 1 Jarvis, Earth's Mightiest Butler
+- 1 Jocasta, Automaton Avenger
+- 1 Kindred Discovery
+- 1 Love on the Battlefield
+- 1 Make Your Move
+- 1 Metallic Mimic
+- 1 Methods of the Mighty
+- 5 Mountain
+- 1 Mystic Monastery
+- 1 Path of Ancestry
+- 1 Patriot, Shield Wielder
+- 1 Photon, Mighty Marvel
+- 6 Plains
+- 1 Plaza of Heroes
+- 1 Port Town
+- 1 Prairie Stream
+- 1 Professor Hulk
+- 1 Quicksilver, Speedster
+- 1 Radiant Summit
+- 1 Raise the Palisade
+- 1 Reconnaissance Mission
+- 1 Relic of Legends
+- 1 Rescue, Pepper Potts
+- 1 Rip Apart
+- 1 Scarlet Witch, Chaotic Avenger
+- 1 Scavenger Grounds
+- 1 Scorched Geyser
+- 1 Secluded Courtyard
+- 1 Shang-Chi and the Ten Rings
+- 1 She-Hulk, Wallbreaker
+- 1 Sol Ring
+- 1 Spectator Seating
+- 1 Speed, Young Avenger
+- 1 Sulfur Falls
+- 1 Swords to Plowshares
+- 1 Talisman of Conviction
+- 1 Talisman of Creativity
+- 1 Talisman of Progress
+- 1 The Wasp, Winsome Avenger
+- 1 Thor, Asgard's Avenger
+- 1 Thought Vessel
+- 1 Tome of Legends
+- 1 Unclaimed Territory
+- 1 Vision, Synthezoid Avenger
+- 1 War Machine, Avenging Arsenal
+- 1 West Coast Expansion
+- 1 Winter Soldier, Reborn Avenger
+
+### 2. Bracket 2, Cloud, Ex-SOLDIER, precon Limit Break
+
+Cards:
+
+- 1 Aerith, Last Ancient
+- 1 Arcane Signet
+- 1 Armory Automaton
+- 1 Ash Barrens
+- 1 Austere Command
+- 1 Avalanche of Sector 7
+- 1 Barret Wallace
+- 1 Barret, Avalanche Leader
+- 1 Bastion Protector
+- 1 Battlefield Forge
+- 1 Behemoth Sledge
+- 1 Bonders' Enclave
+- 1 Bronze Guardian
+- 1 Brushland
+- 1 Bugenhagen, Wise Elder
+- 1 Cait Sith, Fortune Teller
+- 1 Canopy Vista
+- 1 Champion's Helm
+- 1 Chaos Warp
+- 1 Cid, Freeflier Pilot
+- 1 Cinder Glade
+- 1 Clever Concealment
+- 1 Clifftop Retreat
+- 1 Cloud's Limit Break
+- 1 Colossus Hammer
+- 1 Command Tower
+- 1 Conformer Shuriken
+- 1 Conqueror's Flail
+- 1 Cultivate
+- 1 Furious Rise
+- 1 Darksteel Plate
+- 1 Decimate
+- 1 Dispatch
+- 1 Elena, Turk Recruit
+- 1 Evolving Wilds
+- 1 Exotic Orchard
+- 1 Explorer's Scope
+- 1 Fire-Lit Thicket
+- 3 Forest
+- 1 Fortified Village
+- 1 Furycalm Snarl
+- 1 Game Trail
+- 1 Harmonize
+- 1 Heidegger, Shinra Executive
+- 1 Helitrooper
+- 1 Hellkite Tyrant
+- 1 Hero's Blade
+- 1 Hero's Heirloom
+- 1 Inspiring Statuary
+- 1 Jungle Shrine
+- 1 Lifestream's Blessing
+- 1 Lightning Greaves
+- 1 Mask of Memory
+- 1 Mossfire Valley
+- 3 Mountain
+- 1 Nature's Lore
+- 1 Path of Ancestry
+- 3 Plains
+- 1 Professional Face-Breaker
+- 1 Professor Hojo
+- 1 Puresteel Paladin
+- 1 Radiant Grove
+- 1 Rampant Growth
+- 1 Red XIII, Proud Warrior
+- 1 Rootbound Crag
+- 1 Rugged Prairie
+- 1 SOLDIER Military Program
+- 1 Sacred Peaks
+- 1 Scavenger Grounds
+- 1 Secret Rendezvous
+- 1 Sephiroth, Fallen Hero
+- 1 Skullclamp
+- 1 Slayers' Stronghold
+- 1 Sol Ring
+- 1 Spire of Industry
+- 1 Summon: Kujata
+- 1 Summoning Materia
+- 1 Sungrass Prairie
+- 1 Sunpetal Grove
+- 1 Sunscorched Divide
+- 1 Sword of the Animist
+- 1 Tifa, Martial Artist
+- 1 Trailblazer's Boots
+- 1 Ultimate Magic: Holy
+- 1 Ultimate Magic: Meteor
+- 1 Unfinished Business
+- 1 Vandalblast
+- 1 Vanquish the Horde
+- 1 Vincent, Vengeful Atoner
+- 1 Wooded Ridgeline
+- 1 Wrecking Ball Arm
+- 1 Yuffie, Materia Hunter
+- 1 Zack Fair
+
+### 3. Bracket 2, Esika, God of the Tree // The Prismatic Bridge, precon From Cute to Brute
+
+Cards:
+
+- 1 Altar of the Pantheon
+- 1 Arcane Signet
+- 1 Archangel Avacyn // Avacyn, the Purifier
+- 1 Arlinn Kord // Arlinn, Embraced by the Moon
+- 1 Arlinn, the Pack's Hope // Arlinn, the Moon's Fury
+- 1 Azor's Gateway // Sanctum of the Sun
+- 1 Bala Ged Recovery // Bala Ged Sanctuary
+- 1 Barkchannel Pathway // Tidechannel Pathway
+- 1 Beast Whisperer
+- 1 Beast Within
+- 1 Blightstep Pathway // Searstep Pathway
+- 1 Bloodline Keeper // Lord of Lineage
+- 1 Branchloft Pathway // Boulderloft Pathway
+- 1 Brightclimb Pathway // Grimclimb Pathway
+- 1 Butcher of Malakir
+- 1 Chandra, Fire of Kaladesh // Chandra, Roaring Flame
+- 1 Chromatic Lantern
+- 1 Clearwater Pathway // Murkwater Pathway
+- 1 Command Tower
+- 1 Commander's Sphere
+- 1 Cosima, God of the Voyage // The Omenkeel
+- 1 Cragcrown Pathway // Timbercrown Pathway
+- 1 Darkbore Pathway // Slitherbore Pathway
+- 1 Dennick, Pious Apprentice // Dennick, Pious Apparition
+- 1 Diluvian Primordial
+- 1 Dowsing Dagger // Lost Vale
+- 1 Elbrus, the Binding Blade // Withengar Unbound
+- 1 Emmara, Soul of the Accord
+- 1 Evolving Wilds
+- 1 Exotic Orchard
+- 1 Farseek
+- 1 Fellwar Stone
+- 3 Forest
+- 1 Frontier Bivouac
+- 1 Garruk Relentless // Garruk, the Veil-Cursed
+- 1 Guardian Project
+- 1 Hadana's Climb // Winged Temple of Orazca
+- 1 Hagra Mauling // Hagra Broodpit
+- 1 Harmonize
+- 1 Hengegate Pathway // Mistgate Pathway
+- 1 Island
+- 1 Jace, Vryn's Prodigy // Jace, Telepath Unbound
+- 1 Jolrael, Mwonvuli Recluse
+- 1 Journey to Eternity // Atzal, Cave of Eternity
+- 1 Jungle Shrine
+- 1 Kinnan, Bonder Prodigy
+- 1 Kolvori, God of Kinship // The Ringhart Crest
+- 1 Kytheon, Hero of Akros // Gideon, Battle-Forged
+- 1 Legion's Landing // Adanto, the First Fort
+- 1 Liliana, Heretical Healer // Liliana, Defiant Necromancer
+- 1 Ludevic, Necrogenius // Olag, Ludevic's Hubris
+- 1 Meteor Golem
+- 1 Mila, Crafty Companion // Lukka, Wayward Bonder
+- 1 Mountain
+- 1 Needleverge Pathway // Pillarverge Pathway
+- 1 Nicol Bolas, the Ravager // Nicol Bolas, the Arisen
+- 1 Nissa, Vastwood Seer // Nissa, Sage Animist
+- 1 Ondu Inversion // Ondu Skyruins
+- 1 Opulent Palace
+- 1 Path of Ancestry
+- 1 Plains
+- 1 Plargg, Dean of Chaos // Augusta, Dean of Order
+- 1 Pongify
+- 1 Putrefy
+- 1 Rhys the Redeemed
+- 1 Rimewood Falls
+- 1 Riverglide Pathway // Lavaglide Pathway
+- 1 Sandsteppe Citadel
+- 1 Sandstone Oracle
+- 1 Savage Lands
+- 1 Scattered Groves
+- 1 Search for Azcanta // Azcanta, the Sunken Ruin
+- 1 Seaside Citadel
+- 1 Shaile, Dean of Radiance // Embrose, Dean of Shadow
+- 1 Sheltered Thicket
+- 1 Sisay, Weatherlight Captain
+- 1 Sol Ring
+- 1 Sphinx of the Second Sun
+- 1 Swamp
+- 1 Terramorphic Expanse
+- 1 Thaumatic Compass // Spires of Orazca
+- 1 The World Tree
+- 1 Time Wipe
+- 1 Tireless Provisioner
+- 1 Tovolar's Huntmaster // Tovolar's Packleader
+- 1 Treasure Map // Treasure Cove
+- 1 Triplicate Titan
+- 1 Urza's Ruinous Blast
+- 1 Utter End
+- 1 Valakut Awakening // Valakut Stoneforge
+- 1 Valentin, Dean of the Vein // Lisette, Dean of the Root
+- 1 Valki, God of Lies // Tibalt, Cosmic Impostor
+- 1 Vivid Grove
+- 1 Voldaren Pariah // Abolisher of Bloodlines
+- 1 Westvale Abbey // Ormendahl, Profane Prince
+- 1 Woodland Chasm
+- 1 Zetalpa, Primal Dawn
+
+### 4. Bracket 2, Zada, Hedron Grinder, precon Goblin Storm
+
+Cards:
+
+- 1 Ancestors' Aid
+- 1 Arena of Glory
+- 1 Battle Hymn
+- 1 Blasphemous Act
+- 1 Boggart Shenanigans
+- 1 Brightstone Ritual
+- 1 Broadside Bombardiers
+- 1 Castle Embereth
+- 1 Chaos Warp
+- 1 Conspicuous Snoop
+- 1 Crimson Wisps
+- 1 Daring Discovery
+- 1 Den of the Bugbear
+- 1 Dragon Fodder
+- 1 Dwarven Mine
+- 1 Empty the Warrens
+- 1 Expedite
+- 1 Faithless Looting
+- 1 Fists of Flame
+- 1 Forgotten Cave
+- 1 Fountainport
+- 1 Frontline Heroism
+- 1 Gempalm Incinerator
+- 1 General Kreat, the Boltbringer
+- 1 Glimpse the Impossible
+- 1 Goblin Bombardment
+- 1 Goblin Burrows
+- 1 Goblin Bushwhacker
+- 1 Goblin Chieftain
+- 1 Goblin Dark-Dwellers
+- 1 Goblin Lackey
+- 1 Goblin Matron
+- 1 Goblin Negotiation
+- 1 Goblin Trashmaster
+- 1 Goblin Warchief
+- 1 Grapeshot
+- 1 Great Train Heist
+- 1 Grenzo, Havoc Raiser
+- 1 Haze of Rage
+- 1 Hidden Volcano
+- 1 Howlsquad Heavy
+- 1 Idol of Oblivion
+- 1 Impact Tremors
+- 1 Impulsive Pilferer
+- 1 Kher Keep
+- 1 Krenko's Command
+- 1 Krenko, Mob Boss
+- 1 Mana Geyser
+- 1 Mogg War Marshal
+- 22 Mountain
+- 1 Pashalik Mons
+- 1 Past in Flames
+- 1 Quest for the Goblin Lord
+- 1 Redcap Gutter-Dweller
+- 1 Reliquary Tower
+- 1 Renegade Tactics
+- 1 Roaming Throne
+- 1 Ruby Medallion
+- 1 Rundvelt Hordemaster
+- 1 Sazacap's Brew
+- 1 Searslicer Goblin
+- 1 Seething Song
+- 1 Shinka, the Bloodsoaked Keep
+- 1 Siege-Gang Commander
+- 1 Siege-Gang Lieutenant
+- 1 Skirk Prospector
+- 1 Skullclamp
+- 1 Smoldering Crater
+- 1 Sol Ring
+- 1 Spinerock Knoll
+- 1 Spreading Insurrection
+- 1 Storm-Kiln Artist
+- 1 Swiftfoot Boots
+- 1 Throne of Eldraine
+- 1 Vandalblast
+- 1 War Room
+- 1 Wild Ride
+- 1 Witch's Mark
+
+### 5. Bracket 2, Saheeli, Radiant Creator, precon Living Energy
+
+Cards:
+
+- 1 Academy Ruins
+- 1 Adaptive Omnitool
+- 1 Aether Hub
+- 1 Aetherflux Conduit
+- 1 Aetheric Amplifier
+- 1 Aethersquall Ancient
+- 1 Aethertide Whale
+- 1 Aetherwind Basker
+- 1 Aetherworks Marvel
+- 1 Arcane Denial
+- 1 Arcane Signet
+- 1 Architect of the Untamed
+- 1 Attune with Aether
+- 1 Bespoke Battlewagon
+- 1 Blasphemous Act
+- 1 Bootleggers' Stash
+- 1 Chain Reaction
+- 1 Chaos Warp
+- 1 Chromatic Lantern
+- 1 Combustible Gearhulk
+- 1 Command Tower
+- 1 Commander's Sphere
+- 1 Confiscation Coup
+- 1 Conjurer's Closet
+- 1 Cultivator's Caravan
+- 1 Decoction Module
+- 1 Disallow
+- 1 Druid of Purification
+- 1 Duplicant
+- 1 Elder Gargaroth
+- 1 Era of Innovation
+- 1 Evolving Wilds
+- 1 Exotic Orchard
+- 1 Explosive Vegetation
+- 6 Forest
+- 1 Frontier Bivouac
+- 1 Frostboil Snarl
+- 1 Glimmer of Genius
+- 1 Hinterland Harbor
+- 5 Island
+- 1 Karplusan Forest
+- 1 Lightning Greaves
+- 1 Lightning Runner
+- 1 Loyal Apprentice
+- 1 Midnight Clock
+- 5 Mountain
+- 1 Nissa, Worldsoul Speaker
+- 1 One with the Machine
+- 1 Ornithopter of Paradise
+- 1 Overflowing Basin
+- 1 Panharmonicon
+- 1 Path of Ancestry
+- 1 Peema Aether-Seer
+- 1 Peema Trailblazer
+- 1 Pia Nalaar, Chief Mechanic
+- 1 Pia and Kiran Nalaar
+- 1 Rampaging Aetherhood
+- 1 Reality Shift
+- 1 Reckless Fireweaver
+- 1 Retrofitter Foundry
+- 1 Rogue Refiner
+- 1 Rootbound Crag
+- 1 Saheeli, Sublime Artificer
+- 1 Sai, Master Thopterist
+- 1 Servant of the Conduit
+- 1 Sheltered Thicket
+- 1 Shivan Reef
+- 1 Slagwoods Bridge
+- 1 Sol Ring
+- 1 Solar Transformer
+- 1 Solemn Simulacrum
+- 1 Soul-Guide Lantern
+- 1 Spire of Industry
+- 1 Stridehangar Automaton
+- 1 Sulfur Falls
+- 1 Talisman of Curiosity
+- 1 Tanglepool Bridge
+- 1 Temple of Epiphany
+- 1 Territorial Aetherkite
+- 1 Thopter Spy Network
+- 1 Treasure Vault
+- 1 Triplicate Titan
+- 1 Vineglimmer Snarl
+- 1 Whirler Rogue
+- 1 Whirler Virtuoso
+- 1 Yavimaya Coast
+
+### 6. Bracket 2, Auntie Ool, Cursewretch, precon Blight Curse
+
+Cards:
+
+- 1 Aberrant Return
+- 1 Arcane Signet
+- 1 Archfiend of Ifnir
+- 1 Assassin's Trophy
+- 1 Binding the Old Gods
+- 1 Black Sun's Zenith
+- 1 Blowfly Infestation
+- 1 Burning Curiosity
+- 1 Canyon Slough
+- 1 Carnifex Demon
+- 1 Cathartic Pyre
+- 1 Cathartic Reunion
+- 1 Chain Reaction
+- 1 Channeler Initiate
+- 1 Chimil, the Inner Sun
+- 1 Cinder Glade
+- 1 Command Tower
+- 1 Commander's Sphere
+- 1 Contagion Clasp
+- 1 Devoted Druid
+- 1 Dragonskull Summit
+- 1 Dread Tiller
+- 1 Dusk Urchins
+- 1 Eventide's Shadow
+- 1 Everlasting Torment
+- 1 Evolution Sage
+- 1 Evolving Wilds
+- 1 Exotic Orchard
+- 1 Ferrafor, Young Yew
+- 1 Festering Thicket
+- 1 Fire Covenant
+- 1 Flourishing Defenses
+- 6 Forest
+- 1 Glissa Sunslayer
+- 1 Golgari Rot Farm
+- 1 Grave Titan
+- 1 Grave Venerations
+- 1 Grim Poppet
+- 1 Gruul Turf
+- 1 Hapatra, Vizier of Poisons
+- 1 Harmonize
+- 1 Hoarder's Greed
+- 1 Ifnir Deadlands
+- 1 Ignoble Hierarch
+- 1 Incremental Blight
+- 1 Infernal Grasp
+- 1 Kulrath Knight
+- 1 Lasting Tarfire
+- 1 Liliana, Death Wielder
+- 1 Massacre Girl, Known Killer
+- 1 Midnight Banshee
+- 4 Mountain
+- 1 Necroskitter
+- 1 Nesting Grounds
+- 1 Night's Whisper
+- 1 Oft-Nabbed Goat
+- 1 Painful Truths
+- 1 Path of Ancestry
+- 1 Persist
+- 1 Puca's Covenant
+- 1 Puppeteer Clique
+- 1 Putrefy
+- 1 Rakdos Carnarium
+- 1 Riveteers Overlook
+- 1 Rootbound Crag
+- 1 Savage Lands
+- 1 Sheltered Thicket
+- 1 Sinister Gnarlbark
+- 1 Skinrender
+- 1 Smoldering Marsh
+- 1 Sol Ring
+- 1 Soul Snuffers
+- 8 Swamp
+- 1 Terminate
+- 1 Terramorphic Expanse
+- 1 The Reaper, King No More
+- 1 The Scorpion God
+- 1 Tree of Perdition
+- 1 Vernal Fen
+- 1 Village Pillagers
+- 1 Vraska, Betrayal's Sting
+- 1 Wickerbough Elder
+- 1 Wickersmith's Tools
+- 1 Woodland Cemetery
+
+### 7. Bracket 2, Éowyn, Shieldmaiden, precon Riders of Rohan
+
+Cards:
+
+- 1 Aragorn, King of Gondor
+- 1 Arcane Signet
+- 1 Archivist of Gondor
+- 1 Banishing Light
+- 1 Bastion Protector
+- 1 Battlefield Forge
+- 1 Beregond of the Guard
+- 1 Boromir, Gondor's Hope
+- 1 Call for Aid
+- 1 Champions of Minas Tirith
+- 1 Clifftop Retreat
+- 1 Combat Celebrant
+- 1 Command Tower
+- 1 Commander's Sphere
+- 1 Court of Ire
+- 1 Crown of Gondor
+- 1 Dearly Departed
+- 1 Denethor, Stone Seer
+- 1 Door of Destinies
+- 1 Earthquake
+- 1 Erkenbrand, Lord of Westfold
+- 1 Evolving Wilds
+- 1 Exotic Orchard
+- 1 Faramir, Steward of Gondor
+- 1 Fealty to the Realm
+- 1 Field of Ruin
+- 1 Fiend Hunter
+- 1 Flamerush Rider
+- 1 Forth Eorlingas!
+- 1 Frontier Warmonger
+- 1 Frontline Medic
+- 1 Furycalm Snarl
+- 1 Gilraen, Dúnedain Protector
+- 1 Gimli of the Glittering Caves
+- 1 Glacial Fortress
+- 1 Grey Host Reinforcements
+- 1 Harsh Mentor
+- 1 Heirloom Blade
+- 1 Herald's Horn
+- 1 Humble Defector
+- 1 Increasing Devotion
+- 5 Island
+- 1 Lossarnach Captain
+- 1 Lost to Legend
+- 1 Marshal's Anthem
+- 5 Mountain
+- 1 Oath of Eorl
+- 1 Palace Jailer
+- 1 Path of Ancestry
+- 1 Path to Exile
+- 9 Plains
+- 1 Port Town
+- 1 Prairie Stream
+- 1 Prince Imrahil the Fair
+- 1 Riders of Rohan
+- 1 Rogue's Passage
+- 1 Secluded Courtyard
+- 1 Selfless Squire
+- 1 Shared Animosity
+- 1 Sol Ring
+- 1 Sulfur Falls
+- 1 Sunset Revelry
+- 1 Supreme Verdict
+- 1 Swords to Plowshares
+- 1 Talisman of Conviction
+- 1 Talisman of Progress
+- 1 Taunt from the Rampart
+- 1 Terramorphic Expanse
+- 1 Thought Vessel
+- 1 Throne of the High City
+- 1 Théoden, King of Rohan
+- 1 Tranquil Cove
+- 1 Unbreakable Formation
+- 1 Vanquisher's Banner
+- 1 Verge Rangers
+- 1 Village Bell-Ringer
+- 1 Visions of Glory
+- 1 Wayfarer's Bauble
+- 1 Weathered Wayfarer
+- 1 Wind-Scarred Crag
+- 1 Windbrisk Heights
+- 1 Zealous Conscripts
+- 1 Éomer, King of Rohan
+
+### 8. Bracket 2, Omo, Queen of Vesuva, precon Tricky Terrain
+
+Cards:
+
+- 1 Acidic Slime
+- 1 Aggressive Biomancy
+- 1 Apex Devastator
+- 1 Arcane Denial
+- 1 Arcane Signet
+- 1 Avenger of Zendikar
+- 1 Basilisk Gate
+- 1 Beast Within
+- 1 Blast Zone
+- 1 Chromatic Lantern
+- 1 Cloudpost
+- 1 Command Tower
+- 1 Copy Land
+- 1 Curse of the Swine
+- 1 Dark Depths
+- 1 Desert Warfare
+- 1 Desert of the Indomitable
+- 1 Desert of the Mindful
+- 1 Dreamroot Cascade
+- 1 Drown in Dreams
+- 1 Dryad of the Ilysian Grove
+- 1 Elvish Rejuvenator
+- 1 Eureka Moment
+- 1 Evacuation
+- 1 Expedition Map
+- 1 Finale of Revelation
+- 1 Flooded Grove
+- 1 Floriferous Vinewall
+- 1 Fog Bank
+- 4 Forest
+- 1 Glimmerpost
+- 1 Growth Spiral
+- 1 Harmonize
+- 1 Hashep Oasis
+- 1 Hidden Cataract
+- 1 Hidden Nursery
+- 1 Horizon of Progress
+- 1 Hour of Promise
+- 1 Hydra Broodmaster
+- 1 Hydroid Krasis
+- 3 Island
+- 1 Jyoti, Moag Ancient
+- 1 Lair of the Hydra
+- 1 Lazotep Quarry
+- 1 Lumbering Falls
+- 1 Lush Oasis
+- 1 Magus of the Candelabra
+- 1 Mana Reflection
+- 1 March from Velis Vel
+- 1 Mirage Mirror
+- 1 Nissa, Steward of Elements
+- 1 Oblivion Stone
+- 1 Overflowing Basin
+- 1 Planar Nexus
+- 1 Poison Dart Frog
+- 1 Pongify
+- 1 Propaganda
+- 1 Quandrix Campus
+- 1 Rampaging Baloths
+- 1 Rampant Frogantua
+- 1 Ramunap Excavator
+- 1 Replication Technique
+- 1 Sage of the Maze
+- 1 Satyr Wayfinder
+- 1 Scute Swarm
+- 1 Seer's Sundial
+- 1 Simic Growth Chamber
+- 1 Simic Guildgate
+- 1 Skullwinder
+- 1 Sol Ring
+- 1 Summary Dismissal
+- 1 Sunken Palace
+- 1 Sylvan Scrying
+- 1 Talon Gates of Madara
+- 1 Tatyova, Benthic Druid
+- 1 Temple of Mystery
+- 1 Terastodon
+- 1 Thespian's Stage
+- 1 Thornwood Falls
+- 1 Treasure Cruise
+- 1 Trenchpost
+- 1 Ulvenwald Hydra
+- 1 Urban Evolution
+- 1 Uro, Titan of Nature's Wrath
+- 1 Urza's Mine
+- 1 Urza's Power Plant
+- 1 Urza's Tower
+- 1 Vesuva
+- 1 Vineglimmer Snarl
+- 1 Vivien Reid
+- 1 Volatile Fault
+- 1 Wonderscape Sage
+- 1 Yavimaya Coast
+- 1 Yavimaya, Cradle of Growth
+
+### 9. Bracket 2, Heroes in a Half Shell, precon Turtle Power
+
+Cards:
+
+- 1 Acidic Slime
+- 1 April O'Neil, Live on the Scene
+- 1 Arcade Cabinet
+- 1 Arcane Signet
+- 1 Ash Barrens
+- 1 Assassin's Trophy
+- 1 Baxter, Fly in the Ointment
+- 1 Bebop, Skull & Crossbones
+- 1 Big Apple, 3 a.m.
+- 1 Big Mother Mouser
+- 1 Biogenic Ooze
+- 1 Blasphemous Act
+- 1 Casey Jones, Back Alley Brute
+- 1 Chromatic Lantern
+- 1 Cinder Glade
+- 1 City of Brass
+- 1 Coin of Mastery
+- 1 Command Tower
+- 1 Continue?
+- 1 Corpsejack Menace
+- 1 Cultivate
+- 1 Dimension X Pizzasaur
+- 1 Donatello, the Brains
+- 1 Double Jump // Flying Kick
+- 1 Dragonskull Summit
+- 1 Electric Seaweed
+- 1 Endless Foot Assault
+- 1 Escape Tunnel
+- 1 Everything Pizza
+- 1 Evolving Wilds
+- 1 Exotic Orchard
+- 1 Exploding Barrel
+- 1 Fabled Passage
+- 1 Fast Forward
+- 1 Foot Chopper
+- 4 Forest
+- 1 Game Over
+- 1 Grand Coliseum
+- 1 Harmonize
+- 1 Here Comes a New Hero!
+- 1 Hidden Hideout
+- 1 High Score
+- 1 Hinterland Harbor
+- 1 Irma, Part-Time Mutant
+- 2 Island
+- 1 Krang, the All-Powerful
+- 1 Leatherhead, Iron Gator
+- 1 Leonardo, the Balance
+- 1 Lessons from Life
+- 1 Level Up
+- 1 Lita, Little Orphan Amphibian
+- 1 Michelangelo, the Heart
+- 1 Mole Module
+- 1 Mona Lisa, Science Geek
+- 2 Mountain
+- 1 Ninja Pizza
+- 1 Path of Ancestry
+- 2 Plains
+- 1 Rain-Slicked Copse
+- 1 Raphael, the Muscle
+- 1 Rat King, Pale Piper
+- 1 Ray Fillet, Wave Warrior
+- 1 Roadkill Rodney
+- 1 Rocksteady, Mutant Marauder
+- 1 Rootbound Crag
+- 1 Shellshock
+- 1 Shredder, Shadow Master
+- 1 Smoldering Marsh
+- 1 Sodden Verdure
+- 1 Sol Ring
+- 1 Special Move
+- 1 Spire Garden
+- 1 Splinter, the Mentor
+- 1 Steelbane Hydra
+- 1 Sunken Hollow
+- 1 Super Combo
+- 2 Swamp
+- 1 Swift Demise
+- 1 Tempestra, Dame of Games
+- 1 Thriving Grove
+- 1 Thriving Isle
+- 1 Thriving Moor
+- 1 Together Forever
+- 1 Tokka & Rahzar, Unsupervised
+- 1 Turtle Lair
+- 1 Undergrowth Stadium
+- 1 Vanquish the Horde
+- 1 Vernal Fen
+- 1 Vibrant Cityscape
+- 1 Vigor
+- 1 Voracious Hydra
+- 1 Wave Goodbye
+
+### 10. Bracket 5, Sisay, Weatherlight Captain, cedh 2026-09-06, place 1 of 65
+
+Cards:
+
+- 1 Ad Nauseam
+- 1 An Offer You Can't Refuse
+- 1 Ancient Tomb
+- 1 Arcane Signet
+- 1 Badlands
+- 1 Bayou
+- 1 Beseech the Mirror
+- 1 Birds of Paradise
+- 1 Bloodstained Mire
+- 1 Borne Upon a Wind
+- 1 Boseiju, Who Endures
+- 1 Brain Freeze
+- 1 Cabal Ritual
+- 1 Carpet of Flowers
+- 1 Chain of Vapor
+- 1 Chrome Mox
+- 1 City of Brass
+- 1 Command Tower
+- 1 Crop Rotation
+- 1 Culling the Weak
+- 1 Dark Ritual
+- 1 Deathrite Shaman
+- 1 Deflecting Swat
+- 1 Demonic Consultation
+- 1 Demonic Tutor
+- 1 Diabolic Intent
+- 1 Dispel
+- 1 Elves of Deep Shadow
+- 1 Elvish Spirit Guide
+- 1 Emergence Zone
+- 1 Enlightened Tutor
+- 1 Esper Sentinel
+- 1 Exotic Orchard
+- 1 Faerie Mastermind
+- 1 Fierce Guardianship
+- 1 Final Fortune
+- 1 Flooded Strand
+- 1 Flusterstorm
+- 1 Force of Negation
+- 1 Force of Will
+- 1 Gamble
+- 1 Gemstone Caverns
+- 1 Gleaming Splendor
+- 1 Ignoble Hierarch
+- 1 Imperial Seal
+- 1 Jennifer Walters // The Sensational She-Hulk
+- 1 Kinnan, Bonder Prodigy
+- 1 Lavinia, Azorius Renegade
+- 1 Lim-Dûl's Vault
+- 1 Lion's Eye Diamond
+- 1 Lotho, Corrupt Shirriff
+- 1 Lotus Petal
+- 1 Mana Confluence
+- 1 Mana Vault
+- 1 Marsh Flats
+- 1 Mental Misstep
+- 1 Mindbreak Trap
+- 1 Misdirection
+- 1 Misty Rainforest
+- 1 Mox Amber
+- 1 Mox Diamond
+- 1 Mox Opal
+- 1 Mystic Remora
+- 1 Mystical Tutor
+- 1 Necrodominance
+- 1 Necropotence
+- 1 Noble Hierarch
+- 1 Pact of Negation
+- 1 Polluted Delta
+- 1 Pyroblast
+- 1 Ragavan, Nimble Pilferer
+- 1 Rhystic Study
+- 1 Rite of Flame
+- 1 Savannah
+- 1 Scalding Tarn
+- 1 Scrubland
+- 1 Silence
+- 1 Simian Spirit Guide
+- 1 Smothering Tithe
+- 1 Snapback
+- 1 Sol Ring
+- 1 Starting Town
+- 1 Swan Song
+- 1 Tainted Pact
+- 1 Tarnished Citadel
+- 1 Tataru Taru
+- 1 Teferi, Time Raveler
+- 1 Thassa's Oracle
+- 1 Tinder Wall
+- 1 Tropical Island
+- 1 Tundra
+- 1 Underground Sea
+- 1 Underworld Breach
+- 1 Valley Floodcaller
+- 1 Vampiric Tutor
+- 1 Verdant Catacombs
+- 1 Volcanic Island
+- 1 Wishclaw Talisman
+- 1 Wooded Foothills
+
+### 11. Bracket 5, Kinnan, Bonder Prodigy, cedh 2026-09-06, place 1 of 40
+
+Cards:
+
+- 1 Agatha's Soul Cauldron
+- 1 An Offer You Can't Refuse
+- 1 Ancient Tomb
+- 1 Arcane Signet
+- 1 Archdruid's Charm
+- 1 Badgermole Cub
+- 1 Basalt Monolith
+- 1 Birds of Paradise
+- 1 Bloom Tender
+- 1 Boseiju, Who Endures
+- 1 Breeding Pool
+- 1 Chain of Vapor
+- 1 Chord of Calling
+- 1 Chrome Mox
+- 1 Clever Impersonator
+- 1 Colossal Skyturtle
+- 1 Command Tower
+- 1 Consecrated Sphinx
+- 1 Crop Rotation
+- 1 Delighted Halfling
+- 1 Devoted Druid
+- 1 Dramatic Reversal
+- 1 Drift of Phantasms
+- 1 Elvish Mystic
+- 1 Elvish Spirit Guide
+- 1 Emergence Zone
+- 1 Enduring Vitality
+- 1 Faerie Mastermind
+- 1 Fellwar Stone
+- 1 Fierce Guardianship
+- 1 Finale of Devastation
+- 1 Force of Negation
+- 1 Force of Will
+- 1 Forest
+- 1 Freed from the Real
+- 1 Gaea's Cradle
+- 1 Gemstone Caverns
+- 1 Gogo, Master of Mimicry
+- 1 High Fae Trickster
+- 1 Hullbreaker Horror
+- 1 Incubation Druid
+- 1 Island
+- 1 Llanowar Elves
+- 1 Lotus Petal
+- 1 Machine God's Effigy
+- 1 Mana Drain
+- 1 Mana Vault
+- 1 Mental Misstep
+- 1 Minamo, School at Water's Edge
+- 1 Mindbreak Trap
+- 1 Mirage Mirror
+- 1 Mistrise Village
+- 1 Misty Rainforest
+- 1 Moonsilver Key
+- 1 Mox Amber
+- 1 Mox Diamond
+- 1 Mox Opal
+- 1 Mystic Remora
+- 1 Nature's Rhythm
+- 1 Nezahal, Primal Tide
+- 1 Otawara, Soaring City
+- 1 Pemmin's Aura
+- 1 Phyrexian Metamorph
+- 1 Pongify
+- 1 Rejuvenating Springs
+- 1 Rhystic Study
+- 1 Sakashima of a Thousand Faces
+- 1 Scalding Tarn
+- 1 Seedborn Muse
+- 1 Shifting Woodland
+- 1 Simic Signet
+- 1 Sink into Stupor // Soporific Springs
+- 1 Sol Ring
+- 1 Springleaf Drum
+- 1 Strix Serenade
+- 1 Sudden Substitution
+- 1 Swan Song
+- 1 Sylvan Library
+- 1 Talisman of Curiosity
+- 1 Talon Gates of Madara
+- 1 Tezzeret the Seeker
+- 1 Thassa's Oracle
+- 1 The Cabbage Merchant
+- 1 The One Ring
+- 1 The Unagi of Kyoshi Island
+- 1 Thrasios, Triton Hero
+- 1 Transmute Artifact
+- 1 Treasure Vault
+- 1 Tropical Island
+- 1 Urza's Saga
+- 1 Valley Floodcaller
+- 1 Verdant Catacombs
+- 1 Vexing Bauble
+- 1 Wan Shi Tong, Librarian
+- 1 Waterlogged Grove
+- 1 Whir of Invention
+- 1 Willowrush Verge
+- 1 Wooded Foothills
+- 1 Yavimaya Coast
+
+### 12. Bracket 5, Grenzo, Dungeon Warden, cedh 2026-09-06, place 2 of 69
+
+Cards:
+
+- 1 Abundant Countryside
+- 1 Ancient Tomb
+- 1 Arcane Signet
+- 1 Ardent Electromancer
+- 1 Ashnod's Altar
+- 1 Badlands
+- 1 Barkform Harvester
+- 1 Basal Sliver
+- 1 Blood Crypt
+- 1 Blood Vassal
+- 1 Bloodstained Mire
+- 1 Boggart Trawler // Boggart Bog
+- 1 Carrion Feeder
+- 1 Catalyst Elemental
+- 1 Cavern of Souls
+- 1 Chrome Mox
+- 1 City of Brass
+- 1 City of Traitors
+- 1 Command Tower
+- 1 Crime Novelist
+- 1 Damping Sphere
+- 1 Daretti, Rocketeer Engineer
+- 1 Deflecting Swat
+- 1 Demonic Tutor
+- 1 Emrakul's Hatcher
+- 1 Exotic Orchard
+- 1 Fellwar Stone
+- 1 Fury
+- 1 Gemstone Caverns
+- 1 Goblin Engineer
+- 1 Goblin Recruiter
+- 1 Grim Hireling
+- 1 Heartstone
+- 1 Hoverstone Pilgrim
+- 1 Infernal Captor
+- 1 Kiki-Jiki, Mirror Breaker
+- 1 Kingpin, Wilson Fisk
+- 1 Knuckles the Echidna
+- 1 Kuldotha Forgemaster
+- 1 Lotus Petal
+- 1 Luxury Suite
+- 1 Magda, Brazen Outlaw
+- 1 Magus of the Moon
+- 1 Mana Confluence
+- 1 Mana Vault
+- 1 Marsh Flats
+- 1 Mayhem Devil
+- 1 Mount Doom
+- 1 Mox Amber
+- 1 Mox Diamond
+- 1 Mox Opal
+- 1 Nefarious Imp
+- 1 Nykthos, Shrine to Nyx
+- 1 Opposition Agent
+- 1 Orcish Bowmasters
+- 1 Overeager Apprentice
+- 1 Pawn of Ulamog
+- 1 Phyrexian Tower
+- 1 Phyrexian Vivisector
+- 1 Pinnacle Monk // Mystic Peak
+- 1 Pit Automaton
+- 1 Pitiless Plunderer
+- 1 Plaza of Heroes
+- 1 Polluted Delta
+- 1 Priest of Gix
+- 1 Priest of Urabrask
+- 1 Professional Face-Breaker
+- 1 Ragavan, Nimble Pilferer
+- 1 Rapacious Dragon
+- 1 Reckless Barbarian
+- 1 Ruthless Technomancer
+- 1 Simian Spirit Guide
+- 1 Skirk Prospector
+- 1 Skittering Precursor
+- 1 Sling-Gang Lieutenant
+- 1 Sol Ring
+- 1 South Wind Avatar
+- 1 Spirit of Resilience
+- 1 Stadium Vendors
+- 1 Starting Town
+- 1 Stridehangar Automaton
+- 1 Sulfurous Springs
+- 1 Swamp
+- 1 Talisman of Indulgence
+- 1 Tarnished Citadel
+- 1 Treasonous Ogre
+- 1 Treasure Nabber
+- 1 Twilight Diviner
+- 1 Umbral Collar Zealot
+- 1 Vampiric Tutor
+- 1 Viscera Seer
+- 1 Warren Soultrader
+- 1 Woe Strider
+- 1 Workhorse
+- 1 Xorn
+- 1 Young Necromancer
+- 1 Zealous Conscripts
+- 1 Zulaport Cutthroat
+- 1 _____ Goblin
+
+### 13. Bracket 5, Flubs, the Fool, cedh 2026-09-06, place 4 of 65
+
+Cards:
+
+- 1 Aether Spellbomb
+- 1 Ancient Tomb
+- 1 Arcane Signet
+- 1 Arid Mesa
+- 1 Autumn's Veil
+- 1 Birds of Paradise
+- 1 Boseiju, Who Endures
+- 1 Brain Freeze
+- 1 Breakthrough
+- 1 Breeding Pool
+- 1 Chrome Mox
+- 1 City of Brass
+- 1 Cloud of Faeries
+- 1 Cloudstone Curio
+- 1 Command Tower
+- 1 Crimson Kobolds
+- 1 Crookshank Kobolds
+- 1 Crop Rotation
+- 1 Dragon's Rage Channeler
+- 1 Eldritch Evolution
+- 1 Elvish Spirit Guide
+- 1 Emerald Charm
+- 1 Eruth, Tormented Prophet
+- 1 Exotic Orchard
+- 1 Exploration
+- 1 Faithless Looting
+- 1 Fellwar Stone
+- 1 Finale of Devastation
+- 1 Flame Jab
+- 1 Flooded Strand
+- 1 Food Chain
+- 1 Forbidden Orchard
+- 1 Forest
+- 1 Gaea's Cradle
+- 1 Gemstone Caverns
+- 1 Ghostly Pilferer
+- 1 Hexing Squelcher
+- 1 Infernal Plunge
+- 1 Into the Flood Maw
+- 1 Island
+- 1 Jeska's Will
+- 1 Kobolds of Kher Keep
+- 1 Life from the Loam
+- 1 Lightning Bolt
+- 1 Lion's Eye Diamond
+- 1 Lotus Petal
+- 1 Mana Confluence
+- 1 Manabond
+- 1 Memnite
+- 1 Mishra's Bauble
+- 1 Misty Rainforest
+- 1 Mogg Salvage
+- 1 Mountain
+- 1 Mox Amber
+- 1 Mox Diamond
+- 1 Mystic Remora
+- 1 Mystical Tutor
+- 1 Noxious Revival
+- 1 Oboro Breezecaller
+- 1 Ornithopter
+- 1 Phyrexian Walker
+- 1 Pick Your Poison
+- 1 Pyroblast
+- 1 Rejuvenating Springs
+- 1 Rite of Flame
+- 1 Rograkh, Son of Rohgahh
+- 1 Scalding Tarn
+- 1 Shifting Woodland
+- 1 Shocking Sharpshooter
+- 1 Simian Spirit Guide
+- 1 Six
+- 1 Snap
+- 1 Sol Ring
+- 1 Song of Creation
+- 1 Spark of Creativity
+- 1 Springleaf Drum
+- 1 Squee, the Immortal
+- 1 Steam Vents
+- 1 Step Through
+- 1 Stomping Ground
+- 1 Strike It Rich
+- 1 Summer Bloom
+- 1 Taiga
+- 1 Talon Gates of Madara
+- 1 Tinder Wall
+- 1 Tormod's Crypt
+- 1 Tropical Island
+- 1 Underworld Breach
+- 1 Urza's Bauble
+- 1 Utopia Sprawl
+- 1 Veteran Explorer
+- 1 Volcanic Island
+- 1 Walking Ballista
+- 1 Wheel of Fortune
+- 1 Wild Cantor
+- 1 Wild Growth
+- 1 Windswept Heath
+- 1 Wooded Foothills
+- 1 Worldly Tutor
+
+### 14. Bracket 5, Heliod, the Radiant Dawn // Heliod, the Warped Eclipse, cedh 2026-09-05, place 1 of 45
+
+Cards:
+
+- 1 Adarkar Wastes
+- 1 An Offer You Can't Refuse
+- 1 Ancient Den
+- 1 Ancient Tomb
+- 1 Arcane Signet
+- 1 Arid Mesa
+- 1 Azorius Signet
+- 1 Blind Obedience
+- 1 Borne Upon a Wind
+- 1 Cephalid Coliseum
+- 1 Chain of Vapor
+- 1 Chakra Meditation
+- 1 Chrome Mox
+- 1 City of Brass
+- 1 City of Traitors
+- 1 Clever Impersonator
+- 1 Command Tower
+- 1 Commandeer
+- 1 Copy Artifact
+- 1 Coveted Jewel
+- 1 Displacer Kitten
+- 1 Enlightened Tutor
+- 1 Esper Sentinel
+- 1 Faerie Mastermind
+- 1 Fellwar Stone
+- 1 Fierce Guardianship
+- 1 Flash Photography
+- 1 Flooded Strand
+- 1 Floodfarm Verge
+- 1 Flusterstorm
+- 1 Force of Negation
+- 1 Force of Will
+- 1 Gemstone Caverns
+- 1 Gifts Ungiven
+- 1 Gilded Drake
+- 1 Gleaming Splendor
+- 1 Grim Monolith
+- 1 Hallowed Fountain
+- 1 Hidden Strings
+- 1 Hullbreaker Horror
+- 1 Idyllic Tutor
+- 1 Into the Flood Maw
+- 1 Intuition
+- 1 Island
+- 1 King T'Challa // Black Panther, Hope Enduring
+- 1 Lotus Petal
+- 1 Machine God's Effigy
+- 1 Mana Confluence
+- 1 Mana Vault
+- 1 Marsh Flats
+- 1 Mental Misstep
+- 1 Merchant Scroll
+- 1 Minamo, School at Water's Edge
+- 1 Mindbreak Trap
+- 1 Mirrormade
+- 1 Misty Rainforest
+- 1 Mockingbird
+- 1 Moonsilver Key
+- 1 Mox Diamond
+- 1 Mox Opal
+- 1 Mystic Remora
+- 1 Mystical Tutor
+- 1 Orim's Chant
+- 1 Otawara, Soaring City
+- 1 Pact of Negation
+- 1 Paradoxical Outcome
+- 1 Phyrexian Metamorph
+- 1 Plains
+- 1 Polluted Delta
+- 1 Ranger-Captain of Eos
+- 1 Recruiter of the Guard
+- 1 Rhystic Study
+- 1 Scalding Tarn
+- 1 Sea Gate Restoration // Sea Gate, Reborn
+- 1 Sea of Clouds
+- 1 Seat of the Synod
+- 1 Sevinne's Reclamation
+- 1 Silence
+- 1 Sink into Stupor // Soporific Springs
+- 1 Smothering Tithe
+- 1 Snap
+- 1 Snapback
+- 1 Sol Ring
+- 1 Spellseeker
+- 1 Springleaf Drum
+- 1 Subtlety
+- 1 Swan Song
+- 1 Talisman of Progress
+- 1 Tataru Taru
+- 1 Tezzeret, Cruel Captain
+- 1 The One Ring
+- 1 The Queen of Dale
+- 1 Timetwister
+- 1 Transmute Artifact
+- 1 Tundra
+- 1 Urza's Saga
+- 1 Volatile Stormdrake
+- 1 Wan Shi Tong, Librarian
+- 1 Wandering Archaic // Explore the Vastlands
+
+### 15. Bracket 5, Crystal, Inhuman Princess, cedh 2026-09-05, place 1 of 64
+
+Cards:
+
+- 1 An Offer You Can't Refuse
+- 1 Arid Mesa
+- 1 Artist's Talent
+- 1 Autumn's Veil
+- 1 Birds of Paradise
+- 1 Bloodstained Mire
+- 1 Borne Upon a Wind
+- 1 Boseiju, Who Endures
+- 1 Brain Freeze
+- 1 Breeding Pool
+- 1 Chrome Mox
+- 1 City of Brass
+- 1 Command Tower
+- 1 Crop Rotation
+- 1 Curiosity
+- 1 Daze
+- 1 Deflecting Swat
+- 1 Delighted Halfling
+- 1 Elvish Spirit Guide
+- 1 Emerald Charm
+- 1 Emergence Zone
+- 1 Enlightened Tutor
+- 1 Esper Sentinel
+- 1 Exotic Orchard
+- 1 Fierce Guardianship
+- 1 Final Fortune
+- 1 Flashback
+- 1 Flooded Strand
+- 1 Flusterstorm
+- 1 Force of Will
+- 1 Gamble
+- 1 Gemstone Caverns
+- 1 Gitaxian Probe
+- 1 Gleaming Splendor
+- 1 Grand Abolisher
+- 1 Gut Shot
+- 1 Hex Magic
+- 1 Intuition
+- 1 Jeska's Will
+- 1 Jeskai Ascendancy
+- 1 Keen Sense
+- 1 Kellan, the Fae-Blooded // Birthright Boon
+- 1 Legolas's Quick Reflexes
+- 1 Lion's Eye Diamond
+- 1 Lotus Petal
+- 1 Mana Confluence
+- 1 Manamorphose
+- 1 Mental Misstep
+- 1 Mindbreak Trap
+- 1 Misdirection
+- 1 Misty Rainforest
+- 1 Mox Amber
+- 1 Mox Diamond
+- 1 Mystic Remora
+- 1 Noble Hierarch
+- 1 Noxious Revival
+- 1 Open the Armory
+- 1 Ophidian Eye
+- 1 Orim's Chant
+- 1 Otawara, Soaring City
+- 1 Pact of Negation
+- 1 Plateau
+- 1 Polluted Delta
+- 1 Pyrokinesis
+- 1 Ragavan, Nimble Pilferer
+- 1 Redirect Lightning
+- 1 Reverent Silence
+- 1 Rhystic Study
+- 1 Rite of Flame
+- 1 Savannah
+- 1 Scalding Tarn
+- 1 Seedtime
+- 1 Sevinne's Reclamation
+- 1 Silence
+- 1 Simian Spirit Guide
+- 1 Snapback
+- 1 Sol Ring
+- 1 Starting Town
+- 1 Steam Vents
+- 1 Storm-Kiln Artist
+- 1 Strike It Rich
+- 1 Submerge
+- 1 Summoner's Pact
+- 1 Swan Song
+- 1 Taiga
+- 1 Tandem Lookout
+- 1 Tarnished Citadel
+- 1 Tidal Bore
+- 1 Tinder Wall
+- 1 Tropical Island
+- 1 Tundra
+- 1 Underworld Breach
+- 1 Veil of Summer
+- 1 Verdant Catacombs
+- 1 Vivi Ornitier
+- 1 Volcanic Island
+- 1 Will of the Jeskai
+- 1 Windswept Heath
+- 1 Wooded Foothills
+
+### 16. Bracket 5, Ghave, Guru of Spores, cedh 2026-09-05, place 1 of 37
+
+Cards:
+
+- 1 Acorn Catapult
+- 1 Afterlife
+- 1 Alliance of Arms
+- 1 Aquastrand Spider
+- 1 Attrition
+- 1 Aura Shards
+- 1 Awakening Zone
+- 1 Barren Moor
+- 1 Bestial Menace
+- 1 Celestial Force
+- 1 Chorus of the Conclave
+- 1 Cobra Trap
+- 1 Command Tower
+- 1 Cultivate
+- 1 Dark Hatchling
+- 1 Darksteel Ingot
+- 1 Deadly Recluse
+- 1 Death Mutation
+- 1 Doom Blade
+- 1 Evolving Wilds
+- 1 Fertilid
+- 1 Fists of Ironwood
+- 1 Footbottom Feast
+- 10 Forest
+- 1 Golgari Guildmage
+- 1 Golgari Rot Farm
+- 1 Golgari Signet
+- 1 Harmonize
+- 1 Hex
+- 1 Hornet Queen
+- 1 Hour of Reckoning
+- 1 Karador, Ghost Chieftain
+- 1 Lightning Greaves
+- 1 Monk Realist
+- 1 Mortify
+- 1 Nantuko Husk
+- 1 Necrogenesis
+- 1 Nemesis Trap
+- 1 Oblivion Ring
+- 1 Orzhov Basilica
+- 1 Orzhov Signet
+- 1 Penumbra Spider
+- 8 Plains
+- 1 Rupture Spire
+- 1 Sakura-Tribe Elder
+- 1 Scavenging Ooze
+- 1 Secluded Steppe
+- 1 Selesnya Evangel
+- 1 Selesnya Guildmage
+- 1 Selesnya Sanctuary
+- 1 Selesnya Signet
+- 1 Shriekmaw
+- 1 Sigil Captain
+- 1 Skullclamp
+- 1 Sol Ring
+- 1 Soul Snare
+- 1 Spawnwrithe
+- 1 Spike Feeder
+- 1 Squallmonger
+- 1 Storm Herd
+- 8 Swamp
+- 1 Symbiotic Wurm
+- 1 Syphon Flesh
+- 1 Temple of the False God
+- 1 Teneb, the Harvester
+- 1 Tranquil Thicket
+- 1 Tribute to the Wild
+- 1 Vampire Nighthawk
+- 1 Vish Kal, Blood Arbiter
+- 1 Vivid Grove
+- 1 Vivid Marsh
+- 1 Vivid Meadow
+- 1 Vow of Duty
+- 1 Vow of Malice
+- 1 Vow of Wildness
+- 1 Yavimaya Elder
+
+### 17. Bracket 5, Magda, Brazen Outlaw, cedh 2026-09-05, place 1 of 64
+
+Cards:
+
+- 1 Ancient Tomb
+- 1 Barkform Harvester
+- 1 Battered Golem
+- 1 Bloodfire Dwarf
+- 1 Bottle-Cap Blast
+- 1 Captain America's Motorcycle
+- 1 Cavern of Souls
+- 1 Chrome Mox
+- 1 City of Traitors
+- 1 Clock of Omens
+- 1 Clown Car
+- 1 Crystal Vein
+- 1 Cursed Mirror
+- 1 Deflecting Swat
+- 1 Disruptor Flute
+- 1 Dragon-Cursed Halls
+- 1 Dwarven Armorer
+- 1 Dwarven Bloodboiler
+- 1 Dwarven Grunt
+- 1 Dwarven Mauler
+- 1 Dwarven Scorcher
+- 1 Dwarven Trader
+- 1 Enslaved Dwarf
+- 1 Firdoch Core
+- 1 Flare of Duplication
+- 1 Flywheel Racer
+- 1 Fíli and Kíli, Joyous
+- 1 Galvanic Blast
+- 1 Gemstone Caverns
+- 1 Ghostfire Slice
+- 1 Gogo, Mysterious Mime
+- 1 Grafdigger's Cage
+- 1 Great Furnace
+- 1 Grinding Station
+- 1 Hammerheim
+- 1 High-Speed Hoverbike
+- 1 Holdout Settlement
+- 1 Jeska's Will
+- 1 Kavaron, Memorial World
+- 1 Knuckles the Echidna
+- 1 Liberated Dwarf
+- 1 Lifecraft Engine
+- 1 Lightning Bolt
+- 1 Liquimetal Torque
+- 1 Lotus Petal
+- 1 Magda, the Hoardmaster
+- 1 Mana Vault
+- 1 Maskwood Nexus
+- 1 Molten Duplication
+- 8 Mountain
+- 1 Mox Opal
+- 1 Mutavault
+- 1 Peter Parker's Camera
+- 1 Pinnacle Monk // Mystic Peak
+- 1 Plundering Barbarian
+- 1 Portal to Phyrexia
+- 1 Professional Face-Breaker
+- 1 Pyroblast
+- 1 Pyrokinesis
+- 1 Red Elemental Blast
+- 1 Redirect Lightning
+- 1 Relic of Legends
+- 1 Return the Favor
+- 1 Rite of Flame
+- 1 Roaming Throne
+- 1 Sculpting Steel
+- 1 Shatterskull Smashing // Shatterskull, the Hammer Pass
+- 1 Shinka, the Bloodsoaked Keep
+- 1 Simian Spirit Guide
+- 1 Sol Ring
+- 1 Spark Mage
+- 1 Springleaf Drum
+- 1 Stalactite Dagger
+- 1 Sudden Shock
+- 1 Sundering Eruption // Volcanic Fissure
+- 1 Survivors' Encampment
+- 1 Talon Gates of Madara
+- 1 Tezzeret, Cruel Captain
+- 1 Three Tree Mascot
+- 1 Tibalt's Trickery
+- 1 Torpor Orb
+- 1 Treasonous Ogre
+- 1 Treasure Vault
+- 1 Twinshot Sniper
+- 1 Universal Automaton
+- 1 Unlicensed Hearse
+- 1 Untimely Malfunction
+- 1 Urza's Saga
+- 1 Vexing Bauble
+- 1 Volatile Fault
+- 1 Xorn
+- 1 Óin the Brave
+
+### 18. Bracket 5, K'rrik, Son of Yawgmoth, cedh 2026-09-05, place 1 of 39
+
+Cards:
+
+- 1 Ancient Tomb
+- 1 Animate Dead
+- 1 Arcane Signet
+- 1 Asmodeus the Archfiend
+- 1 Balthor the Defiled
+- 1 Baron Helmut Zemo
+- 1 Bazaar of Baghdad
+- 1 Beseech the Mirror
+- 1 Beseech the Queen
+- 1 Bile Blight
+- 1 Bitter Triumph
+- 1 Blinkmoth Nexus
+- 1 Blood Celebrant
+- 1 Blood Pet
+- 1 Bloodstained Mire
+- 1 Braids, Arisen Nightmare
+- 1 Buried Alive
+- 1 Cabal Ritual
+- 1 Cavern of Souls
+- 1 Chrome Mox
+- 1 City of Traitors
+- 1 Corpse Dance
+- 1 Culling the Weak
+- 1 Dance of the Dead
+- 1 Dark Ritual
+- 1 Deadly Rollick
+- 1 Demonic Tutor
+- 1 Dismember
+- 1 Emergence Zone
+- 1 Entomb
+- 1 Everflowing Chalice
+- 1 Fellwar Stone
+- 1 Final Parting
+- 1 Fleshwrither
+- 1 Gemstone Caverns
+- 1 Grasp of Darkness
+- 1 Gray Merchant of Asphodel
+- 1 Grim Monolith
+- 1 Grim Tutor
+- 1 Heartless Summoning
+- 1 Hoarding Broodlord
+- 1 Imperial Seal
+- 1 Inkmoth Nexus
+- 1 Insatiable Avarice
+- 1 Jet Medallion
+- 1 Lake of the Dead
+- 1 Lion's Eye Diamond
+- 1 Lotus Petal
+- 1 Mana Vault
+- 1 Marsh Flats
+- 1 Mind Stone
+- 1 Mishra's Factory
+- 1 Mox Amber
+- 1 Mox Diamond
+- 1 Mutavault
+- 1 Necromancy
+- 1 Necropotence
+- 1 Necrotic Ooze
+- 1 Nykthos, Shrine to Nyx
+- 1 Orcish Bowmasters
+- 1 Peer into the Abyss
+- 1 Pestilence
+- 1 Phyrexian Tower
+- 1 Polluted Delta
+- 1 Praetor's Grasp
+- 1 Prismatic Vista
+- 1 Razaketh, the Foulblooded
+- 1 Reanimate
+- 1 Sacrifice
+- 1 Saw in Half
+- 1 Shallow Grave
+- 1 Sheoldred, the Apocalypse
+- 1 Skirge Familiar
+- 1 Sol Ring
+- 1 Springleaf Drum
+- 13 Swamp
+- 1 Takenuma, Abandoned Mire
+- 1 Talon Gates of Madara
+- 1 Tezzeret, Cruel Captain
+- 1 Unmarked Grave
+- 1 Urza's Saga
+- 1 Vampiric Tutor
+- 1 Verdant Catacombs
+- 1 Vexing Bauble
+- 1 Vile Entomber
+- 1 Vilis, Broker of Blood
+- 1 Yawgmoth's Will
+
+### 19. Bracket 5, Nick Fury, Agent of S.H.I.E.L.D., cedh 2026-09-05, place 1 of 63
+
+Cards:
+
+- 1 Ad Nauseam
+- 1 An Offer You Can't Refuse
+- 1 Ancient Tomb
+- 1 Arcane Signet
+- 1 Arid Mesa
+- 1 Badlands
+- 1 Beseech the Mirror
+- 1 Bloodstained Mire
+- 1 Borne Upon a Wind
+- 1 Brain Freeze
+- 1 Cabal Ritual
+- 1 Chain of Vapor
+- 1 Chrome Mox
+- 1 City of Brass
+- 1 City of Traitors
+- 1 Colossal Skyturtle
+- 1 Command Tower
+- 1 Commandeer
+- 1 Copy Enchantment
+- 1 Dark Ritual
+- 1 Daze
+- 1 Deflecting Swat
+- 1 Demonic Consultation
+- 1 Demonic Tutor
+- 1 Diabolic Intent
+- 1 Dispel
+- 1 Disrupting Shoal
+- 1 Elvish Spirit Guide
+- 1 Enlightened Tutor
+- 1 Esper Sentinel
+- 1 Exotic Orchard
+- 1 Faerie Mastermind
+- 1 Fellwar Stone
+- 1 Fierce Guardianship
+- 1 Flash Photography
+- 1 Flooded Strand
+- 1 Flusterstorm
+- 1 Force of Negation
+- 1 Force of Will
+- 1 Gamble
+- 1 Gemstone Caverns
+- 1 Gitaxian Probe
+- 1 Gleaming Splendor
+- 1 Imperial Seal
+- 1 Into the Flood Maw
+- 1 Jennifer Walters // The Sensational She-Hulk
+- 1 Lim-Dûl's Vault
+- 1 Lion's Eye Diamond
+- 1 Lotho, Corrupt Shirriff
+- 1 Lotus Petal
+- 1 Mana Confluence
+- 1 Mana Vault
+- 1 Marsh Flats
+- 1 Mental Misstep
+- 1 Mindbreak Trap
+- 1 Misdirection
+- 1 Misty Rainforest
+- 1 Mnemonic Betrayal
+- 1 Mockingbird
+- 1 Mox Amber
+- 1 Mox Diamond
+- 1 Mox Opal
+- 1 Mystic Remora
+- 1 Mystical Tutor
+- 1 Necropotence
+- 1 Noxious Revival
+- 1 Orcish Bowmasters
+- 1 Orim's Chant
+- 1 Otawara, Soaring City
+- 1 Pact of Negation
+- 1 Plateau
+- 1 Polluted Delta
+- 1 Ragavan, Nimble Pilferer
+- 1 Red Elemental Blast
+- 1 Redirect Lightning
+- 1 Rhystic Study
+- 1 Rite of Flame
+- 1 Scalding Tarn
+- 1 Scrubland
+- 1 Silence
+- 1 Simian Spirit Guide
+- 1 Smothering Tithe
+- 1 Snapback
+- 1 Sol Ring
+- 1 Starting Town
+- 1 Storm-Kiln Artist
+- 1 Swan Song
+- 1 Tainted Pact
+- 1 Tarnished Citadel
+- 1 Thassa's Oracle
+- 1 Tundra
+- 1 Underground Sea
+- 1 Underworld Breach
+- 1 Valley Floodcaller
+- 1 Vampiric Tutor
+- 1 Verdant Catacombs
+- 1 Volcanic Island
+- 1 Windswept Heath
+- 1 Wishclaw Talisman
+
+### 20. Bracket 5, Terra, Magical Adept // Esper Terra, cedh 2026-09-05, place 2 of 64
+
+Cards:
+
+- 1 An Offer You Can't Refuse
+- 1 Ancient Tomb
+- 1 Arcane Signet
+- 1 Badlands
+- 1 Bayou
+- 1 Birds of Paradise
+- 1 Blind Obedience
+- 1 Boseiju, Who Endures
+- 1 Brain Freeze
+- 1 Chain of Vapor
+- 1 Chrome Mox
+- 1 City of Brass
+- 1 City of Traitors
+- 1 Command Tower
+- 1 Copy Enchantment
+- 1 Crystal, Inhuman Princess
+- 1 Deflecting Swat
+- 1 Demonic Tutor
+- 1 Drannith Magistrate
+- 1 Elvish Spirit Guide
+- 1 Enlightened Tutor
+- 1 Esper Sentinel
+- 1 Estrid's Invocation
+- 1 Exotic Orchard
+- 1 Faerie Mastermind
+- 1 Fierce Guardianship
+- 1 Fire Covenant
+- 1 Firestorm
+- 1 Flooded Strand
+- 1 Flusterstorm
+- 1 Forbidden Orchard
+- 1 Force of Negation
+- 1 Force of Will
+- 1 Gamble
+- 1 Gemstone Caverns
+- 1 Gleaming Splendor
+- 1 High Fae Trickster
+- 1 Hunting Grounds
+- 1 Imperial Seal
+- 1 Intuition
+- 1 Keen Sense
+- 1 King T'Challa // Black Panther, Hope Enduring
+- 1 Lion's Eye Diamond
+- 1 Lotho, Corrupt Shirriff
+- 1 Lotus Petal
+- 1 Mana Confluence
+- 1 Mana Vault
+- 1 Mental Misstep
+- 1 Mind Harness
+- 1 Mindbreak Trap
+- 1 Mirrormade
+- 1 Misty Rainforest
+- 1 Mox Amber
+- 1 Mox Diamond
+- 1 Mox Opal
+- 1 Mystic Remora
+- 1 Niv-Mizzet, Parun
+- 1 Noxious Revival
+- 1 Opposition Agent
+- 1 Orcish Bowmasters
+- 1 Orim's Chant
+- 1 Pact of Negation
+- 1 Polluted Delta
+- 1 Ragavan, Nimble Pilferer
+- 1 Redirect Lightning
+- 1 Rhystic Study
+- 1 Savannah
+- 1 Scalding Tarn
+- 1 Sevinne's Reclamation
+- 1 Silence
+- 1 Simian Spirit Guide
+- 1 Slaughter Pact
+- 1 Smothering Tithe
+- 1 Sol Ring
+- 1 Spark Double
+- 1 Starting Town
+- 1 Subtlety
+- 1 Swan Song
+- 1 Taiga
+- 1 Tarnished Citadel
+- 1 Tataru Taru
+- 1 The Cabbage Merchant
+- 1 The Queen of Dale
+- 1 Tinder Wall
+- 1 Toxic Deluge
+- 1 Tropical Island
+- 1 Trouble in Pairs
+- 1 Tundra
+- 1 Underground Sea
+- 1 Underworld Breach
+- 1 Valley Floodcaller
+- 1 Vampiric Tutor
+- 1 Veil of Summer
+- 1 Verdant Catacombs
+- 1 Vivi Ornitier
+- 1 Volcanic Island
+- 1 Windswept Heath
+- 1 Wooded Foothills
+- 1 Worldly Tutor
+
+### 21. Bracket 5, Shorikai, Genesis Engine, cedh 2026-09-05, place 2 of 60
+
+Cards:
+
+- 1 Adarkar Wastes
+- 1 Amphibian Downpour
+- 1 An Offer You Can't Refuse
+- 1 Ancient Den
+- 1 Ancient Tomb
+- 1 Arcane Signet
+- 1 Arid Mesa
+- 1 Blind Obedience
+- 1 Borne Upon a Wind
+- 1 Chain of Vapor
+- 1 Chrome Mox
+- 1 City of Brass
+- 1 City of Traitors
+- 1 Clever Impersonator
+- 1 Command Tower
+- 1 Commandeer
+- 1 Copy Artifact
+- 1 Copy Enchantment
+- 1 Dispel
+- 1 Displacer Kitten
+- 1 Disrupting Shoal
+- 1 Dramatic Reversal
+- 1 Enlightened Tutor
+- 1 Esper Sentinel
+- 1 Exotic Orchard
+- 1 Faerie Mastermind
+- 1 Fellwar Stone
+- 1 Fierce Guardianship
+- 1 Flash Photography
+- 1 Flooded Strand
+- 1 Floodfarm Verge
+- 1 Flusterstorm
+- 1 Force of Negation
+- 1 Force of Will
+- 1 Gemstone Caverns
+- 1 Glaring Fleshraker
+- 1 Gleaming Splendor
+- 1 Grafdigger's Cage
+- 1 Grim Monolith
+- 1 Hallowed Fountain
+- 1 Hullbreaker Horror
+- 1 Imposter Mech
+- 1 Into the Flood Maw
+- 2 Island
+- 1 King T'Challa // Black Panther, Hope Enduring
+- 1 Lotus Petal
+- 1 Mana Confluence
+- 1 Mana Vault
+- 1 Manifold Key
+- 1 Marsh Flats
+- 1 Mental Misstep
+- 1 Meticulous Archive
+- 1 Minamo, School at Water's Edge
+- 1 Mindbreak Trap
+- 1 Mirrormade
+- 1 Misdirection
+- 1 Misty Rainforest
+- 1 Mockingbird
+- 1 Mox Diamond
+- 1 Mox Opal
+- 1 Mystic Remora
+- 1 Orim's Chant
+- 1 Otawara, Soaring City
+- 1 Out of Time
+- 1 Pact of Negation
+- 1 Path to Exile
+- 1 Phyrexian Metamorph
+- 1 Plains
+- 1 Polluted Delta
+- 1 Ranger-Captain of Eos
+- 1 Rhystic Study
+- 1 Scalding Tarn
+- 1 Sea of Clouds
+- 1 Seat of the Synod
+- 1 Silence
+- 1 Smothering Tithe
+- 1 Snapback
+- 1 Sol Ring
+- 1 Spire of Industry
+- 1 Subtlety
+- 1 Swan Song
+- 1 Swords to Plowshares
+- 1 Talisman of Progress
+- 1 Tataru Taru
+- 1 Teferi, Time Raveler
+- 1 Tezzeret the Seeker
+- 1 Tezzeret, Cruel Captain
+- 1 The One Ring
+- 1 The Queen of Dale
+- 1 Transmute Artifact
+- 1 Tundra
+- 1 Unwinding Clock
+- 1 Valley Floodcaller
+- 1 Vanquish the Horde
+- 1 Voltaic Key
+- 1 Wan Shi Tong, Librarian
+- 1 Whir of Invention
+- 1 Windswept Heath

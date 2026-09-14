@@ -11,7 +11,7 @@ GO := go -C go
 BUF := .bin/buf
 PNPM := pnpm --dir web
 
-.PHONY: feedback-loop feedback-loop-dry feedback-triage feedback-triage-dry smoke allow disallow manapass-check deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check gcs-check themes-check ste-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
+.PHONY: feedback-loop feedback-loop-dry feedback-triage feedback-triage-dry smoke allow disallow manapass-check deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate bracket-calibrate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check gcs-check themes-check ste-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-14s %s\n", $$1, $$2}'
@@ -211,6 +211,18 @@ bracket-gate: ## Write the PR-14A bracket gate document. CAUTION: calls a real p
 		BRACKET_GATE=1 CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall \
 		$(GO) run ./cmd/bracket-gate -run-out $(abspath $(BRACKET_GATE_RUN)) $(BRACKET_GATE_ARGS) > $(BRACKET_GATE_OUT)
 	@echo "wrote $(BRACKET_GATE_OUT) and $(BRACKET_GATE_RUN)"
+
+# BRACKET_CALIBRATE_OUT is the M-15 calibration document: the precons of
+# the repository as bracket 2 and top-finish cEDH lists as bracket 5
+# (D-698). BRACKET_GATE_ARGS="-rejudge <absolute path>" judges it, because
+# the tool runs in go/. The pr14a name puts this machine output under the
+# dated-record exemption of the STE check (D-304).
+BRACKET_CALIBRATE_OUT ?= docs/reference/pr14a-bracket-calibration-decks.md
+
+bracket-calibrate: ## Write the M-15 judge calibration decks from the precons and the local meta store (no model calls, no cost)
+	@test ! -f $(BRACKET_CALIBRATE_OUT) || { echo "$(BRACKET_CALIBRATE_OUT) exists. Set BRACKET_CALIBRATE_OUT to a new file."; exit 1; }
+	@CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall \
+		$(GO) run ./cmd/bracket-gate -calibrate $(abspath $(BRACKET_CALIBRATE_OUT))
 
 # The trimmed snapshot of D-521 serves the free dry-run lane of the deck
 # gate. TestTrimmedSnapshotBuildsEveryShortlist runs the same lane in CI.
