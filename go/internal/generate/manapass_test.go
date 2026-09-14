@@ -527,3 +527,112 @@ func deckCount(deck *mtgv1.Deck) int32 {
 	}
 	return n + int32(len(deck.GetCommanderOracleIds()))
 }
+
+// TestManaCandidatesNeverAddTheCommander is F-128. The pool of the app
+// holds each commander, and the spell steps of the pass read the 99 alone,
+// so a cheap commander that makes mana stood as a step of every spell
+// lever.
+func TestManaCandidatesNeverAddTheCommander(t *testing.T) {
+	commander := manaCard("o-cmd", "Mana Legend", 1, []string{"Creature"}, "", mtgv1.Color_COLOR_W)
+	commander.Supertypes = []string{"Legendary"}
+	plains := manaCard("o-plains", "Plains", 0, []string{"Land"}, "", mtgv1.Color_COLOR_W)
+	plains.Supertypes = []string{"Basic"}
+	big := manaCard("o-big", "Big Spell", 6, []string{"Creature"}, "")
+	src := source{commander.GetOracleId(): commander, plains.GetOracleId(): plains, big.GetOracleId(): big}
+	b := manaBuilder(t, src)
+	req := Request{
+		Format:     mtgv1.FormatId_FORMAT_ID_COMMANDER,
+		Commanders: []string{"o-cmd"},
+		Pool:       NewPool([]*mtgv1.Card{commander, plains, big}, nil),
+	}
+	deck := &mtgv1.Deck{CommanderOracleIds: []string{"o-cmd"}, Cards: []*mtgv1.DeckCard{
+		{OracleId: "o-plains", Name: "Plains", Count: 40, Role: mtgv1.CardRole_CARD_ROLE_LAND},
+		{OracleId: "o-big", Name: "Big Spell", Count: 1, Role: mtgv1.CardRole_CARD_ROLE_THREAT},
+	}}
+	steps := b.manaCandidates(req, deck, []*mtgv1.Card{plains})
+	if len(steps) == 0 {
+		t.Fatal("the pass has no step at all, so the test reads nothing")
+	}
+	for _, s := range steps {
+		if s.add.GetOracleId() == "o-cmd" {
+			t.Errorf("a %s step adds the commander for %s", s.role, s.drop)
+		}
+	}
+	if c := b.cheapestSpell(req, deck); c.GetOracleId() == "o-cmd" {
+		t.Error("the cheapest spell is the commander")
+	}
+}
+
+// TestTheManaPassNeverAddsTheCommander is F-128 end to end. A deck over
+// its land band trades a basic land for a spell, and the commander, a
+// one-mana source, sat in the pool as the best one. The copy check then
+// blocked the deck.
+func TestTheManaPassNeverAddsTheCommander(t *testing.T) {
+	src := source{}
+	commander := manaCard("o-cmd", "Mana Legend", 1, []string{"Creature"}, "", mtgv1.Color_COLOR_W)
+	commander.Supertypes = []string{"Legendary"}
+	commander.CanBeCommander = true
+	commander.ColorIdentity = []mtgv1.Color{mtgv1.Color_COLOR_W}
+	plains := manaCard("o-plains", "Plains", 0, []string{"Land"}, "", mtgv1.Color_COLOR_W)
+	plains.Supertypes = []string{"Basic"}
+	plains.ColorIdentity = []mtgv1.Color{mtgv1.Color_COLOR_W}
+	// A spare spell gives the pass a legal step, so the test reads a pass
+	// on the old code and on the new.
+	spare := manaCard("o-spare", "Spare Spell", 2, []string{"Creature"}, "")
+	pool := []*mtgv1.Card{commander, plains, spare}
+	// Forty lands sit over the bracket 3 ceiling of 38.
+	entries := []Entry{{Name: "Plains", Count: 40, Role: "land", Reason: "a white source"}}
+	for i := range 59 {
+		c := manaCard(fmt.Sprintf("o-spell%02d", i), fmt.Sprintf("Spell %02d", i), 4, []string{"Creature"}, "")
+		pool = append(pool, c)
+		entries = append(entries, Entry{Name: c.GetName(), Count: 1, Role: "threat", Reason: "a body"})
+	}
+	for _, c := range pool {
+		src[c.GetOracleId()] = c
+	}
+	out := step(t, deckOut{Summary: "a white deck", Cards: entries})
+	sc := llm.NewScript(out, out)
+	client, err := llm.New(fakeConfig(), []llm.Provider{sc}, llm.WithoutJitter())
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := rules.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	prof, err := profile.New(cfg, nil, &cutClassifier{flag: "No Such Card"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	prof.SetHands(200)
+	b := NewBuilder(client, cfg, src, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	b.profiler = prof
+	req := testRequest()
+	req.Format = mtgv1.FormatId_FORMAT_ID_COMMANDER
+	req.Power = &mtgv1.PowerLevel{Level: &mtgv1.PowerLevel_Bracket{Bracket: 3}}
+	req.Limits = "Exactly 100 cards."
+	req.Commanders = []string{"o-cmd"}
+	req.Pool = NewPool(pool, nil)
+
+	got, err := b.Build(context.Background(), req, nil)
+	if err != nil {
+		t.Fatalf("build: %v", err)
+	}
+	moved := false
+	for _, f := range got.Deck.GetValidation().GetFindings() {
+		switch f.GetCode() {
+		case rules.CodeCopyLimit:
+			t.Errorf("copy finding: %s", f.GetMessage())
+		case CodeManaPass:
+			moved = true
+		}
+	}
+	for _, dc := range got.Deck.GetCards() {
+		if dc.GetOracleId() == "o-cmd" {
+			t.Errorf("the 99 holds the commander %d times", dc.GetCount())
+		}
+	}
+	if !moved {
+		t.Error("the pass moved no card, so the test reads nothing")
+	}
+}

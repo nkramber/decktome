@@ -11,6 +11,14 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## 2026-09-12c: the Gitar pause note (D-685)
+
+Merged as #151, and #152 corrected the reading of the rule.
+
+**Gitar posted on #150 that it paused automatic reviews**, because the trial's processing ran out for the period. The owner chose a `Gitar review` comment when that note appears (D-685), and #151 recorded the rule.
+
+**The note stopped no review yet.** #150 and #151 each got a full automatic review beside the note, so no trigger ran. #151 merged while `verify:go` still ran, and the job passed at 07:00 UTC. A correction reads the rule as a trigger when the note comes with no review.
+
 ## 2026-09-12b: PR-43 deployed, and the meta run of 2026-09-12
 
 Merged as #150.
