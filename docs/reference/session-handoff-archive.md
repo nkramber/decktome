@@ -11,6 +11,14 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## 2026-09-13e: the stack merged, M-16, and the PR-45 plan
+
+**The owner merged #160 to #163 in order** (D-700). After each squash merge, the session rebased the next branch onto `main` and checked that its content did not change. CI ran green on each new head before the next merge.
+
+**M-16 counted the power of real lists for no cost.** `Profiler.Measure` read 1,491 TopDeck top-cut lists, 1,040 EDHREC average decks, and the 21 calibration decks. Three in four top-cut lists hold 6 or more fast mana, and five of six bracket 4 and 5 builds hold 2 or fewer. The bracket 5 floor of mana on turn four sat above the median real cEDH list (F-127), and the owner moved it to 4.6 (D-703).
+
+**The owner shaped the PR-45 plan.** PR-45 splits into PR-45a and PR-45b (D-701). PR-45a cuts a card its bracket forbids after the build, with code (D-702). PR-45b pulls floors, a shortlist that reads the bracket, and a gap note (D-704).
+
 ## 2026-09-13d: OQ-82, M-14, and the findings F-123 to F-125
 
 **The owner merged #159 and asked what comes next.** Every next step waited on the owner, a date, or money. The session gave the choices, and the owner chose OQ-82, the power of a bracket.
