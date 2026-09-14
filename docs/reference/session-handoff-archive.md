@@ -11,6 +11,18 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## 2026-09-13: the owned-only lifegain build, F-121, and OQ-79 closed
+
+Merged as #157.
+
+**The owner merged #156 and asked what comes next.** Every next step waited on the owner, a date, or money. The API logs showed no build since the deploy of #153, and one `SubmitFeedback` call since 2026-09-09. The owner chose a build that tests three things at once.
+
+**A free local run picked the build.** The session read the owner's collection and ran `Builder.Commanders` in a scratch worktree over the local snapshot of 2026-09-04. For 45 of 58 theme words, the offer with any card allowed names three commanders the owner does not own. In 7 theme words, the owned-only offer holds a commander with no theme signal, by the fill of D-367. The owner owns one card that PR-44 changes, Sidequest: Catch a Fish. So the session proposed a lifegain deck at bracket 3 that names that card.
+
+**Session `X4JfbXzMw4U5A4gEeOaE` reads right on every check.** The offer matched the prediction, and every card reads owned. The curve line matches the list, and the Sidequest counts as a nonland card. The owner closed OQ-79 (D-691).
+
+**The owner found F-121 on the same session.** The commander row showed "Suggest one" beside "You decide". The owner chose to hide "You decide" on that row alone (D-690). The fix adds `no_decline` to the catalog row and `Question.no_decline` to the proto.
+
 ## 2026-09-12g: the documents read the state before a context wipe
 
 **The owner merged #155 and asked for every document to read the current state** before a context wipe. The session changed no code, and it ran no paid target.

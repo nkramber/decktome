@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-14)
 
-**The checkout.** `main` is `45b4ab6`, which is pull request #168, or a later merge. The branch `pr45b-power-floors` holds PR-45b and this hand-off, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
+**The checkout.** `main` is `7d997f1`, which is pull request #169, or a later merge. The branch `docs-pr45b-merged` holds this hand-off, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
 
 **The owner answered OQ-82: a bracket promises its power in both directions** (D-693 to D-695). M-14 ran bracket gate run 2 on `320fcbb` for $1.37 (D-694). Five of the six decks at brackets 4 and 5 miss the floor of the mana on turn four. With the Game Changer flags of PR-47, the judge agrees on 3 of 15 decks, and it still names combos from memory (F-126). #161 merged PR-46, #162 merged PR-47, and #163 merged M-15 (D-697 to D-699). PR-45 splits into PR-45a and PR-45b, and #164 merged the plan (D-701 to D-704).
 
@@ -20,13 +20,13 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **#167 merged PR-49: every tool builds the shortlist of the app** (F-129, D-706, D-708). The gates passed no top-list rate, so they measured shortlists that the app never builds. A parity test fails on the old tools at five calls. The dry comparison on model `20260910T012734Z` finds the rate bringing in up to 45 cards, with more fast mana and Game Changers.
 
-**The session built PR-45b on the branch `pr45b-power-floors`, and its pull request waits for the review** (F-130 to F-134, D-709 to D-715). Brackets 4 and 5 take floors for tutors, fast mana, and Game Changers. The prompt names each floor, and each shortlist line marks the power cards. At brackets 4 and 5 the shortlist pins each power card at a top-list rate of 0.3. A pinned card skips the cap of its role and adds to the total. A deck that misses a floor names the gap and the cards that close it in its summary.
+**#169 merged PR-45b: the build reaches the power of brackets 4 and 5** (F-130 to F-134, D-709 to D-715). Brackets 4 and 5 take floors for tutors, fast mana, and Game Changers. The prompt names each floor, and each shortlist line marks the power cards. At brackets 4 and 5 the shortlist pins each power card at a top-list rate of 0.3. A pinned card skips the cap of its role and adds to the total. A deck that misses a floor names the gap and the cards that close it in its summary.
 
-**The session found three defects on the way, and PR-45b fixes each.** The role caps blocked the power cards (F-131). The first pin took places under the total, and 52 fixing lands left the lists (F-132). The mana pass step of a cheaper card read no job (F-133).
+**The session found three defects on the way, and PR-45b fixes each.** The role caps blocked the power cards (F-131). The first pin took places under the total, and 52 fixing lands left the lists (F-132). The mana pass step of a cheaper card read no job (F-133). The review of `gitar-bot` found a fourth: the land cap read no pin, and `2ed2b06` sets the pinned lands aside.
 
 **The paid runs of PR-45b cost $2.04, and the judge moved from 0 of 6 to between 4 and 6 of 6.** Bracket gate run 6 on the final code reads 4 of 6, and its second judge lane reads the same decks at 6 of 6. Neither miss of run 6 held on the second read, so the owner closed F-134 as judge noise (D-715). Deck gate runs 20 to 22 read PASS on prompt 3.
 
-**The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586). #158 is the newest web deploy, and `deploy-web` released it at 18:52 UTC on 2026-09-13. #167 is the newest API deploy: `deploy-api` finished at 14:58 UTC on 2026-09-14, and revision `mtg-api-00046-j29` serves `api:bbd5c5a`. Both jobs run `worker:bbd5c5a`, and `/readyz` answered 200. The deploy triggers read `go/**`, `docker/**`, and `web/**` alone, so a merge of documents alone starts no build.
+**The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586). #158 is the newest web deploy, and `deploy-web` released it at 18:52 UTC on 2026-09-13. #169 is the newest API deploy: `deploy-api` finished at 17:50 UTC on 2026-09-14, and revision `mtg-api-00047-76c` serves `api:7d997f1`. Both jobs run `worker:7d997f1`, and `/readyz` answered ok. The deploy triggers read `go/**`, `docker/**`, and `web/**` alone, so a merge of documents alone starts no build.
 
 **Session `X4JfbXzMw4U5A4gEeOaE` reads right on every check, and the owner closed OQ-79** (D-691). The owner built an owned-only lifegain Commander deck at bracket 3 on 2026-09-13 at 04:16 UTC. The first message named Sidequest: Catch a Fish. The offer named Aerith Gainsborough, Hope Estheim, and Aerith, Last Ancient, as a free local run of the offer code predicted. The reader owns one copy of each. The reader owns none of the three commanders that an offer with any card allowed names first. The deck marks the commander and every card owned.
 
@@ -114,7 +114,7 @@ CAUTION: the `decktome` gcloud configuration named the Wallabee account and proj
 
 **What waits on the owner.**
 
-- The merge of PR-45b, after the review of `gitar-bot`.
+- The merge of this documents pull request, after the review of `gitar-bot`.
 - A look at the first commander question after one more load of the app (next step 2).
 - OQ-67, the Stage B channels.
 - OQ-77, the blocking function of Identity Platform.
@@ -166,7 +166,7 @@ Fifteen things a fresh session gets wrong without this file.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
 - The feedback store holds 3 verdicts on 2026-09-09, and every one predates the snapshot of D-635. `make feedback-list VERDICT=` reads both verdicts now (F-87). A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- The deployed API, read 2026-09-14 at 14:59 UTC: revision `mtg-api-00046-j29` on image `api:bbd5c5a`, from #167. Both jobs run `worker:bbd5c5a`, and `/readyz` answered 200 with a card snapshot of 2026-09-14 09:01 UTC. `deploy-api` finished at 14:58 UTC.
+- The deployed API, read 2026-09-14 at 17:51 UTC: revision `mtg-api-00047-76c` on image `api:7d997f1`, from #169. Both jobs run `worker:7d997f1`, and `/readyz` answered ok with a card snapshot of 2026-09-14 09:01 UTC. `deploy-api` finished at 17:50 UTC.
 - The deployed web app, read 2026-09-13 at 18:54 UTC: the release of #158, from `deploy-web` at 18:52 UTC. `index.html` loads `assets/index-DYfo4m8I.js` and no `registerSW.js`, and `sw.js` precaches the `workbox-window` chunk.
 - The deployed quality model, read 2026-09-14: `20260914T070904Z`, from the meta job that started at 06:02 UTC and ended at 07:13 UTC. It fits 43,182 lists and 1,517 commanders. Its Commander fit reads `immaterial` 239 and accuracy 0.554, and its Standard fit reads a cross share of 0.667. The job read the weekly EDHREC pass, 2,077 pages and 4 lists. The mtgo source read 3,094 lists with 58 fetch errors. The mtggoldfish source read 155 lists with no failure. The mtgjson source read no list, because its deck list version differs from the stored table, as on 2026-09-12 and 2026-09-13.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
@@ -175,7 +175,7 @@ Fifteen things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **Answer the review of PR-45b, then read it on the deployed app after the merge** (D-709 to D-715). The pull request carries the code, the sweep, the lane, and every paid run. After the merge, Cloud Build deploys the API. A bracket 4 or 5 build on the app then carries the power floors. A missed floor names its cards in the summary. Najeela at bracket 5 still builds a mana base of basics. The power pass after the build still waits (D-704).
+1. **Read PR-45b on the deployed app** (D-709 to D-715). Build a bracket 4 or 5 Commander deck on the app. Its stored profile carries the power floors. A missed floor names its cards in the summary. Read the stored session and the deck, and not the screen alone. Najeela at bracket 5 still builds a mana base of basics. The power pass after the build still waits (D-704).
 2. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide".
 3. **Watch the first self-reload on the next web deploy** (D-692). The live release of #158 passed its check on 2026-09-13 at 18:54 UTC. An installed app that loaded that release must reload by itself when the next release activates. Read it on the next merge that changes `web/**`.
 4. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
@@ -197,7 +197,17 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 ## The ten most recent sessions
 
+### 2026-09-14f: #169 merged, and the documents read the state before a context wipe
+
+**The owner merged #169 and asked for every document to read the current state** before a context wipe. The session changed no code, and it ran no paid target.
+
+**Cloud Build deployed #169.** `deploy-api` finished at 17:50 UTC, and revision `mtg-api-00047-76c` serves `api:7d997f1`. Both jobs run `worker:7d997f1`, and `/readyz` answered ok. No web build ran, because #169 changed no file under `web/**`.
+
+**The refresh.** The roadmap, the resume section, the next steps, and `CLAUDE.md` read the merge. The record of 2026-09-13 moved to the archive.
+
 ### 2026-09-14e: PR-45b, the pin, and six paid runs
+
+Merged as #169.
 
 **The owner merged #168 and asked what comes next.** The session built PR-45b on the branch `pr45b-power-floors`. The owner answered the gap note (D-709), the pin (D-710), and the default of the rate (D-711). The owner also answered two defects on the way (D-712, D-713). The local meta refresh finished and stored `20260914T154223Z`.
 
@@ -208,6 +218,8 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 **Deck gate run 21 found F-133, and the owner chose the fix inside PR-45b.** The mana pass step of a cheaper card read no job, so it added Mox Amber with the job removal. The step now offers a card of the job it replaces.
 
 **Bracket gate run 6 on the final code reads the judge at 4 of 6.** A second judge lane reads the same decks at 6 of 6. The owner closed F-134 as judge noise, over a plan of a bracket 4 ceiling (D-714, D-715). The counts of power cards do not separate the reads of 4 and 5. The paid runs cost $2.04.
+
+**The review of `gitar-bot` found one defect, and `2ed2b06` fixed it.** The land cap read no pin. A new test fails on the old cap, which drops a pinned Game Changer land.
 
 ### 2026-09-14d: #167 merged, and the documents read the state before a context wipe
 
@@ -289,18 +301,6 @@ Merged as #158.
 
 **The owner's live check found F-122.** Session `vY1lCRtl64uwFObznCZ9` stores the commander question with `noDecline: true`, and the live session page checks the flag. The owner's first load still showed both controls, because the service worker served the old shell and never reloaded. The owner chose a reload on a new worker (D-692).
 
-### 2026-09-13: the owned-only lifegain build, F-121, and OQ-79 closed
-
-Merged as #157.
-
-**The owner merged #156 and asked what comes next.** Every next step waited on the owner, a date, or money. The API logs showed no build since the deploy of #153, and one `SubmitFeedback` call since 2026-09-09. The owner chose a build that tests three things at once.
-
-**A free local run picked the build.** The session read the owner's collection and ran `Builder.Commanders` in a scratch worktree over the local snapshot of 2026-09-04. For 45 of 58 theme words, the offer with any card allowed names three commanders the owner does not own. In 7 theme words, the owned-only offer holds a commander with no theme signal, by the fill of D-367. The owner owns one card that PR-44 changes, Sidequest: Catch a Fish. So the session proposed a lifegain deck at bracket 3 that names that card.
-
-**Session `X4JfbXzMw4U5A4gEeOaE` reads right on every check.** The offer matched the prediction, and every card reads owned. The curve line matches the list, and the Sidequest counts as a nonland card. The owner closed OQ-79 (D-691).
-
-**The owner found F-121 on the same session.** The commander row showed "Suggest one" beside "You decide". The owner chose to hide "You decide" on that row alone (D-690). The fix adds `no_decline` to the catalog row and `Question.no_decline` to the proto.
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-12g, and 42 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-13, and 42 more sections, word for word. Read it for the detail behind a decision.
