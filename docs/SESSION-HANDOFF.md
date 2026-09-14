@@ -8,9 +8,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-13)
 
-**The checkout.** `main` is `320fcbb`, which is pull request #159, or a later merge. Four stacked pull requests hold this work: #160 on `oq82-bracket-power`, #161 on `pr46-commander-in-99`, #162 on `pr47-judge-game-changers`, and M-15 on `m15-judge-calibration`. The owner merges them in that order. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
+**The checkout.** `main` is `fe9c75f`, which is pull request #163, or a later merge. The branch `pr45-bracket-power-plan` holds this hand-off and the PR-45 plan, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
 
-**The owner answered OQ-82: a bracket promises its power in both directions** (D-693 to D-695). M-14 ran bracket gate run 2 on `320fcbb` for $1.37 (D-694). Five of the six decks at brackets 4 and 5 miss the floor of the mana on turn four. With the Game Changer flags of PR-47, the judge agrees on 3 of 15 decks, and it still names combos from memory (F-126). PR-46 fixes F-124. M-15 calibrated the judge, and PR-45 uses it at brackets 3 to 5 alone (D-697 to D-699).
+**The owner answered OQ-82: a bracket promises its power in both directions** (D-693 to D-695). M-14 ran bracket gate run 2 on `320fcbb` for $1.37 (D-694). Five of the six decks at brackets 4 and 5 miss the floor of the mana on turn four. With the Game Changer flags of PR-47, the judge agrees on 3 of 15 decks, and it still names combos from memory (F-126). #161 merged PR-46, #162 merged PR-47, and #163 merged M-15 (D-697 to D-699). PR-45 splits into PR-45a and PR-45b, and its plan waits for the owner (D-701 to D-704).
 
 **The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586). #158 is the newest web deploy, and `deploy-web` released it at 18:52 UTC on 2026-09-13. #157 is the newest API deploy: `deploy-api` finished at 07:53 UTC, and revision `mtg-api-00040-wd9` serves `api:42003ce`. Both jobs run `worker:42003ce`, and `/readyz` answered 200. The deploy triggers read `go/**`, `docker/**`, and `web/**` alone, so a merge of documents alone starts no build.
 
@@ -100,6 +100,7 @@ CAUTION: the `decktome` gcloud configuration named the Wallabee account and proj
 
 **What waits on the owner.**
 
+- The PR-45 plan (next step 1).
 - A look at the first commander question after one more load of the app (next step 4).
 - OQ-67, the Stage B channels.
 - OQ-77, the blocking function of Identity Platform.
@@ -159,9 +160,9 @@ Fourteen things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **PR-46: the builder drops a listed commander from the 99, and the copy finding names its card** (F-124, D-697). The branch `pr46-commander-in-99` holds it, as a pull request stacked on #160. Its two new tests fail on the old code and pass on the fix. After #160 merges, rebase the branch onto `main`. Then retarget the pull request to `main`.
-2. **PR-47: the bracket judge reads the Game Changer flag of each card** (F-123, D-696). The branch `pr47-judge-game-changers` holds it, stacked on PR-46. The second judge lane read the 15 decks of run 2 for $0.26. The judge agrees on 3 of 15. `docs/reference/pr14a-bracket-gate-run2-judge2.md` holds the lane.
-3. **M-15 measured the judge, and PR-45 uses it at brackets 3 to 5 alone** (F-126, D-698, D-699). The branch `m15-judge-calibration` holds M-15, stacked on PR-47. The judge reads 11 of 12 cEDH lists as bracket 5 and 5 of 9 precons as bracket 2. PR-45 builds the power of each bracket in both directions (D-693, D-695). The owner reads its plan before any code.
+1. **The owner reads the PR-45 plan** (D-701 to D-704). The branch `pr45-bracket-power-plan` holds it. PR-45a goes first, and PR-45b follows.
+2. **PR-45a: the build cuts a card its bracket forbids** (F-125, D-702). Free tests with a fake classifier come first. A paid bracket gate run over prompts 1 to 9 needs the owner's word.
+3. **PR-45b: the floor at brackets 4 and 5** (F-110, F-127, D-703, D-704). A free sweep over the dry-run shortlists sets the shortlist weight. A paid bracket gate run over prompts 10 to 15 needs the owner's word.
 4. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide".
 5. **Watch the first self-reload on the next web deploy** (D-692). The live release of #158 passed its check on 2026-09-13 at 18:54 UTC. An installed app that loaded that release must reload by itself when the next release activates. Read it on the next merge that changes `web/**`.
 6. **Read the source lines of the meta run of 2026-09-14.** The mtggoldfish source failed on 2026-09-13 with a connection reset on a storage write. A second failure makes a finding.
@@ -183,6 +184,14 @@ The CI step "fake gcs tests" ran no test until 2026-09-10 (D-658). Its filter ma
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 
 ## The ten most recent sessions
+
+### 2026-09-13e: the stack merged, M-16, and the PR-45 plan
+
+**The owner merged #160 to #163 in order** (D-700). After each squash merge, the session rebased the next branch onto `main` and checked that its content did not change. CI ran green on each new head before the next merge.
+
+**M-16 counted the power of real lists for no cost.** `Profiler.Measure` read 1,491 TopDeck top-cut lists, 1,040 EDHREC average decks, and the 21 calibration decks. Three in four top-cut lists hold 6 or more fast mana, and five of six bracket 4 and 5 builds hold 2 or fewer. The bracket 5 floor of mana on turn four sat above the median real cEDH list (F-127), and the owner moved it to 4.6 (D-703).
+
+**The owner shaped the PR-45 plan.** PR-45 splits into PR-45a and PR-45b (D-701). PR-45a cuts a card its bracket forbids after the build, with code (D-702). PR-45b pulls floors, a shortlist that reads the bracket, and a gap note (D-704).
 
 ### 2026-09-13d: OQ-82, M-14, and the findings F-123 to F-125
 
@@ -271,16 +280,6 @@ Merged as #150.
 **The owner merged #149, and Cloud Build deployed it at 06:25 UTC.** Revision `mtg-api-00038-h57` serves `api:e8c1b4a`, both jobs run `worker:e8c1b4a`, and `/readyz` answered 200.
 
 **The meta run of 06:00 UTC succeeded at 06:22 UTC**, on `worker:6d9dacf`. It stored `20260912T061545Z`, fitted on 38,395 lists and 909 commanders. The Commander accuracy fell from 0.644 to 0.542, as gate run 20 predicted. The deployed Standard fit reads its cross share at 0.690, against 0.750 the day before, and that share is no bar.
-
-### 2026-09-12: the deployed grade, F-119, and PR-43
-
-Merged as #149.
-
-**The owner merged #148, and Cloud Build deployed it.** Revision `mtg-api-00037-5np` serves `api:6d9dacf`, both jobs run `worker:6d9dacf`, and `/readyz` answered 200.
-
-**The owner built a Commander deck and named its session.** Session `OFMnk7Tv2zkK8xfAwXxB` asked for a treasure deck, named Smaug the Magnificent, and chose bracket 5 from an owned-only pool. The grade reads typical, and its reasons name the ladder, as D-678 asks. No rules check flags the deck. The reader owns the commander, so OQ-79 keeps its harder case open.
-
-**The read found F-119.** The curve line reads 2.79 over 68 nonland cards, and the stored list reads 2.29 over 66. The engine ran before the mana pass, so every rules finding read the list before the pass. The owner chose PR-43, which runs the pass first (D-684). A whole build through a fake model fails on the old order and passes on the new one.
 
 ## The archive
 
