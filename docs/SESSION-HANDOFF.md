@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-14)
 
-**The checkout.** `main` is `284b324`, which is pull request #172, or a later merge. The branch `fix-role-row-unresolved` holds this hand-off and PR-51, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
+**The checkout.** `main` is `54b07dd`, which is pull request #173, or a later merge. The branch `docs-pr51-merged` holds this hand-off, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
 
 **The owner answered OQ-82: a bracket promises its power in both directions** (D-693 to D-695). M-14 ran bracket gate run 2 on `320fcbb` for $1.37 (D-694). Five of the six decks at brackets 4 and 5 miss the floor of the mana on turn four. With the Game Changer flags of PR-47, the judge agrees on 3 of 15 decks, and it still names combos from memory (F-126). #161 merged PR-46, #162 merged PR-47, and #163 merged M-15 (D-697 to D-699). PR-45 splits into PR-45a and PR-45b, and #164 merged the plan (D-701 to D-704).
 
@@ -38,7 +38,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The same session found F-136 and F-137.** Turn 1 asked whether "that card" leads the deck or sits in the 99, and the first message already named it as commander. `applyFacts` set the named-card fact again after the which-card row took the name (F-136). The owner chose PR-51, a catalog condition, with a question gate run (D-717). The summary also names "Gríma's opponent-milling plan", and no card of the deck makes an opponent mill (F-137). The owner chose a record (D-718).
 
-**The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586). #158 is the newest web deploy, and `deploy-web` released it at 18:52 UTC on 2026-09-13. #172 is the newest API deploy: `deploy-api` finished at 19:19 UTC on 2026-09-14, and revision `mtg-api-00048-5zm` serves `api:284b324`. Both jobs run `worker:284b324`, and `/readyz` answered ok. The deploy triggers read `go/**`, `docker/**`, and `web/**` alone, so a merge of documents alone starts no build.
+**#173 merged PR-51, and deployed session `l9x5bFTcFgpZ4DOcQpxU` proves it** (F-136, D-717). The role row reads `"commander_unresolved": false`, so it waits while the which-card row holds a name. Question gate run 50 read PASS at 73 of 74, as run 49 did, for $0.1938. The owner wrote "Grima as commander" on revision `mtg-api-00049-4lj`. Turn 1 asked the power and the colors, and no role question. Turn 2 offered both Gríma cards.
+
+**The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586). #158 is the newest web deploy, and `deploy-web` released it at 18:52 UTC on 2026-09-13. #173 is the newest API deploy: `deploy-api` finished at 20:50 UTC on 2026-09-14, and revision `mtg-api-00049-4lj` serves `api:54b07dd`. Both jobs run `worker:54b07dd`, and `/readyz` answered ok. The deploy triggers read `go/**`, `docker/**`, and `web/**` alone, so a merge of documents alone starts no build.
 
 **Session `X4JfbXzMw4U5A4gEeOaE` reads right on every check, and the owner closed OQ-79** (D-691). The owner built an owned-only lifegain Commander deck at bracket 3 on 2026-09-13 at 04:16 UTC. The first message named Sidequest: Catch a Fish. The offer named Aerith Gainsborough, Hope Estheim, and Aerith, Last Ancient, as a free local run of the offer code predicted. The reader owns one copy of each. The reader owns none of the three commanders that an offer with any card allowed names first. The deck marks the commander and every card owned.
 
@@ -126,7 +128,7 @@ CAUTION: the `decktome` gcloud configuration named the Wallabee account and proj
 
 **What waits on the owner.**
 
-- The merge of PR-51, after question gate run 50 and the review of `gitar-bot`.
+- The merge of this documents pull request, after the review of `gitar-bot`.
 - A look at the first commander question after a load of the app, in a session that names no commander (next step 2).
 - OQ-67, the Stage B channels.
 - OQ-77, the blocking function of Identity Platform.
@@ -178,7 +180,7 @@ Fifteen things a fresh session gets wrong without this file.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
 - The feedback store holds 3 verdicts on 2026-09-09, and every one predates the snapshot of D-635. `make feedback-list VERDICT=` reads both verdicts now (F-87). A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- The deployed API, read 2026-09-14 at 19:20 UTC: revision `mtg-api-00048-5zm` on image `api:284b324`, from #172. Both jobs run `worker:284b324`, and `/readyz` answered ok with a card snapshot of 2026-09-14 09:01 UTC. `deploy-api` ran from 19:14 to 19:19 UTC.
+- The deployed API, read 2026-09-14 at 20:50 UTC: revision `mtg-api-00049-4lj` on image `api:54b07dd`, from #173. Both jobs run `worker:54b07dd`, and `/readyz` answered ok with a card snapshot of 2026-09-14 09:01 UTC. `deploy-api` ran from 20:45 to 20:50 UTC.
 - The deployed web app, read 2026-09-13 at 18:54 UTC: the release of #158, from `deploy-web` at 18:52 UTC. `index.html` loads `assets/index-DYfo4m8I.js` and no `registerSW.js`, and `sw.js` precaches the `workbox-window` chunk.
 - The deployed quality model, read 2026-09-14: `20260914T070904Z`, from the meta job that started at 06:02 UTC and ended at 07:13 UTC. It fits 43,182 lists and 1,517 commanders. Its Commander fit reads `immaterial` 239 and accuracy 0.554, and its Standard fit reads a cross share of 0.667. The job read the weekly EDHREC pass, 2,077 pages and 4 lists. The mtgo source read 3,094 lists with 58 fetch errors. The mtggoldfish source read 155 lists with no failure. The mtgjson source read no list, because its deck list version differs from the stored table, as on 2026-09-12 and 2026-09-13.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
@@ -187,7 +189,7 @@ Fifteen things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **Merge PR-51, then read it on the deployed app** (F-136, D-717). A session that names a commander with more than one match must ask no role question. Read the stored session and the API log, and not the screen alone. PR-45b holds on session `z1hshyY6Npig1FN2NuV7`, and the power pass after the build still waits (D-704).
+1. **The power pass after the build still waits** (D-704). Session `z1hshyY6Npig1FN2NuV7` built a bracket 5 deck from an owned-only pool. It holds 0 of 4 tutors, 3 of 6 fast mana, and 1 of 8 Game Changers. The gap note names the cards to buy, and F-137 stays a record (D-718).
 2. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide". Session `z1hshyY6Npig1FN2NuV7` named its commander, so it showed no such row.
 3. **Watch the first self-reload on the next web deploy** (D-692). The live release of #158 passed its check on 2026-09-13 at 18:54 UTC. An installed app that loaded that release must reload by itself when the next release activates. Read it on the next merge that changes `web/**`.
 4. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
@@ -207,6 +209,12 @@ The CI step "fake gcs tests" ran no test until 2026-09-10 (D-658). Its filter ma
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 
 ## The ten most recent sessions
+
+### 2026-09-14i: #173 merged, and the deployed app asks no role question
+
+**The owner merged #173, and Cloud Build deployed it.** `deploy-api` ran from 20:45 to 20:50 UTC, and revision `mtg-api-00049-4lj` serves `api:54b07dd`. Both jobs run `worker:54b07dd`, and `/readyz` answered ok.
+
+**Deployed session `l9x5bFTcFgpZ4DOcQpxU` proves PR-51** (F-136, D-717). The owner wrote "Grima as commander", and the lookup found two cards. Turn 1 asked the power and the colors, and no role question. Turn 2 offered both Gríma cards.
 
 ### 2026-09-14h: #171 and #172 merged, the live Grima check, and PR-51
 
@@ -291,24 +299,6 @@ Merged as #169.
 **M-16 counted the power of real lists for no cost.** `Profiler.Measure` read 1,491 TopDeck top-cut lists, 1,040 EDHREC average decks, and the 21 calibration decks. Three in four top-cut lists hold 6 or more fast mana, and five of six bracket 4 and 5 builds hold 2 or fewer. The bracket 5 floor of mana on turn four sat above the median real cEDH list (F-127), and the owner moved it to 4.6 (D-703).
 
 **The owner shaped the PR-45 plan.** PR-45 splits into PR-45a and PR-45b (D-701). PR-45a cuts a card its bracket forbids after the build, with code (D-702). PR-45b pulls floors, a shortlist that reads the bracket, and a gap note (D-704).
-
-### 2026-09-13d: OQ-82, M-14, and the findings F-123 to F-125
-
-**The owner merged #159 and asked what comes next.** Every next step waited on the owner, a date, or money. The session gave the choices, and the owner chose OQ-82, the power of a bracket.
-
-**The evidence.** Deck 3 of the deck gate, a high-power Urza deck at bracket 4, read short of its power on runs 16, 18, and 19. No band of bracket 4 or 5 holds a floor for tutors or fast mana. The shortlist ranks cards by theme fit and EDHREC rank. The owner chose a promise in both directions (D-693) and a measurement first (D-694). A precon upgrade cuts a kept card that the bracket forbids, outside the 85 percent (D-695).
-
-**M-14 ran bracket gate run 2 on `320fcbb`.** It read FAIL for $1.37 over 925 seconds, and the judge agrees on 6 of 15 decks. All six decks at brackets 1 and 2 read as bracket 3. Five of the six decks at brackets 4 and 5 miss the floor of the mana on turn four.
-
-**The read found three defects.** The judge reads Game Changers from memory, and at least 12 of 15 reasons name a card that the data does not flag (F-123). A commander in the 99 left a block that names no card (F-124). A content violation alone goes to the reader with no repair turn (F-125). The owner chose the flags for the judge, a second judge lane, and F-124 first (D-696, D-697).
-
-**The branch `pr46-commander-in-99` holds PR-46, stacked on #160** (F-124, D-697). `assemble` drops a list entry for a commander, and `checkCopies` names a card with no written name. Both new tests fail on the old code and pass on the fix.
-
-**The branch `pr47-judge-game-changers` holds PR-47, stacked on PR-46** (F-123, D-696). The second judge lane read run 2 for $0.26, and the judge agrees on 3 of 15. No reason names an unflagged Game Changer now. All six decks at brackets 4 and 5 read lower, and five of six at brackets 1 and 2 read as bracket 3. The judge also names a Heliod combo that Commander Spellbook does not list (F-126).
-
-**The disk.** Free disk fell to 12 GiB during the verify runs. The owner chose to clear the Docker build cache and the Go build cache, and free disk rose to 34 GiB.
-
-**M-15 calibrated the judge** (F-126, D-698). `make bracket-calibrate` wrote the nine precons as bracket 2 and 12 top-finish cEDH lists as bracket 5. The lane cost $0.33. The judge reads 11 of 12 cEDH lists as bracket 5, and the miss holds one Game Changer. It reads 4 of 9 precons as bracket 3, and each of those holds no Game Changer. The owner chose the judge as the target of PR-45 at brackets 3 to 5 alone (D-699).
 
 ## The archive
 
