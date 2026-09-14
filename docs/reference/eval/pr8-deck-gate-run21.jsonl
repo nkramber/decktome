@@ -1,0 +1,19 @@
+{"suite":"decks","run_id":"pr8-deck-gate-run21","date":"2026-09-14","commit":"f45791a","roles":{"generate":{"provider":"openai","model":"gpt-5.6-terra","effort":"medium"},"judge":{"provider":"anthropic","model":"claude-opus-5","effort":"medium"},"repair":{"provider":"openai","model":"gpt-5.6-terra","effort":"medium"}},"snapshot":"2026-09-04","prompts":{"generate":13,"plan_rubric":2},"versions":{"quality_model":"20260914T154223Z"},"calls":3,"cost_usd":0.11735324999999999,"seconds":96.715049083,"verdict":"PASS","only":"3","lower":["blocks","invented_names","false_rules","judge_error","excluded_in_deck","warnings","repaired","buy_cost","deck_cost","case_assertions"]}
+{"item":"3","metric":"built","value":1,"kind":"gate"}
+{"item":"3","metric":"blocks","value":0,"kind":"gate"}
+{"item":"3","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"3","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"3","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"3","metric":"repaired","value":0,"kind":"info"}
+{"item":"3","metric":"cards","value":99,"kind":"info"}
+{"item":"3","metric":"pool","value":317,"kind":"info"}
+{"item":"3","metric":"warnings","value":0,"kind":"info"}
+{"item":"3","metric":"buy_cost","value":7628,"kind":"info"}
+{"item":"3","metric":"deck_cost","value":7628,"kind":"info"}
+{"item":"3","metric":"plan_plan_coherent","value":0.5,"kind":"info","detail":"partly: Nearly every card supports one artifact-density plan under Urza — fast mana, artifact payoffs, tutors, and counterspells — but the lone Thassa's Oracle has no library-emptying support and sits outside the plan the rest of the list carries."}
+{"item":"3","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: It is exactly the requested mono-blue high-power artifact deck helmed by Urza, Lord High Artificer, with a card pool (Workshop, LED, Mox suite, free counters) appropriate to bracket 4."}
+{"item":"3","metric":"plan_useful_as_built","value":1,"kind":"info","detail":"yes: 35 lands plus a deep fast-mana package support the curve, the artifact count comfortably turns on affinity/improvise cards, and it can actually win via Urza tokens, Kappa Cannoneer, Cyberdrive Awakener, and Aetherflux Reservoir even without the Oracle line."}
+{"item":"3","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: The descriptions of fast mana, tutors, dense counterspells, and artifact pressure are all accurate, but naming Thassa's Oracle as a way to close is false: there is no Demonic Consultation, Tainted Pact, or self-mill in the list, so the Oracle is a near-blank."}
+{"item":"3","metric":"plan_score","value":0.75,"kind":"info"}
+{"item":"3","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"3","metric":"grade","value":0.6972,"kind":"info","detail":"good"}
