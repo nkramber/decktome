@@ -38,6 +38,7 @@ import (
 	"github.com/nkramber/decktome/go/internal/generate"
 	"github.com/nkramber/decktome/go/internal/llm"
 	"github.com/nkramber/decktome/go/internal/precons"
+	"github.com/nkramber/decktome/go/internal/quality"
 	"github.com/nkramber/decktome/go/internal/rules"
 )
 
@@ -96,6 +97,10 @@ type result struct {
 	setCodes []string
 	inSet    int
 	outside  int
+	// shift is what the top-list rate moved in the shortlist, read by a
+	// dry run (D-706).
+	shift    gatekit.RateShift
+	shiftErr error
 	// products names the precons the prompt excluded, excluded holds the
 	// Oracle ids the exclusion took out of the pool, and spare counts
 	// the product cards that stayed usable on a spare copy (D-408).
@@ -215,6 +220,14 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	// The quality model grades every deck the gate builds, and the
+	// summary names the tier (PR-14B). No stored model grades nothing. The
+	// shortlist and the commander pool read its signals as the app does,
+	// in a dry run too (F-129, D-706, D-708).
+	scorer, err := gatekit.Scorer(context.Background())
+	if err != nil {
+		return err
+	}
 	// A dry run builds every shortlist and calls no provider, so it needs
 	// no API key. It is the free check before a paid run.
 	var b *generate.Builder
@@ -235,19 +248,13 @@ func run() error {
 		if err != nil {
 			return err
 		}
-		// The quality model grades every deck the gate builds, and the
-		// summary names the tier (PR-14B). No stored model grades nothing.
-		scorer, err := gatekit.Scorer(context.Background())
-		if err != nil {
-			return err
-		}
 		b = generate.NewBuilder(client, rcfg, idx, quiet, generate.WithProfiler(prof), generate.WithScorer(scorer))
 	}
 
 	start := time.Now()
 	var results []result
 	for _, p := range file.Prompts {
-		r := build(context.Background(), b, cb, idx, binders, p, acc, *dry, preconSet, preconTbl)
+		r := build(context.Background(), b, cb, idx, scorer, binders, p, acc, *dry, preconSet, preconTbl)
 		// The judge lane is the real check for F-26, and the deterministic
 		// net can not read the truth of a rules claim (D-229).
 		if !*dry && !*noJudge && r.deck != nil {
@@ -262,6 +269,9 @@ func run() error {
 		}
 		results = append(results, r)
 		fmt.Fprintf(os.Stderr, "  %2d. %-38s pool %3d%s%s  %s\n", p.ID, p.Name, r.poolSize, setWord(r), excludeWord(r), status(r))
+		if *dry && r.err == nil {
+			fmt.Fprintf(os.Stderr, "      %s\n", shiftWords(r.shift, r.shiftErr))
+		}
 	}
 	if *dry {
 		fmt.Fprintf(os.Stderr, "\ndry run: %d shortlists built, no provider call ran\n", len(results))
@@ -342,6 +352,15 @@ func setWord(r result) string {
 	return fmt.Sprintf("  sets %s in %d out %d", strings.Join(r.setCodes, ","), r.inSet, r.outside)
 }
 
+// shiftWords writes the rate line of a dry run, or the failure of its
+// second shortlist.
+func shiftWords(s gatekit.RateShift, err error) string {
+	if err != nil {
+		return "rate: " + err.Error()
+	}
+	return s.String()
+}
+
 func status(r result) string {
 	switch {
 	case r.err != nil:
@@ -354,7 +373,7 @@ func status(r result) string {
 	}
 }
 
-func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx *cards.Index,
+func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx *cards.Index, scorer *quality.Scorer,
 	binders map[string]*gatekit.Collection, p prompt, acc *llm.Accumulator, dry bool, preconSet *precons.Set, tbl *precons.Table) result {
 	out := result{prompt: p}
 	format := gatekit.FormatID(p.Format)
@@ -405,6 +424,9 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 			Format: format, Theme: p.Theme, Colors: gatekit.Colors(p.Colors),
 			PoolRule: gatekit.PoolRuleID(p.Pool), Owned: own, Bracket: p.Bracket,
 			SetCodes: setCodes, ExcludeOracleIDs: excludedIDs,
+			// A bracket 4 or 5 pool ranks on the commander signal, as the app
+			// does (D-708).
+			CommanderSignal: scorer.CommanderSignal(),
 		})
 		if err != nil {
 			out.err = fmt.Errorf("commander pool: %w", err)
@@ -447,7 +469,9 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 	if len(setCodes) > 0 && p.OutsideMana {
 		outsideRoles = manaRoles(generate.TargetsFor(format, gatekit.PowerLevel(p.Bracket, p.Power)))
 	}
-	list, err := cb.Build(idx, candidates.Request{
+	// The shortlist reads the top-list rate, as the app does (F-129, D-706).
+	req := candidates.Request{
+		MetaBoost:          scorer.MetaBoost(format),
 		Format:             format,
 		Colors:             colors,
 		Theme:              p.Theme,
@@ -458,7 +482,8 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 		SetCodes:           setCodes,
 		OutsideRoles:       outsideRoles,
 		ExcludeOracleIDs:   excludedIDs,
-	})
+	}
+	list, err := cb.Build(idx, req)
 	if err != nil {
 		out.err = fmt.Errorf("candidates: %w", err)
 		return out
@@ -517,6 +542,7 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 		out.touched = append(out.touched, c.GetOracleId())
 	}
 	if dry {
+		out.shift, out.shiftErr = gatekit.ShiftOfRate(cb, idx, req, list)
 		return out
 	}
 	plan := p.Plan

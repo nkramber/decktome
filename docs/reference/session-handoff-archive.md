@@ -11,6 +11,16 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## 2026-09-12e: the gate runs, F-120, and PR-44
+
+Merged as #153.
+
+**The owner approved deck gate run 19 and question gate run 49, and both read PASS.** Run 49 cost $0.1935 over 18 minutes and met every expectation. Run 19 cost $2.7504 over 36 minutes and passes all 25 decks with one repair turn. The owner made run 19 the decks baseline (D-686).
+
+**The check of PR-43 on run 19 found F-120.** Every curve line matches its list. Deck 12 differs from a front-face count by one card, Legion's Landing, which the index typed as a land. The index merged the types of every face, against CR 712.8a.
+
+**The owner chose the rules of each layout** (D-687, D-688). PR-44 gives a card with more than one face its front face, and split and modal double-faced cards keep every face. A test of eight real cards fails on the old types. One shortlist of 25 lost two cards. Quality gate run 21 moves deck 7 from bad to baseline, so graded bad reads 8 and agreement 9. The owner reads guardrail 15 as a rule for tuning items (D-689).
+
 ## 2026-09-12c: the Gitar pause note (D-685)
 
 Merged as #151, and #152 corrected the reading of the rule.

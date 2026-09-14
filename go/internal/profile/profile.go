@@ -312,13 +312,7 @@ func (f *features) tutors(entries []entry, tags *cards.TagIndex) {
 	if tags == nil {
 		return
 	}
-	set := map[string]bool{}
-	for _, id := range tags.Resolve(tutorSlug) {
-		set[id] = true
-	}
-	for _, id := range tags.Resolve(tutorLandSlug) {
-		delete(set, id)
-	}
+	set := tutorSet(tags)
 	n := 0
 	var found []string
 	for _, e := range entries {
@@ -328,6 +322,42 @@ func (f *features) tutors(entries []entry, tags *cards.TagIndex) {
 		}
 	}
 	f.set(KeyTutor, float64(n), names(found))
+}
+
+// tutorSet is every Oracle id the tags read as a tutor: the tutor slug,
+// less the land searches.
+func tutorSet(tags *cards.TagIndex) map[string]bool {
+	set := map[string]bool{}
+	for _, id := range tags.Resolve(tutorSlug) {
+		set[id] = true
+	}
+	for _, id := range tags.Resolve(tutorLandSlug) {
+		delete(set, id)
+	}
+	return set
+}
+
+// PowerCards counts the cards a high bracket reads in a card list, by the
+// rules of the profile: the tutors, the fast mana, and the Game Changers
+// (D-704). A nil tag index counts no tutor. The dry run of a gate reads
+// it to show what the top-list rate moves (D-706).
+func PowerCards(list []*mtgv1.Card, tags *cards.TagIndex) (tutors, fastMana, gameChangers int) {
+	var set map[string]bool
+	if tags != nil {
+		set = tutorSet(tags)
+	}
+	for _, c := range list {
+		if set[c.GetOracleId()] && !isLand(c) {
+			tutors++
+		}
+		if isFastMana(c) {
+			fastMana++
+		}
+		if c.GetGameChanger() {
+			gameChangers++
+		}
+	}
+	return tutors, fastMana, gameChangers
 }
 
 // colorSources measures each deck color's sources against the need of its

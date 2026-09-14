@@ -66,7 +66,7 @@ func TestTrimmedSnapshotBuildsEveryShortlist(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, p := range file.Prompts {
-		r := build(ctx, nil, cb, idx, binders, p, nil, true, preconSet, tbl)
+		r := build(ctx, nil, cb, idx, nil, binders, p, nil, true, preconSet, tbl)
 		if r.err != nil {
 			t.Errorf("prompt %d, %s: %v", p.ID, p.Name, r.err)
 			continue
