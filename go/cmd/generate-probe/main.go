@@ -65,6 +65,13 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	// The quality model grades the deck, and the shortlist reads its
+	// top-list rate as the app does (PR-14B, D-708). No stored model grades
+	// nothing.
+	scorer, err := gatekit.Scorer(context.Background())
+	if err != nil {
+		return err
+	}
 	fid := gatekit.FormatID(*format)
 	if fid == mtgv1.FormatId_FORMAT_ID_UNSPECIFIED {
 		return fmt.Errorf("unknown format %q: give commander, standard, or modern", *format)
@@ -77,6 +84,7 @@ func run() error {
 		PoolRule:           mtgv1.PoolRule_POOL_RULE_ANY_CARD,
 		Bracket:            3,
 		Limits:             candidates.Limits{Total: *limit},
+		MetaBoost:          scorer.MetaBoost(fid),
 	})
 	if err != nil {
 		return fmt.Errorf("candidates: %w", err)
@@ -104,12 +112,6 @@ func run() error {
 		return err
 	}
 	prof, err := gatekit.Profiler(idx, rcfg, quiet)
-	if err != nil {
-		return err
-	}
-	// The quality model grades every deck the gate builds, and the
-	// summary names the tier (PR-14B). No stored model grades nothing.
-	scorer, err := gatekit.Scorer(context.Background())
 	if err != nil {
 		return err
 	}

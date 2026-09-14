@@ -34,6 +34,7 @@ import (
 	"github.com/nkramber/decktome/go/internal/gatekit"
 	"github.com/nkramber/decktome/go/internal/generate"
 	"github.com/nkramber/decktome/go/internal/llm"
+	"github.com/nkramber/decktome/go/internal/quality"
 	"github.com/nkramber/decktome/go/internal/revise"
 	"github.com/nkramber/decktome/go/internal/rules"
 )
@@ -205,7 +206,7 @@ func run() error {
 	var outcomes []outcome
 	for _, bs := range file.Bases {
 		fmt.Fprintf(os.Stderr, "base %d. %s\n", bs.ID, bs.Name)
-		baseDeck, pool, list, commanderIDs, err := buildBase(ctx, b, cb, idx, bs, acc)
+		baseDeck, pool, list, commanderIDs, err := buildBase(ctx, b, cb, idx, bs, scorer, acc)
 		if err != nil {
 			for _, r := range bs.Revisions {
 				outcomes = append(outcomes, outcome{base: bs, rev: r, err: fmt.Errorf("base build: %w", err)})
@@ -293,7 +294,7 @@ func powerWord(bs base) string {
 // buildBase builds the deck the revisions start from, the way the
 // product does: the shortlist, the basics, and the commander.
 func buildBase(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx *cards.Index, bs base,
-	acc *llm.Accumulator) (*mtgv1.Deck, *generate.Pool, *candidates.List, []string, error) {
+	scorer *quality.Scorer, acc *llm.Accumulator) (*mtgv1.Deck, *generate.Pool, *candidates.List, []string, error) {
 	format := formatOf(bs)
 	if format == mtgv1.FormatId_FORMAT_ID_UNSPECIFIED {
 		return nil, nil, nil, nil, fmt.Errorf("unknown format %q", bs.Format)
@@ -320,6 +321,8 @@ func buildBase(ctx context.Context, b *generate.Builder, cb *candidates.Builder,
 		Format: format, Colors: colors, Theme: bs.Theme, CommanderOracleIDs: commanderIDs,
 		PoolRule: mtgv1.PoolRule_POOL_RULE_ANY_CARD, Bracket: bs.Bracket,
 		SetCodes: setCodes,
+		// The shortlist reads the top-list rate, as the app does (D-708).
+		MetaBoost: scorer.MetaBoost(format),
 	})
 	if err != nil {
 		return nil, nil, nil, nil, fmt.Errorf("candidates: %w", err)
