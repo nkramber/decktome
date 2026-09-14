@@ -205,6 +205,33 @@ func TestSixtyCardDeckCarriesNoCommander(t *testing.T) {
 	}
 }
 
+// TestBuildDropsACommanderFromTheList is F-124: the model writes the
+// commander into the list, and the command zone keeps the only copy.
+func TestBuildDropsACommanderFromTheList(t *testing.T) {
+	one := step(t, deckOut{Summary: "lifegain", Cards: []Entry{
+		{Name: "Karlov of the Ghost Council", Count: 1, Role: "threat", Reason: "leads the deck"},
+		{Name: "Ajani's Welcome", Count: 1, Role: "synergy", Reason: "gains life"},
+	}})
+	b, _, _ := testBuilder(t, one, one)
+	req := testRequest()
+	req.Format = mtgv1.FormatId_FORMAT_ID_COMMANDER
+	req.Commanders = []string{"o-karlov"}
+	got, err := b.Build(context.Background(), req, nil)
+	if err != nil {
+		t.Fatalf("build: %v", err)
+	}
+	for _, c := range got.Deck.GetCards() {
+		if c.GetOracleId() == "o-karlov" {
+			t.Error("the list holds the commander as a second copy")
+		}
+	}
+	for _, f := range got.Deck.GetValidation().GetFindings() {
+		if f.GetCode() == rules.CodeCopyLimit {
+			t.Errorf("copy finding %q on a deck whose commander sits in the command zone alone", f.GetMessage())
+		}
+	}
+}
+
 // TestLockedCardMustReachTheDeck is D-242. The locked row asks which
 // cards the deck must keep, and agentsvc never passed the answer, so a
 // deck without the card answered the user's own instruction with silence.

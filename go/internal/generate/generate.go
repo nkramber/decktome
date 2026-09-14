@@ -428,6 +428,22 @@ func (b *Builder) assemble(ctx context.Context, req Request, out *deckOut) pass 
 	if req.Format != mtgv1.FormatId_FORMAT_ID_COMMANDER {
 		commanders = nil
 	}
+	// The command zone holds each commander, so a list entry for one is a
+	// second copy (F-124, D-697). The basic lands below fill its slot
+	// (D-225).
+	if len(commanders) > 0 {
+		zone := make(map[string]bool, len(commanders))
+		for _, id := range commanders {
+			zone[id] = true
+		}
+		kept := make([]*mtgv1.DeckCard, 0, len(main.Cards))
+		for _, dc := range main.Cards {
+			if !zone[dc.GetOracleId()] {
+				kept = append(kept, dc)
+			}
+		}
+		main.Cards = kept
+	}
 	now := req.Now
 	if now == nil {
 		now = time.Now

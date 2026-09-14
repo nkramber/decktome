@@ -158,7 +158,7 @@ Thirteen things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **PR-46: the builder drops a listed commander from the 99, and the copy finding names its card** (F-124, D-697). It goes first, as its own pull request. A unit test builds a deck with the commander in the list, and the old code must fail it. `assemble` in `generate.go` builds the list, and `checkCopies` in `rules/checks.go` writes the finding.
+1. **PR-46: the builder drops a listed commander from the 99, and the copy finding names its card** (F-124, D-697). The branch `pr46-commander-in-99` holds it, as a pull request stacked on #160. Its two new tests fail on the old code and pass on the fix. After #160 merges, rebase the branch onto `main`. Then retarget the pull request to `main`.
 2. **PR-47: the bracket judge reads the Game Changer flag of each card** (F-123, D-696). `DeckText` in `generate/judge.go` writes the judge input. Then `make bracket-gate BRACKET_GATE_ARGS="-rejudge docs/reference/pr14a-bracket-gate-run2.md"` reads the 15 decks again, to a new `BRACKET_GATE_OUT`. The owner approved that lane at about $0.28.
 3. **PR-45: the build reaches the power of its bracket, in both directions** (F-110, F-125, D-693, D-695). Its design follows the second read of M-14, and the owner reads the plan before any code.
 4. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide".
@@ -192,6 +192,8 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 **M-14 ran bracket gate run 2 on `320fcbb`.** It read FAIL for $1.37 over 925 seconds, and the judge agrees on 6 of 15 decks. All six decks at brackets 1 and 2 read as bracket 3. Five of the six decks at brackets 4 and 5 miss the floor of the mana on turn four.
 
 **The read found three defects.** The judge reads Game Changers from memory, and at least 12 of 15 reasons name a card that the data does not flag (F-123). A commander in the 99 left a block that names no card (F-124). A content violation alone goes to the reader with no repair turn (F-125). The owner chose the flags for the judge, a second judge lane, and F-124 first (D-696, D-697).
+
+**The branch `pr46-commander-in-99` holds PR-46, stacked on #160** (F-124, D-697). `assemble` drops a list entry for a commander, and `checkCopies` names a card with no written name. Both new tests fail on the old code and pass on the fix.
 
 ### 2026-09-13c: #158 deployed, and the documents read the merge
 

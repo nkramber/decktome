@@ -81,7 +81,9 @@ func checkCopies(res *mtgv1.ValidationResult, in Input, fr FormatRules) {
 	names := map[string]string{}
 	for _, dc := range allCards(in.Deck) {
 		counts[dc.OracleId] += dc.Count
-		names[dc.OracleId] = dc.Name
+		if dc.Name != "" {
+			names[dc.OracleId] = dc.Name
+		}
 	}
 	for oid, n := range counts {
 		card, ok := in.Cards.ByOracleID(oid)
@@ -96,8 +98,13 @@ func checkCopies(res *mtgv1.ValidationResult, in Input, fr FormatRules) {
 			limit = card.MaxCopiesOverride
 		}
 		if n > limit {
+			// A command zone entry carries no name, so the index names it (F-124).
+			name := names[oid]
+			if name == "" {
+				name = card.GetName()
+			}
 			add(res, CodeCopyLimit, mtgv1.Severity_SEVERITY_BLOCK,
-				fmt.Sprintf("%s: %d copies, the limit is %d", names[oid], n, limit), oid)
+				fmt.Sprintf("%s: %d copies, the limit is %d", name, n, limit), oid)
 		}
 	}
 }
