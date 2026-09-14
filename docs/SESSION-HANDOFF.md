@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-14)
 
-**The checkout.** `main` is `5dbf7d7`, which is pull request #166, or a later merge. The branch `pr49-gate-meta-boost` holds PR-49 and this hand-off, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
+**The checkout.** `main` is `bbd5c5a`, which is pull request #167, or a later merge. The branch `docs-pr49-merged` holds this hand-off, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
 
 **The owner answered OQ-82: a bracket promises its power in both directions** (D-693 to D-695). M-14 ran bracket gate run 2 on `320fcbb` for $1.37 (D-694). Five of the six decks at brackets 4 and 5 miss the floor of the mana on turn four. With the Game Changer flags of PR-47, the judge agrees on 3 of 15 decks, and it still names combos from memory (F-126). #161 merged PR-46, #162 merged PR-47, and #163 merged M-15 (D-697 to D-699). PR-45 splits into PR-45a and PR-45b, and #164 merged the plan (D-701 to D-704).
 
@@ -18,11 +18,11 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **#166 merged PR-48: the mana pass counts the command zone as held** (F-128, D-705). The spell steps of the pass read the 99 alone, and the pool holds each commander. On the old pass a unit test reads three steps that add the commander, and a build test reads 2 copies of it.
 
-**PR-49 makes every tool build the shortlist of the app** (F-129, D-706, D-708). The gates passed no top-list rate, so they measured shortlists that the app never builds. A parity test fails on the old tools at five calls. The dry comparison on model `20260910T012734Z` finds the rate bringing in up to 45 cards, with more fast mana and Game Changers.
+**#167 merged PR-49: every tool builds the shortlist of the app** (F-129, D-706, D-708). The gates passed no top-list rate, so they measured shortlists that the app never builds. A parity test fails on the old tools at five calls. The dry comparison on model `20260910T012734Z` finds the rate bringing in up to 45 cards, with more fast mana and Game Changers.
 
-**PR-45b waits for PR-49** (D-706). The plan read also found F-130: off-theme tutors and many Game Changers never reach a shortlist. At brackets 4 and 5 a card with a high top-list rate stays, and the sweep sets the threshold and the weight (D-707).
+**PR-45b is the next roadmap item** (D-706). The plan read also found F-130: off-theme tutors and many Game Changers never reach a shortlist. At brackets 4 and 5 a card with a high top-list rate stays, and the sweep sets the threshold and the weight (D-707).
 
-**The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586). #158 is the newest web deploy, and `deploy-web` released it at 18:52 UTC on 2026-09-13. #166 is the newest API deploy: `deploy-api` finished at 14:13 UTC on 2026-09-14, and revision `mtg-api-00045-csf` serves `api:5dbf7d7`. Both jobs run `worker:5dbf7d7`, and `/readyz` answered 200. The deploy triggers read `go/**`, `docker/**`, and `web/**` alone, so a merge of documents alone starts no build.
+**The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586). #158 is the newest web deploy, and `deploy-web` released it at 18:52 UTC on 2026-09-13. #167 is the newest API deploy: `deploy-api` finished at 14:58 UTC on 2026-09-14, and revision `mtg-api-00046-j29` serves `api:bbd5c5a`. Both jobs run `worker:bbd5c5a`, and `/readyz` answered 200. The deploy triggers read `go/**`, `docker/**`, and `web/**` alone, so a merge of documents alone starts no build.
 
 **Session `X4JfbXzMw4U5A4gEeOaE` reads right on every check, and the owner closed OQ-79** (D-691). The owner built an owned-only lifegain Commander deck at bracket 3 on 2026-09-13 at 04:16 UTC. The first message named Sidequest: Catch a Fish. The offer named Aerith Gainsborough, Hope Estheim, and Aerith, Last Ancient, as a free local run of the offer code predicted. The reader owns one copy of each. The reader owns none of the three commanders that an offer with any card allowed names first. The deck marks the commander and every card owned.
 
@@ -110,8 +110,9 @@ CAUTION: the `decktome` gcloud configuration named the Wallabee account and proj
 
 **What waits on the owner.**
 
-- The merge of PR-49, after the review of `gitar-bot` (next step 1).
-- A look at the first commander question after one more load of the app (next step 3).
+- The merge of this documents pull request, after the review of `gitar-bot`.
+- The word for the paid bracket gate run of PR-45b (next step 1).
+- A look at the first commander question after one more load of the app (next step 2).
 - OQ-67, the Stage B channels.
 - OQ-77, the blocking function of Identity Platform.
 - OQ-80, a proxy and the pool.
@@ -162,7 +163,7 @@ Fifteen things a fresh session gets wrong without this file.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
 - The feedback store holds 3 verdicts on 2026-09-09, and every one predates the snapshot of D-635. `make feedback-list VERDICT=` reads both verdicts now (F-87). A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- The deployed API, read 2026-09-14 at 14:13 UTC: revision `mtg-api-00045-csf` on image `api:5dbf7d7`, from #166. Both jobs run `worker:5dbf7d7`, and `/readyz` answered 200 with a card snapshot of 2026-09-14 09:01 UTC. `deploy-api` finished at 14:13 UTC.
+- The deployed API, read 2026-09-14 at 14:59 UTC: revision `mtg-api-00046-j29` on image `api:bbd5c5a`, from #167. Both jobs run `worker:bbd5c5a`, and `/readyz` answered 200 with a card snapshot of 2026-09-14 09:01 UTC. `deploy-api` finished at 14:58 UTC.
 - The deployed web app, read 2026-09-13 at 18:54 UTC: the release of #158, from `deploy-web` at 18:52 UTC. `index.html` loads `assets/index-DYfo4m8I.js` and no `registerSW.js`, and `sw.js` precaches the `workbox-window` chunk.
 - The deployed quality model, read 2026-09-14: `20260914T070904Z`, from the meta job that started at 06:02 UTC and ended at 07:13 UTC. It fits 43,182 lists and 1,517 commanders. Its Commander fit reads `immaterial` 239 and accuracy 0.554, and its Standard fit reads a cross share of 0.667. The job read the weekly EDHREC pass, 2,077 pages and 4 lists. The mtgo source read 3,094 lists with 58 fetch errors. The mtggoldfish source read 155 lists with no failure. The mtgjson source read no list, because its deck list version differs from the stored table, as on 2026-09-12 and 2026-09-13.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
@@ -171,18 +172,17 @@ Fifteen things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **PR-49 waits for the review of `gitar-bot` and the merge** (F-129, D-706, D-708). The parity test fails on the old tools. Answer each finding before you ask for the merge.
-2. **PR-45b: the floor at brackets 4 and 5** (F-110, F-127, D-703, D-704). A free sweep over the dry-run shortlists sets the shortlist weight. A paid bracket gate run over prompts 10 to 15 needs the owner's word. It waits for PR-49, and a card with a high top-list rate stays on the shortlist (D-706, D-707).
-3. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide".
-4. **Watch the first self-reload on the next web deploy** (D-692). The live release of #158 passed its check on 2026-09-13 at 18:54 UTC. An installed app that loaded that release must reload by itself when the next release activates. Read it on the next merge that changes `web/**`.
-5. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
-6. **The live half of the feedback loop has no run yet.** Three things want a measurement: the judge lane of the triage, one live fix cycle, and one review round. All three need the owner's word, and the cycle also needs `AUTOTUNE_FIXER_CMD` and a harvest whose verdicts carry a snapshot.
-7. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. The next whole run compares against run 19, and it costs about $2.75, so ask the owner first.
-8. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
-9. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
-10. **The weekly EDHREC read of 2026-09-14** (D-499, D-565). `make meta-refresh` started at 14:13 UTC. Then run `make quality-gate` to a new `QUALITY_GATE_OUT`. The deployed job read 4 lists from 2,077 EDHREC pages, so compare the local count.
-11. **PR-26, the return channels**, waits on OQ-67.
-12. **PR-42 is merged as #148** (D-671). Question gate run 49 missed no conversation, so it ran no rerun. Any miss still fails the run, and each miss joins the finding register.
+1. **PR-45b: the floor at brackets 4 and 5** (F-110, F-127, D-703, D-704). A free sweep over the dry-run shortlists sets the shortlist weight. A paid bracket gate run over prompts 10 to 15 needs the owner's word. It starts from `main` now, and a card with a high top-list rate stays on the shortlist (D-706, D-707). The bracket gate dry run prints the power cards of each shortlist, and the sweep reads them.
+2. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide".
+3. **Watch the first self-reload on the next web deploy** (D-692). The live release of #158 passed its check on 2026-09-13 at 18:54 UTC. An installed app that loaded that release must reload by itself when the next release activates. Read it on the next merge that changes `web/**`.
+4. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
+5. **The live half of the feedback loop has no run yet.** Three things want a measurement: the judge lane of the triage, one live fix cycle, and one review round. All three need the owner's word, and the cycle also needs `AUTOTUNE_FIXER_CMD` and a harvest whose verdicts carry a snapshot.
+6. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. The next whole run compares against run 19, and it costs about $2.75, so ask the owner first.
+7. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
+8. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
+9. **The weekly EDHREC read of 2026-09-14** (D-499, D-565). A local `make meta-refresh` started at 14:13 UTC and still read old mtgo events at 14:54 UTC. Run it again if it did not finish. Then run `make quality-gate` to a new `QUALITY_GATE_OUT`. The deployed job read 4 lists from 2,077 EDHREC pages, so compare the local count.
+10. **PR-26, the return channels**, waits on OQ-67.
+11. **PR-42 is merged as #148** (D-671). Question gate run 49 missed no conversation, so it ran no rerun. Any miss still fails the run, and each miss joins the finding register.
 
 CAUTION: `make revise-gate | tee` hides the exit code. Read the verdict line of the document, never the exit code of a pipe.
 
@@ -193,6 +193,14 @@ The CI step "fake gcs tests" ran no test until 2026-09-10 (D-658). Its filter ma
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 
 ## The ten most recent sessions
+
+### 2026-09-14d: #167 merged, and the documents read the state before a context wipe
+
+**The owner merged #167 and asked whether the context can go.** The hand-off still named PR-49 as an open pull request, so this pull request records the merge. It changes no code, and it runs no paid target.
+
+**Cloud Build deployed #167.** `deploy-api` finished at 14:58 UTC, and revision `mtg-api-00046-j29` serves `api:bbd5c5a`. Both jobs run `worker:bbd5c5a`, and `/readyz` answered 200.
+
+**The local meta refresh had not finished at 14:54 UTC.** It started at 14:13 UTC and read mtgo events of February 2026, with 31 pages that did not fetch. A context wipe can stop it, so the next session runs it again.
 
 ### 2026-09-14c: #166 merged, the meta run, and PR-49
 
@@ -286,12 +294,6 @@ Merged as #157.
 
 **The refresh.** The resume section, the next steps, and `CLAUDE.md` read the state after #155. Each record of 2026-09-11g onward names the pull request that carried it. OQ-79 and OQ-82 carry the evidence of the Smaug session.
 
-### 2026-09-12f: PR-44 deployed
-
-Merged as #154. #155 carried the stage date of `CLAUDE.md` that Gitar asked for.
-
-**The owner merged #153, and Cloud Build deployed it at 19:00 UTC.** Revision `mtg-api-00039-xqg` serves `api:b53fbb6`, both jobs run `worker:b53fbb6`, and `/readyz` answered 200. The meta job of 2026-09-13 refits the deployed model on the types of PR-44.
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-12e, and 42 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-12f, and 42 more sections, word for word. Read it for the detail behind a decision.
