@@ -36,7 +36,7 @@ Stage (2026-09-14): **the app is live on `decktome.com`**, and pull request #178
 
 **#177 merged M-17, which measured for free and found the cause of F-141** (D-723 to D-727). The theme word "milling" matched no card, so the Gríma shortlist held staple roles alone (F-142, F-143). PR-54 comes first: aliases, a word-form rule, and a question when no card matches. PR-52 and PR-53 follow, and PR-53 reads the finisher target and floor of D-726. `docs/reference/m17-finishers-lands-2026-09-14.md` holds every count.
 
-**The branch `pr54-theme-words` holds PR-54** (D-728 to D-731). A theme word finds its row through an alias or a word form. A theme that matches no card gets a question before the build. The Gríma replay reads 14 of the 14 owned mill cards on the shortlist, against 1. A singular creature type keeps the generic rule (D-731, F-144).
+**The branch `pr54-theme-words` holds PR-54** (D-728 to D-731). A theme word finds its row through an alias or a word form. A theme that matches no card gets a question before the build. The Gríma replay reads 14 of the 14 owned mill cards on the shortlist, against 1. A singular creature type keeps the generic rule (D-731, F-144). Question gate run 51 read PASS and found F-145, and run 52 measures its fix (D-732).
 
 Two rules of the deployed app come from 2026-09-09. **A verdict keeps the object it names** (D-635), because a reader deletes the deck or the chat they complained about, and the verdict outlives it. **Every user has a record** at `users/<uid>` (D-638): the verified email, the dates, and six counters of what they made. No harvest reads that record, and a test refuses the import that joins them.
 

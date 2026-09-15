@@ -275,14 +275,23 @@ func (a *Agent) readFacts(st *State) {
 // question again. Another theme that matches no card asks once more, the
 // D-210 rule, and so does a new miss after the key closed.
 func (a *Agent) readThemeMatch(st *State) {
-	st.Ctx.ThemeUnmatched = false
 	st.Ctx.ThemeChanged = st.BadThemeChanged()
 	ts, ok := a.hints.(ThemeSource)
 	theme := strings.TrimSpace(st.Slots.GetTheme())
-	if !ok || theme == "" || st.Slots.GetFormat().GetId() == mtgv1.FormatId_FORMAT_ID_UNSPECIFIED {
+	format := st.Slots.GetFormat().GetId()
+	if !ok || theme == "" || format == mtgv1.FormatId_FORMAT_ID_UNSPECIFIED {
+		st.Ctx.ThemeUnmatched, st.Ctx.ThemeCheck = false, ""
 		return
 	}
-	missed := ts.ThemeUnmatched(theme)
+	// The hint builds a shortlist over the whole card index, and agentsvc
+	// makes a new hint source for each turn. So the session keeps the
+	// answer, and a turn with the same theme, format, and colors reads it.
+	check := strings.ToLower(theme) + "|" + format.String() + "|" + colorKey(st.Slots.GetColors())
+	missed := st.Ctx.ThemeUnmatched
+	if check != st.Ctx.ThemeCheck {
+		missed = ts.ThemeUnmatched(theme)
+		st.Ctx.ThemeCheck = check
+	}
 	out := st.Slots.GetSlotStates()[SlotThemeUnmatched] == mtgv1.SlotState_SLOT_STATE_ASKED
 	switch {
 	case out && st.Ctx.ThemeChanged && !missed:

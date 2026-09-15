@@ -517,8 +517,15 @@ func allDigits(w string) bool {
 
 // stopWords are the words of a request that name no theme. The second
 // group is the words of "build me the best deck you can", which reached
-// the generic rule and became text needles before D-411.
+// the generic rule and became text needles before D-411. The third group
+// names a format, a jank word, or a deck with no theme. The classifier
+// wrote "the strongest Modern deck" and "Good stuff" as themes, no card
+// matched "modern" or "stuff", and the theme row asked (F-145). A jank
+// word names a power and no theme (corpus section 11).
 var stopWords = map[string]bool{
+	"modern": true, "standard": true, "pioneer": true, "legacy": true, "vintage": true, "pauper": true,
+	"brawl": true, "cedh": true, "janky": true, "jank": true, "silly": true, "meme": true, "memes": true,
+	"stuff": true, "goodstuff": true,
 	"a": true, "an": true, "the": true, "and": true, "or": true, "of": true, "with": true, "deck": true,
 	"build": true, "me": true, "my": true, "for": true, "in": true, "on": true, "to": true, "some": true,
 	"commander": true, "edh": true, "please": true, "want": true, "i": true, "that": true, "this": true,

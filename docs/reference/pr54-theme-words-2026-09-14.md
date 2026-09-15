@@ -101,4 +101,20 @@ The type row gained no card for any word. The owner kept the generic rule for a 
 
 ## Question gate run 51
 
-The run is pending (D-730).
+Run 51 ran on `cab4f8e` (D-730). It read PASS: 75 of 75 counted conversations used catalog questions only, and every expected slot held. It cost $0.1958 over 1,276 seconds and 682 calls.
+
+The theme row asked in 8 conversations.
+
+| Conversation | Theme that the classifier wrote | Right to ask |
+|---|---|---|
+| 110 | anime | yes, as the conversation intends |
+| 108, a probe | animals | yes, because no card holds the word |
+| 4 | fun and janky | no, because a jank word names a power |
+| 16 and 63 | the strongest Modern deck | no, because the request names no theme |
+| 68 | the strongest Modern deck possible | no |
+| 37, a probe | competitive Modern deck | no |
+| 72 | Good stuff | no, because the deck has no theme |
+
+Against run 50, each of the 7 conversations beside conversation 110 asked one more question. Conversations whose theme did not change moved too, by one or two questions in both directions. So a move of one question in one run is noise.
+
+The fix adds format names, jank words, and "stuff" to the stop words (F-145). The unit test fails on the old match for all 5 phrases and passes on the new. Question gate run 52 measures the fix (D-732).

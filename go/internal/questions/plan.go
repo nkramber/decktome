@@ -150,6 +150,11 @@ type Context struct {
 	// ThemeChanged says the theme differs from the one that row named
 	// last, the D-210 rule for that row.
 	ThemeChanged bool `json:"theme_changed"`
+	// ThemeCheck names the theme, the format, and the colors that
+	// ThemeUnmatched answers. The fact builds a shortlist over the whole
+	// card index, so a later turn with the same three reads the stored
+	// answer.
+	ThemeCheck string `json:"theme_check"`
 }
 
 // Plan returns the questions to ask this turn, in ask order, at most

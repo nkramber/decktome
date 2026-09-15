@@ -157,3 +157,33 @@ func TestThemeUnmatchedReadsTheCardDatabase(t *testing.T) {
 		t.Error("a nil hint source can not tell, so it answers false")
 	}
 }
+
+// TestThemeMatchReadsTheIndexOncePerTheme is the review of #179. The hint
+// builds a shortlist over the whole card index on each read, and agentsvc
+// makes a new hint source for each turn. A turn with the same theme,
+// format, and colors reads the stored answer, a restored session too, and
+// a change of any one of the three reads the index again.
+func TestThemeMatchReadsTheIndexOncePerTheme(t *testing.T) {
+	h := &fakeHints{}
+	a, _ := testAgentHints(t, h)
+	st := NewState(false)
+	st.Slots.Format = &mtgv1.Format{Id: mtgv1.FormatId_FORMAT_ID_COMMANDER}
+	st.Slots.Theme = "mill"
+	a.readThemeMatch(st)
+	a.readThemeMatch(st)
+	if h.unmatchedCalls != 1 {
+		t.Errorf("two turns with one theme read the index %d times, want 1", h.unmatchedCalls)
+	}
+	restored := Restore("s", st.Slots, st.Snapshot())
+	a.readThemeMatch(restored)
+	if h.unmatchedCalls != 1 {
+		t.Errorf("a restored session read the index again: %d reads", h.unmatchedCalls)
+	}
+	st.Slots.Colors = []mtgv1.Color{mtgv1.Color_COLOR_U, mtgv1.Color_COLOR_B}
+	a.readThemeMatch(st)
+	st.Slots.Theme = "opponent milling cards"
+	a.readThemeMatch(st)
+	if h.unmatchedCalls != 3 {
+		t.Errorf("a new color and a new theme read the index %d times in all, want 3", h.unmatchedCalls)
+	}
+}
