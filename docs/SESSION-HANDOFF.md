@@ -8,7 +8,11 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-14)
 
-**The checkout.** `main` is `413cd64`, which is pull request #177, or a later merge. The branch `docs-m17-merged` holds this hand-off, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
+**The checkout.** `main` is `c7a4ff4`, which is pull request #178, or a later merge. The branch `pr54-theme-words` holds PR-54 and this hand-off, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
+
+**The branch `pr54-theme-words` holds PR-54** (F-141 to F-144, D-728 to D-731). A theme word finds its row through an alias or a word form, and two new rows cover superfriends and land destruction. When no word of a theme matches a card, the theme row asks for the theme before the build. The replay of the Gríma request reads 14 of the 14 owned mill cards on the shortlist, against 1. The dry deck gate gives the same output on `main` and on the branch. `docs/reference/pr54-theme-words-2026-09-14.md` holds every count.
+
+**The owner answered four questions** (D-728 to D-731). The row asks when zero cards match, and not under a floor of 10. Superfriends reads the card type Planeswalker. Question gate run 51 runs after `make verify` passes. A singular creature type keeps the generic rule, because its type row misses type cards such as Field of the Dead (F-144).
 
 **#177 merged M-17, and the owner chose PR-54 first** (D-723 to D-727). The replay of the Gríma request found that the theme "opponent milling cards" matched no card. `themes.json` holds a row for "mill" and none for "milling", so the owned-only shortlist held staple roles alone (F-142). The shortlist dropped the mill cards, and not the model. No reader and no model learns of such a miss (F-143). `docs/reference/m17-finishers-lands-2026-09-14.md` holds every count.
 
@@ -136,7 +140,7 @@ CAUTION: the `decktome` gcloud configuration named the Wallabee account and proj
 
 **What waits on the owner.**
 
-- The merge of this documents pull request, after the review of `gitar-bot`.
+- The merge of PR-54, after the review of `gitar-bot` and question gate run 51.
 - A look at the first commander question after a load of the app, in a session that names no commander (next step 2).
 - OQ-67, the Stage B channels.
 - OQ-77, the blocking function of Identity Platform.
@@ -158,8 +162,9 @@ CAUTION: the `decktome` gcloud configuration named the Wallabee account and proj
 
 A second Mac: `docs/setup-second-mac.md` holds what to carry, what to install, and how to prove the machine.
 
-Sixteen things a fresh session gets wrong without this file.
+Seventeen things a fresh session gets wrong without this file.
 
+- A singular creature-type word keeps the generic rule, and its plural reads the type row (D-731). So "zombie" and "zombies" read two different lists, and F-144 records why.
 - A stored deck records the size of its shortlist and no card of it. So a card that never reached the shortlist and a card that the model dropped look the same. Replay the shortlist for free before a prompt fix (M-17). `.local/m17/zz_scratch_m17_test.go` holds the method, and `list.Theme` names the theme words that matched no card.
 - `make bracket-gate` runs its tool in `go/`, through `go -C go`. A relative `-rejudge` path then points inside `go/`, so pass an absolute path.
 - Twelve targets and two loop scripts spend money: `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `scripts/autotune.sh`, and `scripts/feedback-loop.sh`. Ask the owner before each run. `make autotune`, `make feedback-loop`, `make feedback-loop-dry`, `make feedback-triage-dry`, `eval sweep -dry`, and `go run ./cmd/bracket-gate -sweep` are free.
@@ -184,6 +189,7 @@ Sixteen things a fresh session gets wrong without this file.
 - Commander brackets: the 2025-10-21 revision. Game Changers: 53 cards, list of 2026-02-09. Lutri is banned as a companion only, per the 2026-02-09 announcement (`companion_bans.json` holds the link). The content rules per bracket in `brackets.json` and the Spellbook thresholds were read 2026-09-02, and the Karsten tables are the 2022 articles, read 2026-09-02 (`docs/reference/bracket-profile-2026-09-02.md`).
 - Standard: 18 sets, Wilds of Eldraine to The Hobbit. Six sets leave at the first 2027 set. Verified 2026-08-24.
 - Card snapshot on disk: `.local/gcs/mtg-local-cards/scryfall/20260904T210157`, the newest of 13. Read 2026-09-13, when it flagged 53 Game Changers. Check every card fact against it.
+- The theme table `themes.json` reads `verified_at` 2026-09-14. `make themes-check` read every slug against the snapshot of 2026-09-04 on 2026-09-14. The question gate set holds 109 conversations: 78 counted and 31 probes (D-730).
 - LLM model ids and prices: `roles.json` and `prices.json`, verified 2026-08-24. The max output per provider in `llm/client.go`, verified 2026-08-29. The OpenAI rows are unverified by anyone but the owner. The judge role runs on Opus 5 (D-430).
 - The deck gate upgrade probe cost $0.32 for 2 prompts, 7 calls, and 266 seconds. A partial run reads its own item bars and never stands as the gate (D-526).
 - Run cost, read from the run files on 2026-09-09. The question gate cost $0.190 on run 42, $0.193 on run 43, and $0.194 on run 44, over 18 to 21 minutes. Runs 45 to 48 of 2026-09-11 cost $0.1925, $0.1920, $0.1380, and $0.1923, over 20, 22, 19, and 21 minutes. Run 49 of 2026-09-12 cost $0.1935, over 18 minutes. Run 50 of 2026-09-14 cost $0.1938, over 22 minutes. The deck gate upgrade probe cost $0.32 for 2 prompts. The eval cost $0.092 on run 34 and $0.096 on run 35, over 12 to 14 minutes. The deck gate cost $2.71 on run 18, over 37 minutes, and $2.75 on run 19 of 2026-09-12, over 36 minutes. The revise gate cost $1.07 on run 9. The bracket gate judge lane cost $0.28. Bracket gate run 2 of 2026-09-13 cost $1.3720 over 925 seconds, for 15 builds and the judge. Its second judge lane cost $0.2634 over 128 seconds. The M-15 calibration lane cost $0.3283 over 149 seconds, for 21 decks. Bracket gate run 3 of 2026-09-14 cost $0.7355 over 538 seconds, for 9 builds and the judge. Bracket gate runs 4, 5, and 6 over prompts 10 to 15 cost $0.4979, $0.5247, and $0.5619, over 424, 442, and 564 seconds. The second judge lane of run 6 cost $0.0856 over 35 seconds. Deck gate runs 20, 21, and 22 over prompt 3 cost $0.1321, $0.1174, and $0.1159, over 94, 97, and 106 seconds.
@@ -200,7 +206,7 @@ Sixteen things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **Build PR-54, then PR-52, then PR-53** (D-723 to D-727). PR-54 adds aliases and a word-form rule to the theme match. It also adds a question when no card matches the theme. Its gate needs a question gate run of about $0.19, so ask the owner first. The replay test of M-17 sits in `.local/m17/zz_scratch_m17_test.go`. Copy it into `go/cmd/deck-gate` for a replay, and delete it before a commit. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git. A replay after PR-54 also reads the conditions of F-140 again (D-727). The power pass after the build still waits (D-704), and F-137 stays a record (D-718).
+1. **Merge PR-54, then build PR-52, then PR-53** (D-723 to D-731). Answer the review of `gitar-bot` on PR-54 first, and read question gate run 51 (D-730). After the merge, read one deployed session with a theme that matches no card, such as "anime". PR-52 ranks lands by quality, and PR-53 adds the finisher target of D-726. `.local/pr54/` holds the replay test and the shortlist diff test of PR-54. Copy a test into its package for a run, and delete it before a commit. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git. A replay after PR-54 also reads the conditions of F-140 again (D-727). The power pass after the build still waits (D-704), and F-137 stays a record (D-718).
 2. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide". Session `z1hshyY6Npig1FN2NuV7` named its commander, so it showed no such row.
 3. **Watch the first self-reload on the next web deploy** (D-692). The live release of #158 passed its check on 2026-09-13 at 18:54 UTC. An installed app that loaded that release must reload by itself when the next release activates. Read it on the next merge that changes `web/**`.
 4. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
@@ -220,6 +226,14 @@ The CI step "fake gcs tests" ran no test until 2026-09-10 (D-658). Its filter ma
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 
 ## The ten most recent sessions
+
+### 2026-09-14m: #178 merged, and PR-54 built
+
+**The owner merged #178 and asked what comes next.** Next step 1 named PR-54, so the session built it on the branch `pr54-theme-words`. It ran no paid target before `make verify`.
+
+**The owner answered four questions** (D-728 to D-731). The theme row asks when zero cards match. Superfriends reads the card type Planeswalker. Question gate run 51 runs after `make verify`. A singular creature type keeps the generic rule.
+
+**The free checks.** A count found that the plural rule cost singular type words real type cards, and the owner kept the generic rule for them (D-731, F-144). The replay with the collection of the owner reads 14 of the 14 owned mill cards on the shortlist. The shortlists of the 43 gate prompts and the output of the dry deck gate match `main`.
 
 ### 2026-09-14l: #177 merged, and the documents read the state before a context reset
 
@@ -303,16 +317,6 @@ Merged as #169.
 
 **The local meta refresh had not finished at 14:54 UTC.** It started at 14:13 UTC and read mtgo events of February 2026, with 31 pages that did not fetch. A context wipe can stop it, so the next session runs it again.
 
-### 2026-09-14c: #166 merged, the meta run, and PR-49
-
-**The owner merged #166, and Cloud Build deployed it.** `deploy-api` finished at 14:13 UTC, and revision `mtg-api-00045-csf` serves `api:5dbf7d7`. Both jobs run `worker:5dbf7d7`, and `/readyz` answered 200.
-
-**The meta run of 2026-09-14 needs no finding.** The mtggoldfish source read 155 lists with no failure. The job ran 71 minutes, because it read the weekly EDHREC pass and a large mtgo pass. The mtgjson skip on a version mismatch also shows on 2026-09-12 and 2026-09-13.
-
-**The plan read of PR-45b found F-129 and F-130.** The gates passed no top-list rate to the shortlist, so they measured shortlists that the app never builds. Off-theme tutors and many Game Changers never reach a shortlist. The owner chose PR-49 first for every tool, and a rate threshold for PR-45b (D-706 to D-708).
-
-**The session built PR-49.** The parity test fails on the old tools at five calls, and it passes on the new. The dry comparison on model `20260910T012734Z` finds the rate bringing in 0 to 45 cards of a shortlist, with more fast mana and Game Changers.
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-14b, and 42 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-14c, and 42 more sections, word for word. Read it for the detail behind a decision.

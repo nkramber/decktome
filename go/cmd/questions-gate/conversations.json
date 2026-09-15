@@ -1,6 +1,6 @@
 {
   "verified_at": "2026-09-05",
-  "note": "The PR-7 gate conversations as user messages. A conversation without \"probe\" is a gate conversation, and the file holds 77 of them: 30 among ids 1 to 34, and the 47 terse ones among ids 57 to 104. TestConversations proves the deterministic half offline. The catalog-only bar counts the gate conversations that do not start after a build: a conversation marked \"has_deck\" starts with its build slots closed, so it can not invent a question and it leaves the count (A-9). Conversations marked \"probe\" do not count toward the verdict. They exist to find catalog gaps, so they hold the shapes the gate set never takes: a user who changes their mind, contradicts themselves, asks a question back, or wants something the app can not serve. Their questions still reach the M-5 sheet (D-96). Conversations 53 to 66 are the terse set (D-105). Their users never repeat a value they already gave, so a redundant question strands the conversation instead of getting an answer. Every gate conversation before them restates the format at turn 2, which hid that defect and let both bars reward it. The terse set counted as probes until PR-15, so the catalog-only bar stayed comparable to runs 1 to 13 (D-427). On 2026-09-05 all 47 terse conversations joined the bar with expectations (D-522): the gate holds 77 conversations, the bar is 64 of the counted ones, and the first run after the change rebases every number. Conversations 68 to 100 joined on 2026-08-26 (D-145). They are terse like 53 to 66, and they take the shapes the first 66 never took: bracket 1 and bracket 5, five colors and no colors, a companion, a Background pair, a corrected card name, a corrected color, a zero budget, a partial proxy, a per-card cap beside a total cap, a collection of lands alone, a library that does not exist, Pauper Commander, Oathbreaker, Historic, and a user who answers with a bare digit. They counted as probes until D-522. Id 67 was a copy of 38 and was removed on 2026-08-28 (A-9). The ids keep their numbers, because the holdout split and the paired comparison key on them (D-134, D-181). Conversations 106 to 108 joined on 2026-08-31 with PR-17B (D-376, D-382). They name a set: one that resolves to a family, one that names two base sets and must ask, and one that names a set beside a theme. They count as probes.",
+  "note": "The PR-7 gate conversations as user messages. A conversation without \"probe\" is a gate conversation, and the file holds 78 of them: 30 among ids 1 to 34, the 47 terse ones among ids 57 to 104, and conversation 110 of D-725. TestConversations proves the deterministic half offline. The catalog-only bar counts the gate conversations that do not start after a build: a conversation marked \"has_deck\" starts with its build slots closed, so it can not invent a question and it leaves the count (A-9). Conversations marked \"probe\" do not count toward the verdict. They exist to find catalog gaps, so they hold the shapes the gate set never takes: a user who changes their mind, contradicts themselves, asks a question back, or wants something the app can not serve. Their questions still reach the M-5 sheet (D-96). Conversations 53 to 66 are the terse set (D-105). Their users never repeat a value they already gave, so a redundant question strands the conversation instead of getting an answer. Every gate conversation before them restates the format at turn 2, which hid that defect and let both bars reward it. The terse set counted as probes until PR-15, so the catalog-only bar stayed comparable to runs 1 to 13 (D-427). On 2026-09-05 all 47 terse conversations joined the bar with expectations (D-522): the gate holds 77 conversations, the bar is 64 of the counted ones, and the first run after the change rebases every number. Conversations 68 to 100 joined on 2026-08-26 (D-145). They are terse like 53 to 66, and they take the shapes the first 66 never took: bracket 1 and bracket 5, five colors and no colors, a companion, a Background pair, a corrected card name, a corrected color, a zero budget, a partial proxy, a per-card cap beside a total cap, a collection of lands alone, a library that does not exist, Pauper Commander, Oathbreaker, Historic, and a user who answers with a bare digit. They counted as probes until D-522. Id 67 was a copy of 38 and was removed on 2026-08-28 (A-9). The ids keep their numbers, because the holdout split and the paired comparison key on them (D-134, D-181). Conversations 106 to 108 joined on 2026-08-31 with PR-17B (D-376, D-382). They name a set: one that resolves to a family, one that names two base sets and must ask, and one that names a set beside a theme. They count as probes.",
   "conversations": [
     {
       "id": 1,
@@ -1679,6 +1679,26 @@
       "probe": true,
       "expect": {
         "sets": "msc,msh,pspm,spe,spm"
+      }
+    },
+    {
+      "id": 110,
+      "name": "a theme no card matches",
+      "collection": false,
+      "note": "No word of the theme matches a card, so the theme row asks for the theme again before the build (D-725). The reader answers with a theme that matches.",
+      "messages": [
+        "An anime Commander deck.",
+        "Then make it about dragons. Red.",
+        "Bracket 2, you pick the commander, and 100 dollars."
+      ],
+      "expect": {
+        "format": "commander",
+        "colors": "R",
+        "power": "bracket 2",
+        "pool_rule": "any_card",
+        "commander": "delegated",
+        "budget": "100",
+        "theme": "dragon"
       }
     }
   ]

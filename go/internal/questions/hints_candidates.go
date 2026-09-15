@@ -62,6 +62,9 @@ type CandidateHints struct {
 	thinDone  map[string]bool
 	thin      map[string]bool
 	thinCount map[string]int
+	// The theme match of D-725 runs the whole PR-6 build too, so it runs
+	// once per key and the answer is kept.
+	unmatched map[string]bool
 	// The mana count of D-382 walks the index, so it runs once per key
 	// and the answer is kept. The key carries the sets, the format, and
 	// the colors.
@@ -419,6 +422,41 @@ func (h *CandidateHints) cacheThin(key string, thin bool, count int) {
 		h.thinDone, h.thin, h.thinCount = map[string]bool{}, map[string]bool{}, map[string]int{}
 	}
 	h.thinDone[key], h.thin[key], h.thinCount[key] = true, thin, count
+}
+
+// ThemeUnmatched reports whether the theme holds words and no word matches
+// a card of the format and the colors (D-725). It answers the ThemeSource
+// contract.
+//
+// It reads every card, owned or not. A word the card database does not
+// know is the miss the theme row asks about, and a thin collection is the
+// thin-theme row's to report (D-63). Build counts a card on theme before
+// the set limit and the collection cut the pool, so neither one changes
+// the answer.
+func (h *CandidateHints) ThemeUnmatched(theme string) bool {
+	if h == nil || h.Index == nil || h.Builder == nil || strings.TrimSpace(theme) == "" {
+		return false
+	}
+	key := h.key(theme)
+	if v, ok := h.unmatched[key]; ok {
+		return v
+	}
+	list, err := h.Builder.Build(h.Index, candidates.Request{
+		Format:   h.Format,
+		Theme:    theme,
+		Colors:   h.Colors,
+		PoolRule: mtgv1.PoolRule_POOL_RULE_ANY_CARD,
+	})
+	if err != nil {
+		h.warn("theme match", err)
+		return false
+	}
+	missed := len(list.Theme.Words) > 0 && list.Stats.OnTheme == 0
+	if h.unmatched == nil {
+		h.unmatched = map[string]bool{}
+	}
+	h.unmatched[key] = missed
+	return missed
 }
 
 // ResolveSet maps the words a reader wrote onto a set family (D-376). It

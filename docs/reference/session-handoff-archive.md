@@ -11,6 +11,16 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## 2026-09-14c: #166 merged, the meta run, and PR-49
+
+**The owner merged #166, and Cloud Build deployed it.** `deploy-api` finished at 14:13 UTC, and revision `mtg-api-00045-csf` serves `api:5dbf7d7`. Both jobs run `worker:5dbf7d7`, and `/readyz` answered 200.
+
+**The meta run of 2026-09-14 needs no finding.** The mtggoldfish source read 155 lists with no failure. The job ran 71 minutes, because it read the weekly EDHREC pass and a large mtgo pass. The mtgjson skip on a version mismatch also shows on 2026-09-12 and 2026-09-13.
+
+**The plan read of PR-45b found F-129 and F-130.** The gates passed no top-list rate to the shortlist, so they measured shortlists that the app never builds. Off-theme tutors and many Game Changers never reach a shortlist. The owner chose PR-49 first for every tool, and a rate threshold for PR-45b (D-706 to D-708).
+
+**The session built PR-49.** The parity test fails on the old tools at five calls, and it passes on the new. The dry comparison on model `20260910T012734Z` finds the rate bringing in 0 to 45 cards of a shortlist, with more fast mana and Game Changers.
+
 ## 2026-09-14b: #165 merged, and PR-48 fixes F-128
 
 **The owner merged #165, and the session built PR-48** (F-128, D-705). The spell steps of the mana pass read the 99 alone, and the pool holds each commander. `heldIDs` adds the command zone to the set that `manaCandidates` and `cheapestSpell` read.

@@ -148,6 +148,9 @@ type When struct {
 	// PreconUnresolved marks a precon name the table can not settle
 	// (D-496).
 	PreconUnresolved *bool `json:"precon_unresolved"`
+	// ThemeUnmatched marks a theme no word of which matches a card of the
+	// format and the colors (D-725).
+	ThemeUnmatched *bool `json:"theme_unmatched"`
 }
 
 // Catalog is the loaded table.

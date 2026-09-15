@@ -260,6 +260,45 @@ func (a *Agent) readFacts(st *State) {
 			st.Slots.GetColors(), st.Slots.GetPower())
 		st.Ctx.ThinSetMana = thin
 	}
+	// The theme row reads the theme as this turn left it (D-725).
+	a.readThemeMatch(st)
+}
+
+// readThemeMatch sets the fact of the theme row (D-725, D-728). The row
+// asks for the theme again when the theme holds words and no word matches
+// a card of the format and the colors.
+//
+// The row informs the theme slot under a key of its own, so the theme the
+// reader wrote does not close it. A new theme that matches a card closes
+// the key. A reply that keeps the theme skips it, and the build reads the
+// words as they are: without this, the re-ask of D-599 sent the same
+// question again. Another theme that matches no card asks once more, the
+// D-210 rule, and so does a new miss after the key closed.
+func (a *Agent) readThemeMatch(st *State) {
+	st.Ctx.ThemeUnmatched = false
+	st.Ctx.ThemeChanged = st.BadThemeChanged()
+	ts, ok := a.hints.(ThemeSource)
+	theme := strings.TrimSpace(st.Slots.GetTheme())
+	if !ok || theme == "" || st.Slots.GetFormat().GetId() == mtgv1.FormatId_FORMAT_ID_UNSPECIFIED {
+		return
+	}
+	missed := ts.ThemeUnmatched(theme)
+	out := st.Slots.GetSlotStates()[SlotThemeUnmatched] == mtgv1.SlotState_SLOT_STATE_ASKED
+	switch {
+	case out && st.Ctx.ThemeChanged && !missed:
+		a.log.Info("the reader named a theme that matches cards, so the theme row closed",
+			"session", st.SessionID, "theme", theme)
+		st.Close(SlotThemeUnmatched)
+	case out && !st.Ctx.ThemeChanged && st.repliedTo(SlotThemeUnmatched):
+		a.log.Info("the reader kept a theme that matches no card, so the build reads its words as they are",
+			"session", st.SessionID, "theme", theme)
+		st.Skip(SlotThemeUnmatched)
+	case !out && st.Ctx.Filled[SlotThemeUnmatched] && st.Ctx.ThemeChanged && missed:
+		a.log.Info("another theme matches no card, so the theme row may ask again",
+			"session", st.SessionID, "theme", theme)
+		st.ReopenRows(a.cat, SlotThemeUnmatched)
+	}
+	st.Ctx.ThemeUnmatched = missed
 }
 
 // resolvedRows holds the placeholder-free text, the options, and the
@@ -470,6 +509,10 @@ func (a *Agent) send(ctx context.Context, st *State, message string, chosen []ch
 			// name this app can not settle reads the sentence once.
 			if c.Row.StateKey() == SlotCommanderUnresolved {
 				st.RecordAskedCommander()
+			}
+			// So does the theme row of D-725.
+			if c.Row.StateKey() == SlotThemeUnmatched {
+				st.RecordAskedTheme()
 			}
 		}
 		st.MarkAsked(c.Row.ID, c.Row.StateKey(), c.Row.Slot)
