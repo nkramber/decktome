@@ -8,17 +8,17 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-14)
 
-**The checkout.** `main` is `c7a4ff4`, which is pull request #178, or a later merge. The branch `pr54-theme-words` holds PR-54 and this hand-off, as pull request #179. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
+**The checkout.** `main` is `4dbbc20`, which is pull request #179, or a later merge. The branch `docs-pr54-merged` holds this hand-off, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
 
-**The branch `pr54-theme-words` holds PR-54** (F-141 to F-144, D-728 to D-731). A theme word finds its row through an alias or a word form, and two new rows cover superfriends and land destruction. When no word of a theme matches a card, the theme row asks for the theme before the build. The replay of the Gríma request reads 14 of the 14 owned mill cards on the shortlist, against 1. The dry deck gate gives the same output on `main` and on the branch. `docs/reference/pr54-theme-words-2026-09-14.md` holds every count.
+**#179 merged PR-54** (F-141 to F-145, D-728 to D-732). A theme word finds its row through an alias or a word form, and two new rows cover superfriends and land destruction. When no word of a theme matches a card, the theme row asks for the theme before the build. The replay of the Gríma request reads 14 of the 14 owned mill cards on the shortlist, against 1. The dry deck gate gave the same output before and after the change. `docs/reference/pr54-theme-words-2026-09-14.md` holds every count.
 
 **Question gate run 51 read PASS, and it found F-145** (D-730, D-732). It asked the theme row in 6 conversations that named no theme, such as "the strongest Modern deck". PR-54 adds format names, jank words, and "stuff" to the stop words. Question gate run 52 on the fix read PASS for $0.1951, and the row asked in conversations 108 and 110 alone.
 
-**The owner answered four questions** (D-728 to D-731). The row asks when zero cards match, and not under a floor of 10. Superfriends reads the card type Planeswalker. Question gate run 51 runs after `make verify` passes. A singular creature type keeps the generic rule, because its type row misses type cards such as Field of the Dead (F-144).
+**The owner answered four questions** (D-728 to D-731). The row asks when zero cards match, and not under a floor of 10. Superfriends reads the card type Planeswalker. Question gate run 51 ran after `make verify` passed. A singular creature type keeps the generic rule, because its type row misses type cards such as Field of the Dead (F-144).
 
 **#177 merged M-17, and the owner chose PR-54 first** (D-723 to D-727). The replay of the Gríma request found that the theme "opponent milling cards" matched no card. `themes.json` holds a row for "mill" and none for "milling", so the owned-only shortlist held staple roles alone (F-142). The shortlist dropped the mill cards, and not the model. No reader and no model learns of such a miss (F-143). `docs/reference/m17-finishers-lands-2026-09-14.md` holds every count.
 
-**The owner chose the plan after M-17.** PR-54 adds aliases and a word-form rule to the theme match, and a question when no card matches (D-724, D-725). PR-52 and PR-53 follow. PR-53 takes a finisher target of 3 and a floor of 2 at brackets 1 to 4, and 1 and 1 at bracket 5 (D-726). F-140 stays a record until a replay after PR-54 (D-727).
+**The owner chose the plan after M-17.** PR-54 added aliases and a word-form rule to the theme match, and a question when no card matches (D-724, D-725). PR-52 and PR-53 follow. PR-53 takes a finisher target of 3 and a floor of 2 at brackets 1 to 4, and 1 and 1 at bracket 5 (D-726). F-140 stays a record until a replay after PR-54 (D-727).
 
 **The owner answered OQ-82: a bracket promises its power in both directions** (D-693 to D-695). M-14 ran bracket gate run 2 on `320fcbb` for $1.37 (D-694). Five of the six decks at brackets 4 and 5 miss the floor of the mana on turn four. With the Game Changer flags of PR-47, the judge agrees on 3 of 15 decks, and it still names combos from memory (F-126). #161 merged PR-46, #162 merged PR-47, and #163 merged M-15 (D-697 to D-699). PR-45 splits into PR-45a and PR-45b, and #164 merged the plan (D-701 to D-704).
 
@@ -54,7 +54,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **#175 merged the plan, and every document keeps the review.** `docs/reference/owner-review-grima-2026-09-14.md` holds the review word for word. OQ-83 to OQ-86 hold its four suggestions that no decision took. They cover the payoff shape of a commander, evasion that the commander has, caps per effect class, and a power estimate.
 
-**The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586). #158 is the newest web deploy, and `deploy-web` released it at 18:52 UTC on 2026-09-13. #173 is the newest API deploy: `deploy-api` finished at 20:50 UTC on 2026-09-14, and revision `mtg-api-00049-4lj` serves `api:54b07dd`. Both jobs run `worker:54b07dd`, and `/readyz` answered ok. The deploy triggers read `go/**`, `docker/**`, and `web/**` alone, so a merge of documents alone starts no build.
+**The app is live on `decktome.com`.** A merge to `main` deploys itself on Cloud Build (D-584, D-586). #158 is the newest web deploy, and `deploy-web` released it at 18:52 UTC on 2026-09-13. #179 is the newest API deploy: `deploy-api` finished at 04:13 UTC on 2026-09-15, and revision `mtg-api-00050-w9z` serves `api:4dbbc20`. Both jobs run `worker:4dbbc20`, and `/readyz` answered ok. The deploy triggers read `go/**`, `docker/**`, and `web/**` alone, so a merge of documents alone starts no build.
 
 **Session `X4JfbXzMw4U5A4gEeOaE` reads right on every check, and the owner closed OQ-79** (D-691). The owner built an owned-only lifegain Commander deck at bracket 3 on 2026-09-13 at 04:16 UTC. The first message named Sidequest: Catch a Fish. The offer named Aerith Gainsborough, Hope Estheim, and Aerith, Last Ancient, as a free local run of the offer code predicted. The reader owns one copy of each. The reader owns none of the three commanders that an offer with any card allowed names first. The deck marks the commander and every card owned.
 
@@ -142,7 +142,8 @@ CAUTION: the `decktome` gcloud configuration named the Wallabee account and proj
 
 **What waits on the owner.**
 
-- The merge of PR-54 (#179). Gitar approved it, and question gate run 52 read PASS.
+- The merge of this documents pull request, after the review of `gitar-bot`.
+- A deployed session with a theme that matches no card, such as "anime" (next step 1).
 - A look at the first commander question after a load of the app, in a session that names no commander (next step 2).
 - OQ-67, the Stage B channels.
 - OQ-77, the blocking function of Identity Platform.
@@ -199,7 +200,7 @@ Eighteen things a fresh session gets wrong without this file.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
 - The feedback store holds 3 verdicts on 2026-09-09, and every one predates the snapshot of D-635. `make feedback-list VERDICT=` reads both verdicts now (F-87). A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- The deployed API, read 2026-09-14 at 20:50 UTC: revision `mtg-api-00049-4lj` on image `api:54b07dd`, from #173. Both jobs run `worker:54b07dd`, and `/readyz` answered ok with a card snapshot of 2026-09-14 09:01 UTC. `deploy-api` ran from 20:45 to 20:50 UTC. A read of Cloud Build at 23:43 UTC found no newer build, because #174 to #177 changed documents alone.
+- The deployed API, read 2026-09-15 at 04:14 UTC: revision `mtg-api-00050-w9z` on image `api:4dbbc20`, from #179. Both jobs run `worker:4dbbc20`, and `/readyz` answered ok with a card snapshot of 2026-09-14 21:01 UTC. `deploy-api` ran from 04:09 to 04:13 UTC. No web build ran, because #179 changed no file under `web/**`.
 - The deployed web app, read 2026-09-13 at 18:54 UTC: the release of #158, from `deploy-web` at 18:52 UTC. `index.html` loads `assets/index-DYfo4m8I.js` and no `registerSW.js`, and `sw.js` precaches the `workbox-window` chunk.
 - The deployed quality model, read 2026-09-14: `20260914T070904Z`, from the meta job that started at 06:02 UTC and ended at 07:13 UTC. It fits 43,182 lists and 1,517 commanders. Its Commander fit reads `immaterial` 239 and accuracy 0.554, and its Standard fit reads a cross share of 0.667. The job read the weekly EDHREC pass, 2,077 pages and 4 lists. The mtgo source read 3,094 lists with 58 fetch errors. The mtggoldfish source read 155 lists with no failure. The mtgjson source read no list, because its deck list version differs from the stored table, as on 2026-09-12 and 2026-09-13.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
@@ -209,7 +210,7 @@ Eighteen things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **Merge PR-54, then build PR-52, then PR-53** (D-723 to D-731). Gitar approved #179, and question gate run 52 read PASS (D-732). After the merge, read one deployed session with a theme that matches no card, such as "anime". PR-52 ranks lands by quality, and PR-53 adds the finisher target of D-726. `.local/pr54/` holds the replay test and the shortlist diff test of PR-54. Copy a test into its package for a run, and delete it before a commit. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git. A replay after PR-54 also reads the conditions of F-140 again (D-727). The power pass after the build still waits (D-704), and F-137 stays a record (D-718).
+1. **Build PR-52, then PR-53** (D-720, D-723, D-726). #179 merged PR-54. First read one deployed session whose theme matches no card, such as "anime". The theme row must ask before the build. The owner builds it, and this session reads it with `scripts/read-session.sh`. PR-52 ranks lands by quality, and PR-53 adds the finisher target of D-726. `.local/pr54/` holds the replay test and the shortlist diff test of PR-54. Copy a test into its package for a run, and delete it before a commit. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git. A replay after PR-54 also reads the conditions of F-140 again (D-727). The power pass after the build still waits (D-704), and F-137 stays a record (D-718).
 2. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide". Session `z1hshyY6Npig1FN2NuV7` named its commander, so it showed no such row.
 3. **Watch the first self-reload on the next web deploy** (D-692). The live release of #158 passed its check on 2026-09-13 at 18:54 UTC. An installed app that loaded that release must reload by itself when the next release activates. Read it on the next merge that changes `web/**`.
 4. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
@@ -230,7 +231,17 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 ## The ten most recent sessions
 
+### 2026-09-14n: #179 merged, and the documents read the state before a context reset
+
+**The owner merged #179 and asked for every document to read the current state** before a context reset. The session changed no code, and it ran no paid target.
+
+**Cloud Build deployed #179.** `deploy-api` ran from 04:09 to 04:13 UTC on 2026-09-15, and revision `mtg-api-00050-w9z` serves `api:4dbbc20`. Both jobs run `worker:4dbbc20`, and `/readyz` answered ok. No web build ran, because #179 changed no file under `web/**`.
+
+**The refresh.** The resume section, the next steps, the facts that expire, the roadmap, `CLAUDE.md`, and the note of PR-54 read the merge. The record of 2026-09-14d moved to the archive.
+
 ### 2026-09-14m: #178 merged, and PR-54 built
+
+Merged as #179.
 
 **The owner merged #178 and asked what comes next.** Next step 1 named PR-54, so the session built it on the branch `pr54-theme-words`. It ran no paid target before `make verify`.
 
@@ -316,14 +327,6 @@ Merged as #169.
 
 **The review of `gitar-bot` found one defect, and `2ed2b06` fixed it.** The land cap read no pin. A new test fails on the old cap, which drops a pinned Game Changer land.
 
-### 2026-09-14d: #167 merged, and the documents read the state before a context wipe
-
-**The owner merged #167 and asked whether the context can go.** The hand-off still named PR-49 as an open pull request, so this pull request records the merge. It changes no code, and it runs no paid target.
-
-**Cloud Build deployed #167.** `deploy-api` finished at 14:58 UTC, and revision `mtg-api-00046-j29` serves `api:bbd5c5a`. Both jobs run `worker:bbd5c5a`, and `/readyz` answered 200.
-
-**The local meta refresh had not finished at 14:54 UTC.** It started at 14:13 UTC and read mtgo events of February 2026, with 31 pages that did not fetch. A context wipe can stop it, so the next session runs it again.
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-14c, and 42 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-14d, and 42 more sections, word for word. Read it for the detail behind a decision.
