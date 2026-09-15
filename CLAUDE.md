@@ -6,7 +6,7 @@ Read this file first. Then read `docs/SESSION-HANDOFF.md`. It tells you where th
 
 This repo is a Go + Protobuf + TypeScript monorepo for an agentic MtG deck builder. The app reads a user's ManaBox collection export. The user gives a prompt. The agent asks questions, then builds a legal, useful deck.
 
-Stage (2026-09-14): **the app is live on `decktome.com`**, and pull request #178 is the newest merge. A merge to `main` deploys itself on Cloud Build (D-584, D-586, D-588). Phase 3B, the product UI, is the current phase.
+Stage (2026-09-14): **the app is live on `decktome.com`**, and pull request #179 is the newest merge. A merge to `main` deploys itself on Cloud Build (D-584, D-586, D-588). Phase 3B, the product UI, is the current phase.
 
 **The whole PR-22 gate holds** (D-633), so PR-28 is free to run. Every PR through #119 is merged: PR-0a to PR-8, PR-7B, PR-10 to PR-25, PR-27, PR-32, PR-33, and PR-28a. PR-9 is out of the MVP (D-256). **PR-28 split into three** (D-636). PR-28a is the harvest, and it is merged. PR-28b is the triage and the new "must not ask" expectation, and PR-28c is the fix cycle. PR-26 waits on OQ-67. Of the weak-axes plan, PR-29 and PR-30 closed on their evidence, and PR-31 parks (D-652, D-656, D-573).
 
@@ -36,7 +36,7 @@ Stage (2026-09-14): **the app is live on `decktome.com`**, and pull request #178
 
 **#177 merged M-17, which measured for free and found the cause of F-141** (D-723 to D-727). The theme word "milling" matched no card, so the Gríma shortlist held staple roles alone (F-142, F-143). PR-54 comes first: aliases, a word-form rule, and a question when no card matches. PR-52 and PR-53 follow, and PR-53 reads the finisher target and floor of D-726. `docs/reference/m17-finishers-lands-2026-09-14.md` holds every count.
 
-**The branch `pr54-theme-words` holds PR-54** (D-728 to D-731). A theme word finds its row through an alias or a word form. A theme that matches no card gets a question before the build. The Gríma replay reads 14 of the 14 owned mill cards on the shortlist, against 1. A singular creature type keeps the generic rule (D-731, F-144). Question gate run 51 read PASS and found F-145, and run 52 read PASS on its fix (D-732). Gitar approved #179.
+**#179 merged PR-54** (D-728 to D-732). A theme word finds its row through an alias or a word form. A theme that matches no card gets a question before the build. The Gríma replay reads 14 of the 14 owned mill cards on the shortlist, against 1. A singular creature type keeps the generic rule (D-731, F-144). Question gate run 51 read PASS and found F-145, and run 52 read PASS on its fix (D-732). Cloud Build deployed it, and PR-52 comes next.
 
 Two rules of the deployed app come from 2026-09-09. **A verdict keeps the object it names** (D-635), because a reader deletes the deck or the chat they complained about, and the verdict outlives it. **Every user has a record** at `users/<uid>` (D-638): the verified email, the dates, and six counters of what they made. No harvest reads that record, and a test refuses the import that joins them.
 

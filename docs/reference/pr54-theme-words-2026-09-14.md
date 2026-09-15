@@ -1,6 +1,6 @@
 # PR-54: theme words and the theme row (2026-09-14)
 
-This note holds every count of PR-54 (F-141 to F-144, D-723 to D-725, D-728 to D-731). Each count reads the local card snapshot `20260904T210157` and calls no model. The "before" counts read `main` at `c7a4ff4`. The "after" counts read the branch `pr54-theme-words`.
+This note holds every count of PR-54 (F-141 to F-144, D-723 to D-725, D-728 to D-731). Each count reads the local card snapshot `20260904T210157` and calls no model. The "before" counts read `main` at `c7a4ff4`. The "after" counts read the branch `pr54-theme-words`, and #179 merged it.
 
 ## What changed
 
