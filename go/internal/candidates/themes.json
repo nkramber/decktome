@@ -1,8 +1,13 @@
 {
-  "verified_at": "2026-08-24",
-  "note": "Theme words to signals. Two kinds (D-62): payoffs reward the theme (payoff_slugs, payoff_text) and enablers merely do the thing (slugs, keywords, subtype, text). Payoffs weigh more, so Archangel of Thune outranks a bare lifelinker. Slugs verified against the oracle_tags bulk file of 2026-08-24 (4,521 tags). Scryfall splits the two in its hierarchy: lifegain versus lifegain-matters, sacrifice-outlet versus sacrifice-matters. A word with no row falls back to the generic rule: payoff slug w-matters and synergy-w, enabler slugs w and typal-w, keyword w, subtype w, text w.",
+  "verified_at": "2026-09-14",
+  "note": "Theme words to signals. Two kinds (D-62): payoffs reward the theme (payoff_slugs, payoff_text) and enablers merely do the thing (slugs, keywords, subtype, text). Payoffs weigh more, so Archangel of Thune outranks a bare lifelinker. Slugs verified against the oracle_tags file of the snapshot of 2026-09-04 (4,524 tags) by make themes-check on 2026-09-14. Scryfall splits the two in its hierarchy: lifegain versus lifegain-matters, sacrifice-outlet versus sacrifice-matters. A word finds its row by name, by an alias, or as the singular of a plural row name that names no subtype (D-731). Each base form of a word, its singular and the stem of an -ing form, tries the same three, so milling finds mill (D-724). Types names card types, and the superfriends row reads Planeswalker (D-729). A word with no row falls back to the generic rule: payoff slug w-matters and synergy-w, enabler slugs w and typal-w, keyword w, subtype w, text w.",
   "themes": {
     "lifegain": {
+      "aliases": [
+        "life-gain",
+        "gain-life",
+        "gaining-life"
+      ],
       "payoff_slugs": [
         "lifegain-matters",
         "life-total-matters-self"
@@ -64,6 +69,9 @@
       ]
     },
     "go-wide": {
+      "aliases": [
+        "going-wide"
+      ],
       "payoff_slugs": [
         "synergy-token",
         "synergy-token-creature",
@@ -199,6 +207,10 @@
       ]
     },
     "reanimator": {
+      "aliases": [
+        "reanimate",
+        "reanimation"
+      ],
       "payoff_slugs": [
         "reanimate-matters",
         "reanimate-creature"
@@ -219,6 +231,9 @@
       ]
     },
     "graveyard": {
+      "aliases": [
+        "self-mill"
+      ],
       "payoff_slugs": [
         "leaving-graveyard-matters",
         "graveyard-order-matters"
@@ -252,6 +267,9 @@
       ]
     },
     "spellslinger": {
+      "aliases": [
+        "spell-slinger"
+      ],
       "payoff_slugs": [
         "second-spell-matters",
         "storm-count-matters"
@@ -387,6 +405,9 @@
       ]
     },
     "stax": {
+      "aliases": [
+        "prison"
+      ],
       "payoff_slugs": [
         "tax",
         "hatebear"
@@ -399,6 +420,10 @@
       ]
     },
     "control": {
+      "aliases": [
+        "counterspell",
+        "counter-spell"
+      ],
       "slugs": [
         "counterspell",
         "sweeper",
@@ -589,6 +614,9 @@
       ]
     },
     "theft": {
+      "aliases": [
+        "steal"
+      ],
       "slugs": [
         "theft"
       ],
@@ -597,6 +625,9 @@
       ]
     },
     "copy": {
+      "aliases": [
+        "clone"
+      ],
       "slugs": [
         "copy",
         "clone"
@@ -607,6 +638,10 @@
       ]
     },
     "flying": {
+      "aliases": [
+        "flyer",
+        "flier"
+      ],
       "payoff_slugs": [
         "synergy-flying"
       ],
@@ -656,6 +691,10 @@
       ]
     },
     "aggro": {
+      "aliases": [
+        "aggressive",
+        "weenie"
+      ],
       "slugs": [
         "evasion",
         "anthem"
@@ -688,6 +727,35 @@
       ],
       "text": [
         "{e}"
+      ]
+    },
+    "superfriends": {
+      "aliases": [
+        "planeswalker"
+      ],
+      "payoff_slugs": [
+        "synergy-planeswalker"
+      ],
+      "payoff_text": [
+        "loyalty abilit"
+      ],
+      "slugs": [
+        "protects-planeswalker"
+      ],
+      "types": [
+        "Planeswalker"
+      ],
+      "keywords": [
+        "Proliferate"
+      ],
+      "text": [
+        "planeswalkers you control"
+      ]
+    },
+    "land-destruction": {
+      "slugs": [
+        "removal-land",
+        "mass-land-denial"
       ]
     },
     "dragons": {

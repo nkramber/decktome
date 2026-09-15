@@ -105,6 +105,10 @@ type State struct {
 	// CommanderOptions are the card names that row offers, best first.
 	// Empty for a name that matches no commander.
 	CommanderOptions []string
+	// UnmatchedThemeAsked is the theme the theme row named last (D-725).
+	// The row asks again only for another theme that matches no card, the
+	// D-210 rule of the set row.
+	UnmatchedThemeAsked string
 	// CurrentOffer are the names on the table now. The pick row repeats
 	// with these same names until the user asks for others, so the user
 	// never reads a new list as an ignored answer (D-80).
@@ -363,6 +367,20 @@ func (s *State) RecordAskedCommander() { s.UnresolvedCommanderAsked = s.Unresolv
 // than it named last (D-210).
 func (s *State) BadCommanderChanged() bool {
 	return !strings.EqualFold(strings.TrimSpace(s.UnresolvedCommander), strings.TrimSpace(s.UnresolvedCommanderAsked))
+}
+
+// SlotThemeUnmatched is the state key of the row that asks for the theme
+// again when no word of it matches a card (D-725). It is its own key: the
+// theme the reader wrote fills the theme slot, and the row still asks.
+const SlotThemeUnmatched = "theme_unmatched"
+
+// RecordAskedTheme keeps the theme that row just named.
+func (s *State) RecordAskedTheme() { s.UnmatchedThemeAsked = s.Slots.GetTheme() }
+
+// BadThemeChanged reports whether the theme differs from the one that row
+// named last (D-210).
+func (s *State) BadThemeChanged() bool {
+	return !strings.EqualFold(strings.TrimSpace(s.Slots.GetTheme()), strings.TrimSpace(s.UnmatchedThemeAsked))
 }
 
 // RecordAskedSet keeps the set phrase the row just named.
@@ -794,6 +812,17 @@ func (s *State) ReaskStalled() (reasked []string) {
 	}
 	sort.Strings(reasked)
 	return reasked
+}
+
+// repliedTo reports whether the reader replied this turn to a question of
+// the key, whatever the shape of the reply (D-599).
+func (s *State) repliedTo(key string) bool {
+	for _, id := range s.AnsweredQuestions {
+		if s.keyOfQuestion(id) == key {
+			return true
+		}
+	}
+	return false
 }
 
 // askAge is how many turns the reader has had to answer the newest open

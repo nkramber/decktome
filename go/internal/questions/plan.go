@@ -143,6 +143,18 @@ type Context struct {
 	// nothing has settled its role yet. Such a card fixes the deck's
 	// color identity when it leads, so the color row waits (D-388).
 	NamedLeader bool `json:"named_leader"`
+	// ThemeUnmatched says the theme holds words, and no word matches a
+	// card of the format and the colors. The theme row asks for the theme
+	// again before the build (D-725, D-728).
+	ThemeUnmatched bool `json:"theme_unmatched"`
+	// ThemeChanged says the theme differs from the one that row named
+	// last, the D-210 rule for that row.
+	ThemeChanged bool `json:"theme_changed"`
+	// ThemeCheck names the theme, the format, and the colors that
+	// ThemeUnmatched answers. The fact builds a shortlist over the whole
+	// card index, so a later turn with the same three reads the stored
+	// answer.
+	ThemeCheck string `json:"theme_check"`
 }
 
 // Plan returns the questions to ask this turn, in ask order, at most
@@ -231,10 +243,15 @@ func (r Row) asksAgain(ctx Context) bool {
 //
 // The key comes first, because two rows of the commander slot repeat on
 // two different signals: the pick row on the names it offers, and the
-// row of F-75 on the name the card index does not hold.
+// row of F-75 on the name the card index does not hold. The theme row of
+// D-725 reads its own key too, because no other row of the theme slot
+// repeats.
 func (c Context) contentChanged(key, slot string) bool {
 	if key == SlotCommanderUnresolved {
 		return c.CommanderChanged
+	}
+	if key == SlotThemeUnmatched {
+		return c.ThemeChanged
 	}
 	switch slot {
 	case "commander":
@@ -309,6 +326,7 @@ func (w When) matches(ctx Context) bool {
 		{w.NamedLeader, ctx.NamedLeader},
 		{w.PreconsExcluded, ctx.PreconsExcluded},
 		{w.PreconUnresolved, ctx.PreconUnresolved},
+		{w.ThemeUnmatched, ctx.ThemeUnmatched},
 	}
 	for _, f := range facts {
 		if f.want != nil && *f.want != f.have {

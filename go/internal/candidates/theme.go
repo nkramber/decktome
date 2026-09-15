@@ -26,21 +26,84 @@ type themeRow struct {
 	Keywords    []string `json:"keywords"`
 	Text        []string `json:"text"`
 	Subtype     string   `json:"subtype"`
+	// Types are the card types that do the thing. No tag marks every
+	// planeswalker, and a superfriends deck is its planeswalkers (D-729).
+	Types []string `json:"types"`
+	// Aliases are the other words a reader writes for the row, such as
+	// "steal" for theft (D-724). One alias names one row, and no alias is
+	// the name of a row.
+	Aliases []string `json:"aliases"`
 }
 
 type themeTable struct {
 	VerifiedAt string              `json:"verified_at"`
 	Themes     map[string]themeRow `json:"themes"`
 	Roles      map[string][]string `json:"roles"`
+
+	// alias maps each alias onto its row, and plural maps the singular of
+	// a plural row name onto that row, for each row that names no subtype.
+	// parseThemes builds both (D-724, D-731).
+	alias  map[string]string
+	plural map[string]string
 }
 
-func loadThemes() (*themeTable, error) {
+func loadThemes() (*themeTable, error) { return parseThemes(themesJSON) }
+
+// cardTypes are the card types a row may name. CR 300.1 names six more,
+// and each of those belongs to a supplemental game object that no deck of
+// this app holds.
+var cardTypes = map[string]bool{
+	"Artifact": true, "Battle": true, "Creature": true, "Enchantment": true, "Instant": true,
+	"Kindred": true, "Land": true, "Planeswalker": true, "Sorcery": true,
+}
+
+// parseThemes reads one theme table and builds its word indexes. It
+// refuses an alias that is a row name, names two rows, or is not one
+// lowercase word, and a type that is no card type.
+func parseThemes(data []byte) (*themeTable, error) {
 	var t themeTable
-	if err := json.Unmarshal(themesJSON, &t); err != nil {
+	if err := json.Unmarshal(data, &t); err != nil {
 		return nil, fmt.Errorf("candidates: themes.json: %w", err)
 	}
 	if t.VerifiedAt == "" {
 		return nil, fmt.Errorf("candidates: themes.json has no verified_at")
+	}
+	t.alias, t.plural = map[string]string{}, map[string]string{}
+	names := make([]string, 0, len(t.Themes))
+	for name := range t.Themes {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		row := t.Themes[name]
+		for _, ty := range row.Types {
+			if !cardTypes[ty] {
+				return nil, fmt.Errorf("candidates: theme %q names type %q, which is no card type", name, ty)
+			}
+		}
+		// A type row joins no plural index. Its singular keeps the generic
+		// rule, whose text needle finds type cards the row does not hold,
+		// such as a Zombie token maker (D-731, F-144).
+		if one := singular(name); one != name && row.Subtype == "" {
+			if other, ok := t.plural[one]; ok {
+				return nil, fmt.Errorf("candidates: themes %q and %q share the singular %q", other, name, one)
+			}
+			if _, ok := t.Themes[one]; !ok {
+				t.plural[one] = name
+			}
+		}
+		for _, a := range row.Aliases {
+			if a == "" || a != strings.ToLower(a) || strings.ContainsFunc(a, unicode.IsSpace) {
+				return nil, fmt.Errorf("candidates: theme %q names alias %q, want one lowercase word", name, a)
+			}
+			if _, ok := t.Themes[a]; ok {
+				return nil, fmt.Errorf("candidates: theme %q names alias %q, which is a row of its own", name, a)
+			}
+			if other, ok := t.alias[a]; ok {
+				return nil, fmt.Errorf("candidates: alias %q names two rows, %q and %q", a, other, name)
+			}
+			t.alias[a] = name
+		}
 	}
 	return &t, nil
 }
@@ -49,11 +112,14 @@ func loadThemes() (*themeTable, error) {
 // keyword is weak: hundreds of cards have lifelink, few reward lifegain.
 // Text is weaker than a tag of the same kind: a needle can match by
 // accident. The cap is scoreCap, so payoff plus enabler is a full score.
+// A card type is the same kind of fact as a subtype, so it weighs the
+// same (D-729).
 const (
 	weightPayoffTag  = 1.5
 	weightPayoffText = 1.2
 	weightTag        = 1.0
 	weightSubtype    = 0.8
+	weightType       = 0.8
 	weightKeyword    = 0.5
 	weightText       = 0.4
 	scoreCap         = 2.5
@@ -63,14 +129,18 @@ const (
 type ThemeMatch struct {
 	// Words are the normalized theme words in input order.
 	Words []string
+	// Rows maps a word that found its row through an alias or a base form
+	// onto that row, such as "milling" onto mill (D-724).
+	Rows map[string]string
 	// PayoffSlugs and Slugs are the Tagger slugs that exist for the words.
 	PayoffSlugs []string
 	Slugs       []string
 	// PayoffText lists the payoff needles.
 	PayoffText []string
-	// Keywords, Subtypes, and Text are the other signals in use.
+	// Keywords, Subtypes, Types, and Text are the other signals in use.
 	Keywords []string
 	Subtypes []string
+	Types    []string
 	Text     []string
 	// Unmatched lists words that fired on no card of the pool. Build
 	// fills it after the scan: a needle is a guess until a card holds it.
@@ -154,12 +224,15 @@ func (m ThemeMatch) unmatchedWords(fired firedSignals) []string {
 }
 
 // match turns the user's words into signals. Each word maps through the
-// table, or through the generic rule when the table has no row.
+// row rowOf finds for it, or through the generic rule when no row fits.
+// A second word that finds the same row adds nothing, so it is no word of
+// the match: "mill milling" is one word.
 func (t *themeTable) match(theme string, tags *cards.TagIndex) ThemeMatch {
 	var m ThemeMatch
 	m.tagged = map[string]map[string]bool{}
 	m.wordOf = map[string]string{}
 	seenSlug := map[string]bool{}
+	seenRow := map[string]bool{}
 	// The current word, so each signal remembers where it came from. The
 	// first word that produced a signal keeps it.
 	word := ""
@@ -192,9 +265,21 @@ func (t *themeTable) match(theme string, tags *cards.TagIndex) ThemeMatch {
 		trace(kind + ":" + n)
 	}
 	for _, w := range t.words(theme) {
+		name, found := t.rowOf(w)
+		if found && seenRow[name] {
+			continue
+		}
 		m.Words = append(m.Words, w)
 		word = w
-		if row, ok := t.Themes[w]; ok {
+		if found {
+			seenRow[name] = true
+			if name != w {
+				if m.Rows == nil {
+					m.Rows = map[string]string{}
+				}
+				m.Rows[w] = name
+			}
+			row := t.Themes[name]
 			for _, s := range row.PayoffSlugs {
 				addSlug(s, true)
 			}
@@ -209,6 +294,9 @@ func (t *themeTable) match(theme string, tags *cards.TagIndex) ThemeMatch {
 			}
 			if row.Subtype != "" {
 				addNeedle(&m.Subtypes, "subtype", row.Subtype)
+			}
+			for _, ty := range row.Types {
+				addNeedle(&m.Types, "type", ty)
 			}
 			for _, n := range row.Text {
 				addNeedle(&m.Text, "text", strings.ToLower(n))
@@ -228,6 +316,53 @@ func (t *themeTable) match(theme string, tags *cards.TagIndex) ThemeMatch {
 	}
 	// Build fills Unmatched after it scans the pool.
 	return m
+}
+
+// rowOf finds the row of a theme word (D-724). Each form of the word, the
+// word itself first, tries three things in order: a row of that name, an
+// alias, and a plural row whose singular it is. So "milling" finds mill,
+// "stealing" finds theft through the alias steal, and "token" finds tokens.
+// A word no form of which finds a row answers false, and the generic rule
+// reads it.
+func (t *themeTable) rowOf(w string) (string, bool) {
+	for _, form := range wordForms(w) {
+		if _, ok := t.Themes[form]; ok {
+			return form, true
+		}
+		if name, ok := t.alias[form]; ok {
+			return name, true
+		}
+		if name, ok := t.plural[form]; ok {
+			return name, true
+		}
+	}
+	return "", false
+}
+
+// minStemLen is the shortest stem an -ing form may leave. "king" and
+// "bring" are no form of "k" or "br".
+const minStemLen = 3
+
+// wordForms lists a word and its base forms, the word first. The base
+// forms are the singular, and for an -ing form the stem, the stem with a
+// final e, and the stem with its doubled last letter undone. So milling
+// gives mill, sacrificing gives sacrifice, and controlling gives control.
+func wordForms(w string) []string {
+	forms := []string{w}
+	add := func(f string) {
+		if f != "" && !slices.Contains(forms, f) {
+			forms = append(forms, f)
+		}
+	}
+	add(singular(w))
+	if stem, ok := strings.CutSuffix(w, "ing"); ok && utf8.RuneCountInString(stem) >= minStemLen {
+		add(stem)
+		add(stem + "e")
+		if n := len(stem); stem[n-1] == stem[n-2] {
+			add(stem[:n-1])
+		}
+	}
+	return forms
 }
 
 // score returns the theme fit of a card and the signals that fired.
@@ -283,6 +418,12 @@ func (m ThemeMatch) score(c *mtgv1.Card) (float64, []string) {
 			signals = append(signals, "subtype:"+st)
 		}
 	}
+	for _, ty := range m.Types {
+		if slices.Contains(c.CardTypes, ty) {
+			score += weightType
+			signals = append(signals, "type:"+ty)
+		}
+	}
 	for _, n := range m.Text {
 		if n == "" || covered[n] || !strings.Contains(text, n) {
 			continue
@@ -318,8 +459,9 @@ const minWordLen = 3
 
 // words normalizes the theme: lowercase, split on space and punctuation,
 // stop words dropped, order kept, duplicates dropped. Two tokens that
-// name a hyphenated row join first, so "go wide" finds the go-wide row.
-// Then a token shorter than minWordLen or made of digits goes.
+// find a hyphenated row join first, so "go wide" finds the go-wide row
+// and "extra turn" finds extra-turns. Then a token shorter than
+// minWordLen or made of digits goes.
 func (t *themeTable) words(theme string) []string {
 	// A letter of any script is part of a word, so a non-ASCII theme word
 	// stays whole.
@@ -345,14 +487,14 @@ func (t *themeTable) words(theme string) []string {
 	return out
 }
 
-// joinRows joins two neighbor tokens when the table has a row under
-// their hyphenated form. The joined word replaces both tokens.
+// joinRows joins two neighbor tokens when their hyphenated form finds a
+// row through rowOf. The joined word replaces both tokens.
 func (t *themeTable) joinRows(tokens []string) []string {
 	var out []string
 	for i := 0; i < len(tokens); i++ {
 		if i+1 < len(tokens) {
 			joined := tokens[i] + "-" + tokens[i+1]
-			if _, ok := t.Themes[joined]; ok {
+			if _, ok := t.rowOf(joined); ok {
 				out = append(out, joined)
 				i++
 				continue
@@ -375,8 +517,15 @@ func allDigits(w string) bool {
 
 // stopWords are the words of a request that name no theme. The second
 // group is the words of "build me the best deck you can", which reached
-// the generic rule and became text needles before D-411.
+// the generic rule and became text needles before D-411. The third group
+// names a format, a jank word, or a deck with no theme. The classifier
+// wrote "the strongest Modern deck" and "Good stuff" as themes, no card
+// matched "modern" or "stuff", and the theme row asked (F-145). A jank
+// word names a power and no theme (corpus section 11).
 var stopWords = map[string]bool{
+	"modern": true, "standard": true, "pioneer": true, "legacy": true, "vintage": true, "pauper": true,
+	"brawl": true, "cedh": true, "janky": true, "jank": true, "silly": true, "meme": true, "memes": true,
+	"stuff": true, "goodstuff": true,
 	"a": true, "an": true, "the": true, "and": true, "or": true, "of": true, "with": true, "deck": true,
 	"build": true, "me": true, "my": true, "for": true, "in": true, "on": true, "to": true, "some": true,
 	"commander": true, "edh": true, "please": true, "want": true, "i": true, "that": true, "this": true,
@@ -435,6 +584,15 @@ func hasKeywordFold(have []string, want string) bool {
 // Describe renders the match for the gate doc.
 func (m ThemeMatch) Describe() string {
 	var parts []string
+	if len(m.Rows) > 0 {
+		var forms []string
+		for _, w := range m.Words {
+			if name, ok := m.Rows[w]; ok {
+				forms = append(forms, w+" as "+name)
+			}
+		}
+		parts = append(parts, "word forms "+strings.Join(forms, ", "))
+	}
 	if len(m.PayoffSlugs) > 0 {
 		s := append([]string(nil), m.PayoffSlugs...)
 		sort.Strings(s)
@@ -450,6 +608,9 @@ func (m ThemeMatch) Describe() string {
 	}
 	if len(m.Subtypes) > 0 {
 		parts = append(parts, "subtypes "+strings.Join(m.Subtypes, ", "))
+	}
+	if len(m.Types) > 0 {
+		parts = append(parts, "types "+strings.Join(m.Types, ", "))
 	}
 	if len(m.Unmatched) > 0 {
 		parts = append(parts, "unmatched "+strings.Join(m.Unmatched, ", "))

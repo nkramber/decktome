@@ -183,6 +183,24 @@
       "key": "precon_unresolved"
     },
     {
+      "id": "theme_unmatched",
+      "slot": "theme",
+      "key": "theme_unmatched",
+      "order": 24,
+      "fixed": true,
+      "repeat": true,
+      "repeat_on_change": true,
+      "text": "No card I know matches the theme {theme}. What should the deck do: a creature type, a mechanic, or a play style?",
+      "when": {
+        "theme_unmatched": true,
+        "requires": [
+          "format",
+          "theme"
+        ]
+      },
+      "fallback": "No card I know matches that theme. What should the deck do: a creature type, a mechanic, or a play style?"
+    },
+    {
       "id": "house_rules",
       "slot": "house_rules",
       "order": 25,
@@ -400,6 +418,9 @@
       "when": {
         "has_collection": true,
         "precon": true,
+        "not_beside": [
+          "theme"
+        ],
         "requires": [
           "format",
           "colors",
@@ -431,7 +452,10 @@
           "colors",
           "theme"
         ],
-        "thin_theme": false
+        "thin_theme": false,
+        "not_beside": [
+          "theme"
+        ]
       },
       "closed": true,
       "option_values": [
@@ -452,6 +476,9 @@
       "when": {
         "has_collection": true,
         "thin_theme": true,
+        "not_beside": [
+          "theme"
+        ],
         "requires": [
           "format",
           "colors",

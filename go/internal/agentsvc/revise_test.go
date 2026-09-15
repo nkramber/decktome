@@ -233,8 +233,8 @@ func TestRevisionSwapsBasicsAndKeepsTheBrief(t *testing.T) {
 	fd := &fakeDecks{res: &generate.Result{Deck: base}}
 	legal := map[string]mtgv1.LegalityStatus{"commander": mtgv1.LegalityStatus_LEGALITY_STATUS_LEGAL}
 	karlov := &mtgv1.Card{OracleId: "o-karlov", Name: "Karlov of the Ghost Council", TypeLine: "Legendary Creature — Spirit Advisor",
-		CanBeCommander: true, ColorIdentity: []mtgv1.Color{mtgv1.Color_COLOR_W, mtgv1.Color_COLOR_B}, Legalities: legal}
-	welcome := &mtgv1.Card{OracleId: "o-welcome", Name: "Ajani's Welcome", TypeLine: "Enchantment", ColorIdentity: []mtgv1.Color{mtgv1.Color_COLOR_W}, Legalities: legal}
+		CanBeCommander: true, OracleText: karlovText, ColorIdentity: []mtgv1.Color{mtgv1.Color_COLOR_W, mtgv1.Color_COLOR_B}, Legalities: legal}
+	welcome := &mtgv1.Card{OracleId: "o-welcome", Name: "Ajani's Welcome", TypeLine: "Enchantment", OracleText: welcomeText, ColorIdentity: []mtgv1.Color{mtgv1.Color_COLOR_W}, Legalities: legal}
 	plains := &mtgv1.Card{OracleId: "o-plains", Name: "Plains", TypeLine: "Basic Land — Plains", CardTypes: []string{"Land"}, Supertypes: []string{"Basic"}, Legalities: legal}
 	tower := &mtgv1.Card{OracleId: "o-tower", Name: "Command Tower", TypeLine: "Land", CardTypes: []string{"Land"}, Legalities: legal}
 	idx := cards.NewIndex([]*mtgv1.Card{karlov, welcome, plains, tower}, nil, nil, time.Unix(1000, 0).UTC())

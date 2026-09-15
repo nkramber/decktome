@@ -68,6 +68,19 @@ type FactSource interface {
 	ThinTheme(theme string) (thin bool, count int)
 }
 
+// ThemeSource reports whether any word of the theme matches a card. A hint
+// source that holds the card index implements it (D-725).
+//
+// No reader and no model learned of a theme that matched no card: the
+// words "opponent milling cards" reached the build, and the shortlist
+// held staple roles alone (F-142, F-143).
+type ThemeSource interface {
+	// ThemeUnmatched reports whether the theme holds words and no word
+	// matches a card of the format and the colors. It answers false when
+	// it can not tell.
+	ThemeUnmatched(theme string) bool
+}
+
 // SetResolver maps the words a reader wrote onto a set family. A hint
 // source that holds the card index implements it (D-376).
 type SetResolver interface {

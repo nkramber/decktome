@@ -44,6 +44,8 @@ func fullState() *State {
 	st.UnresolvedCommander, st.UnresolvedCommanderAsked = "Aragorn", "Aragorn"
 	st.CommanderOptions = []string{"Aragorn, King of Gondor"}
 	st.Ctx.CommanderUnresolved, st.Ctx.CommanderNoMatch, st.Ctx.CommanderChanged = true, true, true
+	st.UnmatchedThemeAsked = "opponent milling cards"
+	st.Ctx.ThemeUnmatched, st.Ctx.ThemeChanged = true, true
 	st.Ctx.Reasked = map[string]bool{"power": true}
 	st.AskCount, st.Turn = 2, 2
 	st.Messages = []string{"karlov lifegain", "keep sanguine bond"}

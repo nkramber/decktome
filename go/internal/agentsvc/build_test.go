@@ -32,6 +32,14 @@ type fixedIndex struct{ idx *cards.Index }
 
 func (f fixedIndex) Current() *cards.Index { return f.idx }
 
+// karlovText and welcomeText are the Oracle text of the two fixture cards,
+// read from the card snapshot of 2026-09-04. A lifegain theme matches them,
+// so the theme row of D-725 does not ask before the build.
+const (
+	karlovText  = "Whenever you gain life, put two +1/+1 counters on Karlov.\n{W}{B}, Remove six +1/+1 counters from Karlov: Exile target creature."
+	welcomeText = "Whenever a creature you control enters, you gain 1 life."
+)
+
 // buildOpts wires the generator, a card index, and a candidates builder.
 // Without all three the build returns early and the test proves nothing.
 func buildOpts(t *testing.T, fd *fakeDecks) []Option {
@@ -39,11 +47,13 @@ func buildOpts(t *testing.T, fd *fakeDecks) []Option {
 	karlov := &mtgv1.Card{
 		OracleId: "o-karlov", Name: "Karlov of the Ghost Council",
 		TypeLine: "Legendary Creature — Spirit Advisor", CanBeCommander: true,
+		OracleText:    karlovText,
 		ColorIdentity: []mtgv1.Color{mtgv1.Color_COLOR_W, mtgv1.Color_COLOR_B},
 		Legalities:    map[string]mtgv1.LegalityStatus{"commander": mtgv1.LegalityStatus_LEGALITY_STATUS_LEGAL},
 	}
 	welcome := &mtgv1.Card{
 		OracleId: "o-welcome", Name: "Ajani's Welcome", TypeLine: "Enchantment",
+		OracleText:    welcomeText,
 		ColorIdentity: []mtgv1.Color{mtgv1.Color_COLOR_W},
 		Legalities:    map[string]mtgv1.LegalityStatus{"commander": mtgv1.LegalityStatus_LEGALITY_STATUS_LEGAL},
 	}
@@ -597,11 +607,13 @@ func TestOwnedCardShowsThePriciestOwnedPrinting(t *testing.T) {
 	fd := &fakeDecks{res: &generate.Result{Deck: deck}}
 	karlov := &mtgv1.Card{
 		OracleId: "o-karlov", Name: "Karlov of the Ghost Council", TypeLine: "Legendary Creature — Spirit Advisor", CanBeCommander: true,
+		OracleText:    karlovText,
 		ColorIdentity: []mtgv1.Color{mtgv1.Color_COLOR_W, mtgv1.Color_COLOR_B},
 		Legalities:    map[string]mtgv1.LegalityStatus{"commander": mtgv1.LegalityStatus_LEGALITY_STATUS_LEGAL},
 	}
 	welcome := &mtgv1.Card{
 		OracleId: "o-welcome", Name: "Ajani's Welcome", TypeLine: "Enchantment",
+		OracleText:      welcomeText,
 		ColorIdentity:   []mtgv1.Color{mtgv1.Color_COLOR_W},
 		Legalities:      map[string]mtgv1.LegalityStatus{"commander": mtgv1.LegalityStatus_LEGALITY_STATUS_LEGAL},
 		DefaultPrinting: &mtgv1.Printing{ScryfallId: "p-default"},

@@ -26,6 +26,10 @@ type fakeHints struct {
 	owned int
 	thin  bool
 	count int
+	// unmatched is the ThemeSource answer (D-725), and unmatchedCalls
+	// counts the reads.
+	unmatched      bool
+	unmatchedCalls int
 	// saw are the colors the agent handed over inside the turn (D-124).
 	saw []mtgv1.Color
 	// commanderCalls counts how often the resolver asked for names.
@@ -60,6 +64,11 @@ func (f *fakeHints) OwnedThemeCount(string) int {
 }
 
 func (f *fakeHints) ThinTheme(string) (bool, int) { return f.thin, f.count }
+
+func (f *fakeHints) ThemeUnmatched(string) bool {
+	f.unmatchedCalls++
+	return f.unmatched
+}
 
 func (f *fakeHints) FitsColors(name string, colors []mtgv1.Color) (bool, bool) {
 	id, ok := f.identity[name]

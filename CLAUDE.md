@@ -6,7 +6,7 @@ Read this file first. Then read `docs/SESSION-HANDOFF.md`. It tells you where th
 
 This repo is a Go + Protobuf + TypeScript monorepo for an agentic MtG deck builder. The app reads a user's ManaBox collection export. The user gives a prompt. The agent asks questions, then builds a legal, useful deck.
 
-Stage (2026-09-14): **the app is live on `decktome.com`**, and pull request #177 is the newest merge. A merge to `main` deploys itself on Cloud Build (D-584, D-586, D-588). Phase 3B, the product UI, is the current phase.
+Stage (2026-09-14): **the app is live on `decktome.com`**, and pull request #178 is the newest merge. A merge to `main` deploys itself on Cloud Build (D-584, D-586, D-588). Phase 3B, the product UI, is the current phase.
 
 **The whole PR-22 gate holds** (D-633), so PR-28 is free to run. Every PR through #119 is merged: PR-0a to PR-8, PR-7B, PR-10 to PR-25, PR-27, PR-32, PR-33, and PR-28a. PR-9 is out of the MVP (D-256). **PR-28 split into three** (D-636). PR-28a is the harvest, and it is merged. PR-28b is the triage and the new "must not ask" expectation, and PR-28c is the fix cycle. PR-26 waits on OQ-67. Of the weak-axes plan, PR-29 and PR-30 closed on their evidence, and PR-31 parks (D-652, D-656, D-573).
 
@@ -35,6 +35,8 @@ Stage (2026-09-14): **the app is live on `decktome.com`**, and pull request #177
 **#175 merged that plan, and the review sits word for word in `docs/reference/owner-review-grima-2026-09-14.md`.** OQ-83 to OQ-86 hold its four suggestions that no decision took. They cover the payoff shape of a commander, evasion that the commander has, caps per effect class, and a power estimate.
 
 **#177 merged M-17, which measured for free and found the cause of F-141** (D-723 to D-727). The theme word "milling" matched no card, so the Gríma shortlist held staple roles alone (F-142, F-143). PR-54 comes first: aliases, a word-form rule, and a question when no card matches. PR-52 and PR-53 follow, and PR-53 reads the finisher target and floor of D-726. `docs/reference/m17-finishers-lands-2026-09-14.md` holds every count.
+
+**The branch `pr54-theme-words` holds PR-54** (D-728 to D-731). A theme word finds its row through an alias or a word form. A theme that matches no card gets a question before the build. The Gríma replay reads 14 of the 14 owned mill cards on the shortlist, against 1. A singular creature type keeps the generic rule (D-731, F-144). Question gate run 51 read PASS and found F-145, and run 52 read PASS on its fix (D-732). Gitar approved #179.
 
 Two rules of the deployed app come from 2026-09-09. **A verdict keeps the object it names** (D-635), because a reader deletes the deck or the chat they complained about, and the verdict outlives it. **Every user has a record** at `users/<uid>` (D-638): the verified email, the dates, and six counters of what they made. No harvest reads that record, and a test refuses the import that joins them.
 
@@ -101,7 +103,7 @@ Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
 
 ## Commands that cost money
 
-`make questions-gate` calls the real providers. One run of the 108 conversations (77 gate and 31 probe since D-522) costs $0.18 to $0.19 and takes about 20 minutes, measured on runs 33 to 35 (2026-09-04). Ask the owner before every run, and write to a new `GATE_OUT` file: a rerun must never overwrite a scored document (D-65).
+`make questions-gate` calls the real providers. One run of the 109 conversations (78 gate and 31 probe since D-730) costs $0.18 to $0.19 and takes about 20 minutes, measured on runs 33 to 35 (2026-09-04). Ask the owner before every run, and write to a new `GATE_OUT` file: a rerun must never overwrite a scored document (D-65).
 
 `make questions-eval` scores a gate run with the eval role. One run costs $0.09 to $0.10 (runs 33 to 35) and takes about 13 minutes. `make eval-calibrate` measures the eval model against `claude-opus-5` (D-428). It cost $0.25 to $0.30 on Sonnet 5, and Opus 5 costs about 1.7 times that.
 

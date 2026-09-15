@@ -58,9 +58,10 @@ var conversationsJSON []byte
 const CatalogOnlyBar = 64
 
 // GateSize is the number of gate conversations the live half holds: the
-// 30 of D-105 and the 47 terse ones that joined under D-522. The offline
-// half of TestConversations keeps its own count, questions.MinGateSize.
-const GateSize = 77
+// 30 of D-105, the 47 terse ones that joined under D-522, and conversation
+// 110 of D-725. The offline half of TestConversations keeps its own count,
+// questions.MinGateSize.
+const GateSize = 78
 
 // MissReruns is how many more times a counted conversation with a miss
 // plays inside the run. The document and the run file carry its miss

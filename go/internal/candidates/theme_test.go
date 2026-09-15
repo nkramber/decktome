@@ -28,10 +28,13 @@ func TestPruneNoisyDropsANeedleMostCardsHold(t *testing.T) {
 
 // TestRequestWordsNameNoTheme: the words of "build me the best deck you
 // can" are stop words, so the request reaches the unthemed pool and the
-// offer ranks on popularity (D-411).
+// offer ranks on popularity (D-411). A format name, a jank word, and
+// "stuff" name no theme either: question gate run 51 wrote each phrase of
+// the second group as a theme, and the theme row asked (F-145).
 func TestRequestWordsNameNoTheme(t *testing.T) {
 	tbl := &themeTable{Themes: map[string]themeRow{}}
-	for _, theme := range []string{"Build me the best deck you can", "the best possible deck you can", "make something really powerful"} {
+	for _, theme := range []string{"Build me the best deck you can", "the best possible deck you can", "make something really powerful",
+		"the strongest Modern deck possible", "competitive Modern deck", "Good stuff", "fun and janky", "a silly meme deck"} {
 		if got := tbl.words(theme); len(got) != 0 {
 			t.Errorf("%q gave theme words %v, want none", theme, got)
 		}

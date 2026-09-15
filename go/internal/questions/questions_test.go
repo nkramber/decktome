@@ -67,6 +67,7 @@ func TestCatalogMatchesCorpus(t *testing.T) {
 		"Set (not resolved)": "set_unresolved", "Set (mana from outside)": "set_outside_mana",
 		"Precon (not resolved)":  "precon_unresolved",
 		"Commander (which card)": "commander_unresolved", "Commander (no such card)": "commander_unknown",
+		"Theme (no card found)": "theme_unmatched",
 	}
 	raw, err := os.ReadFile("../../../.claude/skills/mtg-corpus/SKILL.md")
 	if err != nil {
