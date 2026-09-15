@@ -72,7 +72,7 @@ A card name that holds a comma sits in quotation marks, so each card reads once 
 
 ## After M-17
 
-M-17 measured on 2026-09-14, and `docs/reference/m17-finishers-lands-2026-09-14.md` holds every count.
+M-17 measured on 2026-09-14, and #177 merged it. `docs/reference/m17-finishers-lands-2026-09-14.md` holds every count.
 
 - The theme word "milling" matched no card, so the shortlist held staple roles alone (F-142). The shortlist dropped the mill cards, and not the model.
 - PR-54 comes first: aliases, a word-form rule, and a question when no card matches (D-723 to D-725).

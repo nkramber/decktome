@@ -8,9 +8,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-14)
 
-**The checkout.** `main` is `ea7bfa6`, which is pull request #176, or a later merge. The branch `m17-finishers-lands` holds M-17 and this hand-off, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
+**The checkout.** `main` is `413cd64`, which is pull request #177, or a later merge. The branch `docs-m17-merged` holds this hand-off, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
 
-**M-17 measured for free, and the owner chose PR-54 first** (D-723 to D-727). The replay of the Gríma request found that the theme "opponent milling cards" matched no card. `themes.json` holds a row for "mill" and none for "milling", so the owned-only shortlist held staple roles alone (F-142). The shortlist dropped the mill cards, and not the model. No reader and no model learns of such a miss (F-143). `docs/reference/m17-finishers-lands-2026-09-14.md` holds every count.
+**#177 merged M-17, and the owner chose PR-54 first** (D-723 to D-727). The replay of the Gríma request found that the theme "opponent milling cards" matched no card. `themes.json` holds a row for "mill" and none for "milling", so the owned-only shortlist held staple roles alone (F-142). The shortlist dropped the mill cards, and not the model. No reader and no model learns of such a miss (F-143). `docs/reference/m17-finishers-lands-2026-09-14.md` holds every count.
 
 **The owner chose the plan after M-17.** PR-54 adds aliases and a word-form rule to the theme match, and a question when no card matches (D-724, D-725). PR-52 and PR-53 follow. PR-53 takes a finisher target of 3 and a floor of 2 at brackets 1 to 4, and 1 and 1 at bracket 5 (D-726). F-140 stays a record until a replay after PR-54 (D-727).
 
@@ -158,8 +158,9 @@ CAUTION: the `decktome` gcloud configuration named the Wallabee account and proj
 
 A second Mac: `docs/setup-second-mac.md` holds what to carry, what to install, and how to prove the machine.
 
-Fifteen things a fresh session gets wrong without this file.
+Sixteen things a fresh session gets wrong without this file.
 
+- A stored deck records the size of its shortlist and no card of it. So a card that never reached the shortlist and a card that the model dropped look the same. Replay the shortlist for free before a prompt fix (M-17). `.local/m17/zz_scratch_m17_test.go` holds the method, and `list.Theme` names the theme words that matched no card.
 - `make bracket-gate` runs its tool in `go/`, through `go -C go`. A relative `-rejudge` path then points inside `go/`, so pass an absolute path.
 - Twelve targets and two loop scripts spend money: `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `scripts/autotune.sh`, and `scripts/feedback-loop.sh`. Ask the owner before each run. `make autotune`, `make feedback-loop`, `make feedback-loop-dry`, `make feedback-triage-dry`, `eval sweep -dry`, and `go run ./cmd/bracket-gate -sweep` are free.
 - A rerun writes to a new file. Every `*_OUT` variable refuses a document that holds a result (D-65).
@@ -189,7 +190,7 @@ Fifteen things a fresh session gets wrong without this file.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
 - The feedback store holds 3 verdicts on 2026-09-09, and every one predates the snapshot of D-635. `make feedback-list VERDICT=` reads both verdicts now (F-87). A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- The deployed API, read 2026-09-14 at 20:50 UTC: revision `mtg-api-00049-4lj` on image `api:54b07dd`, from #173. Both jobs run `worker:54b07dd`, and `/readyz` answered ok with a card snapshot of 2026-09-14 09:01 UTC. `deploy-api` ran from 20:45 to 20:50 UTC.
+- The deployed API, read 2026-09-14 at 20:50 UTC: revision `mtg-api-00049-4lj` on image `api:54b07dd`, from #173. Both jobs run `worker:54b07dd`, and `/readyz` answered ok with a card snapshot of 2026-09-14 09:01 UTC. `deploy-api` ran from 20:45 to 20:50 UTC. A read of Cloud Build at 23:43 UTC found no newer build, because #174 to #177 changed documents alone.
 - The deployed web app, read 2026-09-13 at 18:54 UTC: the release of #158, from `deploy-web` at 18:52 UTC. `index.html` loads `assets/index-DYfo4m8I.js` and no `registerSW.js`, and `sw.js` precaches the `workbox-window` chunk.
 - The deployed quality model, read 2026-09-14: `20260914T070904Z`, from the meta job that started at 06:02 UTC and ended at 07:13 UTC. It fits 43,182 lists and 1,517 commanders. Its Commander fit reads `immaterial` 239 and accuracy 0.554, and its Standard fit reads a cross share of 0.667. The job read the weekly EDHREC pass, 2,077 pages and 4 lists. The mtgo source read 3,094 lists with 58 fetch errors. The mtggoldfish source read 155 lists with no failure. The mtgjson source read no list, because its deck list version differs from the stored table, as on 2026-09-12 and 2026-09-13.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
@@ -219,6 +220,14 @@ The CI step "fake gcs tests" ran no test until 2026-09-10 (D-658). Its filter ma
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 
 ## The ten most recent sessions
+
+### 2026-09-14l: #177 merged, and the documents read the state before a context reset
+
+**The owner merged #177 and asked for every document to read the current state** before a context reset. The session changed no code, and it ran no paid target.
+
+**No build ran.** #177 changed documents alone. A read of Cloud Build at 23:43 UTC found `deploy-api` on `54b07dd` of #173 as the newest build.
+
+**The refresh.** The resume section, the facts that expire, the roadmap, `CLAUDE.md`, and the review of the Gríma deck read the merge. A new item of the list of things a fresh session gets wrong says to replay the shortlist before a prompt fix. The record of 2026-09-14b moved to the archive.
 
 ### 2026-09-14k: #176 merged, M-17 measured, and the owner chose PR-54 first
 
@@ -304,15 +313,6 @@ Merged as #169.
 
 **The session built PR-49.** The parity test fails on the old tools at five calls, and it passes on the new. The dry comparison on model `20260910T012734Z` finds the rate bringing in 0 to 45 cards of a shortlist, with more fast mana and Game Changers.
 
-### 2026-09-14b: #165 merged, and PR-48 fixes F-128
-
-**The owner merged #165, and the session built PR-48** (F-128, D-705). The spell steps of the mana pass read the 99 alone, and the pool holds each commander. `heldIDs` adds the command zone to the set that `manaCandidates` and `cheapestSpell` read.
-
-**Both new tests fail on the old pass.** A unit test reads three steps that add the commander. One drops a spare basic, and two drop the costliest spell. A build test reads "Mana Legend: 2 copies, the limit is 1". Both pass on the new pass.
-
-**Cloud Build deployed #165.** `deploy-api` finished at 13:41 UTC, and revision `mtg-api-00044-gs5` serves `api:05ef44e`. Both jobs run `worker:05ef44e`, and `/readyz` answered 200. A read at 13:39 UTC, while the build ran, answered 503, and its cause is unverified.
-
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-13, and 42 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-14b, and 42 more sections, word for word. Read it for the detail behind a decision.

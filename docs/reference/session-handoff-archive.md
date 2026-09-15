@@ -11,6 +11,14 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## 2026-09-14b: #165 merged, and PR-48 fixes F-128
+
+**The owner merged #165, and the session built PR-48** (F-128, D-705). The spell steps of the mana pass read the 99 alone, and the pool holds each commander. `heldIDs` adds the command zone to the set that `manaCandidates` and `cheapestSpell` read.
+
+**Both new tests fail on the old pass.** A unit test reads three steps that add the commander. One drops a spare basic, and two drop the costliest spell. A build test reads "Mana Legend: 2 copies, the limit is 1". Both pass on the new pass.
+
+**Cloud Build deployed #165.** `deploy-api` finished at 13:41 UTC, and revision `mtg-api-00044-gs5` serves `api:05ef44e`. Both jobs run `worker:05ef44e`, and `/readyz` answered 200. A read at 13:39 UTC, while the build ran, answered 503, and its cause is unverified.
+
 ## 2026-09-14: PR-45a, the bracket cut, and bracket gate run 3
 
 **The owner merged #164, and the session built PR-45a** (D-702). The content check names each card that the bracket forbids. The build cuts one card of each forbidden combo and each other forbidden card, and basic lands fill the slots. The finding `bracket_cut` names each cut card and the content it held.
