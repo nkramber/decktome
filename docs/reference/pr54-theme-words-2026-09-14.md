@@ -117,4 +117,10 @@ The theme row asked in 8 conversations.
 
 Against run 50, each of the 7 conversations beside conversation 110 asked one more question. Conversations whose theme did not change moved too, by one or two questions in both directions. So a move of one question in one run is noise.
 
-The fix adds format names, jank words, and "stuff" to the stop words (F-145). The unit test fails on the old match for all 5 phrases and passes on the new. Question gate run 52 measures the fix (D-732).
+The fix adds format names, jank words, and "stuff" to the stop words (F-145). The unit test fails on the old match for all 5 phrases and passes on the new. Question gate run 52 measured the fix (D-732).
+
+## Question gate run 52
+
+Run 52 ran on `215d43b`, the fixed code, with the models of run 51 (D-732). It read PASS: 75 of 75 counted conversations used catalog questions only, and every expected slot held. It cost $0.1951 over 1,268 seconds and 680 calls.
+
+The theme row asked in conversations 108 and 110 alone. Each of the 6 conversations with no theme asked one question fewer than in run 51. The other conversations moved 5 questions up and 5 down, which is noise.
