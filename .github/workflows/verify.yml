@@ -264,6 +264,10 @@ jobs:
       # of the contract checker and the session hook (D-748).
       - name: lifecycle check
         run: make lifecycle-check
+      # The byte budget of the files a session reads at start, and the
+      # three lists of paid targets (D-749).
+      - name: context budget
+        run: make context-budget
 
   # Tier 0 of the eval harness (PR-15). It compares every baseline of
   # docs/reference/eval with the newest committed run of its suite and
