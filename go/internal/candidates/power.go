@@ -102,7 +102,18 @@ func promoteFinishers(cs []Candidate, req Request, mode mtgv1.PoolRule, target i
 	if req.Format != mtgv1.FormatId_FORMAT_ID_COMMANDER || target <= 0 || len(finishers) == 0 {
 		return
 	}
+	// A card that already reads as a pinned wincon counts toward the
+	// target. `roles.go` names a wincon from the tag
+	// alternate-win-condition, and `pinPower` pins a finisher that reaches
+	// the keep rate, so a card can carry both before this step. Without
+	// the count the promotion adds the target on top of it, and each extra
+	// pinned card skips its role cap and adds to the total.
 	n := 0
+	for i := range cs {
+		if cs[i].Role == mtgv1.CardRole_CARD_ROLE_WINCON && cs[i].Pinned && finishers[cs[i].Card.GetOracleId()] {
+			n++
+		}
+	}
 	if mode != mtgv1.PoolRule_POOL_RULE_ANY_CARD {
 		n = promoteUpTo(cs, target, n, finishers, func(c Candidate) bool { return c.Owned > 0 })
 	}
@@ -115,7 +126,8 @@ func promoteFinishers(cs []Candidate, req Request, mode mtgv1.PoolRule, target i
 
 // promoteUpTo gives the role wincon to each finisher that want reads,
 // from the best down, until the list holds target of them. It answers
-// the new count.
+// the new count. A card that already reads as a pinned wincon is counted
+// by the caller, so this pass steps over it.
 func promoteUpTo(cs []Candidate, target, n int, finishers map[string]bool, want func(Candidate) bool) int {
 	for i := range cs {
 		if n >= target {

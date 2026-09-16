@@ -190,3 +190,60 @@ func TestAnOwnedModePinsTheOwnedFinishers(t *testing.T) {
 		t.Errorf("any-card reads Bloodletting Artist as %v, want the pinned wincon", c.Role)
 	}
 }
+
+// TestAPrePinnedWinconCountsTowardTheTarget is the Gitar review of #182.
+// `roles.go` names a wincon from the tag alternate-win-condition, and
+// `pinPower` pins a finisher that reaches the keep rate. So a card can
+// read wincon and pinned before the promotion. The promotion stepped over
+// it and counted none of it, and it then added the whole target on top.
+// Each extra pinned card skips its role cap and adds to the total.
+func TestAPrePinnedWinconCountsTowardTheTarget(t *testing.T) {
+	// The reader owns every card, so each pool rule can promote.
+	mk := func(id string, role mtgv1.CardRole, pinned bool) Candidate {
+		return Candidate{Card: &mtgv1.Card{OracleId: id, Name: id}, Role: role, Pinned: pinned, Owned: 1}
+	}
+	build := func() []Candidate {
+		return []Candidate{
+			mk("prepinned", mtgv1.CardRole_CARD_ROLE_WINCON, true),
+			mk("a", mtgv1.CardRole_CARD_ROLE_THREAT, false),
+			mk("b", mtgv1.CardRole_CARD_ROLE_SYNERGY, false),
+			mk("c", mtgv1.CardRole_CARD_ROLE_REMOVAL, false),
+			mk("d", mtgv1.CardRole_CARD_ROLE_SYNERGY, false),
+		}
+	}
+	finishers := map[string]bool{"prepinned": true, "a": true, "b": true, "c": true, "d": true}
+	pinnedWincons := func(cs []Candidate) []string {
+		var out []string
+		for _, c := range cs {
+			if c.Role == mtgv1.CardRole_CARD_ROLE_WINCON && c.Pinned {
+				out = append(out, c.Card.GetName())
+			}
+		}
+		return out
+	}
+	for _, mode := range []mtgv1.PoolRule{
+		mtgv1.PoolRule_POOL_RULE_ANY_CARD,
+		mtgv1.PoolRule_POOL_RULE_OWNED_FIRST,
+		mtgv1.PoolRule_POOL_RULE_OWNED_ONLY,
+	} {
+		cs := build()
+		req := Request{Format: cmdr, Bracket: 4}
+		promoteFinishers(cs, req, mode, FinisherTarget(4), finishers)
+		got := pinnedWincons(cs)
+		if len(got) != FinisherTarget(4) {
+			t.Errorf("%s pins %v, want %d of them", mode, got, FinisherTarget(4))
+		}
+		// The card that already read wincon keeps the role and the pin.
+		if got[0] != "prepinned" {
+			t.Errorf("%s dropped the card that already read wincon: %v", mode, got)
+		}
+	}
+	// A pinned card of another role never counts toward the target.
+	cs := build()
+	cs[0] = mk("prepinned", mtgv1.CardRole_CARD_ROLE_RAMP, true)
+	promoteFinishers(cs, Request{Format: cmdr, Bracket: 4}, mtgv1.PoolRule_POOL_RULE_ANY_CARD,
+		FinisherTarget(4), finishers)
+	if got := pinnedWincons(cs); len(got) != FinisherTarget(4) {
+		t.Errorf("a pinned ramp card moved the count: %v", got)
+	}
+}
