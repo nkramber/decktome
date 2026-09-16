@@ -84,6 +84,22 @@ func (x *TagIndex) Resolve(slug string) []string {
 	return out
 }
 
+// Direct returns the Oracle ids of a slug, and no id of a child tag. The
+// finisher count of PR-53 reads the parent slugs alone, because a child
+// tag holds cards that win no game: the tree of mill-opponent holds
+// Ragavan, Nimble Pilferer, which 47 percent of top-cut lists play (M-17,
+// D-726).
+func (x *TagIndex) Direct(slug string) []string {
+	if x == nil {
+		return nil
+	}
+	t, ok := x.bySlug[slug]
+	if !ok {
+		return nil
+	}
+	return append([]string(nil), t.OracleIDs...)
+}
+
 // Len returns the tag count.
 func (x *TagIndex) Len() int {
 	if x == nil {

@@ -8,7 +8,47 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-16)
 
-**The branch `pr52-land-rank` builds PR-52** (F-139, F-146 to F-148, D-733 to D-738). A Commander land reads its class at every bracket, and the class reads the mana abilities of the land. At brackets 4 and 5 the mana pass trades a basic land for a better land of the pool. An unowned land that costs more than the whole budget ranks last. `docs/reference/pr52-land-rank-2026-09-15.md` holds every count.
+**Pull request #182 holds PR-53, and it waits for the review of `gitar-bot`** (F-138, D-726, D-739 to D-744). Deck gate run 28 reads PASS, and bracket gate run 8 reads the judge at 5 of 6. The code, the tests, and the documents are done.
+
+**The next step.** Read the review threads of #182, and not the status check. The first review found one defect. `6af2e8c` fixed it, and the session answered and resolved that thread. Answer each new finding, then tell the owner the pull request is ready to merge (D-637). The owner accepted run 28 for the review fix, so no paid run is due (D-744).
+
+CAUTION: `main` moved ahead of the branch by one commit, `6f1579a` "Update LICENSE". It touches no file of PR-53, so the branch needs no rebase unless GitHub reports a conflict.
+
+- **The count.** `profile.FinisherSet` reads the nine parent finisher tags of M-17 with no child tag, and the child tag `blood-artist-ability`. `profile.FinisherIDs` adds the evasive creatures of power 5 or more. The snapshot holds 1,857 such cards.
+- **The role.** A Commander shortlist gives the role wincon to the best finishers, up to the target of the bracket, and it pins each one (D-741). An owned mode promotes the owned finishers first (D-742).
+- **The floor and the target.** Every Commander bracket carries a finisher floor of 2, and bracket 5 carries 1. The job targets ask for 3 finishers, and 1 at bracket 5.
+- **The words.** The finisher note and the finisher finding name the deck plan, and not the bracket (F-151). Only the commander leads the deck (F-153). The prompt version reads 15.
+- **The repair.** The shortfall carries the code `finisher_short`, and no repair input holds it (F-152). An empty answer never replaces a deck that holds cards.
+- `docs/reference/pr53-wincon-2026-09-16.md` holds every count.
+
+**Four defects came out of the paid runs, and each has a test that fails on the old code** (D-743, D-744).
+
+- **F-150**: `featureWords` held no finisher row, so the finding read " is 0, and bracket 3 wants 2 or more".
+- **F-151**: the gap note claimed the bracket wants finishers. The bracket system counts Game Changers, mass land denial, extra turns, banned cards, and combos, and it counts no finisher.
+- **F-152**: a pool with too few finishers made the repair answer 0 cards on deck gate prompt 5.
+- **F-153**: the summary called Angel of Serenity the leader of the deck. A rejudge held that verdict, so it is no judge noise.
+
+**The paid runs of the session, $9.00 in all.**
+
+| Run | What | Verdict | Cost |
+|---|---|---|---|
+| Deck gate 24 | the first whole run | FAIL, 3 defects | $2.7876 |
+| Deck gate 25 | after the fixes of D-743 | FAIL, 1 defect | $2.5900 |
+| Summary judge | a rejudge of the run 25 summaries | the verdict held | $0.1045 |
+| Deck gate 26 | prompt 5, the first prompt guard | PASS, 1 rule claim | $0.1292 |
+| Deck gate 27 | prompt 5, the reworded guard | PASS, 0 rule claims | $0.1018 |
+| Deck gate 28 | the whole run on every fix | **PASS** | $2.7527 |
+| Bracket gate 8 | brackets 4 and 5 | judge 5 of 6 | $0.5318 |
+
+**Deck gate run 28 reads PASS**: 25 of 25 decks with no block finding, 0 invented names, and 0 summaries that state a false rule. `eval-check` moves no gate row against baseline run 19.
+
+**Bracket gate run 8 reads the judge at 5 of 6**, 83 percent against a bar of 80. Every one of its six decks meets its finisher floor: 3, 5, 4, 2, 1, and 2, against floors of 2, 2, 2, 1, 1, and 1. The verdict reads FAIL on the band bar, as runs 6 and 7 do. Najeela sits off band on `color_sources` on all three runs. Run 8 adds Kinnan, which misses `avg_mana_value` by 0.13 and `hands_two_to_four_lands` by 0.01. Each run builds new decks, so one deck of six is one sample.
+
+**The review of #182 found one more defect, and the session fixed it.** `promoteUpTo` stepped over a card that already read wincon and pinned, and it counted none of it. So the promotion added the whole target on top of it. At bracket 4 a test reads 4 pinned wincon rows against a target of 3. A pre-pinned wincon finisher counts toward the target now. The fix moves one deck gate pool: prompt 3 falls from 320 cards to 319, and its finisher count holds at 10. Deck gate run 28 measured a shortlist one card wider on that one prompt.
+
+**PR-53 took three wrong readings before the current code.** The first gave the role to every card of the curated count, and the wincon cap of 15 dropped win routes (D-741). The second read the whole scored pool, and an owned mode drops the unowned cards after that step (D-742). The third named the bracket as the source of the finisher floor (D-743).
+
+**#181 merged PR-52** (F-139, F-146 to F-148, D-733 to D-738). A Commander land reads its class at every bracket, and the class reads the mana abilities of the land. At brackets 4 and 5 the mana pass trades a basic land for a better land of the pool. An unowned land that costs more than the whole budget ranks last. `docs/reference/pr52-land-rank-2026-09-15.md` holds every count.
 
 **The free checks of PR-52 hold.** The replay of the Gríma request puts Fabled Passage, Evolving Wilds, and Terramorphic Expanse on the shortlist. The swap takes Fabled Passage and Sunken Hollow, and the reader owns both. 9 of the 25 deck gate pools change, and every one of them is a Commander pool. Quality gate run 24 reads PASS, and it holds the precon bar of a control fit of `main` (D-689).
 
@@ -16,7 +56,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **Bracket gate run 7 reads the judge at 5 of 6, against 4 of 6 on run 6** (D-738). The bar is 80 percent, so run 7 passes that bar and run 6 failed it. Both runs read FAIL on the band bar, and the same deck sits off band: Najeela on `color_sources`. The basic lands fell on four decks of six, and run 7 cost $0.5235.
 
-**The checkout.** `main` is `76e53c7`, which is pull request #180, or a later merge. The branch `pr52-land-rank` holds PR-52, as an open pull request. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
+**#181 merged PR-52, and Cloud Build deployed it.** `main` is `6ff0244`, and `deploy-api` succeeded on 2026-09-16. Revision `mtg-api-00051-sc6` serves the merge, and `/readyz` answered ok with a card snapshot of 2026-09-15 21:01 UTC. No web build ran, because #181 changed no file under `web/**`.
+
+**The checkout.** `main` is `6ff0244`, which is pull request #181, or a later merge. The branch `pr53-wincon-target` holds PR-53, and no push carries it yet. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
 
 **#179 merged PR-54** (F-141 to F-145, D-728 to D-732). A theme word finds its row through an alias or a word form, and two new rows cover superfriends and land destruction. When no word of a theme matches a card, the theme row asks for the theme before the build. The replay of the Gríma request reads 14 of the 14 owned mill cards on the shortlist, against 1. The dry deck gate gave the same output before and after the change. `docs/reference/pr54-theme-words-2026-09-14.md` holds every count.
 
@@ -237,6 +279,18 @@ The CI step "fake gcs tests" ran no test until 2026-09-10 (D-658). Its filter ma
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 
 ## The ten most recent sessions
+
+### 2026-09-16b: #181 merged PR-52, and PR-53 built to a context reset
+
+**The owner merged #181, and Cloud Build deployed it.** Revision `mtg-api-00051-sc6` serves the merge, and `/readyz` answered ok.
+
+**The session built PR-53 on the branch `pr53-wincon-target`.** The owner answered three questions (D-739 to D-741). The finisher count reads the curated tags of M-17, the role goes to the target count alone, and every Commander bracket carries a finisher floor.
+
+**The first reading of the role inverted the item.** Every card of the curated count took the role wincon, and the wincon cap of 15 then dropped finishers. 9 of the 25 deck gate pools held fewer finishers than `main`, and prompt 1 fell from 49 to 20. The owner chose the target-count promotion, and no pool holds fewer finishers now.
+
+**`make verify` stopped two paid runs, and no money went out.** The first stop read a document sentence of 27 words, and the second read the constant `roleWincon` as dead code. The session removed it and started the chain again.
+
+**The context reset came before the paid runs landed.** Nothing of PR-53 is committed.
 
 ### 2026-09-16: PR-52 built, and two paid gates measured it
 

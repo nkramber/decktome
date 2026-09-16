@@ -109,3 +109,24 @@ func TestShortlistMarksThePowerCards(t *testing.T) {
 		t.Errorf("a revision shortlist marks a card:\n%s", got)
 	}
 }
+
+// TestTheFinisherNoteNamesTheDeckPlan is F-151 and D-743. The note read
+// "Bracket 3 wants 2 or more finishers", and the judge marked that a
+// false rule of the game: the bracket system counts Game Changers, mass
+// land denial, extra turns, and combos, and it counts no finisher. Deck
+// gate run 24 failed its false-rule bar on that sentence.
+func TestTheFinisherNoteNamesTheDeckPlan(t *testing.T) {
+	req := Request{}
+	fin := gapSentence(req, profile.KeyFinisher, 3, 1, 2, nil)
+	if strings.Contains(fin, "Bracket") || strings.Contains(fin, "bracket") {
+		t.Errorf("the finisher note names the bracket: %q", fin)
+	}
+	if !strings.HasPrefix(fin, "This deck plan aims for 2 or more finishers") {
+		t.Errorf("the finisher note reads %q", fin)
+	}
+	// A bracket counts Game Changers, so that note keeps the bracket.
+	gc := gapSentence(req, profile.KeyGameChanger, 4, 1, 4, nil)
+	if !strings.HasPrefix(gc, "Bracket 4 wants 4 or more Game Changers") {
+		t.Errorf("the Game Changer note reads %q", gc)
+	}
+}

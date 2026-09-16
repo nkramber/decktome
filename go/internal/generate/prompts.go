@@ -52,7 +52,17 @@ package generate
 // Version 13: at brackets 4 and 5 the deck shape block names the power
 // floors, and each shortlist line marks a card that counts toward one: a
 // tutor, fast mana, or a Game Changer (D-704).
-const PromptVersion = 13
+// Version 14: the job targets name a finisher count, and the deck shape
+// block names the finisher floor of the bracket. Each shortlist line
+// marks a finisher, and the count reads the curated tags of M-17 with
+// the evasive creatures of power 5 or more (D-726).
+//
+// Version 15: the summary names the commander as the one card that leads
+// the deck. Deck gate run 25 wrote "its dedicated closing cards, led by
+// Angel of Serenity", and two judge reads called it a false rule: a deck
+// led by a card names its commander, and that card is not legendary
+// (F-153, D-744).
+const PromptVersion = 15
 
 // generateInstructions is the stable prefix. It names no card, no format,
 // and no session value, so every call of a session shares it.
@@ -91,6 +101,7 @@ Rules for the summary:
 - Write plainly. Do not report on your own work, and do not say whether you met the targets.
 - State no rule of the game. Do not say what a card may do, what a format allows, what is banned, or what is legal. The rules engine checks the deck and reports that.
 - Claim nothing about a card that the shortlist does not say.
+- Only the commander leads the deck. Never write that another card leads it, heads it, or fronts it. Write "chief among them" for the best card of a group.
 - Name no price and no date.
 - Do not address the user by name, and do not ask a question.`
 

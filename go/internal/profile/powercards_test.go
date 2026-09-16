@@ -57,8 +57,10 @@ func TestPowerOfNamesEveryFloorACardCounts(t *testing.T) {
 	}
 }
 
-// TestPowerFloorsFollowTheBracket is D-704: brackets 4 and 5 hold floors
-// for tutors, fast mana, and Game Changers, and no other deck holds one.
+// TestPowerFloorsFollowTheBracket is D-704 and D-726: brackets 4 and 5
+// hold floors for tutors, fast mana, and Game Changers, and no other deck
+// holds one. Every Commander bracket holds the finisher floor, because a
+// deck of any power needs a way to win.
 func TestPowerFloorsFollowTheBracket(t *testing.T) {
 	b, err := LoadBands()
 	if err != nil {
@@ -70,10 +72,10 @@ func TestPowerFloorsFollowTheBracket(t *testing.T) {
 		power  *mtgv1.PowerLevel
 		want   map[string]float64
 	}{
-		{"bracket 3", mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket(3), map[string]float64{}},
-		{"no bracket", mtgv1.FormatId_FORMAT_ID_COMMANDER, nil, map[string]float64{}},
-		{"bracket 4", mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket(4), map[string]float64{KeyTutor: 2, KeyFastMana: 3, KeyGameChanger: 4}},
-		{"bracket 5", mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket(5), map[string]float64{KeyTutor: 4, KeyFastMana: 6, KeyGameChanger: 8}},
+		{"bracket 3", mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket(3), map[string]float64{KeyFinisher: 2}},
+		{"no bracket", mtgv1.FormatId_FORMAT_ID_COMMANDER, nil, map[string]float64{KeyFinisher: 2}},
+		{"bracket 4", mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket(4), map[string]float64{KeyTutor: 2, KeyFastMana: 3, KeyGameChanger: 4, KeyFinisher: 2}},
+		{"bracket 5", mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket(5), map[string]float64{KeyTutor: 4, KeyFastMana: 6, KeyGameChanger: 8, KeyFinisher: 1}},
 		{"60-card", mtgv1.FormatId_FORMAT_ID_MODERN, step(mtgv1.SixtyStep_SIXTY_STEP_TOURNAMENT), map[string]float64{}},
 	} {
 		if got := b.PowerFloors(tt.format, tt.power); !maps.Equal(got, tt.want) {

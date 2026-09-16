@@ -16,6 +16,7 @@ var gapNouns = map[string]string{
 	profile.KeyTutor:       "tutors",
 	profile.KeyFastMana:    "fast mana",
 	profile.KeyGameChanger: "Game Changers",
+	profile.KeyFinisher:    "finishers, the cards that win the game",
 }
 
 // gapNote writes one sentence for each power floor the deck misses, and
@@ -82,7 +83,15 @@ func gapCards(pool *Pool, of func(*mtgv1.Card) []string, key string, held map[st
 
 // gapSentence writes one missed floor and the cards that close it.
 func gapSentence(req Request, key string, bracket int32, value, floor float64, picks []*mtgv1.Card) string {
+	// A bracket names its own floor for tutors, fast mana, and Game
+	// Changers, because the bracket system counts those three (D-704).
+	// It counts no finisher, so the finisher sentence names the deck plan
+	// and not the bracket. The judge reads a bracket that "wants" a
+	// finisher count as a false rule of the game (F-151, D-743).
 	s := fmt.Sprintf("Bracket %d wants %g or more %s, and the deck holds %g.", bracket, floor, gapNouns[key], value)
+	if key == profile.KeyFinisher {
+		s = fmt.Sprintf("This deck plan aims for %g or more %s, and the deck holds %g.", floor, gapNouns[key], value)
+	}
 	if len(picks) == 0 {
 		return s
 	}

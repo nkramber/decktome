@@ -24,15 +24,29 @@ var bands = sync.OnceValues(profile.LoadBands)
 // hold no threat band: a threat is what the theme makes it.
 const CommanderThreats = 12
 
+// The finisher targets of D-726, from the counts of M-17. Brackets 1 to
+// 4 read the median of the precons since 2023 and of the EDHREC average
+// decks. Bracket 5 reads the median of the TopDeck top cut, where one
+// combo finisher closes the game.
+const (
+	CommanderWincons     = 3
+	CommanderWinconsCEDH = 1
+)
+
 // TargetsFor is the wanted count per job. Commander counts the 99, and a
 // 60-card format counts the main deck.
 func TargetsFor(format mtgv1.FormatId, power *mtgv1.PowerLevel) map[string]int {
 	if format == mtgv1.FormatId_FORMAT_ID_COMMANDER {
+		wincons := CommanderWincons
+		if power.GetBracket() >= 5 {
+			wincons = CommanderWinconsCEDH
+		}
 		b, err := bands()
 		if err != nil {
 			return map[string]int{
 				"land": 36, "ramp": 10, "draw": 10, "removal": 8,
-				"wipe": 3, "threat": 12, "interaction": 6, "synergy": 14,
+				"wipe": 3, "threat": 12, "interaction": 6, "synergy": 14 - wincons,
+				"wincon": wincons,
 			}
 		}
 		out := b.Midpoints(format, power)
@@ -40,8 +54,11 @@ func TargetsFor(format mtgv1.FormatId, power *mtgv1.PowerLevel) map[string]int {
 		for _, n := range out {
 			sum += n
 		}
+		// The finisher places come out of the synergy pieces, so the deck
+		// still counts 99 cards (D-726).
+		out["wincon"] = wincons
 		out["threat"] = CommanderThreats
-		out["synergy"] = max(99-sum-CommanderThreats, 0)
+		out["synergy"] = max(99-sum-CommanderThreats-wincons, 0)
 		return out
 	}
 	// A 60-card deck's land count follows the archetype, and the guide

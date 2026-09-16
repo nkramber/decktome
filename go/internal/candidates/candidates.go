@@ -279,6 +279,23 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 	}
 	theme := b.themes.matchIn(req.Theme, idx)
 	roleTags := b.themes.roleSets(idx.Tags())
+	// The finishers of the curated count of M-17: the parent tags with no
+	// child tag, the child tag blood-artist-ability, and the evasive
+	// creatures of power 5 or more (D-726). The profile counts the same
+	// cards, so the role the shortlist writes and the count the check
+	// reads hold the same cards.
+	//
+	// The role goes to the target count alone, and every other finisher
+	// keeps the role it earned (D-741). A wholesale role change put 1,857
+	// cards through the wincon cap of 15, and 9 of the 25 gate pools then
+	// held fewer finishers than before.
+	//
+	// The set reads Commander alone, as the count, the floor, and the
+	// target of D-726 do. A 60-card format holds no finisher floor.
+	var finishers map[string]bool
+	if req.Format == mtgv1.FormatId_FORMAT_ID_COMMANDER {
+		finishers = profile.FinisherIDs(idx.All(), idx.Tags())
+	}
 	// Text fallbacks stand in for the tags only when the snapshot has
 	// none. With tags loaded, an untagged card is not a staple.
 	useText := idx.Tags().Len() == 0
@@ -401,6 +418,9 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 	sortCandidates(scored)
 	// A pinned power card skips the cap of its role (F-131, D-710).
 	pinPower(scored, pw)
+	// The best finishers take the wincon role and the pin, up to the
+	// target of the bracket (D-726, D-741).
+	promoteFinishers(scored, req, mode, FinisherTarget(req.Bracket), finishers)
 	theme.Unmatched = theme.unmatchedWords(fired)
 
 	// The cards the sets hold rank on their own. The outside cards are a
