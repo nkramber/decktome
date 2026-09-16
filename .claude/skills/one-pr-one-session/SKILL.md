@@ -66,6 +66,7 @@ Do not offer the next pull request.
 
 ## Rules of this repo that win over other skills
 
-- The `gitar-review` skill says: carry a fix to a new branch when the owner merged first. A new clean session does that work, not this session.
+- This session answers the Gitar review of its pull request, and a Gitar answer never needs a new session.
+- Never call the pull request ready before a current Gitar review lands. Fix each finding on the same pull request. So the merge-first trap of the `gitar-review` skill does not occur.
 - A merge or a deploy of an earlier pull request never gets its own pull request. The next item reads the base when its own concern needs it.
 - An unattended loop pull request stays red on `pr-contract` until a clean author session completes its rows (D-748).

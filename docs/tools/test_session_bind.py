@@ -39,6 +39,8 @@ class Targets(unittest.TestCase):
         self.assertEqual(targets("git push"), ["pr60-example"])
         self.assertEqual(targets("git push origin HEAD:refs/heads/pr61-other"), ["pr61-other"])
         self.assertEqual(targets("git push origin --delete old-branch"), [])
+        self.assertEqual(targets("git push origin :old-branch"), [])
+        self.assertEqual(targets("git push origin +:old-branch"), [])
 
     def test_cd_and_dash_c_move_the_directory(self):
         self.assertEqual(targets("cd /wt && git push"), ["pr61-other"])

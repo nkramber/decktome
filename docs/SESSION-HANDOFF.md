@@ -290,7 +290,7 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 **The first-parent log of `main` held 12 pull requests of documents alone that only record an earlier state** (F-154). Each one read a merge, a deploy, or the state before a context reset. D-42 made a ✅ mean "merged on `main`", so each item merged with 🔧, and a later session wrote the ✅.
 
-**The owner answered three questions** (D-748). A project hook binds each `session_id` to one branch. `CLAUDE.md` drops its merge narrative. A loop pull request meets the same contract.
+**The owner answered three questions** (D-748). A project hook binds each `session_id` to one branch. `CLAUDE.md` drops its merge narrative. A loop pull request meets the same contract. The session fixes each Gitar finding on the same pull request (D-746). It never calls the pull request ready before a current review lands.
 
 **The session built the skill, the hook, the check, and the template.** `make pr-check` and the `pr-contract` workflow read the body and the diff. `make lifecycle-check` tests the checker and the hook, and it runs in `make lint` and the verify workflow. The session ran no paid target.
 

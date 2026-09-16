@@ -33,7 +33,7 @@ Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
    - **Gitar is the only review this repo asks for.** No second harness reads it.
    - A pull request of documents alone waits for the review too (D-679).
    - Tell the owner when the pull request is ready to merge. The owner merges.
-   - When the owner merged before a finding got its answer, a new clean session carries the fix (D-746).
+   - Wait for a current Gitar review before you call the pull request ready. Fix each finding on the same pull request, in the same session (D-746).
 11. **Never hesitate to ask or to push back.** Ask a question the moment you have one. When the owner's two statements conflict, say so and quote both. When a request rests on a wrong premise, say so with the evidence. The owner sees this as the key to good LLM-user interaction. Silence is the mistake, not the question.
 12. **One pull request, one clean session.** A session works on one pull request, and the pull request carries all its documents and its hand-off. No pull request exists to record an earlier merge. Load `.claude/skills/one-pr-one-session/SKILL.md` for all work on a pull request (D-746 to D-748).
 

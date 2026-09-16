@@ -118,6 +118,8 @@ def git_target(args, directory, branch_of):
         refs = positional(rest, with_value=("-o", "--push-option", "--repo"))
         if len(refs) >= 2:
             ref = refs[1].lstrip("+")
+            if ref.startswith(":"):
+                return None
             ref = ref.split(":", 1)[1] if ":" in ref else ref
             ref = ref[len("refs/heads/"):] if ref.startswith("refs/heads/") else ref
             return branch_of(directory) if ref == "HEAD" else ref
@@ -220,10 +222,13 @@ def main():
         cwd = event.get("cwd") or os.getcwd()
         if not SESSION_ID.match(session_id) or not command:
             return 0
+        branches = targets(command, cwd)
+        if not branches:
+            return 0
         common = run(["git", "rev-parse", "--path-format=absolute", "--git-common-dir"], cwd, 5)
         if not common:
             return 0
-        allowed, message = decide(os.path.join(common, STORE), session_id, targets(command, cwd), command)
+        allowed, message = decide(os.path.join(common, STORE), session_id, branches, command)
     except Exception:  # noqa: BLE001 - the hook fails open, see the module docstring
         return 0
     if allowed:
