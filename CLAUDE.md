@@ -1,42 +1,12 @@
 # decktome - CLAUDE.md
 
-Read this file first. Then read `docs/SESSION-HANDOFF.md`. It tells you where the last session stopped.
+Read this file first. Then read `docs/SESSION-HANDOFF.md`. It tells you where the last session stopped. For all work on a pull request, load `.claude/skills/one-pr-one-session/SKILL.md` first (hard rule 12).
 
 ## Project
 
 This repo is a Go + Protobuf + TypeScript monorepo for an agentic MtG deck builder. The app reads a user's ManaBox collection export. The user gives a prompt. The agent asks questions, then builds a legal, useful deck.
 
-Stage (2026-09-16): **the app is live on `decktome.com`**, and pull request #181 is the newest merge. #181 merged PR-52, and revision `mtg-api-00051-sc6` serves it. The branch `pr53-wincon-target` holds PR-53, and its pull request waits for the owner. Deck gate run 28 reads PASS, and bracket gate run 8 reads the judge at 5 of 6. A merge to `main` deploys itself on Cloud Build (D-584, D-586, D-588). Phase 3B, the product UI, is the current phase.
-
-**The whole PR-22 gate holds** (D-633), so PR-28 is free to run. Every PR through #119 is merged: PR-0a to PR-8, PR-7B, PR-10 to PR-25, PR-27, PR-32, PR-33, and PR-28a. PR-9 is out of the MVP (D-256). **PR-28 split into three** (D-636). PR-28a is the harvest, and it is merged. PR-28b is the triage and the new "must not ask" expectation, and PR-28c is the fix cycle. PR-26 waits on OQ-67. Of the weak-axes plan, PR-29 and PR-30 closed on their evidence, and PR-31 parks (D-652, D-656, D-573).
-
-**The whole feedback loop is on `main`**, as pull requests #117, #121, and #122. The triage names one of 22 classes for each thumbs down, and the reason keys answer 20 of them for nothing (D-643). A case joins the gate file that owns it, and the pull request diff is the accept step (D-642). The fix cycle carries the case and its fix in one pull request, and it answers the review of `gitar-bot` (D-645). **No live cycle ran yet.** **PR-34 is merged as #123**: the app reads the format of an upload out of the file, and Moxfield reads (D-647, F-91 to F-93).
-
-**PR-29 closed, and it never merged** (D-652). M-8 read the precon bar and found its target of 0.95 was never reachable. 54 of 389 pairs carry no signal, because a weak precon's cards do not pair in the corpus (F-95). **Every quality item reports three numbers now**, and the owner drops an item that moves none (D-648). **PR-37 is merged as #127.** It adds the materiality check the synergy break never had, in Commander alone at a floor of 0.10 (D-653). Gate run 18 reads PASS, and no reader-facing number moved: the bar reads a new population, and the model is the same model.
-
-**The owner graded the ten disputed decks** (D-659). The judge bar is the right target, and the defect detector reads built decks wrong. PR-39 merged first, as #135: the basic lands follow the need of each color (D-660, D-661). Gate run 19 measured the new source count on the quality model: every bar holds, and the judge agreement rose from 8 to 9 (D-663).
-
-**M-11 measured fifteen fitted detectors, and none meets its gate** (F-115). The tier reads the detector probability of every deck, so no variant moved a disputed deck. **#144 merged PR-40, and the deployed app grades Commander decks by the rules checks of M-12** (D-675 to D-678). M-10 ran again and M-13 fitted the date cut, and the owner closed PR-38 and PR-41 (D-680, F-118, D-683). Every item that changes a feature of the model reports the three numbers (D-664). A tier change also reports the broken copies graded bad (D-674), and an item passes only when neither reader number worsens (D-681).
-
-**#148, #149, and #153 merged PR-42, PR-43, and PR-44** (D-671, D-684, D-688). The question gate reruns a missed conversation, and the engine reads the deck after the mana pass. A card's types follow the rules of its layout, so a transform card with a land back face counts as a spell. Deck gate run 19 is the decks baseline (D-686), and guardrail 15 governs quality tuning items alone (D-689).
-
-**The commander offer never shares a turn with a theme or colors question** (F-111, D-669). #139 merged it with two question-flow guards (F-113, F-114, D-670), and it deployed on 2026-09-11. An owned-only session reads right on the harder case too, and the owner closed OQ-79 (D-691). #157 hides "You decide" beside the "Suggest one" option of the first commander question, and it deployed on 2026-09-13 (F-121, D-690). The installed app ran the old shell for one load after that deploy (F-122). #158 reloads the page on a new service worker, and it deployed on 2026-09-13 (D-692).
-
-**OQ-82 has an answer** (D-693 to D-704). A bracket promises its power in both directions, and a precon upgrade cuts a kept card that the bracket forbids. #160 to #163 merged M-14, PR-46, PR-47, and M-15 on 2026-09-13, and #164 merged the plan that splits PR-45 into PR-45a and PR-45b (D-701). PR-46 fixes F-124, and PR-47 gives the judge the Game Changer flags of the card data (F-123). With the flags the judge agrees on 3 of 15 decks, and it still names combos from memory (F-126). M-15 found the judge reliable at bracket 5 and soft between brackets 2 and 3, so PR-45 uses it at brackets 3 to 5 (D-699).
-
-**#165 merged PR-45a** (F-125, D-702). The build cuts one card of each combo its bracket forbids, and each other forbidden card, and a basic land fills each slot. Bracket gate run 3 cut two cards, and 9 of 9 decks at brackets 1 to 3 hold no content violation. Its judge bar still reads FAIL, at 3 of 9. The review found F-128, a mana pass that can add a commander to the 99, and #166 merged PR-48 (D-705). #167 merged PR-49, so every tool builds the shortlist of the app (F-129, D-706).
-
-**#169 merged PR-45b** (D-709 to D-715). Brackets 4 and 5 take power floors, and the shortlist pins the power cards that the top lists play. A deck that misses a floor names the cards that close it. The fixes of F-131 to F-133 ride along. Bracket gate run 6 reads the judge at 4 of 6, and its second judge lane reads 6 of 6. Before PR-45b the judge read 0 of 6.
-
-**#172 merged PR-50: a card name matches without its accent** (F-135, D-716). The lookup reads the exact name first, and the folded name only when it fits one card. Guardrail 4 reads the fold as exact now. Deployed session `z1hshyY6Npig1FN2NuV7` read "Grima" and offered both Gríma cards. The same session found F-136, a role question about a name the which-card row held. #173 merged PR-51, its fix, and deployed session `l9x5bFTcFgpZ4DOcQpxU` asked no role question (D-717). F-137 records a summary that called Gríma a mill commander (D-718).
-
-**The owner gave a written review of the Gríma deck on 2026-09-14** (D-719 to D-722). The check confirms no win condition, a weak mana base, and cards whose conditions the deck does not meet (F-138 to F-140). It refutes the claim of a pump shelf. The deck holds none of the 14 owned mill cards on a theme of opponent mill (F-141). M-17 measured first, for no cost. PR-52 improves the mana at brackets 4 and 5, and PR-53 adds a win-condition target, both after PR-54 (D-723).
-
-**#175 merged that plan, and the review sits word for word in `docs/reference/owner-review-grima-2026-09-14.md`.** OQ-83 to OQ-86 hold its four suggestions that no decision took. They cover the payoff shape of a commander, evasion that the commander has, caps per effect class, and a power estimate.
-
-**#177 merged M-17, which measured for free and found the cause of F-141** (D-723 to D-727). The theme word "milling" matched no card, so the Gríma shortlist held staple roles alone (F-142, F-143). PR-54 comes first: aliases, a word-form rule, and a question when no card matches. PR-52 and PR-53 follow, and PR-53 reads the finisher target and floor of D-726. `docs/reference/m17-finishers-lands-2026-09-14.md` holds every count.
-
-**#179 merged PR-54** (D-728 to D-732). A theme word finds its row through an alias or a word form. A theme that matches no card gets a question before the build. The Gríma replay reads 14 of the 14 owned mill cards on the shortlist, against 1. A singular creature type keeps the generic rule (D-731, F-144). Question gate run 51 read PASS and found F-145, and run 52 read PASS on its fix (D-732). Cloud Build deployed it, and PR-52 comes next.
+Stage: **the app is live on `decktome.com`**, and Phase 3B, the product UI, is the current phase. A merge to `main` deploys itself on Cloud Build (D-584, D-586, D-588). `docs/SESSION-HANDOFF.md` holds the current state and the next step. Git holds each merge, and Cloud Build holds each deploy (D-747).
 
 Two rules of the deployed app come from 2026-09-09. **A verdict keeps the object it names** (D-635), because a reader deletes the deck or the chat they complained about, and the verdict outlives it. **Every user has a record** at `users/<uid>` (D-638): the verified email, the dates, and six counters of what they made. No harvest reads that record, and a test refuses the import that joins them.
 
@@ -54,7 +24,7 @@ Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
 2. **Write in ASD-STE100.** Every doc, skill, and agent file must follow Simplified Technical English. Load the `ste-writing` skill before you write. Rules that apply most: max 20 words per procedural sentence, max 25 per descriptive sentence, and active voice. Also: one instruction per sentence, no semicolons, no "-ing" verb forms, one term per concept, paragraphs of max six sentences.
 3. **Ask questions when you think of them.** Do not save questions for the end. Use `AskUserQuestion` in small batches. Record each answer in `docs/decisions.md`.
 4. **Do the research.** Verify facts against sources (Scryfall API, Wizards announcements, the Comprehensive Rules). Record the date of each fact. MtG rules and ban lists change often.
-5. **Make hand-off simple.** Before you end a session, update `docs/SESSION-HANDOFF.md`: the completed work, the open work, and the next step.
+5. **Make hand-off simple.** Update `docs/SESSION-HANDOFF.md` inside the pull request, before you call it ready (D-747). Record the completed work, the open work, and the next step.
 6. **No AI-attribution text** in any PR, branch name, commit message, or comment. This house rule comes from connector-syncer.
 7. **No mistakes.** Check card names, rules, and dates before you write them. When you are not sure, say so and mark the item as unverified.
 8. **Every change starts on a branch.** Never commit to `main`, and never push to it (D-583). Make a branch, commit there, push it, and open a pull request. The owner merges. Run `make where` before every commit, push, and deploy. It prints the branch, the tree, and whether `main` is current. It also names the state of the branch's pull request. Run `make hooks` one time, and the pre-commit hook then refuses what these rules forbid (D-585).
@@ -63,7 +33,9 @@ Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
    - **Gitar is the only review this repo asks for.** No second harness reads it.
    - A pull request of documents alone waits for the review too (D-679).
    - Tell the owner when the pull request is ready to merge. The owner merges.
+   - When the owner merged before a finding got its answer, a new clean session carries the fix (D-746).
 11. **Never hesitate to ask or to push back.** Ask a question the moment you have one. When the owner's two statements conflict, say so and quote both. When a request rests on a wrong premise, say so with the evidence. The owner sees this as the key to good LLM-user interaction. Silence is the mistake, not the question.
+12. **One pull request, one clean session.** A session works on one pull request, and the pull request carries all its documents and its hand-off. No pull request exists to record an earlier merge. Load `.claude/skills/one-pr-one-session/SKILL.md` for all work on a pull request (D-746 to D-748).
 
 ## Reference material
 
@@ -77,6 +49,7 @@ Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
 | Skill | Use when |
 |---|---|
 | `ste-writing` | Before you write or edit any `.md` file here. |
+| `one-pr-one-session` | Before any work on a pull request: a start, a revision, a review, or the hand-off. |
 | `gitar-review` | After each push to a pull request, documents alone included. |
 | `design-doc-style` | Before you edit `docs/design-roadmap.md`. |
 | `mtg-corpus` | Before you reason about formats, legality, archetypes, or card terms. |
@@ -127,7 +100,7 @@ Each other target is free. `make meta-refresh` reads the deck list sources over 
 
 `make eval-check` compares every baseline of the eval harness with its newest run and names the flips (PR-15). It is free.
 
-`make verify` runs every check the verify workflow runs, on this machine, for nothing (D-578). Run it before every pull request. `make where` prints the branch, the tree, and the state of the branch's pull request. `make hooks` installs the pre-commit hook that refuses a commit on `main` (D-585).
+`make verify` runs every check the verify workflow runs, on this machine, for nothing (D-578). Run it before every pull request. `make pr-check` reads the pull request body and diff against the contract of D-747, and `make lifecycle-check` tests the skill wiring and the session hook. Both are free. `make where` prints the branch, the tree, and the state of the branch's pull request. `make hooks` installs the pre-commit hook that refuses a commit on `main` (D-585).
 
 `make feedback-harvest` writes every verdict since the last harvest to `docs/reference/feedback/`, as a dated document and a JSONL file (PR-28a). `SINCE=2026-09-01` sets the floor by hand, and `HARVEST_ARGS=-dry` counts and writes nothing. The watermark comes from the JSONL files, so the documents are the only record. It calls no model and costs nothing. Those files commit with the repository now (D-642).
 
