@@ -8,7 +8,11 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-16)
 
-**The branch `pr53-wincon-target` holds PR-53, and every gate of it passed** (F-138, D-726, D-739 to D-744). Deck gate run 28 reads PASS, and bracket gate run 8 reads the judge at 5 of 6. The code, the tests, and the documents are done.
+**Pull request #182 holds PR-53, and it waits for the review of `gitar-bot`** (F-138, D-726, D-739 to D-744). Deck gate run 28 reads PASS, and bracket gate run 8 reads the judge at 5 of 6. The code, the tests, and the documents are done.
+
+**The next step.** Read the review threads of #182, and not the status check. The first review found one defect. `6af2e8c` fixed it, and the session answered and resolved that thread. Answer each new finding, then tell the owner the pull request is ready to merge (D-637). The owner accepted run 28 for the review fix, so no paid run is due (D-744).
+
+CAUTION: `main` moved ahead of the branch by one commit, `6f1579a` "Update LICENSE". It touches no file of PR-53, so the branch needs no rebase unless GitHub reports a conflict.
 
 - **The count.** `profile.FinisherSet` reads the nine parent finisher tags of M-17 with no child tag, and the child tag `blood-artist-ability`. `profile.FinisherIDs` adds the evasive creatures of power 5 or more. The snapshot holds 1,857 such cards.
 - **The role.** A Commander shortlist gives the role wincon to the best finishers, up to the target of the bracket, and it pins each one (D-741). An owned mode promotes the owned finishers first (D-742).
