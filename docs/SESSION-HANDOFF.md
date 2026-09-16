@@ -168,12 +168,12 @@ CAUTION: the `decktome` gcloud configuration named the Wallabee account and proj
 4. Load the skills. Load `ste-writing` before you write any `.md`. Load `design-doc-style` before you edit the roadmap. Load `mtg-corpus` before you reason about a format, a legality, or a card term.
 5. Run `make verify`. It runs every check the verify workflow runs, on this machine, for nothing. Put Node 22.23.2 on the PATH first. The pull request runs the same jobs on Actions (D-639).
 6. Do "Next steps, in order" below. Ask questions as they come up. Record each owner answer in `docs/decisions.md`, and delete the row from `docs/owner-questions.md`.
-7. Open the pull request, then wait for the review of `gitar-bot` and answer it (D-637). A finding with merit takes a change, a commit, a push, and a reply. A finding with no merit takes a reply that says why, and you resolve it. Tell the owner when the pull request is ready to merge. Gitar is the only review this repo asks for. A pull request of documents alone waits for the review too (D-679).
+7. Open the pull request. Load the `gitar-review` skill, and follow it after each push (D-637, D-745). Gitar is the only review this repo asks for. A pull request of documents alone waits for the review too (D-679).
 8. Before you end, update this file. Move the oldest session to the archive when the count passes ten.
 
 A second Mac: `docs/setup-second-mac.md` holds what to carry, what to install, and how to prove the machine.
 
-Eighteen things a fresh session gets wrong without this file.
+Sixteen things a fresh session gets wrong without this file.
 
 - A test card index with no Oracle text and no tag matches no theme. The theme row of D-725 then asks, and the build never starts. Give each fixture card its real text.
 - A singular creature-type word keeps the generic rule, and its plural reads the type row (D-731). So "zombie" and "zombies" read two different lists, and F-144 records why.
@@ -187,9 +187,7 @@ Eighteen things a fresh session gets wrong without this file.
 - The judge is noisy: two runs of identical code move up to nine bad questions (D-230). One run proves nothing on its own.
 - The sweep's estimate of a step is the cost of its last run file. The deck gate estimate read $2.54 from run 14, and run 16 cost $3.79 with the plan judge and 12 repair turns. A cap set from the estimate stops the sweep before its last step.
 - Many local fits and verify runs fill the disk. On 2026-09-11 `make verify` failed at link time with 258 MiB free, when the Go and Docker build caches held about 50 GB. Run `df -h /System/Volumes/Data` before a long run, and ask the owner before you clear a cache.
-- Gitar sometimes deletes its summary comment and posts a new one with a new id. Find its newest summary by author, and read the review threads. A green Gitar check does not prove that no finding is open.
-- Gitar can post that it paused automatic reviews, because the trial's processing ran out for the period. On #150 to #155 the note came beside a full review each time, and no trigger ran. When the note comes with no review, comment `Gitar review` on the pull request. Answer the manual review as usual (D-685).
-- The owner can merge a pull request before its Gitar finding gets an answer (#154). The pre-commit hook then refuses a commit on that branch. Carry the fix to a new branch from `main`, and reply on the old thread with the new pull request.
+- A Gitar review can be stale: a paused Gitar keeps the review of an older commit, and the comment names no commit. The `gitar-review` skill proves that a review is current, and it holds every Gitar trap (D-745).
 - A background shell command starts in the directory the session left. On 2026-09-12 a `make` target ran in `go/` and found no rule, so head every command with an absolute `cd`.
 - A live check of a web change reads the stored session and the deployed chunk, and not the screen alone. The service worker served the old shell for one load after a deploy (F-122). The protobuf-es code holds each field name in base64, so search a chunk for a property name such as `noDecline`.
 - `Pool.Names` sorts the pool by the alphabet, and the shortlist groups its cards by role. Neither order ranks a card. `Pool.Score` holds the shortlist score (D-702).
