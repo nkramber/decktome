@@ -36,6 +36,7 @@ Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
    - Wait for a current Gitar review before you call the pull request ready. Fix each finding on the same pull request, in the same session (D-746).
 11. **Never hesitate to ask or to push back.** Ask a question the moment you have one. When the owner's two statements conflict, say so and quote both. When a request rests on a wrong premise, say so with the evidence. The owner sees this as the key to good LLM-user interaction. Silence is the mistake, not the question.
 12. **One pull request, one clean session.** A session works on one pull request, and the pull request carries all its documents and its hand-off. No pull request exists to record an earlier merge. Load `.claude/skills/one-pr-one-session/SKILL.md` for all work on a pull request (D-746 to D-748).
+13. **Keep command output small** (D-749). Every line of output stays in the context of every later call. Count or list the matches first, with `grep -c` or `grep -l`. Then read a bounded range, with `sed -n`, `head`, or the offset and limit of the Read tool. Read only the section that you need. Do not print a whole document. Show the output of a failed test, build, or gate in full, because the error is the evidence.
 
 ## Reference material
 
@@ -74,50 +75,8 @@ Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
 
 ## Commands that cost money
 
-`make questions-gate` calls the real providers. One run of the 109 conversations (78 gate and 31 probe since D-730) costs $0.18 to $0.19 and takes about 20 minutes, measured on runs 33 to 35 (2026-09-04). Ask the owner before every run, and write to a new `GATE_OUT` file: a rerun must never overwrite a scored document (D-65).
+Twelve targets and two loop scripts spend money: `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `scripts/autotune.sh`, and `scripts/feedback-loop.sh`. Ask the owner before every run. A rerun writes to a new `*_OUT` file, and a guard refuses a document that holds a result (D-65).
 
-`make questions-eval` scores a gate run with the eval role. One run costs $0.09 to $0.10 (runs 33 to 35) and takes about 13 minutes. `make eval-calibrate` measures the eval model against `claude-opus-5` (D-428). It cost $0.25 to $0.30 on Sonnet 5, and Opus 5 costs about 1.7 times that.
+`docs/reference/paid-targets.md` holds the cost, the flags, and the guards of each paid target, and every free target (D-749). Read it before you run or change a target.
 
-`make autotune` is free. It prints the loop instructions and starts nothing. `scripts/autotune.sh` is the paid loop, and it refuses to start without `AUTOTUNE_ALLOW_UNATTENDED=1`. One iteration costs about $0.25 and takes 33 to 35 minutes, so a $3 budget buys about 12 iterations. Read `docs/reference/autotune-readme.md` and `docs/reference/autotune-design.md` first.
-
-Five more targets spend money, and each has an overwrite guard and an env guard. `make deck-gate` builds the PR-8 gate document. Run 11 cost $1.46 for 24 prompts, and runs 12 to 14 cost $2.24 to $2.64 under the profile's repair passes. `make chat-probe` drives the real `Chat` RPC to a deck. `make generate-probe` builds one deck with the real generate role.
-
-`make summary-judge` judges every deck summary of a gate document (F-26). Each probe costs a few cents. Ask the owner before every run.
-
-`make bracket-gate` builds three commanders at each bracket, 15 decks, and asks the judge role for the bracket of each (PR-14A). It has the same two guards, `BRACKET_GATE=1` and a verdict check on `BRACKET_GATE_OUT`. Run 1 cost $2.08 for the builds and $0.26 for the judge lane, and the second judge lane of 2026-09-05 cost $0.28 (D-540). `BRACKET_GATE_ARGS="-only 7,8,9"` runs the bracket 3 prompts alone, `-rejudge <document>` judges the decks of a document for about $0.26, and `-dry` is free.
-
-`make revise-gate` builds three base decks and runs nine revisions over them, twelve turns with the answered questions (PR-12B, D-448). It has the same two guards. Run 7 cost $0.74 for eleven turns, run 8 cost $1.23, and runs 4 to 6 cost $0.54 to $0.81.
-
-`DECK_GATE_ARGS` passes flags to `make deck-gate`. `DECK_GATE_ARGS="-only 19,20,21,22,23,24"` runs the six set prompts of PR-17B alone, for about $0.35. `DECK_GATE_ARGS="-only 25"` runs the precon exclusion prompt of PR-24 alone, for about $0.13. `GATE_ARGS` passes flags to `make questions-gate`, and `GATE_ARGS="-only 109"` runs the group set probe of D-525 alone. Runs 36 and 37 cost about $0.001 each and took about 10 seconds. A partial run reads its item bars alone and never stands as the gate (D-526).
-
-`make quality-judge` asks the judge role for the tier of every graded deck of a deck gate document (PR-14B). It costs a few cents a deck, and it has the guard `QUALITY_JUDGE=1` and a verdict check on `QUALITY_JUDGE_OUT`. Ask the owner before every run.
-
-`make test-smoke` runs the live LLM smoke test and reads the keys from `.env`. It spends a few cents. The paid targets are these eleven plus the script: questions-gate, questions-eval, eval-calibrate, deck-gate, bracket-gate, revise-gate, chat-probe, generate-probe, summary-judge, quality-judge, and test-smoke. `go run ./cmd/eval sweep -cap <USD>` drives five of them in the order of the eval list under a cap, and it needs `EVAL_SWEEP=1` (PR-15). `-dry` prints the plan for nothing, and the estimate of a step reads its last run file. Since PR-15 the deck gate spends one more judge call a deck, and run 16 cost $3.79 for 25 prompts.
-
-Each other target is free. `make meta-refresh` reads the deck list sources over the network, about 40 minutes on the first run, and calls no model. `make quality-gate` fits the quality model over the local meta store and writes the PR-14B gate document. It also reports the three numbers of D-648: the fitted model grades the decks `QUALITY_GATE_DECKS` names, against the judge's tiers in `QUALITY_GATE_JUDGED`.
-
-`make ste-check` checks every hand-written `.md` file against the STE rules, and `make lint` runs it. `make m5-sheet` builds the scoring sheet, and `make m5-report` reads it. `make themes-check` checks the theme slugs and the commander ranking.
-
-`make eval-check` compares every baseline of the eval harness with its newest run and names the flips (PR-15). It is free.
-
-`make verify` runs every check the verify workflow runs, on this machine, for nothing (D-578). Run it before every pull request. `make pr-check` reads the pull request body and diff against the contract of D-747, and `make lifecycle-check` tests the skill wiring and the session hook. Both are free. `make where` prints the branch, the tree, and the state of the branch's pull request. `make hooks` installs the pre-commit hook that refuses a commit on `main` (D-585).
-
-`make feedback-harvest` writes every verdict since the last harvest to `docs/reference/feedback/`, as a dated document and a JSONL file (PR-28a). `SINCE=2026-09-01` sets the floor by hand, and `HARVEST_ARGS=-dry` counts and writes nothing. The watermark comes from the JSONL files, so the documents are the only record. It calls no model and costs nothing. Those files commit with the repository now (D-642).
-
-`make feedback-triage-dry` routes every verdict of the newest harvest into a class (PR-28b). It calls no model and costs nothing. `make feedback-triage TRIAGE_OUT=<document>` asks the judge for the verdicts the reason keys can not place, at a few cents each. `TRIAGE_ARGS=-apply` writes each case into the gate file that owns it. Ask the owner before every live run.
-
-`make feedback-loop` prints the commands of the fix cycle and starts nothing (PR-28c). `make feedback-loop-dry` plans a cycle for nothing. `scripts/feedback-loop.sh` is the paid cycle, and it refuses to start without `FEEDBACK_LOOP_ALLOW=1` and `AUTOTUNE_FIXER_CMD`. One cycle stops at $2 of gate runs (D-559). It edits code, commits, pushes, opens a pull request, and answers the review, with nobody watching. Ask the owner before every run.
-
-`make users-backfill` seeds the user record of D-638 from what each user already holds, and `BACKFILL_ARGS=-dry` counts and writes nothing. It never lowers a count. It calls no model and costs nothing.
-
-`make read-session SESSION=<id>` reads one chat session of the deployed project, to debug it (D-596). `make feedback-list` reads the newest verdicts of every user over one collection group query, and `VERDICT=up` and `LIMIT=` change what it reads. All three print or write what a reader wrote, and none of them writes an email. `use_decktome` puts the shell on `decktome-prod`. No decktome tool reads `PROJECT_ID`: a shell that works on more than one project exports it for another one.
-
-`make smoke` runs the Playwright smoke flow of PR-23 over the emulators, the trimmed snapshot, and the fake provider (D-553). It calls no model, and it needs the Chromium build of Playwright once.
-
-`make deck-gate-dry` builds every deck gate shortlist over the trimmed snapshot of the repo and calls no provider (D-521). `make deck-gate-trim` rewrites that snapshot from the local store, and the fixture must stay under 10 MB. Both are free.
-
-`make allow EMAIL=... PROJECT_ID=...` invites one email to the deployed app, and `make disallow` takes one off (D-420). Both write one Firestore document of the deployed project with the caller's own credentials, and neither calls a model.
-
-`make store-check` runs the session store against the local Firestore emulator. `make gcs-check` runs the live fake-GCS store test against a server seeded from the trimmed snapshot, and the CI step runs the same script (D-658). `make candidates-review` writes the PR-6 gate document from a local snapshot. `cd go && go run ./cmd/tune-check` compares an eval summary with its baseline.
-
-`docs/reference/pr7-m5-scoring.md` is the owner's working copy. No target writes to it. A new sheet needs a new name and points at the latest gate document, for example `M5_OUT=docs/reference/pr7-m5-scoring-run18.md M5_RUNS=../docs/reference/pr7-question-gate-run18.md make m5-sheet`.
+`make verify` runs every check the verify workflow runs, on this machine, for nothing (D-578). Run it before every pull request. `make lint` also runs `make ste-check`, `make lifecycle-check`, and `make context-budget`. `make pr-check` reads the pull request body and diff against the contract of D-747. `make where` prints the branch, the tree, and the state of the branch's pull request. `make hooks` installs the pre-commit hook that refuses a commit on `main` (D-585).
