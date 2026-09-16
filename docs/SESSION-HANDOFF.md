@@ -8,9 +8,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-16)
 
-**Pull request #PRNUM holds the one-pr-one-session policy, and it waits for the owner's merge** (F-154, D-746 to D-748, guardrail 16). A session works on one pull request now. The pull request carries its code, tests, decisions, documents, review answers, and this hand-off. No pull request exists to record an earlier merge or deploy.
+**Pull request #184 holds the one-pr-one-session policy, and it waits for the owner's merge** (F-154, D-746 to D-748, guardrail 16). A session works on one pull request now. The pull request carries its code, tests, decisions, documents, review answers, and this hand-off. No pull request exists to record an earlier merge or deploy.
 
-**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #PRNUM with `gh pr view PRNUM`. Then do next step 1. This session is bound to #PRNUM and does no other pull request.
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #184 with `gh pr view 184`. Then do next step 1. This session is bound to #184 and does no other pull request.
 
 **#182 merged PR-53 on 2026-09-16**, as `372d912` on `main`. Git and GitHub hold that merge, and Cloud Build holds its deploy (D-747). This session read no deploy result, so no line here states one. The notes of PR-53 below still hold.
 
@@ -58,7 +58,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **#181 merged PR-52, and Cloud Build deployed it.** `main` is `6ff0244`, and `deploy-api` succeeded on 2026-09-16. Revision `mtg-api-00051-sc6` serves the merge, and `/readyz` answered ok with a card snapshot of 2026-09-15 21:01 UTC. No web build ran, because #181 changed no file under `web/**`.
 
-**The checkout.** `main` is `372d912`, which is pull request #182, or a later merge. The branch `one-pr-one-session` holds #PRNUM. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
+**The checkout.** `main` is `372d912`, which is pull request #182, or a later merge. The branch `one-pr-one-session` holds #184. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
 
 **#179 merged PR-54** (F-141 to F-145, D-728 to D-732). A theme word finds its row through an alias or a word form, and two new rows cover superfriends and land destruction. When no word of a theme matches a card, the theme row asks for the theme before the build. The replay of the Gríma request reads 14 of the 14 owned mill cards on the shortlist, against 1. The dry deck gate gave the same output before and after the change. `docs/reference/pr54-theme-words-2026-09-14.md` holds every count.
 
@@ -192,7 +192,7 @@ CAUTION: the `decktome` gcloud configuration named the Wallabee account and proj
 
 **What waits on the owner.**
 
-- The merge of #PRNUM, after the review of `gitar-bot`.
+- The merge of #184, after the review of `gitar-bot`.
 - The next item of the roadmap (next step 1).
 - A deployed session with a theme that matches no card, such as "anime" (next step 2).
 - A look at the first commander question after a load of the app, in a session that names no commander (next step 3).
