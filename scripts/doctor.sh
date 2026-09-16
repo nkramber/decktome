@@ -62,7 +62,7 @@ check "firebase" firebase "firebase --version"                          "$want_f
 check "java"     java     "java -version 2>&1 | head -1 | sed 's/.*\"\\(.*\\)\".*/\\1/'" "17." "brew install openjdk@17 (docs/setup.md step 6)"
 optional "docker" docker  "docker --version | awk '{print \$3}' | tr -d ," ""         "brew install --cask docker (docs/setup.md step 7, D-10). Only make dev-docker needs it."
 optional "gcloud" gcloud  "gcloud --version | head -1 | awk '{print \$4}'" ""         "brew install --cask google-cloud-sdk. Only a cloud deploy needs it."
-optional "python3" python3 "python3 --version | awk '{print \$2}'"      ""           "brew install python. docs/tools/ste-check.py and the README import example use it."
+optional "python3" python3 "python3 --version | awk '{print \$2}'"      ""           "brew install python. docs/tools/ste-check.py, docs/tools/pr_check.py, the session hook, and the README import example use it."
 optional "shellcheck" shellcheck "shellcheck --version | sed -n 's/^version: //p'" "" "brew install shellcheck. CI lints scripts/*.sh with it."
 
 if [ -x .bin/buf ]; then

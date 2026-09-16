@@ -8,11 +8,11 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-16)
 
-**Pull request #182 holds PR-53, and it waits for the review of `gitar-bot`** (F-138, D-726, D-739 to D-744). Deck gate run 28 reads PASS, and bracket gate run 8 reads the judge at 5 of 6. The code, the tests, and the documents are done.
+**Pull request #184 holds the one-pr-one-session policy, and it waits for the owner's merge** (F-154, D-746 to D-748, guardrail 16). A session works on one pull request now. The pull request carries its code, tests, decisions, documents, review answers, and this hand-off. No pull request exists to record an earlier merge or deploy.
 
-**The next step.** Read the review threads of #182, and not the status check. The first review found one defect. `6af2e8c` fixed it, and the session answered and resolved that thread. Answer each new finding, then tell the owner the pull request is ready to merge (D-637). The owner accepted run 28 for the review fix, so no paid run is due (D-744).
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #184 with `gh pr view 184`. Then do next step 1. This session is bound to #184 and does no other pull request.
 
-CAUTION: `main` moved ahead of the branch by one commit, `6f1579a` "Update LICENSE". It touches no file of PR-53, so the branch needs no rebase unless GitHub reports a conflict.
+**#182 merged PR-53 on 2026-09-16**, as `372d912` on `main`. Git and GitHub hold that merge, and Cloud Build holds its deploy (D-747). This session read no deploy result, so no line here states one. The notes of PR-53 below still hold.
 
 - **The count.** `profile.FinisherSet` reads the nine parent finisher tags of M-17 with no child tag, and the child tag `blood-artist-ability`. `profile.FinisherIDs` adds the evasive creatures of power 5 or more. The snapshot holds 1,857 such cards.
 - **The role.** A Commander shortlist gives the role wincon to the best finishers, up to the target of the bracket, and it pins each one (D-741). An owned mode promotes the owned finishers first (D-742).
@@ -58,7 +58,7 @@ CAUTION: `main` moved ahead of the branch by one commit, `6f1579a` "Update LICEN
 
 **#181 merged PR-52, and Cloud Build deployed it.** `main` is `6ff0244`, and `deploy-api` succeeded on 2026-09-16. Revision `mtg-api-00051-sc6` serves the merge, and `/readyz` answered ok with a card snapshot of 2026-09-15 21:01 UTC. No web build ran, because #181 changed no file under `web/**`.
 
-**The checkout.** `main` is `6ff0244`, which is pull request #181, or a later merge. The branch `pr53-wincon-target` holds PR-53, and no push carries it yet. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
+**The checkout.** `main` is `372d912`, which is pull request #182, or a later merge. The branch `one-pr-one-session` holds #184. Run `make where` before you touch anything. Never commit on `main` (D-583). Answer the review of `gitar-bot` before you ask for a merge, and a pull request of documents alone waits for it too (D-637, D-679).
 
 **#179 merged PR-54** (F-141 to F-145, D-728 to D-732). A theme word finds its row through an alias or a word form, and two new rows cover superfriends and land destruction. When no word of a theme matches a card, the theme row asks for the theme before the build. The replay of the Gríma request reads 14 of the 14 owned mill cards on the shortlist, against 1. The dry deck gate gave the same output before and after the change. `docs/reference/pr54-theme-words-2026-09-14.md` holds every count.
 
@@ -192,9 +192,10 @@ CAUTION: the `decktome` gcloud configuration named the Wallabee account and proj
 
 **What waits on the owner.**
 
-- The merge of this documents pull request, after the review of `gitar-bot`.
-- A deployed session with a theme that matches no card, such as "anime" (next step 1).
-- A look at the first commander question after a load of the app, in a session that names no commander (next step 2).
+- The merge of #184, after the review of `gitar-bot`.
+- The next item of the roadmap (next step 1).
+- A deployed session with a theme that matches no card, such as "anime" (next step 2).
+- A look at the first commander question after a load of the app, in a session that names no commander (next step 3).
 - OQ-67, the Stage B channels.
 - OQ-77, the blocking function of Identity Platform.
 - OQ-80, a proxy and the pool.
@@ -204,18 +205,20 @@ CAUTION: the `decktome` gcloud configuration named the Wallabee account and proj
 
 ## How to resume
 
-1. Run `make where`. It prints the branch, the tree, and the state of the branch's pull request.
-2. Run `ps aux | grep autotune` before any write. The loop resets the tree when it rejects an iteration.
-3. Make a branch from `main`. Never commit on `main`, and never push to it (D-583). The owner merges (D-585). Run `make hooks` one time in a fresh checkout.
-4. Load the skills. Load `ste-writing` before you write any `.md`. Load `design-doc-style` before you edit the roadmap. Load `mtg-corpus` before you reason about a format, a legality, or a card term.
-5. Run `make verify`. It runs every check the verify workflow runs, on this machine, for nothing. Put Node 22.23.2 on the PATH first. The pull request runs the same jobs on Actions (D-639).
-6. Do "Next steps, in order" below. Ask questions as they come up. Record each owner answer in `docs/decisions.md`, and delete the row from `docs/owner-questions.md`.
-7. Open the pull request. Load the `gitar-review` skill, and follow it after each push (D-637, D-745). Gitar is the only review this repo asks for. A pull request of documents alone waits for the review too (D-679).
-8. Before you end, update this file. Move the oldest session to the archive when the count passes ten.
+1. Load the `one-pr-one-session` skill, and do its start gate. A session works on one pull request (D-746).
+2. Run `make where`. It prints the branch, the tree, and the state of the branch's pull request.
+3. Run `ps aux | grep autotune` before any write. The loop resets the tree when it rejects an iteration.
+4. Make a branch from `main`. Never commit on `main`, and never push to it (D-583). The owner merges (D-585). Run `make hooks` one time in a fresh checkout.
+5. Load the skills. Load `ste-writing` before you write any `.md`. Load `design-doc-style` before you edit the roadmap. Load `mtg-corpus` before you reason about a format, a legality, or a card term.
+6. Run `make verify`. It runs every check the verify workflow runs, on this machine, for nothing. Put Node 22.23.2 on the PATH first. The pull request runs the same jobs on Actions (D-639).
+7. Do "Next steps, in order" below. Ask questions as they come up. Record each owner answer in `docs/decisions.md`, and delete the row from `docs/owner-questions.md`.
+8. Open the pull request with the sections of `.github/pull_request_template.md`, and run `make pr-check`. Load the `gitar-review` skill, and follow it after each push (D-637, D-745). Gitar is the only review this repo asks for. A pull request of documents alone waits for the review too (D-679).
+9. Update this file inside the pull request, before you call it ready (D-747). Move the oldest session to the archive when the count passes ten.
+10. When the pull request is ready, end the session. The next pull request starts in a new clean session.
 
 A second Mac: `docs/setup-second-mac.md` holds what to carry, what to install, and how to prove the machine.
 
-Sixteen things a fresh session gets wrong without this file.
+Seventeen things a fresh session gets wrong without this file.
 
 - A test card index with no Oracle text and no tag matches no theme. The theme row of D-725 then asks, and the build never starts. Give each fixture card its real text.
 - A singular creature-type word keeps the generic rule, and its plural reads the type row (D-731). So "zombie" and "zombies" read two different lists, and F-144 records why.
@@ -232,6 +235,7 @@ Sixteen things a fresh session gets wrong without this file.
 - A Gitar review can be stale: a paused Gitar keeps the review of an older commit, and the comment names no commit. The `gitar-review` skill proves that a review is current, and it holds every Gitar trap (D-745).
 - A background shell command starts in the directory the session left. On 2026-09-12 a `make` target ran in `go/` and found no rule, so head every command with an absolute `cd`.
 - A live check of a web change reads the stored session and the deployed chunk, and not the screen alone. The service worker served the old shell for one load after a deploy (F-122). The protobuf-es code holds each field name in base64, so search a chunk for a property name such as `noDecline`.
+- The hook `.claude/hooks/session_bind.py` binds a session to the first branch that it creates, pushes, or opens a pull request for. A command on a second branch exits with "Blocked". Start a new clean session. The owner alone removes a binding under `.git/decktome-session-bind/`.
 - `Pool.Names` sorts the pool by the alphabet, and the shortlist groups its cards by role. Neither order ranks a card. `Pool.Score` holds the shortlist score (D-702).
 
 ## Facts that expire
@@ -258,8 +262,8 @@ Sixteen things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **The owner merges PR-52, and then the session builds PR-53** (D-723, D-726). The branch `pr52-land-rank` holds PR-52, and deck gate run 23 and bracket gate run 7 measure it. PR-53 adds the finisher target of D-726, and it reads the counts of `docs/reference/m17-finishers-lands-2026-09-14.md`. The old step 1 reads on, because its notes serve PR-53 too.
-2. **Build PR-53** (D-720, D-723, D-726). #179 merged PR-54. First read one deployed session whose theme matches no card, such as "anime". The theme row must ask before the build. The owner builds it, and this session reads it with `scripts/read-session.sh`. PR-52 ranks lands by quality, and PR-53 adds the finisher target of D-726. `.local/pr54/` holds the replay test and the shortlist diff test of PR-54. Copy a test into its package for a run, and delete it before a commit. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git. A replay after PR-54 also reads the conditions of F-140 again (D-727). The power pass after the build still waits (D-704), and F-137 stays a record (D-718).
+1. **Ask the owner for the next item, in a new clean session** (D-746). #182 merged PR-53, and the sequence of the roadmap ends at step 42. OQ-83 to OQ-86 hold the other suggestions of the review of the Gríma deck. The power pass after the build still waits (D-704). F-137 stays a record (D-718), and a replay after PR-54 reads the conditions of F-140 again (D-727).
+2. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git.
 3. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide". Session `z1hshyY6Npig1FN2NuV7` named its commander, so it showed no such row.
 4. **Watch the first self-reload on the next web deploy** (D-692). The live release of #158 passed its check on 2026-09-13 at 18:54 UTC. An installed app that loaded that release must reload by itself when the next release activates. Read it on the next merge that changes `web/**`.
 5. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
@@ -279,6 +283,16 @@ The CI step "fake gcs tests" ran no test until 2026-09-10 (D-658). Its filter ma
 A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
 
 ## The ten most recent sessions
+
+### 2026-09-16c: one pull request, one clean session
+
+**The owner asked for hard lifecycle boundaries, to cut the context cost of each session.** A session binds to one pull request. The pull request carries its documents and its hand-off, and no pull request records an earlier merge (D-746, D-747).
+
+**The first-parent log of `main` held 12 pull requests of documents alone that only record an earlier state** (F-154). Each one read a merge, a deploy, or the state before a context reset. D-42 made a ✅ mean "merged on `main`", so each item merged with 🔧, and a later session wrote the ✅.
+
+**The owner answered three questions** (D-748). A project hook binds each `session_id` to one branch. `CLAUDE.md` drops its merge narrative. A loop pull request meets the same contract. The session fixes each Gitar finding on the same pull request (D-746). It never calls the pull request ready before a current review lands.
+
+**The session built the skill, the hook, the check, and the template.** `make pr-check` and the `pr-contract` workflow read the body and the diff. `make lifecycle-check` tests the checker and the hook, and it runs in `make lint` and the verify workflow. The session ran no paid target.
 
 ### 2026-09-16b: #181 merged PR-52, and PR-53 built to a context reset
 
@@ -368,38 +382,6 @@ Merged as #179.
 
 **Deployed session `z1hshyY6Npig1FN2NuV7` read "Grima" right, and it proves PR-45b.** The which-card row offered both Gríma cards. The deck at bracket 5 misses all three power floors, and its summary names the cards that close each gap. The read found F-136 and F-137. The owner chose PR-51 with question gate run 50 (D-717), and a record of F-137 (D-718).
 
-### 2026-09-14g: #170 merged, quality gate run 22, and the app check of PR-45b
-
-**The owner merged #170.** It changed documents alone, so no build ran. Gitar approved it beside the note that it paused automatic reviews, and it named no finding.
-
-**Quality gate run 22 read PASS on the local refresh of 2026-09-14, for no cost.** Built decks graded bad rose from 8 to 9 of 25, and the judge agreement stayed at 9. The EDHREC count of 4 lists looked low, and `MergeLists` shows that it counts new keys alone.
-
-**The owner chose the app check of PR-45b.** The other choices were a whole deck gate run, a plan of the power pass, and a queued question. The owner builds a bracket 4 or 5 Commander deck, and the session reads the stored session and the deck.
-
-### 2026-09-14f: #169 merged, and the documents read the state before a context wipe
-
-**The owner merged #169 and asked for every document to read the current state** before a context wipe. The session changed no code, and it ran no paid target.
-
-**Cloud Build deployed #169.** `deploy-api` finished at 17:50 UTC, and revision `mtg-api-00047-76c` serves `api:7d997f1`. Both jobs run `worker:7d997f1`, and `/readyz` answered ok. No web build ran, because #169 changed no file under `web/**`.
-
-**The refresh.** The roadmap, the resume section, the next steps, and `CLAUDE.md` read the merge. The record of 2026-09-13 moved to the archive.
-
-### 2026-09-14e: PR-45b, the pin, and six paid runs
-
-Merged as #169.
-
-**The owner merged #168 and asked what comes next.** The session built PR-45b on the branch `pr45b-power-floors`. The owner answered the gap note (D-709), the pin (D-710), and the default of the rate (D-711). The owner also answered two defects on the way (D-712, D-713). The local meta refresh finished and stored `20260914T154223Z`.
-
-**The sweep found F-131, and the owner chose a pin.** The role caps blocked the power cards, so only weight 1 met every floor, and 138 on-theme cards left the lists. A pin lets a power card at the keep rate skip the cap of its role. At weight 0.1 and a keep rate of 0.3, all 18 floors hold.
-
-**Bracket gate run 4 found F-132.** The first pin took places under the total, and 52 fixing lands left the lists. The Korvold and Najeela decks of run 4 held mana bases of basic lands. A pinned card now adds to the total, and the sweep counts the lands.
-
-**Deck gate run 21 found F-133, and the owner chose the fix inside PR-45b.** The mana pass step of a cheaper card read no job, so it added Mox Amber with the job removal. The step now offers a card of the job it replaces.
-
-**Bracket gate run 6 on the final code reads the judge at 4 of 6.** A second judge lane reads the same decks at 6 of 6. The owner closed F-134 as judge noise, over a plan of a bracket 4 ceiling (D-714, D-715). The counts of power cards do not separate the reads of 4 and 5. The paid runs cost $2.04.
-
-**The review of `gitar-bot` found one defect, and `2ed2b06` fixed it.** The land cap read no pin. A new test fails on the old cap, which drops a pinned Game Changer land.
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-14d, and 42 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume section of 2026-09-08, the records of 2026-08-31 to 2026-09-14g, and 42 more sections, word for word. Read it for the detail behind a decision.

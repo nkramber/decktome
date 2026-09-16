@@ -57,7 +57,7 @@ The pinned versions live in `go/go.mod`, `.nvmrc`, `web/package.json`, and `scri
 11. Run `make buf`. It builds `.bin/buf` from `go/go.mod`, and `make proto` uses it.
 12. Run `make doctor`. Every line must read `ok` or `warn`.
 
-Two tools are optional. `brew install --cask docker-desktop` serves `make dev-docker` only, and `brew install --cask gcloud-cli` serves the cloud deploy of PR-22 only. `make dev` needs neither. Python 3 ships with macOS, and the STE checker uses it.
+Two tools are optional. `brew install --cask docker-desktop` serves `make dev-docker` only, and `brew install --cask gcloud-cli` serves the cloud deploy of PR-22 only. `make dev` needs neither. Python 3 ships with macOS. The STE checker, `make pr-check`, and the session hook of D-746 use it.
 
 ## 4. Put the data in place
 

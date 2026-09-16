@@ -11,6 +11,38 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## 2026-09-14g: #170 merged, quality gate run 22, and the app check of PR-45b
+
+**The owner merged #170.** It changed documents alone, so no build ran. Gitar approved it beside the note that it paused automatic reviews, and it named no finding.
+
+**Quality gate run 22 read PASS on the local refresh of 2026-09-14, for no cost.** Built decks graded bad rose from 8 to 9 of 25, and the judge agreement stayed at 9. The EDHREC count of 4 lists looked low, and `MergeLists` shows that it counts new keys alone.
+
+**The owner chose the app check of PR-45b.** The other choices were a whole deck gate run, a plan of the power pass, and a queued question. The owner builds a bracket 4 or 5 Commander deck, and the session reads the stored session and the deck.
+
+## 2026-09-14f: #169 merged, and the documents read the state before a context wipe
+
+**The owner merged #169 and asked for every document to read the current state** before a context wipe. The session changed no code, and it ran no paid target.
+
+**Cloud Build deployed #169.** `deploy-api` finished at 17:50 UTC, and revision `mtg-api-00047-76c` serves `api:7d997f1`. Both jobs run `worker:7d997f1`, and `/readyz` answered ok. No web build ran, because #169 changed no file under `web/**`.
+
+**The refresh.** The roadmap, the resume section, the next steps, and `CLAUDE.md` read the merge. The record of 2026-09-13 moved to the archive.
+
+## 2026-09-14e: PR-45b, the pin, and six paid runs
+
+Merged as #169.
+
+**The owner merged #168 and asked what comes next.** The session built PR-45b on the branch `pr45b-power-floors`. The owner answered the gap note (D-709), the pin (D-710), and the default of the rate (D-711). The owner also answered two defects on the way (D-712, D-713). The local meta refresh finished and stored `20260914T154223Z`.
+
+**The sweep found F-131, and the owner chose a pin.** The role caps blocked the power cards, so only weight 1 met every floor, and 138 on-theme cards left the lists. A pin lets a power card at the keep rate skip the cap of its role. At weight 0.1 and a keep rate of 0.3, all 18 floors hold.
+
+**Bracket gate run 4 found F-132.** The first pin took places under the total, and 52 fixing lands left the lists. The Korvold and Najeela decks of run 4 held mana bases of basic lands. A pinned card now adds to the total, and the sweep counts the lands.
+
+**Deck gate run 21 found F-133, and the owner chose the fix inside PR-45b.** The mana pass step of a cheaper card read no job, so it added Mox Amber with the job removal. The step now offers a card of the job it replaces.
+
+**Bracket gate run 6 on the final code reads the judge at 4 of 6.** A second judge lane reads the same decks at 6 of 6. The owner closed F-134 as judge noise, over a plan of a bracket 4 ceiling (D-714, D-715). The counts of power cards do not separate the reads of 4 and 5. The paid runs cost $2.04.
+
+**The review of `gitar-bot` found one defect, and `2ed2b06` fixed it.** The land cap read no pin. A new test fails on the old cap, which drops a pinned Game Changer land.
+
 ## 2026-09-14d: #167 merged, and the documents read the state before a context wipe
 
 **The owner merged #167 and asked whether the context can go.** The hand-off still named PR-49 as an open pull request, so this pull request records the merge. It changes no code, and it runs no paid target.

@@ -83,7 +83,7 @@ jobs:
             echo "emulator=$(has '^(go/internal/(sessions|decks|cards|questions)/|go/gen/|proto/|go/go\.(mod|sum)$|\.github/workflows/)')"
             # The emulators image copies firebase.json and the firestore files, and asserts on them.
             echo "docker=$(has '^(docker/|compose\.yaml$|\.dockerignore$|firebase\.json$|firestore\.(rules|indexes\.json)$|go/go\.(mod|sum)$|\.nvmrc$|\.github/workflows/)')"
-            echo "shell=$(has '^(scripts/|docs/|.*\.md$|Makefile$|\.github/workflows/)')"
+            echo "shell=$(has '^(scripts/|docs/|\.claude/|.*\.md$|Makefile$|\.github/)')"
             # Tier 0 of the eval harness reads the committed run files and the code that compares them (PR-15).
             echo "eval=$(has '^(docs/reference/eval/|go/internal/evalrun/|go/cmd/eval/|Makefile$|\.github/workflows/)')"
           } | tee -a "$GITHUB_OUTPUT"
@@ -260,6 +260,10 @@ jobs:
       # script checks the prose. Tables and code blocks are exempt.
       - name: ste check
         run: make ste-check
+      # The skill frontmatter, the one-pr-one-session wiring, and the tests
+      # of the contract checker and the session hook (D-748).
+      - name: lifecycle check
+        run: make lifecycle-check
 
   # Tier 0 of the eval harness (PR-15). It compares every baseline of
   # docs/reference/eval with the newest committed run of its suite and

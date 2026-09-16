@@ -11,7 +11,7 @@ GO := go -C go
 BUF := .bin/buf
 PNPM := pnpm --dir web
 
-.PHONY: feedback-loop feedback-loop-dry feedback-triage feedback-triage-dry smoke allow disallow manapass-check deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate bracket-calibrate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check gcs-check themes-check ste-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
+.PHONY: feedback-loop feedback-loop-dry feedback-triage feedback-triage-dry smoke allow disallow manapass-check deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate bracket-calibrate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check gcs-check themes-check ste-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks pr-check lifecycle-check verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-14s %s\n", $$1, $$2}'
@@ -46,7 +46,7 @@ proto-breaking: $(BUF) ## Fail on a breaking proto change against the main branc
 	@echo "==> buf breaking against $(PROTO_BASE)"
 	@$(BUF) breaking --against '.git#branch=$(PROTO_BASE)'
 
-lint: lint-go lint-web ste-check ## Lint Go, TypeScript, and the docs
+lint: lint-go lint-web ste-check lifecycle-check ## Lint Go, TypeScript, the docs, and the pull request contract tools
 
 lint-go: ## Lint Go (vet + golangci-lint, built from source with the local toolchain)
 	@echo "==> go vet"
@@ -81,6 +81,22 @@ where: ## Print the branch, the tree, main, and the pull request state (D-585)
 hooks: ## Install the git hooks that refuse a commit main must not take (D-585)
 	@git config core.hooksPath .githooks
 	@echo "hooks installed from .githooks"
+
+# The one-pr-one-session contract (D-746 to D-748). pr-check reads the
+# pull request of this branch through gh. For a draft body before the pull
+# request exists, pass PR_BODY_FILE and PR_TITLE. The pr-contract workflow
+# runs the same check on each push and each body edit.
+pr-check: ## Check this branch's pull request body and diff against the one-pr-one-session contract, free (D-747)
+	@git fetch --quiet origin main 2>/dev/null || true
+	@if [ -n "$(PR_BODY_FILE)" ]; then python3 docs/tools/pr_check.py pr --body-file "$(PR_BODY_FILE)" --title "$(PR_TITLE)"; \
+	else python3 docs/tools/pr_check.py pr --gh; fi
+
+# The skill frontmatter, the wiring of the skill, the hook, and the
+# template, and the unit tests of the checker and the hook (D-748).
+lifecycle-check: ## Check every skill and the one-pr-one-session wiring, and test the checker and the hook, free (D-748)
+	@echo "==> lifecycle-check"
+	@python3 docs/tools/pr_check.py skills
+	@python3 -m unittest discover -q -s docs/tools -p 'test_*.py'
 
 verify: ## Run every check the verify workflow runs, on this machine, for nothing (D-578)
 	@echo "==> proto"

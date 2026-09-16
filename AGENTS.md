@@ -35,7 +35,7 @@ make meta-refresh  # read the deck list sources into the meta store, network, fr
 make themes-check  # theme slugs and the commander ranking against the snapshot
 ```
 
-CI runs on pull requests only (D-286). A changes job reads the diff, and each job runs only when its inputs changed. A weekly schedule runs govulncheck alone (D-305).
+CI runs every job of `verify` on each pull request (D-639). The `pr-contract` workflow reads the body and the diff of each pull request against D-747. A weekly schedule runs govulncheck alone (D-305).
 
 ## Rules
 
@@ -46,5 +46,6 @@ CI runs on pull requests only (D-286). A changes job reads the diff, and each jo
 - Log ids, never PII or raw prompts.
 - Table-driven tests. `ctx` is the first parameter. `errors.Is` / `errors.As`. Accept interfaces, return structs.
 - One concern per pull request. Squash merge into `main`.
+- One pull request per clean session. The pull request carries its own documents and hand-off, and no pull request records an earlier merge. Load `.claude/skills/one-pr-one-session/SKILL.md` for all work on a pull request (D-746 to D-748).
 - No AI-attribution text in any PR, branch name, commit message, or comment.
 - Write docs and skills in ASD-STE100. Run `make ste-check` before you commit a `.md` file. `make lint` and CI run it too (D-264).

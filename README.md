@@ -187,7 +187,7 @@ The question gate cost is from 2026-08-26, and the deck gate and bracket gate co
 
 It needs the Chromium build of Playwright once: `pnpm --dir web/apps/web exec playwright install chromium`. Stop `make dev` first, because both stacks take the same ports. The workflow `smoke` runs the same flow on GitHub on a manual trigger, at about 5 minutes of Actions time a run.
 
-CI runs on pull requests only, and a new push to a branch cancels the run in progress. A first job reads the diff against the base branch. Each job runs only when its inputs changed, so a docs change runs the STE check and nothing else. A merge to `main` runs nothing, because the pull request verified the same tree. A weekly schedule runs govulncheck alone, at about 2 minutes a week (D-305). The owner hit 90 percent of the monthly minutes in six days on 2026-08-28, and each run cost 25 billed minutes before this rule (D-286).
+CI runs every job of `verify` on each pull request, and a new push to a branch cancels the run in progress (D-639). The `pr-contract` workflow reads the body and the diff of each pull request on each push and each body edit (D-747). A merge to `main` runs no check, because the pull request verified the same tree. A weekly schedule runs govulncheck alone (D-305).
 
 Rules for contributors and agents: `AGENTS.md`. Machine setup: `docs/setup.md`. A second Mac: `docs/setup-second-mac.md`. Design and roadmap: `docs/design-roadmap.md`. Decisions: `docs/decisions.md`.
 

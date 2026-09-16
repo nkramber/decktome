@@ -436,6 +436,24 @@ PR_BODY="$STATE_DIR/pr-body.md"
   sed -n '/^## The measure run/,$p' "$REPORT"
   echo
   echo "The whole evidence is \`$EVIDENCE\`."
+  echo
+  # The contract of D-747. The cycle writes the rows it can prove. The
+  # other rows read Pending, so pr-contract stays red until a clean author
+  # session completes them (D-748).
+  echo "## Session"
+  echo
+  echo "- Role: author"
+  echo "- Branch: \`$BRANCH\`"
+  echo "- Base: \`$(git merge-base "${BASE_REF:-origin/main}" HEAD)\`"
+  echo
+  echo "## Documentation impact"
+  echo
+  echo "| Category | Entry |"
+  echo "|---|---|"
+  for row in hand-off decisions roadmap questions "root guidance" "skills and hooks" operations; do
+    echo "| $row | Pending: a clean author session completes this row (D-748) |"
+  done
+  echo "| reference documents | Changed: \`$EVIDENCE\` holds the evidence that each case failed before the fix and passes after it |"
 } > "$PR_BODY"
 gh pr create --title "The feedback fix cycle of $STAMP (PR-28c)" --body-file "$PR_BODY" >>"$LOG" 2>&1 \
   || die "could not open the pull request. Read $LOG"
