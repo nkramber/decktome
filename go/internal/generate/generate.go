@@ -383,7 +383,18 @@ const CodeRepairKept = "repair_kept_earlier"
 // worseRepair says whether a repair answered a worse deck than the one
 // it was to fix: the earlier pass had no miss and no block finding, and
 // the repair has one or the other.
+//
+// An empty answer is worse than any deck, and the guard above reads the
+// earlier pass alone. So a deck with a block of its own took the empty
+// answer in its place, and the reader got no card. Deck gate run 24 read
+// 0 cards on prompt 5, where the pool held one finisher against a floor
+// of two and the repair gave up (F-152, D-743). A repair that trims an
+// oversized deck still stands: the test reads an empty answer, and not a
+// smaller one.
 func worseRepair(prev, next pass) bool {
+	if len(next.deck.GetCards()) == 0 && len(prev.deck.GetCards()) > 0 {
+		return true
+	}
 	prevClean := len(prev.misses) == 0 && prev.deck.GetValidation().GetPassed()
 	nextClean := len(next.misses) == 0 && next.deck.GetValidation().GetPassed()
 	return prevClean && !nextClean

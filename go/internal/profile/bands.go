@@ -191,12 +191,13 @@ var powerMarks = map[string]string{
 	KeyTutor:       "tutor",
 	KeyFastMana:    "fast mana",
 	KeyGameChanger: "Game Changer",
+	KeyFinisher:    "finisher",
 }
 
 // promptKeys are the features the prompt names, in order.
 var promptKeys = []string{
 	KeyAvgManaValue, KeyTappedLand, KeyColorlessLand, KeyTutor, KeyFastMana, KeyGameChanger,
-	KeyColorSources, KeyManaTurnFour, KeyHandsTwoToFourLands, KeyCommanderTurnOverMV,
+	KeyFinisher, KeyColorSources, KeyManaTurnFour, KeyHandsTwoToFourLands, KeyCommanderTurnOverMV,
 }
 
 var promptWords = map[string]string{
@@ -206,6 +207,7 @@ var promptWords = map[string]string{
 	KeyTutor:         "tutors, cards that search the library for a card",
 	KeyFastMana:      "fast mana, nonland mana producers of mana value one or less",
 	KeyGameChanger:   "Game Changers, cards on the official Game Changers list",
+	KeyFinisher:      "finishers, cards that can win the game, and evasive creatures of power 5 or more",
 }
 
 // derivedLine writes the four features a count can not state. Each one

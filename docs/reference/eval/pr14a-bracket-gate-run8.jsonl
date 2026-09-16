@@ -1,0 +1,56 @@
+{"suite":"bracket","run_id":"pr14a-bracket-gate-run8","date":"2026-09-16","commit":"6ff0244","roles":{"generate":{"provider":"openai","model":"gpt-5.6-terra","effort":"medium"},"judge":{"provider":"anthropic","model":"claude-opus-5","effort":"medium"},"repair":{"provider":"openai","model":"gpt-5.6-terra","effort":"medium"}},"snapshot":"2026-09-04","prompts":{"generate":15},"calls":12,"cost_usd":0.53180375,"seconds":488.887987541,"verdict":"FAIL","only":"10,11,12,13,14,15","lower":["blocks","off_band","content_violations","judge_error","repaired"]}
+{"item":"10","metric":"built","value":1,"kind":"gate"}
+{"item":"10","metric":"blocks","value":0,"kind":"gate"}
+{"item":"10","metric":"profile","value":1,"kind":"gate"}
+{"item":"10","metric":"off_band","value":0,"kind":"gate"}
+{"item":"10","metric":"content_violations","value":0,"kind":"gate"}
+{"item":"10","metric":"content_checked","value":1,"kind":"gate"}
+{"item":"10","metric":"judge_agrees","value":1,"kind":"info","detail":"built for 4, judged 4"}
+{"item":"10","metric":"repaired","value":0,"kind":"info"}
+{"item":"10","metric":"pool","value":320,"kind":"info"}
+{"item":"11","metric":"built","value":1,"kind":"gate"}
+{"item":"11","metric":"blocks","value":0,"kind":"gate"}
+{"item":"11","metric":"profile","value":1,"kind":"gate"}
+{"item":"11","metric":"off_band","value":0,"kind":"gate"}
+{"item":"11","metric":"content_violations","value":0,"kind":"gate"}
+{"item":"11","metric":"content_checked","value":1,"kind":"gate"}
+{"item":"11","metric":"judge_agrees","value":1,"kind":"info","detail":"built for 4, judged 4"}
+{"item":"11","metric":"repaired","value":0,"kind":"info"}
+{"item":"11","metric":"pool","value":328,"kind":"info"}
+{"item":"12","metric":"built","value":1,"kind":"gate"}
+{"item":"12","metric":"blocks","value":0,"kind":"gate"}
+{"item":"12","metric":"profile","value":1,"kind":"gate"}
+{"item":"12","metric":"off_band","value":0,"kind":"gate"}
+{"item":"12","metric":"content_violations","value":0,"kind":"gate"}
+{"item":"12","metric":"content_checked","value":1,"kind":"gate"}
+{"item":"12","metric":"judge_agrees","value":0,"kind":"info","detail":"built for 4, judged 5"}
+{"item":"12","metric":"repaired","value":0,"kind":"info"}
+{"item":"12","metric":"pool","value":212,"kind":"info"}
+{"item":"13","metric":"built","value":1,"kind":"gate"}
+{"item":"13","metric":"blocks","value":0,"kind":"gate"}
+{"item":"13","metric":"profile","value":1,"kind":"gate"}
+{"item":"13","metric":"off_band","value":2,"kind":"gate","detail":"avg_mana_value, hands_two_to_four_lands"}
+{"item":"13","metric":"content_violations","value":0,"kind":"gate"}
+{"item":"13","metric":"content_checked","value":1,"kind":"gate"}
+{"item":"13","metric":"judge_agrees","value":1,"kind":"info","detail":"built for 5, judged 5"}
+{"item":"13","metric":"repaired","value":0,"kind":"info"}
+{"item":"13","metric":"pool","value":323,"kind":"info"}
+{"item":"14","metric":"built","value":1,"kind":"gate"}
+{"item":"14","metric":"blocks","value":0,"kind":"gate"}
+{"item":"14","metric":"profile","value":1,"kind":"gate"}
+{"item":"14","metric":"off_band","value":0,"kind":"gate"}
+{"item":"14","metric":"content_violations","value":0,"kind":"gate"}
+{"item":"14","metric":"content_checked","value":1,"kind":"gate"}
+{"item":"14","metric":"judge_agrees","value":1,"kind":"info","detail":"built for 5, judged 5"}
+{"item":"14","metric":"repaired","value":0,"kind":"info"}
+{"item":"14","metric":"pool","value":239,"kind":"info"}
+{"item":"15","metric":"built","value":1,"kind":"gate"}
+{"item":"15","metric":"blocks","value":0,"kind":"gate"}
+{"item":"15","metric":"profile","value":1,"kind":"gate"}
+{"item":"15","metric":"off_band","value":1,"kind":"gate","detail":"color_sources"}
+{"item":"15","metric":"content_violations","value":0,"kind":"gate"}
+{"item":"15","metric":"content_checked","value":1,"kind":"gate"}
+{"item":"15","metric":"judge_agrees","value":1,"kind":"info","detail":"built for 5, judged 5"}
+{"item":"15","metric":"repaired","value":0,"kind":"info"}
+{"item":"15","metric":"pool","value":339,"kind":"info"}
+{"item":"suite","metric":"judge_agreement","value":83,"kind":"gate","detail":"5 of 6, the bar is 80"}

@@ -1,0 +1,19 @@
+{"suite":"decks","run_id":"pr8-deck-gate-run27","date":"2026-09-16","commit":"6ff0244","roles":{"generate":{"provider":"openai","model":"gpt-5.6-terra","effort":"medium"},"judge":{"provider":"anthropic","model":"claude-opus-5","effort":"medium"},"repair":{"provider":"openai","model":"gpt-5.6-terra","effort":"medium"}},"snapshot":"2026-09-04","prompts":{"generate":15,"plan_rubric":2},"versions":{"quality_model":"20260914T154223Z"},"calls":3,"cost_usd":0.1018145,"seconds":84.762374875,"verdict":"PASS","only":"5","lower":["blocks","invented_names","false_rules","judge_error","excluded_in_deck","warnings","repaired","buy_cost","deck_cost","case_assertions"]}
+{"item":"5","metric":"built","value":1,"kind":"gate"}
+{"item":"5","metric":"blocks","value":0,"kind":"gate"}
+{"item":"5","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"5","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"5","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"5","metric":"repaired","value":0,"kind":"info"}
+{"item":"5","metric":"cards","value":99,"kind":"info"}
+{"item":"5","metric":"pool","value":169,"kind":"info"}
+{"item":"5","metric":"warnings","value":1,"kind":"info"}
+{"item":"5","metric":"buy_cost","value":0,"kind":"info"}
+{"item":"5","metric":"deck_cost","value":169.60000000000008,"kind":"info"}
+{"item":"5","metric":"plan_plan_coherent","value":0.5,"kind":"info","detail":"partly: The core of white value creatures, protection equipment, and removal hangs together around Gilraen's protect-and-blink ability, but a sizable block of cards (Kataki, Grim Poppet, PuPu UFO, Blitzball, Stiltzkin, The Walls of Ba Sing Se) are unconnected filler, and the three symmetrical wraths fight the creature-board plan the summary names."}
+{"item":"5","metric":"plan_theme_fit","value":0.5,"kind":"info","detail":"partly: It is a mono-white library-constrained Commander deck at roughly bracket 3 as asked, and Gilraen is a reasonable blink commander, but the blink theme is represented by only about six or seven cards with few ETB payoffs, so the deck plays as generic white value more than blink."}
+{"item":"5","metric":"plan_useful_as_built","value":1,"kind":"info","detail":"yes: 36 lands plus ten ramp pieces, a dozen draw sources, and nine spot-removal spells give a smooth, castable curve, and while only Angel of Serenity is tagged a finisher, the equipment-and-Angels board with Gilraen can realistically close a game."}
+{"item":"5","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: It fairly admits the mono-white mana, narrow finisher count, and library-first constraint, but calling the list a \"blink shell\" oversells a deck with only a handful of actual flicker effects and payoffs."}
+{"item":"5","metric":"plan_score","value":0.625,"kind":"info"}
+{"item":"5","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"5","metric":"grade","value":0.3282,"kind":"info","detail":"baseline"}

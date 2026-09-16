@@ -73,6 +73,66 @@ func powerScanOf(idx *cards.Index, req Request) powerScan {
 	return powerScan{on: true, weight: rate.Weight, rate: rate, of: profile.PowerOf(idx.Tags())}
 }
 
+// FinisherTarget is the finisher count a Commander bracket asks for
+// (D-726). Brackets 1 to 4 read the median of the precons since 2023 and
+// of the EDHREC average decks. Bracket 5 reads the median of the TopDeck
+// top cut, where one combo finisher closes the game.
+func FinisherTarget(bracket int32) int {
+	if bracket >= 5 {
+		return 1
+	}
+	return 3
+}
+
+// promoteFinishers gives the role wincon to the best finishers of a
+// Commander shortlist, up to the target of the bracket, and it pins each
+// one (D-726, D-741). Every other finisher keeps the role it earned, so
+// the wincon cap of 15 drops no card. The list holds the cards it held
+// before, and the target count of them now reads wincon.
+//
+// The promotion stops at the target on purpose. A pinned card skips the
+// cap of its role and adds to the total (F-132, D-712), and the snapshot
+// of 2026-09-04 holds 1,857 finishers.
+//
+// An owned mode keeps the owned cards and drops the rest after this
+// step, so the owned finishers take the role first (D-742). Without that
+// order a promotion lands on a card the mode drops, and the shortlist
+// reads under the target of its bracket.
+func promoteFinishers(cs []Candidate, req Request, mode mtgv1.PoolRule, target int, finishers map[string]bool) {
+	if req.Format != mtgv1.FormatId_FORMAT_ID_COMMANDER || target <= 0 || len(finishers) == 0 {
+		return
+	}
+	n := 0
+	if mode != mtgv1.PoolRule_POOL_RULE_ANY_CARD {
+		n = promoteUpTo(cs, target, n, finishers, func(c Candidate) bool { return c.Owned > 0 })
+	}
+	// Owned-only drops every unowned card, so it takes no second pass.
+	if mode == mtgv1.PoolRule_POOL_RULE_OWNED_ONLY {
+		return
+	}
+	promoteUpTo(cs, target, n, finishers, func(Candidate) bool { return true })
+}
+
+// promoteUpTo gives the role wincon to each finisher that want reads,
+// from the best down, until the list holds target of them. It answers
+// the new count.
+func promoteUpTo(cs []Candidate, target, n int, finishers map[string]bool, want func(Candidate) bool) int {
+	for i := range cs {
+		if n >= target {
+			return n
+		}
+		if cs[i].Role == mtgv1.CardRole_CARD_ROLE_WINCON && cs[i].Pinned {
+			continue
+		}
+		if finishers[cs[i].Card.GetOracleId()] && want(cs[i]) {
+			cs[i].Role = mtgv1.CardRole_CARD_ROLE_WINCON
+			cs[i].Pinned = true
+			n++
+		}
+	}
+	return n
+}
+
 // pinPower pins each power card whose rate reaches the keep rate, when the
 // request pins (D-710). A pinned card skips the cap of its role.
 func pinPower(cs []Candidate, pw powerScan) {

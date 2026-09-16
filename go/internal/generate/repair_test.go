@@ -9,6 +9,7 @@ import (
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 	"github.com/nkramber/decktome/go/internal/llm"
+	"github.com/nkramber/decktome/go/internal/profile"
 	"github.com/nkramber/decktome/go/internal/rules"
 )
 
@@ -148,5 +149,59 @@ func TestWorseRepairReadsTheBlocks(t *testing.T) {
 	}
 	if worseRepair(blocked, blocked) || worseRepair(missed, clean) || worseRepair(clean, clean) {
 		t.Error("a repair of a failed pass, or a clean repair, is never worse")
+	}
+}
+
+// TestAnEmptyRepairNeverReplacesADeck is F-152 and D-743. The guard read
+// the earlier pass alone, so a deck with a block of its own took an empty
+// answer in its place. Deck gate run 24 read 0 cards on prompt 5: the
+// pool held one finisher against a floor of two, and the repair gave up.
+func TestAnEmptyRepairNeverReplacesADeck(t *testing.T) {
+	deck := func(n int, passed bool) pass {
+		cards := make([]*mtgv1.DeckCard, n)
+		for i := range cards {
+			cards[i] = &mtgv1.DeckCard{Count: 1}
+		}
+		return pass{deck: &mtgv1.Deck{Cards: cards, Validation: &mtgv1.ValidationResult{Passed: passed}}}
+	}
+	blocked99, empty := deck(99, false), deck(0, false)
+	if !worseRepair(blocked99, empty) {
+		t.Error("an empty answer must never replace a deck that holds cards")
+	}
+	// A repair that trims an oversized deck still stands.
+	if worseRepair(deck(106, false), deck(99, false)) {
+		t.Error("a smaller deck is no empty answer, and the trim must stand")
+	}
+	// Two empty passes leave the guard to the block test.
+	if worseRepair(empty, empty) {
+		t.Error("an empty pass repaired to an empty pass is no regression")
+	}
+}
+
+// TestTheFinisherShortfallBuysNoRepair is F-152 and D-743. The finding
+// carried the off-band code, so every repair input held it. A pool with
+// too few finishers can not close that gap, and the model then answers
+// with no deck. The gap note of the summary is what the reader gets.
+func TestTheFinisherShortfallBuysNoRepair(t *testing.T) {
+	v := &mtgv1.ValidationResult{Findings: []*mtgv1.Finding{
+		{Code: profile.CodeFinisherShort, Severity: mtgv1.Severity_SEVERITY_WARN, Message: "the finisher count is 1"},
+		{Code: profile.CodeOffBand, Severity: mtgv1.Severity_SEVERITY_WARN, Message: "the land count is 30"},
+		{Code: "copy_limit", Severity: mtgv1.Severity_SEVERITY_BLOCK, Message: "two copies"},
+	}}
+	got := repairable(v)
+	for _, f := range got {
+		if f.GetCode() == profile.CodeFinisherShort {
+			t.Error("the repair input holds the finisher shortfall")
+		}
+	}
+	if len(got) != 2 {
+		t.Errorf("the repair reads %d findings, want the block and the off-band row", len(got))
+	}
+	// The shortfall alone buys no repair turn at all.
+	only := &mtgv1.ValidationResult{Findings: []*mtgv1.Finding{
+		{Code: profile.CodeFinisherShort, Severity: mtgv1.Severity_SEVERITY_WARN, Message: "the finisher count is 1"},
+	}}
+	if n := len(repairable(only)); n != 0 {
+		t.Errorf("the finisher shortfall bought %d repair findings, want 0", n)
 	}
 }

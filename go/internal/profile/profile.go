@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"math"
 	"sort"
+	"strconv"
 	"strings"
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
@@ -42,6 +43,7 @@ const (
 	KeyColorlessLand       = "colorless_land"
 	KeyColorSources        = "color_sources"
 	KeyGameChanger         = "game_changer"
+	KeyFinisher            = "finisher"
 	KeyManaTurnFour        = "mana_turn_four"
 	KeyHandsTwoToFourLands = "hands_two_to_four_lands"
 	KeyCommanderTurnOverMV = "commander_turn_over_mv"
@@ -63,6 +65,13 @@ const (
 	// CodeContentUnchecked reports that the content check did not run,
 	// so the deck carries no content finding. It is information.
 	CodeContentUnchecked = "content_unchecked"
+	// CodeFinisherShort reports a deck under the finisher floor of its
+	// bracket. It carries its own code, because it buys no repair turn
+	// and it never reaches the repair input: a pool that holds too few
+	// finishers can not close the gap, and the model then answers with
+	// no deck at all (F-152, D-743). The gap note is what the reader
+	// gets.
+	CodeFinisherShort = "finisher_short"
 )
 
 // Classifier answers the content flags of a deck. The Commander
@@ -173,6 +182,7 @@ func (p *Profiler) measure(deck *mtgv1.Deck, src rules.CardSource) (*mtgv1.DeckP
 	f := &features{}
 	f.counts(entries, commanders)
 	f.tutors(entries, tags)
+	f.finishers(entries, tags)
 	f.sources(entries, colors, deckSize(format))
 	f.goldfish(entries, commanders, commander, p.hands, p.seed)
 
@@ -201,8 +211,12 @@ func (p *Profiler) measure(deck *mtgv1.Deck, src rules.CardSource) (*mtgv1.DeckP
 			row.Low, row.High, row.HasHigh = 0, float64(br.MaxGameChangers), true
 			row.OffBand = m.value > float64(br.MaxGameChangers)
 		} else if row.OffBand {
+			code := CodeOffBand
+			if key == KeyFinisher {
+				code = CodeFinisherShort
+			}
 			findings = append(findings, &mtgv1.Finding{
-				Code: CodeOffBand, Severity: mtgv1.Severity_SEVERITY_WARN,
+				Code: code, Severity: mtgv1.Severity_SEVERITY_WARN,
 				Message: offBandMessage(row, bracket, format, deck.GetPower()),
 			})
 		}
@@ -218,7 +232,7 @@ func (p *Profiler) measure(deck *mtgv1.Deck, src rules.CardSource) (*mtgv1.DeckP
 var featureOrder = []string{
 	KeyLand, KeyTappedLand, KeyColorlessLand, KeyColorSources, KeyAvgManaValue,
 	KeyRamp, KeyDraw, KeyRemoval, KeyWipe, KeyInteraction,
-	KeyTutor, KeyFastMana, KeyGameChanger,
+	KeyTutor, KeyFastMana, KeyGameChanger, KeyFinisher,
 	KeyManaTurnFour, KeyHandsTwoToFourLands, KeyCommanderTurnOverMV,
 }
 
@@ -323,6 +337,26 @@ func (f *features) tutors(entries []entry, tags *cards.TagIndex) {
 	f.set(KeyTutor, float64(n), names(found))
 }
 
+// finishers measures the finisher count when the snapshot has tags, as
+// M-17 counted it: the cards of the curated parent tags, and the evasive
+// creatures of power 5 or more (D-726). Without tags the feature is
+// absent, and the reader sees no row.
+func (f *features) finishers(entries []entry, tags *cards.TagIndex) {
+	if tags == nil {
+		return
+	}
+	set, evasive := FinisherSet(tags), evasionSet(tags)
+	n := 0
+	var found []string
+	for _, e := range entries {
+		if set[e.card.GetOracleId()] || isEvasiveFinisher(e.card, evasive) {
+			n += e.count
+			found = append(found, e.card.GetName())
+		}
+	}
+	f.set(KeyFinisher, float64(n), names(found))
+}
+
 // tutorSet is every Oracle id the tags read as a tutor: the tutor slug,
 // less the land searches.
 func tutorSet(tags *cards.TagIndex) map[string]bool {
@@ -359,15 +393,94 @@ func PowerCards(list []*mtgv1.Card, tags *cards.TagIndex) (tutors, fastMana, gam
 
 // PowerKeys are the features a high bracket holds a floor for, in the
 // order a reader names them (D-704).
-var PowerKeys = []string{KeyTutor, KeyFastMana, KeyGameChanger}
+var PowerKeys = []string{KeyTutor, KeyFastMana, KeyGameChanger, KeyFinisher}
+
+// finisherSlugs are the nine parent finisher tags of M-17 and the child
+// tag blood-artist-ability (D-726). The count reads each parent without
+// its children: the tree of mill-opponent holds Ragavan, Nimble Pilferer,
+// and 47 percent of the top-cut lists play it for no win.
+var finisherSlugs = []string{
+	"alternate-win-condition", "burn-player-each", "drain-life", "mill-opponent",
+	"poison-opponents", "extra-combat-phase", "gives-double-strike", "damage-multiplier",
+	"overrun", "blood-artist-ability",
+}
+
+// evasionSlug is the Tagger tree of evasion, and FinisherPower is the
+// power a creature needs to count as a finisher through evasion (M-17).
+const (
+	evasionSlug   = "evasion"
+	FinisherPower = 5
+)
+
+// FinisherSet is the curated finisher count of M-17, by Oracle id: the
+// cards of the parent tags alone (D-726).
+func FinisherSet(tags *cards.TagIndex) map[string]bool {
+	set := map[string]bool{}
+	for _, slug := range finisherSlugs {
+		for _, id := range tags.Direct(slug) {
+			set[id] = true
+		}
+	}
+	return set
+}
+
+// FinisherIDs is every card of a list that counts as a finisher: the
+// cards of the curated tags, and the evasive creatures of power 5 or more
+// (D-726). The shortlist gives each one the wincon role, so the role it
+// writes and the count the check reads hold the same cards.
+func FinisherIDs(all []*mtgv1.Card, tags *cards.TagIndex) map[string]bool {
+	if tags == nil {
+		return nil
+	}
+	set, evasive := FinisherSet(tags), evasionSet(tags)
+	for _, c := range all {
+		if isEvasiveFinisher(c, evasive) {
+			set[c.GetOracleId()] = true
+		}
+	}
+	return set
+}
+
+// evasionSet is every card of the evasion tree, children included.
+func evasionSet(tags *cards.TagIndex) map[string]bool {
+	set := map[string]bool{}
+	for _, id := range tags.Resolve(evasionSlug) {
+		set[id] = true
+	}
+	return set
+}
+
+// cardPower is the power of a card as a number, and -1 for a card with no
+// power or a power no number states, such as "*". A card with more than
+// one face reads its front face, as its types do (D-687).
+func cardPower(c *mtgv1.Card) int {
+	p := c.GetPower()
+	if p == "" && len(c.GetFaces()) > 0 {
+		p = c.GetFaces()[0].GetPower()
+	}
+	n, err := strconv.Atoi(p)
+	if err != nil {
+		return -1
+	}
+	return n
+}
+
+// isEvasiveFinisher reports a creature of power 5 or more under the
+// evasion tree. It closes a game on its own, and no finisher tag holds
+// it (M-17, D-726).
+func isEvasiveFinisher(c *mtgv1.Card, evasive map[string]bool) bool {
+	return isCreature(c) && evasive[c.GetOracleId()] && cardPower(c) >= FinisherPower
+}
 
 // PowerOf answers the power features a card counts toward, by the rules
 // of the profile (D-704). A nil tag index reads no tutor. The shortlist
 // marks each card by it, and the gap note reads it.
 func PowerOf(tags *cards.TagIndex) func(c *mtgv1.Card) []string {
-	var set map[string]bool
+	var set, finishers, evasive map[string]bool
 	if tags != nil {
 		set = tutorSet(tags)
+		finishers = FinisherSet(tags)
+		evasive = evasionSet(tags)
 	}
 	return func(c *mtgv1.Card) []string {
 		var keys []string
@@ -379,6 +492,11 @@ func PowerOf(tags *cards.TagIndex) func(c *mtgv1.Card) []string {
 		}
 		if c.GetGameChanger() {
 			keys = append(keys, KeyGameChanger)
+		}
+		// A finisher is a card of the curated tags, or an evasive creature
+		// of power 5 or more (D-726).
+		if finishers[c.GetOracleId()] || isEvasiveFinisher(c, evasive) {
+			keys = append(keys, KeyFinisher)
 		}
 		return keys
 	}
@@ -698,6 +816,12 @@ var speedWords = map[int]string{5: "no mana", 4: "four mana", 3: "six mana", 2: 
 // the feature, the value, and the band, in the words of the bracket.
 func offBandMessage(row *mtgv1.ProfileFeature, bracket int32, format mtgv1.FormatId, power *mtgv1.PowerLevel) string {
 	who := fmt.Sprintf("bracket %d", bracket)
+	// The bracket system counts Game Changers, mass land denial, extra
+	// turns, and combos, and it counts no finisher. So the finisher
+	// finding names the deck plan, as its gap note does (F-151, D-743).
+	if row.Key == KeyFinisher {
+		who = "this deck plan"
+	}
 	if format != mtgv1.FormatId_FORMAT_ID_COMMANDER {
 		who = "this power level"
 		if step := power.GetSixtyStep(); step != mtgv1.SixtyStep_SIXTY_STEP_UNSPECIFIED {
@@ -735,6 +859,7 @@ var featureWords = map[string]string{
 	KeyColorlessLand:       "the count of nonbasic lands that make only colorless mana",
 	KeyColorSources:        "the worst color's share of the sources it needs",
 	KeyGameChanger:         "the Game Changer count",
+	KeyFinisher:            "the finisher count",
 	KeyManaTurnFour:        "the mana available on turn four",
 	KeyHandsTwoToFourLands: "the share of opening hands with two to four lands",
 	KeyCommanderTurnOverMV: "the turns the commander comes down after its mana value",

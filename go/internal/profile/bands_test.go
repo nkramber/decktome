@@ -76,8 +76,13 @@ func TestBandLinesAndMidpoints(t *testing.T) {
 			t.Errorf("lines lack %q:\n%s", want, lines)
 		}
 	}
-	if strings.Contains(lines, "shortlist marks") {
-		t.Errorf("bracket 3 holds no power floor, and a line names a mark:\n%s", lines)
+	// Bracket 3 holds one power floor, the finishers of D-726, and no
+	// other line names a mark.
+	if !strings.Contains(lines, `finishers, cards that can win the game, and evasive creatures of power 5 or more: 2 or more, and the shortlist marks each one "finisher"`) {
+		t.Errorf("bracket 3 writes no finisher line:\n%s", lines)
+	}
+	if strings.Count(lines, "shortlist marks") != 1 {
+		t.Errorf("bracket 3 names a mark beside the finishers:\n%s", lines)
 	}
 	// Bracket 4 holds the power floors of D-704, and each line names the
 	// mark its cards carry on the shortlist.
