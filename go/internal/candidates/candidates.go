@@ -18,6 +18,7 @@ import (
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 	"github.com/nkramber/decktome/go/internal/cardname"
 	"github.com/nkramber/decktome/go/internal/cards"
+	"github.com/nkramber/decktome/go/internal/profile"
 	"github.com/nkramber/decktome/go/internal/rules"
 )
 
@@ -78,6 +79,10 @@ type Request struct {
 	WantPair bool
 	// Limits override the defaults. Zero fields keep the default.
 	Limits Limits
+	// BudgetUSD is the budget the reader named, and 0 with none. An
+	// unowned land that costs more ranks last in the land cap, because it
+	// can never fit the deck (D-736).
+	BudgetUSD float64
 }
 
 // Limits bounds the list.
@@ -141,6 +146,11 @@ type Candidate struct {
 	// colors outranks a fetch land that produces nothing. Zero for a
 	// nonland (D-450).
 	Fix int
+	// LandRank orders the mana half of the land cap, and the lower rank
+	// leads. A Commander land reads its class, then the deck colors it
+	// makes, then ownership (D-733, D-734). A land of another format reads
+	// the deck colors it makes alone (D-450). Zero for a nonland.
+	LandRank int
 	// Themed says the theme matched the card. The land cap fills its
 	// theme half with these alone (D-450).
 	Themed bool
@@ -385,7 +395,8 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 				stats.OnThemeOwned++
 			}
 		}
-		scored = append(scored, Candidate{Card: c, Role: role, Score: score, Pop: pop, Rate: rate, Fix: fixCount(c, colorSet), Themed: themeScore > 0, Owned: owned, Outside: outside, Signals: signals})
+		scored = append(scored, Candidate{Card: c, Role: role, Score: score, Pop: pop, Rate: rate, Fix: fixCount(c, colorSet),
+			LandRank: landRank(req, c, colorSet, owned), Themed: themeScore > 0, Owned: owned, Outside: outside, Signals: signals})
 	}
 	sortCandidates(scored)
 	// A pinned power card skips the cap of its role (F-131, D-710).
@@ -518,9 +529,11 @@ const manaShare = 0.5
 
 // capLands takes n lands from a bucket in score order: the mana half
 // first, then the theme lands in score order, then the mana order again
-// when the theme matched too few lands. The mana order ranks by the deck
-// colors a land produces, then by play, so a dual in the colors comes
-// before Command Tower's cousins and an off-color fetch land comes last.
+// when the theme matched too few lands. The mana order ranks by the land
+// rank, then by play. A Commander land ranks by its class, so a fetch
+// land comes before a tapped dual (D-733). A land of another format ranks
+// by the deck colors it produces, so a dual in the colors comes before
+// Command Tower's cousins and an off-color fetch land comes last (D-450).
 // The result keeps the bucket's order, so the theme lands still read
 // first.
 func capLands(cs []Candidate, n int) []Candidate {
@@ -528,14 +541,10 @@ func capLands(cs []Candidate, n int) []Candidate {
 		return cs
 	}
 	mana := int(math.Round(float64(n) * manaShare))
-	// A land that makes two or more of the deck colors is fixing, and
-	// play ranks the fixing. A count above two would put a Thriving land
-	// or Cavern of Souls, which Scryfall lists as every color, over a
-	// shock land in a three-color deck.
 	byMana := slices.Clone(cs)
 	sort.SliceStable(byMana, func(i, j int) bool {
-		if fi, fj := min(byMana[i].Fix, 2), min(byMana[j].Fix, 2); fi != fj {
-			return fi > fj
+		if ri, rj := byMana[i].LandRank, byMana[j].LandRank; ri != rj {
+			return ri < rj
 		}
 		return byMana[i].Pop > byMana[j].Pop
 	})
@@ -584,6 +593,42 @@ func fixCount(c *mtgv1.Card, colorSet map[mtgv1.Color]bool) int {
 	}
 	return n
 }
+
+// landRank is the order of the mana half of the land cap, and the lower
+// rank leads. A land that makes two or more deck colors is fixing, and a
+// count above two would put a Thriving land or Cavern of Souls, which
+// Scryfall lists as every color, over a shock land in a three-color deck.
+//
+// A Commander land reads its class first, at every bracket (D-733,
+// D-734). Inside a class the deck colors it makes lead, and then an owned
+// land. So a fetch land comes before a tapped dual, and Sunken Hollow
+// before Thriving Isle. A land of another format keeps the order of
+// D-450: the deck colors it makes, and then play.
+//
+// An unowned land that costs more than the whole budget ranks under every
+// class: the reader can never buy it (D-736).
+func landRank(req Request, c *mtgv1.Card, colorSet map[mtgv1.Color]bool, owned int32) int {
+	if !slices.Contains(c.GetCardTypes(), "Land") {
+		return 0
+	}
+	colors := 2 - min(fixCount(c, colorSet), 2)
+	if req.Format != mtgv1.FormatId_FORMAT_ID_COMMANDER {
+		return colors
+	}
+	class := profile.LandClassOf(c, colorSet)
+	if owned == 0 && req.BudgetUSD > 0 && c.GetPriceUsd() > req.BudgetUSD {
+		class = overBudgetClass
+	}
+	// Three places a class for the colors, and two a place for ownership.
+	rank := (int(class)*3 + colors) * 2
+	if owned == 0 {
+		rank++
+	}
+	return rank
+}
+
+// overBudgetClass ranks under every land class of the profile (D-736).
+const overBudgetClass = profile.LandOther + 1
 
 // topUpgrades picks the best unowned cards that beat the weakest owned
 // card of the same role, so an upgrade is a real improvement.

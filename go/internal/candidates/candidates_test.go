@@ -28,6 +28,7 @@ type tc struct {
 	id, name, typeLine, text string
 	identity                 []mtgv1.Color
 	keywords, subtypes       []string
+	produced                 []mtgv1.Color
 	mv                       float64
 	rank                     int32
 	tags                     []string
@@ -74,7 +75,7 @@ func fixture(t *testing.T, list []tc) *cards.Index {
 		}
 		protoCards = append(protoCards, &mtgv1.Card{
 			OracleId: c.id, Name: c.name, TypeLine: c.typeLine, OracleText: c.text,
-			ColorIdentity: c.identity, Keywords: c.keywords, Subtypes: c.subtypes,
+			ColorIdentity: c.identity, Keywords: c.keywords, Subtypes: c.subtypes, ProducedMana: c.produced,
 			Supertypes: super, CardTypes: card, ManaValue: c.mv, EdhrecRank: c.rank,
 			Legalities:     map[string]mtgv1.LegalityStatus{"commander": st, "standard": legal},
 			GameChanger:    c.gameChanger,
@@ -1127,7 +1128,8 @@ func TestCommanderPoolFillsAThinTheme(t *testing.T) {
 // the colors, the fixing, must still make the cap.
 func TestLandCapKeepsTheManaStaples(t *testing.T) {
 	land := func(name string, score, pop float64, fix int) Candidate {
-		return Candidate{Card: &mtgv1.Card{OracleId: name, Name: name}, Role: mtgv1.CardRole_CARD_ROLE_LAND, Score: score, Pop: pop, Fix: fix, Themed: score > 0.2}
+		return Candidate{Card: &mtgv1.Card{OracleId: name, Name: name}, Role: mtgv1.CardRole_CARD_ROLE_LAND, Score: score, Pop: pop, Fix: fix,
+			LandRank: 2 - min(fix, 2), Themed: score > 0.2}
 	}
 	var in []Candidate
 	// Twelve theme lands outscore every staple, and none is played much.
