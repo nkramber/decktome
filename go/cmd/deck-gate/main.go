@@ -482,6 +482,7 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 		SetCodes:           setCodes,
 		OutsideRoles:       outsideRoles,
 		ExcludeOracleIDs:   excludedIDs,
+		BudgetUSD:          p.Budget,
 	}
 	list, err := cb.Build(idx, req)
 	if err != nil {

@@ -26,12 +26,13 @@ type spec struct {
 	text     string
 	colors   []mtgv1.Color
 	changer  bool
+	subtypes []string
 }
 
 func card(s spec) *mtgv1.Card {
 	return &mtgv1.Card{
 		OracleId: "oid-" + strings.ToLower(strings.ReplaceAll(s.name, " ", "-")), Name: s.name,
-		ManaCost: s.cost, ManaValue: s.mv, CardTypes: s.types, Supertypes: s.supers,
+		ManaCost: s.cost, ManaValue: s.mv, CardTypes: s.types, Supertypes: s.supers, Subtypes: s.subtypes,
 		ProducedMana: s.produced, OracleText: s.text, Colors: s.colors, ColorIdentity: s.colors,
 		GameChanger: s.changer,
 	}

@@ -68,6 +68,9 @@ func (b *Builder) fixMana(req Request, deck *mtgv1.Deck) int {
 	// A deck inside its bands can still hold its basics against its
 	// colors, so the pass balances them after the bands (F-102, D-660).
 	kept += b.balanceBasics(req, deck, basics, score)
+	// At brackets 4 and 5 a basic land gives its place to a better land of
+	// the pool (PR-52, F-139, D-720, D-734).
+	kept += b.swapBasics(req, deck)
 	if kept > 0 {
 		// The owned flag reads the count of an oracle id across the whole
 		// list, so it is set again after the last step (D-37, F-79).
@@ -154,6 +157,10 @@ func (b *Builder) balanceBasics(req Request, deck *mtgv1.Deck, held []*mtgv1.Car
 type balanceOption struct {
 	step   manaStep
 	ratios []float64
+	// raw holds the ratios with no cap, in ascending order. When every
+	// color meets its need, the swap of PR-52 drops a basic land of the
+	// color with the most sources to spare.
+	raw []float64
 }
 
 // poolBasics is every basic land the pool offers, so a deck color the
@@ -253,13 +260,21 @@ func bandDistance(f *mtgv1.ProfileFeature) float64 {
 //
 // owned is the count the collection holds of the card the step adds.
 // Every entry of a deck carries it, and an entry that lost it read as a
-// card to buy (F-79).
+// card to buy (F-79). reason is the reason a new entry shows, and empty
+// means the reason of a band step.
 type manaStep struct {
-	add   *mtgv1.Card
-	drop  string
-	role  mtgv1.CardRole
-	owned int32
+	add    *mtgv1.Card
+	drop   string
+	role   mtgv1.CardRole
+	owned  int32
+	reason string
 }
+
+// bandReason and swapReason are the reasons an entry of the pass shows.
+const (
+	bandReason = "the mana pass added it to bring the mana base inside the power level"
+	swapReason = "the mana pass traded a basic land for this better land at the power level"
+)
 
 // apply writes the step into the deck.
 func (s manaStep) apply(deck *mtgv1.Deck) {
@@ -267,7 +282,11 @@ func (s manaStep) apply(deck *mtgv1.Deck) {
 		deck.Cards = dropOne(deck.GetCards(), s.drop)
 	}
 	if s.add != nil {
-		deck.Cards = addOne(deck.GetCards(), s.add, s.role, s.owned)
+		reason := s.reason
+		if reason == "" {
+			reason = bandReason
+		}
+		deck.Cards = addOne(deck.GetCards(), s.add, s.role, s.owned, reason)
 	}
 }
 
@@ -479,7 +498,10 @@ func (b *Builder) landsOf(deck *mtgv1.Deck, req Request) (tapped []string, untap
 		untapped = append(untapped, c)
 	}
 	// The pool is long, so the pass reads the untapped lands it ranks
-	// first. Every candidate costs one measurement of the whole deck.
+	// first. Every candidate costs one measurement of the whole deck. The
+	// pool lists its names by the alphabet, so the rank runs before the
+	// cut: the cut once read the first eight names (F-146).
+	rankLands(req, untapped, b.deckColorSet(deck))
 	if len(untapped) > maxLandCandidates {
 		untapped = untapped[:maxLandCandidates]
 	}
@@ -489,6 +511,213 @@ func (b *Builder) landsOf(deck *mtgv1.Deck, req Request) (tapped []string, untap
 // maxLandCandidates bounds the untapped lands one step measures. The
 // pool holds hundreds, and each candidate costs a measurement.
 const maxLandCandidates = 8
+
+// rankLands orders pool lands best first: the class for the deck colors
+// (D-733), then a land the reader owns, then the shortlist score. The
+// sort is stable over the names of the pool, so the name breaks a tie.
+func rankLands(req Request, lands []*mtgv1.Card, colors map[mtgv1.Color]bool) {
+	class := make(map[string]profile.LandClass, len(lands))
+	for _, c := range lands {
+		class[c.GetOracleId()] = profile.LandClassOf(c, colors)
+	}
+	sort.SliceStable(lands, func(i, j int) bool {
+		a, b := lands[i], lands[j]
+		if ca, cb := class[a.GetOracleId()], class[b.GetOracleId()]; ca != cb {
+			return ca < cb
+		}
+		if oa, ob := req.Pool.OwnedCount(a.GetOracleId()) > 0, req.Pool.OwnedCount(b.GetOracleId()) > 0; oa != ob {
+			return oa
+		}
+		sa, _ := req.Pool.Score(a.GetName())
+		sb, _ := req.Pool.Score(b.GetName())
+		return sa > sb
+	})
+}
+
+// deckColorSet is the set of deck colors the profile reads. With no deck
+// color it is nil, and every color counts.
+func (b *Builder) deckColorSet(deck *mtgv1.Deck) map[mtgv1.Color]bool {
+	return sourceColorSet(profile.ColorSources(deck, b.cards))
+}
+
+// sourceColorSet is the set of the colors of the source rows, and nil
+// with no row.
+func sourceColorSet(rows []profile.ColorSource) map[mtgv1.Color]bool {
+	if len(rows) == 0 {
+		return nil
+	}
+	out := make(map[mtgv1.Color]bool, len(rows))
+	for _, r := range rows {
+		out[r.Color] = true
+	}
+	return out
+}
+
+// maxSwapSteps bounds the swap of basic lands. The built decks at bracket
+// 5 played 13 to 26 basic lands, and a TopDeck list of two colors plays 2
+// at the median (M-17).
+const maxSwapSteps = 12
+
+// swapBasics trades a basic land for a better land of the pool at
+// Commander brackets 4 and 5 (PR-52, F-139, D-720, D-734). It returns the
+// count of swaps it kept.
+//
+// The land it adds is an untapped dual, a fetch land, or a land that
+// enters untapped on a condition, in the order of rankLands. A swap keeps
+// the band score, and no color falls under its need. It drops a basic
+// land the deck holds two or more of, so each color keeps a basic land
+// for a fetch land to find.
+func (b *Builder) swapBasics(req Request, deck *mtgv1.Deck) int {
+	if req.Format != mtgv1.FormatId_FORMAT_ID_COMMANDER || req.Power.GetBracket() < 4 || req.Pool == nil {
+		return 0
+	}
+	kept := 0
+	for range maxSwapSteps {
+		if !b.swapOne(req, deck) {
+			break
+		}
+		kept++
+	}
+	return kept
+}
+
+// swapOne makes the best swap the pool allows. It is false when no swap
+// keeps every guard.
+func (b *Builder) swapOne(req Request, deck *mtgv1.Deck) bool {
+	before := profile.ColorSources(deck, b.cards)
+	score := b.manaScore(deck)
+	cost := b.budgetCost(req, deck)
+	for _, add := range b.betterLands(req, deck, sourceColorSet(before)) {
+		var options []balanceOption
+		for _, drop := range b.basicsOf(deck) {
+			if copiesOf(deck, drop.GetOracleId()) < 2 {
+				continue
+			}
+			step := manaStep{add: add, drop: drop.GetOracleId(), role: mtgv1.CardRole_CARD_ROLE_LAND,
+				owned: req.Pool.OwnedCount(add.GetOracleId()), reason: swapReason}
+			undo := snapshot(deck)
+			step.apply(deck)
+			after := profile.ColorSources(deck, b.cards)
+			fits := noColorFalls(before, after) && b.inBudget(req, deck, cost) && b.basicsFeedTheirLands(deck)
+			restore(deck, undo)
+			if fits {
+				options = append(options, balanceOption{step: step, ratios: cappedRatios(after), raw: rawRatios(after)})
+			}
+		}
+		// The swap that leaves the colors best goes first, and the band
+		// score, which runs the simulation, reads one option at a time.
+		// When the capped ratios tie, the color with the most sources to
+		// spare gives up its basic land.
+		sort.SliceStable(options, func(i, j int) bool {
+			x, y := options[i], options[j]
+			if ratiosRise(x.ratios, y.ratios) || ratiosRise(y.ratios, x.ratios) {
+				return ratiosRise(x.ratios, y.ratios)
+			}
+			return ratiosRise(x.raw, y.raw)
+		})
+		for _, o := range options {
+			undo := snapshot(deck)
+			o.step.apply(deck)
+			if b.manaScore(deck) <= score {
+				return true
+			}
+			restore(deck, undo)
+		}
+	}
+	return false
+}
+
+// rawRatios lists each color's sources over its need, with no cap, in
+// ascending order, so the worst color reads first.
+func rawRatios(rows []profile.ColorSource) []float64 {
+	out := make([]float64, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, r.Ratio())
+	}
+	sort.Float64s(out)
+	return out
+}
+
+// betterLands lists the pool lands a swap may add, best first, and no
+// more than maxLandCandidates. Each one is a land the deck does not hold,
+// of the class LandUntappedOnCondition or better. Under owned-first a land
+// the reader does not own stays out, because the reader asked for their
+// own cards first.
+func (b *Builder) betterLands(req Request, deck *mtgv1.Deck, colors map[mtgv1.Color]bool) []*mtgv1.Card {
+	held := heldIDs(deck)
+	var out []*mtgv1.Card
+	for _, name := range req.Pool.Names() {
+		c, ok := req.Pool.Card(name)
+		if !ok || !profile.IsLand(c) || profile.IsBasic(c) || held[c.GetOracleId()] {
+			continue
+		}
+		if profile.LandClassOf(c, colors) > profile.LandUntappedOnCondition {
+			continue
+		}
+		if req.PoolRule == mtgv1.PoolRule_POOL_RULE_OWNED_FIRST && req.Pool.OwnedCount(c.GetOracleId()) == 0 {
+			continue
+		}
+		out = append(out, c)
+	}
+	rankLands(req, out, colors)
+	if len(out) > maxLandCandidates {
+		out = out[:maxLandCandidates]
+	}
+	return out
+}
+
+// noColorFalls says whether every color keeps its sources over its need,
+// capped at one, after a step. Both lists read the deck colors in color
+// order.
+func noColorFalls(before, after []profile.ColorSource) bool {
+	if len(before) != len(after) {
+		return false
+	}
+	for i := range before {
+		if math.Min(after[i].Ratio(), 1) < math.Min(before[i].Ratio(), 1)-1e-9 {
+			return false
+		}
+	}
+	return true
+}
+
+// budgetCost is the cost the budget reads: the cards to buy, or the whole
+// deck when the reader capped the whole deck (D-238).
+func (b *Builder) budgetCost(req Request, deck *mtgv1.Deck) float64 {
+	if req.BudgetWholeDeck {
+		return DeckCostWith(deck, b.cards)
+	}
+	return BuyCostWith(deck, b.cards, req.OracleCounts)
+}
+
+// inBudget says whether a step keeps the cost inside the budget. A step
+// that adds no cost always fits, so a deck over its budget can still
+// trade a land the reader owns.
+func (b *Builder) inBudget(req Request, deck *mtgv1.Deck, before float64) bool {
+	if req.BudgetUSD <= 0 {
+		return true
+	}
+	after := b.budgetCost(req, deck)
+	return after <= before || after <= req.BudgetUSD
+}
+
+// basicsFeedTheirLands says whether the deck holds a basic land for each
+// land that reads basic lands. A swap never starves Fabled Passage or
+// Sunken Hollow of the basic lands they need.
+func (b *Builder) basicsFeedTheirLands(deck *mtgv1.Deck) bool {
+	var basics, readers int32
+	for _, dc := range deck.GetCards() {
+		c, ok := b.cards.ByOracleID(dc.GetOracleId())
+		switch {
+		case !ok:
+		case profile.IsBasic(c):
+			basics += dc.GetCount()
+		case profile.ReadsBasicLands(c):
+			readers += dc.GetCount()
+		}
+	}
+	return basics >= readers
+}
 
 // basicsOf is the basic lands of the deck's colors, from the pool the
 // build used. The always list of the pool holds them (D-225).
@@ -582,7 +811,7 @@ func dropOne(list []*mtgv1.DeckCard, id string) []*mtgv1.DeckCard {
 // buy list named seven such cards at no price, on a deck of owned cards
 // alone. The Owned flag itself is markOwned's, and fixMana runs it over
 // the whole list after the pass.
-func addOne(list []*mtgv1.DeckCard, c *mtgv1.Card, role mtgv1.CardRole, owned int32) []*mtgv1.DeckCard {
+func addOne(list []*mtgv1.DeckCard, c *mtgv1.Card, role mtgv1.CardRole, owned int32, reason string) []*mtgv1.DeckCard {
 	out := make([]*mtgv1.DeckCard, 0, len(list)+1)
 	done := false
 	for _, dc := range list {
@@ -602,7 +831,7 @@ func addOne(list []*mtgv1.DeckCard, c *mtgv1.Card, role mtgv1.CardRole, owned in
 		OracleId: c.GetOracleId(), Name: c.GetName(), Count: 1, Role: role,
 		OwnedCount: owned,
 		PriceUsd:   c.GetPriceUsd(),
-		Reason:     "the mana pass added it to bring the mana base inside the power level",
+		Reason:     reason,
 	})
 }
 

@@ -225,6 +225,7 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 		SetCodes:           setCodes,
 		OutsideRoles:       outsideRoles,
 		ExcludeOracleIDs:   excludedIDs,
+		BudgetUSD:          slots.GetBudgetUsd(),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("build: candidates: %w", err)

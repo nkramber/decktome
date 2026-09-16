@@ -401,11 +401,12 @@ func colorSources(entries []entry, colors []mtgv1.Color, size int) []ColorSource
 	}
 	have := map[mtgv1.Color]float64{}
 	needs := map[mtgv1.Color][]int{}
+	typed := typedLandColors(entries)
 	for _, e := range entries {
 		c := e.card
 		if isLand(c) {
 			if isFetch(c) {
-				for _, col := range colors {
+				for _, col := range fetchSources(c, colors, typed) {
 					have[col] += float64(e.count)
 				}
 				continue
@@ -462,7 +463,8 @@ func (f *features) sources(entries []entry, colors []mtgv1.Color, size int) {
 
 // ColorSource is one deck color's sources against the count its spells
 // need, by the Karsten tables. A land counts as one source of each color
-// it makes, and a fetch land as one of every deck color. A nonland card
+// it makes, and a fetch land as one of each deck color it can find
+// (F-147). A nonland card
 // with a tap mana ability counts as RockSource of each color it makes that
 // its own cost does not need (F-103).
 type ColorSource struct {
