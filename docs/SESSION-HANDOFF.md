@@ -8,9 +8,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-16)
 
-**The branch `context-budget` cuts the context that each session reads at start, and it waits for the owner's merge** (F-155, D-749, D-750, guardrail 17). This file holds the current state alone now. `make context-budget` fails when this file, this section, or `CLAUDE.md` passes its byte limit.
+**Pull request #186 cuts the context that each session reads at start, and it waits for the owner's merge** (F-155, D-749, D-750, guardrail 17). This file holds the current state alone now. `make context-budget` fails when this file, this section, or `CLAUDE.md` passes its byte limit.
 
-**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request of `context-budget` with `gh pr view context-budget`. Then do next step 1.
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #186 with `gh pr view 186`. Then do next step 1. This session is bound to #186 and does no other pull request.
 
 **The base.** `main` is `c2c8966`, from #185. #184 merged the one-pr-one-session policy as `9a7be47`, and #182 merged PR-53 as `372d912`. `docs/reference/pr53-wincon-2026-09-16.md` holds every count of PR-53. The archive holds the full resume section of PR-53.
 
