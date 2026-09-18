@@ -25,7 +25,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 - The first run of the check found three defects (F-156). This pull request fixes each one.
 - M-6 has an entry now. D-254 names the branch `pr-7c`. The rollback procedure names a folder that exists.
 
-**The review.** `gitar-bot` approved with one suggestion on 2026-09-18: REF 2 read no path that starts with a dot, so it skipped `.claude` and `.github`. The finding has full merit, and the fix allows one leading dot. Three unit tests cover it.
+**The checks.** `make verify` passed on this machine, and every job of the verify workflow and `pr-contract` passed on `d6c0eb5`. The pull request waits for the owner's merge.
+
+**The review.** `gitar-bot` approved `d6c0eb5` with no open finding. Its first pass gave one suggestion on 2026-09-18: REF 2 read no path that starts with a dot, so it skipped `.claude` and `.github`. The finding has full merit, and the fix allows one leading dot. Three unit tests cover it. Gitar resolved the thread itself.
 
 **What waits on the owner.**
 
