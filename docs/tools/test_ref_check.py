@@ -14,9 +14,10 @@ spec.loader.exec_module(rc)
 DECISIONS = "| # | Date |\n| D-1 | a |\n| D-2 (amended by D-3) | b |\n| D-3 | c |\n"
 ROADMAP = "| F-1 | a finding |\n\n**M-2: A metric.** The count.\n\n**PR-28a: A change.** ✅ merged\n"
 
-PATHS = {"docs/decisions.md", "docs/design-roadmap.md", "go/internal/decks/store.go"}
-FOLDERS = {"docs", "go", "go/internal", "go/internal/decks"}
-TOP = {"docs", "go"}
+PATHS = {"docs/decisions.md", "docs/design-roadmap.md", "go/internal/decks/store.go",
+         ".claude/skills/one-pr-one-session/SKILL.md"}
+FOLDERS = {"docs", "go", "go/internal", "go/internal/decks", ".claude", ".claude/skills"}
+TOP = {"docs", "go", ".claude"}
 
 
 def run(text, doc="docs/note.md"):
@@ -51,6 +52,17 @@ class RefCheckTest(unittest.TestCase):
 
     def test_a_bare_name_takes_no_rule(self):
         self.assertEqual(run("The file `themes.json` holds the rows."), [])
+
+    def test_a_dotted_path_reads_the_rule(self):
+        findings = run("Load `.claude/skills/absent/SKILL.md`.")
+        self.assertEqual(1, len(findings))
+        self.assertEqual("REF 2", findings[0][1])
+
+    def test_a_live_dotted_path_passes(self):
+        self.assertEqual(run("Load `.claude/skills/one-pr-one-session/SKILL.md`."), [])
+
+    def test_a_parent_path_takes_no_rule(self):
+        self.assertEqual(run("The folder `../docs/decisions.md` sits above."), [])
 
     def test_a_placeholder_takes_no_rule(self):
         self.assertEqual(run("The build lands at `go/X`."), [])

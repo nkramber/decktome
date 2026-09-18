@@ -20,6 +20,7 @@ REF 2 reads a path with a slash and a first part that names a top-level
 entry of the checkout. A bare file name is ambiguous, so the rule skips it.
 The last part of the path holds a file type, or the whole path holds
 lowercase letters alone. So a placeholder such as `go/X` takes no rule.
+The first part can start with one dot, for `.claude` and `.github`.
 A path resolves from the root, from the folder of the document, from the
 folder above it, or as the one path of the checkout that ends with it.
 
@@ -55,7 +56,7 @@ ROW_ID = re.compile(r"^\| ((?:D|F)-\d+)", re.M)
 ENTRY_ID = re.compile(r"\*\*((?:M|PR|I)-\d+[A-Za-z]?):")
 CODE = re.compile(r"`([^`\n]+)`")
 FENCE = re.compile(r"^```.*?^```", re.M | re.S)
-PATH = re.compile(r"^[A-Za-z0-9_][\w./-]*$")
+PATH = re.compile(r"^\.?[A-Za-z0-9_][\w./-]*$")
 
 
 def read(path):
