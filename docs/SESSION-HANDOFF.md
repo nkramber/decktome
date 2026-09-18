@@ -8,9 +8,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-17)
 
-**This pull request carries the skill improvements of `the-thing-below`, and it waits for the owner's merge** (D-751 to D-754, F-156, guardrail 18). Four skills sit in both repos, and this pull request takes the portable part of each one.
+**Pull request #188 carries the skill improvements of `the-thing-below`, and it waits for the owner's merge** (D-751 to D-754, F-156, guardrail 18). Four skills sit in both repos, and this pull request takes the portable part of each one.
 
-**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of this pull request with `gh pr view`. Then do next step 1.
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #188 with `gh pr view 188`. Then do next step 1.
 
 **The base.** `main` is `eeba79a`, from #187, which updated the Gitar skill. #186 merged the context budget as `603d922`, and #184 merged the one-pull-request policy as `9a7be47`.
 
