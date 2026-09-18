@@ -30,7 +30,7 @@ Five more targets spend money, and each has an overwrite guard and an env guard.
 
 Each other target is free. `make meta-refresh` reads the deck list sources over the network, about 40 minutes on the first run, and calls no model. `make quality-gate` fits the quality model over the local meta store and writes the PR-14B gate document. It also reports the three numbers of D-648: the fitted model grades the decks `QUALITY_GATE_DECKS` names, against the judge's tiers in `QUALITY_GATE_JUDGED`.
 
-`make ste-check` checks every hand-written `.md` file against the STE rules, and `make lint` runs it. `make m5-sheet` builds the scoring sheet, and `make m5-report` reads it. `make themes-check` checks the theme slugs and the commander ranking.
+`make ste-check` checks every hand-written `.md` file against the STE rules, and `make lint` runs it. `make ref-check` checks every cited id and every repository path of the same files, free, and `make lint` runs it (D-753). `make m5-sheet` builds the scoring sheet, and `make m5-report` reads it. `make themes-check` checks the theme slugs and the commander ranking.
 
 `make eval-check` compares every baseline of the eval harness with its newest run and names the flips (PR-15). It is free.
 

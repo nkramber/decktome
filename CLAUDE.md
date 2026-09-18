@@ -34,6 +34,7 @@ Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
    - A pull request of documents alone waits for the review too (D-679).
    - Tell the owner when the pull request is ready to merge. The owner merges.
    - Wait for a current Gitar review before you call the pull request ready. Fix each finding on the same pull request, in the same session (D-746).
+   - A commit of `docs/SESSION-HANDOFF.md` or the hand-off archive alone does not make a Gitar pass stale (D-752).
 11. **Never hesitate to ask or to push back.** Ask a question the moment you have one. When the owner's two statements conflict, say so and quote both. When a request rests on a wrong premise, say so with the evidence. The owner sees this as the key to good LLM-user interaction. Silence is the mistake, not the question.
 12. **One pull request, one clean session.** A session works on one pull request, and the pull request carries all its documents and its hand-off. No pull request exists to record an earlier merge. Load `.claude/skills/one-pr-one-session/SKILL.md` for all work on a pull request (D-746 to D-748).
 13. **Keep command output small** (D-749). Every line of output stays in the context of every later call. Count or list the matches first, with `grep -c` or `grep -l`. Then read a bounded range, with `sed -n`, `head`, or the offset and limit of the Read tool. Read only the section that you need. Do not print a whole document. Show the output of a failed test, build, or gate in full, because the error is the evidence.
@@ -79,4 +80,4 @@ Twelve targets and two loop scripts spend money: `make questions-gate`, `make qu
 
 `docs/reference/paid-targets.md` holds the cost, the flags, and the guards of each paid target, and every free target (D-749). Read it before you run or change a target.
 
-`make verify` runs every check the verify workflow runs, on this machine, for nothing (D-578). Run it before every pull request. `make lint` also runs `make ste-check`, `make lifecycle-check`, and `make context-budget`. `make pr-check` reads the pull request body and diff against the contract of D-747. `make where` prints the branch, the tree, and the state of the branch's pull request. `make hooks` installs the pre-commit hook that refuses a commit on `main` (D-585).
+`make verify` runs every check the verify workflow runs, on this machine, for nothing (D-578). Run it before every pull request. `make lint` also runs `make ste-check`, `make ref-check`, `make lifecycle-check`, and `make context-budget`. `make pr-check` reads the pull request body and diff against the contract of D-747. `make where` prints the branch, the tree, and the state of the branch's pull request. `make hooks` installs the pre-commit hook that refuses a commit on `main` (D-585).

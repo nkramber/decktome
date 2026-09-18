@@ -225,7 +225,7 @@ firebase-tools 14.14.0 has no `hosting:rollback` command. Two paths return the s
 2. Run `firebase deploy --only firestore:rules`.
 3. Run `git checkout main -- firestore.rules` to restore the tree.
 
-CAUTION: a rollback of the code does not undo a change of the data. A new version can write a document that an old version cannot read. Read the store code of the merge before a rollback, and check `go/internal/store` for a schema change.
+CAUTION: a rollback of the code does not undo a change of the data. A new version can write a document that an old version cannot read. Read the store code of the merge before a rollback. Check the package under `go/internal` that writes the document for a schema change.
 
 ## 9. What a rollback does not repair
 

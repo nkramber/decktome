@@ -120,12 +120,66 @@ The rules permit these as written. They are technical names (rule 1.5):
 - Software names: ManaBox, Scryfall, Cloud Run, Firestore, Go, Protobuf, TypeScript, React.
 - Code identifiers in backticks.
 
+## Glossary
+
+One term per concept (rule 1.11). Use the term of the left column. Do not use a synonym for variety.
+
+| Term | Use for | Do not use |
+|---|---|---|
+| owner | the person who owns the repo and answers each question | user, maintainer, the name of the owner in prose |
+| session | one harness invocation, bound to one pull request (D-746) | run, conversation, chat |
+| clean session | a new top-level session that holds no work of another pull request (D-746) | fresh context, new chat |
+| pull request | a GitHub pull request | PR in prose, MR, change request |
+| hand-over point | the end of the work of a session on its pull request (D-746) | hand-off, which names `docs/SESSION-HANDOFF.md` |
+| start read | the files a session reads at start: `CLAUDE.md`, the hand-off, and the skills of the task (D-749) | read order, onboarding |
+| context compaction | the harness step that replaces the conversation with a summary | compaction alone |
+| reference file | a file of the `references` folder of a skill, which the skill loads for one case | appendix, sub-skill |
+| effective head | the newest commit outside the metadata set (D-752) | head, which names the branch tip |
+| paid target | a `make` target that calls a provider and costs money (D-749) | expensive target, live target |
+| gate | the condition that a roadmap item must meet | exit test, acceptance test |
+| user | the person who uses the app | player, customer, client |
+
+The MtG terms sit in the `mtg-corpus` skill. Load that skill before you write about a format, a legality, or a card term.
+
 ## The checker
 
 `make ste-check` runs `docs/tools/ste-check.py` on every hand-written `.md` file. The checker flags passive voice (3.6) and modal and helper verbs (3.2, 3.4). It flags sentence-initial and preposition-led -ing forms (3.5), and the 20-word limit in a numbered step (5.1, D-304). It also flags semicolons, contractions, and the 25-word limit. Dated records are exempt: gate documents, audits, session logs, and eval documents.
 
+The passive rule and the participle rule are heuristics. A past participle is an irregular form of the list in the checker, or a word that ends in "ed". So "is required" is a finding. Rewrite the sentence with the actor as the subject: "the build needs the key". The words "can", "must", and "will" pass, because the standard approves them.
+
+## The reference check
+
+`make ref-check` runs `docs/tools/ref_check.py` on the same file list (D-753). It reads two rules:
+
+- REF 1: a cited `D-`, `F-`, `M-`, `PR-`, or `I-` id that no register defines.
+- REF 2: a path of this repo in backticks that no file and no folder holds.
+
+`docs/decisions.md` defines each `D-` id with a table row. `docs/design-roadmap.md` defines each `F-` id with a table row, and it defines each `M-`, `PR-`, and `I-` id with a bold entry title. A bare family id resolves against a lettered variant, for example PR-28 against PR-28a.
+
+- The check reads no `OQ-` id. This repo deletes an answered row from `docs/owner-questions.md`, and the decision then holds the answer (D-753).
+- The check reads no superseded decision. `docs/decisions.md` marks a superseded row in its Question column, and no column holds the id that replaced it.
+- REF 2 reads a path with a slash and a first part that names a top-level entry. A bare file name is ambiguous, so the rule skips it. Write a name that is not a path of this repo without backticks.
+- A path under `.local`, and the folder that the feedback harvest writes, take no rule. A run creates each one.
+- A dated record is history, and a rewrite of it falsifies the record. So the check reads no file that ends with a date, and none of the hand-off archive.
+
+## The size rules of the context budget
+
+`make context-budget` gives each file of the start read a byte limit (D-749, D-753). A session reads each one in full.
+
+| File | Limit |
+|---|---|
+| `CLAUDE.md` | 11,000 bytes |
+| `docs/SESSION-HANDOFF.md` | 24,000 bytes |
+| The resume section of the hand-off | 6,000 bytes |
+| Each `.md` file of `.claude/skills` | 36,864 bytes |
+
+The skill limit is 36 KB, and one kilobyte is 1024 bytes. The `mtg-corpus` skill is exempt, because D-750 parked its split until the measurement of five sessions. Move the detail to a file of the `references` folder when a skill comes near its limit. A reference file loads for one case, and the skill file loads each time.
+
 ## Markdown notes
 
-- Tables and code blocks are exempt from sentence-length counts. Keep cell text short.
+- Tables, code blocks, and front matter are exempt from sentence-length counts. Keep cell text short.
 - Headings are titles. They count as one word (8.6).
+- Text in backticks, in double quotes, or in parentheses counts as one word (8.5, 8.6).
+- A numbered list item is a procedural step, under any heading. Rule 5.1 applies, max 20 words.
+- A bullet list item is one unit. Rule 6.3 applies, max 25 words.
 - The "plain-English" paragraphs in the design doc are descriptive text. Rule 6.3 applies (max 25 words).

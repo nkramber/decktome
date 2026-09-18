@@ -219,6 +219,10 @@ CAUTION: the `decktome` gcloud configuration named the Wallabee account and proj
 
 **The session built the skill, the hook, the check, and the template.** `make pr-check` and the `pr-contract` workflow read the body and the diff. `make lifecycle-check` tests the checker and the hook, and it runs in `make lint` and the verify workflow. The session ran no paid target.
 
+## 2026-09-16b: PR-53 and its paid runs (the hand-off record)
+
+**#182 merged PR-53, the finisher target and the finisher floor** (D-739 to D-744). Deck gate run 28 reads PASS, and bracket gate run 8 reads the judge at 5 of 6. The archive holds the full records of 2026-09-16b and 2026-09-16.
+
 ## 2026-09-16b: #181 merged PR-52, and PR-53 built to a context reset
 
 **The owner merged #181, and Cloud Build deployed it.** Revision `mtg-api-00051-sc6` serves the merge, and `/readyz` answered ok.

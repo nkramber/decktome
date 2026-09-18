@@ -12,7 +12,7 @@ The owner wants the design doc in the style of `/Users/nate/Repos/connector-sync
 1. **Status header.** State the doc status, what it supersedes, and the date you verified each external fact. Add a dated line for each correction pass. Never delete a refuted claim. Mark it refuted and keep it.
 2. **Thesis.** One paragraph. What the system is for and why the plan has this order.
 3. **Lessons learned.** Numbered. Each lesson names the event that taught it. Carry lessons from connector-syncer when they apply.
-4. **System map.** A table of components, what each reads, and its sensitivity.
+4. **System map.** A table of components, what each reads, what each writes, and its sensitivity.
 5. **Cost model.** What we pay, what we do not know, and which measurement will answer it.
 6. **Defect and finding register.** A numbered table. Findings carry evidence and dates. Findings bind to plan items ("binds PR-3"). The status legend:
    - ✅ done (code merged)
@@ -34,6 +34,10 @@ The owner wants the design doc in the style of `/Users/nate/Repos/connector-sync
 - "One concern per pull request" applies to the plan items.
 - A refuted premise stays in the doc with a dated correction (lesson 7 in the model doc).
 - Ids in the roadmap: F-# findings, PR-# code changes, M-# measurement, I-# integration, D-# owner decisions (in `decisions.md`), OQ-# open questions. An audit file uses its own local ids (C-, B-, E-, Q-, G-, L-, T-, P-, W-), and they never enter the roadmap register.
+- An entry cites a D-# id. It never restates the decision. The register holds the reasons.
+- A register defines each id that a document cites. `make ref-check` fails on an id that no register defines (D-753).
+- A measurement gets its own entry, in the phase of its subject. A gate that names an M-# needs that entry.
+- Each path in backticks names a file or a folder of this repo. `make ref-check` fails on a dead path.
 
 ## Plain-English paragraph rules
 
