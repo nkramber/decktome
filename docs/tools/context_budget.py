@@ -11,7 +11,8 @@ The check fails when:
 - a file passes its byte limit,
 - the resume section of the hand-off passes its byte limit,
 - the hand-off holds more session records than its limit,
-- the three lists of paid targets differ, or a listed target does not exist.
+- the three lists of paid targets differ, or a listed target does not exist,
+- a .md file of .claude/skills passes its byte limit (D-753).
 
 Run: python3 docs/tools/context_budget.py
 """
@@ -26,6 +27,13 @@ HANDOFF = "docs/SESSION-HANDOFF.md"
 PAID = "docs/reference/paid-targets.md"
 
 FILE_LIMITS = {CLAUDE: 11000, HANDOFF: 24000}
+
+# A skill loads whole into the context of the session that reads it (D-753).
+SKILLS = ".claude/skills"
+SKILL_LIMIT = 36864
+# D-750 parked the split of this skill until the measurement of five
+# sessions. The exemption goes when the owner decides that rule.
+SKILL_EXEMPT = ".claude/skills/mtg-corpus/"
 RESUME_HEADING = "## RESUME HERE"
 RESUME_LIMIT = 6000
 SESSIONS_HEADING = "## The three most recent sessions"
@@ -65,8 +73,11 @@ def makefile_targets(text):
     return set(re.findall(r"^([a-z0-9-]+):", text, flags=re.M))
 
 
-def check(read, exists):
-    """Return (report lines, errors). `read` maps a path to its text or None, and `exists` tests a path."""
+def check(read, exists, skill_files=()):
+    """Return (report lines, errors). `read` maps a path to its text or None, and `exists` tests a path.
+
+    `skill_files` names every `.md` file of the skills folder.
+    """
     report, errors = [], []
     texts = {path: read(path) for path in {CLAUDE, HANDOFF, PAID, "Makefile"}}
     for path, limit in FILE_LIMITS.items():
@@ -116,6 +127,16 @@ def check(read, exists):
             if name.startswith("scripts/") and not exists(name):
                 errors.append(f"the paid script `{name}` does not exist")
         report.append(f"paid targets: {len(first)} named in {len(lists)} files")
+    over = []
+    for path in sorted(skill_files):
+        if path.startswith(SKILL_EXEMPT):
+            continue
+        size = len((read(path) or "").encode("utf-8"))
+        if size > SKILL_LIMIT:
+            over.append(path)
+            errors.append(f"{path} holds {size} bytes, over its limit of {SKILL_LIMIT}. Move the detail to a file of the references folder")
+    counted = [p for p in skill_files if not p.startswith(SKILL_EXEMPT)]
+    report.append(f"skill files: {len(counted)} under {SKILL_LIMIT} bytes, {len(over)} over, {len(skill_files) - len(counted)} exempt")
     return report, errors
 
 
@@ -127,7 +148,13 @@ def main():
         with open(full, encoding="utf-8") as handle:
             return handle.read()
 
-    report, errors = check(read, lambda path: os.path.exists(os.path.join(ROOT, path)))
+    skills = []
+    for base, _, files in os.walk(os.path.join(ROOT, SKILLS)):
+        for name in files:
+            if name.endswith(".md"):
+                skills.append(os.path.relpath(os.path.join(base, name), ROOT))
+
+    report, errors = check(read, lambda path: os.path.exists(os.path.join(ROOT, path)), skills)
     for line in report:
         print(f"context_budget: {line}")
     for error in errors:

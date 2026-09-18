@@ -260,6 +260,10 @@ jobs:
       # script checks the prose. Tables and code blocks are exempt.
       - name: ste check
         run: make ste-check
+      # Every cited id and every repository path of a document resolves
+      # (D-753). A dated record is exempt.
+      - name: ref check
+        run: make ref-check
       # The skill frontmatter, the one-pr-one-session wiring, and the tests
       # of the contract checker and the session hook (D-748).
       - name: lifecycle check

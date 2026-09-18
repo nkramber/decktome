@@ -62,7 +62,56 @@ Then tell the owner the pull request is ready, and write this line with the numb
 
 `This session is bound to PR #N and is complete. End this session. Start a new clean session before beginning another PR.`
 
-Do not offer the next pull request.
+Do not offer the next pull request. After the owner merges, write the transitional prompt of section 5.
+
+## 4. While the pull request waits
+
+The session stays bound to the pull request while it waits for Gitar or for the owner. It answers each finding on the same pull request (D-746).
+
+- Tell the owner that the session is ready for a context compaction while the pull request waits (D-754).
+- Say the same when the context of the session passes 300K tokens (D-750).
+- Read the resume section of `docs/SESSION-HANDOFF.md` again after a context compaction.
+- A context compaction of this session keeps its binding. It starts no new pull request.
+
+## 5. The transitional prompt
+
+After the merge, the owner says that the pull request merged. The session then writes one transitional prompt, and it does no other work (D-754). Write the prompt for the pull request of this session alone.
+
+Read the merge commit from git first:
+
+```
+git fetch origin && git log --oneline -1 origin/main
+```
+
+Read the next step of `docs/SESSION-HANDOFF.md` and name the next item. The pick is provisional, and the owner can name a different item. Read `docs/owner-questions.md`, and name each open question of that item.
+
+The prompt is one fenced block, and the owner pastes it into the next clean session:
+
+```
+Start <item>: <the one concern>
+
+PR #<x> merged to `main` as <sha>. Read `docs/SESSION-HANDOFF.md` first.
+Branch: `<prefix>/<slug>`. Base: `<sha>`. Role: author.
+Load the `one-pr-one-session` skill and the skills of the task before any change.
+Open questions for this item: <each OQ-# with its subject, or `none`>.
+First action: <the first concrete action>.
+```
+
+The session ends with this prompt. It makes no branch and no change for the next pull request.
+
+## Enforcement
+
+| Rule | Enforced by |
+|---|---|
+| The body, the table, the hand-off change, and a deferred document | `make pr-check` and the `pr-contract` workflow (D-748) |
+| A commit on `main` | The pre-commit hook of `make hooks` (D-585) |
+| A second branch in one session | `.claude/hooks/session_bind.py` (D-748) |
+| The skill frontmatter and the wiring | `make lifecycle-check` (D-748) |
+| The byte budget of the start read | `make context-budget` (D-749) |
+| Each cited id and each repository path | `make ref-check` (D-753) |
+| One pull request in each session, and a clean session for each one | The agent. No check reads the conversation |
+| The truth of each reason, and the one concern | The agent, then the owner |
+| The merge and the deploy | The owner (D-583, D-579) |
 
 ## Rules of this repo that win over other skills
 

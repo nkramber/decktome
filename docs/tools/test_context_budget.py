@@ -50,8 +50,8 @@ def files(**override):
     return base
 
 
-def run(texts, scripts=("scripts/autotune.sh",)):
-    return cb.check(lambda path: texts.get(path), lambda path: path in scripts)
+def run(texts, scripts=("scripts/autotune.sh",), skills=()):
+    return cb.check(lambda path: texts.get(path), lambda path: path in scripts, skills)
 
 
 class ContextBudgetTest(unittest.TestCase):
@@ -113,6 +113,31 @@ class ContextBudgetTest(unittest.TestCase):
     def test_paid_names_stop_at_the_end_of_the_sentence(self):
         text = "Two spend money: `make a-b`. The free `make c-d` stays out.\n"
         self.assertEqual(cb.paid_names(text), {"make a-b"})
+
+
+class SkillSizeTest(unittest.TestCase):
+    SMALL = ".claude/skills/one-pr-one-session/SKILL.md"
+    BIG = ".claude/skills/mtg-corpus/SKILL.md"
+
+    def test_a_small_skill_passes(self):
+        texts = files()
+        texts[self.SMALL] = "x"
+        report, errors = run(texts, skills=[self.SMALL])
+        self.assertEqual(errors, [])
+        self.assertIn(f"skill files: 1 under {cb.SKILL_LIMIT} bytes, 0 over, 0 exempt", report)
+
+    def test_a_skill_over_the_limit_fails(self):
+        texts = files()
+        texts[self.SMALL] = "x" * (cb.SKILL_LIMIT + 1)
+        _, errors = run(texts, skills=[self.SMALL])
+        self.assertTrue(any(e.startswith(self.SMALL) for e in errors), errors)
+
+    def test_the_exempt_skill_passes_over_the_limit(self):
+        texts = files()
+        texts[self.BIG] = "x" * (cb.SKILL_LIMIT + 1)
+        report, errors = run(texts, skills=[self.BIG])
+        self.assertEqual(errors, [])
+        self.assertIn("0 over, 1 exempt", report[-1])
 
 
 if __name__ == "__main__":

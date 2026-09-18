@@ -1,0 +1,81 @@
+"""Tests of the reference check (D-753).
+
+Run: python3 -m unittest discover -s docs/tools -p 'test_*.py'
+"""
+import importlib.util
+import os
+import unittest
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+spec = importlib.util.spec_from_file_location("ref_check", os.path.join(HERE, "ref_check.py"))
+rc = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(rc)
+
+DECISIONS = "| # | Date |\n| D-1 | a |\n| D-2 (amended by D-3) | b |\n| D-3 | c |\n"
+ROADMAP = "| F-1 | a finding |\n\n**M-2: A metric.** The count.\n\n**PR-28a: A change.** ✅ merged\n"
+
+PATHS = {"docs/decisions.md", "docs/design-roadmap.md", "go/internal/decks/store.go"}
+FOLDERS = {"docs", "go", "go/internal", "go/internal/decks"}
+TOP = {"docs", "go"}
+
+
+def run(text, doc="docs/note.md"):
+    known = rc.registers(DECISIONS, ROADMAP)
+    return rc.check(doc, text, known, TOP, PATHS, FOLDERS)
+
+
+class RefCheckTest(unittest.TestCase):
+    def test_a_defined_id_passes(self):
+        self.assertEqual(run("The rule of D-2 and F-1 and M-2 and PR-28a."), [])
+
+    def test_an_undefined_id_fails(self):
+        findings = run("The rule of D-9.")
+        self.assertEqual([(1, "REF 1", "no register defines D-9")], findings)
+
+    def test_a_family_id_resolves_against_a_lettered_entry(self):
+        self.assertEqual(run("PR-28 splits into three."), [])
+
+    def test_a_retired_number_passes(self):
+        self.assertEqual(run("The branch held D-172 to D-176."), [])
+
+    def test_a_dead_path_fails(self):
+        findings = run("Read `go/internal/store` for the schema.")
+        self.assertEqual(1, len(findings))
+        self.assertEqual("REF 2", findings[0][1])
+
+    def test_a_live_path_passes(self):
+        self.assertEqual(run("Read `go/internal/decks/store.go` and `go/internal`."), [])
+
+    def test_a_path_resolves_from_the_folder_of_the_document(self):
+        self.assertEqual(run("Read `decisions.md`.", doc="docs/note.md"), [])
+
+    def test_a_bare_name_takes_no_rule(self):
+        self.assertEqual(run("The file `themes.json` holds the rows."), [])
+
+    def test_a_placeholder_takes_no_rule(self):
+        self.assertEqual(run("The build lands at `go/X`."), [])
+
+    def test_a_path_outside_the_repository_takes_no_rule(self):
+        self.assertEqual(run("Read `backend/spellbook/models/variant.py`."), [])
+
+    def test_a_scratch_path_takes_no_rule(self):
+        self.assertEqual(run("The fit wrote `go/.local/tune/run18.json`."), [])
+
+    def test_a_runtime_folder_takes_no_rule(self):
+        self.assertEqual(run("The harvest writes `docs/reference/feedback/`."), [])
+
+    def test_a_fenced_block_takes_no_rule(self):
+        self.assertEqual(run("Run this:\n\n```\nD-9 `go/internal/store`\n```\n"), [])
+
+    def test_the_line_number_reads_the_source(self):
+        findings = run("A line.\n\nThe rule of D-9.\n")
+        self.assertEqual(3, findings[0][0])
+
+    def test_a_dated_record_is_exempt(self):
+        self.assertTrue(rc.DATED.search("docs/reference/note-2026-09-17.md"))
+        self.assertTrue(rc.DATED.search("docs/reference/session-handoff-archive.md"))
+        self.assertIsNone(rc.DATED.search("docs/decisions.md"))
+
+
+if __name__ == "__main__":
+    unittest.main()

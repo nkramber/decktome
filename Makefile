@@ -46,7 +46,7 @@ proto-breaking: $(BUF) ## Fail on a breaking proto change against the main branc
 	@echo "==> buf breaking against $(PROTO_BASE)"
 	@$(BUF) breaking --against '.git#branch=$(PROTO_BASE)'
 
-lint: lint-go lint-web ste-check lifecycle-check context-budget ## Lint Go, TypeScript, the docs, the start-read budget, and the pull request contract tools
+lint: lint-go lint-web ste-check ref-check lifecycle-check context-budget ## Lint Go, TypeScript, the docs, the references, the start-read budget, and the pull request contract tools
 
 lint-go: ## Lint Go (vet + golangci-lint, built from source with the local toolchain)
 	@echo "==> go vet"
@@ -72,6 +72,13 @@ STE_FILES := $(shell (git ls-files '*.md'; git ls-files --others --exclude-stand
 ste-check: ## Check every hand-written .md file against the STE rules (no cost)
 	@echo "==> ste-check"
 	@python3 docs/tools/ste-check.py $(STE_FILES)
+
+# Every id and every path of a document resolves (D-753). A rename or a
+# split leaves a citation that points at nothing. The check reads the same
+# file list as ste-check. Its unit tests run in lifecycle-check.
+ref-check: ## Check that every cited id and every repository path resolves, free (D-753)
+	@echo "==> ref-check"
+	@python3 docs/tools/ref_check.py $(STE_FILES)
 
 # The files a session reads at start stay under a byte budget (D-749).
 # CLAUDE.md loads into every call, and the hand-off is the first read. The

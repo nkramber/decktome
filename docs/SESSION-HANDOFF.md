@@ -6,23 +6,24 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-16)
+## RESUME HERE (2026-09-17)
 
-**Pull request #186 cuts the context that each session reads at start, and it waits for the owner's merge** (F-155, D-749, D-750, guardrail 17). This file holds the current state alone now. `make context-budget` fails when this file, this section, or `CLAUDE.md` passes its byte limit.
+**This pull request carries the skill improvements of `the-thing-below`, and it waits for the owner's merge** (D-751 to D-754, F-156, guardrail 18). Four skills sit in both repos, and this pull request takes the portable part of each one.
 
-**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #186 with `gh pr view 186`. Then do next step 1. This session is bound to #186 and does no other pull request.
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of this pull request with `gh pr view`. Then do next step 1.
 
-**The base.** `main` is `c2c8966`, from #185. #184 merged the one-pr-one-session policy as `9a7be47`, and #182 merged PR-53 as `372d912`. `docs/reference/pr53-wincon-2026-09-16.md` holds every count of PR-53. The archive holds the full resume section of PR-53.
-
-**The measurement.** `docs/reference/context-budget-2026-09-16.md` holds the audit of ten sessions from 2026-09-11 to 2026-09-16. Cache reads made 98 percent of the input tokens, and a call read 397K tokens of context at the median. The output of the model, thinking included, made 53 percent of the carried context. The hand-off made 5.5 percent, and it grew from 35 KB to 59 KB in five days.
+**The base.** `main` is `eeba79a`, from #187, which updated the Gitar skill. #186 merged the context budget as `603d922`, and #184 merged the one-pull-request policy as `9a7be47`.
 
 **What changed.**
 
-- This file keeps the state, the resume steps, the facts that expire, the next steps, and three short session records. The older text moved to the archive, word for word.
-- The start read names `docs/owner-questions.md` and the decisions that the change touches. The read of `docs/decisions.md` from D-297 is gone.
-- `CLAUDE.md` names every paid target and the rule to ask first. `docs/reference/paid-targets.md` holds the cost, the flags, and the guards.
-- Hard rule 13 keeps command output small.
-- `make context-budget` runs in `make lint` and in the verify workflow. It also fails when the three lists of paid targets differ.
+- `gitar-review` reads the effective head. A commit of the hand-off or its archive alone does not make a Gitar pass stale (D-752).
+- `one-pr-one-session` holds the transitional prompt, the context-compaction rule, and an enforcement table (D-754).
+- `ste-writing` holds a glossary of one term per concept, and it documents the two new checks (D-753, D-754).
+- `design-doc-style` asks each entry to cite a decision id, and each measurement to have its own entry.
+- `make ref-check` fails on a cited id that no register defines, and on a dead path in backticks (D-753).
+- `make context-budget` holds each skill file under 36,864 bytes. `mtg-corpus` keeps the exemption of D-750.
+- The first run of the check found three defects (F-156). This pull request fixes each one.
+- M-6 has an entry now. D-254 names the branch `pr-7c`. The rollback procedure names a folder that exists.
 
 **What waits on the owner.**
 
@@ -116,6 +117,10 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 ## The three most recent sessions
 
+### 2026-09-17: the skill improvements of `the-thing-below`
+
+**The owner asked for a read of the skills of `/Volumes/SSD-1TB/the-thing-below`, and then for its improvements here** (D-751 to D-754). The pull request takes the effective head, the transitional prompt, the context-compaction rule, the glossary, and the enforcement table. It adds `make ref-check` and a byte limit for each skill file. The first run found three dead references, and F-156 holds them. The session ran no paid target.
+
 ### 2026-09-16d: the context budget
 
 **The owner asked for an audit of the token use of this repo, and then for its fixes.** The audit read ten sessions, and it found that session length and the start read drive the cost. This pull request caps the hand-off, moves the paid-target detail out of `CLAUDE.md`, and adds hard rule 13 and `make context-budget` (D-749). The owner deferred the checkpoint rule until five sessions measure the change (D-750). The session ran no paid target.
@@ -123,10 +128,6 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 ### 2026-09-16c: one pull request, one clean session
 
 **#184 made one pull request the unit of a session** (D-746 to D-748). A hook binds a session to one branch, and `make pr-check` reads the documentation matrix of each pull request. The archive holds the full record.
-
-### 2026-09-16b: PR-53 and its paid runs
-
-**#182 merged PR-53, the finisher target and the finisher floor** (D-739 to D-744). Deck gate run 28 reads PASS, and bracket gate run 8 reads the judge at 5 of 6. The archive holds the full records of 2026-09-16b and 2026-09-16.
 
 ## The archive
 

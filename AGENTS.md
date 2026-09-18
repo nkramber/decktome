@@ -19,6 +19,7 @@ make doctor        # check tools
 make proto         # regenerate Go + TS from proto/ (commit the output)
 make lint          # go vet, golangci-lint, eslint, tsc, and the STE check
 make ste-check     # the STE check alone, free, part of make lint
+make ref-check     # every cited id and path resolves, free, part of make lint (D-753)
 make test          # go test -race, vitest
 make test-smoke    # live LLM smoke test, reads .env (fails when .env is absent)
 make llm-defaults-check   # warn on a roles.json or prices.json change
@@ -49,3 +50,4 @@ CI runs every job of `verify` on each pull request (D-639). The `pr-contract` wo
 - One pull request per clean session. The pull request carries its own documents and hand-off, and no pull request records an earlier merge. Load `.claude/skills/one-pr-one-session/SKILL.md` for all work on a pull request (D-746 to D-748).
 - No AI-attribution text in any PR, branch name, commit message, or comment.
 - Write docs and skills in ASD-STE100. Run `make ste-check` before you commit a `.md` file. `make lint` and CI run it too (D-264).
+- Cite an id that a register defines, and a path that exists. `make ref-check` fails on either one (D-753).
