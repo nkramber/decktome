@@ -25,7 +25,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The paid run.** Three builds cost $0.2350 in total (D-757). The owner approved them. No other paid target ran.
 
-**The checks.** `make ste-check` and `make ref-check` read 0 findings.
+**The checks.** `make verify` passed on this machine, exit 0. `make ste-check`, `make ref-check`, and `make pr-check` read 0 findings. Every job of the verify workflow and `pr-contract` passed on `5f415b2`, and `verify:changes` skipped, because no code changed.
+
+**The review.** `gitar-bot` approved `5f415b2` with no finding and no open thread. CAUTION: the Gitar dashboard of 2026-09-19 reads that the trial ends in 4 days. Hard rule 10 makes Gitar the review of every pull request here.
 
 **What waits on the owner.**
 
