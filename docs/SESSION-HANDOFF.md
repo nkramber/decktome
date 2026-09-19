@@ -28,9 +28,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The paid run.** None. Every count of PR-55 comes from a free run against the local snapshot of 2026-09-04.
 
-**The checks.** `make verify` passed on this machine, exit 0. `make themes-check` passed, and it runs the new snapshot test. `make ste-check`, `make ref-check`, `make context-budget`, and `make pr-check` each read 0 findings.
+**The checks.** `make verify` passed on this machine, exit 0. `make themes-check` passed, and it runs the new snapshot test. `make ste-check`, `make ref-check`, `make context-budget`, and `make pr-check` each read 0 findings. Every job of the verify workflow and `pr-contract` passed on `ad1517d`. The job `verify:changes` skipped, because it runs on a manual start alone.
 
-**The review.** The pull request waits for `gitar-bot`.
+**The review.** `gitar-bot` approved `ad1517d`, and it reads 1 closed of 1 finding with no open thread. The finding asked for a word boundary on a land needle, and the fix and its two tests answer it. CAUTION: two examples of that finding name no card of the snapshot. The Gitar trial ends about 2026-09-23, from the dashboard of 2026-09-19.
 
 **What waits on the owner.**
 
