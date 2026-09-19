@@ -17,7 +17,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 **What this pull request holds.** It changes documents alone. No code of the app changes.
 
 - `docs/reference/m18-grima-conditions-2026-09-18.md` holds every count of the replay.
-- **F-140 closes as fixed** (D-758, a session call). Its cause was the theme miss of F-142, and PR-54 cured it.
+- **F-140 closes as fixed** (D-758). Its cause was the theme miss of F-142, and PR-54 cured it.
 - **F-157 opens.** The owned pool of Gríma is thin at three roles, and every build ran a repair turn.
 - The sequencing list gains step 44 for #188, which had no entry, and step 45 for M-18.
 
@@ -30,7 +30,6 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 **What waits on the owner.**
 
 - The merge of this pull request, after the review of `gitar-bot`.
-- Confirmation that F-140 closes, because D-727 was an owner decision (D-758 is a session call).
 - The next item of the roadmap (next step 1).
 - Five sessions on the new files, before a decision on the checkpoint rule (next step 2, D-750).
 - A deployed session with a theme that matches no card, such as "anime" (next step 3).

@@ -92,6 +92,6 @@ F-157 records this. No number holds the state after the repair turn, because the
 
 ## What the plan takes from M-18
 
-- F-140 closes as fixed. PR-54 removed its cause, and three builds measure the result.
+- F-140 closes as fixed (D-758). PR-54 removed its cause, and three builds measure the result. No condition check joins the build.
 - F-157 opens on the thin owned pool and the repair turn of every build.
 - No new code change comes from this measurement.
