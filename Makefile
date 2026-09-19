@@ -535,7 +535,7 @@ meta-refresh: ## Read the deck list sources into the local meta store and fit th
 		$(GO) run ./cmd/worker -meta $(META_ARGS)
 
 themes-check: ## Check the theme slugs and the commander ranking against the local snapshot
-	@CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall $(GO) test ./internal/candidates -run 'TestThemeSlugsExist|TestCommanderQualitySnapshot' -count=1
+	@CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall $(GO) test ./internal/candidates -run 'TestThemeSlugsExist|TestCommanderQualitySnapshot|TestTypalLandsReachATypalShortlist' -count=1
 
 cover: ## Go coverage report
 	@$(GO) test -coverprofile=coverage.out ./... && $(GO) tool cover -func=coverage.out | tail -1
