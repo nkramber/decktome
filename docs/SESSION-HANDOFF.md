@@ -8,9 +8,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-19)
 
-**Pull request #TBD carries PR-55, the typal land signal of the type rows, and it waits for the owner's merge** (D-759 to D-761, F-144, F-148). The fix and its measurement cost nothing.
+**Pull request #190 carries PR-55, the typal land signal of the type rows, and it waits for the owner's merge** (D-759 to D-761, F-144, F-148). The fix and its measurement cost nothing.
 
-**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view`. Then do next step 1.
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #190 with `gh pr view 190`. Then do next step 1.
 
 **The base.** `main` is `c2d5957`, from #189, which carried M-18. #188 merged the skill improvements of `the-thing-below` as `a408a7f`.
 
@@ -27,9 +27,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The paid run.** None. Every count of PR-55 comes from a free run against the local snapshot of 2026-09-04.
 
-**The checks.** TBD.
+**The checks.** `make verify` passed on this machine, exit 0. `make themes-check` passed, and it runs the new snapshot test. `make ste-check`, `make ref-check`, `make context-budget`, and `make pr-check` each read 0 findings.
 
-**The review.** TBD.
+**The review.** The pull request waits for `gitar-bot`.
 
 **What waits on the owner.**
 

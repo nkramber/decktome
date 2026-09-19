@@ -1692,7 +1692,7 @@ Gate: a test fails on the old roles for a card tagged drain-life. The prompt ver
 2026-09-16 (built): every new test fails on the old code. The Gríma replay reads 3 wincon rows of a target of 3, against 2 before D-742. No deck gate prompt holds fewer finishers than `main`, and 11 of the 25 pools hold the same cards. Deck gate run 24 read FAIL and found F-150 to F-152, and run 25 read FAIL and found F-153 (D-743, D-744). Deck gate run 28 reads PASS at 25 of 25 decks, 0 invented names, and 0 false rules, for $2.7527. `eval-check` moves no gate row against run 19. Bracket gate run 8 reads the judge at 5 of 6, 83 percent against a bar of 80, for $0.5318. Every one of its six decks meets its finisher floor. `docs/reference/pr53-wincon-2026-09-16.md` holds every count.
 > *In plain English:* the app built a deck that had no way to win. This change counts the cards that can win a game, asks the builder for enough of them, and names the missing ones.
 
-**PR-55: A typal land signal on the type rows (F-144, F-148, D-737, D-759 to D-761).** 🔧 built 2026-09-19. It came after #189, which merged M-18.
+**PR-55: A typal land signal on the type rows (F-144, F-148, D-737, D-759 to D-761).** 🔧 built 2026-09-19, as #190. It came after #189, which merged M-18.
 The type rows of `themes.json` read a subtype, a typal tag, and a few payoff phrases. None of them reads a land. So a typal shortlist lost every land that makes mana for its type, and F-148 recorded it.
 
 - **The block.** A new `typal_land` block of `themes.json` holds the tag `typal-choose` and the needle "shares a creature type with your commander". The tag reads Cavern of Souls, Secluded Courtyard, Unclaimed Territory, and Three Tree City. The needle reads Path of Ancestry, which names no chosen type.
