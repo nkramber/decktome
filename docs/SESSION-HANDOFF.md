@@ -19,11 +19,12 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 - `go/internal/candidates/themes.json` gains a `typal_land` block: the tag `typal-choose` and one text needle.
 - `go/internal/candidates/theme.go` gives every row with a subtype the block and its own subtype word, as land-only signals.
 - `go/internal/candidates/theme.go` also gives the signal to a singular type word, which keeps the generic rule (D-731, D-761).
-- `go/internal/candidates/typalland_test.go` holds six new tests. One of them needs the snapshot, and `make themes-check` runs it.
+- A land needle matches on a word boundary, so "bat" reads no land whose text holds "battlefield". The Gitar review of #190 found it.
+- `go/internal/candidates/typalland_test.go` holds eight new tests. One of them needs the snapshot, and `make themes-check` runs it.
 - **F-148 closes as fixed.** The land half of **F-144** closes with it, and its nonland half stays a record.
 - `docs/reference/pr55-typal-lands-2026-09-19.md` holds every count.
 
-**The numbers.** The dinosaur typal prompt of the deck gate lost Cavern of Souls, Secluded Courtyard, Unclaimed Territory, Path of Ancestry, and Three Tree City. All five are on the shortlist now, and Restless Ridgeline joins them. The theme "dinosaur", singular, read 0 of the five before D-761 and reads all five now. The shortlist still holds 266 cards and 40 lands, and the on-theme count moves from 208 to 214. Six lands that enter tapped on a condition leave to make the room.
+**The numbers.** The dinosaur typal prompt of the deck gate lost Cavern of Souls, Secluded Courtyard, Unclaimed Territory, Path of Ancestry, and Three Tree City. All five are on the shortlist now, and Restless Ridgeline joins them. The theme "dinosaur", singular, read 0 of the five before D-761 and reads all five now. The shortlist still holds 266 cards and 40 lands, and the on-theme count moves from 208 to 215. Seven lands that enter tapped on a condition leave to make the room.
 
 **The paid run.** None. Every count of PR-55 comes from a free run against the local snapshot of 2026-09-04.
 

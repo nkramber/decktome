@@ -423,6 +423,43 @@ func wordForms(w string) []string {
 	return forms
 }
 
+// containsWord reports whether text holds the needle as a whole word,
+// with an optional plural "s". A land needle is a creature type, and a
+// short type is a part of a common word: "bat" sits in "battlefield",
+// "orc" in "sorcery", and "mount" in "mountain". Those three alone read
+// 218 of the 1,194 Commander-legal lands of the snapshot of 2026-09-04.
+// Both text and needle must be lowercase.
+func containsWord(text, needle string) bool {
+	if needle == "" {
+		return false
+	}
+	for i := 0; ; {
+		j := strings.Index(text[i:], needle)
+		if j < 0 {
+			return false
+		}
+		start := i + j
+		end := start + len(needle)
+		i = start + 1
+		if start > 0 && isWordByte(text[start-1]) {
+			continue
+		}
+		if end < len(text) && text[end] == 's' {
+			end++
+		}
+		if end < len(text) && isWordByte(text[end]) {
+			continue
+		}
+		return true
+	}
+}
+
+// isWordByte reports whether the byte is part of a word. A multibyte
+// rune never holds one of these bytes, so a byte test is enough.
+func isWordByte(b byte) bool {
+	return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b >= 0x80
+}
+
 // score returns the theme fit of a card and the signals that fired.
 func (m ThemeMatch) score(c *mtgv1.Card) (float64, []string) {
 	var score float64
@@ -500,7 +537,7 @@ func (m ThemeMatch) score(c *mtgv1.Card) (float64, []string) {
 			}
 		}
 		for _, n := range m.LandText {
-			if n != "" && strings.Contains(text, n) {
+			if n != "" && containsWord(text, n) {
 				hit = true
 				signals = append(signals, "land-text:"+n)
 			}

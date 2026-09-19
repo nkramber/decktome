@@ -228,3 +228,65 @@ func TestTypalLandsReachATypalShortlist(t *testing.T) {
 		}
 	}
 }
+
+// TestLandNeedleMatchesAWholeWord answers the Gitar finding of #190. A
+// creature type is a part of a common word of land text: "bat" sits in
+// "battlefield", "orc" in "sorcery", and "mount" in "mountain". Those
+// three read 218 of the 1,194 Commander-legal lands of the snapshot of
+// 2026-09-04, and each one would take a place of the theme half.
+func TestLandNeedleMatchesAWholeWord(t *testing.T) {
+	no := []struct{ text, needle string }{
+		{"put it onto the battlefield tapped", "bat"},
+		{"activate only as a sorcery", "orc"},
+		{"search your library for a mountain card", "mount"},
+		{"whenever a creature you control dies", "rat"},
+		{"a 1/1 shapeshifter creature token with changeling", "angel"},
+	}
+	for _, c := range no {
+		if containsWord(c.text, c.needle) {
+			t.Errorf("containsWord(%q, %q) = true, want false", c.text, c.needle)
+		}
+	}
+	yes := []struct{ text, needle string }{
+		{"spend this mana only to cast a sliver spell", "sliver"},
+		{"create a 2/2 black zombie creature token", "zombie"},
+		{"zombies you control get +1/+0", "zombie"},
+		{"this land becomes a 2/5 red and green dinosaur creature", "dinosaur"},
+		{"a creature spell that shares a creature type with your commander", "shares a creature type with your commander"},
+		{"(it's every creature type.)", "every creature type"},
+		{"bat tokens you control", "bat"},
+	}
+	for _, c := range yes {
+		if !containsWord(c.text, c.needle) {
+			t.Errorf("containsWord(%q, %q) = false, want true", c.text, c.needle)
+		}
+	}
+}
+
+// TestChangelingLandReadsEveryTypalTheme answers the Gitar finding of
+// #190. A changeling permanent is every creature type, so a changeling
+// land rewards every typal deck. The word-boundary rule drops the
+// accidental hit of "angel" inside "changeling", and the needle "every
+// creature type" keeps the land on purpose.
+func TestChangelingLandReadsEveryTypalTheme(t *testing.T) {
+	b, err := New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cards := append(typalLandCards(), tc{
+		id: "countryside", name: "Abundant Countryside", typeLine: "Land",
+		text:     "{T}: Add {C}. {T}: Add one mana of any color. Spend this mana only to cast a creature spell. {6}, {T}: Create a 1/1 colorless Shapeshifter creature token with changeling. (It's every creature type.)",
+		produced: []mtgv1.Color{W, G}, rank: 1000,
+	})
+	idx := fixture(t, cards)
+	countryside, ok := idx.ByName("Abundant Countryside")
+	if !ok {
+		t.Fatal("the fixture has no Abundant Countryside")
+	}
+	for _, theme := range []string{"slivers", "dinosaurs", "sliver"} {
+		m := b.themes.match(theme, idx.Tags())
+		if score, signals := m.score(countryside); score <= 0 {
+			t.Errorf("a changeling land scores %.2f on %q with signals %v", score, theme, signals)
+		}
+	}
+}
