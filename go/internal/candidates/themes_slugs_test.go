@@ -29,6 +29,13 @@ func TestThemeSlugsExist(t *testing.T) {
 			}
 		}
 	}
+	// The typal land slugs sit outside the rows, and the matcher drops an
+	// unknown slug without a message too (D-759).
+	for _, slug := range tbl.TypalLand.Slugs {
+		if !tags.Has(slug) {
+			t.Errorf("typal_land names slug %q, which the snapshot does not have", slug)
+		}
+	}
 	roles := make([]string, 0, len(tbl.Roles))
 	for role := range tbl.Roles {
 		roles = append(roles, role)
