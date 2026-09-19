@@ -6,32 +6,31 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-17)
+## RESUME HERE (2026-09-18)
 
-**Pull request #188 carries the skill improvements of `the-thing-below`, and it waits for the owner's merge** (D-751 to D-754, F-156, guardrail 18). Four skills sit in both repos, and this pull request takes the portable part of each one.
+**Pull request #TBD carries M-18, the Gríma replay that D-727 ordered, and it waits for the owner's merge** (D-755 to D-758, F-140, F-157). The measurement closes F-140 as fixed and opens F-157.
 
-**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #188 with `gh pr view 188`. Then do next step 1.
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request. Then do next step 1.
 
-**The base.** `main` is `eeba79a`, from #187, which updated the Gitar skill. #186 merged the context budget as `603d922`, and #184 merged the one-pull-request policy as `9a7be47`.
+**The base.** `main` is `a408a7f`, from #188, which carried the skill improvements of `the-thing-below`. #186 merged the context budget as `603d922`, and #184 merged the one-pull-request policy as `9a7be47`.
 
-**What changed.**
+**What this pull request holds.** It changes documents alone. No code of the app changes.
 
-- `gitar-review` reads the effective head. A commit of the hand-off or its archive alone does not make a Gitar pass stale (D-752).
-- `one-pr-one-session` holds the transitional prompt, the context-compaction rule, and an enforcement table (D-754).
-- `ste-writing` holds a glossary of one term per concept, and it documents the two new checks (D-753, D-754).
-- `design-doc-style` asks each entry to cite a decision id, and each measurement to have its own entry.
-- `make ref-check` fails on a cited id that no register defines, and on a dead path in backticks (D-753).
-- `make context-budget` holds each skill file under 36,864 bytes. `mtg-corpus` keeps the exemption of D-750.
-- The first run of the check found three defects (F-156). This pull request fixes each one.
-- M-6 has an entry now. D-254 names the branch `pr-7c`. The rollback procedure names a folder that exists.
+- `docs/reference/m18-grima-conditions-2026-09-18.md` holds every count of the replay.
+- **F-140 closes as fixed** (D-758, a session call). Its cause was the theme miss of F-142, and PR-54 cured it.
+- **F-157 opens.** The owned pool of Gríma is thin at three roles, and every build ran a repair turn.
+- The sequencing list gains step 44 for #188, which had no entry, and step 45 for M-18.
 
-**The checks.** `make verify` passed on this machine, and every job of the verify workflow and `pr-contract` passed on `d6c0eb5`. The pull request waits for the owner's merge.
+**The numbers.** The theme "opponent milling cards" now matches 823 cards, and M-17 read 0. The owned-only shortlist holds 25 synergy cards, 10 threats, and 1 wincon, and M-17 read 0 of each. Three real builds hold 20, 18, and 24 creature enablers against the line of 11, and the deck of the review held 8.
 
-**The review.** `gitar-bot` approved `d6c0eb5` with no open finding. Its first pass gave one suggestion on 2026-09-18: REF 2 read no path that starts with a dot, so it skipped `.claude` and `.github`. The finding has full merit, and the fix allows one leading dot. Three unit tests cover it. Gitar resolved the thread itself.
+**The paid run.** Three builds cost $0.2350 in total (D-757). The owner approved them. No other paid target ran.
+
+**The checks.** `make ste-check` and `make ref-check` read 0 findings.
 
 **What waits on the owner.**
 
 - The merge of this pull request, after the review of `gitar-bot`.
+- Confirmation that F-140 closes, because D-727 was an owner decision (D-758 is a session call).
 - The next item of the roadmap (next step 1).
 - Five sessions on the new files, before a decision on the checkpoint rule (next step 2, D-750).
 - A deployed session with a theme that matches no card, such as "anime" (next step 3).
@@ -54,7 +53,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 A second Mac: `docs/setup-second-mac.md` holds what to carry, what to install, and how to prove the machine.
 
-Seventeen things a fresh session gets wrong without this file.
+Nineteen things a fresh session gets wrong without this file.
 
 - A test card index with no Oracle text and no tag matches no theme. The theme row of D-725 then asks, and the build never starts. Give each fixture card its real text.
 - A singular creature-type word keeps the generic rule, and its plural reads the type row (D-731). So "zombie" and "zombies" read two different lists, and F-144 records why.
@@ -72,6 +71,8 @@ Seventeen things a fresh session gets wrong without this file.
 - A background shell command starts in the directory the session left. On 2026-09-12 a `make` target ran in `go/` and found no rule, so head every command with an absolute `cd`.
 - A live check of a web change reads the stored session and the deployed chunk, and not the screen alone. The service worker served the old shell for one load after a deploy (F-122). The protobuf-es code holds each field name in base64, so search a chunk for a property name such as `noDecline`.
 - The hook `.claude/hooks/session_bind.py` binds a session to the first branch that it creates, pushes, or opens a pull request for. A command on a second branch exits with "Blocked". Start a new clean session. The owner alone removes a binding under `.git/decktome-session-bind/`.
+- A read under `users/` fails in the sandbox of a session, because that path holds the verified email (D-638). A field mask that fetches no field fails too. A replay reads a local collection export instead (D-756), and the export never enters git.
+- A stored session can be gone. `z1hshyY6Npig1FN2NuV7` no longer exists in `decktome-prod`, so `scripts/read-session.sh` finds nothing. M-17 recorded the request of that session, so the replay needed no session read.
 - `Pool.Names` sorts the pool by the alphabet, and the shortlist groups its cards by role. Neither order ranks a card. `Pool.Score` holds the shortlist score (D-702).
 
 ## Facts that expire
@@ -98,7 +99,7 @@ Seventeen things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **Ask the owner for the next item, in a new clean session** (D-746). #182 merged PR-53, and the sequence of the roadmap ends at step 43. OQ-83 to OQ-86 hold the other suggestions of the review of the Gríma deck. The power pass after the build still waits (D-704). F-137 stays a record (D-718), and a replay after PR-54 reads the conditions of F-140 again (D-727).
+1. **Ask the owner for the next item, in a new clean session** (D-746). The sequence of the roadmap ends at step 45. OQ-83 to OQ-86 hold the other suggestions of the review of the Gríma deck. M-18 gives them evidence. Two items carry no open question. **F-148** and **F-144** ask for a typal land signal on the type rows (D-737). **F-157** records the thin owned pool and the repair turn of every build. The power pass after the build still waits (D-704). F-137 stays a record (D-718). M-18 answers D-727, and F-140 closes as fixed (D-758).
 2. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It waits, because the ten sessions of the audit ran before #184 and before D-749.
 3. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git.
 4. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide". Session `z1hshyY6Npig1FN2NuV7` named its commander, so it showed no such row.
@@ -121,6 +122,10 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 ## The three most recent sessions
 
+### 2026-09-18: the Gríma replay of M-18
+
+**The owner chose the replay that D-727 ordered, over a typal land signal and the four open questions of the Gríma review** (D-755). The session `z1hshyY6Npig1FN2NuV7` no longer exists, and the sandbox refuses every read under `users/`, so the replay read a local ManaBox export of 2026-09-02 (D-756). The owner approved three real builds, and they cost $0.2350 (D-757). Every condition line holds, so F-140 closes as fixed (D-758). F-157 opens on the thin owned pool and the repair turn of every build.
+
 ### 2026-09-17: the skill improvements of `the-thing-below`
 
 **The owner asked for a read of the skills of `/Volumes/SSD-1TB/the-thing-below`, and then for its improvements here** (D-751 to D-754). The pull request takes the effective head, the transitional prompt, the context-compaction rule, the glossary, and the enforcement table. It adds `make ref-check` and a byte limit for each skill file. The first run found three dead references, and F-156 holds them. The session ran no paid target.
@@ -128,10 +133,6 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 ### 2026-09-16d: the context budget
 
 **The owner asked for an audit of the token use of this repo, and then for its fixes.** The audit read ten sessions, and it found that session length and the start read drive the cost. This pull request caps the hand-off, moves the paid-target detail out of `CLAUDE.md`, and adds hard rule 13 and `make context-budget` (D-749). The owner deferred the checkpoint rule until five sessions measure the change (D-750). The session ran no paid target.
-
-### 2026-09-16c: one pull request, one clean session
-
-**#184 made one pull request the unit of a session** (D-746 to D-748). A hook binds a session to one branch, and `make pr-check` reads the documentation matrix of each pull request. The archive holds the full record.
 
 ## The archive
 
