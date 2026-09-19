@@ -12,6 +12,38 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-17
+
+**Pull request #188 carries the skill improvements of `the-thing-below`, and it waits for the owner's merge** (D-751 to D-754, F-156, guardrail 18). Four skills sit in both repos, and this pull request takes the portable part of each one.
+
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #188 with `gh pr view 188`. Then do next step 1.
+
+**The base.** `main` is `eeba79a`, from #187, which updated the Gitar skill. #186 merged the context budget as `603d922`, and #184 merged the one-pull-request policy as `9a7be47`.
+
+**What changed.**
+
+- `gitar-review` reads the effective head. A commit of the hand-off or its archive alone does not make a Gitar pass stale (D-752).
+- `one-pr-one-session` holds the transitional prompt, the context-compaction rule, and an enforcement table (D-754).
+- `ste-writing` holds a glossary of one term per concept, and it documents the two new checks (D-753, D-754).
+- `design-doc-style` asks each entry to cite a decision id, and each measurement to have its own entry.
+- `make ref-check` fails on a cited id that no register defines, and on a dead path in backticks (D-753).
+- `make context-budget` holds each skill file under 36,864 bytes. `mtg-corpus` keeps the exemption of D-750.
+- The first run of the check found three defects (F-156). This pull request fixes each one.
+- M-6 has an entry now. D-254 names the branch `pr-7c`. The rollback procedure names a folder that exists.
+
+**The checks.** `make verify` passed on this machine, and every job of the verify workflow and `pr-contract` passed on `d6c0eb5`. The pull request waits for the owner's merge.
+
+**The review.** `gitar-bot` approved `d6c0eb5` with no open finding. Its first pass gave one suggestion on 2026-09-18: REF 2 read no path that starts with a dot, so it skipped `.claude` and `.github`. The finding has full merit, and the fix allows one leading dot. Three unit tests cover it. Gitar resolved the thread itself.
+
+**What waits on the owner.**
+
+- The merge of this pull request, after the review of `gitar-bot`.
+- The next item of the roadmap (next step 1).
+- Five sessions on the new files, before a decision on the checkpoint rule (next step 2, D-750).
+- A deployed session with a theme that matches no card, such as "anime" (next step 3).
+- A look at the first commander question after a load of the app (next step 4).
+- OQ-67, OQ-77, OQ-80, and OQ-83 to OQ-86.
+
 ## The resume section of 2026-09-16
 
 **Pull request #184 holds the one-pr-one-session policy, and it waits for the owner's merge** (F-154, D-746 to D-748, guardrail 16). A session works on one pull request now. The pull request carries its code, tests, decisions, documents, review answers, and this hand-off. No pull request exists to record an earlier merge or deploy.
