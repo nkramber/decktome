@@ -1644,7 +1644,7 @@ The match of `theme.go` read a row of `themes.json` by the exact word. So "milli
 - **The question.** When no word of the theme matches a card, the theme row asks for the theme again before the build (D-725, D-728). It reads the cards of the format and the colors. A theme that matches closes the row, and a reply that keeps the theme skips it. The card pool rows never share its turn.
 - **Stop words.** Format names, jank words, and "stuff" name no theme. So a request such as "the strongest Modern deck" gets no theme question (F-145).
 
-**M-18: The Gríma replay after PR-54 reads the card conditions again (F-140, F-157, D-755 to D-758).** ✅ measured 2026-09-18, for $0.2350.
+**M-18: The Gríma replay after PR-54 reads the card conditions again (F-140, F-157, D-755 to D-758).** ✅ measured 2026-09-18, for $0.2350, and merged as #189.
 D-727 held F-140 as a record until a replay after PR-54. `docs/reference/m18-grima-conditions-2026-09-18.md` holds every count.
 
 - **The cause is gone.** The theme "opponent milling cards" now matches 823 cards, because the word-form rule reads "milling" as the mill row (D-724). M-17 read 0 cards on theme.
@@ -2008,7 +2008,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 42. **F-154** one pull request, one clean session (D-746 to D-748). **Guardrail 16** binds every later pull request. The skill `one-pr-one-session`, the `pr-contract` workflow, and the session hook enforce it. ✅ merged as #184.
 43. **F-155** the start read stays small (D-749). **Guardrail 17** binds every later pull request, and `make context-budget` enforces it. The checkpoint rule waits for five measured sessions (D-750). ✅ merged as #186.
 44. **F-156** every cited id and every path resolves (D-751 to D-754). **Guardrail 18** binds every later pull request, and `make ref-check` enforces it. The four session skills carry the portable part of `the-thing-below`. ✅ merged as #188.
-45. **M-18** the Gríma replay after PR-54 reads the card conditions again (D-727, D-755 to D-758). **F-140** ✅ closes as fixed: the cause was the theme miss of F-142, and PR-54 cured it. Three builds hold every condition line. **F-157** opens on the thin owned pool and the repair turn of every build.
+45. **M-18** the Gríma replay after PR-54 reads the card conditions again (D-727, D-755 to D-758). **F-140** ✅ closes as fixed: the cause was the theme miss of F-142, and PR-54 cured it. Three builds hold every condition line. **F-157** opens on the thin owned pool and the repair turn of every build. ✅ merged as #189.
 
 ## 9. Open questions
 

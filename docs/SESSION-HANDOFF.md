@@ -8,9 +8,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-18)
 
-**Pull request #TBD carries M-18, the Gríma replay that D-727 ordered, and it waits for the owner's merge** (D-755 to D-758, F-140, F-157). The measurement closes F-140 as fixed and opens F-157.
+**Pull request #189 carries M-18, the Gríma replay that D-727 ordered, and it waits for the owner's merge** (D-755 to D-758, F-140, F-157). The measurement closes F-140 as fixed and opens F-157.
 
-**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request. Then do next step 1.
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #189 with `gh pr view 189`. Then do next step 1.
 
 **The base.** `main` is `a408a7f`, from #188, which carried the skill improvements of `the-thing-below`. #186 merged the context budget as `603d922`, and #184 merged the one-pull-request policy as `9a7be47`.
 
