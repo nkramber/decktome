@@ -20,7 +20,9 @@ const (
 
 var (
 	W = mtgv1.Color_COLOR_W
+	U = mtgv1.Color_COLOR_U
 	B = mtgv1.Color_COLOR_B
+	R = mtgv1.Color_COLOR_R
 	G = mtgv1.Color_COLOR_G
 )
 

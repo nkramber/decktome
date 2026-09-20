@@ -29,11 +29,14 @@ func TestThemeSlugsExist(t *testing.T) {
 			}
 		}
 	}
-	// The typal land slugs sit outside the rows, and the matcher drops an
-	// unknown slug without a message too (D-759).
-	for _, slug := range tbl.TypalLand.Slugs {
+	// The typal slugs sit outside the rows, and the matcher drops an
+	// unknown slug without a message too (D-759, F-144).
+	typalSlugs := append([]string(nil), tbl.Typal.LandSlugs...)
+	typalSlugs = append(typalSlugs, tbl.Typal.CardSlugs...)
+	typalSlugs = append(typalSlugs, tbl.Typal.NoncreatureSlugs...)
+	for _, slug := range typalSlugs {
 		if !tags.Has(slug) {
-			t.Errorf("typal_land names slug %q, which the snapshot does not have", slug)
+			t.Errorf("typal names slug %q, which the snapshot does not have", slug)
 		}
 	}
 	roles := make([]string, 0, len(tbl.Roles))

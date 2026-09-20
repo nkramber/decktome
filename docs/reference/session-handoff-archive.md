@@ -12,6 +12,42 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-20
+
+**Pull request #192 carries the merge trigger of the transitional prompt, and it waits for the owner's merge** (D-764). It changes documents and one skill alone. No code and no test changes.
+
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #192 with `gh pr view 192`. Then do next step 1.
+
+**The base.** `main` is `49412a4`, from #191, which carried PR-56. #190 merged PR-55 as `d7a5825`.
+
+**What this pull request holds.**
+
+- Section 5 of `.claude/skills/one-pr-one-session/SKILL.md` names the trigger. Any message of the owner that names the merge of the bound pull request starts the section.
+- The same section holds a procedure of six steps, the fenced block, and five rules of the prompt.
+- The block gains one line for each check that needs `main` or the deploy of the merge.
+- Section 1 names the trigger as the one exception to step 2, the blocked answer of the start gate.
+- Two cases stop the prompt: an unclear message, and a merge before section 3 calls the pull request ready. Both ask the owner.
+- Hard rule 12 of `CLAUDE.md` holds the trigger in one line, so a session that lost the skill still reacts.
+- The enforcement table names the agent for the trigger, because no check reads the conversation.
+- `docs/decisions.md` gains D-764, with the three owner answers of 2026-09-20.
+
+**The source.** The sibling repos the-thing-below and what-you-carry hold the same rule, and this pull request follows them. The owner chose the inline form of the-thing-below over the reference file of what-you-carry.
+
+**The paid run.** None. This pull request runs no provider call.
+
+**The checks.** `make verify` passed on this machine on the head `98322cf`, exit 0. `make ste-check`, `make ref-check`, `make lifecycle-check`, and `make context-budget` each read 0 findings. `make pr-check` reads 0 contract errors. Every job of the verify workflow and `pr-contract` passed on `98322cf`. The job `verify:changes` skipped, because it runs on a manual start alone. This pull request changes no code, so it adds no test.
+
+**The review.** `gitar-bot` approved `98322cf`, and it reads 1 finding of 1 closed and no open thread. The review is current: the head of the pull request matches, and the dashboard comment reads an edit time after the push. The finding said that the rules of the prompt cite hard rule 6 for a claim that the rule does not carry. The session agreed, and the bullet left section 5. CAUTION: the Gitar trial ends about 2026-09-23, from the dashboard of 2026-09-20.
+
+**What waits on the owner.**
+
+- The merge of this pull request, after the review of `gitar-bot`.
+- The next item of the roadmap (next step 1).
+- Five sessions on the new files, before a decision on the checkpoint rule (next step 2, D-750).
+- A deployed session with a theme that matches no card, such as "anime" (next step 3).
+- A look at the first commander question after a load of the app (next step 4).
+- OQ-67, OQ-77, OQ-80, and OQ-83 to OQ-86.
+
 ## The resume section of 2026-09-19b
 
 **Pull request #191 carries PR-56, the repair-turn gate of a finding on the commander, and it waits for the owner's merge** (D-762, D-763, F-157). The fix and its measurement cost nothing.
@@ -340,6 +376,10 @@ CAUTION: the `decktome` gcloud configuration named the Wallabee account and proj
 - OQ-83 to OQ-86, four suggestions of the review of the Gríma deck.
 
 **CAUTION: a local `make verify` is not the whole story.** It read green for weeks while shellcheck failed (F-89, D-641). Every pull request runs the workflow now.
+
+## 2026-09-19: the typal land signal of PR-55
+
+**The owner chose the wider signal, kept it to lands, and extended it to a singular type word** (D-759 to D-761). A type row of `themes.json` read no land, so a typal shortlist lost every land that makes mana for its type (F-148). A new `typal_land` block holds the tag `typal-choose` and one needle for Path of Ancestry. Each row adds its own subtype word as a land needle. The five lands of F-148 are on the dinosaur shortlist again, in the plural and in the singular. The session ran no paid target, and every count comes from the local snapshot of 2026-09-04.
 
 ## 2026-09-18: the Gríma replay of M-18
 

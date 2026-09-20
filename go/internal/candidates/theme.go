@@ -35,19 +35,25 @@ type themeRow struct {
 	Aliases []string `json:"aliases"`
 }
 
-// typalLandRow holds the land signals every row with a subtype carries
-// (D-759, F-148). A typal land makes mana for a creature type the player
-// chooses, so one slug and one needle hold for every type row.
-type typalLandRow struct {
-	Slugs []string `json:"slugs"`
-	Text  []string `json:"text"`
+// typalRow holds the typal signals every row with a subtype carries
+// (D-759, F-144, F-148). A typal land makes mana for a creature type the
+// player chooses, and a typal card rewards that type, so the same slugs
+// and needles hold for every type row.
+type typalRow struct {
+	LandSlugs []string `json:"land_slugs"`
+	LandText  []string `json:"land_text"`
+	// CardSlugs are the tags that count on a card that is no land.
+	CardSlugs []string `json:"card_slugs"`
+	// NoncreatureSlugs are the tags that count on a card that is no land,
+	// no creature, and no Kindred card.
+	NoncreatureSlugs []string `json:"noncreature_slugs"`
 }
 
 type themeTable struct {
 	VerifiedAt string              `json:"verified_at"`
 	Themes     map[string]themeRow `json:"themes"`
 	Roles      map[string][]string `json:"roles"`
-	TypalLand  typalLandRow        `json:"typal_land"`
+	Typal      typalRow            `json:"typal"`
 
 	// alias maps each alias onto its row, and plural maps the singular of
 	// a plural row name onto that row, for each row that names no subtype.
@@ -134,8 +140,9 @@ const (
 	scoreCap         = 2.5
 	// A typal land is a payoff of the theme and of no other deck, and the
 	// tag and the needle state the same fact, so it weighs as payoff text
-	// (D-759).
-	weightTypalLand = weightPayoffText
+	// (D-759). A typal card carries the same weight for the same reason
+	// (F-144).
+	weightTypal = weightPayoffText
 )
 
 // ThemeMatch is the resolved theme, for logs and the gate doc.
@@ -161,6 +168,14 @@ type ThemeMatch struct {
 	// names no type, so no other signal of the row reads it (F-148).
 	LandSlugs []string
 	LandText  []string
+	// CardSlugs are the typal card signals, and they count on a card that
+	// is no land (F-144). Door of Destinies rewards a creature type the
+	// player chooses, and it names no type, so no other signal reads it.
+	CardSlugs []string
+	// NoncreatureSlugs count on a card that is no land and no creature.
+	// The tag typal-share holds Coat of Arms, and it also holds creatures
+	// of one named type, which reward that type alone (F-144).
+	NoncreatureSlugs []string
 	// Unmatched lists words that fired on no card of the pool. Build
 	// fills it after the scan: a needle is a guess until a card holds it.
 	Unmatched []string
@@ -293,20 +308,31 @@ func (t *themeTable) match(theme string, tags *cards.TagIndex) ThemeMatch {
 		*list = appendUnique(*list, n)
 		trace(kind + ":" + n)
 	}
-	// addTypalLand gives a word that names a creature type the typal land
-	// signals, and the type word itself as a land needle (D-759, D-760).
-	// The needle reaches the lands that name the type, such as Sliver
-	// Hive. Each signal counts on a land alone (F-144, F-148).
-	addTypalLand := func(subtype string) {
-		for _, slug := range t.TypalLand.Slugs {
+	// addTypal gives a word that names a creature type the typal signals,
+	// and the type word itself as a land needle (D-759, D-760). The needle
+	// reaches the lands that name the type, such as Sliver Hive. The land
+	// signals count on a land alone, and the card signals count on a card
+	// that is no land (F-144, F-148).
+	addTypal := func(subtype string) {
+		for _, slug := range t.Typal.LandSlugs {
 			if resolveSlug(slug) {
 				addNeedle(&m.LandSlugs, "land-tag", slug)
 			}
 		}
-		for _, n := range t.TypalLand.Text {
+		for _, n := range t.Typal.LandText {
 			addNeedle(&m.LandText, "land-text", strings.ToLower(n))
 		}
 		addNeedle(&m.LandText, "land-text", strings.ToLower(subtype))
+		for _, slug := range t.Typal.CardSlugs {
+			if resolveSlug(slug) {
+				addNeedle(&m.CardSlugs, "card-tag", slug)
+			}
+		}
+		for _, slug := range t.Typal.NoncreatureSlugs {
+			if resolveSlug(slug) {
+				addNeedle(&m.NoncreatureSlugs, "noncreature-tag", slug)
+			}
+		}
 	}
 	for _, w := range t.words(theme) {
 		name, found := t.rowOf(w)
@@ -338,7 +364,7 @@ func (t *themeTable) match(theme string, tags *cards.TagIndex) ThemeMatch {
 			}
 			if row.Subtype != "" {
 				addNeedle(&m.Subtypes, "subtype", row.Subtype)
-				addTypalLand(row.Subtype)
+				addTypal(row.Subtype)
 			}
 			for _, ty := range row.Types {
 				addNeedle(&m.Types, "type", ty)
@@ -354,7 +380,7 @@ func (t *themeTable) match(theme string, tags *cards.TagIndex) ThemeMatch {
 			}
 			// A typal slug that the card database holds proves the word
 			// names a creature type. A singular type word keeps this rule
-			// and reads no type row (D-731), so it takes the typal land
+			// and reads no type row (D-731), so it takes the typal
 			// signals here (D-759).
 			typal := false
 			for _, s := range []string{"typal-" + w, "typal-" + singular(w)} {
@@ -366,7 +392,7 @@ func (t *themeTable) match(theme string, tags *cards.TagIndex) ThemeMatch {
 			addNeedle(&m.Keywords, "keyword", title(w))
 			addNeedle(&m.Subtypes, "subtype", title(singular(w)))
 			if typal {
-				addTypalLand(singular(w))
+				addTypal(singular(w))
 			}
 			addNeedle(&m.Text, "text", w)
 			m.generic = append(m.generic, w)
@@ -460,6 +486,13 @@ func isWordByte(b byte) bool {
 	return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b >= 0x80
 }
 
+// isCreatureCard reports whether the card has a creature type of its own.
+// A Kindred card names one creature type on its type line, so it counts
+// as a creature here (F-144).
+func isCreatureCard(c *mtgv1.Card) bool {
+	return slices.Contains(c.CardTypes, "Creature") || slices.Contains(c.CardTypes, "Kindred")
+}
+
 // score returns the theme fit of a card and the signals that fired.
 func (m ThemeMatch) score(c *mtgv1.Card) (float64, []string) {
 	var score float64
@@ -526,8 +559,9 @@ func (m ThemeMatch) score(c *mtgv1.Card) (float64, []string) {
 		score += weightText
 		signals = append(signals, "text:"+n)
 	}
-	// The typal land signals are one fact about one card type, so they
-	// count once and on a land alone (D-759, D-760).
+	// The typal signals are one fact about one card type, so they count
+	// once. The land signals read a land alone, and the card signals read
+	// a card that is no land (D-759, D-760, F-144).
 	if slices.Contains(c.CardTypes, "Land") {
 		hit = false
 		for _, slug := range m.LandSlugs {
@@ -543,7 +577,28 @@ func (m ThemeMatch) score(c *mtgv1.Card) (float64, []string) {
 			}
 		}
 		if hit {
-			score += weightTypalLand
+			score += weightTypal
+		}
+	} else {
+		hit = false
+		for _, slug := range m.CardSlugs {
+			if m.tagged[slug][c.OracleId] {
+				hit = true
+				signals = append(signals, "card-tag:"+slug)
+			}
+		}
+		// A creature of one named type rewards that type alone, and the
+		// tag typal-share holds many of them (F-144).
+		if !isCreatureCard(c) {
+			for _, slug := range m.NoncreatureSlugs {
+				if m.tagged[slug][c.OracleId] {
+					hit = true
+					signals = append(signals, "noncreature-tag:"+slug)
+				}
+			}
+		}
+		if hit {
+			score += weightTypal
 		}
 	}
 	if score > scoreCap {
@@ -730,6 +785,10 @@ func (m ThemeMatch) Describe() string {
 	if len(m.LandSlugs) > 0 || len(m.LandText) > 0 {
 		s := append(append([]string(nil), m.LandSlugs...), m.LandText...)
 		parts = append(parts, "typal lands "+strings.Join(s, ", "))
+	}
+	if len(m.CardSlugs) > 0 || len(m.NoncreatureSlugs) > 0 {
+		s := append(append([]string(nil), m.CardSlugs...), m.NoncreatureSlugs...)
+		parts = append(parts, "typal cards "+strings.Join(s, ", "))
 	}
 	if len(m.Unmatched) > 0 {
 		parts = append(parts, "unmatched "+strings.Join(m.Unmatched, ", "))
