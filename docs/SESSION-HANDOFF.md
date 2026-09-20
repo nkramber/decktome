@@ -26,13 +26,13 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 - `docs/decisions.md` gains D-769 and D-770, with the two owner answers of 2026-09-20.
 - **F-144 closes with this pull request.** PR-55, PR-57, and PR-58 each closed one half.
 
-**The measurement, all of it free** (D-770). `docs/reference/pr58-type-name-2026-09-20.md` holds every count. The needle gives a signal to 786 cards of the snapshot of 2026-09-04 that no signal reached. Of the 786, 550 make a token of the type and 87 turn a permanent into it. The other 149 are noise. 55 hold the word after "non-" alone, and 15 match the card's own name. The last 79 are mostly cards that punish the type. A replay of five shortlists reads a swap and no growth: 84 cards entered and 84 left. Of the 84, 46 are a creature of the type and 34 make one. No card that punishes the type entered. The plural and the singular now read one shortlist, card for card, for zombies, goblins, spirits, and cats. Every type row reads 1 or more on-theme cards in every single color, so the change hides no theme question of D-725.
+**The measurement, all of it free** (D-770). `docs/reference/pr58-type-name-2026-09-20.md` holds every count. The needle gives a signal to 786 cards of the snapshot of 2026-09-04 that no signal reached, and 637 of them reward the type. A replay of five shortlists reads a swap and no growth: 84 cards entered and 84 left, and no card that punishes the type entered. The plural and the singular read one shortlist now. Every type row reads 1 or more on-theme cards in every single color, so the change hides no theme question of D-725.
 
 **No paid target ran** (D-770). Deck gate run 29 stays the newest whole run, and `make eval-check` still reads it as PASS. CAUTION: no deck of a model measures this change. The next whole deck gate run carries it, beside any other change that lands first.
 
-**The checks.** Fill this after `make verify`.
+**The checks.** `make verify` passed on this machine on the content of `5c3aed3`, exit 0. The four lint checks and `make pr-check` each read 0 findings. `make eval-check` reads the suite `decks` as PASS on run 29. `make themes-check` passed, and it runs five snapshot tests now against three before (F-158). Every job of the verify workflow and `pr-contract` passed on `ccdc14c`. The job `verify:changes` skipped, because it runs on a manual start alone.
 
-**The review.** Fill this after the `gitar-review` skill runs.
+**The review.** `gitar-bot` approved `ccdc14c`, and it reads 1 closed of 1 findings and no open thread. The review is current: the head matches, and the dashboard comment reads an edit time after the push. The one finding had full merit. D-769 held the replay counts 85/85/81 of an earlier measurement, and the built change reads 84/84. The commit `ccdc14c` corrects D-769, and the thread is resolved. CAUTION: the Gitar trial ends about 2026-09-22, from the dashboard of 2026-09-20.
 
 **What waits on the owner.**
 
