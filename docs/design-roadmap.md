@@ -1766,7 +1766,7 @@ A replay of five shortlists reads a swap and no growth: 84 cards entered and 84 
 Every type row reads 1 or more on-theme cards in every single color. That holds before the change and after it, so the change hides no theme question of D-725. No paid target ran (D-770). `docs/reference/pr58-type-name-2026-09-20.md` holds every count.
 > *In plain English:* a zombie deck wants the cards that make zombies. The app read a card that makes thirteen of them as a card of no theme. This change teaches each tribe row to find its own name in the card text. It also stops the word "cat" in a match with the word "indicate".
 
-**PR-59: The prompt reads the commander (F-159, D-771 to D-774).** 🔧 built 2026-09-20. It came after #194, which merged PR-58.
+**PR-59: The prompt reads the commander (F-159, D-771 to D-774).** 🔧 built 2026-09-20, as #195. It came after #194, which merged PR-58.
 The review of the Gríma deck of 2026-09-14 asked whether the build reads the payoff shape of the commander. A free read of the code says it does not, and F-159 records the gap. Gríma, Saruman's Footman can not be blocked, and its trigger fires one time for each hit. The prompt stated none of that. It named the card and stopped.
 
 - **The block.** The prompt writes the name, the type line, the mana cost, the power and toughness, and every line of Oracle text of each commander (D-771).

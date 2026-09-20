@@ -8,9 +8,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-20d)
 
-**Pull request #<N> carries PR-59, the commander in the model prompt, and it waits for the owner's merge** (F-159, D-771 to D-774).
+**Pull request #195 carries PR-59, the commander in the model prompt, and it waits for the owner's merge** (F-159, D-771 to D-774).
 
-**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view`. Then do next step 1.
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #195 with `gh pr view 195`. Then do next step 1.
 
 **The base.** `main` is `5d1d7e0`, from #194, which carried PR-58.
 
@@ -28,9 +28,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **No paid target ran** (D-771). Deck gate run 29 stays the newest whole run, and `make eval-check` still reads it as PASS. CAUTION: this change is not deterministic. No test proves that a deck improves, and the next whole deck gate run carries it beside any other change that lands first.
 
-**The checks.** <filled before the review>
+**The checks.** `make verify` passed on this machine on the content of `7c75df0`, exit 0. The four lint checks and `make pr-check` each read 0 findings. `make eval-check` reads the suite `decks` as PASS on run 29. The five new tests fail on the old code, and `TestShortlistOmitsTheCommander` caught the first draft of the block.
 
-**The review.** <filled after the push>
+**The review.** <filled after the review>
 
 **What waits on the owner.**
 
