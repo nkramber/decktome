@@ -26,9 +26,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The paid run.** None. Every count comes from the local snapshot of 2026-09-04 and the local export of 2026-09-02.
 
-**The checks.** `make verify` passed on this machine, exit 0. `make ste-check`, `make ref-check`, `make lifecycle-check`, and `make context-budget` each read 0 findings. Both new tests fail on the old code. The first reads 4 findings where it wants 3, and the second counts 2 provider calls where it wants 1.
+**The checks.** `make verify` passed on this machine, exit 0. `make ste-check`, `make ref-check`, `make lifecycle-check`, and `make context-budget` each read 0 findings. Both new tests fail on the old code. The first reads 4 findings where it wants 3, and the second counts 2 provider calls where it wants 1. Every job of the verify workflow and `pr-contract` passed on `91934bb`. The job `verify:changes` skipped, because it runs on a manual start alone.
 
-**The review.** PENDING-REVIEW
+**The review.** `gitar-bot` approved `91934bb`, and it reads 0 findings and no open thread. The review is current: the head of the pull request matches, and the dashboard comment reads an edit time after the push. CAUTION: the Gitar trial ends about 2026-09-23, from the dashboard of 2026-09-20.
 
 **What waits on the owner.**
 
