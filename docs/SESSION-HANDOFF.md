@@ -8,9 +8,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-20)
 
-**Pull request #PRNUM carries the merge trigger of the transitional prompt, and it waits for the owner's merge** (D-764). It changes documents and one skill alone. No code and no test changes.
+**Pull request #192 carries the merge trigger of the transitional prompt, and it waits for the owner's merge** (D-764). It changes documents and one skill alone. No code and no test changes.
 
-**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #PRNUM with `gh pr view PRNUM`. Then do next step 1.
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #192 with `gh pr view 192`. Then do next step 1.
 
 **The base.** `main` is `49412a4`, from #191, which carried PR-56. #190 merged PR-55 as `d7a5825`.
 
