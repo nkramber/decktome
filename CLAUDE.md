@@ -36,7 +36,7 @@ Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
    - Wait for a current Gitar review before you call the pull request ready. Fix each finding on the same pull request, in the same session (D-746).
    - A commit of `docs/SESSION-HANDOFF.md` or the hand-off archive alone does not make a Gitar pass stale (D-752).
 11. **Never hesitate to ask or to push back.** Ask a question the moment you have one. When the owner's two statements conflict, say so and quote both. When a request rests on a wrong premise, say so with the evidence. The owner sees this as the key to good LLM-user interaction. Silence is the mistake, not the question.
-12. **One pull request, one clean session.** A session works on one pull request, and the pull request carries all its documents and its hand-off. No pull request exists to record an earlier merge. Load `.claude/skills/one-pr-one-session/SKILL.md` for all work on a pull request (D-746 to D-748).
+12. **One pull request, one clean session.** A session works on one pull request, and the pull request carries all its documents and its hand-off. No pull request exists to record an earlier merge. Load `.claude/skills/one-pr-one-session/SKILL.md` for all work on a pull request (D-746 to D-748). The owner says that the pull request merged. Then write the transitional prompt of section 5, and do no other work (D-754, D-764).
 13. **Keep command output small** (D-749). Every line of output stays in the context of every later call. Count or list the matches first, with `grep -c` or `grep -l`. Then read a bounded range, with `sed -n`, `head`, or the offset and limit of the Read tool. Read only the section that you need. Do not print a whole document. Show the output of a failed test, build, or gate in full, because the error is the evidence.
 
 ## Reference material
@@ -51,7 +51,7 @@ Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
 | Skill | Use when |
 |---|---|
 | `ste-writing` | Before you write or edit any `.md` file here. |
-| `one-pr-one-session` | Before any work on a pull request: a start, a revision, a review, or the hand-off. |
+| `one-pr-one-session` | Before any work on a pull request: a start, a revision, a review, a merge message, or the hand-off. |
 | `gitar-review` | After each push to a pull request, documents alone included. |
 | `design-doc-style` | Before you edit `docs/design-roadmap.md`. |
 | `mtg-corpus` | Before you reason about formats, legality, archetypes, or card terms. |
