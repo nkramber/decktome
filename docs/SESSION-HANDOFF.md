@@ -6,31 +6,29 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-19)
+## RESUME HERE (2026-09-19b)
 
-**Pull request #190 carries PR-55, the typal land signal of the type rows, and it waits for the owner's merge** (D-759 to D-761, F-144, F-148). The fix and its measurement cost nothing.
+**Pull request #PRNUM carries PR-56, the repair-turn gate of a finding on the commander, and it waits for the owner's merge** (D-762, D-763, F-157). The fix and its measurement cost nothing.
 
-**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #190 with `gh pr view 190`. Then do next step 1.
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #PRNUM with `gh pr view PRNUM`. Then do next step 1.
 
-**The base.** `main` is `c2d5957`, from #189, which carried M-18. #188 merged the skill improvements of `the-thing-below` as `a408a7f`.
+**The base.** `main` is `d7a5825`, from #190, which carried PR-55. #189 merged M-18 as `c2d5957`.
 
-**What this pull request holds.** It changes the theme table, the theme matcher, their tests, and the documents. No prompt and no model call changes.
+**What this pull request holds.** It changes the repair gate of the build, its tests, and the documents. No prompt and no model call changes.
 
-- `go/internal/candidates/themes.json` gains a `typal_land` block: the tag `typal-choose` and one text needle.
-- `go/internal/candidates/theme.go` gives every row with a subtype the block and its own subtype word, as land-only signals.
-- `go/internal/candidates/theme.go` also gives the signal to a singular type word, which keeps the generic rule (D-731, D-761).
-- A land needle matches on a word boundary, so "bat" reads no land whose text holds "battlefield". The Gitar review of #190 found it.
-- `go/internal/candidates/typalland_test.go` holds eight new tests. One of them needs the snapshot, and `make themes-check` runs it.
-- **F-148 closes as fixed.** The land half of **F-144** closes with it, and its nonland half stays a record.
-- `docs/reference/pr55-typal-lands-2026-09-19.md` holds every count.
+- `go/internal/generate/generate.go` gains `fixable`. It drops every finding that names a commander of the deck, before the build decides on a repair turn.
+- The build writes one log line for the findings it drops, and the deck keeps each one (D-226, D-300).
+- `go/internal/generate/ownedcommander_test.go` holds two tests, and both fail on the old code.
+- **F-157 closes as fixed.** Its register row carries a dated correction of its premise.
+- `docs/reference/f157-owned-commander-2026-09-19.md` holds every count.
 
-**The numbers.** The dinosaur typal prompt of the deck gate lost Cavern of Souls, Secluded Courtyard, Unclaimed Territory, Path of Ancestry, and Three Tree City. All five are on the shortlist now, and Restless Ridgeline joins them. The theme "dinosaur", singular, read 0 of the five before D-761 and reads all five now. The shortlist still holds 266 cards and 40 lands, and the on-theme count moves from 208 to 215. Seven lands that enter tapped on a condition leave to make the room.
+**The numbers.** A free replay of the M-18 request names the card of the `not_owned` finding. It is Gríma, Saruman's Footman, the commander the reader named, and the export of 2026-09-02 holds no copy. The model named no card outside the collection: the owned-only shortlist drops every card at 0 copies, and `Normalize` reads the pool alone. A control run with the commander covered reads profile findings alone, and no repair turn. The uncapped owned pool holds 475 cards, with 1 Game Changer against a bracket 5 floor of 8, and 1 tutor against 4. The replay deck reads 6 `profile_off_band` findings, and the three model decks of M-18 read 3.
 
-**The paid run.** None. Every count of PR-55 comes from a free run against the local snapshot of 2026-09-04.
+**The paid run.** None. Every count comes from the local snapshot of 2026-09-04 and the local export of 2026-09-02.
 
-**The checks.** `make verify` passed on this machine, exit 0. `make themes-check` passed, and it runs the new snapshot test. `make ste-check`, `make ref-check`, `make context-budget`, and `make pr-check` each read 0 findings. Every job of the verify workflow and `pr-contract` passed on `ad1517d`. The job `verify:changes` skipped, because it runs on a manual start alone.
+**The checks.** PENDING-CHECKS
 
-**The review.** `gitar-bot` approved `ad1517d`, and it reads 1 closed of 1 finding with no open thread. The finding asked for a word boundary on a land needle, and the fix and its two tests answer it. CAUTION: two examples of that finding name no card of the snapshot. The Gitar trial ends about 2026-09-23, from the dashboard of 2026-09-19.
+**The review.** PENDING-REVIEW
 
 **What waits on the owner.**
 
@@ -133,10 +131,6 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 ### 2026-09-18: the Gríma replay of M-18
 
 **The owner chose the replay that D-727 ordered, over a typal land signal and the four open questions of the Gríma review** (D-755). The session `z1hshyY6Npig1FN2NuV7` no longer exists, and the sandbox refuses every read under `users/`, so the replay read a local ManaBox export of 2026-09-02 (D-756). The owner approved three real builds, and they cost $0.2350 (D-757). Every condition line holds, so F-140 closes as fixed (D-758). F-157 opens on the thin owned pool and the repair turn of every build.
-
-### 2026-09-17: the skill improvements of `the-thing-below`
-
-**The owner asked for a read of the skills of `/Volumes/SSD-1TB/the-thing-below`, and then for its improvements here** (D-751 to D-754). The pull request takes the effective head, the transitional prompt, the context-compaction rule, the glossary, and the enforcement table. It adds `make ref-check` and a byte limit for each skill file. The first run found three dead references, and F-156 holds them. The session ran no paid target.
 
 ## The archive
 
