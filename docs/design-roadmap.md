@@ -1724,7 +1724,7 @@ Gate: two tests fail on the old code. The first reads the finding shape of the M
 2026-09-19 (built): both tests fail on the old code and pass on the new code. The whole `generate` package passes. The owned pool of the replay reaches 1 Game Changer and 1 tutor. Bracket 5 wants 8 and 4, so two floors sit outside its reach (D-763). No paid target ran, so no deck of a model measures the change. `docs/reference/f157-owned-commander-2026-09-19.md` holds every count.
 > *In plain English:* the app saw that your collection holds no copy of your own commander. It then paid the model a second time to repair a deck that no answer can repair. This change stops that second call, which costs money and about a minute.
 
-**PR-57: A typal card signal on the type rows (F-144, D-765 to D-768).** 🔧 built 2026-09-20, as #TBD. It came after #192, which merged the merge trigger of D-764.
+**PR-57: A typal card signal on the type rows (F-144, D-765 to D-768).** 🔧 built 2026-09-20, as #193. It came after #192, which merged the merge trigger of D-764.
 PR-55 taught a type row to read a land that makes mana for its type. A card that is no land kept the old gap. Door of Destinies rewards a creature type the player chooses, it names no type, and its type line names no type. So no signal of the row read it.
 
 - **The block.** The `typal_land` block of `themes.json` is the `typal` block now. It holds `land_slugs` and `land_text` for a land. It holds `card_slugs` for a card that is no land. It holds `noncreature_slugs` for a card that is no land and no creature.

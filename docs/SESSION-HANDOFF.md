@@ -8,9 +8,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-20b)
 
-**Pull request #TBD carries PR-57, the typal card signal of the type rows, and it waits for the owner's merge** (D-765 to D-768, F-144).
+**Pull request #193 carries PR-57, the typal card signal of the type rows, and it waits for the owner's merge** (D-765 to D-768, F-144).
 
-**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #TBD with `gh pr view TBD`. Then do next step 1.
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #193 with `gh pr view 193`. Then do next step 1.
 
 **The base.** `main` is `5fd8085`, from #192, which carried the merge trigger of D-764. #191 merged PR-56 as `49412a4`.
 
@@ -28,7 +28,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The paid run.** `make deck-gate` ran once, as run 29, for $2.7384. It reads PASS: 25 of 25 decks passed every block check, 0 invented names reached the user, and 0 summaries stated a false rule. The dinosaur deck of prompt 4 holds eight generic typal payoffs, and the same deck of run 28 held none. Its `theme_fit` moved from `partly` to `yes`. CAUTION: run 28 ran before #190 and #191, so the whole-run numbers carry PR-55 and PR-56 too. CAUTION: the run header names the commit `5fd8085`, because the change sat in the tree and not in a commit.
 
-**The checks.** PENDING.
+**The checks.** `make verify` passed on this machine on the head `9a9b0fe`, exit 0. `make ste-check`, `make ref-check`, `make lifecycle-check`, and `make context-budget` each read 0 findings. `make pr-check` reads 0 contract errors. `make eval-check` reads the suite `decks` as PASS. The package `go/internal/candidates` passes with the snapshot, and its seven new tests fail on the old code.
 
 **The review.** PENDING.
 
