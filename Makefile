@@ -11,7 +11,7 @@ GO := go -C go
 BUF := .bin/buf
 PNPM := pnpm --dir web
 
-.PHONY: feedback-loop feedback-loop-dry feedback-triage feedback-triage-dry smoke allow disallow manapass-check deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate bracket-calibrate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check gcs-check themes-check ste-check context-budget help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks pr-check lifecycle-check verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
+.PHONY: feedback-loop feedback-loop-dry feedback-triage feedback-triage-dry smoke self-reload-check allow disallow manapass-check deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate bracket-calibrate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check gcs-check themes-check ste-check context-budget help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks pr-check lifecycle-check verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-14s %s\n", $$1, $$2}'
@@ -559,6 +559,12 @@ dev: ## Start the local stack: emulators, fake GCS, API, worker, web. No cloud c
 
 smoke: ## Run the Playwright smoke flow over the emulators and the fake provider (PR-23, no model call, no cost). Stop make dev first
 	@./scripts/smoke.sh
+
+# The installed app reloads itself when a new worker takes over (D-692).
+# The check builds two releases and drives Chromium. It needs Node 22.23.2
+# and a pnpm store, and it calls no provider.
+self-reload-check: ## Prove that an installed app reloads itself on the next web release (D-692, free)
+	@node scripts/self-reload-check.mjs $(SELF_RELOAD_REF)
 
 dev-seed: ## Download the Scryfall snapshot into the local stack (network, ~110 MB)
 	@echo "==> one-shot card snapshot refresh (needs make dev running for fake GCS)"
