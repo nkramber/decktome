@@ -1,6 +1,6 @@
 ---
 name: one-pr-one-session
-description: Bind a session to one repository, one branch, one pull request, and one role, and make the pull request the complete unit with its code, tests, decisions, documents, and hand-off. Load before any work for a pull request - a start, a revision, a review, a Gitar answer, or the hand-off. Stops a second pull request in the same session, and stops a pull request that only records an earlier merge.
+description: Bind a session to one repository, one branch, one pull request, and one role, and make the pull request the complete unit with its code, tests, decisions, documents, and hand-off. Load before any work for a pull request - a start, a revision, a review, a Gitar answer, a merge message, or the hand-off. Stops a second pull request in the same session, and stops a pull request that only records an earlier merge.
 ---
 
 # One pull request, one clean session
@@ -24,6 +24,8 @@ Do these steps before the first edit.
 7. Name the one concern of the pull request. When you see two concerns, ask the owner.
 8. Read `docs/SESSION-HANDOFF.md` and the decisions that the change touches.
 9. Write the draft matrix of section 2 before the code.
+
+A merge message for the pull request of this session is the one exception to step 2. Section 5 gives the answer for it.
 
 When you can not do one step, do not start the work. The hook `.claude/hooks/session_bind.py` binds the session to its first branch. When it blocks a command, end the session. Only the owner removes a binding.
 
@@ -75,15 +77,33 @@ The session stays bound to the pull request while it waits for Gitar or for the 
 
 ## 5. The transitional prompt
 
-After the merge, the owner says that the pull request merged. The session then writes one transitional prompt, and it does no other work (D-754). Write the prompt for the pull request of this session alone.
+### The trigger
 
-Read the merge commit from git first:
+The owner merges the pull request and says so. That message alone starts this section (D-764). The owner asks for no prompt, and the session waits for no other word. Each of these messages is the trigger, and any other variant that names the merge of this pull request:
 
-```
-git fetch origin && git log --oneline -1 origin/main
-```
+- `Merged`
+- `Merged PR #N`
+- `PR #N is merged`
+- `#N merged`
+- `merged it`
 
-Read the next step of `docs/SESSION-HANDOFF.md` and name the next item. The pick is provisional, and the owner can name a different item. Read `docs/owner-questions.md`, and name each open question of that item.
+The trigger is the one exception to step 2 of section 1. A merge message for another pull request is not an exception, and it gets the blocked answer of step 2.
+
+Two cases stop the prompt. Ask the owner, and write no prompt until the answer arrives:
+
+- The message names no pull request, and this session holds no binding. Ask which pull request it names.
+- The owner merged the pull request before section 3 called it ready. Name each part that did not land, such as an open Gitar finding, a document, or a check. Then ask the owner for the next step.
+
+### The procedure
+
+1. Read the merge commit: `git fetch origin && git log --oneline -1 origin/main`.
+2. Confirm that the commit names this pull request.
+3. Read the next step of `docs/SESSION-HANDOFF.md`, and name the next item.
+4. Read `docs/owner-questions.md`, and name each open question of that item.
+5. Name each check that needs `main` or the deploy of this merge.
+6. Write the block below in the last message, and stop.
+
+The pick of step 3 is provisional, and the owner can name a different item.
 
 The prompt is one fenced block, and the owner pastes it into the next clean session:
 
@@ -93,9 +113,19 @@ Start <item>: <the one concern>
 PR #<x> merged to `main` as <sha>. Read `docs/SESSION-HANDOFF.md` first.
 Branch: `<prefix>/<slug>`. Base: `<sha>`. Role: author.
 Load the `one-pr-one-session` skill and the skills of the task before any change.
+<Each check that needs `main` or the deploy of this merge. Run it before the item work.>
 Open questions for this item: <each OQ-# with its subject, or `none`>.
 First action: <the first concrete action>.
 ```
+
+### The rules of the prompt
+
+- The prompt carries one item. A second item needs a second session, and a second prompt.
+- The prompt never asks the next session to record this merge. Git holds the merge (D-747).
+- A check that needs `main` comes first. The branch of the next item gives no such result.
+- Remove that line of the block when this merge needs no such check.
+- The next step of the hand-off holds the same first action. The two agree, or the hand-off wins.
+- The prompt names no provider, no harness, and no model (hard rule 6).
 
 The session ends with this prompt. It makes no branch and no change for the next pull request.
 
@@ -110,6 +140,7 @@ The session ends with this prompt. It makes no branch and no change for the next
 | The byte budget of the start read | `make context-budget` (D-749) |
 | Each cited id and each repository path | `make ref-check` (D-753) |
 | One pull request in each session, and a clean session for each one | The agent. No check reads the conversation |
+| The trigger of the transitional prompt, and its two stop cases | The agent. No check reads the conversation (D-764) |
 | The truth of each reason, and the one concern | The agent, then the owner |
 | The merge and the deploy | The owner (D-583, D-579) |
 

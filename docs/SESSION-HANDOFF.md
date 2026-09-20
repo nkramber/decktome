@@ -6,29 +6,32 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-19b)
+## RESUME HERE (2026-09-20)
 
-**Pull request #191 carries PR-56, the repair-turn gate of a finding on the commander, and it waits for the owner's merge** (D-762, D-763, F-157). The fix and its measurement cost nothing.
+**Pull request #PRNUM carries the merge trigger of the transitional prompt, and it waits for the owner's merge** (D-764). It changes documents and one skill alone. No code and no test changes.
 
-**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #191 with `gh pr view 191`. Then do next step 1.
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #PRNUM with `gh pr view PRNUM`. Then do next step 1.
 
-**The base.** `main` is `d7a5825`, from #190, which carried PR-55. #189 merged M-18 as `c2d5957`.
+**The base.** `main` is `49412a4`, from #191, which carried PR-56. #190 merged PR-55 as `d7a5825`.
 
-**What this pull request holds.** It changes the repair gate of the build, its tests, and the documents. No prompt and no model call changes.
+**What this pull request holds.**
 
-- `go/internal/generate/generate.go` gains `fixable`. It drops every finding that names a commander of the deck, before the build decides on a repair turn.
-- The build writes one log line for the findings it drops, and the deck keeps each one (D-226, D-300).
-- `go/internal/generate/ownedcommander_test.go` holds two tests, and both fail on the old code.
-- **F-157 closes as fixed.** Its register row carries a dated correction of its premise.
-- `docs/reference/f157-owned-commander-2026-09-19.md` holds every count.
+- Section 5 of `.claude/skills/one-pr-one-session/SKILL.md` names the trigger. Any message of the owner that names the merge of the bound pull request starts the section.
+- The same section holds a procedure of six steps, the fenced block, and six rules of the prompt.
+- The block gains one line for each check that needs `main` or the deploy of the merge.
+- Section 1 names the trigger as the one exception to step 2, the blocked answer of the start gate.
+- Two cases stop the prompt: an unclear message, and a merge before section 3 calls the pull request ready. Both ask the owner.
+- Hard rule 12 of `CLAUDE.md` holds the trigger in one line, so a session that lost the skill still reacts.
+- The enforcement table names the agent for the trigger, because no check reads the conversation.
+- `docs/decisions.md` gains D-764, with the three owner answers of 2026-09-20.
 
-**The numbers.** A free replay of the M-18 request names the card of the `not_owned` finding. It is Gríma, Saruman's Footman, the commander the reader named, and the export of 2026-09-02 holds no copy. The model named no card outside the collection: the owned-only shortlist drops every card at 0 copies, and `Normalize` reads the pool alone. A control run with the commander covered reads profile findings alone, and no repair turn. The uncapped owned pool holds 475 cards, with 1 Game Changer against a bracket 5 floor of 8, and 1 tutor against 4. The replay deck reads 6 `profile_off_band` findings, and the three model decks of M-18 read 3.
+**The source.** The sibling repos the-thing-below and what-you-carry hold the same rule, and this pull request follows them. The owner chose the inline form of the-thing-below over the reference file of what-you-carry.
 
-**The paid run.** None. Every count comes from the local snapshot of 2026-09-04 and the local export of 2026-09-02.
+**The paid run.** None. This pull request runs no provider call.
 
-**The checks.** `make verify` passed on this machine, exit 0. `make ste-check`, `make ref-check`, `make lifecycle-check`, and `make context-budget` each read 0 findings. Both new tests fail on the old code. The first reads 4 findings where it wants 3, and the second counts 2 provider calls where it wants 1. Every job of the verify workflow and `pr-contract` passed on `91934bb`. The job `verify:changes` skipped, because it runs on a manual start alone.
+**The checks.** `make verify` passed on this machine, exit 0. `make ste-check`, `make ref-check`, `make lifecycle-check`, and `make context-budget` each read 0 findings. `make pr-check` reads the body of the pull request. This pull request changes no code, so it adds no test.
 
-**The review.** `gitar-bot` approved `91934bb`, and it reads 0 findings and no open thread. The review is current: the head of the pull request matches, and the dashboard comment reads an edit time after the push. CAUTION: the Gitar trial ends about 2026-09-23, from the dashboard of 2026-09-20.
+**The review.** The session pushed the branch, and it waits for a current review of `gitar-bot`.
 
 **What waits on the owner.**
 
@@ -124,6 +127,10 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 ## The three most recent sessions
 
+### 2026-09-20: the merge trigger of the transitional prompt
+
+**The owner asked that a merge message start the transitional prompt by itself** (D-764). D-754 gave the session the prompt, and it named no trigger. Section 5 of the skill now names each variant of the message, and section 1 names the one exception. The owner chose the inline form of the sibling repo the-thing-below, and one line in hard rule 12. An early merge asks the owner first, and no machine check reads the trigger. The session ran no paid target.
+
 ### 2026-09-19b: the repair-turn gate of PR-56
 
 **The owner chose the repair gate alone, and the record of the thin pool** (D-762, D-763). A free replay of the M-18 request names the card of its `not_owned` finding. It is the commander the reader named, and the export of 2026-09-02 holds no copy. No answer of the model changes a commander, so each M-18 build spent a repair call on a block that survives it. `fixable` drops such a finding before the build decides. The uncapped owned pool reaches 1 Game Changer and 1 tutor, against the bracket 5 floors of 8 and 4. So F-157 closes with its measurement. A second session wrote this checkout during the work, and the owner stopped it. The session ran no paid target.
@@ -132,10 +139,6 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 **The owner chose the wider signal, kept it to lands, and extended it to a singular type word** (D-759 to D-761). A type row of `themes.json` read no land, so a typal shortlist lost every land that makes mana for its type (F-148). A new `typal_land` block holds the tag `typal-choose` and one needle for Path of Ancestry. Each row adds its own subtype word as a land needle. The five lands of F-148 are on the dinosaur shortlist again, in the plural and in the singular. The session ran no paid target, and every count comes from the local snapshot of 2026-09-04.
 
-### 2026-09-18: the Gríma replay of M-18
-
-**The owner chose the replay that D-727 ordered, over a typal land signal and the four open questions of the Gríma review** (D-755). The session `z1hshyY6Npig1FN2NuV7` no longer exists, and the sandbox refuses every read under `users/`, so the replay read a local ManaBox export of 2026-09-02 (D-756). The owner approved three real builds, and they cost $0.2350 (D-757). Every condition line holds, so F-140 closes as fixed (D-758). F-157 opens on the thin owned pool and the repair turn of every build.
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-19, the records of 2026-08-31 to 2026-09-17, and 100 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-19b, the records of 2026-08-31 to 2026-09-18, and 102 more sections, word for word. Read it for the detail behind a decision.

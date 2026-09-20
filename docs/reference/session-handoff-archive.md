@@ -12,6 +12,39 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-19b
+
+**Pull request #191 carries PR-56, the repair-turn gate of a finding on the commander, and it waits for the owner's merge** (D-762, D-763, F-157). The fix and its measurement cost nothing.
+
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #191 with `gh pr view 191`. Then do next step 1.
+
+**The base.** `main` is `d7a5825`, from #190, which carried PR-55. #189 merged M-18 as `c2d5957`.
+
+**What this pull request holds.** It changes the repair gate of the build, its tests, and the documents. No prompt and no model call changes.
+
+- `go/internal/generate/generate.go` gains `fixable`. It drops every finding that names a commander of the deck, before the build decides on a repair turn.
+- The build writes one log line for the findings it drops, and the deck keeps each one (D-226, D-300).
+- `go/internal/generate/ownedcommander_test.go` holds two tests, and both fail on the old code.
+- **F-157 closes as fixed.** Its register row carries a dated correction of its premise.
+- `docs/reference/f157-owned-commander-2026-09-19.md` holds every count.
+
+**The numbers.** A free replay of the M-18 request names the card of the `not_owned` finding. It is Gríma, Saruman's Footman, the commander the reader named, and the export of 2026-09-02 holds no copy. The model named no card outside the collection: the owned-only shortlist drops every card at 0 copies, and `Normalize` reads the pool alone. A control run with the commander covered reads profile findings alone, and no repair turn. The uncapped owned pool holds 475 cards, with 1 Game Changer against a bracket 5 floor of 8, and 1 tutor against 4. The replay deck reads 6 `profile_off_band` findings, and the three model decks of M-18 read 3.
+
+**The paid run.** None. Every count comes from the local snapshot of 2026-09-04 and the local export of 2026-09-02.
+
+**The checks.** `make verify` passed on this machine, exit 0. `make ste-check`, `make ref-check`, `make lifecycle-check`, and `make context-budget` each read 0 findings. Both new tests fail on the old code. The first reads 4 findings where it wants 3, and the second counts 2 provider calls where it wants 1. Every job of the verify workflow and `pr-contract` passed on `91934bb`. The job `verify:changes` skipped, because it runs on a manual start alone.
+
+**The review.** `gitar-bot` approved `91934bb`, and it reads 0 findings and no open thread. The review is current: the head of the pull request matches, and the dashboard comment reads an edit time after the push. CAUTION: the Gitar trial ends about 2026-09-23, from the dashboard of 2026-09-20.
+
+**What waits on the owner.**
+
+- The merge of this pull request, after the review of `gitar-bot`.
+- The next item of the roadmap (next step 1).
+- Five sessions on the new files, before a decision on the checkpoint rule (next step 2, D-750).
+- A deployed session with a theme that matches no card, such as "anime" (next step 3).
+- A look at the first commander question after a load of the app (next step 4).
+- OQ-67, OQ-77, OQ-80, and OQ-83 to OQ-86.
+
 ## The resume section of 2026-09-19
 
 **Pull request #190 carries PR-55, the typal land signal of the type rows, and it waits for the owner's merge** (D-759 to D-761, F-144, F-148). The fix and its measurement cost nothing.
@@ -307,6 +340,10 @@ CAUTION: the `decktome` gcloud configuration named the Wallabee account and proj
 - OQ-83 to OQ-86, four suggestions of the review of the Gríma deck.
 
 **CAUTION: a local `make verify` is not the whole story.** It read green for weeks while shellcheck failed (F-89, D-641). Every pull request runs the workflow now.
+
+## 2026-09-18: the Gríma replay of M-18
+
+**The owner chose the replay that D-727 ordered, over a typal land signal and the four open questions of the Gríma review** (D-755). The session `z1hshyY6Npig1FN2NuV7` no longer exists, and the sandbox refuses every read under `users/`, so the replay read a local ManaBox export of 2026-09-02 (D-756). The owner approved three real builds, and they cost $0.2350 (D-757). Every condition line holds, so F-140 closes as fixed (D-758). F-157 opens on the thin owned pool and the repair turn of every build.
 
 ## 2026-09-17: the skill improvements of `the-thing-below`
 
