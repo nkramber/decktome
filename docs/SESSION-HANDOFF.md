@@ -6,28 +6,31 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-18)
+## RESUME HERE (2026-09-19)
 
-**Pull request #189 carries M-18, the Gríma replay that D-727 ordered, and it waits for the owner's merge** (D-755 to D-758, F-140, F-157). The measurement closes F-140 as fixed and opens F-157.
+**Pull request #190 carries PR-55, the typal land signal of the type rows, and it waits for the owner's merge** (D-759 to D-761, F-144, F-148). The fix and its measurement cost nothing.
 
-**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #189 with `gh pr view 189`. Then do next step 1.
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #190 with `gh pr view 190`. Then do next step 1.
 
-**The base.** `main` is `a408a7f`, from #188, which carried the skill improvements of `the-thing-below`. #186 merged the context budget as `603d922`, and #184 merged the one-pull-request policy as `9a7be47`.
+**The base.** `main` is `c2d5957`, from #189, which carried M-18. #188 merged the skill improvements of `the-thing-below` as `a408a7f`.
 
-**What this pull request holds.** It changes documents alone. No code of the app changes.
+**What this pull request holds.** It changes the theme table, the theme matcher, their tests, and the documents. No prompt and no model call changes.
 
-- `docs/reference/m18-grima-conditions-2026-09-18.md` holds every count of the replay.
-- **F-140 closes as fixed** (D-758). Its cause was the theme miss of F-142, and PR-54 cured it.
-- **F-157 opens.** The owned pool of Gríma is thin at three roles, and every build ran a repair turn.
-- The sequencing list gains step 44 for #188, which had no entry, and step 45 for M-18.
+- `go/internal/candidates/themes.json` gains a `typal_land` block: the tag `typal-choose` and one text needle.
+- `go/internal/candidates/theme.go` gives every row with a subtype the block and its own subtype word, as land-only signals.
+- `go/internal/candidates/theme.go` also gives the signal to a singular type word, which keeps the generic rule (D-731, D-761).
+- A land needle matches on a word boundary, so "bat" reads no land whose text holds "battlefield". The Gitar review of #190 found it.
+- `go/internal/candidates/typalland_test.go` holds eight new tests. One of them needs the snapshot, and `make themes-check` runs it.
+- **F-148 closes as fixed.** The land half of **F-144** closes with it, and its nonland half stays a record.
+- `docs/reference/pr55-typal-lands-2026-09-19.md` holds every count.
 
-**The numbers.** The theme "opponent milling cards" now matches 823 cards, and M-17 read 0. The owned-only shortlist holds 25 synergy cards, 10 threats, and 1 wincon, and M-17 read 0 of each. Three real builds hold 20, 18, and 24 creature enablers against the line of 11, and the deck of the review held 8.
+**The numbers.** The dinosaur typal prompt of the deck gate lost Cavern of Souls, Secluded Courtyard, Unclaimed Territory, Path of Ancestry, and Three Tree City. All five are on the shortlist now, and Restless Ridgeline joins them. The theme "dinosaur", singular, read 0 of the five before D-761 and reads all five now. The shortlist still holds 266 cards and 40 lands, and the on-theme count moves from 208 to 215. Seven lands that enter tapped on a condition leave to make the room.
 
-**The paid run.** Three builds cost $0.2350 in total (D-757). The owner approved them. No other paid target ran.
+**The paid run.** None. Every count of PR-55 comes from a free run against the local snapshot of 2026-09-04.
 
-**The checks.** `make verify` passed on this machine, exit 0. `make ste-check`, `make ref-check`, and `make pr-check` read 0 findings. Every job of the verify workflow and `pr-contract` passed on `5f415b2`, and `verify:changes` skipped, because no code changed.
+**The checks.** `make verify` passed on this machine, exit 0. `make themes-check` passed, and it runs the new snapshot test. `make ste-check`, `make ref-check`, `make context-budget`, and `make pr-check` each read 0 findings. Every job of the verify workflow and `pr-contract` passed on `ad1517d`. The job `verify:changes` skipped, because it runs on a manual start alone.
 
-**The review.** `gitar-bot` approved `5f415b2` with no finding and no open thread. CAUTION: the Gitar dashboard of 2026-09-19 reads that the trial ends in 4 days. Hard rule 10 makes Gitar the review of every pull request here.
+**The review.** `gitar-bot` approved `ad1517d`, and it reads 1 closed of 1 finding with no open thread. The finding asked for a word boundary on a land needle, and the fix and its two tests answer it. CAUTION: two examples of that finding name no card of the snapshot. The Gitar trial ends about 2026-09-23, from the dashboard of 2026-09-19.
 
 **What waits on the owner.**
 
@@ -100,7 +103,7 @@ Nineteen things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **Ask the owner for the next item, in a new clean session** (D-746). The sequence of the roadmap ends at step 45. OQ-83 to OQ-86 hold the other suggestions of the review of the Gríma deck. M-18 gives them evidence. Two items carry no open question. **F-148** and **F-144** ask for a typal land signal on the type rows (D-737). **F-157** records the thin owned pool and the repair turn of every build. The power pass after the build still waits (D-704). F-137 stays a record (D-718). M-18 answers D-727, and F-140 closes as fixed (D-758).
+1. **Ask the owner for the next item, in a new clean session** (D-746). The sequence of the roadmap ends at step 46. OQ-83 to OQ-86 hold the other suggestions of the review of the Gríma deck. M-18 gives them evidence. **F-157** records the thin owned pool and the repair turn of every build, and it carries no open question. The power pass after the build still waits (D-704). F-137 stays a record (D-718). PR-55 closes F-148 and the land half of F-144. The nonland half of F-144 stays open: the tag `typal-choose` holds 88 nonlands that no type row reads (D-760).
 2. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It waits, because the ten sessions of the audit ran before #184 and before D-749.
 3. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git.
 4. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide". Session `z1hshyY6Npig1FN2NuV7` named its commander, so it showed no such row.
@@ -123,6 +126,10 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 ## The three most recent sessions
 
+### 2026-09-19: the typal land signal of PR-55
+
+**The owner chose the wider signal, kept it to lands, and extended it to a singular type word** (D-759 to D-761). A type row of `themes.json` read no land, so a typal shortlist lost every land that makes mana for its type (F-148). A new `typal_land` block holds the tag `typal-choose` and one needle for Path of Ancestry. Each row adds its own subtype word as a land needle. The five lands of F-148 are on the dinosaur shortlist again, in the plural and in the singular. The session ran no paid target, and every count comes from the local snapshot of 2026-09-04.
+
 ### 2026-09-18: the Gríma replay of M-18
 
 **The owner chose the replay that D-727 ordered, over a typal land signal and the four open questions of the Gríma review** (D-755). The session `z1hshyY6Npig1FN2NuV7` no longer exists, and the sandbox refuses every read under `users/`, so the replay read a local ManaBox export of 2026-09-02 (D-756). The owner approved three real builds, and they cost $0.2350 (D-757). Every condition line holds, so F-140 closes as fixed (D-758). F-157 opens on the thin owned pool and the repair turn of every build.
@@ -131,10 +138,6 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 **The owner asked for a read of the skills of `/Volumes/SSD-1TB/the-thing-below`, and then for its improvements here** (D-751 to D-754). The pull request takes the effective head, the transitional prompt, the context-compaction rule, the glossary, and the enforcement table. It adds `make ref-check` and a byte limit for each skill file. The first run found three dead references, and F-156 holds them. The session ran no paid target.
 
-### 2026-09-16d: the context budget
-
-**The owner asked for an audit of the token use of this repo, and then for its fixes.** The audit read ten sessions, and it found that session length and the start read drive the cost. This pull request caps the hand-off, moves the paid-target detail out of `CLAUDE.md`, and adds hard rule 13 and `make context-budget` (D-749). The owner deferred the checkpoint rule until five sessions measure the change (D-750). The session ran no paid target.
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08 and 2026-09-16, the records of 2026-08-31 to 2026-09-16c, and 42 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, 2026-09-16, and 2026-09-18, the records of 2026-08-31 to 2026-09-16d, and 43 more sections, word for word. Read it for the detail behind a decision.

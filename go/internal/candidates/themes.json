@@ -1,6 +1,16 @@
 {
   "verified_at": "2026-09-14",
   "note": "Theme words to signals. Two kinds (D-62): payoffs reward the theme (payoff_slugs, payoff_text) and enablers merely do the thing (slugs, keywords, subtype, text). Payoffs weigh more, so Archangel of Thune outranks a bare lifelinker. Slugs verified against the oracle_tags file of the snapshot of 2026-09-04 (4,524 tags) by make themes-check on 2026-09-14. Scryfall splits the two in its hierarchy: lifegain versus lifegain-matters, sacrifice-outlet versus sacrifice-matters. A word finds its row by name, by an alias, or as the singular of a plural row name that names no subtype (D-731). Each base form of a word, its singular and the stem of an -ing form, tries the same three, so milling finds mill (D-724). Types names card types, and the superfriends row reads Planeswalker (D-729). A word with no row falls back to the generic rule: payoff slug w-matters and synergy-w, enabler slugs w and typal-w, keyword w, subtype w, text w.",
+  "typal_land": {
+    "note": "Every row with a subtype carries these land signals, and they count on a land alone (D-759, F-148). The slugs and the needles hold for any creature type. Each row adds its own subtype word as a land needle, so Sliver Hive reaches a slivers list (D-760, F-144). A land needle matches on a word boundary, so \"bat\" reads no land whose text holds \"battlefield\". The needle \"every creature type\" reads a changeling land, which rewards every typal deck.",
+    "slugs": [
+      "typal-choose"
+    ],
+    "text": [
+      "shares a creature type with your commander",
+      "every creature type"
+    ]
+  },
   "themes": {
     "lifegain": {
       "aliases": [

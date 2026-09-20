@@ -12,6 +12,38 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-18
+
+**Pull request #189 carries M-18, the Gríma replay that D-727 ordered, and it waits for the owner's merge** (D-755 to D-758, F-140, F-157). The measurement closes F-140 as fixed and opens F-157.
+
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #189 with `gh pr view 189`. Then do next step 1.
+
+**The base.** `main` is `a408a7f`, from #188, which carried the skill improvements of `the-thing-below`. #186 merged the context budget as `603d922`, and #184 merged the one-pull-request policy as `9a7be47`.
+
+**What this pull request holds.** It changes documents alone. No code of the app changes.
+
+- `docs/reference/m18-grima-conditions-2026-09-18.md` holds every count of the replay.
+- **F-140 closes as fixed** (D-758). Its cause was the theme miss of F-142, and PR-54 cured it.
+- **F-157 opens.** The owned pool of Gríma is thin at three roles, and every build ran a repair turn.
+- The sequencing list gains step 44 for #188, which had no entry, and step 45 for M-18.
+
+**The numbers.** The theme "opponent milling cards" now matches 823 cards, and M-17 read 0. The owned-only shortlist holds 25 synergy cards, 10 threats, and 1 wincon, and M-17 read 0 of each. Three real builds hold 20, 18, and 24 creature enablers against the line of 11, and the deck of the review held 8.
+
+**The paid run.** Three builds cost $0.2350 in total (D-757). The owner approved them. No other paid target ran.
+
+**The checks.** `make verify` passed on this machine, exit 0. `make ste-check`, `make ref-check`, and `make pr-check` read 0 findings. Every job of the verify workflow and `pr-contract` passed on `5f415b2`, and `verify:changes` skipped, because no code changed.
+
+**The review.** `gitar-bot` approved `5f415b2` with no finding and no open thread. CAUTION: the Gitar dashboard of 2026-09-19 reads that the trial ends in 4 days. Hard rule 10 makes Gitar the review of every pull request here.
+
+**What waits on the owner.**
+
+- The merge of this pull request, after the review of `gitar-bot`.
+- The next item of the roadmap (next step 1).
+- Five sessions on the new files, before a decision on the checkpoint rule (next step 2, D-750).
+- A deployed session with a theme that matches no card, such as "anime" (next step 3).
+- A look at the first commander question after a load of the app (next step 4).
+- OQ-67, OQ-77, OQ-80, and OQ-83 to OQ-86.
+
 ## The resume section of 2026-09-17
 
 **Pull request #188 carries the skill improvements of `the-thing-below`, and it waits for the owner's merge** (D-751 to D-754, F-156, guardrail 18). Four skills sit in both repos, and this pull request takes the portable part of each one.
@@ -240,6 +272,10 @@ CAUTION: the `decktome` gcloud configuration named the Wallabee account and proj
 - OQ-83 to OQ-86, four suggestions of the review of the Gríma deck.
 
 **CAUTION: a local `make verify` is not the whole story.** It read green for weeks while shellcheck failed (F-89, D-641). Every pull request runs the workflow now.
+
+## 2026-09-16d: the context budget
+
+**The owner asked for an audit of the token use of this repo, and then for its fixes.** The audit read ten sessions, and it found that session length and the start read drive the cost. This pull request caps the hand-off, moves the paid-target detail out of `CLAUDE.md`, and adds hard rule 13 and `make context-budget` (D-749). The owner deferred the checkpoint rule until five sessions measure the change (D-750). The session ran no paid target.
 
 ## 2026-09-16c: one pull request, one clean session
 
