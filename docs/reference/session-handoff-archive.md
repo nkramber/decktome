@@ -2027,3 +2027,7 @@ Three changes give that:
 - The query client keeps server state fresh for 30 seconds (D-340).
 
 CAUTION: the first-paint bar of D-323 is 130 kB gzipped. Read the Vite build report after any change to `src/app/chunks.ts`. A chunk that moves into the entry chunk spends that budget.
+
+### 2026-09-19b: the repair-turn gate of PR-56
+
+**The owner chose the repair gate alone, and the record of the thin pool** (D-762, D-763). A free replay of the M-18 request names the card of its `not_owned` finding. It is the commander the reader named, and the export of 2026-09-02 holds no copy. No answer of the model changes a commander, so each M-18 build spent a repair call on a block that survives it. `fixable` drops such a finding before the build decides. The uncapped owned pool reaches 1 Game Changer and 1 tutor, against the bracket 5 floors of 8 and 4. So F-157 closes with its measurement. A second session wrote this checkout during the work, and the owner stopped it. The session ran no paid target.

@@ -176,6 +176,14 @@ type ThemeMatch struct {
 	// The tag typal-share holds Coat of Arms, and it also holds creatures
 	// of one named type, which reward that type alone (F-144).
 	NoncreatureSlugs []string
+	// TypeText holds the type word of a type row and of a generic type
+	// word (D-769). It reads a card that names the type, such as a Zombie
+	// token maker, and it counts on a card that is no land. A land reads
+	// the same word as a land needle (D-759). It matches on a word
+	// boundary, because a short type sits in a common word: "cat" reads
+	// 110 cards of "indicate" and "automaton", and "angel" reads 80 of
+	// "changeling", over the snapshot of 2026-09-04.
+	TypeText []string
 	// Unmatched lists words that fired on no card of the pool. Build
 	// fills it after the scan: a needle is a guess until a card holds it.
 	Unmatched []string
@@ -323,6 +331,7 @@ func (t *themeTable) match(theme string, tags *cards.TagIndex) ThemeMatch {
 			addNeedle(&m.LandText, "land-text", strings.ToLower(n))
 		}
 		addNeedle(&m.LandText, "land-text", strings.ToLower(subtype))
+		addNeedle(&m.TypeText, "type-text", strings.ToLower(subtype))
 		for _, slug := range t.Typal.CardSlugs {
 			if resolveSlug(slug) {
 				addNeedle(&m.CardSlugs, "card-tag", slug)
@@ -392,7 +401,12 @@ func (t *themeTable) match(theme string, tags *cards.TagIndex) ThemeMatch {
 			addNeedle(&m.Keywords, "keyword", title(w))
 			addNeedle(&m.Subtypes, "subtype", title(singular(w)))
 			if typal {
+				// The word names a creature type, so it takes the
+				// word-boundary needle of addTypal and no text needle
+				// (D-769). A text needle matches by substring, and it
+				// reads "indicate" for the word "cat".
 				addTypal(singular(w))
+				continue
 			}
 			addNeedle(&m.Text, "text", w)
 			m.generic = append(m.generic, w)
@@ -599,6 +613,15 @@ func (m ThemeMatch) score(c *mtgv1.Card) (float64, []string) {
 		}
 		if hit {
 			score += weightTypal
+		}
+		// The needle names the type and proves no payoff, so it weighs as
+		// text. The word is one fact, so it counts once (D-769).
+		for _, n := range m.TypeText {
+			if containsWord(text, n) {
+				score += weightText
+				signals = append(signals, "type-text:"+n)
+				break
+			}
 		}
 	}
 	if score > scoreCap {
