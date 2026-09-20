@@ -222,17 +222,22 @@ func (b *Builder) Build(ctx context.Context, req Request, acc *llm.Accumulator) 
 	// against. A repair call costs about what it cost (PR-33, F-77).
 	callCost := time.Since(started)
 	for turn := 1; turn <= MaxRepairs; turn++ {
-		findings := repairable(res.deck.GetValidation())
+		all := repairable(res.deck.GetValidation())
+		findings := fixable(all, res.deck.GetCommanderOracleIds())
+		if n := len(all) - len(findings); n > 0 {
+			b.log.Info("a finding names a commander of the deck, so it buys no repair turn",
+				"session", req.SessionID, "findings", n)
+		}
 		if len(res.misses) == 0 && len(findings) == 0 {
 			break
 		}
-		// A deck whose findings are profile findings alone is a legal
-		// deck, and the mana pass has already moved what it can with no
-		// model call. A band the pass could not close is a band this
-		// pool can not reach, and a 60 to 90 second call for it costs
-		// the reader more than it returns (PR-33, D-609).
+		// A deck whose findings are profile findings alone is a deck the
+		// mana pass has already moved as far as it can, with no model
+		// call. A band the pass could not close is a band this pool can
+		// not reach, and a 60 to 90 second call for it costs the reader
+		// more than it returns (PR-33, D-609).
 		if len(res.misses) == 0 && profileOnly(findings) {
-			b.log.Info("the deck is legal and its bands are what the pool allows, so no repair turn runs",
+			b.log.Info("the bands are what the pool allows, so no repair turn runs",
 				"session", req.SessionID, "findings", len(findings))
 			break
 		}
@@ -743,6 +748,33 @@ func repairable(v *mtgv1.ValidationResult) []*mtgv1.Finding {
 			f.GetCode() == profile.CodeExtraTurns, f.GetCode() == profile.CodeTwoCardCombo:
 			out = append(out, f)
 		}
+	}
+	return out
+}
+
+// fixable drops every finding that names a commander of the deck
+// (D-762). A commander comes from the request, and assemble sets it on
+// each pass, so no answer of the model changes it. So a repair turn can
+// not fix such a finding, and F-157 measured the cost: an owned-only
+// build whose reader named a commander the collection does not cover
+// spent a repair call on a block that survives it. The deck keeps the
+// finding, and the reader reads it (D-226, D-300).
+func fixable(findings []*mtgv1.Finding, commanders []string) []*mtgv1.Finding {
+	zone := make(map[string]bool, len(commanders))
+	for _, id := range commanders {
+		if id != "" {
+			zone[id] = true
+		}
+	}
+	if len(zone) == 0 {
+		return findings
+	}
+	out := make([]*mtgv1.Finding, 0, len(findings))
+	for _, f := range findings {
+		if zone[f.GetOracleId()] {
+			continue
+		}
+		out = append(out, f)
 	}
 	return out
 }

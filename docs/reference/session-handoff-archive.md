@@ -12,6 +12,41 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-19
+
+**Pull request #190 carries PR-55, the typal land signal of the type rows, and it waits for the owner's merge** (D-759 to D-761, F-144, F-148). The fix and its measurement cost nothing.
+
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #190 with `gh pr view 190`. Then do next step 1.
+
+**The base.** `main` is `c2d5957`, from #189, which carried M-18. #188 merged the skill improvements of `the-thing-below` as `a408a7f`.
+
+**What this pull request holds.** It changes the theme table, the theme matcher, their tests, and the documents. No prompt and no model call changes.
+
+- `go/internal/candidates/themes.json` gains a `typal_land` block: the tag `typal-choose` and one text needle.
+- `go/internal/candidates/theme.go` gives every row with a subtype the block and its own subtype word, as land-only signals.
+- `go/internal/candidates/theme.go` also gives the signal to a singular type word, which keeps the generic rule (D-731, D-761).
+- A land needle matches on a word boundary, so "bat" reads no land whose text holds "battlefield". The Gitar review of #190 found it.
+- `go/internal/candidates/typalland_test.go` holds eight new tests. One of them needs the snapshot, and `make themes-check` runs it.
+- **F-148 closes as fixed.** The land half of **F-144** closes with it, and its nonland half stays a record.
+- `docs/reference/pr55-typal-lands-2026-09-19.md` holds every count.
+
+**The numbers.** The dinosaur typal prompt of the deck gate lost Cavern of Souls, Secluded Courtyard, Unclaimed Territory, Path of Ancestry, and Three Tree City. All five are on the shortlist now, and Restless Ridgeline joins them. The theme "dinosaur", singular, read 0 of the five before D-761 and reads all five now. The shortlist still holds 266 cards and 40 lands, and the on-theme count moves from 208 to 215. Seven lands that enter tapped on a condition leave to make the room.
+
+**The paid run.** None. Every count of PR-55 comes from a free run against the local snapshot of 2026-09-04.
+
+**The checks.** `make verify` passed on this machine, exit 0. `make themes-check` passed, and it runs the new snapshot test. `make ste-check`, `make ref-check`, `make context-budget`, and `make pr-check` each read 0 findings. Every job of the verify workflow and `pr-contract` passed on `ad1517d`. The job `verify:changes` skipped, because it runs on a manual start alone.
+
+**The review.** `gitar-bot` approved `ad1517d`, and it reads 1 closed of 1 finding with no open thread. The finding asked for a word boundary on a land needle, and the fix and its two tests answer it. CAUTION: two examples of that finding name no card of the snapshot. The Gitar trial ends about 2026-09-23, from the dashboard of 2026-09-19.
+
+**What waits on the owner.**
+
+- The merge of this pull request, after the review of `gitar-bot`.
+- The next item of the roadmap (next step 1).
+- Five sessions on the new files, before a decision on the checkpoint rule (next step 2, D-750).
+- A deployed session with a theme that matches no card, such as "anime" (next step 3).
+- A look at the first commander question after a load of the app (next step 4).
+- OQ-67, OQ-77, OQ-80, and OQ-83 to OQ-86.
+
 ## The resume section of 2026-09-18
 
 **Pull request #189 carries M-18, the Gríma replay that D-727 ordered, and it waits for the owner's merge** (D-755 to D-758, F-140, F-157). The measurement closes F-140 as fixed and opens F-157.
@@ -272,6 +307,10 @@ CAUTION: the `decktome` gcloud configuration named the Wallabee account and proj
 - OQ-83 to OQ-86, four suggestions of the review of the Gríma deck.
 
 **CAUTION: a local `make verify` is not the whole story.** It read green for weeks while shellcheck failed (F-89, D-641). Every pull request runs the workflow now.
+
+## 2026-09-17: the skill improvements of `the-thing-below`
+
+**The owner asked for a read of the skills of `/Volumes/SSD-1TB/the-thing-below`, and then for its improvements here** (D-751 to D-754). The pull request takes the effective head, the transitional prompt, the context-compaction rule, the glossary, and the enforcement table. It adds `make ref-check` and a byte limit for each skill file. The first run found three dead references, and F-156 holds them. The session ran no paid target.
 
 ## 2026-09-16d: the context budget
 
