@@ -460,4 +460,36 @@ describe("DeckView", () => {
     await screen.findByRole("dialog", { name: "Forest" });
     expect(await axe(container.ownerDocument.body)).toHaveNoViolations();
   });
+
+  // The power counts are D-774 to D-777. The reader reads the power of
+  // the deck beside its rules bracket, on the deck page alone.
+  it("shows the power counts of a Commander deck beside its bracket (D-774)", async () => {
+    renderDeck({
+      ...deck,
+      format: { id: FormatId.COMMANDER, houseRules: "" },
+      power: { level: { case: "bracket", value: 5 } },
+      profile: {
+        bracket: 5,
+        features: [
+          { key: "tutor", value: 0, low: 4, high: 0, hasHigh: false, offBand: true, note: "" },
+          { key: "fast_mana", value: 3, low: 6, high: 0, hasHigh: false, offBand: true, note: "" },
+          { key: "game_changer", value: 1, low: 8, high: 0, hasHigh: false, offBand: true, note: "" },
+          { key: "finisher", value: 2, low: 1, high: 0, hasHigh: false, offBand: false, note: "" },
+        ],
+      },
+    } as unknown as Deck);
+    await screen.findByAltText("Forest (card)");
+    const line = screen.getByTestId("power-counts");
+    expect(line).toHaveTextContent("Power against bracket 5:");
+    expect(line).toHaveTextContent("Tutors 0 of 4, short.");
+    expect(line).toHaveTextContent("Fast mana 3 of 6, short.");
+    expect(line).toHaveTextContent("Game Changers 1 of 8, short.");
+    expect(line).toHaveTextContent("Finishers 2 of 1 for this plan.");
+  });
+
+  it("shows no power counts for a deck with no profile", async () => {
+    renderDeck();
+    await screen.findByAltText("Forest (card)");
+    expect(screen.queryByTestId("power-counts")).not.toBeInTheDocument();
+  });
 });

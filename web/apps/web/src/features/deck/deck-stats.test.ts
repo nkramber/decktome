@@ -12,6 +12,7 @@ import {
   formatLabel,
   groupByRole,
   manaCurve,
+  powerCounts,
   powerLabel,
   priceText,
   roleLabel,
@@ -148,5 +149,62 @@ describe("deck-stats", () => {
     expect(severityLabel(Severity.UNSPECIFIED)).toBe("");
     expect(roleLabel(CardRole.WINCON)).toBe("Win conditions");
     expect(roleLabel(99 as CardRole)).toBe("Unsorted");
+  });
+
+  // The power counts are D-774 to D-776. A bracket of 4 or 5 sets a
+  // floor, a lower bracket sets a cap, and the finisher row names the
+  // deck plan.
+  describe("powerCounts", () => {
+    const feature = (key: string, value: number, low: number, high: number, hasHigh: boolean, offBand: boolean) => ({
+      key,
+      value,
+      low,
+      high,
+      hasHigh,
+      offBand,
+      note: "",
+    });
+    const deckOf = (bracket: number, features: ReturnType<typeof feature>[]) => ({ profile: { bracket, features } }) as unknown as Deck;
+
+    it("reads the floors of a bracket 5 deck, and names the plan for the finishers", () => {
+      const deck = deckOf(5, [
+        feature("tutor", 0, 4, 0, false, true),
+        feature("fast_mana", 3, 6, 0, false, true),
+        feature("game_changer", 1, 8, 0, false, true),
+        feature("finisher", 2, 1, 0, false, false),
+      ]);
+      expect(powerCounts(deck).map((c) => c.text)).toEqual([
+        "Tutors 0 of 4, short",
+        "Fast mana 3 of 6, short",
+        "Game Changers 1 of 8, short",
+        "Finishers 2 of 1 for this plan",
+      ]);
+      expect(powerCounts(deck).map((c) => c.offBand)).toEqual([true, true, true, false]);
+    });
+
+    it("reads the caps of a bracket 3 deck, and marks the count that goes over", () => {
+      const deck = deckOf(3, [
+        feature("tutor", 7, 0, 5, true, true),
+        feature("fast_mana", 1, 0, 3, true, false),
+        feature("game_changer", 0, 0, 3, true, false),
+        feature("finisher", 1, 2, 0, false, true),
+      ]);
+      expect(powerCounts(deck).map((c) => c.text)).toEqual([
+        "Tutors 7 of 5 at most, over",
+        "Fast mana 1 of 3 at most",
+        "Game Changers 0 of 3 at most",
+        "Finishers 1 of 2 for this plan, short",
+      ]);
+    });
+
+    it("drops a feature the profile did not measure, and one with no floor and no cap", () => {
+      const deck = deckOf(4, [feature("fast_mana", 3, 3, 0, false, false), feature("game_changer", 2, 0, 0, false, false)]);
+      expect(powerCounts(deck).map((c) => c.key)).toEqual(["fast_mana"]);
+    });
+
+    it("reads no count for a deck with no profile and for a 60-card format", () => {
+      expect(powerCounts({} as unknown as Deck)).toEqual([]);
+      expect(powerCounts(deckOf(0, [feature("tutor", 2, 0, 0, false, false)]))).toEqual([]);
+    });
   });
 });

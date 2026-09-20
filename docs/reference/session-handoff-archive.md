@@ -12,6 +12,45 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-20d
+
+**Pull request #195 carries PR-59, the commander in the model prompt, and it waits for the owner's merge** (F-159, D-771 to D-774).
+
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #195 with `gh pr view 195`. Then do next step 1.
+
+**The base.** `main` is `5d1d7e0`, from #194, which carried PR-58.
+
+**What this pull request holds.**
+
+- `go/internal/generate/input.go` writes a block for each commander of a Commander session. The block holds the name, the type line, the mana cost, the power and toughness, and every Oracle line.
+- The prompt carried one sentence before: "The commander is {name}." The shortlist omits the commander (D-302), and no shortlist line holds Oracle text. So the model had to recall the card.
+- The block line carries no leading dash. A shortlist line starts with one. The first draft used the shortlist format, and `TestShortlistOmitsTheCommander` caught it.
+- `go/internal/generate/commandertext_test.go` is new, and it holds five tests. They cover the block, the format rule of D-233, a pair, a card with no text, and an unknown id.
+- **F-159 is new and closed.** The build reads no ability of the commander at all. `CommanderOracleIDs` only excludes the card from the 99 and from the pair offer.
+- `docs/decisions.md` gains D-771 to D-774, the four owner answers of 2026-09-20.
+- **OQ-83, OQ-84, and OQ-86 close, and OQ-85 waits.** The four rows leave `docs/owner-questions.md` (D-753).
+
+**The measurement, all of it free** (D-771). `docs/reference/grima-payoff-shape-2026-09-20.md` holds every count. The free replay of the M-18 request reproduces its counts: 201 shortlist cards from 2,956 export rows. Of the 201, 10 name an evasion word and 3 grant evasion that Gríma can take. No card of the shortlist has that grant as its only job, so OQ-84 closes with no code (D-772). The effect classes read 12 Equipment, 11 combat damage triggers, and 8 counterspells. They read 0 trigger copiers, 0 extra combats, and 0 double strike cards.
+
+**No paid target ran** (D-771). Deck gate run 29 stays the newest whole run, and `make eval-check` still reads it as PASS. CAUTION: this change is not deterministic. No test proves that a deck improves, and the next whole deck gate run carries it beside any other change that lands first.
+
+**The checks.** `make verify` passed on this machine on the content of `7c75df0`, exit 0. The four lint checks and `make pr-check` each read 0 findings. `make eval-check` reads the suite `decks` as PASS on run 29. The five new tests fail on the old code, and `TestShortlistOmitsTheCommander` caught the first draft of the block.
+
+**The review.** `gitar-bot` approved `12a657d`, and it reads 0 findings and no open thread. The review is current: the head matches, and the dashboard comment reads an edit time after the push. Every job of the verify workflow and `pr-contract` passed on `12a657d`. The job `verify:changes` skipped, because it runs on a manual start alone. CAUTION: the Gitar trial ends about 2026-09-22, from the dashboard of 2026-09-20.
+
+**What waits on the owner.**
+
+- The merge of this pull request, after the review of `gitar-bot`.
+- The next item of the roadmap (next step 1). D-774 names one: the floor counts of the bracket, in their own pull request.
+- Five sessions on the new files, before a decision on the checkpoint rule (next step 2, D-750).
+- A deployed session with a theme that matches no card, such as "anime" (next step 3).
+- A look at the first commander question after a load of the app (next step 4).
+- OQ-67 and OQ-77.
+
+### 2026-09-20b: the typal card signal of PR-57
+
+**The owner chose the wider signal, the payoff-text weight, and a paid run** (D-765 to D-768). A type row read no generic typal payoff, so Door of Destinies and Coat of Arms reached no typal shortlist. The `typal` block of `themes.json` holds two card lists now. `typal-choose` counts on any card that is no land. `typal-share` counts on a card that is no creature, because 40 of its 70 Commander-legal nonlands reward one named type alone. The dinosaur prompt moves from 215 on theme to 289. Deck gate run 29 reads PASS for $2.7384, and its dinosaur deck holds eight generic typal payoffs. F-144 stays open for the cards that name the type (D-768).
+
 ### 2026-09-20: the merge trigger of the transitional prompt
 
 **The owner asked that a merge message start the transitional prompt by itself** (D-764). D-754 gave the session the prompt, and it named no trigger. Section 5 of the skill now names each variant of the message, and section 1 names the one exception. The owner chose the inline form of the sibling repo the-thing-below, and one line in hard rule 12. An early merge asks the owner first, and no machine check reads the trigger. The session ran no paid target.
