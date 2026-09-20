@@ -6,31 +6,33 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-20b)
+## RESUME HERE (2026-09-20c)
 
-**Pull request #193 carries PR-57, the typal card signal of the type rows, and it waits for the owner's merge** (D-765 to D-768, F-144).
+**Pull request #194 carries PR-58, the type-name signal of the type rows, and it waits for the owner's merge** (D-769, D-770, F-144, F-158).
 
-**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #193 with `gh pr view 193`. Then do next step 1.
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #194 with `gh pr view 194`. Then do next step 1.
 
-**The base.** `main` is `5fd8085`, from #192, which carried the merge trigger of D-764. #191 merged PR-56 as `49412a4`.
+**The base.** `main` is `82ba9ad`, from #193, which carried PR-57. #192 carried the merge trigger of D-764.
 
 **What this pull request holds.**
 
-- The `typal_land` block of `go/internal/candidates/themes.json` is the `typal` block now. It holds `land_slugs`, `land_text`, `card_slugs`, and `noncreature_slugs`.
-- `card_slugs` holds `typal-choose`, and it counts on a card that is no land. The card index reads that tag on 85 nonlands, and 81 of them are legal in Commander.
-- `noncreature_slugs` holds `typal-share`, and it counts on a card that is no land and no creature. 40 of the 70 Commander-legal nonlands of that tag are creatures of one named type (D-765).
-- A typal card counts once, at the payoff-text weight of 1.2 (D-766).
-- `go/internal/candidates/typal_test.go` is the old `typalland_test.go`, and it holds seven new tests. Two of them need the snapshot, and `make themes-check` runs them.
-- `docs/decisions.md` gains D-765 to D-768, with the four owner answers of 2026-09-20.
-- F-144 stays open for its other half: a card whose text names the type (D-768).
+- The typal block of `go/internal/candidates/themes.json` gives each type row one more needle: the type word itself. `ThemeMatch.TypeText` holds it.
+- The needle reads a card whose text names the type, such as a Zombie token maker. It counts on a card that is no land, because a land reads the same word as a land needle (D-759).
+- The needle matches on a word boundary. A text needle of `themes.json` reads a substring, and the substring "cat" reads 165 Commander-legal cards against the 55 that name a Cat.
+- A singular type word takes this needle and drops its substring text needle (D-769). So "zombie" and "zombies" read the same signals now.
+- The needle weighs as text, at 0.4 against the score cap of 2.5. A real card of the type still outranks a card that only names one.
+- `go/internal/candidates/typename_test.go` is new, and it holds five tests. One needs the snapshot, and `make themes-check` runs it.
+- **F-158 is new and closed.** `make themes-check` named two snapshot tests of PR-57 that its `-run` pattern never matched. The pattern reads `ReachATypalShortlist` now, and the target runs five tests in place of three.
+- `docs/decisions.md` gains D-769 and D-770, with the two owner answers of 2026-09-20.
+- **F-144 closes with this pull request.** PR-55, PR-57, and PR-58 each closed one half.
 
-**The count of D-760 holds, with one correction.** The tag `typal-choose` holds 88 nonlands of the snapshot of 2026-09-04. The card index reads 85 of them. Three carry a layout that is not playable: a plane, an emblem, and a vanguard. CAUTION: D-760 names Coat of Arms as a card of `typal-choose`, and that is wrong. Coat of Arms carries `typal-share`.
+**The measurement, all of it free** (D-770). `docs/reference/pr58-type-name-2026-09-20.md` holds every count. The needle gives a signal to 786 cards of the snapshot of 2026-09-04 that no signal reached, and 637 of them reward the type. A replay of five shortlists reads a swap and no growth: 84 cards entered and 84 left, and no card that punishes the type entered. The plural and the singular read one shortlist now. Every type row reads 1 or more on-theme cards in every single color, so the change hides no theme question of D-725.
 
-**The paid run.** `make deck-gate` ran once, as run 29, for $2.7384. It reads PASS: 25 of 25 decks passed every block check, 0 invented names reached the user, and 0 summaries stated a false rule. The dinosaur deck of prompt 4 holds eight generic typal payoffs, and the same deck of run 28 held none. Its `theme_fit` moved from `partly` to `yes`. CAUTION: run 28 ran before #190 and #191, so the whole-run numbers carry PR-55 and PR-56 too. CAUTION: the run header names the commit `5fd8085`, because the change sat in the tree and not in a commit.
+**No paid target ran** (D-770). Deck gate run 29 stays the newest whole run, and `make eval-check` still reads it as PASS. CAUTION: no deck of a model measures this change. The next whole deck gate run carries it, beside any other change that lands first.
 
-**The checks.** `make verify` passed on this machine on the head `de67a32`, exit 0. `make ste-check`, `make ref-check`, `make lifecycle-check`, and `make context-budget` each read 0 findings. `make pr-check` reads 0 contract errors. `make eval-check` reads the suite `decks` as PASS. The package `go/internal/candidates` passes with the snapshot, and its seven new tests fail on the old code.
+**The checks.** `make verify` passed on this machine on the content of `5c3aed3`, exit 0. The four lint checks and `make pr-check` each read 0 findings. `make eval-check` reads the suite `decks` as PASS on run 29. `make themes-check` passed, and it runs five snapshot tests now against three before (F-158). Every job of the verify workflow and `pr-contract` passed on `ccdc14c`. The job `verify:changes` skipped, because it runs on a manual start alone.
 
-**The review.** `gitar-bot` approved `19e6e6d`, and it reads 0 findings and no review thread. The review is current: the head of the pull request matches, and the dashboard comment reads an edit time after the push. Every job of the verify workflow and `pr-contract` passed on `19e6e6d`. The job `verify:changes` skipped, because it runs on a manual start alone. CAUTION: the Gitar trial ends about 2026-09-22, from the dashboard of 2026-09-20.
+**The review.** `gitar-bot` approved `ccdc14c`, and it reads 1 closed of 1 findings and no open thread. The review is current: the head matches, and the dashboard comment reads an edit time after the push. The one finding had full merit. D-769 held the replay counts 85/85/81 of an earlier measurement, and the built change reads 84/84. The commit `ccdc14c` corrects D-769, and the thread is resolved. CAUTION: the Gitar trial ends about 2026-09-22, from the dashboard of 2026-09-20.
 
 **What waits on the owner.**
 
@@ -87,14 +89,14 @@ Twenty things a fresh session gets wrong without this file.
 - Commander brackets: the 2025-10-21 revision. Game Changers: 53 cards, list of 2026-02-09. Lutri is banned as a companion only, per the 2026-02-09 announcement (`companion_bans.json` holds the link). The content rules per bracket in `brackets.json` and the Spellbook thresholds were read 2026-09-02, and the Karsten tables are the 2022 articles, read 2026-09-02 (`docs/reference/bracket-profile-2026-09-02.md`).
 - Standard: 18 sets, Wilds of Eldraine to The Hobbit. Six sets leave at the first 2027 set. Verified 2026-08-24.
 - Card snapshot on disk: `.local/gcs/mtg-local-cards/scryfall/20260904T210157`, the newest of 13. Read 2026-09-13, when it flagged 53 Game Changers. Check every card fact against it.
-- The theme table `themes.json` reads `verified_at` 2026-09-14. `make themes-check` read every slug against the snapshot of 2026-09-04 on 2026-09-14. The question gate set holds 109 conversations: 78 counted and 31 probes (D-730).
+- The theme table `themes.json` reads `verified_at` 2026-09-20. `make themes-check` read every slug against the snapshot of 2026-09-04 on 2026-09-20. The question gate set holds 109 conversations: 78 counted and 31 probes (D-730).
 - LLM model ids and prices: `roles.json` and `prices.json`, verified 2026-08-24. The max output per provider in `llm/client.go`, verified 2026-08-29. The OpenAI rows are unverified by anyone but the owner. The judge role runs on Opus 5 (D-430).
 - CAUTION: the application default credentials of this Mac failed on 2026-09-13 with `invalid_rapt`. `make feedback-list` fails, and so do the harvest and the backfill, which read the same credentials. `scripts/read-session.sh` and `gcloud logging read` still work with `CLOUDSDK_CORE_ACCOUNT`. The owner runs `gcloud auth application-default login` to repair them.
 - CAUTION: the `decktome` gcloud configuration named the Wallabee account and project on 2026-09-10, so `use_decktome` put the shell on the wrong project. `scripts/read-session.sh` reads `SESSION_PROJECT` and the account of `CLOUDSDK_CORE_ACCOUNT`, so an environment override reads `decktome-prod` with no change to the configuration. The owner has the commands to repair the configuration. A read on 2026-09-12 at 19:24 UTC found the configuration unchanged.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
 - The feedback store holds 3 verdicts on 2026-09-09, and every one predates the snapshot of D-635. `make feedback-list VERDICT=` reads both verdicts now (F-87). A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- The deployed API, read 2026-09-15 at 04:14 UTC: revision `mtg-api-00050-w9z` on image `api:4dbbc20`, from #179. Both jobs run `worker:4dbbc20`, and `/readyz` answered ok with a card snapshot of 2026-09-14 21:01 UTC. `deploy-api` ran from 04:09 to 04:13 UTC. No web build ran, because #179 changed no file under `web/**`.
+- The deployed API, read 2026-09-20 at 18:30 UTC: revision `mtg-api-00055-xgs` on image `api:82ba9ad`, from #193. Both jobs run `worker:82ba9ad`, and `/readyz` answered ok with a card snapshot of 2026-09-20 09:01 UTC. The revision started at 17:37 UTC. No web build ran, because #193 changed no file under `web/**`. CAUTION: the service holds minScale 0. After a cold start `/readyz` answers 503 and `starting` for about 15 seconds, because the card index takes 15 seconds to load. Poll it before you call the deploy bad.
 - The deployed web app, read 2026-09-13 at 18:54 UTC: the release of #158, from `deploy-web` at 18:52 UTC. `index.html` loads `assets/index-DYfo4m8I.js` and no `registerSW.js`, and `sw.js` precaches the `workbox-window` chunk.
 - The deployed quality model, read 2026-09-14: `20260914T070904Z`, from the meta job that started at 06:02 UTC and ended at 07:13 UTC. It fits 43,182 lists and 1,517 commanders. Its Commander fit reads `immaterial` 239 and accuracy 0.554, and its Standard fit reads a cross share of 0.667. The job read the weekly EDHREC pass, 2,077 pages and 4 lists. The mtgo source read 3,094 lists with 58 fetch errors. The mtggoldfish source read 155 lists with no failure. The mtgjson source read no list, because its deck list version differs from the stored table, as on 2026-09-12 and 2026-09-13.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
@@ -104,7 +106,7 @@ Twenty things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **Ask the owner for the next item, in a new clean session** (D-746). The sequence of the roadmap ends at step 48. OQ-83 to OQ-86 hold the other suggestions of the review of the Gríma deck. M-18 gives them evidence. **F-157** records the thin owned pool and the repair turn of every build, and it carries no open question. The power pass after the build still waits (D-704). F-137 stays a record (D-718). PR-55 closes F-148 and the land half of F-144, and PR-57 closes its typal-payoff half (D-765). **F-144** stays open for one half alone: a card whose text names the type, such as a token maker (D-768). A plain text needle also reads the cards that punish the type, so that half needs its own rule.
+1. **Ask the owner for the next item, in a new clean session** (D-746). The sequence of the roadmap ends at step 48. OQ-83 to OQ-86 hold the other suggestions of the review of the Gríma deck. M-18 gives them evidence. **F-157** records the thin owned pool and the repair turn of every build, and it carries no open question. The power pass after the build still waits (D-704). F-137 stays a record (D-718). PR-55 closes F-148 and the land half of F-144. PR-57 closes its typal-payoff half (D-765), and PR-58 closes the last half (D-769). **F-144** ✅ closes with PR-58 (D-769). PR-55, PR-57, and PR-58 each closed one half. **F-158** ✅ closes with it: `make themes-check` never ran two snapshot tests of PR-57.
 2. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It waits, because the ten sessions of the audit ran before #184 and before D-749.
 3. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git.
 4. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide". Session `z1hshyY6Npig1FN2NuV7` named its commander, so it showed no such row.
@@ -127,6 +129,10 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 ## The three most recent sessions
 
+### 2026-09-20c: the type-name signal of PR-58
+
+**The owner chose the plain needle and the word boundary, and no paid run** (D-769, D-770). A type row read the subtype and a few payoff phrases, and it read no card that only names the type. Army of the Damned makes thirteen Zombie tokens, and the zombies row read it as a card of no theme. The typal block gives each type row and each generic type word the type word as a needle now. The needle reads a word boundary, because the substring "cat" reads 165 Commander-legal cards and the word reads 55. So a singular type word drops its substring needle, and "zombie" and "zombies" read one shortlist at last. A free replay of five shortlists reads a swap of 84 cards, and no card that punishes the type entered. F-144 closes, and F-158 closes with it: `make themes-check` never ran two snapshot tests of PR-57. The session ran no paid target.
+
 ### 2026-09-20b: the typal card signal of PR-57
 
 **The owner chose the wider signal, the payoff-text weight, and a paid run** (D-765 to D-768). A type row read no generic typal payoff, so Door of Destinies and Coat of Arms reached no typal shortlist. The `typal` block of `themes.json` holds two card lists now. `typal-choose` counts on any card that is no land. `typal-share` counts on a card that is no creature, because 40 of its 70 Commander-legal nonlands reward one named type alone. The dinosaur prompt moves from 215 on theme to 289. Deck gate run 29 reads PASS for $2.7384, and its dinosaur deck holds eight generic typal payoffs. F-144 stays open for the cards that name the type (D-768).
@@ -134,10 +140,6 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 ### 2026-09-20: the merge trigger of the transitional prompt
 
 **The owner asked that a merge message start the transitional prompt by itself** (D-764). D-754 gave the session the prompt, and it named no trigger. Section 5 of the skill now names each variant of the message, and section 1 names the one exception. The owner chose the inline form of the sibling repo the-thing-below, and one line in hard rule 12. An early merge asks the owner first, and no machine check reads the trigger. The session ran no paid target.
-
-### 2026-09-19b: the repair-turn gate of PR-56
-
-**The owner chose the repair gate alone, and the record of the thin pool** (D-762, D-763). A free replay of the M-18 request names the card of its `not_owned` finding. It is the commander the reader named, and the export of 2026-09-02 holds no copy. No answer of the model changes a commander, so each M-18 build spent a repair call on a block that survives it. `fixable` drops such a finding before the build decides. The uncapped owned pool reaches 1 Game Changer and 1 tutor, against the bracket 5 floors of 8 and 4. So F-157 closes with its measurement. A second session wrote this checkout during the work, and the owner stopped it. The session ran no paid target.
 
 ## The archive
 
