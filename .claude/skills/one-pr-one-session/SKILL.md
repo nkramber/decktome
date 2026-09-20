@@ -125,7 +125,6 @@ First action: <the first concrete action>.
 - A check that needs `main` comes first. The branch of the next item gives no such result.
 - Remove that line of the block when this merge needs no such check.
 - The next step of the hand-off holds the same first action. The two agree, or the hand-off wins.
-- The prompt names no provider, no harness, and no model (hard rule 6).
 
 The session ends with this prompt. It makes no branch and no change for the next pull request.
 

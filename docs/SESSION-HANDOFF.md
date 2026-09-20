@@ -17,7 +17,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 **What this pull request holds.**
 
 - Section 5 of `.claude/skills/one-pr-one-session/SKILL.md` names the trigger. Any message of the owner that names the merge of the bound pull request starts the section.
-- The same section holds a procedure of six steps, the fenced block, and six rules of the prompt.
+- The same section holds a procedure of six steps, the fenced block, and five rules of the prompt.
 - The block gains one line for each check that needs `main` or the deploy of the merge.
 - Section 1 names the trigger as the one exception to step 2, the blocked answer of the start gate.
 - Two cases stop the prompt: an unclear message, and a merge before section 3 calls the pull request ready. Both ask the owner.
