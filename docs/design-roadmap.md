@@ -1708,7 +1708,7 @@ Gate: a test fails on the old code for each of the five lands of F-148. A land n
 2026-09-19 (built): every new test fails on the old code. The dinosaur prompt of the deck gate holds all five lands of F-148 and Restless Ridgeline. The theme "dinosaur" read 0 of the five before D-761, and it reads all five now. The shortlist still holds 266 cards and 40 lands, and the on-theme count moves from 208 to 215. Seven lands that enter tapped on a condition leave to make the room. Before the change, every type row read an on-theme count of 1 or more in every single color. So the change hides no theme question of D-725. No paid target ran. `docs/reference/pr55-typal-lands-2026-09-19.md` holds every count.
 > *In plain English:* a tribal deck needs the lands that make mana for its tribe. The app dropped every one of them for a plain dual land. This change teaches each tribe row to recognize its own lands.
 
-**PR-56: A finding on the commander buys no repair turn (F-157, D-762, D-763).** 🔧 built 2026-09-19.
+**PR-56: A finding on the commander buys no repair turn (F-157, D-762, D-763).** 🔧 built 2026-09-19, as #191. It came after #190, which merged PR-55.
 Each of the three M-18 builds ran a repair turn, and the reason of each one names a `not_owned` finding. That finding names the commander the reader named, and the collection of the reader holds no copy of it.
 
 - **The cause.** `assemble` takes the commander from the request on every pass. The answer of the model holds a card list, and that list never reaches the command zone. So a finding on a commander survives every repair turn.
