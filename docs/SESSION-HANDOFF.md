@@ -27,7 +27,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The measurement.** No paid target ran. Deck gate run 29 stays the newest whole deck gate run, and `make eval-check` still reads it as PASS. The counts read the profile the server already measured, so the change moves no deck and no grade.
 
-**The checks.** `make verify` passed on this machine, exit 0. The four lint checks read 0 findings. Six new tests cover the helper and the deck page, and each one fails on the old code.
+**The checks.** `make verify` passed on this machine, exit 0. The four lint checks read 0 findings. Six new tests cover the helper and the deck page. Five of the six fail on the old code. The sixth is a negative guard: a deck with no profile shows no count, and that held before the change too.
 
 **The review.** PENDING.
 

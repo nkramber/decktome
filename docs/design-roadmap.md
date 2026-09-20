@@ -1794,7 +1794,7 @@ The Gríma review of 2026-09-14 read the deck as bracket 3 by the rules, and the
 - **The plan.** The finisher floor holds at every bracket, and the bracket system counts no finisher. So the finisher row names the deck plan and never the bracket (D-743, D-776).
 - **The surface.** The deck page alone shows the counts, and the chat page renders the same component (D-777). The change needs no protobuf field and no server change.
 
-Gate: a Commander deck of bracket 5 shows four counts beside its bracket, and each missed floor reads "short". A deck of bracket 3 shows three caps, and a cap the deck breaks reads "over". A deck with no profile shows no count, and a 60-card deck shows none. A feature the profile did not measure gets no row. Every new test fails on the old code.
+Gate: a Commander deck of bracket 5 shows four counts beside its bracket, and each missed floor reads "short". A deck of bracket 3 shows three caps, and a cap the deck breaks reads "over". A deck with no profile shows no count, and a 60-card deck shows none. A feature the profile did not measure gets no row. Five of the six new tests fail on the old code, and the sixth is a negative guard.
 
 2026-09-20 (built): six new tests cover the helper and the deck page. `powerCounts` of `web/apps/web/src/features/deck/deck-stats.ts` reads the profile alone. So the counts need no card data and no second network read. No paid target ran, and no Go file changes.
 > *In plain English:* the app told the reader the bracket of a deck and no more. Two decks of the same bracket can hold very different power. The page now shows how many tutors, fast mana, and Game Changers the deck holds. It shows how many the bracket wants beside each one. A number the deck misses reads "short".
