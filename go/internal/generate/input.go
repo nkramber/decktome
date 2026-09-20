@@ -26,6 +26,38 @@ func (b *Builder) bandWords(req Request, key string) string {
 	return b.profiler.Bands().Words(req.Format, req.Power, key)
 }
 
+// commanderText writes the card of each commander: the name, the type
+// line, the mana cost, the power and toughness, and every line of Oracle
+// text. The name alone never states what the commander rewards (D-771).
+func (b *Builder) commanderText(req Request) string {
+	var s strings.Builder
+	for _, id := range req.Commanders {
+		c, ok := b.cards.ByOracleID(id)
+		if !ok {
+			continue
+		}
+		// The line carries no leading dash, because a shortlist line
+		// starts with one and the commander is not on the list (D-302).
+		s.WriteString(c.GetName())
+		if line := strings.TrimSpace(c.GetTypeLine()); line != "" {
+			fmt.Fprintf(&s, " | %s", line)
+		}
+		if cost := strings.TrimSpace(c.GetManaCost()); cost != "" {
+			fmt.Fprintf(&s, " | %s", cost)
+		}
+		if p, tough := c.GetPower(), c.GetToughness(); p != "" || tough != "" {
+			fmt.Fprintf(&s, " | %s/%s", p, tough)
+		}
+		s.WriteString("\n")
+		for _, line := range strings.Split(c.GetOracleText(), "\n") {
+			if line = strings.TrimSpace(line); line != "" {
+				fmt.Fprintf(&s, "  %s\n", line)
+			}
+		}
+	}
+	return strings.TrimSpace(s.String())
+}
+
 func (b *Builder) input(req Request, misses []Miss, findings []*mtgv1.Finding) string {
 	var s strings.Builder
 	fmt.Fprintf(&s, "## Limits\n\n%s\n", strings.TrimSpace(req.Limits))
@@ -42,6 +74,11 @@ func (b *Builder) input(req Request, misses []Miss, findings []*mtgv1.Finding) s
 		if len(names) > 0 {
 			fmt.Fprintf(&s, "\nThe commander is %s. It is chosen, and it is not one of the cards you list.\n",
 				strings.Join(names, " and "))
+			// The deck serves the payoff shape of the commander, and the
+			// card text is the only place that shape is written (D-771).
+			if txt := b.commanderText(req); txt != "" {
+				fmt.Fprintf(&s, "\nThe commander reads:\n\n%s\n", txt)
+			}
 		}
 	}
 	if req.BudgetUSD > 0 {

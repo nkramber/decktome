@@ -12,6 +12,10 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+### 2026-09-20: the merge trigger of the transitional prompt
+
+**The owner asked that a merge message start the transitional prompt by itself** (D-764). D-754 gave the session the prompt, and it named no trigger. Section 5 of the skill now names each variant of the message, and section 1 names the one exception. The owner chose the inline form of the sibling repo the-thing-below, and one line in hard rule 12. An early merge asks the owner first, and no machine check reads the trigger. The session ran no paid target.
+
 ## The resume section of 2026-09-20
 
 **Pull request #192 carries the merge trigger of the transitional prompt, and it waits for the owner's merge** (D-764). It changes documents and one skill alone. No code and no test changes.
