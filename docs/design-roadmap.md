@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-20 correction pass 201 (PR-60, D-774 to D-777): the session built PR-60. The deck page shows the power counts of a deck beside its rules bracket. The counts read the profile the server already measured. Changes: PR-60, sequencing step 51.
+
 2026-09-20 correction pass 200 (F-159, PR-59, D-771 to D-774): the session built PR-59. The model prompt carries the Oracle text of the commander, so the model reads its payoff shape. OQ-84 and OQ-86 close, and OQ-85 waits. Changes: F-159, PR-59, sequencing step 50.
 
 2026-09-20 correction pass 199 (F-144, F-158, PR-58, D-769, D-770): the session built PR-58. A type row reads a card whose text names its type, and the needle matches on a word boundary. The free replay measures it. Changes: F-144, F-158, PR-58, sequencing step 49.
@@ -1783,6 +1785,20 @@ Gate: a Commander session reads the type line, the mana cost, the power and toug
 Every count of this item is free, and no paid target ran. `docs/reference/grima-payoff-shape-2026-09-20.md` holds the replay of the M-18 shortlist, the classification of its 10 evasion cards, and the effect-class counts. CAUTION: the change is not deterministic. No test can prove that a deck improves, and the next whole deck gate run carries it beside any other change that lands first.
 > *In plain English:* the app told the model the name of the commander and nothing else. The model had to remember the card. This commander cannot be blocked, and it rewards each hit one time. The app now sends the card text, so the model can read what the deck must do.
 
+**PR-60: A deck shows its power counts beside its bracket (D-774 to D-777).** 🔧 built 2026-09-20. It came after #195, which merged PR-59.
+The Gríma review of 2026-09-14 read the deck as bracket 3 by the rules, and the build aimed at bracket 5. The profile measured each power feature of the deck, and no number of the app told the reader. The deck page showed "Bracket 5" and stopped.
+
+- **The source.** `ProfileFeature` of `proto/mtg/v1/deck.proto` already carries `value`, `low`, `high`, and `has_high` for each power feature. The server writes it, and `GetDeck` returns it. No file of `web/apps/web/src` read `deck.profile` before this change.
+- **The floors.** A bracket of 4 or 5 sets a floor for tutors, fast mana, and Game Changers. The row reads "Tutors 0 of 4" (D-774).
+- **The caps.** Bracket 1 to 3 sets a cap for the same three features. The row reads "Tutors 1 of 5 at most" (D-775). Without the cap the reader of most decks saw no count at all.
+- **The plan.** The finisher floor holds at every bracket, and the bracket system counts no finisher. So the finisher row names the deck plan and never the bracket (D-743, D-776).
+- **The surface.** The deck page alone shows the counts, and the chat page renders the same component (D-777). The change needs no protobuf field and no server change.
+
+Gate: a Commander deck of bracket 5 shows four counts beside its bracket, and each missed floor reads "short". A deck of bracket 3 shows three caps, and a cap the deck breaks reads "over". A deck with no profile shows no count, and a 60-card deck shows none. A feature the profile did not measure gets no row. Every new test fails on the old code.
+
+2026-09-20 (built): six new tests cover the helper and the deck page. `powerCounts` of `web/apps/web/src/features/deck/deck-stats.ts` reads the profile alone. So the counts need no card data and no second network read. No paid target ran, and no Go file changes.
+> *In plain English:* the app told the reader the bracket of a deck and no more. Two decks of the same bracket can hold very different power. The page now shows how many tutors, fast mana, and Game Changers the deck holds. It shows how many the bracket wants beside each one. A number the deck misses reads "short".
+
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
 
@@ -2110,6 +2126,8 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 49. **PR-58** a type row reads a card that names its type (D-769, D-770). **F-144** ✅ closes with it, and so does **F-158**. The needle reads 786 cards that no signal reached, and 637 of them reward the type. The replay of five shortlists swaps 84 cards and grows none. The plural and the singular read one shortlist now. No paid target ran, so no deck of a model measures the change.
 
 50. **PR-59** the prompt reads the commander (D-771 to D-774). **F-159** ✅ closes with it. The prompt carried the commander's name alone, and it now carries the card. OQ-84 closes with no code. Three cards of a 201-card shortlist grant evasion Gríma already holds. Each carries a second mode. OQ-85 waits for the shape work, and OQ-86 takes its own pull request. No paid target ran.
+
+51. **PR-60** a deck shows its power counts beside its bracket (D-774 to D-777). The deck page reads the profile the server already measured. A bracket of 4 or 5 shows a floor, and bracket 1 to 3 shows a cap (D-775). The finisher row names the deck plan (D-776). The deck page alone shows the counts, so no protobuf field changes (D-777). No paid target ran.
 
 ## 9. Open questions
 

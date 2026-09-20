@@ -292,3 +292,41 @@ export function sortEntries(entries: DeckCard[], byId: Map<string, Card>, key: S
   });
   return out;
 }
+
+// PowerCount is one power feature of a deck beside the rule its bracket
+// sets. A bracket of 4 or 5 sets a floor for tutors, fast mana, and Game
+// Changers, and a lower bracket sets a cap for the same three (D-775).
+// The finisher rule is the deck plan and never the bracket (D-743,
+// D-776). `offBand` marks the count the deck misses.
+export type PowerCount = { key: string; text: string; offBand: boolean };
+
+// powerKeys is the reader order of `profile.PowerKeys` of the Go profile
+// package, and each noun is the word the reader sees.
+const powerNouns: [string, string][] = [
+  ["tutor", "Tutors"],
+  ["fast_mana", "Fast mana"],
+  ["game_changer", "Game Changers"],
+  ["finisher", "Finishers"],
+];
+
+// powerCounts reads the four power features of the profile the server
+// measured (D-774). It answers one row for each feature that carries a
+// floor or a cap, and no row for a feature the profile did not measure.
+// A 60-card format carries no power band, so it answers no row.
+export function powerCounts(deck: Deck): PowerCount[] {
+  const profile = deck.profile;
+  if (!profile || profile.bracket <= 0) return [];
+  const rows = new Map(profile.features.map((f) => [f.key, f]));
+  const out: PowerCount[] = [];
+  for (const [key, noun] of powerNouns) {
+    const f = rows.get(key);
+    if (!f) continue;
+    if (f.low > 0) {
+      const plan = key === "finisher" ? " for this plan" : "";
+      out.push({ key, text: `${noun} ${f.value} of ${f.low}${plan}${f.offBand ? ", short" : ""}`, offBand: f.offBand });
+    } else if (f.hasHigh) {
+      out.push({ key, text: `${noun} ${f.value} of ${f.high} at most${f.offBand ? ", over" : ""}`, offBand: f.offBand });
+    }
+  }
+  return out;
+}

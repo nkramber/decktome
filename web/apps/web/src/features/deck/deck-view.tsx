@@ -27,6 +27,7 @@ import {
   groupByRole,
   mainTypes,
   manaCurve,
+  powerCounts,
   powerLabel,
   priceText,
   roleLabel,
@@ -126,6 +127,7 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
       <span className="w-6 text-right tabular-nums">{n}</span>
     </span>
   );
+  const counts = powerCounts(deck);
   const captionClass = "mb-3 border-b border-border pb-2 text-left text-sm font-semibold tracking-wide uppercase";
 
   return (
@@ -163,6 +165,20 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
         <p className="text-sm" data-testid="buy-cost">
           To buy: {deck.buyCostUsd > 0 ? priceText(deck.buyCostUsd) : "nothing. Every card is owned, or no price is known."}
         </p>
+        {/* The power counts sit beside the bracket, so the reader reads
+            the power of the deck and its rules bracket together (D-774).
+            The server measured each count, and the profile carries it. */}
+        {counts.length > 0 && (
+          <p className="text-sm" data-testid="power-counts">
+            <span className="text-muted-foreground">Power against bracket {deck.profile?.bracket}: </span>
+            {counts.map((c, i) => (
+              <span key={c.key} className={c.offBand ? "text-warning" : undefined}>
+                {i > 0 && " "}
+                {c.text}.
+              </span>
+            ))}
+          </p>
+        )}
         {deck.summary && (
           <div className="mt-2 flex flex-wrap items-start gap-x-3 gap-y-1">
             <p className="max-w-measure leading-relaxed" data-testid="deck-summary">
