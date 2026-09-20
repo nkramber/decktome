@@ -29,7 +29,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The checks.** `make verify` passed on this machine, exit 0. The four lint checks read 0 findings. Six new tests cover the helper and the deck page. Five of the six fail on the old code. The sixth is a negative guard: a deck with no profile shows no count, and that held before the change too.
 
-**The review.** `gitar-bot` approved `9f87adc`, and it reads 0 findings and no open thread. The review is current: the head matches, and the dashboard comment reads an edit time after the push. CAUTION: Gitar replaced the dashboard comment during the review, and the first id answered 404. Read the newest id each time. Every job of the verify workflow and `pr-contract` passed on `9f87adc`. The job `verify:changes` skipped, because it runs on a manual start alone. CAUTION: the Gitar trial ends about 2026-09-22, from the dashboard of 2026-09-20.
+**The review.** `gitar-bot` approved this pull request, and it reads 0 findings and no open thread. It approved `9f87adc` at 22:00 UTC, and `d189a66` at 22:07 UTC. Each commit after `d189a66` changes `docs/SESSION-HANDOFF.md` alone, and that path does not make the pass stale (D-752). CAUTION: Gitar replaced the dashboard comment during the review, and the first id answered 404. Read the newest id each time. Every job of the verify workflow and `pr-contract` passed on `9f87adc`. The job `verify:changes` skipped, because it runs on a manual start alone. CAUTION: the Gitar trial ends about 2026-09-22, from the dashboard of 2026-09-20.
 
 **What waits on the owner.**
 
