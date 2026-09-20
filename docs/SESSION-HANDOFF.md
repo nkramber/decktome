@@ -26,7 +26,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The paid run.** None. Every count comes from the local snapshot of 2026-09-04 and the local export of 2026-09-02.
 
-**The checks.** PENDING-CHECKS
+**The checks.** `make verify` passed on this machine, exit 0. `make ste-check`, `make ref-check`, `make lifecycle-check`, and `make context-budget` each read 0 findings. Both new tests fail on the old code. The first reads 4 findings where it wants 3, and the second counts 2 provider calls where it wants 1.
 
 **The review.** PENDING-REVIEW
 
@@ -124,6 +124,10 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 ## The three most recent sessions
 
+### 2026-09-19b: the repair-turn gate of PR-56
+
+**The owner chose the repair gate alone, and the record of the thin pool** (D-762, D-763). A free replay of the M-18 request names the card of its `not_owned` finding. It is the commander the reader named, and the export of 2026-09-02 holds no copy. No answer of the model changes a commander, so each M-18 build spent a repair call on a block that survives it. `fixable` drops such a finding before the build decides. The uncapped owned pool reaches 1 Game Changer and 1 tutor, against the bracket 5 floors of 8 and 4. So F-157 closes with its measurement. A second session wrote this checkout during the work, and the owner stopped it. The session ran no paid target.
+
 ### 2026-09-19: the typal land signal of PR-55
 
 **The owner chose the wider signal, kept it to lands, and extended it to a singular type word** (D-759 to D-761). A type row of `themes.json` read no land, so a typal shortlist lost every land that makes mana for its type (F-148). A new `typal_land` block holds the tag `typal-choose` and one needle for Path of Ancestry. Each row adds its own subtype word as a land needle. The five lands of F-148 are on the dinosaur shortlist again, in the plural and in the singular. The session ran no paid target, and every count comes from the local snapshot of 2026-09-04.
@@ -134,4 +138,4 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, 2026-09-16, and 2026-09-18, the records of 2026-08-31 to 2026-09-16d, and 43 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-19, the records of 2026-08-31 to 2026-09-17, and 100 more sections, word for word. Read it for the detail behind a decision.
