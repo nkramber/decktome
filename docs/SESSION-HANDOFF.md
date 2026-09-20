@@ -29,9 +29,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The paid run.** None. This pull request runs no provider call.
 
-**The checks.** `make verify` passed on this machine, exit 0. `make ste-check`, `make ref-check`, `make lifecycle-check`, and `make context-budget` each read 0 findings. `make pr-check` reads the body of the pull request. This pull request changes no code, so it adds no test.
+**The checks.** `make verify` passed on this machine on the head `98322cf`, exit 0. `make ste-check`, `make ref-check`, `make lifecycle-check`, and `make context-budget` each read 0 findings. `make pr-check` reads 0 contract errors. Every job of the verify workflow and `pr-contract` passed on `98322cf`. The job `verify:changes` skipped, because it runs on a manual start alone. This pull request changes no code, so it adds no test.
 
-**The review.** The session pushed the branch, and it waits for a current review of `gitar-bot`.
+**The review.** `gitar-bot` approved `98322cf`, and it reads 1 finding of 1 closed and no open thread. The review is current: the head of the pull request matches, and the dashboard comment reads an edit time after the push. The finding said that the rules of the prompt cite hard rule 6 for a claim that the rule does not carry. The session agreed, and the bullet left section 5. CAUTION: the Gitar trial ends about 2026-09-23, from the dashboard of 2026-09-20.
 
 **What waits on the owner.**
 
