@@ -8,9 +8,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-20e)
 
-**Pull request #NNN carries PR-60, the power counts of a deck beside its bracket, and it waits for the owner's merge** (D-774 to D-777).
+**Pull request #196 carries PR-60, the power counts of a deck beside its bracket, and it waits for the owner's merge** (D-774 to D-777).
 
-**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #NNN with `gh pr view NNN`. Then do next step 1.
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #196 with `gh pr view 196`. Then do next step 1.
 
 **The base.** `main` is `d3d5d29`, from #195, which carried PR-59.
 

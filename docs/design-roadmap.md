@@ -1785,7 +1785,7 @@ Gate: a Commander session reads the type line, the mana cost, the power and toug
 Every count of this item is free, and no paid target ran. `docs/reference/grima-payoff-shape-2026-09-20.md` holds the replay of the M-18 shortlist, the classification of its 10 evasion cards, and the effect-class counts. CAUTION: the change is not deterministic. No test can prove that a deck improves, and the next whole deck gate run carries it beside any other change that lands first.
 > *In plain English:* the app told the model the name of the commander and nothing else. The model had to remember the card. This commander cannot be blocked, and it rewards each hit one time. The app now sends the card text, so the model can read what the deck must do.
 
-**PR-60: A deck shows its power counts beside its bracket (D-774 to D-777).** 🔧 built 2026-09-20. It came after #195, which merged PR-59.
+**PR-60: A deck shows its power counts beside its bracket (D-774 to D-777).** 🔧 built 2026-09-20, as #196. It came after #195, which merged PR-59.
 The Gríma review of 2026-09-14 read the deck as bracket 3 by the rules, and the build aimed at bracket 5. The profile measured each power feature of the deck, and no number of the app told the reader. The deck page showed "Bracket 5" and stopped.
 
 - **The source.** `ProfileFeature` of `proto/mtg/v1/deck.proto` already carries `value`, `low`, `high`, and `has_high` for each power feature. The server writes it, and `GetDeck` returns it. No file of `web/apps/web/src` read `deck.profile` before this change.
