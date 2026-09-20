@@ -30,7 +30,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The checks.** `make verify` passed on this machine on the head `9a9b0fe`, exit 0. `make ste-check`, `make ref-check`, `make lifecycle-check`, and `make context-budget` each read 0 findings. `make pr-check` reads 0 contract errors. `make eval-check` reads the suite `decks` as PASS. The package `go/internal/candidates` passes with the snapshot, and its seven new tests fail on the old code.
 
-**The review.** PENDING.
+**The review.** `gitar-bot` approved `19e6e6d`, and it reads 0 findings and no review thread. The review is current: the head of the pull request matches, and the dashboard comment reads an edit time after the push. Every job of the verify workflow and `pr-contract` passed on `19e6e6d`. The job `verify:changes` skipped, because it runs on a manual start alone. CAUTION: the Gitar trial ends about 2026-09-22, from the dashboard of 2026-09-20.
 
 **What waits on the owner.**
 
