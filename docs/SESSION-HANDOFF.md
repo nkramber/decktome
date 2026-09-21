@@ -35,7 +35,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The checks.** `make verify` passed on this machine, exit 0. The four lint checks read 0 findings, and `make pr-check` read 0 contract errors. `node scripts/self-reload-check.mjs` passed, exit 0.
 
-**The review.** The session asks `gitar-bot` after each push, and it answers each finding on this pull request.
+**The review.** `gitar-bot` approved `51cc41d`, and it reads 0 findings and no review thread. The dashboard comment holds an edit time of 00:03:53 UTC, later than the push of 00:01:46 UTC. Both times are of 2026-09-21, so the review is current on the head. Every job of the verify workflow and `pr-contract` passed on `51cc41d`. The job `verify:changes` skipped, because it runs on a manual start alone. CAUTION: the Gitar note of 2026-09-21 reads two days, so the trial ends about 2026-09-23.
 
 **What waits on the owner.**
 
