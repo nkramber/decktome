@@ -125,6 +125,19 @@ func TestKeptRowsKeepsTheAnsweredDecks(t *testing.T) {
 	if len(plans) != 3 || len(plans["1"]) != 1 || plans["1"][0].Metric != "plan_score" || len(plans["3"]) != 1 {
 		t.Errorf("summary-only kept = %+v, want the plan rows of every deck", plans)
 	}
+	// An older summary judge blocks a kept summary row, and never a
+	// summary-only lane, which judges every summary again.
+	kept.Header.Prompts["summary_judge"] = generate.SummaryJudgeVersion - 1
+	old := filepath.Join(t.TempDir(), "old.jsonl")
+	if err := evalrun.WriteFile(old, kept); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := keptRows(old, src, false); err == nil {
+		t.Error("a kept summary row of an older summary judge is kept")
+	}
+	if _, err := keptRows(old, src, true); err != nil {
+		t.Errorf("a summary-only lane refuses an older summary judge: %v", err)
+	}
 	src.Header.RunID = "another"
 	if _, err := keptRows(path, src, false); err == nil {
 		t.Error("a rejudge of another run is kept")

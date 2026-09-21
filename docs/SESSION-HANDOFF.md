@@ -27,7 +27,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The checks.** `make verify` passed on this machine, exit 0, with Node 22.23.2. `make eval-check` reads the decks suite PASS, run 34 against run 19. `make ste-check`, `make ref-check`, and `make context-budget` read 0 findings.
 
-**The review.** Gitar reviewed `eb606af` and found that the rejudge reader cut each summary to its first paragraph. Commit `93a07a8` fixes it, and run 34 measured the fix. The review of the new head waits.
+**The review.** Gitar reviewed `eb606af` and found that the rejudge reader cut each summary to its first paragraph. Commit `93a07a8` fixes it, and run 34 measured the fix. The review of `b10d584` approved with one suggestion: `-summary-only` need not match the summary judge version of the kept run. The next commit takes it, and the review of that head waits.
 
 **What waits on the owner.**
 

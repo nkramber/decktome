@@ -221,10 +221,20 @@ func keptRows(path string, src *evalrun.Run, summaryOnly bool) (map[string][]eva
 	if kept.Header.Versions["rejudge_of"] != src.Header.RunID {
 		return nil, fmt.Errorf("-keep: %s is not a rejudge of %s", kept.Header.RunID, src.Header.RunID)
 	}
-	for _, k := range []struct {
+	// A kept row must come from the judge this lane would call. With
+	// summaryOnly the summary rows are judged again, so the summary judge
+	// version of the kept run does not matter.
+	checks := []struct {
 		name string
 		want int
-	}{{"plan_rubric", generate.PlanRubricVersion}, {"summary_judge", generate.SummaryJudgeVersion}} {
+	}{{"plan_rubric", generate.PlanRubricVersion}}
+	if !summaryOnly {
+		checks = append(checks, struct {
+			name string
+			want int
+		}{"summary_judge", generate.SummaryJudgeVersion})
+	}
+	for _, k := range checks {
 		if kept.Header.Prompts[k.name] != k.want {
 			return nil, fmt.Errorf("-keep: %s read %s %d, and this lane reads %d", kept.Header.RunID, k.name, kept.Header.Prompts[k.name], k.want)
 		}
