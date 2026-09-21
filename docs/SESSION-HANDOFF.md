@@ -28,7 +28,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The checks.** `make verify` passed on this machine, exit 0. `make ste-check`, `make ref-check`, and `make context-budget` read 0 findings. `make pr-check` read 4 changed files and 0 contract errors.
 
-**The review.** The Gitar review of #200 is pending.
+**The review.** `gitar-bot` reviewed the effective head `9967916` and read "No issues found", with no review thread. Its dashboard edit of 03:06:05 UTC is later than the push of 03:03:40 UTC, both of 2026-09-21, so the review is current. The later commit `ce5db14` changes the hand-off alone (D-752).
 
 **What waits on the owner.**
 
