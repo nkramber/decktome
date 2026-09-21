@@ -30,7 +30,14 @@ First, every statement in the paragraph that asserts a rule of the game. A rule 
 
 Second, for each such statement, whether it is true. Judge it against the real rules of Magic: The Gathering. Say "unknown" when you can not tell.
 
-Be strict about what counts as a rules claim and honest about truth. A summary with no rules claim is the expected result.`
+Be strict about what counts as a rules claim and honest about truth. A summary with no rules claim is the expected result.
+
+When the input holds the card list with the mana cost and the type line of each card from the card data, judge a claim about the cost, the color, or the type of a card against that list, and not against your memory of the card.`
+
+// SummaryJudgeVersion changes when the instructions or the input of the
+// summary judge change. Version 2 reads the card facts of the deck
+// (D-789). A change starts a new epoch of the false-rule rows.
+const SummaryJudgeVersion = 2
 
 const judgeSchema = `{
   "type": "object",
@@ -82,11 +89,18 @@ func (j Judgement) StatesAFalseRule() bool {
 }
 
 // JudgeSummary asks the judge role whether one summary states a rule of
-// the game. deck names the deck, for the judge's context.
-func JudgeSummary(ctx context.Context, c *llm.Client, deck, summary string, acc *llm.Accumulator) (*Judgement, error) {
+// the game. name names the deck, for the judge's context. A deck with its
+// card source adds the cost and the type of each card, because the judge
+// read a true cost as false from its memory of the card (D-789). A nil
+// deck sends the summary alone.
+func JudgeSummary(ctx context.Context, c *llm.Client, name, summary string, deck *mtgv1.Deck, cards rules.CardSource, acc *llm.Accumulator) (*Judgement, error) {
+	input := fmt.Sprintf("Deck: %s\n\nSummary:\n%s", name, summary)
+	if deck != nil && cards != nil {
+		input += "\n\n" + factsDeckText(deck, cards, nil)
+	}
 	res, err := c.Complete(ctx, llm.RoleJudge, llm.Request{
 		Instructions: judgeInstructions,
-		Input:        fmt.Sprintf("Deck: %s\n\nSummary:\n%s", deck, summary),
+		Input:        input,
 		SchemaName:   "summary_check",
 		Schema:       json.RawMessage(judgeSchema),
 	}, acc)
@@ -182,13 +196,14 @@ func bracketDeckText(deck *mtgv1.Deck, cards rules.CardSource) string {
 	return deckText(deck, cards, deckTextOpts{gameChangers: true})
 }
 
-// planDeckText is DeckText with the mana cost and the type line of each
+// factsDeckText is DeckText with the mana cost and the type line of each
 // card, and the color identity of the commander, from the card data. The
 // plan judge reads the colors, the curve, and the mana base from these
-// facts and not from its memory of the cards (F-39, D-787). A request that
+// facts and not from its memory of the cards (F-39, D-787), and the
+// summary judge reads a claim about a card against them (D-789). A request that
 // names sets also marks each card in or outside them, because the judge
 // read reprints of the Hobbit Commander set as outside it (D-788).
-func planDeckText(deck *mtgv1.Deck, cards rules.CardSource, setCodes []string) string {
+func factsDeckText(deck *mtgv1.Deck, cards rules.CardSource, setCodes []string) string {
 	return deckText(deck, cards, deckTextOpts{facts: true, sets: setCodes})
 }
 

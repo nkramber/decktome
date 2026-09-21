@@ -73,3 +73,29 @@ func TestJudgeBracketReadsTheGameChangerFlags(t *testing.T) {
 		t.Errorf("a flagged commander carries no mark:\n%s", in)
 	}
 }
+
+// TestJudgeSummaryReadsTheCardFacts is D-789: with a deck, the summary
+// judge reads the cost and the type of each card from the card data, and
+// with none it reads the summary alone. The card is a test fixture.
+func TestJudgeSummaryReadsTheCardFacts(t *testing.T) {
+	cards := source{"o-lead": {OracleId: "o-lead", Name: "A Six-Mana Leader", ManaCost: "{4}{W}{B}", TypeLine: "Legendary Creature"}}
+	deck := &mtgv1.Deck{CommanderOracleIds: []string{"o-lead"}}
+	answer := `{"claims": [], "verdict": "clean"}`
+	c, sc := bracketClient(t, answer)
+	if _, err := JudgeSummary(context.Background(), c, "a deck", "A commander that costs six mana.", deck, cards, nil); err != nil {
+		t.Fatal(err)
+	}
+	if in := sc.Calls[0].Input; !strings.Contains(in, "Commander: A Six-Mana Leader | {4}{W}{B} | Legendary Creature\n") {
+		t.Errorf("judge input lacks the facts:\n%s", in)
+	}
+	if !strings.Contains(sc.Calls[0].Instructions, "not against your memory of the card") {
+		t.Error("the instructions do not tell the judge to read the facts")
+	}
+	c2, sc2 := bracketClient(t, answer)
+	if _, err := JudgeSummary(context.Background(), c2, "a deck", "A summary.", nil, nil, nil); err != nil {
+		t.Fatal(err)
+	}
+	if in := sc2.Calls[0].Input; strings.Contains(in, "Commander:") {
+		t.Errorf("a nil deck sends a card list:\n%s", in)
+	}
+}

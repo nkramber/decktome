@@ -103,7 +103,7 @@ func run() error {
 			fmt.Printf("%-3s %-42s no summary, skipped\n", b.ID+".", trunc(b.Name, 42))
 			continue
 		}
-		out, err := generate.JudgeSummary(context.Background(), client, b.Name, b.Summary, acc)
+		out, err := generate.JudgeSummary(context.Background(), client, b.Name, b.Summary, nil, nil, acc)
 		if err != nil {
 			return fmt.Errorf("judge deck %s: %w", b.ID, err)
 		}

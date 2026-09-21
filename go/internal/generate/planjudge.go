@@ -128,7 +128,7 @@ func (j PlanJudgement) Score() float64 {
 func JudgePlan(ctx context.Context, c *llm.Client, request string, deck *mtgv1.Deck, cards rules.CardSource, setCodes []string, acc *llm.Accumulator) (*PlanJudgement, error) {
 	res, err := c.Complete(ctx, llm.RoleJudge, llm.Request{
 		Instructions: planJudgeInstructions,
-		Input:        "Request: " + request + "\n\nFormat: " + FormatWord(deck.GetFormat().GetId()) + "\n\nSummary:\n" + deck.GetSummary() + "\n\n" + planDeckText(deck, cards, setCodes),
+		Input:        "Request: " + request + "\n\nFormat: " + FormatWord(deck.GetFormat().GetId()) + "\n\nSummary:\n" + deck.GetSummary() + "\n\n" + factsDeckText(deck, cards, setCodes),
 		SchemaName:   "plan_check",
 		Schema:       json.RawMessage(planJudgeSchema),
 	}, acc)
