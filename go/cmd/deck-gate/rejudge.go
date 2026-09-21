@@ -56,6 +56,11 @@ func readStored(r io.Reader, idx *cards.Index) (map[int]*storedDeck, error) {
 	out := map[int]*storedDeck{}
 	var cur *storedDeck
 	id := 0
+	// A summary holds more than one paragraph: the builder's text, then
+	// the quality line and the gap note that the build joins with a blank
+	// line. writeDeck prints each one, so the reader joins them back
+	// until the next block of the report.
+	inSummary := false
 	sc := bufio.NewScanner(r)
 	sc.Buffer(make([]byte, 0, 64*1024), 1024*1024)
 	for sc.Scan() {
@@ -64,6 +69,7 @@ func readStored(r io.Reader, idx *cards.Index) (map[int]*storedDeck, error) {
 			id, _ = strconv.Atoi(m[1])
 			cur = &storedDeck{}
 			out[id] = cur
+			inSummary = false
 			continue
 		}
 		if cur == nil {
@@ -75,7 +81,18 @@ func readStored(r io.Reader, idx *cards.Index) (map[int]*storedDeck, error) {
 		}
 		if m := summaryLine.FindStringSubmatch(line); m != nil {
 			cur.summary = m[1]
+			inSummary = true
 			continue
+		}
+		if inSummary {
+			if strings.HasPrefix(line, "- ") || strings.HasPrefix(line, "Summary rules claims") || strings.HasPrefix(line, "<details>") {
+				inSummary = false
+			} else {
+				if t := strings.TrimSpace(line); t != "" {
+					cur.summary += "\n\n" + t
+				}
+				continue
+			}
 		}
 		m := deckLine.FindStringSubmatch(line)
 		if m == nil {
@@ -190,8 +207,10 @@ func copyBuildRows(run, src *evalrun.Run) (buildPass bool) {
 // keptRows reads the judge rows of an earlier rejudge of the same run,
 // by item. An item keeps its rows when both judges answered it. An item
 // with a judge error is judged again, so a provider fault costs the
-// failed calls alone and never the whole lane (D-789).
-func keptRows(path string, src *evalrun.Run) (map[string][]evalrun.Row, error) {
+// failed calls alone and never the whole lane (D-789). With summaryOnly,
+// every item keeps its plan rows alone, and the summary judge reads
+// every deck again.
+func keptRows(path string, src *evalrun.Run, summaryOnly bool) (map[string][]evalrun.Row, error) {
 	if path == "" {
 		return nil, nil
 	}
@@ -223,7 +242,13 @@ func keptRows(path string, src *evalrun.Run) (map[string][]evalrun.Row, error) {
 		case "false_rules":
 			answered[row.Item] = true
 		}
+		if summaryOnly && !strings.HasPrefix(row.Metric, "plan_") {
+			continue
+		}
 		rows[row.Item] = append(rows[row.Item], row)
+	}
+	if summaryOnly {
+		return rows, nil
 	}
 	out := map[string][]evalrun.Row{}
 	for item, rs := range rows {
@@ -234,7 +259,7 @@ func keptRows(path string, src *evalrun.Run) (map[string][]evalrun.Row, error) {
 	return out, nil
 }
 
-func runRejudge(doc, runOut, keep string, prompts []prompt) error {
+func runRejudge(doc, runOut, keep string, summaryOnly bool, prompts []prompt) error {
 	if err := gatekit.SpendGuard("DECK_GATE"); err != nil {
 		return err
 	}
@@ -251,7 +276,10 @@ func runRejudge(doc, runOut, keep string, prompts []prompt) error {
 	if src.Header.Suite != "decks" || src.Header.Partial() {
 		return fmt.Errorf("rejudge: %s is not a whole run of the decks suite", src.Header.RunID)
 	}
-	kept, err := keptRows(keep, src)
+	if summaryOnly && keep == "" {
+		return errors.New("-summary-only needs -keep: the plan rows come from an earlier rejudge")
+	}
+	kept, err := keptRows(keep, src, summaryOnly)
 	if err != nil {
 		return err
 	}
@@ -307,7 +335,11 @@ func runRejudge(doc, runOut, keep string, prompts []prompt) error {
 	run.Header.Lower = append(run.Header.Lower, src.Header.Lower...)
 	run.Header.Note = fmt.Sprintf("a rejudge of %s: the decks and the build rows are copied, and the judge rows are new (D-789)", src.Header.RunID)
 	buildPass := copyBuildRows(run, src)
-	if keep != "" {
+	switch {
+	case summaryOnly:
+		run.Header.Versions["kept_from"] = evalrun.RunID(keep)
+		run.Header.Note += fmt.Sprintf(". The summary judge read every deck again, and the plan rows are kept from %s", evalrun.RunID(keep))
+	case keep != "":
 		run.Header.Versions["kept_from"] = evalrun.RunID(keep)
 		run.Header.Note += fmt.Sprintf(". The judge rows of %d decks are kept from %s, and its document holds their lines", len(kept), evalrun.RunID(keep))
 	}
@@ -315,16 +347,30 @@ func runRejudge(doc, runOut, keep string, prompts []prompt) error {
 	start := time.Now()
 	for i := range results {
 		r := &results[i]
-		if _, ok := kept[strconv.Itoa(r.prompt.ID)]; ok {
+		if _, ok := kept[strconv.Itoa(r.prompt.ID)]; ok && !summaryOnly {
 			continue
 		}
 		r.judged, r.judgeErr = judge(context.Background(), client, r.prompt.Name, r.deck, idx, acc)
+		if summaryOnly {
+			fmt.Fprintf(os.Stderr, "  %2d. %-38s %s\n", r.prompt.ID, r.prompt.Name, rejudgeWord(*r))
+			continue
+		}
 		r.plan, r.planErr = generate.JudgePlan(context.Background(), client, r.prompt.Plan, r.deck, idx, r.setCodes, acc)
 		fmt.Fprintf(os.Stderr, "  %2d. %-38s %s\n", r.prompt.ID, r.prompt.Name, rejudgeWord(*r))
 	}
 	falseRules, judgeErrs := 0, 0
 	for _, r := range results {
 		item := strconv.Itoa(r.prompt.ID)
+		if summaryOnly {
+			judgeRows(run, item, r)
+			run.Rows = append(run.Rows, kept[item]...)
+			if r.judgeErr != nil {
+				judgeErrs++
+			} else if r.judged != nil && r.judged.StatesAFalseRule() {
+				falseRules++
+			}
+			continue
+		}
 		if rows, ok := kept[item]; ok {
 			run.Rows = append(run.Rows, rows...)
 			for _, row := range rows {
@@ -348,7 +394,7 @@ func runRejudge(doc, runOut, keep string, prompts []prompt) error {
 	}
 	took := time.Since(start)
 	run.Finish(acc.Report(), took, verdict)
-	reportRejudge(os.Stdout, doc, src, results, kept, buildPass, falseRules, judgeErrs, acc.Report(), took, run)
+	reportRejudge(os.Stdout, doc, src, results, kept, summaryOnly, buildPass, falseRules, judgeErrs, acc.Report(), took, run)
 	if err := evalrun.WriteFile(runOut, run); err != nil {
 		return err
 	}
@@ -370,7 +416,7 @@ func rejudgeWord(r result) string {
 
 // reportRejudge writes the rejudge document. The judge lines keep the
 // form of the source document, so one reader counts both.
-func reportRejudge(w io.Writer, doc string, src *evalrun.Run, rs []result, kept map[string][]evalrun.Row, buildPass bool, falseRules, judgeErrs int, rep llm.Report, took time.Duration, run *evalrun.Run) {
+func reportRejudge(w io.Writer, doc string, src *evalrun.Run, rs []result, kept map[string][]evalrun.Row, summaryOnly, buildPass bool, falseRules, judgeErrs int, rep llm.Report, took time.Duration, run *evalrun.Run) {
 	_, _ = fmt.Fprintf(w, "# PR-8 deck gate, a rejudge of %s\n\n", src.Header.RunID)
 	_, _ = fmt.Fprintf(w, "Run date: %s. Card snapshot: %s. Decks read from `%s`.\n\n", time.Now().UTC().Format("2006-01-02"), src.Header.Snapshot, filepath.Base(doc))
 	build := "every deck of the source passed its build bars"
@@ -384,7 +430,7 @@ func reportRejudge(w io.Writer, doc string, src *evalrun.Run, rs []result, kept 
 	_, _ = fmt.Fprintf(w, "\n## Decks\n\n")
 	for _, r := range rs {
 		_, _ = fmt.Fprintf(w, "### %d. %s\n\n", r.prompt.ID, r.prompt.Name)
-		if _, ok := kept[strconv.Itoa(r.prompt.ID)]; ok {
+		if _, ok := kept[strconv.Itoa(r.prompt.ID)]; ok && !summaryOnly {
 			_, _ = fmt.Fprintf(w, "Kept from %s, and its document holds the judge lines.\n\n", run.Header.Versions["kept_from"])
 			continue
 		}
@@ -396,6 +442,9 @@ func reportRejudge(w io.Writer, doc string, src *evalrun.Run, rs []result, kept 
 			for _, c := range r.judged.Claims {
 				_, _ = fmt.Fprintf(w, "- JUDGE [%s]: %q. %s\n", c.Truth, c.Text, c.Why)
 			}
+		}
+		if summaryOnly {
+			_, _ = fmt.Fprintf(w, "- PLAN rows kept from %s.\n", run.Header.Versions["kept_from"])
 		}
 		if r.planErr != nil {
 			_, _ = fmt.Fprintf(w, "- PLAN JUDGE ERROR: %v\n", r.planErr)

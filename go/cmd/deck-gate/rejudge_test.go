@@ -14,8 +14,9 @@ import (
 
 // TestReadStoredReadsWriteDeckBack is D-789: the rejudge lane reads the
 // commander, the summary, and the deck list that writeDeck wrote, with
-// each count and role. The cards are test fixtures, and one partner
-// name holds a comma of its own.
+// each count and role. A summary of three paragraphs reads back whole.
+// The cards are test fixtures, and one partner name holds a comma of its
+// own.
 func TestReadStoredReadsWriteDeckBack(t *testing.T) {
 	idx := cards.NewIndex([]*mtgv1.Card{
 		{OracleId: "o-a", Name: "Partner, the First"},
@@ -26,7 +27,7 @@ func TestReadStoredReadsWriteDeckBack(t *testing.T) {
 	r := result{
 		prompt: prompt{ID: 7, Name: "a partner deck", Format: "commander"},
 		deck: &mtgv1.Deck{
-			Summary:            "A plan in one line, with a | bar.",
+			Summary:            "A plan in one line, with a | bar.\n\nThe quality model grades this deck at the precon baseline.\n\nA gap note of a second line.",
 			CommanderOracleIds: []string{"o-a", "o-b"},
 			Cards: []*mtgv1.DeckCard{
 				{OracleId: "o-land", Name: "A Plain Land", Count: 36, Role: mtgv1.CardRole_CARD_ROLE_LAND, Reason: "mana | and more"},
@@ -110,15 +111,22 @@ func TestKeptRowsKeepsTheAnsweredDecks(t *testing.T) {
 	if err := evalrun.WriteFile(path, kept); err != nil {
 		t.Fatal(err)
 	}
-	got, err := keptRows(path, src)
+	got, err := keptRows(path, src, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(got) != 1 || len(got["1"]) != 2 {
 		t.Errorf("kept = %+v, want the two rows of deck 1 alone", got)
 	}
+	plans, err := keptRows(path, src, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(plans) != 3 || len(plans["1"]) != 1 || plans["1"][0].Metric != "plan_score" || len(plans["3"]) != 1 {
+		t.Errorf("summary-only kept = %+v, want the plan rows of every deck", plans)
+	}
 	src.Header.RunID = "another"
-	if _, err := keptRows(path, src); err == nil {
+	if _, err := keptRows(path, src, false); err == nil {
 		t.Error("a rejudge of another run is kept")
 	}
 }
