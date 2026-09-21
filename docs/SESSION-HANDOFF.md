@@ -8,47 +8,47 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-20g)
 
-**A pull request on `d778-api-deck-build` carries PR-61, the API-only deck build of D-778. It waits for the Gitar review and the owner's merge.**
+**Pull request #198 carries PR-61, the API-only deck build of D-778. It waits for the owner's merge.**
 
-**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request. Then do next step 1.
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #198 with `gh pr view 198`. Then do next step 1.
 
 **The base.** `main` is `cb6bb2b`, from #197, which carried the self-reload check.
 
 **The live run passed. A session built a deck on the deployed app with no GUI.**
 
 - The sign-in used `accounts:signInWithPassword` of Identity Toolkit, and no browser. The project enables that provider alone.
-- The check account of D-779 signed in, uid `n60IL9CX0NOCj3JbuI7ZrtlrgXf2`. No counter of the owner moved (D-638).
-- The import read 2,471 rows and 4,316 cards. It resolved 2,547 rows, and one row did not resolve.
+- The check account of D-779 signed in, uid `n60IL9CX0NOCj3JbuI7ZrtlrgXf2`. No counter of the owner moved.
+- The import read 2,471 rows and 4,316 cards, and it resolved 2,547 rows.
 - The agent asked four questions over two turns, and the command answered each one.
 - The deck is `4aiklNKrKHGYqyaMhN4H`, Commander, bracket 1, with 1 commander and 99 main cards. It took 100 seconds.
 - `GetDeck` read the deck back, and `ListDecks` found it under session `4mmIdVLGjGXIbbPGqtE7`. That read-back is the half that the check of #196 never reached.
 
 **The first attempt failed, and it found two defects. Both are fixed.**
 
-- A cold Cloud Run instance answered the import with "card database not loaded yet". The command now waits on the public `HealthService.Check` until the API holds a card snapshot.
+- A cold Cloud Run instance answered the import with "card database not loaded yet". The command now waits on the public `HealthService.Check`.
 - **F-160: a failed paid target reports success on this machine.** `Makefile` sets `.SHELLFLAGS`, and GNU Make added that variable in 3.82. This machine runs GNU Make 3.81, which ignores it. So every recipe that ends with `| tee` reports the status of `tee`. `make api-build` sets `set -o pipefail` in its own recipe. Every other target keeps the fault, and a one-concern pull request fixes the rest.
 
 **What this pull request holds.**
 
-- `go/cmd/api-build` is the first command of this repo that calls the deployed API as a client. `go/cmd/chat-probe` serves itself in memory.
-- `make api-build` runs it. The target is a paid one, and the paid list grows to thirteen (D-781).
-- Twenty-one tests drive the whole flow against a test server, for nothing. No test reaches the deployed project.
-- `docs/reference/api-deck-build-2026-09-20.md` holds the method, the result, and the five limits.
-- PR-61 and F-160 of `docs/design-roadmap.md` read the proof. Correction pass 203 records the item.
+- `go/cmd/api-build` is the first command of this repo that calls the deployed API as a client.
+- `make api-build` runs it. The paid list grows to thirteen (D-781).
+- Twenty-one tests drive the whole flow against a test server. No test reaches the deployed project.
+- `docs/reference/api-deck-build-2026-09-20.md` holds the method, the result, and the limits.
+- PR-61 and F-160 of `docs/design-roadmap.md` read the proof, and correction pass 203 records the item.
 - `docs/decisions.md` gains D-779 to D-781.
 - **No file of `web/apps/web/src` changes, and no protobuf file changes.**
 
-**The measurement.** One live run of `make api-build` spent about $0.15 on `decktome-prod`. No other paid target ran. Deck gate run 29 stays the newest whole deck gate run.
+**The measurement.** One live run of `make api-build` spent about $0.15 on `decktome-prod`. No other paid target ran. Deck gate run 29 stays the newest whole run.
 
-**The checks.** `make verify` passed on this machine. The four lint checks read 0 findings.
+**The checks.** `make verify` passed on this machine, exit 0. The four lint checks read 0 findings, and `make pr-check` read 0 contract errors.
 
-**The review.** The pull request waits for `gitar-bot`.
+**The review.** `gitar-bot` reviewed `d6f95ec` and read no issue and no review thread. Its edit time of 01:24:25 UTC is later than the push of 01:21:49 UTC, both of 2026-09-21, so the review is current. CAUTION: the Gitar trial ends about 2026-09-23.
 
 **What waits on the owner.**
 
 - The Gitar review, then the merge of this pull request.
 - **F-160, the `tee` fault of every other paid target.** It needs its own pull request.
-- The default answer plan builds a bracket 1 deck. `API_BUILD_ANSWERS="power=#3"` builds a bracket 3 deck, and the owner can make that the default.
+- The default answer plan builds a bracket 1 deck. `API_BUILD_ANSWERS="power=#3"` builds a bracket 3 deck.
 - The deck id of the bracket 5 deck of session `sXYg6oAi5hzOPbkbk6gG`. The read of its power counts waits for that id.
 - Five sessions on the new files, before a decision on the checkpoint rule (next step 3, D-750).
 - A deployed session with a theme that matches no card, such as "anime" (next step 4).
