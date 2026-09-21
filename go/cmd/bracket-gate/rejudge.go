@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -18,6 +19,7 @@ import (
 	"github.com/nkramber/decktome/go/internal/gatekit"
 	"github.com/nkramber/decktome/go/internal/generate"
 	"github.com/nkramber/decktome/go/internal/llm"
+	"github.com/nkramber/decktome/go/internal/rules"
 )
 
 // The re-judge mode reads the decks of a gate document and runs the
@@ -99,6 +101,24 @@ func readDecks(r io.Reader, idx *cards.Index) ([]result, error) {
 	return out, nil
 }
 
+// readContent profiles each stored deck, so the judge reads the combos
+// of Commander Spellbook as the build path gives them (F-126, D-790). The
+// endpoint is free, and a deck it fails keeps an unchecked profile.
+func readContent(ctx context.Context, rs []result, idx *cards.Index, log *slog.Logger) error {
+	rcfg, err := rules.Load()
+	if err != nil {
+		return err
+	}
+	prof, err := gatekit.Profiler(idx, rcfg, log)
+	if err != nil {
+		return err
+	}
+	for i := range rs {
+		rs[i].deck.Profile, _ = prof.Read(ctx, rs[i].deck, idx)
+	}
+	return nil
+}
+
 // splitHeader reads "commander, theme" where the commander can hold a
 // comma, as "Gishath, Sun's Avatar" does. The commander is the longest
 // prefix the index knows, and the rest is the theme.
@@ -121,6 +141,7 @@ func runRejudge(path, runOut string) error {
 	}
 	run := evalrun.New("bracket-judge", evalrun.RunID(runOut))
 	run.Header.Prompts["generate"] = generate.PromptVersion
+	run.Header.Prompts["bracket_judge"] = generate.BracketJudgeVersion
 	run.Header.Versions["source"] = filepath.Base(path)
 	quiet := gatekit.Quiet()
 	idx, err := gatekit.LoadSnapshot(context.Background(), quiet)
@@ -136,6 +157,9 @@ func runRejudge(path, runOut string) error {
 	results, err := readDecks(f, idx)
 	if err != nil {
 		return fmt.Errorf("rejudge %s: %w", path, err)
+	}
+	if err := readContent(context.Background(), results, idx, quiet); err != nil {
+		return err
 	}
 	client, err := llm.NewFromEnv(gatekit.Env, quiet)
 	if err != nil {
@@ -238,6 +262,25 @@ func reportJudge(w io.Writer, source string, rs []result, acc *llm.Accumulator, 
 		case r.judged != nil:
 			_, _ = fmt.Fprintf(w, "Judge: bracket %d. %s\n\n", r.judged.Bracket, strings.TrimSpace(r.judged.Why))
 		}
+		if c := r.deck.GetProfile().GetContent(); c != nil {
+			_, _ = fmt.Fprintf(w, "Combos the judge read: %s.\n\n", comboNames(c))
+		}
 	}
 	return pass
+}
+
+// comboNames lists the combos of a content check on one line, or says
+// that the check found none or did not run.
+func comboNames(c *mtgv1.ContentCheck) string {
+	if !c.GetChecked() {
+		return "none, the check did not run: " + c.GetError()
+	}
+	var out []string
+	for _, combo := range c.GetCombos() {
+		out = append(out, strings.Join(combo.GetCards(), " + "))
+	}
+	if len(out) == 0 {
+		return "none, Commander Spellbook finds no combo"
+	}
+	return strings.Join(out, "; ")
 }

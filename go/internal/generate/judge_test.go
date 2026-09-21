@@ -74,6 +74,54 @@ func TestJudgeBracketReadsTheGameChangerFlags(t *testing.T) {
 	}
 }
 
+// TestJudgeBracketReadsTheSpellbookCombos is F-126: the bracket judge
+// reads the combos of the stored content check, and a deck with no combo
+// or no check says so, so the judge names no combo from memory (D-790).
+func TestJudgeBracketReadsTheSpellbookCombos(t *testing.T) {
+	cards := source{"o-leader": {OracleId: "o-leader", Name: "A Test Commander"}}
+	deckWith := func(c *mtgv1.ContentCheck) *mtgv1.Deck {
+		return &mtgv1.Deck{CommanderOracleIds: []string{"o-leader"}, Profile: &mtgv1.DeckProfile{Content: c}}
+	}
+	for _, tc := range []struct {
+		name string
+		deck *mtgv1.Deck
+		want []string
+	}{
+		{"two combos", deckWith(&mtgv1.ContentCheck{Checked: true, Combos: []*mtgv1.ComboHit{
+			{Cards: []string{"Card A", "Card B"}, TwoCard: true, Speed: 4},
+			{Cards: []string{"Card C", "Card D", "Card E"}, Speed: 2},
+		}}), []string{
+			"\nCombos:\n- Card A + Card B (two cards, four mana or less)\n",
+			"- Card C + Card D + Card E (3 cards, not a two-card combo, eight mana or less)\n",
+		}},
+		{"no combo", deckWith(&mtgv1.ContentCheck{Checked: true}), []string{"\nCombos:\nCommander Spellbook finds no combo in this deck.\n"}},
+		{"unchecked", deckWith(&mtgv1.ContentCheck{Error: "timeout"}), []string{"The combo check did not run for this deck: timeout.\n"}},
+		{"no profile", &mtgv1.Deck{CommanderOracleIds: []string{"o-leader"}}, []string{"The combo check did not run for this deck.\n"}},
+	} {
+		c, sc := bracketClient(t, `{"bracket": "3", "why": "a combo"}`)
+		if _, err := JudgeBracket(context.Background(), c, tc.deck, cards, nil); err != nil {
+			t.Fatal(err)
+		}
+		in := sc.Calls[0].Input
+		for _, want := range tc.want {
+			if !strings.Contains(in, want) {
+				t.Errorf("%s: judge input lacks %q:\n%s", tc.name, want, in)
+			}
+		}
+		if !strings.Contains(sc.Calls[0].Instructions, "Count only a listed combo") {
+			t.Errorf("%s: the instructions do not bind the judge to the listed combos", tc.name)
+		}
+	}
+	if plain := DeckText(deckWith(&mtgv1.ContentCheck{Checked: true}), cards); strings.Contains(plain, "Combos:") {
+		t.Errorf("DeckText lists combos, and the tier and plan judges read it:\n%s", plain)
+	}
+	for speed, want := range map[int32]string{6: "no mana past the cards", 5: "no mana past the cards", 3: "six mana or less", 1: "more than eight mana"} {
+		if got := speedWord(speed); got != want {
+			t.Errorf("speedWord(%d) = %q, want %q", speed, got, want)
+		}
+	}
+}
+
 // TestJudgeSummaryReadsTheCardFacts is D-789: with a deck, the summary
 // judge reads the cost and the type of each card from the card data, and
 // with none it reads the summary alone. The card is a test fixture.
