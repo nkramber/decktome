@@ -28,7 +28,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The checks.** `make verify` passed on this machine, exit 0, with Node 22.23.2 of `.nvmrc`. The default shell Node v20.17.0 fails the web tests with `ERR_REQUIRE_ESM`. `make ste-check`, `make ref-check`, and `make context-budget` read 0 findings.
 
-**The review.** Pending: the Gitar review of #201.
+**The review.** `gitar-bot` reviewed the effective head `2121262` and read "No issues found", with no review thread. Its dashboard edit of 03:47:02 UTC is later than the push of 03:44:50 UTC, both of 2026-09-21, so the review is current.
 
 **What waits on the owner.**
 
