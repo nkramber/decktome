@@ -13,6 +13,7 @@ go/coverage.out
 # `go build ./cmd/X` drops a 40 to 90 MB binary at go/X. The list mirrors
 # .gitignore, and go/cmd/cmdignore_test.go keeps both lists complete.
 go/api
+go/api-build
 go/candidates-review
 go/chat-probe
 go/feedback

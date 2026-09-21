@@ -180,6 +180,7 @@ make chat-probe        # drive the real Chat RPC to a deck, a few cents
 make generate-probe    # build one deck with the real generate role, a few cents
 make summary-judge     # judge every deck summary of a gate document (F-26), a few cents
 make test-smoke        # live LLM smoke test, reads .env, a few cents
+make api-build         # build one deck over the deployed API, no GUI, $0.10 to $0.20 (D-778)
 ```
 
 The question gate cost is from 2026-08-26, and the deck gate and bracket gate costs are from 2026-09-02.
