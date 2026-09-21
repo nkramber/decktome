@@ -796,6 +796,22 @@
       ],
       "subtype": "Elf"
     },
+    "heroes": {
+      "payoff_slugs": [
+        "typal-hero"
+      ],
+      "payoff_text": [
+        "hero you control",
+        "heroes you control",
+        "hero spell"
+      ],
+      "subtype": "Hero",
+      "aliases": [
+        "superhero",
+        "superheroes",
+        "avengers"
+      ]
+    },
     "goblins": {
       "payoff_slugs": [
         "typal-goblin"

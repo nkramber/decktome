@@ -31,13 +31,14 @@ func TestThemeWordsFindTheirRow(t *testing.T) {
 		"self-mill":  "graveyard", "prison": "stax", "weenie": "aggro", "aggressive": "aggro",
 		"superfriends": "superfriends", "planeswalkers": "superfriends", "going-wide": "go-wide",
 		"spell-slinger": "spellslinger", "land-destruction": "land-destruction",
+		"heroes": "heroes", "superhero": "heroes", "superheroes": "heroes", "avengers": "heroes",
 	}
 	for word, want := range rows {
 		if got, ok := b.themes.rowOf(word); !ok || got != want {
 			t.Errorf("rowOf(%q) = %q, %v, want %q", word, got, ok, want)
 		}
 	}
-	for _, word := range []string{"opponent", "zzzz", "tempo", "king", "string", "draining", "hobbits", "turtles", "elf", "zombie", "dragon"} {
+	for _, word := range []string{"opponent", "zzzz", "tempo", "king", "string", "draining", "hobbits", "turtles", "elf", "zombie", "dragon", "hero"} {
 		if got, ok := b.themes.rowOf(word); ok {
 			t.Errorf("rowOf(%q) = %q, want no row", word, got)
 		}

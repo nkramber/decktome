@@ -12,6 +12,44 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-20i
+
+**Pull request #200 corrects the finding register. Twelve 🔧 rows named work that had merged. It waits for the owner's merge.**
+
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view 200`. Then do next step 1.
+
+**The base.** `main` is `0d17193`, from #199, which carried the F-160 fix.
+
+**Why this pull request exists.** The owner picked F-36 as the item after F-160. The code showed that #68 fixed F-36 on 2026-09-05 (D-535), and the row still read open. So the owner picked a sweep of the register (D-783).
+
+**What this pull request holds.**
+
+- F-28, F-29, F-30, F-36, F-77, F-78, F-139, F-146, F-147, and F-160 read ✅, each with its merge number and date.
+- F-53 and F-94 read 🅿. Their items closed or parked, and the fault of each stays.
+- F-33, F-49, and F-126 read open in part. F-48 names a later document that holds the escape.
+- The heading of PR-52 reads its merge as #181. Correction pass 205 and D-783 record the sweep.
+- **No code file changes.** Six rows stay 🔧: F-33, F-37, F-39, F-48, F-49, and F-126.
+
+**The measurement.** No paid target ran in this session. Deck gate run 29 stays the newest whole run.
+
+**The checks.** `make verify` passed on this machine, exit 0. `make ste-check`, `make ref-check`, and `make context-budget` read 0 findings. `make pr-check` read 4 changed files and 0 contract errors.
+
+**The review.** `gitar-bot` reviewed the effective head `9967916` and read "No issues found", with no review thread. Its dashboard edit of 03:06:05 UTC is later than the push of 03:03:40 UTC, both of 2026-09-21, so the review is current. The later commit `ce5db14` changes the hand-off alone (D-752).
+
+**What waits on the owner.**
+
+- The Gitar review, then the merge of this pull request.
+- The item after the sweep (next step 1). The sequence of the roadmap ends at step 51.
+- The deck id of the bracket 5 deck of session `sXYg6oAi5hzOPbkbk6gG`. The read of its power counts waits for that id.
+- Five sessions on the new files, before a decision on the checkpoint rule (next step 3, D-750).
+- A deployed session with a theme that matches no card, such as "anime" (next step 4).
+- A look at the first commander question after a load of the app (next step 5).
+- OQ-67, OQ-77, and OQ-80.
+
+### 2026-09-20g: the API-only deck build of PR-61
+
+**The owner chose a dedicated check account, and the run keeps what it makes** (D-779, D-780). D-778 asked for a deck build over the API alone, because the live check of #196 read no built deck. The sandbox refuses every read under `users/<uid>` but one session by id, and no session opens a browser. The deployed project enables the email and password provider alone, so `accounts:signInWithPassword` gives a command an id token with no browser. The counters of D-638 count a creation and never lower. So a run under the account of the owner moves a number that no delete corrects. A dedicated account answers that. The first live attempt failed twice over, and each failure was real. A cold Cloud Run instance held no card snapshot, and the target reported success on a failed run. GNU Make 3.81 ignores `.SHELLFLAGS`, which F-160 records. The second run built deck `4aiklNKrKHGYqyaMhN4H` in 100 seconds, and `GetDeck` read it back.
+
 ## The resume section of 2026-09-20h
 
 **Pull request #199 carries the F-160 fix. A failed paid target now fails its make target. It waits for the owner's merge.**
