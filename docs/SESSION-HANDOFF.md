@@ -27,7 +27,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The checks.** `make verify` passed on this machine, exit 0, with Node 22.23.2. The Go tests of the profile, the generate package, and `bracket-gate` pass. `make ste-check`, `make ref-check`, and `make context-budget` read 0 findings.
 
-**The review.** Gitar has not yet reviewed the head of #204.
+**The review.** Gitar reviewed `eb5daed` and reads "No issues found", with no review thread. Its dashboard edit of 20:19:06 UTC is later than the push of 20:14:55 UTC, both of 2026-09-21, so the review is current.
 
 **What waits on the owner.**
 
