@@ -8,9 +8,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-20i)
 
-**Pull request #PRNUM corrects the finding register. Twelve 🔧 rows named work that had merged. It waits for the owner's merge.**
+**Pull request #200 corrects the finding register. Twelve 🔧 rows named work that had merged. It waits for the owner's merge.**
 
-**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view PRNUM`. Then do next step 1.
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view 200`. Then do next step 1.
 
 **The base.** `main` is `0d17193`, from #199, which carried the F-160 fix.
 
@@ -26,9 +26,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The measurement.** No paid target ran in this session. Deck gate run 29 stays the newest whole run.
 
-**The checks.** CHECKS
+**The checks.** `make verify` passed on this machine, exit 0. `make ste-check`, `make ref-check`, and `make context-budget` read 0 findings. `make pr-check` read 4 changed files and 0 contract errors.
 
-**The review.** REVIEW
+**The review.** The Gitar review of #200 is pending.
 
 **What waits on the owner.**
 
