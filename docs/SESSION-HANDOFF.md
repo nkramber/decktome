@@ -30,7 +30,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The measurement.** No paid target ran in this session. Deck gate run 29 stays the newest whole run.
 
-**The checks.** `make verify` passed on this machine, exit 0. `make ste-check` and `make ref-check` read 0 findings, and `make lifecycle-check` ran 83 tests. `make pipefail-check` read 5 guarded pipelines and 1 exempt recipe. `make pr-check` read 12 changed files and 0 contract errors.
+**The checks.** `make verify` passed on this machine, exit 0. `make ste-check` and `make ref-check` read 0 findings, and `make lifecycle-check` ran 83 tests. `make pipefail-check` read 5 guarded pipelines and 1 exempt recipe. `make pr-check` read 12 changed files and 0 contract errors. Every job of the verify workflow passed on #199, and the `verify:shell` job read GNU Make 4.3 of the runner.
 
 **The review.** The review of #199 waits. This session answers each finding on the same pull request (D-746). CAUTION: the Gitar trial ends about 2026-09-23.
 

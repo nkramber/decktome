@@ -17,7 +17,7 @@ A scratch makefile carries the two `SHELL` lines of this repository. Each target
 | `a` | `@false \| tee out.txt` | 0 |
 | `b` | `@set -o pipefail; false \| tee out.txt` | 2 |
 
-Target `a` reads the fault, and target `b` reads the fix. A recipe that sets pipefail itself needs no `.SHELLFLAGS`, so it reads the same on GNU Make 3.81 and on GNU Make 4. The `verify:shell` job runs on `ubuntu-latest`, which carries GNU Make 4. That job now runs `make pipefail-check`, so each pull request proves the rule on both make versions.
+Target `a` reads the fault, and target `b` reads the fix. A recipe that sets pipefail itself needs no `.SHELLFLAGS`, so it reads the same on GNU Make 3.81 and on GNU Make 4. The `verify:shell` job runs on `ubuntu-latest`, which carries GNU Make 4. That job now runs `make pipefail-check`, so each pull request proves the rule on both make versions. The job of run 35552929252 read "GNU Make 4.3 honors .SHELLFLAGS, and it fails a guarded pipeline" at 02:04:46 UTC on 2026-09-21.
 
 ## Every pipeline of the Makefile
 
