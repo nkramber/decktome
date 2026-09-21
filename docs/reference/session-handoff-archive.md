@@ -12,6 +12,48 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-20h
+
+**Pull request #199 carries the F-160 fix. A failed paid target now fails its make target. It waits for the owner's merge.**
+
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view 199`. Then do next step 1.
+
+**The base.** `main` is `98f0527`, from #198, which carried the API-only deck build of PR-61.
+
+**What this pull request holds.**
+
+- Each recipe line of `Makefile` that pipes sets `set -o pipefail` itself now. GNU Make 3.82 added `.SHELLFLAGS`, and GNU Make 3.81 of this Mac ignores it.
+- Three paid targets held the fault: `make chat-probe`, `make generate-probe`, and `make summary-judge`. The free target `make cover` held it too.
+- `make pipefail-check` holds the rule. `make lint` and the `verify:shell` job of the verify workflow both run it, for nothing.
+- The check writes a fixture makefile and proves the rule against the make of the machine. So each pull request proves it on GNU Make 4 of the runner too.
+- `docs/tools/pipefail_check.py` and its 16 tests are new, and `make lifecycle-check` runs the tests.
+- `docs/reference/f160-make-pipefail-2026-09-20.md` holds each exit code. D-782 records the rule, and guardrail 19 carries it.
+- **No Go file, no protobuf file, and no file of `web/` changes.**
+
+**The proof.** Each of the three paid targets ran with `GO=false`, so the command before the `tee` failed at once. Each target exited 2 and printed `Error 1`. Before the fix each one exited 0. No run called a provider, and no run cost money.
+
+**The correction.** The F-160 entry named `make deck-gate` and `make questions-gate` as two targets with the fault. Each of them writes its document with `> $(OUT)` and pipes to nothing, so each one always failed correctly. The roadmap entry, D-782, and the reference document record the refutation.
+
+**The measurement.** No paid target ran in this session. Deck gate run 29 stays the newest whole run.
+
+**The checks.** `make verify` passed on this machine, exit 0. `make ste-check` and `make ref-check` read 0 findings, and `make lifecycle-check` ran 83 tests. `make pipefail-check` read 5 guarded pipelines and 1 exempt recipe. `make pr-check` read 12 changed files and 0 contract errors. Every job of the verify workflow passed on #199, and the `verify:shell` job read GNU Make 4.3 of the runner.
+
+**The review.** `gitar-bot` reviewed `75792c6` and read "No issues found", with no review thread. Its dashboard edit of 02:13:13 UTC is later than the push of 02:12:47 UTC, both of 2026-09-21, so the review is current. CAUTION: the Gitar trial ends about 2026-09-23.
+
+**What waits on the owner.**
+
+- The Gitar review, then the merge of this pull request.
+- The item after F-160 (next step 1). The sequence of the roadmap ends at step 51.
+- The deck id of the bracket 5 deck of session `sXYg6oAi5hzOPbkbk6gG`. The read of its power counts waits for that id.
+- Five sessions on the new files, before a decision on the checkpoint rule (next step 3, D-750).
+- A deployed session with a theme that matches no card, such as "anime" (next step 4).
+- A look at the first commander question after a load of the app (next step 5).
+- OQ-67, OQ-77, and OQ-80.
+
+### 2026-09-20f: the self-reload check of D-692
+
+**The live check of #196 passed in both halves, and the owner named the next item** (D-778). The Hosting release `60c80b8c4ad2a689` went live at 22:44:09 UTC, and the live `index.html` names a new chunk. The deck page chunk holds `data-testid="power-counts"`, and the stats chunk holds every label. The Hosting service serves the current release alone, so the assets of the release of #158 left the site at that minute. The check therefore built both releases on this machine, served the old one, and swapped the server to the new one. The installed app took one stale load, which is F-122, and then it reloaded itself with no command. The check read no built deck, because the sandbox refuses the deck path of a user (D-638). The owner chose an API path that builds a deck with no GUI, and it is next step 1.
+
 ## The resume section of 2026-09-20g
 
 **Pull request #198 carries PR-61, the API-only deck build of D-778. It waits for the owner's merge.**
