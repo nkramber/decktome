@@ -8,9 +8,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-21b)
 
-**Pull request #PRN fixes F-126. The bracket judge reads the combos of Commander Spellbook, and the rejudge of `bracket-gate` profiles each stored deck. It waits for the owner's merge.**
+**Pull request #203 fixes F-126. The bracket judge reads the combos of Commander Spellbook, and the rejudge of `bracket-gate` profiles each stored deck. It waits for the owner's merge.**
 
-**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view PRN`. Then do next step 1.
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view 203`. Then do next step 1.
 
 **The base.** `main` is `23b67ce`, from #202. Cloud Build `169a2dcb` built it and ended SUCCESS, created 2026-09-21 at 15:29 UTC. This session read no revision and no `/readyz`.
 
