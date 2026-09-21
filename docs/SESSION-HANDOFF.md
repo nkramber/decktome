@@ -8,9 +8,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-21c)
 
-**Pull request PRNUM fixes F-162 and answers OQ-87. A calibration precon holds its rules floor, and the gate raises the bracket judge to that floor. It waits for the owner's merge.**
+**Pull request #204 fixes F-162 and answers OQ-87. A calibration precon holds its rules floor, and the gate raises the bracket judge to that floor. It waits for the owner's merge.**
 
-**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view PRNUM`. Then do next step 1.
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view #204`. Then do next step 1.
 
 **The base.** `main` is `88e3870`, from #203. Cloud Build `6620bda1` built it and ended SUCCESS at 19:49:32 UTC on 2026-09-21. The bracket judge runs in the gate tools alone, so no live behavior changed.
 
@@ -25,9 +25,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The measurement.** The rejudge of the 21 calibration decks cost $0.3107 and read FAIL. Ten of 12 cEDH lists agreed, and 6 of 9 precons held their floor. The judge named the combos of precons 4, 5, and 7 and read each one as bracket 3. The raise over those stored verdicts gives 9 of 9 precons, so the run then reads PASS.
 
-**The checks.** CHECKS
+**The checks.** `make verify` passed on this machine, exit 0, with Node 22.23.2. The Go tests of the profile, the generate package, and `bracket-gate` pass. `make ste-check`, `make ref-check`, and `make context-budget` read 0 findings.
 
-**The review.** REVIEW
+**The review.** Gitar has not yet reviewed the head of #204.
 
 **What waits on the owner.**
 
