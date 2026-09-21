@@ -32,7 +32,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The checks.** `make verify` passed on this machine, exit 0. `make ste-check` and `make ref-check` read 0 findings, and `make lifecycle-check` ran 83 tests. `make pipefail-check` read 5 guarded pipelines and 1 exempt recipe. `make pr-check` read 12 changed files and 0 contract errors. Every job of the verify workflow passed on #199, and the `verify:shell` job read GNU Make 4.3 of the runner.
 
-**The review.** The review of #199 waits. This session answers each finding on the same pull request (D-746). CAUTION: the Gitar trial ends about 2026-09-23.
+**The review.** `gitar-bot` reviewed `75792c6` and read "No issues found", with no review thread. Its dashboard edit of 02:13:13 UTC is later than the push of 02:12:47 UTC, both of 2026-09-21, so the review is current. CAUTION: the Gitar trial ends about 2026-09-23.
 
 **What waits on the owner.**
 
