@@ -20,9 +20,10 @@ import (
 
 // The calibration mode writes decks whose bracket comes from outside the
 // builder, in the shape readDecks parses, and it calls no model (M-15,
-// D-698). A precon stands for bracket 2, the judge's "near the strength
-// of a preconstructed deck". A top-finish cEDH list stands for bracket 5.
-// The re-judge mode then reads the document.
+// D-698). A top-finish cEDH list stands for bracket 5. A precon anchors
+// no bracket, and the re-judge mode scores it against the lowest bracket
+// its rules allow (F-162, D-793). Its header keeps bracket 2, the
+// bracket the profile reads it at.
 
 const (
 	calibrationLists      = 12
@@ -202,7 +203,7 @@ func writeCalibration(w io.Writer, asOf time.Time, decks []calibrationDeck) {
 		cedh++
 	}
 	_, _ = fmt.Fprintf(w, "# M-15 judge calibration decks\n\n")
-	_, _ = fmt.Fprintf(w, "Card snapshot: %s. %d precons of the repository stand for bracket 2, and %d cEDH lists of the local meta store stand for bracket 5 (D-698).\n\n",
+	_, _ = fmt.Fprintf(w, "Card snapshot: %s. %d precons of the repository anchor no bracket, and the re-judge mode scores each one against the lowest bracket its rules allow (D-793). %d cEDH lists of the local meta store stand for bracket 5 (D-698).\n\n",
 		asOf.Format("2006-01-02"), precon, cedh)
 	_, _ = fmt.Fprintf(w, "A cEDH list is a Topdeck.gg list of tier great, with one commander and 99 cards. It placed %d or better in a field of %d or more. The newest list of each commander stands. The pick skips a list with a name that the card index does not know.\n\n",
 		calibrationMaxPlace, calibrationMinPlayers)

@@ -35,6 +35,7 @@ import (
 	"github.com/nkramber/decktome/go/internal/gatekit"
 	"github.com/nkramber/decktome/go/internal/generate"
 	"github.com/nkramber/decktome/go/internal/llm"
+	"github.com/nkramber/decktome/go/internal/profile"
 	"github.com/nkramber/decktome/go/internal/quality"
 	"github.com/nkramber/decktome/go/internal/rules"
 )
@@ -59,7 +60,13 @@ type result struct {
 	poolSize     int
 	judged       *generate.BracketJudgement
 	judgeErr     error
-	err          error
+	// floor is the lowest bracket the rules allow the deck. The judge's
+	// bracket rises to it, and raisedFrom keeps the bracket the judge
+	// named, or 0 (F-162, D-793, D-795).
+	floor      int32
+	floorErr   error
+	raisedFrom int32
+	err        error
 	// shift is what the top-list rate moved in the shortlist, read by a
 	// dry run (D-706).
 	shift    gatekit.RateShift
@@ -142,6 +149,7 @@ func run() error {
 	var b *generate.Builder
 	var acc *llm.Accumulator
 	var client *llm.Client
+	var prof *profile.Profiler
 	if !*dry {
 		client, err = llm.NewFromEnv(gatekit.Env, quiet)
 		if err != nil {
@@ -153,7 +161,7 @@ func run() error {
 			return err
 		}
 		acc = llm.NewAccumulator(prices)
-		prof, err := gatekit.Profiler(idx, rcfg, quiet)
+		prof, err = gatekit.Profiler(idx, rcfg, quiet)
 		if err != nil {
 			return err
 		}
@@ -169,6 +177,8 @@ func run() error {
 			if r.judgeErr != nil {
 				fmt.Fprintf(os.Stderr, "  judge %d failed: %v\n", p.ID, r.judgeErr)
 			}
+			r.floor, r.floorErr = prof.Floor(context.Background(), r.deck, idx)
+			raiseToFloor(&r)
 		}
 		results = append(results, r)
 		fmt.Fprintf(os.Stderr, "  %2d. bracket %d %-28s pool %3d  %s\n", p.ID, p.Bracket, p.Commander, r.poolSize, status(r))

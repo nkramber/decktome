@@ -186,7 +186,7 @@ func writeDeck(w io.Writer, r result) {
 		if r.judged.Bracket != p.Bracket {
 			word = "disagrees"
 		}
-		_, _ = fmt.Fprintf(w, "Judge: bracket %d, %s. %s\n\n", r.judged.Bracket, word, strings.TrimSpace(r.judged.Why))
+		_, _ = fmt.Fprintf(w, "Judge: bracket %s, %s. %s\n\n", judgeWords(r), word, strings.TrimSpace(r.judged.Why))
 	} else if r.judgeErr != nil {
 		_, _ = fmt.Fprintf(w, "Judge: error, %s\n\n", r.judgeErr.Error())
 	}

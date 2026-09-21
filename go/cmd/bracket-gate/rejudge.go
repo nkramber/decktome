@@ -103,7 +103,8 @@ func readDecks(r io.Reader, idx *cards.Index) ([]result, error) {
 
 // readContent profiles each stored deck, so the judge reads the combos
 // of Commander Spellbook as the build path gives them (F-126, D-790). The
-// endpoint is free, and a deck it fails keeps an unchecked profile.
+// endpoint is free, and a deck it fails keeps an unchecked profile. Each
+// deck also reads its rules floor (F-162, D-793).
 func readContent(ctx context.Context, rs []result, idx *cards.Index, log *slog.Logger) error {
 	rcfg, err := rules.Load()
 	if err != nil {
@@ -115,6 +116,7 @@ func readContent(ctx context.Context, rs []result, idx *cards.Index, log *slog.L
 	}
 	for i := range rs {
 		rs[i].deck.Profile, _ = prof.Read(ctx, rs[i].deck, idx)
+		rs[i].floor, rs[i].floorErr = prof.Floor(ctx, rs[i].deck, idx)
 	}
 	return nil
 }
@@ -175,6 +177,7 @@ func runRejudge(path, runOut string) error {
 	for i := range results {
 		r := &results[i]
 		r.judged, r.judgeErr = generate.JudgeBracket(context.Background(), client, r.deck, idx, acc)
+		raiseToFloor(r)
 		word := "error"
 		if r.judged != nil {
 			word = fmt.Sprintf("judged %d", r.judged.Bracket)
@@ -191,26 +194,68 @@ func runRejudge(path, runOut string) error {
 	return nil
 }
 
+// raiseToFloor lifts the judge's bracket to the lowest bracket the rules
+// allow the deck. The rules own the low end, and the judge reads above
+// it (D-699). The judge named a listed combo and still read three precons
+// below the bracket its rules allow (F-162, D-795).
+func raiseToFloor(r *result) {
+	if r.judged != nil && r.floorErr == nil && r.floor > r.judged.Bracket {
+		r.raisedFrom = r.judged.Bracket
+		r.judged.Bracket = r.floor
+	}
+}
+
+// judgeWords writes the judge's bracket, and the bracket it named when
+// the floor raised it.
+func judgeWords(r result) string {
+	if r.raisedFrom > 0 {
+		return fmt.Sprintf("%d, raised from %d to the rules floor", r.judged.Bracket, r.raisedFrom)
+	}
+	return strconv.Itoa(int(r.judged.Bracket))
+}
+
+// isPrecon reports whether a deck is a precon of the judge calibration.
+// A precon anchors no bracket, because the Commander Format Panel tied
+// none to a bracket after 2025-10-21, so the lane scores it against its
+// rules floor alone (F-162, D-793).
+func isPrecon(p prompt) bool { return strings.HasPrefix(p.Theme, "precon ") }
+
+// heldFloor reports whether the judge read a precon at or above the
+// lowest bracket its rules allow.
+func heldFloor(r result) bool {
+	return r.floorErr == nil && r.judged != nil && r.judged.Bracket >= r.floor
+}
+
 // reportJudge writes the judge lane document and returns its verdict:
-// every deck judged, and the agreement at the bar.
+// every deck judged, the agreement at the bar on each anchored deck, and
+// each precon at or above its rules floor.
 func reportJudge(w io.Writer, source string, rs []result, acc *llm.Accumulator, idx *cards.Index, took time.Duration, run *evalrun.Run) bool {
-	judged, agreed, errs := 0, 0, 0
+	judged, anchored, agreed, errs, precons, held := 0, 0, 0, 0, 0, 0
 	for _, r := range rs {
 		switch {
 		case r.judgeErr != nil:
 			errs++
 		case r.judged != nil:
 			judged++
+			if isPrecon(r.prompt) {
+				precons++
+				if heldFloor(r) {
+					held++
+				}
+				continue
+			}
+			anchored++
 			if r.judged.Bracket == r.prompt.Bracket {
 				agreed++
 			}
 		}
 	}
 	agreement := 0
-	if judged > 0 {
-		agreement = agreed * 100 / judged
+	if anchored > 0 {
+		agreement = agreed * 100 / anchored
 	}
-	pass := len(rs) > 0 && errs == 0 && judged == len(rs) && agreement >= JudgeAgreementPercent
+	pass := len(rs) > 0 && errs == 0 && judged == len(rs) && held == precons &&
+		(anchored == 0 || agreement >= JudgeAgreementPercent)
 	verdict := "FAIL"
 	if pass {
 		verdict = "PASS"
@@ -220,6 +265,17 @@ func reportJudge(w io.Writer, source string, rs []result, acc *llm.Accumulator, 
 		switch {
 		case r.judgeErr != nil:
 			run.Gate(item, "judged", 0, r.judgeErr.Error())
+		case r.judged != nil && isPrecon(r.prompt):
+			run.Gate(item, "judged", 1, "")
+			if r.floorErr != nil {
+				run.Gate(item, "precon_floor", 0, "no floor: "+r.floorErr.Error())
+				break
+			}
+			ok := 0.0
+			if heldFloor(r) {
+				ok = 1
+			}
+			run.Gate(item, "precon_floor", ok, fmt.Sprintf("floor %d, judged %d", r.floor, r.judged.Bracket))
 		case r.judged != nil:
 			run.Gate(item, "judged", 1, "")
 			agrees := 0.0
@@ -231,12 +287,15 @@ func reportJudge(w io.Writer, source string, rs []result, acc *llm.Accumulator, 
 			run.Gate(item, "judged", 0, "no verdict")
 		}
 	}
-	run.Gate("suite", "judge_agreement", float64(agreement), fmt.Sprintf("%d of %d, the bar is %d", agreed, judged, JudgeAgreementPercent))
+	run.Gate("suite", "judge_agreement", float64(agreement), fmt.Sprintf("%d of %d, the bar is %d", agreed, anchored, JudgeAgreementPercent))
 	run.Finish(acc.Report(), took, verdict)
 	_, _ = fmt.Fprintf(w, "# PR-14A bracket gate, judge lane\n\n")
 	_, _ = fmt.Fprintf(w, "Run date: %s. Card snapshot: %s. Decks read from `%s`.\n\n", time.Now().UTC().Format("2006-01-02"), idx.AsOf.Format("2006-01-02"), source)
 	_, _ = fmt.Fprintf(w, "Verdict: %s. The judge agreed with the bracket on %d of %d decks (%d percent, the bar is %d), with %d judge errors. This document reads the judge bar alone: the block, band, and content bars are in the source document.\n\n",
-		verdict, agreed, judged, agreement, JudgeAgreementPercent, errs)
+		verdict, agreed, anchored, agreement, JudgeAgreementPercent, errs)
+	if precons > 0 {
+		_, _ = fmt.Fprintf(w, "The judge read %d of %d precons at or above the lowest bracket their rules allow. A precon anchors no bracket, so the agreement leaves it out (F-162, D-793).\n\n", held, precons)
+	}
 	rep := acc.Report()
 	_, _ = fmt.Fprintf(w, "Calls %d. Cost %s. Time %.0f seconds.\n\n", rep.Calls, gatekit.CostWord(rep), took.Seconds())
 	run.Markdown(w)
@@ -245,22 +304,42 @@ func reportJudge(w io.Writer, source string, rs []result, acc *llm.Accumulator, 
 	for _, r := range rs {
 		judgedWord, agrees := "error", ""
 		if r.judged != nil {
-			judgedWord = strconv.Itoa(int(r.judged.Bracket))
+			judgedWord = judgeWords(r)
 			agrees = "no"
 			if r.judged.Bracket == r.prompt.Bracket {
 				agrees = "yes"
 			}
 		}
-		_, _ = fmt.Fprintf(w, "| %d | %d | %s | %s | %s |\n", r.prompt.ID, r.prompt.Bracket, judgedWord, agrees, r.prompt.Commander)
+		built := strconv.Itoa(int(r.prompt.Bracket))
+		if isPrecon(r.prompt) {
+			built, agrees = "no floor", "no"
+			if r.floorErr == nil {
+				built = fmt.Sprintf("floor %d", r.floor)
+			}
+			if heldFloor(r) {
+				agrees = "at or above"
+			}
+		}
+		_, _ = fmt.Fprintf(w, "| %d | %s | %s | %s | %s |\n", r.prompt.ID, built, judgedWord, agrees, r.prompt.Commander)
 	}
 	_, _ = fmt.Fprintf(w, "\n## Why\n\n")
 	for _, r := range rs {
-		_, _ = fmt.Fprintf(w, "### %d. Bracket %d, %s, %s\n\n", r.prompt.ID, r.prompt.Bracket, r.prompt.Commander, r.prompt.Theme)
+		head := fmt.Sprintf("Bracket %d", r.prompt.Bracket)
+		if isPrecon(r.prompt) {
+			head = "No floor"
+			if r.floorErr == nil {
+				head = fmt.Sprintf("Floor %d", r.floor)
+			}
+		}
+		_, _ = fmt.Fprintf(w, "### %d. %s, %s, %s\n\n", r.prompt.ID, head, r.prompt.Commander, r.prompt.Theme)
+		if isPrecon(r.prompt) && r.floorErr != nil {
+			_, _ = fmt.Fprintf(w, "Floor: %s\n\n", r.floorErr.Error())
+		}
 		switch {
 		case r.judgeErr != nil:
 			_, _ = fmt.Fprintf(w, "Judge: error, %s\n\n", r.judgeErr.Error())
 		case r.judged != nil:
-			_, _ = fmt.Fprintf(w, "Judge: bracket %d. %s\n\n", r.judged.Bracket, strings.TrimSpace(r.judged.Why))
+			_, _ = fmt.Fprintf(w, "Judge: bracket %s. %s\n\n", judgeWords(r), strings.TrimSpace(r.judged.Why))
 		}
 		if c := r.deck.GetProfile().GetContent(); c != nil {
 			_, _ = fmt.Fprintf(w, "Combos the judge read: %s.\n\n", comboNames(c))

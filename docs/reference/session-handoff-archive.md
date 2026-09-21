@@ -12,6 +12,41 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-21b
+
+**Pull request #203 fixes F-126. The bracket judge reads the combos of Commander Spellbook, and the rejudge of `bracket-gate` profiles each stored deck. It waits for the owner's merge.**
+
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view 203`. Then do next step 1.
+
+**The base.** `main` is `23b67ce`, from #202. Cloud Build `169a2dcb` built it and ended SUCCESS, created 2026-09-21 at 15:29 UTC. This session read no revision and no `/readyz`.
+
+**Why this pull request exists.** The owner picked F-126 from the four open rows (D-790). The judge named a two-card infinite that Spellbook does not list.
+
+**What this pull request holds.**
+
+- `go/internal/generate/judge.go` writes a combo list after the cards, and the judge counts only a listed combo. `BracketJudgeVersion` reads 2.
+- `go/cmd/bracket-gate/rejudge.go` profiles each stored deck through Spellbook, for free. The judge lane names the combos each deck read.
+
+**The measurement** (D-791). The session spent $0.6410. The rejudge of run 2 reads 4 of 15, against 3 of 15, and no reason names an unlisted combo. The calibration decks read 12 of 21, against 16 of 21. Precons 5 and 7 hold a fast combo that the app forbids at bracket 2. cEDH deck 12 reads 4 with the old text too. Deck 17 reads 4 twice with the list and 5 once with the old text (F-162).
+
+**The checks.** `make verify` passed on this machine, exit 0, with Node 22.23.2. The Go tests of `go/internal/generate` and `go/cmd/bracket-gate` pass. `make ste-check`, `make ref-check`, and `make context-budget` read 0 findings.
+
+**The review.** Gitar reviewed `8a9a0ea` and reads "No issues found", with no review thread. Its dashboard edit of 19:27:29 UTC is later than the push of 19:24:55 UTC, both of 2026-09-21, so the review is current.
+
+**What waits on the owner.**
+
+- The Gitar review, then the merge of this pull request.
+- OQ-87: the combo rule of bracket 2 and the two precon anchors (F-162, D-792).
+- The F-48 row says bracket gate run 7 holds the escape. A count on 2026-09-21 read it in runs 1, 2, 3, and 5 alone, and none in runs 6 to 8.
+- Five sessions on the new files, before a decision on the checkpoint rule (next step 3, D-750).
+- A deployed session with a theme that matches no card, such as "anime" (next step 4).
+- A look at the first commander question after a load of the app (next step 5).
+- OQ-67, OQ-77, and OQ-80.
+
+### 2026-09-20j: the starved theme of F-37
+
+**The owner picked F-37, and a free count refuted its premise** (D-784, D-786). The guard stops a build when the exclusion leaves fewer than 30 owned theme cards. A dry run of deck gate prompt 25 read 0 owned theme cards before the exclusion too. The generic rule made the subtype "Superheroe", and Scryfall types these cards Hero. So a heroes row joins the theme table, and "hero" keeps the generic rule (D-731). The offer of the whole pool has no path, so the message offers another theme or a new chat (D-785).
+
 ## The resume section of 2026-09-21a
 
 **Pull request #202 fixes F-39 and F-161. The plan judge and the summary judge read the card facts, and the deck gate rejudges a stored run. It waits for the owner's merge.**
