@@ -51,6 +51,28 @@ func (e *ErrThinSet) Error() string {
 		strings.Join(e.Sets, " and "), e.Have, e.Want)
 }
 
+// ErrThinTheme says the precon exclusion took the theme out of the pool:
+// the library holds enough cards of the theme, and too few stay after
+// the excluded products leave (F-37). The build stops before it spends a
+// model call, because a deck of another theme hides the gap. The reader
+// has no turn that drops an exclusion, so the message offers another
+// theme or a new chat.
+type ErrThinTheme struct {
+	// Theme is the theme as the reader wrote it, and Precons are the
+	// names of the excluded products.
+	Theme   string
+	Precons []string
+	// Have is the owned theme count after the exclusion, Whole the count
+	// before it, and Want the floor (candidates.ThinThemeFloor).
+	Have, Whole, Want int
+}
+
+func (e *ErrThinTheme) Error() string {
+	return fmt.Sprintf("without the cards of %s, your library holds %d cards for %q in these colors, and a deck needs about %d (with them it holds %d): "+
+		"name another theme, or start a new chat and do not exclude the precon",
+		strings.Join(e.Precons, " and "), e.Have, e.Theme, e.Want, e.Whole)
+}
+
 // The wiring a build needs, each named so a log says which one is
 // missing.
 var (
@@ -101,6 +123,8 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 	// owned counts, so a surplus copy stays usable, and a card with no
 	// copy left leaves both pools. A basic land never leaves (D-37).
 	var excludedIDs []string
+	var excludedNames []string
+	whole := owned
 	if keys := slots.GetExcludePreconKeys(); len(keys) > 0 {
 		if tbl := s.preconTable(); tbl != nil {
 			var products []*precons.Product
@@ -112,6 +136,7 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 					continue
 				}
 				products = append(products, p)
+				excludedNames = append(excludedNames, p.Name)
 			}
 			owned, excludedIDs = precons.Exclude(products, owned, candidates.BasicLandByOracle(idx))
 			s.log.InfoContext(ctx, "the deck uses no card of the excluded precons",
@@ -213,7 +238,7 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 	if len(setCodes) > 0 && slots.GetSlotStates()[questions.SlotSetOutsideMana] == mtgv1.SlotState_SLOT_STATE_FILLED {
 		outsideRoles = manaRoles(generate.TargetsFor(format, slots.GetPower()))
 	}
-	list, err := s.builder.Build(idx, candidates.Request{
+	req := candidates.Request{
 		MetaBoost:          s.metaBoost(format),
 		Format:             format,
 		Colors:             colors,
@@ -226,9 +251,21 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 		OutsideRoles:       outsideRoles,
 		ExcludeOracleIDs:   excludedIDs,
 		BudgetUSD:          slots.GetBudgetUsd(),
-	})
+	}
+	list, err := s.builder.Build(idx, req)
 	if err != nil {
 		return nil, fmt.Errorf("build: candidates: %w", err)
+	}
+	// A revision keeps its deck, so the theme floor reads a new build
+	// alone (F-37).
+	if rev == nil {
+		wholeCount, starved, err := s.builder.StarvedTheme(idx, req, list, whole)
+		if err != nil {
+			return nil, fmt.Errorf("build: candidates without the exclusion: %w", err)
+		}
+		if starved {
+			return nil, &ErrThinTheme{Theme: req.Theme, Precons: excludedNames, Have: list.Stats.OnThemeOwned, Whole: wholeCount, Want: candidates.ThinThemeFloor}
+		}
 	}
 	if len(setCodes) > 0 {
 		s.log.InfoContext(ctx, "the deck is limited to the sets the reader named",
@@ -505,6 +542,7 @@ func (s *Server) sendDeck(ctx context.Context, uid string, session *mtgv1.Sessio
 		s.log.ErrorContext(ctx, "the build failed", "session", session.GetId(), "err", err)
 		msg := "the deck build failed, please ask again"
 		var thinSet *ErrThinSet
+		var thinTheme *ErrThinTheme
 		switch {
 		case errors.Is(err, ErrThinCommanderPool):
 			msg = err.Error()
@@ -512,6 +550,10 @@ func (s *Server) sendDeck(ctx context.Context, uid string, session *mtgv1.Sessio
 		// reason, and never with a deck of another set (D-380).
 		case errors.As(err, &thinSet):
 			msg = thinSet.Error()
+		// A theme the precon exclusion starves ends the turn with the
+		// reason, and never with a deck of another theme (F-37).
+		case errors.As(err, &thinTheme):
+			msg = thinTheme.Error()
 		case errors.Is(err, errNoIndexSource), errors.Is(err, errNoIndexLoaded), errors.Is(err, errNoCandidateBuilder):
 			msg = "the deck can not be built here: " + strings.TrimPrefix(err.Error(), "build: ")
 		case errors.Is(bctx.Err(), context.DeadlineExceeded):

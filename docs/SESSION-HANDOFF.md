@@ -6,35 +6,33 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-20i)
+## RESUME HERE (2026-09-20j)
 
-**Pull request #200 corrects the finding register. Twelve 🔧 rows named work that had merged. It waits for the owner's merge.**
+**Pull request #PR fixes F-37. A theme that the precon exclusion starves now ends the turn with a reason. It waits for the owner's merge.**
 
-**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view 200`. Then do next step 1.
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view PR`. Then do next step 1.
 
-**The base.** `main` is `0d17193`, from #199, which carried the F-160 fix.
+**The base.** `main` is `6254a86`, from #200, which carried the register sweep.
 
-**Why this pull request exists.** The owner picked F-36 as the item after F-160. The code showed that #68 fixed F-36 on 2026-09-05 (D-535), and the row still read open. So the owner picked a sweep of the register (D-783).
+**Why this pull request exists.** The owner picked F-37 from the open rows (D-784). The build made a deck of another theme when the exclusion took the theme out of the pool, and the summary hid it.
 
 **What this pull request holds.**
 
-- F-28, F-29, F-30, F-36, F-77, F-78, F-139, F-146, F-147, and F-160 read ✅, each with its merge number and date.
-- F-53 and F-94 read 🅿. Their items closed or parked, and the fault of each stays.
-- F-33, F-49, and F-126 read open in part. F-48 names a later document that holds the escape.
-- The heading of PR-52 reads its merge as #181. Correction pass 205 and D-783 record the sweep.
-- **No code file changes.** Six rows stay 🔧: F-33, F-37, F-39, F-48, F-49, and F-126.
+- `go/internal/candidates/starved.go` reads whether the exclusion is the cause. The pool after it holds fewer than 30 owned theme cards, and the whole library holds 30 or more.
+- `go/internal/agentsvc/build.go` stops a new build with `ErrThinTheme` before the model call. A revision keeps its deck, so the guard skips it.
+- The status line names the counts, and it offers another theme or a new chat (D-785). No turn can drop an exclusion.
+- `go/cmd/deck-gate/main.go` runs the same check.
+- A heroes row joins `go/internal/candidates/themes.json` (D-786). Deck gate prompt 25 matched 0 owned theme cards before it, and 46 after the exclusion with it.
 
-**The measurement.** No paid target ran in this session. Deck gate run 29 stays the newest whole run.
+**The measurement.** No paid target ran. A free dry run of prompt 25 read 56 owned theme cards in white before the exclusion and 46 after it.
 
-**The checks.** `make verify` passed on this machine, exit 0. `make ste-check`, `make ref-check`, and `make context-budget` read 0 findings. `make pr-check` read 4 changed files and 0 contract errors.
-
-**The review.** `gitar-bot` reviewed the effective head `9967916` and read "No issues found", with no review thread. Its dashboard edit of 03:06:05 UTC is later than the push of 03:03:40 UTC, both of 2026-09-21, so the review is current. The later commit `ce5db14` changes the hand-off alone (D-752).
+**The checks.** Pending: `make verify`, `make pr-check`, and the Gitar review.
 
 **What waits on the owner.**
 
 - The Gitar review, then the merge of this pull request.
-- The item after the sweep (next step 1). The sequence of the roadmap ends at step 51.
-- The deck id of the bracket 5 deck of session `sXYg6oAi5hzOPbkbk6gG`. The read of its power counts waits for that id.
+- The item after F-37 (next step 1).
+- The F-48 row says bracket gate run 7 holds the escape. A count on 2026-09-20 read the escape in runs 1, 2, 3, and 5 alone.
 - Five sessions on the new files, before a decision on the checkpoint rule (next step 3, D-750).
 - A deployed session with a theme that matches no card, such as "anime" (next step 4).
 - A look at the first commander question after a load of the app (next step 5).
@@ -103,8 +101,8 @@ Twenty things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **Ask the owner for the item after the sweep** (D-746). The sequence of the roadmap ends at step 51, and next step 2 holds each open item. **Sweep the finding register** (D-783) ✅ done by this pull request. **Fix the `tee` fault of every paid target** (F-160) ✅ done by #199.
-2. **The open items of the roadmap.** Six register rows read 🔧: F-33, F-37, F-39, F-48, F-49, and F-126. OQ-85 waits for a shape score of the shortlist (D-773). **F-157** records the thin owned pool and the repair turn of every build, with no open question. The power pass after the build still waits (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783).
+1. **Ask the owner for the item after F-37** (D-746). The sequence of the roadmap ends at step 51, and next step 2 holds each open item. **Fix F-37** (D-784 to D-786) ✅ done by this pull request. **Sweep the finding register** (D-783) ✅ done by #200.
+2. **The open items of the roadmap.** Five register rows read 🔧: F-33, F-39, F-48, F-49, and F-126. F-39 and F-126 read open in the code on 2026-09-20. F-33 waits for evidence, and F-49 waits for the owner. OQ-85 waits for a shape score of the shortlist (D-773). **F-157** records the thin owned pool and the repair turn of every build, with no open question. The power pass after the build still waits (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783).
 3. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It waits, because the ten sessions of the audit ran before #184 and before D-749.
 4. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git.
 5. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide". Session `z1hshyY6Npig1FN2NuV7` named its commander, so it showed no such row.
@@ -126,6 +124,10 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 ## The three most recent sessions
 
+### 2026-09-20j: the starved theme of F-37
+
+**The owner picked F-37, and a free count refuted its premise** (D-784, D-786). The guard stops a build when the exclusion leaves fewer than 30 owned theme cards. A dry run of deck gate prompt 25 read 0 owned theme cards before the exclusion too. The generic rule made the subtype "Superheroe", and Scryfall types these cards Hero. So a heroes row joins the theme table, and "hero" keeps the generic rule (D-731). The offer of the whole pool has no path, so the message offers another theme or a new chat (D-785).
+
 ### 2026-09-20i: the sweep of the finding register
 
 **The owner picked F-36, and the code showed that F-36 was fixed** (D-783). `applyTheme` refuses a superlative phrase in place of a named theme, and a test of `go/internal/questions/rows_test.go` holds the rule. #68 merged it on 2026-09-05 (D-535). The register row still read open, and the rows of F-77 and F-78 read "planned" after #102. The owner picked a sweep of the register over a wider theme guard. A subagent read each 🔧 row against git, the decisions, and the code. The session checked each merge number on `main` and each cited decision.
@@ -134,10 +136,6 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 **A failed paid target reported success on this Mac, and each recipe now sets pipefail itself** (D-782). `Makefile` set `.SHELLFLAGS := -o pipefail -c`, and GNU Make 3.82 added that variable. This Mac runs GNU Make 3.81, which ignores it. So a recipe that ends with `| tee` read the exit code of `tee`, and `tee` succeeds after a command that fails. A scratch makefile with the two `SHELL` lines of this repository proves both halves. A bare pipeline exits 0, and a guarded pipeline exits 2. Three paid targets and one free target held the fault, and `make api-build` held its own guard from PR-61. The entry of F-160 also named two gate targets, and each of them writes its document with a redirect and always failed correctly. `make pipefail-check` holds the rule now, and it proves the rule against the make of the machine that runs it.
 
-### 2026-09-20g: the API-only deck build of PR-61
-
-**The owner chose a dedicated check account, and the run keeps what it makes** (D-779, D-780). D-778 asked for a deck build over the API alone, because the live check of #196 read no built deck. The sandbox refuses every read under `users/<uid>` but one session by id, and no session opens a browser. The deployed project enables the email and password provider alone, so `accounts:signInWithPassword` gives a command an id token with no browser. The counters of D-638 count a creation and never lower. So a run under the account of the owner moves a number that no delete corrects. A dedicated account answers that. The first live attempt failed twice over, and each failure was real. A cold Cloud Run instance held no card snapshot, and the target reported success on a failed run. GNU Make 3.81 ignores `.SHELLFLAGS`, which F-160 records. The second run built deck `4aiklNKrKHGYqyaMhN4H` in 100 seconds, and `GetDeck` read it back.
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-20, the records of 2026-08-31 to 2026-09-20, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-20i, the records of 2026-08-31 to 2026-09-20, and 104 more sections, word for word. Read it for the detail behind a decision.

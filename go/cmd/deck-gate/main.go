@@ -489,6 +489,18 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 		out.err = fmt.Errorf("candidates: %w", err)
 		return out
 	}
+	// A theme the precon exclusion starves builds nothing, as the chat
+	// stops it (F-37).
+	whole, starved, err := cb.StarvedTheme(idx, req, list, binder.Oracle)
+	if err != nil {
+		out.err = fmt.Errorf("candidates without the exclusion: %w", err)
+		return out
+	}
+	if starved {
+		out.err = fmt.Errorf("without the excluded precons the library holds %d cards for the theme, and %d with them, and a deck needs about %d",
+			list.Stats.OnThemeOwned, whole, candidates.ThinThemeFloor)
+		return out
+	}
 	out.inSet, out.outside = list.Stats.InSet, list.Stats.Outside
 	// A locked card must be nameable, or the deck can not hold it (D-70).
 	// The build reads the ids and states the cards in its own prompt, so
