@@ -34,6 +34,8 @@ Each other target is free. `make meta-refresh` reads the deck list sources over 
 
 `make eval-check` compares every baseline of the eval harness with its newest run and names the flips (PR-15). It is free.
 
+`make self-reload-check` proves that an installed app reloads itself on the next web release (D-692). It builds two releases and drives Chromium, and it calls no provider. It needs Node 22.23.2 and a pnpm store, and it takes about three minutes. `SELF_RELOAD_REF=<ref>` names a different old release, and `docs/reference/self-reload-2026-09-20.md` holds the method and the first result.
+
 `make verify` runs every check the verify workflow runs, on this machine, for nothing (D-578). Run it before every pull request. `make pr-check` reads the pull request body and diff against the contract of D-747, and `make lifecycle-check` tests the skill wiring and the session hook. Both are free. `make where` prints the branch, the tree, and the state of the branch's pull request. `make hooks` installs the pre-commit hook that refuses a commit on `main` (D-585).
 
 `make feedback-harvest` writes every verdict since the last harvest to `docs/reference/feedback/`, as a dated document and a JSONL file (PR-28a). `SINCE=2026-09-01` sets the floor by hand, and `HARVEST_ARGS=-dry` counts and writes nothing. The watermark comes from the JSONL files, so the documents are the only record. It calls no model and costs nothing. Those files commit with the repository now (D-642).

@@ -6,39 +6,45 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-20e)
+## RESUME HERE (2026-09-20f)
 
-**Pull request #196 carries PR-60, the power counts of a deck beside its bracket, and it waits for the owner's merge** (D-774 to D-777).
+**Pull request #197 records the self-reload check of D-692, and it waits for the owner's merge.**
 
-**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #196 with `gh pr view 196`. Then do next step 1.
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #197 with `gh pr view 197`. Then do next step 1.
 
-**The base.** `main` is `d3d5d29`, from #195, which carried PR-59.
+**The base.** `main` is `8eb5720`, from #196, which carried PR-60.
+
+**The live check of #196 passed, in both halves.**
+
+- Cloud Build `32676ba4` built `8eb5720`, and it finished at 22:44:58 UTC. The Hosting release `60c80b8c4ad2a689` went live at 22:44:09 UTC. The release before it was `b786ceb7f89bc4fc`, from #158.
+- The live `index.html` names a new chunk, `assets/index-Fi2SZrwg.js`. `deck-view-BQeBlu0i.js` holds `data-testid="power-counts"`, and `use-cards-DNxWsKmD.js` holds every label of the counts.
+- The Cloud Run revision did not move. That is correct, because `deploy:api` of `.github/workflows/deploy.yml` runs only when a Go file changes.
+- The self-reload of D-692 passed. An installed app of the release of #158 took one stale load, and then it reloaded itself with no command.
+- The check read no built deck. The sandbox refuses every read under `users/<uid>` but one session by id (D-638). D-778 answers that, and it is next step 1.
 
 **What this pull request holds.**
 
-- `powerCounts` of `web/apps/web/src/features/deck/deck-stats.ts` reads the four power features of `deck.profile`. It writes one row for each feature that carries a floor or a cap.
-- `web/apps/web/src/features/deck/deck-view.tsx` shows the rows in the deck header, under the buy-cost line, as `data-testid="power-counts"`. The chat page renders the same component.
-- A bracket of 4 or 5 sets a floor. The row reads "Tutors 0 of 4", and a missed floor reads "short" (D-774).
-- Bracket 1 to 3 sets a cap for the same three features. The row reads "Tutors 1 of 5 at most", and a broken cap reads "over" (D-775). Without the cap the reader of most decks saw no count.
-- The finisher floor holds at every bracket, and the bracket system counts no finisher. So the finisher row names the deck plan (D-743, D-776).
-- The deck page alone shows the counts (D-777). A shared link still shows the bracket alone, because `SharedDeck` drops the profile.
-- **No Go file and no protobuf file changes.** `ProfileFeature` already carried `value`, `low`, `high`, and `has_high`, and `GetDeck` already returned them. No file of `web/apps/web/src` read `deck.profile` before this change.
-- `docs/decisions.md` gains D-775 to D-777, the three owner answers of 2026-09-20.
+- `scripts/self-reload-check.mjs` builds two releases, serves the old one, swaps the server, and reloads the page one time. It exits 0 on a self-reload.
+- `make self-reload-check` runs it. The target is free, and `docs/reference/paid-targets.md` names it.
+- `docs/reference/self-reload-2026-09-20.md` holds the deploy facts, the method, the result, and the three limits of the check.
+- F-122 and PR-25 of `docs/design-roadmap.md` read the proof. Correction pass 202 records the deploy and the check.
+- `docs/decisions.md` gains D-778, the owner decision of 2026-09-20.
+- **No Go file, no protobuf file, and no file of `web/apps/web/src` changes.**
 
-**The measurement.** No paid target ran. Deck gate run 29 stays the newest whole deck gate run, and `make eval-check` still reads it as PASS. The counts read the profile the server already measured, so the change moves no deck and no grade.
+**The measurement.** No paid target ran. The check calls no provider, and it moves no deck and no grade. Deck gate run 29 stays the newest whole deck gate run.
 
-**The checks.** `make verify` passed on this machine, exit 0. The four lint checks read 0 findings. Six new tests cover the helper and the deck page. Five of the six fail on the old code. The sixth is a negative guard: a deck with no profile shows no count, and that held before the change too.
+**The checks.** `make verify` passed on this machine, exit 0. The four lint checks read 0 findings, and `make pr-check` read 0 contract errors. `node scripts/self-reload-check.mjs` passed, exit 0.
 
-**The review.** `gitar-bot` approved this pull request, and it reads 0 findings and no open thread. It approved `9f87adc` at 22:00 UTC, and `d189a66` at 22:07 UTC. Each commit after `d189a66` changes `docs/SESSION-HANDOFF.md` alone, and that path does not make the pass stale (D-752). CAUTION: Gitar replaced the dashboard comment during the review, and the first id answered 404. Read the newest id each time. Every job of the verify workflow and `pr-contract` passed on `9f87adc`. The job `verify:changes` skipped, because it runs on a manual start alone. CAUTION: the Gitar trial ends about 2026-09-22, from the dashboard of 2026-09-20.
+**The review.** `gitar-bot` approved `51cc41d`, and it reads 0 findings and no review thread. The dashboard comment holds an edit time of 00:03:53 UTC, later than the push of 00:01:46 UTC. Both times are of 2026-09-21, so the review is current on the head. Every job of the verify workflow and `pr-contract` passed on `51cc41d`. The job `verify:changes` skipped, because it runs on a manual start alone. CAUTION: the Gitar note of 2026-09-21 reads two days, so the trial ends about 2026-09-23.
 
 **What waits on the owner.**
 
 - The merge of this pull request, after the review of `gitar-bot`.
-- The next item of the roadmap (next step 1). The sequence of the roadmap ends at step 51.
+- The deck id of the bracket 5 deck of session `sXYg6oAi5hzOPbkbk6gG`. The read of its power counts waits for that id.
 - Five sessions on the new files, before a decision on the checkpoint rule (next step 2, D-750).
-- A deployed session with a theme that matches no card, such as "anime" (next step 3).
-- A look at the first commander question after a load of the app (next step 4).
-- OQ-67 and OQ-77.
+- A deployed session with a theme that matches no card, such as "anime" (next step 4).
+- A look at the first commander question after a load of the app (next step 5).
+- OQ-67, OQ-77, and OQ-80.
 
 ## How to resume
 
@@ -93,8 +99,8 @@ Twenty things a fresh session gets wrong without this file.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
 - The feedback store holds 3 verdicts on 2026-09-09, and every one predates the snapshot of D-635. `make feedback-list VERDICT=` reads both verdicts now (F-87). A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- The deployed API, read 2026-09-20 at 21:58 UTC: revision `mtg-api-00057-gbl` on image `api:d3d5d29`, from #195. This session read the revision and the image, and it read no job and no `/readyz` answer. CAUTION: the service holds minScale 0. After a cold start `/readyz` answers 503 and `starting` for about 15 seconds, because the card index takes 15 seconds to load. Poll it before you call the deploy bad.
-- The deployed web app, read 2026-09-13 at 18:54 UTC: the release of #158, from `deploy-web` at 18:52 UTC. `index.html` loads `assets/index-DYfo4m8I.js` and no `registerSW.js`, and `sw.js` precaches the `workbox-window` chunk.
+- The deployed API, read 2026-09-20 at 22:47 UTC: revision `mtg-api-00057-gbl` on image `api:d3d5d29`, from #195. The deploy of #196 moved no revision, because it changed no Go file. This session read the revision and the image, and it read no job and no `/readyz` answer.
+- The deployed web app, read 2026-09-20 at 22:45 UTC: the release of #196, Hosting version `60c80b8c4ad2a689` of 22:44:09 UTC. `index.html` loads `assets/index-Fi2SZrwg.js`. The deck page chunk `deck-view-BQeBlu0i.js` holds the power counts, and `use-cards-DNxWsKmD.js` holds every label. The release before it, `b786ceb7f89bc4fc` of 2026-09-13, came from #158.
 - The deployed quality model, read 2026-09-14: `20260914T070904Z`, from the meta job that started at 06:02 UTC and ended at 07:13 UTC. It fits 43,182 lists and 1,517 commanders. Its Commander fit reads `immaterial` 239 and accuracy 0.554, and its Standard fit reads a cross share of 0.667. The job read the weekly EDHREC pass, 2,077 pages and 4 lists. The mtgo source read 3,094 lists with 58 fetch errors. The mtggoldfish source read 155 lists with no failure. The mtgjson source read no list, because its deck list version differs from the stored table, as on 2026-09-12 and 2026-09-13.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
 - Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 19, revise is run 9. The generate prompt reads version 15 now, and run 19 read version 12. Run 29 of 2026-09-20 is the newest whole deck gate run, and `make eval-check` reads it as PASS against run 19. Run 52 is the newest whole questions run, and it reads PASS. Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 23 is its newest run.
@@ -103,11 +109,11 @@ Twenty things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **Ask the owner for the next item, in a new clean session** (D-746). The sequence of the roadmap ends at step 51. PR-60 closed the last named item, the power counts of D-774. OQ-85 waits for a shape score of the shortlist (D-773). **F-157** records the thin owned pool and the repair turn of every build. It carries no open question. The power pass after the build still waits (D-704). F-137 stays a record (D-718). **F-144** ✅ closed with PR-58 (D-769), and **F-158** ✅ closed with it. **F-159** ✅ closed with PR-59 (D-771).
-2. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It waits, because the ten sessions of the audit ran before #184 and before D-749.
-3. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git.
-4. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide". Session `z1hshyY6Npig1FN2NuV7` named its commander, so it showed no such row.
-5. **Watch the first self-reload on the next web deploy** (D-692). The live release of #158 passed its check on 2026-09-13 at 18:54 UTC. An installed app that loaded that release must reload by itself when the next release activates. Read it on the next merge that changes `web/**`.
+1. **Build a deck over the API alone, with no GUI** (D-778). The owner named this the next item on 2026-09-20. A session must run the whole flow: the collection, the prompt, each question, and the built deck. The live check of #196 read no built deck, because the sandbox refuses the deck path of a user (D-638).
+2. **Ask the owner for the item after it** (D-746). The sequence of the roadmap ends at step 51. PR-60 closed the last named item, the power counts of D-774. OQ-85 waits for a shape score of the shortlist (D-773). **F-157** records the thin owned pool and the repair turn of every build. It carries no open question. The power pass after the build still waits (D-704). F-137 stays a record (D-718). **F-144** ✅ closed with PR-58 (D-769), and **F-158** ✅ closed with it. **F-159** ✅ closed with PR-59 (D-771).
+3. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It waits, because the ten sessions of the audit ran before #184 and before D-749.
+4. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git.
+5. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide". Session `z1hshyY6Npig1FN2NuV7` named its commander, so it showed no such row.
 6. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
 7. **The live half of the feedback loop has no run yet.** Three things want a measurement: the judge lane of the triage, one live fix cycle, and one review round. All three need the owner's word, and the cycle also needs `AUTOTUNE_FIXER_CMD` and a harvest whose verdicts carry a snapshot.
 8. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. Run 29 of 2026-09-20 cost $2.7384 in 1874 seconds, and it reads PASS. Ask the owner before the next whole run.
@@ -126,6 +132,10 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 ## The three most recent sessions
 
+### 2026-09-20f: the self-reload check of D-692
+
+**The live check of #196 passed in both halves, and the owner named the next item** (D-778). The Hosting release `60c80b8c4ad2a689` went live at 22:44:09 UTC, and the live `index.html` names a new chunk. The deck page chunk holds `data-testid="power-counts"`, and the stats chunk holds every label. The Hosting service serves the current release alone, so the assets of the release of #158 left the site at that minute. The check therefore built both releases on this machine, served the old one, and swapped the server to the new one. The installed app took one stale load, which is F-122, and then it reloaded itself with no command. The check read no built deck, because the sandbox refuses the deck path of a user (D-638). The owner chose an API path that builds a deck with no GUI, and it is next step 1.
+
 ### 2026-09-20e: the power counts of PR-60
 
 **The owner chose the cap beside the floor, the plan words for the finishers, and the deck page alone** (D-775 to D-777). D-774 asked for the floor counts of the bracket. A floor above zero exists at bracket 4 and bracket 5 alone. So a panel of floors alone shows no count to the reader of a bracket 2 or a bracket 3 deck. The caps of the lower brackets join the floors. The finisher floor holds at every bracket, and the bracket system counts no finisher. So that row names the deck plan (D-743). Every number was already on the wire: `ProfileFeature` carries the value, the floor, and the cap. No file of the web app read `deck.profile`. So the change is one helper and one paragraph of the deck header. The session ran no paid target.
@@ -133,10 +143,6 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 ### 2026-09-20d: the commander in the prompt of PR-59
 
 **The owner chose the prompt text, no evasion discount, no class cap, and the floor counts** (D-771 to D-774). The review of the Gríma deck asked whether the build reads the payoff shape of the commander. It does not. The build only excludes the commander from the 99 and from the pair offer, and the prompt named the card and stopped. So the model had to recall Gríma from its training data, and Gríma can not be blocked and rewards each hit one time. The prompt now writes the whole card. A free replay refuted the size of OQ-84: three cards of a 201-card shortlist grant evasion Gríma already holds, and each carries a second mode. So that question closes with no code. OQ-85 waits for a shape score, and OQ-86 takes its own pull request. F-159 closes. The session ran no paid target.
-
-### 2026-09-20c: the type-name signal of PR-58
-
-**The owner chose the plain needle and the word boundary, and no paid run** (D-769, D-770). A type row read the subtype and a few payoff phrases, and it read no card that only names the type. Army of the Damned makes thirteen Zombie tokens, and the zombies row read it as a card of no theme. The typal block gives each type row and each generic type word the type word as a needle now. The needle reads a word boundary, because the substring "cat" reads 165 Commander-legal cards and the word reads 55. So a singular type word drops its substring needle, and "zombie" and "zombies" read one shortlist at last. A free replay of five shortlists reads a swap of 84 cards, and no card that punishes the type entered. F-144 closes, and F-158 closes with it: `make themes-check` never ran two snapshot tests of PR-57. The session ran no paid target.
 
 ## The archive
 

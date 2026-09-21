@@ -12,6 +12,44 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-20e
+
+**Pull request #196 carries PR-60, the power counts of a deck beside its bracket, and it waits for the owner's merge** (D-774 to D-777).
+
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #196 with `gh pr view 196`. Then do next step 1.
+
+**The base.** `main` is `d3d5d29`, from #195, which carried PR-59.
+
+**What this pull request holds.**
+
+- `powerCounts` of `web/apps/web/src/features/deck/deck-stats.ts` reads the four power features of `deck.profile`. It writes one row for each feature that carries a floor or a cap.
+- `web/apps/web/src/features/deck/deck-view.tsx` shows the rows in the deck header, under the buy-cost line, as `data-testid="power-counts"`. The chat page renders the same component.
+- A bracket of 4 or 5 sets a floor. The row reads "Tutors 0 of 4", and a missed floor reads "short" (D-774).
+- Bracket 1 to 3 sets a cap for the same three features. The row reads "Tutors 1 of 5 at most", and a broken cap reads "over" (D-775). Without the cap the reader of most decks saw no count.
+- The finisher floor holds at every bracket, and the bracket system counts no finisher. So the finisher row names the deck plan (D-743, D-776).
+- The deck page alone shows the counts (D-777). A shared link still shows the bracket alone, because `SharedDeck` drops the profile.
+- **No Go file and no protobuf file changes.** `ProfileFeature` already carried `value`, `low`, `high`, and `has_high`, and `GetDeck` already returned them. No file of `web/apps/web/src` read `deck.profile` before this change.
+- `docs/decisions.md` gains D-775 to D-777, the three owner answers of 2026-09-20.
+
+**The measurement.** No paid target ran. Deck gate run 29 stays the newest whole deck gate run, and `make eval-check` still reads it as PASS. The counts read the profile the server already measured, so the change moves no deck and no grade.
+
+**The checks.** `make verify` passed on this machine, exit 0. The four lint checks read 0 findings. Six new tests cover the helper and the deck page. Five of the six fail on the old code. The sixth is a negative guard: a deck with no profile shows no count, and that held before the change too.
+
+**The review.** `gitar-bot` approved this pull request, and it reads 0 findings and no open thread. It approved `9f87adc` at 22:00 UTC, and `d189a66` at 22:07 UTC. Each commit after `d189a66` changes `docs/SESSION-HANDOFF.md` alone, and that path does not make the pass stale (D-752). CAUTION: Gitar replaced the dashboard comment during the review, and the first id answered 404. Read the newest id each time. Every job of the verify workflow and `pr-contract` passed on `9f87adc`. The job `verify:changes` skipped, because it runs on a manual start alone. CAUTION: the Gitar trial ends about 2026-09-22, from the dashboard of 2026-09-20.
+
+**What waits on the owner.**
+
+- The merge of this pull request, after the review of `gitar-bot`.
+- The next item of the roadmap (next step 1). The sequence of the roadmap ends at step 51.
+- Five sessions on the new files, before a decision on the checkpoint rule (next step 2, D-750).
+- A deployed session with a theme that matches no card, such as "anime" (next step 3).
+- A look at the first commander question after a load of the app (next step 4).
+- OQ-67 and OQ-77.
+
+### 2026-09-20c: the type-name signal of PR-58
+
+**The owner chose the plain needle and the word boundary, and no paid run** (D-769, D-770). A type row read the subtype and a few payoff phrases, and it read no card that only names the type. Army of the Damned makes thirteen Zombie tokens, and the zombies row read it as a card of no theme. The typal block gives each type row and each generic type word the type word as a needle now. The needle reads a word boundary, because the substring "cat" reads 165 Commander-legal cards and the word reads 55. So a singular type word drops its substring needle, and "zombie" and "zombies" read one shortlist at last. A free replay of five shortlists reads a swap of 84 cards, and no card that punishes the type entered. F-144 closes, and F-158 closes with it: `make themes-check` never ran two snapshot tests of PR-57. The session ran no paid target.
+
 ## The resume section of 2026-09-20d
 
 **Pull request #195 carries PR-59, the commander in the model prompt, and it waits for the owner's merge** (F-159, D-771 to D-774).
