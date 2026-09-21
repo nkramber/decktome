@@ -145,6 +145,7 @@ make test          # go test -race, vitest
 make test-repeat TEST=TestName RUNS=25   # flake hunt
 make test-smoke    # live LLM smoke test, reads the keys from .env
 make smoke         # the Playwright smoke flow over the emulators and the fake provider, free (PR-23)
+make self-reload-check  # prove that an installed app reloads itself on the next web release, free (D-692)
 make llm-defaults-check   # warn when roles.json or prices.json changed
 make cover         # Go coverage summary
 make build         # Go binaries + web bundle
