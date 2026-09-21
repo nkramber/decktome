@@ -150,6 +150,7 @@ func run() error {
 	trim := flag.String("trim", "", "with -dry: write the snapshot trimmed to the cards the prompts reach under this root (D-521)")
 	manaPass := flag.String("manapass", "", "read the decks of a gate document, run the mana pass over each one, and report. Free: no provider call (PR-33)")
 	rejudge := flag.String("rejudge", "", "read the decks of a whole gate document and run the two judges over them, with no build. Costs the judge calls alone (D-789)")
+	keep := flag.String("keep", "", "with -rejudge: keep the judge rows of this earlier rejudge run where both judges answered, and judge the rest again")
 	flag.Parse()
 	if *trim != "" && !*dry {
 		return errors.New("-trim needs -dry: the trimmed snapshot follows the dry run")
@@ -170,7 +171,7 @@ func run() error {
 		if *only != "" || *dry {
 			return errors.New("-rejudge reads a whole run: it takes no -only and no -dry")
 		}
-		return runRejudge(*rejudge, *runOut, file.Prompts)
+		return runRejudge(*rejudge, *runOut, *keep, file.Prompts)
 	}
 
 	// A dry run calls no provider, so it needs no guard.

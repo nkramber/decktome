@@ -1,0 +1,238 @@
+# PR-8 deck gate, a rejudge of pr8-deck-gate-run31
+
+Run date: 2026-09-21. Card snapshot: 2026-09-04. Decks read from `/Users/nate/repos/decktome/docs/reference/pr8-deck-gate-run31.md`.
+
+Verdict: FAIL. every deck of the source passed its build bars, 0 summaries stated a false rule of the game, and 5 judge calls failed. The build rows are the rows of the source run, and no deck was built again (D-789).
+
+- Calls: 80. Cost: $1.2453. Time: 823 seconds.
+
+## Run
+
+- Suite `decks`, run `pr8-deck-gate-run32`, on 2026-09-21, commit `cf4c90c`.
+- Roles: generate on `gpt-5.6-terra` (openai, effort medium), judge on `claude-opus-5` (anthropic, effort medium), repair on `gpt-5.6-terra` (openai, effort medium).
+- Versions: card snapshot 2026-09-04, generate prompt version 15, plan_rubric prompt version 4, summary_judge prompt version 2, precons `5.3.0+20260903`, quality_model `20260914T154223Z`, rejudge_of `pr8-deck-gate-run31`.
+- Calls: 80. Cost: $1.2453. Time: 823 seconds.
+- Note: a rejudge of pr8-deck-gate-run31: the decks and the build rows are copied, and the judge rows are new (D-789)
+
+## Decks
+
+### 1. lifegain Commander, any card
+
+**Summary:** This lifegain deck develops a resilient creature board, uses Karlov of the Ghost Council as a major source of pressure and control, and backs combat with several dedicated alternate ways to close the game. It has broad answers, card flow, and enough mana development to support its stronger threats, but it gives up some raw speed and can be vulnerable when its board is repeatedly cleared.
+
+- JUDGE ERROR: judge summary: llm anthropic/claude-opus-5: budget: attempt budget of 4 used: llm anthropic/claude-opus-5: transient (http 529): POST "https://api.anthropic.com/v1/messages": 529  (Request-ID: req_011CfGbFFLV2ykz5rNbHWFhT) (Workspace-ID: wrkspc_01DKn3qmnB3ZMerq6QsCdj6C) {"type":"error","error":{"type":"overloaded_error","message":"Overloaded"},"request_id":"req_011CfGbFFLV2ykz5rNbHWFhT"}
+- PLAN plan_coherent=yes: Nearly every card either gains life, triggers off life gain (Karlov, Voice of the Blessed, Bloodthirsty Aerialist, Well of Lost Dreams, Sigarda's Splendor), or converts a high life total into a win (Test of Endurance, Aetherflux Reservoir, Angel of Destiny), so the pieces pull one direction, with only mild tension from the three sweepers in a creature-centric board.
+- PLAN theme_fit=yes: It is a WB Commander deck led by Karlov of the Ghost Council built squarely around lifegain, with a card pool (Solitude, Jitte, Serra Ascendant) that sits comfortably in the bracket 3 range the player asked for.
+- PLAN useful_as_built=yes: 36 lands with a heavily WB-fixed base, a low curve centered on one- to four-mana lifegain creatures and enchantments, ample removal and draw, and multiple clear routes to victory make it immediately playable.
+- PLAN summary_honest=partly: The claims of lifegain pressure, card flow, answers and alternate wincons are all visibly backed, but "enough mana development" oversells a ramp slot padded with marginal three-mana artifacts (Hot Dog Cart, Nuka-Cola Vending Machine, Colossal Plow, Druidic Satchel) rather than real acceleration, and it does not mention the deck's own board wipes while warning about being swept.
+
+### 2. aristocrats Commander, owned first
+
+**Summary:** This is a white-black aristocrats deck built to keep creatures flowing, turn their deaths into value, and use Denethor, Ruling Steward to make Soldier tokens and drain the table through sacrifice. Early mana and a large draw package keep the board supplied, while protection effects help Denethor and key creatures survive long enough to establish a sacrifice engine. The deck closes through steady life-loss pressure or its larger finishers, with broad removal and a few board wipes to recover from opposing boards. It gives up raw speed for a more incremental, board-dependent plan and can be vulnerable when its creatures or commander are repeatedly contained.
+
+- JUDGE ERROR: judge summary: llm anthropic/claude-opus-5: budget: attempt budget of 4 used: llm anthropic/claude-opus-5: transient (http 529): POST "https://api.anthropic.com/v1/messages": 529  (Request-ID: req_011CfGbJKqC2yMLU12CTdgzj) (Workspace-ID: wrkspc_01DKn3qmnB3ZMerq6QsCdj6C) {"type":"error","error":{"type":"overloaded_error","message":"Overloaded"},"request_id":"req_011CfGbJKqC2yMLU12CTdgzj"}
+- PLAN JUDGE ERROR: judge plan: llm anthropic/claude-opus-5: budget: attempt budget of 4 used: llm anthropic/claude-opus-5: transient (http 529): POST "https://api.anthropic.com/v1/messages": 529  (Request-ID: req_011CfGbKcY48LynHDPDa4bey) (Workspace-ID: wrkspc_01DKn3qmnB3ZMerq6QsCdj6C) {"type":"error","error":{"type":"overloaded_error","message":"Overloaded"},"request_id":"req_011CfGbKcY48LynHDPDa4bey"}
+
+### 3. artifacts Commander, bracket 4
+
+**Summary:** Urza turns the early artifact mana into a fast, resilient board of artifact threats while holding up efficient protection and targeted answers. The deck wins by overwhelming the table with its artifact board, by deploying its dedicated artifact finishers, or through Thassa's Oracle. It gives up some flexibility for a dense artifact core, so its strongest games come from establishing mana quickly and protecting the key turn.
+
+- JUDGE ERROR: judge summary: llm anthropic/claude-opus-5: budget: attempt budget of 4 used: llm anthropic/claude-opus-5: transient (http 529): POST "https://api.anthropic.com/v1/messages": 529  (Request-ID: req_011CfGbMHD2BZU64yghdYMci) (Workspace-ID: wrkspc_01DKn3qmnB3ZMerq6QsCdj6C) {"type":"error","error":{"type":"overloaded_error","message":"Overloaded"},"request_id":"req_011CfGbMHD2BZU64yghdYMci"}
+- PLAN JUDGE ERROR: judge plan: llm anthropic/claude-opus-5: budget: attempt budget of 4 used: llm anthropic/claude-opus-5: transient (http 529): POST "https://api.anthropic.com/v1/messages": 529  (Request-ID: req_011CfGbQAiBLdo6csZAAG9M9) (Workspace-ID: wrkspc_01DKn3qmnB3ZMerq6QsCdj6C) {"type":"error","error":{"type":"overloaded_error","message":"Overloaded"},"request_id":"req_011CfGbQAiBLdo6csZAAG9M9"}
+
+### 4. dinosaur tribal, bracket 2
+
+**Summary:** This deck ramps into a broad Dinosaur board, uses tribal support to make its creatures more effective, and lets Gishath, Sun's Avatar turn successful attacks into even more Dinosaurs. It wins primarily by overwhelming opponents in combat with large threats and its finisher cards, while retaining enough removal, protection, and wipes to keep the board manageable. It gives up fast, highly precise play for a straightforward creature plan with several expensive cards at the top of the curve.
+
+- JUDGE ERROR: judge summary: llm anthropic/claude-opus-5: budget: attempt budget of 4 used: llm anthropic/claude-opus-5: transient (http 529): POST "https://api.anthropic.com/v1/messages": 529  (Request-ID: req_011CfGbSZGJdCqrkbVkULV1P) (Workspace-ID: wrkspc_01DKn3qmnB3ZMerq6QsCdj6C) {"type":"error","error":{"type":"overloaded_error","message":"Overloaded"},"request_id":"req_011CfGbSZGJdCqrkbVkULV1P"}
+- PLAN JUDGE ERROR: judge plan: llm anthropic/claude-opus-5: budget: attempt budget of 4 used: llm anthropic/claude-opus-5: transient (http 529): POST "https://api.anthropic.com/v1/messages": 529  (Request-ID: req_011CfGbVmPdxbfjsmaL6pVcr) (Workspace-ID: wrkspc_01DKn3qmnB3ZMerq6QsCdj6C) {"type":"error","error":{"type":"overloaded_error","message":"Overloaded"},"request_id":"req_011CfGbVmPdxbfjsmaL6pVcr"}
+
+### 5. blink Commander, owned first
+
+**Summary:** Gilraen, Dúnedain Protector keeps a creature-heavy board moving through blink play, repeatedly leaning on creatures that supply draw, removal, and interaction. The deck develops through a substantial artifact ramp package, protects Gilraen and its key permanents, and uses broad reset buttons when the table gets out of hand. Angel of Serenity is chief among its finishers. The tradeoff is that the list is deliberately reactive and board-focused, with its closing power concentrated in a small finishing package rather than a fast combo.
+
+- PLAN JUDGE ERROR: judge plan: llm anthropic/claude-opus-5: budget: attempt budget of 4 used: llm anthropic/claude-opus-5: transient (http 529): POST "https://api.anthropic.com/v1/messages": 529  (Request-ID: req_011CfGbYdF5hKnCpbMMyorkn) (Workspace-ID: wrkspc_01DKn3qmnB3ZMerq6QsCdj6C) {"type":"error","error":{"type":"overloaded_error","message":"Overloaded"},"request_id":"req_011CfGbYdF5hKnCpbMMyorkn"}
+
+### 6. Modern tempo, tournament
+
+**Summary:** This blue-red tempo deck establishes pressure with a compact creature suite, then uses cheap removal and interaction to preserve that lead while cantrips keep the hand moving. It wins by maintaining steady pressure while denying the opponent room to stabilize. The tradeoff is a lean, low-end curve that gives up broader late-game power and more specialized answers.
+
+- JUDGE ERROR: judge summary: llm anthropic/claude-opus-5: budget: attempt budget of 4 used: llm anthropic/claude-opus-5: transient (http 529): POST "https://api.anthropic.com/v1/messages": 529  (Request-ID: req_011CfGbbx8DoPiPL5YztCcYM) (Workspace-ID: wrkspc_01DKn3qmnB3ZMerq6QsCdj6C) {"type":"error","error":{"type":"overloaded_error","message":"Overloaded"},"request_id":"req_011CfGbbx8DoPiPL5YztCcYM"}
+- PLAN plan_coherent=yes: Every card serves one tempo plan: cheap evasive threats, one-mana removal, light permission, and cantrips/Bauble to fuel Shredder and card flow, with nothing pulling toward a different axis.
+- PLAN theme_fit=partly: It is a legal Modern blue-red tempo list in the right colors and shell, but the request named Delver specifically and the deck contains no Delver of the Secrets or comparable flipping/graveyard payoff, so the namesake element of the archetype is absent.
+- PLAN useful_as_built=yes: 24 lands with four duals and four fastlands support a curve topping at three mana, and twelve aggressive creatures backed by burn give a clear, repeatable win path that someone could sleeve up and play immediately.
+- PLAN summary_honest=yes: The summary accurately describes what is present — twelve cheap threats, eight one-mana removal spells, six counters, six cantrips plus Bauble — and honestly flags the lack of late-game power, though it quietly skips that no Delver-style flip threat is included.
+
+### 7. Modern burn, casual
+
+**Summary:** This mono-red burn deck applies pressure with efficient removal, a dense package of spell-focused creatures, and a steady stream of attackers. It wins by combining burn pressure with combat damage, using draw to keep action flowing into the middle turns. It gives up broad answers and matchup-specific tools for a focused, consistent red game plan.
+
+- PLAN plan_coherent=no: The spell-count payoffs (Thermo-Alchemist, Firebrand Archer) want a dense mass of cheap instants and sorceries, but the deck runs only 14 noncreature spells and instead loads up on twelve-plus four-mana ground creatures, so the cantrip/pinger shell and the clunky midrange bodies pull against each other.
+- PLAN theme_fit=no: The request was mono-red burn, but the list contains only six actual damage spells (4 Lightning Bolt, 2 Burst Lightning) and is otherwise a creature midrange deck topped by Ashcloud Phoenix, Fuming Effigy, Akki Lavarunner and Hazoret.
+- PLAN useful_as_built=partly: 24 Mountains support the curve and the creatures give a real clock, so it is castable and can win, but the top-heavy four-drop pile with only two true card-draw effects (Expedite/Ancestral Anger are replacement cantrips) will stall out and plays far slower than intended.
+- PLAN summary_honest=partly: placeholder
+
+### 8. Modern lifegain, FNM
+
+**Summary:** This white-black lifegain deck establishes early creatures, turns repeated life gain into increasingly serious combat pressure, and uses Vito, Thorn of the Dusk Rose to make that plan harder to race. Solitude and The Wandering Emperor clear away opposing threats while the draw package helps keep the board stocked. It gives up some speed and relies on its creatures surviving long enough for the lifegain payoffs to take over.
+
+- PLAN plan_coherent=yes: Nearly every card feeds one line — cheap lifegain enablers (Soul Warden, Attended Healer, Twinblade Paladin) into payoffs (Vito, Bloodbond Vampire, Archangel of Thune, Dawn of Hope, Enduring Innocence) — with only Altar of the Pantheon sitting loosely outside the plan.
+- PLAN theme_fit=yes: It is a 60-card Modern white-black lifegain deck of roughly FNM caliber, exactly as asked.
+- PLAN useful_as_built=partly: The deck curves out sensibly with 24 lands and several win routes, but with only six dual/pain sources and 9/9 split basics it will often stumble on {3}{W}{W} Solitude, {2}{B}{B} Bloodbond Vampire, and {2}{W}{W} Emperor on curve.
+- PLAN summary_honest=yes: Everything named — the lifegain pressure, Vito as a race-breaker, Solitude and The Wandering Emperor as removal, the draw package, and the admitted slowness — is actually present in the list, and nothing significant is concealed.
+
+### 9. Standard midrange, FNM
+
+**Summary:** This black-green midrange deck develops its mana, establishes a steady creature board, and uses efficient removal to keep opposing threats from taking over. Insidious Roots and Corrupted Conviction support the creature-heavy core, while Darkstar Augur and Phyrexian Arena help maintain resources through longer games. It wins by applying sustained pressure with its creatures, chief among them Goldvein Hydra and Vein Ripper, but gives up some speed against decks built to end the game before its larger threats matter.
+
+- PLAN plan_coherent=partly: The core of ramp, removal, card draw and beefy creatures is a coherent midrange plan, but the eight slots of Insidious Roots plus Corrupted Conviction point at a sacrifice/graveyard-recursion subtheme the deck never enables (no cards return or exile creature cards from the graveyard), so those pieces pull against the goal of keeping creatures on board.
+- PLAN theme_fit=yes: It is a 60-card black-green creature midrange list with duals, removal and card advantage, exactly the Standard FNM-level deck requested.
+- PLAN useful_as_built=partly: 24 lands with twelve untapped/dual sources and a sensible curve mean it casts its spells and has plenty of win conditions, but roughly eight slots (Roots plus Conviction) are near-dead draws and the triple-black Vein Ripper is awkward in a green-leaning mana base, so it plays a few cards down from its list.
+- PLAN summary_honest=partly: The description of mana, removal, draw and creature pressure matches the list, but the claim that Insidious Roots and Corrupted Conviction "support the creature-heavy core" oversells a synergy the deck lacks the enablers for, and it omits that Corrupted Conviction shrinks the board it says it is building.
+
+### 10. Standard aggro, tournament
+
+**Summary:** This red-white aggro deck aims to establish pressure early with a focused creature suite, then clear obstacles with removal and protect its tempo with interaction. Its draw cards help sustain that pressure when the first wave is answered, while Warleader's Call supports the attacking plan. It wins by keeping opponents under consistent combat pressure, giving up broader late-game flexibility for a streamlined, proactive approach.
+
+- PLAN plan_coherent=partly: The removal, Warleader's Call, and beaters all point toward an attacking Boros plan, but the creature curve (only four two-drops against twelve four-drops) and the token-payoff Caretaker's Talent in a deck with almost no token generation pull against the stated fast-aggro direction.
+- PLAN theme_fit=yes: It is a 60-card red-white Standard list built around creatures, burn-ish interaction, and an anthem effect, which is the archetype and format the person asked for.
+- PLAN useful_as_built=partly: The mana base is clean and consistent and there are enough threats and removal to play games, but the top-heavy curve means it often does nothing before turn four, so it functions more as a midrange deck than the aggro deck it is meant to be.
+- PLAN summary_honest=partly: Removal, Warleader's Call, and the general pressure plan are described accurately, but "establish pressure early with a focused creature suite" misrepresents a list whose creatures are mostly four-mana, and calling Caretaker's Talent a draw engine hides that it needs tokens this deck rarely makes.
+
+### 11. Commander with a locked card
+
+**Summary:** Karlov of the Ghost Council leads a low-curve Orzhov sacrifice deck that builds resources from expendable creatures, protects its important pieces, and turns repeated creature losses into pressure. Karlov grows from the deck’s life-focused synergies and provides a dependable creature-control outlet, while sacrifice payoffs such as Bastion of Remembrance and Relic Vial help close games. The deck gives up some raw speed to keep a broad creature package, but it has strong staying power through recursion, card flow, and reset buttons.
+
+- PLAN plan_coherent=yes: Nearly every card is a sacrifice outlet, a free/cheap body, a death-trigger payoff, or a recursion piece, and the drain effects (Bastion, Elas il-Kor, Vito's Inquisitor, Meathook) feed Karlov's lifegain counters, so the pieces pull one direction.
+- PLAN theme_fit=yes: It is a Commander deck led by Karlov of the Ghost Council in Orzhov colors built explicitly around sacrificing creatures, exactly the request.
+- PLAN useful_as_built=yes: 36 lands with heavy dual/fixing support plus Sol Ring and altars supports a mostly one-to-four-drop curve, and it has multiple real win routes through drain enchantments, Blasting Station loops, and a wide creature board.
+- PLAN summary_honest=yes: Recursion (Victimize, Chthonian Nightmare, Liesa, Ratadrabik, Nightmare Shepherd), card flow (Village Rites, Deadly Dispute, Smothering Abomination), protection (Cartel Aristocrat, Gift of Doom, Flare of Fortitude), and reset buttons (Toxic Deluge, Austere Command, Meathook) all appear as claimed; calling Relic Vial a game-closer is a mild stretch but nothing is hidden.
+
+### 12. Commander on a budget
+
+**Summary:** Adeline, Resplendent Cathar leads a white go-wide deck that attacks early, turns those attacks into a growing Human token force, and reinforces that force with token payoffs, creatures, and enchantments. The deck usually wins by overwhelming the table through combat, while Halo Fountain, Luck Bobblehead, and Sword of Body and Mind provide additional closing pressure. It gives up premium mana acceleration and expensive staple cards in favor of a broad, budget-conscious board-building plan.
+
+- PLAN plan_coherent=yes: Nearly every slot supports one white go-wide plan — token makers, anthem/token payoffs (Intangible Virtue, Phantom General, Divine Visitation, Oketra's Monument), attack triggers, and token-based draw — with only minor tension from Phyrexian Rebirth sweeping the player's own board.
+- PLAN theme_fit=yes: It is a mono-white Adeline token Commander deck with no expensive staples or fast mana and no combo lines, which fits the requested theme, budget, and bracket-2 power level.
+- PLAN useful_as_built=yes: 37 mostly-basic sources in a mono-white deck support a low curve, and there are abundant token makers, anthems, removal, and combat-based win routes to actually close a game.
+- PLAN summary_honest=partly: The go-wide, token-payoff, and "no premium ramp" claims all match the list, but calling Luck Bobblehead and Sword of Body and Mind additional "closing pressure" oversells two marginal artifacts, and the summary doesn't mention the ramp package is largely odd treasure/clue trinkets rather than real acceleration.
+
+### 13. owned first, and the commander is not owned
+
+**Summary:** Karlov of the Ghost Council is the center of a steady Orzhov lifegain plan: gain life repeatedly to grow Karlov, protect it, and use its creature-control pressure to keep attacks clear. The deck backs that plan with efficient removal, board resets, and a broad creature suite, then closes through Karlov's accumulated power or chief among its finishers, Frodo, Sauron's Bane, Grave Venerations, and Lyra Dawnbringer. It gives up explosive multicolor mana and relies on its basics, artifact acceleration, and steady card flow to win longer games.
+
+- PLAN plan_coherent=partly: The core Karlov lifegain engine is there (Angel of Vitality, Compassionate Healer, Rosie Cotton, Shattered Angel, Light of Promise, Lembas, Grave Venerations) with protection equipment, but three full board wipes plus a wide, largely generic creature suite and several off-plan bodies (Kor Firewalker, Rooftop Percher, Cirith Ungol Patrol) pull against the go-wide-and-gain-life build.
+- PLAN theme_fit=yes: It is a WB Commander deck led by the requested Karlov, built on lifegain from basics-only mana with a bracket-3-appropriate power level and no clearly over-tier pieces.
+- PLAN useful_as_built=yes: 36 basics plus nine ramp pieces support a low, playable curve with ample removal, card draw, and several credible ways to close, so the deck can be picked up and played as written.
+- PLAN summary_honest=yes: It accurately names the lifegain-plus-Karlov engine, the removal, the wipes, the basics-only mana and artifact ramp, and the finishers it lists are actually in the list.
+
+### 14. the user delegates the commander
+
+**Summary:** This deck ramps through its early turns, uses tribal cost support to deploy Dragons efficiently, and then turns a wide aerial board into devastating attacks with Atarka, World Render. Lathliss, Dragon Queen, Utvara Hellkite, and Wrathful Red Dragon provide especially potent closing pressure, while the removal suite keeps opposing boards from stabilizing. It gives up some resilience to repeated sweepers and relies on its mana development and creature board to convert its powerful top end into a win.
+
+- PLAN plan_coherent=yes: Every nonland slot supports one plan — cheat out or cost-reduce big Dragons, protect and buff them, and swing in the air with Atarka's double strike — with cost reducers, tribal anthems, card draw off creatures, and Dragon-flavored removal all pointing the same direction.
+- PLAN theme_fit=yes: It is a Commander Dragons deck with a Dragon commander the builder chose, heavy Dragon creature count and Dragon-specific support, and a bracket-3-appropriate build with no infinite combos or fast-mana chains.
+- PLAN useful_as_built=yes: 36 lands with a solid RG fixing base, cheap cost reducers and mana rocks to bridge to a top-heavy curve, ten-plus draw sources, and plenty of evasive threats plus Atarka's double strike to actually close games.
+- PLAN summary_honest=yes: It accurately names the ramp/cost-reduction package, the payoff creatures (Lathliss, Utvara Hellkite, Wrathful Red Dragon), and the removal suite, and it openly admits the deck's weakness to repeated board wipes and its dependence on the creature board.
+
+### 15. delegated commander, owned first
+
+**Summary:** Astarion, the Decadent leads a white-black lifegain deck that develops mana, establishes creatures and Equipment, and uses life gained during the turn to make the Friends choice at end step especially rewarding. The board is supported by efficient answers and reset buttons, then closes through its dedicated victory cards and finisher-class threats, with Astarion's Feed mode providing a way to press an opponent who has already lost life. The deck gives up some speed for a steady creature-based battlefield plan and a commander that costs six mana.
+
+- PLAN plan_coherent=partly: The lifegain core (Angel of Vitality, Light of Promise, Rosie Cotton, Compassionate Healer, Frodo plus Call of the Ring) is real and feeds Astarion's end-step trigger, but a sizable Equipment/Puresteel-Paladin package and three unconditional board wipes pull against the wide creature-based board the rest of the list is building.
+- PLAN theme_fit=yes: It is a Commander lifegain deck in white-black with a builder-chosen lifegain commander at a casual, no-combo bracket-2 power level, matching what was asked.
+- PLAN useful_as_built=yes: 37 lands plus a full ramp suite support a reasonable curve, and the deck has ample removal, card draw, and multiple finishers, so it functions out of the box.
+- PLAN summary_honest=partly: Most claims check out (ramp, Equipment, answers, wipes, Friends/Feed), but "dedicated victory cards" plural overstates the list, which has only Frodo, Sauron's Bane as an actual alternate win, with Lyra and Al Bhed Salvagers being ordinary creatures.
+
+### 16. a tight budget, owned first
+
+**Summary:** Denethor, Ruling Steward anchors a creature-resource game: establish mana and card flow, develop a board of expendable creatures and sacrifice-focused pieces, then turn repeated creature losses into pressure. Bastion of Remembrance, Falkenrath Noble, and Zulaport Cutthroat provide the clearest finishing pressure alongside Denethor’s own sacrifice outlet. The deck trades explosive starts and premium individual card power for a patient, board-based plan that can rebuild through creature synergies and use wipes to reset opponents who get ahead.
+
+- JUDGE [unknown]: "Denethor's own sacrifice outlet (i.e., the commander can be used to sacrifice creatures)". This asserts a specific ability of Denethor, Ruling Steward — that he functions as a sacrifice outlet. The provided card data lists only mana cost and type line, so the ability text cannot be verified from the list, and I cannot reliably confirm from memory whether Denethor, Ruling Steward has an activated sacrifice ability.
+- PLAN plan_coherent=partly: The core of sacrifice outlets (Ayli, Bartolomé, Woe Strider, Yahenni, Erebos) plus drain payoffs is consistent, but a cluster of commander-protection cards (Bastion Protector, Take Up the Shield, Swiftfoot Boots, Together Forever, Gift of Immortality) and three mass sweepers pull against a board of expendable creatures you want to keep dying on your own terms.
+- PLAN theme_fit=yes: It is a WB Commander aristocrats deck with sacrifice outlets, fodder, and drain payoffs at a modest, casual bracket-2 power level, built largely from cheap commons/uncommons consistent with a library-first, low-budget request.
+- PLAN useful_as_built=yes: 38 lands with basics-heavy but on-color mana, cheap ramp, a workable curve, plenty of removal and card draw, and three recurring drain effects plus beaters give it a playable game plan out of the box.
+- PLAN summary_honest=yes: placeholder
+
+### 17. upgrade a precon, owned first
+
+**Summary:** This deck builds a wide Goblin board, then uses Zada to turn targeted spells into explosive team-wide turns. Goblin synergies create pressure while draw and burst mana help assemble a decisive combat, with Great Train Heist and Earthquake as major closing tools. It gives up broad flexibility for a focused Goblin-and-spells game plan that is strongest when its creature board remains established.
+
+- JUDGE [true]: "uses Zada to turn targeted spells into explosive team-wide turns". This asserts what the card Zada, Hedron Grinder does — copying a targeted spell for each other creature you control. Zada's actual ability copies an instant or sorcery that targets only Zada, once for each other creature you control, so the claim about the card's function is accurate.
+- PLAN plan_coherent=yes: Nearly every card feeds one line — make a wide Goblin board with token makers and lords, then fire cheap cantrips/pumps through Zada backed by rituals, Past in Flames and Grapeshot for a storm-ish alpha strike — with only Blasphemous Act and Earthquake sitting slightly awkwardly against one's own board.
+- PLAN theme_fit=yes: It is a mono-red Zada Goblin deck built around token swarms and copied spells with a storm subtheme, i.e. exactly a Goblin Storm precon upgrade, and its power level (Sol Ring, Skullclamp, no fast mana beyond rituals, no compact infinite combo) sits reasonably in bracket 3.
+- PLAN useful_as_built=yes: Roughly 36 mostly untapped mono-red lands plus Sol Ring, Arcane Signet and rituals easily support a cheap curve, and the deck has multiple real win routes (Zada pump alpha strikes, Great Train Heist extra combats, Impact Tremors/Boggart Shenanigans/Siege-Gang drain, Earthquake) so it is playable as printed.
+- PLAN summary_honest=yes: The claims of a Goblin-wide board, Zada spell-copying, burst mana, card draw and Great Train Heist/Earthquake as finishers are all backed by actual cards in the list, and it fairly admits the narrow, board-dependent nature of the plan (only omitting explicit mention of the Grapeshot/Past in Flames storm package).
+
+### 18. upgrade a precon, any card
+
+**Summary:** This keeps Turtle Power focused on a broad team of Turtles, Mutants, and Ninjas that wants to attack together, with Heroes in a Half Shell turning successful combat into larger attackers and more cards. The upgraded mana base and compact ramp package make the five-color plan steadier, while Rhystic Study and Kindred Discovery support a longer game. Dimension X Pizzasaur and Everything Pizza remain chief among the finishing threats, backed by efficient removal and the precon’s sweepers. The tradeoff is that the deck remains a combat-focused tribal build rather than a tightly streamlined combo deck.
+
+- PLAN plan_coherent=yes: The list is a coherent five-color creature-combat tribal build around Mutants/Turtles/Ninjas with the commander's attack payoff, light removal, sweepers and a few Food/Pizza finishers, with only a handful of loosely related counters cards.
+- PLAN theme_fit=yes: It is the Turtle Power precon kept intact with modest bracket-3 upgrades (Sol Ring, signets, Swords to Plowshares, Assassin's Trophy, Rhystic Study, better duals), exactly what was asked.
+- PLAN useful_as_built=yes: 39 lands with plenty of five-color fixing (Command Tower, City of Brass, Mana Confluence, Thriving lands, shocks, Chromatic Lantern) support a mostly two- to five-drop curve, and there are ample creature-based and Pizza finishers to close a game, though ramp is on the thin side.
+- PLAN summary_honest=yes: Every element named — Heroes in a Half Shell combat payoff, Rhystic Study and Kindred Discovery, Dimension X Pizzasaur and Everything Pizza, the sweepers, the improved lands and small ramp package — is actually present, and it candidly admits the deck is not streamlined.
+
+### 19. the Hobbit family, two colours
+
+**Summary:** Thranduil leads a Sultai Elf creature deck that develops its mana early, builds pressure with a broad Elf board, and uses legendary Elves to fuel the commander’s draw-and-discard trigger. The deck keeps opponents in check with a substantial removal and interaction suite, then closes through Troll of Khazad-dûm or either Witch-king. Its main concession is that much of its pressure and synergy is creature-based, so repeated board clears can slow its ability to establish a decisive battlefield.
+
+- PLAN plan_coherent=partly: The core is a coherent Sultai Elf board-building deck with legendary Elves to feed the commander and a heavy removal shell, but including three sweepers (Languish, Gnashing of Teeth, Raise the Palisade) in a deck whose pressure comes from a wide board of small Elves pulls against its own plan.
+- PLAN theme_fit=yes: It is a Commander deck built entirely from the requested Hobbit sets, led by Thranduil, the Elvenking, in his Sultai identity, with a fair-value Elf plan and no combo or fast mana that fits a bracket 3 table.
+- PLAN useful_as_built=yes: Thirty-nine lands plus mana dorks, Signet, Wayfarer's Bauble and a sensible 11/10/8 basic split support a low curve, and the deck has plenty of bodies, card draw and evasive/large finishers to actually close games as written, though fixing relies mostly on basics.
+- PLAN summary_honest=partly: The Elf base, legendary-Elf density, removal suite and the named finishers are all genuinely present, but the summary blames "repeated board clears" as an external weakness while omitting that the deck itself runs several symmetrical wipes, and calling Troll of Khazad-dûm a closer overstates a single vanilla-ish body when the real win is Elf combat damage.
+
+### 20. the Hobbit family, a delegated commander
+
+**Summary:** Smaug the Magnificent is the center of a red dragon-and-Treasure strategy that develops mana, attacks early, and turns its Treasure stockpile into mounting pressure. Cavern-Hoard Dragon, Desert Were-Worm, Smaug, the Great Calamity // Spew Flame, and chief among the supporting threats Dáin Ironfoot provide the closing force, while a broad spread of removal, interaction, and board resets keeps opponents from assembling an easy defense. The deck gives up some card selection and specialized answers in exchange for a direct, creature-driven plan built around Smaug’s attacks and a strongly themed supporting cast.
+
+- PLAN plan_coherent=partly: The list mostly reads as a mono-red aggro shell with Treasures and a heavy equipment sub-theme, but the equipment package, the goblin/dwarf bodies, and the handful of expensive dragons pull in somewhat different directions rather than supporting one focused plan.
+- PLAN theme_fit=no: The person asked for a dragons deck and, aside from the commander, the list contains only about three dragons amid a mass of dwarves, goblins, orcs, and equipment, so it is a generic mono-red Hobbit-set aggro deck instead.
+- PLAN useful_as_built=yes: 36 mono-colored lands plus signets and ramp support a low curve of cheap creatures and equipment, with removal, wipes, and several finishers, so it functions at the table as written.
+- PLAN summary_honest=partly: It correctly names the mono-red Treasure/attack plan and even concedes weak card selection, but calling the goblin-and-dwarf filler a "strongly themed supporting cast" and listing Dáin Ironfoot among the closers oversells a dragon identity the list barely has.
+
+### 21. the Hobbit family, mana from outside
+
+**Summary:** This is a black-red Smaug deck that develops its mana with artifacts, Treasures, and Dragon-oriented acceleration before bringing Smaug the Impenetrable to the table as its central threat. It maintains pressure through Goblins, Orcs, Wargs, and larger monsters, uses a broad removal package to force attacks through, and closes with Smaug, the Great Calamity, Troll of Khazad-dûm, or Witch-king of Angmar. The deck gives up some early speed for a mana-heavy, thematic midrange plan built to support expensive Dragons and legendary equipment.
+
+- PLAN plan_coherent=yes: The list is a consistent BR midrange plan: cheap treasure/ramp pieces and rocks to reach a seven-mana commander, a wide package of goblins/orcs and equipment to pressure, removal and two wipes to clear the way, and a handful of large finishers, which is what the summary describes.
+- PLAN theme_fit=yes: All nonland, non-rock cards are in hob/hoc, the commander is the requested Smaug the Impenetrable in BR, and only lands and mana rocks come from outside the sets, consistent with a bracket 3 build (The One Ring being the sole notable game changer).
+- PLAN useful_as_built=partly: Thirty-seven lands and a light rock suite support the expensive curve, but Windswept Heath, Misty Rainforest, and Flooded Strand cannot fetch a single land in this deck's mana base, leaving three effectively dead lands in a deck already straining to cast a seven-drop commander.
+- PLAN summary_honest=yes: Every element named — treasure/artifact acceleration, goblin/orc/warg bodies, a broad removal suite, the legendary equipment package, and the three named finishers — is actually present, and it openly concedes the deck's slow, mana-hungry start.
+
+### 22. a set family and a card from outside it
+
+**Summary:** Thranduil leads a creature-centered Sultai deck built around Elves, with legendary Elves chief among them for recurring draw-and-discard triggers. Early mana creatures and artifacts help establish the board, while removal, interaction, and sweepers keep opponents from pulling too far ahead. The deck closes with Troll of Khazad-dûm and the Witch-kings after its Elf force has developed; it gives up some speed and consistency for a broad thematic creature package and a mana base that supports all three colors.
+
+- PLAN plan_coherent=yes: The list is a coherent Sultai creature deck: a dense Elf body count with legendary Elves and Mox Amber supporting the commander's triggers, backed by ramp creatures, cheap interaction, and a few black finishers, all pointed at building and defending a board.
+- PLAN theme_fit=yes: It is a Commander deck led by Thranduil, the Elvenking, drawn entirely from the requested Hobbit sets except the explicitly permitted Sol Ring, and the power level (a few efficient staples, no fast combo) sits comfortably at bracket 3.
+- PLAN useful_as_built=yes: 36 lands plus mana creatures and signets support the three colors, the curve is low with plenty of early plays, and the wide Elf board plus the Witch-kings and Troll give real ways to close a game.
+- PLAN summary_honest=yes: It accurately describes the Elf/legendary-Elf core, the mana creatures and artifacts, the removal and sweeper package, and the Troll/Witch-king top end, and it candidly admits the deck trades speed and consistency for theme.
+
+### 23. two set families at once
+
+**Summary:** Kíli leads a white Dwarf-and-Equipment deck that builds a durable artifact board, keeps cards flowing through its many value pieces, and turns even modest creatures into meaningful attackers. The deck wins through equipped combat, supported by large evasive closers and artifact-based pressure. It gives up multicolor flexibility and depends on keeping creatures and Equipment together, so its protective spells and selective removal are important for maintaining momentum.
+
+- PLAN plan_coherent=yes: Nearly every card supports one mono-white equipment/artifact aggro plan — a dozen Equipment, cheap resilient bodies, artifact-count payoffs, and cheap draw — with only the three sweepers creating mild tension, and those are largely asymmetric or token-making.
+- PLAN theme_fit=yes: It is a Commander deck with a builder-chosen commander, all cards drawn from the requested Hobbit and Bloomburrow set codes, mono-white, and at a mid-power bracket-3 level with no fast combos or heavy tutors.
+- PLAN useful_as_built=yes: 36 lands plus eight ramp pieces in a mono-colored deck with a low curve, plenty of removal and draw, and several clear paths to close (equipped attackers, Angel of the Ruins, Sunscorch Regent, Psychosis Crawler) make it immediately playable.
+- PLAN summary_honest=yes: The claims of equipped combat, heavy card flow, flying finishers, and dependence on keeping creatures and gear together all match the list, though the 'Dwarf' emphasis is modest (a handful of Dwarves plus Maskwood Nexus/Patchwork Banner) and the sweepers go unmentioned.
+
+### 24. a 60-card deck from one set
+
+**Summary:** This mono-red aggro deck aims to establish creature pressure early, reinforce it with Emberheart Challenger and Hearthborn Battler, and clear resistance with direct removal. Its threats carry the game through combat, with Dragonhawk, Fate's Tempest chief among them, while its draw package helps keep pressure coming. The deck gives up broad answers and defensive options in favor of a direct, consistent red attacking plan.
+
+- PLAN plan_coherent=partly: Most cards point at red creature beatdown, but the plan is muddled by a top-heavy curve (twelve four-and-five-drop creatures), a five-mana removal spell, and two Arcane Signets, which is a ramp/Commander inclusion pulling against the stated early-aggression plan.
+- PLAN theme_fit=yes: It is a 60-card mono-red Modern deck built entirely from the named Bloomburrow-family sets, matching the requested colors, format, and card pool, even if the 'aggro' label is loose.
+- PLAN useful_as_built=partly: 24 Mountains support the costs and the creature suite can close games, but the clunky top-end, double-red five-drops, and mana-wasting Signets mean it plays much slower and more awkwardly than an aggro deck should.
+- PLAN summary_honest=partly: The removal, draw, and Dragonhawk claims are accurate, but the summary advertises establishing pressure early when the list has only four two-drop creatures and leans on five-mana threats, and it silently omits the ramp artifacts.
+
+### 25. use no card of an owned precon
+
+**Summary:** Captain America, Super-Soldier anchors a white Avengers and S.H.I.E.L.D. Hero shell that develops a protected combat board, uses Equipment to keep the cards and mana flowing, and presses its advantage with superhero threats. The deck closes through Angel of Serenity, Origin of Spider-Man, and The Sentry, Golden Guardian, while its removal and wipes keep opposing boards from taking over. It gives up multicolor flexibility and depends heavily on maintaining creatures and artifacts on the table.
+
+- PLAN plan_coherent=yes: The list holds together as a mono-white Hero/Equipment go-wide board with protection (Champion's Helm, Darksteel Plate, Bastion Protector, Clever Concealment), equipment-driven card draw (Skullclamp, Mask of Memory, Puresteel Paladin, Sword of the Animist) and white removal, though the three sweepers sit in mild tension with its own creature-heavy board.
+- PLAN theme_fit=partly: It is a mono-white Commander deck at a reasonable bracket-3 power with a genuine core of Marvel Avengers/S.H.I.E.L.D. hero cards, but a sizable slice of the list is unrelated Middle-earth and other filler (Champions of Minas Tirith, Boromir, Crown of Gondor, Lembas, Buster Sword, Bender's Waterskin), diluting the superhero theme even allowing for the library-first constraint.
+- PLAN useful_as_built=yes: 36 lands with a low white curve, eight mana rocks/ramp pieces and ample removal make it immediately castable and playable, and the handful of pointless fixing lands and rocks (Command Tower, City of Brass, Exotic Orchard, Chromatic Lantern) still tap for colorless or white without breaking the mana.
+- PLAN summary_honest=partly: The equipment-value, protection and removal claims match the cards, but calling Angel of Serenity, Origin of Spider-Man and The Sentry the way the deck "closes" overstates three value pieces as a win plan, and the summary is silent about the several dead multicolor fixers in a mono-white list.
+

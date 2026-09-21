@@ -2,12 +2,14 @@ package main
 
 import (
 	"bytes"
+	"path/filepath"
 	"testing"
 	"time"
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 	"github.com/nkramber/decktome/go/internal/cards"
 	"github.com/nkramber/decktome/go/internal/evalrun"
+	"github.com/nkramber/decktome/go/internal/generate"
 )
 
 // TestReadStoredReadsWriteDeckBack is D-789: the rejudge lane reads the
@@ -83,5 +85,40 @@ func TestCopyBuildRowsDropsTheJudgeRows(t *testing.T) {
 	src.Gate("2", "blocks", 1, "SIZE")
 	if copyBuildRows(evalrun.New("decks", "x"), src) {
 		t.Error("a block of the source reads as a pass")
+	}
+}
+
+// TestKeptRowsKeepsTheAnsweredDecks is D-789: a deck both judges answered
+// keeps its rows, and a deck with a judge error is judged again. A run
+// that rejudged another source, or read another judge version, is
+// refused.
+func TestKeptRowsKeepsTheAnsweredDecks(t *testing.T) {
+	src := evalrun.New("decks", "src")
+	src.Header.RunID = "src"
+	kept := evalrun.New("decks", "kept")
+	kept.Header.Versions["rejudge_of"] = "src"
+	kept.Header.Prompts["plan_rubric"] = generate.PlanRubricVersion
+	kept.Header.Prompts["summary_judge"] = generate.SummaryJudgeVersion
+	kept.Gate("1", "false_rules", 0, "")
+	kept.Info("1", "plan_score", 0.75, "")
+	kept.Gate("2", "judge_error", 1, "529")
+	kept.Info("2", "plan_score", 0.5, "")
+	kept.Gate("3", "false_rules", 0, "")
+	kept.Info("3", "plan_judge_error", 1, "529")
+	kept.Gate("3", "built", 1, "")
+	path := filepath.Join(t.TempDir(), "kept.jsonl")
+	if err := evalrun.WriteFile(path, kept); err != nil {
+		t.Fatal(err)
+	}
+	got, err := keptRows(path, src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 || len(got["1"]) != 2 {
+		t.Errorf("kept = %+v, want the two rows of deck 1 alone", got)
+	}
+	src.Header.RunID = "another"
+	if _, err := keptRows(path, src); err == nil {
+		t.Error("a rejudge of another run is kept")
 	}
 }
