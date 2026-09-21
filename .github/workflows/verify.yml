@@ -272,6 +272,11 @@ jobs:
       # three lists of paid targets (D-749).
       - name: context budget
         run: make context-budget
+      # Every pipeline of a Makefile recipe fails its target (F-160). The
+      # runner has a make that honors .SHELLFLAGS, and the check proves the
+      # recipe rule against that make too.
+      - name: pipefail check
+        run: make pipefail-check
 
   # Tier 0 of the eval harness (PR-15). It compares every baseline of
   # docs/reference/eval with the newest committed run of its suite and

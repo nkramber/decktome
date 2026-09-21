@@ -62,6 +62,12 @@ Each other target is free. `make meta-refresh` reads the deck list sources over 
 
 `docs/reference/pr7-m5-scoring.md` is the owner's working copy. No target writes to it. A new sheet needs a new name and points at the latest gate document, for example `M5_OUT=docs/reference/pr7-m5-scoring-run18.md M5_RUNS=../docs/reference/pr7-question-gate-run18.md make m5-sheet`.
 
+## The exit code of a target
+
+Each recipe line of `Makefile` that pipes sets `set -o pipefail` itself (D-782). GNU Make 3.82 added `.SHELLFLAGS`, and GNU Make 3.81 ignores it, so a recipe reads pipefail from no variable. Four paid targets end with `| tee`, which shows the live output and writes the document. Without pipefail each one reported the exit code of `tee`, and `tee` succeeds after a command that fails. `make pipefail-check` holds the rule, and `make lint` and the `verify:shell` job both run it for nothing. `docs/reference/f160-make-pipefail-2026-09-20.md` holds each exit code and each proof.
+
+CAUTION: `tee` creates its output file before the command writes a byte. So a failed run of `make chat-probe`, `make generate-probe`, `make summary-judge`, or `make api-build` leaves an empty document. The guard of D-65 then refuses that name on the next run. Delete the empty document, or name a new one.
+
 ## Measured run costs
 
 These facts expire. Each one names the date of its read. They moved from `docs/SESSION-HANDOFF.md` word for word (D-749).

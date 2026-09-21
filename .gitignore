@@ -58,3 +58,6 @@ coverage/
 # that rule: a reader's own words may be committed, and no file of the
 # harvest holds an email (D-559). So the harvest commits like any other
 # reference document, and no ignore rule covers it.
+
+# The check tools of docs/tools leave bytecode of the local Python.
+__pycache__/
