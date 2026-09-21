@@ -149,6 +149,9 @@ func run() error {
 	runOut := flag.String("run-out", "", "write the run header and the rows as JSONL here (PR-15)")
 	trim := flag.String("trim", "", "with -dry: write the snapshot trimmed to the cards the prompts reach under this root (D-521)")
 	manaPass := flag.String("manapass", "", "read the decks of a gate document, run the mana pass over each one, and report. Free: no provider call (PR-33)")
+	rejudge := flag.String("rejudge", "", "read the decks of a whole gate document and run the two judges over them, with no build. Costs the judge calls alone (D-789)")
+	summaryOnly := flag.Bool("summary-only", false, "with -rejudge and -keep: judge every summary again, and keep the plan rows of the -keep run")
+	keep := flag.String("keep", "", "with -rejudge: keep the judge rows of this earlier rejudge run where both judges answered, and judge the rest again")
 	flag.Parse()
 	if *trim != "" && !*dry {
 		return errors.New("-trim needs -dry: the trimmed snapshot follows the dry run")
@@ -165,6 +168,12 @@ func run() error {
 		return err
 	}
 	file.Prompts = prompts
+	if *rejudge != "" {
+		if *only != "" || *dry {
+			return errors.New("-rejudge reads a whole run: it takes no -only and no -dry")
+		}
+		return runRejudge(*rejudge, *runOut, *keep, *summaryOnly, file.Prompts)
+	}
 
 	// A dry run calls no provider, so it needs no guard.
 	if !*dry {
@@ -181,6 +190,7 @@ func run() error {
 	run.Header.Only = *only
 	run.Header.Prompts["generate"] = generate.PromptVersion
 	run.Header.Prompts["plan_rubric"] = generate.PlanRubricVersion
+	run.Header.Prompts["summary_judge"] = generate.SummaryJudgeVersion
 	run.LowerIsBetter("blocks", "invented_names", "false_rules", "judge_error", "excluded_in_deck", "warnings", "repaired", "buy_cost", "deck_cost", "case_assertions")
 	quiet := gatekit.Quiet()
 	idx, err := gatekit.LoadSnapshot(context.Background(), quiet)
@@ -258,11 +268,11 @@ func run() error {
 		// The judge lane is the real check for F-26, and the deterministic
 		// net can not read the truth of a rules claim (D-229).
 		if !*dry && !*noJudge && r.deck != nil {
-			r.judged, r.judgeErr = judge(context.Background(), client, p.Name, r.deck, acc)
+			r.judged, r.judgeErr = judge(context.Background(), client, p.Name, r.deck, idx, acc)
 			if r.judgeErr != nil {
 				fmt.Fprintf(os.Stderr, "  judge %d failed: %v\n", p.ID, r.judgeErr)
 			}
-			r.plan, r.planErr = generate.JudgePlan(context.Background(), client, p.Plan, r.deck, idx, acc)
+			r.plan, r.planErr = generate.JudgePlan(context.Background(), client, p.Plan, r.deck, idx, r.setCodes, acc)
 			if r.planErr != nil {
 				fmt.Fprintf(os.Stderr, "  plan judge %d failed: %v\n", p.ID, r.planErr)
 			}
@@ -336,11 +346,11 @@ var errEmptySummary = errors.New("the deck has no summary to judge")
 
 // judge runs the F-26 judge lane on one deck. An empty summary is a judge
 // error and not a pass.
-func judge(ctx context.Context, client *llm.Client, name string, d *mtgv1.Deck, acc *llm.Accumulator) (*generate.Judgement, error) {
+func judge(ctx context.Context, client *llm.Client, name string, d *mtgv1.Deck, cards rules.CardSource, acc *llm.Accumulator) (*generate.Judgement, error) {
 	if d.GetSummary() == "" {
 		return nil, errEmptySummary
 	}
-	return generate.JudgeSummary(ctx, client, name, d.GetSummary(), acc)
+	return generate.JudgeSummary(ctx, client, name, d.GetSummary(), d, cards, acc)
 }
 
 // setWord names the set limit of one result, for the progress line and

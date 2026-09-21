@@ -313,17 +313,7 @@ func recordRows(run *evalrun.Run, rs []result, idx *cards.Index) {
 			misses := checkAsserts(r, idx)
 			run.Gate(item, "case_assertions", float64(len(misses)), strings.Join(misses, "; "))
 		}
-		switch {
-		case r.judgeErr != nil:
-			run.Gate(item, "judge_error", 1, r.judgeErr.Error())
-		case r.judged != nil:
-			falseRule := 0.0
-			if r.judged.StatesAFalseRule() {
-				falseRule = 1
-			}
-			run.Gate(item, "false_rules", falseRule, "")
-			run.Info(item, "rules_claims", float64(len(r.judged.Claims)), "")
-		}
+		judgeRows(run, item, r)
 		repaired := 0.0
 		if r.repaired {
 			repaired = 1
@@ -340,16 +330,6 @@ func recordRows(run *evalrun.Run, rs []result, idx *cards.Index) {
 		run.Info(item, "warnings", float64(warnings), "")
 		run.Info(item, "buy_cost", generate.BuyCost(r.deck), "")
 		run.Info(item, "deck_cost", generate.DeckCost(r.deck), "")
-		if r.plan != nil {
-			for _, f := range generate.PlanFields {
-				g := r.plan.Grade(f)
-				run.Info(item, "plan_"+f, g.Value(), g.Grade+": "+g.Why)
-			}
-			run.Info(item, "plan_score", r.plan.Score(), "")
-			run.Info(item, "plan_reasons_empty", float64(r.plan.EmptyReasons()), "")
-		} else if r.planErr != nil {
-			run.Info(item, "plan_judge_error", 1, r.planErr.Error())
-		}
 		if q := r.deck.GetQuality(); q != nil {
 			run.Info(item, "grade", float64(q.GetScore()), q.GetTier())
 			if run.Header.Versions["quality_model"] == "" {
@@ -385,6 +365,33 @@ func recordRows(run *evalrun.Run, rs []result, idx *cards.Index) {
 			run.Info(item, "excluded", float64(len(r.excluded)), "")
 			run.Info(item, "spare", float64(r.spare), "")
 		}
+	}
+}
+
+// judgeRows writes the rows of the two judges for one deck: the F-26
+// bar and the plan rubric. The rejudge lane writes the same rows over the
+// decks of a stored run (D-789).
+func judgeRows(run *evalrun.Run, item string, r result) {
+	switch {
+	case r.judgeErr != nil:
+		run.Gate(item, "judge_error", 1, r.judgeErr.Error())
+	case r.judged != nil:
+		falseRule := 0.0
+		if r.judged.StatesAFalseRule() {
+			falseRule = 1
+		}
+		run.Gate(item, "false_rules", falseRule, "")
+		run.Info(item, "rules_claims", float64(len(r.judged.Claims)), "")
+	}
+	if r.plan != nil {
+		for _, f := range generate.PlanFields {
+			g := r.plan.Grade(f)
+			run.Info(item, "plan_"+f, g.Value(), g.Grade+": "+g.Why)
+		}
+		run.Info(item, "plan_score", r.plan.Score(), "")
+		run.Info(item, "plan_reasons_empty", float64(r.plan.EmptyReasons()), "")
+	} else if r.planErr != nil {
+		run.Info(item, "plan_judge_error", 1, r.planErr.Error())
 	}
 }
 

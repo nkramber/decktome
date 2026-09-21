@@ -215,7 +215,7 @@ func TestSelectPromptsRefusesAnEmptyMatch(t *testing.T) {
 // TestEmptySummaryIsAJudgeError covers F-26 on a deck with no summary.
 // The judge has nothing to read, so the deck has no verdict on that bar.
 func TestEmptySummaryIsAJudgeError(t *testing.T) {
-	j, err := judge(context.Background(), nil, "a deck", &mtgv1.Deck{}, nil)
+	j, err := judge(context.Background(), nil, "a deck", &mtgv1.Deck{}, nil, nil)
 	if err == nil || j != nil {
 		t.Fatalf("judge = %v, %v; want the empty-summary error", j, err)
 	}

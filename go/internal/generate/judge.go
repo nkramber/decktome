@@ -30,7 +30,14 @@ First, every statement in the paragraph that asserts a rule of the game. A rule 
 
 Second, for each such statement, whether it is true. Judge it against the real rules of Magic: The Gathering. Say "unknown" when you can not tell.
 
-Be strict about what counts as a rules claim and honest about truth. A summary with no rules claim is the expected result.`
+Be strict about what counts as a rules claim and honest about truth. A summary with no rules claim is the expected result.
+
+When the input holds the card list with the mana cost and the type line of each card from the card data, judge a claim about the cost, the color, or the type of a card against that list, and not against your memory of the card.`
+
+// SummaryJudgeVersion changes when the instructions or the input of the
+// summary judge change. Version 2 reads the card facts of the deck
+// (D-789). A change starts a new epoch of the false-rule rows.
+const SummaryJudgeVersion = 2
 
 const judgeSchema = `{
   "type": "object",
@@ -82,11 +89,18 @@ func (j Judgement) StatesAFalseRule() bool {
 }
 
 // JudgeSummary asks the judge role whether one summary states a rule of
-// the game. deck names the deck, for the judge's context.
-func JudgeSummary(ctx context.Context, c *llm.Client, deck, summary string, acc *llm.Accumulator) (*Judgement, error) {
+// the game. name names the deck, for the judge's context. A deck with its
+// card source adds the cost and the type of each card, because the judge
+// read a true cost as false from its memory of the card (D-789). A nil
+// deck sends the summary alone.
+func JudgeSummary(ctx context.Context, c *llm.Client, name, summary string, deck *mtgv1.Deck, cards rules.CardSource, acc *llm.Accumulator) (*Judgement, error) {
+	input := fmt.Sprintf("Deck: %s\n\nSummary:\n%s", name, summary)
+	if deck != nil && cards != nil {
+		input += "\n\n" + factsDeckText(deck, cards, nil)
+	}
 	res, err := c.Complete(ctx, llm.RoleJudge, llm.Request{
 		Instructions: judgeInstructions,
-		Input:        fmt.Sprintf("Deck: %s\n\nSummary:\n%s", deck, summary),
+		Input:        input,
 		SchemaName:   "summary_check",
 		Schema:       json.RawMessage(judgeSchema),
 	}, acc)
@@ -171,36 +185,83 @@ func JudgeBracket(ctx context.Context, c *llm.Client, deck *mtgv1.Deck, cards ru
 // line per card with its count and its job, when the deck names one. No
 // bracket, no summary, and no finding.
 func DeckText(deck *mtgv1.Deck, cards rules.CardSource) string {
-	return deckText(deck, cards, false)
+	return deckText(deck, cards, deckTextOpts{})
 }
 
 // bracketDeckText is DeckText with a mark on each Game Changer that the
 // card data flags, the commander included. The bracket judge counts those
-// marks and not a list it recalls (F-123, D-696). The tier and plan
-// judges read DeckText unmarked.
+// marks and not a list it recalls (F-123, D-696). The tier judge reads
+// DeckText unmarked.
 func bracketDeckText(deck *mtgv1.Deck, cards rules.CardSource) string {
-	return deckText(deck, cards, true)
+	return deckText(deck, cards, deckTextOpts{gameChangers: true})
 }
 
-func deckText(deck *mtgv1.Deck, cards rules.CardSource, markGameChangers bool) string {
+// factsDeckText is DeckText with the mana cost and the type line of each
+// card, and the color identity of the commander, from the card data. The
+// plan judge reads the colors, the curve, and the mana base from these
+// facts and not from its memory of the cards (F-39, D-787), and the
+// summary judge reads a claim about a card against them (D-789). A request that
+// names sets also marks each card in or outside them, because the judge
+// read reprints of the Hobbit Commander set as outside it (D-788).
+func factsDeckText(deck *mtgv1.Deck, cards rules.CardSource, setCodes []string) string {
+	return deckText(deck, cards, deckTextOpts{facts: true, sets: setCodes})
+}
+
+type deckTextOpts struct {
+	gameChangers bool
+	facts        bool
+	sets         []string
+}
+
+// setNote reads whether a card has a printing in the sets of a request.
+func (o deckTextOpts) setNote(c *mtgv1.Card) string {
+	for _, have := range c.GetSetCodes() {
+		for _, want := range o.sets {
+			if strings.EqualFold(have, want) {
+				return "in the sets"
+			}
+		}
+	}
+	return "outside the sets"
+}
+
+func deckText(deck *mtgv1.Deck, cards rules.CardSource, o deckTextOpts) string {
 	flagged := func(id string) bool {
-		if !markGameChangers {
+		if !o.gameChangers {
 			return false
 		}
 		c, ok := cards.ByOracleID(id)
 		return ok && c.GetGameChanger()
 	}
 	var s strings.Builder
+	var identity []mtgv1.Color
 	for _, id := range deck.GetCommanderOracleIds() {
 		c, ok := cards.ByOracleID(id)
 		if !ok {
 			continue
 		}
-		if flagged(id) {
-			fmt.Fprintf(&s, "Commander: %s (Game Changer)\n", c.GetName())
-			continue
+		identity = append(identity, c.GetColorIdentity()...)
+		name := c.GetName()
+		if o.facts {
+			name += cardFacts(c)
 		}
-		fmt.Fprintf(&s, "Commander: %s\n", c.GetName())
+		var notes []string
+		if flagged(id) {
+			notes = append(notes, "Game Changer")
+		}
+		if len(o.sets) > 0 {
+			notes = append(notes, o.setNote(c))
+		}
+		if len(notes) > 0 {
+			name += " (" + strings.Join(notes, ", ") + ")"
+		}
+		fmt.Fprintf(&s, "Commander: %s\n", name)
+	}
+	if o.facts && len(deck.GetCommanderOracleIds()) > 0 {
+		fmt.Fprintf(&s, "Color identity: %s\n", identityWord(identity))
+	}
+	if len(o.sets) > 0 {
+		fmt.Fprintf(&s, "Sets of the request: %s\n", strings.Join(o.sets, ", "))
 	}
 	s.WriteString("\nCards:\n")
 	for _, dc := range deck.GetCards() {
@@ -211,11 +272,67 @@ func deckText(deck *mtgv1.Deck, cards rules.CardSource, markGameChangers bool) s
 		if flagged(dc.GetOracleId()) {
 			notes = append(notes, "Game Changer")
 		}
+		name := dc.GetName()
+		if c, ok := cards.ByOracleID(dc.GetOracleId()); ok {
+			if o.facts {
+				name += cardFacts(c)
+			}
+			if len(o.sets) > 0 {
+				notes = append(notes, o.setNote(c))
+			}
+		}
 		if len(notes) == 0 {
-			fmt.Fprintf(&s, "%d %s\n", dc.GetCount(), dc.GetName())
+			fmt.Fprintf(&s, "%d %s\n", dc.GetCount(), name)
 			continue
 		}
-		fmt.Fprintf(&s, "%d %s (%s)\n", dc.GetCount(), dc.GetName(), strings.Join(notes, ", "))
+		fmt.Fprintf(&s, "%d %s (%s)\n", dc.GetCount(), name, strings.Join(notes, ", "))
+	}
+	return s.String()
+}
+
+// cardFacts writes the mana cost and the type line of a card, with a
+// leading bar: " | {1}{W}{B} | Legendary Creature". A card with no cost,
+// such as a land, writes the type line alone. A card with two faces and
+// no cost of its own writes the cost of each face.
+func cardFacts(c *mtgv1.Card) string {
+	cost := c.GetManaCost()
+	if cost == "" {
+		var faces []string
+		for _, f := range c.GetFaces() {
+			if f.GetManaCost() != "" {
+				faces = append(faces, f.GetManaCost())
+			}
+		}
+		cost = strings.Join(faces, " // ")
+	}
+	var parts []string
+	if cost != "" {
+		parts = append(parts, cost)
+	}
+	if t := c.GetTypeLine(); t != "" {
+		parts = append(parts, t)
+	}
+	if len(parts) == 0 {
+		return ""
+	}
+	return " | " + strings.Join(parts, " | ")
+}
+
+// identityWord writes a color identity in WUBRG letters, and the word
+// colorless for none.
+func identityWord(colors []mtgv1.Color) string {
+	letters := map[mtgv1.Color]string{
+		mtgv1.Color_COLOR_W: "W", mtgv1.Color_COLOR_U: "U", mtgv1.Color_COLOR_B: "B",
+		mtgv1.Color_COLOR_R: "R", mtgv1.Color_COLOR_G: "G",
+	}
+	var s strings.Builder
+	for _, col := range AllColors {
+		if hasColor(colors, col) {
+			s.WriteString(letters[col])
+		}
+	}
+	if s.Len() == 0 {
+		return "colorless"
 	}
 	return s.String()
 }
