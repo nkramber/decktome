@@ -8,9 +8,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-20f)
 
-**Pull request #NNN records the self-reload check of D-692, and it waits for the owner's merge.**
+**Pull request #197 records the self-reload check of D-692, and it waits for the owner's merge.**
 
-**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #NNN with `gh pr view NNN`. Then do next step 1.
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #197 with `gh pr view 197`. Then do next step 1.
 
 **The base.** `main` is `8eb5720`, from #196, which carried PR-60.
 
@@ -33,9 +33,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The measurement.** No paid target ran. The check calls no provider, and it moves no deck and no grade. Deck gate run 29 stays the newest whole deck gate run.
 
-**The checks.** PENDING
+**The checks.** `make verify` passed on this machine, exit 0. The four lint checks read 0 findings, and `make pr-check` read 0 contract errors. `node scripts/self-reload-check.mjs` passed, exit 0.
 
-**The review.** PENDING
+**The review.** The session asks `gitar-bot` after each push, and it answers each finding on this pull request.
 
 **What waits on the owner.**
 
