@@ -30,7 +30,7 @@ func TestJudgePlanReadsTheFourGrades(t *testing.T) {
 		"summary_honest": {"grade": "yes", "why": "plain"}
 	}`)
 	deck := &mtgv1.Deck{Summary: "a deck", Cards: []*mtgv1.DeckCard{{Name: "Sol Ring", Count: 1}}}
-	j, err := JudgePlan(context.Background(), c, "a lifegain deck", deck, source{}, nil)
+	j, err := JudgePlan(context.Background(), c, "a lifegain deck", deck, source{}, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,7 +60,7 @@ func TestJudgePlanRefusesAWordOutsideTheScale(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = JudgePlan(context.Background(), c, "a deck", &mtgv1.Deck{}, source{}, nil)
+	_, err = JudgePlan(context.Background(), c, "a deck", &mtgv1.Deck{}, source{}, nil, nil)
 	if err == nil || !strings.Contains(err.Error(), "judge plan") {
 		t.Errorf("err = %v, want a judge plan error", err)
 	}
@@ -124,7 +124,7 @@ func TestJudgePlanReadsTheCardFacts(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := JudgePlan(context.Background(), c, "a deck", deck, cards, nil); err != nil {
+	if _, err := JudgePlan(context.Background(), c, "a deck", deck, cards, nil, nil); err != nil {
 		t.Fatal(err)
 	}
 	in := sc.Calls[0].Input
@@ -150,10 +150,42 @@ func TestJudgePlanReadsTheCardFacts(t *testing.T) {
 	// A colorless commander reads the word, and a deck with no commander
 	// names no identity.
 	cards["o-grey"] = &mtgv1.Card{OracleId: "o-grey", Name: "A Colorless Leader", ManaCost: "{7}", TypeLine: "Legendary Artifact Creature"}
-	if got := planDeckText(&mtgv1.Deck{CommanderOracleIds: []string{"o-grey"}}, cards); !strings.Contains(got, "Color identity: colorless\n") {
+	if got := planDeckText(&mtgv1.Deck{CommanderOracleIds: []string{"o-grey"}}, cards, nil); !strings.Contains(got, "Color identity: colorless\n") {
 		t.Errorf("colorless commander:\n%s", got)
 	}
-	if got := planDeckText(&mtgv1.Deck{Cards: deck.GetCards()}, cards); strings.Contains(got, "Color identity") {
+	if got := planDeckText(&mtgv1.Deck{Cards: deck.GetCards()}, cards, nil); strings.Contains(got, "Color identity") {
 		t.Errorf("a deck with no commander names an identity:\n%s", got)
+	}
+}
+
+// TestPlanDeckTextMarksTheSets is D-788: a request that names sets marks
+// each card in or outside them from the card data, the commander included.
+// A reprint reads in the sets. The cards are test fixtures.
+func TestPlanDeckTextMarksTheSets(t *testing.T) {
+	cards := source{
+		"o-lead":    {OracleId: "o-lead", Name: "A Set Leader", SetCodes: []string{"hob"}},
+		"o-reprint": {OracleId: "o-reprint", Name: "An Old Reprint", SetCodes: []string{"5dn", "hoc"}},
+		"o-other":   {OracleId: "o-other", Name: "A Card From Elsewhere", SetCodes: []string{"m21"}},
+	}
+	deck := &mtgv1.Deck{
+		CommanderOracleIds: []string{"o-lead"},
+		Cards: []*mtgv1.DeckCard{
+			{OracleId: "o-reprint", Name: "An Old Reprint", Count: 1},
+			{OracleId: "o-other", Name: "A Card From Elsewhere", Count: 1},
+		},
+	}
+	got := planDeckText(deck, cards, []string{"hob", "hoc"})
+	for _, want := range []string{
+		"Commander: A Set Leader (in the sets)\n",
+		"Sets of the request: hob, hoc\n",
+		"1 An Old Reprint (in the sets)\n",
+		"1 A Card From Elsewhere (outside the sets)\n",
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("deck text lacks %q:\n%s", want, got)
+		}
+	}
+	if plain := planDeckText(deck, cards, nil); strings.Contains(plain, "sets") {
+		t.Errorf("a request with no sets marks them:\n%s", plain)
 	}
 }

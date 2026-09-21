@@ -185,14 +185,29 @@ func bracketDeckText(deck *mtgv1.Deck, cards rules.CardSource) string {
 // planDeckText is DeckText with the mana cost and the type line of each
 // card, and the color identity of the commander, from the card data. The
 // plan judge reads the colors, the curve, and the mana base from these
-// facts and not from its memory of the cards (F-39, D-787).
-func planDeckText(deck *mtgv1.Deck, cards rules.CardSource) string {
-	return deckText(deck, cards, deckTextOpts{facts: true})
+// facts and not from its memory of the cards (F-39, D-787). A request that
+// names sets also marks each card in or outside them, because the judge
+// read reprints of the Hobbit Commander set as outside it (D-788).
+func planDeckText(deck *mtgv1.Deck, cards rules.CardSource, setCodes []string) string {
+	return deckText(deck, cards, deckTextOpts{facts: true, sets: setCodes})
 }
 
 type deckTextOpts struct {
 	gameChangers bool
 	facts        bool
+	sets         []string
+}
+
+// setNote reads whether a card has a printing in the sets of a request.
+func (o deckTextOpts) setNote(c *mtgv1.Card) string {
+	for _, have := range c.GetSetCodes() {
+		for _, want := range o.sets {
+			if strings.EqualFold(have, want) {
+				return "in the sets"
+			}
+		}
+	}
+	return "outside the sets"
 }
 
 func deckText(deck *mtgv1.Deck, cards rules.CardSource, o deckTextOpts) string {
@@ -215,14 +230,23 @@ func deckText(deck *mtgv1.Deck, cards rules.CardSource, o deckTextOpts) string {
 		if o.facts {
 			name += cardFacts(c)
 		}
+		var notes []string
 		if flagged(id) {
-			fmt.Fprintf(&s, "Commander: %s (Game Changer)\n", name)
-			continue
+			notes = append(notes, "Game Changer")
+		}
+		if len(o.sets) > 0 {
+			notes = append(notes, o.setNote(c))
+		}
+		if len(notes) > 0 {
+			name += " (" + strings.Join(notes, ", ") + ")"
 		}
 		fmt.Fprintf(&s, "Commander: %s\n", name)
 	}
 	if o.facts && len(deck.GetCommanderOracleIds()) > 0 {
 		fmt.Fprintf(&s, "Color identity: %s\n", identityWord(identity))
+	}
+	if len(o.sets) > 0 {
+		fmt.Fprintf(&s, "Sets of the request: %s\n", strings.Join(o.sets, ", "))
 	}
 	s.WriteString("\nCards:\n")
 	for _, dc := range deck.GetCards() {
@@ -234,9 +258,12 @@ func deckText(deck *mtgv1.Deck, cards rules.CardSource, o deckTextOpts) string {
 			notes = append(notes, "Game Changer")
 		}
 		name := dc.GetName()
-		if o.facts {
-			if c, ok := cards.ByOracleID(dc.GetOracleId()); ok {
+		if c, ok := cards.ByOracleID(dc.GetOracleId()); ok {
+			if o.facts {
 				name += cardFacts(c)
+			}
+			if len(o.sets) > 0 {
+				notes = append(notes, o.setNote(c))
 			}
 		}
 		if len(notes) == 0 {

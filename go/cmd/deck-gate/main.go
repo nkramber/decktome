@@ -262,7 +262,7 @@ func run() error {
 			if r.judgeErr != nil {
 				fmt.Fprintf(os.Stderr, "  judge %d failed: %v\n", p.ID, r.judgeErr)
 			}
-			r.plan, r.planErr = generate.JudgePlan(context.Background(), client, p.Plan, r.deck, idx, acc)
+			r.plan, r.planErr = generate.JudgePlan(context.Background(), client, p.Plan, r.deck, idx, r.setCodes, acc)
 			if r.planErr != nil {
 				fmt.Fprintf(os.Stderr, "  plan judge %d failed: %v\n", p.ID, r.planErr)
 			}

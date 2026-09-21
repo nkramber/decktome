@@ -19,7 +19,7 @@ import (
 
 // PlanRubricVersion changes when a field or its words change. A change
 // starts a new epoch of the plan rows.
-const PlanRubricVersion = 3
+const PlanRubricVersion = 4
 
 const planJudgeInstructions = `You read one deck a deck builder made for a person, with the request the person wrote and the summary the builder wrote for them. You grade the deck on four fields. Each field takes one of three words: no, partly, or yes.
 
@@ -30,7 +30,7 @@ const planJudgeInstructions = `You read one deck a deck builder made for a perso
 
 Give one sentence of reason per field. Judge the deck as it is. Do not grade the power of the deck against tournament lists: that is the job of another judge. Do not grade the format legality, the color identity, or the card counts: code checked them against the card data of the run date before you read the deck, and your knowledge of the card pool can be older than that data.
 
-Each card line gives the mana cost and the type line from the card data, and a Commander deck names the color identity of its commander. Read the colors, the costs, and the card types from those facts, and not from your memory of the cards.`
+Each card line gives the mana cost and the type line from the card data, and a Commander deck names the color identity of its commander. When the request names sets, a line names their codes, and each card line reads in the sets or outside the sets. Read the colors, the costs, the card types, and the sets from those facts, and not from your memory of the cards.`
 
 // The reason comes before the grade in the schema. With the grade first
 // the judge wrote "placeholder" as the reason of the last field in 10 of
@@ -123,11 +123,12 @@ func (j PlanJudgement) Score() float64 {
 
 // JudgePlan asks the judge role to grade a deck on the plan rubric. The
 // judge sees the request, the summary, and the card list with the cost
-// and the type of each card.
-func JudgePlan(ctx context.Context, c *llm.Client, request string, deck *mtgv1.Deck, cards rules.CardSource, acc *llm.Accumulator) (*PlanJudgement, error) {
+// and the type of each card. setCodes are the sets the request names, and
+// they are empty for a request that names none.
+func JudgePlan(ctx context.Context, c *llm.Client, request string, deck *mtgv1.Deck, cards rules.CardSource, setCodes []string, acc *llm.Accumulator) (*PlanJudgement, error) {
 	res, err := c.Complete(ctx, llm.RoleJudge, llm.Request{
 		Instructions: planJudgeInstructions,
-		Input:        "Request: " + request + "\n\nFormat: " + FormatWord(deck.GetFormat().GetId()) + "\n\nSummary:\n" + deck.GetSummary() + "\n\n" + planDeckText(deck, cards),
+		Input:        "Request: " + request + "\n\nFormat: " + FormatWord(deck.GetFormat().GetId()) + "\n\nSummary:\n" + deck.GetSummary() + "\n\n" + planDeckText(deck, cards, setCodes),
 		SchemaName:   "plan_check",
 		Schema:       json.RawMessage(planJudgeSchema),
 	}, acc)
