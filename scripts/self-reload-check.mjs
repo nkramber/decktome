@@ -16,7 +16,7 @@
 // It calls no provider and costs nothing.
 
 import { execFileSync, execSync } from "node:child_process";
-import { createReadStream, existsSync, rmSync, statSync } from "node:fs";
+import { createReadStream, existsSync, readFileSync, rmSync, statSync } from "node:fs";
 import { createServer } from "node:http";
 import { createRequire } from "node:module";
 import { extname, join, resolve } from "node:path";
@@ -44,8 +44,10 @@ const run = (cmd, cwd) => execSync(cmd, { cwd, stdio: "inherit" });
 // The entry chunk of a build carries a content hash, so its name names
 // the release.
 function entryChunk(dir) {
-  const html = execFileSync("grep", ["-o", "assets/index-[A-Za-z0-9_-]*\\.js", join(dir, "index.html")]);
-  return "/" + html.toString().trim().split("\n")[0];
+  const html = readFileSync(join(dir, "index.html"), "utf8");
+  const match = html.match(/assets\/index-[A-Za-z0-9_-]+\.js/);
+  if (!match) throw new Error(`no entry chunk in ${dir}/index.html`);
+  return "/" + match[0];
 }
 
 function buildOldRelease(ref) {
@@ -53,7 +55,7 @@ function buildOldRelease(ref) {
   const tree = join(WORK, sha);
   rmSync(tree, { recursive: true, force: true });
   git("worktree", "prune");
-  run(`git worktree add --detach ${tree} ${sha}`, REPO);
+  git("worktree", "add", "--detach", tree, sha);
   run("pnpm install --offline --frozen-lockfile", join(tree, "web"));
   run("pnpm --filter @mtg/web build", join(tree, "web"));
   return { dist: join(tree, "web/apps/web/dist"), tree, sha };
