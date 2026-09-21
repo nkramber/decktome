@@ -6,42 +6,51 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-20f)
+## RESUME HERE (2026-09-20g)
 
-**Pull request #197 records the self-reload check of D-692, and it waits for the owner's merge.**
+**A pull request on `d778-api-deck-build` carries PR-61, the API-only deck build of D-778. It waits for the Gitar review and the owner's merge.**
 
-**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #197 with `gh pr view 197`. Then do next step 1.
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request. Then do next step 1.
 
-**The base.** `main` is `8eb5720`, from #196, which carried PR-60.
+**The base.** `main` is `cb6bb2b`, from #197, which carried the self-reload check.
 
-**The live check of #196 passed, in both halves.**
+**The live run passed. A session built a deck on the deployed app with no GUI.**
 
-- Cloud Build `32676ba4` built `8eb5720`, and it finished at 22:44:58 UTC. The Hosting release `60c80b8c4ad2a689` went live at 22:44:09 UTC. The release before it was `b786ceb7f89bc4fc`, from #158.
-- The live `index.html` names a new chunk, `assets/index-Fi2SZrwg.js`. `deck-view-BQeBlu0i.js` holds `data-testid="power-counts"`, and `use-cards-DNxWsKmD.js` holds every label of the counts.
-- The Cloud Run revision did not move. That is correct, because `deploy:api` of `.github/workflows/deploy.yml` runs only when a Go file changes.
-- The self-reload of D-692 passed. An installed app of the release of #158 took one stale load, and then it reloaded itself with no command.
-- The check read no built deck. The sandbox refuses every read under `users/<uid>` but one session by id (D-638). D-778 answers that, and it is next step 1.
+- The sign-in used `accounts:signInWithPassword` of Identity Toolkit, and no browser. The project enables that provider alone.
+- The check account of D-779 signed in, uid `n60IL9CX0NOCj3JbuI7ZrtlrgXf2`. No counter of the owner moved (D-638).
+- The import read 2,471 rows and 4,316 cards. It resolved 2,547 rows, and one row did not resolve.
+- The agent asked four questions over two turns, and the command answered each one.
+- The deck is `4aiklNKrKHGYqyaMhN4H`, Commander, bracket 1, with 1 commander and 99 main cards. It took 100 seconds.
+- `GetDeck` read the deck back, and `ListDecks` found it under session `4mmIdVLGjGXIbbPGqtE7`. That read-back is the half that the check of #196 never reached.
+
+**The first attempt failed, and it found two defects. Both are fixed.**
+
+- A cold Cloud Run instance answered the import with "card database not loaded yet". The command now waits on the public `HealthService.Check` until the API holds a card snapshot.
+- **F-160: a failed paid target reports success on this machine.** `Makefile` sets `.SHELLFLAGS`, and GNU Make added that variable in 3.82. This machine runs GNU Make 3.81, which ignores it. So every recipe that ends with `| tee` reports the status of `tee`. `make api-build` sets `set -o pipefail` in its own recipe. Every other target keeps the fault, and a one-concern pull request fixes the rest.
 
 **What this pull request holds.**
 
-- `scripts/self-reload-check.mjs` builds two releases, serves the old one, swaps the server, and reloads the page one time. It exits 0 on a self-reload.
-- `make self-reload-check` runs it. The target is free, and `docs/reference/paid-targets.md` names it.
-- `docs/reference/self-reload-2026-09-20.md` holds the deploy facts, the method, the result, and the three limits of the check.
-- F-122 and PR-25 of `docs/design-roadmap.md` read the proof. Correction pass 202 records the deploy and the check.
-- `docs/decisions.md` gains D-778, the owner decision of 2026-09-20.
-- **No Go file, no protobuf file, and no file of `web/apps/web/src` changes.**
+- `go/cmd/api-build` is the first command of this repo that calls the deployed API as a client. `go/cmd/chat-probe` serves itself in memory.
+- `make api-build` runs it. The target is a paid one, and the paid list grows to thirteen (D-781).
+- Twenty-one tests drive the whole flow against a test server, for nothing. No test reaches the deployed project.
+- `docs/reference/api-deck-build-2026-09-20.md` holds the method, the result, and the five limits.
+- PR-61 and F-160 of `docs/design-roadmap.md` read the proof. Correction pass 203 records the item.
+- `docs/decisions.md` gains D-779 to D-781.
+- **No file of `web/apps/web/src` changes, and no protobuf file changes.**
 
-**The measurement.** No paid target ran. The check calls no provider, and it moves no deck and no grade. Deck gate run 29 stays the newest whole deck gate run.
+**The measurement.** One live run of `make api-build` spent about $0.15 on `decktome-prod`. No other paid target ran. Deck gate run 29 stays the newest whole deck gate run.
 
-**The checks.** `make verify` passed on this machine, exit 0. The four lint checks read 0 findings, and `make pr-check` read 0 contract errors. `node scripts/self-reload-check.mjs` passed, exit 0.
+**The checks.** `make verify` passed on this machine. The four lint checks read 0 findings.
 
-**The review.** `gitar-bot` approved `51cc41d`, and it reads 0 findings and no review thread. The dashboard comment holds an edit time of 00:03:53 UTC, later than the push of 00:01:46 UTC. Both times are of 2026-09-21, so the review is current on the head. Every job of the verify workflow and `pr-contract` passed on `51cc41d`. The job `verify:changes` skipped, because it runs on a manual start alone. CAUTION: the Gitar note of 2026-09-21 reads two days, so the trial ends about 2026-09-23.
+**The review.** The pull request waits for `gitar-bot`.
 
 **What waits on the owner.**
 
-- The merge of this pull request, after the review of `gitar-bot`.
+- The Gitar review, then the merge of this pull request.
+- **F-160, the `tee` fault of every other paid target.** It needs its own pull request.
+- The default answer plan builds a bracket 1 deck. `API_BUILD_ANSWERS="power=#3"` builds a bracket 3 deck, and the owner can make that the default.
 - The deck id of the bracket 5 deck of session `sXYg6oAi5hzOPbkbk6gG`. The read of its power counts waits for that id.
-- Five sessions on the new files, before a decision on the checkpoint rule (next step 2, D-750).
+- Five sessions on the new files, before a decision on the checkpoint rule (next step 3, D-750).
 - A deployed session with a theme that matches no card, such as "anime" (next step 4).
 - A look at the first commander question after a load of the app (next step 5).
 - OQ-67, OQ-77, and OQ-80.
@@ -68,7 +77,7 @@ Twenty things a fresh session gets wrong without this file.
 - A singular creature-type word keeps the generic rule, and its plural reads the type row (D-731). So "zombie" and "zombies" read two different lists, and F-144 records why.
 - A stored deck records the size of its shortlist and no card of it. So a card that never reached the shortlist and a card that the model dropped look the same. Replay the shortlist for free before a prompt fix (M-17). `.local/m17/zz_scratch_m17_test.go` holds the method, and `list.Theme` names the theme words that matched no card.
 - `make bracket-gate` runs its tool in `go/`, through `go -C go`. A relative `-rejudge` path then points inside `go/`, so pass an absolute path.
-- Twelve targets and two loop scripts spend money: `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `scripts/autotune.sh`, and `scripts/feedback-loop.sh`. Ask the owner before each run. `docs/reference/paid-targets.md` holds the cost and the guard of each. `make autotune`, `make feedback-loop`, `make feedback-loop-dry`, `make feedback-triage-dry`, `eval sweep -dry`, and `go run ./cmd/bracket-gate -sweep` are free.
+- Thirteen targets and two loop scripts spend money: `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `make api-build`, `scripts/autotune.sh`, and `scripts/feedback-loop.sh`. Ask the owner before each run. `docs/reference/paid-targets.md` holds the cost and the guard of each. `make autotune`, `make feedback-loop`, `make feedback-loop-dry`, `make feedback-triage-dry`, `eval sweep -dry`, and `go run ./cmd/bracket-gate -sweep` are free.
 - A rerun writes to a new file. Every `*_OUT` variable refuses a document that holds a result (D-65).
 - A gate document names the commit of `HEAD`, and never the tree. Deck gate run 29 ran over uncommitted work, so its header names the parent commit `5fd8085`. Commit the change before a paid run.
 - A gate run takes about 20 minutes and an eval about 13. A foreground command stops at 10 minutes, so run both in the background.
@@ -109,7 +118,7 @@ Twenty things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **Build a deck over the API alone, with no GUI** (D-778). The owner named this the next item on 2026-09-20. A session must run the whole flow: the collection, the prompt, each question, and the built deck. The live check of #196 read no built deck, because the sandbox refuses the deck path of a user (D-638).
+1. **Fix the `tee` fault of every other paid target** (F-160). GNU Make 3.81 on this machine ignores `.SHELLFLAGS`. So every target that pipes to `tee` reports the status of `tee`. A failed paid run then reads as a pass. `make deck-gate` and `make questions-gate` are two of them. `make api-build` sets `set -o pipefail` itself, so PR-61 is correct. The rest needs one pull request. **Build a deck over the API alone** (D-778) ✅ done by PR-61.
 2. **Ask the owner for the item after it** (D-746). The sequence of the roadmap ends at step 51. PR-60 closed the last named item, the power counts of D-774. OQ-85 waits for a shape score of the shortlist (D-773). **F-157** records the thin owned pool and the repair turn of every build. It carries no open question. The power pass after the build still waits (D-704). F-137 stays a record (D-718). **F-144** ✅ closed with PR-58 (D-769), and **F-158** ✅ closed with it. **F-159** ✅ closed with PR-59 (D-771).
 3. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It waits, because the ten sessions of the audit ran before #184 and before D-749.
 4. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git.
@@ -132,6 +141,10 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 ## The three most recent sessions
 
+### 2026-09-20g: the API-only deck build of PR-61
+
+**The owner chose a dedicated check account, and the run keeps what it makes** (D-779, D-780). D-778 asked for a deck build over the API alone, because the live check of #196 read no built deck. The sandbox refuses every read under `users/<uid>` but one session by id, and no session opens a browser. The deployed project enables the email and password provider alone, so `accounts:signInWithPassword` gives a command an id token with no browser. The counters of D-638 count a creation and never lower. So a run under the account of the owner moves a number that no delete corrects. A dedicated account answers that. The first live attempt failed twice over, and each failure was real. A cold Cloud Run instance held no card snapshot, and the target reported success on a failed run. GNU Make 3.81 ignores `.SHELLFLAGS`, which F-160 records. The second run built deck `4aiklNKrKHGYqyaMhN4H` in 100 seconds, and `GetDeck` read it back.
+
 ### 2026-09-20f: the self-reload check of D-692
 
 **The live check of #196 passed in both halves, and the owner named the next item** (D-778). The Hosting release `60c80b8c4ad2a689` went live at 22:44:09 UTC, and the live `index.html` names a new chunk. The deck page chunk holds `data-testid="power-counts"`, and the stats chunk holds every label. The Hosting service serves the current release alone, so the assets of the release of #158 left the site at that minute. The check therefore built both releases on this machine, served the old one, and swapped the server to the new one. The installed app took one stale load, which is F-122, and then it reloaded itself with no command. The check read no built deck, because the sandbox refuses the deck path of a user (D-638). The owner chose an API path that builds a deck with no GUI, and it is next step 1.
@@ -139,10 +152,6 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 ### 2026-09-20e: the power counts of PR-60
 
 **The owner chose the cap beside the floor, the plan words for the finishers, and the deck page alone** (D-775 to D-777). D-774 asked for the floor counts of the bracket. A floor above zero exists at bracket 4 and bracket 5 alone. So a panel of floors alone shows no count to the reader of a bracket 2 or a bracket 3 deck. The caps of the lower brackets join the floors. The finisher floor holds at every bracket, and the bracket system counts no finisher. So that row names the deck plan (D-743). Every number was already on the wire: `ProfileFeature` carries the value, the floor, and the cap. No file of the web app read `deck.profile`. So the change is one helper and one paragraph of the deck header. The session ran no paid target.
-
-### 2026-09-20d: the commander in the prompt of PR-59
-
-**The owner chose the prompt text, no evasion discount, no class cap, and the floor counts** (D-771 to D-774). The review of the Gríma deck asked whether the build reads the payoff shape of the commander. It does not. The build only excludes the commander from the 99 and from the pair offer, and the prompt named the card and stopped. So the model had to recall Gríma from its training data, and Gríma can not be blocked and rewards each hit one time. The prompt now writes the whole card. A free replay refuted the size of OQ-84: three cards of a 201-card shortlist grant evasion Gríma already holds, and each carries a second mode. So that question closes with no code. OQ-85 waits for a shape score, and OQ-86 takes its own pull request. F-159 closes. The session ran no paid target.
 
 ## The archive
 

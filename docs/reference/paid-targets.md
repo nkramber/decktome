@@ -4,7 +4,7 @@ This file holds the cost, the flags, and the guards of each `make` target and lo
 
 ## The paid targets
 
-Twelve targets and two loop scripts spend money: `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `scripts/autotune.sh`, and `scripts/feedback-loop.sh`. Ask the owner before every run.
+Thirteen targets and two loop scripts spend money: `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `make api-build`, `scripts/autotune.sh`, and `scripts/feedback-loop.sh`. Ask the owner before every run.
 
 ## Each target
 
@@ -25,6 +25,10 @@ Five more targets spend money, and each has an overwrite guard and an env guard.
 `DECK_GATE_ARGS` passes flags to `make deck-gate`. `DECK_GATE_ARGS="-only 19,20,21,22,23,24"` runs the six set prompts of PR-17B alone, for about $0.35. `DECK_GATE_ARGS="-only 25"` runs the precon exclusion prompt of PR-24 alone, for about $0.13. `GATE_ARGS` passes flags to `make questions-gate`, and `GATE_ARGS="-only 109"` runs the group set probe of D-525 alone. Runs 36 and 37 cost about $0.001 each and took about 10 seconds. A partial run reads its item bars alone and never stands as the gate (D-526).
 
 `make quality-judge` asks the judge role for the tier of every graded deck of a deck gate document (PR-14B). It costs a few cents a deck, and it has the guard `QUALITY_JUDGE=1` and a verdict check on `QUALITY_JUDGE_OUT`. Ask the owner before every run.
+
+`make api-build` builds one deck over the deployed API, with no browser and no GUI (D-778). It signs in with an email and a password, and it imports a ManaBox CSV. It then answers every question of the agent, and it reads the built deck back out of storage. It costs about $0.10 to $0.20, because the deployed API calls the real providers.
+
+The guards are `API_BUILD=1` and a check on `API_BUILD_OUT`. `API_BUILD_EMAIL` and `API_BUILD_PASSWORD` name the check account of D-779, and `.env` holds both. The run keeps the deck, the chat, and the collection. `API_BUILD_ARGS=-cleanup` deletes all three (D-780). `API_BUILD_ANSWERS="power=#3"` asks for a bracket 3 deck, and an empty plan builds a bracket 1 deck. `docs/reference/api-deck-build-2026-09-20.md` holds the method, the result, and the limits.
 
 `make test-smoke` runs the live LLM smoke test and reads the keys from `.env`. It spends a few cents. The list at the top of this file names every paid target. `go run ./cmd/eval sweep -cap <USD>` drives five of them in the order of the eval list under a cap, and it needs `EVAL_SWEEP=1` (PR-15). `-dry` prints the plan for nothing, and the estimate of a step reads its last run file. Since PR-15 the deck gate spends one more judge call a deck, and run 16 cost $3.79 for 25 prompts.
 

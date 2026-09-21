@@ -46,6 +46,10 @@ The records run newest first. The oldest narratives sit in
 - A look at the first commander question after a load of the app (next step 4).
 - OQ-67 and OQ-77.
 
+### 2026-09-20d: the commander in the prompt of PR-59
+
+**The owner chose the prompt text, no evasion discount, no class cap, and the floor counts** (D-771 to D-774). The review of the Gríma deck asked whether the build reads the payoff shape of the commander. It does not. The build only excludes the commander from the 99 and from the pair offer, and the prompt named the card and stopped. So the model had to recall Gríma from its training data, and Gríma can not be blocked and rewards each hit one time. The prompt now writes the whole card. A free replay refuted the size of OQ-84: three cards of a 201-card shortlist grant evasion Gríma already holds, and each carries a second mode. So that question closes with no code. OQ-85 waits for a shape score, and OQ-86 takes its own pull request. F-159 closes. The session ran no paid target.
+
 ### 2026-09-20c: the type-name signal of PR-58
 
 **The owner chose the plain needle and the word boundary, and no paid run** (D-769, D-770). A type row read the subtype and a few payoff phrases, and it read no card that only names the type. Army of the Damned makes thirteen Zombie tokens, and the zombies row read it as a card of no theme. The typal block gives each type row and each generic type word the type word as a needle now. The needle reads a word boundary, because the substring "cat" reads 165 Commander-legal cards and the word reads 55. So a singular type word drops its substring needle, and "zombie" and "zombies" read one shortlist at last. A free replay of five shortlists reads a swap of 84 cards, and no card that punishes the type entered. F-144 closes, and F-158 closes with it: `make themes-check` never ran two snapshot tests of PR-57. The session ran no paid target.

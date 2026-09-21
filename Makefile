@@ -11,7 +11,7 @@ GO := go -C go
 BUF := .bin/buf
 PNPM := pnpm --dir web
 
-.PHONY: feedback-loop feedback-loop-dry feedback-triage feedback-triage-dry smoke self-reload-check allow disallow manapass-check deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate bracket-calibrate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check gcs-check themes-check ste-check context-budget help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks pr-check lifecycle-check verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
+.PHONY: feedback-loop feedback-loop-dry feedback-triage feedback-triage-dry smoke self-reload-check api-build allow disallow manapass-check deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate bracket-calibrate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check gcs-check themes-check ste-check context-budget help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks pr-check lifecycle-check verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-14s %s\n", $$1, $$2}'
@@ -207,6 +207,10 @@ SUMMARY_JUDGE_IN ?= $(DECK_GATE_OUT)
 SUMMARY_JUDGE_OUT ?= .local/probes/summary-judge.txt
 # CHAT_PROBE_MESSAGES are the user's turns, separated by |.
 CHAT_PROBE_MESSAGES ?= Build me a lifegain Commander deck from any cards.|Karlov of the Ghost Council. Bracket 3, white and black, and no budget.
+API_BUILD_OUT ?= .local/probes/api-build.txt
+API_BUILD_PROMPT ?= Build me a lifegain Commander deck from the cards I own.
+API_BUILD_ANSWERS ?=
+API_BUILD_ARGS ?=
 GENERATE_PROBE_THEME ?= lifegain
 GENERATE_PROBE_COMMANDER ?= Karlov of the Ghost Council
 
@@ -301,6 +305,17 @@ chat-probe: ## Drive the real Chat RPC to a deck. CAUTION: calls the real provid
 		CHAT_PROBE=1 CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall \
 		$(GO) run ./cmd/chat-probe -messages "$(CHAT_PROBE_MESSAGES)" | tee $(CHAT_PROBE_OUT)
 	@echo "wrote $(CHAT_PROBE_OUT)"
+
+api-build: ## Build one deck over the deployed API, with no GUI (D-778). CAUTION: the deployed API calls the real providers and costs money
+	@[ -f .env ] || { echo "api-build: .env is absent. It holds API_BUILD_EMAIL and API_BUILD_PASSWORD."; exit 1; }
+	@test ! -f $(API_BUILD_OUT) || { echo "$(API_BUILD_OUT) exists. Set API_BUILD_OUT to a new file."; exit 1; }
+	@mkdir -p $(dir $(API_BUILD_OUT))
+	@set -o pipefail; set -a && . ./.env && set +a && \
+		API_BUILD=1 $(GO) run ./cmd/api-build \
+		-collection $(abspath go/internal/collections/testdata/manabox_collection.csv) \
+		-prompt "$(API_BUILD_PROMPT)" -answers "$(API_BUILD_ANSWERS)" $(API_BUILD_ARGS) \
+		2>&1 | tee $(API_BUILD_OUT)
+	@echo "wrote $(API_BUILD_OUT)"
 
 generate-probe: ## Build one deck with the real generate role. CAUTION: calls a real provider and costs money
 	@[ -f .env ] || { echo "generate-probe: .env is absent."; exit 1; }
