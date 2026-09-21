@@ -6,38 +6,34 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-20h)
+## RESUME HERE (2026-09-20i)
 
-**Pull request #199 carries the F-160 fix. A failed paid target now fails its make target. It waits for the owner's merge.**
+**Pull request #PRNUM corrects the finding register. Twelve 🔧 rows named work that had merged. It waits for the owner's merge.**
 
-**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view 199`. Then do next step 1.
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view PRNUM`. Then do next step 1.
 
-**The base.** `main` is `98f0527`, from #198, which carried the API-only deck build of PR-61.
+**The base.** `main` is `0d17193`, from #199, which carried the F-160 fix.
+
+**Why this pull request exists.** The owner picked F-36 as the item after F-160. The code showed that #68 fixed F-36 on 2026-09-05 (D-535), and the row still read open. So the owner picked a sweep of the register (D-783).
 
 **What this pull request holds.**
 
-- Each recipe line of `Makefile` that pipes sets `set -o pipefail` itself now. GNU Make 3.82 added `.SHELLFLAGS`, and GNU Make 3.81 of this Mac ignores it.
-- Three paid targets held the fault: `make chat-probe`, `make generate-probe`, and `make summary-judge`. The free target `make cover` held it too.
-- `make pipefail-check` holds the rule. `make lint` and the `verify:shell` job of the verify workflow both run it, for nothing.
-- The check writes a fixture makefile and proves the rule against the make of the machine. So each pull request proves it on GNU Make 4 of the runner too.
-- `docs/tools/pipefail_check.py` and its 16 tests are new, and `make lifecycle-check` runs the tests.
-- `docs/reference/f160-make-pipefail-2026-09-20.md` holds each exit code. D-782 records the rule, and guardrail 19 carries it.
-- **No Go file, no protobuf file, and no file of `web/` changes.**
-
-**The proof.** Each of the three paid targets ran with `GO=false`, so the command before the `tee` failed at once. Each target exited 2 and printed `Error 1`. Before the fix each one exited 0. No run called a provider, and no run cost money.
-
-**The correction.** The F-160 entry named `make deck-gate` and `make questions-gate` as two targets with the fault. Each of them writes its document with `> $(OUT)` and pipes to nothing, so each one always failed correctly. The roadmap entry, D-782, and the reference document record the refutation.
+- F-28, F-29, F-30, F-36, F-77, F-78, F-139, F-146, F-147, and F-160 read ✅, each with its merge number and date.
+- F-53 and F-94 read 🅿. Their items closed or parked, and the fault of each stays.
+- F-33, F-49, and F-126 read open in part. F-48 names a later document that holds the escape.
+- The heading of PR-52 reads its merge as #181. Correction pass 205 and D-783 record the sweep.
+- **No code file changes.** Six rows stay 🔧: F-33, F-37, F-39, F-48, F-49, and F-126.
 
 **The measurement.** No paid target ran in this session. Deck gate run 29 stays the newest whole run.
 
-**The checks.** `make verify` passed on this machine, exit 0. `make ste-check` and `make ref-check` read 0 findings, and `make lifecycle-check` ran 83 tests. `make pipefail-check` read 5 guarded pipelines and 1 exempt recipe. `make pr-check` read 12 changed files and 0 contract errors. Every job of the verify workflow passed on #199, and the `verify:shell` job read GNU Make 4.3 of the runner.
+**The checks.** CHECKS
 
-**The review.** `gitar-bot` reviewed `75792c6` and read "No issues found", with no review thread. Its dashboard edit of 02:13:13 UTC is later than the push of 02:12:47 UTC, both of 2026-09-21, so the review is current. CAUTION: the Gitar trial ends about 2026-09-23.
+**The review.** REVIEW
 
 **What waits on the owner.**
 
 - The Gitar review, then the merge of this pull request.
-- The item after F-160 (next step 1). The sequence of the roadmap ends at step 51.
+- The item after the sweep (next step 1). The sequence of the roadmap ends at step 51.
 - The deck id of the bracket 5 deck of session `sXYg6oAi5hzOPbkbk6gG`. The read of its power counts waits for that id.
 - Five sessions on the new files, before a decision on the checkpoint rule (next step 3, D-750).
 - A deployed session with a theme that matches no card, such as "anime" (next step 4).
@@ -107,8 +103,8 @@ Twenty things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **Ask the owner for the item after F-160** (D-746). The sequence of the roadmap ends at step 51, and PR-60 closed the last named item. Next step 2 holds each open finding and each open question of the roadmap. **Fix the `tee` fault of every other paid target** (F-160) ✅ done by this pull request. **Build a deck over the API alone** (D-778) ✅ done by PR-61.
-2. **Ask the owner for the item after it** (D-746). The sequence of the roadmap ends at step 51. PR-60 closed the last named item, the power counts of D-774. OQ-85 waits for a shape score of the shortlist (D-773). **F-157** records the thin owned pool and the repair turn of every build. It carries no open question. The power pass after the build still waits (D-704). F-137 stays a record (D-718). **F-144** ✅ closed with PR-58 (D-769), and **F-158** ✅ closed with it. **F-159** ✅ closed with PR-59 (D-771).
+1. **Ask the owner for the item after the sweep** (D-746). The sequence of the roadmap ends at step 51, and next step 2 holds each open item. **Sweep the finding register** (D-783) ✅ done by this pull request. **Fix the `tee` fault of every paid target** (F-160) ✅ done by #199.
+2. **The open items of the roadmap.** Six register rows read 🔧: F-33, F-37, F-39, F-48, F-49, and F-126. OQ-85 waits for a shape score of the shortlist (D-773). **F-157** records the thin owned pool and the repair turn of every build, with no open question. The power pass after the build still waits (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783).
 3. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It waits, because the ten sessions of the audit ran before #184 and before D-749.
 4. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git.
 5. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide". Session `z1hshyY6Npig1FN2NuV7` named its commander, so it showed no such row.
@@ -130,6 +126,10 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 ## The three most recent sessions
 
+### 2026-09-20i: the sweep of the finding register
+
+**The owner picked F-36, and the code showed that F-36 was fixed** (D-783). `applyTheme` refuses a superlative phrase in place of a named theme, and a test of `go/internal/questions/rows_test.go` holds the rule. #68 merged it on 2026-09-05 (D-535). The register row still read open, and the rows of F-77 and F-78 read "planned" after #102. The owner picked a sweep of the register over a wider theme guard. A subagent read each 🔧 row against git, the decisions, and the code. The session checked each merge number on `main` and each cited decision.
+
 ### 2026-09-20h: the pipefail rule of F-160
 
 **A failed paid target reported success on this Mac, and each recipe now sets pipefail itself** (D-782). `Makefile` set `.SHELLFLAGS := -o pipefail -c`, and GNU Make 3.82 added that variable. This Mac runs GNU Make 3.81, which ignores it. So a recipe that ends with `| tee` read the exit code of `tee`, and `tee` succeeds after a command that fails. A scratch makefile with the two `SHELL` lines of this repository proves both halves. A bare pipeline exits 0, and a guarded pipeline exits 2. Three paid targets and one free target held the fault, and `make api-build` held its own guard from PR-61. The entry of F-160 also named two gate targets, and each of them writes its document with a redirect and always failed correctly. `make pipefail-check` holds the rule now, and it proves the rule against the make of the machine that runs it.
@@ -137,10 +137,6 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 ### 2026-09-20g: the API-only deck build of PR-61
 
 **The owner chose a dedicated check account, and the run keeps what it makes** (D-779, D-780). D-778 asked for a deck build over the API alone, because the live check of #196 read no built deck. The sandbox refuses every read under `users/<uid>` but one session by id, and no session opens a browser. The deployed project enables the email and password provider alone, so `accounts:signInWithPassword` gives a command an id token with no browser. The counters of D-638 count a creation and never lower. So a run under the account of the owner moves a number that no delete corrects. A dedicated account answers that. The first live attempt failed twice over, and each failure was real. A cold Cloud Run instance held no card snapshot, and the target reported success on a failed run. GNU Make 3.81 ignores `.SHELLFLAGS`, which F-160 records. The second run built deck `4aiklNKrKHGYqyaMhN4H` in 100 seconds, and `GetDeck` read it back.
-
-### 2026-09-20f: the self-reload check of D-692
-
-**The live check of #196 passed in both halves, and the owner named the next item** (D-778). The Hosting release `60c80b8c4ad2a689` went live at 22:44:09 UTC, and the live `index.html` names a new chunk. The deck page chunk holds `data-testid="power-counts"`, and the stats chunk holds every label. The Hosting service serves the current release alone, so the assets of the release of #158 left the site at that minute. The check therefore built both releases on this machine, served the old one, and swapped the server to the new one. The installed app took one stale load, which is F-122, and then it reloaded itself with no command. The check read no built deck, because the sandbox refuses the deck path of a user (D-638). The owner chose an API path that builds a deck with no GUI, and it is next step 1.
 
 ## The archive
 
