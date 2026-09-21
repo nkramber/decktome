@@ -24,6 +24,10 @@ Five more targets spend money, and each has an overwrite guard and an env guard.
 
 `DECK_GATE_ARGS` passes flags to `make deck-gate`. `DECK_GATE_ARGS="-only 19,20,21,22,23,24"` runs the six set prompts of PR-17B alone, for about $0.35. `DECK_GATE_ARGS="-only 25"` runs the precon exclusion prompt of PR-24 alone, for about $0.13. `GATE_ARGS` passes flags to `make questions-gate`, and `GATE_ARGS="-only 109"` runs the group set probe of D-525 alone. Runs 36 and 37 cost about $0.001 each and took about 10 seconds. A partial run reads its item bars alone and never stands as the gate (D-526).
 
+`DECK_GATE_ARGS="-rejudge <absolute path of a gate document>"` judges the stored decks of a whole run again, with no build (D-789). It copies the build rows of the source run and writes new judge rows. So its run stands as a whole run of the decks suite. Run 32 judged the 25 decks of run 31 for $1.2453, and a full run costs about $2.83.
+
+Add `-keep <absolute path of an earlier rejudge run file>` to judge again only the decks that the earlier rejudge lost. Run 33 judged 6 decks again for $0.3482. Prove a change to a judge alone with this lane, and never with a rebuild.
+
 `make quality-judge` asks the judge role for the tier of every graded deck of a deck gate document (PR-14B). It costs a few cents a deck, and it has the guard `QUALITY_JUDGE=1` and a verdict check on `QUALITY_JUDGE_OUT`. Ask the owner before every run.
 
 `make api-build` builds one deck over the deployed API, with no browser and no GUI (D-778). It signs in with an email and a password, and it imports a ManaBox CSV. It then answers every question of the agent, and it reads the built deck back out of storage. It costs about $0.10 to $0.20, because the deployed API calls the real providers.

@@ -6,34 +6,33 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-20j)
+## RESUME HERE (2026-09-21a)
 
-**Pull request #201 fixes F-37. A theme that the precon exclusion starves now ends the turn with a reason. It waits for the owner's merge.**
+**Pull request #202 fixes F-39 and F-161. The plan judge and the summary judge read the card facts, and the deck gate rejudges a stored run. It waits for the owner's merge.**
 
-**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view 201`. Then do next step 1.
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view 202`. Then do next step 1.
 
-**The base.** `main` is `6254a86`, from #200, which carried the register sweep.
+**The base.** `main` is `f390ecd`, from #201. Cloud Build `9a851b58` deployed it: revision `mtg-api-00059-tnv` serves the image of `f390ecd`, and `/readyz` read `ok` on 2026-09-21.
 
-**Why this pull request exists.** The owner picked F-37 from the open rows (D-784). The build made a deck of another theme when the exclusion took the theme out of the pool, and the summary hid it.
+**Why this pull request exists.** The owner picked F-39 from the five open rows (D-787). A judge that recalls a card fact grades a true deck as wrong.
 
 **What this pull request holds.**
 
-- `go/internal/candidates/starved.go` reads whether the exclusion is the cause. The pool after it holds fewer than 30 owned theme cards, and the whole library holds 30 or more.
-- `go/internal/agentsvc/build.go` stops a new build with `ErrThinTheme` before the model call. A revision keeps its deck, so the guard skips it.
-- The status line names the counts, and it offers another theme or a new chat (D-785). No turn can drop an exclusion.
-- `go/cmd/deck-gate/main.go` runs the same check.
-- A heroes row joins `go/internal/candidates/themes.json` (D-786). Deck gate prompt 25 matched 0 owned theme cards before it, and 46 after the exclusion with it.
+- `go/internal/generate/judge.go` writes the mana cost and the type line of each card, and the color identity of the commander (D-787).
+- A request that names sets marks each card in or outside them (D-788). `PlanRubricVersion` reads 4.
+- `JudgeSummary` reads the same facts, and `SummaryJudgeVersion` reads 2 (D-789, F-161).
+- `go/cmd/deck-gate/rejudge.go` judges the stored decks of a whole run with no build. The flag `-keep` judges again only the decks that an earlier rejudge lost.
 
-**The measurement.** No paid target ran. A free dry run of prompt 25 read 56 owned theme cards in white before the exclusion and 46 after it.
+**The measurement.** Deck gate run 30 cost $2.8263 and run 31 cost $2.8348. Both built every deck again, and the owner refused a third such run (D-789). Run 31 failed on a true Astarion cost that the old summary judge called false. Rejudge run 32 cost $1.2453 and lost 6 decks to HTTP 529 answers. Run 33 judged those 6 again for $0.3482, and it reads PASS.
 
-**The checks.** `make verify` passed on this machine, exit 0, with Node 22.23.2 of `.nvmrc`. The default shell Node v20.17.0 fails the web tests with `ERR_REQUIRE_ESM`. `make ste-check`, `make ref-check`, and `make context-budget` read 0 findings.
+**The checks.** `make verify` passed on this machine, exit 0, with Node 22.23.2. `make eval-check` reads the decks suite PASS, run 33 against run 19. `make ste-check`, `make ref-check`, and `make context-budget` read 0 findings.
 
-**The review.** `gitar-bot` reviewed the effective head `2121262` and read "No issues found", with no review thread. Its dashboard edit of 03:47:02 UTC is later than the push of 03:44:50 UTC, both of 2026-09-21, so the review is current.
+**The review.** The Gitar review of the head waits.
 
 **What waits on the owner.**
 
 - The Gitar review, then the merge of this pull request.
-- The item after F-37 (next step 1).
+- The item after F-39 (next step 1).
 - The F-48 row says bracket gate run 7 holds the escape. A count on 2026-09-20 read the escape in runs 1, 2, 3, and 5 alone.
 - Five sessions on the new files, before a decision on the checkpoint rule (next step 3, D-750).
 - A deployed session with a theme that matches no card, such as "anime" (next step 4).
@@ -93,18 +92,18 @@ Twenty things a fresh session gets wrong without this file.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
 - The feedback store holds 3 verdicts on 2026-09-09, and every one predates the snapshot of D-635. `make feedback-list VERDICT=` reads both verdicts now (F-87). A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- The deployed API, read 2026-09-21 at 02:12 UTC: revision `mtg-api-00058-9q9` on image `api:98f0527`, from #198. This session read the revision and the image, and it read no job and no `/readyz` answer.
+- The deployed API, read 2026-09-21 at 04:07 UTC: revision `mtg-api-00059-tnv` on the image of `f390ecd`, from #201. Cloud Build `9a851b58` ended SUCCESS, and `/readyz` read `ok`. This session read no job.
 - The deployed web app, read 2026-09-20 at 22:45 UTC: the release of #196, Hosting version `60c80b8c4ad2a689` of 22:44:09 UTC. `index.html` loads `assets/index-Fi2SZrwg.js`. The deck page chunk `deck-view-BQeBlu0i.js` holds the power counts, and `use-cards-DNxWsKmD.js` holds every label. The release before it, `b786ceb7f89bc4fc` of 2026-09-13, came from #158.
 - The deployed quality model, read 2026-09-14: `20260914T070904Z`, from the meta job that started at 06:02 UTC and ended at 07:13 UTC. It fits 43,182 lists and 1,517 commanders. Its Commander fit reads `immaterial` 239 and accuracy 0.554, and its Standard fit reads a cross share of 0.667. The job read the weekly EDHREC pass, 2,077 pages and 4 lists. The mtgo source read 3,094 lists with 58 fetch errors. The mtggoldfish source read 155 lists with no failure. The mtgjson source read no list, because its deck list version differs from the stored table, as on 2026-09-12 and 2026-09-13.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
-- Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 19, revise is run 9. The generate prompt reads version 15 now, and run 19 read version 12. Run 29 of 2026-09-20 is the newest whole deck gate run, and `make eval-check` reads it as PASS against run 19. Run 52 is the newest whole questions run, and it reads PASS. Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 23 is its newest run.
+- Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 19, revise is run 9. The generate prompt reads version 15 now, and run 19 read version 12. Run 33 of 2026-09-21 is the newest whole deck gate run. It rejudges the decks of run 31 (D-789), and `make eval-check` reads it as PASS against run 19. Run 52 is the newest whole questions run, and it reads PASS. Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 23 is its newest run.
 - Toolchain on this Mac, read 2026-09-11: Go 1.27.1, Node 22.23.2, pnpm 9.2.0, firebase-tools 14.14.0, and Java 17.0.20.1. Playwright is 1.63.0 with its Chromium headless shell (`playwright install chromium`). `go.mod` asks Go 1.27.0 or newer, and vitest is 5.0.0 since #133.
 - The local meta store, read 2026-09-14: 17,686 TopDeck good and 6,431 top-cut Commander lists from 2026-06-04 to 2026-09-14. It also holds 1,045 EDHREC average decks and 192 MTGJSON precons. M-17 read the TopDeck lists from 2026-08-01 alone.
 
 ## Next steps, in order
 
-1. **Ask the owner for the item after F-37** (D-746). The sequence of the roadmap ends at step 51, and next step 2 holds each open item. **Fix F-37** (D-784 to D-786) ✅ done by this pull request. **Sweep the finding register** (D-783) ✅ done by #200.
-2. **The open items of the roadmap.** Five register rows read 🔧: F-33, F-39, F-48, F-49, and F-126. F-39 and F-126 read open in the code on 2026-09-20. F-33 waits for evidence, and F-49 waits for the owner. OQ-85 waits for a shape score of the shortlist (D-773). **F-157** records the thin owned pool and the repair turn of every build, with no open question. The power pass after the build still waits (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783).
+1. **Ask the owner for the item after F-39** (D-746). The sequence of the roadmap ends at step 51, and next step 2 holds each open item. **Fix F-39** (D-787 to D-789) ✅ done by this pull request. **Fix F-37** (D-784 to D-786) ✅ done by #201.
+2. **The open items of the roadmap.** Four register rows read 🔧: F-33, F-48, F-49, and F-126. F-126 reads open in the code on 2026-09-21: the bracket judge reads no combo data. F-33 waits for evidence, and F-49 waits for the owner. OQ-85 waits for a shape score of the shortlist (D-773). **F-157** records the thin owned pool and the repair turn of every build, with no open question. The power pass after the build still waits (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783).
 3. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It waits, because the ten sessions of the audit ran before #184 and before D-749.
 4. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git.
 5. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide". Session `z1hshyY6Npig1FN2NuV7` named its commander, so it showed no such row.
@@ -126,6 +125,10 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 ## The three most recent sessions
 
+### 2026-09-21a: the card facts of the judges, F-39
+
+**The owner picked F-39, and a judge that recalls a card fact failed a true summary** (D-787 to D-789). The plan judge reads the cost, the type, and the identity from the card data, and marks each card in or outside the sets. Deck gate run 31 then failed, because the summary judge called a true Astarion cost false (F-161). The session spent $5.66 on two whole runs to prove a change to the judges alone. The owner refused a third. The new rejudge lane judged the stored decks of run 31 for $1.2453, and a fill of 6 lost decks cost $0.3482.
+
 ### 2026-09-20j: the starved theme of F-37
 
 **The owner picked F-37, and a free count refuted its premise** (D-784, D-786). The guard stops a build when the exclusion leaves fewer than 30 owned theme cards. A dry run of deck gate prompt 25 read 0 owned theme cards before the exclusion too. The generic rule made the subtype "Superheroe", and Scryfall types these cards Hero. So a heroes row joins the theme table, and "hero" keeps the generic rule (D-731). The offer of the whole pool has no path, so the message offers another theme or a new chat (D-785).
@@ -134,10 +137,6 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 **The owner picked F-36, and the code showed that F-36 was fixed** (D-783). `applyTheme` refuses a superlative phrase in place of a named theme, and a test of `go/internal/questions/rows_test.go` holds the rule. #68 merged it on 2026-09-05 (D-535). The register row still read open, and the rows of F-77 and F-78 read "planned" after #102. The owner picked a sweep of the register over a wider theme guard. A subagent read each 🔧 row against git, the decisions, and the code. The session checked each merge number on `main` and each cited decision.
 
-### 2026-09-20h: the pipefail rule of F-160
-
-**A failed paid target reported success on this Mac, and each recipe now sets pipefail itself** (D-782). `Makefile` set `.SHELLFLAGS := -o pipefail -c`, and GNU Make 3.82 added that variable. This Mac runs GNU Make 3.81, which ignores it. So a recipe that ends with `| tee` read the exit code of `tee`, and `tee` succeeds after a command that fails. A scratch makefile with the two `SHELL` lines of this repository proves both halves. A bare pipeline exits 0, and a guarded pipeline exits 2. Three paid targets and one free target held the fault, and `make api-build` held its own guard from PR-61. The entry of F-160 also named two gate targets, and each of them writes its document with a redirect and always failed correctly. `make pipefail-check` holds the rule now, and it proves the rule against the make of the machine that runs it.
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-20i, the records of 2026-08-31 to 2026-09-20, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-20j, the records of 2026-08-31 to 2026-09-20, and 104 more sections, word for word. Read it for the detail behind a decision.

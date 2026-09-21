@@ -12,6 +12,44 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-20j
+
+**Pull request #201 fixes F-37. A theme that the precon exclusion starves now ends the turn with a reason. It waits for the owner's merge.**
+
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view 201`. Then do next step 1.
+
+**The base.** `main` is `6254a86`, from #200, which carried the register sweep.
+
+**Why this pull request exists.** The owner picked F-37 from the open rows (D-784). The build made a deck of another theme when the exclusion took the theme out of the pool, and the summary hid it.
+
+**What this pull request holds.**
+
+- `go/internal/candidates/starved.go` reads whether the exclusion is the cause. The pool after it holds fewer than 30 owned theme cards, and the whole library holds 30 or more.
+- `go/internal/agentsvc/build.go` stops a new build with `ErrThinTheme` before the model call. A revision keeps its deck, so the guard skips it.
+- The status line names the counts, and it offers another theme or a new chat (D-785). No turn can drop an exclusion.
+- `go/cmd/deck-gate/main.go` runs the same check.
+- A heroes row joins `go/internal/candidates/themes.json` (D-786). Deck gate prompt 25 matched 0 owned theme cards before it, and 46 after the exclusion with it.
+
+**The measurement.** No paid target ran. A free dry run of prompt 25 read 56 owned theme cards in white before the exclusion and 46 after it.
+
+**The checks.** `make verify` passed on this machine, exit 0, with Node 22.23.2 of `.nvmrc`. The default shell Node v20.17.0 fails the web tests with `ERR_REQUIRE_ESM`. `make ste-check`, `make ref-check`, and `make context-budget` read 0 findings.
+
+**The review.** `gitar-bot` reviewed the effective head `2121262` and read "No issues found", with no review thread. Its dashboard edit of 03:47:02 UTC is later than the push of 03:44:50 UTC, both of 2026-09-21, so the review is current.
+
+**What waits on the owner.**
+
+- The Gitar review, then the merge of this pull request.
+- The item after F-37 (next step 1).
+- The F-48 row says bracket gate run 7 holds the escape. A count on 2026-09-20 read the escape in runs 1, 2, 3, and 5 alone.
+- Five sessions on the new files, before a decision on the checkpoint rule (next step 3, D-750).
+- A deployed session with a theme that matches no card, such as "anime" (next step 4).
+- A look at the first commander question after a load of the app (next step 5).
+- OQ-67, OQ-77, and OQ-80.
+
+### 2026-09-20h: the pipefail rule of F-160
+
+**A failed paid target reported success on this Mac, and each recipe now sets pipefail itself** (D-782). `Makefile` set `.SHELLFLAGS := -o pipefail -c`, and GNU Make 3.82 added that variable. This Mac runs GNU Make 3.81, which ignores it. So a recipe that ends with `| tee` read the exit code of `tee`, and `tee` succeeds after a command that fails. A scratch makefile with the two `SHELL` lines of this repository proves both halves. A bare pipeline exits 0, and a guarded pipeline exits 2. Three paid targets and one free target held the fault, and `make api-build` held its own guard from PR-61. The entry of F-160 also named two gate targets, and each of them writes its document with a redirect and always failed correctly. `make pipefail-check` holds the rule now, and it proves the rule against the make of the machine that runs it.
+
 ## The resume section of 2026-09-20i
 
 **Pull request #200 corrects the finding register. Twelve 🔧 rows named work that had merged. It waits for the owner's merge.**
