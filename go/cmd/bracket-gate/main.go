@@ -115,6 +115,7 @@ func run() error {
 	run := evalrun.New("bracket", evalrun.RunID(*runOut))
 	run.Header.Only = *only
 	run.Header.Prompts["generate"] = generate.PromptVersion
+	run.Header.Prompts["bracket_judge"] = generate.BracketJudgeVersion
 	run.LowerIsBetter("blocks", "off_band", "content_violations", "judge_error", "repaired")
 	quiet := gatekit.Quiet()
 	idx, err := gatekit.LoadSnapshot(context.Background(), quiet)

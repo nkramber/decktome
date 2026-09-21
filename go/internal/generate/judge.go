@@ -34,6 +34,11 @@ Be strict about what counts as a rules claim and honest about truth. A summary w
 
 When the input holds the card list with the mana cost and the type line of each card from the card data, judge a claim about the cost, the color, or the type of a card against that list, and not against your memory of the card.`
 
+// BracketJudgeVersion changes when the instructions or the input of the
+// bracket judge change. Version 2 reads the combos of Commander
+// Spellbook (F-126, D-790).
+const BracketJudgeVersion = 2
+
 // SummaryJudgeVersion changes when the instructions or the input of the
 // summary judge change. Version 2 reads the card facts of the deck
 // (D-789). A change starts a new epoch of the false-rule rows.
@@ -130,6 +135,8 @@ The Commander brackets, from the Commander Format Panel (2025-02-11, revised 202
 
 The card list marks each Game Changer from the card data, the commander included. Count only the marked cards as Game Changers, and never a card you recall from another list.
 
+The list under "Combos" names each combo that Commander Spellbook finds in the deck, with the mana each needs. Count only a listed combo, and never a combo you recall. When the list says the combo check did not run, read the combos from the cards.
+
 Read the card list for its speed, its mana base, its fast mana and tutors, its interaction, its combos, and its Game Changers. Name one bracket, 1 to 5, and say why in two or three sentences. Judge the deck as it is, and not the bracket the builder may have aimed at.`
 
 // The bracket is a string enum and not a bounded integer: the Anthropic
@@ -191,9 +198,52 @@ func DeckText(deck *mtgv1.Deck, cards rules.CardSource) string {
 // bracketDeckText is DeckText with a mark on each Game Changer that the
 // card data flags, the commander included. The bracket judge counts those
 // marks and not a list it recalls (F-123, D-696). The tier judge reads
-// DeckText unmarked.
+// DeckText unmarked. The combos of the stored profile follow the cards,
+// so the judge counts no combo it recalls (F-126, D-790).
 func bracketDeckText(deck *mtgv1.Deck, cards rules.CardSource) string {
-	return deckText(deck, cards, deckTextOpts{gameChangers: true})
+	return deckText(deck, cards, deckTextOpts{gameChangers: true}) + comboText(deck.GetProfile().GetContent())
+}
+
+// comboText writes the combos of a content check as the bracket judge
+// reads them. A check that did not run says so, and the judge then reads
+// the combos from the cards.
+func comboText(c *mtgv1.ContentCheck) string {
+	var s strings.Builder
+	s.WriteString("\nCombos:\n")
+	switch {
+	case c == nil:
+		s.WriteString("The combo check did not run for this deck.\n")
+	case !c.GetChecked():
+		fmt.Fprintf(&s, "The combo check did not run for this deck: %s.\n", c.GetError())
+	case len(c.GetCombos()) == 0:
+		s.WriteString("Commander Spellbook finds no combo in this deck.\n")
+	}
+	for _, combo := range c.GetCombos() {
+		size := fmt.Sprintf("%d cards, not a two-card combo", len(combo.GetCards()))
+		if combo.GetTwoCard() {
+			size = "two cards"
+		}
+		fmt.Fprintf(&s, "- %s (%s, %s)\n", strings.Join(combo.GetCards(), " + "), size, speedWord(combo.GetSpeed()))
+	}
+	return s.String()
+}
+
+// speedWord writes the speed of a Spellbook combo as the mana it needs:
+// 5 needs no mana, 4 needs four or less, 3 six or less, 2 eight or less,
+// and 1 more. An uncertain minimum adds one, so 6 reads as 5 (variant.py,
+// read 2026-09-02).
+func speedWord(speed int32) string {
+	switch {
+	case speed >= 5:
+		return "no mana past the cards"
+	case speed == 4:
+		return "four mana or less"
+	case speed == 3:
+		return "six mana or less"
+	case speed == 2:
+		return "eight mana or less"
+	}
+	return "more than eight mana"
 }
 
 // factsDeckText is DeckText with the mana cost and the type line of each

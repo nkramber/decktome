@@ -194,10 +194,30 @@ func TestReportJudge(t *testing.T) {
 	if !strings.Contains(buf.String(), "| 1 | 3 | 4 | no | Karlov of the Ghost Council |") {
 		t.Errorf("table:\n%s", buf.String())
 	}
+	if !strings.Contains(buf.String(), "Combos the judge read: none, Commander Spellbook finds no combo.") {
+		t.Errorf("the document does not name the combos the judge read:\n%s", buf.String())
+	}
 	rs[1].judged, rs[1].judgeErr = nil, errors.New("boom")
 	buf.Reset()
 	if reportJudge(&buf, "run1.md", rs, llm.NewAccumulator(nil), idx, time.Second, evalrun.New("bracket-judge", "test")) {
 		t.Error("a judge error must fail")
+	}
+}
+
+// TestComboNames is F-126: the judge lane names the combos each judge
+// call read, so a reader can check a reason against them (D-790).
+func TestComboNames(t *testing.T) {
+	for _, tc := range []struct {
+		c    *mtgv1.ContentCheck
+		want string
+	}{
+		{&mtgv1.ContentCheck{Checked: true, Combos: []*mtgv1.ComboHit{{Cards: []string{"A", "B"}}, {Cards: []string{"C", "D", "E"}}}}, "A + B; C + D + E"},
+		{&mtgv1.ContentCheck{Checked: true}, "none, Commander Spellbook finds no combo"},
+		{&mtgv1.ContentCheck{Error: "timeout"}, "none, the check did not run: timeout"},
+	} {
+		if got := comboNames(tc.c); got != tc.want {
+			t.Errorf("comboNames = %q, want %q", got, tc.want)
+		}
 	}
 }
 

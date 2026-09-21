@@ -6,34 +6,32 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-21a)
+## RESUME HERE (2026-09-21b)
 
-**Pull request #202 fixes F-39 and F-161. The plan judge and the summary judge read the card facts, and the deck gate rejudges a stored run. It waits for the owner's merge.**
+**Pull request #PRN fixes F-126. The bracket judge reads the combos of Commander Spellbook, and the rejudge of `bracket-gate` profiles each stored deck. It waits for the owner's merge.**
 
-**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view 202`. Then do next step 1.
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view PRN`. Then do next step 1.
 
-**The base.** `main` is `f390ecd`, from #201. Cloud Build `9a851b58` deployed it: revision `mtg-api-00059-tnv` serves the image of `f390ecd`, and `/readyz` read `ok` on 2026-09-21.
+**The base.** `main` is `23b67ce`, from #202. Cloud Build `169a2dcb` built it and ended SUCCESS, created 2026-09-21 at 15:29 UTC. This session read no revision and no `/readyz`.
 
-**Why this pull request exists.** The owner picked F-39 from the five open rows (D-787). A judge that recalls a card fact grades a true deck as wrong.
+**Why this pull request exists.** The owner picked F-126 from the four open rows (D-790). The judge named a two-card infinite that Spellbook does not list.
 
 **What this pull request holds.**
 
-- `go/internal/generate/judge.go` writes the mana cost and the type line of each card, and the color identity of the commander (D-787).
-- A request that names sets marks each card in or outside them (D-788). `PlanRubricVersion` reads 4.
-- `JudgeSummary` reads the same facts, and `SummaryJudgeVersion` reads 2 (D-789, F-161).
-- `go/cmd/deck-gate/rejudge.go` judges the stored decks of a whole run with no build. The flag `-keep` judges again only the decks that an earlier rejudge lost.
+- `go/internal/generate/judge.go` writes a combo list after the cards, and the judge counts only a listed combo. `BracketJudgeVersion` reads 2.
+- `go/cmd/bracket-gate/rejudge.go` profiles each stored deck through Spellbook, for free. The judge lane names the combos each deck read.
 
-**The measurement.** Deck gate run 30 cost $2.8263 and run 31 cost $2.8348. Both built every deck again, and the owner refused a third such run (D-789). Run 31 failed on a true Astarion cost that the old summary judge called false. Rejudge run 32 cost $1.2453 and lost 6 decks to HTTP 529 answers. Run 33 judged those 6 again for $0.3482. Gitar found that the lane read the first paragraph of each summary alone. Run 34 judged the 25 whole summaries again for $0.4653, and it reads PASS.
+**The measurement** (D-791). The session spent $0.6410. The rejudge of run 2 reads 4 of 15, against 3 of 15, and no reason names an unlisted combo. The calibration decks read 12 of 21, against 16 of 21. Precons 5 and 7 hold a fast combo that the app forbids at bracket 2. cEDH deck 12 reads 4 with the old text too. Deck 17 reads 4 twice with the list and 5 once with the old text (F-162).
 
-**The checks.** `make verify` passed on this machine, exit 0, with Node 22.23.2. `make eval-check` reads the decks suite PASS, run 34 against run 19. `make ste-check`, `make ref-check`, and `make context-budget` read 0 findings.
+**The checks.** `make verify` passed on this machine, exit 0, with Node 22.23.2. The Go tests of `go/internal/generate` and `go/cmd/bracket-gate` pass. `make ste-check`, `make ref-check`, and `make context-budget` read 0 findings.
 
-**The review.** Gitar reviewed `eb606af` and found that the rejudge reader cut each summary to its first paragraph. Commit `93a07a8` fixes it, and run 34 measured the fix. The review of `b10d584` approved with one suggestion: `-summary-only` need not match the summary judge version of the kept run. Commit `fce6037` takes it. The review of `fce6037` reads "No issues found", with 2 of 2 findings closed. Its dashboard edit of 15:02:54 UTC is later than the push of 14:59:45 UTC, both of 2026-09-21, so the review is current.
+**The review.** REVIEW
 
 **What waits on the owner.**
 
 - The Gitar review, then the merge of this pull request.
-- The item after F-39 (next step 1).
-- The F-48 row says bracket gate run 7 holds the escape. A count on 2026-09-20 read the escape in runs 1, 2, 3, and 5 alone.
+- OQ-87: the combo rule of bracket 2 and the two precon anchors (F-162, D-792).
+- The F-48 row says bracket gate run 7 holds the escape. A count on 2026-09-21 read it in runs 1, 2, 3, and 5 alone, and none in runs 6 to 8.
 - Five sessions on the new files, before a decision on the checkpoint rule (next step 3, D-750).
 - A deployed session with a theme that matches no card, such as "anime" (next step 4).
 - A look at the first commander question after a load of the app (next step 5).
@@ -92,7 +90,7 @@ Twenty things a fresh session gets wrong without this file.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
 - The feedback store holds 3 verdicts on 2026-09-09, and every one predates the snapshot of D-635. `make feedback-list VERDICT=` reads both verdicts now (F-87). A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- The deployed API, read 2026-09-21 at 04:07 UTC: revision `mtg-api-00059-tnv` on the image of `f390ecd`, from #201. Cloud Build `9a851b58` ended SUCCESS, and `/readyz` read `ok`. This session read no job.
+- The deployed API, read 2026-09-21: Cloud Build `169a2dcb` built `23b67ce`, from #202, and ended SUCCESS. This session read no revision, no `/readyz`, and no job.
 - The deployed web app, read 2026-09-20 at 22:45 UTC: the release of #196, Hosting version `60c80b8c4ad2a689` of 22:44:09 UTC. `index.html` loads `assets/index-Fi2SZrwg.js`. The deck page chunk `deck-view-BQeBlu0i.js` holds the power counts, and `use-cards-DNxWsKmD.js` holds every label. The release before it, `b786ceb7f89bc4fc` of 2026-09-13, came from #158.
 - The deployed quality model, read 2026-09-14: `20260914T070904Z`, from the meta job that started at 06:02 UTC and ended at 07:13 UTC. It fits 43,182 lists and 1,517 commanders. Its Commander fit reads `immaterial` 239 and accuracy 0.554, and its Standard fit reads a cross share of 0.667. The job read the weekly EDHREC pass, 2,077 pages and 4 lists. The mtgo source read 3,094 lists with 58 fetch errors. The mtggoldfish source read 155 lists with no failure. The mtgjson source read no list, because its deck list version differs from the stored table, as on 2026-09-12 and 2026-09-13.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
@@ -102,8 +100,8 @@ Twenty things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **Ask the owner for the item after F-39** (D-746). The sequence of the roadmap ends at step 51, and next step 2 holds each open item. **Fix F-39** (D-787 to D-789) ✅ done by this pull request. **Fix F-37** (D-784 to D-786) ✅ done by #201.
-2. **The open items of the roadmap.** Four register rows read 🔧: F-33, F-48, F-49, and F-126. F-126 reads open in the code on 2026-09-21: the bracket judge reads no combo data. F-33 waits for evidence, and F-49 waits for the owner. OQ-85 waits for a shape score of the shortlist (D-773). **F-157** records the thin owned pool and the repair turn of every build, with no open question. The power pass after the build still waits (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783).
+1. **Ask the owner for the item after F-126** (D-746). The sequence of the roadmap ends at step 51, and next step 2 holds each open item. **Fix F-126** (D-790 to D-792) ✅ done by this pull request. **Fix F-39** (D-787 to D-789) ✅ done by #202.
+2. **The open items of the roadmap.** Three register rows read 🔧: F-33, F-48, and F-49. F-33 waits for evidence, and F-49 waits for the owner. F-162 waits on OQ-87. OQ-85 waits for a shape score of the shortlist (D-773). **F-157** records the thin owned pool and the repair turn of every build, with no open question. The power pass after the build still waits (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783).
 3. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It waits, because the ten sessions of the audit ran before #184 and before D-749.
 4. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git.
 5. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide". Session `z1hshyY6Npig1FN2NuV7` named its commander, so it showed no such row.
@@ -125,6 +123,10 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 ## The three most recent sessions
 
+### 2026-09-21b: the combo list of the bracket judge, F-126
+
+**The owner picked F-126, and the bracket judge reads the combos of Commander Spellbook** (D-790). The rejudge profiles each stored deck through the free endpoint. The owner chose two rejudges, a second read, and a control read, for $0.6410 in all (D-791). Run 2 lost its false Heliod combo. Three calibration decks moved, and F-162 and OQ-87 record them (D-792).
+
 ### 2026-09-21a: the card facts of the judges, F-39
 
 **The owner picked F-39, and a judge that recalls a card fact failed a true summary** (D-787 to D-789). The plan judge reads the cost, the type, and the identity from the card data, and marks each card in or outside the sets. Deck gate run 31 then failed, because the summary judge called a true Astarion cost false (F-161). The session spent $5.66 on two whole runs to prove a change to the judges alone. The owner refused a third. The new rejudge lane judged the stored decks of run 31 for $1.2453, and a fill of 6 lost decks cost $0.3482. Gitar found a cut summary in the lane, and run 34 judged the whole summaries for $0.4653.
@@ -132,10 +134,6 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 ### 2026-09-20j: the starved theme of F-37
 
 **The owner picked F-37, and a free count refuted its premise** (D-784, D-786). The guard stops a build when the exclusion leaves fewer than 30 owned theme cards. A dry run of deck gate prompt 25 read 0 owned theme cards before the exclusion too. The generic rule made the subtype "Superheroe", and Scryfall types these cards Hero. So a heroes row joins the theme table, and "hero" keeps the generic rule (D-731). The offer of the whole pool has no path, so the message offers another theme or a new chat (D-785).
-
-### 2026-09-20i: the sweep of the finding register
-
-**The owner picked F-36, and the code showed that F-36 was fixed** (D-783). `applyTheme` refuses a superlative phrase in place of a named theme, and a test of `go/internal/questions/rows_test.go` holds the rule. #68 merged it on 2026-09-05 (D-535). The register row still read open, and the rows of F-77 and F-78 read "planned" after #102. The owner picked a sweep of the register over a wider theme guard. A subagent read each 🔧 row against git, the decisions, and the code. The session checked each merge number on `main` and each cited decision.
 
 ## The archive
 

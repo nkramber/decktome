@@ -12,6 +12,43 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-21a
+
+**Pull request #202 fixes F-39 and F-161. The plan judge and the summary judge read the card facts, and the deck gate rejudges a stored run. It waits for the owner's merge.**
+
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view 202`. Then do next step 1.
+
+**The base.** `main` is `f390ecd`, from #201. Cloud Build `9a851b58` deployed it: revision `mtg-api-00059-tnv` serves the image of `f390ecd`, and `/readyz` read `ok` on 2026-09-21.
+
+**Why this pull request exists.** The owner picked F-39 from the five open rows (D-787). A judge that recalls a card fact grades a true deck as wrong.
+
+**What this pull request holds.**
+
+- `go/internal/generate/judge.go` writes the mana cost and the type line of each card, and the color identity of the commander (D-787).
+- A request that names sets marks each card in or outside them (D-788). `PlanRubricVersion` reads 4.
+- `JudgeSummary` reads the same facts, and `SummaryJudgeVersion` reads 2 (D-789, F-161).
+- `go/cmd/deck-gate/rejudge.go` judges the stored decks of a whole run with no build. The flag `-keep` judges again only the decks that an earlier rejudge lost.
+
+**The measurement.** Deck gate run 30 cost $2.8263 and run 31 cost $2.8348. Both built every deck again, and the owner refused a third such run (D-789). Run 31 failed on a true Astarion cost that the old summary judge called false. Rejudge run 32 cost $1.2453 and lost 6 decks to HTTP 529 answers. Run 33 judged those 6 again for $0.3482. Gitar found that the lane read the first paragraph of each summary alone. Run 34 judged the 25 whole summaries again for $0.4653, and it reads PASS.
+
+**The checks.** `make verify` passed on this machine, exit 0, with Node 22.23.2. `make eval-check` reads the decks suite PASS, run 34 against run 19. `make ste-check`, `make ref-check`, and `make context-budget` read 0 findings.
+
+**The review.** Gitar reviewed `eb606af` and found that the rejudge reader cut each summary to its first paragraph. Commit `93a07a8` fixes it, and run 34 measured the fix. The review of `b10d584` approved with one suggestion: `-summary-only` need not match the summary judge version of the kept run. Commit `fce6037` takes it. The review of `fce6037` reads "No issues found", with 2 of 2 findings closed. Its dashboard edit of 15:02:54 UTC is later than the push of 14:59:45 UTC, both of 2026-09-21, so the review is current.
+
+**What waits on the owner.**
+
+- The Gitar review, then the merge of this pull request.
+- The item after F-39 (next step 1).
+- The F-48 row says bracket gate run 7 holds the escape. A count on 2026-09-20 read the escape in runs 1, 2, 3, and 5 alone.
+- Five sessions on the new files, before a decision on the checkpoint rule (next step 3, D-750).
+- A deployed session with a theme that matches no card, such as "anime" (next step 4).
+- A look at the first commander question after a load of the app (next step 5).
+- OQ-67, OQ-77, and OQ-80.
+
+### 2026-09-20i: the sweep of the finding register
+
+**The owner picked F-36, and the code showed that F-36 was fixed** (D-783). `applyTheme` refuses a superlative phrase in place of a named theme, and a test of `go/internal/questions/rows_test.go` holds the rule. #68 merged it on 2026-09-05 (D-535). The register row still read open, and the rows of F-77 and F-78 read "planned" after #102. The owner picked a sweep of the register over a wider theme guard. A subagent read each 🔧 row against git, the decisions, and the code. The session checked each merge number on `main` and each cited decision.
+
 ## The resume section of 2026-09-20j
 
 **Pull request #201 fixes F-37. A theme that the precon exclusion starves now ends the turn with a reason. It waits for the owner's merge.**
