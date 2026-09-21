@@ -1,8 +1,10 @@
 # decktome - single human entry point.
 # Every target prints what it does. Versions are pinned in go/go.mod, web/package.json, and here.
 
-# Every recipe runs under bash with pipefail, so a command that fails
-# inside a pipe (for example before a tee) fails the target.
+# Every recipe runs under bash. GNU Make 3.82 added .SHELLFLAGS, and GNU
+# Make 3.81 ignores it, so pipefail reaches a 3.81 recipe from no
+# variable. Every recipe line that pipes sets pipefail itself (F-160).
+# `make pipefail-check` holds that rule and proves it on the local make.
 SHELL := bash
 .SHELLFLAGS := -o pipefail -c
 
@@ -11,9 +13,10 @@ GO := go -C go
 BUF := .bin/buf
 PNPM := pnpm --dir web
 
-.PHONY: feedback-loop feedback-loop-dry feedback-triage feedback-triage-dry smoke self-reload-check api-build allow disallow manapass-check deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate bracket-calibrate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check gcs-check themes-check ste-check context-budget help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks pr-check lifecycle-check verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
+.PHONY: feedback-loop feedback-loop-dry feedback-triage feedback-triage-dry smoke self-reload-check api-build allow disallow manapass-check deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate bracket-calibrate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check gcs-check themes-check ste-check context-budget pipefail-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks pr-check lifecycle-check verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
 
 help: ## Show this help
+# pipefail-ok: the grep reads the target list, and an empty list is no fault
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-14s %s\n", $$1, $$2}'
 
 doctor: ## Check that every required tool is installed
@@ -46,7 +49,7 @@ proto-breaking: $(BUF) ## Fail on a breaking proto change against the main branc
 	@echo "==> buf breaking against $(PROTO_BASE)"
 	@$(BUF) breaking --against '.git#branch=$(PROTO_BASE)'
 
-lint: lint-go lint-web ste-check ref-check lifecycle-check context-budget ## Lint Go, TypeScript, the docs, the references, the start-read budget, and the pull request contract tools
+lint: lint-go lint-web ste-check ref-check lifecycle-check context-budget pipefail-check ## Lint Go, TypeScript, the docs, the references, the start-read budget, the pull request contract tools, and the pipelines of this file
 
 lint-go: ## Lint Go (vet + golangci-lint, built from source with the local toolchain)
 	@echo "==> go vet"
@@ -87,6 +90,14 @@ ref-check: ## Check that every cited id and every repository path resolves, free
 context-budget: ## Check the byte budget of CLAUDE.md and the hand-off, and the paid-target lists, free (D-749)
 	@echo "==> context-budget"
 	@python3 docs/tools/context_budget.py
+
+# Every pipeline of a recipe fails its target (F-160). GNU Make 3.81
+# ignores .SHELLFLAGS, so a 3.81 recipe reads pipefail from no variable.
+# The check holds the recipe rule, and it proves the rule against the make
+# of this machine. Its unit tests run in lifecycle-check.
+pipefail-check: ## Check that every pipeline of the Makefile fails its target, free (F-160)
+	@echo "==> pipefail-check"
+	@python3 docs/tools/pipefail_check.py
 
 # LLM_REQUIRE_KEYS is not set here. The unit tests must pass with the
 # package default. Set it in a test with t.Setenv when a case needs it.
@@ -301,7 +312,7 @@ chat-probe: ## Drive the real Chat RPC to a deck. CAUTION: calls the real provid
 	@[ -f .env ] || { echo "chat-probe: .env is absent."; exit 1; }
 	@test ! -f $(CHAT_PROBE_OUT) || { echo "$(CHAT_PROBE_OUT) exists. Set CHAT_PROBE_OUT to a new file."; exit 1; }
 	@mkdir -p $(dir $(CHAT_PROBE_OUT))
-	@set -a && . ./.env && set +a && \
+	@set -o pipefail; set -a && . ./.env && set +a && \
 		CHAT_PROBE=1 CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall \
 		$(GO) run ./cmd/chat-probe -messages "$(CHAT_PROBE_MESSAGES)" | tee $(CHAT_PROBE_OUT)
 	@echo "wrote $(CHAT_PROBE_OUT)"
@@ -321,7 +332,7 @@ generate-probe: ## Build one deck with the real generate role. CAUTION: calls a 
 	@[ -f .env ] || { echo "generate-probe: .env is absent."; exit 1; }
 	@test ! -f $(GENERATE_PROBE_OUT) || { echo "$(GENERATE_PROBE_OUT) exists. Set GENERATE_PROBE_OUT to a new file."; exit 1; }
 	@mkdir -p $(dir $(GENERATE_PROBE_OUT))
-	@set -a && . ./.env && set +a && \
+	@set -o pipefail; set -a && . ./.env && set +a && \
 		GENERATE_PROBE=1 CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall \
 		$(GO) run ./cmd/generate-probe -theme "$(GENERATE_PROBE_THEME)" -commander "$(GENERATE_PROBE_COMMANDER)" | tee $(GENERATE_PROBE_OUT)
 	@echo "wrote $(GENERATE_PROBE_OUT)"
@@ -331,7 +342,7 @@ summary-judge: ## Judge every deck summary of a deck gate document (F-26). CAUTI
 	@test -f $(SUMMARY_JUDGE_IN) || { echo "no deck gate document at $(SUMMARY_JUDGE_IN). Set SUMMARY_JUDGE_IN."; exit 1; }
 	@test ! -f $(SUMMARY_JUDGE_OUT) || { echo "$(SUMMARY_JUDGE_OUT) exists. Set SUMMARY_JUDGE_OUT to a new file."; exit 1; }
 	@mkdir -p $(dir $(SUMMARY_JUDGE_OUT))
-	@set -a && . ./.env && set +a && \
+	@set -o pipefail; set -a && . ./.env && set +a && \
 		SUMMARY_JUDGE=1 $(GO) run ./cmd/summary-judge -in $(abspath $(SUMMARY_JUDGE_IN)) | tee $(SUMMARY_JUDGE_OUT)
 	@echo "wrote $(SUMMARY_JUDGE_OUT)"
 # --- end of the PR-8 gate and probe targets ------------------------------
@@ -553,7 +564,7 @@ themes-check: ## Check the theme slugs and the commander ranking against the loc
 	@CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall $(GO) test ./internal/candidates -run 'TestThemeSlugsExist|TestCommanderQualitySnapshot|ReachATypalShortlist' -count=1
 
 cover: ## Go coverage report
-	@$(GO) test -coverprofile=coverage.out ./... && $(GO) tool cover -func=coverage.out | tail -1
+	@set -o pipefail; $(GO) test -coverprofile=coverage.out ./... && $(GO) tool cover -func=coverage.out | tail -1
 
 build: ## Build the Go binaries and the web app
 	@$(GO) build -o bin/api ./cmd/api

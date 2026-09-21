@@ -12,6 +12,59 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-20g
+
+**Pull request #198 carries PR-61, the API-only deck build of D-778. It waits for the owner's merge.**
+
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of #198 with `gh pr view 198`. Then do next step 1.
+
+**The base.** `main` is `cb6bb2b`, from #197, which carried the self-reload check.
+
+**The live run passed. A session built a deck on the deployed app with no GUI.**
+
+- The sign-in used `accounts:signInWithPassword` of Identity Toolkit, and no browser. The project enables that provider alone.
+- The check account of D-779 signed in, uid `n60IL9CX0NOCj3JbuI7ZrtlrgXf2`. No counter of the owner moved.
+- The import read 2,471 rows and 4,316 cards, and it resolved 2,547 rows.
+- The agent asked four questions over two turns, and the command answered each one.
+- The deck is `4aiklNKrKHGYqyaMhN4H`, Commander, bracket 1, with 1 commander and 99 main cards. It took 100 seconds.
+- `GetDeck` read the deck back, and `ListDecks` found it under session `4mmIdVLGjGXIbbPGqtE7`. That read-back is the half that the check of #196 never reached.
+
+**The first attempt failed, and it found two defects. Both are fixed.**
+
+- A cold Cloud Run instance answered the import with "card database not loaded yet". The command now waits on the public `HealthService.Check`.
+- **F-160: a failed paid target reports success on this machine.** `Makefile` sets `.SHELLFLAGS`, and GNU Make added that variable in 3.82. This machine runs GNU Make 3.81, which ignores it. So every recipe that ends with `| tee` reports the status of `tee`. `make api-build` sets `set -o pipefail` in its own recipe. Every other target keeps the fault, and a one-concern pull request fixes the rest.
+
+**What this pull request holds.**
+
+- `go/cmd/api-build` is the first command of this repo that calls the deployed API as a client.
+- `make api-build` runs it. The paid list grows to thirteen (D-781).
+- Twenty-one tests drive the whole flow against a test server. No test reaches the deployed project.
+- `docs/reference/api-deck-build-2026-09-20.md` holds the method, the result, and the limits.
+- PR-61 and F-160 of `docs/design-roadmap.md` read the proof, and correction pass 203 records the item.
+- `docs/decisions.md` gains D-779 to D-781.
+- **No file of `web/apps/web/src` changes, and no protobuf file changes.**
+
+**The measurement.** One live run of `make api-build` spent about $0.15 on `decktome-prod`. No other paid target ran. Deck gate run 29 stays the newest whole run.
+
+**The checks.** `make verify` passed on this machine, exit 0. The four lint checks read 0 findings, and `make pr-check` read 0 contract errors.
+
+**The review.** `gitar-bot` reviewed `d6f95ec` and read no issue and no review thread. Its edit time of 01:24:25 UTC is later than the push of 01:21:49 UTC, both of 2026-09-21, so the review is current. CAUTION: the Gitar trial ends about 2026-09-23.
+
+**What waits on the owner.**
+
+- The Gitar review, then the merge of this pull request.
+- **F-160, the `tee` fault of every other paid target.** It needs its own pull request.
+- The default answer plan builds a bracket 1 deck. `API_BUILD_ANSWERS="power=#3"` builds a bracket 3 deck.
+- The deck id of the bracket 5 deck of session `sXYg6oAi5hzOPbkbk6gG`. The read of its power counts waits for that id.
+- Five sessions on the new files, before a decision on the checkpoint rule (next step 3, D-750).
+- A deployed session with a theme that matches no card, such as "anime" (next step 4).
+- A look at the first commander question after a load of the app (next step 5).
+- OQ-67, OQ-77, and OQ-80.
+
+### 2026-09-20e: the power counts of PR-60
+
+**The owner chose the cap beside the floor, the plan words for the finishers, and the deck page alone** (D-775 to D-777). D-774 asked for the floor counts of the bracket. A floor above zero exists at bracket 4 and bracket 5 alone. So a panel of floors alone shows no count to the reader of a bracket 2 or a bracket 3 deck. The caps of the lower brackets join the floors. The finisher floor holds at every bracket, and the bracket system counts no finisher. So that row names the deck plan (D-743). Every number was already on the wire: `ProfileFeature` carries the value, the floor, and the cap. No file of the web app read `deck.profile`. So the change is one helper and one paragraph of the deck header. The session ran no paid target.
+
 ## The resume section of 2026-09-20e
 
 **Pull request #196 carries PR-60, the power counts of a deck beside its bracket, and it waits for the owner's merge** (D-774 to D-777).
