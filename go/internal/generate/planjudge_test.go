@@ -90,3 +90,70 @@ func TestPlanReasonEmpty(t *testing.T) {
 		t.Errorf("EmptyReasons = %d, want 2", n)
 	}
 }
+
+// TestJudgePlanReadsTheCardFacts is F-39: the plan judge reads the mana
+// cost and the type line of each card, and the color identity of the
+// commander, from the card data. The cards are test fixtures and name no
+// real card.
+func TestJudgePlanReadsTheCardFacts(t *testing.T) {
+	removal := mtgv1.CardRole_CARD_ROLE_REMOVAL
+	w, b := mtgv1.Color_COLOR_W, mtgv1.Color_COLOR_B
+	cards := source{
+		"o-lead":  {OracleId: "o-lead", Name: "A Two-Color Leader", ManaCost: "{2}{W}{B}", TypeLine: "Legendary Creature — Human Noble", ColorIdentity: []mtgv1.Color{b, w}},
+		"o-bolt":  {OracleId: "o-bolt", Name: "A Cheap Removal Spell", ManaCost: "{B}", TypeLine: "Instant"},
+		"o-land":  {OracleId: "o-land", Name: "A Dual Land", TypeLine: "Land — Plains Swamp"},
+		"o-faces": {OracleId: "o-faces", Name: "A Front // A Back", TypeLine: "Sorcery // Land", Faces: []*mtgv1.CardFace{{ManaCost: "{1}{W}"}, {}}},
+	}
+	deck := &mtgv1.Deck{
+		Summary:            "a deck",
+		CommanderOracleIds: []string{"o-lead"},
+		Cards: []*mtgv1.DeckCard{
+			{OracleId: "o-bolt", Name: "A Cheap Removal Spell", Count: 1, Role: removal},
+			{OracleId: "o-land", Name: "A Dual Land", Count: 1},
+			{OracleId: "o-faces", Name: "A Front // A Back", Count: 1},
+			{OracleId: "o-gone", Name: "A Card Outside The Data", Count: 1},
+		},
+	}
+	sc := llm.NewScript(llm.Step{Output: json.RawMessage(`{
+		"plan_coherent": {"grade": "yes", "why": "one plan"},
+		"theme_fit": {"grade": "yes", "why": "the theme"},
+		"useful_as_built": {"grade": "yes", "why": "plays"},
+		"summary_honest": {"grade": "yes", "why": "plain"}
+	}`)})
+	c, err := llm.New(fakeConfig(), []llm.Provider{sc}, llm.WithoutJitter())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := JudgePlan(context.Background(), c, "a deck", deck, cards, nil); err != nil {
+		t.Fatal(err)
+	}
+	in := sc.Calls[0].Input
+	for _, want := range []string{
+		"Commander: A Two-Color Leader | {2}{W}{B} | Legendary Creature — Human Noble\n",
+		"Color identity: WB\n",
+		"1 A Cheap Removal Spell | {B} | Instant (" + roleWord(removal) + ")\n",
+		"1 A Dual Land | Land — Plains Swamp\n",
+		"1 A Front // A Back | {1}{W} | Sorcery // Land\n",
+		"1 A Card Outside The Data\n",
+	} {
+		if !strings.Contains(in, want) {
+			t.Errorf("judge input lacks %q:\n%s", want, in)
+		}
+	}
+	if !strings.Contains(sc.Calls[0].Instructions, "not from your memory of the cards") {
+		t.Error("the instructions do not tell the judge to read the facts")
+	}
+	if plain := DeckText(deck, cards); strings.Contains(plain, "{B}") || strings.Contains(plain, "Color identity") {
+		t.Errorf("DeckText carries the facts, and the tier judge reads it:\n%s", plain)
+	}
+
+	// A colorless commander reads the word, and a deck with no commander
+	// names no identity.
+	cards["o-grey"] = &mtgv1.Card{OracleId: "o-grey", Name: "A Colorless Leader", ManaCost: "{7}", TypeLine: "Legendary Artifact Creature"}
+	if got := planDeckText(&mtgv1.Deck{CommanderOracleIds: []string{"o-grey"}}, cards); !strings.Contains(got, "Color identity: colorless\n") {
+		t.Errorf("colorless commander:\n%s", got)
+	}
+	if got := planDeckText(&mtgv1.Deck{Cards: deck.GetCards()}, cards); strings.Contains(got, "Color identity") {
+		t.Errorf("a deck with no commander names an identity:\n%s", got)
+	}
+}
