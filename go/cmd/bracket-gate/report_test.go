@@ -204,6 +204,56 @@ func TestReportJudge(t *testing.T) {
 	}
 }
 
+// TestReportJudgeScoresAPreconAgainstItsFloor is F-162: a precon anchors
+// no bracket, so it leaves the agreement, and it fails only below the
+// lowest bracket its rules allow (D-793).
+func TestReportJudgeScoresAPreconAgainstItsFloor(t *testing.T) {
+	idx := cards.NewIndex(nil, nil, nil, time.Now())
+	judge := func(rs []result) (string, bool) {
+		var buf bytes.Buffer
+		pass := reportJudge(&buf, "calibration.md", rs, llm.NewAccumulator(nil), idx, time.Second, evalrun.New("bracket-judge", "test"))
+		return buf.String(), pass
+	}
+	var rs []result
+	for i := 1; i <= 5; i++ {
+		rs = append(rs, good(i, 5))
+	}
+	rs[0].judged.Bracket = 4
+	precon := good(6, 2)
+	precon.prompt.Theme = "precon Living Energy"
+	precon.floor = 4
+	precon.judged.Bracket = 4
+	rs = append(rs, precon)
+	doc, pass := judge(rs)
+	if !pass {
+		t.Errorf("4 of 5 anchored decks and a precon at its floor must pass:\n%s", doc)
+	}
+	for _, want := range []string{"agreed with the bracket on 4 of 5 decks", "| 6 | floor 4 | 4 | at or above |", "1 of 1 precons at or above"} {
+		if !strings.Contains(doc, want) {
+			t.Errorf("document lacks %q:\n%s", want, doc)
+		}
+	}
+	rs[5].judged.Bracket = 3
+	if doc, pass := judge(rs); pass || !strings.Contains(doc, "| 6 | floor 4 | 3 | no |") {
+		t.Errorf("a precon below its floor must fail:\n%s", doc)
+	}
+	raiseToFloor(&rs[5])
+	doc, pass = judge(rs)
+	if !pass || !strings.Contains(doc, "| 6 | floor 4 | 4, raised from 3 to the rules floor | at or above |") ||
+		!strings.Contains(doc, "Judge: bracket 4, raised from 3 to the rules floor.") {
+		t.Errorf("the raise must lift the precon to its floor and say so:\n%s", doc)
+	}
+	rs[5].judged.Bracket, rs[5].raisedFrom, rs[5].floorErr = 3, 0, errors.New("502")
+	raiseToFloor(&rs[5])
+	if rs[5].judged.Bracket != 3 {
+		t.Errorf("a deck with no floor rose to %d", rs[5].judged.Bracket)
+	}
+	rs[5].judged.Bracket = 4
+	if doc, pass := judge(rs); pass || !strings.Contains(doc, "| 6 | no floor | 4 | no |") {
+		t.Errorf("a precon with no floor must fail:\n%s", doc)
+	}
+}
+
 // TestComboNames is F-126: the judge lane names the combos each judge
 // call read, so a reader can check a reason against them (D-790).
 func TestComboNames(t *testing.T) {

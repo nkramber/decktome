@@ -36,8 +36,10 @@ When the input holds the card list with the mana cost and the type line of each 
 
 // BracketJudgeVersion changes when the instructions or the input of the
 // bracket judge change. Version 2 reads the combos of Commander
-// Spellbook (F-126, D-790).
-const BracketJudgeVersion = 2
+// Spellbook (F-126, D-790). Version 3 states the combo rules of brackets
+// 2 and 3 as brackets.json does, and it compares no bracket to a precon
+// (F-162, D-794).
+const BracketJudgeVersion = 3
 
 // SummaryJudgeVersion changes when the instructions or the input of the
 // summary judge change. Version 2 reads the card facts of the deck
@@ -128,8 +130,8 @@ const bracketJudgeInstructions = `You read one Commander deck and name the brack
 
 The Commander brackets, from the Commander Format Panel (2025-02-11, revised 2025-10-21):
 - Bracket 1, Exhibition: an ultra-casual deck, games of nine turns or more. No Game Changers, no mass land denial, no extra turns, no two-card infinite combos.
-- Bracket 2, Core: near the strength of a preconstructed deck, games of eight turns or more. No Game Changers, no mass land denial, few extra turns and never chained, no two-card infinite combos.
-- Bracket 3, Upgraded: souped up beyond a precon, games of six turns or more. Up to three Game Changers, no mass land denial, few extra turns and never chained, no cheap two-card infinite combo in about the first six turns.
+- Bracket 2, Core: unoptimized and straightforward, with wins that are incremental, telegraphed on the board, and disruptable, and games of eight turns or more. No Game Changers, no mass land denial, few extra turns and never chained, no two-card infinite combo that needs six mana or less.
+- Bracket 3, Upgraded: powered up, with strong synergy and high card quality, and games of six turns or more. Up to three Game Changers, no mass land denial, few extra turns and never chained, no two-card infinite combo that needs four mana or less.
 - Bracket 4, Optimized: the strongest cards and decks, games can end from turn four. Only the ban list applies.
 - Bracket 5, cEDH: competitive and metagame-focused, a game can end on any turn. Only the ban list applies. The deck plays the best strategy and not a theme.
 

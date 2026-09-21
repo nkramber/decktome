@@ -259,8 +259,8 @@ bracket-gate: ## Write the PR-14A bracket gate document. CAUTION: calls a real p
 	@echo "wrote $(BRACKET_GATE_OUT) and $(BRACKET_GATE_RUN)"
 
 # BRACKET_CALIBRATE_OUT is the M-15 calibration document: the precons of
-# the repository as bracket 2 and top-finish cEDH lists as bracket 5
-# (D-698). BRACKET_GATE_ARGS="-rejudge <absolute path>" judges it, because
+# the repository, each scored against its rules floor (D-793), and
+# top-finish cEDH lists as bracket 5 (D-698). BRACKET_GATE_ARGS="-rejudge <absolute path>" judges it, because
 # the tool runs in go/. The pr14a name puts this machine output under the
 # dated-record exemption of the STE check (D-304).
 BRACKET_CALIBRATE_OUT ?= docs/reference/pr14a-bracket-calibration-decks.md
