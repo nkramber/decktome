@@ -23,11 +23,11 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 - `JudgeSummary` reads the same facts, and `SummaryJudgeVersion` reads 2 (D-789, F-161).
 - `go/cmd/deck-gate/rejudge.go` judges the stored decks of a whole run with no build. The flag `-keep` judges again only the decks that an earlier rejudge lost.
 
-**The measurement.** Deck gate run 30 cost $2.8263 and run 31 cost $2.8348. Both built every deck again, and the owner refused a third such run (D-789). Run 31 failed on a true Astarion cost that the old summary judge called false. Rejudge run 32 cost $1.2453 and lost 6 decks to HTTP 529 answers. Run 33 judged those 6 again for $0.3482, and it reads PASS.
+**The measurement.** Deck gate run 30 cost $2.8263 and run 31 cost $2.8348. Both built every deck again, and the owner refused a third such run (D-789). Run 31 failed on a true Astarion cost that the old summary judge called false. Rejudge run 32 cost $1.2453 and lost 6 decks to HTTP 529 answers. Run 33 judged those 6 again for $0.3482. Gitar found that the lane read the first paragraph of each summary alone. Run 34 judged the 25 whole summaries again for $0.4653, and it reads PASS.
 
-**The checks.** `make verify` passed on this machine, exit 0, with Node 22.23.2. `make eval-check` reads the decks suite PASS, run 33 against run 19. `make ste-check`, `make ref-check`, and `make context-budget` read 0 findings.
+**The checks.** `make verify` passed on this machine, exit 0, with Node 22.23.2. `make eval-check` reads the decks suite PASS, run 34 against run 19. `make ste-check`, `make ref-check`, and `make context-budget` read 0 findings.
 
-**The review.** The Gitar review of the head waits.
+**The review.** Gitar reviewed `eb606af` and found that the rejudge reader cut each summary to its first paragraph. Commit `93a07a8` fixes it, and run 34 measured the fix. The review of the new head waits.
 
 **What waits on the owner.**
 
@@ -96,7 +96,7 @@ Twenty things a fresh session gets wrong without this file.
 - The deployed web app, read 2026-09-20 at 22:45 UTC: the release of #196, Hosting version `60c80b8c4ad2a689` of 22:44:09 UTC. `index.html` loads `assets/index-Fi2SZrwg.js`. The deck page chunk `deck-view-BQeBlu0i.js` holds the power counts, and `use-cards-DNxWsKmD.js` holds every label. The release before it, `b786ceb7f89bc4fc` of 2026-09-13, came from #158.
 - The deployed quality model, read 2026-09-14: `20260914T070904Z`, from the meta job that started at 06:02 UTC and ended at 07:13 UTC. It fits 43,182 lists and 1,517 commanders. Its Commander fit reads `immaterial` 239 and accuracy 0.554, and its Standard fit reads a cross share of 0.667. The job read the weekly EDHREC pass, 2,077 pages and 4 lists. The mtgo source read 3,094 lists with 58 fetch errors. The mtggoldfish source read 155 lists with no failure. The mtgjson source read no list, because its deck list version differs from the stored table, as on 2026-09-12 and 2026-09-13.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
-- Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 19, revise is run 9. The generate prompt reads version 15 now, and run 19 read version 12. Run 33 of 2026-09-21 is the newest whole deck gate run. It rejudges the decks of run 31 (D-789), and `make eval-check` reads it as PASS against run 19. Run 52 is the newest whole questions run, and it reads PASS. Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 23 is its newest run.
+- Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 19, revise is run 9. The generate prompt reads version 15 now, and run 19 read version 12. Run 34 of 2026-09-21 is the newest whole deck gate run. It rejudges the summaries of run 31 (D-789), and `make eval-check` reads it as PASS against run 19. Run 52 is the newest whole questions run, and it reads PASS. Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 23 is its newest run.
 - Toolchain on this Mac, read 2026-09-11: Go 1.27.1, Node 22.23.2, pnpm 9.2.0, firebase-tools 14.14.0, and Java 17.0.20.1. Playwright is 1.63.0 with its Chromium headless shell (`playwright install chromium`). `go.mod` asks Go 1.27.0 or newer, and vitest is 5.0.0 since #133.
 - The local meta store, read 2026-09-14: 17,686 TopDeck good and 6,431 top-cut Commander lists from 2026-06-04 to 2026-09-14. It also holds 1,045 EDHREC average decks and 192 MTGJSON precons. M-17 read the TopDeck lists from 2026-08-01 alone.
 
@@ -127,7 +127,7 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 ### 2026-09-21a: the card facts of the judges, F-39
 
-**The owner picked F-39, and a judge that recalls a card fact failed a true summary** (D-787 to D-789). The plan judge reads the cost, the type, and the identity from the card data, and marks each card in or outside the sets. Deck gate run 31 then failed, because the summary judge called a true Astarion cost false (F-161). The session spent $5.66 on two whole runs to prove a change to the judges alone. The owner refused a third. The new rejudge lane judged the stored decks of run 31 for $1.2453, and a fill of 6 lost decks cost $0.3482.
+**The owner picked F-39, and a judge that recalls a card fact failed a true summary** (D-787 to D-789). The plan judge reads the cost, the type, and the identity from the card data, and marks each card in or outside the sets. Deck gate run 31 then failed, because the summary judge called a true Astarion cost false (F-161). The session spent $5.66 on two whole runs to prove a change to the judges alone. The owner refused a third. The new rejudge lane judged the stored decks of run 31 for $1.2453, and a fill of 6 lost decks cost $0.3482. Gitar found a cut summary in the lane, and run 34 judged the whole summaries for $0.4653.
 
 ### 2026-09-20j: the starved theme of F-37
 

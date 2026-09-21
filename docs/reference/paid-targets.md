@@ -26,7 +26,7 @@ Five more targets spend money, and each has an overwrite guard and an env guard.
 
 `DECK_GATE_ARGS="-rejudge <absolute path of a gate document>"` judges the stored decks of a whole run again, with no build (D-789). It copies the build rows of the source run and writes new judge rows. So its run stands as a whole run of the decks suite. Run 32 judged the 25 decks of run 31 for $1.2453, and a full run costs about $2.83.
 
-Add `-keep <absolute path of an earlier rejudge run file>` to judge again only the decks that the earlier rejudge lost. Run 33 judged 6 decks again for $0.3482. Prove a change to a judge alone with this lane, and never with a rebuild.
+Add `-keep <absolute path of an earlier rejudge run file>` to judge again only the decks that the earlier rejudge lost. Run 33 judged 6 decks again for $0.3482. Add `-summary-only` beside `-keep` to judge every summary again and keep the plan rows. Run 34 did that for $0.4653. Prove a change to a judge alone with this lane, and never with a rebuild.
 
 `make quality-judge` asks the judge role for the tier of every graded deck of a deck gate document (PR-14B). It costs a few cents a deck, and it has the guard `QUALITY_JUDGE=1` and a verdict check on `QUALITY_JUDGE_OUT`. Ask the owner before every run.
 
