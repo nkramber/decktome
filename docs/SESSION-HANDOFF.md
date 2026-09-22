@@ -8,9 +8,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-22d)
 
-**This pull request changes the review process (D-802 to D-806). Gitar is off, a review of the other provider comes before each merge, and a docs-only change skips the code jobs. It waits for a review of Codex, then for the owner's merge.**
+**Pull request #208 changes the review process (D-802 to D-806). Gitar is off, a review of the other provider comes before each merge, and a docs-only change skips the code jobs. It waits for a review of Codex, then for the owner's merge.**
 
-**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view`. Then do next step 1.
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view 208`. Then do next step 1.
 
 **The base.** `main` is `9900979`, from #207.
 
@@ -30,8 +30,8 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **What waits on the owner.**
 
-- A Codex session that reviews this pull request, with the prompt of `references/answer-review.md` in the `pr-review` skill.
-- The merge of this pull request.
+- A Codex session that reviews #208, with the prompt of `references/answer-review.md` in the `pr-review` skill.
+- The merge of #208.
 - A choice: a ruleset that requires `review-gate` and `verify:gate` on `main`. The repo is public now, so a ruleset can require a check.
 - A whole deck gate run measures the prompt of version 16. It is a paid target, so ask the owner first.
 - UNVERIFIED: the Moxfield import of the deck list. The export panel still names ManaBox and MTG Arena alone.
@@ -105,7 +105,7 @@ Twenty things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **Ask the owner for the item after F-164** (D-746). The sequence of the roadmap ends at step 51, and next step 2 holds each open item. **The review process** (D-802 to D-806) is this pull request. **Fix F-164** (D-800, D-801) ✅ done by #207. **Fix F-33** (D-798, D-799) ✅ done by #206.
+1. **Ask the owner for the item after F-164** (D-746). The sequence of the roadmap ends at step 51, and next step 2 holds each open item. **The review process** (D-802 to D-806) is #208. **Fix F-164** (D-800, D-801) ✅ done by #207. **Fix F-33** (D-798, D-799) ✅ done by #206.
 2. **The open items of the roadmap.** Two register rows read 🔧: F-48 and F-49. F-49 waits for the owner. The F-48 row names run 7 in error, and the escape sits in runs 1, 2, 3, and 5 alone. OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). The power pass after the build still waits (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). No whole deck gate run measured the fixing floor of F-33 yet.
 3. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It waits, because the ten sessions of the audit ran before #184 and before D-749.
 4. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git.
