@@ -8,9 +8,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-22a)
 
-**Pull request #PRNUM fixes F-163 and answers OQ-80. The collection page names every upload format, and a collection stores the format the server read. It waits for the owner's merge.**
+**Pull request #205 fixes F-163 and answers OQ-80. The collection page names every upload format, and a collection stores the format the server read. It waits for the owner's merge.**
 
-**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view #PRNUM`. Then do next step 1.
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view #205`. Then do next step 1.
 
 **The base.** `main` is `3d46167`, from #204. Cloud Build `f1ac3f50` built it and ended SUCCESS at 20:32:47 UTC on 2026-09-21. The bracket judge runs in the gate tools alone, so no live behavior changed.
 
