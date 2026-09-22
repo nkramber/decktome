@@ -12,7 +12,7 @@ Two rules of the deployed app come from 2026-09-09. **A verdict keeps the object
 
 The look follows a reference design the owner gave on 2026-08-30 (D-328 to D-335). `docs/reference/autotune-readme.md` holds the loop commands.
 
-**The repository is public** (D-639). Write no email and no personal address into a file, an issue, or a pull request. D-642 permits a reader's own words. Every pull request runs the whole verify workflow.
+**The repository is public** (D-639). Write no email and no personal address into a file, an issue, or a pull request. D-642 permits a reader's own words. A docs-only change skips the code jobs of the verify workflow (D-805).
 
 Run `make where` before you change anything. It prints the branch, the tree, and the state of the branch's pull request. The session commits on a branch, pushes it, and opens a pull request. The owner merges (hard rule 8, D-583, D-585). Never commit on `main`, and run `make hooks` once in a fresh checkout.
 
@@ -25,16 +25,16 @@ Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
 3. **Ask questions when you think of them.** Do not save questions for the end. Use `AskUserQuestion` in small batches. Record each answer in `docs/decisions.md`.
 4. **Do the research.** Verify facts against sources (Scryfall API, Wizards announcements, the Comprehensive Rules). Record the date of each fact. MtG rules and ban lists change often.
 5. **Make hand-off simple.** Update `docs/SESSION-HANDOFF.md` inside the pull request, before you call it ready (D-747). Record the completed work, the open work, and the next step.
-6. **No AI-attribution text** in any PR, branch name, commit message, or comment. This house rule comes from connector-syncer.
+6. **No AI-attribution text** in any PR, branch name, commit message, or comment. This house rule comes from connector-syncer. Two places name the provider: the `Author:` line of a hand-off entry, and a record in `docs/reviews/` (D-806).
 7. **No mistakes.** Check card names, rules, and dates before you write them. When you are not sure, say so and mark the item as unverified.
 8. **Every change starts on a branch.** Never commit to `main`, and never push to it (D-583). Make a branch, commit there, push it, and open a pull request. The owner merges. Run `make where` before every commit, push, and deploy. It prints the branch, the tree, and whether `main` is current. It also names the state of the branch's pull request. Run `make hooks` one time, and the pre-commit hook then refuses what these rules forbid (D-585).
 9. **Deploy from `main` alone.** Never deploy any other branch to production, for any reason (D-579). Check the branch and the commit before every build, not only the tree. `docs/deploy-and-rollback.md` holds the procedure.
-10. **Answer the review before you ask for a merge.** `gitar-bot` reviews every pull request (D-637). Load the `gitar-review` skill after each push, and follow its procedure (D-745). The skill proves that a review is current, and it answers each finding. These rules of this repo win over the skill:
-   - **Gitar is the only review this repo asks for.** No second harness reads it.
-   - A pull request of documents alone waits for the review too (D-679).
-   - Tell the owner when the pull request is ready to merge. The owner merges.
-   - Wait for a current Gitar review before you call the pull request ready. Fix each finding on the same pull request, in the same session (D-746).
-   - A commit of `docs/SESSION-HANDOFF.md` or the hand-off archive alone does not make a Gitar pass stale (D-752).
+10. **A review of the other provider comes before each merge** (D-803). The provider that wrote a pull request does not review it. Codex reviews a pull request of Claude Code, and Claude Code reviews one of Codex. Load the `pr-review` skill for a review and for the answer to one.
+   - The reviewer writes `docs/reviews/pr-<number>.md`. The `review-gate` check reads its verdict and its Head field (D-804).
+   - A pull request of documents alone waits for the review too, unless the owner applies the `review-override` label (D-679, D-804).
+   - No session waits for Gitar while `.github/gitar-review` reads `paused` (D-802). While it reads `on`, load the `gitar-review` skill after each push, and answer each Gitar finding before the hand-over (D-745).
+   - Fix each finding on the same pull request, in the same session (D-746). A commit of the review files or the two hand-off files alone does not make a review stale (D-752).
+   - Tell the owner when the verdict is `Ready for owner merge` and `review-gate` passes. The owner merges.
 11. **Never hesitate to ask or to push back.** Ask a question the moment you have one. When the owner's two statements conflict, say so and quote both. When a request rests on a wrong premise, say so with the evidence. The owner sees this as the key to good LLM-user interaction. Silence is the mistake, not the question.
 12. **One pull request, one clean session.** A session works on one pull request, and the pull request carries all its documents and its hand-off. No pull request exists to record an earlier merge. Load `.claude/skills/one-pr-one-session/SKILL.md` for all work on a pull request (D-746 to D-748). The owner says that the pull request merged. Then write the transitional prompt of section 5, and do no other work (D-754, D-764).
 13. **Keep command output small** (D-749). Every line of output stays in the context of every later call. Count or list the matches first, with `grep -c` or `grep -l`. Then read a bounded range, with `sed -n`, `head`, or the offset and limit of the Read tool. Read only the section that you need. Do not print a whole document. Show the output of a failed test, build, or gate in full, because the error is the evidence.
@@ -52,7 +52,8 @@ Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
 |---|---|
 | `ste-writing` | Before you write or edit any `.md` file here. |
 | `one-pr-one-session` | Before any work on a pull request: a start, a revision, a review, a merge message, or the hand-off. |
-| `gitar-review` | After each push to a pull request, documents alone included. |
+| `pr-review` | Before a review of a pull request, and before an answer to one (D-803). |
+| `gitar-review` | After each push to a pull request, while `.github/gitar-review` reads `on` (D-802). |
 | `design-doc-style` | Before you edit `docs/design-roadmap.md`. |
 | `mtg-corpus` | Before you reason about formats, legality, archetypes, or card terms. |
 
@@ -68,6 +69,7 @@ Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
 - `docs/open-questions.md` - questions not yet asked or not yet answered.
 - `docs/owner-questions.md` - the decision queue. Every question here waits for the owner, and the tuning loop refuses to decide one.
 - `docs/reference/` - research notes with sources and dates, and every dated gate document.
+- `docs/reviews/` - the review record of each pull request, and the answer of the author (D-803).
 - `docs/audit-2026-08-28.md` - the full audit of 2026-08-28, its owner answers, and the change plan.
 - `docs/audit-2026-08-29.md` - the quality audit of 2026-08-29 and its fixes (D-302 to D-306).
 - `docs/reference/set-data-2026-08-31.md` - every set number PR-17B rests on, with its source and date.

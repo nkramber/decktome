@@ -27,4 +27,4 @@ The commands you ran, and their results.
 
 ## Review
 
-The state of the Gitar review, and the answer to each finding.
+The state of the review of the other provider: waiting, or the verdict and the effective head of `docs/reviews/pr-<number>.md`. The state of Gitar: paused, or the answer to each finding (D-802, D-803).

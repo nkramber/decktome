@@ -1,0 +1,86 @@
+name: review-gate
+
+# The review gate of every pull request (D-803, D-804). The provider that
+# wrote a pull request does not review it, and the review record
+# docs/reviews/pr-<number>.md holds the verdict. docs/tools/review_gate.py
+# holds the rules.
+#
+# The trigger is pull_request_target, so the workflow file, the gate
+# command, and the mode file all come from main. The job reads the files
+# of the head as data. It never builds them and never runs them. GitHub
+# starts this trigger from the default branch alone, so the pull request
+# that adds this file gets no run of it.
+on:
+  pull_request_target:
+    # A label changes the result, so a label event runs the job too.
+    types: [opened, reopened, synchronize, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: review-gate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review-gate:
+    name: "review-gate"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # Same pin as verify.yml. With pull_request_target, this checks out main.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      # Each value of the event goes through env, and never into the text
+      # of the script, so a branch name or a label cannot run as shell.
+      - name: read the head of the pull request as data
+        env:
+          NUMBER: ${{ github.event.pull_request.number }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "+refs/pull/$NUMBER/head:refs/remotes/pr/head"
+          merge_base=$(git merge-base "$BASE_SHA" refs/remotes/pr/head)
+
+          # The files of the head go outside the checkout. No step runs one.
+          rm -rf "$RUNNER_TEMP/head-files"
+          mkdir -p "$RUNNER_TEMP/head-files"
+          git archive refs/remotes/pr/head | tar -x -C "$RUNNER_TEMP/head-files"
+
+          files=$(git diff --name-only "$merge_base" refs/remotes/pr/head \
+            | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          commits=$(git log --reverse --format=%H "$merge_base..refs/remotes/pr/head" \
+            | while read -r sha; do
+                git show --name-only --format= "$sha" \
+                  | jq -R -s -c --arg sha "$sha" \
+                      '{sha: $sha, files: (split("\n") | map(select(length > 0)))}'
+              done | jq -s -c '.')
+          decisions=$(git diff "$merge_base" refs/remotes/pr/head -- docs/decisions.md)
+
+          jq -n \
+            --argjson number "$NUMBER" \
+            --argjson labels "$LABELS" \
+            --argjson files "$files" \
+            --argjson commits "$commits" \
+            --arg decisionsDiff "$decisions" \
+            '{number: $number, labels: $labels, files: $files, commits: $commits,
+              decisionsDiff: $decisionsDiff}' \
+            > "$RUNNER_TEMP/pull-request.json"
+
+      # The step keeps the exit code until the report reaches the log and
+      # the summary, because a fault is the case the owner must read.
+      - name: review gate
+        run: |
+          set -uo pipefail
+          status=0
+          python3 docs/tools/review_gate.py \
+            --facts "$RUNNER_TEMP/pull-request.json" \
+            --head-files "$RUNNER_TEMP/head-files" \
+            --mode-file .github/review-gate-mode > "$RUNNER_TEMP/review-gate.log" 2>&1 || status=$?
+          cat "$RUNNER_TEMP/review-gate.log"
+          cat "$RUNNER_TEMP/review-gate.log" >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"

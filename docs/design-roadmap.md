@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-22 correction pass 213 (the review process, D-802 to D-806): one file pauses Gitar, and the same file turns it back on. A review of the other provider comes before each merge, and the `review-gate` check reads its record. A docs-only change skips the code jobs of the verify workflow. Changes: the review round of the feedback cycle.
+
 2026-09-22 correction pass 212 (F-164, D-800, D-801): F-164 reads ✅. Each card query retries while the API reads Unavailable after a cold start, and each card RPC waits 5 seconds for the first index. Changes: F-164.
 
 2026-09-22 correction pass 211 (F-33, D-798, D-799): F-33 reads ✅. A deck of two or more colors reads a fixing floor, from the low quarter of real lists. The prompt names it, and the mana pass fills it at every power. Changes: F-33.
@@ -1249,7 +1251,7 @@ Gate: a dry triage over a fixture of ten items, the owner's own past complaints,
 
 Every guard of `docs/reference/autotune-design.md` holds. They are the branch of its own, the frozen paths, the append-only decisions, and the green build. **The cases are frozen**, because a fixer that edits one makes the gate agree with the code instead of with the reader. One cycle stops at $2 of gate runs (D-559), and the ledger reads the cost of each run file.
 
-**The cycle pushes, opens the pull request, and answers the review** (D-645, D-637). `scripts/feedback-review.sh` hands every open finding of `gitar-bot` to the fixer, runs the free checks, pushes, and replies on each thread. It stops after three rounds. No step runs in CI (D-286).
+**The cycle pushes, opens the pull request, and answers the review** (D-645, D-637). `scripts/feedback-review.sh` hands every open finding of `gitar-bot` to the fixer, runs the free checks, pushes, and replies on each thread. It stops after three rounds. No step runs in CI (D-286). While `.github/gitar-review` reads `paused`, the cycle runs no round, and the pull request waits for the review of the other provider (D-802, D-803).
 
 Gate: one live cycle on the owner's word ends with a pull request and a passing gate on its new cases. `make eval-check` shows no flip on the baselines. The free half holds. `make feedback-loop-dry` plans a cycle over the fixture for nothing, and it names the three gates and the case ids of each one.
 > *In plain English:* an assistant tries to fix what the complaints show. It proves the complaint is real first, then fixes it, then proves the fix worked. It opens the change for you to approve and answers the automatic reviewer. Nothing ships without you.

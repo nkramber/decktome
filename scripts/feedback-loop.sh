@@ -90,6 +90,10 @@ done
 say() { printf '%s  %s\n' "$(date -u +%H:%M:%S)" "$*" | tee -a "$LOG" >&2; }
 die() { printf 'feedback-loop: %s\n' "$*" >&2; exit 1; }
 
+# While Gitar is paused, no round waits for it (D-802). The pull request
+# then waits for the review of the other provider (D-803).
+GITAR_STATE="$("$ROOT/scripts/gitar-state.sh")" || die "the state of the Gitar review does not read"
+
 STAMP="$(date -u +%Y%m%d-%H%M%S)"
 STATE_DIR="$ROOT/.local/tune/feedback-$STAMP"
 mkdir -p "$STATE_DIR"
@@ -465,6 +469,10 @@ say "pull request #$PR_NUM"
 
 if [ "$ROUNDS" -lt 1 ]; then
   say "no review round was asked for. The cycle ends at #$PR_NUM."
+  exit 0
+fi
+if [ "$GITAR_STATE" = "paused" ]; then
+  say "Gitar is paused (D-802), so no review round runs. #$PR_NUM waits for the review of the other provider (D-803)."
   exit 0
 fi
 say "step 8: the review of gitar-bot, up to $ROUNDS round(s)"

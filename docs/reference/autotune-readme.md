@@ -305,7 +305,7 @@ The eight steps of one cycle:
 6. `make eval-check` must show no flip on the baselines.
 7. The cycle commits its evidence, pushes, and opens the pull request.
    The body holds the rows the cycle can prove. The `pr-contract` check stays red until a clean author session completes the rest (D-748).
-8. `scripts/feedback-review.sh` answers the review of `gitar-bot`, up to `--rounds` times.
+8. `scripts/feedback-review.sh` answers the review of `gitar-bot`, up to `--rounds` times. While Gitar is off, the cycle skips this step (D-802).
 
 The cases are frozen. A fixer that edits one makes the gate agree with
 the code instead of with the reader.

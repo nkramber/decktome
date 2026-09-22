@@ -19,6 +19,13 @@ set -uo pipefail
 cd "$(dirname "$0")/.." || exit 1
 ROOT="$(pwd)"
 
+# The rounds wait for gitar-bot, so they refuse to start while Gitar is paused (D-802).
+gitar_state="$("$ROOT/scripts/gitar-state.sh")" || exit 2
+if [ "$gitar_state" = "paused" ]; then
+  echo "feedback-review: Gitar is paused (D-802). Set .github/gitar-review to on first." >&2
+  exit 2
+fi
+
 PR="${1:-}"
 ROUNDS="${2:-3}"
 STATE_DIR="${3:-$ROOT/.local/tune/review-$(date -u +%Y%m%d-%H%M%S)}"

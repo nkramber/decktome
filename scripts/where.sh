@@ -34,6 +34,10 @@ if command -v gh >/dev/null 2>&1; then
   esac
 fi
 
+# The review switches (D-802, D-804). Each one reads from this checkout.
+printf 'gitar review    %s\n' "$(./scripts/gitar-state.sh 2>&1)"
+printf 'review gate     %s\n' "$(tr -d '[:space:]' < .github/review-gate-mode 2>/dev/null || echo 'no mode file')"
+
 if [ "$branch" = "main" ]; then
   printf '\nWARNING: main takes no commit (D-583). Start a branch first.\n'
 fi

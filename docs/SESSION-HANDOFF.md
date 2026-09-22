@@ -6,32 +6,33 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-22c)
+## RESUME HERE (2026-09-22d)
 
-**Pull request #207 fixes F-164. A card query retries while the API reads Unavailable, and each card RPC waits for the first index. It waits for the owner's merge.**
+**This pull request changes the review process (D-802 to D-806). Gitar is off, a review of the other provider comes before each merge, and a docs-only change skips the code jobs. It waits for a review of Codex, then for the owner's merge.**
 
-**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view 207`. Then do next step 1.
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view`. Then do next step 1.
 
-**The base.** `main` is `b104a89`, from #206. Cloud Build `d3c3f7ab` of `deploy-api` ended SUCCESS at 16:04:58 UTC on 2026-09-22. #206 changed no web file, so `deploy-web` ran no build for it.
+**The base.** `main` is `9900979`, from #207.
 
-**Why this pull request exists.** The owner read empty card art on `decktome.com` after a cold start of the instance. A reload 30 seconds later showed the art. The owner named this defect as the item after F-33 (D-800), and chose the shape of the fix (D-801).
+**Why this pull request exists.** The owner wrote that the Gitar subscription is about to expire, and that the change must be easy to reverse. No GitHub rule asked for Gitar. The rule lived in hard rule 10, two skills, the template, and the feedback cycle. The owner then asked to mandate Codex reviews in the style of `the-thing-below` and `what-you-carry`. The docs-only skip of CI comes from `the-thing-below`.
 
 **What this pull request holds.**
 
-- `web/apps/web/src/lib/card-retry.ts` holds one retry rule for every card query. It takes Unavailable alone, and 13 retries wait 87 seconds in total.
-- Four queries read that rule: the deck view, the binder art, the collection art, and the card options of a question.
-- `cardsvc.ready` waits 5 seconds for the first index. The end of the request stops that wait, and `Current` waits never.
-- The tests are `card-retry.test.ts`, two new tests of `use-cards.test.ts`, `TestReadyWaitsForFirstIndex`, and `TestReadyStopsOnCanceledRequest`.
+- `.github/gitar-review` reads `paused`, and `scripts/gitar-state.sh` reads it. To turn Gitar back on, write `on` there and record a decision (D-802).
+- The `pr-review` skill and `docs/reviews/` hold the review of the other provider (D-803). `AGENTS.md` sends a Codex session to the skill.
+- `.github/workflows/review-gate.yml` runs `docs/tools/review_gate.py` from `main`. `.github/review-gate-mode` reads `enforced` (D-804).
+- `verify.yml` has a paths job and a `verify:gate` job. `docs/tools/changed_paths.py` holds the docs set and the rule (D-805).
+- Each hand-off session entry starts with an `Author:` line (D-806).
 
-**The F-33 live check of #206 passed.** The owner built session `ukCXMO2WdOHi8UvF4lbU` on 2026-09-22, and it made deck `XTMh9N0GFalJPA33zGxa`: Vivi Ornitier, blue and red, bracket 3, owned-only. Its profile reads `fixing_land` 11 against the floor of 11, and it holds no shortfall note. The mana pass filled a live deck.
+**The checks.** `make verify` and `make pr-check` pass on this machine. actionlint 1.7.7 passes on both changed workflows. The new unit tests hold 58 cases.
 
-**The checks.** `make verify` passed on this machine, exit 0, with Node 22.23.2 on the PATH. `go test ./internal/cardsvc/` passes, and the two new web test files hold 10 tests.
-
-**The review.** Gitar reviewed `a8e3a42` and reads "Approved", with no finding and no thread. Its dashboard edit of 18:26:51 UTC is later than the push of 18:24:10 UTC, both of 2026-09-22, so the review is current. Every check of the pull request passes.
+**The review.** Gitar still ran on this pull request, because the subscription was live. The pull request then waits for a review of Codex. The `review-gate` check cannot run on it, because GitHub starts `pull_request_target` from `main` alone. The next pull request gets the first live check.
 
 **What waits on the owner.**
 
+- A Codex session that reviews this pull request, with the prompt of `references/answer-review.md` in the `pr-review` skill.
 - The merge of this pull request.
+- A choice: a ruleset that requires `review-gate` and `verify:gate` on `main`. The repo is public now, so a ruleset can require a check.
 - A whole deck gate run measures the prompt of version 16. It is a paid target, so ask the owner first.
 - UNVERIFIED: the Moxfield import of the deck list. The export panel still names ManaBox and MTG Arena alone.
 - D-794 makes the app less strict than the Wizards infographic at Bracket 2.
@@ -48,9 +49,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 3. Run `ps aux | grep autotune` before any write. The loop resets the tree when it rejects an iteration.
 4. Make a branch from `main`. Never commit on `main`, and never push to it (D-583). The owner merges (D-585). Run `make hooks` one time in a fresh checkout.
 5. Load the skills. Load `ste-writing` before you write any `.md`. Load `design-doc-style` before you edit the roadmap. Load `mtg-corpus` before you reason about a format, a legality, or a card term.
-6. Run `make verify`. It runs every check the verify workflow runs, on this machine, for nothing. Put Node 22.23.2 on the PATH first. The pull request runs the same jobs on Actions (D-639).
+6. Run `make verify`. It runs every check the verify workflow runs, on this machine, for nothing. Put Node 22.23.2 on the PATH first. The pull request runs the same jobs on Actions, and a docs-only change skips the code jobs (D-805).
 7. Do "Next steps, in order" below. Ask questions as they come up. Record each owner answer in `docs/decisions.md`, and delete the row from `docs/owner-questions.md`.
-8. Open the pull request with the sections of `.github/pull_request_template.md`, and run `make pr-check`. Load the `gitar-review` skill, and follow it after each push (D-637, D-745). Gitar is the only review this repo asks for. A pull request of documents alone waits for the review too (D-679).
+8. Open the pull request with the sections of `.github/pull_request_template.md`, and run `make pr-check`. Hand it to the other provider for review with the `pr-review` skill (D-803). Load the `gitar-review` skill only while `.github/gitar-review` reads `on` (D-802).
 9. Update this file inside the pull request, before you call it ready (D-747). Read only the section that you change.
 10. Keep three session records at most (D-749). Move each older record to the archive, word for word.
 11. When the pull request is ready, end the session. The next pull request starts in a new clean session.
@@ -104,7 +105,7 @@ Twenty things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **Ask the owner for the item after F-164** (D-746). The sequence of the roadmap ends at step 51, and next step 2 holds each open item. **Fix F-164** (D-800, D-801) is #207. **Fix F-33** (D-798, D-799) ✅ done by #206.
+1. **Ask the owner for the item after F-164** (D-746). The sequence of the roadmap ends at step 51, and next step 2 holds each open item. **The review process** (D-802 to D-806) is this pull request. **Fix F-164** (D-800, D-801) ✅ done by #207. **Fix F-33** (D-798, D-799) ✅ done by #206.
 2. **The open items of the roadmap.** Two register rows read 🔧: F-48 and F-49. F-49 waits for the owner. The F-48 row names run 7 in error, and the escape sits in runs 1, 2, 3, and 5 alone. OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). The power pass after the build still waits (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). No whole deck gate run measured the fixing floor of F-33 yet.
 3. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It waits, because the ten sessions of the audit ran before #184 and before D-749.
 4. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git.
@@ -123,9 +124,15 @@ CAUTION: `make verify` runs `eval-check`, and `eval-check` reads the newest whol
 
 The CI step "fake gcs tests" ran no test until 2026-09-10 (D-658). Its filter matched no test name, so it passed as a no-op. It runs `scripts/gcs-check.sh` now: the script seeds the fake GCS from the trimmed snapshot and fails unless `TestLiveFakeGCS` passes by name. `make gcs-check` runs the same script.
 
-A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
+No ruleset requires a check on `main`. The one ruleset refuses a deletion and a force push alone (read 2026-09-22). The repo went public on 2026-09-09 (D-639), so a ruleset can require `verify:gate` and `review-gate` now. The owner reads the checks before a merge.
 
 ## The three most recent sessions
+
+### 2026-09-22d: the review process, Gitar off and Codex on
+
+Author: Claude Code
+
+**The owner asked to pause Gitar with an easy reversal, then to mandate Codex reviews and a docs-only skip of CI** (D-802 to D-806). No GitHub rule asked for Gitar, so the change reached the rules, the skills, and the scripts. The review gate and the skip come from `the-thing-below`, and the mode file comes from `what-you-carry`. Two Go tests and the eval check read `docs/reference/`, so the docs set leaves it out.
 
 ### 2026-09-22c: the cold start of the card art, F-164
 
@@ -135,10 +142,6 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 **The owner picked F-33, and chose a prompt line, a mana pass, and measured floors in every format** (D-798, D-799). A free count over the meta store gave the fixing floor of each tier and each count of colors, at the low quarter. The replay of runs 29 and 31 cost nothing. The owner confirmed the live format labels of #205.
 
-### 2026-09-22a: the upload formats of the collection page, F-163
-
-**The owner asked for a UI that names Moxfield in full, and answered OQ-80** (D-796, D-797). The server read Moxfield since #123, and only the page lagged. Each web upload stored no format, so the import now stores the detected one. A proxy counts as owned, which the parser already did. No first-party source confirms the Moxfield import of the deck list, so the export text stays.
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-22a, the records of 2026-08-31 to 2026-09-21b, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-22c, the records of 2026-08-31 to 2026-09-22a, and 104 more sections, word for word. Read it for the detail behind a decision.

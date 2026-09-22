@@ -48,6 +48,17 @@ CI runs every job of `verify` on each pull request (D-639). The `pr-contract` wo
 - Table-driven tests. `ctx` is the first parameter. `errors.Is` / `errors.As`. Accept interfaces, return structs.
 - One concern per pull request. Squash merge into `main`.
 - One pull request per clean session. The pull request carries its own documents and hand-off, and no pull request records an earlier merge. Load `.claude/skills/one-pr-one-session/SKILL.md` for all work on a pull request (D-746 to D-748).
-- No AI-attribution text in any PR, branch name, commit message, or comment.
+- No AI-attribution text in any PR, branch name, commit message, or comment. The `Author:` line of a hand-off entry and a record in `docs/reviews/` name the provider (D-806).
 - Write docs and skills in ASD-STE100. Run `make ste-check` before you commit a `.md` file. `make lint` and CI run it too (D-264).
 - Cite an id that a register defines, and a path that exists. `make ref-check` fails on either one (D-753).
+
+## Review
+
+The provider that wrote a pull request does not review it (D-803). Codex reviews a pull request of Claude Code, and Claude Code reviews one of Codex. A different model or session of the same provider does not qualify.
+
+1. Load `.claude/skills/one-pr-one-session/SKILL.md`, then `.claude/skills/pr-review/SKILL.md`.
+2. Write the review record at `docs/reviews/pr-<number>.md`, in the form of the skill.
+3. Add a session entry to `docs/SESSION-HANDOFF.md` that starts with `Author: Codex` or `Author: Claude Code`.
+4. Commit the record and the entry together, and push them to the branch of the pull request.
+
+The `review-gate` check reads the verdict and the Head field of the record (D-804). The owner merges. A reviewer never pushes to `main`, never merges, and never writes a comment on the pull request.

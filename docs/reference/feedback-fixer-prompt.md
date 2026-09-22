@@ -72,7 +72,7 @@ Do not push. Do not switch branches. Do not amend a commit from before the start
 
 ## The review round
 
-The cycle opens a pull request and waits for the review of `gitar-bot` (D-637). When a finding comes back, you get it with the diff, and the same rules hold. Read each finding on its merit and never on its tone.
+The cycle opens a pull request and waits for the review of `gitar-bot` (D-637). While Gitar is off, the cycle ends at the open pull request, and a session of the other provider reviews it later (D-802, D-803). When a finding comes back, you get it with the diff, and the same rules hold. Read each finding on its merit and never on its tone.
 
 - A finding with merit takes a change, a test, and a commit.
 - A finding with no merit takes no change. Write one paragraph that says why, and the cycle replies with it.
