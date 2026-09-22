@@ -32,6 +32,12 @@ export function sourceLabel(source: ImportSource | undefined): string | undefine
   return source === undefined ? undefined : sourceLabels[source];
 }
 
+// readAs is the line of the import result. The list row starts with the
+// bare label, so the article lives here and not in the label.
+export function readAs(label: string): string {
+  return `Read as ${/^[AEIOU]/.test(label) ? "an" : "a"} ${label}.`;
+}
+
 // ImportResult shows the counts and the unresolved rows of one upload
 // (F-2, M-3). The upload dialog shows the same body inside itself, so
 // the two read alike and one function writes both.
@@ -66,7 +72,7 @@ export function ImportReportBody({ result }: { result: ImportCollectionResponse 
           ? `${collection.name}: ${collection.cardCount} cards, ${report?.resolvedCount ?? 0} rows resolved, ${unresolved.length} unresolved.`
           : "The import returned no collection."}
       </p>
-      {format && <p data-testid="import-format">Read as a {format}.</p>}
+      {format && <p data-testid="import-format">{readAs(format)}</p>}
       {byReason.length > 0 && (
         <ul className="text-sm">
           {byReason.map(([reason, count]) => (

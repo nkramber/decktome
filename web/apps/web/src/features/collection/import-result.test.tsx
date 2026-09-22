@@ -1,7 +1,7 @@
 import { ImportSource, UnresolvedReason } from "@mtg/api-client/mtg/v1/collection_pb";
 import { describe, expect, it } from "vitest";
 
-import { reasonLabel, sourceLabel } from "./import-result";
+import { readAs, reasonLabel, sourceLabel } from "./import-result";
 
 describe("reasonLabel", () => {
   it("reads the full enum name, the short name, and the number", () => {
@@ -25,5 +25,10 @@ describe("sourceLabel", () => {
     expect(sourceLabel(ImportSource.ARENA_TEXT)).toBe("Arena list");
     expect(sourceLabel(ImportSource.UNSPECIFIED)).toBeUndefined();
     expect(sourceLabel(undefined)).toBeUndefined();
+  });
+
+  it("gives the import line the article of its label", () => {
+    expect(readAs("Moxfield export")).toBe("Read as a Moxfield export.");
+    expect(readAs("Arena list")).toBe("Read as an Arena list.");
   });
 });
