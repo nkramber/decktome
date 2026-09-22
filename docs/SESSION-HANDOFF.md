@@ -24,7 +24,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 - `verify.yml` has a paths job and a `verify:gate` job. `docs/tools/changed_paths.py` holds the docs set and the rule (D-805).
 - Each hand-off session entry starts with an `Author:` line (D-806).
 
-**The checks.** `make verify` and `make pr-check` pass on this machine. actionlint 1.7.7 passes on both changed workflows. The new unit tests hold 58 cases.
+**The checks.** `make verify` and `make pr-check` pass on this machine. actionlint 1.7.7 passes on both changed workflows. The new unit tests hold 61 cases.
 
 **The review.** Gitar still ran on this pull request, because the subscription was live. The pull request then waits for a review of Codex. The `review-gate` check cannot run on it, because GitHub starts `pull_request_target` from `main` alone. The next pull request gets the first live check.
 
@@ -132,7 +132,7 @@ No ruleset requires a check on `main`. The one ruleset refuses a deletion and a 
 
 Author: Claude Code
 
-**The owner asked to pause Gitar with an easy reversal, then to mandate Codex reviews and a docs-only skip of CI** (D-802 to D-806). No GitHub rule asked for Gitar, so the change reached the rules, the skills, and the scripts. The review gate and the skip come from `the-thing-below`, and the mode file comes from `what-you-carry`. Two Go tests and the eval check read `docs/reference/`, so the docs set leaves it out.
+**The owner asked to pause Gitar with an easy reversal, then to mandate Codex reviews and a docs-only skip of CI** (D-802 to D-806). No GitHub rule asked for Gitar, so the change reached the rules, the skills, and the scripts. The review gate and the skip come from `the-thing-below`, and the mode file comes from `what-you-carry`. Code reads `docs/reference/` and the `mtg-corpus` skill, so the docs set leaves both out.
 
 ### 2026-09-22c: the cold start of the card art, F-164
 

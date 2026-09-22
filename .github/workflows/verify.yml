@@ -82,8 +82,9 @@ jobs:
 
           # Three dots give the paths of the pull request from the merge
           # base. Two dots would also read each path that main changed
-          # after the branch point.
-          git diff --name-only "$BASE_SHA...$HEAD_SHA" > "$facts/pr-paths.txt"
+          # after the branch point. --no-renames lists both sides of a
+          # move, so a move of code into docs/ names the code path too.
+          git diff --no-renames --name-only "$BASE_SHA...$HEAD_SHA" > "$facts/pr-paths.txt"
           echo "The pull request changes these paths:"
           cat "$facts/pr-paths.txt"
 
@@ -101,9 +102,17 @@ jobs:
             exit 0
           fi
 
-          git diff --name-only "$BEFORE_SHA" "$HEAD_SHA" > "$facts/push-paths.txt"
+          git diff --no-renames --name-only "$BEFORE_SHA" "$HEAD_SHA" > "$facts/push-paths.txt"
           echo "The push changes these paths from $BEFORE_SHA:"
           cat "$facts/push-paths.txt"
+
+          # A run tests the merge with main. Each path that a commit of main
+          # changed after the branch point of the previous head goes here, so
+          # a code change on main runs every job again.
+          previous_base=$(git merge-base "$BEFORE_SHA" "$BASE_SHA")
+          git log --no-renames --format= --name-only "$previous_base..$BASE_SHA" | sort -u > "$facts/base-paths.txt"
+          echo "main changed these paths after $previous_base:"
+          cat "$facts/base-paths.txt"
 
           # The API gives the latest run of each name. One JSON object a line.
           gh api --paginate "repos/$REPOSITORY/commits/$BEFORE_SHA/check-runs?per_page=100" \
@@ -118,7 +127,8 @@ jobs:
           facts="$RUNNER_TEMP/changed-paths"
           arguments=(decide --event-name pull_request --output "$GITHUB_OUTPUT" --pr-paths "$facts/pr-paths.txt")
           if [ -f "$facts/push-paths.txt" ]; then
-            arguments+=(--push-paths "$facts/push-paths.txt" --previous-checks "$facts/previous-checks.jsonl")
+            arguments+=(--push-paths "$facts/push-paths.txt" --previous-checks "$facts/previous-checks.jsonl"
+              --base-paths "$facts/base-paths.txt")
           fi
           python3 docs/tools/changed_paths.py "${arguments[@]}"
 

@@ -24,14 +24,16 @@ def run(name, status="completed", conclusion="success", app="github-actions"):
 
 class DocsSetTest(unittest.TestCase):
     def test_docs_and_skills_and_root_guides_are_in_the_set(self):
-        for path in ("docs/decisions.md", "docs/tools/pr_check.py", ".claude/skills/x/SKILL.md",
+        for path in ("docs/decisions.md", "docs/tools/pr_check.py", ".claude/skills/pr-review/SKILL.md",
                      ".claude/settings.json", "CLAUDE.md", "AGENTS.md", "README.md",
                      ".github/pull_request_template.md"):
             self.assertTrue(cp.in_docs_set(path), path)
 
     def test_code_read_folders_and_workflows_are_outside_the_set(self):
         # Go tests glob docs/reference/pr7-*, and the eval check reads docs/reference/eval/.
+        # The questions test parses the catalog of the mtg-corpus skill.
         for path in ("docs/reference/eval/base.jsonl", "docs/reference/pr7-question-gate-run1.md",
+                     ".claude/skills/mtg-corpus/SKILL.md",
                      ".github/workflows/verify.yml", "go/go.mod", "Makefile", "scripts/where.sh",
                      "docsx/a.md", "CLAUDE.md.bak"):
             self.assertFalse(cp.in_docs_set(path), path)
@@ -53,9 +55,23 @@ class DecideTest(unittest.TestCase):
         with self.assertRaises(cp.FactError):
             cp.decide("pull_request", None, None, None)
 
-    def test_push_paths_and_checks_go_together(self):
-        with self.assertRaises(cp.FactError):
-            cp.decide("pull_request", ["go/a.go"], ["docs/a.md"], None)
+    def test_push_paths_checks_and_base_paths_go_together(self):
+        for checks, base in ((None, None), (GREEN, None), (None, [])):
+            with self.assertRaises(cp.FactError):
+                cp.decide("pull_request", ["go/a.go"], ["docs/a.md"], checks, base)
+
+    def test_a_move_of_code_into_docs_runs(self):
+        # --no-renames lists both sides of a move: the old code path and the new docs path.
+        self.assertFalse(cp.decide("pull_request", ["docs/a.go", "go/a.go"], None, None)[0])
+        self.assertFalse(cp.decide("pull_request", ["go/b.go"], ["docs/a.go", "go/a.go"], GREEN, [])[0])
+
+    def test_a_docs_push_after_code_on_main_runs(self):
+        alone, reason = cp.decide("pull_request", ["go/a.go"], ["docs/a.md"], GREEN, ["docs/x.md", "web/b.ts"])
+        self.assertFalse(alone)
+        self.assertIn("web/b.ts", reason)
+
+    def test_a_docs_push_after_docs_on_main_skips(self):
+        self.assertTrue(cp.decide("pull_request", ["go/a.go"], ["docs/a.md"], GREEN, ["docs/x.md"])[0])
 
     def test_an_empty_change_runs_every_job(self):
         self.assertFalse(cp.decide("pull_request", [], None, None)[0])
@@ -69,37 +85,37 @@ class DecideTest(unittest.TestCase):
         self.assertIn("go/a.go", reason)
 
     def test_a_docs_push_after_a_green_head_skips(self):
-        self.assertTrue(cp.decide("pull_request", ["go/a.go", "docs/a.md"], ["docs/a.md"], GREEN)[0])
+        self.assertTrue(cp.decide("pull_request", ["go/a.go", "docs/a.md"], ["docs/a.md"], GREEN, [])[0])
 
     def test_a_code_push_runs(self):
-        self.assertFalse(cp.decide("pull_request", ["go/a.go"], ["go/a.go", "docs/a.md"], GREEN)[0])
+        self.assertFalse(cp.decide("pull_request", ["go/a.go"], ["go/a.go", "docs/a.md"], GREEN, [])[0])
 
     def test_an_empty_push_runs(self):
-        self.assertFalse(cp.decide("pull_request", ["go/a.go"], [], GREEN)[0])
+        self.assertFalse(cp.decide("pull_request", ["go/a.go"], [], GREEN, [])[0])
 
     def test_a_docs_push_after_a_red_head_runs(self):
         red = [run("verify:gate", conclusion="failure")]
-        alone, reason = cp.decide("pull_request", ["go/a.go"], ["docs/a.md"], red)
+        alone, reason = cp.decide("pull_request", ["go/a.go"], ["docs/a.md"], red, [])
         self.assertFalse(alone)
         self.assertIn("failure", reason)
 
     def test_a_docs_push_after_a_cancelled_or_running_head_runs(self):
         for checks in ([run("verify:gate", conclusion="cancelled")],
                        [run("verify:gate", status="in_progress", conclusion=None)]):
-            self.assertFalse(cp.decide("pull_request", ["go/a.go"], ["docs/a.md"], checks)[0])
+            self.assertFalse(cp.decide("pull_request", ["go/a.go"], ["docs/a.md"], checks, [])[0])
 
     def test_a_docs_push_with_no_gate_run_runs(self):
         other = [run("verify:go"), run("verify:gate", app="some-other-app")]
-        alone, reason = cp.decide("pull_request", ["go/a.go"], ["docs/a.md"], other)
+        alone, reason = cp.decide("pull_request", ["go/a.go"], ["docs/a.md"], other, [])
         self.assertFalse(alone)
         self.assertIn("no run", reason)
 
     def test_an_old_failure_does_not_hide_under_a_new_pass(self):
         checks = [run("verify:gate"), run("verify:gate", conclusion="failure")]
-        self.assertFalse(cp.decide("pull_request", ["go/a.go"], ["docs/a.md"], checks)[0])
+        self.assertFalse(cp.decide("pull_request", ["go/a.go"], ["docs/a.md"], checks, [])[0])
 
     def test_a_reference_push_runs(self):
-        self.assertFalse(cp.decide("pull_request", ["go/a.go"], ["docs/reference/eval/x.jsonl"], GREEN)[0])
+        self.assertFalse(cp.decide("pull_request", ["go/a.go"], ["docs/reference/eval/x.jsonl"], GREEN, [])[0])
 
 
 class ReadCheckRunsTest(unittest.TestCase):

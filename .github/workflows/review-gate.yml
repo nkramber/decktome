@@ -51,11 +51,15 @@ jobs:
           mkdir -p "$RUNNER_TEMP/head-files"
           git archive refs/remotes/pr/head | tar -x -C "$RUNNER_TEMP/head-files"
 
-          files=$(git diff --name-only "$merge_base" refs/remotes/pr/head \
+          # --no-renames lists both sides of a move, so a move of code into
+          # docs/ keeps its code path in each list. A merge commit lists its
+          # paths against its first parent, so a merge of main moves the
+          # effective head.
+          files=$(git diff --no-renames --name-only "$merge_base" refs/remotes/pr/head \
             | jq -R -s -c 'split("\n") | map(select(length > 0))')
           commits=$(git log --reverse --format=%H "$merge_base..refs/remotes/pr/head" \
             | while read -r sha; do
-                git show --name-only --format= "$sha" \
+                git show --no-renames --name-only --format= --diff-merges=first-parent "$sha" \
                   | jq -R -s -c --arg sha "$sha" \
                       '{sha: $sha, files: (split("\n") | map(select(length > 0)))}'
               done | jq -s -c '.')

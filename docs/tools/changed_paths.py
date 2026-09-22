@@ -2,9 +2,11 @@
 """Decide whether the code jobs of the verify workflow skip (D-805).
 
 A pull request whose paths are all in the docs set skips the code jobs.
-A push to a pull request skips them too when two things hold: the push
-changes docs alone, and the verify:gate check passed on the previous
-head. The gate job passes when a docs-only change skips the code jobs.
+A push to a pull request skips them too when three things hold: the push
+changes docs alone, the verify:gate check passed on the previous head,
+and main took no code path since the branch point of the previous head.
+A pull request run tests the merge with main, so a code change on main
+makes the earlier pass cover other code. The gate job passes when a docs-only change skips the code jobs.
 So a run of docs-only pushes reads back through each skipped head to the
 last head that ran the code jobs, and that head passed them.
 
@@ -15,14 +17,17 @@ Two commands:
   gate    reads the result of each code job and the decision, and exits 1
           when a code job failed, or skipped with no docs-only decision.
 
-The docs set leaves out docs/reference/, because Go tests and the eval
-check read files there. The verify:shell job runs on every head, so the
+The docs set leaves out each path that code reads: two Go tests glob
+docs/reference/, the eval check reads docs/reference/eval/, and the
+questions test parses the catalog of the mtg-corpus skill. Each path
+list comes from git with --no-renames, so a move names its old path too. The verify:shell job runs on every head, so the
 document checks and the tests of docs/tools and the session hook run on
 every docs-only change.
 
 Run:
   python3 docs/tools/changed_paths.py decide --event-name pull_request \\
-      --pr-paths pr.txt [--push-paths push.txt --previous-checks checks.jsonl] \\
+      --pr-paths pr.txt [--push-paths push.txt --previous-checks checks.jsonl \\
+      --base-paths base.txt] \\
       --output "$GITHUB_OUTPUT"
   python3 docs/tools/changed_paths.py gate --needs "$NEEDS_JSON"
 """
@@ -31,7 +36,7 @@ import json
 import sys
 
 DOCS_FOLDERS = ("docs/", ".claude/")
-DOCS_EXCLUDED_FOLDERS = ("docs/reference/",)
+DOCS_EXCLUDED_FOLDERS = ("docs/reference/", ".claude/skills/mtg-corpus/")
 DOCS_FILES = (
     "AGENTS.md",
     "CLAUDE.md",
@@ -107,18 +112,18 @@ def gate_fault(runs):
     return None
 
 
-def decide(event_name, pr_paths, push_paths, previous_checks):
+def decide(event_name, pr_paths, push_paths, previous_checks, base_paths=None):
     """Return (documents_alone, reason) for one run of the workflow."""
     if not event_name:
         raise FactError("the event name is empty")
     if event_name != PULL_REQUEST_EVENT:
-        if pr_paths is not None or push_paths is not None or previous_checks is not None:
+        if any(v is not None for v in (pr_paths, push_paths, previous_checks, base_paths)):
             raise FactError(f"the event '{event_name}' is not a pull request, and it takes no path file")
         return False, f"the event '{event_name}' runs every job it starts"
     if pr_paths is None:
         raise FactError("a pull request needs the file of --pr-paths")
-    if (push_paths is None) != (previous_checks is None):
-        raise FactError("--push-paths and --previous-checks go together")
+    if len({push_paths is None, previous_checks is None, base_paths is None}) != 1:
+        raise FactError("--push-paths, --previous-checks, and --base-paths go together")
     # An empty change skips nothing. An empty commit runs every job again.
     if not pr_paths:
         return False, "the pull request changes no path, so every job runs"
@@ -136,6 +141,10 @@ def decide(event_name, pr_paths, push_paths, previous_checks):
     fault = gate_fault(previous_checks)
     if fault is not None:
         return False, f"the push changes docs alone, and on the previous head {fault}, so every job runs"
+    base_code_path = first_path_outside(base_paths)
+    if base_code_path is not None:
+        return False, (f"main changed '{base_code_path}' after the branch point of the previous head, "
+                       "so the earlier pass covers other code, and every job runs")
     return True, f"the push changes docs alone, and '{GATE_CHECK}' passed on the previous head, so the code jobs skip"
 
 
@@ -181,6 +190,7 @@ def main(argv=None):
     one.add_argument("--pr-paths")
     one.add_argument("--push-paths")
     one.add_argument("--previous-checks")
+    one.add_argument("--base-paths")
     one.add_argument("--output", required=True)
     two = sub.add_parser("gate")
     two.add_argument("--needs", required=True)
@@ -195,7 +205,8 @@ def main(argv=None):
         pr_paths = [p for p in read_lines(args.pr_paths) if p] if args.pr_paths else None
         push_paths = [p for p in read_lines(args.push_paths) if p] if args.push_paths else None
         checks = read_check_runs(read_lines(args.previous_checks)) if args.previous_checks else None
-        alone, reason = decide(args.event_name, pr_paths, push_paths, checks)
+        base_paths = [p for p in read_lines(args.base_paths) if p] if args.base_paths else None
+        alone, reason = decide(args.event_name, pr_paths, push_paths, checks, base_paths)
     except (FactError, OSError, ValueError) as fault:
         print(f"changed_paths: stopped. {fault}", file=sys.stderr)
         return 2
