@@ -117,15 +117,136 @@ func TestTheManaPassSwapsABasicLandForABetterLand(t *testing.T) {
 	}
 }
 
-// TestTheSwapWaitsForBracketFour is D-734. The land rank runs at every
-// bracket, and the swap at brackets 4 and 5 alone.
-func TestTheSwapWaitsForBracketFour(t *testing.T) {
+// TestBelowBracketFourThePassFillsTheFixingFloor is D-734 and D-799.
+// The swap of better lands waits for bracket 4, and the fixing floor
+// reads at every bracket. A bracket 3 deck of basic lands sits under its
+// floor of 11, so the pass takes each untapped fixing land of its pool.
+// The deck misses its mana on turn four, and Thriving Isle enters tapped
+// and lowers it, so the pass leaves it out. Marsh Flats finds one deck
+// color, so it is no fixing land.
+func TestBelowBracketFourThePassFillsTheFixingFloor(t *testing.T) {
 	s := newSwapCards()
 	deck := s.fixed(t, 3, mtgv1.PoolRule_POOL_RULE_OWNED_ONLY, ownedAll(s.all()), 0)
 	for _, c := range []*mtgv1.Card{s.grave, s.delta, s.hollow} {
-		if countOf(deck, c.GetOracleId()) != 0 {
-			t.Errorf("the pass traded a basic land for %s at bracket 3", c.GetName())
+		if countOf(deck, c.GetOracleId()) != 1 {
+			t.Errorf("the pass did not take %s at bracket 3", c.GetName())
 		}
+	}
+	for _, c := range []*mtgv1.Card{s.isle, s.flats} {
+		if countOf(deck, c.GetOracleId()) != 0 {
+			t.Errorf("the pass took %s at bracket 3", c.GetName())
+		}
+	}
+}
+
+// TestTheFillTradesABasicLandAndNamesWhy: a deck whose other bands hold
+// takes a fixing land in place of a basic land, and the entry reads the
+// fixing reason.
+func TestTheFillTradesABasicLandAndNamesWhy(t *testing.T) {
+	s := newSwapCards()
+	src := source{}
+	for _, c := range s.all() {
+		src[c.GetOracleId()] = c
+	}
+	b := manaBuilder(t, src)
+	deck := s.deck(3)
+	req := Request{Format: mtgv1.FormatId_FORMAT_ID_COMMANDER, Power: deck.GetPower(), PoolRule: mtgv1.PoolRule_POOL_RULE_OWNED_ONLY,
+		Pool: NewPool(s.all(), ownedAll(s.all()))}
+	if n := b.fillFixing(req, deck); n == 0 {
+		t.Fatal("the fill kept no swap")
+	}
+	if basics := countOf(deck, s.island.GetOracleId()) + countOf(deck, s.swamp.GetOracleId()); basics >= 35 {
+		t.Errorf("the deck still holds %d basic lands", basics)
+	}
+	for _, dc := range deck.GetCards() {
+		if dc.GetOracleId() == s.grave.GetOracleId() && dc.GetReason() != fixReason {
+			t.Errorf("Watery Grave reads reason %q, want the fixing reason", dc.GetReason())
+		}
+	}
+	if countOf(deck, s.grave.GetOracleId()) != 1 {
+		t.Error("the fill did not take Watery Grave, the best land of the pool")
+	}
+}
+
+// sixtyDeck is 12 Islands, 12 Swamps, and 36 spells of two mana, at a
+// power step of Modern.
+func (s swapCards) sixtyDeck(stepOf mtgv1.SixtyStep) *mtgv1.Deck {
+	entry := func(c *mtgv1.Card, n int32, role mtgv1.CardRole) *mtgv1.DeckCard {
+		return &mtgv1.DeckCard{OracleId: c.GetOracleId(), Name: c.GetName(), Count: n, Role: role}
+	}
+	return &mtgv1.Deck{
+		Format: &mtgv1.Format{Id: mtgv1.FormatId_FORMAT_ID_MODERN},
+		Power:  &mtgv1.PowerLevel{Level: &mtgv1.PowerLevel_SixtyStep{SixtyStep: stepOf}},
+		Cards: []*mtgv1.DeckCard{
+			entry(s.island, 12, mtgv1.CardRole_CARD_ROLE_LAND), entry(s.swamp, 12, mtgv1.CardRole_CARD_ROLE_LAND),
+			entry(s.blue, 18, mtgv1.CardRole_CARD_ROLE_THREAT), entry(s.black, 18, mtgv1.CardRole_CARD_ROLE_THREAT),
+		},
+	}
+}
+
+// fixedSixty runs the pass over the 60-card deck with a pool rule and the
+// owned counts.
+func (s swapCards) fixedSixty(t *testing.T, stepOf mtgv1.SixtyStep, rule mtgv1.PoolRule, owned map[string]int32) *mtgv1.Deck {
+	t.Helper()
+	src := source{}
+	for _, c := range s.all() {
+		src[c.GetOracleId()] = c
+	}
+	b := manaBuilder(t, src)
+	deck := s.sixtyDeck(stepOf)
+	req := Request{Format: mtgv1.FormatId_FORMAT_ID_MODERN, Power: deck.GetPower(), PoolRule: rule,
+		Pool: NewPool(s.all(), owned), OracleCounts: owned}
+	b.fixMana(req, deck)
+	if n := deckCount(deck); n != 60 {
+		t.Errorf("the deck holds %d cards after the pass, want 60", n)
+	}
+	return deck
+}
+
+func fixingCount(deck *mtgv1.Deck, s swapCards) int32 {
+	var n int32
+	for _, c := range []*mtgv1.Card{s.grave, s.delta, s.hollow, s.isle} {
+		n += countOf(deck, c.GetOracleId())
+	}
+	return n
+}
+
+// TestTheFillTakesCopiesInASixtyCardDeck is D-799. A 60-card deck takes
+// a second copy of a fixing land up to the copy limit, and it stops at
+// its floor of 7. The casual step holds no floor, so it takes none.
+func TestTheFillTakesCopiesInASixtyCardDeck(t *testing.T) {
+	s := newSwapCards()
+	deck := s.fixedSixty(t, mtgv1.SixtyStep_SIXTY_STEP_FNM, mtgv1.PoolRule_POOL_RULE_OWNED_ONLY, ownedAll(s.all()))
+	if n := fixingCount(deck, s); n != 7 {
+		t.Errorf("the fnm deck holds %d fixing lands, want the floor of 7", n)
+	}
+	for _, c := range []*mtgv1.Card{s.grave, s.delta, s.hollow, s.isle} {
+		if n := countOf(deck, c.GetOracleId()); n > 4 {
+			t.Errorf("the deck holds %d copies of %s", n, c.GetName())
+		}
+	}
+	if countOf(deck, s.grave.GetOracleId()) < 2 {
+		t.Error("the fill took one copy of Watery Grave, the best land of the pool")
+	}
+	casual := s.fixedSixty(t, mtgv1.SixtyStep_SIXTY_STEP_CASUAL, mtgv1.PoolRule_POOL_RULE_OWNED_ONLY, ownedAll(s.all()))
+	if n := fixingCount(casual, s); n != 0 {
+		t.Errorf("the casual deck took %d fixing lands, and its step holds no floor", n)
+	}
+}
+
+// TestTheFillTakesOnlyOwnedCopiesUnderOwnedFirst: a reader who owns one
+// Watery Grave gets one, and the fill buys no second copy.
+func TestTheFillTakesOnlyOwnedCopiesUnderOwnedFirst(t *testing.T) {
+	s := newSwapCards()
+	owned := ownedAll(s.all())
+	owned[s.grave.GetOracleId()] = 1
+	delete(owned, s.delta.GetOracleId())
+	deck := s.fixedSixty(t, mtgv1.SixtyStep_SIXTY_STEP_FNM, mtgv1.PoolRule_POOL_RULE_OWNED_FIRST, owned)
+	if n := countOf(deck, s.grave.GetOracleId()); n != 1 {
+		t.Errorf("the deck holds %d Watery Graves, and the reader owns 1", n)
+	}
+	if n := countOf(deck, s.delta.GetOracleId()); n != 0 {
+		t.Errorf("the deck holds %d Polluted Deltas, and the reader owns none", n)
 	}
 }
 
@@ -212,7 +333,7 @@ func TestTheSwapDropsTheBasicOfTheColorWithMostToSpare(t *testing.T) {
 	owned := ownedAll(s.all())
 	req := Request{Format: mtgv1.FormatId_FORMAT_ID_COMMANDER, Power: deck.GetPower(), PoolRule: mtgv1.PoolRule_POOL_RULE_OWNED_ONLY,
 		Pool: NewPool(s.all(), owned), OracleCounts: owned}
-	if !b.swapOne(req, deck) {
+	if !b.swapOne(req, deck, b.betterLands, "", swapReason) {
 		t.Fatal("the swap made no step")
 	}
 	if countOf(deck, s.grave.GetOracleId()) != 1 {
@@ -251,7 +372,7 @@ func TestTheSwapKeepsABasicLandForEachLandThatReadsOne(t *testing.T) {
 	owned := ownedAll(all)
 	req := Request{Format: mtgv1.FormatId_FORMAT_ID_COMMANDER, Power: deck.GetPower(), PoolRule: mtgv1.PoolRule_POOL_RULE_OWNED_ONLY,
 		Pool: NewPool([]*mtgv1.Card{s.island, s.swamp, s.blue, s.black, s.hollow, dual, passage}, owned), OracleCounts: owned}
-	if b.swapOne(req, deck) || countOf(deck, passage.GetOracleId()) != 0 {
+	if b.swapOne(req, deck, b.betterLands, "", swapReason) || countOf(deck, passage.GetOracleId()) != 0 {
 		t.Error("the swap took Fabled Passage and left 3 basic lands for 4 lands that read them")
 	}
 }

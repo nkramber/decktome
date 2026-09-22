@@ -35,6 +35,10 @@ type Bands struct {
 	VerifiedAt string
 	commander  map[int32]map[string]Band
 	sixty      map[mtgv1.SixtyStep]map[string]Band
+	// The fixing floors are keyed by the count of deck colors, so they
+	// sit outside the feature tables (F-33, D-799).
+	fixCommander map[int32]map[int]float64
+	fixSixty     map[mtgv1.SixtyStep]map[int]float64
 }
 
 var sixtyWords = map[string]mtgv1.SixtyStep{
@@ -50,6 +54,10 @@ func LoadBands() (*Bands, error) {
 		VerifiedAt string                     `json:"verified_at"`
 		Commander  map[string]map[string]Band `json:"commander"`
 		Sixty      map[string]map[string]Band `json:"sixty"`
+		Fixing     struct {
+			Commander map[string]map[string]float64 `json:"commander"`
+			Sixty     map[string]map[string]float64 `json:"sixty"`
+		} `json:"fixing_land"`
 	}
 	if err := json.Unmarshal(bandsJSON, &f); err != nil {
 		return nil, fmt.Errorf("bands.json: %w", err)
@@ -58,9 +66,11 @@ func LoadBands() (*Bands, error) {
 		return nil, fmt.Errorf("bands.json: verified_at is missing")
 	}
 	out := &Bands{
-		VerifiedAt: f.VerifiedAt,
-		commander:  map[int32]map[string]Band{},
-		sixty:      map[mtgv1.SixtyStep]map[string]Band{},
+		VerifiedAt:   f.VerifiedAt,
+		commander:    map[int32]map[string]Band{},
+		sixty:        map[mtgv1.SixtyStep]map[string]Band{},
+		fixCommander: map[int32]map[int]float64{},
+		fixSixty:     map[mtgv1.SixtyStep]map[int]float64{},
 	}
 	for k, table := range f.Commander {
 		n, err := strconv.Atoi(k)
@@ -86,6 +96,45 @@ func LoadBands() (*Bands, error) {
 		if _, ok := out.commander[n]; !ok {
 			return nil, fmt.Errorf("bands.json: bracket %d is missing", n)
 		}
+	}
+	for k, row := range f.Fixing.Commander {
+		n, err := strconv.Atoi(k)
+		if _, ok := out.commander[int32(n)]; err != nil || !ok {
+			return nil, fmt.Errorf("bands.json: fixing_land: bad bracket %q", k)
+		}
+		floors, err := fixingRow(row)
+		if err != nil {
+			return nil, fmt.Errorf("bands.json: fixing_land: bracket %s: %w", k, err)
+		}
+		out.fixCommander[int32(n)] = floors
+	}
+	for k, row := range f.Fixing.Sixty {
+		step, ok := sixtyWords[k]
+		if !ok {
+			return nil, fmt.Errorf("bands.json: fixing_land: bad power step %q", k)
+		}
+		floors, err := fixingRow(row)
+		if err != nil {
+			return nil, fmt.Errorf("bands.json: fixing_land: step %s: %w", k, err)
+		}
+		out.fixSixty[step] = floors
+	}
+	return out, nil
+}
+
+// fixingRow parses the floors of one power, keyed by a color count of 2
+// to 5. A deck of one color needs no fixing, so it holds no key.
+func fixingRow(row map[string]float64) (map[int]float64, error) {
+	out := map[int]float64{}
+	for k, v := range row {
+		n, err := strconv.Atoi(k)
+		if err != nil || n < 2 || n > 5 {
+			return nil, fmt.Errorf("bad color count %q", k)
+		}
+		if v < 0 {
+			return nil, fmt.Errorf("color count %s: floor %g is under zero", k, v)
+		}
+		out[n] = v
 	}
 	return out, nil
 }
@@ -117,6 +166,22 @@ func (b *Bands) For(format mtgv1.FormatId, power *mtgv1.PowerLevel) (table map[s
 		step = mtgv1.SixtyStep_SIXTY_STEP_CASUAL
 	}
 	return b.sixty[step], 0
+}
+
+// FixingFloor answers the fixing lands a deck of the given count of
+// colors must hold, and 0 when its power holds no floor (F-33, D-799). A
+// fixing land is a land of LandClassOf below LandOther. The power reads
+// as For reads it.
+func (b *Bands) FixingFloor(format mtgv1.FormatId, power *mtgv1.PowerLevel, colors int) float64 {
+	if format == mtgv1.FormatId_FORMAT_ID_COMMANDER {
+		_, bracket := b.For(format, power)
+		return b.fixCommander[bracket][colors]
+	}
+	step := power.GetSixtyStep()
+	if _, ok := b.sixty[step]; !ok {
+		step = mtgv1.SixtyStep_SIXTY_STEP_CASUAL
+	}
+	return b.fixSixty[step][colors]
 }
 
 // DefaultBracket is the bracket a Commander deck with no bracket reads
@@ -155,8 +220,36 @@ func (b *Bands) Lines(format mtgv1.FormatId, power *mtgv1.PowerLevel) []string {
 		}
 		out = append(out, line)
 	}
+	if line := b.fixingLine(format, power); line != "" {
+		out = append(out, line)
+	}
 	return out
 }
+
+// fixingLine names the fixing floor of each count of deck colors. A
+// 60-card prompt reads it before the model picks the colors, so the line
+// names every count (F-33, D-799). It is "" when the power holds no
+// floor.
+func (b *Bands) fixingLine(format mtgv1.FormatId, power *mtgv1.PowerLevel) string {
+	var parts []string
+	for n := 2; n <= 5; n++ {
+		if v := b.FixingFloor(format, power, n); v > 0 {
+			parts = append(parts, fmt.Sprintf("%s in a %s-color deck", num(v), colorCountWords[n]))
+		}
+	}
+	if len(parts) == 0 {
+		return ""
+	}
+	list := parts[0]
+	if len(parts) > 1 {
+		list = strings.Join(parts[:len(parts)-1], ", ") + ", and " + parts[len(parts)-1]
+	}
+	return "- fixing lands, lands that make two or more of the deck's colors: at least " + list + ". " +
+		"A dual land, a land that makes any color, and a fetch land that finds two of the deck's colors each count as one. " +
+		"A basic land counts as none."
+}
+
+var colorCountWords = map[int]string{2: "two", 3: "three", 4: "four", 5: "five"}
 
 // Words writes one band as the phrase the job block reads, or "" when
 // the format and the power carry no band for the key (F-78, Part 2).

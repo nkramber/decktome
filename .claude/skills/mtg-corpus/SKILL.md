@@ -184,7 +184,7 @@ Every deck needs cards in these roles. The ratios differ by format and archetype
 
 Mana curve: most decks want the most cards at MV 2 and 3, fewer at 1 and 4, few at 5+. Commander decks average MV 2.8 to 3.5. Aggro 60-card decks average under 2.5.
 
-Color sources: for a two-color 60-card deck, aim for 12 to 14 sources of each main color. Use the Frank Karsten tables for exact counts. Commander with three or more colors needs many dual lands and fixing.
+Color sources: for a two-color 60-card deck, aim for 12 to 14 sources of each main color. Use the Frank Karsten tables for exact counts. Commander with three or more colors needs many dual lands and fixing. For each count of deck colors, the app states the fewest fixing lands a deck can hold, from the low quarter of real lists (D-799). A two-color Commander deck at bracket 3 needs 11.
 
 Sideboard (60-card formats): 15 cards. Answer the expected metagame. Not used in Commander.
 

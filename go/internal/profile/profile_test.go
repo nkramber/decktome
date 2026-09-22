@@ -55,8 +55,8 @@ func add(s spec) *mtgv1.Card {
 var (
 	plains     = add(spec{name: "Plains", types: []string{"Land"}, supers: []string{"Basic"}, produced: []mtgv1.Color{W}})
 	swamp      = add(spec{name: "Swamp", types: []string{"Land"}, supers: []string{"Basic"}, produced: []mtgv1.Color{B}})
-	tapDual    = add(spec{name: "Scoured Barrens", types: []string{"Land"}, produced: []mtgv1.Color{W, B}, text: "Scoured Barrens enters tapped.\nWhen it enters, you gain 1 life."})
-	shock      = add(spec{name: "Godless Shrine", types: []string{"Land"}, produced: []mtgv1.Color{W, B}, text: "As Godless Shrine enters, you may pay 2 life. If you don't, it enters tapped."})
+	tapDual    = add(spec{name: "Scoured Barrens", types: []string{"Land"}, produced: []mtgv1.Color{W, B}, text: "Scoured Barrens enters tapped.\nWhen it enters, you gain 1 life.\n{T}: Add {W} or {B}."})
+	shock      = add(spec{name: "Godless Shrine", types: []string{"Land"}, produced: []mtgv1.Color{W, B}, text: "({T}: Add {W} or {B}.)\nAs Godless Shrine enters, you may pay 2 life. If you don't, it enters tapped."})
 	fetch      = add(spec{name: "Marsh Flats", types: []string{"Land"}, text: "{T}, Pay 1 life, Sacrifice Marsh Flats: Search your library for a Plains or Swamp card, put it onto the battlefield, then shuffle."})
 	rogue      = add(spec{name: "Rogue's Passage", types: []string{"Land"}, produced: []mtgv1.Color{C}, text: "{T}: Add {C}."})
 	solRing    = add(spec{name: "Sol Ring", cost: "{1}", mv: 1, types: []string{"Artifact"}, produced: []mtgv1.Color{C}, text: "{T}: Add {C}{C}."})
@@ -103,8 +103,8 @@ type row struct {
 // interaction, and filler at mana value two to four.
 func shaped() []row {
 	return []row{
-		{plains, 17, mtgv1.CardRole_CARD_ROLE_LAND}, {swamp, 15, mtgv1.CardRole_CARD_ROLE_LAND},
-		{tapDual, 2, mtgv1.CardRole_CARD_ROLE_LAND}, {shock, 1, mtgv1.CardRole_CARD_ROLE_LAND}, {fetch, 1, mtgv1.CardRole_CARD_ROLE_LAND},
+		{plains, 12, mtgv1.CardRole_CARD_ROLE_LAND}, {swamp, 13, mtgv1.CardRole_CARD_ROLE_LAND},
+		{tapDual, 2, mtgv1.CardRole_CARD_ROLE_LAND}, {shock, 8, mtgv1.CardRole_CARD_ROLE_LAND}, {fetch, 1, mtgv1.CardRole_CARD_ROLE_LAND},
 		{solRing, 1, mtgv1.CardRole_CARD_ROLE_RAMP}, {signet, 9, mtgv1.CardRole_CARD_ROLE_RAMP},
 		{knight, 10, mtgv1.CardRole_CARD_ROLE_DRAW}, {knight, 8, mtgv1.CardRole_CARD_ROLE_REMOVAL},
 		{wrath, 3, mtgv1.CardRole_CARD_ROLE_WIPE}, {knight, 6, mtgv1.CardRole_CARD_ROLE_INTERACTION},
@@ -157,7 +157,7 @@ func TestReadMeasuresTheShapedDeckInBand(t *testing.T) {
 		t.Errorf("profile head %v", prof)
 	}
 	want := map[string]float64{
-		KeyLand: 36, KeyTappedLand: 2, KeyColorlessLand: 0, KeyRamp: 10, KeyDraw: 10,
+		KeyLand: 36, KeyTappedLand: 2, KeyColorlessLand: 0, KeyFixingLand: 11, KeyRamp: 10, KeyDraw: 10,
 		KeyRemoval: 8, KeyWipe: 3, KeyInteraction: 6, KeyFastMana: 1, KeyGameChanger: 0,
 	}
 	for key, v := range want {
@@ -194,7 +194,7 @@ func TestReadMeasuresTheShapedDeckInBand(t *testing.T) {
 func TestReadFindsAnOffBandFeature(t *testing.T) {
 	rows := shaped()
 	// Cut five lands for five more spells, and swap the wipes for tutors.
-	rows[0].n = 12
+	rows[0].n = 7
 	rows = append(rows, row{knight, 5, mtgv1.CardRole_CARD_ROLE_SYNERGY})
 	p := newProfiler(t, &fakeClassifier{res: &spellbook.Result{}})
 	prof, findings := p.Read(context.Background(), deckOf(3, rows...), source(testCards))
