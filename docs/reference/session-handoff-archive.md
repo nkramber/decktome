@@ -47,6 +47,10 @@ The records run newest first. The oldest narratives sit in
 - A look at the first commander question after a load of the app (next step 5).
 - OQ-67 and OQ-77.
 
+### 2026-09-22b: the fixing floor of the mana base, F-33
+
+**The owner picked F-33, and chose a prompt line, a mana pass, and measured floors in every format** (D-798, D-799). A free count over the meta store gave the fixing floor of each tier and each count of colors, at the low quarter. The replay of runs 29 and 31 cost nothing. The owner confirmed the live format labels of #205.
+
 ### 2026-09-22a: the upload formats of the collection page, F-163
 
 **The owner asked for a UI that names Moxfield in full, and answered OQ-80** (D-796, D-797). The server read Moxfield since #123, and only the page lagged. Each web upload stored no format, so the import now stores the detected one. A proxy counts as owned, which the parser already did. No first-party source confirms the Moxfield import of the deck list, so the export text stays.

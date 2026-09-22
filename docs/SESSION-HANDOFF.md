@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-22d)
 
-**Pull request #208 changes the review process (D-802 to D-806). Gitar is off, a review of the other provider comes before each merge, and a docs-only change skips the code jobs. It waits for a review of Codex, then for the owner's merge.**
+**The review of #208 found P2-1 in the docs-only push skip. It waits for a fix from Claude Code, then a repeat review.**
 
 **The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view 208`. Then do next step 1.
 
@@ -30,7 +30,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **What waits on the owner.**
 
-- A Codex session that reviews #208, with the prompt of `references/answer-review.md` in the `pr-review` skill.
+- A Claude Code response to P2-1, and a repeat review.
 - The merge of #208.
 - A choice: a ruleset that requires `review-gate` and `verify:gate` on `main`. The repo is public now, so a ruleset can require a check.
 - A whole deck gate run measures the prompt of version 16. It is a paid target, so ask the owner first.
@@ -128,6 +128,12 @@ No ruleset requires a check on `main`. The one ruleset refuses a deletion and a 
 
 ## The three most recent sessions
 
+### 2026-09-22e: review of #208
+
+Author: Codex
+
+**The review found P2-1:** `pull_request` synchronize events do not supply `github.event.before`, so a docs-only push to a code pull request runs all code jobs again. The local `make verify`, `make pr-check`, and 144 document-tool tests passed. GitHub passed `verify:gate` and `verify:shell`. Its docs-only run skipped the seven code jobs. The author must fix P2-1, then the review must run again.
+
 ### 2026-09-22d: the review process, Gitar off and Codex on
 
 Author: Claude Code
@@ -138,10 +144,6 @@ Author: Claude Code
 
 **The owner named a new defect, and chose the web retry and the server wait together** (D-800, D-801). The API listens before its card snapshot loads, and no query of the web app retries. So one failed call after a cold start left blank tiles until a reload. The F-33 live check of #206 passed on the owner's two-color deck.
 
-### 2026-09-22b: the fixing floor of the mana base, F-33
-
-**The owner picked F-33, and chose a prompt line, a mana pass, and measured floors in every format** (D-798, D-799). A free count over the meta store gave the fixing floor of each tier and each count of colors, at the low quarter. The replay of runs 29 and 31 cost nothing. The owner confirmed the live format labels of #205.
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-22c, the records of 2026-08-31 to 2026-09-22a, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-22c, the records of 2026-08-31 to 2026-09-22b, and 105 more sections, word for word. Read it for the detail behind a decision.
