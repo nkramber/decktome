@@ -71,6 +71,9 @@ func (b *Builder) fixMana(req Request, deck *mtgv1.Deck) int {
 	// At brackets 4 and 5 a basic land gives its place to a better land of
 	// the pool (PR-52, F-139, D-720, D-734).
 	kept += b.swapBasics(req, deck)
+	// At every power a deck under its fixing floor trades basic lands for
+	// fixing lands of the pool (F-33, D-799).
+	kept += b.fillFixing(req, deck)
 	if kept > 0 {
 		// The owned flag reads the count of an oracle id across the whole
 		// list, so it is set again after the last step (D-37, F-79).
@@ -223,10 +226,18 @@ func ratiosRise(next, now []float64) bool {
 // every feature. Zero means every band holds. A step is kept only when
 // this number falls, so a fix of one band never breaks another.
 func (b *Builder) manaScore(deck *mtgv1.Deck) float64 {
+	return b.bandScore(deck, "")
+}
+
+// bandScore is manaScore without the feature skip. The fill of fixing
+// lands reads it, so the fill closes its own band and moves no other.
+func (b *Builder) bandScore(deck *mtgv1.Deck, skip string) float64 {
 	prof := b.profiler.Measure(deck, b.cards)
 	total := 0.0
 	for _, f := range prof.GetFeatures() {
-		total += bandDistance(f)
+		if f.GetKey() != skip {
+			total += bandDistance(f)
+		}
 	}
 	return total
 }
@@ -274,6 +285,7 @@ type manaStep struct {
 const (
 	bandReason = "the mana pass added it to bring the mana base inside the power level"
 	swapReason = "the mana pass traded a basic land for this better land at the power level"
+	fixReason  = "the mana pass traded a basic land for this land, which makes two or more of the deck's colors"
 )
 
 // apply writes the step into the deck.
@@ -573,7 +585,7 @@ func (b *Builder) swapBasics(req Request, deck *mtgv1.Deck) int {
 	}
 	kept := 0
 	for range maxSwapSteps {
-		if !b.swapOne(req, deck) {
+		if !b.swapOne(req, deck, b.betterLands, "", swapReason) {
 			break
 		}
 		kept++
@@ -581,20 +593,109 @@ func (b *Builder) swapBasics(req Request, deck *mtgv1.Deck) int {
 	return kept
 }
 
-// swapOne makes the best swap the pool allows. It is false when no swap
-// keeps every guard.
-func (b *Builder) swapOne(req Request, deck *mtgv1.Deck) bool {
+// maxFixingSteps bounds the fill of fixing lands. The widest gap the
+// floors allow is 21, a deck of five colors and basic lands alone at
+// bracket 5.
+const maxFixingSteps = 21
+
+// fillFixing trades a basic land for a fixing land of the pool while the
+// deck sits under its fixing floor, at every power (F-33, D-799). It
+// returns the count of swaps it kept.
+//
+// A fixing land is a land of LandClassOf below LandOther, so a land that
+// enters tapped can join where the tapped band allows it. Each swap keeps
+// the guards of swapOne. The score it reads leaves out the fixing row,
+// so a swap never buys a fixing land with a worse band of another kind.
+func (b *Builder) fillFixing(req Request, deck *mtgv1.Deck) int {
+	if req.Pool == nil {
+		return 0
+	}
+	kept := 0
+	for range maxFixingSteps {
+		if !b.fixingShort(deck) || !b.swapOne(req, deck, b.fixingLands, profile.KeyFixingLand, fixReason) {
+			break
+		}
+		kept++
+	}
+	return kept
+}
+
+// fixingShort says whether the deck sits under its fixing floor.
+func (b *Builder) fixingShort(deck *mtgv1.Deck) bool {
+	for _, f := range b.profiler.Measure(deck, b.cards).GetFeatures() {
+		if f.GetKey() == profile.KeyFixingLand {
+			return f.GetOffBand()
+		}
+	}
+	return false
+}
+
+// sixtyCopies is the copy limit of a 60-card deck and its sideboard
+// together (Comprehensive Rules 100.2a and 100.4a, read 2026-09-22 in the
+// rules of 2026-09-25).
+const sixtyCopies = 4
+
+// fixingLands lists the pool lands the fill may add, best first, and no
+// more than maxLandCandidates. A Commander deck takes a land it does not
+// hold. A 60-card deck takes another copy up to the copy limit. Under
+// owned-first a land takes only the copies the reader owns.
+func (b *Builder) fixingLands(req Request, deck *mtgv1.Deck, colors map[mtgv1.Color]bool) []*mtgv1.Card {
+	commander := req.Format == mtgv1.FormatId_FORMAT_ID_COMMANDER
+	held := heldIDs(deck)
+	var out []*mtgv1.Card
+	for _, name := range req.Pool.Names() {
+		c, ok := req.Pool.Card(name)
+		if !ok || !profile.IsLand(c) || profile.IsBasic(c) || profile.LandClassOf(c, colors) >= profile.LandOther {
+			continue
+		}
+		id := c.GetOracleId()
+		copies := copiesOf(deck, id) + sideCopiesOf(deck, id)
+		switch {
+		case commander && held[id]:
+			continue
+		case !commander && copies >= sixtyCopies:
+			continue
+		}
+		if req.PoolRule == mtgv1.PoolRule_POOL_RULE_OWNED_FIRST && req.Pool.OwnedCount(id) <= copies {
+			continue
+		}
+		out = append(out, c)
+	}
+	rankLands(req, out, colors)
+	if len(out) > maxLandCandidates {
+		out = out[:maxLandCandidates]
+	}
+	return out
+}
+
+// sideCopiesOf is how many copies of a card the sideboard holds.
+func sideCopiesOf(deck *mtgv1.Deck, id string) int32 {
+	var n int32
+	for _, dc := range deck.GetSideboard() {
+		if dc.GetOracleId() == id {
+			n += dc.GetCount()
+		}
+	}
+	return n
+}
+
+// swapOne makes the best swap the pool allows, from the lands the lister
+// names. The band score leaves out the feature skip, and a swap is kept
+// only when that score does not rise. The new entry shows the reason. It
+// is false when no swap keeps every guard.
+func (b *Builder) swapOne(req Request, deck *mtgv1.Deck,
+	lister func(Request, *mtgv1.Deck, map[mtgv1.Color]bool) []*mtgv1.Card, skip, reason string) bool {
 	before := profile.ColorSources(deck, b.cards)
-	score := b.manaScore(deck)
+	score := b.bandScore(deck, skip)
 	cost := b.budgetCost(req, deck)
-	for _, add := range b.betterLands(req, deck, sourceColorSet(before)) {
+	for _, add := range lister(req, deck, sourceColorSet(before)) {
 		var options []balanceOption
 		for _, drop := range b.basicsOf(deck) {
 			if copiesOf(deck, drop.GetOracleId()) < 2 {
 				continue
 			}
 			step := manaStep{add: add, drop: drop.GetOracleId(), role: mtgv1.CardRole_CARD_ROLE_LAND,
-				owned: req.Pool.OwnedCount(add.GetOracleId()), reason: swapReason}
+				owned: req.Pool.OwnedCount(add.GetOracleId()), reason: reason}
 			undo := snapshot(deck)
 			step.apply(deck)
 			after := profile.ColorSources(deck, b.cards)
@@ -618,7 +719,7 @@ func (b *Builder) swapOne(req Request, deck *mtgv1.Deck) bool {
 		for _, o := range options {
 			undo := snapshot(deck)
 			o.step.apply(deck)
-			if b.manaScore(deck) <= score {
+			if b.bandScore(deck, skip) <= score {
 				return true
 			}
 			restore(deck, undo)

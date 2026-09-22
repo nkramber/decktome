@@ -95,6 +95,20 @@
       "commander_turn_over_mv": {"low": -9, "high": 0.3}
     }
   },
+  "fixing_land": {
+    "_comment": "The floor of fixing lands, keyed by power and then by the count of deck colors (F-33, D-799). A fixing land is a nonbasic land of LandClassOf below LandOther: it makes two or more deck colors, or it fetches a land that does. Each floor is the low quarter of the stored lists of one tier, read 2026-09-22 over the meta store of 2026-09-14 and the card snapshot of 2026-09-04: brackets 1 and 2 read the MTGJSON precons, bracket 3 the EDHREC average decks, bracket 4 the good lists, and bracket 5 the great lists. The fnm step reads the good Modern and Standard lists, the tournament step the great ones, and each cell takes the lower of the two formats. A cell of fewer than 30 lists takes the floor of one color fewer. The casual step reads the 60-card precons, whose low quarter is 0 at every color count, so it holds no floor. docs/reference/fixing-floors-2026-09-22.md holds the counts.",
+    "commander": {
+      "1": {"2": 7, "3": 13, "4": 13, "5": 13},
+      "2": {"2": 7, "3": 13, "4": 13, "5": 13},
+      "3": {"2": 11, "3": 17, "4": 17, "5": 17},
+      "4": {"2": 9, "3": 12, "4": 18, "5": 21},
+      "5": {"2": 9, "3": 12, "4": 18, "5": 21}
+    },
+    "sixty": {
+      "fnm": {"2": 7, "3": 10, "4": 12, "5": 12},
+      "tournament": {"2": 7, "3": 11, "4": 13, "5": 12}
+    }
+  },
   "sixty": {
     "casual": {
       "tapped_land": {"low": 0, "high": 12},

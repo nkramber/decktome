@@ -12,6 +12,43 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-22a
+
+**Pull request #205 fixes F-163 and answers OQ-80. The collection page names every upload format, and a collection stores the format the server read. It waits for the owner's merge.**
+
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view #205`. Then do next step 1.
+
+**The base.** `main` is `3d46167`, from #204. Cloud Build `f1ac3f50` built it and ended SUCCESS at 20:32:47 UTC on 2026-09-21. The bracket judge runs in the gate tools alone, so no live behavior changed.
+
+**Why this pull request exists.** The server reads a Moxfield CSV since #123 (D-647), and the collection page still named ManaBox alone. The owner asked for a UI that shows the support in full (D-796).
+
+**What this pull request holds.**
+
+- `go/internal/collectionsvc/service.go` stores the format that `parseUpload` read, and never the unnamed source of the request.
+- `web/apps/web/src/features/collection/collection-page.tsx` names ManaBox, Moxfield, and an Arena list, and each upload row names its format.
+- `web/apps/web/src/features/collection/import-result.tsx` reads "Read as a Moxfield export", and its `BAD_ROW` label names no app.
+- D-797 answers OQ-80: a proxy counts as owned. The parser already read it so, and `TestAProxyCountsAsOwned` holds the rule.
+
+**The checks.** `make verify` passed on this machine, exit 0, with Node 22.23.2. `TestImportDetectsTheFormat` fails without the fix of `service.go`. `make ste-check`, `make ref-check`, and `make context-budget` read 0 findings.
+
+**The review.** Gitar reviewed `46ca534` and found one issue: the import line read "Read as a Arena list". `readAs` now picks the article, and a test reads "an Arena list". Gitar reviewed `7d98374` and reads "Approved", 1 of 1 findings closed, and it resolved its thread. Its dashboard edit of 05:14:12 UTC is later than the push of 05:13:13 UTC, both of 2026-09-22, so the review is current.
+
+**What waits on the owner.**
+
+- The Gitar review, then the merge of this pull request.
+- A look at the collection page after the deploy. A collection stored before D-796 names no format, so upload again to see the label.
+- UNVERIFIED: the Moxfield import of the deck list. The help page answered 403 on 2026-09-22, so the export panel still names ManaBox and MTG Arena alone. Paste one exported list into Moxfield to check the `Commander` and `Deck` headers.
+- D-794 makes the app less strict than the Wizards infographic at Bracket 2.
+- The F-48 row names bracket gate run 7. A count on 2026-09-21 found the escape in runs 1, 2, 3, and 5 alone.
+- Five sessions on the new files, before a decision on the checkpoint rule (next step 3, D-750).
+- A deployed session with a theme that matches no card, such as "anime" (next step 4).
+- A look at the first commander question after a load of the app (next step 5).
+- OQ-67 and OQ-77.
+
+### 2026-09-21b: the combo list of the bracket judge, F-126
+
+**The owner picked F-126, and the bracket judge reads the combos of Commander Spellbook** (D-790). The rejudge profiles each stored deck through the free endpoint. The owner chose two rejudges, a second read, and a control read, for $0.6410 in all (D-791). Run 2 lost its false Heliod combo. Three calibration decks moved, and F-162 and OQ-87 record them (D-792).
+
 ## The resume section of 2026-09-21c
 
 **Pull request #204 fixes F-162 and answers OQ-87. A calibration precon holds its rules floor, and the gate raises the bracket judge to that floor. It waits for the owner's merge.**

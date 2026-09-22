@@ -62,7 +62,12 @@ package generate
 // Angel of Serenity", and two judge reads called it a false rule: a deck
 // led by a card names its commander, and that card is not legendary
 // (F-153, D-744).
-const PromptVersion = 15
+//
+// Version 16: the deck shape block names the fixing floor of each count
+// of deck colors. Deck gate runs 19 to 31 read 0 to 9 nonbasic lands on
+// one owned two-color prompt, because no line named fixing lands (F-33,
+// D-799).
+const PromptVersion = 16
 
 // generateInstructions is the stable prefix. It names no card, no format,
 // and no session value, so every call of a session shares it.

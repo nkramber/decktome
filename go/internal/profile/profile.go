@@ -17,6 +17,7 @@ package profile
 import (
 	"context"
 	"fmt"
+	"maps"
 	"math"
 	"sort"
 	"strconv"
@@ -42,6 +43,7 @@ const (
 	KeyTappedLand          = "tapped_land"
 	KeyColorlessLand       = "colorless_land"
 	KeyColorSources        = "color_sources"
+	KeyFixingLand          = "fixing_land"
 	KeyGameChanger         = "game_changer"
 	KeyFinisher            = "finisher"
 	KeyManaTurnFour        = "mana_turn_four"
@@ -174,6 +176,12 @@ func (p *Profiler) measure(deck *mtgv1.Deck, src rules.CardSource) (*mtgv1.DeckP
 
 	entries, commanders := resolveDeck(deck, src)
 	colors := deckColors(entries, commanders, commander)
+	// The fixing floor reads the count of deck colors, so the band joins a
+	// copy of the table (F-33, D-799).
+	if floor := p.bands.FixingFloor(format, deck.GetPower(), len(colors)); floor > 0 {
+		table = maps.Clone(table)
+		table[KeyFixingLand] = Band{Low: floor}
+	}
 
 	var tags *cards.TagIndex
 	if p.tags != nil {
@@ -184,6 +192,7 @@ func (p *Profiler) measure(deck *mtgv1.Deck, src rules.CardSource) (*mtgv1.DeckP
 	f.tutors(entries, tags)
 	f.finishers(entries, tags)
 	f.sources(entries, colors, deckSize(format))
+	f.fixing(entries, colors)
 	f.goldfish(entries, commanders, commander, p.hands, p.seed)
 
 	var findings []*mtgv1.Finding
@@ -230,7 +239,7 @@ func (p *Profiler) measure(deck *mtgv1.Deck, src rules.CardSource) (*mtgv1.DeckP
 // a deck: the mana base first, then the jobs, then the power signals,
 // then the simulation.
 var featureOrder = []string{
-	KeyLand, KeyTappedLand, KeyColorlessLand, KeyColorSources, KeyAvgManaValue,
+	KeyLand, KeyTappedLand, KeyColorlessLand, KeyColorSources, KeyFixingLand, KeyAvgManaValue,
 	KeyRamp, KeyDraw, KeyRemoval, KeyWipe, KeyInteraction,
 	KeyTutor, KeyFastMana, KeyGameChanger, KeyFinisher,
 	KeyManaTurnFour, KeyHandsTwoToFourLands, KeyCommanderTurnOverMV,
@@ -858,6 +867,7 @@ var featureWords = map[string]string{
 	KeyTappedLand:          "the count of lands that enter tapped",
 	KeyColorlessLand:       "the count of nonbasic lands that make only colorless mana",
 	KeyColorSources:        "the worst color's share of the sources it needs",
+	KeyFixingLand:          "the count of lands that make two or more of the deck's colors",
 	KeyGameChanger:         "the Game Changer count",
 	KeyFinisher:            "the finisher count",
 	KeyManaTurnFour:        "the mana available on turn four",
@@ -871,6 +881,28 @@ func Word(key string) string {
 		return w
 	}
 	return key
+}
+
+// fixing counts the lands that make two or more deck colors, or fetch a
+// land that does (F-33, D-799). A deck of one color needs no fixing, so
+// it reads no row. The class is the one the mana pass ranks lands by.
+func (f *features) fixing(entries []entry, colors []mtgv1.Color) {
+	if len(colors) < 2 {
+		return
+	}
+	set := make(map[mtgv1.Color]bool, len(colors))
+	for _, c := range colors {
+		set[c] = true
+	}
+	n := 0
+	var found []string
+	for _, e := range entries {
+		if LandClassOf(e.card, set) < LandOther {
+			n += e.count
+			found = append(found, e.card.GetName())
+		}
+	}
+	f.set(KeyFixingLand, float64(n), names(found))
 }
 
 // deckColors is the color identity the sources are measured against:
