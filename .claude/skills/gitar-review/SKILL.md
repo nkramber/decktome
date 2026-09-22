@@ -7,7 +7,7 @@ description: Get a Gitar review of the head of a pull request, wait three minute
 
 The GitHub app `gitar-bot` reviews pull requests. This skill gets a Gitar review of the head of a pull request, and then answers each finding. A pull request of documents alone waits for the review too.
 
-Each repo that uses Gitar keeps a copy of this file. A rule of the repo wins over this skill. In decktome, this skill applies only while `.github/gitar-review` reads `on`. While it reads `paused`, no session waits for Gitar (D-802). For example, a repo can ask for a second review, or it can limit who replies to Gitar.
+Each repo that uses Gitar keeps a copy of this file. A rule of the repo wins over this skill. For example, a repo can ask for a second review, or it can limit who replies to Gitar. In decktome, this skill applies only while `.github/gitar-review` reads `on`. While it reads `paused`, no session waits for Gitar (D-802).
 
 ## Terms
 
