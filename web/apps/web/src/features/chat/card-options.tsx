@@ -3,6 +3,7 @@ import type { Question } from "@mtg/api-client/mtg/v1/session_pb";
 import { useQuery } from "@tanstack/react-query";
 
 import { cardClient } from "../../lib/api";
+import { cardQueryRetry } from "../../lib/card-retry";
 import { cn } from "../../lib/cn";
 import { errorMessage } from "../../lib/errors";
 import { FaceImage, facesOf } from "../deck/card-tile";
@@ -31,6 +32,7 @@ export function useOptionCards(q: Question) {
     queryKey: ["cards", "options", ids],
     queryFn: () => cardClient.getCards({ oracleIds: ids }),
     enabled: ids.length > 0,
+    ...cardQueryRetry,
     staleTime: Infinity,
   });
 }

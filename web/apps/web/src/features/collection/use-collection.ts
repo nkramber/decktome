@@ -4,6 +4,7 @@ import { keepPreviousData, useInfiniteQuery, useQueries, useQuery } from "@tanst
 import { useEffect, useMemo, useState } from "react";
 
 import { cardClient, collectionClient } from "../../lib/api";
+import { cardQueryRetry } from "../../lib/card-retry";
 
 // The collection screen shows the binder, not only the form that filled
 // it (D-327). The head reads the summary the import stored, and never an
@@ -155,6 +156,7 @@ export function useBinderArt(rows: CollectionEntry[], first: number, last: numbe
     queries: buckets.map((ids) => ({
       queryKey: ["cards", "binder-art", ids],
       queryFn: () => cardClient.getCards({ oracleIds: ids }),
+      ...cardQueryRetry,
       staleTime: Infinity,
     })),
   });
@@ -170,6 +172,7 @@ export function useCollectionArt(ids: string[]) {
     queryKey: ["cards", "collection-art", ids],
     queryFn: () => cardClient.getCards({ oracleIds: ids }),
     enabled: ids.length > 0,
+    ...cardQueryRetry,
     staleTime: Infinity,
   });
   const byId = new Map<string, Card>();

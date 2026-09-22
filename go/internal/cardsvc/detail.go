@@ -17,8 +17,8 @@ var errUnknownCard = errors.New("the card database holds no card with this oracl
 // snapshot date (PR-20). A card the index does not know is NotFound. A
 // snapshot with no rulings file answers an empty list and has_rulings
 // false, so the client can say "no data" and not "no ruling".
-func (s *Server) GetRulings(_ context.Context, req *connect.Request[mtgv1.GetRulingsRequest]) (*connect.Response[mtgv1.GetRulingsResponse], error) {
-	idx, err := s.ready()
+func (s *Server) GetRulings(ctx context.Context, req *connect.Request[mtgv1.GetRulingsRequest]) (*connect.Response[mtgv1.GetRulingsResponse], error) {
+	idx, err := s.ready(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -36,8 +36,8 @@ func (s *Server) GetRulings(_ context.Context, req *connect.Request[mtgv1.GetRul
 // GetPrintings answers every playable printing of one card with its
 // price, newest set first and then by collector number (PR-20). The
 // index rows are shared, so the answer carries copies.
-func (s *Server) GetPrintings(_ context.Context, req *connect.Request[mtgv1.GetPrintingsRequest]) (*connect.Response[mtgv1.GetPrintingsResponse], error) {
-	idx, err := s.ready()
+func (s *Server) GetPrintings(ctx context.Context, req *connect.Request[mtgv1.GetPrintingsRequest]) (*connect.Response[mtgv1.GetPrintingsResponse], error) {
+	idx, err := s.ready(ctx)
 	if err != nil {
 		return nil, err
 	}
