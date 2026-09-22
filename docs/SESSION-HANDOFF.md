@@ -26,11 +26,11 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The checks.** `make verify` passed on this machine, exit 0, with Node 22.23.2. The shell of this session started on Node 20.17.0 of nvm, and under it each web test failed with `ERR_REQUIRE_ESM`. The free `make manapass-check` lane replayed runs 29 and 31 on `main` and on this branch. Deck 13 of run 31 went from 36 basic lands to 25, and no deck changed a band other than `fixing_land`.
 
-**The review.** No Gitar review of this pull request exists yet.
+**The review.** Gitar reviewed `56edbd0` and reads "Approved", with no finding and no thread. Its dashboard edit of 15:11:50 UTC is later than the push of 15:08:24 UTC, both of 2026-09-22, so the review is current.
 
 **What waits on the owner.**
 
-- The Gitar review, then the merge of this pull request.
+- The merge of this pull request.
 - A whole deck gate run measures the prompt of version 16. It is a paid target, so ask the owner first.
 - UNVERIFIED: the Moxfield import of the deck list. The export panel still names ManaBox and MTG Arena alone.
 - D-794 makes the app less strict than the Wizards infographic at Bracket 2.
