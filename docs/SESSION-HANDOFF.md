@@ -26,7 +26,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The checks.** `make verify` and `make pr-check` pass on this machine. actionlint 1.7.7 passes on both changed workflows. The new unit tests hold 61 cases.
 
-**The review.** Gitar still ran on this pull request, because the subscription was live. The pull request then waits for a review of Codex. The `review-gate` check cannot run on it, because GitHub starts `pull_request_target` from `main` alone. The next pull request gets the first live check.
+**The review.** Gitar reviewed `3c6b50a` and found three defects. A move of code into `docs/` read as docs-only. The `mtg-corpus` skill sat in the docs set, and a Go test parses it. A docs-only push trusted a pass against an older `main`. `8a301de` fixed all three. Gitar approved `8a301de` at 23:01:11 UTC on 2026-09-22, after the push of 22:59:13 UTC, and resolved each thread. Every check passes on that head, and `verify:paths` and `verify:gate` ran live. The dashboard of #206 read "Your trial ends in 1 day" at 15:12 UTC, and the dashboards of #207 and #208 hold no such notice. The `review-gate` check cannot run on this pull request, because GitHub starts `pull_request_target` from `main` alone. The pull request waits for a review of Codex.
 
 **What waits on the owner.**
 
