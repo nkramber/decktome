@@ -27,7 +27,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The checks.** `make verify` passed on this machine, exit 0, with Node 22.23.2 on the PATH. `go test ./internal/cardsvc/` passes, and the two new web test files hold 10 tests.
 
-**The review.** PENDING: the Gitar review of the head of the pull request.
+**The review.** Gitar reviewed `a8e3a42` and reads "Approved", with no finding and no thread. Its dashboard edit of 18:26:51 UTC is later than the push of 18:24:10 UTC, both of 2026-09-22, so the review is current. Every check of the pull request passes.
 
 **What waits on the owner.**
 
