@@ -445,25 +445,67 @@ func TestOnlyANewCollectionCounts(t *testing.T) {
 // TestImportDetectsTheFormat holds D-647: the reader drops a file and
 // never names the app it came from. The web app sent MANABOX_CSV for
 // every upload before this, so an Arena list uploaded there failed
-// every row.
+// every row. The collection names the format it was read as, in the
+// answer and in the store, and never the unnamed source (D-796).
 func TestImportDetectsTheFormat(t *testing.T) {
-	for name, content := range map[string]string{
-		"a ManaBox export": goodCSV,
-		"an Arena list":    "4 Sol Ring (C21) 263\n",
+	for name, tc := range map[string]struct {
+		content string
+		want    mtgv1.ImportSource
+		// stores is false for a file with no resolved row, which the
+		// server answers and never stores.
+		stores bool
+	}{
+		"a ManaBox export":  {goodCSV, mtgv1.ImportSource_IMPORT_SOURCE_MANABOX_CSV, true},
+		"a Moxfield export": {moxfieldCSV, mtgv1.ImportSource_IMPORT_SOURCE_MOXFIELD_CSV, true},
+		"an Arena list":     {"4 Sol Ring (C21) 263\n", mtgv1.ImportSource_IMPORT_SOURCE_ARENA_TEXT, false},
 	} {
 		t.Run(name, func(t *testing.T) {
-			s := newServer(newFakeRepo(), testIndex())
+			repo := newFakeRepo()
+			s := newServer(repo, testIndex())
 			resp, err := s.ImportCollection(context.Background(),
-				importReq("n", mtgv1.ImportSource_IMPORT_SOURCE_UNSPECIFIED, content))
+				importReq("n", mtgv1.ImportSource_IMPORT_SOURCE_UNSPECIFIED, tc.content))
 			if err != nil {
 				t.Fatalf("an unnamed source did not detect: %v", err)
 			}
-			if resp.Msg.GetCollection() == nil {
+			col := resp.Msg.GetCollection()
+			if col == nil {
 				t.Fatal("no collection came back")
+			}
+			if col.GetSource() != tc.want {
+				t.Errorf("answer source = %v, want %v", col.GetSource(), tc.want)
+			}
+			stored, ok := repo.stored[col.GetId()]
+			if ok != tc.stores {
+				t.Fatalf("stored = %v, want %v", ok, tc.stores)
+			}
+			if ok && stored.GetSource() != tc.want {
+				t.Errorf("stored source = %v, want %v", stored.GetSource(), tc.want)
 			}
 		})
 	}
 }
+
+// TestAProxyCountsAsOwned holds D-797: a Moxfield row the reader marks
+// as a proxy is a card they own, so it reaches the collection.
+func TestAProxyCountsAsOwned(t *testing.T) {
+	s := newServer(newFakeRepo(), testIndex())
+	resp, err := s.ImportCollection(context.Background(),
+		importReq("n", mtgv1.ImportSource_IMPORT_SOURCE_UNSPECIFIED, moxfieldCSV))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := resp.Msg.GetCollection().GetCardCount(); got != 2 {
+		t.Errorf("card count = %d, want the 2 proxies as owned", got)
+	}
+	if n := len(resp.Msg.GetReport().GetUnresolved()); n != 0 {
+		t.Errorf("%d rows unresolved, want the proxy row read", n)
+	}
+}
+
+// moxfieldCSV is one row of the Moxfield export shape, with the Proxy
+// cell True. A proxy counts as a card the reader owns (D-797, OQ-80).
+const moxfieldCSV = `"Count","Tradelist Count","Name","Edition","Condition","Language","Foil","Tags","Last Modified","Collector Number","Alter","Proxy","Purchase Price"` + "\n" +
+	`"2","0","Pawpatch Recruit","blb","Near Mint","English","foil","","2026-09-10 00:13:02.787000","187","False","True","0.32"` + "\n"
 
 // TestANamedSourceBeatsTheDetector holds the other half. A caller that
 // names a format means it, and the reader's own word beats a guess

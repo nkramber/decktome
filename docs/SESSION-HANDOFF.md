@@ -6,39 +6,38 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-21c)
+## RESUME HERE (2026-09-22a)
 
-**Pull request #204 fixes F-162 and answers OQ-87. A calibration precon holds its rules floor, and the gate raises the bracket judge to that floor. It waits for the owner's merge.**
+**Pull request #205 fixes F-163 and answers OQ-80. The collection page names every upload format, and a collection stores the format the server read. It waits for the owner's merge.**
 
-**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view #204`. Then do next step 1.
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view #205`. Then do next step 1.
 
-**The base.** `main` is `88e3870`, from #203. Cloud Build `6620bda1` built it and ended SUCCESS at 19:49:32 UTC on 2026-09-21. The bracket judge runs in the gate tools alone, so no live behavior changed.
+**The base.** `main` is `3d46167`, from #204. Cloud Build `f1ac3f50` built it and ended SUCCESS at 20:32:47 UTC on 2026-09-21. The bracket judge runs in the gate tools alone, so no live behavior changed.
 
-**Why this pull request exists.** The owner picked F-162 (D-793). The Wizards update of 2025-10-21 removed the tie between Bracket 2 and precons, so the anchor "a precon is bracket 2" had no source.
+**Why this pull request exists.** The server reads a Moxfield CSV since #123 (D-647), and the collection page still named ManaBox alone. The owner asked for a UI that shows the support in full (D-796).
 
 **What this pull request holds.**
 
-- `go/internal/profile/floor.go` reads the lowest bracket whose rules a deck passes, with one Spellbook call.
-- `go/cmd/bracket-gate/rejudge.go` scores a precon against its floor, and the 80 percent bar reads the cEDH lists alone (D-793).
-- Both lanes raise the bracket of the judge to the floor, and the document names the bracket the judge gave (D-795).
-- `go/internal/generate/judge.go` states the combo rules of `brackets.json` at brackets 2 and 3, with the 2025-10-21 wording. `BracketJudgeVersion` reads 3 (D-794).
+- `go/internal/collectionsvc/service.go` stores the format that `parseUpload` read, and never the unnamed source of the request.
+- `web/apps/web/src/features/collection/collection-page.tsx` names ManaBox, Moxfield, and an Arena list, and each upload row names its format.
+- `web/apps/web/src/features/collection/import-result.tsx` reads "Read as a Moxfield export", and its `BAD_ROW` label names no app.
+- D-797 answers OQ-80: a proxy counts as owned. The parser already read it so, and `TestAProxyCountsAsOwned` holds the rule.
 
-**The measurement.** The rejudge of the 21 calibration decks cost $0.3107 and read FAIL. Ten of 12 cEDH lists agreed, and 6 of 9 precons held their floor. The judge named the combos of precons 4, 5, and 7 and read each one as bracket 3. The raise over those stored verdicts gives 9 of 9 precons, so the run then reads PASS.
+**The checks.** `make verify` passed on this machine, exit 0, with Node 22.23.2. `TestImportDetectsTheFormat` fails without the fix of `service.go`. `make ste-check`, `make ref-check`, and `make context-budget` read 0 findings.
 
-**The checks.** `make verify` passed on this machine, exit 0, with Node 22.23.2. The Go tests of the profile, the generate package, and `bracket-gate` pass. `make ste-check`, `make ref-check`, and `make context-budget` read 0 findings.
-
-**The review.** Gitar reviewed `eb5daed` and reads "No issues found", with no review thread. Its dashboard edit of 20:19:06 UTC is later than the push of 20:14:55 UTC, both of 2026-09-21, so the review is current.
+**The review.** Gitar reviewed `46ca534` and found one issue: the import line read "Read as a Arena list". `readAs` now picks the article, and a test reads "an Arena list". Gitar reviewed `7d98374` and reads "Approved", 1 of 1 findings closed, and it resolved its thread. Its dashboard edit of 05:14:12 UTC is later than the push of 05:13:13 UTC, both of 2026-09-22, so the review is current.
 
 **What waits on the owner.**
 
 - The Gitar review, then the merge of this pull request.
-- D-794 makes the app less strict than the Wizards infographic at Bracket 2. The infographic bans every two-card infinite combo there.
+- A look at the collection page after the deploy. A collection stored before D-796 names no format, so upload again to see the label.
+- UNVERIFIED: the Moxfield import of the deck list. The help page answered 403 on 2026-09-22, so the export panel still names ManaBox and MTG Arena alone. Paste one exported list into Moxfield to check the `Commander` and `Deck` headers.
+- D-794 makes the app less strict than the Wizards infographic at Bracket 2.
 - The F-48 row names bracket gate run 7. A count on 2026-09-21 found the escape in runs 1, 2, 3, and 5 alone.
-- F-157 reads ✅ in the register, and next step 2 still named it as open until this pull request.
 - Five sessions on the new files, before a decision on the checkpoint rule (next step 3, D-750).
 - A deployed session with a theme that matches no card, such as "anime" (next step 4).
 - A look at the first commander question after a load of the app (next step 5).
-- OQ-67, OQ-77, and OQ-80.
+- OQ-67 and OQ-77.
 
 ## How to resume
 
@@ -93,7 +92,7 @@ Twenty things a fresh session gets wrong without this file.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
 - The feedback store holds 3 verdicts on 2026-09-09, and every one predates the snapshot of D-635. `make feedback-list VERDICT=` reads both verdicts now (F-87). A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- The deployed API, read 2026-09-21: Cloud Build `169a2dcb` built `23b67ce`, from #202, and ended SUCCESS. This session read no revision, no `/readyz`, and no job.
+- The deployed API, read 2026-09-22: Cloud Build `f1ac3f50` built `3d46167`, from #204, and ended SUCCESS. This session read no revision, no `/readyz`, and no job.
 - The deployed web app, read 2026-09-20 at 22:45 UTC: the release of #196, Hosting version `60c80b8c4ad2a689` of 22:44:09 UTC. `index.html` loads `assets/index-Fi2SZrwg.js`. The deck page chunk `deck-view-BQeBlu0i.js` holds the power counts, and `use-cards-DNxWsKmD.js` holds every label. The release before it, `b786ceb7f89bc4fc` of 2026-09-13, came from #158.
 - The deployed quality model, read 2026-09-14: `20260914T070904Z`, from the meta job that started at 06:02 UTC and ended at 07:13 UTC. It fits 43,182 lists and 1,517 commanders. Its Commander fit reads `immaterial` 239 and accuracy 0.554, and its Standard fit reads a cross share of 0.667. The job read the weekly EDHREC pass, 2,077 pages and 4 lists. The mtgo source read 3,094 lists with 58 fetch errors. The mtggoldfish source read 155 lists with no failure. The mtgjson source read no list, because its deck list version differs from the stored table, as on 2026-09-12 and 2026-09-13.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
@@ -103,7 +102,7 @@ Twenty things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **Ask the owner for the item after F-162** (D-746). The sequence of the roadmap ends at step 51, and next step 2 holds each open item. **Fix F-162** (D-793 to D-795) ✅ done by this pull request. **Fix F-126** (D-790 to D-792) ✅ done by #203.
+1. **Ask the owner for the item after F-163** (D-746). The sequence of the roadmap ends at step 51, and next step 2 holds each open item. **Fix F-163** (D-796, D-797) ✅ done by this pull request. **Fix F-162** (D-793 to D-795) ✅ done by #204.
 2. **The open items of the roadmap.** Three register rows read 🔧: F-33, F-48, and F-49. F-33 waits for evidence, and F-49 waits for the owner. The F-48 row names run 7 in error, and the escape sits in runs 1, 2, 3, and 5 alone. OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). The power pass after the build still waits (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783).
 3. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It waits, because the ten sessions of the audit ran before #184 and before D-749.
 4. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git.
@@ -126,6 +125,10 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 ## The three most recent sessions
 
+### 2026-09-22a: the upload formats of the collection page, F-163
+
+**The owner asked for a UI that names Moxfield in full, and answered OQ-80** (D-796, D-797). The server read Moxfield since #123, and only the page lagged. Each web upload stored no format, so the import now stores the detected one. A proxy counts as owned, which the parser already did. No first-party source confirms the Moxfield import of the deck list, so the export text stays.
+
 ### 2026-09-21c: the rules floor of the bracket judge, F-162
 
 **The owner picked F-162 and answered OQ-87** (D-793, D-794). A precon anchors no bracket, because Wizards removed that tie on 2025-10-21. A free read found a third precon at floor 4, Zada. The paid rejudge cost $0.3107, and the judge still read precons 4, 5, and 7 as bracket 3. So the gate raises the judge to the rules floor (D-795).
@@ -134,10 +137,6 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 **The owner picked F-126, and the bracket judge reads the combos of Commander Spellbook** (D-790). The rejudge profiles each stored deck through the free endpoint. The owner chose two rejudges, a second read, and a control read, for $0.6410 in all (D-791). Run 2 lost its false Heliod combo. Three calibration decks moved, and F-162 and OQ-87 record them (D-792).
 
-### 2026-09-21a: the card facts of the judges, F-39
-
-**The owner picked F-39, and a judge that recalls a card fact failed a true summary** (D-787 to D-789). The plan judge reads the cost, the type, and the identity from the card data, and marks each card in or outside the sets. Deck gate run 31 then failed, because the summary judge called a true Astarion cost false (F-161). The session spent $5.66 on two whole runs to prove a change to the judges alone. The owner refused a third. The new rejudge lane judged the stored decks of run 31 for $1.2453, and a fill of 6 lost decks cost $0.3482. Gitar found a cut summary in the lane, and run 34 judged the whole summaries for $0.4653.
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-21b, the records of 2026-08-31 to 2026-09-20, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-21c, the records of 2026-08-31 to 2026-09-21a, and 104 more sections, word for word. Read it for the detail behind a decision.

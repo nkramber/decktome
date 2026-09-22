@@ -33,7 +33,7 @@ vi.mock("../../lib/api", () => ({
 }));
 
 const earlier = [
-  { id: "c-old", name: "binder-july.csv", cardCount: 4317, importedAt: { seconds: 1756000000n, nanos: 0 } },
+  { id: "c-old", name: "binder-july.csv", cardCount: 4317, importedAt: { seconds: 1756000000n, nanos: 0 }, source: ImportSource.MOXFIELD_CSV },
   { id: "c-older", name: "binder-june.csv", cardCount: 12, importedAt: undefined },
 ];
 
@@ -140,7 +140,9 @@ describe("CollectionPage", () => {
   it("lists earlier uploads and picks one as the active collection", async () => {
     await renderAt("/collection");
     expect(await screen.findByRole("button", { name: "binder-july.csv" })).toBeInTheDocument();
-    expect(screen.getByText(/4317 cards/)).toBeInTheDocument();
+    expect(screen.getByText(/4317 cards/)).toHaveTextContent(/^Moxfield export, 4317 cards/);
+    // A collection stored before D-796 holds no format, so its row names none.
+    expect(screen.getByText(/^12 cards/)).toBeInTheDocument();
     await userEvent.setup().click(screen.getByRole("button", { name: "binder-july.csv" }));
     expect(useAppStore.getState().collectionId).toBe("c-old");
     expect(useAppStore.getState().poolMode).toBe("owned_first");
@@ -150,7 +152,7 @@ describe("CollectionPage", () => {
 
   it("uploads a CSV and shows the count and the unresolved rows", async () => {
     importCollection.mockResolvedValue({
-      collection: { id: "c-new", name: "export.csv", cardCount: 3 },
+      collection: { id: "c-new", name: "export.csv", cardCount: 3, source: ImportSource.MOXFIELD_CSV },
       report: {
         resolvedCount: 2,
         // The server keys the map by the full enum name.
@@ -171,6 +173,7 @@ describe("CollectionPage", () => {
     expect(await screen.findByTestId("card-count")).toHaveTextContent(
       "export.csv: 3 cards, 2 rows resolved, 2 unresolved.",
     );
+    expect(screen.getByTestId("import-format")).toHaveTextContent("Read as a Moxfield export.");
     const req = importCollection.mock.calls[0][0] as { name: string; source: ImportSource; content: Uint8Array };
     expect(req.name).toBe("export.csv");
     // The upload names no format. The server reads it out of the file

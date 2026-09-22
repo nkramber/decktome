@@ -12,6 +12,44 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-21c
+
+**Pull request #204 fixes F-162 and answers OQ-87. A calibration precon holds its rules floor, and the gate raises the bracket judge to that floor. It waits for the owner's merge.**
+
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view #204`. Then do next step 1.
+
+**The base.** `main` is `88e3870`, from #203. Cloud Build `6620bda1` built it and ended SUCCESS at 19:49:32 UTC on 2026-09-21. The bracket judge runs in the gate tools alone, so no live behavior changed.
+
+**Why this pull request exists.** The owner picked F-162 (D-793). The Wizards update of 2025-10-21 removed the tie between Bracket 2 and precons, so the anchor "a precon is bracket 2" had no source.
+
+**What this pull request holds.**
+
+- `go/internal/profile/floor.go` reads the lowest bracket whose rules a deck passes, with one Spellbook call.
+- `go/cmd/bracket-gate/rejudge.go` scores a precon against its floor, and the 80 percent bar reads the cEDH lists alone (D-793).
+- Both lanes raise the bracket of the judge to the floor, and the document names the bracket the judge gave (D-795).
+- `go/internal/generate/judge.go` states the combo rules of `brackets.json` at brackets 2 and 3, with the 2025-10-21 wording. `BracketJudgeVersion` reads 3 (D-794).
+
+**The measurement.** The rejudge of the 21 calibration decks cost $0.3107 and read FAIL. Ten of 12 cEDH lists agreed, and 6 of 9 precons held their floor. The judge named the combos of precons 4, 5, and 7 and read each one as bracket 3. The raise over those stored verdicts gives 9 of 9 precons, so the run then reads PASS.
+
+**The checks.** `make verify` passed on this machine, exit 0, with Node 22.23.2. The Go tests of the profile, the generate package, and `bracket-gate` pass. `make ste-check`, `make ref-check`, and `make context-budget` read 0 findings.
+
+**The review.** Gitar reviewed `eb5daed` and reads "No issues found", with no review thread. Its dashboard edit of 20:19:06 UTC is later than the push of 20:14:55 UTC, both of 2026-09-21, so the review is current.
+
+**What waits on the owner.**
+
+- The Gitar review, then the merge of this pull request.
+- D-794 makes the app less strict than the Wizards infographic at Bracket 2. The infographic bans every two-card infinite combo there.
+- The F-48 row names bracket gate run 7. A count on 2026-09-21 found the escape in runs 1, 2, 3, and 5 alone.
+- F-157 reads ✅ in the register, and next step 2 still named it as open until this pull request.
+- Five sessions on the new files, before a decision on the checkpoint rule (next step 3, D-750).
+- A deployed session with a theme that matches no card, such as "anime" (next step 4).
+- A look at the first commander question after a load of the app (next step 5).
+- OQ-67, OQ-77, and OQ-80.
+
+### 2026-09-21a: the card facts of the judges, F-39
+
+**The owner picked F-39, and a judge that recalls a card fact failed a true summary** (D-787 to D-789). The plan judge reads the cost, the type, and the identity from the card data, and marks each card in or outside the sets. Deck gate run 31 then failed, because the summary judge called a true Astarion cost false (F-161). The session spent $5.66 on two whole runs to prove a change to the judges alone. The owner refused a third. The new rejudge lane judged the stored decks of run 31 for $1.2453, and a fill of 6 lost decks cost $0.3482. Gitar found a cut summary in the lane, and run 34 judged the whole summaries for $0.4653.
+
 ## The resume section of 2026-09-21b
 
 **Pull request #203 fixes F-126. The bracket judge reads the combos of Commander Spellbook, and the rejudge of `bracket-gate` profiles each stored deck. It waits for the owner's merge.**

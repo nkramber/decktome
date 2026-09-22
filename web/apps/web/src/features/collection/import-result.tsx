@@ -1,4 +1,4 @@
-import { UnresolvedReason } from "@mtg/api-client/mtg/v1/collection_pb";
+import { ImportSource, UnresolvedReason } from "@mtg/api-client/mtg/v1/collection_pb";
 import type { ImportCollectionResponse } from "@mtg/api-client/mtg/v1/collection_service_pb";
 
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/ca
 const reasonLabels: Record<string, string> = {
   UNKNOWN_CARD: "Unknown card: the name and printing match nothing in the card database",
   NON_ENGLISH: "Non-English printing: the app reads English cards only",
-  BAD_ROW: "Bad row: the line does not parse as a ManaBox row",
+  BAD_ROW: "Bad row: the line does not parse in the format of the file",
   NOT_PLAYABLE: "Not a playable card: a token, emblem, or art card",
   UNKNOWN_VALUE: "Unknown value: a finish or condition the app does not know",
 };
@@ -18,6 +18,24 @@ export function reasonLabel(reason: string | number): string {
   const name = typeof reason === "number" ? (UnresolvedReason[reason] ?? String(reason)) : reason;
   const short = name.replace(/^UNRESOLVED_REASON_/, "");
   return reasonLabels[short] ?? short;
+}
+
+// sourceLabel names the format the server read a file as (D-796). A
+// collection stored before D-796 holds no format, so it names nothing.
+const sourceLabels: Partial<Record<ImportSource, string>> = {
+  [ImportSource.MANABOX_CSV]: "ManaBox export",
+  [ImportSource.MOXFIELD_CSV]: "Moxfield export",
+  [ImportSource.ARENA_TEXT]: "Arena list",
+};
+
+export function sourceLabel(source: ImportSource | undefined): string | undefined {
+  return source === undefined ? undefined : sourceLabels[source];
+}
+
+// readAs is the line of the import result. The list row starts with the
+// bare label, so the article lives here and not in the label.
+export function readAs(label: string): string {
+  return `Read as ${/^[AEIOU]/.test(label) ? "an" : "a"} ${label}.`;
 }
 
 // ImportResult shows the counts and the unresolved rows of one upload
@@ -45,6 +63,7 @@ export function ImportReportBody({ result }: { result: ImportCollectionResponse 
   const report = result.report;
   const unresolved = report?.unresolved ?? [];
   const byReason = Object.entries(report?.unresolvedByReason ?? {});
+  const format = sourceLabel(collection?.source);
 
   return (
     <div className="flex flex-col gap-3">
@@ -53,6 +72,7 @@ export function ImportReportBody({ result }: { result: ImportCollectionResponse 
           ? `${collection.name}: ${collection.cardCount} cards, ${report?.resolvedCount ?? 0} rows resolved, ${unresolved.length} unresolved.`
           : "The import returned no collection."}
       </p>
+      {format && <p data-testid="import-format">{readAs(format)}</p>}
       {byReason.length > 0 && (
         <ul className="text-sm">
           {byReason.map(([reason, count]) => (
