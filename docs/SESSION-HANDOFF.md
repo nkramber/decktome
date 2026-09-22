@@ -25,7 +25,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The checks.** `make verify` passed on this machine, exit 0, with Node 22.23.2. `TestImportDetectsTheFormat` fails without the fix of `service.go`. `make ste-check`, `make ref-check`, and `make context-budget` read 0 findings.
 
-**The review.** Gitar reviewed `46ca534` and found one issue: the import line read "Read as a Arena list". `readAs` now picks the article, and a test reads "an Arena list". The fix waits for a current review.
+**The review.** Gitar reviewed `46ca534` and found one issue: the import line read "Read as a Arena list". `readAs` now picks the article, and a test reads "an Arena list". Gitar reviewed `7d98374` and reads "Approved", 1 of 1 findings closed, and it resolved its thread. Its dashboard edit of 05:14:12 UTC is later than the push of 05:13:13 UTC, both of 2026-09-22, so the review is current.
 
 **What waits on the owner.**
 
