@@ -1,6 +1,6 @@
 # decktome
 
-An agentic Magic: The Gathering deck builder. You upload a ManaBox collection export (optional), describe the deck you want, answer a few questions, and get a legal, validated deck with card art. Go + Protobuf (Connect-RPC) + TypeScript (React). Design: `docs/design-roadmap.md`.
+An agentic Magic: The Gathering deck builder. You upload a collection export from ManaBox or Moxfield (optional), and you describe the deck you want. You answer a few questions, and get a legal, validated deck with card art. Go + Protobuf (Connect-RPC) + TypeScript (React). Design: `docs/design-roadmap.md`.
 
 Status: `docs/SESSION-HANDOFF.md` says where the work stands. The local stack serves the card database, the collection import, the LLM role layer, and the question workflow (`AgentService.Chat`). It also serves the deck generator, the revision turn, and the web app.
 
@@ -98,7 +98,7 @@ The web app is the front door of the product. Open http://localhost:5180 while `
 
 1. Sign in. The form runs over the Firebase Auth emulator, so any email and password work. Click "Create account" the first time. The account lives in the emulator and goes when it stops.
 2. You land on Build. A signed-in reader starts at the chat, because that is what the app is for (D-334).
-3. Add a collection, or skip it. Open "Collection" and drop a ManaBox CSV export on the zone. `go/internal/collections/testdata/manabox_collection.csv` is a real one. The head of the screen then shows the count, the unique cards, and the rarity spread.
+3. Add a collection, or skip it. Open "Collection" and drop a ManaBox or Moxfield CSV export on the zone. The app reads the format from the file (D-647). `go/internal/collections/testdata/manabox_collection.csv` is a real one. The head of the screen then shows the count, the unique cards, and the rarity spread.
 4. Pick the pool. "Build" in the header opens a menu of your collections. Choose one, or choose "Any card" (D-332).
 5. Write what you want, for example "a mono-green Commander deck around elves", and press Enter. The agent streams its questions, and the message box leaves while it works (D-325).
 6. Read the deck. The moment a deck exists, the app moves to its own address, `/decks/<id>` (D-335). The deck fills the page, and the conversation docks at the bottom left. "History" opens the thread over it.

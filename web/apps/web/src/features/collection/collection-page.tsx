@@ -29,12 +29,12 @@ import { cn } from "../../lib/cn";
 import { errorMessage } from "../../lib/errors";
 import { useAppStore } from "../../lib/store";
 import { CollectionHero } from "./collection-hero";
-import { ImportResult } from "./import-result";
+import { ImportResult, sourceLabel } from "./import-result";
 import { BinderGrid } from "./binder-grid";
 import { UploadDialog } from "./upload-dialog";
 import { type BinderChoice, type BinderSortKey, noChoice, useBinderPages, useCollectionHead, useDebounced } from "./use-collection";
 
-// The collection screen (ui plan, step 2). Upload a ManaBox CSV, or skip and
+// The collection screen (ui plan, step 2). Upload a collection file, or skip and
 // build from any card (D-37). Earlier uploads come from ListCollections.
 export function CollectionPage() {
   const navigate = useNavigate();
@@ -127,18 +127,18 @@ export function CollectionPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 md:p-6">
-      <PageHeader title="Your collection" description="Upload a ManaBox export, or skip it and build from any card." />
+      <PageHeader title="Your collection" description="Upload a ManaBox or Moxfield export, or an Arena list. Or skip it and build from any card." />
 
       {/* Two cards of one frame, side by side and the same height, so the
           page reads as one row whatever the right card holds (D-458). */}
       <div className="grid gap-6 lg:grid-cols-2 lg:items-stretch">
         <Card className="flex flex-col">
           <CardHeader>
-            <CardTitle>Upload a ManaBox export</CardTitle>
+            <CardTitle>Upload your collection</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             <p className="text-sm text-muted-foreground">
-              A ManaBox CSV export of your collection. The agent then builds from the cards you own.
+              A collection export from ManaBox or Moxfield, or an Arena list. The app reads the format from the file, and the agent then builds from the cards you own.
             </p>
             <div className="flex flex-wrap gap-2">
               <Button type="button" onClick={() => setUploadOpen(true)}>
@@ -164,7 +164,7 @@ export function CollectionPage() {
             </div>
           )}
           {list.isError && <ErrorState title="Could not list collections" message={errorMessage(list.error)} onRetry={() => void list.refetch()} />}
-          {list.isSuccess && collections.length === 0 && <EmptyState compact icon={BookOpenIcon} title="No uploads yet." description="Upload a ManaBox export, or skip and build from any card." />}
+          {list.isSuccess && collections.length === 0 && <EmptyState compact icon={BookOpenIcon} title="No uploads yet." description="Upload a ManaBox or Moxfield export, or an Arena list. Or skip and build from any card." />}
           {collections.length > 0 && (
             <ul className="flex flex-col gap-2">
               {collections.map((c) => {
@@ -190,6 +190,7 @@ export function CollectionPage() {
                       <span className="truncate">{c.name}</span>
                     </Button>
                     <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">
+                      {sourceLabel(c.source) ? `${sourceLabel(c.source)}, ` : null}
                       {c.cardCount} cards
                       {c.importedAt?.seconds ? `, imported ${new Date(Number(c.importedAt.seconds) * 1000).toLocaleDateString()}` : null}
                     </span>

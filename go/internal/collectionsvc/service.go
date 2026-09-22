@@ -112,13 +112,16 @@ func (s *Server) ImportCollection(ctx context.Context, req *connect.Request[mtgv
 	if target != "" && !gzstore.ValidID(target) {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errBadID)
 	}
-	entries, report, err := s.parseUpload(req.Msg.GetSource(), content)
+	entries, report, source, err := s.parseUpload(req.Msg.GetSource(), content)
 	if err != nil {
 		return nil, err
 	}
+	// The collection stores the format the file was read as, and never
+	// the unnamed source of the request, so the reader sees which app the
+	// server took the file for (D-796).
 	col := &mtgv1.Collection{
 		Name:        name,
-		Source:      req.Msg.Source,
+		Source:      source,
 		ContentHash: collections.ContentHash(content),
 	}
 	if len(entries) == 0 {
@@ -426,7 +429,7 @@ func (s *Server) DiffCollections(ctx context.Context, req *connect.Request[mtgv1
 	if !gzstore.ValidID(id) {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errBadID)
 	}
-	entries, report, err := s.parseUpload(req.Msg.GetSource(), req.Msg.GetContent())
+	entries, report, _, err := s.parseUpload(req.Msg.GetSource(), req.Msg.GetContent())
 	if err != nil {
 		return nil, err
 	}
@@ -440,19 +443,20 @@ func (s *Server) DiffCollections(ctx context.Context, req *connect.Request[mtgv1
 	}), nil
 }
 
-// parseUpload reads an uploaded file into entries and an import report.
-// ImportCollection and DiffCollections both read a file the same way,
-// and one term per concept means one function does it.
-func (s *Server) parseUpload(source mtgv1.ImportSource, content []byte) ([]*mtgv1.CollectionEntry, *mtgv1.ImportReport, error) {
+// parseUpload reads an uploaded file into entries, an import report, and
+// the format it read the file as. ImportCollection and DiffCollections
+// both read a file the same way, and one term per concept means one
+// function does it.
+func (s *Server) parseUpload(source mtgv1.ImportSource, content []byte) ([]*mtgv1.CollectionEntry, *mtgv1.ImportReport, mtgv1.ImportSource, error) {
 	if len(content) == 0 {
-		return nil, nil, connect.NewError(connect.CodeInvalidArgument, errEmptyBody)
+		return nil, nil, mtgv1.ImportSource_IMPORT_SOURCE_UNSPECIFIED, connect.NewError(connect.CodeInvalidArgument, errEmptyBody)
 	}
 	if len(content) > maxUpload {
-		return nil, nil, connect.NewError(connect.CodeInvalidArgument, errTooLarge)
+		return nil, nil, mtgv1.ImportSource_IMPORT_SOURCE_UNSPECIFIED, connect.NewError(connect.CodeInvalidArgument, errTooLarge)
 	}
 	idx := s.index.Current()
 	if idx == nil {
-		return nil, nil, connect.NewError(connect.CodeUnavailable, errNoIndex)
+		return nil, nil, mtgv1.ImportSource_IMPORT_SOURCE_UNSPECIFIED, connect.NewError(connect.CodeUnavailable, errNoIndex)
 	}
 	// The reader drops a file and never names the app it came from, so an
 	// unnamed source reads the format out of the file (D-647). A caller
@@ -461,13 +465,13 @@ func (s *Server) parseUpload(source mtgv1.ImportSource, content []byte) ([]*mtgv
 	if source == mtgv1.ImportSource_IMPORT_SOURCE_UNSPECIFIED {
 		detected, err := collections.Detect(content)
 		if err != nil {
-			return nil, nil, connect.NewError(connect.CodeInvalidArgument, err)
+			return nil, nil, mtgv1.ImportSource_IMPORT_SOURCE_UNSPECIFIED, connect.NewError(connect.CodeInvalidArgument, err)
 		}
 		source = detected
 	}
 	rows, badParse, err := collections.Parse(source, content)
 	if err != nil {
-		return nil, nil, connect.NewError(connect.CodeInvalidArgument, err)
+		return nil, nil, mtgv1.ImportSource_IMPORT_SOURCE_UNSPECIFIED, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	entries, badResolve := collections.Resolve(rows, idx)
 	unresolved := append(append([]*mtgv1.UnresolvedRow{}, badParse...), badResolve...)
@@ -476,5 +480,5 @@ func (s *Server) parseUpload(source mtgv1.ImportSource, content []byte) ([]*mtgv
 		Unresolved:         unresolved,
 		ResolvedCount:      int32(len(rows) - len(badResolve)), //nolint:gosec // bounded by maxUpload
 		UnresolvedByReason: collections.ReasonCounts(unresolved),
-	}, nil
+	}, source, nil
 }

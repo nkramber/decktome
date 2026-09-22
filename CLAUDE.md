@@ -4,7 +4,7 @@ Read this file first. Then read `docs/SESSION-HANDOFF.md`. It tells you where th
 
 ## Project
 
-This repo is a Go + Protobuf + TypeScript monorepo for an agentic MtG deck builder. The app reads a user's ManaBox collection export. The user gives a prompt. The agent asks questions, then builds a legal, useful deck.
+This repo is a Go + Protobuf + TypeScript monorepo for an agentic MtG deck builder. The app reads a user's collection export from ManaBox or Moxfield. The user gives a prompt. The agent asks questions, then builds a legal, useful deck.
 
 Stage: **the app is live on `decktome.com`**, and Phase 3B, the product UI, is the current phase. A merge to `main` deploys itself on Cloud Build (D-584, D-586, D-588). `docs/SESSION-HANDOFF.md` holds the current state and the next step. Git holds each merge, and Cloud Build holds each deploy (D-747).
 
