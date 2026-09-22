@@ -132,7 +132,7 @@ No ruleset requires a check on `main`. The one ruleset refuses a deletion and a 
 
 Author: Codex
 
-**The review found P2-1:** `pull_request` synchronize events do not supply `github.event.before`, so a docs-only push to a code pull request runs all code jobs again. The local `make verify`, `make pr-check`, and 144 document-tool tests passed. GitHub passed `verify:gate` and `verify:shell`. Its docs-only run skipped the seven code jobs. The author must fix P2-1, then the review must run again.
+**The review found P2-1:** `pull_request` synchronize events do not supply `github.event.before`, so a docs-only push to a code pull request runs all code jobs again. The push of the review record reproduced this: GitHub started all seven code jobs. The local `make verify`, `make pr-check`, and 144 document-tool tests passed. The author must fix P2-1, then the review must run again.
 
 ### 2026-09-22d: the review process, Gitar off and Codex on
 
