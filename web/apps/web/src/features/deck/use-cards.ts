@@ -3,6 +3,7 @@ import type { Deck } from "@mtg/api-client/mtg/v1/deck_pb";
 import { useQuery } from "@tanstack/react-query";
 
 import { cardClient } from "../../lib/api";
+import { cardQueryRetry } from "../../lib/card-retry";
 
 // One GetCards call carries at most 120 ids. A deck with a sideboard and
 // upgrades can pass that, so the ids go out in chunks.
@@ -43,6 +44,7 @@ export function useDeckCards(deck: Deck) {
   const query = useQuery({
     queryKey: ["cards", deck.id, ids],
     queryFn: () => fetchCards(ids),
+    ...cardQueryRetry,
     staleTime: Infinity,
     placeholderData: (prev) => prev,
   });

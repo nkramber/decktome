@@ -12,6 +12,44 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-22b
+
+**Pull request #206 fixes F-33. A deck of two or more colors reads a fixing floor, and the mana pass fills it. It waits for the owner's merge.**
+
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view 206`. Then do next step 1.
+
+**The base.** `main` is `daeb919`, from #205. Cloud Build `980198dc` of `deploy-api` ended SUCCESS at 05:38:39 UTC on 2026-09-22, and `d4765f6c` of `deploy-web` at 05:40:47 UTC. The owner uploaded one collection after the deploy, and the upload row and the import result both named the format.
+
+**Why this pull request exists.** The owner picked F-33 (D-798). A count over deck gate runs 19 to 31 read 0 to 9 nonbasic lands on one owned two-color prompt. The owned pool holds white-black fixing lands, so the model skips them. The owner chose the shape of the fix (D-799).
+
+**What this pull request holds.**
+
+- `go/internal/profile/bands.json` holds a `fixing_land` floor for each power and each count of deck colors. Each floor is the low quarter of real lists.
+- The profile reads a `fixing_land` row: the lands of `LandClassOf` below `LandOther`. A deck of one color reads no row.
+- The deck shape block names the floor of each count of colors, and the generate prompt reads version 16.
+- `fillFixing` trades a basic land for a fixing land at every power while the deck sits under its floor. A 60-card deck takes copies up to 4, and owned-first takes the owned copies alone. The fill keeps every other band.
+- `docs/reference/fixing-floors-2026-09-22.md` holds the counts, the floors, and the replay.
+
+**The checks.** `make verify` passed on this machine, exit 0, with Node 22.23.2. The shell of this session started on Node 20.17.0 of nvm, and under it each web test failed with `ERR_REQUIRE_ESM`. The free `make manapass-check` lane replayed runs 29 and 31 on `main` and on this branch. Deck 13 of run 31 went from 36 basic lands to 25, and no deck changed a band other than `fixing_land`.
+
+**The review.** Gitar reviewed `56edbd0` and reads "Approved", with no finding and no thread. Its dashboard edit of 15:11:50 UTC is later than the push of 15:08:24 UTC, both of 2026-09-22, so the review is current.
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- A whole deck gate run measures the prompt of version 16. It is a paid target, so ask the owner first.
+- UNVERIFIED: the Moxfield import of the deck list. The export panel still names ManaBox and MTG Arena alone.
+- D-794 makes the app less strict than the Wizards infographic at Bracket 2.
+- The F-48 row names bracket gate run 7. A count on 2026-09-21 found the escape in runs 1, 2, 3, and 5 alone.
+- Five sessions on the new files, before a decision on the checkpoint rule (next step 3, D-750).
+- A deployed session with a theme that matches no card, such as "anime" (next step 4).
+- A look at the first commander question after a load of the app (next step 5).
+- OQ-67 and OQ-77.
+
+### 2026-09-21c: the rules floor of the bracket judge, F-162
+
+**The owner picked F-162 and answered OQ-87** (D-793, D-794). A precon anchors no bracket, because Wizards removed that tie on 2025-10-21. A free read found a third precon at floor 4, Zada. The paid rejudge cost $0.3107, and the judge still read precons 4, 5, and 7 as bracket 3. So the gate raises the judge to the rules floor (D-795).
+
 ## The resume section of 2026-09-22a
 
 **Pull request #205 fixes F-163 and answers OQ-80. The collection page names every upload format, and a collection stores the format the server read. It waits for the owner's merge.**

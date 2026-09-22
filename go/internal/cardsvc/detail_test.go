@@ -67,6 +67,7 @@ func TestGetRulingsCarriesTheSnapshotDate(t *testing.T) {
 // price, the newest set first, then the collector number as a number.
 func TestGetPrintingsOrdersNewestSetFirst(t *testing.T) {
 	s := New()
+	s.SetIndexWait(0)
 	ctx := context.Background()
 	if _, err := s.GetPrintings(ctx, connect.NewRequest(&mtgv1.GetPrintingsRequest{OracleId: "o-sol"})); code(err) != connect.CodeUnavailable {
 		t.Errorf("before a swap: %v, want Unavailable", err)

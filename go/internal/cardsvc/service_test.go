@@ -36,6 +36,7 @@ func code(err error) connect.Code {
 
 func TestUnavailableBeforeSwap(t *testing.T) {
 	s := New()
+	s.SetIndexWait(0)
 	ctx := context.Background()
 	if _, err := s.Lookup(ctx, connect.NewRequest(&mtgv1.LookupRequest{Key: &mtgv1.LookupRequest_Name{Name: "x"}})); code(err) != connect.CodeUnavailable {
 		t.Errorf("Lookup before swap: %v", err)
@@ -142,6 +143,7 @@ func TestSearchPaging(t *testing.T) {
 
 func TestGetCards(t *testing.T) {
 	s := New()
+	s.SetIndexWait(0)
 	ctx := context.Background()
 	if _, err := s.GetCards(ctx, connect.NewRequest(&mtgv1.GetCardsRequest{OracleIds: []string{"o0"}})); code(err) != connect.CodeUnavailable {
 		t.Errorf("GetCards before swap: %v", err)
@@ -183,4 +185,44 @@ func TestGetCards(t *testing.T) {
 			t.Errorf("120 plus repeats: %v", err)
 		}
 	})
+}
+
+// TestReadyWaitsForFirstIndex: the API listens before the snapshot loads,
+// so a request of the first seconds after a cold start meets no index
+// (F-164). Such a request waits for the first Swap, and it reads the
+// cards. A request that ends first reads Unavailable and waits no more.
+func TestReadyWaitsForFirstIndex(t *testing.T) {
+	s := New()
+	s.SetIndexWait(5 * time.Second)
+	go func() {
+		time.Sleep(20 * time.Millisecond)
+		s.Swap(testIndex(1))
+	}()
+	start := time.Now()
+	res, err := s.GetCards(context.Background(), connect.NewRequest(&mtgv1.GetCardsRequest{OracleIds: []string{"o0"}}))
+	if err != nil {
+		t.Fatalf("GetCards during the load: %v", err)
+	}
+	if len(res.Msg.Cards) != 1 {
+		t.Errorf("cards: %d, want 1", len(res.Msg.Cards))
+	}
+	if time.Since(start) < 20*time.Millisecond {
+		t.Error("GetCards answered before the swap")
+	}
+}
+
+// TestReadyStopsOnCanceledRequest: a reader who leaves the page ends the
+// request, and the wait of F-164 ends with it.
+func TestReadyStopsOnCanceledRequest(t *testing.T) {
+	s := New()
+	s.SetIndexWait(time.Minute)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	start := time.Now()
+	if _, err := s.GetCards(ctx, connect.NewRequest(&mtgv1.GetCardsRequest{OracleIds: []string{"o0"}})); code(err) != connect.CodeUnavailable {
+		t.Errorf("GetCards on a canceled request: %v, want Unavailable", err)
+	}
+	if time.Since(start) > 5*time.Second {
+		t.Error("GetCards waited past the end of the request")
+	}
 }
