@@ -12,6 +12,44 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-22f
+
+**Pull request #211 builds PR-62: the collection page scrolls once, with a pinned toolbar and a button to the binder top. It waits for the owner's merge.**
+
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view 211`. After the merge, do next step 1.
+
+**The base.** `main` is `16bbada`, from #210. #210 changed no code, so no deploy build ran for it.
+
+**Why this pull request exists.** The owner named the scroll of the collection page after #210 (D-806). The binder grid held a second scroll box inside `<main>`, so the page showed two scrollbars, and the search left the screen (F-167).
+
+**What this pull request holds.**
+
+- The binder grid reads the scroll of `<main>`, with a `scrollMargin` that follows the content above it.
+- The title and the search stay pinned (D-807). On a wide screen the five filters pin below them.
+- "Back to the binder top" shows one screen below the binder top (D-808). It moves the focus to the binder heading, and it honors reduced motion.
+- `web/apps/web/e2e/collection-scroll.spec.ts` is the gate at 390 px and at 1280 px.
+- D-809: the live check runs that spec on `decktome.com` as the check account of D-779.
+
+**The checks.** `make smoke` passed, 5 of 5, and the new spec fails on the old grid. Four of the five new Vitest tests fail on the old grid, and the fifth is a negative guard. `make verify` passed on this machine, exit 0, with Node 22.23.2 on the PATH.
+
+**The review.** Gitar reviewed `2663424` and reads "Approved", with 1 of 1 findings closed and no open thread. Its dashboard edit of 02:08:01 UTC is later than the push of 02:06:33 UTC, both of 2026-09-23, so the review is current. The one finding named the placeholders of the first push, and `2663424` replaced them. The later commit changes `docs/SESSION-HANDOFF.md` alone, which is the metadata set, so the pass holds (D-752).
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- F-165 and F-166, as later items.
+- A whole deck gate run measures the prompt of version 16 and the fixing floor of F-33. It is a paid target, so ask the owner first.
+- UNVERIFIED: the Moxfield import of the deck list. The export panel still names ManaBox and MTG Arena alone.
+- D-794 makes the app less strict than the Wizards infographic at Bracket 2.
+- Five sessions on the new files, before a decision on the checkpoint rule (next step 3, D-750).
+- A deployed session with a theme that matches no card, such as "anime" (next step 4).
+- A look at the first commander question after a load of the app (next step 5).
+- OQ-67 and OQ-77.
+
+### 2026-09-22d: the escape in the judge text, F-48
+
+**The owner picked F-48, and chose to keep the old gate documents as they are** (D-802, D-803). The escape reached every judge lane, and not the bracket gate alone: 18 documents from 2026-09-02 to 2026-09-21. The judge wrote the JSON text `\\u2014`. Both deploys of #207 ended SUCCESS.
+
 ## The resume section of 2026-09-22e
 
 **Pull request #210 retires the power pass of D-704 and records F-165 and F-166. It changes no code, and it waits for the owner's merge.**

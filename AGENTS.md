@@ -36,7 +36,11 @@ make meta-refresh  # read the deck list sources into the meta store, network, fr
 make themes-check  # theme slugs and the commander ranking against the snapshot
 ```
 
-CI runs every job of `verify` on each pull request (D-639). The `pr-contract` workflow reads the body and the diff of each pull request against D-747. A weekly schedule runs govulncheck alone (D-305).
+CI runs `verify` on each pull request (D-639). A change of documents alone skips the six heavy jobs when the code under it passed (D-818). The `pr-contract` workflow reads the body and the diff of each pull request against D-747. The `review-gate` workflow reads the review record, and `main` requires it (D-815). A weekly schedule runs govulncheck alone (D-305).
+
+## Review
+
+A Codex session reviews each pull request after the Gitar pass (D-811). Load `.claude/skills/pr-review/SKILL.md` and `.claude/skills/one-pr-one-session/SKILL.md` before the review. The review writes `docs/reviews/pr-<number>.md`, and the `review-gate` check reads its verdict and its head. The reviewer never replies to Gitar, never merges, and never pushes to `main`.
 
 ## Rules
 

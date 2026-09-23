@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-23 correction pass 216 (D-810 to D-821): the owner replaced F-165 with the review gate of the two sibling repos. The owner also asked for a CI skip of documents. PR-63 builds both. Changes: PR-63.
+
 2026-09-22 correction pass 215 (F-167, D-806 to D-809): the owner named the scroll of the collection page as the next item. F-167 records two scroll areas. PR-62 builds one scroll area, a pinned toolbar, and a button to the top of the binder. Changes: F-167, PR-62.
 
 2026-09-22 correction pass 214 (the power pass, D-804, D-805): two judge reads of bracket gate run 9 put Najeela at bracket 4, for its warrior filler. Every power floor holds, so the owner retired the power pass of D-704. Changes: PR-45b, F-165, F-166.
@@ -1889,6 +1891,29 @@ After the merge, the next session reads the live chunk of `decktome.com` for the
 2026-09-22 (built): `web/apps/web/e2e/collection-scroll.spec.ts` passes at both widths in `make smoke`. Against the old grid it fails at its first check, "more than one element scrolls up and down". Four of the five new Vitest tests fail on the old grid. The fifth is a negative guard, as a reader above the binder stays in place on both. The first spec run found the virtualizer fault of the move, and the fix above holds. The column count now reads the rows box when that box appears. The old observer ran one time at mount, before the first page gave a box. No paid target ran.
 > *In plain English:* the collection page has a scrollbar for the page and a second one for the card grid inside it. The reader scrolls one, then the other, and the search box leaves the screen. After this change the page has one scrollbar. The search box stays at the top while the cards move. A button takes the reader back to the first card in one click.
 
+**PR-63: A Codex review gates each pull request, and a change of documents skips the heavy CI jobs (D-810 to D-822).** ✅ merged as #212. The mark came after the first Codex review, and D-822 moves it before the Gitar pass.
+The owner asked for the review gate of what-you-carry and the-thing-below (D-810). Before this item, Gitar was the only review, and every pull request ran every job of `verify` (D-639).
+
+- **The review order.** Gitar reviews each push, and the author answers each finding. Then a Codex session writes `docs/reviews/pr-<number>.md` with the new `pr-review` skill (D-811).
+- **The check.** `.github/workflows/review-gate.yml` runs `docs/tools/review_gate.py` from `main` on `pull_request_target`. It reads the head as data, with a token that reads contents alone (D-816).
+- **The rules.** The record exists, its verdict is `Ready for owner merge`, and its head field names the effective head (D-813). A commit of the record or the hand-off alone keeps the approval.
+- **The label.** `review-override` passes a pull request of documents alone. The session applies it when the pull request is ready and every other check is green (D-812, D-814).
+- **Dependabot.** A pull request of Dependabot passes when Dependabot wrote every commit (D-817).
+- **The ruleset.** The ruleset `review-gate` of `main` requires the check, with no bypass (D-815).
+- **The CI skip.** A new job `verify:skip` runs `docs/tools/ci_skip.py` from the base commit (D-818 to D-820). The six heavy jobs skip under rule 1 or rule 2 of D-818. The `shell` and `eval` jobs always run.
+
+Gate:
+
+- `docs/tools/test_review_gate.py` covers each rule, the label set, the Dependabot guard, and a real git history, with a move of code into `docs/`.
+- `docs/tools/test_ci_skip.py` covers both skip rules, a red, cancelled, or absent run, and the search for the last change of code.
+- Each test file reads the workflow that it guards, so a change of the job names fails a test.
+- A live read of the rules against #211 gives the expected result for each case.
+- A Codex record of this pull request approves its effective head (D-821).
+- `make verify` passes.
+
+GitHub starts `pull_request_target` from `main` alone, so the check can not run on this pull request. The first live run of both rules is the next pull request. The session disables the ruleset for this merge, and enables it again after the merge (D-815).
+> *In plain English:* until now, one automatic reviewer read each change, and every change ran the full test suite. After this change, a second AI from another company reads each change of code. GitHub refuses the merge until its written verdict approves the latest code. A change of documents alone skips the slow tests, but only when the code under it already passed them.
+
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
 
@@ -2220,6 +2245,8 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 51. **PR-60** a deck shows its power counts beside its bracket (D-774 to D-777). The deck page reads the profile the server already measured. A bracket of 4 or 5 shows a floor, and bracket 1 to 3 shows a cap (D-775). The finisher row names the deck plan (D-776). The deck page alone shows the counts, so no protobuf field changes (D-777). No paid target ran.
 
 52. **PR-62** the collection page scrolls once (D-806 to D-809). **F-167** ✅ closes with it. The grid reads the scroll of `<main>`, and its toolbar stays pinned. A button returns the reader to the binder top. No paid target ran.
+
+53. **PR-63** a Codex review gates each pull request, and a change of documents skips the heavy CI jobs (D-810 to D-821). The ruleset of `main` requires the `review-gate` check. No paid target ran.
 
 ## 9. Open questions
 
