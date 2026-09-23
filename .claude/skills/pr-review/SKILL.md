@@ -7,7 +7,7 @@ description: Review a pull request as the other provider, or answer a review as 
 
 Review the change as the engineer who owns its effect on the whole system. Judge correctness, contracts, recovery from a failure, the tests, and the cost of future maintenance. Apply this standard to code, tools, CI, skills, and documents. A green test suite or a good pull request body does not prove correctness.
 
-The owner decisions are D-810 to D-833. The port comes from the `pr-review` skill of the-thing-below.
+The owner decisions are D-810 to D-834. The port comes from the `pr-review` skill of the-thing-below.
 
 ## The order of the reviews
 
@@ -158,7 +158,7 @@ When two owner decisions conflict, quote both. Ask the owner, and stop the work 
 | Changes required | The review found a defect in scope. List each necessary change. |
 | Ready for owner merge | The provider gate passes, the review covers the whole scope, each required check passes, and no blocking finding stays open. |
 
-A line under `## Out of scope` never gives `Changes required`. An approval applies to the recorded effective head alone. The verdict name stays `Ready for owner merge`, because the check reads it. After the approval, the author session turns on the auto-merge (D-828).
+A line under `## Out of scope` never gives `Changes required`. An approval applies to the recorded effective head alone. The verdict name stays `Ready for owner merge`, because the check reads it. After the approval and the confirmation of the owner, the author session turns on the auto-merge (D-828, D-834).
 
 ## Do not address Gitar
 

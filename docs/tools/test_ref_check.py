@@ -4,6 +4,7 @@ Run: python3 -m unittest discover -s docs/tools -p 'test_*.py'
 """
 import importlib.util
 import os
+import tempfile
 import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -87,6 +88,24 @@ class RefCheckTest(unittest.TestCase):
         self.assertTrue(rc.DATED.search("docs/reference/note-2026-09-17.md"))
         self.assertTrue(rc.DATED.search("docs/reference/session-handoff-archive.md"))
         self.assertIsNone(rc.DATED.search("docs/decisions.md"))
+
+
+
+class RepoPathsTest(unittest.TestCase):
+    def test_the_git_file_of_a_worktree_is_no_top_level_entry(self):
+        with tempfile.TemporaryDirectory() as root:
+            with open(os.path.join(root, ".git"), "w", encoding="utf-8") as handle:
+                handle.write("gitdir: /elsewhere/.git/worktrees/x\n")
+            os.makedirs(os.path.join(root, "docs"))
+            with open(os.path.join(root, "docs", "a.md"), "w", encoding="utf-8") as handle:
+                handle.write("a\n")
+            saved, rc.ROOT = rc.ROOT, root
+            try:
+                paths, folders = rc.repo_paths()
+            finally:
+                rc.ROOT = saved
+        self.assertEqual(paths, {"docs/a.md"})
+        self.assertEqual(folders, {"docs"})
 
 
 if __name__ == "__main__":

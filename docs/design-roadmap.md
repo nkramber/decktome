@@ -1916,7 +1916,7 @@ Gate:
 GitHub starts `pull_request_target` from `main` alone, so the check can not run on this pull request. The first live run of both rules is the next pull request. The session disables the ruleset for this merge, and enables it again after the merge (D-815).
 > *In plain English:* until now, one automatic reviewer read each change, and every change ran the full test suite. After this change, a second AI from another company reads each change of code. GitHub refuses the merge until its written verdict approves the latest code. A change of documents alone skips the slow tests, but only when the code under it already passed them.
 
-**PR-64: The author session starts the Codex review, and a pull request merges itself on the green light (D-823 to D-833).** 🔧 in progress.
+**PR-64: The author session starts the Codex review, and a pull request merges itself on the green light (D-823 to D-834).** 🔧 in progress.
 PR-63 made the Codex record a required check. The owner still started each Codex review in the desktop app, and the owner merged each pull request (D-583, D-811).
 
 - **The target.** `make codex-review PR=<n>` runs `docs/tools/codex_review.py`. It updates the npm CLI, checks the login and the model, and runs `codex exec` in a new worktree at the head (D-823 to D-825).
@@ -1924,7 +1924,7 @@ PR-63 made the Codex record a required check. The owner still started each Codex
 - **The read.** After the review, the target reads the record from origin, and it checks the head field against the effective head. Each outcome has its own exit code (D-832).
 - **The three-strike stop.** Each finding lists the heads at which a review found it open. The third head of a blocking finding stops the loop for the owner (D-826).
 - **No API key.** Each Codex call runs with no API key in its environment, and it needs a ChatGPT login (D-833).
-- **The auto-merge.** The ruleset of `main` requires each pull request job of `verify`, `pr-contract`, `review-gate`, and each resolved thread. The squash merge is the one method, and the auto-merge is on (D-828, D-830).
+- **The auto-merge.** The ruleset of `main` requires each pull request job of `verify`, `pr-contract`, `review-gate`, and each resolved thread. The squash merge is the one method, and the auto-merge is on (D-828, D-830). The owner confirms each merge after a summary of one paragraph (D-834).
 - **The files of the rules.** `.github/rulesets/` holds the ruleset and the merge settings, and `make ruleset-check` compares them with GitHub.
 
 Gate:

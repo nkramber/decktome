@@ -30,11 +30,11 @@ Author provider: Claude Code
 
 **The review.** No Gitar pass and no Codex review yet.
 
-**The settings.** GitHub still holds the old ruleset and merge settings. `make ruleset-check` reads 13 differences. The owner approves the change before the session makes it (D-829).
+**The settings.** The owner approved the change, and the session applied the ruleset file and the merge settings on 2026-09-23, before it opened this pull request (D-829). `make ruleset-check` then read no difference.
 
 **What waits on the owner.**
 
-- The approval of the change of the settings.
+- The confirmation of the merge of this pull request, after a summary of one paragraph (D-834).
 - F-165 and F-166, as later items.
 - A whole deck gate run of prompt version 16 and the fixing floor of F-33. It is a paid target, so ask the owner first.
 - UNVERIFIED: the Moxfield import of the deck list.
@@ -51,7 +51,7 @@ Author provider: Claude Code
 5. Load the skills. Load `ste-writing` before you write any `.md`. Load `design-doc-style` before you edit the roadmap. Load `mtg-corpus` before you reason about a format, a legality, or a card term.
 6. Run `make verify`. It runs every check the verify workflow runs, on this machine, for nothing. Put Node 22.23.2 on the PATH first. The pull request runs the same jobs on Actions, and a change of documents alone skips six of them (D-818).
 7. Do "Next steps, in order" below. Ask questions as they come up. Record each owner answer in `docs/decisions.md`, and delete the row from `docs/owner-questions.md`.
-8. Open the pull request with the sections of `.github/pull_request_template.md`, and run `make pr-check`. Load the `gitar-review` skill, and follow it after each push (D-637, D-745). After Gitar, run `make codex-review PR=<n>` in the background (D-823). After the approval, turn on the auto-merge (D-828). A pull request of documents alone takes the `review-override` label in place of that review (D-812).
+8. Open the pull request with the sections of `.github/pull_request_template.md`, and run `make pr-check`. Load the `gitar-review` skill, and follow it after each push (D-637, D-745). After Gitar, run `make codex-review PR=<n>` in the background (D-823). After the approval, give the owner a summary of one paragraph, and turn on the auto-merge after the confirmation (D-828, D-834). A pull request of documents alone takes the `review-override` label in place of that review (D-812).
 9. Update this file inside the pull request, before you call it ready (D-747). Read only the section that you change.
 10. Keep three session records at most (D-749). Move each older record to the archive, word for word.
 11. When the pull request merges, write the transitional prompt of the `one-pr-one-session` skill, and end the session.

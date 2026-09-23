@@ -289,6 +289,8 @@ def review(run, repo, codex, number, slug, branch, head, stamp):
     base = os.path.join(repo, TRANSCRIPTS, f"pr-{number}-{stamp}")
     tree = tempfile.mkdtemp(prefix=f"decktome-codex-pr{number}-")
     must(run, ["git", "worktree", "add", "--quiet", "--detach", tree, head], fault, cwd=repo)
+    # A new worktree holds no web packages, and `make verify` needs them for `buf generate`.
+    must(run, ["pnpm", "--dir", "web", "install", "--frozen-lockfile", "--silent"], fault, cwd=tree)
     with open(base + ".jsonl", "w", encoding="utf-8") as events, open(base + ".stderr.log", "w", encoding="utf-8") as log:
         code, _, _ = run([codex, "exec", *model_args(), "-s", SANDBOX, "-C", tree, "--json",
                           "-o", base + ".last.md", prompt(number, slug, branch, head)],

@@ -54,7 +54,7 @@ The reviewer never replies to Gitar, never merges, and never pushes to `main`. T
 - Every card the model names passes the rules engine before the user sees it.
 - Log ids, never PII or raw prompts.
 - Table-driven tests. `ctx` is the first parameter. `errors.Is` / `errors.As`. Accept interfaces, return structs.
-- One concern per pull request. Squash merge into `main`, the one merge method that the repository allows. After the Codex approval, the author session turns on the auto-merge (D-828).
+- One concern per pull request. Squash merge into `main`, the one merge method that the repository allows. After the Codex approval, the author session gives the owner a summary of one paragraph. It turns on the auto-merge after the owner confirms (D-828, D-834).
 - One pull request per clean session. The pull request carries its own documents and hand-off, and no pull request records an earlier merge. Load `.claude/skills/one-pr-one-session/SKILL.md` for all work on a pull request (D-746 to D-748).
 - No AI-attribution text in any PR, branch name, commit message, or comment.
 - Write docs and skills in ASD-STE100. Run `make ste-check` before you commit a `.md` file. `make lint` and CI run it too (D-264).

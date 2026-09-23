@@ -120,7 +120,7 @@ Run the free checks before a deploy. Each one costs nothing.
 
 A failed check stops the deploy. Repair the code on a branch, and merge the repair first.
 
-CAUTION: the ruleset of `main` requires the `review-gate` check, with no bypass (D-815). A repair of code merges only after a Codex record approves it. For an urgent fault, roll back first with section 8, which needs no merge.
+CAUTION: the ruleset of `main` requires the `review-gate` check, each pull request job of `verify`, and each resolved thread, with no bypass (D-815, D-828). A repair of code merges only after a Codex record approves it and each check is green. For an urgent fault, roll back first with section 8, which needs no merge.
 
 ## 4. Deploy the API and the jobs
 

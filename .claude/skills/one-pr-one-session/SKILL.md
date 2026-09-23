@@ -5,7 +5,7 @@ description: Bind a session to one repository, one branch, one pull request, and
 
 # One pull request, one clean session
 
-The owner decisions are D-746 to D-748, and D-823 to D-833 for the review loop and the auto-merge. `CLAUDE.md` holds the other rules, and this skill does not repeat them.
+The owner decisions are D-746 to D-748, and D-823 to D-834 for the review loop and the auto-merge. `CLAUDE.md` holds the other rules, and this skill does not repeat them.
 
 ## The rule
 
@@ -79,8 +79,11 @@ Turn on the auto-merge only when each of these conditions is true (D-828):
 - The last metadata commit is on origin. It holds the record and the hand-off.
 - The Gitar pass is complete, and each top-level Gitar comment has its answer.
 - The record says `Ready for owner merge` for the effective head.
+- The owner confirmed the merge after the summary below (D-834).
 
-Then run these commands, in this order:
+Write a summary of one paragraph: the change, the checks, the review verdict, and each risk that stays open. Then ask the owner for the confirmation of the merge with `AskUserQuestion`. Without the confirmation, do not turn on the auto-merge.
+
+After the confirmation, run these commands, in this order:
 
 ```bash
 gh pr merge <number> --auto --squash
@@ -179,7 +182,7 @@ The session ends with this prompt. It makes no branch and no change for the next
 | One pull request in each session, and a clean session for each one | The agent. No check reads the conversation |
 | The trigger of the transitional prompt, and its two stop cases | The agent. No check reads the conversation (D-764) |
 | The truth of each reason, and the one concern | The agent, then the owner |
-| The merge | The auto-merge under the ruleset (D-828) |
+| The merge | The confirmation of the owner, then the auto-merge under the ruleset (D-828, D-834) |
 | The deploy | Cloud Build, from `main` alone (D-579) |
 
 ## Rules of this repo that win over other skills

@@ -14,7 +14,7 @@ The look follows a reference design the owner gave on 2026-08-30 (D-328 to D-335
 
 **The repository is public** (D-639). Write no email and no personal address into a file, an issue, or a pull request. D-642 permits a reader's own words. Every pull request runs the verify workflow, and a change of documents alone skips its heavy jobs (D-818).
 
-Run `make where` before you change anything. It prints the branch, the tree, and the state of the branch's pull request. The session commits on a branch, pushes it, and opens a pull request. It merges itself when the green light holds (hard rule 8, D-828). Never commit on `main`, and run `make hooks` once in a fresh checkout.
+Run `make where` before you change anything. It prints the branch, the tree, and the state of the branch's pull request. The session commits on a branch, pushes it, and opens a pull request. It merges itself after the green light and the confirmation of the owner (hard rule 8, D-828, D-834). Never commit on `main`, and run `make hooks` once in a fresh checkout.
 
 Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
 
@@ -32,7 +32,7 @@ Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
 10. **Answer the review before you ask for a merge.** `gitar-bot` reviews every pull request (D-637). Load the `gitar-review` skill after each push, and follow its procedure (D-745). The skill proves that a review is current, and it answers each finding. These rules of this repo win over the skill:
    - **After Gitar, run `make codex-review PR=<n>`** (D-823). Codex writes the record with the `pr-review` skill, and `main` requires the `review-gate` check (D-815). The third open round of one finding stops the loop for the owner (D-826).
    - A pull request of documents alone waits for Gitar too (D-679). When it is ready and each other check is green, apply the `review-override` label in place of the Codex review (D-812).
-   - After the approval, turn on the auto-merge. `main` requires each check and each resolved thread (D-828).
+   - After the approval, give the owner a summary of one paragraph, and wait for the confirmation of the merge (D-834). Then turn on the auto-merge (D-828).
    - Wait for a current Gitar review before the Codex review. Fix each finding on the same pull request, in the same session (D-746).
    - A commit of `docs/SESSION-HANDOFF.md` or the hand-off archive alone does not make a Gitar pass stale (D-752).
 11. **Never hesitate to ask or to push back.** Ask a question the moment you have one. When the owner's two statements conflict, say so and quote both. When a request rests on a wrong premise, say so with the evidence. The owner sees this as the key to good LLM-user interaction. Silence is the mistake, not the question.

@@ -317,6 +317,24 @@ class Invocation(unittest.TestCase):
         self.assertEqual(caught.exception.code, cr.EXIT_REFUSAL)
         self.assertIn("ChatGPT", str(caught.exception))
 
+    def test_the_review_prepares_a_worktree_and_runs_codex_there_with_no_key(self):
+        os.environ["OPENAI_API_KEY"] = "sk-test"
+        try:
+            with tempfile.TemporaryDirectory() as repo:
+                run = Fake([(["git", "worktree"], (0, "", "")), (["pnpm"], (0, "", "")), (["/n/codex", "exec"], (0, "", ""))])
+                code, tree, base = cr.review(run, repo, "/n/codex", N, "o/r", "b", R1, "20260923T000000Z")
+                os.rmdir(tree)
+        finally:
+            del os.environ["OPENAI_API_KEY"]
+        self.assertEqual(code, 0)
+        self.assertEqual([c[0] for c in run.calls], ["git", "pnpm", "/n/codex"])
+        self.assertEqual(run.calls[0][-2:], [tree, R1])
+        exec_call = run.calls[2]
+        self.assertEqual(exec_call[exec_call.index("-s") + 1], cr.SANDBOX)
+        self.assertEqual(exec_call[exec_call.index("-C") + 1], tree)
+        self.assertNotIn("OPENAI_API_KEY", run.envs[2])
+        self.assertTrue(base.endswith(f"pr-{N}-20260923T000000Z"))
+
     def test_a_missing_pr_number_is_a_usage_error(self):
         with contextlib.redirect_stderr(io.StringIO()):
             self.assertEqual(cr.main([], run=Fake([])), cr.EXIT_USAGE)
