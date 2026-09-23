@@ -58,3 +58,19 @@ The boost moved the warrior creatures of the Najeela shortlist, against 144 with
 The rule of the session was the largest boost that keeps each core card. Each boost kept the same core, so that rule did not separate the boosts. The owner chose 0.05 (D-839).
 
 Najeela misses the same four core lands at each boost: Underground Sea, Savannah, Exotic Orchard, and Boseiju, Who Endures. The land cap drops them, and this lever does not change the land cap.
+
+## 6. Bracket gate run 11
+
+`make meta-refresh` read the sources again on `1089438`, from 13:53 to 15:30 local time, for no cost. It wrote the local model `20260923T202806Z`. The model holds rates for 231 commanders and 39,077 cards. The rates add 1.86 MB of JSON, and the stored file grew from 4.8 MB to 5.4 MB with the new lists. The rows hold 69 Najeela lists, 1,834 Kinnan lists, and 160 Yuriko lists.
+
+Run 11 read prompts 13 to 15 on `a2c8090` for $0.2967 (`docs/reference/pr14a-bracket-gate-run11.md`). A second judge lane read the same decks for $0.0389 (`docs/reference/pr14a-bracket-gate-run11-judge2.md`).
+
+| Prompt | Lane 1 | Lane 2 |
+|---|---|---|
+| 13. Kinnan, Bonder Prodigy | 5 | 5 |
+| 14. Yuriko, the Tiger's Shadow | 5 | 5 |
+| 15. Najeela, the Blade-Blossom | 5 | 5 |
+
+Each deck sat in every band, with no block finding and no content violation. The Najeela deck holds 10 warrior creatures, against 21 in run 9. It holds Thassa's Oracle and Demonic Consultation, 25 fixing lands, and no tapped land. Derevi, Empyrial Tactician was on the shortlist, and the model left it out.
+
+The paid calls of F-166 cost $0.3957: $0.0601 for the scratch rejudge and $0.3356 for run 11 and its second lane.

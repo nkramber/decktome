@@ -12,6 +12,45 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-23e
+
+**Pull request #216 pauses the required Gitar review (D-838).**
+
+Author provider: Claude Code
+
+**The next step.** Ask the owner for the merge with the summary of four sections (D-836). Pending the owner merge.
+
+**The base.** `main` is `8e492a7`, from #215. This session read no Cloud Build of `8e492a7`.
+
+**Why this pull request exists.** The owner asked to pause the required Gitar review until a later pull request ends the pause. The change must be easy to reverse.
+
+**What this pull request holds.**
+
+- `docs/reference/gitar-pause.md` holds the rules of the pause and the steps of its end.
+- One pause note, with the bold text `Gitar pause (D-838).`, in `CLAUDE.md`, `AGENTS.md`, four skill files, three reference documents, and the template of a pull request.
+- `make codex-review PR=<n> -- --skip-gitar-review` reads no Gitar pass. It refuses an open review thread or an issue on the Gitar dashboard alone. The flag stays after the pause.
+- `scripts/feedback-review.sh` reads the pause file. While it exists, an open thread or a dashboard issue stops the cycle before the fixer, and a comment tells the owner.
+- New tests: 12 in `docs/tools/test_codex_review.py`, 2 in `docs/tools/test_gitar_pause.py`, and 1 with 6 cases in `go/internal/triage/loop_test.go`.
+
+**The checks.** `make verify` passed, exit 0, with Node 22.23.2 on the PATH. The 4 new tests of the flag fail on `8e492a7`, because it has no `check_threads`. `test_gitar_pause.py` fails with the pause file removed. `make -n` shows the flag passed on, and an unknown flag exits 2 before the review.
+
+**The review.** Gitar: the pause applies. Codex review: `d04d5ef` reads Ready for owner merge. P2-1 is fixed, and no finding stays open.
+
+**What waits on the owner.**
+
+- The merge of this pull request, after the summary of four sections (D-836).
+- The end of the Gitar pause, in a later pull request (D-838).
+- F-166 and F-49, as later items.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. It is a paid target, so ask the owner first.
+- UNVERIFIED: the Moxfield import of the deck list.
+- D-794 makes the app less strict than the Wizards infographic at Bracket 2.
+- Five sessions on the new files, before a decision on the checkpoint rule (next step 3, D-750).
+- Next steps 4 and 5, and OQ-67 and OQ-77.
+
+### 2026-09-23c: the fixing fill of Najeela, F-165
+
+**The owner started F-165 from the transitional prompt of #213.** The session replayed the Najeela shortlist of bracket gate run 9 for free, and the replay matched the pool of 338 cards. The owner chose the cut inside the total, the trade of a tapped land, and one paid run of prompt 15 (D-835). Run 10 cost $0.1083 and read 24 fixing lands.
+
 ## The resume section of 2026-09-23d
 
 **Pull request #215 keeps a green `review-gate` green on a commit of documents alone (D-837).**
