@@ -24,7 +24,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 - `web/apps/web/e2e/collection-scroll.spec.ts` is the gate at 390 px and at 1280 px.
 - D-809: the live check runs that spec on `decktome.com` as the check account of D-779.
 
-**The checks.** `make smoke` passed, 5 of 5, and the new spec fails on the old grid. Four of the five new Vitest tests fail on the old grid, and the fifth is a negative guard. VERIFYLINE
+**The checks.** `make smoke` passed, 5 of 5, and the new spec fails on the old grid. Four of the five new Vitest tests fail on the old grid, and the fifth is a negative guard. `make verify` passed on this machine, exit 0, with Node 22.23.2 on the PATH.
 
 **The review.** REVIEWLINE
 
