@@ -1,6 +1,7 @@
 package llm
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -104,8 +105,45 @@ func (a *Anthropic) Complete(ctx context.Context, call Call) (Response, error) {
 	if text == "" {
 		return out, newErr(ClassTerminal, AnthropicName, call.Model, 0, errors.New("empty output"))
 	}
-	out.Output = json.RawMessage(text)
+	out.Output = json.RawMessage(decodeLiteralEscapes([]byte(text)))
 	return out, nil
+}
+
+// decodeLiteralEscapes turns each escaped backslash that starts a \uXXXX
+// sequence into a plain backslash, so the JSON decoder reads the rune. The
+// judge writes an em dash as the JSON text \\u2014, and the decoded reason
+// kept the six characters \u2014 (F-48, D-803). An escaped backslash before
+// any other text stays as it is.
+func decodeLiteralEscapes(raw []byte) []byte {
+	if !bytes.Contains(raw, []byte(`\\u`)) {
+		return raw
+	}
+	out := make([]byte, 0, len(raw))
+	for i := 0; i < len(raw); i++ {
+		if raw[i] != '\\' || i+1 >= len(raw) {
+			out = append(out, raw[i])
+			continue
+		}
+		if raw[i+1] == '\\' && i+7 <= len(raw) && raw[i+2] == 'u' && isHex4(raw[i+3:i+7]) {
+			out = append(out, '\\')
+			i++
+			continue
+		}
+		out = append(out, raw[i], raw[i+1])
+		i++
+	}
+	return out
+}
+
+func isHex4(b []byte) bool {
+	for _, c := range b {
+		switch {
+		case '0' <= c && c <= '9', 'a' <= c && c <= 'f', 'A' <= c && c <= 'F':
+		default:
+			return false
+		}
+	}
+	return len(b) == 4
 }
 
 func classifyAnthropic(ctx context.Context, err error, model string) error {
