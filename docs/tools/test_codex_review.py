@@ -169,6 +169,24 @@ class GitarPass(unittest.TestCase):
         self.assertEqual(cr.gitar_problems(PUSHED, [after, ask, reply], [], []), [])
 
 
+def thread_page(threads, more):
+    return {"data": {"repository": {"pullRequest": {"reviewThreads": {
+        "nodes": threads, "pageInfo": {"hasNextPage": more, "endCursor": "c1" if more else None}}}}}}
+
+
+class Threads(unittest.TestCase):
+    def test_an_open_thread_on_a_later_page_fails_the_pass(self):
+        first = [{"isResolved": True, "path": "a.py", "line": i} for i in range(100)]
+        later = [{"isResolved": False, "path": "b.py", "line": 7}]
+        run = Fake([(["gh", "api", "graphql"], (0, json.dumps([thread_page(first, True), thread_page(later, False)]), ""))])
+        threads = cr.review_threads(run, "o/r", N)
+        self.assertEqual(len(threads), 101)
+        self.assertIn("--paginate", run.calls[0])
+        self.assertIn("after: $endCursor", run.calls[0][-1])
+        problems = cr.gitar_problems(PUSHED, [comment(GITAR, DASH, "2026-09-23T09:00:00Z", "2026-09-23T10:02:00Z")], [], threads)
+        self.assertEqual(problems, ["1 review thread(s) are not resolved: b.py:7."])
+
+
 class Fake:
     """A runner that answers each command from a table of prefixes."""
 

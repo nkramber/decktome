@@ -202,9 +202,18 @@ def gitar_problems(pushed, comments, gitar_runs, threads):
     return problems
 
 
-THREADS = """query($owner: String!, $name: String!, $number: Int!) {
+THREADS = """query($owner: String!, $name: String!, $number: Int!, $endCursor: String) {
   repository(owner: $owner, name: $name) { pullRequest(number: $number) {
-    reviewThreads(first: 100) { nodes { isResolved path line } } } } }"""
+    reviewThreads(first: 100, after: $endCursor) {
+      nodes { isResolved path line } pageInfo { hasNextPage endCursor } } } } }"""
+
+
+def review_threads(run, slug, number):
+    """Every review thread of the pull request. `gh --paginate` follows endCursor to the last page."""
+    owner, name = slug.split("/", 1)
+    pages = json.loads(must(run, ["gh", "api", "graphql", "--paginate", "--slurp", "-F", f"owner={owner}",
+                                  "-F", f"name={name}", "-F", f"number={number}", "-f", f"query={THREADS}"], refuse))
+    return [t for page in pages for t in page["data"]["repository"]["pullRequest"]["reviewThreads"]["nodes"]]
 
 
 def later_commits(run, repo, effective, tip):
@@ -224,10 +233,7 @@ def check_gitar(run, repo, slug, number, effective, tip):
     comments = [c for page in pages for c in page]
     runs = json.loads(must(run, ["gh", "api", f"repos/{slug}/commits/{tip}/check-runs", "--jq",
                                  f"[.check_runs[] | select(.app.slug == \"{GITAR_SLUG}\") | {{status}}]"], refuse))
-    owner, name = slug.split("/", 1)
-    data = json.loads(must(run, ["gh", "api", "graphql", "-F", f"owner={owner}", "-F", f"name={name}",
-                                 "-F", f"number={number}", "-f", f"query={THREADS}"], refuse))
-    threads = data["data"]["repository"]["pullRequest"]["reviewThreads"]["nodes"]
+    threads = review_threads(run, slug, number)
     problems = gitar_problems(pushed, comments, runs, threads)
     if problems:
         raise refuse("the Gitar pass is not complete: " + " ".join(problems))

@@ -28,7 +28,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passed on `a3b6c99`, exit 0, with Node 22.23.2 on the PATH. `make ruleset-check` passed. The review-thread pagination gap has no regression test yet.
 
-**The review.** Gitar found two faults on `5999318`: the push walk of a merge head, and a worktree that a failed install left behind. Each fix has a test that fails on the old code. The Codex review found P2-1: the target reads only 100 Gitar threads. Verdict: `Changes required` for effective head `a3b6c99`.
+**The review.** Gitar found two faults on `5999318`, and approved `a3b6c99`. The first live `make codex-review` read `Changes required` on `a3b6c99`, with one finding: P2-1, the thread query read one page alone. `docs/reviews/pr-213-response.md` holds the answer, and a test fails on the old code.
 
 **The settings.** The owner approved the change, and the session applied the ruleset file and the merge settings on 2026-09-23, before it opened this pull request (D-829). `make ruleset-check` then read no difference.
 
