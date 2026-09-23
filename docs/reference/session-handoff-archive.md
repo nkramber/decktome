@@ -12,6 +12,45 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-22c
+
+**Pull request #207 fixes F-164. A card query retries while the API reads Unavailable, and each card RPC waits for the first index. It waits for the owner's merge.**
+
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view 207`. Then do next step 1.
+
+**The base.** `main` is `b104a89`, from #206. Cloud Build `d3c3f7ab` of `deploy-api` ended SUCCESS at 16:04:58 UTC on 2026-09-22. #206 changed no web file, so `deploy-web` ran no build for it.
+
+**Why this pull request exists.** The owner read empty card art on `decktome.com` after a cold start of the instance. A reload 30 seconds later showed the art. The owner named this defect as the item after F-33 (D-800), and chose the shape of the fix (D-801).
+
+**What this pull request holds.**
+
+- `web/apps/web/src/lib/card-retry.ts` holds one retry rule for every card query. It takes Unavailable alone, and 13 retries wait 87 seconds in total.
+- Four queries read that rule: the deck view, the binder art, the collection art, and the card options of a question.
+- `cardsvc.ready` waits 5 seconds for the first index. The end of the request stops that wait, and `Current` waits never.
+- The tests are `card-retry.test.ts`, two new tests of `use-cards.test.ts`, `TestReadyWaitsForFirstIndex`, and `TestReadyStopsOnCanceledRequest`.
+
+**The F-33 live check of #206 passed.** The owner built session `ukCXMO2WdOHi8UvF4lbU` on 2026-09-22, and it made deck `XTMh9N0GFalJPA33zGxa`: Vivi Ornitier, blue and red, bracket 3, owned-only. Its profile reads `fixing_land` 11 against the floor of 11, and it holds no shortfall note. The mana pass filled a live deck.
+
+**The checks.** `make verify` passed on this machine, exit 0, with Node 22.23.2 on the PATH. `go test ./internal/cardsvc/` passes, and the two new web test files hold 10 tests.
+
+**The review.** Gitar reviewed `a8e3a42` and reads "Approved", with no finding and no thread. Its dashboard edit of 18:26:51 UTC is later than the push of 18:24:10 UTC, both of 2026-09-22, so the review is current. Every check of the pull request passes.
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- A whole deck gate run measures the prompt of version 16. It is a paid target, so ask the owner first.
+- UNVERIFIED: the Moxfield import of the deck list. The export panel still names ManaBox and MTG Arena alone.
+- D-794 makes the app less strict than the Wizards infographic at Bracket 2.
+- The F-48 row names bracket gate run 7. A count on 2026-09-22 read the escape in runs 1, 2, 3, and 5 alone.
+- Five sessions on the new files, before a decision on the checkpoint rule (next step 3, D-750).
+- A deployed session with a theme that matches no card, such as "anime" (next step 4).
+- A look at the first commander question after a load of the app (next step 5).
+- OQ-67 and OQ-77.
+
+### 2026-09-22a: the upload formats of the collection page, F-163
+
+**The owner asked for a UI that names Moxfield in full, and answered OQ-80** (D-796, D-797). The server read Moxfield since #123, and only the page lagged. Each web upload stored no format, so the import now stores the detected one. A proxy counts as owned, which the parser already did. No first-party source confirms the Moxfield import of the deck list, so the export text stays.
+
 ## The resume section of 2026-09-22b
 
 **Pull request #206 fixes F-33. A deck of two or more colors reads a fixing floor, and the mana pass fills it. It waits for the owner's merge.**
