@@ -12,6 +12,44 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-22d
+
+**Pull request #209 fixes F-48. The Anthropic adapter decodes each escape that the judge wrote as literal text. It waits for the owner's merge.**
+
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view 209`. Then do next step 1.
+
+**The base.** `main` is `9900979`, from #207. Cloud Build `616a7995` of `deploy-api` ended SUCCESS at 19:02:53 UTC on 2026-09-22. Build `66935344` of `deploy-web` ended SUCCESS at 19:06:01 UTC. A read of `/readyz` in this session returned `starting` with no card snapshot, so the instance was cold.
+
+**Why this pull request exists.** The owner chose F-48 as the item after F-164 (D-802). The judge text of 18 gate documents held the six characters `\u2014` in place of an em dash. Two card names held an escape too.
+
+**What this pull request holds.**
+
+- `decodeLiteralEscapes` in `go/internal/llm/anthropic.go` turns each escaped backslash before `u` and four hex digits into one backslash. The JSON decoder then reads the rune (D-803).
+- The judge is the only role on Anthropic, so the fix reaches every judge lane. No judge runs in the API.
+- `go/internal/llm/anthropic_escape_test.go` holds three tests. The adapter test fails without the fix.
+- The 18 old documents keep their escapes, by the owner's choice (D-803).
+
+**The F-164 live check of #207 passed.** The owner opened a deck page on a cold instance on 2026-09-23, and the card art arrived with no reload. The API log reads five card calls with 503 after about 5 seconds, from 00:04:54 UTC. Then the retries read 200 at 00:05:05 and 00:05:14 UTC.
+
+**The checks.** `make verify` passed on this machine, exit 0, with Node 22.23.2 on the PATH. The first run failed on one staticcheck finding in `isHex4`, and a `switch` fixed it. `go test ./internal/llm/` passes.
+
+**The review.** Gitar reviewed `8c728dc` and reads "Approved", with no finding and no thread. Its dashboard edit of 00:13:22 UTC is later than the push of 00:12:52 UTC, both of 2026-09-23, so the review is current. The later commit changes `docs/SESSION-HANDOFF.md` alone, which is the metadata set, so the pass holds (D-752). Gitar also approved `2e0b4a4` and `c4b5c29` with no finding.
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- A whole deck gate run measures the prompt of version 16 and the fixing floor of F-33. It is a paid target, so ask the owner first.
+- UNVERIFIED: the Moxfield import of the deck list. The export panel still names ManaBox and MTG Arena alone.
+- D-794 makes the app less strict than the Wizards infographic at Bracket 2.
+- Five sessions on the new files, before a decision on the checkpoint rule (next step 3, D-750).
+- A deployed session with a theme that matches no card, such as "anime" (next step 4).
+- A look at the first commander question after a load of the app (next step 5).
+- OQ-67 and OQ-77.
+
+### 2026-09-22b: the fixing floor of the mana base, F-33
+
+**The owner picked F-33, and chose a prompt line, a mana pass, and measured floors in every format** (D-798, D-799). A free count over the meta store gave the fixing floor of each tier and each count of colors, at the low quarter. The replay of runs 29 and 31 cost nothing. The owner confirmed the live format labels of #205.
+
 ## The resume section of 2026-09-22c
 
 **Pull request #207 fixes F-164. A card query retries while the API reads Unavailable, and each card RPC waits for the first index. It waits for the owner's merge.**

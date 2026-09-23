@@ -6,32 +6,32 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-22d)
+## RESUME HERE (2026-09-22e)
 
-**Pull request #209 fixes F-48. The Anthropic adapter decodes each escape that the judge wrote as literal text. It waits for the owner's merge.**
+**Pull request #210 retires the power pass of D-704 and records F-165 and F-166. It changes no code, and it waits for the owner's merge.**
 
-**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view 209`. Then do next step 1.
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view 210`. Then do next step 1.
 
-**The base.** `main` is `9900979`, from #207. Cloud Build `616a7995` of `deploy-api` ended SUCCESS at 19:02:53 UTC on 2026-09-22. Build `66935344` of `deploy-web` ended SUCCESS at 19:06:01 UTC. A read of `/readyz` in this session returned `starting` with no card snapshot, so the instance was cold.
+**The base.** `main` is `44a03e6`, from #209. Cloud Build `2b161f88` of `deploy-api` built it and ended SUCCESS at 00:34:05 UTC on 2026-09-23. #209 changed no web file, so `deploy-web` ran no build for it.
 
-**Why this pull request exists.** The owner chose F-48 as the item after F-164 (D-802). The judge text of 18 gate documents held the six characters `\u2014` in place of an em dash. Two card names held an escape too.
+**Why this pull request exists.** The owner chose the power pass as the item after F-48 (D-804). D-704 says that the pass returns only if the gate still misses with the three levers. Bracket gate runs 7 and 8 read each bracket 5 deck at bracket 5. So the owner chose a paid bracket gate run on `main` first.
 
 **What this pull request holds.**
 
-- `decodeLiteralEscapes` in `go/internal/llm/anthropic.go` turns each escaped backslash before `u` and four hex digits into one backslash. The JSON decoder then reads the rune (D-803).
-- The judge is the only role on Anthropic, so the fix reaches every judge lane. No judge runs in the API.
-- `go/internal/llm/anthropic_escape_test.go` holds three tests. The adapter test fails without the fix.
-- The 18 old documents keep their escapes, by the owner's choice (D-803).
+- `docs/reference/pr14a-bracket-gate-run9.md`: prompts 10 to 15 on `44a03e6`, prompt version 16, for $0.5312. It reads FAIL. The judge agrees on 4 of 6 decks, and 5 of 6 sit in every band.
+- `docs/reference/pr14a-bracket-gate-run9-judge2.md`: a second judge read of the same six decks, for $0.0833. It reads the same two misses.
+- Najeela at bracket 5 reads bracket 4 in both reads, and each read names the warrior filler. The deck holds 5 tutors, 12 fast mana, and 13 Game Changers, over each floor.
+- Prosper at bracket 4 reads bracket 5 in both reads, the judge noise of F-134.
+- D-805 retires the power pass, because no power count causes the miss. F-165 records the fixing miss of the Najeela deck, and F-166 records the filler read.
 
-**The F-164 live check of #207 passed.** The owner opened a deck page on a cold instance on 2026-09-23, and the card art arrived with no reload. The API log reads five card calls with 503 after about 5 seconds, from 00:04:54 UTC. Then the retries read 200 at 00:05:05 and 00:05:14 UTC.
+**The checks.** `make verify` passed on this machine, exit 0, with Node 22.23.2 on the PATH. `make ste-check`, `make ref-check`, and `make context-budget` pass. Run 9 is a partial run, so `eval-check` reads no new whole run.
 
-**The checks.** `make verify` passed on this machine, exit 0, with Node 22.23.2 on the PATH. The first run failed on one staticcheck finding in `isHex4`, and a `switch` fixed it. `go test ./internal/llm/` passes.
-
-**The review.** Gitar reviewed `8c728dc` and reads "Approved", with no finding and no thread. Its dashboard edit of 00:13:22 UTC is later than the push of 00:12:52 UTC, both of 2026-09-23, so the review is current. The later commit changes `docs/SESSION-HANDOFF.md` alone, which is the metadata set, so the pass holds (D-752). Gitar also approved `2e0b4a4` and `c4b5c29` with no finding.
+**The review.** The first push waits for a Gitar review.
 
 **What waits on the owner.**
 
 - The merge of this pull request.
+- F-165 and F-166, as later items.
 - A whole deck gate run measures the prompt of version 16 and the fixing floor of F-33. It is a paid target, so ask the owner first.
 - UNVERIFIED: the Moxfield import of the deck list. The export panel still names ManaBox and MTG Arena alone.
 - D-794 makes the app less strict than the Wizards infographic at Bracket 2.
@@ -94,7 +94,7 @@ Twenty-one things a fresh session gets wrong without this file.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
 - The feedback store holds 3 verdicts on 2026-09-09, and every one predates the snapshot of D-635. `make feedback-list VERDICT=` reads both verdicts now (F-87). A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- The deployed API, read 2026-09-22: Cloud Build `616a7995` of `deploy-api` built `9900979`, from #207, and ended SUCCESS at 19:02:53 UTC. Build `66935344` of `deploy-web` built the same commit and ended SUCCESS at 19:06:01 UTC. The service holds no minimum instance, so a cold start reads Unavailable for about 90 seconds (F-164).
+- The deployed API, read 2026-09-22: Cloud Build `2b161f88` of `deploy-api` built `44a03e6`, from #209, and ended SUCCESS at 00:34:05 UTC on 2026-09-23. The newest build of `deploy-web` is `66935344`, of `9900979`, from #207. The service holds no minimum instance, so a cold start reads Unavailable for about 90 seconds (F-164).
 - The deployed web app, read 2026-09-20 at 22:45 UTC: the release of #196, Hosting version `60c80b8c4ad2a689` of 22:44:09 UTC. `index.html` loads `assets/index-Fi2SZrwg.js`. The deck page chunk `deck-view-BQeBlu0i.js` holds the power counts, and `use-cards-DNxWsKmD.js` holds every label. The release before it, `b786ceb7f89bc4fc` of 2026-09-13, came from #158.
 - The deployed quality model, read 2026-09-14: `20260914T070904Z`, from the meta job that started at 06:02 UTC and ended at 07:13 UTC. It fits 43,182 lists and 1,517 commanders. Its Commander fit reads `immaterial` 239 and accuracy 0.554, and its Standard fit reads a cross share of 0.667. The job read the weekly EDHREC pass, 2,077 pages and 4 lists. The mtgo source read 3,094 lists with 58 fetch errors. The mtggoldfish source read 155 lists with no failure. The mtgjson source read no list, because its deck list version differs from the stored table, as on 2026-09-12 and 2026-09-13.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
@@ -104,8 +104,8 @@ Twenty-one things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **Ask the owner for the item after F-48** (D-746). The sequence of the roadmap ends at step 51, and next step 2 holds each open item. **Fix F-48** (D-802, D-803) is #209. **Fix F-164** (D-800, D-801) ✅ done by #207.
-2. **The open items of the roadmap.** One register row reads 🔧: F-49, and it waits for the owner. OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). The power pass after the build still waits (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). No whole deck gate run measured the fixing floor of F-33 or generate prompt version 16 yet.
+1. **Ask the owner for the item after the power pass** (D-746). The sequence of the roadmap ends at step 51, and next step 2 holds each open item. **Retire the power pass** (D-804, D-805) is #210. **Fix F-48** (D-802, D-803) ✅ done by #209.
+2. **The open items of the roadmap.** Three register rows read 🔧: F-49, F-165, and F-166. F-49 waits for the owner. F-165 needs a free replay of the Najeela shortlist, and F-166 needs a plan. OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate run 9 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. No whole deck gate run measured them yet.
 3. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It waits, because the ten sessions of the audit ran before #184 and before D-749.
 4. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git.
 5. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide". Session `z1hshyY6Npig1FN2NuV7` named its commander, so it showed no such row.
@@ -127,6 +127,10 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 ## The three most recent sessions
 
+### 2026-09-22e: the power pass of D-704
+
+**The owner picked the power pass, then chose a paid run first, a second judge read, and the retirement** (D-804, D-805). The session said that runs 7 and 8 refute the condition of D-704. Run 9 found a new Najeela miss, and the second read held it. Both reads name the warrior filler, and every power floor holds, so a power pass can not move the read. The deploy of #209 ended SUCCESS.
+
 ### 2026-09-22d: the escape in the judge text, F-48
 
 **The owner picked F-48, and chose to keep the old gate documents as they are** (D-802, D-803). The escape reached every judge lane, and not the bracket gate alone: 18 documents from 2026-09-02 to 2026-09-21. The judge wrote the JSON text `\\u2014`. Both deploys of #207 ended SUCCESS.
@@ -135,10 +139,6 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 **The owner named a new defect, and chose the web retry and the server wait together** (D-800, D-801). The API listens before its card snapshot loads, and no query of the web app retries. So one failed call after a cold start left blank tiles until a reload. The F-33 live check of #206 passed on the owner's two-color deck.
 
-### 2026-09-22b: the fixing floor of the mana base, F-33
-
-**The owner picked F-33, and chose a prompt line, a mana pass, and measured floors in every format** (D-798, D-799). A free count over the meta store gave the fixing floor of each tier and each count of colors, at the low quarter. The replay of runs 29 and 31 cost nothing. The owner confirmed the live format labels of #205.
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-22c, the records of 2026-08-31 to 2026-09-22a, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-22d, the records of 2026-08-31 to 2026-09-22b, and 104 more sections, word for word. Read it for the detail behind a decision.
