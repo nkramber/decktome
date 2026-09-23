@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-23 correction pass 221 (PR-66, D-838): the owner paused the required Gitar review, and asked for a flag of `make codex-review` that skips the Gitar pass. Changes: PR-66.
+
 2026-09-23 correction pass 220 (PR-65, D-837): the owner asked that a commit of documents alone keep a green `review-gate` green. The owner chose this rule over the roadmap clause of D-822. Changes: PR-65.
 
 2026-09-23 correction pass 219 (D-836): the summary before a merge has four sections, What, How, CI, and Codex review. The owner asked for it in #214. Changes: none.
@@ -1960,6 +1962,23 @@ Gate:
 - `make verify` passes.
 > *In plain English:* until now, any edit after the second review, even one line of text, asked for that review again. After this change, an edit of documents alone keeps the approval. The first review bot still reads each edit, and a change of code still needs the second review.
 
+**PR-66: The Gitar requirement pauses, and `make codex-review` takes `--skip-gitar-review` (D-838).** MARK
+The owner paused the required Gitar review until a later pull request ends the pause. The owner asked for a change that is easy to reverse.
+
+- **The switch.** `docs/reference/gitar-pause.md` holds the rules and the steps of the end. Each rule document holds one pause note with the same bold text.
+- **The flag.** `make codex-review PR=<n> -- --skip-gitar-review` reads no Gitar pass, and it still refuses an open review thread. The flag stays after the pause.
+- **The feedback cycle.** While the pause file exists, step 8 needs no Gitar review. An open thread stops the cycle before the fixer, and a comment tells the owner.
+- **What stays.** Each Gitar finding still gets its answer. A Gitar finding stops the work, and the session tells the owner at once.
+
+Gate:
+
+- `docs/tools/test_codex_review.py` covers the flag: an open thread refuses, and the flag skips the Gitar pass.
+- `docs/tools/test_gitar_pause.py` fails when a pause note stays without the pause file, or when a rule document holds no note during the pause.
+- `go/internal/triage/loop_test.go` holds the pause stop before the fixer.
+- `make codex-review` passes the flag, and it refuses an unknown flag before the review.
+- `make verify` passes.
+> *In plain English:* the first review bot no longer holds up a change. The session starts the second review with a new flag. When the first bot still writes a comment, the session stops and tells the owner. To undo the pause, delete one file and the marked notes.
+
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
 
@@ -2297,6 +2316,8 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 54. **PR-64** `make codex-review` starts the Codex review, and a pull request merges itself on the green light (D-823 to D-834).
 
 55. **PR-65** a commit of documents alone keeps a green `review-gate` green (D-837). No paid target ran.
+
+56. **PR-66** the Gitar requirement pauses, and `make codex-review` takes `--skip-gitar-review` (D-838). No paid target ran.
 
 ## 9. Open questions
 

@@ -27,4 +27,6 @@ The commands you ran, and their results.
 
 ## Review
 
+**Gitar pause (D-838).** Write "Gitar pause" when no Gitar review came.
+
 The state of the Gitar review, and the answer to each finding. Then the state of the Codex review record, or the reason for the `review-override` label (D-811, D-812).

@@ -10,7 +10,8 @@
 # holds no open thread.
 #
 # It answers 0 when the review holds nothing open, and 1 when a round
-# limit or a failure leaves work on the pull request.
+# limit or a failure leaves work on the pull request. It answers 3 when
+# the Gitar pause stops it on a finding (D-838).
 #
 # CAUTION: this writes to a public pull request with no person watching.
 # The cycle calls it, and the cycle refuses to run without
@@ -35,6 +36,12 @@ say() { printf '%s  review: %s\n' "$(date -u +%H:%M:%S)" "$*" >&2; }
 # room and still ends a stuck round.
 WAIT_SECONDS="${FEEDBACK_REVIEW_WAIT:-900}"
 POLL_SECONDS="${FEEDBACK_REVIEW_POLL:-30}"
+
+# PAUSE_FILE is the switch of the Gitar pause (D-838). While it exists, a
+# round with no review ends the cycle with 0. An open thread stops the
+# cycle before the fixer, and a comment tells the owner, who reads it first.
+PAUSE_FILE="$ROOT/docs/reference/gitar-pause.md"
+paused() { [ -f "$PAUSE_FILE" ]; }
 
 # open_threads writes every unresolved thread of the pull request as one
 # JSON object a line: the thread id, the path, and the body of the first
@@ -95,6 +102,10 @@ round=1
 while [ "$round" -le "$ROUNDS" ]; do
   say "round $round of $ROUNDS: waiting for the review of gitar-bot"
   if ! wait_for_review; then
+    if paused; then
+      say "no review inside $WAIT_SECONDS seconds. The Gitar review is paused (D-838), so the cycle needs none."
+      exit 0
+    fi
     say "no review inside $WAIT_SECONDS seconds. The pull request keeps whatever is open."
     exit 1
   fi
@@ -108,6 +119,13 @@ while [ "$round" -le "$ROUNDS" ]; do
     exit 0
   fi
   say "$count open thread(s)"
+  if paused; then
+    alert="@${REPO%%/*} Gitar left $count open thread(s) during the Gitar pause (D-838). The cycle stopped before the fixer. The owner reads each finding first."
+    gh pr comment "$PR" --repo "$REPO" --body "$alert" >/dev/null 2>&1 </dev/null \
+      || say "the comment to the owner failed"
+    say "the Gitar pause stops the cycle on $count open thread(s). Tell the owner (D-838)."
+    exit 3
+  fi
 
   # The fixer reads every open finding at once, with the diff of the
   # pull request. One agent run answers the whole review, so a change

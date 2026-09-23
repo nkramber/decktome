@@ -7,6 +7,7 @@ import os
 import subprocess
 import tempfile
 import unittest
+import unittest.mock
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 spec = importlib.util.spec_from_file_location("codex_review", os.path.join(HERE, "codex_review.py"))
@@ -185,6 +186,65 @@ class Threads(unittest.TestCase):
         self.assertIn("after: $endCursor", run.calls[0][-1])
         problems = cr.gitar_problems(PUSHED, [comment(GITAR, DASH, "2026-09-23T09:00:00Z", "2026-09-23T10:02:00Z")], [], threads)
         self.assertEqual(problems, ["1 review thread(s) are not resolved: b.py:7."])
+
+
+class SkipGitar(unittest.TestCase):
+    """--skip-gitar-review reads no Gitar pass, and still refuses an open thread (D-838)."""
+
+    def threads(self, *nodes):
+        return Fake([(["gh", "api", "graphql"], (0, json.dumps([thread_page(list(nodes), False)]), ""))])
+
+    def test_an_open_thread_refuses_and_names_the_owner(self):
+        run = self.threads({"isResolved": True, "path": "a.py", "line": 1}, {"isResolved": False, "path": "b.py", "line": 7})
+        with self.assertRaises(cr.Stop) as caught:
+            cr.check_threads(run, "o/r", N)
+        self.assertEqual(caught.exception.code, cr.EXIT_REFUSAL)
+        self.assertIn("1 review thread(s) are not resolved: b.py:7.", str(caught.exception))
+        self.assertIn("tell the owner (D-838)", str(caught.exception))
+
+    def test_resolved_threads_pass_with_one_call(self):
+        run = self.threads({"isResolved": True, "path": "a.py", "line": 1})
+        cr.check_threads(run, "o/r", N)
+        self.assertEqual(len(run.calls), 1)
+
+    def run_main(self, argv):
+        """Run main up to the CLI update, and give the Gitar calls and the thread calls."""
+        seen = {"gitar": 0, "threads": 0}
+
+        def gitar(*_):
+            seen["gitar"] += 1
+
+        def threads(*_):
+            seen["threads"] += 1
+
+        def stop(_):
+            raise cr.refuse("the CLI update stops the test.")
+
+        patches = [
+            unittest.mock.patch.object(cr, "check_pr", return_value=("b", R1 * 4)),
+            unittest.mock.patch.object(cr, "check_checkout"),
+            unittest.mock.patch.object(cr.rg, "gather", return_value=(None, [], None, None)),
+            unittest.mock.patch.object(cr.rg, "effective_head", return_value=R1 * 4),
+            unittest.mock.patch.object(cr, "check_gitar", side_effect=gitar),
+            unittest.mock.patch.object(cr, "check_threads", side_effect=threads),
+            unittest.mock.patch.object(cr, "update_cli", side_effect=stop),
+        ]
+        with contextlib.ExitStack() as stack:
+            for patch in patches:
+                stack.enter_context(patch)
+            stack.enter_context(contextlib.redirect_stdout(io.StringIO()))
+            code = cr.main(argv, run=Fake([(["gh", "repo", "view"], (0, "o/r\n", ""))]))
+        return code, seen
+
+    def test_the_flag_skips_the_gitar_pass_and_reads_the_threads(self):
+        code, seen = self.run_main(["--pr", str(N), "--skip-gitar-review"])
+        self.assertEqual(code, cr.EXIT_REFUSAL)
+        self.assertEqual(seen, {"gitar": 0, "threads": 1})
+
+    def test_with_no_flag_the_gitar_pass_runs(self):
+        code, seen = self.run_main(["--pr", str(N)])
+        self.assertEqual(code, cr.EXIT_REFUSAL)
+        self.assertEqual(seen, {"gitar": 1, "threads": 0})
 
 
 class Fake:

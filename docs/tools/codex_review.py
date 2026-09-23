@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """Start the Codex review of one pull request, and read its record (D-823 to D-832).
 
-  codex_review.py --pr NUMBER [--repo DIR]
+  codex_review.py --pr NUMBER [--repo DIR] [--skip-gitar-review]
 
 `make codex-review PR=<n>` runs this file. The run has three parts:
 
   1. The refusals. The tool refuses to start when the pull request is
      not open, the checkout is not the head of the pull request, the tree
      is dirty, or the Gitar pass of the effective head is not complete.
+     With --skip-gitar-review, the tool reads no Gitar pass, and it
+     refuses an open review thread alone (D-838).
      It then updates the npm CLI to the newest release, and it refuses a
      CLI below MIN_VERSION, a login that is not ChatGPT, or a model that
      fails the probe (D-824, D-833).
@@ -195,11 +197,17 @@ def gitar_problems(pushed, comments, gitar_runs, threads):
                 problems.append(f"Gitar refused the request of {asked}. Wait, then ask again.")
             elif dashboard <= reply["created_at"]:
                 problems.append(f"the manual review of {asked} has not changed the dashboard yet.")
-    open_threads = [t for t in threads if not t.get("isResolved")]
-    if open_threads:
-        where = ", ".join(f"{t.get('path')}:{t.get('line')}" for t in open_threads[:3])
-        problems.append(f"{len(open_threads)} review thread(s) are not resolved: {where}.")
+    problems.extend(thread_problems(threads))
     return problems
+
+
+def thread_problems(threads):
+    """The open review threads, as one problem, or none."""
+    open_threads = [t for t in threads if not t.get("isResolved")]
+    if not open_threads:
+        return []
+    where = ", ".join(f"{t.get('path')}:{t.get('line')}" for t in open_threads[:3])
+    return [f"{len(open_threads)} review thread(s) are not resolved: {where}."]
 
 
 THREADS = """query($owner: String!, $name: String!, $number: Int!, $endCursor: String) {
@@ -237,6 +245,18 @@ def check_gitar(run, repo, slug, number, effective, tip):
     problems = gitar_problems(pushed, comments, runs, threads)
     if problems:
         raise refuse("the Gitar pass is not complete: " + " ".join(problems))
+
+
+def check_threads(run, slug, number):
+    """The one check of --skip-gitar-review: no review thread is open (D-838).
+
+    The flag skips the wait for a Gitar review, and never a finding. The
+    ruleset of `main` refuses a merge with an open thread, so a review of
+    that head spends the plan for nothing.
+    """
+    problems = thread_problems(review_threads(run, slug, number))
+    if problems:
+        raise refuse(problems[0] + " Answer each one. When Gitar wrote it, stop and tell the owner (D-838).")
 
 
 def update_cli(run):
@@ -424,6 +444,8 @@ def main(argv=None, run=sh):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--pr", type=int, required=True, help="the number of the pull request")
     parser.add_argument("--repo", default=ROOT)
+    parser.add_argument("--skip-gitar-review", action="store_true",
+                        help="read no Gitar pass, and refuse an open review thread alone (D-838)")
     try:
         args = parser.parse_args(argv)
     except SystemExit:
@@ -437,7 +459,11 @@ def main(argv=None, run=sh):
         effective = rg.effective_head(commits, args.pr)
         if effective is None:
             raise refuse("every commit changes the metadata set alone, so the pull request has no effective head.")
-        check_gitar(run, args.repo, slug, args.pr, effective, head)
+        if args.skip_gitar_review:
+            check_threads(run, slug, args.pr)
+            print("codex-review: --skip-gitar-review: no Gitar pass was read (D-838).")
+        else:
+            check_gitar(run, args.repo, slug, args.pr, effective, head)
         codex, installed = update_cli(run)
         check_login(run, codex)
         probe(run, codex)

@@ -167,6 +167,31 @@ func TestTheReviewCountsAnEmptyThreadListAsNone(t *testing.T) {
 	}
 }
 
+// TestTheGitarPauseStopsTheReviewBeforeTheFixer holds D-838. While the
+// pause file exists, an open thread stops the round and tells the owner,
+// and the fixer never answers a Gitar finding on its own.
+func TestTheGitarPauseStopsTheReviewBeforeTheFixer(t *testing.T) {
+	raw, err := os.ReadFile(filepath.Join("..", "..", "..", "scripts", "feedback-review.sh"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(raw)
+	if !strings.Contains(s, `PAUSE_FILE="$ROOT/docs/reference/gitar-pause.md"`) {
+		t.Error("the review does not read the pause file of D-838")
+	}
+	stopIdx := strings.Index(s, "the Gitar pause stops the cycle")
+	fixIdx := strings.Index(s, `FINDINGS="$STATE_DIR/findings-$round.md"`)
+	if stopIdx < 0 || fixIdx < 0 || stopIdx > fixIdx {
+		t.Error("the pause stop does not sit before the fixer")
+	}
+	if !strings.Contains(s, `alert="@${REPO%%/*} `) {
+		t.Error("the pause stop does not tell the owner on the pull request")
+	}
+	if !strings.Contains(loopScript(t), `if [ "$review_code" -eq 3 ]; then`) {
+		t.Error("the cycle does not report the pause stop of the review")
+	}
+}
+
 // TestAnEmptyManifestMarshalsAsAList holds the fault gitar found on
 // pull request #122. A nil slice marshals as null, and the cycle reads
 // the length of that list to decide whether there is anything to fix.
