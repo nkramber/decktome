@@ -12,7 +12,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 Author provider: Claude Code
 
-**The next step.** Read the Gitar output one time, then the repeat review with `make codex-review PR=216 -- --skip-gitar-review`. A Gitar finding stops the work for the owner. Then the merge question with the summary of four sections (D-836). Pending the owner merge.
+**The next step.** Ask the owner for the merge with the summary of four sections (D-836). Pending the owner merge.
 
 **The base.** `main` is `8e492a7`, from #215. This session read no Cloud Build of `8e492a7`.
 
@@ -28,7 +28,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passed, exit 0, with Node 22.23.2 on the PATH. The 4 new tests of the flag fail on `8e492a7`, because it has no `check_threads`. `test_gitar_pause.py` fails with the pause file removed. `make -n` shows the flag passed on, and an unknown flag exits 2 before the review.
 
-**The review.** Gitar: the pause applies, and the dashboard holds the free plan note alone. The Codex review of `9474ed1` reads Changes required with P2-1: the pause missed an issue on the dashboard with no thread. `docs/reviews/pr-216-response.md` answers it with full merit. The repeat review is pending.
+**The review.** Gitar: the pause applies. Codex review: `d04d5ef` reads Ready for owner merge. P2-1 is fixed, and no finding stays open.
 
 **What waits on the owner.**
 
