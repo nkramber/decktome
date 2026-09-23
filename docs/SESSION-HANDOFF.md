@@ -28,7 +28,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passed on `1cfc313`, exit 0, with Node 22.23.2 on the PATH. `TestCommanderRateLeadsABracketFiveList` fails with the lever off. Bracket gate run 11 read prompts 13 to 15 at bracket 5, 3 of 3 in each of two judge lanes, for $0.3356.
 
-**The review.** Gitar pause (D-838). The pause needs no Gitar review. The Codex review waits for the checks of the effective head.
+**The review.** Gitar pause (D-838). The pause needs no Gitar review. Codex review: `d7f103e` reads Ready for owner merge. No finding stays open.
 
 **What waits on the owner.**
 
