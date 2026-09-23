@@ -1981,7 +1981,7 @@ Gate:
 - `make verify` passes.
 > *In plain English:* the first review bot no longer holds up a change. The session starts the second review with a new flag. When the first bot still writes a comment, the session stops and tells the owner. To undo the pause, delete one file and the marked notes.
 
-**PR-67: A bracket 5 shortlist reads the card rate of its commander (F-166, D-839).** ✅ merged as #PRNUM. The mark comes before any review (D-822).
+**PR-67: A bracket 5 shortlist reads the card rate of its commander (F-166, D-839).** ✅ merged as #217. The mark comes before any review (D-822).
 The judge read the Najeela deck of bracket gate runs 9 and 10 at bracket 4, for its warrior filler. The rate of the format can not tell which cards a commander plays, and it counts no land. `docs/reference/f166-commander-rate-2026-09-23.md` holds each measurement.
 
 - **The rate.** The fit reads each TopDeck list before the tier cap. A commander or a pair with 10 lists or more gets the share of its lists that hold each card, lands included. A card under 0.1 has no row.

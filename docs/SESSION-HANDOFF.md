@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-23f)
 
-**Pull request #PRNUM makes a bracket 5 shortlist read the card rate of its commander (F-166, D-839).**
+**Pull request #217 makes a bracket 5 shortlist read the card rate of its commander (F-166, D-839).**
 
 Author provider: Claude Code
 
@@ -26,9 +26,9 @@ Author provider: Claude Code
 - New tests: 3 in `go/internal/quality/commander_rates_test.go` and 2 in `go/internal/candidates/commander_rate_test.go`.
 - `docs/reference/f166-commander-rate-2026-09-23.md` holds each measurement.
 
-**The checks.** VERIFY_LINE Bracket gate run 11 read prompts 13 to 15 at bracket 5, 3 of 3 in each of two judge lanes, for $0.3356.
+**The checks.** `make verify` passed on `1cfc313`, exit 0, with Node 22.23.2 on the PATH. `TestCommanderRateLeadsABracketFiveList` fails with the lever off. Bracket gate run 11 read prompts 13 to 15 at bracket 5, 3 of 3 in each of two judge lanes, for $0.3356.
 
-**The review.** Gitar pause (D-838). REVIEW_LINE
+**The review.** Gitar pause (D-838). The pause needs no Gitar review. The Codex review waits for the checks of the effective head.
 
 **What waits on the owner.**
 
@@ -109,7 +109,7 @@ Twenty-two things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **A bracket 5 shortlist reads the card rate of its commander** (F-166, D-839). This pull request is #PRNUM.
+1. **A bracket 5 shortlist reads the card rate of its commander** (F-166, D-839). This pull request is #217.
 2. **The open items of the roadmap.** One register row reads 🔧: F-49, and it waits for the owner. F-166 reads ✅ with this pull request (D-839). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
 3. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It waits, because the ten sessions of the audit ran before #184 and before D-749.
 4. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git.
