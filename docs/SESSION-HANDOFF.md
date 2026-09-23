@@ -12,6 +12,8 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 Author provider: Claude Code
 
+**The next pull request.** The owner named it on 2026-09-23. A commit of documents alone must keep a green `review-gate` green. It must need no new review of the other provider. Today only the hand-off and its archive pass (D-752). The transitional prompt of #214 names this item.
+
 **The next step.** Pending the owner merge. The owner confirms after the summary of four sections (D-834, D-836).
 
 **The base.** `main` is `755b593`, from #213. `make ruleset-check` read no difference on `main` on 2026-09-23, before the work.
@@ -34,7 +36,7 @@ Author provider: Claude Code
 
 **The checks.** `go test ./...` passed on `433d055`. `make verify` passed on `0e9f231`, exit 0, with Node 22.23.2 on the PATH.
 
-**The review.** Gitar approved effective head `fd55cb2` with no finding and no open thread. Codex approves effective head `fd55cb2`, with no open finding. `PATH=/Users/nate/.nvm/versions/node/v22.23.2/bin:$PATH make verify` passed on `8fb1fe1`. The current `review-gate` failed because the earlier review record named a stale head. The new record is in this push. Read the fresh `review-gate` result before the owner merge. The owner then held the merge and asked that the summary sit inside the merge question, so a new round reads the next head.
+**The review.** Gitar approved effective head `fd55cb2` with no finding and no open thread. Codex approves effective head `fd55cb2`, with no open finding. `PATH=/Users/nate/.nvm/versions/node/v22.23.2/bin:$PATH make verify` passed on `8fb1fe1`. The current `review-gate` failed because the earlier review record named a stale head. The new record is in this push. Read the fresh `review-gate` result before the owner merge. The owner then held the merge. The owner asked that the summary sit inside the merge question. That change is `8795711`, and Gitar approved it with no finding and no thread.
 
 **What waits on the owner.**
 
