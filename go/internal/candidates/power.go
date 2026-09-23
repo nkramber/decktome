@@ -185,13 +185,15 @@ func capPinnedLands(cs []Candidate, n int) []Candidate {
 			rest = append(rest, c)
 		}
 	}
-	keep := make(map[*mtgv1.Card]bool, n)
+	keep := make(map[*mtgv1.Card]Candidate, n)
 	for _, c := range capLands(rest, n) {
-		keep[c.Card] = true
+		keep[c.Card] = c
 	}
 	out := make([]Candidate, 0, n)
 	for _, c := range cs {
-		if c.Pinned || keep[c.Card] {
+		if k, ok := keep[c.Card]; ok {
+			out = append(out, k)
+		} else if c.Pinned {
 			out = append(out, c)
 		}
 	}

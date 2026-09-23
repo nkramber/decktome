@@ -154,6 +154,9 @@ type Candidate struct {
 	// Themed says the theme matched the card. The land cap fills its
 	// theme half with these alone (D-450).
 	Themed bool
+	// ManaHalf marks a land of the mana half of the land cap. The total
+	// cut keeps it, so the half of D-450 holds past the cut (F-165).
+	ManaHalf bool
 	// Partner is the second commander of a pair, and nil for every other
 	// candidate. The pair carries the union of the two color identities,
 	// which is what lets a request reach four colors (D-154).
@@ -506,16 +509,18 @@ func capByRole(in []Candidate, lim Limits) []Candidate {
 	// A pinned card adds to the total and takes no place from another
 	// card, so a pin never drops a land or an on-theme card (F-132).
 	pinned := 0
+	var mana []Candidate
 	for _, c := range out {
-		if c.Pinned {
+		switch {
+		case c.Pinned:
 			pinned++
+		case c.ManaHalf:
+			mana = append(mana, c)
 		}
 	}
 	if len(out)-pinned <= lim.Total {
 		return out
 	}
-	ranked := slices.Clone(out)
-	sortCandidates(ranked)
 	keep := make(map[*mtgv1.Card]bool, lim.Total+pinned)
 	room := lim.Total
 	for _, c := range out {
@@ -523,11 +528,24 @@ func capByRole(in []Candidate, lim Limits) []Candidate {
 			keep[c.Card] = true
 		}
 	}
+	// The mana half of the land cap goes before the score cut. The staple
+	// penalty puts an untapped dual at the score of the cut line, and the
+	// cut dropped 11 of the 20 duals of a deck of five colors (F-165).
+	sortByMana(mana)
+	for _, c := range mana {
+		if room <= 0 {
+			break
+		}
+		keep[c.Card] = true
+		room--
+	}
+	ranked := slices.Clone(out)
+	sortCandidates(ranked)
 	for _, c := range ranked {
 		if room <= 0 {
 			break
 		}
-		if !c.Pinned {
+		if !keep[c.Card] {
 			keep[c.Card] = true
 			room--
 		}
@@ -562,15 +580,12 @@ func capLands(cs []Candidate, n int) []Candidate {
 	}
 	mana := int(math.Round(float64(n) * manaShare))
 	byMana := slices.Clone(cs)
-	sort.SliceStable(byMana, func(i, j int) bool {
-		if ri, rj := byMana[i].LandRank, byMana[j].LandRank; ri != rj {
-			return ri < rj
-		}
-		return byMana[i].Pop > byMana[j].Pop
-	})
+	sortByMana(byMana)
 	keep := make(map[*mtgv1.Card]bool, n)
+	half := make(map[*mtgv1.Card]bool, mana)
 	for _, c := range byMana[:mana] {
 		keep[c.Card] = true
+		half[c.Card] = true
 	}
 	for _, c := range cs {
 		if len(keep) >= n {
@@ -589,10 +604,21 @@ func capLands(cs []Candidate, n int) []Candidate {
 	out := make([]Candidate, 0, n)
 	for _, c := range cs {
 		if keep[c.Card] {
+			c.ManaHalf = half[c.Card]
 			out = append(out, c)
 		}
 	}
 	return out
+}
+
+// sortByMana puts lands in the mana order: the land rank, then play.
+func sortByMana(cs []Candidate) {
+	sort.SliceStable(cs, func(i, j int) bool {
+		if ri, rj := cs[i].LandRank, cs[j].LandRank; ri != rj {
+			return ri < rj
+		}
+		return cs[i].Pop > cs[j].Pop
+	})
 }
 
 // fixCount is the number of deck colors a land produces. With no color

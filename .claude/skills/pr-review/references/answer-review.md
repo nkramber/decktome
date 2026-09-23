@@ -22,7 +22,7 @@ When a current Gitar review holds no open finding, start the review yourself (D-
 
 | Outcome | Next step |
 |---|---|
-| approve | Go to the auto-merge of the `one-pr-one-session` skill. The owner confirms the merge first (D-834). |
+| approve | Go to the auto-merge of the `one-pr-one-session` skill. The owner confirms the merge after the summary of four sections (D-834, D-836). |
 | changes | Answer each finding with the procedure below, push, and do the Gitar pass again. |
 | three-strike stop | Do the procedure of "The three-strike stop" below. |
 | refusal | Correct the condition that the output names, then run the target again. |

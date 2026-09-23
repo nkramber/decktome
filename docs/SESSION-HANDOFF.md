@@ -6,38 +6,42 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-23b)
+## RESUME HERE (2026-09-23c)
 
-**Pull request #213 builds PR-64. `make codex-review` starts the Codex review, and the third open round of one finding stops the loop. A pull request merges itself on the green light.**
+**Pull request #214 fixes F-165 (D-835). The total cut of the shortlist keeps the mana half of the land cap. The fixing fill trades a tapped land that fixes no color.**
 
 Author provider: Claude Code
 
-**The next step.** Pending the auto-merge. The owner confirms the merge after a summary of one paragraph (D-834). Then the session turns on the auto-merge, reads the merge, and writes the transitional prompt. A new session starts the next item from that prompt.
+**The next pull request.** The owner named it on 2026-09-23. A commit of documents alone must keep a green `review-gate` green. It must need no new review of the other provider. Today only the hand-off and its archive pass (D-752). The transitional prompt of #214 names this item.
 
-**The base.** `main` is `ab60c43`, from #212. The ruleset `review-gate` read `active` after that merge, on 2026-09-23.
+**The next step.** Pending the owner merge. The owner confirms after the summary of four sections (D-834, D-836).
 
-**Why this pull request exists.** On 2026-09-23 the owner asked for a review that the author session starts (D-823). The owner also asked for the stop of D-826 and the auto-merge of D-828.
+**The base.** `main` is `755b593`, from #213. `make ruleset-check` read no difference on `main` on 2026-09-23, before the work.
+
+**Why this pull request exists.** Bracket gate run 9 built Najeela at bracket 5 with 16 fixing lands against a floor of 21 (D-805).
+
+**The cause.** A free replay of prompt 15 read the pool of run 9 again, 338 cards. The pool held 16 fixing lands, and the deck held all 16. The land cap kept 20 duals for the mana order, but the total cut of 300 reads the score alone. The staple penalty put each dual at 0.1497, the score of the cut line, so 11 of the 20 left the pool. The guard of `swapOne` was not the cause.
 
 **What this pull request holds.**
 
-- `docs/tools/codex_review.py` and its tests. The target refuses before it spends, updates the npm CLI, checks the ChatGPT login and the model, and runs Codex in a worktree (D-823 to D-825, D-832).
-- No Codex process gets an API key (D-833). The target removes `OPENAI_API_KEY` and `CODEX_API_KEY` from each call.
-- The `Open at:` line of each finding, and exit 4 at the third head (D-826).
-- `.github/rulesets/`, `docs/tools/ruleset_check.py`, and `docs/reference/merge-rules.md` (D-828).
-- The skills `one-pr-one-session`, `pr-review`, and `gitar-review`, `CLAUDE.md`, and `AGENTS.md` name the new loop.
+- `capByRole` keeps the mana half before the score cut, inside the total. `capPinnedLands` keeps the mark of the half. The Najeela pool now holds 27 fixing lands.
+- `fillFixing` trades a spare basic land first. Then it trades a nonbasic land that enters tapped and makes one deck color or none.
+- The tests `TestTotalCutKeepsTheManaHalf`, `TestTheFillTradesATappedLandWhenNoBasicIsSpare`, and `TestTheFillTradesASpareBasicBeforeATappedLand`. Each one fails without its half of the fix.
+- D-835, the F-165 row, and the record of run 10 under PR-45b.
+- D-836: the summary before a merge has four sections, What, How, CI, and Codex review. The summary sits inside the merge question. The owner asked for it in this pull request. `CLAUDE.md`, `AGENTS.md`, two skill files, and `docs/reference/merge-rules.md` name it.
 
-**The checks.** `make verify` passed on `7ecd1a0`, exit 0, with Node 22.23.2 on the PATH. `make ruleset-check`, `make ste-check`, `make ref-check`, and `make context-budget` passed.
+**The measurements.** With the fix, the replay of the stored deck reads 21 fixing lands of 21, and 4 tapped lands in place of 5. Bracket gate run 10 read prompt 15 alone on `433d055` for $0.1083, with the owner's word. The deck holds 24 fixing lands and 1 tapped land, and each band holds. The verdict reads FAIL, because the judge still reads bracket 4 (F-166).
 
-**The review.** Gitar found two faults on `5999318`, and approved `a3b6c99` and `7ecd1a0`. The first live `make codex-review` read `Changes required` on `a3b6c99`: P2-1, the thread query read one page alone. `docs/reviews/pr-213-response.md` holds the answer. The second run approved `7ecd1a0`, exit 0, and the record says `Ready for owner merge`.
+**The cost of the fix.** The total stays at 300, so the cut now drops 11 other cards of the Najeela list. Frodo, Sauron's Bane and four more finishers leave, and six cards of the top-list rate. The run 10 deck names 1 finisher against 3 in run 9. The floor is 1.
 
-**The settings.** The owner approved the change, and the session applied the ruleset file and the merge settings on 2026-09-23, before it opened this pull request (D-829). `make ruleset-check` then read no difference.
+**The checks.** `go test ./...` passed on `433d055`. `make verify` passed on `0e9f231`, exit 0, with Node 22.23.2 on the PATH.
 
-**The live proof of PR-63 and PR-64.** `review-gate` reported on each head of #213 from `pull_request_target`. On the code heads, each job of `verify` ran and passed. On the head `2c9593b` of documents alone, `verify:skip` skipped the six heavy jobs, and each reported `skipped` under its name. GitHub then read the merge state `CLEAN`, so a skipped job passes the ruleset (D-832).
+**The review.** The owner instructed this review to skip the Gitar-feedback requirement. The dashboard reports approval with no code finding, and no review thread is open. Codex marks effective head `8795711` Ready for owner merge. The earlier full `make verify` passed on `d4d8020`. This review's local attempt stopped because `protoc-gen-es` is absent.
 
 **What waits on the owner.**
 
-- The confirmation of the merge of this pull request, after a summary of one paragraph (D-834).
-- F-165 and F-166, as later items.
+- The merge of this pull request, after the summary of four sections (D-834, D-836).
+- F-166 and F-49, as later items.
 - A whole deck gate run of prompt version 16 and the fixing floor of F-33. It is a paid target, so ask the owner first.
 - UNVERIFIED: the Moxfield import of the deck list.
 - D-794 makes the app less strict than the Wizards infographic at Bracket 2.
@@ -53,7 +57,7 @@ Author provider: Claude Code
 5. Load the skills. Load `ste-writing` before you write any `.md`. Load `design-doc-style` before you edit the roadmap. Load `mtg-corpus` before you reason about a format, a legality, or a card term.
 6. Run `make verify`. It runs every check the verify workflow runs, on this machine, for nothing. Put Node 22.23.2 on the PATH first. The pull request runs the same jobs on Actions, and a change of documents alone skips six of them (D-818).
 7. Do "Next steps, in order" below. Ask questions as they come up. Record each owner answer in `docs/decisions.md`, and delete the row from `docs/owner-questions.md`.
-8. Open the pull request with the sections of `.github/pull_request_template.md`, and run `make pr-check`. Load the `gitar-review` skill, and follow it after each push (D-637, D-745). After Gitar, run `make codex-review PR=<n>` in the background (D-823). After the approval, give the owner a summary of one paragraph, and turn on the auto-merge after the confirmation (D-828, D-834). A pull request of documents alone takes the `review-override` label in place of that review (D-812).
+8. Open the pull request with the sections of `.github/pull_request_template.md`, and run `make pr-check`. Load the `gitar-review` skill, and follow it after each push (D-637, D-745). After Gitar, run `make codex-review PR=<n>` in the background (D-823). After the approval, ask the owner. Put the summary of four sections inside the question: What, How, CI, and Codex review. Turn on the auto-merge after the confirmation (D-828, D-834, D-836). A pull request of documents alone takes the `review-override` label in place of that review (D-812).
 9. Update this file inside the pull request, before you call it ready (D-747). Read only the section that you change.
 10. Keep three session records at most (D-749). Move each older record to the archive, word for word.
 11. When the pull request merges, write the transitional prompt of the `one-pr-one-session` skill, and end the session.
@@ -109,8 +113,8 @@ Twenty-two things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **PR-64: the review target and the auto-merge** (D-823 to D-833). This pull request also holds the first live runs of PR-63. **PR-63** is #212.
-2. **The open items of the roadmap.** Three register rows read 🔧: F-49, F-165, and F-166. F-49 waits for the owner. F-165 needs a free replay of the Najeela shortlist, and F-166 needs a plan. OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate run 9 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. No whole deck gate run measured them yet.
+1. **F-165: the fixing fill of Najeela** (D-835). This pull request is #214.
+2. **The open items of the roadmap.** Two register rows read 🔧: F-49 and F-166. F-49 waits for the owner, and F-166 needs a plan. OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 and 10 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. No whole deck gate run measured them yet.
 3. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It waits, because the ten sessions of the audit ran before #184 and before D-749.
 4. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git.
 5. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide". Session `z1hshyY6Npig1FN2NuV7` named its commander, so it showed no such row.
@@ -132,10 +136,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-09-22f: the scroll of the collection page, F-167
-
-**The owner named the scroll of the collection page, pinned the toolbar alone, and chose the binder top as the target of the button** (D-806 to D-809). The session recommended the top of the page, and the owner chose the binder. The first spec run found that a row the virtualizer measures stops a smooth scroll of another source. So the virtualizer makes the move.
-
 ### 2026-09-23a: the review gate and the CI skip, PR-63
 
 **The owner picked F-165 after the live check of #211, then replaced it with the review gate of the two sibling repos** (D-810). The session quoted hard rule 10 against the request, and the owner chose Codex after Gitar. The owner chose a ruleset with no bypass, a label of the session, and an exemption of Dependabot. The session found that #133 held a code commit of a session on a Dependabot branch, so the exemption reads the commit authors. The owner added the CI skip mid-session.
@@ -144,6 +144,10 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner asked for `make codex-review`, a stop at the third open round of one finding, and an auto-merge on the green light** (D-823, D-826, D-828). The session asked six questions at the start. The owner chose the npm CLI with an update before each review, over the binary of the app (D-824). The owner chose the auto-merge for this pull request, over a merge by the owner (D-829). A later answer made the review loop exempt from the ask of each paid run, because it spends the Codex plan (D-831). The owner then asked that no Codex process ever get an API key, and chose the Codex processes as the scope (D-833).
 
+### 2026-09-23c: the fixing fill of Najeela, F-165
+
+**The owner started F-165 from the transitional prompt of #213.** The session replayed the Najeela shortlist of bracket gate run 9 for free, and the replay matched the pool of 338 cards. The owner chose the cut inside the total, the trade of a tapped land, and one paid run of prompt 15 (D-835). Run 10 cost $0.1083 and read 24 fixing lands.
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-23a, the records of 2026-08-31 to 2026-09-22e, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-23b, the records of 2026-08-31 to 2026-09-22f, and 104 more sections, word for word. Read it for the detail behind a decision.

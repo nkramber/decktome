@@ -10,7 +10,7 @@ A pull request merges itself when three conditions hold (D-828):
 2. The Codex record approves the effective head. The `review-gate` check reads the record.
 3. Each Gitar comment has its answer.
 
-The owner then confirms the merge after a summary of one paragraph (D-834). The session turns on the auto-merge after that confirmation alone.
+The owner then confirms the merge after a summary in four sections: What, How, CI, and Codex review (D-834, D-836). The summary sits inside the text of the merge question. The session turns on the auto-merge after that confirmation alone.
 
 The ruleset enforces conditions 1 and 2, and the thread part of condition 3. A top-level Gitar comment is not a review thread, so the ruleset can not read its answer. So the author session reads each one with the `gitar-review` skill before it turns on the auto-merge.
 

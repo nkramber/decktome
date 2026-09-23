@@ -286,6 +286,7 @@ const (
 	bandReason = "the mana pass added it to bring the mana base inside the power level"
 	swapReason = "the mana pass traded a basic land for this better land at the power level"
 	fixReason  = "the mana pass traded a basic land for this land, which makes two or more of the deck's colors"
+	tapReason  = "the mana pass traded a land that enters tapped for this land, which makes two or more of the deck's colors"
 )
 
 // apply writes the step into the deck.
@@ -585,7 +586,7 @@ func (b *Builder) swapBasics(req Request, deck *mtgv1.Deck) int {
 	}
 	kept := 0
 	for range maxSwapSteps {
-		if !b.swapOne(req, deck, b.betterLands, "", swapReason) {
+		if !b.swapOne(req, deck, b.betterLands, b.spareBasics, "", swapReason) {
 			break
 		}
 		kept++
@@ -606,13 +607,20 @@ const maxFixingSteps = 21
 // enters tapped can join where the tapped band allows it. Each swap keeps
 // the guards of swapOne. The score it reads leaves out the fixing row,
 // so a swap never buys a fixing land with a worse band of another kind.
+//
+// Each color keeps one basic land. When no basic land is spare, the fill
+// trades a land of LandOther that enters tapped (F-165, D-835).
 func (b *Builder) fillFixing(req Request, deck *mtgv1.Deck) int {
 	if req.Pool == nil {
 		return 0
 	}
 	kept := 0
 	for range maxFixingSteps {
-		if !b.fixingShort(deck) || !b.swapOne(req, deck, b.fixingLands, profile.KeyFixingLand, fixReason) {
+		if !b.fixingShort(deck) {
+			break
+		}
+		if !b.swapOne(req, deck, b.fixingLands, b.spareBasics, profile.KeyFixingLand, fixReason) &&
+			!b.swapOne(req, deck, b.fixingLands, b.tappedUtility, profile.KeyFixingLand, tapReason) {
 			break
 		}
 		kept++
@@ -680,20 +688,19 @@ func sideCopiesOf(deck *mtgv1.Deck, id string) int32 {
 }
 
 // swapOne makes the best swap the pool allows, from the lands the lister
-// names. The band score leaves out the feature skip, and a swap is kept
-// only when that score does not rise. The new entry shows the reason. It
-// is false when no swap keeps every guard.
+// names, for a land the drops name. The band score leaves out the feature
+// skip, and a swap is kept only when that score does not rise. The new
+// entry shows the reason. It is false when no swap keeps every guard.
 func (b *Builder) swapOne(req Request, deck *mtgv1.Deck,
-	lister func(Request, *mtgv1.Deck, map[mtgv1.Color]bool) []*mtgv1.Card, skip, reason string) bool {
+	lister func(Request, *mtgv1.Deck, map[mtgv1.Color]bool) []*mtgv1.Card,
+	drops func(*mtgv1.Deck, map[mtgv1.Color]bool) []*mtgv1.Card, skip, reason string) bool {
 	before := profile.ColorSources(deck, b.cards)
+	colors := sourceColorSet(before)
 	score := b.bandScore(deck, skip)
 	cost := b.budgetCost(req, deck)
-	for _, add := range lister(req, deck, sourceColorSet(before)) {
+	for _, add := range lister(req, deck, colors) {
 		var options []balanceOption
-		for _, drop := range b.basicsOf(deck) {
-			if copiesOf(deck, drop.GetOracleId()) < 2 {
-				continue
-			}
+		for _, drop := range drops(deck, colors) {
 			step := manaStep{add: add, drop: drop.GetOracleId(), role: mtgv1.CardRole_CARD_ROLE_LAND,
 				owned: req.Pool.OwnedCount(add.GetOracleId()), reason: reason}
 			undo := snapshot(deck)
@@ -726,6 +733,38 @@ func (b *Builder) swapOne(req Request, deck *mtgv1.Deck,
 		}
 	}
 	return false
+}
+
+// spareBasics lists the basic lands the deck holds two or more of, so
+// each color keeps a basic land for a fetch land to find.
+func (b *Builder) spareBasics(deck *mtgv1.Deck, _ map[mtgv1.Color]bool) []*mtgv1.Card {
+	var out []*mtgv1.Card
+	for _, c := range b.basicsOf(deck) {
+		if copiesOf(deck, c.GetOracleId()) >= 2 {
+			out = append(out, c)
+		}
+	}
+	return out
+}
+
+// tappedUtility lists the nonbasic lands of the deck that enter tapped
+// and read LandOther, by name. Such a land slows the deck and fixes no
+// color, so the fill trades it once no basic land is spare (F-165,
+// D-835).
+func (b *Builder) tappedUtility(deck *mtgv1.Deck, colors map[mtgv1.Color]bool) []*mtgv1.Card {
+	var out []*mtgv1.Card
+	seen := map[string]bool{}
+	for _, dc := range deck.GetCards() {
+		c, ok := b.cards.ByOracleID(dc.GetOracleId())
+		if !ok || seen[c.GetOracleId()] || !profile.IsLand(c) || profile.IsBasic(c) || !profile.EntersTapped(c) ||
+			profile.LandClassOf(c, colors) < profile.LandOther {
+			continue
+		}
+		seen[c.GetOracleId()] = true
+		out = append(out, c)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].GetName() < out[j].GetName() })
+	return out
 }
 
 // rawRatios lists each color's sources over its need, with no cap, in

@@ -5,7 +5,7 @@ description: Bind a session to one repository, one branch, one pull request, and
 
 # One pull request, one clean session
 
-The owner decisions are D-746 to D-748, and D-823 to D-834 for the review loop and the auto-merge. `CLAUDE.md` holds the other rules, and this skill does not repeat them.
+The owner decisions are D-746 to D-748, and D-823 to D-834 and D-836 for the review loop and the auto-merge. `CLAUDE.md` holds the other rules, and this skill does not repeat them.
 
 ## The rule
 
@@ -79,9 +79,16 @@ Turn on the auto-merge only when each of these conditions is true (D-828):
 - The last metadata commit is on origin. It holds the record and the hand-off.
 - The Gitar pass is complete, and each top-level Gitar comment has its answer.
 - The record says `Ready for owner merge` for the effective head.
-- The owner confirmed the merge after the summary below (D-834).
+- The owner confirmed the merge after the summary below (D-834, D-836).
 
-Write a summary of one paragraph: the change, the checks, the review verdict, and each risk that stays open. Then ask the owner for the confirmation of the merge with `AskUserQuestion`. Without the confirmation, do not turn on the auto-merge.
+Write the summary in four sections, with a few sentences in each section (D-836):
+
+- **What:** the change, and the problem that it fixes.
+- **How:** the method of the change, the evidence, and each risk that stays open.
+- **CI:** green or not. Name each check that is not green.
+- **Codex review:** the verdict of the record, `Ready for owner merge`, `Blocked`, or `Changes required`.
+
+Write the summary in the question text of `AskUserQuestion`, and ask the owner for the confirmation of the merge in the same text. The owner can see the question alone, so a summary outside it does not reach the owner. Without the confirmation, do not turn on the auto-merge.
 
 After the confirmation, run these commands, in this order:
 
