@@ -33,6 +33,8 @@ Author provider: Claude Code
 
 **The checks.** `go test ./...` passed on `433d055`. `make verify` passed on `0e9f231`, exit 0, with Node 22.23.2 on the PATH.
 
+**The review.** Gitar approved `1df2e1e` with no finding and no thread. Each check of that head passed, except `review-gate`, which waits for the Codex record.
+
 **What waits on the owner.**
 
 - The merge of this pull request, after a summary of one paragraph (D-834).
