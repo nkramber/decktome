@@ -10,7 +10,8 @@
 # holds no open thread.
 #
 # It answers 0 when the review holds nothing open, and 1 when a round
-# limit or a failure leaves work on the pull request.
+# limit or a failure leaves work on the pull request. It answers 3 when
+# the Gitar pause stops it on a finding (D-838).
 #
 # CAUTION: this writes to a public pull request with no person watching.
 # The cycle calls it, and the cycle refuses to run without
@@ -35,6 +36,41 @@ say() { printf '%s  review: %s\n' "$(date -u +%H:%M:%S)" "$*" >&2; }
 # room and still ends a stuck round.
 WAIT_SECONDS="${FEEDBACK_REVIEW_WAIT:-900}"
 POLL_SECONDS="${FEEDBACK_REVIEW_POLL:-30}"
+
+# PAUSE_FILE is the switch of the Gitar pause (D-838). While it exists, a
+# round with no review ends the cycle with 0. An open thread or an issue on
+# the Gitar dashboard stops the cycle before the fixer, and a comment tells
+# the owner, who reads it first. GITAR_PAUSE_FILE moves the switch for a test.
+PAUSE_FILE="${GITAR_PAUSE_FILE:-$ROOT/docs/reference/gitar-pause.md}"
+paused() { [ -f "$PAUSE_FILE" ]; }
+
+# dashboard_clean answers 0 when the newest Gitar dashboard reports no
+# issue. The rule is dashboard_issue of docs/tools/codex_review.py, so the
+# cycle and make codex-review read a dashboard the same way.
+dashboard_clean() {
+  gh api --paginate "repos/$REPO/issues/$PR/comments" \
+    --jq '.[] | select(.user.login == "gitar-bot[bot]") | .body | tojson' 2>/dev/null \
+    | python3 -c 'import json, sys
+sys.path.insert(0, "docs/tools")
+import codex_review
+bodies = [json.loads(line) for line in sys.stdin if line.strip()]
+comments = [{"user": {"login": codex_review.GITAR}, "created_at": f"{i:08d}", "body": b} for i, b in enumerate(bodies)]
+sys.exit(1 if codex_review.dashboard_issue(comments) else 0)'
+}
+
+# pause_stop ends the cycle with 3 when Gitar left a finding during the
+# pause: an open thread, or an issue on the dashboard (D-838).
+pause_stop() {
+  local what=""
+  [ "$1" = "0" ] || what="$1 open thread(s)"
+  dashboard_clean || what="${what:+$what and }an issue on the dashboard"
+  [ -n "$what" ] || return 0
+  alert="@${REPO%%/*} Gitar left $what during the Gitar pause (D-838). The cycle stopped before the fixer. The owner reads each finding first."
+  gh pr comment "$PR" --repo "$REPO" --body "$alert" >/dev/null 2>&1 </dev/null \
+    || say "the comment to the owner failed"
+  say "the Gitar pause stops the cycle on $what. Tell the owner (D-838)."
+  exit 3
+}
 
 # open_threads writes every unresolved thread of the pull request as one
 # JSON object a line: the thread id, the path, and the body of the first
@@ -94,7 +130,9 @@ wait_for_review() {
 round=1
 while [ "$round" -le "$ROUNDS" ]; do
   say "round $round of $ROUNDS: waiting for the review of gitar-bot"
-  if ! wait_for_review; then
+  landed=1
+  wait_for_review || landed=0
+  if [ "$landed" = "0" ] && ! paused; then
     say "no review inside $WAIT_SECONDS seconds. The pull request keeps whatever is open."
     exit 1
   fi
@@ -103,6 +141,13 @@ while [ "$round" -le "$ROUNDS" ]; do
   # grep -c prints 0 and exits 1 on an empty file, so an "|| echo 0"
   # here would write a second line and the count would never read 0.
   count="$(awk 'NF' "$threads" 2>/dev/null | wc -l | tr -d ' ')"
+  if paused; then
+    pause_stop "$count"
+    if [ "$landed" = "0" ]; then
+      say "no review inside $WAIT_SECONDS seconds. The Gitar review is paused (D-838), so the cycle needs none."
+      exit 0
+    fi
+  fi
   if [ "$count" = "0" ]; then
     say "the review holds nothing open"
     exit 0

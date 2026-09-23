@@ -12,6 +12,45 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-23d
+
+**Pull request #215 keeps a green `review-gate` green on a commit of documents alone (D-837).**
+
+Author provider: Claude Code
+
+**The next step.** The Gitar pass, then `make codex-review PR=215` (D-823). Then the merge question with the summary of four sections (D-834, D-836). Pending the owner merge.
+
+**The base.** `main` is `11a30e7`, from #214. The Cloud Build `6c38cea5` of `deploy-api` built `11a30e7`, and it ended SUCCESS at 16:40:48 UTC on 2026-09-23.
+
+**Why this pull request exists.** The owner named it after #214. RG 5 read the effective head of D-813 alone. So a later commit of the roadmap, a decision, or a skill turned the check red, and it asked for a new Codex review.
+
+**What this pull request holds.**
+
+- RG 5 also passes a record of an earlier commit, when each later commit changes documents alone. The documents are the set of D-814.
+- The effective head of D-813 stays. A reviewer still records it, and `make codex-review` still waits for the Gitar pass of each later commit.
+- `check_head` without the commits still needs the effective head itself, for the fresh record of `codex_review.py`.
+- Eleven new tests in `docs/tools/test_review_gate.py`. The tests that expect a pass fail on the rule of `11a30e7`: 12 failures in 5 tests.
+- D-837 amends D-813 and D-822. The owner chose the new rule over the roadmap clause of D-822, and the set of D-814 with the eval files.
+- The rule text in `CLAUDE.md`, `AGENTS.md`, `docs/reference/merge-rules.md`, `docs/tools/pr_check.py`, and three skills. A new caution: push no commit after the auto-merge turns on.
+
+**The checks.** `python3 -m unittest` passed 110 tests of `test_review_gate`, `test_codex_review`, and `test_ci_skip`. `make verify` passed, exit 0, with Node 22.23.2 on the PATH, on the tree of the first commit of this pull request.
+
+**The review.** The Codex review approves effective head `224cef7`. No Gitar code review or actionable feedback exists. The local `make verify` stopped because `protoc-gen-es` is absent. GitHub `review-gate`, `pr-contract`, `verify:eval`, `verify:shell`, and `verify:skip` pass. The other heavy verify jobs skip for this documents-only commit. Review record and hand-off commit `5a7bd5e` are on the PR branch.
+
+**What waits on the owner.**
+
+- The merge of this pull request, after the summary of four sections (D-834, D-836).
+- F-166 and F-49, as later items.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. It is a paid target, so ask the owner first.
+- UNVERIFIED: the Moxfield import of the deck list.
+- D-794 makes the app less strict than the Wizards infographic at Bracket 2.
+- Five sessions on the new files, before a decision on the checkpoint rule (next step 3, D-750).
+- Next steps 4 and 5, and OQ-67 and OQ-77.
+
+### 2026-09-23b: the review target and the auto-merge, PR-64
+
+**The owner asked for `make codex-review`, a stop at the third open round of one finding, and an auto-merge on the green light** (D-823, D-826, D-828). The session asked six questions at the start. The owner chose the npm CLI with an update before each review, over the binary of the app (D-824). The owner chose the auto-merge for this pull request, over a merge by the owner (D-829). A later answer made the review loop exempt from the ask of each paid run, because it spends the Codex plan (D-831). The owner then asked that no Codex process ever get an API key, and chose the Codex processes as the scope (D-833).
+
 ## The resume section of 2026-09-23c
 
 **Pull request #214 fixes F-165 (D-835). The total cut of the shortlist keeps the mana half of the land cap. The fixing fill trades a tapped land that fixes no color.**

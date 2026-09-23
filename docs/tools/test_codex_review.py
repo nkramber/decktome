@@ -7,6 +7,7 @@ import os
 import subprocess
 import tempfile
 import unittest
+import unittest.mock
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 spec = importlib.util.spec_from_file_location("codex_review", os.path.join(HERE, "codex_review.py"))
@@ -185,6 +186,114 @@ class Threads(unittest.TestCase):
         self.assertIn("after: $endCursor", run.calls[0][-1])
         problems = cr.gitar_problems(PUSHED, [comment(GITAR, DASH, "2026-09-23T09:00:00Z", "2026-09-23T10:02:00Z")], [], threads)
         self.assertEqual(problems, ["1 review thread(s) are not resolved: b.py:7."])
+
+
+def summary(*kbds):
+    """A Gitar dashboard body with one summary line of the Code Review block."""
+    return "<details>\n<summary><b>Code Review</b> " + " ".join(f"<kbd>{k}</kbd>" for k in kbds) + "</summary>\n</details>"
+
+
+class Dashboard(unittest.TestCase):
+    """dashboard_issue reads the newest Gitar dashboard, and each unknown form is an issue (D-838)."""
+
+    def issue(self, *bodies):
+        return cr.dashboard_issue([comment(GITAR, b, f"2026-09-23T10:0{i}:00Z") for i, b in enumerate(bodies)])
+
+    def test_each_clean_form_of_the_record_passes(self):
+        # The forms of 90 dashboards of #120 to #216, read 2026-09-23.
+        for kbds in [("\u2705 Approved",), ("\u2705 No issues found",), ("\u2705 Approved", "1 resolved / 1 findings"),
+                     ("\u2705 Approved", "2 closed / 2 findings"), ("\u2705 No issues found", "2 closed / 2 findings")]:
+            self.assertIsNone(self.issue(summary(*kbds)), kbds)
+
+    def test_an_open_finding_is_an_issue(self):
+        self.assertTrue(self.issue(summary("\u2705 Approved", "1 resolved / 2 findings")))
+
+    def test_an_unknown_verdict_is_an_issue(self):
+        self.assertTrue(self.issue(summary("Changes requested")))
+        self.assertTrue(self.issue(summary("\u2705 Approved with suggestions")))
+
+    def test_an_unknown_tally_is_an_issue(self):
+        self.assertTrue(self.issue(summary("\u2705 Approved", "1 open")))
+        self.assertTrue(self.issue(summary("\u2705 Approved", "1 resolved / 1 findings", "new")))
+
+    def test_a_dashboard_with_no_summary_line_is_an_issue(self):
+        self.assertTrue(self.issue("<b>Code Review</b> in a new shape"))
+
+    def test_the_newest_dashboard_counts(self):
+        self.assertIsNone(self.issue(summary("Changes requested"), summary("\u2705 Approved")))
+        self.assertTrue(self.issue(summary("\u2705 Approved"), summary("Changes requested")))
+
+    def test_the_free_plan_note_alone_is_no_issue(self):
+        self.assertIsNone(self.issue("> [!IMPORTANT]\n> You are using the Gitar free plan."))
+        self.assertIsNone(cr.dashboard_issue([comment("nkramber", summary("Changes requested"), PUSHED)]))
+
+
+class SkipGitar(unittest.TestCase):
+    """--skip-gitar-review reads no Gitar pass, and still refuses an open thread (D-838)."""
+
+    def threads(self, *nodes, comments=()):
+        return Fake([(["gh", "api", "graphql"], (0, json.dumps([thread_page(list(nodes), False)]), "")),
+                     (["gh", "api", "--paginate"], (0, json.dumps([list(comments)]), ""))])
+
+    def test_an_open_thread_refuses_and_names_the_owner(self):
+        run = self.threads({"isResolved": True, "path": "a.py", "line": 1}, {"isResolved": False, "path": "b.py", "line": 7})
+        with self.assertRaises(cr.Stop) as caught:
+            cr.check_threads(run, "o/r", N)
+        self.assertEqual(caught.exception.code, cr.EXIT_REFUSAL)
+        self.assertIn("1 review thread(s) are not resolved: b.py:7.", str(caught.exception))
+        self.assertIn("tell the owner (D-838)", str(caught.exception))
+
+    def test_resolved_threads_and_a_clean_dashboard_pass(self):
+        run = self.threads({"isResolved": True, "path": "a.py", "line": 1}, comments=[comment(GITAR, summary("\u2705 Approved"), PUSHED)])
+        cr.check_threads(run, "o/r", N)
+        self.assertEqual(len(run.calls), 2)
+
+    def test_a_dashboard_issue_with_no_thread_refuses(self):
+        run = self.threads(comments=[comment(GITAR, summary("\u2705 Approved", "0 resolved / 1 findings"), PUSHED)])
+        with self.assertRaises(cr.Stop) as caught:
+            cr.check_threads(run, "o/r", N)
+        self.assertEqual(caught.exception.code, cr.EXIT_REFUSAL)
+        self.assertIn("the Gitar dashboard reports an issue", str(caught.exception))
+        self.assertIn("tell the owner (D-838)", str(caught.exception))
+
+    def run_main(self, argv):
+        """Run main up to the CLI update, and give the Gitar calls and the thread calls."""
+        seen = {"gitar": 0, "threads": 0}
+
+        def gitar(*_):
+            seen["gitar"] += 1
+
+        def threads(*_):
+            seen["threads"] += 1
+
+        def stop(_):
+            raise cr.refuse("the CLI update stops the test.")
+
+        patches = [
+            unittest.mock.patch.object(cr, "check_pr", return_value=("b", R1 * 4)),
+            unittest.mock.patch.object(cr, "check_checkout"),
+            unittest.mock.patch.object(cr.rg, "gather", return_value=(None, [], None, None)),
+            unittest.mock.patch.object(cr.rg, "effective_head", return_value=R1 * 4),
+            unittest.mock.patch.object(cr, "check_gitar", side_effect=gitar),
+            unittest.mock.patch.object(cr, "check_threads", side_effect=threads),
+            unittest.mock.patch.object(cr, "update_cli", side_effect=stop),
+        ]
+        with contextlib.ExitStack() as stack:
+            for patch in patches:
+                stack.enter_context(patch)
+            stack.enter_context(contextlib.redirect_stdout(io.StringIO()))
+            code = cr.main(argv, run=Fake([(["gh", "repo", "view"], (0, "o/r\n", ""))]))
+        return code, seen
+
+    def test_the_flag_skips_the_gitar_pass_and_reads_the_threads(self):
+        code, seen = self.run_main(["--pr", str(N), "--skip-gitar-review"])
+        self.assertEqual(code, cr.EXIT_REFUSAL)
+        self.assertEqual(seen, {"gitar": 0, "threads": 1})
+
+    def test_with_no_flag_the_gitar_pass_runs(self):
+        code, seen = self.run_main(["--pr", str(N)])
+        self.assertEqual(code, cr.EXIT_REFUSAL)
+        self.assertEqual(seen, {"gitar": 1, "threads": 0})
 
 
 class Fake:

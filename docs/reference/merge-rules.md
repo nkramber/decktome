@@ -10,6 +10,8 @@ A pull request merges itself when three conditions hold (D-828):
 2. The Codex record approves the effective head, or each commit after its head changes documents alone (D-837). The `review-gate` check reads the record.
 3. Each Gitar comment has its answer.
 
+**Gitar pause (D-838).** `docs/reference/gitar-pause.md` wins over condition 3. No Gitar review is necessary, and each Gitar finding stops the work for the owner.
+
 The owner then confirms the merge after a summary in four sections: What, How, CI, and Codex review (D-834, D-836). The summary sits inside the text of the merge question. The session turns on the auto-merge after that confirmation alone.
 
 CAUTION: Push no commit after the auto-merge turns on. A commit of documents alone keeps `review-gate` green, so GitHub can merge it before Gitar reads it (D-837).

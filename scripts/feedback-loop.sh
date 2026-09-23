@@ -470,6 +470,10 @@ fi
 say "step 8: the review of gitar-bot, up to $ROUNDS round(s)"
 "$ROOT/scripts/feedback-review.sh" "$PR_NUM" "$ROUNDS" "$STATE_DIR" 2>&1 | tee -a "$LOG"
 review_code="${PIPESTATUS[0]}"
+if [ "$review_code" -eq 3 ]; then
+  say "Gitar left a finding on #$PR_NUM during the Gitar pause (D-838). Tell the owner."
+  exit 3
+fi
 if [ "$review_code" -ne 0 ]; then
   say "the review rounds ended with work open on #$PR_NUM. Read the pull request."
   exit "$review_code"
