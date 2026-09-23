@@ -28,7 +28,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passed, exit 0, with Node 22.23.2 on the PATH. The 4 new tests of the flag fail on `8e492a7`, because it has no `check_threads`. `test_gitar_pause.py` fails with the pause file removed. `make -n` shows the flag passed on, and an unknown flag exits 2 before the review.
 
-**The review.** Gitar: the Gitar pause. Codex review: pending, with `make codex-review PR=216 -- --skip-gitar-review`.
+**The review.** Gitar: the pause applies, and the current dashboard has no code claim. Codex review: Changes required for effective head `9474ed1`, finding P2-1. `make verify` passes with Node 22.23.2. The review record and this hand-off are pending push.
 
 **What waits on the owner.**
 
