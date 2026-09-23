@@ -23,6 +23,11 @@ const (
 	PairMinLift     = 1.5
 	MaxPairs        = 200000
 	TopCardCount    = 12
+	// MinCommanderLists is the TopDeck list count a commander or a pair
+	// needs for its own card rates, and CommanderRateFloor is the least
+	// rate a stored card holds (D-839).
+	MinCommanderLists  = 10
+	CommanderRateFloor = 0.1
 )
 
 // tierWeight is the placement weight of a list in the rates and the
@@ -204,6 +209,51 @@ func commanderSignals(fm *FormatModel, reads []meta.Commander, idx *cards.Index)
 		}
 		fm.Commanders[CommanderKey(ids...)] = sig
 	}
+}
+
+// CommanderRates answers the card rates of each commander or pair from
+// its TopDeck lists (D-839). The fit passes every TopDeck list and not
+// the training split, because no holdout bar reads these rates. A card
+// counts once in a list, and a basic land never counts.
+func CommanderRates(reals []*Resolved, idx *cards.Index) map[string]CommanderRate {
+	out := map[string]CommanderRate{}
+	lists := map[string]int{}
+	held := map[string]map[string]int{}
+	for _, r := range reals {
+		if r.List.Source != meta.SourceTopdeck || len(r.Deck.GetCommanderOracleIds()) == 0 {
+			continue
+		}
+		key := CommanderKey(r.Deck.GetCommanderOracleIds()...)
+		lists[key]++
+		if held[key] == nil {
+			held[key] = map[string]int{}
+		}
+		seen := map[string]bool{}
+		for _, dc := range r.Deck.GetCards() {
+			id := dc.GetOracleId()
+			if seen[id] || slices.Contains(r.Deck.GetCommanderOracleIds(), id) {
+				continue
+			}
+			if c, ok := idx.ByOracleID(id); !ok || profile.IsBasic(c) {
+				continue
+			}
+			seen[id] = true
+			held[key][id]++
+		}
+	}
+	for key, n := range lists {
+		if n < MinCommanderLists {
+			continue
+		}
+		rates := map[string]float64{}
+		for id, k := range held[key] {
+			if v := float64(k) / float64(n); v >= CommanderRateFloor {
+				rates[id] = round4(v)
+			}
+		}
+		out[key] = CommanderRate{Lists: n, Cards: rates}
+	}
+	return out
 }
 
 // splitPair reads "A + B" as two names.

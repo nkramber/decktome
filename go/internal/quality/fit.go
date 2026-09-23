@@ -213,6 +213,21 @@ func capTiers(reals []*Resolved, limit int) []*Resolved {
 	return out
 }
 
+// topdeckLists answers the TopDeck lists of a Commander fit, and none in
+// another format (D-839).
+func topdeckLists(reals []*Resolved, f mtgv1.FormatId) []*Resolved {
+	if f != mtgv1.FormatId_FORMAT_ID_COMMANDER {
+		return nil
+	}
+	var out []*Resolved
+	for _, r := range reals {
+		if r.List.Source == meta.SourceTopdeck {
+			out = append(out, r)
+		}
+	}
+	return out
+}
+
 // holdoutFold says whether a key sits in the holdout split of a fold.
 // The folds partition the keys, so every list is holdout in one fold.
 func holdoutFold(key string, fold int) bool {
@@ -270,8 +285,10 @@ type holdRow struct {
 // prepared is one format's rows, resolved, capped, broken, and
 // profiled once, so every fold reads the same lists (M-7).
 type prepared struct {
-	f        mtgv1.FormatId
-	reals    []*Resolved
+	f     mtgv1.FormatId
+	reals []*Resolved
+	// topdeck holds the TopDeck lists before the tier cap (D-839).
+	topdeck  []*Resolved
 	all      []*Resolved
 	tiers    []string
 	level    map[string]int
@@ -526,6 +543,10 @@ func prepareFormat(ctx context.Context, in FitInput, f mtgv1.FormatId) (*prepare
 		}
 		reals = append(reals, r)
 	}
+	// The commander rates read every TopDeck list before the tier cap,
+	// because a cap of the newest lists drops most commanders under
+	// MinCommanderLists (D-839).
+	topdeck := topdeckLists(reals, f)
 	reals = capTiers(reals, MaxTierLists)
 	fr.Used = len(reals)
 	if len(reals) < 20 {
@@ -558,7 +579,7 @@ func prepareFormat(ctx context.Context, in FitInput, f mtgv1.FormatId) (*prepare
 	for _, r := range all {
 		present[r.List.Tier] = true
 	}
-	prep := &prepared{f: f, reals: reals, all: all, level: map[string]int{}, profiles: map[string]*mtgv1.DeckProfile{}}
+	prep := &prepared{f: f, reals: reals, topdeck: topdeck, all: all, level: map[string]int{}, profiles: map[string]*mtgv1.DeckProfile{}}
 	for _, t := range meta.Tiers {
 		if present[t] {
 			prep.tiers = append(prep.tiers, t)
@@ -602,6 +623,7 @@ func fitFold(ctx context.Context, in FitInput, prep *prepared, fr *FormatReport,
 	buildCorpus(fm, train, prep.profiles, in.Index)
 	if prep.f == mtgv1.FormatId_FORMAT_ID_COMMANDER {
 		commanderSignals(fm, in.Commanders, in.Index)
+		fm.CommanderRates = CommanderRates(prep.topdeck, in.Index)
 	}
 	samples := make([]sample, 0, len(prep.all))
 	for _, r := range prep.all {

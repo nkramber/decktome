@@ -70,6 +70,14 @@ type Request struct {
 	// its commanders on it first, and theme breaks the tie. Nil with no
 	// model, and the pool ranks on theme and popularity alone.
 	CommanderSignal func(oracleIDs ...string) float64
+	// CommanderRate gives the share of the TopDeck lists of the commander
+	// that hold a card, in [0,1] (D-839). A bracket 5 Commander request
+	// ranks on it first, and the theme adds ThemeBoost times its score.
+	// Nil with no model or too few lists, and the list ranks as before.
+	CommanderRate func(oracleID string) float64
+	// ThemeBoost overrides DefaultThemeBoost. The free sweep of F-166 sets
+	// it, and every other caller leaves it zero (D-839).
+	ThemeBoost float64
 	// WantBackground narrows a pair request to pairs that hold a
 	// Background, because a Background rarely ranks on theme alone (D-154).
 	WantBackground bool
@@ -316,6 +324,7 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 	// A bracket 4 or 5 request reads the top-list rate as a power signal,
 	// and it builds the reserve the gap note reads (D-704, D-707, D-709).
 	pw := powerScanOf(idx, req)
+	commanderRate, boost := commanderRateOf(req)
 
 	var stats Stats
 	var scored, reserve []Candidate
@@ -352,7 +361,18 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 		stats.Pool++
 		themeScore, signals := theme.score(c)
 		fired.mark(signals)
-		role, roleSignal := assignRole(c, roleTags, themeScore > 0, useText)
+		// A bracket 5 request with a commander rate ranks on the lists of
+		// its commander, and its theme adds a small boost (D-839). Every
+		// other request leads with the theme alone.
+		lead := themeScore
+		if commanderRate != nil {
+			cr := commanderRate(c.OracleId)
+			lead = cr + boost*themeScore
+			if cr > 0 {
+				signals = append(signals, "commander rate")
+			}
+		}
+		role, roleSignal := assignRole(c, roleTags, lead > 0, useText)
 		if roleSignal != "" {
 			signals = append(signals, roleSignal)
 		}
@@ -397,13 +417,13 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 		// so an off-theme tutor never reached the list before (F-130,
 		// D-707).
 		kept := pw.on && rate >= pw.rate.Keep
-		if themeScore == 0 && !stapleRole(role) && setCodes == nil && !kept {
+		if lead == 0 && !stapleRole(role) && setCodes == nil && !kept {
 			continue
 		}
-		score := themeScore*0.7 + pop*0.3 + rate*pw.weight
+		score := lead*0.7 + pop*0.3 + rate*pw.weight
 		// A staple with no theme signal ranks below every on-theme card of
 		// its score band. Theme leads, popularity breaks ties (F-5).
-		if themeScore == 0 && !kept {
+		if lead == 0 && !kept {
 			score *= staplePenalty
 		}
 		if kept {
@@ -416,7 +436,7 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 			}
 		}
 		scored = append(scored, Candidate{Card: c, Role: role, Score: score, Pop: pop, Rate: rate, Fix: fixCount(c, colorSet),
-			LandRank: landRank(req, c, colorSet, owned), Themed: themeScore > 0, Owned: owned, Outside: outside, Signals: signals})
+			LandRank: landRank(req, c, colorSet, owned), Themed: lead > 0, Owned: owned, Outside: outside, Signals: signals})
 	}
 	sortCandidates(scored)
 	// A pinned power card skips the cap of its role (F-131, D-710).

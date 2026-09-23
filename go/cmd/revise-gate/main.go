@@ -324,6 +324,8 @@ func buildBase(ctx context.Context, b *generate.Builder, cb *candidates.Builder,
 		SetCodes: setCodes,
 		// The shortlist reads the top-list rate, as the app does (D-708).
 		MetaBoost: scorer.MetaBoost(format),
+		// A bracket 5 request reads the rate of its commander (D-839).
+		CommanderRate: scorer.CommanderRate(commanderIDs...),
 	})
 	if err != nil {
 		return nil, nil, nil, nil, fmt.Errorf("candidates: %w", err)

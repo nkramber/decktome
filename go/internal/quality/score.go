@@ -110,6 +110,17 @@ func (s *Scorer) CommanderSignal() func(ids ...string) float64 {
 	}
 }
 
+// CommanderRate answers the card rates of a commander or a pair in its
+// TopDeck lists, in [0, 1]. Nil with no model or no row, so a bracket 5
+// shortlist reads the rate of the format alone (D-839).
+func (s *Scorer) CommanderRate(ids ...string) func(oracleID string) float64 {
+	r, ok := s.Model().Format(mtgv1.FormatId_FORMAT_ID_COMMANDER).CommanderRateOf(ids...)
+	if !ok || len(r.Cards) == 0 {
+		return nil
+	}
+	return func(oracleID string) float64 { return r.Cards[oracleID] }
+}
+
 // CardQualities answers the per-format rows of one card, for GetCards.
 func (s *Scorer) CardQualities(oracleID string) []*mtgv1.CardQuality {
 	m := s.Model()
