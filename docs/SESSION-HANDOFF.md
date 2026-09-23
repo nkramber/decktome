@@ -36,7 +36,7 @@ Author provider: Claude Code
 
 **The checks.** `go test ./...` passed on `433d055`. `make verify` passed on `0e9f231`, exit 0, with Node 22.23.2 on the PATH.
 
-**The review.** Gitar approves effective head `8795711` with no finding or open thread. Codex approves effective head `8795711`, Ready for owner merge, with no open finding. `make verify` passes on `d4d8020`. The published record passes `review-gate`. All other required checks pass or skip on the document-only push.
+**The review.** The earlier Gitar review approved the product change with no finding or open thread. Its dashboard still says `Gitar is working` after the record update. Codex marks effective head `8795711` Blocked because the current Gitar result is incomplete. `make verify` passes on `d4d8020`.
 
 **What waits on the owner.**
 
