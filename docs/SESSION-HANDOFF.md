@@ -26,7 +26,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The checks.** `make smoke` passed, 5 of 5, and the new spec fails on the old grid. Four of the five new Vitest tests fail on the old grid, and the fifth is a negative guard. `make verify` passed on this machine, exit 0, with Node 22.23.2 on the PATH.
 
-**The review.** Gitar review pending on the head of #211.
+**The review.** Gitar reviewed `2663424` and reads "Approved", with 1 of 1 findings closed and no open thread. Its dashboard edit of 02:08:01 UTC is later than the push of 02:06:33 UTC, both of 2026-09-23, so the review is current. The one finding named the placeholders of the first push, and `2663424` replaced them. The later commit changes `docs/SESSION-HANDOFF.md` alone, which is the metadata set, so the pass holds (D-752).
 
 **What waits on the owner.**
 
