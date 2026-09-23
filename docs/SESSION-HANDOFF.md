@@ -77,7 +77,7 @@ Twenty-one things a fresh session gets wrong without this file.
 - The hook `.claude/hooks/session_bind.py` binds a session to the first branch that it creates, pushes, or opens a pull request for. A command on a second branch exits with "Blocked". Start a new clean session. The owner alone removes a binding under `.git/decktome-session-bind/`.
 - A read under `users/` fails in the sandbox of a session, because that path holds the verified email (D-638). A field mask that fetches no field fails too. A replay reads a local collection export instead (D-756), and the export never enters git.
 - A stored session can be gone. `z1hshyY6Npig1FN2NuV7` no longer exists in `decktome-prod`, so `scripts/read-session.sh` finds nothing. M-17 recorded the request of that session, so the replay needed no session read.
-- The Edit tool can write the rune in place of the six characters `\u2014` in new text. Read the bytes with `cat -v`, or write such text through a script.
+- The Edit tool and a Bash heredoc can write the rune in place of the six characters `\u2014`. Write the backslash as `chr(92)` in a Python script, and read the bytes with `ascii()`.
 - `Pool.Names` sorts the pool by the alphabet, and the shortlist groups its cards by role. Neither order ranks a card. `Pool.Score` holds the shortlist score (D-702).
 
 ## Facts that expire

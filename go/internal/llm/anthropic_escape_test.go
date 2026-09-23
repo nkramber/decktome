@@ -20,7 +20,7 @@ func TestDecodeLiteralEscapes(t *testing.T) {
 		{"card name", `{"why":"Bartolom\\u00e9 and Thr\\u00f3r's Map"}`, "Bartolomé and Thrór's Map"},
 		{"upper hex", `{"why":"a \\u00E9"}`, "a é"},
 		{"surrogate pair", `{"why":"\\ud83d\\ude00"}`, "\U0001F600"},
-		{"real escape", `{"why":"a — b"}`, "a — b"},
+		{"real escape", `{"why":"a \u2014 b"}`, "a — b"},
 		{"escaped backslash", `{"why":"a\\b \\n"}`, `a\b \n`},
 		{"quote", `{"why":"\"x\\u2014\""}`, "\"x—\""},
 		{"short hex", `{"why":"a \\u20zz"}`, `a \u20zz`},
@@ -42,7 +42,7 @@ func TestDecodeLiteralEscapes(t *testing.T) {
 }
 
 func TestDecodeLiteralEscapesKeepsCleanOutput(t *testing.T) {
-	raw := []byte(`{"format":"commander","why":"a — b"}`)
+	raw := []byte(`{"format":"commander","why":"a \u2014 b"}`)
 	if got := decodeLiteralEscapes(raw); &got[0] != &raw[0] {
 		t.Errorf("clean output was copied: %s", got)
 	}
