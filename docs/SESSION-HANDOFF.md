@@ -36,7 +36,7 @@ Author provider: Claude Code
 
 **The checks.** `go test ./...` passed on `433d055`. `make verify` passed on `0e9f231`, exit 0, with Node 22.23.2 on the PATH.
 
-**The review.** The earlier Gitar review approved the product change with no finding or open thread. Its dashboard still says `Gitar is working` after the record update. Codex marks effective head `8795711` Blocked because the current Gitar result is incomplete. `make verify` passes on `d4d8020`.
+**The review.** The owner instructed this review to skip the Gitar-feedback requirement. The dashboard reports approval with no code finding, and no review thread is open. Codex marks effective head `8795711` Ready for owner merge. The earlier full `make verify` passed on `d4d8020`. This review's local attempt stopped because `protoc-gen-es` is absent.
 
 **What waits on the owner.**
 
