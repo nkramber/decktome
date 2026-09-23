@@ -8,11 +8,11 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-23c)
 
-**Pull request #NNN fixes F-165 (D-835). The total cut of the shortlist keeps the mana half of the land cap. The fixing fill trades a tapped land that fixes no color.**
+**Pull request #214 fixes F-165 (D-835). The total cut of the shortlist keeps the mana half of the land cap. The fixing fill trades a tapped land that fixes no color.**
 
 Author provider: Claude Code
 
-**The next step.** Pending the owner merge. After the Gitar pass, the session runs `make codex-review PR=NNN`. After the approval, it gives the owner a summary of one paragraph (D-834).
+**The next step.** Pending the owner merge. After the Gitar pass, the session runs `make codex-review PR=214`. After the approval, it gives the owner a summary of one paragraph (D-834).
 
 **The base.** `main` is `755b593`, from #213. `make ruleset-check` read no difference on `main` on 2026-09-23, before the work.
 
@@ -31,7 +31,7 @@ Author provider: Claude Code
 
 **The cost of the fix.** The total stays at 300, so the cut now drops 11 other cards of the Najeela list. Frodo, Sauron's Bane and four more finishers leave, and six cards of the top-list rate. The run 10 deck names 1 finisher against 3 in run 9. The floor is 1.
 
-**The checks.** `go test ./...` passed on `433d055`.
+**The checks.** `go test ./...` passed on `433d055`. `make verify` passed on `0e9f231`, exit 0, with Node 22.23.2 on the PATH.
 
 **What waits on the owner.**
 
@@ -108,7 +108,7 @@ Twenty-two things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **F-165: the fixing fill of Najeela** (D-835). This pull request is #NNN.
+1. **F-165: the fixing fill of Najeela** (D-835). This pull request is #214.
 2. **The open items of the roadmap.** Two register rows read 🔧: F-49 and F-166. F-49 waits for the owner, and F-166 needs a plan. OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 and 10 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. No whole deck gate run measured them yet.
 3. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It waits, because the ten sessions of the audit ran before #184 and before D-749.
 4. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git.
