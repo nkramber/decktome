@@ -227,7 +227,8 @@ def check_pr(title, body, author, head_ref, changed, exists, is_ancestor=None, h
     # The mark goes in right after the pull request opens, before any review
     # reads the head, because a roadmap commit moves the effective head (D-822).
     mark = f"{MERGED_MARK}{number}"
-    if number and ROADMAP in changed and mark not in roadmap_added:
+    # The number ends at a non-digit, so #2120 is not the mark of #212.
+    if number and ROADMAP in changed and not re.search(re.escape(mark) + r"(?!\d)", roadmap_added):
         errors.append(f"the diff of {ROADMAP} adds no \"{mark}\". Mark the roadmap item before the Gitar pass (D-822)")
     return errors
 

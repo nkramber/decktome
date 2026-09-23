@@ -14,6 +14,16 @@ Correction: the skeleton of `.claude/skills/pr-review/references/review-record.m
 
 Regression check: `test_a_filled_skeleton_passes_the_reference_check` in `docs/tools/test_review_gate.py` fills the skeleton with the number 212. It runs `ref_check.check` against the real registers. It failed on the old title, and it passes on the new title. The tool tests pass, and `make ste-check` and `make ref-check` give no finding.
 
+## P2-2: The roadmap mark accepts a longer pull request number
+
+Result: full merit.
+
+Evidence: `check_pr` with the number 212 and the roadmap text `✅ merged as #2120` gave no mark error on `f500798`.
+
+Correction: `docs/tools/pr_check.py` now needs a non-digit, or the end of the text, after the number of the mark (D-822).
+
+Regression check: `test_the_mark_of_a_longer_number_fails` tries `#2120` with and without a period, and `#21`. The two `#2120` cases failed on `f500798`, and each case passes now. `test_the_mark_at_the_end_of_the_text_passes` covers the mark at the end of the text.
+
 ## New ids
 
 None.

@@ -163,6 +163,18 @@ class PullRequestContract(unittest.TestCase):
                              lambda sha: True, number=212, roadmap_added="**PR-63: A gate.** ✅ merged as #212.")
         self.assertFalse(any("merged as" in e for e in errors), errors)
 
+    def test_the_mark_of_a_longer_number_fails(self):
+        for text in ("✅ merged as #2120.", "✅ merged as #2120", "✅ merged as #21"):
+            with self.subTest(text=text):
+                errors = pc.check_pr("PR-63: a gate", body(), "nkramber", "pr60-example", CHANGED, exists,
+                                     lambda sha: True, number=212, roadmap_added=text)
+                self.assertTrue(any("merged as #212" in e for e in errors), errors)
+
+    def test_the_mark_at_the_end_of_the_text_passes(self):
+        errors = pc.check_pr("PR-63: a gate", body(), "nkramber", "pr60-example", CHANGED, exists,
+                             lambda sha: True, number=212, roadmap_added="✅ merged as #212")
+        self.assertFalse(any("merged as" in e for e in errors), errors)
+
     def test_a_draft_with_no_number_skips_the_merge_mark(self):
         errors = pc.check_pr("PR-63: a gate", body(), "nkramber", "pr60-example", CHANGED, exists,
                              lambda sha: True, number=None, roadmap_added="🔧 built")
