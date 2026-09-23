@@ -34,7 +34,7 @@ Author provider: Claude Code
 
 **The checks.** `go test ./...` passed on `433d055`. `make verify` passed on `0e9f231`, exit 0, with Node 22.23.2 on the PATH.
 
-**The review.** Gitar approved `1df2e1e` with no finding and no thread. Codex approves effective head `1df2e1e`, with no open finding. `make verify` passed with Node 22.23.2. The current `review-gate` waits for this record to reach the branch. Then the owner asked for D-836 in `fd55cb2`. Gitar approved `fd55cb2` with no finding and no thread, and a new Codex review reads it.
+**The review.** Gitar approved effective head `fd55cb2` with no finding and no open thread. Codex approves effective head `fd55cb2`, with no open finding. `PATH=/Users/nate/.nvm/versions/node/v22.23.2/bin:$PATH make verify` passed on `8fb1fe1`. The current `review-gate` failed because the earlier review record named a stale head. The new record is in this push. Read the fresh `review-gate` result before the owner merge.
 
 **What waits on the owner.**
 
