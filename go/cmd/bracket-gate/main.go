@@ -271,6 +271,7 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 	// The shortlist reads the top-list rate, as the app does (F-129, D-706).
 	req := candidates.Request{
 		MetaBoost:          scorer.MetaBoost(format),
+		CommanderRate:      scorer.CommanderRate(commanderIDs...),
 		Format:             format,
 		Colors:             colors,
 		Theme:              p.Theme,

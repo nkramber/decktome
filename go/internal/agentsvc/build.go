@@ -240,6 +240,7 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 	}
 	req := candidates.Request{
 		MetaBoost:          s.metaBoost(format),
+		CommanderRate:      s.commanderRate(commanderIDs),
 		Format:             format,
 		Colors:             colors,
 		Theme:              slots.GetTheme(),
@@ -1018,6 +1019,15 @@ func (s *Server) metaBoost(format mtgv1.FormatId) func(string) float64 {
 		return nil
 	}
 	return s.scorer.MetaBoost(format)
+}
+
+// commanderRate answers the card rates of the commander in its TopDeck
+// lists, nil with no model or no row (D-839).
+func (s *Server) commanderRate(ids []string) func(string) float64 {
+	if s.scorer == nil {
+		return nil
+	}
+	return s.scorer.CommanderRate(ids...)
 }
 
 // commanderSignal answers the cEDH signal of the quality model, nil

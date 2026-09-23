@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-23 correction pass 222 (PR-67, D-839): the judge reads a typal bracket 5 deck as bracket 4 for its theme filler. It reads a top-cut list of the same commander as bracket 5. A bracket 5 shortlist now reads the card rate of its commander in the TopDeck lists. Changes: PR-67, F-166.
+
 2026-09-23 correction pass 221 (PR-66, D-838): the owner paused the required Gitar review, and asked for a flag of `make codex-review` that skips the Gitar pass. Changes: PR-66.
 
 2026-09-23 correction pass 220 (PR-65, D-837): the owner asked that a commit of documents alone keep a green `review-gate` green. The owner chose this rule over the roadmap clause of D-822. Changes: PR-65.
@@ -497,7 +499,7 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-163 | **The collection page named ManaBox alone, and the server reads Moxfield too.** The server reads a Moxfield CSV since #123 (D-647). `collection-page.tsx` named ManaBox alone in its header, its card, and its empty state. The `BAD_ROW` label named a ManaBox row, and the Moxfield and Arena parsers write it too. Each web upload stored `IMPORT_SOURCE_UNSPECIFIED`, because the import stored the source of the request and not the detected one. So no screen named the format the server read. Found 2026-09-21. | ✅ fixed by #205 (D-796). The page names the three formats. The import result and each upload row name the detected format, and `TestImportDetectsTheFormat` reads it in the answer and in the store. |
 | F-164 | **The card art stays empty after a cold start, and only a reload brings it.** The owner read this on `decktome.com` on 2026-09-22. `go/cmd/api/main.go` listens before the card snapshot loads, so `cardsvc` answers Unavailable until the first index lands. That state holds about 90 seconds, and Cloud Run runs `mtg-api` with no minimum instance. No query of the web app retries (`web/apps/web/src/lib/query-client.ts`), and each card query keeps its data forever. So one failed call left blank tiles on the deck view, the binder, and the card options. | ✅ fixed by #207 (D-801). Each card query retries for 87 seconds while the API reads Unavailable, and each card RPC waits 5 seconds for the first index. |
 | F-165 | **The mana pass leaves a bracket 5 deck of five colors under its fixing floor, with basic lands left to trade.** Bracket gate run 9 built Najeela with 16 fixing lands against a floor of 21. It also holds 5 lands that enter tapped, and the band allows 2. The deck still holds 9 basic lands, so `fillFixing` in `go/internal/generate/manapass.go` had a basic land to trade. UNVERIFIED cause: a pool short of fixing lands, or a guard of `swapOne` that refuses each swap. Found 2026-09-23 (D-805). **2026-09-23 correction:** a free replay refuted the guard. The pool of 338 cards held 16 fixing lands, and the deck held all 16. The total cut of 300 dropped 11 of the 20 mana lands of the land cap, at a score of 0.1497. Only Forest had a spare copy, so the fill reached 20 of 21 with a full pool (D-835). | ✅ merged as #214 (D-835). The total cut keeps the mana half, and the fill trades a tapped land that fixes no color. The replay reads 21 of 21, and bracket gate run 10 reads 24. |
-| F-166 | **A typal Commander request at bracket 5 reads bracket 4, because the judge weighs its theme cards against a pure cEDH line.** Both judge reads of bracket gate run 9 put Najeela at bracket 4. Each read names warrior filler, such as Jazal Goldmane and Pact of the Serpent. The deck holds 5 tutors, 12 fast mana, and 13 Game Changers, over each floor of D-704. Spellbook finds no combo in it, and the Najeela decks of runs 7 and 8 held Thassa's Oracle. Found 2026-09-23 (D-805). | 🔧 open. A lever must weigh the theme of the request against the power of D-693, and it needs a plan first. |
+| F-166 | **A typal Commander request at bracket 5 reads bracket 4, because the judge weighs its theme cards against a pure cEDH line.** Both judge reads of bracket gate run 9 put Najeela at bracket 4. Each read names warrior filler, such as Jazal Goldmane and Pact of the Serpent. The deck holds 5 tutors, 12 fast mana, and 13 Game Changers, over each floor of D-704. Spellbook finds no combo in it, and the Najeela decks of runs 7 and 8 held Thassa's Oracle. Found 2026-09-23 (D-805). | ✅ closes with PR-67 (D-839). A bracket 5 shortlist reads the card rate of its commander. Bracket gate run 11 reads the Najeela deck at bracket 5 in two judge lanes. |
 | F-167 | **The collection page shows two scrollbars, and the binder toolbar scrolls away.** `<main>` of `web/apps/web/src/app/layout.tsx` scrolls the page (D-364). `web/apps/web/src/features/collection/binder-grid.tsx` adds a second scroll box of `max-h-[75vh]`. The reader scrolls the page to reach the binder, then scrolls the box. The search and the filters leave the screen, and no control returns the reader to them. The owner named it on 2026-09-22 (D-806). | ✅ fixed by #211 (D-806 to D-809). The binder grid reads the scroll of `<main>`, its title and search stay pinned, and a button returns the reader to the binder top. |
 | F-158 | **Two snapshot tests of PR-57 never ran.** `make themes-check` names each snapshot test by a `-run` pattern. The pattern held `TestTypalLandsReachATypalShortlist` from PR-55, and PR-57 added `TestTypalCardsReachATypalShortlist` and did not extend it. A `-run` pattern is an unanchored regular expression, and the land name never matches the card name. So the card test of PR-57 ran in no target. It also skips under `make verify`, because the verify workflow holds no card snapshot. Found 2026-09-20 by the checks of PR-58. | ✅ fixed by PR-58. The pattern reads `ReachATypalShortlist` now, which matches all three snapshot shortlist tests. A run of `make themes-check` reads five tests in place of three. |
 | F-30 | **No signal of deck quality exists.** The pool ranks on theme fit and EDHREC popularity, and the bracket drops Game Changers under bracket 3 and nothing else. A bracket 5 request got the three most popular legends whose text held "you" and "can" (session t8o1nGGquK6UdTQkfY3V, D-411, 2026-09-01). | ✅ PR-14B merged 2026-09-03 (#58, D-470 to D-493), and D-479 answered OQ-54. F-53 and F-94 carry the judge bar. The row read 🔧 until 2026-09-20. |
@@ -1979,6 +1981,21 @@ Gate:
 - `make verify` passes.
 > *In plain English:* the first review bot no longer holds up a change. The session starts the second review with a new flag. When the first bot still writes a comment, the session stops and tells the owner. To undo the pause, delete one file and the marked notes.
 
+**PR-67: A bracket 5 shortlist reads the card rate of its commander (F-166, D-839).** ✅ merged as #217. The mark comes before any review (D-822).
+The judge read the Najeela deck of bracket gate runs 9 and 10 at bracket 4, for its warrior filler. The rate of the format can not tell which cards a commander plays, and it counts no land. `docs/reference/f166-commander-rate-2026-09-23.md` holds each measurement.
+
+- **The rate.** The fit reads each TopDeck list before the tier cap. A commander or a pair with 10 lists or more gets the share of its lists that hold each card, lands included. A card under 0.1 has no row.
+- **The shortlist.** A bracket 5 Commander request with a rate ranks on it first. The theme adds 0.05 times its score, the owner choice after a free sweep. A card the lists of the commander play stays on the list with the signal "commander rate".
+- **What stays.** Brackets 1 to 4 and the other formats read no commander rate. A commander with no row, and a pair with no row of its own, rank as before. The deployed app reads the rates after the first meta job that runs the new fit.
+
+Gate:
+
+- `go/internal/quality/commander_rates_test.go` covers the list floor, the rate floor, the basic lands, the other sources, the pair key, and the round trip.
+- `go/internal/candidates/commander_rate_test.go` covers the shortlist: bracket 5 keeps an off-theme card of the commander lists over a theme card. Bracket 4, no bracket, and Standard read no rate. The test fails with the lever off.
+- Bracket gate run 11 reads prompts 13 to 15 at bracket 5, 3 of 3 in each of two judge lanes, for $0.3356. Each deck sits in every band.
+- `make verify` passes.
+> *In plain English:* a request for a top-power deck with a theme got theme cards that real tournament decks never play. The builder now starts from the cards that winning decks of the same commander play, and the theme adds a little. Other power levels do not change.
+
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
 
@@ -2318,6 +2335,8 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 55. **PR-65** a commit of documents alone keeps a green `review-gate` green (D-837). No paid target ran.
 
 56. **PR-66** the Gitar requirement pauses, and `make codex-review` takes `--skip-gitar-review` (D-838). No paid target ran.
+
+57. **PR-67** a bracket 5 shortlist reads the card rate of its commander (F-166, D-839). The scratch rejudge, bracket gate run 11, and its second lane cost $0.3957.
 
 ## 9. Open questions
 

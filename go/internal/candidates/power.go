@@ -73,6 +73,27 @@ func powerScanOf(idx *cards.Index, req Request) powerScan {
 	return powerScan{on: true, weight: rate.Weight, rate: rate, of: profile.PowerOf(idx.Tags())}
 }
 
+// DefaultThemeBoost is the weight of the theme score beside the commander
+// rate of a bracket 5 request (D-839). In the free sweep of F-166, every
+// boost from 0.02 to 0.5 kept the same cards of the commander lists, and
+// the boost moved the Najeela warriors on the list from 40 to 105. The
+// owner chose 0.05, which kept 47.
+const DefaultThemeBoost = 0.05
+
+// commanderRateOf answers the commander rate a request reads and the
+// weight of its theme. A bracket 5 Commander request with a rate reads
+// it, because the TopDeck lists are cEDH lists. Every other request
+// reads none (D-839).
+func commanderRateOf(req Request) (func(string) float64, float64) {
+	if req.CommanderRate == nil || req.Format != mtgv1.FormatId_FORMAT_ID_COMMANDER || req.Bracket < 5 {
+		return nil, 0
+	}
+	if req.ThemeBoost > 0 {
+		return req.CommanderRate, req.ThemeBoost
+	}
+	return req.CommanderRate, DefaultThemeBoost
+}
+
 // FinisherTarget is the finisher count a Commander bracket asks for
 // (D-726). Brackets 1 to 4 read the median of the precons since 2023 and
 // of the EDHREC average decks. Bracket 5 reads the median of the TopDeck

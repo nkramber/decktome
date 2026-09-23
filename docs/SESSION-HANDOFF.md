@@ -6,35 +6,37 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-23e)
+## RESUME HERE (2026-09-23f)
 
-**Pull request #216 pauses the required Gitar review (D-838).**
+**Pull request #217 makes a bracket 5 shortlist read the card rate of its commander (F-166, D-839).**
 
 Author provider: Claude Code
 
 **The next step.** Ask the owner for the merge with the summary of four sections (D-836). Pending the owner merge.
 
-**The base.** `main` is `8e492a7`, from #215. This session read no Cloud Build of `8e492a7`.
+**The base.** `main` is `f00a2af`, from #216. Cloud Build `11533acf` of `deploy-api` built `f00a2af`, and it ended SUCCESS at 18:24:15 UTC.
 
-**Why this pull request exists.** The owner asked to pause the required Gitar review until a later pull request ends the pause. The change must be easy to reverse.
+**Why this pull request exists.** The judge read the Najeela deck of bracket gate runs 9 and 10 at bracket 4, for its warrior filler. A scratch rejudge read a top-cut Najeela list at bracket 5 twice, for $0.0601. So the builder missed the line of the bracket, and the judge did not.
 
 **What this pull request holds.**
 
-- `docs/reference/gitar-pause.md` holds the rules of the pause and the steps of its end.
-- One pause note, with the bold text `Gitar pause (D-838).`, in `CLAUDE.md`, `AGENTS.md`, four skill files, three reference documents, and the template of a pull request.
-- `make codex-review PR=<n> -- --skip-gitar-review` reads no Gitar pass. It refuses an open review thread or an issue on the Gitar dashboard alone. The flag stays after the pause.
-- `scripts/feedback-review.sh` reads the pause file. While it exists, an open thread or a dashboard issue stops the cycle before the fixer, and a comment tells the owner.
-- New tests: 12 in `docs/tools/test_codex_review.py`, 2 in `docs/tools/test_gitar_pause.py`, and 1 with 6 cases in `go/internal/triage/loop_test.go`.
+- The fit reads each TopDeck list before the tier cap. It stores the card rates of each commander or pair with 10 lists or more, lands included.
+- A bracket 5 Commander shortlist ranks on that rate first, and the theme adds 0.05 times its score. Other brackets and formats do not change.
+- The app, the bracket gate, the deck gate, and the revise gate pass the rate.
+- New tests: 3 in `go/internal/quality/commander_rates_test.go` and 2 in `go/internal/candidates/commander_rate_test.go`.
+- `docs/reference/f166-commander-rate-2026-09-23.md` holds each measurement.
 
-**The checks.** `make verify` passed, exit 0, with Node 22.23.2 on the PATH. The 4 new tests of the flag fail on `8e492a7`, because it has no `check_threads`. `test_gitar_pause.py` fails with the pause file removed. `make -n` shows the flag passed on, and an unknown flag exits 2 before the review.
+**The checks.** `make verify` passed on `1cfc313`, exit 0, with Node 22.23.2 on the PATH. `TestCommanderRateLeadsABracketFiveList` fails with the lever off. Bracket gate run 11 read prompts 13 to 15 at bracket 5, 3 of 3 in each of two judge lanes, for $0.3356.
 
-**The review.** Gitar: the pause applies. Codex review: `d04d5ef` reads Ready for owner merge. P2-1 is fixed, and no finding stays open.
+**The review.** Gitar pause (D-838). The pause needs no Gitar review. Codex review: `d7f103e` reads Ready for owner merge. No finding stays open.
 
 **What waits on the owner.**
 
 - The merge of this pull request, after the summary of four sections (D-836).
+- The deployed app reads the rates after the first meta job that runs the new fit. Read one deployed bracket 5 session after that job.
+- The land cap drops four lands that half the Najeela lists play. This pull request does not change the land cap.
 - The end of the Gitar pause, in a later pull request (D-838).
-- F-166 and F-49, as later items.
+- F-49, as a later item.
 - A whole deck gate run of prompt version 16 and the fixing floor of F-33. It is a paid target, so ask the owner first.
 - UNVERIFIED: the Moxfield import of the deck list.
 - D-794 makes the app less strict than the Wizards infographic at Bracket 2.
@@ -96,8 +98,9 @@ Twenty-two things a fresh session gets wrong without this file.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
 - The feedback store holds 3 verdicts on 2026-09-09, and every one predates the snapshot of D-635. `make feedback-list VERDICT=` reads both verdicts now (F-87). A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- The deployed API, read 2026-09-23: Cloud Build `6c38cea5` of `deploy-api` built `11a30e7`, from #214, and ended SUCCESS at 16:40:48 UTC. The newest build of `deploy-web` is `dc8ed000`, of `503dffd`, from #211, and it ended SUCCESS at 02:45:32 UTC on 2026-09-23. The service holds no minimum instance, so a cold start reads Unavailable for about 90 seconds (F-164).
+- The deployed API, read 2026-09-23: Cloud Build `11533acf` of `deploy-api` built `f00a2af`, from #216, and ended SUCCESS at 18:24:15 UTC. The newest build of `deploy-web` is `dc8ed000`, of `503dffd`, from #211, and it ended SUCCESS at 02:45:32 UTC on 2026-09-23. The service holds no minimum instance, so a cold start reads Unavailable for about 90 seconds (F-164).
 - The deployed web app, read 2026-09-20 at 22:45 UTC: the release of #196, Hosting version `60c80b8c4ad2a689` of 22:44:09 UTC. `index.html` loads `assets/index-Fi2SZrwg.js`. The deck page chunk `deck-view-BQeBlu0i.js` holds the power counts, and `use-cards-DNxWsKmD.js` holds every label. The release before it, `b786ceb7f89bc4fc` of 2026-09-13, came from #158.
+- The local quality model is `20260923T202806Z`, from `make meta-refresh` on `1089438` on 2026-09-23. It holds the commander rates of 231 commanders (D-839). The deployed model holds none until a meta job runs the new fit.
 - The deployed quality model, read 2026-09-14: `20260914T070904Z`, from the meta job that started at 06:02 UTC and ended at 07:13 UTC. It fits 43,182 lists and 1,517 commanders. Its Commander fit reads `immaterial` 239 and accuracy 0.554, and its Standard fit reads a cross share of 0.667. The job read the weekly EDHREC pass, 2,077 pages and 4 lists. The mtgo source read 3,094 lists with 58 fetch errors. The mtggoldfish source read 155 lists with no failure. The mtgjson source read no list, because its deck list version differs from the stored table, as on 2026-09-12 and 2026-09-13.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
 - Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 19, revise is run 9. The generate prompt reads version 16 now, and run 19 read version 12. Run 34 of 2026-09-21 is the newest whole deck gate run. It rejudges the summaries of run 31 (D-789), and `make eval-check` reads it as PASS against run 19. Run 52 is the newest whole questions run, and it reads PASS. Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 23 is its newest run.
@@ -106,8 +109,8 @@ Twenty-two things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **The Gitar requirement pauses, and `make codex-review` takes `--skip-gitar-review`** (D-838). This pull request is #216.
-2. **The open items of the roadmap.** Two register rows read 🔧: F-49 and F-166. F-49 waits for the owner, and F-166 needs a plan. OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 and 10 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. No whole deck gate run measured them yet.
+1. **A bracket 5 shortlist reads the card rate of its commander** (F-166, D-839). This pull request is #217.
+2. **The open items of the roadmap.** One register row reads 🔧: F-49, and it waits for the owner. F-166 reads ✅ with this pull request (D-839). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
 3. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It waits, because the ten sessions of the audit ran before #184 and before D-749.
 4. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git.
 5. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide". Session `z1hshyY6Npig1FN2NuV7` named its commander, so it showed no such row.
@@ -129,10 +132,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-09-23c: the fixing fill of Najeela, F-165
-
-**The owner started F-165 from the transitional prompt of #213.** The session replayed the Najeela shortlist of bracket gate run 9 for free, and the replay matched the pool of 338 cards. The owner chose the cut inside the total, the trade of a tapped land, and one paid run of prompt 15 (D-835). Run 10 cost $0.1083 and read 24 fixing lands.
-
 ### 2026-09-23d: the review gate of documents alone, PR-65
 
 **The owner started this item from the transitional prompt of #214.** The session read the deploy of `11a30e7` first, and it ended SUCCESS. The session quoted D-822 against the new rule, and the owner chose the new rule. The owner kept the eval files in the set of D-814.
@@ -141,6 +140,10 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner asked to pause the required Gitar review, and asked for a flag of `make codex-review` that skips the Gitar pass** (D-838). The owner asked for a change that is easy to reverse, and for an alert at each Gitar finding. The session asked two questions. The owner kept the thread check of the flag, over a flag that skips each check. The owner chose a stop of the feedback cycle on a Gitar finding, over no change of the script. The Makefile of make 3.81 reads the flag after `--` as a goal, so a no-op rule passes it on.
 
+### 2026-09-23f: the commander rate of bracket 5, PR-67
+
+**The owner started F-166 from the transitional prompt of #216.** The session read the deploy of `f00a2af` first, and it ended SUCCESS. A free count and a $0.0601 rejudge showed that the judge reads a top-cut Najeela list at bracket 5. The owner chose a rate for each commander, 10 lists, bracket 5 alone, and a theme boost of 0.05 (D-839). The owner chose a real fit through `make meta-refresh` over a scratch model, and it took 97 minutes.
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-23d, the records of 2026-08-31 to 2026-09-23b, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-23e, the records of 2026-08-31 to 2026-09-23c, and 104 more sections, word for word. Read it for the detail behind a decision.

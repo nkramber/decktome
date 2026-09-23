@@ -125,6 +125,18 @@ type FormatModel struct {
 	// Commanders holds the commander signals by Oracle id, Commander
 	// alone. A pair is keyed by both ids in order with a plus between.
 	Commanders map[string]CommanderSignal `json:"commanders,omitempty"`
+	// CommanderRates holds the card rates of each commander or pair with
+	// MinCommanderLists TopDeck lists or more, keyed as Commanders
+	// (D-839). Commander alone.
+	CommanderRates map[string]CommanderRate `json:"commander_rates,omitempty"`
+}
+
+// CommanderRate is the share of the TopDeck lists of one commander or
+// pair that hold each card, lands included and basic lands left out. A
+// card under CommanderRateFloor has no row (D-839).
+type CommanderRate struct {
+	Lists int                `json:"lists"`
+	Cards map[string]float64 `json:"cards"`
 }
 
 // Holdout is the gate measure of a format (roadmap PR-14B): a great
@@ -259,6 +271,17 @@ func CommanderKey(ids ...string) string {
 		out += id
 	}
 	return out
+}
+
+// CommanderRateOf answers the card rates of a commander or a pair. A pair
+// reads its own row alone, because each partner plays another deck with
+// each other partner (D-839).
+func (fm *FormatModel) CommanderRateOf(ids ...string) (CommanderRate, bool) {
+	if fm == nil || len(ids) == 0 {
+		return CommanderRate{}, false
+	}
+	r, ok := fm.CommanderRates[CommanderKey(ids...)]
+	return r, ok
 }
 
 // Commander answers the signal of a commander or a pair. A pair with

@@ -1,0 +1,8 @@
+{"suite":"bracket-judge","run_id":"pr14a-bracket-gate-run11-judge2","date":"2026-09-23","commit":"a2c8090","roles":{"judge":{"provider":"anthropic","model":"claude-opus-5","effort":"medium"}},"snapshot":"2026-09-04","prompts":{"bracket_judge":3,"generate":16},"versions":{"source":"pr14a-bracket-gate-run11.md"},"calls":3,"cost_usd":0.038943,"seconds":17.998742708,"verdict":"PASS"}
+{"item":"13","metric":"judged","value":1,"kind":"gate"}
+{"item":"13","metric":"judge_agrees","value":1,"kind":"info","detail":"built for 5, judged 5"}
+{"item":"14","metric":"judged","value":1,"kind":"gate"}
+{"item":"14","metric":"judge_agrees","value":1,"kind":"info","detail":"built for 5, judged 5"}
+{"item":"15","metric":"judged","value":1,"kind":"gate"}
+{"item":"15","metric":"judge_agrees","value":1,"kind":"info","detail":"built for 5, judged 5"}
+{"item":"suite","metric":"judge_agreement","value":100,"kind":"gate","detail":"3 of 3, the bar is 80"}
