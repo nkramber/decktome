@@ -27,7 +27,7 @@ A pull request of documents alone can merge with no Codex review (D-812). Apply 
 - Each check of the pull request is green, except `review-gate`.
 - The completion gate of the `one-pr-one-session` skill holds.
 
-The documentation set holds `docs/`, `.claude/`, `CLAUDE.md`, `AGENTS.md`, `README.md`, and `.github/pull_request_template.md`. These paths are not in it: `docs/tools/`, `.claude/hooks/`, `.claude/settings.json`, `.claude/settings.local.json`, and each workflow. A change of a decision row does not stop the label.
+The documentation set holds `docs/`, `.claude/`, `CLAUDE.md`, `AGENTS.md`, `README.md`, and `.github/pull_request_template.md`. These paths are not in it: `docs/tools/`, `.claude/hooks/`, `.claude/settings.json`, the local settings file of the harness, and each workflow. A change of a decision row does not stop the label.
 
 Apply the label with this command:
 

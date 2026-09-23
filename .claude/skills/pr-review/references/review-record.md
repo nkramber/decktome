@@ -27,12 +27,13 @@ The effective head is the newest commit that changes a path outside the metadata
 
 A commit that changes those paths alone is a metadata commit. It does not move the effective head. So the commit of the record does not make the record stale, and a later hand-off commit of the author does not either. A commit that changes the record of another pull request moves the effective head.
 
-Record the effective head, and not the tip of the branch. Read it with this command, where `<base>` is `origin/main`:
+A merge commit always moves the effective head, because it brings new code into the branch.
+
+Record the effective head, and not the tip of the branch. Read it with the rule of the check itself, so the two never disagree:
 
 ```bash
-git log -1 --format=%H "$(git merge-base <base> HEAD)..HEAD" -- . \
-  ':(exclude)docs/reviews/pr-<number>.md' ':(exclude)docs/reviews/pr-<number>-response.md' \
-  ':(exclude)docs/SESSION-HANDOFF.md' ':(exclude)docs/reference/session-handoff-archive.md'
+git fetch origin main
+python3 docs/tools/review_gate.py --effective-head <number>
 ```
 
 ## The skeleton

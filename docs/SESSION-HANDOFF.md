@@ -30,7 +30,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passed on this machine, exit 0, with Node 22.23.2 on the PATH. It ran 123 Python tests, 40 of them new. A live read of both rules against the history of #211 gave the expected result for each case.
 
-**The review.** Gitar waits for its first review of the head. The Codex review follows the Gitar pass (D-821).
+**The review.** Gitar reviewed `2914524` and asked for changes, with two findings. Both had merit. A clean merge commit listed no file, so the gate skipped it, and the documented `git log` rule returned it. The fix lets a merge move the effective head and adds `--effective-head`. The `gather` test of `ci_skip.py` called the real `gh`, and the fix stubs it. CI also failed `ref-check` on the local settings file that git ignores, and the skill now names it without backticks. The Codex review follows a current Gitar pass (D-821).
 
 **The merge of this pull request (D-815).** The check can not report on this pull request, because `pull_request_target` reads `main`. When the pull request is ready, this session sets the ruleset to `disabled`. After the owner's merge message, it sets the ruleset to `active` again and reads it back. Only then does it write the transitional prompt.
 

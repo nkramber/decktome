@@ -195,6 +195,25 @@ class GitFacts(unittest.TestCase):
         self.assertEqual(status, 1, out)
         self.assertIn("`go/a.go`", out)
 
+    def test_a_merge_of_main_after_the_review_moves_the_effective_head(self):
+        code = self.commit({"go/a.go": "package a\n"}, "code")
+        self.commit({rg.record_path(N): record(head=code)}, "review")
+        self.git("checkout", "-q", "main")
+        self.commit({"go/c.go": "package c\n"}, "main moves")
+        self.git("checkout", "-q", "work")
+        self.git("merge", "-q", "--no-edit", "main")
+        merge = self.git("rev-parse", "HEAD")
+        status, out = self.gate()
+        self.assertEqual(status, 1, out)
+        self.assertIn(f"effective head is `{merge}`", out)
+
+    def test_the_effective_head_mode_prints_the_rule_of_the_check(self):
+        code = self.commit({"go/a.go": "package a\n"}, "code")
+        self.commit({"docs/SESSION-HANDOFF.md": "state\n"}, "hand-off")
+        out = subprocess.run([sys.executable, os.path.join(HERE, "review_gate.py"), "--effective-head", str(N),
+                              "--base", self.base, "--repo", self.repo], capture_output=True, text=True)
+        self.assertEqual((out.returncode, out.stdout.strip()), (0, code), out.stderr)
+
     def test_the_label_passes_documents(self):
         self.commit({"docs/decisions.md": "| D-1 |\n"}, "docs")
         status, out = self.gate(labels=[rg.LABEL])

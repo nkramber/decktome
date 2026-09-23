@@ -70,7 +70,10 @@ def decide(pr_paths, push_paths, code_pr, code_run, previous_run):
 
 
 def run(repo, *args):
-    out = subprocess.run(list(args), cwd=repo, capture_output=True, text=True)
+    try:
+        out = subprocess.run(list(args), cwd=repo, capture_output=True, text=True)
+    except OSError:
+        return None
     return out.stdout if out.returncode == 0 else None
 
 

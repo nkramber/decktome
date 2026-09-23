@@ -107,8 +107,19 @@ class LastCodeCommit(unittest.TestCase):
         self.commit("go/a.go", "code")
         before = self.git("rev-parse", "HEAD")
         head = self.commit("docs/a.md", "docs")
-        facts = cs.gather(self.repo, "o/r", before, head, "synchronize", before)
+        calls = []
+        real = cs.gh_json
+        cs.gh_json = lambda repo, path, jq: calls.append(path)
+        try:
+            facts = cs.gather(self.repo, "o/r", before, head, "synchronize", before)
+        finally:
+            cs.gh_json = real
         self.assertEqual(facts[1], ["docs/a.md"])
+        self.assertEqual(facts[4], None)
+        self.assertTrue(calls, "gather reads the runs through gh_json alone")
+
+    def test_a_missing_binary_is_an_unknown_fact(self):
+        self.assertIsNone(cs.run(self.repo, "decktome-no-such-binary"))
 
 
 class Workflow(unittest.TestCase):

@@ -2,6 +2,8 @@
 """The review gate of every pull request (D-810 to D-817).
 
   review_gate.py --event FILE --head REF [--repo DIR]
+  review_gate.py --effective-head NUMBER [--base REF] [--head REF]
+      Print the effective head. A reviewer records this commit (D-813).
 
 A pull request passes in one of three ways:
 
@@ -39,6 +41,10 @@ DEPENDABOT_EMAIL = "49699333+dependabot[bot]@users.noreply.github.com"
 ELIGIBLE = ("docs/", ".claude/", "CLAUDE.md", "AGENTS.md", "README.md", ".github/pull_request_template.md")
 REFUSED = ("docs/tools/", ".claude/hooks/", ".claude/settings.json", ".claude/settings.local.json")
 
+# git lists no path for a clean merge. A merge brings new code into the
+# branch, so gather gives it this path, which no metadata set holds.
+MERGE = "(merge commit)"
+
 HEAD_FIELD = re.compile(r"^\s*-\s*Head:\s*`([0-9a-fA-F]+)`")
 BOLD = re.compile(r"\*\*([^*]+?)\*\*")
 
@@ -63,7 +69,8 @@ def eligible(path):
 def effective_head(commits, number):
     """The newest commit that changes a path outside the metadata set, or None.
 
-    commits holds (sha, files) pairs, oldest first.
+    commits holds (sha, files) pairs, oldest first. gather gives a merge
+    commit the path MERGE, so a merge always moves the effective head.
     """
     metadata = metadata_paths(number)
     for sha, files in reversed(commits):
@@ -170,10 +177,14 @@ def gather(repo, base, head):
     # --no-renames: a code file that moves into docs/ still counts as a change of code.
     files = [p for p in git(repo, "diff", "--name-only", "--no-renames", merge_base, head).stdout.splitlines() if p]
     commits, authors = [], set()
-    for line in git(repo, "log", "--reverse", "--format=%H %ae", f"{merge_base}..{head}").stdout.splitlines():
-        sha, email = line.split(" ", 1)
+    for line in git(repo, "log", "--reverse", "--format=%H %P%x09%ae", f"{merge_base}..{head}").stdout.splitlines():
+        ids, email = line.split("\t", 1)
+        sha, *parents = ids.split()
         changed = git(repo, "show", "--no-renames", "--name-only", "--format=", sha).stdout.splitlines()
-        commits.append((sha, [p for p in changed if p]))
+        files = [p for p in changed if p]
+        if len(parents) > 1:
+            files.append(MERGE)
+        commits.append((sha, files))
         authors.add(email)
 
     def read_record(path):
@@ -185,10 +196,20 @@ def gather(repo, base, head):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--event", required=True, help="the pull_request_target event file")
-    parser.add_argument("--head", required=True, help="the ref that holds the head of the pull request")
+    parser.add_argument("--event", help="the pull_request_target event file")
+    parser.add_argument("--head", default="HEAD", help="the ref that holds the head of the pull request")
     parser.add_argument("--repo", default=ROOT)
+    parser.add_argument("--effective-head", type=int, metavar="NUMBER", help="print the effective head of this pull request")
+    parser.add_argument("--base", default="origin/main", help="the base ref of --effective-head")
     args = parser.parse_args()
+    if args.effective_head is not None:
+        _, commits, _, _ = gather(args.repo, args.base, args.head)
+        head = effective_head(commits, args.effective_head)
+        print(head or "none: every commit changes the metadata set alone")
+        return 0 if head else 1
+    if not args.event:
+        print("review_gate: pass --event, or --effective-head.", file=sys.stderr)
+        return 2
     with open(args.event, encoding="utf-8") as handle:
         pr = json.load(handle).get("pull_request")
     if not pr:
