@@ -28,7 +28,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passed on `7ecd1a0`, exit 0, with Node 22.23.2 on the PATH. `make ruleset-check`, `make ste-check`, `make ref-check`, and `make context-budget` passed.
 
-**The review.** Gitar found two faults on `5999318`, and approved `a3b6c99`. The first Codex review found P2-1, because the thread query read one page alone. The author added pagination and a later-page test in `7ecd1a0`. The review record approves this effective head. Gitar passes, and no thread remains open. The review-gate check needs a new run after the record push.
+**The review.** Gitar found two faults on `5999318`, and approved `a3b6c99`. The first Codex review found P2-1, because the thread query read one page alone. The author added pagination and a later-page test in `7ecd1a0`. The review record approves this effective head. Gitar passes, and no thread remains open. The review-gate check passed on `2703ce3`. Gitar and `pr-contract` pass. The verify workflow passed its required jobs and skipped its six heavy jobs for this documentation-only push.
 
 **The settings.** The owner approved the change, and the session applied the ruleset file and the merge settings on 2026-09-23, before it opened this pull request (D-829). `make ruleset-check` then read no difference.
 
