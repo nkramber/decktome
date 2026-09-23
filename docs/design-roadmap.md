@@ -1962,7 +1962,7 @@ Gate:
 - `make verify` passes.
 > *In plain English:* until now, any edit after the second review, even one line of text, asked for that review again. After this change, an edit of documents alone keeps the approval. The first review bot still reads each edit, and a change of code still needs the second review.
 
-**PR-66: The Gitar requirement pauses, and `make codex-review` takes `--skip-gitar-review` (D-838).** MARK
+**PR-66: The Gitar requirement pauses, and `make codex-review` takes `--skip-gitar-review` (D-838).** ✅ merged as #216. The mark comes before any review (D-822).
 The owner paused the required Gitar review until a later pull request ends the pause. The owner asked for a change that is easy to reverse.
 
 - **The switch.** `docs/reference/gitar-pause.md` holds the rules and the steps of the end. Each rule document holds one pause note with the same bold text.

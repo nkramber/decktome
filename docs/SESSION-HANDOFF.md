@@ -8,11 +8,11 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-23e)
 
-**Pull request PRNUM pauses the required Gitar review (D-838).**
+**Pull request #216 pauses the required Gitar review (D-838).**
 
 Author provider: Claude Code
 
-**The next step.** Read the Gitar output one time, then `make codex-review PR=PRNUM -- --skip-gitar-review`. A Gitar finding stops the work for the owner. Then the merge question with the summary of four sections (D-836). Pending the owner merge.
+**The next step.** Read the Gitar output one time, then `make codex-review PR=216 -- --skip-gitar-review`. A Gitar finding stops the work for the owner. Then the merge question with the summary of four sections (D-836). Pending the owner merge.
 
 **The base.** `main` is `8e492a7`, from #215. This session read no Cloud Build of `8e492a7`.
 
@@ -28,7 +28,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passed, exit 0, with Node 22.23.2 on the PATH. The 4 new tests of the flag fail on `8e492a7`, because it has no `check_threads`. `test_gitar_pause.py` fails with the pause file removed. `make -n` shows the flag passed on, and an unknown flag exits 2 before the review.
 
-**The review.** Gitar: the Gitar pause. Codex review: pending, with `make codex-review PR=PRNUM -- --skip-gitar-review`.
+**The review.** Gitar: the Gitar pause. Codex review: pending, with `make codex-review PR=216 -- --skip-gitar-review`.
 
 **What waits on the owner.**
 
@@ -106,7 +106,7 @@ Twenty-two things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **The Gitar requirement pauses, and `make codex-review` takes `--skip-gitar-review`** (D-838). This pull request is PRNUM.
+1. **The Gitar requirement pauses, and `make codex-review` takes `--skip-gitar-review`** (D-838). This pull request is #216.
 2. **The open items of the roadmap.** Two register rows read 🔧: F-49 and F-166. F-49 waits for the owner, and F-166 needs a plan. OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 and 10 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. No whole deck gate run measured them yet.
 3. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It waits, because the ten sessions of the audit ran before #184 and before D-749.
 4. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git.
