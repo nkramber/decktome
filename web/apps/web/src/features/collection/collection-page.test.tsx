@@ -1,9 +1,9 @@
 import { Color } from "@mtg/api-client/mtg/v1/card_pb";
 import { BinderSort, ImportSource, UnresolvedReason } from "@mtg/api-client/mtg/v1/collection_pb";
-import { screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { axe } from "jest-axe";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useAppStore } from "../../lib/store";
 import { fakeUser, state } from "../../test-auth-state";
@@ -529,6 +529,71 @@ describe("the binder controls", () => {
     await renderAt("/collection");
     expect(await screen.findByText("Could not read the binder")).toBeInTheDocument();
     expect(screen.getByRole("alert")).toHaveTextContent("[unavailable] no store");
+  });
+});
+
+// The page is the one scroll area of the binder (D-806). jsdom lays out
+// nothing, so each test places the binder by hand: main scrolls 900
+// pixels, and the binder starts 100 pixels into the page content. The
+// virtualizer holds a move inside the scroll height, so main gets one.
+describe("the binder scroll", () => {
+  async function scrolledPage() {
+    useAppStore.setState({ collectionId: "c-old", poolMode: "owned_only" });
+    await renderAt("/collection");
+    await screen.findByTestId("binder-count");
+    const main = document.querySelector("main")!;
+    Object.defineProperty(main, "clientHeight", { configurable: true, value: 600 });
+    Object.defineProperty(main, "scrollHeight", { configurable: true, value: 20000 });
+    Object.defineProperty(main, "scrollTop", { configurable: true, value: 900 });
+    const binder = screen.getByRole("region", { name: "The binder" });
+    binder.getBoundingClientRect = () => ({ top: -800 }) as DOMRect;
+    const scrollTo = vi.spyOn(main, "scrollTo");
+    return { main, binder, scrollTo };
+  }
+
+  afterEach(() => {
+    delete (window as { matchMedia?: unknown }).matchMedia;
+  });
+
+  it("holds no scroll box of its own, and pins its title and search", async () => {
+    useAppStore.setState({ collectionId: "c-old", poolMode: "owned_only" });
+    await renderAt("/collection");
+    expect((await screen.findByTestId("binder-rows")).className).not.toMatch(/overflow|max-h/);
+    expect(screen.getByTestId("binder-bar")).toHaveClass("sticky", "top-0");
+    expect(within(screen.getByTestId("binder-bar")).getByRole("searchbox", { name: "Search the binder by card name" })).toBeInTheDocument();
+  });
+
+  it("shows the button one screen below the binder top, and moves the page and the focus there (D-808)", async () => {
+    const { main, scrollTo } = await scrolledPage();
+    expect(screen.queryByRole("button", { name: "Back to the binder top" })).not.toBeInTheDocument();
+    fireEvent.scroll(main);
+    const button = await screen.findByRole("button", { name: "Back to the binder top" });
+    await userEvent.setup().click(button);
+    expect(scrollTo).toHaveBeenCalledWith({ top: 100, behavior: "smooth" });
+    expect(screen.getByRole("heading", { name: "The binder" })).toHaveFocus();
+  });
+
+  it("jumps for a reader who asks for less motion", async () => {
+    Object.defineProperty(window, "matchMedia", { configurable: true, value: (q: string) => ({ matches: q === "(prefers-reduced-motion: reduce)" }) });
+    const { main, scrollTo } = await scrolledPage();
+    fireEvent.scroll(main);
+    await userEvent.setup().click(await screen.findByRole("button", { name: "Back to the binder top" }));
+    expect(scrollTo).toHaveBeenCalledWith({ top: 100, behavior: "auto" });
+  });
+
+  it("returns a reader below the binder top to it after a new filter", async () => {
+    const { scrollTo } = await scrolledPage();
+    await userEvent.setup().selectOptions(screen.getByRole("combobox", { name: "Filter by color" }), "R");
+    await waitFor(() => expect(scrollTo).toHaveBeenCalledWith({ top: 100 }));
+  });
+
+  it("leaves a reader above the binder in place after a new sort", async () => {
+    const { main, binder, scrollTo } = await scrolledPage();
+    Object.defineProperty(main, "scrollTop", { configurable: true, value: 0 });
+    binder.getBoundingClientRect = () => ({ top: 300 }) as DOMRect;
+    await userEvent.setup().selectOptions(screen.getByRole("combobox", { name: "Sort the binder" }), "price");
+    await waitFor(() => expect(getCollection).toHaveBeenCalledWith(expect.objectContaining({ sort: BinderSort.PRICE })));
+    expect(scrollTo).not.toHaveBeenCalled();
   });
 });
 

@@ -1,15 +1,17 @@
 import type { Card } from "@mtg/api-client/mtg/v1/card_pb";
 import { type CollectionEntry, Condition, Finish, type SetCount } from "@mtg/api-client/mtg/v1/collection_pb";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { SearchIcon } from "lucide-react";
+import { ArrowUpIcon, SearchIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { EmptyState } from "../../app/components/empty-state";
 import { ErrorState } from "../../app/components/error-state";
+import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Select } from "../../components/ui/select";
 import { Skeleton } from "../../components/ui/skeleton";
 import { cn } from "../../lib/cn";
+import { moveBehavior, offsetIn, resetTop, showTopButton } from "./binder-scroll";
 import { type BinderChoice, type BinderSortKey, useBinderArt } from "./use-collection";
 
 // The binder: the reader's cards, with the art, the count, the finish,
@@ -127,25 +129,70 @@ export type BinderGridProps = {
 };
 
 export function BinderGrid({ rows, matched, total, sets, byType, choice, onChoice, sort, onSort, loading, error, onRetry, onReachEnd }: BinderGridProps) {
-  const scroller = useRef<HTMLDivElement>(null);
+  const section = useRef<HTMLElement>(null);
+  const bar = useRef<HTMLDivElement>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
+  const [box, setBox] = useState<HTMLDivElement | null>(null);
+  const [list, setList] = useState<HTMLDivElement | null>(null);
   const [columns, setColumns] = useState(3);
+  const [margin, setMargin] = useState(0);
+  const [barHeight, setBarHeight] = useState(0);
+  const [showTop, setShowTop] = useState(false);
 
-  // The column count follows the width of the scroller, so the tiles
-  // keep their shape from a phone to a wide desktop.
+  // The page is the one scroll area, and the grid moves with it (D-806).
+  // A grid outside the layout has no `<main>`, and then nothing scrolls.
+  const scrollRoot = () => section.current?.closest("main") ?? null;
+
+  // The column count follows the width of the rows, so the tiles keep
+  // their shape from a phone to a wide desktop.
   useEffect(() => {
-    const el = scroller.current;
-    if (!el || typeof ResizeObserver === "undefined") return;
-    const measure = () => setColumns(columnsFor(el.clientWidth));
+    if (!box || typeof ResizeObserver === "undefined") return;
+    const measure = () => setColumns(columnsFor(box.clientWidth));
     measure();
     const observer = new ResizeObserver(measure);
-    observer.observe(el);
+    observer.observe(box);
     return () => observer.disconnect();
+  }, [box]);
+
+  // The rows start below the page header, the upload cards, and the
+  // hero. Any of them can change height, and the page then changes
+  // height too, so the page is the element to watch. The pinned title
+  // gives the filters under it their offset on a wide screen (D-807).
+  useEffect(() => {
+    const main = scrollRoot();
+    const page = section.current?.parentElement;
+    if (!main || !page || typeof ResizeObserver === "undefined") return;
+    const measure = () => {
+      if (list) setMargin(offsetIn(list, main));
+      setBarHeight(bar.current?.offsetHeight ?? 0);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(page);
+    if (bar.current) observer.observe(bar.current);
+    return () => observer.disconnect();
+  }, [list]);
+
+  // The button to the binder top shows one screen below it (D-808).
+  useEffect(() => {
+    const main = scrollRoot();
+    const el = section.current;
+    if (!main || !el) return;
+    const read = () => setShowTop(showTopButton(main.scrollTop, offsetIn(el, main), main.clientHeight));
+    read();
+    main.addEventListener("scroll", read, { passive: true });
+    return () => main.removeEventListener("scroll", read);
   }, []);
 
-  // A new choice or sort is a new list, so the reader reads it from the
-  // top. Without this they search and land in the middle of the answer.
+  // A new choice or sort is a new list, so a reader below the binder top
+  // returns to it. Without this they search and land in the middle of
+  // the answer. A reader above the binder stays in place.
   useEffect(() => {
-    scroller.current?.scrollTo(0, 0);
+    const main = scrollRoot();
+    const el = section.current;
+    if (!main || !el) return;
+    const top = resetTop(main.scrollTop, offsetIn(el, main));
+    if (top !== undefined) main.scrollTo({ top });
   }, [choice, sort]);
 
   const rowCount = Math.ceil(rows.length / columns);
@@ -155,7 +202,8 @@ export function BinderGrid({ rows, matched, total, sets, byType, choice, onChoic
   // eslint-disable-next-line react-hooks/incompatible-library
   const virtual = useVirtualizer({
     count: rowCount,
-    getScrollElement: () => scroller.current,
+    getScrollElement: scrollRoot,
+    scrollMargin: margin,
     // A tile is the art plus two lines of text. The virtualizer measures
     // the real height after the first paint, so this is the start value.
     estimateSize: () => 312,
@@ -177,14 +225,30 @@ export function BinderGrid({ rows, matched, total, sets, byType, choice, onChoic
     if (onReachEnd && rowCount > 0 && lastRow >= rowCount - 2) onReachEnd();
   }, [lastRow, rowCount, onReachEnd]);
 
+  // The move goes to the binder top, and focus goes to the binder
+  // heading, so a keyboard reader continues from there. The virtualizer
+  // makes the move: a row it measures on the way up corrects the scroll,
+  // and that correction stops a smooth scroll it did not start.
+  const toTop = () => {
+    const main = scrollRoot();
+    const el = section.current;
+    if (!main || !el) return;
+    virtual.scrollToOffset(offsetIn(el, main), { behavior: moveBehavior() });
+    heading.current?.focus({ preventScroll: true });
+  };
+
   const byOracle = useBinderArt(rows, firstRow * columns, lastRow * columns + columns - 1);
 
   const set = (patch: Partial<BinderChoice>) => onChoice({ ...choice, ...patch });
 
   return (
-    <section aria-labelledby="binder-grid-title" className="flex flex-col gap-3">
+    <section ref={section} aria-labelledby="binder-grid-title" className="flex flex-col gap-3">
+      {/* The title and the search stay pinned at the top of the page
+          (D-807). On a wide screen the filters pin below them. On a
+          phone the filters scroll away, so the pinned block stays small. */}
+      <div ref={bar} data-testid="binder-bar" className="sticky top-0 z-10 flex flex-col gap-3 border-b border-border bg-background py-2 md:border-b-0 md:pb-0">
       <div className="flex flex-wrap items-center gap-3">
-        <h3 id="binder-grid-title" className="font-display text-lg font-semibold">
+        <h3 ref={heading} id="binder-grid-title" tabIndex={-1} className="font-display text-lg font-semibold outline-none">
           The binder
         </h3>
         <span className="font-mono text-[11px] text-muted-foreground tabular-nums" data-testid="binder-count">
@@ -192,8 +256,7 @@ export function BinderGrid({ rows, matched, total, sets, byType, choice, onChoic
         </span>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        <div className="relative min-w-48 grow">
+        <div className="relative">
           <SearchIcon aria-hidden="true" className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="search"
@@ -204,6 +267,9 @@ export function BinderGrid({ rows, matched, total, sets, byType, choice, onChoic
             className="pl-8"
           />
         </div>
+      </div>
+
+      <div data-testid="binder-filters" className="z-10 flex flex-wrap gap-2 bg-background md:sticky md:border-b md:border-border md:pb-2" style={{ top: barHeight }}>
         <Select aria-label="Filter by set" value={choice.set} onChange={(e) => set({ set: e.target.value })}>
           {setOptions(sets).map((o) => (
             <option key={o.value} value={o.value}>
@@ -248,15 +314,15 @@ export function BinderGrid({ rows, matched, total, sets, byType, choice, onChoic
       )}
 
       {rows.length > 0 && (
-        <div ref={scroller} data-testid="binder-scroller" className="max-h-[75vh] overflow-y-auto rounded-panel border border-border bg-card p-2">
-          <div style={{ height: virtual.getTotalSize(), position: "relative", width: "100%" }}>
+        <div ref={setBox} data-testid="binder-rows" className="rounded-panel border border-border bg-card p-2">
+          <div ref={setList} style={{ height: virtual.getTotalSize(), position: "relative", width: "100%" }}>
             {items.map((row) => (
               <div
                 key={row.key}
                 data-index={row.index}
                 ref={virtual.measureElement}
                 className={cn("absolute top-0 left-0 grid w-full gap-2 pb-2", gridCols[columns])}
-                style={{ transform: `translateY(${row.start}px)` }}
+                style={{ transform: `translateY(${row.start - virtual.options.scrollMargin}px)` }}
               >
                 {rows.slice(row.index * columns, row.index * columns + columns).map((e) => (
                   <BinderTile key={`${e.scryfallId}-${e.finish}-${e.condition}`} entry={e} card={byOracle.get(e.oracleId)} />
@@ -268,6 +334,13 @@ export function BinderGrid({ rows, matched, total, sets, byType, choice, onChoic
       )}
 
       {loading && <Skeleton className="h-24 w-full rounded-card" />}
+
+      {showTop && (
+        <Button variant="outline" size="sm" aria-label="Back to the binder top" onClick={toTop} className="sticky bottom-4 z-10 self-end bg-background shadow-raised">
+          <ArrowUpIcon aria-hidden="true" />
+          Binder top
+        </Button>
+      )}
     </section>
   );
 }
