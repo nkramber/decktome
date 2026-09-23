@@ -8,9 +8,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-22f)
 
-**Pull request #PRNUM builds PR-62: the collection page scrolls once, with a pinned toolbar and a button to the binder top. It waits for the owner's merge.**
+**Pull request #211 builds PR-62: the collection page scrolls once, with a pinned toolbar and a button to the binder top. It waits for the owner's merge.**
 
-**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view PRNUM`. After the merge, do next step 1.
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view 211`. After the merge, do next step 1.
 
 **The base.** `main` is `16bbada`, from #210. #210 changed no code, so no deploy build ran for it.
 
@@ -26,7 +26,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The checks.** `make smoke` passed, 5 of 5, and the new spec fails on the old grid. Four of the five new Vitest tests fail on the old grid, and the fifth is a negative guard. `make verify` passed on this machine, exit 0, with Node 22.23.2 on the PATH.
 
-**The review.** REVIEWLINE
+**The review.** Gitar review pending on the head of #211.
 
 **What waits on the owner.**
 
@@ -104,7 +104,7 @@ Twenty-one things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **The live check of PR-62, after the merge and the deploy of the web app** (D-809). Read the live chunk for "Back to the binder top" and for the absence of `max-h-[75vh]`. Then run `web/apps/web/e2e/collection-scroll.spec.ts` with `SMOKE_BASE_URL=https://decktome.com`, `API_BUILD_EMAIL`, and `API_BUILD_PASSWORD`. Then ask the owner for the next item (D-746). **PR-62** is #PRNUM.
+1. **The live check of PR-62, after the merge and the deploy of the web app** (D-809). Read the live chunk for "Back to the binder top" and for the absence of `max-h-[75vh]`. Then run `web/apps/web/e2e/collection-scroll.spec.ts` with `SMOKE_BASE_URL=https://decktome.com`, `API_BUILD_EMAIL`, and `API_BUILD_PASSWORD`. Then ask the owner for the next item (D-746). **PR-62** is #211.
 2. **The open items of the roadmap.** Three register rows read 🔧: F-49, F-165, and F-166. F-49 waits for the owner. F-165 needs a free replay of the Najeela shortlist, and F-166 needs a plan. OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate run 9 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. No whole deck gate run measured them yet.
 3. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It waits, because the ten sessions of the audit ran before #184 and before D-749.
 4. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git.
