@@ -12,7 +12,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 Author provider: Claude Code
 
-**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view 213`. When it is open, follow the author loop of section 3 of that skill.
+**The next step.** Pending the auto-merge. The owner confirms the merge after a summary of one paragraph (D-834). Then the session turns on the auto-merge, reads the merge, and writes the transitional prompt. A new session starts the next item from that prompt.
 
 **The base.** `main` is `ab60c43`, from #212. The ruleset `review-gate` read `active` after that merge, on 2026-09-23.
 
@@ -28,9 +28,11 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passed on `7ecd1a0`, exit 0, with Node 22.23.2 on the PATH. `make ruleset-check`, `make ste-check`, `make ref-check`, and `make context-budget` passed.
 
-**The review.** Gitar found two faults on `5999318`, and approved `a3b6c99`. The first Codex review found P2-1, because the thread query read one page alone. The author added pagination and a later-page test in `7ecd1a0`. The review record approves this effective head. Gitar passes, and no thread remains open. The review-gate check passed on `2703ce3`. Gitar and `pr-contract` pass. The verify workflow passed its required jobs and skipped its six heavy jobs for this documentation-only push.
+**The review.** Gitar found two faults on `5999318`, and approved `a3b6c99` and `7ecd1a0`. The first live `make codex-review` read `Changes required` on `a3b6c99`: P2-1, the thread query read one page alone. `docs/reviews/pr-213-response.md` holds the answer. The second run approved `7ecd1a0`, exit 0, and the record says `Ready for owner merge`.
 
 **The settings.** The owner approved the change, and the session applied the ruleset file and the merge settings on 2026-09-23, before it opened this pull request (D-829). `make ruleset-check` then read no difference.
+
+**The live proof of PR-63 and PR-64.** `review-gate` reported on each head of #213 from `pull_request_target`. On the code heads, each job of `verify` ran and passed. On the head `2c9593b` of documents alone, `verify:skip` skipped the six heavy jobs, and each reported `skipped` under its name. GitHub then read the merge state `CLEAN`, so a skipped job passes the ruleset (D-832).
 
 **What waits on the owner.**
 
