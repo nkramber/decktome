@@ -12,6 +12,48 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-23b
+
+**Pull request #213 builds PR-64. `make codex-review` starts the Codex review, and the third open round of one finding stops the loop. A pull request merges itself on the green light.**
+
+Author provider: Claude Code
+
+**The next step.** Pending the auto-merge. The owner confirms the merge after a summary of one paragraph (D-834). Then the session turns on the auto-merge, reads the merge, and writes the transitional prompt. A new session starts the next item from that prompt.
+
+**The base.** `main` is `ab60c43`, from #212. The ruleset `review-gate` read `active` after that merge, on 2026-09-23.
+
+**Why this pull request exists.** On 2026-09-23 the owner asked for a review that the author session starts (D-823). The owner also asked for the stop of D-826 and the auto-merge of D-828.
+
+**What this pull request holds.**
+
+- `docs/tools/codex_review.py` and its tests. The target refuses before it spends, updates the npm CLI, checks the ChatGPT login and the model, and runs Codex in a worktree (D-823 to D-825, D-832).
+- No Codex process gets an API key (D-833). The target removes `OPENAI_API_KEY` and `CODEX_API_KEY` from each call.
+- The `Open at:` line of each finding, and exit 4 at the third head (D-826).
+- `.github/rulesets/`, `docs/tools/ruleset_check.py`, and `docs/reference/merge-rules.md` (D-828).
+- The skills `one-pr-one-session`, `pr-review`, and `gitar-review`, `CLAUDE.md`, and `AGENTS.md` name the new loop.
+
+**The checks.** `make verify` passed on `7ecd1a0`, exit 0, with Node 22.23.2 on the PATH. `make ruleset-check`, `make ste-check`, `make ref-check`, and `make context-budget` passed.
+
+**The review.** Gitar found two faults on `5999318`, and approved `a3b6c99` and `7ecd1a0`. The first live `make codex-review` read `Changes required` on `a3b6c99`: P2-1, the thread query read one page alone. `docs/reviews/pr-213-response.md` holds the answer. The second run approved `7ecd1a0`, exit 0, and the record says `Ready for owner merge`.
+
+**The settings.** The owner approved the change, and the session applied the ruleset file and the merge settings on 2026-09-23, before it opened this pull request (D-829). `make ruleset-check` then read no difference.
+
+**The live proof of PR-63 and PR-64.** `review-gate` reported on each head of #213 from `pull_request_target`. On the code heads, each job of `verify` ran and passed. On the head `2c9593b` of documents alone, `verify:skip` skipped the six heavy jobs, and each reported `skipped` under its name. GitHub then read the merge state `CLEAN`, so a skipped job passes the ruleset (D-832).
+
+**What waits on the owner.**
+
+- The confirmation of the merge of this pull request, after a summary of one paragraph (D-834).
+- F-165 and F-166, as later items.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. It is a paid target, so ask the owner first.
+- UNVERIFIED: the Moxfield import of the deck list.
+- D-794 makes the app less strict than the Wizards infographic at Bracket 2.
+- Five sessions on the new files, before a decision on the checkpoint rule (next step 3, D-750).
+- Next steps 4 and 5, and OQ-67 and OQ-77.
+
+### 2026-09-22f: the scroll of the collection page, F-167
+
+**The owner named the scroll of the collection page, pinned the toolbar alone, and chose the binder top as the target of the button** (D-806 to D-809). The session recommended the top of the page, and the owner chose the binder. The first spec run found that a row the virtualizer measures stops a smooth scroll of another source. So the virtualizer makes the move.
+
 ## The resume section of 2026-09-23a
 
 **Pull request #212 builds PR-63: a Codex review record gates each pull request, and a change of documents alone skips the heavy jobs of CI. It waits for the Codex review and the owner's merge.**
