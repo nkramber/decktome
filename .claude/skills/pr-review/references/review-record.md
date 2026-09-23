@@ -106,6 +106,8 @@ Give each finding a stable id: the letter `P`, the severity, a hyphen, and an in
 
 Status: <open | fixed in `<sha>` | accepted risk, D-<id> | withdrawn>.
 
+Open at: `<effective head sha>`, `<effective head sha>`.
+
 File: `<path>:<line range>`, or Commit: `<sha>`.
 
 Trigger: the input or the state that causes the defect.
@@ -122,6 +124,12 @@ Regression check: the command or the test that proves the fix, and its result.
 ```
 
 A withdrawn finding stays in the file with the evidence that refuted it. Never delete a finding.
+
+## The open rounds
+
+The `Open at:` line lists each effective head at which a review found the finding open, oldest first (D-826). Keep each earlier head. When this review finds the finding open, add the effective head of this review. When the finding is fixed at this head, add no head. A second review of one head adds that head one time only.
+
+`make codex-review` counts the distinct heads of an open P0, P1, or P2 finding. At three heads it stops the fix loop, and the owner decides. A finding that closes and then opens again keeps its earlier heads. A record without the line counts the current head alone. The `review-gate` check does not read the line.
 
 ## Correct the body
 

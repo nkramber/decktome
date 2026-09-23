@@ -36,11 +36,15 @@ make meta-refresh  # read the deck list sources into the meta store, network, fr
 make themes-check  # theme slugs and the commander ranking against the snapshot
 ```
 
-CI runs `verify` on each pull request (D-639). A change of documents alone skips the six heavy jobs when the code under it passed (D-818). The `pr-contract` workflow reads the body and the diff of each pull request against D-747. The `review-gate` workflow reads the review record, and `main` requires it (D-815). A weekly schedule runs govulncheck alone (D-305).
+CI runs `verify` on each pull request (D-639). A change of documents alone skips the six heavy jobs when the code under it passed (D-818). The `pr-contract` workflow reads the body and the diff of each pull request against D-747. The `review-gate` workflow reads the review record.
+
+The ruleset of `main` requires `review-gate`, `pr-contract`, and each pull request job of `verify` (D-815, D-828). `.github/rulesets/` holds that ruleset. A weekly schedule runs govulncheck alone (D-305).
 
 ## Review
 
-A Codex session reviews each pull request after the Gitar pass (D-811). Load `.claude/skills/pr-review/SKILL.md` and `.claude/skills/one-pr-one-session/SKILL.md` before the review. The review writes `docs/reviews/pr-<number>.md`, and the `review-gate` check reads its verdict and its head. The reviewer never replies to Gitar, never merges, and never pushes to `main`.
+Codex reviews each pull request after the Gitar pass (D-811). The author session starts the review with `make codex-review PR=<number>` (D-823). Load `.claude/skills/pr-review/SKILL.md` and `.claude/skills/one-pr-one-session/SKILL.md` before the review. The review writes `docs/reviews/pr-<number>.md` and updates the hand-off in one commit (D-827). The `review-gate` check reads its verdict and its head.
+
+The reviewer never replies to Gitar, never merges, and never pushes to `main`. The third open round of one finding stops the loop, and the owner decides (D-826).
 
 ## Rules
 
@@ -50,7 +54,7 @@ A Codex session reviews each pull request after the Gitar pass (D-811). Load `.c
 - Every card the model names passes the rules engine before the user sees it.
 - Log ids, never PII or raw prompts.
 - Table-driven tests. `ctx` is the first parameter. `errors.Is` / `errors.As`. Accept interfaces, return structs.
-- One concern per pull request. Squash merge into `main`.
+- One concern per pull request. Squash merge into `main`, the one merge method that the repository allows. After the Codex approval, the author session gives the owner a summary of one paragraph. It turns on the auto-merge after the owner confirms (D-828, D-834).
 - One pull request per clean session. The pull request carries its own documents and hand-off, and no pull request records an earlier merge. Load `.claude/skills/one-pr-one-session/SKILL.md` for all work on a pull request (D-746 to D-748).
 - No AI-attribution text in any PR, branch name, commit message, or comment.
 - Write docs and skills in ASD-STE100. Run `make ste-check` before you commit a `.md` file. `make lint` and CI run it too (D-264).

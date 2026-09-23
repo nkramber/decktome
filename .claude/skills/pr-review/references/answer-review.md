@@ -10,13 +10,37 @@ Gitar reviews each push. After each push, load the `gitar-review` skill and foll
 - A reply names no provider, harness, or model (hard rule 6).
 - Record the pass in the hand-off: the count of findings, and the commit that answered each one.
 
-## Ask for the Codex review
+## Start the Codex review
 
-When a current Gitar review holds no open finding, tell the owner that the pull request is ready for the Codex review. The owner starts the Codex session. Give the owner these facts:
+When a current Gitar review holds no open finding, start the review yourself (D-823). The owner approved each round of the loop (D-831).
 
-- The pull request number and the effective head.
-- The line `Author provider: Claude Code` in the hand-off record of the pull request.
-- The result of `make verify` on the effective head.
+1. Write the line `Author provider: Claude Code` in the hand-off record, and push it.
+2. Wait until each check of the tip completes.
+3. Run `make codex-review PR=<number>` in the background, and wait for the notice of its end.
+4. Read the last line of the output: `outcome: <name> (exit <n>)`.
+5. Run `git pull --ff-only`, because the reviewer pushed the record.
+
+| Outcome | Next step |
+|---|---|
+| approve | Go to the auto-merge of the `one-pr-one-session` skill. The owner confirms the merge first (D-834). |
+| changes | Answer each finding with the procedure below, push, and do the Gitar pass again. |
+| three-strike stop | Do the procedure of "The three-strike stop" below. |
+| refusal | Correct the condition that the output names, then run the target again. |
+| fault | Read the transcript that the output names. Ask the owner when the cause is not clear. |
+
+A refusal spends nothing. The target refuses a dirty tree, a checkout that differs from origin, and an incomplete Gitar pass.
+
+## The three-strike stop
+
+The target exits 4 when a blocking finding is open at its third effective head (D-826). Do these steps:
+
+1. Turn off the auto-merge with `gh pr merge <number> --disable-auto`.
+2. Stop the fix loop. Change no file for that finding.
+3. Ask the owner with `AskUserQuestion`.
+4. Record the answer in `docs/reviews/pr-<number>-response.md`.
+5. Record the answer as a new D- row too, when it sets a rule.
+
+The question gives the finding, the evidence of the reviewer, each answer of the author so far, and the options with their pros and cons.
 
 ## Apply the label
 
@@ -51,7 +75,7 @@ When you push again after the label, remove the label first. Apply it again when
 6. Correct each part with merit. Make the smallest change that restores the contract.
 7. Record each result in `docs/reviews/pr-<number>-response.md`.
 8. Commit the response, the corrections, and the hand-off, then push.
-9. Ask the owner for a repeat review by the Codex session.
+9. Do the Gitar pass, then start the repeat review with `make codex-review PR=<number>`.
 
 Refute a finding when the evidence supports it:
 

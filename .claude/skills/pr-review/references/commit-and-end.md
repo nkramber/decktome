@@ -8,10 +8,10 @@ Commit and push the record in the session that writes it.
 
 | After | Commit these files | Who commits |
 |---|---|---|
-| A review or a repeat review | `docs/reviews/pr-<number>.md` alone | The reviewer |
+| A review or a repeat review | `docs/reviews/pr-<number>.md` and `docs/SESSION-HANDOFF.md` | The reviewer |
 | An answer to a review | `docs/reviews/pr-<number>-response.md`, each corrected file, and `docs/SESSION-HANDOFF.md` | The author |
 
-The reviewer does not edit the hand-off. The author reads the record, and records the review state in the hand-off with a metadata commit.
+The reviewer records the review state in the resume section of the hand-off: the effective head, the verdict, and each open finding id (D-827). It changes no other part of the hand-off. Both paths sit in the metadata set, so the commit keeps the effective head.
 
 The check reads the head of the pull request. So the check sees the record only after the push. A review is complete only when the branch on GitHub holds the record.
 
@@ -29,6 +29,8 @@ gh pr view <number> --json headRefOid --jq .headRefOid
 ```
 
 The status line must show no `[ahead N]`. The hash from `gh pr view` must be the same as `git rev-parse HEAD`. Write the push line in the `## Verification` section of the record.
+
+`make codex-review` starts the reviewer in a worktree with a detached HEAD (D-832). There, push with `git push origin HEAD:<branch>`. The status line then names no branch, so the hash comparison is the proof. The target also refuses a push that changes a path outside the metadata set.
 
 When the remote refuses the push, the review is not complete. Tell the owner that the record has a commit and no push. A sandbox with no network can refuse the push with no message from git, so read the status line.
 

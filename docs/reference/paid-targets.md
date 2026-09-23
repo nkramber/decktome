@@ -4,9 +4,19 @@ This file holds the cost, the flags, and the guards of each `make` target and lo
 
 ## The paid targets
 
-Thirteen targets and two loop scripts spend money: `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `make api-build`, `scripts/autotune.sh`, and `scripts/feedback-loop.sh`. Ask the owner before every run.
+Fourteen targets and two loop scripts spend money: `make codex-review`, `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `make api-build`, `scripts/autotune.sh`, and `scripts/feedback-loop.sh`. Ask the owner before every run, except a round of `make codex-review` (D-831).
 
 ## Each target
+
+`make codex-review PR=<n>` starts the Codex review of one pull request (D-823). It spends the usage of the owner's Codex plan, and never an API key (D-833). So one request of the owner approves each round of the review loop of a pull request (D-831). The rule of three open rounds limits the loop (D-826). No run has a measured cost or duration yet.
+
+- The guards: an open pull request, a checkout at its head, a clean tree, and a complete Gitar pass. A failed guard spends nothing, and the target exits 5.
+- The CLI: the target runs `npm install -g @openai/codex@latest`, and it refuses a version below 0.156.1 (D-824).
+- The login: `codex login status` must give "Logged in using ChatGPT". Each call runs with `OPENAI_API_KEY` and `CODEX_API_KEY` removed.
+- The model: `gpt-6-luna` at the effort `medium`, in the sandbox `danger-full-access`, from the command line alone (D-823, D-825).
+- The output: the transcript goes to `.local/codex-review/`, and the last line names the outcome and the exit code (D-832).
+
+`make ruleset-check` is free. It reads the ruleset of `main` and the merge settings through `gh api`, and it compares them with `.github/rulesets/` (D-828).
 
 `make questions-gate` calls the real providers. One run of the 109 conversations (78 gate and 31 probe since D-730) costs $0.18 to $0.19 and takes about 20 minutes, measured on runs 33 to 35 (2026-09-04). Ask the owner before every run, and write to a new `GATE_OUT` file: a rerun must never overwrite a scored document (D-65).
 

@@ -87,6 +87,9 @@ def repo_paths():
         for name in names:
             folders.add(os.path.join(rel, name) if rel else name)
         for name in files:
+            # A git worktree holds `.git` as a file. It is no path of the repo (D-832).
+            if not rel and name == ".git":
+                continue
             paths.add(os.path.join(rel, name) if rel else name)
     return paths, folders
 

@@ -13,7 +13,7 @@ GO := go -C go
 BUF := .bin/buf
 PNPM := pnpm --dir web
 
-.PHONY: feedback-loop feedback-loop-dry feedback-triage feedback-triage-dry smoke self-reload-check api-build allow disallow manapass-check deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate bracket-calibrate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check gcs-check themes-check ste-check context-budget pipefail-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks pr-check lifecycle-check verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean
+.PHONY: feedback-loop feedback-loop-dry feedback-triage feedback-triage-dry smoke self-reload-check api-build allow disallow manapass-check deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate bracket-calibrate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check gcs-check themes-check ste-check context-budget pipefail-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks pr-check lifecycle-check verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean codex-review ruleset-check
 
 help: ## Show this help
 # pipefail-ok: the grep reads the target list, and an empty list is no fault
@@ -123,6 +123,17 @@ lifecycle-check: ## Check every skill and the one-pr-one-session wiring, and tes
 	@echo "==> lifecycle-check"
 	@python3 docs/tools/pr_check.py skills
 	@python3 -m unittest discover -q -s docs/tools -p 'test_*.py'
+
+# The Codex review of one pull request (D-823 to D-833). docs/tools/codex_review.py
+# holds the refusals, the run, and the read. Its own exit code names the
+# outcome, and make turns each code that is not 0 into 2, so read the last
+# line: `outcome: <name> (exit <n>)`.
+codex-review: ## Start the Codex review of one pull request and read its record: make codex-review PR=<n>. CAUTION: it spends the owner's Codex plan, never the API (D-831, D-833)
+	@[ -n "$(PR)" ] || { echo "codex-review: set PR to the number of the pull request. Usage: make codex-review PR=213"; exit 2; }
+	@python3 docs/tools/codex_review.py --pr "$(PR)"
+
+ruleset-check: ## Compare the live ruleset and merge settings of main with .github/rulesets, free (D-828)
+	@python3 docs/tools/ruleset_check.py
 
 verify: ## Run every check the verify workflow runs, on this machine, for nothing (D-578)
 	@echo "==> proto"
