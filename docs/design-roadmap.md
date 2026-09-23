@@ -2002,7 +2002,7 @@ Gate:
 - `make verify` passes.
 > *In plain English:* a request for a top-power deck with a theme got theme cards that real tournament decks never play. The builder now starts from the cards that winning decks of the same commander play, and the theme adds a little. Other power levels do not change.
 
-**PR-69: The land cap of a bracket 5 shortlist keeps the core lands of its commander (F-168, F-169, D-843, D-844).** 🔧 open.
+**PR-69: The land cap of a bracket 5 shortlist keeps the core lands of its commander (F-168, F-169, D-843, D-844).** ✅ merged as #219. The mark comes before any review (D-822).
 The land cap kept 20 lands in the mana order, and that order reads no commander rate. So the Najeela shortlist held 7 pain lands that no Najeela list plays, and it dropped four lands that most of the lists play. `docs/reference/f168-land-cap-2026-09-23.md` holds each measurement.
 
 - **The order.** A bracket 5 Commander request with a commander rate fills the mana half of the land cap in score order. The half keeps its 20 places, and the theme half does not change.
