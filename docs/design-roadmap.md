@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-23 correction pass 219 (D-836): the summary before a merge has four sections, What, How, CI, and Codex review. The owner asked for it in #214. Changes: none.
+
 2026-09-23 correction pass 218 (D-835): a free replay of the Najeela shortlist refuted the guard of `swapOne` as the cause of F-165. The total cut of the shortlist dropped 11 of the 20 mana lands. The cut now keeps them, and the fixing fill trades a tapped land that fixes no color. Changes: F-165, PR-45b.
 
 2026-09-23 correction pass 217 (PR-64, D-823 to D-833): the owner asked for three things. The author session starts the Codex review, and the third open round of one finding stops the loop. A pull request merges itself on the green light. PR-64 builds all three.
