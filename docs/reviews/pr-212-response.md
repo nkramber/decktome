@@ -8,7 +8,7 @@ This file answers the review record `docs/reviews/pr-212.md` of effective head `
 
 Result: full merit.
 
-Evidence: the record passed `make ref-check` with its own title. The same record with the template title `# PR-212 review` gave one REF 1 finding. No other file of the skill or the tools writes the GitHub number after `PR-`.
+Evidence: the record passed `make ref-check` with its own title. The same record with the template title, with the number 212 after the roadmap prefix, gave one REF 1 finding. No other file of the skill or the tools writes the GitHub number after `PR-`.
 
 Correction: the skeleton of `.claude/skills/pr-review/references/review-record.md` now starts with `# Pull request <number> review`, the form of the record. The section "The record" also says that the GitHub number never follows `PR-`, because REF 1 reads that form as a roadmap id (D-753). The fix changes the template, and not the checker, so REF 1 keeps its full reach.
 
