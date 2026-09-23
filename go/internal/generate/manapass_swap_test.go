@@ -333,7 +333,7 @@ func TestTheSwapDropsTheBasicOfTheColorWithMostToSpare(t *testing.T) {
 	owned := ownedAll(s.all())
 	req := Request{Format: mtgv1.FormatId_FORMAT_ID_COMMANDER, Power: deck.GetPower(), PoolRule: mtgv1.PoolRule_POOL_RULE_OWNED_ONLY,
 		Pool: NewPool(s.all(), owned), OracleCounts: owned}
-	if !b.swapOne(req, deck, b.betterLands, "", swapReason) {
+	if !b.swapOne(req, deck, b.betterLands, b.spareBasics, "", swapReason) {
 		t.Fatal("the swap made no step")
 	}
 	if countOf(deck, s.grave.GetOracleId()) != 1 {
@@ -372,7 +372,7 @@ func TestTheSwapKeepsABasicLandForEachLandThatReadsOne(t *testing.T) {
 	owned := ownedAll(all)
 	req := Request{Format: mtgv1.FormatId_FORMAT_ID_COMMANDER, Power: deck.GetPower(), PoolRule: mtgv1.PoolRule_POOL_RULE_OWNED_ONLY,
 		Pool: NewPool([]*mtgv1.Card{s.island, s.swamp, s.blue, s.black, s.hollow, dual, passage}, owned), OracleCounts: owned}
-	if b.swapOne(req, deck, b.betterLands, "", swapReason) || countOf(deck, passage.GetOracleId()) != 0 {
+	if b.swapOne(req, deck, b.betterLands, b.spareBasics, "", swapReason) || countOf(deck, passage.GetOracleId()) != 0 {
 		t.Error("the swap took Fabled Passage and left 3 basic lands for 4 lands that read them")
 	}
 }
