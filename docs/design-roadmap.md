@@ -1530,7 +1530,7 @@ At brackets 4 and 5 the prompt tells the model that tutors and fast mana have no
 - **A shortlist that reads the bracket.** At brackets 4 and 5 the rate of a card in the top lists weighs more. A high-rate card with no theme signal keeps its full score. A free sweep over the dry-run shortlists of the bracket gate sets the weight. Such a card also stays on the shortlist, and the sweep sets the rate threshold too (F-130, D-707).
 - **A gap note.** When the pool can not reach a floor, the code writes one sentence into the summary. It names the gap and the highest-rate shortlist cards that close it, beside the grade sentence (`generate.go` about line 582).
 
-A power pass after the build waits. It returns only if the gate still misses with the three levers. D-805 retires it on bracket gate run 9.
+The plan kept a power pass after the build, for a gate that still missed with the three levers. D-805 retires it on bracket gate run 9, because no power count causes the miss.
 
 **Correction, 2026-09-14: the gap note also names cards from outside the pool (D-709).** The plan said that the note fires when the pool can not reach a floor, and that it names shortlist cards. The pool comes from the shortlist, so no shortlist card can close that gap. The note now fires on every floor miss. It names the pool cards that the deck lacks, then legal cards outside the pool. With a collection, each card reads owned or to buy.
 

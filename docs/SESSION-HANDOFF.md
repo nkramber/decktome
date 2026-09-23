@@ -26,7 +26,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The checks.** `make verify` passed on this machine, exit 0, with Node 22.23.2 on the PATH. `make ste-check`, `make ref-check`, and `make context-budget` pass. Run 9 is a partial run, so `eval-check` reads no new whole run.
 
-**The review.** The first push waits for a Gitar review.
+**The review.** Gitar reviewed `a76119d` and read "Approved with suggestions", with two findings. Its dashboard edit of 01:20:13 UTC is later than the push of 01:17:25 UTC, both of 2026-09-23. Both findings had merit: the read date of the deployed API fact, and a PR-45b line that said the pass waits and retires. The next commit fixes both, and it waits for a current review.
 
 **What waits on the owner.**
 
@@ -94,7 +94,7 @@ Twenty-one things a fresh session gets wrong without this file.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
 - The feedback store holds 3 verdicts on 2026-09-09, and every one predates the snapshot of D-635. `make feedback-list VERDICT=` reads both verdicts now (F-87). A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- The deployed API, read 2026-09-22: Cloud Build `2b161f88` of `deploy-api` built `44a03e6`, from #209, and ended SUCCESS at 00:34:05 UTC on 2026-09-23. The newest build of `deploy-web` is `66935344`, of `9900979`, from #207. The service holds no minimum instance, so a cold start reads Unavailable for about 90 seconds (F-164).
+- The deployed API, read 2026-09-23: Cloud Build `2b161f88` of `deploy-api` built `44a03e6`, from #209, and ended SUCCESS at 00:34:05 UTC. The newest build of `deploy-web` is `66935344`, of `9900979`, from #207. The service holds no minimum instance, so a cold start reads Unavailable for about 90 seconds (F-164).
 - The deployed web app, read 2026-09-20 at 22:45 UTC: the release of #196, Hosting version `60c80b8c4ad2a689` of 22:44:09 UTC. `index.html` loads `assets/index-Fi2SZrwg.js`. The deck page chunk `deck-view-BQeBlu0i.js` holds the power counts, and `use-cards-DNxWsKmD.js` holds every label. The release before it, `b786ceb7f89bc4fc` of 2026-09-13, came from #158.
 - The deployed quality model, read 2026-09-14: `20260914T070904Z`, from the meta job that started at 06:02 UTC and ended at 07:13 UTC. It fits 43,182 lists and 1,517 commanders. Its Commander fit reads `immaterial` 239 and accuracy 0.554, and its Standard fit reads a cross share of 0.667. The job read the weekly EDHREC pass, 2,077 pages and 4 lists. The mtgo source read 3,094 lists with 58 fetch errors. The mtggoldfish source read 155 lists with no failure. The mtgjson source read no list, because its deck list version differs from the stored table, as on 2026-09-12 and 2026-09-13.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
