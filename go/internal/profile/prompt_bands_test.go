@@ -68,7 +68,7 @@ func TestDerivedLinesNameTheirNumber(t *testing.T) {
 	lines := strings.Join(b.Lines(mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket(4)), "\n")
 	for _, want := range []string{
 		"4.4 mana on turn four", // mana_turn_four, bracket 4 (D-703)
-		"70 percent",            // hands_two_to_four_lands
+		"56 percent",            // hands_two_to_four_lands, bracket 4 (D-844)
 		"0.5 of a turn",         // commander_turn_over_mv
 		"about 19 sources",      // color_sources, the 99-card table
 		"about 26",              // the two-pip row of that table
@@ -76,6 +76,11 @@ func TestDerivedLinesNameTheirNumber(t *testing.T) {
 		if !strings.Contains(lines, want) {
 			t.Errorf("the deck shape block does not name %q:\n%s", want, lines)
 		}
+	}
+	// Bracket 5 reads the low quarter of the top cut, so a list of 27
+	// lands, the median of that cut, sits inside the floor (D-844).
+	if five := strings.Join(b.Lines(mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket(5)), "\n"); !strings.Contains(five, "56 percent") {
+		t.Errorf("the bracket 5 block does not name the hands floor of D-844:\n%s", five)
 	}
 	// A 60-card deck reads its own source counts, and no commander line.
 	sixty := strings.Join(b.Lines(mtgv1.FormatId_FORMAT_ID_MODERN, step(mtgv1.SixtyStep_SIXTY_STEP_FNM)), "\n")

@@ -12,6 +12,47 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-23f
+
+**Pull request #217 makes a bracket 5 shortlist read the card rate of its commander (F-166, D-839).**
+
+Author provider: Claude Code
+
+**The next step.** Ask the owner for the merge with the summary of four sections (D-836). Pending the owner merge.
+
+**The base.** `main` is `f00a2af`, from #216. Cloud Build `11533acf` of `deploy-api` built `f00a2af`, and it ended SUCCESS at 18:24:15 UTC.
+
+**Why this pull request exists.** The judge read the Najeela deck of bracket gate runs 9 and 10 at bracket 4, for its warrior filler. A scratch rejudge read a top-cut Najeela list at bracket 5 twice, for $0.0601. So the builder missed the line of the bracket, and the judge did not.
+
+**What this pull request holds.**
+
+- The fit reads each TopDeck list before the tier cap. It stores the card rates of each commander or pair with 10 lists or more, lands included.
+- A bracket 5 Commander shortlist ranks on that rate first, and the theme adds 0.05 times its score. Other brackets and formats do not change.
+- The app, the bracket gate, the deck gate, and the revise gate pass the rate.
+- New tests: 3 in `go/internal/quality/commander_rates_test.go` and 2 in `go/internal/candidates/commander_rate_test.go`.
+- `docs/reference/f166-commander-rate-2026-09-23.md` holds each measurement.
+
+**The checks.** `make verify` passed on `1cfc313`, exit 0, with Node 22.23.2 on the PATH. `TestCommanderRateLeadsABracketFiveList` fails with the lever off. Bracket gate run 11 read prompts 13 to 15 at bracket 5, 3 of 3 in each of two judge lanes, for $0.3356.
+
+**The review.** Gitar pause (D-838). The pause needs no Gitar review. Codex review: `d7f103e` reads Ready for owner merge. No finding stays open.
+
+**What waits on the owner.**
+
+- The merge of this pull request, after the summary of four sections (D-836).
+- The deployed app reads the rates after the first meta job that runs the new fit. Read one deployed bracket 5 session after that job.
+- The land cap drops four lands that half the Najeela lists play. This pull request does not change the land cap.
+- The end of the Gitar pause, in a later pull request (D-838).
+- F-49, as a later item.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. It is a paid target, so ask the owner first.
+- UNVERIFIED: the Moxfield import of the deck list.
+- D-794 makes the app less strict than the Wizards infographic at Bracket 2.
+- Five sessions on the new files, before a decision on the checkpoint rule (next step 3, D-750).
+- Next steps 4 and 5, and OQ-67 and OQ-77.
+
+### 2026-09-23d: the review gate of documents alone, PR-65
+
+**The owner started this item from the transitional prompt of #214.** The session read the deploy of `11a30e7` first, and it ended SUCCESS. The session quoted D-822 against the new rule, and the owner chose the new rule. The owner kept the eval files in the set of D-814.
+
 ## The resume section of 2026-09-23e
 
 **Pull request #216 pauses the required Gitar review (D-838).**
