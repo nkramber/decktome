@@ -3,6 +3,7 @@ package triage
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -245,7 +246,8 @@ func TestTheGitarPauseStopsTheReviewBeforeTheFixer(t *testing.T) {
 				"FAKE_THREADS="+c.threads, "FAKE_BODIES="+bodies.String(), "FAKE_LOG="+log)
 			out, err := cmd.CombinedOutput()
 			code := 0
-			if exit, ok := err.(*exec.ExitError); ok {
+			var exit *exec.ExitError
+			if errors.As(err, &exit) {
 				code = exit.ExitCode()
 			} else if err != nil {
 				t.Fatal(err)
