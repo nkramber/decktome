@@ -36,7 +36,7 @@ Author provider: Claude Code
 
 **The checks.** `go test ./...` passed on `433d055`. `make verify` passed on `0e9f231`, exit 0, with Node 22.23.2 on the PATH.
 
-**The review.** Gitar approved effective head `fd55cb2` with no finding and no open thread. Codex approves effective head `fd55cb2`, with no open finding. `PATH=/Users/nate/.nvm/versions/node/v22.23.2/bin:$PATH make verify` passed on `8fb1fe1`. The current `review-gate` failed because the earlier review record named a stale head. The new record is in this push. Read the fresh `review-gate` result before the owner merge. The owner then held the merge. The owner asked that the summary sit inside the merge question. That change is `8795711`, and Gitar approved it with no finding and no thread.
+**The review.** Gitar and Codex approved the effective head `fd55cb2` with no finding, and `make verify` passed on `8fb1fe1`. The owner then held the merge and asked for the summary inside the merge question. That change is `8795711`, and Gitar approved it with no finding and no thread.
 
 **What waits on the owner.**
 
