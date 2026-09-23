@@ -12,6 +12,44 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-22e
+
+**Pull request #210 retires the power pass of D-704 and records F-165 and F-166. It changes no code, and it waits for the owner's merge.**
+
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view 210`. Then do next step 1.
+
+**The base.** `main` is `44a03e6`, from #209. Cloud Build `2b161f88` of `deploy-api` built it and ended SUCCESS at 00:34:05 UTC on 2026-09-23. #209 changed no web file, so `deploy-web` ran no build for it.
+
+**Why this pull request exists.** The owner chose the power pass as the item after F-48 (D-804). D-704 says that the pass returns only if the gate still misses with the three levers. Bracket gate runs 7 and 8 read each bracket 5 deck at bracket 5. So the owner chose a paid bracket gate run on `main` first.
+
+**What this pull request holds.**
+
+- `docs/reference/pr14a-bracket-gate-run9.md`: prompts 10 to 15 on `44a03e6`, prompt version 16, for $0.5312. It reads FAIL. The judge agrees on 4 of 6 decks, and 5 of 6 sit in every band.
+- `docs/reference/pr14a-bracket-gate-run9-judge2.md`: a second judge read of the same six decks, for $0.0833. It reads the same two misses.
+- Najeela at bracket 5 reads bracket 4 in both reads, and each read names the warrior filler. The deck holds 5 tutors, 12 fast mana, and 13 Game Changers, over each floor.
+- Prosper at bracket 4 reads bracket 5 in both reads, the judge noise of F-134.
+- D-805 retires the power pass, because no power count causes the miss. F-165 records the fixing miss of the Najeela deck, and F-166 records the filler read.
+
+**The checks.** `make verify` passed on this machine, exit 0, with Node 22.23.2 on the PATH. `make ste-check`, `make ref-check`, and `make context-budget` pass. Run 9 is a partial run, so `eval-check` reads no new whole run.
+
+**The review.** Gitar reviewed `fa45157` and reads "Approved", with 2 of 2 findings closed and no open thread. Its dashboard edit of 01:22:30 UTC is later than the push of 01:21:20 UTC, both of 2026-09-23, so the review is current. The first review of `a76119d` found two faults. The deployed API fact read the wrong date, and a PR-45b line said that the pass waits and retires. `fa45157` fixed both, and Gitar confirmed each fix. The later commit changes `docs/SESSION-HANDOFF.md` alone, which is the metadata set, so the pass holds (D-752).
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- F-165 and F-166, as later items.
+- A whole deck gate run measures the prompt of version 16 and the fixing floor of F-33. It is a paid target, so ask the owner first.
+- UNVERIFIED: the Moxfield import of the deck list. The export panel still names ManaBox and MTG Arena alone.
+- D-794 makes the app less strict than the Wizards infographic at Bracket 2.
+- Five sessions on the new files, before a decision on the checkpoint rule (next step 3, D-750).
+- A deployed session with a theme that matches no card, such as "anime" (next step 4).
+- A look at the first commander question after a load of the app (next step 5).
+- OQ-67 and OQ-77.
+
+### 2026-09-22c: the cold start of the card art, F-164
+
+**The owner named a new defect, and chose the web retry and the server wait together** (D-800, D-801). The API listens before its card snapshot loads, and no query of the web app retries. So one failed call after a cold start left blank tiles until a reload. The F-33 live check of #206 passed on the owner's two-color deck.
+
 ## The resume section of 2026-09-22d
 
 **Pull request #209 fixes F-48. The Anthropic adapter decodes each escape that the judge wrote as literal text. It waits for the owner's merge.**
