@@ -26,7 +26,7 @@ Author provider: Claude Code
 - `fillFixing` trades a spare basic land first. Then it trades a nonbasic land that enters tapped and makes one deck color or none.
 - The tests `TestTotalCutKeepsTheManaHalf`, `TestTheFillTradesATappedLandWhenNoBasicIsSpare`, and `TestTheFillTradesASpareBasicBeforeATappedLand`. Each one fails without its half of the fix.
 - D-835, the F-165 row, and the record of run 10 under PR-45b.
-- D-836: the summary before a merge has four sections, What, How, CI, and Codex review. The owner asked for it in this pull request. `CLAUDE.md`, `AGENTS.md`, two skill files, and `docs/reference/merge-rules.md` name it.
+- D-836: the summary before a merge has four sections, What, How, CI, and Codex review. The summary sits inside the merge question. The owner asked for it in this pull request. `CLAUDE.md`, `AGENTS.md`, two skill files, and `docs/reference/merge-rules.md` name it.
 
 **The measurements.** With the fix, the replay of the stored deck reads 21 fixing lands of 21, and 4 tapped lands in place of 5. Bracket gate run 10 read prompt 15 alone on `433d055` for $0.1083, with the owner's word. The deck holds 24 fixing lands and 1 tapped land, and each band holds. The verdict reads FAIL, because the judge still reads bracket 4 (F-166).
 
@@ -34,7 +34,7 @@ Author provider: Claude Code
 
 **The checks.** `go test ./...` passed on `433d055`. `make verify` passed on `0e9f231`, exit 0, with Node 22.23.2 on the PATH.
 
-**The review.** Gitar approved effective head `fd55cb2` with no finding and no open thread. Codex approves effective head `fd55cb2`, with no open finding. `PATH=/Users/nate/.nvm/versions/node/v22.23.2/bin:$PATH make verify` passed on `8fb1fe1`. The current `review-gate` failed because the earlier review record named a stale head. The new record is in this push. Read the fresh `review-gate` result before the owner merge.
+**The review.** Gitar approved effective head `fd55cb2` with no finding and no open thread. Codex approves effective head `fd55cb2`, with no open finding. `PATH=/Users/nate/.nvm/versions/node/v22.23.2/bin:$PATH make verify` passed on `8fb1fe1`. The current `review-gate` failed because the earlier review record named a stale head. The new record is in this push. Read the fresh `review-gate` result before the owner merge. The owner then held the merge and asked that the summary sit inside the merge question, so a new round reads the next head.
 
 **What waits on the owner.**
 
@@ -55,7 +55,7 @@ Author provider: Claude Code
 5. Load the skills. Load `ste-writing` before you write any `.md`. Load `design-doc-style` before you edit the roadmap. Load `mtg-corpus` before you reason about a format, a legality, or a card term.
 6. Run `make verify`. It runs every check the verify workflow runs, on this machine, for nothing. Put Node 22.23.2 on the PATH first. The pull request runs the same jobs on Actions, and a change of documents alone skips six of them (D-818).
 7. Do "Next steps, in order" below. Ask questions as they come up. Record each owner answer in `docs/decisions.md`, and delete the row from `docs/owner-questions.md`.
-8. Open the pull request with the sections of `.github/pull_request_template.md`, and run `make pr-check`. Load the `gitar-review` skill, and follow it after each push (D-637, D-745). After Gitar, run `make codex-review PR=<n>` in the background (D-823). After the approval, give the owner a summary in four sections: What, How, CI, and Codex review. Turn on the auto-merge after the confirmation (D-828, D-834, D-836). A pull request of documents alone takes the `review-override` label in place of that review (D-812).
+8. Open the pull request with the sections of `.github/pull_request_template.md`, and run `make pr-check`. Load the `gitar-review` skill, and follow it after each push (D-637, D-745). After Gitar, run `make codex-review PR=<n>` in the background (D-823). After the approval, ask the owner. Put the summary of four sections inside the question: What, How, CI, and Codex review. Turn on the auto-merge after the confirmation (D-828, D-834, D-836). A pull request of documents alone takes the `review-override` label in place of that review (D-812).
 9. Update this file inside the pull request, before you call it ready (D-747). Read only the section that you change.
 10. Keep three session records at most (D-749). Move each older record to the archive, word for word.
 11. When the pull request merges, write the transitional prompt of the `one-pr-one-session` skill, and end the session.

@@ -88,7 +88,7 @@ Write the summary in four sections, with a few sentences in each section (D-836)
 - **CI:** green or not. Name each check that is not green.
 - **Codex review:** the verdict of the record, `Ready for owner merge`, `Blocked`, or `Changes required`.
 
-Then ask the owner for the confirmation of the merge with `AskUserQuestion`. Without the confirmation, do not turn on the auto-merge.
+Write the summary in the question text of `AskUserQuestion`, and ask the owner for the confirmation of the merge in the same text. The owner can see the question alone, so a summary outside it does not reach the owner. Without the confirmation, do not turn on the auto-merge.
 
 After the confirmation, run these commands, in this order:
 

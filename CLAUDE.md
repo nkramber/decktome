@@ -32,7 +32,7 @@ Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
 10. **Answer the review before you ask for a merge.** `gitar-bot` reviews every pull request (D-637). Load the `gitar-review` skill after each push, and follow its procedure (D-745). The skill proves that a review is current, and it answers each finding. These rules of this repo win over the skill:
    - **After Gitar, run `make codex-review PR=<n>`** (D-823). Codex writes the record with the `pr-review` skill, and `main` requires the `review-gate` check (D-815). The third open round of one finding stops the loop for the owner (D-826).
    - A pull request of documents alone waits for Gitar too (D-679). When it is ready and each other check is green, apply the `review-override` label in place of the Codex review (D-812).
-   - After the approval, give the owner a summary in four sections: What, How, CI, and Codex review. Wait for the confirmation of the merge (D-834, D-836). Then turn on the auto-merge (D-828).
+   - After the approval, ask the owner with a summary in four sections inside the question: What, How, CI, and Codex review. Wait for the confirmation of the merge (D-834, D-836). Then turn on the auto-merge (D-828).
    - Wait for a current Gitar review before the Codex review. Fix each finding on the same pull request, in the same session (D-746).
    - A commit of `docs/SESSION-HANDOFF.md` or the hand-off archive alone does not make a Gitar pass stale (D-752).
 11. **Never hesitate to ask or to push back.** Ask a question the moment you have one. When the owner's two statements conflict, say so and quote both. When a request rests on a wrong premise, say so with the evidence. The owner sees this as the key to good LLM-user interaction. Silence is the mistake, not the question.
