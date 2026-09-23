@@ -12,7 +12,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 Author provider: Claude Code
 
-**The next step.** Pending the owner merge. After the Gitar pass, the session runs `make codex-review PR=214`. After the approval, it gives the owner a summary of one paragraph (D-834).
+**The next step.** Pending the owner merge. The owner confirms after a summary of one paragraph (D-834).
 
 **The base.** `main` is `755b593`, from #213. `make ruleset-check` read no difference on `main` on 2026-09-23, before the work.
 
@@ -33,7 +33,7 @@ Author provider: Claude Code
 
 **The checks.** `go test ./...` passed on `433d055`. `make verify` passed on `0e9f231`, exit 0, with Node 22.23.2 on the PATH.
 
-**The review.** Gitar approved `1df2e1e` with no finding and no thread. Each check of that head passed, except `review-gate`, which waits for the Codex record.
+**The review.** Gitar approved `1df2e1e` with no finding and no thread. Codex approves effective head `1df2e1e`, with no open finding. `make verify` passed with Node 22.23.2. The current `review-gate` waits for this record to reach the branch.
 
 **What waits on the owner.**
 
