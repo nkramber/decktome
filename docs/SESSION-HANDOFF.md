@@ -26,9 +26,9 @@ Author provider: Claude Code
 - `.github/rulesets/`, `docs/tools/ruleset_check.py`, and `docs/reference/merge-rules.md` (D-828).
 - The skills `one-pr-one-session`, `pr-review`, and `gitar-review`, `CLAUDE.md`, and `AGENTS.md` name the new loop.
 
-**The checks.** `make verify` passed on `a3b6c99`, exit 0, with Node 22.23.2 on the PATH. `make ruleset-check` passed. The review-thread pagination gap has no regression test yet.
+**The checks.** `make verify` passed on `7ecd1a0`, exit 0, with Node 22.23.2 on the PATH. `make ruleset-check`, `make ste-check`, `make ref-check`, and `make context-budget` passed.
 
-**The review.** Gitar found two faults on `5999318`, and approved `a3b6c99`. The first live `make codex-review` read `Changes required` on `a3b6c99`, with one finding: P2-1, the thread query read one page alone. `docs/reviews/pr-213-response.md` holds the answer, and a test fails on the old code.
+**The review.** Gitar found two faults on `5999318`, and approved `a3b6c99`. The first Codex review found P2-1, because the thread query read one page alone. The author added pagination and a later-page test in `7ecd1a0`. The review record approves this effective head. Gitar passes, and no thread remains open. The review-gate check needs a new run after the record push.
 
 **The settings.** The owner approved the change, and the session applied the ruleset file and the merge settings on 2026-09-23, before it opened this pull request (D-829). `make ruleset-check` then read no difference.
 
