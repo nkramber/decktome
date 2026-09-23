@@ -10,17 +10,19 @@ This file is also the switch of the unattended feedback cycle. `scripts/feedback
 - The Codex review needs no Gitar pass. Run `make codex-review PR=<n> -- --skip-gitar-review` for each Codex review.
 - A pull request of documents alone takes the `review-override` label when each other check is green. It does not wait for Gitar (amends D-679).
 - The Codex reviewer needs no current Gitar review. It still verifies each Gitar claim that exists.
-- The unattended feedback cycle needs no Gitar review. An open thread stops it before the fixer, and a comment on its pull request tells the owner.
+- The unattended feedback cycle needs no Gitar review. A Gitar finding stops it before the fixer, and a comment on its pull request tells the owner.
 
 ## What stays
 
 - Gitar can still review a push. Each Gitar finding still gets its answer on the same pull request.
-- The ruleset of `main` still requires each review thread resolved. So `--skip-gitar-review` still refuses an open review thread, and it spends nothing.
+- The ruleset of `main` still requires each review thread resolved. So `--skip-gitar-review` still refuses an open review thread or a Gitar finding, and it spends nothing.
 - The flag `--skip-gitar-review` stays after the pause ends (D-838).
 
 ## A Gitar finding stops the work
 
 A Gitar finding is a review thread of `gitar-bot`, or an issue in the `Code Review` block of its dashboard comment. A dashboard that reports no issue is not a finding. A pause note of Gitar is not a finding.
+
+`dashboard_issue` of `docs/tools/codex_review.py` reads the dashboard for the flag and for the feedback cycle. A clean dashboard has the verdict `✅ Approved` or `✅ No issues found`, and each of its findings is resolved or closed. Each other form counts as a finding.
 
 1. After each push, wait for each check on the tip to complete.
 2. Read the Gitar threads and the newest dashboard comment one time, with command B of the `gitar-review` skill.

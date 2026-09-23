@@ -307,7 +307,7 @@ The eight steps of one cycle:
    The body holds the rows the cycle can prove. The `pr-contract` check stays red until a clean author session completes the rest (D-748).
 8. `scripts/feedback-review.sh` answers the review of `gitar-bot`, up to `--rounds` times.
 
-**Gitar pause (D-838).** While `docs/reference/gitar-pause.md` exists, step 8 needs no Gitar review. An open thread stops the cycle before the fixer, and a comment tells the owner.
+**Gitar pause (D-838).** While `docs/reference/gitar-pause.md` exists, step 8 needs no Gitar review. An open thread or an issue on the Gitar dashboard stops the cycle before the fixer, and a comment tells the owner.
 
 The cases are frozen. A fixer that edits one makes the gate agree with
 the code instead of with the reader.

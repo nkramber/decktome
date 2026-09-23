@@ -167,25 +167,105 @@ func TestTheReviewCountsAnEmptyThreadListAsNone(t *testing.T) {
 	}
 }
 
-// TestTheGitarPauseStopsTheReviewBeforeTheFixer holds D-838. While the
-// pause file exists, an open thread stops the round and tells the owner,
-// and the fixer never answers a Gitar finding on its own.
+// fakeGH answers the gh calls of the review round from the environment:
+// FAKE_THREADS for the thread query, FAKE_BODIES for the issue comments,
+// and each pull request comment goes to FAKE_LOG.
+const fakeGH = `#!/usr/bin/env bash
+case "$1 $2" in
+  "repo view") echo "o/r" ;;
+  "pr checks") echo '[{"name":"Gitar","bucket":"pass"}]' ;;
+  "api graphql") printf '%s' "$FAKE_THREADS" ;;
+  "api --paginate") printf '%s' "$FAKE_BODIES" ;;
+  "pr comment") echo "$*" >> "$FAKE_LOG" ;;
+  *) exit 1 ;;
+esac
+`
+
+// gitarSummary is a Gitar dashboard body with one summary line.
+func gitarSummary(kbds ...string) string {
+	s := "<details>\n<summary><b>Code Review</b>"
+	for _, k := range kbds {
+		s += " <kbd>" + k + "</kbd>"
+	}
+	return s + "</summary>\n</details>"
+}
+
+// TestTheGitarPauseStopsTheReviewBeforeTheFixer runs the review round with
+// a fake gh (D-838). While the pause file exists, an open thread or an
+// issue on the dashboard stops the round with 3 and tells the owner, so
+// the fixer never answers a Gitar finding on its own.
 func TestTheGitarPauseStopsTheReviewBeforeTheFixer(t *testing.T) {
-	raw, err := os.ReadFile(filepath.Join("..", "..", "..", "scripts", "feedback-review.sh"))
+	if _, err := exec.LookPath("bash"); err != nil {
+		t.Skip("no bash")
+	}
+	script, err := filepath.Abs(filepath.Join("..", "..", "..", "scripts", "feedback-review.sh"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	s := string(raw)
-	if !strings.Contains(s, `PAUSE_FILE="$ROOT/docs/reference/gitar-pause.md"`) {
-		t.Error("the review does not read the pause file of D-838")
+	bin := t.TempDir()
+	if err := os.WriteFile(filepath.Join(bin, "gh"), []byte(fakeGH), 0o755); err != nil {
+		t.Fatal(err)
 	}
-	stopIdx := strings.Index(s, "the Gitar pause stops the cycle")
-	fixIdx := strings.Index(s, `FINDINGS="$STATE_DIR/findings-$round.md"`)
-	if stopIdx < 0 || fixIdx < 0 || stopIdx > fixIdx {
-		t.Error("the pause stop does not sit before the fixer")
+	thread := `{"id":"T1","path":"a.go","line":3,"author":"gitar-bot","body":"a finding"}` + "\n"
+	cases := []struct {
+		name    string
+		paused  bool
+		threads string
+		bodies  []string
+		code    int
+		alert   string
+	}{
+		{"a dashboard issue with no thread stops", true, "", []string{gitarSummary("✅ Approved", "0 resolved / 1 findings")}, 3, "an issue on the dashboard"},
+		{"an unknown verdict stops", true, "", []string{gitarSummary("Changes requested")}, 3, "an issue on the dashboard"},
+		{"an open thread stops", true, thread, []string{gitarSummary("✅ Approved")}, 3, "1 open thread(s)"},
+		{"a clean dashboard passes", true, "", []string{gitarSummary("✅ Approved", "1 resolved / 1 findings")}, 0, ""},
+		{"the free plan note alone passes", true, "", []string{"> You are using the Gitar free plan."}, 0, ""},
+		{"with no pause the round reads the threads alone", false, "", []string{gitarSummary("Changes requested")}, 0, ""},
 	}
-	if !strings.Contains(s, `alert="@${REPO%%/*} `) {
-		t.Error("the pause stop does not tell the owner on the pull request")
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			dir := t.TempDir()
+			pause := filepath.Join(dir, "gitar-pause.md")
+			if c.paused {
+				if err := os.WriteFile(pause, []byte("paused\n"), 0o644); err != nil {
+					t.Fatal(err)
+				}
+			}
+			var bodies strings.Builder
+			for _, b := range c.bodies {
+				line, _ := json.Marshal(b)
+				bodies.Write(append(line, '\n'))
+			}
+			log := filepath.Join(dir, "gh.log")
+			ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
+			defer cancel()
+			cmd := exec.CommandContext(ctx, "bash", script, "7", "1", filepath.Join(dir, "state"))
+			cmd.Env = append(os.Environ(), "PATH="+bin+string(os.PathListSeparator)+os.Getenv("PATH"),
+				"GITAR_PAUSE_FILE="+pause, "FEEDBACK_REVIEW_WAIT=5", "FEEDBACK_REVIEW_POLL=1",
+				"FAKE_THREADS="+c.threads, "FAKE_BODIES="+bodies.String(), "FAKE_LOG="+log)
+			out, err := cmd.CombinedOutput()
+			code := 0
+			if exit, ok := err.(*exec.ExitError); ok {
+				code = exit.ExitCode()
+			} else if err != nil {
+				t.Fatal(err)
+			}
+			if code != c.code {
+				t.Fatalf("exit %d, want %d\n%s", code, c.code, out)
+			}
+			sent, _ := os.ReadFile(log)
+			if c.alert == "" {
+				if len(sent) > 0 {
+					t.Errorf("the round wrote a comment: %s", sent)
+				}
+				return
+			}
+			for _, want := range []string{"pr comment 7", "@o ", c.alert, "(D-838)"} {
+				if !strings.Contains(string(sent), want) {
+					t.Errorf("the comment to the owner lacks %q: %s", want, sent)
+				}
+			}
+		})
 	}
 	if !strings.Contains(loopScript(t), `if [ "$review_code" -eq 3 ]; then`) {
 		t.Error("the cycle does not report the pause stop of the review")

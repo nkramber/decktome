@@ -1966,15 +1966,15 @@ Gate:
 The owner paused the required Gitar review until a later pull request ends the pause. The owner asked for a change that is easy to reverse.
 
 - **The switch.** `docs/reference/gitar-pause.md` holds the rules and the steps of the end. Each rule document holds one pause note with the same bold text.
-- **The flag.** `make codex-review PR=<n> -- --skip-gitar-review` reads no Gitar pass, and it still refuses an open review thread. The flag stays after the pause.
-- **The feedback cycle.** While the pause file exists, step 8 needs no Gitar review. An open thread stops the cycle before the fixer, and a comment tells the owner.
+- **The flag.** `make codex-review PR=<n> -- --skip-gitar-review` reads no Gitar pass. It still refuses an open review thread or an issue on the Gitar dashboard. The flag stays after the pause.
+- **The feedback cycle.** While the pause file exists, step 8 needs no Gitar review. An open thread or a dashboard issue stops the cycle before the fixer, and a comment tells the owner.
 - **What stays.** Each Gitar finding still gets its answer. A Gitar finding stops the work, and the session tells the owner at once.
 
 Gate:
 
-- `docs/tools/test_codex_review.py` covers the flag: an open thread refuses, and the flag skips the Gitar pass.
+- `docs/tools/test_codex_review.py` covers the flag: an open thread or a dashboard issue refuses, and the flag skips the Gitar pass. It also covers each clean form of the stored dashboards, and each unknown form.
 - `docs/tools/test_gitar_pause.py` fails when a pause note stays without the pause file, or when a rule document holds no note during the pause.
-- `go/internal/triage/loop_test.go` holds the pause stop before the fixer.
+- `go/internal/triage/loop_test.go` runs the review round with a fake `gh`. A thread or a dashboard issue stops it with 3 and a comment to the owner.
 - `make codex-review` passes the flag, and it refuses an unknown flag before the review.
 - `make verify` passes.
 > *In plain English:* the first review bot no longer holds up a change. The session starts the second review with a new flag. When the first bot still writes a comment, the session stops and tells the owner. To undo the pause, delete one file and the marked notes.

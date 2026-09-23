@@ -188,11 +188,52 @@ class Threads(unittest.TestCase):
         self.assertEqual(problems, ["1 review thread(s) are not resolved: b.py:7."])
 
 
+def summary(*kbds):
+    """A Gitar dashboard body with one summary line of the Code Review block."""
+    return "<details>\n<summary><b>Code Review</b> " + " ".join(f"<kbd>{k}</kbd>" for k in kbds) + "</summary>\n</details>"
+
+
+class Dashboard(unittest.TestCase):
+    """dashboard_issue reads the newest Gitar dashboard, and each unknown form is an issue (D-838)."""
+
+    def issue(self, *bodies):
+        return cr.dashboard_issue([comment(GITAR, b, f"2026-09-23T10:0{i}:00Z") for i, b in enumerate(bodies)])
+
+    def test_each_clean_form_of_the_record_passes(self):
+        # The forms of 90 dashboards of #120 to #216, read 2026-09-23.
+        for kbds in [("\u2705 Approved",), ("\u2705 No issues found",), ("\u2705 Approved", "1 resolved / 1 findings"),
+                     ("\u2705 Approved", "2 closed / 2 findings"), ("\u2705 No issues found", "2 closed / 2 findings")]:
+            self.assertIsNone(self.issue(summary(*kbds)), kbds)
+
+    def test_an_open_finding_is_an_issue(self):
+        self.assertTrue(self.issue(summary("\u2705 Approved", "1 resolved / 2 findings")))
+
+    def test_an_unknown_verdict_is_an_issue(self):
+        self.assertTrue(self.issue(summary("Changes requested")))
+        self.assertTrue(self.issue(summary("\u2705 Approved with suggestions")))
+
+    def test_an_unknown_tally_is_an_issue(self):
+        self.assertTrue(self.issue(summary("\u2705 Approved", "1 open")))
+        self.assertTrue(self.issue(summary("\u2705 Approved", "1 resolved / 1 findings", "new")))
+
+    def test_a_dashboard_with_no_summary_line_is_an_issue(self):
+        self.assertTrue(self.issue("<b>Code Review</b> in a new shape"))
+
+    def test_the_newest_dashboard_counts(self):
+        self.assertIsNone(self.issue(summary("Changes requested"), summary("\u2705 Approved")))
+        self.assertTrue(self.issue(summary("\u2705 Approved"), summary("Changes requested")))
+
+    def test_the_free_plan_note_alone_is_no_issue(self):
+        self.assertIsNone(self.issue("> [!IMPORTANT]\n> You are using the Gitar free plan."))
+        self.assertIsNone(cr.dashboard_issue([comment("nkramber", summary("Changes requested"), PUSHED)]))
+
+
 class SkipGitar(unittest.TestCase):
     """--skip-gitar-review reads no Gitar pass, and still refuses an open thread (D-838)."""
 
-    def threads(self, *nodes):
-        return Fake([(["gh", "api", "graphql"], (0, json.dumps([thread_page(list(nodes), False)]), ""))])
+    def threads(self, *nodes, comments=()):
+        return Fake([(["gh", "api", "graphql"], (0, json.dumps([thread_page(list(nodes), False)]), "")),
+                     (["gh", "api", "--paginate"], (0, json.dumps([list(comments)]), ""))])
 
     def test_an_open_thread_refuses_and_names_the_owner(self):
         run = self.threads({"isResolved": True, "path": "a.py", "line": 1}, {"isResolved": False, "path": "b.py", "line": 7})
@@ -202,10 +243,18 @@ class SkipGitar(unittest.TestCase):
         self.assertIn("1 review thread(s) are not resolved: b.py:7.", str(caught.exception))
         self.assertIn("tell the owner (D-838)", str(caught.exception))
 
-    def test_resolved_threads_pass_with_one_call(self):
-        run = self.threads({"isResolved": True, "path": "a.py", "line": 1})
+    def test_resolved_threads_and_a_clean_dashboard_pass(self):
+        run = self.threads({"isResolved": True, "path": "a.py", "line": 1}, comments=[comment(GITAR, summary("\u2705 Approved"), PUSHED)])
         cr.check_threads(run, "o/r", N)
-        self.assertEqual(len(run.calls), 1)
+        self.assertEqual(len(run.calls), 2)
+
+    def test_a_dashboard_issue_with_no_thread_refuses(self):
+        run = self.threads(comments=[comment(GITAR, summary("\u2705 Approved", "0 resolved / 1 findings"), PUSHED)])
+        with self.assertRaises(cr.Stop) as caught:
+            cr.check_threads(run, "o/r", N)
+        self.assertEqual(caught.exception.code, cr.EXIT_REFUSAL)
+        self.assertIn("the Gitar dashboard reports an issue", str(caught.exception))
+        self.assertIn("tell the owner (D-838)", str(caught.exception))
 
     def run_main(self, argv):
         """Run main up to the CLI update, and give the Gitar calls and the thread calls."""

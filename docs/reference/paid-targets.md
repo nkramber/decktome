@@ -11,7 +11,7 @@ Fourteen targets and two loop scripts spend money: `make codex-review`, `make qu
 `make codex-review PR=<n>` starts the Codex review of one pull request (D-823). It spends the usage of the owner's Codex plan, and never an API key (D-833). So one request of the owner approves each round of the review loop of a pull request (D-831). The rule of three open rounds limits the loop (D-826). No run has a measured cost or duration yet.
 
 - The guards: an open pull request, a checkout at its head, a clean tree, and a complete Gitar pass. A failed guard spends nothing, and the target exits 5.
-- The flag: `make codex-review PR=<n> -- --skip-gitar-review` reads no Gitar pass, and it refuses an open review thread alone (D-838). Each Codex review of the Gitar pause uses it.
+- The flag: `make codex-review PR=<n> -- --skip-gitar-review` reads no Gitar pass, and it refuses an open review thread or an issue on the Gitar dashboard alone (D-838). Each Codex review of the Gitar pause uses it.
 - The CLI: the target runs `npm install -g @openai/codex@latest`, and it refuses a version below 0.156.1 (D-824).
 - The login: `codex login status` must give "Logged in using ChatGPT". Each call runs with `OPENAI_API_KEY` and `CODEX_API_KEY` removed.
 - The model: `gpt-6-luna` at the effort `medium`, in the sandbox `danger-full-access`, from the command line alone (D-823, D-825).

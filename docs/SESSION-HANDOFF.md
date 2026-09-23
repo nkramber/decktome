@@ -12,7 +12,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 Author provider: Claude Code
 
-**The next step.** Read the Gitar output one time, then `make codex-review PR=216 -- --skip-gitar-review`. A Gitar finding stops the work for the owner. Then the merge question with the summary of four sections (D-836). Pending the owner merge.
+**The next step.** Read the Gitar output one time, then the repeat review with `make codex-review PR=216 -- --skip-gitar-review`. A Gitar finding stops the work for the owner. Then the merge question with the summary of four sections (D-836). Pending the owner merge.
 
 **The base.** `main` is `8e492a7`, from #215. This session read no Cloud Build of `8e492a7`.
 
@@ -22,13 +22,13 @@ Author provider: Claude Code
 
 - `docs/reference/gitar-pause.md` holds the rules of the pause and the steps of its end.
 - One pause note, with the bold text `Gitar pause (D-838).`, in `CLAUDE.md`, `AGENTS.md`, four skill files, three reference documents, and the template of a pull request.
-- `make codex-review PR=<n> -- --skip-gitar-review` reads no Gitar pass, and it refuses an open review thread alone. The flag stays after the pause.
-- `scripts/feedback-review.sh` reads the pause file. While it exists, an open thread stops the cycle before the fixer, and a comment tells the owner.
-- New tests: 4 in `docs/tools/test_codex_review.py`, 2 in `docs/tools/test_gitar_pause.py`, and 1 in `go/internal/triage/loop_test.go`.
+- `make codex-review PR=<n> -- --skip-gitar-review` reads no Gitar pass. It refuses an open review thread or an issue on the Gitar dashboard alone. The flag stays after the pause.
+- `scripts/feedback-review.sh` reads the pause file. While it exists, an open thread or a dashboard issue stops the cycle before the fixer, and a comment tells the owner.
+- New tests: 12 in `docs/tools/test_codex_review.py`, 2 in `docs/tools/test_gitar_pause.py`, and 1 with 6 cases in `go/internal/triage/loop_test.go`.
 
 **The checks.** `make verify` passed, exit 0, with Node 22.23.2 on the PATH. The 4 new tests of the flag fail on `8e492a7`, because it has no `check_threads`. `test_gitar_pause.py` fails with the pause file removed. `make -n` shows the flag passed on, and an unknown flag exits 2 before the review.
 
-**The review.** Gitar: the pause applies, and the current dashboard has no code claim. Codex review: Changes required for effective head `9474ed1`, finding P2-1. `make verify` passes with Node 22.23.2. The review record and this hand-off are pending push.
+**The review.** Gitar: the pause applies, and the dashboard holds the free plan note alone. The Codex review of `9474ed1` reads Changes required with P2-1: the pause missed an issue on the dashboard with no thread. `docs/reviews/pr-216-response.md` answers it with full merit. The repeat review is pending.
 
 **What waits on the owner.**
 
