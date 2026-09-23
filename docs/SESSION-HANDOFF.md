@@ -8,11 +8,11 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-23a)
 
-**Pull request #PRNUM builds PR-63: a Codex review record gates each pull request, and a change of documents alone skips the heavy jobs of CI. It waits for the Codex review and the owner's merge.**
+**Pull request #212 builds PR-63: a Codex review record gates each pull request, and a change of documents alone skips the heavy jobs of CI. It waits for the Codex review and the owner's merge.**
 
 Author provider: Claude Code
 
-**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view PRNUM`. The owner starts the Codex review session with the `pr-review` skill (D-821).
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view 212`. The owner starts the Codex review session with the `pr-review` skill (D-821).
 
 **The base.** `main` is `503dffd`, from #211. The deploy build `dc8ed000` of `deploy-web` ended SUCCESS at 02:45:32 UTC on 2026-09-23. The live check of PR-62 passed: the chunk `collection-page-Qcjp-D1m.js` holds "Back to the binder top", no chunk holds `max-h-[75vh]`, and the spec passed 2 of 2 on `decktome.com`.
 
@@ -28,9 +28,9 @@ Author provider: Claude Code
 
 **Done on GitHub, outside git.** The session created the label `review-override` and the ruleset `review-gate`, id 23858584, with no bypass (D-815). The ruleset requires the check on `main` now, so each merge waits for it.
 
-**The checks.** CHECKS_LINE
+**The checks.** `make verify` passed on this machine, exit 0, with Node 22.23.2 on the PATH. It ran 123 Python tests, 40 of them new. A live read of both rules against the history of #211 gave the expected result for each case.
 
-**The review.** REVIEW_LINE
+**The review.** Gitar waits for its first review of the head. The Codex review follows the Gitar pass (D-821).
 
 **The merge of this pull request (D-815).** The check can not report on this pull request, because `pull_request_target` reads `main`. When the pull request is ready, this session sets the ruleset to `disabled`. After the owner's merge message, it sets the ruleset to `active` again and reads it back. Only then does it write the transitional prompt.
 
@@ -111,7 +111,7 @@ Twenty-two things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **The first live runs of PR-63, on the next pull request** (D-815, D-818). Read the log of `review-gate` and of `verify:skip` on that pull request. Confirm that `gh api repos/nkramber/decktome/rulesets/23858584` reads `active`. **PR-63** is #PRNUM.
+1. **The first live runs of PR-63, on the next pull request** (D-815, D-818). Read the log of `review-gate` and of `verify:skip` on that pull request. Confirm that `gh api repos/nkramber/decktome/rulesets/23858584` reads `active`. **PR-63** is #212.
 2. **The open items of the roadmap.** Three register rows read 🔧: F-49, F-165, and F-166. F-49 waits for the owner. F-165 needs a free replay of the Najeela shortlist, and F-166 needs a plan. OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate run 9 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. No whole deck gate run measured them yet.
 3. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It waits, because the ten sessions of the audit ran before #184 and before D-749.
 4. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git.
