@@ -12,6 +12,50 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-23a
+
+**Pull request #212 builds PR-63: a Codex review record gates each pull request, and a change of documents alone skips the heavy jobs of CI. It waits for the Codex review and the owner's merge.**
+
+Author provider: Claude Code
+
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view 212`. The owner starts the Codex review session with the `pr-review` skill (D-821).
+
+**The base.** `main` is `503dffd`, from #211. The deploy build `dc8ed000` of `deploy-web` ended SUCCESS at 02:45:32 UTC on 2026-09-23. The live check of PR-62 passed: the chunk `collection-page-Qcjp-D1m.js` holds "Back to the binder top", no chunk holds `max-h-[75vh]`, and the spec passed 2 of 2 on `decktome.com`.
+
+**Why this pull request exists.** The owner first picked F-165, then replaced it with the review gate of what-you-carry and the-thing-below (D-810). The owner then asked for a CI skip of documents in the same pull request (D-818, D-819).
+
+**What this pull request holds.**
+
+- `.github/workflows/review-gate.yml` and `docs/tools/review_gate.py`: the check reads `docs/reviews/pr-<number>.md` on the head (D-811, D-813, D-816).
+- The `review-override` label passes documents alone, and Dependabot passes when it wrote every commit (D-812, D-814, D-817).
+- The job `verify:skip` and `docs/tools/ci_skip.py`: the six heavy jobs skip under rule 1 or rule 2 of D-818.
+- The `pr-review` skill and five reference files, ported from the-thing-below.
+- `CLAUDE.md` rules 6 and 10, `AGENTS.md`, and the `one-pr-one-session` skill name the new review.
+
+**Done on GitHub, outside git.** The session created the label `review-override` and the ruleset `review-gate`, id 23858584, with no bypass (D-815). The ruleset requires the check on `main` now, so each merge waits for it.
+
+**The checks.** `make verify` passed on this machine on `2914524`, exit 0, with Node 22.23.2 on the PATH. Every check of `cc386b4` is green on Actions, and the tool tests pass locally, 44 of them new. The first live `verify:skip` ran every job, because the base `503dffd` holds no rule. A live read of both rules against the history of #211 gave the expected result for each case.
+
+**The review.** Gitar found three faults on `2914524` and `46d47ca`, and approved `cc386b4`. Codex then found three: the record title failed REF 1, the roadmap mark came after the approval (D-822), and the mark check matched `#2120`. Each fix has a test that fails on the old code, and `docs/reviews/pr-212-response.md` holds the answers. Gitar approved `fdf73be`. Codex approved `fdf73be` in `8ae1187`, and its record fixed the path list that Gitar named. Pending owner merge. The session disables the ruleset for the merge (D-815).
+
+**The merge of this pull request (D-815).** The check can not report on this pull request, because `pull_request_target` reads `main`. When the pull request is ready, this session sets the ruleset to `disabled`. After the owner's merge message, it sets the ruleset to `active` again and reads it back. Only then does it write the transitional prompt.
+
+**What waits on the owner.**
+
+- The Codex review of this pull request, and the merge.
+- F-165 and F-166, as later items.
+- A whole deck gate run measures the prompt of version 16 and the fixing floor of F-33. It is a paid target, so ask the owner first.
+- UNVERIFIED: the Moxfield import of the deck list. The export panel still names ManaBox and MTG Arena alone.
+- D-794 makes the app less strict than the Wizards infographic at Bracket 2.
+- Five sessions on the new files, before a decision on the checkpoint rule (next step 3, D-750).
+- A deployed session with a theme that matches no card, such as "anime" (next step 4).
+- A look at the first commander question after a load of the app (next step 5).
+- OQ-67 and OQ-77.
+
+### 2026-09-22e: the power pass of D-704
+
+**The owner picked the power pass, then chose a paid run first, a second judge read, and the retirement** (D-804, D-805). The session said that runs 7 and 8 refute the condition of D-704. Run 9 found a new Najeela miss, and the second read held it. Both reads name the warrior filler, and every power floor holds, so a power pass can not move the read. The deploy of #209 ended SUCCESS.
+
 ## The resume section of 2026-09-22f
 
 **Pull request #211 builds PR-62: the collection page scrolls once, with a pinned toolbar and a button to the binder top. It waits for the owner's merge.**

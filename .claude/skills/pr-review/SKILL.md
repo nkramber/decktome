@@ -7,16 +7,18 @@ description: Review a pull request as the other provider, or answer a review as 
 
 Review the change as the engineer who owns its effect on the whole system. Judge correctness, contracts, recovery from a failure, the tests, and the cost of future maintenance. Apply this standard to code, tools, CI, skills, and documents. A green test suite or a good pull request body does not prove correctness.
 
-The owner decisions are D-810 to D-821. The port comes from the `pr-review` skill of the-thing-below.
+The owner decisions are D-810 to D-833. The port comes from the `pr-review` skill of the-thing-below.
 
 ## The order of the reviews
 
 Every pull request gets two reviews, in this order (D-811):
 
 1. Gitar reviews each push. The author answers each Gitar finding with the `gitar-review` skill.
-2. After a current Gitar review holds no open finding, a Codex session reviews the pull request with this skill.
+2. After a current Gitar review holds no open finding, the author session runs `make codex-review PR=<number>` (D-823). Codex reviews the pull request with this skill.
 
 The Codex review writes `docs/reviews/pr-<number>.md`. The `review-gate` check reads that file, and the ruleset of `main` requires the check (D-815).
+
+A review that `make codex-review` starts has no owner in the loop. Where this skill says to ask the owner, write the question under `## Open questions and accepted risks`. Then give the verdict `Blocked`. The author session asks the owner.
 
 Two cases need no Codex review:
 
@@ -156,7 +158,7 @@ When two owner decisions conflict, quote both. Ask the owner, and stop the work 
 | Changes required | The review found a defect in scope. List each necessary change. |
 | Ready for owner merge | The provider gate passes, the review covers the whole scope, each required check passes, and no blocking finding stays open. |
 
-A line under `## Out of scope` never gives `Changes required`. An approval applies to the recorded effective head alone. The owner alone merges the pull request (D-583).
+A line under `## Out of scope` never gives `Changes required`. An approval applies to the recorded effective head alone. The verdict name stays `Ready for owner merge`, because the check reads it. After the approval, the author session turns on the auto-merge (D-828).
 
 ## Do not address Gitar
 
@@ -172,7 +174,7 @@ The reviewer reads the Gitar comments and the author replies as claims (D-811). 
 A review request permits these actions, and no other actions:
 
 - The inspection, the checks, and the review record.
-- One commit of the record, and a push of that commit to the branch of the pull request.
+- One commit of the record and the hand-off, and a push of that commit to the branch of the pull request (D-827).
 - A correction of a stale fact in the body, under "Correct the body" in `references/review-record.md`.
 
 It does not permit a code fix, a merge, a comment, a label, or a push to `main`. When the reviewer writes a substantive fix, the reviewer becomes an author, and it can not approve that fix.

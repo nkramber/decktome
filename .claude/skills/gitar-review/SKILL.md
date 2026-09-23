@@ -55,8 +55,20 @@ Do these steps after each push.
 22. For no merit, reply on the thread with the reason and the evidence. Then resolve the thread.
 23. For partial merit, fix the part with merit. Refute the rest in the same reply.
 24. When you have commits, go to step 1. After the push, reply on each thread with the commit that fixes it.
-25. Stop when a current review approves, or when a current review adds no finding and each finding has its answer.
-26. Tell the owner that the pull request is ready to merge.
+25. Resolve each thread after its reply. The ruleset of `main` refuses a merge with an open thread (D-828).
+26. Stop when a current review approves, or when a current review adds no finding and each finding has its answer.
+27. Run `make codex-review PR=<number>`. The `answer-review.md` file of the `pr-review` skill gives the steps (D-823).
+
+## The check of `make codex-review`
+
+`make codex-review` refuses to start until the pass is complete (D-832). It reads four facts:
+
+- The Gitar check on the tip completed.
+- The newest dashboard comment changed after the push of the effective head. The first check suite of that push gives its time.
+- A `Gitar review` comment after that push has the reply "On it", and a later change of the dashboard.
+- No review thread of the pull request is open.
+
+A top-level Gitar comment is not a review thread, so no check reads its answer. Read each one with command B before the target runs. Read them again before the auto-merge.
 
 ## Find an automatic review
 

@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-23 correction pass 217 (PR-64, D-823 to D-833): the owner asked for three things. The author session starts the Codex review, and the third open round of one finding stops the loop. A pull request merges itself on the green light. PR-64 builds all three.
+
 2026-09-23 correction pass 216 (D-810 to D-821): the owner replaced F-165 with the review gate of the two sibling repos. The owner also asked for a CI skip of documents. PR-63 builds both. Changes: PR-63.
 
 2026-09-22 correction pass 215 (F-167, D-806 to D-809): the owner named the scroll of the collection page as the next item. F-167 records two scroll areas. PR-62 builds one scroll area, a pinned toolbar, and a button to the top of the binder. Changes: F-167, PR-62.
@@ -1914,6 +1916,27 @@ Gate:
 GitHub starts `pull_request_target` from `main` alone, so the check can not run on this pull request. The first live run of both rules is the next pull request. The session disables the ruleset for this merge, and enables it again after the merge (D-815).
 > *In plain English:* until now, one automatic reviewer read each change, and every change ran the full test suite. After this change, a second AI from another company reads each change of code. GitHub refuses the merge until its written verdict approves the latest code. A change of documents alone skips the slow tests, but only when the code under it already passed them.
 
+**PR-64: The author session starts the Codex review, and a pull request merges itself on the green light (D-823 to D-833).** 🔧 in progress.
+PR-63 made the Codex record a required check. The owner still started each Codex review in the desktop app, and the owner merged each pull request (D-583, D-811).
+
+- **The target.** `make codex-review PR=<n>` runs `docs/tools/codex_review.py`. It updates the npm CLI, checks the login and the model, and runs `codex exec` in a new worktree at the head (D-823 to D-825).
+- **The guards.** The target refuses a closed pull request, a checkout that differs from origin, a dirty tree, and an incomplete Gitar pass. A refusal spends nothing (D-832).
+- **The read.** After the review, the target reads the record from origin, and it checks the head field against the effective head. Each outcome has its own exit code (D-832).
+- **The three-strike stop.** Each finding lists the heads at which a review found it open. The third head of a blocking finding stops the loop for the owner (D-826).
+- **No API key.** Each Codex call runs with no API key in its environment, and it needs a ChatGPT login (D-833).
+- **The auto-merge.** The ruleset of `main` requires each pull request job of `verify`, `pr-contract`, `review-gate`, and each resolved thread. The squash merge is the one method, and the auto-merge is on (D-828, D-830).
+- **The files of the rules.** `.github/rulesets/` holds the ruleset and the merge settings, and `make ruleset-check` compares them with GitHub.
+
+Gate:
+
+- `docs/tools/test_codex_review.py` covers each refusal, the three rounds of D-826, and a fixed finding that opens again. It also covers each outcome, and the read over a real git history.
+- `docs/tools/test_ruleset_check.py` compares the ruleset file with the job names of `.github/workflows/verify.yml`.
+- `make ruleset-check` passes after the change of the settings.
+- Each required check reports on a head of documents alone and on a head of code.
+- `make codex-review` approves the effective head of this pull request, and this pull request merges itself (D-829).
+- `make verify` passes.
+> *In plain English:* until now, the owner started each second review by hand and pressed the merge button. After this change, the working session starts the review with one command. When every check is green and the review approves, GitHub merges the change. When a review finds the same problem three times, the loop stops and asks the owner.
+
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
 
@@ -2247,6 +2270,8 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 52. **PR-62** the collection page scrolls once (D-806 to D-809). **F-167** ✅ closes with it. The grid reads the scroll of `<main>`, and its toolbar stays pinned. A button returns the reader to the binder top. No paid target ran.
 
 53. **PR-63** a Codex review gates each pull request, and a change of documents skips the heavy CI jobs (D-810 to D-821). The ruleset of `main` requires the `review-gate` check. No paid target ran.
+
+54. **PR-64** `make codex-review` starts the Codex review, and a pull request merges itself on the green light (D-823 to D-833).
 
 ## 9. Open questions
 

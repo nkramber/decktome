@@ -1,0 +1,82 @@
+{
+  "name": "review-gate",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": {
+      "include": [
+        "~DEFAULT_BRANCH"
+      ],
+      "exclude": []
+    }
+  },
+  "bypass_actors": [],
+  "rules": [
+    {
+      "type": "required_status_checks",
+      "parameters": {
+        "do_not_enforce_on_create": false,
+        "strict_required_status_checks_policy": false,
+        "required_status_checks": [
+          {
+            "context": "review-gate",
+            "integration_id": 15368
+          },
+          {
+            "context": "pr-contract",
+            "integration_id": 15368
+          },
+          {
+            "context": "verify:skip",
+            "integration_id": 15368
+          },
+          {
+            "context": "verify:go",
+            "integration_id": 15368
+          },
+          {
+            "context": "verify:vuln",
+            "integration_id": 15368
+          },
+          {
+            "context": "verify:emulator",
+            "integration_id": 15368
+          },
+          {
+            "context": "verify:web",
+            "integration_id": 15368
+          },
+          {
+            "context": "verify:proto",
+            "integration_id": 15368
+          },
+          {
+            "context": "verify:shell",
+            "integration_id": 15368
+          },
+          {
+            "context": "verify:eval",
+            "integration_id": 15368
+          },
+          {
+            "context": "verify:docker",
+            "integration_id": 15368
+          }
+        ]
+      }
+    },
+    {
+      "type": "pull_request",
+      "parameters": {
+        "required_approving_review_count": 0,
+        "dismiss_stale_reviews_on_push": false,
+        "require_code_owner_review": false,
+        "require_last_push_approval": false,
+        "required_review_thread_resolution": true,
+        "allowed_merge_methods": [
+          "squash"
+        ]
+      }
+    }
+  ]
+}

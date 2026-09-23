@@ -6,59 +6,55 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-23a)
+## RESUME HERE (2026-09-23b)
 
-**Pull request #212 builds PR-63: a Codex review record gates each pull request, and a change of documents alone skips the heavy jobs of CI. It waits for the Codex review and the owner's merge.**
+**This pull request builds PR-64. `make codex-review` starts the Codex review, and the third open round of one finding stops the loop. A pull request merges itself on the green light.**
 
 Author provider: Claude Code
 
-**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view 212`. The owner starts the Codex review session with the `pr-review` skill (D-821).
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of this pull request with `gh pr view`. When it is open, follow the author loop of section 3 of that skill.
 
-**The base.** `main` is `503dffd`, from #211. The deploy build `dc8ed000` of `deploy-web` ended SUCCESS at 02:45:32 UTC on 2026-09-23. The live check of PR-62 passed: the chunk `collection-page-Qcjp-D1m.js` holds "Back to the binder top", no chunk holds `max-h-[75vh]`, and the spec passed 2 of 2 on `decktome.com`.
+**The base.** `main` is `ab60c43`, from #212. The ruleset `review-gate` read `active` after that merge, on 2026-09-23.
 
-**Why this pull request exists.** The owner first picked F-165, then replaced it with the review gate of what-you-carry and the-thing-below (D-810). The owner then asked for a CI skip of documents in the same pull request (D-818, D-819).
+**Why this pull request exists.** On 2026-09-23 the owner asked for a review that the author session starts (D-823). The owner also asked for the stop of D-826 and the auto-merge of D-828.
 
 **What this pull request holds.**
 
-- `.github/workflows/review-gate.yml` and `docs/tools/review_gate.py`: the check reads `docs/reviews/pr-<number>.md` on the head (D-811, D-813, D-816).
-- The `review-override` label passes documents alone, and Dependabot passes when it wrote every commit (D-812, D-814, D-817).
-- The job `verify:skip` and `docs/tools/ci_skip.py`: the six heavy jobs skip under rule 1 or rule 2 of D-818.
-- The `pr-review` skill and five reference files, ported from the-thing-below.
-- `CLAUDE.md` rules 6 and 10, `AGENTS.md`, and the `one-pr-one-session` skill name the new review.
+- `docs/tools/codex_review.py` and its tests. The target refuses before it spends, updates the npm CLI, checks the ChatGPT login and the model, and runs Codex in a worktree (D-823 to D-825, D-832).
+- No Codex process gets an API key (D-833). The target removes `OPENAI_API_KEY` and `CODEX_API_KEY` from each call.
+- The `Open at:` line of each finding, and exit 4 at the third head (D-826).
+- `.github/rulesets/`, `docs/tools/ruleset_check.py`, and `docs/reference/merge-rules.md` (D-828).
+- The skills `one-pr-one-session`, `pr-review`, and `gitar-review`, `CLAUDE.md`, and `AGENTS.md` name the new loop.
 
-**Done on GitHub, outside git.** The session created the label `review-override` and the ruleset `review-gate`, id 23858584, with no bypass (D-815). The ruleset requires the check on `main` now, so each merge waits for it.
+**The checks.** The tool tests pass locally, 60 of them new. `make verify` did not run yet.
 
-**The checks.** `make verify` passed on this machine on `2914524`, exit 0, with Node 22.23.2 on the PATH. Every check of `cc386b4` is green on Actions, and the tool tests pass locally, 44 of them new. The first live `verify:skip` ran every job, because the base `503dffd` holds no rule. A live read of both rules against the history of #211 gave the expected result for each case.
+**The review.** No Gitar pass and no Codex review yet.
 
-**The review.** Gitar found three faults on `2914524` and `46d47ca`, and approved `cc386b4`. Codex then found three: the record title failed REF 1, the roadmap mark came after the approval (D-822), and the mark check matched `#2120`. Each fix has a test that fails on the old code, and `docs/reviews/pr-212-response.md` holds the answers. Gitar approved `fdf73be`. Codex approved `fdf73be` in `8ae1187`, and its record fixed the path list that Gitar named. Pending owner merge. The session disables the ruleset for the merge (D-815).
-
-**The merge of this pull request (D-815).** The check can not report on this pull request, because `pull_request_target` reads `main`. When the pull request is ready, this session sets the ruleset to `disabled`. After the owner's merge message, it sets the ruleset to `active` again and reads it back. Only then does it write the transitional prompt.
+**The settings.** GitHub still holds the old ruleset and merge settings. `make ruleset-check` reads 13 differences. The owner approves the change before the session makes it (D-829).
 
 **What waits on the owner.**
 
-- The Codex review of this pull request, and the merge.
+- The approval of the change of the settings.
 - F-165 and F-166, as later items.
-- A whole deck gate run measures the prompt of version 16 and the fixing floor of F-33. It is a paid target, so ask the owner first.
-- UNVERIFIED: the Moxfield import of the deck list. The export panel still names ManaBox and MTG Arena alone.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. It is a paid target, so ask the owner first.
+- UNVERIFIED: the Moxfield import of the deck list.
 - D-794 makes the app less strict than the Wizards infographic at Bracket 2.
 - Five sessions on the new files, before a decision on the checkpoint rule (next step 3, D-750).
-- A deployed session with a theme that matches no card, such as "anime" (next step 4).
-- A look at the first commander question after a load of the app (next step 5).
-- OQ-67 and OQ-77.
+- Next steps 4 and 5, and OQ-67 and OQ-77.
 
 ## How to resume
 
 1. Load the `one-pr-one-session` skill, and do its start gate. A session works on one pull request (D-746).
 2. Run `make where`. It prints the branch, the tree, and the state of the branch's pull request.
 3. Run `ps aux | grep autotune` before any write. The loop resets the tree when it rejects an iteration.
-4. Make a branch from `main`. Never commit on `main`, and never push to it (D-583). The owner merges (D-585). Run `make hooks` one time in a fresh checkout.
+4. Make a branch from `main`. Never commit on `main`, and never push to it (D-583). The pull request merges itself on the green light (D-828). Run `make hooks` one time in a fresh checkout.
 5. Load the skills. Load `ste-writing` before you write any `.md`. Load `design-doc-style` before you edit the roadmap. Load `mtg-corpus` before you reason about a format, a legality, or a card term.
 6. Run `make verify`. It runs every check the verify workflow runs, on this machine, for nothing. Put Node 22.23.2 on the PATH first. The pull request runs the same jobs on Actions, and a change of documents alone skips six of them (D-818).
 7. Do "Next steps, in order" below. Ask questions as they come up. Record each owner answer in `docs/decisions.md`, and delete the row from `docs/owner-questions.md`.
-8. Open the pull request with the sections of `.github/pull_request_template.md`, and run `make pr-check`. Load the `gitar-review` skill, and follow it after each push (D-637, D-745). After Gitar, the owner starts a Codex review with the `pr-review` skill (D-811). A pull request of documents alone takes the `review-override` label in place of that review (D-812).
+8. Open the pull request with the sections of `.github/pull_request_template.md`, and run `make pr-check`. Load the `gitar-review` skill, and follow it after each push (D-637, D-745). After Gitar, run `make codex-review PR=<n>` in the background (D-823). After the approval, turn on the auto-merge (D-828). A pull request of documents alone takes the `review-override` label in place of that review (D-812).
 9. Update this file inside the pull request, before you call it ready (D-747). Read only the section that you change.
 10. Keep three session records at most (D-749). Move each older record to the archive, word for word.
-11. When the pull request is ready, end the session. The next pull request starts in a new clean session.
+11. When the pull request merges, write the transitional prompt of the `one-pr-one-session` skill, and end the session.
 
 A second Mac: `docs/setup-second-mac.md` holds what to carry, what to install, and how to prove the machine.
 
@@ -68,7 +64,7 @@ Twenty-two things a fresh session gets wrong without this file.
 - A singular creature-type word keeps the generic rule, and its plural reads the type row (D-731). So "zombie" and "zombies" read two different lists, and F-144 records why.
 - A stored deck records the size of its shortlist and no card of it. So a card that never reached the shortlist and a card that the model dropped look the same. Replay the shortlist for free before a prompt fix (M-17). `.local/m17/zz_scratch_m17_test.go` holds the method, and `list.Theme` names the theme words that matched no card.
 - `make bracket-gate` runs its tool in `go/`, through `go -C go`. A relative `-rejudge` path then points inside `go/`, so pass an absolute path.
-- Thirteen targets and two loop scripts spend money: `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `make api-build`, `scripts/autotune.sh`, and `scripts/feedback-loop.sh`. Ask the owner before each run. `docs/reference/paid-targets.md` holds the cost and the guard of each. `make autotune`, `make feedback-loop`, `make feedback-loop-dry`, `make feedback-triage-dry`, `eval sweep -dry`, and `go run ./cmd/bracket-gate -sweep` are free.
+- Fourteen targets and two loop scripts spend money: `make codex-review`, `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `make api-build`, `scripts/autotune.sh`, and `scripts/feedback-loop.sh`. Ask the owner before each run. `docs/reference/paid-targets.md` holds the cost and the guard of each. `make autotune`, `make feedback-loop`, `make feedback-loop-dry`, `make feedback-triage-dry`, `eval sweep -dry`, and `go run ./cmd/bracket-gate -sweep` are free.
 - A rerun writes to a new file. Every `*_OUT` variable refuses a document that holds a result (D-65).
 - A gate document names the commit of `HEAD`, and never the tree. Deck gate run 29 ran over uncommitted work, so its header names the parent commit `5fd8085`. Commit the change before a paid run.
 - A gate run takes about 20 minutes and an eval about 13. A foreground command stops at 10 minutes, so run both in the background.
@@ -111,7 +107,7 @@ Twenty-two things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **The first live runs of PR-63, on the next pull request** (D-815, D-818). Read the log of `review-gate` and of `verify:skip` on that pull request. Confirm that `gh api repos/nkramber/decktome/rulesets/23858584` reads `active`. **PR-63** is #212.
+1. **PR-64: the review target and the auto-merge** (D-823 to D-833). This pull request also holds the first live runs of PR-63. **PR-63** is #212.
 2. **The open items of the roadmap.** Three register rows read 🔧: F-49, F-165, and F-166. F-49 waits for the owner. F-165 needs a free replay of the Najeela shortlist, and F-166 needs a plan. OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate run 9 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. No whole deck gate run measured them yet.
 3. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It waits, because the ten sessions of the audit ran before #184 and before D-749.
 4. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git.
@@ -130,7 +126,7 @@ CAUTION: `make verify` runs `eval-check`, and `eval-check` reads the newest whol
 
 The CI step "fake gcs tests" ran no test until 2026-09-10 (D-658). Its filter matched no test name, so it passed as a no-op. It runs `scripts/gcs-check.sh` now: the script seeds the fake GCS from the trimmed snapshot and fails unless `TestLiveFakeGCS` passes by name. `make gcs-check` runs the same script.
 
-A ruleset that requires the `verify` check on `main` is not possible. The repo is private on the free plan, and the rulesets API answers 403 (checked 2026-08-28). The owner reads the checks before a merge.
+The repository is public (D-639). The rulesets API answers, and the ruleset of `main` can require each job of `verify` (D-828). `docs/reference/merge-rules.md` holds the rules, and `make ruleset-check` compares them with GitHub.
 
 ## The three most recent sessions
 
@@ -138,14 +134,14 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 **The owner named the scroll of the collection page, pinned the toolbar alone, and chose the binder top as the target of the button** (D-806 to D-809). The session recommended the top of the page, and the owner chose the binder. The first spec run found that a row the virtualizer measures stops a smooth scroll of another source. So the virtualizer makes the move.
 
-### 2026-09-22e: the power pass of D-704
-
-**The owner picked the power pass, then chose a paid run first, a second judge read, and the retirement** (D-804, D-805). The session said that runs 7 and 8 refute the condition of D-704. Run 9 found a new Najeela miss, and the second read held it. Both reads name the warrior filler, and every power floor holds, so a power pass can not move the read. The deploy of #209 ended SUCCESS.
-
 ### 2026-09-23a: the review gate and the CI skip, PR-63
 
 **The owner picked F-165 after the live check of #211, then replaced it with the review gate of the two sibling repos** (D-810). The session quoted hard rule 10 against the request, and the owner chose Codex after Gitar. The owner chose a ruleset with no bypass, a label of the session, and an exemption of Dependabot. The session found that #133 held a code commit of a session on a Dependabot branch, so the exemption reads the commit authors. The owner added the CI skip mid-session.
 
+### 2026-09-23b: the review target and the auto-merge, PR-64
+
+**The owner asked for `make codex-review`, a stop at the third open round of one finding, and an auto-merge on the green light** (D-823, D-826, D-828). The session asked six questions at the start. The owner chose the npm CLI with an update before each review, over the binary of the app (D-824). The owner chose the auto-merge for this pull request, over a merge by the owner (D-829). A later answer made the review loop exempt from the ask of each paid run, because it spends the Codex plan (D-831). The owner then asked that no Codex process ever get an API key, and chose the Codex processes as the scope (D-833).
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-22f, the records of 2026-08-31 to 2026-09-22d, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-23a, the records of 2026-08-31 to 2026-09-22e, and 104 more sections, word for word. Read it for the detail behind a decision.
