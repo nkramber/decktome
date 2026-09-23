@@ -45,7 +45,7 @@ Obey these rules:
 - A reason says why the document stays correct. "No documentation impact" is not a reason.
 - Never defer a document to "after the merge" or to another pull request.
 - The hand-off describes only the work in this pull request and the state of its base.
-- Mark the own roadmap item `✅ merged as #N` after the number exists. The text reaches `main` only through the merge (D-747).
+- Mark the own roadmap item `✅ merged as #N` right after the pull request opens, before the Gitar pass. A roadmap commit moves the effective head, so a later mark needs a new review (D-822). The text reaches `main` only through the merge (D-747).
 - Never write a merge commit, a merge time, or a deploy result that you did not read. Git, GitHub, and Cloud Build hold those facts.
 
 Run `make pr-check` before you ask for the review. For a draft body, set `PR_BODY_FILE` and `PR_TITLE`. CI runs the same check on each body edit and push.
@@ -138,6 +138,7 @@ The session ends with this prompt. It makes no branch and no change for the next
 |---|---|
 | The body, the table, the hand-off change, and a deferred document | `make pr-check` and the `pr-contract` workflow (D-748) |
 | A commit on `main` | The pre-commit hook of `make hooks` (D-585) |
+| The roadmap mark `✅ merged as #N` in a diff that changes the roadmap | `make pr-check` and the `pr-contract` workflow (D-822) |
 | A merge with no approved Codex record, label, or Dependabot exemption | The `review-gate` workflow and the ruleset of `main` (D-815) |
 | A second branch in one session | `.claude/hooks/session_bind.py` (D-748) |
 | The skill frontmatter and the wiring | `make lifecycle-check` (D-748) |

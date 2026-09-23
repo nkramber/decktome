@@ -28,6 +28,8 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 SKILL = ".claude/skills/one-pr-one-session/SKILL.md"
 TEMPLATE = ".github/pull_request_template.md"
 HANDOFF = "docs/SESSION-HANDOFF.md"
+ROADMAP = "docs/design-roadmap.md"
+MERGED_MARK = "✅ merged as #"
 EXEMPT_AUTHORS = {"dependabot[bot]", "app/dependabot"}
 BLOCKED = "Blocked: start a new clean session for this PR."
 COMPLETE = "This session is bound to PR #N and is complete. End this session. Start a new clean session before beginning another PR."
@@ -208,7 +210,7 @@ def deferred_sentences(text):
     return found
 
 
-def check_pr(title, body, author, head_ref, changed, exists, is_ancestor=None, handoff_added=""):
+def check_pr(title, body, author, head_ref, changed, exists, is_ancestor=None, handoff_added="", number=None, roadmap_added=""):
     """Return every contract error of one pull request. Empty means it passes."""
     if author in EXEMPT_AUTHORS:
         return []
@@ -222,6 +224,11 @@ def check_pr(title, body, author, head_ref, changed, exists, is_ancestor=None, h
         errors.append(f"the hand-off defers documentation: \"{sentence}\"")
     if changed and all(is_document(p) for p in changed) and MERGE_RECORD_TITLE.search(title or ""):
         errors.append("a pull request of documents alone records an earlier merge or deploy. Git and Cloud Build hold those facts (D-747)")
+    # The mark goes in right after the pull request opens, before any review
+    # reads the head, because a roadmap commit moves the effective head (D-822).
+    mark = f"{MERGED_MARK}{number}"
+    if number and ROADMAP in changed and mark not in roadmap_added:
+        errors.append(f"the diff of {ROADMAP} adds no \"{mark}\". Mark the roadmap item before the Gitar pass (D-822)")
     return errors
 
 
@@ -238,22 +245,28 @@ def run_pr(args):
             pr = json.load(handle).get("pull_request") or {}
         title, body = pr.get("title", ""), pr.get("body") or ""
         author, head = (pr.get("user") or {}).get("login", ""), (pr.get("head") or {}).get("ref", "")
+        number = pr.get("number")
     elif args.gh:
-        out = subprocess.run(["gh", "pr", "view", "--json", "title,body,author,headRefName"], cwd=ROOT, capture_output=True, text=True)
+        out = subprocess.run(["gh", "pr", "view", "--json", "title,body,author,headRefName,number"], cwd=ROOT, capture_output=True, text=True)
         if out.returncode != 0:
             raise SystemExit("pr_check: gh reads no pull request for this branch. Pass PR_BODY_FILE and PR_TITLE for a draft.")
         pr = json.loads(out.stdout)
         title, body = pr["title"], pr["body"]
         author, head = pr["author"]["login"], pr["headRefName"]
+        number = pr["number"]
     else:
         with open(args.body_file, encoding="utf-8") as handle:
             body = handle.read()
         title, author, head = args.title or "", "", args.head or git("rev-parse", "--abbrev-ref", "HEAD").strip()
+        number = None
     changed = [p for p in git("diff", "--name-only", f"{args.base}...HEAD").splitlines() if p]
-    handoff_added = "\n".join(
-        line[1:] for line in git("diff", "--unified=0", f"{args.base}...HEAD", "--", HANDOFF).splitlines()
-        if line.startswith("+") and not line.startswith("+++")
-    )
+    def added(path):
+        return "\n".join(
+            line[1:] for line in git("diff", "--unified=0", f"{args.base}...HEAD", "--", path).splitlines()
+            if line.startswith("+") and not line.startswith("+++")
+        )
+
+    handoff_added, roadmap_added = added(HANDOFF), added(ROADMAP)
 
     def exists(path):
         return os.path.exists(os.path.join(ROOT, path.rstrip("/")))
@@ -264,7 +277,7 @@ def run_pr(args):
     if author in EXEMPT_AUTHORS:
         print(f"pr_check: {author} is exempt. The owner reads a dependency pull request (D-748).")
         return 0
-    errors = check_pr(title, body, author, head, changed, exists, is_ancestor, handoff_added)
+    errors = check_pr(title, body, author, head, changed, exists, is_ancestor, handoff_added, number, roadmap_added)
     for error in errors:
         print(f"pr_check: {error}")
     print(f"pr_check: {len(changed)} changed files, {len(errors)} contract errors")

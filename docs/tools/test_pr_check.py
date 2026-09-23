@@ -153,6 +153,21 @@ class PullRequestContract(unittest.TestCase):
     def test_reviewer_role_passes(self):
         self.assertEqual(check(body().replace("Role: author", "Role: reviewer")), [])
 
+    def test_a_roadmap_change_without_the_merge_mark_fails(self):
+        errors = pc.check_pr("PR-63: a gate", body(), "nkramber", "pr60-example", CHANGED, exists,
+                             lambda sha: True, number=212, roadmap_added="**PR-63: A gate.** 🔧 built.")
+        self.assertTrue(any("merged as #212" in e for e in errors), errors)
+
+    def test_a_roadmap_change_with_the_merge_mark_passes(self):
+        errors = pc.check_pr("PR-63: a gate", body(), "nkramber", "pr60-example", CHANGED, exists,
+                             lambda sha: True, number=212, roadmap_added="**PR-63: A gate.** ✅ merged as #212.")
+        self.assertFalse(any("merged as" in e for e in errors), errors)
+
+    def test_a_draft_with_no_number_skips_the_merge_mark(self):
+        errors = pc.check_pr("PR-63: a gate", body(), "nkramber", "pr60-example", CHANGED, exists,
+                             lambda sha: True, number=None, roadmap_added="🔧 built")
+        self.assertFalse(any("merged as" in e for e in errors), errors)
+
     def test_dependabot_is_exempt(self):
         self.assertEqual(check("", changed=["web/package.json"], author="dependabot[bot]"), [])
 
