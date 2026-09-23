@@ -8,11 +8,11 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-23b)
 
-**This pull request builds PR-64. `make codex-review` starts the Codex review, and the third open round of one finding stops the loop. A pull request merges itself on the green light.**
+**Pull request #213 builds PR-64. `make codex-review` starts the Codex review, and the third open round of one finding stops the loop. A pull request merges itself on the green light.**
 
 Author provider: Claude Code
 
-**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of this pull request with `gh pr view`. When it is open, follow the author loop of section 3 of that skill.
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view 213`. When it is open, follow the author loop of section 3 of that skill.
 
 **The base.** `main` is `ab60c43`, from #212. The ruleset `review-gate` read `active` after that merge, on 2026-09-23.
 
@@ -26,7 +26,7 @@ Author provider: Claude Code
 - `.github/rulesets/`, `docs/tools/ruleset_check.py`, and `docs/reference/merge-rules.md` (D-828).
 - The skills `one-pr-one-session`, `pr-review`, and `gitar-review`, `CLAUDE.md`, and `AGENTS.md` name the new loop.
 
-**The checks.** The tool tests pass locally, 60 of them new. `make verify` did not run yet.
+**The checks.** `make verify` passed on the code of `9c25d23`, exit 0, with Node 22.23.2 on the PATH. The tool tests pass locally, 62 of them new.
 
 **The review.** No Gitar pass and no Codex review yet.
 

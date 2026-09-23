@@ -1916,7 +1916,7 @@ Gate:
 GitHub starts `pull_request_target` from `main` alone, so the check can not run on this pull request. The first live run of both rules is the next pull request. The session disables the ruleset for this merge, and enables it again after the merge (D-815).
 > *In plain English:* until now, one automatic reviewer read each change, and every change ran the full test suite. After this change, a second AI from another company reads each change of code. GitHub refuses the merge until its written verdict approves the latest code. A change of documents alone skips the slow tests, but only when the code under it already passed them.
 
-**PR-64: The author session starts the Codex review, and a pull request merges itself on the green light (D-823 to D-834).** 🔧 in progress.
+**PR-64: The author session starts the Codex review, and a pull request merges itself on the green light (D-823 to D-834).** ✅ merged as #213. The mark comes before the Gitar pass (D-822).
 PR-63 made the Codex record a required check. The owner still started each Codex review in the desktop app, and the owner merged each pull request (D-583, D-811).
 
 - **The target.** `make codex-review PR=<n>` runs `docs/tools/codex_review.py`. It updates the npm CLI, checks the login and the model, and runs `codex exec` in a new worktree at the head (D-823 to D-825).
@@ -2271,7 +2271,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 
 53. **PR-63** a Codex review gates each pull request, and a change of documents skips the heavy CI jobs (D-810 to D-821). The ruleset of `main` requires the `review-gate` check. No paid target ran.
 
-54. **PR-64** `make codex-review` starts the Codex review, and a pull request merges itself on the green light (D-823 to D-833).
+54. **PR-64** `make codex-review` starts the Codex review, and a pull request merges itself on the green light (D-823 to D-834).
 
 ## 9. Open questions
 
