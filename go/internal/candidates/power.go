@@ -199,7 +199,7 @@ func capRole(cs []Candidate, n int) []Candidate {
 // Changer land counts toward a power floor, so a pinned land skips the
 // land cap and does not count against it, as a pinned card of every other
 // role does (F-131, D-710). The result keeps the order of the bucket.
-func capPinnedLands(cs []Candidate, n int) []Candidate {
+func capPinnedLands(cs []Candidate, n int, byScore bool) []Candidate {
 	rest := make([]Candidate, 0, len(cs))
 	for _, c := range cs {
 		if !c.Pinned {
@@ -207,7 +207,7 @@ func capPinnedLands(cs []Candidate, n int) []Candidate {
 		}
 	}
 	keep := make(map[*mtgv1.Card]Candidate, n)
-	for _, c := range capLands(rest, n) {
+	for _, c := range capLands(rest, n, byScore) {
 		keep[c.Card] = c
 	}
 	out := make([]Candidate, 0, n)

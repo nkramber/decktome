@@ -1147,7 +1147,7 @@ func TestLandCapKeepsTheManaStaples(t *testing.T) {
 	}
 	staples = append(staples, "Verdant Catacombs")
 	sortCandidates(in)
-	got := capLands(in, 10)
+	got := capLands(in, 10, false)
 	if len(got) != 10 {
 		t.Fatalf("cap = %d lands, want 10", len(got))
 	}
@@ -1172,7 +1172,7 @@ func TestLandCapKeepsTheManaStaples(t *testing.T) {
 		t.Errorf("the bucket lost its score order: %s first", got[0].Card.GetName())
 	}
 	// A bucket inside the cap is untouched.
-	if got := capLands(in[:8], 10); len(got) != 8 {
+	if got := capLands(in[:8], 10, false); len(got) != 8 {
 		t.Errorf("a bucket of 8 under a cap of 10 became %d", len(got))
 	}
 	// A theme that matched two lands leaves the rest of its half to the
@@ -1183,7 +1183,7 @@ func TestLandCapKeepsTheManaStaples(t *testing.T) {
 		few = append(few, land(fmt.Sprintf("Dual %d", i), 0.15, 0.5-float64(i)/100, 2))
 	}
 	sortCandidates(few)
-	got = capLands(few, 6)
+	got = capLands(few, 6, false)
 	names = map[string]bool{}
 	for _, c := range got {
 		names[c.Card.GetName()] = true
@@ -1199,7 +1199,7 @@ func TestLandCapKeepsTheManaStaples(t *testing.T) {
 	// played, and two colors is fixing enough, so the shock leads.
 	three := []Candidate{land("Thriving Isle", 0.15, 0.6, 3), land("Hallowed Fountain", 0.15, 0.99, 2), land("Reliquary Tower", 0.15, 1.0, 0)}
 	sortCandidates(three)
-	if got := capLands(three, 2); got[0].Card.GetName() != "Hallowed Fountain" && got[1].Card.GetName() != "Hallowed Fountain" {
+	if got := capLands(three, 2, false); got[0].Card.GetName() != "Hallowed Fountain" && got[1].Card.GetName() != "Hallowed Fountain" {
 		t.Errorf("the shock land lost to a three-color count: %v", got)
 	}
 }
