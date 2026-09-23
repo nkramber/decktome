@@ -29,7 +29,7 @@ Author provider: Claude Code
 
 **The checks.** `python3 -m unittest` passed 110 tests of `test_review_gate`, `test_codex_review`, and `test_ci_skip`. `make verify` passed, exit 0, with Node 22.23.2 on the PATH, on the tree of the first commit of this pull request.
 
-**The review.** The Codex review approves effective head `224cef7`. No Gitar code review or actionable feedback exists. The local `make verify` stopped because `protoc-gen-es` is absent. GitHub verification and `pr-contract` pass. The review record and hand-off commit still need a push and a fresh `review-gate` result.
+**The review.** The Codex review approves effective head `224cef7`. No Gitar code review or actionable feedback exists. The local `make verify` stopped because `protoc-gen-es` is absent. GitHub `review-gate`, `pr-contract`, `verify:eval`, `verify:shell`, and `verify:skip` pass. The other heavy verify jobs skip for this documents-only commit. Review record and hand-off commit `5a7bd5e` are on the PR branch.
 
 **What waits on the owner.**
 
