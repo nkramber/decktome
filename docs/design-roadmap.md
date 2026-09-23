@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-23 correction pass 220 (PR-65, D-837): the owner asked that a commit of documents alone keep a green `review-gate` green. The owner chose this rule over the roadmap clause of D-822. Changes: PR-65.
+
 2026-09-23 correction pass 219 (D-836): the summary before a merge has four sections, What, How, CI, and Codex review. The owner asked for it in #214. Changes: none.
 
 2026-09-23 correction pass 218 (D-835): a free replay of the Najeela shortlist refuted the guard of `swapOne` as the cause of F-165. The total cut of the shortlist dropped 11 of the 20 mana lands. The cut now keeps them, and the fixing fill trades a tapped land that fixes no color. Changes: F-165, PR-45b.
@@ -1943,6 +1945,21 @@ Gate:
 - `make verify` passes.
 > *In plain English:* until now, the owner started each second review by hand and pressed the merge button. After this change, the working session starts the review with one command. When every check is green and the review approves, GitHub merges the change. When a review finds the same problem three times, the loop stops and asks the owner.
 
+**PR-65: A commit of documents alone keeps a green review gate green (D-837).** ✅ merged as #215. The mark comes before the Gitar pass (D-822).
+RG 5 of PR-63 read the effective head of D-813 alone. So a later commit of the roadmap, a decision, or a skill turned the check red, and it asked for a new Codex review.
+
+- **The rule.** RG 5 of `docs/tools/review_gate.py` also passes a record of an earlier commit, when each later commit changes documents alone. The documents are the set of D-814.
+- **The limits.** A path of code, a refused path of D-814, or a merge commit after the recorded head still fails the check.
+- **What stays.** A reviewer still records the effective head of D-813. `make codex-review` still waits for the Gitar pass of each later commit, and Gitar still reviews each commit of documents (D-752).
+
+Gate:
+
+- `docs/tools/test_review_gate.py` covers each kind of document, many commits of documents, a later commit of code, a refused path, and a merge. It also covers a pull request of documents alone.
+- Each test that expects a pass fails on the rule of `11a30e7`.
+- The `review-gate` check reads its rule from `main` (D-816). So this pull request runs the old rule on its own head, and the tests prove the change.
+- `make verify` passes.
+> *In plain English:* until now, any edit after the second review, even one line of text, asked for that review again. After this change, an edit of documents alone keeps the approval. The first review bot still reads each edit, and a change of code still needs the second review.
+
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
 
@@ -2278,6 +2295,8 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 53. **PR-63** a Codex review gates each pull request, and a change of documents skips the heavy CI jobs (D-810 to D-821). The ruleset of `main` requires the `review-gate` check. No paid target ran.
 
 54. **PR-64** `make codex-review` starts the Codex review, and a pull request merges itself on the green light (D-823 to D-834).
+
+55. **PR-65** a commit of documents alone keeps a green `review-gate` green (D-837). No paid target ran.
 
 ## 9. Open questions
 

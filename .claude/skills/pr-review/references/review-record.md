@@ -27,6 +27,8 @@ The effective head is the newest commit that changes a path outside the metadata
 
 A commit that changes those paths alone is a metadata commit. It does not move the effective head. So the commit of the record does not make the record stale, and a later hand-off commit of the author does not either. A commit that changes the record of another pull request moves the effective head.
 
+The check also passes a record of an earlier commit, when each later commit changes documents alone (D-837). The documents are the set of the `review-override` label (D-814). So a later commit of the roadmap, a decision, or a skill keeps the approval. Still record the effective head, because `make codex-review` reads a new record against it.
+
 A merge commit always moves the effective head, because it brings new code into the branch.
 
 Record the effective head, and not the tip of the branch. Read it with the rule of the check itself, so the two never disagree:
@@ -149,7 +151,7 @@ The check has five rules (D-810 to D-817):
 2. RG 2: Dependabot opened the pull request and wrote every commit. This rule passes the check alone.
 3. RG 3: `docs/reviews/pr-<number>.md` exists on the head.
 4. RG 4: the verdict is `Ready for owner merge`.
-5. RG 5: the head field names the effective head.
+5. RG 5: the head field names the effective head, or an earlier commit that documents alone follow (D-837).
 
 `docs/tools/review_gate.py` holds each rule, and `docs/tools/test_review_gate.py` holds its tests. A push of code after the approval fails RG 5. That result is correct: review the new diff, then change the head field and the verdict together.
 

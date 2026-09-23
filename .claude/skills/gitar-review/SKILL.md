@@ -100,6 +100,8 @@ A commit of the metadata set does not make a pass stale (D-752). The record of a
 
 A commit that changes any other path moves the effective head. A documents-only pull request waits for the review of its own documents (D-679). The metadata set holds the hand-off alone, not the documents that the pull request changes.
 
+After the Codex approval, a commit of documents alone keeps `review-gate` green (D-837). So the Gitar pass is the one review of that commit. Push no commit after the auto-merge turns on, because GitHub can then merge it before Gitar reads it.
+
 ## Rules for each reply
 
 - State the evidence: the command, the test, the decision id, or the commit.
