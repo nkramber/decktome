@@ -30,7 +30,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passed on this machine on `2914524`, exit 0, with Node 22.23.2 on the PATH. Every check of `cc386b4` is green on Actions, and the tool tests pass locally, 44 of them new. The first live `verify:skip` ran every job, because the base `503dffd` holds no rule. A live read of both rules against the history of #211 gave the expected result for each case.
 
-**The review.** Gitar found three faults on `2914524` and `46d47ca`, and approved `cc386b4`. Codex then found three: the record title failed REF 1, the roadmap mark came after the approval (D-822), and the mark check matched `#2120`. Each fix has a test that fails on the old code, and `docs/reviews/pr-212-response.md` holds the answers. Gitar approved `fdf73be` with one suggestion on the record itself, which the repeat Codex review of `fdf73be` fixes.
+**The review.** Gitar found three faults on `2914524` and `46d47ca`, and approved `cc386b4`. Codex then found three: the record title failed REF 1, the roadmap mark came after the approval (D-822), and the mark check matched `#2120`. Each fix has a test that fails on the old code, and `docs/reviews/pr-212-response.md` holds the answers. Gitar approved `fdf73be`. Codex approved `fdf73be` in `8ae1187`, and its record fixed the path list that Gitar named. Pending owner merge. The session disables the ruleset for the merge (D-815).
 
 **The merge of this pull request (D-815).** The check can not report on this pull request, because `pull_request_target` reads `main`. When the pull request is ready, this session sets the ruleset to `disabled`. After the owner's merge message, it sets the ruleset to `active` again and reads it back. Only then does it write the transitional prompt.
 
