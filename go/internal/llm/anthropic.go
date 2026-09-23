@@ -137,7 +137,9 @@ func decodeLiteralEscapes(raw []byte) []byte {
 
 func isHex4(b []byte) bool {
 	for _, c := range b {
-		if !('0' <= c && c <= '9' || 'a' <= c && c <= 'f' || 'A' <= c && c <= 'F') {
+		switch {
+		case '0' <= c && c <= '9', 'a' <= c && c <= 'f', 'A' <= c && c <= 'F':
+		default:
 			return false
 		}
 	}

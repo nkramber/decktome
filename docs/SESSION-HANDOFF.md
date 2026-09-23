@@ -23,14 +23,15 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 - `go/internal/llm/anthropic_escape_test.go` holds three tests. The adapter test fails without the fix.
 - The 18 old documents keep their escapes, by the owner's choice (D-803).
 
-**The checks.** CHECKS_PENDING
+**The F-164 live check of #207 passed.** The owner opened a deck page on a cold instance on 2026-09-23, and the card art arrived with no reload. The API log reads five card calls with 503 after about 5 seconds, from 00:04:54 UTC. Then the retries read 200 at 00:05:05 and 00:05:14 UTC.
+
+**The checks.** `make verify` passed on this machine, exit 0, with Node 22.23.2 on the PATH. The first run failed on one staticcheck finding in `isHex4`, and a `switch` fixed it. `go test ./internal/llm/` passes.
 
 **The review.** REVIEW_PENDING
 
 **What waits on the owner.**
 
 - The merge of this pull request.
-- The live check of F-164. Leave the app closed for about 20 minutes, then open a deck page. The card art must arrive with no reload.
 - A whole deck gate run measures the prompt of version 16 and the fixing floor of F-33. It is a paid target, so ask the owner first.
 - UNVERIFIED: the Moxfield import of the deck list. The export panel still names ManaBox and MTG Arena alone.
 - D-794 makes the app less strict than the Wizards infographic at Bracket 2.
