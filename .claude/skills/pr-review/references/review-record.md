@@ -4,7 +4,7 @@ Part of the `pr-review` skill. Load this file before you write a review record o
 
 ## The record
 
-Use one file for each pull request, `docs/reviews/pr-<number>.md`. The number is the GitHub number, and not the roadmap id. Keep the name and the finding ids on a repeat review.
+Use one file for each pull request, `docs/reviews/pr-<number>.md`. The number is the GitHub number, and not the roadmap id. Never write the GitHub number after `PR-`, because `make ref-check` reads `PR-` and a number as a roadmap id (D-753). Keep the name and the finding ids on a repeat review.
 
 The record and the `Author provider` line of the hand-off can name a provider (D-811). No commit, body, branch, or comment names one (hard rule 6).
 
@@ -41,7 +41,7 @@ python3 docs/tools/review_gate.py --effective-head <number>
 Keep the text of each heading, and keep the order.
 
 ```markdown
-# PR-<number> review
+# Pull request <number> review
 
 Date: <YYYY-MM-DD>
 

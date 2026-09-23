@@ -236,6 +236,21 @@ class GitFacts(unittest.TestCase):
         self.assertEqual(status, 1, out)
 
 
+class RecordTemplate(unittest.TestCase):
+    def test_a_filled_skeleton_passes_the_reference_check(self):
+        refs = importlib.util.spec_from_file_location("ref_check", os.path.join(HERE, "ref_check.py"))
+        rc = importlib.util.module_from_spec(refs)
+        refs.loader.exec_module(rc)
+        doc = ".claude/skills/pr-review/references/review-record.md"
+        with open(os.path.join(rg.ROOT, doc), encoding="utf-8") as handle:
+            text = handle.read()
+        skeleton = text.split("## The skeleton", 1)[1].split("```markdown\n", 1)[1].split("\n```", 1)[0]
+        record_text = skeleton.replace("<number>", "212").replace("PR-<id>", "PR-63")
+        known = rc.registers(rc.read(rc.DECISIONS), rc.read(rc.ROADMAP))
+        findings = [f for f in rc.check("docs/reviews/pr-212.md", record_text, known, set(), set(), set()) if f[1] == "REF 1"]
+        self.assertEqual(findings, [])
+
+
 class Workflow(unittest.TestCase):
     def test_the_workflow_runs_this_file_from_the_base_and_never_the_head(self):
         with open(os.path.join(rg.ROOT, ".github/workflows/review-gate.yml"), encoding="utf-8") as handle:
