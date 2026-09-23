@@ -27,7 +27,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 **The checks.** `make verify` passed on this machine, exit 0, with Node 22.23.2 on the PATH. The first run failed on one staticcheck finding in `isHex4`, and a `switch` fixed it. `go test ./internal/llm/` passes.
 
-**The review.** REVIEW_PENDING
+**The review.** Gitar reviewed `8c728dc` and reads "Approved", with no finding and no thread. Its dashboard edit of 00:13:22 UTC is later than the push of 00:12:52 UTC, both of 2026-09-23, so the review is current. The later commit changes `docs/SESSION-HANDOFF.md` alone, which is the metadata set, so the pass holds (D-752). Gitar also approved `2e0b4a4` and `c4b5c29` with no finding.
 
 **What waits on the owner.**
 
