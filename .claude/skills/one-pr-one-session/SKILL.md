@@ -40,6 +40,7 @@ The pull request body holds the sections of `.github/pull_request_template.md`. 
 Obey these rules:
 
 - Change `docs/SESSION-HANDOFF.md` in every pull request. Record the finished state, the checks, the review state, and "pending owner merge".
+- Write the line `Author provider: Claude Code` or `Author provider: Codex` in the hand-off record. The Codex review reads it (D-811).
 - Change every document whose facts or contracts the pull request changes. Name the path in backticks.
 - A reason says why the document stays correct. "No documentation impact" is not a reason.
 - Never defer a document to "after the merge" or to another pull request.
@@ -58,6 +59,7 @@ The pull request is ready for the owner only when all of these are true:
 - The roadmap and the hand-off read the state of this pull request.
 - `make pr-check` passes, and every canonical document has its row.
 - `make verify` passes. The `gitar-review` skill found no open finding on a current review.
+- The `review-gate` check passes. A Codex record approves the effective head, or the `review-override` label applies (D-811, D-812).
 - No work waits for a second pull request.
 
 Then tell the owner the pull request is ready, and write this line with the number:
@@ -68,7 +70,9 @@ Do not offer the next pull request. After the owner merges, write the transition
 
 ## 4. While the pull request waits
 
-The session stays bound to the pull request while it waits for Gitar or for the owner. It answers each finding on the same pull request (D-746).
+The session stays bound to the pull request while it waits for Gitar, for the Codex review, or for the owner. It answers each finding on the same pull request (D-746).
+
+After the Gitar pass, tell the owner that the pull request is ready for the Codex review. The `pr-review` skill gives the facts to name. A pull request of documents alone takes the label in place of that review.
 
 - Tell the owner that the session is ready for a context compaction while the pull request waits (D-754).
 - Say the same when the context of the session passes 300K tokens (D-750).
@@ -134,6 +138,7 @@ The session ends with this prompt. It makes no branch and no change for the next
 |---|---|
 | The body, the table, the hand-off change, and a deferred document | `make pr-check` and the `pr-contract` workflow (D-748) |
 | A commit on `main` | The pre-commit hook of `make hooks` (D-585) |
+| A merge with no approved Codex record, label, or Dependabot exemption | The `review-gate` workflow and the ruleset of `main` (D-815) |
 | A second branch in one session | `.claude/hooks/session_bind.py` (D-748) |
 | The skill frontmatter and the wiring | `make lifecycle-check` (D-748) |
 | The byte budget of the start read | `make context-budget` (D-749) |
@@ -147,5 +152,6 @@ The session ends with this prompt. It makes no branch and no change for the next
 
 - This session answers the Gitar review of its pull request, and a Gitar answer never needs a new session.
 - Never call the pull request ready before a current Gitar review lands. Fix each finding on the same pull request. So the merge-first trap of the `gitar-review` skill does not occur.
+- Never call the pull request ready before the `review-gate` check passes on its head. The ruleset of `main` refuses the merge until then (D-815).
 - A merge or a deploy of an earlier pull request never gets its own pull request. The next item reads the base when its own concern needs it.
 - An unattended loop pull request stays red on `pr-contract` until a clean author session completes its rows (D-748).

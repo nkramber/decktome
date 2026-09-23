@@ -1,9 +1,10 @@
 name: verify
 
 # The workflow runs on every pull request and on every push to one
-# (D-639). The repository is public, so the Actions minutes are free and
-# no job waits on a diff. `make verify` still runs the same checks on the
-# owner's machine, and the two answer the same question.
+# (D-639). A change of documents alone skips the six heavy jobs when the
+# code under it passed verify (D-818 to D-820). `make verify` still runs
+# the same checks on the owner's machine, and the two answer the same
+# question.
 #
 # It also runs when the owner asks for it, and on one weekly schedule.
 # A dispatch reads the diff of this ref against main and skips a job that
@@ -39,10 +40,10 @@ permissions:
 # Every job has a timeout. A hung test or install runs to the 6-hour
 # default otherwise.
 #
-# A pull request runs every job, because the repository is public and the
-# minutes cost nothing (D-639). A dispatch still reads the diff and skips
-# a job the ref does not touch, which keeps a hand run short. The
-# scheduled run starts the vuln job alone.
+# A pull request runs every job, except when the skip job finds a change
+# of documents alone over code that passed (D-639, D-818). A dispatch
+# still reads the diff and skips a job the ref does not touch, which keeps
+# a hand run short. The scheduled run starts the vuln job alone.
 jobs:
   changes:
     name: "verify:changes"
@@ -88,10 +89,54 @@ jobs:
             echo "eval=$(has '^(docs/reference/eval/|go/internal/evalrun/|go/cmd/eval/|Makefile$|\.github/workflows/)')"
           } | tee -a "$GITHUB_OUTPUT"
 
+  # A change of documents alone skips the six heavy jobs (D-818 to D-820).
+  # The shell and eval jobs read documents, so they never skip. The rule
+  # runs from the base commit, so a pull request can not change the rule
+  # that skips its own jobs. A base with no rule, or any fault, gives no
+  # output, and each heavy job then runs.
+  skip:
+    name: "verify:skip"
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
+    outputs:
+      skip: ${{ steps.decide.outputs.skip }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      # Each value of the event enters through env, never through an
+      # expression inside the script.
+      - id: decide
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          ACTION: ${{ github.event.action }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          rule="$RUNNER_TEMP/rule"
+          mkdir -p "$rule"
+          if ! git show "$BASE_SHA:docs/tools/ci_skip.py" > "$rule/ci_skip.py" ||
+             ! git show "$BASE_SHA:docs/tools/review_gate.py" > "$rule/review_gate.py"; then
+            echo "The base holds no skip rule, so every job runs."
+            exit 0
+          fi
+          python3 "$rule/ci_skip.py" --repo "$GITHUB_WORKSPACE" --repo-slug "$REPO" \
+            --base "$BASE_SHA" --head "$HEAD_SHA" --action "$ACTION" --before "${BEFORE:-}" \
+            --output "$GITHUB_OUTPUT"
+
   go:
     name: "verify:go"
-    needs: [changes]
-    if: ${{ !cancelled() && (github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && (inputs.all || needs.changes.outputs.go == 'true'))) }}
+    needs: [changes, skip]
+    if: ${{ !cancelled() && ((github.event_name == 'pull_request' && needs.skip.outputs.skip != 'true') || (github.event_name == 'workflow_dispatch' && (inputs.all || needs.changes.outputs.go == 'true'))) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -130,7 +175,8 @@ jobs:
   # while go.sum stays the same, and no pull request touches it (D-305).
   vuln:
     name: "verify:vuln"
-    if: ${{ github.event_name == 'schedule' || github.event_name == 'pull_request' }}
+    needs: [skip]
+    if: ${{ !cancelled() && (github.event_name == 'schedule' || (github.event_name == 'pull_request' && needs.skip.outputs.skip != 'true')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -147,8 +193,8 @@ jobs:
   # their tests without an emulator. This job gives them one.
   emulator:
     name: "verify:emulator"
-    needs: [changes]
-    if: ${{ !cancelled() && (github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && (inputs.all || needs.changes.outputs.emulator == 'true'))) }}
+    needs: [changes, skip]
+    if: ${{ !cancelled() && ((github.event_name == 'pull_request' && needs.skip.outputs.skip != 'true') || (github.event_name == 'workflow_dispatch' && (inputs.all || needs.changes.outputs.emulator == 'true'))) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -178,8 +224,8 @@ jobs:
 
   web:
     name: "verify:web"
-    needs: [changes]
-    if: ${{ !cancelled() && (github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && (inputs.all || needs.changes.outputs.web == 'true'))) }}
+    needs: [changes, skip]
+    if: ${{ !cancelled() && ((github.event_name == 'pull_request' && needs.skip.outputs.skip != 'true') || (github.event_name == 'workflow_dispatch' && (inputs.all || needs.changes.outputs.web == 'true'))) }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -202,8 +248,8 @@ jobs:
 
   proto:
     name: "verify:proto"
-    needs: [changes]
-    if: ${{ !cancelled() && (github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && (inputs.all || needs.changes.outputs.proto == 'true'))) }}
+    needs: [changes, skip]
+    if: ${{ !cancelled() && ((github.event_name == 'pull_request' && needs.skip.outputs.skip != 'true') || (github.event_name == 'workflow_dispatch' && (inputs.all || needs.changes.outputs.proto == 'true'))) }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -302,8 +348,8 @@ jobs:
   # alone does not rebuild them.
   docker:
     name: "verify:docker"
-    needs: [changes]
-    if: ${{ !cancelled() && (github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && (inputs.all || needs.changes.outputs.docker == 'true'))) }}
+    needs: [changes, skip]
+    if: ${{ !cancelled() && ((github.event_name == 'pull_request' && needs.skip.outputs.skip != 'true') || (github.event_name == 'workflow_dispatch' && (inputs.all || needs.changes.outputs.docker == 'true'))) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:

@@ -6,31 +6,37 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-22f)
+## RESUME HERE (2026-09-23a)
 
-**Pull request #211 builds PR-62: the collection page scrolls once, with a pinned toolbar and a button to the binder top. It waits for the owner's merge.**
+**Pull request #PRNUM builds PR-63: a Codex review record gates each pull request, and a change of documents alone skips the heavy jobs of CI. It waits for the Codex review and the owner's merge.**
 
-**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view 211`. After the merge, do next step 1.
+Author provider: Claude Code
 
-**The base.** `main` is `16bbada`, from #210. #210 changed no code, so no deploy build ran for it.
+**The next step.** Start a new clean session, and load the `one-pr-one-session` skill. Run `make where`, and read the state of the pull request with `gh pr view PRNUM`. The owner starts the Codex review session with the `pr-review` skill (D-821).
 
-**Why this pull request exists.** The owner named the scroll of the collection page after #210 (D-806). The binder grid held a second scroll box inside `<main>`, so the page showed two scrollbars, and the search left the screen (F-167).
+**The base.** `main` is `503dffd`, from #211. The deploy build `dc8ed000` of `deploy-web` ended SUCCESS at 02:45:32 UTC on 2026-09-23. The live check of PR-62 passed: the chunk `collection-page-Qcjp-D1m.js` holds "Back to the binder top", no chunk holds `max-h-[75vh]`, and the spec passed 2 of 2 on `decktome.com`.
+
+**Why this pull request exists.** The owner first picked F-165, then replaced it with the review gate of what-you-carry and the-thing-below (D-810). The owner then asked for a CI skip of documents in the same pull request (D-818, D-819).
 
 **What this pull request holds.**
 
-- The binder grid reads the scroll of `<main>`, with a `scrollMargin` that follows the content above it.
-- The title and the search stay pinned (D-807). On a wide screen the five filters pin below them.
-- "Back to the binder top" shows one screen below the binder top (D-808). It moves the focus to the binder heading, and it honors reduced motion.
-- `web/apps/web/e2e/collection-scroll.spec.ts` is the gate at 390 px and at 1280 px.
-- D-809: the live check runs that spec on `decktome.com` as the check account of D-779.
+- `.github/workflows/review-gate.yml` and `docs/tools/review_gate.py`: the check reads `docs/reviews/pr-<number>.md` on the head (D-811, D-813, D-816).
+- The `review-override` label passes documents alone, and Dependabot passes when it wrote every commit (D-812, D-814, D-817).
+- The job `verify:skip` and `docs/tools/ci_skip.py`: the six heavy jobs skip under rule 1 or rule 2 of D-818.
+- The `pr-review` skill and five reference files, ported from the-thing-below.
+- `CLAUDE.md` rules 6 and 10, `AGENTS.md`, and the `one-pr-one-session` skill name the new review.
 
-**The checks.** `make smoke` passed, 5 of 5, and the new spec fails on the old grid. Four of the five new Vitest tests fail on the old grid, and the fifth is a negative guard. `make verify` passed on this machine, exit 0, with Node 22.23.2 on the PATH.
+**Done on GitHub, outside git.** The session created the label `review-override` and the ruleset `review-gate`, id 23858584, with no bypass (D-815). The ruleset requires the check on `main` now, so each merge waits for it.
 
-**The review.** Gitar reviewed `2663424` and reads "Approved", with 1 of 1 findings closed and no open thread. Its dashboard edit of 02:08:01 UTC is later than the push of 02:06:33 UTC, both of 2026-09-23, so the review is current. The one finding named the placeholders of the first push, and `2663424` replaced them. The later commit changes `docs/SESSION-HANDOFF.md` alone, which is the metadata set, so the pass holds (D-752).
+**The checks.** CHECKS_LINE
+
+**The review.** REVIEW_LINE
+
+**The merge of this pull request (D-815).** The check can not report on this pull request, because `pull_request_target` reads `main`. When the pull request is ready, this session sets the ruleset to `disabled`. After the owner's merge message, it sets the ruleset to `active` again and reads it back. Only then does it write the transitional prompt.
 
 **What waits on the owner.**
 
-- The merge of this pull request.
+- The Codex review of this pull request, and the merge.
 - F-165 and F-166, as later items.
 - A whole deck gate run measures the prompt of version 16 and the fixing floor of F-33. It is a paid target, so ask the owner first.
 - UNVERIFIED: the Moxfield import of the deck list. The export panel still names ManaBox and MTG Arena alone.
@@ -47,16 +53,16 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 3. Run `ps aux | grep autotune` before any write. The loop resets the tree when it rejects an iteration.
 4. Make a branch from `main`. Never commit on `main`, and never push to it (D-583). The owner merges (D-585). Run `make hooks` one time in a fresh checkout.
 5. Load the skills. Load `ste-writing` before you write any `.md`. Load `design-doc-style` before you edit the roadmap. Load `mtg-corpus` before you reason about a format, a legality, or a card term.
-6. Run `make verify`. It runs every check the verify workflow runs, on this machine, for nothing. Put Node 22.23.2 on the PATH first. The pull request runs the same jobs on Actions (D-639).
+6. Run `make verify`. It runs every check the verify workflow runs, on this machine, for nothing. Put Node 22.23.2 on the PATH first. The pull request runs the same jobs on Actions, and a change of documents alone skips six of them (D-818).
 7. Do "Next steps, in order" below. Ask questions as they come up. Record each owner answer in `docs/decisions.md`, and delete the row from `docs/owner-questions.md`.
-8. Open the pull request with the sections of `.github/pull_request_template.md`, and run `make pr-check`. Load the `gitar-review` skill, and follow it after each push (D-637, D-745). Gitar is the only review this repo asks for. A pull request of documents alone waits for the review too (D-679).
+8. Open the pull request with the sections of `.github/pull_request_template.md`, and run `make pr-check`. Load the `gitar-review` skill, and follow it after each push (D-637, D-745). After Gitar, the owner starts a Codex review with the `pr-review` skill (D-811). A pull request of documents alone takes the `review-override` label in place of that review (D-812).
 9. Update this file inside the pull request, before you call it ready (D-747). Read only the section that you change.
 10. Keep three session records at most (D-749). Move each older record to the archive, word for word.
 11. When the pull request is ready, end the session. The next pull request starts in a new clean session.
 
 A second Mac: `docs/setup-second-mac.md` holds what to carry, what to install, and how to prove the machine.
 
-Twenty-one things a fresh session gets wrong without this file.
+Twenty-two things a fresh session gets wrong without this file.
 
 - A test card index with no Oracle text and no tag matches no theme. The theme row of D-725 then asks, and the build never starts. Give each fixture card its real text.
 - A singular creature-type word keeps the generic rule, and its plural reads the type row (D-731). So "zombie" and "zombies" read two different lists, and F-144 records why.
@@ -78,6 +84,7 @@ Twenty-one things a fresh session gets wrong without this file.
 - A read under `users/` fails in the sandbox of a session, because that path holds the verified email (D-638). A field mask that fetches no field fails too. A replay reads a local collection export instead (D-756), and the export never enters git.
 - A stored session can be gone. `z1hshyY6Npig1FN2NuV7` no longer exists in `decktome-prod`, so `scripts/read-session.sh` finds nothing. M-17 recorded the request of that session, so the replay needed no session read.
 - The Edit tool and a Bash heredoc can write the rune in place of the six characters `\u2014`. Write the backslash as `chr(92)` in a Python script, and read the bytes with `ascii()`.
+- The `review-gate` check and the job `verify:skip` read their rules from `main`. A pull request that changes `review_gate.py` or `ci_skip.py` runs the old rule on its own head, so prove a change in the tests (D-816, D-820).
 - `Pool.Names` sorts the pool by the alphabet, and the shortlist groups its cards by role. Neither order ranks a card. `Pool.Score` holds the shortlist score (D-702).
 
 ## Facts that expire
@@ -94,7 +101,7 @@ Twenty-one things a fresh session gets wrong without this file.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
 - The feedback store holds 3 verdicts on 2026-09-09, and every one predates the snapshot of D-635. `make feedback-list VERDICT=` reads both verdicts now (F-87). A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- The deployed API, read 2026-09-23: Cloud Build `2b161f88` of `deploy-api` built `44a03e6`, from #209, and ended SUCCESS at 00:34:05 UTC. The newest build of `deploy-web` is `66935344`, of `9900979`, from #207. The service holds no minimum instance, so a cold start reads Unavailable for about 90 seconds (F-164).
+- The deployed API, read 2026-09-23: Cloud Build `2b161f88` of `deploy-api` built `44a03e6`, from #209, and ended SUCCESS at 00:34:05 UTC. The newest build of `deploy-web` is `dc8ed000`, of `503dffd`, from #211, and it ended SUCCESS at 02:45:32 UTC on 2026-09-23. The service holds no minimum instance, so a cold start reads Unavailable for about 90 seconds (F-164).
 - The deployed web app, read 2026-09-20 at 22:45 UTC: the release of #196, Hosting version `60c80b8c4ad2a689` of 22:44:09 UTC. `index.html` loads `assets/index-Fi2SZrwg.js`. The deck page chunk `deck-view-BQeBlu0i.js` holds the power counts, and `use-cards-DNxWsKmD.js` holds every label. The release before it, `b786ceb7f89bc4fc` of 2026-09-13, came from #158.
 - The deployed quality model, read 2026-09-14: `20260914T070904Z`, from the meta job that started at 06:02 UTC and ended at 07:13 UTC. It fits 43,182 lists and 1,517 commanders. Its Commander fit reads `immaterial` 239 and accuracy 0.554, and its Standard fit reads a cross share of 0.667. The job read the weekly EDHREC pass, 2,077 pages and 4 lists. The mtgo source read 3,094 lists with 58 fetch errors. The mtggoldfish source read 155 lists with no failure. The mtgjson source read no list, because its deck list version differs from the stored table, as on 2026-09-12 and 2026-09-13.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
@@ -104,7 +111,7 @@ Twenty-one things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **The live check of PR-62, after the merge and the deploy of the web app** (D-809). Read the live chunk for "Back to the binder top" and for the absence of `max-h-[75vh]`. Then run `web/apps/web/e2e/collection-scroll.spec.ts` with `SMOKE_BASE_URL=https://decktome.com`, `API_BUILD_EMAIL`, and `API_BUILD_PASSWORD`. Then ask the owner for the next item (D-746). **PR-62** is #211.
+1. **The first live runs of PR-63, on the next pull request** (D-815, D-818). Read the log of `review-gate` and of `verify:skip` on that pull request. Confirm that `gh api repos/nkramber/decktome/rulesets/23858584` reads `active`. **PR-63** is #PRNUM.
 2. **The open items of the roadmap.** Three register rows read 🔧: F-49, F-165, and F-166. F-49 waits for the owner. F-165 needs a free replay of the Najeela shortlist, and F-166 needs a plan. OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate run 9 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. No whole deck gate run measured them yet.
 3. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It waits, because the ten sessions of the audit ran before #184 and before D-749.
 4. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git.
@@ -135,10 +142,10 @@ A ruleset that requires the `verify` check on `main` is not possible. The repo i
 
 **The owner picked the power pass, then chose a paid run first, a second judge read, and the retirement** (D-804, D-805). The session said that runs 7 and 8 refute the condition of D-704. Run 9 found a new Najeela miss, and the second read held it. Both reads name the warrior filler, and every power floor holds, so a power pass can not move the read. The deploy of #209 ended SUCCESS.
 
-### 2026-09-22d: the escape in the judge text, F-48
+### 2026-09-23a: the review gate and the CI skip, PR-63
 
-**The owner picked F-48, and chose to keep the old gate documents as they are** (D-802, D-803). The escape reached every judge lane, and not the bracket gate alone: 18 documents from 2026-09-02 to 2026-09-21. The judge wrote the JSON text `\\u2014`. Both deploys of #207 ended SUCCESS.
+**The owner picked F-165 after the live check of #211, then replaced it with the review gate of the two sibling repos** (D-810). The session quoted hard rule 10 against the request, and the owner chose Codex after Gitar. The owner chose a ruleset with no bypass, a label of the session, and an exemption of Dependabot. The session found that #133 held a code commit of a session on a Dependabot branch, so the exemption reads the commit authors. The owner added the CI skip mid-session.
 
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-22e, the records of 2026-08-31 to 2026-09-22c, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-22f, the records of 2026-08-31 to 2026-09-22d, and 104 more sections, word for word. Read it for the detail behind a decision.

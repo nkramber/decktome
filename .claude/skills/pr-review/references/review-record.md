@@ -1,0 +1,147 @@
+# PR review: the review record
+
+Part of the `pr-review` skill. Load this file before you write a review record or correct the body of a pull request. Load it too before you read the head and the verdict for `review-gate`.
+
+## The record
+
+Use one file for each pull request, `docs/reviews/pr-<number>.md`. The number is the GitHub number, and not the roadmap id. Keep the name and the finding ids on a repeat review.
+
+The record and the `Author provider` line of the hand-off can name a provider (D-811). No commit, body, branch, or comment names one (hard rule 6).
+
+The `review-gate` check reads three parts of the record. Keep their form exact:
+
+| Part | Exact form | Rule |
+|---|---|---|
+| The file name | `docs/reviews/pr-<number>.md` | The GitHub number of the pull request. |
+| The head field | `- Head: ` and the hash in backticks, in the `## Identity` list | The effective head, with 7 characters or more. The check reads that list alone. |
+| The verdict | The verdict line of the `## Verdict` section, such as `**Ready for owner merge.**` | The section holds one bold span, and that span is one of the three verdict names. |
+
+## The effective head
+
+The effective head is the newest commit that changes a path outside the metadata set (D-813). The metadata set holds four paths of the pull request:
+
+- `docs/reviews/pr-<number>.md`
+- `docs/reviews/pr-<number>-response.md`
+- `docs/SESSION-HANDOFF.md`
+- `docs/reference/session-handoff-archive.md`
+
+A commit that changes those paths alone is a metadata commit. It does not move the effective head. So the commit of the record does not make the record stale, and a later hand-off commit of the author does not either. A commit that changes the record of another pull request moves the effective head.
+
+Record the effective head, and not the tip of the branch. Read it with this command, where `<base>` is `origin/main`:
+
+```bash
+git log -1 --format=%H "$(git merge-base <base> HEAD)..HEAD" -- . \
+  ':(exclude)docs/reviews/pr-<number>.md' ':(exclude)docs/reviews/pr-<number>-response.md' \
+  ':(exclude)docs/SESSION-HANDOFF.md' ':(exclude)docs/reference/session-handoff-archive.md'
+```
+
+## The skeleton
+
+Keep the text of each heading, and keep the order.
+
+```markdown
+# PR-<number> review
+
+Date: <YYYY-MM-DD>
+
+## Identity
+
+- PR: <number>
+- Roadmap item: PR-<id>
+- Target: `main`
+- Base: `<sha>`
+- Merge base: `<sha>`
+- Head: `<effective head sha>`
+- Branch: `<branch>`
+
+## Provider gate
+
+The author provider, the source of that fact, the reviewer provider, and the result.
+
+## Intended behavior and scope
+
+The intent, the gate, and each contract that the change touches.
+Each path of `git diff --stat`, as inspected or as not inspected.
+
+## Findings
+
+One subsection for each finding, in severity order. Write "No finding." when the review found none.
+
+## Out of scope
+
+One line for each concern that a later item holds, with the name of that item. Write "None." when there is none.
+
+## PR comments
+
+One line for each thread: the claim, the answer of the author, and what the review verified.
+
+## Description edits
+
+One line for each correction of the body: the old value and the new value. Write "None." when there is none.
+
+## Verification
+
+One line for each command or check, with its result. Name each check that did not run, and the reason.
+End with the push line: `- Push: <sha> is the head of origin/<branch>, verified with gh pr view.`
+
+## Open questions and accepted risks
+
+Each open question and each accepted risk, with its id.
+
+## Verdict
+
+**<Blocked | Changes required | Ready for owner merge>.** This verdict applies to head `<sha>`.
+The reason in one or two sentences, with no bold text.
+```
+
+A repeat review replaces the verdict of the `## Verdict` section. Put each earlier verdict under `## Earlier verdicts`, above `## Verdict`. A second bold span in the `## Verdict` section fails the check.
+
+## The finding form
+
+Give each finding a stable id: the letter `P`, the severity, a hyphen, and an index. `P1-1` is the first P1 finding. Never give a finding a new number on a repeat review.
+
+```markdown
+### P<severity>-<n>: <a short title that states the defect>
+
+Status: <open | fixed in `<sha>` | accepted risk, D-<id> | withdrawn>.
+
+File: `<path>:<line range>`, or Commit: `<sha>`.
+
+Trigger: the input or the state that causes the defect.
+
+Expected: the correct behavior, with the contract or the D- id.
+
+Actual: the observed behavior.
+
+Consequence: the effect on the user, the data, the build, or the maintainer.
+
+Correction: the smallest change that restores the contract.
+
+Regression check: the command or the test that proves the fix, and its result.
+```
+
+A withdrawn finding stays in the file with the evidence that refuted it. Never delete a finding.
+
+## Correct the body
+
+A body that names a stale head, an old count, or a replaced correction gives the owner wrong facts at the merge. The reviewer corrects such a fact directly, with no finding. The reviewer changes only a fact that the review verified:
+
+- The effective head, the base, or the merge base.
+- A count that the review read, such as the number of tests or findings.
+- The result of a check that the review read.
+
+The reviewer never changes what the author says the pull request does, or why. It never changes a decision or a recommendation. Name no provider in the body (hard rule 6). Write one line for each edit under `## Description edits`.
+
+## The review-gate check
+
+The check has five rules (D-810 to D-817):
+
+1. RG 1: when the `review-override` label is on, each changed path is in the documentation set.
+2. RG 2: Dependabot opened the pull request and wrote every commit. This rule passes the check alone.
+3. RG 3: `docs/reviews/pr-<number>.md` exists on the head.
+4. RG 4: the verdict is `Ready for owner merge`.
+5. RG 5: the head field names the effective head.
+
+`docs/tools/review_gate.py` holds each rule, and `docs/tools/test_review_gate.py` holds its tests. A push of code after the approval fails RG 5. That result is correct: review the new diff, then change the head field and the verdict together.
+
+The check can not run on a pull request that changes `.github/workflows/review-gate.yml`. GitHub starts `pull_request_target` from `main` alone, so the check reads the rules of `main`.
