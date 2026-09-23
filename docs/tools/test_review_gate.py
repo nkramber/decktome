@@ -214,6 +214,14 @@ class GitFacts(unittest.TestCase):
                               "--base", self.base, "--repo", self.repo], capture_output=True, text=True)
         self.assertEqual((out.returncode, out.stdout.strip()), (0, code), out.stderr)
 
+    def test_the_label_reads_every_commit_and_not_the_last_one(self):
+        self.commit({"go/a.go": "package a\n"}, "code")
+        self.commit({"docs/a.md": "notes\n"}, "docs")
+        status, out = self.gate(labels=[rg.LABEL])
+        self.assertEqual(status, 1, out)
+        self.assertIn("`go/a.go`", out)
+        self.assertIn("2 changed path(s)", out)
+
     def test_the_label_passes_documents(self):
         self.commit({"docs/decisions.md": "| D-1 |\n"}, "docs")
         status, out = self.gate(labels=[rg.LABEL])

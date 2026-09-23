@@ -181,10 +181,10 @@ def gather(repo, base, head):
         ids, email = line.split("\t", 1)
         sha, *parents = ids.split()
         changed = git(repo, "show", "--no-renames", "--name-only", "--format=", sha).stdout.splitlines()
-        files = [p for p in changed if p]
+        commit_files = [p for p in changed if p]
         if len(parents) > 1:
-            files.append(MERGE)
-        commits.append((sha, files))
+            commit_files.append(MERGE)
+        commits.append((sha, commit_files))
         authors.add(email)
 
     def read_record(path):
