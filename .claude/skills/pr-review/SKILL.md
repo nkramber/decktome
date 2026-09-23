@@ -158,7 +158,7 @@ When two owner decisions conflict, quote both. Ask the owner, and stop the work 
 | Changes required | The review found a defect in scope. List each necessary change. |
 | Ready for owner merge | The provider gate passes, the review covers the whole scope, each required check passes, and no blocking finding stays open. |
 
-A line under `## Out of scope` never gives `Changes required`. An approval applies to the recorded effective head alone. The verdict name stays `Ready for owner merge`, because the check reads it. After the approval and the confirmation of the owner, the author session turns on the auto-merge (D-828, D-834).
+A line under `## Out of scope` never gives `Changes required`. An approval applies to the recorded effective head, and to each later commit of documents alone (D-837). The verdict name stays `Ready for owner merge`, because the check reads it. After the approval and the confirmation of the owner, the author session turns on the auto-merge (D-828, D-834).
 
 ## Do not address Gitar
 

@@ -224,8 +224,8 @@ def check_pr(title, body, author, head_ref, changed, exists, is_ancestor=None, h
         errors.append(f"the hand-off defers documentation: \"{sentence}\"")
     if changed and all(is_document(p) for p in changed) and MERGE_RECORD_TITLE.search(title or ""):
         errors.append("a pull request of documents alone records an earlier merge or deploy. Git and Cloud Build hold those facts (D-747)")
-    # The mark goes in right after the pull request opens, before any review
-    # reads the head, because a roadmap commit moves the effective head (D-822).
+    # The mark goes in right after the pull request opens, before the Gitar
+    # pass, because each roadmap commit needs a Gitar pass (D-822, D-837).
     mark = f"{MERGED_MARK}{number}"
     # The number ends at a non-digit, so #2120 is not the mark of #212.
     if number and ROADMAP in changed and not re.search(re.escape(mark) + r"(?!\d)", roadmap_added):

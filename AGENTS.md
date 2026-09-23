@@ -42,7 +42,7 @@ The ruleset of `main` requires `review-gate`, `pr-contract`, and each pull reque
 
 ## Review
 
-Codex reviews each pull request after the Gitar pass (D-811). The author session starts the review with `make codex-review PR=<number>` (D-823). Load `.claude/skills/pr-review/SKILL.md` and `.claude/skills/one-pr-one-session/SKILL.md` before the review. The review writes `docs/reviews/pr-<number>.md` and updates the hand-off in one commit (D-827). The `review-gate` check reads its verdict and its head.
+Codex reviews each pull request after the Gitar pass (D-811). The author session starts the review with `make codex-review PR=<number>` (D-823). Load `.claude/skills/pr-review/SKILL.md` and `.claude/skills/one-pr-one-session/SKILL.md` before the review. The review writes `docs/reviews/pr-<number>.md` and updates the hand-off in one commit (D-827). The `review-gate` check reads its verdict and its head. A later commit of documents alone keeps the approval, and Gitar still reviews it (D-837).
 
 The reviewer never replies to Gitar, never merges, and never pushes to `main`. The third open round of one finding stops the loop, and the owner decides (D-826).
 

@@ -12,6 +12,52 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-23c
+
+**Pull request #214 fixes F-165 (D-835). The total cut of the shortlist keeps the mana half of the land cap. The fixing fill trades a tapped land that fixes no color.**
+
+Author provider: Claude Code
+
+**The next pull request.** The owner named it on 2026-09-23. A commit of documents alone must keep a green `review-gate` green. It must need no new review of the other provider. Today only the hand-off and its archive pass (D-752). The transitional prompt of #214 names this item.
+
+**The next step.** Pending the owner merge. The owner confirms after the summary of four sections (D-834, D-836).
+
+**The base.** `main` is `755b593`, from #213. `make ruleset-check` read no difference on `main` on 2026-09-23, before the work.
+
+**Why this pull request exists.** Bracket gate run 9 built Najeela at bracket 5 with 16 fixing lands against a floor of 21 (D-805).
+
+**The cause.** A free replay of prompt 15 read the pool of run 9 again, 338 cards. The pool held 16 fixing lands, and the deck held all 16. The land cap kept 20 duals for the mana order, but the total cut of 300 reads the score alone. The staple penalty put each dual at 0.1497, the score of the cut line, so 11 of the 20 left the pool. The guard of `swapOne` was not the cause.
+
+**What this pull request holds.**
+
+- `capByRole` keeps the mana half before the score cut, inside the total. `capPinnedLands` keeps the mark of the half. The Najeela pool now holds 27 fixing lands.
+- `fillFixing` trades a spare basic land first. Then it trades a nonbasic land that enters tapped and makes one deck color or none.
+- The tests `TestTotalCutKeepsTheManaHalf`, `TestTheFillTradesATappedLandWhenNoBasicIsSpare`, and `TestTheFillTradesASpareBasicBeforeATappedLand`. Each one fails without its half of the fix.
+- D-835, the F-165 row, and the record of run 10 under PR-45b.
+- D-836: the summary before a merge has four sections, What, How, CI, and Codex review. The summary sits inside the merge question. The owner asked for it in this pull request. `CLAUDE.md`, `AGENTS.md`, two skill files, and `docs/reference/merge-rules.md` name it.
+
+**The measurements.** With the fix, the replay of the stored deck reads 21 fixing lands of 21, and 4 tapped lands in place of 5. Bracket gate run 10 read prompt 15 alone on `433d055` for $0.1083, with the owner's word. The deck holds 24 fixing lands and 1 tapped land, and each band holds. The verdict reads FAIL, because the judge still reads bracket 4 (F-166).
+
+**The cost of the fix.** The total stays at 300, so the cut now drops 11 other cards of the Najeela list. Frodo, Sauron's Bane and four more finishers leave, and six cards of the top-list rate. The run 10 deck names 1 finisher against 3 in run 9. The floor is 1.
+
+**The checks.** `go test ./...` passed on `433d055`. `make verify` passed on `0e9f231`, exit 0, with Node 22.23.2 on the PATH.
+
+**The review.** The owner instructed this review to skip the Gitar-feedback requirement. The dashboard reports approval with no code finding, and no review thread is open. Codex marks effective head `8795711` Ready for owner merge. The earlier full `make verify` passed on `d4d8020`. This review's local attempt stopped because `protoc-gen-es` is absent.
+
+**What waits on the owner.**
+
+- The merge of this pull request, after the summary of four sections (D-834, D-836).
+- F-166 and F-49, as later items.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. It is a paid target, so ask the owner first.
+- UNVERIFIED: the Moxfield import of the deck list.
+- D-794 makes the app less strict than the Wizards infographic at Bracket 2.
+- Five sessions on the new files, before a decision on the checkpoint rule (next step 3, D-750).
+- Next steps 4 and 5, and OQ-67 and OQ-77.
+
+### 2026-09-23a: the review gate and the CI skip, PR-63
+
+**The owner picked F-165 after the live check of #211, then replaced it with the review gate of the two sibling repos** (D-810). The session quoted hard rule 10 against the request, and the owner chose Codex after Gitar. The owner chose a ruleset with no bypass, a label of the session, and an exemption of Dependabot. The session found that #133 held a code commit of a session on a Dependabot branch, so the exemption reads the commit authors. The owner added the CI skip mid-session.
+
 ## The resume section of 2026-09-23b
 
 **Pull request #213 builds PR-64. `make codex-review` starts the Codex review, and the third open round of one finding stops the loop. A pull request merges itself on the green light.**

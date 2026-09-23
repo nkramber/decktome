@@ -6,37 +6,30 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-23c)
+## RESUME HERE (2026-09-23d)
 
-**Pull request #214 fixes F-165 (D-835). The total cut of the shortlist keeps the mana half of the land cap. The fixing fill trades a tapped land that fixes no color.**
+**Pull request #215 keeps a green `review-gate` green on a commit of documents alone (D-837).**
 
 Author provider: Claude Code
 
-**The next pull request.** The owner named it on 2026-09-23. A commit of documents alone must keep a green `review-gate` green. It must need no new review of the other provider. Today only the hand-off and its archive pass (D-752). The transitional prompt of #214 names this item.
+**The next step.** The Gitar pass, then `make codex-review PR=215` (D-823). Then the merge question with the summary of four sections (D-834, D-836). Pending the owner merge.
 
-**The next step.** Pending the owner merge. The owner confirms after the summary of four sections (D-834, D-836).
+**The base.** `main` is `11a30e7`, from #214. The Cloud Build `6c38cea5` of `deploy-api` built `11a30e7`, and it ended SUCCESS at 16:40:48 UTC on 2026-09-23.
 
-**The base.** `main` is `755b593`, from #213. `make ruleset-check` read no difference on `main` on 2026-09-23, before the work.
-
-**Why this pull request exists.** Bracket gate run 9 built Najeela at bracket 5 with 16 fixing lands against a floor of 21 (D-805).
-
-**The cause.** A free replay of prompt 15 read the pool of run 9 again, 338 cards. The pool held 16 fixing lands, and the deck held all 16. The land cap kept 20 duals for the mana order, but the total cut of 300 reads the score alone. The staple penalty put each dual at 0.1497, the score of the cut line, so 11 of the 20 left the pool. The guard of `swapOne` was not the cause.
+**Why this pull request exists.** The owner named it after #214. RG 5 read the effective head of D-813 alone. So a later commit of the roadmap, a decision, or a skill turned the check red, and it asked for a new Codex review.
 
 **What this pull request holds.**
 
-- `capByRole` keeps the mana half before the score cut, inside the total. `capPinnedLands` keeps the mark of the half. The Najeela pool now holds 27 fixing lands.
-- `fillFixing` trades a spare basic land first. Then it trades a nonbasic land that enters tapped and makes one deck color or none.
-- The tests `TestTotalCutKeepsTheManaHalf`, `TestTheFillTradesATappedLandWhenNoBasicIsSpare`, and `TestTheFillTradesASpareBasicBeforeATappedLand`. Each one fails without its half of the fix.
-- D-835, the F-165 row, and the record of run 10 under PR-45b.
-- D-836: the summary before a merge has four sections, What, How, CI, and Codex review. The summary sits inside the merge question. The owner asked for it in this pull request. `CLAUDE.md`, `AGENTS.md`, two skill files, and `docs/reference/merge-rules.md` name it.
+- RG 5 also passes a record of an earlier commit, when each later commit changes documents alone. The documents are the set of D-814.
+- The effective head of D-813 stays. A reviewer still records it, and `make codex-review` still waits for the Gitar pass of each later commit.
+- `check_head` without the commits still needs the effective head itself, for the fresh record of `codex_review.py`.
+- Eleven new tests in `docs/tools/test_review_gate.py`. The tests that expect a pass fail on the rule of `11a30e7`: 12 failures in 5 tests.
+- D-837 amends D-813 and D-822. The owner chose the new rule over the roadmap clause of D-822, and the set of D-814 with the eval files.
+- The rule text in `CLAUDE.md`, `AGENTS.md`, `docs/reference/merge-rules.md`, `docs/tools/pr_check.py`, and three skills. A new caution: push no commit after the auto-merge turns on.
 
-**The measurements.** With the fix, the replay of the stored deck reads 21 fixing lands of 21, and 4 tapped lands in place of 5. Bracket gate run 10 read prompt 15 alone on `433d055` for $0.1083, with the owner's word. The deck holds 24 fixing lands and 1 tapped land, and each band holds. The verdict reads FAIL, because the judge still reads bracket 4 (F-166).
+**The checks.** `python3 -m unittest` passed 110 tests of `test_review_gate`, `test_codex_review`, and `test_ci_skip`. `make verify` passed, exit 0, with Node 22.23.2 on the PATH, on the tree of the first commit of this pull request.
 
-**The cost of the fix.** The total stays at 300, so the cut now drops 11 other cards of the Najeela list. Frodo, Sauron's Bane and four more finishers leave, and six cards of the top-list rate. The run 10 deck names 1 finisher against 3 in run 9. The floor is 1.
-
-**The checks.** `go test ./...` passed on `433d055`. `make verify` passed on `0e9f231`, exit 0, with Node 22.23.2 on the PATH.
-
-**The review.** The owner instructed this review to skip the Gitar-feedback requirement. The dashboard reports approval with no code finding, and no review thread is open. Codex marks effective head `8795711` Ready for owner merge. The earlier full `make verify` passed on `d4d8020`. This review's local attempt stopped because `protoc-gen-es` is absent.
+**The review.** The Codex review approves effective head `224cef7`. No Gitar code review or actionable feedback exists. The local `make verify` stopped because `protoc-gen-es` is absent. GitHub `review-gate`, `pr-contract`, `verify:eval`, `verify:shell`, and `verify:skip` pass. The other heavy verify jobs skip for this documents-only commit. Review record and hand-off commit `5a7bd5e` are on the PR branch.
 
 **What waits on the owner.**
 
@@ -103,7 +96,7 @@ Twenty-two things a fresh session gets wrong without this file.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
 - The feedback store holds 3 verdicts on 2026-09-09, and every one predates the snapshot of D-635. `make feedback-list VERDICT=` reads both verdicts now (F-87). A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- The deployed API, read 2026-09-23: Cloud Build `2b161f88` of `deploy-api` built `44a03e6`, from #209, and ended SUCCESS at 00:34:05 UTC. The newest build of `deploy-web` is `dc8ed000`, of `503dffd`, from #211, and it ended SUCCESS at 02:45:32 UTC on 2026-09-23. The service holds no minimum instance, so a cold start reads Unavailable for about 90 seconds (F-164).
+- The deployed API, read 2026-09-23: Cloud Build `6c38cea5` of `deploy-api` built `11a30e7`, from #214, and ended SUCCESS at 16:40:48 UTC. The newest build of `deploy-web` is `dc8ed000`, of `503dffd`, from #211, and it ended SUCCESS at 02:45:32 UTC on 2026-09-23. The service holds no minimum instance, so a cold start reads Unavailable for about 90 seconds (F-164).
 - The deployed web app, read 2026-09-20 at 22:45 UTC: the release of #196, Hosting version `60c80b8c4ad2a689` of 22:44:09 UTC. `index.html` loads `assets/index-Fi2SZrwg.js`. The deck page chunk `deck-view-BQeBlu0i.js` holds the power counts, and `use-cards-DNxWsKmD.js` holds every label. The release before it, `b786ceb7f89bc4fc` of 2026-09-13, came from #158.
 - The deployed quality model, read 2026-09-14: `20260914T070904Z`, from the meta job that started at 06:02 UTC and ended at 07:13 UTC. It fits 43,182 lists and 1,517 commanders. Its Commander fit reads `immaterial` 239 and accuracy 0.554, and its Standard fit reads a cross share of 0.667. The job read the weekly EDHREC pass, 2,077 pages and 4 lists. The mtgo source read 3,094 lists with 58 fetch errors. The mtggoldfish source read 155 lists with no failure. The mtgjson source read no list, because its deck list version differs from the stored table, as on 2026-09-12 and 2026-09-13.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
@@ -113,7 +106,7 @@ Twenty-two things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **F-165: the fixing fill of Najeela** (D-835). This pull request is #214.
+1. **A commit of documents alone keeps a green `review-gate` green** (D-837). This pull request is #215.
 2. **The open items of the roadmap.** Two register rows read 🔧: F-49 and F-166. F-49 waits for the owner, and F-166 needs a plan. OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 and 10 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. No whole deck gate run measured them yet.
 3. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It waits, because the ten sessions of the audit ran before #184 and before D-749.
 4. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git.
@@ -136,10 +129,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-09-23a: the review gate and the CI skip, PR-63
-
-**The owner picked F-165 after the live check of #211, then replaced it with the review gate of the two sibling repos** (D-810). The session quoted hard rule 10 against the request, and the owner chose Codex after Gitar. The owner chose a ruleset with no bypass, a label of the session, and an exemption of Dependabot. The session found that #133 held a code commit of a session on a Dependabot branch, so the exemption reads the commit authors. The owner added the CI skip mid-session.
-
 ### 2026-09-23b: the review target and the auto-merge, PR-64
 
 **The owner asked for `make codex-review`, a stop at the third open round of one finding, and an auto-merge on the green light** (D-823, D-826, D-828). The session asked six questions at the start. The owner chose the npm CLI with an update before each review, over the binary of the app (D-824). The owner chose the auto-merge for this pull request, over a merge by the owner (D-829). A later answer made the review loop exempt from the ask of each paid run, because it spends the Codex plan (D-831). The owner then asked that no Codex process ever get an API key, and chose the Codex processes as the scope (D-833).
@@ -148,6 +137,10 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner started F-165 from the transitional prompt of #213.** The session replayed the Najeela shortlist of bracket gate run 9 for free, and the replay matched the pool of 338 cards. The owner chose the cut inside the total, the trade of a tapped land, and one paid run of prompt 15 (D-835). Run 10 cost $0.1083 and read 24 fixing lands.
 
+### 2026-09-23d: the review gate of documents alone, PR-65
+
+**The owner started this item from the transitional prompt of #214.** The session read the deploy of `11a30e7` first, and it ended SUCCESS. The session quoted D-822 against the new rule, and the owner chose the new rule. The owner kept the eval files in the set of D-814.
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-23b, the records of 2026-08-31 to 2026-09-22f, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-23c, the records of 2026-08-31 to 2026-09-23a, and 104 more sections, word for word. Read it for the detail behind a decision.

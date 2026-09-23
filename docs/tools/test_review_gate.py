@@ -1,4 +1,4 @@
-"""Tests of review_gate.py (D-810 to D-817)."""
+"""Tests of review_gate.py (D-810 to D-817, D-837)."""
 import importlib.util
 import json
 import os
@@ -85,14 +85,71 @@ class ReviewRecord(unittest.TestCase):
         states, results = run(commits=commits, text=record())
         self.assertEqual(faults(states), [], results)
 
-    def test_a_commit_of_another_record_moves_the_effective_head(self):
+    def test_a_commit_of_another_record_moves_the_effective_head_and_keeps_the_gate(self):
         commits = CODE + [("f" * 40, ["docs/reviews/pr-211.md"])]
-        states, _ = run(commits=commits, text=record())
-        self.assertIn(("RG 5", "FAULT"), states)
+        self.assertEqual(rg.effective_head(commits, N), "f" * 40)
+        states, results = run(commits=commits, text=record())
+        self.assertEqual(faults(states), [], results)
 
     def test_metadata_commits_alone_have_no_effective_head(self):
         states, _ = run(commits=[(HEAD, ["docs/SESSION-HANDOFF.md"])], text=record())
         self.assertIn(("RG 5", "FAULT"), states)
+
+
+class DocumentsAfterTheApproval(unittest.TestCase):
+    """A commit of documents alone keeps a green gate green (D-837)."""
+
+    def test_a_commit_of_each_kind_of_document_keeps_the_gate(self):
+        for path in ["docs/design-roadmap.md", "docs/decisions.md", ".claude/skills/pr-review/SKILL.md",
+                     "CLAUDE.md", "AGENTS.md", "README.md", ".github/pull_request_template.md",
+                     "docs/reference/eval/baselines.json"]:
+            with self.subTest(path=path):
+                states, results = run(commits=CODE + [("d" * 40, [path])], text=record())
+                self.assertEqual(faults(states), [], results)
+                self.assertIn("D-837", results[-1][2])
+
+    def test_many_commits_of_documents_keep_the_gate(self):
+        commits = CODE + [("d" * 40, ["docs/decisions.md"]), ("e" * 40, ["docs/SESSION-HANDOFF.md"]),
+                          ("f" * 40, ["docs/design-roadmap.md", ".claude/skills/gitar-review/SKILL.md"])]
+        states, results = run(commits=commits, text=record())
+        self.assertEqual(faults(states), [], results)
+
+    def test_a_code_commit_after_a_commit_of_documents_fails(self):
+        commits = CODE + [("d" * 40, ["docs/decisions.md"]), ("e" * 40, ["go/internal/generate/fill.go"])]
+        states, _ = run(commits=commits, text=record())
+        self.assertIn(("RG 5", "FAULT"), states)
+
+    def test_a_commit_that_mixes_a_document_and_code_fails(self):
+        commits = CODE + [("d" * 40, ["docs/decisions.md", "Makefile"])]
+        states, _ = run(commits=commits, text=record())
+        self.assertIn(("RG 5", "FAULT"), states)
+
+    def test_a_refused_path_after_the_approval_fails(self):
+        for path in ["docs/tools/review_gate.py", ".claude/hooks/session_bind.py", ".claude/settings.json",
+                     ".claude/settings.local.json", ".github/workflows/review-gate.yml", "docsx/a.md"]:
+            with self.subTest(path=path):
+                states, _ = run(commits=CODE + [("d" * 40, [path])], text=record())
+                self.assertIn(("RG 5", "FAULT"), states)
+
+    def test_a_merge_commit_after_the_approval_fails(self):
+        states, _ = run(commits=CODE + [("d" * 40, [rg.MERGE])], text=record())
+        self.assertIn(("RG 5", "FAULT"), states)
+
+    def test_a_head_outside_the_branch_fails_even_before_documents(self):
+        commits = CODE + [("d" * 40, ["docs/decisions.md"])]
+        states, _ = run(commits=commits, text=record(head="0000000"))
+        self.assertIn(("RG 5", "FAULT"), states)
+
+    def test_a_documentation_pull_request_keeps_its_approval(self):
+        first = "c" * 40
+        commits = [(first, ["docs/decisions.md"]), ("d" * 40, ["docs/design-roadmap.md"])]
+        states, results = run(files=["docs/decisions.md", "docs/design-roadmap.md"], commits=commits,
+                              text=record(head=first[:7]))
+        self.assertEqual(faults(states), [], results)
+
+    def test_the_check_without_commits_needs_the_effective_head_itself(self):
+        state, _ = rg.check_head(rg.record_path(N), record(), "d" * 40)
+        self.assertEqual(state, "FAULT")
 
 
 class OverrideLabel(unittest.TestCase):
@@ -181,6 +238,24 @@ class GitFacts(unittest.TestCase):
         code = self.commit({"go/a.go": "package a\n"}, "code")
         self.commit({rg.record_path(N): record(head=code)}, "review")
         self.commit({"go/b.go": "package a\n"}, "more code")
+        status, out = self.gate()
+        self.assertEqual(status, 1, out)
+        self.assertIn("RG 5: FAULT", out)
+
+    def test_the_command_passes_a_commit_of_documents_after_the_review(self):
+        code = self.commit({"go/a.go": "package a\n"}, "code")
+        self.commit({rg.record_path(N): record(head=code)}, "review")
+        self.commit({"docs/design-roadmap.md": "mark\n", "docs/decisions.md": "row\n"}, "documents")
+        status, out = self.gate()
+        self.assertEqual(status, 0, out)
+        self.assertIn("RG 5: PASS", out)
+        self.assertIn("D-837", out)
+
+    def test_the_command_fails_code_after_a_commit_of_documents(self):
+        code = self.commit({"go/a.go": "package a\n"}, "code")
+        self.commit({rg.record_path(N): record(head=code)}, "review")
+        self.commit({"docs/decisions.md": "row\n"}, "documents")
+        self.commit({"docs/tools/new.py": "print(1)\n"}, "a tool")
         status, out = self.gate()
         self.assertEqual(status, 1, out)
         self.assertIn("RG 5: FAULT", out)

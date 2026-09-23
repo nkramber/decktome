@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The review gate of every pull request (D-810 to D-817).
+"""The review gate of every pull request (D-810 to D-817, D-837).
 
   review_gate.py --event FILE --head REF [--repo DIR]
   review_gate.py --effective-head NUMBER [--base REF] [--head REF]
@@ -8,7 +8,8 @@
 A pull request passes in one of three ways:
 
   - A Codex review record at `docs/reviews/pr-<N>.md` on the head
-    approves the effective head (D-811).
+    approves the effective head (D-811). A record of an earlier commit
+    also passes when each later commit changes documents alone (D-837).
   - The `review-override` label is on, and every changed path is in the
     documentation set (D-812, D-814).
   - Dependabot opened it, and Dependabot wrote every commit (D-817).
@@ -112,7 +113,23 @@ def check_verdict(path, text):
     return "PASS", f"the verdict of `{path}` is `{APPROVED}`."
 
 
-def check_head(path, text, head):
+def documents_since(commits, recorded):
+    """True when a commit matches recorded, and each later commit changes documents alone (D-837).
+
+    A merge commit carries the path MERGE, which is no document.
+    """
+    for i in range(len(commits) - 1, -1, -1):
+        if commits[i][0].lower().startswith(recorded.lower()):
+            return all(eligible(f) for _, files in commits[i + 1:] for f in files)
+    return False
+
+
+def check_head(path, text, head, commits=None):
+    """RG 5. With commits, the record of an earlier commit passes when documents_since holds.
+
+    Without commits, the head field must name head itself. codex_review
+    reads a fresh record that way.
+    """
     if head is None:
         return "FAULT", "every commit changes the metadata set alone, so the pull request has no effective head."
     lines = section(text, "## Identity")
@@ -123,9 +140,11 @@ def check_head(path, text, head):
         return "FAULT", f"the `## Identity` list of `{path}` holds no line `- Head: ` with the hash in backticks."
     if len(recorded) < SHORTEST_HASH:
         return "FAULT", f"the head field of `{path}` is `{recorded}`, shorter than {SHORTEST_HASH} characters."
-    if not head.lower().startswith(recorded.lower()):
-        return "FAULT", f"the head field of `{path}` is `{recorded}`, and the effective head is `{head}`. Review the new diff, then update the head and the verdict together."
-    return "PASS", f"the head field of `{path}` names the effective head `{head}`."
+    if head.lower().startswith(recorded.lower()):
+        return "PASS", f"the head field of `{path}` names the effective head `{head}`."
+    if commits is not None and documents_since(commits, recorded):
+        return "PASS", f"the head field of `{path}` names `{recorded}`, and each later commit changes documents alone, so the approval holds (D-837)."
+    return "FAULT", f"the head field of `{path}` is `{recorded}`, and the effective head is `{head}`. Review the new diff, then update the head and the verdict together."
 
 
 def evaluate(number, author, labels, files, commits, authors, read_record):
@@ -160,7 +179,7 @@ def evaluate(number, author, labels, files, commits, authors, read_record):
         return results
     results.append(("RG 3", "PASS", f"the head holds the review record at `{path}`."))
     results.append(("RG 4", *check_verdict(path, text)))
-    results.append(("RG 5", *check_head(path, text, effective_head(commits, number))))
+    results.append(("RG 5", *check_head(path, text, effective_head(commits, number), commits)))
     return results
 
 
