@@ -12,7 +12,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 Author provider: Claude Code
 
-**The next step.** Wait for the Codex review of the effective head. Then ask the owner for the merge with the summary of four sections (D-836). Pending the owner merge.
+**The next step.** Ask the owner for the merge with the summary of four sections (D-836). Pending the owner merge.
 
 **The base.** `main` is `f00a2af`, from #216. Cloud Build `11533acf` of `deploy-api` built `f00a2af`, and it ended SUCCESS at 18:24:15 UTC.
 
