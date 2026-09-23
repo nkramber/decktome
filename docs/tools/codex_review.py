@@ -207,8 +207,18 @@ THREADS = """query($owner: String!, $name: String!, $number: Int!) {
     reviewThreads(first: 100) { nodes { isResolved path line } } } } }"""
 
 
+def later_commits(run, repo, effective, tip):
+    """The effective head and each later commit of the branch, oldest first.
+
+    The walk follows the first parent alone. A merge of `main` as the
+    effective head otherwise brings in old commits of `main`, and their
+    check suites give a push time long before the merge.
+    """
+    return must(run, ["git", "rev-list", "--reverse", "--first-parent", f"{effective}^..{tip}"], refuse, cwd=repo).split()
+
+
 def check_gitar(run, repo, slug, number, effective, tip):
-    shas = must(run, ["git", "rev-list", "--reverse", f"{effective}^..{tip}"], refuse, cwd=repo).split()
+    shas = later_commits(run, repo, effective, tip)
     pushed = push_time(run, slug, shas or [effective])
     pages = json.loads(must(run, ["gh", "api", "--paginate", "--slurp", f"repos/{slug}/issues/{number}/comments"], refuse))
     comments = [c for page in pages for c in page]
@@ -290,7 +300,12 @@ def review(run, repo, codex, number, slug, branch, head, stamp):
     tree = tempfile.mkdtemp(prefix=f"decktome-codex-pr{number}-")
     must(run, ["git", "worktree", "add", "--quiet", "--detach", tree, head], fault, cwd=repo)
     # A new worktree holds no web packages, and `make verify` needs them for `buf generate`.
-    must(run, ["pnpm", "--dir", "web", "install", "--frozen-lockfile", "--silent"], fault, cwd=tree)
+    try:
+        must(run, ["pnpm", "--dir", "web", "install", "--frozen-lockfile", "--silent"], fault, cwd=tree)
+    except Stop:
+        run(["git", "worktree", "remove", "--force", tree], cwd=repo)
+        shutil.rmtree(tree, ignore_errors=True)
+        raise
     with open(base + ".jsonl", "w", encoding="utf-8") as events, open(base + ".stderr.log", "w", encoding="utf-8") as log:
         code, _, _ = run([codex, "exec", *model_args(), "-s", SANDBOX, "-C", tree, "--json",
                           "-o", base + ".last.md", prompt(number, slug, branch, head)],

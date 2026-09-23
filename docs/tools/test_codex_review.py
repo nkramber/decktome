@@ -335,6 +335,18 @@ class Invocation(unittest.TestCase):
         self.assertNotIn("OPENAI_API_KEY", run.envs[2])
         self.assertTrue(base.endswith(f"pr-{N}-20260923T000000Z"))
 
+    def test_a_failed_install_removes_the_worktree(self):
+        with tempfile.TemporaryDirectory() as repo:
+            run = Fake([(["git", "worktree", "add"], (0, "", "")), (["pnpm"], (1, "", "ERR_PNPM_OUTDATED_LOCKFILE")),
+                        (["git", "worktree", "remove"], (0, "", ""))])
+            with self.assertRaises(cr.Stop) as caught:
+                cr.review(run, repo, "/n/codex", N, "o/r", "b", R1, "20260923T000000Z")
+        tree = run.calls[0][-2]
+        self.assertEqual(caught.exception.code, cr.EXIT_FAULT)
+        self.assertEqual(run.calls[-1], ["git", "worktree", "remove", "--force", tree])
+        self.assertFalse(os.path.exists(tree))
+        self.assertNotIn("/n/codex", [c[0] for c in run.calls])
+
     def test_a_missing_pr_number_is_a_usage_error(self):
         with contextlib.redirect_stderr(io.StringIO()):
             self.assertEqual(cr.main([], run=Fake([])), cr.EXIT_USAGE)
@@ -415,6 +427,22 @@ class ReadResult(unittest.TestCase):
     def test_a_push_outside_the_metadata_set_is_a_fault(self):
         self.push_review(record(self.head[:7]), extra="go/y.go")
         self.assertIn("go/y.go", self.fault())
+
+    def test_the_push_walk_of_a_merge_head_skips_the_commits_of_main(self):
+        # The branch merges a newer main. The merge is the effective head.
+        git(self.author, "switch", "-q", "main")
+        self.write(self.author, "go/main.go", "package main\n")
+        self.commit(self.author, "main1")
+        main1 = git(self.author, "rev-parse", "HEAD")
+        git(self.author, "switch", "-q", "b")
+        git(self.author, "merge", "-q", "--no-edit", "main")
+        merge = git(self.author, "rev-parse", "HEAD")
+        self.write(self.author, "docs/SESSION-HANDOFF.md", "state\n")
+        self.commit(self.author, "hand-off")
+        tip = git(self.author, "rev-parse", "HEAD")
+        shas = cr.later_commits(cr.sh, self.author, merge, tip)
+        self.assertEqual(shas, [merge, tip])
+        self.assertNotIn(main1, shas)
 
     def test_a_push_with_no_record_is_a_fault(self):
         self.write(self.reviewer, "docs/SESSION-HANDOFF.md", "state\n")

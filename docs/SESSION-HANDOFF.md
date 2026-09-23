@@ -28,7 +28,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passed on the code of `9c25d23`, exit 0, with Node 22.23.2 on the PATH. The tool tests pass locally, 62 of them new.
 
-**The review.** No Gitar pass and no Codex review yet.
+**The review.** Gitar found two faults on `5999318`: the push walk of a merge head, and a worktree that a failed install left behind. Each fix has a test that fails on the old code. No Codex review yet.
 
 **The settings.** The owner approved the change, and the session applied the ruleset file and the merge settings on 2026-09-23, before it opened this pull request (D-829). `make ruleset-check` then read no difference.
 
