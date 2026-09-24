@@ -1,6 +1,6 @@
 ---
 name: gitar-review
-description: Get a Gitar review of the head of a pull request, wait three minutes after each push, prove that the review is current, and answer every finding. Verify each finding as a claim, then fix and reply, or refute, reply, and resolve. Load after each push to a pull request, documents alone included.
+description: Get a Gitar review of the head of a pull request, wait one minute after each push, prove that the review is current, and answer every finding. Verify each finding as a claim, then fix and reply, or refute, reply, and resolve. Load after each push to a pull request, documents alone included.
 ---
 
 # Gitar review skill
@@ -19,7 +19,7 @@ Each repo that uses Gitar keeps a copy of this file. A rule of the repo wins ove
 - **Metadata set**: two paths of this repo: `docs/SESSION-HANDOFF.md` and `docs/reference/session-handoff-archive.md` (D-752).
 - **Current review**: a review of the effective head.
 - **Stale review**: a review of a commit older than the effective head.
-- **Push wait**: the minimum wait of three minutes after a push, before a `Gitar review` comment (D-160).
+- **Push wait**: the minimum wait of one minute after a push, before a `Gitar review` comment (D-900).
 
 ## Why a review goes stale
 
@@ -72,7 +72,7 @@ A top-level Gitar comment is not a review thread, so no check reads its answer. 
 
 ## Find an automatic review
 
-The owner permits a `Gitar review` comment only after the push wait, and only when no automatic review started (D-160).
+The owner permits a `Gitar review` comment only after the push wait, and only when no automatic review started (D-900).
 
 An automatic review started when one of these conditions is true:
 
@@ -81,7 +81,7 @@ An automatic review started when one of these conditions is true:
 
 When neither condition is true after the push wait, no automatic review started. You can then comment `Gitar review`.
 
-On 2026-09-16, the Gitar check on the heads of #30, #31, and #32 started 8 to 31 seconds after the commit. Each check completed in 80 seconds or less. So the push wait of three minutes is longer than a normal automatic review.
+On 2026-09-16, the Gitar check on the heads of #30, #31, and #32 started 8 to 31 seconds after the commit. Each check completed in 80 seconds or less. So an automatic review starts inside the push wait of one minute, and step 8 waits for its check.
 
 ## Prove that a review is current
 
@@ -220,9 +220,9 @@ gh pr comment "$n" --body "Gitar review"
 
 ```bash
 # The push wait. Replace <seconds> with the push time in seconds from command A.
-# The loop ends three minutes after the push. A tool that refuses a long command can run it in the background.
+# The loop ends one minute after the push. A tool that refuses a long command can run it in the background.
 push=<seconds>
-while [ $(( $(date +%s) - push )) -lt 180 ]; do sleep 15; done
+while [ $(( $(date +%s) - push )) -lt 60 ]; do sleep 15; done
 
 # The Gitar check on the head: the status, the conclusion, and the start time.
 h=$(gh pr view "$n" --json headRefOid --jq .headRefOid)

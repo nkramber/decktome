@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-24e)
 
-**Pull request #226 ends the Gitar pause (PR-76, D-899).**
+**Pull request #226 ends the Gitar pause, and sets a push wait of one minute (PR-76, D-899, D-900).**
 
 Author provider: Claude Code
 
@@ -19,6 +19,7 @@ Author provider: Claude Code
 **The change.**
 
 - Each pull request waits for a current Gitar review again, documents alone too (D-637, D-679, D-745).
+- A session waits one minute after a push, before it asks Gitar for a manual review (D-900). The `gitar-review` skill held three minutes.
 - Each pause note and the pause file of D-838 are gone, by the steps of the end in that file (D-899).
 - The flag `--skip-gitar-review` and the pause branch of `scripts/feedback-review.sh` stay (D-838). With no pause file, the feedback cycle waits for Gitar.
 - Gitar finished no review on #215 to #225. The owner showed a Gitar review of 2026-09-24 on #76 of `nkramber/the-thing-below`.
@@ -107,7 +108,7 @@ Twenty-two things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **PR-76: the end of the Gitar pause** (D-899). This pull request is #226.
+1. **PR-76: the end of the Gitar pause, and a push wait of one minute** (D-899, D-900). This pull request is #226.
 2. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It comes after PR-75 (D-890). It waits, because the ten sessions of the audit ran before #184 and before D-749.
 3. **The open items of the roadmap.** Two register rows read 🔧: F-49 and F-174. PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
 4. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git.
@@ -140,7 +141,7 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ### 2026-09-24e: the end of the Gitar pause, PR-76
 
-**The owner asked to end the Gitar pause of PR-66 (D-838).** The session read that Gitar finished no review on #215 to #225, and told the owner before the change. The owner showed a Gitar review of the same day on another repository, and confirmed that reviews come again. The session followed the steps of the end in the pause file (D-899). This pull request waits for its own Gitar review before the merge.
+**The owner asked to end the Gitar pause of PR-66 (D-838).** The session read that Gitar finished no review on #215 to #225, and told the owner before the change. The owner showed a Gitar review of the same day on another repository, and confirmed that reviews come again. The session followed the steps of the end in the pause file (D-899). The owner then asked for a push wait of one minute (D-900). This pull request waits for its own Gitar review before the merge.
 
 ## The archive
 

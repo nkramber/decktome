@@ -6,7 +6,7 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
-2026-09-24 correction pass 227 (PR-76, D-899): the owner ended the Gitar pause of PR-66. Each pull request waits for a current Gitar review again.
+2026-09-24 correction pass 227 (PR-76, D-899, D-900): the owner ended the Gitar pause of PR-66. Each pull request waits for a current Gitar review again, and the push wait is one minute.
 
 2026-09-23 correction pass 226 (PR-71, D-863 to D-876): the power judge of a 60-card import gets its labels, its prompt, its split, and its gate. The store labels a casual list and an FNM list, which refutes a premise of D-859. A new read also fixes the power of the session (F-172). Changes: PR-71, F-172.
 
@@ -2182,13 +2182,14 @@ Gate:
 - `make verify` passes.
 > *In plain English:* before this change a complaint waited in the database until someone looked. Now the owner gets a short phone notice for each thumbs up or down. The fix still goes through the normal review.
 
-**PR-76: The Gitar pause ends, and each pull request waits for a Gitar review again (D-899).** ✅ merged as #226. The mark comes before any review (D-822).
+**PR-76: The Gitar pause ends, and each pull request waits for a Gitar review again (D-899, D-900).** ✅ merged as #226. The mark comes before any review (D-822).
 PR-66 paused the required Gitar review (D-838). Gitar finished no review on #215 to #225. On 2026-09-24 Gitar reviewed a pull request of `nkramber/the-thing-below` again.
 
 - **The notes.** This item deletes each pause note and the pause file, by the steps of the end in that file.
 - **The records.** The decisions and the review records still name the pause file. `docs/tools/ref_check.py` gives that path no rule (D-899).
 - **What stays.** The flag `--skip-gitar-review` and the pause branch of `scripts/feedback-review.sh` stay (D-838). With no pause file, the feedback cycle waits for Gitar.
 - **The rules again.** Each pull request waits for a current Gitar review, documents alone too (D-637, D-679, D-745). The Codex review comes after the Gitar pass (D-823).
+- **The push wait.** A session waits one minute after a push, before it asks Gitar for a manual review (D-900). The `gitar-review` skill held three minutes.
 
 Gate:
 
@@ -2565,7 +2566,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 
 64. **PR-75** a Pushover notice to the owner for each verdict (F-49, D-892 to D-898). No paid target ran.
 
-65. **PR-76** the end of the Gitar pause (D-899). No paid target ran.
+65. **PR-76** the end of the Gitar pause, and a push wait of one minute (D-899, D-900). No paid target ran.
 
 ## 9. Open questions
 
