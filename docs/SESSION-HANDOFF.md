@@ -27,7 +27,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passed on `cb591e8`, exit 0. The two new tests fail on the code of `2c658ff`, and shellcheck is clean.
 
-**The review.** Gitar pause (D-838). Gitar left its plan notice alone, with no finding (D-842). `scripts/feedback-review.sh` ran the Codex rounds (D-878). Round 1 found no code fault, and it asked for the word of the owner on the gate of PR-73. The fixer corrected the gate text, and round 2 reads Ready for owner merge at `d6109a3`. The owner then accepted the path of a failed cycle, and D-880 records it. A new round reads that head.
+**The review.** Gitar pause (D-838). Gitar left its plan notice alone, with no finding (D-842). `scripts/feedback-review.sh` ran the Codex rounds (D-878). Round 1 found no code fault, and it asked for the word of the owner on the gate of PR-73. The fixer corrected the gate text, and round 2 reads Ready for owner merge at `d6109a3`. The owner then accepted the path of a failed cycle, and D-880 records it. The repeat review approves effective head `1176c9d7`. `make verify` passed there, the GitHub checks passed or skipped document-only jobs, and no finding stays open.
 
 **What waits on the owner.**
 
