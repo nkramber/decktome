@@ -2136,7 +2136,7 @@ Gate:
 - `make verify` passes.
 > *In plain English:* a real complaint from the site went through the whole loop for the first time. The test did not show the problem, because it built the deck from every card and not from the reader's collection. The loop now stops when a test shows no problem, and a later free replay looks for the real cause.
 
-**PR-74: A plain upload page, and a failed parse files its own thumbs down (F-49, F-91, D-882 to D-891).** 🔧 built. It waits for the review.
+**PR-74: A plain upload page, and a failed parse files its own thumbs down (F-49, F-91, D-882 to D-891).** ✅ merged as #224.
 The collection upload page and the deck import page named the services whose exports the app reads. A parse error of the server named the formats too, and no failed parse reached the review. The owner asked for a plain page and a report of each failed parse (D-882).
 
 - **The page.** The collection page, the upload dialog, and the deck import dialog name no service (D-889). The label after a good upload and the export panel keep their names.
