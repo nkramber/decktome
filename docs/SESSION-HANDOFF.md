@@ -29,7 +29,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passed on `b1a1865`, exit 0, with Node 22.23.2 on the PATH. Both real exports resolve 100 of 100 cards against the snapshot of 2026-09-04. No paid target ran.
 
-**The review.** Gitar pause (D-838). Codex review: pending.
+**The review.** Gitar pause (D-838). Codex review: Changes required at `a32ac85`, finding P2-1 remains open.
 
 **What waits on the owner.**
 
