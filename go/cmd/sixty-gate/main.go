@@ -3,8 +3,9 @@
 // judge for the step of each, and writes a gate document to stdout.
 //
 // Casual reads the Theme, Intro, and Planeswalker decks of the precon
-// table, FNM the Challenger decks, and tournament a top 8 finish in an
-// MTGO Challenge or an MTGTop8 RCQ (D-863). The gate passes when 80
+// table, FNM the MTGGoldfish user decks that a model of another family
+// labeled fnm (D-875), and tournament a top 8 finish in an MTGO Challenge
+// or an MTGTop8 RCQ (D-863). The gate passes when 80
 // percent of the test reads name the label, and no read sits two steps
 // off (D-868). A FAIL verdict exits 2.
 package main
@@ -87,7 +88,11 @@ func run(w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	set, err := pick(idx, precons, modern, standard)
+	fnm, err := fnmKeys()
+	if err != nil {
+		return err
+	}
+	set, err := pick(idx, precons, modern, standard, fnm)
 	if err != nil {
 		return err
 	}

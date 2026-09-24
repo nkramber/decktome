@@ -1,6 +1,8 @@
 package main
 
 import (
+	_ "embed"
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"sort"
@@ -28,20 +30,36 @@ const (
 	eventLists = 2
 )
 
-// casualTypes, challengerTypes, and eventTypes are the product types of
-// the precon table that label a rung (D-863). The FNM rung takes 13
-// Challenger decks and 12 Event decks, because the Challenger decks read
-// near a tournament list (D-873).
-var (
-	casualTypes     = map[string]bool{"Theme Deck": true, "Intro Pack": true, "Planeswalker Deck": true}
-	challengerTypes = map[string]bool{"Challenger Deck": true, "Pioneer Challenger Deck": true}
-	eventTypes      = map[string]bool{"Event Deck": true, "Modern Event Deck": true}
-)
+// casualTypes are the product types of the precon table that label the
+// casual rung (D-863).
+var casualTypes = map[string]bool{"Theme Deck": true, "Intro Pack": true, "Planeswalker Deck": true}
 
-const (
-	challengerLists = 13
-	eventDeckLists  = 12
-)
+// labelsJSON holds the steps of 60 MTGGoldfish user decks from a model
+// outside the family of the judge. No product type marks the FNM line,
+// so the FNM rung reads the decks labeled fnm (D-874, D-875).
+//
+//go:embed goldfish_labels.json
+var labelsJSON []byte
+
+// fnmKeys answers the key of each user deck labeled fnm.
+func fnmKeys() (map[string]bool, error) {
+	var doc struct {
+		Labels []struct {
+			ID   string `json:"id"`
+			Step string `json:"step"`
+		} `json:"labels"`
+	}
+	if err := json.Unmarshal(labelsJSON, &doc); err != nil {
+		return nil, fmt.Errorf("sixty-gate: labels: %w", err)
+	}
+	out := map[string]bool{}
+	for _, l := range doc.Labels {
+		if l.Step == "fnm" {
+			out[meta.SourceGoldfish+" "+l.ID] = true
+		}
+	}
+	return out, nil
+}
 
 // rcq matches the event name of a Regional Championship Qualifier on
 // MTGTop8. StarCityGames names its own qualifier "ReCQ".
@@ -70,34 +88,24 @@ type picked struct {
 
 // pick builds the three rungs of lists that resolve whole against the
 // card index, newest first by date, then by id (D-863, D-867, D-869). The
+// FNM rung reads the user decks whose key fnm names (D-875). The
 // tournament rung takes each source apart, with a cap for each event
 // (D-871).
-func pick(idx *cards.Index, precons []meta.Precon, modern, standard []meta.List) (picked, error) {
+func pick(idx *cards.Index, precons []meta.Precon, modern, standard []meta.List, fnm map[string]bool) (picked, error) {
 	out := picked{skipped: map[mtgv1.SixtyStep]int{}}
-	var casual, challenger, event, mtgo, top8 []calList
+	var casual, users, mtgo, top8 []calList
 	for _, p := range precons {
 		if preconCount(p.Cards) < 60 {
 			continue
 		}
-		format := "Standard"
-		switch {
-		case strings.HasPrefix(p.Type, "Pioneer"):
-			format = "Pioneer"
-		case strings.HasPrefix(p.Type, "Modern"):
-			format = "Modern"
+		if !casualTypes[p.Type] {
+			continue
 		}
-		l := calList{id: p.Code + " " + p.Name, name: p.Name, date: p.ReleaseDate, format: format}
-		switch {
-		case casualTypes[p.Type]:
-			l.label = mtgv1.SixtyStep_SIXTY_STEP_CASUAL
-			casual = append(casual, l)
-		case challengerTypes[p.Type]:
-			l.label = mtgv1.SixtyStep_SIXTY_STEP_FNM
-			challenger = append(challenger, l)
-		case eventTypes[p.Type]:
-			l.label = mtgv1.SixtyStep_SIXTY_STEP_FNM
-			event = append(event, l)
-		}
+		// Each casual product was sold for Standard (D-869).
+		casual = append(casual, calList{
+			label: mtgv1.SixtyStep_SIXTY_STEP_CASUAL, id: p.Code + " " + p.Name,
+			name: p.Name, date: p.ReleaseDate, format: "Standard",
+		})
 	}
 	byID := map[string]meta.Precon{}
 	for _, p := range precons {
@@ -114,6 +122,12 @@ func pick(idx *cards.Index, precons []meta.Precon, modern, standard []meta.List)
 		lists  []meta.List
 	}{{"Modern", modern}, {"Standard", standard}} {
 		for _, m := range set.lists {
+			if key := m.Source + " " + m.ID; fnm[key] {
+				users = append(users, calList{
+					label: mtgv1.SixtyStep_SIXTY_STEP_FNM, id: key, name: "user deck", date: m.Date, format: set.format,
+				})
+				continue
+			}
 			if !topEight(m) {
 				continue
 			}
@@ -142,7 +156,7 @@ func pick(idx *cards.Index, precons []meta.Precon, modern, standard []meta.List)
 	}
 	for _, rung := range [][]part{
 		{{casual, resolvePrecon, rungSize, 0}},
-		{{challenger, resolvePrecon, challengerLists, 0}, {event, resolvePrecon, eventDeckLists, 0}},
+		{{users, resolveList, rungSize, 0}},
 		{{mtgo, resolveList, mtgoLists, eventLists}, {top8, resolveList, top8Lists, eventLists}},
 	} {
 		var taken []calList

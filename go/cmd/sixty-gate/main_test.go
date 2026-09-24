@@ -32,19 +32,20 @@ func list(source, event, date string, n, place int) meta.List {
 	}
 }
 
-// fixture holds 30 lists of each precon type, a Starter deck that labels
-// no rung, a 40-card Intro pack, and tournament lists in many events.
-func fixture() ([]meta.Precon, []meta.List) {
+// fixture holds 30 casual precons, a Starter deck that labels no rung, a
+// 40-card Intro pack, tournament lists in many events, and 30 user decks
+// with the keys of the FNM labels it answers.
+func fixture() ([]meta.Precon, []meta.List, map[string]bool) {
 	var ps []meta.Precon
 	for i := range 30 {
-		date := fmt.Sprintf("2020-01-%02d", i+1)
-		ps = append(ps, precon("Theme Deck", i, date), precon("Challenger Deck", i, date), precon("Event Deck", i, date))
+		ps = append(ps, precon("Theme Deck", i, fmt.Sprintf("2020-01-%02d", i+1)))
 	}
 	ps = append(ps, precon("Starter Deck", 0, "2030-01-01"))
 	small := precon("Intro Pack", 99, "2030-01-01")
 	small.Cards = small.Cards[:1]
 	ps = append(ps, small)
 	var ls []meta.List
+	fnm := map[string]bool{}
 	for day := 1; day <= 20; day++ {
 		date := fmt.Sprintf("2026-09-%02d", day)
 		for n := range 4 {
@@ -54,17 +55,35 @@ func fixture() ([]meta.Precon, []meta.List) {
 		// A league list and a ninth place label no rung.
 		ls = append(ls, list(meta.SourceMTGO, "Modern League", date, 9, 1))
 		ls = append(ls, list(meta.SourceMTGO, "Modern Challenge 64", date, 9, 9))
+		// Each day holds a user deck with an FNM label and one with none.
+		for n, labeled := range []bool{true, false} {
+			u := list(meta.SourceGoldfish, "User", date, n, 0)
+			ls = append(ls, u)
+			if labeled && day <= 15 {
+				fnm[u.Source+" "+u.ID] = true
+			}
+		}
 	}
-	return ps, ls
+	return ps, ls, fnm
 }
 
-// TestPickBuildsTheRungs is D-863, D-867, D-871, and D-873: three rungs
+// TestPickBuildsTheRungs is D-863, D-867, D-871, and D-875: three rungs
 // of 25, every fifth list in the dev split, the newest lists first, the
-// FNM rung split by product type, and the tournament rung split by source
-// with two lists of one event at most.
+// FNM rung from the labeled user decks alone, and the tournament rung
+// split by source with two lists of one event at most.
 func TestPickBuildsTheRungs(t *testing.T) {
-	ps, ls := fixture()
-	set, err := pick(testIndex(), ps, ls, nil)
+	ps, ls, fnm := fixture()
+	extra := map[string]bool{}
+	for k := range fnm {
+		extra[k] = true
+	}
+	for day := 16; day <= 20; day++ {
+		extra[fmt.Sprintf("%s User-2026-09-%02d-1", meta.SourceGoldfish, day)] = true
+	}
+	for day := 1; day <= 5; day++ {
+		extra[fmt.Sprintf("%s User-2026-09-%02d-1", meta.SourceGoldfish, day)] = true
+	}
+	set, err := pick(testIndex(), ps, ls, nil, extra)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -72,17 +91,19 @@ func TestPickBuildsTheRungs(t *testing.T) {
 	dev := map[mtgv1.SixtyStep]int{}
 	sources := map[string]int{}
 	events := map[string]int{}
-	kinds := map[string]int{}
 	for _, l := range set.lists {
 		count[l.label]++
-		if l.label == mtgv1.SixtyStep_SIXTY_STEP_FNM {
-			kinds[strings.Fields(l.name)[0]]++
-		}
 		if l.dev {
 			dev[l.label]++
 		}
-		if l.label == mtgv1.SixtyStep_SIXTY_STEP_TOURNAMENT {
-			sources[strings.Fields(l.id)[0]]++
+		source := strings.Fields(l.id)[0]
+		switch l.label {
+		case mtgv1.SixtyStep_SIXTY_STEP_FNM:
+			if source != meta.SourceGoldfish || !extra[l.id] {
+				t.Errorf("the FNM rung took %s", l.id)
+			}
+		case mtgv1.SixtyStep_SIXTY_STEP_TOURNAMENT:
+			sources[source]++
 			events[l.event]++
 			if strings.Contains(l.name, "League") || strings.Contains(l.name, "64") {
 				t.Errorf("the rung took %s", l.id)
@@ -96,9 +117,6 @@ func TestPickBuildsTheRungs(t *testing.T) {
 		if count[s] != 25 || dev[s] != 5 {
 			t.Errorf("%s: lists = %d, dev = %d, want 25 and 5", stepWord(s), count[s], dev[s])
 		}
-	}
-	if kinds["Challenger"] != 13 || kinds["Event"] != 12 {
-		t.Errorf("FNM kinds = %v, want 13 Challenger and 12 Event decks (D-873)", kinds)
 	}
 	if sources[meta.SourceMTGO] != 13 || sources[meta.SourceMTGTop8] != 12 {
 		t.Errorf("sources = %v, want 13 MTGO and 12 MTGTop8", sources)
@@ -116,11 +134,17 @@ func TestPickBuildsTheRungs(t *testing.T) {
 // TestPickSkipsAListThatDoesNotResolve reads a newer list with an unknown
 // card as a skip, and the rung takes the next list in its place.
 func TestPickSkipsAListThatDoesNotResolve(t *testing.T) {
-	ps, ls := fixture()
+	ps, ls, _ := fixture()
 	odd := precon("Theme Deck", 50, "2021-01-01")
 	odd.Cards = append(odd.Cards, meta.PreconCard{Name: "No Such Card", Count: 1})
 	ps = append(ps, odd)
-	set, err := pick(testIndex(), ps, ls, nil)
+	fnm := map[string]bool{}
+	for _, l := range ls {
+		if l.Source == meta.SourceGoldfish {
+			fnm[l.Source+" "+l.ID] = true
+		}
+	}
+	set, err := pick(testIndex(), ps, ls, nil, fnm)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -130,29 +154,28 @@ func TestPickSkipsAListThatDoesNotResolve(t *testing.T) {
 }
 
 // TestPickRefusesAThinRung stops before any provider call when a rung
-// holds fewer lists than the split wants.
+// holds fewer lists than the split wants: here 15 labeled user decks.
 func TestPickRefusesAThinRung(t *testing.T) {
-	ps, ls := fixture()
-	if _, err := pick(testIndex(), ps[:10], ls, nil); err == nil {
-		t.Error("a rung of 5 lists passed")
+	ps, ls, fnm := fixture()
+	if _, err := pick(testIndex(), ps, ls, nil, fnm); err == nil {
+		t.Error("an FNM rung of 15 lists passed")
 	}
 }
 
-// TestPickReadsThePioneerFormat is D-869: a Pioneer Challenger deck and
-// a Modern Event deck read the format of their release.
-func TestPickReadsThePioneerFormat(t *testing.T) {
-	ps, ls := fixture()
-	ps = append(ps, precon("Pioneer Challenger Deck", 0, "2029-01-01"), precon("Modern Event Deck", 0, "2028-01-01"))
-	set, err := pick(testIndex(), ps, ls, nil)
+// TestFnmKeysReadsTheLabels is D-875: the embedded labels hold 60 user
+// decks, and 28 of them read fnm.
+func TestFnmKeysReadsTheLabels(t *testing.T) {
+	keys, err := fnmKeys()
 	if err != nil {
 		t.Fatal(err)
 	}
-	formats := map[string]string{}
-	for _, l := range set.lists {
-		formats[l.name] = l.format
+	if len(keys) != 28 {
+		t.Errorf("fnm keys = %d, want 28", len(keys))
 	}
-	if formats["Pioneer Challenger Deck 0"] != "Pioneer" || formats["Modern Event Deck 0"] != "Modern" {
-		t.Errorf("formats = %q and %q", formats["Pioneer Challenger Deck 0"], formats["Modern Event Deck 0"])
+	for k := range keys {
+		if !strings.HasPrefix(k, meta.SourceGoldfish+" ") {
+			t.Errorf("key %q names no user deck", k)
+		}
 	}
 }
 

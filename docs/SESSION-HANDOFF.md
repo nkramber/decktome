@@ -8,11 +8,11 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-23i)
 
-**Pull request (not yet opened) adds the power step of a 60-card import (PR-71, F-170, F-172, D-863 to D-874).**
+**Pull request (not yet opened) adds the power step of a 60-card import (PR-71, F-170, F-172, D-863 to D-875).**
 
 Author provider: Claude Code
 
-**The next step.** Read the labels of `.local/pr71/goldfish-label-set.md` when the owner returns the file (D-874). Then propose how the labeled decks join the rungs, and ask for test run 1.
+**The next step.** Ask the owner for test run 1 of `make sixty-gate`, about $3.8. The FNM rung reads the labels of `go/cmd/sixty-gate/goldfish_labels.json` (D-875).
 
 **The code.** `JudgeSixtyStep` with prompt version 2, the step of a 60-card import, the new read, the power slot of the session (F-172, D-870), and `make sixty-gate`. The tests of each part pass.
 
@@ -32,7 +32,6 @@ Author provider: Claude Code
 
 **What waits on the owner.**
 
-- The labels of the 60 user decks, from a model of another family (D-874).
 - The paid run 1 of `make sixty-gate`, about $3.8. Ask first.
 - The Ulalek, Fused Atrocity shortlist holds 20 fixing lands, against a floor of 21.
 - The end of the Gitar pause, in a later pull request (D-838).
