@@ -2117,7 +2117,7 @@ Gate:
 - `make verify` passes.
 > *In plain English:* when a reader complains, the app can turn the complaint into a test and a fix. This change keeps that work in one reviewed pull request, and only the owner can merge it.
 
-**PR-73: One live fix cycle on the thumbs down of 2026-09-24 (F-49, F-173, F-174, D-877, D-878, D-880, D-881).** 🔧 planned.
+**PR-73: One live fix cycle on the thumbs down of 2026-09-24 (F-49, F-173, F-174, D-877, D-878, D-880, D-881).** ✅ merged as #223.
 The thumbs down of 2026-09-24 carries a session and a deck, so the triage can write a case that a gate runs. The judge lane put it in C5, the power of one card, and the case went to the bracket gate.
 
 - **The session.** It made the branch `feedback-live-cycle` from `main` and drove the cycle with `--here`. Its own pull request holds the evidence, the fix of F-173, and the documents (D-877).

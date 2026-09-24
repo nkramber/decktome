@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-24b)
 
-**Pull request #PRNUM drives the first live feedback fix cycle, and the cycle now stops when no case fails (PR-73, F-49, F-173, F-174, D-880 to D-882).**
+**Pull request #223 drives the first live feedback fix cycle, and the cycle now stops when no case fails (PR-73, F-49, F-173, F-174, D-880 to D-882).**
 
 Author provider: Claude Code
 
@@ -25,9 +25,9 @@ Author provider: Claude Code
 
 **The 60-card import of PR-72.** It arrived after #222 merged. After the deploy of `3b2f686`, the owner imported a Modern list: session `UQIUu8rInPouZgi8TAPk`, deck `FeedZujcyu8BDr95uQtd`. The power slot reads `SIXTY_STEP_TOURNAMENT` (F-172), and one judge call cost $0.027732. The deck stores the step, a profile of 17 features with a goldfish of 10,000 hands, and the grade `typical` 0.6538 on model `20260924T061156Z`. Its summary holds 6 sentences, the judge reason first (D-855). Validation passed with 1 finding.
 
-**The checks.** CHECKS
+**The checks.** `make verify` passed on `cb591e8`, exit 0. The two new tests fail on the code of `2c658ff`, and shellcheck is clean.
 
-**The review.** REVIEW
+**The review.** Gitar pause (D-838). Gitar is read one time after CI completes, and the Codex review follows. The pull request then waits for the owner.
 
 **What waits on the owner.**
 
@@ -108,7 +108,7 @@ Twenty-two things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **The first live feedback fix cycle, and the cycle stops when no case fails** (PR-73, F-49, F-173, F-174, D-880 to D-882). This pull request is #PRNUM.
+1. **The first live feedback fix cycle, and the cycle stops when no case fails** (PR-73, F-49, F-173, F-174, D-880 to D-882). This pull request is #223.
 2. **PR-74: a plain upload page, and a failed parse files its own thumbs down** (F-49, F-91, D-882). Before any code, ask the owner the five questions of the roadmap entry. Give the pros and cons of each option. One pull request, one clean session.
 3. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It comes after PR-74 (D-882). It waits, because the ten sessions of the audit ran before #184 and before D-749.
 4. **The open items of the roadmap.** Two register rows read 🔧: F-49 and F-174. PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
