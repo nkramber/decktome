@@ -478,3 +478,34 @@ func TestGateOfNamesTheSuiteOfEveryTarget(t *testing.T) {
 		}
 	}
 }
+
+// TestACaseWithNoMessageReachesNoGate holds D-841. A verdict that
+// carries no session gives a conversation with no message, and the
+// question gate refuses one. The dry cycle of 2026-09-23 counted two such
+// cases as cases a gate measures, so a live cycle would pay for nothing.
+func TestACaseWithNoMessageReachesNoGate(t *testing.T) {
+	recs := []harvest.Record{
+		{ID: "up1", Kind: "question", Verdict: "up", QuestionID: "q-1-set_unresolved"},
+		{ID: "down1", Kind: "question", Verdict: "down", QuestionID: "q-1-set_unresolved",
+			Reasons: []string{"already_answered"}},
+	}
+	results := Run(context.Background(), recs, nil, testNamer, testNextID)
+	for _, r := range results {
+		if r.Err != nil {
+			t.Fatalf("%s: %v", r.Route.Record.ID, r.Err)
+		}
+		if r.Case.Target != TargetConversations || r.Case.NoRun == "" {
+			t.Errorf("%s: target %q, no_run %q, want a conversation no gate runs",
+				r.Route.Record.ID, r.Case.Target, r.Case.NoRun)
+		}
+	}
+	m := ManifestOf("h.jsonl", time.Now(), results)
+	if len(m.Cases) != 0 {
+		t.Errorf("the manifest holds %d cases, want none: %+v", len(m.Cases), m.Cases)
+	}
+	var b bytes.Buffer
+	Report(&b, results, time.Now(), true, "nothing")
+	if got := strings.Count(b.String(), "**no gate runs it**"); got != 2 {
+		t.Errorf("the document names %d cases no gate runs, want 2:\n%s", got, b.String())
+	}
+}
