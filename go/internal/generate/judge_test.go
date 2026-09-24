@@ -150,10 +150,19 @@ func TestJudgeSummaryReadsTheCardFacts(t *testing.T) {
 
 // TestJudgeSixtyStep is D-866: the step judge answers one of three
 // steps from its schema, and it refuses any other word. The format word
-// heads the input, and the card facts follow each name.
+// heads the input, and the card facts and the rules text follow each
+// name (D-872).
 func TestJudgeSixtyStep(t *testing.T) {
-	cards := source{"o-bolt": {OracleId: "o-bolt", Name: "Lightning Bolt", ManaCost: "{R}", TypeLine: "Instant"}}
-	deck := &mtgv1.Deck{Cards: []*mtgv1.DeckCard{{OracleId: "o-bolt", Name: "Lightning Bolt", Count: 4}}}
+	cards := source{
+		"o-bolt": {OracleId: "o-bolt", Name: "Lightning Bolt", ManaCost: "{R}", TypeLine: "Instant", OracleText: "Lightning Bolt deals 3\ndamage to any target."},
+		"o-dfc": {OracleId: "o-dfc", Name: "Front // Back", TypeLine: "Instant // Land", Faces: []*mtgv1.CardFace{
+			{ManaCost: "{1}{R}", OracleText: "Front deals 2 damage."}, {OracleText: "{T}: Add {R}."},
+		}},
+	}
+	deck := &mtgv1.Deck{
+		Cards:     []*mtgv1.DeckCard{{OracleId: "o-bolt", Name: "Lightning Bolt", Count: 4}},
+		Sideboard: []*mtgv1.DeckCard{{OracleId: "o-dfc", Name: "Front // Back", Count: 1}},
+	}
 	for word, want := range map[string]mtgv1.SixtyStep{
 		"casual":     mtgv1.SixtyStep_SIXTY_STEP_CASUAL,
 		"fnm":        mtgv1.SixtyStep_SIXTY_STEP_FNM,
@@ -167,8 +176,15 @@ func TestJudgeSixtyStep(t *testing.T) {
 		if j.Step != want || j.Why != "w" {
 			t.Errorf("%s: step = %v, why = %q", word, j.Step, j.Why)
 		}
-		if in := sc.Calls[0].Input; !strings.HasPrefix(in, "Format: Pioneer\n") || !strings.Contains(in, "4 Lightning Bolt | {R} | Instant\n") {
-			t.Errorf("judge input = %q", in)
+		in := sc.Calls[0].Input
+		for _, want := range []string{
+			"Format: Pioneer\n\nCards:\n",
+			"4 Lightning Bolt | {R} | Instant | Lightning Bolt deals 3 damage to any target.\n",
+			"\nSideboard:\n1 Front // Back | {1}{R} | Instant // Land | Front deals 2 damage. // {T}: Add {R}.\n",
+		} {
+			if !strings.Contains(in, want) {
+				t.Errorf("judge input lacks %q:\n%s", want, in)
+			}
 		}
 		if sc.Calls[0].SchemaName != "sixty_step" {
 			t.Errorf("schema = %q", sc.Calls[0].SchemaName)

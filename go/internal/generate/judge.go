@@ -43,8 +43,10 @@ const BracketJudgeVersion = 3
 
 // SixtyJudgeVersion names the prompt of the step judge of a 60-card
 // import. A sixty-gate document reads it, so a run names the prompt it
-// measured. Version 1 defines each step by its anchor (D-866).
-const SixtyJudgeVersion = 1
+// measured. Version 1 defines each step by its anchor (D-866). Version 2
+// gives the rules text of each card, because the judge read the lands of
+// a new landfall deck as filler (D-872).
+const SixtyJudgeVersion = 2
 
 // SummaryJudgeVersion changes when the instructions or the input of the
 // summary judge change. Version 2 reads the card facts of the deck
@@ -205,7 +207,7 @@ The three steps, each the level of a kind of deck:
 - fnm: the level of a Challenger deck, a deck that Wizards of the Coast sells ready to play at Friday Night Magic in a local store.
 - tournament: a deck that can finish in the top 8 of a Magic Online Challenge or of a Regional Championship Qualifier.
 
-The first line names the format of the deck. Each card line gives the count, the name, the mana cost, and the type line from the card data.
+The first line names the format of the deck. Each card line gives the count, the name, the mana cost, the type line, and the rules text from the card data. Read the rules text of each card, and never judge a card by a memory of it.
 
 Read the card list for its card quality, its mana base, its curve, its consistency, its interaction, and its sideboard. Judge the deck against the other decks of its format when its cards were new. Do not lower the step because the cards are old, and do not raise it because they are new. Name one step, and say why in two or three sentences. Judge the deck as it is, and not the step its builder may have aimed at.`
 
@@ -269,24 +271,49 @@ func SixtyFormatWord(f mtgv1.FormatId) string {
 	return FormatWord(f)
 }
 
-// sixtyDeckText is the deck with the facts of each card, under a format
-// line, and the sideboard after the main deck.
+// sixtyDeckText is the deck with the facts and the rules text of each
+// card, under a format line, and the sideboard after the main deck. The
+// judge knows few cards of the newest sets, so it reads what each card
+// does from the card data (D-872).
 func sixtyDeckText(deck *mtgv1.Deck, format string, cards rules.CardSource) string {
 	var s strings.Builder
 	fmt.Fprintf(&s, "Format: %s\n", format)
-	s.WriteString(factsDeckText(deck, cards, nil))
-	if len(deck.GetSideboard()) == 0 {
-		return s.String()
-	}
-	s.WriteString("\nSideboard:\n")
-	for _, dc := range deck.GetSideboard() {
-		name := dc.GetName()
-		if c, ok := cards.ByOracleID(dc.GetOracleId()); ok {
-			name += cardFacts(c)
+	for _, part := range []struct {
+		head string
+		list []*mtgv1.DeckCard
+	}{{"\nCards:\n", deck.GetCards()}, {"\nSideboard:\n", deck.GetSideboard()}} {
+		if len(part.list) == 0 {
+			continue
 		}
-		fmt.Fprintf(&s, "%d %s\n", dc.GetCount(), name)
+		s.WriteString(part.head)
+		for _, dc := range part.list {
+			name := dc.GetName()
+			if c, ok := cards.ByOracleID(dc.GetOracleId()); ok {
+				name += cardFacts(c) + rulesText(c)
+			}
+			fmt.Fprintf(&s, "%d %s\n", dc.GetCount(), name)
+		}
 	}
 	return s.String()
+}
+
+// rulesText writes the rules text of a card on one line, with a leading
+// bar. A card with two faces writes the text of each face.
+func rulesText(c *mtgv1.Card) string {
+	text := c.GetOracleText()
+	if text == "" {
+		var faces []string
+		for _, f := range c.GetFaces() {
+			if f.GetOracleText() != "" {
+				faces = append(faces, f.GetOracleText())
+			}
+		}
+		text = strings.Join(faces, " // ")
+	}
+	if text == "" {
+		return ""
+	}
+	return " | " + strings.Join(strings.Fields(text), " ")
 }
 
 // DeckText writes a deck as the judge reads it: the commander, then one
