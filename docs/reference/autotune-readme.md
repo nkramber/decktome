@@ -306,7 +306,7 @@ records the failure in the documents of the same pull request.
 The steps of one cycle:
 
 1. The triage writes one case per thumbs down into the gate file that owns it, and it commits them.
-2. Each gate runs over its case ids alone. **Every case must fail.** A case that already passes stays as a case a change must not flip, and the fixer never sees it.
+2. Each gate runs over its case ids alone. **Every case must fail.** A case that already passes stays as a case a change must not flip, and the fixer never sees it. When no case fails, the cycle stops before the fixer with 1 (F-173).
 3. The fixer reads the failing cases, the reader's own words, and `docs/reference/feedback-fixer-prompt.md`.
 4. A frozen path, a removed line of `docs/decisions.md`, or a red tree reverts the fixer and keeps the cases.
 5. The same gates run over the same ids. **Every case must pass.**

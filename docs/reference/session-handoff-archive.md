@@ -12,6 +12,47 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-24a
+
+**Pull request #222 fits the feedback fix cycle to the one-PR rule and the Codex review (PR-72, F-49, D-877 to D-879).**
+
+Author provider: Claude Code
+
+**The next step.** Next step 7, PR-73: one live fix cycle on the thumbs down of 2026-09-24. The session drives the cycle with `--here`, and its own pull request holds the cycle (D-877).
+
+**The base.** `main` is `3b2f686`, from #221. Cloud Build `b9d92d13` of `deploy-api` built `3b2f686` and ended SUCCESS at 13:16:56 UTC on 2026-09-24. Build `f303f85a` of `deploy-web` ended SUCCESS at 13:19:38 UTC.
+
+**The thumbs down of 2026-09-24.** The free `make feedback-list` and a harvest into `.local/pr72/harvest` read one new verdict, from 13:31 UTC. It names a card of a Commander deck with `wrong_power` and the words of the reader. It carries the snapshot of D-635: the session with 4 turns, and the deck. Its field `session_id` is empty, and the triage reads the session from the snapshot. The free dry triage puts it in C5, and one judge read waits for the words. No user text entered the repository.
+
+**What this pull request holds.**
+
+- `scripts/feedback-loop.sh --here` commits the cycle on the branch of the session and pushes nothing (D-877).
+- `scripts/feedback-review.sh` waits for CI, reads Gitar one time, runs the Codex review, and lets the fixer answer (D-878).
+- No script of the cycle merges, and the fixer runs with no GitHub login (D-878).
+- `make feedback-harvest` writes under `.local/feedback` (D-879).
+
+**The checks.** `make verify` passed on `179d586`, exit 0. All GitHub verify jobs and `pr-contract` passed. The initial `review-gate` failed because the record did not exist.
+
+**The review.** Gitar pause (D-838). Gitar left its plan notice alone, with no finding (D-842). Round 1 of Codex reads Ready for owner merge at `179d586ab7da39d5b44b926098dfc074315df3d8`, with no open findings. The refreshed `review-gate` result waits for the record push. The pull request waits for the merge of the owner.
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- One live import of a 60-card list on decktome.com, about $0.022. The owner moved it after this merge, and asked for a reminder before the transitional prompt.
+- The three paid steps of PR-73: the judge lane, one live cycle, and the review rounds.
+- One deployed bracket 5 session reads the commander rates now.
+- The Ulalek, Fused Atrocity shortlist holds 20 fixing lands, against a floor of 21.
+- The end of the Gitar pause, in a later pull request (D-838).
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
+- UNVERIFIED: the Moxfield import of the deck list that the app exports.
+- D-794 makes the app less strict than the Wizards infographic at Bracket 2.
+- Five sessions on the new files, before a decision on the checkpoint rule (next step 3, D-750).
+- Next steps 4 and 5, and OQ-67 and OQ-77.
+
+### 2026-09-23i: the first harvest, PR-68
+
+**The owner started F-49 from the transitional prompt of #217.** The deploy of `e755f65` ended SUCCESS. The session named three faults before a paid run, and the owner chose a free count first (D-840). The harvest read 4 verdicts. The owner chose the fix and one live judge call, kept the harvest out of git (D-841), and added the Gitar notice rule (D-842). The meta job of 2026-09-24 wrote the rates of 225 commanders, and the session moved the branch onto `fa05e3c`.
+
 ## The resume section of 2026-09-23j
 
 **Pull request #221 reads the power step of a 60-card import (PR-71, F-170, F-172, D-863 to D-876).**
