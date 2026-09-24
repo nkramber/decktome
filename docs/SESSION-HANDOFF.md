@@ -12,7 +12,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 Author provider: Claude Code
 
-**The next step.** The Codex review is ready for the owner merge. Wait for the owner's four-part summary confirmation (D-836).
+**The next step.** Ask the owner for the merge with the summary of four sections (D-836). Pending the owner merge.
 
 **The base.** `main` is `e755f65`, from #217. This session read no deploy of `e755f65`.
 
@@ -25,9 +25,9 @@ Author provider: Claude Code
 - New tests: `go/internal/candidates/land_cap_rate_test.go`, and a bracket 5 check in `go/internal/profile/prompt_bands_test.go`.
 - `docs/reference/f168-land-cap-2026-09-23.md` holds each measurement.
 
-**The checks.** `make verify` passed on `242a225`, exit 0, with Node 22.23.2 on the PATH. A revert of each of the three parts of the land change fails its own case. The Najeela replay keeps 90 of 90 core cards. A sweep of 231 commanders cuts the dropped core lands from 163 to 9. Bracket gate run 12 read prompt 15 for $0.1249 with two judge lanes. Both read bracket 5, and the verdict reads FAIL on the old hands floor alone.
+**The checks.** `make verify` passed on `242a225`, exit 0, with Node 22.23.2 on the PATH. Each job of the verify workflow passed on `22738bc`. A revert of each of the three parts of the land change fails its own case. The Najeela replay keeps 90 of 90 core cards. A sweep of 231 commanders cuts the dropped core lands from 163 to 9. Bracket gate run 12 read prompt 15 for $0.1249 with two judge lanes. Both read bracket 5, and the verdict reads FAIL on the old hands floor alone.
 
-**The review.** Gitar pause (D-838). Codex review: `Ready for owner merge` at `22738bc`. No finding stays open.
+**The review.** Gitar pause (D-838). Gitar left its plan notice alone, with no finding. Codex review: `22738bc` reads Ready for owner merge. No finding stays open.
 
 **What waits on the owner.**
 
