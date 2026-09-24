@@ -8,11 +8,15 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-23i)
 
-**Pull request (not yet opened) adds the power step of a 60-card import (PR-71, F-170, D-863 to D-869).**
+**Pull request (not yet opened) adds the power step of a 60-card import (PR-71, F-170, F-172, D-863 to D-874).**
 
 Author provider: Claude Code
 
-**The next step.** Write `JudgeSixtyStep` and its tests, then `make sixty-gate` with its free `-dry` lane.
+**The next step.** Read the labels of `.local/pr71/goldfish-label-set.md` when the owner returns the file (D-874). Then propose how the labeled decks join the rungs, and ask for test run 1.
+
+**The code.** `JudgeSixtyStep` with prompt version 2, the step of a 60-card import, the new read, the power slot of the session (F-172, D-870), and `make sixty-gate`. The tests of each part pass.
+
+**The paid runs.** Three dev lanes cost $0.8443 in all: `docs/reference/pr71-sixty-gate-dev1.md` to `docs/reference/pr71-sixty-gate-dev3.md`. No read of prompt version 2 sat two steps off. The FNM rung read 5 of 10, from both sides (D-873, D-874).
 
 **The base.** `main` is `fa05e3c`, from #220. Cloud Build read SUCCESS for `deploy-api` and `deploy-web` of `fa05e3c` on 2026-09-24 UTC.
 
@@ -28,7 +32,8 @@ Author provider: Claude Code
 
 **What waits on the owner.**
 
-- The paid run 1 of `make sixty-gate`, about $3.3. Ask first.
+- The labels of the 60 user decks, from a model of another family (D-874).
+- The paid run 1 of `make sixty-gate`, about $3.8. Ask first.
 - The Ulalek, Fused Atrocity shortlist holds 20 fixing lands, against a floor of 21.
 - The end of the Gitar pause, in a later pull request (D-838).
 - F-49, as a later item.
