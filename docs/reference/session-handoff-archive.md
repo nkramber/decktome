@@ -12,6 +12,46 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-23g
+
+**Pull request #219 makes the land cap of a bracket 5 shortlist keep the core lands of its commander (F-168, D-843). It also moves the opening-hands floor of brackets 4 and 5 to real lists (F-169, D-844).**
+
+Author provider: Claude Code
+
+**The next step.** Ask the owner for the merge with the summary of four sections (D-836). Pending the owner merge.
+
+**The base.** `main` is `e755f65`, from #217. This session read no deploy of `e755f65`.
+
+**Why this pull request exists.** The F-166 sweep found that the land cap drops four core lands of Najeela. The mana half of `capLands` reads the land class and then the play, and no commander rate. So it held 7 pain lands that no Najeela list plays.
+
+**What this pull request holds.**
+
+- A bracket 5 Commander request with a commander rate fills the mana half in score order. The owned-first fill and the total cut read the same order.
+- The floor of first hands with two to four lands reads 0.56 at brackets 4 and 5, the low quarter of the TopDeck lists. The land band stays 27 to 33.
+- New tests: `go/internal/candidates/land_cap_rate_test.go`, and a bracket 5 check in `go/internal/profile/prompt_bands_test.go`.
+- `docs/reference/f168-land-cap-2026-09-23.md` holds each measurement.
+
+**The checks.** `make verify` passed on `242a225`, exit 0, with Node 22.23.2 on the PATH. Each job of the verify workflow passed on `22738bc`. A revert of each of the three parts of the land change fails its own case. The Najeela replay keeps 90 of 90 core cards. A sweep of 231 commanders cuts the dropped core lands from 163 to 9. Bracket gate run 12 read prompt 15 for $0.1249 with two judge lanes. Both read bracket 5, and the verdict reads FAIL on the old hands floor alone.
+
+**The review.** Gitar pause (D-838). Gitar left its plan notice alone, with no finding. Codex review: `22738bc` reads Ready for owner merge. No finding stays open.
+
+**What waits on the owner.**
+
+- The merge of this pull request, after the summary of four sections (D-836).
+- The Ulalek, Fused Atrocity shortlist holds 20 fixing lands, against a floor of 21. Its lists hold 11.6 on average.
+- The deployed app reads the rates after the first meta job that runs the fit of #217. Read one deployed bracket 5 session after that job.
+- The end of the Gitar pause, in a later pull request (D-838).
+- F-49, as a later item.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. It is a paid target, so ask the owner first.
+- UNVERIFIED: the Moxfield import of the deck list.
+- D-794 makes the app less strict than the Wizards infographic at Bracket 2.
+- Five sessions on the new files, before a decision on the checkpoint rule (next step 3, D-750).
+- Next steps 4 and 5, and OQ-67 and OQ-77.
+
+### 2026-09-23e: the Gitar pause, PR-66
+
+**The owner asked to pause the required Gitar review, and asked for a flag of `make codex-review` that skips the Gitar pass** (D-838). The owner asked for a change that is easy to reverse, and for an alert at each Gitar finding. The session asked two questions. The owner kept the thread check of the flag, over a flag that skips each check. The owner chose a stop of the feedback cycle on a Gitar finding, over no change of the script. The Makefile of make 3.81 reads the flag after `--` as a goal, so a no-op rule passes it on.
+
 ## The resume section of 2026-09-23f
 
 **Pull request #217 makes a bracket 5 shortlist read the card rate of its commander (F-166, D-839).**

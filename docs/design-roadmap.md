@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-23 correction pass 225 (PR-70, D-845 to D-862): a user can import a deck list, and the app shows it as a deck it built. A Commander import reads its bracket from the judge over the floor of its rules. The backfill of the user record counted no revision (F-171). Changes: PR-70, PR-71, F-170, F-171.
+
 2026-09-23 correction pass 224 (PR-69, D-843): the land cap of a bracket 5 shortlist read no commander rate in its mana half. It dropped four lands that most Najeela lists play, and it held pain lands that no list plays. The opening-hands floor of brackets 4 and 5 failed most real top-cut lists (D-844). Changes: PR-69, F-168, F-169.
 
 2026-09-23 correction pass 222 (PR-67, D-839): the judge reads a typal bracket 5 deck as bracket 4 for its theme filler. It reads a top-cut list of the same commander as bracket 5. A bracket 5 shortlist now reads the card rate of its commander in the TopDeck lists. Changes: PR-67, F-166.
@@ -2022,7 +2024,7 @@ Gate:
 - `make verify` passes.
 > *In plain English:* a top-power deck got lands that no winning deck of its commander plays. It lost lands that most of those decks play. The land list now follows the same winning decks. The check of the first hands also failed most real winning decks. Its bar moves to what those decks play.
 
-**PR-70: Import a deck list, and show it as a deck the app built (F-170, F-171, D-845 to D-862).** 🔧 in progress. The owner approved the scope on 2026-09-23 (D-860).
+**PR-70: Import a deck list, and show it as a deck the app built (F-170, F-171, D-845 to D-862).** ✅ merged as #220. The mark comes before any review (D-822). The owner approved the scope on 2026-09-23 (D-860).
 A user brings a deck of their own, and the app stores it as a deck that a build made. So the deck page shows it, and the revise turn changes it. The owner asked for the import on 2026-09-23.
 
 - **The input.** The page `/decks` gets an import form. It takes a text file that Archidekt exports, or a pasted Arena list (D-845). The app fetches no URL.
@@ -2402,6 +2404,8 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 57. **PR-67** a bracket 5 shortlist reads the card rate of its commander (F-166, D-839). The scratch rejudge, bracket gate run 11, and its second lane cost $0.3957.
 
 59. **PR-69** the land cap and the hands floor follow the real lists (F-168, F-169, D-843, D-844). Bracket gate run 12 cost $0.1249.
+
+60. **PR-70** a deck import, and the count of revisions in the backfill (F-170, F-171, D-845 to D-862). No paid target ran.
 
 ## 9. Open questions
 
