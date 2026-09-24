@@ -102,6 +102,25 @@ func TestTheWatermarkComesFromTheFiles(t *testing.T) {
 	}
 }
 
+// TestTheHarvestWritesUnderLocal holds D-879. The .local folder is
+// ignored, so a harvest never rides into a commit of the fix cycle.
+func TestTheHarvestWritesUnderLocal(t *testing.T) {
+	if !strings.HasPrefix(Dir, ".local/") {
+		t.Fatalf("Dir = %q, want a folder under .local (D-879)", Dir)
+	}
+	root := t.TempDir()
+	rec := Record{ID: "f1", CreatedAt: at("2026-09-24T13:31:00Z"), Kind: "card", Verdict: "down", Context: "absent"}
+	doc, jsonl, err := Write(root, at("2026-09-24T14:00:00Z"), []Record{rec})
+	if err != nil {
+		t.Fatalf("Write: %v", err)
+	}
+	for _, p := range []string{doc, jsonl} {
+		if !strings.HasPrefix(p, filepath.Join(root, ".local", "feedback")+string(filepath.Separator)) {
+			t.Errorf("the harvest wrote %s, outside .local/feedback", p)
+		}
+	}
+}
+
 // TestASecondHarvestOfADayTakesItsOwnName holds D-65: a run never
 // writes over a document that exists.
 func TestASecondHarvestOfADayTakesItsOwnName(t *testing.T) {

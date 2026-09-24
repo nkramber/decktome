@@ -25,8 +25,9 @@ import (
 	"github.com/nkramber/decktome/go/internal/feedback"
 )
 
-// Dir is where the harvest writes, under the repo root.
-const Dir = "docs/reference/feedback"
+// Dir is where the harvest writes, under the repo root. It sits under
+// .local, so a harvest never rides into a commit of the fix cycle (D-879).
+const Dir = ".local/feedback"
 
 // Record is one line of the JSONL file. It names the verdict, the words
 // of the reader, and the object the verdict names as it stood at that

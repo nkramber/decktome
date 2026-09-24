@@ -1,17 +1,27 @@
 #!/usr/bin/env bash
-# The review round of the feedback fix cycle (PR-28c, D-645). It waits
-# for the review of gitar-bot on one pull request, hands each finding to
-# the fixer agent, and replies on the thread with what changed (D-637).
+# The review step of the feedback fix cycle (PR-28c, D-645, D-878). It
+# reads the review of gitar-bot on one pull request, then runs the Codex
+# review, and hands each finding to the fixer agent.
 #
 #   scripts/feedback-review.sh <pr-number> <rounds> <state-dir>
 #
-# One round is: wait for the review, ask the fixer, run the free checks,
-# commit, push, and reply to every thread. The round ends when the review
-# holds no open thread.
+# One round is: wait for the checks of the tip, and read Gitar. An open
+# Gitar thread goes to the fixer, who changes the code or says why not,
+# and the round replies on the thread (D-637). With no open thread, the
+# round runs the Codex review (D-811). A record that asks for changes
+# goes to the fixer, who writes the response file (D-878). Each fix runs
+# the free checks, and the round pushes it.
 #
-# It answers 0 when the review holds nothing open, and 1 when a round
+# During the Gitar pause the round reads Gitar one time and never waits
+# for it (D-838). An open thread or an issue on the dashboard stops it.
+#
+# It answers 0 when Codex approves the effective head, and 1 when a round
 # limit or a failure leaves work on the pull request. It answers 3 when
-# the Gitar pause stops it on a finding (D-838).
+# the Gitar pause stops it on a finding (D-838), and 4 when a Codex
+# finding is open at its third head (D-826).
+#
+# The script never merges, and it never turns on the auto-merge. The
+# owner decides the merge after an approval (D-878).
 #
 # CAUTION: this writes to a public pull request with no person watching.
 # The cycle calls it, and the cycle refuses to run without
@@ -37,10 +47,18 @@ say() { printf '%s  review: %s\n' "$(date -u +%H:%M:%S)" "$*" >&2; }
 WAIT_SECONDS="${FEEDBACK_REVIEW_WAIT:-900}"
 POLL_SECONDS="${FEEDBACK_REVIEW_POLL:-30}"
 
+# CI_WAIT_SECONDS is how long one round waits for the checks of the tip.
+# The default gives the whole verify workflow room.
+CI_WAIT_SECONDS="${FEEDBACK_CI_WAIT:-3600}"
+
+# CODEX_REVIEW_CMD runs the Codex review of D-823. A test names a fake.
+CODEX_REVIEW_CMD="${CODEX_REVIEW_CMD:-python3 $ROOT/docs/tools/codex_review.py}"
+
 # PAUSE_FILE is the switch of the Gitar pause (D-838). While it exists, a
-# round with no review ends the cycle with 0. An open thread or an issue on
-# the Gitar dashboard stops the cycle before the fixer, and a comment tells
-# the owner, who reads it first. GITAR_PAUSE_FILE moves the switch for a test.
+# round reads Gitar one time and goes on to the Codex review. An open
+# thread or an issue on the Gitar dashboard stops the cycle before the
+# fixer, and a comment tells the owner, who reads it first.
+# GITAR_PAUSE_FILE moves the switch for a test.
 PAUSE_FILE="${GITAR_PAUSE_FILE:-$ROOT/docs/reference/gitar-pause.md}"
 paused() { [ -f "$PAUSE_FILE" ]; }
 
@@ -116,7 +134,8 @@ sys.exit(1)'
 }
 
 # wait_for_review holds until the Gitar check settles or the wait runs
-# out. A round that never sees a review reports it and stops.
+# out. The round calls it only when the Gitar review is not paused. During
+# the pause the round reads Gitar one time and never waits (D-838).
 wait_for_review() {
   local waited=0
   while [ "$waited" -lt "$WAIT_SECONDS" ]; do
@@ -127,36 +146,107 @@ wait_for_review() {
   return 1
 }
 
-round=1
-while [ "$round" -le "$ROUNDS" ]; do
-  say "round $round of $ROUNDS: waiting for the review of gitar-bot"
-  landed=1
-  wait_for_review || landed=0
-  if [ "$landed" = "0" ] && ! paused; then
-    say "no review inside $WAIT_SECONDS seconds. The pull request keeps whatever is open."
-    exit 1
+# ci_state prints "done" when each check of the pushed head completed, and
+# "fail <names>" when one failed. It prints "pending" while GitHub reads an
+# older head or a check still runs. Gitar is not CI, and review-gate waits
+# for the Codex record, so neither one counts.
+ci_state() {
+  local head
+  head="$(gh pr view "$PR" --json headRefOid --jq .headRefOid 2>/dev/null)"
+  if [ -z "$head" ] || [ "$head" != "$(git rev-parse HEAD 2>/dev/null)" ]; then
+    echo "pending"
+    return
   fi
-  threads="$STATE_DIR/threads-$round.jsonl"
-  open_threads > "$threads"
-  # grep -c prints 0 and exits 1 on an empty file, so an "|| echo 0"
-  # here would write a second line and the count would never read 0.
-  count="$(awk 'NF' "$threads" 2>/dev/null | wc -l | tr -d ' ')"
-  if paused; then
-    pause_stop "$count"
-    if [ "$landed" = "0" ]; then
-      say "no review inside $WAIT_SECONDS seconds. The Gitar review is paused (D-838), so the cycle needs none."
-      exit 0
-    fi
-  fi
-  if [ "$count" = "0" ]; then
-    say "the review holds nothing open"
-    exit 0
-  fi
-  say "$count open thread(s)"
+  gh pr checks "$PR" --json name,bucket 2>/dev/null \
+    | python3 -c 'import json, sys
+try:
+    rows = json.load(sys.stdin)
+except Exception:
+    print("pending")
+    sys.exit(0)
+rows = [r for r in rows if r.get("name") not in ("Gitar", "review-gate")]
+if not rows or any(r.get("bucket") == "pending" for r in rows):
+    print("pending")
+    sys.exit(0)
+bad = [r["name"] for r in rows if r.get("bucket") in ("fail", "cancel")]
+print("fail " + ", ".join(bad) if bad else "done")'
+}
 
-  # The fixer reads every open finding at once, with the diff of the
-  # pull request. One agent run answers the whole review, so a change
-  # that serves two findings is written once.
+# wait_for_ci holds until each check of the tip completes. The Codex
+# review starts after CI, as the pr-review skill says (D-878).
+wait_for_ci() {
+  local waited=0 state
+  while :; do
+    state="$(ci_state)"
+    case "$state" in
+      done) return 0 ;;
+      fail*) say "a check of the tip failed: ${state#fail }. A person reads it."; return 1 ;;
+    esac
+    if [ "$waited" -ge "$CI_WAIT_SECONDS" ]; then
+      say "the checks of the tip did not complete inside $CI_WAIT_SECONDS seconds"
+      return 1
+    fi
+    sleep "$POLL_SECONDS"
+    waited=$((waited + POLL_SECONDS))
+  done
+}
+
+# frozen_paths prints the FROZEN block of the cycle. The fixer of a review
+# round keeps the same rule as the fixer of the cycle (D-645), and it never
+# edits the review record, which belongs to the reviewer (D-878).
+frozen_paths() {
+  awk '/^FROZEN="$/ {f = 1; next} f && /^"$/ {exit} f && NF {print $1}' "$ROOT/scripts/feedback-loop.sh"
+  echo "docs/reviews/pr-$PR.md"
+}
+
+# fix_and_push hands one findings document to the fixer. It reverts the
+# round when the fixer touches a frozen path, removes a decision line, or
+# turns the tree red. It pushes what is left. It answers 1 on a failure.
+fix_and_push() {
+  local doc="$1" label="$2" summary="$3" before after changed path
+  before="$(git rev-parse HEAD)"
+  if ! AUTOTUNE_EVAL_DOC="$doc" \
+       AUTOTUNE_LABEL="$label" \
+       AUTOTUNE_LAST_GOOD="$before" \
+       AUTOTUNE_FIXER_PROMPT="$ROOT/docs/reference/feedback-fixer-prompt.md" \
+       "$ROOT/scripts/autotune-fix.sh" > "$summary" 2>&1; then
+    say "the fixer failed on $label. Read $summary"
+    git reset -q --hard "$before"
+    return 1
+  fi
+  after="$(git rev-parse HEAD)"
+  if [ "$before" = "$after" ]; then
+    say "the fixer changed nothing on $label"
+    return 0
+  fi
+  changed="$(git diff --name-only "$before"; git ls-files --others --exclude-standard)"
+  for path in $(frozen_paths); do
+    if grep -qxF -- "$path" <<<"$changed" || grep -qF -- "$path/" <<<"$changed"; then
+      say "the fixer touched a frozen path: $path. The cycle reverts $label."
+      git reset -q --hard "$before"
+      return 1
+    fi
+  done
+  if git diff -U0 "$before" -- docs/decisions.md | grep -q '^-[^-]'; then
+    say "the fixer removed a line of docs/decisions.md, which is append-only. The cycle reverts $label."
+    git reset -q --hard "$before"
+    return 1
+  fi
+  if ! ( cd "$ROOT/go" && go build ./... && go vet ./... && go test ./... >/dev/null ) \
+     || ! ( cd "$ROOT" && make lint-go >/dev/null 2>&1 ); then
+    say "the tree is red after the fix of $label. The cycle reverts it."
+    git reset -q --hard "$before"
+    return 1
+  fi
+  git push -q || { say "could not push the fix of $label"; return 1; }
+  say "pushed $(git rev-list --count "$before".."$after") commit(s)"
+}
+
+# gitar_round hands the open Gitar threads to the fixer, and replies on
+# each thread with what the fixer said (D-637). Only a round with no
+# Gitar pause reaches it.
+gitar_round() {
+  local threads="$1" count="$2"
   FINDINGS="$STATE_DIR/findings-$round.md"
   {
     echo "# The review of pull request #$PR, round $round"
@@ -193,31 +283,9 @@ for line in open(sys.argv[1]):
     echo '```'
   } > "$FINDINGS"
 
-  say "handing $count finding(s) to the fixer"
+  say "handing $count Gitar finding(s) to the fixer"
   SUMMARY="$STATE_DIR/summary-$round.md"
-  before="$(git rev-parse HEAD)"
-  if ! AUTOTUNE_EVAL_DOC="$FINDINGS" \
-       AUTOTUNE_LABEL="review-$PR-$round" \
-       AUTOTUNE_LAST_GOOD="$before" \
-       AUTOTUNE_FIXER_PROMPT="$ROOT/docs/reference/feedback-fixer-prompt.md" \
-       "$ROOT/scripts/autotune-fix.sh" > "$SUMMARY" 2>&1; then
-    say "the fixer failed on round $round. Read $SUMMARY"
-    exit 1
-  fi
-
-  after="$(git rev-parse HEAD)"
-  if [ "$before" != "$after" ]; then
-    if ! ( cd "$ROOT/go" && go build ./... && go vet ./... && go test ./... >/dev/null ) \
-       || ! ( cd "$ROOT" && make lint-go >/dev/null 2>&1 ); then
-      say "the tree is red after the review fix. The cycle reverts this round."
-      git reset -q --hard "$before"
-      exit 1
-    fi
-    git push -q || { say "could not push the review fix"; exit 1; }
-    say "pushed $(git rev-list --count "$before".."$after") commit(s)"
-  else
-    say "the fixer changed nothing this round"
-  fi
+  fix_and_push "$FINDINGS" "review-$PR-$round" "$SUMMARY" || exit 1
 
   # One reply per thread, with what the fixer said about it. A thread the
   # summary does not name gets the general answer, so no finding is left
@@ -247,9 +315,95 @@ print((m.group(1).strip() if m else "")[:3500])
       || say "could not reply on thread $tid"
   done < "$threads"
   say "replied to $count thread(s)"
+}
 
+# codex_round runs the Codex review of the pushed head (D-811, D-878). An
+# approval ends the review step with 0, and the owner then decides the
+# merge. A record that asks for changes goes to the fixer, who answers each
+# finding in the response file. The cycle never merges (D-878).
+codex_round() {
+  local log="$STATE_DIR/codex-$round.log" code args
+  args=(--pr "$PR")
+  if paused; then args+=(--skip-gitar-review); fi
+  say "round $round: the Codex review (D-878)"
+  # CODEX_REVIEW_CMD holds a command and its arguments, so it splits here.
+  # shellcheck disable=SC2086
+  $CODEX_REVIEW_CMD "${args[@]}" > "$log" 2>&1 </dev/null
+  code=$?
+  tail -n 3 "$log" >&2
+  case "$code" in
+    0|3|4) git pull -q --ff-only || { say "could not pull the review record"; exit 1; } ;;
+  esac
+  case "$code" in
+    0)
+      say "Codex approved the effective head. The owner decides the merge, and the cycle never merges (D-878)."
+      exit 0 ;;
+    3) ;;
+    4)
+      say "a Codex finding is open at its third head (D-826). The cycle stops, and the owner decides."
+      exit 4 ;;
+    *)
+      say "the Codex review ended with exit $code. Read $log"
+      exit 1 ;;
+  esac
+
+  FINDINGS="$STATE_DIR/codex-findings-$round.md"
+  {
+    echo "# The Codex review of pull request #$PR, round $round"
+    echo
+    echo "Codex reviewed this pull request, and its record asks for changes. A finding is a claim, not a fact."
+    echo "Answer each open finding with the steps of \`.claude/skills/pr-review/references/answer-review.md\`, under \"Answer the findings of a review\"."
+    echo "The cycle does the push and the next review, so skip steps 8 and 9 of that list."
+    echo
+    echo "- Decide full merit, partial merit, or no merit for each open finding."
+    echo "- Correct each part with merit, with a test, in a commit."
+    echo "- Write \`docs/reviews/pr-$PR-response.md\` as the reference file says, and commit it."
+    echo "- Never edit \`docs/reviews/pr-$PR.md\`. The record belongs to the reviewer, and the cycle reverts a round that edits it."
+    echo
+    echo "## The record"
+    echo
+    cat "$ROOT/docs/reviews/pr-$PR.md" 2>/dev/null || echo "The record did not read. Answer nothing, and say so in your summary."
+    echo
+    echo "## The change under review"
+    echo
+    echo '```diff'
+    git diff "$(git merge-base HEAD origin/main)"...HEAD | head -c 200000
+    echo '```'
+  } > "$FINDINGS"
+  say "handing the Codex findings to the fixer"
+  fix_and_push "$FINDINGS" "codex-$PR-$round" "$STATE_DIR/codex-summary-$round.md" || exit 1
+}
+
+round=1
+while [ "$round" -le "$ROUNDS" ]; do
+  say "round $round of $ROUNDS: the checks of the tip"
+  wait_for_ci || exit 1
+  if paused; then
+    say "round $round: one read of Gitar, because the Gitar review is paused (D-838)"
+  else
+    say "round $round: waiting for the review of gitar-bot"
+    if ! wait_for_review; then
+      say "no review inside $WAIT_SECONDS seconds. The pull request keeps whatever is open."
+      exit 1
+    fi
+  fi
+  threads="$STATE_DIR/threads-$round.jsonl"
+  open_threads > "$threads"
+  # grep -c prints 0 and exits 1 on an empty file, so an "|| echo 0"
+  # here would write a second line and the count would never read 0.
+  count="$(awk 'NF' "$threads" 2>/dev/null | wc -l | tr -d ' ')"
+  if paused; then
+    pause_stop "$count"
+  fi
+  if [ "$count" != "0" ]; then
+    say "$count open thread(s)"
+    gitar_round "$threads" "$count"
+  else
+    say "Gitar holds nothing open"
+    codex_round
+  fi
   round=$((round + 1))
 done
 
-say "the review still holds open threads after $ROUNDS round(s)"
+say "the review still holds open work after $ROUNDS round(s)"
 exit 1

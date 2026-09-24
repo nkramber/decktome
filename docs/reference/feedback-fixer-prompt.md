@@ -70,11 +70,14 @@ Write no attribution line in any commit. No "Co-Authored-By", no "Generated with
 
 Do not push. Do not switch branches. Do not amend a commit from before the start commit named below.
 
+Do not merge a pull request, and do not turn on the auto-merge. The owner decides each merge (D-878). The cycle runs you with no GitHub login.
+
 ## The review round
 
-The cycle opens a pull request and waits for the review of `gitar-bot` (D-637). When a finding comes back, you get it with the diff, and the same rules hold. Read each finding on its merit and never on its tone.
+The review step reads the review of `gitar-bot` (D-637), and then it runs the Codex review (D-878). When a finding comes back, you get it with the diff, and the same rules hold. Read each finding on its merit and never on its tone.
 
 - A finding with merit takes a change, a test, and a commit.
-- A finding with no merit takes no change. Write one paragraph that says why, and the cycle replies with it.
+- A Gitar finding with no merit takes no change. Write one paragraph that says why, and the cycle replies with it.
+- A Codex finding gets its answer in `docs/reviews/pr-<number>-response.md`, with the steps of the `pr-review` skill. Commit that file. Never edit `docs/reviews/pr-<number>.md`, because the record belongs to the reviewer.
 
 Answer the finding. Do not rewrite the case, and do not weaken a test to make a finding go away.

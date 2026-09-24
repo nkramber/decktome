@@ -174,13 +174,72 @@ func TestTheReviewCountsAnEmptyThreadListAsNone(t *testing.T) {
 const fakeGH = `#!/usr/bin/env bash
 case "$1 $2" in
   "repo view") echo "o/r" ;;
-  "pr checks") echo '[{"name":"Gitar","bucket":"pass"}]' ;;
+  "pr view") echo "abc123" ;;
+  "pr checks") printf '[{"name":"Gitar","bucket":"%s"},{"name":"verify","bucket":"%s"}]' "${FAKE_GITAR:-pass}" "${FAKE_CI:-pass}" ;;
   "api graphql") printf '%s' "$FAKE_THREADS" ;;
   "api --paginate") printf '%s' "$FAKE_BODIES" ;;
   "pr comment") echo "$*" >> "$FAKE_LOG" ;;
   *) exit 1 ;;
 esac
 `
+
+// fakeGit answers the two git calls of a review round with no fix: the
+// head of the checkout, and the pull of the review record.
+const fakeGit = `#!/usr/bin/env bash
+case "$1" in
+  rev-parse) echo "abc123" ;;
+  pull) echo "git $*" >> "$FAKE_GIT_LOG" ;;
+  *) exit 1 ;;
+esac
+`
+
+// fakeCodex stands for docs/tools/codex_review.py. It logs its flags and
+// exits with FAKE_CODEX_CODE.
+const fakeCodex = `#!/usr/bin/env bash
+echo "$*" >> "$FAKE_CODEX_LOG"
+echo "outcome: fake (exit ${FAKE_CODEX_CODE:-0})"
+exit "${FAKE_CODEX_CODE:-0}"
+`
+
+// reviewFakes writes the fake gh, git, and Codex review into one folder.
+func reviewFakes(t *testing.T) string {
+	t.Helper()
+	bin := t.TempDir()
+	for name, body := range map[string]string{"gh": fakeGH, "git": fakeGit, "codex-review": fakeCodex} {
+		if err := os.WriteFile(filepath.Join(bin, name), []byte(body), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return bin
+}
+
+// runReview runs one review round with the fakes of bin and the extra
+// environment. It answers the exit code and the output.
+func runReview(t *testing.T, bin string, env ...string) (int, string) {
+	t.Helper()
+	script, err := filepath.Abs(filepath.Join("..", "..", "..", "scripts", "feedback-review.sh"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, "bash", script, "7", "1", filepath.Join(t.TempDir(), "state"))
+	cmd.Env = append(os.Environ(), "PATH="+bin+string(os.PathListSeparator)+os.Getenv("PATH"),
+		"CODEX_REVIEW_CMD="+filepath.Join(bin, "codex-review"),
+		"FEEDBACK_REVIEW_WAIT=5", "FEEDBACK_REVIEW_POLL=1", "FEEDBACK_CI_WAIT=5")
+	cmd.Env = append(cmd.Env, env...)
+	out, err := cmd.CombinedOutput()
+	if ctx.Err() != nil {
+		t.Fatalf("the round never returned: %s", out)
+	}
+	var exit *exec.ExitError
+	if errors.As(err, &exit) {
+		return exit.ExitCode(), string(out)
+	} else if err != nil {
+		t.Fatal(err)
+	}
+	return 0, string(out)
+}
 
 // gitarSummary is a Gitar dashboard body with one summary line.
 func gitarSummary(kbds ...string) string {
@@ -198,14 +257,6 @@ func gitarSummary(kbds ...string) string {
 func TestTheGitarPauseStopsTheReviewBeforeTheFixer(t *testing.T) {
 	if _, err := exec.LookPath("bash"); err != nil {
 		t.Skip("no bash")
-	}
-	script, err := filepath.Abs(filepath.Join("..", "..", "..", "scripts", "feedback-review.sh"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	bin := t.TempDir()
-	if err := os.WriteFile(filepath.Join(bin, "gh"), []byte(fakeGH), 0o755); err != nil {
-		t.Fatal(err)
 	}
 	thread := `{"id":"T1","path":"a.go","line":3,"author":"gitar-bot","body":"a finding"}` + "\n"
 	cases := []struct {
@@ -225,6 +276,7 @@ func TestTheGitarPauseStopsTheReviewBeforeTheFixer(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
+			bin := reviewFakes(t)
 			dir := t.TempDir()
 			pause := filepath.Join(dir, "gitar-pause.md")
 			if c.paused {
@@ -238,29 +290,31 @@ func TestTheGitarPauseStopsTheReviewBeforeTheFixer(t *testing.T) {
 				bodies.Write(append(line, '\n'))
 			}
 			log := filepath.Join(dir, "gh.log")
-			ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
-			defer cancel()
-			cmd := exec.CommandContext(ctx, "bash", script, "7", "1", filepath.Join(dir, "state"))
-			cmd.Env = append(os.Environ(), "PATH="+bin+string(os.PathListSeparator)+os.Getenv("PATH"),
-				"GITAR_PAUSE_FILE="+pause, "FEEDBACK_REVIEW_WAIT=5", "FEEDBACK_REVIEW_POLL=1",
-				"FAKE_THREADS="+c.threads, "FAKE_BODIES="+bodies.String(), "FAKE_LOG="+log)
-			out, err := cmd.CombinedOutput()
-			code := 0
-			var exit *exec.ExitError
-			if errors.As(err, &exit) {
-				code = exit.ExitCode()
-			} else if err != nil {
-				t.Fatal(err)
-			}
+			codexLog := filepath.Join(dir, "codex.log")
+			code, out := runReview(t, bin, "GITAR_PAUSE_FILE="+pause,
+				"FAKE_THREADS="+c.threads, "FAKE_BODIES="+bodies.String(), "FAKE_LOG="+log,
+				"FAKE_CODEX_LOG="+codexLog, "FAKE_GIT_LOG="+filepath.Join(dir, "git.log"))
 			if code != c.code {
 				t.Fatalf("exit %d, want %d\n%s", code, c.code, out)
 			}
 			sent, _ := os.ReadFile(log)
+			ran, _ := os.ReadFile(codexLog)
 			if c.alert == "" {
 				if len(sent) > 0 {
 					t.Errorf("the round wrote a comment: %s", sent)
 				}
+				// A round with nothing open from Gitar goes on to the Codex
+				// review, with the flag of the pause alone (D-838, D-878).
+				if want := "--pr 7"; !strings.Contains(string(ran), want) {
+					t.Errorf("the Codex review ran with %q, want %q", ran, want)
+				}
+				if got := strings.Contains(string(ran), "--skip-gitar-review"); got != c.paused {
+					t.Errorf("the Codex review flag of the pause = %v, want %v: %s", got, c.paused, ran)
+				}
 				return
+			}
+			if len(ran) > 0 {
+				t.Errorf("the Codex review ran after a Gitar finding of the pause: %s", ran)
 			}
 			for _, want := range []string{"pr comment 7", "@o ", c.alert, "(D-838)"} {
 				if !strings.Contains(string(sent), want) {
@@ -271,6 +325,171 @@ func TestTheGitarPauseStopsTheReviewBeforeTheFixer(t *testing.T) {
 	}
 	if !strings.Contains(loopScript(t), `if [ "$review_code" -eq 3 ]; then`) {
 		t.Error("the cycle does not report the pause stop of the review")
+	}
+}
+
+// TestTheReviewStepReadsGitarOnceThenCodex holds D-878. During the pause
+// a round reads Gitar one time and never waits for it. It waits for CI,
+// runs the Codex review, and reads its exit code. An approval pulls the
+// record and ends the step with 0, so the owner decides the merge.
+func TestTheReviewStepReadsGitarOnceThenCodex(t *testing.T) {
+	if _, err := exec.LookPath("bash"); err != nil {
+		t.Skip("no bash")
+	}
+	cases := []struct {
+		name   string
+		env    []string
+		code   int
+		codex  bool
+		pulled bool
+	}{
+		// FEEDBACK_REVIEW_WAIT=600 is longer than the deadline of runReview,
+		// so a round that waits for Gitar fails the test.
+		{"a pending Gitar check does not hold a paused round", []string{"FAKE_GITAR=pending", "FEEDBACK_REVIEW_WAIT=600"}, 0, true, true},
+		{"a failed check stops the round before Codex", []string{"FAKE_CI=fail"}, 1, false, false},
+		{"a pending check past the wait stops the round", []string{"FAKE_CI=pending"}, 1, false, false},
+		{"an approval pulls the record and ends with 0", []string{"FAKE_CODEX_CODE=0"}, 0, true, true},
+		{"a three-strike stop ends with 4", []string{"FAKE_CODEX_CODE=4"}, 4, true, true},
+		{"a refusal ends with 1 and pulls nothing", []string{"FAKE_CODEX_CODE=5"}, 1, true, false},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			bin := reviewFakes(t)
+			dir := t.TempDir()
+			pause := filepath.Join(dir, "gitar-pause.md")
+			if err := os.WriteFile(pause, []byte("paused\n"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			codexLog := filepath.Join(dir, "codex.log")
+			gitLog := filepath.Join(dir, "git.log")
+			env := append([]string{"GITAR_PAUSE_FILE=" + pause, "FAKE_LOG=" + filepath.Join(dir, "gh.log"),
+				"FAKE_CODEX_LOG=" + codexLog, "FAKE_GIT_LOG=" + gitLog}, c.env...)
+			code, out := runReview(t, bin, env...)
+			if code != c.code {
+				t.Fatalf("exit %d, want %d\n%s", code, c.code, out)
+			}
+			ran, _ := os.ReadFile(codexLog)
+			if (len(ran) > 0) != c.codex {
+				t.Errorf("the Codex review ran = %v, want %v\n%s", len(ran) > 0, c.codex, out)
+			}
+			pulled, _ := os.ReadFile(gitLog)
+			if strings.Contains(string(pulled), "pull") != c.pulled {
+				t.Errorf("the round pulled the record = %v, want %v: %s", !c.pulled, c.pulled, pulled)
+			}
+		})
+	}
+}
+
+// TestTheCycleNeverMerges holds D-878. No script of the cycle merges a
+// pull request or turns on the auto-merge, and the fixer runs with no
+// GitHub login, so it can not do either one.
+func TestTheCycleNeverMerges(t *testing.T) {
+	for _, name := range []string{"feedback-loop.sh", "feedback-review.sh", "autotune-fix.sh"} {
+		raw, err := os.ReadFile(filepath.Join("..", "..", "..", "scripts", name))
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, bad := range []string{"pr merge", "--auto", "enablePullRequestAutoMerge", "mergePullRequest"} {
+			if strings.Contains(string(raw), bad) {
+				t.Errorf("%s holds %q, and the cycle never merges (D-878)", name, bad)
+			}
+		}
+	}
+	raw, err := os.ReadFile(filepath.Join("..", "..", "..", "scripts", "autotune-fix.sh"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"-u GH_TOKEN", "-u GITHUB_TOKEN", `GH_CONFIG_DIR="$NO_GH" $AUTOTUNE_FIXER_CMD`} {
+		if !strings.Contains(string(raw), want) {
+			t.Errorf("the fixer keeps its GitHub login: autotune-fix.sh lacks %q (D-878)", want)
+		}
+	}
+}
+
+// TestHereCommitsOnTheBranchOfTheSession holds D-877. The flag --here cuts
+// no branch, so the cycle commits on the branch of the session. It refuses
+// main and a detached HEAD, and a failure names the commit that drops the
+// work of the cycle. The copy of the script runs in a new repository with
+// no go folder, so the triage fails before any model call.
+func TestHereCommitsOnTheBranchOfTheSession(t *testing.T) {
+	if _, err := exec.LookPath("bash"); err != nil {
+		t.Skip("no bash")
+	}
+	raw, err := os.ReadFile(filepath.Join("..", "..", "..", "scripts", "feedback-loop.sh"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	cases := []struct {
+		name   string
+		branch string
+		detach bool
+		want   string
+	}{
+		{"the branch of the session", "session", false, "the branch of the session (--here, D-877)"},
+		{"main is refused", "main", false, "never commit on main"},
+		{"a detached HEAD is refused", "session", true, "--here needs a branch"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			repo := t.TempDir()
+			git := func(args ...string) string {
+				t.Helper()
+				cmd := exec.Command("git", args...)
+				cmd.Dir = repo
+				cmd.Env = append(os.Environ(), "GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@t", "GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@t")
+				out, err := cmd.CombinedOutput()
+				if err != nil {
+					t.Fatalf("git %v: %v\n%s", args, err, out)
+				}
+				return strings.TrimSpace(string(out))
+			}
+			git("init", "-q", "-b", c.branch)
+			if err := os.MkdirAll(filepath.Join(repo, "scripts"), 0o755); err != nil {
+				t.Fatal(err)
+			}
+			for path, body := range map[string]string{"scripts/feedback-loop.sh": string(raw), ".gitignore": ".env\n.local/\n", ".env": ""} {
+				if err := os.WriteFile(filepath.Join(repo, path), []byte(body), 0o755); err != nil {
+					t.Fatal(err)
+				}
+			}
+			git("add", "-A")
+			git("commit", "-q", "-m", "start")
+			start := git("rev-parse", "HEAD")
+			if c.detach {
+				git("checkout", "-q", "--detach")
+			}
+			ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
+			defer cancel()
+			cmd := exec.CommandContext(ctx, "bash", filepath.Join(repo, "scripts", "feedback-loop.sh"), "--here")
+			cmd.Env = append(os.Environ(), "FEEDBACK_LOOP_ALLOW=1", "AUTOTUNE_FIXER_CMD=true")
+			out, err := cmd.CombinedOutput()
+			if err == nil {
+				t.Fatalf("the cycle passed with no triage: %s", out)
+			}
+			if !strings.Contains(string(out), c.want) {
+				t.Errorf("output lacks %q:\n%s", c.want, out)
+			}
+			if branches := git("branch", "--list", "feedback-fix/*"); branches != "" {
+				t.Errorf("--here cut a branch: %s", branches)
+			}
+			if c.name == "the branch of the session" {
+				if got := git("rev-parse", "--abbrev-ref", "HEAD"); got != "session" {
+					t.Errorf("the checkout moved to %s", got)
+				}
+				if want := "git reset --hard " + start; !strings.Contains(string(out), want) {
+					t.Errorf("the failure does not name %q:\n%s", want, out)
+				}
+			}
+		})
+	}
+	// --here works on the current branch, so it takes no --base.
+	script, err := filepath.Abs(filepath.Join("..", "..", "..", "scripts", "feedback-loop.sh"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	out, err := exec.CommandContext(t.Context(), "bash", script, "--here", "--base", "main").CombinedOutput()
+	if err == nil || !strings.Contains(string(out), "takes no --base") {
+		t.Errorf("--here with --base: %v, %s", err, out)
 	}
 }
 

@@ -55,10 +55,10 @@ coverage/
 /go/tune-check
 /go/worker
 
-# D-640 kept the feedback harvest out of the repository, and D-642 drops
-# that rule: a reader's own words may be committed, and no file of the
-# harvest holds an email (D-559). So the harvest commits like any other
-# reference document, and no ignore rule covers it.
+# D-640 kept the feedback harvest out of the repository, and D-642 dropped
+# that rule. D-879 writes the harvest under .local/feedback, so the rule of
+# .local above covers it. A case of the fix cycle still holds the words of
+# the reader (D-642).
 
 # The check tools of docs/tools leave bytecode of the local Python.
 __pycache__/
