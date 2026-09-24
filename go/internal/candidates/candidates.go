@@ -102,6 +102,10 @@ type Limits struct {
 	Upgrades int
 	// PerRole caps each role in the main list.
 	PerRole map[mtgv1.CardRole]int
+	// landsByScore fills the mana half of the land cap in score order. A
+	// bracket 5 request with a commander rate sets it, because the rate
+	// leads the score (D-843).
+	landsByScore bool
 }
 
 // staplePenalty halves the score of a card with no theme signal.
@@ -325,6 +329,7 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 	// and it builds the reserve the gap note reads (D-704, D-707, D-709).
 	pw := powerScanOf(idx, req)
 	commanderRate, boost := commanderRateOf(req)
+	lim.landsByScore = commanderRate != nil
 
 	var stats Stats
 	var scored, reserve []Candidate
@@ -519,7 +524,7 @@ func capByRole(in []Candidate, lim Limits) []Candidate {
 		cs := byRole[r]
 		if n := lim.PerRole[r]; n > 0 && len(cs) > n {
 			if r == mtgv1.CardRole_CARD_ROLE_LAND {
-				cs = capPinnedLands(cs, n)
+				cs = capPinnedLands(cs, n, lim.landsByScore)
 			} else {
 				cs = capRole(cs, n)
 			}
@@ -551,7 +556,7 @@ func capByRole(in []Candidate, lim Limits) []Candidate {
 	// The mana half of the land cap goes before the score cut. The staple
 	// penalty puts an untapped dual at the score of the cut line, and the
 	// cut dropped 11 of the 20 duals of a deck of five colors (F-165).
-	sortByMana(mana)
+	sortLands(mana, lim.landsByScore)
 	for _, c := range mana {
 		if room <= 0 {
 			break
@@ -594,13 +599,17 @@ const manaShare = 0.5
 // Command Tower's cousins and an off-color fetch land comes last (D-450).
 // The result keeps the bucket's order, so the theme lands still read
 // first.
-func capLands(cs []Candidate, n int) []Candidate {
+//
+// With byScore the mana half reads the score order. A bracket 5 score
+// leads with the commander rate, and the land rank put 7 pain lands that
+// no Najeela list plays over 4 lands that most lists play (F-168, D-843).
+func capLands(cs []Candidate, n int, byScore bool) []Candidate {
 	if n <= 0 || len(cs) <= n {
 		return cs
 	}
 	mana := int(math.Round(float64(n) * manaShare))
 	byMana := slices.Clone(cs)
-	sortByMana(byMana)
+	sortLands(byMana, byScore)
 	keep := make(map[*mtgv1.Card]bool, n)
 	half := make(map[*mtgv1.Card]bool, mana)
 	for _, c := range byMana[:mana] {
@@ -629,6 +638,16 @@ func capLands(cs []Candidate, n int) []Candidate {
 		}
 	}
 	return out
+}
+
+// sortLands puts lands in the score order with byScore, and in the mana
+// order with no byScore (D-843).
+func sortLands(cs []Candidate, byScore bool) {
+	if byScore {
+		sortCandidates(cs)
+		return
+	}
+	sortByMana(cs)
 }
 
 // sortByMana puts lands in the mana order: the land rank, then play.
@@ -767,7 +786,7 @@ func ownedFirst(in []Candidate, lim Limits) []Candidate {
 	for _, c := range owned {
 		used[c.Role]++
 	}
-	left := Limits{Total: room, PerRole: map[mtgv1.CardRole]int{}}
+	left := Limits{Total: room, PerRole: map[mtgv1.CardRole]int{}, landsByScore: lim.landsByScore}
 	for role, n := range lim.PerRole {
 		if free := n - used[role]; free > 0 {
 			left.PerRole[role] = free

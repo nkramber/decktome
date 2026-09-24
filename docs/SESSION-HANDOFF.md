@@ -6,35 +6,34 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-23f)
+## RESUME HERE (2026-09-23g)
 
-**Pull request #217 makes a bracket 5 shortlist read the card rate of its commander (F-166, D-839).**
+**Pull request #219 makes the land cap of a bracket 5 shortlist keep the core lands of its commander (F-168, D-843). It also moves the opening-hands floor of brackets 4 and 5 to real lists (F-169, D-844).**
 
 Author provider: Claude Code
 
 **The next step.** Ask the owner for the merge with the summary of four sections (D-836). Pending the owner merge.
 
-**The base.** `main` is `f00a2af`, from #216. Cloud Build `11533acf` of `deploy-api` built `f00a2af`, and it ended SUCCESS at 18:24:15 UTC.
+**The base.** `main` is `e755f65`, from #217. This session read no deploy of `e755f65`.
 
-**Why this pull request exists.** The judge read the Najeela deck of bracket gate runs 9 and 10 at bracket 4, for its warrior filler. A scratch rejudge read a top-cut Najeela list at bracket 5 twice, for $0.0601. So the builder missed the line of the bracket, and the judge did not.
+**Why this pull request exists.** The F-166 sweep found that the land cap drops four core lands of Najeela. The mana half of `capLands` reads the land class and then the play, and no commander rate. So it held 7 pain lands that no Najeela list plays.
 
 **What this pull request holds.**
 
-- The fit reads each TopDeck list before the tier cap. It stores the card rates of each commander or pair with 10 lists or more, lands included.
-- A bracket 5 Commander shortlist ranks on that rate first, and the theme adds 0.05 times its score. Other brackets and formats do not change.
-- The app, the bracket gate, the deck gate, and the revise gate pass the rate.
-- New tests: 3 in `go/internal/quality/commander_rates_test.go` and 2 in `go/internal/candidates/commander_rate_test.go`.
-- `docs/reference/f166-commander-rate-2026-09-23.md` holds each measurement.
+- A bracket 5 Commander request with a commander rate fills the mana half in score order. The owned-first fill and the total cut read the same order.
+- The floor of first hands with two to four lands reads 0.56 at brackets 4 and 5, the low quarter of the TopDeck lists. The land band stays 27 to 33.
+- New tests: `go/internal/candidates/land_cap_rate_test.go`, and a bracket 5 check in `go/internal/profile/prompt_bands_test.go`.
+- `docs/reference/f168-land-cap-2026-09-23.md` holds each measurement.
 
-**The checks.** `make verify` passed on `1cfc313`, exit 0, with Node 22.23.2 on the PATH. `TestCommanderRateLeadsABracketFiveList` fails with the lever off. Bracket gate run 11 read prompts 13 to 15 at bracket 5, 3 of 3 in each of two judge lanes, for $0.3356.
+**The checks.** `make verify` passed on `242a225`, exit 0, with Node 22.23.2 on the PATH. Each job of the verify workflow passed on `22738bc`. A revert of each of the three parts of the land change fails its own case. The Najeela replay keeps 90 of 90 core cards. A sweep of 231 commanders cuts the dropped core lands from 163 to 9. Bracket gate run 12 read prompt 15 for $0.1249 with two judge lanes. Both read bracket 5, and the verdict reads FAIL on the old hands floor alone.
 
-**The review.** Gitar pause (D-838). The pause needs no Gitar review. Codex review: `d7f103e` reads Ready for owner merge. No finding stays open.
+**The review.** Gitar pause (D-838). Gitar left its plan notice alone, with no finding. Codex review: `22738bc` reads Ready for owner merge. No finding stays open.
 
 **What waits on the owner.**
 
 - The merge of this pull request, after the summary of four sections (D-836).
-- The deployed app reads the rates after the first meta job that runs the new fit. Read one deployed bracket 5 session after that job.
-- The land cap drops four lands that half the Najeela lists play. This pull request does not change the land cap.
+- The Ulalek, Fused Atrocity shortlist holds 20 fixing lands, against a floor of 21. Its lists hold 11.6 on average.
+- The deployed app reads the rates after the first meta job that runs the fit of #217. Read one deployed bracket 5 session after that job.
 - The end of the Gitar pause, in a later pull request (D-838).
 - F-49, as a later item.
 - A whole deck gate run of prompt version 16 and the fixing floor of F-33. It is a paid target, so ask the owner first.
@@ -109,8 +108,8 @@ Twenty-two things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **A bracket 5 shortlist reads the card rate of its commander** (F-166, D-839). This pull request is #217.
-2. **The open items of the roadmap.** One register row reads 🔧: F-49, and it waits for the owner. F-166 reads ✅ with this pull request (D-839). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
+1. **The land cap of a bracket 5 shortlist keeps the core lands of its commander** (F-168, F-169, D-843, D-844). This pull request is #219.
+2. **The open items of the roadmap.** One register row reads 🔧: F-49, and it waits for the owner. F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ with this pull request (D-843, D-844). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
 3. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It waits, because the ten sessions of the audit ran before #184 and before D-749.
 4. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git.
 5. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide". Session `z1hshyY6Npig1FN2NuV7` named its commander, so it showed no such row.
@@ -132,10 +131,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-09-23d: the review gate of documents alone, PR-65
-
-**The owner started this item from the transitional prompt of #214.** The session read the deploy of `11a30e7` first, and it ended SUCCESS. The session quoted D-822 against the new rule, and the owner chose the new rule. The owner kept the eval files in the set of D-814.
-
 ### 2026-09-23e: the Gitar pause, PR-66
 
 **The owner asked to pause the required Gitar review, and asked for a flag of `make codex-review` that skips the Gitar pass** (D-838). The owner asked for a change that is easy to reverse, and for an alert at each Gitar finding. The session asked two questions. The owner kept the thread check of the flag, over a flag that skips each check. The owner chose a stop of the feedback cycle on a Gitar finding, over no change of the script. The Makefile of make 3.81 reads the flag after `--` as a goal, so a no-op rule passes it on.
@@ -144,6 +139,10 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner started F-166 from the transitional prompt of #216.** The session read the deploy of `f00a2af` first, and it ended SUCCESS. A free count and a $0.0601 rejudge showed that the judge reads a top-cut Najeela list at bracket 5. The owner chose a rate for each commander, 10 lists, bracket 5 alone, and a theme boost of 0.05 (D-839). The owner chose a real fit through `make meta-refresh` over a scratch model, and it took 97 minutes.
 
+### 2026-09-23g: the land cap of bracket 5, PR-69
+
+**The owner started F-168 beside the open session of #218.** A free replay found that the cap drops Taiga, Plateau, Exotic Orchard, and Boseiju. The F-166 note named two other lands. The owner chose the score order for the mana half over a pass of the cap and over a cap of 45 (D-843). Run 12 read FAIL on the hands floor alone. A free measure of 6,497 top-cut lists showed that 84 percent of them fail it. The owner chose to fix the band in this pull request, at 0.56 for brackets 4 and 5 (D-844).
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-23e, the records of 2026-08-31 to 2026-09-23c, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-23f, the records of 2026-08-31 to 2026-09-23d, and 104 more sections, word for word. Read it for the detail behind a decision.

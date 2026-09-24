@@ -1,0 +1,4 @@
+{"suite":"bracket-judge","run_id":"pr14a-bracket-gate-run12-judge2","date":"2026-09-23","commit":"2b2b466","roles":{"judge":{"provider":"anthropic","model":"claude-opus-5","effort":"medium"}},"snapshot":"2026-09-04","prompts":{"bracket_judge":3,"generate":16},"versions":{"source":"pr14a-bracket-gate-run12.md"},"calls":1,"cost_usd":0.016706,"seconds":6.510890208,"verdict":"PASS"}
+{"item":"15","metric":"judged","value":1,"kind":"gate"}
+{"item":"15","metric":"judge_agrees","value":1,"kind":"info","detail":"built for 5, judged 5"}
+{"item":"suite","metric":"judge_agreement","value":100,"kind":"gate","detail":"1 of 1, the bar is 80"}
