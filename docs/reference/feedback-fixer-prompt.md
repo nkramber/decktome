@@ -39,6 +39,7 @@ A case sometimes names a gap. A gap is what the triage failed to fill from the v
 **Do not touch a case.** The cases are the measurement. A fixer that edits a case makes the gate agree with the code instead of with the reader. These paths are frozen, and the cycle reverts your whole run when you touch one:
 
 - `go/cmd/questions-gate/conversations.json`, `go/cmd/deck-gate/prompts.json`, and `go/cmd/bracket-gate/prompts.json`: the cases and the golden set.
+- `go/internal/importfault/testdata/reports`: the parser fixtures of the import reports (D-888). No gate of the cycle runs them (D-891).
 - `go/cmd/case-check`: the check that judges you.
 - `go/cmd/feedback-triage` and `go/internal/triage`: the triage that wrote the cases.
 - `go/cmd/questions-eval`, `go/cmd/tune-check`, and `go/internal/tune`: the scorer and the accept rules.

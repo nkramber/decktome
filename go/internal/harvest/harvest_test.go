@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/encoding/protojson"
+
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 	"github.com/nkramber/decktome/go/internal/feedback"
 )
@@ -186,5 +188,36 @@ func TestTheSnapshotReachesTheJSONL(t *testing.T) {
 	cards, _ := deck["cards"].([]any)
 	if len(cards) != 2 {
 		t.Errorf("the JSONL holds %d cards, want 2", len(cards))
+	}
+}
+
+// An import report carries the fault of the server into the JSONL, and
+// the document names the page, the error, and the header (D-884, D-885).
+func TestTheFaultOfAnImportReachesTheHarvest(t *testing.T) {
+	item := feedback.Item{
+		ID: "f2", Kind: "import", Verdict: "down", UID: "u1", Text: "mana box",
+		Reasons: []string{"parse_fault"}, CreatedAt: at("2026-09-24T04:00:00Z"),
+		Import: &mtgv1.ImportFault{
+			Page: mtgv1.ImportPage_IMPORT_PAGE_COLLECTION, Error: "the file matches no format",
+			Header: "Title,Count", ByteCount: 40, RowCount: 2, BadRowCount: 2,
+			Rows: []*mtgv1.UnresolvedRow{{Line: 2, Raw: "Sol Ring,1"}, {Line: 3, Raw: "Island,4"}},
+		},
+	}
+	rec, err := RecordOf(item)
+	if err != nil {
+		t.Fatalf("RecordOf: %v", err)
+	}
+	if rec.Context != "fault" {
+		t.Fatalf("context = %q, want fault", rec.Context)
+	}
+	var f mtgv1.ImportFault
+	if err := protojson.Unmarshal(rec.Import, &f); err != nil || len(f.GetRows()) != 2 {
+		t.Fatalf("the fault does not read back: %v, %d rows", err, len(f.GetRows()))
+	}
+	doc := Document(item.CreatedAt, []Record{rec})
+	for _, want := range []string{"- page: collection, 40 bytes, 2 rows, 2 do not parse, 2 kept", "- error: the file matches no format", "- header: `Title,Count`", "- said: mana box"} {
+		if !strings.Contains(doc, want) {
+			t.Errorf("the document lacks %q", want)
+		}
 	}
 }

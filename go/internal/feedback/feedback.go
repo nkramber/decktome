@@ -21,19 +21,21 @@ import (
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 	"github.com/nkramber/decktome/go/internal/gzstore"
+	"google.golang.org/protobuf/proto"
 )
 
 // schemaVersion counts the stored shape. Version 3 fills session_gz on
 // a verdict about a deck as well, because the slots that made the deck
-// live on the session (D-643).
-const schemaVersion = 3
+// live on the session (D-643). Version 4 adds import_gz, the fault of a
+// report of kind import (D-884).
+const schemaVersion = 4
 
 // ErrNotFound reports a feedback id no document answers.
 var ErrNotFound = errors.New("feedback not found")
 
 // Item is one verdict as the store holds it. Kind and Verdict are the
 // short names of the proto enums, so the harvest reads them without the
-// proto: question, summary, card, deck, and up, down.
+// proto: question, summary, card, deck, chat, import, and up, down.
 type Item struct {
 	// ID is the document id of the verdict. Add answers it, and every
 	// read fills it, so a harvest names the row it wrote. Add itself
@@ -71,6 +73,11 @@ type Item struct {
 	// object, and both are nil on a document written before D-635.
 	Session *mtgv1.Session
 	Deck    *mtgv1.Deck
+	// Import is the fault of a file the app could not read, for kind
+	// import (D-884, D-885). The server fills it from its own read of the
+	// file, so it is not the client's word. Text then holds the service
+	// the user named (D-883).
+	Import *mtgv1.ImportFault
 }
 
 // Repo stores feedback in Firestore. The caller owns the client.
@@ -100,6 +107,7 @@ type stored struct {
 	// the way the session and the deck stores hold their own (D-604).
 	SessionGz []byte `firestore:"session_gz"`
 	DeckGz    []byte `firestore:"deck_gz"`
+	ImportGz  []byte `firestore:"import_gz"`
 }
 
 func (r *Repo) col(uid string) *firestore.CollectionRef {
@@ -109,6 +117,10 @@ func (r *Repo) col(uid string) *firestore.CollectionRef {
 // Add writes one verdict under the user and answers its id.
 func (r *Repo) Add(ctx context.Context, uid string, item Item) (string, error) {
 	sessionGz, deckGz, err := snapshotOf(item)
+	if err != nil {
+		return "", err
+	}
+	importGz, err := faultOf(item.Import)
 	if err != nil {
 		return "", err
 	}
@@ -130,6 +142,7 @@ func (r *Repo) Add(ctx context.Context, uid string, item Item) (string, error) {
 		CreatedAt:    item.CreatedAt.UTC(),
 		SessionGz:    sessionGz,
 		DeckGz:       deckGz,
+		ImportGz:     importGz,
 	})
 	if err != nil {
 		return "", fmt.Errorf("feedback: %w", err)
@@ -184,6 +197,26 @@ func snapshotOf(item Item) (sessionGz, deckGz []byte, err error) {
 	return sessionGz, deckGz, nil
 }
 
+// faultOf encodes the fault of a report of kind import. The rows are the
+// fault, so a fault that passes the room of one document keeps half its
+// rows until it fits. The bad row count keeps the number it left out.
+func faultOf(fault *mtgv1.ImportFault) ([]byte, error) {
+	if fault == nil {
+		return nil, nil
+	}
+	fault = proto.CloneOf(fault)
+	for {
+		gz, err := gzstore.MarshalProto(fault)
+		if err != nil {
+			return nil, fmt.Errorf("feedback: %w", err)
+		}
+		if len(gz) <= gzstore.MaxStoredBytes || len(fault.GetRows()) == 0 {
+			return gz, nil
+		}
+		fault.Rows = fault.GetRows()[:len(fault.GetRows())/2]
+	}
+}
+
 // itemOf reads a stored document as an Item. A snapshot that does not
 // open leaves its field nil, so one bad blob never hides a verdict.
 func itemOf(id string, s stored) Item {
@@ -201,10 +234,18 @@ func itemOf(id string, s stored) Item {
 			deck = &m
 		}
 	}
+	var fault *mtgv1.ImportFault
+	if len(s.ImportGz) > 0 {
+		var m mtgv1.ImportFault
+		if err := gzstore.UnmarshalProto(s.ImportGz, &m); err == nil {
+			fault = &m
+		}
+	}
 	return Item{
 		ID:           id,
 		Session:      sess,
 		Deck:         deck,
+		Import:       fault,
 		Kind:         s.Kind,
 		Verdict:      s.Verdict,
 		UID:          s.UID,
@@ -366,6 +407,7 @@ var kindNames = map[mtgv1.FeedbackKind]string{
 	mtgv1.FeedbackKind_FEEDBACK_KIND_CARD:     "card",
 	mtgv1.FeedbackKind_FEEDBACK_KIND_DECK:     "deck",
 	mtgv1.FeedbackKind_FEEDBACK_KIND_CHAT:     "chat",
+	mtgv1.FeedbackKind_FEEDBACK_KIND_IMPORT:   "import",
 }
 
 var verdictNames = map[mtgv1.FeedbackVerdict]string{
@@ -392,6 +434,9 @@ var reasonKeys = map[mtgv1.FeedbackKind][]string{
 	// A chat that stops belongs to no question, so it has a kind and a
 	// reason set of its own (D-594).
 	mtgv1.FeedbackKind_FEEDBACK_KIND_CHAT: {"stuck", "ignored_request", "wrong_questions", "no_deck", "error"},
+	// A file the app could not read has one fault, and the server names
+	// it: the user checks no reason (D-884).
+	mtgv1.FeedbackKind_FEEDBACK_KIND_IMPORT: {"parse_fault"},
 }
 
 // Reasons lists the reason keys of a kind, in the order the dialog

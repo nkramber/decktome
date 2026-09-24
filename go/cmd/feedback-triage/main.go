@@ -120,7 +120,12 @@ func run() error {
 		judger = triage.LiveJudger(client, acc)
 	}
 
-	nextID := func(target string) (int, error) { return triage.NextID(filepath.Join(*root, target)) }
+	nextID := func(target string) (int, error) {
+		if triage.IsFixtureTarget(target) {
+			return triage.NextFixtureID(filepath.Join(*root, target))
+		}
+		return triage.NextID(filepath.Join(*root, target))
+	}
 	results := triage.Run(context.Background(), recs, judger, namer, nextID)
 
 	if *apply {
@@ -171,6 +176,19 @@ func applyCases(root string, results []triage.Result) error {
 			continue
 		}
 		path := filepath.Join(root, r.Case.Target)
+		// A parser fixture is a file of its own in a folder (D-888).
+		if triage.IsFixtureTarget(r.Case.Target) {
+			written, err := triage.WriteFixture(path, r.Case.ID, r.Case.Body)
+			if err != nil {
+				return err
+			}
+			rel, err := filepath.Rel(root, written)
+			if err != nil {
+				return err
+			}
+			results[i].Applied = filepath.ToSlash(rel)
+			continue
+		}
 		if err := triage.Append(path, r.Case.Body); err != nil {
 			return err
 		}

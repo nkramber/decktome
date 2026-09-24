@@ -4,13 +4,15 @@
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { UnresolvedRow } from "./collection_pb";
+import { file_mtg_v1_collection } from "./collection_pb";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file mtg/v1/feedback_service.proto.
  */
 export const file_mtg_v1_feedback_service: GenFile = /*@__PURE__*/
-  fileDesc("Ch1tdGcvdjEvZmVlZGJhY2tfc2VydmljZS5wcm90bxIGbXRnLnYxIsQBCghGZWVkYmFjaxIiCgRraW5kGAEgASgOMhQubXRnLnYxLkZlZWRiYWNrS2luZBIoCgd2ZXJkaWN0GAIgASgOMhcubXRnLnYxLkZlZWRiYWNrVmVyZGljdBISCgpzZXNzaW9uX2lkGAMgASgJEhMKC3F1ZXN0aW9uX2lkGAQgASgJEg8KB2RlY2tfaWQYBSABKAkSEQoJb3JhY2xlX2lkGAYgASgJEg8KB3JlYXNvbnMYByADKAkSDAoEdGV4dBgIIAEoCSI7ChVTdWJtaXRGZWVkYmFja1JlcXVlc3QSIgoIZmVlZGJhY2sYASABKAsyEC5tdGcudjEuRmVlZGJhY2siLQoWU3VibWl0RmVlZGJhY2tSZXNwb25zZRITCgtmZWVkYmFja19pZBgBIAEoCSqsAQoMRmVlZGJhY2tLaW5kEh0KGUZFRURCQUNLX0tJTkRfVU5TUEVDSUZJRUQQABIaChZGRUVEQkFDS19LSU5EX1FVRVNUSU9OEAESGQoVRkVFREJBQ0tfS0lORF9TVU1NQVJZEAISFgoSRkVFREJBQ0tfS0lORF9DQVJEEAMSFgoSRkVFREJBQ0tfS0lORF9ERUNLEAQSFgoSRkVFREJBQ0tfS0lORF9DSEFUEAUqZwoPRmVlZGJhY2tWZXJkaWN0EiAKHEZFRURCQUNLX1ZFUkRJQ1RfVU5TUEVDSUZJRUQQABIXChNGRUVEQkFDS19WRVJESUNUX1VQEAESGQoVRkVFREJBQ0tfVkVSRElDVF9ET1dOEAIyZAoPRmVlZGJhY2tTZXJ2aWNlElEKDlN1Ym1pdEZlZWRiYWNrEh0ubXRnLnYxLlN1Ym1pdEZlZWRiYWNrUmVxdWVzdBoeLm10Zy52MS5TdWJtaXRGZWVkYmFja1Jlc3BvbnNlIgBCMlowZ2l0aHViLmNvbS9ua3JhbWJlci9kZWNrdG9tZS9nby9nZW4vbXRnL3YxO210Z3YxYgZwcm90bzM");
+  fileDesc("Ch1tdGcvdjEvZmVlZGJhY2tfc2VydmljZS5wcm90bxIGbXRnLnYxIoUCCghGZWVkYmFjaxIiCgRraW5kGAEgASgOMhQubXRnLnYxLkZlZWRiYWNrS2luZBIoCgd2ZXJkaWN0GAIgASgOMhcubXRnLnYxLkZlZWRiYWNrVmVyZGljdBISCgpzZXNzaW9uX2lkGAMgASgJEhMKC3F1ZXN0aW9uX2lkGAQgASgJEg8KB2RlY2tfaWQYBSABKAkSEQoJb3JhY2xlX2lkGAYgASgJEg8KB3JlYXNvbnMYByADKAkSDAoEdGV4dBgIIAEoCRInCgtpbXBvcnRfcGFnZRgJIAEoDjISLm10Zy52MS5JbXBvcnRQYWdlEhYKDmltcG9ydF9jb250ZW50GAogASgMIrEBCgtJbXBvcnRGYXVsdBIgCgRwYWdlGAEgASgOMhIubXRnLnYxLkltcG9ydFBhZ2USDQoFZXJyb3IYAiABKAkSDgoGaGVhZGVyGAMgASgJEhIKCmJ5dGVfY291bnQYBCABKAMSEQoJcm93X2NvdW50GAUgASgFEiMKBHJvd3MYBiADKAsyFS5tdGcudjEuVW5yZXNvbHZlZFJvdxIVCg1iYWRfcm93X2NvdW50GAcgASgFIjsKFVN1Ym1pdEZlZWRiYWNrUmVxdWVzdBIiCghmZWVkYmFjaxgBIAEoCzIQLm10Zy52MS5GZWVkYmFjayItChZTdWJtaXRGZWVkYmFja1Jlc3BvbnNlEhMKC2ZlZWRiYWNrX2lkGAEgASgJKsYBCgxGZWVkYmFja0tpbmQSHQoZRkVFREJBQ0tfS0lORF9VTlNQRUNJRklFRBAAEhoKFkZFRURCQUNLX0tJTkRfUVVFU1RJT04QARIZChVGRUVEQkFDS19LSU5EX1NVTU1BUlkQAhIWChJGRUVEQkFDS19LSU5EX0NBUkQQAxIWChJGRUVEQkFDS19LSU5EX0RFQ0sQBBIWChJGRUVEQkFDS19LSU5EX0NIQVQQBRIYChRGRUVEQkFDS19LSU5EX0lNUE9SVBAGKlsKCkltcG9ydFBhZ2USGwoXSU1QT1JUX1BBR0VfVU5TUEVDSUZJRUQQABIaChZJTVBPUlRfUEFHRV9DT0xMRUNUSU9OEAESFAoQSU1QT1JUX1BBR0VfREVDSxACKmcKD0ZlZWRiYWNrVmVyZGljdBIgChxGRUVEQkFDS19WRVJESUNUX1VOU1BFQ0lGSUVEEAASFwoTRkVFREJBQ0tfVkVSRElDVF9VUBABEhkKFUZFRURCQUNLX1ZFUkRJQ1RfRE9XThACMmQKD0ZlZWRiYWNrU2VydmljZRJRCg5TdWJtaXRGZWVkYmFjaxIdLm10Zy52MS5TdWJtaXRGZWVkYmFja1JlcXVlc3QaHi5tdGcudjEuU3VibWl0RmVlZGJhY2tSZXNwb25zZSIAQjJaMGdpdGh1Yi5jb20vbmtyYW1iZXIvZGVja3RvbWUvZ28vZ2VuL210Zy92MTttdGd2MWIGcHJvdG8z", [file_mtg_v1_collection]);
 
 /**
  * Feedback is one verdict. The ids a kind does not use stay empty.
@@ -65,11 +67,27 @@ export type Feedback = Message<"mtg.v1.Feedback"> & {
   reasons: string[];
 
   /**
-   * text is the "Other" box, at most the message cap of the chat.
+   * text is the "Other" box, at most the message cap of the chat. For
+   * kind IMPORT it is the service the user named, in the user's words
+   * (D-883).
    *
    * @generated from field: string text = 8;
    */
   text: string;
+
+  /**
+   * import_page and import_content are for kind IMPORT alone. The
+   * content is the file the page could not read. The server reads it
+   * again and keeps the fault, never the whole file (D-885).
+   *
+   * @generated from field: mtg.v1.ImportPage import_page = 9;
+   */
+  importPage: ImportPage;
+
+  /**
+   * @generated from field: bytes import_content = 10;
+   */
+  importContent: Uint8Array;
 };
 
 /**
@@ -78,6 +96,70 @@ export type Feedback = Message<"mtg.v1.Feedback"> & {
  */
 export const FeedbackSchema: GenMessage<Feedback> = /*@__PURE__*/
   messageDesc(file_mtg_v1_feedback_service, 0);
+
+/**
+ * ImportFault is what a report of kind IMPORT keeps (D-885). The server
+ * fills it from its own read of the file.
+ *
+ * @generated from message mtg.v1.ImportFault
+ */
+export type ImportFault = Message<"mtg.v1.ImportFault"> & {
+  /**
+   * @generated from field: mtg.v1.ImportPage page = 1;
+   */
+  page: ImportPage;
+
+  /**
+   * error is the error of the server when the file does not read at
+   * all, and empty when the file read with bad rows (D-887).
+   *
+   * @generated from field: string error = 2;
+   */
+  error: string;
+
+  /**
+   * header is the first line of the file.
+   *
+   * @generated from field: string header = 3;
+   */
+  header: string;
+
+  /**
+   * @generated from field: int64 byte_count = 4;
+   */
+  byteCount: bigint;
+
+  /**
+   * row_count counts the lines of the file after the header.
+   *
+   * @generated from field: int32 row_count = 5;
+   */
+  rowCount: number;
+
+  /**
+   * rows holds the rows that do not parse, the source line of each, at
+   * most 500 (D-885). The reason of a row of a file that does not read
+   * at all is BAD_ROW.
+   *
+   * @generated from field: repeated mtg.v1.UnresolvedRow rows = 6;
+   */
+  rows: UnresolvedRow[];
+
+  /**
+   * bad_row_count counts every row that does not parse, so a cut list
+   * shows how many rows it left out.
+   *
+   * @generated from field: int32 bad_row_count = 7;
+   */
+  badRowCount: number;
+};
+
+/**
+ * Describes the message mtg.v1.ImportFault.
+ * Use `create(ImportFaultSchema)` to create a new message.
+ */
+export const ImportFaultSchema: GenMessage<ImportFault> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_feedback_service, 1);
 
 /**
  * @generated from message mtg.v1.SubmitFeedbackRequest
@@ -94,7 +176,7 @@ export type SubmitFeedbackRequest = Message<"mtg.v1.SubmitFeedbackRequest"> & {
  * Use `create(SubmitFeedbackRequestSchema)` to create a new message.
  */
 export const SubmitFeedbackRequestSchema: GenMessage<SubmitFeedbackRequest> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_feedback_service, 1);
+  messageDesc(file_mtg_v1_feedback_service, 2);
 
 /**
  * @generated from message mtg.v1.SubmitFeedbackResponse
@@ -113,7 +195,7 @@ export type SubmitFeedbackResponse = Message<"mtg.v1.SubmitFeedbackResponse"> & 
  * Use `create(SubmitFeedbackResponseSchema)` to create a new message.
  */
 export const SubmitFeedbackResponseSchema: GenMessage<SubmitFeedbackResponse> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_feedback_service, 2);
+  messageDesc(file_mtg_v1_feedback_service, 3);
 
 /**
  * FeedbackKind names what the verdict is about.
@@ -164,6 +246,16 @@ export enum FeedbackKind {
    * @generated from enum value: FEEDBACK_KIND_CHAT = 5;
    */
   CHAT = 5,
+
+  /**
+   * FEEDBACK_KIND_IMPORT is a file the app could not read, on the
+   * collection upload or the deck import (D-882, D-884). It names no
+   * session, no deck, and no card. It is a thumbs down alone. The server
+   * reads the file again and names the fault itself (D-596).
+   *
+   * @generated from enum value: FEEDBACK_KIND_IMPORT = 6;
+   */
+  IMPORT = 6,
 }
 
 /**
@@ -171,6 +263,38 @@ export enum FeedbackKind {
  */
 export const FeedbackKindSchema: GenEnum<FeedbackKind> = /*@__PURE__*/
   enumDesc(file_mtg_v1_feedback_service, 0);
+
+/**
+ * ImportPage names the page a file came through, for kind IMPORT.
+ *
+ * @generated from enum mtg.v1.ImportPage
+ */
+export enum ImportPage {
+  /**
+   * @generated from enum value: IMPORT_PAGE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * IMPORT_PAGE_COLLECTION is the collection upload.
+   *
+   * @generated from enum value: IMPORT_PAGE_COLLECTION = 1;
+   */
+  COLLECTION = 1,
+
+  /**
+   * IMPORT_PAGE_DECK is the deck import.
+   *
+   * @generated from enum value: IMPORT_PAGE_DECK = 2;
+   */
+  DECK = 2,
+}
+
+/**
+ * Describes the enum mtg.v1.ImportPage.
+ */
+export const ImportPageSchema: GenEnum<ImportPage> = /*@__PURE__*/
+  enumDesc(file_mtg_v1_feedback_service, 1);
 
 /**
  * FeedbackVerdict is the thumb.
@@ -203,12 +327,13 @@ export enum FeedbackVerdict {
  * Describes the enum mtg.v1.FeedbackVerdict.
  */
 export const FeedbackVerdictSchema: GenEnum<FeedbackVerdict> = /*@__PURE__*/
-  enumDesc(file_mtg_v1_feedback_service, 1);
+  enumDesc(file_mtg_v1_feedback_service, 2);
 
 /**
  * FeedbackService takes a user's verdict on one thing the app made
  * (PR-27, D-557 to D-559): a question, a deck description, one card of
- * a deck, or the deck as a whole. There is no list RPC. The harvest of
+ * a deck, the deck as a whole, a chat, or a file the app could not read.
+ * There is no list RPC. The harvest of
  * PR-28 reads the stored items with the owner's credentials (D-420).
  *
  * @generated from service mtg.v1.FeedbackService

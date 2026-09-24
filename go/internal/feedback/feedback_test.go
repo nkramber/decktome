@@ -7,6 +7,7 @@ import (
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 	"github.com/nkramber/decktome/go/internal/gzstore"
+	"google.golang.org/protobuf/proto"
 )
 
 // TestNamesAndReasons pins the short names and the reason keys of
@@ -31,6 +32,7 @@ func TestNamesAndReasons(t *testing.T) {
 		mtgv1.FeedbackKind_FEEDBACK_KIND_CARD:     5,
 		mtgv1.FeedbackKind_FEEDBACK_KIND_DECK:     5,
 		mtgv1.FeedbackKind_FEEDBACK_KIND_CHAT:     5,
+		mtgv1.FeedbackKind_FEEDBACK_KIND_IMPORT:   1,
 	}
 	for k, n := range want {
 		keys := Reasons(k)
@@ -165,5 +167,41 @@ func TestTwoSnapshotsStayInsideOneDocument(t *testing.T) {
 	}
 	if len(sessionGz) == 0 || len(deckGz) == 0 {
 		t.Error("a small pair of snapshots dropped one")
+	}
+}
+
+// The fault of a report of kind import reads back whole, and a fault
+// over the room of one document keeps half its rows until it fits
+// (D-885).
+func TestTheFaultOfAnImportFitsOneDocument(t *testing.T) {
+	small := &mtgv1.ImportFault{Error: "no format", Header: "a,b", Rows: []*mtgv1.UnresolvedRow{{Line: 2, Raw: "x,y"}}, BadRowCount: 1}
+	gz, err := faultOf(small)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := itemOf("id", stored{ImportGz: gz}).Import; !proto.Equal(got, small) {
+		t.Fatalf("read back %v, want %v", got, small)
+	}
+	big := &mtgv1.ImportFault{BadRowCount: 3000}
+	for i := range 3000 {
+		raw := make([]byte, 512)
+		if _, err := rand.Read(raw); err != nil {
+			t.Fatal(err)
+		}
+		big.Rows = append(big.Rows, &mtgv1.UnresolvedRow{Line: int32(i + 2), Raw: hex.EncodeToString(raw)})
+	}
+	gz, err = faultOf(big)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(gz) > gzstore.MaxStoredBytes {
+		t.Fatalf("the fault is %d bytes, over the room of one document", len(gz))
+	}
+	got := itemOf("id", stored{ImportGz: gz}).Import
+	if n := len(got.GetRows()); n == 0 || n >= 3000 || got.GetBadRowCount() != 3000 {
+		t.Errorf("kept %d rows of a count %d, want fewer than 3000 of 3000", n, got.GetBadRowCount())
+	}
+	if len(big.GetRows()) != 3000 {
+		t.Error("faultOf cut the rows of the caller")
 	}
 }

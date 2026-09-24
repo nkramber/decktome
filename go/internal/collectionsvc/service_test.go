@@ -15,6 +15,7 @@ import (
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 	"github.com/nkramber/decktome/go/internal/cards"
 	"github.com/nkramber/decktome/go/internal/collections"
+	"github.com/nkramber/decktome/go/internal/importfault"
 	"github.com/nkramber/decktome/go/internal/users"
 )
 
@@ -215,20 +216,27 @@ func TestImportCollectionRejects(t *testing.T) {
 		name string
 		req  *connect.Request[mtgv1.ImportCollectionRequest]
 		code connect.Code
+		// unreadable says the error carries the detail of D-887.
+		unreadable bool
 	}{
-		{"empty body", importReq("n", mtgv1.ImportSource_IMPORT_SOURCE_MANABOX_CSV, ""), connect.CodeInvalidArgument},
-		{"too large", importReq("n", mtgv1.ImportSource_IMPORT_SOURCE_MANABOX_CSV, strings.Repeat("a", maxUpload+1)), connect.CodeInvalidArgument},
+		{"empty body", importReq("n", mtgv1.ImportSource_IMPORT_SOURCE_MANABOX_CSV, ""), connect.CodeInvalidArgument, false},
+		{"too large", importReq("n", mtgv1.ImportSource_IMPORT_SOURCE_MANABOX_CSV, strings.Repeat("a", maxUpload+1)), connect.CodeInvalidArgument, false},
 		// An unnamed source reads the format out of the file now (D-647),
 		// so a file no format claims is the refusal and not the unnamed
 		// source.
-		{"a file no format claims", importReq("n", mtgv1.ImportSource_IMPORT_SOURCE_UNSPECIFIED, "First,Last\nAnn,Lee\n"), connect.CodeInvalidArgument},
-		{"bad header", importReq("n", mtgv1.ImportSource_IMPORT_SOURCE_MANABOX_CSV, "Foo,Bar\n1,2\n"), connect.CodeInvalidArgument},
+		{"a file no format claims", importReq("n", mtgv1.ImportSource_IMPORT_SOURCE_UNSPECIFIED, "First,Last\nAnn,Lee\n"), connect.CodeInvalidArgument, true},
+		{"bad header", importReq("n", mtgv1.ImportSource_IMPORT_SOURCE_MANABOX_CSV, "Foo,Bar\n1,2\n"), connect.CodeInvalidArgument, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := s.ImportCollection(context.Background(), tt.req)
 			if connect.CodeOf(err) != tt.code {
 				t.Errorf("code = %v (%v), want %v", connect.CodeOf(err), err, tt.code)
+			}
+			// A file that does not read offers the report form, and a
+			// size limit does not (D-887).
+			if got := importfault.IsUnreadable(err); got != tt.unreadable {
+				t.Errorf("unreadable = %v, want %v", got, tt.unreadable)
 			}
 		})
 	}

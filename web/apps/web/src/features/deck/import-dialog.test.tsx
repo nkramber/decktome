@@ -1,3 +1,7 @@
+import { create } from "@bufbuild/protobuf";
+import { Code, ConnectError } from "@connectrpc/connect";
+import { UnreadableFileSchema, UnresolvedReason } from "@mtg/api-client/mtg/v1/collection_pb";
+import { FeedbackKind, ImportPage } from "@mtg/api-client/mtg/v1/feedback_service_pb";
 import { FormatId } from "@mtg/api-client/mtg/v1/format_pb";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -13,7 +17,9 @@ vi.mock("firebase/auth");
 const importDeck = vi.fn();
 const getDeck = vi.fn();
 const listCollections = vi.fn();
+const submitFeedback = vi.fn();
 vi.mock("../../lib/api", () => ({
+  feedbackClient: { submitFeedback: (...a: unknown[]) => submitFeedback(...a) },
   healthClient: { check: () => Promise.resolve({ status: "ok", version: "test", cardSnapshot: "none" }) },
   collectionClient: { listCollections: (...a: unknown[]) => listCollections(...a) },
   agentClient: { getSession: vi.fn(), importDeck: (...a: unknown[]) => importDeck(...a), readImportBracket: vi.fn() },
@@ -32,6 +38,7 @@ beforeEach(() => {
   importDeck.mockReset();
   getDeck.mockReset();
   listCollections.mockReset();
+  submitFeedback.mockReset();
   listCollections.mockResolvedValue({ collections: [] });
   getDeck.mockResolvedValue({ deck: stored });
 });
@@ -107,5 +114,36 @@ describe("ImportDialog", () => {
     await user.selectOptions(await screen.findByRole("combobox", { name: "Show owned cards from this collection" }), "c1");
     await user.click(screen.getByRole("button", { name: "Import" }));
     await waitFor(() => expect(importDeck).toHaveBeenCalledWith(expect.objectContaining({ collectionId: "c1" })));
+  });
+});
+
+// A list the app could not read shows the short form of D-882, and a
+// list with lines that did not parse offers it beside the skipped lines
+// (D-887). The dialog names no service (D-889).
+describe("the report of a list the app could not read", () => {
+  it("names no service on the pick step", async () => {
+    await renderAt("/decks");
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Import a deck" }));
+    expect(screen.getByRole("dialog")).not.toHaveTextContent(/ManaBox|Moxfield|Arena|Archidekt/);
+  });
+
+  it("asks where the list came from, and sends it as a deck report", async () => {
+    importDeck.mockRejectedValue(new ConnectError("no line of the list reads as a card", Code.InvalidArgument, undefined, [{ desc: UnreadableFileSchema, value: create(UnreadableFileSchema) }]));
+    submitFeedback.mockResolvedValue({ feedbackId: "fb1" });
+    const user = await openAndPaste("hello");
+
+    expect(await screen.findByText("Something went wrong. The app could not read this file.")).toBeInTheDocument();
+    expect(screen.queryByText(/Import failed/)).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Send a report" }));
+    await screen.findByText(/Your report went to the review/);
+    expect(submitFeedback).toHaveBeenCalledWith({ feedback: expect.objectContaining({ kind: FeedbackKind.IMPORT, importPage: ImportPage.DECK, text: "" }) });
+  });
+
+  it("offers the form beside the lines that did not parse", async () => {
+    importDeck.mockResolvedValue({ deck: stored, sessionId: "s9", commanderOptions: [], unresolved: [{ line: 2, raw: "hello", reason: UnresolvedReason.BAD_ROW }] });
+    await openAndPaste("4 Lightning Bolt{enter}hello");
+
+    expect(await screen.findByText("The app could not read 1 row of this file.")).toBeInTheDocument();
   });
 });

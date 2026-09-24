@@ -55,13 +55,18 @@ type Record struct {
 	OracleID   string           `json:"oracle_id,omitempty"`
 	Prompts    map[string]int64 `json:"prompts,omitempty"`
 	// Context reads "snapshot" when the verdict carries the object it
-	// names, and "absent" when it does not. A verdict written before
-	// D-635 reads absent, and so does one whose kind names no object.
+	// names, "fault" when an import report carries the fault of the
+	// server (D-884), and "absent" when it carries neither. A verdict
+	// written before D-635 reads absent.
 	Context string `json:"context"`
 	// Session and Deck hold the snapshot as protojson. The triage of
 	// PR-28b reads the deck list and the turns from here.
 	Session json.RawMessage `json:"session,omitempty"`
 	Deck    json.RawMessage `json:"deck,omitempty"`
+	// Import holds the fault of an import report as protojson: the error
+	// of the server, the header, the counts, and the rows that do not
+	// parse (D-885). The triage writes its parser fixture from here.
+	Import json.RawMessage `json:"import,omitempty"`
 }
 
 // RecordOf reads one stored verdict as a record.
@@ -97,6 +102,13 @@ func RecordOf(item feedback.Item) (Record, error) {
 			return Record{}, fmt.Errorf("harvest %s: deck: %w", item.ID, err)
 		}
 		r.Deck, r.Context = raw, "snapshot"
+	}
+	if item.Import != nil {
+		raw, err := m.Marshal(item.Import)
+		if err != nil {
+			return Record{}, fmt.Errorf("harvest %s: import: %w", item.ID, err)
+		}
+		r.Import, r.Context = raw, "fault"
 	}
 	return r, nil
 }

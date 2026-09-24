@@ -127,7 +127,7 @@ export function CollectionPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 md:p-6">
-      <PageHeader title="Your collection" description="Upload a ManaBox or Moxfield export, or an Arena list. Or skip it and build from any card." />
+      <PageHeader title="Your collection" description="Upload a collection file. Or skip it and build from any card." />
 
       {/* Two cards of one frame, side by side and the same height, so the
           page reads as one row whatever the right card holds (D-458). */}
@@ -138,7 +138,7 @@ export function CollectionPage() {
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             <p className="text-sm text-muted-foreground">
-              A collection export from ManaBox or Moxfield, or an Arena list. The app reads the format from the file, and the agent then builds from the cards you own.
+              Upload a collection file. The app reads the format from the file, and the agent then builds from the cards you own.
             </p>
             <div className="flex flex-wrap gap-2">
               <Button type="button" onClick={() => setUploadOpen(true)}>
@@ -164,7 +164,7 @@ export function CollectionPage() {
             </div>
           )}
           {list.isError && <ErrorState title="Could not list collections" message={errorMessage(list.error)} onRetry={() => void list.refetch()} />}
-          {list.isSuccess && collections.length === 0 && <EmptyState compact icon={BookOpenIcon} title="No uploads yet." description="Upload a ManaBox or Moxfield export, or an Arena list. Or skip and build from any card." />}
+          {list.isSuccess && collections.length === 0 && <EmptyState compact icon={BookOpenIcon} title="No uploads yet." description="Upload a collection file. Or skip and build from any card." />}
           {collections.length > 0 && (
             <ul className="flex flex-col gap-2">
               {collections.map((c) => {

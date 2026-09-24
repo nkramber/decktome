@@ -19,6 +19,7 @@ import (
 	"github.com/nkramber/decktome/go/internal/feedback"
 	"github.com/nkramber/decktome/go/internal/generate"
 	"github.com/nkramber/decktome/go/internal/gzstore"
+	"github.com/nkramber/decktome/go/internal/importfault"
 	"github.com/nkramber/decktome/go/internal/questions"
 	"github.com/nkramber/decktome/go/internal/sessions"
 	"github.com/nkramber/decktome/go/internal/users"
@@ -90,7 +91,7 @@ func Prompts() map[string]int64 {
 var (
 	errNoUser          = errors.New("no user in the request context")
 	errNoFeedback      = errors.New("feedback is required")
-	errBadKind         = errors.New("kind: name a question, a summary, a card, or a deck")
+	errBadKind         = errors.New("kind: name a question, a summary, a card, a deck, a chat, or an import")
 	errBadVerdict      = errors.New("verdict: name up or down")
 	errLongText        = fmt.Errorf("text: the text takes at most %d bytes", MaxTextBytes)
 	errUpWithReason    = errors.New("a thumbs up carries no reason and no text")
@@ -101,6 +102,8 @@ var (
 	errNotYourSession  = errors.New("the session is not yours, or there is no such session")
 	errNotYourDeck     = errors.New("the deck is not yours, or there is no such deck")
 	errImportedDeck    = errors.New("deck_id: a list you imported takes no verdict, and a revision of it does")
+	errImportUp        = errors.New("an import report is a thumbs down alone")
+	errFileNotImport   = errors.New("import_page: only an import report takes a file")
 )
 
 func invalid(err error) error { return connect.NewError(connect.CodeInvalidArgument, err) }
@@ -119,8 +122,19 @@ func (s *Server) SubmitFeedback(ctx context.Context, req *connect.Request[mtgv1.
 	if err != nil {
 		return nil, invalid(err)
 	}
-	sess, deck, err := s.checkOwner(ctx, uid, fb)
-	if err != nil {
+	var sess *mtgv1.Session
+	var deck *mtgv1.Deck
+	if item.Kind == feedback.KindName(mtgv1.FeedbackKind_FEEDBACK_KIND_IMPORT) {
+		// The server reads the file again, so the fault it keeps is its
+		// own and not the client's word (D-596, D-884). The file itself is
+		// never stored (D-885).
+		fault, err := importfault.Read(fb.GetImportPage(), fb.GetImportContent())
+		if err != nil {
+			return nil, invalid(err)
+		}
+		item.Import = fault
+		item.Reasons = []string{"parse_fault"}
+	} else if sess, deck, err = s.checkOwner(ctx, uid, fb); err != nil {
 		return nil, err
 	}
 	// The exact wording the reader saw, and what the reader answered
@@ -179,15 +193,23 @@ func itemOf(fb *mtgv1.Feedback) (feedback.Item, error) {
 		}
 	}
 	down := fb.GetVerdict() == mtgv1.FeedbackVerdict_FEEDBACK_VERDICT_DOWN
-	if !down && (len(item.Reasons) > 0 || item.Text != "") {
-		return item, errUpWithReason
-	}
-	if down && len(item.Reasons) == 0 && item.Text == "" {
-		return item, errDownNeedsReason
-	}
 	question := kind == mtgv1.FeedbackKind_FEEDBACK_KIND_QUESTION
 	chat := kind == mtgv1.FeedbackKind_FEEDBACK_KIND_CHAT
 	card := kind == mtgv1.FeedbackKind_FEEDBACK_KIND_CARD
+	// An import report names a file and no object. The server names its
+	// fault, so it needs no reason from the user, and its text is the
+	// service the user named (D-883, D-884).
+	imp := kind == mtgv1.FeedbackKind_FEEDBACK_KIND_IMPORT
+	switch {
+	case imp && !down:
+		return item, errImportUp
+	case !imp && (fb.GetImportPage() != mtgv1.ImportPage_IMPORT_PAGE_UNSPECIFIED || len(fb.GetImportContent()) > 0):
+		return item, errFileNotImport
+	case !down && (len(item.Reasons) > 0 || item.Text != ""):
+		return item, errUpWithReason
+	case down && !imp && len(item.Reasons) == 0 && item.Text == "":
+		return item, errDownNeedsReason
+	}
 	// A chat verdict names the session and no question, and it names no
 	// deck: a chat that stops has none (D-594).
 	if err := wantID("session_id", item.SessionID, question || chat); err != nil {
@@ -196,7 +218,7 @@ func itemOf(fb *mtgv1.Feedback) (feedback.Item, error) {
 	if err := wantID("question_id", item.QuestionID, question); err != nil {
 		return item, err
 	}
-	if err := wantID("deck_id", item.DeckID, !question && !chat); err != nil {
+	if err := wantID("deck_id", item.DeckID, !question && !chat && !imp); err != nil {
 		return item, err
 	}
 	if err := wantID("oracle_id", item.OracleID, card); err != nil {

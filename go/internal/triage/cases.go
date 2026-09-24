@@ -25,7 +25,17 @@ const (
 	TargetConversations  = "go/cmd/questions-gate/conversations.json"
 	TargetDeckPrompts    = "go/cmd/deck-gate/prompts.json"
 	TargetBracketPrompts = "go/cmd/bracket-gate/prompts.json"
+	// The parser fixtures of D-888 are folders, one per page, and each
+	// case is a file of its own.
+	TargetCollectionReports = "go/internal/importfault/testdata/reports/collection"
+	TargetDeckReports       = "go/internal/importfault/testdata/reports/deck"
 )
+
+// IsFixtureTarget reports whether a target is a folder of parser
+// fixtures and not a gate file.
+func IsFixtureTarget(target string) bool {
+	return target == TargetCollectionReports || target == TargetDeckReports
+}
 
 // Case is one artifact the triage wrote.
 type Case struct {
@@ -124,6 +134,8 @@ func CaseOf(r Route, id int, name Namer) (Case, error) {
 		return bracketPromptOf(r, id, name)
 	case ADefect:
 		return defectOf(r), nil
+	case AParseFixture:
+		return fixtureOf(r, id)
 	}
 	return Case{}, fmt.Errorf("triage %s: no class, so no artifact", r.Record.ID)
 }
@@ -326,6 +338,65 @@ func defectOf(r Route) Case {
 	}
 	b.WriteString(readerSaid(rec))
 	return Case{Class: r.Class.ID, Artifact: ADefect, Detail: strings.TrimSpace(b.String())}
+}
+
+// fixtureOf writes the parser fixture of an import report (D-888): the
+// header, then the kept rows in line order. The body is the text as a
+// JSON string. The rows are a user's own rows, and the owner chose to
+// keep them in the public repository (D-639, D-888).
+func fixtureOf(r Route, id int) (Case, error) {
+	fault, err := FaultOf(r.Record)
+	if err != nil {
+		return Case{}, err
+	}
+	target := fixtureTarget(fault)
+	if target == "" {
+		return Case{}, fmt.Errorf("triage %s: the report names no page", r.Record.ID)
+	}
+	var b strings.Builder
+	b.WriteString(fault.GetHeader())
+	b.WriteString("\n")
+	for _, row := range fault.GetRows() {
+		b.WriteString(row.GetRaw())
+		b.WriteString("\n")
+	}
+	body, err := json.Marshal(b.String())
+	if err != nil {
+		return Case{}, fmt.Errorf("triage %s: %w", r.Record.ID, err)
+	}
+	var gaps []string
+	if n := int(fault.GetBadRowCount()); n > len(fault.GetRows()) {
+		gaps = append(gaps, fmt.Sprintf("the report kept %d of the %d rows that do not parse", len(fault.GetRows()), n))
+	}
+	if r.Record.Text == "" {
+		gaps = append(gaps, "the user named no service")
+	}
+	return Case{Class: r.Class.ID, Artifact: AParseFixture, Target: target, ID: id, Body: body, Gaps: gaps,
+		Detail: strings.TrimSpace(fmt.Sprintf("%s, %s. The fix lives in %s. %s", r.Class.ID, r.Class.Name, r.Class.Where, readerSaid(r.Record)))}, nil
+}
+
+// FaultOf reads the fault of an import report, or an error when the
+// report carries none.
+func FaultOf(rec harvest.Record) (*mtgv1.ImportFault, error) {
+	if len(rec.Import) == 0 {
+		return nil, fmt.Errorf("triage %s: the report carries no fault", rec.ID)
+	}
+	var f mtgv1.ImportFault
+	if err := protojson.Unmarshal(rec.Import, &f); err != nil {
+		return nil, fmt.Errorf("triage %s: the fault: %w", rec.ID, err)
+	}
+	return &f, nil
+}
+
+// fixtureTarget names the folder of the page of a fault.
+func fixtureTarget(f *mtgv1.ImportFault) string {
+	switch f.GetPage() {
+	case mtgv1.ImportPage_IMPORT_PAGE_COLLECTION:
+		return TargetCollectionReports
+	case mtgv1.ImportPage_IMPORT_PAGE_DECK:
+		return TargetDeckReports
+	}
+	return ""
 }
 
 // SessionOf reads the session snapshot of a verdict, or nil when it

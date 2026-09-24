@@ -8,6 +8,10 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"google.golang.org/protobuf/encoding/protojson"
+
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 )
 
 // Names answers the two paths one harvest writes, under root. The date
@@ -120,13 +124,37 @@ func Document(day time.Time, recs []Record) string {
 		if r.Text != "" {
 			fmt.Fprintf(&b, "- said: %s\n", r.Text)
 		}
+		writeFault(&b, r)
 		switch r.Context {
 		case "snapshot":
 			fmt.Fprintf(&b, "- context: the verdict carries the object it names\n")
+		case "fault":
+			fmt.Fprintf(&b, "- context: the report carries the fault of the server, and never the file\n")
 		default:
 			fmt.Fprintf(&b, "- context: **absent**. The verdict predates D-635, or its kind names no object. The triage reads the words alone.\n")
 		}
 		b.WriteString("\n")
 	}
 	return b.String()
+}
+
+// writeFault writes the fault of an import report: the page, the error,
+// the header, and the counts. The rows stay in the JSONL file, because
+// one report holds up to 500 of them (D-885). The said line above holds
+// the service the user named (D-883).
+func writeFault(b *strings.Builder, r Record) {
+	if len(r.Import) == 0 {
+		return
+	}
+	var f mtgv1.ImportFault
+	if err := protojson.Unmarshal(r.Import, &f); err != nil {
+		fmt.Fprintf(b, "- fault: does not read (%v)\n", err)
+		return
+	}
+	page := strings.ToLower(strings.TrimPrefix(f.GetPage().String(), "IMPORT_PAGE_"))
+	fmt.Fprintf(b, "- page: %s, %d bytes, %d rows, %d do not parse, %d kept\n", page, f.GetByteCount(), f.GetRowCount(), f.GetBadRowCount(), len(f.GetRows()))
+	if f.GetError() != "" {
+		fmt.Fprintf(b, "- error: %s\n", f.GetError())
+	}
+	fmt.Fprintf(b, "- header: `%s`\n", strings.ReplaceAll(f.GetHeader(), "`", "'"))
 }

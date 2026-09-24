@@ -1,5 +1,8 @@
 import { Color } from "@mtg/api-client/mtg/v1/card_pb";
-import { BinderSort, ImportSource, UnresolvedReason } from "@mtg/api-client/mtg/v1/collection_pb";
+import { create } from "@bufbuild/protobuf";
+import { Code, ConnectError } from "@connectrpc/connect";
+import { BinderSort, ImportSource, UnreadableFileSchema, UnresolvedReason } from "@mtg/api-client/mtg/v1/collection_pb";
+import { FeedbackKind, FeedbackVerdict, ImportPage } from "@mtg/api-client/mtg/v1/feedback_service_pb";
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { axe } from "jest-axe";
@@ -19,7 +22,9 @@ const getCards = vi.fn();
 const deleteCollection = vi.fn();
 const updateCollection = vi.fn();
 const diffCollections = vi.fn();
+const submitFeedback = vi.fn();
 vi.mock("../../lib/api", () => ({
+  feedbackClient: { submitFeedback: (...args: unknown[]) => submitFeedback(...args) },
   healthClient: { check: () => Promise.resolve({ status: "ok", version: "test", cardSnapshot: "none" }) },
   cardClient: { getCards: (...args: unknown[]) => getCards(...args) },
   collectionClient: {
@@ -55,6 +60,7 @@ beforeEach(() => {
   deleteCollection.mockReset();
   updateCollection.mockReset();
   diffCollections.mockReset();
+  submitFeedback.mockReset();
   listCollections.mockResolvedValue({ collections: earlier });
   // The head reads the summary the import stored, and never an entry
   // (D-392). A paged read carries the rows the binder grid shows.
@@ -414,7 +420,7 @@ describe("the upload dialog", () => {
   // PR-25: a phone share sheet often offers Copy and no file, so the
   // dialog takes the CSV text too. The text becomes a File, and every
   // step after it reads the upload the same way.
-  it("takes the CSV as pasted text, and says where ManaBox puts the export", async () => {
+  it("takes the CSV as pasted text, and names no service (D-889)", async () => {
     importCollection.mockResolvedValue({
       collection: { id: "c-new", name: "pasted-collection.csv", cardCount: 1 },
       report: { unresolved: [], resolvedCount: 1, unresolvedByReason: {} },
@@ -422,11 +428,11 @@ describe("the upload dialog", () => {
     const user = userEvent.setup();
     await renderAt("/collection");
     await openUpload(user);
-    expect(screen.getByText(/The app reads the file and names its format itself/)).toBeInTheDocument();
-    expect(screen.getByText(/ManaBox writes its export from Settings/)).toBeInTheDocument();
+    expect(screen.getByText(/The app reads the file and finds its format itself/)).toBeInTheDocument();
+    expect(screen.getByRole("dialog")).not.toHaveTextContent(/ManaBox|Moxfield|Arena|Archidekt/);
 
-    await user.click(screen.getByRole("button", { name: "No file? Paste the CSV text" }));
-    await user.type(screen.getByLabelText("Paste the CSV text"), "Name,Set code{enter}Bolt,LEA");
+    await user.click(screen.getByRole("button", { name: "No file? Paste its text" }));
+    await user.type(screen.getByLabelText("Paste the text of the file"), "Name,Set code{enter}Bolt,LEA");
     await user.click(screen.getByRole("button", { name: "Use this text" }));
     // The dialog names the file it made, so the reader reads what goes up.
     expect(await screen.findByText("pasted-collection.csv")).toBeInTheDocument();
@@ -638,5 +644,79 @@ describe("the upload mode", () => {
     await screen.findByTestId("card-count");
     expect(useAppStore.getState().collectionId).toBe("");
     expect(useAppStore.getState().poolMode).toBe("any");
+  });
+});
+
+// A file the app could not read shows the short form of D-882 in place
+// of the error of the server, and the form files a thumbs down of kind
+// IMPORT with the file and the service in the user's words (D-883,
+// D-884).
+describe("the report of a file the app could not read", () => {
+  const unreadable = () => new ConnectError("the file matches no format this app reads: ManaBox CSV", Code.InvalidArgument, undefined, [{ desc: UnreadableFileSchema, value: create(UnreadableFileSchema) }]);
+
+  async function upload(user: ReturnType<typeof userEvent.setup>) {
+    await openUpload(user);
+    await user.upload(screen.getByLabelText("Collection file"), new File(["Title,Count\nBolt,1\n"], "odd.csv", { type: "text/csv" }));
+    await user.click(screen.getByRole("button", { name: "Upload" }));
+  }
+
+  it("asks where the file came from, and sends the report", async () => {
+    importCollection.mockRejectedValue(unreadable());
+    submitFeedback.mockResolvedValue({ feedbackId: "fb1" });
+    const user = userEvent.setup();
+    await renderAt("/collection");
+    await upload(user);
+
+    expect(await screen.findByText("Something went wrong. The app could not read this file.")).toBeInTheDocument();
+    expect(screen.getByRole("dialog")).not.toHaveTextContent(/ManaBox/);
+    await user.type(screen.getByLabelText("Which app or site did the file come from?"), "mana box");
+    await user.click(screen.getByRole("button", { name: "Send a report" }));
+
+    expect(await screen.findByText(/Your report went to the review/)).toBeInTheDocument();
+    const sent = submitFeedback.mock.calls[0]?.[0] as { feedback: { kind: FeedbackKind; verdict: FeedbackVerdict; text: string; importPage: ImportPage; importContent: Uint8Array } };
+    expect(sent.feedback).toMatchObject({ kind: FeedbackKind.IMPORT, verdict: FeedbackVerdict.DOWN, text: "mana box", importPage: ImportPage.COLLECTION });
+    expect(new TextDecoder().decode(sent.feedback.importContent)).toBe("Title,Count\nBolt,1\n");
+  });
+
+  it("shows another error as it is, with no form", async () => {
+    importCollection.mockRejectedValue(new ConnectError("the store is full", Code.ResourceExhausted));
+    const user = userEvent.setup();
+    await renderAt("/collection");
+    await upload(user);
+
+    expect(await screen.findByText(/Upload failed: .*the store is full/)).toBeInTheDocument();
+    expect(screen.queryByTestId("report-import")).not.toBeInTheDocument();
+  });
+
+  it("offers the form for rows that did not parse, and not for an unknown card (D-887)", async () => {
+    importCollection.mockResolvedValue({
+      collection: { id: "c-new", name: "odd.csv", cardCount: 1 },
+      report: {
+        unresolved: [
+          { line: 2, raw: "Bolt,shiny", reason: UnresolvedReason.UNKNOWN_VALUE },
+          { line: 3, raw: "Nosuch,1", reason: UnresolvedReason.UNKNOWN_CARD },
+        ],
+        resolvedCount: 1,
+        unresolvedByReason: {},
+      },
+    });
+    const user = userEvent.setup();
+    await renderAt("/collection");
+    await upload(user);
+
+    expect(await screen.findByText("The app could not read 1 row of this file.")).toBeInTheDocument();
+  });
+
+  it("offers no form when every skipped row is an unknown card", async () => {
+    importCollection.mockResolvedValue({
+      collection: { id: "c-new", name: "odd.csv", cardCount: 1 },
+      report: { unresolved: [{ line: 3, raw: "Nosuch,1", reason: UnresolvedReason.UNKNOWN_CARD }], resolvedCount: 1, unresolvedByReason: {} },
+    });
+    const user = userEvent.setup();
+    await renderAt("/collection");
+    await upload(user);
+
+    await screen.findByText("Import result");
+    expect(screen.queryByTestId("report-import")).not.toBeInTheDocument();
   });
 });

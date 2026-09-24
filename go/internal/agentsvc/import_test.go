@@ -15,6 +15,7 @@ import (
 	"github.com/nkramber/decktome/go/internal/candidates"
 	"github.com/nkramber/decktome/go/internal/cards"
 	"github.com/nkramber/decktome/go/internal/generate"
+	"github.com/nkramber/decktome/go/internal/importfault"
 	"github.com/nkramber/decktome/go/internal/llm"
 	"github.com/nkramber/decktome/go/internal/users"
 )
@@ -342,5 +343,31 @@ func TestImportRefusesALongList(t *testing.T) {
 	}
 	if len(ds.put) != 0 || len(store.sessions) != 0 || fd.imports != 0 {
 		t.Errorf("a refused list stored %d decks and %d sessions", len(ds.put), len(store.sessions))
+	}
+}
+
+// A list with no line that reads as a card offers the report form, and a
+// list whose lines read but name no known card does not (D-887). A list
+// over the line cap is a size limit, and it offers no form either.
+func TestImportMarksAListThatDoesNotRead(t *testing.T) {
+	cases := []struct {
+		name, text string
+		unreadable bool
+	}{
+		{"no card line", "hello\nworld\n", true},
+		{"no known card", "1 Nosuch Cardname\n", false},
+		{"over the line cap", strings.Repeat("1 Plains\n", 1001), false},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			client, _ := importServer(t, &fakeDecks{}, &fakeDeckStore{}, &fakeNoter{})
+			_, err := client.ImportDeck(context.Background(), connect.NewRequest(&mtgv1.ImportDeckRequest{Text: c.text}))
+			if connect.CodeOf(err) != connect.CodeInvalidArgument {
+				t.Fatalf("err = %v, want InvalidArgument", err)
+			}
+			if got := importfault.IsUnreadable(err); got != c.unreadable {
+				t.Errorf("unreadable = %v, want %v (%v)", got, c.unreadable, err)
+			}
+		})
 	}
 }

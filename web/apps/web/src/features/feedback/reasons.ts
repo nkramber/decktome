@@ -44,6 +44,10 @@ const byKind: Record<FeedbackKind, Reason[]> = {
     { key: "no_deck", label: "It never built a deck." },
     { key: "error", label: "Something failed or showed an error." },
   ],
+  // A file the app could not read (D-884). The server names the fault,
+  // so the form shows no reason to check, and the key is the one the
+  // server stores.
+  [FeedbackKind.IMPORT]: [{ key: "parse_fault", label: "The app could not read the file." }],
 };
 
 export function reasonsOf(kind: FeedbackKind): Reason[] {

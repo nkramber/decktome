@@ -22,6 +22,7 @@ import (
 	"github.com/nkramber/decktome/go/internal/cardsvc"
 	"github.com/nkramber/decktome/go/internal/collections"
 	"github.com/nkramber/decktome/go/internal/gzstore"
+	"github.com/nkramber/decktome/go/internal/importfault"
 	"github.com/nkramber/decktome/go/internal/users"
 )
 
@@ -465,13 +466,15 @@ func (s *Server) parseUpload(source mtgv1.ImportSource, content []byte) ([]*mtgv
 	if source == mtgv1.ImportSource_IMPORT_SOURCE_UNSPECIFIED {
 		detected, err := collections.Detect(content)
 		if err != nil {
-			return nil, nil, mtgv1.ImportSource_IMPORT_SOURCE_UNSPECIFIED, connect.NewError(connect.CodeInvalidArgument, err)
+			return nil, nil, mtgv1.ImportSource_IMPORT_SOURCE_UNSPECIFIED, importfault.Unreadable(err)
 		}
 		source = detected
 	}
+	// A file that does not read offers the report form on the page
+	// (D-887).
 	rows, badParse, err := collections.Parse(source, content)
 	if err != nil {
-		return nil, nil, mtgv1.ImportSource_IMPORT_SOURCE_UNSPECIFIED, connect.NewError(connect.CodeInvalidArgument, err)
+		return nil, nil, mtgv1.ImportSource_IMPORT_SOURCE_UNSPECIFIED, importfault.Unreadable(err)
 	}
 	entries, badResolve := collections.Resolve(rows, idx)
 	unresolved := append(append([]*mtgv1.UnresolvedRow{}, badParse...), badResolve...)

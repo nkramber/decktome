@@ -89,6 +89,10 @@ func targetOf(r Route) string {
 		return TargetDeckPrompts
 	case ABracketPrompt:
 		return TargetBracketPrompts
+	case AParseFixture:
+		if f, err := FaultOf(r.Record); err == nil {
+			return fixtureTarget(f)
+		}
 	}
 	return ""
 }

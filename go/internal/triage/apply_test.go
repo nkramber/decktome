@@ -22,6 +22,7 @@ func TestTheClassKeysMatchTheStore(t *testing.T) {
 		mtgv1.FeedbackKind_FEEDBACK_KIND_CARD:     "card",
 		mtgv1.FeedbackKind_FEEDBACK_KIND_DECK:     "deck",
 		mtgv1.FeedbackKind_FEEDBACK_KIND_CHAT:     "chat",
+		mtgv1.FeedbackKind_FEEDBACK_KIND_IMPORT:   "import",
 	}
 	seen := map[string]bool{}
 	for enum, word := range kinds {

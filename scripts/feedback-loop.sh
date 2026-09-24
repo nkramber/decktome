@@ -51,6 +51,7 @@ FROZEN="
 go/cmd/questions-gate/conversations.json
 go/cmd/deck-gate/prompts.json
 go/cmd/bracket-gate/prompts.json
+go/internal/importfault/testdata/reports
 go/cmd/case-check
 go/cmd/feedback-triage
 go/internal/triage

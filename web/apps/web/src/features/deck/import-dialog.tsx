@@ -2,6 +2,7 @@ import type { DeckCard } from "@mtg/api-client/mtg/v1/deck_pb";
 import type { ImportDeckResponse } from "@mtg/api-client/mtg/v1/agent_service_pb";
 import { FormatId } from "@mtg/api-client/mtg/v1/format_pb";
 import type { UnresolvedRow } from "@mtg/api-client/mtg/v1/collection_pb";
+import { ImportPage } from "@mtg/api-client/mtg/v1/feedback_service_pb";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileTextIcon } from "lucide-react";
 import { type FormEvent, useState } from "react";
@@ -14,6 +15,7 @@ import { Label } from "../../components/ui/label";
 import { agentClient, collectionClient } from "../../lib/api";
 import { cn } from "../../lib/cn";
 import { errorMessage } from "../../lib/errors";
+import { isUnreadable, parseFaults, ReportImport } from "../feedback/report-import";
 
 // The deck import (PR-70). A reader brings a deck list: a text file that
 // Archidekt exports, or a pasted Arena list (D-845). The app stores it as
@@ -104,6 +106,10 @@ function ImportBody({ onClose }: { onClose: () => void }) {
     },
   });
 
+  // A list the app could not read shows the report form in place of the
+  // error of the server (D-887, D-889).
+  const unreadable = send.isError && isUnreadable(send.error);
+
   async function readFile(f: File | undefined) {
     if (!f) return;
     setFileName(f.name);
@@ -124,7 +130,7 @@ function ImportBody({ onClose }: { onClose: () => void }) {
         ? "The list marks no commander. Pick the card that leads it."
         : step === "done"
           ? "Each line below matched no card, so the deck holds the rest."
-          : "A text file from Archidekt, or a pasted Arena list. The deck opens like a deck the agent built.";
+          : "Upload a deck list file, or paste the list. The deck opens like a deck the agent built.";
 
   return (
     <DialogContent className="max-w-xl" aria-describedby="import-dialog-note">
@@ -142,7 +148,7 @@ function ImportBody({ onClose }: { onClose: () => void }) {
             className="flex cursor-pointer flex-col items-center gap-1.5 rounded-card border-2 border-dashed border-border px-6 py-6 text-center transition-colors hover:border-accent hover:bg-muted"
           >
             <FileTextIcon className="size-6 text-primary" aria-hidden="true" />
-            <span className="font-display text-[15px]">{fileName || "Choose an Archidekt text file"}</span>
+            <span className="font-display text-[15px]">{fileName || "Choose a deck list file"}</span>
             <span className="font-mono text-[11px] text-muted-foreground">.txt — or paste the list below</span>
           </label>
           <Input id="deck-file" type="file" accept=".txt,text/plain" className="sr-only" onChange={(e) => void readFile(e.target.files?.[0])} />
@@ -185,7 +191,7 @@ function ImportBody({ onClose }: { onClose: () => void }) {
                 The list is over {maxImportBytes >> 10} KiB. A deck list is much shorter.
               </p>
             )}
-            {send.isError && (
+            {send.isError && !unreadable && (
               <p role="alert" className="text-danger">
                 Import failed: {errorMessage(send.error)}
               </p>
@@ -202,6 +208,9 @@ function ImportBody({ onClose }: { onClose: () => void }) {
           </DialogFooter>
         </form>
       )}
+      {/* The form of D-882 sits outside the import form, because a form
+          holds no form. */}
+      {step === "pick" && unreadable && <ReportImport page={ImportPage.DECK} file={new Blob([text])} badRows={0} />}
 
       {step === "format" && (
         <Choice
@@ -236,6 +245,7 @@ function ImportBody({ onClose }: { onClose: () => void }) {
       {step === "done" && result && (
         <div className="flex flex-col gap-4">
           <SkippedLines rows={result.unresolved} />
+          {parseFaults(result.unresolved) > 0 && <ReportImport page={ImportPage.DECK} file={new Blob([text])} badRows={parseFaults(result.unresolved)} />}
           <DialogFooter>
             <Button
               type="button"
