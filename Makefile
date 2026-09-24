@@ -497,7 +497,7 @@ disallow: ## Take one email off the invite list: make disallow EMAIL=... PROJECT
 feedback-list: ## Read the newest verdicts of every user: make feedback-list [VERDICT=down] [LIMIT=50]
 	@PROJECT_ID=$${FEEDBACK_PROJECT:-decktome-prod} $(GO) run ./cmd/feedback -verdict "$${VERDICT-down}" -limit $${LIMIT:-50}
 
-feedback-harvest: ## Write every verdict since the last harvest to docs/reference/feedback/: make feedback-harvest [SINCE=2026-09-01] [HARVEST_ARGS=-dry]
+feedback-harvest: ## Write every verdict since the last harvest to .local/feedback/ (D-879): make feedback-harvest [SINCE=2026-09-01] [HARVEST_ARGS=-dry]
 	@PROJECT_ID=$${FEEDBACK_PROJECT:-decktome-prod} $(GO) run ./cmd/feedback-harvest -root $(CURDIR) $(if $(SINCE),-since $(SINCE),) $(HARVEST_ARGS)
 
 # TRIAGE_OUT names the triage document. A rerun must never overwrite a
@@ -507,12 +507,14 @@ TRIAGE_OUT ?=
 TRIAGE_ARGS ?=
 
 feedback-loop: ## Print how to start the feedback fix cycle. It never starts one
-	@echo "The cycle writes the cases, fixes them, opens a pull request, and answers the review, with nobody watching."
-	@echo "One pull request holds the case AND the fix, so the gate on main is never red (D-645)."
+	@echo "The cycle writes the cases and fixes them on the branch of the session (--here, D-877)."
+	@echo "The session writes the documents and opens the pull request. The review step reads Gitar, runs Codex, and the fixer answers (D-878)."
+	@echo "One pull request holds the case AND the fix, so the gate on main is never red (D-645). The cycle never merges (D-878)."
 	@echo "docs/reference/autotune-design.md holds the guards. docs/reference/feedback-fixer-prompt.md holds what the fixer reads."
 	@echo
 	@echo "  make feedback-loop-dry                            free: the plan, no model and no commit"
-	@echo "  FEEDBACK_LOOP_ALLOW=1 AUTOTUNE_FIXER_CMD=... scripts/feedback-loop.sh --cap 2.00"
+	@echo "  FEEDBACK_LOOP_ALLOW=1 AUTOTUNE_FIXER_CMD=... scripts/feedback-loop.sh --here --cap 2.00"
+	@echo "  scripts/feedback-review.sh <pull request> 3 <state folder of the cycle>"
 
 feedback-loop-dry: ## Plan a feedback fix cycle over the newest harvest, call no model and commit nothing (free)
 	@scripts/feedback-loop.sh --dry $(LOOP_ARGS)

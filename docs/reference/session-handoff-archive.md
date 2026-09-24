@@ -12,6 +12,48 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-23j
+
+**Pull request #221 reads the power step of a 60-card import (PR-71, F-170, F-172, D-863 to D-876).**
+
+Author provider: Claude Code
+
+**The next step.** Read the refreshed `review-gate` result for #221 after the review record push. The auto-merge of #221 is on.
+
+**The base.** `main` is `1d36928`, from #218, merged into this branch on 2026-09-24. This session read no deploy of `1d36928`. The deploy of `fa05e3c` ended SUCCESS, and the owner imported `go/internal/decklist/testdata/archidekt_living_weapon.txt` on decktome.com. The stored deck holds bracket 3 from the judge with no estimate mark. It also holds the legality block of D-846, the grade typical, and the summary of D-855.
+
+**What this pull request holds.**
+
+- `JudgeSixtyStep` with prompt version 2 reads casual, FNM, or tournament, with the rules text of each card (D-866, D-872).
+- A 60-card import reads the step with no guard, then the profile and the grade (D-865, D-869). A judge failure stores no step, and the next open reads again (D-864).
+- A new read writes the power into the session, for Commander too (F-172, D-870).
+- `make sixty-gate` and `make sixty-gate-dry`, with the labels of `go/cmd/sixty-gate/goldfish_labels.json` (D-863, D-867, D-871, D-873 to D-876).
+
+**The paid runs.** $8.9265 in all. Three dev lanes cost $0.8443. Test run 1 read FAIL for $4.1086, 133 of 180, on RCQs of 16 to 24 players. Test run 2 read PASS for $3.9736, 148 of 180, with no read two steps off (`docs/reference/pr71-sixty-gate-run2.md`).
+
+**The checks.** `make verify` passed on `1b6ca8a`, exit 0, with Node 22.23.2 on the PATH. The later commits change documents alone. Mutation checks fail the session tests without the session write, and the deck page test with the old trigger.
+
+**The review.** Gitar pause (D-838). Gitar left its plan notice alone, with no finding. Round 1 of Codex approved `8610fd2`. Round 2 found P2-1 at `04d6373`: a new read lost the usage of a concurrent turn. The fix and regression test pass at `81bb505`. The review says Ready for owner merge at `81bb505`, pending the refreshed `review-gate` result after the record push.
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- One live import of a 60-card list after the merge. Each costs one judge read, about $0.022.
+- One deployed bracket 5 session reads the commander rates now.
+- The live fix cycle waits for a thumbs down that carries a session. The cycle opens its own pull request, and its review step reads Gitar alone (D-840).
+- The Ulalek, Fused Atrocity shortlist holds 20 fixing lands, against a floor of 21.
+- The end of the Gitar pause, in a later pull request (D-838).
+- F-49, as a later item.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
+- UNVERIFIED: the Moxfield import of the deck list that the app exports.
+- D-794 makes the app less strict than the Wizards infographic at Bracket 2.
+- Five sessions on the new files, before a decision on the checkpoint rule (next step 3, D-750).
+- Next steps 4 and 5, and OQ-67 and OQ-77.
+
+### 2026-09-23h: the deck import, PR-70
+
+**The owner started PR-70 from the transitional prompt of #219.** No roadmap item covered a deck import. The session asked five batches of scope questions, and the owner approved the scope (D-845 to D-860). The owner chose a new judge for the power step of a 60-card import, and then its split into PR-71 (D-858, D-859). The code found the bug of the backfill, and the owner chose its fix here (D-861).
+
 ## The resume section of 2026-09-23i
 
 **Pull request #218 counts the first harvest, and the triage leaves out a case that no gate can run (PR-68, F-49, D-840, D-841). It also holds the Gitar notice rule of D-842.**

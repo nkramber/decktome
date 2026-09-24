@@ -99,5 +99,11 @@ if [ "$DRY_RUN" = "1" ]; then
   echo "autotune-fix: dry run, the prompt is at $keep and no agent ran" >&2
   exit 0
 fi
+# The fixer also gets no GitHub login. GH_CONFIG_DIR points gh at an empty
+# folder, so the fixer can not merge, turn on the auto-merge, or comment.
+# The owner decides each merge (D-878).
+NO_GH="$(mktemp -d)"
+trap 'rm -f "$PROMPT"; rm -rf "$NO_GH"' EXIT
 # shellcheck disable=SC2086
-env -u ANTHROPIC_API_KEY -u OPENAI_API_KEY $AUTOTUNE_FIXER_CMD < "$PROMPT"
+env -u ANTHROPIC_API_KEY -u OPENAI_API_KEY -u GH_TOKEN -u GITHUB_TOKEN -u GH_ENTERPRISE_TOKEN \
+  GH_CONFIG_DIR="$NO_GH" $AUTOTUNE_FIXER_CMD < "$PROMPT"

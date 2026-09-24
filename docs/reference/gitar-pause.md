@@ -10,7 +10,7 @@ This file is also the switch of the unattended feedback cycle. `scripts/feedback
 - The Codex review needs no Gitar pass. Run `make codex-review PR=<n> -- --skip-gitar-review` for each Codex review.
 - A pull request of documents alone takes the `review-override` label when each other check is green. It does not wait for Gitar (amends D-679).
 - The Codex reviewer needs no current Gitar review. It still verifies each Gitar claim that exists.
-- The unattended feedback cycle needs no Gitar review. A Gitar finding stops it before the fixer, and a comment on its pull request tells the owner.
+- The feedback cycle needs no Gitar review. Its review step reads Gitar one time, never waits for it, and then runs the Codex review (D-878). A Gitar finding stops it before the fixer, and a comment on its pull request tells the owner.
 
 ## What stays
 
@@ -37,7 +37,7 @@ The owner ends the pause in a later pull request. Do these steps in that pull re
 
 1. Run `git grep -n -F "**Gitar pause (D-838).**"` to find each pause note.
 2. Delete each paragraph or bullet that the command finds.
-3. Delete this file. The feedback cycle then waits for Gitar again, and it answers each finding.
+3. Delete this file. The feedback cycle then waits for Gitar again, and it answers each finding before the Codex review.
 4. Keep the flag `--skip-gitar-review` and the pause branch of `scripts/feedback-review.sh`.
 5. Run `make lint`. The test `docs/tools/test_gitar_pause.py` fails when a pause note stays without this file.
 6. Record the end as a new decision.

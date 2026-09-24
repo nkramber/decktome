@@ -10,12 +10,20 @@
 # to start without FEEDBACK_LOOP_ALLOW=1, and it stops at --cap, which is
 # $2.00 by default (D-559).
 #
-# The cycle never runs on a branch it did not make. It reverts the fixer
-# when the tree goes red, when the fixer touches a frozen path, or when a
-# case still fails.
+# The cycle never runs on a branch it did not make, unless --here names
+# the branch of the session (D-877). It reverts the fixer when the tree
+# goes red, when the fixer touches a frozen path, or when a case still
+# fails.
 #
 #   FEEDBACK_LOOP_ALLOW=1 scripts/feedback-loop.sh --cap 2.00
+#   FEEDBACK_LOOP_ALLOW=1 scripts/feedback-loop.sh --here --cap 2.00
 #   scripts/feedback-loop.sh --dry
+#
+# --here commits on the current branch and stops after the evidence. It
+# pushes nothing and opens no pull request. The session writes the
+# documents, opens the pull request, and then runs
+# scripts/feedback-review.sh for the review step (D-877, D-878). The cycle
+# never merges a pull request, in either mode (D-878).
 #
 # AUTOTUNE_FIXER_CMD names the agent, the way the tuning loop does. This
 # script ships no default: an unattended agent that edits a repository is
@@ -33,6 +41,7 @@ BASE_REF=""
 DRY_RUN="0"
 ROUNDS="3"
 OPEN_PR="1"
+HERE="0"
 
 # FROZEN holds what the fixer may not touch. The cases are the
 # measurement: a fixer that edits one makes the gate agree with the code
@@ -63,7 +72,7 @@ docs/reference/eval/baselines.json
 "
 
 usage() {
-  sed -n '2,26p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,30p' "$0" | sed 's/^# \{0,1\}//'
   exit "${1:-0}"
 }
 
@@ -82,6 +91,7 @@ while [ $# -gt 0 ]; do
     --rounds) needs_value "$1" "$#"; ROUNDS="$2"; shift 2 ;;
     --dry) DRY_RUN="1"; shift ;;
     --no-pr) OPEN_PR="0"; shift ;;
+    --here) HERE="1"; OPEN_PR="0"; shift ;;
     -h|--help) usage 0 ;;
     *) echo "feedback-loop: unknown flag $1" >&2; usage 1 ;;
   esac
@@ -89,6 +99,12 @@ done
 
 say() { printf '%s  %s\n' "$(date -u +%H:%M:%S)" "$*" | tee -a "$LOG" >&2; }
 die() { printf 'feedback-loop: %s\n' "$*" >&2; exit 1; }
+
+# --here works on the branch of the session, so it cuts no branch and
+# switches to no base (D-877).
+if [ "$HERE" = "1" ] && [ -n "$BASE_REF" ]; then
+  die "--here works on the current branch, so it takes no --base"
+fi
 
 STAMP="$(date -u +%Y%m%d-%H%M%S)"
 STATE_DIR="$ROOT/.local/tune/feedback-$STAMP"
@@ -125,6 +141,7 @@ START_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 if [ "$DRY_RUN" != "1" ]; then
   case "$START_BRANCH" in
     main|master) die "never commit on $START_BRANCH (D-583). Start a branch first." ;;
+    HEAD) [ "$HERE" = "1" ] && die "--here needs a branch, and the checkout has a detached HEAD" ;;
   esac
 fi
 if [ -n "$BASE_REF" ]; then
@@ -135,11 +152,26 @@ fi
 BRANCH="feedback-fix/$STAMP"
 if [ "$DRY_RUN" = "1" ]; then
   say "dry run: no branch, no model call, no commit. The checkout stays on $START_BRANCH."
+elif [ "$HERE" = "1" ]; then
+  BRANCH="$START_BRANCH"
+  say "branch $BRANCH, the branch of the session (--here, D-877)"
 else
   git switch -c "$BRANCH" >/dev/null 2>&1 || die "could not cut $BRANCH"
   say "branch $BRANCH"
 fi
 START_COMMIT="$(git rev-parse HEAD)"
+# A failed cycle under --here leaves the case commit on the branch of the
+# session. A case fails by design, so that commit never merges alone
+# (D-645). The session drops it and records the failure (D-877).
+if [ "$HERE" = "1" ] && [ "$DRY_RUN" != "1" ]; then
+  here_exit() {
+    local code=$?
+    if [ "$code" -ne 0 ]; then
+      say "the cycle failed. git reset --hard $START_COMMIT drops its commits from $BRANCH. Record the failure in the documents (D-877)."
+    fi
+  }
+  trap here_exit EXIT
+fi
 
 # --- The ledger --------------------------------------------------------
 
@@ -417,6 +449,11 @@ Every case failed before the fix and passes after it. make eval-check
 shows no flip on the baselines (D-645)." || die "could not commit the evidence"
 
 say "spent \$$(spent) of \$$CAP over $(wc -l < "$LEDGER" | tr -d ' ') gate run(s)"
+if [ "$HERE" = "1" ]; then
+  say "the cycle committed on $BRANCH and pushed nothing (D-877). The session writes the documents, pushes, and opens the pull request."
+  say "  then: scripts/feedback-review.sh <pull request> $ROUNDS $STATE_DIR"
+  exit 0
+fi
 if [ "$OPEN_PR" != "1" ]; then
   say "the cycle wrote $BRANCH and pushed nothing. To open it:"
   say "  git push -u origin $BRANCH && gh pr create --fill"
@@ -467,15 +504,19 @@ if [ "$ROUNDS" -lt 1 ]; then
   say "no review round was asked for. The cycle ends at #$PR_NUM."
   exit 0
 fi
-say "step 8: the review of gitar-bot, up to $ROUNDS round(s)"
+say "step 8: the review, up to $ROUNDS round(s): Gitar, then Codex (D-878)"
 "$ROOT/scripts/feedback-review.sh" "$PR_NUM" "$ROUNDS" "$STATE_DIR" 2>&1 | tee -a "$LOG"
 review_code="${PIPESTATUS[0]}"
 if [ "$review_code" -eq 3 ]; then
   say "Gitar left a finding on #$PR_NUM during the Gitar pause (D-838). Tell the owner."
   exit 3
 fi
+if [ "$review_code" -eq 4 ]; then
+  say "a Codex finding on #$PR_NUM is open at its third head (D-826). Ask the owner."
+  exit 4
+fi
 if [ "$review_code" -ne 0 ]; then
   say "the review rounds ended with work open on #$PR_NUM. Read the pull request."
   exit "$review_code"
 fi
-say "the cycle is done. #$PR_NUM holds the cases, the fix, and the answered review."
+say "the cycle is done. #$PR_NUM holds the cases, the fix, and the approved review. The owner decides the merge, and the cycle never merges (D-878)."

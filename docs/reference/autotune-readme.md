@@ -279,7 +279,7 @@ same guards, but they measure different things.
 | Input | An eval report of the question gate | A harvest of the deployed app |
 | The bar | A ratio against the best run of the night, over a noise margin of 9 | Every new case goes from fail to pass |
 | The cost | `--budget`, $3.00 by default | `--cap`, $2.00 by default (D-559) |
-| The end | A branch, and no push without `--push` | A pull request, and an answered review (D-645) |
+| The end | A branch, and no push without `--push` | A pull request of the session, and a Codex approval (D-645, D-877, D-878) |
 | The script | `scripts/autotune.sh` | `scripts/feedback-loop.sh` |
 
 The commands.
@@ -287,15 +287,23 @@ The commands.
 ```
 make feedback-loop                      free: it prints these commands and starts nothing
 make feedback-loop-dry                  free: it plans a cycle, calls no model, and commits nothing
-FEEDBACK_LOOP_ALLOW=1 AUTOTUNE_FIXER_CMD=... scripts/feedback-loop.sh --cap 2.00
+FEEDBACK_LOOP_ALLOW=1 AUTOTUNE_FIXER_CMD=... scripts/feedback-loop.sh --here --cap 2.00
+scripts/feedback-review.sh <pull request> 3 <state folder of the cycle>
 ```
 
 The flags. `--in <file>` reads one harvest, and an empty flag reads the
-newest. `--base <branch>` cuts the cycle's branch off that branch.
-`--rounds <n>` sets how many times the cycle answers the review, and 3
-is the default. `--no-pr` stops at the local branch and pushes nothing.
+newest under `.local/feedback` (D-879). `--here` commits on the branch
+of the session, and it pushes nothing (D-877). `--base <branch>` cuts
+the cycle's branch off that branch, and `--here` refuses it. `--rounds
+<n>` sets the count of review rounds, and 3 is the default. `--no-pr`
+stops at the local branch and pushes nothing.
 
-The eight steps of one cycle:
+The session drives the cycle, and the pull request of the session holds
+it (D-877). The session makes a branch from `main` and runs the cycle
+with `--here`. When the cycle fails, the session drops its commits and
+records the failure in the documents of the same pull request.
+
+The steps of one cycle:
 
 1. The triage writes one case per thumbs down into the gate file that owns it, and it commits them.
 2. Each gate runs over its case ids alone. **Every case must fail.** A case that already passes stays as a case a change must not flip, and the fixer never sees it.
@@ -303,11 +311,16 @@ The eight steps of one cycle:
 4. A frozen path, a removed line of `docs/decisions.md`, or a red tree reverts the fixer and keeps the cases.
 5. The same gates run over the same ids. **Every case must pass.**
 6. `make eval-check` must show no flip on the baselines.
-7. The cycle commits its evidence, pushes, and opens the pull request.
-   The body holds the rows the cycle can prove. The `pr-contract` check stays red until a clean author session completes the rest (D-748).
-8. `scripts/feedback-review.sh` answers the review of `gitar-bot`, up to `--rounds` times.
+7. The cycle commits its evidence. With `--here`, it stops there.
+8. The session writes the documents, pushes, and opens its pull request.
+9. `scripts/feedback-review.sh` waits for CI and reads Gitar. It runs the Codex review, and the fixer answers each finding (D-878).
+10. A Codex approval ends the review step. The session then asks the owner, and the owner decides the merge.
 
-**Gitar pause (D-838).** While `docs/reference/gitar-pause.md` exists, step 8 needs no Gitar review. An open thread or an issue on the Gitar dashboard stops the cycle before the fixer, and a comment tells the owner.
+Without `--here`, the cycle pushes and opens its own pull request at step 7, and it runs step 9 itself. That body holds the rows the cycle can prove, and `pr-contract` stays red until an author session completes the rest (D-748).
+
+The review step stops with 3 on a Gitar finding of the pause. It stops with 4 when a Codex finding is open at its third head (D-826). The fixer runs with no GitHub login, and no script of the cycle merges or turns on the auto-merge (D-878).
+
+**Gitar pause (D-838).** While `docs/reference/gitar-pause.md` exists, step 9 reads Gitar one time and never waits for it. An open thread or an issue on the Gitar dashboard stops the cycle before the fixer, and a comment tells the owner.
 
 The cases are frozen. A fixer that edits one makes the gate agree with
 the code instead of with the reader.
