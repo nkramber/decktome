@@ -119,7 +119,7 @@ func Parse(r io.Reader) (*List, error) {
 			})
 			continue
 		}
-		line.Row.Line, line.Row.Raw = n, truncate(raw)
+		line.Line, line.Raw = n, truncate(raw)
 		if line.Section == Main {
 			line.Section = section
 		}
