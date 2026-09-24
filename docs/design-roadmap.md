@@ -2130,7 +2130,7 @@ The thumbs down of 2026-09-24 carries a session and a deck, so the triage can wr
 Gate:
 
 - The case fails before the fix and passes after it, and `make eval-check` shows no flip. Not met on 2026-09-24: case 16 passed before the fix (D-880).
-- A failed cycle records its cost and its reason in the pull request of the session instead. This pull request records both.
+- A failed cycle records its cost and its reason in the pull request of the session instead. Met. This path holds, in place of the first bullet. The cycle of 2026-09-24 is a failed cycle of D-877: its confirm run read that 1 of 1 cases did not read fail. It ended with 0 only because of F-173, and `TestTheCycleStopsWhenNoCaseFailsBeforeTheFix` proves that the fixed cycle ends with 1. The session dropped the case (D-880), and `docs/reference/feedback/fix-cycle-20260924-153731.md` records the cost and the reason.
 - `TestTheCycleStopsWhenNoCaseFailsBeforeTheFix` and `TestAPassingCaseReadsPass` fail on the code of `2c658ff`, and pass now.
 - A Codex record approves the effective head, and the owner decides the merge.
 - `make verify` passes.
