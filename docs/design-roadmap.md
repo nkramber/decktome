@@ -2156,7 +2156,7 @@ Gate:
 - `make verify` passes.
 > *In plain English:* the upload page names no app now. When a file does not read, the page asks where the file came from and sends a report. The review then gets the broken rows and a test that fails until the fix.
 
-**PR-75: A thumbs down pings the owner at once (F-49, D-890).** ✅ merged as #PRNUM.
+**PR-75: A thumbs down pings the owner at once (F-49, D-890).** ✅ merged as #225.
 Before PR-75 a verdict was a Firestore write alone: `feedback.Repo.Add` creates `users/<uid>/feedback/<id>` in `decktome-prod`, and nothing read it until `make feedback-harvest`. Now the API sends the owner a Pushover notice of each verdict. The notice is a notice only. The harvest, the triage, and the fix cycle stay the path that acts on a verdict.
 
 - **The questions.** The owner answered the five questions of D-890 on 2026-09-24 (D-892 to D-897). The session verified each Google Cloud fact against the documentation of 2026-09-22.
