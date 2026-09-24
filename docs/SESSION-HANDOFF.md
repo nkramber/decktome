@@ -8,32 +8,31 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-23i)
 
-**Pull request (not yet opened) adds the power step of a 60-card import (PR-71, F-170, F-172, D-863 to D-876).**
+**Pull request #PRNUM reads the power step of a 60-card import (PR-71, F-170, F-172, D-863 to D-876).**
 
 Author provider: Claude Code
 
-**The next step.** Read test run 2 of `make sixty-gate` (D-876).
+**The next step.** Pending owner merge. Tell the owner the state of the review of #PRNUM.
 
-**Test run 1.** `docs/reference/pr71-sixty-gate-run1.md` reads FAIL for $4.1086: 133 of 180 reads name the label, and the floor is 80 percent. No read sits two steps off. Casual read 53 of 60, FNM 40 of 60, and tournament 40 of 60. The MTGO lists read 26 of 30, and the RCQ lists 14 of 30. Each RCQ held 16 to 24 players.
+**The base.** `main` is `fa05e3c`, from #220. Cloud Build read SUCCESS for `deploy-api` and `deploy-web` of `fa05e3c` on 2026-09-24 UTC. The owner imported `go/internal/decklist/testdata/archidekt_living_weapon.txt` on decktome.com. The stored deck holds bracket 3 from the judge with no estimate mark. It also holds the legality block of D-846, the grade typical, and the summary of D-855.
 
-**The code.** `JudgeSixtyStep` with prompt version 2, the step of a 60-card import, the new read, the power slot of the session (F-172, D-870), and `make sixty-gate`. The tests of each part pass.
+**What this pull request holds.**
 
-**The paid runs.** Three dev lanes cost $0.8443 in all: `docs/reference/pr71-sixty-gate-dev1.md` to `docs/reference/pr71-sixty-gate-dev3.md`. No read of prompt version 2 sat two steps off. The FNM rung read 5 of 10, from both sides (D-873, D-874).
+- `JudgeSixtyStep` with prompt version 2 reads casual, FNM, or tournament, with the rules text of each card (D-866, D-872).
+- A 60-card import reads the step with no guard, then the profile and the grade (D-865, D-869). A judge failure stores no step, and the next open reads again (D-864).
+- A new read writes the power into the session, for Commander too (F-172, D-870).
+- `make sixty-gate` and `make sixty-gate-dry`, with the labels of `go/cmd/sixty-gate/goldfish_labels.json` (D-863, D-867, D-871, D-873 to D-876).
 
-**The base.** `main` is `fa05e3c`, from #220. Cloud Build read SUCCESS for `deploy-api` and `deploy-web` of `fa05e3c` on 2026-09-24 UTC.
+**The paid runs.** $8.9265 in all. Three dev lanes cost $0.8443. Test run 1 read FAIL for $4.1086, 133 of 180, on RCQs of 16 to 24 players. Test run 2 read PASS for $3.9736, 148 of 180, with no read two steps off (`docs/reference/pr71-sixty-gate-run2.md`).
 
-**The live import of `fa05e3c`.** The owner imported `go/internal/decklist/testdata/archidekt_living_weapon.txt` on decktome.com. The session read the stored session and deck:
+**The checks.** CHECKS
 
-- The session holds Commander, the commander Ekthi, Contaminator Priest, the color W, bracket 3, no turn, and one deck.
-- The deck holds 99 cards and the commander, `imported`, and bracket 3 from the judge, with no estimate mark.
-- The findings hold the legality block of the commander (D-846) and four warnings of the bands.
-- The grade reads typical, and the summary holds the reason of the judge and the quality sentence (D-855).
-- No build path writes `legality_as_of`, so the empty field matches a generated deck.
-
-**The scope.** A free count of the local store refuted a premise of D-859: the precon table labels a casual list and an FNM list (D-863). The owner chose each scope answer that the session recommended (D-864 to D-869). The roadmap entry of PR-71 holds the scope.
+**The review.** REVIEW
 
 **What waits on the owner.**
 
+- The merge of this pull request.
+- One live import of a 60-card list after the merge. Each costs one judge read, about $0.022.
 - The Ulalek, Fused Atrocity shortlist holds 20 fixing lands, against a floor of 21.
 - The end of the Gitar pause, in a later pull request (D-838).
 - F-49, as a later item.
@@ -109,8 +108,8 @@ Twenty-two things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **Import a deck list, and show it as a deck the app built** (PR-70, F-170, F-171, D-845 to D-862). This pull request is #220.
-2. **The open items of the roadmap.** One register row reads 🔧: F-49, and it waits for the owner. F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 reads 🔧 until PR-71 reads the power step of a 60-card import. F-171 reads ✅ with this pull request (D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
+1. **The power step of a 60-card import** (PR-71, F-170, F-172, D-863 to D-876). This pull request is #PRNUM.
+2. **The open items of the roadmap.** One register row reads 🔧: F-49, and it waits for the owner. F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ with this pull request (D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
 3. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It waits, because the ten sessions of the audit ran before #184 and before D-749.
 4. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git.
 5. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide". Session `z1hshyY6Npig1FN2NuV7` named its commander, so it showed no such row.
@@ -139,6 +138,10 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 ### 2026-09-23h: the deck import, PR-70
 
 **The owner started PR-70 from the transitional prompt of #219.** No roadmap item covered a deck import. The session asked five batches of scope questions, and the owner approved the scope (D-845 to D-860). The owner chose a new judge for the power step of a 60-card import, and then its split into PR-71 (D-858, D-859). The code found the bug of the backfill, and the owner chose its fix here (D-861).
+
+### 2026-09-23i: the power step of a 60-card import, PR-71
+
+**The owner started PR-71 from the transitional prompt of #220.** A free count refuted a premise of D-859, and the owner chose the scope in five batches (D-863 to D-869). No product type of Wizards marked the FNM line, so a model of another family labeled 60 user decks (D-874, D-875). Test run 1 failed on small RCQs, and run 2 passed on fresh lists (D-876). The session found F-172 in the code, and the owner chose its fix here (D-870).
 
 ## The archive
 

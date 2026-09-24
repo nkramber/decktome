@@ -31,7 +31,9 @@ Five more targets spend money, and each has an overwrite guard and an env guard.
 
 `make bracket-gate` builds three commanders at each bracket, 15 decks, and asks the judge role for the bracket of each (PR-14A). It has the same two guards, `BRACKET_GATE=1` and a verdict check on `BRACKET_GATE_OUT`. Run 1 cost $2.08 for the builds and $0.26 for the judge lane, and the second judge lane of 2026-09-05 cost $0.28 (D-540). `BRACKET_GATE_ARGS="-only 7,8,9"` runs the bracket 3 prompts alone, `-rejudge <document>` judges the decks of a document for about $0.26, and `-dry` is free. The rejudge profiles each deck through Commander Spellbook first, for free, so the judge reads its combos (D-790). On 2026-09-21 the rejudge of run 2 cost $0.2446, and the calibration decks cost $0.3113 and $0.3107 (D-795).
 
-`make sixty-gate` asks the step judge for the power step of each labeled 60-card list three times (PR-71, D-863 to D-871). It has the guard `SIXTY_GATE=1`, and any file at `SIXTY_GATE_OUT` stops the run. A FAIL verdict exits 2. `SIXTY_GATE_ARGS="-split dev -reads 1"` reads the 15 dev lists once, and that document holds no verdict. The estimate of the test lane is about $3.3, from the bracket judge rate of D-795, until run 1 measures it. `make sixty-gate-dry` prints the split for free.
+`make sixty-gate` asks the step judge for the power step of each labeled 60-card list three times (PR-71, D-863 to D-871). It has the guard `SIXTY_GATE=1`, and any file at `SIXTY_GATE_OUT` stops the run. A FAIL verdict exits 2.
+
+`SIXTY_GATE_ARGS="-split dev -reads 1"` reads the 15 dev lists once, and that document holds no verdict. Run 1 cost $4.1086 and run 2 cost $3.9736, for 180 reads each. `-exclude <documents>` leaves out the tournament lists of earlier runs (D-876). `make sixty-gate-dry` prints the split for free.
 
 `make revise-gate` builds three base decks and runs nine revisions over them, twelve turns with the answered questions (PR-12B, D-448). It has the same two guards. Run 7 cost $0.74 for eleven turns, run 8 cost $1.23, and runs 4 to 6 cost $0.54 to $0.81.
 
