@@ -225,9 +225,17 @@ type Deck struct {
 	// invented the answer, and every deck named its commander as a card to
 	// buy (D-604). Unset on a deck built before this, and the reader then
 	// reads no commander in the buy list, which is the safe failure.
-	Commanders    []*DeckCard `protobuf:"bytes,27,rep,name=commanders,proto3" json:"commanders,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Commanders []*DeckCard `protobuf:"bytes,27,rep,name=commanders,proto3" json:"commanders,omitempty"`
+	// imported says a user brought this list, and no build made it
+	// (PR-70, D-845). The thumbs stay off on it, and a revision of it is
+	// a deck the app made (D-853).
+	Imported bool `protobuf:"varint,28,opt,name=imported,proto3" json:"imported,omitempty"`
+	// bracket_estimated says the bracket is the floor of the rules alone,
+	// because the bracket judge did not answer (D-854). The next open of
+	// the deck asks the judge again.
+	BracketEstimated bool `protobuf:"varint,29,opt,name=bracket_estimated,json=bracketEstimated,proto3" json:"bracket_estimated,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *Deck) Reset() {
@@ -440,6 +448,20 @@ func (x *Deck) GetCommanders() []*DeckCard {
 		return x.Commanders
 	}
 	return nil
+}
+
+func (x *Deck) GetImported() bool {
+	if x != nil {
+		return x.Imported
+	}
+	return false
+}
+
+func (x *Deck) GetBracketEstimated() bool {
+	if x != nil {
+		return x.BracketEstimated
+	}
+	return false
 }
 
 // DeckQuality is the grade of the deck quality model (PR-14B). The
@@ -1618,7 +1640,7 @@ var File_mtg_v1_deck_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\n" +
-	"\x11mtg/v1/deck.proto\x12\x06mtg.v1\x1a\x11mtg/v1/card.proto\x1a\x13mtg/v1/format.proto\x1a\x14mtg/v1/session.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x8b\b\n" +
+	"\x11mtg/v1/deck.proto\x12\x06mtg.v1\x1a\x11mtg/v1/card.proto\x1a\x13mtg/v1/format.proto\x1a\x14mtg/v1/session.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xd4\b\n" +
 	"\x04Deck\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12&\n" +
@@ -1653,7 +1675,9 @@ const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\x05build\x18\x1a \x01(\v2\x14.mtg.v1.BuildMetricsR\x05build\x120\n" +
 	"\n" +
 	"commanders\x18\x1b \x03(\v2\x10.mtg.v1.DeckCardR\n" +
-	"commandersJ\x04\b\n" +
+	"commanders\x12\x1a\n" +
+	"\bimported\x18\x1c \x01(\bR\bimported\x12+\n" +
+	"\x11bracket_estimated\x18\x1d \x01(\bR\x10bracketEstimatedJ\x04\b\n" +
 	"\x10\vR\x04seed\"\xb5\x01\n" +
 	"\vDeckQuality\x12\x12\n" +
 	"\x04tier\x18\x01 \x01(\tR\x04tier\x12\x14\n" +

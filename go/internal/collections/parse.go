@@ -249,6 +249,12 @@ func ParseArenaText(r io.Reader) ([]Row, []*mtgv1.UnresolvedRow, error) {
 	return rows, bad, sc.Err()
 }
 
+// ParseLine reads one Arena line: a count, a name, and an optional
+// "(SET) 123" pair and finish marker. The deck parser of PR-70 reads each
+// card line through it, so a deck and a collection read a line the same
+// way.
+func ParseLine(text string) (Row, bool) { return parseArenaLine(text) }
+
 func parseArenaLine(text string) (Row, bool) {
 	fields := strings.Fields(text)
 	if len(fields) < 2 {

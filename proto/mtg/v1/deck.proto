@@ -90,6 +90,14 @@ message Deck {
   // buy (D-604). Unset on a deck built before this, and the reader then
   // reads no commander in the buy list, which is the safe failure.
   repeated DeckCard commanders = 27;
+  // imported says a user brought this list, and no build made it
+  // (PR-70, D-845). The thumbs stay off on it, and a revision of it is
+  // a deck the app made (D-853).
+  bool imported = 28;
+  // bracket_estimated says the bracket is the floor of the rules alone,
+  // because the bracket judge did not answer (D-854). The next open of
+  // the deck asks the judge again.
+  bool bracket_estimated = 29;
 }
 
 // DeckQuality is the grade of the deck quality model (PR-14B). The

@@ -29,7 +29,9 @@ import (
 	"cloud.google.com/go/firestore"
 	"google.golang.org/api/iterator"
 
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 	"github.com/nkramber/decktome/go/internal/gcpenv"
+	"github.com/nkramber/decktome/go/internal/gzstore"
 	"github.com/nkramber/decktome/go/internal/users"
 )
 
@@ -83,16 +85,17 @@ func run() error {
 			if err != nil {
 				return fmt.Errorf("%s of %s: %w", kind, ref.ID, err)
 			}
-			// A revised deck names the deck it came from, and walk counts
-			// it apart.
+			// A revised deck names the deck it came from, and an imported
+			// list is no deck the app built. Both count apart (D-852).
 			if kind == "decks" {
-				var revisions int64
-				revisions, err = countRevisions(ctx, ref.Collection(kind))
+				var revisions, imported int64
+				revisions, imported, err = countDeckKinds(ctx, ref.Collection(kind))
 				if err != nil {
 					return fmt.Errorf("revisions of %s: %w", ref.ID, err)
 				}
 				counts[users.DeckRevisions] = revisions
-				n -= revisions
+				counts[users.DecksImported] = imported
+				n -= revisions + imported
 			}
 			counts[counter] = n
 			oldest = earlier(oldest, first)
@@ -107,8 +110,8 @@ func run() error {
 		oldest = earlier(oldest, first)
 		newest = later(newest, last)
 
-		fmt.Fprintf(os.Stderr, "user %s  decks %d, revisions %d, collections %d, chats %d, up %d, down %d\n",
-			ref.ID, counts[users.DecksCreated], counts[users.DeckRevisions],
+		fmt.Fprintf(os.Stderr, "user %s  decks %d, revisions %d, imports %d, collections %d, chats %d, up %d, down %d\n",
+			ref.ID, counts[users.DecksCreated], counts[users.DeckRevisions], counts[users.DecksImported],
 			counts[users.CollectionsUpload], counts[users.SessionsStarted], up, down)
 		if *dry {
 			continue
@@ -143,19 +146,38 @@ func walk(ctx context.Context, col *firestore.CollectionRef) (n int64, first, la
 	return n, first, last, nil
 }
 
-// countRevisions counts the decks that name a deck they came from.
-func countRevisions(ctx context.Context, col *firestore.CollectionRef) (int64, error) {
+// countDeckKinds counts the revisions and the imports of one user.
+func countDeckKinds(ctx context.Context, col *firestore.CollectionRef) (revisions, imported int64, err error) {
 	snaps, err := col.Documents(ctx).GetAll()
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
-	var n int64
 	for _, snap := range snaps {
-		if id, _ := snap.Data()["revised_from_deck_id"].(string); id != "" {
-			n++
+		rev, imp := deckKind(snap.Data())
+		switch {
+		case imp:
+			imported++
+		case rev:
+			revisions++
 		}
 	}
-	return n, nil
+	return revisions, imported, nil
+}
+
+// deckKind reads whether one stored deck is a revision and whether it is
+// an import. The flat fields answer. A document written before them holds
+// neither, so the packed deck answers (D-861).
+func deckKind(data map[string]any) (revision, imported bool) {
+	if id, ok := data["revised_from_deck_id"].(string); ok {
+		imp, _ := data["imported"].(bool)
+		return id != "", imp
+	}
+	payload, _ := data["deck_gz"].([]byte)
+	var d mtgv1.Deck
+	if err := gzstore.UnmarshalProto(payload, &d); err != nil {
+		return false, false
+	}
+	return d.GetRevisedFromDeckId() != "", d.GetImported()
 }
 
 // verdicts counts the thumbs up and the thumbs down of one user.

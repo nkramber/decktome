@@ -33,7 +33,7 @@ PR-22 added four things on 2026-09-06, and this page reads them as they stand:
 - A `hosting` block in `firebase.json` for the static app (D-544). It names the Vite build directory, the single-page rewrite, and long cache headers on the hashed assets.
 - The Firebase web configuration through four build variables: `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, and `VITE_FIREBASE_APP_ID`. Unset, the app talks to the emulator project.
 - The invite list (D-314, D-420). On Cloud Run the API reads `config/allowlist` before every signed-in request, with a cache of one minute. It refuses an email off the list with one sentence. `make allow EMAIL=... PROJECT_ID=...` writes the list, and `make disallow` takes an email off.
-- The spend cap (D-421). One Firestore document per user and month, `users/<uid>/usage/<YYYY-MM>`, sums the cost of every turn. On Cloud Run the cap is $5 a month, and `SPEND_CAP_USD` moves it. A turn at the cap gets a refusal that names the day the cap resets.
+- The spend cap (D-421). One Firestore document per user and month, `users/<uid>/usage/<YYYY-MM>`, sums the cost of every turn and of each deck import (PR-70). On Cloud Run the cap is $5 a month, and `SPEND_CAP_USD` moves it. A turn at the cap gets a refusal that names the day the cap resets.
 
 ## 2. Before you start
 

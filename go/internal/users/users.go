@@ -39,6 +39,9 @@ const (
 	SessionsStarted   Counter = "total_sessions_started"
 	FeedbackUp        Counter = "total_feedback_up"
 	FeedbackDown      Counter = "total_feedback_down"
+	// DecksImported counts the lists a user brought, apart from the decks
+	// the app built (PR-70, D-852).
+	DecksImported Counter = "total_decks_imported"
 )
 
 // counters lists every field the backfill and the reader know. A field
@@ -46,6 +49,7 @@ const (
 var counters = map[Counter]bool{
 	DecksCreated: true, DeckRevisions: true, CollectionsUpload: true,
 	SessionsStarted: true, FeedbackUp: true, FeedbackDown: true,
+	DecksImported: true,
 }
 
 // ErrBadCounter reports a field that names no counter.
@@ -71,6 +75,7 @@ type Record struct {
 	SessionsStarted   int64 `firestore:"total_sessions_started"`
 	FeedbackUp        int64 `firestore:"total_feedback_up"`
 	FeedbackDown      int64 `firestore:"total_feedback_down"`
+	DecksImported     int64 `firestore:"total_decks_imported"`
 }
 
 // Repo stores the records. The caller owns the client.

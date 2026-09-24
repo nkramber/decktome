@@ -3,7 +3,9 @@ syntax = "proto3";
 package mtg.v1;
 
 import "google/protobuf/timestamp.proto";
+import "mtg/v1/collection.proto";
 import "mtg/v1/deck.proto";
+import "mtg/v1/format.proto";
 import "mtg/v1/session.proto";
 
 option go_package = "github.com/nkramber/decktome/go/gen/mtg/v1;mtgv1";
@@ -21,6 +23,12 @@ service AgentService {
   // DeleteSession removes a conversation for good. The decks it built
   // stay (roadmap PR-19).
   rpc DeleteSession(DeleteSessionRequest) returns (DeleteSessionResponse) {}
+  // ImportDeck stores a deck list that a user brings, and a session
+  // that the revise turn reads (PR-70, D-845, D-851).
+  rpc ImportDeck(ImportDeckRequest) returns (ImportDeckResponse) {}
+  // ReadImportBracket asks the bracket judge again for an imported deck
+  // whose bracket is the floor alone (D-854).
+  rpc ReadImportBracket(ReadImportBracketRequest) returns (ReadImportBracketResponse) {}
 }
 
 message ListSessionsRequest {
@@ -150,4 +158,45 @@ message GetSessionRequest {
 
 message GetSessionResponse {
   Session session = 1;
+}
+
+// ImportDeckRequest carries one deck list: an Archidekt text export or an
+// Arena list (D-845). A list that needs an answer comes back with the
+// question, and the client sends the list again with the answer.
+message ImportDeckRequest {
+  string text = 1;
+  // name is the deck name. The form fills it from the file name.
+  string name = 2;
+  // collection_id names the collection that marks the owned cards, or
+  // is empty for no owned mark (D-849).
+  string collection_id = 3;
+  // format is the pick of the user for a list that is not Commander:
+  // Standard, Modern, or the house format for neither (D-857).
+  FormatId format = 4;
+  // commander_oracle_ids is the pick of the user for a Commander list
+  // with no commander mark (D-847).
+  repeated string commander_oracle_ids = 5;
+}
+
+message ImportDeckResponse {
+  // deck and session_id are set when the import stored the deck.
+  Deck deck = 1;
+  string session_id = 2;
+  // needs_format says the list is not Commander and the request named
+  // no format. The client asks Standard, Modern, or neither.
+  bool needs_format = 3;
+  // commander_options are the cards of the list that can lead a deck,
+  // when the list marks no commander. The client asks for a pick.
+  repeated DeckCard commander_options = 4;
+  // unresolved names each line that matched no card. The import skips
+  // it (D-846).
+  repeated UnresolvedRow unresolved = 5;
+}
+
+message ReadImportBracketRequest {
+  string deck_id = 1;
+}
+
+message ReadImportBracketResponse {
+  Deck deck = 1;
 }

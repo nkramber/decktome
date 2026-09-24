@@ -82,6 +82,11 @@ type fakeDecks struct {
 	// as the real generator does, so a test can read the session total
 	// (D-447).
 	record bool
+	// imports counts the reads of an imported list, owned is the last
+	// owned map, and estimate marks the bracket as the floor (PR-70).
+	imports  int
+	owned    map[string]int32
+	estimate bool
 }
 
 func (f *fakeDecks) Build(ctx context.Context, req generate.Request, acc *llm.Accumulator) (*generate.Result, error) {
