@@ -27,7 +27,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passed on `1b6ca8a`, exit 0, with Node 22.23.2 on the PATH. The later commits change documents alone. Mutation checks fail the session tests without the session write, and the deck page test with the old trigger.
 
-**The review.** Gitar pause (D-838). Gitar: read one time after CI. Codex review: pending.
+**The review.** Gitar pause (D-838). Codex review: Ready for owner merge at effective head `8610fd2d7c93169441c3b444c572a025c49ad769`. Open findings: none.
 
 **What waits on the owner.**
 
