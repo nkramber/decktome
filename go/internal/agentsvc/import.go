@@ -210,7 +210,8 @@ func (s *Server) ReadImportBracket(ctx context.Context, req *connect.Request[mtg
 	}
 	acc := llm.NewAccumulator(s.prices)
 	importer.ReadImport(ctx, deck, owned, acc)
-	if report := acc.Report(); report.Calls > 0 {
+	report := acc.Report()
+	if report.Calls > 0 {
 		before := cloneUsage(session.GetUsage())
 		session.Usage = addUsage(cloneUsage(before), report)
 		s.recordSpend(ctx, uid, session, before)
@@ -220,15 +221,17 @@ func (s *Server) ReadImportBracket(ctx context.Context, req *connect.Request[mtg
 	if err := s.deckStore.Put(sctx, uid, deck); err != nil {
 		return nil, storeError(err)
 	}
-	s.storeImportPower(sctx, uid, session, deck)
+	s.storeImportPower(sctx, uid, session.GetId(), deck, report)
 	return connect.NewResponse(&mtgv1.ReadImportBracketResponse{Deck: deck}), nil
 }
 
 // storeImportPower writes the power of a new read into the power slot of
 // the import session, because a revise turn reads the slot and not the
-// deck (F-172, D-870). A version conflict reads the session again, as
-// storeTurn does. A failure warns: the deck already holds the power.
-func (s *Server) storeImportPower(ctx context.Context, uid string, session *mtgv1.Session, deck *mtgv1.Deck) {
+// deck (F-172, D-870). The usage of the judge adds to the usage that the
+// store holds now, so a turn that wrote since keeps its own (D-447). A
+// version conflict reads the session again, as storeTurn does. A failure
+// warns: the deck already holds the power.
+func (s *Server) storeImportPower(ctx context.Context, uid, sessionID string, deck *mtgv1.Deck, report llm.Report) {
 	if deck.GetPower() == nil {
 		return
 	}
@@ -237,7 +240,7 @@ func (s *Server) storeImportPower(ctx context.Context, uid string, session *mtgv
 		var current *mtgv1.Session
 		var snap questions.Snapshot
 		var version int64
-		current, snap, version, err = s.store.GetState(ctx, uid, session.GetId())
+		current, snap, version, err = s.store.GetState(ctx, uid, sessionID)
 		if err != nil {
 			break
 		}
@@ -248,13 +251,15 @@ func (s *Server) storeImportPower(ctx context.Context, uid string, session *mtgv
 		st.Slots.Power = deck.GetPower()
 		st.Close("power")
 		current.Slots = st.Slots
-		current.Usage = session.GetUsage()
+		if report.Calls > 0 {
+			current.Usage = addUsage(cloneUsage(current.GetUsage()), report)
+		}
 		if err = s.store.Put(ctx, uid, current, st.Snapshot(), version); !errors.Is(err, sessions.ErrConflict) {
 			break
 		}
 	}
 	if err != nil {
-		s.log.WarnContext(ctx, "the import power was not written to the session", "session", session.GetId(), "err", err)
+		s.log.WarnContext(ctx, "the import power was not written to the session", "session", sessionID, "err", err)
 	}
 }
 

@@ -12,7 +12,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 Author provider: Claude Code
 
-**The next step.** Pending owner merge of #221. `review-gate` passes, and Gitar left its plan notice alone, with no finding.
+**The next step.** Run the repeat Codex review of #221 after CI, for the answer to P2-1. The auto-merge of #221 is on.
 
 **The base.** `main` is `1d36928`, from #218, merged into this branch on 2026-09-24. This session read no deploy of `1d36928`. The deploy of `fa05e3c` ended SUCCESS, and the owner imported `go/internal/decklist/testdata/archidekt_living_weapon.txt` on decktome.com. The stored deck holds bracket 3 from the judge with no estimate mark. It also holds the legality block of D-846, the grade typical, and the summary of D-855.
 
@@ -27,7 +27,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passed on `1b6ca8a`, exit 0, with Node 22.23.2 on the PATH. The later commits change documents alone. Mutation checks fail the session tests without the session write, and the deck page test with the old trigger.
 
-**The review.** Gitar pause (D-838). Codex review: Changes required at effective head `04d6373905d017b7e08bfbf8d045cb46c2373a39`. Open finding: P2-1 covers loss of session usage after a concurrent write.
+**The review.** Gitar pause (D-838). Gitar left its plan notice alone, with no finding. Round 1 of Codex approved `8610fd2`. The merge of `main` at `04d6373` got round 2, and it found P2-1: a new read lost the usage of a concurrent turn. `docs/reviews/pr-221-response.md` answers it with full merit, a fix, and a regression test. The repeat review is pending.
 
 **What waits on the owner.**
 

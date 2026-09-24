@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
+	"google.golang.org/protobuf/proto"
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 	"github.com/nkramber/decktome/go/gen/mtg/v1/mtgv1connect"
@@ -290,6 +291,42 @@ func TestReadImportStepAsksAgain(t *testing.T) {
 	}
 	if _, err := client.ReadImportBracket(context.Background(), connect.NewRequest(&mtgv1.ReadImportBracketRequest{DeckId: id})); err != nil || fd.imports != 2 {
 		t.Errorf("a judged step was read again: reads = %d, err = %v", fd.imports, err)
+	}
+}
+
+// TestReadImportBracketKeepsConcurrentUsage is P2-1 of the review of
+// #221: a turn that writes the session between the new read and its
+// write keeps its usage, and the judge usage adds to it (D-447).
+func TestReadImportBracketKeepsConcurrentUsage(t *testing.T) {
+	fd, ds := &fakeDecks{estimate: true, record: true}, &fakeDeckStore{}
+	client, store := importServer(t, fd, ds, &fakeNoter{})
+	res := importList(t, client, &mtgv1.ImportDeckRequest{Text: markedList})
+	id := res.GetSessionId()
+	base := proto.Clone(store.sessions[id].GetUsage()).(*mtgv1.Usage)
+	fd.estimate = false
+	// The first GetState of the write sees the session, then a turn lands
+	// before the Put: it adds 7 calls and moves the version.
+	fired := false
+	store.onGetState = func() {
+		if fired {
+			return
+		}
+		fired = true
+		u := proto.Clone(store.sessions[id]).(*mtgv1.Session)
+		u.Usage = proto.Clone(base).(*mtgv1.Usage)
+		u.Usage.Calls += 7
+		store.sessions[id] = u
+		store.versions[id]++
+	}
+	if _, err := client.ReadImportBracket(context.Background(), connect.NewRequest(&mtgv1.ReadImportBracketRequest{DeckId: res.GetDeck().GetId()})); err != nil {
+		t.Fatal(err)
+	}
+	got := store.sessions[id]
+	if got.GetUsage().GetCalls() != base.GetCalls()+7+1 {
+		t.Errorf("calls = %d, want %d: the turn's 7 and the judge's 1", got.GetUsage().GetCalls(), base.GetCalls()+8)
+	}
+	if got.GetSlots().GetPower().GetBracket() != 3 {
+		t.Errorf("session bracket = %d, want 3", got.GetSlots().GetPower().GetBracket())
 	}
 }
 
