@@ -26,7 +26,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passed on `152dd4e`, exit 0. `make pr-check` passed on the body.
 
-**The review.** Gitar pause (D-838). Codex reviewed `00a330f`: Changes required, P2-1 open. CI passed the code jobs.
+**The review.** Gitar pause (D-838). Codex reviewed `00a330f`: Ready for owner merge, no open findings. The free verify gate passed.
 
 **What waits on the owner.**
 
