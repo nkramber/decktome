@@ -27,7 +27,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passed on `cb591e8`, exit 0. The two new tests fail on the code of `2c658ff`, and shellcheck is clean.
 
-**The review.** Codex reads Ready for owner merge at `d6109a39bec0d438d88503f6554234e64f8827b0`. No code finding is open. The PR-73 gate now explains its alternate path (D-877, D-880). The owner decides the merge.
+**The review.** Gitar pause (D-838). Gitar left its plan notice alone, with no finding (D-842). `scripts/feedback-review.sh` ran the Codex rounds (D-878). Round 1 found no code fault, and it asked for the word of the owner on the gate of PR-73. The fixer corrected the gate text, and round 2 reads Ready for owner merge at `d6109a3`. The owner then accepted the path of a failed cycle, and D-880 records it. A new round reads that head.
 
 **What waits on the owner.**
 
