@@ -41,6 +41,13 @@ When the input holds the card list with the mana cost and the type line of each 
 // (F-162, D-794).
 const BracketJudgeVersion = 3
 
+// SixtyJudgeVersion names the prompt of the step judge of a 60-card
+// import. A sixty-gate document reads it, so a run names the prompt it
+// measured. Version 1 defines each step by its anchor (D-866). Version 2
+// gives the rules text of each card, because the judge read the lands of
+// a new landfall deck as filler (D-872).
+const SixtyJudgeVersion = 2
+
 // SummaryJudgeVersion changes when the instructions or the input of the
 // summary judge change. Version 2 reads the card facts of the deck
 // (D-789). A change starts a new epoch of the false-rule rows.
@@ -188,6 +195,125 @@ func JudgeBracket(ctx context.Context, c *llm.Client, deck *mtgv1.Deck, cards ru
 		return nil, fmt.Errorf("judge bracket output: bracket %q", out.Bracket)
 	}
 	return &BracketJudgement{Bracket: int32(n), Why: out.Why}, nil
+}
+
+// The step judge reads the power step of a 60-card import (PR-70,
+// D-858). Each step is the level of a kind of deck, and the calibration
+// set labels its lists by the same kinds (D-863, D-866).
+const sixtyJudgeInstructions = `You read one 60-card constructed deck and name the power step it plays at.
+
+The three steps, each the level of a kind of deck:
+- casual: the level of a preconstructed deck that Wizards of the Coast sells for play at home: a Theme deck, an Intro pack, or a Planeswalker deck.
+- fnm: the level of a Challenger deck, a deck that Wizards of the Coast sells ready to play at Friday Night Magic in a local store.
+- tournament: a deck that can finish in the top 8 of a Magic Online Challenge or of a Regional Championship Qualifier.
+
+The first line names the format of the deck. Each card line gives the count, the name, the mana cost, the type line, and the rules text from the card data. Read the rules text of each card, and never judge a card by a memory of it.
+
+Read the card list for its card quality, its mana base, its curve, its consistency, its interaction, and its sideboard. Judge the deck against the other decks of its format when its cards were new. Do not lower the step because the cards are old, and do not raise it because they are new. Name one step, and say why in two or three sentences. Judge the deck as it is, and not the step its builder may have aimed at.`
+
+const sixtyJudgeSchema = `{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["step", "why"],
+  "properties": {
+    "step": {"type": "string", "enum": ["casual", "fnm", "tournament"]},
+    "why": {"type": "string"}
+  }
+}`
+
+// SixtyJudgement is the judge's power step for one 60-card deck.
+type SixtyJudgement struct {
+	Step mtgv1.SixtyStep `json:"-"`
+	Why  string          `json:"why"`
+}
+
+type sixtyOut struct {
+	Step string `json:"step"`
+	Why  string `json:"why"`
+}
+
+var sixtySteps = map[string]mtgv1.SixtyStep{
+	"casual":     mtgv1.SixtyStep_SIXTY_STEP_CASUAL,
+	"fnm":        mtgv1.SixtyStep_SIXTY_STEP_FNM,
+	"tournament": mtgv1.SixtyStep_SIXTY_STEP_TOURNAMENT,
+}
+
+// JudgeSixtyStep asks the judge role which power step a 60-card deck
+// plays at. The format word heads the list, because a calibration list
+// can name a format the app does not build, such as Pioneer (D-869).
+func JudgeSixtyStep(ctx context.Context, c *llm.Client, deck *mtgv1.Deck, format string, cards rules.CardSource, acc *llm.Accumulator) (*SixtyJudgement, error) {
+	res, err := c.Complete(ctx, llm.RoleJudge, llm.Request{
+		Instructions: sixtyJudgeInstructions,
+		Input:        sixtyDeckText(deck, format, cards),
+		SchemaName:   "sixty_step",
+		Schema:       json.RawMessage(sixtyJudgeSchema),
+	}, acc)
+	if err != nil {
+		return nil, fmt.Errorf("judge step: %w", err)
+	}
+	var out sixtyOut
+	if err := json.Unmarshal(res.Output, &out); err != nil {
+		return nil, fmt.Errorf("judge step output: %w", err)
+	}
+	step, ok := sixtySteps[out.Step]
+	if !ok {
+		return nil, fmt.Errorf("judge step output: step %q", out.Step)
+	}
+	return &SixtyJudgement{Step: step, Why: out.Why}, nil
+}
+
+// SixtyFormatWord names the format of a 60-card import for the step
+// judge. The house format checks no legality (D-3, D-857).
+func SixtyFormatWord(f mtgv1.FormatId) string {
+	if f == mtgv1.FormatId_FORMAT_ID_HOUSE {
+		return "house rules, any card and no ban list"
+	}
+	return FormatWord(f)
+}
+
+// sixtyDeckText is the deck with the facts and the rules text of each
+// card, under a format line, and the sideboard after the main deck. The
+// judge knows few cards of the newest sets, so it reads what each card
+// does from the card data (D-872).
+func sixtyDeckText(deck *mtgv1.Deck, format string, cards rules.CardSource) string {
+	var s strings.Builder
+	fmt.Fprintf(&s, "Format: %s\n", format)
+	for _, part := range []struct {
+		head string
+		list []*mtgv1.DeckCard
+	}{{"\nCards:\n", deck.GetCards()}, {"\nSideboard:\n", deck.GetSideboard()}} {
+		if len(part.list) == 0 {
+			continue
+		}
+		s.WriteString(part.head)
+		for _, dc := range part.list {
+			name := dc.GetName()
+			if c, ok := cards.ByOracleID(dc.GetOracleId()); ok {
+				name += cardFacts(c) + rulesText(c)
+			}
+			fmt.Fprintf(&s, "%d %s\n", dc.GetCount(), name)
+		}
+	}
+	return s.String()
+}
+
+// rulesText writes the rules text of a card on one line, with a leading
+// bar. A card with two faces writes the text of each face.
+func rulesText(c *mtgv1.Card) string {
+	text := c.GetOracleText()
+	if text == "" {
+		var faces []string
+		for _, f := range c.GetFaces() {
+			if f.GetOracleText() != "" {
+				faces = append(faces, f.GetOracleText())
+			}
+		}
+		text = strings.Join(faces, " // ")
+	}
+	if text == "" {
+		return ""
+	}
+	return " | " + strings.Join(strings.Fields(text), " ")
 }
 
 // DeckText writes a deck as the judge reads it: the commander, then one

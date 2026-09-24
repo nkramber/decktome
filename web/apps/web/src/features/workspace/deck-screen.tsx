@@ -10,6 +10,7 @@ import { agentClient, deckClient } from "../../lib/api";
 import { errorMessage } from "../../lib/errors";
 import { ChatPanel } from "../chat/session-page";
 import { emptyState, fromSession } from "../chat/use-chat";
+import { importPowerNote, needsPowerRead } from "../deck/deck-view";
 import { DeckActions } from "./deck-actions";
 import { DeckVersions } from "./deck-versions";
 
@@ -28,9 +29,10 @@ export function DeckScreen() {
   const deck = deckQuery.data?.deck;
   const sessionId = deck?.sessionId ?? "";
 
-  // An imported deck whose bracket is the floor of the rules alone asks
-  // the judge again, once per open (D-854). The answer replaces the deck
-  // in the cache, and the panel below mounts again with it.
+  // An imported deck whose bracket is the floor of the rules alone, or a
+  // 60-card import with no power step, asks the judge again, once per
+  // open (D-854, D-864). The answer replaces the deck in the cache, and
+  // the panel below mounts again with it.
   const queryClient = useQueryClient();
   useQuery({
     queryKey: ["deck", id, "bracket"],
@@ -39,7 +41,7 @@ export function DeckScreen() {
       queryClient.setQueryData(["deck", id], (old: typeof deckQuery.data) => (old ? { ...old, deck: res.deck } : old));
       return res;
     },
-    enabled: deck?.imported === true && deck.bracketEstimated,
+    enabled: deck !== undefined && needsPowerRead(deck),
     staleTime: Infinity,
     retry: false,
   });
@@ -106,7 +108,7 @@ export function DeckScreen() {
   // this address names, never the latest of the session.
   return (
     <ChatPanel
-      key={`${deck.id}:${deck.bracketEstimated}`}
+      key={`${deck.id}:${importPowerNote(deck)}`}
       initial={initial}
       session={session}
       deckOverride={deck}

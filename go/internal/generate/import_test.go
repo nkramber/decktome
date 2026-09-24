@@ -121,22 +121,89 @@ func TestReadImportFloorOnJudgeFailure(t *testing.T) {
 	}
 }
 
-// TestReadImportSixtyCards is D-859: a 60-card import calls no model and
-// holds no power step and no profile until PR-71. The rules still read
-// it (D-846).
-func TestReadImportSixtyCards(t *testing.T) {
-	book := &emptyBook{}
-	b, sc := importBuilder(t, book)
+func sixtyJudge(step, why string) llm.Step {
+	raw, _ := json.Marshal(map[string]string{"step": step, "why": why})
+	return llm.Step{Output: raw}
+}
+
+// TestReadImportSixtyStep is D-865 and D-869: a 60-card import takes the
+// step of the judge with no guard, and the profile and the grade then
+// read the deck at that step. The judge reads the format and the
+// sideboard.
+func TestReadImportSixtyStep(t *testing.T) {
+	b, sc := importBuilder(t, &emptyBook{}, sixtyJudge("fnm", "a tuned burn list"))
+	deck := importDeck(mtgv1.FormatId_FORMAT_ID_MODERN)
+	deck.Sideboard = []*mtgv1.DeckCard{{OracleId: "o-tithe", Name: "Smothering Tithe", Count: 1}}
+	b.ReadImport(context.Background(), deck, nil, &llm.Accumulator{})
+	if got := deck.GetPower().GetSixtyStep(); got != mtgv1.SixtyStep_SIXTY_STEP_FNM {
+		t.Fatalf("step = %v, want FNM", got)
+	}
+	if len(sc.Calls) != 1 || deck.GetBracketEstimated() || NeedsPowerRead(deck) {
+		t.Errorf("calls = %d, estimated = %v, needs a read = %v", len(sc.Calls), deck.GetBracketEstimated(), NeedsPowerRead(deck))
+	}
+	if deck.GetProfile() == nil || deck.GetValidation() == nil {
+		t.Errorf("profile = %v, validation = %v", deck.GetProfile(), deck.GetValidation())
+	}
+	if !strings.HasPrefix(deck.GetSummary(), "a tuned burn list") {
+		t.Errorf("summary = %q", deck.GetSummary())
+	}
+	in := sc.Calls[0].Input
+	for _, want := range []string{"Format: Modern\n", "98 Plains | Basic Land - Plains\n", "\nSideboard:\n1 Smothering Tithe | Enchantment\n"} {
+		if !strings.Contains(in, want) {
+			t.Errorf("judge input lacks %q:\n%s", want, in)
+		}
+	}
+}
+
+// TestReadImportSixtyNoStepOnJudgeFailure is D-864: with no judge answer
+// the deck holds no step, no profile, and no grade, and the next open
+// asks again. The rules still read it (D-846).
+func TestReadImportSixtyNoStepOnJudgeFailure(t *testing.T) {
+	b, _ := importBuilder(t, &emptyBook{})
 	deck := importDeck(mtgv1.FormatId_FORMAT_ID_MODERN)
 	b.ReadImport(context.Background(), deck, nil, &llm.Accumulator{})
-	if len(sc.Calls) != 0 || book.calls != 0 {
-		t.Errorf("model calls = %d, content checks = %d", len(sc.Calls), book.calls)
+	if deck.GetPower() != nil || deck.GetProfile() != nil || deck.GetQuality() != nil || deck.GetBracketEstimated() {
+		t.Errorf("power = %v, profile = %v, quality = %v", deck.GetPower(), deck.GetProfile(), deck.GetQuality())
 	}
-	if deck.GetPower() != nil || deck.GetProfile() != nil || deck.GetBracketEstimated() {
-		t.Errorf("power = %v, profile = %v", deck.GetPower(), deck.GetProfile())
+	if !NeedsPowerRead(deck) {
+		t.Error("a 60-card import with no step asks no new read")
 	}
 	if deck.GetValidation() == nil || deck.GetValidation().GetPassed() {
 		t.Errorf("a 99-card Modern list passed validation: %v", deck.GetValidation())
+	}
+}
+
+// TestReadImportHouseFormatWord is D-857: the house format names no
+// legality to the judge.
+func TestReadImportHouseFormatWord(t *testing.T) {
+	b, sc := importBuilder(t, &emptyBook{}, sixtyJudge("casual", "x"))
+	deck := importDeck(mtgv1.FormatId_FORMAT_ID_HOUSE)
+	b.ReadImport(context.Background(), deck, nil, &llm.Accumulator{})
+	if in := sc.Calls[0].Input; !strings.HasPrefix(in, "Format: house rules, any card and no ban list\n") {
+		t.Errorf("judge input = %q", in)
+	}
+}
+
+// TestNeedsPowerRead is D-854 and D-864: a floor estimate and a 60-card
+// deck with no step ask again, and a deck the app built never does.
+func TestNeedsPowerRead(t *testing.T) {
+	step := &mtgv1.PowerLevel{Level: &mtgv1.PowerLevel_SixtyStep{SixtyStep: mtgv1.SixtyStep_SIXTY_STEP_CASUAL}}
+	bracket := &mtgv1.PowerLevel{Level: &mtgv1.PowerLevel_Bracket{Bracket: 3}}
+	commander, modern := &mtgv1.Format{Id: mtgv1.FormatId_FORMAT_ID_COMMANDER}, &mtgv1.Format{Id: mtgv1.FormatId_FORMAT_ID_MODERN}
+	for _, c := range []struct {
+		name string
+		deck *mtgv1.Deck
+		want bool
+	}{
+		{"built deck", &mtgv1.Deck{Format: modern}, false},
+		{"commander read", &mtgv1.Deck{Imported: true, Format: commander, Power: bracket}, false},
+		{"commander floor", &mtgv1.Deck{Imported: true, Format: commander, Power: bracket, BracketEstimated: true}, true},
+		{"sixty read", &mtgv1.Deck{Imported: true, Format: modern, Power: step}, false},
+		{"sixty with no step", &mtgv1.Deck{Imported: true, Format: modern}, true},
+	} {
+		if got := NeedsPowerRead(c.deck); got != c.want {
+			t.Errorf("%s: needs a read = %v, want %v", c.name, got, c.want)
+		}
 	}
 }
 

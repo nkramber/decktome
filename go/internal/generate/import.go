@@ -17,8 +17,10 @@ import (
 //
 // A Commander deck gets the bracket of the judge. The bracket never sits
 // under the floor of its rules (D-850). When the judge fails, the floor
-// stands and the deck says so (D-854). A 60-card deck gets no power step,
-// no profile, and no grade: PR-71 reads the step (D-859).
+// stands and the deck says so (D-854). A 60-card deck gets the step of
+// the judge with no guard (D-865), and no step when the judge fails
+// (D-864). The profile and the grade read a deck that holds a power
+// (D-869).
 //
 // Each card stays as the user wrote it, and each finding of the rules
 // engine stays on the deck (D-846). The summary is the reason of the
@@ -36,6 +38,8 @@ func (b *Builder) ReadImport(ctx context.Context, deck *mtgv1.Deck, owned map[st
 	var why string
 	if commander {
 		why = b.importBracket(ctx, deck, acc)
+	} else {
+		why = b.importStep(ctx, deck, acc)
 	}
 	// Ownership is information on an import: the user owns the list and
 	// asks for no build from the collection.
@@ -45,7 +49,10 @@ func (b *Builder) ReadImport(ctx context.Context, deck *mtgv1.Deck, owned map[st
 		OracleCounts: owned,
 		Cards:        b.cards,
 	})
-	if commander && deck.GetPower().GetBracket() > 0 && b.profiler != nil {
+	// The profile and the grade read the deck at its power, as for a
+	// generated deck, so a deck with no power gets neither (D-869).
+	read := deck.GetPower().GetBracket() > 0 || deck.GetPower().GetSixtyStep() != mtgv1.SixtyStep_SIXTY_STEP_UNSPECIFIED
+	if read && b.profiler != nil {
 		prof, findings, _ := b.profiler.ReadForbidden(ctx, deck, b.cards)
 		deck.Profile = prof
 		for _, f := range findings {
@@ -97,4 +104,35 @@ func (b *Builder) importBracket(ctx context.Context, deck *mtgv1.Deck, acc *llm.
 		deck.Power = &mtgv1.PowerLevel{Level: &mtgv1.PowerLevel_Bracket{Bracket: bracket}}
 	}
 	return why
+}
+
+// importStep sets the power step of a 60-card import and answers the
+// reason of the judge. No rule guards the step (D-865). With no judge
+// answer the deck holds no step, and the next open asks again (D-864).
+func (b *Builder) importStep(ctx context.Context, deck *mtgv1.Deck, acc *llm.Accumulator) string {
+	deck.Power = nil
+	if b.llm == nil {
+		return ""
+	}
+	j, err := JudgeSixtyStep(ctx, b.llm, deck, SixtyFormatWord(deck.GetFormat().GetId()), b.cards, acc)
+	if err != nil {
+		b.log.WarnContext(ctx, "import step judge failed", "deck", deck.GetId(), "err", err)
+		return ""
+	}
+	deck.Power = &mtgv1.PowerLevel{Level: &mtgv1.PowerLevel_SixtyStep{SixtyStep: j.Step}}
+	return j.Why
+}
+
+// NeedsPowerRead says an imported deck asks the judge again at the next
+// open: a Commander bracket that is the floor alone (D-854), or a 60-card
+// deck with no step (D-864). A 60-card deck imported before PR-71 holds
+// no step, so it gets its read too.
+func NeedsPowerRead(deck *mtgv1.Deck) bool {
+	if !deck.GetImported() {
+		return false
+	}
+	if deck.GetFormat().GetId() == mtgv1.FormatId_FORMAT_ID_COMMANDER {
+		return deck.GetBracketEstimated()
+	}
+	return deck.GetPower().GetSixtyStep() == mtgv1.SixtyStep_SIXTY_STEP_UNSPECIFIED
 }

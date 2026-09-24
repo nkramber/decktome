@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
+	"google.golang.org/protobuf/proto"
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 	"github.com/nkramber/decktome/go/gen/mtg/v1/mtgv1connect"
@@ -19,18 +20,27 @@ import (
 )
 
 // ReadImport makes fakeDecks an Importer. It reads bracket 3 for a
-// Commander list, or the floor alone when estimate is set, and it records
-// one judge call when record is set.
+// Commander list, or the floor 2 alone when estimate is set, and it
+// records one judge call when record is set. A 60-card list reads the
+// step of the field step, and no step when it is unset.
 func (f *fakeDecks) ReadImport(_ context.Context, deck *mtgv1.Deck, owned map[string]int32, acc *llm.Accumulator) {
 	f.imports++
 	f.owned = owned
 	if deck.GetFormat().GetId() != mtgv1.FormatId_FORMAT_ID_COMMANDER {
+		deck.Power = nil
+		if f.step != mtgv1.SixtyStep_SIXTY_STEP_UNSPECIFIED {
+			deck.Power = &mtgv1.PowerLevel{Level: &mtgv1.PowerLevel_SixtyStep{SixtyStep: f.step}}
+		}
 		return
 	}
 	if f.record && acc != nil {
 		acc.Record(llm.RoleJudge, "fake-judge", &llm.Usage{InputTokens: 4000, OutputTokens: 200}, 0)
 	}
-	deck.Power = &mtgv1.PowerLevel{Level: &mtgv1.PowerLevel_Bracket{Bracket: 3}}
+	bracket := int32(3)
+	if f.estimate {
+		bracket = 2
+	}
+	deck.Power = &mtgv1.PowerLevel{Level: &mtgv1.PowerLevel_Bracket{Bracket: bracket}}
 	deck.BracketEstimated = f.estimate
 	deck.Validation = &mtgv1.ValidationResult{Passed: true}
 }
@@ -232,6 +242,91 @@ func TestReadImportBracketAsksAgain(t *testing.T) {
 	}
 	if _, err := client.ReadImportBracket(context.Background(), connect.NewRequest(&mtgv1.ReadImportBracketRequest{DeckId: res.GetDeck().GetId()})); err != nil || fd.imports != 2 {
 		t.Errorf("a judged bracket was read again: reads = %d, err = %v", fd.imports, err)
+	}
+}
+
+// TestReadImportBracketWritesTheSessionPower is F-172 and D-870: a new
+// read that raises the floor also writes the bracket into the power slot
+// of the session, because a revise turn reads the slot.
+func TestReadImportBracketWritesTheSessionPower(t *testing.T) {
+	fd, ds := &fakeDecks{estimate: true}, &fakeDeckStore{}
+	client, store := importServer(t, fd, ds, &fakeNoter{})
+	res := importList(t, client, &mtgv1.ImportDeckRequest{Text: markedList})
+	if got := store.sessions[res.GetSessionId()].GetSlots().GetPower().GetBracket(); got != 2 {
+		t.Fatalf("session bracket = %d, want the floor 2", got)
+	}
+	fd.estimate = false
+	if _, err := client.ReadImportBracket(context.Background(), connect.NewRequest(&mtgv1.ReadImportBracketRequest{DeckId: res.GetDeck().GetId()})); err != nil {
+		t.Fatal(err)
+	}
+	if got := store.sessions[res.GetSessionId()].GetSlots().GetPower().GetBracket(); got != 3 {
+		t.Errorf("session bracket = %d, want the judged 3", got)
+	}
+}
+
+// TestReadImportStepAsksAgain is D-864, F-172, and D-870: a 60-card
+// import with no step asks the judge again at the next open. The step
+// then fills the power slot of the session, and a deck with a step is
+// not read again.
+func TestReadImportStepAsksAgain(t *testing.T) {
+	fd, ds := &fakeDecks{}, &fakeDeckStore{}
+	client, store := importServer(t, fd, ds, &fakeNoter{})
+	list := "Deck\n4 Lightning Bolt\n56 Plains\n"
+	res := importList(t, client, &mtgv1.ImportDeckRequest{Text: list, Format: mtgv1.FormatId_FORMAT_ID_MODERN})
+	id := res.GetDeck().GetId()
+	if res.GetDeck().GetPower() != nil || store.sessions[res.GetSessionId()].GetSlots().GetPower() != nil {
+		t.Fatalf("deck power = %v, session power = %v", res.GetDeck().GetPower(), store.sessions[res.GetSessionId()].GetSlots().GetPower())
+	}
+	fd.step = mtgv1.SixtyStep_SIXTY_STEP_FNM
+	got, err := client.ReadImportBracket(context.Background(), connect.NewRequest(&mtgv1.ReadImportBracketRequest{DeckId: id}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Msg.GetDeck().GetPower().GetSixtyStep() != fd.step || fd.imports != 2 {
+		t.Errorf("step = %v, reads = %d", got.Msg.GetDeck().GetPower(), fd.imports)
+	}
+	slots := store.sessions[res.GetSessionId()].GetSlots()
+	if slots.GetPower().GetSixtyStep() != fd.step || slots.GetSlotStates()["power"] != mtgv1.SlotState_SLOT_STATE_FILLED {
+		t.Errorf("session power = %v, state = %v", slots.GetPower(), slots.GetSlotStates()["power"])
+	}
+	if _, err := client.ReadImportBracket(context.Background(), connect.NewRequest(&mtgv1.ReadImportBracketRequest{DeckId: id})); err != nil || fd.imports != 2 {
+		t.Errorf("a judged step was read again: reads = %d, err = %v", fd.imports, err)
+	}
+}
+
+// TestReadImportBracketKeepsConcurrentUsage is P2-1 of the review of
+// #221: a turn that writes the session between the new read and its
+// write keeps its usage, and the judge usage adds to it (D-447).
+func TestReadImportBracketKeepsConcurrentUsage(t *testing.T) {
+	fd, ds := &fakeDecks{estimate: true, record: true}, &fakeDeckStore{}
+	client, store := importServer(t, fd, ds, &fakeNoter{})
+	res := importList(t, client, &mtgv1.ImportDeckRequest{Text: markedList})
+	id := res.GetSessionId()
+	base := proto.Clone(store.sessions[id].GetUsage()).(*mtgv1.Usage)
+	fd.estimate = false
+	// The first GetState of the write sees the session, then a turn lands
+	// before the Put: it adds 7 calls and moves the version.
+	fired := false
+	store.onGetState = func() {
+		if fired {
+			return
+		}
+		fired = true
+		u := proto.Clone(store.sessions[id]).(*mtgv1.Session)
+		u.Usage = proto.Clone(base).(*mtgv1.Usage)
+		u.Usage.Calls += 7
+		store.sessions[id] = u
+		store.versions[id]++
+	}
+	if _, err := client.ReadImportBracket(context.Background(), connect.NewRequest(&mtgv1.ReadImportBracketRequest{DeckId: res.GetDeck().GetId()})); err != nil {
+		t.Fatal(err)
+	}
+	got := store.sessions[id]
+	if got.GetUsage().GetCalls() != base.GetCalls()+7+1 {
+		t.Errorf("calls = %d, want %d: the turn's 7 and the judge's 1", got.GetUsage().GetCalls(), base.GetCalls()+8)
+	}
+	if got.GetSlots().GetPower().GetBracket() != 3 {
+		t.Errorf("session bracket = %d, want 3", got.GetSlots().GetPower().GetBracket())
 	}
 }
 

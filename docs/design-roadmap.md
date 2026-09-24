@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-23 correction pass 226 (PR-71, D-863 to D-876): the power judge of a 60-card import gets its labels, its prompt, its split, and its gate. The store labels a casual list and an FNM list, which refutes a premise of D-859. A new read also fixes the power of the session (F-172). Changes: PR-71, F-172.
+
 2026-09-23 correction pass 225 (PR-70, D-845 to D-862): a user can import a deck list, and the app shows it as a deck it built. A Commander import reads its bracket from the judge over the floor of its rules. The backfill of the user record counted no revision (F-171). Changes: PR-70, PR-71, F-170, F-171.
 
 2026-09-23 correction pass 224 (PR-69, D-843): the land cap of a bracket 5 shortlist read no commander rate in its mana half. It dropped four lands that most Najeela lists play, and it held pain lands that no list plays. The opening-hands floor of brackets 4 and 5 failed most real top-cut lists (D-844). Changes: PR-69, F-168, F-169.
@@ -354,7 +356,7 @@ Three structural facts drive the plan:
 - **Firestore.** Per user: one collection doc set (PR-4 decided one gzip document per collection, about 500 KB for a 5,000-card binder, D-16), sessions, decks. Low.
 - **Cloud Run.** Two services plus a worker, scale to zero. Low until users exist.
 - **Eval.** Deterministic checks are free. Judge runs cost per deck. Cap per run as connector-syncer does ($5 cap in its bake-off).
-- **Deck import (PR-70, 2026-09-23).** One judge read on each Commander import, about $0.014 to $0.017 from bracket gate runs 9 and 12. The floor and the profile call Commander Spellbook up to three times. A 60-card import calls no model.
+- **Deck import (PR-70, 2026-09-23).** One judge read on each Commander import, about $0.014 to $0.017 from bracket gate runs 9 and 12. The floor and the profile call Commander Spellbook up to three times. REFUTED 2026-09-23 by PR-71: "a 60-card import calls no model". A 60-card import makes one judge read, about $0.022 from `make sixty-gate` run 2.
 - **Bracket profile (PR-14A, 2026-09-02).** Commander Spellbook is free at 90 calls a minute, two calls per build. The profile's repair passes raise a build from about one model call to two. Deck gate run 12 cost $2.24 against $1.46 for run 11.
 - **The measured monthly cost at idle is still unknown (2026-09-09).** It is the fourth item of the PR-22 gate, and the three that test behavior all hold (D-620). The week of the deploy held the walks and the deploys of PR-32, PR-33, and PR-25, so no week yet reads as idle. PR-28 waits behind this number (D-557).
 - **Unknowns to measure first:** tokens per session (M-1), Scryfall refresh lag after an announcement (M-2), ManaBox import failure rate on real files (M-3).
@@ -510,8 +512,9 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-167 | **The collection page shows two scrollbars, and the binder toolbar scrolls away.** `<main>` of `web/apps/web/src/app/layout.tsx` scrolls the page (D-364). `web/apps/web/src/features/collection/binder-grid.tsx` adds a second scroll box of `max-h-[75vh]`. The reader scrolls the page to reach the binder, then scrolls the box. The search and the filters leave the screen, and no control returns the reader to them. The owner named it on 2026-09-22 (D-806). | ✅ fixed by #211 (D-806 to D-809). The binder grid reads the scroll of `<main>`, its title and search stay pinned, and a button returns the reader to the binder top. |
 | F-168 | **The land cap of a bracket 5 shortlist drops lands that most lists of its commander play.** `capLands` gives half its 40 places to the mana order, which reads the land class and then the play (D-450, D-733). A bracket 5 score leads with the commander rate of D-839, and the mana order reads no rate. So the Najeela shortlist held 7 pain lands that no Najeela list plays, and it dropped Taiga, Plateau, Exotic Orchard, and Boseiju, Who Endures. Half the Najeela lists or more play each of the four. `docs/reference/f166-commander-rate-2026-09-23.md` named the gap on 2026-09-23. | ✅ closes with PR-69 (D-843). The mana half reads the score order when a commander rate applies. The Najeela shortlist holds 90 of its 90 core cards. |
 | F-169 | **The opening-hands floor of brackets 4 and 5 fails most real top-cut lists.** The bracket 5 floor asked 0.65 of first hands to hold two to four lands, and bracket 4 asked 0.70. A 99-card deck needs 30 lands to reach 0.65, and the bracket 5 land band starts at 27. 5,456 of 6,497 TopDeck great lists read under 0.65. Bracket gate run 12 read FAIL on this band alone, for a Najeela deck of 27 lands. Found 2026-09-23. | ✅ closes with PR-69 (D-844). Both floors read 0.56, the low quarter of the TopDeck lists. |
-| F-170 | **The app reads no deck list, so a user can not show or revise a deck of their own.** `ParseArenaText` reads an Arena list as a collection, and it skips the `Commander`, `Deck`, and `Sideboard` headers. The deck page and the revise turn read a deck that a build stored. The revise turn reads the last deck of its session. The owner asked for a deck import on 2026-09-23. | 🔧 binds PR-70 and PR-71 (D-845 to D-860). |
+| F-170 | **The app reads no deck list, so a user can not show or revise a deck of their own.** `ParseArenaText` reads an Arena list as a collection, and it skips the `Commander`, `Deck`, and `Sideboard` headers. The deck page and the revise turn read a deck that a build stored. The revise turn reads the last deck of its session. The owner asked for a deck import on 2026-09-23. | ✅ closes with PR-71 (D-845 to D-876). PR-70 reads the list, and PR-71 reads the power step of a 60-card import. |
 | F-171 | **The backfill of the user record counts no revision.** `cmd/users-backfill` reads the flat field `revised_from_deck_id`, and no stored deck held it. So a backfill counts each revision as a first build. The one backfill of 2026-09-09 read no deck, so no record holds a wrong count. Found 2026-09-23. | ✅ closes with PR-70 (D-861). A stored deck holds the flat field, and the backfill reads the packed deck of an older document. |
+| F-172 | **A new read of an imported deck leaves the power of its session behind.** `ReadImportBracket` stores the new power on the deck alone. A revise turn reads the power slot of the session, so it reads the floor of a Commander estimate, or no step of a 60-card import. Found 2026-09-23 in the work of PR-71. | ✅ closes with PR-71 (D-870). A new read writes the power into the power slot of the session. |
 | F-158 | **Two snapshot tests of PR-57 never ran.** `make themes-check` names each snapshot test by a `-run` pattern. The pattern held `TestTypalLandsReachATypalShortlist` from PR-55, and PR-57 added `TestTypalCardsReachATypalShortlist` and did not extend it. A `-run` pattern is an unanchored regular expression, and the land name never matches the card name. So the card test of PR-57 ran in no target. It also skips under `make verify`, because the verify workflow holds no card snapshot. Found 2026-09-20 by the checks of PR-58. | ✅ fixed by PR-58. The pattern reads `ReachATypalShortlist` now, which matches all three snapshot shortlist tests. A run of `make themes-check` reads five tests in place of three. |
 | F-30 | **No signal of deck quality exists.** The pool ranks on theme fit and EDHREC popularity, and the bracket drops Game Changers under bracket 3 and nothing else. A bracket 5 request got the three most popular legends whose text held "you" and "can" (session t8o1nGGquK6UdTQkfY3V, D-411, 2026-09-01). | ✅ PR-14B merged 2026-09-03 (#58, D-470 to D-493), and D-479 answered OQ-54. F-53 and F-94 carry the judge bar. The row read 🔧 until 2026-09-20. |
 | F-6 | **No Cloud Tasks emulator.** Local mode can not run real Cloud Tasks. | ✅ PR-0c (#3): a `Dispatcher` interface with a local in-process implementation. |
@@ -2072,11 +2075,28 @@ Gate:
 - `make verify` passes.
 > *In plain English:* today the app shows only the decks it built. This item lets you bring a deck you already have, from an Archidekt file or a pasted Arena list. The app shows it with the same checks, reads its bracket, and changes it on request.
 
-**PR-71: The power step of a 60-card import (F-170, D-858, D-859).** 🔧 planned. It waits for PR-70.
-A judge reads the power step of a 60-card import: casual, FNM level, or tournament. The judge has no prompt, no calibration set, and no measured cost. The meta store holds tournament lists from MTGO and MTGGoldfish, and no source on record labels a casual list or an FNM list.
+**PR-71: The power step of a 60-card import (F-170, F-172, D-858, D-859, D-863 to D-876).** ✅ merged as #221.
+A judge reads the power step of a 60-card import: casual, FNM level, or tournament. REFUTED 2026-09-23 (D-863): "no source on record labels a casual list or an FNM list". The product types of the precon table label a casual list. No product type marks the FNM line, so a model of another family labeled the FNM lists (D-874, D-875).
 
-Gate: unwritten. The item needs a source of labeled lists before its gate.
-> *In plain English:* a Commander import gets its power read, and a 60-card import does not yet. This item adds that read. It first needs real decks of each power level to test against.
+- **The judge.** `JudgeSixtyStep` in `go/internal/generate/judge.go` reads the main deck, the sideboard, and the format word. Each card line holds the rules text of the card (D-872). It answers the step and a reason, one judge call for each import. The prompt defines each step by its anchor (D-866).
+- **The import.** `ReadImport` asks the judge for each import that is not Commander. The step stands with no guard (D-865). The profile and the grade then read the deck at that step, as a generated 60-card deck does (D-869). The reason of the judge and the quality sentence make the summary (D-855).
+- **The failure.** The deck stores no step, and the page shows that the app did not read it yet (D-864). The deck page asks again at each open while an imported 60-card deck holds no step. So an import stored before this item also gets its read.
+- **The new read.** `ReadImportBracket` reads the step of a 60-card deck and the bracket of a Commander deck. The RPC keeps its name, because the web and the API deploy apart. A new read also writes the power into the power slot of the session, because a revise turn reads the slot (F-172, D-870).
+- **The labels.** Casual reads the Theme, Intro, and Planeswalker decks of the precon table. FNM reads the user decks of MTGGoldfish that a model outside the family of the judge labeled fnm (D-873 to D-875). Tournament reads the top 8 of an MTGO Challenge and of an MTGTop8 RCQ (D-863). It takes 13 MTGO lists and 12 MTGTop8 lists, with at most two lists of one event (D-871). An RCQ counts from 32 players (D-876).
+- **The pick.** Each rung, or each source of a rung, takes its newest lists that resolve whole, by date, then by key. Every fifth list of a rung makes the dev split, and the other 20 make the test split (D-867). The newest 25 casual lists run from 2019-01 to 2026-04, so the age of their cards can confound the step. The FNM rung holds 9 Modern and 16 Standard decks of September 2026.
+- **The format word.** A casual precon reads Standard, the format of its release. A user deck or a tournament list reads Modern or Standard.
+- **The target.** `make sixty-gate` reads the test split three times and writes a gate document. It has the guard `SIXTY_GATE=1`, and any file at `SIXTY_GATE_OUT` stops the run. The flag `-exclude` leaves out the tournament lists of earlier gate documents (D-876). `make sixty-gate-dry` prints the split for free.
+- **The cost.** Test run 2 read 180 times for $3.9736, so a read costs about $0.022, and so does each 60-card import. The dev lanes and the two test runs cost $8.9265 in all.
+
+Gate:
+
+- `make sixty-gate` reads the step of the label on 80 percent of the test reads, and no read sits two steps off (D-868). Run 1 read FAIL, 133 of 180, on RCQs of 16 to 24 players. Run 2 read PASS, 148 of 180, with fresh tournament lists (D-876).
+- Tests of `JudgeSixtyStep` cover the schema, each step, a bad answer, and the rules text of each card.
+- Tests of the import cover the step, the profile at the step, and a judge failure with no step, no profile, and no grade. Tests of the new read cover the power slot of the session (F-172).
+- Tests of the deck page cover the new read of a 60-card import with no step. A deck with a step gets no new read.
+- Tests of `go/cmd/sixty-gate` cover the pick, the split, the cap of each event, the RCQ size, the exclusion, and the verdict.
+- `make verify` passes.
+> *In plain English:* a Commander import gets its power read, and a 60-card import does not yet. This item adds that read. It tests the reader against Wizards decks for casual play and against tournament winners. For Friday Night Magic, another model rated real user decks.
 
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
@@ -2425,6 +2445,8 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 59. **PR-69** the land cap and the hands floor follow the real lists (F-168, F-169, D-843, D-844). Bracket gate run 12 cost $0.1249.
 
 60. **PR-70** a deck import, and the count of revisions in the backfill (F-170, F-171, D-845 to D-862). No paid target ran.
+
+61. **PR-71** the power step of a 60-card import, and the power of the session after a new read (F-170, F-172, D-863 to D-876). The paid runs cost $8.9265.
 
 ## 9. Open questions
 

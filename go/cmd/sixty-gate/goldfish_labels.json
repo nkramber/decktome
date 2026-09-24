@@ -1,0 +1,365 @@
+{
+ "_comment": "The steps of 60 MTGGoldfish user decks, labeled on 2026-09-23 by a model outside the family of the judge, from the step text of D-866 and a glossary of rules text (D-874, D-875). The FNM rung of sixty-gate reads the decks labeled fnm.",
+ "labels": [
+  {
+   "id": "7969454",
+   "format": "modern",
+   "step": "tournament",
+   "reason": "Four copies each of Shifting Woodland, Kona, Omniscience, and two self-mill spells give the deck a redundant way to deploy its costly threats; the 15-card sideboard covers removal, graveyards, and artifacts."
+  },
+  {
+   "id": "7969427",
+   "format": "modern",
+   "step": "tournament",
+   "reason": "Urza's Saga finds Blade of the Bloodchief for Basking Broodscale, while Eldrazi Temple and Ugin's Labyrinth accelerate Mycospawn and Emrakul; the sideboard has specific combo and graveyard hate."
+  },
+  {
+   "id": "7969424",
+   "format": "modern",
+   "step": "fnm",
+   "reason": "Lantern of Insight, Codex Shredder, and Ensnaring Bridge form a real lock, but four Harbinger of the Seas turn off the deck's own black nonbasics and Urza's Saga; the list also has 61 main cards and only 14 sideboard cards."
+  },
+  {
+   "id": "7969418",
+   "format": "modern",
+   "step": "tournament",
+   "reason": "The Guide of Souls, Ocelot Pride, Ajani, and Bombardment core is backed by Solitude and Quantum Riddler, with fetchlands supporting all three colors and a full reactive sideboard."
+  },
+  {
+   "id": "7969375",
+   "format": "modern",
+   "step": "tournament",
+   "reason": "Four Devoted Druid, Badgermole Cub, Leyline of Abundance, and Tyvar provide multiple mana-combo routes, with Green Sun's Zenith and Nature's Rhythm finding singleton payoffs; the extra main-deck card is a small consistency cost."
+  },
+  {
+   "id": "7969349",
+   "format": "modern",
+   "step": "tournament",
+   "reason": "Four Basking Broodscale and three Blade of the Bloodchief make the Spawn loop easy to assemble through Urza's Saga and Ancient Stirrings, and the sideboard supplies hate and alternate threats."
+  },
+  {
+   "id": "7969347",
+   "format": "modern",
+   "step": "fnm",
+   "reason": "Guide of Souls, Ocelot Pride, and Ajani give it a strong start, but Academic Dispute, Pursue the Past, and three main-deck Deflecting Palm dilute the pressure; the sideboard contains only 13 cards."
+  },
+  {
+   "id": "7969333",
+   "format": "modern",
+   "step": "fnm",
+   "reason": "Mana creatures, Oath of Nissa, and Interplanar Beacon can cast the many planeswalkers, but the spread of expensive two-ofs and sparse early interaction leaves this closer to local-store power than top-eight power."
+  },
+  {
+   "id": "7969308",
+   "format": "modern",
+   "step": "tournament",
+   "reason": "Four Narset and Day's Undoing attack opposing draws, while Orim's Chant plus Isochron Scepter offers another lock; efficient counters, removal, fetchlands, and a full sideboard support both plans."
+  },
+  {
+   "id": "7969297",
+   "format": "modern",
+   "step": "fnm",
+   "reason": "Snapcaster Mage, Ice-Fang Coatl, Flare of Denial, and Subtlety give it a credible flash game, but it has little creature removal, only four snow basics for Coatl, and no sideboard."
+  },
+  {
+   "id": "7969295",
+   "format": "modern",
+   "step": "tournament",
+   "reason": "The Broodscale and Blade engine is supported by four Urza's Saga, Ancient Stirrings, and Malevolent Rumble, while blue sources enable four sideboard Consign to Memory alongside other targeted hate."
+  },
+  {
+   "id": "7969288",
+   "format": "modern",
+   "step": "fnm",
+   "reason": "Looting, Cache Grab, and Malevolent Rumble stock Shifting Woodland for God-Pharaoh's Gift and large reanimation targets, but four seven-mana Gifts and no sideboard make this closer to FNM than a top-eight list."
+  },
+  {
+   "id": "7969247",
+   "format": "modern",
+   "step": "fnm",
+   "reason": "Unmarked Grave, Persist, Grisly Salvage, and Unburial Rites can put Ashen Rider or Angel of Despair into play early, but the many three-ofs, tapped lands, and missing sideboard hold it below tournament level."
+  },
+  {
+   "id": "7969222",
+   "format": "modern",
+   "step": "tournament",
+   "reason": "Four Phelia, Solitude, Quantum Riddler, and Overlord of the Balemurk create repeatable value, with cheap removal and counters in the main deck and a full matchup-focused sideboard."
+  },
+  {
+   "id": "7969209",
+   "format": "modern",
+   "step": "tournament",
+   "reason": "Primal Prayers, Guide of Souls, and Acererak provide a repeatable venture engine, with tutors, Solar Transformer, and Ranger-Captain of Eos improving assembly and protection; the missing sideboard is its clear weakness."
+  },
+  {
+   "id": "7969185",
+   "format": "modern",
+   "step": "tournament",
+   "reason": "Four each of Guide of Souls, Ocelot Pride, Ajani, and Voice of Victory form a fast core, backed by Bombardment, cheap burn, a fetchland mana base, and a full hate sideboard."
+  },
+  {
+   "id": "7969181",
+   "format": "modern",
+   "step": "fnm",
+   "reason": "Aether Vial and the Spirit lords give the flyers a coherent curve, and Spell Queller and Skyclave Apparition interact, but four three-mana Eidolon of Rhetoric and no sideboard leave it short of tournament preparation."
+  },
+  {
+   "id": "7969142",
+   "format": "modern",
+   "step": "tournament",
+   "reason": "Four Relic of Progenitus feed Ketramose while Frog, Quantum Riddler, and Solitude supply threats and answers; the cheap disruption and 15-card sideboard give the Esper shell a complete plan."
+  },
+  {
+   "id": "7969137",
+   "format": "modern",
+   "step": "tournament",
+   "reason": "Four copies of each Tron land plus Expedition Map, Eldrazi Temple, and Ugin's Labyrinth reliably power out Ugin and Eldrazi, and Karn has a stocked artifact sideboard to search."
+  },
+  {
+   "id": "7969091",
+   "format": "modern",
+   "step": "tournament",
+   "reason": "Broodscale, Blade, Saga, and Ancient Stirrings provide a compact combo within a fast Eldrazi shell, with Trinisphere, graveyard hate, and Disruptor Flute available after boarding."
+  },
+  {
+   "id": "7969055",
+   "format": "modern",
+   "step": "tournament",
+   "reason": "Four Faithful Mending, Persist, and Archon of Cruelty give the deck a consistent reanimation plan, while Frog, Riddler, Solitude, and a full sideboard cover fair games and interaction."
+  },
+  {
+   "id": "7969051",
+   "format": "modern",
+   "step": "tournament",
+   "reason": "Leyline of the Guildpact enables fast Scion of Draco and full-domain Tribal Flames and Leyline Binding, while Kavu, Nacatl, and Ragavan pressure early; the sideboard covers several matchups."
+  },
+  {
+   "id": "7968855",
+   "format": "modern",
+   "step": "tournament",
+   "reason": "Looting and Thought Scour fill the graveyard for four Persist and Unearth, which return Archon or Oculus, while Frog, discard, removal, and a full sideboard keep the plan resilient."
+  },
+  {
+   "id": "7968731",
+   "format": "modern",
+   "step": "tournament",
+   "reason": "Birthing Ritual converts cheap Coatl and Coiling Oracle into stronger creatures including Oculus, and free Flare of Denial and Subtlety protect the board; the sideboard has sweepers and counterspells."
+  },
+  {
+   "id": "7968688",
+   "format": "modern",
+   "step": "tournament",
+   "reason": "Zero-mana artifacts trigger Weapons Manufacturing and Pinnacle Emissary, while Mox Opal, Urza's Saga, and Kappa Cannoneer add speed and a hard-to-block finish; the sideboard covers major hate targets."
+  },
+  {
+   "id": "7968674",
+   "format": "modern",
+   "step": "tournament",
+   "reason": "Guide of Souls, Ocelot Pride, Ajani, and Bombardment remain a dense pressure engine, with Thoughtseize and Bowmasters adding disruption and a full sideboard; the 61st card slightly reduces consistency."
+  },
+  {
+   "id": "7968663",
+   "format": "modern",
+   "step": "tournament",
+   "reason": "Utopia Sprawl, Eldrazi Temple, and Ugin's Labyrinth accelerate Mycospawn, Command, and large Eldrazi, while Kozilek's Return and the sideboard give the deck interaction across creature and artifact matchups."
+  },
+  {
+   "id": "7968587",
+   "format": "modern",
+   "step": "fnm",
+   "reason": "Guide of Souls, Ocelot Pride, Birthing Ritual, and Solitude are powerful together, but the many small one-of effects and a four-card sideboard of only Endurance and Haywire Mite leave it closer to FNM."
+  },
+  {
+   "id": "7968565",
+   "format": "modern",
+   "step": "fnm",
+   "reason": "Looting and Faithful Mending can fuel Vengevine, with Solitude and Endurance offering free interaction, but the four-color mana base and two-card sideboard make the plan too narrow for a top-eight target."
+  },
+  {
+   "id": "7968508",
+   "format": "modern",
+   "step": "tournament",
+   "reason": "Badgermole Cub and Leyline of Abundance multiply mana from Birds, Hierarchs, and Devoted Druid, while Freed from the Real, tutors, and Ballista give redundant combo finishes and a full sideboard."
+  },
+  {
+   "id": "7969432",
+   "format": "standard",
+   "step": "fnm",
+   "reason": "Freebooter, Biotech Specialist, and The Sackville-Bagginses support a sacrifice engine, but numerous singletons and two-of payoffs scatter the plan despite a functional three-color mana base and full sideboard."
+  },
+  {
+   "id": "7969365",
+   "format": "standard",
+   "step": "tournament",
+   "reason": "Four Sanctifier, Case of the Uneaten Feast, Enlightened Confidant, Amalia, and Essence Channeler make life gain both pressure and card selection, with clean Orzhov mana, removal, and a complete sideboard."
+  },
+  {
+   "id": "7969331",
+   "format": "standard",
+   "step": "tournament",
+   "reason": "Four No More Lies, Three Steps Ahead, and Consult the Star Charts anchor a dense control plan with sweepers and finishers, and the sideboard addresses artifacts, graveyards, and spells; the 61st card is a minor cost."
+  },
+  {
+   "id": "7969325",
+   "format": "standard",
+   "step": "fnm",
+   "reason": "Llanowar Elves, Spider Manifestation, and Worldwagon can reach the expensive threats, but Temur Battlecrier asks for three colors early and the many four- and five-mana cards leave this closer to FNM despite a full sideboard."
+  },
+  {
+   "id": "7968850",
+   "format": "standard",
+   "step": "casual",
+   "reason": "Tidecaller and Glacierwood Siege point toward mill, but twenty basic lands, Fog Bank, slow Monument activations, little removal, and no sideboard leave the deck near preconstructed home-play power."
+  },
+  {
+   "id": "7968805",
+   "format": "standard",
+   "step": "tournament",
+   "reason": "Four Zealot, Sackville-Bagginses, Obsessive Pursuit, Mutagen Man, and The Ooze form a redundant sacrifice-and-counter engine, with strong black-green lands and a full disruptive sideboard."
+  },
+  {
+   "id": "7968690",
+   "format": "standard",
+   "step": "tournament",
+   "reason": "Cheap flyers enable four Kaito and four Enduring Curiosity, while Requiting Hex, Bitter Triumph, and the blue counters provide efficient interaction; the sideboard has discard, sweepers, and graveyard hate."
+  },
+  {
+   "id": "7968678",
+   "format": "standard",
+   "step": "tournament",
+   "reason": "Four Freebooter, Biotech Specialist, Sackville-Bagginses, and Obsessive Pursuit make sacrifice payoffs reliable, and the shockland mana base plus sweepers, discard, and threats in the sideboard support long matches."
+  },
+  {
+   "id": "7968434",
+   "format": "standard",
+   "step": "fnm",
+   "reason": "Llanowar Elves and Spider Manifestation accelerate a focused creature curve, but eight four-mana Ouroboroid and Leatherhead with little card draw make the list closer to FNM than a top-eight deck."
+  },
+  {
+   "id": "7968309",
+   "format": "standard",
+   "step": "fnm",
+   "reason": "Four Sanctifier, Pridemate, Essence Channeler, and Sheltered by Ghosts create a fast life-gain board, but only two Erode and no sideboard leave the otherwise coherent mono-white list short of tournament depth."
+  },
+  {
+   "id": "7968210",
+   "format": "standard",
+   "step": "casual",
+   "reason": "Sazh's Chocobo and Beorn's Hospitality reward land drops, but the scattered mid-cost creatures, only Quarrel as removal, and missing sideboard resemble a home-play deck."
+  },
+  {
+   "id": "7967885",
+   "format": "standard",
+   "step": "fnm",
+   "reason": "Four one-drop attackers, Impact Tremors, Raphael, and Burst Lightning give a clear low-curve damage plan, but the small top-end one-ofs and lack of a sideboard keep it near FNM level."
+  },
+  {
+   "id": "7967852",
+   "format": "standard",
+   "step": "fnm",
+   "reason": "Duress, Burglar Rat, Ozai's Cruelty, and Bandit's Talent consistently empty hands for Tinybones, but few board answers, expensive Painful Quandary, and no sideboard cap the deck near FNM."
+  },
+  {
+   "id": "7967798",
+   "format": "standard",
+   "step": "fnm",
+   "reason": "Confidant and Tarmogoyf offer efficient threats and the three-color lands are serviceable, but the Appraiser, Ral, and discard packages do not form a consistent finish and there is no sideboard."
+  },
+  {
+   "id": "7967781",
+   "format": "standard",
+   "step": "fnm",
+   "reason": "The Beastie, Fear of Missing Out, Wickerfolk, and Tarmogoyf delirium core is strong, but adding white for Practiced Offense and Hardened Academic stretches the mana and slows the low-curve attack; it is closer to FNM."
+  },
+  {
+   "id": "7967717",
+   "format": "standard",
+   "step": "fnm",
+   "reason": "Kaito and cheap flyers give the Ninja spells a workable base, but the many singletons and four Sunset Saboteur that grow opposing creatures weaken the pressure despite a full sideboard."
+  },
+  {
+   "id": "7967703",
+   "format": "standard",
+   "step": "tournament",
+   "reason": "Four each of Beastie, Fear of Missing Out, Wickerfolk, Tarmogoyf, Break Out, and Rapid Rescue make delirium pressure consistent, with clean red-green mana and sideboard sweepers and hate."
+  },
+  {
+   "id": "7967431",
+   "format": "standard",
+   "step": "fnm",
+   "reason": "PuPu UFO, Town lands, and Travel the Overworld support a coherent blue late game, but the many colorless Towns strain early blue counters and six-mana Leviathan; the full sideboard puts it nearer FNM than casual."
+  },
+  {
+   "id": "7967418",
+   "format": "standard",
+   "step": "fnm",
+   "reason": "The three-color lands can cast its Hero threats and Burst Lightning supplies early play, but the many two- and three-of legends and costly transformations make draws inconsistent despite a full sideboard."
+  },
+  {
+   "id": "7967345",
+   "format": "standard",
+   "step": "fnm",
+   "reason": "Mako, Skyray, Inti, Cool but Rude, and Great Gilded Boat repeatedly reward discarding, but most payoff cards need several turns and the sideboard is narrow; this is closer to FNM than top-eight power."
+  },
+  {
+   "id": "7967329",
+   "format": "standard",
+   "step": "fnm",
+   "reason": "Annex and Professor Dellian Fel provide a control engine with plentiful removal, but four six-mana Together as One are hard to cast for many colors from this mostly black-green mana base, limiting tournament speed."
+  },
+  {
+   "id": "7967326",
+   "format": "standard",
+   "step": "tournament",
+   "reason": "Four Flamebraider and Ashling accelerate the four-of evoke Elementals, while tribal lands fix their colors and Sunderflock rewards the type; removal, counters, and a full sideboard round out the plan."
+  },
+  {
+   "id": "7967225",
+   "format": "standard",
+   "step": "fnm",
+   "reason": "Four No More Lies, Three Steps Ahead, Consult the Star Charts, and Erode make a solid Azorius control shell, but the missing sideboard and four Settle the Wreckage leave it closer to FNM."
+  },
+  {
+   "id": "7967224",
+   "format": "standard",
+   "step": "tournament",
+   "reason": "Four prepared Emeritus of Ideation and Truce offer repeatable card draw and removal, supported by four each of No More Lies, Three Steps Ahead, and Consult the Star Charts plus a complete sideboard."
+  },
+  {
+   "id": "7954168",
+   "format": "standard",
+   "step": "casual",
+   "reason": "Fog effects, Cornucopia, and Fumigate can delay combat, but the main deck has no reliable way to win and the six-mana Weftwalking helps both players, leaving the list near home-play power."
+  },
+  {
+   "id": "7954154",
+   "format": "standard",
+   "step": "fnm",
+   "reason": "Enduring Tenacity and Bloodthirsty Conqueror can loop life loss and gain, but the five-mana finisher, many two-ofs, slow gainlands, and scattered sideboard make this closer to FNM."
+  },
+  {
+   "id": "7954152",
+   "format": "standard",
+   "step": "fnm",
+   "reason": "Sanctifier, Case of the Uneaten Feast, Confidant, Amalia, and Ajani form a consistent life-gain engine, but the missing sideboard and only three removal spells leave it short of tournament preparation."
+  },
+  {
+   "id": "7954150",
+   "format": "standard",
+   "step": "fnm",
+   "reason": "The four-of life-gain core and nearly all-white mana are consistent, but Practiced Offense and lone Sheltered by Ghosts give limited interaction, and there is no sideboard."
+  },
+  {
+   "id": "7954149",
+   "format": "standard",
+   "step": "fnm",
+   "reason": "Tablet of Discovery powers the Lesson and instant package and Colorstorm Stallion rewards spells, but expensive Jeskai Revelation and uneven white sources slow the plan despite a full sideboard."
+  },
+  {
+   "id": "7954115",
+   "format": "standard",
+   "step": "fnm",
+   "reason": "Forsaken Miner, Bloodghast, Zealot, and Sackville-Bagginses create a repeatable sacrifice base, but the remaining threats are scattered two- and three-ofs and the deck has no sideboard."
+  }
+ ]
+}

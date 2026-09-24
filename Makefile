@@ -13,7 +13,7 @@ GO := go -C go
 BUF := .bin/buf
 PNPM := pnpm --dir web
 
-.PHONY: feedback-loop feedback-loop-dry feedback-triage feedback-triage-dry smoke self-reload-check api-build allow disallow manapass-check deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate bracket-calibrate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check gcs-check themes-check ste-check context-budget pipefail-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks pr-check lifecycle-check verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean codex-review --skip-gitar-review ruleset-check
+.PHONY: feedback-loop feedback-loop-dry feedback-triage feedback-triage-dry smoke self-reload-check api-build allow disallow manapass-check deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate sixty-gate sixty-gate-dry bracket-calibrate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check gcs-check themes-check ste-check context-budget pipefail-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks pr-check lifecycle-check verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean codex-review --skip-gitar-review ruleset-check
 
 help: ## Show this help
 # pipefail-ok: the grep reads the target list, and an empty list is no fault
@@ -279,6 +279,24 @@ bracket-gate: ## Write the PR-14A bracket gate document. CAUTION: calls a real p
 		BRACKET_GATE=1 CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall \
 		$(GO) run ./cmd/bracket-gate -run-out $(abspath $(BRACKET_GATE_RUN)) $(BRACKET_GATE_ARGS) > $(BRACKET_GATE_OUT)
 	@echo "wrote $(BRACKET_GATE_OUT) and $(BRACKET_GATE_RUN)"
+
+# SIXTY_GATE_OUT is the PR-71 gate document of the power judge of a
+# 60-card import, and SIXTY_GATE_ARGS passes flags, for example
+# -split dev -reads 1 for the dev split. A paid result is never
+# overwritten (D-65), so any existing file stops the run.
+SIXTY_GATE_OUT ?= docs/reference/pr71-sixty-gate.md
+SIXTY_GATE_ARGS ?=
+
+sixty-gate: ## Write the PR-71 gate document of the 60-card power judge. CAUTION: calls a real provider and costs money
+	@[ -f .env ] || { echo "sixty-gate: .env is absent."; exit 1; }
+	@test ! -f $(SIXTY_GATE_OUT) || { echo "$(SIXTY_GATE_OUT) exists. Set SIXTY_GATE_OUT to a new file."; exit 1; }
+	@set -a && . ./.env && set +a && \
+		SIXTY_GATE=1 CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall \
+		$(GO) run ./cmd/sixty-gate $(SIXTY_GATE_ARGS) > $(SIXTY_GATE_OUT)
+	@echo "wrote $(SIXTY_GATE_OUT)"
+
+sixty-gate-dry: ## Print the calibration split of the 60-card power judge from the local meta store (no model calls, no cost)
+	@CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall $(GO) run ./cmd/sixty-gate -dry
 
 # BRACKET_CALIBRATE_OUT is the M-15 calibration document: the precons of
 # the repository, each scored against its rules floor (D-793), and

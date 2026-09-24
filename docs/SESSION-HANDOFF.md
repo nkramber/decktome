@@ -6,42 +6,39 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-23i)
+## RESUME HERE (2026-09-23j)
 
-**Pull request #218 counts the first harvest, and the triage leaves out a case that no gate can run (PR-68, F-49, D-840, D-841). It also holds the Gitar notice rule of D-842.**
+**Pull request #221 reads the power step of a 60-card import (PR-71, F-170, F-172, D-863 to D-876).**
 
 Author provider: Claude Code
 
-**The next step.** Ask the owner for the merge with the summary of four sections (D-836). Pending the owner merge.
+**The next step.** Read the refreshed `review-gate` result for #221 after the review record push. The auto-merge of #221 is on.
 
-**The base.** `main` is `fa05e3c`, from #220. Cloud Build `12cdcf15` of `deploy-api` built `fa05e3c`, and it ended SUCCESS at 02:13:39 UTC on 2026-09-24.
-
-**Why this pull request exists.** Next step 7 asked for one live fix cycle. The session found three faults first: no harvest, a cycle that opens its own pull request, and a review step of Gitar alone (D-840). The owner chose a free count first.
+**The base.** `main` is `1d36928`, from #218, merged into this branch on 2026-09-24. This session read no deploy of `1d36928`. The deploy of `fa05e3c` ended SUCCESS, and the owner imported `go/internal/decklist/testdata/archidekt_living_weapon.txt` on decktome.com. The stored deck holds bracket 3 from the judge with no estimate mark. It also holds the legality block of D-846, the grade typical, and the summary of D-855.
 
 **What this pull request holds.**
 
-- The first harvest read 4 verdicts of one user. One carries a snapshot, and it is a C4 defect with no gate case.
-- The triage marks a conversation case with no message. The manifest and `-apply` leave it out, and the report names it.
-- The live judge lane read one verdict for $0.0122. It chose C4, and #99 fixed that fault the same day (F-75).
-- New tests: `TestACaseWithNoMessageReachesNoGate` and `TestApplyWritesNoCaseThatNoGateRuns`.
-- `docs/reference/f49-harvest-2026-09-23.md` holds each measurement. The harvest stays under `.local` (D-841).
-- A Gitar comment that names no specific item is not a finding, and nobody answers it (D-842). The rule sits in `pr-review`, `gitar-review`, and `docs/reference/gitar-pause.md`.
-- The deployed quality model `20260924T061156Z` holds the rates of 225 commanders (D-839).
+- `JudgeSixtyStep` with prompt version 2 reads casual, FNM, or tournament, with the rules text of each card (D-866, D-872).
+- A 60-card import reads the step with no guard, then the profile and the grade (D-865, D-869). A judge failure stores no step, and the next open reads again (D-864).
+- A new read writes the power into the session, for Commander too (F-172, D-870).
+- `make sixty-gate` and `make sixty-gate-dry`, with the labels of `go/cmd/sixty-gate/goldfish_labels.json` (D-863, D-867, D-871, D-873 to D-876).
 
-**The checks.** `make verify` passed on `a08c68a`, exit 0, before the rebase. `make verify` passed on `c947e64`, exit 0, on the base `fa05e3c`. Both new tests fail without the rule. `make feedback-loop-dry` reads 0 cases a gate measures.
+**The paid runs.** $8.9265 in all. Three dev lanes cost $0.8443. Test run 1 read FAIL for $4.1086, 133 of 180, on RCQs of 16 to 24 players. Test run 2 read PASS for $3.9736, 148 of 180, with no read two steps off (`docs/reference/pr71-sixty-gate-run2.md`).
 
-**The review.** Gitar pause (D-838). No Gitar finding: each Gitar comment is the plan notice or a work note. Codex approved effective head `c947e64` after the rebase. `make verify`, `make ste-check`, and `make ref-check` passed. The pushed record passed `review-gate`, `pr-contract`, `verify:eval`, `verify:shell`, and `verify:skip`. The other verify jobs skipped because the push changed documents alone (D-818).
+**The checks.** `make verify` passed on `1b6ca8a`, exit 0, with Node 22.23.2 on the PATH. The later commits change documents alone. Mutation checks fail the session tests without the session write, and the deck page test with the old trigger.
+
+**The review.** Gitar pause (D-838). Gitar left its plan notice alone, with no finding. Round 1 of Codex approved `8610fd2`. Round 2 found P2-1 at `04d6373`: a new read lost the usage of a concurrent turn. The fix and regression test pass at `81bb505`. The review says Ready for owner merge at `81bb505`, pending the refreshed `review-gate` result after the record push.
 
 **What waits on the owner.**
 
-- The merge of this pull request, after the summary of four sections (D-836).
-- One live import on the deployed app. Each Commander import costs one judge read.
+- The merge of this pull request.
+- One live import of a 60-card list after the merge. Each costs one judge read, about $0.022.
 - One deployed bracket 5 session reads the commander rates now.
 - The live fix cycle waits for a thumbs down that carries a session. The cycle opens its own pull request, and its review step reads Gitar alone (D-840).
-- PR-71, the power judge of a 60-card import. It needs a source of labeled lists (D-859).
 - The Ulalek, Fused Atrocity shortlist holds 20 fixing lands, against a floor of 21.
 - The end of the Gitar pause, in a later pull request (D-838).
-- A whole deck gate run of prompt version 16 and the fixing floor of F-33. It is a paid target, so ask the owner first.
+- F-49, as a later item.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
 - UNVERIFIED: the Moxfield import of the deck list that the app exports.
 - D-794 makes the app less strict than the Wizards infographic at Bracket 2.
 - Five sessions on the new files, before a decision on the checkpoint rule (next step 3, D-750).
@@ -69,7 +66,7 @@ Twenty-two things a fresh session gets wrong without this file.
 - A singular creature-type word keeps the generic rule, and its plural reads the type row (D-731). So "zombie" and "zombies" read two different lists, and F-144 records why.
 - A stored deck records the size of its shortlist and no card of it. So a card that never reached the shortlist and a card that the model dropped look the same. Replay the shortlist for free before a prompt fix (M-17). `.local/m17/zz_scratch_m17_test.go` holds the method, and `list.Theme` names the theme words that matched no card.
 - `make bracket-gate` runs its tool in `go/`, through `go -C go`. A relative `-rejudge` path then points inside `go/`, so pass an absolute path.
-- Fourteen targets and two loop scripts spend money: `make codex-review`, `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `make api-build`, `scripts/autotune.sh`, and `scripts/feedback-loop.sh`. Ask the owner before each run. `docs/reference/paid-targets.md` holds the cost and the guard of each. `make autotune`, `make feedback-loop`, `make feedback-loop-dry`, `make feedback-triage-dry`, `eval sweep -dry`, and `go run ./cmd/bracket-gate -sweep` are free.
+- Fifteen targets and two loop scripts spend money: `make codex-review`, `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make sixty-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `make api-build`, `scripts/autotune.sh`, and `scripts/feedback-loop.sh`. Ask the owner before each run. `docs/reference/paid-targets.md` holds the cost and the guard of each. `make autotune`, `make feedback-loop`, `make feedback-loop-dry`, `make feedback-triage-dry`, `eval sweep -dry`, and `go run ./cmd/bracket-gate -sweep` are free.
 - A rerun writes to a new file. Every `*_OUT` variable refuses a document that holds a result (D-65).
 - A gate document names the commit of `HEAD`, and never the tree. Deck gate run 29 ran over uncommitted work, so its header names the parent commit `5fd8085`. Commit the change before a paid run.
 - A gate run takes about 20 minutes and an eval about 13. A foreground command stops at 10 minutes, so run both in the background.
@@ -113,8 +110,8 @@ Twenty-two things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **The first harvest, and the triage leaves out a case that no gate can run** (PR-68, F-49, D-840 to D-842). This pull request is #218.
-2. **The open items of the roadmap.** Two register rows read 🔧: F-49 and F-170. The live cycle of F-49 waits for a thumbs down with a session (D-841). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 reads 🔧 until PR-71 reads the power step of a 60-card import. F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
+1. **The power step of a 60-card import** (PR-71, F-170, F-172, D-863 to D-876). This pull request is #221.
+2. **The open items of the roadmap.** One register row reads 🔧: F-49. The live cycle of F-49 waits for a thumbs down with a session (D-841). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ with this pull request (D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
 3. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It waits, because the ten sessions of the audit ran before #184 and before D-749.
 4. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git.
 5. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide". Session `z1hshyY6Npig1FN2NuV7` named its commander, so it showed no such row.
@@ -136,10 +133,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-09-23g: the land cap of bracket 5, PR-69
-
-**The owner started F-168 beside the open session of #218.** A free replay found that the cap drops Taiga, Plateau, Exotic Orchard, and Boseiju. The F-166 note named two other lands. The owner chose the score order for the mana half over a pass of the cap and over a cap of 45 (D-843). Run 12 read FAIL on the hands floor alone. A free measure of 6,497 top-cut lists showed that 84 percent of them fail it. The owner chose to fix the band in this pull request, at 0.56 for brackets 4 and 5 (D-844).
-
 ### 2026-09-23h: the deck import, PR-70
 
 **The owner started PR-70 from the transitional prompt of #219.** No roadmap item covered a deck import. The session asked five batches of scope questions, and the owner approved the scope (D-845 to D-860). The owner chose a new judge for the power step of a 60-card import, and then its split into PR-71 (D-858, D-859). The code found the bug of the backfill, and the owner chose its fix here (D-861).
@@ -148,6 +141,10 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner started F-49 from the transitional prompt of #217.** The deploy of `e755f65` ended SUCCESS. The session named three faults before a paid run, and the owner chose a free count first (D-840). The harvest read 4 verdicts. The owner chose the fix and one live judge call, kept the harvest out of git (D-841), and added the Gitar notice rule (D-842). The meta job of 2026-09-24 wrote the rates of 225 commanders, and the session moved the branch onto `fa05e3c`.
 
+### 2026-09-23j: the power step of a 60-card import, PR-71
+
+**The owner started PR-71 from the transitional prompt of #220.** A free count refuted a premise of D-859, and the owner chose the scope in five batches (D-863 to D-869). No product type of Wizards marked the FNM line, so a model of another family labeled 60 user decks (D-874, D-875). Test run 1 failed on small RCQs, and run 2 passed on fresh lists (D-876). The session found F-172 in the code, and the owner chose its fix here (D-870).
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-23h, the records of 2026-08-31 to 2026-09-23f, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-23i, the records of 2026-08-31 to 2026-09-23g, and 104 more sections, word for word. Read it for the detail behind a decision.

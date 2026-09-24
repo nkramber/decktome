@@ -25,6 +25,7 @@ go/allow
 go/deck-gate
 go/eval
 go/bracket-gate
+go/sixty-gate
 go/quality-gate
 go/generate-probe
 go/m5-report
