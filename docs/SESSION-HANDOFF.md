@@ -25,9 +25,9 @@ Author provider: Claude Code
 - No script of the cycle merges, and the fixer runs with no GitHub login (D-878).
 - `make feedback-harvest` writes under `.local/feedback` (D-879).
 
-**The checks.** Pending.
+**The checks.** `make verify` passed on `179d586`, exit 0. All GitHub verify jobs and `pr-contract` passed. The initial `review-gate` failed because the record did not exist.
 
-**The review.** Pending.
+**The review.** Ready for owner merge at `179d586ab7da39d5b44b926098dfc074315df3d8`, with no open findings. The refreshed `review-gate` result waits for the record push.
 
 **What waits on the owner.**
 
