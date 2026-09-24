@@ -2,7 +2,7 @@ import type { DeckCard } from "@mtg/api-client/mtg/v1/deck_pb";
 import type { ImportDeckResponse } from "@mtg/api-client/mtg/v1/agent_service_pb";
 import { FormatId } from "@mtg/api-client/mtg/v1/format_pb";
 import type { UnresolvedRow } from "@mtg/api-client/mtg/v1/collection_pb";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileTextIcon } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { useNavigate } from "react-router";
@@ -11,10 +11,9 @@ import { Button } from "../../components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../../components/ui/dialog";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
-import { agentClient } from "../../lib/api";
+import { agentClient, collectionClient } from "../../lib/api";
 import { cn } from "../../lib/cn";
 import { errorMessage } from "../../lib/errors";
-import { useCollections } from "../chat/pool-picker";
 
 // The deck import (PR-70). A reader brings a deck list: a text file that
 // Archidekt exports, or a pasted Arena list (D-845). The app stores it as
@@ -57,7 +56,9 @@ export function ImportDialog({ open, onOpenChange }: { open: boolean; onOpenChan
 function ImportBody({ onClose }: { onClose: () => void }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const collections = useCollections().data?.collections ?? [];
+  // The key is the one of the pool picker of the chat, so one call serves
+  // both.
+  const collections = useQuery({ queryKey: ["collections"], queryFn: () => collectionClient.listCollections({}) }).data?.collections ?? [];
   const [step, setStep] = useState<Step>("pick");
   const [text, setText] = useState("");
   const [fileName, setFileName] = useState("");
@@ -152,7 +153,7 @@ function ImportBody({ onClose }: { onClose: () => void }) {
               rows={8}
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder={"Commander\n1 Heroes in a Half Shell (TMC) 6\n\nDeck\n1 Sol Ring (TMC) 60"}
+              placeholder={"Commander\n1 Heroes in a Half Shell (TMC) 6\n\nDeck\n1 Acidic Slime (TMC) 48"}
               className="min-h-32 rounded-card border border-border bg-background p-2 font-mono text-xs"
             />
           </div>
