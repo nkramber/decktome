@@ -27,7 +27,7 @@ Author provider: Claude Code
 - The counter `total_decks_imported` (D-852, D-862), and the backfill fix of F-171 (D-861).
 - The two real exports of the owner are the fixtures (D-856, D-860).
 
-**The checks.** `make verify` passed its code, lint, test, web build, and eval checks on `0ed435e`. Its Docker build stalled locally. The Docker check passed on GitHub. Both real exports resolve 100 of 100 cards against the snapshot of 2026-09-04. No paid target ran.
+**The checks.** `make verify` passed on `0ed435e`, exit 0, in the author session. The run of the reviewer passed its code, lint, test, web build, and eval checks, and its Docker build stalled locally. The Docker check passed on GitHub. Both real exports resolve 100 of 100 cards against the snapshot of 2026-09-04. No paid target ran.
 
 **The review.** Gitar pause (D-838). Gitar left its plan notice alone, with no finding. Round 1 found P2-1, and round 2 verified its fix. The current verdict is Ready for owner merge on `0ed435e`. No finding stays open.
 
