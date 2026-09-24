@@ -12,6 +12,46 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-24c
+
+**Pull request #224 gives a plain upload page, and a failed parse files its own thumbs down (F-49, F-91, D-882 to D-891).**
+
+Author provider: Claude Code
+
+**The next step.** Next step 2, PR-75: a thumbs down pings the owner at once (D-890). Ask the owner the five questions of its roadmap entry before any code.
+
+**The base.** `main` is `d4b8daf`, from #223. Cloud Build `7f6cf9e5` of `deploy-api` built `d4b8daf` and ended SUCCESS at 17:41:29 UTC on 2026-09-24. #223 changed no web file.
+
+**The change.**
+
+- The collection page, the upload dialog, and the deck import dialog name no service (D-889).
+- A file that does not read, or a read with rows that do not parse, shows a short form (D-887). The form asks where the file came from, in free text (D-883).
+- The form files a thumbs down of kind IMPORT. The server reads the file again and keeps its own fault, with at most 500 bad rows (D-884, D-885).
+- The triage class I1 writes a parser fixture from the stored rows (D-888). A free test fails on it until the parser reads it, and the cycle does not run it (D-891).
+- No paid target ran.
+
+**The checks.** `make verify` passed on `152dd4e`, exit 0. `make pr-check` passed on the body.
+
+**The review.** Gitar pause (D-838). Codex reviewed `00a330f`: Ready for owner merge, no open findings. The free verify gate passed.
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- One report on the deployed app, after the deploy of this merge. Upload a file that does not read, send the form, and read it with `make feedback-list`.
+- PR-75 and its five questions (D-890). Next step 3 comes after it (D-750).
+- M-19, the free replay of the owned-only shortlist (F-174).
+- One deployed bracket 5 session reads the commander rates now.
+- The Ulalek, Fused Atrocity shortlist holds 20 fixing lands, against a floor of 21.
+- The end of the Gitar pause, in a later pull request (D-838).
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
+- UNVERIFIED: the Moxfield import of the deck list that the app exports.
+- D-794 makes the app less strict than the Wizards infographic at Bracket 2.
+- Next steps 5 and 6, and OQ-67 and OQ-77.
+
+### 2026-09-24a: the feedback cycle and the one-PR rule, PR-72
+
+**The owner started PR-72 from the transitional prompt of #221.** The deploy of `3b2f686` ended SUCCESS, and a thumbs down of 2026-09-24 carries a session and a deck. The owner chose the flag `--here` and a Codex review that the cycle runs (D-877, D-878). The cycle never merges, and the owner approves in the same session. The owner kept the words of the reader in a case, and moved the harvest to `.local/feedback` (D-879). The owner moved the 60-card import after the merge.
+
 ## The resume section of 2026-09-24b
 
 **Pull request #223 drives the first live feedback fix cycle, and the cycle now stops when no case fails (PR-73, F-49, F-173, F-174, D-880 to D-882).**

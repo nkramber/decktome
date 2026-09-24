@@ -40,6 +40,7 @@ import (
 	"github.com/nkramber/decktome/go/internal/invitesvc"
 	"github.com/nkramber/decktome/go/internal/llm"
 	"github.com/nkramber/decktome/go/internal/meta"
+	"github.com/nkramber/decktome/go/internal/notify"
 	"github.com/nkramber/decktome/go/internal/precons"
 	"github.com/nkramber/decktome/go/internal/profile"
 	"github.com/nkramber/decktome/go/internal/quality"
@@ -173,8 +174,15 @@ func run(ctx context.Context, logger *slog.Logger) error {
 		decksvc.WithUser(userFn))
 	// The feedback store takes a verdict on a question, a summary, a
 	// card, or a deck of the caller (PR-27, D-558).
-	feedbackServer := feedbacksvc.New(feedback.NewRepo(fs), sessionRepo, deckRepo, userFn,
-		feedbacksvc.WithUsers(userRepo))
+	feedbackOpts := []feedbacksvc.Option{feedbacksvc.WithUsers(userRepo)}
+	// Each verdict pings the owner through Pushover (D-892, D-893). The
+	// token and the key come from Secret Manager, and a run without them
+	// sends nothing.
+	if pushover := notify.FromEnv(os.Getenv); pushover != nil {
+		feedbackOpts = append(feedbackOpts, feedbacksvc.WithNotifier(notify.NewBackground(pushover, logger)))
+		logger.Info("feedback notices on")
+	}
+	feedbackServer := feedbacksvc.New(feedback.NewRepo(fs), sessionRepo, deckRepo, userFn, feedbackOpts...)
 	// The LLM role layer. Building it here proves the config and the
 	// keys at startup, not on the first user turn.
 	llmClient, err := llm.NewFromEnv(os.Getenv, logger)

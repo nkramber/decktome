@@ -672,7 +672,7 @@ describe("the report of a file the app could not read", () => {
     await user.type(screen.getByLabelText("Which app or site did the file come from?"), "mana box");
     await user.click(screen.getByRole("button", { name: "Send a report" }));
 
-    expect(await screen.findByText(/Your report went to the review/)).toBeInTheDocument();
+    expect(await screen.findByText(/Your report will be reviewed so that we can resolve the issue/)).toBeInTheDocument();
     const sent = submitFeedback.mock.calls[0]?.[0] as { feedback: { kind: FeedbackKind; verdict: FeedbackVerdict; text: string; importPage: ImportPage; importContent: Uint8Array } };
     expect(sent.feedback).toMatchObject({ kind: FeedbackKind.IMPORT, verdict: FeedbackVerdict.DOWN, text: "mana box", importPage: ImportPage.COLLECTION });
     expect(new TextDecoder().decode(sent.feedback.importContent)).toBe("Title,Count\nBolt,1\n");

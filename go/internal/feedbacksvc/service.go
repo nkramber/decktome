@@ -20,7 +20,9 @@ import (
 	"github.com/nkramber/decktome/go/internal/generate"
 	"github.com/nkramber/decktome/go/internal/gzstore"
 	"github.com/nkramber/decktome/go/internal/importfault"
+	"github.com/nkramber/decktome/go/internal/notify"
 	"github.com/nkramber/decktome/go/internal/questions"
+	"github.com/nkramber/decktome/go/internal/ratelimit"
 	"github.com/nkramber/decktome/go/internal/sessions"
 	"github.com/nkramber/decktome/go/internal/users"
 )
@@ -52,6 +54,24 @@ type Option func(*Server)
 // (D-638).
 func WithUsers(n users.Noter) Option { return func(s *Server) { s.users = n } }
 
+// Notifier takes one notice to the owner and returns at once.
+type Notifier interface {
+	Notify(n notify.Notice)
+}
+
+// WithNotifier sends the owner a notice of each verdict (D-892). A
+// server with no notifier sends nothing, which is what a local run and
+// every other test wires.
+func WithNotifier(n Notifier) Option { return func(s *Server) { s.notifier = n } }
+
+// PingWindow is the debounce of D-896: one notice for each user in a
+// minute. The count lives in each instance, so three instances send at
+// most three.
+const PingWindow = time.Minute
+
+// messageWords caps the words of the reader in a notice (D-894).
+const messageWords = 15
+
 // WithClock replaces time.Now (tests).
 func WithClock(now func() time.Time) Option {
 	return func(s *Server) { s.now = now }
@@ -68,6 +88,10 @@ type Server struct {
 	// users counts the verdicts a reader gives (D-638). A nil one
 	// records nothing, which is what every test wires.
 	users users.Noter
+	// notifier sends the owner a notice of each verdict, and pings holds
+	// the debounce of each user (D-892, D-896).
+	notifier Notifier
+	pings    *ratelimit.Limiter
 }
 
 // New wires the service. Every source is needed: a question verdict
@@ -77,6 +101,7 @@ func New(store Store, sessionSrc SessionSource, deckSrc DeckSource, userFn auth.
 	for _, o := range opts {
 		o(s)
 	}
+	s.pings = ratelimit.New(1, PingWindow).WithClock(s.now)
 	return s
 }
 
@@ -155,7 +180,53 @@ func (s *Server) SubmitFeedback(ctx context.Context, req *connect.Request[mtgv1.
 		counter = users.FeedbackDown
 	}
 	users.NoteQuietly(ctx, s.users, uid, auth.Email(ctx), counter, s.now())
+	if s.notifier != nil && s.pings.Allow(uid) {
+		s.notifier.Notify(noticeOf(id, auth.Email(ctx), item))
+	}
 	return connect.NewResponse(&mtgv1.SubmitFeedbackResponse{FeedbackId: id}), nil
+}
+
+// noticeOf writes the notice of one stored verdict (D-894). The email is
+// the verified one of the request, the value the user record stores, so
+// the notice reads no store (D-895). The notice never enters the store
+// or the harvest.
+func noticeOf(id, email string, item feedback.Item) notify.Notice {
+	thumb := "thumbs up"
+	if item.Verdict == "down" {
+		thumb = "thumbs down"
+	}
+	var b strings.Builder
+	line := func(label, value string) {
+		if value != "" {
+			fmt.Fprintf(&b, "%s: %s\n", label, value)
+		}
+	}
+	line("user", email)
+	line("reasons", strings.Join(item.Reasons, ", "))
+	line("message", firstWords(item.Text, messageWords))
+	if f := item.Import; f != nil {
+		line("page", fmt.Sprintf("%s, %d of %d rows do not parse", f.GetPage(), f.GetBadRowCount(), f.GetRowCount()))
+		line("error", f.GetError())
+	}
+	line("session", item.SessionID)
+	line("question", item.QuestionID)
+	line("deck", item.DeckID)
+	line("card", item.OracleID)
+	line("verdict", id)
+	line("time", item.CreatedAt.UTC().Format("2006-01-02 15:04 UTC"))
+	return notify.Notice{
+		Title:   fmt.Sprintf("decktome: %s, %s", thumb, item.Kind),
+		Message: strings.TrimSuffix(b.String(), "\n"),
+	}
+}
+
+// firstWords keeps the first n words of s, and marks a cut with "...".
+func firstWords(s string, n int) string {
+	words := strings.Fields(s)
+	if len(words) <= n {
+		return strings.Join(words, " ")
+	}
+	return strings.Join(words[:n], " ") + " ..."
 }
 
 // itemOf reads the fields of a verdict and refuses a bad one. The ids

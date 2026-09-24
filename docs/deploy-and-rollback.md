@@ -156,6 +156,15 @@ gcloud run jobs update mtg-meta --region us-central1 \
 
 To change an environment variable or a secret, add the flag to the same command. Section 11 of `docs/setup-gcp.md` names every flag of the first deploy.
 
+The Pushover secrets of PR-75 need one step outside a deploy (D-893). Section 8 of `docs/setup-gcp.md` creates them. Then mount them on the service one time:
+
+```
+gcloud run services update mtg-api --region us-central1 \
+  --update-secrets=PUSHOVER_APP_TOKEN=pushover-app-token:1,PUSHOVER_USER_KEY=pushover-user-key:1
+```
+
+The session of 2026-09-24 ran this step on the image of `930d1a6`, and revision `mtg-api-00078-hv2` holds the two secrets. Each later deploy keeps them. The API log reads `feedback notices on` at start when both are set. To stop the notices, run the same command with `--remove-secrets=PUSHOVER_APP_TOKEN,PUSHOVER_USER_KEY`.
+
 ## 5. Deploy the web app
 
 The four `VITE_FIREBASE_` values never change. `docs/setup-gcp.md` section 13 holds them.
@@ -203,6 +212,8 @@ Cloud Run keeps every revision. A rollback moves the traffic, and it needs no bu
 
 The change takes seconds. Run `--to-latest` to return the traffic to the newest revision.
 
+A revision older than `mtg-api-00077-vwp` holds no Pushover secret, so a rollback to it sends no notice of a verdict. The store still keeps each verdict.
+
 ### 8.2 The jobs
 
 A job keeps no revision history for a rollback command. Point the job at the earlier image tag.
@@ -234,6 +245,7 @@ CAUTION: a rollback of the code does not undo a change of the data. A new versio
 - A Firestore document that the new version wrote stays as it is.
 - An index that a deploy added stays until you remove it by hand.
 - A secret version stays active until you disable it.
+- A Pushover notice that the API sent stays on the device and with Pushover.
 - A card snapshot in the bucket stays. The worker keeps three versions (`cards.KeepVersions`).
 
 ## 10. Sources and dates
@@ -247,4 +259,5 @@ CAUTION: a rollback of the code does not undo a change of the data. A new versio
 | Both binaries import `go/internal/quality` | `go list -deps ./cmd/api` and `./cmd/worker`, read 2026-09-07 |
 | The project, the region, and every name | `docs/setup-gcp.md` and the deploy of 2026-09-07 |
 | `/readyz` is the readiness path, and the frontend takes `/healthz` | The deploy of 2026-09-07, five paths compared |
+| `--update-secrets` keeps the other secrets, and a deploy keeps the secrets of the revision before it | The update of `mtg-api` on 2026-09-24, revisions `mtg-api-00077-vwp` and `mtg-api-00078-hv2` |
 | The Vite build needs Node 22 | `docs/setup.md` and the toolchain of the repo |

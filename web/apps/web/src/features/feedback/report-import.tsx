@@ -67,7 +67,7 @@ export function ReportImport({ page, file, badRows }: ReportImportProps) {
         {what}
       </p>
       {done ? (
-        <p role="status">Thank you. Your report went to the review, so we can fix the fault.</p>
+        <p role="status">Thank you! Your report will be reviewed so that we can resolve the issue.</p>
       ) : (
         <form onSubmit={(e) => void onSubmit(e).catch(() => {})} className="flex flex-col gap-2">
           <Label htmlFor="import-service">Which app or site did the file come from?</Label>

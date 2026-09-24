@@ -19,14 +19,14 @@ The roadmap (PR-22, D-310, D-314) fixes the shape. One table names each part.
 | The meta job | Cloud Run job, `docker/worker.Dockerfile`, `-meta` | Reads the deck list sources and fits the quality model daily at 06:00 UTC (D-492) |
 | The database | Firestore, Native mode, Standard edition | Sessions, decks, collections, usage, and the allowlist document `config/allowlist` (D-420) |
 | The bucket | Cloud Storage, `PROJECT_ID-cards` | The card snapshots, three versions kept (`cards.KeepVersions`), and the meta store |
-| The secrets | Secret Manager | `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, and `TOPDECK_API_KEY` (D-492) |
+| The secrets | Secret Manager | `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, and `TOPDECK_API_KEY` (D-492), and the Pushover pair `PUSHOVER_APP_TOKEN` and `PUSHOVER_USER_KEY` (D-893) |
 | Sign-in | Firebase Authentication, email and password | Open sign-up, and the API refuses every email that is not on the allowlist (D-314) |
 | The web app | Firebase Hosting on your domain | The Vite build of `web/apps/web`, with a free managed certificate |
 | The images | Artifact Registry | The two container images |
 | The schedules | Cloud Scheduler, two jobs | Runs the two Cloud Run jobs |
 | The alarm | Cloud Billing budget | Sends an email at a spend threshold |
 
-The repo holds the two Dockerfiles and the Firestore rules and indexes. The Go code reads `PROJECT_ID`, `CARDS_BUCKET`, `ALLOWED_ORIGINS`, and the three keys from the environment. `gcpenv.OnCloudRun` reads `K_SERVICE`, which Cloud Run sets, and the API then refuses every request with no token (`cmd/api/main.go`).
+The repo holds the two Dockerfiles and the Firestore rules and indexes. The Go code reads `PROJECT_ID`, `CARDS_BUCKET`, `ALLOWED_ORIGINS`, the three keys, and the optional Pushover pair from the environment. `gcpenv.OnCloudRun` reads `K_SERVICE`, which Cloud Run sets, and the API then refuses every request with no token (`cmd/api/main.go`).
 
 PR-22 added four things on 2026-09-06, and this page reads them as they stand:
 
@@ -161,7 +161,18 @@ gcloud secrets create topdeck-api-key --replication-policy=automatic
 printf '%s' "$TOPDECK_API_KEY" | gcloud secrets versions add topdeck-api-key --data-file=-
 ```
 
-Three secrets with one version each stay inside the free tier of six active versions. Each version is `1`, and section 11 pins that number. Google recommends a pinned version over `latest` for a secret in an environment variable, because Cloud Run reads it at instance start.
+Three secrets with one version each stay inside the free tier of six active versions. Each version is `1`, and section 11 pins that number.
+
+The API sends the owner a Pushover notice of each verdict (PR-75, D-892 to D-897). Make an application at `pushover.net/apps/build`, and read its API token. Read the user key on the Pushover dashboard. Put the two values in `PUSHOVER_APP_TOKEN` and `PUSHOVER_USER_KEY` of the shell, never in a file (D-639). Then run these four commands.
+
+```
+gcloud secrets create pushover-app-token --replication-policy=automatic
+printf '%s' "$PUSHOVER_APP_TOKEN" | gcloud secrets versions add pushover-app-token --data-file=-
+gcloud secrets create pushover-user-key --replication-policy=automatic
+printf '%s' "$PUSHOVER_USER_KEY" | gcloud secrets versions add pushover-user-key --data-file=-
+```
+
+The project holds six active versions with these two and the Cloud Build connection, read 2026-09-24. A seventh costs $0.06 a month. Without the two secrets the API sends no notice, and it runs as before. Google recommends a pinned version over `latest` for a secret in an environment variable, because Cloud Run reads it at instance start.
 
 ## 9. Create the service accounts
 
@@ -183,6 +194,8 @@ gcloud storage buckets add-iam-policy-binding gs://PROJECT_ID-cards --member=ser
 gcloud secrets add-iam-policy-binding openai-api-key --member=serviceAccount:SA_API --role=roles/secretmanager.secretAccessor
 gcloud secrets add-iam-policy-binding anthropic-api-key --member=serviceAccount:SA_API --role=roles/secretmanager.secretAccessor
 gcloud secrets add-iam-policy-binding topdeck-api-key --member=serviceAccount:SA_WORKER --role=roles/secretmanager.secretAccessor
+gcloud secrets add-iam-policy-binding pushover-app-token --member=serviceAccount:SA_API --role=roles/secretmanager.secretAccessor
+gcloud secrets add-iam-policy-binding pushover-user-key --member=serviceAccount:SA_API --role=roles/secretmanager.secretAccessor
 ```
 
 The API verifies Firebase ID tokens with Google's public keys, so it needs no Firebase role. The scheduler account gets the Cloud Run Invoker role on each job in section 12.
@@ -214,7 +227,7 @@ gcloud run deploy mtg-api \
   --service-account SA_API \
   --allow-unauthenticated \
   --set-env-vars "^@^PROJECT_ID=PROJECT_ID@CARDS_BUCKET=PROJECT_ID-cards@ALLOWED_ORIGINS=https://DOMAIN,https://www.DOMAIN,https://PROJECT_ID.web.app,https://PROJECT_ID.firebaseapp.com@SPEND_CAP_USD=5" \
-  --set-secrets OPENAI_API_KEY=openai-api-key:1,ANTHROPIC_API_KEY=anthropic-api-key:1 \
+  --set-secrets OPENAI_API_KEY=openai-api-key:1,ANTHROPIC_API_KEY=anthropic-api-key:1,PUSHOVER_APP_TOKEN=pushover-app-token:1,PUSHOVER_USER_KEY=pushover-user-key:1 \
   --memory 2Gi --cpu 1 --min-instances 0 --max-instances 3 --concurrency 20 \
   --no-cpu-throttling \
   --timeout 900 --port 8080
@@ -228,6 +241,7 @@ Six notes on the flags:
 - `--memory 2Gi` is a starting point. The API holds the whole card index in memory. Read the memory chart after the first week and move the number.
 - `--timeout 900` covers a deck build. The default is 300 seconds and the maximum is 3,600. A build with repair passes takes minutes, and the `Chat` RPC streams for that whole time.
 - `--set-secrets` pins version `1`. Rotate a key with a new version and a new deploy.
+- The two Pushover secrets are optional. Leave them out of `--set-secrets` when you made no Pushover application, and the API sends no notice.
 - `PROJECT_ID` must be explicit. Cloud Run sets `K_SERVICE` and not the project id.
 - `SPEND_CAP_USD` names the monthly cap per user (D-421). Cloud Run reads $5 with no value, and `0` turns the cap off.
 - `SPEND_CAP_OVERRIDES` gives a named email its own cap (D-576). It reads a comma-separated list of `email:usd` pairs, and `0` turns the cap off for that email alone. Example: `SPEND_CAP_OVERRIDES=owner@example.com:0`. The API drops an entry that names no number, and the log names it.
@@ -370,7 +384,7 @@ Every line reads the free tier of the Google Cloud free program document, 2026-0
 | Cloud Run, the two jobs | 2,880 snapshot ticks of about 10 seconds plus one download a day, and 30 meta runs of about 10 minutes: about 52,000 vCPU-seconds | 240,000 vCPU-seconds and 450,000 GiB-seconds for instance-based billing | $0 | $0.000018 a vCPU-second, $0.000002 a GiB-second |
 | Firestore | About 13,000 writes and 50,000 reads a month, under 100 MiB stored | 20,000 writes, 50,000 reads, and 20,000 deletes a day, 1 GiB stored | $0 | $0.09 a 100,000 writes, $0.03 a 100,000 reads, $0.15 a GiB a month in a US region |
 | Cloud Storage | About 0.6 GB: three snapshots of 109 MB and a 263 MB meta store, with a few thousand operations | 5 GB-months in `us-central1`, 5,000 Class A and 50,000 Class B operations | $0 | $0.020 a GB a month, $0.05 a 10,000 Class A, $0.004 a 10,000 Class B |
-| Secret Manager | 3 active versions, a few hundred accesses at instance starts | 6 active versions, 10,000 accesses | $0 | $0.06 a version a month, $0.03 a 10,000 accesses |
+| Secret Manager | 6 active versions since 2026-09-24, a few hundred accesses at instance starts | 6 active versions, 10,000 accesses | $0 | $0.06 a version a month, $0.03 a 10,000 accesses |
 | Cloud Scheduler | 2 jobs | 3 jobs a billing account | $0 | $0.10 a job a month |
 | Artifact Registry | Two images of some tens of MB each, a few tags | 0.5 GB | $0 | $0.10 a GB a month |
 | Cloud Build | 0 minutes with local Docker builds | 2,500 build-minutes | $0 | $0.006 a minute |
@@ -422,6 +436,7 @@ Every fact of this page carries a date. The repo facts read the code and the doc
 | Cloud Run request-based and instance-based prices | https://preprice.app/ai-costs/gcp_cloud_run (third party, verified 2026-06-14) and https://cloudchipr.com/blog/cloud-run-pricing (third party, 2025-11-14). The official page is https://cloud.google.com/run/pricing. |
 | Cloud Run request timeout, default 300 and maximum 3,600 seconds | https://docs.cloud.google.com/run/docs/configuring/request-timeout |
 | Cloud Run secrets as environment variables and the pinned version advice | https://docs.cloud.google.com/run/docs/configuring/services/secrets |
+| The Pushover message endpoint, the limits of 1024 and 250 characters, and 10,000 free messages a month, read 2026-09-24 | https://pushover.net/api |
 | Cloud Run jobs on a schedule, the invoker role, and the run URI | https://docs.cloud.google.com/run/docs/execute/jobs-on-schedule |
 | The `gcloud run jobs create` flags | https://docs.cloud.google.com/sdk/gcloud/reference/run/jobs/create |
 | The `gcloud firestore databases create` flags | https://docs.cloud.google.com/sdk/gcloud/reference/firestore/databases/create |
