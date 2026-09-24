@@ -318,9 +318,7 @@ The steps of one cycle:
 
 Without `--here`, the cycle pushes and opens its own pull request at step 7, and it runs step 9 itself. That body holds the rows the cycle can prove, and `pr-contract` stays red until an author session completes the rest (D-748).
 
-The review step stops with 3 on a Gitar finding of the pause. It stops with 4 when a Codex finding is open at its third head (D-826). The fixer runs with no GitHub login, and no script of the cycle merges or turns on the auto-merge (D-878).
-
-**Gitar pause (D-838).** While `docs/reference/gitar-pause.md` exists, step 9 reads Gitar one time and never waits for it. An open thread or an issue on the Gitar dashboard stops the cycle before the fixer, and a comment tells the owner.
+The review step stops with 3 on a Gitar finding during a Gitar pause (D-838). It stops with 4 when a Codex finding is open at its third head (D-826). The fixer runs with no GitHub login, and no script of the cycle merges or turns on the auto-merge (D-878).
 
 The cases are frozen. A fixer that edits one makes the gate agree with
 the code instead of with the reader.

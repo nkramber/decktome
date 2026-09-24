@@ -7,8 +7,6 @@ description: Bind a session to one repository, one branch, one pull request, and
 
 The owner decisions are D-746 to D-748, and D-823 to D-834 and D-836 for the review loop and the auto-merge. `CLAUDE.md` holds the other rules, and this skill does not repeat them.
 
-**Gitar pause (D-838).** `docs/reference/gitar-pause.md` wins over each Gitar step of this skill. No step waits for a Gitar review. Tell the owner of each Gitar finding at once.
-
 ## The rule
 
 A session works on one pull request. A session can make many turns and commits for it. More than one clean session can work on the same pull request, for example a review or a correction. The pull request carries all its work: code, tests, decisions, documents, the review answers, and the hand-off.

@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-24 correction pass 227 (PR-76, D-899): the owner ended the Gitar pause of PR-66. Each pull request waits for a current Gitar review again.
+
 2026-09-23 correction pass 226 (PR-71, D-863 to D-876): the power judge of a 60-card import gets its labels, its prompt, its split, and its gate. The store labels a casual list and an FNM list, which refutes a premise of D-859. A new read also fixes the power of the session (F-172). Changes: PR-71, F-172.
 
 2026-09-23 correction pass 225 (PR-70, D-845 to D-862): a user can import a deck list, and the app shows it as a deck it built. A Commander import reads its bracket from the judge over the floor of its rules. The backfill of the user record counted no revision (F-171). Changes: PR-70, PR-71, F-170, F-171.
@@ -2180,6 +2182,23 @@ Gate:
 - `make verify` passes.
 > *In plain English:* before this change a complaint waited in the database until someone looked. Now the owner gets a short phone notice for each thumbs up or down. The fix still goes through the normal review.
 
+**PR-76: The Gitar pause ends, and each pull request waits for a Gitar review again (D-899).** ✅ merged as #226. The mark comes before any review (D-822).
+PR-66 paused the required Gitar review (D-838). Gitar finished no review on #215 to #225. On 2026-09-24 Gitar reviewed a pull request of `nkramber/the-thing-below` again.
+
+- **The notes.** This item deletes each pause note and the pause file, by the steps of the end in that file.
+- **The records.** The decisions and the review records still name the pause file. `docs/tools/ref_check.py` gives that path no rule (D-899).
+- **What stays.** The flag `--skip-gitar-review` and the pause branch of `scripts/feedback-review.sh` stay (D-838). With no pause file, the feedback cycle waits for Gitar.
+- **The rules again.** Each pull request waits for a current Gitar review, documents alone too (D-637, D-679, D-745). The Codex review comes after the Gitar pass (D-823).
+
+Gate:
+
+- `git grep` finds no pause note outside `docs/tools/test_gitar_pause.py`. Met.
+- `docs/tools/test_gitar_pause.py` passes with no pause file. Met.
+- `docs/tools/test_ref_check.py` passes the path of the deleted pause file. Met.
+- A current Gitar review of this pull request, with an answer to each finding.
+- `make verify` passes.
+> *In plain English:* for a day the first review bot wrote no reviews, so the owner let changes merge without it. The bot works again, so each change waits for it again. A later pause needs one file and a few notes.
+
 **M-19: The owned-only shortlist of the thumbs down of 2026-09-24 (F-174, D-881).** 🔧 planned. It waits for the measurement of five sessions (D-750, D-890).
 The deck of Hope Estheim holds 24 basic lands at bracket 4. The collection export of 2026-08-30 holds 30 owned lands that make white and blue mana, and the deck holds none of them. The replay finds the step that left them out.
 
@@ -2545,6 +2564,8 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 63. **PR-74** a plain upload page, and a failed parse files its own thumbs down (F-49, F-91, D-882 to D-891). No paid target ran.
 
 64. **PR-75** a Pushover notice to the owner for each verdict (F-49, D-892 to D-898). No paid target ran.
+
+65. **PR-76** the end of the Gitar pause (D-899). No paid target ran.
 
 ## 9. Open questions
 

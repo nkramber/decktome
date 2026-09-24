@@ -12,6 +12,46 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-24d
+
+**Pull request #225 sends the owner a Pushover notice of each verdict (PR-75, F-49, D-892 to D-898).**
+
+Author provider: Claude Code
+
+**The next step.** Next step 2: measure five sessions, then ask the owner about the checkpoint rule (D-750).
+
+**The base.** `main` is `930d1a6`, from #224. Cloud Build `58dfbace` of `deploy-api` ended SUCCESS at 19:53:44 UTC on 2026-09-24, and `86152b16` of `deploy-web` at 19:56:27 UTC. The owner filed an import report on the deployed app at 20:45 UTC. `make feedback-list` read kind import, `IMPORT_PAGE_DECK`, the error, and 3 kept rows. The text view prints the count of the rows, and `-json` prints the rows.
+
+**The change.**
+
+- `SubmitFeedback` sends a notice after the store writes the verdict (D-892). `go/internal/notify` posts it to Pushover in the background (D-893).
+- Every verdict pings, with at most one notice for each user in a minute (D-896, D-897).
+- The notice holds the email of the token, the reasons, 15 words of the text, the ids, and the time (D-894). The email replaces the rule of D-890 (D-895).
+- The secrets `pushover-app-token` and `pushover-user-key` sit in Secret Manager. Revision `mtg-api-00078-hv2` mounts them at version 1 on the image of `930d1a6`.
+- The report form of PR-74 thanks the user with the text of the owner (D-898).
+- No paid target ran. One test notice through `notify.Pushover` reached the device of the owner.
+
+**The checks.** `make verify` passed on the tree of `060e688`, exit 0. `make pr-check` passed on the body.
+
+**The review.** Codex reviewed effective head `0122c743`. Ready for owner merge. No open findings. The Gitar pause (D-838) removes the current Gitar review requirement.
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- One notice from the deployed app after the deploy of this merge. Give one verdict, and read the notice.
+- Next step 2 (D-750). M-19, the free replay of the owned-only shortlist (F-174), comes after it.
+- One deployed bracket 5 session reads the commander rates now.
+- The Ulalek, Fused Atrocity shortlist holds 20 fixing lands, against a floor of 21.
+- The end of the Gitar pause, in a later pull request (D-838).
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
+- UNVERIFIED: the Moxfield import of the deck list that the app exports.
+- D-794 makes the app less strict than the Wizards infographic at Bracket 2.
+- Next steps 4 and 5, and OQ-67 and OQ-77.
+
+### 2026-09-24b: the first live fix cycle, PR-73
+
+**The owner started PR-73 from the transitional prompt of #222.** The deploy of `2c658ff` ended SUCCESS. The session said first that a bracket case builds with any card and counts no basic land. The owner chose the judge lane first, then the cycle, and the paid steps cost $0.2291. Case 16 passed before the fix, and the cycle still ran the fixer (F-173). The owner dropped the case, chose the fix here, moved the cause to M-19, and named PR-74 (D-880 to D-882).
+
 ## The resume section of 2026-09-24c
 
 **Pull request #224 gives a plain upload page, and a failed parse files its own thumbs down (F-49, F-91, D-882 to D-891).**

@@ -9,8 +9,6 @@ The GitHub app `gitar-bot` reviews pull requests. This skill gets a Gitar review
 
 Each repo that uses Gitar keeps a copy of this file. A rule of the repo wins over this skill. For example, a repo can ask for a second review, or it can limit who replies to Gitar.
 
-**Gitar pause (D-838).** `docs/reference/gitar-pause.md` wins over this skill. Do not do the push wait, and do not comment `Gitar review`. Read the Gitar output one time after each push. Tell the owner of each finding at once.
-
 ## Terms
 
 - **Head**: the newest commit of the pull request branch on GitHub.

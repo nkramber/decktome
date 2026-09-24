@@ -48,6 +48,10 @@ RETIRED = {f"D-{n}" for n in range(172, 177)}
 RUNTIME = {"docs/reference/feedback"}
 SCRATCH = "/.local/"
 
+# A deleted file that a record still names. A rewrite of the record
+# falsifies it, so the path takes no rule (D-899).
+GONE = {"docs/reference/gitar-pause.md"}
+
 # A dated record is history. A rewrite of it falsifies the record.
 DATED = re.compile(r"-\d{4}-\d{2}-\d{2}\.md$|session-handoff-archive\.md$")
 
@@ -119,7 +123,7 @@ def check(doc, text, known, top, paths, folders):
             token = match.group(1).strip().rstrip("/")
             if "/" not in token or not PATH.match(token):
                 continue
-            if token.split("/")[0] not in top or token in RUNTIME:
+            if token.split("/")[0] not in top or token in RUNTIME or token in GONE:
                 continue
             if SCRATCH in "/" + token:
                 continue
