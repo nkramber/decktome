@@ -77,6 +77,9 @@ class RefCheckTest(unittest.TestCase):
     def test_a_runtime_folder_takes_no_rule(self):
         self.assertEqual(run("The harvest writes `docs/reference/feedback/`."), [])
 
+    def test_a_deleted_path_of_a_record_takes_no_rule(self):
+        self.assertEqual(run("`docs/reference/gitar-pause.md` held the rules of the pause."), [])
+
     def test_a_fenced_block_takes_no_rule(self):
         self.assertEqual(run("Run this:\n\n```\nD-9 `go/internal/store`\n```\n"), [])
 

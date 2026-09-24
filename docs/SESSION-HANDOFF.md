@@ -6,37 +6,37 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-24d)
+## RESUME HERE (2026-09-24e)
 
-**Pull request #225 sends the owner a Pushover notice of each verdict (PR-75, F-49, D-892 to D-898).**
+**Pull request #226 ends the Gitar pause, and sets a push wait of one minute (PR-76, D-899, D-900).**
 
 Author provider: Claude Code
 
 **The next step.** Next step 2: measure five sessions, then ask the owner about the checkpoint rule (D-750).
 
-**The base.** `main` is `930d1a6`, from #224. Cloud Build `58dfbace` of `deploy-api` ended SUCCESS at 19:53:44 UTC on 2026-09-24, and `86152b16` of `deploy-web` at 19:56:27 UTC. The owner filed an import report on the deployed app at 20:45 UTC. `make feedback-list` read kind import, `IMPORT_PAGE_DECK`, the error, and 3 kept rows. The text view prints the count of the rows, and `-json` prints the rows.
+**The base.** `main` is `284c601`, from #225.
 
 **The change.**
 
-- `SubmitFeedback` sends a notice after the store writes the verdict (D-892). `go/internal/notify` posts it to Pushover in the background (D-893).
-- Every verdict pings, with at most one notice for each user in a minute (D-896, D-897).
-- The notice holds the email of the token, the reasons, 15 words of the text, the ids, and the time (D-894). The email replaces the rule of D-890 (D-895).
-- The secrets `pushover-app-token` and `pushover-user-key` sit in Secret Manager. Revision `mtg-api-00078-hv2` mounts them at version 1 on the image of `930d1a6`.
-- The report form of PR-74 thanks the user with the text of the owner (D-898).
-- No paid target ran. One test notice through `notify.Pushover` reached the device of the owner.
+- Each pull request waits for a current Gitar review again, documents alone too (D-637, D-679, D-745).
+- A session waits one minute after a push, before it asks Gitar for a manual review (D-900). The `gitar-review` skill held three minutes.
+- Each pause note and the pause file of D-838 are gone, by the steps of the end in that file (D-899).
+- The flag `--skip-gitar-review` and the pause branch of `scripts/feedback-review.sh` stay (D-838). With no pause file, the feedback cycle waits for Gitar.
+- Gitar finished no review on #215 to #225. The owner showed a Gitar review of 2026-09-24 on #76 of `nkramber/the-thing-below`.
+- `docs/tools/ref_check.py` gives the path of the pause file no rule, because the records still name it.
+- No paid target ran.
 
-**The checks.** `make verify` passed on the tree of `060e688`, exit 0. `make pr-check` passed on the body.
+**The checks.** `make verify` passed on the tree of `0c4fe16`, exit 0. Every check on `7567fc3` passed. `make pr-check` passed on the body.
 
-**The review.** Codex reviewed effective head `0122c743`. Ready for owner merge. No open findings. The Gitar pause (D-838) removes the current Gitar review requirement.
+**The review.** Codex reviewed effective head `7567fc3a8f3ca3e3e41eec2f539a7e51e210a3d5`. Ready for owner merge. No open findings. Gitar approved the same head.
 
 **What waits on the owner.**
 
 - The merge of this pull request.
-- One notice from the deployed app after the deploy of this merge. Give one verdict, and read the notice.
+- One notice from the deployed app after the deploy of #225. Give one verdict, and read the notice.
 - Next step 2 (D-750). M-19, the free replay of the owned-only shortlist (F-174), comes after it.
 - One deployed bracket 5 session reads the commander rates now.
 - The Ulalek, Fused Atrocity shortlist holds 20 fixing lands, against a floor of 21.
-- The end of the Gitar pause, in a later pull request (D-838).
 - A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
 - UNVERIFIED: the Moxfield import of the deck list that the app exports.
 - D-794 makes the app less strict than the Wizards infographic at Bracket 2.
@@ -108,7 +108,7 @@ Twenty-two things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **PR-75: a thumbs down pings the owner at once** (F-49, D-890, D-892 to D-897). This pull request is #225.
+1. **PR-76: the end of the Gitar pause, and a push wait of one minute** (D-899, D-900). This pull request is #226.
 2. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It comes after PR-75 (D-890). It waits, because the ten sessions of the audit ran before #184 and before D-749.
 3. **The open items of the roadmap.** Two register rows read 🔧: F-49 and F-174. PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
 4. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git.
@@ -131,10 +131,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-09-24b: the first live fix cycle, PR-73
-
-**The owner started PR-73 from the transitional prompt of #222.** The deploy of `2c658ff` ended SUCCESS. The session said first that a bracket case builds with any card and counts no basic land. The owner chose the judge lane first, then the cycle, and the paid steps cost $0.2291. Case 16 passed before the fix, and the cycle still ran the fixer (F-173). The owner dropped the case, chose the fix here, moved the cause to M-19, and named PR-74 (D-880 to D-882).
-
 ### 2026-09-24c: the plain upload page, PR-74
 
 **The owner started PR-74 from the transitional prompt of #223.** The deploy of `d4b8daf` ended SUCCESS. The owner answered the five questions of D-882 and three more, in three batches (D-883 to D-889, D-891). The session named the risk of user rows in a public repository, and the owner chose a fixture from the stored rows (D-888). The owner named PR-75, a notice for each thumbs down (D-890).
@@ -143,6 +139,10 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner started PR-75 from the transitional prompt of #224.** Both deploys of `930d1a6` ended SUCCESS, and the owner filed an import report that `make feedback-list` read. The owner answered the five questions of D-890 in three batches (D-892 to D-897). The owner asked for the email in the notice, and the session quoted D-890 against it. The owner chose the email of the token (D-895). The session created the two secrets and mounted them with the approval of the owner. The owner added a new thank-you text to the report form (D-898).
 
+### 2026-09-24e: the end of the Gitar pause, PR-76
+
+**The owner asked to end the Gitar pause of PR-66 (D-838).** The session read that Gitar finished no review on #215 to #225, and told the owner before the change. The owner showed a Gitar review of the same day on another repository, and confirmed that reviews come again. The session followed the steps of the end in the pause file (D-899). The owner then asked for a push wait of one minute (D-900). This pull request waits for its own Gitar review before the merge.
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-24c, the records of 2026-08-31 to 2026-09-24a, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-24d, the records of 2026-08-31 to 2026-09-24b, and 104 more sections, word for word. Read it for the detail behind a decision.

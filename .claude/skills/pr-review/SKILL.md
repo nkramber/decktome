@@ -16,8 +16,6 @@ Every pull request gets two reviews, in this order (D-811):
 1. Gitar reviews each push. The author answers each Gitar finding with the `gitar-review` skill.
 2. After a current Gitar review holds no open finding, the author session runs `make codex-review PR=<number>` (D-823). Codex reviews the pull request with this skill.
 
-**Gitar pause (D-838).** `docs/reference/gitar-pause.md` wins over this order. The author runs `make codex-review PR=<number> -- --skip-gitar-review`, and no step waits for Gitar.
-
 The Codex review writes `docs/reviews/pr-<number>.md`. The `review-gate` check reads that file, and the ruleset of `main` requires the check (D-815).
 
 A review that `make codex-review` starts has no owner in the loop. Where this skill says to ask the owner, write the question under `## Open questions and accepted risks`. Then give the verdict `Blocked`. The author session asks the owner.
