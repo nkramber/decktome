@@ -4,7 +4,7 @@
 // The fix cycle runs it twice. Before the fixer it must report every
 // case as a failure, because a case is the fault a reader met and a case
 // that already passes never measured it. After the fixer it must report
-// every one as a pass.
+// every one as a pass. A confirm run in which no case fails exits 3.
 //
 // It calls no model and it costs nothing. It reads the run file the gate
 // wrote, so it reads the same bars the gate's own verdict reads.
@@ -33,6 +33,11 @@ import (
 // did not read the way the caller wanted. The cycle stops on a fault and
 // judges nothing (T-12).
 const exitFault = 2
+
+// exitNoneFailed is the code of a confirm run in which no case failed.
+// No case then measured the fault of a reader, so the cycle has nothing
+// to fix and stops before the fixer (F-173).
+const exitNoneFailed = 3
 
 func main() {
 	code, err := run()
@@ -113,6 +118,9 @@ func check(w io.Writer, m triage.Manifest, rec *evalrun.Run, gate, want, runFile
 	}
 	if bad > 0 {
 		_, _ = fmt.Fprintf(w, "%d of %d cases did not read %s.\n", bad, len(cases), want)
+		if want == "fail" && bad == len(cases) {
+			return exitNoneFailed, nil
+		}
 		return 1, nil
 	}
 	_, _ = fmt.Fprintf(w, "Every one of the %d cases reads %s.\n", len(cases), want)

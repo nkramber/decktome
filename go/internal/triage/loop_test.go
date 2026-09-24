@@ -146,6 +146,37 @@ func TestTheCycleStopsWhenTheCapLeavesACaseUnmeasured(t *testing.T) {
 	}
 }
 
+// TestTheCycleStopsWhenNoCaseFailsBeforeTheFix holds F-173. The live
+// cycle of PR-73 read one case that passed before the fix, and the cycle
+// still ran the fixer and a measure run, then exited 0. A case that passes
+// before the fix measured nothing, so no failing case means nothing to fix.
+func TestTheCycleStopsWhenNoCaseFailsBeforeTheFix(t *testing.T) {
+	s := loopScript(t)
+	confirm := strings.Index(s, "step 2: confirm")
+	fixer := strings.Index(s, "step 3: the fixer")
+	if confirm < 0 || fixer < 0 {
+		t.Fatal("the cycle names no confirm step or no fixer step")
+	}
+	part := s[confirm:fixer]
+	// case-check exits 3 when no case fails, and that gate goes to no fixer.
+	noneFailed := strings.Index(part, "\n    3) ")
+	if noneFailed < 0 {
+		t.Fatal("the confirm step reads no exit 3 of case-check")
+	}
+	line := part[noneFailed:]
+	line = line[:strings.Index(line[1:], "\n")+1]
+	if strings.Contains(line, "TO_FIX=") {
+		t.Errorf("a gate with no failing case goes to the fixer: %s", line)
+	}
+	stop := strings.Index(part, `if [ -z "$TO_FIX" ]; then`)
+	if stop < 0 {
+		t.Fatal("the cycle does not stop before the fixer when no case fails")
+	}
+	if !strings.Contains(part[stop:], "exit 1") {
+		t.Error("the stop with no failing case does not exit 1, so the reset of --here is not printed")
+	}
+}
+
 // TestTheReviewCountsAnEmptyThreadListAsNone reads the fault that made
 // this test: grep -c prints 0 and exits 1 on an empty file, so an
 // "|| echo 0" wrote a second line and the count never read 0. The review

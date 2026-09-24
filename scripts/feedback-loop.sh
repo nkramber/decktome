@@ -226,7 +226,7 @@ run_gate() {
 
 # check_cases reads the run file against the manifest. want is pass or
 # fail. It answers 0 when every case reads that way, 1 when one does not,
-# and 2 on a fault.
+# and 2 on a fault. A confirm run in which no case fails answers 3.
 check_cases() {
   local gate="$1" run="$2" want="$3"
   ( cd "$ROOT/go" && go run ./cmd/case-check -manifest "$MANIFEST" -run "$run" -gate "$gate" -want "$want" ) \
@@ -349,6 +349,7 @@ print(",".join(str(c["id"]) for c in (m.get("cases") or []) if c["gate"] == sys.
   case $? in
     0) TO_FIX="$TO_FIX $gate" ;;
     1) say "  some cases of the $gate gate already pass. The fixer sees the failures alone." ; TO_FIX="$TO_FIX $gate" ;;
+    3) say "  no case of the $gate gate fails, so none of them measured the fault of a reader." ;;
     *) die "case-check faulted on the $gate gate. Read $LOG" ;;
   esac
 done
@@ -356,6 +357,13 @@ say "spent \$$(spent) of \$$CAP"
 if [ "$capped" != "0" ]; then
   say "some cases reached no gate, so the cycle stops before the fixer."
   say "the branch $BRANCH holds the cases alone. Raise --cap and run again, or drop the branch."
+  exit 1
+fi
+# A cycle with no failing case has nothing to fix. The fixer and a
+# measure run would spend on a case that measured nothing (F-173).
+if [ -z "$TO_FIX" ]; then
+  say "no case fails before the fix, so no case measured the fault. The cycle stops before the fixer."
+  say "read $REPORT. The branch $BRANCH holds the cases alone."
   exit 1
 fi
 

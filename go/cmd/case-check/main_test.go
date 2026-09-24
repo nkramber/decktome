@@ -74,11 +74,30 @@ func TestAPassingCaseReadsPass(t *testing.T) {
 		t.Errorf("the summary is missing:\n%s", b.String())
 	}
 	// A case that already passed on the confirm run never measured the
-	// reader's fault, and the cycle must hear about it.
+	// reader's fault, and the cycle must hear about it. With no case that
+	// fails, the cycle has nothing to fix (F-173).
 	b.Reset()
 	code, _ = check(&b, manifest(), rec, triage.GateQuestions, "fail", "run.jsonl")
-	if code != 1 {
-		t.Errorf("code = %d, want 1: a case that passes before the fix measured nothing", code)
+	if code != exitNoneFailed {
+		t.Errorf("code = %d, want %d: no case fails before the fix, so none measured a fault", code, exitNoneFailed)
+	}
+}
+
+// TestAConfirmRunWithOneFailureIsNotNoneFailed keeps the two confirm codes
+// apart. One case that fails still gives the fixer work, and one that
+// passes stays out of its sight (F-173).
+func TestAConfirmRunWithOneFailureIsNotNoneFailed(t *testing.T) {
+	two := triage.Manifest{Cases: []triage.Entry{
+		{Class: "Q1", From: "f01", Gate: triage.GateQuestions, Target: triage.TargetConversations, ID: 110},
+		{Class: "Q1", From: "f02", Gate: triage.GateQuestions, Target: triage.TargetConversations, ID: 111},
+	}}
+	rec := evalrun.New("questions", "test")
+	rec.Gate("110", "slot_format", 0, "")
+	rec.Gate("111", "slot_format", 1, "")
+	var b bytes.Buffer
+	code, err := check(&b, two, rec, triage.GateQuestions, "fail", "run.jsonl")
+	if err != nil || code != 1 {
+		t.Errorf("code = %d, err = %v, want 1: one of two cases fails\n%s", code, err, b.String())
 	}
 }
 
