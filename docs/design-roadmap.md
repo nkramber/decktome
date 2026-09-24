@@ -2098,7 +2098,7 @@ Gate:
 - `make verify` passes.
 > *In plain English:* a Commander import gets its power read, and a 60-card import does not yet. This item adds that read. It tests the reader against Wizards decks for casual play and against tournament winners. For Friday Night Magic, another model rated real user decks.
 
-**PR-72: The feedback fix cycle follows the one-PR rule and the Codex review (F-49, D-877 to D-879).** ✅ merged as #N.
+**PR-72: The feedback fix cycle follows the one-PR rule and the Codex review (F-49, D-877 to D-879).** ✅ merged as #222.
 Before this item the cycle cut its own branch and opened its own pull request. So a session that drove it worked on two pull requests (D-746). Its review step read Gitar alone and waited for it, although D-838 pauses Gitar. No Codex review read a pull request of the cycle, so `review-gate` refused its merge.
 
 - **The branch.** The flag `--here` of `scripts/feedback-loop.sh` commits the case, the fix, and the evidence on the branch of the session. It pushes nothing (D-877). The session writes the documents and opens the pull request. A failed cycle names the commit that drops its work.
