@@ -40,6 +40,11 @@ const (
 	// between questions belongs to none of them. It names the session and
 	// no question.
 	FeedbackKind_FEEDBACK_KIND_CHAT FeedbackKind = 5
+	// FEEDBACK_KIND_IMPORT is a file the app could not read, on the
+	// collection upload or the deck import (D-882, D-884). It names no
+	// session, no deck, and no card. It is a thumbs down alone. The server
+	// reads the file again and names the fault itself (D-596).
+	FeedbackKind_FEEDBACK_KIND_IMPORT FeedbackKind = 6
 )
 
 // Enum value maps for FeedbackKind.
@@ -51,6 +56,7 @@ var (
 		3: "FEEDBACK_KIND_CARD",
 		4: "FEEDBACK_KIND_DECK",
 		5: "FEEDBACK_KIND_CHAT",
+		6: "FEEDBACK_KIND_IMPORT",
 	}
 	FeedbackKind_value = map[string]int32{
 		"FEEDBACK_KIND_UNSPECIFIED": 0,
@@ -59,6 +65,7 @@ var (
 		"FEEDBACK_KIND_CARD":        3,
 		"FEEDBACK_KIND_DECK":        4,
 		"FEEDBACK_KIND_CHAT":        5,
+		"FEEDBACK_KIND_IMPORT":      6,
 	}
 )
 
@@ -87,6 +94,58 @@ func (x FeedbackKind) Number() protoreflect.EnumNumber {
 // Deprecated: Use FeedbackKind.Descriptor instead.
 func (FeedbackKind) EnumDescriptor() ([]byte, []int) {
 	return file_mtg_v1_feedback_service_proto_rawDescGZIP(), []int{0}
+}
+
+// ImportPage names the page a file came through, for kind IMPORT.
+type ImportPage int32
+
+const (
+	ImportPage_IMPORT_PAGE_UNSPECIFIED ImportPage = 0
+	// IMPORT_PAGE_COLLECTION is the collection upload.
+	ImportPage_IMPORT_PAGE_COLLECTION ImportPage = 1
+	// IMPORT_PAGE_DECK is the deck import.
+	ImportPage_IMPORT_PAGE_DECK ImportPage = 2
+)
+
+// Enum value maps for ImportPage.
+var (
+	ImportPage_name = map[int32]string{
+		0: "IMPORT_PAGE_UNSPECIFIED",
+		1: "IMPORT_PAGE_COLLECTION",
+		2: "IMPORT_PAGE_DECK",
+	}
+	ImportPage_value = map[string]int32{
+		"IMPORT_PAGE_UNSPECIFIED": 0,
+		"IMPORT_PAGE_COLLECTION":  1,
+		"IMPORT_PAGE_DECK":        2,
+	}
+)
+
+func (x ImportPage) Enum() *ImportPage {
+	p := new(ImportPage)
+	*p = x
+	return p
+}
+
+func (x ImportPage) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ImportPage) Descriptor() protoreflect.EnumDescriptor {
+	return file_mtg_v1_feedback_service_proto_enumTypes[1].Descriptor()
+}
+
+func (ImportPage) Type() protoreflect.EnumType {
+	return &file_mtg_v1_feedback_service_proto_enumTypes[1]
+}
+
+func (x ImportPage) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ImportPage.Descriptor instead.
+func (ImportPage) EnumDescriptor() ([]byte, []int) {
+	return file_mtg_v1_feedback_service_proto_rawDescGZIP(), []int{1}
 }
 
 // FeedbackVerdict is the thumb.
@@ -126,11 +185,11 @@ func (x FeedbackVerdict) String() string {
 }
 
 func (FeedbackVerdict) Descriptor() protoreflect.EnumDescriptor {
-	return file_mtg_v1_feedback_service_proto_enumTypes[1].Descriptor()
+	return file_mtg_v1_feedback_service_proto_enumTypes[2].Descriptor()
 }
 
 func (FeedbackVerdict) Type() protoreflect.EnumType {
-	return &file_mtg_v1_feedback_service_proto_enumTypes[1]
+	return &file_mtg_v1_feedback_service_proto_enumTypes[2]
 }
 
 func (x FeedbackVerdict) Number() protoreflect.EnumNumber {
@@ -139,7 +198,7 @@ func (x FeedbackVerdict) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use FeedbackVerdict.Descriptor instead.
 func (FeedbackVerdict) EnumDescriptor() ([]byte, []int) {
-	return file_mtg_v1_feedback_service_proto_rawDescGZIP(), []int{1}
+	return file_mtg_v1_feedback_service_proto_rawDescGZIP(), []int{2}
 }
 
 // Feedback is one verdict. The ids a kind does not use stay empty.
@@ -159,8 +218,15 @@ type Feedback struct {
 	// for a thumbs down. The keys per kind are fixed, and the API refuses
 	// one it does not know.
 	Reasons []string `protobuf:"bytes,7,rep,name=reasons,proto3" json:"reasons,omitempty"`
-	// text is the "Other" box, at most the message cap of the chat.
-	Text          string `protobuf:"bytes,8,opt,name=text,proto3" json:"text,omitempty"`
+	// text is the "Other" box, at most the message cap of the chat. For
+	// kind IMPORT it is the service the user named, in the user's words
+	// (D-883).
+	Text string `protobuf:"bytes,8,opt,name=text,proto3" json:"text,omitempty"`
+	// import_page and import_content are for kind IMPORT alone. The
+	// content is the file the page could not read. The server reads it
+	// again and keeps the fault, never the whole file (D-885).
+	ImportPage    ImportPage `protobuf:"varint,9,opt,name=import_page,json=importPage,proto3,enum=mtg.v1.ImportPage" json:"import_page,omitempty"`
+	ImportContent []byte     `protobuf:"bytes,10,opt,name=import_content,json=importContent,proto3" json:"import_content,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -251,6 +317,123 @@ func (x *Feedback) GetText() string {
 	return ""
 }
 
+func (x *Feedback) GetImportPage() ImportPage {
+	if x != nil {
+		return x.ImportPage
+	}
+	return ImportPage_IMPORT_PAGE_UNSPECIFIED
+}
+
+func (x *Feedback) GetImportContent() []byte {
+	if x != nil {
+		return x.ImportContent
+	}
+	return nil
+}
+
+// ImportFault is what a report of kind IMPORT keeps (D-885). The server
+// fills it from its own read of the file.
+type ImportFault struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Page  ImportPage             `protobuf:"varint,1,opt,name=page,proto3,enum=mtg.v1.ImportPage" json:"page,omitempty"`
+	// error is the error of the server when the file does not read at
+	// all, and empty when the file read with bad rows (D-887).
+	Error string `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
+	// header is the first line of the file.
+	Header    string `protobuf:"bytes,3,opt,name=header,proto3" json:"header,omitempty"`
+	ByteCount int64  `protobuf:"varint,4,opt,name=byte_count,json=byteCount,proto3" json:"byte_count,omitempty"`
+	// row_count counts the lines of the file after the header.
+	RowCount int32 `protobuf:"varint,5,opt,name=row_count,json=rowCount,proto3" json:"row_count,omitempty"`
+	// rows holds the rows that do not parse, the source line of each, at
+	// most 500 (D-885). The reason of a row of a file that does not read
+	// at all is BAD_ROW.
+	Rows []*UnresolvedRow `protobuf:"bytes,6,rep,name=rows,proto3" json:"rows,omitempty"`
+	// bad_row_count counts every row that does not parse, so a cut list
+	// shows how many rows it left out.
+	BadRowCount   int32 `protobuf:"varint,7,opt,name=bad_row_count,json=badRowCount,proto3" json:"bad_row_count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ImportFault) Reset() {
+	*x = ImportFault{}
+	mi := &file_mtg_v1_feedback_service_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImportFault) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImportFault) ProtoMessage() {}
+
+func (x *ImportFault) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_feedback_service_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImportFault.ProtoReflect.Descriptor instead.
+func (*ImportFault) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_feedback_service_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *ImportFault) GetPage() ImportPage {
+	if x != nil {
+		return x.Page
+	}
+	return ImportPage_IMPORT_PAGE_UNSPECIFIED
+}
+
+func (x *ImportFault) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
+}
+
+func (x *ImportFault) GetHeader() string {
+	if x != nil {
+		return x.Header
+	}
+	return ""
+}
+
+func (x *ImportFault) GetByteCount() int64 {
+	if x != nil {
+		return x.ByteCount
+	}
+	return 0
+}
+
+func (x *ImportFault) GetRowCount() int32 {
+	if x != nil {
+		return x.RowCount
+	}
+	return 0
+}
+
+func (x *ImportFault) GetRows() []*UnresolvedRow {
+	if x != nil {
+		return x.Rows
+	}
+	return nil
+}
+
+func (x *ImportFault) GetBadRowCount() int32 {
+	if x != nil {
+		return x.BadRowCount
+	}
+	return 0
+}
+
 type SubmitFeedbackRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Feedback      *Feedback              `protobuf:"bytes,1,opt,name=feedback,proto3" json:"feedback,omitempty"`
@@ -260,7 +443,7 @@ type SubmitFeedbackRequest struct {
 
 func (x *SubmitFeedbackRequest) Reset() {
 	*x = SubmitFeedbackRequest{}
-	mi := &file_mtg_v1_feedback_service_proto_msgTypes[1]
+	mi := &file_mtg_v1_feedback_service_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -272,7 +455,7 @@ func (x *SubmitFeedbackRequest) String() string {
 func (*SubmitFeedbackRequest) ProtoMessage() {}
 
 func (x *SubmitFeedbackRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_feedback_service_proto_msgTypes[1]
+	mi := &file_mtg_v1_feedback_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -285,7 +468,7 @@ func (x *SubmitFeedbackRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitFeedbackRequest.ProtoReflect.Descriptor instead.
 func (*SubmitFeedbackRequest) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_feedback_service_proto_rawDescGZIP(), []int{1}
+	return file_mtg_v1_feedback_service_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *SubmitFeedbackRequest) GetFeedback() *Feedback {
@@ -305,7 +488,7 @@ type SubmitFeedbackResponse struct {
 
 func (x *SubmitFeedbackResponse) Reset() {
 	*x = SubmitFeedbackResponse{}
-	mi := &file_mtg_v1_feedback_service_proto_msgTypes[2]
+	mi := &file_mtg_v1_feedback_service_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -317,7 +500,7 @@ func (x *SubmitFeedbackResponse) String() string {
 func (*SubmitFeedbackResponse) ProtoMessage() {}
 
 func (x *SubmitFeedbackResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_feedback_service_proto_msgTypes[2]
+	mi := &file_mtg_v1_feedback_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -330,7 +513,7 @@ func (x *SubmitFeedbackResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitFeedbackResponse.ProtoReflect.Descriptor instead.
 func (*SubmitFeedbackResponse) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_feedback_service_proto_rawDescGZIP(), []int{2}
+	return file_mtg_v1_feedback_service_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *SubmitFeedbackResponse) GetFeedbackId() string {
@@ -344,7 +527,7 @@ var File_mtg_v1_feedback_service_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_feedback_service_proto_rawDesc = "" +
 	"\n" +
-	"\x1dmtg/v1/feedback_service.proto\x12\x06mtg.v1\"\x8b\x02\n" +
+	"\x1dmtg/v1/feedback_service.proto\x12\x06mtg.v1\x1a\x17mtg/v1/collection.proto\"\xe7\x02\n" +
 	"\bFeedback\x12(\n" +
 	"\x04kind\x18\x01 \x01(\x0e2\x14.mtg.v1.FeedbackKindR\x04kind\x121\n" +
 	"\averdict\x18\x02 \x01(\x0e2\x17.mtg.v1.FeedbackVerdictR\averdict\x12\x1d\n" +
@@ -355,19 +538,38 @@ const file_mtg_v1_feedback_service_proto_rawDesc = "" +
 	"\adeck_id\x18\x05 \x01(\tR\x06deckId\x12\x1b\n" +
 	"\toracle_id\x18\x06 \x01(\tR\boracleId\x12\x18\n" +
 	"\areasons\x18\a \x03(\tR\areasons\x12\x12\n" +
-	"\x04text\x18\b \x01(\tR\x04text\"E\n" +
+	"\x04text\x18\b \x01(\tR\x04text\x123\n" +
+	"\vimport_page\x18\t \x01(\x0e2\x12.mtg.v1.ImportPageR\n" +
+	"importPage\x12%\n" +
+	"\x0eimport_content\x18\n" +
+	" \x01(\fR\rimportContent\"\xee\x01\n" +
+	"\vImportFault\x12&\n" +
+	"\x04page\x18\x01 \x01(\x0e2\x12.mtg.v1.ImportPageR\x04page\x12\x14\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error\x12\x16\n" +
+	"\x06header\x18\x03 \x01(\tR\x06header\x12\x1d\n" +
+	"\n" +
+	"byte_count\x18\x04 \x01(\x03R\tbyteCount\x12\x1b\n" +
+	"\trow_count\x18\x05 \x01(\x05R\browCount\x12)\n" +
+	"\x04rows\x18\x06 \x03(\v2\x15.mtg.v1.UnresolvedRowR\x04rows\x12\"\n" +
+	"\rbad_row_count\x18\a \x01(\x05R\vbadRowCount\"E\n" +
 	"\x15SubmitFeedbackRequest\x12,\n" +
 	"\bfeedback\x18\x01 \x01(\v2\x10.mtg.v1.FeedbackR\bfeedback\"9\n" +
 	"\x16SubmitFeedbackResponse\x12\x1f\n" +
 	"\vfeedback_id\x18\x01 \x01(\tR\n" +
-	"feedbackId*\xac\x01\n" +
+	"feedbackId*\xc6\x01\n" +
 	"\fFeedbackKind\x12\x1d\n" +
 	"\x19FEEDBACK_KIND_UNSPECIFIED\x10\x00\x12\x1a\n" +
 	"\x16FEEDBACK_KIND_QUESTION\x10\x01\x12\x19\n" +
 	"\x15FEEDBACK_KIND_SUMMARY\x10\x02\x12\x16\n" +
 	"\x12FEEDBACK_KIND_CARD\x10\x03\x12\x16\n" +
 	"\x12FEEDBACK_KIND_DECK\x10\x04\x12\x16\n" +
-	"\x12FEEDBACK_KIND_CHAT\x10\x05*g\n" +
+	"\x12FEEDBACK_KIND_CHAT\x10\x05\x12\x18\n" +
+	"\x14FEEDBACK_KIND_IMPORT\x10\x06*[\n" +
+	"\n" +
+	"ImportPage\x12\x1b\n" +
+	"\x17IMPORT_PAGE_UNSPECIFIED\x10\x00\x12\x1a\n" +
+	"\x16IMPORT_PAGE_COLLECTION\x10\x01\x12\x14\n" +
+	"\x10IMPORT_PAGE_DECK\x10\x02*g\n" +
 	"\x0fFeedbackVerdict\x12 \n" +
 	"\x1cFEEDBACK_VERDICT_UNSPECIFIED\x10\x00\x12\x17\n" +
 	"\x13FEEDBACK_VERDICT_UP\x10\x01\x12\x19\n" +
@@ -387,26 +589,32 @@ func file_mtg_v1_feedback_service_proto_rawDescGZIP() []byte {
 	return file_mtg_v1_feedback_service_proto_rawDescData
 }
 
-var file_mtg_v1_feedback_service_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_mtg_v1_feedback_service_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_mtg_v1_feedback_service_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_mtg_v1_feedback_service_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_mtg_v1_feedback_service_proto_goTypes = []any{
 	(FeedbackKind)(0),              // 0: mtg.v1.FeedbackKind
-	(FeedbackVerdict)(0),           // 1: mtg.v1.FeedbackVerdict
-	(*Feedback)(nil),               // 2: mtg.v1.Feedback
-	(*SubmitFeedbackRequest)(nil),  // 3: mtg.v1.SubmitFeedbackRequest
-	(*SubmitFeedbackResponse)(nil), // 4: mtg.v1.SubmitFeedbackResponse
+	(ImportPage)(0),                // 1: mtg.v1.ImportPage
+	(FeedbackVerdict)(0),           // 2: mtg.v1.FeedbackVerdict
+	(*Feedback)(nil),               // 3: mtg.v1.Feedback
+	(*ImportFault)(nil),            // 4: mtg.v1.ImportFault
+	(*SubmitFeedbackRequest)(nil),  // 5: mtg.v1.SubmitFeedbackRequest
+	(*SubmitFeedbackResponse)(nil), // 6: mtg.v1.SubmitFeedbackResponse
+	(*UnresolvedRow)(nil),          // 7: mtg.v1.UnresolvedRow
 }
 var file_mtg_v1_feedback_service_proto_depIdxs = []int32{
 	0, // 0: mtg.v1.Feedback.kind:type_name -> mtg.v1.FeedbackKind
-	1, // 1: mtg.v1.Feedback.verdict:type_name -> mtg.v1.FeedbackVerdict
-	2, // 2: mtg.v1.SubmitFeedbackRequest.feedback:type_name -> mtg.v1.Feedback
-	3, // 3: mtg.v1.FeedbackService.SubmitFeedback:input_type -> mtg.v1.SubmitFeedbackRequest
-	4, // 4: mtg.v1.FeedbackService.SubmitFeedback:output_type -> mtg.v1.SubmitFeedbackResponse
-	4, // [4:5] is the sub-list for method output_type
-	3, // [3:4] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	2, // 1: mtg.v1.Feedback.verdict:type_name -> mtg.v1.FeedbackVerdict
+	1, // 2: mtg.v1.Feedback.import_page:type_name -> mtg.v1.ImportPage
+	1, // 3: mtg.v1.ImportFault.page:type_name -> mtg.v1.ImportPage
+	7, // 4: mtg.v1.ImportFault.rows:type_name -> mtg.v1.UnresolvedRow
+	3, // 5: mtg.v1.SubmitFeedbackRequest.feedback:type_name -> mtg.v1.Feedback
+	5, // 6: mtg.v1.FeedbackService.SubmitFeedback:input_type -> mtg.v1.SubmitFeedbackRequest
+	6, // 7: mtg.v1.FeedbackService.SubmitFeedback:output_type -> mtg.v1.SubmitFeedbackResponse
+	7, // [7:8] is the sub-list for method output_type
+	6, // [6:7] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_mtg_v1_feedback_service_proto_init() }
@@ -414,13 +622,14 @@ func file_mtg_v1_feedback_service_proto_init() {
 	if File_mtg_v1_feedback_service_proto != nil {
 		return
 	}
+	file_mtg_v1_collection_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_mtg_v1_feedback_service_proto_rawDesc), len(file_mtg_v1_feedback_service_proto_rawDesc)),
-			NumEnums:      2,
-			NumMessages:   3,
+			NumEnums:      3,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

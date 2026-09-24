@@ -3,8 +3,11 @@ package triage
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -145,4 +148,53 @@ func oneLine(s string) string {
 	s = strings.ReplaceAll(s, "|", "/")
 	s = strings.Join(strings.Fields(s), " ")
 	return strings.TrimSpace(s)
+}
+
+// fixtureRe reads the number of a parser fixture file: "<n>.txt".
+var fixtureRe = regexp.MustCompile(`^(\d+)\.txt$`)
+
+// NextFixtureID answers one past the highest number of the fixtures in a
+// folder (D-888). A folder that does not exist yet answers 1.
+func NextFixtureID(dir string) (int, error) {
+	entries, err := os.ReadDir(dir)
+	if errors.Is(err, fs.ErrNotExist) {
+		return 1, nil
+	}
+	if err != nil {
+		return 0, fmt.Errorf("triage: %s: %w", dir, err)
+	}
+	next := 1
+	for _, e := range entries {
+		m := fixtureRe.FindStringSubmatch(e.Name())
+		if m == nil {
+			continue
+		}
+		if n, err := strconv.Atoi(m[1]); err == nil && n >= next {
+			next = n + 1
+		}
+	}
+	return next, nil
+}
+
+// WriteFixture writes one parser fixture as "<id>.txt" in dir, and
+// answers the path. The body is the text as a JSON string. It never
+// writes over a file, so two runs can not lose a case.
+func WriteFixture(dir string, id int, body json.RawMessage) (string, error) {
+	var text string
+	if err := json.Unmarshal(body, &text); err != nil {
+		return "", fmt.Errorf("triage: the fixture body: %w", err)
+	}
+	if err := os.MkdirAll(dir, 0o750); err != nil {
+		return "", fmt.Errorf("triage: %w", err)
+	}
+	path := filepath.Join(dir, strconv.Itoa(id)+".txt")
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600) // #nosec G304 -- the triage names a folder of this repo.
+	if err != nil {
+		return "", fmt.Errorf("triage: %w", err)
+	}
+	if _, err := f.WriteString(text); err != nil {
+		_ = f.Close()
+		return "", fmt.Errorf("triage: %s: %w", path, err)
+	}
+	return path, f.Close()
 }

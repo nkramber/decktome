@@ -78,8 +78,9 @@ func TestTheCaseFilesAreFrozen(t *testing.T) {
 			t.Errorf("the cycle does not freeze %s, so the fixer may edit its own measurement", target)
 		}
 	}
-	// The triage and the check that judges the fixer are frozen too.
-	for _, p := range []string{"go/internal/triage", "go/cmd/case-check", "go/cmd/feedback-triage"} {
+	// The triage, the check that judges the fixer, and the parser
+	// fixtures of D-888 are frozen too.
+	for _, p := range []string{"go/internal/triage", "go/cmd/case-check", "go/cmd/feedback-triage", "go/internal/importfault/testdata/reports"} {
 		if !held[p] {
 			t.Errorf("the cycle does not freeze %s", p)
 		}

@@ -11,11 +11,13 @@ describe("reasonsOf", () => {
     expect(reasonsOf(FeedbackKind.SUMMARY).map((r) => r.key)).toEqual(["false_claim", "misses_plan", "too_long_or_vague"]);
     expect(reasonsOf(FeedbackKind.CARD).map((r) => r.key)).toEqual(["off_theme", "illegal", "unwanted_buy", "wrong_printing", "wrong_power"]);
     expect(reasonsOf(FeedbackKind.DECK).map((r) => r.key)).toEqual(["off_spec", "bad_mana", "too_little_interaction", "wrong_power", "too_many_to_buy"]);
+    expect(reasonsOf(FeedbackKind.CHAT).map((r) => r.key)).toEqual(["stuck", "ignored_request", "wrong_questions", "no_deck", "error"]);
+    expect(reasonsOf(FeedbackKind.IMPORT).map((r) => r.key)).toEqual(["parse_fault"]);
     expect(reasonsOf(FeedbackKind.UNSPECIFIED)).toEqual([]);
   });
 
   it("gives every reason a sentence", () => {
-    for (const kind of [FeedbackKind.QUESTION, FeedbackKind.SUMMARY, FeedbackKind.CARD, FeedbackKind.DECK]) {
+    for (const kind of [FeedbackKind.QUESTION, FeedbackKind.SUMMARY, FeedbackKind.CARD, FeedbackKind.DECK, FeedbackKind.CHAT, FeedbackKind.IMPORT]) {
       for (const r of reasonsOf(kind)) expect(r.label).toMatch(/^[A-Z].*\.$/);
     }
   });

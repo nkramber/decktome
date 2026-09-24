@@ -98,6 +98,12 @@ func run() error {
 		if it.Text != "" {
 			fmt.Printf("  said      %s\n", it.Text)
 		}
+		if f := it.Import; f != nil {
+			fmt.Printf("  page      %s, %d bytes, %d rows, %d do not parse\n", f.GetPage(), f.GetByteCount(), f.GetRowCount(), f.GetBadRowCount())
+			if f.GetError() != "" {
+				fmt.Printf("  error     %s\n", f.GetError())
+			}
+		}
 		fmt.Println()
 	}
 	return nil

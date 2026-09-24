@@ -19,6 +19,7 @@ import (
 	"github.com/nkramber/decktome/go/internal/decklist"
 	"github.com/nkramber/decktome/go/internal/generate"
 	"github.com/nkramber/decktome/go/internal/gzstore"
+	"github.com/nkramber/decktome/go/internal/importfault"
 	"github.com/nkramber/decktome/go/internal/llm"
 	"github.com/nkramber/decktome/go/internal/questions"
 	"github.com/nkramber/decktome/go/internal/rules"
@@ -90,9 +91,17 @@ func (s *Server) ImportDeck(ctx context.Context, req *connect.Request[mtgv1.Impo
 		return nil, connect.NewError(connect.CodeUnavailable, errIndexNotLoaded)
 	}
 
+	// A list that does not read offers the report form on the page
+	// (D-887). A list over the line cap is a size limit and no fault.
 	list, err := decklist.Parse(strings.NewReader(msg.GetText()))
-	if err != nil {
+	if errors.Is(err, decklist.ErrTooManyLines) {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	}
+	if err != nil {
+		return nil, importfault.Unreadable(err)
+	}
+	if len(list.Lines) == 0 {
+		return nil, importfault.Unreadable(importfault.ErrNoCardLine)
 	}
 	entries, bad := decklist.Resolve(list, idx)
 	if len(entries) == 0 {

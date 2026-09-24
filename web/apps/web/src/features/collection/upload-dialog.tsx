@@ -1,5 +1,6 @@
 import { type CollectionDiff } from "@mtg/api-client/mtg/v1/collection_pb";
 import type { ImportCollectionResponse } from "@mtg/api-client/mtg/v1/collection_service_pb";
+import { ImportPage } from "@mtg/api-client/mtg/v1/feedback_service_pb";
 import { useMutation } from "@tanstack/react-query";
 import { PackageIcon } from "lucide-react";
 import { type FormEvent, useRef, useState } from "react";
@@ -12,6 +13,7 @@ import { collectionClient } from "../../lib/api";
 import { cn } from "../../lib/cn";
 import { errorMessage } from "../../lib/errors";
 import { maxUploadBytes } from "../../lib/limits";
+import { isUnreadable, parseFaults, ReportImport } from "../feedback/report-import";
 import { CollectionDiffBody } from "./collection-diff";
 import { ImportReportBody } from "./import-result";
 
@@ -126,6 +128,10 @@ function UploadBody({ activeCollectionId, activeCollectionName, askForFile, onIm
   });
 
   const busy = diff.isPending || upload.isPending;
+  // A file the app could not read shows the report form in place of the
+  // error of the server, which names formats (D-887, D-889).
+  const unreadable = (diff.isError && isUnreadable(diff.error)) || (upload.isError && isUnreadable(upload.error));
+  const badRows = parseFaults(result?.report?.unresolved ?? []);
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -149,7 +155,7 @@ function UploadBody({ activeCollectionId, activeCollectionName, askForFile, onIm
       ? "Every row the import could not read is listed below."
       : step === "diff"
         ? `Read what a replacement of ${collectionName} changes.`
-        : "A collection export from ManaBox or Moxfield, or an Arena list. Nothing is stored until you upload.";
+        : "Upload a collection file, or paste its text. Nothing is stored until you upload.";
 
   return (
     <DialogContent className="max-w-xl" aria-describedby="upload-dialog-note">
@@ -161,6 +167,7 @@ function UploadBody({ activeCollectionId, activeCollectionName, askForFile, onIm
       </DialogHeader>
 
       {step === "pick" && (
+        <>
         <form onSubmit={onSubmit} className="flex flex-col gap-3">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="file" className="sr-only">
@@ -208,21 +215,20 @@ function UploadBody({ activeCollectionId, activeCollectionName, askForFile, onIm
               className="sr-only"
             />
             <p className="text-xs text-muted-foreground">
-              The app reads the file and names its format itself. ManaBox writes its export from Settings, then Export collection. Moxfield writes one from Collection, then Export. It lands in Files, or in the share sheet.
+              The app reads the file and finds its format itself.
             </p>
             {/* A phone that offers Copy and no file still gets a way in.
                 The text becomes a File, so the diff, the size check, and
                 the upload read it as any other export (PR-25). */}
             {pasteOpen ? (
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="paste">Paste the CSV text</Label>
+                <Label htmlFor="paste">Paste the text of the file</Label>
                 <textarea
                   id="paste"
                   name="paste"
                   rows={4}
                   value={pasted}
                   onChange={(e) => setPasted(e.target.value)}
-                  placeholder="Binder Name,Binder Type,Name,Set code,..."
                   className="min-h-24 rounded-card border border-border bg-background p-2 font-mono text-xs"
                 />
                 <Button
@@ -238,7 +244,7 @@ function UploadBody({ activeCollectionId, activeCollectionName, askForFile, onIm
               </div>
             ) : (
               <Button type="button" variant="ghost" size="sm" className="self-start" onClick={() => setPasteOpen(true)}>
-                No file? Paste the CSV text
+                No file? Paste its text
               </Button>
             )}
           </div>
@@ -272,12 +278,12 @@ function UploadBody({ activeCollectionId, activeCollectionName, askForFile, onIm
                 The file is {(file.size / (1 << 20)).toFixed(1)} MiB. The limit is {maxUploadBytes >> 20} MiB.
               </p>
             )}
-            {diff.isError && (
+            {diff.isError && !unreadable && (
               <p role="alert" className="text-danger">
                 Could not read that file: {errorMessage(diff.error)}
               </p>
             )}
-            {upload.isError && (
+            {upload.isError && !unreadable && (
               <p role="alert" className="text-danger">
                 Upload failed: {errorMessage(upload.error)}
               </p>
@@ -293,6 +299,10 @@ function UploadBody({ activeCollectionId, activeCollectionName, askForFile, onIm
             </Button>
           </DialogFooter>
         </form>
+        {/* The form of D-882 sits outside the upload form, because a
+            form holds no form. */}
+        {unreadable && file && <ReportImport page={ImportPage.COLLECTION} file={file} badRows={0} />}
+        </>
       )}
 
       {step === "diff" && diffResult && file && (
@@ -321,6 +331,7 @@ function UploadBody({ activeCollectionId, activeCollectionName, askForFile, onIm
       {step === "done" && result && (
         <div className="flex flex-col gap-4">
           <ImportReportBody result={result} />
+          {badRows > 0 && file && <ReportImport page={ImportPage.COLLECTION} file={file} badRows={badRows} />}
           <DialogFooter>
             <Button type="button" onClick={() => onClose()}>
               Done

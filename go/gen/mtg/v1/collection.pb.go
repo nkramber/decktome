@@ -1103,6 +1103,45 @@ func (x *ImportReport) GetUnresolvedByReason() map[string]int32 {
 	return nil
 }
 
+// UnreadableFile is the error detail of a file the app could not read
+// (D-887). The page shows the report form on it, and on no other error:
+// a file that is too large or a bad commander pick is no parse fault.
+type UnreadableFile struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UnreadableFile) Reset() {
+	*x = UnreadableFile{}
+	mi := &file_mtg_v1_collection_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UnreadableFile) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UnreadableFile) ProtoMessage() {}
+
+func (x *UnreadableFile) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_collection_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UnreadableFile.ProtoReflect.Descriptor instead.
+func (*UnreadableFile) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_collection_proto_rawDescGZIP(), []int{8}
+}
+
 // UnresolvedRow is one input row the importer rejected, with the reason.
 type UnresolvedRow struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -1115,7 +1154,7 @@ type UnresolvedRow struct {
 
 func (x *UnresolvedRow) Reset() {
 	*x = UnresolvedRow{}
-	mi := &file_mtg_v1_collection_proto_msgTypes[8]
+	mi := &file_mtg_v1_collection_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1127,7 +1166,7 @@ func (x *UnresolvedRow) String() string {
 func (*UnresolvedRow) ProtoMessage() {}
 
 func (x *UnresolvedRow) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_collection_proto_msgTypes[8]
+	mi := &file_mtg_v1_collection_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1140,7 +1179,7 @@ func (x *UnresolvedRow) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnresolvedRow.ProtoReflect.Descriptor instead.
 func (*UnresolvedRow) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_collection_proto_rawDescGZIP(), []int{8}
+	return file_mtg_v1_collection_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *UnresolvedRow) GetLine() int32 {
@@ -1247,7 +1286,8 @@ const file_mtg_v1_collection_proto_rawDesc = "" +
 	"\x14unresolved_by_reason\x18\x03 \x03(\v2,.mtg.v1.ImportReport.UnresolvedByReasonEntryR\x12unresolvedByReason\x1aE\n" +
 	"\x17UnresolvedByReasonEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01\"g\n" +
+	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01\"\x10\n" +
+	"\x0eUnreadableFile\"g\n" +
 	"\rUnresolvedRow\x12\x12\n" +
 	"\x04line\x18\x01 \x01(\x05R\x04line\x12\x10\n" +
 	"\x03raw\x18\x02 \x01(\tR\x03raw\x120\n" +
@@ -1299,7 +1339,7 @@ func file_mtg_v1_collection_proto_rawDescGZIP() []byte {
 }
 
 var file_mtg_v1_collection_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
-var file_mtg_v1_collection_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_mtg_v1_collection_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_mtg_v1_collection_proto_goTypes = []any{
 	(BinderSort)(0),               // 0: mtg.v1.BinderSort
 	(ImportSource)(0),             // 1: mtg.v1.ImportSource
@@ -1314,33 +1354,34 @@ var file_mtg_v1_collection_proto_goTypes = []any{
 	(*CollectionDiff)(nil),        // 10: mtg.v1.CollectionDiff
 	(*QuantityChange)(nil),        // 11: mtg.v1.QuantityChange
 	(*ImportReport)(nil),          // 12: mtg.v1.ImportReport
-	(*UnresolvedRow)(nil),         // 13: mtg.v1.UnresolvedRow
-	nil,                           // 14: mtg.v1.CollectionSummary.ByRarityEntry
-	nil,                           // 15: mtg.v1.CollectionSummary.ByTypeEntry
-	nil,                           // 16: mtg.v1.ImportReport.UnresolvedByReasonEntry
-	(*timestamppb.Timestamp)(nil), // 17: google.protobuf.Timestamp
-	(Color)(0),                    // 18: mtg.v1.Color
-	(*ImageUris)(nil),             // 19: mtg.v1.ImageUris
+	(*UnreadableFile)(nil),        // 13: mtg.v1.UnreadableFile
+	(*UnresolvedRow)(nil),         // 14: mtg.v1.UnresolvedRow
+	nil,                           // 15: mtg.v1.CollectionSummary.ByRarityEntry
+	nil,                           // 16: mtg.v1.CollectionSummary.ByTypeEntry
+	nil,                           // 17: mtg.v1.ImportReport.UnresolvedByReasonEntry
+	(*timestamppb.Timestamp)(nil), // 18: google.protobuf.Timestamp
+	(Color)(0),                    // 19: mtg.v1.Color
+	(*ImageUris)(nil),             // 20: mtg.v1.ImageUris
 }
 var file_mtg_v1_collection_proto_depIdxs = []int32{
 	1,  // 0: mtg.v1.Collection.source:type_name -> mtg.v1.ImportSource
-	17, // 1: mtg.v1.Collection.imported_at:type_name -> google.protobuf.Timestamp
+	18, // 1: mtg.v1.Collection.imported_at:type_name -> google.protobuf.Timestamp
 	8,  // 2: mtg.v1.Collection.entries:type_name -> mtg.v1.CollectionEntry
 	6,  // 3: mtg.v1.Collection.summary:type_name -> mtg.v1.CollectionSummary
-	14, // 4: mtg.v1.CollectionSummary.by_rarity:type_name -> mtg.v1.CollectionSummary.ByRarityEntry
+	15, // 4: mtg.v1.CollectionSummary.by_rarity:type_name -> mtg.v1.CollectionSummary.ByRarityEntry
 	7,  // 5: mtg.v1.CollectionSummary.sets:type_name -> mtg.v1.SetCount
-	15, // 6: mtg.v1.CollectionSummary.by_type:type_name -> mtg.v1.CollectionSummary.ByTypeEntry
+	16, // 6: mtg.v1.CollectionSummary.by_type:type_name -> mtg.v1.CollectionSummary.ByTypeEntry
 	2,  // 7: mtg.v1.CollectionEntry.finish:type_name -> mtg.v1.Finish
 	3,  // 8: mtg.v1.CollectionEntry.condition:type_name -> mtg.v1.Condition
-	18, // 9: mtg.v1.CollectionEntry.colors:type_name -> mtg.v1.Color
-	19, // 10: mtg.v1.CollectionEntry.image_uris:type_name -> mtg.v1.ImageUris
-	18, // 11: mtg.v1.BinderFilter.color:type_name -> mtg.v1.Color
+	19, // 9: mtg.v1.CollectionEntry.colors:type_name -> mtg.v1.Color
+	20, // 10: mtg.v1.CollectionEntry.image_uris:type_name -> mtg.v1.ImageUris
+	19, // 11: mtg.v1.BinderFilter.color:type_name -> mtg.v1.Color
 	8,  // 12: mtg.v1.CollectionDiff.added:type_name -> mtg.v1.CollectionEntry
 	8,  // 13: mtg.v1.CollectionDiff.removed:type_name -> mtg.v1.CollectionEntry
 	11, // 14: mtg.v1.CollectionDiff.changed:type_name -> mtg.v1.QuantityChange
 	8,  // 15: mtg.v1.QuantityChange.entry:type_name -> mtg.v1.CollectionEntry
-	13, // 16: mtg.v1.ImportReport.unresolved:type_name -> mtg.v1.UnresolvedRow
-	16, // 17: mtg.v1.ImportReport.unresolved_by_reason:type_name -> mtg.v1.ImportReport.UnresolvedByReasonEntry
+	14, // 16: mtg.v1.ImportReport.unresolved:type_name -> mtg.v1.UnresolvedRow
+	17, // 17: mtg.v1.ImportReport.unresolved_by_reason:type_name -> mtg.v1.ImportReport.UnresolvedByReasonEntry
 	4,  // 18: mtg.v1.UnresolvedRow.reason:type_name -> mtg.v1.UnresolvedReason
 	19, // [19:19] is the sub-list for method output_type
 	19, // [19:19] is the sub-list for method input_type
@@ -1361,7 +1402,7 @@ func file_mtg_v1_collection_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_mtg_v1_collection_proto_rawDesc), len(file_mtg_v1_collection_proto_rawDesc)),
 			NumEnums:      5,
-			NumMessages:   12,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

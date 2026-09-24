@@ -4,9 +4,12 @@ package mtg.v1;
 
 option go_package = "github.com/nkramber/decktome/go/gen/mtg/v1;mtgv1";
 
+import "mtg/v1/collection.proto";
+
 // FeedbackService takes a user's verdict on one thing the app made
 // (PR-27, D-557 to D-559): a question, a deck description, one card of
-// a deck, or the deck as a whole. There is no list RPC. The harvest of
+// a deck, the deck as a whole, a chat, or a file the app could not read.
+// There is no list RPC. The harvest of
 // PR-28 reads the stored items with the owner's credentials (D-420).
 service FeedbackService {
   // SubmitFeedback stores one verdict under the caller. The session or
@@ -33,6 +36,20 @@ enum FeedbackKind {
   // between questions belongs to none of them. It names the session and
   // no question.
   FEEDBACK_KIND_CHAT = 5;
+  // FEEDBACK_KIND_IMPORT is a file the app could not read, on the
+  // collection upload or the deck import (D-882, D-884). It names no
+  // session, no deck, and no card. It is a thumbs down alone. The server
+  // reads the file again and names the fault itself (D-596).
+  FEEDBACK_KIND_IMPORT = 6;
+}
+
+// ImportPage names the page a file came through, for kind IMPORT.
+enum ImportPage {
+  IMPORT_PAGE_UNSPECIFIED = 0;
+  // IMPORT_PAGE_COLLECTION is the collection upload.
+  IMPORT_PAGE_COLLECTION = 1;
+  // IMPORT_PAGE_DECK is the deck import.
+  IMPORT_PAGE_DECK = 2;
 }
 
 // FeedbackVerdict is the thumb.
@@ -61,8 +78,36 @@ message Feedback {
   // for a thumbs down. The keys per kind are fixed, and the API refuses
   // one it does not know.
   repeated string reasons = 7;
-  // text is the "Other" box, at most the message cap of the chat.
+  // text is the "Other" box, at most the message cap of the chat. For
+  // kind IMPORT it is the service the user named, in the user's words
+  // (D-883).
   string text = 8;
+  // import_page and import_content are for kind IMPORT alone. The
+  // content is the file the page could not read. The server reads it
+  // again and keeps the fault, never the whole file (D-885).
+  ImportPage import_page = 9;
+  bytes import_content = 10;
+}
+
+// ImportFault is what a report of kind IMPORT keeps (D-885). The server
+// fills it from its own read of the file.
+message ImportFault {
+  ImportPage page = 1;
+  // error is the error of the server when the file does not read at
+  // all, and empty when the file read with bad rows (D-887).
+  string error = 2;
+  // header is the first line of the file.
+  string header = 3;
+  int64 byte_count = 4;
+  // row_count counts the lines of the file after the header.
+  int32 row_count = 5;
+  // rows holds the rows that do not parse, the source line of each, at
+  // most 500 (D-885). The reason of a row of a file that does not read
+  // at all is BAD_ROW.
+  repeated UnresolvedRow rows = 6;
+  // bad_row_count counts every row that does not parse, so a cut list
+  // shows how many rows it left out.
+  int32 bad_row_count = 7;
 }
 
 message SubmitFeedbackRequest {

@@ -12,6 +12,46 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-24b
+
+**Pull request #223 drives the first live feedback fix cycle, and the cycle now stops when no case fails (PR-73, F-49, F-173, F-174, D-880 to D-882).**
+
+Author provider: Claude Code
+
+**The next step.** Next step 2, PR-74: a plain upload page, and a failed parse files its own thumbs down (D-882). Ask the owner the five questions of its roadmap entry before any code.
+
+**The base.** `main` is `2c658ff`, from #222. Cloud Build `b78f592d` of `deploy-api` built `2c658ff` and ended SUCCESS at 15:34:25 UTC on 2026-09-24. No `deploy-web` build ran, because #222 changed no web file.
+
+**The live cycle.**
+
+- The free harvest read 5 verdicts. The thumbs down of 13:31 UTC carries the snapshot of a session and a Commander deck. The cycle read a harvest of that verdict alone.
+- The judge lane cost $0.0099, and it put the verdict in C5. The cycle cost $0.0057 of triage and $0.2135 of two bracket gate runs.
+- Case 16 passed before the fix, and the fixer made no change. The owner dropped the case, and the branch keeps the evidence alone (D-880).
+- The cycle ran the fixer with no failing case (F-173), and this pull request stops it. F-174 and M-19 hold the cause (D-881).
+
+**The 60-card import of PR-72.** It arrived after #222 merged. After the deploy of `3b2f686`, the owner imported a Modern list: session `UQIUu8rInPouZgi8TAPk`, deck `FeedZujcyu8BDr95uQtd`. The power slot reads `SIXTY_STEP_TOURNAMENT` (F-172), and one judge call cost $0.027732. The deck stores the step, a profile of 17 features with a goldfish of 10,000 hands, and the grade `typical` 0.6538 on model `20260924T061156Z`. Its summary holds 6 sentences, the judge reason first (D-855). Validation passed with 1 finding.
+
+**The checks.** `make verify` passed on `cb591e8`, exit 0. The two new tests fail on the code of `2c658ff`, and shellcheck is clean.
+
+**The review.** Gitar pause (D-838). Gitar left its plan notice alone, with no finding (D-842). `scripts/feedback-review.sh` ran the Codex rounds (D-878). Round 1 found no code fault, and it asked for the word of the owner on the gate of PR-73. The fixer corrected the gate text, and round 2 reads Ready for owner merge at `d6109a3`. The owner then accepted the path of a failed cycle, and D-880 records it. The repeat review approves effective head `1176c9d7`. `make verify` passed there, the GitHub checks passed or skipped document-only jobs, and no finding stays open.
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- PR-74 and its five questions (D-882). Next step 3 comes after it (D-750).
+- M-19, the free replay of the owned-only shortlist (F-174).
+- One deployed bracket 5 session reads the commander rates now.
+- The Ulalek, Fused Atrocity shortlist holds 20 fixing lands, against a floor of 21.
+- The end of the Gitar pause, in a later pull request (D-838).
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
+- UNVERIFIED: the Moxfield import of the deck list that the app exports.
+- D-794 makes the app less strict than the Wizards infographic at Bracket 2.
+- Next steps 5 and 6, and OQ-67 and OQ-77.
+
+### 2026-09-23j: the power step of a 60-card import, PR-71
+
+**The owner started PR-71 from the transitional prompt of #220.** A free count refuted a premise of D-859, and the owner chose the scope in five batches (D-863 to D-869). No product type of Wizards marked the FNM line, so a model of another family labeled 60 user decks (D-874, D-875). Test run 1 failed on small RCQs, and run 2 passed on fresh lists (D-876). The session found F-172 in the code, and the owner chose its fix here (D-870).
+
 ## The resume section of 2026-09-24a
 
 **Pull request #222 fits the feedback fix cycle to the one-PR rule and the Codex review (PR-72, F-49, D-877 to D-879).**

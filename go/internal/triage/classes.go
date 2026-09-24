@@ -36,6 +36,11 @@ const (
 	// ADefect is a report row and no case. The fix is a code fix, and no
 	// gate of this repo measures it yet, so a person writes the test.
 	ADefect Artifact = "defect"
+	// AParseFixture is a file the parser test reads: the header and the
+	// kept rows of an import report (D-888). The fix is a code fix in the
+	// parser, and the free test of the importfault package fails until
+	// the parser reads the file. No gate of the fix cycle runs it (D-891).
+	AParseFixture Artifact = "parse_fixture"
 )
 
 // Class is one triage class: the fault a reader reported, the artifact
@@ -63,8 +68,9 @@ type Class struct {
 // classes is the whole set, in report order. The ten classes of the
 // design note keep their ids and their words. Five more carry the chat
 // kind of D-594, which arrived after the note, and seven carry the
-// reason keys the note left unmapped (D-643). Every reason key of every
-// kind names exactly one class, so no verdict falls through.
+// reason keys the note left unmapped (D-643). One carries the import
+// kind of D-884. Every reason key of every kind names exactly one class,
+// so no verdict falls through.
 var classes = []Class{
 	{"Q1", "asked again", "question", "already_answered", AConversation, "the catalog trigger, the word rules, the classify prompt", ""},
 	{"Q2", "off target", "question", "not_applicable", AConversation, "the catalog when clause", ""},
@@ -92,6 +98,8 @@ var classes = []Class{
 	{"X3", "the wrong questions", "chat", "wrong_questions", AConversation, "the catalog when clause", ""},
 	{"X4", "no deck came", "chat", "no_deck", ADefect, "the build path", ""},
 	{"X5", "an error", "chat", "error", ADefect, "the error path", ""},
+
+	{"I1", "the import failed", "import", "parse_fault", AParseFixture, "the parser of the page, go/internal/collections or go/internal/decklist", ""},
 }
 
 // byKey finds a class by its kind and its reason key.

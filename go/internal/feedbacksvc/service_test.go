@@ -56,6 +56,8 @@ const (
 	kindSummary  = mtgv1.FeedbackKind_FEEDBACK_KIND_SUMMARY
 	kindCard     = mtgv1.FeedbackKind_FEEDBACK_KIND_CARD
 	kindDeck     = mtgv1.FeedbackKind_FEEDBACK_KIND_DECK
+	kindImport   = mtgv1.FeedbackKind_FEEDBACK_KIND_IMPORT
+	pageDeck     = mtgv1.ImportPage_IMPORT_PAGE_DECK
 	up           = mtgv1.FeedbackVerdict_FEEDBACK_VERDICT_UP
 	down         = mtgv1.FeedbackVerdict_FEEDBACK_VERDICT_DOWN
 )
@@ -326,6 +328,13 @@ func TestTheVerdictCountsOnTheUserRecord(t *testing.T) {
 			want: users.FeedbackDown,
 		},
 		{
+			// An import report is a thumbs down, and it counts as one
+			// (D-886).
+			name: "an import report counts down",
+			fb:   &mtgv1.Feedback{Kind: kindImport, Verdict: mtgv1.FeedbackVerdict_FEEDBACK_VERDICT_DOWN, ImportPage: pageDeck, ImportContent: []byte("hello\nworld\n")},
+			want: users.FeedbackDown,
+		},
+		{
 			name: "a thumbs up counts up",
 			fb:   &mtgv1.Feedback{Kind: mtgv1.FeedbackKind_FEEDBACK_KIND_DECK, Verdict: mtgv1.FeedbackVerdict_FEEDBACK_VERDICT_UP, DeckId: "d1"},
 			want: users.FeedbackUp,
@@ -436,5 +445,51 @@ func TestAnImportedDeckTakesNoVerdict(t *testing.T) {
 		Kind: mtgv1.FeedbackKind_FEEDBACK_KIND_DECK, Verdict: mtgv1.FeedbackVerdict_FEEDBACK_VERDICT_UP, DeckId: "d2",
 	}); err != nil {
 		t.Errorf("a revision of an import took no verdict: %v", err)
+	}
+}
+
+// An import report names no object. The server reads the file again and
+// keeps its own fault and the service in the user's words, and never the
+// file (D-883 to D-885).
+func TestAnImportReportKeepsTheFaultOfTheServer(t *testing.T) {
+	store, s := fixture()
+	fb := &mtgv1.Feedback{Kind: kindImport, Verdict: down, Text: "mana box", ImportPage: pageDeck, ImportContent: []byte("1 Sol Ring\nnot a card line\n")}
+	if _, err := submit(s, "u2", fb); err != nil {
+		t.Fatalf("submit: %v", err)
+	}
+	if len(store.items) != 1 {
+		t.Fatalf("stored %d items, want 1", len(store.items))
+	}
+	got := store.items[0]
+	if got.Kind != "import" || got.Verdict != "down" || got.Text != "mana box" {
+		t.Errorf("stored %s %s %q", got.Kind, got.Verdict, got.Text)
+	}
+	if len(got.Reasons) != 1 || got.Reasons[0] != "parse_fault" {
+		t.Errorf("reasons = %v, want the one the server names", got.Reasons)
+	}
+	if got.Session != nil || got.Deck != nil || got.SessionID != "" || got.DeckID != "" {
+		t.Error("an import report names an object")
+	}
+	f := got.Import
+	if f.GetPage() != pageDeck || len(f.GetRows()) != 1 || f.GetRows()[0].GetRaw() != "not a card line" {
+		t.Errorf("fault = %v", f)
+	}
+}
+
+func TestAnImportReportRefusesABadReport(t *testing.T) {
+	_, s := fixture()
+	file := []byte("hello\nworld\n")
+	for name, fb := range map[string]*mtgv1.Feedback{
+		"a thumbs up":           {Kind: kindImport, Verdict: up, ImportPage: pageDeck, ImportContent: file},
+		"no page":               {Kind: kindImport, Verdict: down, ImportContent: file},
+		"no file":               {Kind: kindImport, Verdict: down, ImportPage: pageDeck},
+		"a file with no fault":  {Kind: kindImport, Verdict: down, ImportPage: pageDeck, ImportContent: []byte("1 Sol Ring\n")},
+		"a deck id":             {Kind: kindImport, Verdict: down, DeckId: "d1", ImportPage: pageDeck, ImportContent: file},
+		"a reason of no import": {Kind: kindImport, Verdict: down, Reasons: []string{"off_spec"}, ImportPage: pageDeck, ImportContent: file},
+		"a file on a deck":      {Kind: kindDeck, Verdict: down, DeckId: "d1", Reasons: []string{"off_spec"}, ImportContent: file},
+	} {
+		if _, err := submit(s, "u1", fb); codeOf(t, err) != connect.CodeInvalidArgument {
+			t.Errorf("%s: code = %v, want InvalidArgument", name, codeOf(t, err))
+		}
 	}
 }

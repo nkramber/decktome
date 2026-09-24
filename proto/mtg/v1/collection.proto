@@ -211,6 +211,11 @@ message ImportReport {
   map<string, int32> unresolved_by_reason = 3;
 }
 
+// UnreadableFile is the error detail of a file the app could not read
+// (D-887). The page shows the report form on it, and on no other error:
+// a file that is too large or a bad commander pick is no parse fault.
+message UnreadableFile {}
+
 // UnresolvedRow is one input row the importer rejected, with the reason.
 message UnresolvedRow {
   int32 line = 1;

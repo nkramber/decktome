@@ -274,13 +274,14 @@ func TestEveryReasonKeyNamesOneClass(t *testing.T) {
 		"card/off_theme", "card/illegal", "card/unwanted_buy", "card/wrong_printing", "card/wrong_power",
 		"deck/off_spec", "deck/bad_mana", "deck/too_little_interaction", "deck/wrong_power", "deck/too_many_to_buy",
 		"chat/stuck", "chat/ignored_request", "chat/wrong_questions", "chat/no_deck", "chat/error",
+		"import/parse_fault",
 	} {
 		if seen[want] == "" {
 			t.Errorf("reason %s names no class", want)
 		}
 	}
-	if len(classes) != 22 {
-		t.Errorf("%d classes, want 22: one per reason key", len(classes))
+	if len(classes) != 23 {
+		t.Errorf("%d classes, want 23: one per reason key", len(classes))
 	}
 }
 
@@ -473,6 +474,14 @@ func TestGateOfNamesTheSuiteOfEveryTarget(t *testing.T) {
 			// test above reads each one.
 		case ADefect:
 			// A defect writes no file, so no gate measures it.
+		case AParseFixture:
+			// A parser fixture is a file the free test of the importfault
+			// package reads, and no gate of the fix cycle runs it (D-891).
+			for _, target := range []string{TargetCollectionReports, TargetDeckReports} {
+				if GateOf(target) != "" {
+					t.Errorf("GateOf(%q) names a gate, and the cycle runs no parser fixture", target)
+				}
+			}
 		default:
 			t.Errorf("class %s writes artifact %q, and no gate owns it", c.ID, c.Artifact)
 		}

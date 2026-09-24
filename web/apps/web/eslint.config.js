@@ -11,7 +11,7 @@ import tseslint from "typescript-eslint";
 // | Feature    | May import from features     |
 // |------------|------------------------------|
 // | auth       | none                         |
-// | collection | none                         |
+// | collection | feedback                     |
 // | chat       | deck, feedback               |
 // | deck       | export, feedback             |
 // | export     | none                         |
@@ -24,7 +24,8 @@ import tseslint from "typescript-eslint";
 //
 // feedback is a leaf too (PR-27, D-558): the thumbs and the dialog take
 // the ids of the thing they judge and call the feedback client. The
-// chat, the deck, and the workspace mount them.
+// chat, the deck, and the workspace mount them. The collection mounts
+// the report of a file the app could not read (D-882).
 //
 // share is the public page of a share link (D-315). It renders the card
 // groups of the deck feature and nothing that needs a sign-in.
@@ -35,7 +36,7 @@ import tseslint from "typescript-eslint";
 const features = ["auth", "collection", "chat", "deck", "export", "feedback", "share", "workspace"];
 const allow = {
   auth: [],
-  collection: [],
+  collection: ["feedback"],
   chat: ["deck", "feedback"],
   deck: ["export", "feedback"],
   export: [],

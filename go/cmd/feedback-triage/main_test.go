@@ -28,3 +28,24 @@ func TestApplyWritesNoCaseThatNoGateRuns(t *testing.T) {
 		t.Errorf("the gate file exists or can not be read: %v", err)
 	}
 }
+
+// A parser fixture is a file of its own in the folder of its page
+// (D-888), and the result names that file.
+func TestApplyWritesAParserFixture(t *testing.T) {
+	root := t.TempDir()
+	results := []triage.Result{{Case: triage.Case{
+		Class: "I1", Artifact: triage.AParseFixture, Target: triage.TargetDeckReports,
+		ID: 3, Body: []byte(`"hello\nworld\n"`),
+	}}}
+	if err := applyCases(root, results); err != nil {
+		t.Fatal(err)
+	}
+	want := triage.TargetDeckReports + "/3.txt"
+	if results[0].Applied != want {
+		t.Errorf("applied = %q, want %q", results[0].Applied, want)
+	}
+	got, err := os.ReadFile(filepath.Join(root, want))
+	if err != nil || string(got) != "hello\nworld\n" {
+		t.Errorf("fixture = %q, %v", got, err)
+	}
+}
