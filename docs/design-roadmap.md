@@ -2058,7 +2058,7 @@ Gate:
 - `make verify` passes.
 > *In plain English:* today the app shows only the decks it built. This item lets you bring a deck you already have, from an Archidekt file or a pasted Arena list. The app shows it with the same checks, reads its bracket, and changes it on request.
 
-**PR-71: The power step of a 60-card import (F-170, F-172, D-858, D-859, D-863 to D-876).** 🔧 planned.
+**PR-71: The power step of a 60-card import (F-170, F-172, D-858, D-859, D-863 to D-876).** ✅ merged as #221.
 A judge reads the power step of a 60-card import: casual, FNM level, or tournament. REFUTED 2026-09-23 (D-863): "no source on record labels a casual list or an FNM list". The product types of the precon table label a casual list. No product type marks the FNM line, so a model of another family labeled the FNM lists (D-874, D-875).
 
 - **The judge.** `JudgeSixtyStep` in `go/internal/generate/judge.go` reads the main deck, the sideboard, and the format word. Each card line holds the rules text of the card (D-872). It answers the step and a reason, one judge call for each import. The prompt defines each step by its anchor (D-866).

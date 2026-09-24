@@ -8,11 +8,11 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-23i)
 
-**Pull request #PRNUM reads the power step of a 60-card import (PR-71, F-170, F-172, D-863 to D-876).**
+**Pull request #221 reads the power step of a 60-card import (PR-71, F-170, F-172, D-863 to D-876).**
 
 Author provider: Claude Code
 
-**The next step.** Pending owner merge. Tell the owner the state of the review of #PRNUM.
+**The next step.** Pending owner merge. Tell the owner the state of the review of #221.
 
 **The base.** `main` is `fa05e3c`, from #220. Cloud Build read SUCCESS for `deploy-api` and `deploy-web` of `fa05e3c` on 2026-09-24 UTC. The owner imported `go/internal/decklist/testdata/archidekt_living_weapon.txt` on decktome.com. The stored deck holds bracket 3 from the judge with no estimate mark. It also holds the legality block of D-846, the grade typical, and the summary of D-855.
 
@@ -25,9 +25,9 @@ Author provider: Claude Code
 
 **The paid runs.** $8.9265 in all. Three dev lanes cost $0.8443. Test run 1 read FAIL for $4.1086, 133 of 180, on RCQs of 16 to 24 players. Test run 2 read PASS for $3.9736, 148 of 180, with no read two steps off (`docs/reference/pr71-sixty-gate-run2.md`).
 
-**The checks.** CHECKS
+**The checks.** `make verify` passed on `1b6ca8a`, exit 0, with Node 22.23.2 on the PATH. The later commits change documents alone. Mutation checks fail the session tests without the session write, and the deck page test with the old trigger.
 
-**The review.** REVIEW
+**The review.** Gitar pause (D-838). Gitar: read one time after CI. Codex review: pending.
 
 **What waits on the owner.**
 
@@ -108,7 +108,7 @@ Twenty-two things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **The power step of a 60-card import** (PR-71, F-170, F-172, D-863 to D-876). This pull request is #PRNUM.
+1. **The power step of a 60-card import** (PR-71, F-170, F-172, D-863 to D-876). This pull request is #221.
 2. **The open items of the roadmap.** One register row reads 🔧: F-49, and it waits for the owner. F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ with this pull request (D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
 3. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It waits, because the ten sessions of the audit ran before #184 and before D-749.
 4. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git.
