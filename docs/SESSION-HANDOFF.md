@@ -27,7 +27,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passed on the tree of `060e688`, exit 0. `make pr-check` passed on the body.
 
-**The review.** Gitar pause (D-838). The Codex review follows `make codex-review PR=225`.
+**The review.** Codex reviewed effective head `0122c743`. Ready for owner merge. No open findings. The Gitar pause (D-838) removes the current Gitar review requirement.
 
 **What waits on the owner.**
 
