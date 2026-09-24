@@ -1,5 +1,5 @@
 import { Code, ConnectError } from "@connectrpc/connect";
-import { FormatId } from "@mtg/api-client/mtg/v1/format_pb";
+import { FormatId, SixtyStep } from "@mtg/api-client/mtg/v1/format_pb";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { axe } from "jest-axe";
@@ -28,11 +28,16 @@ const deleteDeck = vi.fn();
 const listDecks = vi.fn();
 const shareDeck = vi.fn();
 const revokeShare = vi.fn();
+const readImportBracket = vi.fn();
 vi.mock("../../lib/api", () => ({
   healthClient: { check: () => Promise.resolve({ status: "ok", version: "test", cardSnapshot: "none" }) },
   collectionClient: { listCollections: () => Promise.resolve({ collections: [] }) },
   agentClient: {
-    listSessions: () => Promise.resolve({ sessions: [], nextPageToken: "" }), getSession: (...a: unknown[]) => getSession(...a), chat: (...a: unknown[]) => chat(...a) },
+    listSessions: () => Promise.resolve({ sessions: [], nextPageToken: "" }),
+    getSession: (...a: unknown[]) => getSession(...a),
+    chat: (...a: unknown[]) => chat(...a),
+    readImportBracket: (...a: unknown[]) => readImportBracket(...a),
+  },
   cardClient: { getCards: () => Promise.resolve({ cards: [], missingOracleIds: [] }) },
   deckClient: {
     listDecks: (...a: unknown[]) => listDecks(...a),
@@ -74,6 +79,7 @@ beforeEach(() => {
   getDeck.mockResolvedValue({ deck });
   updateDeck.mockResolvedValue({ deck });
   deleteDeck.mockResolvedValue({});
+  readImportBracket.mockReset();
 });
 
 describe("DeckScreen", () => {
@@ -165,6 +171,28 @@ describe("DeckScreen", () => {
 });
 
 // The revision turn of PR-12B now happens on the deck screen (D-335).
+describe("the power read of an imported deck", () => {
+  const sixty = { ...deck, format: { id: FormatId.MODERN }, imported: true, bracketEstimated: false };
+
+  it("asks the judge again for a 60-card import with no step, and shows the step (D-864)", async () => {
+    getDeck.mockResolvedValue({ deck: sixty });
+    readImportBracket.mockResolvedValue({
+      deck: { ...sixty, power: { level: { case: "sixtyStep", value: SixtyStep.FNM } } },
+    });
+    await renderAt("/decks/d1");
+    await waitFor(() => expect(readImportBracket).toHaveBeenCalledWith({ deckId: "d1" }));
+    expect(await screen.findByText(/FNM/)).toBeInTheDocument();
+    expect(screen.queryByText(/power step not read yet/)).not.toBeInTheDocument();
+  });
+
+  it("asks nothing for a 60-card import that holds a step", async () => {
+    getDeck.mockResolvedValue({ deck: { ...sixty, power: { level: { case: "sixtyStep", value: SixtyStep.CASUAL } } } });
+    await renderAt("/decks/d1");
+    expect(await screen.findByText(/Casual/)).toBeInTheDocument();
+    expect(readImportBracket).not.toHaveBeenCalled();
+  });
+});
+
 describe("a revision on the deck screen", () => {
   const revised = {
     ...deck,

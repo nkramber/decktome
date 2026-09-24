@@ -534,10 +534,20 @@ export function CardGroup({
   );
 }
 
+// needsPowerRead says an imported deck asks the judge again at this
+// open: a bracket that is the floor of the rules alone (D-854), or a
+// 60-card deck with no power step (D-864). NeedsPowerRead of the server
+// reads the same rule.
+export function needsPowerRead(deck: Deck): boolean {
+  if (!deck.imported) return false;
+  if (deck.format?.id === FormatId.COMMANDER) return deck.bracketEstimated;
+  return powerLabel(deck.power) === "";
+}
+
 // importPowerNote names the power of an imported deck when the app did
 // not read it (PR-70). A bracket that is the floor of the rules alone is
-// an estimate until the judge answers (D-854). A 60-card import holds no
-// power step until PR-71 (D-859).
+// an estimate until the judge answers (D-854). A 60-card import with no
+// power step waits for the judge (D-864).
 export function importPowerNote(deck: Deck): string {
   if (!deck.imported) return "";
   if (!powerLabel(deck.power)) return deck.format?.id === FormatId.COMMANDER ? "imported, bracket not read yet" : "imported, power step not read yet";

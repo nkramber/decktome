@@ -10,6 +10,7 @@ import (
 	"connectrpc.com/connect"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
@@ -21,6 +22,7 @@ import (
 	"github.com/nkramber/decktome/go/internal/llm"
 	"github.com/nkramber/decktome/go/internal/questions"
 	"github.com/nkramber/decktome/go/internal/rules"
+	"github.com/nkramber/decktome/go/internal/sessions"
 	"github.com/nkramber/decktome/go/internal/users"
 )
 
@@ -170,7 +172,9 @@ func (s *Server) ImportDeck(ctx context.Context, req *connect.Request[mtgv1.Impo
 }
 
 // ReadImportBracket asks the judge again for an imported deck whose
-// bracket is the floor alone (D-854). Any other deck comes back as it is.
+// bracket is the floor alone (D-854), or a 60-card import with no power
+// step (D-864). The RPC keeps its name, because the web and the API
+// deploy apart. Any other deck comes back as it is.
 func (s *Server) ReadImportBracket(ctx context.Context, req *connect.Request[mtgv1.ReadImportBracketRequest]) (*connect.Response[mtgv1.ReadImportBracketResponse], error) {
 	uid := s.userFn(ctx)
 	if uid == "" {
@@ -190,7 +194,7 @@ func (s *Server) ReadImportBracket(ctx context.Context, req *connect.Request[mtg
 	if !deck.GetImported() {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, errNotImported)
 	}
-	if !deck.GetBracketEstimated() {
+	if !generate.NeedsPowerRead(deck) {
 		return connect.NewResponse(&mtgv1.ReadImportBracketResponse{Deck: deck}), nil
 	}
 	if err := s.checkSpendCap(ctx, uid); err != nil {
@@ -216,7 +220,42 @@ func (s *Server) ReadImportBracket(ctx context.Context, req *connect.Request[mtg
 	if err := s.deckStore.Put(sctx, uid, deck); err != nil {
 		return nil, storeError(err)
 	}
+	s.storeImportPower(sctx, uid, session, deck)
 	return connect.NewResponse(&mtgv1.ReadImportBracketResponse{Deck: deck}), nil
+}
+
+// storeImportPower writes the power of a new read into the power slot of
+// the import session, because a revise turn reads the slot and not the
+// deck (F-172, D-870). A version conflict reads the session again, as
+// storeTurn does. A failure warns: the deck already holds the power.
+func (s *Server) storeImportPower(ctx context.Context, uid string, session *mtgv1.Session, deck *mtgv1.Deck) {
+	if deck.GetPower() == nil {
+		return
+	}
+	var err error
+	for try := 0; try <= deckIDRetries; try++ {
+		var current *mtgv1.Session
+		var snap questions.Snapshot
+		var version int64
+		current, snap, version, err = s.store.GetState(ctx, uid, session.GetId())
+		if err != nil {
+			break
+		}
+		if proto.Equal(current.GetSlots().GetPower(), deck.GetPower()) {
+			return
+		}
+		st := questions.Restore(current.GetId(), current.GetSlots(), snap)
+		st.Slots.Power = deck.GetPower()
+		st.Close("power")
+		current.Slots = st.Slots
+		current.Usage = session.GetUsage()
+		if err = s.store.Put(ctx, uid, current, st.Snapshot(), version); !errors.Is(err, sessions.ErrConflict) {
+			break
+		}
+	}
+	if err != nil {
+		s.log.WarnContext(ctx, "the import power was not written to the session", "session", session.GetId(), "err", err)
+	}
 }
 
 // importFormat reads the format of a list. The pick of the user wins. A

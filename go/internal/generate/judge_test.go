@@ -147,3 +147,35 @@ func TestJudgeSummaryReadsTheCardFacts(t *testing.T) {
 		t.Errorf("a nil deck sends a card list:\n%s", in)
 	}
 }
+
+// TestJudgeSixtyStep is D-866: the step judge answers one of three
+// steps from its schema, and it refuses any other word. The format word
+// heads the input, and the card facts follow each name.
+func TestJudgeSixtyStep(t *testing.T) {
+	cards := source{"o-bolt": {OracleId: "o-bolt", Name: "Lightning Bolt", ManaCost: "{R}", TypeLine: "Instant"}}
+	deck := &mtgv1.Deck{Cards: []*mtgv1.DeckCard{{OracleId: "o-bolt", Name: "Lightning Bolt", Count: 4}}}
+	for word, want := range map[string]mtgv1.SixtyStep{
+		"casual":     mtgv1.SixtyStep_SIXTY_STEP_CASUAL,
+		"fnm":        mtgv1.SixtyStep_SIXTY_STEP_FNM,
+		"tournament": mtgv1.SixtyStep_SIXTY_STEP_TOURNAMENT,
+	} {
+		c, sc := bracketClient(t, `{"step": "`+word+`", "why": "w"}`)
+		j, err := JudgeSixtyStep(context.Background(), c, deck, "Pioneer", cards, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if j.Step != want || j.Why != "w" {
+			t.Errorf("%s: step = %v, why = %q", word, j.Step, j.Why)
+		}
+		if in := sc.Calls[0].Input; !strings.HasPrefix(in, "Format: Pioneer\n") || !strings.Contains(in, "4 Lightning Bolt | {R} | Instant\n") {
+			t.Errorf("judge input = %q", in)
+		}
+		if sc.Calls[0].SchemaName != "sixty_step" {
+			t.Errorf("schema = %q", sc.Calls[0].SchemaName)
+		}
+	}
+	c, _ := bracketClient(t, `{"step": "competitive", "why": "w"}`)
+	if _, err := JudgeSixtyStep(context.Background(), c, deck, "Modern", cards, nil); err == nil {
+		t.Error("a step outside the schema passed")
+	}
+}

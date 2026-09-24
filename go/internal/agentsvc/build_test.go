@@ -84,9 +84,12 @@ type fakeDecks struct {
 	record bool
 	// imports counts the reads of an imported list, owned is the last
 	// owned map, and estimate marks the bracket as the floor (PR-70).
+	// step is the power step of a 60-card list, and unset reads none
+	// (PR-71).
 	imports  int
 	owned    map[string]int32
 	estimate bool
+	step     mtgv1.SixtyStep
 }
 
 func (f *fakeDecks) Build(ctx context.Context, req generate.Request, acc *llm.Accumulator) (*generate.Result, error) {
