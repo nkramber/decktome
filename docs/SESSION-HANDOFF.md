@@ -30,7 +30,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passed on `a08c68a`, exit 0, before the rebase. `make verify` passed on `c947e64`, exit 0, on the base `fa05e3c`. Both new tests fail without the rule. `make feedback-loop-dry` reads 0 cases a gate measures.
 
-**The review.** Gitar pause (D-838). No Gitar finding: each Gitar comment is the plan notice or a work note. Codex approved `2702b20`. #219 and #220 merged, so the branch moved onto `fa05e3c`, and the rebased head needs a new review.
+**The review.** Gitar pause (D-838). No Gitar finding: each Gitar comment is the plan notice or a work note. Codex approved effective head `c947e64` after the rebase. `make verify`, `make ste-check`, and `make ref-check` passed. The PR checks passed except the stale `review-gate`. This record needs publication and a fresh gate result.
 
 **What waits on the owner.**
 
