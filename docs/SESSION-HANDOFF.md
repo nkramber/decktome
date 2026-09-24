@@ -28,7 +28,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passed on the tree of the first commit, exit 0. `make pr-check` passed on the body.
 
-**The review.** Pending: the Gitar review of this pull request, then the Codex review. The diff changes `docs/tools/`, so the `review-override` label does not apply.
+**The review.** Codex reviewed effective head `7567fc3a8f3ca3e3e41eec2f539a7e51e210a3d5`. Ready for owner merge. No open findings. Gitar approved the same head.
 
 **What waits on the owner.**
 
