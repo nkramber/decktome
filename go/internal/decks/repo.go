@@ -63,6 +63,12 @@ type storedDeck struct {
 	// ShareTokenHash is the hash of the share token, empty with no link
 	// (D-315). The token itself is never stored.
 	ShareTokenHash string `firestore:"share_token_hash"`
+	// Imported marks a list a user brought (PR-70). The backfill of the
+	// user record counts it apart from a built deck (D-852).
+	Imported bool `firestore:"imported"`
+	// RevisedFromDeckID names the deck a revision came from. The backfill
+	// counts a revision apart from a first build (D-638, D-861).
+	RevisedFromDeckID string `firestore:"revised_from_deck_id"`
 }
 
 // listFields are the flat fields List reads. The list never inflates a
@@ -123,6 +129,8 @@ func toStored(d *mtgv1.Deck, payload []byte) storedDeck {
 		BuyCostUSD:         d.GetBuyCostUsd(),
 		Stale:              d.GetStale(),
 		Favorite:           d.GetFavorite(),
+		Imported:           d.GetImported(),
+		RevisedFromDeckID:  d.GetRevisedFromDeckId(),
 		PowerBracket:       int64(d.GetPower().GetBracket()),
 		PowerSixtyStep:     int64(d.GetPower().GetSixtyStep()),
 		CardCount:          int64(CardCount(d)),

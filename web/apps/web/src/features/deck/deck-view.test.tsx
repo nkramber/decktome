@@ -115,6 +115,21 @@ beforeEach(() => {
 });
 
 describe("DeckView", () => {
+  it("shows no thumbs on a list the reader imported, and names its power (D-853, D-859)", async () => {
+    renderDeck({ ...deck, imported: true, format: { id: FormatId.MODERN }, power: undefined } as unknown as Deck);
+    await screen.findByAltText("Forest (card)");
+    expect(screen.queryByRole("group", { name: "Rate this deck" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: "Rate the deck description" })).not.toBeInTheDocument();
+    expect(screen.queryAllByRole("button", { name: "This helped" })).toHaveLength(0);
+    expect(screen.getByText(/imported, power step not read yet/)).toBeInTheDocument();
+  });
+
+  it("marks a bracket that is the floor of the rules alone as an estimate (D-854)", async () => {
+    renderDeck({ ...deck, imported: true, format: { id: FormatId.COMMANDER }, power: { level: { case: "bracket", value: 3 } }, bracketEstimated: true } as unknown as Deck);
+    await screen.findByAltText("Forest (card)");
+    expect(screen.getByText(/imported, bracket estimated from the rules alone/)).toBeInTheDocument();
+  });
+
   it("puts the thumbs beside the legality line, beside the summary, and at the foot of every tile (PR-27, D-559)", async () => {
     const user = userEvent.setup();
     renderDeck();

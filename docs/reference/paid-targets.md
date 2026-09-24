@@ -63,7 +63,7 @@ Each other target is free. `make meta-refresh` reads the deck list sources over 
 
 `make feedback-loop` prints the commands of the fix cycle and starts nothing (PR-28c). `make feedback-loop-dry` plans a cycle for nothing. `scripts/feedback-loop.sh` is the paid cycle, and it refuses to start without `FEEDBACK_LOOP_ALLOW=1` and `AUTOTUNE_FIXER_CMD`. One cycle stops at $2 of gate runs (D-559). It edits code, commits, pushes, opens a pull request, and answers the review, with nobody watching. Ask the owner before every run.
 
-`make users-backfill` seeds the user record of D-638 from what each user already holds, and `BACKFILL_ARGS=-dry` counts and writes nothing. It never lowers a count. It calls no model and costs nothing.
+`make users-backfill` seeds the user record of D-638 from what each user already holds, and `BACKFILL_ARGS=-dry` counts and writes nothing. It counts a revision and an imported deck apart from a first build (D-861). It never lowers a count. It calls no model and costs nothing.
 
 `make read-session SESSION=<id>` reads one chat session of the deployed project, to debug it (D-596). `make feedback-list` reads the newest verdicts of every user over one collection group query, and `VERDICT=up` and `LIMIT=` change what it reads. All three print or write what a reader wrote, and none of them writes an email. `use_decktome` puts the shell on `decktome-prod`. No decktome tool reads `PROJECT_ID`: a shell that works on more than one project exports it for another one.
 

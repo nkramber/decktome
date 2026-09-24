@@ -100,6 +100,7 @@ var (
 	errNoCard          = errors.New("oracle_id: the deck holds no card with this id")
 	errNotYourSession  = errors.New("the session is not yours, or there is no such session")
 	errNotYourDeck     = errors.New("the deck is not yours, or there is no such deck")
+	errImportedDeck    = errors.New("deck_id: a list you imported takes no verdict, and a revision of it does")
 )
 
 func invalid(err error) error { return connect.NewError(connect.CodeInvalidArgument, err) }
@@ -250,6 +251,12 @@ func (s *Server) checkOwner(ctx context.Context, uid string, fb *mtgv1.Feedback)
 	}
 	if err != nil {
 		return nil, nil, connect.NewError(connect.CodeInternal, err)
+	}
+	// A list the user brought is no deck the app made, so it takes no
+	// verdict. A revision of it is the work of the app, and it does
+	// (D-853).
+	if deck.GetImported() {
+		return nil, nil, connect.NewError(connect.CodeFailedPrecondition, errImportedDeck)
 	}
 	switch fb.GetKind() {
 	case mtgv1.FeedbackKind_FEEDBACK_KIND_SUMMARY:

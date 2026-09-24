@@ -1,5 +1,5 @@
 import { FormatId, SixtyStep } from "@mtg/api-client/mtg/v1/format_pb";
-import { LayersIcon, SearchIcon, StarIcon } from "lucide-react";
+import { FileUpIcon, LayersIcon, SearchIcon, StarIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 
@@ -14,6 +14,7 @@ import { Skeleton } from "../../components/ui/skeleton";
 import { cn } from "../../lib/cn";
 import { errorMessage } from "../../lib/errors";
 import { DeckCard } from "./deck-card";
+import { ImportDialog } from "./import-dialog";
 import { type DeckFilter, emptyDeckFilter, useCommanderCards, useDeckList, useDeckWrites } from "./use-decks";
 
 // The deck library (PR-17). The grid carries the art and the color of
@@ -54,6 +55,7 @@ export function DecksPage() {
   const [format, setFormat] = useState<FormatId>(FormatId.UNSPECIFIED);
   const [power, setPower] = useState("");
   const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const query = useDebounced(text.trim(), 250);
 
   const filter: DeckFilter = useMemo(
@@ -88,7 +90,17 @@ export function DecksPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-[75rem] flex-col gap-6 p-4 md:p-6">
-      <PageHeader title="Your decks" description="Every deck the agent built for you." />
+      <PageHeader
+        title="Your decks"
+        description="Every deck the agent built for you, and every deck you imported."
+        actions={
+          <Button variant="outline" onClick={() => setImportOpen(true)}>
+            <FileUpIcon className="size-4" aria-hidden="true" />
+            Import a deck
+          </Button>
+        }
+      />
+      <ImportDialog open={importOpen} onOpenChange={setImportOpen} />
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative min-w-56 flex-1">

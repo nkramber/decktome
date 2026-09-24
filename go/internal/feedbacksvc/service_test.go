@@ -411,3 +411,30 @@ func TestADeckVerdictKeepsTheSessionThatBuiltIt(t *testing.T) {
 		t.Error("the verdict kept a session the store does not hold")
 	}
 }
+
+// TestAnImportedDeckTakesNoVerdict is D-853: a list the user brought
+// takes no verdict, and a revision of it does.
+func TestAnImportedDeckTakesNoVerdict(t *testing.T) {
+	store := &fakeStore{}
+	sess := fakeSessions{"u1": {"s1": &mtgv1.Session{Id: "s1"}}}
+	deckList := fakeDecks{"u1": {
+		"d1": &mtgv1.Deck{Id: "d1", SessionId: "s1", Imported: true, Summary: "A list."},
+		"d2": &mtgv1.Deck{Id: "d2", SessionId: "s1", RevisedFromDeckId: "d1", Summary: "A revision."},
+	}}
+	noter := &fakeNoter{}
+	s := New(store, sess, deckList, auth.UserID, WithUsers(noter))
+	for _, kind := range []mtgv1.FeedbackKind{mtgv1.FeedbackKind_FEEDBACK_KIND_DECK, mtgv1.FeedbackKind_FEEDBACK_KIND_SUMMARY} {
+		_, err := submit(s, "u1", &mtgv1.Feedback{Kind: kind, Verdict: mtgv1.FeedbackVerdict_FEEDBACK_VERDICT_UP, DeckId: "d1"})
+		if connect.CodeOf(err) != connect.CodeFailedPrecondition {
+			t.Errorf("%v on an import: err = %v", kind, err)
+		}
+	}
+	if len(noter.counts) != 0 {
+		t.Errorf("counted %v for a refused verdict", noter.counts)
+	}
+	if _, err := submit(s, "u1", &mtgv1.Feedback{
+		Kind: mtgv1.FeedbackKind_FEEDBACK_KIND_DECK, Verdict: mtgv1.FeedbackVerdict_FEEDBACK_VERDICT_UP, DeckId: "d2",
+	}); err != nil {
+		t.Errorf("a revision of an import took no verdict: %v", err)
+	}
+}

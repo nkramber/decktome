@@ -8,7 +8,7 @@ This repo is a Go + Protobuf + TypeScript monorepo for an agentic MtG deck build
 
 Stage: **the app is live on `decktome.com`**, and Phase 3B, the product UI, is the current phase. A merge to `main` deploys itself on Cloud Build (D-584, D-586, D-588). `docs/SESSION-HANDOFF.md` holds the current state and the next step. Git holds each merge, and Cloud Build holds each deploy (D-747).
 
-Two rules of the deployed app come from 2026-09-09. **A verdict keeps the object it names** (D-635), because a reader deletes the deck or the chat they complained about, and the verdict outlives it. **Every user has a record** at `users/<uid>` (D-638): the verified email, the dates, and six counters of what they made. No harvest reads that record, and a test refuses the import that joins them.
+Two rules of the deployed app come from 2026-09-09. **A verdict keeps the object it names** (D-635), because a reader deletes the deck or the chat they complained about, and the verdict outlives it. **Every user has a record** at `users/<uid>` (D-638): the verified email, the dates, and seven counters of what they made (D-852). No harvest reads that record, and a test refuses the import that joins them.
 
 The look follows a reference design the owner gave on 2026-08-30 (D-328 to D-335). `docs/reference/autotune-readme.md` holds the loop commands.
 

@@ -1,5 +1,5 @@
 import { Code, ConnectError } from "@connectrpc/connect";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 
@@ -27,6 +27,22 @@ export function DeckScreen() {
   });
   const deck = deckQuery.data?.deck;
   const sessionId = deck?.sessionId ?? "";
+
+  // An imported deck whose bracket is the floor of the rules alone asks
+  // the judge again, once per open (D-854). The answer replaces the deck
+  // in the cache, and the panel below mounts again with it.
+  const queryClient = useQueryClient();
+  useQuery({
+    queryKey: ["deck", id, "bracket"],
+    queryFn: async () => {
+      const res = await agentClient.readImportBracket({ deckId: id });
+      queryClient.setQueryData(["deck", id], (old: typeof deckQuery.data) => (old ? { ...old, deck: res.deck } : old));
+      return res;
+    },
+    enabled: deck?.imported === true && deck.bracketEstimated,
+    staleTime: Infinity,
+    retry: false,
+  });
 
   // The conversation that built this deck. A deck whose session went
   // shows the deck alone, and it says so.
@@ -90,7 +106,7 @@ export function DeckScreen() {
   // this address names, never the latest of the session.
   return (
     <ChatPanel
-      key={deck.id}
+      key={`${deck.id}:${deck.bracketEstimated}`}
       initial={initial}
       session={session}
       deckOverride={deck}

@@ -6,8 +6,12 @@ import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobu
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Timestamp } from "@bufbuild/protobuf/wkt";
 import { file_google_protobuf_timestamp } from "@bufbuild/protobuf/wkt";
-import type { Deck } from "./deck_pb";
+import type { UnresolvedRow } from "./collection_pb";
+import { file_mtg_v1_collection } from "./collection_pb";
+import type { Deck, DeckCard } from "./deck_pb";
 import { file_mtg_v1_deck } from "./deck_pb";
+import type { FormatId } from "./format_pb";
+import { file_mtg_v1_format } from "./format_pb";
 import type { Answer, PoolRule, Question, Session, SessionStatus, Slots, Usage } from "./session_pb";
 import { file_mtg_v1_session } from "./session_pb";
 import type { Message } from "@bufbuild/protobuf";
@@ -16,7 +20,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file mtg/v1/agent_service.proto.
  */
 export const file_mtg_v1_agent_service: GenFile = /*@__PURE__*/
-  fileDesc("ChptdGcvdjEvYWdlbnRfc2VydmljZS5wcm90bxIGbXRnLnYxIjwKE0xpc3RTZXNzaW9uc1JlcXVlc3QSEQoJcGFnZV9zaXplGAEgASgFEhIKCnBhZ2VfdG9rZW4YAiABKAkiWQoUTGlzdFNlc3Npb25zUmVzcG9uc2USKAoIc2Vzc2lvbnMYASADKAsyFi5tdGcudjEuU2Vzc2lvblN1bW1hcnkSFwoPbmV4dF9wYWdlX3Rva2VuGAIgASgJIpECCg5TZXNzaW9uU3VtbWFyeRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEhUKDWZpcnN0X21lc3NhZ2UYAyABKAkSFQoNY29sbGVjdGlvbl9pZBgEIAEoCRIlCgZzdGF0dXMYBSABKA4yFS5tdGcudjEuU2Vzc2lvblN0YXR1cxISCgpkZWNrX2NvdW50GAYgASgFEhwKBXVzYWdlGAcgASgLMg0ubXRnLnYxLlVzYWdlEi4KCmNyZWF0ZWRfYXQYCCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEi4KCnVwZGF0ZWRfYXQYCSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIjgKFFVwZGF0ZVNlc3Npb25SZXF1ZXN0EhIKCnNlc3Npb25faWQYASABKAkSDAoEbmFtZRgCIAEoCSJAChVVcGRhdGVTZXNzaW9uUmVzcG9uc2USJwoHc2Vzc2lvbhgBIAEoCzIWLm10Zy52MS5TZXNzaW9uU3VtbWFyeSIqChREZWxldGVTZXNzaW9uUmVxdWVzdBISCgpzZXNzaW9uX2lkGAEgASgJIhcKFURlbGV0ZVNlc3Npb25SZXNwb25zZSKyAQoLQ2hhdFJlcXVlc3QSEgoKc2Vzc2lvbl9pZBgBIAEoCRIVCg1jb2xsZWN0aW9uX2lkGAIgASgJEg8KB21lc3NhZ2UYAyABKAkSHwoHYW5zd2VycxgEIAMoCzIOLm10Zy52MS5BbnN3ZXISIwoJcG9vbF9ydWxlGAcgASgOMhAubXRnLnYxLlBvb2xSdWxlSgQIBRAGSgQIBhAHUgRzZWVkUg9rZWVwX29yYWNsZV9pZHMiPgoKQWdlbnRFcnJvchIMCgRjb2RlGAEgASgJEg8KB21lc3NhZ2UYAiABKAkSEQoJcmV0cnlhYmxlGAMgASgIIr8CCgxDaGF0UmVzcG9uc2USGQoPc2Vzc2lvbl9zdGFydGVkGAEgASgJSAASFAoKdGV4dF9kZWx0YRgCIAEoCUgAEiQKCHF1ZXN0aW9uGAMgASgLMhAubXRnLnYxLlF1ZXN0aW9uSAASHgoFc2xvdHMYBCABKAsyDS5tdGcudjEuU2xvdHNIABIQCgZzdGF0dXMYBSABKAlIABIcCgRkZWNrGAYgASgLMgwubXRnLnYxLkRlY2tIABITCgVlcnJvchgHIAEoCUICGAFIABIlCgdmYWlsdXJlGAggASgLMhIubXRnLnYxLkFnZW50RXJyb3JIABIeCgV1c2FnZRgJIAEoCzINLm10Zy52MS5Vc2FnZUgAEiMKBXBoYXNlGAogASgOMhIubXRnLnYxLkJ1aWxkUGhhc2VIAEIHCgVldmVudCInChFHZXRTZXNzaW9uUmVxdWVzdBISCgpzZXNzaW9uX2lkGAEgASgJIjYKEkdldFNlc3Npb25SZXNwb25zZRIgCgdzZXNzaW9uGAEgASgLMg8ubXRnLnYxLlNlc3Npb24qwgEKCkJ1aWxkUGhhc2USGwoXQlVJTERfUEhBU0VfVU5TUEVDSUZJRUQQABIXChNCVUlMRF9QSEFTRV9SRUFESU5HEAESGQoVQlVJTERfUEhBU0VfU0hPUlRMSVNUEAISGAoUQlVJTERfUEhBU0VfQlVJTERJTkcQAxIYChRCVUlMRF9QSEFTRV9DSEVDS0lORxAEEhkKFUJVSUxEX1BIQVNFX1JFUEFJUklORxAFEhQKEEJVSUxEX1BIQVNFX0RPTkUQBjL5AgoMQWdlbnRTZXJ2aWNlEjUKBENoYXQSEy5tdGcudjEuQ2hhdFJlcXVlc3QaFC5tdGcudjEuQ2hhdFJlc3BvbnNlIgAwARJFCgpHZXRTZXNzaW9uEhkubXRnLnYxLkdldFNlc3Npb25SZXF1ZXN0GhoubXRnLnYxLkdldFNlc3Npb25SZXNwb25zZSIAEksKDExpc3RTZXNzaW9ucxIbLm10Zy52MS5MaXN0U2Vzc2lvbnNSZXF1ZXN0GhwubXRnLnYxLkxpc3RTZXNzaW9uc1Jlc3BvbnNlIgASTgoNVXBkYXRlU2Vzc2lvbhIcLm10Zy52MS5VcGRhdGVTZXNzaW9uUmVxdWVzdBodLm10Zy52MS5VcGRhdGVTZXNzaW9uUmVzcG9uc2UiABJOCg1EZWxldGVTZXNzaW9uEhwubXRnLnYxLkRlbGV0ZVNlc3Npb25SZXF1ZXN0Gh0ubXRnLnYxLkRlbGV0ZVNlc3Npb25SZXNwb25zZSIAQjJaMGdpdGh1Yi5jb20vbmtyYW1iZXIvZGVja3RvbWUvZ28vZ2VuL210Zy92MTttdGd2MWIGcHJvdG8z", [file_google_protobuf_timestamp, file_mtg_v1_deck, file_mtg_v1_session]);
+  fileDesc("ChptdGcvdjEvYWdlbnRfc2VydmljZS5wcm90bxIGbXRnLnYxIjwKE0xpc3RTZXNzaW9uc1JlcXVlc3QSEQoJcGFnZV9zaXplGAEgASgFEhIKCnBhZ2VfdG9rZW4YAiABKAkiWQoUTGlzdFNlc3Npb25zUmVzcG9uc2USKAoIc2Vzc2lvbnMYASADKAsyFi5tdGcudjEuU2Vzc2lvblN1bW1hcnkSFwoPbmV4dF9wYWdlX3Rva2VuGAIgASgJIpECCg5TZXNzaW9uU3VtbWFyeRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEhUKDWZpcnN0X21lc3NhZ2UYAyABKAkSFQoNY29sbGVjdGlvbl9pZBgEIAEoCRIlCgZzdGF0dXMYBSABKA4yFS5tdGcudjEuU2Vzc2lvblN0YXR1cxISCgpkZWNrX2NvdW50GAYgASgFEhwKBXVzYWdlGAcgASgLMg0ubXRnLnYxLlVzYWdlEi4KCmNyZWF0ZWRfYXQYCCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEi4KCnVwZGF0ZWRfYXQYCSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIjgKFFVwZGF0ZVNlc3Npb25SZXF1ZXN0EhIKCnNlc3Npb25faWQYASABKAkSDAoEbmFtZRgCIAEoCSJAChVVcGRhdGVTZXNzaW9uUmVzcG9uc2USJwoHc2Vzc2lvbhgBIAEoCzIWLm10Zy52MS5TZXNzaW9uU3VtbWFyeSIqChREZWxldGVTZXNzaW9uUmVxdWVzdBISCgpzZXNzaW9uX2lkGAEgASgJIhcKFURlbGV0ZVNlc3Npb25SZXNwb25zZSKyAQoLQ2hhdFJlcXVlc3QSEgoKc2Vzc2lvbl9pZBgBIAEoCRIVCg1jb2xsZWN0aW9uX2lkGAIgASgJEg8KB21lc3NhZ2UYAyABKAkSHwoHYW5zd2VycxgEIAMoCzIOLm10Zy52MS5BbnN3ZXISIwoJcG9vbF9ydWxlGAcgASgOMhAubXRnLnYxLlBvb2xSdWxlSgQIBRAGSgQIBhAHUgRzZWVkUg9rZWVwX29yYWNsZV9pZHMiPgoKQWdlbnRFcnJvchIMCgRjb2RlGAEgASgJEg8KB21lc3NhZ2UYAiABKAkSEQoJcmV0cnlhYmxlGAMgASgIIr8CCgxDaGF0UmVzcG9uc2USGQoPc2Vzc2lvbl9zdGFydGVkGAEgASgJSAASFAoKdGV4dF9kZWx0YRgCIAEoCUgAEiQKCHF1ZXN0aW9uGAMgASgLMhAubXRnLnYxLlF1ZXN0aW9uSAASHgoFc2xvdHMYBCABKAsyDS5tdGcudjEuU2xvdHNIABIQCgZzdGF0dXMYBSABKAlIABIcCgRkZWNrGAYgASgLMgwubXRnLnYxLkRlY2tIABITCgVlcnJvchgHIAEoCUICGAFIABIlCgdmYWlsdXJlGAggASgLMhIubXRnLnYxLkFnZW50RXJyb3JIABIeCgV1c2FnZRgJIAEoCzINLm10Zy52MS5Vc2FnZUgAEiMKBXBoYXNlGAogASgOMhIubXRnLnYxLkJ1aWxkUGhhc2VIAEIHCgVldmVudCInChFHZXRTZXNzaW9uUmVxdWVzdBISCgpzZXNzaW9uX2lkGAEgASgJIjYKEkdldFNlc3Npb25SZXNwb25zZRIgCgdzZXNzaW9uGAEgASgLMg8ubXRnLnYxLlNlc3Npb24ihgEKEUltcG9ydERlY2tSZXF1ZXN0EgwKBHRleHQYASABKAkSDAoEbmFtZRgCIAEoCRIVCg1jb2xsZWN0aW9uX2lkGAMgASgJEiAKBmZvcm1hdBgEIAEoDjIQLm10Zy52MS5Gb3JtYXRJZBIcChRjb21tYW5kZXJfb3JhY2xlX2lkcxgFIAMoCSKyAQoSSW1wb3J0RGVja1Jlc3BvbnNlEhoKBGRlY2sYASABKAsyDC5tdGcudjEuRGVjaxISCgpzZXNzaW9uX2lkGAIgASgJEhQKDG5lZWRzX2Zvcm1hdBgDIAEoCBIrChFjb21tYW5kZXJfb3B0aW9ucxgEIAMoCzIQLm10Zy52MS5EZWNrQ2FyZBIpCgp1bnJlc29sdmVkGAUgAygLMhUubXRnLnYxLlVucmVzb2x2ZWRSb3ciKwoYUmVhZEltcG9ydEJyYWNrZXRSZXF1ZXN0Eg8KB2RlY2tfaWQYASABKAkiNwoZUmVhZEltcG9ydEJyYWNrZXRSZXNwb25zZRIaCgRkZWNrGAEgASgLMgwubXRnLnYxLkRlY2sqwgEKCkJ1aWxkUGhhc2USGwoXQlVJTERfUEhBU0VfVU5TUEVDSUZJRUQQABIXChNCVUlMRF9QSEFTRV9SRUFESU5HEAESGQoVQlVJTERfUEhBU0VfU0hPUlRMSVNUEAISGAoUQlVJTERfUEhBU0VfQlVJTERJTkcQAxIYChRCVUlMRF9QSEFTRV9DSEVDS0lORxAEEhkKFUJVSUxEX1BIQVNFX1JFUEFJUklORxAFEhQKEEJVSUxEX1BIQVNFX0RPTkUQBjKcBAoMQWdlbnRTZXJ2aWNlEjUKBENoYXQSEy5tdGcudjEuQ2hhdFJlcXVlc3QaFC5tdGcudjEuQ2hhdFJlc3BvbnNlIgAwARJFCgpHZXRTZXNzaW9uEhkubXRnLnYxLkdldFNlc3Npb25SZXF1ZXN0GhoubXRnLnYxLkdldFNlc3Npb25SZXNwb25zZSIAEksKDExpc3RTZXNzaW9ucxIbLm10Zy52MS5MaXN0U2Vzc2lvbnNSZXF1ZXN0GhwubXRnLnYxLkxpc3RTZXNzaW9uc1Jlc3BvbnNlIgASTgoNVXBkYXRlU2Vzc2lvbhIcLm10Zy52MS5VcGRhdGVTZXNzaW9uUmVxdWVzdBodLm10Zy52MS5VcGRhdGVTZXNzaW9uUmVzcG9uc2UiABJOCg1EZWxldGVTZXNzaW9uEhwubXRnLnYxLkRlbGV0ZVNlc3Npb25SZXF1ZXN0Gh0ubXRnLnYxLkRlbGV0ZVNlc3Npb25SZXNwb25zZSIAEkUKCkltcG9ydERlY2sSGS5tdGcudjEuSW1wb3J0RGVja1JlcXVlc3QaGi5tdGcudjEuSW1wb3J0RGVja1Jlc3BvbnNlIgASWgoRUmVhZEltcG9ydEJyYWNrZXQSIC5tdGcudjEuUmVhZEltcG9ydEJyYWNrZXRSZXF1ZXN0GiEubXRnLnYxLlJlYWRJbXBvcnRCcmFja2V0UmVzcG9uc2UiAEIyWjBnaXRodWIuY29tL25rcmFtYmVyL2RlY2t0b21lL2dvL2dlbi9tdGcvdjE7bXRndjFiBnByb3RvMw", [file_google_protobuf_timestamp, file_mtg_v1_collection, file_mtg_v1_deck, file_mtg_v1_format, file_mtg_v1_session]);
 
 /**
  * @generated from message mtg.v1.ListSessionsRequest
@@ -418,6 +422,140 @@ export const GetSessionResponseSchema: GenMessage<GetSessionResponse> = /*@__PUR
   messageDesc(file_mtg_v1_agent_service, 11);
 
 /**
+ * ImportDeckRequest carries one deck list: an Archidekt text export or an
+ * Arena list (D-845). A list that needs an answer comes back with the
+ * question, and the client sends the list again with the answer.
+ *
+ * @generated from message mtg.v1.ImportDeckRequest
+ */
+export type ImportDeckRequest = Message<"mtg.v1.ImportDeckRequest"> & {
+  /**
+   * @generated from field: string text = 1;
+   */
+  text: string;
+
+  /**
+   * name is the deck name. The form fills it from the file name.
+   *
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * collection_id names the collection that marks the owned cards, or
+   * is empty for no owned mark (D-849).
+   *
+   * @generated from field: string collection_id = 3;
+   */
+  collectionId: string;
+
+  /**
+   * format is the pick of the user for a list that is not Commander:
+   * Standard, Modern, or the house format for neither (D-857).
+   *
+   * @generated from field: mtg.v1.FormatId format = 4;
+   */
+  format: FormatId;
+
+  /**
+   * commander_oracle_ids is the pick of the user for a Commander list
+   * with no commander mark (D-847).
+   *
+   * @generated from field: repeated string commander_oracle_ids = 5;
+   */
+  commanderOracleIds: string[];
+};
+
+/**
+ * Describes the message mtg.v1.ImportDeckRequest.
+ * Use `create(ImportDeckRequestSchema)` to create a new message.
+ */
+export const ImportDeckRequestSchema: GenMessage<ImportDeckRequest> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_agent_service, 12);
+
+/**
+ * @generated from message mtg.v1.ImportDeckResponse
+ */
+export type ImportDeckResponse = Message<"mtg.v1.ImportDeckResponse"> & {
+  /**
+   * deck and session_id are set when the import stored the deck.
+   *
+   * @generated from field: mtg.v1.Deck deck = 1;
+   */
+  deck?: Deck | undefined;
+
+  /**
+   * @generated from field: string session_id = 2;
+   */
+  sessionId: string;
+
+  /**
+   * needs_format says the list is not Commander and the request named
+   * no format. The client asks Standard, Modern, or neither.
+   *
+   * @generated from field: bool needs_format = 3;
+   */
+  needsFormat: boolean;
+
+  /**
+   * commander_options are the cards of the list that can lead a deck,
+   * when the list marks no commander. The client asks for a pick.
+   *
+   * @generated from field: repeated mtg.v1.DeckCard commander_options = 4;
+   */
+  commanderOptions: DeckCard[];
+
+  /**
+   * unresolved names each line that matched no card. The import skips
+   * it (D-846).
+   *
+   * @generated from field: repeated mtg.v1.UnresolvedRow unresolved = 5;
+   */
+  unresolved: UnresolvedRow[];
+};
+
+/**
+ * Describes the message mtg.v1.ImportDeckResponse.
+ * Use `create(ImportDeckResponseSchema)` to create a new message.
+ */
+export const ImportDeckResponseSchema: GenMessage<ImportDeckResponse> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_agent_service, 13);
+
+/**
+ * @generated from message mtg.v1.ReadImportBracketRequest
+ */
+export type ReadImportBracketRequest = Message<"mtg.v1.ReadImportBracketRequest"> & {
+  /**
+   * @generated from field: string deck_id = 1;
+   */
+  deckId: string;
+};
+
+/**
+ * Describes the message mtg.v1.ReadImportBracketRequest.
+ * Use `create(ReadImportBracketRequestSchema)` to create a new message.
+ */
+export const ReadImportBracketRequestSchema: GenMessage<ReadImportBracketRequest> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_agent_service, 14);
+
+/**
+ * @generated from message mtg.v1.ReadImportBracketResponse
+ */
+export type ReadImportBracketResponse = Message<"mtg.v1.ReadImportBracketResponse"> & {
+  /**
+   * @generated from field: mtg.v1.Deck deck = 1;
+   */
+  deck?: Deck | undefined;
+};
+
+/**
+ * Describes the message mtg.v1.ReadImportBracketResponse.
+ * Use `create(ReadImportBracketResponseSchema)` to create a new message.
+ */
+export const ReadImportBracketResponseSchema: GenMessage<ReadImportBracketResponse> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_agent_service, 15);
+
+/**
  * BuildPhase names where a turn stands (roadmap PR-19). The stepper of
  * the chat reads it beside the status lines.
  *
@@ -533,6 +671,28 @@ export const AgentService: GenService<{
     methodKind: "unary";
     input: typeof DeleteSessionRequestSchema;
     output: typeof DeleteSessionResponseSchema;
+  },
+  /**
+   * ImportDeck stores a deck list that a user brings, and a session
+   * that the revise turn reads (PR-70, D-845, D-851).
+   *
+   * @generated from rpc mtg.v1.AgentService.ImportDeck
+   */
+  importDeck: {
+    methodKind: "unary";
+    input: typeof ImportDeckRequestSchema;
+    output: typeof ImportDeckResponseSchema;
+  },
+  /**
+   * ReadImportBracket asks the bracket judge again for an imported deck
+   * whose bracket is the floor alone (D-854).
+   *
+   * @generated from rpc mtg.v1.AgentService.ReadImportBracket
+   */
+  readImportBracket: {
+    methodKind: "unary";
+    input: typeof ReadImportBracketRequestSchema;
+    output: typeof ReadImportBracketResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_mtg_v1_agent_service, 0);
