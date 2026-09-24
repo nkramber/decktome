@@ -136,7 +136,7 @@ describe("the report of a list the app could not read", () => {
     expect(await screen.findByText("Something went wrong. The app could not read this file.")).toBeInTheDocument();
     expect(screen.queryByText(/Import failed/)).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Send a report" }));
-    await screen.findByText(/Your report went to the review/);
+    await screen.findByText(/Your report will be reviewed so that we can resolve the issue/);
     expect(submitFeedback).toHaveBeenCalledWith({ feedback: expect.objectContaining({ kind: FeedbackKind.IMPORT, importPage: ImportPage.DECK, text: "" }) });
   });
 

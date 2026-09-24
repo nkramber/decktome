@@ -6,41 +6,41 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-24c)
+## RESUME HERE (2026-09-24d)
 
-**Pull request #224 gives a plain upload page, and a failed parse files its own thumbs down (F-49, F-91, D-882 to D-891).**
+**Pull request #PRNUM sends the owner a Pushover notice of each verdict (PR-75, F-49, D-892 to D-898).**
 
 Author provider: Claude Code
 
-**The next step.** Next step 2, PR-75: a thumbs down pings the owner at once (D-890). Ask the owner the five questions of its roadmap entry before any code.
+**The next step.** Next step 2: measure five sessions, then ask the owner about the checkpoint rule (D-750).
 
-**The base.** `main` is `d4b8daf`, from #223. Cloud Build `7f6cf9e5` of `deploy-api` built `d4b8daf` and ended SUCCESS at 17:41:29 UTC on 2026-09-24. #223 changed no web file.
+**The base.** `main` is `930d1a6`, from #224. Cloud Build `58dfbace` of `deploy-api` ended SUCCESS at 19:53:44 UTC on 2026-09-24, and `86152b16` of `deploy-web` at 19:56:27 UTC. The owner filed an import report on the deployed app at 20:45 UTC. `make feedback-list` read kind import, `IMPORT_PAGE_DECK`, the error, and 3 kept rows. The text view prints the count of the rows, and `-json` prints the rows.
 
 **The change.**
 
-- The collection page, the upload dialog, and the deck import dialog name no service (D-889).
-- A file that does not read, or a read with rows that do not parse, shows a short form (D-887). The form asks where the file came from, in free text (D-883).
-- The form files a thumbs down of kind IMPORT. The server reads the file again and keeps its own fault, with at most 500 bad rows (D-884, D-885).
-- The triage class I1 writes a parser fixture from the stored rows (D-888). A free test fails on it until the parser reads it, and the cycle does not run it (D-891).
-- No paid target ran.
+- `SubmitFeedback` sends a notice after the store writes the verdict (D-892). `go/internal/notify` posts it to Pushover in the background (D-893).
+- Every verdict pings, with at most one notice for each user in a minute (D-896, D-897).
+- The notice holds the email of the token, the reasons, 15 words of the text, the ids, and the time (D-894). The email replaces the rule of D-890 (D-895).
+- The secrets `pushover-app-token` and `pushover-user-key` sit in Secret Manager. Revision `mtg-api-00078-hv2` mounts them at version 1 on the image of `930d1a6`.
+- The report form of PR-74 thanks the user with the text of the owner (D-898).
+- No paid target ran. One test notice through `notify.Pushover` reached the device of the owner.
 
-**The checks.** `make verify` passed on `152dd4e`, exit 0. `make pr-check` passed on the body.
+**The checks.** CHECKS
 
-**The review.** Gitar pause (D-838). Codex reviewed `00a330f`: Ready for owner merge, no open findings. The free verify gate passed.
+**The review.** REVIEW
 
 **What waits on the owner.**
 
 - The merge of this pull request.
-- One report on the deployed app, after the deploy of this merge. Upload a file that does not read, send the form, and read it with `make feedback-list`.
-- PR-75 and its five questions (D-890). Next step 3 comes after it (D-750).
-- M-19, the free replay of the owned-only shortlist (F-174).
+- One notice from the deployed app after the deploy of this merge. Give one verdict, and read the notice.
+- Next step 2 (D-750). M-19, the free replay of the owned-only shortlist (F-174), comes after it.
 - One deployed bracket 5 session reads the commander rates now.
 - The Ulalek, Fused Atrocity shortlist holds 20 fixing lands, against a floor of 21.
 - The end of the Gitar pause, in a later pull request (D-838).
 - A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
 - UNVERIFIED: the Moxfield import of the deck list that the app exports.
 - D-794 makes the app less strict than the Wizards infographic at Bracket 2.
-- Next steps 5 and 6, and OQ-67 and OQ-77.
+- Next steps 4 and 5, and OQ-67 and OQ-77.
 
 ## How to resume
 
@@ -97,7 +97,7 @@ Twenty-two things a fresh session gets wrong without this file.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
 - The harvest of 2026-09-24 at 15:28 UTC read 5 verdicts, all of one user. Two carry the snapshot of D-635, of 2026-09-09 and of 2026-09-24. `docs/reference/f49-harvest-2026-09-23.md` holds the first harvest. A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- The deployed API, read 2026-09-24: Cloud Build `7f6cf9e5` of `deploy-api` built `d4b8daf`, from #223, and ended SUCCESS at 17:41:29 UTC. Build `b78f592d` built `2c658ff`, from #222, before it. Build `f303f85a` of `deploy-web` built `3b2f686`, from #221, and it ended SUCCESS at 13:19:38 UTC. The `mtg-meta` job reads `worker:2c658ff`. The service holds no minimum instance, so a cold start reads Unavailable for about 90 seconds (F-164).
+- The deployed API, read 2026-09-24: Cloud Build `58dfbace` of `deploy-api` built `930d1a6`, from #224, and ended SUCCESS at 19:53:44 UTC. Build `86152b16` of `deploy-web` built `930d1a6` and ended SUCCESS at 19:56:27 UTC. The session then made revisions `mtg-api-00077-vwp` and `mtg-api-00078-hv2` on the same image, to mount the Pushover secrets (D-893). The service holds no minimum instance, so a cold start reads Unavailable for about 90 seconds (F-164).
 - The deployed web app, read 2026-09-20 at 22:45 UTC: the release of #196, Hosting version `60c80b8c4ad2a689` of 22:44:09 UTC. `index.html` loads `assets/index-Fi2SZrwg.js`. The deck page chunk `deck-view-BQeBlu0i.js` holds the power counts, and `use-cards-DNxWsKmD.js` holds every label. The release before it, `b786ceb7f89bc4fc` of 2026-09-13, came from #158.
 - The local quality model is `20260923T202806Z`, from `make meta-refresh` on `1089438` on 2026-09-23. It holds the commander rates of 231 commanders (D-839).
 - The deployed quality model, read 2026-09-24: `20260924T061156Z`, from the meta job that ran from 06:00:50 to 06:19:52 UTC on `worker:fa05e3c`. Its Commander fit read 25,851 lists and used 9,244, with `immaterial` 224 and accuracy 0.5595. It holds the rates of 225 commanders, and Najeela reads 64 lists and 169 cards (D-839). The EDHREC pass read nothing, because it ran on 2026-09-21. The mtgjson source read no list, because its deck list version differs from the stored table.
@@ -108,19 +108,18 @@ Twenty-two things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **PR-74: a plain upload page, and a failed parse files its own thumbs down** (F-49, F-91, D-882 to D-891). This pull request is #224.
-2. **PR-75: a thumbs down pings the owner at once** (F-49, D-890). Before any code, ask the owner the five questions of the roadmap entry. Give the pros and cons of each option. Verify each fact of Google Cloud against its documentation, with the date. One pull request, one clean session.
-3. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It comes after PR-75 (D-890). It waits, because the ten sessions of the audit ran before #184 and before D-749.
-4. **The open items of the roadmap.** Two register rows read 🔧: F-49 and F-174. PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
-5. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git.
-6. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide". Session `z1hshyY6Npig1FN2NuV7` named its commander, so it showed no such row.
-7. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
-8. **M-19: replay the owned-only shortlist of the thumbs down of 2026-09-24** (F-174, D-881). It is free. Read the session and the deck of the snapshot, and the local collection export. Keep the export out of git.
-9. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. Run 29 of 2026-09-20 cost $2.7384 in 1874 seconds, and it reads PASS. Ask the owner before the next whole run.
-10. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
-11. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
-12. **PR-26, the return channels**, waits on OQ-67.
-13. **PR-42 is merged as #148** (D-671). Question gate run 49 missed no conversation, so it ran no rerun. Any miss still fails the run, and each miss joins the finding register.
+1. **PR-75: a thumbs down pings the owner at once** (F-49, D-890, D-892 to D-897). This pull request is #PRNUM.
+2. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It comes after PR-75 (D-890). It waits, because the ten sessions of the audit ran before #184 and before D-749.
+3. **The open items of the roadmap.** Two register rows read 🔧: F-49 and F-174. PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
+4. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git.
+5. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide". Session `z1hshyY6Npig1FN2NuV7` named its commander, so it showed no such row.
+6. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
+7. **M-19: replay the owned-only shortlist of the thumbs down of 2026-09-24** (F-174, D-881). It is free. Read the session and the deck of the snapshot, and the local collection export. Keep the export out of git.
+8. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. Run 29 of 2026-09-20 cost $2.7384 in 1874 seconds, and it reads PASS. Ask the owner before the next whole run.
+9. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
+10. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
+11. **PR-26, the return channels**, waits on OQ-67.
+12. **PR-42 is merged as #148** (D-671). Question gate run 49 missed no conversation, so it ran no rerun. Any miss still fails the run, and each miss joins the finding register.
 
 CAUTION: a command such as `make revise-gate 2>&1 | tee log` hides the exit code of make, because the shell of a session sets no pipefail. Read the verdict line of the document. Each recipe of `Makefile` sets pipefail itself (D-782).
 
@@ -132,10 +131,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-09-24a: the feedback cycle and the one-PR rule, PR-72
-
-**The owner started PR-72 from the transitional prompt of #221.** The deploy of `3b2f686` ended SUCCESS, and a thumbs down of 2026-09-24 carries a session and a deck. The owner chose the flag `--here` and a Codex review that the cycle runs (D-877, D-878). The cycle never merges, and the owner approves in the same session. The owner kept the words of the reader in a case, and moved the harvest to `.local/feedback` (D-879). The owner moved the 60-card import after the merge.
-
 ### 2026-09-24b: the first live fix cycle, PR-73
 
 **The owner started PR-73 from the transitional prompt of #222.** The deploy of `2c658ff` ended SUCCESS. The session said first that a bracket case builds with any card and counts no basic land. The owner chose the judge lane first, then the cycle, and the paid steps cost $0.2291. Case 16 passed before the fix, and the cycle still ran the fixer (F-173). The owner dropped the case, chose the fix here, moved the cause to M-19, and named PR-74 (D-880 to D-882).
@@ -144,6 +139,10 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner started PR-74 from the transitional prompt of #223.** The deploy of `d4b8daf` ended SUCCESS. The owner answered the five questions of D-882 and three more, in three batches (D-883 to D-889, D-891). The session named the risk of user rows in a public repository, and the owner chose a fixture from the stored rows (D-888). The owner named PR-75, a notice for each thumbs down (D-890).
 
+### 2026-09-24d: the notice of each verdict, PR-75
+
+**The owner started PR-75 from the transitional prompt of #224.** Both deploys of `930d1a6` ended SUCCESS, and the owner filed an import report that `make feedback-list` read. The owner answered the five questions of D-890 in three batches (D-892 to D-897). The owner asked for the email in the notice, and the session quoted D-890 against it. The owner chose the email of the token (D-895). The session created the two secrets and mounted them with the approval of the owner. The owner added a new thank-you text to the report form (D-898).
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-24b, the records of 2026-08-31 to 2026-09-23j, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-24c, the records of 2026-08-31 to 2026-09-24a, and 104 more sections, word for word. Read it for the detail behind a decision.
