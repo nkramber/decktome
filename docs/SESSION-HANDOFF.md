@@ -26,7 +26,7 @@ Author provider: Claude Code
 - `docs/tools/ref_check.py` gives the path of the pause file no rule, because the records still name it.
 - No paid target ran.
 
-**The checks.** `make verify` passed on the tree of the first commit, exit 0. `make pr-check` passed on the body.
+**The checks.** `make verify` passed on the tree of `0c4fe16`, exit 0. Every check on `7567fc3` passed. `make pr-check` passed on the body.
 
 **The review.** Codex reviewed effective head `7567fc3a8f3ca3e3e41eec2f539a7e51e210a3d5`. Ready for owner merge. No open findings. Gitar approved the same head.
 
