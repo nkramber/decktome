@@ -27,7 +27,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passed on `cb591e8`, exit 0. The two new tests fail on the code of `2c658ff`, and shellcheck is clean.
 
-**The review.** Codex reads Blocked at `4805915726f10e1bfd380edf9e06c9473656e1ab`. The PR-73 gate lacks an owner waiver. No code finding is open. The pull request waits for the owner.
+**The review.** Codex reads Ready for owner merge at `d6109a39bec0d438d88503f6554234e64f8827b0`. No code finding is open. The PR-73 gate now explains its alternate path (D-877, D-880). The owner decides the merge.
 
 **What waits on the owner.**
 
