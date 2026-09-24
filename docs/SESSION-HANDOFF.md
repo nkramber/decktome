@@ -6,41 +6,33 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-23h)
+## RESUME HERE (2026-09-23i)
 
-**Pull request #220 imports a deck list, and shows it as a deck the app built (PR-70, F-170, F-171, D-845 to D-862).**
+**Pull request (not yet opened) adds the power step of a 60-card import (PR-71, F-170, D-863 to D-869).**
 
 Author provider: Claude Code
 
-**The next step.** Ask the owner for the merge with the summary of four sections (D-836). Pending the owner merge.
+**The next step.** Write `JudgeSixtyStep` and its tests, then `make sixty-gate` with its free `-dry` lane.
 
-**The base.** `main` is `51184cd`, from #219. This session read no deploy of `51184cd`.
+**The base.** `main` is `fa05e3c`, from #220. Cloud Build read SUCCESS for `deploy-api` and `deploy-web` of `fa05e3c` on 2026-09-24 UTC.
 
-**Why this pull request exists.** The owner asked on 2026-09-23 for a deck import, so a user can show and tweak a deck of their own. The app read a deck list as a collection alone.
+**The live import of `fa05e3c`.** The owner imported `go/internal/decklist/testdata/archidekt_living_weapon.txt` on decktome.com. The session read the stored session and deck:
 
-**What this pull request holds.**
+- The session holds Commander, the commander Ekthi, Contaminator Priest, the color W, bracket 3, no turn, and one deck.
+- The deck holds 99 cards and the commander, `imported`, and bracket 3 from the judge, with no estimate mark.
+- The findings hold the legality block of the commander (D-846) and four warnings of the bands.
+- The grade reads typical, and the summary holds the reason of the judge and the quality sentence (D-855).
+- No build path writes `legality_as_of`, so the empty field matches a generated deck.
 
-- `go/internal/decklist` reads an Archidekt text file and a pasted Arena list, with the commander mark of each (D-845, D-847).
-- `ImportDeck` stores the deck and a session, so the revise turn reads it (D-851). `ReadImportBracket` asks the judge again for an estimate (D-854).
-- `ReadImport` reads the floor, the judge, the rules, the profile, the grade, and the owned marks (D-846, D-849, D-850, D-855).
-- The page `/decks` gets the import form. The deck page hides the thumbs on an import (D-853).
-- The counter `total_decks_imported` (D-852, D-862), and the backfill fix of F-171 (D-861).
-- The two real exports of the owner are the fixtures (D-856, D-860).
-
-**The checks.** `make verify` passed on `0ed435e`, exit 0, in the author session. The run of the reviewer passed its code, lint, test, web build, and eval checks, and its Docker build stalled locally. The Docker check passed on GitHub. Both real exports resolve 100 of 100 cards against the snapshot of 2026-09-04. No paid target ran.
-
-**The review.** Gitar pause (D-838). Gitar left its plan notice alone, with no finding. Round 1 found P2-1, and round 2 verified its fix. The current verdict is Ready for owner merge on `0ed435e`. No finding stays open.
+**The scope.** A free count of the local store refuted a premise of D-859: the precon table labels a casual list and an FNM list (D-863). The owner chose each scope answer that the session recommended (D-864 to D-869). The roadmap entry of PR-71 holds the scope.
 
 **What waits on the owner.**
 
-- The merge of this pull request, after the summary of four sections (D-836).
-- One live import on the deployed app after the merge. Each Commander import costs one judge read.
-- PR-71, the power judge of a 60-card import. It needs a source of labeled lists (D-859).
-- The Ulalek, Fused Atrocity shortlist holds 20 fixing lands, against a floor of 21. Its lists hold 11.6 on average.
-- The deployed app reads the rates after the first meta job that runs the fit of #217.
+- The paid run 1 of `make sixty-gate`, about $3.3. Ask first.
+- The Ulalek, Fused Atrocity shortlist holds 20 fixing lands, against a floor of 21.
 - The end of the Gitar pause, in a later pull request (D-838).
 - F-49, as a later item.
-- A whole deck gate run of prompt version 16 and the fixing floor of F-33. It is a paid target, so ask the owner first.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
 - UNVERIFIED: the Moxfield import of the deck list that the app exports.
 - D-794 makes the app less strict than the Wizards infographic at Bracket 2.
 - Five sessions on the new files, before a decision on the checkpoint rule (next step 3, D-750).
@@ -135,10 +127,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-09-23f: the commander rate of bracket 5, PR-67
-
-**The owner started F-166 from the transitional prompt of #216.** The session read the deploy of `f00a2af` first, and it ended SUCCESS. A free count and a $0.0601 rejudge showed that the judge reads a top-cut Najeela list at bracket 5. The owner chose a rate for each commander, 10 lists, bracket 5 alone, and a theme boost of 0.05 (D-839). The owner chose a real fit through `make meta-refresh` over a scratch model, and it took 97 minutes.
-
 ### 2026-09-23g: the land cap of bracket 5, PR-69
 
 **The owner started F-168 beside the open session of #218.** A free replay found that the cap drops Taiga, Plateau, Exotic Orchard, and Boseiju. The F-166 note named two other lands. The owner chose the score order for the mana half over a pass of the cap and over a cap of 45 (D-843). Run 12 read FAIL on the hands floor alone. A free measure of 6,497 top-cut lists showed that 84 percent of them fail it. The owner chose to fix the band in this pull request, at 0.56 for brackets 4 and 5 (D-844).
@@ -149,4 +137,4 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-23g, the records of 2026-08-31 to 2026-09-23e, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-23h, the records of 2026-08-31 to 2026-09-23f, and 104 more sections, word for word. Read it for the detail behind a decision.
