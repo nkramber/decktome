@@ -111,6 +111,7 @@ After the Codex approval, a commit of documents alone keeps `review-gate` green 
 - Never accept a finding only to close the review faster. A wrong fix costs more than a written disagreement.
 - Never make a fix larger than the rule that the finding names.
 - When a finding conflicts with an owner decision, quote both and ask the owner.
+- A Gitar comment that names no specific item is not a finding (D-842). Do not reply to a plan notice, a pause note, or a dashboard with no issue.
 
 ## Traps
 

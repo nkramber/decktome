@@ -20,7 +20,7 @@ This file is also the switch of the unattended feedback cycle. `scripts/feedback
 
 ## A Gitar finding stops the work
 
-A Gitar finding is a review thread of `gitar-bot`, or an issue in the `Code Review` block of its dashboard comment. A dashboard that reports no issue is not a finding. A pause note of Gitar is not a finding.
+A Gitar finding is a review thread of `gitar-bot`, or an issue in the `Code Review` block of its dashboard comment. A dashboard that reports no issue is not a finding. A pause note of Gitar is not a finding. A plan notice, and each other Gitar comment that names no specific item, is not a finding. Do not reply to it (D-842).
 
 `dashboard_issue` of `docs/tools/codex_review.py` reads the dashboard for the flag and for the feedback cycle. A clean dashboard has the verdict `✅ Approved` or `✅ No issues found`, and each of its findings is resolved or closed. Each other form counts as a finding.
 

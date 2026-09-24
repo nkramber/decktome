@@ -42,6 +42,10 @@ type Case struct {
 	// Gaps name what the verdict could not fill. A person reads them on
 	// the pull request and finishes the case by hand.
 	Gaps []string `json:"gaps,omitempty"`
+	// NoRun names why no gate can run the case, or is empty. The manifest
+	// and the apply step leave such a case out, so the fix cycle never
+	// pays for a gate run on it (D-841).
+	NoRun string `json:"no_run,omitempty"`
 	// Detail is the defect in words, for a class that writes no case.
 	Detail string `json:"detail,omitempty"`
 }
@@ -182,11 +186,15 @@ func conversationOf(r Route, id int, name Namer) (Case, error) {
 	if r.Class.ID == "X3" {
 		gaps = append(gaps, "a chat verdict names no question, so a person names the row that must not fire")
 	}
+	var noRun string
+	if len(c.Messages) == 0 {
+		noRun = "the question gate refuses a conversation with no message"
+	}
 	body, err := json.Marshal(c)
 	if err != nil {
 		return Case{}, fmt.Errorf("triage %s: %w", rec.ID, err)
 	}
-	return Case{Class: classID(r), Artifact: AConversation, Target: TargetConversations, ID: id, Body: body, Gaps: gaps}, nil
+	return Case{Class: classID(r), Artifact: AConversation, Target: TargetConversations, ID: id, Body: body, Gaps: gaps, NoRun: noRun}, nil
 }
 
 // deckPromptOf writes a deck gate prompt from the deck the reader judged

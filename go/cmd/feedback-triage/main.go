@@ -167,7 +167,7 @@ func run() error {
 // owner question into the decision queue.
 func applyCases(root string, results []triage.Result) error {
 	for i, r := range results {
-		if r.Err != nil || len(r.Case.Body) == 0 || r.Case.Target == "" {
+		if r.Err != nil || len(r.Case.Body) == 0 || r.Case.Target == "" || r.Case.NoRun != "" {
 			continue
 		}
 		path := filepath.Join(root, r.Case.Target)

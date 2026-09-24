@@ -170,6 +170,7 @@ The reviewer reads the Gitar comments and the author replies as claims (D-811). 
 - Check that the Gitar review is current. Use the read commands of the `gitar-review` skill alone.
 - A Gitar finding with no answer blocks the verdict, because the pass of the author is not complete.
 - A Gitar finding that the author refuted with evidence is not a finding of the review.
+- A Gitar comment that names no specific item is not a finding. Examples are a plan notice, a pause note, and a dashboard that reports no issue. Ignore it, and do not record it. It never blocks the verdict (D-842).
 
 ## Scope limits
 

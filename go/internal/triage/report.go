@@ -122,6 +122,9 @@ func Report(w io.Writer, rs []Result, day time.Time, dry bool, cost string) bool
 		for _, g := range r.Case.Gaps {
 			_, _ = fmt.Fprintf(w, "- **gap**: %s\n", g)
 		}
+		if r.Case.NoRun != "" {
+			_, _ = fmt.Fprintf(w, "- **no gate runs it**: %s, so no gate file takes it\n", r.Case.NoRun)
+		}
 		if r.Applied != "" {
 			_, _ = fmt.Fprintf(w, "- written to `%s`\n", r.Applied)
 		}

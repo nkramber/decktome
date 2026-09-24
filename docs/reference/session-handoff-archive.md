@@ -12,6 +12,50 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-23h
+
+**Pull request #220 imports a deck list, and shows it as a deck the app built (PR-70, F-170, F-171, D-845 to D-862).**
+
+Author provider: Claude Code
+
+**The next step.** Ask the owner for the merge with the summary of four sections (D-836). Pending the owner merge.
+
+**The base.** `main` is `51184cd`, from #219. This session read no deploy of `51184cd`.
+
+**Why this pull request exists.** The owner asked on 2026-09-23 for a deck import, so a user can show and tweak a deck of their own. The app read a deck list as a collection alone.
+
+**What this pull request holds.**
+
+- `go/internal/decklist` reads an Archidekt text file and a pasted Arena list, with the commander mark of each (D-845, D-847).
+- `ImportDeck` stores the deck and a session, so the revise turn reads it (D-851). `ReadImportBracket` asks the judge again for an estimate (D-854).
+- `ReadImport` reads the floor, the judge, the rules, the profile, the grade, and the owned marks (D-846, D-849, D-850, D-855).
+- The page `/decks` gets the import form. The deck page hides the thumbs on an import (D-853).
+- The counter `total_decks_imported` (D-852, D-862), and the backfill fix of F-171 (D-861).
+- The two real exports of the owner are the fixtures (D-856, D-860).
+
+**The checks.** `make verify` passed on `0ed435e`, exit 0, in the author session. The run of the reviewer passed its code, lint, test, web build, and eval checks, and its Docker build stalled locally. The Docker check passed on GitHub. Both real exports resolve 100 of 100 cards against the snapshot of 2026-09-04. No paid target ran.
+
+**The review.** Gitar pause (D-838). Gitar left its plan notice alone, with no finding. Round 1 found P2-1, and round 2 verified its fix. The current verdict is Ready for owner merge on `0ed435e`. No finding stays open.
+
+**What waits on the owner.**
+
+- The merge of this pull request, after the summary of four sections (D-836).
+- One live import on the deployed app after the merge. Each Commander import costs one judge read.
+- PR-71, the power judge of a 60-card import. It needs a source of labeled lists (D-859).
+- The Ulalek, Fused Atrocity shortlist holds 20 fixing lands, against a floor of 21. Its lists hold 11.6 on average.
+- The deployed app reads the rates after the first meta job that runs the fit of #217.
+- The end of the Gitar pause, in a later pull request (D-838).
+- F-49, as a later item.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. It is a paid target, so ask the owner first.
+- UNVERIFIED: the Moxfield import of the deck list that the app exports.
+- D-794 makes the app less strict than the Wizards infographic at Bracket 2.
+- Five sessions on the new files, before a decision on the checkpoint rule (next step 3, D-750).
+- Next steps 4 and 5, and OQ-67 and OQ-77.
+
+### 2026-09-23f: the commander rate of bracket 5, PR-67
+
+**The owner started F-166 from the transitional prompt of #216.** The session read the deploy of `f00a2af` first, and it ended SUCCESS. A free count and a $0.0601 rejudge showed that the judge reads a top-cut Najeela list at bracket 5. The owner chose a rate for each commander, 10 lists, bracket 5 alone, and a theme boost of 0.05 (D-839). The owner chose a real fit through `make meta-refresh` over a scratch model, and it took 97 minutes.
+
 ## The resume section of 2026-09-23g
 
 **Pull request #219 makes the land cap of a bracket 5 shortlist keep the core lands of its commander (F-168, D-843). It also moves the opening-hands floor of brackets 4 and 5 to real lists (F-169, D-844).**

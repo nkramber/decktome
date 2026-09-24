@@ -7,6 +7,7 @@ Part of the `pr-review` skill. Load this file when you are the author, and you a
 Gitar reviews each push. After each push, load the `gitar-review` skill and follow it. The Gitar pass comes before the Codex review, and it never replaces the Codex review (D-811).
 
 - Answer each Gitar finding before you ask the owner for the Codex review.
+- Do not answer a Gitar comment that names no specific item, such as a plan notice or a pause note. It is not a finding (D-842).
 
 **Gitar pause (D-838).** `docs/reference/gitar-pause.md` wins over this section. Run `make codex-review PR=<number> -- --skip-gitar-review`. Tell the owner of each Gitar finding at once.
 - A reply names no provider, harness, or model (hard rule 6).
