@@ -6,6 +6,7 @@ package decklist
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"regexp"
 	"strings"
@@ -29,6 +30,10 @@ const (
 // maxLines caps one list. A Commander deck is 100 cards, and a list of
 // many thousand lines is a paste of the wrong file.
 const maxLines = 1000
+
+// ErrTooManyLines refuses a list over maxLines. The whole list fails, so
+// no line past the cap goes missing with no report (D-846).
+var ErrTooManyLines = fmt.Errorf("a deck list takes at most %d lines", maxLines)
 
 // maxRawBytes bounds the echoed line text in a report, as a collection
 // upload bounds it.
@@ -69,8 +74,9 @@ var headers = map[string]Section{
 	"companion": Companion,
 }
 
-// Parse reads a list. It fails only on a read error. A line that reads
-// as no card goes to Bad, and the import reports it (D-846).
+// Parse reads a list. It fails on a read error and on a list over
+// maxLines. A line that reads as no card goes to Bad, and the import
+// reports it (D-846).
 func Parse(r io.Reader) (*List, error) {
 	out := &List{}
 	sc := bufio.NewScanner(r)
@@ -81,7 +87,7 @@ func Parse(r io.Reader) (*List, error) {
 	for sc.Scan() {
 		n++
 		if n > maxLines {
-			break
+			return nil, ErrTooManyLines
 		}
 		raw := sc.Text()
 		text := strings.TrimSpace(strings.TrimPrefix(raw, "\ufeff"))

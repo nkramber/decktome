@@ -234,3 +234,18 @@ func TestReadImportBracketAsksAgain(t *testing.T) {
 		t.Errorf("a judged bracket was read again: reads = %d, err = %v", fd.imports, err)
 	}
 }
+
+// TestImportRefusesALongList is P2-1 of the review of #220: a list over
+// the line cap stores no deck and no session (D-846).
+func TestImportRefusesALongList(t *testing.T) {
+	fd, ds := &fakeDecks{}, &fakeDeckStore{}
+	client, store := importServer(t, fd, ds, &fakeNoter{})
+	text := "1 Karlov of the Ghost Council\n" + strings.Repeat("1 Plains\n", 1000)
+	_, err := client.ImportDeck(context.Background(), connect.NewRequest(&mtgv1.ImportDeckRequest{Text: text}))
+	if connect.CodeOf(err) != connect.CodeInvalidArgument {
+		t.Fatalf("err = %v, want InvalidArgument", err)
+	}
+	if len(ds.put) != 0 || len(store.sessions) != 0 || fd.imports != 0 {
+		t.Errorf("a refused list stored %d decks and %d sessions", len(ds.put), len(store.sessions))
+	}
+}

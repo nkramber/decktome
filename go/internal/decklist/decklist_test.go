@@ -2,6 +2,7 @@ package decklist
 
 import (
 	"context"
+	"errors"
 	"io"
 	"log/slog"
 	"os"
@@ -211,5 +212,18 @@ func TestResolveRealExports(t *testing.T) {
 		if n != 100 || len(cmd) != 1 || cmd[0] != tc.commander {
 			t.Errorf("%s: %d cards, commander %v", tc.file, n, cmd)
 		}
+	}
+}
+
+// TestParseRefusesALongList is P2-1 of the review of #220: a list over
+// maxLines fails whole, and no line past the cap goes missing (D-846).
+func TestParseRefusesALongList(t *testing.T) {
+	text := strings.Repeat("1 Plains\n", maxLines+1)
+	l, err := Parse(strings.NewReader(text))
+	if !errors.Is(err, ErrTooManyLines) || l != nil {
+		t.Fatalf("list is nil = %v, err = %v, want ErrTooManyLines", l == nil, err)
+	}
+	if _, err := Parse(strings.NewReader(strings.Repeat("1 Plains\n", maxLines))); err != nil {
+		t.Errorf("a list of %d lines failed: %v", maxLines, err)
 	}
 }
