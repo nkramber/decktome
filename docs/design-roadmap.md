@@ -354,7 +354,7 @@ Three structural facts drive the plan:
 - **Firestore.** Per user: one collection doc set (PR-4 decided one gzip document per collection, about 500 KB for a 5,000-card binder, D-16), sessions, decks. Low.
 - **Cloud Run.** Two services plus a worker, scale to zero. Low until users exist.
 - **Eval.** Deterministic checks are free. Judge runs cost per deck. Cap per run as connector-syncer does ($5 cap in its bake-off).
-- **Deck import (PR-70, 2026-09-23).** One judge read on each Commander import, about $0.014 to $0.017 from bracket gate runs 9 and 12. The floor and the profile call Commander Spellbook up to three times. A 60-card import calls no model.
+- **Deck import (PR-70, 2026-09-23).** One judge read on each Commander import, about $0.014 to $0.017 from bracket gate runs 9 and 12. The floor and the profile call Commander Spellbook up to three times. REFUTED 2026-09-23 by PR-71: "a 60-card import calls no model". A 60-card import makes one judge read, about $0.022 from `make sixty-gate` run 2.
 - **Bracket profile (PR-14A, 2026-09-02).** Commander Spellbook is free at 90 calls a minute, two calls per build. The profile's repair passes raise a build from about one model call to two. Deck gate run 12 cost $2.24 against $1.46 for run 11.
 - **The measured monthly cost at idle is still unknown (2026-09-09).** It is the fourth item of the PR-22 gate, and the three that test behavior all hold (D-620). The week of the deploy held the walks and the deploys of PR-32, PR-33, and PR-25, so no week yet reads as idle. PR-28 waits behind this number (D-557).
 - **Unknowns to measure first:** tokens per session (M-1), Scryfall refresh lag after an announcement (M-2), ManaBox import failure rate on real files (M-3).
@@ -2426,6 +2426,8 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 59. **PR-69** the land cap and the hands floor follow the real lists (F-168, F-169, D-843, D-844). Bracket gate run 12 cost $0.1249.
 
 60. **PR-70** a deck import, and the count of revisions in the backfill (F-170, F-171, D-845 to D-862). No paid target ran.
+
+61. **PR-71** the power step of a 60-card import, and the power of the session after a new read (F-170, F-172, D-863 to D-876). The paid runs cost $8.9265.
 
 ## 9. Open questions
 
