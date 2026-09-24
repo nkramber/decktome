@@ -12,7 +12,9 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 Author provider: Claude Code
 
-**The next step.** Ask the owner for test run 1 of `make sixty-gate`, about $3.8. The FNM rung reads the labels of `go/cmd/sixty-gate/goldfish_labels.json` (D-875).
+**The next step.** The owner chooses what follows the FAIL of test run 1.
+
+**Test run 1.** `docs/reference/pr71-sixty-gate-run1.md` reads FAIL for $4.1086: 133 of 180 reads name the label, and the floor is 80 percent. No read sits two steps off. Casual read 53 of 60, FNM 40 of 60, and tournament 40 of 60. The MTGO lists read 26 of 30, and the RCQ lists 14 of 30. Each RCQ held 16 to 24 players.
 
 **The code.** `JudgeSixtyStep` with prompt version 2, the step of a 60-card import, the new read, the power slot of the session (F-172, D-870), and `make sixty-gate`. The tests of each part pass.
 
@@ -32,7 +34,7 @@ Author provider: Claude Code
 
 **What waits on the owner.**
 
-- The paid run 1 of `make sixty-gate`, about $3.8. Ask first.
+- The next step after the FAIL of test run 1.
 - The Ulalek, Fused Atrocity shortlist holds 20 fixing lands, against a floor of 21.
 - The end of the Gitar pause, in a later pull request (D-838).
 - F-49, as a later item.
