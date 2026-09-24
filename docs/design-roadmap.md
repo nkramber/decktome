@@ -505,6 +505,7 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-167 | **The collection page shows two scrollbars, and the binder toolbar scrolls away.** `<main>` of `web/apps/web/src/app/layout.tsx` scrolls the page (D-364). `web/apps/web/src/features/collection/binder-grid.tsx` adds a second scroll box of `max-h-[75vh]`. The reader scrolls the page to reach the binder, then scrolls the box. The search and the filters leave the screen, and no control returns the reader to them. The owner named it on 2026-09-22 (D-806). | ✅ fixed by #211 (D-806 to D-809). The binder grid reads the scroll of `<main>`, its title and search stay pinned, and a button returns the reader to the binder top. |
 | F-168 | **The land cap of a bracket 5 shortlist drops lands that most lists of its commander play.** `capLands` gives half its 40 places to the mana order, which reads the land class and then the play (D-450, D-733). A bracket 5 score leads with the commander rate of D-839, and the mana order reads no rate. So the Najeela shortlist held 7 pain lands that no Najeela list plays, and it dropped Taiga, Plateau, Exotic Orchard, and Boseiju, Who Endures. Half the Najeela lists or more play each of the four. `docs/reference/f166-commander-rate-2026-09-23.md` named the gap on 2026-09-23. | ✅ closes with PR-69 (D-843). The mana half reads the score order when a commander rate applies. The Najeela shortlist holds 90 of its 90 core cards. |
 | F-169 | **The opening-hands floor of brackets 4 and 5 fails most real top-cut lists.** The bracket 5 floor asked 0.65 of first hands to hold two to four lands, and bracket 4 asked 0.70. A 99-card deck needs 30 lands to reach 0.65, and the bracket 5 land band starts at 27. 5,456 of 6,497 TopDeck great lists read under 0.65. Bracket gate run 12 read FAIL on this band alone, for a Najeela deck of 27 lands. Found 2026-09-23. | ✅ closes with PR-69 (D-844). Both floors read 0.56, the low quarter of the TopDeck lists. |
+| F-170 | **The app reads no deck list, so a user can not show or revise a deck of their own.** `ParseArenaText` reads an Arena list as a collection, and it skips the `Commander`, `Deck`, and `Sideboard` headers. The deck page and the revise turn read a deck that a build stored. The revise turn reads the last deck of its session. The owner asked for a deck import on 2026-09-23. | 🔧 binds PR-70 and PR-71 (D-845 to D-860). |
 | F-158 | **Two snapshot tests of PR-57 never ran.** `make themes-check` names each snapshot test by a `-run` pattern. The pattern held `TestTypalLandsReachATypalShortlist` from PR-55, and PR-57 added `TestTypalCardsReachATypalShortlist` and did not extend it. A `-run` pattern is an unanchored regular expression, and the land name never matches the card name. So the card test of PR-57 ran in no target. It also skips under `make verify`, because the verify workflow holds no card snapshot. Found 2026-09-20 by the checks of PR-58. | ✅ fixed by PR-58. The pattern reads `ReachATypalShortlist` now, which matches all three snapshot shortlist tests. A run of `make themes-check` reads five tests in place of three. |
 | F-30 | **No signal of deck quality exists.** The pool ranks on theme fit and EDHREC popularity, and the bracket drops Game Changers under bracket 3 and nothing else. A bracket 5 request got the three most popular legends whose text held "you" and "can" (session t8o1nGGquK6UdTQkfY3V, D-411, 2026-09-01). | ✅ PR-14B merged 2026-09-03 (#58, D-470 to D-493), and D-479 answered OQ-54. F-53 and F-94 carry the judge bar. The row read 🔧 until 2026-09-20. |
 | F-6 | **No Cloud Tasks emulator.** Local mode can not run real Cloud Tasks. | ✅ PR-0c (#3): a `Dispatcher` interface with a local in-process implementation. |
@@ -2018,6 +2019,39 @@ Gate:
 - `go/internal/profile/prompt_bands_test.go` reads the new floor in the prompt lines of brackets 4 and 5, and it fails on the old bands.
 - `make verify` passes.
 > *In plain English:* a top-power deck got lands that no winning deck of its commander plays. It lost lands that most of those decks play. The land list now follows the same winning decks. The check of the first hands also failed most real winning decks. Its bar moves to what those decks play.
+
+**PR-70: Import a deck list, and show it as a deck the app built (F-170, D-845 to D-857, D-859, D-860).** 🔧 in progress. The owner approved the scope on 2026-09-23 (D-860).
+A user brings a deck of their own, and the app stores it as a deck that a build made. So the deck page shows it, and the revise turn changes it. The owner asked for the import on 2026-09-23.
+
+- **The input.** The page `/decks` gets an import form. It takes a text file that Archidekt exports, or a pasted Arena list (D-845). The app fetches no URL.
+- **The parse.** A deck parser reads the Archidekt line `1x Name (set) number *F* [Category]` and the Arena sections `Commander`, `Deck`, `Sideboard`, and `Companion`. It also reads the line `// COMMANDER`, and a blank line ends that section. It resolves each name as a collection upload does, and it reports each name that matches no card.
+- **The format.** A commander mark or a main deck of 100 cards reads Commander. For any other list, the user picks Standard, Modern, or neither, and neither stores as the house format (D-857).
+- **The commander.** The Archidekt category `Commander{top}`, the Arena header `Commander`, or the line `// COMMANDER` names it. With neither mark, the user picks from the cards of the list that can lead a deck (D-847).
+- **The checks.** Each card stays as the user wrote it, and the page shows each finding of `rules.Validate` (D-846). The roles come from `assignRole` alone (D-848).
+- **The collection.** A user with a collection can pick one to show the owned cards and the buy list (D-849).
+- **The bracket.** `Profiler.Floor` reads the floor, and `JudgeBracket` reads the bracket. The bracket never sits under the floor (D-850). When the judge fails, the deck stores the floor as an estimate, and the next open reads again (D-854). A 60-card import shows that the app did not read its power step yet (D-859).
+- **The summary.** The reason of the judge and the quality sentence (D-855).
+- **The session.** The import writes a session with the format, the commander, the colors, the bracket, and the collection. Its theme stays empty. The revise turn then reads the deck as it reads a generated deck (D-851).
+- **The user record and the thumbs.** A new counter `total_decks_imported` counts each import (D-852). The thumbs stay off on the import and apply to each revision (D-853).
+- **The name.** An Archidekt import takes the name of its file, and the form names a pasted list.
+- **The cost.** One judge read for each Commander import. Bracket gate run 12 read one deck for $0.0167, and run 9 read six for $0.0833. A 60-card import calls no model.
+
+Gate:
+
+- The parser reads `living_weapon.txt`, the Archidekt export of the owner (D-856): 100 cards, with Ekthi, Contaminator Priest as the commander. The commander earns a finding of legality. The foil line, the double-faced names, and the collector number `XLN-235` resolve.
+- The parser reads `Turtle_power.txt`, the Arena export of the owner (D-860): 100 cards, with Heroes in a Half Shell as the commander.
+- A test of the parser reads an Arena list with each of the four sections.
+- Tests of the import cover the session, a revise turn on the imported deck, the new counter, and the hidden thumbs.
+- Tests of the import also cover the floor on a judge failure and the house format.
+- Tests of the web form cover the paste, the file, the collection pick, the format pick, and the commander pick.
+- `make verify` passes.
+> *In plain English:* today the app shows only the decks it built. This item lets you bring a deck you already have, from an Archidekt file or a pasted Arena list. The app shows it with the same checks, reads its bracket, and changes it on request.
+
+**PR-71: The power step of a 60-card import (F-170, D-858, D-859).** 🔧 planned. It waits for PR-70.
+A judge reads the power step of a 60-card import: casual, FNM level, or tournament. The judge has no prompt, no calibration set, and no measured cost. The meta store holds tournament lists from MTGO and MTGGoldfish, and no source on record labels a casual list or an FNM list.
+
+Gate: unwritten. The item needs a source of labeled lists before its gate.
+> *In plain English:* a Commander import gets its power read, and a 60-card import does not yet. This item adds that read. It first needs real decks of each power level to test against.
 
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
