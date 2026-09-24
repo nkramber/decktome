@@ -28,12 +28,19 @@ const (
 	eventLists = 2
 )
 
-// casualTypes and fnmTypes are the product types of the precon table that
-// label a rung (D-863). The Event decks stay out: no Wizards page on
-// record says they were sold for FNM play.
+// casualTypes, challengerTypes, and eventTypes are the product types of
+// the precon table that label a rung (D-863). The FNM rung takes 13
+// Challenger decks and 12 Event decks, because the Challenger decks read
+// near a tournament list (D-873).
 var (
-	casualTypes = map[string]bool{"Theme Deck": true, "Intro Pack": true, "Planeswalker Deck": true}
-	fnmTypes    = map[string]bool{"Challenger Deck": true, "Pioneer Challenger Deck": true}
+	casualTypes     = map[string]bool{"Theme Deck": true, "Intro Pack": true, "Planeswalker Deck": true}
+	challengerTypes = map[string]bool{"Challenger Deck": true, "Pioneer Challenger Deck": true}
+	eventTypes      = map[string]bool{"Event Deck": true, "Modern Event Deck": true}
+)
+
+const (
+	challengerLists = 13
+	eventDeckLists  = 12
 )
 
 // rcq matches the event name of a Regional Championship Qualifier on
@@ -67,29 +74,29 @@ type picked struct {
 // (D-871).
 func pick(idx *cards.Index, precons []meta.Precon, modern, standard []meta.List) (picked, error) {
 	out := picked{skipped: map[mtgv1.SixtyStep]int{}}
-	var casual, fnm, mtgo, top8 []calList
+	var casual, challenger, event, mtgo, top8 []calList
 	for _, p := range precons {
-		var label mtgv1.SixtyStep
-		switch {
-		case casualTypes[p.Type]:
-			label = mtgv1.SixtyStep_SIXTY_STEP_CASUAL
-		case fnmTypes[p.Type]:
-			label = mtgv1.SixtyStep_SIXTY_STEP_FNM
-		default:
-			continue
-		}
 		if preconCount(p.Cards) < 60 {
 			continue
 		}
 		format := "Standard"
-		if strings.HasPrefix(p.Type, "Pioneer") {
+		switch {
+		case strings.HasPrefix(p.Type, "Pioneer"):
 			format = "Pioneer"
+		case strings.HasPrefix(p.Type, "Modern"):
+			format = "Modern"
 		}
-		l := calList{label: label, id: p.Code + " " + p.Name, name: p.Name, date: p.ReleaseDate, format: format}
-		if label == mtgv1.SixtyStep_SIXTY_STEP_CASUAL {
+		l := calList{id: p.Code + " " + p.Name, name: p.Name, date: p.ReleaseDate, format: format}
+		switch {
+		case casualTypes[p.Type]:
+			l.label = mtgv1.SixtyStep_SIXTY_STEP_CASUAL
 			casual = append(casual, l)
-		} else {
-			fnm = append(fnm, l)
+		case challengerTypes[p.Type]:
+			l.label = mtgv1.SixtyStep_SIXTY_STEP_FNM
+			challenger = append(challenger, l)
+		case eventTypes[p.Type]:
+			l.label = mtgv1.SixtyStep_SIXTY_STEP_FNM
+			event = append(event, l)
 		}
 	}
 	byID := map[string]meta.Precon{}
@@ -135,7 +142,7 @@ func pick(idx *cards.Index, precons []meta.Precon, modern, standard []meta.List)
 	}
 	for _, rung := range [][]part{
 		{{casual, resolvePrecon, rungSize, 0}},
-		{{fnm, resolvePrecon, rungSize, 0}},
+		{{challenger, resolvePrecon, challengerLists, 0}, {event, resolvePrecon, eventDeckLists, 0}},
 		{{mtgo, resolveList, mtgoLists, eventLists}, {top8, resolveList, top8Lists, eventLists}},
 	} {
 		var taken []calList

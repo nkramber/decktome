@@ -32,13 +32,13 @@ func list(source, event, date string, n, place int) meta.List {
 	}
 }
 
-// fixture holds 30 lists of each precon rung, a Starter deck that labels
+// fixture holds 30 lists of each precon type, a Starter deck that labels
 // no rung, a 40-card Intro pack, and tournament lists in many events.
 func fixture() ([]meta.Precon, []meta.List) {
 	var ps []meta.Precon
 	for i := range 30 {
 		date := fmt.Sprintf("2020-01-%02d", i+1)
-		ps = append(ps, precon("Theme Deck", i, date), precon("Challenger Deck", i, date))
+		ps = append(ps, precon("Theme Deck", i, date), precon("Challenger Deck", i, date), precon("Event Deck", i, date))
 	}
 	ps = append(ps, precon("Starter Deck", 0, "2030-01-01"))
 	small := precon("Intro Pack", 99, "2030-01-01")
@@ -58,9 +58,10 @@ func fixture() ([]meta.Precon, []meta.List) {
 	return ps, ls
 }
 
-// TestPickBuildsTheRungs is D-863, D-867, and D-871: three rungs of 25,
-// every fifth list in the dev split, the newest lists first, and the
-// tournament rung split by source with two lists of one event at most.
+// TestPickBuildsTheRungs is D-863, D-867, D-871, and D-873: three rungs
+// of 25, every fifth list in the dev split, the newest lists first, the
+// FNM rung split by product type, and the tournament rung split by source
+// with two lists of one event at most.
 func TestPickBuildsTheRungs(t *testing.T) {
 	ps, ls := fixture()
 	set, err := pick(testIndex(), ps, ls, nil)
@@ -71,8 +72,12 @@ func TestPickBuildsTheRungs(t *testing.T) {
 	dev := map[mtgv1.SixtyStep]int{}
 	sources := map[string]int{}
 	events := map[string]int{}
+	kinds := map[string]int{}
 	for _, l := range set.lists {
 		count[l.label]++
+		if l.label == mtgv1.SixtyStep_SIXTY_STEP_FNM {
+			kinds[strings.Fields(l.name)[0]]++
+		}
 		if l.dev {
 			dev[l.label]++
 		}
@@ -91,6 +96,9 @@ func TestPickBuildsTheRungs(t *testing.T) {
 		if count[s] != 25 || dev[s] != 5 {
 			t.Errorf("%s: lists = %d, dev = %d, want 25 and 5", stepWord(s), count[s], dev[s])
 		}
+	}
+	if kinds["Challenger"] != 13 || kinds["Event"] != 12 {
+		t.Errorf("FNM kinds = %v, want 13 Challenger and 12 Event decks (D-873)", kinds)
 	}
 	if sources[meta.SourceMTGO] != 13 || sources[meta.SourceMTGTop8] != 12 {
 		t.Errorf("sources = %v, want 13 MTGO and 12 MTGTop8", sources)
@@ -130,24 +138,22 @@ func TestPickRefusesAThinRung(t *testing.T) {
 	}
 }
 
-// TestPickReadsThePioneerFormat is D-869: a Pioneer Challenger deck
-// reads the format of its release.
+// TestPickReadsThePioneerFormat is D-869: a Pioneer Challenger deck and
+// a Modern Event deck read the format of their release.
 func TestPickReadsThePioneerFormat(t *testing.T) {
 	ps, ls := fixture()
-	ps = append(ps, precon("Pioneer Challenger Deck", 0, "2029-01-01"))
+	ps = append(ps, precon("Pioneer Challenger Deck", 0, "2029-01-01"), precon("Modern Event Deck", 0, "2028-01-01"))
 	set, err := pick(testIndex(), ps, ls, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
+	formats := map[string]string{}
 	for _, l := range set.lists {
-		if l.label == mtgv1.SixtyStep_SIXTY_STEP_FNM {
-			if l.format != "Pioneer" {
-				t.Errorf("newest FNM list = %s, format %s", l.id, l.format)
-			}
-			return
-		}
+		formats[l.name] = l.format
 	}
-	t.Error("no FNM list")
+	if formats["Pioneer Challenger Deck 0"] != "Pioneer" || formats["Modern Event Deck 0"] != "Modern" {
+		t.Errorf("formats = %q and %q", formats["Pioneer Challenger Deck 0"], formats["Modern Event Deck 0"])
+	}
 }
 
 // TestVerdict is D-868: 80 percent of the reads name the label, and no
