@@ -255,11 +255,9 @@ func TestExcludeLeavesOutReadLists(t *testing.T) {
 		t.Fatal(err)
 	}
 	doc := "| Rung | Split | Date | Format | List |\n|---|---|---|---|---|\n"
-	var read []string
 	for _, l := range first.lists {
 		if l.label == mtgv1.SixtyStep_SIXTY_STEP_TOURNAMENT {
 			doc += fmt.Sprintf("| tournament | test | %s | %s | %s |\n", l.date, l.format, cell(l.id+", "+l.name))
-			read = append(read, l.id)
 		}
 	}
 	path := t.TempDir() + "/run.md"
