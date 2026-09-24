@@ -6,7 +6,7 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
-2026-09-23 correction pass 226 (PR-71, D-863 to D-875): the power judge of a 60-card import gets its labels, its prompt, its split, and its gate. The store labels a casual list and an FNM list, which refutes a premise of D-859. A new read also fixes the power of the session (F-172). Changes: PR-71, F-172.
+2026-09-23 correction pass 226 (PR-71, D-863 to D-876): the power judge of a 60-card import gets its labels, its prompt, its split, and its gate. The store labels a casual list and an FNM list, which refutes a premise of D-859. A new read also fixes the power of the session (F-172). Changes: PR-71, F-172.
 
 2026-09-23 correction pass 225 (PR-70, D-845 to D-862): a user can import a deck list, and the app shows it as a deck it built. A Commander import reads its bracket from the judge over the floor of its rules. The backfill of the user record counted no revision (F-171). Changes: PR-70, PR-71, F-170, F-171.
 
@@ -2058,17 +2058,17 @@ Gate:
 - `make verify` passes.
 > *In plain English:* today the app shows only the decks it built. This item lets you bring a deck you already have, from an Archidekt file or a pasted Arena list. The app shows it with the same checks, reads its bracket, and changes it on request.
 
-**PR-71: The power step of a 60-card import (F-170, F-172, D-858, D-859, D-863 to D-875).** 🔧 planned.
+**PR-71: The power step of a 60-card import (F-170, F-172, D-858, D-859, D-863 to D-876).** 🔧 planned.
 A judge reads the power step of a 60-card import: casual, FNM level, or tournament. REFUTED 2026-09-23 (D-863): "no source on record labels a casual list or an FNM list". The product types of the precon table label both.
 
 - **The judge.** `JudgeSixtyStep` in `go/internal/generate/judge.go` reads the main deck, the sideboard, and the format word. Each card line holds the rules text of the card (D-872). It answers the step and a reason, one judge call for each import. The prompt defines each step by its anchor (D-866).
 - **The import.** `ReadImport` asks the judge for each import that is not Commander. The step stands with no guard (D-865). The profile and the grade then read the deck at that step, as a generated 60-card deck does (D-869). The reason of the judge and the quality sentence make the summary (D-855).
 - **The failure.** The deck stores no step, and the page shows that the app did not read it yet (D-864). The deck page asks again at each open while an imported 60-card deck holds no step. So an import stored before this item also gets its read.
 - **The new read.** `ReadImportBracket` reads the step of a 60-card deck and the bracket of a Commander deck. The RPC keeps its name, because the web and the API deploy apart. A new read also writes the power into the power slot of the session, because a revise turn reads the slot (F-172, D-870).
-- **The labels.** Casual reads the Theme, Intro, and Planeswalker decks of the precon table. FNM reads the user decks of MTGGoldfish that a model outside the family of the judge labeled fnm (D-873 to D-875). Tournament reads the top 8 of an MTGO Challenge and of an MTGTop8 RCQ (D-863). It takes 13 MTGO lists and 12 MTGTop8 lists, with at most two lists of one event (D-871).
+- **The labels.** Casual reads the Theme, Intro, and Planeswalker decks of the precon table. FNM reads the user decks of MTGGoldfish that a model outside the family of the judge labeled fnm (D-873 to D-875). Tournament reads the top 8 of an MTGO Challenge and of an MTGTop8 RCQ (D-863). It takes 13 MTGO lists and 12 MTGTop8 lists, with at most two lists of one event (D-871). An RCQ counts from 32 players (D-876).
 - **The pick.** Each rung, or each source of a rung, takes its newest lists that resolve whole, by date, then by key. Every fifth list of a rung makes the dev split, and the other 20 make the test split (D-867). The newest 25 casual lists run from 2019-01 to 2026-04, so the age of their cards can confound the step. The FNM rung holds 9 Modern and 16 Standard decks of September 2026.
 - **The format word.** A casual precon reads Standard, the format of its release. A user deck or a tournament list reads Modern or Standard.
-- **The target.** `make sixty-gate` reads the test split three times and writes a gate document. It has the guard `SIXTY_GATE=1`, and any file at `SIXTY_GATE_OUT` stops the run. `make sixty-gate-dry` prints the split for free.
+- **The target.** `make sixty-gate` reads the test split three times and writes a gate document. It has the guard `SIXTY_GATE=1`, and any file at `SIXTY_GATE_OUT` stops the run. The flag `-exclude` leaves out the tournament lists of earlier gate documents (D-876). `make sixty-gate-dry` prints the split for free.
 - **The cost.** The dev lane of prompt version 2 read 15 lists for $0.3185, so a read costs about $0.021. So test run 1 costs about $3.8, and an import about $0.02.
 
 Gate:

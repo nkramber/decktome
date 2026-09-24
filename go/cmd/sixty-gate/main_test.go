@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -27,7 +28,7 @@ func precon(kind string, n int, date string) meta.Precon {
 
 func list(source, event, date string, n, place int) meta.List {
 	return meta.List{
-		Source: source, ID: fmt.Sprintf("%s-%s-%d", event, date, n), Event: event, Date: date, Placement: place,
+		Source: source, ID: fmt.Sprintf("%s-%s-%d", event, date, n), Event: event, Date: date, Placement: place, Players: 32,
 		Cards: []meta.Card{{Name: "Lightning Bolt", Count: 4}, {Name: "Mountain", Count: 56}},
 	}
 }
@@ -83,7 +84,7 @@ func TestPickBuildsTheRungs(t *testing.T) {
 	for day := 1; day <= 5; day++ {
 		extra[fmt.Sprintf("%s User-2026-09-%02d-1", meta.SourceGoldfish, day)] = true
 	}
-	set, err := pick(testIndex(), ps, ls, nil, extra)
+	set, err := pick(testIndex(), ps, ls, nil, extra, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -144,7 +145,7 @@ func TestPickSkipsAListThatDoesNotResolve(t *testing.T) {
 			fnm[l.Source+" "+l.ID] = true
 		}
 	}
-	set, err := pick(testIndex(), ps, ls, nil, fnm)
+	set, err := pick(testIndex(), ps, ls, nil, fnm, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -157,7 +158,7 @@ func TestPickSkipsAListThatDoesNotResolve(t *testing.T) {
 // holds fewer lists than the split wants: here 15 labeled user decks.
 func TestPickRefusesAThinRung(t *testing.T) {
 	ps, ls, fnm := fixture()
-	if _, err := pick(testIndex(), ps, ls, nil, fnm); err == nil {
+	if _, err := pick(testIndex(), ps, ls, nil, fnm, nil); err == nil {
 		t.Error("an FNM rung of 15 lists passed")
 	}
 }
@@ -221,5 +222,64 @@ func TestReasonNamesTheError(t *testing.T) {
 	}
 	if got := reason(result{why: "w", err: "e"}); got != "w" {
 		t.Errorf("reason = %q", got)
+	}
+}
+
+// TestPickReadsLargeRCQsAlone is D-876: an RCQ of fewer than 32 players
+// labels no list.
+func TestPickReadsLargeRCQsAlone(t *testing.T) {
+	small := list(meta.SourceMTGTop8, "RCQ @ Small", "2026-09-30", 0, 1)
+	small.Players = 31
+	if topEight(small) {
+		t.Error("an RCQ of 31 players labels a list")
+	}
+	small.Players = 32
+	if !topEight(small) {
+		t.Error("an RCQ of 32 players labels no list")
+	}
+}
+
+// TestExcludeLeavesOutReadLists is D-876: a key of an earlier document
+// leaves its list out of the tournament rung, and the rung takes the
+// next list.
+func TestExcludeLeavesOutReadLists(t *testing.T) {
+	ps, ls, fnm := fixture()
+	for day := 16; day <= 20; day++ {
+		fnm[fmt.Sprintf("%s User-2026-09-%02d-1", meta.SourceGoldfish, day)] = true
+	}
+	for day := 1; day <= 5; day++ {
+		fnm[fmt.Sprintf("%s User-2026-09-%02d-1", meta.SourceGoldfish, day)] = true
+	}
+	first, err := pick(testIndex(), ps, ls, nil, fnm, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	doc := "| Rung | Split | Date | Format | List |\n|---|---|---|---|---|\n"
+	var read []string
+	for _, l := range first.lists {
+		if l.label == mtgv1.SixtyStep_SIXTY_STEP_TOURNAMENT {
+			doc += fmt.Sprintf("| tournament | test | %s | %s | %s |\n", l.date, l.format, cell(l.id+", "+l.name))
+			read = append(read, l.id)
+		}
+	}
+	path := t.TempDir() + "/run.md"
+	if err := os.WriteFile(path, []byte(doc), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	exclude, err := readExclude(path)
+	if err != nil || len(exclude) != 25 {
+		t.Fatalf("exclude = %d keys, err = %v", len(exclude), err)
+	}
+	second, err := pick(testIndex(), ps, ls, nil, fnm, exclude)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, l := range second.lists {
+		if l.label == mtgv1.SixtyStep_SIXTY_STEP_TOURNAMENT && exclude[l.id] {
+			t.Errorf("the second rung read %s again", l.id)
+		}
+	}
+	if _, err := readExclude(t.TempDir() + "/none.md"); err == nil {
+		t.Error("a missing document passed")
 	}
 }

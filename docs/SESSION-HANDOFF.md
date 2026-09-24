@@ -8,11 +8,11 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-23i)
 
-**Pull request (not yet opened) adds the power step of a 60-card import (PR-71, F-170, F-172, D-863 to D-875).**
+**Pull request (not yet opened) adds the power step of a 60-card import (PR-71, F-170, F-172, D-863 to D-876).**
 
 Author provider: Claude Code
 
-**The next step.** The owner chooses what follows the FAIL of test run 1.
+**The next step.** Read test run 2 of `make sixty-gate` (D-876).
 
 **Test run 1.** `docs/reference/pr71-sixty-gate-run1.md` reads FAIL for $4.1086: 133 of 180 reads name the label, and the floor is 80 percent. No read sits two steps off. Casual read 53 of 60, FNM 40 of 60, and tournament 40 of 60. The MTGO lists read 26 of 30, and the RCQ lists 14 of 30. Each RCQ held 16 to 24 players.
 
@@ -34,7 +34,6 @@ Author provider: Claude Code
 
 **What waits on the owner.**
 
-- The next step after the FAIL of test run 1.
 - The Ulalek, Fused Atrocity shortlist holds 20 fixing lands, against a floor of 21.
 - The end of the Gitar pause, in a later pull request (D-838).
 - F-49, as a later item.

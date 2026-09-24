@@ -50,6 +50,7 @@ func run(w io.Writer) error {
 	dry := flag.Bool("dry", false, "print the split and stop before the provider calls")
 	split := flag.String("split", "test", "judge the test split, which the verdict reads, or the dev split")
 	reads := flag.Int("reads", 3, "judge reads of each list")
+	excludeDocs := flag.String("exclude", "", "leave out the tournament lists of these gate documents, comma separated")
 	flag.Parse()
 	if *split != "test" && *split != "dev" {
 		return fmt.Errorf("sixty-gate: -split %q, want test or dev", *split)
@@ -92,11 +93,15 @@ func run(w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	set, err := pick(idx, precons, modern, standard, fnm)
+	exclude, err := readExclude(*excludeDocs)
 	if err != nil {
 		return err
 	}
-	head := header{snapshot: idx.AsOf.Format("2006-01-02"), precons: version, split: *split, reads: *reads}
+	set, err := pick(idx, precons, modern, standard, fnm, exclude)
+	if err != nil {
+		return err
+	}
+	head := header{snapshot: idx.AsOf.Format("2006-01-02"), precons: version, split: *split, reads: *reads, excluded: len(exclude)}
 	if *dry {
 		writeSplit(w, head, set)
 		return nil
@@ -152,6 +157,7 @@ type header struct {
 	precons  string
 	split    string
 	reads    int
+	excluded int
 	judge    string
 	took     time.Duration
 	cost     llm.Report
@@ -234,6 +240,7 @@ func distance(a, b mtgv1.SixtyStep) int {
 func writeSplit(w io.Writer, h header, set picked) {
 	_, _ = fmt.Fprintf(w, "# The calibration split of the 60-card power judge (PR-71)\n\n")
 	_, _ = fmt.Fprintf(w, "Card snapshot: %s. Precon table: %s. No provider call.\n\n", h.snapshot, h.precons)
+	writeExcluded(w, h)
 	writeSkipped(w, set)
 	_, _ = fmt.Fprintf(w, "| Rung | Split | Date | Format | List |\n|---|---|---|---|---|\n")
 	for _, l := range set.lists {
@@ -242,6 +249,12 @@ func writeSplit(w io.Writer, h header, set picked) {
 			sp = "dev"
 		}
 		_, _ = fmt.Fprintf(w, "| %s | %s | %s | %s | %s |\n", stepWord(l.label), sp, l.date, l.format, cell(l.id+", "+l.name))
+	}
+}
+
+func writeExcluded(w io.Writer, h header) {
+	if h.excluded > 0 {
+		_, _ = fmt.Fprintf(w, "The tournament rung left out %d lists that an earlier run read (D-876).\n\n", h.excluded)
 	}
 }
 
@@ -271,6 +284,7 @@ func writeReport(w io.Writer, h header, set picked, results []result, t totals) 
 		_, _ = fmt.Fprintf(w, "The gate of D-868: %d of %d reads name the label, and %.0f percent is the floor. %d reads sit two steps off, and 0 is the cap.\n\n",
 			t.all.exact, t.all.reads, passRate*100, t.all.two)
 	}
+	writeExcluded(w, h)
 	writeSkipped(w, set)
 	_, _ = fmt.Fprintf(w, "| Rung | Lists | Reads | Label | One step off | Two steps off | Errors |\n|---|---|---|---|---|---|---|\n")
 	for _, s := range steps {
@@ -293,6 +307,49 @@ func writeReport(w io.Writer, h header, set picked, results []result, t totals) 
 		_, _ = fmt.Fprintf(w, "| %s | %s | %s | %s | %s | %s |\n", stepWord(r.list.label), r.list.date, r.list.format,
 			cell(r.list.id+", "+r.list.name), strings.Join(words, " "), cell(reason(r)))
 	}
+}
+
+// readExclude reads the key of each tournament list of the named gate
+// documents: the first part of the List column of each row (D-876).
+func readExclude(paths string) (map[string]bool, error) {
+	out := map[string]bool{}
+	for _, p := range strings.Split(paths, ",") {
+		if p = strings.TrimSpace(p); p == "" {
+			continue
+		}
+		data, err := os.ReadFile(p)
+		if err != nil {
+			return nil, fmt.Errorf("sixty-gate: -exclude: %w", err)
+		}
+		n := 0
+		for _, line := range strings.Split(string(data), "\n") {
+			if key, ok := tournamentKey(line); ok {
+				out[key] = true
+				n++
+			}
+		}
+		if n == 0 {
+			return nil, fmt.Errorf("sixty-gate: -exclude: %s holds no tournament list", p)
+		}
+	}
+	return out, nil
+}
+
+// tournamentKey reads the key of a tournament row of a gate document or
+// of a split: the List column holds the key, a comma, and the name.
+func tournamentKey(line string) (string, bool) {
+	cells := strings.Split(line, "|")
+	if len(cells) < 6 || strings.TrimSpace(cells[1]) != "tournament" {
+		return "", false
+	}
+	for _, c := range cells[2:] {
+		c = strings.TrimSpace(c)
+		if strings.HasPrefix(c, meta.SourceMTGO+" ") || strings.HasPrefix(c, meta.SourceMTGTop8+" ") {
+			key, _, _ := strings.Cut(c, ", ")
+			return key, true
+		}
+	}
+	return "", false
 }
 
 // reason is the reason of the first read, or the first error when no

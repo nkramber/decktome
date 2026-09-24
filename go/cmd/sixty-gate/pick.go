@@ -23,11 +23,13 @@ const devEvery = 5
 
 // The tournament rung takes 13 MTGO lists and 12 MTGTop8 lists, and at
 // most two lists of one event, so the rung spans more events and more
-// decks (D-871).
+// decks (D-871). An RCQ counts from 32 players: test run 1 read the top 8
+// of RCQs of 16 to 24 players at the label 14 of 30 times (D-876).
 const (
-	mtgoLists  = 13
-	top8Lists  = 12
-	eventLists = 2
+	mtgoLists     = 13
+	top8Lists     = 12
+	eventLists    = 2
+	minRCQPlayers = 32
 )
 
 // casualTypes are the product types of the precon table that label the
@@ -91,7 +93,10 @@ type picked struct {
 // FNM rung reads the user decks whose key fnm names (D-875). The
 // tournament rung takes each source apart, with a cap for each event
 // (D-871).
-func pick(idx *cards.Index, precons []meta.Precon, modern, standard []meta.List, fnm map[string]bool) (picked, error) {
+//
+// A key in exclude leaves a tournament list out, so a new run reads lists
+// that no earlier run read (D-876).
+func pick(idx *cards.Index, precons []meta.Precon, modern, standard []meta.List, fnm, exclude map[string]bool) (picked, error) {
 	out := picked{skipped: map[mtgv1.SixtyStep]int{}}
 	var casual, users, mtgo, top8 []calList
 	for _, p := range precons {
@@ -128,7 +133,7 @@ func pick(idx *cards.Index, precons []meta.Precon, modern, standard []meta.List,
 				})
 				continue
 			}
-			if !topEight(m) {
+			if !topEight(m) || exclude[m.Source+" "+m.ID] {
 				continue
 			}
 			l := calList{
@@ -185,7 +190,8 @@ type part struct {
 	perEvent int
 }
 
-// topEight is a top 8 finish in an MTGO Challenge or an MTGTop8 RCQ.
+// topEight is a top 8 finish in an MTGO Challenge, or in an MTGTop8 RCQ
+// of 32 players or more.
 func topEight(m meta.List) bool {
 	if m.Placement < 1 || m.Placement > 8 {
 		return false
@@ -194,7 +200,7 @@ func topEight(m meta.List) bool {
 	case meta.SourceMTGO:
 		return strings.Contains(m.Event, "Challenge")
 	case meta.SourceMTGTop8:
-		return rcq.MatchString(m.Event)
+		return rcq.MatchString(m.Event) && m.Players >= minRCQPlayers
 	}
 	return false
 }
