@@ -12,7 +12,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 Author provider: Claude Code
 
-**The next step.** Pending owner merge. Tell the owner the state of the review of #221.
+**The next step.** Pending owner merge of #221. `review-gate` passes, and Gitar left its plan notice alone, with no finding (D-842).
 
 **The base.** `main` is `fa05e3c`, from #220. Cloud Build read SUCCESS for `deploy-api` and `deploy-web` of `fa05e3c` on 2026-09-24 UTC. The owner imported `go/internal/decklist/testdata/archidekt_living_weapon.txt` on decktome.com. The stored deck holds bracket 3 from the judge with no estimate mark. It also holds the legality block of D-846, the grade typical, and the summary of D-855.
 
