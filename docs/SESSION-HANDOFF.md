@@ -27,7 +27,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passed on `179d586`, exit 0. All GitHub verify jobs and `pr-contract` passed. The initial `review-gate` failed because the record did not exist.
 
-**The review.** Ready for owner merge at `179d586ab7da39d5b44b926098dfc074315df3d8`, with no open findings. The refreshed `review-gate` result waits for the record push.
+**The review.** Gitar pause (D-838). Gitar left its plan notice alone, with no finding (D-842). Round 1 of Codex reads Ready for owner merge at `179d586ab7da39d5b44b926098dfc074315df3d8`, with no open findings. The refreshed `review-gate` result waits for the record push. The pull request waits for the merge of the owner.
 
 **What waits on the owner.**
 
